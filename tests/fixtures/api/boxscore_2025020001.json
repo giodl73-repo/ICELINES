@@ -1,0 +1,139 @@
+{
+  "id": 2025020001,
+  "season": 20252026,
+  "gameType": 2,
+  "gameDate": "2025-10-15",
+  "gameState": "OFF",
+  "awayTeam": {"abbrev": "EDM", "score": 2},
+  "homeTeam": {"abbrev": "SEA", "score": 4},
+  "playerByGameStats": {
+    "awayTeam": {
+      "forwards": [
+        {
+          "playerId": 8480001,
+          "sweaterNumber": 97,
+          "name": {"default": "C. McPlayer"},
+          "position": "C",
+          "goals": 1,
+          "assists": 1,
+          "points": 2,
+          "plusMinus": -1,
+          "pim": 0,
+          "hits": 2,
+          "powerPlayGoals": 1,
+          "sog": 5,
+          "faceoffWinningPctg": 0.571,
+          "toi": "22:18",
+          "blockedShots": 1,
+          "shifts": 28,
+          "giveaways": 1,
+          "takeaways": 3
+        }
+      ],
+      "defensemen": [],
+      "goalies": []
+    },
+    "homeTeam": {
+      "forwards": [
+        {
+          "playerId": 8480002,
+          "sweaterNumber": 14,
+          "name": {"default": "S. Skater"},
+          "position": "L",
+          "goals": 1,
+          "assists": 2,
+          "points": 3,
+          "plusMinus": 2,
+          "pim": 2,
+          "hits": 4,
+          "powerPlayGoals": 0,
+          "sog": 4,
+          "faceoffWinningPctg": 0.0,
+          "toi": "18:42",
+          "blockedShots": 2,
+          "shifts": 24,
+          "giveaways": 2,
+          "takeaways": 1
+        },
+        {
+          "playerId": 8480003,
+          "sweaterNumber": 21,
+          "name": {"default": "H. Gem"},
+          "position": "C",
+          "goals": 0,
+          "assists": 1,
+          "points": 1,
+          "plusMinus": 1,
+          "pim": 0,
+          "hits": 2,
+          "powerPlayGoals": 0,
+          "sog": 3,
+          "faceoffWinningPctg": 0.50,
+          "toi": "16:55",
+          "blockedShots": 3,
+          "shifts": 22,
+          "giveaways": 1,
+          "takeaways": 2
+        },
+        {
+          "playerId": 8480009,
+          "sweaterNumber": 28,
+          "name": {"default": "U. Mann"},
+          "position": "L",
+          "goals": 0,
+          "assists": 0,
+          "points": 0,
+          "plusMinus": 0,
+          "pim": 0,
+          "hits": 3,
+          "powerPlayGoals": 0,
+          "sog": 2,
+          "faceoffWinningPctg": 0.40,
+          "toi": "17:30",
+          "blockedShots": 2,
+          "shifts": 23,
+          "giveaways": 1,
+          "takeaways": 1
+        }
+      ],
+      "defensemen": [
+        {
+          "playerId": 8480010,
+          "sweaterNumber": 4,
+          "name": {"default": "S. Blue"},
+          "position": "D",
+          "goals": 0,
+          "assists": 1,
+          "points": 1,
+          "plusMinus": 2,
+          "pim": 0,
+          "hits": 3,
+          "powerPlayGoals": 0,
+          "sog": 2,
+          "faceoffWinningPctg": 0.0,
+          "toi": "23:10",
+          "blockedShots": 4,
+          "shifts": 30,
+          "giveaways": 0,
+          "takeaways": 2
+        }
+      ],
+      "goalies": [
+        {
+          "playerId": 8480020,
+          "sweaterNumber": 35,
+          "name": {"default": "G. Hand"},
+          "position": "G",
+          "starter": true,
+          "decision": "W",
+          "shotsAgainst": 28,
+          "saves": 26,
+          "goalsAgainst": 2,
+          "savePctg": 0.929,
+          "toi": "60:00",
+          "pim": 0
+        }
+      ]
+    }
+  }
+}

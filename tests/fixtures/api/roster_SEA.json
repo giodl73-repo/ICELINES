@@ -1,0 +1,148 @@
+{
+  "forwards": [
+    {
+      "id": 8480002,
+      "firstName": {"default": "Solid"},
+      "lastName": {"default": "Skater"},
+      "sweaterNumber": 14,
+      "positionCode": "L",
+      "shootsCatches": "L",
+      "heightInInches": 74,
+      "weightInPounds": 202,
+      "birthDate": "1999-03-22",
+      "birthCity": {"default": "Toronto"},
+      "birthCountry": "CAN",
+      "headshot": "https://assets.nhle.com/mugs/nhl/20252026/SEA/8480002.png"
+    },
+    {
+      "id": 8480003,
+      "firstName": {"default": "Hidden"},
+      "lastName": {"default": "Gem"},
+      "sweaterNumber": 21,
+      "positionCode": "C",
+      "shootsCatches": "R",
+      "heightInInches": 72,
+      "weightInPounds": 185,
+      "birthDate": "2000-08-15",
+      "birthCity": {"default": "Helsinki"},
+      "birthCountry": "FIN",
+      "headshot": "https://assets.nhle.com/mugs/nhl/20252026/SEA/8480003.png"
+    },
+    {
+      "id": 8480004,
+      "firstName": {"default": "Stretched"},
+      "lastName": {"default": "Thin"},
+      "sweaterNumber": 17,
+      "positionCode": "R",
+      "shootsCatches": "R",
+      "heightInInches": 71,
+      "weightInPounds": 190,
+      "birthDate": "1998-11-04",
+      "birthCity": {"default": "Brno"},
+      "birthCountry": "CZE",
+      "headshot": "https://assets.nhle.com/mugs/nhl/20252026/SEA/8480004.png"
+    },
+    {
+      "id": 8480006,
+      "firstName": {"default": "Young"},
+      "lastName": {"default": "Star"},
+      "sweaterNumber": 37,
+      "positionCode": "C",
+      "shootsCatches": "L",
+      "heightInInches": 72,
+      "weightInPounds": 180,
+      "birthDate": "2005-09-18",
+      "birthCity": {"default": "Laval"},
+      "birthCountry": "CAN",
+      "headshot": "https://assets.nhle.com/mugs/nhl/20252026/SEA/8480006.png"
+    },
+    {
+      "id": 8480007,
+      "firstName": {"default": "Hurt"},
+      "lastName": {"default": "Hero"},
+      "sweaterNumber": 22,
+      "positionCode": "L",
+      "shootsCatches": "L",
+      "heightInInches": 73,
+      "weightInPounds": 196,
+      "birthDate": "1997-07-12",
+      "birthCity": {"default": "Stockholm"},
+      "birthCountry": "SWE",
+      "headshot": "https://assets.nhle.com/mugs/nhl/20252026/SEA/8480007.png"
+    },
+    {
+      "id": 8480008,
+      "firstName": {"default": "Sitout"},
+      "lastName": {"default": "Steve"},
+      "sweaterNumber": 53,
+      "positionCode": "R",
+      "shootsCatches": "R",
+      "heightInInches": 71,
+      "weightInPounds": 185,
+      "birthDate": "2000-02-28",
+      "birthCity": {"default": "Mississauga"},
+      "birthCountry": "CAN",
+      "headshot": "https://assets.nhle.com/mugs/nhl/20252026/SEA/8480008.png"
+    },
+    {
+      "id": 8480009,
+      "firstName": {"default": "Utility"},
+      "lastName": {"default": "Mann"},
+      "sweaterNumber": 28,
+      "positionCode": "C",
+      "shootsCatches": "L",
+      "heightInInches": 74,
+      "weightInPounds": 198,
+      "birthDate": "1998-04-11",
+      "birthCity": {"default": "Kassel"},
+      "birthCountry": "DEU",
+      "headshot": "https://assets.nhle.com/mugs/nhl/20252026/SEA/8480009.png"
+    }
+  ],
+  "defensemen": [
+    {
+      "id": 8480010,
+      "firstName": {"default": "Steady"},
+      "lastName": {"default": "Blue"},
+      "sweaterNumber": 4,
+      "positionCode": "D",
+      "shootsCatches": "L",
+      "heightInInches": 75,
+      "weightInPounds": 215,
+      "birthDate": "1996-01-20",
+      "birthCity": {"default": "Gothenburg"},
+      "birthCountry": "SWE",
+      "headshot": "https://assets.nhle.com/mugs/nhl/20252026/SEA/8480010.png"
+    },
+    {
+      "id": 8480011,
+      "firstName": {"default": "Poke"},
+      "lastName": {"default": "Check"},
+      "sweaterNumber": 7,
+      "positionCode": "D",
+      "shootsCatches": "R",
+      "heightInInches": 74,
+      "weightInPounds": 207,
+      "birthDate": "1998-06-14",
+      "birthCity": {"default": "Turku"},
+      "birthCountry": "FIN",
+      "headshot": "https://assets.nhle.com/mugs/nhl/20252026/SEA/8480011.png"
+    }
+  ],
+  "goalies": [
+    {
+      "id": 8480020,
+      "firstName": {"default": "Glove"},
+      "lastName": {"default": "Hand"},
+      "sweaterNumber": 35,
+      "positionCode": "G",
+      "shootsCatches": "L",
+      "heightInInches": 74,
+      "weightInPounds": 195,
+      "birthDate": "1995-03-08",
+      "birthCity": {"default": "Moscow"},
+      "birthCountry": "RUS",
+      "headshot": "https://assets.nhle.com/mugs/nhl/20252026/SEA/8480020.png"
+    }
+  ]
+}
