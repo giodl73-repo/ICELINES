@@ -1901,22 +1901,31 @@ Options:
 <span class="p">}</span>
 
 <span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">SeasonLine</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">season</span><span class="p">:</span><span class="w">  </span><span class="nc">Season</span><span class="p">,</span><span class="w">   </span><span class="c1">// e.g. &quot;20252026&quot;</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">season</span><span class="p">:</span><span class="w">  </span><span class="nc">Season</span><span class="p">,</span><span class="w">   </span><span class="c1">// 8-digit YYYYZZZZ, e.g. Season(20252026)</span>
 <span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">team</span><span class="p">:</span><span class="w">    </span><span class="nb">String</span><span class="p">,</span>
 <span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">gp</span><span class="p">:</span><span class="w">      </span><span class="kt">u32</span><span class="p">,</span>
 <span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">goals</span><span class="p">:</span><span class="w">   </span><span class="kt">u32</span><span class="p">,</span>
 <span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">assists</span><span class="p">:</span><span class="w"> </span><span class="kt">u32</span><span class="p">,</span>
-<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">ppg</span><span class="p">:</span><span class="w">     </span><span class="kt">f32</span><span class="p">,</span>
-<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">toi_pg</span><span class="p">:</span><span class="w">  </span><span class="kt">f32</span><span class="p">,</span><span class="w">      </span><span class="c1">// seconds per game</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">ppg</span><span class="p">:</span><span class="w">     </span><span class="kt">f32</span><span class="p">,</span><span class="w">      </span><span class="c1">// points per game — stored as f32 for display</span>
+<span class="w">                           </span><span class="c1">// NOTE: projection engine casts to f64 at its boundary;</span>
+<span class="w">                           </span><span class="c1">// document the cast with a comment at the call site.</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">toi_pg</span><span class="p">:</span><span class="w">  </span><span class="kt">u32</span><span class="p">,</span><span class="w">      </span><span class="c1">// avg TOI per game in SECONDS (not minutes).</span>
+<span class="w">                           </span><span class="c1">// Display layer divides by 60. Internal math stays integer.</span>
 <span class="p">}</span>
 </code></pre></div>
 <hr />
 <h2 id="new-cli-commands-summary">New CLI Commands Summary<a class="headerlink" href="#new-cli-commands-summary" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p><strong>Note on "Release" vs plan "Phase"</strong>: Release here refers to data tier readiness,
+not implementation plan milestones. Release 1 = NHL API Tiers 1+2 (rosters + stats).
+Release 2 = Tier 3 shift data. All commands in this spec are planned for the
+implementation plan's Phase 2+. The foundation plan (Phase 1) ships only <code>team</code> and <code>rank</code>.</p>
+</blockquote>
 <table>
 <thead>
 <tr>
 <th>Command</th>
-<th>Phase</th>
+<th>Release</th>
 <th>Key Flags</th>
 </tr>
 </thead>
@@ -1937,24 +1946,24 @@ Options:
 <td>--by draft-class|age|pick-range</td>
 </tr>
 <tr>
-<td><code>icelines history &lt;PLAYER&gt;</code></td>
-<td>2</td>
-<td>--seasons, --pace</td>
-</tr>
-<tr>
 <td><code>icelines compare &lt;P1&gt; &lt;P2&gt;</code></td>
 <td>1</td>
 <td>--pace, --history</td>
 </tr>
 <tr>
-<td><code>icelines mates &lt;PLAYER&gt;</code></td>
-<td>2</td>
-<td>--top, --min-shifts (requires Tier 3 data)</td>
-</tr>
-<tr>
 <td><code>icelines group &lt;CMD&gt;</code></td>
 <td>1</td>
 <td>create, add, show, compare, auto</td>
+</tr>
+<tr>
+<td><code>icelines history &lt;PLAYER&gt;</code></td>
+<td>1</td>
+<td>--seasons, --pace (from NHL career stats API)</td>
+</tr>
+<tr>
+<td><code>icelines mates &lt;PLAYER&gt;</code></td>
+<td>2</td>
+<td>--top, --min-shifts (requires Tier 3 shift data)</td>
 </tr>
 <tr>
 <td><code>icelines scouting &lt;PLAYER&gt;</code></td>
@@ -1963,8 +1972,8 @@ Options:
 </tr>
 </tbody>
 </table>
-<p>Phase 1 = build with Tier 1+2 data (Yahoo CSV + NHL bios/stats)<br />
-Phase 2 = add Tier 3 data (shifts) for mates + enhanced scouting</p>
+<p>Release 1 = NHL API Tiers 1+2 (rosters, bios, season stats — no Yahoo CSV required)
+Release 2 = add Tier 3 shift data for <code>mates</code> + enhanced <code>scouting</code></p>
 <hr />
 <h2 id="filtering-engine-design">Filtering Engine Design<a class="headerlink" href="#filtering-engine-design" title="Permanent link">&para;</a></h2>
 <p>All filter commands go through a shared <code>PlayerFilter</code> builder in <code>icelines-core</code>:</p>

@@ -1387,6 +1387,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#1a-replacing-python-scripts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1a. Replacing Python Scripts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#2-commands-specification" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1406,6 +1417,34 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="icelines fetch">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#icelines-fetch-rosters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines fetch rosters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-fetch-stats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines fetch stats
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -1469,6 +1508,61 @@
     <span class="md-ellipsis">
       
         icelines compare &lt;T1&gt; &lt;T2&gt;
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-tonight" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines tonight
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-schedule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines schedule
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-trade" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines trade
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-project" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines project
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-tui" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines tui
       
     </span>
   </a>
@@ -1680,22 +1774,107 @@ output (mkdocs) remains the same format, but the generator is now a Rust functio
 <li>The CLI is a single binary that can be distributed without interpreter installation.</li>
 </ul>
 <hr />
+<h2 id="1a-replacing-python-scripts">1a. Replacing Python Scripts<a class="headerlink" href="#1a-replacing-python-scripts" title="Permanent link">&para;</a></h2>
+<p>The table below documents which Python script each <code>icelines</code> command replaces. This
+serves as the migration checklist: when a command is implemented and tested, the
+corresponding Python script can be deleted.</p>
+<table>
+<thead>
+<tr>
+<th>Python script</th>
+<th>Rust CLI command</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scripts/fetch_rosters.py</code></td>
+<td><code>icelines fetch rosters</code></td>
+<td>One request per team, caches to JSON</td>
+</tr>
+<tr>
+<td><code>scripts/fetch_gp.py</code></td>
+<td><code>icelines fetch stats</code></td>
+<td>Paginated bios + summary, merges on ID</td>
+</tr>
+<tr>
+<td><code>scripts/gen_site.py</code></td>
+<td><code>icelines build</code></td>
+<td>Tera templates replace Jinja2</td>
+</tr>
+<tr>
+<td><code>scripts/deploy.bat</code></td>
+<td><code>icelines deploy</code></td>
+<td>Calls <code>mkdocs gh-deploy</code> via subprocess</td>
+</tr>
+<tr>
+<td><em>(new — no prior script)</em></td>
+<td><code>icelines fetch positions</code></td>
+<td>Aggregates boxscores for position profiles</td>
+</tr>
+<tr>
+<td><em>(new — no prior script)</em></td>
+<td><code>icelines tonight</code></td>
+<td>Schedule + projected lines from boxscores</td>
+</tr>
+<tr>
+<td><em>(new — no prior script)</em></td>
+<td><code>icelines tui</code></td>
+<td>Full-screen terminal UI</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Yahoo CSV dependency</strong>: The Yahoo Fantasy Hockey CSV is no longer used for any position
+data. Positions come exclusively from the NHL API — <code>positionCode</code> from the bios endpoint
+for primary position, and the boxscore <code>position</code> field per game for actual deployment
+tracking. See <code>docs/specs/position-engine.md</code> for the full algorithm.</p>
+<hr />
 <h2 id="2-commands-specification">2. Commands Specification<a class="headerlink" href="#2-commands-specification" title="Permanent link">&para;</a></h2>
 <h3 id="icelines-fetch"><code>icelines fetch</code><a class="headerlink" href="#icelines-fetch" title="Permanent link">&para;</a></h3>
-<p>Fetch NHL games-played data for all players in the current CSV and write to local cache.</p>
-<div class="highlight"><pre><span></span><code>icelines fetch [OPTIONS]
+<p>Fetch all NHL data needed to run IceLines. Replaces three Python scripts
+(<code>fetch_rosters.py</code>, <code>fetch_gp.py</code>) with a single composable command.
+All subcommands use <code>https://api-web.nhle.com/v1/</code> or
+<code>https://api.nhle.com/stats/rest/en/</code> (new NHL API — not the deprecated <code>/api/v1/</code>).</p>
+<div class="highlight"><pre><span></span><code>icelines fetch &lt;SUBCOMMAND&gt; [OPTIONS]
 
-Options:
-  --csv &lt;PATH&gt;       Path to Yahoo Fantasy Hockey CSV export [default: data/fantasy.csv]
-  --season &lt;YEAR&gt;    NHL season year (e.g. 2024 for 2023-24) [default: current]
-  --refresh          Invalidate cache and re-fetch all players
-  --player &lt;NAME&gt;    Fetch a single player by name (partial match OK)
-  --dry-run          Show what would be fetched without making API calls
-  -v, --verbose      Show per-player fetch status
+Subcommands:
+  rosters    Fetch all 32 team rosters + headshot URLs  (replaces fetch_rosters.py)
+  stats      Fetch season stats for all skaters          (replaces fetch_gp.py)
+  all        Run rosters then stats in sequence           (default if no subcommand)
+
+Common Options:
+  --season &lt;YEAR&gt;    Season in YYYYZZZZ format [default: current, e.g. 20252026]
+  --refresh          Invalidate cache and re-fetch everything
+  --dry-run          Show what would be fetched without API calls
+  -v, --verbose      Show per-player status
 </code></pre></div>
+<h4 id="icelines-fetch-rosters"><code>icelines fetch rosters</code><a class="headerlink" href="#icelines-fetch-rosters" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code>GET https://api-web.nhle.com/v1/roster/{TEAM}/{SEASON}
+</code></pre></div>
+<ul>
+<li>Fetches all 32 NHL team rosters (one request per team)</li>
+<li>Stores player bio + headshot URL keyed by normalized name</li>
+<li>Headshot URL format: <code>https://assets.nhle.com/mugs/nhl/{SEASON}/{TEAM}/{player_id}.png</code></li>
+<li>Writes to <code>~/.icelines/cache/rosters/{SEASON}/{TEAM}.json</code></li>
+</ul>
+<h4 id="icelines-fetch-stats"><code>icelines fetch stats</code><a class="headerlink" href="#icelines-fetch-stats" title="Permanent link">&para;</a></h4>
+<p>Two bulk-paginated endpoints, no per-player requests:</p>
+<div class="highlight"><pre><span></span><code># Bios: GP, player ID, team, position, birth data
+GET https://api.nhle.com/stats/rest/en/skater/bios
+    ?cayenneExp=seasonId={SEASON}%20and%20gameTypeId=2&amp;limit=100&amp;start={N}
+
+# Stats: G, A, points, TOI, PPG, shots
+GET https://api.nhle.com/stats/rest/en/skater/summary
+    ?cayenneExp=seasonId={SEASON}%20and%20gameTypeId=2&amp;limit=100&amp;start={N}
+</code></pre></div>
+<ul>
+<li>Paginates until <code>start + page_size &gt;= response.total</code></li>
+<li>Merges bios + stats on <code>playerId</code></li>
+<li>Writes to <code>~/.icelines/cache/stats/{SEASON}/bios.json</code> and <code>stats.json</code></li>
+</ul>
+<p><strong>All stats (G, A, GP, TOI) come from the NHL API — not from any CSV.</strong></p>
 <p><strong>Behavior:</strong>
-- Reads player names from <code>--csv</code>, resolves each to an NHL API player ID
-- Checks local cache (<code>~/.icelines/cache/</code>) before each API call
+- Checks local cache before each API call
 - Writes fetched GP data to cache with timestamp
 - Reports players that could not be resolved (name mismatch, not found in API)
 - Exits 0 if all players resolved, exits 1 if any player could not be resolved (unless <code>--allow-missing</code>)</p>
@@ -1812,6 +1991,152 @@ Options:
 - Renders two lineup cards side-by-side in the terminal (requires ≥140 column terminal)
 - Highlights slots where T1 player's pace projection exceeds T2's by &gt;10 pts/82 (or vice versa)</p>
 <hr />
+<h3 id="icelines-tonight"><code>icelines tonight</code><a class="headerlink" href="#icelines-tonight" title="Permanent link">&para;</a></h3>
+<p>Show today's NHL games with projected starting lines for each game.</p>
+<div class="highlight"><pre><span></span><code>icelines tonight [OPTIONS]
+
+Options:
+  --team &lt;ABBREV&gt;    Filter output to games involving this team only
+  --json             Output JSON instead of formatted text
+</code></pre></div>
+<p><strong>Behavior:</strong></p>
+<p>Fetches today's schedule from <code>https://api-web.nhle.com/v1/schedule/now</code>. For each game,
+retrieves the most recent cached boxscore for each team to derive the projected starting
+lines — the last game played is the best available proxy for tonight's lineup.</p>
+<p>Output is a compact side-by-side view for each game:</p>
+<div class="highlight"><pre><span></span><code>7:00 PM ET  Carolina Hurricanes @ NY Rangers
+
+  CAR Projected Lines         NYR Projected Lines
+  F1  Niederreiter–Aho–Svech  F1  Panarin–Trocheck–Kreider
+  F2  Kotkaniemi–Drury–Tera   F2  Kakko–Chytil–Lafreniere
+  F3  Necas–Staal–Jarvis      F3  Vesey–Goodrow–Blais
+  F4  Lorentz–Kostalek–Noes   F4  Reaves–Gauthier–Carpenter
+  D1  Slavin–Burns             D1  Miller–Fox
+  D2  Chatfield–DeAngelo       D2  Trouba–Lindgren
+  D3  Orlov–Pesce              D3  Jones–Schneider
+
+  Note: Lines projected from last game boxscore — not confirmed.
+</code></pre></div>
+<p>Lines are constructed by reading the forward and defense arrays from each team's most
+recent boxscore and grouping by line number / pair number where available. If a team
+has no cached boxscore (has not played a game yet this season), their projected lines are
+shown as <code>"(no boxscore data)"</code>.</p>
+<p><code>--team</code>: If provided, only games involving <code>&lt;ABBREV&gt;</code> are shown. Other games are omitted.</p>
+<p><strong>JSON output (<code>--json</code>)</strong>: An array of game objects, each with <code>game_time</code>, <code>away_team</code>,
+<code>home_team</code>, <code>away_projected_lines</code>, <code>home_projected_lines</code>, and <code>data_source</code> (the game
+ID of the most recent boxscore used for each team).</p>
+<hr />
+<h3 id="icelines-schedule"><code>icelines schedule</code><a class="headerlink" href="#icelines-schedule" title="Permanent link">&para;</a></h3>
+<p>Show the upcoming NHL schedule for a team or the full league.</p>
+<div class="highlight"><pre><span></span><code>icelines schedule [OPTIONS]
+
+Options:
+  --team &lt;ABBREV&gt;    Show schedule for this team only
+  --days &lt;N&gt;         Number of days ahead to show [default: 7]
+  --json             Output JSON instead of formatted table
+</code></pre></div>
+<p><strong>Behavior:</strong></p>
+<p>Fetches the schedule by iterating <code>https://api-web.nhle.com/v1/schedule/{DATE}</code> for each
+date from today through today + <code>--days</code>. Filters to the specified team if <code>--team</code> is
+provided.</p>
+<p>Output lists each game with date, time, home, and away team:</p>
+<div class="highlight"><pre><span></span><code>NHL Schedule — Next 7 Days
+
+Sat Apr 25    7:00 PM ET    CAR @ NYR
+Sat Apr 25    7:30 PM ET    TOR @ OTT
+Sat Apr 25   10:00 PM ET    SEA @ VGK
+Sun Apr 26    3:00 PM ET    EDM @ CGY
+...
+</code></pre></div>
+<p>If <code>--team</code> is provided, only that team's games are shown. Games the team has already
+played (today's earlier games) are included if they appear in the schedule feed.</p>
+<hr />
+<h3 id="icelines-trade"><code>icelines trade</code><a class="headerlink" href="#icelines-trade" title="Permanent link">&para;</a></h3>
+<p>Analyze the depth chart impact of a trade for the team losing the outgoing player.</p>
+<div class="highlight"><pre><span></span><code>icelines trade &lt;PLAYER_OUT&gt; for &lt;PLAYER_IN&gt; [OPTIONS]
+
+Arguments:
+  &lt;PLAYER_OUT&gt;       Player being traded away (name or NHL player ID)
+  &lt;PLAYER_IN&gt;        Player being acquired (name or NHL player ID)
+
+Options:
+  --team &lt;ABBREV&gt;    Team perspective [default: player_out&#39;s current team]
+  --json             Output JSON instead of formatted tables
+</code></pre></div>
+<p><strong>Behavior:</strong></p>
+<p>Shows the depth chart for <code>--team</code> (or <code>player_out</code>'s current team) in two states:
+before the trade (current) and after the trade (simulated). The diff highlights:</p>
+<ul>
+<li>Which line slot <code>player_out</code> occupied</li>
+<li>Where <code>player_in</code> is placed given their primary and eligible positions</li>
+<li>Whether the replacement is an upgrade or downgrade (pace comparison)</li>
+<li>How team totals (sum of pace_82 for all rostered skaters) change</li>
+</ul>
+<p>Example output:</p>
+<div class="highlight"><pre><span></span><code>Trade Analysis — EDM perspective
+  OUT: Jesse Puljujarvi (RW, 23.4 pts/82, Line 3 RW)
+  IN:  Rickard Rakell   (RW/LW, 51.2 pts/82)
+
+  BEFORE           →    AFTER
+  Line 3 RW                 Line 3 RW
+  [Puljujarvi] 23.4         [Rakell] 51.2  +27.8 pts/82
+
+  Team total before: 312.4 pts/82
+  Team total after:  340.2 pts/82  (+27.8)
+
+  Verdict: Upgrade — Rakell slots directly into Puljujarvi&#39;s line 3 RW slot.
+</code></pre></div>
+<p><strong>Scope</strong>: This command evaluates only the team losing <code>player_out</code> (i.e., the team specified
+by <code>--team</code>). The other team's depth chart change is not shown. To evaluate the other side,
+run <code>icelines trade &lt;PLAYER_IN&gt; for &lt;PLAYER_OUT&gt; --team &lt;OTHER_TEAM&gt;</code> separately.</p>
+<p><strong>Positioning</strong>: <code>player_in</code> is placed in the depth chart using the same algorithm as the
+depth chart builder (primary position first, then eligible positions). If <code>player_in</code> is not
+in IceLines' cached data (e.g., they are a minor-league player not in the NHL API stats
+feed), the command exits with an error and a suggestion to run <code>icelines fetch stats</code>.</p>
+<hr />
+<h3 id="icelines-project"><code>icelines project</code><a class="headerlink" href="#icelines-project" title="Permanent link">&para;</a></h3>
+<p>Rest-of-season projection for a player or all skaters on a team. Full specification in
+<code>docs/specs/projection-engine.md</code>.</p>
+<div class="highlight"><pre><span></span><code>icelines project &lt;PLAYER|--team TEAM&gt; [OPTIONS]
+
+Arguments:
+  &lt;PLAYER&gt;           Player name (partial match) or NHL player ID
+                     Mutually exclusive with --team
+
+Options:
+  --team &lt;ABBREV&gt;    Project all skaters on this team (mutually exclusive with &lt;PLAYER&gt;)
+  --mode &lt;MODE&gt;      pace | regressed | composite  [default: regressed]
+  --games &lt;N&gt;        Remaining games to project [default: computed from schedule API]
+  --season           Show by-season career comparison (single-player mode only)
+  --pos &lt;POSITIONS&gt;  Comma-separated position filter for --team: C,LW,RW,D  [default: all]
+  --json             Output JSON instead of formatted table
+</code></pre></div>
+<p><strong>Single-player output</strong>: Player bio, current pace, career PPG, α weight, projected
+remaining points, ±1σ confidence band, and projected full-season total. With <code>--season</code>,
+also shows a by-season career comparison table.</p>
+<p><strong>Team output</strong>: Ranked table of all skaters on the team above MIN_GP, sorted by projected
+remaining points descending. Includes team total projected remaining and ±1σ band.</p>
+<p>See <code>docs/specs/projection-engine.md</code> for the full algorithm, formula definitions, and
+data source specification.</p>
+<hr />
+<h3 id="icelines-tui"><code>icelines tui</code><a class="headerlink" href="#icelines-tui" title="Permanent link">&para;</a></h3>
+<p>Launch the IceLines full-screen terminal user interface. Full specification in
+<code>docs/specs/tui.md</code>.</p>
+<div class="highlight"><pre><span></span><code>icelines tui [OPTIONS]
+icelines         (no arguments — same as icelines tui)
+
+Options:
+  --no-color     Disable ANSI colors; use text labels for fit classes instead
+</code></pre></div>
+<p><strong>Behavior</strong>: Enters terminal raw mode, initializes the <code>ratatui</code> + <code>crossterm</code> event loop,
+and renders the Home screen (league tracker). All navigation is keyboard-driven.</p>
+<p>The TUI reads exclusively from the local cache — it does not make NHL API calls during
+normal operation. Use <code>icelines fetch</code> (or the Fetch screen inside the TUI, key <code>f</code> from
+Home) to refresh stale data.</p>
+<p>Press <code>q</code> or <code>Esc</code> from the Home screen to exit the TUI and return to the shell.</p>
+<p>See <code>docs/specs/tui.md</code> for the full screen inventory, widget catalog, navigation model,
+and color contract.</p>
+<hr />
 <h2 id="3-crate-architecture">3. Crate Architecture<a class="headerlink" href="#3-crate-architecture" title="Permanent link">&para;</a></h2>
 <p>The IceLines workspace is structured as four crates with a strict dependency DAG:</p>
 <div class="highlight"><pre><span></span><code>icelines-core
@@ -1855,28 +2180,33 @@ state, position parse errors)</p>
 CSV parse errors, player ID resolution failures, schema validation failures)</p>
 <hr />
 <h3 id="icelines-site"><code>icelines-site</code><a class="headerlink" href="#icelines-site" title="Permanent link">&para;</a></h3>
-<p><strong>Role</strong>: Site and markdown generation.</p>
+<p><strong>Role</strong>: Site and markdown generation. Replaces <code>scripts/gen_site.py</code>.</p>
 <p><strong>Owns</strong>:
 - Lineup card markdown renderer (Tera templates)
 - Index page renderer
 - Team page generator (one markdown file per team)
-- mkdocs.yml generator/updater</p>
-<p><strong>Depends on</strong>: <code>icelines-core</code> (for all data types and scoring results)</p>
+- mkdocs.yml generator/updater
+- Dashboard TOML loader and page generator (see <code>docs/specs/dashboard-engine.md</code>)</p>
 <p><strong>Does NOT own</strong>:
+- Terminal rendering — that belongs in <code>icelines-cli</code>
 - Business logic, scoring, fit classification
 - Network I/O
 - File path resolution outside the site output directory</p>
+<p><strong>Depends on</strong>: <code>icelines-core</code> (for all data types and scoring results)</p>
 <p><strong>Error type</strong>: <code>icelines_site::Error</code> (template rendering errors, file write errors)</p>
 <hr />
 <h3 id="icelines-cli"><code>icelines-cli</code><a class="headerlink" href="#icelines-cli" title="Permanent link">&para;</a></h3>
-<p><strong>Role</strong>: Binary entry point. Wires everything together.</p>
+<p><strong>Role</strong>: Binary entry point. Wires everything together. The single binary
+replaces all Python scripts: <code>fetch_rosters.py</code>, <code>fetch_gp.py</code>, <code>gen_site.py</code>,
+<code>deploy.bat</code>. Users run <code>icelines &lt;subcommand&gt;</code>, not Python scripts.</p>
 <p><strong>Owns</strong>:
 - <code>main.rs</code> with clap derive subcommand enum
 - Command handler functions (thin wrappers that call fetch/core/site)
 - tokio runtime setup
 - Top-level error formatting (convert crate errors to user-facing messages)
 - Config loading (<code>~/.icelines/config.toml</code> or project-local <code>.icelines.toml</code>)
-- Terminal renderer: <code>src/render/terminal.rs</code> — colored rows via <code>owo-colors</code>, tabular layout via <code>comfy-table</code></p>
+- <strong>Terminal renderer</strong>: <code>src/render/terminal.rs</code> — colored rows via <code>owo-colors</code>,
+  tabular layout via <code>comfy-table</code>. Terminal rendering is CLI concern, not site concern.</p>
 <p><strong>Depends on</strong>: All three library crates.</p>
 <p><strong>Error type</strong>: <code>anyhow::Error</code> (binary — error context chaining via anyhow is appropriate here)</p>
 <hr />
@@ -1911,10 +2241,19 @@ CSV parse errors, player ID resolution failures, schema validation failures)</p>
 <span class="w">    </span><span class="n">Goalie</span><span class="p">,</span>
 <span class="p">}</span>
 
+<span class="sd">/// Season identifier — always 8-digit YYYYZZZZ format (e.g. 20252026).</span>
+<span class="sd">/// Newtype prevents silent confusion with 4-digit year u32 values.</span>
+<span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">Season</span><span class="p">(</span><span class="k">pub</span><span class="w"> </span><span class="kt">u32</span><span class="p">);</span>
+
+<span class="k">impl</span><span class="w"> </span><span class="n">Season</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">current</span><span class="p">()</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">Self</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* derive from current date */</span><span class="w"> </span><span class="fm">todo!</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">as_str</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">String</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="mf">0.</span><span class="n">to_string</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
+<span class="p">}</span>
+
 <span class="sd">/// A complete depth chart for one NHL team.</span>
 <span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">DepthChart</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">team</span><span class="p">:</span><span class="w"> </span><span class="nc">TeamAbbr</span><span class="p">,</span>
-<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">season</span><span class="p">:</span><span class="w"> </span><span class="kt">u32</span><span class="p">,</span><span class="w">          </span><span class="c1">// e.g. 2024 for the 2023-24 season</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">season</span><span class="p">:</span><span class="w"> </span><span class="nc">Season</span><span class="p">,</span><span class="w">       </span><span class="c1">// 8-digit YYYYZZZZ, e.g. Season(20252026)</span>
 <span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">forward_lines</span><span class="p">:</span><span class="w"> </span><span class="p">[[</span><span class="nb">Option</span><span class="o">&lt;</span><span class="n">Player</span><span class="o">&gt;</span><span class="p">;</span><span class="w"> </span><span class="mi">3</span><span class="p">];</span><span class="w"> </span><span class="mi">4</span><span class="p">],</span><span class="w">  </span><span class="c1">// [line][LW=0, C=1, RW=2]</span>
 <span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">defense_pairs</span><span class="p">:</span><span class="w"> </span><span class="p">[[</span><span class="nb">Option</span><span class="o">&lt;</span><span class="n">Player</span><span class="o">&gt;</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">3</span><span class="p">],</span><span class="w">  </span><span class="c1">// [pair][LD=0, RD=1]</span>
 <span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">unplaced</span><span class="p">:</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">Player</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="c1">// Players on team who didn&#39;t fit the standard structure</span>

@@ -1,0 +1,2472 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="NHL depth charts, pace-adjusted rankings, and trade analysis for all 32 teams">
+      
+      
+      
+        <link rel="canonical" href="https://giodl73-repo.github.io/ICELINES/plans/2026-04-25-phase2-site-analysis/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+    
+    
+      
+        <title>IceLines Rust CLI — Phase 2 Implementation Plan - IceLines</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/fantasy.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="blue">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#icelines-rust-cli-phase-2-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="IceLines" class="md-header__button md-logo" aria-label="IceLines" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            IceLines
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              IceLines Rust CLI — Phase 2 Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="blue"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="blue"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/giodl73-repo/ICELINES" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    IceLines
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Tracker
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../teams/COL/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Teams
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="IceLines" class="md-nav__button md-logo" aria-label="IceLines" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    IceLines
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/giodl73-repo/ICELINES" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    IceLines
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Teams
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Teams
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/COL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    COL — Colorado Avalanche
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/TB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TB — Tampa Bay Lightning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/VGK/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VGK — Vegas Golden Knights
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/DAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DAL — Dallas Stars
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/EDM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    EDM — Edmonton Oilers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/PIT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PIT — Pittsburgh Penguins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/MTL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MTL — Montréal Canadiens
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/MIN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MIN — Minnesota Wild
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/OTT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OTT — Ottawa Senators
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/FLA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FLA — Florida Panthers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/SJ/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SJ — San Jose Sharks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/BUF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BUF — Buffalo Sabres
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/ANA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ANA — Anaheim Ducks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/CAR/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CAR — Carolina Hurricanes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/UTA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UTA — Utah Hockey Club
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/BOS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BOS — Boston Bruins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/WSH/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WSH — Washington Capitals
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/DET/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DET — Detroit Red Wings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/CBJ/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CBJ — Columbus Blue Jackets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/TOR/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TOR — Toronto Maple Leafs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/NYI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NYI — New York Islanders
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/NYR/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NYR — New York Rangers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/PHI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PHI — Philadelphia Flyers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/NJ/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJ — New Jersey Devils
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/STL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STL — St. Louis Blues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/LA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LA — Los Angeles Kings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/SEA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SEA — Seattle Kraken
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/NSH/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NSH — Nashville Predators
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/CHI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CHI — Chicago Blackhawks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/WPG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WPG — Winnipeg Jets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/CGY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CGY — Calgary Flames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/VAN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VAN — Vancouver Canucks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#background" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Map
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="File Map">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#icelines-core" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines-core/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-fetch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines-fetch/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-site" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines-site/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines-cli/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dataschemes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        data/schemes/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dashboards" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dashboards/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#githubworkflows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        .github/workflows/
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-breakdown" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase Breakdown
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase Breakdown">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-data-model-extensions-in-icelines-core" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1 — Data Model Extensions in icelines-core
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-fantasy-scheme-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2 — Fantasy Scheme Engine
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-position-engine-and-icelines-fetch-extensions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3 — Position Engine and icelines-fetch Extensions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-sqlite-database-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4 — SQLite Database Layer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-5-player-analysis-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 5 — Player Analysis Commands
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-6-site-generation-and-dashboard-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 6 — Site Generation and Dashboard Engine
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-7-ci-workflow-integration-tests-and-cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 7 — CI Workflow, Integration Tests, and Cleanup
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#success-criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Success Criteria
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#test-coverage-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test Coverage Requirements
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Test Coverage Requirements">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#l0-unit-tests-95-icelines-core" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        L0 — Unit Tests (≥ 95% icelines-core)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#l1-integration-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        L1 — Integration Tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#l2-system-tests-every-phase-2-command" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        L2 — System Tests (every Phase 2 command)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of Scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="icelines-rust-cli-phase-2-implementation-plan">IceLines Rust CLI — Phase 2 Implementation Plan<a class="headerlink" href="#icelines-rust-cli-phase-2-implementation-plan" title="Permanent link">&para;</a></h1>
+<p><strong>Date</strong>: 2026-04-25<br />
+<strong>Phase</strong>: 2 of 3 — Site Generation, Fantasy Schemes, and Player Analysis<br />
+<strong>Spec references</strong>:
+- <code>docs/specs/rust-cli.md</code> — command surface, crate architecture, migration table
+- <code>docs/specs/fantasy-scheme.md</code> — scheme TOML format, SkaterWeights, GoalieWeights, compute_fantasy_score()
+- <code>docs/specs/dashboard-engine.md</code> — TOML dashboard definitions, QuerySpec, DashboardSpec, templates, layouts
+- <code>docs/specs/player-analysis.md</code> — PlayerFilter, PlayerBio, DraftInfo, SeasonHistory, PlayerGroup, all player commands
+- <code>docs/specs/position-engine.md</code> — PositionProfile, boxscore API, 20%-threshold eligibility algorithm
+- <code>docs/specs/data-sources.md</code> — NHL API tiers, cache layout, TTL policy</p>
+<p><strong>Companion plans</strong>:
+- <code>docs/plans/2026-04-25-rust-cli-foundation.md</code> — Phase 1: workspace, icelines-core, icelines-fetch, <code>team</code> and <code>rank</code>
+- <code>docs/plans/2026-04-25-phase3-tui-projections.md</code> — Phase 3: TUI, projections, shift data, tonight</p>
+<hr />
+<h2 id="background">Background<a class="headerlink" href="#background" title="Permanent link">&para;</a></h2>
+<p>Phase 1 delivered the foundational workspace: <code>icelines-core</code> data model, <code>icelines-fetch</code> NHL
+API client with caching, and two terminal commands (<code>team</code>, <code>rank</code>) that validate end-to-end
+correctness. The Python scripts <code>fetch_rosters.py</code> and <code>fetch_gp.py</code> can now be retired.</p>
+<p>Phase 2 completes the site generation pipeline and builds out the full player analysis command
+surface. The central deliverable is <code>icelines build</code> — a Rust replacement for <code>scripts/gen_site.py</code>
+driven by a declarative TOML dashboard engine. Alongside it: the fantasy scheme system, the
+position engine (boxscore-derived position profiles), the extended player data model (bio, draft
+info, career history, groups), the <code>PlayerFilter</code> engine, and seven new CLI commands (<code>players</code>,
+<code>class</code>, <code>peers</code>, <code>compare</code>, <code>group</code>, <code>history</code>, <code>scheme</code>). A SQLite database (<code>icelines.db</code>) is
+introduced for persistent storage of <code>PlayerRecord</code>, <code>SeasonHistory</code>, and <code>PlayerGroup</code> records
+that are too large or too structured for flat JSON cache files. A GitHub Actions CI workflow
+ensures the codebase stays clean on every push.</p>
+<p>By the end of Phase 2, the full <code>icelines build → icelines serve → icelines deploy</code> pipeline
+replaces all remaining Python scripts, and users can perform deep player analysis from the
+terminal without touching a browser.</p>
+<hr />
+<h2 id="goals">Goals<a class="headerlink" href="#goals" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Implement <code>icelines build</code>, <code>icelines serve</code>, and <code>icelines deploy</code> — full site generation
+  replacing <code>scripts/gen_site.py</code>, driven by the TOML dashboard engine</li>
+<li>Implement <code>icelines fetch positions</code> — boxscore API client, per-game position aggregation,
+  <code>PositionProfile</code> derivation using the 20%-threshold algorithm from <code>position-engine.md</code></li>
+<li>Implement <code>icelines scheme</code> subcommands: <code>new</code>, <code>from-csv</code>, <code>list</code>, <code>show</code>, <code>edit</code></li>
+<li>Implement the fantasy scoring engine in <code>icelines-core</code>: <code>compute_fantasy_score()</code>,
+  <code>SkaterWeights</code>, <code>GoalieWeights</code>, <code>FantasyScore</code> with breakdown map</li>
+<li>Implement the dashboard engine in <code>icelines-site</code>: TOML <code>DashboardSpec</code> loader, Tera template
+  engine init, <code>QueryExecutor</code>, page builder, built-in templates and layouts</li>
+<li>Extend <code>icelines-core</code> data model with <code>PlayerBio</code>, <code>DraftInfo</code>, <code>SeasonHistory</code>, <code>SeasonLine</code>,
+  <code>PlayerGroup</code>, <code>GroupMember</code>, <code>PositionProfile</code>, <code>PlayerFilter</code></li>
+<li>Implement <code>icelines players</code>, <code>icelines class</code>, <code>icelines peers</code>, <code>icelines compare</code>,
+  <code>icelines group</code>, <code>icelines history</code> CLI commands</li>
+<li>Introduce SQLite (<code>rusqlite</code>) for <code>PlayerRecord</code>, <code>SeasonHistory</code>, and <code>PlayerGroup</code>
+  persistence in <code>~/.icelines/db/icelines.db</code></li>
+<li>Add <code>icelines-fetch/src/career.rs</code> — player landing API client for <code>seasonTotals</code></li>
+<li>Add <code>icelines-fetch/src/boxscore.rs</code> — boxscore API client and game-log fetcher</li>
+<li>Ship three built-in read-only scheme TOML files (<code>yahoo-standard</code>, <code>espn-standard</code>,
+  <code>simple-pts</code>) and three starter dashboard TOML definitions</li>
+<li>Establish a GitHub Actions CI workflow: <code>cargo test</code>, <code>cargo clippy</code>, <code>cargo fmt --check</code></li>
+</ul>
+<hr />
+<h2 id="file-map">File Map<a class="headerlink" href="#file-map" title="Permanent link">&para;</a></h2>
+<p>Files to create, by crate. All files in Phase 1 remain; this table lists additions only.</p>
+<h3 id="icelines-core"><code>icelines-core/</code><a class="headerlink" href="#icelines-core" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/scheme.rs</code></td>
+<td><code>Scheme</code>, <code>SchemeSource</code>, <code>SkaterWeights</code>, <code>GoalieWeights</code>, <code>FantasyScore</code>; <code>compute_fantasy_score(stats, weights, gp) -&gt; Option&lt;FantasyScore&gt;</code>; invariants DI-20 through DI-23</td>
+</tr>
+<tr>
+<td><code>src/filter.rs</code></td>
+<td><code>PlayerFilter</code> builder struct with all filter dimensions from <code>player-analysis.md</code> §Filtering Engine; <code>PlayerFilter::apply(&amp;self, players: &amp;[PlayerRecord]) -&gt; Vec&lt;&amp;PlayerRecord&gt;</code></td>
+</tr>
+<tr>
+<td><code>src/bio.rs</code></td>
+<td><code>PlayerBio</code>, <code>DraftInfo</code>, <code>Region</code> enum (NorthAmerica, Scandinavia, CentralEurope, Russia, Other), <code>Hand</code> enum (L, R), <code>LeagueBackground</code> enum (NCAA, OHL, WHL, QMJHL, SHL, Liiga, KHL, Other)</td>
+</tr>
+<tr>
+<td><code>src/history.rs</code></td>
+<td><code>SeasonHistory { player_id: u32, seasons: Vec&lt;SeasonLine&gt; }</code>; <code>SeasonLine</code> with season id, team, gp, goals, assists, ppg, toi_pg; <code>compute_career_ppg(history: &amp;SeasonHistory) -&gt; Option&lt;f64&gt;</code> (weighted mean, regular season only)</td>
+</tr>
+<tr>
+<td><code>src/group.rs</code></td>
+<td><code>PlayerGroup { id: Uuid, name: String, description: Option&lt;String&gt;, created_at: DateTime&lt;Utc&gt;, members: Vec&lt;u32&gt;, tags: Vec&lt;String&gt; }</code>; <code>GroupMember { player_id: u32, added_at: DateTime&lt;Utc&gt;, note: Option&lt;String&gt; }</code></td>
+</tr>
+<tr>
+<td><code>src/position_profile.rs</code></td>
+<td><code>PositionProfile { player_id, season, primary_position, eligible_positions, appearance_counts: HashMap&lt;Position,u32&gt;, games_processed, is_fallback }</code>; <code>compute_position_profile(counts: &amp;HashMap&lt;Position,u32&gt;, bio_position: Position, gp: u32) -&gt; PositionProfile</code> implementing the 20%-threshold and tie-breaking rules from <code>position-engine.md</code> §4–§5</td>
+</tr>
+<tr>
+<td><code>src/query/mod.rs</code></td>
+<td><code>QuerySpec</code>, <code>QuerySource</code> enum (Players, Teams, Groups, Class, Leaderboard, Buried, Peers, DepthChart, History), <code>SortField</code>, <code>SortDir</code>, <code>DisplaySpec</code></td>
+</tr>
+<tr>
+<td><code>src/query/executor.rs</code></td>
+<td><code>run_query(spec: &amp;QuerySpec, store: &amp;PlayerStore) -&gt; Vec&lt;Record&gt;</code>; dispatch on <code>QuerySource</code> variant; <code>Record { fields: HashMap&lt;String, TemplateValue&gt; }</code></td>
+</tr>
+<tr>
+<td><code>src/query/filters.rs</code></td>
+<td>Internal filter helpers for each <code>QuerySource</code>: <code>filter_players()</code>, <code>filter_class()</code>, <code>filter_leaderboard()</code>, <code>filter_buried()</code>, <code>filter_peers()</code></td>
+</tr>
+<tr>
+<td><code>src/dashboard/mod.rs</code></td>
+<td><code>DashboardSpec { dashboard: DashboardMeta, query: QuerySpec, display: DisplaySpec, tabs: Option&lt;Vec&lt;TabSpec&gt;&gt; }</code>; <code>load_dashboard_spec(path: &amp;Path) -&gt; Result&lt;DashboardSpec, Error&gt;</code></td>
+</tr>
+<tr>
+<td><code>src/dashboard/builder.rs</code></td>
+<td><code>DashboardBuilder::build(spec: &amp;DashboardSpec, store: &amp;PlayerStore, out_dir: &amp;Path) -&gt; Result&lt;(), Error&gt;</code> — runs query, renders each record through Tera template, applies layout, writes output files</td>
+</tr>
+<tr>
+<td><code>src/dashboard/nav.rs</code></td>
+<td><code>collect_nav_entries(dashboard_dir: &amp;Path) -&gt; Vec&lt;NavEntry&gt;</code> — reads all <code>.toml</code> files, returns entries for mkdocs <code>nav:</code> key</td>
+</tr>
+<tr>
+<td><code>src/lib.rs</code></td>
+<td>Add <code>pub mod scheme</code>, <code>pub mod filter</code>, <code>pub mod bio</code>, <code>pub mod history</code>, <code>pub mod group</code>, <code>pub mod position_profile</code>, <code>pub mod query</code>, <code>pub mod dashboard</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="icelines-fetch"><code>icelines-fetch/</code><a class="headerlink" href="#icelines-fetch" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/boxscore.rs</code></td>
+<td><code>fetch_game_log(player_id, season, client) -&gt; Result&lt;Vec&lt;u64&gt;, Error&gt;</code> — player landing game-log endpoint; <code>fetch_boxscore(game_id, client, cache) -&gt; Result&lt;BoxscoreResponse, Error&gt;</code> — boxscore endpoint with shared game-level deduplication; <code>BoxscoreResponse</code> serde types matching the <code>playerByGameStats</code> structure from <code>position-engine.md</code> §2.2; deduplicated fetch: if a game ID is already in boxscore cache it is read from disk</td>
+</tr>
+<tr>
+<td><code>src/career.rs</code></td>
+<td><code>fetch_player_landing(player_id, client, cache) -&gt; Result&lt;PlayerLanding, Error&gt;</code> — <code>api-web.nhle.com/v1/player/{ID}/landing</code>; <code>PlayerLanding { season_totals: Vec&lt;SeasonTotalsEntry&gt; }</code>; 7-day cache TTL; excludes playoff seasons (<code>gameTypeId != 2</code>)</td>
+</tr>
+<tr>
+<td><code>src/lib.rs</code></td>
+<td>Add <code>pub mod boxscore</code>, <code>pub mod career</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="icelines-site"><code>icelines-site/</code><a class="headerlink" href="#icelines-site" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Cargo.toml</code></td>
+<td>Promote from stub: add <code>tera</code>, <code>serde</code>, <code>serde_json</code>, <code>walkdir</code>, <code>toml</code>; retain <code>icelines-core</code> and <code>thiserror</code></td>
+</tr>
+<tr>
+<td><code>src/lib.rs</code></td>
+<td><code>init_tera(template_dir: &amp;Path) -&gt; Result&lt;Tera, Error&gt;</code> — registers built-in templates from embedded directory; <code>pub mod dashboard</code>, <code>pub mod render</code></td>
+</tr>
+<tr>
+<td><code>src/dashboard.rs</code></td>
+<td><code>DashboardPageBuilder</code> — wraps <code>DashboardBuilder</code> from <code>icelines-core</code>, owns the <code>Tera</code> instance, writes rendered HTML/Markdown to <code>out_dir</code>; handles tabbed layout by rendering one page with multiple tab sections</td>
+</tr>
+<tr>
+<td><code>src/render.rs</code></td>
+<td><code>render_team_page(depth_chart: &amp;DepthChart, tera: &amp;Tera) -&gt; Result&lt;String, Error&gt;</code> — renders the team lineup card markdown using <code>team.md.tera</code>; <code>render_index(teams: &amp;[TeamSummary], tera: &amp;Tera) -&gt; Result&lt;String, Error&gt;</code></td>
+</tr>
+<tr>
+<td><code>src/templates/lineup-cell.html</code></td>
+<td>Tera template: player name, team, position, pace projection, GP badge, CSS fit class</td>
+</tr>
+<tr>
+<td><code>src/templates/player-row.html</code></td>
+<td>Tera template: ranked table row — rank, name, team, pos, age, gp, ppg_pace, goals_pace, fit badge</td>
+</tr>
+<tr>
+<td><code>src/templates/player-card.html</code></td>
+<td>Tera template: larger card with photo URL, full bio line, draft info, nationality flag, team logo, pace stats</td>
+</tr>
+<tr>
+<td><code>src/templates/class-card.html</code></td>
+<td>Tera template: draft pick card — pick number badge, name, team, pace stats, class rank</td>
+</tr>
+<tr>
+<td><code>src/templates/team-summary-card.html</code></td>
+<td>Tera template: team tracker card — logo, rank badge, position bars (C/LW/RW/D), E/S/B/X counts, total score</td>
+</tr>
+<tr>
+<td><code>src/templates/leaderboard-row.html</code></td>
+<td>Tera template: position + name + team + stat value + trend arrow</td>
+</tr>
+<tr>
+<td><code>src/templates/group-member-row.html</code></td>
+<td>Tera template: rank within group, name, pace stats, group-relative percentile</td>
+</tr>
+<tr>
+<td><code>src/templates/team.md.tera</code></td>
+<td>Tera template: full team lineup card markdown page, 4×3 forward grid + 3×2 defense grid with mkdocs-material card grid layout and CSS fit class names</td>
+</tr>
+<tr>
+<td><code>src/templates/index.md.tera</code></td>
+<td>Tera template: index page with all 32 teams sorted by Elite count, tier distribution per team</td>
+</tr>
+<tr>
+<td><code>src/layouts/two-column-grid.html</code></td>
+<td>Layout: 32 items in 2 columns of 16</td>
+</tr>
+<tr>
+<td><code>src/layouts/four-column-grid.html</code></td>
+<td>Layout: cards in 4 columns, good for 30+ cards</td>
+</tr>
+<tr>
+<td><code>src/layouts/ranked-table.html</code></td>
+<td>Layout: sortable HTML table for leaderboards and filtered lists</td>
+</tr>
+<tr>
+<td><code>src/layouts/single-page.html</code></td>
+<td>Layout: one record filling the page (scouting reports, player profiles)</td>
+</tr>
+<tr>
+<td><code>src/layouts/tabbed.html</code></td>
+<td>Layout: multiple queries in tabs on one page (e.g., C / LW / RW / D)</td>
+</tr>
+<tr>
+<td><code>src/layouts/comparison.html</code></td>
+<td>Layout: two queries side by side for head-to-head views</td>
+</tr>
+</tbody>
+</table>
+<h3 id="icelines-cli"><code>icelines-cli/</code><a class="headerlink" href="#icelines-cli" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/db.rs</code></td>
+<td>SQLite via <code>rusqlite</code>: <code>open_db(path: &amp;Path) -&gt; Result&lt;Connection, Error&gt;</code>; migration runner <code>run_migrations(conn: &amp;Connection) -&gt; Result&lt;(), Error&gt;</code>; migration SQL embedded as <code>const</code> strings; schema: <code>player_records</code>, <code>season_history</code>, <code>player_groups</code>, <code>group_members</code> tables; <code>upsert_player_record()</code>, <code>upsert_season_history()</code>, <code>save_group()</code>, <code>load_groups()</code>, <code>delete_group()</code></td>
+</tr>
+<tr>
+<td><code>src/commands/build.rs</code></td>
+<td><code>run_build(args, config)</code> — reads CSV, loads cached data, builds <code>PlayerStore</code>; walks <code>dashboards/</code> for all <code>.toml</code> files; calls <code>DashboardPageBuilder</code> for each; generates <code>docs/teams/</code> pages (one per team) and <code>docs/index.md</code>; optionally calls <code>mkdocs build</code> via <code>std::process::Command</code>; <code>--dashboard &lt;ID&gt;</code> flag limits to one dashboard</td>
+</tr>
+<tr>
+<td><code>src/commands/serve.rs</code></td>
+<td><code>run_serve(args, config)</code> — calls <code>run_build</code> then spawns <code>mkdocs serve --dev-addr 127.0.0.1:&lt;PORT&gt;</code> via <code>std::process::Command</code></td>
+</tr>
+<tr>
+<td><code>src/commands/deploy.rs</code></td>
+<td><code>run_deploy(args, config)</code> — calls <code>run_build</code> then spawns <code>mkdocs gh-deploy --remote-name &lt;remote&gt;</code></td>
+</tr>
+<tr>
+<td><code>src/commands/scheme.rs</code></td>
+<td>Scheme subcommands: <code>run_scheme_new()</code> interactive wizard (prompts per stat with current default, saves TOML); <code>run_scheme_from_csv()</code> detects columns, generates template; <code>run_scheme_list()</code> reads <code>~/.icelines/schemes/</code>; <code>run_scheme_show()</code> pretty-prints weights; <code>run_scheme_edit()</code> opens <code>$EDITOR</code>; validates TOML on save</td>
+</tr>
+<tr>
+<td><code>src/commands/players.rs</code></td>
+<td><code>run_players(args, config)</code> — builds <code>PlayerFilter</code> from CLI flags, calls <code>PlayerFilter::apply</code>, renders terminal table with comfy-table; <code>--json</code> emits serde_json; reused by <code>class</code>, <code>peers</code> internals</td>
+</tr>
+<tr>
+<td><code>src/commands/class.rs</code></td>
+<td><code>run_class(year, args, config)</code> — loads player records, filters by <code>draft_year</code>, optionally compares two classes side-by-side; renders class table with pick number, PPG, class median and hit count</td>
+</tr>
+<tr>
+<td><code>src/commands/peers.rs</code></td>
+<td><code>run_peers(player, args, config)</code> — resolves player, selects peer method (draft-class ±1 year, age ±1 year, pick-range ±15), renders peer table with vs. column and percentile line</td>
+</tr>
+<tr>
+<td><code>src/commands/compare.rs</code></td>
+<td><code>run_compare(p1, p2, args, config)</code> — resolves both players, renders head-to-head table; <code>--history N</code> fetches career data via <code>career.rs</code> and shows N-season comparison block</td>
+</tr>
+<tr>
+<td><code>src/commands/group.rs</code></td>
+<td>Group subcommands — all backed by <code>db.rs</code> group CRUD: <code>run_group_create()</code>, <code>run_group_add()</code>, <code>run_group_remove()</code>, <code>run_group_list()</code>, <code>run_group_show()</code> (full stats table), <code>run_group_delete()</code>, <code>run_group_export()</code> (JSON/CSV), <code>run_group_compare()</code> (side-by-side), <code>run_group_auto()</code> (auto-populate from draft class + position via <code>PlayerFilter</code>)</td>
+</tr>
+<tr>
+<td><code>src/commands/history.rs</code></td>
+<td><code>run_history(player, args, config)</code> — resolves player, fetches <code>SeasonHistory</code> from <code>career.rs</code>, renders multi-season table normalized to 82-game pace if <code>--pace</code> flag set</td>
+</tr>
+<tr>
+<td><code>src/commands/fetch.rs</code></td>
+<td>Extend Phase 1 stub — add <code>positions</code> subcommand that calls <code>boxscore.rs</code> fetch pipeline, deduplicates game IDs, computes <code>PositionProfile</code> for each player, writes to cache</td>
+</tr>
+<tr>
+<td><code>src/cli.rs</code></td>
+<td>Extend clap <code>Commands</code> enum: add <code>Build</code>, <code>Serve</code>, <code>Deploy</code>, <code>Scheme</code>, <code>Players</code>, <code>Class</code>, <code>Peers</code>, <code>Compare</code>, <code>Group</code>, <code>History</code>; add <code>Fetch::Positions</code> subcommand variant</td>
+</tr>
+</tbody>
+</table>
+<h3 id="dataschemes"><code>data/schemes/</code><a class="headerlink" href="#dataschemes" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>data/schemes/yahoo-standard.toml</code></td>
+<td>Built-in read-only scheme: G=3.0, A=2.0, PPG=1.0, PPA=0.5, SHG=2.0, SHA=1.0, GWG=0.5, HIT=0.5, BLK=0.5, W=5.0, L=-2.0, SV=0.15, GA=-1.0, SHO=4.0</td>
+</tr>
+<tr>
+<td><code>data/schemes/espn-standard.toml</code></td>
+<td>Built-in read-only scheme: G=6.0, A=4.0, plus_minus=2.0, pp_goals=2.0, pp_assists=2.0, shots_on_goal=1.0, hits=1.0</td>
+</tr>
+<tr>
+<td><code>data/schemes/simple-pts.toml</code></td>
+<td>Built-in read-only scheme: G=1.0, A=1.0 (pure hockey points, no bonuses)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="dashboards"><code>dashboards/</code><a class="headerlink" href="#dashboards" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dashboards/u23-centers.toml</code></td>
+<td>U23 Centers leaderboard: source=players, pos=C, age_max=23, gp_min=15, sort_by=ppg_pace, template=player-row, layout=ranked-table</td>
+</tr>
+<tr>
+<td><code>dashboards/class-2022.toml</code></td>
+<td>2022 Draft Class: source=class, draft_year=2022, gp_min=10, sort_by=draft_pick, template=class-card, layout=four-column-grid</td>
+</tr>
+<tr>
+<td><code>dashboards/buried-assets.toml</code></td>
+<td>Buried trade assets: source=buried, min_fpts=80, min_delta=0.75, sort_by=delta, template=player-row, layout=ranked-table</td>
+</tr>
+</tbody>
+</table>
+<h3 id="githubworkflows"><code>.github/workflows/</code><a class="headerlink" href="#githubworkflows" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.github/workflows/ci.yml</code></td>
+<td>GitHub Actions CI: triggers on push and pull_request to master; jobs: <code>test</code> (cargo test --workspace), <code>clippy</code> (cargo clippy --workspace -- -D warnings), <code>fmt</code> (cargo fmt --check); uses <code>actions/checkout@v4</code>, <code>dtolnay/rust-toolchain@stable</code> matching <code>rust-toolchain.toml</code> version</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="phase-breakdown">Phase Breakdown<a class="headerlink" href="#phase-breakdown" title="Permanent link">&para;</a></h2>
+<h3 id="phase-1-data-model-extensions-in-icelines-core">Phase 1 — Data Model Extensions in icelines-core<a class="headerlink" href="#phase-1-data-model-extensions-in-icelines-core" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[ ] Add <code>uuid</code> and <code>chrono</code> to <code>icelines-core/Cargo.toml</code></li>
+<li>[ ] Implement <code>src/bio.rs</code>: <code>PlayerBio</code>, <code>DraftInfo</code>, <code>Region</code>, <code>Hand</code>, <code>LeagueBackground</code> — all types derive <code>Debug</code>, <code>Clone</code>, <code>Serialize</code>, <code>Deserialize</code></li>
+<li>[ ] Implement <code>src/history.rs</code>: <code>SeasonHistory</code>, <code>SeasonLine</code>; implement <code>compute_career_ppg()</code> — weighted mean over prior regular seasons (<code>gameTypeId = 2</code>), excludes current season, returns <code>None</code> for zero-GP history (rookie case)</li>
+<li>[ ] Implement <code>src/group.rs</code>: <code>PlayerGroup</code>, <code>GroupMember</code>; derive <code>Serialize</code>, <code>Deserialize</code>; <code>PlayerGroup::new(name, description) -&gt; Self</code> generates UUID via <code>uuid::Uuid::new_v4()</code></li>
+<li>[ ] Implement <code>src/position_profile.rs</code>: <code>PositionProfile</code> struct; <code>compute_position_profile(counts, bio_position, total_gp)</code> — threshold = <code>ceil(0.20 × total_gp)</code>, primary = argmax(counts) with tie-breaking (prefer bio_position, then C &gt; LW &gt; RW &gt; D), fallback when total_gp &lt; 5 games</li>
+<li>[ ] Write unit tests in <code>src/position_profile.rs</code>:</li>
+<li>Draisaitl case: <code>{C:45, L:25}</code>, 70 GP → primary=C, eligible=[C, LW] (25 &gt;= ceil(14) = 14)</li>
+<li>Ehlers case: <code>{L:40, R:10, C:5}</code>, 55 GP → primary=LW, eligible=[LW, RW] (10 &gt;= 11? No — 10 &lt; 11, so eligible=[LW] only)</li>
+<li>Fallback case: 4 games → <code>is_fallback = true</code>, primary = bio_position</li>
+<li>Tie-break case: <code>{C:10, LW:10}</code>, 50 GP → primary=C (bio_position=C wins tie)</li>
+<li>[ ] Implement <code>src/filter.rs</code>: <code>PlayerFilter</code> struct with all fields from spec; <code>apply()</code> method chains predicates — each filter dimension is <code>Option&lt;_&gt;</code> and is skipped when <code>None</code>; implement <code>Hand</code>, update <code>src/lib.rs</code> re-exports</li>
+<li>[ ] Write unit tests in <code>src/filter.rs</code>: filter by age_max, nationality, draft_year, undrafted, ppg_range; verify empty filter returns all players; verify combined filters chain correctly (AND semantics)</li>
+<li>[ ] Verify: <code>cargo test -p icelines-core</code> passes with no warnings</li>
+</ul>
+<h3 id="phase-2-fantasy-scheme-engine">Phase 2 — Fantasy Scheme Engine<a class="headerlink" href="#phase-2-fantasy-scheme-engine" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[ ] Implement <code>src/scheme.rs</code> in <code>icelines-core</code>:</li>
+<li><code>SkaterWeights</code> struct — all 16 stat fields from <code>fantasy-scheme.md</code> data model, all <code>f32</code></li>
+<li><code>GoalieWeights</code> struct — 6 fields (wins, losses, saves, goals_against, shutouts, save_pct), all <code>f32</code></li>
+<li><code>SchemeSource</code> enum — Yahoo, Espn, Cbs, Custom; derives <code>Serialize</code>, <code>Deserialize</code></li>
+<li><code>Scheme</code> struct — name, description, version, source, skater: SkaterWeights, goalie: GoalieWeights</li>
+<li><code>FantasyScore { total: f32, per_game: f32, breakdown: HashMap&lt;String, f32&gt; }</code></li>
+<li><code>compute_fantasy_score(stats: &amp;SkaterStats, weights: &amp;SkaterWeights, gp: u32) -&gt; Option&lt;FantasyScore&gt;</code> — returns <code>None</code> when <code>gp &lt; MIN_GP</code>; <code>build_breakdown()</code> inner function that verifies sum within 0.001 of total (invariant DI-23)</li>
+<li>[ ] Write unit tests in <code>src/scheme.rs</code>:</li>
+<li><code>compute_fantasy_score</code> with yahoo-standard weights and known stat line: Beniers 20G 30A 6PPG 5PPA 1GWG 31HIT 69BLK → total=179.0, per_game=2.18 (82 GP)</li>
+<li><code>None</code> returned when <code>gp=9</code> (below MIN_GP=10)</li>
+<li><code>breakdown</code> keys sum to within 0.001 of <code>total</code></li>
+<li>Zero weights: a stat with weight 0.0 contributes 0.0 to breakdown, not omitted</li>
+<li>[ ] Create <code>data/schemes/yahoo-standard.toml</code>, <code>data/schemes/espn-standard.toml</code>, <code>data/schemes/simple-pts.toml</code> per spec; mark with <code>[scheme] readonly = true</code></li>
+<li>[ ] Implement scheme loading in <code>icelines-cli/src/commands/scheme.rs</code>:</li>
+<li><code>load_builtin_schemes() -&gt; Vec&lt;Scheme&gt;</code> — reads from <code>data/schemes/</code> (bundled with binary via <code>include_str!</code> or runtime path resolution)</li>
+<li><code>load_user_schemes(dir: &amp;Path) -&gt; Vec&lt;Scheme&gt;</code> — reads <code>~/.icelines/schemes/</code></li>
+<li><code>run_scheme_list()</code> — renders both built-in and user schemes in a single table</li>
+<li><code>run_scheme_show(name)</code> — finds scheme by name (case-insensitive), pretty-prints weights in three columns, lists unscored stats</li>
+<li><code>run_scheme_new(args)</code> — interactive prompt loop over each stat key with current default value; saves to <code>~/.icelines/schemes/{slug}.toml</code>; <code>--copy &lt;NAME&gt;</code> pre-fills from existing scheme</li>
+<li><code>run_scheme_from_csv(path, args)</code> — reads CSV column headers, maps to stat keys per the detection table in <code>fantasy-scheme.md</code>, writes template with all detected stats set to 0.0, prints instructions</li>
+<li><code>run_scheme_edit(name)</code> — reads <code>$EDITOR</code>, opens TOML file; on return from editor, validates by attempting <code>toml::from_str::&lt;Scheme&gt;()</code> and reports parse errors</li>
+<li>[ ] Verify: <code>cargo test -p icelines-core</code> and <code>cargo build -p icelines-cli</code> pass</li>
+</ul>
+<h3 id="phase-3-position-engine-and-icelines-fetch-extensions">Phase 3 — Position Engine and icelines-fetch Extensions<a class="headerlink" href="#phase-3-position-engine-and-icelines-fetch-extensions" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[ ] Add <code>toml</code> to <code>icelines-fetch/Cargo.toml</code></li>
+<li>[ ] Implement <code>src/boxscore.rs</code> in <code>icelines-fetch</code>:</li>
+<li><code>BoxscoreResponse</code> serde struct matching the <code>playerByGameStats</code> structure from <code>position-engine.md</code> §2.2: <code>awayTeam</code> and <code>homeTeam</code> each contain <code>forwards: Vec&lt;BoxscorePlayer&gt;</code>, <code>defense: Vec&lt;BoxscorePlayer&gt;</code>, <code>goalies: Vec&lt;BoxscorePlayer&gt;</code></li>
+<li><code>BoxscorePlayer { player_id: u32, name: BoxscoreName, position: String, toi: String, shifts: u32 }</code></li>
+<li><code>fetch_game_log(player_id: u32, season: u32, client: &amp;NhlApiClient) -&gt; Result&lt;Vec&lt;u64&gt;, Error&gt;</code> — <code>GET api-web.nhle.com/v1/player/{ID}/game-log/{SEASON}/2</code>; caches at <code>~/.icelines/cache/landing/{PLAYER_ID}_gamelog_{SEASON}.json</code></li>
+<li><code>fetch_boxscore(game_id: u64, client: &amp;NhlApiClient, cache: &amp;Cache) -&gt; Result&lt;BoxscoreResponse, Error&gt;</code> — <code>GET api-web.nhle.com/v1/gamecenter/{GAME_ID}/boxscore</code>; caches at <code>~/.icelines/cache/boxscores/{SEASON}/{GAME_ID}.json</code>; completed games never re-fetched (no TTL); today's and future games not cached</li>
+<li><code>fetch_positions_for_all_players(player_ids: &amp;[u32], season: u32, client, cache) -&gt; Result&lt;HashMap&lt;u32, PositionProfile&gt;, Error&gt;</code> — deduplicates game IDs across all players (fetch each boxscore once), aggregates <code>appearance_counts</code> per player, calls <code>compute_position_profile()</code> for each</li>
+<li>[ ] Implement <code>src/career.rs</code> in <code>icelines-fetch</code>:</li>
+<li><code>PlayerLanding { player_id: u32, season_totals: Vec&lt;SeasonTotalsEntry&gt; }</code></li>
+<li><code>SeasonTotalsEntry { season: u32, game_type_id: u8, team_abbrev: String, games_played: u32, goals: u32, assists: u32, points: u32 }</code></li>
+<li><code>fetch_player_landing(player_id: u32, client: &amp;NhlApiClient, cache: &amp;Cache) -&gt; Result&lt;PlayerLanding, Error&gt;</code> — 7-day TTL; cache at <code>~/.icelines/cache/landing/{PLAYER_ID}.json</code></li>
+<li><code>to_season_history(landing: &amp;PlayerLanding) -&gt; SeasonHistory</code> — filters <code>game_type_id == 2</code>, maps to <code>SeasonLine</code>, computes <code>ppg = points / games_played as f32</code> (0.0 if GP=0)</li>
+<li>[ ] Write unit tests in <code>src/boxscore.rs</code>: parse a known fixture <code>tests/fixtures/api/boxscore_sample.json</code>, assert player IDs and positions extracted correctly</li>
+<li>[ ] Write unit tests in <code>src/career.rs</code>: parse <code>tests/fixtures/api/landing_draisaitl.json</code>, assert <code>compute_career_ppg</code> result matches documented expected value from spec example (Draisaitl 620 GP)</li>
+<li>[ ] Extend <code>icelines-cli/src/commands/fetch.rs</code>: add <code>positions</code> subcommand — load player IDs from bios cache, call <code>fetch_positions_for_all_players</code>, write each <code>PositionProfile</code> to <code>~/.icelines/cache/positions/{SEASON}/{PLAYER_ID}.json</code>, report players that failed</li>
+<li>[ ] Add test fixtures: <code>tests/fixtures/api/boxscore_sample.json</code>, <code>tests/fixtures/api/landing_draisaitl.json</code></li>
+<li>[ ] Verify: <code>cargo test -p icelines-fetch</code> and <code>cargo test -p icelines-cli</code> pass</li>
+</ul>
+<h3 id="phase-4-sqlite-database-layer">Phase 4 — SQLite Database Layer<a class="headerlink" href="#phase-4-sqlite-database-layer" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[ ] Add <code>rusqlite</code> (with <code>bundled</code> feature) and <code>uuid</code> to <code>icelines-cli/Cargo.toml</code></li>
+<li>[ ] Implement <code>src/db.rs</code> in <code>icelines-cli</code>:</li>
+<li><code>open_db(path: &amp;Path) -&gt; Result&lt;Connection, anyhow::Error&gt;</code> — creates parent dirs if needed; opens with <code>PRAGMA journal_mode=WAL</code></li>
+<li>Migration runner <code>run_migrations(conn: &amp;Connection) -&gt; Result&lt;(), anyhow::Error&gt;</code> — applies migrations in order, uses a <code>_migrations</code> table to track applied versions; migrations are embedded <code>const</code> strings</li>
+<li>Migration 001: create <code>player_records</code> table — <code>(player_id INTEGER PRIMARY KEY, name TEXT, name_normalized TEXT, team TEXT, position TEXT, season_gp INTEGER, season_goals INTEGER, season_assists INTEGER, season_points INTEGER, pace_82 REAL, fit_class TEXT, updated_at INTEGER)</code></li>
+<li>Migration 002: create <code>season_history</code> table — <code>(player_id INTEGER, season INTEGER, team TEXT, gp INTEGER, goals INTEGER, assists INTEGER, ppg REAL, toi_pg REAL, PRIMARY KEY (player_id, season))</code></li>
+<li>Migration 003: create <code>player_groups</code> table — <code>(id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT, created_at INTEGER, tags TEXT)</code> and <code>group_members</code> table — <code>(group_id TEXT, player_id INTEGER, added_at INTEGER, note TEXT, PRIMARY KEY (group_id, player_id))</code></li>
+<li><code>upsert_player_record(conn, record: &amp;PlayerRecord) -&gt; Result&lt;(), anyhow::Error&gt;</code></li>
+<li><code>upsert_season_history(conn, history: &amp;SeasonHistory) -&gt; Result&lt;(), anyhow::Error&gt;</code> — replaces all rows for the player</li>
+<li><code>save_group(conn, group: &amp;PlayerGroup) -&gt; Result&lt;(), anyhow::Error&gt;</code></li>
+<li><code>load_all_groups(conn) -&gt; Result&lt;Vec&lt;PlayerGroup&gt;, anyhow::Error&gt;</code></li>
+<li><code>delete_group(conn, group_id: &amp;str) -&gt; Result&lt;(), anyhow::Error&gt;</code></li>
+<li><code>load_group_members(conn, group_id: &amp;str) -&gt; Result&lt;Vec&lt;u32&gt;, anyhow::Error&gt;</code></li>
+<li>[ ] Write unit tests in <code>src/db.rs</code> using an in-memory SQLite connection (<code>:memory:</code>):</li>
+<li>Verify migrations run cleanly from a fresh database</li>
+<li>Verify upsert player_record is idempotent (second upsert overwrites, not duplicates)</li>
+<li>Verify save_group, load_all_groups, delete_group round-trip correctly</li>
+<li>Verify season_history upsert replaces all rows for a player</li>
+<li>[ ] Wire database initialization into <code>src/main.rs</code>: open <code>~/.icelines/db/icelines.db</code>, run migrations, pass <code>Connection</code> to command handlers that need it (group commands, history commands)</li>
+<li>[ ] Verify: <code>cargo test</code> passes including db unit tests</li>
+</ul>
+<h3 id="phase-5-player-analysis-commands">Phase 5 — Player Analysis Commands<a class="headerlink" href="#phase-5-player-analysis-commands" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[ ] Implement <code>src/commands/class.rs</code>:</li>
+<li><code>run_class(year: u16, args)</code> — filters players by <code>draft_year == year</code> (from <code>PlayerBio.draft.year</code>), sorts by draft pick ascending, computes per-class median PPG and hit count (players with pace_82 ≥ 65 for forwards, ≥ 45 for defense)</li>
+<li><code>--compare &lt;YEAR&gt;</code> flag: renders two draft classes side-by-side in paired columns</li>
+<li><code>--years-in &lt;N&gt;</code> flag: filters to players whose <code>rookie_season</code> is exactly <code>N</code> seasons before the current season</li>
+<li><code>--pos &lt;POS&gt;</code> and <code>--round &lt;N&gt;</code> delegate to <code>PlayerFilter</code></li>
+<li>[ ] Implement <code>src/commands/peers.rs</code>:</li>
+<li><code>run_peers(player, args)</code> — resolves player by name; builds peer group using selected method: <code>--by draft-class</code> (same <code>draft_year ± 1</code>, same position group), <code>--by age</code> (±1 birth year, same position), <code>--by pick-range</code> (within 15 overall picks, same draft)</li>
+<li>Renders peer table with <code>vs. &lt;player&gt;</code> column: <code>+0.03 ahead</code> or <code>-0.04 behind</code> relative to subject player's PPG pace</li>
+<li>Shows subject player highlighted (indicated with <code>→</code> prefix in rank column)</li>
+<li>Footer: <code>&lt;player&gt; rank: N of M peers | PPG percentile in group: P%</code></li>
+<li>[ ] Implement <code>src/commands/compare.rs</code>:</li>
+<li><code>run_compare(p1, p2, args)</code> — resolves both players; renders head-to-head table with rows: Draft, GP, PPG, G/82, A/82, ES TOI/G, Zone Start %, Avg line (32 teams), Fit on own team</li>
+<li><code>--history &lt;N&gt;</code> flag: fetches career data for both players via <code>career.rs</code>, appends N-season per-player career table below the comparison</li>
+<li>Footer: <code>Edge: &lt;PLAYER&gt; by &lt;X&gt; PPG; &lt;OTHER_PLAYER&gt; by &lt;Y&gt;% Zone Start</code></li>
+<li>[ ] Implement <code>src/commands/players.rs</code>:</li>
+<li><code>run_players(args)</code> — builds <code>PlayerFilter</code> from all CLI flags (pos, age, nationality, region, draft_year, draft_round, pick_max, undrafted, rookie, ppg_range, gp_min, toi_min, handedness)</li>
+<li>Applies filter, sorts by <code>--sort</code> field (ppg default, goals, assists, age, draft)</li>
+<li>Renders terminal table with comfy-table; first row header shows filter summary</li>
+<li><code>--json</code> outputs <code>serde_json::to_string_pretty</code> of filtered <code>Vec&lt;PlayerRecord&gt;</code></li>
+<li><code>--csv</code> outputs CSV with header row matching the terminal table columns</li>
+<li>[ ] Implement <code>src/commands/history.rs</code>:</li>
+<li><code>run_history(player, args)</code> — resolves player by name via <code>PlayerResolver</code>; fetches <code>PlayerLanding</code> from <code>career.rs</code>; converts to <code>SeasonHistory</code></li>
+<li><code>--pace</code> flag: normalizes all raw stats to 82-game pace in the table</li>
+<li><code>--seasons &lt;N&gt;</code>: limits to the N most recent seasons</li>
+<li>Footer: career pace average PPG, peak season</li>
+<li>[ ] Implement all <code>icelines group</code> subcommands in <code>src/commands/group.rs</code>:</li>
+<li><code>create</code> — prompts for name if not provided, saves empty group to db</li>
+<li><code>add &lt;GROUP&gt; &lt;PLAYER&gt;</code> — resolves player by name, adds player_id to group in db</li>
+<li><code>remove &lt;GROUP&gt; &lt;PLAYER&gt;</code> — removes player_id from group in db</li>
+<li><code>list</code> — reads all groups from db, renders table (name, member count, created date)</li>
+<li><code>show &lt;GROUP&gt;</code> — loads group, fetches current stats for all member player_ids, renders ranked stat table with median footer</li>
+<li><code>delete &lt;GROUP&gt;</code> — confirms interactively, deletes group and members from db</li>
+<li><code>export &lt;GROUP&gt;</code> — writes JSON or CSV of group members with current stats</li>
+<li><code>compare &lt;G1&gt; &lt;G2&gt;</code> — renders two group stat summaries side-by-side</li>
+<li><code>auto &lt;GROUP&gt; --draft-year &lt;Y&gt; --pos &lt;P&gt;</code> — builds <code>PlayerFilter</code> for the class+position, auto-populates group with matching players</li>
+<li>[ ] Verify: all new commands build and produce correct terminal output; <code>cargo test -p icelines-cli</code> passes</li>
+</ul>
+<h3 id="phase-6-site-generation-and-dashboard-engine">Phase 6 — Site Generation and Dashboard Engine<a class="headerlink" href="#phase-6-site-generation-and-dashboard-engine" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[ ] Promote <code>icelines-site</code> from stub: add <code>tera</code>, <code>serde_json</code>, <code>walkdir</code>, <code>toml</code> to <code>Cargo.toml</code></li>
+<li>[ ] Implement <code>icelines-site/src/lib.rs</code>:</li>
+<li><code>init_tera(template_dir: &amp;Path) -&gt; Result&lt;Tera, Error&gt;</code> — scans template directory, registers each <code>.html</code> and <code>.tera</code> file by basename</li>
+<li>Register built-in templates from <code>src/templates/</code> directory (embedded at compile time using <code>include_str!</code> macros, written to a temp dir at first run, or loaded from the binary's install prefix)</li>
+<li>[ ] Implement all Tera templates in <code>src/templates/</code>: <code>lineup-cell.html</code>, <code>player-row.html</code>, <code>player-card.html</code>, <code>class-card.html</code>, <code>team-summary-card.html</code>, <code>leaderboard-row.html</code>, <code>group-member-row.html</code>, <code>team.md.tera</code>, <code>index.md.tera</code></li>
+<li>[ ] Implement all layout HTML files in <code>src/layouts/</code>: <code>two-column-grid.html</code>, <code>four-column-grid.html</code>, <code>ranked-table.html</code>, <code>single-page.html</code>, <code>tabbed.html</code>, <code>comparison.html</code></li>
+<li>[ ] Implement <code>icelines-site/src/dashboard.rs</code>: <code>DashboardPageBuilder</code> — owns <code>Tera</code> instance; <code>build_page(spec: &amp;DashboardSpec, store: &amp;PlayerStore, out_dir: &amp;Path) -&gt; Result&lt;(), Error&gt;</code> runs query via <code>icelines_core::query::executor::run_query</code>, renders each record through the spec's template, wraps results in the spec's layout, writes final file to <code>out_dir / spec.dashboard.id / index.md</code></li>
+<li>[ ] Implement <code>icelines-site/src/render.rs</code>: <code>render_team_page</code>, <code>render_index</code></li>
+<li>[ ] Implement <code>src/commands/build.rs</code> in <code>icelines-cli</code>:</li>
+<li><code>run_build(args, config)</code> — loads CSV, fetches or reads cached stats and position profiles, builds <code>PlayerStore</code>; iterates <code>dashboards/</code> directory with <code>walkdir</code>, loads each <code>.toml</code> as <code>DashboardSpec</code>, calls <code>DashboardPageBuilder::build_page</code>; writes 32 team pages and <code>docs/index.md</code>; reports per-dashboard errors without aborting the full build; optionally spawns <code>mkdocs build</code></li>
+<li><code>--dashboard &lt;ID&gt;</code> flag: builds only the specified dashboard TOML file</li>
+<li><code>--no-site</code> flag: skips the mkdocs subprocess</li>
+<li>[ ] Implement <code>src/commands/serve.rs</code>: <code>run_serve</code> — calls <code>run_build</code> then <code>mkdocs serve</code></li>
+<li>[ ] Implement <code>src/commands/deploy.rs</code>: <code>run_deploy</code> — calls <code>run_build</code> then <code>mkdocs gh-deploy</code></li>
+<li>[ ] Create <code>dashboards/u23-centers.toml</code>, <code>dashboards/class-2022.toml</code>, <code>dashboards/buried-assets.toml</code></li>
+<li>[ ] Manual smoke test: <code>cargo run -- build --no-site</code> generates <code>docs/teams/COL.md</code> and <code>docs/index.md</code> without error</li>
+<li>[ ] Manual smoke test: <code>cargo run -- build --dashboard u23-centers --no-site</code> generates <code>docs/dashboards/u23-centers/index.md</code></li>
+</ul>
+<h3 id="phase-7-ci-workflow-integration-tests-and-cleanup">Phase 7 — CI Workflow, Integration Tests, and Cleanup<a class="headerlink" href="#phase-7-ci-workflow-integration-tests-and-cleanup" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[ ] Create <code>.github/workflows/ci.yml</code>:</li>
+<li>Trigger: <code>push</code> and <code>pull_request</code> targeting <code>master</code></li>
+<li>Job <code>test</code>: <code>cargo test --workspace</code> with <code>cargo</code> caching via <code>Swatinem/rust-cache@v2</code></li>
+<li>Job <code>clippy</code>: <code>cargo clippy --workspace -- -D warnings</code></li>
+<li>Job <code>fmt</code>: <code>cargo fmt --all --check</code></li>
+<li>All jobs use <code>dtolnay/rust-toolchain@stable</code> pinned to the version in <code>rust-toolchain.toml</code></li>
+<li><code>CARGO_TERM_COLOR: always</code> env var so CI output is readable in GitHub Actions log</li>
+<li>[ ] Add test fixtures: <code>tests/fixtures/api/boxscore_sample.json</code> with realistic structure matching <code>position-engine.md</code> §2.2, covering both <code>awayTeam</code> and <code>homeTeam</code>; <code>tests/fixtures/api/landing_draisaitl.json</code> with 8 seasons of <code>seasonTotals</code></li>
+<li>[ ] Write <code>tests/integration_scheme.rs</code>:</li>
+<li>Load <code>yahoo-standard.toml</code>, deserialize to <code>Scheme</code></li>
+<li>Compute <code>compute_fantasy_score</code> with Beniers stat line (20G, 30A, 6PPG, 5PPA, 1GWG, 31HIT, 69BLK, 82GP) → assert total=179.0, per_game=2.18</li>
+<li>Assert <code>breakdown["goals"] == 60.0</code></li>
+<li>Assert <code>breakdown</code> sums to within 0.001 of <code>total</code></li>
+<li>Assert <code>None</code> returned for GP=9</li>
+<li>[ ] Write <code>tests/integration_positions.rs</code>:</li>
+<li>Parse <code>boxscore_sample.json</code>, extract appearance counts for known player IDs</li>
+<li>Assert <code>compute_position_profile({C:45, L:25}, bio=C, gp=70)</code> → primary=C, eligible=[C, LW]</li>
+<li>Assert fallback triggered for player with 3 games → <code>is_fallback=true</code></li>
+<li>[ ] Write <code>tests/integration_build.rs</code> (optional, if build pipeline is testable without mkdocs):</li>
+<li>Build a <code>PlayerStore</code> from <code>sample.csv</code> and mock API fixtures</li>
+<li>Build the <code>u23-centers</code> dashboard to a temp directory</li>
+<li>Assert output file exists and contains expected player names</li>
+<li>[ ] Run <code>cargo test --workspace</code> — all tests pass</li>
+<li>[ ] Run <code>cargo clippy --workspace -- -D warnings</code> — zero warnings</li>
+<li>[ ] Run <code>cargo fmt --all --check</code> — no formatting diffs</li>
+<li>[ ] Audit all library code (<code>icelines-core</code>, <code>icelines-fetch</code>, <code>icelines-site</code>) for <code>unwrap()</code> — replace with <code>?</code> or <code>expect("documented invariant")</code></li>
+<li>[ ] Update <code>context/waves/WAVE02-APPMANAGER-ADOPTION.md</code> with Phase 2 completion status</li>
+</ul>
+<hr />
+<h2 id="success-criteria">Success Criteria<a class="headerlink" href="#success-criteria" title="Permanent link">&para;</a></h2>
+<p>The following conditions must all be true before this plan is considered complete:</p>
+<ol>
+<li><code>cargo build --release</code> produces a single <code>icelines</code> binary with no errors or warnings</li>
+<li><code>cargo test --workspace</code> passes with zero failures across all four crates</li>
+<li><code>cargo clippy --workspace -- -D warnings</code> produces zero warnings</li>
+<li><code>icelines build --no-site</code> generates 32 team markdown pages and <code>docs/index.md</code> from cached data</li>
+<li><code>icelines build --dashboard u23-centers --no-site</code> generates the U23 Centers dashboard page</li>
+<li><code>icelines fetch positions --dry-run</code> reports player count and game count without making API calls</li>
+<li><code>icelines scheme list</code> shows at least three built-in schemes (yahoo-standard, espn-standard, simple-pts)</li>
+<li><code>icelines scheme show yahoo-standard</code> renders the correct weights table matching <code>fantasy-scheme.md</code></li>
+<li><code>icelines players --pos C --age-max 23</code> produces a non-empty ranked table for known players in test fixtures</li>
+<li><code>icelines class 2022</code> produces a table with pick numbers, PPG pace, and class median line</li>
+<li><code>icelines peers "Matty Beniers"</code> resolves the player and renders a peer table with a rank and percentile footer</li>
+<li><code>icelines compare "Matty Beniers" "Logan Cooley"</code> produces a head-to-head table with an Edge line</li>
+<li><code>icelines group create "Test"</code> persists a group to <code>~/.icelines/db/icelines.db</code> and <code>icelines group list</code> returns it</li>
+<li><code>icelines history "Leon Draisaitl" --pace</code> renders a season-by-season 82-game pace table</li>
+<li><code>icelines rank --scheme yahoo-standard</code> computes and ranks by fantasy points instead of pace_82</li>
+<li>GitHub Actions CI passes on a clean push to master: all three jobs (test, clippy, fmt) are green</li>
+<li>No <code>unwrap()</code> in <code>icelines-core</code>, <code>icelines-fetch</code>, or <code>icelines-site</code> library code</li>
+<li>All test assertions document expected values with calculation comments</li>
+<li><code>icelines-core</code> L0 coverage remains ≥ 95% (verified by <code>cargo llvm-cov</code>)</li>
+<li>Every L2 command test exits 0 with correct stdout shape</li>
+</ol>
+<hr />
+<h2 id="test-coverage-requirements">Test Coverage Requirements<a class="headerlink" href="#test-coverage-requirements" title="Permanent link">&para;</a></h2>
+<p>See <code>docs/specs/test-strategy.md</code> for full L0/L1/L2 definitions and BENCH archetypes.</p>
+<h3 id="l0-unit-tests-95-icelines-core">L0 — Unit Tests (≥ 95% icelines-core)<a class="headerlink" href="#l0-unit-tests-95-icelines-core" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Expected</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>compute_fantasy_score(beniers, yahoo_standard, 82)</code></td>
+<td>179.0</td>
+<td>Spec-documented baseline</td>
+</tr>
+<tr>
+<td><code>breakdown_sums_to_total</code></td>
+<td>within 0.001</td>
+<td>DI-23 invariant</td>
+</tr>
+<tr>
+<td><code>fantasy_score_none_below_min_gp</code></td>
+<td>None</td>
+<td>DI-22 invariant</td>
+</tr>
+<tr>
+<td><code>position_profile_draisaitl(C=45, L=25)</code></td>
+<td>multi=[C,LW]</td>
+<td>36% ≥ 20% threshold</td>
+</tr>
+<tr>
+<td><code>position_profile_mcmann(L=78)</code></td>
+<td>primary=LW, single</td>
+<td>0% secondary</td>
+</tr>
+<tr>
+<td><code>position_profile_tie_break(C=40, R=40)</code></td>
+<td>primary=C</td>
+<td>Alpha order</td>
+</tr>
+<tr>
+<td><code>player_filter_combined(C, CAN, ppg≥0.60)</code></td>
+<td>intersection</td>
+<td>Filter composition</td>
+</tr>
+<tr>
+<td><code>player_filter_empty_result</code></td>
+<td><code>[]</code> not error</td>
+<td>No matches valid</td>
+</tr>
+<tr>
+<td><code>draft_info_round_from_overall_pick_1</code></td>
+<td>round=1</td>
+<td>Draft math correct</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Property test</strong> (proptest required):
+<div class="highlight"><pre><span></span><code><span class="n">proptest</span><span class="o">!</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">fantasy_score_scales_linearly_with_goals</span><span class="p">(</span><span class="n">g</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="mi">0</span><span class="k">u32</span><span class="o">..</span><span class="mi">60</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">s1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fantasy_pts_for_goals</span><span class="p">(</span><span class="n">g</span><span class="p">,</span><span class="w"> </span><span class="mf">3.0</span><span class="p">);</span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">s2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fantasy_pts_for_goals</span><span class="p">(</span><span class="n">g</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mf">3.0</span><span class="p">);</span>
+<span class="w">        </span><span class="fm">assert!</span><span class="p">((</span><span class="n">s2</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">s1</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">2.0</span><span class="p">).</span><span class="n">abs</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">0.001</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<h3 id="l1-integration-tests">L1 — Integration Tests<a class="headerlink" href="#l1-integration-tests" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Verifies</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scheme_from_csv_detects_15_stats</code></td>
+<td>CSV header → correct column map</td>
+</tr>
+<tr>
+<td><code>scheme_round_trip_toml</code></td>
+<td>serialize → deserialize → identical</td>
+</tr>
+<tr>
+<td><code>fantasy_pipeline_9_archetypes</code></td>
+<td>fixture CSV + scheme → exact scores</td>
+</tr>
+<tr>
+<td><code>position_profile_from_boxscore</code></td>
+<td>3 fixture boxscores → correct profile</td>
+</tr>
+<tr>
+<td><code>dashboard_toml_loads_query</code></td>
+<td>u23_centers.toml → QuerySpec(pos=C, age≤23)</td>
+</tr>
+<tr>
+<td><code>group_persist_round_trip</code></td>
+<td>create/add/show/delete in-memory DB</td>
+</tr>
+<tr>
+<td><code>site_build_32_files</code></td>
+<td>build → 32 team markdown files exist</td>
+</tr>
+<tr>
+<td><code>scheme_built_in_immutable</code></td>
+<td>write yahoo-standard → Error::ReadOnly</td>
+</tr>
+</tbody>
+</table>
+<h3 id="l2-system-tests-every-phase-2-command">L2 — System Tests (every Phase 2 command)<a class="headerlink" href="#l2-system-tests-every-phase-2-command" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Assertion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>icelines scheme from-csv tests/fixtures/sample_skaters.csv</code></td>
+<td>Exit 0, file created</td>
+</tr>
+<tr>
+<td><code>icelines scheme list</code></td>
+<td>Exit 0, shows scheme</td>
+</tr>
+<tr>
+<td><code>icelines scheme show yahoo-standard</code></td>
+<td>Exit 0, 11 scored stats visible</td>
+</tr>
+<tr>
+<td><code>icelines players --pos C --age-max 23</code></td>
+<td>Exit 0, all rows C ≤ 23</td>
+</tr>
+<tr>
+<td><code>icelines class 2022 --pos C</code></td>
+<td>Exit 0, contains 2022 picks</td>
+</tr>
+<tr>
+<td><code>icelines rank --scheme yahoo-standard --top 10</code></td>
+<td>Exit 0, 10 rows</td>
+</tr>
+<tr>
+<td><code>icelines build --no-site</code></td>
+<td>Exit 0, docs/teams/COL.md created</td>
+</tr>
+<tr>
+<td><code>icelines group create TestGroup</code></td>
+<td>Exit 0, group in db</td>
+</tr>
+<tr>
+<td><code>icelines fetch positions --dry-run</code></td>
+<td>Exit 0, no HTTP calls</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="out-of-scope">Out of Scope<a class="headerlink" href="#out-of-scope" title="Permanent link">&para;</a></h2>
+<p><strong>Phase 3 — TUI, Projections, Shift Data, Tonight:</strong>
+- <code>icelines tui</code> / <code>icelines</code> (no args) — ratatui full-screen TUI with 8 screens (<code>tui.md</code>)
+- <code>icelines project</code> — rest-of-season projections, age curve, schedule difficulty factor (<code>projection-engine.md</code>)
+- <code>icelines tonight</code> — schedule API + projected lines from boxscores
+- <code>icelines schedule</code> — forward calendar view
+- <code>icelines trade</code> — depth chart diff for trade analysis
+- <code>icelines mates</code> — shift-based linemate analysis (requires Tier 3 shift data)
+- <code>icelines scouting</code> — full scouting report (Tier 3 — shift data required for linemate section)
+- Shift data fetch: <code>icelines fetch shifts</code> — shiftchart API client and game log fetcher
+- <code>ProjectionMode</code>, <code>ProjectionResult</code>, <code>compute_projection()</code> in <code>icelines-core</code>
+- <code>GameSchedule</code>, <code>RemainingGames</code> types and schedule API client
+- <code>Shift</code>, <code>ShiftProfile</code>, <code>compute_linemates()</code> types and shift aggregation
+- Age curve and schedule difficulty factor computation
+- <code>cargo install</code> packaging and release pipeline (cross-platform binary builds)
+- <code>.github/workflows/release.yml</code> — Windows, macOS, Linux binary build and GitHub Release publishing</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.indexes", "navigation.top", "search.highlight", "search.suggest", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

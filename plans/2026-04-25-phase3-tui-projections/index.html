@@ -1,0 +1,2516 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="NHL depth charts, pace-adjusted rankings, and trade analysis for all 32 teams">
+      
+      
+      
+        <link rel="canonical" href="https://giodl73-repo.github.io/ICELINES/plans/2026-04-25-phase3-tui-projections/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+    
+    
+      
+        <title>IceLines Rust CLI — Phase 3 Implementation Plan - IceLines</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/fantasy.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="blue">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#icelines-rust-cli-phase-3-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="IceLines" class="md-header__button md-logo" aria-label="IceLines" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            IceLines
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              IceLines Rust CLI — Phase 3 Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="blue"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="blue"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/giodl73-repo/ICELINES" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    IceLines
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Tracker
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../teams/COL/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Teams
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="IceLines" class="md-nav__button md-logo" aria-label="IceLines" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    IceLines
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/giodl73-repo/ICELINES" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    IceLines
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Teams
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Teams
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/COL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    COL — Colorado Avalanche
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/TB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TB — Tampa Bay Lightning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/VGK/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VGK — Vegas Golden Knights
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/DAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DAL — Dallas Stars
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/EDM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    EDM — Edmonton Oilers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/PIT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PIT — Pittsburgh Penguins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/MTL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MTL — Montréal Canadiens
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/MIN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MIN — Minnesota Wild
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/OTT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OTT — Ottawa Senators
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/FLA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FLA — Florida Panthers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/SJ/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SJ — San Jose Sharks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/BUF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BUF — Buffalo Sabres
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/ANA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ANA — Anaheim Ducks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/CAR/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CAR — Carolina Hurricanes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/UTA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UTA — Utah Hockey Club
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/BOS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BOS — Boston Bruins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/WSH/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WSH — Washington Capitals
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/DET/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DET — Detroit Red Wings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/CBJ/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CBJ — Columbus Blue Jackets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/TOR/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TOR — Toronto Maple Leafs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/NYI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NYI — New York Islanders
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/NYR/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NYR — New York Rangers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/PHI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PHI — Philadelphia Flyers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/NJ/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJ — New Jersey Devils
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/STL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STL — St. Louis Blues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/LA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LA — Los Angeles Kings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/SEA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SEA — Seattle Kraken
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/NSH/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NSH — Nashville Predators
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/CHI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CHI — Chicago Blackhawks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/WPG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WPG — Winnipeg Jets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/CGY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CGY — Calgary Flames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/VAN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VAN — Vancouver Canucks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#background" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Map
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="File Map">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#icelines-core" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines-core/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-fetch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines-fetch/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-clisrctui" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines-cli/src/tui/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-clisrctuiscreens" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines-cli/src/tui/screens/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-clisrctuiwidgets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines-cli/src/tui/widgets/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-clisrccommands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines-cli/src/commands/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#githubworkflows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        .github/workflows/
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-breakdown" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase Breakdown
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase Breakdown">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-projection-engine-core-types-and-pace-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1 — Projection Engine Core Types and Pace Mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-regressed-and-composite-modes-schedule-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2 — Regressed and Composite Modes, Schedule Integration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-icelines-project-icelines-tonight-icelines-trade-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3 — icelines project, icelines tonight, icelines trade Commands
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-shift-data-fetch-and-shiftprofile-computation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4 — Shift Data Fetch and ShiftProfile Computation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-5-tui-app-skeleton-event-loop-and-home-screen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 5 — TUI App Skeleton, Event Loop, and Home Screen
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-6-remaining-tui-screens-team-player-search-tonight-projections-groups-fetch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 6 — Remaining TUI Screens (Team, Player, Search, Tonight, Projections, Groups, Fetch)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-7-icelines-mates-icelines-scouting-release-pipeline-and-packaging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 7 — icelines mates, icelines scouting, Release Pipeline, and Packaging
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#success-criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Success Criteria
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#test-coverage-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test Coverage Requirements
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Test Coverage Requirements">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#l0-unit-tests-phase-3-additions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        L0 — Unit Tests (Phase 3 additions)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#l1-integration-tests-phase-3-additions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        L1 — Integration Tests (Phase 3 additions)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#l2-system-tests-every-phase-3-command-tui" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        L2 — System Tests (every Phase 3 command + TUI)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of Scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="icelines-rust-cli-phase-3-implementation-plan">IceLines Rust CLI — Phase 3 Implementation Plan<a class="headerlink" href="#icelines-rust-cli-phase-3-implementation-plan" title="Permanent link">&para;</a></h1>
+<p><strong>Date</strong>: 2026-04-25<br />
+<strong>Phase</strong>: 3 of 3 — TUI, Projection Engine, Shift Data, Tonight<br />
+<strong>Spec references</strong>:
+- <code>docs/specs/rust-cli.md</code> — command surface, crate architecture, <code>tonight</code>, <code>schedule</code>, <code>trade</code>, <code>project</code>, <code>tui</code>
+- <code>docs/specs/tui.md</code> — ratatui TUI, 8 screens, event loop, widget catalog, color contract, navigation model
+- <code>docs/specs/projection-engine.md</code> — pace/regressed/composite modes, age factor table, schedule factor, confidence band, career PPG derivation
+- <code>docs/specs/player-analysis.md</code> — <code>mates</code>, <code>scouting</code> command specs, <code>ShiftProfile</code>, linemate output format
+- <code>docs/specs/position-engine.md</code> — boxscore cache layout (shared with shift fetcher)
+- <code>docs/specs/fantasy-scheme.md</code> — scheme integration with <code>project</code> command (<code>--scheme</code> flag)
+- <code>docs/specs/dashboard-engine.md</code> — <code>shifts</code> query source (Tier 3 data)</p>
+<p><strong>Companion plans</strong>:
+- <code>docs/plans/2026-04-25-rust-cli-foundation.md</code> — Phase 1: workspace, icelines-core, icelines-fetch, <code>team</code> and <code>rank</code>
+- <code>docs/plans/2026-04-25-phase2-site-analysis.md</code> — Phase 2: site generation, schemes, player analysis</p>
+<hr />
+<h2 id="background">Background<a class="headerlink" href="#background" title="Permanent link">&para;</a></h2>
+<p>Phase 2 delivered the complete site generation pipeline, fantasy scheme engine, dashboard engine,
+player analysis commands (<code>players</code>, <code>class</code>, <code>peers</code>, <code>compare</code>, <code>group</code>, <code>history</code>), and the
+SQLite database layer. The Python scripts are fully retired.</p>
+<p>Phase 3 completes the IceLines feature set with three major additions:</p>
+<p><strong>Projection engine</strong>: Rest-of-season projections at three sophistication levels — pace (simple
+PPG extrapolation), regressed (career-weighted blend with credibility factor α), and composite
+(adds age curve and schedule difficulty). The engine lives in <code>icelines-core</code> as pure computation
+and powers both the <code>icelines project</code> command and the Projections screen in the TUI.</p>
+<p><strong>Shift data</strong>: The <code>icelines fetch shifts</code> pipeline fetches the NHL shiftchart API and game-log
+endpoints to build per-player <code>ShiftProfile</code> records — who each player actually skated with, how
+often, and how those combinations performed. This powers <code>icelines mates</code> (linemate analysis) and
+enhances <code>icelines scouting</code> with shift-derived context.</p>
+<p><strong>TUI</strong>: The full-screen terminal interface launched by <code>icelines</code> (no arguments) or
+<code>icelines tui</code>. Built with <code>ratatui</code> + <code>crossterm</code>, it exposes all Phase 1–3 analytics through
+8 keyboard-navigable screens: Home, Team, Player, Search, Tonight, Projections, Groups, Fetch.
+The TUI reads exclusively from the local cache; all fetch operations run in tokio background tasks
+with live progress bars.</p>
+<p>By the end of Phase 3, IceLines is a complete, distributable CLI tool. A release pipeline
+produces platform binaries for Windows, macOS, and Linux via GitHub Actions.</p>
+<hr />
+<h2 id="goals">Goals<a class="headerlink" href="#goals" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Implement <code>ProjectionMode</code>, <code>ProjectionResult</code>, and the full three-mode projection engine in
+  <code>icelines-core</code>: pace, regressed (career-weighted α blend), composite (age factor + schedule
+  difficulty)</li>
+<li>Implement confidence band computation (<code>σ_ppg × √remaining_games</code>) from per-game point totals</li>
+<li>Implement <code>GameSchedule</code> and <code>RemainingGames</code> in <code>icelines-core</code>; implement the schedule API
+  client in <code>icelines-fetch</code></li>
+<li>Implement <code>icelines project &lt;PLAYER&gt;</code> and <code>icelines project --team &lt;TEAM&gt;</code> commands</li>
+<li>Implement <code>icelines tonight</code> and <code>icelines schedule</code> commands</li>
+<li>Implement <code>icelines trade &lt;PLAYER_OUT&gt; for &lt;PLAYER_IN&gt;</code> command</li>
+<li>Implement <code>Shift</code>, <code>ShiftProfile</code>, <code>compute_linemates()</code> in <code>icelines-core</code>; implement
+  <code>icelines fetch shifts</code> (shiftchart API client and game-log fetcher) in <code>icelines-fetch</code></li>
+<li>Implement <code>icelines mates &lt;PLAYER&gt;</code> using shift-derived linemate data</li>
+<li>Implement <code>icelines scouting &lt;PLAYER&gt;</code> — full 8-section scouting report</li>
+<li>Implement the full ratatui TUI: <code>App</code> state, event loop, all 8 screens, all 5 widget types</li>
+<li>Implement <code>cargo install</code> packaging and the release pipeline (<code>.github/workflows/release.yml</code>)
+  for Windows, macOS, and Linux cross-compiled binaries</li>
+</ul>
+<hr />
+<h2 id="file-map">File Map<a class="headerlink" href="#file-map" title="Permanent link">&para;</a></h2>
+<p>Files to create, by crate. All Phase 1 and Phase 2 files remain; this table lists additions only.</p>
+<h3 id="icelines-core"><code>icelines-core/</code><a class="headerlink" href="#icelines-core" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/projection/mod.rs</code></td>
+<td><code>ProjectionMode</code> enum (Pace, Regressed, Composite); <code>ProjectionResult</code> struct with all fields from <code>projection-engine.md</code> §7: player_id, mode, alpha, current_ppg, career_ppg, remaining_games, projected_remaining, sigma, age_factor, schedule_factor</td>
+</tr>
+<tr>
+<td><code>src/projection/pace.rs</code></td>
+<td><code>pace_project(current_ppg: f64, remaining_games: u32) -&gt; f64</code> — <code>current_ppg × remaining_games</code>; no career data required</td>
+</tr>
+<tr>
+<td><code>src/projection/regressed.rs</code></td>
+<td><code>compute_alpha(season_gp: u32) -&gt; f64</code> — <code>min(season_gp as f64 / 50.0, 1.0)</code>; <code>regressed_project(current_ppg, career_ppg: Option&lt;f64&gt;, season_gp, remaining_games) -&gt; (f64, f64)</code> — returns (proj_pts, alpha); falls back to pace when <code>career_ppg.is_none()</code> (rookie case)</td>
+</tr>
+<tr>
+<td><code>src/projection/composite.rs</code></td>
+<td><code>age_factor(age: u8) -&gt; f64</code> — lookup table per <code>projection-engine.md</code> §2.3 (0.92 at ≤22, 1.00 at 26–27, 0.87 at ≥35); <code>schedule_factor(remaining_opponents: &amp;[TeamStrength], k: f64) -&gt; f64</code> — <code>1.0 + k × mean(opponent_rank_deviation)</code>, default k=0.015; <code>composite_project(regressed_pts, age_factor, schedule_factor) -&gt; f64</code></td>
+</tr>
+<tr>
+<td><code>src/projection/confidence.rs</code></td>
+<td><code>compute_sigma(per_game_points: &amp;[u32], remaining_games: u32) -&gt; Option&lt;f64&gt;</code> — returns <code>None</code> when fewer than 10 games; <code>std_dev(per_game_points) × sqrt(remaining_games as f64)</code></td>
+</tr>
+<tr>
+<td><code>src/schedule.rs</code></td>
+<td><code>GameSchedule { team: TeamAbbr, games: Vec&lt;ScheduledGame&gt; }</code>; <code>ScheduledGame { date: NaiveDate, opponent: TeamAbbr, is_home: bool, game_id: Option&lt;u64&gt; }</code>; <code>RemainingGames { team: TeamAbbr, count: u32, games: Vec&lt;ScheduledGame&gt; }</code>; <code>compute_remaining(schedule: &amp;GameSchedule, today: NaiveDate) -&gt; RemainingGames</code>; <code>TeamStrength { team: TeamAbbr, goals_against_per_game: f32, rank: u8 }</code></td>
+</tr>
+<tr>
+<td><code>src/shift.rs</code></td>
+<td><code>Shift { player_id: u32, partner_id: u32, game_id: u64, shared_seconds: u32 }</code>; <code>ShiftProfile { player_id: u32, season: u32, linemates: Vec&lt;LinemateRecord&gt; }</code>; <code>LinemateRecord { partner_id: u32, shared_shifts: u32, shared_toi_seconds: u32, gf_together: u32, ga_together: u32 }</code>; <code>compute_linemates(shifts: &amp;[Shift], min_shared_shifts: u32) -&gt; Vec&lt;LinemateRecord&gt;</code> — groups by partner_id, sums shared_shifts and shared_toi, filters by threshold, sorts by shared_shifts desc</td>
+</tr>
+<tr>
+<td><code>src/lib.rs</code></td>
+<td>Add <code>pub mod projection</code>, <code>pub mod schedule</code>, <code>pub mod shift</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="icelines-fetch"><code>icelines-fetch/</code><a class="headerlink" href="#icelines-fetch" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/shifts.rs</code></td>
+<td><code>ShiftchartEntry { team_abbrev: String, period: u8, start_time: String, end_time: String, duration: String, player_id: u32 }</code>; <code>fetch_shiftchart(game_id: u64, client, cache) -&gt; Result&lt;Vec&lt;ShiftchartEntry&gt;, Error&gt;</code> — <code>GET api-web.nhle.com/v1/shiftcharts/{GAME_ID}</code>; caches at <code>~/.icelines/cache/shifts/{SEASON}/{GAME_ID}.json</code>; completed games never expire; <code>parse_shift_overlap(entries: &amp;[ShiftchartEntry]) -&gt; Vec&lt;Shift&gt;</code> — for each pair of players on the same team in the same period, computes the time overlap in seconds from their start/end times</td>
+</tr>
+<tr>
+<td><code>src/schedule.rs</code></td>
+<td><code>ScheduleApiResponse</code> serde struct for <code>api-web.nhle.com/v1/schedule/{DATE}</code>; <code>fetch_schedule_for_date(date: NaiveDate, client, cache) -&gt; Result&lt;Vec&lt;ScheduledGame&gt;, Error&gt;</code> — 6-hour TTL; <code>fetch_remaining_schedule(team: &amp;TeamAbbr, today: NaiveDate, season_end: NaiveDate, client, cache) -&gt; Result&lt;GameSchedule, Error&gt;</code> — iterates dates from today through season_end, aggregates all games for the given team; cache per team at <code>~/.icelines/cache/schedule/{SEASON}/{TEAM}.json</code></td>
+</tr>
+<tr>
+<td><code>src/lib.rs</code></td>
+<td>Add <code>pub mod shifts</code>, <code>pub mod schedule</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="icelines-clisrctui"><code>icelines-cli/src/tui/</code><a class="headerlink" href="#icelines-clisrctui" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mod.rs</code></td>
+<td><code>run_tui(config: &amp;Config) -&gt; Result&lt;(), anyhow::Error&gt;</code> — public entry point; sets up crossterm raw mode and alternate screen, creates <code>App</code>, runs the event loop, restores terminal on exit (including panic hook to ensure cleanup); delegates to <code>event::run_event_loop</code></td>
+</tr>
+<tr>
+<td><code>app.rs</code></td>
+<td><code>App</code> struct with all fields from <code>tui.md</code> §4: <code>screen_stack: Vec&lt;Screen&gt;</code>, <code>teams</code>, <code>players</code>, <code>position_profiles</code>, <code>tonight_games</code>, <code>search_query</code>, <code>search_active</code>, <code>search_results</code>, <code>selected_row: HashMap&lt;Screen, usize&gt;</code>, <code>show_help</code>, <code>fetch_progress: Option&lt;FetchProgress&gt;</code>, <code>color_mode: ColorMode</code>; <code>Screen</code> enum (Home, Team(TeamAbbr), Player(u32), Search, Tonight, Projections(Option<TeamAbbr>), Groups, Fetch); <code>ColorMode</code> enum (Full, NoColor); <code>App::new(config) -&gt; Self</code>; <code>App::current_screen(&amp;self) -&gt; &amp;Screen</code>; <code>App::push(screen)</code>, <code>App::pop()</code></td>
+</tr>
+<tr>
+<td><code>event.rs</code></td>
+<td><code>AppEvent</code> enum from <code>tui.md</code> §5 (Up, Down, Left, Right, Enter, Esc, Quit, Search, Refresh, Help, Char(char), Backspace, Resize(u16, u16)); <code>run_event_loop(terminal, app, data_rx) -&gt; Result&lt;(), anyhow::Error&gt;</code> — 16ms crossterm poll (≈60fps), drain <code>data_rx</code> mpsc channel, dispatch to current screen handler, call <code>terminal.draw(render)</code>, check <code>should_quit</code>; <code>map_crossterm_event(event: crossterm::event::Event) -&gt; Option&lt;AppEvent&gt;</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="icelines-clisrctuiscreens"><code>icelines-cli/src/tui/screens/</code><a class="headerlink" href="#icelines-clisrctuiscreens" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mod.rs</code></td>
+<td><code>pub mod home</code>, <code>pub mod team</code>, <code>pub mod player</code>, <code>pub mod search</code>, <code>pub mod tonight</code>, <code>pub mod projections</code>, <code>pub mod groups</code>, <code>pub mod fetch</code>; shared <code>render(frame: &amp;mut Frame, app: &amp;App)</code> dispatcher that calls the correct screen's render function based on <code>app.current_screen()</code></td>
+</tr>
+<tr>
+<td><code>home.rs</code></td>
+<td><code>render_home(frame, app)</code> — two-column 16-row table of all 32 teams: Rank, Team abbreviation (colored by dominant fit class), mean pace pts/82, E/S/B counts; <code>handle_home_event(event: AppEvent, app: &amp;mut App)</code> — Up/Down moves selection, Left/Right switches columns, Enter pushes <code>Screen::Team</code>, <code>/</code> pushes <code>Screen::Search</code>; <code>f</code> key pushes <code>Screen::Fetch</code></td>
+</tr>
+<tr>
+<td><code>team.rs</code></td>
+<td><code>render_team(frame, app, team_abbr)</code> — 4×3 forward grid and 3×2 defense grid using <code>PlayerCell</code> widgets; below-MIN_GP section at bottom; <code>handle_team_event(event, app)</code> — arrow keys move grid cursor, Enter pushes <code>Screen::Player(player_id)</code>, Esc pops screen</td>
+</tr>
+<tr>
+<td><code>player.rs</code></td>
+<td><code>render_player(frame, app, player_id)</code> — split layout: left panel (this season stats, projection panel, position profile), right panel (career trend <code>Sparkline</code>, peers list); <code>handle_player_event(event, app)</code> — <code>p</code> key cycles projection mode (pace → regressed → composite), recomputes projection from cached data without re-fetch; Esc pops screen</td>
+</tr>
+<tr>
+<td><code>search.rs</code></td>
+<td><code>render_search(frame, app)</code> — search input line at top, results table below; <code>handle_search_event(event, app)</code> — <code>Char(c)</code> appends to <code>search_query</code> and filters <code>app.players</code> in-memory (case-insensitive substring on <code>name</code> and <code>name_normalized</code>); Backspace trims query; Enter on non-empty results pushes <code>Screen::Player</code>; Esc pops screen and clears query</td>
+</tr>
+<tr>
+<td><code>tonight.rs</code></td>
+<td><code>render_tonight(frame, app)</code> — scrollable list of today's games, each showing game time, teams, and projected F1–F4 + D1–D3 lines from most recent cached boxscore; <code>handle_tonight_event(event, app)</code> — Up/Down navigates games, Enter on highlighted game pushes <code>Screen::Team</code> for highlighted team, <code>r</code> key triggers background re-fetch of today's schedule</td>
+</tr>
+<tr>
+<td><code>projections.rs</code></td>
+<td><code>render_projections(frame, app, team)</code> — ranked table: Rank, Player, Pos, GP, Pts, PPG, α, Proj, ±1σ range; team total footer; <code>handle_projections_event(event, app)</code> — <code>t</code> opens inline team picker (searchable list), <code>m</code> cycles projection mode, <code>p</code> opens position filter inline, Enter pushes <code>Screen::Player</code>, Esc pops</td>
+</tr>
+<tr>
+<td><code>groups.rs</code></td>
+<td><code>render_groups(frame, app)</code> — list of all saved player groups with name, member count, created date; opening a group shows a player rank table; <code>handle_groups_event(event, app)</code> — Enter opens group member list, <code>n</code> key opens inline text field for new group name, <code>d</code> deletes highlighted group with confirmation prompt, Esc pops</td>
+</tr>
+<tr>
+<td><code>fetch.rs</code></td>
+<td><code>render_fetch(frame, app)</code> — cache status table (Data Set, Status, Last Fetched, Size) plus active progress bar when a fetch is running; <code>handle_fetch_event(event, app)</code> — <code>r</code> triggers stale-data fetch via background tokio task, <code>R</code> force-refreshes all, <code>p</code>/<code>s</code>/<code>b</code>/<code>l</code> trigger targeted fetches; progress updates arrive via the data mpsc channel</td>
+</tr>
+</tbody>
+</table>
+<h3 id="icelines-clisrctuiwidgets"><code>icelines-cli/src/tui/widgets/</code><a class="headerlink" href="#icelines-clisrctuiwidgets" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mod.rs</code></td>
+<td><code>pub mod player_cell</code>, <code>pub mod team_card</code>, <code>pub mod progress_bar</code>, <code>pub mod help_overlay</code>, <code>pub mod sparkline</code></td>
+</tr>
+<tr>
+<td><code>player_cell.rs</code></td>
+<td><code>PlayerCell&lt;'a&gt; { player: &amp;'a Player, selected: bool, color_mode: ColorMode }</code> implementing <code>ratatui::widgets::Widget</code>; renders 20-char truncated name, <code>XX.X pts/82</code>, <code>GP N</code> on two lines; background <code>Style</code> set to fit class color in <code>Full</code> mode; <code>[ELITE]</code>/<code>[SOLID]</code>/<code>[BURIED]</code>/<code>[STRETCH]</code> appended in <code>NoColor</code> mode</td>
+</tr>
+<tr>
+<td><code>team_card.rs</code></td>
+<td><code>TeamCard&lt;'a&gt; { team: &amp;'a TeamSummary, rank: usize, selected: bool, color_mode: ColorMode }</code> implementing <code>Widget</code>; 4-line compact widget: rank + team abbreviation (line 1), mean pts/82 (line 2), E/S/B/X counts (line 3), divider (line 4); background reflects dominant fit class</td>
+</tr>
+<tr>
+<td><code>progress_bar.rs</code></td>
+<td><code>ProgressBar&lt;'a&gt; { label: &amp;'a str, total: u64, completed: u64, eta_secs: Option&lt;u64&gt; }</code> implementing <code>Widget</code>; renders filled (█) and empty (░) segments, percentage, ETA string formatted as <code>Xm Ys</code>; adapts width to available terminal columns</td>
+</tr>
+<tr>
+<td><code>help_overlay.rs</code></td>
+<td><code>HelpOverlay&lt;'a&gt; { bindings: &amp;'a [(&amp;'a str, &amp;'a str)] }</code> implementing <code>Widget</code>; renders a bordered modal box centered over the current frame; each binding pair shown as <code>key</code> — <code>description</code>; press <code>?</code> or <code>Esc</code> to dismiss; overlay is rendered last so it appears on top</td>
+</tr>
+<tr>
+<td><code>sparkline.rs</code></td>
+<td><code>Sparkline&lt;'a&gt; { seasons: &amp;'a [SeasonBar] }</code> where <code>SeasonBar { label: String, pts_82: f64, gp: u32, is_short: bool }</code>; wraps <code>ratatui::widgets::BarChart</code>; bar color derived from fit class thresholds (≥65 green, ≥40 yellow, ≥20 blue, &lt;20 red); short/COVID seasons rendered with <code>Modifier::DIM</code>; x-axis labels are two-digit season years</td>
+</tr>
+</tbody>
+</table>
+<h3 id="icelines-clisrccommands"><code>icelines-cli/src/commands/</code><a class="headerlink" href="#icelines-clisrccommands" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>project.rs</code></td>
+<td><code>run_project_player(player, args, config)</code> — resolves player; loads current stats from cache; fetches <code>PlayerLanding</code> via <code>career.rs</code> for career PPG; fetches game log for per-game point totals (confidence band); fetches remaining schedule for the player's team; calls <code>pace_project</code>, <code>regressed_project</code>, or <code>composite_project</code> per <code>--mode</code>; renders single-player output per <code>projection-engine.md</code> §5 example; <code>--season</code> flag renders career comparison table; <code>--json</code> outputs <code>ProjectionResult</code> as JSON; <code>run_project_team(team, args, config)</code> — runs single-player projection for each skater above MIN_GP on the team, sorts by projected_remaining desc, renders team table with total footer per §6</td>
+</tr>
+<tr>
+<td><code>tonight.rs</code></td>
+<td><code>run_tonight(args, config)</code> — fetches today's schedule from <code>schedule/now</code>; for each game, loads the most recent cached boxscore for each team; extracts forward lines and defense pairs from boxscore <code>playerByGameStats</code>; renders compact side-by-side view per <code>rust-cli.md</code> <code>tonight</code> example; <code>--team</code> filter; <code>--json</code> output</td>
+</tr>
+<tr>
+<td><code>trade.rs</code></td>
+<td><code>run_trade(player_out, player_in, args, config)</code> — resolves both players; identifies <code>player_out</code>'s current team (or uses <code>--team</code>); builds the team's depth chart; removes <code>player_out</code> from depth chart, inserts <code>player_in</code> using depth chart builder algorithm (primary position first, then eligible positions); renders before/after diff with pace comparison, team total delta, and verdict line per <code>rust-cli.md</code> <code>trade</code> example; exits with error if <code>player_in</code> is not in cached data</td>
+</tr>
+<tr>
+<td><code>mates.rs</code></td>
+<td><code>run_mates(player, args, config)</code> — resolves player; loads <code>ShiftProfile</code> from db or cache for the player; filters linemates by <code>--min-shifts</code> threshold; fetches partner names from cached player records; renders linemate table per <code>player-analysis.md</code> <code>mates</code> example with shared shifts, ES-TOI together, GF%, xGF% (xGF shown as <code>N/A</code> if unavailable); <code>--top &lt;N&gt;</code> limits output rows</td>
+</tr>
+<tr>
+<td><code>scouting.rs</code></td>
+<td><code>run_scouting(player, args, config)</code> — aggregates all available data for one player and renders the 8-section scouting report: (1) Bio — age, nationality, draft, hand; (2) Current season pace stats; (3) Career trajectory — 3-year pace trend from <code>SeasonHistory</code>; (4) Peer group rank — draft class percentile via peer algorithm; (5) Linemate analysis — primary line partners from <code>ShiftProfile</code> if available, else <code>"shift data not available"</code>; (6) Depth chart position on own team; (7) Cross-team value — mean line position on other 31 teams; (8) Fit classification and interpretation; <code>--format terminal|markdown|json</code>; <code>--out &lt;FILE&gt;</code> writes to file</td>
+</tr>
+</tbody>
+</table>
+<h3 id="githubworkflows"><code>.github/workflows/</code><a class="headerlink" href="#githubworkflows" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.github/workflows/release.yml</code></td>
+<td>GitHub Actions release pipeline: triggers on <code>push</code> of version tags matching <code>v[0-9]+.[0-9]+.[0-9]+</code>; matrix: <code>x86_64-unknown-linux-musl</code> (ubuntu-latest), <code>x86_64-apple-darwin</code> + <code>aarch64-apple-darwin</code> (macos-latest), <code>x86_64-pc-windows-msvc</code> (windows-latest); steps: checkout, install toolchain via <code>dtolnay/rust-toolchain@stable</code>, install cross-compilation targets, <code>cargo build --release --target ${{ matrix.target }}</code>; upload binary to GitHub Release via <code>softprops/action-gh-release@v2</code>; binary named <code>icelines-{target}.{exe}</code> on Windows, <code>icelines-{target}</code> on others</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="phase-breakdown">Phase Breakdown<a class="headerlink" href="#phase-breakdown" title="Permanent link">&para;</a></h2>
+<h3 id="phase-1-projection-engine-core-types-and-pace-mode">Phase 1 — Projection Engine Core Types and Pace Mode<a class="headerlink" href="#phase-1-projection-engine-core-types-and-pace-mode" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[ ] Add <code>chrono</code> to <code>icelines-core/Cargo.toml</code> if not already present from Phase 2</li>
+<li>[ ] Create <code>icelines-core/src/projection/</code> module directory</li>
+<li>[ ] Implement <code>src/projection/mod.rs</code>: <code>ProjectionMode</code> enum (Pace, Regressed, Composite) with <code>Display</code> impl showing "Pace", "Regressed", "Composite"; <code>ProjectionResult</code> struct with all fields from spec §7 — all <code>Option&lt;f64&gt;</code> fields that are mode-specific; derive <code>Debug</code>, <code>Clone</code>, <code>Serialize</code>, <code>Deserialize</code></li>
+<li>[ ] Implement <code>src/projection/pace.rs</code>: <code>pace_project(current_ppg: f64, remaining_games: u32) -&gt; f64</code> — single multiplication, always returns a value; document: "No regression applied — projects current pace forward linearly"</li>
+<li>[ ] Implement <code>src/projection/confidence.rs</code>: <code>compute_sigma(per_game_points: &amp;[u32], remaining_games: u32) -&gt; Option&lt;f64&gt;</code> — returns <code>None</code> when <code>per_game_points.len() &lt; 10</code>; <code>std_dev</code> = sqrt(Σ(x − mean)² / n); sigma = std_dev × sqrt(remaining_games as f64)</li>
+<li>[ ] Implement <code>src/schedule.rs</code>: <code>GameSchedule</code>, <code>ScheduledGame</code>, <code>RemainingGames</code>, <code>TeamStrength</code>; <code>compute_remaining(schedule: &amp;GameSchedule, today: NaiveDate) -&gt; RemainingGames</code> — filters <code>schedule.games</code> to those with <code>date &gt;= today</code> and <code>game_id.is_none()</code> (not yet played)</li>
+<li>[ ] Write unit tests in <code>src/projection/pace.rs</code>:</li>
+<li><code>pace_project(1.288, 30) == 38.64</code> (Draisaitl example, allow ε=0.01)</li>
+<li><code>pace_project(0.0, 30) == 0.0</code></li>
+<li><code>pace_project(1.000, 0) == 0.0</code></li>
+<li>[ ] Write unit tests in <code>src/projection/confidence.rs</code>:</li>
+<li><code>compute_sigma(&amp;[], 30)</code> returns <code>None</code></li>
+<li><code>compute_sigma(&amp;[0; 9], 30)</code> returns <code>None</code> (exactly 9 games — below threshold)</li>
+<li><code>compute_sigma(&amp;[0; 10], 30)</code> returns <code>Some(0.0)</code> (all zeros — no variance)</li>
+<li>Known std_dev case: <code>[1, 0, 1, 0, 1, 0, 1, 0, 1, 0]</code> → std_dev=0.5, sigma=0.5×√30 ≈ 2.739 (document expected value)</li>
+<li>[ ] Write unit tests in <code>src/schedule.rs</code>:</li>
+<li><code>compute_remaining</code> returns empty when all games are in the past</li>
+<li>Correctly counts games from today onward</li>
+<li>[ ] Verify: <code>cargo test -p icelines-core</code> passes</li>
+</ul>
+<h3 id="phase-2-regressed-and-composite-modes-schedule-integration">Phase 2 — Regressed and Composite Modes, Schedule Integration<a class="headerlink" href="#phase-2-regressed-and-composite-modes-schedule-integration" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[ ] Implement <code>src/projection/regressed.rs</code>:</li>
+<li><code>compute_alpha(season_gp: u32) -&gt; f64</code> — <code>(season_gp as f64 / 50.0).min(1.0)</code></li>
+<li><code>regressed_project(current_ppg: f64, career_ppg: Option&lt;f64&gt;, season_gp: u32, remaining_games: u32) -&gt; (projected_pts: f64, alpha: f64, used_fallback: bool)</code> — when <code>career_ppg.is_none()</code>, sets <code>used_fallback=true</code> and uses <code>pace_project</code>; otherwise computes <code>proj_ppg = α × current_ppg + (1-α) × career_ppg.unwrap()</code>, then <code>proj_ppg × remaining_games</code></li>
+<li>[ ] Implement <code>src/projection/composite.rs</code>:</li>
+<li><code>age_factor(age: u8) -&gt; f64</code> — exhaustive match over the age table from <code>projection-engine.md</code> §2.3; handles <code>age &lt;= 22</code> and <code>age &gt;= 35</code> arms</li>
+<li><code>schedule_factor(remaining_opponents: &amp;[TeamStrength], k: f64) -&gt; f64</code> — <code>1.0 + k × mean_deviation</code> where <code>mean_deviation = mean(opponent.rank as f64 − league_median_rank)</code>; returns 1.0 for empty slice</li>
+<li><code>composite_project(regressed_pts: f64, age: u8, remaining_opponents: &amp;[TeamStrength]) -&gt; (f64, f64, f64)</code> — returns (composite_pts, age_factor, schedule_factor); calls <code>age_factor(age)</code> and <code>schedule_factor(remaining_opponents, 0.015)</code></li>
+<li>[ ] Implement <code>icelines-fetch/src/schedule.rs</code>:</li>
+<li><code>ScheduleApiDay</code> serde struct for <code>api-web.nhle.com/v1/schedule/{DATE}</code> response — <code>game_week: Vec&lt;ScheduleDay&gt;</code>, each day has <code>date: String</code> and <code>games: Vec&lt;ScheduleGame&gt;</code></li>
+<li><code>ScheduleGame { id: u64, season: u32, game_type: u8, game_date: String, start_time_utc: String, away_team: ScheduleTeam, home_team: ScheduleTeam }</code></li>
+<li><code>fetch_schedule_for_date(date: NaiveDate, client, cache) -&gt; Result&lt;Vec&lt;ScheduledGame&gt;, Error&gt;</code> — 6-hour TTL; returns only <code>game_type == 2</code> (regular season) games; maps <code>away_team</code> and <code>home_team</code> to <code>ScheduledGame</code></li>
+<li><code>fetch_remaining_schedule(team: &amp;TeamAbbr, today: NaiveDate, season_end: NaiveDate, client, cache) -&gt; Result&lt;GameSchedule, Error&gt;</code> — iterates dates, collects games involving <code>team</code>, caches complete result per team at <code>~/.icelines/cache/schedule/{SEASON}/{TEAM}.json</code></li>
+<li>[ ] Write unit tests in <code>src/projection/regressed.rs</code>:</li>
+<li><code>compute_alpha(0) == 0.0</code></li>
+<li><code>compute_alpha(25) == 0.5</code></li>
+<li><code>compute_alpha(50) == 1.0</code></li>
+<li><code>compute_alpha(82) == 1.0</code> (clamped)</li>
+<li>Regressed project with career_ppg: GP=52, current_ppg=1.288, career_ppg=1.241, α=1.00 → proj=1.288×30=38.64 (α=1.0 → identical to pace, documented in spec)</li>
+<li>Rookie fallback: career_ppg=None → used_fallback=true, proj equals pace result</li>
+<li>[ ] Write unit tests in <code>src/projection/composite.rs</code>:</li>
+<li><code>age_factor(22) == 0.92</code></li>
+<li><code>age_factor(27) == 1.00</code></li>
+<li><code>age_factor(30) == 0.97</code></li>
+<li><code>age_factor(35) == 0.87</code></li>
+<li><code>schedule_factor(&amp;[], 0.015) == 1.0</code> (empty slice)</li>
+<li><code>schedule_factor</code> with all opponents at median rank → 1.0</li>
+<li>[ ] Verify: <code>cargo test -p icelines-core</code> passes; all projection tests document expected values with calculation comments</li>
+</ul>
+<h3 id="phase-3-icelines-project-icelines-tonight-icelines-trade-commands">Phase 3 — <code>icelines project</code>, <code>icelines tonight</code>, <code>icelines trade</code> Commands<a class="headerlink" href="#phase-3-icelines-project-icelines-tonight-icelines-trade-commands" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[ ] Implement <code>src/commands/project.rs</code> in <code>icelines-cli</code>:</li>
+<li><code>run_project_player(player, args, config)</code>:<ul>
+<li>Resolve player name via <code>PlayerResolver</code></li>
+<li>Load current-season stats from cache (or call <code>icelines fetch stats</code> error if not cached)</li>
+<li>Fetch <code>PlayerLanding</code> via <code>career.rs</code> → compute <code>career_ppg</code> via <code>compute_career_ppg()</code></li>
+<li>Fetch game log from <code>boxscore.rs</code> → extract per-game point totals (goals + assists per game) → <code>compute_sigma()</code></li>
+<li>Fetch remaining schedule via <code>schedule.rs</code> → <code>compute_remaining()</code></li>
+<li>Compute projection in requested mode; build <code>ProjectionResult</code></li>
+<li>Render terminal output matching <code>projection-engine.md</code> §5 example format exactly: bio line, mode line, career PPG line, remaining games line, projected pts with range, full-season total</li>
+<li><code>--season</code> flag: append career comparison table (season, team, G, A, Pts, GP, PPG)</li>
+<li><code>--json</code>: serialize <code>ProjectionResult</code> per §5 JSON example</li>
+</ul>
+</li>
+<li><code>run_project_team(team, args, config)</code>:<ul>
+<li>Load all active skaters for the team from cache</li>
+<li>Filter to players above MIN_GP</li>
+<li>Run single-player projection for each (re-use career + schedule data where possible)</li>
+<li>Sort by <code>projected_remaining</code> descending</li>
+<li>Render team table per <code>projection-engine.md</code> §6 example: Rank, Player, Pos, GP, Pts, PPG, α, Proj, Range</li>
+<li>Team total footer: sum of all <code>projected_remaining</code>, combined σ = √(Σσ²)</li>
+</ul>
+</li>
+<li>[ ] Implement <code>src/commands/tonight.rs</code>:</li>
+<li><code>run_tonight(args, config)</code>:<ul>
+<li>Fetch today's schedule (<code>/v1/schedule/now</code>)</li>
+<li>For each game: load most recent cached boxscore for each team; extract <code>forwards</code> and <code>defense</code> arrays; group by <code>toi</code> descending to infer line number (first 3 forwards by TOI = F1, next 3 = F2, etc.)</li>
+<li>Render per <code>rust-cli.md</code> tonight example: game time, teams, projected lines side-by-side, caveat label</li>
+<li><code>--team &lt;ABBREV&gt;</code> filter: only show games involving that team</li>
+<li><code>--json</code>: array of game objects with <code>game_time</code>, <code>away_team</code>, <code>home_team</code>, projected lines, <code>data_source</code> (game_id of the boxscore used)</li>
+</ul>
+</li>
+<li><code>run_schedule(args, config)</code>:<ul>
+<li>Fetch schedule for today through today + <code>--days</code> (default 7)</li>
+<li>Render table: date, time, away, home per <code>rust-cli.md</code> schedule example</li>
+<li><code>--team</code> filter; <code>--json</code> output</li>
+</ul>
+</li>
+<li>[ ] Implement <code>src/commands/trade.rs</code>:</li>
+<li><code>run_trade(player_out, player_in, args, config)</code>:<ul>
+<li>Resolve both players; error if <code>player_in</code> not in cached data with suggestion to run <code>icelines fetch stats</code></li>
+<li>Identify team from <code>player_out</code>'s cached record (or <code>--team</code> override)</li>
+<li>Build "before" depth chart for the team</li>
+<li>Build "after" depth chart: remove <code>player_out</code>, insert <code>player_in</code> using depth chart builder algorithm</li>
+<li>Compute team pace totals before and after (sum of all <code>pace_82</code> values for rostered skaters above MIN_GP)</li>
+<li>Render before/after diff per <code>rust-cli.md</code> trade example: player lines with pace values, delta, team total before/after, Verdict line</li>
+</ul>
+</li>
+<li>[ ] Add <code>Schedule</code> and <code>Tonight</code> variants to the clap <code>Commands</code> enum in <code>src/cli.rs</code>; add <code>--games</code>, <code>--season</code>, <code>--mode</code> flags to <code>Project</code> subcommand; add <code>for</code> syntax to <code>Trade</code> subcommand (using clap's multi-arg support)</li>
+<li>[ ] Verify: <code>cargo run -- project "Leon Draisaitl"</code> produces output matching the spec example format; <code>cargo run -- tonight</code> renders today's schedule without errors (or graceful empty message if no games today); <code>cargo run -- trade "Jesse Puljujarvi" for "Rickard Rakell"</code> renders trade diff</li>
+</ul>
+<h3 id="phase-4-shift-data-fetch-and-shiftprofile-computation">Phase 4 — Shift Data Fetch and ShiftProfile Computation<a class="headerlink" href="#phase-4-shift-data-fetch-and-shiftprofile-computation" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[ ] Implement <code>icelines-fetch/src/shifts.rs</code>:</li>
+<li><code>ShiftchartEntry</code> serde struct matching <code>api-web.nhle.com/v1/shiftcharts/{GAME_ID}</code> response — <code>data: Vec&lt;ShiftRow&gt;</code> where <code>ShiftRow { playerId: u32, teamAbbrev: String, period: u8, startTime: String, endTime: String, duration: String }</code></li>
+<li><code>fetch_shiftchart(game_id: u64, client, cache) -&gt; Result&lt;Vec&lt;ShiftchartEntry&gt;, Error&gt;</code> — caches at <code>~/.icelines/cache/shifts/{SEASON}/{GAME_ID}.json</code>; completed games never expire</li>
+<li><code>parse_time_to_seconds(time: &amp;str) -&gt; Result&lt;u32, Error&gt;</code> — converts <code>"MM:SS"</code> to total seconds; errors on malformed input</li>
+<li><code>compute_shift_overlaps(entries: &amp;[ShiftchartEntry]) -&gt; Vec&lt;Shift&gt;</code> — for each pair of players on the same team in the same period: compute intersection = min(end_A, end_B) − max(start_A, start_B) in seconds; emit a <code>Shift</code> record when intersection &gt; 0; O(n²) per period is acceptable (≤25 players per team per period)</li>
+<li><code>fetch_shifts_for_all_games(game_ids: &amp;[u64], season: u32, client, cache) -&gt; Result&lt;Vec&lt;Shift&gt;, Error&gt;</code> — fetches each game's shiftchart (deduplicated), parses overlaps, returns flat list</li>
+<li>[ ] Extend <code>icelines-cli/src/commands/fetch.rs</code>: add <code>shifts</code> subcommand variant — loads all player game logs from boxscore cache, collects unique game IDs for the season, calls <code>fetch_shifts_for_all_games</code>, computes <code>ShiftProfile</code> for each player via <code>compute_linemates()</code>, writes each profile to db (<code>upsert_shift_profile</code>) and to <code>~/.icelines/cache/shifts/{SEASON}/profiles/{PLAYER_ID}.json</code></li>
+<li>[ ] Add <code>upsert_shift_profile(conn, profile: &amp;ShiftProfile) -&gt; Result&lt;(), anyhow::Error&gt;</code> and <code>load_shift_profile(conn, player_id: u32, season: u32) -&gt; Result&lt;Option&lt;ShiftProfile&gt;, anyhow::Error&gt;</code> to <code>src/db.rs</code>; add Migration 004: <code>shift_profiles</code> and <code>linemate_records</code> tables</li>
+<li>[ ] Write unit tests in <code>src/shifts.rs</code>:</li>
+<li><code>parse_time_to_seconds("05:32") == 332</code></li>
+<li><code>parse_time_to_seconds("00:00") == 0</code></li>
+<li><code>parse_time_to_seconds("invalid")</code> returns <code>Err</code></li>
+<li><code>compute_shift_overlaps</code> with two players both on-ice from 0:00–1:00 → overlap = 60 seconds</li>
+<li><code>compute_shift_overlaps</code> with non-overlapping shifts → no <code>Shift</code> records emitted</li>
+<li><code>compute_linemates</code> with known fixture: player A shared 412 shifts with player B → <code>LinemateRecord { partner_id: B, shared_shifts: 412, ... }</code></li>
+<li>[ ] Add test fixture <code>tests/fixtures/api/shiftchart_sample.json</code> with realistic shift data for two known player IDs</li>
+<li>[ ] Verify: <code>cargo test -p icelines-fetch</code> passes; <code>cargo run -- fetch shifts</code> processes the sample fixture without panic</li>
+</ul>
+<h3 id="phase-5-tui-app-skeleton-event-loop-and-home-screen">Phase 5 — TUI App Skeleton, Event Loop, and Home Screen<a class="headerlink" href="#phase-5-tui-app-skeleton-event-loop-and-home-screen" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[ ] Add <code>ratatui</code> and <code>crossterm</code> to <code>icelines-cli/Cargo.toml</code></li>
+<li>[ ] Create <code>src/tui/</code> directory structure: <code>mod.rs</code>, <code>app.rs</code>, <code>event.rs</code>, <code>screens/mod.rs</code>, <code>widgets/mod.rs</code></li>
+<li>[ ] Implement <code>src/tui/app.rs</code>:</li>
+<li><code>App::new(config)</code> — loads teams and players from cache (sync, since the main thread starts before the event loop); initializes <code>screen_stack</code> with <code>[Screen::Home]</code>; sets <code>color_mode</code> from <code>config.no_color</code> or <code>NO_COLOR</code> env var</li>
+<li><code>App::push(screen)</code> — appends to <code>screen_stack</code>; no limit on stack depth</li>
+<li><code>App::pop()</code> — removes last element if stack length &gt; 1; at length 1 (Home) sets <code>should_quit = true</code></li>
+<li><code>App::current_screen()</code> — <code>screen_stack.last().unwrap()</code> (invariant: stack is never empty)</li>
+<li><code>App::should_quit</code> field; <code>App::handle_global_event(event) -&gt; bool</code> — handles <code>Quit</code>, <code>Esc</code> at Home, <code>Help</code> toggle; returns true if consumed</li>
+<li>[ ] Implement <code>src/tui/event.rs</code>:</li>
+<li><code>map_crossterm_event(event: crossterm::event::Event) -&gt; Option&lt;AppEvent&gt;</code> — maps <code>KeyCode::Up</code> → <code>AppEvent::Up</code>, etc.; maps <code>KeyCode::Char('q')</code> → <code>AppEvent::Quit</code>, <code>KeyCode::Char('/')</code> → <code>AppEvent::Search</code>, <code>KeyCode::Char('?')</code> → <code>AppEvent::Help</code>, <code>KeyCode::Char('r')</code> → <code>AppEvent::Refresh</code>; <code>KeyCode::Char(c)</code> → <code>AppEvent::Char(c)</code> for all other chars (used in search mode)</li>
+<li><code>run_event_loop(terminal: &amp;mut Terminal&lt;CrosstermBackend&lt;Stdout&gt;&gt;, app: &amp;mut App, data_rx: &amp;mut mpsc::Receiver&lt;DataMessage&gt;) -&gt; Result&lt;(), anyhow::Error&gt;</code> — the main loop: poll with 16ms timeout, drain channel, update app, draw, check <code>should_quit</code></li>
+<li>[ ] Implement <code>src/tui/mod.rs</code>:</li>
+<li><code>run_tui(config: &amp;Config) -&gt; Result&lt;(), anyhow::Error&gt;</code> — install panic hook that calls <code>crossterm::terminal::disable_raw_mode()</code> and <code>execute!(stdout, LeaveAlternateScreen)</code> before the panic message; enter raw mode + alternate screen; create <code>Terminal&lt;CrosstermBackend&lt;Stdout&gt;&gt;</code>; create <code>App</code>; create tokio mpsc channel for background data; call <code>run_event_loop</code>; on return, restore terminal</li>
+<li>[ ] Implement <code>src/tui/screens/home.rs</code>:</li>
+<li><code>render_home(frame: &amp;mut Frame, app: &amp;App)</code> — outer <code>Layout::vertical([Constraint::Min(0), Constraint::Length(1)])</code> for main area and status bar; main area <code>Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])</code> for two columns; iterate teams sorted by mean pts/82 desc, fill column 0 with ranks 1–16 and column 1 with ranks 17–32; each row shows <code>Span::styled(team.abbr, style)</code> colored by dominant fit class; Pts/82 in dim white; E/S/B counts in compact format; selected row highlighted with <code>Style::default().add_modifier(Modifier::REVERSED)</code></li>
+<li><code>handle_home_event(event: AppEvent, app: &amp;mut App)</code> — Up/Down adjusts <code>app.selected_row[Screen::Home]</code> clamped to 0..31; Left/Right toggles column focus; Enter: push <code>Screen::Team(teams[selected].abbr.clone())</code>; <code>AppEvent::Char('f')</code>: push <code>Screen::Fetch</code>; <code>AppEvent::Search</code>: push <code>Screen::Search</code></li>
+<li>[ ] Implement all five widgets (<code>player_cell.rs</code>, <code>team_card.rs</code>, <code>progress_bar.rs</code>, <code>help_overlay.rs</code>, <code>sparkline.rs</code>) per spec §8 widget catalog</li>
+<li>[ ] Implement <code>src/tui/screens/mod.rs</code> dispatch function <code>render(frame, app)</code> that matches on <code>app.current_screen()</code> and calls the appropriate render function; if <code>app.show_help</code>, render <code>HelpOverlay</code> on top of whatever the current screen renders</li>
+<li>[ ] Wire <code>icelines tui</code> and bare <code>icelines</code> (no args) in <code>src/main.rs</code> to call <code>run_tui(config)</code></li>
+<li>[ ] Manual smoke test: <code>cargo run -- tui</code> enters the TUI, Home screen renders 32 teams in two columns, <code>q</code> exits cleanly and restores terminal</li>
+<li>[ ] Verify: terminal is always restored on panic — test by intentionally panicking in a branch and confirming shell is usable afterward</li>
+</ul>
+<h3 id="phase-6-remaining-tui-screens-team-player-search-tonight-projections-groups-fetch">Phase 6 — Remaining TUI Screens (Team, Player, Search, Tonight, Projections, Groups, Fetch)<a class="headerlink" href="#phase-6-remaining-tui-screens-team-player-search-tonight-projections-groups-fetch" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[ ] Implement <code>src/tui/screens/team.rs</code>:</li>
+<li>Load <code>DepthChart</code> for the team from <code>app.players</code> filtered by team and position</li>
+<li>Render 4×3 grid of <code>PlayerCell</code> widgets and 3×2 defense grid using <code>ratatui::layout::Layout</code> with equal-width constraints per column</li>
+<li>Below-MIN_GP section: <code>Block::new().title("Below MIN_GP")</code> with a simple list</li>
+<li>Selection cursor: a <code>u8</code> pair <code>(row, col)</code> stored in <code>app.selected_row</code> for Team screens; highlighted with reversed style</li>
+<li>Enter: look up <code>player_id</code> from the selected grid cell and push <code>Screen::Player(player_id)</code></li>
+<li>[ ] Implement <code>src/tui/screens/player.rs</code>:</li>
+<li>Left panel: <code>Paragraph</code> widgets for each data section (This Season, Projection, Position Profile)</li>
+<li>Right panel: <code>Sparkline</code> widget for career trend, <code>List</code> widget for peers (same team, same position group, above MIN_GP)</li>
+<li><code>p</code> key: cycle <code>app.player_projection_mode</code> (a new field in <code>App</code> — <code>Option&lt;ProjectionMode&gt;</code> defaulting to Regressed); recompute projection inline from cached data (no I/O — all data already in <code>app.players</code> and <code>app.histories</code>)</li>
+<li>If career history data not loaded: show <code>"(press r to load career data)"</code> and trigger background fetch on <code>r</code></li>
+<li>[ ] Implement <code>src/tui/screens/search.rs</code>:</li>
+<li>Search input rendered as <code>Paragraph</code> with the current <code>app.search_query</code> and a cursor character</li>
+<li>Filter <code>app.players</code> in-memory on every <code>AppEvent::Char</code> and <code>AppEvent::Backspace</code> event — no debouncing needed at ~800 player scale</li>
+<li>Results rendered as a <code>Table</code> widget with rank, name, team, pos, GP, PPG, fit label/color</li>
+<li>Enter on a result: push <code>Screen::Player(result.player_id)</code></li>
+<li>[ ] Implement <code>src/tui/screens/tonight.rs</code>:</li>
+<li>On screen push: if <code>app.tonight_games</code> is <code>None</code>, trigger background fetch via data channel; render <code>"Loading schedule..."</code> spinner (<code>|</code>, <code>/</code>, <code>-</code>, <code>\</code> cycling each tick) until data arrives</li>
+<li>Once loaded: render scrollable <code>List</code> of game entries; each entry occupies ~10 lines (game header + 7 line rows); <code>Scrollbar</code> widget on the right edge</li>
+<li><code>r</code> key: clears <code>app.tonight_games</code>, triggers re-fetch</li>
+<li>[ ] Implement <code>src/tui/screens/projections.rs</code>:</li>
+<li>On screen push with a team: compute projections for all team skaters above MIN_GP using cached data (sync — no I/O); store results in <code>App</code> field <code>projection_results: Vec&lt;ProjectionResult&gt;</code></li>
+<li><code>t</code> key: render inline <code>Popup</code> (centered block over main area) with searchable list of 32 teams; selecting a team updates <code>App</code> and recomputes projections</li>
+<li><code>m</code> key: cycle through <code>ProjectionMode::Pace → Regressed → Composite</code>; recompute immediately</li>
+<li><code>p</code> key: render inline position filter popup; <code>All | Forwards | Defense | C | LW | RW | D</code></li>
+<li>Team total footer always visible at bottom of screen</li>
+<li>[ ] Implement <code>src/tui/screens/groups.rs</code>:</li>
+<li>Load groups from db on screen push; render <code>Table</code> with name, count, date</li>
+<li>Enter: load group members from db, compute current stats for each member from <code>app.players</code>, push a sub-view (same screen, different render mode) showing member rank table</li>
+<li><code>n</code> key: render inline text input for group name; on Enter, save to db via background task, refresh groups list</li>
+<li><code>d</code> key: render confirmation dialog <code>"Delete group 'X'? [y/N]"</code>; on <code>y</code>, delete from db</li>
+<li>[ ] Implement <code>src/tui/screens/fetch.rs</code>:</li>
+<li>On render: stat each expected cache file, compute age, compare to TTL to determine STALE/OK/MISSING; render <code>Table</code> with status indicators</li>
+<li><code>r</code> key: trigger stale-data fetch background task via channel; render <code>ProgressBar</code> widget at bottom as updates arrive</li>
+<li><code>R</code> key: trigger force-refresh (all data sets, ignoring TTL)</li>
+<li><code>p</code>, <code>s</code>, <code>b</code>, <code>l</code> keys: trigger targeted fetch for positions, stats, boxscores, player landings respectively</li>
+<li>Background fetch tasks use <code>tokio::task::spawn</code> and send progress updates as <code>DataMessage::FetchProgress { dataset, completed, total }</code> through the channel</li>
+<li>[ ] Run full TUI regression: all 8 screens navigate correctly; <code>Esc</code> from any non-Home screen returns to previous screen; <code>q</code> from Home quits; help overlay appears and dismisses; no terminal corruption on exit</li>
+<li>[ ] Verify: <code>cargo build --release</code> produces binary under 20 MB (if over, audit feature flags on ratatui/crossterm/rusqlite)</li>
+</ul>
+<h3 id="phase-7-icelines-mates-icelines-scouting-release-pipeline-and-packaging">Phase 7 — <code>icelines mates</code>, <code>icelines scouting</code>, Release Pipeline, and Packaging<a class="headerlink" href="#phase-7-icelines-mates-icelines-scouting-release-pipeline-and-packaging" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[ ] Implement <code>src/commands/mates.rs</code>:</li>
+<li><code>run_mates(player, args, config)</code>:<ul>
+<li>Resolve player</li>
+<li>Load <code>ShiftProfile</code> from db (<code>load_shift_profile</code>) — if not present, error with <code>"No shift data found — run 'icelines fetch shifts' first"</code></li>
+<li>Filter linemates by <code>--min-shifts</code> (default 50)</li>
+<li>Limit to <code>--top N</code> (default 5) by shared_shifts desc</li>
+<li>Resolve partner names from <code>app.players</code> (cached)</li>
+<li>Compute ES-TOI together: <code>shared_toi_seconds / 60</code> as minutes + seconds</li>
+<li>Compute GF%: <code>gf_together / (gf_together + ga_together)</code> — show <code>N/A</code> if both are 0 (data not available)</li>
+<li>Render table per <code>player-analysis.md</code> mates example; footer: primary line (top 3 partners)</li>
+</ul>
+</li>
+<li>[ ] Implement <code>src/commands/scouting.rs</code>:</li>
+<li><code>run_scouting(player, args, config)</code>:<ul>
+<li>Resolve player; assemble all 8 sections:</li>
+<li>§1 Bio: from <code>PlayerBio</code> — age (computed from birth_date), nationality (ISO alpha-3), draft info (round, pick, drafting team), hand</li>
+<li>§2 Current season: pace stats (G, A, Pts, GP, PPG, pace_82, fit class)</li>
+<li>§3 Career trajectory: load <code>SeasonHistory</code>, compute 3-year rolling pace, show trend arrow (▲ improving, ▼ declining, → stable — based on regression slope over last 3 seasons)</li>
+<li>§4 Peer group rank: use draft class ±1 year peer method; compute player's percentile in group</li>
+<li>§5 Linemate analysis: if <code>ShiftProfile</code> available, list top 3 linemates with shared TOI; else <code>"(shift data not loaded — run icelines fetch shifts)"</code></li>
+<li>§6 Depth chart: load team depth chart, identify which forward line or defense pair the player occupies</li>
+<li>§7 Cross-team value: for each of the other 31 teams, simulate placing the player on that team's depth chart; compute the mean line number (1–4) across all teams; compare to current line assignment</li>
+<li>§8 Fit classification: restate the fit class with a one-sentence interpretation matching the threshold rationale from <code>rust-cli.md</code> §5.2</li>
+<li><code>--format terminal</code>: render with section headers and comfy-table sub-tables</li>
+<li><code>--format markdown</code>: render as a markdown document with <code>##</code> section headers</li>
+<li><code>--format json</code>: serialize all sections as a flat JSON object</li>
+<li><code>--out &lt;FILE&gt;</code>: write to file instead of stdout; infer format from file extension if not specified</li>
+</ul>
+</li>
+<li>[ ] Create <code>.github/workflows/release.yml</code>:</li>
+<li>Trigger: <code>push</code> of tags matching <code>v[0-9]+.[0-9]+.[0-9]+</code></li>
+<li><code>create-release</code> job: <code>softprops/action-gh-release@v2</code> with <code>draft: true</code>; extracts version from tag name for release title</li>
+<li>Build matrix with <code>include</code> items: <code>{ target: x86_64-unknown-linux-musl, os: ubuntu-latest }</code>, <code>{ target: x86_64-apple-darwin, os: macos-latest }</code>, <code>{ target: aarch64-apple-darwin, os: macos-latest }</code>, <code>{ target: x86_64-pc-windows-msvc, os: windows-latest }</code></li>
+<li>Steps per matrix job: <code>actions/checkout@v4</code>; <code>dtolnay/rust-toolchain@stable</code> with <code>targets: ${{ matrix.target }}</code>; <code>Swatinem/rust-cache@v2</code>; install <code>musl-tools</code> on linux for musl target; <code>cargo build --release --target ${{ matrix.target }}</code>; rename binary to <code>icelines-${{ matrix.target }}</code> (<code>.exe</code> on windows); upload to release via <code>softprops/action-gh-release@v2</code> with <code>files:</code> pointing to renamed binary</li>
+<li>[ ] Update <code>Cargo.toml</code> workspace manifest with <code>[workspace.package]</code> section: <code>version</code>, <code>authors</code>, <code>license</code>, <code>repository</code> (GitHub URL); propagate to all four crate <code>Cargo.toml</code> files using <code>version.workspace = true</code></li>
+<li>[ ] Add <code>[package] name = "icelines"</code> in <code>icelines-cli/Cargo.toml</code> with <code>[[bin]] name = "icelines" path = "src/main.rs"</code></li>
+<li>[ ] Verify <code>cargo install --path icelines-cli</code> installs successfully from a clean checkout</li>
+<li>[ ] Run full integration test suite: <code>cargo test --workspace</code></li>
+<li>[ ] Run <code>cargo clippy --workspace -- -D warnings</code> — zero warnings</li>
+<li>[ ] Run <code>cargo fmt --all --check</code> — no formatting diffs</li>
+<li>[ ] Tag <code>v0.1.0</code> and verify the release workflow produces binaries for all four targets in the GitHub Release draft</li>
+<li>[ ] Update <code>context/waves/WAVE02-APPMANAGER-ADOPTION.md</code> and <code>STATUS.md</code> with Phase 3 completion status</li>
+</ul>
+<hr />
+<h2 id="success-criteria">Success Criteria<a class="headerlink" href="#success-criteria" title="Permanent link">&para;</a></h2>
+<p>The following conditions must all be true before this plan is considered complete:</p>
+<ol>
+<li><code>cargo build --release</code> produces a single <code>icelines</code> binary with no errors</li>
+<li><code>cargo test --workspace</code> passes with zero failures</li>
+<li><code>cargo clippy --workspace -- -D warnings</code> produces zero warnings</li>
+<li><code>icelines tui</code> enters the TUI, renders the Home screen with all 32 teams in two columns, and exits cleanly with <code>q</code></li>
+<li>All 8 TUI screens are reachable via keyboard navigation: Home → Team → Player, Home → Search, Home → Fetch, <code>tonight</code> key → Tonight, <code>project</code> key → Projections, <code>groups</code> key → Groups</li>
+<li>The TUI restores the terminal correctly on both clean exit and panic</li>
+<li><code>icelines project "Connor McDavid"</code> produces a formatted projection output matching the <code>projection-engine.md</code> example format (bio line, mode line, career PPG, remaining games, projected pts with range, full-season total)</li>
+<li><code>icelines project "Connor McDavid" --mode composite</code> produces age_factor and schedule_factor values consistent with the age table (age 28 → 0.99) and with <code>age_factor</code> and <code>schedule_factor</code> printed in output</li>
+<li><code>icelines project --team EDM</code> produces a ranked table for all Oilers skaters above MIN_GP with a team total footer</li>
+<li><code>icelines tonight</code> renders today's schedule (or a clean empty message if no games) without errors</li>
+<li><code>icelines schedule --team SEA --days 14</code> renders the next 14 days of Seattle Kraken games</li>
+<li><code>icelines trade "Jesse Puljujarvi" for "Rickard Rakell"</code> renders before/after depth chart diff with pace values, delta, team total change, and a Verdict line</li>
+<li><code>icelines fetch shifts</code> completes without errors on a season with cached boxscores, producing <code>ShiftProfile</code> records in the database</li>
+<li><code>icelines mates "Matty Beniers"</code> renders a linemate table from shift data (or a clear error directing to <code>icelines fetch shifts</code> if not available)</li>
+<li><code>icelines scouting "Leon Draisaitl"</code> renders all 8 sections with no placeholder text; linemate section populated when shift data is available</li>
+<li><code>cargo install --path icelines-cli</code> installs the <code>icelines</code> binary successfully from a clean checkout</li>
+<li>The release workflow (<code>.github/workflows/release.yml</code>) produces binaries for all four targets (linux-musl, darwin-x86, darwin-arm64, windows-msvc) when a <code>v*.*.*</code> tag is pushed</li>
+<li>No <code>unwrap()</code> in <code>icelines-core</code>, <code>icelines-fetch</code>, or <code>icelines-site</code> library code</li>
+<li>Terminal rendering is correct at minimum size (80×24): no overflow, no truncation that makes the UI unusable</li>
+<li>All unit and integration test assertions document expected values with calculation comments</li>
+</ol>
+<hr />
+<h2 id="test-coverage-requirements">Test Coverage Requirements<a class="headerlink" href="#test-coverage-requirements" title="Permanent link">&para;</a></h2>
+<p>See <code>docs/specs/test-strategy.md</code> for L0/L1/L2 definitions.
+Phase 3 must not reduce L0 coverage below 95% on icelines-core.</p>
+<h3 id="l0-unit-tests-phase-3-additions">L0 — Unit Tests (Phase 3 additions)<a class="headerlink" href="#l0-unit-tests-phase-3-additions" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Expected</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pace_project(ppg=1.68, remaining=30)</code></td>
+<td>50.4 pts</td>
+<td>McDavid remaining-season</td>
+</tr>
+<tr>
+<td><code>alpha_at_10_gp</code></td>
+<td>0.20</td>
+<td>min(10/50, 1.0)</td>
+</tr>
+<tr>
+<td><code>alpha_at_50_gp</code></td>
+<td>1.00</td>
+<td>fully weighted to current</td>
+</tr>
+<tr>
+<td><code>alpha_at_75_gp</code></td>
+<td>1.00</td>
+<td>clamped at 1.0</td>
+</tr>
+<tr>
+<td><code>regressed_project(cur=1.68, career=1.45, gp=25)</code></td>
+<td>documented</td>
+<td>α=0.5, weighted blend</td>
+</tr>
+<tr>
+<td><code>age_factor_at_26</code></td>
+<td>1.00</td>
+<td>peak age</td>
+</tr>
+<tr>
+<td><code>age_factor_at_30</code></td>
+<td>~0.96</td>
+<td>~2% decline per year</td>
+</tr>
+<tr>
+<td><code>age_factor_at_35</code></td>
+<td>~0.86</td>
+<td>cumulative decline</td>
+</tr>
+<tr>
+<td><code>age_factor_at_20</code></td>
+<td>~0.92</td>
+<td>pre-peak discount</td>
+</tr>
+<tr>
+<td><code>confidence_band_width_increases_low_gp</code></td>
+<td>wider at 20 GP</td>
+<td>small sample = more uncertainty</td>
+</tr>
+<tr>
+<td><code>shift_overlap_mcdavid_draisaitl</code></td>
+<td>high co-ice fraction</td>
+<td>known linemates</td>
+</tr>
+<tr>
+<td><code>shift_profile_primary_linemates_top_3</code></td>
+<td>3 partners</td>
+<td>only top-3 returned</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Property tests</strong> (required):
+<div class="highlight"><pre><span></span><code><span class="n">proptest</span><span class="o">!</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">alpha_always_in_0_to_1</span><span class="p">(</span><span class="n">gp</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="mi">0</span><span class="k">u32</span><span class="o">..</span><span class="mi">200</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">compute_alpha</span><span class="p">(</span><span class="n">gp</span><span class="p">);</span>
+<span class="w">        </span><span class="fm">assert!</span><span class="p">(</span><span class="n">a</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mf">0.0</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">age_factor_always_positive</span><span class="p">(</span><span class="n">age</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="mi">18</span><span class="k">u8</span><span class="o">..</span><span class="mi">45</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="fm">assert!</span><span class="p">(</span><span class="n">age_factor</span><span class="p">(</span><span class="n">age</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0.0</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">regressed_proj_between_pace_and_career</span><span class="p">(</span>
+<span class="w">        </span><span class="n">cur</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="mf">0.0</span><span class="k">f32</span><span class="o">..</span><span class="mf">3.0</span><span class="p">,</span><span class="w"> </span><span class="n">career</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="mf">0.0</span><span class="k">f32</span><span class="o">..</span><span class="mf">3.0</span><span class="p">,</span><span class="w"> </span><span class="n">gp</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="mi">10</span><span class="k">u32</span><span class="o">..</span><span class="mi">82</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">regressed_project</span><span class="p">(</span><span class="n">cur</span><span class="p">,</span><span class="w"> </span><span class="n">career</span><span class="p">,</span><span class="w"> </span><span class="n">gp</span><span class="p">,</span><span class="w"> </span><span class="mi">30</span><span class="p">);</span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">lo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cur</span><span class="p">.</span><span class="n">min</span><span class="p">(</span><span class="n">career</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">30.0</span><span class="p">;</span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">hi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cur</span><span class="p">.</span><span class="n">max</span><span class="p">(</span><span class="n">career</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">30.0</span><span class="p">;</span>
+<span class="w">        </span><span class="fm">assert!</span><span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">total</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="n">lo</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">total</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">hi</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">0.001</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<h3 id="l1-integration-tests-phase-3-additions">L1 — Integration Tests (Phase 3 additions)<a class="headerlink" href="#l1-integration-tests-phase-3-additions" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Verifies</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>projection_pipeline_pace_mode</code></td>
+<td>fixture player → documented projected pts</td>
+</tr>
+<tr>
+<td><code>projection_pipeline_regressed_mode</code></td>
+<td>career stats from fixture → blended result</td>
+</tr>
+<tr>
+<td><code>shift_profile_from_fixture_boxscores</code></td>
+<td>5 boxscores → correct top-3 linemates</td>
+</tr>
+<tr>
+<td><code>shift_profile_min_shifts_filter</code></td>
+<td>&lt; 50 shared shifts → excluded from partners</td>
+</tr>
+<tr>
+<td><code>tonight_schedule_parses_correctly</code></td>
+<td>fixture schedule JSON → game list</td>
+</tr>
+<tr>
+<td><code>tonight_projected_lines_from_last_boxscore</code></td>
+<td>last game lineup → projected lines</td>
+</tr>
+<tr>
+<td><code>trade_depth_chart_diff</code></td>
+<td>before/after chart → correct upgrade/downgrade detection</td>
+</tr>
+<tr>
+<td><code>tui_app_state_initial</code></td>
+<td>App::new() → Screen::Home, no panics</td>
+</tr>
+<tr>
+<td><code>tui_navigation_home_to_team</code></td>
+<td>Enter on team card → Screen::Team(team)</td>
+</tr>
+<tr>
+<td><code>tui_search_filters_live</code></td>
+<td>type "Beni" → Beniers appears, Eberle does not</td>
+</tr>
+</tbody>
+</table>
+<h3 id="l2-system-tests-every-phase-3-command-tui">L2 — System Tests (every Phase 3 command + TUI)<a class="headerlink" href="#l2-system-tests-every-phase-3-command-tui" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Command / Scenario</th>
+<th>Assertion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>icelines project "Matty Beniers" --mode pace</code></td>
+<td>Exit 0, contains projected pts</td>
+</tr>
+<tr>
+<td><code>icelines project "Matty Beniers" --mode regressed</code></td>
+<td>Exit 0, different value than pace</td>
+</tr>
+<tr>
+<td><code>icelines project --team SEA</code></td>
+<td>Exit 0, shows all SEA skaters</td>
+</tr>
+<tr>
+<td><code>icelines tonight</code></td>
+<td>Exit 0, shows today's games</td>
+</tr>
+<tr>
+<td><code>icelines schedule --team SEA --days 7</code></td>
+<td>Exit 0, shows ≥ 1 SEA game</td>
+</tr>
+<tr>
+<td><code>icelines trade "Tolvanen" for "Brady Tkachuk"</code></td>
+<td>Exit 0, shows before/after depth</td>
+</tr>
+<tr>
+<td><code>icelines mates "Matty Beniers"</code></td>
+<td>Exit 0, shows linemates</td>
+</tr>
+<tr>
+<td><code>icelines scouting "Matty Beniers"</code></td>
+<td>Exit 0, 8 sections visible</td>
+</tr>
+<tr>
+<td><code>icelines fetch shifts --dry-run</code></td>
+<td>Exit 0, lists game IDs without fetching</td>
+</tr>
+<tr>
+<td>TUI: <code>icelines tui</code> then <code>q</code> within 2s</td>
+<td>Exit 0, terminal restored cleanly</td>
+</tr>
+<tr>
+<td>TUI: <code>icelines</code> (no args)</td>
+<td>Same as <code>icelines tui</code></td>
+</tr>
+<tr>
+<td>Binary: <code>icelines --version</code></td>
+<td>Matches <code>Cargo.toml</code> workspace version</td>
+</tr>
+<tr>
+<td>Release: Linux binary runs on Ubuntu 22.04</td>
+<td>Exit 0, <code>--version</code> works</td>
+</tr>
+<tr>
+<td>Release: macOS binary (arm64) runs</td>
+<td>Exit 0, <code>--version</code> works</td>
+</tr>
+<tr>
+<td>Release: Windows binary runs</td>
+<td>Exit 0, <code>--version</code> works</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="out-of-scope">Out of Scope<a class="headerlink" href="#out-of-scope" title="Permanent link">&para;</a></h2>
+<p>The following are explicitly out of scope for Phase 3 and for IceLines v0.1:</p>
+<p><strong>Data sources not yet integrated:</strong>
+- Tier 4 advanced stats (Natural Stat Trick, MoneyPuck xGF, Evolving Hockey RAPM) — require
+  third-party scraping and are not available via the NHL API
+- Tier 5 social signals (Twitter/X, Reddit r/hockey sentiment) — no structured API
+- Tier 6 beat media injury reports — unstructured text, no API</p>
+<p><strong>Features deferred to v0.2+:</strong>
+- Mouse support in the TUI (crossterm mouse events not captured in v0.1)
+- Live game score tracking — IceLines is a batch analytics tool, not a live dashboard
+- Historical multi-season position tracking — position engine operates on current season only
+- Windows installer / macOS <code>.app</code> bundle — distribution is <code>cargo install</code> and GitHub Releases
+- Color theme customization — the four fit class colors are fixed in v0.1
+- TUI split-pane / persistent sidebar layout
+- <code>icelines dashboard preview</code> and <code>icelines dashboard new</code> CLI subcommands (stubs may be
+  present from Phase 2 but are not fully implemented)
+- Playoff projection modeling — rest-of-season engine covers regular season only
+- Category-league fantasy scoring (PIM, PPP, hits, blocks as projection inputs) — points only
+- Goalie scouting reports — goalies are parsed but not placed in lineup cards or projection tables</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.indexes", "navigation.top", "search.highlight", "search.suggest", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

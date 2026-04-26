@@ -1564,6 +1564,56 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#test-coverage-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test Coverage Requirements
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Test Coverage Requirements">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#l0-unit-tests-phase-1-scope-icelines-core" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        L0 — Unit Tests (Phase 1 scope, icelines-core)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#l1-integration-tests-phase-1-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        L1 — Integration Tests (Phase 1 scope)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#l2-system-tests-phase-1-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        L2 — System Tests (Phase 1 scope)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#out-of-scope-for-this-plan" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1598,10 +1648,17 @@
 <p><strong>Date</strong>: 2026-04-25<br />
 <strong>Phase</strong>: 1 of 3 — Foundation (icelines-core + icelines-fetch + icelines-cli: <code>team</code> and <code>rank</code>)<br />
 <strong>Spec references</strong>:
-- <code>docs/specs/rust-cli.md</code> — command surface, crate architecture, data model
-- <code>docs/specs/data-sources.md</code> — NHL API tiers, shift data, composite scoring roadmap
-- <code>docs/specs/player-analysis.md</code> — player filtering, draft classes, peer groups (Phase 2+)
-- <code>docs/specs/dashboard-engine.md</code> — TOML-driven dashboard generation (Phase 2+)</p>
+- <code>docs/specs/rust-cli.md</code> — full command surface, crate architecture, data model, migration table
+- <code>docs/specs/data-sources.md</code> — NHL API tiers (Tier 0 rosters is now primary player universe)
+- <code>docs/specs/position-engine.md</code> — position from boxscore API, no Yahoo CSV (Phase 1 partial)
+- <code>docs/specs/fantasy-scheme.md</code> — scheme TOML format, icelines-core scoring engine (Phase 1 partial)
+- <code>docs/specs/player-analysis.md</code> — player filtering, draft classes, peer groups (Phase 2)
+- <code>docs/specs/dashboard-engine.md</code> — TOML-driven dashboard generation (Phase 2)
+- <code>docs/specs/projection-engine.md</code> — projection modes, age curve, confidence bands (Phase 3)
+- <code>docs/specs/tui.md</code> — ratatui TUI, 8 screens, event loop (Phase 3)</p>
+<p><strong>Companion plans</strong>:
+- <code>docs/plans/2026-04-25-phase2-site-analysis.md</code> — site generation, schemes, player analysis
+- <code>docs/plans/2026-04-25-phase3-tui-projections.md</code> — TUI, projections, shift data, tonight</p>
 <hr />
 <h2 id="background">Background<a class="headerlink" href="#background" title="Permanent link">&para;</a></h2>
 <p>The IceLines pipeline currently exists as a collection of Python scripts. The Rust CLI rewrite
@@ -1937,6 +1994,186 @@ for this plan (Phase 2: site generation).</p>
 <li>No <code>unwrap()</code> in <code>icelines-core</code>, <code>icelines-fetch</code>, or <code>icelines-site</code> library code</li>
 <li><code>icelines-core</code> has zero dependencies that perform I/O (verified by <code>cargo tree -p icelines-core</code>)</li>
 </ol>
+<hr />
+<h2 id="test-coverage-requirements">Test Coverage Requirements<a class="headerlink" href="#test-coverage-requirements" title="Permanent link">&para;</a></h2>
+<p>See <code>docs/specs/test-strategy.md</code> for full definitions of L0/L1/L2 and the 9 BENCH archetypes.</p>
+<h3 id="l0-unit-tests-phase-1-scope-icelines-core">L0 — Unit Tests (Phase 1 scope, icelines-core)<a class="headerlink" href="#l0-unit-tests-phase-1-scope-icelines-core" title="Permanent link">&para;</a></h3>
+<p>Target: <strong>≥ 95% line coverage</strong> on <code>icelines-core</code>.</p>
+<p>Required tests (each with documented calculation comment):</p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Expected value</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pace_score(100, 75)</code></td>
+<td>109.333 pts/82</td>
+<td>McDavid-scale verification</td>
+</tr>
+<tr>
+<td><code>pace_score(50, 70)</code></td>
+<td>58.571 pts/82</td>
+<td>Mid-tier verification</td>
+</tr>
+<tr>
+<td><code>pace_score(_, 0)</code></td>
+<td>None</td>
+<td>Division by zero prevention</td>
+</tr>
+<tr>
+<td><code>pace_score(_, 9)</code></td>
+<td>None</td>
+<td>Below MIN_GP</td>
+</tr>
+<tr>
+<td><code>pace_score(_, 10)</code></td>
+<td>Some(_)</td>
+<td>Exactly at MIN_GP — must include</td>
+</tr>
+<tr>
+<td><code>classify_fit(64.9, Forward)</code></td>
+<td>Solid</td>
+<td>Below Elite threshold</td>
+</tr>
+<tr>
+<td><code>classify_fit(65.0, Forward)</code></td>
+<td>Elite</td>
+<td>At threshold — inclusive</td>
+</tr>
+<tr>
+<td><code>classify_fit(65.0, Defense)</code></td>
+<td>Solid</td>
+<td>D uses different thresholds</td>
+</tr>
+<tr>
+<td><code>classify_fit(45.0, Defense)</code></td>
+<td>Elite</td>
+<td>D Elite threshold</td>
+</tr>
+<tr>
+<td><code>normalize_name("Slafkovský")</code></td>
+<td>"slafkovsky"</td>
+<td>Diacritic strip</td>
+</tr>
+<tr>
+<td><code>normalize_name("")</code></td>
+<td>""</td>
+<td>Empty string safe</td>
+</tr>
+<tr>
+<td><code>TeamAbbr::parse("SEA")</code></td>
+<td>Ok(SEA)</td>
+<td>Valid team</td>
+</tr>
+<tr>
+<td><code>TeamAbbr::parse("XYZ")</code></td>
+<td>Err(_)</td>
+<td>Invalid team</td>
+</tr>
+<tr>
+<td><code>PositionResolver::parse("C,LW,Util")</code></td>
+<td>(C, [C, LW])</td>
+<td>Multi-position</td>
+</tr>
+</tbody>
+</table>
+<p>Property test (proptest):
+<div class="highlight"><pre><span></span><code><span class="n">proptest</span><span class="o">!</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">fn</span><span class="w"> </span><span class="nf">any_pace_above_elite_is_elite</span><span class="p">(</span><span class="n">pts</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="mf">65.0</span><span class="k">f32</span><span class="o">..</span><span class="mf">500.0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="fm">assert_eq!</span><span class="p">(</span><span class="n">classify_fit</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span><span class="w"> </span><span class="n">Position</span><span class="p">::</span><span class="n">Forward</span><span class="p">),</span><span class="w"> </span><span class="n">FitClass</span><span class="p">::</span><span class="n">Elite</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<h3 id="l1-integration-tests-phase-1-scope">L1 — Integration Tests (Phase 1 scope)<a class="headerlink" href="#l1-integration-tests-phase-1-scope" title="Permanent link">&para;</a></h3>
+<p>Target: All happy paths + all error paths in <code>icelines-fetch</code>.</p>
+<p>Required fixtures: <code>tests/fixtures/sample_skaters.csv</code> (9 BENCH archetypes),
+<code>tests/fixtures/api/</code> (mock API responses for each archetype).</p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Verifies</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>full_pipeline_col_depth_chart</code></td>
+<td>CSV → GP fetch (mocked) → score → 4×3 grid structure</td>
+</tr>
+<tr>
+<td><code>resolver_slafkovsky</code></td>
+<td>Normalized match → correct player ID 8482078</td>
+</tr>
+<tr>
+<td><code>resolver_sebastian_aho_disambiguates</code></td>
+<td>Two players same name → team-match wins</td>
+</tr>
+<tr>
+<td><code>csv_bom_handled</code></td>
+<td>UTF-8 BOM prefix → parsed correctly</td>
+</tr>
+<tr>
+<td><code>csv_empty_numeric_field</code></td>
+<td>Empty G column → CsvParse error, not silent 0</td>
+</tr>
+<tr>
+<td><code>csv_missing_column</code></td>
+<td>No Team column → CsvParse error with field name</td>
+</tr>
+<tr>
+<td><code>depth_chart_partial_defense</code></td>
+<td>4 D players → pair 3 = [None, None]</td>
+</tr>
+<tr>
+<td><code>depth_chart_gp_zero_excluded</code></td>
+<td>GP=0 player → in <code>below_min_gp</code>, not on card</td>
+</tr>
+<tr>
+<td><code>cache_hit_skips_api</code></td>
+<td>Second fetch → zero HTTP calls (verify with httpmock)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="l2-system-tests-phase-1-scope">L2 — System Tests (Phase 1 scope)<a class="headerlink" href="#l2-system-tests-phase-1-scope" title="Permanent link">&para;</a></h3>
+<p>Target: Every Phase 1 command has at least one exit-0 smoke test.</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Assertion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>icelines --version</code></td>
+<td>Exit 0, prints version string</td>
+</tr>
+<tr>
+<td><code>icelines --help</code></td>
+<td>Exit 0, lists all subcommands</td>
+</tr>
+<tr>
+<td><code>icelines fetch --dry-run</code></td>
+<td>Exit 0, no HTTP calls made</td>
+</tr>
+<tr>
+<td><code>icelines team COL</code></td>
+<td>Exit 0, stdout contains "Colorado Avalanche"</td>
+</tr>
+<tr>
+<td><code>icelines rank --top 10</code></td>
+<td>Exit 0, stdout has exactly 10 player rows</td>
+</tr>
+<tr>
+<td><code>icelines rank --pos C --top 5</code></td>
+<td>Exit 0, all 5 rows show position C</td>
+</tr>
+</tbody>
+</table>
 <hr />
 <h2 id="out-of-scope-for-this-plan">Out of Scope for This Plan<a class="headerlink" href="#out-of-scope-for-this-plan" title="Permanent link">&para;</a></h2>
 <p><strong>Phase 2 — Site Generation + Player Analysis:</strong>

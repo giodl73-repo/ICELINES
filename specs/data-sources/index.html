@@ -1387,10 +1387,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tier-1-yahoo-fantasy-csv" class="md-nav__link">
+  <a href="#tier-0-nhl-team-rosters-player-universe" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tier 1 — Yahoo Fantasy CSV
+        Tier 0 — NHL Team Rosters (player universe)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tier-1-yahoo-fantasy-csv-optional" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 1 — Yahoo Fantasy CSV (optional)
       
     </span>
   </a>
@@ -1723,23 +1734,40 @@ and how it feeds into the depth chart engine.</p>
 <p>Tiers 1–3 are <strong>primary</strong> — they drive all rankings and depth charts.<br />
 Tiers 4–6 are <strong>contextual</strong> — they annotate, not override.</p>
 <hr />
-<h2 id="tier-1-yahoo-fantasy-csv">Tier 1 — Yahoo Fantasy CSV<a class="headerlink" href="#tier-1-yahoo-fantasy-csv" title="Permanent link">&para;</a></h2>
-<p><strong>Endpoint</strong>: Manual export from Yahoo Fantasy Hockey league<br />
-<strong>Path</strong>: <code>data/fantasy.csv</code> (user-supplied)<br />
-<strong>Format</strong>: CSV with Yahoo-specific player IDs and position eligibility</p>
-<p><strong>What we use:</strong>
-- <code>Eligible Positions</code> — fantasy position eligibility (C, LW, RW, D, G) — KEPT
-- <code>First Name</code>, <code>Last Name</code> — player name for NHL API matching — KEPT
-- <code>Team</code> — cross-validation only (authoritative source is NHL API <code>currentTeamAbbrev</code>) — KEPT
-- <code>Image</code> — player photo URL (Yahoo CDN) — KEPT
-- REMOVED: <code>G (P)</code>, <code>A (P)</code> — these come from NHL API <code>SkaterStats.goals</code> / <code>SkaterStats.assists</code> now</p>
+<h2 id="tier-0-nhl-team-rosters-player-universe">Tier 0 — NHL Team Rosters (player universe)<a class="headerlink" href="#tier-0-nhl-team-rosters-player-universe" title="Permanent link">&para;</a></h2>
+<p><strong>Endpoint</strong>: <code>https://api-web.nhle.com/v1/roster/{TEAM}/{SEASON}</code><br />
+<strong>Fetched by</strong>: <code>icelines fetch rosters</code> (32 requests, one per team)<br />
+<strong>Cache TTL</strong>: 48 hours<br />
+<strong>Auth</strong>: None</p>
+<p>This is the authoritative player universe. All 32 rosters are fetched at the start of
+every season and after roster moves. There is no CSV dependency for the player list.</p>
+<p><strong>What we get:</strong>
+- <code>id</code> — NHL canonical player ID (<code>u32</code>)
+- <code>firstName</code>, <code>lastName</code> — player name (Unicode, used for display)
+- <code>positionCode</code> — <code>L</code> / <code>R</code> / <code>C</code> / <code>D</code> / <code>G</code>
+- <code>headshot</code> — real team-specific photo URL:
+  <code>https://assets.nhle.com/mugs/nhl/{SEASON}/{TEAM}/{player_id}.png</code>
+- <code>birthDate</code>, <code>birthCountry</code>, <code>shootsCatches</code>, <code>sweaterNumber</code></p>
+<p><strong>Pipeline:</strong> <code>icelines fetch rosters</code> → <code>data/rosters.json</code> → <code>icelines-core::PlayerBio</code></p>
+<hr />
+<h2 id="tier-1-yahoo-fantasy-csv-optional">Tier 1 — Yahoo Fantasy CSV (optional)<a class="headerlink" href="#tier-1-yahoo-fantasy-csv-optional" title="Permanent link">&para;</a></h2>
+<p><strong>Status</strong>: <strong>Optional</strong> — IceLines works without it.<br />
+<strong>Path</strong>: <code>data/fantasy.csv</code> (user-supplied, manual export)</p>
+<p>The Yahoo CSV is useful for one thing: fantasy position eligibility. Yahoo designates
+some players as eligible at multiple positions (e.g., Draisaitl as C and LW) based on
+their usage. This multi-position eligibility is fantasy-specific and not in the NHL API.</p>
+<p><strong>What we use (and only this):</strong>
+- <code>Eligible Positions</code> — multi-position fantasy eligibility (e.g., <code>C,LW,Util</code>)
+- <code>First Name</code>, <code>Last Name</code> — for matching to NHL player ID if rosters are stale</p>
+<p><strong>What we do NOT use:</strong>
+- Any stat columns (<code>G (P)</code>, <code>A (P)</code>, etc.) — all stats come from Tier 2 NHL API
+- <code>Image</code> — all photos come from Tier 0 NHL roster API
+- <code>Team</code> — authoritative source is NHL API <code>currentTeamAbbrev</code></p>
 <p><strong>Limitations:</strong>
-- Stats are NOT sourced from Yahoo CSV. Yahoo CSV provides position eligibility and photo URLs only.
-- No games played — must cross-reference with Tier 2
-- Position eligibility is fantasy-determined, not always hockey-accurate
-- Export is manual — not automated
-- Player IDs are Yahoo internal, not NHL IDs</p>
-<p><strong>Pipeline:</strong> <code>data/fantasy.csv</code> → <code>icelines-core::player::YahooRecord</code> (eligibility + photo only)</p>
+- Manual export — not automated
+- Export frequency is user-controlled
+- When not provided, position eligibility falls back to NHL API <code>positionCode</code></p>
+<p><strong>Pipeline:</strong> <code>data/fantasy.csv</code> (optional) → <code>icelines-core::YahooEligibility</code></p>
 <hr />
 <h2 id="tier-2-nhl-api-core-stats">Tier 2 — NHL API Core Stats<a class="headerlink" href="#tier-2-nhl-api-core-stats" title="Permanent link">&para;</a></h2>
 <p><strong>Endpoint</strong>: <code>https://api.nhle.com/stats/rest/en/</code><br />
@@ -1820,7 +1848,9 @@ line groupings without relying on coaching press releases.</p>
 <span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">shifts_per_game</span><span class="p">:</span><span class="w">    </span><span class="kt">f32</span><span class="p">,</span>
 <span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">zone_start_pct</span><span class="p">:</span><span class="w">     </span><span class="nb">Option</span><span class="o">&lt;</span><span class="kt">f32</span><span class="o">&gt;</span><span class="p">,</span><span class="w">  </span><span class="c1">// None if data unavailable</span>
 <span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">top_line_partners</span><span class="p">:</span><span class="w">  </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="p">(</span><span class="kt">u32</span><span class="p">,</span><span class="w"> </span><span class="kt">f32</span><span class="p">)</span><span class="o">&gt;</span><span class="p">,</span><span class="w">  </span><span class="c1">// (player_id, co-ice_fraction)</span>
-<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">avg_ev_toi_per_game</span><span class="p">:</span><span class="w"> </span><span class="kt">f32</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">avg_ev_toi_seconds_per_game</span><span class="p">:</span><span class="w"> </span><span class="kt">u32</span><span class="p">,</span><span class="w">  </span><span class="c1">// stored as INTEGER SECONDS, not minutes.</span>
+<span class="w">                                            </span><span class="c1">// Display layer: divide by 60 for &quot;MM:SS&quot;.</span>
+<span class="w">                                            </span><span class="c1">// Threshold comparisons: 16:00 = 960, 10:00 = 600.</span>
 <span class="p">}</span>
 </code></pre></div>
 <h3 id="shift-adjusted-line-score">Shift-Adjusted Line Score<a class="headerlink" href="#shift-adjusted-line-score" title="Permanent link">&para;</a></h3>
