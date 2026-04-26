@@ -1,0 +1,106 @@
+{
+  "forwards": [
+    {
+      "id": 8480001,
+      "firstName": {"default": "Connor"},
+      "lastName": {"default": "McPlayer"},
+      "sweaterNumber": 97,
+      "positionCode": "C",
+      "shootsCatches": "L",
+      "heightInInches": 73,
+      "weightInPounds": 193,
+      "birthDate": "1997-01-13",
+      "birthCity": {"default": "Richmond Hill"},
+      "birthCountry": "CAN",
+      "headshot": "https://assets.nhle.com/mugs/nhl/20252026/EDM/8480001.png"
+    },
+    {
+      "id": 8480050,
+      "firstName": {"default": "Nathan"},
+      "lastName": {"default": "McSkater"},
+      "sweaterNumber": 29,
+      "positionCode": "C",
+      "shootsCatches": "R",
+      "heightInInches": 71,
+      "weightInPounds": 200,
+      "birthDate": "1995-09-01",
+      "birthCity": {"default": "Halifax"},
+      "birthCountry": "CAN",
+      "headshot": "https://assets.nhle.com/mugs/nhl/20252026/COL/8480050.png"
+    },
+    {
+      "id": 8480051,
+      "firstName": {"default": "Martin"},
+      "lastName": {"default": "Necasek"},
+      "sweaterNumber": 88,
+      "positionCode": "R",
+      "shootsCatches": "R",
+      "heightInInches": 74,
+      "weightInPounds": 185,
+      "birthDate": "1999-01-15",
+      "birthCity": {"default": "Prerov"},
+      "birthCountry": "CZE",
+      "headshot": "https://assets.nhle.com/mugs/nhl/20252026/COL/8480051.png"
+    },
+    {
+      "id": 8480052,
+      "firstName": {"default": "Valeri"},
+      "lastName": {"default": "Nikushkin"},
+      "sweaterNumber": 13,
+      "positionCode": "L",
+      "shootsCatches": "L",
+      "heightInInches": 75,
+      "weightInPounds": 205,
+      "birthDate": "1995-03-05",
+      "birthCity": {"default": "Chelyabinsk"},
+      "birthCountry": "RUS",
+      "headshot": "https://assets.nhle.com/mugs/nhl/20252026/COL/8480052.png"
+    }
+  ],
+  "defensemen": [
+    {
+      "id": 8480060,
+      "firstName": {"default": "Cale"},
+      "lastName": {"default": "Makarov"},
+      "sweaterNumber": 8,
+      "positionCode": "D",
+      "shootsCatches": "L",
+      "heightInInches": 74,
+      "weightInPounds": 187,
+      "birthDate": "1998-10-30",
+      "birthCity": {"default": "Regina"},
+      "birthCountry": "CAN",
+      "headshot": "https://assets.nhle.com/mugs/nhl/20252026/COL/8480060.png"
+    },
+    {
+      "id": 8480061,
+      "firstName": {"default": "Devon"},
+      "lastName": {"default": "Turvey"},
+      "sweaterNumber": 77,
+      "positionCode": "D",
+      "shootsCatches": "R",
+      "heightInInches": 76,
+      "weightInPounds": 215,
+      "birthDate": "1994-08-21",
+      "birthCity": {"default": "New Westminster"},
+      "birthCountry": "CAN",
+      "headshot": "https://assets.nhle.com/mugs/nhl/20252026/COL/8480061.png"
+    }
+  ],
+  "goalies": [
+    {
+      "id": 8480070,
+      "firstName": {"default": "Alex"},
+      "lastName": {"default": "Georgeson"},
+      "sweaterNumber": 40,
+      "positionCode": "G",
+      "shootsCatches": "L",
+      "heightInInches": 73,
+      "weightInPounds": 179,
+      "birthDate": "1996-07-19",
+      "birthCity": {"default": "Batumi"},
+      "birthCountry": "GEO",
+      "headshot": "https://assets.nhle.com/mugs/nhl/20252026/COL/8480070.png"
+    }
+  ]
+}

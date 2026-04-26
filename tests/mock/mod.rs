@@ -111,8 +111,16 @@ fn read_fixture(relative: &str) -> String {
         .unwrap_or_else(|e| panic!("missing fixture {relative}: {e}"))
 }
 
+/// A registered mock handle — used by `assert_all_called()`.
+struct Handle {
+    description: String,
+    mock: httpmock::Mock,
+}
+
 pub struct MockNhlServer {
     server: MockServer,
+    // Tracks every registered mock so assert_all_called() can verify each was hit.
+    handles: std::cell::RefCell<Vec<Handle>>,
 }
 
 impl MockNhlServer {
@@ -120,7 +128,16 @@ impl MockNhlServer {
     pub async fn start() -> Self {
         Self {
             server: MockServer::start_async().await,
+            handles: std::cell::RefCell::new(Vec::new()),
         }
+    }
+
+    /// Register a mock and track its handle for `assert_all_called()`.
+    fn track(&self, description: &str, mock: httpmock::Mock) {
+        self.handles.borrow_mut().push(Handle {
+            description: description.to_owned(),
+            mock,
+        });
     }
 
     /// Base URL to pass to `NhlApiClient::new()` in tests.
@@ -133,13 +150,15 @@ impl MockNhlServer {
     /// Register `GET /v1/roster/{team}/20252026`
     pub fn register_roster(&self, team: &str) {
         let body = read_fixture(&format!("api/roster_{team}.json"));
-        self.server.mock(|when, then| {
+        let desc = format!("GET /v1/roster/{team}/20252026");
+        let mock = self.server.mock(|when, then| {
             when.method(GET)
                 .path(format!("/v1/roster/{team}/20252026"));
             then.status(200)
                 .header("content-type", "application/json")
                 .body(body);
         });
+        self.track(&desc, mock);
     }
 
     /// Register rosters for all 32 teams using the SEA fixture (sufficient for
@@ -265,11 +284,47 @@ impl MockNhlServer {
     // ── Assertion helpers ────────────────────────────────────────────────────
 
     /// Verify that every registered mock was called at least once.
-    /// Call this at the end of your test — a missed mock = a test gap.
+    ///
+    /// Call this at the END of every L1 test. A registered mock that was never
+    /// hit is a test gap — it means the code under test did not exercise the
+    /// path you thought it would.
+    ///
+    /// ```rust
+    /// let mock = MockNhlServer::start().await;
+    /// mock.register_bios_page(1);
+    /// // ... run code under test ...
+    /// mock.assert_all_called(); // panics if bios_page(1) was never requested
+    /// ```
     pub fn assert_all_called(&self) {
-        // httpmock tracks hit counts; this is a manual pass over registered mocks.
-        // The `httpmock` crate's `Mock::assert()` does this per-mock.
-        // Implement by storing handles and calling assert on each.
-        // Placeholder — real implementation uses `Mock` handles stored in a Vec.
+        let handles = self.handles.borrow();
+        let mut failures = Vec::new();
+        for h in handles.iter() {
+            if h.mock.hits() == 0 {
+                failures.push(format!("  NOT CALLED: {}", h.description));
+            }
+        }
+        if !failures.is_empty() {
+            panic!(
+                "MockNhlServer: {} registered mock(s) were never called:\n{}",
+                failures.len(),
+                failures.join("\n")
+            );
+        }
+    }
+
+    /// Assert a specific endpoint was called exactly `n` times.
+    pub fn assert_called_times(&self, description_contains: &str, n: usize) {
+        let handles = self.handles.borrow();
+        for h in handles.iter() {
+            if h.description.contains(description_contains) {
+                assert_eq!(
+                    h.mock.hits(), n,
+                    "Expected '{}' to be called {} time(s), got {}",
+                    h.description, n, h.mock.hits()
+                );
+                return;
+            }
+        }
+        panic!("No registered mock matching '{description_contains}'");
     }
 }
