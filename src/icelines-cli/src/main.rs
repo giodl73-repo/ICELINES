@@ -63,7 +63,9 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
         Commands::Mates => stub("mates"),
         Commands::Group => stub("group"),
         Commands::Scouting => stub("scouting"),
-        Commands::Scheme => stub("scheme"),
+        Commands::Scheme(sub) => {
+            commands::scheme::run(sub).await?;
+        }
         Commands::Dashboard => stub("dashboard"),
     }
     Ok(())

@@ -2,6 +2,7 @@ use crate::cli::FetchSubcommand;
 use crate::config::Config;
 use anyhow::Context;
 use icelines_fetch::{
+    boxscore_client::{aggregate_profiles, BoxscoreClient},
     nhl_api::NhlApiClient,
     snapshot::{today_date, SnapshotStore, SnapshotTier},
 };
@@ -26,11 +27,8 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             do_rosters(&season, refresh, dry_run).await?;
             do_stats(&season, refresh, dry_run).await
         }
-        FetchSubcommand::Positions => {
-            println!(
-                "icelines fetch positions: not yet implemented (Phase 2 — requires shift data)"
-            );
-            Ok(())
+        FetchSubcommand::Positions { season, dry_run } => {
+            do_positions(&season, dry_run).await
         }
     }
 }
@@ -139,5 +137,45 @@ async fn do_stats(season: &str, refresh: bool, dry_run: bool) -> anyhow::Result<
 
     store.seal(&snap).context("sealing stats snapshot")?;
     println!("Snapshot '{snap}' sealed and set as active.");
+    Ok(())
+}
+
+async fn do_positions(season: &str, dry_run: bool) -> anyhow::Result<()> {
+    use icelines_fetch::schema::SkaterBio;
+
+    let cfg   = Config::load()?;
+    let store = SnapshotStore::new(cfg.snapshot_dir());
+    let today = today_date();
+    let snap  = format!("{season}-{today}-positions");
+
+    // Load player IDs from the active Stats snapshot (bios.json).
+    let bios: Vec<SkaterBio> = store
+        .read_tier(&SnapshotTier::Stats, "bios.json")
+        .context("reading bios.json from active Stats snapshot")?;
+
+    let player_ids: Vec<u32> = bios.iter().map(|b| b.player_id).collect();
+
+    if dry_run {
+        println!("Would fetch game logs for {} players", player_ids.len());
+        return Ok(());
+    }
+
+    store
+        .create(&snap, season, SnapshotTier::Positions, None, &today)
+        .context("creating positions snapshot")?;
+
+    let client   = BoxscoreClient::production();
+    let profiles = aggregate_profiles(&player_ids, season, &client).await;
+
+    for profile in &profiles {
+        let json = serde_json::to_vec(profile).context("serializing PositionProfile")?;
+        store
+            .write_file(&snap, &SnapshotTier::Positions, &format!("{}.json", profile.player_id), &json)
+            .with_context(|| format!("writing profile for player {}", profile.player_id))?;
+    }
+
+    store.seal(&snap).context("sealing positions snapshot")?;
+    store.set_active(&snap).context("setting positions snapshot active")?;
+    println!("Fetched positions for {} players", profiles.len());
     Ok(())
 }

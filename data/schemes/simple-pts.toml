@@ -1,0 +1,11 @@
+[scheme]
+name        = "simple-pts"
+description = "Pure hockey points (G+A only, no fantasy bonuses)"
+source      = "custom"
+
+[scoring.skater]
+goals   = 1.0
+assists = 1.0
+
+[scoring.goalie]
+wins = 1.0

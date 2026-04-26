@@ -50,17 +50,19 @@ pub enum SnapshotError {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum SnapshotTier {
-    Rosters,   // Tier 1 — 32 team rosters + headshots
-    Stats,     // Tier 2 — skater bios + season stats
-    Derived,   // Tier 3 — computed scores, depth charts (Phase 3)
+    Rosters,    // Tier 1 — 32 team rosters + headshots
+    Stats,      // Tier 2 — skater bios + season stats
+    Positions,  // Tier 2b — boxscore-derived position eligibility
+    Derived,    // Tier 3 — computed scores, depth charts (Phase 3)
 }
 
 impl SnapshotTier {
     pub fn dir_name(&self) -> &'static str {
         match self {
-            Self::Rosters => "rosters",
-            Self::Stats   => "stats",
-            Self::Derived => "derived",
+            Self::Rosters   => "rosters",
+            Self::Stats     => "stats",
+            Self::Positions => "positions",
+            Self::Derived   => "derived",
         }
     }
 }

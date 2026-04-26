@@ -1,0 +1,23 @@
+[scheme]
+name        = "espn-standard"
+description = "ESPN Fantasy Hockey standard points league"
+source      = "espn"
+
+[scoring.skater]
+goals          = 6.0
+assists        = 4.0
+pp_goals       = 2.0
+pp_assists     = 2.0
+sh_goals       = 3.0
+sh_assists     = 3.0
+gwg            = 1.0
+hits           = 1.0
+blocks         = 1.0
+shots_on_goal  = 1.0
+plus_minus     = 2.0
+
+[scoring.goalie]
+wins          = 5.0
+saves         = 0.2
+goals_against = -2.0
+shutouts      = 5.0

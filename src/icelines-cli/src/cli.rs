@@ -94,8 +94,9 @@ pub enum Commands {
     Group,
     /// Run scouting report for a player or team.
     Scouting,
-    /// Manage color / display schemes.
-    Scheme,
+    /// Manage fantasy scoring schemes.
+    #[command(subcommand)]
+    Scheme(SchemeSubcommand),
     /// Open the metrics dashboard.
     Dashboard,
 }
@@ -132,7 +133,25 @@ pub enum FetchSubcommand {
         dry_run: bool,
     },
     /// Refresh position eligibility from boxscore data (Phase 2).
-    Positions,
+    Positions {
+        #[arg(long, default_value = "20252026")]
+        season: String,
+        #[arg(long)]
+        dry_run: bool,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum SchemeSubcommand {
+    /// List all available schemes (built-in + user-defined).
+    List,
+    /// Show scoring weights for a named scheme.
+    Show { name: String },
+    /// Detect scoreable stats from a Yahoo CSV and create a scheme template.
+    FromCsv {
+        path: String,
+        #[arg(long)] name: Option<String>,
+    },
 }
 
 #[derive(Debug, Subcommand)]

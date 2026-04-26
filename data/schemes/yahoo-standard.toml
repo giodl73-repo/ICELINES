@@ -1,0 +1,22 @@
+[scheme]
+name        = "yahoo-standard"
+description = "Yahoo Fantasy Hockey standard points league"
+source      = "yahoo"
+
+[scoring.skater]
+goals      = 3.0
+assists    = 2.0
+pp_goals   = 1.0
+pp_assists = 0.5
+sh_goals   = 1.0
+sh_assists = 0.5
+gwg        = 0.5
+hits       = 0.5
+blocks     = 0.5
+
+[scoring.goalie]
+wins          = 5.0
+losses        = -2.0
+saves         = 0.15
+goals_against = -1.0
+shutouts      = 4.0
