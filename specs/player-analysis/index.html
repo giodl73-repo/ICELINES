@@ -1,0 +1,2068 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="NHL depth charts, pace-adjusted rankings, and trade analysis for all 32 teams">
+      
+      
+      
+        <link rel="canonical" href="https://giodl73-repo.github.io/ICELINES/specs/player-analysis/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+    
+    
+      
+        <title>IceLines Player Analysis — CLI Specification - IceLines</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/fantasy.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="blue">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#icelines-player-analysis-cli-specification" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="IceLines" class="md-header__button md-logo" aria-label="IceLines" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            IceLines
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              IceLines Player Analysis — CLI Specification
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="blue"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="blue"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/giodl73-repo/ICELINES" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    IceLines
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Tracker
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../teams/COL/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Teams
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="IceLines" class="md-nav__button md-logo" aria-label="IceLines" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    IceLines
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/giodl73-repo/ICELINES" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    IceLines
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Teams
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Teams
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/COL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    COL — Colorado Avalanche
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/TB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TB — Tampa Bay Lightning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/VGK/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VGK — Vegas Golden Knights
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/DAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DAL — Dallas Stars
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/EDM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    EDM — Edmonton Oilers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/PIT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PIT — Pittsburgh Penguins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/MTL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MTL — Montréal Canadiens
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/MIN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MIN — Minnesota Wild
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/OTT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OTT — Ottawa Senators
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/FLA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FLA — Florida Panthers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/SJ/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SJ — San Jose Sharks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/BUF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BUF — Buffalo Sabres
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/ANA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ANA — Anaheim Ducks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/CAR/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CAR — Carolina Hurricanes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/UTA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UTA — Utah Hockey Club
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/BOS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BOS — Boston Bruins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/WSH/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WSH — Washington Capitals
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/DET/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DET — Detroit Red Wings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/CBJ/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CBJ — Columbus Blue Jackets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/TOR/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TOR — Toronto Maple Leafs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/NYI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NYI — New York Islanders
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/NYR/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NYR — New York Rangers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/PHI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PHI — Philadelphia Flyers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/NJ/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJ — New Jersey Devils
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/STL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STL — St. Louis Blues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/LA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LA — Los Angeles Kings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/SEA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SEA — Seattle Kraken
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/NSH/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NSH — Nashville Predators
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/CHI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CHI — Chicago Blackhawks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/WPG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WPG — Winnipeg Jets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/CGY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CGY — Calgary Flames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/VAN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VAN — Vancouver Canucks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#design-principle-everything-composable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design Principle: Everything Composable
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#command-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Command Reference
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Command Reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#icelines-players-list-filter-players" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines players — List &amp; Filter Players
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-class-draft-class-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines class — Draft Class Analysis
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-peers-peer-group-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines peers — Peer Group Comparison
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-history-multi-season-player-history" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines history — Multi-Season Player History
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-mates-linemate-analysis-shift-based" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines mates — Linemate Analysis (Shift-Based)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-group-manage-peer-groups-projects" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines group — Manage Peer Groups / Projects
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-compare-head-to-head-player-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines compare — Head-to-Head Player Comparison
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-scouting-full-player-scouting-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines scouting — Full Player Scouting Report
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-model-extensions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Model Extensions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#new-cli-commands-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New CLI Commands Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#filtering-engine-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Filtering Engine Design
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#persistence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Persistence
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="icelines-player-analysis-cli-specification">IceLines Player Analysis — CLI Specification<a class="headerlink" href="#icelines-player-analysis-cli-specification" title="Permanent link">&para;</a></h1>
+<p><strong>Version</strong>: 0.1<br />
+<strong>Date</strong>: 2026-04-25<br />
+<strong>Status</strong>: Draft<br />
+<strong>Depends on</strong>: <code>docs/specs/rust-cli.md</code>, <code>docs/specs/data-sources.md</code></p>
+<p>The IceLines CLI is not just a depth chart generator. It is the primary interface for player
+analysis, draft class comparison, peer group tracking, linemate discovery, and historical
+context. Everything the original NHL Analysis Platform did as a web app, IceLines does as
+composable CLI commands with structured output.</p>
+<hr />
+<h2 id="design-principle-everything-composable">Design Principle: Everything Composable<a class="headerlink" href="#design-principle-everything-composable" title="Permanent link">&para;</a></h2>
+<p>Every command produces structured output (table, JSON, or CSV with <code>--json</code>/<code>--csv</code> flags).
+This means commands can pipe into each other and into other tools:</p>
+<div class="highlight"><pre><span></span><code>icelines<span class="w"> </span>players<span class="w"> </span>--pos<span class="w"> </span>C<span class="w"> </span>--age-max<span class="w"> </span><span class="m">23</span><span class="w"> </span>--json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">&#39;.[] | .name&#39;</span>
+icelines<span class="w"> </span>class<span class="w"> </span><span class="m">2022</span><span class="w"> </span>--pos<span class="w"> </span>C<span class="w"> </span><span class="p">|</span><span class="w"> </span>icelines<span class="w"> </span>rank<span class="w"> </span>--stdin
+icelines<span class="w"> </span>peers<span class="w"> </span>McDavid<span class="w"> </span>--json<span class="w"> </span>&gt;<span class="w"> </span>peer_group.json
+</code></pre></div>
+<hr />
+<h2 id="command-reference">Command Reference<a class="headerlink" href="#command-reference" title="Permanent link">&para;</a></h2>
+<hr />
+<h3 id="icelines-players-list-filter-players"><code>icelines players</code> — List &amp; Filter Players<a class="headerlink" href="#icelines-players-list-filter-players" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>icelines players [OPTIONS]
+
+Filter Options:
+  --team &lt;ABBREV&gt;         Filter by NHL team (e.g. SEA, NYR)
+  --pos &lt;POS&gt;             Position: C, LW, RW, D, G
+  --age-min &lt;N&gt;           Minimum age (as of season start)
+  --age-max &lt;N&gt;           Maximum age
+  --years-min &lt;N&gt;         Minimum years in NHL (seasons played)
+  --years-max &lt;N&gt;         Maximum years in NHL
+  --nationality &lt;CODE&gt;    ISO country code (CAN, USA, SWE, FIN, RUS, CZE, SVK...)
+  --region &lt;REGION&gt;       Broader region: North America, Europe, Scandinavia
+  --draft-year &lt;YEAR&gt;     Draft year (e.g. 2021)
+  --draft-round &lt;N&gt;       Draft round (1, 2, 3...)
+  --draft-pick-max &lt;N&gt;    Drafted at or before this overall pick
+  --undrafted             Only undrafted players
+  --rookie                Only players in their first NHL season
+  --handedness &lt;L|R&gt;      Shooting/catching hand
+  --ppg-min &lt;F&gt;           Minimum PPG pace (e.g. 0.60)
+  --ppg-max &lt;F&gt;           Maximum PPG pace
+  --gp-min &lt;N&gt;            Minimum games played
+  --toi-min &lt;F&gt;           Minimum avg ES-TOI per game (minutes)
+
+Output Options:
+  --sort &lt;FIELD&gt;          Sort by: ppg (default), goals, assists, age, draft
+  --limit &lt;N&gt;             Max rows [default: 25]
+  --json                  JSON output
+  --csv                   CSV output
+</code></pre></div>
+<p><strong>Examples:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># All U23 North American centers, sorted by PPG pace</span>
+icelines<span class="w"> </span>players<span class="w"> </span>--pos<span class="w"> </span>C<span class="w"> </span>--age-max<span class="w"> </span><span class="m">23</span><span class="w"> </span>--region<span class="w"> </span><span class="s2">&quot;North America&quot;</span><span class="w"> </span>--sort<span class="w"> </span>ppg
+
+<span class="c1"># All first-round picks from 2020-2022 who are playing this season</span>
+icelines<span class="w"> </span>players<span class="w"> </span>--draft-year<span class="w"> </span><span class="m">2020</span><span class="w"> </span>--draft-round<span class="w"> </span><span class="m">1</span><span class="w"> </span>--gp-min<span class="w"> </span><span class="m">20</span>
+icelines<span class="w"> </span>players<span class="w"> </span>--draft-year<span class="w"> </span><span class="m">2021</span><span class="w"> </span>--draft-round<span class="w"> </span><span class="m">1</span><span class="w"> </span>--gp-min<span class="w"> </span><span class="m">20</span>
+icelines<span class="w"> </span>players<span class="w"> </span>--draft-year<span class="w"> </span><span class="m">2022</span><span class="w"> </span>--draft-round<span class="w"> </span><span class="m">1</span><span class="w"> </span>--gp-min<span class="w"> </span><span class="m">20</span>
+
+<span class="c1"># Swedish defensemen with &gt;16:00 ES-TOI per game</span>
+icelines<span class="w"> </span>players<span class="w"> </span>--pos<span class="w"> </span>D<span class="w"> </span>--nationality<span class="w"> </span>SWE<span class="w"> </span>--toi-min<span class="w"> </span><span class="m">16</span>
+
+<span class="c1"># Undrafted players producing at a 0.50+ PPG pace</span>
+icelines<span class="w"> </span>players<span class="w"> </span>--undrafted<span class="w"> </span>--ppg-min<span class="w"> </span><span class="m">0</span>.50
+</code></pre></div>
+<p><strong>Terminal output:</strong></p>
+<div class="highlight"><pre><span></span><code>PLAYERS — C · Age ≤23 · North America  (23 players)
+
+ Rank  Player               Team  Age  Nat  GP    PPG    G/82  A/82  Draft
+────────────────────────────────────────────────────────────────────────────
+    1  Macklin Celebrini    SJ    19   CAN  74   1.24   49.5  52.2  24 R1#1
+    2  Matty Beniers        SEA   22   USA  82   0.61   20.0  30.0  22 R1#2
+    3  Logan Cooley         UTA   21   USA  68   0.58   18.2  29.5  22 R1#3
+    4  Dylan Guenther       UTA   21   CAN  79   0.65   26.1  27.3  22 R1#9
+</code></pre></div>
+<hr />
+<h3 id="icelines-class-draft-class-analysis"><code>icelines class</code> — Draft Class Analysis<a class="headerlink" href="#icelines-class-draft-class-analysis" title="Permanent link">&para;</a></h3>
+<p>Group all players from a given draft year, show how the class is performing as a cohort.</p>
+<div class="highlight"><pre><span></span><code>icelines class &lt;YEAR&gt; [OPTIONS]
+
+Arguments:
+  &lt;YEAR&gt;              Draft year (2018–current)
+
+Options:
+  --pos &lt;POS&gt;         Filter by position
+  --round &lt;N&gt;         Filter by draft round
+  --compare &lt;YEAR&gt;    Side-by-side with another draft class
+  --years-in &lt;N&gt;      Show class at N years in (e.g. --years-in 3)
+  --sort &lt;FIELD&gt;      ppg (default), goals, draft-pick
+  --json
+</code></pre></div>
+<p><strong>Examples:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># How is the 2022 draft class performing in their 3rd year?</span>
+icelines<span class="w"> </span>class<span class="w"> </span><span class="m">2022</span><span class="w"> </span>--years-in<span class="w"> </span><span class="m">3</span><span class="w"> </span>--pos<span class="w"> </span>C
+
+<span class="c1"># Compare 2021 and 2022 first-round center classes</span>
+icelines<span class="w"> </span>class<span class="w"> </span><span class="m">2021</span><span class="w"> </span>--pos<span class="w"> </span>C<span class="w"> </span>--round<span class="w"> </span><span class="m">1</span><span class="w"> </span>--compare<span class="w"> </span><span class="m">2022</span>
+</code></pre></div>
+<p><strong>Terminal output:</strong></p>
+<div class="highlight"><pre><span></span><code>DRAFT CLASS 2022 — Centers · Year 3 in NHL
+
+ Pick  Player               Team  GP    PPG    G/82  Note
+────────────────────────────────────────────────────────────
+   #1  Juraj Slafkovský     MTL   71   0.89   23.1  ★ elite
+   #2  Simon Nemec          NJ    66   0.51   10.1
+   #3  Logan Cooley         UTA   68   0.58   18.2
+   #6  Matty Beniers        SEA   82   0.61   20.0
+   #9  Dylan Guenther       UTA   79   0.65   26.1  ★ elite
+  ...
+CLASS MEDIAN PPG: 0.45  |  Class Hits (&gt;0.70 PPG): 4/32
+</code></pre></div>
+<hr />
+<h3 id="icelines-peers-peer-group-comparison"><code>icelines peers</code> — Peer Group Comparison<a class="headerlink" href="#icelines-peers-peer-group-comparison" title="Permanent link">&para;</a></h3>
+<p>Find a player's peer group — players with similar age, position, and draft era — and show
+how they compare. This answers: "Is this player performing as expected for who they are?"</p>
+<div class="highlight"><pre><span></span><code>icelines peers &lt;PLAYER&gt; [OPTIONS]
+
+Arguments:
+  &lt;PLAYER&gt;              Player name (partial match OK)
+
+Options:
+  --by draft-class      Peers = same draft year ± 1 (default)
+  --by age              Peers = ±1 year age window at same position
+  --by pick-range       Peers = within 15 picks in same draft
+  --size &lt;N&gt;            Peer group size [default: 10]
+  --json
+</code></pre></div>
+<p><strong>Examples:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Where does Beniers rank among his draft class peers?</span>
+icelines<span class="w"> </span>peers<span class="w"> </span><span class="s2">&quot;Matty Beniers&quot;</span>
+
+<span class="c1"># Where does Eberle rank among his age-matched RW peers?</span>
+icelines<span class="w"> </span>peers<span class="w"> </span><span class="s2">&quot;Jordan Eberle&quot;</span><span class="w"> </span>--by<span class="w"> </span>age
+</code></pre></div>
+<p><strong>Terminal output:</strong></p>
+<div class="highlight"><pre><span></span><code>PEERS OF MATTY BENIERS (SEA · C · Age 22 · 2022 R1#2)
+Peer group: 2022 first-round centers ± 5 picks
+
+ Rank  Player               Team  Age  GP    PPG    vs. Beniers
+────────────────────────────────────────────────────────────────
+    1  Logan Cooley         UTA   21   68   0.58   +0.03 ahead
+  → 2  Matty Beniers        SEA   22   82   0.61   —
+    3  Dylan Guenther       UTA   21   79   0.65   -0.04 behind
+    4  Matvei Michkov       PHI   20   71   0.72   -0.11 behind
+────────────────────────────────────────────────────────────────
+Beniers rank: 2 of 4 peers  |  PPG percentile in group: 75th
+</code></pre></div>
+<hr />
+<h3 id="icelines-history-multi-season-player-history"><code>icelines history</code> — Multi-Season Player History<a class="headerlink" href="#icelines-history-multi-season-player-history" title="Permanent link">&para;</a></h3>
+<p>Show a player's production across every NHL season they have played.</p>
+<div class="highlight"><pre><span></span><code>icelines history &lt;PLAYER&gt; [OPTIONS]
+
+Options:
+  --seasons &lt;N&gt;       How many seasons back [default: 5]
+  --stat &lt;FIELD&gt;      Highlight stat: ppg (default), goals, assists, toi
+  --pace              Normalize everything to 82-game pace
+  --json
+</code></pre></div>
+<p><strong>Examples:</strong></p>
+<div class="highlight"><pre><span></span><code>icelines<span class="w"> </span><span class="nb">history</span><span class="w"> </span><span class="s2">&quot;Jordan Eberle&quot;</span><span class="w"> </span>--pace
+icelines<span class="w"> </span><span class="nb">history</span><span class="w"> </span><span class="s2">&quot;Connor McDavid&quot;</span><span class="w"> </span>--seasons<span class="w"> </span><span class="m">10</span><span class="w"> </span>--stat<span class="w"> </span>ppg
+</code></pre></div>
+<p><strong>Terminal output:</strong></p>
+<div class="highlight"><pre><span></span><code>JORDAN EBERLE — Career History (82-game pace)
+
+ Season  Team  GP   G/82  A/82  PPG   TOI/G   Age
+───────────────────────────────────────────────────
+ 25–26   SEA   80   27.1  56.6  0.69  16:42   35
+ 24–25   SEA   74   22.8  42.2  0.55  15:58   34
+ 23–24   SEA   69   28.1  51.2  0.63  17:02   33
+ 22–23   SEA   77   26.0  47.8  0.60  16:45   32
+ 21–22   SEA   67   30.1  54.1  0.67  17:10   31
+───────────────────────────────────────────────────
+Career pace avg: 0.63 PPG  |  Peak season: 25-26 (0.69)
+</code></pre></div>
+<hr />
+<h3 id="icelines-mates-linemate-analysis-shift-based"><code>icelines mates</code> — Linemate Analysis (Shift-Based)<a class="headerlink" href="#icelines-mates-linemate-analysis-shift-based" title="Permanent link">&para;</a></h3>
+<p>Using shift data, identify who each player actually played with most frequently and how the
+line combinations performed.</p>
+<div class="highlight"><pre><span></span><code>icelines mates &lt;PLAYER&gt; [OPTIONS]
+
+Options:
+  --top &lt;N&gt;           Top N line partners [default: 5]
+  --min-shifts &lt;N&gt;    Minimum shared shifts to include [default: 50]
+  --season &lt;YEAR&gt;     Season [default: current]
+  --json
+</code></pre></div>
+<p><strong>Examples:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Who does Beniers actually play with most?</span>
+icelines<span class="w"> </span>mates<span class="w"> </span><span class="s2">&quot;Matty Beniers&quot;</span>
+
+<span class="c1"># Who has Tolvanen been linemates with across the season?</span>
+icelines<span class="w"> </span>mates<span class="w"> </span><span class="s2">&quot;Eeli Tolvanen&quot;</span><span class="w"> </span>--top<span class="w"> </span><span class="m">8</span>
+</code></pre></div>
+<p><strong>Terminal output:</strong></p>
+<div class="highlight"><pre><span></span><code>LINEMATES OF MATTY BENIERS (SEA · C)
+Based on 1,247 tracked shifts this season
+
+ Partner              Pos  Shared Shifts  ES-TOI Together  GF%  xGF%
+──────────────────────────────────────────────────────────────────────
+ Jordan Eberle        RW        412          148:22         55%   54%
+ Eeli Tolvanen        LW        387          140:08         52%   53%
+ Bobby McMann         LW        198           71:30         48%   51%
+ Kaapo Kakko          RW        156           56:12         50%   49%
+──────────────────────────────────────────────────────────────────────
+Primary line: Tolvanen — Beniers — Eberle (387/412 shifts together)
+</code></pre></div>
+<hr />
+<h3 id="icelines-group-manage-peer-groups-projects"><code>icelines group</code> — Manage Peer Groups / Projects<a class="headerlink" href="#icelines-group-manage-peer-groups-projects" title="Permanent link">&para;</a></h3>
+<p>Custom collections of players — draft classes, watchlists, trade targets, prospect pools.
+Groups persist to <code>~/.icelines/groups.json</code>.</p>
+<div class="highlight"><pre><span></span><code>icelines group &lt;SUBCOMMAND&gt;
+
+Subcommands:
+  create &lt;NAME&gt; [--desc TEXT]         Create an empty group
+  add &lt;GROUP&gt; &lt;PLAYER&gt;                Add a player to a group
+  remove &lt;GROUP&gt; &lt;PLAYER&gt;             Remove a player
+  list                                List all groups
+  show &lt;GROUP&gt;                        Show group members with current stats
+  delete &lt;GROUP&gt;                      Delete a group
+  export &lt;GROUP&gt;                      Export group to CSV/JSON
+  compare &lt;GROUP1&gt; &lt;GROUP2&gt;           Side-by-side group comparison
+  auto --draft-year &lt;Y&gt; --pos &lt;P&gt;     Auto-populate from draft class + position
+</code></pre></div>
+<p><strong>Examples:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Create a &quot;2022 C prospects&quot; watchlist</span>
+icelines<span class="w"> </span>group<span class="w"> </span>create<span class="w"> </span><span class="s2">&quot;2022-C-Class&quot;</span><span class="w"> </span>--desc<span class="w"> </span><span class="s2">&quot;2022 draft class centers&quot;</span>
+icelines<span class="w"> </span>group<span class="w"> </span>auto<span class="w"> </span><span class="s2">&quot;2022-C-Class&quot;</span><span class="w"> </span>--draft-year<span class="w"> </span><span class="m">2022</span><span class="w"> </span>--pos<span class="w"> </span>C
+
+<span class="c1"># Create a trade targets group</span>
+icelines<span class="w"> </span>group<span class="w"> </span>create<span class="w"> </span><span class="s2">&quot;Trade Targets&quot;</span><span class="w"> </span>--desc<span class="w"> </span><span class="s2">&quot;SEA trade candidates&quot;</span>
+icelines<span class="w"> </span>group<span class="w"> </span>add<span class="w"> </span><span class="s2">&quot;Trade Targets&quot;</span><span class="w"> </span><span class="s2">&quot;Brady Tkachuk&quot;</span>
+icelines<span class="w"> </span>group<span class="w"> </span>add<span class="w"> </span><span class="s2">&quot;Trade Targets&quot;</span><span class="w"> </span><span class="s2">&quot;Devon Toews&quot;</span>
+icelines<span class="w"> </span>group<span class="w"> </span>show<span class="w"> </span><span class="s2">&quot;Trade Targets&quot;</span>
+
+<span class="c1"># Compare two groups</span>
+icelines<span class="w"> </span>group<span class="w"> </span>compare<span class="w"> </span><span class="s2">&quot;2021-C-Class&quot;</span><span class="w"> </span><span class="s2">&quot;2022-C-Class&quot;</span>
+</code></pre></div>
+<p><strong><code>show</code> output:</strong></p>
+<div class="highlight"><pre><span></span><code>GROUP: 2022-C-Class  (7 members)
+&quot;2022 draft class centers&quot;
+
+ Rank  Player               Team  Age  GP    PPG    G/82  Draft Pos
+──────────────────────────────────────────────────────────────────────
+    1  Matvei Michkov       PHI   20   71   0.72   26.0  R1#7
+    2  Dylan Guenther       UTA   21   79   0.65   26.1  R1#9
+    3  Matty Beniers        SEA   22   82   0.61   20.0  R1#2
+    4  Logan Cooley         UTA   21   68   0.58   18.2  R1#3
+    5  Juraj Slafkovský     MTL   22   71   0.89   23.1  R1#1
+──────────────────────────────────────────────────────────────────────
+Group median PPG: 0.65  |  Group GP median: 74
+</code></pre></div>
+<hr />
+<h3 id="icelines-compare-head-to-head-player-comparison"><code>icelines compare</code> — Head-to-Head Player Comparison<a class="headerlink" href="#icelines-compare-head-to-head-player-comparison" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>icelines compare &lt;PLAYER1&gt; &lt;PLAYER2&gt; [OPTIONS]
+
+Options:
+  --pace              Normalize to 82-game pace (default)
+  --raw               Show raw season totals
+  --history &lt;N&gt;       Include last N seasons
+  --json
+</code></pre></div>
+<p><strong>Example:</strong></p>
+<div class="highlight"><pre><span></span><code>icelines<span class="w"> </span>compare<span class="w"> </span><span class="s2">&quot;Matty Beniers&quot;</span><span class="w"> </span><span class="s2">&quot;Logan Cooley&quot;</span>
+</code></pre></div>
+<p><strong>Output:</strong></p>
+<div class="highlight"><pre><span></span><code>HEAD-TO-HEAD COMPARISON  (82-game pace)
+
+                         Matty Beniers     Logan Cooley
+                         SEA · C · 22      UTA · C · 21
+────────────────────────────────────────────────────────
+ Draft                   2022 R1 #2        2022 R1 #3
+ GP this season          82                68
+ PPG                     0.61              0.58
+ G/82                    20.0              18.2
+ A/82                    30.0              29.5
+ ES TOI/G                16:42             15:58
+ Zone Start %            51%               56%
+ Avg line (32 teams)     3.23              3.45
+ Fit on own team         ~ solid           ~ solid
+────────────────────────────────────────────────────────
+Edge: BENIERS by 0.03 PPG; COOLEY by 5% Zone Start
+</code></pre></div>
+<hr />
+<h3 id="icelines-scouting-full-player-scouting-report"><code>icelines scouting</code> — Full Player Scouting Report<a class="headerlink" href="#icelines-scouting-full-player-scouting-report" title="Permanent link">&para;</a></h3>
+<p>Combines bio, career history, pace stats, peer ranking, linemates, and fit classification
+into a single formatted report.</p>
+<div class="highlight"><pre><span></span><code>icelines scouting &lt;PLAYER&gt; [OPTIONS]
+
+Options:
+  --format terminal (default) | markdown | json
+  --out &lt;FILE&gt;        Write to file instead of stdout
+</code></pre></div>
+<p><strong>Output sections:</strong>
+1. Bio (age, nationality, draft, handedness)
+2. Current season pace stats
+3. Career trajectory (3-year pace trend)
+4. Peer group rank (draft class percentile)
+5. Linemate analysis (primary line partners)
+6. Depth chart position on own team
+7. Cross-team value (avg line on other 31 teams)
+8. Fit classification and interpretation</p>
+<hr />
+<h2 id="data-model-extensions">Data Model Extensions<a class="headerlink" href="#data-model-extensions" title="Permanent link">&para;</a></h2>
+<p>These new commands require extending <code>icelines-core</code> with:</p>
+<div class="highlight"><pre><span></span><code><span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">PlayerBio</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">player_id</span><span class="p">:</span><span class="w">     </span><span class="kt">u32</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">full_name</span><span class="p">:</span><span class="w">     </span><span class="nb">String</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">birth_date</span><span class="p">:</span><span class="w">    </span><span class="nc">NaiveDate</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">nationality</span><span class="p">:</span><span class="w">   </span><span class="nb">String</span><span class="p">,</span><span class="w">           </span><span class="c1">// ISO-3166 alpha-3</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">region</span><span class="p">:</span><span class="w">        </span><span class="nc">Region</span><span class="p">,</span><span class="w">           </span><span class="c1">// NorthAmerica | Europe | Scandinavia | Other</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">shoots</span><span class="p">:</span><span class="w">        </span><span class="nc">Hand</span><span class="p">,</span><span class="w">             </span><span class="c1">// L | R</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">draft</span><span class="p">:</span><span class="w">         </span><span class="nb">Option</span><span class="o">&lt;</span><span class="n">DraftInfo</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">rookie_season</span><span class="p">:</span><span class="w"> </span><span class="nb">Option</span><span class="o">&lt;</span><span class="n">Season</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">league_bg</span><span class="p">:</span><span class="w">     </span><span class="nc">LeagueBackground</span><span class="p">,</span><span class="w"> </span><span class="c1">// NCAA | OHL | WHL | QMJHL | SHL | Liiga | KHL | Other</span>
+<span class="p">}</span>
+
+<span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">DraftInfo</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">year</span><span class="p">:</span><span class="w">    </span><span class="kt">u16</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">round</span><span class="p">:</span><span class="w">   </span><span class="kt">u8</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">overall</span><span class="p">:</span><span class="w"> </span><span class="kt">u16</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">team</span><span class="p">:</span><span class="w">    </span><span class="nb">String</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="k">pub</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="nc">Region</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">NorthAmerica</span><span class="p">,</span><span class="w">  </span><span class="c1">// CAN + USA</span>
+<span class="w">    </span><span class="n">Scandinavia</span><span class="p">,</span><span class="w">   </span><span class="c1">// SWE + FIN + NOR + DEN</span>
+<span class="w">    </span><span class="n">CentralEurope</span><span class="p">,</span><span class="w"> </span><span class="c1">// CZE + SVK + AUT + SUI</span>
+<span class="w">    </span><span class="n">Russia</span><span class="p">,</span>
+<span class="w">    </span><span class="n">Other</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">PlayerGroup</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">id</span><span class="p">:</span><span class="w">          </span><span class="nc">uuid</span><span class="p">::</span><span class="n">Uuid</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">name</span><span class="p">:</span><span class="w">        </span><span class="nb">String</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">description</span><span class="p">:</span><span class="w"> </span><span class="nb">Option</span><span class="o">&lt;</span><span class="nb">String</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">created_at</span><span class="p">:</span><span class="w">  </span><span class="nc">DateTime</span><span class="o">&lt;</span><span class="n">Utc</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">members</span><span class="p">:</span><span class="w">     </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="kt">u32</span><span class="o">&gt;</span><span class="p">,</span><span class="w">         </span><span class="c1">// player_ids</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">tags</span><span class="p">:</span><span class="w">        </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="nb">String</span><span class="o">&gt;</span><span class="p">,</span><span class="w">      </span><span class="c1">// e.g. [&quot;draft-class&quot;, &quot;2022&quot;, &quot;C&quot;]</span>
+<span class="p">}</span>
+
+<span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">SeasonHistory</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">player_id</span><span class="p">:</span><span class="w"> </span><span class="kt">u32</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">seasons</span><span class="p">:</span><span class="w">   </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">SeasonLine</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">SeasonLine</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">season</span><span class="p">:</span><span class="w">  </span><span class="nc">Season</span><span class="p">,</span><span class="w">   </span><span class="c1">// e.g. &quot;20252026&quot;</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">team</span><span class="p">:</span><span class="w">    </span><span class="nb">String</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">gp</span><span class="p">:</span><span class="w">      </span><span class="kt">u32</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">goals</span><span class="p">:</span><span class="w">   </span><span class="kt">u32</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">assists</span><span class="p">:</span><span class="w"> </span><span class="kt">u32</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">ppg</span><span class="p">:</span><span class="w">     </span><span class="kt">f32</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">toi_pg</span><span class="p">:</span><span class="w">  </span><span class="kt">f32</span><span class="p">,</span><span class="w">      </span><span class="c1">// seconds per game</span>
+<span class="p">}</span>
+</code></pre></div>
+<hr />
+<h2 id="new-cli-commands-summary">New CLI Commands Summary<a class="headerlink" href="#new-cli-commands-summary" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Phase</th>
+<th>Key Flags</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>icelines players</code></td>
+<td>1</td>
+<td>--pos, --age, --nationality, --region, --draft-year, --ppg-min</td>
+</tr>
+<tr>
+<td><code>icelines class &lt;YEAR&gt;</code></td>
+<td>1</td>
+<td>--pos, --round, --compare, --years-in</td>
+</tr>
+<tr>
+<td><code>icelines peers &lt;PLAYER&gt;</code></td>
+<td>1</td>
+<td>--by draft-class|age|pick-range</td>
+</tr>
+<tr>
+<td><code>icelines history &lt;PLAYER&gt;</code></td>
+<td>2</td>
+<td>--seasons, --pace</td>
+</tr>
+<tr>
+<td><code>icelines compare &lt;P1&gt; &lt;P2&gt;</code></td>
+<td>1</td>
+<td>--pace, --history</td>
+</tr>
+<tr>
+<td><code>icelines mates &lt;PLAYER&gt;</code></td>
+<td>2</td>
+<td>--top, --min-shifts (requires Tier 3 data)</td>
+</tr>
+<tr>
+<td><code>icelines group &lt;CMD&gt;</code></td>
+<td>1</td>
+<td>create, add, show, compare, auto</td>
+</tr>
+<tr>
+<td><code>icelines scouting &lt;PLAYER&gt;</code></td>
+<td>2</td>
+<td>--format, --out</td>
+</tr>
+</tbody>
+</table>
+<p>Phase 1 = build with Tier 1+2 data (Yahoo CSV + NHL bios/stats)<br />
+Phase 2 = add Tier 3 data (shifts) for mates + enhanced scouting</p>
+<hr />
+<h2 id="filtering-engine-design">Filtering Engine Design<a class="headerlink" href="#filtering-engine-design" title="Permanent link">&para;</a></h2>
+<p>All filter commands go through a shared <code>PlayerFilter</code> builder in <code>icelines-core</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">PlayerFilter</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">teams</span><span class="p">:</span><span class="w">        </span><span class="nb">Option</span><span class="o">&lt;</span><span class="nb">Vec</span><span class="o">&lt;</span><span class="nb">String</span><span class="o">&gt;&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">positions</span><span class="p">:</span><span class="w">    </span><span class="nb">Option</span><span class="o">&lt;</span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">Position</span><span class="o">&gt;&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">age_range</span><span class="p">:</span><span class="w">    </span><span class="nb">Option</span><span class="o">&lt;</span><span class="p">(</span><span class="kt">u8</span><span class="p">,</span><span class="w"> </span><span class="kt">u8</span><span class="p">)</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">years_range</span><span class="p">:</span><span class="w">  </span><span class="nb">Option</span><span class="o">&lt;</span><span class="p">(</span><span class="kt">u8</span><span class="p">,</span><span class="w"> </span><span class="kt">u8</span><span class="p">)</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">nationalities</span><span class="p">:</span><span class="nb">Option</span><span class="o">&lt;</span><span class="nb">Vec</span><span class="o">&lt;</span><span class="nb">String</span><span class="o">&gt;&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">regions</span><span class="p">:</span><span class="w">      </span><span class="nb">Option</span><span class="o">&lt;</span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">Region</span><span class="o">&gt;&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">draft_years</span><span class="p">:</span><span class="w">  </span><span class="nb">Option</span><span class="o">&lt;</span><span class="nb">Vec</span><span class="o">&lt;</span><span class="kt">u16</span><span class="o">&gt;&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">draft_rounds</span><span class="p">:</span><span class="w"> </span><span class="nb">Option</span><span class="o">&lt;</span><span class="nb">Vec</span><span class="o">&lt;</span><span class="kt">u8</span><span class="o">&gt;&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">pick_max</span><span class="p">:</span><span class="w">     </span><span class="nb">Option</span><span class="o">&lt;</span><span class="kt">u16</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">undrafted</span><span class="p">:</span><span class="w">    </span><span class="nb">Option</span><span class="o">&lt;</span><span class="kt">bool</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">rookie_only</span><span class="p">:</span><span class="w">  </span><span class="nb">Option</span><span class="o">&lt;</span><span class="kt">bool</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">ppg_range</span><span class="p">:</span><span class="w">    </span><span class="nb">Option</span><span class="o">&lt;</span><span class="p">(</span><span class="kt">f32</span><span class="p">,</span><span class="w"> </span><span class="kt">f32</span><span class="p">)</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">gp_min</span><span class="p">:</span><span class="w">       </span><span class="nb">Option</span><span class="o">&lt;</span><span class="kt">u32</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">toi_min</span><span class="p">:</span><span class="w">      </span><span class="nb">Option</span><span class="o">&lt;</span><span class="kt">f32</span><span class="o">&gt;</span><span class="p">,</span><span class="w">   </span><span class="c1">// minutes per game</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">handedness</span><span class="p">:</span><span class="w">   </span><span class="nb">Option</span><span class="o">&lt;</span><span class="n">Hand</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="k">impl</span><span class="w"> </span><span class="n">PlayerFilter</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">players</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="p">[</span><span class="n">PlayerRecord</span><span class="p">])</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;&amp;</span><span class="n">PlayerRecord</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">..</span><span class="p">.</span><span class="w"> </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>This single filter type is used by <code>players</code>, <code>class</code>, <code>peers</code>, <code>group auto</code>, and any
+future command that needs player subsetting. New filter dimensions are added in one place.</p>
+<hr />
+<h2 id="persistence">Persistence<a class="headerlink" href="#persistence" title="Permanent link">&para;</a></h2>
+<p>Groups and custom data persist to <code>~/.icelines/</code>:</p>
+<div class="highlight"><pre><span></span><code>~/.icelines/
+├── cache/           — API response cache (see data-sources.md)
+├── db/
+│   └── icelines.db  — SQLite: PlayerRecord, ShiftProfile, SeasonHistory
+└── groups.json      — PlayerGroup definitions (portable, human-readable)
+</code></pre></div>
+<p><code>groups.json</code> is intentionally plain JSON — users can hand-edit, commit to a dotfiles repo,
+or share with others. Player IDs are NHL canonical IDs so groups are portable across CSV exports.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.indexes", "navigation.top", "search.highlight", "search.suggest", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

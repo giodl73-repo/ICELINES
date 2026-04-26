@@ -1,0 +1,2144 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="NHL depth charts, pace-adjusted rankings, and trade analysis for all 32 teams">
+      
+      
+      
+        <link rel="canonical" href="https://giodl73-repo.github.io/ICELINES/specs/rust-cli/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+    
+    
+      
+        <title>IceLines Rust CLI — Full Specification - IceLines</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/fantasy.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="blue">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#icelines-rust-cli-full-specification" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="IceLines" class="md-header__button md-logo" aria-label="IceLines" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            IceLines
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              IceLines Rust CLI — Full Specification
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="blue"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="blue"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/giodl73-repo/ICELINES" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    IceLines
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Tracker
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../teams/COL/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Teams
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="IceLines" class="md-nav__button md-logo" aria-label="IceLines" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    IceLines
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/giodl73-repo/ICELINES" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    IceLines
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Teams
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Teams
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/COL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    COL — Colorado Avalanche
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/TB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TB — Tampa Bay Lightning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/VGK/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VGK — Vegas Golden Knights
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/DAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DAL — Dallas Stars
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/EDM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    EDM — Edmonton Oilers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/PIT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PIT — Pittsburgh Penguins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/MTL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MTL — Montréal Canadiens
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/MIN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MIN — Minnesota Wild
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/OTT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OTT — Ottawa Senators
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/FLA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FLA — Florida Panthers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/SJ/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SJ — San Jose Sharks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/BUF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BUF — Buffalo Sabres
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/ANA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ANA — Anaheim Ducks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/CAR/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CAR — Carolina Hurricanes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/UTA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UTA — Utah Hockey Club
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/BOS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BOS — Boston Bruins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/WSH/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WSH — Washington Capitals
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/DET/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DET — Detroit Red Wings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/CBJ/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CBJ — Columbus Blue Jackets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/TOR/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TOR — Toronto Maple Leafs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/NYI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NYI — New York Islanders
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/NYR/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NYR — New York Rangers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/PHI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PHI — Philadelphia Flyers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/NJ/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJ — New Jersey Devils
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/STL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STL — St. Louis Blues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/LA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LA — Los Angeles Kings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/SEA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SEA — Seattle Kraken
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/NSH/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NSH — Nashville Predators
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/CHI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CHI — Chicago Blackhawks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/WPG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WPG — Winnipeg Jets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/CGY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CGY — Calgary Flames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/VAN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VAN — Vancouver Canucks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-problem-statement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Problem Statement
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-commands-specification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Commands Specification
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Commands Specification">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#icelines-fetch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines fetch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-build" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines build
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-serve" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines serve
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-deploy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines deploy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-team-team" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines team &lt;TEAM&gt;
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-rank" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines rank
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-compare-t1-t2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines compare &lt;T1&gt; &lt;T2&gt;
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-crate-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Crate Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Crate Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#icelines-core" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines-core
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-fetch_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines-fetch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-site" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines-site
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icelines-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icelines-cli
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-data-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Data Model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-scoring-algorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Scoring Algorithm
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Scoring Algorithm">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51-pace-projection-formula" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 Pace Projection Formula
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-fit-classification-thresholds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 Fit Classification Thresholds
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-site-generation-approach" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Site Generation Approach
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-error-handling-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Error Handling Strategy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Non-Goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="icelines-rust-cli-full-specification">IceLines Rust CLI — Full Specification<a class="headerlink" href="#icelines-rust-cli-full-specification" title="Permanent link">&para;</a></h1>
+<p><strong>Version</strong>: 0.1<br />
+<strong>Date</strong>: 2026-04-25<br />
+<strong>Status</strong>: Draft — pre-implementation</p>
+<hr />
+<h2 id="1-problem-statement">1. Problem Statement<a class="headerlink" href="#1-problem-statement" title="Permanent link">&para;</a></h2>
+<p>IceLines began as a collection of Python scripts stitched together with shell glue: one script
+to read the Yahoo CSV, one to hit the NHL API, one to render Jinja2 templates, one to invoke
+mkdocs. Each script works in isolation. The pipeline is not.</p>
+<p>Problems with the current approach:</p>
+<ul>
+<li><strong>No shared data model.</strong> Each script reinvents player record parsing, producing subtle
+  inconsistencies in field naming, position normalization, and GP handling.</li>
+<li><strong>No error surface.</strong> A player whose name fails to match the NHL API is silently dropped.
+  There is no structured error type, no recovery, and no user-facing message.</li>
+<li><strong>No caching.</strong> Every run hits the NHL API for all players. During a 500-player CSV run,
+  this means hundreds of HTTP requests, rate-limit exposure, and no resumability.</li>
+<li><strong>No CLI contract.</strong> Users run scripts directly with hardcoded paths. There is no <code>--help</code>,
+  no argument validation, no subcommand structure.</li>
+<li><strong>No testability.</strong> The scoring logic is embedded in script globals, untestable in isolation.</li>
+</ul>
+<p>The Rust CLI solves all of these with a workspace of focused crates, a typed data model, a
+cache-first fetch layer, and a clap-based CLI with clear subcommands. The site generation
+output (mkdocs) remains the same format, but the generator is now a Rust function called from
+<code>icelines build</code>, not a Python script.</p>
+<p><strong>Why Rust?</strong></p>
+<ul>
+<li>The scoring engine (pace projection, fit classification, depth chart construction) is a
+  pure computation with no I/O. Rust makes invalid states unrepresentable and eliminates
+  a category of runtime errors.</li>
+<li>The fetch layer (NHL API client) benefits from async/await and reqwest, with the
+  cache layer implemented as simple file I/O — no external dependencies.</li>
+<li>The site generator does not need a Python runtime or venv management.</li>
+<li>The CLI is a single binary that can be distributed without interpreter installation.</li>
+</ul>
+<hr />
+<h2 id="2-commands-specification">2. Commands Specification<a class="headerlink" href="#2-commands-specification" title="Permanent link">&para;</a></h2>
+<h3 id="icelines-fetch"><code>icelines fetch</code><a class="headerlink" href="#icelines-fetch" title="Permanent link">&para;</a></h3>
+<p>Fetch NHL games-played data for all players in the current CSV and write to local cache.</p>
+<div class="highlight"><pre><span></span><code>icelines fetch [OPTIONS]
+
+Options:
+  --csv &lt;PATH&gt;       Path to Yahoo Fantasy Hockey CSV export [default: data/fantasy.csv]
+  --season &lt;YEAR&gt;    NHL season year (e.g. 2024 for 2023-24) [default: current]
+  --refresh          Invalidate cache and re-fetch all players
+  --player &lt;NAME&gt;    Fetch a single player by name (partial match OK)
+  --dry-run          Show what would be fetched without making API calls
+  -v, --verbose      Show per-player fetch status
+</code></pre></div>
+<p><strong>Behavior:</strong>
+- Reads player names from <code>--csv</code>, resolves each to an NHL API player ID
+- Checks local cache (<code>~/.icelines/cache/</code>) before each API call
+- Writes fetched GP data to cache with timestamp
+- Reports players that could not be resolved (name mismatch, not found in API)
+- Exits 0 if all players resolved, exits 1 if any player could not be resolved (unless <code>--allow-missing</code>)</p>
+<hr />
+<h3 id="icelines-build"><code>icelines build</code><a class="headerlink" href="#icelines-build" title="Permanent link">&para;</a></h3>
+<p>Generate the mkdocs site from cached data and CSV.</p>
+<div class="highlight"><pre><span></span><code>icelines build [OPTIONS]
+
+Options:
+  --csv &lt;PATH&gt;       Path to Yahoo Fantasy Hockey CSV [default: data/fantasy.csv]
+  --out &lt;DIR&gt;        Output directory for generated markdown [default: docs/teams/]
+  --min-gp &lt;N&gt;       Minimum GP threshold for pace ranking inclusion [default: 10]
+  --no-site          Generate markdown only, do not run mkdocs
+  --season &lt;YEAR&gt;    NHL season year for site title [default: current]
+</code></pre></div>
+<p><strong>Behavior:</strong>
+- Reads CSV, loads cached GP data, computes pace projections and fit classifications
+- Generates one markdown file per NHL team (32 files) in <code>--out</code>
+- Generates index page at <code>docs/index.md</code> with tier summary per team
+- Optionally invokes <code>mkdocs build</code> via subprocess (requires mkdocs in PATH)
+- Fails if any player in the CSV has no cached GP data (run <code>icelines fetch</code> first)</p>
+<hr />
+<h3 id="icelines-serve"><code>icelines serve</code><a class="headerlink" href="#icelines-serve" title="Permanent link">&para;</a></h3>
+<p>Build and serve the site locally for review.</p>
+<div class="highlight"><pre><span></span><code>icelines serve [OPTIONS]
+
+Options:
+  --csv &lt;PATH&gt;       Path to Yahoo Fantasy Hockey CSV [default: data/fantasy.csv]
+  --port &lt;PORT&gt;      Port for mkdocs serve [default: 8000]
+  --min-gp &lt;N&gt;       Minimum GP threshold [default: 10]
+</code></pre></div>
+<p><strong>Behavior:</strong>
+- Runs <code>icelines build</code> then invokes <code>mkdocs serve --dev-addr 127.0.0.1:&lt;PORT&gt;</code>
+- Requires mkdocs and mkdocs-material in PATH</p>
+<hr />
+<h3 id="icelines-deploy"><code>icelines deploy</code><a class="headerlink" href="#icelines-deploy" title="Permanent link">&para;</a></h3>
+<p>Build and deploy the site to GitHub Pages.</p>
+<div class="highlight"><pre><span></span><code>icelines deploy [OPTIONS]
+
+Options:
+  --csv &lt;PATH&gt;       Path to Yahoo Fantasy Hockey CSV [default: data/fantasy.csv]
+  --remote &lt;NAME&gt;    Git remote to deploy to [default: origin]
+  --min-gp &lt;N&gt;       Minimum GP threshold [default: 10]
+</code></pre></div>
+<p><strong>Behavior:</strong>
+- Runs <code>icelines build</code> then invokes <code>mkdocs gh-deploy --remote-name &lt;remote&gt;</code>
+- Requires mkdocs and mkdocs-material in PATH, git remote configured</p>
+<hr />
+<h3 id="icelines-team-team"><code>icelines team &lt;TEAM&gt;</code><a class="headerlink" href="#icelines-team-team" title="Permanent link">&para;</a></h3>
+<p>Display a lineup card for a single NHL team in the terminal.</p>
+<div class="highlight"><pre><span></span><code>icelines team &lt;TEAM&gt; [OPTIONS]
+
+Arguments:
+  &lt;TEAM&gt;             NHL team abbreviation (e.g. EDM, COL, SEA) or full name (partial match)
+
+Options:
+  --csv &lt;PATH&gt;       Path to Yahoo Fantasy Hockey CSV [default: data/fantasy.csv]
+  --min-gp &lt;N&gt;       Minimum GP threshold [default: 10]
+  --no-color         Disable ANSI color output
+</code></pre></div>
+<p><strong>Behavior:</strong>
+- Renders the 4×3 forward grid and 3×2 defense grid for the specified team
+- Color-codes each player cell by fit classification
+- Shows pace projection (1 decimal), GP, and position in each cell
+- Reports players on the team who are below MIN_GP (listed separately, not on the card)</p>
+<p><strong>Example output:</strong>
+<div class="highlight"><pre><span></span><code>Colorado Avalanche — 2023-24 — IceLines Lineup Card
+
+FORWARDS          LW              C               RW
+Line 1      [Lehkonen   ] [MacKinnon  ] [Rantanen   ]
+            83.4 pts/82  109.3 pts/82  96.7 pts/82
+            [GREEN]       [GREEN]       [GREEN]
+
+Line 2      [Rodrigues  ] [Tomas      ] [O&#39;Connor   ]
+            ...
+
+DEFENSE           LD              RD
+Pair 1      [Makar      ] [Toews      ]
+            ...
+</code></pre></div></p>
+<hr />
+<h3 id="icelines-rank"><code>icelines rank</code><a class="headerlink" href="#icelines-rank" title="Permanent link">&para;</a></h3>
+<p>Display a pace-adjusted ranking table for all players in the CSV.</p>
+<div class="highlight"><pre><span></span><code>icelines rank [OPTIONS]
+
+Options:
+  --csv &lt;PATH&gt;       Path to Yahoo Fantasy Hockey CSV [default: data/fantasy.csv]
+  --min-gp &lt;N&gt;       Minimum GP threshold [default: 10]
+  --position &lt;POS&gt;   Filter by position: F, D, C, LW, RW [default: all]
+  --team &lt;ABBR&gt;      Filter by team abbreviation
+  --top &lt;N&gt;          Show top N players [default: 50]
+  --no-color         Disable ANSI color output
+</code></pre></div>
+<p><strong>Behavior:</strong>
+- Ranks all players by pace projection descending, goals/GP as tiebreaker
+- Displays rank, name, team, position, GP, pace projection, goals/82, fit class
+- Color-codes each row by fit classification
+- Players below MIN_GP are listed at the bottom with a "&lt; MIN_GP" marker, not ranked</p>
+<hr />
+<h3 id="icelines-compare-t1-t2"><code>icelines compare &lt;T1&gt; &lt;T2&gt;</code><a class="headerlink" href="#icelines-compare-t1-t2" title="Permanent link">&para;</a></h3>
+<p>Side-by-side comparison of two NHL teams' lineup cards.</p>
+<div class="highlight"><pre><span></span><code>icelines compare &lt;T1&gt; &lt;T2&gt; [OPTIONS]
+
+Arguments:
+  &lt;T1&gt;               First team abbreviation
+  &lt;T2&gt;               Second team abbreviation
+
+Options:
+  --csv &lt;PATH&gt;       Path to Yahoo Fantasy Hockey CSV [default: data/fantasy.csv]
+  --min-gp &lt;N&gt;       Minimum GP threshold [default: 10]
+  --no-color         Disable ANSI color output
+</code></pre></div>
+<p><strong>Behavior:</strong>
+- Renders two lineup cards side-by-side in the terminal (requires ≥140 column terminal)
+- Highlights slots where T1 player's pace projection exceeds T2's by &gt;10 pts/82 (or vice versa)</p>
+<hr />
+<h2 id="3-crate-architecture">3. Crate Architecture<a class="headerlink" href="#3-crate-architecture" title="Permanent link">&para;</a></h2>
+<p>The IceLines workspace is structured as four crates with a strict dependency DAG:</p>
+<div class="highlight"><pre><span></span><code>icelines-core
+    ↑
+icelines-fetch       icelines-site
+    ↑                    ↑
+         icelines-cli
+</code></pre></div>
+<h3 id="icelines-core"><code>icelines-core</code><a class="headerlink" href="#icelines-core" title="Permanent link">&para;</a></h3>
+<p><strong>Role</strong>: Pure domain logic. No I/O, no async, no network.</p>
+<p><strong>Owns</strong>:
+- All data model types (<code>Player</code>, <code>Team</code>, <code>DepthChart</code>, <code>LineAssignment</code>, <code>FitClass</code>, <code>PaceScore</code>)
+- Scoring engine: pace projection, fit classification, tiebreaker sorting
+- Depth chart builder: assigns players to line positions given a team's roster
+- Position resolver: given a Yahoo position string, returns primary NHL position
+- Name normalizer: Unicode NFC normalization, diacritic stripping fallback</p>
+<p><strong>Does NOT own</strong>:
+- File I/O, network I/O, environment variables
+- CLI argument parsing
+- Template rendering
+- Error types that wrap <code>std::io::Error</code> (those live in fetch/site)</p>
+<p><strong>Error type</strong>: <code>icelines_core::Error</code> (thiserror enum covering scoring failures, invalid player
+state, position parse errors)</p>
+<hr />
+<h3 id="icelines-fetch_1"><code>icelines-fetch</code><a class="headerlink" href="#icelines-fetch_1" title="Permanent link">&para;</a></h3>
+<p><strong>Role</strong>: All async I/O. NHL API client, local cache, CSV loader.</p>
+<p><strong>Owns</strong>:
+- NHL API HTTP client (reqwest, async) — base URL: <code>https://api.nhle.com/stats/rest/en/</code>
+- Bulk bio fetch: <code>fetch_all_bios(season) -&gt; Vec&lt;PlayerBio&gt;</code> — paginates <code>/skater/bios</code> using <code>limit=100&amp;start={N}</code> until <code>start + page_size &gt;= total</code>
+- Bulk stats fetch: <code>fetch_all_stats(season) -&gt; Vec&lt;SkaterStats&gt;</code> — paginates <code>/skater/summary</code> using <code>limit=100&amp;start={N}</code> until <code>start + page_size &gt;= total</code>
+- Local cache layer (<code>~/.icelines/cache/</code>, JSON files with TTL stamps)
+- CSV parser (reads Yahoo Fantasy CSV into <code>Vec&lt;Player&gt;</code>)
+- Player ID resolution (name → NHL API player ID)
+- Error types for network, cache, schema validation failures</p>
+<p><strong>Depends on</strong>: <code>icelines-core</code> (for <code>Player</code>, <code>Team</code>, position types)</p>
+<p><strong>Does NOT own</strong>:
+- Scoring logic
+- Template rendering
+- CLI argument parsing</p>
+<p><strong>Error type</strong>: <code>icelines_fetch::Error</code> (thiserror enum covering HTTP errors, cache errors,
+CSV parse errors, player ID resolution failures, schema validation failures)</p>
+<hr />
+<h3 id="icelines-site"><code>icelines-site</code><a class="headerlink" href="#icelines-site" title="Permanent link">&para;</a></h3>
+<p><strong>Role</strong>: Site and markdown generation.</p>
+<p><strong>Owns</strong>:
+- Lineup card markdown renderer (Tera templates)
+- Index page renderer
+- Team page generator (one markdown file per team)
+- mkdocs.yml generator/updater</p>
+<p><strong>Depends on</strong>: <code>icelines-core</code> (for all data types and scoring results)</p>
+<p><strong>Does NOT own</strong>:
+- Business logic, scoring, fit classification
+- Network I/O
+- File path resolution outside the site output directory</p>
+<p><strong>Error type</strong>: <code>icelines_site::Error</code> (template rendering errors, file write errors)</p>
+<hr />
+<h3 id="icelines-cli"><code>icelines-cli</code><a class="headerlink" href="#icelines-cli" title="Permanent link">&para;</a></h3>
+<p><strong>Role</strong>: Binary entry point. Wires everything together.</p>
+<p><strong>Owns</strong>:
+- <code>main.rs</code> with clap derive subcommand enum
+- Command handler functions (thin wrappers that call fetch/core/site)
+- tokio runtime setup
+- Top-level error formatting (convert crate errors to user-facing messages)
+- Config loading (<code>~/.icelines/config.toml</code> or project-local <code>.icelines.toml</code>)
+- Terminal renderer: <code>src/render/terminal.rs</code> — colored rows via <code>owo-colors</code>, tabular layout via <code>comfy-table</code></p>
+<p><strong>Depends on</strong>: All three library crates.</p>
+<p><strong>Error type</strong>: <code>anyhow::Error</code> (binary — error context chaining via anyhow is appropriate here)</p>
+<hr />
+<h2 id="4-data-model">4. Data Model<a class="headerlink" href="#4-data-model" title="Permanent link">&para;</a></h2>
+<p>All types live in <code>icelines-core</code>. All types implement <code>Debug</code>, <code>Clone</code>, <code>serde::Serialize</code>,
+<code>serde::Deserialize</code> unless noted.</p>
+<div class="highlight"><pre><span></span><code><span class="sd">/// A player as read from the Yahoo Fantasy CSV and enriched with NHL API data.</span>
+<span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">Player</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">,</span><span class="w">              </span><span class="c1">// Display name (normalized, not stripped)</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">name_normalized</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">,</span><span class="w">   </span><span class="c1">// Diacritic-stripped, lowercase, for matching</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">nhl_id</span><span class="p">:</span><span class="w"> </span><span class="nb">Option</span><span class="o">&lt;</span><span class="kt">u32</span><span class="o">&gt;</span><span class="p">,</span><span class="w">       </span><span class="c1">// NHL player IDs fit in u32 (range ~6000–9000000)</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">team</span><span class="p">:</span><span class="w"> </span><span class="nc">TeamAbbr</span><span class="p">,</span><span class="w">            </span><span class="c1">// Current NHL team abbreviation (3-letter canonical)</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">position</span><span class="p">:</span><span class="w"> </span><span class="nc">Position</span><span class="p">,</span><span class="w">        </span><span class="c1">// Primary position (from Yahoo column, normalized)</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">yahoo_positions</span><span class="p">:</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">Position</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="c1">// All Yahoo-eligible positions</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">season_goals</span><span class="p">:</span><span class="w"> </span><span class="kt">u32</span><span class="p">,</span><span class="w">         </span><span class="c1">// Goals from NHL API SkaterStats.goals</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">season_assists</span><span class="p">:</span><span class="w"> </span><span class="kt">u32</span><span class="p">,</span><span class="w">       </span><span class="c1">// Assists from NHL API SkaterStats.assists</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">season_points</span><span class="p">:</span><span class="w"> </span><span class="kt">u32</span><span class="p">,</span><span class="w">        </span><span class="c1">// Goals + assists from NHL API SkaterStats</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">season_gp</span><span class="p">:</span><span class="w"> </span><span class="nb">Option</span><span class="o">&lt;</span><span class="kt">u32</span><span class="o">&gt;</span><span class="p">,</span><span class="w">    </span><span class="c1">// GP from NHL API PlayerBio.gamesPlayed (None if not yet fetched)</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">pace_score</span><span class="p">:</span><span class="w"> </span><span class="nb">Option</span><span class="o">&lt;</span><span class="n">PaceScore</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="c1">// Computed by scoring engine (None if GP &lt; MIN_GP)</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">fit_class</span><span class="p">:</span><span class="w"> </span><span class="nb">Option</span><span class="o">&lt;</span><span class="n">FitClass</span><span class="o">&gt;</span><span class="p">,</span><span class="w">   </span><span class="c1">// Computed by scoring engine</span>
+<span class="p">}</span>
+
+<span class="sd">/// NHL team abbreviation — a newtype over String, validated against 32-team canonical list.</span>
+<span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">TeamAbbr</span><span class="p">(</span><span class="nb">String</span><span class="p">);</span>
+
+<span class="sd">/// Player position on ice.</span>
+<span class="k">pub</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="nc">Position</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">Center</span><span class="p">,</span>
+<span class="w">    </span><span class="n">LeftWing</span><span class="p">,</span>
+<span class="w">    </span><span class="n">RightWing</span><span class="p">,</span>
+<span class="w">    </span><span class="n">Defense</span><span class="p">,</span>
+<span class="w">    </span><span class="n">Goalie</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="sd">/// A complete depth chart for one NHL team.</span>
+<span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">DepthChart</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">team</span><span class="p">:</span><span class="w"> </span><span class="nc">TeamAbbr</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">season</span><span class="p">:</span><span class="w"> </span><span class="kt">u32</span><span class="p">,</span><span class="w">          </span><span class="c1">// e.g. 2024 for the 2023-24 season</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">forward_lines</span><span class="p">:</span><span class="w"> </span><span class="p">[[</span><span class="nb">Option</span><span class="o">&lt;</span><span class="n">Player</span><span class="o">&gt;</span><span class="p">;</span><span class="w"> </span><span class="mi">3</span><span class="p">];</span><span class="w"> </span><span class="mi">4</span><span class="p">],</span><span class="w">  </span><span class="c1">// [line][LW=0, C=1, RW=2]</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">defense_pairs</span><span class="p">:</span><span class="w"> </span><span class="p">[[</span><span class="nb">Option</span><span class="o">&lt;</span><span class="n">Player</span><span class="o">&gt;</span><span class="p">;</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span><span class="w"> </span><span class="mi">3</span><span class="p">],</span><span class="w">  </span><span class="c1">// [pair][LD=0, RD=1]</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">unplaced</span><span class="p">:</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">Player</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="c1">// Players on team who didn&#39;t fit the standard structure</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">below_min_gp</span><span class="p">:</span><span class="w"> </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">Player</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="c1">// Players below MIN_GP threshold</span>
+<span class="p">}</span>
+
+<span class="sd">/// A player&#39;s assigned position within a depth chart.</span>
+<span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">LineAssignment</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">line</span><span class="p">:</span><span class="w"> </span><span class="kt">u8</span><span class="p">,</span><span class="w">        </span><span class="c1">// 1-4 for forwards, 1-3 for defense</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">slot</span><span class="p">:</span><span class="w"> </span><span class="nc">Slot</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="k">pub</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="nc">Slot</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">LeftWing</span><span class="p">,</span>
+<span class="w">    </span><span class="n">Center</span><span class="p">,</span>
+<span class="w">    </span><span class="n">RightWing</span><span class="p">,</span>
+<span class="w">    </span><span class="n">LeftDefense</span><span class="p">,</span>
+<span class="w">    </span><span class="n">RightDefense</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="sd">/// Fit classification for a player&#39;s roster slot.</span>
+<span class="cp">#[derive(PartialEq, Eq, PartialOrd, Ord)]</span>
+<span class="k">pub</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="nc">FitClass</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">Elite</span><span class="p">,</span><span class="w">   </span><span class="c1">// Green  — pace projection exceeds Elite threshold for position group</span>
+<span class="w">    </span><span class="n">Solid</span><span class="p">,</span><span class="w">   </span><span class="c1">// Yellow — pace projection between Solid and Elite threshold</span>
+<span class="w">    </span><span class="n">Buried</span><span class="p">,</span><span class="w">  </span><span class="c1">// Blue   — pace projection below Solid threshold (underused for slot)</span>
+<span class="w">    </span><span class="n">Stretch</span><span class="p">,</span><span class="w"> </span><span class="c1">// Red    — pace projection inconsistent with assigned slot (overextended)</span>
+<span class="p">}</span>
+
+<span class="sd">/// Pace-adjusted scoring result for a player.</span>
+<span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">PaceScore</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">ppg</span><span class="p">:</span><span class="w"> </span><span class="kt">f64</span><span class="p">,</span><span class="w">              </span><span class="c1">// Points per game (season_points / season_gp)</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">pace_82</span><span class="p">:</span><span class="w"> </span><span class="kt">f64</span><span class="p">,</span><span class="w">          </span><span class="c1">// PPG × 82 (projected full-season points)</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">goals_per_game</span><span class="p">:</span><span class="w"> </span><span class="kt">f64</span><span class="p">,</span><span class="w">   </span><span class="c1">// Tiebreaker value</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">gp</span><span class="p">:</span><span class="w"> </span><span class="kt">u32</span><span class="p">,</span><span class="w">               </span><span class="c1">// Games played (from NHL API)</span>
+<span class="p">}</span>
+</code></pre></div>
+<hr />
+<h2 id="5-scoring-algorithm">5. Scoring Algorithm<a class="headerlink" href="#5-scoring-algorithm" title="Permanent link">&para;</a></h2>
+<h3 id="51-pace-projection-formula">5.1 Pace Projection Formula<a class="headerlink" href="#51-pace-projection-formula" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>pace_82 = (season_points / season_gp) × 82
+</code></pre></div>
+<p>Where:
+- <code>season_points</code> = goals + assists from NHL API SkaterStats (fields: <code>goals</code>, <code>assists</code>)
+- <code>season_gp</code> = NHL API current-season GP from PlayerBio (not Yahoo's cached GP column)
+- 82 = nominal NHL regular season length</p>
+<p><strong>Tiebreaker</strong>: When two players have identical <code>pace_82</code> to two decimal places, rank by
+<code>goals_per_game</code> descending. Secondary tiebreaker: alphabetical by last name ascending.</p>
+<p><strong>MIN_GP</strong>: Players with <code>season_gp &lt; 10</code> are excluded from pace ranking and fit classification.
+They appear on the lineup card only if they are on the team roster in the CSV, marked with a
+"&lt;MIN_GP" badge instead of a pace projection.</p>
+<h3 id="52-fit-classification-thresholds">5.2 Fit Classification Thresholds<a class="headerlink" href="#52-fit-classification-thresholds" title="Permanent link">&para;</a></h3>
+<p>Thresholds are calibrated to the approximate percentile distribution of NHL player PPG × 82 by
+position group in a typical season. All values below are for forwards; defense thresholds are
+lower (forwards score at higher rates than defensemen).</p>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>Color</th>
+<th>Forward threshold</th>
+<th>Defense threshold</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Elite</td>
+<td>Green</td>
+<td>pace_82 ≥ 65 pts/82</td>
+<td>pace_82 ≥ 45 pts/82</td>
+</tr>
+<tr>
+<td>Solid</td>
+<td>Yellow</td>
+<td>pace_82 ≥ 40 pts/82</td>
+<td>pace_82 ≥ 28 pts/82</td>
+</tr>
+<tr>
+<td>Buried</td>
+<td>Blue</td>
+<td>pace_82 ≥ 20 pts/82</td>
+<td>pace_82 ≥ 14 pts/82</td>
+</tr>
+<tr>
+<td>Stretch</td>
+<td>Red</td>
+<td>pace_82 &lt; 20 pts/82</td>
+<td>pace_82 &lt; 14 pts/82</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Rationale for 65/40/20 (forwards)</strong>:
+- 65 pts/82 represents approximately the 80th percentile of forward production — genuine top-six
+  talent with consistent offensive contribution.
+- 40 pts/82 represents approximately the 50th percentile — a reliable middle-six player.
+- 20 pts/82 represents approximately the 20th percentile — a player who produces at a bottom-six
+  or fourth-line rate.
+- Below 20 pts/82 projected, a player is either in a depth role or underperforming their slot.</p>
+<p><strong>Rationale for 45/28/14 (defense)</strong>:
+- Scaled from forward thresholds by the approximate ratio of mean forward PPG to mean defense PPG
+  in the modern NHL (~0.69). 65 × 0.69 ≈ 45, 40 × 0.69 ≈ 28, 20 × 0.69 ≈ 14.</p>
+<p>These thresholds are <strong>provisional</strong>. They should be reviewed against actual season data
+annually and updated in the assumptions log with the observed percentile at each boundary.</p>
+<hr />
+<h2 id="6-site-generation-approach">6. Site Generation Approach<a class="headerlink" href="#6-site-generation-approach" title="Permanent link">&para;</a></h2>
+<p>The site generator in <code>icelines-site</code> uses Tera templates to produce mkdocs-compatible markdown.
+Templates live in <code>icelines-site/templates/</code>.</p>
+<p><strong>Key templates:</strong>
+- <code>team.md.tera</code> — one team lineup card page. Receives a <code>DepthChart</code> and renders the 4×3
+  forward grid and 3×2 defense grid with mkdocs-material card grid layout and CSS class names
+  corresponding to fit classes.
+- <code>index.md.tera</code> — index page with all 32 teams, sorted by Elite player count descending.
+  Each team entry shows tier distribution (N Elite, N Solid, N Buried, N Stretch).</p>
+<p><strong>CSS fit classes</strong> (defined in <code>docs/assets/icelines.css</code>):
+- <code>.fit-elite</code> — background: #e8f5e9, border-left: 4px solid #2e7d32
+- <code>.fit-solid</code> — background: #fffde7, border-left: 4px solid #f9a825
+- <code>.fit-buried</code> — background: #e3f2fd, border-left: 4px solid #1565c0
+- <code>.fit-stretch</code> — background: #ffebee, border-left: 4px solid #b71c1c</p>
+<p>These classes are applied to mkdocs-material <code>div.grid.cards</code> items. The card displays:
+- Player name (bold, 20-char truncation)
+- Team abbreviation + position
+- Pace projection: <code>XX.X pts/82</code>
+- GP badge: <code>(XX GP)</code></p>
+<hr />
+<h2 id="7-error-handling-strategy">7. Error Handling Strategy<a class="headerlink" href="#7-error-handling-strategy" title="Permanent link">&para;</a></h2>
+<p>IceLines uses a layered error handling approach consistent with Rust idioms:</p>
+<p><strong>Library crates</strong> (<code>icelines-core</code>, <code>icelines-fetch</code>, <code>icelines-site</code>):
+- Each defines its own error enum using <code>thiserror</code>
+- All public functions return <code>Result&lt;T, CrateError&gt;</code>
+- No <code>unwrap()</code> in library code — every potential panic site uses <code>?</code> or explicit <code>expect()</code> with
+  a documented invariant
+- No <code>Box&lt;dyn Error&gt;</code> in public return positions</p>
+<p><strong>CLI binary</strong> (<code>icelines-cli</code>):
+- Uses <code>anyhow</code> for error context chaining
+- Translates crate errors into user-facing messages with context:
+  - "Could not resolve player 'Slafkovsky' to NHL API ID — did you mean 'Juraj Slafkovský' (ID 8482078)?"
+  - "NHL API returned HTTP 503 for player Connor McDavid — the API may be down. Try again later."
+  - "Cache entry for player Tolvanen (ID 8481601) is 3 days old and --refresh was not passed."
+- Exits with non-zero exit code on any unrecoverable error
+- All player-level resolution failures are collected and reported together, not one at a time</p>
+<p><strong>NHL API schema changes</strong>:
+- <code>serde(deny_unknown_fields)</code> on all API response types
+- Schema validation failure produces a specific, actionable error message (see WIRE role)</p>
+<hr />
+<h2 id="8-non-goals">8. Non-Goals<a class="headerlink" href="#8-non-goals" title="Permanent link">&para;</a></h2>
+<p>The following are explicitly out of scope for the IceLines Rust CLI:</p>
+<ul>
+<li><strong>Real-time game tracking.</strong> IceLines is a batch analytics tool, not a live dashboard.
+  GP data is fetched on demand and cached; it does not auto-refresh.</li>
+<li><strong>Goalie analysis.</strong> The lineup card covers skaters only (forwards and defensemen).
+  Goalies in the Yahoo CSV are parsed but not placed on lineup cards.</li>
+<li><strong>Trade value / dynasty ranking.</strong> IceLines ranks current-season pace, not future value.
+  Age curves, contract status, and draft capital are out of scope.</li>
+<li><strong>Points league vs. category league scoring.</strong> The pace projection is points-based.
+  Fantasy leagues using goals/assists/PIM/PPP categories are not modeled.</li>
+<li><strong>Team-strength adjustment.</strong> Pace projections are raw PPG × 82, unadjusted for opponent
+  quality, zone starts, or line-mate quality. This is a named assumption (A1), not an oversight.</li>
+<li><strong>Historical season comparison.</strong> The CLI operates on one season at a time. Multi-season
+  trend analysis is not implemented.</li>
+<li><strong>User account management or auth.</strong> There is no login, no cloud sync, no user profile.
+  All data is local files.</li>
+<li><strong>Windows installer or macOS .app bundle.</strong> Distribution is via <code>cargo install</code> or
+  pre-built binaries on the GitHub releases page.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.indexes", "navigation.top", "search.highlight", "search.suggest", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

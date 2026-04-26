@@ -1,0 +1,2038 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="NHL depth charts, pace-adjusted rankings, and trade analysis for all 32 teams">
+      
+      
+      
+        <link rel="canonical" href="https://giodl73-repo.github.io/ICELINES/specs/data-sources/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+    
+    
+      
+        <title>IceLines Data Sources — Full Specification - IceLines</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/fantasy.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="blue">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#icelines-data-sources-full-specification" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="IceLines" class="md-header__button md-logo" aria-label="IceLines" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            IceLines
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              IceLines Data Sources — Full Specification
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="blue"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="blue"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/giodl73-repo/ICELINES" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    IceLines
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Tracker
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../teams/COL/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Teams
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="IceLines" class="md-nav__button md-logo" aria-label="IceLines" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    IceLines
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/giodl73-repo/ICELINES" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    IceLines
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Teams
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Teams
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/COL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    COL — Colorado Avalanche
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/TB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TB — Tampa Bay Lightning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/VGK/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VGK — Vegas Golden Knights
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/DAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DAL — Dallas Stars
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/EDM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    EDM — Edmonton Oilers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/PIT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PIT — Pittsburgh Penguins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/MTL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MTL — Montréal Canadiens
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/MIN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MIN — Minnesota Wild
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/OTT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OTT — Ottawa Senators
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/FLA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FLA — Florida Panthers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/SJ/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SJ — San Jose Sharks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/BUF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BUF — Buffalo Sabres
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/ANA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ANA — Anaheim Ducks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/CAR/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CAR — Carolina Hurricanes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/UTA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UTA — Utah Hockey Club
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/BOS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BOS — Boston Bruins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/WSH/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WSH — Washington Capitals
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/DET/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DET — Detroit Red Wings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/CBJ/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CBJ — Columbus Blue Jackets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/TOR/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TOR — Toronto Maple Leafs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/NYI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NYI — New York Islanders
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/NYR/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NYR — New York Rangers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/PHI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PHI — Philadelphia Flyers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/NJ/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJ — New Jersey Devils
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/STL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STL — St. Louis Blues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/LA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LA — Los Angeles Kings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/SEA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SEA — Seattle Kraken
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/NSH/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NSH — Nashville Predators
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/CHI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CHI — Chicago Blackhawks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/WPG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WPG — Winnipeg Jets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/CGY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CGY — Calgary Flames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/VAN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VAN — Vancouver Canucks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#data-tier-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Tier Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tier-1-yahoo-fantasy-csv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 1 — Yahoo Fantasy CSV
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tier-2-nhl-api-core-stats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 2 — NHL API Core Stats
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tier 2 — NHL API Core Stats">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#2a-skater-bios-gp-demographics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2a — Skater Bios (GP + demographics)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2b-skater-summary-stats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2b — Skater Summary Stats
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2c-skater-time-on-ice" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2c — Skater Time On Ice
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tier-3-shift-data-nhl-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 3 — Shift Data (NHL API)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tier 3 — Shift Data (NHL API)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-we-compute-from-shifts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What We Compute From Shifts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schema
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#derived-fields-per-player-season" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Derived Fields Per Player (Season)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shift-adjusted-line-score" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shift-Adjusted Line Score
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tier-4-advanced-stats-natural-stat-trick" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 4 — Advanced Stats (Natural Stat Trick)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tier-5-social-signal-reddit-nhl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 5 — Social Signal (Reddit NHL)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tier-6-beat-media-line-rushes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 6 — Beat Media Line Rushes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-pipeline-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Pipeline Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#composite-scoring-phase-1-phase-2-evolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Composite Scoring (Phase 1 → Phase 2 evolution)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Composite Scoring (Phase 1 → Phase 2 evolution)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-current-pure-ppg-pace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1 (current): Pure PPG Pace
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-ppg-toi-weighted" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2: PPG + TOI Weighted
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-full-composite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3: Full Composite
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-storage-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Storage Layout
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#invariants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Invariants
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-Goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="icelines-data-sources-full-specification">IceLines Data Sources — Full Specification<a class="headerlink" href="#icelines-data-sources-full-specification" title="Permanent link">&para;</a></h1>
+<p><strong>Version</strong>: 0.1<br />
+<strong>Date</strong>: 2026-04-25<br />
+<strong>Status</strong>: Draft</p>
+<p>The goal of IceLines is the best possible lines analysis — not just fantasy points or PPG pace,
+but the full picture of how a player performs, how they are deployed, and what the game actually
+looked like around them. This spec defines every data source we compile, what it contributes,
+and how it feeds into the depth chart engine.</p>
+<hr />
+<h2 id="data-tier-overview">Data Tier Overview<a class="headerlink" href="#data-tier-overview" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Source</th>
+<th>Granularity</th>
+<th>Latency</th>
+<th>What It Answers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 — Fantasy</td>
+<td>Yahoo CSV export</td>
+<td>Season totals</td>
+<td>Manual export</td>
+<td>Fantasy-context positions, ownership</td>
+</tr>
+<tr>
+<td>2 — Core Stats</td>
+<td>NHL API <code>/stats/rest</code></td>
+<td>Season totals + bios</td>
+<td>Daily</td>
+<td>GP, G, A, TOI, PPG, shots</td>
+</tr>
+<tr>
+<td>3 — Shifts</td>
+<td>NHL API <code>/shiftcharts</code></td>
+<td>Per-shift, per-game</td>
+<td>Daily</td>
+<td>Real line deployment, line partners, zone starts</td>
+</tr>
+<tr>
+<td>4 — Advanced</td>
+<td>NHL Edge / Natural Stat Trick</td>
+<td>Per-situation</td>
+<td>Daily</td>
+<td>Corsi, xG, HDCA, zone entries</td>
+</tr>
+<tr>
+<td>5 — Social</td>
+<td>Reddit NHL / Twitter</td>
+<td>Per-day</td>
+<td>Real-time</td>
+<td>Fan sentiment, injury rumors, line news</td>
+</tr>
+<tr>
+<td>6 — Beat Media</td>
+<td>RSS / web scrape</td>
+<td>Per-article</td>
+<td>Real-time</td>
+<td>Official line rushes, coach quotes, practice lines</td>
+</tr>
+</tbody>
+</table>
+<p>Tiers 1–3 are <strong>primary</strong> — they drive all rankings and depth charts.<br />
+Tiers 4–6 are <strong>contextual</strong> — they annotate, not override.</p>
+<hr />
+<h2 id="tier-1-yahoo-fantasy-csv">Tier 1 — Yahoo Fantasy CSV<a class="headerlink" href="#tier-1-yahoo-fantasy-csv" title="Permanent link">&para;</a></h2>
+<p><strong>Endpoint</strong>: Manual export from Yahoo Fantasy Hockey league<br />
+<strong>Path</strong>: <code>data/fantasy.csv</code> (user-supplied)<br />
+<strong>Format</strong>: CSV with Yahoo-specific player IDs and position eligibility</p>
+<p><strong>What we use:</strong>
+- <code>Eligible Positions</code> — fantasy position eligibility (C, LW, RW, D, G) — KEPT
+- <code>First Name</code>, <code>Last Name</code> — player name for NHL API matching — KEPT
+- <code>Team</code> — cross-validation only (authoritative source is NHL API <code>currentTeamAbbrev</code>) — KEPT
+- <code>Image</code> — player photo URL (Yahoo CDN) — KEPT
+- REMOVED: <code>G (P)</code>, <code>A (P)</code> — these come from NHL API <code>SkaterStats.goals</code> / <code>SkaterStats.assists</code> now</p>
+<p><strong>Limitations:</strong>
+- Stats are NOT sourced from Yahoo CSV. Yahoo CSV provides position eligibility and photo URLs only.
+- No games played — must cross-reference with Tier 2
+- Position eligibility is fantasy-determined, not always hockey-accurate
+- Export is manual — not automated
+- Player IDs are Yahoo internal, not NHL IDs</p>
+<p><strong>Pipeline:</strong> <code>data/fantasy.csv</code> → <code>icelines-core::player::YahooRecord</code> (eligibility + photo only)</p>
+<hr />
+<h2 id="tier-2-nhl-api-core-stats">Tier 2 — NHL API Core Stats<a class="headerlink" href="#tier-2-nhl-api-core-stats" title="Permanent link">&para;</a></h2>
+<p><strong>Endpoint</strong>: <code>https://api.nhle.com/stats/rest/en/</code><br />
+<strong>Cache TTL</strong>: 24 hours<br />
+<strong>Auth</strong>: None (public)</p>
+<h3 id="2a-skater-bios-gp-demographics">2a — Skater Bios (GP + demographics)<a class="headerlink" href="#2a-skater-bios-gp-demographics" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>GET /skater/bios?cayenneExp=seasonId={SEASON}&amp;gameTypeId=2&amp;limit=100&amp;start={N}
+</code></pre></div>
+<p><strong>Fields used:</strong>
+- <code>gamesPlayed</code> — denominator for all pace calculations
+- <code>playerId</code> — NHL canonical player ID (used for photo URL and future joins)
+- <code>skaterFullName</code> — for name matching (with Unicode normalization)
+- <code>currentTeamAbbrev</code> — team at time of fetch (may differ from Yahoo CSV after trades)
+- <code>positionCode</code> — L/R/C/D for validation against Yahoo position eligibility</p>
+<p><strong>Fields stored:</strong> All of the above plus <code>birthDate</code>, <code>nationalityCode</code>, <code>shootsCatches</code></p>
+<h3 id="2b-skater-summary-stats">2b — Skater Summary Stats<a class="headerlink" href="#2b-skater-summary-stats" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>GET /skater/summary?cayenneExp=seasonId={SEASON}&amp;gameTypeId=2&amp;limit=100&amp;start={N}
+</code></pre></div>
+<p><strong>Fields used:</strong>
+- <code>goals</code>, <code>assists</code>, <code>points</code> — cross-validation against Yahoo CSV
+- <code>pointsPerGame</code> — NHL-computed PPG (sanity check against our projection)
+- <code>timeOnIcePerGame</code> — TOI in seconds (line role validation)
+- <code>ppGoals</code>, <code>ppPoints</code> — power play production
+- <code>shGoals</code>, <code>shPoints</code> — shorthanded production
+- <code>shots</code>, <code>shootingPctg</code> — shooting efficiency</p>
+<h3 id="2c-skater-time-on-ice">2c — Skater Time On Ice<a class="headerlink" href="#2c-skater-time-on-ice" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>GET /skater/timeonice?cayenneExp=seasonId={SEASON}&amp;gameTypeId=2
+</code></pre></div>
+<p><strong>Fields used:</strong>
+- <code>evTimeOnIce</code> — even strength TOI (true line role signal)
+- <code>ppTimeOnIce</code> — power play TOI
+- <code>shTimeOnIce</code> — penalty kill TOI</p>
+<p><strong>Key insight:</strong> <code>evTimeOnIce / gamesPlayed</code> is a stronger line deployment signal than points
+alone. A player with 18:00 ES-TOI is on the first two lines regardless of point totals.</p>
+<hr />
+<h2 id="tier-3-shift-data-nhl-api">Tier 3 — Shift Data (NHL API)<a class="headerlink" href="#tier-3-shift-data-nhl-api" title="Permanent link">&para;</a></h2>
+<p><strong>Endpoint</strong>: <code>https://api.nhle.com/stats/rest/en/shiftcharts</code><br />
+<strong>Cache TTL</strong>: 7 days (historical), 6 hours (current season)<br />
+<strong>Auth</strong>: None</p>
+<div class="highlight"><pre><span></span><code>GET /shiftcharts?cayenneExp=gameId={GAME_ID}
+</code></pre></div>
+<p>Shift data is the ground truth of how coaches actually deploy players. It tells us:
+- Which players were on the ice at the same time (line partners)
+- Which zone they started in (offensive vs defensive zone starts)
+- How long each shift was
+- How many shifts per game (deployment frequency)</p>
+<h3 id="what-we-compute-from-shifts">What We Compute From Shifts<a class="headerlink" href="#what-we-compute-from-shifts" title="Permanent link">&para;</a></h3>
+<p><strong>Line partners:</strong> For each forward, find the two other forwards most frequently on the ice
+simultaneously. This gives the actual deployed line, not the presumed one. A player listed as
+LW may be deployed as C when another player is injured.</p>
+<p><strong>Zone start percentage:</strong> <code>offensive_zone_starts / (offensive_zone_starts + defensive_zone_starts)</code>.
+High ZS% (&gt;55%) indicates offensive deployment. Low ZS% (&lt;45%) indicates shutdown role.
+This contextualizes PPG — a player with 0.70 PPG and 42% ZS% is more valuable than one with
+0.70 PPG and 62% ZS%.</p>
+<p><strong>Shift length distribution:</strong> Average shift length (seconds) by line. First-line players
+average 40–50 second shifts at high frequency. Fourth-line players average 30–35 second shifts
+less frequently.</p>
+<p><strong>Average shift rank:</strong> For each player, their average shift sequence number in each period
+(shifts 1–4 in a period = first rotation, 5–8 = second rotation). This directly identifies
+line groupings without relying on coaching press releases.</p>
+<h3 id="schema">Schema<a class="headerlink" href="#schema" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">Shift</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">player_id</span><span class="p">:</span><span class="w"> </span><span class="kt">u32</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">game_id</span><span class="p">:</span><span class="w">   </span><span class="kt">u64</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">period</span><span class="p">:</span><span class="w">    </span><span class="kt">u8</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">shift_num</span><span class="p">:</span><span class="w"> </span><span class="kt">u16</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">start_sec</span><span class="p">:</span><span class="w"> </span><span class="kt">u32</span><span class="p">,</span><span class="w">   </span><span class="c1">// seconds from period start</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">end_sec</span><span class="p">:</span><span class="w">   </span><span class="kt">u32</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">duration</span><span class="p">:</span><span class="w">  </span><span class="kt">u16</span><span class="p">,</span><span class="w">   </span><span class="c1">// seconds</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">team_abbr</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">,</span>
+<span class="p">}</span>
+</code></pre></div>
+<h3 id="derived-fields-per-player-season">Derived Fields Per Player (Season)<a class="headerlink" href="#derived-fields-per-player-season" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">ShiftProfile</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">player_id</span><span class="p">:</span><span class="w">          </span><span class="kt">u32</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">games_with_shifts</span><span class="p">:</span><span class="w">  </span><span class="kt">u32</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">avg_shift_sec</span><span class="p">:</span><span class="w">      </span><span class="kt">f32</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">shifts_per_game</span><span class="p">:</span><span class="w">    </span><span class="kt">f32</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">zone_start_pct</span><span class="p">:</span><span class="w">     </span><span class="nb">Option</span><span class="o">&lt;</span><span class="kt">f32</span><span class="o">&gt;</span><span class="p">,</span><span class="w">  </span><span class="c1">// None if data unavailable</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">top_line_partners</span><span class="p">:</span><span class="w">  </span><span class="nb">Vec</span><span class="o">&lt;</span><span class="p">(</span><span class="kt">u32</span><span class="p">,</span><span class="w"> </span><span class="kt">f32</span><span class="p">)</span><span class="o">&gt;</span><span class="p">,</span><span class="w">  </span><span class="c1">// (player_id, co-ice_fraction)</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">avg_ev_toi_per_game</span><span class="p">:</span><span class="w"> </span><span class="kt">f32</span><span class="p">,</span>
+<span class="p">}</span>
+</code></pre></div>
+<h3 id="shift-adjusted-line-score">Shift-Adjusted Line Score<a class="headerlink" href="#shift-adjusted-line-score" title="Permanent link">&para;</a></h3>
+<p>The shift profile feeds into a <strong>shift-adjusted line score</strong> that can override pure PPG ranking
+when deployment context clearly places a player higher or lower:</p>
+<ul>
+<li>If <code>avg_ev_toi_per_game</code> &gt; 16:00 for a forward → Line 1–2 floor regardless of PPG</li>
+<li>If <code>avg_ev_toi_per_game</code> &lt; 10:00 → Line 3–4 cap regardless of PPG</li>
+<li><code>zone_start_pct</code> &lt; 40% with PPG &gt; 0.70 → flag as "shutdown star" (different value profile)</li>
+<li>Strong line partner signal (&gt;60% co-ice with an identified top liner) → line assignment inherited</li>
+</ul>
+<hr />
+<h2 id="tier-4-advanced-stats-natural-stat-trick">Tier 4 — Advanced Stats (Natural Stat Trick)<a class="headerlink" href="#tier-4-advanced-stats-natural-stat-trick" title="Permanent link">&para;</a></h2>
+<p><strong>Source</strong>: <code>https://www.naturalstattrick.com/</code><br />
+<strong>Method</strong>: HTML scrape (no official API)<br />
+<strong>Cache TTL</strong>: 24 hours<br />
+<strong>Status</strong>: Planned (Phase 2)</p>
+<p><strong>Fields we want:</strong>
+- <code>CF%</code> — Corsi For percentage (shot attempt possession)
+- <code>xGF%</code> — Expected goals for percentage
+- <code>HDCF%</code> — High-danger chance percentage
+- <code>xGA/60</code> — Expected goals against per 60 (defensive metric)
+- <code>RelCF%</code> — Corsi relative to team (isolates individual contribution)</p>
+<p><strong>Why it matters:</strong> A player with 0.60 PPG but 56% xGF% is driving play. A player with
+0.60 PPG but 44% xGF% is riding linemates. PPG alone cannot distinguish these.</p>
+<p><strong>Integration:</strong> Advanced stats annotate the depth chart card — they do not change rankings.
+A player marked ↑ BURIED with high xGF% gets an additional "possession driver" tag.</p>
+<hr />
+<h2 id="tier-5-social-signal-reddit-nhl">Tier 5 — Social Signal (Reddit NHL)<a class="headerlink" href="#tier-5-social-signal-reddit-nhl" title="Permanent link">&para;</a></h2>
+<p><strong>Source</strong>: Reddit <code>/r/hockey</code>, <code>/r/nhl</code>, individual team subreddits<br />
+<strong>Method</strong>: Reddit API (public read access)<br />
+<strong>Cache TTL</strong>: 4 hours<br />
+<strong>Status</strong>: Planned (Phase 3)</p>
+<p><strong>What we extract:</strong>
+- <strong>Injury reports:</strong> Posts mentioning <code>[player name] + (day-to-day|IR|injured|out)</code> with high upvote counts
+- <strong>Line rush reports:</strong> Posts from beat reporters (verified flair) mentioning line combinations
+- <strong>Trade rumors:</strong> Posts mentioning <code>[player name] + (trade|deal|moved)</code> from credible sources</p>
+<p><strong>Schema:</strong>
+<div class="highlight"><pre><span></span><code><span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">SocialSignal</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">player_id</span><span class="p">:</span><span class="w">    </span><span class="kt">u32</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">signal_type</span><span class="p">:</span><span class="w">  </span><span class="nc">SignalType</span><span class="p">,</span><span class="w">  </span><span class="c1">// Injury | LineNews | TradeRumor</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">source</span><span class="p">:</span><span class="w">       </span><span class="nb">String</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">confidence</span><span class="p">:</span><span class="w">   </span><span class="kt">f32</span><span class="p">,</span><span class="w">         </span><span class="c1">// 0.0–1.0 based on upvotes + source credibility</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">fetched_at</span><span class="p">:</span><span class="w">   </span><span class="nc">DateTime</span><span class="o">&lt;</span><span class="n">Utc</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">text_excerpt</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">,</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p><strong>How it surfaces:</strong> Social signals appear as annotations on team pages — a small icon and
+tooltip on a player cell. They do NOT change rankings automatically. The analyst sees the signal
+and decides.</p>
+<hr />
+<h2 id="tier-6-beat-media-line-rushes">Tier 6 — Beat Media Line Rushes<a class="headerlink" href="#tier-6-beat-media-line-rushes" title="Permanent link">&para;</a></h2>
+<p><strong>Sources</strong>: Team-specific beat reporters (Daily Faceoff, The Athletic, team sites)<br />
+<strong>Method</strong>: RSS feed scraping<br />
+<strong>Cache TTL</strong>: 2 hours<br />
+<strong>Status</strong>: Planned (Phase 3)</p>
+<p>Daily Faceoff publishes line combinations for every team before each game, sourced directly
+from morning skate observations. This is the authoritative "what is coach actually doing today"
+signal.</p>
+<p><strong>Fields:</strong>
+- Reported line combinations (LW-C-RW groupings)
+- Date/time (valid for the next game only)
+- Source reporter</p>
+<p><strong>Integration:</strong> If a practice line combination differs from our computed depth chart by 2+
+lines for a player, flag the discrepancy. This is the "coach override" signal.</p>
+<hr />
+<h2 id="data-pipeline-architecture">Data Pipeline Architecture<a class="headerlink" href="#data-pipeline-architecture" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>Yahoo CSV          NHL API Bios    NHL API Stats    Shift Charts
+    │                   │               │                │
+    ▼                   ▼               ▼                ▼
+YahooRecord     ────► PlayerBio    SkaterStats      ShiftProfile
+    │                   │               │                │
+    └───────────────────┴───────────────┴────────────────┘
+                                │
+                         PlayerRecord           ◄─── Social / Beat (annotations)
+                                │
+                        ┌───────┴────────┐
+                        │                │
+                  PaceScore          ShiftScore
+                        │                │
+                        └───────┬────────┘
+                          CompositeScore
+                                │
+                    ┌───────────┴───────────┐
+                    │                       │
+              DepthChart              FitClass
+                    │                       │
+                    └───────────┬───────────┘
+                          LineCard (HTML)
+                                │
+                         GitHub Pages
+</code></pre></div>
+<hr />
+<h2 id="composite-scoring-phase-1-phase-2-evolution">Composite Scoring (Phase 1 → Phase 2 evolution)<a class="headerlink" href="#composite-scoring-phase-1-phase-2-evolution" title="Permanent link">&para;</a></h2>
+<h3 id="phase-1-current-pure-ppg-pace">Phase 1 (current): Pure PPG Pace<a class="headerlink" href="#phase-1-current-pure-ppg-pace" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>score = (G + A) / GP * 82  +  (G / GP * 82) * 0.001
+</code></pre></div>
+<h3 id="phase-2-ppg-toi-weighted">Phase 2: PPG + TOI Weighted<a class="headerlink" href="#phase-2-ppg-toi-weighted" title="Permanent link">&para;</a></h3>
+<p><div class="highlight"><pre><span></span><code>toi_factor = clamp(evTOI_per_game / 18.0, 0.6, 1.2)
+score      = ppg_82 * toi_factor  +  gpg_82 * 0.001
+</code></pre></div>
+A player with 22:00 ES-TOI gets a 1.22× multiplier. A player with 10:00 ES-TOI gets 0.67×.
+This corrects for defensive forwards who produce in limited minutes and offensive passengers
+with inflated PPG from elite linemates.</p>
+<h3 id="phase-3-full-composite">Phase 3: Full Composite<a class="headerlink" href="#phase-3-full-composite" title="Permanent link">&para;</a></h3>
+<p><div class="highlight"><pre><span></span><code>score = 0.60 * ppg_82_toi_adjusted
+      + 0.20 * xGF_per60_normalized
+      + 0.10 * zone_start_adjusted_factor
+      + 0.10 * shift_rank_signal
+</code></pre></div>
+Weights are provisional — calibrated against scout review of "obvious" line rankings
+(McDavid is L1, every team's clear 4th liner is L4). PACE and SCOUT must agree before
+any weight change ships.</p>
+<hr />
+<h2 id="data-storage-layout">Data Storage Layout<a class="headerlink" href="#data-storage-layout" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>~/.icelines/
+├── cache/
+│   ├── gp/
+│   │   └── 20252026/
+│   │       └── {player_id}.json       # bios API response
+│   ├── stats/
+│   │   └── 20252026/
+│   │       └── {player_id}.json       # summary stats response
+│   ├── shifts/
+│   │   └── 20252026/
+│   │       └── {game_id}.json         # full shiftchart response
+│   └── social/
+│       └── {YYYY-MM-DD}/
+│           └── reddit.json            # signal dump
+└── db/
+    └── icelines.db                    # SQLite: derived PlayerRecord, ShiftProfile
+</code></pre></div>
+<p>All cache files include a <code>fetched_at</code> timestamp. <code>icelines fetch --refresh</code> clears and
+re-fetches. <code>icelines fetch --stale</code> shows what is older than its TTL.</p>
+<hr />
+<h2 id="invariants">Invariants<a class="headerlink" href="#invariants" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>DI-10</strong>: A PlayerRecord with GP &lt; MIN_GP has no pace score — it is <code>None</code>, not 0.0</li>
+<li><strong>DI-11</strong>: ShiftProfile is only created for players with ≥ 5 games of shift data</li>
+<li><strong>DI-12</strong>: Social signals never modify <code>PaceScore</code> or <code>FitClass</code> — annotations only</li>
+<li><strong>DI-13</strong>: A CompositeScore is reproducible: same inputs produce same output (no randomness)</li>
+<li><strong>DI-14</strong>: Cache miss for any player is logged as a warning; missing player data is <code>None</code>, never silently 0</li>
+</ul>
+<hr />
+<h2 id="non-goals">Non-Goals<a class="headerlink" href="#non-goals" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Real-time data</strong>: IceLines is not a live dashboard. The minimum meaningful cadence is daily.</li>
+<li><strong>Game prediction</strong>: We analyze deployment and production; we do not predict future performance.</li>
+<li><strong>Contract/salary data</strong>: Out of scope — this is hockey analytics, not cap management.</li>
+<li><strong>Playoff-specific analysis</strong>: Regular season only for now; playoff context is a different beast.</li>
+<li><strong>Player comparison across eras</strong>: All rankings are within the current season only.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.indexes", "navigation.top", "search.highlight", "search.suggest", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

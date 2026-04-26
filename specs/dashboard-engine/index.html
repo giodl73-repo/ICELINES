@@ -1,0 +1,2169 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="NHL depth charts, pace-adjusted rankings, and trade analysis for all 32 teams">
+      
+      
+      
+        <link rel="canonical" href="https://giodl73-repo.github.io/ICELINES/specs/dashboard-engine/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+    
+    
+      
+        <title>IceLines Dashboard Engine — Specification - IceLines</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/fantasy.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="blue">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#icelines-dashboard-engine-specification" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="IceLines" class="md-header__button md-logo" aria-label="IceLines" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            IceLines
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              IceLines Dashboard Engine — Specification
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="blue"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="blue"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/giodl73-repo/ICELINES" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    IceLines
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Tracker
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../teams/COL/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Teams
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="IceLines" class="md-nav__button md-logo" aria-label="IceLines" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    IceLines
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/giodl73-repo/ICELINES" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    IceLines
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Teams
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Teams
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/COL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    COL — Colorado Avalanche
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/TB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TB — Tampa Bay Lightning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/VGK/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VGK — Vegas Golden Knights
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/DAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DAL — Dallas Stars
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/EDM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    EDM — Edmonton Oilers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/PIT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PIT — Pittsburgh Penguins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/MTL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MTL — Montréal Canadiens
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/MIN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MIN — Minnesota Wild
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/OTT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OTT — Ottawa Senators
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/FLA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FLA — Florida Panthers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/SJ/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SJ — San Jose Sharks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/BUF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BUF — Buffalo Sabres
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/ANA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ANA — Anaheim Ducks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/CAR/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CAR — Carolina Hurricanes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/UTA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UTA — Utah Hockey Club
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/BOS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BOS — Boston Bruins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/WSH/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WSH — Washington Capitals
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/DET/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DET — Detroit Red Wings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/CBJ/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CBJ — Columbus Blue Jackets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/TOR/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TOR — Toronto Maple Leafs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/NYI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NYI — New York Islanders
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/NYR/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NYR — New York Rangers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/PHI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PHI — Philadelphia Flyers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/NJ/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJ — New Jersey Devils
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/STL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STL — St. Louis Blues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/LA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LA — Los Angeles Kings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/SEA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SEA — Seattle Kraken
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/NSH/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NSH — Nashville Predators
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/CHI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CHI — Chicago Blackhawks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/WPG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WPG — Winnipeg Jets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/CGY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CGY — Calgary Flames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../teams/VAN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VAN — Vancouver Canucks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#core-idea" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Idea
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dashboard-definition-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dashboard Definition Format
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#built-in-query-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Built-In Query Sources
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#built-in-templates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Built-In Templates
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Built-In Templates">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#player-lineup-cell" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        player-lineup-cell
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#player-card" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        player-card
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#player-row" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        player-row
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#class-card" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        class-card
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#team-summary-card" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        team-summary-card
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scouting-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        scouting-report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#leaderboard-row" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        leaderboard-row
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#group-member-row" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        group-member-row
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#built-in-layouts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Built-In Layouts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Built-In Layouts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#two-column-grid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        two-column-grid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#four-column-grid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        four-column-grid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ranked-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ranked-table
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#single-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        single-page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tabbed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tabbed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        comparison
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-dashboard-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example Dashboard Definitions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Example Dashboard Definitions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#leaderboard-u23-centers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Leaderboard: U23 Centers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#draft-class-dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Draft Class Dashboard
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#buried-trade-assets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Buried Trade Assets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#peer-group-watchlist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Peer Group Watchlist
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tabbed-position-leaderboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tabbed Position Leaderboard
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cli-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CLI Integration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rust-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rust Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-a-new-dashboard-no-rust-required" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding a New Dashboard (no Rust required)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-Goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="icelines-dashboard-engine-specification">IceLines Dashboard Engine — Specification<a class="headerlink" href="#icelines-dashboard-engine-specification" title="Permanent link">&para;</a></h1>
+<p><strong>Version</strong>: 0.1<br />
+<strong>Date</strong>: 2026-04-25<br />
+<strong>Status</strong>: Draft</p>
+<p>The current site hardcodes one dashboard type: 32 team lineup cards.
+The dashboard engine makes every view a first-class, declaratively defined artifact.
+Any combination of query + template + layout produces a new dashboard — no Rust code required.</p>
+<hr />
+<h2 id="core-idea">Core Idea<a class="headerlink" href="#core-idea" title="Permanent link">&para;</a></h2>
+<p>A dashboard is three things:</p>
+<div class="highlight"><pre><span></span><code>Query      →  which players/teams/data to pull, with what filters
+Template   →  how to render one record (a player cell, a team row, a chart bar)
+Layout     →  how to arrange rendered records (grid, table, column, tabs)
+</code></pre></div>
+<p>These are defined in <code>.toml</code> files in a <code>dashboards/</code> directory.
+<code>icelines build</code> reads all dashboard definitions and generates a site section for each.</p>
+<hr />
+<h2 id="dashboard-definition-format">Dashboard Definition Format<a class="headerlink" href="#dashboard-definition-format" title="Permanent link">&para;</a></h2>
+<p>Each dashboard is a <code>.toml</code> file in <code>dashboards/</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># dashboards/draft-class-2022.toml</span>
+
+<span class="k">[dashboard]</span>
+<span class="n">id</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;draft-class-2022&quot;</span>
+<span class="n">title</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;2022 Draft Class&quot;</span>
+<span class="n">subtitle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;How the 2022 draft class is performing in year 3&quot;</span>
+<span class="n">output</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;docs/dashboards/draft-class-2022/&quot;</span>
+<span class="n">template</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;class-card&quot;</span><span class="w">         </span><span class="c1"># references templates/class-card.html</span>
+<span class="n">layout</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;two-column-grid&quot;</span><span class="w">    </span><span class="c1"># references layouts/two-column-grid.html</span>
+<span class="n">nav</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="w">                 </span><span class="c1"># include in site nav</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="k">[query]</span>
+<span class="n">source</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;players&quot;</span><span class="w">           </span><span class="c1"># players | teams | groups | shifts | history</span>
+<span class="c1"># --- filters ---</span>
+<span class="n">draft_year</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="mi">2022</span>
+<span class="n">gp_min</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="mi">20</span>
+<span class="c1"># position   = [&quot;C&quot;, &quot;LW&quot;, &quot;RW&quot;]   # optional</span>
+<span class="c1"># team        = &quot;SEA&quot;               # optional</span>
+<span class="c1"># age_max     = 24                  # optional</span>
+<span class="c1"># --- sorting ---</span>
+<span class="n">sort_by</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;ppg_pace&quot;</span><span class="w">          </span><span class="c1"># ppg_pace | goals_pace | age | draft_pick | name</span>
+<span class="n">sort_dir</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;desc&quot;</span>
+<span class="n">limit</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="mi">64</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="k">[display]</span>
+<span class="c1"># Fields available in the template as {{ player.X }}</span>
+<span class="n">fields</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="s2">&quot;name&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;team&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;age&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;nationality_flag&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;draft_pick&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;gp&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;ppg_pace&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;goals_pace&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;assists_pace&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;fit_class&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;avg_other_line&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;photo_url&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;team_logo_url&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+<span class="c1"># Metric shown as the primary badge on each card</span>
+<span class="n">primary_metric</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;ppg_pace&quot;</span>
+<span class="n">primary_label</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pts/82&quot;</span>
+<span class="c1"># Secondary badge</span>
+<span class="n">secondary_metric</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;goals_pace&quot;</span>
+<span class="n">secondary_label</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;g/82&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="built-in-query-sources">Built-In Query Sources<a class="headerlink" href="#built-in-query-sources" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Description</th>
+<th>Key Filters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>players</code></td>
+<td>All skaters/goalies in current dataset</td>
+<td>pos, team, age, nationality, draft_year, gp_min, ppg_min, toi_min</td>
+</tr>
+<tr>
+<td><code>teams</code></td>
+<td>All 32 NHL teams</td>
+<td>division, conference</td>
+</tr>
+<tr>
+<td><code>groups</code></td>
+<td>Members of a saved <code>icelines group</code></td>
+<td>group_name</td>
+</tr>
+<tr>
+<td><code>history</code></td>
+<td>Multi-season data for a player</td>
+<td>player, seasons</td>
+</tr>
+<tr>
+<td><code>shifts</code></td>
+<td>Shift-derived linemate data</td>
+<td>player, min_shared_shifts</td>
+</tr>
+<tr>
+<td><code>depth_chart</code></td>
+<td>A team's computed depth chart</td>
+<td>team, pos</td>
+</tr>
+<tr>
+<td><code>leaderboard</code></td>
+<td>League-wide ranking at a position</td>
+<td>pos, metric, limit</td>
+</tr>
+<tr>
+<td><code>buried</code></td>
+<td>Players with delta &gt; threshold</td>
+<td>pos, min_fpts, min_delta</td>
+</tr>
+<tr>
+<td><code>class</code></td>
+<td>Full draft class</td>
+<td>draft_year, pos, round</td>
+</tr>
+<tr>
+<td><code>peers</code></td>
+<td>A player's peer group</td>
+<td>player, method</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="built-in-templates">Built-In Templates<a class="headerlink" href="#built-in-templates" title="Permanent link">&para;</a></h2>
+<p>Templates live in <code>templates/</code> and receive a single record (player, team, etc.).
+New templates are Tera <code>.html</code> files — no Rust code needed.</p>
+<h3 id="player-lineup-cell"><code>player-lineup-cell</code><a class="headerlink" href="#player-lineup-cell" title="Permanent link">&para;</a></h3>
+<p>The current team depth chart cell: photo, name, gp·ppg·proj, fit color.</p>
+<h3 id="player-card"><code>player-card</code><a class="headerlink" href="#player-card" title="Permanent link">&para;</a></h3>
+<p>Larger card: photo, full bio line, pace stats, draft info, flag, team logo.</p>
+<h3 id="player-row"><code>player-row</code><a class="headerlink" href="#player-row" title="Permanent link">&para;</a></h3>
+<p>Single table row: rank, name, team, pos, age, gp, ppg, g/82, fit badge.</p>
+<h3 id="class-card"><code>class-card</code><a class="headerlink" href="#class-card" title="Permanent link">&para;</a></h3>
+<p>Draft pick card: pick number badge, name, team, pace stats, class rank.</p>
+<h3 id="team-summary-card"><code>team-summary-card</code><a class="headerlink" href="#team-summary-card" title="Permanent link">&para;</a></h3>
+<p>Team tracker card: logo, rank badge, position bars (C/LW/RW/D), total score.</p>
+<h3 id="scouting-report"><code>scouting-report</code><a class="headerlink" href="#scouting-report" title="Permanent link">&para;</a></h3>
+<p>Full single-player page: bio, career history table, peer rank, linemates, fit.</p>
+<h3 id="leaderboard-row"><code>leaderboard-row</code><a class="headerlink" href="#leaderboard-row" title="Permanent link">&para;</a></h3>
+<p>Simple ranked row: position, name, team, stat value, trend arrow.</p>
+<h3 id="group-member-row"><code>group-member-row</code><a class="headerlink" href="#group-member-row" title="Permanent link">&para;</a></h3>
+<p>Group member row: rank within group, name, pace stats, group-relative percentile.</p>
+<hr />
+<h2 id="built-in-layouts">Built-In Layouts<a class="headerlink" href="#built-in-layouts" title="Permanent link">&para;</a></h2>
+<p>Layouts arrange a collection of rendered templates.</p>
+<h3 id="two-column-grid"><code>two-column-grid</code><a class="headerlink" href="#two-column-grid" title="Permanent link">&para;</a></h3>
+<p>32 items in 2 columns of 16 — the current tracker index.</p>
+<h3 id="four-column-grid"><code>four-column-grid</code><a class="headerlink" href="#four-column-grid" title="Permanent link">&para;</a></h3>
+<p>Cards in 4 columns — good for draft class (30+ cards).</p>
+<h3 id="ranked-table"><code>ranked-table</code><a class="headerlink" href="#ranked-table" title="Permanent link">&para;</a></h3>
+<p>Sortable HTML table — for leaderboards, filtered player lists.</p>
+<h3 id="single-page"><code>single-page</code><a class="headerlink" href="#single-page" title="Permanent link">&para;</a></h3>
+<p>One record filling the page — for scouting reports, player profiles.</p>
+<h3 id="tabbed"><code>tabbed</code><a class="headerlink" href="#tabbed" title="Permanent link">&para;</a></h3>
+<p>Multiple queries in tabs on one page (e.g., C / LW / RW / D tabs).</p>
+<h3 id="comparison"><code>comparison</code><a class="headerlink" href="#comparison" title="Permanent link">&para;</a></h3>
+<p>Two queries side by side — for group compare, head-to-head.</p>
+<hr />
+<h2 id="example-dashboard-definitions">Example Dashboard Definitions<a class="headerlink" href="#example-dashboard-definitions" title="Permanent link">&para;</a></h2>
+<h3 id="leaderboard-u23-centers">Leaderboard: U23 Centers<a class="headerlink" href="#leaderboard-u23-centers" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># dashboards/u23-centers.toml</span>
+<span class="k">[dashboard]</span>
+<span class="n">id</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;u23-centers&quot;</span>
+<span class="n">title</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;U23 Centers&quot;</span>
+<span class="n">subtitle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Under-23 centers ranked by PPG pace&quot;</span>
+<span class="n">output</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;docs/dashboards/u23-centers/&quot;</span>
+<span class="n">template</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;player-row&quot;</span>
+<span class="n">layout</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;ranked-table&quot;</span>
+
+<span class="k">[query]</span>
+<span class="n">source</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;players&quot;</span>
+<span class="n">pos</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">]</span>
+<span class="n">age_max</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="mi">23</span>
+<span class="n">gp_min</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="mi">15</span>
+<span class="n">sort_by</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;ppg_pace&quot;</span>
+<span class="n">sort_dir</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;desc&quot;</span>
+
+<span class="k">[display]</span>
+<span class="n">fields</span><span class="w">         </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;rank&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;name&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;team&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;age&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;nationality_flag&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;gp&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;ppg_pace&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;goals_pace&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;draft_pick&quot;</span><span class="p">]</span>
+<span class="n">primary_metric</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;ppg_pace&quot;</span>
+</code></pre></div>
+<h3 id="draft-class-dashboard">Draft Class Dashboard<a class="headerlink" href="#draft-class-dashboard" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># dashboards/class-2022-all.toml</span>
+<span class="k">[dashboard]</span>
+<span class="n">id</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;class-2022-all&quot;</span>
+<span class="n">title</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;2022 Draft Class&quot;</span>
+<span class="n">output</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;docs/dashboards/class-2022/&quot;</span>
+<span class="n">template</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;class-card&quot;</span>
+<span class="n">layout</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;four-column-grid&quot;</span>
+
+<span class="k">[query]</span>
+<span class="n">source</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;class&quot;</span>
+<span class="n">draft_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2022</span>
+<span class="n">gp_min</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span>
+<span class="n">sort_by</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;draft_pick&quot;</span>
+<span class="n">sort_dir</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;asc&quot;</span>
+
+<span class="k">[display]</span>
+<span class="n">fields</span><span class="w">         </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;draft_pick&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;name&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;team&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;pos&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;age&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;gp&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;ppg_pace&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;goals_pace&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;fit_class&quot;</span><span class="p">]</span>
+<span class="n">primary_metric</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;ppg_pace&quot;</span>
+<span class="n">primary_label</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pts/82&quot;</span>
+</code></pre></div>
+<h3 id="buried-trade-assets">Buried Trade Assets<a class="headerlink" href="#buried-trade-assets" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># dashboards/buried-assets.toml</span>
+<span class="k">[dashboard]</span>
+<span class="n">id</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;buried-assets&quot;</span>
+<span class="n">title</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Buried Trade Assets&quot;</span>
+<span class="n">subtitle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Players playing significantly below their cross-team value&quot;</span>
+<span class="n">output</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;docs/dashboards/buried-assets/&quot;</span>
+<span class="n">template</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;player-row&quot;</span>
+<span class="n">layout</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;ranked-table&quot;</span>
+
+<span class="k">[query]</span>
+<span class="n">source</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;buried&quot;</span>
+<span class="n">min_fpts</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="mi">80</span>
+<span class="n">min_delta</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="mf">0.75</span>
+<span class="n">sort_by</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;delta&quot;</span>
+<span class="n">sort_dir</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;desc&quot;</span>
+<span class="n">limit</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="mi">40</span>
+
+<span class="k">[display]</span>
+<span class="n">fields</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;rank&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;name&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;team&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;pos&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;ppg_pace&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;own_line&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;avg_other_line&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;delta&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;photo_url&quot;</span><span class="p">]</span>
+</code></pre></div>
+<h3 id="peer-group-watchlist">Peer Group Watchlist<a class="headerlink" href="#peer-group-watchlist" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># dashboards/sea-rebuild-targets.toml</span>
+<span class="k">[dashboard]</span>
+<span class="n">id</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;sea-rebuild-targets&quot;</span>
+<span class="n">title</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;SEA Rebuild Targets&quot;</span>
+<span class="n">subtitle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Custom watchlist — potential trade acquisitions for Seattle&quot;</span>
+<span class="n">output</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;docs/dashboards/sea-rebuild-targets/&quot;</span>
+<span class="n">template</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;player-card&quot;</span>
+<span class="n">layout</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;two-column-grid&quot;</span>
+
+<span class="k">[query]</span>
+<span class="n">source</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;groups&quot;</span>
+<span class="n">group_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;SEA Rebuild Targets&quot;</span>
+<span class="n">sort_by</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;ppg_pace&quot;</span>
+<span class="n">sort_dir</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;desc&quot;</span>
+
+<span class="k">[display]</span>
+<span class="n">fields</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;team&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;pos&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;age&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;gp&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;ppg_pace&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;avg_other_line&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;fit_class&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;photo_url&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;team_logo_url&quot;</span><span class="p">]</span>
+</code></pre></div>
+<h3 id="tabbed-position-leaderboard">Tabbed Position Leaderboard<a class="headerlink" href="#tabbed-position-leaderboard" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># dashboards/position-leaders.toml</span>
+<span class="k">[dashboard]</span>
+<span class="n">id</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;position-leaders&quot;</span>
+<span class="n">title</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;League Leaders by Position&quot;</span>
+<span class="n">output</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;docs/dashboards/position-leaders/&quot;</span>
+<span class="n">layout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;tabbed&quot;</span>
+
+<span class="k">[[dashboard.tabs]]</span>
+<span class="n">label</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Centers&quot;</span>
+<span class="n">template</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;leaderboard-row&quot;</span>
+<span class="n">query</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">source</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;leaderboard&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">pos</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;C&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">sort_by</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;ppg_pace&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">limit</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">30</span><span class="w"> </span><span class="p">}</span>
+<span class="n">fields</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;rank&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;name&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;team&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;gp&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;ppg_pace&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;goals_pace&quot;</span><span class="p">]</span>
+
+<span class="k">[[dashboard.tabs]]</span>
+<span class="n">label</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Left Wing&quot;</span>
+<span class="n">template</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;leaderboard-row&quot;</span>
+<span class="n">query</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">source</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;leaderboard&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">pos</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;LW&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">sort_by</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;ppg_pace&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">limit</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">30</span><span class="w"> </span><span class="p">}</span>
+<span class="n">fields</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;rank&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;name&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;team&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;gp&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;ppg_pace&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;goals_pace&quot;</span><span class="p">]</span>
+
+<span class="k">[[dashboard.tabs]]</span>
+<span class="n">label</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Right Wing&quot;</span>
+<span class="n">template</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;leaderboard-row&quot;</span>
+<span class="n">query</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">source</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;leaderboard&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">pos</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;RW&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">sort_by</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;ppg_pace&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">limit</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">30</span><span class="w"> </span><span class="p">}</span>
+<span class="n">fields</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;rank&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;name&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;team&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;gp&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;ppg_pace&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;goals_pace&quot;</span><span class="p">]</span>
+
+<span class="k">[[dashboard.tabs]]</span>
+<span class="n">label</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Defense&quot;</span>
+<span class="n">template</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;leaderboard-row&quot;</span>
+<span class="n">query</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">source</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;leaderboard&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">pos</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;D&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">sort_by</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;ppg_pace&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">limit</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">30</span><span class="w"> </span><span class="p">}</span>
+<span class="n">fields</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;rank&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;name&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;team&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;gp&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;ppg_pace&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;goals_pace&quot;</span><span class="p">]</span>
+</code></pre></div>
+<hr />
+<h2 id="cli-integration">CLI Integration<a class="headerlink" href="#cli-integration" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="c1"># Build all dashboards defined in dashboards/</span>
+icelines<span class="w"> </span>build
+
+<span class="c1"># Build only specific dashboards</span>
+icelines<span class="w"> </span>build<span class="w"> </span>--dashboard<span class="w"> </span>u23-centers
+icelines<span class="w"> </span>build<span class="w"> </span>--dashboard<span class="w"> </span>class-2022-all
+
+<span class="c1"># Create a new dashboard from a template</span>
+icelines<span class="w"> </span>dashboard<span class="w"> </span>new<span class="w"> </span>--name<span class="w"> </span><span class="s2">&quot;Scandinavian Wings&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--query<span class="w"> </span><span class="s2">&quot;pos=LW,RW nationality=SWE,FIN,NOR&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--template<span class="w"> </span>player-row<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--layout<span class="w"> </span>ranked-table
+
+<span class="c1"># List all defined dashboards</span>
+icelines<span class="w"> </span>dashboard<span class="w"> </span>list
+
+<span class="c1"># Preview a dashboard query result without generating HTML</span>
+icelines<span class="w"> </span>dashboard<span class="w"> </span>preview<span class="w"> </span>u23-centers<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+</code></pre></div>
+<hr />
+<h2 id="rust-architecture">Rust Architecture<a class="headerlink" href="#rust-architecture" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>icelines-core/
+  src/
+    query/
+      mod.rs           # QuerySpec struct (deserialized from TOML)
+      executor.rs      # run_query(spec, &amp;PlayerStore) -&gt; Vec&lt;Record&gt;
+      filters.rs       # PlayerFilter, TeamFilter, GroupFilter, etc.
+    template/
+      mod.rs           # TemplateEngine (Tera wrapper)
+      registry.rs      # register built-in templates
+    layout/
+      mod.rs           # LayoutEngine — arrange N rendered templates
+    dashboard/
+      mod.rs           # DashboardSpec struct
+      builder.rs       # load TOML → run query → render → write files
+      nav.rs           # collect all dashboards → generate nav entries
+
+icelines-cli/
+  src/
+    commands/
+      build.rs         # walks dashboards/, calls DashboardBuilder for each
+      dashboard.rs     # new, list, preview subcommands
+</code></pre></div>
+<p><strong>Key types:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">DashboardSpec</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">dashboard</span><span class="p">:</span><span class="w"> </span><span class="nc">DashboardMeta</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">query</span><span class="p">:</span><span class="w">     </span><span class="nc">QuerySpec</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">display</span><span class="p">:</span><span class="w">   </span><span class="nc">DisplaySpec</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">tabs</span><span class="p">:</span><span class="w">      </span><span class="nb">Option</span><span class="o">&lt;</span><span class="nb">Vec</span><span class="o">&lt;</span><span class="n">TabSpec</span><span class="o">&gt;&gt;</span><span class="p">,</span><span class="w">  </span><span class="c1">// for tabbed layout</span>
+<span class="p">}</span>
+
+<span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">QuerySpec</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">source</span><span class="p">:</span><span class="w">   </span><span class="nc">QuerySource</span><span class="p">,</span><span class="w">   </span><span class="c1">// Players | Teams | Groups | ...</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">filters</span><span class="p">:</span><span class="w">  </span><span class="nc">PlayerFilter</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">sort_by</span><span class="p">:</span><span class="w">  </span><span class="nc">SortField</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">sort_dir</span><span class="p">:</span><span class="w"> </span><span class="nc">SortDir</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">limit</span><span class="p">:</span><span class="w">    </span><span class="nb">Option</span><span class="o">&lt;</span><span class="kt">usize</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="k">pub</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="nc">QuerySource</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">Players</span><span class="p">,</span>
+<span class="w">    </span><span class="n">Teams</span><span class="p">,</span>
+<span class="w">    </span><span class="n">Groups</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="n">Class</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">draft_year</span><span class="p">:</span><span class="w"> </span><span class="kt">u16</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="n">Leaderboard</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">pos</span><span class="p">:</span><span class="w"> </span><span class="nc">Position</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="n">Buried</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">min_delta</span><span class="p">:</span><span class="w"> </span><span class="kt">f32</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="n">Peers</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">player</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="p">:</span><span class="w"> </span><span class="nc">PeerMethod</span><span class="w"> </span><span class="p">},</span>
+<span class="p">}</span>
+
+<span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">Record</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Flat key-value map fed into Tera template</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">fields</span><span class="p">:</span><span class="w"> </span><span class="nc">HashMap</span><span class="o">&lt;</span><span class="nb">String</span><span class="p">,</span><span class="w"> </span><span class="n">TemplateValue</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="p">}</span>
+</code></pre></div>
+<hr />
+<h2 id="adding-a-new-dashboard-no-rust-required">Adding a New Dashboard (no Rust required)<a class="headerlink" href="#adding-a-new-dashboard-no-rust-required" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Create <code>dashboards/my-dashboard.toml</code></li>
+<li>Define <code>[dashboard]</code>, <code>[query]</code>, <code>[display]</code> sections</li>
+<li>Optionally create <code>templates/my-template.html</code> (Tera syntax)</li>
+<li>Run <code>icelines build --dashboard my-dashboard</code></li>
+<li>Preview at <code>http://127.0.0.1:8000/dashboards/my-dashboard/</code></li>
+</ol>
+<p>New dashboard types that need new query sources or display fields
+require a small Rust change in <code>icelines-core/src/query/executor.rs</code>.
+Everything else is configuration.</p>
+<hr />
+<h2 id="non-goals">Non-Goals<a class="headerlink" href="#non-goals" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Ad-hoc SQL</strong>: Queries are structured filter specs, not raw SQL. Power users can export
+  to JSON/CSV and use their own tools.</li>
+<li><strong>Real-time dashboards</strong>: Pages are generated at build time, not streamed live.</li>
+<li><strong>Custom JavaScript charts</strong>: The engine outputs static HTML/CSS. Plotly or D3 integration
+  is a separate enhancement, not a core requirement.</li>
+<li><strong>Multi-sport support</strong>: IceLines is NHL-specific. The query model uses hockey concepts
+  (lines, pairs, PPG, TOI) that do not generalize.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.indexes", "navigation.top", "search.highlight", "search.suggest", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
