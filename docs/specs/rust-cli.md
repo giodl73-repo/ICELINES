@@ -41,6 +41,29 @@ output (mkdocs) remains the same format, but the generator is now a Rust functio
 
 ---
 
+## 1a. Replacing Python Scripts
+
+The table below documents which Python script each `icelines` command replaces. This
+serves as the migration checklist: when a command is implemented and tested, the
+corresponding Python script can be deleted.
+
+| Python script           | Rust CLI command             | Notes                                      |
+|-------------------------|------------------------------|--------------------------------------------|
+| `scripts/fetch_rosters.py` | `icelines fetch rosters`  | One request per team, caches to JSON       |
+| `scripts/fetch_gp.py`   | `icelines fetch stats`       | Paginated bios + summary, merges on ID     |
+| `scripts/gen_site.py`   | `icelines build`             | Tera templates replace Jinja2              |
+| `scripts/deploy.bat`    | `icelines deploy`            | Calls `mkdocs gh-deploy` via subprocess    |
+| *(new — no prior script)* | `icelines fetch positions` | Aggregates boxscores for position profiles |
+| *(new — no prior script)* | `icelines tonight`         | Schedule + projected lines from boxscores  |
+| *(new — no prior script)* | `icelines tui`             | Full-screen terminal UI                    |
+
+**Yahoo CSV dependency**: The Yahoo Fantasy Hockey CSV is no longer used for any position
+data. Positions come exclusively from the NHL API — `positionCode` from the bios endpoint
+for primary position, and the boxscore `position` field per game for actual deployment
+tracking. See `docs/specs/position-engine.md` for the full algorithm.
+
+---
+
 ## 2. Commands Specification
 
 ### `icelines fetch`
@@ -251,6 +274,204 @@ Options:
 **Behavior:**
 - Renders two lineup cards side-by-side in the terminal (requires ≥140 column terminal)
 - Highlights slots where T1 player's pace projection exceeds T2's by >10 pts/82 (or vice versa)
+
+---
+
+### `icelines tonight`
+
+Show today's NHL games with projected starting lines for each game.
+
+```
+icelines tonight [OPTIONS]
+
+Options:
+  --team <ABBREV>    Filter output to games involving this team only
+  --json             Output JSON instead of formatted text
+```
+
+**Behavior:**
+
+Fetches today's schedule from `https://api-web.nhle.com/v1/schedule/now`. For each game,
+retrieves the most recent cached boxscore for each team to derive the projected starting
+lines — the last game played is the best available proxy for tonight's lineup.
+
+Output is a compact side-by-side view for each game:
+
+```
+7:00 PM ET  Carolina Hurricanes @ NY Rangers
+
+  CAR Projected Lines         NYR Projected Lines
+  F1  Niederreiter–Aho–Svech  F1  Panarin–Trocheck–Kreider
+  F2  Kotkaniemi–Drury–Tera   F2  Kakko–Chytil–Lafreniere
+  F3  Necas–Staal–Jarvis      F3  Vesey–Goodrow–Blais
+  F4  Lorentz–Kostalek–Noes   F4  Reaves–Gauthier–Carpenter
+  D1  Slavin–Burns             D1  Miller–Fox
+  D2  Chatfield–DeAngelo       D2  Trouba–Lindgren
+  D3  Orlov–Pesce              D3  Jones–Schneider
+
+  Note: Lines projected from last game boxscore — not confirmed.
+```
+
+Lines are constructed by reading the forward and defense arrays from each team's most
+recent boxscore and grouping by line number / pair number where available. If a team
+has no cached boxscore (has not played a game yet this season), their projected lines are
+shown as `"(no boxscore data)"`.
+
+`--team`: If provided, only games involving `<ABBREV>` are shown. Other games are omitted.
+
+**JSON output (`--json`)**: An array of game objects, each with `game_time`, `away_team`,
+`home_team`, `away_projected_lines`, `home_projected_lines`, and `data_source` (the game
+ID of the most recent boxscore used for each team).
+
+---
+
+### `icelines schedule`
+
+Show the upcoming NHL schedule for a team or the full league.
+
+```
+icelines schedule [OPTIONS]
+
+Options:
+  --team <ABBREV>    Show schedule for this team only
+  --days <N>         Number of days ahead to show [default: 7]
+  --json             Output JSON instead of formatted table
+```
+
+**Behavior:**
+
+Fetches the schedule by iterating `https://api-web.nhle.com/v1/schedule/{DATE}` for each
+date from today through today + `--days`. Filters to the specified team if `--team` is
+provided.
+
+Output lists each game with date, time, home, and away team:
+
+```
+NHL Schedule — Next 7 Days
+
+Sat Apr 25    7:00 PM ET    CAR @ NYR
+Sat Apr 25    7:30 PM ET    TOR @ OTT
+Sat Apr 25   10:00 PM ET    SEA @ VGK
+Sun Apr 26    3:00 PM ET    EDM @ CGY
+...
+```
+
+If `--team` is provided, only that team's games are shown. Games the team has already
+played (today's earlier games) are included if they appear in the schedule feed.
+
+---
+
+### `icelines trade`
+
+Analyze the depth chart impact of a trade for the team losing the outgoing player.
+
+```
+icelines trade <PLAYER_OUT> for <PLAYER_IN> [OPTIONS]
+
+Arguments:
+  <PLAYER_OUT>       Player being traded away (name or NHL player ID)
+  <PLAYER_IN>        Player being acquired (name or NHL player ID)
+
+Options:
+  --team <ABBREV>    Team perspective [default: player_out's current team]
+  --json             Output JSON instead of formatted tables
+```
+
+**Behavior:**
+
+Shows the depth chart for `--team` (or `player_out`'s current team) in two states:
+before the trade (current) and after the trade (simulated). The diff highlights:
+
+- Which line slot `player_out` occupied
+- Where `player_in` is placed given their primary and eligible positions
+- Whether the replacement is an upgrade or downgrade (pace comparison)
+- How team totals (sum of pace_82 for all rostered skaters) change
+
+Example output:
+
+```
+Trade Analysis — EDM perspective
+  OUT: Jesse Puljujarvi (RW, 23.4 pts/82, Line 3 RW)
+  IN:  Rickard Rakell   (RW/LW, 51.2 pts/82)
+
+  BEFORE           →    AFTER
+  Line 3 RW                 Line 3 RW
+  [Puljujarvi] 23.4         [Rakell] 51.2  +27.8 pts/82
+
+  Team total before: 312.4 pts/82
+  Team total after:  340.2 pts/82  (+27.8)
+
+  Verdict: Upgrade — Rakell slots directly into Puljujarvi's line 3 RW slot.
+```
+
+**Scope**: This command evaluates only the team losing `player_out` (i.e., the team specified
+by `--team`). The other team's depth chart change is not shown. To evaluate the other side,
+run `icelines trade <PLAYER_IN> for <PLAYER_OUT> --team <OTHER_TEAM>` separately.
+
+**Positioning**: `player_in` is placed in the depth chart using the same algorithm as the
+depth chart builder (primary position first, then eligible positions). If `player_in` is not
+in IceLines' cached data (e.g., they are a minor-league player not in the NHL API stats
+feed), the command exits with an error and a suggestion to run `icelines fetch stats`.
+
+---
+
+### `icelines project`
+
+Rest-of-season projection for a player or all skaters on a team. Full specification in
+`docs/specs/projection-engine.md`.
+
+```
+icelines project <PLAYER|--team TEAM> [OPTIONS]
+
+Arguments:
+  <PLAYER>           Player name (partial match) or NHL player ID
+                     Mutually exclusive with --team
+
+Options:
+  --team <ABBREV>    Project all skaters on this team (mutually exclusive with <PLAYER>)
+  --mode <MODE>      pace | regressed | composite  [default: regressed]
+  --games <N>        Remaining games to project [default: computed from schedule API]
+  --season           Show by-season career comparison (single-player mode only)
+  --pos <POSITIONS>  Comma-separated position filter for --team: C,LW,RW,D  [default: all]
+  --json             Output JSON instead of formatted table
+```
+
+**Single-player output**: Player bio, current pace, career PPG, α weight, projected
+remaining points, ±1σ confidence band, and projected full-season total. With `--season`,
+also shows a by-season career comparison table.
+
+**Team output**: Ranked table of all skaters on the team above MIN_GP, sorted by projected
+remaining points descending. Includes team total projected remaining and ±1σ band.
+
+See `docs/specs/projection-engine.md` for the full algorithm, formula definitions, and
+data source specification.
+
+---
+
+### `icelines tui`
+
+Launch the IceLines full-screen terminal user interface. Full specification in
+`docs/specs/tui.md`.
+
+```
+icelines tui [OPTIONS]
+icelines         (no arguments — same as icelines tui)
+
+Options:
+  --no-color     Disable ANSI colors; use text labels for fit classes instead
+```
+
+**Behavior**: Enters terminal raw mode, initializes the `ratatui` + `crossterm` event loop,
+and renders the Home screen (league tracker). All navigation is keyboard-driven.
+
+The TUI reads exclusively from the local cache — it does not make NHL API calls during
+normal operation. Use `icelines fetch` (or the Fetch screen inside the TUI, key `f` from
+Home) to refresh stale data.
+
+Press `q` or `Esc` from the Home screen to exit the TUI and return to the shell.
+
+See `docs/specs/tui.md` for the full screen inventory, widget catalog, navigation model,
+and color contract.
 
 ---
 
