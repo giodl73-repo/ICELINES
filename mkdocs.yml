@@ -1,0 +1,91 @@
+site_name: IceLines
+site_description: NHL depth charts, pace-adjusted rankings, and trade analysis for all 32 teams
+site_url: https://giodl73-repo.github.io/ICELINES/
+repo_url: https://github.com/giodl73-repo/ICELINES
+repo_name: IceLines
+docs_dir: docs
+site_dir: ../fantasy-site
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: black
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.indexes
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+  font:
+    text: Inter
+    code: JetBrains Mono
+
+markdown_extensions:
+  - tables
+  - attr_list
+  - def_list
+  - admonition
+  - md_in_html
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - toc:
+      permalink: true
+
+extra_css:
+  - assets/fantasy.css
+
+plugins:
+  - search:
+      lang: en
+
+nav:
+  - Tracker: index.md
+  - Teams:
+    - COL — Colorado Avalanche: teams/COL.md
+    - TB — Tampa Bay Lightning: teams/TB.md
+    - VGK — Vegas Golden Knights: teams/VGK.md
+    - DAL — Dallas Stars: teams/DAL.md
+    - EDM — Edmonton Oilers: teams/EDM.md
+    - PIT — Pittsburgh Penguins: teams/PIT.md
+    - MTL — Montréal Canadiens: teams/MTL.md
+    - MIN — Minnesota Wild: teams/MIN.md
+    - OTT — Ottawa Senators: teams/OTT.md
+    - FLA — Florida Panthers: teams/FLA.md
+    - SJ — San Jose Sharks: teams/SJ.md
+    - BUF — Buffalo Sabres: teams/BUF.md
+    - ANA — Anaheim Ducks: teams/ANA.md
+    - CAR — Carolina Hurricanes: teams/CAR.md
+    - UTA — Utah Hockey Club: teams/UTA.md
+    - BOS — Boston Bruins: teams/BOS.md
+    - WSH — Washington Capitals: teams/WSH.md
+    - DET — Detroit Red Wings: teams/DET.md
+    - CBJ — Columbus Blue Jackets: teams/CBJ.md
+    - TOR — Toronto Maple Leafs: teams/TOR.md
+    - NYI — New York Islanders: teams/NYI.md
+    - NYR — New York Rangers: teams/NYR.md
+    - PHI — Philadelphia Flyers: teams/PHI.md
+    - NJ — New Jersey Devils: teams/NJ.md
+    - STL — St. Louis Blues: teams/STL.md
+    - LA — Los Angeles Kings: teams/LA.md
+    - SEA — Seattle Kraken: teams/SEA.md
+    - NSH — Nashville Predators: teams/NSH.md
+    - CHI — Chicago Blackhawks: teams/CHI.md
+    - WPG — Winnipeg Jets: teams/WPG.md
+    - CGY — Calgary Flames: teams/CGY.md
+    - VAN — Vancouver Canucks: teams/VAN.md
