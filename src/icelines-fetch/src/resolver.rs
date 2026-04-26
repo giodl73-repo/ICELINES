@@ -1,1 +1,2 @@
-// Stub — implemented in tasks 6 and 7
+// Task 7: full implementation
+pub struct PlayerResolver;

@@ -24,4 +24,3 @@ pub enum FetchError {
     Json(#[from] serde_json::Error),
 }
 
-pub struct PlayerResolver;

@@ -985,6 +985,7 @@ dependencies = [
  "icelines-fetch",
  "icelines-site",
  "owo-colors",
+ "serde",
  "serde_json",
  "tokio",
  "toml",
