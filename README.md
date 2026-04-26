@@ -29,11 +29,36 @@ the same as a player with 120 pts in 82 games.
 
 Stats sourced from Yahoo Fantasy Hockey 2025–26 season data and NHL API.
 
-## Generating the site
+## Structure
+
+```
+ICELINES/
+├── scripts/
+│   ├── gen_site.py      # generate docs/ from CSV + GP data
+│   ├── fetch_gp.py      # refresh NHL GP data → data/gp_data.json
+│   └── deploy.bat       # one-click regenerate + publish
+├── data/
+│   └── gp_data.json     # cached NHL games-played data
+├── docs/                # generated site source (mkdocs input)
+│   ├── index.md
+│   ├── assets/
+│   └── teams/
+├── src/                 # future Rust CLI
+└── mkdocs.yml
+```
+
+## Usage
 
 ```bash
-pip install mkdocs-material
-python gen_site.py   # regenerates all docs/
-mkdocs serve         # preview locally at http://127.0.0.1:8000
-mkdocs gh-deploy     # push to GitHub Pages
+# Refresh NHL GP data from API
+python scripts/fetch_gp.py
+
+# Regenerate site
+python scripts/gen_site.py
+
+# Preview locally
+PYTHONUTF8=1 mkdocs serve
+
+# Deploy to GitHub Pages (or double-click scripts/deploy.bat)
+PYTHONUTF8=1 mkdocs gh-deploy
 ```

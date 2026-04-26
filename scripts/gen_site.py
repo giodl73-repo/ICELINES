@@ -19,9 +19,10 @@ import sys
 import unicodedata
 from collections import defaultdict
 
+_ROOT     = os.path.dirname(os.path.dirname(__file__))   # repo root
 CSV_PATH  = r'C:\Users\giodl\Downloads\Yahoo-465.l.1214-Players.csv'
-GP_PATH   = os.path.join(os.path.dirname(__file__), 'gp_data.json')
-DOCS_DIR  = os.path.join(os.path.dirname(__file__), 'docs')
+GP_PATH   = os.path.join(_ROOT, 'data', 'gp_data.json')
+DOCS_DIR  = os.path.join(_ROOT, 'docs')
 TEAMS_DIR = os.path.join(DOCS_DIR, 'teams')
 
 FULL_SEASON = 82   # project everything to this many games

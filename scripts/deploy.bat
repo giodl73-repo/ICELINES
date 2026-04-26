@@ -4,10 +4,10 @@ echo  IceLines — regenerate and deploy
 echo  ================================
 echo.
 
-cd /d "%~dp0"
+cd /d "%~dp0\.."
 
 echo [1/3] Generating site from CSV data...
-python gen_site.py
+python scripts\gen_site.py
 if errorlevel 1 (
     echo ERROR: gen_site.py failed
     pause
