@@ -1,7 +1,10 @@
 pub mod analysis;
 pub mod build;
 pub mod fetch;
+pub mod mates;
 pub mod players;
+pub mod project;
+pub mod tonight;
 pub mod rank;
 pub mod scheme;
 pub mod snapshot;

@@ -104,12 +104,22 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
         // ── Phase 3 stubs ────────────────────────────────────────────────────
         Commands::Serve => stub("serve"),
         Commands::Deploy => stub("deploy"),
-        Commands::Tonight => stub("tonight"),
-        Commands::Schedule => stub("schedule"),
-        Commands::Trade => stub("trade"),
-        Commands::Project => stub("project"),
+        Commands::Tonight { team } => {
+            commands::tonight::run(team).await?;
+        }
+        Commands::Schedule { team, days } => {
+            commands::tonight::run_schedule(team, days).await?;
+        }
+        Commands::Trade { player_out, _for: _, player_in, team } => {
+            commands::tonight::run_trade(player_out, player_in, team).await?;
+        }
+        Commands::Project { player, team, mode, games } => {
+            commands::project::run(player, team, mode, games).await?;
+        }
         Commands::Tui => stub("tui"),
-        Commands::Mates => stub("mates"),
+        Commands::Mates { player, top } => {
+            commands::mates::run(player, top).await?;
+        }
         Commands::Scouting => stub("scouting"),
         Commands::Scheme(sub) => {
             commands::scheme::run(sub).await?;

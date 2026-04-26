@@ -1,5 +1,6 @@
 //! BoxscoreClient — fetches game logs and boxscores from the NHL web API,
-//! then aggregates per-player position appearances into `PositionProfile`s.
+//! then aggregates per-player position appearances into `PositionProfile`s
+//! and linemate `ShiftProfile`s.
 
 use std::collections::HashMap;
 use std::time::Duration;
@@ -8,6 +9,10 @@ use icelines_core::{Position, PositionProfile};
 use serde::Deserialize;
 
 use crate::error::FetchError;
+use crate::shift_profile::{
+    parse_toi_mmss, BoxscoreData, BoxscorePlayerEntry, ShiftProfile,
+    build_profile_from_boxscores,
+};
 
 // ── Internal response shapes ──────────────────────────────────────────────────
 
@@ -33,21 +38,26 @@ struct BoxscoreResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct PlayerByGameStats {
-    home_team: TeamStats,
-    away_team: TeamStats,
+    home_team: TeamStatsResponse,
+    away_team: TeamStatsResponse,
 }
 
 #[derive(Debug, Deserialize)]
-struct TeamStats {
+struct TeamStatsResponse {
     forwards: Vec<SkaterEntry>,
     defense: Vec<SkaterEntry>,
 }
 
+/// Full skater entry with TOI and shifts for boxscore mapping.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct SkaterEntry {
     player_id: u32,
-    position: String, // "C", "L", "R", "D"
+    position: String,  // "C", "L", "R", "D"
+    #[serde(default)]
+    toi: Option<String>,    // "MM:SS" even-strength TOI
+    #[serde(default)]
+    shifts: Option<u32>,
 }
 
 // ── BoxscoreClient ────────────────────────────────────────────────────────────
@@ -138,13 +148,13 @@ impl BoxscoreClient {
         let mut positions: HashMap<u32, String> = HashMap::new();
 
         let all_teams = [
-            resp.player_by_game_stats.home_team.forwards.as_slice(),
-            resp.player_by_game_stats.home_team.defense.as_slice(),
-            resp.player_by_game_stats.away_team.forwards.as_slice(),
-            resp.player_by_game_stats.away_team.defense.as_slice(),
+            ("home", resp.player_by_game_stats.home_team.forwards.as_slice()),
+            ("home", resp.player_by_game_stats.home_team.defense.as_slice()),
+            ("away", resp.player_by_game_stats.away_team.forwards.as_slice()),
+            ("away", resp.player_by_game_stats.away_team.defense.as_slice()),
         ];
 
-        for team_skaters in &all_teams {
+        for (_side, team_skaters) in &all_teams {
             for skater in *team_skaters {
                 positions.insert(skater.player_id, skater.position.clone());
             }
@@ -152,6 +162,93 @@ impl BoxscoreClient {
 
         Ok(positions)
     }
+
+    /// Fetch a boxscore and map it into a `BoxscoreData` for linemate analysis.
+    ///
+    /// TOI strings ("MM:SS") are parsed to integer seconds; malformed strings
+    /// produce 0 without panicking.
+    ///
+    /// Endpoint: `GET {base_web}/v1/gamecenter/{game_id}/boxscore`
+    pub async fn fetch_boxscore_data(
+        &self,
+        game_id: u64,
+    ) -> Result<BoxscoreData, FetchError> {
+        let url = format!("{}/gamecenter/{game_id}/boxscore", self.base_web);
+        let resp: BoxscoreResponse = self.get_json(&url).await?;
+
+        // We need to know which team abbreviation belongs to which side.
+        // The NHL API doesn't embed the abbrev in playerByGameStats, so we
+        // use "HOME" / "AWAY" as synthetic team tokens — sufficient for the
+        // same-team co-occurrence logic in build_profile_from_boxscores.
+        let home_abbrev = "HOME".to_owned();
+        let away_abbrev = "AWAY".to_owned();
+
+        let mut players: Vec<BoxscorePlayerEntry> = Vec::new();
+
+        let teams: [(&str, &[SkaterEntry], &[SkaterEntry]); 2] = [
+            (&home_abbrev, &resp.player_by_game_stats.home_team.forwards, &resp.player_by_game_stats.home_team.defense),
+            (&away_abbrev, &resp.player_by_game_stats.away_team.forwards, &resp.player_by_game_stats.away_team.defense),
+        ];
+
+        for (team_token, forwards, defense) in &teams {
+            for skater in forwards.iter().chain(defense.iter()) {
+                let toi_secs = skater
+                    .toi
+                    .as_deref()
+                    .map(parse_toi_mmss)
+                    .unwrap_or(0);
+                players.push(BoxscorePlayerEntry {
+                    player_id: skater.player_id,
+                    team: team_token.to_string(),
+                    position: skater.position.clone(),
+                    toi_secs,
+                    shifts: skater.shifts.unwrap_or(0),
+                });
+            }
+        }
+
+        Ok(BoxscoreData {
+            game_id,
+            home_team: home_abbrev,
+            away_team: away_abbrev,
+            players,
+        })
+    }
+}
+
+// ── aggregate_shift_profiles ──────────────────────────────────────────────────
+
+/// For each player ID, fetch their game log, fetch each boxscore, and build a
+/// `ShiftProfile` capturing linemate co-occurrence.
+///
+/// Players with zero appearances are silently skipped.
+pub async fn aggregate_shift_profiles(
+    player_ids: &[u32],
+    season: &str,
+    client: &BoxscoreClient,
+) -> Vec<ShiftProfile> {
+    let mut profiles = Vec::new();
+
+    for &player_id in player_ids {
+        let game_ids = match client.fetch_game_log(player_id, season).await {
+            Ok(ids) => ids,
+            Err(_) => continue,
+        };
+
+        let mut boxscores: Vec<BoxscoreData> = Vec::new();
+        for game_id in game_ids {
+            match client.fetch_boxscore_data(game_id).await {
+                Ok(bs) => boxscores.push(bs),
+                Err(_) => continue, // skip individual game errors
+            }
+        }
+
+        if let Some(profile) = build_profile_from_boxscores(player_id, &boxscores) {
+            profiles.push(profile);
+        }
+    }
+
+    profiles
 }
 
 // ── aggregate_profiles ────────────────────────────────────────────────────────

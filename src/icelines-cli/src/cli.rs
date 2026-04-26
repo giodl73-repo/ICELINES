@@ -68,14 +68,38 @@ pub enum Commands {
     Serve,
     /// Deploy the site.
     Deploy,
-    /// Show tonight's schedule and projected scoring.
-    Tonight,
-    /// Show the full season schedule.
-    Schedule,
-    /// Evaluate a trade offer.
-    Trade,
-    /// Project player performance for the rest of the season.
-    Project,
+    /// Show tonight's NHL games.
+    Tonight {
+        /// Filter to games involving this team.
+        #[arg(long)] team: Option<String>,
+    },
+    /// Show upcoming schedule.
+    Schedule {
+        #[arg(long)] team: Option<String>,
+        #[arg(long, default_value_t = 7)] days: u32,
+    },
+    /// Evaluate a trade — depth chart before/after.
+    Trade {
+        /// Player leaving (partial name OK).
+        player_out: String,
+        /// Literal "for".
+        #[arg(value_name = "for")] _for: String,
+        /// Player arriving.
+        player_in: String,
+        /// Team perspective [default: player_out's team].
+        #[arg(long)] team: Option<String>,
+    },
+    /// Project rest-of-season performance.
+    Project {
+        /// Player name (partial match OK). Omit to use --team.
+        player: Option<String>,
+        /// Project all skaters on a team.
+        #[arg(long)] team: Option<String>,
+        /// Projection mode: pace | regressed | composite [default: regressed]
+        #[arg(long, default_value = "regressed")] mode: String,
+        /// Override remaining games (default: auto from schedule).
+        #[arg(long)] games: Option<u32>,
+    },
     /// Launch the interactive TUI.
     Tui,
     /// Filter and list players with rich criteria.
@@ -135,7 +159,13 @@ pub enum Commands {
         json: bool,
     },
     /// Find line-mates for a player.
-    Mates,
+    Mates {
+        /// Player name (fuzzy matched).
+        player: String,
+        /// Number of top linemates to display.
+        #[arg(long, default_value_t = 5)]
+        top: usize,
+    },
     /// Manage player watchlists and custom groups.
     #[command(subcommand)]
     Group(GroupSubcommand),
