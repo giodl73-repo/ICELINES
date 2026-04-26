@@ -42,8 +42,12 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
             commands::snapshot::run(sub).await?;
         }
 
-        // ── Phase 2 / 3 stubs ────────────────────────────────────────────────
-        Commands::Build => stub("build"),
+        // ── Phase 2 implemented commands ─────────────────────────────────────
+        Commands::Build { no_site } => {
+            commands::build::run(no_site).await?;
+        }
+
+        // ── Phase 3 stubs ────────────────────────────────────────────────────
         Commands::Serve => stub("serve"),
         Commands::Deploy => stub("deploy"),
         Commands::Compare => stub("compare"),

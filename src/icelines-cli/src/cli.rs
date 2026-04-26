@@ -55,9 +55,15 @@ pub enum Commands {
     #[command(subcommand)]
     Snapshot(SnapshotSubcommand),
 
-    // ── Phase 2 / 3 stubs ────────────────────────────────────────────────────
-    /// Build static site output.
-    Build,
+    // ── Phase 2 implemented ───────────────────────────────────────────────────
+    /// Generate site markdown from cached snapshot data.
+    Build {
+        /// Generate markdown only, do not run mkdocs.
+        #[arg(long)]
+        no_site: bool,
+    },
+
+    // ── Phase 3 stubs ────────────────────────────────────────────────────────
     /// Serve the static site locally.
     Serve,
     /// Deploy the site.

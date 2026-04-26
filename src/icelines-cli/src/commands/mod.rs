@@ -1,3 +1,4 @@
+pub mod build;
 pub mod fetch;
 pub mod rank;
 pub mod snapshot;

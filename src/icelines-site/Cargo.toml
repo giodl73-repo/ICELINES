@@ -4,7 +4,8 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-icelines-core = { path = "../icelines-core" }
+icelines-core  = { path = "../icelines-core" }
+icelines-fetch = { path = "../icelines-fetch" }
 thiserror.workspace = true
 serde.workspace     = true
-# Phase 2: tera, toml added here
+serde_json.workspace = true
