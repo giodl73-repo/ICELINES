@@ -3,10 +3,18 @@
 **Date**: 2026-04-25  
 **Phase**: 1 of 3 — Foundation (icelines-core + icelines-fetch + icelines-cli: `team` and `rank`)  
 **Spec references**:
-- `docs/specs/rust-cli.md` — command surface, crate architecture, data model
-- `docs/specs/data-sources.md` — NHL API tiers, shift data, composite scoring roadmap
-- `docs/specs/player-analysis.md` — player filtering, draft classes, peer groups (Phase 2+)
-- `docs/specs/dashboard-engine.md` — TOML-driven dashboard generation (Phase 2+)
+- `docs/specs/rust-cli.md` — full command surface, crate architecture, data model, migration table
+- `docs/specs/data-sources.md` — NHL API tiers (Tier 0 rosters is now primary player universe)
+- `docs/specs/position-engine.md` — position from boxscore API, no Yahoo CSV (Phase 1 partial)
+- `docs/specs/fantasy-scheme.md` — scheme TOML format, icelines-core scoring engine (Phase 1 partial)
+- `docs/specs/player-analysis.md` — player filtering, draft classes, peer groups (Phase 2)
+- `docs/specs/dashboard-engine.md` — TOML-driven dashboard generation (Phase 2)
+- `docs/specs/projection-engine.md` — projection modes, age curve, confidence bands (Phase 3)
+- `docs/specs/tui.md` — ratatui TUI, 8 screens, event loop (Phase 3)
+
+**Companion plans**:
+- `docs/plans/2026-04-25-phase2-site-analysis.md` — site generation, schemes, player analysis
+- `docs/plans/2026-04-25-phase3-tui-projections.md` — TUI, projections, shift data, tonight
 
 ---
 
@@ -213,6 +221,76 @@ The following conditions must all be true before this plan is considered complet
 8. Every test assertion documents its expected value with a calculation comment
 9. No `unwrap()` in `icelines-core`, `icelines-fetch`, or `icelines-site` library code
 10. `icelines-core` has zero dependencies that perform I/O (verified by `cargo tree -p icelines-core`)
+
+---
+
+## Test Coverage Requirements
+
+See `docs/specs/test-strategy.md` for full definitions of L0/L1/L2 and the 9 BENCH archetypes.
+
+### L0 — Unit Tests (Phase 1 scope, icelines-core)
+
+Target: **≥ 95% line coverage** on `icelines-core`.
+
+Required tests (each with documented calculation comment):
+
+| Test | Expected value | Why |
+|------|---------------|-----|
+| `pace_score(100, 75)` | 109.333 pts/82 | McDavid-scale verification |
+| `pace_score(50, 70)` | 58.571 pts/82 | Mid-tier verification |
+| `pace_score(_, 0)` | None | Division by zero prevention |
+| `pace_score(_, 9)` | None | Below MIN_GP |
+| `pace_score(_, 10)` | Some(_) | Exactly at MIN_GP — must include |
+| `classify_fit(64.9, Forward)` | Solid | Below Elite threshold |
+| `classify_fit(65.0, Forward)` | Elite | At threshold — inclusive |
+| `classify_fit(65.0, Defense)` | Solid | D uses different thresholds |
+| `classify_fit(45.0, Defense)` | Elite | D Elite threshold |
+| `normalize_name("Slafkovský")` | "slafkovsky" | Diacritic strip |
+| `normalize_name("")` | "" | Empty string safe |
+| `TeamAbbr::parse("SEA")` | Ok(SEA) | Valid team |
+| `TeamAbbr::parse("XYZ")` | Err(_) | Invalid team |
+| `PositionResolver::parse("C,LW,Util")` | (C, [C, LW]) | Multi-position |
+
+Property test (proptest):
+```rust
+proptest! {
+    fn any_pace_above_elite_is_elite(pts in 65.0f32..500.0) {
+        assert_eq!(classify_fit(pts, Position::Forward), FitClass::Elite);
+    }
+}
+```
+
+### L1 — Integration Tests (Phase 1 scope)
+
+Target: All happy paths + all error paths in `icelines-fetch`.
+
+Required fixtures: `tests/fixtures/sample_skaters.csv` (9 BENCH archetypes),
+`tests/fixtures/api/` (mock API responses for each archetype).
+
+| Test | Verifies |
+|------|---------|
+| `full_pipeline_col_depth_chart` | CSV → GP fetch (mocked) → score → 4×3 grid structure |
+| `resolver_slafkovsky` | Normalized match → correct player ID 8482078 |
+| `resolver_sebastian_aho_disambiguates` | Two players same name → team-match wins |
+| `csv_bom_handled` | UTF-8 BOM prefix → parsed correctly |
+| `csv_empty_numeric_field` | Empty G column → CsvParse error, not silent 0 |
+| `csv_missing_column` | No Team column → CsvParse error with field name |
+| `depth_chart_partial_defense` | 4 D players → pair 3 = [None, None] |
+| `depth_chart_gp_zero_excluded` | GP=0 player → in `below_min_gp`, not on card |
+| `cache_hit_skips_api` | Second fetch → zero HTTP calls (verify with httpmock) |
+
+### L2 — System Tests (Phase 1 scope)
+
+Target: Every Phase 1 command has at least one exit-0 smoke test.
+
+| Command | Assertion |
+|---------|-----------|
+| `icelines --version` | Exit 0, prints version string |
+| `icelines --help` | Exit 0, lists all subcommands |
+| `icelines fetch --dry-run` | Exit 0, no HTTP calls made |
+| `icelines team COL` | Exit 0, stdout contains "Colorado Avalanche" |
+| `icelines rank --top 10` | Exit 0, stdout has exactly 10 player rows |
+| `icelines rank --pos C --top 5` | Exit 0, all 5 rows show position C |
 
 ---
 
