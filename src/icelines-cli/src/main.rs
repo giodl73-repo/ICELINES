@@ -48,20 +48,50 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
         }
 
         // ── Phase 2 player analysis ───────────────────────────────────────────
-        Commands::Players { pos, team, age_max, age_min, nationality, draft_year,
-                            draft_round, ppg_min, gp_min, top, json } => {
+        Commands::Players {
+            pos,
+            team,
+            age_max,
+            age_min,
+            nationality,
+            draft_year,
+            draft_round,
+            ppg_min,
+            gp_min,
+            top,
+            json,
+        } => {
             commands::players::run(commands::players::PlayersArgs {
-                pos, team, age_max, age_min, nationality,
-                draft_year, draft_round, ppg_min, gp_min, top, json,
-            }).await?;
+                pos,
+                team,
+                age_max,
+                age_min,
+                nationality,
+                draft_year,
+                draft_round,
+                ppg_min,
+                gp_min,
+                top,
+                json,
+            })
+            .await?;
         }
-        Commands::Class { year, pos, top, json } => {
+        Commands::Class {
+            year,
+            pos,
+            top,
+            json,
+        } => {
             commands::analysis::run_class(year, pos, top, json).await?;
         }
         Commands::Peers { player, size, json } => {
             commands::analysis::run_peers(player, size, json).await?;
         }
-        Commands::Compare { player1, player2, json } => {
+        Commands::Compare {
+            player1,
+            player2,
+            json,
+        } => {
             commands::analysis::run_compare(player1, player2, json).await?;
         }
         Commands::History { player, json } => {

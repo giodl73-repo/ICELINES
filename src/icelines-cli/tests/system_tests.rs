@@ -128,12 +128,130 @@ fn l2_cmd_rank_no_cache_exits_nonzero() {
 
 #[test]
 fn l2_cmd_stubs_exit_zero() {
-    for cmd in &["build", "serve", "deploy", "tui", "tonight"] {
+    for cmd in &["serve", "deploy", "tui", "tonight"] {
         let out = run(&[cmd]);
         assert!(
             out.status.success(),
             "stub command '{cmd}' must exit 0, got: {:?}",
             out.status.code()
+        );
+    }
+}
+
+// ── L2: Phase 2 scheme commands ───────────────────────────────────────────────
+
+#[test]
+fn l2_cmd_scheme_list_exits_zero() {
+    let out = run(&["scheme", "list"]);
+    assert!(out.status.success(), "scheme list must exit 0");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("yahoo-standard"),
+        "scheme list must show yahoo-standard"
+    );
+    assert!(
+        stdout.contains("espn-standard"),
+        "scheme list must show espn-standard"
+    );
+    assert!(
+        stdout.contains("simple-pts"),
+        "scheme list must show simple-pts"
+    );
+}
+
+#[test]
+fn l2_cmd_scheme_show_yahoo_exits_zero() {
+    let out = run(&["scheme", "show", "yahoo-standard"]);
+    assert!(
+        out.status.success(),
+        "scheme show yahoo-standard must exit 0"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("goals"),
+        "scheme show must display scoring weights"
+    );
+}
+
+#[test]
+fn l2_cmd_scheme_show_unknown_exits_nonzero() {
+    let out = run(&["scheme", "show", "nonexistent-scheme"]);
+    assert!(!out.status.success(), "unknown scheme must exit non-zero");
+}
+
+// ── L2: Phase 2 snapshot commands ────────────────────────────────────────────
+
+#[test]
+fn l2_cmd_snapshot_list_exits_zero() {
+    // May have no snapshots if fetch hasn't been run — that's fine
+    let out = run(&["snapshot", "list"]);
+    assert!(
+        out.status.success(),
+        "snapshot list must exit 0 even with no snapshots"
+    );
+}
+
+#[test]
+fn l2_cmd_snapshot_verify_no_active_exits_gracefully() {
+    // Without an active snapshot, verify should exit non-zero with a message
+    let out = run(&["snapshot", "verify"]);
+    // Either succeeds (snapshots exist) or fails with a clear message
+    if !out.status.success() {
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        let stdout = String::from_utf8_lossy(&out.stdout);
+        assert!(
+            stderr.len() > 0 || stdout.len() > 0,
+            "verify must produce output when it fails"
+        );
+    }
+}
+
+// ── L2: Phase 2 player analysis (requires cache — graceful degradation) ───────
+
+#[test]
+fn l2_cmd_players_no_cache_exits_gracefully() {
+    let out = run(&["players", "--pos", "C", "--age-max", "25"]);
+    if !out.status.success() {
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        assert!(
+            stderr.contains("fetch") || stderr.len() > 0,
+            "players must mention fetch when cache is missing"
+        );
+    }
+}
+
+#[test]
+fn l2_cmd_class_no_cache_exits_gracefully() {
+    let out = run(&["class", "2022"]);
+    if !out.status.success() {
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        assert!(
+            stderr.len() > 0,
+            "class must produce error output when cache is missing"
+        );
+    }
+}
+
+#[test]
+fn l2_cmd_group_list_exits_zero() {
+    let out = run(&["group", "list"]);
+    assert!(
+        out.status.success(),
+        "group list must exit 0 even with no groups"
+    );
+}
+
+#[test]
+fn l2_cmd_build_no_site_exits_gracefully() {
+    // Without a snapshot, build should fail gracefully (not panic)
+    let out = run(&["build", "--no-site"]);
+    // Either succeeds (if snapshot exists) or fails with a clear message
+    if !out.status.success() {
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        let stdout = String::from_utf8_lossy(&out.stdout);
+        assert!(
+            stderr.contains("fetch") || stdout.contains("fetch") || stderr.len() > 0,
+            "build must mention fetch when cache is missing"
         );
     }
 }

@@ -9,7 +9,7 @@ use icelines_fetch::{
 };
 
 pub async fn run(team: String, _scheme: Option<String>, no_color: bool) -> anyhow::Result<()> {
-    let cfg   = Config::load()?;
+    let cfg = Config::load()?;
     let store = SnapshotStore::new(cfg.snapshot_dir());
 
     let team_abbr = TeamAbbr::parse(&team)
@@ -17,10 +17,16 @@ pub async fn run(team: String, _scheme: Option<String>, no_color: bool) -> anyho
 
     // Read roster from snapshot chain (may be in a Rosters parent snapshot)
     let roster: RosterResponse = store
-        .read_tier(&SnapshotTier::Rosters, &format!("{}.json", team_abbr.as_str()))
-        .with_context(|| format!(
-            "no roster for {} — run `icelines fetch rosters` first", team_abbr
-        ))?;
+        .read_tier(
+            &SnapshotTier::Rosters,
+            &format!("{}.json", team_abbr.as_str()),
+        )
+        .with_context(|| {
+            format!(
+                "no roster for {} — run `icelines fetch rosters` first",
+                team_abbr
+            )
+        })?;
 
     // Read stats from snapshot chain
     let bios: Vec<SkaterBio> = store

@@ -39,15 +39,15 @@ struct PlayerByGameStats {
 
 #[derive(Debug, Deserialize)]
 struct TeamStats {
-    forwards:   Vec<SkaterEntry>,
-    defense:    Vec<SkaterEntry>,
+    forwards: Vec<SkaterEntry>,
+    defense: Vec<SkaterEntry>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct SkaterEntry {
-    player_id:     u32,
-    position:      String,   // "C", "L", "R", "D"
+    player_id: u32,
+    position: String, // "C", "L", "R", "D"
 }
 
 // ── BoxscoreClient ────────────────────────────────────────────────────────────
@@ -94,9 +94,12 @@ impl BoxscoreClient {
 
         let status = resp.status().as_u16();
         match status {
-            200 => resp.json::<T>().await.map_err(|e| FetchError::SchemaChanged {
-                detail: format!("{url}: {e}"),
-            }),
+            200 => resp
+                .json::<T>()
+                .await
+                .map_err(|e| FetchError::SchemaChanged {
+                    detail: format!("{url}: {e}"),
+                }),
             s => Err(FetchError::Http {
                 status: s,
                 url: url.to_owned(),
@@ -189,9 +192,7 @@ pub async fn aggregate_profiles(
             }
         }
 
-        if let Some(profile) =
-            PositionProfile::build(player_id, season.to_owned(), appearances)
-        {
+        if let Some(profile) = PositionProfile::build(player_id, season.to_owned(), appearances) {
             profiles.push(profile);
         }
     }

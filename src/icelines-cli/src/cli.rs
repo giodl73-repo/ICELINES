@@ -80,41 +80,59 @@ pub enum Commands {
     Tui,
     /// Filter and list players with rich criteria.
     Players {
-        #[arg(long)] pos:        Option<String>,
-        #[arg(long)] team:       Option<String>,
-        #[arg(long)] age_max:    Option<u8>,
-        #[arg(long)] age_min:    Option<u8>,
-        #[arg(long)] nationality: Option<String>,
-        #[arg(long)] draft_year: Option<u16>,
-        #[arg(long)] draft_round: Option<u8>,
-        #[arg(long)] ppg_min:    Option<f64>,
-        #[arg(long)] gp_min:     Option<u32>,
-        #[arg(long, default_value_t = 25)] top: usize,
-        #[arg(long)] json:       bool,
+        #[arg(long)]
+        pos: Option<String>,
+        #[arg(long)]
+        team: Option<String>,
+        #[arg(long)]
+        age_max: Option<u8>,
+        #[arg(long)]
+        age_min: Option<u8>,
+        #[arg(long)]
+        nationality: Option<String>,
+        #[arg(long)]
+        draft_year: Option<u16>,
+        #[arg(long)]
+        draft_round: Option<u8>,
+        #[arg(long)]
+        ppg_min: Option<f64>,
+        #[arg(long)]
+        gp_min: Option<u32>,
+        #[arg(long, default_value_t = 25)]
+        top: usize,
+        #[arg(long)]
+        json: bool,
     },
     /// Show a draft class — all players from a given draft year.
     Class {
         year: u16,
-        #[arg(long)] pos:  Option<String>,
-        #[arg(long)] top:  Option<usize>,
-        #[arg(long)] json: bool,
+        #[arg(long)]
+        pos: Option<String>,
+        #[arg(long)]
+        top: Option<usize>,
+        #[arg(long)]
+        json: bool,
     },
     /// Find statistical peers for a player (same draft era and position).
     Peers {
         player: String,
-        #[arg(long, default_value_t = 10)] size: usize,
-        #[arg(long)] json: bool,
+        #[arg(long, default_value_t = 10)]
+        size: usize,
+        #[arg(long)]
+        json: bool,
     },
     /// Head-to-head player comparison.
     Compare {
         player1: String,
         player2: String,
-        #[arg(long)] json: bool,
+        #[arg(long)]
+        json: bool,
     },
     /// Show a player's historical season stats.
     History {
         player: String,
-        #[arg(long)] json: bool,
+        #[arg(long)]
+        json: bool,
     },
     /// Find line-mates for a player.
     Mates,
@@ -173,7 +191,11 @@ pub enum FetchSubcommand {
 #[derive(Debug, Subcommand)]
 pub enum GroupSubcommand {
     /// Create a new group.
-    Create { name: String, #[arg(long)] desc: Option<String> },
+    Create {
+        name: String,
+        #[arg(long)]
+        desc: Option<String>,
+    },
     /// Add a player to a group.
     Add { group: String, player: String },
     /// Remove a player from a group.
@@ -195,7 +217,8 @@ pub enum SchemeSubcommand {
     /// Detect scoreable stats from a Yahoo CSV and create a scheme template.
     FromCsv {
         path: String,
-        #[arg(long)] name: Option<String>,
+        #[arg(long)]
+        name: Option<String>,
     },
 }
 

@@ -8,16 +8,16 @@
 //! It differs from the terminal `classify_fit()` which uses absolute pace
 //! thresholds.
 
+use crate::model::{Player, Position, TeamAbbr};
 use std::collections::HashMap;
-use crate::model::{Player, TeamAbbr, Position};
 
 /// Per-player cross-team metrics.
 #[derive(Debug, Clone)]
 pub struct CrossTeamMetrics {
-    pub player_nhl_id:  Option<u32>,
-    pub own_line:       u8,     // rank on own team at their position (1-indexed)
-    pub avg_other_line: f32,    // average rank across the other 31 teams
-    pub delta:          f32,    // own_line - avg_other_line (positive = buried)
+    pub player_nhl_id: Option<u32>,
+    pub own_line: u8,        // rank on own team at their position (1-indexed)
+    pub avg_other_line: f32, // average rank across the other 31 teams
+    pub delta: f32,          // own_line - avg_other_line (positive = buried)
 }
 
 impl CrossTeamMetrics {
@@ -27,13 +27,13 @@ impl CrossTeamMetrics {
         let own = self.own_line as f32;
         let avg = self.avg_other_line;
         if own - avg > 0.75 {
-            WebFitClass::Buried   // blue: could play higher elsewhere
+            WebFitClass::Buried // blue: could play higher elsewhere
         } else if avg <= own + 0.5 {
-            WebFitClass::Elite    // green: true caliber for this line
+            WebFitClass::Elite // green: true caliber for this line
         } else if avg <= own + 1.25 {
-            WebFitClass::Solid    // yellow: ok but above their level
+            WebFitClass::Solid // yellow: ok but above their level
         } else {
-            WebFitClass::Stretch  // red: overextended
+            WebFitClass::Stretch // red: overextended
         }
     }
 }
@@ -42,27 +42,27 @@ impl CrossTeamMetrics {
 /// Different from terminal FitClass which uses absolute pace thresholds.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WebFitClass {
-    Elite,    // green  — avg ≤ own + 0.5
-    Solid,    // yellow — avg ≤ own + 1.25
-    Buried,   // blue   — avg < own - 0.75
-    Stretch,  // red    — avg > own + 1.25
+    Elite,   // green  — avg ≤ own + 0.5
+    Solid,   // yellow — avg ≤ own + 1.25
+    Buried,  // blue   — avg < own - 0.75
+    Stretch, // red    — avg > own + 1.25
 }
 
 impl WebFitClass {
     pub fn css_class(self) -> &'static str {
         match self {
-            Self::Elite   => "fit",
-            Self::Solid   => "solid",
-            Self::Buried  => "buried",
+            Self::Elite => "fit",
+            Self::Solid => "solid",
+            Self::Buried => "buried",
             Self::Stretch => "stretch",
         }
     }
 
     pub fn label(self) -> &'static str {
         match self {
-            Self::Elite   => "★",
-            Self::Solid   => "~",
-            Self::Buried  => "↑",
+            Self::Elite => "★",
+            Self::Solid => "~",
+            Self::Buried => "↑",
             Self::Stretch => "↓",
         }
     }
@@ -105,45 +105,56 @@ pub fn compute_all(players: &[Player]) -> Vec<CrossTeamMetrics> {
 
     let pos_index = build_pos_index(players);
 
-    players.iter().map(|p| {
-        let Some(score) = p.pace_score else {
-            return CrossTeamMetrics {
-                player_nhl_id:  p.nhl_id,
-                own_line:       255,
-                avg_other_line: 255.0,
-                delta:          0.0,
+    players
+        .iter()
+        .map(|p| {
+            let Some(score) = p.pace_score else {
+                return CrossTeamMetrics {
+                    player_nhl_id: p.nhl_id,
+                    own_line: 255,
+                    avg_other_line: 255.0,
+                    delta: 0.0,
+                };
             };
-        };
 
-        let sort_key = score.sort_key();
+            let sort_key = score.sort_key();
 
-        // Own rank on own team
-        let own_sorted = pos_index.get(&(&p.team, p.position))
-            .map(|v| v.as_slice())
-            .unwrap_or(&[]);
-        let own_line = rank_in(sort_key, own_sorted);
+            // Own rank on own team
+            let own_sorted = pos_index
+                .get(&(&p.team, p.position))
+                .map(|v| v.as_slice())
+                .unwrap_or(&[]);
+            let own_line = rank_in(sort_key, own_sorted);
 
-        // Average rank on each other team
-        let other_ranks: Vec<f32> = all_teams.iter()
-            .filter(|&&t| t != &p.team)
-            .map(|t| {
-                let other_sorted = pos_index.get(&(t, p.position))
-                    .map(|v| v.as_slice())
-                    .unwrap_or(&[]);
-                rank_in(sort_key, other_sorted) as f32
-            })
-            .collect();
+            // Average rank on each other team
+            let other_ranks: Vec<f32> = all_teams
+                .iter()
+                .filter(|&&t| t != &p.team)
+                .map(|t| {
+                    let other_sorted = pos_index
+                        .get(&(t, p.position))
+                        .map(|v| v.as_slice())
+                        .unwrap_or(&[]);
+                    rank_in(sort_key, other_sorted) as f32
+                })
+                .collect();
 
-        let avg_other_line = if other_ranks.is_empty() {
-            own_line as f32
-        } else {
-            other_ranks.iter().sum::<f32>() / other_ranks.len() as f32
-        };
+            let avg_other_line = if other_ranks.is_empty() {
+                own_line as f32
+            } else {
+                other_ranks.iter().sum::<f32>() / other_ranks.len() as f32
+            };
 
-        let delta = own_line as f32 - avg_other_line;
+            let delta = own_line as f32 - avg_other_line;
 
-        CrossTeamMetrics { player_nhl_id: p.nhl_id, own_line, avg_other_line, delta }
-    }).collect()
+            CrossTeamMetrics {
+                player_nhl_id: p.nhl_id,
+                own_line,
+                avg_other_line,
+                delta,
+            }
+        })
+        .collect()
 }
 
 #[cfg(test)]
@@ -154,31 +165,31 @@ mod tests {
 
     fn make_player(name: &str, team: &str, pos: Position, pace: f64) -> Player {
         Player {
-            nhl_id:          None,
-            full_name:       name.to_owned(),
+            nhl_id: None,
+            full_name: name.to_owned(),
             name_normalized: normalize_name(name),
-            team:            TeamAbbr(team.to_owned()),
-            position:        pos,
-            eligible_pos:    vec![pos],
-            gp_status:       GpStatus::Eligible(60),
-            season_goals:    20,
-            season_assists:  30,
-            season_points:   50,
-            pace_score:      Some(PaceScore {
-                pace_82:     pace,
+            team: TeamAbbr(team.to_owned()),
+            position: pos,
+            eligible_pos: vec![pos],
+            gp_status: GpStatus::Eligible(60),
+            season_goals: 20,
+            season_assists: 30,
+            season_points: 50,
+            pace_score: Some(PaceScore {
+                pace_82: pace,
                 goals_per_82: pace * 0.4,
-                raw_points:  50,
-                gp:          60,
+                raw_points: 50,
+                gp: 60,
             }),
-            headshot_url:    None,
-            birth_date:      None,
-            birth_country:   None,
+            headshot_url: None,
+            birth_date: None,
+            birth_country: None,
             nationality_code: None,
-            shoots_catches:  None,
-            draft_year:      None,
-            draft_round:     None,
-            draft_overall:   None,
-            rookie_season:   None,
+            shoots_catches: None,
+            draft_year: None,
+            draft_round: None,
+            draft_overall: None,
+            rookie_season: None,
         }
     }
 
@@ -187,8 +198,8 @@ mod tests {
         // Top player on SEA should be rank 1 on their own team
         let players = vec![
             make_player("Elite", "SEA", Position::Center, 140.0),
-            make_player("Mid",   "SEA", Position::Center,  70.0),
-            make_player("Depth", "SEA", Position::Center,  40.0),
+            make_player("Mid", "SEA", Position::Center, 70.0),
+            make_player("Depth", "SEA", Position::Center, 40.0),
         ];
         let metrics = compute_all(&players);
         let elite = metrics.iter().find(|m| m.avg_other_line < 2.0).unwrap();
@@ -200,26 +211,32 @@ mod tests {
         // "Buried" is 3rd C on EDM (behind two elite players) but would be
         // #1 C on all other teams which have only weak/no centers.
         let players = vec![
-            make_player("Star",    "EDM", Position::Center, 140.0),
-            make_player("Good",    "EDM", Position::Center, 120.0),
-            make_player("Buried",  "EDM", Position::Center, 110.0),
+            make_player("Star", "EDM", Position::Center, 140.0),
+            make_player("Good", "EDM", Position::Center, 120.0),
+            make_player("Buried", "EDM", Position::Center, 110.0),
             // Other teams' Cs are much weaker → Buried ranks #1 there
-            make_player("SEA-C1",  "SEA", Position::Center,  40.0),
-            make_player("NYR-C1",  "NYR", Position::Center,  38.0),
-            make_player("TOR-C1",  "TOR", Position::Center,  35.0),
+            make_player("SEA-C1", "SEA", Position::Center, 40.0),
+            make_player("NYR-C1", "NYR", Position::Center, 38.0),
+            make_player("TOR-C1", "TOR", Position::Center, 35.0),
         ];
         let metrics = compute_all(&players);
         let buried = metrics.iter().find(|m| m.own_line == 3).unwrap();
         // own_line=3 (3rd on EDM), avg_other_line≈1 (best C on SEA/NYR/TOR)
         // delta = 3 - ~1 = ~2 > 0.75 → buried
-        assert!(buried.delta > 0.75, "delta={}, expected > 0.75", buried.delta);
+        assert!(
+            buried.delta > 0.75,
+            "delta={}, expected > 0.75",
+            buried.delta
+        );
         assert_eq!(buried.web_fit_class(), WebFitClass::Buried);
     }
 
     #[test]
     fn l0_web_fit_class_thresholds() {
         let m = |own: u8, avg: f32| CrossTeamMetrics {
-            player_nhl_id: None, own_line: own, avg_other_line: avg,
+            player_nhl_id: None,
+            own_line: own,
+            avg_other_line: avg,
             delta: own as f32 - avg,
         };
         // own=1, avg=1.3 → delta=-0.3, avg ≤ 1+0.5=1.5 → Elite

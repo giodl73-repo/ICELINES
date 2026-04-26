@@ -27,12 +27,14 @@ pub enum SnapshotError {
 
     #[error("integrity violation in '{file}': expected {expected}, got {got}")]
     IntegrityViolation {
-        file:     String,
+        file: String,
         expected: String,
-        got:      String,
+        got: String,
     },
 
-    #[error("stats snapshot '{name}' requires parent rosters snapshot '{parent}' which is missing")]
+    #[error(
+        "stats snapshot '{name}' requires parent rosters snapshot '{parent}' which is missing"
+    )]
     MissingParent { name: String, parent: String },
 
     #[error("no active snapshot — run `icelines fetch` first")]
@@ -50,19 +52,19 @@ pub enum SnapshotError {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum SnapshotTier {
-    Rosters,    // Tier 1 — 32 team rosters + headshots
-    Stats,      // Tier 2 — skater bios + season stats
-    Positions,  // Tier 2b — boxscore-derived position eligibility
-    Derived,    // Tier 3 — computed scores, depth charts (Phase 3)
+    Rosters,   // Tier 1 — 32 team rosters + headshots
+    Stats,     // Tier 2 — skater bios + season stats
+    Positions, // Tier 2b — boxscore-derived position eligibility
+    Derived,   // Tier 3 — computed scores, depth charts (Phase 3)
 }
 
 impl SnapshotTier {
     pub fn dir_name(&self) -> &'static str {
         match self {
-            Self::Rosters   => "rosters",
-            Self::Stats     => "stats",
+            Self::Rosters => "rosters",
+            Self::Stats => "stats",
             Self::Positions => "positions",
-            Self::Derived   => "derived",
+            Self::Derived => "derived",
         }
     }
 }
@@ -70,41 +72,41 @@ impl SnapshotTier {
 /// Entry in the top-level manifest index.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SnapshotEntry {
-    pub name:       String,
-    pub season:     String,
-    pub tier:       SnapshotTier,
-    pub date:       String,          // YYYY-MM-DD
-    pub created_at: String,          // RFC3339
-    pub parent_key: Option<String>,  // name of parent snapshot (tier chain)
+    pub name: String,
+    pub season: String,
+    pub tier: SnapshotTier,
+    pub date: String,               // YYYY-MM-DD
+    pub created_at: String,         // RFC3339
+    pub parent_key: Option<String>, // name of parent snapshot (tier chain)
     pub file_count: usize,
-    pub sealed:     bool,
+    pub sealed: bool,
 }
 
 /// Top-level index: ~/.icelines/snapshots/index.json
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct SnapshotManifest {
     pub snapshots: Vec<SnapshotEntry>,
-    pub active:    Option<String>,
+    pub active: Option<String>,
 }
 
 /// Per-snapshot metadata: {snapshot_dir}/snapshot.json
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SnapshotMeta {
-    pub name:       String,
-    pub season:     String,
-    pub tier:       SnapshotTier,
+    pub name: String,
+    pub season: String,
+    pub tier: SnapshotTier,
     pub created_at: String,
     pub parent_key: Option<String>,
     /// SHA-256 hex digest per file (path relative to snapshot_dir)
-    pub integrity:  HashMap<String, String>,
-    pub metadata:   HashMap<String, String>,
-    pub sealed:     bool,
+    pub integrity: HashMap<String, String>,
+    pub metadata: HashMap<String, String>,
+    pub sealed: bool,
 }
 
 // ── SnapshotStore ─────────────────────────────────────────────────────────────
 
 pub struct SnapshotStore {
-    root: PathBuf,   // ~/.icelines/snapshots/
+    root: PathBuf, // ~/.icelines/snapshots/
 }
 
 impl SnapshotStore {
@@ -119,9 +121,13 @@ impl SnapshotStore {
         PathBuf::from(home).join(".icelines").join("snapshots")
     }
 
-    fn index_path(&self) -> PathBuf { self.root.join("index.json") }
+    fn index_path(&self) -> PathBuf {
+        self.root.join("index.json")
+    }
 
-    fn snapshot_dir(&self, name: &str) -> PathBuf { self.root.join(name) }
+    fn snapshot_dir(&self, name: &str) -> PathBuf {
+        self.root.join(name)
+    }
 
     fn meta_path(&self, name: &str) -> PathBuf {
         self.snapshot_dir(name).join("snapshot.json")
@@ -166,27 +172,27 @@ impl SnapshotStore {
         std::fs::create_dir_all(dir.join(tier.dir_name()))?;
 
         let meta = SnapshotMeta {
-            name:       name.to_owned(),
-            season:     season.to_owned(),
+            name: name.to_owned(),
+            season: season.to_owned(),
             tier,
             created_at: now_rfc3339(),
             parent_key,
-            integrity:  HashMap::new(),
-            metadata:   HashMap::new(),
-            sealed:     false,
+            integrity: HashMap::new(),
+            metadata: HashMap::new(),
+            sealed: false,
         };
         self.write_meta(name, &meta)?;
 
         let mut manifest = self.load_manifest()?;
         manifest.snapshots.push(SnapshotEntry {
-            name:       name.to_owned(),
-            season:     season.to_owned(),
-            tier:       meta.tier.clone(),
-            date:       date.to_owned(),
+            name: name.to_owned(),
+            season: season.to_owned(),
+            tier: meta.tier.clone(),
+            date: date.to_owned(),
             created_at: meta.created_at.clone(),
             parent_key: meta.parent_key.clone(),
             file_count: 0,
-            sealed:     false,
+            sealed: false,
         });
         self.save_manifest(&manifest)
     }
@@ -211,7 +217,7 @@ impl SnapshotStore {
 
         // Update integrity hash
         let hex = sha256_hex(data);
-        let rel  = format!("{}/{}", tier.dir_name(), filename);
+        let rel = format!("{}/{}", tier.dir_name(), filename);
         let mut meta = self.load_meta(snapshot_name)?;
         meta.integrity.insert(rel, hex);
         self.write_meta(snapshot_name, &meta)?;
@@ -254,7 +260,10 @@ impl SnapshotStore {
                 Some(parent) => name = parent,
                 None => {
                     return Err(SnapshotError::NotFound {
-                        name: format!("{} data not found in snapshot chain from '{active}'", tier.dir_name()),
+                        name: format!(
+                            "{} data not found in snapshot chain from '{active}'",
+                            tier.dir_name()
+                        ),
                     })
                 }
             }
@@ -299,10 +308,12 @@ impl SnapshotStore {
     ) -> Result<T, SnapshotError> {
         let meta = self.load_meta(snapshot_name)?;
         if !meta.sealed {
-            return Err(SnapshotError::NotSealed { name: snapshot_name.to_owned() });
+            return Err(SnapshotError::NotSealed {
+                name: snapshot_name.to_owned(),
+            });
         }
 
-        let rel  = format!("{}/{}", tier.dir_name(), filename);
+        let rel = format!("{}/{}", tier.dir_name(), filename);
         let path = self.snapshot_dir(snapshot_name).join(&rel);
         if !path.exists() {
             return Err(SnapshotError::NotFound { name: rel });
@@ -315,7 +326,9 @@ impl SnapshotStore {
             let got = sha256_hex(&data);
             if got != *expected {
                 return Err(SnapshotError::IntegrityViolation {
-                    file: rel, expected: expected.clone(), got,
+                    file: rel,
+                    expected: expected.clone(),
+                    got,
                 });
             }
         }
@@ -334,7 +347,9 @@ impl SnapshotStore {
     pub fn set_active(&self, name: &str) -> Result<(), SnapshotError> {
         let meta = self.load_meta(name)?;
         if !meta.sealed {
-            return Err(SnapshotError::NotSealed { name: name.to_owned() });
+            return Err(SnapshotError::NotSealed {
+                name: name.to_owned(),
+            });
         }
         let mut manifest = self.load_manifest()?;
         manifest.active = Some(name.to_owned());
@@ -352,7 +367,7 @@ impl SnapshotStore {
                 continue;
             }
             let data = std::fs::read(&path)?;
-            let got  = sha256_hex(&data);
+            let got = sha256_hex(&data);
             if got != *expected {
                 failures.push(format!("CORRUPT: {rel} (expected {expected}, got {got})"));
             }
@@ -382,14 +397,16 @@ impl SnapshotStore {
     fn load_meta(&self, name: &str) -> Result<SnapshotMeta, SnapshotError> {
         let p = self.meta_path(name);
         if !p.exists() {
-            return Err(SnapshotError::NotFound { name: name.to_owned() });
+            return Err(SnapshotError::NotFound {
+                name: name.to_owned(),
+            });
         }
         let raw = std::fs::read_to_string(&p)?;
         Ok(serde_json::from_str(&raw)?)
     }
 
     fn write_meta(&self, name: &str, meta: &SnapshotMeta) -> Result<(), SnapshotError> {
-        let p   = self.meta_path(name);
+        let p = self.meta_path(name);
         let tmp = p.with_extension("tmp");
         let json = serde_json::to_string_pretty(meta)?;
         let mut f = std::fs::File::create(&tmp)?;
@@ -419,21 +436,21 @@ fn now_rfc3339() -> String {
         .as_secs();
     // Very basic: YYYY-MM-DDTHH:MM:SSZ from unix timestamp
     let s = secs;
-    let sec  = s % 60;
-    let min  = (s / 60) % 60;
-    let hr   = (s / 3600) % 24;
+    let sec = s % 60;
+    let min = (s / 60) % 60;
+    let hr = (s / 3600) % 24;
     let days = s / 86400;
     // Rough Gregorian (good enough for snapshot naming, not a calendar library)
     let year = 1970 + days / 365;
     let day_of_year = days % 365;
     let month = day_of_year / 30 + 1;
-    let day   = day_of_year % 30 + 1;
+    let day = day_of_year % 30 + 1;
     format!("{year:04}-{month:02}-{day:02}T{hr:02}:{min:02}:{sec:02}Z")
 }
 
 pub fn today_date() -> String {
     let s = now_rfc3339();
-    s[..10].to_owned()   // "YYYY-MM-DD"
+    s[..10].to_owned() // "YYYY-MM-DD"
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -452,9 +469,24 @@ mod tests {
     #[test]
     fn l0_snapshot_create_and_seal() {
         let (_dir, store) = store();
-        store.create("20252026-2026-04-25", "20252026", SnapshotTier::Rosters, None, "2026-04-25").unwrap();
+        store
+            .create(
+                "20252026-2026-04-25",
+                "20252026",
+                SnapshotTier::Rosters,
+                None,
+                "2026-04-25",
+            )
+            .unwrap();
         let data = b"{\"forwards\":[],\"defensemen\":[],\"goalies\":[]}";
-        store.write_file("20252026-2026-04-25", &SnapshotTier::Rosters, "SEA.json", data).unwrap();
+        store
+            .write_file(
+                "20252026-2026-04-25",
+                &SnapshotTier::Rosters,
+                "SEA.json",
+                data,
+            )
+            .unwrap();
         store.seal("20252026-2026-04-25").unwrap();
 
         let manifest = store.load_manifest().unwrap();
@@ -467,22 +499,37 @@ mod tests {
     #[test]
     fn l0_snapshot_integrity_verified_on_read() {
         let (_dir, store) = store();
-        store.create("snap1", "20252026", SnapshotTier::Stats, None, "2026-04-25").unwrap();
+        store
+            .create("snap1", "20252026", SnapshotTier::Stats, None, "2026-04-25")
+            .unwrap();
         let data = serde_json::to_vec(&serde_json::json!({"data":[],"total":0})).unwrap();
-        store.write_file("snap1", &SnapshotTier::Stats, "bios.json", &data).unwrap();
+        store
+            .write_file("snap1", &SnapshotTier::Stats, "bios.json", &data)
+            .unwrap();
         store.seal("snap1").unwrap();
 
         // Read succeeds
-        let v: serde_json::Value = store.read("snap1", &SnapshotTier::Stats, "bios.json").unwrap();
+        let v: serde_json::Value = store
+            .read("snap1", &SnapshotTier::Stats, "bios.json")
+            .unwrap();
         assert_eq!(v["total"], 0);
     }
 
     #[test]
     fn l0_snapshot_read_active_requires_seal() {
         let (_dir, store) = store();
-        store.create("snap2", "20252026", SnapshotTier::Rosters, None, "2026-04-25").unwrap();
+        store
+            .create(
+                "snap2",
+                "20252026",
+                SnapshotTier::Rosters,
+                None,
+                "2026-04-25",
+            )
+            .unwrap();
         // Not sealed — read_active should fail
-        let result: Result<serde_json::Value, _> = store.read_active(&SnapshotTier::Rosters, "ANA.json");
+        let result: Result<serde_json::Value, _> =
+            store.read_active(&SnapshotTier::Rosters, "ANA.json");
         // No active set yet
         assert!(matches!(result, Err(SnapshotError::NoActiveSnapshot)));
     }
@@ -490,9 +537,19 @@ mod tests {
     #[test]
     fn l0_snapshot_verify_catches_corruption() {
         let (_dir, store) = store();
-        store.create("snap3", "20252026", SnapshotTier::Rosters, None, "2026-04-25").unwrap();
+        store
+            .create(
+                "snap3",
+                "20252026",
+                SnapshotTier::Rosters,
+                None,
+                "2026-04-25",
+            )
+            .unwrap();
         let data = b"original content";
-        store.write_file("snap3", &SnapshotTier::Rosters, "ANA.json", data).unwrap();
+        store
+            .write_file("snap3", &SnapshotTier::Rosters, "ANA.json", data)
+            .unwrap();
         store.seal("snap3").unwrap();
 
         // Corrupt the file directly
@@ -508,8 +565,18 @@ mod tests {
     fn l0_snapshot_manifest_atomic_write() {
         let (_dir, store) = store();
         // Two creates don't corrupt the manifest
-        store.create("a", "20252026", SnapshotTier::Rosters, None, "2026-04-25").unwrap();
-        store.create("b", "20252026", SnapshotTier::Stats, Some("a".into()), "2026-04-25").unwrap();
+        store
+            .create("a", "20252026", SnapshotTier::Rosters, None, "2026-04-25")
+            .unwrap();
+        store
+            .create(
+                "b",
+                "20252026",
+                SnapshotTier::Stats,
+                Some("a".into()),
+                "2026-04-25",
+            )
+            .unwrap();
         let manifest = store.load_manifest().unwrap();
         assert_eq!(manifest.snapshots.len(), 2);
     }
@@ -517,9 +584,13 @@ mod tests {
     #[test]
     fn l0_snapshot_delete_non_active() {
         let (_dir, store) = store();
-        store.create("old", "20252026", SnapshotTier::Rosters, None, "2026-04-24").unwrap();
+        store
+            .create("old", "20252026", SnapshotTier::Rosters, None, "2026-04-24")
+            .unwrap();
         store.seal("old").unwrap();
-        store.create("new", "20252026", SnapshotTier::Rosters, None, "2026-04-25").unwrap();
+        store
+            .create("new", "20252026", SnapshotTier::Rosters, None, "2026-04-25")
+            .unwrap();
         store.seal("new").unwrap(); // new is now active
         store.delete("old").unwrap();
         let manifest = store.load_manifest().unwrap();

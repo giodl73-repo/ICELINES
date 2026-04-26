@@ -62,7 +62,8 @@ impl Config {
 
     /// Directory for named snapshots: ~/.icelines/snapshots/
     pub fn snapshot_dir(&self) -> std::path::PathBuf {
-        self.cache_dir.parent()
+        self.cache_dir
+            .parent()
             .unwrap_or(&self.cache_dir)
             .join("snapshots")
     }

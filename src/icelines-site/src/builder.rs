@@ -6,10 +6,10 @@ use std::io::Write as _;
 use std::path::{Path, PathBuf};
 
 use icelines_core::{
-    compute_cross_team_metrics, CrossTeamMetrics,
+    compute_cross_team_metrics,
     model::{Player, Position, Season},
     scoring::sort_by_pace,
-    DepthChartBuilder, TeamAbbr,
+    CrossTeamMetrics, DepthChartBuilder, TeamAbbr,
 };
 use icelines_fetch::{
     player_builder::{build_players, index_bios, index_stats},
@@ -24,32 +24,57 @@ use crate::{
 };
 
 const FULL_SEASON: u32 = 82;
-const FWD_LINES:   usize = 4;
-const DEF_PAIRS:   usize = 3;
+const FWD_LINES: usize = 4;
+const DEF_PAIRS: usize = 3;
 
 const TEAM_NAMES: &[(&str, &str)] = &[
-    ("ANA","Anaheim Ducks"),("BOS","Boston Bruins"),("BUF","Buffalo Sabres"),
-    ("CAR","Carolina Hurricanes"),("CBJ","Columbus Blue Jackets"),("CGY","Calgary Flames"),
-    ("CHI","Chicago Blackhawks"),("COL","Colorado Avalanche"),("DAL","Dallas Stars"),
-    ("DET","Detroit Red Wings"),("EDM","Edmonton Oilers"),("FLA","Florida Panthers"),
-    ("LAK","Los Angeles Kings"),("MIN","Minnesota Wild"),("MTL","Montréal Canadiens"),
-    ("NJD","New Jersey Devils"),("NSH","Nashville Predators"),("NYI","New York Islanders"),
-    ("NYR","New York Rangers"),("OTT","Ottawa Senators"),("PHI","Philadelphia Flyers"),
-    ("PIT","Pittsburgh Penguins"),("SEA","Seattle Kraken"),("SJS","San Jose Sharks"),
-    ("STL","St. Louis Blues"),("TBL","Tampa Bay Lightning"),("TOR","Toronto Maple Leafs"),
-    ("UTA","Utah Hockey Club"),("VAN","Vancouver Canucks"),("VGK","Vegas Golden Knights"),
-    ("WPG","Winnipeg Jets"),("WSH","Washington Capitals"),
+    ("ANA", "Anaheim Ducks"),
+    ("BOS", "Boston Bruins"),
+    ("BUF", "Buffalo Sabres"),
+    ("CAR", "Carolina Hurricanes"),
+    ("CBJ", "Columbus Blue Jackets"),
+    ("CGY", "Calgary Flames"),
+    ("CHI", "Chicago Blackhawks"),
+    ("COL", "Colorado Avalanche"),
+    ("DAL", "Dallas Stars"),
+    ("DET", "Detroit Red Wings"),
+    ("EDM", "Edmonton Oilers"),
+    ("FLA", "Florida Panthers"),
+    ("LAK", "Los Angeles Kings"),
+    ("MIN", "Minnesota Wild"),
+    ("MTL", "Montréal Canadiens"),
+    ("NJD", "New Jersey Devils"),
+    ("NSH", "Nashville Predators"),
+    ("NYI", "New York Islanders"),
+    ("NYR", "New York Rangers"),
+    ("OTT", "Ottawa Senators"),
+    ("PHI", "Philadelphia Flyers"),
+    ("PIT", "Pittsburgh Penguins"),
+    ("SEA", "Seattle Kraken"),
+    ("SJS", "San Jose Sharks"),
+    ("STL", "St. Louis Blues"),
+    ("TBL", "Tampa Bay Lightning"),
+    ("TOR", "Toronto Maple Leafs"),
+    ("UTA", "Utah Hockey Club"),
+    ("VAN", "Vancouver Canucks"),
+    ("VGK", "Vegas Golden Knights"),
+    ("WPG", "Winnipeg Jets"),
+    ("WSH", "Washington Capitals"),
 ];
 
 fn team_full_name(abbrev: &str) -> &'static str {
-    TEAM_NAMES.iter().find(|(a, _)| *a == abbrev).map(|(_, n)| *n).unwrap_or("Unknown")
+    TEAM_NAMES
+        .iter()
+        .find(|(a, _)| *a == abbrev)
+        .map(|(_, n)| *n)
+        .unwrap_or("Unknown")
 }
 
 pub struct SiteConfig {
-    pub docs_dir:     PathBuf,
-    pub mkdocs_yml:   PathBuf,
+    pub docs_dir: PathBuf,
+    pub mkdocs_yml: PathBuf,
     pub snapshot_dir: PathBuf,
-    pub season:       u32,
+    pub season: u32,
 }
 
 pub struct SiteBuilder {
@@ -57,21 +82,25 @@ pub struct SiteBuilder {
 }
 
 impl SiteBuilder {
-    pub fn new(config: SiteConfig) -> Self { Self { config } }
+    pub fn new(config: SiteConfig) -> Self {
+        Self { config }
+    }
 
     /// Build all docs/ markdown files from snapshot data.
     pub fn build(&self) -> Result<Vec<String>, SiteError> {
         let store = SnapshotStore::new(&self.config.snapshot_dir);
 
         // Load data from snapshots
-        let bios: Vec<SkaterBio>   = store.read_tier(&SnapshotTier::Stats,   "bios.json")
+        let bios: Vec<SkaterBio> = store
+            .read_tier(&SnapshotTier::Stats, "bios.json")
             .map_err(|e| SiteError::Snapshot(e.to_string()))?;
-        let stats: Vec<SkaterStats> = store.read_tier(&SnapshotTier::Stats,   "stats.json")
+        let stats: Vec<SkaterStats> = store
+            .read_tier(&SnapshotTier::Stats, "stats.json")
             .unwrap_or_default();
 
-        let bio_idx   = index_bios(&bios);
+        let bio_idx = index_bios(&bios);
         let stats_idx = index_stats(&stats);
-        let season    = Season(self.config.season);
+        let season = Season(self.config.season);
 
         // Load all 32 rosters and build players
         let mut all_players: Vec<Player> = Vec::new();
@@ -81,7 +110,7 @@ impl SiteBuilder {
                 store.read_tier(&SnapshotTier::Rosters, &filename);
             if let Ok(r) = roster {
                 let team = TeamAbbr(abbrev.to_string());
-                let fwds = build_players(&r.forwards,   &bio_idx, &stats_idx, season, &team);
+                let fwds = build_players(&r.forwards, &bio_idx, &stats_idx, season, &team);
                 let defs = build_players(&r.defensemen, &bio_idx, &stats_idx, season, &team);
                 all_players.extend(fwds);
                 all_players.extend(defs);
@@ -99,7 +128,7 @@ impl SiteBuilder {
 
         // Team strength for tracker index
         let team_strength = compute_team_strength(&all_players);
-        let max_strength  = team_strength.values().copied().fold(0.0_f32, f32::max);
+        let max_strength = team_strength.values().copied().fold(0.0_f32, f32::max);
         let mut ranked_teams: Vec<&str> = TEAM_NAMES.iter().map(|(a, _)| *a).collect();
         ranked_teams.sort_by(|a, b| {
             let sa = team_strength.get(*a).copied().unwrap_or(0.0);
@@ -115,19 +144,24 @@ impl SiteBuilder {
         for (rank, &abbrev) in ranked_teams.iter().enumerate() {
             let rank = rank + 1;
             let team = TeamAbbr(abbrev.to_string());
-            let team_players: Vec<&Player> = all_players.iter()
+            let team_players: Vec<&Player> = all_players
+                .iter()
                 .filter(|p| p.team.as_str() == abbrev)
                 .collect();
 
-            if team_players.is_empty() { continue; }
+            if team_players.is_empty() {
+                continue;
+            }
 
             let owned: Vec<Player> = team_players.iter().map(|p| (*p).clone()).collect();
             let chart = DepthChartBuilder::build(team.clone(), season, owned);
 
             let page = self.render_team_page(
-                abbrev, rank, &chart, &metrics_map,
+                abbrev,
+                rank,
+                &chart,
+                &metrics_map,
                 team_strength.get(abbrev).copied().unwrap_or(0.0),
-
             );
             let path = teams_dir.join(format!("{abbrev}.md"));
             write_file(&path, &page)?;
@@ -173,15 +207,24 @@ impl SiteBuilder {
         for line_idx in 0..FWD_LINES {
             let row = chart.forward_lines.get(line_idx);
             let lw = row.and_then(|r| r[0].as_ref());
-            let c  = row.and_then(|r| r[1].as_ref());
+            let c = row.and_then(|r| r[1].as_ref());
             let rw = row.and_then(|r| r[2].as_ref());
 
-            let lw_m = lw.and_then(|p| p.nhl_id).and_then(|id| metrics.get(&Some(id)));
-            let c_m  = c.and_then(|p| p.nhl_id).and_then(|id| metrics.get(&Some(id)));
-            let rw_m = rw.and_then(|p| p.nhl_id).and_then(|id| metrics.get(&Some(id)));
+            let lw_m = lw
+                .and_then(|p| p.nhl_id)
+                .and_then(|id| metrics.get(&Some(id)));
+            let c_m = c
+                .and_then(|p| p.nhl_id)
+                .and_then(|id| metrics.get(&Some(id)));
+            let rw_m = rw
+                .and_then(|p| p.nhl_id)
+                .and_then(|id| metrics.get(&Some(id)));
 
             out.push_str("<tr>\n");
-            out.push_str(&format!("<td class=\"line-num-cell\">Line {}</td>\n", line_idx + 1));
+            out.push_str(&format!(
+                "<td class=\"line-num-cell\">Line {}</td>\n",
+                line_idx + 1
+            ));
             out.push_str(&player_cell(lw, lw_m));
             out.push('\n');
             out.push_str(&player_cell(c, c_m));
@@ -201,11 +244,18 @@ impl SiteBuilder {
             let row = chart.defense_pairs.get(pair_idx);
             let d1 = row.and_then(|r| r[0].as_ref());
             let d2 = row.and_then(|r| r[1].as_ref());
-            let d1_m = d1.and_then(|p| p.nhl_id).and_then(|id| metrics.get(&Some(id)));
-            let d2_m = d2.and_then(|p| p.nhl_id).and_then(|id| metrics.get(&Some(id)));
+            let d1_m = d1
+                .and_then(|p| p.nhl_id)
+                .and_then(|id| metrics.get(&Some(id)));
+            let d2_m = d2
+                .and_then(|p| p.nhl_id)
+                .and_then(|id| metrics.get(&Some(id)));
 
             out.push_str("<tr>\n");
-            out.push_str(&format!("<td class=\"pair-num-cell\">Pair {}</td>\n", pair_idx + 1));
+            out.push_str(&format!(
+                "<td class=\"pair-num-cell\">Pair {}</td>\n",
+                pair_idx + 1
+            ));
             out.push_str(&player_cell(d1, d1_m));
             out.push('\n');
             out.push_str(&player_cell(d2, d2_m));
@@ -243,14 +293,19 @@ impl SiteBuilder {
             out.push_str("<div>\n");
             for (i, abbrev) in col.iter().enumerate() {
                 let global_rank = col_idx * half + i + 1;
-                let pts   = strength.get(*abbrev).copied().unwrap_or(0.0);
-                let fill  = bar_fill(pts, max_pts, 120);
-                let name  = team_full_name(abbrev);
-                let logo  = team_logo_url(abbrev);
-                let rank_cls = if global_rank <= 5 { "top5" }
-                    else if global_rank <= 10 { "top10" }
-                    else if global_rank >= 28 { "bot5" }
-                    else { "" };
+                let pts = strength.get(*abbrev).copied().unwrap_or(0.0);
+                let fill = bar_fill(pts, max_pts, 120);
+                let name = team_full_name(abbrev);
+                let logo = team_logo_url(abbrev);
+                let rank_cls = if global_rank <= 5 {
+                    "top5"
+                } else if global_rank <= 10 {
+                    "top10"
+                } else if global_rank >= 28 {
+                    "bot5"
+                } else {
+                    ""
+                };
 
                 out.push_str(&format!(
                     r#"<a class="tracker-card" href="teams/{abbrev}.md"><span class="tracker-rank {rank_cls}">#{global_rank}</span><img class="tracker-logo" src="{logo}" alt="{abbrev}"><div class="tracker-bar-wrap"><div class="tracker-bar"><div class="tracker-bar-fill" style="width:{fill}px"></div></div><div style="font-size:0.7rem;color:#6b7280">{name}</div></div><span class="tracker-score">{pts:.0}</span></a>"#
@@ -277,23 +332,25 @@ fn compute_team_strength(players: &[Player]) -> HashMap<String, f32> {
                 .push(s.pace_82 as f32);
         }
     }
-    map.iter().map(|(team, pos_map)| {
-        let team = team.clone();
-        let fwd_pts: f32 = [Position::LeftWing, Position::Center, Position::RightWing]
-            .iter()
-            .map(|pos| {
-                let mut v = pos_map.get(pos).cloned().unwrap_or_default();
+    map.iter()
+        .map(|(team, pos_map)| {
+            let team = team.clone();
+            let fwd_pts: f32 = [Position::LeftWing, Position::Center, Position::RightWing]
+                .iter()
+                .map(|pos| {
+                    let mut v = pos_map.get(pos).cloned().unwrap_or_default();
+                    v.sort_by(|a, b| b.partial_cmp(a).unwrap_or(std::cmp::Ordering::Equal));
+                    v.iter().take(FWD_LINES).sum::<f32>()
+                })
+                .sum();
+            let def_pts: f32 = {
+                let mut v = pos_map.get(&Position::Defense).cloned().unwrap_or_default();
                 v.sort_by(|a, b| b.partial_cmp(a).unwrap_or(std::cmp::Ordering::Equal));
-                v.iter().take(FWD_LINES).sum::<f32>()
-            })
-            .sum();
-        let def_pts: f32 = {
-            let mut v = pos_map.get(&Position::Defense).cloned().unwrap_or_default();
-            v.sort_by(|a, b| b.partial_cmp(a).unwrap_or(std::cmp::Ordering::Equal));
-            v.iter().take(DEF_PAIRS * 2).sum::<f32>()
-        };
-        (team.clone(), fwd_pts + def_pts)
-    }).collect()
+                v.iter().take(DEF_PAIRS * 2).sum::<f32>()
+            };
+            (team.clone(), fwd_pts + def_pts)
+        })
+        .collect()
 }
 
 fn write_file(path: &Path, content: &str) -> Result<(), SiteError> {

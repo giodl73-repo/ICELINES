@@ -48,16 +48,16 @@ impl PlayerFilter {
     ///
     /// All active filter fields are combined with AND logic.
     pub fn apply<'a>(&self, players: &'a [Player]) -> Vec<&'a Player> {
-        players
-            .iter()
-            .filter(|p| self.matches(p))
-            .collect()
+        players.iter().filter(|p| self.matches(p)).collect()
     }
 
     fn matches(&self, p: &Player) -> bool {
         // Team filter
         if let Some(ref teams) = self.teams {
-            if !teams.iter().any(|t| t.eq_ignore_ascii_case(p.team.as_str())) {
+            if !teams
+                .iter()
+                .any(|t| t.eq_ignore_ascii_case(p.team.as_str()))
+            {
                 return false;
             }
         }
@@ -129,10 +129,7 @@ impl PlayerFilter {
 
         // Draft year filter
         if let Some(ref years) = self.draft_years {
-            let matches_year = p
-                .draft_year
-                .map(|dy| years.contains(&dy))
-                .unwrap_or(false);
+            let matches_year = p.draft_year.map(|dy| years.contains(&dy)).unwrap_or(false);
             if !matches_year {
                 return false;
             }
@@ -299,19 +296,23 @@ mod tests {
         // pace_82 for (5+10)/50 * 82 = 24.6
         // pace_82 for (30+60)/70 * 82 = 105.4...
         let players = vec![
-            make_player("High Scorer", "SEA", Position::Center, 60, 20, 40),     // pace=82.0
-            make_player("Low Scorer", "NYR", Position::LeftWing, 50, 5, 10),     // pace=24.6
-            make_player("Elite Scorer", "EDM", Position::Center, 70, 30, 60),    // pace=105.4
+            make_player("High Scorer", "SEA", Position::Center, 60, 20, 40), // pace=82.0
+            make_player("Low Scorer", "NYR", Position::LeftWing, 50, 5, 10), // pace=24.6
+            make_player("Elite Scorer", "EDM", Position::Center, 70, 30, 60), // pace=105.4
         ];
         let filter = PlayerFilter {
             ppg_min: Some(80.0),
             ..PlayerFilter::new()
         };
         let result = filter.apply(&players);
-        assert_eq!(result.len(), 2, "only players with pace_82 >= 80.0 should match");
-        assert!(result.iter().all(|p| {
-            p.pace_score.map(|ps| ps.pace_82 >= 80.0).unwrap_or(false)
-        }));
+        assert_eq!(
+            result.len(),
+            2,
+            "only players with pace_82 >= 80.0 should match"
+        );
+        assert!(result
+            .iter()
+            .all(|p| { p.pace_score.map(|ps| ps.pace_82 >= 80.0).unwrap_or(false) }));
     }
 
     #[test]
@@ -344,6 +345,10 @@ mod tests {
             ..PlayerFilter::new()
         };
         let result = filter.apply(&players);
-        assert_eq!(result.len(), 0, "no matches should return empty vec, not error");
+        assert_eq!(
+            result.len(),
+            0,
+            "no matches should return empty vec, not error"
+        );
     }
 }

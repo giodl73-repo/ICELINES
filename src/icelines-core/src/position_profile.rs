@@ -13,15 +13,15 @@ use crate::Position;
 /// Aggregated position eligibility for one player in one season.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PositionProfile {
-    pub player_id:      u32,
-    pub season:         String,
+    pub player_id: u32,
+    pub season: String,
     /// position → number of games the player appeared at that position
-    pub appearances:    HashMap<Position, u32>,
+    pub appearances: HashMap<Position, u32>,
     /// position with the most appearances (ties broken alphabetically by abbreviation)
-    pub primary:        Position,
+    pub primary: Position,
     /// positions where `count / total_games >= 0.20`; always includes `primary`
     pub multi_eligible: Vec<Position>,
-    pub total_games:    u32,
+    pub total_games: u32,
 }
 
 impl PositionProfile {
@@ -32,8 +32,8 @@ impl PositionProfile {
     /// `appearances` maps `Position` → game count for that position.
     /// Any positions absent from the map are treated as zero appearances.
     pub fn build(
-        player_id:   u32,
-        season:      String,
+        player_id: u32,
+        season: String,
         appearances: HashMap<Position, u32>,
     ) -> Option<Self> {
         let total_games: u32 = appearances.values().sum();
@@ -94,10 +94,7 @@ mod tests {
     /// (25/70 ≈ 35.7% ≥ 20%)
     #[test]
     fn draisaitl_multi_eligible() {
-        let app = appearances(&[
-            (Position::Center,   45),
-            (Position::LeftWing, 25),
-        ]);
+        let app = appearances(&[(Position::Center, 45), (Position::LeftWing, 25)]);
         let profile = PositionProfile::build(8478402, "20252026".into(), app).unwrap();
 
         assert_eq!(profile.primary, Position::Center);
@@ -121,10 +118,7 @@ mod tests {
     /// L0: Tie-break by abbreviation — C=40, R=40 → primary=C (C < RW alphabetically)
     #[test]
     fn tie_break_alpha() {
-        let app = appearances(&[
-            (Position::Center,    40),
-            (Position::RightWing, 40),
-        ]);
+        let app = appearances(&[(Position::Center, 40), (Position::RightWing, 40)]);
         let profile = PositionProfile::build(9999999, "20252026".into(), app).unwrap();
 
         assert_eq!(profile.primary, Position::Center);
@@ -136,10 +130,7 @@ mod tests {
     /// L0: All zero appearances → build returns None
     #[test]
     fn zero_games_no_profile() {
-        let app = appearances(&[
-            (Position::Center,   0),
-            (Position::LeftWing, 0),
-        ]);
+        let app = appearances(&[(Position::Center, 0), (Position::LeftWing, 0)]);
         assert!(PositionProfile::build(1234567, "20252026".into(), app).is_none());
     }
 }

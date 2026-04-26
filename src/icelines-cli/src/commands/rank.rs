@@ -17,7 +17,7 @@ const ALL_TEAMS: &[&str] = &[
 ];
 
 pub async fn run(top: usize, pos: Option<String>, _scheme: Option<String>) -> anyhow::Result<()> {
-    let cfg   = Config::load()?;
+    let cfg = Config::load()?;
     let store = SnapshotStore::new(cfg.snapshot_dir());
 
     // Parse optional position filter
@@ -33,7 +33,7 @@ pub async fn run(top: usize, pos: Option<String>, _scheme: Option<String>) -> an
         .read_tier(&SnapshotTier::Stats, "stats.json")
         .unwrap_or_default();
 
-    let bio_idx   = index_bios(&bios);
+    let bio_idx = index_bios(&bios);
     let stats_idx = index_stats(&stats);
     let season_u32: u32 = cfg.season_str().parse().unwrap_or(20252026);
 

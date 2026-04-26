@@ -85,14 +85,14 @@ fn build_one(
         season_points: goals + assists,
         pace_score,
         headshot_url: rp.headshot.clone(),
-        birth_date:       bio.and_then(|b| b.birth_date.clone()),
-        birth_country:    bio.and_then(|b| b.birth_country.clone()),
+        birth_date: bio.and_then(|b| b.birth_date.clone()),
+        birth_country: bio.and_then(|b| b.birth_country.clone()),
         nationality_code: bio.and_then(|b| b.nationality_code.clone()),
-        shoots_catches:   bio.and_then(|b| b.shoots_catches.clone()),
-        draft_year:       bio.and_then(|b| b.draft_year.map(|v| v as u16)),
-        draft_round:      bio.and_then(|b| b.draft_round.map(|v| v as u8)),
-        draft_overall:    bio.and_then(|b| b.draft_overall.map(|v| v as u16)),
-        rookie_season:    bio.and_then(|b| b.first_season_for_game_type),
+        shoots_catches: bio.and_then(|b| b.shoots_catches.clone()),
+        draft_year: bio.and_then(|b| b.draft_year.map(|v| v as u16)),
+        draft_round: bio.and_then(|b| b.draft_round.map(|v| v as u8)),
+        draft_overall: bio.and_then(|b| b.draft_overall.map(|v| v as u16)),
+        rookie_season: bio.and_then(|b| b.first_season_for_game_type),
     })
 }
 
