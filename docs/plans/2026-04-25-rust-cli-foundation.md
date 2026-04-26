@@ -2,7 +2,11 @@
 
 **Date**: 2026-04-25  
 **Phase**: 1 of 3 — Foundation (icelines-core + icelines-fetch + icelines-cli: `team` and `rank`)  
-**Spec reference**: `docs/specs/rust-cli.md`
+**Spec references**:
+- `docs/specs/rust-cli.md` — command surface, crate architecture, data model
+- `docs/specs/data-sources.md` — NHL API tiers, shift data, composite scoring roadmap
+- `docs/specs/player-analysis.md` — player filtering, draft classes, peer groups (Phase 2+)
+- `docs/specs/dashboard-engine.md` — TOML-driven dashboard generation (Phase 2+)
 
 ---
 
@@ -214,11 +218,19 @@ The following conditions must all be true before this plan is considered complet
 
 ## Out of Scope for This Plan
 
-- `icelines build` — site generation (Phase 2)
-- `icelines serve` and `icelines deploy` — mkdocs integration (Phase 2)
-- `icelines compare` — side-by-side terminal comparison (Phase 2)
-- Tera template implementation in `icelines-site` (Phase 2)
-- GitHub Actions CI workflow (Phase 2)
-- Distribution / `cargo install` packaging (Phase 3)
-- mkdocs.yml generation (Phase 2)
-- Windows binary release pipeline (Phase 3)
+**Phase 2 — Site Generation + Player Analysis:**
+- `icelines build` — TOML dashboard engine, Tera templates (`dashboard-engine.md`)
+- `icelines serve` and `icelines deploy` — mkdocs integration
+- `icelines players`, `icelines class`, `icelines peers`, `icelines compare` (`player-analysis.md`)
+- `icelines group` — persistent watchlists
+- Tera template implementation in `icelines-site`
+- GitHub Actions CI workflow
+- `PlayerBio`, `DraftInfo`, `SeasonHistory` model extensions (`player-analysis.md`)
+- `PlayerFilter` engine for composable filtering
+
+**Phase 3 — Shift Data + Social + Distribution:**
+- `icelines mates` — shift-based linemate analysis (`data-sources.md` Tier 3)
+- `icelines scouting` — full scouting report
+- Tier 4–6 data (advanced stats, social signals, beat media)
+- Composite scoring: PPG × TOI, xGF integration (`data-sources.md`)
+- `cargo install` packaging, Windows binary release pipeline
