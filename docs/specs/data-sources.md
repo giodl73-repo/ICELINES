@@ -27,27 +27,52 @@ Tiers 4–6 are **contextual** — they annotate, not override.
 
 ---
 
-## Tier 1 — Yahoo Fantasy CSV
+## Tier 0 — NHL Team Rosters (player universe)
 
-**Endpoint**: Manual export from Yahoo Fantasy Hockey league  
-**Path**: `data/fantasy.csv` (user-supplied)  
-**Format**: CSV with Yahoo-specific player IDs and position eligibility
+**Endpoint**: `https://api-web.nhle.com/v1/roster/{TEAM}/{SEASON}`  
+**Fetched by**: `icelines fetch rosters` (32 requests, one per team)  
+**Cache TTL**: 48 hours  
+**Auth**: None
 
-**What we use:**
-- `Eligible Positions` — fantasy position eligibility (C, LW, RW, D, G) — KEPT
-- `First Name`, `Last Name` — player name for NHL API matching — KEPT
-- `Team` — cross-validation only (authoritative source is NHL API `currentTeamAbbrev`) — KEPT
-- `Image` — player photo URL (Yahoo CDN) — KEPT
-- REMOVED: `G (P)`, `A (P)` — these come from NHL API `SkaterStats.goals` / `SkaterStats.assists` now
+This is the authoritative player universe. All 32 rosters are fetched at the start of
+every season and after roster moves. There is no CSV dependency for the player list.
+
+**What we get:**
+- `id` — NHL canonical player ID (`u32`)
+- `firstName`, `lastName` — player name (Unicode, used for display)
+- `positionCode` — `L` / `R` / `C` / `D` / `G`
+- `headshot` — real team-specific photo URL:
+  `https://assets.nhle.com/mugs/nhl/{SEASON}/{TEAM}/{player_id}.png`
+- `birthDate`, `birthCountry`, `shootsCatches`, `sweaterNumber`
+
+**Pipeline:** `icelines fetch rosters` → `data/rosters.json` → `icelines-core::PlayerBio`
+
+---
+
+## Tier 1 — Yahoo Fantasy CSV (optional)
+
+**Status**: **Optional** — IceLines works without it.  
+**Path**: `data/fantasy.csv` (user-supplied, manual export)
+
+The Yahoo CSV is useful for one thing: fantasy position eligibility. Yahoo designates
+some players as eligible at multiple positions (e.g., Draisaitl as C and LW) based on
+their usage. This multi-position eligibility is fantasy-specific and not in the NHL API.
+
+**What we use (and only this):**
+- `Eligible Positions` — multi-position fantasy eligibility (e.g., `C,LW,Util`)
+- `First Name`, `Last Name` — for matching to NHL player ID if rosters are stale
+
+**What we do NOT use:**
+- Any stat columns (`G (P)`, `A (P)`, etc.) — all stats come from Tier 2 NHL API
+- `Image` — all photos come from Tier 0 NHL roster API
+- `Team` — authoritative source is NHL API `currentTeamAbbrev`
 
 **Limitations:**
-- Stats are NOT sourced from Yahoo CSV. Yahoo CSV provides position eligibility and photo URLs only.
-- No games played — must cross-reference with Tier 2
-- Position eligibility is fantasy-determined, not always hockey-accurate
-- Export is manual — not automated
-- Player IDs are Yahoo internal, not NHL IDs
+- Manual export — not automated
+- Export frequency is user-controlled
+- When not provided, position eligibility falls back to NHL API `positionCode`
 
-**Pipeline:** `data/fantasy.csv` → `icelines-core::player::YahooRecord` (eligibility + photo only)
+**Pipeline:** `data/fantasy.csv` (optional) → `icelines-core::YahooEligibility`
 
 ---
 

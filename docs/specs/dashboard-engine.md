@@ -347,13 +347,19 @@ pub struct QuerySpec {
 }
 
 pub enum QuerySource {
+    // Tier 1+2: available in Release 1
     Players,
     Teams,
-    Groups { name: String },
-    Class { draft_year: u16 },
+    Groups    { name: String },
+    Class     { draft_year: u16 },
     Leaderboard { pos: Position },
-    Buried { min_delta: f32 },
-    Peers { player: String, method: PeerMethod },
+    Buried    { min_delta: f32 },
+    Peers     { player: String, method: PeerMethod },
+    DepthChart { team: String, pos: Option<Position> },
+    History   { player: String, seasons: u8 },          // multi-season career data
+
+    // Tier 3: available in Release 2 (requires shift data)
+    Shifts    { player: String, min_shared_shifts: u32 }, // linemate analysis
 }
 
 pub struct Record {

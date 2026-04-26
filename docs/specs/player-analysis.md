@@ -453,19 +453,24 @@ pub struct SeasonLine {
 
 ## New CLI Commands Summary
 
-| Command | Phase | Key Flags |
-|---------|-------|-----------|
+> **Note on "Release" vs plan "Phase"**: Release here refers to data tier readiness,
+> not implementation plan milestones. Release 1 = NHL API Tiers 1+2 (rosters + stats).
+> Release 2 = Tier 3 shift data. All commands in this spec are planned for the
+> implementation plan's Phase 2+. The foundation plan (Phase 1) ships only `team` and `rank`.
+
+| Command | Release | Key Flags |
+|---------|---------|-----------|
 | `icelines players` | 1 | --pos, --age, --nationality, --region, --draft-year, --ppg-min |
 | `icelines class <YEAR>` | 1 | --pos, --round, --compare, --years-in |
 | `icelines peers <PLAYER>` | 1 | --by draft-class\|age\|pick-range |
-| `icelines history <PLAYER>` | 2 | --seasons, --pace |
 | `icelines compare <P1> <P2>` | 1 | --pace, --history |
-| `icelines mates <PLAYER>` | 2 | --top, --min-shifts (requires Tier 3 data) |
 | `icelines group <CMD>` | 1 | create, add, show, compare, auto |
+| `icelines history <PLAYER>` | 1 | --seasons, --pace (from NHL career stats API) |
+| `icelines mates <PLAYER>` | 2 | --top, --min-shifts (requires Tier 3 shift data) |
 | `icelines scouting <PLAYER>` | 2 | --format, --out |
 
-Phase 1 = build with Tier 1+2 data (Yahoo CSV + NHL bios/stats)  
-Phase 2 = add Tier 3 data (shifts) for mates + enhanced scouting
+Release 1 = NHL API Tiers 1+2 (rosters, bios, season stats — no Yahoo CSV required)
+Release 2 = add Tier 3 shift data for `mates` + enhanced `scouting`
 
 ---
 

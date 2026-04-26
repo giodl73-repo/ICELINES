@@ -45,23 +45,59 @@ output (mkdocs) remains the same format, but the generator is now a Rust functio
 
 ### `icelines fetch`
 
-Fetch NHL games-played data for all players in the current CSV and write to local cache.
+Fetch all NHL data needed to run IceLines. Replaces three Python scripts
+(`fetch_rosters.py`, `fetch_gp.py`) with a single composable command.
+All subcommands use `https://api-web.nhle.com/v1/` or
+`https://api.nhle.com/stats/rest/en/` (new NHL API — not the deprecated `/api/v1/`).
 
 ```
-icelines fetch [OPTIONS]
+icelines fetch <SUBCOMMAND> [OPTIONS]
 
-Options:
-  --csv <PATH>       Path to Yahoo Fantasy Hockey CSV export [default: data/fantasy.csv]
-  --season <YEAR>    NHL season year (e.g. 2024 for 2023-24) [default: current]
-  --refresh          Invalidate cache and re-fetch all players
-  --player <NAME>    Fetch a single player by name (partial match OK)
-  --dry-run          Show what would be fetched without making API calls
-  -v, --verbose      Show per-player fetch status
+Subcommands:
+  rosters    Fetch all 32 team rosters + headshot URLs  (replaces fetch_rosters.py)
+  stats      Fetch season stats for all skaters          (replaces fetch_gp.py)
+  all        Run rosters then stats in sequence           (default if no subcommand)
+
+Common Options:
+  --season <YEAR>    Season in YYYYZZZZ format [default: current, e.g. 20252026]
+  --refresh          Invalidate cache and re-fetch everything
+  --dry-run          Show what would be fetched without API calls
+  -v, --verbose      Show per-player status
 ```
+
+#### `icelines fetch rosters`
+
+```
+GET https://api-web.nhle.com/v1/roster/{TEAM}/{SEASON}
+```
+
+- Fetches all 32 NHL team rosters (one request per team)
+- Stores player bio + headshot URL keyed by normalized name
+- Headshot URL format: `https://assets.nhle.com/mugs/nhl/{SEASON}/{TEAM}/{player_id}.png`
+- Writes to `~/.icelines/cache/rosters/{SEASON}/{TEAM}.json`
+
+#### `icelines fetch stats`
+
+Two bulk-paginated endpoints, no per-player requests:
+
+```
+# Bios: GP, player ID, team, position, birth data
+GET https://api.nhle.com/stats/rest/en/skater/bios
+    ?cayenneExp=seasonId={SEASON}%20and%20gameTypeId=2&limit=100&start={N}
+
+# Stats: G, A, points, TOI, PPG, shots
+GET https://api.nhle.com/stats/rest/en/skater/summary
+    ?cayenneExp=seasonId={SEASON}%20and%20gameTypeId=2&limit=100&start={N}
+```
+
+- Paginates until `start + page_size >= response.total`
+- Merges bios + stats on `playerId`
+- Writes to `~/.icelines/cache/stats/{SEASON}/bios.json` and `stats.json`
+
+**All stats (G, A, GP, TOI) come from the NHL API — not from any CSV.**
 
 **Behavior:**
-- Reads player names from `--csv`, resolves each to an NHL API player ID
-- Checks local cache (`~/.icelines/cache/`) before each API call
+- Checks local cache before each API call
 - Writes fetched GP data to cache with timestamp
 - Reports players that could not be resolved (name mismatch, not found in API)
 - Exits 0 if all players resolved, exits 1 if any player could not be resolved (unless `--allow-missing`)
@@ -279,20 +315,22 @@ CSV parse errors, player ID resolution failures, schema validation failures)
 
 ### `icelines-site`
 
-**Role**: Site and markdown generation.
+**Role**: Site and markdown generation. Replaces `scripts/gen_site.py`.
 
 **Owns**:
 - Lineup card markdown renderer (Tera templates)
 - Index page renderer
 - Team page generator (one markdown file per team)
 - mkdocs.yml generator/updater
-
-**Depends on**: `icelines-core` (for all data types and scoring results)
+- Dashboard TOML loader and page generator (see `docs/specs/dashboard-engine.md`)
 
 **Does NOT own**:
+- Terminal rendering — that belongs in `icelines-cli`
 - Business logic, scoring, fit classification
 - Network I/O
 - File path resolution outside the site output directory
+
+**Depends on**: `icelines-core` (for all data types and scoring results)
 
 **Error type**: `icelines_site::Error` (template rendering errors, file write errors)
 
@@ -300,7 +338,9 @@ CSV parse errors, player ID resolution failures, schema validation failures)
 
 ### `icelines-cli`
 
-**Role**: Binary entry point. Wires everything together.
+**Role**: Binary entry point. Wires everything together. The single binary
+replaces all Python scripts: `fetch_rosters.py`, `fetch_gp.py`, `gen_site.py`,
+`deploy.bat`. Users run `icelines <subcommand>`, not Python scripts.
 
 **Owns**:
 - `main.rs` with clap derive subcommand enum
@@ -308,7 +348,8 @@ CSV parse errors, player ID resolution failures, schema validation failures)
 - tokio runtime setup
 - Top-level error formatting (convert crate errors to user-facing messages)
 - Config loading (`~/.icelines/config.toml` or project-local `.icelines.toml`)
-- Terminal renderer: `src/render/terminal.rs` — colored rows via `owo-colors`, tabular layout via `comfy-table`
+- **Terminal renderer**: `src/render/terminal.rs` — colored rows via `owo-colors`,
+  tabular layout via `comfy-table`. Terminal rendering is CLI concern, not site concern.
 
 **Depends on**: All three library crates.
 
