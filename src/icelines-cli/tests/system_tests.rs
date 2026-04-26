@@ -255,3 +255,30 @@ fn l2_cmd_build_no_site_exits_gracefully() {
         );
     }
 }
+
+// ── L2: Phase 3 commands ──────────────────────────────────────────────────────
+
+#[test]
+fn l2_cmd_project_invalid_mode_exits_nonzero() {
+    let out = run(&["project", "McDavid", "--mode", "invalid"]);
+    assert!(!out.status.success(), "invalid mode must exit non-zero");
+}
+
+#[test]
+fn l2_cmd_schedule_exits_zero() {
+    let out = run(&["schedule", "--days", "7"]);
+    assert!(out.status.success(), "schedule must exit 0");
+}
+
+#[test]
+fn l2_cmd_tui_help_exits_zero() {
+    let out = run(&["tui", "--help"]);
+    assert!(out.status.success(), "tui --help must exit 0");
+}
+
+#[test]
+fn l2_cmd_tonight_no_panic() {
+    let out = run(&["tonight"]);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(!stderr.contains("panic"), "tonight must not panic");
+}

@@ -1,0 +1,130 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            artifact: icelines-linux-x86_64
+            binary: icelines
+
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact: icelines-macos-arm64
+            binary: icelines
+
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact: icelines-macos-x86_64
+            binary: icelines
+
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact: icelines-windows-x86_64
+            binary: icelines.exe
+
+    defaults:
+      run:
+        working-directory: src
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install musl tools (Linux only)
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: sudo apt-get install -y musl-tools
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src/target
+          key: ${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('src/Cargo.lock') }}
+
+      - name: Build release binary
+        run: cargo build --release --target ${{ matrix.target }} -p icelines-cli
+
+      - name: Strip binary (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: strip target/${{ matrix.target }}/release/${{ matrix.binary }}
+
+      - name: Package artifact
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp target/${{ matrix.target }}/release/${{ matrix.binary }} dist/
+          cd dist
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            7z a ../${{ matrix.artifact }}.zip .
+          else
+            tar czf ../${{ matrix.artifact }}.tar.gz .
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: src/${{ matrix.artifact }}.*
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: IceLines ${{ github.ref_name }}
+          body: |
+            ## IceLines ${{ github.ref_name }}
+
+            NHL depth chart tracker and analytics CLI.
+
+            ### Install
+
+            Download the binary for your platform, extract, and add to your PATH.
+
+            ### Quick start
+
+            ```bash
+            icelines fetch all          # fetch NHL data
+            icelines rank --top 20      # top 20 players by PPG pace
+            icelines team SEA           # Seattle Kraken lineup
+            icelines                    # launch TUI
+            ```
+
+            See [README](https://github.com/giodl73-repo/ICELINES#readme) for full usage.
+          files: |
+            artifacts/**/*.tar.gz
+            artifacts/**/*.zip
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}

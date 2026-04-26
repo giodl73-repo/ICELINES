@@ -3,6 +3,7 @@ mod commands;
 mod config;
 mod error;
 mod render;
+mod tui;
 
 use clap::Parser;
 use cli::{Cli, Commands};
@@ -12,6 +13,11 @@ use config::Config;
 async fn main() -> anyhow::Result<()> {
     // Load config early so any error surfaces before command dispatch.
     let _cfg = Config::load()?;
+
+    // icelines with no args → launch TUI
+    if std::env::args().len() == 1 {
+        return tui::run_tui(false).await;
+    }
 
     let cli = Cli::parse();
 
@@ -116,11 +122,15 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
         Commands::Project { player, team, mode, games } => {
             commands::project::run(player, team, mode, games).await?;
         }
-        Commands::Tui => stub("tui"),
+        Commands::Tui => {
+            tui::run_tui(false).await?;
+        }
         Commands::Mates { player, top } => {
             commands::mates::run(player, top).await?;
         }
-        Commands::Scouting => stub("scouting"),
+        Commands::Scouting { player, format } => {
+            commands::scouting::run(player, format).await?;
+        }
         Commands::Scheme(sub) => {
             commands::scheme::run(sub).await?;
         }

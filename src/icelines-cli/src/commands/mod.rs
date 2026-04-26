@@ -4,6 +4,7 @@ pub mod fetch;
 pub mod mates;
 pub mod players;
 pub mod project;
+pub mod scouting;
 pub mod tonight;
 pub mod rank;
 pub mod scheme;

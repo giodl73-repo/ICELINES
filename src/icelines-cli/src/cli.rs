@@ -169,8 +169,11 @@ pub enum Commands {
     /// Manage player watchlists and custom groups.
     #[command(subcommand)]
     Group(GroupSubcommand),
-    /// Run scouting report for a player or team.
-    Scouting,
+    /// Full 8-section scouting report for a player.
+    Scouting {
+        player: String,
+        #[arg(long, default_value = "terminal")] format: String,
+    },
     /// Manage fantasy scoring schemes.
     #[command(subcommand)]
     Scheme(SchemeSubcommand),

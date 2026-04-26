@@ -33,6 +33,8 @@ chrono      = { version = "0.4", features = ["serde"] }
 toml        = "0.8"
 tera        = "1"
 sha2        = "0.10"
+ratatui     = "0.29"
+crossterm   = { version = "0.28", features = ["event-stream"] }
 httpmock    = "0.7"
 proptest    = "1"
 tempfile    = "3"
