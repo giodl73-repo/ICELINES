@@ -2,8 +2,7 @@
 
 **Version**: 0.2  
 **Date**: 2026-04-26  
-**Status**: Draft — replaces the TTL-file model in `icelines-fetch/src/cache.rs`  
-**Inspired by**: craftworks `design/compiler/assembly/ATOMS.md` — atoms A186, A206, A208
+**Status**: Draft — replaces the TTL-file model in `icelines-fetch/src/cache.rs`
 
 ---
 

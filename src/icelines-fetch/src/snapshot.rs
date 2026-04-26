@@ -4,7 +4,8 @@
 //! snapshots that maintain a three-tier provenance chain:
 //!   Tier 1 (Rosters) → Tier 2 (Stats) → Tier 3 (Derived, future)
 //!
-//! Design mirrors craftworks `assembly/ATOMS.md` atoms A186, A206, A208.
+//! Each snapshot is immutable after sealing, integrity-verified on every read,
+//! and linked to its parent snapshot via a provenance key chain.
 
 use std::collections::HashMap;
 use std::io::Write as _;
