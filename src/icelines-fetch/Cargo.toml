@@ -1,0 +1,19 @@
+[package]
+name    = "icelines-fetch"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+icelines-core = { path = "../icelines-core" }
+thiserror.workspace   = true
+serde.workspace       = true
+serde_json.workspace  = true
+tokio.workspace       = true
+reqwest.workspace     = true
+csv.workspace         = true
+encoding_rs.workspace = true
+
+[dev-dependencies]
+httpmock.workspace = true
+tempfile.workspace = true
+tokio = { workspace = true, features = ["rt", "macros"] }
