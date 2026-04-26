@@ -32,6 +32,7 @@ uuid        = { version = "1", features = ["v4"] }
 chrono      = { version = "0.4", features = ["serde"] }
 toml        = "0.8"
 tera        = "1"
+sha2        = "0.10"
 httpmock    = "0.7"
 proptest    = "1"
 tempfile    = "3"

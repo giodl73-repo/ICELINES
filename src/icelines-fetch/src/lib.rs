@@ -5,6 +5,7 @@ pub mod nhl_api;
 pub mod player_builder;
 pub mod resolver;
 pub mod schema;
+pub mod snapshot;
 
 pub use cache::Cache;
 pub use error::FetchError;
