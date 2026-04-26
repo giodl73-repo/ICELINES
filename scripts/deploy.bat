@@ -6,10 +6,10 @@ echo.
 
 cd /d "%~dp0\.."
 
-echo [1/3] Generating site from CSV data...
-python scripts\gen_site.py
+echo [1/3] Building site with icelines...
+src\target\release\icelines.exe build --no-site
 if errorlevel 1 (
-    echo ERROR: gen_site.py failed
+    echo ERROR: icelines build failed - run: cargo build --release -p icelines-cli
     pause
     exit /b 1
 )

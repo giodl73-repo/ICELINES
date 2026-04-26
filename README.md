@@ -10,7 +10,6 @@ Real lineup cards and pace-adjusted rankings for all 32 NHL teams.
 - Players color-coded by fit: 🟢 elite fit · 🟡 solid · 🔵 buried · 🔴 overextended
 - Rankings based on **points per game** (G+A / GP × 82) with goals/gp as tiebreaker
 - Every player's pace-projected stats: `{GP}gp · {PPG} pts/gp · {proj} proj`
-- Trade analysis: who each team can deal and what they need
 
 ## Methodology
 
@@ -18,47 +17,60 @@ Real lineup cards and pace-adjusted rankings for all 32 NHL teams.
 All stats projected to an 82-game pace — a player with 60 pts in 40 games ranks
 the same as a player with 120 pts in 82 games.
 
-**Fit classification** (per player vs their line slot):
+**Fit classification** (avg line on other 31 teams vs own line slot):
 
 | Color | Label | Condition |
 |-------|-------|-----------|
-| 🟢 Green | ★ fit | avg elsewhere ≤ own line + 0.5 |
+| 🟢 Green | ★ elite fit | avg elsewhere ≤ own line + 0.5 |
 | 🟡 Yellow | ~ solid | avg elsewhere ≤ own line + 1.25 |
 | 🔵 Blue | ↑ buried | avg elsewhere < own line − 0.75 |
 | 🔴 Red | ↓ stretch | avg elsewhere > own line + 1.25 |
 
-Stats sourced from Yahoo Fantasy Hockey 2025–26 season data and NHL API.
+Stats sourced from the NHL API. Rosters, headshots, and all scoring stats come
+from `api-web.nhle.com` and `api.nhle.com/stats/rest/en/` — no external CSV dependency.
 
 ## Structure
 
 ```
 ICELINES/
 ├── scripts/
-│   ├── gen_site.py      # generate docs/ from CSV + GP data
-│   ├── fetch_gp.py      # refresh NHL GP data → data/gp_data.json
-│   └── deploy.bat       # one-click regenerate + publish
+│   └── deploy.bat           # one-click build + publish to GitHub Pages
 ├── data/
-│   └── gp_data.json     # cached NHL games-played data
-├── docs/                # generated site source (mkdocs input)
+│   └── rosters.json         # cached NHL roster + headshot data
+├── docs/                    # generated site source (mkdocs input)
 │   ├── index.md
 │   ├── assets/
 │   └── teams/
-├── src/                 # future Rust CLI
+├── src/                     # Rust CLI (icelines)
+│   ├── icelines-core/       # scoring engine, models, cross-team metrics
+│   ├── icelines-fetch/      # NHL API client, snapshot store
+│   ├── icelines-site/       # site generator (replaces gen_site.py)
+│   └── icelines-cli/        # binary entry point
 └── mkdocs.yml
 ```
 
 ## Usage
 
 ```bash
-# Refresh NHL GP data from API
-python scripts/fetch_gp.py
+# First build the binary (one-time)
+cd src && cargo build --release
 
-# Regenerate site
-python scripts/gen_site.py
+# Fetch NHL data (rosters, stats) — creates a named snapshot
+icelines fetch all
 
-# Preview locally
+# Preview site locally
+icelines build --no-site
 PYTHONUTF8=1 mkdocs serve
 
 # Deploy to GitHub Pages (or double-click scripts/deploy.bat)
-PYTHONUTF8=1 mkdocs gh-deploy
+icelines build && PYTHONUTF8=1 mkdocs gh-deploy
+
+# Manage snapshots
+icelines snapshot list
+icelines snapshot verify
+icelines snapshot use <name>
+
+# Rankings
+icelines rank --top 20
+icelines team SEA
 ```
