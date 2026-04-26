@@ -1,0 +1,353 @@
+/* ── NHL Fantasy Tracker ─────────────────────────────────── */
+
+:root {
+  --fit-color:     #1a7f37;
+  --fit-bg:        #d4f7dc;
+  --solid-color:   #854d0e;
+  --solid-bg:      #fefce8;
+  --buried-color:  #1e40af;
+  --buried-bg:     #dbeafe;
+  --stretch-color: #9b1c1c;
+  --stretch-bg:    #fde8e8;
+  --neutral-color: #374151;
+  --neutral-bg:    #f9fafb;
+  --ice-blue:      #e8f4fd;
+  --line-border:   #d1d5db;
+}
+
+[data-md-color-scheme="slate"] {
+  --fit-bg:        #0a3d1a;
+  --fit-color:     #6ee7a0;
+  --solid-bg:      #2d2600;
+  --solid-color:   #fde047;
+  --buried-bg:     #1e3a5f;
+  --buried-color:  #93c5fd;
+  --stretch-bg:    #3b0f0f;
+  --stretch-color: #fca5a5;
+  --neutral-bg:    #1e293b;
+  --ice-blue:      #0f2132;
+  --line-border:   #334155;
+}
+
+/* ── TRACKER INDEX ───────────────────────────────────────── */
+
+.tracker-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.tracker-card {
+  border: 1px solid var(--line-border);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  background: var(--neutral-bg);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-decoration: none;
+  transition: box-shadow 0.15s;
+}
+
+.tracker-card:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.tracker-logo {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.tracker-rank {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #6b7280;
+  min-width: 2rem;
+  text-align: right;
+}
+
+.tracker-rank.top5  { color: #059669; }
+.tracker-rank.top10 { color: #2563eb; }
+.tracker-rank.bot5  { color: #dc2626; }
+
+.tracker-team {
+  font-size: 1.1rem;
+  font-weight: 700;
+  min-width: 3rem;
+}
+
+.tracker-bar-wrap {
+  flex: 1;
+}
+
+.tracker-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: #e5e7eb;
+  overflow: hidden;
+}
+.tracker-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #2563eb, #7c3aed);
+}
+
+.tracker-score {
+  font-size: 0.8rem;
+  color: #6b7280;
+  min-width: 3.5rem;
+  text-align: right;
+}
+
+.tracker-pos-badges {
+  display: flex;
+  gap: 3px;
+}
+
+.pos-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: white;
+}
+.pos-badge.loaded  { background: #059669; }
+.pos-badge.elite   { background: #7c3aed; }
+.pos-badge.buy     { background: #dc2626; }
+.pos-badge.ok      { background: #6b7280; }
+
+/* ── TEAM LINEUP CARD ────────────────────────────────────── */
+
+.team-header {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--line-border);
+}
+
+.team-rank-badge {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #374151;
+}
+
+.team-total {
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.lineup-section {
+  margin: 1.5rem 0;
+}
+
+.lineup-section h3 {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+
+/* ── LINEUP TABLE ────────────────────────────────────────── */
+
+.lineup-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.lineup-table th {
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 0.4rem 0.75rem;
+  text-align: center;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.lineup-table th.pos-lw { background: #1e3a5f; }
+.lineup-table th.pos-c  { background: #1a3a1a; }
+.lineup-table th.pos-rw { background: #3a1a1a; }
+.lineup-table th.pos-d  { background: #2d1f3a; }
+.lineup-table th.line-col { background: #111827; }
+
+.lineup-table td {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line-border);
+  vertical-align: top;
+}
+
+.line-num-cell {
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: #6b7280;
+  text-align: center;
+  white-space: nowrap;
+  background: var(--neutral-bg);
+  width: 4rem;
+}
+
+.pair-num-cell {
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-align: center;
+  background: var(--neutral-bg);
+  width: 4rem;
+}
+
+/* ── PLAYER CELLS ────────────────────────────────────────── */
+
+.player-cell {
+  min-width: 130px;
+}
+
+.player-cell.fit {
+  background: var(--fit-bg);
+}
+.player-cell.solid {
+  background: var(--solid-bg);
+}
+.player-cell.buried {
+  background: var(--buried-bg);
+}
+.player-cell.stretch {
+  background: var(--stretch-bg);
+}
+.player-cell.empty {
+  background: var(--neutral-bg);
+  opacity: 0.5;
+}
+
+/* ── TEAM PAGE HEADER ────────────────────────────────────── */
+
+.team-page-header {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--line-border);
+}
+
+.team-page-header h1 {
+  margin: 0 0 0.25rem 0;
+}
+
+.team-page-meta {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.team-page-logo {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+/* ── PLAYER CELLS ────────────────────────────────────────── */
+
+.player-photo {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  float: right;
+  margin: 0 0 4px 6px;
+}
+
+.player-name {
+  font-weight: 600;
+  display: block;
+  font-size: 0.85rem;
+}
+
+.player-gp {
+  font-size: 0.72rem;
+  color: #6b7280;
+  display: block;
+}
+
+.player-fit-label {
+  font-size: 0.7rem;
+  display: block;
+  margin-top: 2px;
+}
+
+.player-cell.fit     .player-fit-label { color: var(--fit-color); }
+.player-cell.solid   .player-fit-label { color: var(--solid-color); }
+.player-cell.buried  .player-fit-label { color: var(--buried-color); }
+.player-cell.stretch .player-fit-label { color: var(--stretch-color); }
+
+/* ── STRENGTH BAR ────────────────────────────────────────── */
+
+.pos-summary {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 1rem 0;
+}
+
+.pos-pill {
+  border-radius: 20px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.pos-pill.loaded  { background: var(--fit-bg);     color: var(--fit-color); }
+.pos-pill.average { background: var(--neutral-bg);  color: var(--neutral-color); }
+.pos-pill.buy     { background: var(--stretch-bg);  color: var(--stretch-color); }
+
+/* ── TRADE SECTION ───────────────────────────────────────── */
+
+.trade-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.trade-box {
+  border: 1px solid var(--line-border);
+  border-radius: 6px;
+  padding: 0.75rem;
+}
+
+.trade-box h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.trade-box.deal h4 { color: var(--fit-color); }
+.trade-box.buy  h4 { color: var(--stretch-color); }
+
+.trade-item {
+  font-size: 0.82rem;
+  padding: 2px 0;
+  border-bottom: 1px solid var(--line-border);
+}
+.trade-item:last-child { border-bottom: none; }
+
+/* ── RESPONSIVE ──────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .tracker-grid { grid-template-columns: 1fr; }
+  .trade-grid   { grid-template-columns: 1fr; }
+  .lineup-table { font-size: 0.78rem; }
+  .player-cell  { min-width: 90px; }
+}
