@@ -11,7 +11,7 @@ pub fn compute_pace_score(goals: u32, assists: u32, gp: u32) -> Option<PaceScore
     }
     let gp_f = gp as f64;
     // pace_82 = (goals + assists) / gp * 82
-    let pace_82      = (goals + assists) as f64 / gp_f * 82.0;
+    let pace_82 = (goals + assists) as f64 / gp_f * 82.0;
     // goals_per_82 = goals / gp * 82
     let goals_per_82 = goals as f64 / gp_f * 82.0;
 
@@ -39,10 +39,15 @@ pub fn classify_fit(pace_82: f64, position: Position) -> FitClass {
         (45.0_f64, 28.0_f64, 14.0_f64)
     };
 
-    if pace_82 >= elite  { FitClass::Elite }
-    else if pace_82 >= solid   { FitClass::Solid }
-    else if pace_82 >= buried  { FitClass::Buried }
-    else                       { FitClass::Stretch }
+    if pace_82 >= elite {
+        FitClass::Elite
+    } else if pace_82 >= solid {
+        FitClass::Solid
+    } else if pace_82 >= buried {
+        FitClass::Buried
+    } else {
+        FitClass::Stretch
+    }
 }
 
 /// Sort a slice of Players by pace score descending.
@@ -53,7 +58,8 @@ pub fn sort_by_pace(players: &mut [Player]) {
     players.sort_by(|a, b| {
         let sa = a.pace_score.map(|s| s.sort_key()).unwrap_or(-1.0);
         let sb = b.pace_score.map(|s| s.sort_key()).unwrap_or(-1.0);
-        sb.partial_cmp(&sa).unwrap_or(std::cmp::Ordering::Equal)
+        sb.partial_cmp(&sa)
+            .unwrap_or(std::cmp::Ordering::Equal)
             .then_with(|| a.nhl_id.cmp(&b.nhl_id))
     });
 }
@@ -68,16 +74,22 @@ mod tests {
     fn l0_scoring_pace_mcdavid_82gp() {
         // (50+90) / 82 * 82 = 140.000 exactly (full season, no projection)
         let s = compute_pace_score(50, 90, 82).unwrap();
-        assert!((s.pace_82 - 140.0).abs() < 0.001,
-            "expected 140.000 got {}", s.pace_82);
+        assert!(
+            (s.pace_82 - 140.0).abs() < 0.001,
+            "expected 140.000 got {}",
+            s.pace_82
+        );
     }
 
     #[test]
     fn l0_scoring_pace_mid_tier() {
         // (28+40) / 74 * 82 = 75.351...
         let s = compute_pace_score(28, 40, 74).unwrap();
-        assert!((s.pace_82 - 75.351).abs() < 0.001,
-            "expected ~75.351 got {}", s.pace_82);
+        assert!(
+            (s.pace_82 - 75.351).abs() < 0.001,
+            "expected ~75.351 got {}",
+            s.pace_82
+        );
     }
 
     #[test]
@@ -89,8 +101,10 @@ mod tests {
     #[test]
     fn l0_scoring_pace_below_min_gp_is_none() {
         // GP=9 is below MIN_GP=10 → None
-        assert!(compute_pace_score(3, 6, 9).is_none(),
-            "GP=9 should be below MIN_GP={MIN_GP}");
+        assert!(
+            compute_pace_score(3, 6, 9).is_none(),
+            "GP=9 should be below MIN_GP={MIN_GP}"
+        );
     }
 
     #[test]
@@ -98,17 +112,24 @@ mod tests {
         // GP=10 is exactly MIN_GP → must return Some
         // (3+5) / 10 * 82 = 65.600
         let s = compute_pace_score(3, 5, 10).unwrap();
-        assert!((s.pace_82 - 65.600).abs() < 0.001,
-            "expected 65.600 got {}", s.pace_82);
+        assert!(
+            (s.pace_82 - 65.600).abs() < 0.001,
+            "expected 65.600 got {}",
+            s.pace_82
+        );
     }
 
     #[test]
     fn l0_scoring_goals_tiebreaker_in_sort_key() {
         let s1 = compute_pace_score(20, 60, 82).unwrap(); // same points, fewer goals
         let s2 = compute_pace_score(40, 40, 82).unwrap(); // same points, more goals
-        // s2 should have higher sort key (goals break the tie)
-        assert!(s2.sort_key() > s1.sort_key(),
-            "goals/82 tiebreaker: s2({}) should beat s1({})", s2.sort_key(), s1.sort_key());
+                                                          // s2 should have higher sort key (goals break the tie)
+        assert!(
+            s2.sort_key() > s1.sort_key(),
+            "goals/82 tiebreaker: s2({}) should beat s1({})",
+            s2.sort_key(),
+            s1.sort_key()
+        );
     }
 
     // ── classify_fit ─────────────────────────────────────────────────────────

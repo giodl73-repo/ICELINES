@@ -1,7 +1,7 @@
+use crate::error::FetchError;
+use serde::{de::DeserializeOwned, Serialize};
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
-use serde::{de::DeserializeOwned, Serialize};
-use crate::error::FetchError;
 
 /// File-based cache under `~/.icelines/cache/`.
 /// Each entry is a JSON file. TTL is checked on read; expired entries are treated as misses.
@@ -28,7 +28,9 @@ impl Cache {
     /// Read a cached value. Returns None if missing or expired.
     pub fn get<T: DeserializeOwned>(&self, key: &str, ttl: Duration) -> Option<T> {
         let p = self.path(key);
-        if !p.exists() { return None; }
+        if !p.exists() {
+            return None;
+        }
 
         // Check age
         if let Ok(meta) = p.metadata() {
@@ -71,10 +73,10 @@ impl Cache {
 /// Standard TTLs used across the fetch layer.
 pub mod ttl {
     use std::time::Duration;
-    pub const ROSTER:    Duration = Duration::from_secs(48 * 3600);   // 48h
-    pub const STATS:     Duration = Duration::from_secs(24 * 3600);   // 24h
-    pub const BOXSCORE:  Duration = Duration::from_secs(365 * 24 * 3600); // completed games: permanent
-    pub const SCHEDULE:  Duration = Duration::from_secs(6 * 3600);    // 6h
+    pub const ROSTER: Duration = Duration::from_secs(48 * 3600); // 48h
+    pub const STATS: Duration = Duration::from_secs(24 * 3600); // 24h
+    pub const BOXSCORE: Duration = Duration::from_secs(365 * 24 * 3600); // completed games: permanent
+    pub const SCHEDULE: Duration = Duration::from_secs(6 * 3600); // 6h
 }
 
 #[cfg(test)]

@@ -14,7 +14,7 @@ impl PositionResolver {
             .split(',')
             .map(str::trim)
             .filter(|s| !NON_SLOT.contains(s) && !s.is_empty())
-            .filter_map(|s| Self::parse_single(s))
+            .filter_map(Self::parse_single)
             .collect();
 
         if positions.is_empty() {
@@ -29,11 +29,11 @@ impl PositionResolver {
     /// (silently skips rather than failing — Yahoo can add new slot types).
     fn parse_single(s: &str) -> Option<Position> {
         match s {
-            "C"  => Some(Position::Center),
+            "C" => Some(Position::Center),
             "LW" => Some(Position::LeftWing),
             "RW" => Some(Position::RightWing),
-            "D"  => Some(Position::Defense),
-            _    => None,
+            "D" => Some(Position::Defense),
+            _ => None,
         }
     }
 

@@ -1,0 +1,11 @@
+C:\src\NHL\fantasy-tracker\src\target\debug\deps\hyper_rustls-14830aa5f91afc11.d: C:\Users\giodl\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.9\src\lib.rs C:\Users\giodl\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.9\src\config.rs C:\Users\giodl\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.9\src\connector.rs C:\Users\giodl\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.9\src\connector\builder.rs C:\Users\giodl\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.9\src\stream.rs
+
+C:\src\NHL\fantasy-tracker\src\target\debug\deps\libhyper_rustls-14830aa5f91afc11.rlib: C:\Users\giodl\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.9\src\lib.rs C:\Users\giodl\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.9\src\config.rs C:\Users\giodl\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.9\src\connector.rs C:\Users\giodl\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.9\src\connector\builder.rs C:\Users\giodl\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.9\src\stream.rs
+
+C:\src\NHL\fantasy-tracker\src\target\debug\deps\libhyper_rustls-14830aa5f91afc11.rmeta: C:\Users\giodl\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.9\src\lib.rs C:\Users\giodl\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.9\src\config.rs C:\Users\giodl\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.9\src\connector.rs C:\Users\giodl\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.9\src\connector\builder.rs C:\Users\giodl\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.9\src\stream.rs
+
+C:\Users\giodl\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.9\src\lib.rs:
+C:\Users\giodl\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.9\src\config.rs:
+C:\Users\giodl\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.9\src\connector.rs:
+C:\Users\giodl\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.9\src\connector\builder.rs:
+C:\Users\giodl\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.9\src\stream.rs:

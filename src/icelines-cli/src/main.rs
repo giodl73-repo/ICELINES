@@ -28,7 +28,11 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
         Commands::Fetch(sub) => {
             commands::fetch::run(sub).await?;
         }
-        Commands::Team { team, scheme, no_color } => {
+        Commands::Team {
+            team,
+            scheme,
+            no_color,
+        } => {
             commands::team::run(team, scheme, no_color).await?;
         }
         Commands::Rank { top, pos, scheme } => {
@@ -36,23 +40,23 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
         }
 
         // ── Phase 2 / 3 stubs ────────────────────────────────────────────────
-        Commands::Build     => stub("build"),
-        Commands::Serve     => stub("serve"),
-        Commands::Deploy    => stub("deploy"),
-        Commands::Compare   => stub("compare"),
-        Commands::Tonight   => stub("tonight"),
-        Commands::Schedule  => stub("schedule"),
-        Commands::Trade     => stub("trade"),
-        Commands::Project   => stub("project"),
-        Commands::Tui       => stub("tui"),
-        Commands::Players   => stub("players"),
-        Commands::Class     => stub("class"),
-        Commands::Peers     => stub("peers"),
-        Commands::History   => stub("history"),
-        Commands::Mates     => stub("mates"),
-        Commands::Group     => stub("group"),
-        Commands::Scouting  => stub("scouting"),
-        Commands::Scheme    => stub("scheme"),
+        Commands::Build => stub("build"),
+        Commands::Serve => stub("serve"),
+        Commands::Deploy => stub("deploy"),
+        Commands::Compare => stub("compare"),
+        Commands::Tonight => stub("tonight"),
+        Commands::Schedule => stub("schedule"),
+        Commands::Trade => stub("trade"),
+        Commands::Project => stub("project"),
+        Commands::Tui => stub("tui"),
+        Commands::Players => stub("players"),
+        Commands::Class => stub("class"),
+        Commands::Peers => stub("peers"),
+        Commands::History => stub("history"),
+        Commands::Mates => stub("mates"),
+        Commands::Group => stub("group"),
+        Commands::Scouting => stub("scouting"),
+        Commands::Scheme => stub("scheme"),
         Commands::Dashboard => stub("dashboard"),
     }
     Ok(())

@@ -1,14 +1,14 @@
-use std::collections::HashMap;
-use icelines_core::name::normalize_name;
 use crate::error::FetchError;
 use crate::schema::SkaterBio;
+use icelines_core::name::normalize_name;
+use std::collections::HashMap;
 
 /// Candidate player for disambiguation output.
 #[derive(Debug, Clone)]
 pub struct Candidate {
     pub player_id: u32,
     pub full_name: String,
-    pub team:      String,
+    pub team: String,
 }
 
 pub struct PlayerResolver {
@@ -25,7 +25,7 @@ impl PlayerResolver {
             index.entry(key).or_default().push(Candidate {
                 player_id: bio.player_id,
                 full_name: bio.skater_full_name.clone(),
-                team:      bio.current_team_abbrev.clone(),
+                team: bio.current_team_abbrev.clone(),
             });
         }
         Self { index }
@@ -42,7 +42,11 @@ impl PlayerResolver {
         let key = normalize_name(name);
         let candidates = match self.index.get(&key) {
             Some(v) => v,
-            None => return Err(FetchError::PlayerNotFound { name: name.to_owned() }),
+            None => {
+                return Err(FetchError::PlayerNotFound {
+                    name: name.to_owned(),
+                })
+            }
         };
 
         if candidates.len() == 1 {
@@ -52,7 +56,8 @@ impl PlayerResolver {
         // Multiple candidates — try team-based disambiguation (Sebastian Aho case)
         if let Some(team) = team_hint {
             let team_upper = team.trim().to_uppercase();
-            let matching: Vec<&Candidate> = candidates.iter()
+            let matching: Vec<&Candidate> = candidates
+                .iter()
                 .filter(|c| c.team.to_uppercase() == team_upper)
                 .collect();
             if matching.len() == 1 {
@@ -62,20 +67,24 @@ impl PlayerResolver {
 
         Err(FetchError::NameAmbiguous {
             name: name.to_owned(),
-            candidates: candidates.iter()
+            candidates: candidates
+                .iter()
                 .map(|c| (c.player_id, c.full_name.clone(), c.team.clone()))
                 .collect(),
         })
     }
 
     /// Resolve all names in a batch. Returns (resolved, errors).
-    pub fn resolve_batch(&self, names: &[(String, Option<String>)]) -> (Vec<(String, u32)>, Vec<FetchError>) {
+    pub fn resolve_batch(
+        &self,
+        names: &[(String, Option<String>)],
+    ) -> (Vec<(String, u32)>, Vec<FetchError>) {
         let mut resolved = Vec::new();
-        let mut errors   = Vec::new();
+        let mut errors = Vec::new();
         for (name, team) in names {
             match self.resolve(name, team.as_deref()) {
-                Ok(id)  => resolved.push((name.clone(), id)),
-                Err(e)  => errors.push(e),
+                Ok(id) => resolved.push((name.clone(), id)),
+                Err(e) => errors.push(e),
             }
         }
         (resolved, errors)
@@ -88,26 +97,26 @@ mod tests {
 
     fn bio(id: u32, name: &str, team: &str) -> SkaterBio {
         SkaterBio {
-            player_id:            id,
-            skater_full_name:     name.to_owned(),
-            last_name:            name.split_whitespace().last().unwrap_or("").to_owned(),
-            games_played:         50,
-            goals:                10,
-            assists:              20,
-            points:               30,
-            current_team_abbrev:  team.to_owned(),
-            position_code:        "C".to_owned(),
-            birth_date:           None,
-            birth_country:        None,
-            nationality_code:     None,
-            shoots_catches:       None,
-            draft_year:           None,
-            draft_round:          None,
-            draft_overall:        None,
-            birth_city:           None,
+            player_id: id,
+            skater_full_name: name.to_owned(),
+            last_name: name.split_whitespace().last().unwrap_or("").to_owned(),
+            games_played: 50,
+            goals: 10,
+            assists: 20,
+            points: 30,
+            current_team_abbrev: team.to_owned(),
+            position_code: "C".to_owned(),
+            birth_date: None,
+            birth_country: None,
+            nationality_code: None,
+            shoots_catches: None,
+            draft_year: None,
+            draft_round: None,
+            draft_overall: None,
+            birth_city: None,
             birth_state_province_code: None,
-            height:               None,
-            weight:               None,
+            height: None,
+            weight: None,
             first_season_for_game_type: None,
             is_in_hall_of_fame_yn: None,
         }

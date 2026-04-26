@@ -50,14 +50,18 @@ fn decompose_char(c: char) -> Vec<char> {
 }
 
 fn base(c: char, upper: char, lower: char) -> char {
-    if c.is_uppercase() { upper } else { lower }
+    if c.is_uppercase() {
+        upper
+    } else {
+        lower
+    }
 }
 
 fn is_combining_mark(c: char) -> bool {
     // Unicode general category Mn (Non-spacing Mark): U+0300–U+036F
     ('\u{0300}'..='\u{036F}').contains(&c)
-    || ('\u{1DC0}'..='\u{1DFF}').contains(&c)
-    || ('\u{20D0}'..='\u{20FF}').contains(&c)
+        || ('\u{1DC0}'..='\u{1DFF}').contains(&c)
+        || ('\u{20D0}'..='\u{20FF}').contains(&c)
 }
 
 #[cfg(test)]
@@ -91,7 +95,10 @@ mod tests {
 
     #[test]
     fn l0_name_case_insensitive() {
-        assert_eq!(normalize_name("MATTY BENIERS"), normalize_name("Matty Beniers"));
+        assert_eq!(
+            normalize_name("MATTY BENIERS"),
+            normalize_name("Matty Beniers")
+        );
     }
 
     #[test]

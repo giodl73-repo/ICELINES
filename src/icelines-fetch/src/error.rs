@@ -13,14 +13,20 @@ pub enum FetchError {
     #[error("cache error: {0}")]
     Cache(String),
     #[error("CSV parse error at row {row}, field '{field}': {detail}")]
-    CsvParse { row: usize, field: String, detail: String },
+    CsvParse {
+        row: usize,
+        field: String,
+        detail: String,
+    },
     #[error("player not found: {name}")]
     PlayerNotFound { name: String },
     #[error("ambiguous name '{name}': {candidates:?}")]
-    NameAmbiguous { name: String, candidates: Vec<(u32, String, String)> },
+    NameAmbiguous {
+        name: String,
+        candidates: Vec<(u32, String, String)>,
+    },
     #[error("IO: {0}")]
     Io(#[from] std::io::Error),
     #[error("JSON: {0}")]
     Json(#[from] serde_json::Error),
 }
-

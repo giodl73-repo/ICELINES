@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use serde::Deserialize;
+use std::path::PathBuf;
 
 // ── Raw TOML shape ────────────────────────────────────────────────────────────
 
@@ -8,9 +8,9 @@ use serde::Deserialize;
 #[derive(Debug, Deserialize, Default)]
 #[allow(dead_code)]
 struct RawConfig {
-    csv_path:  Option<String>,
+    csv_path: Option<String>,
     cache_dir: Option<String>,
-    season:    Option<u32>,
+    season: Option<u32>,
 }
 
 // ── Public Config ─────────────────────────────────────────────────────────────
@@ -19,11 +19,11 @@ struct RawConfig {
 #[allow(dead_code)]
 pub struct Config {
     /// Path to a Yahoo CSV export (optional).
-    pub csv_path:  Option<PathBuf>,
+    pub csv_path: Option<PathBuf>,
     /// Directory used to cache API responses.
     pub cache_dir: PathBuf,
     /// Season identifier (8-digit YYYYZZZZ, e.g. 20252026).
-    pub season:    Option<u32>,
+    pub season: Option<u32>,
 }
 
 impl Config {
@@ -39,8 +39,9 @@ impl Config {
         let raw: RawConfig = if config_path.exists() {
             let text = std::fs::read_to_string(&config_path)
                 .map_err(|e| anyhow::anyhow!("cannot read {}: {}", config_path.display(), e))?;
-            toml::from_str(&text)
-                .map_err(|e| anyhow::anyhow!("invalid config at {}: {}", config_path.display(), e))?
+            toml::from_str(&text).map_err(|e| {
+                anyhow::anyhow!("invalid config at {}: {}", config_path.display(), e)
+            })?
         } else {
             RawConfig::default()
         };
@@ -48,10 +49,15 @@ impl Config {
         let default_cache = home.join(".icelines").join("cache");
 
         Ok(Config {
-            csv_path:  raw.csv_path.map(PathBuf::from),
+            csv_path: raw.csv_path.map(PathBuf::from),
             cache_dir: raw.cache_dir.map(PathBuf::from).unwrap_or(default_cache),
-            season:    raw.season,
+            season: raw.season,
         })
+    }
+
+    /// Return the season as an 8-digit string (e.g. "20252026").
+    pub fn season_str(&self) -> String {
+        self.season.unwrap_or(20252026).to_string()
     }
 }
 

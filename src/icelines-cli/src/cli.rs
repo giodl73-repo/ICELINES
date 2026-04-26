@@ -4,8 +4,8 @@ use clap::{Parser, Subcommand};
 
 #[derive(Debug, Parser)]
 #[command(
-    name    = "icelines",
-    about   = "NHL fantasy depth-chart and ranking tool",
+    name = "icelines",
+    about = "NHL fantasy depth-chart and ranking tool",
     version,
     propagate_version = true
 )]
@@ -52,7 +52,6 @@ pub enum Commands {
     },
 
     // ── Phase 2 / 3 stubs ────────────────────────────────────────────────────
-
     /// Build static site output.
     Build,
     /// Serve the static site locally.
@@ -95,12 +94,33 @@ pub enum Commands {
 
 #[derive(Debug, Subcommand)]
 pub enum FetchSubcommand {
-    /// Fetch all team rosters from the NHL API.
-    Rosters,
-    /// Fetch skater statistics for the current season.
-    Stats,
-    /// Fetch rosters and stats in one pass.
-    All,
-    /// Refresh position eligibility data.
+    /// Fetch all 32 team rosters (headshots, positions, bios).
+    Rosters {
+        #[arg(long, default_value = "20252026")]
+        season: String,
+        #[arg(long)]
+        refresh: bool,
+        #[arg(long)]
+        dry_run: bool,
+    },
+    /// Fetch skater season stats (G, A, GP, TOI).
+    Stats {
+        #[arg(long, default_value = "20252026")]
+        season: String,
+        #[arg(long)]
+        refresh: bool,
+        #[arg(long)]
+        dry_run: bool,
+    },
+    /// Fetch rosters then stats in one pass.
+    All {
+        #[arg(long, default_value = "20252026")]
+        season: String,
+        #[arg(long)]
+        refresh: bool,
+        #[arg(long)]
+        dry_run: bool,
+    },
+    /// Refresh position eligibility from boxscore data (Phase 2).
     Positions,
 }

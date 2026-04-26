@@ -9,8 +9,8 @@ pub mod teams;
 pub use depth_chart::DepthChartBuilder;
 pub use error::IcelinesError;
 pub use model::{
-    DepthChart, FitClass, GpStatus, LineAssignment, PaceScore, Player,
-    Position, Season, Slot, TeamAbbr,
+    DepthChart, FitClass, GpStatus, LineAssignment, PaceScore, Player, Position, Season, Slot,
+    TeamAbbr,
 };
 pub use name::normalize_name;
 pub use position::PositionResolver;

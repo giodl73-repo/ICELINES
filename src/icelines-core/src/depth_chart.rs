@@ -1,6 +1,6 @@
-use std::collections::HashMap;
 use crate::model::{DepthChart, Player, Position, Season, TeamAbbr};
 use crate::scoring::sort_by_pace;
+use std::collections::HashMap;
 
 pub struct DepthChartBuilder;
 
@@ -20,7 +20,7 @@ impl DepthChartBuilder {
         let mut fwd_slots: HashMap<Position, Vec<Player>> = HashMap::new();
         let mut def_slots: Vec<Player> = Vec::new();
         let mut below_min: Vec<Player> = Vec::new();
-        let mut unplaced:  Vec<Player> = Vec::new();
+        let mut unplaced: Vec<Player> = Vec::new();
 
         for player in players {
             if !player.gp_status.is_eligible() {
@@ -28,14 +28,18 @@ impl DepthChartBuilder {
                 continue;
             }
 
-            let fwd_eligible: Vec<Position> = player.eligible_pos.iter()
+            let fwd_eligible: Vec<Position> = player
+                .eligible_pos
+                .iter()
                 .copied()
                 .filter(|p| p.is_forward())
                 .collect();
 
             if !fwd_eligible.is_empty() {
                 // Greedy: assign to forward position with fewest players so far
-                let best = fwd_eligible.iter().copied()
+                let best = fwd_eligible
+                    .iter()
+                    .copied()
                     .min_by_key(|pos| fwd_slots.get(pos).map_or(0, |v| v.len()))
                     .unwrap(); // safe: fwd_eligible is non-empty
                 fwd_slots.entry(best).or_default().push(player);
@@ -48,7 +52,8 @@ impl DepthChartBuilder {
 
         // Fill forward_lines grid: 4 rows × [LW, C, RW]
         let none3: [Option<Player>; 3] = [None, None, None];
-        let mut forward_lines: Vec<[Option<Player>; 3]> = vec![none3.clone(), none3.clone(), none3.clone(), none3];
+        let mut forward_lines: Vec<[Option<Player>; 3]> =
+            vec![none3.clone(), none3.clone(), none3.clone(), none3];
         let order = [Position::LeftWing, Position::Center, Position::RightWing];
         for (slot_idx, pos) in order.iter().enumerate() {
             let players_at_pos = fwd_slots.remove(pos).unwrap_or_default();
@@ -74,7 +79,14 @@ impl DepthChartBuilder {
             }
         }
 
-        DepthChart { team, season, forward_lines, defense_pairs, unplaced, below_min_gp: below_min }
+        DepthChart {
+            team,
+            season,
+            forward_lines,
+            defense_pairs,
+            unplaced,
+            below_min_gp: below_min,
+        }
     }
 }
 
@@ -109,28 +121,33 @@ mod tests {
     fn l0_depth_chart_partial_defense_fills_empty_slots() {
         // Only 4 defensemen → pair 3 should be [None, None]
         let players = vec![
-            make_player("D One",   "SEA", "D,Util", 5, 20, 75),
-            make_player("D Two",   "SEA", "D,Util", 4, 15, 72),
+            make_player("D One", "SEA", "D,Util", 5, 20, 75),
+            make_player("D Two", "SEA", "D,Util", 4, 15, 72),
             make_player("D Three", "SEA", "D,Util", 3, 10, 60),
-            make_player("D Four",  "SEA", "D,Util", 2, 8, 55),
+            make_player("D Four", "SEA", "D,Util", 2, 8, 55),
         ];
-        let chart = DepthChartBuilder::build(
-            TeamAbbr("SEA".into()), Season(20252026), players
+        let chart = DepthChartBuilder::build(TeamAbbr("SEA".into()), Season(20252026), players);
+        assert!(
+            chart.defense_pairs[2][0].is_none(),
+            "pair 3 slot 0 should be empty"
         );
-        assert!(chart.defense_pairs[2][0].is_none(), "pair 3 slot 0 should be empty");
-        assert!(chart.defense_pairs[2][1].is_none(), "pair 3 slot 1 should be empty");
-        assert!(chart.defense_pairs[0][0].is_some(), "pair 1 slot 0 should be filled");
+        assert!(
+            chart.defense_pairs[2][1].is_none(),
+            "pair 3 slot 1 should be empty"
+        );
+        assert!(
+            chart.defense_pairs[0][0].is_some(),
+            "pair 1 slot 0 should be filled"
+        );
     }
 
     #[test]
     fn l0_depth_chart_gp_zero_goes_to_below_min() {
         let players = vec![
             make_player("Present", "SEA", "C,Util", 10, 20, 50),
-            make_player("Absent",  "SEA", "RW,Util", 0,  0,  0),
+            make_player("Absent", "SEA", "RW,Util", 0, 0, 0),
         ];
-        let chart = DepthChartBuilder::build(
-            TeamAbbr("SEA".into()), Season(20252026), players
-        );
+        let chart = DepthChartBuilder::build(TeamAbbr("SEA".into()), Season(20252026), players);
         assert_eq!(chart.below_min_gp.len(), 1);
         assert_eq!(chart.below_min_gp[0].full_name, "Absent");
     }

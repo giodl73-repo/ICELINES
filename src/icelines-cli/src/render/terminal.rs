@@ -9,9 +9,9 @@ use owo_colors::OwoColorize;
 /// Map a `FitClass` to a comfy-table `Color` for table cells.
 fn fit_color(fc: FitClass) -> Color {
     match fc {
-        FitClass::Elite   => Color::Green,
-        FitClass::Solid   => Color::Yellow,
-        FitClass::Buried  => Color::Blue,
+        FitClass::Elite => Color::Green,
+        FitClass::Solid => Color::Yellow,
+        FitClass::Buried => Color::Blue,
         FitClass::Stretch => Color::Red,
     }
 }
@@ -53,11 +53,7 @@ fn empty_cell() -> Cell {
 /// Forwards are shown in a 4×3 grid (lines × [LW, C, RW]).
 /// Defense is shown in a 3×2 grid (pairs × [D, D]).
 pub fn render_team_card(chart: &DepthChart, no_color: bool) {
-    println!(
-        "\n=== {} — {} ===\n",
-        chart.team.as_str(),
-        chart.season
-    );
+    println!("\n=== {} — {} ===\n", chart.team.as_str(), chart.season);
 
     // ── Forwards ─────────────────────────────────────────────────────────────
     println!("FORWARDS");
@@ -66,9 +62,18 @@ pub fn render_team_card(chart: &DepthChart, no_color: bool) {
 
     for (i, row) in chart.forward_lines.iter().enumerate() {
         let line_label = format!("L{}", i + 1);
-        let lw = row[0].as_ref().map(|p| player_cell(p, no_color)).unwrap_or_else(empty_cell);
-        let c  = row[1].as_ref().map(|p| player_cell(p, no_color)).unwrap_or_else(empty_cell);
-        let rw = row[2].as_ref().map(|p| player_cell(p, no_color)).unwrap_or_else(empty_cell);
+        let lw = row[0]
+            .as_ref()
+            .map(|p| player_cell(p, no_color))
+            .unwrap_or_else(empty_cell);
+        let c = row[1]
+            .as_ref()
+            .map(|p| player_cell(p, no_color))
+            .unwrap_or_else(empty_cell);
+        let rw = row[2]
+            .as_ref()
+            .map(|p| player_cell(p, no_color))
+            .unwrap_or_else(empty_cell);
         fwd_table.add_row(vec![Cell::new(line_label), lw, c, rw]);
     }
     println!("{fwd_table}");
@@ -80,8 +85,14 @@ pub fn render_team_card(chart: &DepthChart, no_color: bool) {
 
     for (i, pair) in chart.defense_pairs.iter().enumerate() {
         let pair_label = format!("P{}", i + 1);
-        let d1 = pair[0].as_ref().map(|p| player_cell(p, no_color)).unwrap_or_else(empty_cell);
-        let d2 = pair[1].as_ref().map(|p| player_cell(p, no_color)).unwrap_or_else(empty_cell);
+        let d1 = pair[0]
+            .as_ref()
+            .map(|p| player_cell(p, no_color))
+            .unwrap_or_else(empty_cell);
+        let d2 = pair[1]
+            .as_ref()
+            .map(|p| player_cell(p, no_color))
+            .unwrap_or_else(empty_cell);
         def_table.add_row(vec![Cell::new(pair_label), d1, d2]);
     }
     println!("{def_table}");
@@ -133,11 +144,11 @@ pub fn render_rank_table(
             .pace_score
             .expect("player passed is_rankable() but has no pace_score");
 
-        let gp_str   = ps.gp.to_string();
-        let ppg_str  = format!("{:.2}", ps.raw_points as f64 / ps.gp as f64);
+        let gp_str = ps.gp.to_string();
+        let ppg_str = format!("{:.2}", ps.raw_points as f64 / ps.gp as f64);
         let proj_str = format!("{:.1}", ps.pace_82);
 
-        let fc    = classify_fit(ps.pace_82, player.position);
+        let fc = classify_fit(ps.pace_82, player.position);
         let proj_cell = if no_color {
             Cell::new(format!("[{}] {}", fc.label(), proj_str))
         } else {

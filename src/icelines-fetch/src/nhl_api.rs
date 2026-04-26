@@ -1,21 +1,21 @@
-use std::time::Duration;
 use crate::error::FetchError;
 use crate::schema::{PagedResponse, RosterResponse, SkaterBio, SkaterStats};
+use std::time::Duration;
 
 const TEAMS: &[&str] = &[
-    "ANA","BOS","BUF","CAR","CBJ","CGY","CHI","COL","DAL","DET","EDM","FLA",
-    "LAK","MIN","MTL","NJD","NSH","NYI","NYR","OTT","PHI","PIT","SEA","SJS",
-    "STL","TBL","TOR","UTA","VAN","VGK","WPG","WSH",
+    "ANA", "BOS", "BUF", "CAR", "CBJ", "CGY", "CHI", "COL", "DAL", "DET", "EDM", "FLA", "LAK",
+    "MIN", "MTL", "NJD", "NSH", "NYI", "NYR", "OTT", "PHI", "PIT", "SEA", "SJS", "STL", "TBL",
+    "TOR", "UTA", "VAN", "VGK", "WPG", "WSH",
 ];
 
 /// Async NHL API client.
 /// `base_url_stats` and `base_url_web` are configurable to allow mocking in tests.
 pub struct NhlApiClient {
-    client:         reqwest::Client,
-    base_stats:     String,   // https://api.nhle.com/stats/rest/en
-    base_web:       String,   // https://api-web.nhle.com/v1
-    max_retries:    u32,
-    retry_base_ms:  u64,
+    client: reqwest::Client,
+    base_stats: String, // https://api.nhle.com/stats/rest/en
+    base_web: String,   // https://api-web.nhle.com/v1
+    max_retries: u32,
+    retry_base_ms: u64,
 }
 
 impl NhlApiClient {
@@ -28,7 +28,7 @@ impl NhlApiClient {
         Self {
             client,
             base_stats: base_stats.into(),
-            base_web:   base_web.into(),
+            base_web: base_web.into(),
             max_retries: 3,
             retry_base_ms: 1000,
         }
@@ -47,32 +47,46 @@ impl NhlApiClient {
     async fn get_json<T: serde::de::DeserializeOwned>(&self, url: &str) -> Result<T, FetchError> {
         let mut attempt = 0u32;
         loop {
-            let resp = self.client.get(url)
+            let resp = self
+                .client
+                .get(url)
                 .send()
                 .await
-                .map_err(|e| FetchError::Http { status: 0, url: format!("{url}: {e}") })?;
+                .map_err(|e| FetchError::Http {
+                    status: 0,
+                    url: format!("{url}: {e}"),
+                })?;
 
             let status = resp.status().as_u16();
             match status {
                 200 => {
-                    return resp.json::<T>().await
+                    return resp
+                        .json::<T>()
+                        .await
                         .map_err(|e| FetchError::SchemaChanged {
-                            detail: format!("{url}: {e}")
+                            detail: format!("{url}: {e}"),
                         });
                 }
                 429 => {
                     if attempt >= self.max_retries {
-                        return Err(FetchError::RateLimited { url: url.to_owned() });
+                        return Err(FetchError::RateLimited {
+                            url: url.to_owned(),
+                        });
                     }
                     let delay = self.retry_base_ms * (1 << attempt); // 1s, 2s, 4s
                     tokio::time::sleep(Duration::from_millis(delay)).await;
                     attempt += 1;
                 }
                 503 => {
-                    return Err(FetchError::ServiceUnavailable { url: url.to_owned() });
+                    return Err(FetchError::ServiceUnavailable {
+                        url: url.to_owned(),
+                    });
                 }
                 s => {
-                    return Err(FetchError::Http { status: s, url: url.to_owned() });
+                    return Err(FetchError::Http {
+                        status: s,
+                        url: url.to_owned(),
+                    });
                 }
             }
         }
@@ -121,13 +135,20 @@ impl NhlApiClient {
     }
 
     /// Fetch the roster for one team.
-    pub async fn fetch_team_roster(&self, team: &str, season: &str) -> Result<RosterResponse, FetchError> {
+    pub async fn fetch_team_roster(
+        &self,
+        team: &str,
+        season: &str,
+    ) -> Result<RosterResponse, FetchError> {
         let url = format!("{}/roster/{team}/{season}", self.base_web);
         self.get_json(&url).await
     }
 
     /// Fetch rosters for all 32 NHL teams.
-    pub async fn fetch_all_rosters(&self, season: &str) -> Result<Vec<(String, RosterResponse)>, FetchError> {
+    pub async fn fetch_all_rosters(
+        &self,
+        season: &str,
+    ) -> Result<Vec<(String, RosterResponse)>, FetchError> {
         let mut results = Vec::new();
         for team in TEAMS {
             let roster = self.fetch_team_roster(team, season).await?;
@@ -136,4 +157,3 @@ impl NhlApiClient {
         Ok(results)
     }
 }
-

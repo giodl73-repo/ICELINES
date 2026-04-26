@@ -10,7 +10,9 @@ pub const MIN_GP: u32 = 10;
 pub struct Season(pub u32);
 
 impl Season {
-    pub fn as_str(self) -> String { self.0.to_string() }
+    pub fn as_str(self) -> String {
+        self.0.to_string()
+    }
 }
 
 impl std::fmt::Display for Season {
@@ -31,7 +33,9 @@ impl std::fmt::Display for Season {
 pub struct TeamAbbr(pub String);
 
 impl TeamAbbr {
-    pub fn as_str(&self) -> &str { &self.0 }
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
 }
 
 impl std::fmt::Display for TeamAbbr {
@@ -56,27 +60,29 @@ impl Position {
         matches!(self, Self::Center | Self::LeftWing | Self::RightWing)
     }
 
-    pub fn is_defense(self) -> bool { matches!(self, Self::Defense) }
+    pub fn is_defense(self) -> bool {
+        matches!(self, Self::Defense)
+    }
 
     /// Parse from NHL API positionCode (L, R, C, D, G)
     pub fn from_api_code(code: &str) -> Option<Self> {
         match code {
-            "C"              => Some(Self::Center),
-            "L"              => Some(Self::LeftWing),
-            "R"              => Some(Self::RightWing),
-            "D"              => Some(Self::Defense),
-            "G"              => Some(Self::Goalie),
-            _                => None,
+            "C" => Some(Self::Center),
+            "L" => Some(Self::LeftWing),
+            "R" => Some(Self::RightWing),
+            "D" => Some(Self::Defense),
+            "G" => Some(Self::Goalie),
+            _ => None,
         }
     }
 
     pub fn abbreviation(self) -> &'static str {
         match self {
-            Self::Center    => "C",
-            Self::LeftWing  => "LW",
+            Self::Center => "C",
+            Self::LeftWing => "LW",
             Self::RightWing => "RW",
-            Self::Defense   => "D",
-            Self::Goalie    => "G",
+            Self::Defense => "D",
+            Self::Goalie => "G",
         }
     }
 }
@@ -114,7 +120,9 @@ impl GpStatus {
         }
     }
 
-    pub fn is_eligible(self) -> bool { matches!(self, Self::Eligible(_)) }
+    pub fn is_eligible(self) -> bool {
+        matches!(self, Self::Eligible(_))
+    }
 }
 
 // ── PaceScore ────────────────────────────────────────────────────────────────
@@ -124,13 +132,13 @@ impl GpStatus {
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct PaceScore {
     /// Points per 82 games = (goals + assists) / gp * 82
-    pub pace_82:      f64,
+    pub pace_82: f64,
     /// Goals per 82 games = goals / gp * 82 (tiebreaker)
     pub goals_per_82: f64,
     /// Raw points this season (before projection)
-    pub raw_points:   u32,
+    pub raw_points: u32,
     /// Games played this season
-    pub gp:           u32,
+    pub gp: u32,
 }
 
 impl PaceScore {
@@ -158,18 +166,18 @@ pub enum FitClass {
 impl FitClass {
     pub fn label(self) -> &'static str {
         match self {
-            Self::Elite   => "Elite",
-            Self::Solid   => "Solid",
-            Self::Buried  => "Buried",
+            Self::Elite => "Elite",
+            Self::Solid => "Solid",
+            Self::Buried => "Buried",
             Self::Stretch => "Stretch",
         }
     }
 
     pub fn symbol(self) -> &'static str {
         match self {
-            Self::Elite   => "★",
-            Self::Solid   => "~",
-            Self::Buried  => "↑",
+            Self::Elite => "★",
+            Self::Solid => "~",
+            Self::Buried => "↑",
             Self::Stretch => "↓",
         }
     }
@@ -180,30 +188,34 @@ impl FitClass {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Player {
     /// NHL canonical player ID (u32 fits all current IDs ~6000–9000000)
-    pub nhl_id:          Option<u32>,
-    pub full_name:       String,
+    pub nhl_id: Option<u32>,
+    pub full_name: String,
     /// Pre-normalized name for matching (lowercase, diacritics stripped)
     pub name_normalized: String,
-    pub team:            TeamAbbr,
+    pub team: TeamAbbr,
     /// Primary position from NHL API positionCode
-    pub position:        Position,
+    pub position: Position,
     /// All positions eligible for (from Yahoo CSV or boxscore aggregation)
-    pub eligible_pos:    Vec<Position>,
-    pub gp_status:       GpStatus,
+    pub eligible_pos: Vec<Position>,
+    pub gp_status: GpStatus,
     /// Season statistics from NHL API SkaterStats
-    pub season_goals:    u32,
-    pub season_assists:  u32,
-    pub season_points:   u32,
+    pub season_goals: u32,
+    pub season_assists: u32,
+    pub season_points: u32,
     /// Pace projection — None if GpStatus is not Eligible
-    pub pace_score:      Option<PaceScore>,
+    pub pace_score: Option<PaceScore>,
     /// Headshot URL from NHL roster API
-    pub headshot_url:    Option<String>,
+    pub headshot_url: Option<String>,
 }
 
 impl Player {
-    pub fn gp(&self) -> Option<u32> { self.gp_status.gp() }
+    pub fn gp(&self) -> Option<u32> {
+        self.gp_status.gp()
+    }
 
-    pub fn is_rankable(&self) -> bool { self.pace_score.is_some() }
+    pub fn is_rankable(&self) -> bool {
+        self.pace_score.is_some()
+    }
 }
 
 // ── DepthChart ───────────────────────────────────────────────────────────────
@@ -227,10 +239,10 @@ pub enum Slot {
 /// defense_pairs: 3 rows × 2 slots, None = unfilled.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DepthChart {
-    pub team:          TeamAbbr,
-    pub season:        Season,
-    pub forward_lines: Vec<[Option<Player>; 3]>,  // 4 rows
-    pub defense_pairs: Vec<[Option<Player>; 2]>,  // 3 rows
-    pub unplaced:      Vec<Player>,
-    pub below_min_gp:  Vec<Player>,
+    pub team: TeamAbbr,
+    pub season: Season,
+    pub forward_lines: Vec<[Option<Player>; 3]>, // 4 rows
+    pub defense_pairs: Vec<[Option<Player>; 2]>, // 3 rows
+    pub unplaced: Vec<Player>,
+    pub below_min_gp: Vec<Player>,
 }

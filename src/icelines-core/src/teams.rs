@@ -37,12 +37,7 @@ pub const CANONICAL_TEAMS: &[(&str, &str)] = &[
 ];
 
 /// Yahoo abbreviations that differ from NHL API abbreviations.
-const YAHOO_TO_NHL: &[(&str, &str)] = &[
-    ("LA",  "LAK"),
-    ("NJ",  "NJD"),
-    ("TB",  "TBL"),
-    ("SJ",  "SJS"),
-];
+const YAHOO_TO_NHL: &[(&str, &str)] = &[("LA", "LAK"), ("NJ", "NJD"), ("TB", "TBL"), ("SJ", "SJS")];
 
 impl TeamAbbr {
     /// Parse a team abbreviation — accepts both NHL API and Yahoo formats.
@@ -50,7 +45,8 @@ impl TeamAbbr {
     pub fn parse(s: &str) -> Result<Self, IcelinesError> {
         let upper = s.trim().to_uppercase();
         // Normalize Yahoo abbreviation to NHL format
-        let normalized = YAHOO_TO_NHL.iter()
+        let normalized = YAHOO_TO_NHL
+            .iter()
             .find(|(yahoo, _)| *yahoo == upper.as_str())
             .map(|(_, nhl)| *nhl)
             .unwrap_or(upper.as_str());
@@ -62,13 +58,16 @@ impl TeamAbbr {
     }
 
     pub fn full_name(&self) -> Option<&'static str> {
-        CANONICAL_TEAMS.iter()
+        CANONICAL_TEAMS
+            .iter()
             .find(|(abbr, _)| *abbr == self.0.as_str())
             .map(|(_, name)| *name)
     }
 
     pub fn all() -> impl Iterator<Item = TeamAbbr> {
-        CANONICAL_TEAMS.iter().map(|(abbr, _)| TeamAbbr(abbr.to_string()))
+        CANONICAL_TEAMS
+            .iter()
+            .map(|(abbr, _)| TeamAbbr(abbr.to_string()))
     }
 }
 
