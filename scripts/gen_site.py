@@ -19,11 +19,12 @@ import sys
 import unicodedata
 from collections import defaultdict
 
-_ROOT     = os.path.dirname(os.path.dirname(__file__))   # repo root
-CSV_PATH  = r'C:\Users\giodl\Downloads\Yahoo-465.l.1214-Players.csv'
-GP_PATH   = os.path.join(_ROOT, 'data', 'gp_data.json')
-DOCS_DIR  = os.path.join(_ROOT, 'docs')
-TEAMS_DIR = os.path.join(DOCS_DIR, 'teams')
+_ROOT         = os.path.dirname(os.path.dirname(__file__))   # repo root
+CSV_PATH      = r'C:\Users\giodl\Downloads\Yahoo-465.l.1214-Players.csv'
+GP_PATH       = os.path.join(_ROOT, 'data', 'gp_data.json')
+ROSTERS_PATH  = os.path.join(_ROOT, 'data', 'rosters.json')
+DOCS_DIR      = os.path.join(_ROOT, 'docs')
+TEAMS_DIR     = os.path.join(DOCS_DIR, 'teams')
 
 FULL_SEASON = 82   # project everything to this many games
 MIN_GP      = 10   # minimum GP to use per-game projection (below this use raw)
@@ -69,6 +70,14 @@ def normalize_name(s):
     """Strip accents for fuzzy name matching."""
     return ''.join(c for c in unicodedata.normalize('NFD', s)
                    if unicodedata.category(c) != 'Mn').lower().strip()
+
+def load_roster_lookup(rosters_path):
+    """Returns {normalize_name(fullName): {'headshot', 'nhl_team', 'player_id'}}"""
+    if not os.path.exists(rosters_path):
+        return {}
+    with open(rosters_path, encoding='utf-8') as f:
+        return json.load(f)   # already keyed by normalized name
+
 
 def load_gp_lookup(gp_path):
     """Returns {normalize_name(fullName): {'gp', 'team', 'player_id'}} from NHL API data."""
@@ -128,7 +137,7 @@ def skater_score(g, a, gp):
         g82   = g
     return pts82 + g82 * 0.001
 
-def load_all(csv_path, gp_lookup):
+def load_all(csv_path, gp_lookup, roster_lookup=None):
     """
     Load skaters + goalies.
     _fpts  = pts/82g + g/82g*0.001   ← drives ALL rankings
@@ -175,12 +184,16 @@ def load_all(csv_path, gp_lookup):
                     row['_gpg']       = gpg
                     row['_pts82']     = ppg * FULL_SEASON if gp >= MIN_GP else (g + a)
                     row['_g82']       = gpg * FULL_SEASON if gp >= MIN_GP else g
+                    # NHL headshot from roster (durable) — fall back to Yahoo CDN
+                    roster_info = (roster_lookup or {}).get(normalize_name(name))
+                    nhl_headshot = roster_info['headshot'] if roster_info else ''
+                    yahoo_photo  = row.get('Image', '')
                     row['_name']      = name
                     row['_is_fwd']    = bool(fp)
                     row['_fpos']      = fp
                     row['_pos']       = None
                     row['_player_id'] = gp_info['player_id'] if gp_info else 0
-                    row['_photo']     = row.get('Image', '')
+                    row['_photo']     = nhl_headshot or yahoo_photo
                     skaters.append(row)
     if unmatched:
         print(f'  GP unmatched for {len(unmatched)} players (raw pts used)')
@@ -636,7 +649,7 @@ def gen_index(ranked_teams, strength, charts, all_teams):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def update_nav(ranked_teams):
-    yml_path = os.path.join(os.path.dirname(__file__), 'mkdocs.yml')
+    yml_path = os.path.join(_ROOT, 'mkdocs.yml')
     with open(yml_path, encoding='utf-8') as f:
         content = f.read()
 
@@ -659,12 +672,17 @@ def update_nav(ranked_teams):
 
 def main():
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+
+    print(f'Loading roster data from {ROSTERS_PATH}...')
+    roster_lookup = load_roster_lookup(ROSTERS_PATH)
+    print(f'  {len(roster_lookup)} players with NHL headshots')
+
     print(f'Loading GP data from {GP_PATH}...')
     gp_lookup = load_gp_lookup(GP_PATH)
     print(f'  {len(gp_lookup)} players in GP lookup')
 
     print(f'Loading {CSV_PATH}...')
-    skaters, goalies = load_all(CSV_PATH, gp_lookup)
+    skaters, goalies = load_all(CSV_PATH, gp_lookup, roster_lookup)
     print(f'  {len(skaters)} skaters, {len(goalies)} goalies')
     print(f'  Projecting all fpts to {FULL_SEASON}-game pace (min {MIN_GP} GP)')
 

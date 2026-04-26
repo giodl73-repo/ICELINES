@@ -69,8 +69,8 @@ Files to create, by crate:
 | `src/lib.rs` | Re-exports: `pub mod csv_loader`, `pub mod nhl_api`, `pub mod cache`, `pub mod resolver`, `pub mod error` |
 | `src/error.rs` | `icelines_fetch::Error` enum: Http, Cache, CsvParse, PlayerNotFound, SchemaChanged, NameAmbiguous |
 | `src/csv_loader.rs` | `load_csv(path: &Path) -> Result<Vec<Player>, Error>`: reads Yahoo CSV, validates columns, builds `Player` stubs |
-| `src/nhl_api.rs` | `NhlApiClient`: reqwest Client, `fetch_player_gp(player_id, season)`, `search_player_by_name(name)` |
-| `src/schema.rs` | NHL API response types with `#[serde(deny_unknown_fields)]`: `PlayerResponse`, `StatsSingleSeason`, `PeopleResponse` |
+| `src/nhl_api.rs` | `NhlApiClient`: reqwest Client, `fetch_all_bios(season) -> Vec<PlayerBio>` and `fetch_all_stats(season) -> Vec<SkaterStats>` — both paginate using `limit=100&start={N}` until `start + page_size >= total` |
+| `src/schema.rs` | NHL API response types with `#[serde(deny_unknown_fields)]`: `PlayerBioResponse { data: Vec<PlayerBio>, total: u32 }` (from `/skater/bios`), `SkaterStatsResponse { data: Vec<SkaterStats>, total: u32 }` (from `/skater/summary`) |
 | `src/cache.rs` | `Cache`: file-based cache, `get(key)`, `put(key, value, ttl)`, `invalidate(key)`, TTL = 24h |
 | `src/resolver.rs` | `PlayerResolver`: resolves Player name → NHL player ID using exact match, normalized match, then reports ambiguity |
 
@@ -125,7 +125,7 @@ Files to create, by crate:
 - [ ] Create `icelines-fetch/Cargo.toml` with all dependencies
 - [ ] Implement `src/schema.rs`: NHL API response types with `deny_unknown_fields`
 - [ ] Implement `src/cache.rs`: file cache in `~/.icelines/cache/`, `get`/`put`/`invalidate`, 24h TTL
-- [ ] Implement `src/nhl_api.rs`: `NhlApiClient` with reqwest, `fetch_player_gp()`, exponential backoff on 429/503
+- [ ] Implement `src/nhl_api.rs`: `NhlApiClient` with reqwest, `fetch_all_bios(season)` and `fetch_all_stats(season)` (bulk pagination), exponential backoff on 429/503
 - [ ] Implement `src/resolver.rs`: `PlayerResolver` — exact name match, normalized match, ambiguity detection (Sebastian Aho case)
 - [ ] Implement `src/csv_loader.rs`: `load_csv()` — validate expected columns by name, parse rows, report missing fields
 - [ ] Write unit tests in `src/csv_loader.rs` module: empty rows, missing columns, BOM input, accented names

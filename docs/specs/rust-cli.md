@@ -257,7 +257,9 @@ state, position parse errors)
 **Role**: All async I/O. NHL API client, local cache, CSV loader.
 
 **Owns**:
-- NHL API HTTP client (reqwest, async)
+- NHL API HTTP client (reqwest, async) — base URL: `https://api.nhle.com/stats/rest/en/`
+- Bulk bio fetch: `fetch_all_bios(season) -> Vec<PlayerBio>` — paginates `/skater/bios` using `limit=100&start={N}` until `start + page_size >= total`
+- Bulk stats fetch: `fetch_all_stats(season) -> Vec<SkaterStats>` — paginates `/skater/summary` using `limit=100&start={N}` until `start + page_size >= total`
 - Local cache layer (`~/.icelines/cache/`, JSON files with TTL stamps)
 - CSV parser (reads Yahoo Fantasy CSV into `Vec<Player>`)
 - Player ID resolution (name → NHL API player ID)
@@ -284,7 +286,6 @@ CSV parse errors, player ID resolution failures, schema validation failures)
 - Index page renderer
 - Team page generator (one markdown file per team)
 - mkdocs.yml generator/updater
-- Terminal table renderer (for `team` and `rank` commands — display logic, not business logic)
 
 **Depends on**: `icelines-core` (for all data types and scoring results)
 
@@ -307,6 +308,7 @@ CSV parse errors, player ID resolution failures, schema validation failures)
 - tokio runtime setup
 - Top-level error formatting (convert crate errors to user-facing messages)
 - Config loading (`~/.icelines/config.toml` or project-local `.icelines.toml`)
+- Terminal renderer: `src/render/terminal.rs` — colored rows via `owo-colors`, tabular layout via `comfy-table`
 
 **Depends on**: All three library crates.
 
@@ -324,13 +326,14 @@ All types live in `icelines-core`. All types implement `Debug`, `Clone`, `serde:
 pub struct Player {
     pub name: String,              // Display name (normalized, not stripped)
     pub name_normalized: String,   // Diacritic-stripped, lowercase, for matching
-    pub nhl_id: Option<u64>,       // NHL API player ID (None if unresolved)
+    pub nhl_id: Option<u32>,       // NHL player IDs fit in u32 (range ~6000–9000000)
     pub team: TeamAbbr,            // Current NHL team abbreviation (3-letter canonical)
     pub position: Position,        // Primary position (from Yahoo column, normalized)
     pub yahoo_positions: Vec<Position>, // All Yahoo-eligible positions
-    pub season_points: u32,        // Points from Yahoo CSV
-    pub season_goals: u32,         // Goals from Yahoo CSV
-    pub season_gp: Option<u32>,    // GP from NHL API (None if not yet fetched)
+    pub season_goals: u32,         // Goals from NHL API SkaterStats.goals
+    pub season_assists: u32,       // Assists from NHL API SkaterStats.assists
+    pub season_points: u32,        // Goals + assists from NHL API SkaterStats
+    pub season_gp: Option<u32>,    // GP from NHL API PlayerBio.gamesPlayed (None if not yet fetched)
     pub pace_score: Option<PaceScore>, // Computed by scoring engine (None if GP < MIN_GP)
     pub fit_class: Option<FitClass>,   // Computed by scoring engine
 }
@@ -400,8 +403,8 @@ pace_82 = (season_points / season_gp) × 82
 ```
 
 Where:
-- `season_points` = Yahoo Fantasy total points column (G + primary A + secondary A)
-- `season_gp` = NHL API current-season GP (not Yahoo's cached GP column)
+- `season_points` = goals + assists from NHL API SkaterStats (fields: `goals`, `assists`)
+- `season_gp` = NHL API current-season GP from PlayerBio (not Yahoo's cached GP column)
 - 82 = nominal NHL regular season length
 
 **Tiebreaker**: When two players have identical `pace_82` to two decimal places, rank by

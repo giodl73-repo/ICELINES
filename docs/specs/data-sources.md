@@ -34,19 +34,20 @@ Tiers 4–6 are **contextual** — they annotate, not override.
 **Format**: CSV with Yahoo-specific player IDs and position eligibility
 
 **What we use:**
-- `Eligible Positions` — fantasy position eligibility (C, LW, RW, D, G)
-- `G (P)`, `A (P)` — raw season goals and assists
-- `Team` — current team abbreviation
-- `First Name`, `Last Name` — player name for NHL API matching
-- `Image` — player photo URL (Yahoo CDN)
+- `Eligible Positions` — fantasy position eligibility (C, LW, RW, D, G) — KEPT
+- `First Name`, `Last Name` — player name for NHL API matching — KEPT
+- `Team` — cross-validation only (authoritative source is NHL API `currentTeamAbbrev`) — KEPT
+- `Image` — player photo URL (Yahoo CDN) — KEPT
+- REMOVED: `G (P)`, `A (P)` — these come from NHL API `SkaterStats.goals` / `SkaterStats.assists` now
 
 **Limitations:**
+- Stats are NOT sourced from Yahoo CSV. Yahoo CSV provides position eligibility and photo URLs only.
 - No games played — must cross-reference with Tier 2
 - Position eligibility is fantasy-determined, not always hockey-accurate
 - Export is manual — not automated
 - Player IDs are Yahoo internal, not NHL IDs
 
-**Pipeline:** `data/fantasy.csv` → `icelines-core::player::YahooRecord`
+**Pipeline:** `data/fantasy.csv` → `icelines-core::player::YahooRecord` (eligibility + photo only)
 
 ---
 
