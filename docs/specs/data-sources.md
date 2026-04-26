@@ -187,7 +187,9 @@ pub struct ShiftProfile {
     pub shifts_per_game:    f32,
     pub zone_start_pct:     Option<f32>,  // None if data unavailable
     pub top_line_partners:  Vec<(u32, f32)>,  // (player_id, co-ice_fraction)
-    pub avg_ev_toi_per_game: f32,
+    pub avg_ev_toi_seconds_per_game: u32,  // stored as INTEGER SECONDS, not minutes.
+                                            // Display layer: divide by 60 for "MM:SS".
+                                            // Threshold comparisons: 16:00 = 960, 10:00 = 600.
 }
 ```
 

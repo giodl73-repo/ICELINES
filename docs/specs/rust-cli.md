@@ -612,10 +612,19 @@ pub enum Position {
     Goalie,
 }
 
+/// Season identifier — always 8-digit YYYYZZZZ format (e.g. 20252026).
+/// Newtype prevents silent confusion with 4-digit year u32 values.
+pub struct Season(pub u32);
+
+impl Season {
+    pub fn current() -> Self { /* derive from current date */ todo!() }
+    pub fn as_str(&self) -> String { self.0.to_string() }
+}
+
 /// A complete depth chart for one NHL team.
 pub struct DepthChart {
     pub team: TeamAbbr,
-    pub season: u32,          // e.g. 2024 for the 2023-24 season
+    pub season: Season,       // 8-digit YYYYZZZZ, e.g. Season(20252026)
     pub forward_lines: [[Option<Player>; 3]; 4],  // [line][LW=0, C=1, RW=2]
     pub defense_pairs: [[Option<Player>; 2]; 3],  // [pair][LD=0, RD=1]
     pub unplaced: Vec<Player>, // Players on team who didn't fit the standard structure

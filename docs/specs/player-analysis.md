@@ -439,13 +439,16 @@ pub struct SeasonHistory {
 }
 
 pub struct SeasonLine {
-    pub season:  Season,   // e.g. "20252026"
+    pub season:  Season,   // 8-digit YYYYZZZZ, e.g. Season(20252026)
     pub team:    String,
     pub gp:      u32,
     pub goals:   u32,
     pub assists: u32,
-    pub ppg:     f32,
-    pub toi_pg:  f32,      // seconds per game
+    pub ppg:     f32,      // points per game — stored as f32 for display
+                           // NOTE: projection engine casts to f64 at its boundary;
+                           // document the cast with a comment at the call site.
+    pub toi_pg:  u32,      // avg TOI per game in SECONDS (not minutes).
+                           // Display layer divides by 60. Internal math stays integer.
 }
 ```
 
