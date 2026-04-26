@@ -3,35 +3,34 @@ use crate::render::terminal::render_team_card;
 use anyhow::{bail, Context};
 use icelines_core::{model::Season, DepthChartBuilder, TeamAbbr};
 use icelines_fetch::{
-    cache::{ttl, Cache},
     player_builder::{build_players, index_bios, index_stats},
     schema::{RosterResponse, SkaterBio, SkaterStats},
+    snapshot::{SnapshotStore, SnapshotTier},
 };
 
 pub async fn run(team: String, _scheme: Option<String>, no_color: bool) -> anyhow::Result<()> {
-    let cfg = Config::load()?;
-    let cache = Cache::new(&cfg.cache_dir);
-    let season = cfg.season_str();
+    let cfg   = Config::load()?;
+    let store = SnapshotStore::new(cfg.snapshot_dir());
 
     let team_abbr = TeamAbbr::parse(&team)
         .with_context(|| format!("'{team}' is not a valid NHL team abbreviation"))?;
 
-    // Load roster from cache
-    let roster_key = format!("rosters/{season}/{}.json", team_abbr.as_str());
-    let roster: RosterResponse = cache.get(&roster_key, ttl::ROSTER).with_context(|| {
-        format!(
-            "no cached roster for {} — run `icelines fetch rosters` first",
-            team_abbr
-        )
-    })?;
+    // Read roster from snapshot chain (may be in a Rosters parent snapshot)
+    let roster: RosterResponse = store
+        .read_tier(&SnapshotTier::Rosters, &format!("{}.json", team_abbr.as_str()))
+        .with_context(|| format!(
+            "no roster for {} — run `icelines fetch rosters` first", team_abbr
+        ))?;
 
-    // Load stats from cache
-    let bios: Vec<SkaterBio> = cache
-        .get(&format!("stats/{season}/bios.json"), ttl::STATS)
-        .with_context(|| "no cached stats — run `icelines fetch stats` first")?;
-    let stats: Vec<SkaterStats> = cache
-        .get(&format!("stats/{season}/stats.json"), ttl::STATS)
+    // Read stats from snapshot chain
+    let bios: Vec<SkaterBio> = store
+        .read_tier(&SnapshotTier::Stats, "bios.json")
+        .with_context(|| "no stats found — run `icelines fetch stats` first")?;
+    let stats: Vec<SkaterStats> = store
+        .read_tier(&SnapshotTier::Stats, "stats.json")
         .unwrap_or_default();
+
+    let season = cfg.season_str();
 
     let bio_idx = index_bios(&bios);
     let stats_idx = index_stats(&stats);

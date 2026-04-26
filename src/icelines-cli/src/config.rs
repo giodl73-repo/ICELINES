@@ -59,6 +59,13 @@ impl Config {
     pub fn season_str(&self) -> String {
         self.season.unwrap_or(20252026).to_string()
     }
+
+    /// Directory for named snapshots: ~/.icelines/snapshots/
+    pub fn snapshot_dir(&self) -> std::path::PathBuf {
+        self.cache_dir.parent()
+            .unwrap_or(&self.cache_dir)
+            .join("snapshots")
+    }
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

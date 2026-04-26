@@ -38,6 +38,9 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
         Commands::Rank { top, pos, scheme } => {
             commands::rank::run(top, pos, scheme).await?;
         }
+        Commands::Snapshot(sub) => {
+            commands::snapshot::run(sub).await?;
+        }
 
         // ── Phase 2 / 3 stubs ────────────────────────────────────────────────
         Commands::Build => stub("build"),

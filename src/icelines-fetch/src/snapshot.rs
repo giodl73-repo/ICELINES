@@ -230,6 +230,34 @@ impl SnapshotStore {
         self.save_manifest(&manifest)
     }
 
+    /// Walk the parent chain from the active snapshot to find one containing `tier`.
+    /// Returns the snapshot name that owns the data for this tier.
+    pub fn find_snapshot_for_tier(&self, tier: &SnapshotTier) -> Result<String, SnapshotError> {
+        let manifest = self.load_manifest()?;
+        let active = manifest
+            .active
+            .as_deref()
+            .ok_or(SnapshotError::NoActiveSnapshot)?
+            .to_owned();
+
+        let mut name = active.clone();
+        loop {
+            let meta = self.load_meta(&name)?;
+            let tier_dir = self.snapshot_dir(&name).join(tier.dir_name());
+            if tier_dir.exists() && meta.sealed {
+                return Ok(name);
+            }
+            match meta.parent_key {
+                Some(parent) => name = parent,
+                None => {
+                    return Err(SnapshotError::NotFound {
+                        name: format!("{} data not found in snapshot chain from '{active}'", tier.dir_name()),
+                    })
+                }
+            }
+        }
+    }
+
     // ── Reading ───────────────────────────────────────────────────────────────
 
     /// Read a file from the active snapshot, verifying integrity.
@@ -239,9 +267,23 @@ impl SnapshotStore {
         filename: &str,
     ) -> Result<T, SnapshotError> {
         let manifest = self.load_manifest()?;
-        let name = manifest.active.as_deref()
+        let name = manifest
+            .active
+            .as_deref()
             .ok_or(SnapshotError::NoActiveSnapshot)?
             .to_owned();
+        self.read(&name, tier, filename)
+    }
+
+    /// Read a file by finding the right snapshot for the tier in the parent chain.
+    /// Use this when the active snapshot may be a higher tier (e.g. Stats)
+    /// but you need Roster data from its parent.
+    pub fn read_tier<T: serde::de::DeserializeOwned>(
+        &self,
+        tier: &SnapshotTier,
+        filename: &str,
+    ) -> Result<T, SnapshotError> {
+        let name = self.find_snapshot_for_tier(tier)?;
         self.read(&name, tier, filename)
     }
 

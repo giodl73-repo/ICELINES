@@ -5,9 +5,9 @@ use icelines_core::{
     model::Season, position::PositionResolver, scoring::sort_by_pace, Position, TeamAbbr,
 };
 use icelines_fetch::{
-    cache::{ttl, Cache},
     player_builder::{build_players, index_bios, index_stats},
     schema::{RosterResponse, SkaterBio, SkaterStats},
+    snapshot::{SnapshotStore, SnapshotTier},
 };
 
 const ALL_TEAMS: &[&str] = &[
@@ -17,32 +17,32 @@ const ALL_TEAMS: &[&str] = &[
 ];
 
 pub async fn run(top: usize, pos: Option<String>, _scheme: Option<String>) -> anyhow::Result<()> {
-    let cfg = Config::load()?;
-    let cache = Cache::new(&cfg.cache_dir);
-    let season = cfg.season_str();
+    let cfg   = Config::load()?;
+    let store = SnapshotStore::new(cfg.snapshot_dir());
 
     // Parse optional position filter
     let pos_filter: Option<Position> = pos
         .as_deref()
         .and_then(|p| PositionResolver::parse(p).ok().map(|(primary, _)| primary));
 
-    // Load global stats (bios + summary)
-    let bios: Vec<SkaterBio> = cache
-        .get(&format!("stats/{season}/bios.json"), ttl::STATS)
-        .with_context(|| "no cached stats — run `icelines fetch stats` first")?;
-    let stats: Vec<SkaterStats> = cache
-        .get(&format!("stats/{season}/stats.json"), ttl::STATS)
+    // Load global stats from snapshot chain
+    let bios: Vec<SkaterBio> = store
+        .read_tier(&SnapshotTier::Stats, "bios.json")
+        .with_context(|| "no stats found — run `icelines fetch stats` first")?;
+    let stats: Vec<SkaterStats> = store
+        .read_tier(&SnapshotTier::Stats, "stats.json")
         .unwrap_or_default();
 
-    let bio_idx = index_bios(&bios);
+    let bio_idx   = index_bios(&bios);
     let stats_idx = index_stats(&stats);
-    let season_u32: u32 = season.parse().unwrap_or(20252026);
+    let season_u32: u32 = cfg.season_str().parse().unwrap_or(20252026);
 
-    // Collect all skaters across all 32 teams
+    // Collect all skaters across all 32 teams from snapshot
     let mut all_players = Vec::new();
     for team_str in ALL_TEAMS {
-        let roster_key = format!("rosters/{season}/{team_str}.json");
-        let roster: Option<RosterResponse> = cache.get(&roster_key, ttl::ROSTER);
+        let roster: Option<RosterResponse> = store
+            .read_tier(&SnapshotTier::Rosters, &format!("{team_str}.json"))
+            .ok();
         if let Some(r) = roster {
             let team = TeamAbbr(team_str.to_string());
             let fwds = build_players(&r.forwards, &bio_idx, &stats_idx, Season(season_u32), &team);

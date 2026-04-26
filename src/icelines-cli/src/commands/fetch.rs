@@ -2,9 +2,8 @@ use crate::cli::FetchSubcommand;
 use crate::config::Config;
 use anyhow::Context;
 use icelines_fetch::{
-    cache::{ttl, Cache},
     nhl_api::NhlApiClient,
-    schema::{RosterResponse, SkaterBio, SkaterStats},
+    snapshot::{today_date, SnapshotStore, SnapshotTier},
 };
 
 pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
@@ -36,61 +35,67 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
     }
 }
 
+const TEAMS: &[&str] = &[
+    "ANA", "BOS", "BUF", "CAR", "CBJ", "CGY", "CHI", "COL", "DAL", "DET", "EDM", "FLA", "LAK",
+    "MIN", "MTL", "NJD", "NSH", "NYI", "NYR", "OTT", "PHI", "PIT", "SEA", "SJS", "STL", "TBL",
+    "TOR", "UTA", "VAN", "VGK", "WPG", "WSH",
+];
+
 async fn do_rosters(season: &str, refresh: bool, dry_run: bool) -> anyhow::Result<()> {
-    let cfg = Config::load()?;
-    let cache = Cache::new(&cfg.cache_dir);
+    let cfg    = Config::load()?;
+    let store  = SnapshotStore::new(cfg.snapshot_dir());
     let client = NhlApiClient::production();
+    let today  = today_date();
+    let snap   = format!("{season}-{today}-rosters");
 
-    const TEAMS: &[&str] = &[
-        "ANA", "BOS", "BUF", "CAR", "CBJ", "CGY", "CHI", "COL", "DAL", "DET", "EDM", "FLA", "LAK",
-        "MIN", "MTL", "NJD", "NSH", "NYI", "NYR", "OTT", "PHI", "PIT", "SEA", "SJS", "STL", "TBL",
-        "TOR", "UTA", "VAN", "VGK", "WPG", "WSH",
-    ];
-
-    println!("Fetching rosters for season {season}...");
-    for team in TEAMS {
-        let key = format!("rosters/{season}/{team}.json");
-        if !refresh && cache.get::<RosterResponse>(&key, ttl::ROSTER).is_some() {
-            println!("  {team}: cached");
-            continue;
-        }
-        if dry_run {
+    if dry_run {
+        println!("Would create snapshot: {snap}");
+        for team in TEAMS {
             println!("  {team}: would fetch /v1/roster/{team}/{season}");
-            continue;
         }
+        return Ok(());
+    }
+
+    // Check if already sealed today
+    if !refresh {
+        if let Ok(entries) = store.list() {
+            if entries.iter().any(|e| e.name == snap && e.sealed) {
+                println!("Rosters already fetched today (use --refresh to re-fetch).");
+                println!("  Snapshot: {snap}");
+                return Ok(());
+            }
+        }
+    }
+
+    store
+        .create(&snap, season, SnapshotTier::Rosters, None, &today)
+        .context("creating roster snapshot")?;
+
+    println!("Fetching rosters → snapshot '{snap}'");
+    for team in TEAMS {
         let roster = client
             .fetch_team_roster(team, season)
             .await
             .with_context(|| format!("fetching roster for {team}"))?;
         let count = roster.forwards.len() + roster.defensemen.len() + roster.goalies.len();
-        cache
-            .put(&key, &roster)
-            .with_context(|| format!("caching roster for {team}"))?;
+        let json  = serde_json::to_vec(&roster).context("serializing roster")?;
+        store
+            .write_file(&snap, &SnapshotTier::Rosters, &format!("{team}.json"), &json)
+            .with_context(|| format!("writing {team} to snapshot"))?;
         println!("  {team}: {count} players");
     }
-    if !dry_run {
-        println!("Rosters saved to cache.");
-    }
+
+    store.seal(&snap).context("sealing roster snapshot")?;
+    println!("Snapshot '{snap}' sealed and set as active.");
     Ok(())
 }
 
 async fn do_stats(season: &str, refresh: bool, dry_run: bool) -> anyhow::Result<()> {
-    let cfg = Config::load()?;
-    let cache = Cache::new(&cfg.cache_dir);
+    let cfg    = Config::load()?;
+    let store  = SnapshotStore::new(cfg.snapshot_dir());
     let client = NhlApiClient::production();
-
-    let bios_key = format!("stats/{season}/bios.json");
-    let stats_key = format!("stats/{season}/stats.json");
-
-    if !refresh
-        && cache.get::<Vec<SkaterBio>>(&bios_key, ttl::STATS).is_some()
-        && cache
-            .get::<Vec<SkaterStats>>(&stats_key, ttl::STATS)
-            .is_some()
-    {
-        println!("Stats cached (use --refresh to re-fetch).");
-        return Ok(());
-    }
+    let today  = today_date();
+    let snap   = format!("{season}-{today}-stats");
 
     if dry_run {
         println!("Would fetch: /stats/rest/en/skater/bios?seasonId={season}");
@@ -98,22 +103,41 @@ async fn do_stats(season: &str, refresh: bool, dry_run: bool) -> anyhow::Result<
         return Ok(());
     }
 
+    // Check if already sealed today
+    if !refresh {
+        if let Ok(entries) = store.list() {
+            if entries.iter().any(|e| e.name == snap && e.sealed) {
+                println!("Stats already fetched today (use --refresh to re-fetch).");
+                return Ok(());
+            }
+        }
+    }
+
+    // Parent = active rosters snapshot
+    let parent = store
+        .find_snapshot_for_tier(&SnapshotTier::Rosters)
+        .ok()
+        .map(|n| n.to_owned());
+
+    store
+        .create(&snap, season, SnapshotTier::Stats, parent, &today)
+        .context("creating stats snapshot")?;
+
     println!("Fetching bios...");
-    let bios = client
-        .fetch_all_bios(season)
-        .await
-        .context("fetching bios")?;
+    let bios  = client.fetch_all_bios(season).await.context("fetching bios")?;
     println!("  {} players", bios.len());
-    cache.put(&bios_key, &bios).context("caching bios")?;
+    store.write_file(&snap, &SnapshotTier::Stats, "bios.json",
+        &serde_json::to_vec(&bios).context("serializing bios")?
+    ).context("writing bios")?;
 
     println!("Fetching stats...");
-    let stats = client
-        .fetch_all_stats(season)
-        .await
-        .context("fetching stats")?;
+    let stats = client.fetch_all_stats(season).await.context("fetching stats")?;
     println!("  {} players", stats.len());
-    cache.put(&stats_key, &stats).context("caching stats")?;
+    store.write_file(&snap, &SnapshotTier::Stats, "stats.json",
+        &serde_json::to_vec(&stats).context("serializing stats")?
+    ).context("writing stats")?;
 
-    println!("Stats saved to cache.");
+    store.seal(&snap).context("sealing stats snapshot")?;
+    println!("Snapshot '{snap}' sealed and set as active.");
     Ok(())
 }

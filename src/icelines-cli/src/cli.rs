@@ -51,6 +51,10 @@ pub enum Commands {
         scheme: Option<String>,
     },
 
+    /// Manage named data snapshots.
+    #[command(subcommand)]
+    Snapshot(SnapshotSubcommand),
+
     // ── Phase 2 / 3 stubs ────────────────────────────────────────────────────
     /// Build static site output.
     Build,
@@ -123,4 +127,18 @@ pub enum FetchSubcommand {
     },
     /// Refresh position eligibility from boxscore data (Phase 2).
     Positions,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum SnapshotSubcommand {
+    /// List all snapshots with tier, date, and sealed status.
+    List,
+    /// Show full detail for a named snapshot (files, integrity, parent chain).
+    Show { name: String },
+    /// Set the active snapshot (must be sealed).
+    Use { name: String },
+    /// Re-verify integrity hashes for a snapshot (or the active one).
+    Verify { name: Option<String> },
+    /// Delete a named snapshot (cannot delete the active one).
+    Delete { name: String },
 }
