@@ -171,6 +171,14 @@ mod tests {
                 gp:          60,
             }),
             headshot_url:    None,
+            birth_date:      None,
+            birth_country:   None,
+            nationality_code: None,
+            shoots_catches:  None,
+            draft_year:      None,
+            draft_round:     None,
+            draft_overall:   None,
+            rookie_season:   None,
         }
     }
 

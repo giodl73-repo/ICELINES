@@ -1,4 +1,5 @@
 pub mod cross_team;
+pub mod filter;
 pub mod scheme;
 pub mod depth_chart;
 pub mod error;
@@ -12,9 +13,10 @@ pub mod teams;
 pub use cross_team::{compute_all as compute_cross_team_metrics, CrossTeamMetrics, WebFitClass};
 pub use depth_chart::DepthChartBuilder;
 pub use error::IcelinesError;
+pub use filter::PlayerFilter;
 pub use model::{
-    DepthChart, FitClass, GpStatus, LineAssignment, PaceScore, Player, Position, Season, Slot,
-    TeamAbbr,
+    DepthChart, FitClass, GpStatus, LineAssignment, PaceScore, Player, Position, Region, Season,
+    Slot, TeamAbbr,
 };
 pub use name::normalize_name;
 pub use position::PositionResolver;

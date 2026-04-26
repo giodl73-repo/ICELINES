@@ -47,21 +47,39 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
             commands::build::run(no_site).await?;
         }
 
+        // ── Phase 2 player analysis ───────────────────────────────────────────
+        Commands::Players { pos, team, age_max, age_min, nationality, draft_year,
+                            draft_round, ppg_min, gp_min, top, json } => {
+            commands::players::run(commands::players::PlayersArgs {
+                pos, team, age_max, age_min, nationality,
+                draft_year, draft_round, ppg_min, gp_min, top, json,
+            }).await?;
+        }
+        Commands::Class { year, pos, top, json } => {
+            commands::analysis::run_class(year, pos, top, json).await?;
+        }
+        Commands::Peers { player, size, json } => {
+            commands::analysis::run_peers(player, size, json).await?;
+        }
+        Commands::Compare { player1, player2, json } => {
+            commands::analysis::run_compare(player1, player2, json).await?;
+        }
+        Commands::History { player, json } => {
+            commands::analysis::run_history(player, json).await?;
+        }
+        Commands::Group(sub) => {
+            commands::analysis::run_group(sub).await?;
+        }
+
         // ── Phase 3 stubs ────────────────────────────────────────────────────
         Commands::Serve => stub("serve"),
         Commands::Deploy => stub("deploy"),
-        Commands::Compare => stub("compare"),
         Commands::Tonight => stub("tonight"),
         Commands::Schedule => stub("schedule"),
         Commands::Trade => stub("trade"),
         Commands::Project => stub("project"),
         Commands::Tui => stub("tui"),
-        Commands::Players => stub("players"),
-        Commands::Class => stub("class"),
-        Commands::Peers => stub("peers"),
-        Commands::History => stub("history"),
         Commands::Mates => stub("mates"),
-        Commands::Group => stub("group"),
         Commands::Scouting => stub("scouting"),
         Commands::Scheme(sub) => {
             commands::scheme::run(sub).await?;

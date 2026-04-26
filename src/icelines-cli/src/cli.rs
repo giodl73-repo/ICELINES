@@ -68,8 +68,6 @@ pub enum Commands {
     Serve,
     /// Deploy the site.
     Deploy,
-    /// Compare two players head-to-head.
-    Compare,
     /// Show tonight's schedule and projected scoring.
     Tonight,
     /// Show the full season schedule.
@@ -80,18 +78,49 @@ pub enum Commands {
     Project,
     /// Launch the interactive TUI.
     Tui,
-    /// List all available players.
-    Players,
-    /// Classify players into tiers.
-    Class,
-    /// Find statistical peers for a player.
-    Peers,
-    /// Show a player's historical stats.
-    History,
+    /// Filter and list players with rich criteria.
+    Players {
+        #[arg(long)] pos:        Option<String>,
+        #[arg(long)] team:       Option<String>,
+        #[arg(long)] age_max:    Option<u8>,
+        #[arg(long)] age_min:    Option<u8>,
+        #[arg(long)] nationality: Option<String>,
+        #[arg(long)] draft_year: Option<u16>,
+        #[arg(long)] draft_round: Option<u8>,
+        #[arg(long)] ppg_min:    Option<f64>,
+        #[arg(long)] gp_min:     Option<u32>,
+        #[arg(long, default_value_t = 25)] top: usize,
+        #[arg(long)] json:       bool,
+    },
+    /// Show a draft class — all players from a given draft year.
+    Class {
+        year: u16,
+        #[arg(long)] pos:  Option<String>,
+        #[arg(long)] top:  Option<usize>,
+        #[arg(long)] json: bool,
+    },
+    /// Find statistical peers for a player (same draft era and position).
+    Peers {
+        player: String,
+        #[arg(long, default_value_t = 10)] size: usize,
+        #[arg(long)] json: bool,
+    },
+    /// Head-to-head player comparison.
+    Compare {
+        player1: String,
+        player2: String,
+        #[arg(long)] json: bool,
+    },
+    /// Show a player's historical season stats.
+    History {
+        player: String,
+        #[arg(long)] json: bool,
+    },
     /// Find line-mates for a player.
     Mates,
-    /// Group players into a custom set for comparison.
-    Group,
+    /// Manage player watchlists and custom groups.
+    #[command(subcommand)]
+    Group(GroupSubcommand),
     /// Run scouting report for a player or team.
     Scouting,
     /// Manage fantasy scoring schemes.
@@ -139,6 +168,22 @@ pub enum FetchSubcommand {
         #[arg(long)]
         dry_run: bool,
     },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum GroupSubcommand {
+    /// Create a new group.
+    Create { name: String, #[arg(long)] desc: Option<String> },
+    /// Add a player to a group.
+    Add { group: String, player: String },
+    /// Remove a player from a group.
+    Remove { group: String, player: String },
+    /// List all groups.
+    List,
+    /// Show members of a group with current stats.
+    Show { name: String },
+    /// Delete a group.
+    Delete { name: String },
 }
 
 #[derive(Debug, Subcommand)]

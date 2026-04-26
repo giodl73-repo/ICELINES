@@ -183,6 +183,30 @@ impl FitClass {
     }
 }
 
+// ── Region ────────────────────────────────────────────────────────────────────
+
+/// Geographic region grouping for player nationality analysis.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Region {
+    NorthAmerica,  // CAN + USA
+    Scandinavia,   // SWE + FIN + NOR + DEN
+    CentralEurope, // CZE + SVK + AUT + SUI + DEU
+    Russia,        // RUS
+    Other,
+}
+
+impl Region {
+    pub fn from_country(country: &str) -> Self {
+        match country {
+            "CAN" | "USA" => Self::NorthAmerica,
+            "SWE" | "FIN" | "NOR" | "DEN" => Self::Scandinavia,
+            "CZE" | "SVK" | "AUT" | "SUI" | "DEU" => Self::CentralEurope,
+            "RUS" => Self::Russia,
+            _ => Self::Other,
+        }
+    }
+}
+
 // ── Player ───────────────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -206,6 +230,15 @@ pub struct Player {
     pub pace_score: Option<PaceScore>,
     /// Headshot URL from NHL roster API
     pub headshot_url: Option<String>,
+    // Bio fields (populated from NHL API SkaterBio)
+    pub birth_date:       Option<String>,  // "YYYY-MM-DD"
+    pub birth_country:    Option<String>,  // ISO-3166 alpha-3 e.g. "CAN"
+    pub nationality_code: Option<String>,  // ISO alpha-3
+    pub shoots_catches:   Option<String>,  // "L" or "R"
+    pub draft_year:       Option<u16>,
+    pub draft_round:      Option<u8>,
+    pub draft_overall:    Option<u16>,
+    pub rookie_season:    Option<u32>,     // first NHL season (YYYYZZZZ format)
 }
 
 impl Player {
