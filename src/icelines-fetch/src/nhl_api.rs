@@ -242,6 +242,8 @@ impl NhlApiClient {
     }
 
     /// Fetch today's NHL schedule from /v1/schedule/now.
+    /// Fetch the current game week schedule (up to 7 days from today).
+    /// Returns all games with their calendar date attached.
     pub async fn fetch_today_schedule(&self) -> Result<Vec<ScheduledGame>, FetchError> {
         let url = format!("{}/schedule/now", self.base_web);
         let raw: serde_json::Value = self.get_json(&url).await?;
@@ -249,6 +251,7 @@ impl NhlApiClient {
         let mut games = Vec::new();
         if let Some(week) = raw["gameWeek"].as_array() {
             for day in week {
+                let date = day["date"].as_str().unwrap_or("").to_owned();
                 if let Some(day_games) = day["games"].as_array() {
                     for g in day_games {
                         let game_id = g["id"].as_u64().unwrap_or(0);
@@ -262,6 +265,7 @@ impl NhlApiClient {
                         if game_id > 0 {
                             games.push(ScheduledGame {
                                 game_id,
+                                date: date.clone(),
                                 away_abbrev: away,
                                 away_name,
                                 home_abbrev: home,
@@ -280,6 +284,7 @@ impl NhlApiClient {
 #[derive(Debug, Clone)]
 pub struct ScheduledGame {
     pub game_id:         u64,
+    pub date:            String,  // "YYYY-MM-DD"
     pub away_abbrev:     String,
     pub away_name:       String,
     pub home_abbrev:     String,

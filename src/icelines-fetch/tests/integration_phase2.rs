@@ -157,10 +157,11 @@ fn l1_filter_by_team_sea_only() {
 fn l1_filter_ppg_min_excludes_low_scorers() {
     let players = players_fixture();
     let mut f = PlayerFilter::new();
-    // McDavid pace = 140, Beniers = 59.5 — only McDavid above 100
-    f.ppg_min = Some(100.0);
+    // McDavid PPG = (50+90)/82 = 1.707, Beniers = (20+30)/82 = 0.610
+    // Only McDavid above 1.5 PPG
+    f.ppg_min = Some(1.5);
     let result = f.apply(&players);
-    assert_eq!(result.len(), 1);
+    assert_eq!(result.len(), 1, "only McDavid should exceed 1.5 PPG");
     assert_eq!(result[0].full_name, "McDavid");
 }
 

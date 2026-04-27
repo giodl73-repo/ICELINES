@@ -65,7 +65,10 @@ fn fuzzy_find_player<'a>(
     all_players
         .iter()
         .find(|p| p.name_normalized.contains(norm.as_str()))
-        .with_context(|| format!("no player found matching '{query}'"))
+        .with_context(|| format!(
+            "no player found matching '{query}' \
+             (note: goalies are not in the skater dataset — only forwards and defensemen are supported)"
+        ))
 }
 
 /// Score all players in a roster, returning `(full_name, score)` sorted desc.

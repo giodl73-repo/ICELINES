@@ -289,13 +289,6 @@ pub struct LeadersArgs {
 pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
     let metric = SortMetric::parse(&args.sort)?;
 
-    // Guard: ppg-min > 5.0 almost certainly means the user passed pts/82 instead of PPG
-    if let Some(ppg) = args.ppg_min {
-        if ppg > 5.0 {
-            eprintln!("  Hint: --ppg-min expects points-per-game (e.g. 0.80), not per-82 pace. Did you mean --ppg-min {:.2}?", ppg / 82.0);
-        }
-    }
-
     // Load player pool — single season or N-season aggregate
     let all_players: Vec<Player> = if args.seasons > 1 {
         aggregate::load_aggregate_players(args.seasons as usize)
@@ -434,7 +427,7 @@ fn leaders_table(
         for (i, (p, pct)) in players.iter().zip(percentiles.iter()).enumerate() {
             let gp  = p.gp().map(|g| g.to_string()).unwrap_or_else(|| "—".to_owned());
             let val = metric.display(p, rate);
-            let pct_s = pct.map(|v| format!("{v}th")).unwrap_or_else(|| "—".to_owned());
+            let pct_s = pct.map(|v| format!("{v}{}", ordinal(v))).unwrap_or_else(|| "—".to_owned());
             println!("{:<4} {:<24} {:<5} {:<4} {:<4} {:<10} {:<6}", i + 1, p.full_name, p.team.as_str(), p.position.abbreviation(), gp, val, pct_s);
         }
     } else {
@@ -624,9 +617,10 @@ fn print_percentile(all: &[Player], target: &Player) {
     let rank = n_better + 1;
     let pct = ((1.0 - n_better as f64 / peers.len() as f64) * 100.0) as u8;
     println!(
-        "LEAGUE RANK  #{rank} of {} {}'s  ({pct}th percentile by Pts/82)",
+        "LEAGUE RANK  #{rank} of {} {}'s  ({pct}{} percentile by Pts/82)",
         peers.len(),
-        target.position.abbreviation()
+        target.position.abbreviation(),
+        ordinal(pct)
     );
     println!();
 }
@@ -904,6 +898,20 @@ fn zscore(val: f64, mean: f64, std: f64) -> f64 {
 
 fn round1(v: f64) -> f64 { (v * 10.0).round() / 10.0 }
 fn round2(v: f64) -> f64 { (v * 100.0).round() / 100.0 }
+
+/// Return the correct English ordinal suffix for a number (1→"st", 2→"nd", 3→"rd", rest→"th").
+fn ordinal(n: u8) -> &'static str {
+    // 11, 12, 13 always use "th" regardless of last digit
+    match n % 100 {
+        11..=13 => "th",
+        _ => match n % 10 {
+            1 => "st",
+            2 => "nd",
+            3 => "rd",
+            _ => "th",
+        },
+    }
+}
 
 // ── Unit tests ────────────────────────────────────────────────────────────────
 

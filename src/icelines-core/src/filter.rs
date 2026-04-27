@@ -172,18 +172,19 @@ impl PlayerFilter {
             }
         }
 
-        // PPG (pace_82) min filter
+        // PPG min filter — compares against per-game rate (pace_82 / 82).
+        // Flag is --ppg-min 0.80, meaning "at least 0.80 points per game".
         if let Some(ppg_min) = self.ppg_min {
-            let pace = p.pace_score.map(|ps| ps.pace_82).unwrap_or(0.0);
-            if pace < ppg_min {
+            let ppg = p.pace_score.map(|ps| ps.pace_82 / 82.0).unwrap_or(0.0);
+            if ppg < ppg_min {
                 return false;
             }
         }
 
-        // PPG (pace_82) max filter
+        // PPG max filter — same per-game scale
         if let Some(ppg_max) = self.ppg_max {
-            let pace = p.pace_score.map(|ps| ps.pace_82).unwrap_or(0.0);
-            if pace > ppg_max {
+            let ppg = p.pace_score.map(|ps| ps.pace_82 / 82.0).unwrap_or(0.0);
+            if ppg > ppg_max {
                 return false;
             }
         }
@@ -354,27 +355,23 @@ mod tests {
 
     #[test]
     fn filter_by_ppg_min() {
-        // pace_82 for (20+40)/60 * 82 = 82.0
-        // pace_82 for (5+10)/50 * 82 = 24.6
-        // pace_82 for (30+60)/70 * 82 = 105.4...
+        // PPG (per game) for (20+40)/60 = 1.000
+        // PPG (per game) for (5+10)/50  = 0.300
+        // PPG (per game) for (30+60)/70 = 1.286
         let players = vec![
-            make_player("High Scorer", "SEA", Position::Center, 60, 20, 40), // pace=82.0
-            make_player("Low Scorer", "NYR", Position::LeftWing, 50, 5, 10), // pace=24.6
-            make_player("Elite Scorer", "EDM", Position::Center, 70, 30, 60), // pace=105.4
+            make_player("High Scorer",  "SEA", Position::Center,    60, 20, 40), // 1.000 ppg
+            make_player("Low Scorer",   "NYR", Position::LeftWing,  50,  5, 10), // 0.300 ppg
+            make_player("Elite Scorer", "EDM", Position::Center,    70, 30, 60), // 1.286 ppg
         ];
         let filter = PlayerFilter {
-            ppg_min: Some(80.0),
+            ppg_min: Some(0.90), // ≥ 0.90 per game → High and Elite qualify
             ..PlayerFilter::new()
         };
         let result = filter.apply(&players);
-        assert_eq!(
-            result.len(),
-            2,
-            "only players with pace_82 >= 80.0 should match"
-        );
-        assert!(result
-            .iter()
-            .all(|p| { p.pace_score.map(|ps| ps.pace_82 >= 80.0).unwrap_or(false) }));
+        assert_eq!(result.len(), 2, "only players with PPG >= 0.90 should match");
+        assert!(result.iter().all(|p| {
+            p.pace_score.map(|ps| ps.pace_82 / 82.0 >= 0.90).unwrap_or(false)
+        }));
     }
 
     #[test]

@@ -3,8 +3,14 @@ use icelines_fetch::nhl_api::NhlApiClient;
 
 pub async fn run(team_filter: Option<String>) -> anyhow::Result<()> {
     let client = NhlApiClient::production();
-    let schedule = client.fetch_today_schedule().await
+    let all_games = client.fetch_today_schedule().await
         .context("fetching today's schedule")?;
+
+    // Filter to today only (first date in the gameWeek)
+    let today = all_games.first().map(|g| g.date.as_str()).unwrap_or("");
+    let schedule: Vec<_> = all_games.iter()
+        .filter(|g| g.date.is_empty() || g.date == today)
+        .collect();
 
     if schedule.is_empty() {
         println!("No games scheduled today.");
@@ -12,8 +18,9 @@ pub async fn run(team_filter: Option<String>) -> anyhow::Result<()> {
     }
 
     let team_up = team_filter.as_deref().map(str::to_uppercase);
+    let date_label = if today.is_empty() { "today".to_owned() } else { today.to_owned() };
 
-    println!("TONIGHT'S GAMES — {} game(s)", schedule.len());
+    println!("TONIGHT'S GAMES — {} ({} game(s))", date_label, schedule.len());
     println!("{}", "─".repeat(60usize));
 
     for game in &schedule {
@@ -27,19 +34,45 @@ pub async fn run(team_filter: Option<String>) -> anyhow::Result<()> {
             game.away_abbrev, game.away_name,
             game.home_abbrev, game.home_name,
             time);
-        println!("  Game ID: {}", game.game_id);
-        println!();
     }
-
-    println!("Note: projected lineup from last boxscore requires `icelines fetch shifts` (Phase 4).");
     Ok(())
 }
 
 pub async fn run_schedule(team: Option<String>, days: u32) -> anyhow::Result<()> {
-    println!("SCHEDULE — next {days} days{}",
-        team.as_deref().map(|t| format!(" · {t}")).unwrap_or_default());
-    println!("(Full schedule calendar requires schedule API integration — Phase 4)");
-    println!("Use the NHL app or nhl.com/schedule for now.");
+    let client = NhlApiClient::production();
+    let all_games = client.fetch_today_schedule().await
+        .context("fetching schedule")?;
+
+    if all_games.is_empty() {
+        println!("No upcoming games found.");
+        return Ok(());
+    }
+
+    let team_up = team.as_deref().map(str::to_uppercase);
+
+    // Group by date, show up to `days` distinct dates
+    let mut current_date = String::new();
+    let mut days_shown = 0u32;
+
+    println!("SCHEDULE — next {days} day(s){}",
+        team_up.as_deref().map(|t| format!(" · {t}")).unwrap_or_default());
+    println!("{}", "─".repeat(60usize));
+
+    for game in &all_games {
+        if game.date != current_date {
+            if days_shown >= days { break; }
+            current_date = game.date.clone();
+            days_shown += 1;
+            println!("\n{}", current_date);
+        }
+        if let Some(ref t) = team_up {
+            if &game.away_abbrev != t && &game.home_abbrev != t {
+                continue;
+            }
+        }
+        let time = game.start_time_utc.get(11..16).unwrap_or("?");
+        println!("  {} @ {}  UTC {}", game.away_abbrev, game.home_abbrev, time);
+    }
     Ok(())
 }
 

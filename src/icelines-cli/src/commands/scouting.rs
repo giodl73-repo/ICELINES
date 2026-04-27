@@ -1,26 +1,24 @@
-use anyhow::Context;
+use anyhow::{bail, Context};
 use icelines_core::{
     compute_cross_team_metrics, compute_projection, name::normalize_name,
     model::MIN_GP, ProjectionMode,
 };
+use icelines_fetch::{career::load_career, snapshot::SnapshotStore};
 use crate::commands::players::load_all_players;
+use crate::config::Config;
 
 pub async fn run(player_name: String, format: String) -> anyhow::Result<()> {
+    let fmt = format.to_lowercase();
+    if !["terminal", "markdown", "json"].contains(&fmt.as_str()) {
+        bail!("unknown format '{format}' — valid: terminal, markdown, json");
+    }
+
     let players = load_all_players()?;
     let norm    = normalize_name(&player_name);
     let player  = players.iter()
         .find(|p| p.name_normalized.contains(&norm))
         .with_context(|| format!("player '{player_name}' not found"))?;
 
-    let md = format.to_lowercase() == "markdown";
-    let sep: String = if md { "---".to_owned() } else { "─".repeat(60usize) };
-
-    // ── Section 1: Bio ────────────────────────────────────────────────────────
-    println!("{}", if md { format!("# Scouting Report — {}", player.full_name) }
-             else { format!("SCOUTING REPORT — {}", player.full_name) });
-    println!("{sep}");
-    println!();
-    println!("## 1. Bio");
     let age = player.birth_date.as_deref()
         .and_then(|d| d.get(..4)).and_then(|y| y.parse::<u16>().ok())
         .map(|y| 2026u16.saturating_sub(y).to_string()).unwrap_or_else(|| "—".to_owned());
@@ -29,6 +27,53 @@ pub async fn run(player_name: String, format: String) -> anyhow::Result<()> {
         (Some(y), _, _)             => y.to_string(),
         _                           => "Undrafted".to_owned(),
     };
+
+    // ── JSON output path ──────────────────────────────────────────────────────
+    if fmt == "json" {
+        let report = serde_json::json!({
+            "player":      player.full_name,
+            "team":        player.team.as_str(),
+            "position":    player.position.abbreviation(),
+            "age":         age,
+            "draft":       draft,
+            "nationality": player.nationality_code,
+            "handedness":  player.shoots_catches,
+            "height_in":   player.height_in_inches,
+            "weight_lbs":  player.weight_lbs,
+            "current_season": {
+                "gp":        player.gp(),
+                "goals":     player.season_goals,
+                "assists":   player.season_assists,
+                "pts":       player.season_points,
+                "ppg":       player.pace_score.map(|s| s.pace_82 / 82.0),
+                "pts_82":    player.pace_score.map(|s| s.pace_82),
+                "goals_82":  player.pace_score.map(|s| s.goals_per_82),
+                "pp_goals":  player.pp_goals,
+                "pp_points": player.pp_points,
+                "gwg":       player.gwg,
+                "shots":     player.shots,
+                "shooting_pct": player.shooting_pct,
+                "plus_minus": player.plus_minus,
+                "toi_mmss":  player.toi_mmss(),
+            },
+            "contract": {
+                "expiry_year": player.contract_expiry_year,
+                "expiry_type": player.expiry_type,
+            }
+        });
+        println!("{}", serde_json::to_string_pretty(&report)?);
+        return Ok(());
+    }
+
+    let md = fmt == "markdown";
+    let sep: String = if md { "---".to_owned() } else { "─".repeat(60usize) };
+
+    // ── Section 1: Bio ────────────────────────────────────────────────────────
+    println!("{}", if md { format!("# Scouting Report — {}", player.full_name) }
+             else { format!("SCOUTING REPORT — {}", player.full_name) });
+    println!("{sep}");
+    println!();
+    println!("## 1. Bio");
     println!("  Team:         {} ({})", player.team.as_str(),
         if md { format!("*{}*", player.team.as_str()) } else { player.team.as_str().to_owned() });
     println!("  Position:     {:?}", player.position);
@@ -56,7 +101,33 @@ pub async fn run(player_name: String, format: String) -> anyhow::Result<()> {
     // ── Section 3: Career trajectory ─────────────────────────────────────────
     println!();
     println!("## 3. Career Trajectory");
-    println!("  Current season only (multi-season history: `icelines fetch history` Phase 4)");
+    let store2 = if let Ok(cfg2) = Config::load() {
+        SnapshotStore::new(cfg2.snapshot_dir())
+    } else {
+        SnapshotStore::new(SnapshotStore::default_root())
+    };
+    match load_career(&player.full_name, 5, &store2) {
+        Some(career) if !career.seasons.is_empty() => {
+            println!("  {:<10} {:<4} {:>4} {:>4} {:>4}  {:>7}",
+                "Season", "Team", "GP", "G", "A", "PPG");
+            for line in &career.seasons {
+                let lbl = if line.season.len() == 8 {
+                    format!("{}-{}", &line.season[2..4], &line.season[6..8])
+                } else { line.season.clone() };
+                println!("  {:<10} {:<4} {:>4} {:>4} {:>4}  {:>7.3}",
+                    lbl, line.team, line.gp, line.goals, line.assists, line.ppg);
+            }
+            println!("  Career PPG: {:.3}  Peak: {} ({:.3})",
+                career.career_ppg,
+                if career.peak_season.len() == 8 {
+                    format!("{}-{}", &career.peak_season[2..4], &career.peak_season[6..8])
+                } else { career.peak_season.clone() },
+                career.peak_ppg);
+        }
+        _ => {
+            println!("  Career history not available in bundled data.");
+        }
+    }
 
     // ── Section 4: Peer group rank ────────────────────────────────────────────
     println!();
@@ -80,7 +151,8 @@ pub async fn run(player_name: String, format: String) -> anyhow::Result<()> {
         let pct = if peers.len() > 1 {
             100 - (rank * 100 / peers.len())
         } else { 100 };
-        println!("  Percentile:   {}th", pct);
+        let ord = match pct % 100 { 11..=13 => "th", _ => match pct % 10 { 1=>"st",2=>"nd",3=>"rd",_=>"th" } };
+        println!("  Percentile:   {pct}{ord}");
     } else {
         println!("  Draft data not available");
     }
