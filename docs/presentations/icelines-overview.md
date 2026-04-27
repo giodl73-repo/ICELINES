@@ -9,32 +9,34 @@ of NHL data ship in the binary — no fetch, no account, no setup.
 
 ## Core capabilities
 
-```proof:tree kind=org indent-width=2
-root: IceLines
-- Query Engine
-  - query leaders (30+ sort metrics, all filters)
-  - query player (career arc, percentile rank)
-  - query compare (head-to-head, similarity search)
-- Team Analysis
-  - depth charts (4x3 forward, 3x2 defense)
-  - fit classification (Elite/Solid/Buried/Stretch)
-  - trade impact simulation
-- Player Research
-  - scouting reports (8 sections, JSON export)
-  - career history (38 seasons, 1987–2025)
-  - projection engine (pace/regressed/composite)
-  - similarity/comps search
-- Fantasy League
-  - leagues and teams (SQLite-backed)
-  - scoring (Yahoo/ESPN/custom schemes)
-  - trade evaluation and execution
-  - HTTP dashboard server
-- Data
-  - bundled binary (5 seasons, no fetch)
-  - 38 seasons installable via GitHub Releases
-  - MoneyPuck xG/CF%/xGF% (optional)
-  - NHL realtime stats (hits/blocks/giveaways)
+<!-- proof:compiled from="proof:tree kind=org" uri="" -->
+```org
+IceLines
+├── Query Engine
+  ├── query leaders (30+ sort metrics, all filters)
+  ├── query player (career arc, percentile rank)
+  ├── query compare (head-to-head, similarity search)
+├── Team Analysis
+  ├── depth charts (4x3 forward, 3x2 defense)
+  ├── fit classification (Elite/Solid/Buried/Stretch)
+  ├── trade impact simulation
+├── Player Research
+  ├── scouting reports (8 sections, JSON export)
+  ├── career history (38 seasons, 1987–2025)
+  ├── projection engine (pace/regressed/composite)
+  ├── similarity/comps search
+├── Fantasy League
+  ├── leagues and teams (SQLite-backed)
+  ├── scoring (Yahoo/ESPN/custom schemes)
+  ├── trade evaluation and execution
+  ├── HTTP dashboard server
+└── Data
+  ├── bundled binary (5 seasons, no fetch)
+  ├── 38 seasons installable via GitHub Releases
+  ├── MoneyPuck xG/CF%/xGF% (optional)
+  └── NHL realtime stats (hits/blocks/giveaways)
 ```
+<!-- /proof:compiled -->
 
 ---
 

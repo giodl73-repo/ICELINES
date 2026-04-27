@@ -44,6 +44,14 @@ cd src && cargo fmt --check                    # must be clean
 # Run (after release build)
 src/target/release/icelines.exe query leaders --pos C --top 10
 src/target/release/icelines.exe fantasy league-create "My League"
+
+# proof — documentation linting and guide compilation
+# proof binary lives in the workspace target at C:\src\target\debug\proof.exe
+# Build proof first if needed: cd C:/src && cargo build
+C:/src/target/debug/proof check .                  # lint all markdown
+C:/src/target/debug/proof check . --errors-only    # errors only
+bash scripts/build-guides.sh                       # compile src/guides/ → docs/guides/
+bash scripts/build-guides.sh --check               # validate without writing
 ```
 
 ---
