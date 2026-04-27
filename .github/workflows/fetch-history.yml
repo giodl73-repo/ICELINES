@@ -1,0 +1,65 @@
+name: Fetch Historical Season Data
+
+on:
+  workflow_dispatch:
+    inputs:
+      from_season:
+        description: 'Start season (e.g. 20002001)'
+        required: false
+        default: '20002001'
+      to_season:
+        description: 'End season (e.g. 20202021)'
+        required: false
+        default: '20202021'
+      force:
+        description: 'Re-fetch even if data exists (true/false)'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    name: Fetch seasons ${{ inputs.from_season }}–${{ inputs.to_season }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Fetch historical seasons
+        run: |
+          FORCE_FLAG=""
+          if [ "${{ inputs.force }}" = "true" ]; then
+            FORCE_FLAG="--force"
+          fi
+          python3 scripts/fetch_history.py \
+            --from "${{ inputs.from_season }}" \
+            --to   "${{ inputs.to_season }}" \
+            $FORCE_FLAG
+
+      - name: Check what was fetched
+        run: |
+          echo "Seasons now in data/seasons/:"
+          ls data/seasons/
+          echo ""
+          echo "File sizes:"
+          du -sh data/seasons/*/
+
+      - name: Commit fetched data
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git add data/seasons/
+          if git diff --staged --quiet; then
+            echo "No new data to commit."
+          else
+            SEASON_LIST=$(ls data/seasons/ | tr '\n' ' ')
+            git commit -m "Add historical season data: ${SEASON_LIST}"
+            git push
+          fi
