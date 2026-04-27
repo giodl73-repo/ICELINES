@@ -301,6 +301,9 @@ pub enum DataSubcommand {
         /// Install a specific season (e.g. 20212022).
         #[arg(long)]
         season: Option<String>,
+        /// Re-download even if the season is already installed.
+        #[arg(long)]
+        force: bool,
     },
     /// List installed season bundles.
     List,

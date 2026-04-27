@@ -71,9 +71,19 @@ Rank  Team                   Owner            Score      Per/G
 
 IceLines ships with three built-in schemes:
 
+<!-- proof:compiled from="proof:tree kind=org" uri="" -->
+```org
+Scoring Schemes
+├── yahoo-standard (default)
+  ├── goals: 3.0 · assists: 2.0
+  ├── PPG bonus: 1.0 · hits: 0.5 · blocks: 0.5
+├── espn-standard
+  ├── goals: 6.0 · assists: 4.0
+  ├── PPG bonus: 2.0 · shots: 1.0 · plus-minus: 2.0
+└── simple-pts
+  └── goals: 1.0 · assists: 1.0 · no bonuses
 ```
-``````
-```
+<!-- /proof:compiled -->
 
 Create a league with any scheme:
 

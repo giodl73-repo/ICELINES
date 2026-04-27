@@ -27,8 +27,8 @@ const RELEASE_URL_TEMPLATE: &str =
 
 pub async fn run(cmd: DataSubcommand) -> anyhow::Result<()> {
     match cmd {
-        DataSubcommand::Install { seasons, season } => {
-            run_install(seasons, season).await
+        DataSubcommand::Install { seasons, season, force } => {
+            run_install(seasons, season, force).await
         }
         DataSubcommand::List => run_list(),
         DataSubcommand::Remove { season } => run_remove(&season),
@@ -37,23 +37,29 @@ pub async fn run(cmd: DataSubcommand) -> anyhow::Result<()> {
 
 // ── install ───────────────────────────────────────────────────────────────────
 
-async fn run_install(seasons: u8, season: Option<String>) -> anyhow::Result<()> {
+async fn run_install(seasons: u8, season: Option<String>, force: bool) -> anyhow::Result<()> {
     let seasons_dir = seasons_base_dir()?;
     std::fs::create_dir_all(&seasons_dir)
         .with_context(|| format!("create {}", seasons_dir.display()))?;
 
     // Build the list of seasons to install.
     let to_install: Vec<&str> = if let Some(ref s) = season {
-        // Specific season requested.
+        if s == "20042005" {
+            println!(
+                "Season 20042005 was the NHL lockout — no games were played, no data exists."
+            );
+            return Ok(());
+        }
         if !AVAILABLE_SEASONS.contains(&s.as_str()) {
             println!(
-                "Season {s} not yet available — run `icelines fetch stats --season {s}` to build it."
+                "Season {s} is not available as a pre-built bundle.\n  \
+                 To fetch it yourself: `icelines fetch stats --season {s}`\n  \
+                 Available: 19871988–20252026 (excluding 20042005 lockout)"
             );
             return Ok(());
         }
         vec![s.as_str()]
     } else {
-        // Last N seasons, newest first.
         AVAILABLE_SEASONS
             .iter()
             .take(seasons as usize)
@@ -62,7 +68,7 @@ async fn run_install(seasons: u8, season: Option<String>) -> anyhow::Result<()> 
     };
 
     for s in to_install {
-        install_season(&seasons_dir, s).await?;
+        install_season(&seasons_dir, s, force).await?;
     }
 
     Ok(())
@@ -71,9 +77,20 @@ async fn run_install(seasons: u8, season: Option<String>) -> anyhow::Result<()> 
 async fn install_season(
     seasons_dir: &std::path::Path,
     season: &str,
+    force: bool,
 ) -> anyhow::Result<()> {
-    let url = RELEASE_URL_TEMPLATE.replace("{SEASON}", season);
     let dest = seasons_dir.join(season);
+
+    // Installed seasons are extracted under dest/bundle-{season}/ by the tar.gz layout.
+    let bundle_dir = dest.join(format!("bundle-{season}"));
+
+    // Skip if already installed and not forcing a refresh.
+    if !force && bundle_dir.join("bios.json").exists() && bundle_dir.join("stats.json").exists() {
+        println!("Season {season} already installed (use --force to re-download).");
+        return Ok(());
+    }
+
+    let url = RELEASE_URL_TEMPLATE.replace("{SEASON}", season);
 
     // Download.
     let client = reqwest::Client::builder()
@@ -238,7 +255,11 @@ fn walkdir(dir: &std::path::Path) -> u64 {
 
 /// Read bios.json and return player count.
 fn bios_player_count(season_dir: &std::path::Path) -> Option<usize> {
-    let bios_path = season_dir.join("bios.json");
+    // Installed bundles extract to bundle-{season}/bios.json
+    let season_name = season_dir.file_name()?.to_string_lossy().to_string();
+    let bundle = season_dir.join(format!("bundle-{season_name}")).join("bios.json");
+    let direct = season_dir.join("bios.json");
+    let bios_path = if bundle.exists() { bundle } else { direct };
     let raw = std::fs::read(&bios_path).ok()?;
     let bios: Vec<serde_json::Value> = serde_json::from_slice(&raw).ok()?;
     Some(bios.len())
