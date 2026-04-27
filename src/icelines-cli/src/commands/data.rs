@@ -3,9 +3,17 @@
 use crate::cli::DataSubcommand;
 use anyhow::Context;
 
-/// Season list (newest first) — mirrors `icelines_fetch::bundled::BUNDLED_SEASONS`.
+/// All seasons with published GitHub Releases, newest first.
+/// The first 5 are also bundled in the binary; the rest require `data install`.
 const AVAILABLE_SEASONS: &[&str] = &[
+    // Current + recent (bundled in binary)
     "20252026", "20242025", "20232024", "20222023", "20212022",
+    // Historical — downloadable via `icelines data install`
+    "20202021", "20192020", "20182019", "20172018", "20162017",
+    "20152016", "20142015", "20132014", "20122013", "20112012",
+    "20102011", "20092010", "20082009", "20072008", "20062007",
+    "20052006", "20032004", "20022003", "20012002", "20002001",
+    // Note: 20042005 is omitted — lockout season, no games played
 ];
 
 const RELEASE_URL_TEMPLATE: &str =
