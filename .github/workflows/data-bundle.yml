@@ -1,0 +1,127 @@
+name: Data Bundle
+
+on:
+  workflow_dispatch:
+    inputs:
+      seasons:
+        description: 'Seasons to bundle (space-separated YYYYZZZZ, e.g. "20252026 20242025")'
+        required: false
+        default: '20252026 20242025 20232024 20222023 20212022'
+  schedule:
+    # Refresh current season data weekly on Monday mornings
+    - cron: '0 6 * * 1'
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: write   # required to create GitHub Releases
+
+jobs:
+  bundle:
+    name: Bundle Season ${{ matrix.season }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Bundled inline from input or default 5 seasons
+        season:
+          - '20252026'
+          - '20242025'
+          - '20232024'
+          - '20222023'
+          - '20212022'
+
+    defaults:
+      run:
+        working-directory: src
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src/target
+          key: ${{ runner.os }}-bundle-${{ hashFiles('src/Cargo.lock') }}
+
+      - name: Build icelines
+        run: cargo build --release -p icelines-cli
+
+      - name: Refresh current season data (stats only — rosters from repo)
+        # For historical seasons the repo already has bios+stats. For current season,
+        # refresh stats from NHL API. Roster data is fetched separately and committed.
+        if: matrix.season == '20252026'
+        run: |
+          python3 scripts/fetch_seasons.py --seasons 1
+
+      - name: Pack season bundle from repo data
+        run: |
+          SEASON=${{ matrix.season }}
+          BUNDLE="data-${SEASON}.tar.gz"
+          DATA_DIR="data/seasons/${SEASON}"
+
+          if [ ! -d "${DATA_DIR}" ]; then
+            echo "No data for season ${SEASON} — skipping"
+            exit 0
+          fi
+
+          # Create bundle from committed repo data
+          mkdir -p /tmp/bundle-${SEASON}
+          cp "${DATA_DIR}/bios.json"  /tmp/bundle-${SEASON}/bios.json  2>/dev/null || true
+          cp "${DATA_DIR}/stats.json" /tmp/bundle-${SEASON}/stats.json 2>/dev/null || true
+
+          # Add metadata
+          echo "{\"season\":\"${SEASON}\",\"bundled_at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" \
+            > /tmp/bundle-${SEASON}/manifest.json
+
+          # Compress
+          cd /tmp && tar czf "${BUNDLE}" "bundle-${SEASON}/"
+
+          # Size check — fail if > 500 KB (indicates data issue)
+          SIZE=$(stat -c%s "${BUNDLE}")
+          echo "Bundle size: ${SIZE} bytes"
+          if [ "$SIZE" -gt 512000 ]; then
+            echo "ERROR: bundle too large (${SIZE} > 512000 bytes)"
+            exit 1
+          fi
+
+          mv "${BUNDLE}" "$GITHUB_WORKSPACE/"
+
+      - name: Create or update data release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: data-${{ matrix.season }}
+          name: NHL Data — ${{ matrix.season }}
+          body: |
+            Pre-packaged NHL season data for season ${{ matrix.season }}.
+
+            ## Install
+
+            ```bash
+            icelines data install --season ${{ matrix.season }}
+            ```
+
+            Or install last 5 seasons:
+            ```bash
+            icelines data install --seasons 5
+            ```
+
+            ## Contents
+
+            - `bios.json` — all skater biographical data and GP
+            - `stats.json` — all skater season statistics
+            - `rosters/` — all 32 team rosters with headshot URLs
+            - `manifest.json` — bundle metadata
+
+            Data sourced from the NHL API. Historical season data does not change.
+          files: data-${{ matrix.season }}.tar.gz
+          make_latest: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
