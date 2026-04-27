@@ -2,6 +2,10 @@
 name    = "IceLines"
 description = "NHL analytics CLI — documentation validation"
 
+[compile]
+source_dir = "src/guides"
+output_dir = "docs/guides"
+
 [files]
 include = ["**/*.md"]
 exclude = [

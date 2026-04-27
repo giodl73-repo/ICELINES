@@ -1,42 +1,43 @@
 #!/usr/bin/env bash
 # Compile IceLines proof source documents to docs/ output directories.
-# Usage: bash scripts/compile-docs.sh
-# Requires proof binary at C:/src/target/release/proof.exe or proof in PATH.
+#
+# Uses proof.toml [compile] config for guides (source_dir → output_dir).
+# Presentations use explicit -o flag.
+#
+# Usage:
+#   bash scripts/compile-docs.sh           # compile all
+#   bash scripts/compile-docs.sh guides    # guides only
+#   bash scripts/compile-docs.sh pres      # presentations only
 
 set -e
 
 PROOF="${PROOF:-C:/src/target/release/proof.exe}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+TARGET="${1:-all}"
 
 if ! command -v "$PROOF" &>/dev/null && ! [ -f "$PROOF" ]; then
-    echo "proof binary not found. Set PROOF=/path/to/proof or build from C:/src/proof"
+    echo "proof not found. Set PROOF=/path/to/proof"
     exit 1
 fi
 
-echo "Compiling IceLines docs..."
-echo "  Root: $ROOT"
-echo "  proof: $PROOF"
+echo "IceLines doc compile — proof $("$PROOF" --version 2>&1 | head -1)"
+echo "Root: $ROOT"
 echo ""
 
-# Guides: src/guides/*.source.md → docs/guides/*.md
-mkdir -p "$ROOT/docs/guides"
-for src in "$ROOT/src/guides"/*.source.md; do
-    base=$(basename "$src" .source.md)
-    out="$ROOT/docs/guides/${base}.md"
-    "$PROOF" compile "$src" -o "$out" --root "$ROOT"
-done
+if [[ "$TARGET" == "all" || "$TARGET" == "guides" ]]; then
+    echo "Compiling guides → docs/guides/"
+    # proof.toml [compile] routes src/guides → docs/guides automatically
+    "$PROOF" compile src/guides --root "$ROOT" -c "$ROOT/proof.toml"
+fi
 
-# Presentations: src/presentations/*.source.md → docs/presentations/*.md
-mkdir -p "$ROOT/docs/presentations"
-for src in "$ROOT/src/presentations"/*.source.md; do
-    base=$(basename "$src" .source.md)
-    out="$ROOT/docs/presentations/${base}.md"
-    "$PROOF" compile "$src" -o "$out" --root "$ROOT"
-done
+if [[ "$TARGET" == "all" || "$TARGET" == "pres" ]]; then
+    echo "Compiling presentations → docs/presentations/"
+    mkdir -p "$ROOT/docs/presentations"
+    for src in "$ROOT/src/presentations"/*.source.md; do
+        base=$(basename "$src" .source.md)
+        "$PROOF" compile "$src" -o "$ROOT/docs/presentations/${base}.md" --root "$ROOT"
+    done
+fi
 
 echo ""
-echo "Done. Compiled guides:"
-ls "$ROOT/docs/guides/"
-echo ""
-echo "Compiled presentations:"
-ls "$ROOT/docs/presentations/"
+echo "Done."
