@@ -1,76 +1,128 @@
-# IceLines — NHL Depth Chart Tracker
+# IceLines — NHL Analytics Platform
 
-Real lineup cards and pace-adjusted rankings for all 32 NHL teams.
+NHL depth charts, pace-adjusted rankings, query engine, and fantasy league management — all from a single Rust CLI with 5 seasons of data bundled in.
 
 **[→ View the site](https://giodl73-repo.github.io/ICELINES/)**
 
-## What it shows
+---
 
-- **4×3 forward lines** (LW / C / RW) and **3×2 defense pairs** for every team
-- Players color-coded by fit: 🟢 elite fit · 🟡 solid · 🔵 buried · 🔴 overextended
-- Rankings based on **points per game** (G+A / GP × 82) with goals/gp as tiebreaker
-- Every player's pace-projected stats: `{GP}gp · {PPG} pts/gp · {proj} proj`
+## What it does
 
-## Methodology
+- **Depth charts** — 4×3 forward lines + 3×2 defense pairs for all 32 teams, color-coded by fit vs the rest of the league
+- **Query engine** — `icelines query leaders` with 30+ sort metrics, demographic filters, multi-season aggregation, and Y/Y improvement sort
+- **Fantasy leagues** — create leagues and teams, compute scores against any scheme (Yahoo, ESPN, custom), simulate trades, run a web server
+- **Advanced stats** — MoneyPuck xG/CF%/FF%, NHL realtime hits/blocks/giveaways, shooting%, TOI
+- **Career analysis** — multi-season history, projections, similarity search, comps
+- **No cold start** — works immediately after install, 5 seasons bundled in the binary
 
-**Scoring**: Points per game (`(G+A) / GP × 82`) with goals/gp as tiebreaker.
-All stats projected to an 82-game pace — a player with 60 pts in 40 games ranks
-the same as a player with 120 pts in 82 games.
+---
 
-**Fit classification** (avg line on other 31 teams vs own line slot):
+## Quick start
 
-| Color | Label | Condition |
-|-------|-------|-----------|
-| 🟢 Green | ★ elite fit | avg elsewhere ≤ own line + 0.5 |
-| 🟡 Yellow | ~ solid | avg elsewhere ≤ own line + 1.25 |
-| 🔵 Blue | ↑ buried | avg elsewhere < own line − 0.75 |
-| 🔴 Red | ↓ stretch | avg elsewhere > own line + 1.25 |
+```bash
+# Build (one-time)
+cd src && cargo build --release
 
-Stats sourced from the NHL API. Rosters, headshots, and all scoring stats come
-from `api-web.nhle.com` and `api.nhle.com/stats/rest/en/` — no external CSV dependency.
+# Query — no fetch required, bundled data works immediately
+icelines query leaders --pos C --age-max 23 --sort ppg --top 15
+icelines query leaders --draft-year 2022 --sort pts-pace
+icelines query leaders --nationality FIN --sort ppg
+icelines query leaders --seasons 3 --pos C --top 10   # 3-season aggregate
+icelines query leaders --sort improvement --pos F     # Y/Y breakout leaders
+
+# Player profile with career arc and percentile rank
+icelines query player "Connor McDavid" --percentiles
+
+# Similarity search
+icelines query compare "Matty Beniers" --similar 8
+
+# Team depth chart
+icelines team EDM
+
+# Rankings
+icelines rank --top 20 --pos D
+
+# Fetch fresh data (optional — bundled data is current season)
+icelines fetch all
+
+# Fantasy league
+icelines fantasy league-create "My League" --scheme yahoo-standard
+icelines fantasy team-create "Gio's Rangers" --owner "Gio"
+icelines fantasy team-add "Gio's Rangers" "McDavid"
+icelines fantasy standings
+icelines fantasy trade "Bouchard" --to-team "Other Team" --for-player "Werenski"
+icelines fantasy serve --port 8080   # web dashboard
+```
+
+---
 
 ## Structure
 
 ```
-ICELINES/
-├── scripts/
-│   └── deploy.bat           # one-click build + publish to GitHub Pages
-├── data/
-│   └── rosters.json         # cached NHL roster + headshot data
-├── docs/                    # generated site source (mkdocs input)
-│   ├── index.md
-│   ├── assets/
-│   └── teams/
-├── src/                     # Rust CLI (icelines)
-│   ├── icelines-core/       # scoring engine, models, cross-team metrics
-│   ├── icelines-fetch/      # NHL API client, snapshot store
-│   ├── icelines-site/       # site generator (replaces gen_site.py)
-│   └── icelines-cli/        # binary entry point
-└── mkdocs.yml
+icelines/
+├── src/                    Rust workspace (4 crates)
+│   ├── icelines-core/      domain types, filters, scheme scoring — no I/O
+│   ├── icelines-fetch/     NHL API client, snapshot store, bundled data
+│   ├── icelines-site/      mkdocs site generation
+│   ├── icelines-cli/       CLI commands, TUI, HTTP server
+│   ├── guides/             proof source docs → docs/guides/
+│   └── presentations/      proof source docs → docs/presentations/
+├── data/                   5 bundled seasons (20212022–20252026)
+├── design/                 specs, plans, architecture, invariants
+├── docs/                   generated output (mkdocs)
+└── .roles/                 8 domain review roles
 ```
 
-## Usage
+---
+
+## Sort metrics
+
+`icelines query leaders --sort <metric>`
+
+| Category | Metrics |
+|----------|---------|
+| Points | `pts-pace`, `ppg`, `pts`, `goals`, `assists`, `gp` |
+| Goals | `g-pace`, `gpg` |
+| Power play | `pp-pts-pace`, `pp-g-pace`, `pp-pts`, `pp-g` |
+| Shorthanded | `sh-g-pace`, `sh-g` |
+| Other | `gwg-pace`, `gwg`, `shots-pace`, `shots` |
+| Rates | `sh-pct`, `plus-minus`, `toi`, `fo-pct` |
+| Physical | `hits-pace`, `hits`, `blocks-pace`, `blocks`, `takeaways`, `giveaways`, `pim` |
+| Advanced | `xg`, `xg-per-60`, `cf-pct`, `ff-pct`, `xgf-pct` (requires `icelines fetch moneypuck`) |
+| Trend | `improvement` (Y/Y PPG delta) |
+
+---
+
+## Data sources
+
+| Source | What | Command |
+|--------|------|---------|
+| NHL API (free) | Stats, rosters, bios, realtime, schedule | `icelines fetch all` |
+| MoneyPuck (free CSV) | xG, CF%, FF%, xGF% | `icelines fetch money-puck` |
+| Bundled (binary) | 5 seasons 20212022–20252026 | — (zero config) |
+
+---
+
+## Tests
+
+338 tests across three tiers:
 
 ```bash
-# First build the binary (one-time)
-cd src && cargo build --release
-
-# Fetch NHL data (rosters, stats) — creates a named snapshot
-icelines fetch all
-
-# Preview site locally
-icelines build --no-site
-PYTHONUTF8=1 mkdocs serve
-
-# Deploy to GitHub Pages (or double-click scripts/deploy.bat)
-icelines build && PYTHONUTF8=1 mkdocs gh-deploy
-
-# Manage snapshots
-icelines snapshot list
-icelines snapshot verify
-icelines snapshot use <name>
-
-# Rankings
-icelines rank --top 20
-icelines team SEA
+cd src && cargo test           # all tests
+cd src && cargo clippy -- -D warnings
+cd src && cargo fmt --check
 ```
+
+| Tier | Count | Scope |
+|------|-------|-------|
+| L0 unit | ~270 | Pure logic, in-module |
+| L1 integration | ~46 | Real structures, httpmock fixture |
+| L2 system | ~68 | Binary subprocess tests |
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE).
+
+Copyright (c) 2026 Gio Della-Libera

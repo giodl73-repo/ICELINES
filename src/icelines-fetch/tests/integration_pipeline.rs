@@ -19,9 +19,9 @@ use icelines_fetch::{
 // ── Fixture paths ─────────────────────────────────────────────────────────────
 
 fn fixture(relative: &str) -> std::path::PathBuf {
-    // CARGO_MANIFEST_DIR = …/fantasy-tracker/src/icelines-fetch
-    // .parent() = …/fantasy-tracker/src
-    // .parent() = …/fantasy-tracker   ← repo root, where tests/fixtures/ lives
+    // CARGO_MANIFEST_DIR = …/icelines/src/icelines-fetch
+    // .parent() = …/icelines/src
+    // .parent() = …/icelines   ← repo root, where tests/fixtures/ lives
     std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .unwrap()

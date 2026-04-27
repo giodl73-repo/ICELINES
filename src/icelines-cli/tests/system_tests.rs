@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 fn icelines_bin() -> PathBuf {
-    // CARGO_MANIFEST_DIR = …/fantasy-tracker/src/icelines-cli
+    // CARGO_MANIFEST_DIR = …/icelines/src/icelines-cli
     let workspace = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .unwrap() // …/src
