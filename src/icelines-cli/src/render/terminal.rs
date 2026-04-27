@@ -98,10 +98,19 @@ pub fn render_team_card(chart: &DepthChart, no_color: bool) {
     println!("{def_table}");
 
     if !chart.unplaced.is_empty() {
-        println!("\nUnplaced: {}", chart.unplaced.len());
+        println!("\nAdditional ({}):", chart.unplaced.len());
+        for p in &chart.unplaced {
+            let ppg = p.pace_score.map(|s| format!("{:.2}", s.pace_82 / 82.0)).unwrap_or_else(|| "—".to_owned());
+            let gp  = p.gp().map(|g| g.to_string()).unwrap_or_else(|| "—".to_owned());
+            println!("  {:<24} {}  {}gp  {}", p.full_name, p.position.abbreviation(), gp, ppg);
+        }
     }
     if !chart.below_min_gp.is_empty() {
-        println!("Below min GP: {}", chart.below_min_gp.len());
+        println!("\nBelow min GP ({}):", chart.below_min_gp.len());
+        for p in &chart.below_min_gp {
+            let gp = p.gp().map(|g| g.to_string()).unwrap_or_else(|| "0".to_owned());
+            println!("  {:<24} {}  {}gp", p.full_name, p.position.abbreviation(), gp);
+        }
     }
 }
 

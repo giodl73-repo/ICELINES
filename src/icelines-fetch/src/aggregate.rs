@@ -152,10 +152,15 @@ pub fn load_improvement_map() -> HashMap<u32, f64> {
     for (pid, curr) in &curr_idx {
         if curr.games_played < 10 { continue; }
         let curr_ppg = (curr.goals + curr.assists) as f64 / curr.games_played as f64;
-        let prev_ppg = prev_idx.get(pid)
-            .filter(|p| p.games_played >= 10)
-            .map(|p| (p.goals + p.assists) as f64 / p.games_played as f64)
-            .unwrap_or(0.0);
+        // Only include players who appeared in BOTH seasons with ≥10 GP.
+        // Players missing from the prior season (true rookies or data gaps) are
+        // excluded entirely — their delta would just be their current PPG which
+        // inflates the leaderboard misleadingly.
+        let prev = match prev_idx.get(pid).filter(|p| p.games_played >= 10) {
+            Some(p) => p,
+            None    => continue,
+        };
+        let prev_ppg = (prev.goals + prev.assists) as f64 / prev.games_played as f64;
         result.insert(*pid, curr_ppg - prev_ppg);
     }
     result

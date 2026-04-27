@@ -464,8 +464,10 @@ pub enum FantasySubcommand {
     },
     /// List all fantasy leagues.
     LeagueList,
-    /// Set the active fantasy league.
+    /// Set the active fantasy league (alias: league-switch).
     LeagueUse { name: String },
+    /// Switch to a different league (alias for league-use).
+    LeagueSwitch { name: String },
     /// Delete a fantasy league and all its teams.
     LeagueDelete { name: String },
 

@@ -171,7 +171,7 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
                 commands::fantasy::run_league_create(name, scheme).await?,
             FantasySubcommand::LeagueList =>
                 commands::fantasy::run_league_list().await?,
-            FantasySubcommand::LeagueUse { name } =>
+            FantasySubcommand::LeagueUse { name } | FantasySubcommand::LeagueSwitch { name } =>
                 commands::fantasy::run_league_use(name).await?,
             FantasySubcommand::LeagueDelete { name } =>
                 commands::fantasy::run_league_delete(name).await?,

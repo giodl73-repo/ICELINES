@@ -109,7 +109,7 @@ fn require_league(
         leagues
             .into_iter()
             .find(|l| &l.name == name)
-            .with_context(|| format!("league '{name}' not found"))
+            .with_context(|| format!("league '{name}' not found — run `icelines fantasy league-list`"))
     } else {
         db.get_active_league()?
             .ok_or_else(|| anyhow::anyhow!(
@@ -134,16 +134,9 @@ pub async fn run_league_create(name: String, scheme_name: String) -> anyhow::Res
     let db = FantasyDb::open()?;
     db.create_league(&name, &scheme_name)?;
 
-    // If this is the first league, automatically set it active.
-    let leagues = db.list_leagues()?;
-    if leagues.len() == 1 {
-        db.set_active_league(&name)?;
-        println!(
-            "League '{name}' created (scheme: {scheme_name}). Set as active."
-        );
-    } else {
-        println!("League '{name}' created (scheme: {scheme_name}).");
-    }
+    // Always activate the newly created league — user just created it, they want to work with it.
+    db.set_active_league(&name)?;
+    println!("League '{name}' created (scheme: {scheme_name}). Set as active.");
     Ok(())
 }
 
@@ -169,13 +162,15 @@ pub async fn run_league_list() -> anyhow::Result<()> {
     Ok(())
 }
 
-/// `icelines fantasy league-use <name>`
+/// `icelines fantasy league-use <name>` / `icelines fantasy league-switch <name>`
 pub async fn run_league_use(name: String) -> anyhow::Result<()> {
     let db = FantasyDb::open()?;
-    db.set_active_league(&name)?;
+    db.set_active_league(&name)
+        .with_context(|| format!("league '{name}' not found — run `icelines fantasy league-list`"))?;
     println!("Active league set to '{name}'.");
     Ok(())
 }
+
 
 /// `icelines fantasy league-delete <name>`
 pub async fn run_league_delete(name: String) -> anyhow::Result<()> {

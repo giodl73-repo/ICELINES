@@ -323,6 +323,7 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
     }
 
     // Contract filters
+    let wants_contract = args.ufa || args.rfa || args.elc || args.expiry_year.is_some();
     if args.ufa { matched.retain(|p| p.is_ufa()); }
     if args.rfa { matched.retain(|p| p.is_rfa()); }
     if args.elc {
@@ -335,6 +336,10 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
     }
     if let Some(yr) = args.expiry_year {
         matched.retain(|p| p.contract_expiry_year == Some(yr));
+    }
+    // Hint when contract filter returns nothing — likely no contract data fetched
+    if wants_contract && matched.is_empty() {
+        eprintln!("  Hint: no contract data found. Run `icelines fetch contracts` to enable UFA/RFA/ELC filtering.");
     }
 
     // Improvement sort requires the Y/Y delta map — handle before generic sort

@@ -208,8 +208,12 @@ pub async fn run_history(player_name: String, _json: bool) -> anyhow::Result<()>
             line.ppg, line.pts_per_82());
     }
     println!("{}", "─".repeat(64usize));
+    let peak_label = {
+        let s = &summary.peak_season;
+        if s.len() == 8 { format!("{}-{}", &s[2..4], &s[6..8]) } else { s.clone() }
+    };
     println!("Career:  {:.3} pts/gp  |  Peak: {} ({:.3} pts/gp)",
-        summary.career_ppg, summary.peak_season, summary.peak_ppg);
+        summary.career_ppg, peak_label, summary.peak_ppg);
     Ok(())
 }
 

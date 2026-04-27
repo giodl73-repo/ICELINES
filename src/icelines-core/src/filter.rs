@@ -167,7 +167,7 @@ impl PlayerFilter {
 
         // Rookie filter
         if let Some(true) = self.rookie_only {
-            if p.rookie_season.is_none() {
+            if p.rookie_season != Some(crate::CURRENT_SEASON) {
                 return false;
             }
         }
