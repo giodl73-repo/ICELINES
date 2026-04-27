@@ -143,16 +143,22 @@ impl SortMetric {
 
     fn display(self, p: &Player, rate: bool) -> String {
         match self {
-            Self::PtsPace => {
-                let v = p.pace_score.map(|s| s.pace_82).unwrap_or(0.0);
-                if rate { format!("{:.3}", v / 82.0) } else { format!("{:.1}", v) }
-            }
-            Self::Ppg => format!("{:.3}", p.pace_score.map(|s| s.pace_82 / 82.0).unwrap_or(0.0)),
-            Self::GPace => {
-                let v = p.pace_score.map(|s| s.goals_per_82).unwrap_or(0.0);
-                if rate { format!("{:.3}", v / 82.0) } else { format!("{:.1}", v) }
-            }
-            Self::Gpg   => format!("{:.3}", p.pace_score.map(|s| s.goals_per_82 / 82.0).unwrap_or(0.0)),
+            Self::PtsPace => match p.pace_score {
+                Some(s) => if rate { format!("{:.3}", s.pace_82 / 82.0) } else { format!("{:.1}", s.pace_82) },
+                None    => "—".to_owned(),
+            },
+            Self::Ppg => match p.pace_score {
+                Some(s) => format!("{:.3}", s.pace_82 / 82.0),
+                None    => "—".to_owned(),
+            },
+            Self::GPace => match p.pace_score {
+                Some(s) => if rate { format!("{:.3}", s.goals_per_82 / 82.0) } else { format!("{:.1}", s.goals_per_82) },
+                None    => "—".to_owned(),
+            },
+            Self::Gpg => match p.pace_score {
+                Some(s) => format!("{:.3}", s.goals_per_82 / 82.0),
+                None    => "—".to_owned(),
+            },
             Self::Pts     => p.season_points.to_string(),
             Self::Goals   => p.season_goals.to_string(),
             Self::Assists => p.season_assists.to_string(),
@@ -283,6 +289,13 @@ pub struct LeadersArgs {
 pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
     let metric = SortMetric::parse(&args.sort)?;
 
+    // Guard: ppg-min > 5.0 almost certainly means the user passed pts/82 instead of PPG
+    if let Some(ppg) = args.ppg_min {
+        if ppg > 5.0 {
+            eprintln!("  Hint: --ppg-min expects points-per-game (e.g. 0.80), not per-82 pace. Did you mean --ppg-min {:.2}?", ppg / 82.0);
+        }
+    }
+
     // Load player pool — single season or N-season aggregate
     let all_players: Vec<Player> = if args.seasons > 1 {
         aggregate::load_aggregate_players(args.seasons as usize)
@@ -340,6 +353,12 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
     // Hint when contract filter returns nothing — likely no contract data fetched
     if wants_contract && matched.is_empty() {
         eprintln!("  Hint: no contract data found. Run `icelines fetch contracts` to enable UFA/RFA/ELC filtering.");
+    }
+    // Nationality hint — bad ISO code returns silent empty
+    if matched.is_empty() {
+        if let Some(ref nats) = filter.nationalities {
+            eprintln!("  Hint: no players found for nationality code(s) {:?}. Use ISO-3166 alpha-3 (e.g. CAN, USA, SWE, FIN, RUS, CZE, SVK, DEU).", nats);
+        }
     }
 
     // Improvement sort requires the Y/Y delta map — handle before generic sort
@@ -660,6 +679,9 @@ pub async fn run_compare(
     } else if let Some(p2_name) = player2 {
         let p1 = find_player(&players, &player1)?;
         let p2 = find_player(&players, &p2_name)?;
+        if p1.name_normalized == p2.name_normalized {
+            eprintln!("  Note: both sides resolved to the same player ({}).", p1.full_name);
+        }
         print_head_to_head(p1, p2);
         Ok(())
     } else {

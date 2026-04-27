@@ -347,7 +347,7 @@ pub enum QuerySubcommand {
         #[arg(long)]
         draft_year: Option<u16>,
         /// Draft round (1–7)
-        #[arg(long)]
+        #[arg(long = "draft-round")]
         round: Option<u8>,
         /// Maximum overall draft pick number
         #[arg(long)]
