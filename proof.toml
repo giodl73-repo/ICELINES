@@ -1,0 +1,56 @@
+[meta]
+name    = "IceLines"
+description = "NHL analytics CLI — documentation validation"
+
+[files]
+include = ["**/*.md"]
+exclude = [
+    "CHANGELOG.md",
+    "_archive/**",
+    "src/target/**",
+    "data/**",
+]
+root = true
+
+[ascii_box]
+enabled          = true
+tolerance        = 0
+code_blocks_only = true
+
+[ascii_flow]
+enabled = true
+
+[ascii_tree]
+enabled = true
+
+[markdown]
+enabled = true
+max_h1  = 1
+
+# ── Section schemas ────────────────────────────────────────────────────────────
+
+[[section_schemas]]
+paths = ["docs/guides/**/*.md"]
+required_h2_all = ["Usage", "Examples"]
+
+[[section_schemas]]
+paths = ["design/specs/**/*.md"]
+required_h2_all = ["Purpose"]
+
+[[section_schemas]]
+paths = ["src/guides/**/*.source.md"]
+required_h2_all = ["Usage"]
+
+# ── Table schemas ──────────────────────────────────────────────────────────────
+
+[[markdown_table.table_schemas]]
+heading = "Sort metrics"
+required_columns = ["Metric key", "Description"]
+
+[[markdown_table.table_schemas]]
+heading = "Filter flags"
+required_columns = ["Flag", "Description"]
+
+[[markdown_table.table_schemas]]
+heading = "Commands"
+required_columns = ["Command", "Description"]
