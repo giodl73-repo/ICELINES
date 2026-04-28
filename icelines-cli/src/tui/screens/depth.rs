@@ -131,12 +131,21 @@ pub fn render_team(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
         if bucket.len() < 4 {
             bucket.push(p);
         } else {
-            // Primary slot full — spill to least-populated forward position
-            let spill = [Position::LeftWing, Position::Center, Position::RightWing]
-                .iter()
-                .min_by_key(|&&pos| fwd_buckets.get(&pos).map_or(0, |v| v.len()))
-                .copied()
-                .unwrap_or(p.position);
+            // Primary slot full — spill to natural wing based on shooting hand,
+            // fall back to least-populated if natural wing is also full.
+            let natural = match p.shoots_catches.as_deref() {
+                Some("R") => Position::RightWing,
+                _         => Position::LeftWing,  // lefty or unknown → LW
+            };
+            let spill = if fwd_buckets.get(&natural).map_or(0, |v| v.len()) < 4 {
+                natural
+            } else {
+                [Position::LeftWing, Position::Center, Position::RightWing]
+                    .iter()
+                    .min_by_key(|&&pos| fwd_buckets.get(&pos).map_or(0, |v| v.len()))
+                    .copied()
+                    .unwrap_or(p.position)
+            };
             fwd_buckets.entry(spill).or_default().push(p);
         }
     }
