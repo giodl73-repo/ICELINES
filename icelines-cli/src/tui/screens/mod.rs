@@ -30,9 +30,10 @@ pub fn render(f: &mut Frame, app: &App) {
         Screen::Queries         => queries::render(f, app, chunks[1]),
         Screen::Tonight         => misc::render_tonight(f, chunks[1]),
         Screen::Projections     => misc::render_projections(f, app, chunks[1]),
-        Screen::Groups          => misc::render_groups(f, app, chunks[1]),
-        Screen::Fetch           => misc::render_fetch(f, app, chunks[1]),
-        Screen::Help            => home::render(f, app, chunks[1]),
+        Screen::Groups              => misc::render_groups(f, app, chunks[1]),
+        Screen::GroupDetail(name)   => misc::render_group_members(f, app, chunks[1], name),
+        Screen::Fetch               => misc::render_fetch(f, app, chunks[1]),
+        Screen::Help                => home::render(f, app, chunks[1]),
     }
 
     f.render_widget(
@@ -54,13 +55,14 @@ pub fn render(f: &mut Frame, app: &App) {
 }
 
 fn render_nav(f: &mut Frame, app: &App, area: Rect) {
+    // Order matches Tab cycle: Home→Queries→Projections→Tonight→Groups→Fetch+Install
     let tabs: &[(&str, Screen)] = &[
-        ("League",      Screen::Home),
-        ("/Search",     Screen::Search),
-        ("Queries",     Screen::Queries),
-        ("Tonight",     Screen::Tonight),
-        ("Projections", Screen::Projections),
-        ("Groups",      Screen::Groups),
+        ("League",        Screen::Home),
+        ("/Search",       Screen::Search),
+        ("Queries",       Screen::Queries),
+        ("Projections",   Screen::Projections),
+        ("Tonight",       Screen::Tonight),
+        ("Groups",        Screen::Groups),
         ("Fetch+Install", Screen::Fetch),
     ];
 

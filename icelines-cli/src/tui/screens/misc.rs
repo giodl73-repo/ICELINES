@@ -107,10 +107,12 @@ pub fn render_projections(f: &mut Frame, app: &App, area: Rect) {
 
 // ── Groups ────────────────────────────────────────────────────────────────────
 
+/// Which group is "open" for member viewing — stored in app.selected
+/// When selected >= group count, we're in group-list view (default)
 pub fn render_groups(f: &mut Frame, app: &App, area: Rect) {
     let block = Block::default()
         .borders(Borders::ALL)
-        .title(" Player Watchlists & Groups ");
+        .title(" Groups — ↑↓ select · Enter view members · Esc back ");
     let inner = block.inner(area);
     f.render_widget(block, area);
 
@@ -160,9 +162,65 @@ pub fn render_groups(f: &mut Frame, app: &App, area: Rect) {
 
     lines.push(Line::from(""));
     lines.push(Line::styled(
-        "  Manage: icelines group create/add/remove/show/delete",
+        "  Enter: view members  ·  manage via icelines group <cmd>",
         Style::default().fg(Color::DarkGray),
     ));
+
+    f.render_widget(Paragraph::new(lines), inner);
+}
+
+/// Show members of the selected group (called from app.rs when Enter is pressed on Groups).
+pub fn render_group_members(f: &mut Frame, app: &App, area: Rect, group_name: &str) {
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .title(format!(" {} — Esc to go back ", group_name));
+    let inner = block.inner(area);
+    f.render_widget(block, area);
+
+    let members = crate::db::GroupDb::open()
+        .ok()
+        .and_then(|db| db.list_members(group_name).ok())
+        .unwrap_or_default();
+
+    if members.is_empty() {
+        let lines = vec![
+            Line::from(""),
+            Line::from("  This group is empty."),
+            Line::from(""),
+            Line::styled(
+                format!("  icelines group add \"{}\" \"McDavid\"", group_name),
+                Style::default().fg(Color::Cyan),
+            ),
+        ];
+        f.render_widget(Paragraph::new(lines), inner);
+        return;
+    }
+
+    let dim = Style::default().fg(Color::DarkGray);
+    let mut lines = vec![
+        Line::styled(format!("  {:<24} {:<5} {:<4} {:>8}", "Player", "Team", "Pos", "Pts/82"), dim),
+        Line::styled(format!("  {}", "─".repeat(46)), dim),
+    ];
+
+    for (i, norm) in members.iter().enumerate() {
+        let player = app.players.iter().find(|p| p.name_normalized.contains(norm.as_str()));
+        let style = if i == app.selected {
+            Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
+        } else {
+            Style::default()
+        };
+        let row = match player {
+            Some(p) => {
+                let proj = p.pace_score.map(|s| format!("{:.1}", s.pace_82)).unwrap_or_else(|| "—".to_owned());
+                let name = p.full_name.chars().take(24).collect::<String>();
+                format!("  {:<24} {:<5} {:<4} {:>8}", name, p.team.as_str(), p.position.abbreviation(), proj)
+            }
+            None => format!("  {}  (not in current data)", norm),
+        };
+        lines.push(Line::styled(row, style));
+    }
+    lines.push(Line::from(""));
+    lines.push(Line::styled(format!("  {} member(s)", members.len()), dim));
 
     f.render_widget(Paragraph::new(lines), inner);
 }

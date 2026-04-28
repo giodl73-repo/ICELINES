@@ -85,7 +85,13 @@ impl GroupDb {
             .context("set WAL mode")?;
 
         run_migrations(&conn)?;
-        Ok(Self { conn })
+        let db = Self { conn };
+        // Seed a default "Favorites" group so users have a group to add players to immediately.
+        let _ = db.conn.execute(
+            "INSERT OR IGNORE INTO groups (name, description, created_at) VALUES ('Favorites', 'My favorite players', datetime('now'))",
+            [],
+        );
+        Ok(db)
     }
 
     /// Open an in-memory database for unit tests.

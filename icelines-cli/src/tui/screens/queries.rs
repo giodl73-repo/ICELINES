@@ -144,6 +144,21 @@ fn col_label(sort: &str) -> &'static str {
 // ── Render ────────────────────────────────────────────────────────────────────
 
 pub fn render(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
+    use crate::tui::app::QueryMode;
+
+    // Show save/load overlay instead of results when in those modes
+    match app.query_mode {
+        QueryMode::SaveName => {
+            render_save_prompt(f, app, area);
+            return;
+        }
+        QueryMode::LoadList => {
+            render_load_list(f, app, area);
+            return;
+        }
+        QueryMode::Build => {}
+    }
+
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Length(30), Constraint::Min(0)])
@@ -151,6 +166,61 @@ pub fn render(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
 
     render_controls(f, app, chunks[0]);
     render_results(f, app, chunks[1]);
+}
+
+fn render_save_prompt(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
+
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .title(" Save Query — type a name, Enter to save, Esc to cancel ");
+    let inner = block.inner(area);
+    f.render_widget(block, area);
+
+    let dim = Style::default().fg(Color::DarkGray);
+    let lines = vec![
+        Line::from(""),
+        Line::from("  Name your query:"),
+        Line::from(""),
+        Line::styled(
+            format!("  ▶ {}▌", app.query_save_name),
+            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+        ),
+        Line::from(""),
+        Line::styled("  Enter = save · Esc = cancel", dim),
+    ];
+    f.render_widget(Paragraph::new(lines), inner);
+}
+
+fn render_load_list(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .title(" Saved Queries — ↑↓ select · Enter to load · Esc to cancel ");
+    let inner = block.inner(area);
+    f.render_widget(block, area);
+
+    let dim = Style::default().fg(Color::DarkGray);
+
+    if app.query_saved_list.is_empty() {
+        let lines = vec![
+            Line::from(""),
+            Line::from("  No saved queries yet."),
+            Line::from(""),
+            Line::styled("  Build a query, then press s to save.", dim),
+        ];
+        f.render_widget(Paragraph::new(lines), inner);
+        return;
+    }
+
+    let items: Vec<ListItem> = app.query_saved_list.iter().enumerate().map(|(i, (name, _))| {
+        let style = if i == app.selected {
+            Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
+        } else {
+            Style::default()
+        };
+        ListItem::new(Line::styled(format!("  {}", name), style))
+    }).collect();
+
+    f.render_widget(List::new(items), inner);
 }
 
 fn render_controls(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
@@ -179,8 +249,11 @@ fn render_controls(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
 
     let mut all_items = items;
     all_items.push(ListItem::new(Line::from("")));
-    all_items.push(ListItem::new(Line::styled(" Enter: open player", dim)));
-    all_items.push(ListItem::new(Line::styled(" r: reset all filters", dim)));
+    all_items.push(ListItem::new(Line::from("")));
+    all_items.push(ListItem::new(Line::styled(" s  save this query", Style::default().fg(Color::Green))));
+    all_items.push(ListItem::new(Line::styled(" l  load saved query", Style::default().fg(Color::Green))));
+    all_items.push(ListItem::new(Line::styled(" Enter  player card", dim)));
+    all_items.push(ListItem::new(Line::styled(" r  reset filters", dim)));
 
     f.render_widget(List::new(all_items), inner);
 }

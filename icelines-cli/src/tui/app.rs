@@ -18,8 +18,9 @@ pub enum Screen {
     Search,
     Tonight,
     Projections,
-    Queries,          // interactive query builder
+    Queries,              // interactive query builder
     Groups,
+    GroupDetail(String),  // viewing members of a named group
     Fetch,
     Help,
 }
@@ -38,6 +39,9 @@ pub struct App {
     pub show_help:           bool,
     // Headshot ASCII cache
     pub headshot_cache:      crate::tui::headshot::HeadshotCache,
+    // Group picker (shown as overlay on player card)
+    pub group_picker_open:   bool,
+    pub group_picker_list:   Vec<String>,  // group names
     // Query manager state
     pub query_fields:        Vec<crate::tui::screens::queries::QueryField>,
     pub query_field_idx:     usize,       // which field row is active
@@ -64,6 +68,8 @@ impl App {
             query_fields:        crate::tui::screens::queries::default_fields(),
             query_field_idx:     0,
             query_result_scroll: 0,
+            group_picker_open:   false,
+            group_picker_list:   Vec::new(),
             headshot_cache:      crate::tui::headshot::HeadshotCache::new(),
             query_mode:          QueryMode::Build,
             query_save_name:     String::new(),
@@ -83,8 +89,11 @@ impl App {
             Action::Quit => return true,
             Action::Help => self.show_help = true,
             Action::Back | Action::Escape => {
-                // If in save/load mode, cancel back to Build mode first
-                if self.screen == Screen::Queries && self.query_mode != QueryMode::Build {
+                if self.group_picker_open {
+                    self.group_picker_open = false;
+                    self.selected = 0;
+                    self.status = "  g = add to group".to_owned();
+                } else if self.screen == Screen::Queries && self.query_mode != QueryMode::Build {
                     self.query_mode = QueryMode::Build;
                     self.status = "Cancelled  ·  s=save  l=load  r=reset".to_owned();
                 } else {
@@ -180,6 +189,23 @@ impl App {
                     self.status = "Refreshing… (run icelines fetch all)".to_owned();
                 }
             }
+            Action::AddToGroup => {
+                if matches!(self.screen, Screen::Player(_)) {
+                    // Load group list and open picker
+                    self.group_picker_list = crate::db::GroupDb::open()
+                        .ok()
+                        .and_then(|db| db.list_groups().ok())
+                        .map(|gs| gs.into_iter().map(|g| g.name).collect())
+                        .unwrap_or_default();
+                    if self.group_picker_list.is_empty() {
+                        self.status = "No groups yet — create one with `icelines group create`".to_owned();
+                    } else {
+                        self.group_picker_open = true;
+                        self.selected = 0;
+                        self.status = "Add to group — ↑↓ select · Enter to add · Esc cancel".to_owned();
+                    }
+                }
+            }
             Action::Install => {
                 if self.screen == Screen::Fetch {
                     use crate::tui::screens::misc::ALL_SEASONS;
@@ -235,6 +261,54 @@ impl App {
                     self.prev_screen = Some(self.screen.clone());
                     self.screen = Screen::Player(idx);
                     self.selected = 0;
+                }
+            }
+            // Group picker overlay (shown on player card)
+            _ if self.group_picker_open => {
+                if let Screen::Player(idx) = self.screen {
+                    if let Some(p) = self.players.get(idx) {
+                        if let Some(group_name) = self.group_picker_list.get(self.selected).cloned() {
+                            let norm = p.name_normalized.clone();
+                            let full = p.full_name.clone();
+                            if let Ok(db) = crate::db::GroupDb::open() {
+                                match db.add_member(&group_name, &norm) {
+                                    Ok(true)  => self.status = format!("✓ Added {} to '{}'", full, group_name),
+                                    Ok(false) => self.status = format!("'{}' is already in '{}'", full, group_name),
+                                    Err(e)    => self.status = format!("Error: {e}"),
+                                }
+                            }
+                            self.group_picker_open = false;
+                            self.selected = 0;
+                        }
+                    }
+                }
+            }
+            Screen::Groups => {
+                // Enter on a group row → open group detail view
+                let groups = crate::db::GroupDb::open()
+                    .ok()
+                    .and_then(|db| db.list_groups().ok())
+                    .unwrap_or_default();
+                if let Some(g) = groups.get(self.selected) {
+                    self.prev_screen = Some(Screen::Groups);
+                    self.screen = Screen::GroupDetail(g.name.clone());
+                    self.selected = 0;
+                }
+            }
+            Screen::GroupDetail(_) => {
+                // Enter on a member row → player card
+                if let Screen::GroupDetail(ref group_name) = self.screen.clone() {
+                    let members = crate::db::GroupDb::open()
+                        .ok()
+                        .and_then(|db| db.list_members(group_name).ok())
+                        .unwrap_or_default();
+                    if let Some(norm) = members.get(self.selected) {
+                        if let Some(global_idx) = self.players.iter().position(|p| p.name_normalized.contains(norm.as_str())) {
+                            self.prev_screen = Some(self.screen.clone());
+                            self.screen = Screen::Player(global_idx);
+                            self.selected = 0;
+                        }
+                    }
                 }
             }
             Screen::Queries => {

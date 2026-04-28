@@ -2,7 +2,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::Line,
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Borders, Clear, List, ListItem, Paragraph},
     Frame,
 };
 use crate::tui::app::App;
@@ -11,7 +11,7 @@ use crate::tui::headshot;
 pub fn render(f: &mut Frame, app: &App, area: Rect, idx: usize) {
     let block = Block::default()
         .borders(Borders::ALL)
-        .title(" Player Card  (Esc: back) ");
+        .title(" Player Card  ·  g: add to group  ·  Esc: back ");
     let inner = block.inner(area);
     f.render_widget(block, area);
 
@@ -35,13 +35,62 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, idx: usize) {
 
     render_headshot(f, app, p, chunks[0]);
     render_stats(f, p, chunks[1]);
+
+    // Group picker overlay — floats over the card when `g` is pressed
+    if app.group_picker_open {
+        render_group_picker(f, app, area);
+    }
+}
+
+fn render_group_picker(f: &mut Frame, app: &App, area: Rect) {
+    // Center a small popup
+    let popup_h = (app.group_picker_list.len() as u16 + 4).min(area.height - 4);
+    let popup_w = 36u16.min(area.width - 4);
+    let popup = Rect::new(
+        area.x + (area.width - popup_w) / 2,
+        area.y + (area.height - popup_h) / 2,
+        popup_w,
+        popup_h,
+    );
+    f.render_widget(Clear, popup);
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .title(" Add to group — ↑↓ · Enter · Esc ")
+        .style(Style::default().fg(Color::Yellow));
+    let inner = block.inner(popup);
+    f.render_widget(block, popup);
+
+    let items: Vec<ListItem> = app.group_picker_list.iter().enumerate().map(|(i, name)| {
+        let style = if i == app.selected {
+            Style::default().fg(Color::Black).bg(Color::Yellow).add_modifier(Modifier::BOLD)
+        } else {
+            Style::default()
+        };
+        ListItem::new(Line::styled(format!("  ★  {}", name), style))
+    }).collect();
+    f.render_widget(List::new(items), inner);
 }
 
 fn render_headshot(f: &mut Frame, app: &App, p: &icelines_core::model::Player, area: Rect) {
     let rows = p.nhl_id.and_then(|id| app.headshot_cache.get(id));
     let lines: Vec<Line> = match rows.as_deref() {
-        None                                      => vec![Line::from("  Fetching…")],
-        Some(r) if headshot::is_loading(r)        => vec![Line::from("  Fetching…")],
+        None => {
+            // headshot_url is None (bundled data) — no fetch triggered, show placeholder
+            let abbr = p.team.as_str();
+            vec![
+                Line::from(""),
+                Line::from(""),
+                Line::from(""),
+                Line::from(format!("  {:^20}", abbr)),
+                Line::from(""),
+                Line::from("  run fetch all"),
+                Line::from("  for player photo"),
+            ]
+        }
+        Some(r) if headshot::is_loading(r) => vec![
+            Line::from(""),
+            Line::from("  downloading…"),
+        ],
         Some(r) if headshot::is_error(r)          => vec![
             Line::from("  ┌──────────────────┐"),
             Line::from("  │                  │"),

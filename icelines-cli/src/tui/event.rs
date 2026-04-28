@@ -17,7 +17,8 @@ pub enum Action {
     Search,
     Tab,
     Refresh,
-    Install,   // 'i' on Fetch+Install screen — install selected season
+    Install,      // 'i' on Fetch+Install screen
+    AddToGroup,   // 'g' on player card — open group picker
     Char(char),
     Backspace,
 }
@@ -51,6 +52,7 @@ fn map_key(k: crossterm::event::KeyEvent) -> Option<Action> {
         Char('/') => Some(Action::Search),
         Char('r') => Some(Action::Refresh),
         Char('i') => Some(Action::Install),
+        Char('g') => Some(Action::AddToGroup),
         Char(c)   => Some(Action::Char(c)),
         Esc       => Some(Action::Escape),
         Backspace => Some(Action::Backspace),
