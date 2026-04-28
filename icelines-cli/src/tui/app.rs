@@ -116,6 +116,32 @@ impl App {
                     self.selected = 0;
                 }
             }
+            Screen::Projections => {
+                // Enter on a projection row → player card
+                // The sorted order matches render order — find the Nth rankable player
+                let mut sorted_indices: Vec<usize> = self.players.iter()
+                    .enumerate()
+                    .filter(|(_, p)| p.pace_score.is_some())
+                    .collect::<Vec<_>>()
+                    .into_iter()
+                    .enumerate()
+                    .map(|(rank_pos, (global_idx, p))| (rank_pos, global_idx, p.pace_score.map(|s| s.pace_82).unwrap_or(0.0)))
+                    .collect::<Vec<_>>()
+                    .into_iter()
+                    .map(|(_, gi, _)| gi)
+                    .collect();
+                // Sort by pace descending (same order as render)
+                sorted_indices.sort_by(|&a, &b| {
+                    let pa = self.players[a].pace_score.map(|s| s.pace_82).unwrap_or(0.0);
+                    let pb = self.players[b].pace_score.map(|s| s.pace_82).unwrap_or(0.0);
+                    pb.partial_cmp(&pa).unwrap_or(std::cmp::Ordering::Equal)
+                });
+                if let Some(&global_idx) = sorted_indices.get(self.selected) {
+                    self.prev_screen = Some(self.screen.clone());
+                    self.screen = Screen::Player(global_idx);
+                    self.selected = 0;
+                }
+            }
             Screen::Search => {
                 // Navigate to player screen for selected search result
                 self.prev_screen = Some(Screen::Search);

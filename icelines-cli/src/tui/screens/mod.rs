@@ -28,7 +28,7 @@ pub fn render(f: &mut Frame, app: &App) {
         Screen::Search          => search::render(f, app, chunks[1]),
         Screen::Tonight         => misc::render_tonight(f, chunks[1]),
         Screen::Projections     => misc::render_projections(f, app, chunks[1]),
-        Screen::Groups          => misc::render_groups(f, chunks[1]),
+        Screen::Groups          => misc::render_groups(f, app, chunks[1]),
         Screen::Fetch           => misc::render_fetch(f, app, chunks[1]),
         Screen::Help            => home::render(f, app, chunks[1]),
     }
@@ -58,7 +58,7 @@ fn render_nav(f: &mut Frame, app: &App, area: Rect) {
         ("Tonight",     Screen::Tonight),
         ("Projections", Screen::Projections),
         ("Groups",      Screen::Groups),
-        ("Fetch",       Screen::Fetch),
+        ("Fetch+Install", Screen::Fetch),
     ];
 
     let mut spans: Vec<Span> = Vec::new();

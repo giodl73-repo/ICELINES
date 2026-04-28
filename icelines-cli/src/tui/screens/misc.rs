@@ -1,10 +1,10 @@
-//! Non-home TUI screens: Tonight, Projections, Groups, Fetch.
+//! TUI screens: Tonight, Projections, Groups, Fetch+Install.
 
 use ratatui::{
-    layout::Rect,
+    layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::Line,
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Borders, List, ListItem, Paragraph},
     Frame,
 };
 use crate::tui::app::App;
@@ -16,16 +16,27 @@ pub fn render_tonight(f: &mut Frame, area: Rect) {
     let inner = block.inner(area);
     f.render_widget(block, area);
 
+    let dim = Style::default().fg(Color::DarkGray);
+    let cmd = Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD);
+
     let lines = vec![
-        Line::from("  Live schedule requires a network call — run in your terminal:"),
         Line::from(""),
-        Line::styled("  icelines tonight", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-        Line::from("  icelines tonight --team EDM"),
+        Line::from("  Tonight's schedule is fetched live from the NHL API."),
+        Line::from("  Run these in your terminal:"),
         Line::from(""),
-        Line::from("  icelines schedule --days 7"),
-        Line::from("  icelines schedule --team SEA --days 3"),
+        Line::styled("  icelines tonight", cmd),
+        Line::styled("  → all games tonight with UTC start times", dim),
         Line::from(""),
-        Line::from("  The NHL API is free — no key required."),
+        Line::styled("  icelines tonight --team EDM", cmd),
+        Line::styled("  → games involving a specific team", dim),
+        Line::from(""),
+        Line::styled("  icelines schedule --days 7", cmd),
+        Line::styled("  → upcoming schedule for the next week", dim),
+        Line::from(""),
+        Line::styled("  icelines schedule --team SEA --days 3", cmd),
+        Line::styled("  → upcoming home/away games for one team", dim),
+        Line::from(""),
+        Line::from("  The NHL public API is free — no key required."),
     ];
     f.render_widget(Paragraph::new(lines), inner);
 }
@@ -35,57 +46,58 @@ pub fn render_tonight(f: &mut Frame, area: Rect) {
 pub fn render_projections(f: &mut Frame, app: &App, area: Rect) {
     let block = Block::default()
         .borders(Borders::ALL)
-        .title(" Top Projections (pts/82) — ↑↓ scroll ");
+        .title(" Top Projections (pts/82)  ↑↓ scroll · Enter: player card ");
     let inner = block.inner(area);
     f.render_widget(block, area);
 
     if app.players.is_empty() {
         let lines = vec![
-            Line::from("  Loading player data…"),
             Line::from(""),
-            Line::from("  Run `icelines fetch all` if data never loads."),
+            Line::from("  Loading player data…"),
+            Line::from("  Run `icelines fetch all` if this persists."),
         ];
         f.render_widget(Paragraph::new(lines), inner);
         return;
     }
 
-    // Sort by pts-pace descending, take top 50
-    let mut sorted: Vec<_> = app.players.iter()
-        .filter(|p| p.pace_score.is_some())
-        .collect();
+    let mut sorted: Vec<_> = app.players.iter().filter(|p| p.pace_score.is_some()).collect();
     sorted.sort_by(|a, b| {
         let sa = a.pace_score.map(|s| s.pace_82).unwrap_or(0.0);
         let sb = b.pace_score.map(|s| s.pace_82).unwrap_or(0.0);
         sb.partial_cmp(&sa).unwrap_or(std::cmp::Ordering::Equal)
     });
 
-    let offset = app.selected.saturating_sub(5).min(sorted.len().saturating_sub(20));
-    let header_style = Style::default().fg(Color::DarkGray);
+    let visible = inner.height.saturating_sub(3) as usize;
+    let offset  = app.selected.saturating_sub(visible / 2).min(sorted.len().saturating_sub(visible));
 
+    let dim = Style::default().fg(Color::DarkGray);
     let mut lines = vec![
         Line::styled(
-            format!("  {:<4} {:<22} {:<5} {:<4} {:>6}  {:>7}", "Rank", "Player", "Team", "Pos", "PPG", "Pts/82"),
-            header_style,
+            format!("  {:<4} {:<22} {:<5} {:<4} {:>6}  {:>7}  {:>5}", "Rank","Player","Team","Pos","PPG","Pts/82","GP"),
+            dim,
         ),
-        Line::styled(format!("  {}", "─".repeat(52)), header_style),
+        Line::styled(format!("  {}", "─".repeat(58)), dim),
     ];
 
-    for (i, p) in sorted.iter().skip(offset).take(inner.height.saturating_sub(3) as usize).enumerate() {
-        let rank   = offset + i + 1;
-        let ppg    = p.pace_score.map(|s| format!("{:.3}", s.pace_82 / 82.0)).unwrap_or_else(|| "—".to_owned());
-        let proj   = p.pace_score.map(|s| format!("{:.1}", s.pace_82)).unwrap_or_else(|| "—".to_owned());
-        let name   = p.full_name.chars().take(22).collect::<String>();
+    for (i, p) in sorted.iter().skip(offset).take(visible).enumerate() {
+        let global_rank = offset + i + 1;
+        let ppg  = p.pace_score.map(|s| format!("{:.3}", s.pace_82 / 82.0)).unwrap_or_else(|| "—".to_owned());
+        let proj = p.pace_score.map(|s| format!("{:.1}", s.pace_82)).unwrap_or_else(|| "—".to_owned());
+        let gp   = p.pace_score.map(|s| s.gp.to_string()).unwrap_or_else(|| "—".to_owned());
+        let name = p.full_name.chars().take(22).collect::<String>();
 
         let style = if offset + i == app.selected {
             Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
-        } else if rank <= 5 {
+        } else if global_rank <= 5 {
             Style::default().fg(Color::Green)
-        } else {
+        } else if global_rank <= 20 {
             Style::default()
+        } else {
+            Style::default().fg(Color::DarkGray)
         };
 
         lines.push(Line::styled(
-            format!("  {:<4} {:<22} {:<5} {:<4} {:>6}  {:>7}", rank, name, p.team.as_str(), p.position.abbreviation(), ppg, proj),
+            format!("  {:<4} {:<22} {:<5} {:<4} {:>6}  {:>7}  {:>5}", global_rank, name, p.team.as_str(), p.position.abbreviation(), ppg, proj, gp),
             style,
         ));
     }
@@ -95,57 +107,194 @@ pub fn render_projections(f: &mut Frame, app: &App, area: Rect) {
 
 // ── Groups ────────────────────────────────────────────────────────────────────
 
-pub fn render_groups(f: &mut Frame, area: Rect) {
-    let block = Block::default().borders(Borders::ALL).title(" Player Groups & Watchlists ");
+pub fn render_groups(f: &mut Frame, app: &App, area: Rect) {
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .title(" Player Watchlists & Groups ");
     let inner = block.inner(area);
     f.render_widget(block, area);
 
-    let lines = vec![
-        Line::from("  Manage player watchlists from your terminal:"),
-        Line::from(""),
-        Line::styled("  icelines group list", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-        Line::from("  icelines group create \"My Watchlist\""),
-        Line::from("  icelines group add \"My Watchlist\" \"McDavid\""),
-        Line::from("  icelines group show \"My Watchlist\""),
-        Line::from("  icelines group delete \"My Watchlist\""),
-        Line::from(""),
-        Line::from("  Groups are persisted in ~/.icelines/icelines.db"),
+    // Load groups synchronously — GroupDb reads are fast (local SQLite)
+    let groups = crate::db::GroupDb::open()
+        .ok()
+        .and_then(|db| db.list_groups().ok())
+        .unwrap_or_default();
+
+    if groups.is_empty() {
+        let dim = Style::default().fg(Color::DarkGray);
+        let cmd = Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD);
+        let lines = vec![
+            Line::from(""),
+            Line::from("  No groups yet. Create one in your terminal:"),
+            Line::from(""),
+            Line::styled("  icelines group create \"My Watchlist\"", cmd),
+            Line::styled("  icelines group add \"My Watchlist\" \"McDavid\"", cmd),
+            Line::styled("  icelines group show \"My Watchlist\"", cmd),
+            Line::from(""),
+            Line::styled("  Groups persist in ~/.icelines/icelines.db", dim),
+        ];
+        f.render_widget(Paragraph::new(lines), inner);
+        return;
+    }
+
+    let mut lines = vec![
+        Line::styled(
+            format!("  {:<24} {:>7}  {}", "Group", "Members", "Description"),
+            Style::default().fg(Color::DarkGray),
+        ),
+        Line::styled(format!("  {}", "─".repeat(60)), Style::default().fg(Color::DarkGray)),
     ];
+
+    for (i, g) in groups.iter().enumerate() {
+        let style = if i == app.selected {
+            Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
+        } else {
+            Style::default()
+        };
+        let desc = g.description.chars().take(28).collect::<String>();
+        lines.push(Line::styled(
+            format!("  {:<24} {:>7}  {}", g.name, g.member_count, desc),
+            style,
+        ));
+    }
+
+    lines.push(Line::from(""));
+    lines.push(Line::styled(
+        "  Manage: icelines group create/add/remove/show/delete",
+        Style::default().fg(Color::DarkGray),
+    ));
+
     f.render_widget(Paragraph::new(lines), inner);
 }
 
-// ── Fetch ─────────────────────────────────────────────────────────────────────
+// ── Fetch + Install ───────────────────────────────────────────────────────────
+
+/// All 38 seasons newest-first (mirrors AVAILABLE_SEASONS in data.rs).
+const ALL_SEASONS: &[(&str, &str)] = &[
+    ("20252026","2025-26 Current"),
+    ("20242025","2024-25"),
+    ("20232024","2023-24"),
+    ("20222023","2022-23"),
+    ("20212022","2021-22"),
+    ("20202021","2020-21 (COVID bubble)"),
+    ("20192020","2019-20"),
+    ("20182019","2018-19"),
+    ("20172018","2017-18"),
+    ("20162017","2016-17"),
+    ("20152016","2015-16 (McDavid rookie)"),
+    ("20142015","2014-15"),
+    ("20132014","2013-14"),
+    ("20122013","2012-13 (lockout-shortened)"),
+    ("20112012","2011-12"),
+    ("20102011","2010-11"),
+    ("20092010","2009-10"),
+    ("20082009","2008-09"),
+    ("20072008","2007-08"),
+    ("20062007","2006-07"),
+    ("20052006","2005-06 (Ovechkin/Crosby rookies)"),
+    ("20032004","2003-04"),
+    ("20022003","2002-03"),
+    ("20012002","2001-02"),
+    ("20002001","2000-01"),
+    ("19992000","1999-2000"),
+    ("19981999","1998-99"),
+    ("19971998","1997-98"),
+    ("19961997","1996-97"),
+    ("19951996","1995-96"),
+    ("19941995","1994-95 (lockout-shortened)"),
+    ("19931994","1993-94"),
+    ("19921993","1992-93"),
+    ("19911992","1991-92"),
+    ("19901991","1990-91"),
+    ("19891990","1989-90"),
+    ("19881989","1988-89"),
+    ("19871988","1987-88 (Gretzky to LA)"),
+];
+
+fn season_installed(season: &str) -> bool {
+    let home = std::env::var("USERPROFILE")
+        .or_else(|_| std::env::var("HOME"))
+        .unwrap_or_default();
+    let bundle_path = std::path::Path::new(&home)
+        .join(".icelines/seasons")
+        .join(season)
+        .join(format!("bundle-{season}/bios.json"));
+    bundle_path.exists()
+}
 
 pub fn render_fetch(f: &mut Frame, app: &App, area: Rect) {
-    let block = Block::default().borders(Borders::ALL).title(" Data & Fetch Status ");
-    let inner = block.inner(area);
-    f.render_widget(block, area);
+    // Split: top section (fetch commands) | bottom section (season list)
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(7), Constraint::Min(0)])
+        .split(area);
+
+    // ── Top: Fetch commands ──────────────────────────────────────────────────
+    let fetch_block = Block::default()
+        .borders(Borders::ALL)
+        .title(" Fetch Commands ");
+    let fetch_inner = fetch_block.inner(chunks[0]);
+    f.render_widget(fetch_block, chunks[0]);
 
     let player_status = if app.players.is_empty() {
-        "Loading…".to_owned()
+        "loading…".to_owned()
     } else {
-        format!("{} players loaded from bundled/snapshot data", app.players.len())
+        format!("{} players loaded", app.players.len())
     };
 
-    let lines = vec![
-        Line::from(format!("  Status: {}", player_status)),
+    let cmd = Style::default().fg(Color::Cyan);
+    let dim = Style::default().fg(Color::DarkGray);
+    let fetch_lines = vec![
+        Line::styled(format!("  Data: {}", player_status), dim),
         Line::from(""),
-        Line::styled("  Fetch commands:", Style::default().fg(Color::DarkGray).add_modifier(Modifier::BOLD)),
-        Line::from(""),
-        Line::styled("  icelines fetch all", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-        Line::from("    → rosters + stats from NHL API (~5 min)"),
-        Line::from(""),
-        Line::styled("  icelines fetch realtime", Style::default().fg(Color::Cyan)),
-        Line::from("    → hits, blocks, giveaways, takeaways, PIM"),
-        Line::from(""),
-        Line::styled("  icelines fetch money-puck", Style::default().fg(Color::Cyan)),
-        Line::from("    → xG, CF%, FF%, xGF% from MoneyPuck (free)"),
-        Line::from(""),
-        Line::styled("  icelines data install --seasons 38", Style::default().fg(Color::Cyan)),
-        Line::from("    → full history 1987–2025 from GitHub Releases"),
-        Line::from(""),
-        Line::styled("  icelines snapshot list", Style::default().fg(Color::Cyan)),
-        Line::from("    → all cached snapshots with integrity hashes"),
+        Line::styled("  icelines fetch all", cmd),
+        Line::styled("  → rosters + stats from NHL API (~5 min, run in terminal)", dim),
+        Line::styled("  icelines fetch realtime  |  icelines fetch money-puck", cmd),
     ];
-    f.render_widget(Paragraph::new(lines), inner);
+    f.render_widget(Paragraph::new(fetch_lines), fetch_inner);
+
+    // ── Bottom: Season install list ──────────────────────────────────────────
+    let install_block = Block::default()
+        .borders(Borders::ALL)
+        .title(" Season History — ↑↓ select  ·  installed: ✓  ·  run `icelines data install --season YYYYZZZZ` ");
+    let install_inner = install_block.inner(chunks[1]);
+    f.render_widget(install_block, chunks[1]);
+
+    let visible = install_inner.height as usize;
+    let offset  = app.selected.saturating_sub(visible / 2).min(ALL_SEASONS.len().saturating_sub(visible));
+
+    let items: Vec<ListItem> = ALL_SEASONS.iter()
+        .enumerate()
+        .skip(offset)
+        .take(visible)
+        .map(|(i, (season_id, label))| {
+            let installed = season_installed(season_id);
+            let marker = if installed { "✓" } else { "○" };
+            let marker_style = if installed {
+                Style::default().fg(Color::Green)
+            } else {
+                Style::default().fg(Color::DarkGray)
+            };
+
+            let row_style = if i == app.selected {
+                Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
+            } else if installed {
+                Style::default()
+            } else {
+                Style::default().fg(Color::DarkGray)
+            };
+
+            let install_hint = if i == app.selected && !installed {
+                format!("  → icelines data install --season {season_id}")
+            } else {
+                String::new()
+            };
+
+            let text = format!("  {} {:<10}  {}{}", marker, season_id, label, install_hint);
+            ListItem::new(Line::styled(text, row_style))
+                .style(if installed && i != app.selected { marker_style } else { row_style })
+        })
+        .collect();
+
+    f.render_widget(List::new(items), install_inner);
 }
