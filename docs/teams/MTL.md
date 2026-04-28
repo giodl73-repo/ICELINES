@@ -14,20 +14,20 @@
 </tr>
 <tr>
 <td class="line-num-cell">Line 2</td>
-<td class="player-cell solid"><span class="player-name">Alexandre Texier</span><span class="player-gp">51gp &nbsp;·&nbsp; <b>0.41</b> pts/gp &nbsp;·&nbsp; 0.16 g/gp &nbsp;·&nbsp; 34 proj</span><span class="player-fit-label">~ avg L3.0</span></td>
-<td class="player-cell stretch"><span class="player-name">Alex Newhook</span><span class="player-gp">42gp &nbsp;·&nbsp; <b>0.60</b> pts/gp &nbsp;·&nbsp; 0.31 g/gp &nbsp;·&nbsp; 49 proj</span><span class="player-fit-label">↓ avg L3.3 — overextended</span></td>
+<td class="player-cell solid"><span class="player-name">Alexandre Texier</span><span class="player-gp">51gp &nbsp;·&nbsp; <b>0.41</b> pts/gp &nbsp;·&nbsp; 0.16 g/gp &nbsp;·&nbsp; 34 proj</span><span class="player-fit-label">~ avg L2.9</span></td>
+<td class="player-cell solid"><span class="player-name">Alex Newhook</span><span class="player-gp">42gp &nbsp;·&nbsp; <b>0.60</b> pts/gp &nbsp;·&nbsp; 0.31 g/gp &nbsp;·&nbsp; 49 proj</span><span class="player-fit-label">~ avg L3.2</span></td>
 <td class="player-cell fit"><span class="player-name">Ivan Demidov</span><span class="player-gp">82gp &nbsp;·&nbsp; <b>0.76</b> pts/gp &nbsp;·&nbsp; 0.23 g/gp &nbsp;·&nbsp; 62 proj</span><span class="player-fit-label">★ avg L1.7</span></td>
 </tr>
 <tr>
 <td class="line-num-cell">Line 3</td>
-<td class="player-cell fit"><span class="player-name">Samuel Blais</span><span class="player-gp">21gp &nbsp;·&nbsp; <b>0.38</b> pts/gp &nbsp;·&nbsp; 0.14 g/gp &nbsp;·&nbsp; 31 proj</span><span class="player-fit-label">★ avg L3.2</span></td>
-<td class="player-cell stretch"><span class="player-name">Oliver Kapanen</span><span class="player-gp">82gp &nbsp;·&nbsp; <b>0.45</b> pts/gp &nbsp;·&nbsp; 0.27 g/gp &nbsp;·&nbsp; 37 proj</span><span class="player-fit-label">↓ avg L4.3 — overextended</span></td>
-<td class="player-cell fit"><span class="player-name">Zachary Bolduc</span><span class="player-gp">78gp &nbsp;·&nbsp; <b>0.38</b> pts/gp &nbsp;·&nbsp; 0.15 g/gp &nbsp;·&nbsp; 32 proj</span><span class="player-fit-label">★ avg L3.4</span></td>
+<td class="player-cell fit"><span class="player-name">Samuel Blais</span><span class="player-gp">21gp &nbsp;·&nbsp; <b>0.38</b> pts/gp &nbsp;·&nbsp; 0.14 g/gp &nbsp;·&nbsp; 31 proj</span><span class="player-fit-label">★ avg L3.1</span></td>
+<td class="player-cell solid"><span class="player-name">Oliver Kapanen</span><span class="player-gp">82gp &nbsp;·&nbsp; <b>0.45</b> pts/gp &nbsp;·&nbsp; 0.27 g/gp &nbsp;·&nbsp; 37 proj</span><span class="player-fit-label">~ avg L4.2</span></td>
+<td class="player-cell fit"><span class="player-name">Zachary Bolduc</span><span class="player-gp">78gp &nbsp;·&nbsp; <b>0.38</b> pts/gp &nbsp;·&nbsp; 0.15 g/gp &nbsp;·&nbsp; 32 proj</span><span class="player-fit-label">★ avg L3.3</span></td>
 </tr>
 <tr>
 <td class="line-num-cell">Line 4</td>
 <td class="player-cell empty"><span class="player-name">—</span></td>
-<td class="player-cell solid"><span class="player-name">Kirby Dach</span><span class="player-gp">37gp &nbsp;·&nbsp; <b>0.41</b> pts/gp &nbsp;·&nbsp; 0.22 g/gp &nbsp;·&nbsp; 33 proj</span><span class="player-fit-label">~ avg L4.7</span></td>
+<td class="player-cell solid"><span class="player-name">Kirby Dach</span><span class="player-gp">37gp &nbsp;·&nbsp; <b>0.41</b> pts/gp &nbsp;·&nbsp; 0.22 g/gp &nbsp;·&nbsp; 33 proj</span><span class="player-fit-label">~ avg L4.6</span></td>
 <td class="player-cell fit"><span class="player-name">Josh Anderson</span><span class="player-gp">72gp &nbsp;·&nbsp; <b>0.32</b> pts/gp &nbsp;·&nbsp; 0.19 g/gp &nbsp;·&nbsp; 26 proj</span><span class="player-fit-label">★ avg L3.5</span></td>
 </tr>
 </tbody></table></div>
@@ -45,13 +45,13 @@
 </tr>
 <tr>
 <td class="pair-num-cell">Pair 2</td>
-<td class="player-cell fit"><span class="player-name">Mike Matheson</span><span class="player-gp">78gp &nbsp;·&nbsp; <b>0.47</b> pts/gp &nbsp;·&nbsp; 0.09 g/gp &nbsp;·&nbsp; 39 proj</span><span class="player-fit-label">★ avg L2.4</span></td>
-<td class="player-cell fit"><span class="player-name">Alexandre Carrier</span><span class="player-gp">73gp &nbsp;·&nbsp; <b>0.30</b> pts/gp &nbsp;·&nbsp; 0.10 g/gp &nbsp;·&nbsp; 25 proj</span><span class="player-fit-label">★ avg L4.3</span></td>
+<td class="player-cell fit"><span class="player-name">Mike Matheson</span><span class="player-gp">78gp &nbsp;·&nbsp; <b>0.47</b> pts/gp &nbsp;·&nbsp; 0.09 g/gp &nbsp;·&nbsp; 39 proj</span><span class="player-fit-label">★ avg L2.3</span></td>
+<td class="player-cell fit"><span class="player-name">Alexandre Carrier</span><span class="player-gp">73gp &nbsp;·&nbsp; <b>0.30</b> pts/gp &nbsp;·&nbsp; 0.10 g/gp &nbsp;·&nbsp; 25 proj</span><span class="player-fit-label">★ avg L4.2</span></td>
 </tr>
 <tr>
 <td class="pair-num-cell">Pair 3</td>
-<td class="player-cell fit"><span class="player-name">Kaiden Guhle</span><span class="player-gp">39gp &nbsp;·&nbsp; <b>0.28</b> pts/gp &nbsp;·&nbsp; 0.05 g/gp &nbsp;·&nbsp; 23 proj</span><span class="player-fit-label">★ avg L4.5</span></td>
-<td class="player-cell fit"><span class="player-name">Jayden Struble</span><span class="player-gp">59gp &nbsp;·&nbsp; <b>0.20</b> pts/gp &nbsp;·&nbsp; 0.03 g/gp &nbsp;·&nbsp; 17 proj</span><span class="player-fit-label">★ avg L6.4</span></td>
+<td class="player-cell fit"><span class="player-name">Kaiden Guhle</span><span class="player-gp">39gp &nbsp;·&nbsp; <b>0.28</b> pts/gp &nbsp;·&nbsp; 0.05 g/gp &nbsp;·&nbsp; 23 proj</span><span class="player-fit-label">★ avg L4.3</span></td>
+<td class="player-cell fit"><span class="player-name">Jayden Struble</span><span class="player-gp">59gp &nbsp;·&nbsp; <b>0.20</b> pts/gp &nbsp;·&nbsp; 0.03 g/gp &nbsp;·&nbsp; 17 proj</span><span class="player-fit-label">★ avg L6.2</span></td>
 </tr>
 </tbody></table></div>
 

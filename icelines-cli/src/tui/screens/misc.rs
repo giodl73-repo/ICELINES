@@ -1,4 +1,4 @@
-//! TUI screens: Tonight, Projections, Groups, Fetch+Install.
+//! TUI screens: Tonight/Scores, Projections, Groups, Fetch+Install, Schedule, Playoffs, Admin.
 
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -382,4 +382,91 @@ pub fn render_fetch(f: &mut Frame, app: &App, area: Rect) {
         .collect();
 
     f.render_widget(List::new(items), install_inner);
+}
+
+// ── Schedule (stub) ───────────────────────────────────────────────────────────
+
+pub fn render_schedule_stub(f: &mut Frame, area: Rect) {
+    let block = Block::default().borders(Borders::ALL).title(" Schedule ");
+    let inner = block.inner(area);
+    f.render_widget(block, area);
+
+    let dim = Style::default().fg(Color::DarkGray);
+    let cmd = Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD);
+    let lines = vec![
+        Line::from(""),
+        Line::from("  Full season schedule — coming in v2."),
+        Line::from(""),
+        Line::styled("  In the meantime, use the CLI:", dim),
+        Line::from(""),
+        Line::styled("  icelines tonight", cmd),
+        Line::styled("  icelines schedule --days 7", cmd),
+        Line::styled("  icelines schedule --team SEA --days 14", cmd),
+        Line::from(""),
+        Line::styled("  Planned: team filter, matchup search (NYR WSH), date nav.", dim),
+    ];
+    f.render_widget(Paragraph::new(lines), inner);
+}
+
+// ── Playoffs (stub) ───────────────────────────────────────────────────────────
+
+pub fn render_playoffs_stub(f: &mut Frame, area: Rect) {
+    let block = Block::default().borders(Borders::ALL).title(" Playoffs ");
+    let inner = block.inner(area);
+    f.render_widget(block, area);
+
+    let dim = Style::default().fg(Color::DarkGray);
+    let hi  = Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD);
+    let lines = vec![
+        Line::from(""),
+        Line::styled("  Playoff bracket + series tracker — coming in v2.", hi),
+        Line::from(""),
+        Line::styled("  Will include:", dim),
+        Line::styled("    · Live bracket with round-by-round progression", dim),
+        Line::styled("    · Series detail: game log, leading scorers", dim),
+        Line::styled("    · Historical Stanley Cup campaigns (time-travel with y)", dim),
+        Line::styled("    · Projected playoff picture during regular season", dim),
+    ];
+    f.render_widget(Paragraph::new(lines), inner);
+}
+
+// ── Admin overlay ─────────────────────────────────────────────────────────────
+
+pub fn render_admin(f: &mut Frame, app: &App, area: Rect) {
+    use crate::tui::loader::InstallPhase;
+
+    let dim  = Style::default().fg(Color::DarkGray);
+    let cmd  = Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD);
+    let hi   = Style::default().fg(Color::White);
+
+    let phase_line = match app.install_state.phase() {
+        InstallPhase::Idle =>
+            Line::styled("  No install in progress.", dim),
+        InstallPhase::Downloading(ref s) =>
+            Line::styled(format!("  Installing {s}…"), Style::default().fg(Color::Cyan)),
+        InstallPhase::Done(ref s, kb) =>
+            Line::styled(format!("  ✓ {s} installed ({kb} KB)"), Style::default().fg(Color::Green)),
+        InstallPhase::Error(_, ref msg) =>
+            Line::styled(format!("  ✗ Failed: {msg}"), Style::default().fg(Color::Red)),
+    };
+
+    let lines = vec![
+        Line::from(""),
+        Line::styled("  Admin commands (run in terminal):", hi),
+        Line::from(""),
+        Line::styled("  icelines fetch all", cmd),
+        Line::styled("    → refresh all NHL data", dim),
+        Line::from(""),
+        Line::styled("  icelines data list", cmd),
+        Line::styled("    → show installed seasons", dim),
+        Line::from(""),
+        Line::styled("  icelines data install 20032004", cmd),
+        Line::styled("    → install a historical season", dim),
+        Line::from(""),
+        Line::styled("  ─────────────────────────────", dim),
+        phase_line,
+        Line::from(""),
+        Line::styled("  Esc to close", dim),
+    ];
+    f.render_widget(Paragraph::new(lines), area);
 }

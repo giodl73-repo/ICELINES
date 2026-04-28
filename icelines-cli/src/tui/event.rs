@@ -64,8 +64,6 @@ fn map_key(k: crossterm::event::KeyEvent) -> Option<Action> {
         Char('4') => Some(Action::GoToTab(3)),
         Char('5') => Some(Action::GoToTab(4)),
         Char('6') => Some(Action::GoToTab(5)),
-        Char('7') => Some(Action::GoToTab(6)),
-        Char('8') => Some(Action::GoToTab(7)),
         Char(' ') => Some(Action::Space),
         Char(c)   => Some(Action::Char(c)),
         Esc       => Some(Action::Escape),

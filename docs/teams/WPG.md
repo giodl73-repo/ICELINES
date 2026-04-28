@@ -16,18 +16,18 @@
 <td class="line-num-cell">Line 2</td>
 <td class="player-cell stretch"><span class="player-name">Alex Iafallo</span><span class="player-gp">79gp &nbsp;·&nbsp; <b>0.37</b> pts/gp &nbsp;·&nbsp; 0.16 g/gp &nbsp;·&nbsp; 30 proj</span><span class="player-fit-label">↓ avg L3.3 — overextended</span></td>
 <td class="player-cell fit"><span class="player-name">Gabriel Vilardi</span><span class="player-gp">82gp &nbsp;·&nbsp; <b>0.84</b> pts/gp &nbsp;·&nbsp; 0.37 g/gp &nbsp;·&nbsp; 69 proj</span><span class="player-fit-label">★ avg L1.9</span></td>
-<td class="player-cell stretch"><span class="player-name">Isak Rosen</span><span class="player-gp">37gp &nbsp;·&nbsp; <b>0.27</b> pts/gp &nbsp;·&nbsp; 0.16 g/gp &nbsp;·&nbsp; 22 proj</span><span class="player-fit-label">↓ avg L3.9 — overextended</span></td>
+<td class="player-cell stretch"><span class="player-name">Isak Rosen</span><span class="player-gp">37gp &nbsp;·&nbsp; <b>0.27</b> pts/gp &nbsp;·&nbsp; 0.16 g/gp &nbsp;·&nbsp; 22 proj</span><span class="player-fit-label">↓ avg L3.8 — overextended</span></td>
 </tr>
 <tr>
 <td class="line-num-cell">Line 3</td>
-<td class="player-cell solid"><span class="player-name">Cole Koepke</span><span class="player-gp">66gp &nbsp;·&nbsp; <b>0.26</b> pts/gp &nbsp;·&nbsp; 0.12 g/gp &nbsp;·&nbsp; 21 proj</span><span class="player-fit-label">~ avg L4.0</span></td>
-<td class="player-cell solid"><span class="player-name">Cole Perfetti</span><span class="player-gp">68gp &nbsp;·&nbsp; <b>0.47</b> pts/gp &nbsp;·&nbsp; 0.18 g/gp &nbsp;·&nbsp; 39 proj</span><span class="player-fit-label">~ avg L3.9</span></td>
-<td class="player-cell solid"><span class="player-name">Gustav Nyquist</span><span class="player-gp">51gp &nbsp;·&nbsp; <b>0.24</b> pts/gp &nbsp;·&nbsp; 0.02 g/gp &nbsp;·&nbsp; 19 proj</span><span class="player-fit-label">~ avg L4.1</span></td>
+<td class="player-cell solid"><span class="player-name">Cole Koepke</span><span class="player-gp">66gp &nbsp;·&nbsp; <b>0.26</b> pts/gp &nbsp;·&nbsp; 0.12 g/gp &nbsp;·&nbsp; 21 proj</span><span class="player-fit-label">~ avg L3.9</span></td>
+<td class="player-cell solid"><span class="player-name">Cole Perfetti</span><span class="player-gp">68gp &nbsp;·&nbsp; <b>0.47</b> pts/gp &nbsp;·&nbsp; 0.18 g/gp &nbsp;·&nbsp; 39 proj</span><span class="player-fit-label">~ avg L3.8</span></td>
+<td class="player-cell solid"><span class="player-name">Gustav Nyquist</span><span class="player-gp">51gp &nbsp;·&nbsp; <b>0.24</b> pts/gp &nbsp;·&nbsp; 0.02 g/gp &nbsp;·&nbsp; 19 proj</span><span class="player-fit-label">~ avg L4.0</span></td>
 </tr>
 <tr>
 <td class="line-num-cell">Line 4</td>
 <td class="player-cell empty"><span class="player-name">—</span></td>
-<td class="player-cell stretch"><span class="player-name">Morgan Barron</span><span class="player-gp">65gp &nbsp;·&nbsp; <b>0.35</b> pts/gp &nbsp;·&nbsp; 0.17 g/gp &nbsp;·&nbsp; 29 proj</span><span class="player-fit-label">↓ avg L5.3 — overextended</span></td>
+<td class="player-cell solid"><span class="player-name">Morgan Barron</span><span class="player-gp">65gp &nbsp;·&nbsp; <b>0.35</b> pts/gp &nbsp;·&nbsp; 0.17 g/gp &nbsp;·&nbsp; 29 proj</span><span class="player-fit-label">~ avg L5.2</span></td>
 <td class="player-cell solid"><span class="player-name">Nikita Chibrikov</span><span class="player-gp">11gp &nbsp;·&nbsp; <b>0.00</b> pts/gp &nbsp;·&nbsp; 0.00 g/gp &nbsp;·&nbsp; 0 proj</span><span class="player-fit-label">~ avg L4.8</span></td>
 </tr>
 </tbody></table></div>
@@ -41,17 +41,17 @@
 <tr>
 <td class="pair-num-cell">Pair 1</td>
 <td class="player-cell solid"><span class="player-name">Josh Morrissey</span><span class="player-gp">77gp &nbsp;·&nbsp; <b>0.71</b> pts/gp &nbsp;·&nbsp; 0.18 g/gp &nbsp;·&nbsp; 59 proj</span><span class="player-fit-label">~ avg L1.6</span></td>
-<td class="player-cell stretch"><span class="player-name">Neal Pionk</span><span class="player-gp">51gp &nbsp;·&nbsp; <b>0.24</b> pts/gp &nbsp;·&nbsp; 0.06 g/gp &nbsp;·&nbsp; 19 proj</span><span class="player-fit-label">↓ avg L5.5 — overextended</span></td>
+<td class="player-cell stretch"><span class="player-name">Neal Pionk</span><span class="player-gp">51gp &nbsp;·&nbsp; <b>0.24</b> pts/gp &nbsp;·&nbsp; 0.06 g/gp &nbsp;·&nbsp; 19 proj</span><span class="player-fit-label">↓ avg L5.4 — overextended</span></td>
 </tr>
 <tr>
 <td class="pair-num-cell">Pair 2</td>
-<td class="player-cell stretch"><span class="player-name">Dylan DeMelo</span><span class="player-gp">82gp &nbsp;·&nbsp; <b>0.23</b> pts/gp &nbsp;·&nbsp; 0.04 g/gp &nbsp;·&nbsp; 19 proj</span><span class="player-fit-label">↓ avg L5.7 — overextended</span></td>
-<td class="player-cell stretch"><span class="player-name">Dylan Samberg</span><span class="player-gp">66gp &nbsp;·&nbsp; <b>0.21</b> pts/gp &nbsp;·&nbsp; 0.02 g/gp &nbsp;·&nbsp; 17 proj</span><span class="player-fit-label">↓ avg L6.1 — overextended</span></td>
+<td class="player-cell stretch"><span class="player-name">Dylan DeMelo</span><span class="player-gp">82gp &nbsp;·&nbsp; <b>0.23</b> pts/gp &nbsp;·&nbsp; 0.04 g/gp &nbsp;·&nbsp; 19 proj</span><span class="player-fit-label">↓ avg L5.6 — overextended</span></td>
+<td class="player-cell stretch"><span class="player-name">Dylan Samberg</span><span class="player-gp">66gp &nbsp;·&nbsp; <b>0.21</b> pts/gp &nbsp;·&nbsp; 0.02 g/gp &nbsp;·&nbsp; 17 proj</span><span class="player-fit-label">↓ avg L5.9 — overextended</span></td>
 </tr>
 <tr>
 <td class="pair-num-cell">Pair 3</td>
-<td class="player-cell stretch"><span class="player-name">Jacob Bryson</span><span class="player-gp">50gp &nbsp;·&nbsp; <b>0.16</b> pts/gp &nbsp;·&nbsp; 0.04 g/gp &nbsp;·&nbsp; 13 proj</span><span class="player-fit-label">↓ avg L7.5 — overextended</span></td>
-<td class="player-cell stretch"><span class="player-name">Elias Salomonsson</span><span class="player-gp">32gp &nbsp;·&nbsp; <b>0.16</b> pts/gp &nbsp;·&nbsp; 0.03 g/gp &nbsp;·&nbsp; 13 proj</span><span class="player-fit-label">↓ avg L7.5 — overextended</span></td>
+<td class="player-cell stretch"><span class="player-name">Jacob Bryson</span><span class="player-gp">50gp &nbsp;·&nbsp; <b>0.16</b> pts/gp &nbsp;·&nbsp; 0.04 g/gp &nbsp;·&nbsp; 13 proj</span><span class="player-fit-label">↓ avg L7.3 — overextended</span></td>
+<td class="player-cell stretch"><span class="player-name">Elias Salomonsson</span><span class="player-gp">32gp &nbsp;·&nbsp; <b>0.16</b> pts/gp &nbsp;·&nbsp; 0.03 g/gp &nbsp;·&nbsp; 13 proj</span><span class="player-fit-label">↓ avg L7.4 — overextended</span></td>
 </tr>
 </tbody></table></div>
 

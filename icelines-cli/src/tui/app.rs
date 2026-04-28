@@ -26,6 +26,8 @@ pub enum Screen {
     Comps(usize),         // similar-player comps for player at index
     Depth,                // league-wide team depth rankings
     DepthTeam(String),    // one team's depth chart with fit coloring
+    Schedule,             // upcoming schedule + matchup search (stub)
+    Playoffs,             // bracket + series tracker (stub)
 }
 
 pub struct App {
@@ -48,6 +50,7 @@ pub struct App {
     pub group_picker_player: Option<(String, String)>, // (normalized, full_name)
     // Depth chart tab
     pub depth_mode:          icelines_core::cross_team::ScoringMode,
+    pub show_admin:          bool,
     // Query manager state
     pub query_fields:        Vec<crate::tui::screens::queries::QueryField>,
     pub query_field_idx:     usize,       // which field row is active
@@ -76,6 +79,7 @@ impl App {
             query_field_idx:     0,
             query_result_scroll: 0,
             depth_mode:          icelines_core::cross_team::ScoringMode::Fantasy,
+            show_admin:          false,
             group_picker_open:   false,
             group_picker_list:   Vec::new(),
             group_picker_player: None,
@@ -90,8 +94,17 @@ impl App {
     /// Handle an action. Returns true if the app should quit.
     pub fn handle(&mut self, action: Action) -> bool {
         if self.show_help {
-            // Any key dismisses help
             self.show_help = false;
+            return false;
+        }
+
+        if self.show_admin {
+            // Any key except Esc/q is ignored while admin overlay is open
+            match action {
+                Action::Quit => return true,
+                Action::Back | Action::Escape => self.show_admin = false,
+                _ => {}
+            }
             return false;
         }
 
@@ -169,20 +182,38 @@ impl App {
                     }
                 }
             }
-            Action::Right => {
-                if self.screen == Screen::Queries {
-                    if let Some(f) = self.query_fields.get_mut(self.query_field_idx) {
-                        f.next();
+            Action::Right | Action::Left => {
+                match &self.screen {
+                    Screen::Queries if !self.query_results_focused => {
+                        if let Some(f) = self.query_fields.get_mut(self.query_field_idx) {
+                            if matches!(action, Action::Right) { f.next(); } else { f.prev(); }
+                        }
+                        self.query_result_scroll = 0;
                     }
-                    self.query_result_scroll = 0;
-                }
-            }
-            Action::Left => {
-                if self.screen == Screen::Queries {
-                    if let Some(f) = self.query_fields.get_mut(self.query_field_idx) {
-                        f.prev();
+                    // Sub-view switching: League ↔ Depth
+                    Screen::Home => {
+                        self.prev_screen = Some(self.screen.clone());
+                        self.screen = Screen::Depth;
+                        self.selected = 0;
                     }
-                    self.query_result_scroll = 0;
+                    Screen::Depth => {
+                        self.prev_screen = Some(self.screen.clone());
+                        self.screen = Screen::Home;
+                        self.selected = 0;
+                    }
+                    // Sub-view switching: Projections ↔ Queries
+                    Screen::Projections => {
+                        self.prev_screen = Some(self.screen.clone());
+                        self.screen = Screen::Queries;
+                        self.selected = 0;
+                        self.query_results_focused = false;
+                    }
+                    Screen::Queries if self.query_results_focused => {
+                        self.prev_screen = Some(self.screen.clone());
+                        self.screen = Screen::Projections;
+                        self.selected = 0;
+                    }
+                    _ => {}
                 }
             }
             Action::Enter => self.activate_selected(),
@@ -229,6 +260,8 @@ impl App {
                 } else if matches!(self.screen, Screen::Depth | Screen::DepthTeam(_)) && c == 's' {
                     self.depth_mode = self.depth_mode.toggle();
                     self.status = format!("Scoring: {}", self.depth_mode.label());
+                } else if c == 'F' {
+                    self.show_admin = !self.show_admin;
                 }
             }
             Action::Backspace => {
@@ -286,16 +319,14 @@ impl App {
             }
 
             Action::GoToTab(n) => {
-                // 1–8: League, /Search, Queries, Projections, Tonight, Groups, Depth, Fetch+Install
+                // 1–6: League, Stats, Scores, Schedule, Groups, Playoffs
                 let tabs = [
                     Screen::Home,
-                    Screen::Search,
-                    Screen::Queries,
                     Screen::Projections,
                     Screen::Tonight,
+                    Screen::Schedule,
                     Screen::Groups,
-                    Screen::Depth,
-                    Screen::Fetch,
+                    Screen::Playoffs,
                 ];
                 if let Some(screen) = tabs.get(n) {
                     self.prev_screen = Some(self.screen.clone());
@@ -590,15 +621,17 @@ impl App {
     fn cycle_screen(&mut self) {
         self.query_results_focused = false;
         self.screen = match &self.screen {
-            Screen::Home              => Screen::Queries,
-            Screen::Queries           => Screen::Projections,
-            Screen::Projections       => Screen::Tonight,
-            Screen::Tonight           => Screen::Groups,
-            Screen::Groups            => Screen::Depth,
-            Screen::Depth             => Screen::Fetch,
-            Screen::DepthTeam(_)      => Screen::Fetch,  // Tab from team chart skips to Fetch
-            Screen::Fetch             => Screen::Home,
-            _                         => Screen::Home,
+            // League tab → Stats tab
+            Screen::Home | Screen::Depth | Screen::DepthTeam(_)
+            | Screen::Team(_) | Screen::Player(_) | Screen::Comps(_) => Screen::Projections,
+            // Stats tab → Scores tab
+            Screen::Projections | Screen::Queries | Screen::Search  => Screen::Tonight,
+            // Scores → Schedule → Groups → Playoffs → League
+            Screen::Tonight   => Screen::Schedule,
+            Screen::Schedule  => Screen::Groups,
+            Screen::Groups | Screen::GroupDetail(_) => Screen::Playoffs,
+            Screen::Playoffs  => Screen::Home,
+            _                 => Screen::Home,
         };
         self.selected = 0;
         self.query_result_scroll = 0;
@@ -632,19 +665,20 @@ mod tests {
 
     #[test]
     fn l0_tui_tab_cycles_screens() {
+        // v2: 6 tabs — League→Stats→Scores→Schedule→Groups→Playoffs→League
         let mut app = App::new(false);
         app.handle(Action::Tab);
-        assert_eq!(app.screen, Screen::Queries, "Home→Queries");
+        assert_eq!(app.screen, Screen::Projections, "Home→Stats(Projections)");
         app.handle(Action::Tab);
-        assert_eq!(app.screen, Screen::Projections, "Queries→Projections");
+        assert_eq!(app.screen, Screen::Tonight, "Stats→Scores");
         app.handle(Action::Tab);
-        assert_eq!(app.screen, Screen::Tonight, "Projections→Tonight");
+        assert_eq!(app.screen, Screen::Schedule, "Scores→Schedule");
         app.handle(Action::Tab);
-        assert_eq!(app.screen, Screen::Groups, "Tonight→Groups");
+        assert_eq!(app.screen, Screen::Groups, "Schedule→Groups");
         app.handle(Action::Tab);
-        assert_eq!(app.screen, Screen::Fetch, "Groups→Fetch");
+        assert_eq!(app.screen, Screen::Playoffs, "Groups→Playoffs");
         app.handle(Action::Tab);
-        assert_eq!(app.screen, Screen::Home, "Fetch→Home (wraps)");
+        assert_eq!(app.screen, Screen::Home, "Playoffs→League (wraps)");
     }
 
     #[test]
@@ -697,6 +731,8 @@ mod tests {
     #[test]
     fn l0_tui_down_up_selection() {
         let mut app = App::new(false);
+        // Use Groups screen — no wrap, linear selection
+        app.screen = Screen::Groups;
         assert_eq!(app.selected, 0);
         app.handle(Action::Down);
         assert_eq!(app.selected, 1);

@@ -14,20 +14,20 @@
 </tr>
 <tr>
 <td class="line-num-cell">Line 2</td>
-<td class="player-cell solid"><span class="player-name">Will Cuylle</span><span class="player-gp">82gp &nbsp;·&nbsp; <b>0.46</b> pts/gp &nbsp;·&nbsp; 0.24 g/gp &nbsp;·&nbsp; 38 proj</span><span class="player-fit-label">~ avg L2.7</span></td>
-<td class="player-cell fit"><span class="player-name">Vincent Trocheck</span><span class="player-gp">67gp &nbsp;·&nbsp; <b>0.79</b> pts/gp &nbsp;·&nbsp; 0.24 g/gp &nbsp;·&nbsp; 65 proj</span><span class="player-fit-label">★ avg L2.3</span></td>
+<td class="player-cell solid"><span class="player-name">Will Cuylle</span><span class="player-gp">82gp &nbsp;·&nbsp; <b>0.46</b> pts/gp &nbsp;·&nbsp; 0.24 g/gp &nbsp;·&nbsp; 38 proj</span><span class="player-fit-label">~ avg L2.6</span></td>
+<td class="player-cell fit"><span class="player-name">Vincent Trocheck</span><span class="player-gp">67gp &nbsp;·&nbsp; <b>0.79</b> pts/gp &nbsp;·&nbsp; 0.24 g/gp &nbsp;·&nbsp; 65 proj</span><span class="player-fit-label">★ avg L2.2</span></td>
 <td class="player-cell stretch"><span class="player-name">Taylor Raddysh</span><span class="player-gp">68gp &nbsp;·&nbsp; <b>0.28</b> pts/gp &nbsp;·&nbsp; 0.13 g/gp &nbsp;·&nbsp; 23 proj</span><span class="player-fit-label">↓ avg L3.8 — overextended</span></td>
 </tr>
 <tr>
 <td class="line-num-cell">Line 3</td>
-<td class="player-cell fit"><span class="player-name">Adam Sykora</span><span class="player-gp">11gp &nbsp;·&nbsp; <b>0.36</b> pts/gp &nbsp;·&nbsp; 0.27 g/gp &nbsp;·&nbsp; 30 proj</span><span class="player-fit-label">★ avg L3.4</span></td>
-<td class="player-cell fit"><span class="player-name">J.T. Miller</span><span class="player-gp">68gp &nbsp;·&nbsp; <b>0.78</b> pts/gp &nbsp;·&nbsp; 0.25 g/gp &nbsp;·&nbsp; 64 proj</span><span class="player-fit-label">★ avg L2.3</span></td>
+<td class="player-cell fit"><span class="player-name">Adam Sykora</span><span class="player-gp">11gp &nbsp;·&nbsp; <b>0.36</b> pts/gp &nbsp;·&nbsp; 0.27 g/gp &nbsp;·&nbsp; 30 proj</span><span class="player-fit-label">★ avg L3.3</span></td>
+<td class="player-cell fit"><span class="player-name">J.T. Miller</span><span class="player-gp">68gp &nbsp;·&nbsp; <b>0.78</b> pts/gp &nbsp;·&nbsp; 0.25 g/gp &nbsp;·&nbsp; 64 proj</span><span class="player-fit-label">★ avg L2.2</span></td>
 <td class="player-cell solid"><span class="player-name">Jaroslav Chmelar</span><span class="player-gp">28gp &nbsp;·&nbsp; <b>0.21</b> pts/gp &nbsp;·&nbsp; 0.14 g/gp &nbsp;·&nbsp; 18 proj</span><span class="player-fit-label">~ avg L4.2</span></td>
 </tr>
 <tr>
 <td class="line-num-cell">Line 4</td>
 <td class="player-cell fit"><span class="player-name">Tye Kartye</span><span class="player-gp">64gp &nbsp;·&nbsp; <b>0.34</b> pts/gp &nbsp;·&nbsp; 0.12 g/gp &nbsp;·&nbsp; 28 proj</span><span class="player-fit-label">★ avg L3.4</span></td>
-<td class="player-cell stretch"><span class="player-name">Noah Laba</span><span class="player-gp">74gp &nbsp;·&nbsp; <b>0.32</b> pts/gp &nbsp;·&nbsp; 0.12 g/gp &nbsp;·&nbsp; 27 proj</span><span class="player-fit-label">↓ avg L5.8 — overextended</span></td>
+<td class="player-cell stretch"><span class="player-name">Noah Laba</span><span class="player-gp">74gp &nbsp;·&nbsp; <b>0.32</b> pts/gp &nbsp;·&nbsp; 0.12 g/gp &nbsp;·&nbsp; 27 proj</span><span class="player-fit-label">↓ avg L5.6 — overextended</span></td>
 <td class="player-cell empty"><span class="player-name">—</span></td>
 </tr>
 </tbody></table></div>
@@ -45,13 +45,13 @@
 </tr>
 <tr>
 <td class="pair-num-cell">Pair 2</td>
-<td class="player-cell stretch"><span class="player-name">Matthew Robertson</span><span class="player-gp">72gp &nbsp;·&nbsp; <b>0.25</b> pts/gp &nbsp;·&nbsp; 0.08 g/gp &nbsp;·&nbsp; 20 proj</span><span class="player-fit-label">↓ avg L5.1 — overextended</span></td>
-<td class="player-cell stretch"><span class="player-name">Braden Schneider</span><span class="player-gp">82gp &nbsp;·&nbsp; <b>0.22</b> pts/gp &nbsp;·&nbsp; 0.02 g/gp &nbsp;·&nbsp; 18 proj</span><span class="player-fit-label">↓ avg L5.8 — overextended</span></td>
+<td class="player-cell stretch"><span class="player-name">Matthew Robertson</span><span class="player-gp">72gp &nbsp;·&nbsp; <b>0.25</b> pts/gp &nbsp;·&nbsp; 0.08 g/gp &nbsp;·&nbsp; 20 proj</span><span class="player-fit-label">↓ avg L5.0 — overextended</span></td>
+<td class="player-cell stretch"><span class="player-name">Braden Schneider</span><span class="player-gp">82gp &nbsp;·&nbsp; <b>0.22</b> pts/gp &nbsp;·&nbsp; 0.02 g/gp &nbsp;·&nbsp; 18 proj</span><span class="player-fit-label">↓ avg L5.7 — overextended</span></td>
 </tr>
 <tr>
 <td class="pair-num-cell">Pair 3</td>
-<td class="player-cell solid"><span class="player-name">Scott Morrow</span><span class="player-gp">29gp &nbsp;·&nbsp; <b>0.21</b> pts/gp &nbsp;·&nbsp; 0.00 g/gp &nbsp;·&nbsp; 17 proj</span><span class="player-fit-label">~ avg L6.2</span></td>
-<td class="player-cell fit"><span class="player-name">Will Borgen</span><span class="player-gp">75gp &nbsp;·&nbsp; <b>0.20</b> pts/gp &nbsp;·&nbsp; 0.07 g/gp &nbsp;·&nbsp; 16 proj</span><span class="player-fit-label">★ avg L6.4</span></td>
+<td class="player-cell solid"><span class="player-name">Scott Morrow</span><span class="player-gp">29gp &nbsp;·&nbsp; <b>0.21</b> pts/gp &nbsp;·&nbsp; 0.00 g/gp &nbsp;·&nbsp; 17 proj</span><span class="player-fit-label">~ avg L6.1</span></td>
+<td class="player-cell fit"><span class="player-name">Will Borgen</span><span class="player-gp">75gp &nbsp;·&nbsp; <b>0.20</b> pts/gp &nbsp;·&nbsp; 0.07 g/gp &nbsp;·&nbsp; 16 proj</span><span class="player-fit-label">★ avg L6.2</span></td>
 </tr>
 </tbody></table></div>
 

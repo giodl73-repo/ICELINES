@@ -14,20 +14,20 @@
 </tr>
 <tr>
 <td class="line-num-cell">Line 2</td>
-<td class="player-cell fit"><span class="player-name">Jamie Benn</span><span class="player-gp">60gp &nbsp;·&nbsp; <b>0.60</b> pts/gp &nbsp;·&nbsp; 0.25 g/gp &nbsp;·&nbsp; 49 proj</span><span class="player-fit-label">★ avg L2.1</span></td>
+<td class="player-cell fit"><span class="player-name">Jamie Benn</span><span class="player-gp">60gp &nbsp;·&nbsp; <b>0.60</b> pts/gp &nbsp;·&nbsp; 0.25 g/gp &nbsp;·&nbsp; 49 proj</span><span class="player-fit-label">★ avg L2.0</span></td>
 <td class="player-cell fit"><span class="player-name">Roope Hintz</span><span class="player-gp">53gp &nbsp;·&nbsp; <b>0.83</b> pts/gp &nbsp;·&nbsp; 0.28 g/gp &nbsp;·&nbsp; 68 proj</span><span class="player-fit-label">★ avg L2.0</span></td>
-<td class="player-cell stretch"><span class="player-name">Arttu Hyry</span><span class="player-gp">20gp &nbsp;·&nbsp; <b>0.25</b> pts/gp &nbsp;·&nbsp; 0.15 g/gp &nbsp;·&nbsp; 20 proj</span><span class="player-fit-label">↓ avg L4.0 — overextended</span></td>
+<td class="player-cell stretch"><span class="player-name">Arttu Hyry</span><span class="player-gp">20gp &nbsp;·&nbsp; <b>0.25</b> pts/gp &nbsp;·&nbsp; 0.15 g/gp &nbsp;·&nbsp; 20 proj</span><span class="player-fit-label">↓ avg L3.9 — overextended</span></td>
 </tr>
 <tr>
 <td class="line-num-cell">Line 3</td>
 <td class="player-cell fit"><span class="player-name">Michael Bunting</span><span class="player-gp">74gp &nbsp;·&nbsp; <b>0.45</b> pts/gp &nbsp;·&nbsp; 0.19 g/gp &nbsp;·&nbsp; 37 proj</span><span class="player-fit-label">★ avg L2.7</span></td>
-<td class="player-cell fit"><span class="player-name">Matt Duchene</span><span class="player-gp">57gp &nbsp;·&nbsp; <b>0.79</b> pts/gp &nbsp;·&nbsp; 0.28 g/gp &nbsp;·&nbsp; 65 proj</span><span class="player-fit-label">★ avg L2.3</span></td>
-<td class="player-cell stretch"><span class="player-name">Nathan Bastian</span><span class="player-gp">36gp &nbsp;·&nbsp; <b>0.19</b> pts/gp &nbsp;·&nbsp; 0.17 g/gp &nbsp;·&nbsp; 16 proj</span><span class="player-fit-label">↓ avg L4.3 — overextended</span></td>
+<td class="player-cell buried"><span class="player-name">Matt Duchene</span><span class="player-gp">57gp &nbsp;·&nbsp; <b>0.79</b> pts/gp &nbsp;·&nbsp; 0.28 g/gp &nbsp;·&nbsp; 65 proj</span><span class="player-fit-label">↑ avg L2.2 — underused</span></td>
+<td class="player-cell solid"><span class="player-name">Nathan Bastian</span><span class="player-gp">36gp &nbsp;·&nbsp; <b>0.19</b> pts/gp &nbsp;·&nbsp; 0.17 g/gp &nbsp;·&nbsp; 16 proj</span><span class="player-fit-label">~ avg L4.2</span></td>
 </tr>
 <tr>
 <td class="line-num-cell">Line 4</td>
 <td class="player-cell solid"><span class="player-name">Adam Erne</span><span class="player-gp">45gp &nbsp;·&nbsp; <b>0.18</b> pts/gp &nbsp;·&nbsp; 0.13 g/gp &nbsp;·&nbsp; 15 proj</span><span class="player-fit-label">~ avg L4.6</span></td>
-<td class="player-cell buried"><span class="player-name">Tyler Seguin</span><span class="player-gp">27gp &nbsp;·&nbsp; <b>0.63</b> pts/gp &nbsp;·&nbsp; 0.26 g/gp &nbsp;·&nbsp; 52 proj</span><span class="player-fit-label">↑ avg L3.1 — underused</span></td>
+<td class="player-cell buried"><span class="player-name">Tyler Seguin</span><span class="player-gp">27gp &nbsp;·&nbsp; <b>0.63</b> pts/gp &nbsp;·&nbsp; 0.26 g/gp &nbsp;·&nbsp; 52 proj</span><span class="player-fit-label">↑ avg L3.0 — underused</span></td>
 <td class="player-cell empty"><span class="player-name">—</span></td>
 </tr>
 </tbody></table></div>
@@ -41,17 +41,17 @@
 <tr>
 <td class="pair-num-cell">Pair 1</td>
 <td class="player-cell fit"><span class="player-name">Miro Heiskanen</span><span class="player-gp">77gp &nbsp;·&nbsp; <b>0.82</b> pts/gp &nbsp;·&nbsp; 0.12 g/gp &nbsp;·&nbsp; 67 proj</span><span class="player-fit-label">★ avg L1.4</span></td>
-<td class="player-cell fit"><span class="player-name">Thomas Harley</span><span class="player-gp">70gp &nbsp;·&nbsp; <b>0.51</b> pts/gp &nbsp;·&nbsp; 0.09 g/gp &nbsp;·&nbsp; 42 proj</span><span class="player-fit-label">★ avg L2.1</span></td>
+<td class="player-cell fit"><span class="player-name">Thomas Harley</span><span class="player-gp">70gp &nbsp;·&nbsp; <b>0.51</b> pts/gp &nbsp;·&nbsp; 0.09 g/gp &nbsp;·&nbsp; 42 proj</span><span class="player-fit-label">★ avg L2.0</span></td>
 </tr>
 <tr>
 <td class="pair-num-cell">Pair 2</td>
-<td class="player-cell fit"><span class="player-name">Esa Lindell</span><span class="player-gp">82gp &nbsp;·&nbsp; <b>0.39</b> pts/gp &nbsp;·&nbsp; 0.07 g/gp &nbsp;·&nbsp; 32 proj</span><span class="player-fit-label">★ avg L3.2</span></td>
-<td class="player-cell stretch"><span class="player-name">Vladislav Kolyachonok</span><span class="player-gp">13gp &nbsp;·&nbsp; <b>0.23</b> pts/gp &nbsp;·&nbsp; 0.08 g/gp &nbsp;·&nbsp; 19 proj</span><span class="player-fit-label">↓ avg L5.7 — overextended</span></td>
+<td class="player-cell fit"><span class="player-name">Esa Lindell</span><span class="player-gp">82gp &nbsp;·&nbsp; <b>0.39</b> pts/gp &nbsp;·&nbsp; 0.07 g/gp &nbsp;·&nbsp; 32 proj</span><span class="player-fit-label">★ avg L3.1</span></td>
+<td class="player-cell stretch"><span class="player-name">Vladislav Kolyachonok</span><span class="player-gp">13gp &nbsp;·&nbsp; <b>0.23</b> pts/gp &nbsp;·&nbsp; 0.08 g/gp &nbsp;·&nbsp; 19 proj</span><span class="player-fit-label">↓ avg L5.6 — overextended</span></td>
 </tr>
 <tr>
 <td class="pair-num-cell">Pair 3</td>
-<td class="player-cell solid"><span class="player-name">Nils Lundkvist</span><span class="player-gp">52gp &nbsp;·&nbsp; <b>0.21</b> pts/gp &nbsp;·&nbsp; 0.06 g/gp &nbsp;·&nbsp; 17 proj</span><span class="player-fit-label">~ avg L6.1</span></td>
-<td class="player-cell solid"><span class="player-name">Alexander Petrovic</span><span class="player-gp">54gp &nbsp;·&nbsp; <b>0.19</b> pts/gp &nbsp;·&nbsp; 0.04 g/gp &nbsp;·&nbsp; 15 proj</span><span class="player-fit-label">~ avg L6.9</span></td>
+<td class="player-cell solid"><span class="player-name">Nils Lundkvist</span><span class="player-gp">52gp &nbsp;·&nbsp; <b>0.21</b> pts/gp &nbsp;·&nbsp; 0.06 g/gp &nbsp;·&nbsp; 17 proj</span><span class="player-fit-label">~ avg L5.9</span></td>
+<td class="player-cell solid"><span class="player-name">Alexander Petrovic</span><span class="player-gp">54gp &nbsp;·&nbsp; <b>0.19</b> pts/gp &nbsp;·&nbsp; 0.04 g/gp &nbsp;·&nbsp; 15 proj</span><span class="player-fit-label">~ avg L6.7</span></td>
 </tr>
 </tbody></table></div>
 

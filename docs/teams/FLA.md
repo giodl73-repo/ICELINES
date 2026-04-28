@@ -16,11 +16,11 @@
 <td class="line-num-cell">Line 2</td>
 <td class="player-cell buried"><span class="player-name">Brad Marchand</span><span class="player-gp">52gp &nbsp;·&nbsp; <b>1.04</b> pts/gp &nbsp;·&nbsp; 0.52 g/gp &nbsp;·&nbsp; 85 proj</span><span class="player-fit-label">↑ avg L1.2 — underused</span></td>
 <td class="player-cell fit"><span class="player-name">Sam Bennett</span><span class="player-gp">76gp &nbsp;·&nbsp; <b>0.76</b> pts/gp &nbsp;·&nbsp; 0.34 g/gp &nbsp;·&nbsp; 63 proj</span><span class="player-fit-label">★ avg L2.4</span></td>
-<td class="player-cell stretch"><span class="player-name">Cole Schwindt</span><span class="player-gp">29gp &nbsp;·&nbsp; <b>0.24</b> pts/gp &nbsp;·&nbsp; 0.17 g/gp &nbsp;·&nbsp; 20 proj</span><span class="player-fit-label">↓ avg L4.1 — overextended</span></td>
+<td class="player-cell stretch"><span class="player-name">Cole Schwindt</span><span class="player-gp">29gp &nbsp;·&nbsp; <b>0.24</b> pts/gp &nbsp;·&nbsp; 0.17 g/gp &nbsp;·&nbsp; 20 proj</span><span class="player-fit-label">↓ avg L4.0 — overextended</span></td>
 </tr>
 <tr>
 <td class="line-num-cell">Line 3</td>
-<td class="player-cell fit"><span class="player-name">A.J. Greer</span><span class="player-gp">78gp &nbsp;·&nbsp; <b>0.41</b> pts/gp &nbsp;·&nbsp; 0.22 g/gp &nbsp;·&nbsp; 34 proj</span><span class="player-fit-label">★ avg L3.0</span></td>
+<td class="player-cell fit"><span class="player-name">A.J. Greer</span><span class="player-gp">78gp &nbsp;·&nbsp; <b>0.41</b> pts/gp &nbsp;·&nbsp; 0.22 g/gp &nbsp;·&nbsp; 34 proj</span><span class="player-fit-label">★ avg L2.9</span></td>
 <td class="player-cell fit"><span class="player-name">Carter Verhaeghe</span><span class="player-gp">77gp &nbsp;·&nbsp; <b>0.71</b> pts/gp &nbsp;·&nbsp; 0.32 g/gp &nbsp;·&nbsp; 59 proj</span><span class="player-fit-label">★ avg L2.6</span></td>
 <td class="player-cell empty"><span class="player-name">—</span></td>
 </tr>
@@ -45,13 +45,13 @@
 </tr>
 <tr>
 <td class="pair-num-cell">Pair 2</td>
-<td class="player-cell solid"><span class="player-name">Gustav Forsling</span><span class="player-gp">80gp &nbsp;·&nbsp; <b>0.35</b> pts/gp &nbsp;·&nbsp; 0.03 g/gp &nbsp;·&nbsp; 29 proj</span><span class="player-fit-label">~ avg L3.8</span></td>
-<td class="player-cell fit"><span class="player-name">Mike Benning</span><span class="player-gp">18gp &nbsp;·&nbsp; <b>0.33</b> pts/gp &nbsp;·&nbsp; 0.11 g/gp &nbsp;·&nbsp; 27 proj</span><span class="player-fit-label">★ avg L3.9</span></td>
+<td class="player-cell solid"><span class="player-name">Gustav Forsling</span><span class="player-gp">80gp &nbsp;·&nbsp; <b>0.35</b> pts/gp &nbsp;·&nbsp; 0.03 g/gp &nbsp;·&nbsp; 29 proj</span><span class="player-fit-label">~ avg L3.7</span></td>
+<td class="player-cell fit"><span class="player-name">Mike Benning</span><span class="player-gp">18gp &nbsp;·&nbsp; <b>0.33</b> pts/gp &nbsp;·&nbsp; 0.11 g/gp &nbsp;·&nbsp; 27 proj</span><span class="player-fit-label">★ avg L3.8</span></td>
 </tr>
 <tr>
 <td class="pair-num-cell">Pair 3</td>
-<td class="player-cell fit"><span class="player-name">Uvis Balinskis</span><span class="player-gp">54gp &nbsp;·&nbsp; <b>0.28</b> pts/gp &nbsp;·&nbsp; 0.09 g/gp &nbsp;·&nbsp; 23 proj</span><span class="player-fit-label">★ avg L4.6</span></td>
-<td class="player-cell fit"><span class="player-name">Tobias Bjornfot</span><span class="player-gp">19gp &nbsp;·&nbsp; <b>0.21</b> pts/gp &nbsp;·&nbsp; 0.11 g/gp &nbsp;·&nbsp; 17 proj</span><span class="player-fit-label">★ avg L6.1</span></td>
+<td class="player-cell fit"><span class="player-name">Uvis Balinskis</span><span class="player-gp">54gp &nbsp;·&nbsp; <b>0.28</b> pts/gp &nbsp;·&nbsp; 0.09 g/gp &nbsp;·&nbsp; 23 proj</span><span class="player-fit-label">★ avg L4.5</span></td>
+<td class="player-cell fit"><span class="player-name">Tobias Bjornfot</span><span class="player-gp">19gp &nbsp;·&nbsp; <b>0.21</b> pts/gp &nbsp;·&nbsp; 0.11 g/gp &nbsp;·&nbsp; 17 proj</span><span class="player-fit-label">★ avg L5.9</span></td>
 </tr>
 </tbody></table></div>
 

@@ -39,6 +39,8 @@ pub fn render(f: &mut Frame, app: &App) {
         Screen::Comps(idx)          => comps::render(f, app, chunks[1], *idx),
         Screen::Depth               => depth::render_league(f, app, chunks[1]),
         Screen::DepthTeam(abbrev)   => depth::render_team(f, app, chunks[1], abbrev),
+        Screen::Schedule            => misc::render_schedule_stub(f, chunks[1]),
+        Screen::Playoffs            => misc::render_playoffs_stub(f, chunks[1]),
     }
 
     f.render_widget(
@@ -71,25 +73,40 @@ pub fn render(f: &mut Frame, app: &App) {
         f.render_widget(block, popup);
         f.render_widget(Paragraph::new(help_lines()), inner);
     }
+
+    if app.show_admin {
+        let popup = centered_rect(44, 50, area);
+        f.render_widget(Clear, popup);
+        let block = Block::default()
+            .title(" Admin — Esc to close ")
+            .borders(Borders::ALL)
+            .style(Style::default().fg(Color::Yellow));
+        let inner = block.inner(popup);
+        f.render_widget(block, popup);
+        misc::render_admin(f, app, inner);
+    }
+}
+
+fn tab_for_screen(screen: &Screen) -> usize {
+    match screen {
+        Screen::Home | Screen::Team(_) | Screen::Player(_)
+        | Screen::Depth | Screen::DepthTeam(_) | Screen::Comps(_) => 0, // League
+        Screen::Projections | Screen::Queries | Screen::Search  => 1,   // Stats
+        Screen::Tonight                                          => 2,   // Scores
+        Screen::Schedule                                         => 3,   // Schedule
+        Screen::Groups | Screen::GroupDetail(_)                  => 4,   // Groups
+        Screen::Playoffs                                         => 5,   // Playoffs
+        _                                                        => 99,  // no tab (Fetch, Help)
+    }
 }
 
 fn render_nav(f: &mut Frame, app: &App, area: Rect) {
-    // Order matches Tab cycle: Home→Queries→Projections→Tonight→Groups→Fetch+Install
-    let tabs: &[(&str, Screen)] = &[
-        ("League",        Screen::Home),
-        ("/Search",       Screen::Search),
-        ("Queries",       Screen::Queries),
-        ("Projections",   Screen::Projections),
-        ("Tonight",       Screen::Tonight),
-        ("Groups",        Screen::Groups),
-        ("Depth",         Screen::Depth),
-        ("Fetch+Install", Screen::Fetch),
-    ];
+    let tab_labels = ["League", "Stats", "Scores", "Schedule", "Groups", "Playoffs"];
+    let active_tab = tab_for_screen(&app.screen);
 
     let mut spans: Vec<Span> = Vec::new();
-    for (label, tab_screen) in tabs {
-        let active = std::mem::discriminant(&app.screen) == std::mem::discriminant(tab_screen)
-            || (*tab_screen == Screen::Depth && matches!(app.screen, Screen::DepthTeam(_)));
+    for (i, label) in tab_labels.iter().enumerate() {
+        let active = i == active_tab;
         let style = if active {
             Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
         } else {
@@ -98,10 +115,14 @@ fn render_nav(f: &mut Frame, app: &App, area: Rect) {
         spans.push(Span::styled(format!(" {label} "), style));
         spans.push(Span::styled("│", Style::default().fg(Color::DarkGray)));
     }
-    spans.push(Span::styled(
-        "  Tab:cycle  ←→:query values  Esc:back  ?:help  q:quit",
-        Style::default().fg(Color::DarkGray),
-    ));
+
+    // Season indicator placeholder for v2
+    let hint = if app.show_admin {
+        "  Esc:close admin"
+    } else {
+        "  Tab:cycle  ←→:sub-view  F:admin  ?:help  q:quit"
+    };
+    spans.push(Span::styled(hint, Style::default().fg(Color::DarkGray)));
     f.render_widget(Paragraph::new(Line::from(spans)), area);
 }
 
