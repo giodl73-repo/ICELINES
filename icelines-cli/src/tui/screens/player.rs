@@ -23,14 +23,14 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, idx: usize) {
     // Trigger headshot fetch if not cached
     if let (Some(id), Some(url)) = (p.nhl_id, p.headshot_url.as_deref()) {
         if app.headshot_cache.get(id).is_none() {
-            headshot::spawn_fetch(id, url.to_owned(), app.headshot_cache.clone(), 20, 12);
+            headshot::spawn_fetch(id, url.to_owned(), app.headshot_cache.clone(), 22, 15);
         }
     }
 
     // Layout: headshot (22 cols) | stats (rest)
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Length(22), Constraint::Min(0)])
+        .constraints([Constraint::Length(26), Constraint::Min(0)])
         .split(inner);
 
     render_headshot(f, app, p, chunks[0]);
