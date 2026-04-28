@@ -230,10 +230,9 @@ pub fn build_players_from_bios(
             if !position.is_forward() && !position.is_defense() {
                 return None;
             }
-            let team_str = bio.current_team_abbrev.as_deref().unwrap_or("");
-            if team_str.is_empty() {
-                return None;
-            }
+            // Retired/unsigned players have no current team — use "RET" so they
+            // appear in draft-class lookups and history rather than being dropped.
+            let team_str = bio.current_team_abbrev.as_deref().unwrap_or("RET");
             let stats = stats_idx.get(&bio.player_id).copied();
             let fallback_gp = bio.games_played;
             let team = TeamAbbr(team_str.to_owned());

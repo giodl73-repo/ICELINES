@@ -23,6 +23,7 @@ pub enum Screen {
     GroupDetail(String),  // viewing members of a named group
     Fetch,
     Help,
+    Comps(usize),         // similar-player comps for player at index
 }
 
 pub struct App {
@@ -214,6 +215,12 @@ impl App {
                         }
                         _ => {}
                     }
+                } else if let Screen::Player(idx) = self.screen {
+                    if c == 'c' {
+                        self.prev_screen = Some(self.screen.clone());
+                        self.screen = Screen::Comps(idx);
+                        self.selected = 0;
+                    }
                 }
             }
             Action::Backspace => {
@@ -381,6 +388,15 @@ impl App {
                     )
             }
 
+            Screen::Comps(target_idx) => {
+                let target_idx = *target_idx;
+                self.players.get(target_idx).and_then(|target| {
+                    crate::tui::screens::comps::find_comps(&self.players, target)
+                        .get(self.selected)
+                        .map(|p| (p.name_normalized.clone(), p.full_name.clone()))
+                })
+            }
+
             _ => None,
         }
     }
@@ -521,6 +537,19 @@ impl App {
                 self.prev_screen = Some(Screen::Search);
                 self.screen = Screen::Player(self.selected);
                 self.selected = 0;
+            }
+            Screen::Comps(target_idx) => {
+                let target_idx = *target_idx;
+                if let Some(target) = self.players.get(target_idx) {
+                    let comps = crate::tui::screens::comps::find_comps(&self.players, target);
+                    if let Some(comp) = comps.get(self.selected) {
+                        if let Some(global_idx) = self.players.iter().position(|p| p.nhl_id == comp.nhl_id) {
+                            self.prev_screen = Some(self.screen.clone());
+                            self.screen = Screen::Player(global_idx);
+                            self.selected = 0;
+                        }
+                    }
+                }
             }
             _ => {}
         }

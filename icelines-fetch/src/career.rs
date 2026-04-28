@@ -26,8 +26,11 @@ pub fn load_career(
         };
         let stats_opt = bundled::get_stats(season);
 
-        // Find this player in the season
-        let bio = bios.iter().find(|b| normalize_name(&b.skater_full_name).contains(&norm))?;
+        // Find this player in the season — skip seasons they didn't play in
+        let bio = match bios.iter().find(|b| normalize_name(&b.skater_full_name).contains(&norm)) {
+            Some(b) => b,
+            None    => continue,
+        };
 
         if player_id.is_none() {
             player_id  = Some(bio.player_id);

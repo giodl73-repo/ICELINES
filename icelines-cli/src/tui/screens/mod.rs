@@ -4,6 +4,7 @@ pub mod player;
 pub mod search;
 pub mod misc;
 pub mod queries;
+pub mod comps;
 
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
@@ -34,6 +35,7 @@ pub fn render(f: &mut Frame, app: &App) {
         Screen::GroupDetail(name)   => misc::render_group_members(f, app, chunks[1], name),
         Screen::Fetch               => misc::render_fetch(f, app, chunks[1]),
         Screen::Help                => home::render(f, app, chunks[1]),
+        Screen::Comps(idx)          => comps::render(f, app, chunks[1], *idx),
     }
 
     f.render_widget(

@@ -11,7 +11,7 @@ use crate::tui::headshot;
 pub fn render(f: &mut Frame, app: &App, area: Rect, idx: usize) {
     let block = Block::default()
         .borders(Borders::ALL)
-        .title(" Player Card  ·  g: add to group  ·  Esc: back ");
+        .title(" Player Card  ·  c: comps  ·  g: group  ·  f: favorites  ·  Esc: back ");
     let inner = block.inner(area);
     f.render_widget(block, area);
 
