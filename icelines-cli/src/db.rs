@@ -45,6 +45,16 @@ fn run_migrations(conn: &Connection) -> anyhow::Result<()> {
     )
     .context("migration 002: create group_members table")?;
 
+    // Migration 003 — saved queries
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS saved_queries (
+            name        TEXT PRIMARY KEY,
+            fields_json TEXT NOT NULL,
+            created_at  TEXT NOT NULL
+        );",
+    )
+    .context("migration 003: create saved_queries table")?;
+
     // Enable foreign-key enforcement (off by default in rusqlite).
     conn.execute_batch("PRAGMA foreign_keys = ON;")
         .context("enable foreign keys")?;
@@ -202,6 +212,36 @@ impl GroupDb {
         if !exists {
             bail!("group '{name}' not found");
         }
+        Ok(())
+    }
+
+    // ── Saved queries ─────────────────────────────────────────────────────────
+
+    /// Save a named query (overwrites if name already exists).
+    pub fn save_query(&self, name: &str, fields_json: &str) -> anyhow::Result<()> {
+        let now = now_utc();
+        self.conn.execute(
+            "INSERT OR REPLACE INTO saved_queries (name, fields_json, created_at) VALUES (?1, ?2, ?3)",
+            rusqlite::params![name, fields_json, now],
+        ).with_context(|| format!("save query '{name}'"))?;
+        Ok(())
+    }
+
+    /// List all saved queries, newest first.
+    pub fn list_saved_queries(&self) -> anyhow::Result<Vec<(String, String)>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT name, fields_json FROM saved_queries ORDER BY created_at DESC"
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })?.collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
+    }
+
+    /// Delete a saved query by name.
+    #[allow(dead_code)]
+    pub fn delete_saved_query(&self, name: &str) -> anyhow::Result<()> {
+        self.conn.execute("DELETE FROM saved_queries WHERE name = ?1", rusqlite::params![name])?;
         Ok(())
     }
 }

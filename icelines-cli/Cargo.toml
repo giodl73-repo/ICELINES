@@ -25,6 +25,7 @@ rusqlite.workspace    = true
 reqwest.workspace     = true
 flate2.workspace      = true
 tar.workspace         = true
+image.workspace       = true
 axum.workspace        = true
 tower.workspace       = true
 uuid.workspace        = true

@@ -237,3 +237,29 @@ fn render_results(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
 
     f.render_widget(Paragraph::new(lines), inner);
 }
+
+// ── Saved query serialization ─────────────────────────────────────────────────
+
+/// Serialize current field selections to JSON for storage.
+pub fn fields_to_json(fields: &[QueryField]) -> String {
+    let pairs: Vec<String> = fields.iter()
+        .map(|f| format!("{{\"label\":\"{}\",\"selected\":{}}}", f.label, f.selected))
+        .collect();
+    format!("[{}]", pairs.join(","))
+}
+
+/// Restore field selections from stored JSON. Unknown labels are ignored.
+pub fn apply_saved_json(fields: &mut [QueryField], json: &str) {
+    if let Ok(arr) = serde_json::from_str::<Vec<serde_json::Value>>(json) {
+        for entry in &arr {
+            if let (Some(label), Some(sel)) = (
+                entry["label"].as_str(),
+                entry["selected"].as_u64(),
+            ) {
+                if let Some(f) = fields.iter_mut().find(|f| f.label == label) {
+                    f.selected = (sel as usize).min(f.options.len().saturating_sub(1));
+                }
+            }
+        }
+    }
+}

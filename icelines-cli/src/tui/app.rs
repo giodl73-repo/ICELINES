@@ -4,6 +4,13 @@ use crate::tui::event::Action;
 use crate::tui::loader::InstallState;
 
 #[derive(Debug, Clone, PartialEq)]
+pub enum QueryMode {
+    Build,      // normal — editing fields, viewing results
+    SaveName,   // typing a name to save the current query
+    LoadList,   // browsing saved queries to load
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Screen {
     Home,
     Team(String),     // team abbreviation
@@ -29,10 +36,15 @@ pub struct App {
     pub search_query:        String,
     pub status:              String,
     pub show_help:           bool,
+    // Headshot ASCII cache
+    pub headshot_cache:      crate::tui::headshot::HeadshotCache,
     // Query manager state
     pub query_fields:        Vec<crate::tui::screens::queries::QueryField>,
-    pub query_field_idx:     usize,   // which field row is active
-    pub query_result_scroll: usize,   // scroll offset in results panel
+    pub query_field_idx:     usize,       // which field row is active
+    pub query_result_scroll: usize,       // scroll offset in results panel
+    pub query_mode:          QueryMode,   // build | save-name | load-list
+    pub query_save_name:     String,      // name being typed for save
+    pub query_saved_list:    Vec<(String, String)>, // (name, json) loaded from DB
 }
 
 impl App {
@@ -52,6 +64,10 @@ impl App {
             query_fields:        crate::tui::screens::queries::default_fields(),
             query_field_idx:     0,
             query_result_scroll: 0,
+            headshot_cache:      crate::tui::headshot::HeadshotCache::new(),
+            query_mode:          QueryMode::Build,
+            query_save_name:     String::new(),
+            query_saved_list:    Vec::new(),
         }
     }
 
@@ -66,7 +82,15 @@ impl App {
         match action {
             Action::Quit => return true,
             Action::Help => self.show_help = true,
-            Action::Back | Action::Escape => self.go_back(),
+            Action::Back | Action::Escape => {
+                // If in save/load mode, cancel back to Build mode first
+                if self.screen == Screen::Queries && self.query_mode != QueryMode::Build {
+                    self.query_mode = QueryMode::Build;
+                    self.status = "Cancelled  ·  s=save  l=load  r=reset".to_owned();
+                } else {
+                    self.go_back();
+                }
+            }
             Action::Down => {
                 if self.screen == Screen::Queries {
                     // In query screen: ↓ moves between field rows
@@ -110,12 +134,38 @@ impl App {
                 if self.screen == Screen::Search {
                     self.search_query.push(c);
                     self.selected = 0;
+                } else if self.screen == Screen::Queries {
+                    match &self.query_mode {
+                        QueryMode::SaveName => {
+                            // Typing the save name
+                            self.query_save_name.push(c);
+                        }
+                        QueryMode::Build if c == 's' => {
+                            // Start save-name mode
+                            self.query_mode = QueryMode::SaveName;
+                            self.query_save_name.clear();
+                            self.status = "Save query as: (type name, Enter to save, Esc to cancel)".to_owned();
+                        }
+                        QueryMode::Build if c == 'l' => {
+                            // Load saved queries list
+                            self.query_saved_list = crate::db::GroupDb::open()
+                                .ok()
+                                .and_then(|db| db.list_saved_queries().ok())
+                                .unwrap_or_default();
+                            self.query_mode = QueryMode::LoadList;
+                            self.selected = 0;
+                            self.status = "Saved queries — ↑↓ select · Enter to load · Del to delete · Esc to cancel".to_owned();
+                        }
+                        _ => {}
+                    }
                 }
             }
             Action::Backspace => {
                 if self.screen == Screen::Search {
                     self.search_query.pop();
                     self.selected = 0;
+                } else if self.screen == Screen::Queries && self.query_mode == QueryMode::SaveName {
+                    self.query_save_name.pop();
                 }
             }
             Action::Tab => self.cycle_screen(),
@@ -188,14 +238,39 @@ impl App {
                 }
             }
             Screen::Queries => {
-                // Enter on a result row → player card
-                let results = crate::tui::screens::queries::run_query(&self.players, &self.query_fields);
-                let row_idx = self.query_result_scroll + self.selected.min(results.len().saturating_sub(1));
-                if let Some((_, p)) = results.get(row_idx) {
-                    if let Some(global_idx) = self.players.iter().position(|pl| pl.nhl_id == p.nhl_id) {
-                        self.prev_screen = Some(self.screen.clone());
-                        self.screen = Screen::Player(global_idx);
-                        self.selected = 0;
+                match self.query_mode {
+                    QueryMode::SaveName => {
+                        // Save the current query with the typed name
+                        let name = self.query_save_name.trim().to_owned();
+                        if !name.is_empty() {
+                            let json = crate::tui::screens::queries::fields_to_json(&self.query_fields);
+                            if let Ok(db) = crate::db::GroupDb::open() {
+                                let _ = db.save_query(&name, &json);
+                                self.status = format!("Saved query '{name}'  ·  l=load  s=save  r=reset");
+                            }
+                        }
+                        self.query_mode = QueryMode::Build;
+                    }
+                    QueryMode::LoadList => {
+                        // Load the selected saved query
+                        if let Some((name, json)) = self.query_saved_list.get(self.selected) {
+                            crate::tui::screens::queries::apply_saved_json(&mut self.query_fields, json);
+                            self.status = format!("Loaded query '{name}'  ·  ←→ to adjust  s=save  r=reset");
+                            self.query_mode = QueryMode::Build;
+                            self.query_result_scroll = 0;
+                        }
+                    }
+                    QueryMode::Build => {
+                        // Enter on a result row → player card
+                        let results = crate::tui::screens::queries::run_query(&self.players, &self.query_fields);
+                        let row_idx = self.query_result_scroll + self.selected.min(results.len().saturating_sub(1));
+                        if let Some((_, p)) = results.get(row_idx) {
+                            if let Some(global_idx) = self.players.iter().position(|pl| pl.nhl_id == p.nhl_id) {
+                                self.prev_screen = Some(self.screen.clone());
+                                self.screen = Screen::Player(global_idx);
+                                self.selected = 0;
+                            }
+                        }
                     }
                 }
             }

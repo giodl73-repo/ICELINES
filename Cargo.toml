@@ -39,6 +39,7 @@ ratatui     = "0.29"
 crossterm   = { version = "0.28", features = ["event-stream"] }
 httpmock    = "0.7"
 proptest    = "1"
+image       = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
 tempfile    = "3"
 axum        = { version = "0.7", features = ["json"] }
 tower       = "0.4"

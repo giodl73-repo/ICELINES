@@ -1,5 +1,6 @@
 pub mod app;
 pub mod event;
+pub mod headshot;
 pub mod loader;
 pub mod screens;
 pub mod widgets;
