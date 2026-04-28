@@ -171,5 +171,73 @@ mod tests {
         assert_eq!(app.screen, Screen::Tonight);
         app.handle(Action::Tab);
         assert_eq!(app.screen, Screen::Projections);
+        app.handle(Action::Tab);
+        assert_eq!(app.screen, Screen::Groups);
+        app.handle(Action::Tab);
+        assert_eq!(app.screen, Screen::Fetch);
+        app.handle(Action::Tab);
+        assert_eq!(app.screen, Screen::Home, "Tab wraps back to Home");
+    }
+
+    #[test]
+    fn l0_tui_search_key_switches_to_search_screen() {
+        let mut app = App::new(false);
+        app.handle(Action::Search);
+        assert_eq!(app.screen, Screen::Search);
+        assert!(app.search_query.is_empty());
+    }
+
+    #[test]
+    fn l0_tui_esc_returns_to_home_when_no_history() {
+        let mut app = App::new(false);
+        app.handle(Action::Tab); // go to Tonight
+        app.handle(Action::Back); // Esc — prev_screen is None, go to Home
+        assert_eq!(app.screen, Screen::Home);
+    }
+
+    #[test]
+    fn l0_tui_back_restores_prev_screen() {
+        let mut app = App::new(false);
+        // Simulate navigating to Search then back
+        app.handle(Action::Search);
+        assert_eq!(app.screen, Screen::Search);
+        app.handle(Action::Back);
+        assert_eq!(app.screen, Screen::Home, "Back from Search returns to Home");
+    }
+
+    #[test]
+    fn l0_tui_home_enter_navigates_to_team() {
+        let mut app = App::new(false);
+        // selected=0 → first team in RANKED_TEAMS
+        app.handle(Action::Enter);
+        let first_team = crate::tui::screens::home::RANKED_TEAMS[0];
+        assert_eq!(app.screen, Screen::Team(first_team.to_string()));
+        assert_eq!(app.prev_screen, Some(Screen::Home));
+    }
+
+    #[test]
+    fn l0_tui_team_enter_without_players_does_not_crash() {
+        let mut app = App::new(false);
+        // Navigate to a team with no players loaded
+        app.screen = Screen::Team("SEA".to_string());
+        app.selected = 0;
+        app.handle(Action::Enter); // should not panic even with empty player list
+        // With no players, selected player not found — stays on Team screen
+        assert!(matches!(app.screen, Screen::Team(_) | Screen::Player(_)));
+    }
+
+    #[test]
+    fn l0_tui_down_up_selection() {
+        let mut app = App::new(false);
+        assert_eq!(app.selected, 0);
+        app.handle(Action::Down);
+        assert_eq!(app.selected, 1);
+        app.handle(Action::Down);
+        assert_eq!(app.selected, 2);
+        app.handle(Action::Up);
+        assert_eq!(app.selected, 1);
+        app.handle(Action::Up);
+        app.handle(Action::Up); // can't go below 0
+        assert_eq!(app.selected, 0);
     }
 }
