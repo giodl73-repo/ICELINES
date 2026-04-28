@@ -224,9 +224,15 @@ fn render_load_list(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
 }
 
 fn render_controls(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
+    let border_style = if !app.query_results_focused {
+        Style::default().fg(Color::Cyan)
+    } else {
+        Style::default().fg(Color::DarkGray)
+    };
     let block = Block::default()
         .borders(Borders::ALL)
-        .title(" Query  ↑↓ field · ←→ value ");
+        .title(" Query  ↑↓ field · ←→ value ")
+        .border_style(border_style);
     let inner = block.inner(area);
     f.render_widget(block, area);
 
@@ -261,9 +267,15 @@ fn render_controls(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
 fn render_results(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
     let sort = app.query_fields[0].value();
 
+    let border_style = if app.query_results_focused {
+        Style::default().fg(Color::Cyan)
+    } else {
+        Style::default().fg(Color::DarkGray)
+    };
     let block = Block::default()
         .borders(Borders::ALL)
-        .title(format!(" Results — {} · ↑↓ scroll · Enter: card ", sort));
+        .title(format!(" Results — {} · Tab:focus · ↑↓ · Enter: card ", sort))
+        .border_style(border_style);
     let inner = block.inner(area);
     f.render_widget(block, area);
 
