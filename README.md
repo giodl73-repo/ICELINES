@@ -6,11 +6,32 @@ NHL depth charts, pace-adjusted rankings, query engine, fantasy league managemen
 
 ---
 
-## Quick start
+## Download (no coding required)
+
+**[→ Download the latest release](https://github.com/giodl73-repo/ICELINES/releases/latest)**
+
+1. Click the link above and download the file for your platform:
+   - Windows → `icelines-windows-x86_64.zip`
+   - Mac (Apple Silicon) → `icelines-macos-arm64.tar.gz`
+   - Mac (Intel) → `icelines-macos-x86_64.tar.gz`
+   - Linux → `icelines-linux-x86_64.tar.gz`
+2. Extract the archive — you get a single `icelines` (or `icelines.exe`) file
+3. Open a terminal in that folder and run:
 
 ```bash
-git clone https://github.com/giodl73-repo/ICELINES.git icelines
-cd icelines/src
+icelines fetch all        # download current NHL data (~5 seconds)
+icelines tui              # launch the interactive app
+```
+
+That's it. Five seasons of data are bundled in — no database setup, no accounts.
+
+---
+
+## Build from source
+
+```bash
+git clone https://github.com/giodl73-repo/ICELINES.git
+cd ICELINES
 cargo build --release
 ```
 
