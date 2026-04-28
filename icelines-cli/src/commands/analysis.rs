@@ -29,6 +29,19 @@ pub async fn run_class(
     let matched = filter.apply(&players);
     let limit = top.unwrap_or(matched.len());
 
+    if matched.is_empty() {
+        let current_year = 2026u16;
+        if year < current_year - 4 {
+            eprintln!("DRAFT CLASS {year} — 0 active players found in installed seasons.");
+            eprintln!("  Players from the {year} draft class may have retired before the bundled data window.");
+            eprintln!("  Install older seasons to see historical draft class data:");
+            eprintln!("    icelines data install <YYYYZZZZ>");
+        } else {
+            eprintln!("DRAFT CLASS {year} — 0 players matched. Check the draft year.");
+        }
+        return Ok(());
+    }
+
     println!("DRAFT CLASS {year} — {} players", matched.len());
     println!("{}", "─".repeat(72usize));
     println!(
@@ -181,7 +194,7 @@ pub async fn run_compare(name1: String, name2: String, _json: bool) -> anyhow::R
 
 // ── icelines history ───────────────────────────────────────────────────────────
 
-pub async fn run_history(player_name: String, _json: bool) -> anyhow::Result<()> {
+pub async fn run_history(player_name: String, seasons: usize, _json: bool) -> anyhow::Result<()> {
     use icelines_fetch::career::load_career;
     use crate::config::Config;
     use icelines_fetch::snapshot::SnapshotStore;
@@ -189,8 +202,11 @@ pub async fn run_history(player_name: String, _json: bool) -> anyhow::Result<()>
     let cfg   = Config::load()?;
     let store = SnapshotStore::new(cfg.snapshot_dir());
 
-    let summary = load_career(&player_name, 5, &store)
-        .with_context(|| format!("'{player_name}' not found in bundled season data"))?;
+    let summary = load_career(&player_name, seasons, &store)
+        .with_context(|| format!(
+            "'{player_name}' not found in installed seasons (checked last {seasons}).\n\
+             Tip: install older seasons with `icelines data install <YYYYZZZZ>` to view historical players."
+        ))?;
 
     println!("CAREER HISTORY — {} (last {} seasons)",
         summary.full_name, summary.seasons.len());
@@ -274,7 +290,7 @@ pub async fn run_group(cmd: GroupSubcommand) -> anyhow::Result<()> {
 
             let players = load_all_players()?;
             for norm in &members {
-                if let Some(p) = players.iter().find(|p| &p.name_normalized == norm) {
+                if let Some(p) = players.iter().find(|p| p.name_normalized.contains(norm.as_str())) {
                     let (ppg, proj) = pace_strings(p);
                     println!(
                         "  {:<24} {:<5} {:<4} {} / {}",
@@ -285,7 +301,7 @@ pub async fn run_group(cmd: GroupSubcommand) -> anyhow::Result<()> {
                         proj
                     );
                 } else {
-                    println!("  {norm}  (not in current snapshot)");
+                    println!("  {norm}  (player not found — may have been traded or retired)");
                 }
             }
         }

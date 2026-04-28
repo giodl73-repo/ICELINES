@@ -158,6 +158,9 @@ pub enum Commands {
     /// Show a player's historical season stats.
     History {
         player: String,
+        /// Number of seasons to show (default: 5).
+        #[arg(long, default_value_t = 5)]
+        seasons: usize,
         #[arg(long)]
         json: bool,
     },

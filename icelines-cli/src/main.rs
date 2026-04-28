@@ -102,8 +102,8 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
         } => {
             commands::analysis::run_compare(player1, player2, json).await?;
         }
-        Commands::History { player, json } => {
-            commands::analysis::run_history(player, json).await?;
+        Commands::History { player, seasons, json } => {
+            commands::analysis::run_history(player, seasons, json).await?;
         }
         Commands::Group(sub) => {
             commands::analysis::run_group(sub).await?;

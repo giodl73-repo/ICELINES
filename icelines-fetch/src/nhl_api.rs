@@ -261,16 +261,25 @@ impl NhlApiClient {
                         let home = g["homeTeam"]["abbrev"].as_str().unwrap_or("").to_owned();
                         let home_name = g["homeTeam"]["placeName"]["default"]
                             .as_str().unwrap_or(&home).to_owned();
-                        let start = g["startTimeUTC"].as_str().unwrap_or("").to_owned();
+                        let start     = g["startTimeUTC"].as_str().unwrap_or("").to_owned();
+                        let game_type = g["gameType"].as_u64().unwrap_or(2) as u8;
+                        let ss        = &g["seriesSummary"];
+                        let series_game = ss["gameLabel"].as_str().map(str::to_owned);
+                        let away_wins   = ss["awayWins"].as_u64().map(|v| v as u8);
+                        let home_wins   = ss["homeWins"].as_u64().map(|v| v as u8);
                         if game_id > 0 {
                             games.push(ScheduledGame {
                                 game_id,
                                 date: date.clone(),
+                                game_type,
                                 away_abbrev: away,
                                 away_name,
                                 home_abbrev: home,
                                 home_name,
                                 start_time_utc: start,
+                                series_game,
+                                away_wins,
+                                home_wins,
                             });
                         }
                     }
@@ -285,9 +294,26 @@ impl NhlApiClient {
 pub struct ScheduledGame {
     pub game_id:         u64,
     pub date:            String,  // "YYYY-MM-DD"
+    pub game_type:       u8,      // 1=preseason 2=regular 3=playoff
     pub away_abbrev:     String,
     pub away_name:       String,
     pub home_abbrev:     String,
     pub home_name:       String,
     pub start_time_utc:  String,
+    // Playoff series context (game_type == 3 only)
+    pub series_game:     Option<String>,  // e.g. "Game 4"
+    pub away_wins:       Option<u8>,
+    pub home_wins:       Option<u8>,
+}
+
+impl ScheduledGame {
+    pub fn is_playoff(&self) -> bool { self.game_type == 3 }
+
+    /// "EDM 2 – VGK 1 · Game 4" style label for playoffs.
+    pub fn series_label(&self) -> Option<String> {
+        let gm = self.series_game.as_deref()?;
+        let aw = self.away_wins?;
+        let hw = self.home_wins?;
+        Some(format!("{} {aw}–{hw} {} · {gm}", self.away_abbrev, self.home_abbrev))
+    }
 }

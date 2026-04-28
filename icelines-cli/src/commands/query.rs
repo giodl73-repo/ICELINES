@@ -377,11 +377,33 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
         return Ok(());
     }
 
-    matched.sort_by(|a, b| {
-        metric.sort_value(b)
-            .partial_cmp(&metric.sort_value(a))
-            .unwrap_or(std::cmp::Ordering::Equal)
-    });
+    // Warn if a realtime/MoneyPuck metric has no data (all zeros/defaults)
+    let data_missing = match metric {
+        SortMetric::HitsPace | SortMetric::Hits | SortMetric::BlocksPace | SortMetric::Blocks
+        | SortMetric::Takeaways | SortMetric::Giveaways | SortMetric::Pim => {
+            matched.iter().all(|p| p.hits == 0 && p.blocked_shots == 0 && p.takeaways == 0)
+        }
+        SortMetric::Xg | SortMetric::XgPer60 | SortMetric::CfPct
+        | SortMetric::FfPct | SortMetric::XgfPct => {
+            matched.iter().all(|p| p.xg.is_none() && p.cf_pct_5v5.is_none())
+        }
+        _ => false,
+    };
+    if data_missing {
+        eprintln!("  Warning: no realtime/MoneyPuck data loaded for sort '{}'. Run `icelines fetch` to download it.", args.sort);
+        eprintln!("  Results below are sorted by Pts/82 as a fallback.");
+        matched.sort_by(|a, b| {
+            let sa = a.pace_score.map(|s| s.pace_82).unwrap_or(0.0);
+            let sb = b.pace_score.map(|s| s.pace_82).unwrap_or(0.0);
+            sb.partial_cmp(&sa).unwrap_or(std::cmp::Ordering::Equal)
+        });
+    } else {
+        matched.sort_by(|a, b| {
+            metric.sort_value(b)
+                .partial_cmp(&metric.sort_value(a))
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+    }
     let total_matched = matched.len();
     let results: Vec<&Player> = matched.into_iter().take(args.top).collect();
 

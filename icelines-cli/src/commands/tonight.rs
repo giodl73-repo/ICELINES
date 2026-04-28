@@ -1,6 +1,22 @@
 use anyhow::Context;
 use icelines_fetch::nhl_api::NhlApiClient;
 
+/// Convert a UTC time string "HH:MM" to "H:MM AM/PM ET" (assumes EDT = UTC-4, April–Oct).
+/// Falls back to showing UTC if parsing fails.
+fn format_time_et(utc_hhmm: &str) -> String {
+    let parts: Vec<&str> = utc_hhmm.splitn(2, ':').collect();
+    if parts.len() == 2 {
+        if let (Ok(h), Ok(m)) = (parts[0].parse::<u32>(), parts[1].parse::<u32>()) {
+            // EDT = UTC-4 (daylight saving, Oct–Mar use EST = UTC-5; we use -4 year-round as approximation)
+            let et_h = (h + 24 - 4) % 24;
+            let period = if et_h < 12 { "AM" } else { "PM" };
+            let display_h = match et_h % 12 { 0 => 12, n => n };
+            return format!("{display_h}:{m:02} {period} ET");
+        }
+    }
+    format!("{utc_hhmm} UTC")
+}
+
 pub async fn run(team_filter: Option<String>) -> anyhow::Result<()> {
     let client = NhlApiClient::production();
     let all_games = client.fetch_today_schedule().await
@@ -38,11 +54,12 @@ pub async fn run(team_filter: Option<String>) -> anyhow::Result<()> {
     }
 
     for game in &filtered {
-        let time = game.start_time_utc.get(11..16).unwrap_or("?");
-        println!("{} {} @ {} {}  UTC {}",
+        let utc = game.start_time_utc.get(11..16).unwrap_or("?");
+        let et  = format_time_et(utc);
+        println!("{} {} @ {} {}  {}",
             game.away_abbrev, game.away_name,
             game.home_abbrev, game.home_name,
-            time);
+            et);
     }
     Ok(())
 }
@@ -79,8 +96,9 @@ pub async fn run_schedule(team: Option<String>, days: u32) -> anyhow::Result<()>
                 continue;
             }
         }
-        let time = game.start_time_utc.get(11..16).unwrap_or("?");
-        println!("  {} @ {}  UTC {}", game.away_abbrev, game.home_abbrev, time);
+        let utc = game.start_time_utc.get(11..16).unwrap_or("?");
+        let et  = format_time_et(utc);
+        println!("  {} @ {}  {}", game.away_abbrev, game.home_abbrev, et);
     }
     Ok(())
 }
