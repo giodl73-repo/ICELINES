@@ -1,5 +1,5 @@
 use anyhow::Result;
-use crossterm::event::{self, Event, KeyCode, KeyModifiers};
+use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 use std::time::Duration;
 
 #[derive(Debug, Clone)]
@@ -36,6 +36,10 @@ fn map_event(ev: Event) -> Option<Action> {
 }
 
 fn map_key(k: crossterm::event::KeyEvent) -> Option<Action> {
+    // Ignore Release and Repeat — only handle Press to prevent double-fire
+    if k.kind != KeyEventKind::Press {
+        return None;
+    }
     use KeyCode::*;
     match k.code {
         Char('q') if k.modifiers == KeyModifiers::NONE => Some(Action::Quit),

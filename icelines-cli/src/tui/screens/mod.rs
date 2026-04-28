@@ -27,9 +27,9 @@ pub fn render(f: &mut Frame, app: &App) {
         Screen::Player(idx)     => player::render(f, app, chunks[1], *idx),
         Screen::Search          => search::render(f, app, chunks[1]),
         Screen::Tonight         => misc::render_tonight(f, chunks[1]),
-        Screen::Projections     => misc::render_projections(f, chunks[1]),
+        Screen::Projections     => misc::render_projections(f, app, chunks[1]),
         Screen::Groups          => misc::render_groups(f, chunks[1]),
-        Screen::Fetch           => misc::render_fetch(f, chunks[1]),
+        Screen::Fetch           => misc::render_fetch(f, app, chunks[1]),
         Screen::Help            => home::render(f, app, chunks[1]),
     }
 
