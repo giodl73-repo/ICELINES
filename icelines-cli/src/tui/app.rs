@@ -39,9 +39,10 @@ pub struct App {
     pub show_help:           bool,
     // Headshot ASCII cache
     pub headshot_cache:      crate::tui::headshot::HeadshotCache,
-    // Group picker (shown as overlay on player card)
+    // Group picker (shown as overlay on player card or team roster)
     pub group_picker_open:   bool,
-    pub group_picker_list:   Vec<String>,  // group names
+    pub group_picker_list:   Vec<String>,           // group names
+    pub group_picker_player: Option<(String, String)>, // (normalized, full_name)
     // Query manager state
     pub query_fields:        Vec<crate::tui::screens::queries::QueryField>,
     pub query_field_idx:     usize,       // which field row is active
@@ -70,6 +71,7 @@ impl App {
             query_result_scroll: 0,
             group_picker_open:   false,
             group_picker_list:   Vec::new(),
+            group_picker_player: None,
             headshot_cache:      crate::tui::headshot::HeadshotCache::new(),
             query_mode:          QueryMode::Build,
             query_save_name:     String::new(),
@@ -91,8 +93,9 @@ impl App {
             Action::Back | Action::Escape => {
                 if self.group_picker_open {
                     self.group_picker_open = false;
+                    self.group_picker_player = None;
                     self.selected = 0;
-                    self.status = "  g = add to group".to_owned();
+                    self.status = "  g = add to group from any player card or team roster".to_owned();
                 } else if self.screen == Screen::Queries && self.query_mode != QueryMode::Build {
                     self.query_mode = QueryMode::Build;
                     self.status = "Cancelled  ·  s=save  l=load  r=reset".to_owned();
@@ -190,19 +193,33 @@ impl App {
                 }
             }
             Action::AddToGroup => {
-                if matches!(self.screen, Screen::Player(_)) {
-                    // Load group list and open picker
+                // Find which player the user is looking at (player card OR team roster row)
+                let target_player: Option<(String, String)> = match &self.screen {
+                    Screen::Player(idx) => self.players.get(*idx)
+                        .map(|p| (p.name_normalized.clone(), p.full_name.clone())),
+                    Screen::Team(abbrev) => {
+                        let abbrev = abbrev.clone();
+                        self.players.iter()
+                            .filter(|p| p.team.as_str() == abbrev.as_str())
+                            .nth(self.selected)
+                            .map(|p| (p.name_normalized.clone(), p.full_name.clone()))
+                    }
+                    _ => None,
+                };
+
+                if let Some(player) = target_player {
                     self.group_picker_list = crate::db::GroupDb::open()
                         .ok()
                         .and_then(|db| db.list_groups().ok())
                         .map(|gs| gs.into_iter().map(|g| g.name).collect())
                         .unwrap_or_default();
                     if self.group_picker_list.is_empty() {
-                        self.status = "No groups yet — create one with `icelines group create`".to_owned();
+                        self.status = "No groups — create one with `icelines group create`".to_owned();
                     } else {
+                        self.group_picker_player = Some(player);
                         self.group_picker_open = true;
                         self.selected = 0;
-                        self.status = "Add to group — ↑↓ select · Enter to add · Esc cancel".to_owned();
+                        self.status = "Add to group — ↑↓ select · Enter · Esc cancel".to_owned();
                     }
                 }
             }
@@ -263,24 +280,20 @@ impl App {
                     self.selected = 0;
                 }
             }
-            // Group picker overlay (shown on player card)
+            // Group picker overlay (shown on player card OR team roster)
             _ if self.group_picker_open => {
-                if let Screen::Player(idx) = self.screen {
-                    if let Some(p) = self.players.get(idx) {
-                        if let Some(group_name) = self.group_picker_list.get(self.selected).cloned() {
-                            let norm = p.name_normalized.clone();
-                            let full = p.full_name.clone();
-                            if let Ok(db) = crate::db::GroupDb::open() {
-                                match db.add_member(&group_name, &norm) {
-                                    Ok(true)  => self.status = format!("✓ Added {} to '{}'", full, group_name),
-                                    Ok(false) => self.status = format!("'{}' is already in '{}'", full, group_name),
-                                    Err(e)    => self.status = format!("Error: {e}"),
-                                }
+                if let Some(group_name) = self.group_picker_list.get(self.selected).cloned() {
+                    if let Some((norm, full)) = self.group_picker_player.take() {
+                        if let Ok(db) = crate::db::GroupDb::open() {
+                            match db.add_member(&group_name, &norm) {
+                                Ok(true)  => self.status = format!("✓ Added {} to '{}'", full, group_name),
+                                Ok(false) => self.status = format!("'{}' is already in '{}'", full, group_name),
+                                Err(e)    => self.status = format!("Error: {e}"),
                             }
-                            self.group_picker_open = false;
-                            self.selected = 0;
                         }
                     }
+                    self.group_picker_open = false;
+                    self.selected = 0;
                 }
             }
             Screen::Groups => {

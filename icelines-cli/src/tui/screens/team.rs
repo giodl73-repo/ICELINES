@@ -10,7 +10,7 @@ use crate::tui::app::App;
 pub fn render(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
     let block = Block::default()
         .borders(Borders::ALL)
-        .title(format!(" {} — Roster  (Enter: player card  Esc: back) ", abbrev));
+        .title(format!(" {} — Roster  ·  g: add to group  ·  Enter: player card  ·  Esc: back ", abbrev));
     let inner = block.inner(area);
     f.render_widget(block, area);
 
@@ -54,4 +54,9 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
     }
 
     f.render_widget(Paragraph::new(lines), inner);
+
+    // Group picker overlay — shown when user presses g on a team roster row
+    if app.group_picker_open {
+        super::player::render_group_picker(f, app, area);
+    }
 }

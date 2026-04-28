@@ -42,7 +42,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, idx: usize) {
     }
 }
 
-fn render_group_picker(f: &mut Frame, app: &App, area: Rect) {
+pub fn render_group_picker(f: &mut Frame, app: &App, area: Rect) {
     // Center a small popup
     let popup_h = (app.group_picker_list.len() as u16 + 4).min(area.height - 4);
     let popup_w = 36u16.min(area.width - 4);
@@ -83,8 +83,8 @@ fn render_headshot(f: &mut Frame, app: &App, p: &icelines_core::model::Player, a
                 Line::from(""),
                 Line::from(format!("  {:^20}", abbr)),
                 Line::from(""),
-                Line::from("  run fetch all"),
-                Line::from("  for player photo"),
+                Line::from("  icelines fetch"),
+                Line::from("  rosters"),
             ]
         }
         Some(r) if headshot::is_loading(r) => vec![
