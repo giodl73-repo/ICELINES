@@ -41,6 +41,20 @@ pub fn render(f: &mut Frame, app: &App) {
         chunks[2],
     );
 
+    // Group picker overlay — shown on any player-list screen when g is pressed.
+    // Rendered at top level so it floats over the current screen.
+    // (player.rs and team.rs also call this, but those handle it locally.
+    //  This catches Projections, Search, Queries, GroupDetail.)
+    if app.group_picker_open {
+        // Skip if player/team screen — they render the overlay themselves
+        let handled_locally = matches!(app.screen,
+            Screen::Player(_) | Screen::Team(_)
+        );
+        if !handled_locally {
+            player::render_group_picker(f, app, area);
+        }
+    }
+
     if app.show_help {
         let popup = centered_rect(62, 65, area);
         f.render_widget(Clear, popup);

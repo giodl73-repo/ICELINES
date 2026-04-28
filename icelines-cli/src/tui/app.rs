@@ -193,10 +193,13 @@ impl App {
                 }
             }
             Action::AddToGroup => {
-                // Find which player the user is looking at (player card OR team roster row)
+                // Find selected player on any screen that shows a player list
                 let target_player: Option<(String, String)> = match &self.screen {
+                    // Player card — the displayed player
                     Screen::Player(idx) => self.players.get(*idx)
                         .map(|p| (p.name_normalized.clone(), p.full_name.clone())),
+
+                    // Team roster — selected row within that team
                     Screen::Team(abbrev) => {
                         let abbrev = abbrev.clone();
                         self.players.iter()
@@ -204,6 +207,54 @@ impl App {
                             .nth(self.selected)
                             .map(|p| (p.name_normalized.clone(), p.full_name.clone()))
                     }
+
+                    // Projections — sorted pts/82 leaderboard
+                    Screen::Projections => {
+                        let mut sorted: Vec<&icelines_core::model::Player> = self.players.iter()
+                            .filter(|p| p.pace_score.is_some()).collect();
+                        sorted.sort_by(|a, b| {
+                            let sa = a.pace_score.map(|s| s.pace_82).unwrap_or(0.0);
+                            let sb = b.pace_score.map(|s| s.pace_82).unwrap_or(0.0);
+                            sb.partial_cmp(&sa).unwrap_or(std::cmp::Ordering::Equal)
+                        });
+                        sorted.get(self.selected)
+                            .map(|p| (p.name_normalized.clone(), p.full_name.clone()))
+                    }
+
+                    // Search — filtered results
+                    Screen::Search => {
+                        let norm = icelines_core::name::normalize_name(&self.search_query);
+                        let filtered: Vec<&icelines_core::model::Player> = self.players.iter()
+                            .filter(|p| p.name_normalized.contains(&norm))
+                            .collect();
+                        filtered.get(self.selected)
+                            .map(|p| (p.name_normalized.clone(), p.full_name.clone()))
+                    }
+
+                    // Query manager — result rows from the right panel
+                    Screen::Queries => {
+                        let results = crate::tui::screens::queries::run_query(
+                            &self.players, &self.query_fields
+                        );
+                        let row_idx = self.query_result_scroll
+                            + self.selected.min(results.len().saturating_sub(1));
+                        results.get(row_idx)
+                            .map(|(_, p)| (p.name_normalized.clone(), p.full_name.clone()))
+                    }
+
+                    // Group detail — members of a group
+                    Screen::GroupDetail(group_name) => {
+                        let gn = group_name.clone();
+                        crate::db::GroupDb::open().ok()
+                            .and_then(|db| db.list_members(&gn).ok())
+                            .and_then(|members| members.get(self.selected).cloned()
+                                .and_then(|norm| self.players.iter()
+                                    .find(|p| p.name_normalized.contains(&norm))
+                                    .map(|p| (p.name_normalized.clone(), p.full_name.clone()))
+                                )
+                            )
+                    }
+
                     _ => None,
                 };
 
