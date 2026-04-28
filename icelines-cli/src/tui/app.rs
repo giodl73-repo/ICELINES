@@ -332,11 +332,19 @@ impl App {
     }
 
     fn go_back(&mut self) {
-        if let Some(prev) = self.prev_screen.take() {
-            self.screen = prev;
+        self.screen = if let Some(prev) = self.prev_screen.take() {
+            prev
         } else {
-            self.screen = Screen::Home;
-        }
+            // Sensible parent for each drill-down screen when prev_screen is unset
+            match &self.screen {
+                Screen::DepthTeam(_) => Screen::Depth,
+                Screen::Team(_)      => Screen::Home,
+                Screen::Player(_)    => Screen::Home,
+                Screen::Comps(_)     => Screen::Home,
+                Screen::GroupDetail(_) => Screen::Groups,
+                _                    => Screen::Home,
+            }
+        };
         self.selected = 0;
         self.query_results_focused = false;
     }
@@ -582,14 +590,15 @@ impl App {
     fn cycle_screen(&mut self) {
         self.query_results_focused = false;
         self.screen = match &self.screen {
-            Screen::Home        => Screen::Queries,
-            Screen::Queries     => Screen::Projections,
-            Screen::Projections => Screen::Tonight,
-            Screen::Tonight     => Screen::Groups,
-            Screen::Groups      => Screen::Depth,
-            Screen::Depth       => Screen::Fetch,
-            Screen::Fetch       => Screen::Home,
-            _                   => Screen::Home,
+            Screen::Home              => Screen::Queries,
+            Screen::Queries           => Screen::Projections,
+            Screen::Projections       => Screen::Tonight,
+            Screen::Tonight           => Screen::Groups,
+            Screen::Groups            => Screen::Depth,
+            Screen::Depth             => Screen::Fetch,
+            Screen::DepthTeam(_)      => Screen::Fetch,  // Tab from team chart skips to Fetch
+            Screen::Fetch             => Screen::Home,
+            _                         => Screen::Home,
         };
         self.selected = 0;
         self.query_result_scroll = 0;

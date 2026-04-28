@@ -107,7 +107,7 @@ pub fn render_team(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
         }
     };
 
-    // 5 columns: C | LW | RW | LD | RD
+    // 5 columns: LW | C | RW | LD | RD
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
@@ -116,34 +116,48 @@ pub fn render_team(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
         ])
         .split(inner);
 
-    // Build the LD/RD split from shoots_catches
-    let mut all_d: Vec<&icelines_core::model::Player> = app.players.iter()
-        .filter(|p| p.team.as_str() == abbrev
-            && p.position == icelines_core::model::Position::Defense)
+    // Greedy forward assignment: sort all forwards by score, assign to primary pos.
+    // Overflow (>4 at any pos) spills into the thinnest other forward slot.
+    use icelines_core::model::Position;
+    let mut fwd_buckets: std::collections::HashMap<Position, Vec<&icelines_core::model::Player>> =
+        std::collections::HashMap::new();
+    let mut all_fwds: Vec<&icelines_core::model::Player> = app.players.iter()
+        .filter(|p| p.team.as_str() == abbrev && p.position.is_forward())
         .collect();
-    all_d.sort_by(|a, b| score_of(b).partial_cmp(&score_of(a))
-        .unwrap_or(std::cmp::Ordering::Equal));
+    all_fwds.sort_by(|a, b| score_of(b).partial_cmp(&score_of(a)).unwrap_or(std::cmp::Ordering::Equal));
 
-    let ld_players: Vec<&icelines_core::model::Player> = all_d.iter()
-        .filter(|p| p.shoots_catches.as_deref() != Some("R"))
-        .copied().collect();
-    let rd_players: Vec<&icelines_core::model::Player> = all_d.iter()
-        .filter(|p| p.shoots_catches.as_deref() == Some("R"))
-        .copied().collect();
+    for p in &all_fwds {
+        let bucket = fwd_buckets.entry(p.position).or_default();
+        if bucket.len() < 4 {
+            bucket.push(p);
+        } else {
+            // Primary slot full — spill to least-populated forward position
+            let spill = [Position::LeftWing, Position::Center, Position::RightWing]
+                .iter()
+                .min_by_key(|&&pos| fwd_buckets.get(&pos).map_or(0, |v| v.len()))
+                .copied()
+                .unwrap_or(p.position);
+            fwd_buckets.entry(spill).or_default().push(p);
+        }
+    }
 
+    // Defense: split by handedness
+    let mut all_d: Vec<&icelines_core::model::Player> = app.players.iter()
+        .filter(|p| p.team.as_str() == abbrev && p.position == Position::Defense)
+        .collect();
+    all_d.sort_by(|a, b| score_of(b).partial_cmp(&score_of(a)).unwrap_or(std::cmp::Ordering::Equal));
+    let ld_players: Vec<_> = all_d.iter().filter(|p| p.shoots_catches.as_deref() != Some("R")).copied().collect();
+    let rd_players: Vec<_> = all_d.iter().filter(|p| p.shoots_catches.as_deref() == Some("R")).copied().collect();
+
+    let empty = vec![];
     let fwd_cols = [
-        (icelines_core::model::Position::Center,    "CENTER",     4usize),
-        (icelines_core::model::Position::LeftWing,  "LEFT WING",  4),
-        (icelines_core::model::Position::RightWing, "RIGHT WING", 4),
+        (Position::LeftWing,  "LEFT WING",  fwd_buckets.get(&Position::LeftWing).unwrap_or(&empty)),
+        (Position::Center,    "CENTER",     fwd_buckets.get(&Position::Center).unwrap_or(&empty)),
+        (Position::RightWing, "RIGHT WING", fwd_buckets.get(&Position::RightWing).unwrap_or(&empty)),
     ];
 
-    for (col, (pos, label, depth)) in fwd_cols.iter().enumerate() {
-        let mut players: Vec<&icelines_core::model::Player> = app.players.iter()
-            .filter(|p| p.team.as_str() == abbrev && p.position == *pos)
-            .collect();
-        players.sort_by(|a, b| score_of(b).partial_cmp(&score_of(a))
-            .unwrap_or(std::cmp::Ordering::Equal));
-        render_pos_col(f, chunks[col], label, &players, *depth, &score_of, &metrics_map, mode);
+    for (col, (_pos, label, players)) in fwd_cols.iter().enumerate() {
+        render_pos_col(f, chunks[col], label, players, 4, &score_of, &metrics_map, mode);
     }
 
     render_pos_col(f, chunks[3], "LD", &ld_players, 3, &score_of, &metrics_map, mode);
