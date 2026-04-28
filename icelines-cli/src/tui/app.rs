@@ -51,6 +51,10 @@ pub struct App {
     // Depth chart tab
     pub depth_mode:          icelines_core::cross_team::ScoringMode,
     pub show_admin:          bool,
+    // Season time-travel
+    pub active_season:       String,
+    pub show_season_picker:  bool,
+    pub picker_selected:     usize,
     // Query manager state
     pub query_fields:        Vec<crate::tui::screens::queries::QueryField>,
     pub query_field_idx:     usize,       // which field row is active
@@ -80,6 +84,9 @@ impl App {
             query_result_scroll: 0,
             depth_mode:          icelines_core::cross_team::ScoringMode::Fantasy,
             show_admin:          false,
+            active_season:       icelines_core::CURRENT_SEASON_STR.to_owned(),
+            show_season_picker:  false,
+            picker_selected:     0,
             group_picker_open:   false,
             group_picker_list:   Vec::new(),
             group_picker_player: None,
@@ -99,13 +106,16 @@ impl App {
         }
 
         if self.show_admin {
-            // Any key except Esc/q is ignored while admin overlay is open
             match action {
                 Action::Quit => return true,
                 Action::Back | Action::Escape => self.show_admin = false,
                 _ => {}
             }
             return false;
+        }
+
+        if self.show_season_picker {
+            return self.handle_season_picker(action);
         }
 
         match action {
@@ -262,6 +272,13 @@ impl App {
                     self.status = format!("Scoring: {}", self.depth_mode.label());
                 } else if c == 'F' {
                     self.show_admin = !self.show_admin;
+                } else if c == 'y' {
+                    self.show_season_picker = true;
+                    // Start picker on current active season
+                    let season_list = crate::tui::screens::misc::PICKER_SEASONS;
+                    self.picker_selected = season_list.iter()
+                        .position(|(id, _, _)| *id == self.active_season.as_str())
+                        .unwrap_or(0);
                 }
             }
             Action::Backspace => {
@@ -360,6 +377,100 @@ impl App {
             }
         }
         false
+    }
+
+    /// Handle key events when the season picker overlay is open.
+    /// Returns true only if user pressed q (quit).
+    fn handle_season_picker(&mut self, action: Action) -> bool {
+        use crate::tui::screens::misc::PICKER_SEASONS;
+        let n = PICKER_SEASONS.len();
+        match action {
+            Action::Quit => return true,
+            Action::Back | Action::Escape => {
+                self.show_season_picker = false;
+            }
+            Action::Down => {
+                self.picker_selected = (self.picker_selected + 1).min(n.saturating_sub(1));
+            }
+            Action::Up => {
+                self.picker_selected = self.picker_selected.saturating_sub(1);
+            }
+            Action::Enter => {
+                if let Some(&(season_id, _, is_lockout)) = PICKER_SEASONS.get(self.picker_selected) {
+                    if is_lockout {
+                        self.status = "No season data — lockout year (2004-05).".to_owned();
+                    } else {
+                        let is_bundled = icelines_fetch::bundled::BUNDLED_SEASONS.contains(&season_id);
+                        let is_installed = icelines_fetch::bundled::is_installed(season_id);
+                        if is_bundled || is_installed {
+                            self.reload_for_season(season_id);
+                            self.show_season_picker = false;
+                        } else {
+                            self.status = format!(
+                                "Season {} not installed. Press 'i' to install, or run `icelines data install {}`.",
+                                season_id, season_id
+                            );
+                        }
+                    }
+                }
+            }
+            Action::Char('i') => {
+                if let Some(&(season_id, _, is_lockout)) = PICKER_SEASONS.get(self.picker_selected) {
+                    if is_lockout {
+                        self.status = "Cannot install — lockout year has no data.".to_owned();
+                    } else if icelines_fetch::bundled::is_installed(season_id) {
+                        self.status = format!("Season {} is already installed.", season_id);
+                    } else {
+                        let season = season_id.to_owned();
+                        let state = self.install_state.clone();
+                        crate::tui::loader::spawn_install(season, state);
+                        self.status = format!("Installing {}…", season_id);
+                    }
+                }
+            }
+            _ => {}
+        }
+        false
+    }
+
+    /// Reload app.players from the given season (bundled or installed).
+    fn reload_for_season(&mut self, season_id: &str) {
+        use icelines_fetch::{bundled, player_builder};
+        use std::collections::HashMap;
+
+        let bios = bundled::get_bios(season_id)
+            .or_else(|| bundled::get_bios_installed(season_id));
+        let stats = bundled::get_stats(season_id)
+            .or_else(|| bundled::get_stats_installed(season_id));
+
+        let players = if let Some(bios) = bios {
+            let stats_idx = stats.as_ref()
+                .map(|s| player_builder::index_stats(s))
+                .unwrap_or_default();
+            player_builder::build_players_from_bios(
+                &bios, &stats_idx,
+                &HashMap::new(), &HashMap::new(), &HashMap::new(),
+                icelines_core::model::Season(
+                    season_id.parse().unwrap_or(icelines_core::CURRENT_SEASON)
+                ),
+            )
+        } else {
+            Vec::new()
+        };
+
+        self.active_season = season_id.to_owned();
+        self.players = players;
+        self.selected = 0;
+
+        if season_id == icelines_core::CURRENT_SEASON_STR {
+            self.status = "Current season loaded.".to_owned();
+        } else {
+            let label = crate::tui::screens::misc::PICKER_SEASONS.iter()
+                .find(|(id, _, _)| *id == season_id)
+                .map(|(_, label, _)| *label)
+                .unwrap_or(season_id);
+            self.status = format!("[{}] — historical season. Live features unavailable.", label);
+        }
     }
 
     fn go_back(&mut self) {

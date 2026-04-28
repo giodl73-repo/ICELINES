@@ -227,6 +227,50 @@ pub fn render_group_members(f: &mut Frame, app: &App, area: Rect, group_name: &s
 
 // ── Fetch + Install ───────────────────────────────────────────────────────────
 
+/// Season list for the picker overlay: (season_id, display_label, is_lockout).
+/// Includes the 2004-05 lockout as an unselectable entry.
+pub const PICKER_SEASONS: &[(&str, &str, bool)] = &[
+    ("20252026","2025-26  (current)",               false),
+    ("20242025","2024-25",                          false),
+    ("20232024","2023-24",                          false),
+    ("20222023","2022-23",                          false),
+    ("20212022","2021-22",                          false),
+    ("20202021","2020-21  (COVID bubble)",          false),
+    ("20192020","2019-20",                          false),
+    ("20182019","2018-19",                          false),
+    ("20172018","2017-18",                          false),
+    ("20162017","2016-17",                          false),
+    ("20152016","2015-16  (McDavid rookie)",        false),
+    ("20142015","2014-15",                          false),
+    ("20132014","2013-14",                          false),
+    ("20122013","2012-13  (lockout-shortened)",     false),
+    ("20112012","2011-12",                          false),
+    ("20102011","2010-11",                          false),
+    ("20092010","2009-10",                          false),
+    ("20082009","2008-09",                          false),
+    ("20072008","2007-08",                          false),
+    ("20062007","2006-07",                          false),
+    ("20052006","2005-06  (Ovechkin/Crosby)",       false),
+    ("20042005","✗ 2004-05  LOCKOUT — no season",   true),
+    ("20032004","2003-04",                          false),
+    ("20022003","2002-03",                          false),
+    ("20012002","2001-02",                          false),
+    ("20002001","2000-01",                          false),
+    ("19992000","1999-2000",                        false),
+    ("19981999","1998-99",                          false),
+    ("19971998","1997-98",                          false),
+    ("19961997","1996-97",                          false),
+    ("19951996","1995-96",                          false),
+    ("19941995","1994-95  (lockout-shortened)",     false),
+    ("19931994","1993-94",                          false),
+    ("19921993","1992-93",                          false),
+    ("19911992","1991-92",                          false),
+    ("19901991","1990-91",                          false),
+    ("19891990","1989-90",                          false),
+    ("19881989","1988-89",                          false),
+    ("19871988","1987-88  (Gretzky to LA)",         false),
+];
+
 /// All 38 seasons newest-first (mirrors AVAILABLE_SEASONS in data.rs).
 pub const ALL_SEASONS: &[(&str, &str)] = &[
     ("20252026","2025-26 Current"),
@@ -382,6 +426,63 @@ pub fn render_fetch(f: &mut Frame, app: &App, area: Rect) {
         .collect();
 
     f.render_widget(List::new(items), install_inner);
+}
+
+// ── Season picker overlay ─────────────────────────────────────────────────────
+
+pub fn render_season_picker(f: &mut Frame, app: &App, area: Rect) {
+    use icelines_fetch::bundled::{is_installed, BUNDLED_SEASONS};
+
+    let popup_h = (area.height * 70 / 100).min(44);
+    let popup_w = (area.width  * 50 / 100).min(52).max(44);
+    let popup = Rect::new(
+        area.x + (area.width  - popup_w) / 2,
+        area.y + (area.height - popup_h) / 2,
+        popup_w, popup_h,
+    );
+    f.render_widget(ratatui::widgets::Clear, popup);
+
+    let block = ratatui::widgets::Block::default()
+        .borders(Borders::ALL)
+        .title(" Select Season — ↑↓ · Enter · i:install · Esc:cancel ")
+        .style(Style::default().fg(Color::Cyan));
+    let inner = block.inner(popup);
+    f.render_widget(block, popup);
+
+    let visible = inner.height as usize;
+    let total   = PICKER_SEASONS.len();
+    let offset  = app.picker_selected.saturating_sub(visible / 2).min(total.saturating_sub(visible));
+
+    let items: Vec<ListItem> = PICKER_SEASONS.iter().enumerate()
+        .skip(offset).take(visible)
+        .map(|(i, (season_id, label, is_lockout))| {
+            let is_current  = *season_id == app.active_season.as_str();
+            let is_bundled  = BUNDLED_SEASONS.contains(season_id);
+            let installed   = is_bundled || is_installed(season_id);
+            let selected    = i == app.picker_selected;
+
+            let prefix = if is_current  { "▶ " }
+                         else if installed { "✓ " }
+                         else             { "  " };
+
+            let (style, suffix) = if selected {
+                (Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD), "")
+            } else if *is_lockout {
+                (Style::default().fg(Color::DarkGray), "")
+            } else if !installed {
+                (Style::default().fg(Color::DarkGray), "  [not installed]")
+            } else {
+                (Style::default(), "")
+            };
+
+            ListItem::new(ratatui::text::Line::styled(
+                format!(" {prefix}{label}{suffix}"),
+                style,
+            ))
+        })
+        .collect();
+
+    f.render_widget(List::new(items), inner);
 }
 
 // ── Schedule (stub) ───────────────────────────────────────────────────────────

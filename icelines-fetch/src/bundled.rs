@@ -71,6 +71,41 @@ pub fn get_stats(season: &str) -> Option<Vec<SkaterStats>> {
     serde_json::from_slice(bytes).ok()
 }
 
+// ── Installed season data (from ~/.icelines/seasons/) ────────────────────────
+
+/// Returns the path to a season's bundle directory, or None if home can't be determined.
+fn season_bundle_dir(season_id: &str) -> Option<std::path::PathBuf> {
+    let home = std::env::var("USERPROFILE")
+        .or_else(|_| std::env::var("HOME"))
+        .ok()?;
+    Some(std::path::Path::new(&home)
+        .join(".icelines")
+        .join("seasons")
+        .join(season_id)
+        .join(format!("bundle-{season_id}")))
+}
+
+/// Returns true if a season has been installed to disk.
+pub fn is_installed(season_id: &str) -> bool {
+    season_bundle_dir(season_id)
+        .map(|d| d.join("bios.json").exists())
+        .unwrap_or(false)
+}
+
+/// Read bios from an installed season bundle. Returns None if not installed.
+pub fn get_bios_installed(season_id: &str) -> Option<Vec<crate::schema::SkaterBio>> {
+    let path = season_bundle_dir(season_id)?.join("bios.json");
+    let text = std::fs::read_to_string(path).ok()?;
+    serde_json::from_str(&text).ok()
+}
+
+/// Read stats from an installed season bundle. Returns None if not installed.
+pub fn get_stats_installed(season_id: &str) -> Option<Vec<crate::schema::SkaterStats>> {
+    let path = season_bundle_dir(season_id)?.join("stats.json");
+    let text = std::fs::read_to_string(path).ok()?;
+    serde_json::from_str(&text).ok()
+}
+
 /// Load bios: try snapshot store first (fresh), fall back to bundled data.
 pub fn load_bios_with_fallback(
     season: &str,

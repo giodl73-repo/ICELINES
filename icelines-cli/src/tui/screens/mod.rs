@@ -85,6 +85,10 @@ pub fn render(f: &mut Frame, app: &App) {
         f.render_widget(block, popup);
         misc::render_admin(f, app, inner);
     }
+
+    if app.show_season_picker {
+        misc::render_season_picker(f, app, area);
+    }
 }
 
 fn tab_for_screen(screen: &Screen) -> usize {
@@ -116,11 +120,24 @@ fn render_nav(f: &mut Frame, app: &App, area: Rect) {
         spans.push(Span::styled("│", Style::default().fg(Color::DarkGray)));
     }
 
-    // Season indicator placeholder for v2
+    // Season indicator — shown when a historical season is active
+    if app.active_season != icelines_core::CURRENT_SEASON_STR {
+        let label = crate::tui::screens::misc::PICKER_SEASONS.iter()
+            .find(|(id, _, _)| *id == app.active_season.as_str())
+            .map(|(_, l, _)| *l)
+            .unwrap_or(app.active_season.as_str());
+        spans.push(Span::styled(
+            format!("  [{}] ", label.split_whitespace().next().unwrap_or(label)),
+            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+        ));
+    }
+
     let hint = if app.show_admin {
         "  Esc:close admin"
+    } else if app.show_season_picker {
+        "  Esc:cancel picker"
     } else {
-        "  Tab:cycle  ←→:sub-view  F:admin  ?:help  q:quit"
+        "  y:season  F:admin  Tab:cycle  ←→:sub-view  ?:help  q:quit"
     };
     spans.push(Span::styled(hint, Style::default().fg(Color::DarkGray)));
     f.render_widget(Paragraph::new(Line::from(spans)), area);
