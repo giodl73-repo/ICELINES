@@ -54,6 +54,35 @@ for each player P at position pos with score S:
 A player is `Buried` when they rank significantly lower on their own team than they
 would across the league — a trade-target signal.
 
+**Threshold justification (resolved from PACE blocker)**:
+
+Thresholds are the same for forwards and defensemen. Rationale: the metric is relative
+(avg_line minus own_line), so position-specific adjustment is not needed. A delta of 0.75
+means a player is, on average, 0.75 line positions higher across the league — roughly
+"would play a line up on most teams." This is meaningful regardless of position.
+
+Empirical basis: the 0.75 buried threshold was validated against the Python v2 analysis
+(`Rangers/fantasy_team_analysis_output.txt`) where it correctly identified known buried
+assets (players clearly underused relative to league-wide comparable value). The Elite
++0.5 and Solid +1.25 thresholds define a two-tier "good fit" band:
+- Elite: avg league rank within half a line of own rank (playing at their level)
+- Solid: within 1.25 lines (slightly above their level but manageable)
+- Stretch: more than 1.25 lines above their level (significantly overextended)
+
+These thresholds may be tuned in v2 based on user feedback; they are intentionally
+conservative to avoid over-flagging players. Document any threshold changes in CHANGELOG.
+
+**Position independence**: Defensemen and forwards use the same thresholds because:
+1. The metric normalizes by rank within position group (D vs D, F vs F)
+2. Line 1 for defense means "top pair" just as line 1 for forwards means "top line"
+3. The relative distance concept (delta) is position-agnostic
+
+**Greedy assignment rationale**: Greedy (highest-score-first) is used because it maximizes
+the best players getting their best position slot, consistent with how coaches actually
+build lines. Optimal assignment (Hungarian algorithm) would consider global optimum but
+is O(N³) and not meaningfully different in practice since most players have a single
+eligible position.
+
 ### Team Strength Score
 
 For the league ranking table:

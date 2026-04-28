@@ -78,6 +78,32 @@ pub active_season: Season,   // default = CURRENT_SEASON
 All data reads go through `active_season`. Current-season screens (live scores, tonight)
 show a "Historical season — no live data" message when non-current season is active.
 
+**Thread safety**: The TUI event loop is single-threaded (one tokio task). All `App`
+mutations — including `active_season` changes — happen in the event handler, never in
+background tasks. Background tasks (data load, install) send results back via `mpsc`
+channel drained in the main loop. No `Arc<Mutex>` is needed for `active_season`.
+This single-threaded invariant must be preserved; never move event handling to a separate thread.
+
+**Season indicator color**: When a historical season is active, the nav bar indicator
+`[2003-04]` is rendered in `Color::Yellow` (high contrast against the default dim nav
+bar). Current season shows no indicator. This uses the same `Style::default().fg(Color::Yellow)`
+as the existing query-field active values for visual consistency.
+
+**Scoring mode scope**: The `s` key toggles scoring mode on the **League tab** (both
+sub-views) and the **Stats tab Projections sub-view** only. It does not apply to the
+Queries sub-view (queries have their own sort controls) or to Comps. This prevents
+`s` from being overloaded with different meanings on different sub-views.
+
+**Concurrent install in season picker**: While an install is in progress (`i` pressed),
+the user may still navigate the picker with `↑↓`. Pressing `i` on a second uninstalled
+season while the first is still installing shows the error: "Install in progress — wait
+for current install to finish". Only one concurrent install is allowed. The in-progress
+row shows `[installing… N%]` updating live from the mpsc channel.
+
+**Admin overlay command validation**: Unknown commands show: `Unknown: 'X'. Type ? for help`.
+Valid commands: `fetch [all]`, `install <YYYYZZZZ>`, `data list`, `data remove <YYYYZZZZ>`.
+Invalid season codes (non-8-digit or unknown) show: `Invalid season 'X'. Use format: 20242025`.
+
 ---
 
 ## Tab 1: League (Depth Rankings)

@@ -161,30 +161,74 @@ Date changes clear the cache and trigger a new fetch.
 
 ## Playoff vs Regular Season
 
-The screen adapts automatically based on the date's game types:
+**Detection rule**: A date is a playoff date if `game.game_type == 3` for any game on
+that date. This is the authoritative check — not calendar date, not standings. If a date
+has both regular (type=2) and playoff (type=3) games (possible during transition), playoff
+games show series context and regular games show records; both are shown.
 
-- **Playoff date**: Game rows show series status; section header shows round
-- **Regular season date**: Game rows show records; no series context
-- **Mixed** (e.g., regular + preseason): Both types shown, preseason dimmed
+Section header logic:
+- All games type=3 → `[PLAYOFFS R{round}]` where round is read from `seriesSummary.seriesAbbrev`
+- All games type=2 → `[REGULAR SEASON]`
+- Mixed → `[PLAYOFFS + REGULAR]` (rare, end-of-regular/start-of-playoffs overlap)
+- Type=1 (preseason) → shown dimmed with `[PRE]` label
 
-The screen header shows `[PLAYOFFS R1]` / `[PLAYOFFS R2]` etc. when applicable,
-or `[REGULAR SEASON]`.
+**Game status symbols** — terminal compatibility:
+| Status | Primary | ASCII fallback |
+|--------|---------|---------------|
+| In progress | `◉ LIVE` | `* LIVE` |
+| Final | `✓ FINAL` | `+ FINAL` |
+| Not started | `○ PRE` | `- PRE` |
+
+Fallback used when `TERM` is `dumb` or `NO_COLOR` is set. On Windows Terminal, primary
+symbols are tested and render correctly in Cascadia Code; on other fonts, fallback is safer.
+
+**Series status layout**: Series status line must fit in 80 columns alongside team names.
+Maximum format: `{ABBR} leads {N}-{M}` (14 chars max). If terminal width <80, truncate
+to `{N}-{M}` only.
+
+---
+
+## Cache Policy (resolved from WIRE blocker)
+
+- Cache key for live scores: `scores_live_{YYYY-MM-DD}` — keyed by date, not global
+- Cache survives tab navigation: if user leaves Scores tab and returns within 30s, existing
+  cache is used; beyond 30s, a fresh fetch is triggered
+- `r` key always clears cache regardless of TTL and triggers immediate fetch
+- Past dates (`scores_date < today`): permanent cache, never re-fetched
+- Completed games (`game.gameState == "OFF"` or `"FINAL"`): cached permanently
+
+---
+
+## Date Navigation Edge Cases (resolved from BENCH blocker)
+
+| Scenario | Expected behavior |
+|----------|-----------------|
+| First day of season | `←` shows "No earlier games in this season" |
+| Last day of season | `→` shows "No later games in this season" |
+| Off-season date (July) | "No games scheduled. Next season begins {date}" |
+| Date with no games | "No games scheduled for {date}" — arrows still work |
+| Partial API response (some games missing) | Show available games + "[N games unavailable]" |
+| In-progress game, API times out | Show last-known score with `[stale]` tag |
 
 ---
 
 ## Season Time-Travel
 
 When `active_season` is not the current season:
-- Schedule data comes from bundled season data (not live API)
+- Schedule data comes from bundled `schedule.json` (not live API)
 - All games show as `FINAL` (no live state)
 - Game detail shows goal log if bundled; otherwise shows score only
 - Top of screen shows: `[Historical — 2003-04]`
+- Fantasy scoring mode unavailable for historical seasons where scheme is not bundled
+  (shows `[Fantasy mode N/A — no historical scheme bundled]`)
 
 ---
 
-## Open Questions
+## Decisions (Open Questions resolved)
 
-1. **Goal detail depth** — do we show assists, or just scorer + primary assist?
-2. **Penalty log** — show penalties in game detail, or goals only?
-3. **Goalie stats** — always shown in game detail, or only for completed games?
-4. **Push notifications** — out of scope for TUI, but noted for future mobile/CLI companion
+1. **Goal detail**: Show scorer + primary assist only. Secondary assist omitted in v1 to
+   fit 80-column layout. Secondary assist added in v2 when wider terminal is assured.
+2. **Penalty log**: Not shown in v1. Goals only in game detail. Penalties added in v2.
+3. **Goalie stats**: Shown only for completed games (`gameState == "OFF"`). In-progress
+   games show saves/shots in real time if available in boxscore response; omitted if not.
+4. **Push notifications**: Out of scope for TUI. Noted for future mobile companion.

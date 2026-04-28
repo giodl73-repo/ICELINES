@@ -203,13 +203,70 @@ pub playoffs_cursor:  (usize, usize), // (round, series) selection
 
 ---
 
-## Open Questions
+## Bracket Data Source (resolved from WIRE blocker)
 
-1. **Bracket visual layout** — the ASCII bracket is complex. Should we use a simplified
-   list-style bracket instead for v1 of this screen?
-2. **Series leaders** — requires aggregating boxscore data per series. Expensive to
-   compute for historical seasons. Defer to v2 of this screen?
-3. **Projected playoff picture** — during regular season, show projected bracket based
-   on current standings? Nice-to-have, not blocking.
-4. **Cup facts database** — who maintains and updates this? Propose: a `cup-facts.json`
-   committed to the repo, one entry per season, maintained by hand.
+For current season brackets:
+- Authoritative source: `GET /v1/playoff-bracket/{year}` (live API)
+- If API fails: fall back to `playoffs.json` in the current season bundle if available
+- If neither available: show "Bracket data unavailable [r: retry]"
+
+For historical brackets:
+- Authoritative source: `playoffs.json` in the season bundle
+- **Not** reconstructed from schedule data — pre-built `playoffs.json` is canonical
+- If a season bundle lacks `playoffs.json`: show "Historical playoff data not bundled for {season}"
+- If `playoffs.json` is incomplete (missing rounds): show available rounds + "[data incomplete]"
+
+**Fallback hierarchy** (in order):
+1. `playoffs.json` from installed bundle
+2. Live API `GET /v1/playoff-bracket/{year}` (current season only)
+3. Reconstructed from `schedule.json` game_type=3 games (fallback for partial data only)
+4. Error message
+
+---
+
+## Series Leaders (resolved from BENCH blocker)
+
+Series leaders are aggregated from the `results` array in `playoffs.json`.
+Each game result entry includes `goals: [{scorer, team}]` — scorer names only.
+Assists are **not included in v1** (not in bundled data). Goals only.
+
+**Test fixture spec**: Given a 4-game sweep (Games 1-4 complete), verify:
+- Leader stats are the sum of goals across those 4 games only
+- A player who scored in all 4 games shows `4G` not `0G`
+- Players from both teams are included (sorted by goals desc)
+- If a player's name appears in two games differently (e.g., name change), deduplicate by normalized name
+
+---
+
+## In-Progress Series Edge Cases (resolved from EDGE warning)
+
+| Scenario | Behavior |
+|----------|----------|
+| Game N in progress | Show current score with `◉ LIVE` label |
+| Game N+1 not yet scheduled | Show `Game {N+1} (if needed)` only after Game N completes AND series not decided |
+| Game N missing from API | Show `Game N — data unavailable` rather than skipping |
+| Series not started | Show "Series begins {date}" |
+| Bye week / days off | No games shown for those dates; not an error |
+
+"If needed" games: shown only when the series requires that many games. A best-of-7 with
+team A leading 3-0 shows Game 4 as live; Games 5-7 are shown as "(if needed)".
+
+---
+
+## Decisions (Open Questions resolved)
+
+1. **Bracket layout**: **List-style bracket for v1** — simpler, works at 80 columns, less
+   fragile. ASCII bracket art deferred to v2 after bracket data is validated.
+   List format: rounds as collapsible sections, series as rows.
+
+2. **Series leaders**: v1 shows goals only (from `playoffs.json`). Assists added in v2
+   when per-game boxscore data is bundled. Computation is per-series (only games in that
+   series), not season-wide.
+
+3. **Projected playoff picture**: Shown during regular season using current standings data.
+   Top 3 in each division + 2 wild cards per conference. Labeled `[PROJECTED]` clearly.
+   Based on points, not complex tiebreaker scenarios (simplified).
+
+4. **Cup facts database**: A `cup-facts.json` file committed to the IceLines repo at
+   `src/data/cup-facts.json`. One entry per season. Updated annually after Cup is awarded.
+   Community PRs welcome for historical season notes.

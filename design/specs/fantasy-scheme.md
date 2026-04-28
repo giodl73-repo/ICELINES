@@ -357,9 +357,46 @@ Users can `--copy` any built-in to create a customized version.
 
 ---
 
+## Scheme Validation Rules (resolved from TAPE + EDGE blockers)
+
+All scheme TOML files are validated on load and on save via `icelines scheme edit`. A scheme
+that fails validation is rejected with an error message; no partial loading.
+
+**Validation rules:**
+1. `weight` values must be finite `f64` — `NaN` and `±Inf` are rejected
+2. Zero weights are allowed (stat counts but has no score impact)
+3. Negative weights are allowed (e.g., `losses = -2.0` for goalie losses)
+4. Unknown stat keys are **rejected** with: `Unknown stat key 'custom_x'. Add to schema first.`
+   (This prevents silent typos: `G (P)` vs `G(P)`)
+5. `scheme.name` must not be empty and must not contain `/`, `\`, `:`, or `..`
+6. `scheme.version` must be a valid semver string (e.g., `"1.0"`, `"2.3.1"`)
+
+**CSV auto-detection (`icelines scheme from-csv`):**
+- Columns not in the known stat mapping are logged as warnings, not errors
+- A CSV with only 1 scoreable stat column is valid (produces a single-weight scheme)
+- Column name `G (Pls)` (typo for `G (P)`) is flagged as: `Unrecognized column 'G (Pls)' — did you mean 'G (P)'?`
+
+---
+
+## Scheme Name Collision Rules (resolved from EDGE blocker)
+
+User-created schemes are stored in `~/.icelines/schemes/` with the filename matching the
+scheme name (slugified). Built-in schemes are read from the binary (not the filesystem).
+
+**Collision policy:**
+- User schemes that share a name with a built-in are stored under the `user/` namespace
+  internally: `user/yahoo-standard` vs built-in `yahoo-standard`
+- The CLI resolves `--scheme yahoo-standard` to the **user copy** if one exists, with warning:
+  `Using custom 'yahoo-standard' — built-in version also exists. Use --scheme builtin/yahoo-standard to use the built-in.`
+- User scheme filenames are slug-safe (lowercase, hyphens only, no `/`). The `user/` prefix
+  is internal only; users reference schemes by slug, not path.
+
+---
+
 ## Invariants
 
 - **DI-20**: A `FantasyScore` is always computed from the same `Scheme` version — scheme version is stored alongside the score in cache
-- **DI-21**: Built-in schemes are read-only — editing them creates a user copy
+- **DI-21**: Built-in schemes are read-only — editing them creates a user copy in `~/.icelines/schemes/`
 - **DI-22**: `fantasy_pts_per_game` is always `None` when `gp < MIN_GP`, never 0.0
 - **DI-23**: The `breakdown` map sums to within 0.001 of `total` (floating point tolerance)
+- **DI-24**: Fantasy mode uses the current scheme (v1.0) for all seasons including historical. No scheme versioning per season. (See `season-timetravel.md` §Fantasy Scoring Mode)

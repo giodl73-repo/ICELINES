@@ -15,15 +15,46 @@ and how it feeds into the depth chart engine.
 
 | Tier | Source | Granularity | Latency | What It Answers |
 |------|--------|-------------|---------|-----------------|
+| 0 — Rosters | NHL API `/v1/roster` | Per-team | 48h TTL | Player universe, position, headshot URL |
 | 1 — Fantasy | Yahoo CSV export | Season totals | Manual export | Fantasy-context positions, ownership |
-| 2 — Core Stats | NHL API `/stats/rest` | Season totals + bios | Daily | GP, G, A, TOI, PPG, shots |
+| 2a — Core Stats | NHL API `/stats/rest` | Season totals + bios | Daily | GP, G, A, TOI, PPG, shots |
+| 2b — Schedule | NHL API `/v1/schedule/{date}` | Per-date | 6h TTL (future), permanent (past) | Game schedule, results |
+| 2c — Live Scores | NHL API `/v1/score/now` | Per-game live | 30s while active | In-progress scores, period, time |
+| 2d — Boxscore | NHL API `/v1/gamecenter/{id}/boxscore` | Per-game | Permanent once final | Goals, goalies, key stats |
+| 2e — Playoff Bracket | NHL API `/v1/playoff-bracket/{year}` | Per-series | Daily during playoffs | Bracket, series state, advancement |
 | 3 — Shifts | NHL API `/shiftcharts` | Per-shift, per-game | Daily | Real line deployment, line partners, zone starts |
 | 4 — Advanced | NHL Edge / Natural Stat Trick | Per-situation | Daily | Corsi, xG, HDCA, zone entries |
 | 5 — Social | Reddit NHL / Twitter | Per-day | Real-time | Fan sentiment, injury rumors, line news |
 | 6 — Beat Media | RSS / web scrape | Per-article | Real-time | Official line rushes, coach quotes, practice lines |
 
-Tiers 1–3 are **primary** — they drive all rankings and depth charts.  
+Tiers 0–3 are **primary** — they drive all rankings, depth charts, and live screens.  
 Tiers 4–6 are **contextual** — they annotate, not override.
+
+---
+
+## Tier 2c — Live Scores (Detail)
+
+**Endpoints used by Scores screen:**
+
+| Endpoint | Purpose | Cache TTL | Cache Key |
+|----------|---------|-----------|-----------|
+| `GET /v1/score/now` | Today's live scores | 30s (active), stale-while-revalidating | `scores_today` |
+| `GET /v1/schedule/{YYYY-MM-DD}` | Any date's schedule/results | Permanent for past dates; 6h for future | `schedule_{date}` |
+| `GET /v1/gamecenter/{gameId}/boxscore` | Goal log, goalie stats | Permanent once game is `FINAL` | `boxscore_{gameId}` |
+| `GET /v1/playoff-bracket/{year}` | Bracket + series state | 1h during playoffs; permanent after season | `bracket_{year}` |
+
+**Schema validation**: All API responses are validated before parsing. Required fields:
+- `game_id: u64` — reject if 0 or missing
+- `game_type: u8` — must be 1 (pre), 2 (regular), or 3 (playoff); unknown values treated as 2
+- `startTimeUTC: String` — ISO 8601; parse failure → show raw string, do not crash
+- `seriesSummary` — optional; if missing for a game_type=3 game, show score without series context
+
+**Graceful degradation**:
+- Network timeout (>10s) → return stale cached data with `[stale Xm ago]` label
+- Malformed JSON → skip the affected game, show others with `[1 game unavailable]` warning
+- Empty response → show "No games found for this date" — not an error
+
+**Retry policy**: Exponential backoff starting at 1s, max 3 retries, max delay 8s.
 
 ---
 

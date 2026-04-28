@@ -142,6 +142,40 @@ Each season bundle (`icelines data install YYYYZZZZ`) must include:
 
 Stats from shortened seasons display normally; pace/82 normalization handles GP differences.
 
+**Lockout UX (resolved from EDGE blocker)**: 2004-05 is rendered in the picker as:
+```
+  ✗ 2004-05  LOCKOUT — no season
+```
+This row is **unselectable**. Enforcement:
+- The row is dimmed and does not respond to `Enter`
+- If the cursor lands on it via `↓`, pressing `Enter` shows: `No season data — lockout year`
+- `i` on this row is also rejected: `Cannot install — no season data exists`
+- The picker never updates `active_season` to 2004-05 under any input path
+
+**Incomplete bundle handling (resolved from WIRE blocker)**: If an installed bundle is
+missing files:
+- Missing `stats.json`: Stats/League/Depth tabs show "Stats data incomplete for this season"
+- Missing `playoffs.json`: Playoffs tab shows "Playoff data not bundled for this season"
+- Missing `schedule.json`: Schedule tab shows "Schedule data not bundled for this season"
+- Missing `bios.json`: All screens show "Season data incomplete — try reinstalling: `:install {season}`"
+- Partial data is used where available; missing files cause per-screen messages, not app crash
+
+---
+
+## Fantasy Scoring Mode for Historical Seasons (resolved from TAPE + PACE blockers)
+
+**Invariant DI-24**: Fantasy mode always uses the **current Yahoo scheme (v1.0)** for all
+seasons, including historical ones. Rationale: Yahoo scoring rules have not materially
+changed since 2010; the same G×3 A×2 formula applies retroactively. Historical seasons do
+NOT bundle separate scheme versions.
+
+Exception: if a future scheme update changes the formula, the new scheme applies to all
+seasons from that point forward. Past analyses with old scheme are not retroactively updated.
+
+If Fantasy mode is selected on a historical season, it works normally with no warning.
+The only Fantasy-unavailable scenario is if the player has no stats in the bundle (e.g.,
+a player who entered the league after the historical season — they simply don't appear).
+
 ---
 
 ## Installation UX

@@ -9,6 +9,7 @@ Plans track work items from idea to completion.
 
 | Plan | Status | Summary |
 |------|--------|---------|
+| [Phase 7 — TUI v2 Redesign](2026-04-28-phase7-tui-v2-redesign.md) | Draft | 6-tab nav, season time-travel, Scores/Schedule/Playoffs screens |
 | [Phase 5 — Query Engine](2026-04-26-phase5-query-engine.md) | Active | `icelines query` leaders/player/compare, --seasons N, improvement sort |
 | [Phase 6 — Export & Dashboard](2026-04-26-phase6-export-dashboard.md) | Draft | `icelines export md`, proof DASHBOARD-SPEC integration |
 

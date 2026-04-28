@@ -161,21 +161,56 @@ pub schedule_data:   ScheduleCache,  // Arc<Mutex<ScheduleState>>
 ```
 
 Data is fetched per-week and cached. Navigating to a week not in cache triggers a fetch.
+Pre-fetch: current week + 2 weeks ahead on first Schedule tab open (3 requests, parallelized).
+
+---
+
+## Search Input Validation (resolved from TAPE + BENCH blockers)
+
+Team code validation:
+- Input normalized to uppercase before matching
+- Validated against canonical 32-team list in `icelines-core::teams`
+- Unknown code: `Unknown team: 'XYZ'. Try: SEA, NYR, EDM, ...`
+- Case-insensitive: `nyr` → `NYR`
+
+Edge cases:
+| Input | Behavior |
+|-------|----------|
+| `SEA SEA` (same team twice) | Error: "Cannot search same team vs itself" |
+| `NYR INVALID` (one valid, one invalid) | Error for the invalid code; not partial match |
+| `nyr wsh` (lowercase) | Normalized to `NYR WSH`, works |
+| Empty string, `Esc` | Clear filter, return to week view |
+| Single space | Treated as empty, ignored |
+| `Backspace` | Remove last character from query |
+| `Ctrl+U` | Clear entire search input |
+
+---
+
+## Partial Fetch Degradation (resolved from WIRE blocker)
+
+When a week fetch fails:
+- Show explicit message: `Schedule unavailable for week of Apr 28 [r: retry]`
+- Do NOT show empty rows — empty rows are indistinguishable from "no games scheduled"
+- Other cached weeks remain accessible via `←→`
+- Retry is triggered by `r` key; exponential backoff: 1s, 2s, 4s, max 3 attempts
 
 ---
 
 ## Season Time-Travel
 
 When `active_season` is not current:
-- All data comes from bundled season schedule (if available) or NHL API historical data
+- Data from bundled `schedule.json` in that season's bundle
+- If bundle lacks `schedule.json`, shows "Schedule data not bundled for this season"
 - Future games show as "not played" (obvious from historical context)
 - Useful for reviewing how a playoff run unfolded game by game
 
 ---
 
-## Open Questions
+## Decisions (Open Questions resolved)
 
-1. **How many weeks to pre-fetch?** Fetch current week + 2 weeks ahead on first load?
-2. **Playoff schedule integration** — playoff games appear in the schedule naturally; 
-   should the schedule screen integrate with the Playoffs bracket, or keep separate?
-3. **Division/conference filter** — useful but adds complexity; defer to v2.1?
+1. **Pre-fetch**: Current week + 2 weeks ahead (3 parallel requests). Enough for near-future
+   planning; avoids over-fetching the full season on first open.
+2. **Playoff schedule integration**: Playoff games appear naturally in schedule (they are
+   in the NHL schedule API). No separate integration needed — the game_type field distinguishes
+   them. Playoffs bracket (Series view) is a separate screen; link via `Enter` on playoff game.
+3. **Division/conference filter**: Deferred to v2.1. Not blocking.
