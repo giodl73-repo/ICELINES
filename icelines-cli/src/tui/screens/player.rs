@@ -20,10 +20,20 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, idx: usize) {
         return;
     };
 
-    // Trigger headshot fetch if not cached
-    if let (Some(id), Some(url)) = (p.nhl_id, p.headshot_url.as_deref()) {
+    // Trigger headshot fetch if not cached.
+    // URL is derivable from nhl_id + team + season even without fetching rosters:
+    //   https://assets.nhle.com/mugs/nhl/{SEASON}/{TEAM}/{ID}.png
+    if let Some(id) = p.nhl_id {
         if app.headshot_cache.get(id).is_none() {
-            headshot::spawn_fetch(id, url.to_owned(), app.headshot_cache.clone(), 22, 15);
+            let url = p.headshot_url.clone().unwrap_or_else(|| {
+                format!(
+                    "https://assets.nhle.com/mugs/nhl/{}/{}/{}.png",
+                    icelines_core::CURRENT_SEASON_STR,
+                    p.team.as_str(),
+                    id
+                )
+            });
+            headshot::spawn_fetch(id, url, app.headshot_cache.clone(), 22, 15);
         }
     }
 
@@ -83,8 +93,7 @@ fn render_headshot(f: &mut Frame, app: &App, p: &icelines_core::model::Player, a
                 Line::from(""),
                 Line::from(format!("  {:^20}", abbr)),
                 Line::from(""),
-                Line::from("  icelines fetch"),
-                Line::from("  rosters"),
+                Line::from("  loading…"),
             ]
         }
         Some(r) if headshot::is_loading(r) => vec![
