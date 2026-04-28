@@ -9,36 +9,149 @@ use ratatui::{
 };
 use crate::tui::app::App;
 
-// ── Tonight ───────────────────────────────────────────────────────────────────
+// ── Scores / Tonight ─────────────────────────────────────────────────────────
 
-pub fn render_tonight(f: &mut Frame, area: Rect) {
-    let block = Block::default().borders(Borders::ALL).title(" Tonight's Games ");
+pub fn render_tonight(f: &mut Frame, app: &App, area: Rect) {
+    use crate::tui::tonight::TonightState;
+    use icelines_fetch::nhl_api::ScheduledGame;
+
+    let state = app.tonight_cache.lock().unwrap().clone();
+
+    let title = match &state {
+        TonightState::Loading => " Scores — fetching… ",
+        TonightState::Error(_) => " Scores — fetch failed · r: retry ",
+        _ => " Scores — r:refresh  ↑↓:select  Esc:back ",
+    };
+
+    let block = Block::default().borders(Borders::ALL).title(title);
     let inner = block.inner(area);
     f.render_widget(block, area);
 
     let dim = Style::default().fg(Color::DarkGray);
-    let cmd = Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD);
 
-    let lines = vec![
-        Line::from(""),
-        Line::from("  Tonight's schedule is fetched live from the NHL API."),
-        Line::from("  Run these in your terminal:"),
-        Line::from(""),
-        Line::styled("  icelines tonight", cmd),
-        Line::styled("  → all games tonight with UTC start times", dim),
-        Line::from(""),
-        Line::styled("  icelines tonight --team EDM", cmd),
-        Line::styled("  → games involving a specific team", dim),
-        Line::from(""),
-        Line::styled("  icelines schedule --days 7", cmd),
-        Line::styled("  → upcoming schedule for the next week", dim),
-        Line::from(""),
-        Line::styled("  icelines schedule --team SEA --days 3", cmd),
-        Line::styled("  → upcoming home/away games for one team", dim),
-        Line::from(""),
-        Line::from("  The NHL public API is free — no key required."),
+    match state {
+        TonightState::Idle => {
+            f.render_widget(Paragraph::new(vec![
+                Line::from(""),
+                Line::styled("  Loading schedule…", dim),
+            ]), inner);
+        }
+        TonightState::Loading => {
+            f.render_widget(Paragraph::new(vec![
+                Line::from(""),
+                Line::styled("  Fetching NHL schedule…", Style::default().fg(Color::Cyan)),
+            ]), inner);
+        }
+        TonightState::Error(e) => {
+            f.render_widget(Paragraph::new(vec![
+                Line::from(""),
+                Line::styled(format!("  Error: {e}"), Style::default().fg(Color::Red)),
+                Line::from(""),
+                Line::styled("  Press r to retry.", dim),
+                Line::from(""),
+                Line::styled("  Or use the CLI: icelines tonight", dim),
+            ]), inner);
+        }
+        TonightState::Loaded(games) => {
+            render_scores_list(f, app, inner, &games);
+        }
+    }
+}
+
+fn render_scores_list(f: &mut Frame, app: &App, area: Rect, games: &[icelines_fetch::nhl_api::ScheduledGame]) {
+    if games.is_empty() {
+        f.render_widget(Paragraph::new(vec![
+            Line::from(""),
+            Line::styled("  No games scheduled today.", Style::default().fg(Color::DarkGray)),
+        ]), area);
+        return;
+    }
+
+    // Detect if any game is a playoff game
+    let has_playoffs = games.iter().any(|g| g.is_playoff());
+    let has_regular  = games.iter().any(|g| !g.is_playoff());
+
+    let section_label = match (has_playoffs, has_regular) {
+        (true,  false) => "  PLAYOFFS",
+        (false, true)  => "  REGULAR SEASON",
+        _              => "  TONIGHT",
+    };
+
+    let dim   = Style::default().fg(Color::DarkGray);
+    let gold  = Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD);
+    let cyan  = Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD);
+
+    let mut items: Vec<ratatui::widgets::ListItem> = vec![
+        ratatui::widgets::ListItem::new(Line::styled(section_label, gold)),
+        ratatui::widgets::ListItem::new(Line::styled(format!("  {}", "─".repeat(60)), dim)),
     ];
-    f.render_widget(Paragraph::new(lines), inner);
+
+    for (i, game) in games.iter().enumerate() {
+        let utc  = game.start_time_utc.get(11..16).unwrap_or("?");
+        let et   = fmt_et(utc);
+        let selected = i == app.scores_selected;
+
+        // Build the main game line
+        let series_info = if game.is_playoff() {
+            game.series_label()
+                .unwrap_or_else(|| format!("Game {}", game.series_game.as_deref().unwrap_or("?")))
+        } else {
+            String::new()
+        };
+
+        let game_line = if series_info.is_empty() {
+            format!("  {:<5}  {:>4} @ {:<4}  {}", et, game.away_abbrev, game.home_abbrev, " ".repeat(30))
+        } else {
+            format!("  {:<5}  {:>4} @ {:<4}  {}", et, game.away_abbrev, game.home_abbrev, series_info)
+        };
+
+        let style = if selected {
+            Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
+        } else if game.is_playoff() {
+            Style::default().fg(Color::White)
+        } else {
+            Style::default().fg(Color::DarkGray)
+        };
+
+        items.push(ratatui::widgets::ListItem::new(Line::styled(game_line, style)));
+
+        // Series context line for playoff games
+        if game.is_playoff() {
+            if let (Some(aw), Some(hw)) = (game.away_wins, game.home_wins) {
+                let ctx = match aw.cmp(&hw) {
+                    std::cmp::Ordering::Greater =>
+                        format!("         {} leads series {}-{}", game.away_abbrev, aw, hw),
+                    std::cmp::Ordering::Less =>
+                        format!("         {} leads series {}-{}", game.home_abbrev, hw, aw),
+                    std::cmp::Ordering::Equal =>
+                        format!("         Series tied {}-{}", aw, hw),
+                };
+                let ctx_style = if selected { style } else { dim };
+                items.push(ratatui::widgets::ListItem::new(Line::styled(ctx, ctx_style)));
+            }
+        }
+    }
+
+    items.push(ratatui::widgets::ListItem::new(Line::from("")));
+    items.push(ratatui::widgets::ListItem::new(Line::styled(
+        "  Times shown in ET  ·  data from NHL public API", dim
+    )));
+
+    f.render_widget(ratatui::widgets::List::new(items), area);
+}
+
+/// Convert "HH:MM" UTC to "H:MM AM/PM ET" (EDT = UTC-4).
+fn fmt_et(utc_hhmm: &str) -> String {
+    let parts: Vec<&str> = utc_hhmm.splitn(2, ':').collect();
+    if let [h, m] = parts.as_slice() {
+        if let (Ok(h), Ok(m)) = (h.parse::<u32>(), m.parse::<u32>()) {
+            let et_h = (h + 24 - 4) % 24;
+            let period = if et_h < 12 { "AM" } else { "PM" };
+            let display = match et_h % 12 { 0 => 12, n => n };
+            return format!("{display}:{m:02} {period}");
+        }
+    }
+    format!("{utc_hhmm} UTC")
 }
 
 // ── Projections ───────────────────────────────────────────────────────────────

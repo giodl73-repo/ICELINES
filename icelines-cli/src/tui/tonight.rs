@@ -26,9 +26,14 @@ pub fn maybe_fetch(cache: TonightCache) {
     }
     *cache.lock().unwrap() = TonightState::Loading;
 
+    // Guard: only spawn if we're inside a tokio runtime (not in unit tests)
+    if tokio::runtime::Handle::try_current().is_err() {
+        return;
+    }
+
     let cache2 = cache.clone();
     tokio::spawn(async move {
-        let client = NhlApiClient::new();
+        let client = NhlApiClient::production();
         match client.fetch_today_schedule().await {
             Ok(games) => *cache2.lock().unwrap() = TonightState::Loaded(games),
             Err(e)    => *cache2.lock().unwrap() = TonightState::Error(e.to_string()),

@@ -3,6 +3,7 @@ pub mod event;
 pub mod headshot;
 pub mod loader;
 pub mod screens;
+pub mod tonight;
 pub mod widgets;
 
 pub use app::App;

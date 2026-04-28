@@ -55,6 +55,10 @@ pub struct App {
     pub active_season:       String,
     pub show_season_picker:  bool,
     pub picker_selected:     usize,
+    // Scores (live schedule)
+    pub tonight_cache:       crate::tui::tonight::TonightCache,
+    pub scores_date:         String,   // "YYYY-MM-DD", empty = today
+    pub scores_selected:     usize,    // selected game row
     // Query manager state
     pub query_fields:        Vec<crate::tui::screens::queries::QueryField>,
     pub query_field_idx:     usize,       // which field row is active
@@ -87,6 +91,9 @@ impl App {
             active_season:       icelines_core::CURRENT_SEASON_STR.to_owned(),
             show_season_picker:  false,
             picker_selected:     0,
+            tonight_cache:       crate::tui::tonight::new_cache(),
+            scores_date:         String::new(),
+            scores_selected:     0,
             group_picker_open:   false,
             group_picker_list:   Vec::new(),
             group_picker_player: None,
@@ -135,7 +142,9 @@ impl App {
                 }
             }
             Action::Down => {
-                if self.screen == Screen::Queries {
+                if self.screen == Screen::Tonight {
+                    self.scores_selected = self.scores_selected.saturating_add(1);
+                } else if self.screen == Screen::Queries {
                     if self.query_results_focused {
                         let results = crate::tui::screens::queries::run_query(&self.players, &self.query_fields);
                         let visible: usize = 20;
@@ -163,7 +172,9 @@ impl App {
                 }
             }
             Action::Up => {
-                if self.screen == Screen::Queries {
+                if self.screen == Screen::Tonight {
+                    self.scores_selected = self.scores_selected.saturating_sub(1);
+                } else if self.screen == Screen::Queries {
                     if self.query_results_focused {
                         if self.selected > 0 {
                             self.selected -= 1;
@@ -292,11 +303,15 @@ impl App {
             Action::Tab => self.cycle_screen(),
             Action::Refresh => {
                 if self.screen == Screen::Queries {
-                    // Reset all query fields to defaults
                     self.query_fields = crate::tui::screens::queries::default_fields();
                     self.query_field_idx = 0;
                     self.query_result_scroll = 0;
                     self.status = "Query fields reset.".to_owned();
+                } else if self.screen == Screen::Tonight {
+                    // Force refresh scores
+                    *self.tonight_cache.lock().unwrap() = crate::tui::tonight::TonightState::Idle;
+                    crate::tui::tonight::maybe_fetch(self.tonight_cache.clone());
+                    self.status = "Refreshing scores…".to_owned();
                 } else {
                     self.status = "Refreshing… (run icelines fetch all)".to_owned();
                 }
@@ -352,6 +367,7 @@ impl App {
                     self.query_result_scroll = 0;
                     self.query_results_focused = false;
                     self.group_picker_open = false;
+                    self.maybe_fetch_scores();
                 }
             }
 
@@ -377,6 +393,13 @@ impl App {
             }
         }
         false
+    }
+
+    /// Trigger a background schedule fetch if on the Scores tab and cache is Idle.
+    fn maybe_fetch_scores(&mut self) {
+        if self.screen == Screen::Tonight {
+            crate::tui::tonight::maybe_fetch(self.tonight_cache.clone());
+        }
     }
 
     /// Handle key events when the season picker overlay is open.
@@ -731,7 +754,7 @@ impl App {
 
     fn cycle_screen(&mut self) {
         self.query_results_focused = false;
-        self.screen = match &self.screen {
+        let next = match &self.screen {
             // League tab → Stats tab
             Screen::Home | Screen::Depth | Screen::DepthTeam(_)
             | Screen::Team(_) | Screen::Player(_) | Screen::Comps(_) => Screen::Projections,
@@ -744,8 +767,10 @@ impl App {
             Screen::Playoffs  => Screen::Home,
             _                 => Screen::Home,
         };
+        self.screen = next;
         self.selected = 0;
         self.query_result_scroll = 0;
+        self.maybe_fetch_scores();
     }
 }
 
