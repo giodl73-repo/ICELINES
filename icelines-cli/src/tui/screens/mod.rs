@@ -3,6 +3,7 @@ pub mod team;
 pub mod player;
 pub mod search;
 pub mod misc;
+pub mod queries;
 
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
@@ -26,6 +27,7 @@ pub fn render(f: &mut Frame, app: &App) {
         Screen::Team(abbrev)    => team::render(f, app, chunks[1], abbrev),
         Screen::Player(idx)     => player::render(f, app, chunks[1], *idx),
         Screen::Search          => search::render(f, app, chunks[1]),
+        Screen::Queries         => queries::render(f, app, chunks[1]),
         Screen::Tonight         => misc::render_tonight(f, chunks[1]),
         Screen::Projections     => misc::render_projections(f, app, chunks[1]),
         Screen::Groups          => misc::render_groups(f, app, chunks[1]),
@@ -55,6 +57,7 @@ fn render_nav(f: &mut Frame, app: &App, area: Rect) {
     let tabs: &[(&str, Screen)] = &[
         ("League",      Screen::Home),
         ("/Search",     Screen::Search),
+        ("Queries",     Screen::Queries),
         ("Tonight",     Screen::Tonight),
         ("Projections", Screen::Projections),
         ("Groups",      Screen::Groups),
@@ -73,7 +76,7 @@ fn render_nav(f: &mut Frame, app: &App, area: Rect) {
         spans.push(Span::styled("│", Style::default().fg(Color::DarkGray)));
     }
     spans.push(Span::styled(
-        "  Tab:cycle  Esc:back  ?:help  q:quit",
+        "  Tab:cycle  ←→:query values  Esc:back  ?:help  q:quit",
         Style::default().fg(Color::DarkGray),
     ));
     f.render_widget(Paragraph::new(Line::from(spans)), area);

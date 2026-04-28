@@ -11,39 +11,47 @@ pub enum Screen {
     Search,
     Tonight,
     Projections,
+    Queries,          // interactive query builder
     Groups,
     Fetch,
     Help,
 }
 
 pub struct App {
-    pub screen:         Screen,
-    pub prev_screen:    Option<Screen>,
-    pub no_color:       bool,
-    pub players:        Vec<Player>,
-    pub load_state:     crate::tui::loader::LoadState,
-    pub install_state:  InstallState,
-    pub tick:           u64,             // incremented each frame for spinner
-    pub selected:       usize,
-    pub search_query:   String,
-    pub status:         String,
-    pub show_help:      bool,
+    pub screen:              Screen,
+    pub prev_screen:         Option<Screen>,
+    pub no_color:            bool,
+    pub players:             Vec<Player>,
+    pub load_state:          crate::tui::loader::LoadState,
+    pub install_state:       InstallState,
+    pub tick:                u64,
+    pub selected:            usize,
+    pub search_query:        String,
+    pub status:              String,
+    pub show_help:           bool,
+    // Query manager state
+    pub query_fields:        Vec<crate::tui::screens::queries::QueryField>,
+    pub query_field_idx:     usize,   // which field row is active
+    pub query_result_scroll: usize,   // scroll offset in results panel
 }
 
 impl App {
     pub fn new(no_color: bool) -> Self {
         Self {
-            screen:         Screen::Home,
-            prev_screen:    None,
+            screen:              Screen::Home,
+            prev_screen:         None,
             no_color,
-            players:        Vec::new(),
-            load_state:     crate::tui::loader::LoadState::new(),
-            install_state:  InstallState::new(),
-            tick:           0,
-            selected:       0,
-            search_query:   String::new(),
-            status:         "Loading data… · Press ? for help · q to quit".to_owned(),
-            show_help:      false,
+            players:             Vec::new(),
+            load_state:          crate::tui::loader::LoadState::new(),
+            install_state:       InstallState::new(),
+            tick:                0,
+            selected:            0,
+            search_query:        String::new(),
+            status:              "Loading data… · Press ? for help · q to quit".to_owned(),
+            show_help:           false,
+            query_fields:        crate::tui::screens::queries::default_fields(),
+            query_field_idx:     0,
+            query_result_scroll: 0,
         }
     }
 
@@ -59,8 +67,38 @@ impl App {
             Action::Quit => return true,
             Action::Help => self.show_help = true,
             Action::Back | Action::Escape => self.go_back(),
-            Action::Down  => self.selected = self.selected.saturating_add(1),
-            Action::Up    => self.selected = self.selected.saturating_sub(1),
+            Action::Down => {
+                if self.screen == Screen::Queries {
+                    // In query screen: ↓ moves between field rows
+                    let n = self.query_fields.len();
+                    self.query_field_idx = (self.query_field_idx + 1).min(n - 1);
+                } else {
+                    self.selected = self.selected.saturating_add(1);
+                }
+            }
+            Action::Up => {
+                if self.screen == Screen::Queries {
+                    self.query_field_idx = self.query_field_idx.saturating_sub(1);
+                } else {
+                    self.selected = self.selected.saturating_sub(1);
+                }
+            }
+            Action::Right => {
+                if self.screen == Screen::Queries {
+                    if let Some(f) = self.query_fields.get_mut(self.query_field_idx) {
+                        f.next();
+                    }
+                    self.query_result_scroll = 0;
+                }
+            }
+            Action::Left => {
+                if self.screen == Screen::Queries {
+                    if let Some(f) = self.query_fields.get_mut(self.query_field_idx) {
+                        f.prev();
+                    }
+                    self.query_result_scroll = 0;
+                }
+            }
             Action::Enter => self.activate_selected(),
             Action::Search => {
                 self.prev_screen = Some(self.screen.clone());
@@ -82,7 +120,15 @@ impl App {
             }
             Action::Tab => self.cycle_screen(),
             Action::Refresh => {
-                self.status = "Refreshing… (run icelines fetch all)".to_owned();
+                if self.screen == Screen::Queries {
+                    // Reset all query fields to defaults
+                    self.query_fields = crate::tui::screens::queries::default_fields();
+                    self.query_field_idx = 0;
+                    self.query_result_scroll = 0;
+                    self.status = "Query fields reset.".to_owned();
+                } else {
+                    self.status = "Refreshing… (run icelines fetch all)".to_owned();
+                }
             }
             Action::Install => {
                 if self.screen == Screen::Fetch {
@@ -141,6 +187,18 @@ impl App {
                     self.selected = 0;
                 }
             }
+            Screen::Queries => {
+                // Enter on a result row → player card
+                let results = crate::tui::screens::queries::run_query(&self.players, &self.query_fields);
+                let row_idx = self.query_result_scroll + self.selected.min(results.len().saturating_sub(1));
+                if let Some((_, p)) = results.get(row_idx) {
+                    if let Some(global_idx) = self.players.iter().position(|pl| pl.nhl_id == p.nhl_id) {
+                        self.prev_screen = Some(self.screen.clone());
+                        self.screen = Screen::Player(global_idx);
+                        self.selected = 0;
+                    }
+                }
+            }
             Screen::Projections => {
                 // Enter on a projection row → player card
                 // The sorted order matches render order — find the Nth rankable player
@@ -179,14 +237,16 @@ impl App {
 
     fn cycle_screen(&mut self) {
         self.screen = match &self.screen {
-            Screen::Home        => Screen::Tonight,
-            Screen::Tonight     => Screen::Projections,
-            Screen::Projections => Screen::Groups,
+            Screen::Home        => Screen::Queries,
+            Screen::Queries     => Screen::Projections,
+            Screen::Projections => Screen::Tonight,
+            Screen::Tonight     => Screen::Groups,
             Screen::Groups      => Screen::Fetch,
             Screen::Fetch       => Screen::Home,
             _                   => Screen::Home,
         };
         self.selected = 0;
+        self.query_result_scroll = 0;
     }
 }
 
@@ -219,15 +279,17 @@ mod tests {
     fn l0_tui_tab_cycles_screens() {
         let mut app = App::new(false);
         app.handle(Action::Tab);
-        assert_eq!(app.screen, Screen::Tonight);
+        assert_eq!(app.screen, Screen::Queries, "Home→Queries");
         app.handle(Action::Tab);
-        assert_eq!(app.screen, Screen::Projections);
+        assert_eq!(app.screen, Screen::Projections, "Queries→Projections");
         app.handle(Action::Tab);
-        assert_eq!(app.screen, Screen::Groups);
+        assert_eq!(app.screen, Screen::Tonight, "Projections→Tonight");
         app.handle(Action::Tab);
-        assert_eq!(app.screen, Screen::Fetch);
+        assert_eq!(app.screen, Screen::Groups, "Tonight→Groups");
         app.handle(Action::Tab);
-        assert_eq!(app.screen, Screen::Home, "Tab wraps back to Home");
+        assert_eq!(app.screen, Screen::Fetch, "Groups→Fetch");
+        app.handle(Action::Tab);
+        assert_eq!(app.screen, Screen::Home, "Fetch→Home (wraps)");
     }
 
     #[test]
