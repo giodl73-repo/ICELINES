@@ -74,6 +74,31 @@ async fn run_install(seasons: u8, season: Option<String>, force: bool) -> anyhow
     Ok(())
 }
 
+/// Public entry point for TUI-triggered installs.
+pub async fn install_season_tui(season: &str) -> anyhow::Result<u64> {
+    let home = std::env::var("USERPROFILE")
+        .or_else(|_| std::env::var("HOME"))
+        .context("cannot determine home directory")?;
+    let seasons_dir = std::path::Path::new(&home).join(".icelines").join("seasons");
+    std::fs::create_dir_all(&seasons_dir)?;
+    let dest = seasons_dir.join(season);
+    let bundle_dir = dest.join(format!("bundle-{season}"));
+    if bundle_dir.join("bios.json").exists() {
+        anyhow::bail!("already installed");
+    }
+    let url = RELEASE_URL_TEMPLATE.replace("{SEASON}", season);
+    let client = reqwest::Client::builder().user_agent("icelines-cli").build()?;
+    let response = client.get(&url).send().await?;
+    if !response.status().is_success() {
+        anyhow::bail!("HTTP {}", response.status());
+    }
+    let bytes = response.bytes().await?;
+    let kb = bytes.len() as u64 / 1024;
+    std::fs::create_dir_all(&dest)?;
+    extract_tar_gz(&bytes, &dest)?;
+    Ok(kb)
+}
+
 async fn install_season(
     seasons_dir: &std::path::Path,
     season: &str,

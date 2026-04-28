@@ -43,7 +43,10 @@ async fn run_loop(
     loader::spawn_loader(app.load_state.clone());
 
     loop {
-        // Poll for loaded players and move them into App
+        // Tick counter for spinner animation
+        app.tick = app.tick.wrapping_add(1);
+
+        // Poll for loaded players
         if app.players.is_empty() {
             if let Some(players) = app.load_state.take_players() {
                 app.players = players;
@@ -51,10 +54,29 @@ async fn run_loop(
             }
         }
 
+        // Poll install state → update status bar
+        use loader::InstallPhase;
+        match app.install_state.phase() {
+            InstallPhase::Downloading(season) => {
+                let frames = ["⠋","⠙","⠹","⠸","⠼","⠴","⠦","⠧","⠇","⠏"];
+                let spinner = frames[(app.tick / 2 % 10) as usize];
+                app.status = format!("{spinner} Installing {season}…");
+            }
+            InstallPhase::Done(ref season, kb) => {
+                // Only show once — reset to idle after displaying
+                app.status = format!("✓ {season} installed ({kb} KB) — press i to install another");
+                // Keep Done state so screen shows ✓ immediately
+            }
+            InstallPhase::Error(ref season, ref msg) => {
+                app.status = format!("✗ {season}: {msg}");
+            }
+            InstallPhase::Idle => {}
+        }
+
         // Draw
         term.draw(|f| screens::render(f, &app))?;
 
-        // Handle event (100ms timeout → ~10fps, enough for a stats TUI)
+        // Handle event (100ms timeout → ~10fps)
         if let Some(action) = event::next_event(std::time::Duration::from_millis(100)).await? {
             if app.handle(action) {
                 break; // quit

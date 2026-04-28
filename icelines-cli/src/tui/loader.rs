@@ -72,3 +72,44 @@ pub fn spawn_loader(state: LoadState) {
         }
     });
 }
+
+// ── Season install state ──────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum InstallPhase {
+    Idle,
+    Downloading(String), // season id
+    Done(String, u64),   // season id, KB
+    Error(String, String), // season id, message
+}
+
+#[derive(Debug, Clone)]
+pub struct InstallState {
+    inner: Arc<Mutex<InstallPhase>>,
+}
+
+impl InstallState {
+    pub fn new() -> Self {
+        Self { inner: Arc::new(Mutex::new(InstallPhase::Idle)) }
+    }
+
+    pub fn phase(&self) -> InstallPhase {
+        self.inner.lock().map(|g| g.clone()).unwrap_or(InstallPhase::Idle)
+    }
+
+    fn set(&self, phase: InstallPhase) {
+        if let Ok(mut g) = self.inner.lock() { *g = phase; }
+    }
+}
+
+/// Spawn a background season install. Updates `state` with progress.
+pub fn spawn_install(season: String, state: InstallState) {
+    let state2 = state.clone();
+    state.set(InstallPhase::Downloading(season.clone()));
+    tokio::spawn(async move {
+        match crate::commands::data::install_season_tui(&season).await {
+            Ok(kb)  => state2.set(InstallPhase::Done(season, kb)),
+            Err(e)  => state2.set(InstallPhase::Error(season, e.to_string())),
+        }
+    });
+}

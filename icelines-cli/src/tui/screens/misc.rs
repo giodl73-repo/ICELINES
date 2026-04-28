@@ -170,7 +170,7 @@ pub fn render_groups(f: &mut Frame, app: &App, area: Rect) {
 // ── Fetch + Install ───────────────────────────────────────────────────────────
 
 /// All 38 seasons newest-first (mirrors AVAILABLE_SEASONS in data.rs).
-const ALL_SEASONS: &[(&str, &str)] = &[
+pub const ALL_SEASONS: &[(&str, &str)] = &[
     ("20252026","2025-26 Current"),
     ("20242025","2024-25"),
     ("20232024","2023-24"),
@@ -223,6 +223,8 @@ fn season_installed(season: &str) -> bool {
 }
 
 pub fn render_fetch(f: &mut Frame, app: &App, area: Rect) {
+    use crate::tui::loader::InstallPhase;
+
     // Split: top section (fetch commands) | bottom section (season list)
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -254,45 +256,70 @@ pub fn render_fetch(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(Paragraph::new(fetch_lines), fetch_inner);
 
     // ── Bottom: Season install list ──────────────────────────────────────────
+    let install_title = match app.install_state.phase() {
+        InstallPhase::Downloading(ref s) => format!(" Installing {}… ⠋ ", s),
+        InstallPhase::Done(ref s, kb)    => format!(" ✓ {} installed ({} KB) — ↑↓ for more · i to install ", s, kb),
+        InstallPhase::Error(_, _)        => " Install failed — see status bar ".to_owned(),
+        InstallPhase::Idle               => " Season History — ↑↓ select · i to install ".to_owned(),
+    };
     let install_block = Block::default()
         .borders(Borders::ALL)
-        .title(" Season History — ↑↓ select  ·  installed: ✓  ·  run `icelines data install --season YYYYZZZZ` ");
+        .title(install_title);
     let install_inner = install_block.inner(chunks[1]);
     f.render_widget(install_block, chunks[1]);
 
     let visible = install_inner.height as usize;
     let offset  = app.selected.saturating_sub(visible / 2).min(ALL_SEASONS.len().saturating_sub(visible));
 
+    let installing_id = match app.install_state.phase() {
+        InstallPhase::Downloading(ref s) => Some(s.clone()),
+        _ => None,
+    };
+    let just_done_id = match app.install_state.phase() {
+        InstallPhase::Done(ref s, _) => Some(s.clone()),
+        _ => None,
+    };
+
+    let spinner_frames = ["⠋","⠙","⠹","⠸","⠼","⠴","⠦","⠧","⠇","⠏"];
+    let spinner = spinner_frames[(app.tick / 2 % 10) as usize];
+
     let items: Vec<ListItem> = ALL_SEASONS.iter()
         .enumerate()
         .skip(offset)
         .take(visible)
         .map(|(i, (season_id, label))| {
-            let installed = season_installed(season_id);
-            let marker = if installed { "✓" } else { "○" };
-            let marker_style = if installed {
-                Style::default().fg(Color::Green)
+            let installed = season_installed(season_id)
+                || just_done_id.as_deref() == Some(season_id);
+            let is_installing = installing_id.as_deref() == Some(season_id);
+
+            let (marker, marker_style) = if is_installing {
+                (spinner, Style::default().fg(Color::Yellow))
+            } else if installed {
+                ("✓", Style::default().fg(Color::Green))
             } else {
-                Style::default().fg(Color::DarkGray)
+                ("○", Style::default().fg(Color::DarkGray))
             };
 
             let row_style = if i == app.selected {
                 Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
+            } else if is_installing {
+                Style::default().fg(Color::Yellow)
             } else if installed {
                 Style::default()
             } else {
                 Style::default().fg(Color::DarkGray)
             };
 
-            let install_hint = if i == app.selected && !installed {
-                format!("  → icelines data install --season {season_id}")
+            let hint = if i == app.selected && !installed && !is_installing {
+                "  ← press i to install"
+            } else if is_installing {
+                "  ← downloading…"
             } else {
-                String::new()
+                ""
             };
 
-            let text = format!("  {} {:<10}  {}{}", marker, season_id, label, install_hint);
-            ListItem::new(Line::styled(text, row_style))
-                .style(if installed && i != app.selected { marker_style } else { row_style })
+            let text = format!("  {} {:<10}  {}{}", marker, season_id, label, hint);
+            ListItem::new(Line::styled(text, if is_installing { marker_style } else { row_style }))
         })
         .collect();
 

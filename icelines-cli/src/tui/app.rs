@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 use icelines_core::model::Player;
 use crate::tui::event::Action;
+use crate::tui::loader::InstallState;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Screen {
@@ -16,29 +17,33 @@ pub enum Screen {
 }
 
 pub struct App {
-    pub screen:       Screen,
-    pub prev_screen:  Option<Screen>,
-    pub no_color:     bool,
-    pub players:      Vec<Player>,
-    pub load_state:   crate::tui::loader::LoadState,
-    pub selected:     usize,
-    pub search_query: String,
-    pub status:       String,
-    pub show_help:    bool,
+    pub screen:         Screen,
+    pub prev_screen:    Option<Screen>,
+    pub no_color:       bool,
+    pub players:        Vec<Player>,
+    pub load_state:     crate::tui::loader::LoadState,
+    pub install_state:  InstallState,
+    pub tick:           u64,             // incremented each frame for spinner
+    pub selected:       usize,
+    pub search_query:   String,
+    pub status:         String,
+    pub show_help:      bool,
 }
 
 impl App {
     pub fn new(no_color: bool) -> Self {
         Self {
-            screen:       Screen::Home,
-            prev_screen:  None,
+            screen:         Screen::Home,
+            prev_screen:    None,
             no_color,
-            players:      Vec::new(),
-            load_state:   crate::tui::loader::LoadState::new(),
-            selected:     0,
-            search_query: String::new(),
-            status:       "Loading data… · Press ? for help · q to quit".to_owned(),
-            show_help:    false,
+            players:        Vec::new(),
+            load_state:     crate::tui::loader::LoadState::new(),
+            install_state:  InstallState::new(),
+            tick:           0,
+            selected:       0,
+            search_query:   String::new(),
+            status:         "Loading data… · Press ? for help · q to quit".to_owned(),
+            show_help:      false,
         }
     }
 
@@ -78,6 +83,26 @@ impl App {
             Action::Tab => self.cycle_screen(),
             Action::Refresh => {
                 self.status = "Refreshing… (run icelines fetch all)".to_owned();
+            }
+            Action::Install => {
+                if self.screen == Screen::Fetch {
+                    use crate::tui::screens::misc::ALL_SEASONS;
+                    if let Some(&(season_id, _)) = ALL_SEASONS.get(self.selected) {
+                        // Don't re-install if already downloading or done
+                        match self.install_state.phase() {
+                            crate::tui::loader::InstallPhase::Downloading(_) => {
+                                self.status = "Install already in progress…".to_owned();
+                            }
+                            _ => {
+                                self.status = format!("Installing {season_id}…");
+                                crate::tui::loader::spawn_install(
+                                    season_id.to_string(),
+                                    self.install_state.clone(),
+                                );
+                            }
+                        }
+                    }
+                }
             }
         }
         false

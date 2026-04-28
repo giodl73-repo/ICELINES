@@ -15,6 +15,7 @@ pub enum Action {
     Search,
     Tab,
     Refresh,
+    Install,   // 'i' on Fetch+Install screen — install selected season
     Char(char),
     Backspace,
 }
@@ -47,6 +48,7 @@ fn map_key(k: crossterm::event::KeyEvent) -> Option<Action> {
         Char('?') => Some(Action::Help),
         Char('/') => Some(Action::Search),
         Char('r') => Some(Action::Refresh),
+        Char('i') => Some(Action::Install),
         Char(c)   => Some(Action::Char(c)),
         Esc       => Some(Action::Escape),
         Backspace => Some(Action::Backspace),
