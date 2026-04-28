@@ -17,8 +17,11 @@ pub enum Action {
     Search,
     Tab,
     Refresh,
-    Install,      // 'i' on Fetch+Install screen
-    AddToGroup,   // 'g' on player card — open group picker
+    Install,          // 'i' on Fetch+Install screen
+    AddToGroup,       // 'g' — open group picker on any player-list screen
+    AddToFavorites,   // 'f' — instant add to Favorites group (no picker)
+    GoToTab(usize),   // '1'–'7' — jump directly to a tab
+    Space,            // Space — toggle focus in split-pane screens
     Char(char),
     Backspace,
 }
@@ -53,6 +56,16 @@ fn map_key(k: crossterm::event::KeyEvent) -> Option<Action> {
         Char('r') => Some(Action::Refresh),
         Char('i') => Some(Action::Install),
         Char('g') => Some(Action::AddToGroup),
+        Char('f') => Some(Action::AddToFavorites),
+        // Number keys 1–7 jump directly to a tab
+        Char('1') => Some(Action::GoToTab(0)),
+        Char('2') => Some(Action::GoToTab(1)),
+        Char('3') => Some(Action::GoToTab(2)),
+        Char('4') => Some(Action::GoToTab(3)),
+        Char('5') => Some(Action::GoToTab(4)),
+        Char('6') => Some(Action::GoToTab(5)),
+        Char('7') => Some(Action::GoToTab(6)),
+        Char(' ') => Some(Action::Space),
         Char(c)   => Some(Action::Char(c)),
         Esc       => Some(Action::Escape),
         Backspace => Some(Action::Backspace),
@@ -61,7 +74,7 @@ fn map_key(k: crossterm::event::KeyEvent) -> Option<Action> {
         Left  => Some(Action::Left),
         Right => Some(Action::Right),
         Enter => Some(Action::Enter),
-        Tab       => Some(Action::Tab),
-        _         => None,
+        Tab   => Some(Action::Tab),
+        _     => None,
     }
 }

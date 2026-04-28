@@ -121,12 +121,14 @@ impl App {
                         if self.query_field_idx + 1 < n {
                             self.query_field_idx += 1;
                         } else {
-                            // Overflow past last field → jump to results
                             self.query_results_focused = true;
                             self.selected = 0;
                             self.query_result_scroll = 0;
                         }
                     }
+                } else if self.screen == Screen::Home {
+                    let n = crate::tui::screens::home::RANKED_TEAMS.len();
+                    self.selected = if self.selected + 1 >= n { 0 } else { self.selected + 1 };
                 } else {
                     self.selected = self.selected.saturating_add(1);
                 }
@@ -139,15 +141,26 @@ impl App {
                         } else if self.query_result_scroll > 0 {
                             self.query_result_scroll -= 1;
                         } else {
-                            // Overflow past first result → jump back to fields
                             self.query_results_focused = false;
                             self.query_field_idx = self.query_fields.len().saturating_sub(1);
                         }
                     } else {
                         self.query_field_idx = self.query_field_idx.saturating_sub(1);
                     }
+                } else if self.screen == Screen::Home {
+                    let n = crate::tui::screens::home::RANKED_TEAMS.len();
+                    self.selected = if self.selected == 0 { n - 1 } else { self.selected - 1 };
                 } else {
                     self.selected = self.selected.saturating_sub(1);
+                }
+            }
+            Action::Space => {
+                if self.screen == Screen::Queries && self.query_mode == QueryMode::Build {
+                    self.query_results_focused = !self.query_results_focused;
+                    self.selected = 0;
+                    if !self.query_results_focused {
+                        self.query_field_idx = 0;
+                    }
                 }
             }
             Action::Right => {
