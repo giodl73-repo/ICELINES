@@ -20,15 +20,24 @@ pub async fn run(team_filter: Option<String>) -> anyhow::Result<()> {
     let team_up = team_filter.as_deref().map(str::to_uppercase);
     let date_label = if today.is_empty() { "today".to_owned() } else { today.to_owned() };
 
-    println!("TONIGHT'S GAMES — {} ({} game(s))", date_label, schedule.len());
+    // Apply team filter up front so the header count matches what's displayed
+    let filtered: Vec<_> = schedule.iter().filter(|g| {
+        match &team_up {
+            Some(t) => &g.away_abbrev == t || &g.home_abbrev == t,
+            None    => true,
+        }
+    }).collect();
+
+    let team_label = team_up.as_deref().map(|t| format!(" · {t}")).unwrap_or_default();
+    println!("TONIGHT'S GAMES — {}{} ({} game(s))", date_label, team_label, filtered.len());
     println!("{}", "─".repeat(60usize));
 
-    for game in &schedule {
-        if let Some(ref t) = team_up {
-            if &game.away_abbrev != t && &game.home_abbrev != t {
-                continue;
-            }
-        }
+    if filtered.is_empty() {
+        println!("No games tonight{}.", team_label);
+        return Ok(());
+    }
+
+    for game in &filtered {
         let time = game.start_time_utc.get(11..16).unwrap_or("?");
         println!("{} {} @ {} {}  UTC {}",
             game.away_abbrev, game.away_name,
@@ -122,22 +131,42 @@ pub async fn run_trade(player_out: String, player_in: String, team: Option<Strin
         TeamAbbr(team_abbr.clone()), Season(icelines_core::CURRENT_SEASON), team_players_after
     );
 
-    // Compare top 3 lines
+    let fmt3 = |row: Option<&[Option<icelines_core::model::Player>; 3]>| {
+        row.map(|r| r.iter()
+            .map(|s| s.as_ref().map(|p| p.full_name.chars().take(12).collect::<String>())
+                .unwrap_or_else(|| "—".repeat(12)))
+            .collect::<Vec<_>>()
+            .join(" | ")
+        ).unwrap_or_else(|| "—".to_owned())
+    };
+    let fmt2 = |row: Option<&[Option<icelines_core::model::Player>; 2]>| {
+        row.map(|r| r.iter()
+            .map(|s| s.as_ref().map(|p| p.full_name.chars().take(16).collect::<String>())
+                .unwrap_or_else(|| "—".repeat(16)))
+            .collect::<Vec<_>>()
+            .join(" | ")
+        ).unwrap_or_else(|| "—".to_owned())
+    };
+
+    // Compare top 3 forward lines
     println!("FORWARD LINES — BEFORE vs AFTER");
     println!("{}", "─".repeat(72usize));
     for line in 0..3 {
         let b_row = chart_before.forward_lines.get(line);
         let a_row = chart_after.forward_lines.get(line);
-        let fmt = |row: Option<&[Option<icelines_core::model::Player>; 3]>| {
-            row.map(|r| r.iter()
-                .map(|s| s.as_ref().map(|p| p.full_name.chars().take(12).collect::<String>())
-                    .unwrap_or_else(|| "—".repeat(12)))
-                .collect::<Vec<_>>()
-                .join(" | ")
-            ).unwrap_or_else(|| "—".to_owned())
-        };
-        println!("  Line {} BEFORE: {}", line+1, fmt(b_row));
-        println!("  Line {} AFTER:  {}", line+1, fmt(a_row));
+        println!("  Line {} BEFORE: {}", line+1, fmt3(b_row));
+        println!("  Line {} AFTER:  {}", line+1, fmt3(a_row));
+        println!();
+    }
+
+    // Compare top 3 defense pairs
+    println!("DEFENSE PAIRS — BEFORE vs AFTER");
+    println!("{}", "─".repeat(72usize));
+    for pair in 0..3 {
+        let b_row = chart_before.defense_pairs.get(pair);
+        let a_row = chart_after.defense_pairs.get(pair);
+        println!("  Pair {} BEFORE: {}", pair+1, fmt2(b_row));
+        println!("  Pair {} AFTER:  {}", pair+1, fmt2(a_row));
         println!();
     }
 

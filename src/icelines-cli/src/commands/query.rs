@@ -298,7 +298,11 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
 
     let mut filter = PlayerFilter::new();
     if let Some(ref p) = args.pos {
-        filter.positions = Some(parse_positions(p));
+        if p.is_empty() {
+            eprintln!("  Hint: --pos \"\" has no effect — omit the flag to include all positions.");
+        } else {
+            filter.positions = Some(parse_positions(p));
+        }
     }
     if let Some(t) = args.team {
         filter.teams = Some(vec![t.to_uppercase()]);

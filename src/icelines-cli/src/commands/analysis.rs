@@ -230,8 +230,12 @@ pub async fn run_group(cmd: GroupSubcommand) -> anyhow::Result<()> {
         }
         GroupSubcommand::Add { group, player } => {
             let norm = normalize_name(&player);
-            db.add_member(&group, &norm)?;
-            println!("Added '{player}' to '{group}'.");
+            let added = db.add_member(&group, &norm)?;
+            if added {
+                println!("Added '{player}' to '{group}'.");
+            } else {
+                println!("'{player}' is already in '{group}' — no change.");
+            }
         }
         GroupSubcommand::Remove { group, player } => {
             let norm = normalize_name(&player);

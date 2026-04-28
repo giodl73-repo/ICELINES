@@ -113,20 +113,20 @@ impl GroupDb {
     }
 
     /// Add a player (normalized name) to a group.
-    /// If the player is already a member this is a no-op (not an error).
-    pub fn add_member(&self, group: &str, player_normalized: &str) -> anyhow::Result<()> {
+    /// Returns `true` if added, `false` if already a member (no-op).
+    pub fn add_member(&self, group: &str, player_normalized: &str) -> anyhow::Result<bool> {
         // Verify the group exists first so we give a clear error.
         self.require_group(group)?;
 
         let now = now_utc();
-        self.conn
+        let rows = self.conn
             .execute(
                 "INSERT OR IGNORE INTO group_members \
                  (group_name, player_normalized, added_at) VALUES (?1, ?2, ?3)",
                 rusqlite::params![group, player_normalized, now],
             )
             .with_context(|| format!("add member '{player_normalized}' to '{group}'"))?;
-        Ok(())
+        Ok(rows > 0)
     }
 
     /// Remove a player from a group.  No-op if the player is not a member.

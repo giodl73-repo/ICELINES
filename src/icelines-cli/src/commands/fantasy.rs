@@ -388,13 +388,16 @@ pub async fn run_standings(
     println!("{:<5} {:<22} {:<16} {:<10} Per/G", "Rank", "Team", "Owner", "Score");
     println!("{}", "─".repeat(60));
     for (rank, (team_name, owner, total, per_g)) in standings.iter().enumerate() {
+        // Avoid -0.0 display for empty teams (IEEE 754 negative zero)
+        let total_display = if *total == 0.0 { 0.0f32 } else { *total };
+        let perg_display  = if *per_g  == 0.0 { 0.0f32 } else { *per_g  };
         println!(
             "{:<5} {:<22} {:<16} {:<10.1} {:.2}",
             rank + 1,
             team_name,
             owner,
-            total,
-            per_g
+            total_display,
+            perg_display
         );
     }
     Ok(())
