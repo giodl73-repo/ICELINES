@@ -38,7 +38,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: src
+        working-directory: .
 
     steps:
       - uses: actions/checkout@v4
@@ -58,8 +58,8 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            src/target
-          key: ${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('src/Cargo.lock') }}
+            target
+          key: ${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('Cargo.lock') }}
 
       - name: Build release binary
         run: cargo build --release --target ${{ matrix.target }} -p icelines-cli

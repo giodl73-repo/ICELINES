@@ -4,14 +4,18 @@ on:
   push:
     branches: [master]
     paths:
-      - 'src/**'
+      - 'icelines-*/**'
       - 'tests/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
       - '.github/workflows/ci.yml'
   pull_request:
     branches: [master]
     paths:
-      - 'src/**'
+      - 'icelines-*/**'
       - 'tests/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
 
 env:
   CARGO_TERM_COLOR: always
@@ -21,9 +25,6 @@ jobs:
   test:
     name: Test Suite
     runs-on: windows-latest
-    defaults:
-      run:
-        working-directory: src
 
     steps:
       - uses: actions/checkout@v4
@@ -39,13 +40,13 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            src/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('src/Cargo.lock') }}-${{ hashFiles('src/**/*.rs') }}
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}-${{ hashFiles('icelines-*/**/*.rs') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-${{ hashFiles('src/Cargo.lock') }}-
+            ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}-
             ${{ runner.os }}-cargo-
 
-      - name: L0 — Unit tests (icelines-core ≥ 95% coverage target)
+      - name: L0 — Unit tests (icelines-core)
         run: cargo test -p icelines-core --lib
 
       - name: L1 — Integration tests (icelines-fetch)
@@ -67,11 +68,8 @@ jobs:
         run: cargo test -p icelines-cli --test system_tests
 
   coverage:
-    name: Coverage Gate (icelines-core ≥ 95%)
+    name: Coverage Gate (icelines-core ≥ 80%)
     runs-on: windows-latest
-    defaults:
-      run:
-        working-directory: src
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -87,10 +85,8 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            src/target
-          key: ${{ runner.os }}-cov-${{ hashFiles('src/Cargo.lock') }}
+            target
+          key: ${{ runner.os }}-cov-${{ hashFiles('Cargo.lock') }}
 
-      - name: Check icelines-core coverage ≥ 95%
-        # Note: bundled data files add many uncovered lines in lib.rs (static arrays).
-        # We target line coverage on the actual logic, not the embedded constants.
+      - name: Check icelines-core coverage ≥ 80%
         run: cargo llvm-cov -p icelines-core --lib --fail-under-lines 80

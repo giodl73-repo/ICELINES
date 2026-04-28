@@ -219,32 +219,9 @@ icelines-cli     thin UI layer — commands, TUI, HTTP server (axum)
 
 ---
 
-## Documentation
-
-Source documents live in `src/` and compile to `docs/` via [proof](https://github.com/giodl73-repo/PROOF):
-
-```bash
-# Compile all source docs to docs/
-proof compile
-
-# Validate compiled output
-proof check docs/
-```
-
-| Source | Output |
-|--------|--------|
-| `src/guides/*.source.md` | `docs/guides/*.md` |
-| `src/presentations/*.source.md` | `docs/presentations/*.md` |
-| `src/data/*.md` | referenced via `md://` URIs |
-
-Guides: [Getting Started](docs/guides/00-getting-started.md) · [Query Engine](docs/guides/01-query.md) · [Team Depth Charts](docs/guides/02-team-depth.md) · [Fantasy](docs/guides/03-fantasy.md) · [Data & History](docs/guides/04-data.md) · [Comps & Research](docs/guides/05-comps-history.md)
-
----
-
 ## Tests
 
 ```bash
-cd src
 cargo test                    # 338 tests — L0, L1, L2, mock API
 cargo clippy -- -D warnings   # must be clean
 cargo fmt --check             # must be clean

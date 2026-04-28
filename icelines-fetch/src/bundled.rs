@@ -15,7 +15,7 @@ macro_rules! season_bytes {
     ($season:literal, $file:literal) => {
         include_bytes!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../data/seasons/",
+            "/../data/seasons/",
             $season,
             "/",
             $file

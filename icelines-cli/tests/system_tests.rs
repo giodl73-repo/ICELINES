@@ -8,16 +8,15 @@ use std::path::PathBuf;
 use std::process::Command;
 
 fn icelines_bin() -> PathBuf {
-    // CARGO_MANIFEST_DIR = …/icelines/src/icelines-cli
+    // CARGO_MANIFEST_DIR = …/icelines/icelines-cli
+    // One parent up is the workspace root: …/icelines/
     let workspace = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
-        .unwrap() // …/src
-        .parent()
-        .unwrap(); // …/fantasy-tracker
+        .unwrap(); // …/icelines
     #[cfg(windows)]
-    let bin = workspace.join("src/target/release/icelines.exe");
+    let bin = workspace.join("target/release/icelines.exe");
     #[cfg(not(windows))]
-    let bin = workspace.join("src/target/release/icelines");
+    let bin = workspace.join("target/release/icelines");
     bin
 }
 

@@ -3,7 +3,7 @@
 **Project**: IceLines NHL analytics + fantasy platform  
 **Binary**: `icelines` (Rust CLI)  
 **Repo root**: `C:/src/icelines/`  
-**Working dir**: `C:/src/icelines/src/` (Rust workspace)
+**Working dir: `C:/src/icelines/` (workspace root)
 
 ---
 
@@ -32,18 +32,18 @@ icelines-cli    (depends on all three)
 
 ```bash
 # Build
-cd src && cargo build                          # debug
-cd src && cargo build --release -p icelines-cli  # release binary
+cargo build                          # debug
+cargo build --release -p icelines-cli  # release binary
 
 # Test
-cd src && cargo test                           # all crates
-cd src && cargo test -p icelines-core          # one crate
-cd src && cargo clippy -- -D warnings          # must be clean
-cd src && cargo fmt --check                    # must be clean
+cargo test                           # all crates
+cargo test -p icelines-core          # one crate
+cargo clippy -- -D warnings          # must be clean
+cargo fmt --check                    # must be clean
 
 # Run (after release build)
-src/target/release/icelines.exe query leaders --pos C --top 10
-src/target/release/icelines.exe fantasy league-create "My League"
+target/release/icelines.exe query leaders --pos C --top 10
+target/release/icelines.exe fantasy league-create "My League"
 
 # proof — documentation linting and guide compilation
 # proof binary lives in the workspace target at C:\src\target\debug\proof.exe

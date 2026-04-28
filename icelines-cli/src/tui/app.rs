@@ -95,11 +95,24 @@ impl App {
     fn activate_selected(&mut self) {
         match &self.screen {
             Screen::Home => {
-                // Navigate to team screen for the selected team
                 let teams = crate::tui::screens::home::RANKED_TEAMS;
                 if let Some(abbrev) = teams.get(self.selected) {
                     self.prev_screen = Some(Screen::Home);
                     self.screen = Screen::Team(abbrev.to_string());
+                    self.selected = 0;
+                }
+            }
+            Screen::Team(abbrev) => {
+                // Select a player from the team roster → open their player card
+                let abbrev = abbrev.clone();
+                let global_idx = self.players.iter()
+                    .enumerate()
+                    .filter(|(_, p)| p.team.as_str() == abbrev.as_str())
+                    .nth(self.selected)
+                    .map(|(i, _)| i);
+                if let Some(idx) = global_idx {
+                    self.prev_screen = Some(self.screen.clone());
+                    self.screen = Screen::Player(idx);
                     self.selected = 0;
                 }
             }
