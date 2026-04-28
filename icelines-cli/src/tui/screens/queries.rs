@@ -274,7 +274,7 @@ fn render_results(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
     };
     let block = Block::default()
         .borders(Borders::ALL)
-        .title(format!(" Results — {} · Tab:focus · ↑↓ · Enter: card ", sort))
+        .title(format!(" Results — {} · ↑↓ · Enter: card ", sort))
         .border_style(border_style);
     let inner = block.inner(area);
     f.render_widget(block, area);

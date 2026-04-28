@@ -118,7 +118,14 @@ impl App {
                         }
                     } else {
                         let n = self.query_fields.len();
-                        self.query_field_idx = (self.query_field_idx + 1).min(n - 1);
+                        if self.query_field_idx + 1 < n {
+                            self.query_field_idx += 1;
+                        } else {
+                            // Overflow past last field → jump to results
+                            self.query_results_focused = true;
+                            self.selected = 0;
+                            self.query_result_scroll = 0;
+                        }
                     }
                 } else {
                     self.selected = self.selected.saturating_add(1);
@@ -129,8 +136,12 @@ impl App {
                     if self.query_results_focused {
                         if self.selected > 0 {
                             self.selected -= 1;
+                        } else if self.query_result_scroll > 0 {
+                            self.query_result_scroll -= 1;
                         } else {
-                            self.query_result_scroll = self.query_result_scroll.saturating_sub(1);
+                            // Overflow past first result → jump back to fields
+                            self.query_results_focused = false;
+                            self.query_field_idx = self.query_fields.len().saturating_sub(1);
                         }
                     } else {
                         self.query_field_idx = self.query_field_idx.saturating_sub(1);
@@ -200,14 +211,7 @@ impl App {
                     self.query_save_name.pop();
                 }
             }
-            Action::Tab => {
-                if matches!(self.screen, Screen::Queries) && self.query_mode == QueryMode::Build {
-                    self.query_results_focused = !self.query_results_focused;
-                    self.selected = 0;
-                } else {
-                    self.cycle_screen();
-                }
-            }
+            Action::Tab => self.cycle_screen(),
             Action::Refresh => {
                 if self.screen == Screen::Queries {
                     // Reset all query fields to defaults
