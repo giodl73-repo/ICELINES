@@ -11,6 +11,102 @@
 use crate::model::{Player, Position, TeamAbbr};
 use std::collections::HashMap;
 
+/// Which metric to use when ranking players across teams.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ScoringMode {
+    Pace,    // pts/82 pace (default)
+    Fantasy, // Yahoo-style: G×3 A×2 PPG×1 PPA×0.5 SHG×1 SHA×0.5 GWG×0.5 HIT×0.5 BLK×0.5
+}
+
+impl ScoringMode {
+    pub fn label(self) -> &'static str {
+        match self { Self::Pace => "Pts/82", Self::Fantasy => "FPts" }
+    }
+    pub fn toggle(self) -> Self {
+        match self { Self::Pace => Self::Fantasy, Self::Fantasy => Self::Pace }
+    }
+}
+
+/// Yahoo-style fantasy points for a skater.
+pub fn fantasy_score(p: &Player) -> f64 {
+    let pp_ast = (p.pp_points as i32 - p.pp_goals as i32).max(0) as f64;
+    let sh_ast = (p.sh_points as i32 - p.sh_goals as i32).max(0) as f64;
+    p.season_goals as f64     * 3.0
+        + p.season_assists as f64 * 2.0
+        + p.pp_goals as f64       * 1.0
+        + pp_ast                  * 0.5
+        + p.sh_goals as f64       * 1.0
+        + sh_ast                  * 0.5
+        + p.gwg as f64            * 0.5
+        + p.hits as f64           * 0.5
+        + p.blocked_shots as f64  * 0.5
+}
+
+/// Aggregated strength for one team — top-4 per forward slot + top-6 D.
+#[derive(Debug, Clone)]
+pub struct TeamStrength {
+    pub c_score:  f64,
+    pub lw_score: f64,
+    pub rw_score: f64,
+    pub d_score:  f64,
+    pub total:    f64,
+    pub c_top:    String,
+    pub lw_top:   String,
+    pub rw_top:   String,
+    pub d_top:    String,
+}
+
+/// Compute top-4 F / top-6 D team strength for all teams.
+pub fn compute_team_strength(
+    players: &[Player],
+    mode: ScoringMode,
+) -> HashMap<String, TeamStrength> {
+    // group by (team, position), score descending
+    let mut groups: HashMap<(String, Position), Vec<(f64, String)>> = HashMap::new();
+    for p in players {
+        let score = match mode {
+            ScoringMode::Fantasy => fantasy_score(p),
+            ScoringMode::Pace    => p.pace_score.map(|s| s.pace_82 as f64).unwrap_or(0.0),
+        };
+        groups
+            .entry((p.team.as_str().to_owned(), p.position))
+            .or_default()
+            .push((score, p.full_name.clone()));
+    }
+    for g in groups.values_mut() {
+        g.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+    }
+
+    let all_teams: Vec<String> = groups.keys()
+        .map(|(t, _)| t.clone())
+        .collect::<std::collections::HashSet<_>>()
+        .into_iter()
+        .collect();
+
+    let mut out = HashMap::new();
+    for team in all_teams {
+        let c  = groups.get(&(team.clone(), Position::Center)).map(|v| v.as_slice()).unwrap_or(&[]);
+        let lw = groups.get(&(team.clone(), Position::LeftWing)).map(|v| v.as_slice()).unwrap_or(&[]);
+        let rw = groups.get(&(team.clone(), Position::RightWing)).map(|v| v.as_slice()).unwrap_or(&[]);
+        let d  = groups.get(&(team.clone(), Position::Defense)).map(|v| v.as_slice()).unwrap_or(&[]);
+
+        let c_score  = c.iter().take(4).map(|(s, _)| s).sum();
+        let lw_score = lw.iter().take(4).map(|(s, _)| s).sum();
+        let rw_score = rw.iter().take(4).map(|(s, _)| s).sum();
+        let d_score  = d.iter().take(6).map(|(s, _)| s).sum();
+
+        out.insert(team, TeamStrength {
+            c_score, lw_score, rw_score, d_score,
+            total: c_score + lw_score + rw_score + d_score,
+            c_top:  c.first().map(|(_, n)| n.clone()).unwrap_or_else(|| "—".to_owned()),
+            lw_top: lw.first().map(|(_, n)| n.clone()).unwrap_or_else(|| "—".to_owned()),
+            rw_top: rw.first().map(|(_, n)| n.clone()).unwrap_or_else(|| "—".to_owned()),
+            d_top:  d.first().map(|(_, n)| n.clone()).unwrap_or_else(|| "—".to_owned()),
+        });
+    }
+    out
+}
+
 /// Per-player cross-team metrics.
 #[derive(Debug, Clone)]
 pub struct CrossTeamMetrics {
@@ -69,16 +165,17 @@ impl WebFitClass {
 }
 
 /// Build a map: (team, position) → sorted list of sort keys (desc).
-fn build_pos_index(players: &[Player]) -> HashMap<(&TeamAbbr, Position), Vec<f64>> {
+fn build_pos_index<'a>(players: &'a [Player], mode: ScoringMode) -> HashMap<(&'a TeamAbbr, Position), Vec<f64>> {
     let mut map: HashMap<(&TeamAbbr, Position), Vec<f64>> = HashMap::new();
     for p in players {
-        if let Some(score) = p.pace_score {
-            map.entry((&p.team, p.position))
-                .or_default()
-                .push(score.sort_key());
-        }
+        let score = match mode {
+            ScoringMode::Pace => {
+                if let Some(s) = p.pace_score { s.sort_key() } else { continue; }
+            }
+            ScoringMode::Fantasy => fantasy_score(p),
+        };
+        map.entry((&p.team, p.position)).or_default().push(score);
     }
-    // Sort descending so index = rank - 1
     for v in map.values_mut() {
         v.sort_by(|a, b| b.partial_cmp(a).unwrap_or(std::cmp::Ordering::Equal));
     }
@@ -91,11 +188,13 @@ fn rank_in(sort_key: f64, sorted_desc: &[f64]) -> u8 {
     rank.min(255) as u8
 }
 
-/// Compute cross-team metrics for every player in the dataset.
-///
-/// `players` must include all players from all 32 teams, with positions
-/// already assigned and pace scores computed.
+/// Compute cross-team metrics for every player — Pace scoring (backward compat).
 pub fn compute_all(players: &[Player]) -> Vec<CrossTeamMetrics> {
+    compute_all_with_mode(players, ScoringMode::Pace)
+}
+
+/// Compute cross-team metrics for every player using the given scoring mode.
+pub fn compute_all_with_mode(players: &[Player], mode: ScoringMode) -> Vec<CrossTeamMetrics> {
     let all_teams: Vec<&TeamAbbr> = {
         let mut teams: Vec<&TeamAbbr> = players.iter().map(|p| &p.team).collect();
         teams.sort_by(|a, b| a.0.cmp(&b.0));
@@ -103,21 +202,23 @@ pub fn compute_all(players: &[Player]) -> Vec<CrossTeamMetrics> {
         teams
     };
 
-    let pos_index = build_pos_index(players);
+    let pos_index = build_pos_index(players, mode);
 
     players
         .iter()
         .map(|p| {
-            let Some(score) = p.pace_score else {
-                return CrossTeamMetrics {
-                    player_nhl_id: p.nhl_id,
-                    own_line: 255,
-                    avg_other_line: 255.0,
-                    delta: 0.0,
-                };
+            let sort_key = match mode {
+                ScoringMode::Pace => match p.pace_score {
+                    Some(s) => s.sort_key(),
+                    None => return CrossTeamMetrics {
+                        player_nhl_id: p.nhl_id,
+                        own_line: 255,
+                        avg_other_line: 255.0,
+                        delta: 0.0,
+                    },
+                },
+                ScoringMode::Fantasy => fantasy_score(p),
             };
-
-            let sort_key = score.sort_key();
 
             // Own rank on own team
             let own_sorted = pos_index

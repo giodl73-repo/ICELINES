@@ -5,6 +5,7 @@ pub mod search;
 pub mod misc;
 pub mod queries;
 pub mod comps;
+pub mod depth;
 
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
@@ -36,6 +37,8 @@ pub fn render(f: &mut Frame, app: &App) {
         Screen::Fetch               => misc::render_fetch(f, app, chunks[1]),
         Screen::Help                => home::render(f, app, chunks[1]),
         Screen::Comps(idx)          => comps::render(f, app, chunks[1], *idx),
+        Screen::Depth               => depth::render_league(f, app, chunks[1]),
+        Screen::DepthTeam(abbrev)   => depth::render_team(f, app, chunks[1], abbrev),
     }
 
     f.render_widget(
@@ -79,12 +82,14 @@ fn render_nav(f: &mut Frame, app: &App, area: Rect) {
         ("Projections",   Screen::Projections),
         ("Tonight",       Screen::Tonight),
         ("Groups",        Screen::Groups),
+        ("Depth",         Screen::Depth),
         ("Fetch+Install", Screen::Fetch),
     ];
 
     let mut spans: Vec<Span> = Vec::new();
     for (label, tab_screen) in tabs {
-        let active = std::mem::discriminant(&app.screen) == std::mem::discriminant(tab_screen);
+        let active = std::mem::discriminant(&app.screen) == std::mem::discriminant(tab_screen)
+            || (*tab_screen == Screen::Depth && matches!(app.screen, Screen::DepthTeam(_)));
         let style = if active {
             Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
         } else {

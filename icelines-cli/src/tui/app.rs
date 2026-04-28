@@ -24,6 +24,8 @@ pub enum Screen {
     Fetch,
     Help,
     Comps(usize),         // similar-player comps for player at index
+    Depth,                // league-wide team depth rankings
+    DepthTeam(String),    // one team's depth chart with fit coloring
 }
 
 pub struct App {
@@ -44,6 +46,8 @@ pub struct App {
     pub group_picker_open:   bool,
     pub group_picker_list:   Vec<String>,           // group names
     pub group_picker_player: Option<(String, String)>, // (normalized, full_name)
+    // Depth chart tab
+    pub depth_mode:          icelines_core::cross_team::ScoringMode,
     // Query manager state
     pub query_fields:        Vec<crate::tui::screens::queries::QueryField>,
     pub query_field_idx:     usize,       // which field row is active
@@ -71,6 +75,7 @@ impl App {
             query_fields:        crate::tui::screens::queries::default_fields(),
             query_field_idx:     0,
             query_result_scroll: 0,
+            depth_mode:          icelines_core::cross_team::ScoringMode::Fantasy,
             group_picker_open:   false,
             group_picker_list:   Vec::new(),
             group_picker_player: None,
@@ -221,6 +226,9 @@ impl App {
                         self.screen = Screen::Comps(idx);
                         self.selected = 0;
                     }
+                } else if matches!(self.screen, Screen::Depth | Screen::DepthTeam(_)) && c == 's' {
+                    self.depth_mode = self.depth_mode.toggle();
+                    self.status = format!("Scoring: {}", self.depth_mode.label());
                 }
             }
             Action::Backspace => {
@@ -278,7 +286,7 @@ impl App {
             }
 
             Action::GoToTab(n) => {
-                // 1–7 map to: League, /Search, Queries, Projections, Tonight, Groups, Fetch+Install
+                // 1–8: League, /Search, Queries, Projections, Tonight, Groups, Depth, Fetch+Install
                 let tabs = [
                     Screen::Home,
                     Screen::Search,
@@ -286,6 +294,7 @@ impl App {
                     Screen::Projections,
                     Screen::Tonight,
                     Screen::Groups,
+                    Screen::Depth,
                     Screen::Fetch,
                 ];
                 if let Some(screen) = tabs.get(n) {
@@ -538,6 +547,21 @@ impl App {
                 self.screen = Screen::Player(self.selected);
                 self.selected = 0;
             }
+            Screen::Depth => {
+                let strength = icelines_core::cross_team::compute_team_strength(
+                    &self.players, self.depth_mode
+                );
+                let mut ranked: Vec<String> = strength.keys().cloned().collect();
+                ranked.sort_by(|a, b| {
+                    strength[b].total.partial_cmp(&strength[a].total)
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                });
+                if let Some(team) = ranked.get(self.selected) {
+                    self.prev_screen = Some(Screen::Depth);
+                    self.screen = Screen::DepthTeam(team.clone());
+                    self.selected = 0;
+                }
+            }
             Screen::Comps(target_idx) => {
                 let target_idx = *target_idx;
                 if let Some(target) = self.players.get(target_idx) {
@@ -562,7 +586,8 @@ impl App {
             Screen::Queries     => Screen::Projections,
             Screen::Projections => Screen::Tonight,
             Screen::Tonight     => Screen::Groups,
-            Screen::Groups      => Screen::Fetch,
+            Screen::Groups      => Screen::Depth,
+            Screen::Depth       => Screen::Fetch,
             Screen::Fetch       => Screen::Home,
             _                   => Screen::Home,
         };
