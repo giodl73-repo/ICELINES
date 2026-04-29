@@ -326,6 +326,21 @@ pub enum SnapshotSubcommand {
     Verify { name: Option<String> },
     /// Delete a named snapshot (cannot delete the active one).
     Delete { name: String },
+    /// Convert a legacy snapshot to the chunked layout (Phase 8h).
+    /// Idempotent — already-chunked snapshots are a no-op.
+    Rebuild {
+        name: String,
+        /// Use the chunked storage format (Phase 8h). Required flag for
+        /// forward-compat with future rebuild modes.
+        #[arg(long)]
+        chunked: bool,
+    },
+    /// Sweep zero-ref chunks from the chunk store (Phase 8h).
+    Gc {
+        /// Report what would be removed without touching disk.
+        #[arg(long)]
+        dry_run: bool,
+    },
 }
 
 // ── Phase 5 query subcommands ─────────────────────────────────────────────────

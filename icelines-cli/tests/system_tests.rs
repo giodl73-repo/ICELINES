@@ -331,6 +331,35 @@ fn l2_cmd_scouting_unknown_format_exits_nonzero() {
         "error must list valid formats, got stderr:\n{stderr}");
 }
 
+// ── L2: chunked snapshot ops (Phase 8h.4) ─────────────────────────────────────
+
+#[test]
+fn l2_cmd_snapshot_gc_dry_run_exits_zero() {
+    // gc with no snapshots is a clean no-op exit.
+    let out = run(&["snapshot", "gc", "--dry-run"]);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(!stderr.contains("panicked at"), "must not panic, stderr: {stderr}");
+    assert!(out.status.success(), "snapshot gc --dry-run must exit 0, stderr: {stderr}");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("Dry run") || stdout.contains("Nothing to sweep"),
+        "stdout must mention dry-run or sweep result, got:\n{stdout}",
+    );
+}
+
+#[test]
+fn l2_cmd_snapshot_rebuild_requires_chunked_flag() {
+    // Without --chunked, the rebuild command errors with a clear message.
+    let out = run(&["snapshot", "rebuild", "any-name"]);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(!stderr.contains("panicked at"));
+    assert!(!out.status.success(), "missing --chunked must exit non-zero");
+    assert!(
+        stderr.contains("--chunked"),
+        "error must reference --chunked flag, got stderr:\n{stderr}",
+    );
+}
+
 #[test]
 fn l2_cmd_tui_help_exits_zero() {
     let out = run(&["tui", "--help"]);

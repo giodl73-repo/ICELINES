@@ -29,4 +29,10 @@ pub enum FetchError {
     Io(#[from] std::io::Error),
     #[error("JSON: {0}")]
     Json(#[from] serde_json::Error),
+    /// Phase 8h: chunk requested by hash is not present on disk.
+    #[error("missing chunk: {hash}")]
+    MissingChunk { hash: String },
+    /// Phase 8h: on-disk bytes for a chunk hashed to a different value.
+    #[error("integrity violation — expected {expected}, got {actual}")]
+    IntegrityViolation { expected: String, actual: String },
 }

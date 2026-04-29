@@ -106,32 +106,64 @@ pub fn get_stats_installed(season_id: &str) -> Option<Vec<crate::schema::SkaterS
     serde_json::from_str(&text).ok()
 }
 
-/// Load bios: try snapshot store first (fresh), fall back to bundled data.
+/// Load bios: try the snapshot store first, falling back to bundled data.
+///
+/// Resolution order (Phase 8h):
+/// 1. Active snapshot — chunked layout (`chunked.json`) if present
+/// 2. Active snapshot — legacy `stats/bios.json`
+/// 3. Bundled data shipped with the binary
 pub fn load_bios_with_fallback(
     season: &str,
     store: &crate::snapshot::SnapshotStore,
 ) -> Result<Vec<SkaterBio>, FetchError> {
-    // 1. Fresh snapshot (from icelines fetch)
+    // 1. Chunked active snapshot
+    if let Ok((bios, _)) = read_chunked_active(store) {
+        return Ok(bios);
+    }
+    // 2. Legacy file-per-tier active snapshot
     if let Ok(bios) = store.read_tier(&crate::snapshot::SnapshotTier::Stats, "bios.json") {
         return Ok(bios);
     }
-    // 2. Bundled data shipped with binary
+    // 3. Bundled data shipped with binary
     get_bios(season).ok_or_else(|| FetchError::PlayerNotFound {
         name: format!("no bios for season {season} — run `icelines fetch stats`"),
     })
 }
 
-/// Load stats: try snapshot store first (fresh), fall back to bundled data.
+/// Load stats: try the snapshot store first, falling back to bundled data.
+/// See `load_bios_with_fallback` for the full resolution order.
 pub fn load_stats_with_fallback(
     season: &str,
     store: &crate::snapshot::SnapshotStore,
 ) -> Result<Vec<SkaterStats>, FetchError> {
+    // 1. Chunked active snapshot
+    if let Ok((_, stats)) = read_chunked_active(store) {
+        return Ok(stats);
+    }
+    // 2. Legacy file-per-tier active snapshot
     if let Ok(stats) = store.read_tier(&crate::snapshot::SnapshotTier::Stats, "stats.json") {
         return Ok(stats);
     }
     get_stats(season).ok_or_else(|| FetchError::PlayerNotFound {
         name: format!("no stats for season {season} — run `icelines fetch stats`"),
     })
+}
+
+/// Read both bios + stats from the active chunked snapshot, if any. Returns
+/// `Err` if no snapshot is active, the active snapshot is not chunked, or
+/// any chunk fails its integrity check.
+fn read_chunked_active(
+    store: &crate::snapshot::SnapshotStore,
+) -> Result<(Vec<SkaterBio>, Vec<SkaterStats>), crate::snapshot::SnapshotError> {
+    let manifest = store.load_manifest()?;
+    let active = manifest
+        .active
+        .as_deref()
+        .ok_or(crate::snapshot::SnapshotError::NoActiveSnapshot)?;
+    if !store.is_chunked(active) {
+        return Err(crate::snapshot::SnapshotError::NotFound { name: format!("{active}/chunked.json") });
+    }
+    store.read_chunked_stats(active)
 }
 
 #[cfg(test)]
