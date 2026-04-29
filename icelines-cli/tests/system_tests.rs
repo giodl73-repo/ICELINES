@@ -1092,6 +1092,87 @@ fn l2_cmd_group_rename_succeeds() {
     assert!(!stdout.contains(" before "), "old name should not appear: {stdout}");
 }
 
+// ── Phase 8f.8: data verify ─────────────────────────────────────────────────
+
+#[test]
+fn l2_cmd_data_verify_no_install_errors_helpfully() {
+    let home = tempfile::tempdir().expect("tempdir");
+    // No seasons dir at all → expect a clear hint to run `data install`.
+    let out = run_isolated(home.path(), &["data", "verify", "--all"]);
+    assert!(!out.status.success());
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("no installed seasons") || stderr.contains("data install"),
+        "must hint to install first, got: {stderr}");
+}
+
+#[test]
+fn l2_cmd_data_verify_detects_tampering_in_isolated_home() {
+    let home = tempfile::tempdir().expect("tempdir");
+    // Hand-build a fake installed bundle: ~/.icelines/seasons/20242025/bios.json
+    // + manifest.json. Then run `data verify 20242025`.
+    let dir = home.path().join(".icelines").join("seasons").join("20242025");
+    std::fs::create_dir_all(&dir).expect("mkdir");
+    std::fs::write(dir.join("bios.json"),  b"[]").unwrap();
+    std::fs::write(dir.join("stats.json"), b"[]").unwrap();
+    // Hand-author a manifest with deliberately wrong hashes so verify fails.
+    let manifest = serde_json::json!({
+        "season": "20242025",
+        "sha256": {
+            "bios.json":  "0000000000000000000000000000000000000000000000000000000000000000",
+            "stats.json": "1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "version": 1,
+        "written_at": "2026-04-29T00:00:00Z"
+    });
+    std::fs::write(dir.join("manifest.json"),
+        serde_json::to_string(&manifest).unwrap()).unwrap();
+
+    let out = run_isolated(home.path(), &["data", "verify", "20242025"]);
+    assert!(!out.status.success(),
+        "tampered bundle must exit nonzero");
+    let combined = format!("{}{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr));
+    assert!(combined.contains("mismatch"),
+        "must report mismatch, got: {combined}");
+}
+
+#[test]
+fn l2_cmd_data_verify_clean_bundle_succeeds() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let dir = home.path().join(".icelines").join("seasons").join("20242025");
+    std::fs::create_dir_all(&dir).expect("mkdir");
+    let bios  = b"[{\"player_id\":1}]";
+    let stats = b"[{\"player_id\":1,\"goals\":10}]";
+    std::fs::write(dir.join("bios.json"),  bios).unwrap();
+    std::fs::write(dir.join("stats.json"), stats).unwrap();
+    // Compute correct hashes.
+    use sha2::{Digest, Sha256};
+    let hex = |b: &[u8]| {
+        let mut h = Sha256::new(); h.update(b);
+        let v = h.finalize();
+        v.iter().map(|byte| format!("{byte:02x}")).collect::<String>()
+    };
+    let manifest = serde_json::json!({
+        "season": "20242025",
+        "sha256": {
+            "bios.json":  hex(bios),
+            "stats.json": hex(stats)
+        },
+        "version": 1,
+        "written_at": "2026-04-29T00:00:00Z"
+    });
+    std::fs::write(dir.join("manifest.json"),
+        serde_json::to_string(&manifest).unwrap()).unwrap();
+
+    let out = run_isolated(home.path(), &["data", "verify", "20242025"]);
+    assert!(out.status.success(),
+        "clean bundle must verify, stderr: {}", String::from_utf8_lossy(&out.stderr));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("verified") || stdout.contains("✓"),
+        "success output expected, got: {stdout}");
+}
+
 // ── Phase 8f.7: scheme from-csv multi-platform ──────────────────────────────
 
 #[test]

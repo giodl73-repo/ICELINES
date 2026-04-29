@@ -32,6 +32,7 @@ pub async fn run(cmd: DataSubcommand) -> anyhow::Result<()> {
         }
         DataSubcommand::List => run_list(),
         DataSubcommand::Remove { season } => run_remove(&season),
+        DataSubcommand::Verify { season, all } => run_verify(season.as_deref(), all),
     }
 }
 
@@ -96,6 +97,8 @@ pub async fn install_season_tui(season: &str) -> anyhow::Result<u64> {
     let kb = bytes.len() as u64 / 1024;
     std::fs::create_dir_all(&dest)?;
     extract_tar_gz(&bytes, &dest)?;
+    write_bundle_manifest(&dest, season)
+        .with_context(|| format!("writing manifest for {season}"))?;
     Ok(kb)
 }
 
@@ -154,6 +157,11 @@ async fn install_season(
 
     extract_tar_gz(&bytes, &dest)
         .with_context(|| format!("extract data-{season}.tar.gz"))?;
+
+    // Phase 8f.8: write a SHA-256 manifest covering each JSON file in the
+    // extracted bundle so `data verify` can flag corruption / tampering.
+    write_bundle_manifest(&dest, season)
+        .with_context(|| format!("writing manifest for {season}"))?;
 
     println!("Installed season {season} → {}", dest.display());
     Ok(())
@@ -301,4 +309,283 @@ fn flate2_decoder(bytes: &[u8]) -> anyhow::Result<flate2::read::GzDecoder<&[u8]>
 
 fn tar_archive(bytes: &[u8]) -> tar::Archive<&[u8]> {
     tar::Archive::new(bytes)
+}
+
+// ── Phase 8f.8: SHA-256 verification of installed bundles ────────────────────
+
+/// Format a byte slice as lowercase hex. Avoids pulling in the `hex` crate
+/// for a single use.
+fn to_hex(bytes: &[u8]) -> String {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let mut s = String::with_capacity(bytes.len() * 2);
+    for b in bytes {
+        s.push(HEX[(b >> 4) as usize] as char);
+        s.push(HEX[(b & 0x0f) as usize] as char);
+    }
+    s
+}
+
+/// Files we hash for a season bundle. Optional files (playoffs.json) are
+/// skipped silently when absent so older bundles still verify cleanly.
+const HASHED_FILES: &[&str] = &["bios.json", "stats.json", "playoffs.json"];
+
+/// Manifest written next to the bundle's JSON files at install time.
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+struct BundleManifest {
+    season:     String,
+    /// `{filename: hex-sha256}` for each file we hash.
+    sha256:     std::collections::BTreeMap<String, String>,
+    /// Schema version. Bump when the manifest format changes.
+    #[serde(default = "default_manifest_version")]
+    version:    u32,
+    /// ISO-8601 timestamp of when the manifest was written.
+    written_at: String,
+}
+
+fn default_manifest_version() -> u32 { 1 }
+
+/// Resolve the directory holding the bundle's JSON files. Installed tarballs
+/// extract to either `dest/bundle-{season}/` or directly into `dest/`,
+/// depending on the tarball layout. We pick whichever has bios.json.
+pub(crate) fn bundle_files_dir(dest: &std::path::Path, season: &str) -> std::path::PathBuf {
+    let nested = dest.join(format!("bundle-{season}"));
+    if nested.join("bios.json").exists() { nested } else { dest.to_owned() }
+}
+
+/// Compute SHA-256 hex of a single file. Returns `Ok(None)` when the file
+/// does not exist (so optional files can be skipped without an error path).
+fn file_sha256(path: &std::path::Path) -> anyhow::Result<Option<String>> {
+    use sha2::{Digest, Sha256};
+    if !path.exists() { return Ok(None); }
+    let bytes = std::fs::read(path)
+        .with_context(|| format!("reading {}", path.display()))?;
+    let mut hasher = Sha256::new();
+    hasher.update(&bytes);
+    Ok(Some(to_hex(&hasher.finalize())))
+}
+
+/// Walk the bundle's JSON files, compute hashes, and write `manifest.json`.
+fn write_bundle_manifest(dest: &std::path::Path, season: &str) -> anyhow::Result<()> {
+    let dir = bundle_files_dir(dest, season);
+    let mut sha256 = std::collections::BTreeMap::new();
+    for f in HASHED_FILES {
+        if let Some(hex) = file_sha256(&dir.join(f))? {
+            sha256.insert((*f).to_owned(), hex);
+        }
+    }
+    if sha256.is_empty() {
+        anyhow::bail!("nothing to hash in {} — bundle layout unexpected", dir.display());
+    }
+    let manifest = BundleManifest {
+        season: season.to_owned(),
+        sha256,
+        version: default_manifest_version(),
+        written_at: chrono::Utc::now().to_rfc3339(),
+    };
+    let json = serde_json::to_string_pretty(&manifest)
+        .context("serialize manifest")?;
+    let path = dir.join("manifest.json");
+    std::fs::write(&path, json)
+        .with_context(|| format!("writing {}", path.display()))?;
+    Ok(())
+}
+
+/// Verify hashes of one or all installed bundles. Errors loud for any
+/// mismatched, missing, or unmanifested bundle.
+fn run_verify(season: Option<&str>, all: bool) -> anyhow::Result<()> {
+    if season.is_some() && all {
+        anyhow::bail!("--all and a season name are mutually exclusive");
+    }
+    let seasons_dir = seasons_base_dir()?;
+    if !seasons_dir.exists() {
+        anyhow::bail!(
+            "no installed seasons in {} — run `icelines data install` first",
+            seasons_dir.display()
+        );
+    }
+
+    // Collect the seasons to verify.
+    let to_verify: Vec<String> = if all {
+        std::fs::read_dir(&seasons_dir)?
+            .filter_map(|e| e.ok())
+            .filter(|e| e.path().is_dir())
+            .filter_map(|e| e.file_name().into_string().ok())
+            .collect()
+    } else if let Some(s) = season {
+        vec![s.to_owned()]
+    } else {
+        anyhow::bail!("specify a season or pass --all");
+    };
+
+    let mut had_error = false;
+    for s in &to_verify {
+        match verify_one(&seasons_dir, s) {
+            Ok(VerifyOutcome::Ok { count }) => {
+                println!("✓ {s}: {count} file(s) verified");
+            }
+            Ok(VerifyOutcome::Missing) => {
+                println!("? {s}: no manifest.json — install with the current binary to generate one");
+                if !all { had_error = true; }
+            }
+            Err(e) => {
+                println!("✗ {s}: {e}");
+                had_error = true;
+            }
+        }
+    }
+    if had_error {
+        anyhow::bail!("verification failed");
+    }
+    Ok(())
+}
+
+enum VerifyOutcome { Ok { count: usize }, Missing }
+
+/// Reread + rehash every file in the manifest, comparing against the recorded
+/// hex digest. Pure function — exposed for tests via `verify_dir`.
+pub(crate) fn verify_dir(dir: &std::path::Path) -> anyhow::Result<VerifyResult> {
+    let manifest_path = dir.join("manifest.json");
+    if !manifest_path.exists() {
+        return Ok(VerifyResult::Missing);
+    }
+    let text = std::fs::read_to_string(&manifest_path)
+        .with_context(|| format!("reading {}", manifest_path.display()))?;
+    let manifest: BundleManifest = serde_json::from_str(&text)
+        .with_context(|| format!("parsing {}", manifest_path.display()))?;
+    let mut mismatches = Vec::new();
+    for (file, expected) in &manifest.sha256 {
+        match file_sha256(&dir.join(file))? {
+            None => mismatches.push(format!("{file}: file is missing")),
+            Some(actual) if actual != *expected =>
+                mismatches.push(format!("{file}: sha256 mismatch")),
+            _ => {}
+        }
+    }
+    Ok(VerifyResult::Ok {
+        count: manifest.sha256.len(),
+        mismatches,
+    })
+}
+
+#[derive(Debug)]
+pub(crate) enum VerifyResult {
+    Missing,
+    Ok { count: usize, mismatches: Vec<String> },
+}
+
+fn verify_one(seasons_dir: &std::path::Path, season: &str)
+    -> anyhow::Result<VerifyOutcome>
+{
+    let dest = seasons_dir.join(season);
+    if !dest.exists() {
+        anyhow::bail!("season {season} is not installed");
+    }
+    let dir = bundle_files_dir(&dest, season);
+    match verify_dir(&dir)? {
+        VerifyResult::Missing => Ok(VerifyOutcome::Missing),
+        VerifyResult::Ok { count, mismatches } if mismatches.is_empty() =>
+            Ok(VerifyOutcome::Ok { count }),
+        VerifyResult::Ok { mismatches, .. } => {
+            anyhow::bail!("{} mismatch(es): {}", mismatches.len(), mismatches.join(", "));
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn hex_sha256(bytes: &[u8]) -> String {
+        use sha2::{Digest, Sha256};
+        let mut h = Sha256::new();
+        h.update(bytes);
+        super::to_hex(&h.finalize())
+    }
+
+    #[test]
+    fn l0_file_sha256_matches_known_hash() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("hello.txt");
+        std::fs::write(&path, b"hello world").unwrap();
+        let expected = hex_sha256(b"hello world");
+        let actual = file_sha256(&path).unwrap().unwrap();
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn l0_file_sha256_returns_none_for_missing() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("nope.txt");
+        assert!(file_sha256(&path).unwrap().is_none());
+    }
+
+    #[test]
+    fn l0_write_and_verify_roundtrip() {
+        // Simulate an installed bundle: dir with bios.json + stats.json,
+        // write manifest, verify_dir reports no mismatches.
+        let dir = tempfile::tempdir().unwrap();
+        let dest = dir.path().to_owned();
+        std::fs::write(dest.join("bios.json"),  b"[{\"x\":1}]").unwrap();
+        std::fs::write(dest.join("stats.json"), b"[{\"y\":2}]").unwrap();
+        write_bundle_manifest(&dest, "20242025").unwrap();
+        let result = verify_dir(&dest).unwrap();
+        match result {
+            VerifyResult::Ok { count, mismatches } => {
+                assert_eq!(count, 2);
+                assert!(mismatches.is_empty(), "no mismatches expected, got: {mismatches:?}");
+            }
+            other => panic!("expected Ok, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn l0_verify_detects_tampering() {
+        let dir = tempfile::tempdir().unwrap();
+        let dest = dir.path().to_owned();
+        std::fs::write(dest.join("bios.json"),  b"[{\"x\":1}]").unwrap();
+        std::fs::write(dest.join("stats.json"), b"[{\"y\":2}]").unwrap();
+        write_bundle_manifest(&dest, "20242025").unwrap();
+        // Tamper with one file after manifest.
+        std::fs::write(dest.join("bios.json"), b"[{\"x\":999}]").unwrap();
+        match verify_dir(&dest).unwrap() {
+            VerifyResult::Ok { mismatches, .. } => {
+                assert_eq!(mismatches.len(), 1, "exactly one file should mismatch");
+                assert!(mismatches[0].contains("bios.json"),
+                    "must name bios.json, got: {mismatches:?}");
+                assert!(mismatches[0].contains("mismatch"),
+                    "must say 'mismatch', got: {mismatches:?}");
+            }
+            other => panic!("expected Ok, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn l0_verify_detects_missing_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let dest = dir.path().to_owned();
+        std::fs::write(dest.join("bios.json"),  b"[]").unwrap();
+        std::fs::write(dest.join("stats.json"), b"[]").unwrap();
+        write_bundle_manifest(&dest, "20242025").unwrap();
+        // Delete a file after the manifest is written.
+        std::fs::remove_file(dest.join("stats.json")).unwrap();
+        match verify_dir(&dest).unwrap() {
+            VerifyResult::Ok { mismatches, .. } => {
+                assert_eq!(mismatches.len(), 1);
+                assert!(mismatches[0].contains("stats.json"));
+                assert!(mismatches[0].contains("missing"),
+                    "must say 'missing', got: {mismatches:?}");
+            }
+            other => panic!("expected Ok, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn l0_verify_no_manifest_returns_missing() {
+        let dir = tempfile::tempdir().unwrap();
+        // No manifest, no files.
+        match verify_dir(dir.path()).unwrap() {
+            VerifyResult::Missing => {} // ok
+            other => panic!("expected Missing, got {other:?}"),
+        }
+    }
 }

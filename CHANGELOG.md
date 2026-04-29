@@ -3,6 +3,19 @@
 ## Unreleased
 
 ### Added
+- Phase 8f.8: `icelines data verify [SEASON|--all]` checks SHA-256
+  hashes of installed bundle files against a manifest written at
+  install time. Catches partial downloads and post-install tampering.
+  `data install` now writes `manifest.json` next to bios.json /
+  stats.json (and playoffs.json when present) covering each file's
+  SHA-256, season ID, and a versioned schema. Verify reports `✓` per
+  clean bundle, `✗` with named mismatches when a file changes, and
+  `?` for legacy bundles installed before this manifest existed.
+  `--all` walks every installed season. New `to_hex()` helper avoids
+  pulling in the `hex` crate. 6 L0 tests (file_sha256, manifest
+  roundtrip, tamper detection, missing-file detection, no-manifest
+  fallback) + 3 L2 subprocess tests (no-install hint, tampered
+  bundle exit, clean bundle success).
 - Phase 8f.7: `icelines scheme from-csv` now supports ESPN, Sleeper,
   and Fantrax CSVs in addition to Yahoo. Each platform has a dialect
   with `signatures` (signature columns for auto-detection) and
