@@ -66,7 +66,7 @@ pub fn compute_team_strength(
     for p in players {
         let score = match mode {
             ScoringMode::Fantasy => fantasy_score(p),
-            ScoringMode::Pace    => p.pace_score.map(|s| s.pace_82 as f64).unwrap_or(0.0),
+            ScoringMode::Pace    => p.pace_score.map(|s| s.pace_82).unwrap_or(0.0),
         };
         groups
             .entry((p.team.as_str().to_owned(), p.position))
@@ -165,7 +165,7 @@ impl WebFitClass {
 }
 
 /// Build a map: (team, position) → sorted list of sort keys (desc).
-fn build_pos_index<'a>(players: &'a [Player], mode: ScoringMode) -> HashMap<(&'a TeamAbbr, Position), Vec<f64>> {
+fn build_pos_index(players: &[Player], mode: ScoringMode) -> HashMap<(&TeamAbbr, Position), Vec<f64>> {
     let mut map: HashMap<(&TeamAbbr, Position), Vec<f64>> = HashMap::new();
     for p in players {
         let score = match mode {

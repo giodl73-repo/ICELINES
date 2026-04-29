@@ -1,0 +1,152 @@
+{
+  "season": "19931994",
+  "champion": "NYR",
+  "conn_smythe": "Brian Leetch",
+  "rounds": [
+    {
+      "round": 1,
+      "label": "Conference Quarterfinals",
+      "series": [
+        {
+          "top_seed": "NYR", "top_seed_name": "New York Rangers",
+          "bottom_seed": "NYI", "bottom_seed_name": "New York Islanders",
+          "winner": "NYR", "games": 4,
+          "top_seed_rank": "1", "bottom_seed_rank": "8",
+          "conference": "Eastern",
+          "results": []
+        },
+        {
+          "top_seed": "NJD", "top_seed_name": "New Jersey Devils",
+          "bottom_seed": "BUF", "bottom_seed_name": "Buffalo Sabres",
+          "winner": "NJD", "games": 7,
+          "top_seed_rank": "2", "bottom_seed_rank": "7",
+          "conference": "Eastern",
+          "results": []
+        },
+        {
+          "top_seed": "PIT", "top_seed_name": "Pittsburgh Penguins",
+          "bottom_seed": "WSH", "bottom_seed_name": "Washington Capitals",
+          "winner": "WSH", "games": 6,
+          "top_seed_rank": "3", "bottom_seed_rank": "6",
+          "conference": "Eastern",
+          "results": []
+        },
+        {
+          "top_seed": "BOS", "top_seed_name": "Boston Bruins",
+          "bottom_seed": "MTL", "bottom_seed_name": "Montreal Canadiens",
+          "winner": "BOS", "games": 7,
+          "top_seed_rank": "4", "bottom_seed_rank": "5",
+          "conference": "Eastern",
+          "results": []
+        },
+        {
+          "top_seed": "DET", "top_seed_name": "Detroit Red Wings",
+          "bottom_seed": "SJS", "bottom_seed_name": "San Jose Sharks",
+          "winner": "SJS", "games": 7,
+          "top_seed_rank": "1", "bottom_seed_rank": "8",
+          "conference": "Western",
+          "results": []
+        },
+        {
+          "top_seed": "CGY", "top_seed_name": "Calgary Flames",
+          "bottom_seed": "VAN", "bottom_seed_name": "Vancouver Canucks",
+          "winner": "VAN", "games": 7,
+          "top_seed_rank": "2", "bottom_seed_rank": "7",
+          "conference": "Western",
+          "results": []
+        },
+        {
+          "top_seed": "TOR", "top_seed_name": "Toronto Maple Leafs",
+          "bottom_seed": "CHI", "bottom_seed_name": "Chicago Blackhawks",
+          "winner": "TOR", "games": 6,
+          "top_seed_rank": "3", "bottom_seed_rank": "6",
+          "conference": "Western",
+          "results": []
+        },
+        {
+          "top_seed": "DAL", "top_seed_name": "Dallas Stars",
+          "bottom_seed": "STL", "bottom_seed_name": "St. Louis Blues",
+          "winner": "DAL", "games": 4,
+          "top_seed_rank": "4", "bottom_seed_rank": "5",
+          "conference": "Western",
+          "results": []
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "label": "Conference Semifinals",
+      "series": [
+        {
+          "top_seed": "NYR", "top_seed_name": "New York Rangers",
+          "bottom_seed": "WSH", "bottom_seed_name": "Washington Capitals",
+          "winner": "NYR", "games": 5,
+          "conference": "Eastern",
+          "results": []
+        },
+        {
+          "top_seed": "NJD", "top_seed_name": "New Jersey Devils",
+          "bottom_seed": "BOS", "bottom_seed_name": "Boston Bruins",
+          "winner": "NJD", "games": 6,
+          "conference": "Eastern",
+          "results": []
+        },
+        {
+          "top_seed": "VAN", "top_seed_name": "Vancouver Canucks",
+          "bottom_seed": "DAL", "bottom_seed_name": "Dallas Stars",
+          "winner": "VAN", "games": 5,
+          "conference": "Western",
+          "results": []
+        },
+        {
+          "top_seed": "TOR", "top_seed_name": "Toronto Maple Leafs",
+          "bottom_seed": "SJS", "bottom_seed_name": "San Jose Sharks",
+          "winner": "TOR", "games": 7,
+          "conference": "Western",
+          "results": []
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "label": "Conference Finals",
+      "series": [
+        {
+          "top_seed": "NYR", "top_seed_name": "New York Rangers",
+          "bottom_seed": "NJD", "bottom_seed_name": "New Jersey Devils",
+          "winner": "NYR", "games": 7,
+          "conference": "Eastern",
+          "results": []
+        },
+        {
+          "top_seed": "VAN", "top_seed_name": "Vancouver Canucks",
+          "bottom_seed": "TOR", "bottom_seed_name": "Toronto Maple Leafs",
+          "winner": "VAN", "games": 5,
+          "conference": "Western",
+          "results": []
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "label": "Stanley Cup Final",
+      "series": [
+        {
+          "top_seed": "NYR", "top_seed_name": "New York Rangers",
+          "bottom_seed": "VAN", "bottom_seed_name": "Vancouver Canucks",
+          "winner": "NYR", "games": 7,
+          "top_seed_rank": "E1", "bottom_seed_rank": "W7",
+          "results": [
+            {"date": "1994-05-31", "home": "NYR", "away": "VAN", "home_score": 2, "away_score": 3, "series_after": "VAN leads 1-0"},
+            {"date": "1994-06-02", "home": "NYR", "away": "VAN", "home_score": 3, "away_score": 1, "series_after": "tied 1-1"},
+            {"date": "1994-06-04", "home": "VAN", "away": "NYR", "home_score": 1, "away_score": 5, "series_after": "NYR leads 2-1"},
+            {"date": "1994-06-07", "home": "VAN", "away": "NYR", "home_score": 2, "away_score": 4, "series_after": "NYR leads 3-1"},
+            {"date": "1994-06-09", "home": "NYR", "away": "VAN", "home_score": 3, "away_score": 6, "series_after": "NYR leads 3-2"},
+            {"date": "1994-06-11", "home": "VAN", "away": "NYR", "home_score": 4, "away_score": 1, "series_after": "tied 3-3"},
+            {"date": "1994-06-14", "home": "NYR", "away": "VAN", "home_score": 3, "away_score": 2, "series_after": "NYR wins 4-3"}
+          ]
+        }
+      ]
+    }
+  ]
+}

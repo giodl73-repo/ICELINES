@@ -225,3 +225,40 @@ fn l1_cache_hit_skips_stale() {
         cache.get("never_written.json", std::time::Duration::from_secs(1));
     assert!(result.is_none(), "missing key must return None");
 }
+
+// ── Phase 8c: historical playoffs bundle ──────────────────────────────────────
+
+#[test]
+fn l1_historical_playoffs_19931994_loads_via_bundled_path() {
+    // Full chain: load bundled JSON → convert to PlayoffBracket → verify fields
+    // that the TUI relies on. Proves no-network historical bracket support.
+    let bundle = icelines_fetch::bundled::load_playoffs("19931994")
+        .expect("19931994 must be bundled");
+    assert_eq!(bundle.season, "19931994");
+    assert_eq!(bundle.champion.as_deref(), Some("NYR"));
+
+    let bracket = bundle.to_bracket();
+    assert_eq!(bracket.rounds.len(), 4);
+    // Round 4 = Stanley Cup Final, NYR vs VAN, 7 games
+    let cup = bracket.rounds.iter().find(|r| r.round_number == 4).unwrap();
+    assert_eq!(cup.series.len(), 1);
+    let s = &cup.series[0];
+    assert_eq!(s.top_seed_abbrev, "NYR");
+    assert_eq!(s.bottom_seed_abbrev, "VAN");
+    assert_eq!(s.top_seed_wins, 4);
+    assert_eq!(s.bottom_seed_wins, 3);
+    assert_eq!(s.games.len(), 7);
+    // Game 1 = VAN won in NYR (3-2 OT) → series_after "VAN leads 1-0"
+    assert_eq!(s.games[0].series_after, "VAN leads 1-0");
+    // Cup-clinching game ends "NYR wins 4-3"
+    assert_eq!(s.games[6].series_after, "NYR wins 4-3");
+    // Letter assignment from to_bracket — round 4 single series gets a letter
+    assert!(s.letter.is_some(), "every series gets a stable letter");
+}
+
+#[test]
+fn l1_historical_playoffs_unknown_season_returns_none() {
+    // Sanity: only 19931994 ships in v1 of Phase 8c.
+    assert!(icelines_fetch::bundled::load_playoffs("19951996").is_none());
+    assert!(icelines_fetch::bundled::load_playoffs("19981999").is_none());
+}

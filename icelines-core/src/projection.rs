@@ -284,7 +284,7 @@ mod tests {
             #[test]
             fn alpha_always_in_0_to_1(gp in 0u32..300) {
                 let a = compute_alpha(gp);
-                prop_assert!(a >= 0.0 && a <= 1.0, "alpha={a} out of [0,1]");
+                prop_assert!((0.0..=1.0).contains(&a), "alpha={a} out of [0,1]");
             }
 
             #[test]
