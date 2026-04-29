@@ -215,9 +215,11 @@ Two scoring modes:
 
 ## Headshot Rendering
 
-Fetched async in `tui/headshot.rs`. Stored in `HeadshotCache` (Arc<DashMap>).
-URL derived from `nhl_id + team + CURRENT_SEASON_STR` — no roster fetch needed.
-Rendered as braille dither (4× effective resolution vs block characters).
+Fetched async in `tui/headshot.rs`. Stored in `HeadshotCache`
+(`Arc<Mutex<HashMap<u32, Vec<String>>>>`). URL derived from
+`nhl_id + team + CURRENT_SEASON_STR` — no roster fetch needed.
+Rendered as braille dither (4× effective resolution vs block
+characters). See `headshot-rendering.md` for algorithm detail.
 
 ---
 
