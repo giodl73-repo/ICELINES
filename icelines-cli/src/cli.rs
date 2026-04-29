@@ -330,11 +330,17 @@ pub enum SchemeSubcommand {
         #[arg(long)]
         source: bool,
     },
-    /// Detect scoreable stats from a Yahoo CSV and create a scheme template.
+    /// Detect scoreable stats from a fantasy CSV export and create a scheme
+    /// template. Auto-detects the platform (Yahoo / ESPN / Sleeper / Fantrax)
+    /// from header columns; pass `--platform` to override.
     FromCsv {
         path: String,
         #[arg(long)]
         name: Option<String>,
+        /// Force a specific platform: yahoo, espn, sleeper, or fantrax.
+        /// Bypasses auto-detection.
+        #[arg(long)]
+        platform: Option<String>,
     },
 }
 

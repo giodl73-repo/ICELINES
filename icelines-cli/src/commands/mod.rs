@@ -13,5 +13,6 @@ pub mod serve_deploy;
 pub mod tonight;
 pub mod rank;
 pub mod scheme;
+pub mod scheme_dialects;
 pub mod snapshot;
 pub mod team;

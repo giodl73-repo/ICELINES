@@ -3,6 +3,18 @@
 ## Unreleased
 
 ### Added
+- Phase 8f.7: `icelines scheme from-csv` now supports ESPN, Sleeper,
+  and Fantrax CSVs in addition to Yahoo. Each platform has a dialect
+  with `signatures` (signature columns for auto-detection) and
+  `stat_cols` (column → normalized stat-key map). Auto-detection picks
+  the dialect with the most signature hits; ties break in declaration
+  order (Yahoo first, preserving Phase-5 behavior on ambiguous CSVs).
+  New `--platform yahoo|espn|sleeper|fantrax` flag overrides
+  auto-detection. Unrecognized headers error with a `--platform` hint.
+  Output now includes the detected platform plus column-to-key
+  mappings (`G (P) → goals`). New `scheme_dialects` module with 11 L0
+  tests + 5 L2 subprocess tests covering autodetect, override,
+  unknown-platform, and unrecognized-format paths.
 - Phase 8f.6: `icelines group export/import/rename` for portable groups.
   - `group export NAME [--out PATH]` writes one group's members + metadata
     to JSON (default stdout, `--out file.json` for a file). Wire format
