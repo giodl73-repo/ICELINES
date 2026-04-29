@@ -55,7 +55,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, idx: usize) {
     render_headshot(f, app, p, chunks[0]);
     render_stats(f, p, chunks[1]);
     if dashboards_on {
-        render_dashboard_panel(f, app, chunks[2]);
+        render_dashboard_panel(f, app, p, chunks[2]);
     }
 
     // Group picker overlay — floats over the card when `g` is pressed
@@ -64,19 +64,20 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, idx: usize) {
     }
 }
 
-/// Phase 8j: proof-compiled side panel. Lazy-compiles on first frame and
-/// caches the result on `App`. Off behind the dashboards feature flag.
-fn render_dashboard_panel(f: &mut Frame, app: &App, area: Rect) {
+/// Phase 8j: proof-compiled side panel. Renders a per-player scout card
+/// driven by `tui::dashboard_panel`. The panel caches by nhl_id so we
+/// only compile once per player.
+fn render_dashboard_panel(f: &mut Frame, app: &App, p: &icelines_core::model::Player, area: Rect) {
     let block = Block::default()
         .borders(Borders::ALL)
-        .title(" Dashboard (preview) ")
+        .title(" Scout card (proof) ")
         .style(Style::default().fg(Color::DarkGray));
     let inner = block.inner(area);
     f.render_widget(block, area);
 
     let dim = Style::default().fg(Color::Gray);
     let lines: Vec<Line> = app.dashboard_panel
-        .lines()
+        .lines_for_player(p)
         .into_iter()
         .map(|l| Line::styled(l, dim))
         .collect();

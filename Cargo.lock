@@ -1879,6 +1879,7 @@ checksum = "0e7465ac9959cc2b1404e8e2367b43684a6d13790fe23056cc8c6c5a6b7bcb94"
 [[package]]
 name = "mdpath"
 version = "0.5.0"
+source = "git+https://github.com/giodl73-repo/MDPATH?rev=6666cb4368ebc4b1b7ec8d77169b524821e90e9c#6666cb4368ebc4b1b7ec8d77169b524821e90e9c"
 dependencies = [
  "thiserror 2.0.18",
 ]
@@ -2165,6 +2166,7 @@ dependencies = [
 [[package]]
 name = "proof"
 version = "0.5.0"
+source = "git+https://github.com/giodl73-repo/PROOF?rev=9c5d456ef49cf8e1aeb516557d52ea0ddb79fd2c#9c5d456ef49cf8e1aeb516557d52ea0ddb79fd2c"
 dependencies = [
  "anyhow",
  "clap",
@@ -2187,6 +2189,7 @@ dependencies = [
 [[package]]
 name = "proof-canvas"
 version = "0.1.0"
+source = "git+https://github.com/giodl73-repo/PROOF?rev=9c5d456ef49cf8e1aeb516557d52ea0ddb79fd2c#9c5d456ef49cf8e1aeb516557d52ea0ddb79fd2c"
 dependencies = [
  "unicode-width 0.2.0",
 ]
@@ -2194,6 +2197,7 @@ dependencies = [
 [[package]]
 name = "proof-math"
 version = "0.1.0"
+source = "git+https://github.com/giodl73-repo/PROOF?rev=9c5d456ef49cf8e1aeb516557d52ea0ddb79fd2c#9c5d456ef49cf8e1aeb516557d52ea0ddb79fd2c"
 dependencies = [
  "unicode-width 0.2.0",
 ]

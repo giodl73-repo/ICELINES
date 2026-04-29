@@ -3,6 +3,32 @@
 ## Unreleased
 
 ### Added
+- Phase 8j (cont.): Real player stats in the dashboard panel + CI-ready
+  proof pinning.
+  - `tui::dashboard_panel` now compiles a per-player proof source
+    (name, team, position, G/A/Pts/+/-/PP-Pts/Shots, GP/PPG/Pts-82
+    rate stats) and caches by `nhl_id`. Each player's compile happens
+    once and the rendered lines are reused on every subsequent frame.
+    Long names truncate with an ellipsis; missing rate stats render
+    as em-dashes so the layout never collapses.
+  - Player screen pulls per-player lines via `lines_for_player(p)`
+    instead of the static placeholder.
+  - Output stripper now unwraps proof's `<!-- proof:compiled -->`
+    markers and ` ```dashboard ` code-fence wrapper so the panel
+    shows just the rendered region content.
+  - **CI fix**: switched `proof_lib` from `path = "../../proof"` to
+    `git = "...", rev = "9c5d456e"`. icelines release builds no
+    longer need proof + mdpath checked out as siblings; cargo fetches
+    them transitively from GitHub. Local fast-iteration preserved
+    via a gitignored `.cargo/config.toml` with `[patch]` overrides
+    pointing at the sibling repos. Template at
+    `.cargo/config.toml.example`. Updated `design/proof_lib.md` to
+    document the pattern.
+  - Companion proof commit `9c5d456e` pins mdpath the same way.
+  - 8 new L0 tests in dashboard_panel (build-source content, real
+    stats render, cache-by-nhl_id, em-dash for missing fields,
+    name-truncation helper, plus three strip-unwrap tests covering
+    the proof:compiled scaffolding). 619 tests workspace-wide.
 - Phase 8j: Proof-compiled dashboard panel — opt-in TUI feature flag.
   - `proof_lib` is now a runtime dependency of icelines-cli. The CLI
     binary always carries the proof code so toggling the flag at
