@@ -362,6 +362,16 @@ pub enum DataSubcommand {
     List,
     /// Remove an installed season bundle.
     Remove { season: String },
+    /// Verify SHA-256 hashes of an installed bundle's files against the
+    /// manifest written at install time. Detects partial downloads and
+    /// post-install tampering.
+    Verify {
+        /// Season to verify (e.g. 20242025). Conflicts with `--all`.
+        season: Option<String>,
+        /// Verify every installed bundle.
+        #[arg(long)]
+        all: bool,
+    },
 }
 
 #[derive(Debug, Subcommand)]
