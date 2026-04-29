@@ -6,3 +6,6 @@ __pycache__/
 *.tmp
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
+# Per-developer cargo overrides for proof + mdpath path patches.
+# See `.cargo/config.toml.example` for the template.
+.cargo/config.toml

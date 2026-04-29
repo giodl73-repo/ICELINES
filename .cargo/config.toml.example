@@ -1,0 +1,26 @@
+# Local-development override for proof + mdpath path resolution.
+#
+# By default `icelines-cli/Cargo.toml` pins proof_lib to a specific commit
+# on https://github.com/giodl73-repo/PROOF, and proof in turn pins mdpath
+# to a commit on https://github.com/giodl73-repo/MDPATH. That setup lets
+# CI runners build icelines from a single `actions/checkout` without
+# needing the sibling repos.
+#
+# When you have proof and/or mdpath checked out locally and want to
+# iterate without committing+pushing each change, copy this file to
+# `.cargo/config.toml` (the real config — gitignored) and uncomment the
+# blocks below. Cargo applies the [patch] sections transparently: your
+# local working tree is used for compile, no git fetch happens.
+#
+# Layout this assumes:
+#   C:/src/ICELINES/      ← this repo
+#   C:/src/proof/         ← sibling
+#   C:/src/mdpath/        ← sibling (proof's dependency)
+#
+# Adjust the relative paths if your layout differs.
+
+# [patch."https://github.com/giodl73-repo/PROOF"]
+# proof = { path = "../proof" }
+
+# [patch."https://github.com/giodl73-repo/MDPATH"]
+# mdpath = { path = "../mdpath" }
