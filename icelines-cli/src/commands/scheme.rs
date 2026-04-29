@@ -5,7 +5,7 @@ use icelines_core::scheme::Scheme;
 pub async fn run(cmd: SchemeSubcommand) -> anyhow::Result<()> {
     match cmd {
         SchemeSubcommand::List => run_list().await,
-        SchemeSubcommand::Show { name } => run_show(&name).await,
+        SchemeSubcommand::Show { name, source } => run_show(&name, source).await,
         SchemeSubcommand::FromCsv { path, name } => run_from_csv(&path, name.as_deref()).await,
     }
 }
@@ -25,9 +25,18 @@ async fn run_list() -> anyhow::Result<()> {
     Ok(())
 }
 
-pub async fn run_show(name: &str) -> anyhow::Result<()> {
+pub async fn run_show(name: &str, source: bool) -> anyhow::Result<()> {
     let scheme = find_builtin(name)
         .with_context(|| format!("scheme '{name}' not found — run `icelines scheme list`"))?;
+
+    if source {
+        // Phase 8f.5: --source emits the scheme as pretty JSON for
+        // copy/paste, diffing, or piping into another tool.
+        let json = serde_json::to_string_pretty(&scheme)
+            .context("serializing scheme to JSON")?;
+        println!("{json}");
+        return Ok(());
+    }
 
     println!("Scheme:   {}", scheme.name);
     println!("Source:   {:?}", scheme.source);

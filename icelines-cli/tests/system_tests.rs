@@ -178,6 +178,24 @@ fn l2_cmd_scheme_show_unknown_exits_nonzero() {
     assert!(!out.status.success(), "unknown scheme must exit non-zero");
 }
 
+#[test]
+fn l2_cmd_scheme_show_source_emits_valid_json() {
+    // Phase 8f.5: --source prints the scheme as JSON for diffing / piping.
+    let out = run(&["scheme", "show", "yahoo-standard", "--source"]);
+    assert!(
+        out.status.success(),
+        "scheme show --source must exit 0, stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let parsed: serde_json::Value = serde_json::from_str(&stdout)
+        .expect("scheme show --source output must be valid JSON");
+    assert_eq!(parsed["name"].as_str(), Some("yahoo-standard"),
+        "JSON must include name field");
+    assert!(parsed["skater"].is_object(), "JSON must include skater weights");
+    assert!(parsed["goalie"].is_object(), "JSON must include goalie weights");
+}
+
 // ── L2: Phase 2 snapshot commands ────────────────────────────────────────────
 
 #[test]

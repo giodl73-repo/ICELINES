@@ -307,7 +307,13 @@ pub enum SchemeSubcommand {
     /// List all available schemes (built-in + user-defined).
     List,
     /// Show scoring weights for a named scheme.
-    Show { name: String },
+    Show {
+        name: String,
+        /// Print the scheme as JSON instead of the human-readable table.
+        /// Useful for copy/paste, diff, or piping into another tool.
+        #[arg(long)]
+        source: bool,
+    },
     /// Detect scoreable stats from a Yahoo CSV and create a scheme template.
     FromCsv {
         path: String,
