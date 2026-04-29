@@ -300,6 +300,22 @@ pub enum GroupSubcommand {
     Show { name: String },
     /// Delete a group.
     Delete { name: String },
+    /// Export a group (members + metadata) to JSON.
+    Export {
+        name: String,
+        /// Output path. Use `-` to write to stdout. Default: stdout.
+        #[arg(long, default_value = "-")]
+        out: String,
+    },
+    /// Import a group from a previously exported JSON file.
+    Import {
+        path: String,
+        /// Override the group name from the file.
+        #[arg(long = "as", value_name = "NAME")]
+        as_name: Option<String>,
+    },
+    /// Rename an existing group (members carry over).
+    Rename { old: String, new: String },
 }
 
 #[derive(Debug, Subcommand)]

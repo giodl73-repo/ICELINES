@@ -145,6 +145,82 @@ impl GroupDb {
         Ok(rows > 0)
     }
 
+    /// Rename a group. Phase 8f.6.
+    ///
+    /// FK constraint on `group_members.group_name` cascades the change to all
+    /// members. Returns Ok(()) on success; errors when `old` doesn't exist or
+    /// when `new` collides with another group.
+    pub fn rename_group(&self, old: &str, new: &str) -> anyhow::Result<()> {
+        if old == new {
+            return Ok(());
+        }
+        self.require_group(old)?;
+        // Reject collisions explicitly so the user sees a clean message rather
+        // than rusqlite's UNIQUE-constraint-violated error.
+        let collides: bool = self.conn
+            .query_row(
+                "SELECT 1 FROM groups WHERE name = ?1",
+                rusqlite::params![new],
+                |_| Ok(true),
+            )
+            .unwrap_or(false);
+        if collides {
+            bail!("a group named '{new}' already exists");
+        }
+        // The schema has FK on group_members.group_name → groups.name without
+        // ON UPDATE CASCADE, so a naive UPDATE on `groups` violates the
+        // constraint mid-transaction. `defer_foreign_keys = ON` postpones
+        // enforcement until COMMIT, letting us rewrite both tables in one tx.
+        let tx = self.conn.unchecked_transaction()?;
+        tx.execute_batch("PRAGMA defer_foreign_keys = ON;")?;
+        tx.execute(
+            "UPDATE groups SET name = ?1 WHERE name = ?2",
+            rusqlite::params![new, old],
+        )?;
+        tx.execute(
+            "UPDATE group_members SET group_name = ?1 WHERE group_name = ?2",
+            rusqlite::params![new, old],
+        )?;
+        tx.commit()?;
+        Ok(())
+    }
+
+    /// Bulk-insert members into a group (used by `group import`). Returns the
+    /// number of new rows actually inserted (duplicates are silently skipped).
+    pub fn add_members_bulk(&self, group: &str, players_normalized: &[String])
+        -> anyhow::Result<usize>
+    {
+        self.require_group(group)?;
+        let now = now_utc();
+        let tx = self.conn.unchecked_transaction()?;
+        let mut inserted = 0usize;
+        {
+            let mut stmt = tx.prepare(
+                "INSERT OR IGNORE INTO group_members \
+                 (group_name, player_normalized, added_at) VALUES (?1, ?2, ?3)",
+            )?;
+            for p in players_normalized {
+                let rows = stmt.execute(rusqlite::params![group, p, now])?;
+                inserted += rows;
+            }
+        }
+        tx.commit()?;
+        Ok(inserted)
+    }
+
+    /// Look up a group's description (returns Ok("") when the group has none).
+    pub fn group_description(&self, name: &str) -> anyhow::Result<String> {
+        self.require_group(name)?;
+        let desc: String = self.conn
+            .query_row(
+                "SELECT description FROM groups WHERE name = ?1",
+                rusqlite::params![name],
+                |r| r.get(0),
+            )
+            .unwrap_or_default();
+        Ok(desc)
+    }
+
     /// Remove a player from a group.  No-op if the player is not a member.
     pub fn remove_member(&self, group: &str, player_normalized: &str) -> anyhow::Result<()> {
         self.require_group(group)?;
@@ -359,5 +435,70 @@ mod tests {
 
         let members = db.list_members("dups").expect("list members");
         assert_eq!(members.len(), 1, "duplicate member should appear only once");
+    }
+
+    // ── Phase 8f.6: rename + bulk import ───────────────────────────────────
+
+    #[test]
+    fn l1_db_rename_group_moves_members() {
+        let db = GroupDb::open_in_memory().expect("open in-memory db");
+        db.create_group("old-name", "to be renamed").expect("create");
+        db.add_member("old-name", "alice").expect("add");
+        db.add_member("old-name", "bob").expect("add");
+
+        db.rename_group("old-name", "new-name").expect("rename");
+
+        // Old name is gone.
+        assert!(db.list_members("old-name").is_err(),
+            "old name should no longer exist");
+        // New name has both members.
+        let mut members = db.list_members("new-name").expect("list new");
+        members.sort();
+        assert_eq!(members, vec!["alice".to_owned(), "bob".to_owned()]);
+        // Description is preserved.
+        assert_eq!(db.group_description("new-name").unwrap(), "to be renamed");
+    }
+
+    #[test]
+    fn l1_db_rename_to_same_name_is_noop() {
+        let db = GroupDb::open_in_memory().expect("open in-memory db");
+        db.create_group("x", "").expect("create");
+        // Should not error and should not destroy the group.
+        db.rename_group("x", "x").expect("noop rename");
+        assert_eq!(db.list_groups().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn l1_db_rename_collision_errors() {
+        let db = GroupDb::open_in_memory().expect("open in-memory db");
+        db.create_group("a", "").expect("create a");
+        db.create_group("b", "").expect("create b");
+        let err = db.rename_group("a", "b").unwrap_err().to_string();
+        assert!(err.contains("already exists"),
+            "collision must mention 'already exists', got: {err}");
+        // Both groups still exist with their original names.
+        let names: Vec<String> = db.list_groups().unwrap().into_iter().map(|g| g.name).collect();
+        assert!(names.contains(&"a".to_owned()));
+        assert!(names.contains(&"b".to_owned()));
+    }
+
+    #[test]
+    fn l1_db_rename_unknown_group_errors() {
+        let db = GroupDb::open_in_memory().expect("open in-memory db");
+        let err = db.rename_group("ghost", "phantom").unwrap_err().to_string();
+        assert!(err.contains("not found"),
+            "unknown old name must error, got: {err}");
+    }
+
+    #[test]
+    fn l1_db_add_members_bulk_dedups_and_counts() {
+        let db = GroupDb::open_in_memory().expect("open in-memory db");
+        db.create_group("g", "").expect("create");
+        db.add_member("g", "alice").expect("seed");
+
+        let members = vec!["alice".to_owned(), "bob".to_owned(), "carol".to_owned()];
+        let inserted = db.add_members_bulk("g", &members).expect("bulk add");
+        assert_eq!(inserted, 2, "alice already there, bob+carol new = 2");
+        assert_eq!(db.list_members("g").unwrap().len(), 3);
     }
 }
