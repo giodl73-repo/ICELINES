@@ -1,17 +1,48 @@
 use crate::config::Config;
 use icelines_core::{filter::PlayerFilter, model::Player, position::PositionResolver};
-use icelines_fetch::{snapshot::SnapshotStore, PlayerRepository};
+use icelines_fetch::{snapshot::SnapshotStore, PlayerRepository, BUNDLED_SEASONS};
 
 /// Load all skaters via PlayerRepository (snapshot → bundled fallback).
 /// This is the single entry point for player data across all commands.
 pub fn load_all_players() -> anyhow::Result<Vec<Player>> {
-    let cfg  = Config::load()?;
+    load_all_players_for_season(None)
+}
+
+/// Load all skaters for a specific bundled season, or use the configured /
+/// current season when `season` is None. Validates the season string against
+/// the bundled-seasons list and produces a clear error listing valid seasons
+/// when the request can't be served.
+///
+/// Phase 8f cherry-pick: backs the `--season` flag on query commands.
+pub fn load_all_players_for_season(season: Option<&str>) -> anyhow::Result<Vec<Player>> {
+    let cfg = Config::load()?;
+    let resolved_season = match season {
+        Some(s) => {
+            validate_bundled_season(s)?;
+            s.to_owned()
+        }
+        None => cfg.season_str(),
+    };
     let repo = PlayerRepository::new(
         SnapshotStore::new(cfg.snapshot_dir()),
-        cfg.season_str(),
+        resolved_season,
     );
     repo.load_all()
         .map_err(|e| anyhow::anyhow!("{e}\n  Try: icelines fetch all"))
+}
+
+/// Reject `--season` values that aren't in the bundled list. Empty string and
+/// non-eight-digit strings are also rejected up front so the error message is
+/// useful (rather than the deeper "no bios for season" path).
+pub fn validate_bundled_season(season: &str) -> anyhow::Result<()> {
+    if BUNDLED_SEASONS.contains(&season) {
+        return Ok(());
+    }
+    let bundled = BUNDLED_SEASONS.join(", ");
+    anyhow::bail!(
+        "season '{season}' is not bundled.\n  Bundled seasons: {bundled}\n  \
+         (use one of these, or fetch live data with `icelines fetch all`)"
+    )
 }
 
 pub struct PlayersArgs {
@@ -58,4 +89,39 @@ pub async fn run(args: PlayersArgs) -> anyhow::Result<()> {
     }
     println!("\n{} matched, showing {}.", matched.len(), matched.len().min(args.top));
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ── Phase 8f: --season validator ───────────────────────────────────────
+
+    #[test]
+    fn l0_validate_bundled_season_accepts_each_bundled_id() {
+        for s in BUNDLED_SEASONS {
+            assert!(validate_bundled_season(s).is_ok(),
+                "bundled season {s} should validate");
+        }
+    }
+
+    #[test]
+    fn l0_validate_bundled_season_rejects_unbundled() {
+        let err = validate_bundled_season("19951996").unwrap_err().to_string();
+        assert!(err.contains("not bundled"),
+            "must say 'not bundled', got: {err}");
+        assert!(err.contains("Bundled seasons:"),
+            "must list bundled options, got: {err}");
+        // Each bundled season should appear in the hint so the user can copy.
+        for s in BUNDLED_SEASONS {
+            assert!(err.contains(s), "expected {s} in hint, got: {err}");
+        }
+    }
+
+    #[test]
+    fn l0_validate_bundled_season_rejects_garbage() {
+        assert!(validate_bundled_season("").is_err());
+        assert!(validate_bundled_season("hi").is_err());
+        assert!(validate_bundled_season("2025").is_err());
+    }
 }

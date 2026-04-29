@@ -447,6 +447,10 @@ pub enum QuerySubcommand {
         /// Aggregate across N seasons (1–5, default 1 = current season only)
         #[arg(long, default_value_t = 1)]
         seasons: u8,
+        /// Query a specific historical season (e.g. 20242025). Conflicts with
+        /// --seasons N. Must match a bundled season — see icelines-fetch::BUNDLED_SEASONS.
+        #[arg(long)]
+        season: Option<String>,
         /// Sort metric: pts-pace (default), ppg, g-pace, gpg, pts, goals, assists, gp,
         ///   pp-pts-pace, pp-g-pace, pp-pts, pp-g, sh-g-pace, sh-g, gwg-pace, gwg,
         ///   shots-pace, shots, sh-pct, plus-minus, toi, fo-pct,
@@ -496,6 +500,9 @@ pub enum QuerySubcommand {
         /// Last N games rolling (requires Phase 5C game-log data)
         #[arg(long)]
         last_n: Option<u32>,
+        /// Query a specific historical season (e.g. 20242025).
+        #[arg(long)]
+        season: Option<String>,
     },
 
     /// Side-by-side comparison or similarity search.
@@ -510,6 +517,9 @@ pub enum QuerySubcommand {
         /// Similarity metric: ppg (default) | career-arc
         #[arg(long, default_value = "ppg")]
         by: String,
+        /// Query a specific historical season (e.g. 20242025).
+        #[arg(long)]
+        season: Option<String>,
     },
 }
 

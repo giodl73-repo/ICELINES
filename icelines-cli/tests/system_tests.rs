@@ -931,3 +931,70 @@ fn l2_cmd_query_compare_shows_contract_rows() {
         "compare output must contain Contract or Expires row, got: {stdout}"
     );
 }
+
+// ── Phase 8f: --season flag on query commands ───────────────────────────────
+
+#[test]
+fn l2_cmd_query_leaders_season_bundled_succeeds() {
+    // Pinning to a previous bundled season must produce that season's leaderboard.
+    let out = run(&["query", "leaders", "--season", "20242025", "--top", "5"]);
+    assert!(
+        out.status.success(),
+        "query leaders --season 20242025 must exit 0, stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("Pts/82") || stdout.contains("PPG"),
+        "leaderboard header should be present, got: {stdout}");
+    assert!(stdout.contains("matched, showing"),
+        "footer count should be present, got: {stdout}");
+}
+
+#[test]
+fn l2_cmd_query_leaders_season_unbundled_errors_with_hint() {
+    let out = run(&["query", "leaders", "--season", "19951996", "--top", "5"]);
+    assert!(!out.status.success(),
+        "non-bundled --season must exit nonzero");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("not bundled"),
+        "must say 'not bundled', got: {stderr}");
+    assert!(stderr.contains("20252026"),
+        "must list current bundled season as a hint, got: {stderr}");
+}
+
+#[test]
+fn l2_cmd_query_leaders_season_with_seasons_n_errors() {
+    let out = run(&["query", "leaders",
+        "--season", "20242025", "--seasons", "3", "--top", "5"]);
+    assert!(!out.status.success(),
+        "--season + --seasons N > 1 must exit nonzero");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("mutually exclusive"),
+        "must explain the conflict, got: {stderr}");
+}
+
+#[test]
+fn l2_cmd_query_player_season_bundled_succeeds() {
+    // McDavid was on EDM in 20242025 — same as today, but the path proves the
+    // season override doesn't crash run_player.
+    let out = run(&["query", "player", "McDavid", "--season", "20242025"]);
+    assert!(
+        out.status.success(),
+        "query player --season must exit 0, stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("PLAYER PROFILE"),
+        "player profile header should be present, got: {stdout}");
+}
+
+#[test]
+fn l2_cmd_query_compare_season_bundled_succeeds() {
+    let out = run(&["query", "compare",
+        "McDavid", "MacKinnon", "--season", "20242025"]);
+    assert!(
+        out.status.success(),
+        "query compare --season must exit 0, stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+}

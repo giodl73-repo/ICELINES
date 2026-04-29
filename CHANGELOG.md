@@ -3,6 +3,17 @@
 ## Unreleased
 
 ### Added
+- Phase 8f.4: `--season YYYYZZZZ` flag on `query leaders/player/compare`.
+  Pins the query to a specific bundled season instead of the current one
+  — `icelines query leaders --season 20242025 --top 10` shows last
+  season's leaders without changing config. Validates against
+  `icelines_fetch::BUNDLED_SEASONS` (currently 2021-22 → 2025-26) and
+  rejects unknown seasons with a copyable hint listing the bundled IDs.
+  Mutually exclusive with `--seasons N` (the multi-season aggregate);
+  combining the two errors with a clear explanation. New
+  `load_all_players_for_season(Option<&str>)` helper backs all three
+  query commands. 3 L0 validator tests + 5 L2 subprocess tests
+  (success, unbundled-error, conflict-error, player + compare paths).
 - Phase 8c: Historical playoffs bundle. New `playoffs_bundle` module
   defines the `PlayoffsBundle` JSON schema (rounds → series → per-game
   results with optional goal scorers) and a `to_bracket()` conversion

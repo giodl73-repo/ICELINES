@@ -153,7 +153,7 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
                 draft_year, round, draft_pick_max, undrafted, rookie,
                 handedness, ppg_min, gp_min, gp_max,
                 toi_min, plus_minus_min, shots_pg_min, birth_province,
-                seasons, sort, top, rate, percentiles, json, csv,
+                seasons, season, sort, top, rate, percentiles, json, csv,
                 ufa, rfa, elc, expiry_year,
             } => {
                 commands::query::run_leaders(commands::query::LeadersArgs {
@@ -162,14 +162,14 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
                     handedness, ppg_min, gp_min, gp_max,
                     birth_province, toi_min, plus_minus_min, shots_pg_min,
                     ufa, rfa, elc, expiry_year,
-                    seasons, sort, top, rate, percentiles, json, csv,
+                    seasons, season, sort, top, rate, percentiles, json, csv,
                 }).await?;
             }
-            QuerySubcommand::Player { name, breakdown, percentiles, last_n } => {
-                commands::query::run_player(name, breakdown, percentiles, last_n).await?;
+            QuerySubcommand::Player { name, breakdown, percentiles, last_n, season } => {
+                commands::query::run_player(name, breakdown, percentiles, last_n, season).await?;
             }
-            QuerySubcommand::Compare { player1, player2, similar, by } => {
-                commands::query::run_compare(player1, player2, similar, by).await?;
+            QuerySubcommand::Compare { player1, player2, similar, by, season } => {
+                commands::query::run_compare(player1, player2, similar, by, season).await?;
             }
         },
         Commands::Fantasy(sub) => match sub {
