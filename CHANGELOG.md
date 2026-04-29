@@ -3,6 +3,16 @@
 ## Unreleased
 
 ### Added
+- Phase 8f.2 + 8f.3: snapshot prune + diff
+  - `icelines snapshot prune --keep N [--dry-run]` keeps the newest N
+    sealed snapshots per tier and deletes the rest. Active snapshot is
+    always preserved; drafts are excluded from the keep count. Pair with
+    `snapshot gc` to reclaim chunk space. 5 L0 + 2 L2 tests.
+  - `icelines snapshot diff <A> <B>` compares two chunked snapshots and
+    reports player-level changes (added / removed / changed bios /
+    changed stats). O(n) hash-set diff via the chunked layout — exact
+    and fast. Legacy snapshots error with a hint to run `rebuild
+    --chunked` first. 4 L0 + 1 L2 tests.
 - Phase 8f.1: live-feeds toggle — `--no-live` global CLI flag,
   `ICELINES_NO_LIVE` env var, and `live = false` config key all suppress
   NHL API fetches in Scores / Schedule / Playoffs / boxscore + the auto-
