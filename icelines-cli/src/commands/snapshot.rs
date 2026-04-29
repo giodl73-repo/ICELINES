@@ -106,6 +106,45 @@ pub async fn run(cmd: SnapshotSubcommand) -> anyhow::Result<()> {
                 .with_context(|| format!("deleting snapshot '{name}'"))?;
             println!("Deleted snapshot '{name}'.");
         }
+
+        SnapshotSubcommand::Rebuild { name, chunked } => {
+            if !chunked {
+                anyhow::bail!(
+                    "snapshot rebuild requires --chunked (the only supported rebuild mode in v1)"
+                );
+            }
+            if store.is_chunked(&name) {
+                println!("Snapshot '{name}' is already chunked — nothing to do.");
+                return Ok(());
+            }
+            let cm = store
+                .rebuild_chunked(&name)
+                .with_context(|| format!("rebuilding snapshot '{name}' as chunked"))?;
+            println!(
+                "✓ Migrated '{name}' to chunked layout ({} bios + {} stats chunks).",
+                cm.bios.len(),
+                cm.stats.len(),
+            );
+            println!("  Run `icelines snapshot gc` to sweep any chunks now unreferenced.");
+        }
+
+        SnapshotSubcommand::Gc { dry_run } => {
+            let report = store.gc_chunks(dry_run).context("gc_chunks failed")?;
+            let kb = report.bytes_freed / 1024;
+            if report.dry_run {
+                println!(
+                    "Dry run — would remove {} chunk(s), freeing ~{} KB.",
+                    report.removed, kb,
+                );
+            } else if report.removed == 0 {
+                println!("Nothing to sweep — all chunks are still referenced.");
+            } else {
+                println!(
+                    "✓ Swept {} chunk(s), freed ~{} KB.",
+                    report.removed, kb,
+                );
+            }
+        }
     }
     Ok(())
 }
