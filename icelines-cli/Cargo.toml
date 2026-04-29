@@ -26,6 +26,15 @@ reqwest.workspace     = true
 flate2.workspace      = true
 tar.workspace         = true
 sha2.workspace        = true
+# Phase 8j: proof_lib is now a runtime dep, gated behind the dashboards
+# feature flag (off by default). The CLI binary always carries the code so
+# turning the flag on at runtime needs no rebuild. Pinned by local path
+# while proof's API is pre-1.0 — switch to git+rev pinning for releases.
+# See design/proof_lib.md.
+proof_lib = { package = "proof", path = "../../proof" }
+# tempfile backs the proof_lib disk roundtrip (compile_file only takes
+# paths). Promoted from dev-deps when proof_lib became a runtime dep.
+tempfile.workspace = true
 image.workspace       = true
 axum.workspace        = true
 tower.workspace       = true
@@ -33,10 +42,5 @@ uuid.workspace        = true
 chrono.workspace      = true
 
 [dev-dependencies]
-# Smoke-test proof's library API per design/proof_lib.md. The PROOF crate
-# is named `proof` (binary) with `[lib] name = "proof_lib"` (library), so
-# we rename the dep here to keep the natural `use proof_lib::...` imports
-# in test code. Local path while proof's API is pre-1.0 — pin by SHA via
-# `git = ..., rev = ...` once stable.
-proof_lib = { package = "proof", path = "../../proof" }
-tempfile.workspace = true
+# proof_lib + tempfile are now runtime deps above; tests reuse them
+# without redeclaring.
