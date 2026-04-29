@@ -220,6 +220,11 @@ pub enum FetchSubcommand {
         refresh: bool,
         #[arg(long)]
         dry_run: bool,
+        /// Write per-player chunks (Phase 8h) instead of single bios.json
+        /// + stats.json files. Daily-cadence storage shrinks ~10–15× via
+        /// content-addressed dedup; readers fall back transparently.
+        #[arg(long)]
+        chunked: bool,
     },
     /// Fetch rosters then stats in one pass.
     All {
@@ -229,6 +234,9 @@ pub enum FetchSubcommand {
         refresh: bool,
         #[arg(long)]
         dry_run: bool,
+        /// Same as `fetch stats --chunked` — applies to the stats step.
+        #[arg(long)]
+        chunked: bool,
     },
     /// Refresh position eligibility from boxscore data (Phase 2).
     Positions {
