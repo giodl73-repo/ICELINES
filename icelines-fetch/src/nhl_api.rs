@@ -584,6 +584,33 @@ pub struct PlayoffSeries {
     pub bottom_seed_rank:   Option<String>,
     pub winner_abbrev:      Option<String>, // None until series concludes
     pub conference:         Option<String>, // "Eastern" | "Western" | None
+    /// Per-game results for this series. Empty when the live API source
+    /// does not include game logs; populated for historical bundles.
+    /// Phase 8c.
+    pub games:              Vec<PlayoffGameResult>,
+}
+
+/// One game inside a playoff series. Sourced from bundled `playoffs.json`
+/// for historical seasons (Phase 8c). The live `/v1/playoff-bracket/{year}`
+/// endpoint does not include per-game logs, so for current-season series
+/// this vector is empty.
+#[derive(Debug, Clone)]
+pub struct PlayoffGameResult {
+    pub date:         String,        // ISO 8601 (YYYY-MM-DD)
+    pub home_abbrev:  String,
+    pub away_abbrev:  String,
+    pub home_score:   u8,
+    pub away_score:   u8,
+    pub series_after: String,        // e.g. "TBL 1-0", "tied 2-2"
+    pub goals:        Vec<PlayoffGoal>,
+}
+
+/// One goal scored in a playoff game. v1 of the bundle records scorer name
+/// and team abbrev only; assists and timestamps may be added in v2.
+#[derive(Debug, Clone)]
+pub struct PlayoffGoal {
+    pub scorer: String,
+    pub team:   String,
 }
 
 impl PlayoffSeries {
@@ -758,5 +785,6 @@ fn parse_series(s: &serde_json::Value) -> PlayoffSeries {
         bottom_seed_rank:   bot_rank,
         winner_abbrev,
         conference,
+        games: Vec::new(),
     }
 }

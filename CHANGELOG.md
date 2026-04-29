@@ -3,6 +3,22 @@
 ## Unreleased
 
 ### Added
+- Phase 8c: Historical playoffs bundle. New `playoffs_bundle` module
+  defines the `PlayoffsBundle` JSON schema (rounds → series → per-game
+  results with optional goal scorers) and a `to_bracket()` conversion
+  that drops cleanly into the existing TUI render path. `bundled::
+  load_playoffs(season)` resolves installed bundle first then the
+  binary-embedded copy. Hand-authored `data/seasons/19931994/
+  playoffs.json` ships as the first fixture — full 4-round NYR Cup run
+  with per-game results for the Cup Final. `tui::playoffs` now consults
+  bundled data before any network call; historical seasons never hit
+  the live API. `render_series_body` renders the per-game log when
+  present (Game N · date · home N–N away · series-after) and falls
+  back to the existing "X game(s) played" hint for live-API series.
+  Closes the `Per-game scores + scorers ship with playoffs.json (v2)`
+  TODO. 11 L0 tests in `playoffs_bundle` + `bundled`, 5 L0 tests in
+  TUI cache + render paths, 2 L1 integration tests covering the full
+  load → convert → render chain.
 - Phase 8f.2 + 8f.3: snapshot prune + diff
   - `icelines snapshot prune --keep N [--dry-run]` keeps the newest N
     sealed snapshots per tier and deletes the rest. Active snapshot is

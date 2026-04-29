@@ -1,8 +1,8 @@
 # Playoffs Screen — Specification
 
-**Version**: 1.0
+**Version**: 1.1
 **Date**: 2026-04-28
-**Status**: Draft — not yet implemented
+**Status**: Implemented (Phase 7e + 8c) — list-style bracket; historical bundle path live for 19931994; per-game log renders when bundled data is present.
 
 ---
 

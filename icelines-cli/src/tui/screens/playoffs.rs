@@ -14,7 +14,7 @@ use ratatui::{
 
 use crate::tui::app::App;
 use crate::tui::playoffs::{playoff_year_for_season, PlayoffsState};
-use icelines_fetch::nhl_api::{PlayoffBracket, PlayoffSeries};
+use icelines_fetch::nhl_api::{PlayoffBracket, PlayoffGameResult, PlayoffSeries};
 
 // ── Bracket view ──────────────────────────────────────────────────────────────
 
@@ -251,36 +251,66 @@ fn render_series_body(f: &mut Frame, area: Rect, s: &PlayoffSeries) {
     lines.push(Line::styled(format!("  {}", "─".repeat(60)), dim));
     lines.push(Line::from(""));
 
-    // Game-by-game placeholder. The /v1/playoff-bracket endpoint does not
-    // include per-game results in v1; per-game logs come from the bundled
-    // `playoffs.json` (deferred to v2). For now show the count with a hint.
     lines.push(Line::styled("  GAMES", gold));
-    lines.push(Line::styled(
-        format!("    {} game(s) played so far",  s.games_played()),
-        Style::default(),
-    ));
-    if !s.is_complete() && s.games_played() < 7 {
-        let next_game      = s.games_played() + 1;
-        // A best-of-7 game is mandatory ("upcoming") iff its number is at most
-        // 4 + min(top_wins, bot_wins) — the trailing team's win count guarantees
-        // that many games must be played. Beyond that, games are "(if needed)".
-        let last_mandatory = 4 + s.top_seed_wins.min(s.bottom_seed_wins);
-        let hint = if next_game <= last_mandatory {
-            format!("    Game {next_game} upcoming")
-        } else {
-            format!("    Game {next_game} (if needed)")
-        };
-        lines.push(Line::styled(hint, dim));
+    if s.games.is_empty() {
+        // Live API path — no per-game data. Show the count + next-game hint.
+        lines.push(Line::styled(
+            format!("    {} game(s) played so far", s.games_played()),
+            Style::default(),
+        ));
+        if !s.is_complete() && s.games_played() < 7 {
+            let next_game      = s.games_played() + 1;
+            // A best-of-7 game is mandatory ("upcoming") iff its number is at
+            // most 4 + min(top_wins, bot_wins) — the trailing team's win count
+            // guarantees that many games must be played. Beyond that, games
+            // are "(if needed)".
+            let last_mandatory = 4 + s.top_seed_wins.min(s.bottom_seed_wins);
+            let hint = if next_game <= last_mandatory {
+                format!("    Game {next_game} upcoming")
+            } else {
+                format!("    Game {next_game} (if needed)")
+            };
+            lines.push(Line::styled(hint, dim));
+        }
+        lines.push(Line::from(""));
+        lines.push(Line::styled(
+            "  Per-game logs available for bundled historical seasons.",
+            dim,
+        ));
+    } else {
+        // Bundled-data path — render the actual game log.
+        for (i, g) in s.games.iter().enumerate() {
+            let row = format_game_row(i + 1, g);
+            let style = if g.home_score > g.away_score && g.home_abbrev == s.top_seed_abbrev
+                || g.away_score > g.home_score && g.away_abbrev == s.top_seed_abbrev
+            {
+                Style::default().fg(Color::White)
+            } else {
+                Style::default().fg(Color::Gray)
+            };
+            lines.push(Line::styled(row, style));
+        }
     }
-    lines.push(Line::from(""));
-    lines.push(Line::styled(
-        "  Per-game scores + scorers ship with bundled playoffs.json (v2).",
-        dim,
-    ));
+
     lines.push(Line::from(""));
     lines.push(Line::styled("  Esc to return to bracket", dim));
 
     f.render_widget(Paragraph::new(lines), area);
+}
+
+/// Format one row of the game log:
+/// `  Game 7  1994-06-14   NYR 3 – 2 VAN   NYR wins 4-3`
+fn format_game_row(num: usize, g: &PlayoffGameResult) -> String {
+    format!(
+        "    Game {num}  {date}   {home} {hs} – {as_} {away}   {after}",
+        num   = num,
+        date  = g.date,
+        home  = g.home_abbrev,
+        hs    = g.home_score,
+        as_   = g.away_score,
+        away  = g.away_abbrev,
+        after = g.series_after,
+    )
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -317,6 +347,7 @@ mod tests {
                                 else if bot_w == 4 { Some(bot.to_owned()) }
                                 else { None },
             conference:         conf.map(str::to_owned),
+            games:              Vec::new(),
         }
     }
 
@@ -473,5 +504,75 @@ mod tests {
         assert!(text.contains("Game 6"), "in-progress series must hint next game, got:\n{text}");
         // 3-2 means top_seed needs only 1 more → Game 6 is mandatory ("upcoming"), Game 7 conditional
         assert!(text.contains("upcoming"), "Game 6 should be 'upcoming' not 'if needed', got:\n{text}");
+    }
+
+    // ── Phase 8c: bundled per-game render path ──────────────────────────────
+
+    fn fixture_series_with_games(letter: &str) -> PlayoffSeries {
+        use icelines_fetch::nhl_api::PlayoffGameResult;
+        PlayoffSeries {
+            letter:             Some(letter.to_owned()),
+            top_seed_abbrev:    "NYR".to_owned(),
+            top_seed_name:      "New York Rangers".to_owned(),
+            top_seed_wins:      4,
+            top_seed_rank:      Some("E1".to_owned()),
+            bottom_seed_abbrev: "VAN".to_owned(),
+            bottom_seed_name:   "Vancouver Canucks".to_owned(),
+            bottom_seed_wins:   3,
+            bottom_seed_rank:   Some("W7".to_owned()),
+            winner_abbrev:      Some("NYR".to_owned()),
+            conference:         None,
+            games: vec![
+                PlayoffGameResult {
+                    date: "1994-05-31".to_owned(),
+                    home_abbrev: "NYR".to_owned(), away_abbrev: "VAN".to_owned(),
+                    home_score: 2, away_score: 3,
+                    series_after: "VAN leads 1-0".to_owned(),
+                    goals: vec![],
+                },
+                PlayoffGameResult {
+                    date: "1994-06-14".to_owned(),
+                    home_abbrev: "NYR".to_owned(), away_abbrev: "VAN".to_owned(),
+                    home_score: 3, away_score: 2,
+                    series_after: "NYR wins 4-3".to_owned(),
+                    goals: vec![],
+                },
+            ],
+        }
+    }
+
+    #[test]
+    fn l0_render_series_detail_with_games_shows_game_log() {
+        let mut app = App::new(false);
+        let r4 = PlayoffRound {
+            round_number: 4, label: "Stanley Cup Final".to_owned(),
+            series: vec![fixture_series_with_games("CUP")],
+        };
+        seed(&mut app, vec![r4]);
+
+        let text = render_detail_to_text(&app, "CUP");
+        // Game-log rows render with date + score + series_after.
+        assert!(text.contains("Game 1"), "first game row missing, got:\n{text}");
+        assert!(text.contains("1994-05-31"), "first game date missing");
+        assert!(text.contains("VAN leads 1-0"), "first series_after missing");
+        assert!(text.contains("Game 2"), "second game row missing");
+        assert!(text.contains("1994-06-14"), "Cup-clinching date missing");
+        assert!(text.contains("NYR wins 4-3"), "Cup-clinching series_after missing");
+        // The v2 placeholder / "X game(s) played so far" line is gone for this path.
+        assert!(!text.contains("game(s) played so far"),
+            "non-placeholder branch shouldn't show fallback count, got:\n{text}");
+    }
+
+    #[test]
+    fn l0_render_series_detail_no_games_falls_back_to_count() {
+        // Live API path — empty games → still shows count + next-game hint.
+        let mut app = App::new(false);
+        let r1 = PlayoffRound { round_number: 1, label: "First Round".to_owned(),
+            series: vec![fixture_series("A", "FLA", "TBL", 4, 2, Some("Eastern"))] };
+        seed(&mut app, vec![r1]);
+
+        let text = render_detail_to_text(&app, "A");
+        assert!(text.contains("6 game(s) played"),
+            "fallback count must appear when games empty, got:\n{text}");
     }
 }

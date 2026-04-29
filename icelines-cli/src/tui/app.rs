@@ -531,7 +531,7 @@ impl App {
                 } else if matches!(self.screen, Screen::Playoffs | Screen::SeriesDetail(_)) {
                     if let Some(year) = crate::tui::playoffs::playoff_year_for_season(&self.active_season) {
                         crate::tui::playoffs::force_fetch_bracket(
-                            self.playoffs_cache.clone(), year,
+                            self.playoffs_cache.clone(), year, &self.active_season,
                         );
                         self.status = format!("Retrying playoff bracket {year}…");
                     }
@@ -772,7 +772,9 @@ impl App {
     fn maybe_fetch_playoffs(&mut self) {
         if matches!(self.screen, Screen::Playoffs | Screen::SeriesDetail(_)) {
             if let Some(year) = crate::tui::playoffs::playoff_year_for_season(&self.active_season) {
-                crate::tui::playoffs::maybe_fetch_bracket(self.playoffs_cache.clone(), year);
+                crate::tui::playoffs::maybe_fetch_bracket(
+                    self.playoffs_cache.clone(), year, &self.active_season,
+                );
             }
         }
     }
@@ -1544,6 +1546,7 @@ mod tests {
                                 else if bot_w == 4 { Some(bot.to_owned()) }
                                 else { None },
             conference:         None,
+            games:              Vec::new(),
         }
     }
 

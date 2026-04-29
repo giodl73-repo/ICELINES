@@ -7,7 +7,7 @@
 //! Data source: NHL API bios + summary endpoints.
 //! Historical seasons are immutable — they never change after the season ends.
 
-use crate::{error::FetchError, schema::{SkaterBio, SkaterStats}};
+use crate::{error::FetchError, playoffs_bundle::PlayoffsBundle, schema::{SkaterBio, SkaterStats}};
 
 // ── Embedded season data (compiled into binary at build time) ─────────────────
 
@@ -104,6 +104,49 @@ pub fn get_stats_installed(season_id: &str) -> Option<Vec<crate::schema::SkaterS
     let path = season_bundle_dir(season_id)?.join("stats.json");
     let text = std::fs::read_to_string(path).ok()?;
     serde_json::from_str(&text).ok()
+}
+
+// ── Historical playoffs (Phase 8c) ───────────────────────────────────────────
+
+/// Embedded `playoffs.json` files. Each entry is `(season_id, &[u8])`. Add new
+/// historical seasons here as their bundles are authored. The 1993-94 NYR Cup
+/// run is the canonical first fixture per `design/specs/playoffs.md`.
+static BUNDLED_PLAYOFFS: &[(&str, &[u8])] = &[
+    ("19931994", include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../data/seasons/19931994/playoffs.json"
+    ))),
+];
+
+/// List of seasons with bundled playoff data.
+pub fn bundled_playoff_seasons() -> Vec<&'static str> {
+    BUNDLED_PLAYOFFS.iter().map(|(s, _)| *s).collect()
+}
+
+/// Deserialize bundled `playoffs.json` for a season. Returns None if no
+/// bundle has been authored for that season yet.
+pub fn get_playoffs(season_id: &str) -> Option<PlayoffsBundle> {
+    let bytes = BUNDLED_PLAYOFFS.iter()
+        .find_map(|(s, b)| (*s == season_id).then_some(*b))?;
+    serde_json::from_slice(bytes).ok()
+}
+
+/// Read `playoffs.json` from an installed season bundle in the user's
+/// `~/.icelines/seasons/` directory. Returns `None` when the bundle is not
+/// installed or does not include a playoffs file. Takes precedence over
+/// `get_playoffs` when both are available — installed bundles can be updated
+/// without rebuilding the binary.
+pub fn get_playoffs_installed(season_id: &str) -> Option<PlayoffsBundle> {
+    let path = season_bundle_dir(season_id)?.join("playoffs.json");
+    let text = std::fs::read_to_string(path).ok()?;
+    serde_json::from_str(&text).ok()
+}
+
+/// Resolve `playoffs.json` for a season. Prefers an installed bundle (so users
+/// can refresh historical data without rebuilding) and falls back to the
+/// binary-embedded version.
+pub fn load_playoffs(season_id: &str) -> Option<PlayoffsBundle> {
+    get_playoffs_installed(season_id).or_else(|| get_playoffs(season_id))
 }
 
 /// Load bios: try the snapshot store first, falling back to bundled data.
@@ -212,5 +255,41 @@ mod tests {
     fn l0_bundled_unknown_season_returns_none() {
         assert!(get_bios("19951996").is_none());
         assert!(get_stats("19951996").is_none());
+    }
+
+    // ── Phase 8c: bundled playoffs ─────────────────────────────────────────
+
+    #[test]
+    fn l0_bundled_playoffs_19931994_parses() {
+        let b = get_playoffs("19931994").expect("19931994 must be bundled");
+        assert_eq!(b.season, "19931994");
+        assert_eq!(b.champion.as_deref(), Some("NYR"));
+        assert_eq!(b.rounds.len(), 4);
+    }
+
+    #[test]
+    fn l0_bundled_playoffs_unknown_season_returns_none() {
+        assert!(get_playoffs("19951996").is_none());
+    }
+
+    #[test]
+    fn l0_bundled_playoffs_19931994_cup_final_has_seven_games() {
+        let b = get_playoffs("19931994").expect("19931994 bundled");
+        let cup = b.rounds.iter().find(|r| r.round == 4).expect("round 4 present");
+        assert_eq!(cup.series.len(), 1, "Cup Final has one series");
+        assert_eq!(cup.series[0].results.len(), 7, "Cup Final ran 7 games");
+        // Convert via to_bracket and verify wins were derived correctly.
+        let br = b.to_bracket();
+        let cup_series = &br.rounds.iter().find(|r| r.round_number == 4).unwrap().series[0];
+        assert_eq!(cup_series.top_seed_wins, 4);
+        assert_eq!(cup_series.bottom_seed_wins, 3);
+        assert_eq!(cup_series.games.len(), 7);
+    }
+
+    #[test]
+    fn l0_bundled_playoffs_load_prefers_installed_then_embedded() {
+        // No installed bundle in test env → falls back to embedded.
+        let b = load_playoffs("19931994").expect("must resolve");
+        assert_eq!(b.season, "19931994");
     }
 }
