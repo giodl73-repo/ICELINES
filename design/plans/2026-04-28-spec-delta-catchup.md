@@ -225,6 +225,7 @@ Smaller items spread across multiple specs.
 
 | Item | Spec | Effort |
 |------|------|--------|
+| **Live-feeds toggle** (`--no-live` flag + config) | new — see below | 2h |
 | `snapshot prune --keep N` | `snapshot-operations.md` | 1h |
 | `snapshot diff <A> <B>` | `snapshot-operations.md` | 2h |
 | Data bundle SHA-256 verification | `data-bundles.md` | 1h |
@@ -236,6 +237,41 @@ Smaller items spread across multiple specs.
 | Admin overlay `:` command prompt | `tui-admin-overlay.md` v2 | 3h |
 | MoneyPuck historical xG | INDEX backlog | 4h |
 | `--season YYYYZZZZ` flag on query commands | INDEX backlog | 2h |
+
+### 8f.1 — Live-feeds toggle (~2h)
+
+Disables every NHL-API live fetch in one switch. Useful for airplane
+mode, demos, rate-limit avoidance, and deterministic CI runs.
+
+Surface:
+- CLI flag: `icelines tui --no-live` and `icelines schedule --no-live`
+  (and equivalent on `tonight` / any future live command)
+- Config option: `live = false` in `~/.icelines/config.toml`
+- Env var: `ICELINES_NO_LIVE=1` for parity with cron / docker users
+- Precedence: CLI flag > env var > config > default (live ON)
+
+Behavior when live is off:
+- Scores tab: render fallback "Live data disabled — re-enable with
+  `--no-live=false`" instead of fetching `/v1/schedule/now`
+- Schedule tab: same — week view still works against cached weeks
+  if any exist, otherwise fallback message
+- Playoffs tab: same — bracket fetch suppressed; cached bracket if
+  any, else fallback
+- Auto-refresh timer: never arms — `should_auto_refresh` short-circuits
+  on the toggle
+- Game detail: boxscore fetch suppressed; show "boxscore unavailable
+  in offline mode"
+- `r` retry on any of these screens: status bar reminder that live is
+  off
+
+Tests:
+- `l0_live_toggle_off_disarms_auto_refresh`
+- `l0_live_toggle_off_short_circuits_maybe_fetch`
+- `l0_config_precedence_cli_overrides_env_overrides_file`
+- `l2_cmd_tui_no_live_exits_zero` — TUI launches without network
+
+Spec: extend `tui-v2.md` with a §Live-feeds toggle section (or write
+a small standalone `live-toggle.md`).
 
 Pick by user demand; no blocking order between items here.
 

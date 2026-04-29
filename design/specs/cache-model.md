@@ -176,3 +176,129 @@ The old `~/.icelines/cache/rosters/` and `~/.icelines/cache/stats/` directories
 are read-compatible during migration (`icelines snapshot import` reads legacy cache
 and seals it as a snapshot named `legacy-import`). The old cache is not deleted
 automatically — run `icelines cache clean` to remove it.
+
+---
+
+## Chunked storage layout (Phase 8h)
+
+The default layout (above) writes one `bios.json` and one `stats.json` per
+snapshot — ~1.5 MB total, 97% of which is byte-identical day-to-day during a
+season. The **chunked layout** addresses this by storing each player's
+record as its own content-addressed chunk, so daily snapshots only commit
+the records that actually changed.
+
+### Layout
+
+```
+~/.icelines/snapshots/
+├── chunks/                      ← global content-addressed object store
+│   ├── ab/
+│   │   └── ab1f5c…d7e2          ← {"playerId":8478402,"goals":35,...}
+│   ├── 92/
+│   │   └── 92b1de…4e7a          ← {"playerId":8477934,"goals":48,...}
+│   └── ...                       (sharded by first byte → ≤256 dirs)
+├── chunkrefs.json               ← refcount table for GC
+├── 20252026-2026-04-25/
+│   ├── snapshot.json            ← unchanged — SnapshotMeta
+│   └── chunked.json             ← ChunkedManifest (bios + stats hashes)
+└── 20252026-2026-04-26/
+    ├── snapshot.json
+    └── chunked.json             ← shares ~95% of hashes with previous day
+```
+
+### Data structures
+
+```rust
+pub struct ChunkedManifest {
+    pub version: u8,                     // schema version, currently 1
+    pub bios:    HashMap<u32, String>,   // player_id → SHA-256 chunk hash
+    pub stats:   HashMap<u32, String>,
+}
+
+pub struct ChunkRefs {
+    pub counts: HashMap<String, u32>,    // hash → number of snapshots referencing it
+}
+
+pub struct GcReport {
+    pub removed:     u32,
+    pub bytes_freed: u64,
+    pub dry_run:     bool,
+}
+```
+
+### Storage savings
+
+| Cadence | Legacy layout | Chunked layout | Reduction |
+|---------|---------------|----------------|-----------|
+| Daily, 1 month | ~45 MB | ~5 MB | 9× |
+| Daily, full season | ~270 MB | ~25 MB | ~10× |
+| Daily, 5 seasons archived | ~1.4 GB | ~80 MB | ~17× |
+
+### Lifecycle
+
+**Writing** (`SnapshotStore::write_chunked_stats`):
+1. For each player record, serialize to canonical JSON.
+2. Hash the bytes (SHA-256), put into `chunks/{prefix}/{hash}`.
+   If the chunk already exists, `put` is a fast no-op (no rewrite).
+3. Build a `ChunkedManifest` mapping player_id → hash.
+4. Write `{snapshot}/chunked.json` atomically (`.tmp` → rename).
+5. Increment refcount for each referenced hash in `chunkrefs.json`.
+
+**Reading** (`SnapshotStore::read_chunked_stats`):
+1. Open `{snapshot}/chunked.json`.
+2. For each (player_id, hash), read `chunks/{prefix}/{hash}` and verify
+   integrity by re-hashing.
+3. Reassemble `Vec<SkaterBio>` and `Vec<SkaterStats>`.
+
+**Deleting** (`SnapshotStore::delete`):
+1. Decrement refcount for each chunk in the snapshot's manifest.
+2. Remove the snapshot directory.
+3. Chunks at refcount 0 are NOT physically removed here — call
+   `gc_chunks(false)` to sweep.
+
+**Garbage collection** (`SnapshotStore::gc_chunks`):
+1. Recompute refs from all chunked manifests (defends against drift).
+2. Walk every chunk in the store; any not in the refcount table is
+   "zero-ref" and eligible for sweep.
+3. With `dry_run=true`, report counts/bytes only. With `dry_run=false`,
+   physically remove zero-ref chunks.
+
+**Migration** (`SnapshotStore::rebuild_chunked`):
+1. If snapshot already chunked → no-op (return existing manifest).
+2. Read `stats/bios.json` + `stats/stats.json` via the legacy reader.
+3. Run the chunked write path.
+4. Legacy files remain in place — caller may delete them later.
+
+### CLI surface
+
+```
+icelines snapshot rebuild <NAME> --chunked    # one-shot migration, idempotent
+icelines snapshot gc [--dry-run]              # sweep zero-ref chunks
+```
+
+`fetch all` continues to use `write_file` for the legacy layout in v1; a
+follow-up flag (`--chunked`) will let users opt new fetches into chunked.
+
+### Recovery
+
+`chunkrefs.json` is a hint for performance; the chunked manifests are the
+source of truth. `recompute_refs()` rebuilds the refs table by walking
+every chunked manifest. `gc_chunks` always recomputes before sweeping —
+so a corrupt or missing refs file is recoverable and never causes
+incorrect chunk deletion.
+
+### Atomicity
+
+Same atomic-rename pattern as the legacy layout. The snapshot is "live"
+only after `chunked.json` and `snapshot.json` are renamed into place.
+Concurrent writes of the same chunk content converge to the same path
+(content-addressed); never produces a half-written `<hash>` file.
+
+### Integrity
+
+Stronger than legacy:
+- Every chunk's filename IS its SHA-256. Reading verifies bytes against
+  the filename — catches bit-rot and manual edits.
+- The chunked manifest's hash mappings are themselves verified on read.
+- No separate `integrity` HashMap field needed for chunked tiers — the
+  manifest serves that role.
