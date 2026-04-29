@@ -46,10 +46,12 @@ target/release/icelines.exe query leaders --pos C --top 10
 target/release/icelines.exe fantasy league-create "My League"
 
 # proof — documentation linting and guide compilation
-# proof binary lives in the workspace target at C:\src\target\debug\proof.exe
-# Build proof first if needed: cd C:/src && cargo build
-C:/src/target/debug/proof check .                  # lint all markdown
-C:/src/target/debug/proof check . --errors-only    # errors only
+# proof is a sibling repo at C:/src/proof/. Build it from there:
+#   cd C:/src/proof && cargo build
+# Binary lands at C:/src/proof/target/debug/proof.exe (Windows) or .../proof (Unix).
+# scripts/build-guides.sh resolves the binary automatically.
+C:/src/proof/target/debug/proof check .            # lint all markdown
+C:/src/proof/target/debug/proof check . --errors-only   # errors only
 bash scripts/build-guides.sh                       # compile src/guides/ → docs/guides/
 bash scripts/build-guides.sh --check               # validate without writing
 ```
