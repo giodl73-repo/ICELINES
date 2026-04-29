@@ -10,6 +10,15 @@ use clap::{Parser, Subcommand};
     propagate_version = true
 )]
 pub struct Cli {
+    /// Disable all live NHL API fetches (Phase 8f.1). Suppresses the
+    /// Scores / Schedule / Playoffs / boxscore endpoints and the Scores
+    /// auto-refresh timer. Useful for airplane mode, demos, rate-limit
+    /// avoidance, and deterministic CI runs. Also settable via
+    /// `ICELINES_NO_LIVE=1` or `live = false` in `~/.icelines/config.toml`.
+    /// Precedence: CLI flag > env var > config file > default (live ON).
+    #[arg(long, global = true)]
+    pub no_live: bool,
+
     #[command(subcommand)]
     pub command: Commands,
 }

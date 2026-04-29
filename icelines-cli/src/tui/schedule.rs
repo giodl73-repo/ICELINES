@@ -70,6 +70,12 @@ pub fn week_label(monday: &str) -> String {
 /// Trigger a background fetch for the week starting at `week_start`
 /// (must be a Monday) if the entry is Idle or missing.
 pub fn maybe_fetch_week(cache: WeekCache, week_start: String) {
+    if !crate::config::live_feeds_enabled() {
+        cache.lock().unwrap()
+            .insert(week_start, ScheduleState::Error(
+                crate::tui::tonight::LIVE_DISABLED_MSG.to_owned()));
+        return;
+    }
     {
         let mut map = cache.lock().unwrap();
         match map.get(&week_start) {
@@ -100,6 +106,12 @@ pub fn maybe_fetch_week(cache: WeekCache, week_start: String) {
 
 /// Force a refetch even if the cache already has data — used by `r` (retry).
 pub fn force_fetch_week(cache: WeekCache, week_start: String) {
+    if !crate::config::live_feeds_enabled() {
+        cache.lock().unwrap()
+            .insert(week_start, ScheduleState::Error(
+                crate::tui::tonight::LIVE_DISABLED_MSG.to_owned()));
+        return;
+    }
     {
         let mut map = cache.lock().unwrap();
         map.insert(week_start.clone(), ScheduleState::Loading);
@@ -133,6 +145,12 @@ pub fn prefetch_around(cache: WeekCache, from_week: &str) {
 /// already loading or loaded. Key is the uppercase team abbreviation.
 pub fn maybe_fetch_team(cache: TeamSeasonCache, team: String, season: String) {
     let key = team.clone();
+    if !crate::config::live_feeds_enabled() {
+        cache.lock().unwrap()
+            .insert(key, ScheduleState::Error(
+                crate::tui::tonight::LIVE_DISABLED_MSG.to_owned()));
+        return;
+    }
     {
         let mut map = cache.lock().unwrap();
         match map.get(&key) {

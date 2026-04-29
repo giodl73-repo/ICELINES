@@ -14,14 +14,17 @@ use config::Config;
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     // Load config early so any error surfaces before command dispatch.
-    let _cfg = Config::load()?;
+    let cfg = Config::load()?;
 
-    // icelines with no args → launch TUI
+    // icelines with no args → launch TUI. Resolve the live-feeds toggle
+    // from env + config (no CLI flag yet because we haven't parsed).
     if std::env::args().len() == 1 {
+        config::init_live_feeds(false, &cfg);
         return tui::run_tui(false).await;
     }
 
     let cli = Cli::parse();
+    config::init_live_feeds(cli.no_live, &cfg);
 
     let result = dispatch(cli).await;
     if let Err(e) = result {

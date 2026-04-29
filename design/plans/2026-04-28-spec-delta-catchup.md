@@ -246,7 +246,7 @@ Smaller items spread across multiple specs.
 | MoneyPuck historical xG | INDEX backlog | 4h |
 | `--season YYYYZZZZ` flag on query commands | INDEX backlog | 2h |
 
-### 8f.1 — Live-feeds toggle (~2h)
+### 8f.1 — Live-feeds toggle (~2h) **— Implemented (2026-04-29)**
 
 Disables every NHL-API live fetch in one switch. Useful for airplane
 mode, demos, rate-limit avoidance, and deterministic CI runs.

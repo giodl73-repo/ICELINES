@@ -642,7 +642,10 @@ impl App {
     /// Run one tick of the auto-refresh timer. Called by the TUI event loop
     /// every poll cycle (~10 fps). When the conditions in `should_auto_refresh`
     /// are met, triggers a silent `force_fetch` and resets the timer.
+    /// Phase 8f.1: also short-circuits when live feeds are disabled so the
+    /// timer doesn't repeatedly write the "live disabled" error to the cache.
     pub fn tick_auto_refresh(&mut self) {
+        if !crate::config::live_feeds_enabled() { return; }
         let now = std::time::Instant::now();
         if should_auto_refresh(
             &self.screen,

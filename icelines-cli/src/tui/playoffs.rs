@@ -34,6 +34,12 @@ pub fn playoff_year_for_season(season: &str) -> Option<u16> {
 
 /// Trigger a background fetch for the bracket year if not already loaded.
 pub fn maybe_fetch_bracket(cache: PlayoffsCache, year: u16) {
+    if !crate::config::live_feeds_enabled() {
+        cache.lock().unwrap()
+            .insert(year, PlayoffsState::Error(
+                crate::tui::tonight::LIVE_DISABLED_MSG.to_owned()));
+        return;
+    }
     {
         let mut map = cache.lock().unwrap();
         match map.get(&year) {
@@ -61,6 +67,12 @@ pub fn maybe_fetch_bracket(cache: PlayoffsCache, year: u16) {
 
 /// Force-refetch (used by the `r` retry key).
 pub fn force_fetch_bracket(cache: PlayoffsCache, year: u16) {
+    if !crate::config::live_feeds_enabled() {
+        cache.lock().unwrap()
+            .insert(year, PlayoffsState::Error(
+                crate::tui::tonight::LIVE_DISABLED_MSG.to_owned()));
+        return;
+    }
     cache.lock().unwrap().insert(year, PlayoffsState::Loading);
     if tokio::runtime::Handle::try_current().is_err() {
         return;

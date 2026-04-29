@@ -3,6 +3,13 @@
 ## Unreleased
 
 ### Added
+- Phase 8f.1: live-feeds toggle — `--no-live` global CLI flag,
+  `ICELINES_NO_LIVE` env var, and `live = false` config key all suppress
+  NHL API fetches in Scores / Schedule / Playoffs / boxscore + the auto-
+  refresh timer. Precedence: CLI > env > config > default(on). When
+  disabled, each live tab renders an explicit "Live feeds disabled —
+  re-enable with …" message via the standard error path. 4 L0 precedence
+  tests + 2 L2 (flag accepted globally, `--help` documents it).
 - Phase 8d: `icelines export md <shape>` — writes deterministic markdown
   tables with YAML front-matter for proof DASHBOARD-SPEC consumption.
   Five shapes shipped: `leaders`, `team`, `depth`, `compare`, `roster`.
