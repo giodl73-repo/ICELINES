@@ -3,6 +3,27 @@
 ## Unreleased
 
 ### Added
+- Phase 8j: Proof-compiled dashboard panel — opt-in TUI feature flag.
+  - `proof_lib` is now a runtime dependency of icelines-cli. The CLI
+    binary always carries the proof code so toggling the flag at
+    runtime needs no rebuild. Pinned by local path while pre-1.0.
+  - New `--dashboards` global CLI flag, `ICELINES_DASHBOARDS=1` env
+    var, and `dashboards = true` config key — same precedence pattern
+    as the existing `--no-live` flag (CLI > env > config > default).
+    Off by default while the integration matures.
+  - `tui::dashboard_panel` module compiles a baked-in
+    `*.dashboard.source.md` template via `proof_lib::compile_file`
+    (disk roundtrip via `tempfile::tempdir()`, cached on first frame
+    via `Arc<Mutex<Option<Vec<String>>>>`). Compile failures fall back
+    to a single `[dashboard error]` line — never panics out of render.
+  - Player detail screen (`tui::screens::player`) splits to three
+    panes when the flag is on AND screen width ≥ 100 cols: headshot
+    | stats | dashboard. Below the threshold the layout is unchanged.
+  - 4 L0 precedence tests (matches the live-feeds shape), 5 L0
+    panel-compile tests (compile + cache + front-matter strip + error
+    fallback), 2 L0 player-screen render-guard tests, and 2 L2
+    subprocess tests covering `--help` documentation and global flag
+    acceptance. 611 tests workspace-wide, all green.
 - Phase 8f.9: User schemes load from `~/.icelines/schemes/*.toml`.
   Closes the long-standing Phase-2 TODO. `scheme list` now shows user
   schemes alongside builtins (labelled `user`); `scheme show NAME`

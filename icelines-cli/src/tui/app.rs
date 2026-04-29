@@ -154,6 +154,9 @@ pub struct App {
     pub query_results_focused: bool,      // Tab toggles focus between field editor and result list
     pub query_save_name:     String,      // name being typed for save
     pub query_saved_list:    Vec<(String, String)>, // (name, json) loaded from DB
+    /// Phase 8j: lazy-compiled proof dashboard panel for the player card.
+    /// Only consulted when `crate::config::dashboards_enabled()` is true.
+    pub dashboard_panel:     crate::tui::dashboard_panel::CompiledPanel,
 }
 
 impl App {
@@ -207,6 +210,7 @@ impl App {
             query_results_focused: false,
             query_save_name:     String::new(),
             query_saved_list:    Vec::new(),
+            dashboard_panel:     crate::tui::dashboard_panel::CompiledPanel::new(),
         }
     }
 

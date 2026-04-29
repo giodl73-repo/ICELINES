@@ -14,6 +14,11 @@ struct RawConfig {
     /// Phase 8f.1: when explicitly `false`, live NHL API fetches are
     /// disabled. Absent or `true` keeps live feeds on (the default).
     live: Option<bool>,
+    /// Phase 8j: when explicitly `true`, the experimental proof-compiled
+    /// dashboard panels render in supporting screens (currently the player
+    /// detail card). Absent or `false` keeps them hidden — feature is
+    /// off by default while the integration matures.
+    dashboards: Option<bool>,
 }
 
 // ── Public Config ─────────────────────────────────────────────────────────────
@@ -30,6 +35,9 @@ pub struct Config {
     /// Phase 8f.1: explicit value of the `live` config key, if set.
     /// `None` means "respect the defaults / env var / CLI flag".
     pub live: Option<bool>,
+    /// Phase 8j: explicit value of the `dashboards` config key, if set.
+    /// `None` defers to env / CLI / default(off).
+    pub dashboards: Option<bool>,
 }
 
 impl Config {
@@ -59,6 +67,7 @@ impl Config {
             cache_dir: raw.cache_dir.map(PathBuf::from).unwrap_or(default_cache),
             season: raw.season,
             live: raw.live,
+            dashboards: raw.dashboards,
         })
     }
 
@@ -130,6 +139,56 @@ pub fn resolve_live(cli_no_live: bool, env_no_live: bool, config_live: Option<bo
     true
 }
 
+// ── Dashboards feature flag (Phase 8j) ────────────────────────────────────────
+
+/// Process-wide flag for whether experimental dashboard panels render.
+/// Off by default — opt in via `--dashboards`, `ICELINES_DASHBOARDS=1`, or
+/// `dashboards = true` in `~/.icelines/config.toml`.
+static DASHBOARDS: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+
+/// Resolve and stash the dashboards boolean. Precedence (highest first):
+/// 1. `--dashboards` CLI flag (force-on)
+/// 2. `ICELINES_DASHBOARDS` env var (any non-empty / non-zero / non-"false")
+/// 3. `dashboards = true` in `~/.icelines/config.toml`
+/// 4. Default: dashboards OFF (experimental).
+///
+/// Idempotent — first call wins, subsequent calls are no-ops.
+pub fn init_dashboards(cli_dashboards: bool, cfg: &Config) {
+    let env_on = std::env::var_os("ICELINES_DASHBOARDS")
+        .map(|v| {
+            let s = v.to_string_lossy();
+            !s.is_empty() && s != "0" && !s.eq_ignore_ascii_case("false")
+        })
+        .unwrap_or(false);
+    let resolved = if cli_dashboards {
+        true
+    } else if env_on {
+        true
+    } else if let Some(c) = cfg.dashboards {
+        c
+    } else {
+        false
+    };
+    let _ = DASHBOARDS.set(resolved);
+}
+
+/// True iff experimental dashboard panels should render. Returns `false`
+/// when `init_dashboards` was never called — the safe default for tests
+/// that don't go through the CLI entry point.
+pub fn dashboards_enabled() -> bool {
+    *DASHBOARDS.get().unwrap_or(&false)
+}
+
+/// Pure precedence resolver for tests — same rule as `init_dashboards`
+/// but free of any global state.
+#[allow(dead_code)]
+pub fn resolve_dashboards(cli: bool, env: bool, config: Option<bool>) -> bool {
+    if cli            { return true; }
+    if env            { return true; }
+    if let Some(c) = config { return c; }
+    false
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 // ── Tests for live-feeds precedence (Phase 8f.1) ──────────────────────────────
@@ -166,6 +225,34 @@ mod live_feeds_tests {
         assert_eq!(resolve_live(false, false, Some(true)),  true);
         // No config → default true
         assert_eq!(resolve_live(false, false, None),        true);
+    }
+
+    // ── Phase 8j: dashboards flag precedence ───────────────────────────────
+
+    #[test]
+    fn l0_resolve_dashboards_default_is_off() {
+        assert_eq!(resolve_dashboards(false, false, None), false);
+    }
+
+    #[test]
+    fn l0_resolve_dashboards_cli_wins_over_everything() {
+        assert_eq!(resolve_dashboards(true, false, None),         true);
+        assert_eq!(resolve_dashboards(true, false, Some(false)),  true);
+        assert_eq!(resolve_dashboards(true, true,  Some(false)),  true);
+    }
+
+    #[test]
+    fn l0_resolve_dashboards_env_wins_over_config() {
+        assert_eq!(resolve_dashboards(false, true,  Some(false)), true);
+        assert_eq!(resolve_dashboards(false, false, Some(false)), false);
+        assert_eq!(resolve_dashboards(false, false, Some(true)),  true);
+    }
+
+    #[test]
+    fn l0_resolve_dashboards_config_only_when_no_higher_signal() {
+        assert_eq!(resolve_dashboards(false, false, Some(true)),  true);
+        assert_eq!(resolve_dashboards(false, false, Some(false)), false);
+        assert_eq!(resolve_dashboards(false, false, None),        false);
     }
 }
 
