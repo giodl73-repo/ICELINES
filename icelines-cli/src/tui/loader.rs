@@ -100,6 +100,13 @@ impl InstallState {
     fn set(&self, phase: InstallPhase) {
         if let Ok(mut g) = self.inner.lock() { *g = phase; }
     }
+
+    /// Drive a specific phase from a test. Bypasses the spawn_install pipeline
+    /// so render assertions can target each branch deterministically.
+    #[cfg(test)]
+    pub fn force_phase(&self, phase: InstallPhase) {
+        self.set(phase);
+    }
 }
 
 /// Spawn a background season install. Updates `state` with progress.

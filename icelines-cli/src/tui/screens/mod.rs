@@ -6,6 +6,9 @@ pub mod misc;
 pub mod queries;
 pub mod comps;
 pub mod depth;
+pub mod schedule;
+pub mod playoffs;
+pub mod game_detail;
 
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
@@ -39,8 +42,12 @@ pub fn render(f: &mut Frame, app: &App) {
         Screen::Comps(idx)          => comps::render(f, app, chunks[1], *idx),
         Screen::Depth               => depth::render_league(f, app, chunks[1]),
         Screen::DepthTeam(abbrev)   => depth::render_team(f, app, chunks[1], abbrev),
-        Screen::Schedule            => misc::render_schedule_stub(f, chunks[1]),
-        Screen::Playoffs            => misc::render_playoffs_stub(f, chunks[1]),
+        Screen::Schedule                  => schedule::render(f, app, chunks[1]),
+        Screen::ScheduleTeam(team)        => schedule::render_team_schedule(f, app, chunks[1], team),
+        Screen::ScheduleMatchup(t1, t2)   => schedule::render_matchup(f, app, chunks[1], t1, t2),
+        Screen::Playoffs                  => playoffs::render(f, app, chunks[1]),
+        Screen::SeriesDetail(letter)      => playoffs::render_series_detail(f, app, chunks[1], letter),
+        Screen::GameDetail(game_id)       => game_detail::render(f, app, chunks[1], *game_id),
     }
 
     f.render_widget(
@@ -96,10 +103,11 @@ fn tab_for_screen(screen: &Screen) -> usize {
         Screen::Home | Screen::Team(_) | Screen::Player(_)
         | Screen::Depth | Screen::DepthTeam(_) | Screen::Comps(_) => 0, // League
         Screen::Projections | Screen::Queries | Screen::Search  => 1,   // Stats
-        Screen::Tonight                                          => 2,   // Scores
-        Screen::Schedule                                         => 3,   // Schedule
+        Screen::Tonight | Screen::GameDetail(_)                  => 2,   // Scores
+        Screen::Schedule | Screen::ScheduleTeam(_)
+            | Screen::ScheduleMatchup(..)                        => 3,   // Schedule
         Screen::Groups | Screen::GroupDetail(_)                  => 4,   // Groups
-        Screen::Playoffs                                         => 5,   // Playoffs
+        Screen::Playoffs | Screen::SeriesDetail(_)               => 5,   // Playoffs
         _                                                        => 99,  // no tab (Fetch, Help)
     }
 }
