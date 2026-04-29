@@ -3,6 +3,20 @@
 ## Unreleased
 
 ### Added
+- Phase 8f.6: `icelines group export/import/rename` for portable groups.
+  - `group export NAME [--out PATH]` writes one group's members + metadata
+    to JSON (default stdout, `--out file.json` for a file). Wire format
+    is stable + versioned for future migrations.
+  - `group import PATH [--as NEWNAME]` reads back a previously-exported
+    JSON file and recreates the group with all members; `--as` lets
+    users clone a group under a new name without editing the file.
+  - `group rename OLD NEW` updates the group name, carrying members
+    via a deferred-FK transaction (sqlite's `defer_foreign_keys = ON`).
+    Same-name is a noop; collision errors with a clear message.
+  - GroupDb gains `rename_group`, `add_members_bulk`, and
+    `group_description` helpers backing the new commands. 5 L1 db tests
+    + 3 L2 subprocess tests (export → import roundtrip, rename
+    moves members, export-to-stdout).
 - Phase 8f.5: `icelines scheme show NAME --source` prints the scheme as
   pretty JSON instead of the human-readable table. Useful for copy/paste,
   diffing two schemes, or piping into `jq`. The default (no flag) still

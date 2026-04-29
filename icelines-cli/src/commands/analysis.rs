@@ -313,8 +313,69 @@ pub async fn run_group(cmd: GroupSubcommand) -> anyhow::Result<()> {
                 bail!("group '{name}' not found");
             }
         }
+
+        // ── Phase 8f.6: portable group I/O ──────────────────────────────────
+        GroupSubcommand::Export { name, out } => {
+            let payload = build_export_payload(&db, &name)?;
+            let json = serde_json::to_string_pretty(&payload)
+                .context("serializing group export")?;
+            if out == "-" {
+                println!("{json}");
+            } else {
+                std::fs::write(&out, &json)
+                    .with_context(|| format!("writing {out}"))?;
+                println!("✓ Exported group '{}' ({} members) to {}",
+                    payload.name, payload.members.len(), out);
+            }
+        }
+        GroupSubcommand::Import { path, as_name } => {
+            let text = std::fs::read_to_string(&path)
+                .with_context(|| format!("reading {path}"))?;
+            let mut payload: GroupExport = serde_json::from_str(&text)
+                .with_context(|| format!("parsing {path} as a group export"))?;
+            if let Some(rename) = as_name {
+                payload.name = rename;
+            }
+            db.create_group(&payload.name, &payload.description)
+                .with_context(|| format!("creating group '{}'", payload.name))?;
+            let inserted = db.add_members_bulk(&payload.name, &payload.members)?;
+            println!("✓ Imported group '{}' — created with {} member(s).",
+                payload.name, inserted);
+        }
+        GroupSubcommand::Rename { old, new } => {
+            db.rename_group(&old, &new)?;
+            println!("✓ Renamed group '{old}' → '{new}'.");
+        }
     }
     Ok(())
+}
+
+// ── Group export payload (Phase 8f.6) ───────────────────────────────────────
+
+/// Wire format for `group export` / `group import`. Stable by design — the
+/// JSON is committable and shareable, so additive changes only.
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+struct GroupExport {
+    name:        String,
+    #[serde(default)]
+    description: String,
+    members:     Vec<String>, // normalized names
+    /// Schema version. Bump when the wire format changes.
+    #[serde(default = "default_export_version")]
+    version:     u32,
+}
+
+fn default_export_version() -> u32 { 1 }
+
+fn build_export_payload(db: &GroupDb, name: &str) -> anyhow::Result<GroupExport> {
+    let members = db.list_members(name)?;
+    let description = db.group_description(name).unwrap_or_default();
+    Ok(GroupExport {
+        name: name.to_owned(),
+        description,
+        members,
+        version: default_export_version(),
+    })
 }
 
 // ── Shared helpers ─────────────────────────────────────────────────────────────

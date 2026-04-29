@@ -31,6 +31,21 @@ fn run(args: &[&str]) -> std::process::Output {
         })
 }
 
+/// Run the binary with HOME and USERPROFILE pointed at a temp dir so the
+/// SQLite group/fantasy db opens fresh and tests don't mutate real user data.
+/// Phase 8f.6.
+#[allow(dead_code)]
+fn run_isolated(home: &std::path::Path, args: &[&str]) -> std::process::Output {
+    Command::new(icelines_bin())
+        .env("HOME", home)
+        .env("USERPROFILE", home)
+        .args(args)
+        .output()
+        .unwrap_or_else(|e| {
+            panic!("failed to run icelines binary: {e}")
+        })
+}
+
 // ── L2: --version exits 0 and prints version ─────────────────────────────────
 
 #[test]
@@ -1015,4 +1030,79 @@ fn l2_cmd_query_compare_season_bundled_succeeds() {
         "query compare --season must exit 0, stderr: {}",
         String::from_utf8_lossy(&out.stderr)
     );
+}
+
+// ── Phase 8f.6: group export / import / rename ──────────────────────────────
+
+#[test]
+fn l2_cmd_group_export_import_roundtrip() {
+    let home = tempfile::tempdir().expect("tempdir");
+    // Create + populate a group in the isolated home.
+    let out = run_isolated(home.path(),
+        &["group", "create", "watch", "--desc", "watch list"]);
+    assert!(out.status.success(),
+        "group create stderr: {}", String::from_utf8_lossy(&out.stderr));
+    for player in ["McDavid", "MacKinnon", "Matthews"] {
+        let out = run_isolated(home.path(), &["group", "add", "watch", player]);
+        assert!(out.status.success(),
+            "group add {player} stderr: {}", String::from_utf8_lossy(&out.stderr));
+    }
+    // Export to file.
+    let export_path = home.path().join("watch.json");
+    let out = run_isolated(home.path(),
+        &["group", "export", "watch", "--out", export_path.to_str().unwrap()]);
+    assert!(out.status.success(),
+        "group export stderr: {}", String::from_utf8_lossy(&out.stderr));
+    let json = std::fs::read_to_string(&export_path)
+        .expect("export file written");
+    let parsed: serde_json::Value = serde_json::from_str(&json)
+        .expect("export must be valid JSON");
+    assert_eq!(parsed["name"].as_str(), Some("watch"));
+    assert_eq!(parsed["description"].as_str(), Some("watch list"));
+    let members = parsed["members"].as_array().expect("members array");
+    assert_eq!(members.len(), 3);
+    // Import as a new name into the same db.
+    let out = run_isolated(home.path(),
+        &["group", "import", export_path.to_str().unwrap(), "--as", "watch-copy"]);
+    assert!(out.status.success(),
+        "group import stderr: {}", String::from_utf8_lossy(&out.stderr));
+    // Both groups now visible from list.
+    let out = run_isolated(home.path(), &["group", "list"]);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("watch"), "original group missing: {stdout}");
+    assert!(stdout.contains("watch-copy"), "imported copy missing: {stdout}");
+}
+
+#[test]
+fn l2_cmd_group_rename_succeeds() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let out = run_isolated(home.path(), &["group", "create", "before"]);
+    assert!(out.status.success(),
+        "create stderr: {}", String::from_utf8_lossy(&out.stderr));
+    let out = run_isolated(home.path(), &["group", "add", "before", "McDavid"]);
+    assert!(out.status.success(),
+        "add stderr: {}", String::from_utf8_lossy(&out.stderr));
+    let out = run_isolated(home.path(), &["group", "rename", "before", "after"]);
+    assert!(out.status.success(),
+        "rename stderr: {}", String::from_utf8_lossy(&out.stderr));
+    // After rename, `before` is gone and `after` carries the member.
+    let out = run_isolated(home.path(), &["group", "list"]);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("after"),  "renamed group missing: {stdout}");
+    assert!(!stdout.contains(" before "), "old name should not appear: {stdout}");
+}
+
+#[test]
+fn l2_cmd_group_export_to_stdout_emits_json() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let _ = run_isolated(home.path(), &["group", "create", "stdout-test"]);
+    let _ = run_isolated(home.path(), &["group", "add", "stdout-test", "McDavid"]);
+    // Default --out is "-" → stdout.
+    let out = run_isolated(home.path(), &["group", "export", "stdout-test"]);
+    assert!(out.status.success(),
+        "export to stdout stderr: {}", String::from_utf8_lossy(&out.stderr));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let parsed: serde_json::Value = serde_json::from_str(&stdout)
+        .expect("stdout must be valid JSON");
+    assert_eq!(parsed["name"].as_str(), Some("stdout-test"));
 }
