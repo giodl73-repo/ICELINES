@@ -280,6 +280,39 @@ Total estimate: **~14–16 hours of focused work**.
 
 ---
 
+## Status: Implemented (2026-04-29)
+
+All five sub-phases (8h.1–8h.5) shipped in one session, ~3 hours.
+
+**Delivered:**
+- `icelines-fetch::chunkstore` — `ChunkStore::{new, hash, put, get,
+  exists, delete, iter_chunks, path_for, root}` with 12 L0 tests
+  (round-trip, dedup, sharding, missing, corrupted, idempotent delete,
+  iter skips .tmp + missing-root)
+- `SnapshotStore` extensions:
+  - `chunk_store()`, `is_chunked()`, `write_chunked_stats()`,
+    `read_chunked_stats()`, `load_refs()`, `inc_refs()`, `dec_refs()`,
+    `recompute_refs()`, `gc_chunks()`, `rebuild_chunked()`
+  - `delete()` updated to dec-ref chunks before removing the snapshot dir
+- New types: `ChunkedManifest`, `ChunkRefs`, `GcReport`
+- `bundled::load_bios_with_fallback` / `load_stats_with_fallback`
+  prefer chunked active snapshot, then legacy, then bundled
+- CLI: `icelines snapshot rebuild <name> --chunked` and
+  `icelines snapshot gc [--dry-run]` wired into `commands/snapshot.rs`
+- L2 subprocess tests for the new CLI surfaces
+- `cache-model.md` extended with the chunked layout section (~120 lines)
+
+**Test count delta:** workspace went 468 → 493 (+25).
+
+**Out of scope (still as planned):** roster chunking, zstd compression,
+cross-season chunk dedup, pack files, network sync of chunks.
+
+**Remaining for a follow-up:** make `fetch all` opt-in to chunked
+writes via a `--chunked` flag (currently fetch still uses the legacy
+`write_file` path; chunked is reachable only via `rebuild`).
+
+---
+
 ## Status after Phase 8h
 
 - `cache-model.md` regains "Implemented" status with the chunked layout

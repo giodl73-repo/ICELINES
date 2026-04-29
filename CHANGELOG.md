@@ -3,6 +3,17 @@
 ## Unreleased
 
 ### Added
+- Phase 8h: Chunked snapshot store — content-addressed per-player chunks
+  with SHA-256 deduplication. New `icelines-fetch::chunkstore` module
+  (put/get/exists/delete with sharded layout); `SnapshotStore` extended
+  with `write_chunked_stats`, `read_chunked_stats`, `is_chunked`, refs
+  table (`chunkrefs.json`), `gc_chunks`, `recompute_refs`,
+  `rebuild_chunked` (legacy → chunked migration). Two new CLI ops:
+  `icelines snapshot rebuild --chunked <name>` and
+  `icelines snapshot gc [--dry-run]`. `bundled::load_*_with_fallback`
+  prefers chunked active snapshot then falls back to legacy → bundled.
+  25 new tests (12 ChunkStore + 11 chunked snapshot + 2 L2). Storage
+  reduction: ~10–15× for daily-cadence snapshots over a season.
 - Phase 8b: Scores auto-refresh — live Scores tab polls every 30s. New
   `should_auto_refresh` pure function + `App::tick_auto_refresh` driven
   from the TUI event loop. "Updated Xs ago" indicator in the Scores
