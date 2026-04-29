@@ -1092,6 +1092,87 @@ fn l2_cmd_group_rename_succeeds() {
     assert!(!stdout.contains(" before "), "old name should not appear: {stdout}");
 }
 
+// ── Phase 8f.7: scheme from-csv multi-platform ──────────────────────────────
+
+#[test]
+fn l2_cmd_scheme_from_csv_yahoo_autodetect() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let path = dir.path().join("yahoo.csv");
+    // Minimal Yahoo header — enough for signature + a few stat columns.
+    std::fs::write(&path,
+        "Player,Owner,GP,G (P),A (P),HIT (P),BLK (P),Fan Pts\n").unwrap();
+    let out = run(&["scheme", "from-csv", path.to_str().unwrap()]);
+    assert!(out.status.success(),
+        "from-csv stderr: {}", String::from_utf8_lossy(&out.stderr));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("Platform: Yahoo"),
+        "platform header missing, got: {stdout}");
+    assert!(stdout.contains("goals") && stdout.contains("hits"),
+        "stat keys missing, got: {stdout}");
+}
+
+#[test]
+fn l2_cmd_scheme_from_csv_espn_autodetect() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let path = dir.path().join("espn.csv");
+    std::fs::write(&path,
+        "RANK,PLAYER,TEAM,POS,STATUS,OWNER,G,A,+/-,SOG,HIT,BLK\n").unwrap();
+    let out = run(&["scheme", "from-csv", path.to_str().unwrap()]);
+    assert!(out.status.success(),
+        "from-csv stderr: {}", String::from_utf8_lossy(&out.stderr));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("Platform: ESPN"),
+        "ESPN should auto-detect, got: {stdout}");
+}
+
+#[test]
+fn l2_cmd_scheme_from_csv_explicit_platform_override() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let path = dir.path().join("ambiguous.csv");
+    // Header has bare G,A — would match ESPN auto-detection but no signature
+    // columns. With --platform fantrax, we should still get fantrax.
+    std::fs::write(&path,
+        "Player,G,A,Pts,PPG,SOG,HT,BLK\n").unwrap();
+    let out = run(&["scheme", "from-csv", path.to_str().unwrap(),
+        "--platform", "fantrax"]);
+    assert!(out.status.success(),
+        "explicit platform stderr: {}", String::from_utf8_lossy(&out.stderr));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("Platform: Fantrax"),
+        "explicit fantrax must be honored, got: {stdout}");
+    // HT (fantrax convention) → hits
+    assert!(stdout.contains("hits"),
+        "fantrax HT should map to hits, got: {stdout}");
+}
+
+#[test]
+fn l2_cmd_scheme_from_csv_unknown_platform_errors() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let path = dir.path().join("anything.csv");
+    std::fs::write(&path, "Header\n").unwrap();
+    let out = run(&["scheme", "from-csv", path.to_str().unwrap(),
+        "--platform", "draftkings"]);
+    assert!(!out.status.success(),
+        "unknown platform must exit nonzero");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("yahoo"),
+        "unknown-platform error must list valid options, got: {stderr}");
+}
+
+#[test]
+fn l2_cmd_scheme_from_csv_unrecognized_format_errors() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let path = dir.path().join("garbage.csv");
+    // Header with no signature column from any platform.
+    std::fs::write(&path, "ColA,ColB,ColC\n").unwrap();
+    let out = run(&["scheme", "from-csv", path.to_str().unwrap()]);
+    assert!(!out.status.success(),
+        "unknown format must exit nonzero");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("unrecognized") || stderr.contains("--platform"),
+        "must hint --platform fallback, got: {stderr}");
+}
+
 #[test]
 fn l2_cmd_group_export_to_stdout_emits_json() {
     let home = tempfile::tempdir().expect("tempdir");

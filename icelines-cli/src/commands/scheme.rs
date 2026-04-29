@@ -1,4 +1,5 @@
 use crate::cli::SchemeSubcommand;
+use crate::commands::scheme_dialects::{detect_platform, dialect_for, matched_stats, Platform};
 use anyhow::Context;
 use icelines_core::scheme::Scheme;
 
@@ -6,7 +7,8 @@ pub async fn run(cmd: SchemeSubcommand) -> anyhow::Result<()> {
     match cmd {
         SchemeSubcommand::List => run_list().await,
         SchemeSubcommand::Show { name, source } => run_show(&name, source).await,
-        SchemeSubcommand::FromCsv { path, name } => run_from_csv(&path, name.as_deref()).await,
+        SchemeSubcommand::FromCsv { path, name, platform } =>
+            run_from_csv(&path, name.as_deref(), platform.as_deref()).await,
     }
 }
 
@@ -85,41 +87,46 @@ pub async fn run_show(name: &str, source: bool) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn run_from_csv(path: &str, name: Option<&str>) -> anyhow::Result<()> {
-    // Detect scoreable columns from Yahoo CSV headers
+async fn run_from_csv(
+    path: &str,
+    name: Option<&str>,
+    platform: Option<&str>,
+) -> anyhow::Result<()> {
     use std::io::BufRead;
     let file = std::fs::File::open(path).with_context(|| format!("opening {path}"))?;
     let mut reader = std::io::BufReader::new(file);
     let mut header = String::new();
     reader.read_line(&mut header)?;
 
-    const STAT_COLS: &[(&str, &str)] = &[
-        ("G (P)", "goals"),
-        ("A (P)", "assists"),
-        ("PPG (P)", "pp_goals"),
-        ("PPA (P)", "pp_assists"),
-        ("SHG (P)", "sh_goals"),
-        ("SHA (P)", "sh_assists"),
-        ("GWG (P)", "gwg"),
-        ("HIT (P)", "hits"),
-        ("BLK (P)", "blocks"),
-        ("W (G)", "goalie_wins"),
-        ("L (G)", "goalie_losses"),
-        ("GA (G)", "goalie_ga"),
-        ("SV (G)", "goalie_saves"),
-        ("SHO (G)", "goalie_shutouts"),
-    ];
+    // Phase 8f.7: pick a dialect by explicit --platform, otherwise auto-detect.
+    let dialect = if let Some(p) = platform {
+        let parsed = Platform::parse(p).ok_or_else(|| anyhow::anyhow!(
+            "unknown platform '{p}' — supported: yahoo, espn, sleeper, fantrax"
+        ))?;
+        dialect_for(parsed)
+    } else {
+        match detect_platform(&header) {
+            Some(d) => d,
+            None => anyhow::bail!(
+                "unrecognized CSV format — header has no Yahoo / ESPN / Sleeper / \
+                 Fantrax signature columns.\n  Try `--platform <yahoo|espn|sleeper|fantrax>` \
+                 to force a specific dialect."
+            ),
+        }
+    };
 
-    let detected: Vec<&str> = STAT_COLS
-        .iter()
-        .filter(|(col, _)| header.contains(col))
-        .map(|(_, key)| *key)
-        .collect();
-
+    let stats = matched_stats(dialect, &header);
     let scheme_name = name.unwrap_or("my-league");
-    println!("Detected {} scoreable stats in '{path}':", detected.len());
-    for k in &detected {
-        println!("  {k}");
+    println!("Platform: {} ({} signature{} detected)",
+        dialect.platform.name(),
+        dialect.signatures.iter()
+            .filter(|s| header.contains(*s))
+            .count(),
+        if dialect.signatures.iter().filter(|s| header.contains(*s)).count() == 1 { "" } else { "s" },
+    );
+    println!("Detected {} scoreable stat(s) in '{path}':", stats.len());
+    for (col, key) in &stats {
+        println!("  {col:<14} → {key}");
     }
     println!();
     println!("Template scheme name: '{scheme_name}'");
