@@ -438,6 +438,44 @@ fn l2_cmd_no_live_help_mentions_flag() {
         "--help must document --no-live, got:\n{stdout}");
 }
 
+// ── L2: snapshot prune + diff (Phase 8f.2 + 8f.3) ─────────────────────────────
+
+#[test]
+fn l2_cmd_snapshot_prune_dry_run_with_no_snapshots_is_clean() {
+    let out = run(&["snapshot", "prune", "--keep", "30", "--dry-run"]);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(!stderr.contains("panicked at"), "must not panic, stderr: {stderr}");
+    assert!(out.status.success(), "prune --dry-run on empty store must exit 0, stderr: {stderr}");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("Dry run") || stdout.contains("Nothing to prune"),
+        "stdout must mention dry-run or empty result, got:\n{stdout}",
+    );
+}
+
+#[test]
+fn l2_cmd_snapshot_diff_unknown_snapshots_errors_clearly() {
+    // No snapshots exist — diff against two made-up names.
+    let out = run(&["snapshot", "diff", "nope-a", "nope-b"]);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(!stderr.contains("panicked at"), "must not panic");
+    assert!(!out.status.success(), "missing snapshots must exit non-zero");
+    // Either NotFound or "requires both snapshots to be chunked" is acceptable.
+    assert!(
+        stderr.contains("not found") || stderr.contains("chunked"),
+        "error must explain why diff failed, got stderr:\n{stderr}",
+    );
+}
+
+#[test]
+fn l2_cmd_snapshot_prune_help_mentions_keep_flag() {
+    let out = run(&["snapshot", "prune", "--help"]);
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("--keep"));
+    assert!(stdout.contains("--dry-run"));
+}
+
 #[test]
 fn l2_cmd_tui_help_exits_zero() {
     let out = run(&["tui", "--help"]);

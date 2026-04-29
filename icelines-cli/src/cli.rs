@@ -363,6 +363,25 @@ pub enum SnapshotSubcommand {
         #[arg(long)]
         dry_run: bool,
     },
+    /// Keep the newest N sealed snapshots per tier; delete the rest
+    /// (Phase 8f.2). Active snapshot is always preserved. Drafts are
+    /// excluded from the keep count. Pair with `snapshot gc` to free
+    /// chunks newly orphaned by the prune.
+    Prune {
+        #[arg(long)]
+        keep: usize,
+        /// Report what would be deleted without touching disk.
+        #[arg(long)]
+        dry_run: bool,
+    },
+    /// Compare two chunked snapshots — reports added / removed players
+    /// plus bios/stats hash mismatches (Phase 8f.3).
+    Diff {
+        /// First snapshot name.
+        a: String,
+        /// Second snapshot name.
+        b: String,
+    },
 }
 
 // ── Phase 5 query subcommands ─────────────────────────────────────────────────

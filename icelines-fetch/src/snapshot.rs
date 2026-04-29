@@ -138,6 +138,33 @@ pub struct GcReport {
     pub dry_run:     bool,
 }
 
+/// Phase 8f.2: result of a `prune` invocation.
+#[derive(Debug, Clone)]
+pub struct PruneReport {
+    pub planned: u32,        // count that *would* be deleted
+    pub deleted: u32,        // actually removed (== planned unless dry_run)
+    pub dry_run: bool,
+    pub names:   Vec<String>, // names slated for deletion, sorted
+}
+
+/// Phase 8f.3: result of `diff(a, b)`. All `player_id` lists are sorted.
+#[derive(Debug, Clone)]
+pub struct DiffReport {
+    pub a_name:        String,
+    pub b_name:        String,
+    pub added:         Vec<u32>,  // in B but not A
+    pub removed:       Vec<u32>,  // in A but not B
+    pub changed_bios:  Vec<u32>,  // bio hash differs
+    pub changed_stats: Vec<u32>,  // stats hash differs
+}
+
+impl DiffReport {
+    pub fn is_empty(&self) -> bool {
+        self.added.is_empty() && self.removed.is_empty()
+            && self.changed_bios.is_empty() && self.changed_stats.is_empty()
+    }
+}
+
 // ── SnapshotStore ─────────────────────────────────────────────────────────────
 
 pub struct SnapshotStore {
@@ -442,6 +469,101 @@ impl SnapshotStore {
         }
 
         Ok(failures)
+    }
+
+    /// Compare two chunked snapshots and report player-level changes.
+    /// Phase 8f.3: leverages the chunked layout's content-addressing —
+    /// `bios`/`stats` hashes are byte-identical iff the records are. Set
+    /// comparison gives an O(n) exact diff with no JSON deep-walking.
+    ///
+    /// Both snapshots must be chunked. Legacy snapshots can be migrated
+    /// via `snapshot rebuild --chunked <name>` first.
+    pub fn diff(&self, a: &str, b: &str) -> Result<DiffReport, SnapshotError> {
+        if !self.is_chunked(a) || !self.is_chunked(b) {
+            return Err(SnapshotError::Io(std::io::Error::other(format!(
+                "snapshot diff requires both snapshots to be chunked. \
+                 Run `icelines snapshot rebuild --chunked <name>` first. \
+                 a={a} chunked={a_chk}, b={b} chunked={b_chk}",
+                a_chk = self.is_chunked(a),
+                b_chk = self.is_chunked(b),
+            ))));
+        }
+        let cm_a = self.load_chunked_manifest(a)?;
+        let cm_b = self.load_chunked_manifest(b)?;
+
+        use std::collections::HashSet;
+        let ids_a: HashSet<u32> = cm_a.bios.keys().copied().collect();
+        let ids_b: HashSet<u32> = cm_b.bios.keys().copied().collect();
+
+        let mut added:   Vec<u32> = ids_b.difference(&ids_a).copied().collect();
+        let mut removed: Vec<u32> = ids_a.difference(&ids_b).copied().collect();
+        added.sort();
+        removed.sort();
+
+        let mut changed_bios:  Vec<u32> = Vec::new();
+        let mut changed_stats: Vec<u32> = Vec::new();
+        for id in ids_a.intersection(&ids_b) {
+            if cm_a.bios.get(id)  != cm_b.bios.get(id)  { changed_bios.push(*id); }
+            if cm_a.stats.get(id) != cm_b.stats.get(id) { changed_stats.push(*id); }
+        }
+        changed_bios.sort();
+        changed_stats.sort();
+
+        Ok(DiffReport {
+            a_name: a.to_owned(),
+            b_name: b.to_owned(),
+            added, removed, changed_bios, changed_stats,
+        })
+    }
+
+    /// Prune sealed snapshots, keeping the newest `keep` per tier and
+    /// deleting older ones. Returns a `PruneReport`. The active snapshot is
+    /// always preserved regardless of count. Drafts (unsealed) are ignored.
+    /// With `dry_run=true`, computes what would be deleted without touching
+    /// disk.
+    ///
+    /// Useful for daily-cron workflows: pair with `gc_chunks` to keep
+    /// long-running snapshot storage bounded.
+    pub fn prune(&self, keep: usize, dry_run: bool) -> Result<PruneReport, SnapshotError> {
+        let manifest = self.load_manifest()?;
+        let active = manifest.active.clone();
+
+        // Group sealed snapshots by tier, sorted newest-first by created_at
+        // (stable tie-break by name to keep things deterministic).
+        let mut by_tier: HashMap<&'static str, Vec<&SnapshotEntry>> = HashMap::new();
+        for entry in &manifest.snapshots {
+            if !entry.sealed { continue; }
+            by_tier.entry(entry.tier.dir_name()).or_default().push(entry);
+        }
+        for entries in by_tier.values_mut() {
+            entries.sort_by(|a, b| b.created_at.cmp(&a.created_at).then(b.name.cmp(&a.name)));
+        }
+
+        let mut to_delete: Vec<String> = Vec::new();
+        for (_tier, entries) in by_tier.iter() {
+            for entry in entries.iter().skip(keep) {
+                if active.as_deref() == Some(entry.name.as_str()) {
+                    continue;
+                }
+                to_delete.push(entry.name.clone());
+            }
+        }
+        // Stable order across runs.
+        to_delete.sort();
+
+        let mut deleted = 0u32;
+        if !dry_run {
+            for name in &to_delete {
+                self.delete(name)?;
+                deleted += 1;
+            }
+        }
+        Ok(PruneReport {
+            planned:  to_delete.len() as u32,
+            deleted,
+            dry_run,
+            names:    to_delete,
+        })
     }
 
     /// Delete a snapshot (cannot delete the active one).
@@ -1122,6 +1244,165 @@ mod tests {
         // Refs not double-incremented
         let refs = store.load_refs().unwrap();
         for c in refs.counts.values() { assert_eq!(*c, 1); }
+    }
+
+    // ── Prune (Phase 8f.2) ───────────────────────────────────────────────────
+
+    fn create_sealed_dated(store: &SnapshotStore, name: &str, date: &str) {
+        store.create(name, "20252026", SnapshotTier::Stats, None, date).unwrap();
+        store.seal(name).unwrap();
+    }
+
+    #[test]
+    fn l0_prune_dry_run_lists_planned_deletions_without_touching_disk() {
+        let (_dir, store) = store();
+        // Five Stats snapshots dated newest-first; one of them stays active.
+        create_sealed_dated(&store, "stats-2026-04-25", "2026-04-25");
+        create_sealed_dated(&store, "stats-2026-04-26", "2026-04-26");
+        create_sealed_dated(&store, "stats-2026-04-27", "2026-04-27");
+        create_sealed_dated(&store, "stats-2026-04-28", "2026-04-28");
+        create_sealed_dated(&store, "stats-2026-04-29", "2026-04-29");
+        // Sealing in order makes the last one active. Keep newest 2.
+
+        let report = store.prune(2, true).unwrap();
+        assert!(report.dry_run);
+        // Newest 2 kept (28, 29); one of those (29) is active and excluded
+        // from any deletion logic regardless. Three older ones planned.
+        assert_eq!(report.planned, 3, "expected 3 to prune, got {}", report.planned);
+        assert_eq!(report.deleted, 0, "dry_run must not actually delete");
+        // All 5 still present
+        assert_eq!(store.list().unwrap().len(), 5);
+    }
+
+    #[test]
+    fn l0_prune_real_run_deletes_oldest_keeps_newest() {
+        let (_dir, store) = store();
+        for date in &["2026-04-25", "2026-04-26", "2026-04-27", "2026-04-28", "2026-04-29"] {
+            create_sealed_dated(&store, &format!("stats-{date}"), date);
+        }
+        let report = store.prune(2, false).unwrap();
+        assert_eq!(report.deleted, 3);
+
+        let remaining: Vec<String> = store.list().unwrap().into_iter().map(|e| e.name).collect();
+        assert_eq!(remaining.len(), 2);
+        assert!(remaining.contains(&"stats-2026-04-29".to_owned()));
+        assert!(remaining.contains(&"stats-2026-04-28".to_owned()));
+    }
+
+    #[test]
+    fn l0_prune_never_deletes_active() {
+        let (_dir, store) = store();
+        create_sealed_dated(&store, "stats-2026-04-25", "2026-04-25");
+        create_sealed_dated(&store, "stats-2026-04-26", "2026-04-26");
+        create_sealed_dated(&store, "stats-2026-04-27", "2026-04-27");
+        // Force the OLDEST to be active — pinning it.
+        store.set_active("stats-2026-04-25").unwrap();
+
+        // Keep only 1 — that would delete the two newer ones, but the active
+        // (2026-04-25) must survive because prune skips the active.
+        let report = store.prune(1, false).unwrap();
+        let names: Vec<String> = store.list().unwrap().into_iter().map(|e| e.name).collect();
+        assert!(names.contains(&"stats-2026-04-25".to_owned()),
+            "active snapshot must always survive prune");
+        // We told prune to keep 1 newest; with 2026-04-27 newest, that's kept.
+        // 2026-04-26 is the only one prune is allowed to delete (active is excluded).
+        assert!(report.deleted >= 1);
+    }
+
+    #[test]
+    fn l0_prune_keep_more_than_count_is_noop() {
+        let (_dir, store) = store();
+        create_sealed_dated(&store, "stats-2026-04-25", "2026-04-25");
+        create_sealed_dated(&store, "stats-2026-04-26", "2026-04-26");
+        let report = store.prune(10, false).unwrap();
+        assert_eq!(report.deleted, 0);
+        assert_eq!(store.list().unwrap().len(), 2);
+    }
+
+    #[test]
+    fn l0_prune_skips_drafts() {
+        let (_dir, store) = store();
+        // Create one sealed and one draft (un-sealed).
+        create_sealed_dated(&store, "stats-2026-04-25", "2026-04-25");
+        store.create("stats-2026-04-26-draft", "20252026", SnapshotTier::Stats, None, "2026-04-26").unwrap();
+        // Don't seal the draft.
+
+        let report = store.prune(0, true).unwrap();
+        // Only the sealed one is countable; the draft is invisible to prune.
+        assert!(!report.names.contains(&"stats-2026-04-26-draft".to_owned()),
+            "drafts must be excluded from prune candidates");
+    }
+
+    // ── Diff (Phase 8f.3) ───────────────────────────────────────────────────
+
+    #[test]
+    fn l0_diff_identical_chunked_snapshots_returns_empty() {
+        let (_dir, store) = store();
+        store.create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25").unwrap();
+        store.create("b", "20252026", SnapshotTier::Stats, None, "2026-04-26").unwrap();
+        let bios  = vec![fixture_bio(1, "A"), fixture_bio(2, "B")];
+        let stats = vec![fixture_stats(1, 10), fixture_stats(2, 20)];
+        store.write_chunked_stats("a", &bios, &stats).unwrap();
+        store.write_chunked_stats("b", &bios, &stats).unwrap();
+
+        let diff = store.diff("a", "b").unwrap();
+        assert!(diff.is_empty(), "identical content must yield empty diff: {diff:?}");
+    }
+
+    #[test]
+    fn l0_diff_detects_added_and_removed_players() {
+        let (_dir, store) = store();
+        store.create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25").unwrap();
+        store.create("b", "20252026", SnapshotTier::Stats, None, "2026-04-26").unwrap();
+        // a has {1, 2}, b has {2, 3}: removed=[1], added=[3]
+        store.write_chunked_stats("a",
+            &[fixture_bio(1, "A"), fixture_bio(2, "B")],
+            &[fixture_stats(1, 10), fixture_stats(2, 20)],
+        ).unwrap();
+        store.write_chunked_stats("b",
+            &[fixture_bio(2, "B"), fixture_bio(3, "C")],
+            &[fixture_stats(2, 20), fixture_stats(3, 30)],
+        ).unwrap();
+
+        let diff = store.diff("a", "b").unwrap();
+        assert_eq!(diff.removed, vec![1], "player 1 in A only");
+        assert_eq!(diff.added,   vec![3], "player 3 in B only");
+        assert!(diff.changed_bios.is_empty());
+        assert!(diff.changed_stats.is_empty());
+    }
+
+    #[test]
+    fn l0_diff_detects_changed_stats_only() {
+        let (_dir, store) = store();
+        store.create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25").unwrap();
+        store.create("b", "20252026", SnapshotTier::Stats, None, "2026-04-26").unwrap();
+        // Same bios; player 2's stats differ between A and B.
+        let bios  = vec![fixture_bio(1, "A"), fixture_bio(2, "B")];
+        store.write_chunked_stats("a", &bios,
+            &[fixture_stats(1, 10), fixture_stats(2, 20)]).unwrap();
+        store.write_chunked_stats("b", &bios,
+            &[fixture_stats(1, 10), fixture_stats(2, 25)]).unwrap();
+
+        let diff = store.diff("a", "b").unwrap();
+        assert!(diff.added.is_empty());
+        assert!(diff.removed.is_empty());
+        assert!(diff.changed_bios.is_empty(), "bios are identical");
+        assert_eq!(diff.changed_stats, vec![2]);
+    }
+
+    #[test]
+    fn l0_diff_legacy_snapshot_errors_with_clear_message() {
+        let (_dir, store) = store();
+        store.create("legacy", "20252026", SnapshotTier::Stats, None, "2026-04-25").unwrap();
+        store.create("chunked", "20252026", SnapshotTier::Stats, None, "2026-04-26").unwrap();
+        store.write_chunked_stats("chunked",
+            &[fixture_bio(1, "A")], &[fixture_stats(1, 10)]).unwrap();
+
+        let err = store.diff("legacy", "chunked").unwrap_err().to_string();
+        assert!(err.contains("requires both snapshots to be chunked"),
+            "error must explain the requirement, got: {err}");
+        assert!(err.contains("rebuild --chunked"),
+            "error must hint at migration command, got: {err}");
     }
 
     #[test]

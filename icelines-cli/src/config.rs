@@ -120,7 +120,9 @@ pub fn live_feeds_enabled() -> bool {
 }
 
 /// Pure precedence resolver — exposed for tests so they can verify the
-/// rule without poking the global OnceLock.
+/// rule without poking the global OnceLock. `init_live_feeds` inlines
+/// the same logic against env/config inputs.
+#[allow(dead_code)] // production path uses init_live_feeds; tests use this.
 pub fn resolve_live(cli_no_live: bool, env_no_live: bool, config_live: Option<bool>) -> bool {
     if cli_no_live      { return false; }
     if env_no_live      { return false; }
