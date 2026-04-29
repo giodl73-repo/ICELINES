@@ -1,8 +1,8 @@
 # Markdown Export — Specification
 
-**Version**: 1.0
-**Date**: 2026-04-28
-**Status**: Planned
+**Version**: 1.1
+**Date**: 2026-04-29
+**Status**: Implemented (partial — 5 of 7 shapes shipped; `fantasy` and `series` deferred)
 
 ---
 
@@ -235,12 +235,24 @@ L2 (subprocess):
 
 ## Status
 
-**Not yet implemented.** Tracked in `design/plans/INDEX.md` under
-"Phase 6 — Export & Dashboard". Blocked on:
-- Proof DASHBOARD-SPEC publication (proof side)
+**Implemented (partial)** as of 2026-04-29 (Phase 8d).
 
-The schema in this spec is committed — implementing the writer
-should be ~2–4 hours per shape, mostly `comfy_table` formatting.
+Five shapes shipped:
+
+| Shape | Status | Notes |
+|-------|--------|-------|
+| `leaders` | ✅ Implemented | sort=`pts-pace` only in v1; other metrics in 8d follow-up |
+| `team` | ✅ Implemented | full skater roster (no L1/L2/L3 line-card grid yet) |
+| `depth` | ✅ Implemented | Top 50 cross-team metrics, sorted by delta |
+| `compare` | ✅ Implemented | GP/G/A/Pts/Pts82/PPG with diff |
+| `roster` | ✅ Implemented | grouped by team alpha, then pace within team |
+| `fantasy` | ⏸ Deferred | needs FantasyDb + scheme integration plumbing |
+| `series` | ⏸ Deferred | needs the historical playoffs.json bundle (Phase 8c) |
+
+13 L0 tests + 3 L2 subprocess tests. proof DASHBOARD-SPEC integration
+is unblocked — the smoke test in `icelines-cli/tests/proof_lib_smoke.rs`
+proves library link works; consuming the exported markdown into the
+TUI is a separate phase.
 
 ---
 

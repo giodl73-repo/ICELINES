@@ -3,6 +3,14 @@
 ## Unreleased
 
 ### Added
+- Phase 8d: `icelines export md <shape>` — writes deterministic markdown
+  tables with YAML front-matter for proof DASHBOARD-SPEC consumption.
+  Five shapes shipped: `leaders`, `team`, `depth`, `compare`, `roster`.
+  `fantasy` and `series` are stubbed with deferred messages (need
+  FantasyDb glue and historical playoffs.json respectively). Output
+  goes to `~/.icelines/reports/{shape}.md` by default; pass `--out -`
+  for stdout. 13 L0 tests + 3 L2 subprocess tests. `export-markdown.md`
+  spec status flipped from `Planned` → `Implemented (partial)`.
 - Phase 8h: Chunked snapshot store — content-addressed per-player chunks
   with SHA-256 deduplication. New `icelines-fetch::chunkstore` module
   (put/get/exists/delete with sharded layout); `SnapshotStore` extended

@@ -183,6 +183,14 @@ L1 tests verify column order + front-matter validity per shape. No
 runtime proof dependency exists in the binary; `cargo tree -p
 icelines-cli` does not list `proof_lib` or any proof crate.
 
+**Status: Implemented (partial) — 2026-04-29**. Five shapes shipped
+(`leaders`, `team`, `depth`, `compare`, `roster`); `fantasy` and
+`series` deferred (need FantasyDb + scheme glue and historical
+playoffs.json respectively). 13 L0 tests + 3 L2 subprocess tests.
+proof_lib smoke test landed in `icelines-cli/tests/proof_lib_smoke.rs`
+(dev-dep only) — Phase 8d consumption side (TUI rendering compiled
+output) intentionally not started, per the original Phase 8 scope.
+
 ---
 
 ## Phase 8e — Fantasy v1 polish (P2, ~5–8 hours)

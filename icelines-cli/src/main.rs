@@ -130,6 +130,9 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
         Commands::Tui => {
             tui::run_tui(false).await?;
         }
+        Commands::Export(sub) => {
+            commands::export::run(sub).await?;
+        }
         Commands::Mates { player, top } => {
             commands::mates::run(player, top).await?;
         }

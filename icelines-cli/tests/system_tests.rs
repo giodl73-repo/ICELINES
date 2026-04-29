@@ -383,6 +383,39 @@ fn l2_cmd_fetch_all_accepts_chunked_flag() {
     assert!(out.status.success(), "fetch all --dry-run --chunked must exit 0, stderr: {stderr}");
 }
 
+// ── L2: markdown export (Phase 8d) ────────────────────────────────────────────
+
+#[test]
+fn l2_cmd_export_md_leaders_to_stdout() {
+    // `--out -` writes to stdout so we can grep the front matter directly.
+    let out = run(&["export", "md", "leaders", "--out", "-", "--top", "5"]);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(!stderr.contains("panicked at"));
+    assert!(out.status.success(), "export md leaders must exit 0, stderr: {stderr}");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.starts_with("---\n"), "stdout must start with YAML front-matter");
+    assert!(stdout.contains("type: leaderboard"));
+    assert!(stdout.contains("| Rank | Player | Team | Pos | Age | GP | G | A | Pts | PPG | Pts/82 |"));
+}
+
+#[test]
+fn l2_cmd_export_md_team_requires_team_flag() {
+    let out = run(&["export", "md", "team", "--out", "-"]);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(!stderr.contains("panicked at"));
+    assert!(!out.status.success(), "missing --team must exit non-zero");
+    assert!(stderr.contains("--team"), "error must reference --team flag");
+}
+
+#[test]
+fn l2_cmd_export_md_fantasy_returns_deferred_message() {
+    let out = run(&["export", "md", "fantasy", "--out", "-"]);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(!stderr.contains("panicked at"));
+    assert!(!out.status.success(), "deferred shapes must exit non-zero");
+    assert!(stderr.contains("deferred"), "error must explain why fantasy is deferred");
+}
+
 #[test]
 fn l2_cmd_tui_help_exits_zero() {
     let out = run(&["tui", "--help"]);

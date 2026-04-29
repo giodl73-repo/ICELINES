@@ -105,6 +105,11 @@ pub enum Commands {
     },
     /// Launch the interactive TUI.
     Tui,
+    /// Export analytical output as markdown tables (Phase 8d).
+    /// Bridges to proof's DASHBOARD-SPEC compiler — see
+    /// `design/specs/export-markdown.md`.
+    #[command(subcommand)]
+    Export(ExportSubcommand),
     /// Filter and list players with rich criteria.
     Players {
         #[arg(long)]
@@ -566,4 +571,88 @@ pub enum FantasySubcommand {
         #[arg(long)]
         league: Option<String>,
     },
+}
+
+// ── Phase 8d: markdown export ────────────────────────────────────────────────
+
+#[derive(Debug, Subcommand)]
+pub enum ExportSubcommand {
+    /// Write a markdown table for the given shape. Output is deterministic
+    /// and proof-DASHBOARD-SPEC ready.
+    Md {
+        /// What to export. See `design/specs/export-markdown.md`.
+        #[arg(value_enum)]
+        shape: MdShape,
+        /// Output path. Default: `~/.icelines/reports/{shape}.md`.
+        /// Pass `-` for stdout.
+        #[arg(long)]
+        out: Option<String>,
+
+        // ── Filters per shape ────────────────────────────────────────────
+        /// Position filter for `leaders` / `roster` (`C`, `LW`, `RW`, `D`, `F`, `G`).
+        #[arg(long)]
+        pos: Option<String>,
+        /// Team abbrev for `team` (e.g. `SEA`).
+        #[arg(long)]
+        team: Option<String>,
+        /// Top-N for `leaders`.
+        #[arg(long, default_value_t = 25)]
+        top: usize,
+        /// Sort metric for `leaders`. Defaults to `pts-pace`.
+        #[arg(long, default_value = "pts-pace")]
+        sort: String,
+        /// Min-GP filter for `leaders` (default = current MIN_GP).
+        #[arg(long)]
+        gp_min: Option<u32>,
+        /// First player for `compare`.
+        #[arg(long)]
+        p1: Option<String>,
+        /// Second player for `compare`.
+        #[arg(long)]
+        p2: Option<String>,
+        /// Series letter for `series` (e.g. `A`).
+        #[arg(long)]
+        series: Option<String>,
+
+        // ── Render hints (forwarded to YAML front-matter) ────────────────
+        /// Suggested terminal width — proof reflows to fit.
+        #[arg(long, default_value_t = 100)]
+        width: u16,
+        /// Suggested terminal height — proof truncates if needed.
+        #[arg(long, default_value_t = 30)]
+        height: u16,
+    },
+}
+
+#[derive(Debug, Clone, Copy, clap::ValueEnum)]
+pub enum MdShape {
+    /// Top-N leaderboard (mirrors `query leaders`).
+    Leaders,
+    /// Single team's lineup card.
+    Team,
+    /// Cross-team line-value rankings.
+    Depth,
+    /// Active fantasy league standings.
+    Fantasy,
+    /// Two-player head-to-head.
+    Compare,
+    /// One playoff series — game log + scorers.
+    Series,
+    /// All teams' rosters in one big table.
+    Roster,
+}
+
+impl MdShape {
+    /// Lowercase label used in default output filenames + front-matter.
+    pub fn label(&self) -> &'static str {
+        match self {
+            MdShape::Leaders => "leaders",
+            MdShape::Team    => "team",
+            MdShape::Depth   => "depth",
+            MdShape::Fantasy => "fantasy",
+            MdShape::Compare => "compare",
+            MdShape::Series  => "series",
+            MdShape::Roster  => "roster",
+        }
+    }
 }
