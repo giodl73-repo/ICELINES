@@ -95,9 +95,15 @@ icelines tui
 # or just: icelines  (no subcommand launches TUI)
 ```
 
-8 screens: home · teams · players · search · rankings · schedule · tonight · settings
+Six tabs: League · Stats · Scores · Schedule · Groups · Playoffs.
 
-Navigate with arrow keys, `/` to search, `q` to quit.
+- `Tab` cycles tabs, `1`–`6` jumps directly.
+- `←/→` switches sub-views inside a tab (and navigates weeks on Schedule).
+- `/` opens search — players on most tabs, team / matchup on Schedule.
+- `y` opens the season picker for time-travel; `g`/`f` add players to
+  groups; `?` shows the full key map.
+
+Full walkthrough in [The Interactive TUI](06-tui.md).
 
 ---
 
@@ -107,3 +113,4 @@ Navigate with arrow keys, `/` to search, `q` to quit.
 - [Team Depth Charts](02-team-depth.md) — fit classification, lineup cards
 - [Fantasy League](03-fantasy.md) — leagues, scoring, trades
 - [Data & History](04-data.md) — 38 seasons, MoneyPuck, contracts
+- [The Interactive TUI](06-tui.md) — six tabs, season time-travel, live scores, schedule search

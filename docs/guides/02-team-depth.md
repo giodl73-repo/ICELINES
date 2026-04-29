@@ -52,21 +52,23 @@ Each player is classified by comparing their pace score to where they'd rank
 on each of the other 31 NHL teams at their position.
 
 ```
-```proof:tree kind=org
-root: Fit Class
-- ★ Elite (green)
-  condition: avg rank elsewhere ≤ own line + 0.5
-  meaning: true caliber for this slot on most rosters
-- ~ Solid (yellow)
-  condition: avg rank elsewhere ≤ own line + 1.25
-  meaning: fits their role, slight upgrade elsewhere
-- ↑ Buried (blue)
-  condition: avg rank elsewhere < own line − 0.75
-  meaning: underused — would play a higher line on most teams
-- ↓ Stretch (red)
-  condition: avg rank elsewhere > own line + 1.25
-  meaning: overextended — playing above their talent level
+<!-- proof:compiled from="proof:tree kind=org" uri="" -->
+```org
+Fit Class
+├── ★ Elite (green)
+├── condition: avg rank elsewhere ≤ own line + 0.5
+├── meaning: true caliber for this slot on most rosters
+├── ~ Solid (yellow)
+├── condition: avg rank elsewhere ≤ own line + 1.25
+├── meaning: fits their role, slight upgrade elsewhere
+├── ↑ Buried (blue)
+├── condition: avg rank elsewhere < own line − 0.75
+├── meaning: underused — would play a higher line on most teams
+├── ↓ Stretch (red)
+├── condition: avg rank elsewhere > own line + 1.25
+└── meaning: overextended — playing above their talent level
 ```
+<!-- /proof:compiled -->
 ```
 
 **Example:** A player who's a 3rd-liner on their own team but would be a 1st-liner

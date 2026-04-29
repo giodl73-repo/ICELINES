@@ -3,6 +3,43 @@
 ## Unreleased
 
 ### Added
+- Phase 8b: Scores auto-refresh — live Scores tab polls every 30s. New
+  `should_auto_refresh` pure function + `App::tick_auto_refresh` driven
+  from the TUI event loop. "Updated Xs ago" indicator in the Scores
+  title. Timer arms on tab entry / `t` jump to today, disarms on date
+  change, never fires on past dates. 8 L0 + 2 render tests.
+- Phase 8a: Test catch-up for previously-shipped features. 27 new tests:
+  - **Scouting** (`commands/scouting.rs`) — extracted `validate_format` +
+    pure `render_report() -> String`; 7 L0 tests cover all 3 formats,
+    section presence, low-GP path; 3 L2 subprocess tests verify exit
+    codes and JSON parseability.
+  - **Admin overlay** (`tui/app.rs`, `screens/misc.rs`) — 5 L0 keystroke
+    tests (capital `F` toggle, Esc closes, Tab blocked, lowercase f
+    untouched) + 4 L0 render tests (Idle / Downloading / Done / Error
+    phases). Added `InstallState::force_phase` for deterministic test
+    drives.
+  - **Headshot rendering** (`tui/headshot.rs`) — extracted
+    `pixels_to_braille()` + `DOT_X` / `DOT_Y` / `THRESHOLD` constants;
+    8 L0 tests cover braille bit layout, threshold contract, cache
+    round-trip, loading/error placeholders, Arc-shared clone semantics.
+- 10 new specs in `design/specs/` covering previously-homeless features:
+  group-management, fantasy-leagues, data-bundles, site-generation,
+  scouting-reports, scheme-customization, snapshot-operations,
+  tui-admin-overlay, export-markdown (planned), headshot-rendering
+  (reference). Specs INDEX updated.
+- Phase 7c gap-fix: Scores tab — date navigation (`←/→`), `d` date picker
+  (ISO or `MM/DD`), `t` back-to-today, per-game boxscore detail
+  (goals/assists, goalies, series context for playoffs), per-date and
+  per-boxscore caches
+- Phase 7e: Playoffs tab — list-style bracket from `/v1/playoff-bracket/{year}`,
+  per-round navigation, per-series detail with summary and "if needed" game
+  hints, off-season / error states, `r` retry
+- Phase 7d: Schedule tab — weekly view with date navigation, team and matchup
+  search (`/SEA`, `/NYR WSH`), team-season detail and head-to-head matchup
+  views, per-week + per-team caches with `r` retry, `t` jump to today
+- TUI guide (`docs/guides/06-tui.md`) — covers Phase 7a–7e: six-tab nav,
+  season time-travel, Scores, Schedule with search and matchups, Playoffs
+  bracket and series detail
 - `icelines query compare --comps` — contract comparable finder (in progress)
 - Season data expansion to 2000-01 (in progress)
 
