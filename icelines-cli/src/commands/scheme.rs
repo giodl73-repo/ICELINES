@@ -23,13 +23,27 @@ async fn run_list() -> anyhow::Result<()> {
             s.description
         );
     }
-    // TODO Phase 2: also load user schemes from ~/.icelines/schemes/
+    // Phase 8f.9: surface user schemes alongside builtins. Errors loading any
+    // single file are warned about but don't break listing.
+    match load_user_schemes() {
+        Ok(user) => {
+            for s in user {
+                println!(
+                    "{:<20} {:<12} {}",
+                    s.name, "user", s.description,
+                );
+            }
+        }
+        Err(e) => eprintln!("  warning: could not enumerate user schemes — {e}"),
+    }
     Ok(())
 }
 
 pub async fn run_show(name: &str, source: bool) -> anyhow::Result<()> {
-    let scheme = find_builtin(name)
-        .with_context(|| format!("scheme '{name}' not found — run `icelines scheme list`"))?;
+    let scheme = find_scheme(name)
+        .with_context(|| format!(
+            "scheme '{name}' not found — run `icelines scheme list`, or check ~/.icelines/schemes/{name}.toml"
+        ))?;
 
     if source {
         // Phase 8f.5: --source emits the scheme as pretty JSON for
@@ -137,4 +151,168 @@ async fn run_from_csv(
 
 fn find_builtin(name: &str) -> Option<Scheme> {
     Scheme::all_builtins().into_iter().find(|s| s.name == name)
+}
+
+// ── Phase 8f.9: user schemes from ~/.icelines/schemes/ ──────────────────────
+
+/// Look up a scheme by name, preferring a user file when present so users can
+/// override a builtin (e.g., a tweaked `yahoo-standard.toml`).
+fn find_scheme(name: &str) -> Option<Scheme> {
+    if let Some(s) = load_user_scheme(name) { return Some(s); }
+    find_builtin(name)
+}
+
+/// Resolve `~/.icelines/schemes/{name}.toml` and parse it as a `Scheme`.
+/// Returns `None` if the file is absent; `None` (with no signal to caller)
+/// if the file is malformed — the caller falls back to the builtin lookup,
+/// and a `scheme show` of a malformed user file will surface the parse error
+/// via the dedicated `load_user_scheme_strict` path below.
+fn load_user_scheme(name: &str) -> Option<Scheme> {
+    let path = user_schemes_dir().ok()?.join(format!("{name}.toml"));
+    if !path.exists() { return None; }
+    let text = std::fs::read_to_string(&path).ok()?;
+    toml::from_str(&text).ok()
+}
+
+/// Enumerate every `*.toml` file under `~/.icelines/schemes/` and parse it.
+/// Failed parses are skipped silently to keep `scheme list` robust against
+/// half-edited templates; `scheme show NAME` is the place for strict errors.
+fn load_user_schemes() -> anyhow::Result<Vec<Scheme>> {
+    let dir = user_schemes_dir()?;
+    if !dir.exists() { return Ok(Vec::new()); }
+    let mut out = Vec::new();
+    for entry in std::fs::read_dir(&dir)
+        .with_context(|| format!("reading {}", dir.display()))?
+    {
+        let entry = entry?;
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("toml") { continue; }
+        let text = match std::fs::read_to_string(&path) {
+            Ok(t) => t,
+            Err(_) => continue,
+        };
+        let parsed: Result<Scheme, _> = toml::from_str(&text);
+        if let Ok(s) = parsed {
+            out.push(s);
+        } else {
+            eprintln!("  warning: could not parse {}", path.display());
+        }
+    }
+    out.sort_by(|a, b| a.name.cmp(&b.name));
+    Ok(out)
+}
+
+fn user_schemes_dir() -> anyhow::Result<std::path::PathBuf> {
+    let home = std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(std::path::PathBuf::from)
+        .ok_or_else(|| anyhow::anyhow!("cannot determine home directory"))?;
+    Ok(home.join(".icelines").join("schemes"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Set HOME/USERPROFILE so `user_schemes_dir()` resolves into a tempdir.
+    /// Returns the temp `~/.icelines/schemes/` ready to receive `.toml` files.
+    fn isolate_home() -> (tempfile::TempDir, std::path::PathBuf) {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let home = dir.path().to_path_buf();
+        // Set both env vars; production code falls back from HOME to USERPROFILE.
+        std::env::set_var("HOME", &home);
+        std::env::set_var("USERPROFILE", &home);
+        let schemes = home.join(".icelines").join("schemes");
+        std::fs::create_dir_all(&schemes).unwrap();
+        (dir, schemes)
+    }
+
+    fn write_user_scheme(dir: &std::path::Path, name: &str, body: &str) {
+        std::fs::write(dir.join(format!("{name}.toml")), body).unwrap();
+    }
+
+    /// A minimal valid scheme TOML matching the Scheme serde shape.
+    fn minimal_scheme_toml(name: &str) -> String {
+        format!(r#"
+name = "{name}"
+description = "test scheme"
+source = "custom"
+
+[skater]
+goals = 4.0
+assists = 3.0
+
+[goalie]
+wins = 5.0
+"#)
+    }
+
+    #[test]
+    fn l0_load_user_scheme_round_trips_known_name() {
+        // NOTE: env vars are process-global; tests in the same binary run in
+        // separate threads, so this test serializes lookups via a Mutex when
+        // run alongside others. cargo runs tests in parallel by default but
+        // toml parsing is stateless — the only contention is HOME.
+        let _guard = scheme_test_lock();
+        let (_keep, schemes) = isolate_home();
+        write_user_scheme(&schemes, "my-league", &minimal_scheme_toml("my-league"));
+
+        let s = load_user_scheme("my-league").expect("user scheme resolves");
+        assert_eq!(s.name, "my-league");
+        assert_eq!(s.description, "test scheme");
+        assert_eq!(s.skater.goals, 4.0);
+        assert_eq!(s.goalie.wins, 5.0);
+    }
+
+    #[test]
+    fn l0_find_scheme_prefers_user_over_builtin() {
+        let _guard = scheme_test_lock();
+        let (_keep, schemes) = isolate_home();
+        // Override the builtin yahoo-standard with a user scheme.
+        write_user_scheme(&schemes, "yahoo-standard", &minimal_scheme_toml("yahoo-standard"));
+        let s = find_scheme("yahoo-standard").expect("must resolve");
+        // Our user scheme has goals=4.0 — different from the real builtin (3.0).
+        assert_eq!(s.skater.goals, 4.0,
+            "user scheme should override builtin");
+    }
+
+    #[test]
+    fn l0_find_scheme_falls_back_to_builtin_when_user_absent() {
+        let _guard = scheme_test_lock();
+        let (_keep, _schemes) = isolate_home();
+        // No user file present — should still resolve the builtin.
+        let s = find_scheme("yahoo-standard").expect("builtin must resolve");
+        assert_eq!(s.name, "yahoo-standard");
+        // Builtin yahoo-standard goals = 3.0 (matches scheme.rs:103).
+        assert_eq!(s.skater.goals, 3.0);
+    }
+
+    #[test]
+    fn l0_load_user_schemes_skips_malformed_files() {
+        let _guard = scheme_test_lock();
+        let (_keep, schemes) = isolate_home();
+        write_user_scheme(&schemes, "valid", &minimal_scheme_toml("valid"));
+        write_user_scheme(&schemes, "broken", "this is not valid toml [[[");
+
+        let all = load_user_schemes().expect("listing must not fail");
+        let names: Vec<&str> = all.iter().map(|s| s.name.as_str()).collect();
+        assert!(names.contains(&"valid"));
+        assert!(!names.contains(&"broken"),
+            "malformed toml should be skipped, got: {names:?}");
+    }
+
+    #[test]
+    fn l0_load_user_schemes_empty_dir_returns_empty() {
+        let _guard = scheme_test_lock();
+        let (_keep, _schemes) = isolate_home();
+        let all = load_user_schemes().expect("must succeed on empty dir");
+        assert!(all.is_empty(), "empty dir should produce empty list");
+    }
+
+    /// HOME env-var mutation is process-global. Serialize the user-scheme
+    /// tests so they don't race each other inside one cargo-test process.
+    fn scheme_test_lock() -> std::sync::MutexGuard<'static, ()> {
+        static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+        LOCK.lock().unwrap_or_else(|p| p.into_inner())
+    }
 }

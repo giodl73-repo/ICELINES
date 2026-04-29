@@ -3,6 +3,18 @@
 ## Unreleased
 
 ### Added
+- Phase 8f.9: User schemes load from `~/.icelines/schemes/*.toml`.
+  Closes the long-standing Phase-2 TODO. `scheme list` now shows user
+  schemes alongside builtins (labelled `user`); `scheme show NAME`
+  resolves user schemes first so a `~/.icelines/schemes/yahoo-standard.toml`
+  cleanly overrides the builtin. Malformed user files are skipped with
+  a warning rather than breaking the listing — `scheme show` still
+  errors loud on a malformed exact-name match. SkaterWeights and
+  GoalieWeights gain `#[serde(default)]` so partial schemes (only set
+  the stats you score) parse without listing every field. 5 L0 tests
+  cover the round-trip, override priority, builtin fallback, malformed
+  skip, and empty-dir paths (using a process-global Mutex to serialize
+  HOME-env mutations).
 - Phase 8f.8: `icelines data verify [SEASON|--all]` checks SHA-256
   hashes of installed bundle files against a manifest written at
   install time. Catches partial downloads and post-install tampering.

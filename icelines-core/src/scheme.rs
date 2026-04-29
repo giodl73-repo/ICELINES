@@ -9,6 +9,7 @@ use std::collections::HashMap;
 // ── Weights ───────────────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct SkaterWeights {
     pub goals: f32,
     pub assists: f32,
@@ -50,6 +51,7 @@ impl Default for SkaterWeights {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct GoalieWeights {
     pub wins: f32,
     pub losses: f32,
