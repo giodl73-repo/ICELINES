@@ -1,6 +1,7 @@
 //! Phase 5A–5B query engine: icelines query leaders / player / compare
 
-use crate::commands::players::load_all_players;
+// Phase 8f: query commands now use load_all_players_for_season for the
+// optional --season override. The unconditional helper is no longer needed.
 use crate::config::Config;
 use anyhow::{bail, Context};
 use icelines_core::{
@@ -276,6 +277,8 @@ pub struct LeadersArgs {
     pub expiry_year: Option<u16>,
     /// Aggregate stats across this many bundled seasons (1 = current only)
     pub seasons: u8,
+    /// Specific historical season override (Phase 8f). Conflicts with `seasons > 1`.
+    pub season: Option<String>,
     pub sort: String,
     pub top: usize,
     pub rate: bool,
@@ -289,11 +292,20 @@ pub struct LeadersArgs {
 pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
     let metric = SortMetric::parse(&args.sort)?;
 
-    // Load player pool — single season or N-season aggregate
+    // Phase 8f: --season overrides default; --season + --seasons > 1 is ambiguous.
+    if args.season.is_some() && args.seasons > 1 {
+        anyhow::bail!(
+            "--season and --seasons N > 1 are mutually exclusive.\n  \
+             Use --season YYYYZZZZ for a single historical season,\n  \
+             or --seasons N for an N-season aggregate of recent seasons."
+        );
+    }
+
+    // Load player pool — single season (default or overridden) or N-season aggregate.
     let all_players: Vec<Player> = if args.seasons > 1 {
         aggregate::load_aggregate_players(args.seasons as usize)
     } else {
-        load_all_players()?
+        crate::commands::players::load_all_players_for_season(args.season.as_deref())?
     };
 
     let mut filter = PlayerFilter::new();
@@ -551,8 +563,9 @@ pub async fn run_player(
     breakdown: String,
     percentiles: bool,
     last_n: Option<u32>,
+    season: Option<String>,
 ) -> anyhow::Result<()> {
-    let players = load_all_players()?;
+    let players = crate::commands::players::load_all_players_for_season(season.as_deref())?;
     let p = find_player(&players, &name)?;
 
     let age = age_str(p);
@@ -691,8 +704,9 @@ pub async fn run_compare(
     player2: Option<String>,
     similar: Option<usize>,
     _by: String,
+    season: Option<String>,
 ) -> anyhow::Result<()> {
-    let players = load_all_players()?;
+    let players = crate::commands::players::load_all_players_for_season(season.as_deref())?;
 
     if let Some(n) = similar {
         run_similar(&players, &player1, n)
