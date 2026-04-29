@@ -20,14 +20,16 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             season,
             refresh,
             dry_run,
-        } => do_stats(&season, refresh, dry_run).await,
+            chunked,
+        } => do_stats(&season, refresh, dry_run, chunked).await,
         FetchSubcommand::All {
             season,
             refresh,
             dry_run,
+            chunked,
         } => {
             do_rosters(&season, refresh, dry_run).await?;
-            do_stats(&season, refresh, dry_run).await?;
+            do_stats(&season, refresh, dry_run, chunked).await?;
             // Contracts are best-effort — don't fail the whole fetch if they fail
             if let Err(e) = do_contracts(&season, dry_run).await {
                 eprintln!("Warning: contract fetch failed (non-fatal): {e}");
@@ -105,7 +107,7 @@ async fn do_rosters(season: &str, refresh: bool, dry_run: bool) -> anyhow::Resul
     Ok(())
 }
 
-async fn do_stats(season: &str, refresh: bool, dry_run: bool) -> anyhow::Result<()> {
+async fn do_stats(season: &str, refresh: bool, dry_run: bool, chunked: bool) -> anyhow::Result<()> {
     let cfg = Config::load()?;
     let store = SnapshotStore::new(cfg.snapshot_dir());
     let client = NhlApiClient::production();
@@ -116,6 +118,9 @@ async fn do_stats(season: &str, refresh: bool, dry_run: bool) -> anyhow::Result<
         println!("Would fetch: /stats/rest/en/skater/bios?seasonId={season}");
         println!("Would fetch: /stats/rest/en/skater/summary?seasonId={season}");
         println!("Would fetch: /stats/rest/en/skater/realtime?seasonId={season}");
+        if chunked {
+            println!("Would write per-player chunks (--chunked) instead of single JSON files.");
+        }
         return Ok(());
     }
 
@@ -145,14 +150,6 @@ async fn do_stats(season: &str, refresh: bool, dry_run: bool) -> anyhow::Result<
         .await
         .context("fetching bios")?;
     println!("  {} players", bios.len());
-    store
-        .write_file(
-            &snap,
-            &SnapshotTier::Stats,
-            "bios.json",
-            &serde_json::to_vec(&bios).context("serializing bios")?,
-        )
-        .context("writing bios")?;
 
     println!("Fetching stats...");
     let stats = client
@@ -160,14 +157,37 @@ async fn do_stats(season: &str, refresh: bool, dry_run: bool) -> anyhow::Result<
         .await
         .context("fetching stats")?;
     println!("  {} players", stats.len());
-    store
-        .write_file(
-            &snap,
-            &SnapshotTier::Stats,
-            "stats.json",
-            &serde_json::to_vec(&stats).context("serializing stats")?,
-        )
-        .context("writing stats")?;
+
+    if chunked {
+        // Phase 8h: per-player content-addressed chunks. Daily snapshots
+        // share unchanged player records — typical reuse is 95%+.
+        let cm = store
+            .write_chunked_stats(&snap, &bios, &stats)
+            .context("writing chunked bios+stats")?;
+        println!(
+            "  Wrote {} bio + {} stats chunks (chunked layout — Phase 8h).",
+            cm.bios.len(),
+            cm.stats.len(),
+        );
+    } else {
+        // Legacy file-per-tier layout. Larger but simpler to inspect with `cat`.
+        store
+            .write_file(
+                &snap,
+                &SnapshotTier::Stats,
+                "bios.json",
+                &serde_json::to_vec(&bios).context("serializing bios")?,
+            )
+            .context("writing bios")?;
+        store
+            .write_file(
+                &snap,
+                &SnapshotTier::Stats,
+                "stats.json",
+                &serde_json::to_vec(&stats).context("serializing stats")?,
+            )
+            .context("writing stats")?;
+    }
 
     println!("Fetching realtime stats...");
     let realtime = client

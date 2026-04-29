@@ -361,6 +361,29 @@ fn l2_cmd_snapshot_rebuild_requires_chunked_flag() {
 }
 
 #[test]
+fn l2_cmd_fetch_stats_dry_run_chunked_mentions_chunks() {
+    // --chunked + --dry-run should not hit the network; output must mention chunks.
+    let out = run(&["fetch", "stats", "--dry-run", "--chunked"]);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(!stderr.contains("panicked at"));
+    assert!(out.status.success(), "fetch --dry-run must exit 0, stderr: {stderr}");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("chunks"),
+        "dry-run with --chunked must mention chunked layout, got stdout:\n{stdout}",
+    );
+}
+
+#[test]
+fn l2_cmd_fetch_all_accepts_chunked_flag() {
+    // Just clap-parsing: --chunked must be accepted on `fetch all` too.
+    let out = run(&["fetch", "all", "--dry-run", "--chunked"]);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(!stderr.contains("panicked at"));
+    assert!(out.status.success(), "fetch all --dry-run --chunked must exit 0, stderr: {stderr}");
+}
+
+#[test]
 fn l2_cmd_tui_help_exits_zero() {
     let out = run(&["tui", "--help"]);
     assert!(out.status.success(), "tui --help must exit 0");
