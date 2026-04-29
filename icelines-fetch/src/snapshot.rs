@@ -395,6 +395,10 @@ impl SnapshotStore {
     pub fn verify(&self, name: &str) -> Result<Vec<String>, SnapshotError> {
         let meta = self.load_meta(name)?;
         let mut failures = Vec::new();
+
+        // Legacy file-per-tier integrity: walk meta.integrity and re-hash
+        // each tracked file. Chunked snapshots have an empty integrity map
+        // (the filename IS the hash), so this loop is a no-op for them.
         for (rel, expected) in &meta.integrity {
             let path = self.snapshot_dir(name).join(rel);
             if !path.exists() {
@@ -407,6 +411,36 @@ impl SnapshotStore {
                 failures.push(format!("CORRUPT: {rel} (expected {expected}, got {got})"));
             }
         }
+
+        // Phase 8h: chunked layout integrity. Walks chunked.json and reads
+        // every referenced chunk through ChunkStore::get, which re-hashes
+        // the bytes against the expected hash (the filename). Catches both
+        // missing chunks and bit-rot of chunk files.
+        if self.is_chunked(name) {
+            let cm    = self.load_chunked_manifest(name)?;
+            let store = self.chunk_store();
+            for (player_id, hash) in cm.bios.iter().chain(cm.stats.iter()) {
+                match store.get(hash) {
+                    Ok(_) => {}
+                    Err(crate::error::FetchError::MissingChunk { hash }) => {
+                        failures.push(format!(
+                            "MISSING CHUNK: bios/stats for player {player_id} → {hash}"
+                        ));
+                    }
+                    Err(crate::error::FetchError::IntegrityViolation { expected, actual }) => {
+                        failures.push(format!(
+                            "CORRUPT CHUNK: player {player_id} (expected {expected}, got {actual})"
+                        ));
+                    }
+                    Err(other) => {
+                        failures.push(format!(
+                            "CHUNK ERROR: player {player_id} → {other}"
+                        ));
+                    }
+                }
+            }
+        }
+
         Ok(failures)
     }
 
@@ -1088,6 +1122,57 @@ mod tests {
         // Refs not double-incremented
         let refs = store.load_refs().unwrap();
         for c in refs.counts.values() { assert_eq!(*c, 1); }
+    }
+
+    #[test]
+    fn l0_chunked_snapshot_verify_clean_returns_no_failures() {
+        let (_dir, store) = store();
+        store.create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25").unwrap();
+        let bios = vec![fixture_bio(1, "A"), fixture_bio(2, "B")];
+        let stats = vec![fixture_stats(1, 10), fixture_stats(2, 20)];
+        store.write_chunked_stats("a", &bios, &stats).unwrap();
+
+        let failures = store.verify("a").unwrap();
+        assert!(failures.is_empty(), "clean chunked snapshot must verify, got: {failures:?}");
+    }
+
+    #[test]
+    fn l0_chunked_snapshot_verify_catches_corrupted_chunk() {
+        let (_dir, store) = store();
+        store.create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25").unwrap();
+        let bios = vec![fixture_bio(1, "A")];
+        let stats = vec![fixture_stats(1, 10)];
+        let cm = store.write_chunked_stats("a", &bios, &stats).unwrap();
+
+        // Corrupt the bio chunk: write garbage at its on-disk path.
+        let bio_hash = cm.bios.values().next().unwrap();
+        let bio_path = store.chunk_store().path_for(bio_hash);
+        std::fs::write(&bio_path, b"tampered bytes").unwrap();
+
+        let failures = store.verify("a").unwrap();
+        assert_eq!(failures.len(), 1, "exactly one failure expected, got {failures:?}");
+        assert!(failures[0].contains("CORRUPT CHUNK"),
+            "must classify as CORRUPT CHUNK, got: {}", failures[0]);
+        assert!(failures[0].contains(bio_hash),
+            "must mention the offending hash, got: {}", failures[0]);
+    }
+
+    #[test]
+    fn l0_chunked_snapshot_verify_catches_missing_chunk() {
+        let (_dir, store) = store();
+        store.create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25").unwrap();
+        let bios = vec![fixture_bio(1, "A")];
+        let stats = vec![fixture_stats(1, 10)];
+        let cm = store.write_chunked_stats("a", &bios, &stats).unwrap();
+
+        // Remove the stats chunk from the global store.
+        let stats_hash = cm.stats.values().next().unwrap();
+        store.chunk_store().delete(stats_hash).unwrap();
+
+        let failures = store.verify("a").unwrap();
+        assert_eq!(failures.len(), 1);
+        assert!(failures[0].contains("MISSING CHUNK"),
+            "must classify as MISSING CHUNK, got: {}", failures[0]);
     }
 
     #[test]
