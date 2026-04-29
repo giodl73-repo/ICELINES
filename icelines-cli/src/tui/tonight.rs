@@ -25,6 +25,12 @@ pub type TonightCache = Arc<Mutex<HashMap<String, TonightState>>>;
 /// stable when callers want to refer to "today" without computing a date.
 pub const TODAY_KEY: &str = "";
 
+/// User-facing error message stored in the cache when live feeds are
+/// disabled (Phase 8f.1). Same wording across all live tabs.
+pub(crate) const LIVE_DISABLED_MSG: &str =
+    "Live feeds disabled — re-enable with `--no-live=false`, unset \
+     ICELINES_NO_LIVE, or set `live = true` in ~/.icelines/config.toml";
+
 pub fn new_cache() -> TonightCache {
     Arc::new(Mutex::new(HashMap::new()))
 }
@@ -33,6 +39,11 @@ pub fn new_cache() -> TonightCache {
 /// fetched via `/v1/schedule/now`. Any other value is interpreted as
 /// `YYYY-MM-DD` and fetched via `/v1/schedule/{date}`.
 pub fn maybe_fetch(cache: TonightCache, date_key: String) {
+    if !crate::config::live_feeds_enabled() {
+        cache.lock().unwrap()
+            .insert(date_key, TonightState::Error(LIVE_DISABLED_MSG.to_owned()));
+        return;
+    }
     {
         let mut map = cache.lock().unwrap();
         match map.get(&date_key) {
@@ -64,6 +75,11 @@ pub fn maybe_fetch(cache: TonightCache, date_key: String) {
 
 /// Force-refetch even if the cache has data (used by the `r` key).
 pub fn force_fetch(cache: TonightCache, date_key: String) {
+    if !crate::config::live_feeds_enabled() {
+        cache.lock().unwrap()
+            .insert(date_key, TonightState::Error(LIVE_DISABLED_MSG.to_owned()));
+        return;
+    }
     cache.lock().unwrap().insert(date_key.clone(), TonightState::Loading);
     if tokio::runtime::Handle::try_current().is_err() {
         return;
@@ -108,6 +124,11 @@ pub fn new_boxscore_cache() -> BoxscoreCache {
 }
 
 pub fn maybe_fetch_boxscore(cache: BoxscoreCache, game_id: u64) {
+    if !crate::config::live_feeds_enabled() {
+        cache.lock().unwrap()
+            .insert(game_id, BoxscoreState::Error(LIVE_DISABLED_MSG.to_owned()));
+        return;
+    }
     {
         let mut map = cache.lock().unwrap();
         match map.get(&game_id) {

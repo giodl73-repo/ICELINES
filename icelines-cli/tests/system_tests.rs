@@ -416,6 +416,28 @@ fn l2_cmd_export_md_fantasy_returns_deferred_message() {
     assert!(stderr.contains("deferred"), "error must explain why fantasy is deferred");
 }
 
+// ── L2: live-feeds toggle (Phase 8f.1) ────────────────────────────────────────
+
+#[test]
+fn l2_cmd_no_live_flag_is_accepted_globally() {
+    // The flag attaches to any subcommand because it's declared global.
+    let out = run(&["--no-live", "schedule", "--days", "1"]);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(!stderr.contains("panicked at"));
+    assert!(!stderr.contains("error: unexpected argument"),
+        "--no-live must be accepted as a global flag, got stderr:\n{stderr}");
+}
+
+#[test]
+fn l2_cmd_no_live_help_mentions_flag() {
+    // Top-level --help must document the flag so users can discover it.
+    let out = run(&["--help"]);
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("--no-live"),
+        "--help must document --no-live, got:\n{stdout}");
+}
+
 #[test]
 fn l2_cmd_tui_help_exits_zero() {
     let out = run(&["tui", "--help"]);
