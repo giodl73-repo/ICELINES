@@ -246,41 +246,47 @@ impl NhlApiClient {
     /// Returns all games with their calendar date attached.
     pub async fn fetch_today_schedule(&self) -> Result<Vec<ScheduledGame>, FetchError> {
         let url = format!("{}/schedule/now", self.base_web);
-        let raw: serde_json::Value = self.get_json(&url).await?;
+        self.fetch_schedule_url(&url).await
+    }
 
+    /// Fetch the gameWeek starting at a specific date (YYYY-MM-DD).
+    /// Returns up to 7 days of games beginning from that date.
+    pub async fn fetch_schedule_for_date(&self, date: &str) -> Result<Vec<ScheduledGame>, FetchError> {
+        let url = format!("{}/schedule/{}", self.base_web, date);
+        self.fetch_schedule_url(&url).await
+    }
+
+    /// Fetch the full season schedule for one team via
+    /// `/v1/club-schedule-season/{team}/{season}`.
+    pub async fn fetch_team_season_schedule(
+        &self,
+        team: &str,
+        season: &str,
+    ) -> Result<Vec<ScheduledGame>, FetchError> {
+        let url = format!("{}/club-schedule-season/{team}/{season}", self.base_web);
+        let raw: serde_json::Value = self.get_json(&url).await?;
+        let mut games = Vec::new();
+        if let Some(arr) = raw["games"].as_array() {
+            for g in arr {
+                if let Some(parsed) = parse_game(g, None) {
+                    games.push(parsed);
+                }
+            }
+        }
+        Ok(games)
+    }
+
+    /// Internal helper: parse the gameWeek-shaped response at `url`.
+    async fn fetch_schedule_url(&self, url: &str) -> Result<Vec<ScheduledGame>, FetchError> {
+        let raw: serde_json::Value = self.get_json(url).await?;
         let mut games = Vec::new();
         if let Some(week) = raw["gameWeek"].as_array() {
             for day in week {
-                let date = day["date"].as_str().unwrap_or("").to_owned();
+                let date = day["date"].as_str().map(str::to_owned);
                 if let Some(day_games) = day["games"].as_array() {
                     for g in day_games {
-                        let game_id = g["id"].as_u64().unwrap_or(0);
-                        let away = g["awayTeam"]["abbrev"].as_str().unwrap_or("").to_owned();
-                        let away_name = g["awayTeam"]["placeName"]["default"]
-                            .as_str().unwrap_or(&away).to_owned();
-                        let home = g["homeTeam"]["abbrev"].as_str().unwrap_or("").to_owned();
-                        let home_name = g["homeTeam"]["placeName"]["default"]
-                            .as_str().unwrap_or(&home).to_owned();
-                        let start     = g["startTimeUTC"].as_str().unwrap_or("").to_owned();
-                        let game_type = g["gameType"].as_u64().unwrap_or(2) as u8;
-                        let ss        = &g["seriesSummary"];
-                        let series_game = ss["gameLabel"].as_str().map(str::to_owned);
-                        let away_wins   = ss["awayWins"].as_u64().map(|v| v as u8);
-                        let home_wins   = ss["homeWins"].as_u64().map(|v| v as u8);
-                        if game_id > 0 {
-                            games.push(ScheduledGame {
-                                game_id,
-                                date: date.clone(),
-                                game_type,
-                                away_abbrev: away,
-                                away_name,
-                                home_abbrev: home,
-                                home_name,
-                                start_time_utc: start,
-                                series_game,
-                                away_wins,
-                                home_wins,
-                            });
+                        if let Some(parsed) = parse_game(g, date.as_deref()) {
+                            games.push(parsed);
                         }
                     }
                 }
@@ -288,6 +294,55 @@ impl NhlApiClient {
         }
         Ok(games)
     }
+}
+
+/// Parse one game JSON object into a ScheduledGame.
+/// `fallback_date` is used when the date isn't on the game itself (gameWeek nests
+/// games under a date; club-schedule-season puts `gameDate` on the game).
+fn parse_game(g: &serde_json::Value, fallback_date: Option<&str>) -> Option<ScheduledGame> {
+    let game_id = g["id"].as_u64().unwrap_or(0);
+    if game_id == 0 {
+        return None;
+    }
+    let date = g["gameDate"].as_str()
+        .map(str::to_owned)
+        .or_else(|| fallback_date.map(str::to_owned))
+        .unwrap_or_default();
+
+    let away      = g["awayTeam"]["abbrev"].as_str().unwrap_or("").to_owned();
+    let away_name = g["awayTeam"]["placeName"]["default"].as_str().unwrap_or(&away).to_owned();
+    let home      = g["homeTeam"]["abbrev"].as_str().unwrap_or("").to_owned();
+    let home_name = g["homeTeam"]["placeName"]["default"].as_str().unwrap_or(&home).to_owned();
+    let start     = g["startTimeUTC"].as_str().unwrap_or("").to_owned();
+    let game_type = g["gameType"].as_u64().unwrap_or(2) as u8;
+
+    let away_score = g["awayTeam"]["score"].as_u64().map(|v| v as u8);
+    let home_score = g["homeTeam"]["score"].as_u64().map(|v| v as u8);
+    let game_state = g["gameState"].as_str().map(str::to_owned);
+    let last_period = g["gameOutcome"]["lastPeriodType"].as_str().map(str::to_owned);
+
+    let ss = &g["seriesSummary"];
+    let series_game = ss["gameLabel"].as_str().map(str::to_owned);
+    let away_wins   = ss["awayWins"].as_u64().map(|v| v as u8);
+    let home_wins   = ss["homeWins"].as_u64().map(|v| v as u8);
+
+    Some(ScheduledGame {
+        game_id,
+        date,
+        game_type,
+        away_abbrev: away,
+        away_name,
+        home_abbrev: home,
+        home_name,
+        start_time_utc: start,
+        away_score,
+        home_score,
+        game_state,
+        last_period,
+        series_game,
+        away_wins,
+        home_wins,
+    })
 }
 
 #[derive(Debug, Clone)]
@@ -300,6 +355,11 @@ pub struct ScheduledGame {
     pub home_abbrev:     String,
     pub home_name:       String,
     pub start_time_utc:  String,
+    // Result fields — populated for completed/live games
+    pub away_score:      Option<u8>,
+    pub home_score:      Option<u8>,
+    pub game_state:      Option<String>,  // "FUT","PRE","LIVE","CRIT","FINAL","OFF"
+    pub last_period:     Option<String>,  // "REG","OT","SO" (when final)
     // Playoff series context (game_type == 3 only)
     pub series_game:     Option<String>,  // e.g. "Game 4"
     pub away_wins:       Option<u8>,
@@ -309,11 +369,394 @@ pub struct ScheduledGame {
 impl ScheduledGame {
     pub fn is_playoff(&self) -> bool { self.game_type == 3 }
 
+    /// True once the game has ended (FINAL or OFF).
+    pub fn is_final(&self) -> bool {
+        matches!(self.game_state.as_deref(), Some("FINAL") | Some("OFF"))
+    }
+
+    /// True if the game is in progress (LIVE or CRIT).
+    pub fn is_live(&self) -> bool {
+        matches!(self.game_state.as_deref(), Some("LIVE") | Some("CRIT"))
+    }
+
+    /// True if the game involves the given team (case-sensitive uppercase abbrev).
+    pub fn involves(&self, abbrev: &str) -> bool {
+        self.away_abbrev == abbrev || self.home_abbrev == abbrev
+    }
+
     /// "EDM 2 – VGK 1 · Game 4" style label for playoffs.
     pub fn series_label(&self) -> Option<String> {
         let gm = self.series_game.as_deref()?;
         let aw = self.away_wins?;
         let hw = self.home_wins?;
         Some(format!("{} {aw}–{hw} {} · {gm}", self.away_abbrev, self.home_abbrev))
+    }
+}
+
+// ── Boxscore types (Phase 7c gap-fix) ─────────────────────────────────────────
+
+/// One goal scored in a game.
+#[derive(Debug, Clone)]
+pub struct Goal {
+    pub period:        u8,        // 1, 2, 3, OT=4+
+    pub period_type:   String,    // "REG" | "OT" | "SO"
+    pub time_in_period:String,    // "MM:SS"
+    pub scorer_name:   String,
+    pub scorer_team:   String,    // home/away abbrev
+    pub assist1_name:  Option<String>,
+    pub assist2_name:  Option<String>,
+    pub away_score:    u8,
+    pub home_score:    u8,
+}
+
+/// Goalie line for one team's starting goalie in a game.
+#[derive(Debug, Clone)]
+pub struct GoalieLine {
+    pub player_name: String,
+    pub team_abbrev: String,
+    pub saves:       u32,
+    pub shots:       u32,
+    pub decision:    Option<String>, // "W" | "L" | "OTL" | None
+}
+
+/// Detailed boxscore for one game.
+#[derive(Debug, Clone)]
+pub struct Boxscore {
+    pub game_id:        u64,
+    pub away_abbrev:    String,
+    pub home_abbrev:    String,
+    pub away_score:     u8,
+    pub home_score:     u8,
+    pub game_state:     Option<String>,
+    pub last_period:    Option<String>,
+    pub goals:          Vec<Goal>,
+    pub goalies:        Vec<GoalieLine>,
+}
+
+impl NhlApiClient {
+    /// Fetch the boxscore for one game from `/v1/gamecenter/{id}/boxscore`.
+    pub async fn fetch_boxscore(&self, game_id: u64) -> Result<Boxscore, FetchError> {
+        let url = format!("{}/gamecenter/{game_id}/boxscore", self.base_web);
+        let raw: serde_json::Value = self.get_json(&url).await?;
+        Ok(parse_boxscore(&raw, game_id))
+    }
+}
+
+/// Defensive boxscore parser. NHL's boxscore endpoint shape varies — this
+/// accepts the common forms and silently drops fields it doesn't recognize.
+pub fn parse_boxscore(raw: &serde_json::Value, game_id: u64) -> Boxscore {
+    let away_abbrev = raw["awayTeam"]["abbrev"].as_str().unwrap_or("").to_owned();
+    let home_abbrev = raw["homeTeam"]["abbrev"].as_str().unwrap_or("").to_owned();
+    let away_score  = raw["awayTeam"]["score"].as_u64().unwrap_or(0) as u8;
+    let home_score  = raw["homeTeam"]["score"].as_u64().unwrap_or(0) as u8;
+    let game_state  = raw["gameState"].as_str().map(str::to_owned);
+    let last_period = raw["gameOutcome"]["lastPeriodType"].as_str().map(str::to_owned);
+
+    // Goals — try a few common nesting paths
+    let mut goals = Vec::new();
+    let goal_arrays: Vec<&serde_json::Value> = if let Some(arr) = raw["summary"]["scoring"].as_array() {
+        // Newer endpoint: summary.scoring is array of period blocks; each has "goals"
+        arr.iter().collect()
+    } else if let Some(arr) = raw["scoring"].as_array() {
+        arr.iter().collect()
+    } else {
+        Vec::new()
+    };
+
+    for period_block in goal_arrays {
+        let period_num = period_block["periodDescriptor"]["number"].as_u64()
+            .or_else(|| period_block["period"].as_u64())
+            .unwrap_or(0) as u8;
+        let period_type = period_block["periodDescriptor"]["periodType"].as_str()
+            .or_else(|| period_block["periodType"].as_str())
+            .unwrap_or("REG")
+            .to_owned();
+
+        if let Some(g_arr) = period_block["goals"].as_array() {
+            for g in g_arr {
+                let scorer_name = g["firstName"]["default"].as_str()
+                    .map(|fn_| {
+                        let ln = g["lastName"]["default"].as_str().unwrap_or("");
+                        format!("{fn_} {ln}").trim().to_owned()
+                    })
+                    .or_else(|| g["name"]["default"].as_str().map(str::to_owned))
+                    .or_else(|| g["scorer"].as_str().map(str::to_owned))
+                    .unwrap_or_default();
+                let scorer_team = g["teamAbbrev"]["default"].as_str()
+                    .or_else(|| g["teamAbbrev"].as_str())
+                    .unwrap_or("")
+                    .to_owned();
+                let time_in_period = g["timeInPeriod"].as_str()
+                    .or_else(|| g["time"].as_str())
+                    .unwrap_or("")
+                    .to_owned();
+
+                // Assists: prefer structured array
+                let mut assists: Vec<String> = Vec::new();
+                if let Some(arr) = g["assists"].as_array() {
+                    for a in arr {
+                        if let Some(name) = a["name"]["default"].as_str() {
+                            assists.push(name.to_owned());
+                        } else if let (Some(fnm), Some(lnm)) = (
+                            a["firstName"]["default"].as_str(),
+                            a["lastName"]["default"].as_str(),
+                        ) {
+                            assists.push(format!("{fnm} {lnm}"));
+                        }
+                    }
+                }
+                let assist1_name = assists.first().cloned();
+                let assist2_name = assists.get(1).cloned();
+
+                let aw_score = g["awayScore"].as_u64().unwrap_or(0) as u8;
+                let hm_score = g["homeScore"].as_u64().unwrap_or(0) as u8;
+
+                goals.push(Goal {
+                    period:         period_num,
+                    period_type:    period_type.clone(),
+                    time_in_period,
+                    scorer_name,
+                    scorer_team,
+                    assist1_name,
+                    assist2_name,
+                    away_score:     aw_score,
+                    home_score:     hm_score,
+                });
+            }
+        }
+    }
+
+    // Goalies — try common shapes: playerByGameStats.{home,away}Team.goalies / boxscore.goalies
+    let mut goalies = Vec::new();
+    let goalie_paths = [
+        (&raw["playerByGameStats"]["awayTeam"]["goalies"], away_abbrev.as_str()),
+        (&raw["playerByGameStats"]["homeTeam"]["goalies"], home_abbrev.as_str()),
+        (&raw["boxscore"]["awayTeam"]["goalies"],          away_abbrev.as_str()),
+        (&raw["boxscore"]["homeTeam"]["goalies"],          home_abbrev.as_str()),
+    ];
+    for (val, team) in goalie_paths {
+        if let Some(arr) = val.as_array() {
+            for g in arr {
+                let player_name = g["name"]["default"].as_str()
+                    .map(str::to_owned)
+                    .or_else(|| {
+                        let fnm = g["firstName"]["default"].as_str()?;
+                        let lnm = g["lastName"]["default"].as_str().unwrap_or("");
+                        Some(format!("{fnm} {lnm}").trim().to_owned())
+                    })
+                    .unwrap_or_default();
+                let saves = g["saves"].as_u64().unwrap_or(0) as u32;
+                let shots = g["shotsAgainst"].as_u64()
+                    .or_else(|| g["shots"].as_u64())
+                    .unwrap_or(0) as u32;
+                let decision = g["decision"].as_str().map(str::to_owned);
+                if !player_name.is_empty() {
+                    goalies.push(GoalieLine {
+                        player_name,
+                        team_abbrev: team.to_owned(),
+                        saves, shots, decision,
+                    });
+                }
+            }
+        }
+    }
+
+    Boxscore {
+        game_id, away_abbrev, home_abbrev,
+        away_score, home_score, game_state, last_period,
+        goals, goalies,
+    }
+}
+
+// ── Playoff bracket types (Phase 7e) ──────────────────────────────────────────
+
+/// One series in a playoff round.
+#[derive(Debug, Clone)]
+pub struct PlayoffSeries {
+    pub letter:             Option<String>, // e.g. "A" — used as a stable key
+    pub top_seed_abbrev:    String,
+    pub top_seed_name:      String,
+    pub top_seed_wins:      u8,
+    pub top_seed_rank:      Option<String>, // e.g. "A1", "WC1"
+    pub bottom_seed_abbrev: String,
+    pub bottom_seed_name:   String,
+    pub bottom_seed_wins:   u8,
+    pub bottom_seed_rank:   Option<String>,
+    pub winner_abbrev:      Option<String>, // None until series concludes
+    pub conference:         Option<String>, // "Eastern" | "Western" | None
+}
+
+impl PlayoffSeries {
+    /// True when one side has 4 wins and the other has fewer.
+    pub fn is_complete(&self) -> bool {
+        self.top_seed_wins == 4 || self.bottom_seed_wins == 4
+    }
+
+    /// Total number of games played so far in the series.
+    pub fn games_played(&self) -> u8 {
+        self.top_seed_wins + self.bottom_seed_wins
+    }
+
+    /// One-line summary like "FLA 4-2 TBL · FLA wins" (or "tied 2-2", "FLA leads 3-1").
+    pub fn summary(&self) -> String {
+        let (t, b) = (self.top_seed_wins, self.bottom_seed_wins);
+        if let Some(w) = &self.winner_abbrev {
+            format!("{} {t}-{b} {} · {w} wins", self.top_seed_abbrev, self.bottom_seed_abbrev)
+        } else if t > b {
+            format!("{} leads {t}-{b}", self.top_seed_abbrev)
+        } else if b > t {
+            format!("{} leads {b}-{t}", self.bottom_seed_abbrev)
+        } else if t == 0 {
+            format!("{} vs {} · series begins", self.top_seed_abbrev, self.bottom_seed_abbrev)
+        } else {
+            format!("Tied {t}-{b}")
+        }
+    }
+}
+
+/// One round of a playoff bracket.
+#[derive(Debug, Clone)]
+pub struct PlayoffRound {
+    pub round_number: u8,    // 1..=4
+    pub label:        String, // "First Round", "Second Round", "Conf Final", "Stanley Cup Final"
+    pub series:       Vec<PlayoffSeries>,
+}
+
+/// Full playoff bracket for one season.
+#[derive(Debug, Clone)]
+pub struct PlayoffBracket {
+    pub season:        String,
+    pub current_round: Option<u8>,
+    pub rounds:        Vec<PlayoffRound>,
+}
+
+impl PlayoffBracket {
+    /// Find a series by its letter (e.g. "A").
+    pub fn find_series(&self, letter: &str) -> Option<&PlayoffSeries> {
+        for r in &self.rounds {
+            for s in &r.series {
+                if s.letter.as_deref() == Some(letter) {
+                    return Some(s);
+                }
+            }
+        }
+        None
+    }
+
+    /// True if every round is empty (no series yet — pre-playoffs / off-season).
+    pub fn is_empty(&self) -> bool {
+        self.rounds.iter().all(|r| r.series.is_empty())
+    }
+}
+
+impl NhlApiClient {
+    /// Fetch the playoff bracket for a given playoff year (the second year of the
+    /// season; e.g. for season 2025-26 the year is 2026).
+    pub async fn fetch_playoff_bracket(&self, year: u16) -> Result<PlayoffBracket, FetchError> {
+        let url = format!("{}/playoff-bracket/{year}", self.base_web);
+        let raw: serde_json::Value = self.get_json(&url).await?;
+        Ok(parse_playoff_bracket(&raw))
+    }
+}
+
+/// Parse a playoff-bracket JSON payload. Defensively accepts the shape NHL's
+/// API has historically used (`series` list grouped by `playoffRounds`) and
+/// extracts the fields we render. Unknown fields are silently dropped.
+pub fn parse_playoff_bracket(raw: &serde_json::Value) -> PlayoffBracket {
+    let season = raw["season"].as_str()
+        .or_else(|| raw["seasonId"].as_str())
+        .map(str::to_owned)
+        .unwrap_or_default();
+    let current_round = raw["currentRound"].as_u64()
+        .or_else(|| raw["roundNumber"].as_u64())
+        .map(|v| v as u8);
+
+    let mut rounds = Vec::new();
+    let round_arrays = raw["playoffRounds"].as_array()
+        .or_else(|| raw["rounds"].as_array());
+    if let Some(arr) = round_arrays {
+        for r in arr {
+            let round_number = r["roundNumber"].as_u64().unwrap_or(0) as u8;
+            let label = r["roundLabel"].as_str()
+                .or_else(|| r["roundName"].as_str())
+                .map(str::to_owned)
+                .unwrap_or_else(|| match round_number {
+                    1 => "First Round".to_owned(),
+                    2 => "Second Round".to_owned(),
+                    3 => "Conference Final".to_owned(),
+                    4 => "Stanley Cup Final".to_owned(),
+                    _ => format!("Round {round_number}"),
+                });
+            let mut series = Vec::new();
+            if let Some(s_arr) = r["series"].as_array() {
+                for s in s_arr {
+                    series.push(parse_series(s));
+                }
+            }
+            rounds.push(PlayoffRound { round_number, label, series });
+        }
+    }
+
+    rounds.sort_by_key(|r| r.round_number);
+    PlayoffBracket { season, current_round, rounds }
+}
+
+fn parse_series(s: &serde_json::Value) -> PlayoffSeries {
+    let letter = s["seriesLetter"].as_str()
+        .or_else(|| s["seriesAbbrev"].as_str())
+        .map(str::to_owned);
+
+    let top    = &s["topSeedTeam"];
+    let bottom = &s["bottomSeedTeam"];
+
+    let top_abbrev = top["abbrev"].as_str().unwrap_or("").to_owned();
+    let top_name   = top["name"]["default"].as_str()
+        .or_else(|| top["placeName"]["default"].as_str())
+        .unwrap_or(&top_abbrev).to_owned();
+    let top_wins   = top["wins"].as_u64().unwrap_or(0) as u8;
+    let top_rank   = top["seed"].as_str()
+        .or_else(|| s["topSeedRank"].as_str())
+        .or_else(|| s["topSeedRankAbbrev"].as_str())
+        .map(str::to_owned);
+
+    let bot_abbrev = bottom["abbrev"].as_str().unwrap_or("").to_owned();
+    let bot_name   = bottom["name"]["default"].as_str()
+        .or_else(|| bottom["placeName"]["default"].as_str())
+        .unwrap_or(&bot_abbrev).to_owned();
+    let bot_wins   = bottom["wins"].as_u64().unwrap_or(0) as u8;
+    let bot_rank   = bottom["seed"].as_str()
+        .or_else(|| s["bottomSeedRank"].as_str())
+        .or_else(|| s["bottomSeedRankAbbrev"].as_str())
+        .map(str::to_owned);
+
+    // Winner: explicit field or inferred from 4-win threshold
+    let winner_abbrev = s["winningTeam"]["abbrev"].as_str()
+        .map(str::to_owned)
+        .or_else(|| {
+            if top_wins == 4 { Some(top_abbrev.clone()) }
+            else if bot_wins == 4 { Some(bot_abbrev.clone()) }
+            else { None }
+        });
+
+    let conference = s["conferenceAbbrev"].as_str()
+        .or_else(|| s["conference"].as_str())
+        .map(|c| match c {
+            "E" | "EAST" | "Eastern" => "Eastern".to_owned(),
+            "W" | "WEST" | "Western" => "Western".to_owned(),
+            other => other.to_owned(),
+        });
+
+    PlayoffSeries {
+        letter,
+        top_seed_abbrev:    top_abbrev,
+        top_seed_name:      top_name,
+        top_seed_wins:      top_wins,
+        top_seed_rank:      top_rank,
+        bottom_seed_abbrev: bot_abbrev,
+        bottom_seed_name:   bot_name,
+        bottom_seed_wins:   bot_wins,
+        bottom_seed_rank:   bot_rank,
+        winner_abbrev,
+        conference,
     }
 }

@@ -98,32 +98,45 @@ async fn fetch_and_dither_braille(url: &str, out_cols: u32, out_rows: u32) -> an
         image::Luma([stretched])
     });
 
-    // Braille dot layout (Unicode braille bit positions):
-    //   dot 1 (bit 0) = (0,0)    dot 4 (bit 3) = (1,0)
-    //   dot 2 (bit 1) = (0,1)    dot 5 (bit 4) = (1,1)
-    //   dot 3 (bit 2) = (0,2)    dot 6 (bit 5) = (1,2)
-    //   dot 7 (bit 6) = (0,3)    dot 8 (bit 7) = (1,3)
-    const DOT_X: [u32; 8] = [0, 0, 0, 1, 1, 1, 0, 1];
-    const DOT_Y: [u32; 8] = [0, 1, 2, 0, 1, 2, 3, 3];
-    const THRESHOLD: u8 = 128;
-
     let out: Vec<String> = (0..out_rows).map(|row| {
         (0..out_cols).map(|col| {
             let px = col * 2;
             let py = row * 4;
-            let mut bits: u8 = 0;
-            for dot in 0..8u8 {
-                let x = px + DOT_X[dot as usize];
-                let y = py + DOT_Y[dot as usize];
+            let mut dots = [false; 8];
+            for dot in 0..8usize {
+                let x = px + DOT_X[dot];
+                let y = py + DOT_Y[dot];
                 if x < img_w && y < img_h && enhanced.get_pixel(x, y)[0] >= THRESHOLD {
-                    bits |= 1 << dot;
+                    dots[dot] = true;
                 }
             }
-            char::from_u32(0x2800 + bits as u32).unwrap_or(' ')
+            pixels_to_braille(dots)
         }).collect()
     }).collect();
 
     Ok(out)
+}
+
+// ── Pure dither helpers (testable) ────────────────────────────────────────────
+
+/// Braille dot layout — Unicode braille bit positions (U+2800–U+28FF).
+///   dot 1 (bit 0) = (0,0)    dot 4 (bit 3) = (1,0)
+///   dot 2 (bit 1) = (0,1)    dot 5 (bit 4) = (1,1)
+///   dot 3 (bit 2) = (0,2)    dot 6 (bit 5) = (1,2)
+///   dot 7 (bit 6) = (0,3)    dot 8 (bit 7) = (1,3)
+pub(crate) const DOT_X: [u32; 8] = [0, 0, 0, 1, 1, 1, 0, 1];
+pub(crate) const DOT_Y: [u32; 8] = [0, 1, 2, 0, 1, 2, 3, 3];
+pub(crate) const THRESHOLD: u8   = 128;
+
+/// Encode a 2×4 pixel block as a braille character. The 8-bit input is
+/// indexed by dot number (0..8) per the canonical braille layout above —
+/// `true` lights that dot.
+pub(crate) fn pixels_to_braille(dots: [bool; 8]) -> char {
+    let mut bits: u8 = 0;
+    for (i, on) in dots.iter().enumerate() {
+        if *on { bits |= 1 << i; }
+    }
+    char::from_u32(0x2800 + bits as u32).unwrap_or(' ')
 }
 
 /// Team logo dither — block mode for clean high-contrast logos.
@@ -146,4 +159,104 @@ pub async fn fetch_logo_ascii(url: &str, out_cols: u32, out_rows: u32) -> anyhow
     }).collect();
 
     Ok(out)
+}
+
+#[cfg(test)]
+mod tests {
+    //! L0 tests for the headshot rendering pipeline (Phase 8a.3).
+    //! Network paths are not exercised — we test the pure dither encoder
+    //! and the in-memory cache.
+    use super::*;
+
+    // ── Braille encoding ─────────────────────────────────────────────────────
+
+    #[test]
+    fn l0_braille_dot_bit_layout_matches_unicode() {
+        // No dots → blank braille (U+2800)
+        assert_eq!(pixels_to_braille([false; 8]) as u32, 0x2800);
+        // All dots → full braille pattern (U+28FF)
+        assert_eq!(pixels_to_braille([true; 8]) as u32, 0x28FF);
+
+        // Each individual dot lights exactly the expected bit
+        for i in 0..8 {
+            let mut dots = [false; 8];
+            dots[i] = true;
+            let expected = 0x2800 + (1u32 << i);
+            assert_eq!(
+                pixels_to_braille(dots) as u32,
+                expected,
+                "dot {i} must encode to U+{expected:04X}",
+            );
+        }
+    }
+
+    #[test]
+    fn l0_threshold_dither_solid_black_sets_all_dots() {
+        // Convention: a "solid black" face on a dark terminal lights up the
+        // braille glyph — every dot shows. The dither does NOT apply contrast
+        // stretch in this isolated helper test; we just verify that when all
+        // 8 dot positions are above-threshold (encoded as `true`), the output
+        // is the fully-lit U+28FF.
+        assert_eq!(pixels_to_braille([true; 8]) as u32, 0x28FF);
+    }
+
+    #[test]
+    fn l0_threshold_dither_solid_white_clears_all_dots() {
+        // "Solid white" on a dark terminal (no ink) means no dots → blank.
+        assert_eq!(pixels_to_braille([false; 8]) as u32, 0x2800);
+    }
+
+    #[test]
+    fn l0_threshold_constant_is_midpoint() {
+        // Document the threshold contract — must remain at the 8-bit midpoint.
+        // Changing this value alters every rendered headshot.
+        assert_eq!(THRESHOLD, 128, "THRESHOLD constant changed — review headshot tone");
+    }
+
+    // ── Cache ────────────────────────────────────────────────────────────────
+
+    #[test]
+    fn l0_cache_get_set_roundtrip() {
+        let cache = HeadshotCache::new();
+        assert!(cache.get(8478402).is_none(), "fresh cache must miss");
+
+        let rows = vec!["row1".to_owned(), "row2".to_owned()];
+        cache.set(8478402, rows.clone());
+        assert_eq!(cache.get(8478402), Some(rows));
+
+        // Different id stays None
+        assert!(cache.get(99).is_none());
+
+        // Overwrite
+        let rows2 = vec!["fresh".to_owned()];
+        cache.set(8478402, rows2.clone());
+        assert_eq!(cache.get(8478402), Some(rows2));
+    }
+
+    #[test]
+    fn l0_is_loading_detects_placeholder() {
+        assert!(is_loading(&[LOADING_MARKER.to_owned()]));
+        // Real rendered content is never just one cell of the loading marker
+        assert!(!is_loading(&["row1".to_owned(), "row2".to_owned()]));
+        assert!(!is_loading(&[]));
+        assert!(!is_loading(&[ERROR_MARKER.to_owned()]));
+    }
+
+    #[test]
+    fn l0_is_error_detects_placeholder() {
+        assert!(is_error(&[ERROR_MARKER.to_owned()]));
+        assert!(!is_error(&[LOADING_MARKER.to_owned()]));
+        assert!(!is_error(&["fine".to_owned(), "row".to_owned()]));
+        assert!(!is_error(&[]));
+    }
+
+    #[test]
+    fn l0_cache_clone_shares_storage() {
+        // HeadshotCache::Clone returns an Arc-shared clone — writes from one
+        // are visible from the other (essential for the spawn_fetch task).
+        let a = HeadshotCache::new();
+        let b = a.clone();
+        a.set(42, vec!["row".to_owned()]);
+        assert_eq!(b.get(42), Some(vec!["row".to_owned()]));
+    }
 }

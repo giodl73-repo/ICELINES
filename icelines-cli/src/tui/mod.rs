@@ -2,6 +2,8 @@ pub mod app;
 pub mod event;
 pub mod headshot;
 pub mod loader;
+pub mod playoffs;
+pub mod schedule;
 pub mod screens;
 pub mod tonight;
 pub mod widgets;
@@ -47,6 +49,10 @@ async fn run_loop(
     loop {
         // Tick counter for spinner animation
         app.tick = app.tick.wrapping_add(1);
+
+        // Auto-refresh live Scores every 30s while the tab is active.
+        // Pure decision in App; this loop just calls it once per frame.
+        app.tick_auto_refresh();
 
         // Poll for loaded players
         if app.players.is_empty() {

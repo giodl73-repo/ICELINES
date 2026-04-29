@@ -273,6 +273,65 @@ fn l2_cmd_schedule_exits_zero() {
 }
 
 #[test]
+fn l2_cmd_schedule_team_filter_no_panic() {
+    // The team filter flag should be accepted by clap and the command should not panic
+    // even with no network — output may be empty or "No games" but we only assert no crash.
+    let out = run(&["schedule", "--team", "SEA", "--days", "3"]);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(!stderr.contains("panic"), "schedule --team must not panic, stderr: {stderr}");
+}
+
+#[test]
+fn l2_cmd_schedule_invalid_days_does_not_panic() {
+    // clap should reject non-numeric --days with a non-zero exit, but no panic
+    let out = run(&["schedule", "--days", "not-a-number"]);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(!stderr.contains("panicked at"), "must not panic, stderr: {stderr}");
+    assert!(!out.status.success(), "invalid --days must exit non-zero");
+}
+
+// ── L2: scouting reports (Phase 8a.1) ─────────────────────────────────────────
+
+#[test]
+fn l2_cmd_scouting_terminal_exits_zero() {
+    // Use a player guaranteed to be in bundled data.
+    let out = run(&["scouting", "McDavid"]);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(!stderr.contains("panicked at"), "scouting must not panic, stderr: {stderr}");
+    assert!(out.status.success(), "scouting must exit 0, stderr: {stderr}");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    // All eight sections present
+    for n in 1..=8 {
+        let header = format!("## {n}.");
+        assert!(stdout.contains(&header), "section header '{header}' missing in stdout");
+    }
+}
+
+#[test]
+fn l2_cmd_scouting_json_parses() {
+    let out = run(&["scouting", "McDavid", "--format", "json"]);
+    assert!(out.status.success(), "scouting --format json must exit 0");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let v: serde_json::Value = serde_json::from_str(stdout.trim())
+        .unwrap_or_else(|e| panic!("scouting json output must parse: {e}\nGOT:\n{stdout}"));
+    // Spot-check the contract documented in scouting-reports.md
+    assert!(v.get("player").and_then(|p| p.as_str()).is_some(),
+        "json must contain a string `player` field");
+    assert!(v.get("current_season").is_some(), "json must contain `current_season`");
+    assert!(v.get("contract").is_some(), "json must contain `contract`");
+}
+
+#[test]
+fn l2_cmd_scouting_unknown_format_exits_nonzero() {
+    let out = run(&["scouting", "McDavid", "--format", "xml"]);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(!stderr.contains("panicked at"), "must not panic, stderr: {stderr}");
+    assert!(!out.status.success(), "unknown format must exit non-zero");
+    assert!(stderr.contains("terminal") || stderr.contains("markdown") || stderr.contains("json"),
+        "error must list valid formats, got stderr:\n{stderr}");
+}
+
+#[test]
 fn l2_cmd_tui_help_exits_zero() {
     let out = run(&["tui", "--help"]);
     assert!(out.status.success(), "tui --help must exit 0");

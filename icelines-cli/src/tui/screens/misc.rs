@@ -12,20 +12,29 @@ use crate::tui::app::App;
 // ── Scores / Tonight ─────────────────────────────────────────────────────────
 
 pub fn render_tonight(f: &mut Frame, app: &App, area: Rect) {
-    use crate::tui::tonight::TonightState;
-    use icelines_fetch::nhl_api::ScheduledGame;
+    use crate::tui::tonight::{lookup, TonightState};
 
-    let state = app.tonight_cache.lock().unwrap().clone();
+    // Reserve a 3-line strip at the bottom for the d-key date picker overlay.
+    let bottom_h: u16 = if app.scores_picker_open { 3 } else { 0 };
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Min(0), Constraint::Length(bottom_h)])
+        .split(area);
+    let main_area = chunks[0];
+
+    let state = lookup(&app.tonight_cache, &app.scores_date);
+    let date_label = scores_date_label(&app.scores_date);
+    let updated = scores_updated_indicator(app);
 
     let title = match &state {
-        TonightState::Loading => " Scores — fetching… ",
-        TonightState::Error(_) => " Scores — fetch failed · r: retry ",
-        _ => " Scores — r:refresh  ↑↓:select  Esc:back ",
+        TonightState::Loading  => format!(" Scores · {date_label} · fetching…{updated} "),
+        TonightState::Error(_) => format!(" Scores · {date_label} · fetch failed · r:retry{updated} "),
+        _ => format!(" Scores · {date_label} ·  ←→:date  d:jump  t:today  Enter:detail{updated} "),
     };
 
     let block = Block::default().borders(Borders::ALL).title(title);
-    let inner = block.inner(area);
-    f.render_widget(block, area);
+    let inner = block.inner(main_area);
+    f.render_widget(block, main_area);
 
     let dim = Style::default().fg(Color::DarkGray);
 
@@ -56,13 +65,48 @@ pub fn render_tonight(f: &mut Frame, app: &App, area: Rect) {
             render_scores_list(f, app, inner, &games);
         }
     }
+
+    if bottom_h > 0 {
+        render_scores_date_picker(f, app, chunks[1]);
+    }
+}
+
+fn render_scores_date_picker(f: &mut Frame, app: &App, area: Rect) {
+    let block = Block::default().borders(Borders::ALL).title(" Go to date — Enter applies, Esc cancels ");
+    let inner = block.inner(area);
+    f.render_widget(block, area);
+
+    if let Some(err) = &app.scores_picker_err {
+        f.render_widget(
+            Paragraph::new(Line::styled(
+                format!("  ⚠ {err}"),
+                Style::default().fg(Color::Red),
+            )),
+            inner,
+        );
+        return;
+    }
+
+    let cursor = "█";
+    let prompt = format!("  Go to: {}{cursor}", app.scores_picker_input);
+    f.render_widget(Paragraph::new(prompt), inner);
 }
 
 fn render_scores_list(f: &mut Frame, app: &App, area: Rect, games: &[icelines_fetch::nhl_api::ScheduledGame]) {
+    let date_label = scores_date_label(&app.scores_date);
+    let dim_style  = Style::default().fg(Color::DarkGray);
+
     if games.is_empty() {
+        let msg = if app.scores_date.is_empty() {
+            "  No games scheduled today.".to_owned()
+        } else {
+            format!("  No games scheduled for {date_label}.")
+        };
         f.render_widget(Paragraph::new(vec![
             Line::from(""),
-            Line::styled("  No games scheduled today.", Style::default().fg(Color::DarkGray)),
+            Line::styled(msg, dim_style),
+            Line::from(""),
+            Line::styled("  ←/→ navigate days  ·  d jump to date  ·  Esc back", dim_style),
         ]), area);
         return;
     }
@@ -79,7 +123,6 @@ fn render_scores_list(f: &mut Frame, app: &App, area: Rect, games: &[icelines_fe
 
     let dim   = Style::default().fg(Color::DarkGray);
     let gold  = Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD);
-    let cyan  = Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD);
 
     let mut items: Vec<ratatui::widgets::ListItem> = vec![
         ratatui::widgets::ListItem::new(Line::styled(section_label, gold)),
@@ -133,11 +176,49 @@ fn render_scores_list(f: &mut Frame, app: &App, area: Rect, games: &[icelines_fe
     }
 
     items.push(ratatui::widgets::ListItem::new(Line::from("")));
+    // Date arrows + jump hint at the bottom — mirrors the spec's footer
+    let anchor = if app.scores_date.is_empty() {
+        crate::tui::schedule::today_iso()
+    } else {
+        app.scores_date.clone()
+    };
+    let prev_d = crate::tui::schedule::add_days(&anchor, -1).unwrap_or_default();
+    let next_d = crate::tui::schedule::add_days(&anchor, 1).unwrap_or_default();
+    items.push(ratatui::widgets::ListItem::new(Line::styled(
+        format!("  ←  {prev_d}    {next_d}  →"),
+        dim,
+    )));
     items.push(ratatui::widgets::ListItem::new(Line::styled(
         "  Times shown in ET  ·  data from NHL public API", dim
     )));
 
     f.render_widget(ratatui::widgets::List::new(items), area);
+}
+
+/// "Updated Xs ago" indicator string, prefixed with " · " so it can be
+/// concatenated into a title segment. Returns an empty string when no
+/// auto-refresh has happened yet (e.g. on past dates).
+fn scores_updated_indicator(app: &App) -> String {
+    let last = match app.last_auto_refresh {
+        Some(t) => t,
+        None    => return String::new(),
+    };
+    let elapsed = std::time::Instant::now().duration_since(last).as_secs();
+    format!("  ·  Updated {}s ago", elapsed)
+}
+
+/// Format the active scores date for the title bar — "Today" for the empty
+/// sentinel, "Mon Apr 28, 2026" for an explicit date.
+fn scores_date_label(date_key: &str) -> String {
+    if date_key.is_empty() {
+        return "Today".to_owned();
+    }
+    use chrono::NaiveDate;
+    if let Ok(d) = NaiveDate::parse_from_str(date_key, "%Y-%m-%d") {
+        d.format("%a %b %-d, %Y").to_string()
+    } else {
+        date_key.to_owned()
+    }
 }
 
 /// Convert "HH:MM" UTC to "H:MM AM/PM ET" (EDT = UTC-4).
@@ -598,51 +679,6 @@ pub fn render_season_picker(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(List::new(items), inner);
 }
 
-// ── Schedule (stub) ───────────────────────────────────────────────────────────
-
-pub fn render_schedule_stub(f: &mut Frame, area: Rect) {
-    let block = Block::default().borders(Borders::ALL).title(" Schedule ");
-    let inner = block.inner(area);
-    f.render_widget(block, area);
-
-    let dim = Style::default().fg(Color::DarkGray);
-    let cmd = Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD);
-    let lines = vec![
-        Line::from(""),
-        Line::from("  Full season schedule — coming in v2."),
-        Line::from(""),
-        Line::styled("  In the meantime, use the CLI:", dim),
-        Line::from(""),
-        Line::styled("  icelines tonight", cmd),
-        Line::styled("  icelines schedule --days 7", cmd),
-        Line::styled("  icelines schedule --team SEA --days 14", cmd),
-        Line::from(""),
-        Line::styled("  Planned: team filter, matchup search (NYR WSH), date nav.", dim),
-    ];
-    f.render_widget(Paragraph::new(lines), inner);
-}
-
-// ── Playoffs (stub) ───────────────────────────────────────────────────────────
-
-pub fn render_playoffs_stub(f: &mut Frame, area: Rect) {
-    let block = Block::default().borders(Borders::ALL).title(" Playoffs ");
-    let inner = block.inner(area);
-    f.render_widget(block, area);
-
-    let dim = Style::default().fg(Color::DarkGray);
-    let hi  = Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD);
-    let lines = vec![
-        Line::from(""),
-        Line::styled("  Playoff bracket + series tracker — coming in v2.", hi),
-        Line::from(""),
-        Line::styled("  Will include:", dim),
-        Line::styled("    · Live bracket with round-by-round progression", dim),
-        Line::styled("    · Series detail: game log, leading scorers", dim),
-        Line::styled("    · Historical Stanley Cup campaigns (time-travel with y)", dim),
-        Line::styled("    · Projected playoff picture during regular season", dim),
-    ];
-    f.render_widget(Paragraph::new(lines), inner);
-}
 
 // ── Admin overlay ─────────────────────────────────────────────────────────────
 
@@ -683,4 +719,120 @@ pub fn render_admin(f: &mut Frame, app: &App, area: Rect) {
         Line::styled("  Esc to close", dim),
     ];
     f.render_widget(Paragraph::new(lines), area);
+}
+
+#[cfg(test)]
+mod tests {
+    //! L0 render tests for the admin overlay (Phase 8a.2).
+    use super::*;
+    use crate::tui::app::App;
+    use crate::tui::loader::InstallPhase;
+    use ratatui::backend::TestBackend;
+    use ratatui::Terminal;
+
+    fn buffer_text(buf: &ratatui::buffer::Buffer) -> String {
+        let mut out = String::new();
+        for y in 0..buf.area.height {
+            for x in 0..buf.area.width {
+                out.push_str(buf[(x, y)].symbol());
+            }
+            out.push('\n');
+        }
+        out
+    }
+
+    fn render_admin_to_text(app: &App) -> String {
+        let backend = TestBackend::new(80, 24);
+        let mut term = Terminal::new(backend).unwrap();
+        term.draw(|f| {
+            let area = f.area();
+            super::render_admin(f, app, area);
+        }).unwrap();
+        buffer_text(term.backend().buffer())
+    }
+
+    #[test]
+    fn l0_render_admin_idle_phase_shows_no_install() {
+        let app = App::new(false);
+        // Default phase is Idle
+        let text = render_admin_to_text(&app);
+        assert!(text.contains("No install in progress"),
+            "Idle phase must show 'No install in progress', got:\n{text}");
+        // Canonical CLI commands listed
+        assert!(text.contains("icelines fetch all"), "fetch hint missing");
+        assert!(text.contains("icelines data list"), "list hint missing");
+    }
+
+    #[test]
+    fn l0_render_admin_downloading_phase_shows_spinner() {
+        let app = App::new(false);
+        app.install_state.force_phase(InstallPhase::Downloading("19931994".to_owned()));
+        let text = render_admin_to_text(&app);
+        assert!(text.contains("Installing 19931994"),
+            "Downloading phase must show season being installed, got:\n{text}");
+    }
+
+    #[test]
+    fn l0_render_admin_error_phase_shows_red() {
+        let app = App::new(false);
+        app.install_state.force_phase(InstallPhase::Error(
+            "19931994".to_owned(),
+            "connection refused".to_owned(),
+        ));
+        let text = render_admin_to_text(&app);
+        // TestBackend captures characters but not ANSI colors. Verify the
+        // textual content of the error branch reaches the buffer.
+        assert!(text.contains("Failed"),
+            "Error phase must show 'Failed:' prefix, got:\n{text}");
+        assert!(text.contains("connection refused"),
+            "Error phase must include the error message, got:\n{text}");
+    }
+
+    #[test]
+    fn l0_render_admin_done_phase_shows_check_and_size() {
+        let app = App::new(false);
+        app.install_state.force_phase(InstallPhase::Done("19931994".to_owned(), 4321));
+        let text = render_admin_to_text(&app);
+        assert!(text.contains("19931994") && text.contains("4321"),
+            "Done phase must show season + KB, got:\n{text}");
+    }
+
+    // ── Scores auto-refresh indicator (Phase 8b) ─────────────────────────────
+
+    fn render_tonight_to_text(app: &App) -> String {
+        let backend = TestBackend::new(120, 24);
+        let mut term = Terminal::new(backend).unwrap();
+        term.draw(|f| {
+            let area = f.area();
+            super::render_tonight(f, app, area);
+        }).unwrap();
+        buffer_text(term.backend().buffer())
+    }
+
+    #[test]
+    fn l0_render_scores_shows_updated_indicator_when_armed() {
+        let mut app = App::new(false);
+        app.screen = crate::tui::app::Screen::Tonight;
+        app.scores_date.clear();
+        // Force the indicator to read ~14s by setting last_auto_refresh in the past.
+        let past = std::time::Instant::now() - std::time::Duration::from_secs(14);
+        app.last_auto_refresh = Some(past);
+
+        let text = render_tonight_to_text(&app);
+        // Look for "Updated " followed by a digit + "s ago"
+        let has_marker = text.contains("Updated") && text.contains("s ago");
+        assert!(has_marker, "auto-refresh indicator missing, got:\n{text}");
+    }
+
+    #[test]
+    fn l0_render_scores_hides_updated_indicator_on_past_date() {
+        let app = App::new(false);
+        let mut app = app;
+        app.screen = crate::tui::app::Screen::Tonight;
+        app.scores_date = "2026-01-15".to_owned();
+        // Past dates leave last_auto_refresh as None — no indicator.
+        app.last_auto_refresh = None;
+        let text = render_tonight_to_text(&app);
+        assert!(!text.contains("Updated "), "indicator must not render on past dates");
+    }
 }
