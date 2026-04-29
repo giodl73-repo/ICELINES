@@ -3,6 +3,12 @@
 ## Unreleased
 
 ### Added
+- Phase 8f.5: `icelines scheme show NAME --source` prints the scheme as
+  pretty JSON instead of the human-readable table. Useful for copy/paste,
+  diffing two schemes, or piping into `jq`. The default (no flag) still
+  emits the readable layout. Scheme already derived Serialize so the
+  change is minimal. 1 L2 test verifies valid JSON with name + skater +
+  goalie fields.
 - Phase 8f.4: `--season YYYYZZZZ` flag on `query leaders/player/compare`.
   Pins the query to a specific bundled season instead of the current one
   — `icelines query leaders --season 20242025 --top 10` shows last
