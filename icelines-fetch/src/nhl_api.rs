@@ -472,6 +472,29 @@ pub struct GoalieLine {
     pub decision:    Option<String>, // "W" | "L" | "OTL" | None
 }
 
+/// One skater's line in a single game's boxscore. Sourced from
+/// `playerByGameStats.{home,away}Team.{forwards,defense}` on
+/// `/v1/gamecenter/{id}/boxscore`. Used by the game-detail screen to
+/// pick out per-team stat leaders (TOI, SOG, Hits, Blocks, Takeaways).
+#[derive(Debug, Clone)]
+pub struct SkaterLine {
+    pub player_id:      u32,
+    pub player_name:    String,
+    pub team_abbrev:    String,
+    pub position:       String,         // "C" | "L" | "R" | "D"
+    /// Time on ice in seconds. Parsed from the API's "MM:SS" string.
+    pub toi_seconds:    u32,
+    pub goals:          u32,
+    pub assists:        u32,
+    pub plus_minus:     i32,
+    pub sog:            u32,
+    pub hits:           u32,
+    pub blocked_shots:  u32,
+    pub takeaways:      u32,
+    pub giveaways:      u32,
+    pub pim:            u32,
+}
+
 /// Detailed boxscore for one game.
 #[derive(Debug, Clone)]
 pub struct Boxscore {
@@ -484,6 +507,11 @@ pub struct Boxscore {
     pub last_period:    Option<String>,
     pub goals:          Vec<Goal>,
     pub goalies:        Vec<GoalieLine>,
+    /// Per-team skater rows with full stat block. `away_skaters` first,
+    /// `home_skaters` second. Empty when the boxscore endpoint
+    /// pre-dates the `playerByGameStats` schema.
+    pub away_skaters:   Vec<SkaterLine>,
+    pub home_skaters:   Vec<SkaterLine>,
 }
 
 impl NhlApiClient {
@@ -614,11 +642,67 @@ pub fn parse_boxscore(raw: &serde_json::Value, game_id: u64) -> Boxscore {
         }
     }
 
+    // Per-team skater stats from `playerByGameStats.{home,away}Team.
+    // {forwards,defense}`. Goalies live alongside but are already
+    // pulled into the dedicated `goalies` array above.
+    let pgs = &raw["playerByGameStats"];
+    let away_skaters = parse_skater_lines(&pgs["awayTeam"], &away_abbrev);
+    let home_skaters = parse_skater_lines(&pgs["homeTeam"], &home_abbrev);
+
     Boxscore {
         game_id, away_abbrev, home_abbrev,
         away_score, home_score, game_state, last_period,
         goals, goalies,
+        away_skaters, home_skaters,
     }
+}
+
+/// Pull all forwards + defense out of one team's `playerByGameStats`
+/// block. Goalies are intentionally excluded — they're handled by the
+/// dedicated `goalies` parsing path above. Returns an empty Vec when
+/// the `playerByGameStats` shape isn't present (older boxscore
+/// endpoints; partial responses while a game is loading).
+fn parse_skater_lines(team: &serde_json::Value, abbrev: &str) -> Vec<SkaterLine> {
+    let mut out = Vec::new();
+    for group in &["forwards", "defense"] {
+        let Some(arr) = team[group].as_array() else { continue };
+        for p in arr {
+            let player_id   = p["playerId"].as_u64().unwrap_or(0) as u32;
+            let player_name = p["name"]["default"].as_str()
+                .or_else(|| p["name"].as_str())
+                .unwrap_or("")
+                .to_owned();
+            let position = p["position"].as_str().unwrap_or("").to_owned();
+            let toi_seconds = parse_mmss(p["toi"].as_str().unwrap_or("0:00"));
+            out.push(SkaterLine {
+                player_id,
+                player_name,
+                team_abbrev: abbrev.to_owned(),
+                position,
+                toi_seconds,
+                goals:         p["goals"]         .as_u64().unwrap_or(0) as u32,
+                assists:       p["assists"]       .as_u64().unwrap_or(0) as u32,
+                plus_minus:    p["plusMinus"]     .as_i64().unwrap_or(0) as i32,
+                sog:           p["sog"]           .as_u64().unwrap_or(0) as u32,
+                hits:          p["hits"]          .as_u64().unwrap_or(0) as u32,
+                blocked_shots: p["blockedShots"]  .as_u64().unwrap_or(0) as u32,
+                takeaways:     p["takeaways"]     .as_u64().unwrap_or(0) as u32,
+                giveaways:     p["giveaways"]     .as_u64().unwrap_or(0) as u32,
+                pim:           p["pim"]           .as_u64().unwrap_or(0) as u32,
+            });
+        }
+    }
+    out
+}
+
+/// Parse "MM:SS" → seconds. Returns 0 on malformed input. Handles the
+/// boxscore convention where TOI is published as a colon-separated
+/// minutes-seconds string ("18:45") rather than a number.
+fn parse_mmss(s: &str) -> u32 {
+    let mut parts = s.splitn(2, ':');
+    let m = parts.next().and_then(|p| p.parse::<u32>().ok()).unwrap_or(0);
+    let s = parts.next().and_then(|p| p.parse::<u32>().ok()).unwrap_or(0);
+    m * 60 + s
 }
 
 // ── Playoff bracket types (Phase 7e) ──────────────────────────────────────────

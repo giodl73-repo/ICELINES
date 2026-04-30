@@ -15,7 +15,7 @@ use ratatui::{
 
 use crate::tui::app::App;
 use crate::tui::tonight::{lookup_boxscore, BoxscoreState};
-use icelines_fetch::nhl_api::{Boxscore, Goal, ScheduledGame};
+use icelines_fetch::nhl_api::{Boxscore, Goal, ScheduledGame, SkaterLine};
 
 pub fn render(f: &mut Frame, app: &App, area: Rect, game_id: u64) {
     // Look up the schedule entry for this game (gives us series context).
@@ -143,8 +143,128 @@ fn render_loaded(f: &mut Frame, area: Rect, b: &Boxscore, sched: Option<&Schedul
         lines.push(Line::from(""));
     }
 
+    // Per-team stat leaders. Only renders when the boxscore endpoint
+    // populated `playerByGameStats` (current API; older games may
+    // return an empty array which we silently skip).
+    if !b.away_skaters.is_empty() || !b.home_skaters.is_empty() {
+        lines.push(Line::styled("  LEADERS", gold));
+        for (label, team) in [
+            (b.away_abbrev.as_str(), &b.away_skaters),
+            (b.home_abbrev.as_str(), &b.home_skaters),
+        ] {
+            if team.is_empty() { continue; }
+            lines.extend(team_leader_lines(label, team));
+        }
+        lines.push(Line::from(""));
+    }
+
     lines.push(Line::styled("  Esc to return to scores", dim));
     f.render_widget(Paragraph::new(lines), area);
+}
+
+/// Produce the leader rows for one team — three lines:
+///   "    SEA  TOI 26:09 (V. Gavrikov)"
+///   "         SOG 5 (Eberle) · Hits 7 (Wright) · Blocks 4 (Borgen)"
+///   "         Takeaways 4 (Stephenson) · Giveaways 3 (Beniers)"
+fn team_leader_lines(team_label: &str, skaters: &[SkaterLine]) -> Vec<Line<'static>> {
+    let dim   = Style::default().fg(Color::DarkGray);
+    let cyan  = Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD);
+    let team_style = Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD);
+
+    // Pick the leader for each stat; skip if no row has any non-zero value.
+    let toi_leader     = leader_by(skaters, |s| s.toi_seconds);
+    let sog_leader     = leader_by(skaters, |s| s.sog);
+    let hits_leader    = leader_by(skaters, |s| s.hits);
+    let blocks_leader  = leader_by(skaters, |s| s.blocked_shots);
+    let take_leader    = leader_by(skaters, |s| s.takeaways);
+    let give_leader    = leader_by(skaters, |s| s.giveaways);
+
+    let mut lines: Vec<Line<'static>> = Vec::new();
+
+    // Row 1: team label + TOI leader (always rendered when we have any data).
+    let mut row1: Vec<ratatui::text::Span<'static>> = Vec::new();
+    row1.push(ratatui::text::Span::styled("    ".to_owned(), dim));
+    row1.push(ratatui::text::Span::styled(format!("{team_label:<3}  "), team_style));
+    if let Some(s) = toi_leader {
+        row1.push(ratatui::text::Span::styled("TOI ".to_owned(), dim));
+        row1.push(ratatui::text::Span::styled(fmt_mmss(s.toi_seconds), cyan));
+        row1.push(ratatui::text::Span::styled(format!(" ({})", short_name(&s.player_name)), dim));
+    }
+    lines.push(Line::from(row1));
+
+    // Row 2: SOG · Hits · Blocks
+    let row2 = compose_leader_row("         ", &[
+        ("SOG",    sog_leader.map(|s| (s.sog as u32, short_name(&s.player_name)))),
+        ("Hits",   hits_leader.map(|s| (s.hits as u32, short_name(&s.player_name)))),
+        ("Blocks", blocks_leader.map(|s| (s.blocked_shots as u32, short_name(&s.player_name)))),
+    ], dim, cyan);
+    if !row2.spans.is_empty() {
+        lines.push(row2);
+    }
+
+    // Row 3: Takeaways · Giveaways
+    let row3 = compose_leader_row("         ", &[
+        ("Takeaways", take_leader.map(|s| (s.takeaways as u32, short_name(&s.player_name)))),
+        ("Giveaways", give_leader.map(|s| (s.giveaways as u32, short_name(&s.player_name)))),
+    ], dim, cyan);
+    if !row3.spans.is_empty() {
+        lines.push(row3);
+    }
+
+    lines
+}
+
+/// Pick the highest-`metric` skater. Returns None when every skater's
+/// value is 0 — no point rendering a leader row of zeros.
+fn leader_by<F: Fn(&SkaterLine) -> u32>(skaters: &[SkaterLine], f: F) -> Option<&SkaterLine> {
+    let leader = skaters.iter().max_by_key(|s| f(s))?;
+    if f(leader) == 0 { None } else { Some(leader) }
+}
+
+/// Compose a "Stat N (player) · Stat N (player)" row from a slice of
+/// (label, optional (value, name)) pairs. Stats with no data are
+/// skipped; the separator only appears between rendered pairs.
+fn compose_leader_row(
+    indent: &str,
+    pairs: &[(&'static str, Option<(u32, String)>)],
+    dim: Style,
+    cyan: Style,
+) -> Line<'static> {
+    let mut spans: Vec<ratatui::text::Span<'static>> = Vec::new();
+    let mut wrote_any = false;
+    for (label, val) in pairs {
+        let Some((n, name)) = val else { continue };
+        if wrote_any {
+            spans.push(ratatui::text::Span::styled(" · ".to_owned(), dim));
+        } else {
+            spans.push(ratatui::text::Span::styled(indent.to_owned(), dim));
+        }
+        spans.push(ratatui::text::Span::styled(format!("{label} "), dim));
+        spans.push(ratatui::text::Span::styled(n.to_string(), cyan));
+        spans.push(ratatui::text::Span::styled(format!(" ({name})"), dim));
+        wrote_any = true;
+    }
+    Line::from(spans)
+}
+
+/// Format seconds as "MM:SS". 1565 → "26:05".
+fn fmt_mmss(secs: u32) -> String {
+    format!("{:>2}:{:02}", secs / 60, secs % 60)
+}
+
+/// Trim a player full name to "F. Lastname" so leader rows don't wrap
+/// on a 30-col panel. "Vince Dunn" → "V. Dunn"; single-word names pass
+/// through unchanged.
+fn short_name(full: &str) -> String {
+    let mut parts = full.split_whitespace();
+    match (parts.next(), parts.next_back()) {
+        (Some(first), Some(last)) if first != last => {
+            let initial = first.chars().next().unwrap_or('?');
+            format!("{initial}. {last}")
+        }
+        (Some(only), _) => only.to_owned(),
+        _               => full.to_owned(),
+    }
 }
 
 fn format_goal_row(goal: &Goal) -> String {
@@ -232,6 +352,34 @@ mod tests {
                     decision: Some("W".to_owned()),
                 },
             ],
+            away_skaters: vec![
+                fixture_skater("Adam Fox",        "NYR", "D", 26 * 60 + 9,  2, 1, 4, 0, 0),
+                fixture_skater("Mika Zibanejad",  "NYR", "C", 21 * 60 + 33, 5, 2, 0, 1, 1),
+                fixture_skater("Artemi Panarin",  "NYR", "L", 20 * 60 + 2,  3, 0, 1, 2, 0),
+            ],
+            home_skaters: vec![
+                fixture_skater("John Carlson",    "WSH", "D", 25 * 60 + 11, 2, 0, 5, 0, 1),
+                fixture_skater("Alex Ovechkin",   "WSH", "L", 19 * 60 + 48, 6, 3, 0, 0, 1),
+                fixture_skater("Tom Wilson",      "WSH", "R", 17 * 60 + 21, 4, 5, 1, 1, 0),
+            ],
+        }
+    }
+
+    /// Compact `SkaterLine` builder used by `fixture_boxscore` to keep
+    /// the test fixture readable.
+    fn fixture_skater(name: &str, team: &str, pos: &str, toi: u32,
+                      sog: u32, hits: u32, blocks: u32, takeaways: u32, giveaways: u32) -> icelines_fetch::nhl_api::SkaterLine {
+        icelines_fetch::nhl_api::SkaterLine {
+            player_id:      0,
+            player_name:    name.to_owned(),
+            team_abbrev:    team.to_owned(),
+            position:       pos.to_owned(),
+            toi_seconds:    toi,
+            goals: 0, assists: 0, plus_minus: 0,
+            sog, hits,
+            blocked_shots: blocks,
+            takeaways, giveaways,
+            pim: 0,
         }
     }
 
@@ -303,6 +451,30 @@ mod tests {
         // Section headers
         assert!(text.contains("GOALS"), "GOALS header missing");
         assert!(text.contains("GOALTENDERS"), "GOALTENDERS header missing");
+    }
+
+    #[test]
+    fn l0_render_game_detail_shows_team_stat_leaders() {
+        // The LEADERS block under GOALTENDERS surfaces per-team
+        // TOI/SOG/Hits/Blocks/Takeaways highs. With our fixture data:
+        //   NYR:  TOI Fox 26:09     Hits Zibanejad 2     Blocks Fox 4
+        //   WSH:  TOI Carlson 25:11 Hits Wilson 5         Blocks Carlson 5
+        let app = App::new(false);
+        app.boxscore_cache.lock().unwrap()
+            .insert(12345, BoxscoreState::Loaded(fixture_boxscore(12345)));
+        let text = render_to_text(&app, 12345);
+
+        assert!(text.contains("LEADERS"),
+            "LEADERS section header missing, got:\n{text}");
+        // TOI leaders — "26:09" for NYR, "25:11" for WSH (formatted MM:SS)
+        assert!(text.contains("26:09"), "NYR TOI leader time missing, got:\n{text}");
+        assert!(text.contains("25:11"), "WSH TOI leader time missing, got:\n{text}");
+        // Short-name format: "F. Fox" / "J. Carlson"
+        assert!(text.contains("A. Fox"),     "Fox short-name missing, got:\n{text}");
+        assert!(text.contains("J. Carlson"), "Carlson short-name missing, got:\n{text}");
+        // Section labels
+        assert!(text.contains("TOI") && text.contains("SOG") && text.contains("Hits"),
+            "leader-row stat labels missing, got:\n{text}");
     }
 
     #[test]

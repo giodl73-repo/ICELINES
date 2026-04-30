@@ -896,6 +896,19 @@ const FIXTURE_BOXSCORE: &str = r#"{
   },
   "playerByGameStats": {
     "awayTeam": {
+      "forwards": [
+        {"playerId": 8478550, "name": {"default": "Mika Zibanejad"}, "position": "C",
+         "toi": "21:33", "goals": 1, "assists": 1, "plusMinus": 1,
+         "sog": 5, "hits": 2, "blockedShots": 0, "takeaways": 1, "giveaways": 1, "pim": 0},
+        {"playerId": 8478402, "name": {"default": "Artemi Panarin"}, "position": "L",
+         "toi": "20:02", "goals": 0, "assists": 1, "plusMinus": 0,
+         "sog": 3, "hits": 0, "blockedShots": 1, "takeaways": 2, "giveaways": 0, "pim": 0}
+      ],
+      "defense": [
+        {"playerId": 8482073, "name": {"default": "Adam Fox"}, "position": "D",
+         "toi": "26:09", "goals": 0, "assists": 0, "plusMinus": -1,
+         "sog": 2, "hits": 1, "blockedShots": 4, "takeaways": 0, "giveaways": 0, "pim": 0}
+      ],
       "goalies": [
         {
           "firstName": {"default": "Igor"},
@@ -905,6 +918,19 @@ const FIXTURE_BOXSCORE: &str = r#"{
       ]
     },
     "homeTeam": {
+      "forwards": [
+        {"playerId": 8471214, "name": {"default": "Alex Ovechkin"}, "position": "L",
+         "toi": "19:48", "goals": 1, "assists": 0, "plusMinus": 1,
+         "sog": 6, "hits": 3, "blockedShots": 0, "takeaways": 0, "giveaways": 1, "pim": 0},
+        {"playerId": 8478493, "name": {"default": "Tom Wilson"}, "position": "R",
+         "toi": "17:21", "goals": 1, "assists": 0, "plusMinus": 1,
+         "sog": 4, "hits": 5, "blockedShots": 1, "takeaways": 1, "giveaways": 0, "pim": 2}
+      ],
+      "defense": [
+        {"playerId": 8474590, "name": {"default": "John Carlson"}, "position": "D",
+         "toi": "25:11", "goals": 0, "assists": 1, "plusMinus": 1,
+         "sog": 2, "hits": 0, "blockedShots": 5, "takeaways": 0, "giveaways": 1, "pim": 0}
+      ],
       "goalies": [
         {
           "firstName": {"default": "Charlie"},
@@ -949,6 +975,54 @@ fn l0_parse_boxscore_basic() {
     assert_eq!(nyr_g.saves, 32);
     assert_eq!(nyr_g.shots, 35);
     assert_eq!(nyr_g.decision.as_deref(), Some("L"));
+}
+
+#[test]
+fn l0_parse_boxscore_skater_lines_per_team() {
+    // playerByGameStats forwards + defense flow into SkaterLine. Each
+    // team's array contains both groups; goalies stay in their own
+    // bucket (not duplicated into away_skaters/home_skaters).
+    use icelines_fetch::nhl_api::parse_boxscore;
+    let raw: serde_json::Value = serde_json::from_str(FIXTURE_BOXSCORE).unwrap();
+    let bs = parse_boxscore(&raw, 2025020100);
+
+    // Away (NYR): 2 forwards + 1 defenseman = 3 skaters
+    assert_eq!(bs.away_skaters.len(), 3, "expected 3 NYR skaters: {:?}",
+        bs.away_skaters.iter().map(|s| &s.player_name).collect::<Vec<_>>());
+    // Home (WSH): 2 forwards + 1 defenseman = 3 skaters
+    assert_eq!(bs.home_skaters.len(), 3);
+
+    // Spot-check field shape on Adam Fox (highest TOI on NYR).
+    let fox = bs.away_skaters.iter().find(|s| s.player_name == "Adam Fox")
+        .expect("Fox in fixture");
+    assert_eq!(fox.team_abbrev, "NYR");
+    assert_eq!(fox.position, "D");
+    assert_eq!(fox.toi_seconds, 26 * 60 + 9, "26:09 → 1569 seconds");
+    assert_eq!(fox.blocked_shots, 4);
+    assert_eq!(fox.plus_minus, -1);
+
+    // Tom Wilson — high hits leader on WSH side.
+    let wilson = bs.home_skaters.iter().find(|s| s.player_name == "Tom Wilson")
+        .expect("Wilson in fixture");
+    assert_eq!(wilson.hits, 5);
+    assert_eq!(wilson.pim, 2);
+}
+
+#[test]
+fn l0_parse_boxscore_handles_missing_player_by_game_stats() {
+    // Older boxscore endpoints (pre-2024) may omit playerByGameStats
+    // entirely. The parser must return empty skater vectors without
+    // panicking so the game-detail screen can fall back gracefully.
+    use icelines_fetch::nhl_api::parse_boxscore;
+    let raw: serde_json::Value = serde_json::from_str(r#"{
+        "id": 999,
+        "awayTeam": {"abbrev": "BOS", "score": 0},
+        "homeTeam": {"abbrev": "MTL", "score": 0},
+        "gameState": "FUT"
+    }"#).unwrap();
+    let bs = parse_boxscore(&raw, 999);
+    assert!(bs.away_skaters.is_empty());
+    assert!(bs.home_skaters.is_empty());
 }
 
 #[tokio::test]
