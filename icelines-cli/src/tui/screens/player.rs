@@ -76,7 +76,7 @@ fn render_dashboard_panel(f: &mut Frame, app: &App, p: &icelines_core::model::Pl
     let inner = block.inner(area);
     f.render_widget(block, area);
 
-    let lines = app.dashboard_panel.lines_for_player(p);
+    let lines = app.dashboard_panel.lines_for_player(p, &app.league_context);
     f.render_widget(Paragraph::new(lines), inner);
 }
 

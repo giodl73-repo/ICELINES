@@ -17,13 +17,85 @@
 //! for the smoke test in case we want to re-introduce it for site
 //! generation later.
 
-use icelines_core::model::Player;
+use icelines_core::model::{Player, Position};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use crate::tui::sparkline;
+
+// ── League context (Phase 8j) ─────────────────────────────────────────────
+//
+// A small, sorted-by-position view of the current player pool used to
+// compute "where does this player rank vs peers at their position?". The
+// App builds this once after players are loaded and reuses it for every
+// player render.
+
+/// Sorted-ascending pace_82 values per position. An empty context disables
+/// the percentile section in the panel — callers that don't have a player
+/// pool yet (loading, tests) can pass `LeagueContext::empty()`.
+#[derive(Debug, Clone, Default)]
+pub struct LeagueContext {
+    pace_by_position: HashMap<Position, Vec<f64>>,
+}
+
+impl LeagueContext {
+    /// Empty context — every percentile lookup returns `None`. Used as a
+    /// placeholder before the player pool has loaded.
+    pub fn empty() -> Self { Self::default() }
+
+    /// Build from a player slice. Skipped players: those without a
+    /// `pace_score` (un-rankable) and goalies (we don't track skater
+    /// pace for goalies). Resulting vectors are sorted ascending so
+    /// rank lookups are an `O(log n)` binary search.
+    pub fn from_players(players: &[Player]) -> Self {
+        let mut buckets: HashMap<Position, Vec<f64>> = HashMap::new();
+        for p in players {
+            if matches!(p.position, Position::Goalie) { continue; }
+            if let Some(s) = p.pace_score.as_ref() {
+                buckets.entry(p.position).or_default().push(s.pace_82);
+            }
+        }
+        for v in buckets.values_mut() {
+            v.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+        }
+        Self { pace_by_position: buckets }
+    }
+
+    /// Look up the player's `(rank, total, percentile)` at their position.
+    /// `rank` is 1-based with 1 = highest pace_82; `percentile` is
+    /// `0.0..=100.0` where 100 = top of league.
+    /// Returns `None` for goalies, players without `pace_score`, or
+    /// positions that aren't in this context (e.g. empty context).
+    pub fn position_rank(&self, p: &Player) -> Option<PositionRank> {
+        let pace = p.pace_score.as_ref()?.pace_82;
+        let bucket = self.pace_by_position.get(&p.position)?;
+        if bucket.is_empty() { return None; }
+        // bucket is sorted ascending, so position from the top = total - lower-or-equal-count + 1.
+        // Use binary_search to find the player's slot.
+        let lower_or_equal = bucket.partition_point(|v| *v <= pace);
+        let total = bucket.len();
+        let rank = total - lower_or_equal + 1; // 1-based, top = 1
+        let rank = rank.min(total).max(1);
+        let percentile = if total == 1 {
+            100.0
+        } else {
+            // Players strictly below the player divided by total - 1.
+            let below = bucket.partition_point(|v| *v < pace);
+            (below as f64) / ((total - 1) as f64) * 100.0
+        };
+        Some(PositionRank { rank, total, percentile })
+    }
+}
+
+/// Result of a position-rank lookup.
+#[derive(Debug, Clone, Copy)]
+pub struct PositionRank {
+    pub rank:       usize,  // 1-based, top = 1
+    pub total:      usize,  // count of qualifying peers at the position
+    pub percentile: f64,    // 0.0 ..= 100.0
+}
 
 /// A panel rendered for a specific player. Returns `Line<'static>` so
 /// callers can drop the result straight into a ratatui Paragraph; each
@@ -47,14 +119,20 @@ impl CompiledPanel {
     }
 
     /// Build (or fetch from cache) the styled panel lines for a player.
-    pub fn lines_for_player(&self, p: &Player) -> Vec<Line<'static>> {
+    /// The `league` context is used for the position-rank section; pass
+    /// `LeagueContext::empty()` to suppress that section.
+    ///
+    /// **Cache caveat**: results are keyed by `nhl_id` only. If the league
+    /// context changes mid-session (e.g. players reload), call
+    /// `clear_cache()` to force a rebuild.
+    pub fn lines_for_player(&self, p: &Player, league: &LeagueContext) -> Vec<Line<'static>> {
         if let Some(id) = p.nhl_id {
             let guard = self.inner.lock().unwrap();
             if let Some(cached) = guard.by_player.get(&id) {
                 return cached.clone();
             }
         }
-        let lines = build_panel_lines(p);
+        let lines = build_panel_lines(p, league);
         if let Some(id) = p.nhl_id {
             self.inner.lock().unwrap().by_player.insert(id, lines.clone());
         }
@@ -94,11 +172,16 @@ const ACCENT_COLOR: Color = Color::Cyan;
 /// `tui::screens::player::render_dashboard_panel`.
 const PANEL_WIDTH: usize = 28;
 
-/// Build the full set of styled lines for one player. Layout is unchanged
-/// from the plain-text version (identity → counting → trend), but each
-/// section now uses colour to convey meaning at a glance.
-fn build_panel_lines(p: &Player) -> Vec<Line<'static>> {
-    let mut lines: Vec<Line<'static>> = Vec::with_capacity(14);
+/// Build the full set of styled lines for one player. Sections, in order:
+///
+/// 1. **Identity** — name, team · pos · nationality/handedness.
+/// 2. **Counting stats** — G/A, Pts/+/-, PP/SOG.
+/// 3. **5-season trend** — three coloured sparklines (G, Pts, SOG) with
+///    range marker and first→last anchors.
+/// 4. **Position vs league** — rank + percentile bar (when context has
+///    enough peers at the player's position).
+fn build_panel_lines(p: &Player, league: &LeagueContext) -> Vec<Line<'static>> {
+    let mut lines: Vec<Line<'static>> = Vec::with_capacity(18);
     let dim    = Style::default().fg(DIM_COLOR);
     let title  = Style::default().fg(TITLE_COLOR).add_modifier(Modifier::BOLD);
     let accent = Style::default().fg(ACCENT_COLOR);
@@ -155,8 +238,9 @@ fn build_panel_lines(p: &Player) -> Vec<Line<'static>> {
                                 dim, accent));
         }
         _ => {
-            let goals_values: Vec<f64> = history.iter().map(|r| r.goals as f64).collect();
+            let goals_values: Vec<f64> = history.iter().map(|r| r.goals  as f64).collect();
             let pts_values:   Vec<f64> = history.iter().map(|r| r.points as f64).collect();
+            let shots_values: Vec<f64> = history.iter().map(|r| r.shots  as f64).collect();
             let first = &history[0];
             let last  = &history[history.len() - 1];
             let range = format!("{}→{}", short_year(first.season), short_year(last.season));
@@ -169,13 +253,79 @@ fn build_panel_lines(p: &Player) -> Vec<Line<'static>> {
             // green when above, red when below, white when on the line.
             let g_spark   = colored_spark_spans(&goals_values, history.len());
             let pts_spark = colored_spark_spans(&pts_values,   history.len());
+            let sh_spark  = colored_spark_spans(&shots_values, history.len());
             let pad = 5usize.saturating_sub(history.len());
 
-            lines.push(spark_row("G  ", pad, g_spark, first.goals, last.goals, dim, accent));
+            lines.push(spark_row("G  ", pad, g_spark,   first.goals,  last.goals,  dim, accent));
             lines.push(spark_row("Pts", pad, pts_spark, first.points, last.points, dim, accent));
+            lines.push(spark_row("SOG", pad, sh_spark,  first.shots,  last.shots,  dim, accent));
         }
     }
+
+    // ── Position vs league ────────────────────────────────────────────
+    if let Some(rank) = league.position_rank(p) {
+        lines.push(Line::from(""));
+        let pos_letter = position_letter(p.position);
+        // Header: "Pos vs C peers   #3/87"
+        lines.push(Line::from(vec![
+            Span::styled(format!("Pos vs {pos_letter}: "), dim),
+            Span::styled(format!("#{}/{}", rank.rank, rank.total), accent),
+        ]));
+        // Bar: 12 cols, colour-graded by percentile band.
+        lines.push(Line::from(percentile_bar_spans(rank.percentile, 12, dim, accent)));
+    }
+
     lines
+}
+
+/// Letter abbreviation used in the position-rank header.
+fn position_letter(pos: Position) -> &'static str {
+    match pos {
+        Position::Center    => "C",
+        Position::LeftWing  => "LW",
+        Position::RightWing => "RW",
+        Position::Defense   => "D",
+        Position::Goalie    => "G",
+    }
+}
+
+/// Render a percentile bar as `width` columns plus a trailing percentile
+/// label. Filled cells use a colour gradient: top quartile green,
+/// 50–75 yellow, 25–50 dim white, below 25 red.
+fn percentile_bar_spans(
+    percentile: f64,
+    width: usize,
+    dim: Style,
+    accent: Style,
+) -> Vec<Span<'static>> {
+    let pct = percentile.clamp(0.0, 100.0);
+    let filled = ((pct / 100.0) * width as f64).round() as usize;
+    let band_color = if pct >= 75.0 { Color::Green }
+                     else if pct >= 50.0 { Color::Yellow }
+                     else if pct >= 25.0 { Color::White }
+                     else { Color::Red };
+    let mut spans: Vec<Span<'static>> = Vec::with_capacity(4);
+    if filled > 0 {
+        spans.push(Span::styled(
+            "█".repeat(filled),
+            Style::default().fg(band_color),
+        ));
+    }
+    if filled < width {
+        spans.push(Span::styled("░".repeat(width - filled), dim));
+    }
+    spans.push(Span::styled("  ".to_owned(), dim));
+    // Round-half-up percentage label so a 96.5 reads as 97.
+    spans.push(Span::styled(format!("top {}%", percentile_to_top_pct(pct)), accent));
+    spans
+}
+
+/// Convert a 0..=100 percentile into a "top X%" label. `top` here is
+/// `100 - percentile` rounded down so a 96th-percentile player is "top 4%"
+/// (not "top 3%" via half-up rounding which would overstate the rank).
+fn percentile_to_top_pct(percentile: f64) -> u32 {
+    let top = (100.0 - percentile).max(0.0).floor();
+    top as u32
 }
 
 /// Render one `LABEL  VALUE   LABEL  VALUE` row with split colours.
@@ -264,6 +414,7 @@ struct HistoryRow {
     season: &'static str,  // e.g. "20242025"
     goals:  u32,
     points: u32,
+    shots:  u32,
 }
 
 /// Walk the bundled-history seasons (currently 5) in chronological order
@@ -282,6 +433,7 @@ fn load_player_history(nhl_id: u32) -> Vec<HistoryRow> {
                     season,
                     goals:  row.goals,
                     points: row.points,
+                    shots:  row.shots,
                 });
             }
         }
@@ -358,7 +510,7 @@ mod tests {
     #[test]
     fn l0_build_panel_lines_includes_identity_and_stats() {
         let p = fixture_player();
-        let lines = build_panel_lines(&p);
+        let lines = build_panel_lines(&p, &LeagueContext::empty());
         let body = lines_to_text(&lines);
         assert!(body.contains("Connor McDavid"), "name missing:\n{body}");
         assert!(body.contains("EDM"), "team missing:\n{body}");
@@ -374,9 +526,9 @@ mod tests {
     #[test]
     fn l0_build_panel_lines_renders_sparklines_when_history_available() {
         // McDavid has rows in all 5 bundled seasons → trend region uses
-        // sparklines + a labelled latest-season anchor.
+        // three sparklines (G, Pts, SOG) + range marker.
         let p = fixture_player();
-        let lines = build_panel_lines(&p);
+        let lines = build_panel_lines(&p, &LeagueContext::empty());
         let body = lines_to_text(&lines);
         let has_block = body.chars().any(|c| "▁▂▃▄▅▆▇█".contains(c));
         assert!(has_block,
@@ -387,6 +539,13 @@ mod tests {
             "year-range marker missing:\n{body}");
         assert!(body.contains(" → "),
             "first → last anchors missing:\n{body}");
+        // All three trend rows present.
+        assert!(body.lines().any(|l| l.starts_with("G  ")),
+            "goals sparkline row missing:\n{body}");
+        assert!(body.lines().any(|l| l.starts_with("Pts")),
+            "points sparkline row missing:\n{body}");
+        assert!(body.lines().any(|l| l.starts_with("SOG")),
+            "shots sparkline row missing:\n{body}");
     }
 
     #[test]
@@ -422,7 +581,7 @@ mod tests {
         let mut p = fixture_player();
         p.nhl_id = Some(99999999);
         p.pace_score = None;
-        let lines = build_panel_lines(&p);
+        let lines = build_panel_lines(&p, &LeagueContext::empty());
         let body = lines_to_text(&lines);
         assert!(body.contains("Bundled history: none"),
             "no-history message missing:\n{body}");
@@ -438,7 +597,7 @@ mod tests {
         // Stub history loading by hand-building the lines via the same
         // shape, since we can't easily construct a 1-season player in
         // the bundled data. Verify the formatter output instead.
-        let history = vec![HistoryRow { season: "20252026", goals: 12, points: 30 }];
+        let history = vec![HistoryRow { season: "20252026", goals: 12, points: 30, shots: 80 }];
         // The body for a 1-season fall-through is two lines:
         //   "Bundled history: 25-26"
         //   "G    12    Pts  30"
@@ -454,7 +613,7 @@ mod tests {
         let p = fixture_player();
         let id = p.nhl_id.expect("fixture has nhl_id");
 
-        let first = panel.lines_for_player(&p);
+        let first = panel.lines_for_player(&p, &LeagueContext::empty());
         // Cache populated.
         {
             let s = panel.inner.lock().unwrap();
@@ -462,7 +621,7 @@ mod tests {
                 "cache must populate after first compile");
         }
         // Second call returns cached lines (byte-equal).
-        let second = panel.lines_for_player(&p);
+        let second = panel.lines_for_player(&p, &LeagueContext::empty());
         assert_eq!(first, second);
     }
 
@@ -504,5 +663,184 @@ mod tests {
         assert_eq!(short_year("20252026"), "26");
         assert_eq!(short_year("19931994"), "94");
         assert_eq!(short_year("malformed"), "malformed");
+    }
+
+    // ── Position vs league percentile (Phase 8j) ─────────────────────────
+
+    /// Build a small synthetic player pool with a known pace_82 distribution
+    /// so position rank lookups are deterministic.
+    fn fake_pace_player(nhl_id: u32, position: Position, pace: f64) -> Player {
+        let json = format!(r#"{{
+            "nhl_id": {nhl_id},
+            "full_name": "Player {nhl_id}",
+            "name_normalized": "player_{nhl_id}",
+            "team": "TST",
+            "position": "{}",
+            "eligible_pos": ["{}"],
+            "gp_status": {{ "Eligible": 80 }},
+            "season_goals": 0, "season_assists": 0, "season_points": 0,
+            "pace_score": {{ "pace_82": {pace}, "goals_per_82": 0.0, "raw_points": 0, "gp": 80 }},
+            "pp_goals": 0, "pp_points": 0, "sh_goals": 0, "sh_points": 0,
+            "gwg": 0, "ot_goals": 0, "shots": 0, "shooting_pct": null,
+            "plus_minus": 0,
+            "toi_per_game_sec": null, "faceoff_win_pct": null,
+            "hits": 0, "blocked_shots": 0, "missed_shots": 0,
+            "giveaways": 0, "takeaways": 0, "pim": 0,
+            "xg": null, "xg_per_60": null,
+            "cf_pct_5v5": null, "ff_pct_5v5": null, "xgf_pct_5v5": null,
+            "headshot_url": null, "sweater_number": null,
+            "birth_date": null, "birth_country": null,
+            "nationality_code": null, "birth_city": null,
+            "birth_state_province": null, "shoots_catches": null,
+            "height_in_inches": null, "weight_lbs": null,
+            "draft_year": null, "draft_round": null, "draft_overall": null,
+            "rookie_season": null,
+            "contract_expiry_year": null, "expiry_type": null, "salary": null
+        }}"#, position_json(position), position_json(position));
+        serde_json::from_str(&json).expect("synthetic player round-trips")
+    }
+
+    fn position_json(p: Position) -> &'static str {
+        match p {
+            Position::Center    => "Center",
+            Position::LeftWing  => "LeftWing",
+            Position::RightWing => "RightWing",
+            Position::Defense   => "Defense",
+            Position::Goalie    => "Goalie",
+        }
+    }
+
+    #[test]
+    fn l0_league_context_position_rank_basic() {
+        // 5 centers with paces 50, 60, 70, 80, 90. Player at 90 = #1/5.
+        let pool: Vec<Player> = [50.0, 60.0, 70.0, 80.0, 90.0]
+            .iter().enumerate()
+            .map(|(i, p)| fake_pace_player(i as u32 + 1, Position::Center, *p))
+            .collect();
+        let ctx = LeagueContext::from_players(&pool);
+
+        let top = &pool[4]; // pace 90
+        let rank = ctx.position_rank(top).expect("top player ranks");
+        assert_eq!(rank.rank, 1);
+        assert_eq!(rank.total, 5);
+        assert!((rank.percentile - 100.0).abs() < 0.01,
+            "top of 5 should be 100th percentile, got {}", rank.percentile);
+
+        let bottom = &pool[0]; // pace 50
+        let rank = ctx.position_rank(bottom).expect("bottom player ranks");
+        assert_eq!(rank.rank, 5);
+        assert!((rank.percentile - 0.0).abs() < 0.01,
+            "bottom of 5 should be 0th percentile, got {}", rank.percentile);
+    }
+
+    #[test]
+    fn l0_league_context_buckets_by_position() {
+        // 3 centers + 2 defensemen — separate rank pools.
+        let pool = vec![
+            fake_pace_player(1, Position::Center,  100.0),
+            fake_pace_player(2, Position::Center,  80.0),
+            fake_pace_player(3, Position::Center,  60.0),
+            fake_pace_player(4, Position::Defense, 50.0),
+            fake_pace_player(5, Position::Defense, 40.0),
+        ];
+        let ctx = LeagueContext::from_players(&pool);
+        let c_rank = ctx.position_rank(&pool[1]).expect("center #2 of 3");
+        assert_eq!(c_rank.rank, 2);
+        assert_eq!(c_rank.total, 3);
+        let d_rank = ctx.position_rank(&pool[3]).expect("defenseman #1 of 2");
+        assert_eq!(d_rank.rank, 1);
+        assert_eq!(d_rank.total, 2);
+    }
+
+    #[test]
+    fn l0_league_context_skips_players_without_pace() {
+        let json = r#"{
+            "nhl_id": 99, "full_name": "No Pace", "name_normalized": "no_pace",
+            "team": "TST", "position": "Center", "eligible_pos": ["Center"],
+            "gp_status": "Zero",
+            "season_goals": 0, "season_assists": 0, "season_points": 0,
+            "pace_score": null,
+            "pp_goals": 0, "pp_points": 0, "sh_goals": 0, "sh_points": 0,
+            "gwg": 0, "ot_goals": 0, "shots": 0, "shooting_pct": null,
+            "plus_minus": 0, "toi_per_game_sec": null, "faceoff_win_pct": null,
+            "hits": 0, "blocked_shots": 0, "missed_shots": 0,
+            "giveaways": 0, "takeaways": 0, "pim": 0,
+            "xg": null, "xg_per_60": null,
+            "cf_pct_5v5": null, "ff_pct_5v5": null, "xgf_pct_5v5": null,
+            "headshot_url": null, "sweater_number": null,
+            "birth_date": null, "birth_country": null,
+            "nationality_code": null, "birth_city": null,
+            "birth_state_province": null, "shoots_catches": null,
+            "height_in_inches": null, "weight_lbs": null,
+            "draft_year": null, "draft_round": null, "draft_overall": null,
+            "rookie_season": null,
+            "contract_expiry_year": null, "expiry_type": null, "salary": null
+        }"#;
+        let no_pace: Player = serde_json::from_str(json).unwrap();
+        let ctx = LeagueContext::from_players(&[no_pace.clone()]);
+        assert!(ctx.position_rank(&no_pace).is_none(),
+            "players without pace_score must not rank");
+    }
+
+    #[test]
+    fn l0_league_context_goalies_excluded() {
+        let g = fake_pace_player(1, Position::Goalie, 100.0);
+        let ctx = LeagueContext::from_players(&[g.clone()]);
+        assert!(ctx.position_rank(&g).is_none(),
+            "goalies don't get a skater pace rank");
+    }
+
+    #[test]
+    fn l0_percentile_to_top_pct_floors_complement() {
+        assert_eq!(percentile_to_top_pct(100.0), 0);   // top of league
+        assert_eq!(percentile_to_top_pct(96.5), 3);    // floor(3.5) = 3
+        assert_eq!(percentile_to_top_pct(50.0), 50);
+        assert_eq!(percentile_to_top_pct(0.0), 100);
+    }
+
+    #[test]
+    fn l0_percentile_bar_spans_fill_proportional_to_rank() {
+        let dim    = Style::default().fg(DIM_COLOR);
+        let accent = Style::default().fg(ACCENT_COLOR);
+
+        // 50% percentile, 12-col bar → 6 filled + 6 empty.
+        let spans = percentile_bar_spans(50.0, 12, dim, accent);
+        let filled_text: String = spans.iter().map(|s| s.content.to_string()).collect();
+        let filled = filled_text.chars().filter(|c| *c == '█').count();
+        let empty  = filled_text.chars().filter(|c| *c == '░').count();
+        assert_eq!(filled, 6);
+        assert_eq!(empty,  6);
+        // Label says "top 50%".
+        assert!(filled_text.contains("top 50%"),
+            "percentile label missing, got {filled_text}");
+    }
+
+    #[test]
+    fn l0_panel_includes_pos_vs_league_when_context_populated() {
+        // McDavid in a 3-player center pool → ranks #1.
+        let p = fixture_player();
+        let pool = vec![
+            fixture_player(),
+            fake_pace_player(99001, Position::Center, 60.0),
+            fake_pace_player(99002, Position::Center, 70.0),
+        ];
+        let ctx = LeagueContext::from_players(&pool);
+        let lines = build_panel_lines(&p, &ctx);
+        let body  = lines_to_text(&lines);
+        assert!(body.contains("Pos vs C:"),
+            "expected pos-rank header, got:\n{body}");
+        assert!(body.contains("#1/3"),
+            "expected #1/3 rank, got:\n{body}");
+        assert!(body.contains("top "),
+            "expected top-N% label, got:\n{body}");
+    }
+
+    #[test]
+    fn l0_panel_omits_pos_vs_league_when_context_empty() {
+        let p = fixture_player();
+        let lines = build_panel_lines(&p, &LeagueContext::empty());
+        let body  = lines_to_text(&lines);
+        assert!(!body.contains("Pos vs"),
+            "empty context must suppress pos-rank section, got:\n{body}");
     }
 }

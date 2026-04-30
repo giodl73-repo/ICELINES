@@ -59,6 +59,13 @@ async fn run_loop(
         // Poll for loaded players
         if app.players.is_empty() {
             if let Some(players) = app.load_state.take_players() {
+                // Phase 8j: build the league context for percentile lookups
+                // in the dashboard panel. One scan, sorted vectors per
+                // position; reused for every player render thereafter.
+                app.league_context = crate::tui::dashboard_panel::LeagueContext::from_players(&players);
+                // Drop any panel cache that may have been computed with the
+                // empty context so the next render picks up the new percentiles.
+                app.dashboard_panel = crate::tui::dashboard_panel::CompiledPanel::new();
                 app.players = players;
                 app.status  = format!("{} players loaded — press ? for help", app.players.len());
             }
