@@ -378,6 +378,138 @@ fn build_export_payload(db: &GroupDb, name: &str) -> anyhow::Result<GroupExport>
     })
 }
 
+// ── Attended games (Phase 8 follow-up) ────────────────────────────────────────
+
+pub async fn run_games(cmd: crate::cli::GamesSubcommand) -> anyhow::Result<()> {
+    use crate::cli::GamesSubcommand;
+    use crate::db::AttendedGameInput;
+    let db = GroupDb::open()?;
+    match cmd {
+        GamesSubcommand::Add { game_id, note } => {
+            // Try to fetch boxscore metadata so the row is self-describing
+            // even after the API rotates the box out. Failures are fine —
+            // the row still records `game_id` and the user's note.
+            let meta = lookup_game_meta(game_id).await;
+            db.add_attended_game(&AttendedGameInput {
+                game_id,
+                game_date:   meta.as_ref().and_then(|m| m.date.clone()),
+                away_abbrev: meta.as_ref().map(|m| m.away_abbrev.clone()),
+                home_abbrev: meta.as_ref().map(|m| m.home_abbrev.clone()),
+                away_score:  meta.as_ref().and_then(|m| m.away_score),
+                home_score:  meta.as_ref().and_then(|m| m.home_score),
+                note,
+            })?;
+            match meta {
+                Some(m) => println!("✓ Recorded: {} {} @ {} ({})",
+                    m.date.as_deref().unwrap_or("?"),
+                    m.away_abbrev, m.home_abbrev,
+                    score_pair(m.away_score, m.home_score)),
+                None    => println!("✓ Recorded game {game_id} (boxscore unavailable; row saved)"),
+            }
+        }
+        GamesSubcommand::Remove { game_id } => {
+            if db.remove_attended_game(game_id)? {
+                println!("✓ Removed game {game_id} from attended list.");
+            } else {
+                bail!("game {game_id} was not on your attended list");
+            }
+        }
+        GamesSubcommand::List => {
+            let rows = db.list_attended_games()?;
+            if rows.is_empty() {
+                println!("No attended games yet. Add one with `icelines games add <game_id>`.");
+                return Ok(());
+            }
+            println!("{:<10} {:<12} {:<24} {:<8} {}",
+                "Game ID", "Date", "Matchup", "Score", "Note");
+            println!("{}", "─".repeat(78));
+            for r in &rows {
+                let date = r.game_date.as_deref().unwrap_or("—");
+                let matchup = format!("{} @ {}", r.away_abbrev, r.home_abbrev);
+                let score = score_pair(r.away_score, r.home_score);
+                println!("{:<10} {:<12} {:<24} {:<8} {}",
+                    r.game_id, date, matchup, score, r.note);
+            }
+            println!("\n{} game(s) attended.", rows.len());
+        }
+        GamesSubcommand::Export { out } => {
+            let rows = db.list_attended_games()?;
+            let json = serde_json::to_string_pretty(&AttendedGamesExport {
+                version: 1,
+                games: rows.iter().map(|r| ExportRow {
+                    game_id: r.game_id,
+                    date:    r.game_date.clone(),
+                    away:    r.away_abbrev.clone(),
+                    home:    r.home_abbrev.clone(),
+                    away_score: r.away_score,
+                    home_score: r.home_score,
+                    note:    r.note.clone(),
+                }).collect(),
+            }).context("serializing attended games")?;
+            if out == "-" {
+                println!("{json}");
+            } else {
+                std::fs::write(&out, &json)
+                    .with_context(|| format!("writing {out}"))?;
+                println!("✓ Exported {} game(s) to {}", rows.len(), out);
+            }
+        }
+    }
+    Ok(())
+}
+
+#[derive(Debug, serde::Serialize)]
+struct AttendedGamesExport {
+    version: u32,
+    games:   Vec<ExportRow>,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct ExportRow {
+    game_id:    u64,
+    date:       Option<String>,
+    away:       String,
+    home:       String,
+    away_score: Option<u8>,
+    home_score: Option<u8>,
+    note:       String,
+}
+
+#[derive(Debug, Clone)]
+struct GameMeta {
+    date:        Option<String>,
+    away_abbrev: String,
+    home_abbrev: String,
+    away_score:  Option<u8>,
+    home_score:  Option<u8>,
+}
+
+/// Best-effort fetch of metadata for a game_id. Returns `None` on any
+/// failure (offline, 404, malformed) — the caller still records the
+/// game with the user-supplied note + ID.
+async fn lookup_game_meta(game_id: u64) -> Option<GameMeta> {
+    use icelines_fetch::nhl_api::NhlApiClient;
+    let client = NhlApiClient::production();
+    let bs = client.fetch_boxscore(game_id).await.ok()?;
+    Some(GameMeta {
+        // The boxscore endpoint exposes `gameDate` at the top — extract
+        // via a separate call if the parser doesn't already publish it.
+        // For now leave date as None and let users see the matchup.
+        date: None,
+        away_abbrev: bs.away_abbrev,
+        home_abbrev: bs.home_abbrev,
+        away_score:  Some(bs.away_score),
+        home_score:  Some(bs.home_score),
+    })
+}
+
+fn score_pair(away: Option<u8>, home: Option<u8>) -> String {
+    match (away, home) {
+        (Some(a), Some(h)) => format!("{a}-{h}"),
+        _                  => "—".to_owned(),
+    }
+}
+
 // ── Shared helpers ─────────────────────────────────────────────────────────────
 
 fn find_player<'a>(players: &'a [Player], name: &str) -> anyhow::Result<&'a Player> {
