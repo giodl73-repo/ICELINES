@@ -1,14 +1,21 @@
 #!/usr/bin/env python3
 """
-Fetch NHL historical season data (bios + stats) from the public NHL API.
+Fetch NHL historical season data from the public NHL API.
 
-Saves bios.json and stats.json to data/seasons/{SEASON}/ for each season.
-Skips seasons that already have both files.
+Saves three files to data/seasons/{SEASON}/ per season:
+  - bios.json          (skater biographical data)
+  - stats.json         (skater season statistics)
+  - goalie-stats.json  (goalie season statistics — Phase G.0)
+
+Skips files that already exist unless --force is passed. Use
+--skaters-only or --goalies-only to scope the fetch.
 
 Usage:
     python3 scripts/fetch_history.py
     python3 scripts/fetch_history.py --seasons 20002001 20012002
     python3 scripts/fetch_history.py --from 20002001 --to 20202021
+    python3 scripts/fetch_history.py --goalies-only --seasons 20212022 \
+        20222023 20232024 20242025 20252026
 """
 
 import argparse
@@ -76,36 +83,74 @@ def fetch_paged(endpoint: str, delay_ms: int = 300) -> list:
     return all_rows
 
 
-def fetch_season(season: str, data_root: Path, force: bool = False) -> bool:
-    """Fetch bios + stats for one season. Returns True if fetched, False if skipped."""
-    dest = data_root / season
-    bios_path  = dest / "bios.json"
-    stats_path = dest / "stats.json"
+def fetch_season(
+    season: str,
+    data_root: Path,
+    force: bool = False,
+    fetch_skaters: bool = True,
+    fetch_goalies: bool = True,
+) -> bool:
+    """Fetch bios + stats + goalie-stats for one season.
 
-    if not force and bios_path.exists() and stats_path.exists():
-        bios_count  = len(json.loads(bios_path.read_text()))
-        stats_count = len(json.loads(stats_path.read_text()))
-        print(f"  {season}: already exists ({bios_count} bios, {stats_count} stats) — skipping")
+    Returns True if any file was fetched, False if every requested file
+    was already on disk and `force` is off.
+    """
+    dest = data_root / season
+    bios_path    = dest / "bios.json"
+    stats_path   = dest / "stats.json"
+    goalies_path = dest / "goalie-stats.json"
+    dest.mkdir(parents=True, exist_ok=True)
+
+    skater_present  = bios_path.exists() and stats_path.exists()
+    goalies_present = goalies_path.exists()
+
+    # Fast-skip path — every requested file already exists.
+    if not force \
+            and (not fetch_skaters or skater_present) \
+            and (not fetch_goalies or goalies_present):
+        parts = []
+        if skater_present:
+            parts.append(f"{len(json.loads(bios_path.read_text()))} bios, "
+                         f"{len(json.loads(stats_path.read_text()))} stats")
+        if goalies_present:
+            parts.append(f"{len(json.loads(goalies_path.read_text()))} goalies")
+        joined = " | ".join(parts) if parts else "nothing requested"
+        print(f"  {season}: already exists ({joined}) — skipping")
         return False
 
-    dest.mkdir(parents=True, exist_ok=True)
-    print(f"  {season}: fetching bios...", end="", flush=True)
+    fetched_any = False
 
-    bios_ep  = f"{BASE}/skater/bios?cayenneExp=seasonId%3D{season}%20and%20gameTypeId%3D2"
-    stats_ep = f"{BASE}/skater/summary?cayenneExp=seasonId%3D{season}%20and%20gameTypeId%3D2"
+    # ── Skaters ─────────────────────────────────────────────────────────
+    if fetch_skaters and (force or not skater_present):
+        print(f"  {season}: fetching bios...", end="", flush=True)
+        bios_ep = f"{BASE}/skater/bios?cayenneExp=seasonId%3D{season}%20and%20gameTypeId%3D2"
+        bios = fetch_paged(bios_ep)
+        print(f" {len(bios)} players", end="", flush=True)
+        bios_path.write_text(json.dumps(bios, separators=(",", ":")))
 
-    bios = fetch_paged(bios_ep)
-    print(f" {len(bios)} players", end="", flush=True)
-    bios_path.write_text(json.dumps(bios, separators=(",", ":")))
+        time.sleep(0.5)
+        print(f"  | stats...", end="", flush=True)
+        stats_ep = f"{BASE}/skater/summary?cayenneExp=seasonId%3D{season}%20and%20gameTypeId%3D2"
+        stats = fetch_paged(stats_ep)
+        print(f" {len(stats)} players")
+        stats_path.write_text(json.dumps(stats, separators=(",", ":")))
+        fetched_any = True
 
-    time.sleep(0.5)
-    print(f"  | stats...", end="", flush=True)
+    # ── Goalies ─────────────────────────────────────────────────────────
+    if fetch_goalies and (force or not goalies_present):
+        time.sleep(0.5)
+        print(f"  {season}: fetching goalies...", end="", flush=True)
+        # NHL goalie summary endpoint mirrors the skater one — same paging,
+        # same cayenneExp filter shape. Pre-1955 returns empty arrays for
+        # most fields; we still write the file (possibly empty) so callers
+        # can rely on its presence.
+        goalies_ep = f"{BASE}/goalie/summary?cayenneExp=seasonId%3D{season}%20and%20gameTypeId%3D2"
+        goalies = fetch_paged(goalies_ep)
+        print(f" {len(goalies)} goalies")
+        goalies_path.write_text(json.dumps(goalies, separators=(",", ":")))
+        fetched_any = True
 
-    stats = fetch_paged(stats_ep)
-    print(f" {len(stats)} players")
-    stats_path.write_text(json.dumps(stats, separators=(",", ":")))
-
-    return True
+    return fetched_any
 
 
 def main():
@@ -115,6 +160,10 @@ def main():
     parser.add_argument("--to",   dest="to_season",   help="End season (inclusive)")
     parser.add_argument("--force", action="store_true", help="Re-fetch even if data exists")
     parser.add_argument("--data-dir", default="data/seasons", help="Output directory")
+    parser.add_argument("--skaters-only", action="store_true",
+                        help="Skip goalie fetch (legacy behaviour)")
+    parser.add_argument("--goalies-only", action="store_true",
+                        help="Only fetch goalie-stats.json — skip bios + stats")
     args = parser.parse_args()
 
     data_root = Path(args.data_dir)
@@ -134,13 +183,23 @@ def main():
     print(f"  Output:  {data_root.resolve()}")
     print()
 
+    if args.skaters_only and args.goalies_only:
+        print("  --skaters-only and --goalies-only are mutually exclusive")
+        sys.exit(2)
+
+    fetch_skaters = not args.goalies_only
+    fetch_goalies = not args.skaters_only
+
     fetched = 0
     skipped = 0
     errors  = 0
 
     for season in seasons:
         try:
-            if fetch_season(season, data_root, force=args.force):
+            if fetch_season(
+                season, data_root, force=args.force,
+                fetch_skaters=fetch_skaters, fetch_goalies=fetch_goalies,
+            ):
                 fetched += 1
             else:
                 skipped += 1
