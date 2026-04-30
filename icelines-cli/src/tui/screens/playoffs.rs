@@ -48,7 +48,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
             render_message(f, inner, "Fetching playoff bracket…"),
         PlayoffsState::Error(e) => render_error(f, inner, &e),
         PlayoffsState::Loaded(b) if b.is_empty() => {
-            render_off_season(f, inner, &b);
+            render_off_season(f, inner, &b, &app.active_season);
         }
         PlayoffsState::Loaded(b) => {
             render_bracket(f, inner, app, &b);
@@ -82,15 +82,20 @@ fn render_error(f: &mut Frame, area: Rect, msg: &str) {
     );
 }
 
-fn render_off_season(f: &mut Frame, area: Rect, b: &PlayoffBracket) {
+fn render_off_season(f: &mut Frame, area: Rect, b: &PlayoffBracket, active_season: &str) {
     let dim  = Style::default().fg(Color::DarkGray);
     let gold = Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD);
+    // Live API often returns the bracket payload with an empty `season`
+    // field during the regular season. Fall back to the active season the
+    // user picked so the message always carries a real label.
+    let season_label = if b.season.is_empty() { active_season } else { b.season.as_str() };
+    let pretty = self::season_label(season_label);
     let lines = vec![
         Line::from(""),
         Line::styled("  Playoffs not yet active for this season.", gold),
         Line::from(""),
         Line::styled(
-            format!("  Season {} — bracket data has not been published.", b.season),
+            format!("  Season {pretty} — bracket data has not been published."),
             dim,
         ),
         Line::from(""),
