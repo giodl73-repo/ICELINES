@@ -174,44 +174,38 @@ const PANEL_WIDTH: usize = 28;
 
 /// Build the full set of styled lines for one player. Sections, in order:
 ///
-/// 1. **Identity** — name, team · pos · nationality/handedness.
-/// 2. **Counting stats** — G/A, Pts/+/-, PP/SOG.
-/// 3. **5-season trend** — three coloured sparklines (G, Pts, SOG) with
+/// 1. **Header** — compact `Lastname · TEAM POS` confirms which player
+///    the panel is showing without duplicating the full name + bio that
+///    the left stats column already displays.
+/// 2. **5-season trend** — three coloured sparklines (G, Pts, SOG) with
 ///    range marker and first→last anchors.
-/// 4. **Position vs league** — rank + percentile bar (when context has
+/// 3. **Position vs league** — rank + percentile bar (when context has
 ///    enough peers at the player's position).
+///
+/// Counting stats (G/A/Pts/+/-/PP/SOG) deliberately omitted — they live
+/// in the left stats column on the player screen. The panel adds value
+/// by surfacing what that column doesn't: history and league position.
 fn build_panel_lines(p: &Player, league: &LeagueContext) -> Vec<Line<'static>> {
-    let mut lines: Vec<Line<'static>> = Vec::with_capacity(18);
+    let mut lines: Vec<Line<'static>> = Vec::with_capacity(10);
     let dim    = Style::default().fg(DIM_COLOR);
     let title  = Style::default().fg(TITLE_COLOR).add_modifier(Modifier::BOLD);
     let accent = Style::default().fg(ACCENT_COLOR);
 
-    // ── Identity ──────────────────────────────────────────────────────
-    lines.push(Line::styled(trim_to(&p.full_name, PANEL_WIDTH), title));
+    // ── Header ────────────────────────────────────────────────────────
+    // Compact identity so the panel makes sense even with the cursor
+    // mid-frame. Last name keeps the line short; team + position make it
+    // clear which McDavid (etc.) the panel is showing.
+    let last_name = p.full_name
+        .rsplit_once(' ')
+        .map(|(_, l)| l)
+        .unwrap_or(p.full_name.as_str());
     lines.push(Line::from(vec![
+        Span::styled(trim_to(last_name, 18), title),
+        Span::styled("  ·  ", dim),
         Span::styled(p.team.as_str().to_owned(), accent),
-        Span::styled("  ·  ", dim),
+        Span::styled(" ", dim),
         Span::raw(p.position.abbreviation().to_owned()),
-        Span::styled("  ·  ", dim),
-        Span::raw(format!(
-            "{}/{}",
-            p.nationality_code.as_deref().unwrap_or("—"),
-            p.shoots_catches.as_deref().unwrap_or("—"),
-        )),
     ]));
-    lines.push(Line::from(""));
-
-    // ── Counting stats ────────────────────────────────────────────────
-    // Each row: `LABEL  VALUE   LABEL  VALUE` — values get the accent
-    // colour, labels stay dim.
-    lines.push(stat_row("G  ", &p.season_goals.to_string(), "A  ", &p.season_assists.to_string(),
-                        dim, accent));
-    lines.push(stat_row("Pts", &p.season_points.to_string(),
-                        "+/-", &format!("{:+}", p.plus_minus),
-                        dim, accent));
-    lines.push(stat_row("PP", &p.pp_points.to_string(),
-                        "SOG", &p.shots.to_string(),
-                        dim, accent));
     lines.push(Line::from(""));
 
     // ── Bundled-history trend ────────────────────────────────────────
@@ -228,14 +222,14 @@ fn build_panel_lines(p: &Player, league: &LeagueContext) -> Vec<Line<'static>> {
             lines.push(stat_row("Pts/82", &pace, "PPG", &ppg, dim, accent));
         }
         1 => {
+            // Single-season history: nothing to chart yet. Just confirm
+            // which season is bundled — the actual G/Pts for that season
+            // already show on the left stats column.
             let row = &history[0];
             lines.push(Line::styled(
                 format!("Bundled history: {}", short_season(row.season)),
                 dim,
             ));
-            lines.push(stat_row("G  ", &row.goals.to_string(),
-                                "Pts", &row.points.to_string(),
-                                dim, accent));
         }
         _ => {
             let goals_values: Vec<f64> = history.iter().map(|r| r.goals  as f64).collect();
@@ -508,19 +502,23 @@ mod tests {
     }
 
     #[test]
-    fn l0_build_panel_lines_includes_identity_and_stats() {
+    fn l0_build_panel_lines_header_uses_last_name_and_team() {
+        // Header is compact: Lastname · TEAM POS. Counting stats live on
+        // the left column of the player screen, not duplicated here.
         let p = fixture_player();
         let lines = build_panel_lines(&p, &LeagueContext::empty());
         let body = lines_to_text(&lines);
-        assert!(body.contains("Connor McDavid"), "name missing:\n{body}");
-        assert!(body.contains("EDM"), "team missing:\n{body}");
-        // The format uses 2-space padding around the dot separators.
-        assert!(body.contains("·  C  ·"), "position missing:\n{body}");
-        assert!(body.contains("CAN/L"), "nationality/handedness missing:\n{body}");
-        // Counting stats (53 G, 127 Pts, +57)
-        assert!(body.contains(" 53"), "goals missing:\n{body}");
-        assert!(body.contains("127"), "points missing:\n{body}");
-        assert!(body.contains("+57"), "plus_minus missing or unsigned:\n{body}");
+        assert!(body.contains("McDavid"), "last name missing:\n{body}");
+        assert!(body.contains("EDM"),     "team missing:\n{body}");
+        assert!(body.contains(" C"),      "position missing:\n{body}");
+        // First name + the redundant counting block must NOT appear.
+        assert!(!body.starts_with("Connor"),
+            "header should use last name only, got:\n{body}");
+        // Counting stats are on the left side now.
+        assert!(!body.contains(" 53"),
+            "goals row should not duplicate left column:\n{body}");
+        assert!(!body.contains("127"),
+            "points row should not duplicate left column:\n{body}");
     }
 
     #[test]
@@ -593,15 +591,9 @@ mod tests {
 
     #[test]
     fn l0_build_panel_lines_single_season_shows_row_no_spark() {
-        // 1-season history: render the season's row, skip the spark.
-        // Stub history loading by hand-building the lines via the same
-        // shape, since we can't easily construct a 1-season player in
-        // the bundled data. Verify the formatter output instead.
+        // 1-season history: just confirm the bundled season — counting
+        // stats live on the left column of the player screen.
         let history = vec![HistoryRow { season: "20252026", goals: 12, points: 30, shots: 80 }];
-        // The body for a 1-season fall-through is two lines:
-        //   "Bundled history: 25-26"
-        //   "G    12    Pts  30"
-        // We assert the format directly via the helper functions.
         assert_eq!(short_season(history[0].season), "25-26");
         let row = format!("Bundled history: {}", short_season(history[0].season));
         assert_eq!(row, "Bundled history: 25-26");
