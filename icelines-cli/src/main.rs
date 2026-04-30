@@ -178,6 +178,11 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
             QuerySubcommand::Compare { player1, player2, similar, by, season } => {
                 commands::query::run_compare(player1, player2, similar, by, season).await?;
             }
+            QuerySubcommand::Goalies { top, sort, team, min_gp, season, json, csv } => {
+                commands::query::run_goalies(commands::query::GoaliesArgs {
+                    top, sort, team, min_gp, season, json, csv,
+                }).await?;
+            }
         },
         Commands::Fantasy(sub) => match sub {
             FantasySubcommand::LeagueCreate { name, scheme } =>

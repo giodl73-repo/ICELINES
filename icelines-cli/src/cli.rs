@@ -602,6 +602,32 @@ pub enum QuerySubcommand {
         #[arg(long)]
         season: Option<String>,
     },
+
+    /// Goalie leaderboard — Phase G.5.
+    /// `sv-pct` (default) | `gaa` | `wins` | `gp` | `saves` | `so`.
+    Goalies {
+        /// Number of goalies to show.
+        #[arg(long, default_value_t = 20)]
+        top: usize,
+        /// Sort metric: sv-pct | gaa | wins | gp | saves | so.
+        #[arg(long, default_value = "sv-pct")]
+        sort: String,
+        /// Filter to one team (e.g. WPG).
+        #[arg(long)]
+        team: Option<String>,
+        /// Minimum GP threshold. Default 15 (NHL leaderboard convention).
+        #[arg(long, default_value_t = 15)]
+        min_gp: u32,
+        /// Query a specific historical season (e.g. 20242025).
+        #[arg(long)]
+        season: Option<String>,
+        /// Export as JSON.
+        #[arg(long)]
+        json: bool,
+        /// Export as CSV.
+        #[arg(long)]
+        csv: bool,
+    },
 }
 
 // ── Fantasy sub-commands ──────────────────────────────────────────────────────

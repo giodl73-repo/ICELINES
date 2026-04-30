@@ -697,6 +697,133 @@ async fn print_career(p: &Player) {
     }
 }
 
+// ── icelines query goalies (Phase G.5) ────────────────────────────────────────
+
+pub struct GoaliesArgs {
+    pub top:    usize,
+    pub sort:   String,
+    pub team:   Option<String>,
+    pub min_gp: u32,
+    pub season: Option<String>,
+    pub json:   bool,
+    pub csv:    bool,
+}
+
+pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
+    use icelines_core::model::Goalie;
+    use icelines_fetch::goalie_repository::GoalieRepository;
+    use icelines_fetch::snapshot::SnapshotStore;
+
+    if args.json && args.csv {
+        bail!("--json and --csv are mutually exclusive");
+    }
+
+    let cfg = Config::load()?;
+    let season = match args.season.as_deref() {
+        Some(s) => {
+            crate::commands::players::validate_bundled_season(s)?;
+            s.to_owned()
+        }
+        None => cfg.season_str(),
+    };
+    let repo = GoalieRepository::new(SnapshotStore::new(cfg.snapshot_dir()), season.clone());
+    let mut goalies: Vec<Goalie> = repo.load_all()
+        .map_err(|e| anyhow::anyhow!("{e}\n  Try: icelines fetch goalies"))?;
+
+    // Filters
+    if let Some(team) = args.team.as_deref() {
+        let abbrev = team.to_ascii_uppercase();
+        goalies.retain(|g| g.team.as_str() == abbrev);
+    }
+    goalies.retain(|g| g.qualified(args.min_gp));
+
+    // Sort
+    use std::cmp::Ordering;
+    let sort_key = args.sort.to_ascii_lowercase();
+    goalies.sort_by(|a, b| {
+        let sa = a.stats.as_ref();
+        let sb = b.stats.as_ref();
+        match sort_key.as_str() {
+            "sv-pct" | "svpct" | "sv%" => {
+                let av = sa.and_then(|s| s.save_pct).unwrap_or(0.0);
+                let bv = sb.and_then(|s| s.save_pct).unwrap_or(0.0);
+                bv.partial_cmp(&av).unwrap_or(Ordering::Equal)
+            }
+            "gaa" => {
+                let av = sa.and_then(|s| s.goals_against_average).unwrap_or(f32::INFINITY);
+                let bv = sb.and_then(|s| s.goals_against_average).unwrap_or(f32::INFINITY);
+                av.partial_cmp(&bv).unwrap_or(Ordering::Equal)
+            }
+            "wins" | "w" =>
+                sb.map(|s| s.wins).unwrap_or(0).cmp(&sa.map(|s| s.wins).unwrap_or(0)),
+            "gp" =>
+                sb.map(|s| s.games_played).unwrap_or(0).cmp(&sa.map(|s| s.games_played).unwrap_or(0)),
+            "saves" =>
+                sb.map(|s| s.saves).unwrap_or(0).cmp(&sa.map(|s| s.saves).unwrap_or(0)),
+            "so" | "shutouts" =>
+                sb.map(|s| s.shutouts).unwrap_or(0).cmp(&sa.map(|s| s.shutouts).unwrap_or(0)),
+            other => {
+                eprintln!("  Hint: unknown sort '{other}' — falling back to sv-pct.");
+                let av = sa.and_then(|s| s.save_pct).unwrap_or(0.0);
+                let bv = sb.and_then(|s| s.save_pct).unwrap_or(0.0);
+                bv.partial_cmp(&av).unwrap_or(Ordering::Equal)
+            }
+        }
+    });
+    goalies.truncate(args.top);
+
+    if args.json {
+        println!("{}", serde_json::to_string_pretty(&goalies)
+            .context("serializing goalies to JSON")?);
+        return Ok(());
+    }
+    if args.csv {
+        println!("rank,goalie,team,gp,wins,losses,ot_losses,sv_pct,gaa,so,saves");
+        for (i, g) in goalies.iter().enumerate() {
+            let s = g.stats.as_ref();
+            println!("{},\"{}\",{},{},{},{},{},{:.4},{:.3},{},{}",
+                i + 1,
+                g.full_name,
+                g.team.as_str(),
+                s.map(|s| s.games_played).unwrap_or(0),
+                s.map(|s| s.wins).unwrap_or(0),
+                s.map(|s| s.losses).unwrap_or(0),
+                s.and_then(|s| s.ot_losses).unwrap_or(0),
+                s.and_then(|s| s.save_pct).unwrap_or(0.0),
+                s.and_then(|s| s.goals_against_average).unwrap_or(0.0),
+                s.map(|s| s.shutouts).unwrap_or(0),
+                s.map(|s| s.saves).unwrap_or(0),
+            );
+        }
+        return Ok(());
+    }
+
+    // Default: terminal-friendly table.
+    println!("{:<4} {:<24} {:<5} {:<4} {:<10} {:<6} {:<6} {:<3} {:<6}",
+        "Rank", "Goalie", "Team", "GP", "W-L-OT", "SV%", "GAA", "SO", "Saves");
+    println!("{}", "─".repeat(80));
+    for (i, g) in goalies.iter().enumerate() {
+        let s = match g.stats.as_ref() { Some(s) => s, None => continue };
+        let record = match s.ot_losses {
+            Some(otl) => format!("{}-{}-{}", s.wins, s.losses, otl),
+            None      => format!("{}-{}",    s.wins, s.losses),
+        };
+        let sv  = s.save_pct.map(|v| format!("{:.3}", v)).unwrap_or_else(|| "—".to_owned());
+        let gaa = s.goals_against_average.map(|v| format!("{:.2}", v))
+            .unwrap_or_else(|| "—".to_owned());
+        println!("{:<4} {:<24} {:<5} {:<4} {:<10} {:<6} {:<6} {:<3} {:<6}",
+            i + 1,
+            g.full_name.chars().take(24).collect::<String>(),
+            g.team.as_str(),
+            s.games_played,
+            record, sv, gaa, s.shutouts, s.saves,
+        );
+    }
+    println!("\n{} goalies (min {} GP, sorted by {}) for season {}.",
+        goalies.len(), args.min_gp, sort_key, season);
+    Ok(())
+}
+
 // ── icelines query compare ────────────────────────────────────────────────────
 
 pub async fn run_compare(

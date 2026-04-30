@@ -1104,6 +1104,91 @@ fn l2_cmd_group_rename_succeeds() {
     assert!(!stdout.contains(" before "), "old name should not appear: {stdout}");
 }
 
+// ── Phase G.5: query goalies ───────────────────────────────────────────────
+
+#[test]
+fn l2_cmd_query_goalies_default_table() {
+    let out = run(&["query", "goalies", "--top", "5"]);
+    assert!(out.status.success(),
+        "query goalies stderr: {}", String::from_utf8_lossy(&out.stderr));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("Goalie") && stdout.contains("SV%") && stdout.contains("GAA"),
+        "default table missing column headers, got:\n{stdout}");
+    // Footer carries qualifying gate + sort label.
+    assert!(stdout.contains("min 15 GP") && stdout.contains("sv-pct"),
+        "footer should mention min-gp + sort, got:\n{stdout}");
+}
+
+#[test]
+fn l2_cmd_query_goalies_csv_includes_header() {
+    let out = run(&["query", "goalies", "--top", "3", "--csv"]);
+    assert!(out.status.success(),
+        "query goalies --csv stderr: {}", String::from_utf8_lossy(&out.stderr));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let first = stdout.lines().next().unwrap_or("");
+    assert!(first.starts_with("rank,goalie,team,gp,wins"),
+        "CSV header missing, got first line: {first}");
+}
+
+#[test]
+fn l2_cmd_query_goalies_json_parses() {
+    let out = run(&["query", "goalies", "--top", "2", "--json"]);
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let parsed: serde_json::Value = serde_json::from_str(&stdout)
+        .expect("query goalies --json must emit valid JSON");
+    let arr = parsed.as_array().expect("top-level array");
+    assert_eq!(arr.len(), 2);
+    assert!(arr[0]["full_name"].is_string());
+    assert!(arr[0]["stats"]["save_pct"].is_number());
+}
+
+#[test]
+fn l2_cmd_query_goalies_sort_gaa_low_first() {
+    let out = run(&["query", "goalies", "--top", "5", "--sort", "gaa"]);
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    // Pull GAA column values from the data rows; the smallest should
+    // be first since GAA sort is ascending.
+    let gaas: Vec<f32> = stdout.lines()
+        .filter(|l| l.starts_with(|c: char| c.is_ascii_digit()))
+        .filter_map(|l| {
+            let parts: Vec<&str> = l.split_whitespace().collect();
+            // Layout: rank goalie team gp w-l-ot sv% gaa so saves
+            parts.get(parts.len().saturating_sub(3))
+                .and_then(|s| s.parse::<f32>().ok())
+        })
+        .collect();
+    assert!(gaas.len() >= 2, "expected at least 2 data rows, got: {gaas:?}");
+    for w in gaas.windows(2) {
+        assert!(w[0] <= w[1] + 0.001,
+            "GAA sort should be ascending, got {} before {} in {gaas:?}", w[0], w[1]);
+    }
+}
+
+#[test]
+fn l2_cmd_query_goalies_team_filter_one_team_only() {
+    let out = run(&["query", "goalies", "--team", "WPG", "--min-gp", "5"]);
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    // Every data row should show WPG as the team. We grep the WPG column —
+    // the one between the goalie name and GP. Count occurrences of " WPG "
+    // (with both-side padding, since other 3-char tokens could collide).
+    let wpg_rows = stdout.lines()
+        .filter(|l| l.contains(" WPG "))
+        .count();
+    // Count data rows: lines whose FIRST token is a numeric rank.
+    // The footer ("N goalies (min ...)") also starts with a digit, so
+    // exclude it via the "goalies (" suffix check.
+    let other_team_rows = stdout.lines()
+        .filter(|l| l.starts_with(|c: char| c.is_ascii_digit()))
+        .filter(|l| !l.contains("goalies ("))
+        .count();
+    assert!(wpg_rows >= 1, "expected at least one WPG goalie, got:\n{stdout}");
+    assert_eq!(wpg_rows, other_team_rows,
+        "every data row should be WPG when --team WPG, got:\n{stdout}");
+}
+
 // ── Attended games (Phase 8 follow-up) ─────────────────────────────────────
 
 #[test]
