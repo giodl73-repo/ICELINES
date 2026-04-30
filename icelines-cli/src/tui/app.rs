@@ -540,6 +540,27 @@ impl App {
                     self.picker_selected = season_list.iter()
                         .position(|(id, _, _)| *id == self.active_season.as_str())
                         .unwrap_or(0);
+                } else if c == 'd' && !matches!(
+                    self.screen,
+                    // Skip text-input screens; 'd' is part of the typed query.
+                    Screen::Search | Screen::Tonight
+                ) && !(self.screen == Screen::Schedule && self.schedule_search_mode)
+                  && !(self.screen == Screen::Queries
+                       && matches!(self.query_mode, QueryMode::SaveName))
+                {
+                    // Global shortcut: jump to the league depth view.
+                    // Already on a depth screen → toggle back to Home so
+                    // the key can hide the chart too.
+                    self.prev_screen = Some(self.screen.clone());
+                    self.screen = match &self.screen {
+                        Screen::Depth | Screen::DepthTeam(_) => Screen::Home,
+                        _ => Screen::Depth,
+                    };
+                    self.selected = 0;
+                    self.status = match &self.screen {
+                        Screen::Depth => "Depth chart — s: scoring  Enter: team chart  d: home".to_owned(),
+                        _             => "Home".to_owned(),
+                    };
                 }
             }
             Action::Backspace => {
@@ -970,6 +991,8 @@ impl App {
     /// Reload app.players from the given season (bundled or installed).
     fn reload_for_season(&mut self, season_id: &str) {
         use icelines_fetch::{bundled, player_builder};
+        use icelines_fetch::goalie_repository::GoalieRepository;
+        use icelines_fetch::snapshot::SnapshotStore;
         use std::collections::HashMap;
 
         let bios = bundled::get_bios(season_id)
@@ -992,8 +1015,23 @@ impl App {
             Vec::new()
         };
 
+        // Phase G.7c: reload goalies for the requested season too. Without
+        // this, the GOALTENDING strip on Team and the Goalies tab keep
+        // showing current-season goalies while skater data is historical.
+        let goalies = match crate::config::Config::load() {
+            Ok(cfg) => {
+                let repo = GoalieRepository::new(
+                    SnapshotStore::new(cfg.snapshot_dir()),
+                    season_id.to_owned(),
+                );
+                repo.load_all().unwrap_or_default()
+            }
+            Err(_) => Vec::new(),
+        };
+
         self.active_season = season_id.to_owned();
         self.players = players;
+        self.goalies = goalies;
         self.selected = 0;
 
         if season_id == icelines_core::CURRENT_SEASON_STR {

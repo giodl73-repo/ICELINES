@@ -149,7 +149,7 @@ fn render_nav(f: &mut Frame, app: &App, area: Rect) {
     } else if app.show_season_picker {
         "  Esc:cancel picker"
     } else {
-        "  y:season  F:admin  Tab:cycle  ←→:sub-view  ?:help  q:quit"
+        "  d:depth  y:season  F:admin  Tab:cycle  ←→:sub-view  ?:help  q:quit"
     };
     spans.push(Span::styled(hint, Style::default().fg(Color::DarkGray)));
     f.render_widget(Paragraph::new(Line::from(spans)), area);

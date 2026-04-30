@@ -23,12 +23,15 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, idx: usize) {
     // Trigger headshot fetch if not cached.
     // URL is derivable from nhl_id + team + season even without fetching rosters:
     //   https://assets.nhle.com/mugs/nhl/{SEASON}/{TEAM}/{ID}.png
+    // Use active_season so historical-season views build a season-correct
+    // URL — disk cache key (nhl_id) is season-agnostic, so once any
+    // season's URL succeeds the image persists for every future view.
     if let Some(id) = p.nhl_id {
         if app.headshot_cache.get(id).is_none() {
             let url = p.headshot_url.clone().unwrap_or_else(|| {
                 format!(
                     "https://assets.nhle.com/mugs/nhl/{}/{}/{}.png",
-                    icelines_core::CURRENT_SEASON_STR,
+                    app.active_season,
                     p.team.as_str(),
                     id
                 )
