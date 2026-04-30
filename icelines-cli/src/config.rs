@@ -147,46 +147,51 @@ pub fn resolve_live(cli_no_live: bool, env_no_live: bool, config_live: Option<bo
 static DASHBOARDS: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
 
 /// Resolve and stash the dashboards boolean. Precedence (highest first):
-/// 1. `--dashboards` CLI flag (force-on)
-/// 2. `ICELINES_DASHBOARDS` env var (any non-empty / non-zero / non-"false")
-/// 3. `dashboards = true` in `~/.icelines/config.toml`
-/// 4. Default: dashboards OFF (experimental).
+/// 1. `--no-dashboards` CLI flag (force-off)
+/// 2. `ICELINES_DASHBOARDS=0` env var (force-off)
+/// 3. `dashboards = false` in `~/.icelines/config.toml`
+/// 4. Default: dashboards ON.
 ///
 /// Idempotent — first call wins, subsequent calls are no-ops.
-pub fn init_dashboards(cli_dashboards: bool, cfg: &Config) {
-    let env_on = std::env::var_os("ICELINES_DASHBOARDS")
+pub fn init_dashboards(cli_no_dashboards: bool, cfg: &Config) {
+    let env_off = std::env::var_os("ICELINES_DASHBOARDS")
         .map(|v| {
             let s = v.to_string_lossy();
-            !s.is_empty() && s != "0" && !s.eq_ignore_ascii_case("false")
+            // Only an explicit falsy value disables; empty / unset / non-zero leaves it on.
+            s == "0" || s.eq_ignore_ascii_case("false") || s.eq_ignore_ascii_case("off")
         })
         .unwrap_or(false);
-    let resolved = if cli_dashboards {
-        true
-    } else if env_on {
-        true
+    let resolved = if cli_no_dashboards {
+        false
+    } else if env_off {
+        false
     } else if let Some(c) = cfg.dashboards {
         c
     } else {
-        false
+        true
     };
     let _ = DASHBOARDS.set(resolved);
 }
 
-/// True iff experimental dashboard panels should render. Returns `false`
-/// when `init_dashboards` was never called — the safe default for tests
-/// that don't go through the CLI entry point.
+/// True iff dashboard panels should render. Returns `true` when
+/// `init_dashboards` was never called — matches the new on-by-default
+/// behavior so tests that bypass the CLI entry point see panels by
+/// default (most TUI render tests work with explicit fixture setups
+/// that don't depend on this).
 pub fn dashboards_enabled() -> bool {
-    *DASHBOARDS.get().unwrap_or(&false)
+    *DASHBOARDS.get().unwrap_or(&true)
 }
 
 /// Pure precedence resolver for tests — same rule as `init_dashboards`
-/// but free of any global state.
+/// but free of any global state. Inputs: `cli_no` is `--no-dashboards`,
+/// `env_off` is `ICELINES_DASHBOARDS=0|false|off`, `config` is the
+/// optional `dashboards` config-file key.
 #[allow(dead_code)]
-pub fn resolve_dashboards(cli: bool, env: bool, config: Option<bool>) -> bool {
-    if cli            { return true; }
-    if env            { return true; }
+pub fn resolve_dashboards(cli_no: bool, env_off: bool, config: Option<bool>) -> bool {
+    if cli_no         { return false; }
+    if env_off        { return false; }
     if let Some(c) = config { return c; }
-    false
+    true
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -227,23 +232,27 @@ mod live_feeds_tests {
         assert_eq!(resolve_live(false, false, None),        true);
     }
 
-    // ── Phase 8j: dashboards flag precedence ───────────────────────────────
+    // ── Phase 8j: dashboards flag precedence (now opt-OUT — on by default) ──
 
     #[test]
-    fn l0_resolve_dashboards_default_is_off() {
-        assert_eq!(resolve_dashboards(false, false, None), false);
+    fn l0_resolve_dashboards_default_is_on() {
+        // With no CLI flag, no env var, and no config — dashboards render.
+        assert_eq!(resolve_dashboards(false, false, None), true);
     }
 
     #[test]
-    fn l0_resolve_dashboards_cli_wins_over_everything() {
-        assert_eq!(resolve_dashboards(true, false, None),         true);
-        assert_eq!(resolve_dashboards(true, false, Some(false)),  true);
-        assert_eq!(resolve_dashboards(true, true,  Some(false)),  true);
+    fn l0_resolve_dashboards_cli_no_wins_over_everything() {
+        // `--no-dashboards` forces off no matter what env/config say.
+        assert_eq!(resolve_dashboards(true, false, None),         false);
+        assert_eq!(resolve_dashboards(true, false, Some(true)),   false);
+        assert_eq!(resolve_dashboards(true, true,  Some(true)),   false);
     }
 
     #[test]
-    fn l0_resolve_dashboards_env_wins_over_config() {
-        assert_eq!(resolve_dashboards(false, true,  Some(false)), true);
+    fn l0_resolve_dashboards_env_off_wins_over_config() {
+        // `ICELINES_DASHBOARDS=0` disables even with `dashboards = true`.
+        assert_eq!(resolve_dashboards(false, true,  Some(true)),  false);
+        // env unset → config wins.
         assert_eq!(resolve_dashboards(false, false, Some(false)), false);
         assert_eq!(resolve_dashboards(false, false, Some(true)),  true);
     }
@@ -252,7 +261,8 @@ mod live_feeds_tests {
     fn l0_resolve_dashboards_config_only_when_no_higher_signal() {
         assert_eq!(resolve_dashboards(false, false, Some(true)),  true);
         assert_eq!(resolve_dashboards(false, false, Some(false)), false);
-        assert_eq!(resolve_dashboards(false, false, None),        false);
+        // No config → default true.
+        assert_eq!(resolve_dashboards(false, false, None),        true);
     }
 }
 

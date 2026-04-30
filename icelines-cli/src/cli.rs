@@ -19,14 +19,13 @@ pub struct Cli {
     #[arg(long, global = true)]
     pub no_live: bool,
 
-    /// Enable experimental proof-compiled dashboard panels (Phase 8j).
-    /// Currently surfaces a side panel on the TUI player card. Off by
-    /// default while the integration matures. Also settable via
-    /// `ICELINES_DASHBOARDS=1` or `dashboards = true` in
+    /// Disable the dashboard side panel on the TUI player card. The panel
+    /// is on by default; pass this flag to suppress it. Also settable via
+    /// `ICELINES_DASHBOARDS=0` or `dashboards = false` in
     /// `~/.icelines/config.toml`. Precedence: CLI flag > env > config >
-    /// default (off).
+    /// default (on).
     #[arg(long, global = true)]
-    pub dashboards: bool,
+    pub no_dashboards: bool,
 
     #[command(subcommand)]
     pub command: Commands,

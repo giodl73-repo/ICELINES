@@ -1092,28 +1092,28 @@ fn l2_cmd_group_rename_succeeds() {
     assert!(!stdout.contains(" before "), "old name should not appear: {stdout}");
 }
 
-// ── Phase 8j: dashboards feature flag ───────────────────────────────────────
+// ── Dashboards opt-out flag (was opt-in pre-2026-04-29) ────────────────────
 
 #[test]
-fn l2_cmd_dashboards_flag_documented_in_help() {
-    // The --dashboards global flag should appear in --help output so users
-    // discover it. Same shape as --no-live, just opt-in instead of opt-out.
+fn l2_cmd_no_dashboards_flag_documented_in_help() {
+    // The --no-dashboards global flag should appear in --help output.
+    // Same opt-out shape as --no-live.
     let out = run(&["--help"]);
     assert!(out.status.success(), "--help must exit 0");
     let stdout = String::from_utf8_lossy(&out.stdout);
-    assert!(stdout.contains("--dashboards"),
-        "--help must list --dashboards, got:\n{stdout}");
-    assert!(stdout.contains("ICELINES_DASHBOARDS") || stdout.contains("dashboards = true"),
+    assert!(stdout.contains("--no-dashboards"),
+        "--help must list --no-dashboards, got:\n{stdout}");
+    assert!(stdout.contains("ICELINES_DASHBOARDS") || stdout.contains("dashboards"),
         "--help must mention env var or config key, got:\n{stdout}");
 }
 
 #[test]
-fn l2_cmd_dashboards_flag_accepted_globally() {
-    // --dashboards on a non-TUI command must be accepted (it's a noop for
-    // non-TUI paths but must not error). Also verifies clap's global=true.
-    let out = run(&["--dashboards", "scheme", "list"]);
+fn l2_cmd_no_dashboards_flag_accepted_globally() {
+    // --no-dashboards on a non-TUI command must be accepted (noop for
+    // non-TUI paths but must not error). Verifies clap's global=true.
+    let out = run(&["--no-dashboards", "scheme", "list"]);
     assert!(out.status.success(),
-        "--dashboards scheme list stderr: {}",
+        "--no-dashboards scheme list stderr: {}",
         String::from_utf8_lossy(&out.stderr));
 }
 

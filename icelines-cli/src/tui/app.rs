@@ -516,7 +516,8 @@ impl App {
                     self.query_save_name.pop();
                 }
             }
-            Action::Tab => self.cycle_screen(),
+            Action::Tab     => self.cycle_screen(),
+            Action::TabPrev => self.cycle_screen_back(),
             Action::Refresh => {
                 if self.screen == Screen::Queries {
                     self.query_fields = crate::tui::screens::queries::default_fields();
@@ -1291,6 +1292,31 @@ impl App {
         self.maybe_fetch_schedule();
         self.maybe_fetch_playoffs();
     }
+
+    /// Reverse of `cycle_screen` — Shift-Tab.
+    /// Order matches the forward cycle so Shift-Tab walks the same six
+    /// tabs in the opposite direction:
+    ///   League ← Stats ← Scores ← Schedule ← Groups ← Playoffs ← League
+    fn cycle_screen_back(&mut self) {
+        self.query_results_focused = false;
+        let prev = match &self.screen {
+            Screen::Home | Screen::Depth | Screen::DepthTeam(_)
+            | Screen::Team(_) | Screen::Player(_) | Screen::Comps(_) => Screen::Playoffs,
+            Screen::Projections | Screen::Queries | Screen::Search  => Screen::Home,
+            Screen::Tonight | Screen::GameDetail(_) => Screen::Projections,
+            Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => Screen::Tonight,
+            Screen::Groups | Screen::GroupDetail(_) => Screen::Schedule,
+            Screen::Playoffs | Screen::SeriesDetail(_) => Screen::Groups,
+            _                 => Screen::Home,
+        };
+        self.screen = prev;
+        self.selected = 0;
+        self.schedule_selected = 0;
+        self.query_result_scroll = 0;
+        self.maybe_fetch_scores();
+        self.maybe_fetch_schedule();
+        self.maybe_fetch_playoffs();
+    }
 }
 
 #[cfg(test)]
@@ -1334,6 +1360,34 @@ mod tests {
         assert_eq!(app.screen, Screen::Playoffs, "Groups→Playoffs");
         app.handle(Action::Tab);
         assert_eq!(app.screen, Screen::Home, "Playoffs→League (wraps)");
+    }
+
+    #[test]
+    fn l0_tui_shift_tab_cycles_screens_backwards() {
+        // Shift-Tab walks the same six tabs in reverse order:
+        //   League ← Stats ← Scores ← Schedule ← Groups ← Playoffs ← League
+        let mut app = App::new(false);
+        app.handle(Action::TabPrev);
+        assert_eq!(app.screen, Screen::Playoffs, "Home→Playoffs (wraps backwards)");
+        app.handle(Action::TabPrev);
+        assert_eq!(app.screen, Screen::Groups,    "Playoffs→Groups");
+        app.handle(Action::TabPrev);
+        assert_eq!(app.screen, Screen::Schedule,  "Groups→Schedule");
+        app.handle(Action::TabPrev);
+        assert_eq!(app.screen, Screen::Tonight,   "Schedule→Scores");
+        app.handle(Action::TabPrev);
+        assert_eq!(app.screen, Screen::Projections, "Scores→Stats");
+        app.handle(Action::TabPrev);
+        assert_eq!(app.screen, Screen::Home,      "Stats→League");
+    }
+
+    #[test]
+    fn l0_tui_tab_and_shift_tab_are_inverses() {
+        // Six forward + six backward should land on the original screen.
+        let mut app = App::new(false);
+        for _ in 0..6 { app.handle(Action::Tab); }
+        for _ in 0..6 { app.handle(Action::TabPrev); }
+        assert_eq!(app.screen, Screen::Home);
     }
 
     #[test]

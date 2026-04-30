@@ -16,6 +16,8 @@ pub enum Action {
     Enter,
     Search,
     Tab,
+    /// Shift-Tab — cycle tabs in reverse.
+    TabPrev,
     Refresh,
     Install,          // 'i' on Fetch+Install screen
     AddToGroup,       // 'g' — open group picker on any player-list screen
@@ -73,7 +75,11 @@ fn map_key(k: crossterm::event::KeyEvent) -> Option<Action> {
         Left  => Some(Action::Left),
         Right => Some(Action::Right),
         Enter => Some(Action::Enter),
-        Tab   => Some(Action::Tab),
+        // Tab handling: many terminals deliver Shift-Tab as a distinct
+        // `BackTab` keycode; others deliver `Tab` with `SHIFT`. Cover both.
+        Tab if k.modifiers.contains(KeyModifiers::SHIFT) => Some(Action::TabPrev),
+        BackTab => Some(Action::TabPrev),
+        Tab     => Some(Action::Tab),
         _     => None,
     }
 }
