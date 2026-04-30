@@ -137,24 +137,41 @@ fn build_panel_lines(p: &Player) -> Vec<String> {
             lines.push(format!("G   {:>3}    Pts {:>3}", row.goals, row.points));
         }
         _ => {
+            // Sparklines are 1 char per season. The two-digit year labels we
+            // tried originally (`21-22`) don't align with single-char columns
+            // so we show the range once at the end of each spark instead, and
+            // anchor with the first + last season's totals so the scale is
+            // legible at a glance.
             let goals_values: Vec<f64> = history.iter().map(|r| r.goals as f64).collect();
             let pts_values:   Vec<f64> = history.iter().map(|r| r.points as f64).collect();
-            lines.push(label_row(&history));
             let spark_width = history.len();
-            lines.push(format!("G   {}", sparkline::render(&goals_values, spark_width)));
-            lines.push(format!("Pts {}", sparkline::render(&pts_values,   spark_width)));
-            // Latest season as a scale anchor.
-            if let Some(last) = history.last() {
-                lines.push(format!(
-                    "{} → G {} Pts {}",
-                    short_season(last.season),
-                    last.goals,
-                    last.points,
-                ));
-            }
+            let g_spark   = sparkline::render(&goals_values, spark_width);
+            let pts_spark = sparkline::render(&pts_values,   spark_width);
+            // First and last season tags compressed to year-pairs (e.g. 21→26).
+            let first = &history[0];
+            let last  = &history[history.len() - 1];
+            let range = format!("{}→{}", short_year(first.season), short_year(last.season));
+
+            lines.push(format!("Last 5 seasons {range}"));
+            // Pad spark to a common width so the column count is fixed even when
+            // history.len() < 5 (e.g., a 3-season player still fills 5 cols-worth
+            // of leading whitespace so the panel looks consistent).
+            let pad = " ".repeat(5usize.saturating_sub(spark_width));
+            lines.push(format!("G   {pad}{g_spark}    {} → {}", first.goals,  last.goals));
+            lines.push(format!("Pts {pad}{pts_spark}    {} → {}", first.points, last.points));
         }
     }
     lines
+}
+
+/// Compress the right-hand year of an 8-char season string to 2 chars.
+/// `"20242025"` → `"25"`. Used in the sparkline range marker.
+fn short_year(season: &str) -> String {
+    if season.len() == 8 {
+        season[6..8].to_owned()
+    } else {
+        season.to_owned()
+    }
 }
 
 /// One row of bundled-history data for a player.
@@ -186,15 +203,6 @@ fn load_player_history(nhl_id: u32) -> Vec<HistoryRow> {
         }
     }
     out
-}
-
-/// Render the per-column season labels above the sparkline. Compresses
-/// `"20242025"` → `"24-25"` so five seasons fit in 28 cols.
-fn label_row(history: &[HistoryRow]) -> String {
-    history.iter()
-        .map(|r| short_season(r.season))
-        .collect::<Vec<_>>()
-        .join(" ")
 }
 
 fn short_season(season: &str) -> String {
@@ -288,9 +296,14 @@ mod tests {
             "goals sparkline row missing:\n{body}");
         assert!(body.contains("Pts "),
             "points row missing:\n{body}");
-        // Latest-season anchor appears.
-        assert!(body.contains("→ G ") && body.contains("Pts "),
-            "anchor line missing:\n{body}");
+        // Range marker + first/last anchors appear.
+        assert!(body.contains("Last 5 seasons"),
+            "range header missing:\n{body}");
+        assert!(body.contains("21→26") || body.contains("22→26"),
+            "year-range marker missing:\n{body}");
+        // First-to-last counts visible on the spark rows.
+        assert!(body.contains(" → "),
+            "first → last anchors missing:\n{body}");
     }
 
     #[test]
@@ -375,12 +388,11 @@ mod tests {
     }
 
     #[test]
-    fn l0_label_row_reads_left_to_right() {
-        let history = vec![
-            HistoryRow { season: "20212022", goals: 1, points: 2 },
-            HistoryRow { season: "20222023", goals: 3, points: 4 },
-            HistoryRow { season: "20232024", goals: 5, points: 6 },
-        ];
-        assert_eq!(label_row(&history), "21-22 22-23 23-24");
+    fn l0_short_year_extracts_two_digit_end_year() {
+        // The range marker uses the right-hand year only.
+        assert_eq!(short_year("20212022"), "22");
+        assert_eq!(short_year("20252026"), "26");
+        assert_eq!(short_year("19931994"), "94");
+        assert_eq!(short_year("malformed"), "malformed");
     }
 }
