@@ -71,6 +71,15 @@ async fn run_loop(
             }
         }
 
+        // Phase G.3: poll for loaded goalies separately. Empty pool stays
+        // empty (no goalie data bundled / fetched) — Goalies tab handles
+        // the empty case.
+        if app.goalies.is_empty() {
+            if let Some(goalies) = app.load_state.take_goalies() {
+                app.goalies = goalies;
+            }
+        }
+
         // Poll install state → update status bar
         use loader::InstallPhase;
         match app.install_state.phase() {

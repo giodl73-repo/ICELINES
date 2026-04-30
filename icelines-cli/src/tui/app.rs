@@ -93,6 +93,8 @@ pub enum Screen {
     Playoffs,                            // list-style bracket — rounds × series
     SeriesDetail(String),                // one series — keyed by series letter
     GameDetail(u64),                     // boxscore for one game — keyed by game_id
+    Goalies,                             // league goalie leaderboard (Phase G.3)
+    GoalieDetail(usize),                 // index into App.goalies
 }
 
 pub struct App {
@@ -100,6 +102,16 @@ pub struct App {
     pub prev_screen:         Option<Screen>,
     pub no_color:            bool,
     pub players:             Vec<Player>,
+    /// Phase G.3: league goalie pool. Populated alongside `players`
+    /// from `load_state`. Empty until the loader returns.
+    pub goalies:             Vec<icelines_core::model::Goalie>,
+    /// Selected row on the Goalies tab.
+    pub goalie_selected:     usize,
+    /// Sort cycle index on the Goalies tab.
+    /// 0=SV% desc, 1=GAA asc, 2=W desc, 3=GP desc, 4=Saves desc, 5=SO desc.
+    pub goalie_sort:         u8,
+    /// Min-GP filter on the Goalies tab. Cycles 5 → 15 → 25 → 40 → 5.
+    pub goalie_min_gp:       u32,
     pub load_state:          crate::tui::loader::LoadState,
     pub install_state:       InstallState,
     pub tick:                u64,
@@ -169,6 +181,10 @@ impl App {
             prev_screen:         None,
             no_color,
             players:             Vec::new(),
+            goalies:             Vec::new(),
+            goalie_selected:     0,
+            goalie_sort:         0,   // SV% descending — Vezina-eligibility default
+            goalie_min_gp:       15,  // NHL leaderboard convention
             load_state:          crate::tui::loader::LoadState::new(),
             install_state:       InstallState::new(),
             tick:                0,
@@ -269,6 +285,8 @@ impl App {
                     self.scores_selected = self.scores_selected.saturating_add(1);
                 } else if matches!(self.screen, Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(_, _)) {
                     self.schedule_selected = self.schedule_selected.saturating_add(1);
+                } else if self.screen == Screen::Goalies {
+                    self.goalie_selected = self.goalie_selected.saturating_add(1);
                 } else if self.screen == Screen::Playoffs {
                     self.playoffs_series = self.playoffs_series.saturating_add(1);
                 } else if self.screen == Screen::Queries {
@@ -303,6 +321,8 @@ impl App {
                     self.scores_selected = self.scores_selected.saturating_sub(1);
                 } else if matches!(self.screen, Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(_, _)) {
                     self.schedule_selected = self.schedule_selected.saturating_sub(1);
+                } else if self.screen == Screen::Goalies {
+                    self.goalie_selected = self.goalie_selected.saturating_sub(1);
                 } else if self.screen == Screen::Playoffs {
                     self.playoffs_series = self.playoffs_series.saturating_sub(1);
                 } else if self.screen == Screen::Queries {
@@ -467,6 +487,20 @@ impl App {
                 } else if matches!(self.screen, Screen::Depth | Screen::DepthTeam(_)) && c == 's' {
                     self.depth_mode = self.depth_mode.toggle();
                     self.status = format!("Scoring: {}", self.depth_mode.label());
+                } else if self.screen == Screen::Goalies && c == 's' {
+                    // Phase G.3: cycle sort SV% → GAA → W → GP → Saves → SO
+                    let n = crate::tui::screens::goalies::SORTS.len() as u8;
+                    self.goalie_sort = (self.goalie_sort + 1) % n;
+                    self.goalie_selected = 0;
+                    let label = crate::tui::screens::goalies::SORTS[self.goalie_sort as usize].label();
+                    self.status = format!("Goalies sort: {label}");
+                } else if self.screen == Screen::Goalies && c == 'm' {
+                    // Cycle min-GP threshold 5 → 15 → 25 → 40
+                    let cycle = crate::tui::screens::goalies::MIN_GP_CYCLE;
+                    let cur = cycle.iter().position(|v| *v == self.goalie_min_gp).unwrap_or(0);
+                    self.goalie_min_gp = cycle[(cur + 1) % cycle.len()];
+                    self.goalie_selected = 0;
+                    self.status = format!("Goalies min GP: {}", self.goalie_min_gp);
                 } else if self.screen == Screen::Schedule && c == 't' {
                     // Jump to today's week
                     let today = crate::tui::schedule::today_iso();
@@ -1271,18 +1305,18 @@ impl App {
 
     fn cycle_screen(&mut self) {
         self.query_results_focused = false;
+        // Phase G.3: 7-tab cycle now —
+        //   League → Stats → Goalies → Scores → Schedule → Groups → Playoffs → League
         let next = match &self.screen {
-            // League tab → Stats tab
             Screen::Home | Screen::Depth | Screen::DepthTeam(_)
             | Screen::Team(_) | Screen::Player(_) | Screen::Comps(_) => Screen::Projections,
-            // Stats tab → Scores tab
-            Screen::Projections | Screen::Queries | Screen::Search  => Screen::Tonight,
-            // Scores → Schedule → Groups → Playoffs → League
-            Screen::Tonight | Screen::GameDetail(_) => Screen::Schedule,
+            Screen::Projections | Screen::Queries | Screen::Search  => Screen::Goalies,
+            Screen::Goalies | Screen::GoalieDetail(_)               => Screen::Tonight,
+            Screen::Tonight | Screen::GameDetail(_)                 => Screen::Schedule,
             Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => Screen::Groups,
-            Screen::Groups | Screen::GroupDetail(_) => Screen::Playoffs,
-            Screen::Playoffs | Screen::SeriesDetail(_) => Screen::Home,
-            _                 => Screen::Home,
+            Screen::Groups | Screen::GroupDetail(_)                 => Screen::Playoffs,
+            Screen::Playoffs | Screen::SeriesDetail(_)              => Screen::Home,
+            _                                                       => Screen::Home,
         };
         self.screen = next;
         self.selected = 0;
@@ -1294,20 +1328,18 @@ impl App {
     }
 
     /// Reverse of `cycle_screen` — Shift-Tab.
-    /// Order matches the forward cycle so Shift-Tab walks the same six
-    /// tabs in the opposite direction:
-    ///   League ← Stats ← Scores ← Schedule ← Groups ← Playoffs ← League
     fn cycle_screen_back(&mut self) {
         self.query_results_focused = false;
         let prev = match &self.screen {
             Screen::Home | Screen::Depth | Screen::DepthTeam(_)
             | Screen::Team(_) | Screen::Player(_) | Screen::Comps(_) => Screen::Playoffs,
             Screen::Projections | Screen::Queries | Screen::Search  => Screen::Home,
-            Screen::Tonight | Screen::GameDetail(_) => Screen::Projections,
+            Screen::Goalies | Screen::GoalieDetail(_)               => Screen::Projections,
+            Screen::Tonight | Screen::GameDetail(_)                 => Screen::Goalies,
             Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => Screen::Tonight,
-            Screen::Groups | Screen::GroupDetail(_) => Screen::Schedule,
-            Screen::Playoffs | Screen::SeriesDetail(_) => Screen::Groups,
-            _                 => Screen::Home,
+            Screen::Groups | Screen::GroupDetail(_)                 => Screen::Schedule,
+            Screen::Playoffs | Screen::SeriesDetail(_)              => Screen::Groups,
+            _                                                       => Screen::Home,
         };
         self.screen = prev;
         self.selected = 0;
@@ -1346,12 +1378,14 @@ mod tests {
 
     #[test]
     fn l0_tui_tab_cycles_screens() {
-        // v2: 6 tabs — League→Stats→Scores→Schedule→Groups→Playoffs→League
+        // 7 tabs (Phase G.3): League→Stats→Goalies→Scores→Schedule→Groups→Playoffs→League
         let mut app = App::new(false);
         app.handle(Action::Tab);
         assert_eq!(app.screen, Screen::Projections, "Home→Stats(Projections)");
         app.handle(Action::Tab);
-        assert_eq!(app.screen, Screen::Tonight, "Stats→Scores");
+        assert_eq!(app.screen, Screen::Goalies, "Stats→Goalies");
+        app.handle(Action::Tab);
+        assert_eq!(app.screen, Screen::Tonight, "Goalies→Scores");
         app.handle(Action::Tab);
         assert_eq!(app.screen, Screen::Schedule, "Scores→Schedule");
         app.handle(Action::Tab);
@@ -1364,8 +1398,8 @@ mod tests {
 
     #[test]
     fn l0_tui_shift_tab_cycles_screens_backwards() {
-        // Shift-Tab walks the same six tabs in reverse order:
-        //   League ← Stats ← Scores ← Schedule ← Groups ← Playoffs ← League
+        // Shift-Tab walks the same seven tabs in reverse:
+        //   League ← Stats ← Goalies ← Scores ← Schedule ← Groups ← Playoffs ← League
         let mut app = App::new(false);
         app.handle(Action::TabPrev);
         assert_eq!(app.screen, Screen::Playoffs, "Home→Playoffs (wraps backwards)");
@@ -1376,17 +1410,19 @@ mod tests {
         app.handle(Action::TabPrev);
         assert_eq!(app.screen, Screen::Tonight,   "Schedule→Scores");
         app.handle(Action::TabPrev);
-        assert_eq!(app.screen, Screen::Projections, "Scores→Stats");
+        assert_eq!(app.screen, Screen::Goalies,   "Scores→Goalies");
+        app.handle(Action::TabPrev);
+        assert_eq!(app.screen, Screen::Projections, "Goalies→Stats");
         app.handle(Action::TabPrev);
         assert_eq!(app.screen, Screen::Home,      "Stats→League");
     }
 
     #[test]
     fn l0_tui_tab_and_shift_tab_are_inverses() {
-        // Six forward + six backward should land on the original screen.
+        // Seven forward + seven backward should land on the original screen.
         let mut app = App::new(false);
-        for _ in 0..6 { app.handle(Action::Tab); }
-        for _ in 0..6 { app.handle(Action::TabPrev); }
+        for _ in 0..7 { app.handle(Action::Tab); }
+        for _ in 0..7 { app.handle(Action::TabPrev); }
         assert_eq!(app.screen, Screen::Home);
     }
 

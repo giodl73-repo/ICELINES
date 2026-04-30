@@ -1,6 +1,9 @@
 use crate::config::Config;
-use icelines_core::{filter::PlayerFilter, model::Player, position::PositionResolver};
-use icelines_fetch::{snapshot::SnapshotStore, PlayerRepository, BUNDLED_SEASONS};
+use icelines_core::{filter::PlayerFilter, model::{Goalie, Player}, position::PositionResolver};
+use icelines_fetch::{
+    goalie_repository::GoalieRepository,
+    snapshot::SnapshotStore, PlayerRepository, BUNDLED_SEASONS,
+};
 
 /// Load all skaters via PlayerRepository (snapshot → bundled fallback).
 /// This is the single entry point for player data across all commands.
@@ -29,6 +32,20 @@ pub fn load_all_players_for_season(season: Option<&str>) -> anyhow::Result<Vec<P
     );
     repo.load_all()
         .map_err(|e| anyhow::anyhow!("{e}\n  Try: icelines fetch all"))
+}
+
+/// Load all goalies via GoalieRepository. Mirror of `load_all_players`.
+/// Returns an empty Vec quietly if no goalie data is bundled or
+/// snapshotted — callers (TUI Goalies tab) handle the empty case as
+/// off-season.
+pub fn load_all_goalies() -> anyhow::Result<Vec<Goalie>> {
+    let cfg  = Config::load()?;
+    let repo = GoalieRepository::new(
+        SnapshotStore::new(cfg.snapshot_dir()),
+        cfg.season_str(),
+    );
+    repo.load_all()
+        .map_err(|e| anyhow::anyhow!("{e}\n  Try: icelines fetch goalies"))
 }
 
 /// Reject `--season` values that aren't in the bundled list. Empty string and

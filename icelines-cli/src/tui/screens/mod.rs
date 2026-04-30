@@ -9,6 +9,7 @@ pub mod depth;
 pub mod schedule;
 pub mod playoffs;
 pub mod game_detail;
+pub mod goalies;
 
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
@@ -48,6 +49,8 @@ pub fn render(f: &mut Frame, app: &App) {
         Screen::Playoffs                  => playoffs::render(f, app, chunks[1]),
         Screen::SeriesDetail(letter)      => playoffs::render_series_detail(f, app, chunks[1], letter),
         Screen::GameDetail(game_id)       => game_detail::render(f, app, chunks[1], *game_id),
+        Screen::Goalies                   => goalies::render(f, app, chunks[1]),
+        Screen::GoalieDetail(_idx)        => goalies::render(f, app, chunks[1]),  // detail card lands in v2
     }
 
     f.render_widget(
@@ -102,18 +105,19 @@ fn tab_for_screen(screen: &Screen) -> usize {
     match screen {
         Screen::Home | Screen::Team(_) | Screen::Player(_)
         | Screen::Depth | Screen::DepthTeam(_) | Screen::Comps(_) => 0, // League
-        Screen::Projections | Screen::Queries | Screen::Search  => 1,   // Stats
-        Screen::Tonight | Screen::GameDetail(_)                  => 2,   // Scores
+        Screen::Projections | Screen::Queries | Screen::Search   => 1,  // Stats
+        Screen::Goalies | Screen::GoalieDetail(_)                => 2,  // Goalies
+        Screen::Tonight | Screen::GameDetail(_)                  => 3,  // Scores
         Screen::Schedule | Screen::ScheduleTeam(_)
-            | Screen::ScheduleMatchup(..)                        => 3,   // Schedule
-        Screen::Groups | Screen::GroupDetail(_)                  => 4,   // Groups
-        Screen::Playoffs | Screen::SeriesDetail(_)               => 5,   // Playoffs
-        _                                                        => 99,  // no tab (Fetch, Help)
+            | Screen::ScheduleMatchup(..)                        => 4,  // Schedule
+        Screen::Groups | Screen::GroupDetail(_)                  => 5,  // Groups
+        Screen::Playoffs | Screen::SeriesDetail(_)               => 6,  // Playoffs
+        _                                                        => 99, // no tab (Fetch, Help)
     }
 }
 
 fn render_nav(f: &mut Frame, app: &App, area: Rect) {
-    let tab_labels = ["League", "Stats", "Scores", "Schedule", "Groups", "Playoffs"];
+    let tab_labels = ["League", "Stats", "Goalies", "Scores", "Schedule", "Groups", "Playoffs"];
     let active_tab = tab_for_screen(&app.screen);
 
     let mut spans: Vec<Span> = Vec::new();
