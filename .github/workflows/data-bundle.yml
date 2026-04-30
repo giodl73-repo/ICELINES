@@ -91,6 +91,15 @@ jobs:
           DATA_DIR="data/seasons/${{ matrix.season }}"
           if [ -f "${DATA_DIR}/bios.json" ] && [ -f "${DATA_DIR}/stats.json" ]; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
+            # Phase G.0: goalie-stats.json shipped from 2026-04-29 onwards.
+            # Older release artifacts (rebuilt before this date) lack the
+            # file; the workflow includes it when present so re-publication
+            # is the final step that adds it to the tarball.
+            if [ -f "${DATA_DIR}/goalie-stats.json" ]; then
+              echo "has_goalies=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "has_goalies=false" >> "$GITHUB_OUTPUT"
+            fi
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
             echo "No data for ${{ matrix.season }} — skipping"
@@ -108,14 +117,25 @@ jobs:
           cp "${DATA_DIR}/bios.json"  "/tmp/bundle-${SEASON}/bios.json"
           cp "${DATA_DIR}/stats.json" "/tmp/bundle-${SEASON}/stats.json"
 
-          # Metadata
-          echo "{\"season\":\"${SEASON}\",\"bundled_at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"bios_count\":$(python3 -c "import json; print(len(json.load(open('${DATA_DIR}/bios.json'))))" 2>/dev/null || echo 0)}" \
+          # Phase G.0: goalie-stats.json ships in every tarball from this
+          # workflow run forward. Older releases that pre-date this commit
+          # lack the file; consumers are expected to re-install via
+          # `icelines data install --season {S} --force` to pick it up.
+          GOALIES_COUNT=0
+          if [ -f "${DATA_DIR}/goalie-stats.json" ]; then
+            cp "${DATA_DIR}/goalie-stats.json" "/tmp/bundle-${SEASON}/goalie-stats.json"
+            GOALIES_COUNT=$(python3 -c "import json; print(len(json.load(open('${DATA_DIR}/goalie-stats.json'))))" 2>/dev/null || echo 0)
+          fi
+
+          # Metadata — extended with goalies_count.
+          BIOS_COUNT=$(python3 -c "import json; print(len(json.load(open('${DATA_DIR}/bios.json'))))" 2>/dev/null || echo 0)
+          echo "{\"season\":\"${SEASON}\",\"bundled_at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"bios_count\":${BIOS_COUNT},\"goalies_count\":${GOALIES_COUNT}}" \
             > "/tmp/bundle-${SEASON}/manifest.json"
 
           cd /tmp && tar czf "${BUNDLE}" "bundle-${SEASON}/"
 
           SIZE=$(stat -c%s "${BUNDLE}")
-          echo "Bundle ${SEASON}: ${SIZE} bytes compressed"
+          echo "Bundle ${SEASON}: ${SIZE} bytes compressed (${BIOS_COUNT} skaters, ${GOALIES_COUNT} goalies)"
 
           mv "${BUNDLE}" "$GITHUB_WORKSPACE/"
 
@@ -146,10 +166,15 @@ jobs:
             | File | Description |
             |------|-------------|
             | `bios.json` | Skater biographical data (nationality, draft, age) |
-            | `stats.json` | Season statistics (G, A, GP, PP, SH, GWG, shots, TOI) |
-            | `manifest.json` | Bundle metadata and player count |
+            | `stats.json` | Skater season statistics (G, A, GP, PP, SH, GWG, shots, TOI) |
+            | `goalie-stats.json` | Goalie season statistics (W, L, SV%, GAA, SO, saves, TOI) — added 2026-04-29 |
+            | `manifest.json` | Bundle metadata, skater count, goalie count |
 
             Data sourced from the NHL public API. Historical seasons are immutable.
+
+            **Note**: bundles created before 2026-04-29 do not include
+            `goalie-stats.json`. Re-install with `icelines data install
+            --season {SEASON} --force` to refresh.
           files: data-${{ matrix.season }}.tar.gz
           make_latest: false
         env:
