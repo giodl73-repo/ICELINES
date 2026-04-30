@@ -43,6 +43,7 @@ pub fn help_lines() -> Vec<Line<'static>> {
         Line::from("  Enter        Select / drill down"),
         Line::from("  Esc          Go back / clear search"),
         Line::from("  r            Refresh / retry current view"),
+        Line::from("  d            Toggle league depth chart  (s: scoring on Depth)"),
         Line::from("  t            On Schedule: jump to today's week"),
         Line::from("  y            Season picker (time-travel)"),
         Line::from("  F            Admin overlay"),

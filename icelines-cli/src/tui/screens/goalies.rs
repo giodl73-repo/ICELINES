@@ -5,7 +5,7 @@
 //! `Enter` opens a per-goalie detail card.
 
 use ratatui::{
-    layout::Rect,
+    layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, Paragraph},
@@ -13,6 +13,7 @@ use ratatui::{
 };
 
 use crate::tui::app::App;
+use crate::tui::headshot;
 use icelines_core::model::Goalie;
 
 /// Sort selectors. App stores the index; we map index → comparator here
@@ -211,26 +212,45 @@ pub fn render_detail(f: &mut Frame, app: &App, area: Rect, idx: usize) {
         }
     };
 
+    // Phase G.7b: trigger a headshot fetch the same way the player card
+    // does. URL pattern is identical for goalies — the NHL mugs CDN
+    // serves both. Disk cache (keyed by nhl_id) is season-agnostic, so
+    // the same image works whether the user is viewing 25-26 or a
+    // historical year via the season picker.
+    if app.headshot_cache.get(g.nhl_id).is_none() {
+        let url = g.headshot_url.clone().unwrap_or_else(|| {
+            format!(
+                "https://assets.nhle.com/mugs/nhl/{}/{}/{}.png",
+                app.active_season,
+                g.team.as_str(),
+                g.nhl_id,
+            )
+        });
+        headshot::spawn_fetch(g.nhl_id, url, app.headshot_cache.clone(), 22, 15);
+    }
+
     let title = format!(" Goalie — {}  ·  Esc back ", g.full_name);
     let block = Block::default().borders(Borders::ALL).title(title);
     let inner = block.inner(area);
     f.render_widget(block, area);
 
-    // Layout: stats column on the left, dashboard panel on the right
-    // when --dashboards is on AND there's room (≥ 80 cols).
-    let dashboards_on = crate::config::dashboards_enabled() && inner.width >= 80;
-    let layout = ratatui::layout::Layout::default()
-        .direction(ratatui::layout::Direction::Horizontal)
-        .constraints(if dashboards_on {
-            vec![ratatui::layout::Constraint::Min(0), ratatui::layout::Constraint::Length(34)]
-        } else {
-            vec![ratatui::layout::Constraint::Min(0)]
-        })
+    // Layout: headshot (26 cols) | stats (rest) | [dashboard panel (34 cols)]
+    // Dashboard panel only when --dashboards is on AND we have room.
+    let dashboards_on = crate::config::dashboards_enabled() && inner.width >= 100;
+    let constraints: Vec<Constraint> = if dashboards_on {
+        vec![Constraint::Length(26), Constraint::Min(0), Constraint::Length(34)]
+    } else {
+        vec![Constraint::Length(26), Constraint::Min(0)]
+    };
+    let layout = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(constraints)
         .split(inner);
 
-    render_detail_stats(f, g, layout[0]);
+    render_headshot(f, app, g, layout[0]);
+    render_detail_stats(f, g, layout[1]);
     if dashboards_on {
-        if let Some(area_right) = layout.get(1).copied() {
+        if let Some(area_right) = layout.get(2).copied() {
             let panel_block = Block::default()
                 .borders(Borders::ALL)
                 .title(" Scout card ")
@@ -241,6 +261,41 @@ pub fn render_detail(f: &mut Frame, app: &App, area: Rect, idx: usize) {
             f.render_widget(Paragraph::new(lines), panel_inner);
         }
     }
+}
+
+/// Render the goalie headshot column — same braille-dithered art as the
+/// player card. Falls back to a placeholder when the network fetch
+/// hasn't returned yet (or has errored). Phase G.7b.
+fn render_headshot(f: &mut Frame, app: &App, g: &Goalie, area: Rect) {
+    let rows = app.headshot_cache.get(g.nhl_id);
+    let lines: Vec<Line> = match rows.as_deref() {
+        None => {
+            let abbr = g.team.as_str();
+            vec![
+                Line::from(""),
+                Line::from(""),
+                Line::from(""),
+                Line::from(format!("  {:^20}", abbr)),
+                Line::from(""),
+                Line::from("  loading…"),
+            ]
+        }
+        Some(r) if headshot::is_loading(r) => vec![
+            Line::from(""),
+            Line::from("  downloading…"),
+        ],
+        Some(r) if headshot::is_error(r) => vec![
+            Line::from("  ┌──────────────────┐"),
+            Line::from("  │                  │"),
+            Line::from("  │   no headshot    │"),
+            Line::from("  │                  │"),
+            Line::from("  └──────────────────┘"),
+        ],
+        Some(rows) => rows.iter()
+            .map(|row| Line::styled(row.clone(), Style::default().fg(Color::White)))
+            .collect(),
+    };
+    f.render_widget(Paragraph::new(lines), area);
 }
 
 fn render_detail_stats(f: &mut Frame, g: &Goalie, area: Rect) {
