@@ -5,6 +5,7 @@ pub mod export;
 pub mod fantasy;
 pub mod fetch;
 pub mod mates;
+pub mod output;
 pub mod players;
 pub mod project;
 pub mod query;

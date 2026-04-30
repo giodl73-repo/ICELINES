@@ -19,7 +19,8 @@ pub(crate) fn validate_format(format: &str) -> anyhow::Result<&'static str> {
         "terminal" => Ok("terminal"),
         "markdown" => Ok("markdown"),
         "json"     => Ok("json"),
-        _ => bail!("unknown format '{format}' — valid: terminal, markdown, json"),
+        "csv"      => Ok("csv"),
+        _ => bail!("unknown format '{format}' — valid: terminal, markdown, json, csv"),
     }
 }
 
@@ -68,6 +69,45 @@ pub(crate) fn render_report(
         (Some(y), _, _)             => y.to_string(),
         _                           => "Undrafted".to_owned(),
     };
+
+    // ── CSV output path ──────────────────────────────────────────────────────
+    // Long-form: one row per stat. Lets users open the report in Excel
+    // alongside other player CSVs and pivot/filter on `stat`.
+    if format == "csv" {
+        let s = player.pace_score;
+        let rows: &[(&str, String)] = &[
+            ("player",        player.full_name.clone()),
+            ("team",          player.team.as_str().to_owned()),
+            ("position",      player.position.abbreviation().to_owned()),
+            ("age",           age.clone()),
+            ("draft",         draft.clone()),
+            ("nationality",   player.nationality_code.clone().unwrap_or_default()),
+            ("handedness",    player.shoots_catches.clone().unwrap_or_default()),
+            ("height_in",     player.height_in_inches.map(|h| h.to_string()).unwrap_or_default()),
+            ("weight_lbs",    player.weight_lbs.map(|w| w.to_string()).unwrap_or_default()),
+            ("gp",            player.gp().map(|g| g.to_string()).unwrap_or_default()),
+            ("goals",         player.season_goals.to_string()),
+            ("assists",       player.season_assists.to_string()),
+            ("points",        player.season_points.to_string()),
+            ("ppg",           s.map(|s| format!("{:.3}", s.pace_82 / 82.0)).unwrap_or_default()),
+            ("pts_82",        s.map(|s| format!("{:.1}", s.pace_82)).unwrap_or_default()),
+            ("goals_82",      s.map(|s| format!("{:.1}", s.goals_per_82)).unwrap_or_default()),
+            ("pp_goals",      player.pp_goals.to_string()),
+            ("pp_points",     player.pp_points.to_string()),
+            ("shots",         player.shots.to_string()),
+            ("shooting_pct",  player.shooting_pct.map(|p| format!("{:.3}", p)).unwrap_or_default()),
+            ("plus_minus",    player.plus_minus.to_string()),
+            ("toi_mmss",      player.toi_mmss().unwrap_or_default()),
+            ("contract_expiry_year", player.contract_expiry_year.map(|y| y.to_string()).unwrap_or_default()),
+        ];
+        let _ = writeln!(out, "stat,value");
+        for (k, v) in rows {
+            let _ = writeln!(out, "{},{}",
+                crate::commands::output::escape_csv(k),
+                crate::commands::output::escape_csv(v));
+        }
+        return out;
+    }
 
     // ── JSON output path ─────────────────────────────────────────────────────
     if format == "json" {

@@ -8,6 +8,7 @@ mod render;
 #[cfg(test)] mod test_utils;
 mod tui;
 
+use anyhow::Context;
 use clap::Parser;
 use cli::{Cli, Commands, FantasySubcommand, QuerySubcommand};
 use config::Config;
@@ -50,8 +51,8 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
         } => {
             commands::team::run(team, scheme, no_color).await?;
         }
-        Commands::Rank { top, pos, scheme } => {
-            commands::rank::run(top, pos, scheme).await?;
+        Commands::Rank { top, pos, scheme, json, csv, out } => {
+            commands::rank::run(top, pos, scheme, json, csv, out).await?;
         }
         Commands::Snapshot(sub) => {
             commands::snapshot::run(sub).await?;
@@ -75,6 +76,8 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
             gp_min,
             top,
             json,
+            csv,
+            out,
         } => {
             commands::players::run(commands::players::PlayersArgs {
                 pos,
@@ -88,6 +91,8 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
                 gp_min,
                 top,
                 json,
+                csv,
+                out,
             })
             .await?;
         }
@@ -95,22 +100,22 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
             year,
             pos,
             top,
-            json,
+            json, csv, out,
         } => {
-            commands::analysis::run_class(year, pos, top, json).await?;
+            commands::analysis::run_class(year, pos, top, json, csv, out).await?;
         }
-        Commands::Peers { player, size, json } => {
-            commands::analysis::run_peers(player, size, json).await?;
+        Commands::Peers { player, size, json, csv, out } => {
+            commands::analysis::run_peers(player, size, json, csv, out).await?;
         }
         Commands::Compare {
             player1,
             player2,
-            json,
+            json, csv, out,
         } => {
-            commands::analysis::run_compare(player1, player2, json).await?;
+            commands::analysis::run_compare(player1, player2, json, csv, out).await?;
         }
-        Commands::History { player, seasons, json } => {
-            commands::analysis::run_history(player, seasons, json).await?;
+        Commands::History { player, seasons, json, csv, out } => {
+            commands::analysis::run_history(player, seasons, json, csv, out).await?;
         }
         Commands::Group(sub) => {
             commands::analysis::run_group(sub).await?;
@@ -134,8 +139,8 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
         Commands::Trade { player_out, _for: _, player_in, team } => {
             commands::tonight::run_trade(player_out, player_in, team).await?;
         }
-        Commands::Project { player, team, mode, games } => {
-            commands::project::run(player, team, mode, games).await?;
+        Commands::Project { player, team, mode, games, json, csv, out } => {
+            commands::project::run(player, team, mode, games, json, csv, out).await?;
         }
         Commands::Tui => {
             tui::run_tui(false).await?;
@@ -143,8 +148,78 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
         Commands::Export(sub) => {
             commands::export::run(sub).await?;
         }
-        Commands::Mates { player, top } => {
-            commands::mates::run(player, top).await?;
+        Commands::X { shape, player, team, pos, year, top, seasons, json, out } => {
+            // Default to CSV (the whole point of `x` is "give me Excel-ready output").
+            let csv = !json;
+            use cli::ExportShape;
+            match shape {
+                ExportShape::Rank => {
+                    commands::rank::run(top, pos, None, json, csv, out).await?;
+                }
+                ExportShape::Leaders => {
+                    commands::query::run_leaders(commands::query::LeadersArgs {
+                        pos, team, age_min: None, age_max: None,
+                        nationality: None, draft_year: None,
+                        round: None, draft_pick_max: None,
+                        undrafted: false, rookie: false,
+                        handedness: None,
+                        ppg_min: None, gp_min: None, gp_max: None,
+                        birth_province: None,
+                        toi_min: None, plus_minus_min: None, shots_pg_min: None,
+                        ufa: false, rfa: false, elc: false, expiry_year: None,
+                        seasons: 1, season: None,
+                        sort: "ppg".to_owned(), top,
+                        rate: false, percentiles: false,
+                        json, csv,
+                    }).await?;
+                }
+                ExportShape::Goalies => {
+                    commands::query::run_goalies(commands::query::GoaliesArgs {
+                        top,
+                        sort: "sv-pct".to_owned(),
+                        team, min_gp: 5, season: None,
+                        json, csv,
+                    }).await?;
+                }
+                ExportShape::Players => {
+                    commands::players::run(commands::players::PlayersArgs {
+                        pos, team,
+                        age_max: None, age_min: None,
+                        nationality: None, draft_year: None, draft_round: None,
+                        ppg_min: None, gp_min: None, top,
+                        json, csv, out,
+                    }).await?;
+                }
+                ExportShape::Class => {
+                    let yr = year.context("--year is required for `x class`")?;
+                    commands::analysis::run_class(yr, pos, Some(top), json, csv, out).await?;
+                }
+                ExportShape::History => {
+                    let p = player.context("--player is required for `x history`")?;
+                    commands::analysis::run_history(p, seasons, json, csv, out).await?;
+                }
+                ExportShape::Peers => {
+                    let p = player.context("--player is required for `x peers`")?;
+                    commands::analysis::run_peers(p, top, json, csv, out).await?;
+                }
+                ExportShape::Compare => {
+                    // `--player A --player B` is two args; clap can't bind that to one
+                    // Option, so we accept comma-separated for the unified path:
+                    // `icelines x compare --player "McDavid,Draisaitl"`
+                    let p = player.context("--player \"a,b\" is required for `x compare`")?;
+                    let (a, b) = p.split_once(',').context(
+                        "for `x compare`, pass two names comma-separated, e.g. \
+                         --player \"McDavid,Draisaitl\""
+                    )?;
+                    commands::analysis::run_compare(
+                        a.trim().to_owned(), b.trim().to_owned(),
+                        json, csv, out,
+                    ).await?;
+                }
+            }
+        }
+        Commands::Mates { player, top, json, csv, out } => {
+            commands::mates::run(player, top, json, csv, out).await?;
         }
         Commands::Scouting { player, format } => {
             commands::scouting::run(player, format).await?;

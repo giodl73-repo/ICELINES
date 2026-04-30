@@ -68,7 +68,9 @@ pub struct PlayersArgs {
     pub nationality: Option<String>, pub draft_year: Option<u16>,
     pub draft_round: Option<u8>, pub ppg_min: Option<f64>,
     pub gp_min: Option<u32>, pub top: usize,
-    #[allow(dead_code)] pub json: bool,
+    pub json: bool,
+    pub csv:  bool,
+    pub out:  Option<std::path::PathBuf>,
 }
 
 pub async fn run(args: PlayersArgs) -> anyhow::Result<()> {
@@ -89,10 +91,11 @@ pub async fn run(args: PlayersArgs) -> anyhow::Result<()> {
     filter.gp_min        = args.gp_min;
 
     let matched = filter.apply(&players);
-    println!("{:<4} {:<24} {:<5} {:<4} {:<4} {:<7} {:<8}",
-        "Rank","Player","Team","Pos","Age","PPG","Proj/82");
-    println!("{}", "─".repeat(62usize));
-    for (i, p) in matched.iter().take(args.top).enumerate() {
+    let total   = matched.len();
+    let take    = total.min(args.top);
+
+    let headers = &["rank", "player", "team", "pos", "age", "ppg", "proj_82"];
+    let rows: Vec<Vec<String>> = matched.iter().take(args.top).enumerate().map(|(i, p)| {
         let age = p.birth_date.as_deref()
             .and_then(|d| d.get(..4)).and_then(|y| y.parse::<u16>().ok())
             .map(|y| (2026u16.saturating_sub(y)).to_string())
@@ -101,10 +104,20 @@ pub async fn run(args: PlayersArgs) -> anyhow::Result<()> {
             Some(s) => (format!("{:.2}", s.pace_82/82.0), format!("{:.0}", s.pace_82)),
             None    => ("—".to_owned(), "—".to_owned()),
         };
-        println!("{:<4} {:<24} {:<5} {:<4} {:<4} {:<7} {:<8}",
-            i+1, p.full_name, p.team.as_str(), p.position.abbreviation(), age, ppg, proj);
+        vec![
+            (i + 1).to_string(),
+            p.full_name.clone(),
+            p.team.as_str().to_owned(),
+            p.position.abbreviation().to_owned(),
+            age, ppg, proj,
+        ]
+    }).collect();
+
+    let format = crate::commands::output::Format::resolve(args.csv, args.json)?;
+    format.emit_to(headers, &rows, args.out.as_deref())?;
+    if format == crate::commands::output::Format::Table && args.out.is_none() {
+        println!("\n{total} matched, showing {take}.");
     }
-    println!("\n{} matched, showing {}.", matched.len(), matched.len().min(args.top));
     Ok(())
 }
 

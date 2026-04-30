@@ -3,6 +3,7 @@ use icelines_core::{
     compute_projection, model::MIN_GP, name::normalize_name, ProjectionMode,
 };
 use icelines_fetch::{career::load_career, snapshot::SnapshotStore};
+use crate::commands::output::Format;
 use crate::{commands::players::load_all_players, config::Config};
 
 const DEFAULT_REMAINING: u32 = 20; // fallback when schedule not available
@@ -12,12 +13,16 @@ pub async fn run(
     team:   Option<String>,
     mode:   String,
     games:  Option<u32>,
+    json:   bool,
+    csv:    bool,
+    out:    Option<std::path::PathBuf>,
 ) -> anyhow::Result<()> {
     let mode: ProjectionMode = mode.parse()
         .map_err(|e: String| anyhow::anyhow!(e))?;
 
     let players = load_all_players()?;
     let remaining = games.unwrap_or(DEFAULT_REMAINING);
+    let format = Format::resolve(csv, json)?;
 
     if let Some(name) = target {
         // Single player
@@ -47,21 +52,40 @@ pub async fn run(
             current_ppg, career_ppg, score.gp, age, remaining, mode
         );
 
-        println!("PROJECTION — {} ({} · {:?} · {} remaining games)",
-            player.full_name, player.team.as_str(), mode, remaining);
-        println!("{}", "─".repeat(56usize));
-        println!("  Current PPG:        {:.3}", result.current_ppg);
-        if let Some(cp) = career_ppg {
-            println!("  Career PPG:         {:.3}  (5-season avg)", cp);
+        if format == Format::Table && out.is_none() {
+            println!("PROJECTION — {} ({} · {:?} · {} remaining games)",
+                player.full_name, player.team.as_str(), mode, remaining);
+            println!("{}", "─".repeat(56usize));
+            println!("  Current PPG:        {:.3}", result.current_ppg);
+            if let Some(cp) = career_ppg {
+                println!("  Career PPG:         {:.3}  (5-season avg)", cp);
+            }
+            println!("  α (blend weight):   {:.2}", result.alpha);
+            println!("  Age factor:         {:.2}", result.age_factor);
+            println!("  Projected pts:      {:.1}", result.projected_points);
+            println!("  Confidence band:    {:.1} – {:.1}  (±{:.1})",
+                result.low_band, result.high_band,
+                result.confidence_band_width() / 2.0);
+            return Ok(());
         }
-        println!("  α (blend weight):   {:.2}", result.alpha);
-        println!("  Age factor:         {:.2}", result.age_factor);
-        println!("  Projected pts:      {:.1}", result.projected_points);
-        println!("  Confidence band:    {:.1} – {:.1}  (±{:.1})",
-            result.low_band, result.high_band,
-            result.confidence_band_width() / 2.0);
-        println!();
-        println!("  Note: career data requires `icelines fetch history` (Phase 4).");
+
+        // Single-player CSV/JSON: long-form rows (one stat per row).
+        let headers = &["stat", "value"];
+        let career_str = career_ppg.map(|v| format!("{:.3}", v)).unwrap_or_else(|| "—".to_owned());
+        let rows: Vec<Vec<String>> = vec![
+            vec!["player".to_owned(),         player.full_name.clone()],
+            vec!["team".to_owned(),           player.team.as_str().to_owned()],
+            vec!["mode".to_owned(),           format!("{mode:?}")],
+            vec!["remaining_games".to_owned(),remaining.to_string()],
+            vec!["current_ppg".to_owned(),    format!("{:.3}", result.current_ppg)],
+            vec!["career_ppg".to_owned(),     career_str],
+            vec!["alpha".to_owned(),          format!("{:.2}", result.alpha)],
+            vec!["age_factor".to_owned(),     format!("{:.2}", result.age_factor)],
+            vec!["projected_points".to_owned(), format!("{:.1}", result.projected_points)],
+            vec!["band_low".to_owned(),       format!("{:.1}", result.low_band)],
+            vec!["band_high".to_owned(),      format!("{:.1}", result.high_band)],
+        ];
+        format.emit_to(headers, &rows, out.as_deref())?;
 
     } else if let Some(team_abbr) = team {
         // Team-wide projection
@@ -74,13 +98,8 @@ pub async fn run(
             anyhow::bail!("no rankable players found for {} — run `icelines fetch`", team_upper);
         }
 
-        println!("PROJECTIONS — {} ({:?} mode · {} remaining)", team_upper, mode, remaining);
-        println!("{}", "─".repeat(64usize));
-        println!("{:<24} {:<4} {:<8} {:<8} {:<12}",
-            "Player", "Pos", "Curr PPG", "Proj Pts", "Band");
-        println!("{}", "─".repeat(64usize));
-
-        for p in &team_players {
+        let headers = &["player", "pos", "current_ppg", "projected_points", "band_low", "band_high"];
+        let rows: Vec<Vec<String>> = team_players.iter().map(|p| {
             let score = p.pace_score.unwrap();
             let current_ppg = score.pace_82 / 82.0;
             let age: u8 = p.birth_date.as_deref()
@@ -89,11 +108,20 @@ pub async fn run(
                 .map(|y| (2026u16.saturating_sub(y)).min(99) as u8)
                 .unwrap_or(27);
             let r = compute_projection(current_ppg, None, score.gp, age, remaining, mode);
-            println!("{:<24} {:<4} {:<8.2} {:<8.1} {:.1}–{:.1}",
-                p.full_name, p.position.abbreviation(),
-                r.current_ppg, r.projected_points,
-                r.low_band, r.high_band);
+            vec![
+                p.full_name.clone(),
+                p.position.abbreviation().to_owned(),
+                format!("{:.2}", r.current_ppg),
+                format!("{:.1}", r.projected_points),
+                format!("{:.1}", r.low_band),
+                format!("{:.1}", r.high_band),
+            ]
+        }).collect();
+
+        if format == Format::Table && out.is_none() {
+            println!("PROJECTIONS — {} ({:?} mode · {} remaining)", team_upper, mode, remaining);
         }
+        format.emit_to(headers, &rows, out.as_deref())?;
     } else {
         anyhow::bail!("specify a player name or --team ABBREV");
     }
