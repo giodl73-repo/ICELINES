@@ -30,6 +30,7 @@ Specs define what we're building. Each spec covers one feature or screen.
 | [query-engine.md](query-engine.md) | Implemented | query leaders/player/compare, 30+ sort metrics |
 | [site-generation.md](site-generation.md) | Implemented | mkdocs build/serve/deploy, Tera-free template |
 | [export-markdown.md](export-markdown.md) | Planned | `export md` for proof DASHBOARD-SPEC bridge |
+| [goalies.md](goalies.md) | Draft | Goalies as first-class players: GoalieStats schema, GoalieRepository, dedicated TUI tab, team-card slots, query goalies, fantasy goalie scoring |
 | [test-strategy.md](test-strategy.md) | Implemented | L0/L1/L2 tiers, mock NHL API fixture |
 
 ---
