@@ -95,6 +95,18 @@ pub fn render_team(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
         return;
     }
 
+    // Phase G.4: split inner vertically — grid on top, goalie strip
+    // below. Strip takes 5 lines (header + 1 separator + up to 3 goalies);
+    // suppressed when the team has no goalies in App.goalies.
+    let team_goalies = super::team::collect_team_goalies(&app.goalies, abbrev);
+    let strip_height: u16 = if team_goalies.is_empty() { 0 } else { 5 };
+    let outer = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Min(0), Constraint::Length(strip_height)])
+        .split(inner);
+    let grid_area  = outer[0];
+    let strip_area = outer[1];
+
     // Compute cross-team metrics for all players
     let metrics = compute_all_with_mode(&app.players, mode);
     let metrics_map: std::collections::HashMap<u32, &icelines_core::cross_team::CrossTeamMetrics> =
@@ -114,7 +126,7 @@ pub fn render_team(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
             Constraint::Ratio(1, 5), Constraint::Ratio(1, 5), Constraint::Ratio(1, 5),
             Constraint::Ratio(1, 5), Constraint::Ratio(1, 5),
         ])
-        .split(inner);
+        .split(grid_area);
 
     // Greedy forward assignment: sort all forwards by score, assign to primary pos.
     // Overflow (>4 at any pos) spills into the thinnest other forward slot.
@@ -171,6 +183,54 @@ pub fn render_team(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
 
     render_pos_col(f, chunks[3], "LD", &ld_players, 3, &score_of, &metrics_map, mode);
     render_pos_col(f, chunks[4], "RD", &rd_players, 3, &score_of, &metrics_map, mode);
+
+    // Phase G.4: goalie strip rendered below the grid when present.
+    if !team_goalies.is_empty() {
+        render_goalie_strip(f, strip_area, &team_goalies);
+    }
+}
+
+/// Render the per-team goalie strip — single header row plus one row
+/// per goalie sorted by GP descending. Designed to fit in a 5-line
+/// vertical band at the bottom of the depth chart.
+fn render_goalie_strip(
+    f: &mut Frame,
+    area: Rect,
+    goalies: &[&icelines_core::model::Goalie],
+) {
+    let dim  = Style::default().fg(Color::DarkGray);
+    let gold = Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD);
+    let mut lines: Vec<Line> = Vec::with_capacity(goalies.len() + 2);
+    lines.push(Line::styled("  GOALTENDING", gold));
+    lines.push(Line::styled(format!("  {:<22} {:<4}  {:>6}  {:>9}",
+        "Goalie", "GP", "SV%", "Record"), dim));
+    for g in goalies {
+        let stats = match g.stats.as_ref() {
+            Some(s) => s,
+            None    => {
+                lines.push(Line::from(format!(
+                    "  {:<22} {:<4}  {:>6}  {:>9}",
+                    g.full_name.chars().take(22).collect::<String>(),
+                    "—", "—", "—",
+                )));
+                continue;
+            }
+        };
+        let sv_pct = stats.save_pct.map(|v| format!("{:.3}", v))
+            .unwrap_or_else(|| "—".to_owned());
+        let record = match stats.ot_losses {
+            Some(otl) => format!("{}-{}-{}", stats.wins, stats.losses, otl),
+            None      => format!("{}-{}",    stats.wins, stats.losses),
+        };
+        lines.push(Line::from(format!(
+            "  {:<22} {:<4}  {:>6}  {:>9}",
+            g.full_name.chars().take(22).collect::<String>(),
+            stats.games_played,
+            sv_pct,
+            record,
+        )));
+    }
+    f.render_widget(Paragraph::new(lines), area);
 }
 
 fn render_pos_col(
