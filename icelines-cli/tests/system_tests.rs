@@ -1092,6 +1092,65 @@ fn l2_cmd_group_rename_succeeds() {
     assert!(!stdout.contains(" before "), "old name should not appear: {stdout}");
 }
 
+// ── Attended games (Phase 8 follow-up) ─────────────────────────────────────
+
+#[test]
+fn l2_cmd_games_add_list_remove_roundtrip() {
+    // Full lifecycle in an isolated $HOME so we don't pollute the real db.
+    let home = tempfile::tempdir().expect("tempdir");
+    // List on a fresh db should report empty.
+    let out = run_isolated(home.path(), &["games", "list"]);
+    assert!(out.status.success(),
+        "games list stderr: {}", String::from_utf8_lossy(&out.stderr));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("No attended games"),
+        "fresh db should report empty, got: {stdout}");
+
+    // Add a game (no boxscore available, that's fine).
+    let out = run_isolated(home.path(),
+        &["games", "add", "2025020100", "--note", "first game"]);
+    assert!(out.status.success(),
+        "games add stderr: {}", String::from_utf8_lossy(&out.stderr));
+
+    // List should now show it.
+    let out = run_isolated(home.path(), &["games", "list"]);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("2025020100"),
+        "added game id should appear in list, got: {stdout}");
+    assert!(stdout.contains("first game"),
+        "note should appear in list, got: {stdout}");
+
+    // Remove it.
+    let out = run_isolated(home.path(), &["games", "remove", "2025020100"]);
+    assert!(out.status.success(),
+        "games remove stderr: {}", String::from_utf8_lossy(&out.stderr));
+    // Remove again should error (already gone).
+    let out = run_isolated(home.path(), &["games", "remove", "2025020100"]);
+    assert!(!out.status.success(),
+        "second remove should exit nonzero — game already gone");
+}
+
+#[test]
+fn l2_cmd_games_export_emits_versioned_json() {
+    let home = tempfile::tempdir().expect("tempdir");
+    // Seed two games.
+    for (id, note) in [(2025020100u64, "first"), (2025020101u64, "second")] {
+        let out = run_isolated(home.path(),
+            &["games", "add", &id.to_string(), "--note", note]);
+        assert!(out.status.success(),
+            "games add stderr: {}", String::from_utf8_lossy(&out.stderr));
+    }
+    // Export to stdout — must be valid JSON with version + games[].
+    let out = run_isolated(home.path(), &["games", "export"]);
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let parsed: serde_json::Value = serde_json::from_str(&stdout)
+        .expect("export output must be valid JSON");
+    assert_eq!(parsed["version"].as_u64(), Some(1));
+    assert_eq!(parsed["games"].as_array().map(|a| a.len()), Some(2),
+        "expected 2 games in export, got: {stdout}");
+}
+
 // ── Dashboards opt-out flag (was opt-in pre-2026-04-29) ────────────────────
 
 #[test]

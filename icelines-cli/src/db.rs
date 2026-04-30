@@ -55,6 +55,26 @@ fn run_migrations(conn: &Connection) -> anyhow::Result<()> {
     )
     .context("migration 003: create saved_queries table")?;
 
+    // Migration 004 — games-I-attended log
+    //
+    // Personal record of NHL games the user attended in person. Keyed by
+    // the NHL game_id so we can rejoin it back to the boxscore feed and
+    // render rich team stats. `note` is freeform — let users record
+    // "took my dad to his first NHL game", "Ovechkin's 800th", etc.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS attended_games (
+            game_id     INTEGER PRIMARY KEY,
+            game_date   TEXT,         -- YYYY-MM-DD captured at add time
+            away_abbrev TEXT,
+            home_abbrev TEXT,
+            away_score  INTEGER,
+            home_score  INTEGER,
+            note        TEXT NOT NULL DEFAULT '',
+            attended_at TEXT NOT NULL  -- ISO-8601 of the row insert
+        );",
+    )
+    .context("migration 004: create attended_games table")?;
+
     // Enable foreign-key enforcement (off by default in rusqlite).
     conn.execute_batch("PRAGMA foreign_keys = ON;")
         .context("enable foreign keys")?;
@@ -326,6 +346,102 @@ impl GroupDb {
         self.conn.execute("DELETE FROM saved_queries WHERE name = ?1", rusqlite::params![name])?;
         Ok(())
     }
+
+    // ── Attended games ──────────────────────────────────────────────────
+
+    /// Record one NHL game the user attended in person. Idempotent —
+    /// duplicate calls for the same `game_id` overwrite the row so the
+    /// note can be edited after the fact. The metadata fields (date,
+    /// abbrevs, score) are captured at add time so the row reads
+    /// usefully even after the API rotates older boxscores out.
+    pub fn add_attended_game(&self, row: &AttendedGameInput) -> anyhow::Result<()> {
+        let now = now_utc();
+        self.conn.execute(
+            "INSERT OR REPLACE INTO attended_games \
+             (game_id, game_date, away_abbrev, home_abbrev, \
+              away_score, home_score, note, attended_at) \
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            rusqlite::params![
+                row.game_id, row.game_date, row.away_abbrev, row.home_abbrev,
+                row.away_score, row.home_score, row.note, now,
+            ],
+        ).with_context(|| format!("record attended game {}", row.game_id))?;
+        Ok(())
+    }
+
+    /// Remove a game from the attended list. Returns `true` if a row
+    /// was actually deleted, `false` if the game wasn't on the list.
+    pub fn remove_attended_game(&self, game_id: u64) -> anyhow::Result<bool> {
+        let n = self.conn.execute(
+            "DELETE FROM attended_games WHERE game_id = ?1",
+            rusqlite::params![game_id],
+        ).with_context(|| format!("delete attended game {game_id}"))?;
+        Ok(n > 0)
+    }
+
+    /// True iff this game is already on the attended list.
+    pub fn is_attended(&self, game_id: u64) -> anyhow::Result<bool> {
+        let exists: bool = self.conn.query_row(
+            "SELECT 1 FROM attended_games WHERE game_id = ?1",
+            rusqlite::params![game_id],
+            |_| Ok(true),
+        ).unwrap_or(false);
+        Ok(exists)
+    }
+
+    /// List every attended game, newest first by `game_date`. Rows
+    /// without a date sort to the bottom.
+    pub fn list_attended_games(&self) -> anyhow::Result<Vec<AttendedGameRow>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT game_id, game_date, away_abbrev, home_abbrev,
+                    away_score, home_score, note, attended_at
+             FROM attended_games
+             ORDER BY game_date DESC NULLS LAST, attended_at DESC",
+        )?;
+        let rows = stmt.query_map([], |r| {
+            Ok(AttendedGameRow {
+                game_id:     r.get::<_, i64>(0)? as u64,
+                game_date:   r.get::<_, Option<String>>(1)?,
+                away_abbrev: r.get::<_, Option<String>>(2)?.unwrap_or_default(),
+                home_abbrev: r.get::<_, Option<String>>(3)?.unwrap_or_default(),
+                away_score:  r.get::<_, Option<i64>>(4)?.map(|n| n as u8),
+                home_score:  r.get::<_, Option<i64>>(5)?.map(|n| n as u8),
+                note:        r.get::<_, String>(6)?,
+                attended_at: r.get::<_, String>(7)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
+    }
+}
+
+// ── Attended games — row types (Phase 8 follow-up) ─────────────────────────
+
+/// What a caller hands `add_attended_game` — the metadata captured at
+/// add time so list views work even after the API rotates older
+/// boxscores.
+#[derive(Debug, Clone)]
+pub struct AttendedGameInput {
+    pub game_id:     u64,
+    pub game_date:   Option<String>,   // "YYYY-MM-DD"
+    pub away_abbrev: Option<String>,
+    pub home_abbrev: Option<String>,
+    pub away_score:  Option<u8>,
+    pub home_score:  Option<u8>,
+    pub note:        String,
+}
+
+/// One row in the attended-games list view.
+#[derive(Debug, Clone)]
+pub struct AttendedGameRow {
+    pub game_id:     u64,
+    pub game_date:   Option<String>,
+    pub away_abbrev: String,
+    pub home_abbrev: String,
+    pub away_score:  Option<u8>,
+    pub home_score:  Option<u8>,
+    pub note:        String,
+    pub attended_at: String,
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -500,5 +616,94 @@ mod tests {
         let inserted = db.add_members_bulk("g", &members).expect("bulk add");
         assert_eq!(inserted, 2, "alice already there, bob+carol new = 2");
         assert_eq!(db.list_members("g").unwrap().len(), 3);
+    }
+
+    // ── Attended games ─────────────────────────────────────────────────────
+
+    fn fixture_attended(game_id: u64, date: &str, away: &str, home: &str,
+                        score: (u8, u8), note: &str) -> AttendedGameInput {
+        AttendedGameInput {
+            game_id,
+            game_date:   Some(date.to_owned()),
+            away_abbrev: Some(away.to_owned()),
+            home_abbrev: Some(home.to_owned()),
+            away_score:  Some(score.0),
+            home_score:  Some(score.1),
+            note:        note.to_owned(),
+        }
+    }
+
+    #[test]
+    fn l1_db_attended_add_query_round_trip() {
+        let db = GroupDb::open_in_memory().expect("in-memory");
+        let g  = fixture_attended(2025020100, "2026-01-15", "SEA", "VGK",
+                                  (3, 2), "Kraken first home win of 2026");
+
+        assert!(!db.is_attended(g.game_id).unwrap(), "fresh db: not attended");
+        db.add_attended_game(&g).expect("record");
+        assert!(db.is_attended(g.game_id).unwrap(), "after add: attended");
+
+        let rows = db.list_attended_games().unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].game_id, 2025020100);
+        assert_eq!(rows[0].game_date.as_deref(), Some("2026-01-15"));
+        assert_eq!(rows[0].away_abbrev, "SEA");
+        assert_eq!(rows[0].home_abbrev, "VGK");
+        assert_eq!(rows[0].away_score, Some(3));
+        assert_eq!(rows[0].home_score, Some(2));
+        assert_eq!(rows[0].note, "Kraken first home win of 2026");
+    }
+
+    #[test]
+    fn l1_db_attended_add_is_idempotent_overwrites_note() {
+        // Re-adding the same game_id should overwrite the row so the
+        // user can edit the note after the fact.
+        let db = GroupDb::open_in_memory().expect("in-memory");
+        db.add_attended_game(&fixture_attended(1, "2026-01-15", "BOS", "MTL",
+                                               (1, 0), "first attempt"))
+            .expect("first add");
+        db.add_attended_game(&fixture_attended(1, "2026-01-15", "BOS", "MTL",
+                                               (1, 0), "edited note"))
+            .expect("second add");
+        let rows = db.list_attended_games().unwrap();
+        assert_eq!(rows.len(), 1, "still one row after overwrite");
+        assert_eq!(rows[0].note, "edited note");
+    }
+
+    #[test]
+    fn l1_db_attended_remove_returns_false_when_absent() {
+        let db = GroupDb::open_in_memory().expect("in-memory");
+        let removed = db.remove_attended_game(99).unwrap();
+        assert!(!removed, "remove of unknown game returns false");
+    }
+
+    #[test]
+    fn l1_db_attended_remove_then_list_excludes_row() {
+        let db = GroupDb::open_in_memory().expect("in-memory");
+        db.add_attended_game(&fixture_attended(1, "2026-01-15", "BOS", "MTL",
+                                               (1, 0), ""))
+            .expect("add");
+        let removed = db.remove_attended_game(1).unwrap();
+        assert!(removed);
+        assert!(!db.is_attended(1).unwrap());
+        assert!(db.list_attended_games().unwrap().is_empty());
+    }
+
+    #[test]
+    fn l1_db_attended_list_orders_newest_first() {
+        // Sort by game_date DESC — earlier dates render below later ones.
+        let db = GroupDb::open_in_memory().expect("in-memory");
+        db.add_attended_game(&fixture_attended(1, "2025-12-01", "A", "B",
+                                               (1, 0), "")).expect("add");
+        db.add_attended_game(&fixture_attended(2, "2026-03-15", "C", "D",
+                                               (2, 1), "")).expect("add");
+        db.add_attended_game(&fixture_attended(3, "2026-01-15", "E", "F",
+                                               (3, 2), "")).expect("add");
+        let rows = db.list_attended_games().unwrap();
+        let dates: Vec<_> = rows.iter()
+            .map(|r| r.game_date.clone().unwrap_or_default())
+            .collect();
+        assert_eq!(dates, vec!["2026-03-15", "2026-01-15", "2025-12-01"],
+            "newest first by game_date, got: {dates:?}");
     }
 }

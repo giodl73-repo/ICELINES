@@ -197,6 +197,9 @@ pub enum Commands {
     /// Manage player watchlists and custom groups.
     #[command(subcommand)]
     Group(GroupSubcommand),
+    /// Track NHL games you attended in person.
+    #[command(subcommand)]
+    Games(GamesSubcommand),
     /// Full 8-section scouting report for a player.
     Scouting {
         player: String,
@@ -324,6 +327,28 @@ pub enum GroupSubcommand {
     },
     /// Rename an existing group (members carry over).
     Rename { old: String, new: String },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum GamesSubcommand {
+    /// Record an NHL game you attended in person.
+    /// `game_id` is the 10-digit NHL ID (visible in the Scores tab).
+    Add {
+        game_id: u64,
+        /// Freeform note — "took my dad", "Ovechkin's 800th", etc.
+        #[arg(long, default_value = "")]
+        note: String,
+    },
+    /// Remove a game from your attended list.
+    Remove { game_id: u64 },
+    /// List every game you've recorded as attended.
+    List,
+    /// Export the attended-games list to JSON (default stdout).
+    Export {
+        /// Output path. Use `-` to write to stdout.
+        #[arg(long, default_value = "-")]
+        out: String,
+    },
 }
 
 #[derive(Debug, Subcommand)]

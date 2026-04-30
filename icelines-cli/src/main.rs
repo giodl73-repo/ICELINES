@@ -115,6 +115,9 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
         Commands::Group(sub) => {
             commands::analysis::run_group(sub).await?;
         }
+        Commands::Games(sub) => {
+            commands::analysis::run_games(sub).await?;
+        }
 
         Commands::Serve { port } => {
             commands::serve_deploy::run_serve(port).await?;
