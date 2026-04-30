@@ -2,6 +2,7 @@ pub mod app;
 pub mod dashboard_panel;
 pub mod event;
 pub mod headshot;
+pub mod sparkline;
 pub mod loader;
 pub mod playoffs;
 pub mod schedule;

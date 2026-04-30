@@ -2,7 +2,28 @@
 
 ## Unreleased
 
-### Added
+### Changed
+- Phase 8j (rev): Native sparklines, proof_lib back to dev-only.
+  `proof:chart` directives don't compose inside `proof:region` bodies
+  (filed at design/proof-bug-report.md), so the dashboard compositor
+  was wrapping plain text we already lay out cheaply with ratatui.
+  - New `tui::sparkline` module (~80 lines, zero new deps) renders
+    Unicode block sparklines `▁▂▃▄▅▆▇█` from a `&[f64]`.
+  - `tui::dashboard_panel` rewritten to build lines natively. Identity
+    + counting stats + bundled history trend, in 14 lines of panel.
+  - Players with 5 bundled seasons get two sparklines + a latest-season
+    anchor (e.g., `25-26 → G 48 Pts 138`). Players with one season show
+    that season's row. Players with no bundled history get the pace
+    fallback. `if a player has less than 5 we can just show the seasons
+    they have` — done.
+  - proof_lib + tempfile demoted from runtime back to dev-deps. The
+    smoke test (`tests/proof_lib_smoke.rs`) keeps the integration
+    paved if we re-introduce proof for site dashboard generation.
+  - `--dashboards` flag remains as the opt-in toggle for the panel.
+  - 9 new L0 tests in `tui::sparkline` (empty input, single value,
+    constant series, increasing walk, bucket-when-overflow, negatives,
+    real McDavid trend shape, width-clamps-to-input). Dashboard panel
+    tests rewritten for the native renderer; total 622 → ~625 tests.
 - Phase 8j (cont.): Real player stats in the dashboard panel + CI-ready
   proof pinning.
   - `tui::dashboard_panel` now compiles a per-player proof source

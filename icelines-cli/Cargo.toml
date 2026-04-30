@@ -26,24 +26,6 @@ reqwest.workspace     = true
 flate2.workspace      = true
 tar.workspace         = true
 sha2.workspace        = true
-# Phase 8j: proof_lib is a runtime dep, gated behind the dashboards
-# feature flag (off by default). The CLI binary always carries the code
-# so turning the flag on at runtime needs no rebuild.
-#
-# Pinned by SHA so CI runners (which only check out icelines) can build
-# without needing the proof repo as a sibling. For local iteration on
-# proof, drop a `.cargo/config.toml` in the workspace root with:
-#
-#   [patch."https://github.com/giodl73-repo/PROOF"]
-#   proof = { path = "../proof" }
-#
-# (See `.cargo/config.toml.example` in this repo for the full template
-# including a matching mdpath patch.) Cargo applies the patch transparently
-# — your local proof checkout is used for compile, no git fetch needed.
-proof_lib = { package = "proof", git = "https://github.com/giodl73-repo/PROOF", rev = "9c5d456ef49cf8e1aeb516557d52ea0ddb79fd2c" }
-# tempfile backs the proof_lib disk roundtrip (compile_file only takes
-# paths). Promoted from dev-deps when proof_lib became a runtime dep.
-tempfile.workspace = true
 image.workspace       = true
 axum.workspace        = true
 tower.workspace       = true
@@ -51,5 +33,11 @@ uuid.workspace        = true
 chrono.workspace      = true
 
 [dev-dependencies]
-# proof_lib + tempfile are now runtime deps above; tests reuse them
-# without redeclaring.
+# proof_lib is parked as a dev-dep — the smoke test in
+# `tests/proof_lib_smoke.rs` keeps the integration code paved in case
+# we re-introduce proof for site dashboard generation later. The TUI
+# panel renders sparklines natively (`tui::sparkline`) after we hit a
+# dashboard-region directive composition bug
+# (see design/proof-bug-report.md).
+proof_lib = { package = "proof", git = "https://github.com/giodl73-repo/PROOF", rev = "9c5d456ef49cf8e1aeb516557d52ea0ddb79fd2c" }
+tempfile.workspace = true

@@ -199,58 +199,7 @@ mod dashboard_tests {
     // exercised by L2 subprocess tests on the TUI launcher.
 
     use crate::config::{init_dashboards, Config};
-    use crate::tui::dashboard_panel::CompiledPanel;
-    use ratatui::{
-        backend::TestBackend,
-        layout::Rect,
-        style::{Color, Style},
-        text::Line,
-        widgets::{Block, Borders, Paragraph},
-        Terminal,
-    };
     use std::path::PathBuf;
-
-    /// Mirror of `super::render_dashboard_panel` decoupled from `App` so
-    /// the render guard logic is testable without a full Player fixture.
-    fn render_panel_isolated(area: Rect) -> String {
-        let panel = CompiledPanel::new();
-        let backend = TestBackend::new(area.width, area.height);
-        let mut term = Terminal::new(backend).unwrap();
-        term.draw(|f| {
-            let block = Block::default()
-                .borders(Borders::ALL)
-                .title(" Dashboard (preview) ")
-                .style(Style::default().fg(Color::DarkGray));
-            let inner = block.inner(area);
-            f.render_widget(block, area);
-
-            let dim = Style::default().fg(Color::Gray);
-            let lines: Vec<Line> = panel.lines().into_iter()
-                .map(|l| Line::styled(l, dim))
-                .collect();
-            f.render_widget(Paragraph::new(lines), inner);
-        }).unwrap();
-        let buf = term.backend().buffer();
-        let mut out = String::new();
-        for y in 0..buf.area.height {
-            for x in 0..buf.area.width {
-                out.push_str(buf[(x, y)].symbol());
-            }
-            out.push('\n');
-        }
-        out
-    }
-
-    #[test]
-    fn l0_panel_renders_title_and_compiled_body() {
-        // Standalone render — proves the panel produces the title and
-        // some baked-in body text from the proof source.
-        let text = render_panel_isolated(Rect::new(0, 0, 30, 14));
-        assert!(text.contains("Dashboard (preview)"),
-            "panel title missing, got:\n{text}");
-        assert!(text.contains("PROOF") || text.contains("preview"),
-            "panel body missing, got:\n{text}");
-    }
 
     #[test]
     fn l0_init_dashboards_explicit_true_takes_effect() {
