@@ -3,7 +3,7 @@
 //! Loads all players from bundled/snapshot data without blocking the event loop.
 
 use std::sync::{Arc, Mutex};
-use icelines_core::model::Player;
+use icelines_core::model::{Goalie, Player};
 
 /// Shared loading state readable from the event loop.
 #[derive(Debug, Clone)]
@@ -14,6 +14,7 @@ pub struct LoadState {
 #[derive(Debug)]
 struct LoadInner {
     pub players: Vec<Player>,
+    pub goalies: Vec<Goalie>,
     pub loading: bool,
     pub error:   Option<String>,
 }
@@ -23,6 +24,7 @@ impl LoadState {
         Self {
             inner: Arc::new(Mutex::new(LoadInner {
                 players: Vec::new(),
+                goalies: Vec::new(),
                 loading: true,
                 error:   None,
             })),
@@ -43,14 +45,25 @@ impl LoadState {
         }
     }
 
+    /// Pop the loaded goalie pool. Phase G.3.
+    pub fn take_goalies(&self) -> Option<Vec<Goalie>> {
+        let mut g = self.inner.lock().ok()?;
+        if !g.loading && g.error.is_none() && !g.goalies.is_empty() {
+            Some(std::mem::take(&mut g.goalies))
+        } else {
+            None
+        }
+    }
+
     #[allow(dead_code)]
     pub fn error(&self) -> Option<String> {
         self.inner.lock().ok().and_then(|g| g.error.clone())
     }
 
-    fn set_done(&self, players: Vec<Player>) {
+    fn set_done(&self, players: Vec<Player>, goalies: Vec<Goalie>) {
         if let Ok(mut g) = self.inner.lock() {
             g.players = players;
+            g.goalies = goalies;
             g.loading = false;
         }
     }
@@ -63,12 +76,16 @@ impl LoadState {
     }
 }
 
-/// Spawn a tokio task that loads all players and stores them in `state`.
+/// Spawn a tokio task that loads players + goalies in parallel and
+/// stores them in `state`. Phase G.3.
 pub fn spawn_loader(state: LoadState) {
     tokio::spawn(async move {
-        match crate::commands::players::load_all_players() {
-            Ok(players) => state.set_done(players),
-            Err(e)      => state.set_error(e.to_string()),
+        let players = crate::commands::players::load_all_players();
+        let goalies = crate::commands::players::load_all_goalies();
+        match (players, goalies) {
+            (Ok(p), Ok(g))      => state.set_done(p, g),
+            (Ok(p), Err(_e))    => state.set_done(p, Vec::new()),  // skater-only fallback
+            (Err(e), _)         => state.set_error(e.to_string()),
         }
     });
 }
