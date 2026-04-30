@@ -4,6 +4,7 @@ pub mod bundled;
 pub mod cache;
 pub mod career;
 pub mod chunkstore;
+pub mod goalie_repository;
 pub mod repository;
 pub mod csv_loader;
 pub mod error;

@@ -7,7 +7,11 @@
 //! Data source: NHL API bios + summary endpoints.
 //! Historical seasons are immutable — they never change after the season ends.
 
-use crate::{error::FetchError, playoffs_bundle::PlayoffsBundle, schema::{SkaterBio, SkaterStats}};
+use crate::{
+    error::FetchError,
+    playoffs_bundle::PlayoffsBundle,
+    schema::{GoalieStats, SkaterBio, SkaterStats},
+};
 
 // ── Embedded season data (compiled into binary at build time) ─────────────────
 
@@ -37,6 +41,14 @@ static STATS_20222023: &[u8] = season_bytes!("20222023", "stats.json");
 
 static BIOS_20212022:  &[u8] = season_bytes!("20212022", "bios.json");
 static STATS_20212022: &[u8] = season_bytes!("20212022", "stats.json");
+
+// Goalie summaries — Phase G.1. Same five seasons embedded, separate
+// arrays so the bins/stats lookups stay narrow.
+static GOALIES_20252026: &[u8] = season_bytes!("20252026", "goalie-stats.json");
+static GOALIES_20242025: &[u8] = season_bytes!("20242025", "goalie-stats.json");
+static GOALIES_20232024: &[u8] = season_bytes!("20232024", "goalie-stats.json");
+static GOALIES_20222023: &[u8] = season_bytes!("20222023", "goalie-stats.json");
+static GOALIES_20212022: &[u8] = season_bytes!("20212022", "goalie-stats.json");
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
@@ -69,6 +81,54 @@ pub fn get_stats(season: &str) -> Option<Vec<SkaterStats>> {
         _          => return None,
     };
     serde_json::from_slice(bytes).ok()
+}
+
+/// Deserialize bundled goalie stats for a season (Phase G.1). Returns
+/// None when the season isn't one of the five embedded current seasons.
+/// Use `get_goalie_stats_installed` to read from `~/.icelines/seasons/`
+/// for historical seasons that were brought in via `data install`.
+pub fn get_goalie_stats(season: &str) -> Option<Vec<GoalieStats>> {
+    let bytes = match season {
+        "20252026" => GOALIES_20252026,
+        "20242025" => GOALIES_20242025,
+        "20232024" => GOALIES_20232024,
+        "20222023" => GOALIES_20222023,
+        "20212022" => GOALIES_20212022,
+        _          => return None,
+    };
+    serde_json::from_slice(bytes).ok()
+}
+
+/// Read goalie stats from an installed season bundle. Returns None when
+/// the bundle is not installed (~/.icelines/seasons/...) or pre-dates
+/// G.0's bundling of `goalie-stats.json` into release tarballs.
+pub fn get_goalie_stats_installed(season_id: &str) -> Option<Vec<GoalieStats>> {
+    let path = season_bundle_dir(season_id)?.join("goalie-stats.json");
+    let text = std::fs::read_to_string(path).ok()?;
+    serde_json::from_str(&text).ok()
+}
+
+/// Resolve goalie stats: chunked snapshot → legacy snapshot → embedded
+/// → installed bundle. Mirrors `load_bios_with_fallback` / `load_stats_*`
+/// for parity. The snapshot tier path lands when G.2 wires
+/// `fetch goalies` to write a goalie-stats tier.
+pub fn load_goalies_with_fallback(
+    season: &str,
+    store: &crate::snapshot::SnapshotStore,
+) -> Result<Vec<GoalieStats>, FetchError> {
+    // 1. Legacy file-per-tier active snapshot (chunked path lands in G.2+).
+    if let Ok(rows) = store.read_tier::<Vec<GoalieStats>>(
+        &crate::snapshot::SnapshotTier::Stats, "goalie-stats.json",
+    ) {
+        return Ok(rows);
+    }
+    // 2. Bundled data.
+    if let Some(rows) = get_goalie_stats(season) { return Ok(rows); }
+    // 3. Installed (historical) bundle.
+    if let Some(rows) = get_goalie_stats_installed(season) { return Ok(rows); }
+    Err(FetchError::PlayerNotFound {
+        name: format!("no goalie stats for season {season} — run `icelines fetch goalies`"),
+    })
 }
 
 // ── Installed season data (from ~/.icelines/seasons/) ────────────────────────
