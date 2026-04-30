@@ -5,6 +5,7 @@ mod db;
 mod error;
 pub mod fantasy_db;
 mod render;
+#[cfg(test)] mod test_utils;
 mod tui;
 
 use clap::Parser;

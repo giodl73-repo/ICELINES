@@ -253,7 +253,7 @@ wins = 5.0
         // separate threads, so this test serializes lookups via a Mutex when
         // run alongside others. cargo runs tests in parallel by default but
         // toml parsing is stateless — the only contention is HOME.
-        let _guard = scheme_test_lock();
+        let _guard = crate::test_utils::home_env_lock();
         let (_keep, schemes) = isolate_home();
         write_user_scheme(&schemes, "my-league", &minimal_scheme_toml("my-league"));
 
@@ -266,7 +266,7 @@ wins = 5.0
 
     #[test]
     fn l0_find_scheme_prefers_user_over_builtin() {
-        let _guard = scheme_test_lock();
+        let _guard = crate::test_utils::home_env_lock();
         let (_keep, schemes) = isolate_home();
         // Override the builtin yahoo-standard with a user scheme.
         write_user_scheme(&schemes, "yahoo-standard", &minimal_scheme_toml("yahoo-standard"));
@@ -278,7 +278,7 @@ wins = 5.0
 
     #[test]
     fn l0_find_scheme_falls_back_to_builtin_when_user_absent() {
-        let _guard = scheme_test_lock();
+        let _guard = crate::test_utils::home_env_lock();
         let (_keep, _schemes) = isolate_home();
         // No user file present — should still resolve the builtin.
         let s = find_scheme("yahoo-standard").expect("builtin must resolve");
@@ -289,7 +289,7 @@ wins = 5.0
 
     #[test]
     fn l0_load_user_schemes_skips_malformed_files() {
-        let _guard = scheme_test_lock();
+        let _guard = crate::test_utils::home_env_lock();
         let (_keep, schemes) = isolate_home();
         write_user_scheme(&schemes, "valid", &minimal_scheme_toml("valid"));
         write_user_scheme(&schemes, "broken", "this is not valid toml [[[");
@@ -303,16 +303,10 @@ wins = 5.0
 
     #[test]
     fn l0_load_user_schemes_empty_dir_returns_empty() {
-        let _guard = scheme_test_lock();
+        let _guard = crate::test_utils::home_env_lock();
         let (_keep, _schemes) = isolate_home();
         let all = load_user_schemes().expect("must succeed on empty dir");
         assert!(all.is_empty(), "empty dir should produce empty list");
     }
 
-    /// HOME env-var mutation is process-global. Serialize the user-scheme
-    /// tests so they don't race each other inside one cargo-test process.
-    fn scheme_test_lock() -> std::sync::MutexGuard<'static, ()> {
-        static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
-        LOCK.lock().unwrap_or_else(|p| p.into_inner())
-    }
 }
