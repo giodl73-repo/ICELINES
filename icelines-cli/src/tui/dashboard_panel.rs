@@ -139,6 +139,22 @@ impl CompiledPanel {
         lines
     }
 
+    /// Phase G.7: build (or fetch from cache) the styled panel lines for
+    /// a goalie. Same caching key (nhl_id) as the skater path — goalies
+    /// have unique IDs so there's no risk of collision.
+    pub fn lines_for_goalie(&self, g: &icelines_core::model::Goalie) -> Vec<Line<'static>> {
+        let id = g.nhl_id;
+        {
+            let guard = self.inner.lock().unwrap();
+            if let Some(cached) = guard.by_player.get(&id) {
+                return cached.clone();
+            }
+        }
+        let lines = build_goalie_panel_lines(g);
+        self.inner.lock().unwrap().by_player.insert(id, lines.clone());
+        lines
+    }
+
     /// Drop all cached compilations. Used by tests that mutate fixture
     /// data so subsequent calls re-build.
     #[cfg(test)]
@@ -433,6 +449,139 @@ fn load_player_history(nhl_id: u32) -> Vec<HistoryRow> {
         }
     }
     out
+}
+
+// ── Goalie panel (Phase G.7) ──────────────────────────────────────────────────
+
+/// One row of bundled goalie history.
+#[derive(Debug, Clone)]
+struct GoalieHistoryRow {
+    season:   &'static str,  // e.g. "20242025"
+    save_pct: f32,           // 0.0..=1.0
+    gaa:      f32,
+    wins:     u32,
+}
+
+/// Walk the 5 bundled seasons and pull the goalie's row from each.
+/// Missing seasons skipped — sparkline accepts variable length.
+fn load_goalie_history(nhl_id: u32) -> Vec<GoalieHistoryRow> {
+    use icelines_fetch::bundled;
+    let mut out = Vec::new();
+    for season in bundled::BUNDLED_SEASONS.iter().rev() {
+        if let Some(stats) = bundled::get_goalie_stats(season) {
+            if let Some(row) = stats.iter().find(|s| s.player_id == nhl_id) {
+                out.push(GoalieHistoryRow {
+                    season,
+                    save_pct: row.save_pct.unwrap_or(0.0),
+                    gaa:      row.goals_against_average.unwrap_or(0.0),
+                    wins:     row.wins,
+                });
+            }
+        }
+    }
+    out
+}
+
+/// Build styled panel lines for a goalie. Layout mirrors the skater
+/// scout card but with goalie-shaped trend rows:
+///   header (Lastname · TEAM G)
+///   blank
+///   trend block: SV%, GAA (colors inverted — lower=green=better), W
+///   anchor row showing first→last absolute values for context
+fn build_goalie_panel_lines(g: &icelines_core::model::Goalie) -> Vec<Line<'static>> {
+    let mut lines: Vec<Line<'static>> = Vec::with_capacity(10);
+    let dim    = Style::default().fg(DIM_COLOR);
+    let title  = Style::default().fg(TITLE_COLOR).add_modifier(Modifier::BOLD);
+    let accent = Style::default().fg(ACCENT_COLOR);
+
+    // Header — short identity line.
+    let last_name = g.full_name
+        .rsplit_once(' ')
+        .map(|(_, l)| l)
+        .unwrap_or(g.full_name.as_str());
+    lines.push(Line::from(vec![
+        Span::styled(trim_to(last_name, 18), title),
+        Span::styled("  ·  ", dim),
+        Span::styled(g.team.as_str().to_owned(), accent),
+        Span::styled(" G", dim),
+    ]));
+    lines.push(Line::from(""));
+
+    let history = load_goalie_history(g.nhl_id);
+    match history.len() {
+        0 => {
+            lines.push(Line::styled("Bundled history: none", dim));
+        }
+        1 => {
+            let row = &history[0];
+            lines.push(Line::styled(
+                format!("Bundled history: {}", short_season(row.season)),
+                dim,
+            ));
+        }
+        _ => {
+            let sv_values:  Vec<f64> = history.iter().map(|r| r.save_pct as f64).collect();
+            // GAA inverted via negation: sparkline scales high → high
+            // bars, so flipping the sign makes "low GAA" the high bar.
+            // We label it normally and invert colour band semantics.
+            let gaa_values_inv: Vec<f64> = history.iter().map(|r| -(r.gaa as f64)).collect();
+            let w_values:   Vec<f64> = history.iter().map(|r| r.wins as f64).collect();
+            let first = &history[0];
+            let last  = &history[history.len() - 1];
+            let range = format!("{}→{}", short_year(first.season), short_year(last.season));
+            lines.push(Line::from(vec![
+                Span::styled("Last 5 seasons ", dim),
+                Span::styled(range, accent),
+            ]));
+            let pad = 5usize.saturating_sub(history.len());
+            // SV%: higher better → standard colour mapping.
+            let sv_spark = colored_spark_spans(&sv_values, history.len());
+            lines.push(goalie_spark_row("SV%", pad, sv_spark,
+                fmt3(first.save_pct), fmt3(last.save_pct), dim, accent));
+            // GAA: lower better → invert colours by passing negated values.
+            let gaa_spark = colored_spark_spans(&gaa_values_inv, history.len());
+            lines.push(goalie_spark_row("GAA", pad, gaa_spark,
+                fmt2(first.gaa), fmt2(last.gaa), dim, accent));
+            let w_spark = colored_spark_spans(&w_values, history.len());
+            lines.push(goalie_spark_row("W  ", pad, w_spark,
+                first.wins.to_string(), last.wins.to_string(), dim, accent));
+        }
+    }
+    lines
+}
+
+fn goalie_spark_row(
+    label: &str,
+    pad: usize,
+    spark: Vec<Span<'static>>,
+    first: String,
+    last: String,
+    dim: Style,
+    accent: Style,
+) -> Line<'static> {
+    let mut spans: Vec<Span<'static>> = Vec::with_capacity(4 + spark.len());
+    spans.push(Span::styled(format!("{label} "), dim));
+    if pad > 0 { spans.push(Span::raw(" ".repeat(pad))); }
+    spans.extend(spark);
+    spans.push(Span::styled("    ".to_owned(), dim));
+    spans.push(Span::styled(first, accent));
+    spans.push(Span::styled(" → ".to_owned(), dim));
+    spans.push(Span::styled(last, accent));
+    Line::from(spans)
+}
+
+/// Format SV% as ".925" — drops the leading zero per goalie convention.
+fn fmt3(v: f32) -> String {
+    let s = format!("{:.3}", v);
+    if let Some(stripped) = s.strip_prefix('0') {
+        stripped.to_owned()
+    } else {
+        s
+    }
+}
+
+fn fmt2(v: f32) -> String {
+    format!("{:.2}", v)
 }
 
 fn short_season(season: &str) -> String {
@@ -834,5 +983,102 @@ mod tests {
         let body  = lines_to_text(&lines);
         assert!(!body.contains("Pos vs"),
             "empty context must suppress pos-rank section, got:\n{body}");
+    }
+
+    // ── Goalie panel (Phase G.7) ─────────────────────────────────────────
+
+    fn fixture_goalie() -> icelines_core::model::Goalie {
+        // Connor Hellebuyck (id 8476945) is in all 5 bundled seasons.
+        let json = r#"{
+            "nhl_id": 8476945,
+            "full_name": "Connor Hellebuyck",
+            "name_normalized": "connor_hellebuyck",
+            "team": "WPG",
+            "stats": {
+                "games_played": 63, "games_started": 62,
+                "wins": 47, "losses": 12,
+                "ot_losses": 3, "ties": null,
+                "shots_against": 1664, "goals_against": 125, "saves": 1539,
+                "save_pct": 0.92487, "goals_against_average": 2.00461,
+                "shutouts": 8, "time_on_ice": 224482
+            },
+            "bio": {
+                "birth_date": null, "birth_country": null,
+                "nationality_code": null, "catches": "L",
+                "height_in_inches": null, "weight_lbs": null,
+                "draft_year": null, "draft_round": null, "draft_overall": null,
+                "rookie_season": null
+            },
+            "headshot_url": null,
+            "sweater_number": null
+        }"#;
+        serde_json::from_str(json).expect("goalie fixture parses")
+    }
+
+    #[test]
+    fn l0_goalie_panel_header_uses_lastname_team_g() {
+        let g = fixture_goalie();
+        let lines = build_goalie_panel_lines(&g);
+        let body = lines_to_text(&lines);
+        assert!(body.contains("Hellebuyck"), "lastname missing: {body}");
+        assert!(body.contains("WPG"),        "team missing: {body}");
+        assert!(body.contains(" G"),         "G suffix missing: {body}");
+    }
+
+    #[test]
+    fn l0_goalie_panel_renders_three_sparklines_when_history_present() {
+        let g = fixture_goalie();
+        let lines = build_goalie_panel_lines(&g);
+        let body  = lines_to_text(&lines);
+        // All three rows must appear.
+        assert!(body.lines().any(|l| l.starts_with("SV%")),
+            "SV% spark row missing:\n{body}");
+        assert!(body.lines().any(|l| l.starts_with("GAA")),
+            "GAA spark row missing:\n{body}");
+        assert!(body.lines().any(|l| l.starts_with("W  ")),
+            "W spark row missing:\n{body}");
+        // Range marker present.
+        assert!(body.contains("Last 5 seasons"),
+            "range header missing:\n{body}");
+        // SV% rendered as ".XYZ" (leading zero stripped). The first/last
+        // anchors carry the values; only those show in body text. Match
+        // any 3-digit decimal starting with a dot to avoid pinning specific
+        // values that change as the bundled data refreshes.
+        assert!(body.contains(".8") || body.contains(".9"),
+            "SV% short form (leading zero stripped) missing, got:\n{body}");
+        // And it should NOT include the unstripped prefix.
+        assert!(!body.contains("0.9") && !body.contains("0.8"),
+            "SV% should drop leading zero, got:\n{body}");
+        // First→last anchors visible.
+        assert!(body.contains(" → "),
+            "first→last anchors missing, got:\n{body}");
+        // Sparkline blocks present.
+        assert!(body.chars().any(|c| "▁▂▃▄▅▆▇█".contains(c)),
+            "expected sparkline blocks, got:\n{body}");
+    }
+
+    #[test]
+    fn l0_fmt3_drops_leading_zero() {
+        // SV% goalie convention is ".925" not "0.925".
+        assert_eq!(fmt3(0.925),  ".925");
+        assert_eq!(fmt3(0.9008), ".901");
+        // 1.0 (theoretical max) keeps the "1." form.
+        assert_eq!(fmt3(1.0),    "1.000");
+    }
+
+    #[test]
+    fn l0_lines_for_goalie_caches_by_nhl_id() {
+        let panel = CompiledPanel::new();
+        let g = fixture_goalie();
+        let first = panel.lines_for_goalie(&g);
+        // Cache populated under the goalie's nhl_id.
+        {
+            let s = panel.inner.lock().unwrap();
+            assert!(s.by_player.contains_key(&g.nhl_id),
+                "goalie cache key missing");
+        }
+        let second = panel.lines_for_goalie(&g);
+        assert_eq!(first, second,
+            "second call must return cached lines");
     }
 }

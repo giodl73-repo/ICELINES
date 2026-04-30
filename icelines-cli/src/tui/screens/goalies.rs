@@ -194,6 +194,103 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(List::new(items), area);
 }
 
+/// Per-goalie detail card. Phase G.7. Mirrors the player-card layout
+/// but with goalie-specific stats; the dashboard panel renders the
+/// 5-season SV%/GAA/W trend on the right when --dashboards is on.
+pub fn render_detail(f: &mut Frame, app: &App, area: Rect, idx: usize) {
+    let g = match app.goalies.get(idx) {
+        Some(g) => g,
+        None    => {
+            let dim = Style::default().fg(Color::DarkGray);
+            f.render_widget(Block::default().borders(Borders::ALL).title(" Goalie · Esc back "), area);
+            f.render_widget(Paragraph::new(vec![
+                Line::from(""),
+                Line::styled("  Goalie no longer in roster.", dim),
+            ]).block(Block::default()), area);
+            return;
+        }
+    };
+
+    let title = format!(" Goalie — {}  ·  Esc back ", g.full_name);
+    let block = Block::default().borders(Borders::ALL).title(title);
+    let inner = block.inner(area);
+    f.render_widget(block, area);
+
+    // Layout: stats column on the left, dashboard panel on the right
+    // when --dashboards is on AND there's room (≥ 80 cols).
+    let dashboards_on = crate::config::dashboards_enabled() && inner.width >= 80;
+    let layout = ratatui::layout::Layout::default()
+        .direction(ratatui::layout::Direction::Horizontal)
+        .constraints(if dashboards_on {
+            vec![ratatui::layout::Constraint::Min(0), ratatui::layout::Constraint::Length(34)]
+        } else {
+            vec![ratatui::layout::Constraint::Min(0)]
+        })
+        .split(inner);
+
+    render_detail_stats(f, g, layout[0]);
+    if dashboards_on {
+        if let Some(area_right) = layout.get(1).copied() {
+            let panel_block = Block::default()
+                .borders(Borders::ALL)
+                .title(" Scout card ")
+                .style(Style::default().fg(Color::DarkGray));
+            let panel_inner = panel_block.inner(area_right);
+            f.render_widget(panel_block, area_right);
+            let lines = app.dashboard_panel.lines_for_goalie(g);
+            f.render_widget(Paragraph::new(lines), panel_inner);
+        }
+    }
+}
+
+fn render_detail_stats(f: &mut Frame, g: &Goalie, area: Rect) {
+    let dim    = Style::default().fg(Color::DarkGray);
+    let gold   = Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD);
+    let cyan   = Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD);
+    let mut lines: Vec<Line> = Vec::new();
+    lines.push(Line::from(""));
+    lines.push(Line::from(vec![
+        Span::styled(format!("  {}", g.full_name), gold),
+        Span::styled(format!("  ·  {}  ·  G", g.team.as_str()), dim),
+    ]));
+    if let Some(catches) = g.bio.catches.as_deref() {
+        lines.push(Line::styled(format!("  Catches: {catches}"), dim));
+    }
+    lines.push(Line::from(""));
+
+    if let Some(s) = g.stats.as_ref() {
+        let record = match s.ot_losses {
+            Some(otl) => format!("{}-{}-{}", s.wins, s.losses, otl),
+            None      => format!("{}-{}",    s.wins, s.losses),
+        };
+        let sv  = s.save_pct.map(|v| format!("{:.4}", v)).unwrap_or_else(|| "—".to_owned());
+        let gaa = s.goals_against_average.map(|v| format!("{:.2}", v)).unwrap_or_else(|| "—".to_owned());
+        lines.push(Line::styled("  RECORD", gold));
+        lines.push(Line::from(vec![
+            Span::styled("    GP    ", dim),
+            Span::styled(s.games_played.to_string(), cyan),
+            Span::styled("       Record   ", dim),
+            Span::styled(record, cyan),
+        ]));
+        lines.push(Line::from(vec![
+            Span::styled("    SV%   ", dim),
+            Span::styled(sv, cyan),
+            Span::styled("    GAA  ", dim),
+            Span::styled(gaa, cyan),
+        ]));
+        lines.push(Line::from(vec![
+            Span::styled("    SO    ", dim),
+            Span::styled(s.shutouts.to_string(), cyan),
+            Span::styled("        Saves   ", dim),
+            Span::styled(s.saves.to_string(), cyan),
+        ]));
+    } else {
+        lines.push(Line::styled("  No stats recorded yet.", dim));
+    }
+
+    f.render_widget(Paragraph::new(lines), area);
+}
+
 /// Trim "Connor Hellebuyck" → "C. Hellebuyck" so the leaderboard fits in
 /// the 22-col column width without wrapping.
 fn short_name(full: &str) -> String {
