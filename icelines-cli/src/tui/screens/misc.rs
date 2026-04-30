@@ -97,27 +97,44 @@ fn render_scores_list(f: &mut Frame, app: &App, area: Rect, games: &[icelines_fe
     let dim_style  = Style::default().fg(Color::DarkGray);
 
     // The NHL `/v1/schedule/now` endpoint returns the whole "gameWeek"
-    // (up to 7 days) — so we always filter games to just the user's
-    // selected date. Empty `scores_date` means "today" — compute it
-    // locally so we don't show tomorrow's games as if they're today's.
-    let target_date = if app.scores_date.is_empty() {
-        chrono::Local::now().date_naive().format("%Y-%m-%d").to_string()
+    // (up to 7 days) — so we filter games to the user's selected date.
+    // Empty `scores_date` means "today" — but timezone matters: a user
+    // in Pacific time looking at the Scores tab at 8 PM PT is at
+    // 2026-04-29 locally but 2026-04-30 UTC, while the NHL day grouping
+    // can use either depending on the game's time. Accept BOTH local
+    // and UTC "today" so the user always sees tonight's games.
+    let target_dates: Vec<String> = if app.scores_date.is_empty() {
+        let local = chrono::Local::now().date_naive().format("%Y-%m-%d").to_string();
+        let utc   = chrono::Utc::now().date_naive().format("%Y-%m-%d").to_string();
+        if local == utc { vec![local] } else { vec![local, utc] }
     } else {
-        app.scores_date.clone()
+        vec![app.scores_date.clone()]
     };
     let filtered: Vec<&icelines_fetch::nhl_api::ScheduledGame> = games.iter()
-        .filter(|g| g.date == target_date)
+        .filter(|g| target_dates.iter().any(|d| *d == g.date))
         .collect();
 
     if filtered.is_empty() {
-        let msg = if app.scores_date.is_empty() {
+        // Diagnostic hint: when the gameWeek isn't empty but our filter
+        // matched nothing, it's almost certainly a timezone or
+        // navigation mismatch. Surface the first available date so the
+        // user can hit ←/→ to find it instead of staring at "no games".
+        let hint = if !games.is_empty() && app.scores_date.is_empty() {
+            let earliest = games.iter()
+                .map(|g| g.date.as_str())
+                .filter(|d| !d.is_empty())
+                .min()
+                .unwrap_or("");
+            format!("  Schedule has {} game(s) starting {} — press → to view.",
+                games.len(), earliest)
+        } else if app.scores_date.is_empty() {
             "  No games scheduled today.".to_owned()
         } else {
             format!("  No games scheduled for {date_label}.")
         };
         f.render_widget(Paragraph::new(vec![
             Line::from(""),
-            Line::styled(msg, dim_style),
+            Line::styled(hint, dim_style),
             Line::from(""),
             Line::styled("  ←/→ navigate days  ·  d jump to date  ·  Esc back", dim_style),
         ]), area);
@@ -919,19 +936,54 @@ mod tests {
         // empty-string key (the canonical TonightCache key for "now")
         // and verify only games with today's date render.
         let today = chrono::Local::now().date_naive().format("%Y-%m-%d").to_string();
-        let yesterday = chrono::Local::now()
-            .date_naive()
-            .pred_opt().unwrap()
+        let two_weeks_ago = (chrono::Local::now().date_naive()
+            - chrono::Duration::days(14))
             .format("%Y-%m-%d").to_string();
         let games = vec![
-            fixture_game(&yesterday, "MTL", "TBL", 23),
-            fixture_game(&today,     "PIT", "PHI", 23),
+            fixture_game(&two_weeks_ago, "MTL", "TBL", 23),
+            fixture_game(&today,         "PIT", "PHI", 23),
         ];
         let text = render_with_games("", games);
         assert!(text.contains("PIT"),
             "today's game must render, got:\n{text}");
         assert!(!text.contains("MTL"),
-            "yesterday's game must NOT render under empty scores_date, got:\n{text}");
+            "two-weeks-ago game must NOT render under empty scores_date, got:\n{text}");
+    }
+
+    #[test]
+    fn l0_scores_filter_accepts_local_or_utc_today() {
+        // Timezone tolerance: when the user is mid-evening Pacific, their
+        // local date and the UTC date can disagree. Both should match —
+        // the NHL day-wrapper grouping uses either depending on the
+        // game's time slot. This test pins the relaxation: a game on
+        // today-in-UTC (which could be tomorrow-in-local) renders OK.
+        let utc_today = chrono::Utc::now().date_naive().format("%Y-%m-%d").to_string();
+        let games = vec![fixture_game(&utc_today, "MTL", "TBL", 23)];
+        let text = render_with_games("", games);
+        assert!(text.contains("MTL"),
+            "UTC-today game must render even when local is yesterday, got:\n{text}");
+    }
+
+    #[test]
+    fn l0_scores_empty_filter_shows_diagnostic_hint() {
+        // When the API returns games but none match today's date in
+        // either timezone, show a helpful hint with the earliest
+        // upcoming date instead of "No games scheduled today" — the
+        // user can then hit → to navigate to the games.
+        let future = (chrono::Local::now().date_naive()
+            + chrono::Duration::days(3))
+            .format("%Y-%m-%d").to_string();
+        let games = vec![
+            fixture_game(&future, "PIT", "PHI", 23),
+            fixture_game(&future, "BUF", "BOS", 23),
+        ];
+        let text = render_with_games("", games);
+        assert!(text.contains("Schedule has 2 game"),
+            "diagnostic count missing, got:\n{text}");
+        assert!(text.contains(&future),
+            "diagnostic should name the earliest available date, got:\n{text}");
+        assert!(text.contains("press →"),
+            "diagnostic should prompt for navigation, got:\n{text}");
     }
 
     #[test]
