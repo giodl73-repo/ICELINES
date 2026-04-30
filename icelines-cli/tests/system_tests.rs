@@ -104,6 +104,18 @@ fn l2_cmd_fetch_stats_dry_run_exits_zero() {
     assert!(out.status.success(), "fetch stats --dry-run must exit 0");
 }
 
+#[test]
+fn l2_cmd_fetch_goalies_dry_run_exits_zero() {
+    // Phase G.2: `fetch goalies` should mention the right endpoint.
+    let out = run(&["fetch", "goalies", "--dry-run"]);
+    assert!(out.status.success(),
+        "fetch goalies --dry-run stderr: {}",
+        String::from_utf8_lossy(&out.stderr));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("/goalie/summary") || stdout.contains("Would fetch"),
+        "dry-run should mention the goalie endpoint, got:\n{stdout}");
+}
+
 // ── L2: team with no cache exits 1 with helpful message ──────────────────────
 
 #[test]

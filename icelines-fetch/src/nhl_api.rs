@@ -166,6 +166,17 @@ impl NhlApiClient {
         self.fetch_all_paged(&endpoint).await
     }
 
+    /// Fetch all goalie season stats for a season (paginated). Phase G.2.
+    /// Returns the full league's goalies, including backups with low GP.
+    /// Callers gate by `qualified()` for leaderboard rendering.
+    pub async fn fetch_all_goalies(&self, season: &str) -> Result<Vec<crate::schema::GoalieStats>, FetchError> {
+        let endpoint = format!(
+            "{}/goalie/summary?cayenneExp=seasonId%3D{season}%20and%20gameTypeId%3D2",
+            self.base_stats
+        );
+        self.fetch_all_paged(&endpoint).await
+    }
+
     /// Fetch a URL as raw text (used for CSV downloads such as MoneyPuck).
     pub async fn fetch_text(&self, url: &str) -> Result<String, FetchError> {
         let resp = self
