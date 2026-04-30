@@ -50,7 +50,7 @@ pub fn render(f: &mut Frame, app: &App) {
         Screen::SeriesDetail(letter)      => playoffs::render_series_detail(f, app, chunks[1], letter),
         Screen::GameDetail(game_id)       => game_detail::render(f, app, chunks[1], *game_id),
         Screen::Goalies                   => goalies::render(f, app, chunks[1]),
-        Screen::GoalieDetail(_idx)        => goalies::render(f, app, chunks[1]),  // detail card lands in v2
+        Screen::GoalieDetail(idx)         => goalies::render_detail(f, app, chunks[1], *idx),
     }
 
     f.render_widget(

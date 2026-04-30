@@ -1289,6 +1289,26 @@ impl App {
                     self.screen = Screen::SeriesDetail(letter);
                 }
             }
+            // Goalies: Enter on a leaderboard row opens GoalieDetail. We
+            // resolve the selected row index against the same sort+filter
+            // pipeline `goalies::render` uses, then translate the visible
+            // rank back to a position in `app.goalies` so the detail
+            // screen can address the goalie directly.
+            Screen::Goalies => {
+                let sort = crate::tui::screens::goalies::SORTS
+                    .get(self.goalie_sort as usize).copied()
+                    .unwrap_or(crate::tui::screens::goalies::GoalieSort::SvPctDesc);
+                let qualified = crate::tui::screens::goalies::sort_goalies(
+                    &self.goalies, sort, self.goalie_min_gp,
+                );
+                if let Some(g_ref) = qualified.get(self.goalie_selected) {
+                    let nhl_id = g_ref.nhl_id;
+                    if let Some(idx) = self.goalies.iter().position(|g| g.nhl_id == nhl_id) {
+                        self.prev_screen = Some(Screen::Goalies);
+                        self.screen = Screen::GoalieDetail(idx);
+                    }
+                }
+            }
             // Scores: Enter on a game row opens GameDetail keyed by game_id.
             Screen::Tonight => {
                 if let Some(game_id) = self.selected_game_id() {
