@@ -297,6 +297,75 @@ pub struct Player {
     pub salary: Option<u64>,
 }
 
+// ── Goalie (Phase G.1) ────────────────────────────────────────────────────────
+//
+// Separate type from `Player` per the goalies spec: the schema doesn't
+// share enough with skaters to justify polymorphism, and the type
+// system prevents skater-only ops on goalies.
+
+/// One goalie's row in the rendered TUI / CLI views. Stats are
+/// optional — a roster goalie who hasn't played yet has `stats: None`
+/// and just shows their bio block.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Goalie {
+    pub nhl_id:           u32,
+    pub full_name:        String,
+    pub name_normalized:  String,
+    pub team:             TeamAbbr,
+    pub stats:            Option<GoalieSeasonStats>,
+    pub bio:              GoalieBio,
+    pub headshot_url:     Option<String>,
+    pub sweater_number:   Option<u32>,
+}
+
+/// Per-season counting + rate stats for one goalie. Mirrors
+/// `icelines_fetch::schema::GoalieStats` minus the metadata fields
+/// (player_id, name, team, season_id) that live on the `Goalie` itself.
+/// Era-typical nulls preserved as `Option`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GoalieSeasonStats {
+    pub games_played:         u32,
+    pub games_started:        u32,
+    pub wins:                 u32,
+    pub losses:               u32,
+    pub ot_losses:            Option<u32>,
+    pub ties:                 Option<u32>,
+    pub shots_against:        u32,
+    pub goals_against:        u32,
+    pub saves:                u32,
+    pub save_pct:             Option<f32>,
+    pub goals_against_average: Option<f32>,
+    pub shutouts:             u32,
+    /// Time on ice in seconds.
+    pub time_on_ice:          u32,
+}
+
+/// Demographic / draft / bio data for one goalie. Same fields as the
+/// skater `Player` bio block where they overlap; `catches` replaces
+/// `shoots_catches` since goalies' handedness is glove-side.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GoalieBio {
+    pub birth_date:        Option<String>,
+    pub birth_country:     Option<String>,
+    pub nationality_code:  Option<String>,
+    pub catches:           Option<String>,        // "L" | "R"
+    pub height_in_inches:  Option<u32>,
+    pub weight_lbs:        Option<u32>,
+    pub draft_year:        Option<u16>,
+    pub draft_round:       Option<u8>,
+    pub draft_overall:     Option<u16>,
+    pub rookie_season:     Option<u32>,
+}
+
+impl Goalie {
+    /// True iff this goalie has played enough games to qualify for the
+    /// position-rank section of the TUI panel. Default 15 GP (NHL.com
+    /// leaderboard convention).
+    pub fn qualified(&self, min_gp: u32) -> bool {
+        self.stats.as_ref().map(|s| s.games_played >= min_gp).unwrap_or(false)
+    }
+}
+
 impl Player {
     pub fn gp(&self) -> Option<u32> {
         self.gp_status.gp()
