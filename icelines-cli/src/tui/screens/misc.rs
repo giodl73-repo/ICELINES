@@ -159,41 +159,84 @@ fn render_scores_list(f: &mut Frame, app: &App, area: Rect, games: &[icelines_fe
         ratatui::widgets::ListItem::new(Line::styled(format!("  {}", "─".repeat(60)), dim)),
     ];
 
+    use ratatui::text::Span;
     for (i, game) in filtered.iter().enumerate() {
         let utc  = game.start_time_utc.get(11..16).unwrap_or("?");
         let et   = fmt_et(utc);
         let selected = i == app.scores_selected;
 
-        // Build the main game line. `series_label()` already prefixes the
-        // game number with "Game"; only fall back to a placeholder when
-        // both label and number are unavailable from the API payload.
-        let series_info = if game.is_playoff() {
-            game.series_label()
-                .unwrap_or_else(|| {
-                    match game.series_game.as_deref() {
-                        Some(label) => label.to_owned(),
-                        None        => "Playoffs".to_owned(),
-                    }
-                })
+        // The series tag is the game number ("Game 5") for playoff games.
+        // For regular-season games it's empty.
+        let series_tag = if game.is_playoff() {
+            game.series_game.clone().unwrap_or_else(|| "Playoffs".to_owned())
         } else {
             String::new()
         };
 
-        let game_line = if series_info.is_empty() {
-            format!("  {:<5}  {:>4} @ {:<4}  {}", et, game.away_abbrev, game.home_abbrev, " ".repeat(30))
-        } else {
-            format!("  {:<5}  {:>4} @ {:<4}  {}", et, game.away_abbrev, game.home_abbrev, series_info)
-        };
-
-        let style = if selected {
+        // Score block — the part the user wants to "pop".
+        // Final/live games: `away_score – home_score` with the winner's
+        //   number bolded + cyan, loser dim. The em-dash separator is
+        //   greyed so the numbers carry the eye.
+        // Future games: time-of-day in cyan.
+        let row_base = if selected {
             Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
         } else if game.is_playoff() {
             Style::default().fg(Color::White)
         } else {
             Style::default().fg(Color::DarkGray)
         };
+        let label_dim = if selected { row_base } else { dim };
+        let accent    = if selected { row_base } else {
+            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)
+        };
 
-        items.push(ratatui::widgets::ListItem::new(Line::styled(game_line, style)));
+        let mut spans: Vec<Span<'static>> = Vec::new();
+        // Indent + matchup column ("  MTL @ TBL  ").
+        spans.push(Span::styled("  ".to_owned(), label_dim));
+        spans.push(Span::styled(format!("{:>4} ", game.away_abbrev), label_dim));
+        spans.push(Span::styled("@ ".to_owned(), if selected { row_base } else { dim }));
+        spans.push(Span::styled(format!("{:<4}", game.home_abbrev), label_dim));
+        // Series tag (game number) — distinct, dim.
+        if !series_tag.is_empty() {
+            spans.push(Span::styled(format!("  {series_tag}"), label_dim));
+        }
+        // Padding to push the score block to a fixed right-side column.
+        let prefix_width = 2 + 5 + 2 + 4 + if series_tag.is_empty() { 0 } else { 2 + series_tag.chars().count() };
+        let target_col   = 36usize;  // score column starts here, regardless of prefix
+        let pad = target_col.saturating_sub(prefix_width);
+        if pad > 0 { spans.push(Span::raw(" ".repeat(pad))); }
+
+        // Score / time block.
+        if game.is_final() || game.is_live() {
+            let aw = game.away_score.unwrap_or(0);
+            let hw = game.home_score.unwrap_or(0);
+            let (away_style, home_style) = match aw.cmp(&hw) {
+                std::cmp::Ordering::Greater => (accent,    label_dim),
+                std::cmp::Ordering::Less    => (label_dim, accent),
+                std::cmp::Ordering::Equal   => (label_dim, label_dim),
+            };
+            spans.push(Span::styled(format!("{aw:>2}"), away_style));
+            spans.push(Span::styled(" – ".to_owned(),
+                if selected { row_base } else { dim }));
+            spans.push(Span::styled(format!("{hw}"), home_style));
+            // Final / LIVE tag at the far right.
+            let tag = if game.is_live() { "LIVE" }
+                      else { match game.last_period.as_deref() {
+                          Some("OT") => "Final/OT",
+                          Some("SO") => "Final/SO",
+                          _          => "Final",
+                      }};
+            let tag_style = if game.is_live() {
+                Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)
+            } else {
+                label_dim
+            };
+            spans.push(Span::styled(format!("  {tag}"), tag_style));
+        } else {
+            // Scheduled / not-yet-started — show the start time in accent.
+            spans.push(Span::styled(et.clone(), accent));
+        }
+        items.push(ratatui::widgets::ListItem::new(Line::from(spans)));
 
         // Series context line for playoff games
         if game.is_playoff() {
@@ -206,7 +249,7 @@ fn render_scores_list(f: &mut Frame, app: &App, area: Rect, games: &[icelines_fe
                     std::cmp::Ordering::Equal =>
                         format!("         Series tied {}-{}", aw, hw),
                 };
-                let ctx_style = if selected { style } else { dim };
+                let ctx_style = if selected { row_base } else { dim };
                 items.push(ratatui::widgets::ListItem::new(Line::styled(ctx, ctx_style)));
             }
         }
@@ -998,5 +1041,50 @@ mod tests {
             "series label must render verbatim, got:\n{text}");
         assert!(!text.contains("Game ?"),
             "no question-mark placeholder when label is present, got:\n{text}");
+    }
+
+    #[test]
+    fn l0_scores_final_game_renders_score_with_em_dash() {
+        // Final games: score block is `aw – hw` with an em-dash
+        // separator. The user's Scores tab now surfaces the score
+        // distinctly from the matchup column.
+        let mut g = fixture_game("2026-04-28", "MTL", "TBL", 23);
+        g.away_score  = Some(3);
+        g.home_score  = Some(2);
+        g.game_state  = Some("OFF".to_owned());
+        g.last_period = Some("REG".to_owned());
+        let text = render_with_games("2026-04-28", vec![g]);
+        // Score numbers AND em-dash separator both visible.
+        assert!(text.contains(" 3 – 2"),
+            "score should render as `3 – 2`, got:\n{text}");
+        // Final tag at the right.
+        assert!(text.contains("Final"),
+            "Final tag should appear for completed games, got:\n{text}");
+    }
+
+    #[test]
+    fn l0_scores_live_game_shows_LIVE_tag() {
+        let mut g = fixture_game("2026-04-28", "MTL", "TBL", 23);
+        g.away_score = Some(2);
+        g.home_score = Some(1);
+        g.game_state = Some("LIVE".to_owned());
+        let text = render_with_games("2026-04-28", vec![g]);
+        assert!(text.contains("LIVE"),
+            "LIVE tag must render for in-progress games, got:\n{text}");
+        assert!(text.contains("2 – 1"),
+            "live games show their running score, got:\n{text}");
+    }
+
+    #[test]
+    fn l0_scores_future_game_shows_start_time() {
+        // Pre-game (game_state = "FUT") games show the ET start time
+        // instead of a score. Time appears in the score column.
+        let g = fixture_game("2026-04-28", "MTL", "TBL", 23);
+        let text = render_with_games("2026-04-28", vec![g]);
+        // 23:00 UTC = 7:00 PM ET (during DST).
+        assert!(text.contains("7:00 PM") || text.contains("8:00 PM"),
+            "future games show ET start time, got:\n{text}");
+        assert!(!text.contains("Final"),
+            "future games should NOT render the Final tag, got:\n{text}");
     }
 }

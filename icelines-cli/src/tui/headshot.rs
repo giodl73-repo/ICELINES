@@ -1,10 +1,25 @@
 //! Player headshot ASCII art for the TUI player card.
 //!
 //! Downloads player headshot PNGs from the NHL CDN, converts to grayscale,
-//! resizes to fit the terminal, and dithers using proof's half-block algorithm
-//! (2 image rows per terminal row using ▀▄█ Unicode block characters).
+//! resizes to fit the terminal, and dithers using a braille-block algorithm
+//! (2×4 image pixels per terminal char using U+2800–U+28FF).
+//!
+//! ## Caching
+//!
+//! Two tiers:
+//!
+//! 1. **In-memory** (`HeadshotCache`) — single session, keyed by `nhl_id`.
+//!    Holds the dithered ASCII rows or a loading/error marker.
+//! 2. **On-disk** (`~/.icelines/cache/headshots/{nhl_id}.txt`) — persists
+//!    across sessions. Populated on every successful network fetch and
+//!    consulted by `spawn_fetch` before hitting the network.
+//!
+//! The dithered ASCII is ~1 KB per player; ~900 active players ≈ 1.5 MB
+//! total on disk for the whole league. Cheap, and means the player card
+//! renders headshots instantly on second use without any network calls.
 
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 // ── Cache ─────────────────────────────────────────────────────────────────────
@@ -40,16 +55,68 @@ pub fn is_error(rows: &[String]) -> bool {
 }
 
 /// Spawn a background task to fetch and dither a headshot.
+/// Tries the disk cache first; only hits the network on a true miss.
+/// Successful network fetches are written back to disk for next session.
 /// Uses braille dither for maximum resolution (2×4 pixels per char).
 pub fn spawn_fetch(nhl_id: u32, url: String, cache: HeadshotCache, target_cols: u32, target_rows: u32) {
     cache.set(nhl_id, vec![LOADING_MARKER.to_owned()]);
     let cache2 = cache.clone();
     tokio::spawn(async move {
+        // Tier 2 — disk cache. Avoids one HTTP per player per session.
+        if let Some(rows) = read_from_disk(nhl_id) {
+            cache2.set(nhl_id, rows);
+            return;
+        }
         match fetch_and_dither_braille(&url, target_cols, target_rows).await {
-            Ok(rows) => cache2.set(nhl_id, rows),
+            Ok(rows) => {
+                // Best-effort write; cache stays useful even if the disk
+                // write fails (e.g., read-only home).
+                let _ = write_to_disk(nhl_id, &rows);
+                cache2.set(nhl_id, rows);
+            }
             Err(_)   => cache2.set(nhl_id, vec![ERROR_MARKER.to_owned()]),
         }
     });
+}
+
+// ── Disk cache ─────────────────────────────────────────────────────────────
+
+/// Return the directory under which we persist dithered headshots.
+/// Resolves to `~/.icelines/cache/headshots/`. Returns `None` only when
+/// `$HOME` / `$USERPROFILE` are both unset — extreme edge case.
+fn disk_dir() -> Option<PathBuf> {
+    let home = std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(PathBuf::from)?;
+    Some(home.join(".icelines").join("cache").join("headshots"))
+}
+
+fn disk_path(nhl_id: u32) -> Option<PathBuf> {
+    Some(disk_dir()?.join(format!("{nhl_id}.txt")))
+}
+
+/// Load a previously-dithered headshot from disk. Returns `None` on any
+/// failure (missing file, unreadable, empty) — caller falls through to
+/// the network fetch path.
+fn read_from_disk(nhl_id: u32) -> Option<Vec<String>> {
+    let path = disk_path(nhl_id)?;
+    let text = std::fs::read_to_string(&path).ok()?;
+    let rows: Vec<String> = text.lines().map(str::to_owned).collect();
+    if rows.is_empty() { return None; }
+    Some(rows)
+}
+
+/// Persist a dithered headshot to disk. Best-effort: failures are
+/// silently ignored (read-only home, disk full, etc.). The in-memory
+/// cache still serves the rest of the session.
+fn write_to_disk(nhl_id: u32, rows: &[String]) -> std::io::Result<()> {
+    let path = disk_path(nhl_id).ok_or_else(|| std::io::Error::new(
+        std::io::ErrorKind::NotFound, "no home directory"))?;
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(&path, rows.join("\n"))?;
+    Ok(())
 }
 
 // ── Fetch + dither pipeline ───────────────────────────────────────────────────
@@ -258,5 +325,63 @@ mod tests {
         let b = a.clone();
         a.set(42, vec!["row".to_owned()]);
         assert_eq!(b.get(42), Some(vec!["row".to_owned()]));
+    }
+
+    // ── Disk cache ─────────────────────────────────────────────────────────
+
+    /// Set HOME/USERPROFILE to a tempdir so disk_path() resolves into it.
+    /// Returns the temp dir guard + the resolved cache directory.
+    fn isolate_home() -> (tempfile::TempDir, std::path::PathBuf) {
+        let dir = tempfile::tempdir().expect("tempdir");
+        std::env::set_var("HOME", dir.path());
+        std::env::set_var("USERPROFILE", dir.path());
+        let cache_dir = dir.path().join(".icelines").join("cache").join("headshots");
+        (dir, cache_dir)
+    }
+
+    #[test]
+    fn l0_disk_read_returns_none_when_file_missing() {
+        let _g = crate::test_utils::home_env_lock();
+        let (_keep, _) = isolate_home();
+        assert!(read_from_disk(99999999).is_none(),
+            "absent file → None, no panic");
+    }
+
+    #[test]
+    fn l0_disk_write_and_read_roundtrip() {
+        let _g = crate::test_utils::home_env_lock();
+        let (_keep, cache_dir) = isolate_home();
+
+        let rows = vec!["⠀⠀⠀".to_owned(), "⠶⠶⠶".to_owned(), "⠿⠿⠿".to_owned()];
+        write_to_disk(8478402, &rows).expect("write must succeed");
+        // File lands at the canonical path.
+        let path = cache_dir.join("8478402.txt");
+        assert!(path.exists(), "expected file at {}", path.display());
+        // Roundtrip — read returns the same rows.
+        let loaded = read_from_disk(8478402).expect("read must succeed");
+        assert_eq!(loaded, rows);
+    }
+
+    #[test]
+    fn l0_disk_write_creates_parent_directory_on_first_use() {
+        let _g = crate::test_utils::home_env_lock();
+        let (_keep, cache_dir) = isolate_home();
+        // Parent doesn't exist yet on first call.
+        assert!(!cache_dir.exists());
+        write_to_disk(1234567, &["row".to_owned()]).expect("write must succeed");
+        assert!(cache_dir.exists(),
+            "write_to_disk must mkdir -p the parent");
+    }
+
+    #[test]
+    fn l0_disk_read_treats_empty_file_as_miss() {
+        let _g = crate::test_utils::home_env_lock();
+        let (_keep, cache_dir) = isolate_home();
+        // Pre-create an empty file at the cache path — should still
+        // return None so the network path runs.
+        std::fs::create_dir_all(&cache_dir).unwrap();
+        std::fs::write(cache_dir.join("0.txt"), "").unwrap();
+        assert!(read_from_disk(0).is_none(),
+            "empty file should not look like a cached headshot");
     }
 }
