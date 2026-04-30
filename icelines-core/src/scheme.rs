@@ -213,6 +213,27 @@ pub struct SkaterStats {
 
 pub const MIN_GP_SCHEME: u32 = 10;
 
+/// Minimum GP for a goalie to qualify for fantasy scoring. Goalies
+/// accumulate counting stats (saves, wins) much faster than skaters,
+/// but a one-game appearance shouldn't anchor a lopsided weekly score.
+/// 5 GP is the typical NHL fantasy convention for goalie eligibility.
+pub const MIN_GP_GOALIE_SCHEME: u32 = 5;
+
+/// Pure-data shape consumed by `compute_goalie_fantasy_score`. Matches
+/// the goalie counting stats fantasy schemes care about; the caller
+/// builds it from `icelines_core::model::GoalieSeasonStats` (or any
+/// equivalent source).
+#[derive(Debug, Clone, Default)]
+pub struct GoalieScoreStats {
+    pub games_played:  u32,
+    pub wins:          u32,
+    pub losses:        u32,
+    pub saves:         u32,
+    pub goals_against: u32,
+    pub shutouts:      u32,
+    pub save_pct:      f32,  // 0.0..=1.0
+}
+
 /// Compute fantasy score for a skater. Returns None if gp < MIN_GP_SCHEME.
 ///
 /// DI-22: FantasyScore is always None when gp < MIN_GP_SCHEME.
@@ -248,6 +269,49 @@ pub fn compute_fantasy_score(
             weights.faceoff_wins * stats.faceoff_wins as f32,
             "faceoff_wins",
         ),
+    ];
+
+    let total: f32 = entries.iter().map(|(v, _)| v).sum();
+    let breakdown: HashMap<String, f32> = entries
+        .iter()
+        .filter(|(v, _)| v.abs() > 0.001)
+        .map(|(v, k)| (k.to_string(), *v))
+        .collect();
+
+    Some(FantasyScore {
+        total,
+        per_game: total / gp as f32,
+        gp,
+        breakdown,
+    })
+}
+
+/// Compute fantasy score for a goalie. Returns None when the goalie
+/// hasn't played enough games (`gp < MIN_GP_GOALIE_SCHEME`) so weekly
+/// scoring isn't anchored by a single appearance. Phase G.6.
+///
+/// Matches the standard Yahoo-style scoring set used for goalies:
+/// W (positive), L (negative), Saves (small per-save reward), GA
+/// (negative), SO (large bonus), and SV% (rate-stat bonus).
+pub fn compute_goalie_fantasy_score(
+    stats: &GoalieScoreStats,
+    weights: &GoalieWeights,
+    gp: u32,
+) -> Option<FantasyScore> {
+    if gp < MIN_GP_GOALIE_SCHEME {
+        return None;
+    }
+
+    let entries: &[(f32, &str)] = &[
+        (weights.wins          * stats.wins          as f32, "wins"),
+        (weights.losses        * stats.losses        as f32, "losses"),
+        (weights.saves         * stats.saves         as f32, "saves"),
+        (weights.goals_against * stats.goals_against as f32, "goals_against"),
+        (weights.shutouts      * stats.shutouts      as f32, "shutouts"),
+        // SV% is a rate stat — multiply by GP so the contribution scales
+        // with playing time. A backup with one .950 game shouldn't out-
+        // earn a starter at .920 for the season.
+        (weights.save_pct * stats.save_pct * gp as f32, "save_pct"),
     ];
 
     let total: f32 = entries.iter().map(|(v, _)| v).sum();
@@ -358,5 +422,87 @@ mod tests {
             compute_fantasy_score(&beniers_stats(), &Scheme::yahoo_standard().skater, 82).unwrap();
         // 179.0 / 82 = 2.182...
         assert!((s.per_game - s.total / 82.0).abs() < 0.001);
+    }
+
+    // ── Goalie scoring (Phase G.6) ─────────────────────────────────────────
+
+    fn hellebuyck_24_25() -> GoalieScoreStats {
+        // Connor Hellebuyck 24-25: 47W, 12L, 8 SO, 1539 saves, 125 GA, .9249
+        GoalieScoreStats {
+            games_played:  63,
+            wins:          47,
+            losses:        12,
+            saves:         1539,
+            goals_against: 125,
+            shutouts:      8,
+            save_pct:      0.92487,
+        }
+    }
+
+    #[test]
+    fn l0_goalie_yahoo_standard_arithmetic() {
+        // Yahoo standard goalie weights: W=5, L=-2, Saves=0.15, GA=-1, SO=4
+        // Hellebuyck: 47*5 + 12*-2 + 1539*0.15 + 125*-1 + 8*4
+        //           = 235 - 24 + 230.85 - 125 + 32 = 348.85 (no SV% bonus
+        //           in yahoo-standard — save_pct weight is 0.0)
+        let s = compute_goalie_fantasy_score(
+            &hellebuyck_24_25(),
+            &Scheme::yahoo_standard().goalie,
+            63,
+        ).unwrap();
+        let expected = 235.0 - 24.0 + 230.85 - 125.0 + 32.0;
+        assert!((s.total - expected).abs() < 0.01,
+            "expected ≈{expected}, got {}", s.total);
+    }
+
+    #[test]
+    fn l0_goalie_below_min_gp_returns_none() {
+        // GP below MIN_GP_GOALIE_SCHEME (5) → no score.
+        assert!(compute_goalie_fantasy_score(
+            &hellebuyck_24_25(),
+            &Scheme::yahoo_standard().goalie,
+            4,
+        ).is_none());
+        // Exactly at the threshold returns Some.
+        assert!(compute_goalie_fantasy_score(
+            &hellebuyck_24_25(),
+            &Scheme::yahoo_standard().goalie,
+            MIN_GP_GOALIE_SCHEME,
+        ).is_some());
+    }
+
+    #[test]
+    fn l0_goalie_breakdown_omits_zero_categories() {
+        // Yahoo standard has save_pct weight 0.0 → no save_pct entry in breakdown.
+        let s = compute_goalie_fantasy_score(
+            &hellebuyck_24_25(),
+            &Scheme::yahoo_standard().goalie,
+            63,
+        ).unwrap();
+        assert!(!s.breakdown.contains_key("save_pct"),
+            "save_pct=0 weight should not appear in breakdown");
+        // Real categories DO appear.
+        for k in &["wins", "losses", "saves", "goals_against", "shutouts"] {
+            assert!(s.breakdown.contains_key(*k),
+                "missing breakdown key: {k}");
+        }
+    }
+
+    #[test]
+    fn l0_goalie_save_pct_weight_scales_by_gp() {
+        // A scheme that pays 100 per save_pct point per game.
+        let weights = GoalieWeights {
+            save_pct: 100.0,
+            ..Default::default()
+        };
+        // .92 SV% × 50 GP × 100 = 4600
+        let stats = GoalieScoreStats {
+            games_played: 50, wins: 25, losses: 20,
+            saves: 1400, goals_against: 100, shutouts: 3, save_pct: 0.92,
+        };
+        let s = compute_goalie_fantasy_score(&stats, &weights, 50).unwrap();
+        let expected = 0.92 * 50.0 * 100.0;
+        assert!((s.total - expected).abs() < 0.01,
+            "expected {}, got {}", expected, s.total);
     }
 }
