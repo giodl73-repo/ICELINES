@@ -321,10 +321,56 @@ fn parse_game(g: &serde_json::Value, fallback_date: Option<&str>) -> Option<Sche
     let game_state = g["gameState"].as_str().map(str::to_owned);
     let last_period = g["gameOutcome"]["lastPeriodType"].as_str().map(str::to_owned);
 
+    // Series context for playoff games. The NHL API has used several
+    // shapes over time and the schedule-now / club-schedule endpoints
+    // serialise it differently:
+    //   * seriesSummary.gameLabel / awayWins / homeWins      (historical)
+    //   * seriesStatus.gameNumberOfSeven / topSeedWins / etc (current)
+    //   * gameLabel / gameNumber may also live at top level
+    // We try each path and pick the first hit. The label is stored as a
+    // human-readable string ("Game 4"); the wins are taken from whichever
+    // sub-object publishes them.
     let ss = &g["seriesSummary"];
-    let series_game = ss["gameLabel"].as_str().map(str::to_owned);
-    let away_wins   = ss["awayWins"].as_u64().map(|v| v as u8);
-    let home_wins   = ss["homeWins"].as_u64().map(|v| v as u8);
+    let st = &g["seriesStatus"];
+
+    let series_game = ss["gameLabel"].as_str().map(str::to_owned)
+        .or_else(|| st["gameLabel"].as_str().map(str::to_owned))
+        .or_else(|| g["gameLabel"].as_str().map(str::to_owned))
+        .or_else(|| {
+            // Numeric "gameNumberOfSeven" (current API) — convert to label.
+            let n = st["gameNumberOfSeven"].as_u64()
+                .or_else(|| ss["gameNumber"].as_u64())
+                .or_else(|| g["gameNumber"].as_u64())?;
+            Some(format!("Game {n}"))
+        });
+
+    // Wins — top vs bottom in seriesStatus, away vs home in seriesSummary.
+    // We map them to (away, home) by matching the team abbrevs since the
+    // NHL doesn't always tell us which side is "top seed" in the schedule
+    // payload.
+    let away_wins = ss["awayWins"].as_u64()
+        .or_else(|| {
+            // seriesStatus uses topSeedWins/bottomSeedWins — pair by abbrev.
+            let top_abbrev    = st["topSeedTeamAbbrev"].as_str().unwrap_or("");
+            let bottom_abbrev = st["bottomSeedTeamAbbrev"].as_str().unwrap_or("");
+            let top_wins      = st["topSeedWins"].as_u64();
+            let bottom_wins   = st["bottomSeedWins"].as_u64();
+            if away == top_abbrev { top_wins }
+            else if away == bottom_abbrev { bottom_wins }
+            else { None }
+        })
+        .map(|v| v as u8);
+    let home_wins = ss["homeWins"].as_u64()
+        .or_else(|| {
+            let top_abbrev    = st["topSeedTeamAbbrev"].as_str().unwrap_or("");
+            let bottom_abbrev = st["bottomSeedTeamAbbrev"].as_str().unwrap_or("");
+            let top_wins      = st["topSeedWins"].as_u64();
+            let bottom_wins   = st["bottomSeedWins"].as_u64();
+            if home == top_abbrev { top_wins }
+            else if home == bottom_abbrev { bottom_wins }
+            else { None }
+        })
+        .map(|v| v as u8);
 
     Some(ScheduledGame {
         game_id,
@@ -786,5 +832,113 @@ fn parse_series(s: &serde_json::Value) -> PlayoffSeries {
         winner_abbrev,
         conference,
         games: Vec::new(),
+    }
+}
+
+#[cfg(test)]
+mod parse_game_tests {
+    //! Unit tests for `parse_game` — the field-name fallbacks for series
+    //! context have been a source of empty `Game ?` placeholders in the
+    //! TUI when the NHL API shape changed underneath us. Cover the three
+    //! shapes we currently know about explicitly.
+
+    use super::parse_game;
+    use serde_json::json;
+
+    fn base_playoff(extra: serde_json::Value) -> serde_json::Value {
+        // The minimum game payload our parser requires, plus whatever the
+        // caller layers on for series context.
+        let mut v = json!({
+            "id": 2025030101,
+            "gameType": 3,
+            "awayTeam": {"abbrev":"NYR","placeName":{"default":"New York"}},
+            "homeTeam": {"abbrev":"WSH","placeName":{"default":"Washington"}},
+            "startTimeUTC": "2026-04-28T23:05:00Z",
+            "gameState": "FUT"
+        });
+        if let serde_json::Value::Object(extra_map) = extra {
+            if let serde_json::Value::Object(base) = &mut v {
+                for (k, val) in extra_map { base.insert(k, val); }
+            }
+        }
+        v
+    }
+
+    #[test]
+    fn l0_parse_game_reads_legacy_seriesSummary_gameLabel() {
+        // Original API shape — seriesSummary.gameLabel + away/homeWins.
+        let raw = base_playoff(json!({
+            "seriesSummary": {"gameLabel": "Game 4", "awayWins": 2, "homeWins": 1}
+        }));
+        let g = parse_game(&raw, Some("2026-04-28")).expect("parses");
+        assert_eq!(g.series_game.as_deref(), Some("Game 4"));
+        assert_eq!(g.away_wins, Some(2));
+        assert_eq!(g.home_wins, Some(1));
+    }
+
+    #[test]
+    fn l0_parse_game_reads_seriesStatus_gameLabel() {
+        // Newer endpoints publish series context under `seriesStatus`
+        // with a `gameLabel` field. Our parser falls through to it when
+        // `seriesSummary` is absent.
+        let raw = base_playoff(json!({
+            "seriesStatus": {
+                "gameLabel": "Game 1",
+                "topSeedTeamAbbrev": "WSH", "topSeedWins": 0,
+                "bottomSeedTeamAbbrev": "NYR", "bottomSeedWins": 0
+            }
+        }));
+        let g = parse_game(&raw, Some("2026-04-28")).expect("parses");
+        assert_eq!(g.series_game.as_deref(), Some("Game 1"));
+        // Wins map by abbrev: NYR is bottom seed, WSH is top seed.
+        assert_eq!(g.away_wins, Some(0)); // NYR → bottom_wins
+        assert_eq!(g.home_wins, Some(0)); // WSH → top_wins
+    }
+
+    #[test]
+    fn l0_parse_game_reads_seriesStatus_gameNumberOfSeven() {
+        // When only the numeric `gameNumberOfSeven` is present, the
+        // parser synthesises a "Game N" label so the TUI never displays
+        // "Game ?" for an otherwise valid playoff fixture. This is the
+        // bug captured in 2026-04 — round 1 games returned only the
+        // numeric form and the label fell back to a question mark.
+        let raw = base_playoff(json!({
+            "seriesStatus": {
+                "gameNumberOfSeven": 3,
+                "topSeedTeamAbbrev": "WSH", "topSeedWins": 1,
+                "bottomSeedTeamAbbrev": "NYR", "bottomSeedWins": 1
+            }
+        }));
+        let g = parse_game(&raw, Some("2026-04-28")).expect("parses");
+        assert_eq!(g.series_game.as_deref(), Some("Game 3"),
+            "numeric gameNumberOfSeven should synthesise a 'Game N' label");
+        assert_eq!(g.away_wins, Some(1));
+        assert_eq!(g.home_wins, Some(1));
+    }
+
+    #[test]
+    fn l0_parse_game_reads_top_level_gameLabel_fallback() {
+        // Some payloads put `gameLabel` at the top of the game object.
+        let raw = base_playoff(json!({"gameLabel": "Game 7"}));
+        let g = parse_game(&raw, Some("2026-04-28")).expect("parses");
+        assert_eq!(g.series_game.as_deref(), Some("Game 7"));
+    }
+
+    #[test]
+    fn l0_parse_game_no_series_context_leaves_label_none() {
+        // Regular-season game with no series fields → series_game stays
+        // None so the TUI renders without a "Game ?" suffix.
+        let raw = json!({
+            "id": 2025020100,
+            "gameType": 2,
+            "awayTeam": {"abbrev":"SEA","placeName":{"default":"Seattle"}},
+            "homeTeam": {"abbrev":"VGK","placeName":{"default":"Vegas"}},
+            "startTimeUTC": "2026-01-15T03:00:00Z",
+            "gameState": "FUT"
+        });
+        let g = parse_game(&raw, Some("2026-01-14")).expect("parses");
+        assert_eq!(g.series_game, None);
+        assert_eq!(g.away_wins, None);
+        assert_eq!(g.home_wins, None);
     }
 }

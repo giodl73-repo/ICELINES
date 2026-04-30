@@ -96,7 +96,20 @@ fn render_scores_list(f: &mut Frame, app: &App, area: Rect, games: &[icelines_fe
     let date_label = scores_date_label(&app.scores_date);
     let dim_style  = Style::default().fg(Color::DarkGray);
 
-    if games.is_empty() {
+    // The NHL `/v1/schedule/now` endpoint returns the whole "gameWeek"
+    // (up to 7 days) — so we always filter games to just the user's
+    // selected date. Empty `scores_date` means "today" — compute it
+    // locally so we don't show tomorrow's games as if they're today's.
+    let target_date = if app.scores_date.is_empty() {
+        chrono::Local::now().date_naive().format("%Y-%m-%d").to_string()
+    } else {
+        app.scores_date.clone()
+    };
+    let filtered: Vec<&icelines_fetch::nhl_api::ScheduledGame> = games.iter()
+        .filter(|g| g.date == target_date)
+        .collect();
+
+    if filtered.is_empty() {
         let msg = if app.scores_date.is_empty() {
             "  No games scheduled today.".to_owned()
         } else {
@@ -112,8 +125,8 @@ fn render_scores_list(f: &mut Frame, app: &App, area: Rect, games: &[icelines_fe
     }
 
     // Detect if any game is a playoff game
-    let has_playoffs = games.iter().any(|g| g.is_playoff());
-    let has_regular  = games.iter().any(|g| !g.is_playoff());
+    let has_playoffs = filtered.iter().any(|g| g.is_playoff());
+    let has_regular  = filtered.iter().any(|g| !g.is_playoff());
 
     let section_label = match (has_playoffs, has_regular) {
         (true,  false) => "  PLAYOFFS",
@@ -129,15 +142,22 @@ fn render_scores_list(f: &mut Frame, app: &App, area: Rect, games: &[icelines_fe
         ratatui::widgets::ListItem::new(Line::styled(format!("  {}", "─".repeat(60)), dim)),
     ];
 
-    for (i, game) in games.iter().enumerate() {
+    for (i, game) in filtered.iter().enumerate() {
         let utc  = game.start_time_utc.get(11..16).unwrap_or("?");
         let et   = fmt_et(utc);
         let selected = i == app.scores_selected;
 
-        // Build the main game line
+        // Build the main game line. `series_label()` already prefixes the
+        // game number with "Game"; only fall back to a placeholder when
+        // both label and number are unavailable from the API payload.
         let series_info = if game.is_playoff() {
             game.series_label()
-                .unwrap_or_else(|| format!("Game {}", game.series_game.as_deref().unwrap_or("?")))
+                .unwrap_or_else(|| {
+                    match game.series_game.as_deref() {
+                        Some(label) => label.to_owned(),
+                        None        => "Playoffs".to_owned(),
+                    }
+                })
         } else {
             String::new()
         };
@@ -834,5 +854,97 @@ mod tests {
         app.last_auto_refresh = None;
         let text = render_tonight_to_text(&app);
         assert!(!text.contains("Updated "), "indicator must not render on past dates");
+    }
+
+    // ── Scores tab date filtering (regression: 2026-04-29) ──────────────────
+    //
+    // `/v1/schedule/now` returns the whole "gameWeek" — up to 7 days of
+    // future games. Without filtering, every day's games rendered together
+    // as if they were all tonight's. These tests pin the per-date filter
+    // so the regression doesn't come back.
+
+    use icelines_fetch::nhl_api::ScheduledGame;
+    use crate::tui::tonight::TonightState;
+
+    fn fixture_game(date: &str, away: &str, home: &str, hour_utc: u8) -> ScheduledGame {
+        ScheduledGame {
+            game_id: 2025030100 + (hour_utc as u64),
+            date: date.to_owned(),
+            game_type: 3,
+            away_abbrev: away.to_owned(),
+            away_name:   format!("Away {away}"),
+            home_abbrev: home.to_owned(),
+            home_name:   format!("Home {home}"),
+            start_time_utc: format!("{date}T{hour_utc:02}:00:00Z"),
+            away_score: None,
+            home_score: None,
+            game_state: Some("FUT".to_owned()),
+            last_period: None,
+            series_game: Some("Game 1".to_owned()),
+            away_wins: Some(0),
+            home_wins: Some(0),
+        }
+    }
+
+    fn render_with_games(scores_date: &str, games: Vec<ScheduledGame>) -> String {
+        let mut app = App::new(false);
+        app.screen = crate::tui::app::Screen::Tonight;
+        app.scores_date = scores_date.to_owned();
+        app.tonight_cache.lock().unwrap()
+            .insert(scores_date.to_owned(), TonightState::Loaded(games));
+        render_tonight_to_text(&app)
+    }
+
+    #[test]
+    fn l0_scores_filters_to_selected_date_only() {
+        // Three games across three different days. With scores_date set
+        // to the middle date, only the middle game renders.
+        let games = vec![
+            fixture_game("2026-04-27", "MTL", "TBL", 23),
+            fixture_game("2026-04-28", "PIT", "PHI", 23),
+            fixture_game("2026-04-29", "BUF", "BOS", 23),
+        ];
+        let text = render_with_games("2026-04-28", games);
+        assert!(text.contains("PIT") && text.contains("PHI"),
+            "selected-date game must render, got:\n{text}");
+        assert!(!text.contains("MTL"),
+            "earlier-date game must NOT render, got:\n{text}");
+        assert!(!text.contains("BUF"),
+            "later-date game must NOT render, got:\n{text}");
+    }
+
+    #[test]
+    fn l0_scores_today_filter_when_scores_date_empty() {
+        // Empty scores_date == "today" — populate the cache under the
+        // empty-string key (the canonical TonightCache key for "now")
+        // and verify only games with today's date render.
+        let today = chrono::Local::now().date_naive().format("%Y-%m-%d").to_string();
+        let yesterday = chrono::Local::now()
+            .date_naive()
+            .pred_opt().unwrap()
+            .format("%Y-%m-%d").to_string();
+        let games = vec![
+            fixture_game(&yesterday, "MTL", "TBL", 23),
+            fixture_game(&today,     "PIT", "PHI", 23),
+        ];
+        let text = render_with_games("", games);
+        assert!(text.contains("PIT"),
+            "today's game must render, got:\n{text}");
+        assert!(!text.contains("MTL"),
+            "yesterday's game must NOT render under empty scores_date, got:\n{text}");
+    }
+
+    #[test]
+    fn l0_scores_renders_game_label_when_series_game_present() {
+        // Regression for the "Game ?" placeholder bug: when the parser
+        // populates series_game with a real label like "Game 1", the
+        // Scores tab must surface that label, not a question mark.
+        let mut g = fixture_game("2026-04-28", "WSH", "NYR", 23);
+        g.series_game = Some("Game 4".to_owned());
+        let text = render_with_games("2026-04-28", vec![g]);
+        assert!(text.contains("Game 4"),
+            "series label must render verbatim, got:\n{text}");
+        assert!(!text.contains("Game ?"),
+            "no question-mark placeholder when label is present, got:\n{text}");
     }
 }
