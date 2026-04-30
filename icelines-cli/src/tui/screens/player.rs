@@ -64,23 +64,19 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, idx: usize) {
     }
 }
 
-/// Phase 8j: proof-compiled side panel. Renders a per-player scout card
-/// driven by `tui::dashboard_panel`. The panel caches by nhl_id so we
-/// only compile once per player.
+/// Phase 8j: native scout card driven by `tui::dashboard_panel`. The
+/// panel emits already-styled Lines (per-column colour on the
+/// sparklines, accent colour on values), so render is a direct
+/// pass-through. Cache by nhl_id keeps repeated frames cheap.
 fn render_dashboard_panel(f: &mut Frame, app: &App, p: &icelines_core::model::Player, area: Rect) {
     let block = Block::default()
         .borders(Borders::ALL)
-        .title(" Scout card (proof) ")
+        .title(" Scout card ")
         .style(Style::default().fg(Color::DarkGray));
     let inner = block.inner(area);
     f.render_widget(block, area);
 
-    let dim = Style::default().fg(Color::Gray);
-    let lines: Vec<Line> = app.dashboard_panel
-        .lines_for_player(p)
-        .into_iter()
-        .map(|l| Line::styled(l, dim))
-        .collect();
+    let lines = app.dashboard_panel.lines_for_player(p);
     f.render_widget(Paragraph::new(lines), inner);
 }
 

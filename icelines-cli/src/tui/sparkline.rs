@@ -14,16 +14,23 @@
 const BLOCKS: &[char] = &['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
 
 /// Render a sparkline from `values` clamped/scaled to `width` columns.
-///
-/// * Width less than the value count → bin into `width` buckets and
-///   average each bucket; this preserves shape on tight terminals.
-/// * Width greater than the value count → 1 col per value; the
-///   sparkline is left-aligned and trailing space is left to the caller.
-/// * All values equal → middle band (`▄`) so the line still renders.
-/// * Empty input → empty string.
+/// See `columns` for behaviour notes — this is just a string convenience.
 pub fn render(values: &[f64], width: usize) -> String {
+    columns(values, width).into_iter().map(|(c, _)| c).collect()
+}
+
+/// Render a sparkline as `(block, bucket_value)` pairs — one entry per
+/// column. The bucket value is the (averaged) input that maps to that
+/// column, so callers can colour each block based on its data point.
+///
+/// Behaviour:
+/// * `values.is_empty()` or `width == 0` → empty Vec.
+/// * `width >= values.len()` → one column per value (left-aligned).
+/// * `width <  values.len()` → bin into `width` buckets, average each.
+/// * All values equal → middle band (`▄`) so the line still draws.
+pub fn columns(values: &[f64], width: usize) -> Vec<(char, f64)> {
     if values.is_empty() || width == 0 {
-        return String::new();
+        return Vec::new();
     }
     let cols = if width >= values.len() { values.len() } else { width };
     let bucketed = bucket(values, cols);
@@ -34,20 +41,19 @@ pub fn render(values: &[f64], width: usize) -> String {
             (lo.min(v), hi.max(v))
         });
     if !min.is_finite() || !max.is_finite() {
-        return String::new();
+        return Vec::new();
     }
     let span = max - min;
     if span == 0.0 {
         // All-equal series → middle band so the line still draws.
-        return std::iter::repeat(BLOCKS[BLOCKS.len() / 2 - 1])
-            .take(cols)
-            .collect();
+        let mid = BLOCKS[BLOCKS.len() / 2 - 1];
+        return bucketed.into_iter().map(|v| (mid, v)).collect();
     }
-    bucketed.iter()
+    bucketed.into_iter()
         .map(|v| {
-            let normalized = (v - min) / span;     // 0.0 ..= 1.0
+            let normalized = (v - min) / span;          // 0.0 ..= 1.0
             let idx = (normalized * (BLOCKS.len() - 1) as f64).round() as usize;
-            BLOCKS[idx.min(BLOCKS.len() - 1)]
+            (BLOCKS[idx.min(BLOCKS.len() - 1)], v)
         })
         .collect()
 }
@@ -159,5 +165,29 @@ mod tests {
         // Width 100, only 5 inputs → output is 5 chars (one per value).
         let s = render(&[1.0, 2.0, 3.0, 4.0, 5.0], 100);
         assert_eq!(s.chars().count(), 5);
+    }
+
+    #[test]
+    fn l0_columns_returns_per_column_value_pairs() {
+        // The bucket value for each column should round-trip the input
+        // when input.len() <= width (no averaging).
+        let cols = columns(&[1.0, 2.0, 3.0], 5);
+        assert_eq!(cols.len(), 3);
+        assert_eq!(cols[0].1, 1.0);
+        assert_eq!(cols[1].1, 2.0);
+        assert_eq!(cols[2].1, 3.0);
+        // Block chars match the render() output for the same input.
+        let blocks: String = cols.iter().map(|(c, _)| *c).collect();
+        assert_eq!(blocks, render(&[1.0, 2.0, 3.0], 5));
+    }
+
+    #[test]
+    fn l0_columns_returns_bucketed_averages() {
+        // 6 inputs into 3 cols → each column averages 2 inputs.
+        let cols = columns(&[10.0, 20.0, 100.0, 100.0, 0.0, 0.0], 3);
+        assert_eq!(cols.len(), 3);
+        assert_eq!(cols[0].1, 15.0);
+        assert_eq!(cols[1].1, 100.0);
+        assert_eq!(cols[2].1, 0.0);
     }
 }
