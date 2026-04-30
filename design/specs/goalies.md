@@ -367,22 +367,95 @@ in one task. Background fetch matches the existing pattern for skaters.
 
 ## Phasing
 
-Six commits, roughly sized:
+Eight commits + a release-republication wave. Code phases (G.1–G.7) ship
+independently. The data backfill (G.0) and the release re-tagging (G.8)
+are orthogonal — G.0 runs before G.1 lands so the schema has real fixtures
+to test against; G.8 runs after G.7 so historical bundles carry goalie
+data for `data install`.
 
-| Phase | Commit theme | LOC | Outcome |
-|-------|--------------|-----|---------|
-| **G.1** | Schema + repo + bundled loader | ~400 | `GoalieStats`, `Goalie`, `GoalieRepository`, `bundled::get_goalie_stats`, snapshot tier. No UI yet — verify via L1 tests. |
-| **G.2** | `fetch goalies` command | ~250 | New CLI subcommand; populates `~/.icelines/snapshots/.../goalie-stats.json`. |
-| **G.3** | TUI Goalies tab | ~600 | New screen + leaderboard render; sort + min-gp + team filter; tab nav wires; goalie detail card. |
-| **G.4** | Team-card integration | ~200 | Goalies appear on `DepthTeam` and `Team` screens. |
-| **G.5** | `query goalies` + `rank --pos G` | ~350 | CLI parity with skater leaders. |
-| **G.6** | Fantasy goalie scoring | ~400 | Wire `RosterEntry` enum, scheme weights, standings. Update fantasy spec. |
-| **G.7** (optional) | Bundled-history sparklines | ~300 | Goalie panel SV%/GAA/W trends across the 5 bundled seasons; mirrors skater scout card. |
+| Phase | Commit theme | LOC / artifacts | Outcome |
+|-------|--------------|-----------------|---------|
+| **G.0** | Data backfill — 38 seasons | 38 × `goalie-stats.json` files | Run `scripts/fetch_history.py --goalies --all` (extended in G.0) to populate `data/seasons/{S}/goalie-stats.json` for every season the NHL API supports. Older seasons may have sparse fields; document gaps. ~30MB of new data committed. |
+| **G.1** | Schema + repo + bundled loader | ~400 LOC | `GoalieStats`, `Goalie`, `GoalieRepository`, `bundled::get_goalie_stats`, snapshot tier. The 5 current seasons embed via `include_bytes!()`. No UI yet — verify via L1 tests. |
+| **G.2** | `fetch goalies` command | ~250 LOC | New CLI subcommand; populates `~/.icelines/snapshots/.../goalie-stats.json`. |
+| **G.3** | TUI Goalies tab | ~600 LOC | New screen + leaderboard render; sort + min-gp + team filter; tab nav wires; goalie detail card. |
+| **G.4** | Team-card integration | ~200 LOC | Goalies appear on `DepthTeam` and `Team` screens. |
+| **G.5** | `query goalies` + `rank --pos G` | ~350 LOC | CLI parity with skater leaders. |
+| **G.6** | Fantasy goalie scoring | ~400 LOC | Wire `RosterEntry` enum, scheme weights, standings. Update fantasy spec. |
+| **G.7** | Bundled-history sparklines | ~300 LOC | Goalie panel SV%/GAA/W trends across the 5 bundled seasons; mirrors skater scout card. GAA colors inverted (lower=better). |
+| **G.8** | Re-publish 38 GitHub Releases | workflow change + 38 release runs | Update `.github/workflows/data-bundle.yml` to include `goalie-stats.json` in each tarball; trigger `workflow_dispatch` for all seasons; the action overwrites the existing `data-{SEASON}` release artifact. |
 
-Bundling 5 seasons of goalie data (~50KB per season × 5 = ~250KB) is part
-of G.1 — fetch the data once, commit the JSON files into
-`data/seasons/{YYYY}{YYYY+1}/goalie-stats.json` so the binary ships with
-them via `include_bytes!()`.
+### G.0 — Data backfill detail
+
+`scripts/fetch_history.py` already handles `bios.json` + `stats.json` per
+season. Extend it with a `--goalies` flag (or do it always; goalie stats
+are small) so one run produces all three files per season directory.
+
+Sequence:
+1. Code: extend `fetch_history.py` with goalie-summary endpoint paging.
+2. Run locally for the 5 binary-bundled seasons (smallest blast radius
+   first — verify the schema before backfilling 33 more).
+3. Run for all 38 seasons via the CI `workflow_dispatch` so the
+   workspace runner does the I/O, not the user's machine.
+4. Commit the resulting `goalie-stats.json` files into the repo.
+
+Per-season size budget: roughly 60–100 KB per season × 38 ≈ ~2–4 MB of
+new committed data. Acceptable — well under the threshold where we'd
+move to git-lfs.
+
+Older seasons will have incomplete goalie stats. Pre-1990 SV% data
+quality drops; pre-1955 saves data is essentially absent. Document the
+gap in `data/seasons/README.md` rather than gating the bundle.
+
+### G.8 — Re-publish releases
+
+The `data-bundle.yml` workflow's "Pack season bundle" step copies
+`bios.json` + `stats.json` into the tarball today. Add `goalie-stats.json`
+to that copy block:
+
+```yaml
+cp "${DATA_DIR}/bios.json"          "/tmp/bundle-${SEASON}/bios.json"
+cp "${DATA_DIR}/stats.json"         "/tmp/bundle-${SEASON}/stats.json"
+cp "${DATA_DIR}/goalie-stats.json"  "/tmp/bundle-${SEASON}/goalie-stats.json"
+```
+
+`softprops/action-gh-release@v2` overwrites the artifact when the same
+`tag_name` already exists. So the re-publication is just:
+
+1. Push the workflow change to `master`.
+2. Run `gh workflow run data-bundle.yml` (or trigger from the Actions UI)
+   with the empty seasons input — that fans out to all 38 matrix entries.
+3. ~10 minutes of CI later, every `data-{SEASON}` release ships a tarball
+   with `goalie-stats.json` included. Existing `data install` runs pick
+   it up on next install.
+
+Users who installed seasons before G.8: their `~/.icelines/seasons/{S}/`
+directories lack `goalie-stats.json`. The new code path treats that the
+same as "no bundled goalies for this season" — falls back to a stat-less
+goalie list. We add a one-liner `data verify` warning when the manifest
+is pre-G.8 and the goalie file is absent: *"goalie-stats missing — re-run
+`data install --season {S} --force` to refresh"*.
+
+### Data path post-G.8
+
+```
+data/seasons/{S}/
+  bios.json
+  stats.json
+  goalie-stats.json   ← NEW
+  playoffs.json       (some seasons only)
+
+GitHub Release data-{S}:
+  data-{S}.tar.gz
+    bundle-{S}/
+      bios.json
+      stats.json
+      goalie-stats.json   ← NEW
+      manifest.json
+
+icelines binary (5 current seasons):
+  embedded via include_bytes! at compile time
+```
 
 ---
 
