@@ -291,6 +291,16 @@ pub enum FetchSubcommand {
         #[arg(long)]
         dry_run: bool,
     },
+    /// Fetch goalie season stats (W/L/SV%/GAA/SO) — Phase G.2.
+    /// Writes goalie-stats.json into the active snapshot store.
+    Goalies {
+        #[arg(long, default_value = icelines_core::CURRENT_SEASON_STR)]
+        season: String,
+        #[arg(long)]
+        refresh: bool,
+        #[arg(long)]
+        dry_run: bool,
+    },
 }
 
 #[derive(Debug, Subcommand)]

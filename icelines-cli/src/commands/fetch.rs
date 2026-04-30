@@ -30,6 +30,11 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
         } => {
             do_rosters(&season, refresh, dry_run).await?;
             do_stats(&season, refresh, dry_run, chunked).await?;
+            // Goalie stats are best-effort — non-skater data shouldn't block
+            // a partial fetch if the goalie endpoint goes down. Phase G.2.
+            if let Err(e) = do_goalies(&season, dry_run).await {
+                eprintln!("Warning: goalie fetch failed (non-fatal): {e}");
+            }
             // Contracts are best-effort — don't fail the whole fetch if they fail
             if let Err(e) = do_contracts(&season, dry_run).await {
                 eprintln!("Warning: contract fetch failed (non-fatal): {e}");
@@ -40,6 +45,7 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
         FetchSubcommand::Realtime { season, dry_run } => do_realtime(&season, dry_run).await,
         FetchSubcommand::MoneyPuck { season, dry_run } => do_moneypuck(&season, dry_run).await,
         FetchSubcommand::Contracts { season, dry_run } => do_contracts(&season, dry_run).await,
+        FetchSubcommand::Goalies { season, refresh: _, dry_run } => do_goalies(&season, dry_run).await,
     }
 }
 
@@ -243,6 +249,51 @@ async fn do_realtime(season: &str, dry_run: bool) -> anyhow::Result<()> {
         .context("writing realtime")?;
 
     store.seal(&snap).context("sealing realtime snapshot")?;
+    println!("Snapshot '{snap}' sealed and set as active.");
+    Ok(())
+}
+
+/// Fetch goalie season stats and write `goalie-stats.json` into a new
+/// snapshot. Phase G.2.
+///
+/// Mirrors `do_realtime` — single endpoint, paginated fetch, written
+/// under `SnapshotTier::Stats` so the same fallback chain in
+/// `bundled::load_goalies_with_fallback` picks it up first when
+/// active.
+async fn do_goalies(season: &str, dry_run: bool) -> anyhow::Result<()> {
+    let cfg = Config::load()?;
+    let store = SnapshotStore::new(cfg.snapshot_dir());
+    let client = NhlApiClient::production();
+    let today = today_date();
+    let snap = format!("{season}-{today}-goalies");
+
+    if dry_run {
+        println!("Would fetch: /stats/rest/en/goalie/summary?seasonId={season}");
+        return Ok(());
+    }
+
+    store
+        .create(&snap, season, SnapshotTier::Stats, None, &today)
+        .context("creating goalies snapshot")?;
+
+    println!("Fetching goalie stats...");
+    let goalies = client
+        .fetch_all_goalies(season)
+        .await
+        .context("fetching goalie stats")?;
+    let qualified = goalies.iter().filter(|g| g.games_played >= 15).count();
+    println!("  {} goalies ({} qualified at 15+ GP)", goalies.len(), qualified);
+
+    store
+        .write_file(
+            &snap,
+            &SnapshotTier::Stats,
+            "goalie-stats.json",
+            &serde_json::to_vec(&goalies).context("serializing goalie stats")?,
+        )
+        .context("writing goalie-stats.json")?;
+
+    store.seal(&snap).context("sealing goalies snapshot")?;
     println!("Snapshot '{snap}' sealed and set as active.");
     Ok(())
 }
