@@ -673,6 +673,90 @@ fn l2_cmd_query_help_exits_zero() {
     assert!(stdout.contains("compare"), "query help must list 'compare' subcommand");
 }
 
+// ── L2: --csv / x export coverage (Phase X.1) ────────────────────────────────
+
+/// Sanity that the unified `x` shortcut emits CSV by default with a header
+/// row + at least one data row. CSV is the default — `--out` is optional.
+#[test]
+fn l2_x_rank_csv_default_emits_header_and_rows() {
+    let out = run(&["x", "rank", "--top", "5"]);
+    assert!(out.status.success(), "icelines x rank must exit 0, stderr: {}",
+        String::from_utf8_lossy(&out.stderr));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.starts_with("rank,player,team,pos"),
+        "CSV must start with header row, got first line: {:?}",
+        stdout.lines().next());
+    let line_count = stdout.lines().count();
+    assert!(line_count >= 6,
+        "expected at least 6 lines (1 header + 5 data), got {line_count}");
+}
+
+#[test]
+fn l2_x_history_csv_has_seasons_columns() {
+    let out = run(&["x", "history", "--player", "McDavid", "--seasons", "3"]);
+    assert!(out.status.success(), "icelines x history must exit 0, stderr: {}",
+        String::from_utf8_lossy(&out.stderr));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let header = stdout.lines().next().unwrap_or("");
+    for col in &["season", "team", "gp", "ppg"] {
+        assert!(header.contains(col),
+            "history CSV header must include '{col}', got: {header}");
+    }
+}
+
+#[test]
+fn l2_players_csv_flag_emits_csv_format() {
+    let out = run(&["players", "--top", "3", "--csv"]);
+    assert!(out.status.success(), "players --csv must exit 0, stderr: {}",
+        String::from_utf8_lossy(&out.stderr));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.starts_with("rank,player,team"),
+        "expected CSV header, got first line: {:?}", stdout.lines().next());
+}
+
+#[test]
+fn l2_csv_and_json_flags_are_mutually_exclusive() {
+    let out = run(&["players", "--top", "1", "--csv", "--json"]);
+    assert!(!out.status.success(),
+        "passing both --csv and --json must exit non-zero");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("mutually exclusive") || stderr.contains("exclusive"),
+        "error must mention mutual exclusion, got: {stderr}"
+    );
+}
+
+#[test]
+fn l2_x_with_out_flag_writes_file() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let path = tmp.path().join("rank.csv");
+    let out = run(&[
+        "x", "rank", "--top", "3", "--out", path.to_str().unwrap()
+    ]);
+    assert!(out.status.success(),
+        "icelines x rank --out must exit 0, stderr: {}",
+        String::from_utf8_lossy(&out.stderr));
+    let body = std::fs::read_to_string(&path)
+        .expect("output file must exist after --out");
+    assert!(body.starts_with("rank,player,team"),
+        "written file must contain CSV header, got: {body}");
+    let line_count = body.lines().count();
+    assert!(line_count >= 4, "expected ≥4 lines (header + 3 rows), got {line_count}");
+}
+
+#[test]
+fn l2_x_help_lists_all_shapes() {
+    let out = run(&["x", "--help"]);
+    assert!(out.status.success(), "icelines x --help must exit 0");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    for shape in &["rank", "leaders", "goalies", "players", "history", "peers", "compare"] {
+        assert!(
+            stdout.contains(shape),
+            "x --help must list '{shape}' shape, got: {stdout}"
+        );
+    }
+}
+
 // ── L2: fantasy commands ──────────────────────────────────────────────────────
 
 /// Generate a unique league name using process ID + test name suffix to avoid
@@ -752,6 +836,49 @@ fn l2_cmd_fantasy_serve_help_exits_zero() {
     assert!(
         out.status.success(),
         "fantasy serve --help must exit 0"
+    );
+}
+
+/// Phase G.6 end-to-end: prove that adding a goalie to a fantasy team
+/// resolves through the goalie pool and surfaces the "(Goalie)" tag.
+/// Uses isolated HOME so the run can't collide with the user's real DB.
+#[test]
+fn l2_cmd_fantasy_team_add_goalie_emits_goalie_tag() {
+    let tmp = tempfile::tempdir().expect("tempdir for isolated HOME");
+    let home = tmp.path();
+    let league = unique_league("goalie-add");
+    let team   = "Net Crashers";
+
+    let out = run_isolated(home, &["fantasy", "league-create", &league]);
+    assert!(
+        out.status.success(),
+        "league-create must succeed, stderr: {}",
+        String::from_utf8_lossy(&out.stderr),
+    );
+
+    let out = run_isolated(home, &["fantasy", "team-create", team]);
+    assert!(
+        out.status.success(),
+        "team-create must succeed, stderr: {}",
+        String::from_utf8_lossy(&out.stderr),
+    );
+
+    // Hellebuyck is a goalie — he is NOT in the skater pool, so a successful
+    // resolution proves the goalie-pool fallback in `run_team_add` works.
+    let out = run_isolated(home, &["fantasy", "team-add", team, "Hellebuyck"]);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        out.status.success(),
+        "team-add Hellebuyck must succeed (goalie fallback), stderr: {stderr}"
+    );
+    assert!(
+        stdout.contains("(Goalie)"),
+        "team-add output must tag the addition as (Goalie), got: {stdout}"
+    );
+    assert!(
+        stdout.contains("Hellebuyck"),
+        "team-add output must echo the goalie's name, got: {stdout}"
     );
 }
 
@@ -1228,7 +1355,7 @@ fn l2_cmd_games_add_list_remove_roundtrip() {
 }
 
 #[test]
-fn l2_cmd_games_export_emits_versioned_json() {
+fn l2_cmd_games_export_json_flag_emits_versioned_json() {
     let home = tempfile::tempdir().expect("tempdir");
     // Seed two games.
     for (id, note) in [(2025020100u64, "first"), (2025020101u64, "second")] {
@@ -1237,15 +1364,36 @@ fn l2_cmd_games_export_emits_versioned_json() {
         assert!(out.status.success(),
             "games add stderr: {}", String::from_utf8_lossy(&out.stderr));
     }
-    // Export to stdout — must be valid JSON with version + games[].
-    let out = run_isolated(home.path(), &["games", "export"]);
+    // `--json` opts into the legacy versioned envelope.
+    let out = run_isolated(home.path(), &["games", "export", "--json"]);
     assert!(out.status.success());
     let stdout = String::from_utf8_lossy(&out.stdout);
     let parsed: serde_json::Value = serde_json::from_str(&stdout)
-        .expect("export output must be valid JSON");
+        .expect("export --json output must be valid JSON");
     assert_eq!(parsed["version"].as_u64(), Some(1));
     assert_eq!(parsed["games"].as_array().map(|a| a.len()), Some(2),
         "expected 2 games in export, got: {stdout}");
+}
+
+#[test]
+fn l2_cmd_games_export_default_emits_csv() {
+    // After Phase X.1, `games export` defaults to CSV — Excel-friendly.
+    let home = tempfile::tempdir().expect("tempdir");
+    for (id, note) in [(2025020100u64, "first"), (2025020101u64, "second")] {
+        let out = run_isolated(home.path(),
+            &["games", "add", &id.to_string(), "--note", note]);
+        assert!(out.status.success(),
+            "games add stderr: {}", String::from_utf8_lossy(&out.stderr));
+    }
+    let out = run_isolated(home.path(), &["games", "export"]);
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("game_id,date,away,home"),
+        "default games export must emit CSV header, got: {stdout}",
+    );
+    let data_lines = stdout.lines().filter(|l| !l.is_empty()).count();
+    assert!(data_lines >= 3, "expected ≥3 lines (header + 2 rows), got {data_lines}");
 }
 
 // ── Dashboards opt-out flag (was opt-in pre-2026-04-29) ────────────────────

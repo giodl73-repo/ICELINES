@@ -14,8 +14,12 @@ pub async fn run_class(
     year: u16,
     pos: Option<String>,
     top: Option<usize>,
-    _json: bool,
+    json: bool,
+    csv:  bool,
+    out:  Option<std::path::PathBuf>,
 ) -> anyhow::Result<()> {
+    use crate::commands::output::Format;
+
     let players = load_all_players()?;
 
     let mut filter = PlayerFilter::new();
@@ -42,38 +46,38 @@ pub async fn run_class(
         return Ok(());
     }
 
-    println!("DRAFT CLASS {year} — {} players", matched.len());
-    println!("{}", "─".repeat(72usize));
-    println!(
-        "{:<5} {:<24} {:<5} {:<4} {:<5} {:<7} {:<8}",
-        "Pick", "Player", "Team", "Pos", "Age", "PPG", "Proj/82"
-    );
-    println!("{}", "─".repeat(72usize));
-
-    for p in matched.iter().take(limit) {
-        let pick = p
-            .draft_overall
-            .map(|n| format!("#{n}"))
-            .unwrap_or_else(|| "UD".to_owned());
-        let age = age_from_birth_date(p);
+    let headers = &["pick", "player", "team", "pos", "age", "ppg", "proj_82"];
+    let rows: Vec<Vec<String>> = matched.iter().take(limit).map(|p| {
+        let pick = p.draft_overall.map(|n| format!("#{n}")).unwrap_or_else(|| "UD".to_owned());
         let (ppg, proj) = pace_strings(p);
-        println!(
-            "{:<5} {:<24} {:<5} {:<4} {:<5} {:<7} {:<8}",
+        vec![
             pick,
-            p.full_name,
-            p.team.as_str(),
-            p.position.abbreviation(),
-            age,
-            ppg,
-            proj
-        );
+            p.full_name.clone(),
+            p.team.as_str().to_owned(),
+            p.position.abbreviation().to_owned(),
+            age_from_birth_date(p),
+            ppg, proj,
+        ]
+    }).collect();
+
+    let format = Format::resolve(csv, json)?;
+    if format == Format::Table && out.is_none() {
+        println!("DRAFT CLASS {year} — {} players", matched.len());
     }
+    format.emit_to(headers, &rows, out.as_deref())?;
     Ok(())
 }
 
 // ── icelines peers ─────────────────────────────────────────────────────────────
 
-pub async fn run_peers(player_name: String, size: usize, _json: bool) -> anyhow::Result<()> {
+pub async fn run_peers(
+    player_name: String,
+    size: usize,
+    json: bool,
+    csv:  bool,
+    out:  Option<std::path::PathBuf>,
+) -> anyhow::Result<()> {
+    use crate::commands::output::Format;
     let players = load_all_players()?;
     let target = find_player(&players, &player_name)?;
 
@@ -101,101 +105,85 @@ pub async fn run_peers(player_name: String, size: usize, _json: bool) -> anyhow:
         .map(|i| i + 1)
         .unwrap_or(0);
 
-    println!(
-        "PEERS OF {} ({} · {:?} · Draft {})",
-        target.full_name,
-        target.team.as_str(),
-        target.position,
-        draft_year
-    );
-    println!(
-        "Peer group: Draft class {}-{} at {:?}",
-        draft_year.saturating_sub(1),
-        draft_year + 1,
-        target.position
-    );
-    println!("{}", "─".repeat(64usize));
-    println!(
-        "{:<5} {:<24} {:<5} {:<7} {:<8}",
-        "Rank", "Player", "Team", "PPG", "Proj/82"
-    );
-    println!("{}", "─".repeat(64usize));
-
-    for (i, p) in peers.iter().take(size).enumerate() {
-        let marker = if p.name_normalized == target.name_normalized {
-            " ←"
-        } else {
-            ""
-        };
+    let headers = &["rank", "player", "team", "ppg", "proj_82", "is_target"];
+    let rows: Vec<Vec<String>> = peers.iter().take(size).enumerate().map(|(i, p)| {
         let (ppg, proj) = pace_strings(p);
+        let is_target = if p.name_normalized == target.name_normalized { "true" } else { "false" };
+        vec![
+            (i + 1).to_string(),
+            p.full_name.clone(),
+            p.team.as_str().to_owned(),
+            ppg, proj,
+            is_target.to_owned(),
+        ]
+    }).collect();
+
+    let format = Format::resolve(csv, json)?;
+    if format == Format::Table && out.is_none() {
         println!(
-            "{:<5} {:<24} {:<5} {:<7} {:<8}{}",
-            i + 1,
-            p.full_name,
-            p.team.as_str(),
-            ppg,
-            proj,
-            marker
+            "PEERS OF {} ({} · {:?} · Draft {})",
+            target.full_name, target.team.as_str(), target.position, draft_year,
         );
     }
-    println!(
-        "\n{} in peer group. {} ranks #{} of {}.",
-        target.full_name,
-        target.full_name,
-        target_rank,
-        peers.len()
-    );
+    format.emit_to(headers, &rows, out.as_deref())?;
+    if format == Format::Table && out.is_none() {
+        println!("\n{} ranks #{} of {} in the peer group.",
+            target.full_name, target_rank, peers.len());
+    }
     Ok(())
 }
 
 // ── icelines compare ───────────────────────────────────────────────────────────
 
-pub async fn run_compare(name1: String, name2: String, _json: bool) -> anyhow::Result<()> {
+pub async fn run_compare(
+    name1: String,
+    name2: String,
+    json: bool,
+    csv:  bool,
+    out:  Option<std::path::PathBuf>,
+) -> anyhow::Result<()> {
+    use crate::commands::output::Format;
     let players = load_all_players()?;
     let p1 = find_player(&players, &name1)?;
     let p2 = find_player(&players, &name2)?;
 
     let (ppg1, proj1) = pace_strings(p1);
     let (ppg2, proj2) = pace_strings(p2);
+    let goals1 = p1.pace_score.map(|s| format!("{:.1}", s.goals_per_82)).unwrap_or_else(|| "—".to_owned());
+    let goals2 = p2.pace_score.map(|s| format!("{:.1}", s.goals_per_82)).unwrap_or_else(|| "—".to_owned());
 
-    println!(
-        "{:<28} {:<28}",
-        p1.full_name.as_str(),
-        p2.full_name.as_str()
-    );
-    println!("{:<28} {:<28}", p1.team.as_str(), p2.team.as_str());
-    println!("{}", "─".repeat(60usize));
+    // Long-form rows: one row per stat with each player as a column.
+    // Excel-friendly and trivially extends if we add more stats.
+    let p1_label = p1.full_name.clone();
+    let p2_label = p2.full_name.clone();
+    let headers: Vec<String> = vec!["stat".to_owned(), p1_label.clone(), p2_label.clone()];
+    let header_refs: Vec<&str> = headers.iter().map(|s| s.as_str()).collect();
+    let rows: Vec<Vec<String>> = vec![
+        vec!["team".to_owned(),       p1.team.as_str().to_owned(),    p2.team.as_str().to_owned()],
+        vec!["position".to_owned(),   p1.position.abbreviation().to_owned(), p2.position.abbreviation().to_owned()],
+        vec!["age".to_owned(),        age_from_birth_date(p1),        age_from_birth_date(p2)],
+        vec!["draft".to_owned(),      draft_str(p1),                  draft_str(p2)],
+        vec!["ppg".to_owned(),        ppg1,                           ppg2],
+        vec!["proj_82".to_owned(),    proj1,                          proj2],
+        vec!["goals_82".to_owned(),   goals1,                         goals2],
+    ];
 
-    let row = |label: &str, v1: &str, v2: &str| {
-        println!("  {:<18} {:<18} {:<18}", label, v1, v2);
-    };
-
-    row(
-        "Position",
-        p1.position.abbreviation(),
-        p2.position.abbreviation(),
-    );
-    row("Age", &age_from_birth_date(p1), &age_from_birth_date(p2));
-    row("Draft", &draft_str(p1), &draft_str(p2));
-    row("PPG", &ppg1, &ppg2);
-    row("Proj/82g", &proj1, &proj2);
-    row(
-        "Goals/82g",
-        &p1.pace_score
-            .map(|s| format!("{:.1}", s.goals_per_82))
-            .unwrap_or_else(|| "—".to_owned()),
-        &p2.pace_score
-            .map(|s| format!("{:.1}", s.goals_per_82))
-            .unwrap_or_else(|| "—".to_owned()),
-    );
-
+    let format = Format::resolve(csv, json)?;
+    format.emit_to(&header_refs, &rows, out.as_deref())?;
     Ok(())
 }
 
 // ── icelines history ───────────────────────────────────────────────────────────
 
-pub async fn run_history(player_name: String, seasons: usize, _json: bool) -> anyhow::Result<()> {
+pub async fn run_history(
+    player_name: String,
+    seasons: usize,
+    json: bool,
+    csv:  bool,
+    out:  Option<std::path::PathBuf>,
+) -> anyhow::Result<()> {
     use icelines_fetch::career::load_career;
+    use crate::commands::output::Format;
     use crate::config::Config;
     use icelines_fetch::snapshot::SnapshotStore;
 
@@ -208,28 +196,31 @@ pub async fn run_history(player_name: String, seasons: usize, _json: bool) -> an
              Tip: install older seasons with `icelines data install <YYYYZZZZ>` to view historical players."
         ))?;
 
-    println!("CAREER HISTORY — {} (last {} seasons)",
-        summary.full_name, summary.seasons.len());
-    println!("{}", "─".repeat(64usize));
-    println!("{:<10} {:<6} {:<4} {:<4} {:<4} {:<8} {:<8}",
-        "Season", "Team", "GP", "G", "A", "PPG", "Pts/82");
-    println!("{}", "─".repeat(64usize));
+    let headers = &["season", "team", "gp", "goals", "assists", "ppg", "pts_per_82"];
+    let rows: Vec<Vec<String>> = summary.seasons.iter().map(|line| vec![
+        line.season.clone(),
+        line.team.clone(),
+        line.gp.to_string(),
+        line.goals.to_string(),
+        line.assists.to_string(),
+        format!("{:.3}", line.ppg),
+        format!("{:.1}", line.pts_per_82()),
+    ]).collect();
 
-    for line in &summary.seasons {
-        let label = if line.season.len() == 8 {
-            format!("{}-{}", &line.season[2..4], &line.season[6..8])
-        } else { line.season.clone() };
-        println!("{:<10} {:<6} {:<4} {:<4} {:<4} {:<8.3} {:<8.1}",
-            label, line.team, line.gp, line.goals, line.assists,
-            line.ppg, line.pts_per_82());
+    let format = Format::resolve(csv, json)?;
+    if format == Format::Table && out.is_none() {
+        println!("CAREER HISTORY — {} (last {} seasons)",
+            summary.full_name, summary.seasons.len());
     }
-    println!("{}", "─".repeat(64usize));
-    let peak_label = {
-        let s = &summary.peak_season;
-        if s.len() == 8 { format!("{}-{}", &s[2..4], &s[6..8]) } else { s.clone() }
-    };
-    println!("Career:  {:.3} pts/gp  |  Peak: {} ({:.3} pts/gp)",
-        summary.career_ppg, peak_label, summary.peak_ppg);
+    format.emit_to(headers, &rows, out.as_deref())?;
+    if format == Format::Table && out.is_none() {
+        let peak_label = {
+            let s = &summary.peak_season;
+            if s.len() == 8 { format!("{}-{}", &s[2..4], &s[6..8]) } else { s.clone() }
+        };
+        println!("\nCareer: {:.3} pts/gp  |  Peak: {} ({:.3} pts/gp)",
+            summary.career_ppg, peak_label, summary.peak_ppg);
+    }
     Ok(())
 }
 
@@ -432,24 +423,39 @@ pub async fn run_games(cmd: crate::cli::GamesSubcommand) -> anyhow::Result<()> {
             }
             println!("\n{} game(s) attended.", rows.len());
         }
-        GamesSubcommand::Export { out } => {
+        GamesSubcommand::Export { out, json } => {
             let rows = db.list_attended_games()?;
-            let json = serde_json::to_string_pretty(&AttendedGamesExport {
-                version: 1,
-                games: rows.iter().map(|r| ExportRow {
-                    game_id: r.game_id,
-                    date:    r.game_date.clone(),
-                    away:    r.away_abbrev.clone(),
-                    home:    r.home_abbrev.clone(),
-                    away_score: r.away_score,
-                    home_score: r.home_score,
-                    note:    r.note.clone(),
-                }).collect(),
-            }).context("serializing attended games")?;
-            if out == "-" {
-                println!("{json}");
+            let body = if json {
+                serde_json::to_string_pretty(&AttendedGamesExport {
+                    version: 1,
+                    games: rows.iter().map(|r| ExportRow {
+                        game_id: r.game_id,
+                        date:    r.game_date.clone(),
+                        away:    r.away_abbrev.clone(),
+                        home:    r.home_abbrev.clone(),
+                        away_score: r.away_score,
+                        home_score: r.home_score,
+                        note:    r.note.clone(),
+                    }).collect(),
+                }).context("serializing attended games")?
             } else {
-                std::fs::write(&out, &json)
+                // Default: CSV — opens directly in Excel.
+                let headers = &["game_id", "date", "away", "home", "away_score", "home_score", "note"];
+                let csv_rows: Vec<Vec<String>> = rows.iter().map(|r| vec![
+                    r.game_id.to_string(),
+                    r.game_date.clone().unwrap_or_default(),
+                    r.away_abbrev.clone(),
+                    r.home_abbrev.clone(),
+                    r.away_score.map(|n| n.to_string()).unwrap_or_default(),
+                    r.home_score.map(|n| n.to_string()).unwrap_or_default(),
+                    r.note.clone(),
+                ]).collect();
+                crate::commands::output::Format::Csv.render(headers, &csv_rows)
+            };
+            if out == "-" {
+                println!("{body}");
+            } else {
+                std::fs::write(&out, &body)
                     .with_context(|| format!("writing {out}"))?;
                 println!("✓ Exported {} game(s) to {}", rows.len(), out);
             }

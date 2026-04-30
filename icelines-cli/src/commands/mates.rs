@@ -17,9 +17,17 @@ use crate::config::Config;
 
 // ── Entry point ───────────────────────────────────────────────────────────────
 
-pub async fn run(player_name: String, top: usize) -> anyhow::Result<()> {
+pub async fn run(
+    player_name: String,
+    top: usize,
+    json: bool,
+    csv:  bool,
+    out:  Option<std::path::PathBuf>,
+) -> anyhow::Result<()> {
+    use crate::commands::output::Format;
     let players = load_all_players()?;
     let target = find_player(&players, &player_name)?;
+    let format = Format::resolve(csv, json)?;
 
     let player_id = match target.nhl_id {
         Some(id) => id,
@@ -38,8 +46,8 @@ pub async fn run(player_name: String, top: usize) -> anyhow::Result<()> {
     let filename = format!("{player_id}.json");
 
     match store.read_tier::<ShiftProfile>(&SnapshotTier::Positions, &filename) {
-        Ok(profile) => display_profile(&profile, &players, top),
-        Err(_) => display_placeholder(target, &players, top),
+        Ok(profile) => display_profile(&profile, &players, top, format, out.as_deref())?,
+        Err(_)      => display_placeholder(target, &players, top, format, out.as_deref())?,
     }
 
     Ok(())
@@ -47,58 +55,48 @@ pub async fn run(player_name: String, top: usize) -> anyhow::Result<()> {
 
 // ── Display helpers ───────────────────────────────────────────────────────────
 
-fn display_profile(profile: &ShiftProfile, players: &[Player], top: usize) {
-    let toi_mins = profile.avg_ev_toi_seconds_per_game / 60;
-    let toi_secs = profile.avg_ev_toi_seconds_per_game % 60;
+fn display_profile(
+    profile: &ShiftProfile,
+    players: &[Player],
+    top: usize,
+    format: crate::commands::output::Format,
+    out: Option<&std::path::Path>,
+) -> anyhow::Result<()> {
+    use crate::commands::output::Format;
 
-    println!(
-        "LINEMATES — player {} ({} games analyzed)",
-        profile.player_id, profile.games_analyzed
-    );
-    println!(
-        "Avg EV TOI/game: {}:{:02}",
-        toi_mins, toi_secs
-    );
-    println!("{}", "─".repeat(62usize));
-    println!(
-        "{:<5} {:<24} {:>12} {:>10}",
-        "Rank", "Partner", "Shared Games", "Co-Ice%"
-    );
-    println!("{}", "─".repeat(62usize));
+    let headers = &["rank", "partner", "shared_shifts", "co_ice_pct"];
+    let rows: Vec<Vec<String>> = profile.top_linemates.iter().take(top).enumerate().map(|(i, lm)| {
+        vec![
+            (i + 1).to_string(),
+            find_player_name(players, lm.partner_id),
+            lm.shared_shifts.to_string(),
+            format!("{:.1}", lm.co_ice_pct * 100.0),
+        ]
+    }).collect();
 
-    let displayed = profile.top_linemates.iter().take(top);
-    for (i, lm) in displayed.enumerate() {
-        let name = find_player_name(players, lm.partner_id);
+    if format == Format::Table && out.is_none() {
+        let toi_mins = profile.avg_ev_toi_seconds_per_game / 60;
+        let toi_secs = profile.avg_ev_toi_seconds_per_game % 60;
         println!(
-            "{:<5} {:<24} {:>12} {:>9.1}%",
-            i + 1,
-            name,
-            lm.shared_shifts,
-            lm.co_ice_pct * 100.0,
+            "LINEMATES — player {} ({} games analyzed)",
+            profile.player_id, profile.games_analyzed
         );
+        println!("Avg EV TOI/game: {}:{:02}", toi_mins, toi_secs);
     }
-
-    let shown = profile.top_linemates.len().min(top);
-    println!("\nShowing {shown} of {} linemates.", profile.top_linemates.len());
+    format.emit_to(headers, &rows, out)?;
+    Ok(())
 }
 
-fn display_placeholder(target: &Player, players: &[Player], top: usize) {
-    println!(
-        "No shift data found for {}.",
-        target.full_name
-    );
-    println!("Run `icelines fetch shifts` to compute linemate data.");
-    println!();
-    println!(
-        "PLACEHOLDER — forwards on {} roster:",
-        target.team.as_str()
-    );
-    println!("{}", "─".repeat(50usize));
-    println!("{:<5} {:<24} {:<5}", "Rank", "Player", "Pos");
-    println!("{}", "─".repeat(50usize));
+fn display_placeholder(
+    target: &Player,
+    players: &[Player],
+    top: usize,
+    format: crate::commands::output::Format,
+    out: Option<&std::path::Path>,
+) -> anyhow::Result<()> {
+    use crate::commands::output::Format;
 
-    let teammates: Vec<&Player> = players
-        .iter()
+    let teammates: Vec<&Player> = players.iter()
         .filter(|p| {
             p.team.as_str() == target.team.as_str()
                 && p.position.is_forward()
@@ -107,18 +105,21 @@ fn display_placeholder(target: &Player, players: &[Player], top: usize) {
         .take(top)
         .collect();
 
-    for (i, p) in teammates.iter().enumerate() {
-        println!(
-            "{:<5} {:<24} {:<5}",
-            i + 1,
-            p.full_name,
-            p.position.abbreviation()
-        );
-    }
+    let headers = &["rank", "player", "pos"];
+    let rows: Vec<Vec<String>> = teammates.iter().enumerate().map(|(i, p)| vec![
+        (i + 1).to_string(),
+        p.full_name.clone(),
+        p.position.abbreviation().to_owned(),
+    ]).collect();
 
-    if teammates.is_empty() {
-        println!("  (no forwards found on roster)");
+    if format == Format::Table && out.is_none() {
+        eprintln!("No shift data found for {}.", target.full_name);
+        eprintln!("Run `icelines fetch shifts` to compute linemate data.");
+        eprintln!();
+        eprintln!("PLACEHOLDER — forwards on {} roster:", target.team.as_str());
     }
+    format.emit_to(headers, &rows, out)?;
+    Ok(())
 }
 
 // ── Private helpers ───────────────────────────────────────────────────────────

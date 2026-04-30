@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 
 // ── Top-level CLI ─────────────────────────────────────────────────────────────
 
@@ -66,6 +66,12 @@ pub enum Commands {
         /// Color scheme override.
         #[arg(long)]
         scheme: Option<String>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long)]
+        csv:  bool,
+        #[arg(long, value_name = "PATH")]
+        out:  Option<std::path::PathBuf>,
     },
 
     /// Manage named data snapshots.
@@ -119,6 +125,10 @@ pub enum Commands {
         #[arg(long, default_value = "regressed")] mode: String,
         /// Override remaining games (default: auto from schedule).
         #[arg(long)] games: Option<u32>,
+        #[arg(long)] json: bool,
+        #[arg(long)] csv:  bool,
+        #[arg(long, value_name = "PATH")]
+        out:  Option<std::path::PathBuf>,
     },
     /// Launch the interactive TUI.
     Tui,
@@ -127,6 +137,34 @@ pub enum Commands {
     /// `design/specs/export-markdown.md`.
     #[command(subcommand)]
     Export(ExportSubcommand),
+    /// Quick CSV/JSON export of any report — `icelines x leaders --top 10`.
+    /// Default format is CSV, default destination is stdout. Use --out to
+    /// write to a file you can open in Excel directly.
+    #[command(name = "x", alias = "xport")]
+    X {
+        /// Report shape to export. Run `icelines x --help` for the list.
+        shape: ExportShape,
+        /// Player name (for shapes that target a single player).
+        #[arg(long)]
+        player: Option<String>,
+        #[arg(long)]
+        team: Option<String>,
+        #[arg(long)]
+        pos: Option<String>,
+        #[arg(long)]
+        year: Option<u16>,
+        #[arg(long, default_value_t = 25)]
+        top: usize,
+        /// Number of seasons (history shape).
+        #[arg(long, default_value_t = 5)]
+        seasons: usize,
+        /// Emit JSON instead of CSV. CSV is the default — Excel-friendly.
+        #[arg(long)]
+        json: bool,
+        /// Write to a file instead of stdout.
+        #[arg(long, value_name = "PATH")]
+        out: Option<std::path::PathBuf>,
+    },
     /// Filter and list players with rich criteria.
     Players {
         #[arg(long)]
@@ -151,6 +189,12 @@ pub enum Commands {
         top: usize,
         #[arg(long)]
         json: bool,
+        /// Emit RFC-4180 CSV (one header row + data rows). Mutually exclusive with --json.
+        #[arg(long)]
+        csv:  bool,
+        /// Write the report to a file instead of stdout.
+        #[arg(long, value_name = "PATH")]
+        out:  Option<std::path::PathBuf>,
     },
     /// Show a draft class — all players from a given draft year.
     Class {
@@ -161,6 +205,10 @@ pub enum Commands {
         top: Option<usize>,
         #[arg(long)]
         json: bool,
+        #[arg(long)]
+        csv:  bool,
+        #[arg(long, value_name = "PATH")]
+        out:  Option<std::path::PathBuf>,
     },
     /// Find statistical peers for a player (same draft era and position).
     Peers {
@@ -169,6 +217,10 @@ pub enum Commands {
         size: usize,
         #[arg(long)]
         json: bool,
+        #[arg(long)]
+        csv:  bool,
+        #[arg(long, value_name = "PATH")]
+        out:  Option<std::path::PathBuf>,
     },
     /// Head-to-head player comparison.
     Compare {
@@ -176,6 +228,10 @@ pub enum Commands {
         player2: String,
         #[arg(long)]
         json: bool,
+        #[arg(long)]
+        csv:  bool,
+        #[arg(long, value_name = "PATH")]
+        out:  Option<std::path::PathBuf>,
     },
     /// Show a player's historical season stats.
     History {
@@ -185,6 +241,10 @@ pub enum Commands {
         seasons: usize,
         #[arg(long)]
         json: bool,
+        #[arg(long)]
+        csv:  bool,
+        #[arg(long, value_name = "PATH")]
+        out:  Option<std::path::PathBuf>,
     },
     /// Find line-mates for a player.
     Mates {
@@ -193,6 +253,10 @@ pub enum Commands {
         /// Number of top linemates to display.
         #[arg(long, default_value_t = 5)]
         top: usize,
+        #[arg(long)] json: bool,
+        #[arg(long)] csv:  bool,
+        #[arg(long, value_name = "PATH")]
+        out:  Option<std::path::PathBuf>,
     },
     /// Manage player watchlists and custom groups.
     #[command(subcommand)]
@@ -353,11 +417,14 @@ pub enum GamesSubcommand {
     Remove { game_id: u64 },
     /// List every game you've recorded as attended.
     List,
-    /// Export the attended-games list to JSON (default stdout).
+    /// Export the attended-games list to CSV or JSON (default: stdout, CSV).
     Export {
         /// Output path. Use `-` to write to stdout.
         #[arg(long, default_value = "-")]
         out: String,
+        /// Emit JSON instead of CSV.
+        #[arg(long)]
+        json: bool,
     },
 }
 
@@ -800,4 +867,26 @@ impl MdShape {
             MdShape::Roster  => "roster",
         }
     }
+}
+
+/// Report shapes accepted by the unified `icelines x <shape>` command.
+/// Each maps to an existing report and emits CSV by default.
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum ExportShape {
+    /// Top-N league rank by pace score (mirrors `icelines rank`).
+    Rank,
+    /// League-wide pace leaderboard (mirrors `icelines query leaders`).
+    Leaders,
+    /// Goalie leaderboard (mirrors `icelines query goalies`).
+    Goalies,
+    /// Filter players by criteria (mirrors `icelines players`).
+    Players,
+    /// Draft class for a year (mirrors `icelines class`).
+    Class,
+    /// Career season-by-season log for one player (mirrors `icelines history`).
+    History,
+    /// Statistical peers for one player (mirrors `icelines peers`).
+    Peers,
+    /// Two-player comparison (mirrors `icelines compare`).
+    Compare,
 }
