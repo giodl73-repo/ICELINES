@@ -19,12 +19,7 @@ use icelines_core::{
 };
 use std::collections::HashMap;
 
-/// All 32 NHL franchises (matches the `ALL_TEAMS` slice in `repository.rs`).
-const ALL_TEAMS: &[&str] = &[
-    "ANA", "BOS", "BUF", "CAR", "CBJ", "CGY", "CHI", "COL", "DAL", "DET", "EDM", "FLA", "LAK",
-    "MIN", "MTL", "NJD", "NSH", "NYI", "NYR", "OTT", "PHI", "PIT", "SEA", "SJS", "STL", "TBL",
-    "TOR", "UTA", "VAN", "VGK", "WPG", "WSH",
-];
+use crate::teams::ALL_NHL_TEAMS as ALL_TEAMS;
 
 pub struct GoalieRepository {
     store:  SnapshotStore,
@@ -266,13 +261,69 @@ mod tests {
 
     #[test]
     fn l1_goalie_repo_dedup_by_nhl_id() {
-        // No traded-goalie scenario in the bundled fixture this season,
-        // but the dedup logic must preserve uniqueness regardless.
+        // Whether or not the season has trades, every loaded goalie must
+        // be unique by nhl_id. This is the safety net behind the
+        // load_all dedup_by_key call.
         let (_keep, repo) = empty_repo();
         let goalies = repo.load_all().expect("load");
         let ids: std::collections::HashSet<u32> = goalies.iter().map(|g| g.nhl_id).collect();
         assert_eq!(ids.len(), goalies.len(),
             "every loaded goalie has a unique nhl_id");
+    }
+
+    #[test]
+    fn l1_goalie_repo_traded_goalie_appears_once_with_primary_team() {
+        // 24-25 bundled data contains real mid-season trades —
+        // James Reimer (8473503) is listed as "ANA,BUF" because he
+        // started in Anaheim and was traded to Buffalo. The repo must:
+        //   - emit exactly one Goalie struct for him (no double-count)
+        //   - point his team at the primary (first listed) abbrev
+        //   - still let load_team("BUF") find him via the comma-split path
+        let (_keep, repo) = empty_repo();
+        let goalies = repo.load_all().expect("load");
+        let reimer_rows: Vec<_> = goalies.iter()
+            .filter(|g| g.nhl_id == 8473503)
+            .collect();
+        assert_eq!(
+            reimer_rows.len(), 1,
+            "traded goalie must dedup to one row, got {}",
+            reimer_rows.len(),
+        );
+        let reimer = reimer_rows[0];
+        // ANA is the first listed — that's the primary stop.
+        assert_eq!(reimer.team.as_str(), "ANA",
+            "primary team must be the first comma-listed abbrev");
+
+        // load_team must see him on BOTH stops via the comma-split
+        // fallback, since the filter happens against team_abbrevs.
+        let on_ana = repo.load_team("ANA").expect("load ANA");
+        let on_buf = repo.load_team("BUF").expect("load BUF");
+        assert!(on_ana.iter().any(|g| g.nhl_id == 8473503),
+            "Reimer must be findable on ANA");
+        assert!(on_buf.iter().any(|g| g.nhl_id == 8473503),
+            "Reimer must be findable on BUF after the trade");
+    }
+
+    #[test]
+    fn l1_goalie_repo_no_team_abbrevs_string_leaks_to_team_field() {
+        // Defensive: regardless of whether a goalie was traded, the
+        // `team` field on the Goalie struct must be a plain 3-letter
+        // abbrev — never the raw "EDM,PIT" string. UI columns assume a
+        // bounded width and would mis-render otherwise.
+        let (_keep, repo) = empty_repo();
+        let goalies = repo.load_all().expect("load");
+        for g in &goalies {
+            assert!(
+                !g.team.as_str().contains(','),
+                "goalie {} ({}) leaked a comma into team field: '{}'",
+                g.full_name, g.nhl_id, g.team.as_str(),
+            );
+            assert!(
+                g.team.as_str().len() <= 3,
+                "goalie {} team abbrev '{}' is longer than 3 chars",
+                g.full_name, g.team.as_str(),
+            );
+        }
     }
 
     #[test]

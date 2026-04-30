@@ -1,12 +1,7 @@
 use crate::error::FetchError;
 use crate::schema::{PagedResponse, PlayerContract, RosterResponse, SkaterBio, SkaterRealtime, SkaterStats};
+use crate::teams::ALL_NHL_TEAMS as TEAMS;
 use std::time::Duration;
-
-const TEAMS: &[&str] = &[
-    "ANA", "BOS", "BUF", "CAR", "CBJ", "CGY", "CHI", "COL", "DAL", "DET", "EDM", "FLA", "LAK",
-    "MIN", "MTL", "NJD", "NSH", "NYI", "NYR", "OTT", "PHI", "PIT", "SEA", "SJS", "STL", "TBL",
-    "TOR", "UTA", "VAN", "VGK", "WPG", "WSH",
-];
 
 /// Async NHL API client.
 /// `base_url_stats` and `base_url_web` are configurable to allow mocking in tests.

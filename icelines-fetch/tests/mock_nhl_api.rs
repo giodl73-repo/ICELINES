@@ -161,6 +161,43 @@ const FIXTURE_STATS_JSON: &str = r#"{
   "total": 3
 }"#;
 
+/// 2-goalie summary payload mirroring the live NHL `/goalie/summary`
+/// endpoint shape. Used to exercise `fetch_all_goalies` end-to-end via
+/// httpmock without hitting the real API.
+const FIXTURE_GOALIES_JSON: &str = r#"{
+  "data": [
+    {
+      "playerId": 8476945,
+      "goalieFullName": "Connor Hellebuyck",
+      "lastName": "Hellebuyck",
+      "teamAbbrevs": "WPG",
+      "seasonId": 20252026,
+      "shootsCatches": "L",
+      "gamesPlayed": 63, "gamesStarted": 62,
+      "wins": 47, "losses": 12, "otLosses": 3, "ties": null,
+      "shotsAgainst": 1664, "goalsAgainst": 125, "saves": 1539,
+      "savePct": 0.92487, "goalsAgainstAverage": 2.00461,
+      "shutouts": 8, "timeOnIce": 224482,
+      "goals": 0, "assists": 1, "points": 1, "penaltyMinutes": 2
+    },
+    {
+      "playerId": 8476434,
+      "goalieFullName": "Sergei Bobrovsky",
+      "lastName": "Bobrovsky",
+      "teamAbbrevs": "FLA",
+      "seasonId": 20252026,
+      "shootsCatches": "L",
+      "gamesPlayed": 52, "gamesStarted": 50,
+      "wins": 32, "losses": 13, "otLosses": 5, "ties": null,
+      "shotsAgainst": 1497, "goalsAgainst": 113, "saves": 1384,
+      "savePct": 0.91851, "goalsAgainstAverage": 2.18,
+      "shutouts": 5, "timeOnIce": 184700,
+      "goals": 0, "assists": 0, "points": 0, "penaltyMinutes": 0
+    }
+  ],
+  "total": 2
+}"#;
+
 /// 3-player realtime stats payload — hits, blocks, giveaways, takeaways, pim.
 const FIXTURE_REALTIME_JSON: &str = r#"{
   "data": [
@@ -546,6 +583,54 @@ async fn l1_mock_fetch_realtime_parses_hits() {
     assert_eq!(mc_rt.takeaways, 42, "takeaways must be parsed");
     assert_eq!(mc_rt.giveaways, 35, "giveaways must be parsed");
     assert_eq!(mc_rt.pim, 14, "pim must be parsed");
+}
+
+#[tokio::test]
+async fn l1_mock_fetch_goalies_parses_record_and_save_pct() {
+    let server = MockServer::start();
+
+    let _mock = server.mock(|when, then| {
+        when.method(GET)
+            .path_contains("/goalie/summary");
+        then.status(200)
+            .header("content-type", "application/json")
+            .body(FIXTURE_GOALIES_JSON);
+    });
+
+    let base_stats = server.url("");
+    let client = NhlApiClient::new(&base_stats, "http://unused.local");
+
+    let goalies = client
+        .fetch_all_goalies("20252026")
+        .await
+        .expect("mock fetch_all_goalies must succeed");
+    assert_eq!(goalies.len(), 2, "must parse 2 goalie rows");
+
+    let hb = goalies.iter().find(|g| g.player_id == 8476945)
+        .expect("Hellebuyck must be present in fixture");
+    assert_eq!(hb.last_name, "Hellebuyck");
+    assert_eq!(hb.team_abbrevs, "WPG");
+    assert_eq!(hb.wins, 47);
+    assert_eq!(hb.losses, 12);
+    assert_eq!(hb.shutouts, 8);
+    assert_eq!(hb.shots_against, 1664);
+    assert_eq!(hb.saves, 1539);
+    assert!(
+        hb.save_pct.is_some_and(|p| (p - 0.92487).abs() < 1e-4),
+        "save_pct must round-trip from camelCase savePct: got {:?}",
+        hb.save_pct,
+    );
+    assert!(
+        hb.goals_against_average.is_some_and(|g| (g - 2.00461).abs() < 1e-3),
+        "goals_against_average must parse from camelCase",
+    );
+    assert!(hb.qualified(15), "Hellebuyck with 63 GP must clear 15-GP threshold");
+
+    let bob = goalies.iter().find(|g| g.player_id == 8476434)
+        .expect("Bobrovsky must be present in fixture");
+    assert_eq!(bob.team_abbrevs, "FLA");
+    assert_eq!(bob.primary_team(), "FLA");
+    assert_eq!(bob.wins, 32);
 }
 
 #[tokio::test]
