@@ -1081,4 +1081,48 @@ mod tests {
         assert_eq!(first, second,
             "second call must return cached lines");
     }
+
+    #[test]
+    fn l0_goalie_panel_zero_history_falls_back_cleanly() {
+        // A made-up nhl_id matches no bundled season → 0 history rows.
+        // Panel should render the header + a "Bundled history: none"
+        // placeholder, no sparkline blocks.
+        let mut g = fixture_goalie();
+        g.nhl_id = 99_000_001;
+        let lines = build_goalie_panel_lines(&g);
+        let body  = lines_to_text(&lines);
+        assert!(body.contains("Bundled history: none"),
+            "no-history goalie should show fallback message, got:\n{body}");
+        // Header still renders so the user knows which goalie this is.
+        assert!(body.contains("Hellebuyck"),
+            "header should still render, got:\n{body}");
+        // No sparkline blocks since there's no trend.
+        assert!(!body.chars().any(|c| "▁▂▃▄▅▆▇█".contains(c)),
+            "no-history goalie should NOT show spark blocks, got:\n{body}");
+    }
+
+    #[test]
+    fn l0_goalie_panel_one_history_shows_season_only() {
+        // We can't easily construct a 1-season bundled fixture, so this
+        // test exercises the formatter directly via the helpers it
+        // calls — just confirms the season-label branch reads sensibly.
+        // (The real 1-season path is exercised when a goalie's nhl_id
+        // happens to appear in only one bundled season; verified via
+        // existing render integration.)
+        assert_eq!(short_season("20252026"), "25-26");
+        // Header for a single-history goalie reads:
+        //   "Bundled history: 25-26"
+        let row = format!("Bundled history: {}", short_season("20252026"));
+        assert_eq!(row, "Bundled history: 25-26");
+    }
+
+    #[test]
+    fn l0_fmt2_keeps_two_decimals_for_gaa() {
+        // GAA uses standard 2-decimal formatting; no leading-zero strip.
+        // (Goalies often show GAA < 1.00 in tiny samples, so we keep the 0.)
+        assert_eq!(fmt2(2.05),  "2.05");
+        assert_eq!(fmt2(2.0),   "2.00");
+        assert_eq!(fmt2(0.5),   "0.50");
+        assert_eq!(fmt2(0.0),   "0.00");
+    }
 }

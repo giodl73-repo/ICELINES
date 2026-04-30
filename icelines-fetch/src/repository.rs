@@ -21,11 +21,7 @@ use crate::{
     snapshot::{SnapshotStore, SnapshotTier},
 };
 
-const ALL_TEAMS: &[&str] = &[
-    "ANA","BOS","BUF","CAR","CBJ","CGY","CHI","COL","DAL","DET","EDM","FLA","LAK",
-    "MIN","MTL","NJD","NSH","NYI","NYR","OTT","PHI","PIT","SEA","SJS","STL","TBL",
-    "TOR","UTA","VAN","VGK","WPG","WSH",
-];
+use crate::teams::ALL_NHL_TEAMS as ALL_TEAMS;
 
 pub struct PlayerRepository {
     store:  SnapshotStore,
@@ -184,6 +180,47 @@ mod tests {
         let players = repo.load_all().expect("load_all must succeed with bundled data");
         assert!(players.len() > 500,
             "expected 900+ players from bundled data, got {}", players.len());
+    }
+
+    #[test]
+    fn l1_repository_load_all_dedup_by_nhl_id() {
+        // Mid-season trades + same-team duplicate rows in the NHL bios
+        // feed both produce >1 row per playerId. The repo's safety-net
+        // dedup must collapse them to one Player struct so the leaderboard
+        // doesn't show the same person twice.
+        let (_dir, repo) = repo();
+        let players = repo.load_all().expect("load");
+        let ids: std::collections::HashSet<u32> = players.iter()
+            .filter_map(|p| p.nhl_id)
+            .collect();
+        let with_id = players.iter().filter(|p| p.nhl_id.is_some()).count();
+        assert_eq!(
+            ids.len(), with_id,
+            "every loaded player must have a unique nhl_id; found duplicate(s)"
+        );
+    }
+
+    #[test]
+    fn l1_repository_no_team_abbrev_leak_in_player_team_field() {
+        // Player.team must be a clean 3-letter abbrev — never a comma-
+        // separated stint string. Any comma here means we joined the
+        // wrong field somewhere in the build pipeline.
+        let (_dir, repo) = repo();
+        let players = repo.load_all().expect("load");
+        for p in &players {
+            let t = p.team.as_str();
+            assert!(
+                !t.contains(','),
+                "{} ({:?}) leaked a comma into team: '{}'",
+                p.full_name, p.nhl_id, t,
+            );
+            // Allow up to 4 chars (some legacy abbrevs); flag obviously
+            // wrong values like "Dallas Stars" or "EDM,PIT".
+            assert!(
+                t.len() <= 4 && t.len() >= 2,
+                "{} team '{}' has implausible length {}", p.full_name, t, t.len(),
+            );
+        }
     }
 
     #[test]

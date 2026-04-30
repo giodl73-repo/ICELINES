@@ -16,7 +16,9 @@ pub mod resolver;
 pub mod schema;
 pub mod shift_profile;
 pub mod snapshot;
+pub mod teams;
 
+pub use teams::ALL_NHL_TEAMS;
 pub use boxscore_client::{aggregate_profiles, aggregate_shift_profiles, BoxscoreClient};
 pub use bundled::{get_bios as get_bundled_bios, get_stats as get_bundled_stats,
     get_playoffs as get_bundled_playoffs, load_bios_with_fallback,
