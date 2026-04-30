@@ -337,8 +337,15 @@ fn parse_game(g: &serde_json::Value, fallback_date: Option<&str>) -> Option<Sche
         .or_else(|| st["gameLabel"].as_str().map(str::to_owned))
         .or_else(|| g["gameLabel"].as_str().map(str::to_owned))
         .or_else(|| {
-            // Numeric "gameNumberOfSeven" (current API) — convert to label.
-            let n = st["gameNumberOfSeven"].as_u64()
+            // Numeric "Game N" — the NHL API has used a few field names
+            // over time:
+            //   * `gameNumberOfSeries` (current as of 2026-04-29 — verified
+            //     against /v1/schedule/now during a live round-1 series)
+            //   * `gameNumberOfSeven` (older variant)
+            //   * `gameNumber`         (some other endpoints)
+            // Convert the first hit to a "Game N" label.
+            let n = st["gameNumberOfSeries"].as_u64()
+                .or_else(|| st["gameNumberOfSeven"].as_u64())
                 .or_else(|| ss["gameNumber"].as_u64())
                 .or_else(|| g["gameNumber"].as_u64())?;
             Some(format!("Game {n}"))
@@ -744,7 +751,9 @@ pub fn parse_playoff_bracket(raw: &serde_json::Value) -> PlayoffBracket {
         .or_else(|| raw["roundNumber"].as_u64())
         .map(|v| v as u8);
 
-    let mut rounds = Vec::new();
+    let mut rounds: Vec<PlayoffRound> = Vec::new();
+
+    // Shape A: legacy nested form — `playoffRounds: [{ roundNumber, series: [..] }]`.
     let round_arrays = raw["playoffRounds"].as_array()
         .or_else(|| raw["rounds"].as_array());
     if let Some(arr) = round_arrays {
@@ -753,13 +762,7 @@ pub fn parse_playoff_bracket(raw: &serde_json::Value) -> PlayoffBracket {
             let label = r["roundLabel"].as_str()
                 .or_else(|| r["roundName"].as_str())
                 .map(str::to_owned)
-                .unwrap_or_else(|| match round_number {
-                    1 => "First Round".to_owned(),
-                    2 => "Second Round".to_owned(),
-                    3 => "Conference Final".to_owned(),
-                    4 => "Stanley Cup Final".to_owned(),
-                    _ => format!("Round {round_number}"),
-                });
+                .unwrap_or_else(|| default_round_label(round_number));
             let mut series = Vec::new();
             if let Some(s_arr) = r["series"].as_array() {
                 for s in s_arr {
@@ -770,8 +773,42 @@ pub fn parse_playoff_bracket(raw: &serde_json::Value) -> PlayoffBracket {
         }
     }
 
+    // Shape B: current API (verified 2026-04-29) — flat `series: [..]`
+    // where each series carries its own `playoffRound`. Bucket by round.
+    if rounds.is_empty() {
+        if let Some(arr) = raw["series"].as_array() {
+            use std::collections::BTreeMap;
+            let mut by_round: BTreeMap<u8, Vec<PlayoffSeries>> = BTreeMap::new();
+            let mut labels:   BTreeMap<u8, String>             = BTreeMap::new();
+            for s in arr {
+                let rn = s["playoffRound"].as_u64()
+                    .or_else(|| s["roundNumber"].as_u64())
+                    .unwrap_or(0) as u8;
+                if let Some(t) = s["seriesTitle"].as_str() {
+                    labels.entry(rn).or_insert_with(|| t.to_owned());
+                }
+                by_round.entry(rn).or_default().push(parse_series(s));
+            }
+            for (rn, ser) in by_round {
+                let label = labels.get(&rn).cloned()
+                    .unwrap_or_else(|| default_round_label(rn));
+                rounds.push(PlayoffRound { round_number: rn, label, series: ser });
+            }
+        }
+    }
+
     rounds.sort_by_key(|r| r.round_number);
     PlayoffBracket { season, current_round, rounds }
+}
+
+fn default_round_label(round_number: u8) -> String {
+    match round_number {
+        1 => "First Round".to_owned(),
+        2 => "Second Round".to_owned(),
+        3 => "Conference Final".to_owned(),
+        4 => "Stanley Cup Final".to_owned(),
+        _ => format!("Round {round_number}"),
+    }
 }
 
 fn parse_series(s: &serde_json::Value) -> PlayoffSeries {
@@ -786,21 +823,34 @@ fn parse_series(s: &serde_json::Value) -> PlayoffSeries {
     let top_name   = top["name"]["default"].as_str()
         .or_else(|| top["placeName"]["default"].as_str())
         .unwrap_or(&top_abbrev).to_owned();
-    let top_wins   = top["wins"].as_u64().unwrap_or(0) as u8;
-    let top_rank   = top["seed"].as_str()
+    // Wins: legacy nested API put it on the team object; current API
+    // (verified 2026-04-29 against /v1/playoff-bracket/2026) puts it at
+    // the series level as `topSeedWins`/`bottomSeedWins`.
+    let top_wins = top["wins"].as_u64()
+        .or_else(|| s["topSeedWins"].as_u64())
+        .unwrap_or(0) as u8;
+    // Rank: prefer the abbreviated form ("D1", "WC1") when present —
+    // matches what users see in the playoff bracket header.
+    let top_rank = s["topSeedRankAbbrev"].as_str()
+        .or_else(|| top["seed"].as_str())
         .or_else(|| s["topSeedRank"].as_str())
-        .or_else(|| s["topSeedRankAbbrev"].as_str())
-        .map(str::to_owned);
+        .map(str::to_owned)
+        // Numeric `topSeedRank` (1..=8) shows up as a u64 — fall through
+        // to that and stringify so something usable lands in the UI.
+        .or_else(|| s["topSeedRank"].as_u64().map(|n| n.to_string()));
 
     let bot_abbrev = bottom["abbrev"].as_str().unwrap_or("").to_owned();
     let bot_name   = bottom["name"]["default"].as_str()
         .or_else(|| bottom["placeName"]["default"].as_str())
         .unwrap_or(&bot_abbrev).to_owned();
-    let bot_wins   = bottom["wins"].as_u64().unwrap_or(0) as u8;
-    let bot_rank   = bottom["seed"].as_str()
+    let bot_wins = bottom["wins"].as_u64()
+        .or_else(|| s["bottomSeedWins"].as_u64())
+        .unwrap_or(0) as u8;
+    let bot_rank = s["bottomSeedRankAbbrev"].as_str()
+        .or_else(|| bottom["seed"].as_str())
         .or_else(|| s["bottomSeedRank"].as_str())
-        .or_else(|| s["bottomSeedRankAbbrev"].as_str())
-        .map(str::to_owned);
+        .map(str::to_owned)
+        .or_else(|| s["bottomSeedRank"].as_u64().map(|n| n.to_string()));
 
     // Winner: explicit field or inferred from 4-win threshold
     let winner_abbrev = s["winningTeam"]["abbrev"].as_str()
@@ -914,6 +964,49 @@ mod parse_game_tests {
             "numeric gameNumberOfSeven should synthesise a 'Game N' label");
         assert_eq!(g.away_wins, Some(1));
         assert_eq!(g.home_wins, Some(1));
+    }
+
+    #[test]
+    fn l0_parse_game_reads_seriesStatus_gameNumberOfSeries_current() {
+        // Current API (verified 2026-04-29 against /v1/schedule/now during
+        // a live round-1 series): `gameNumberOfSeries` is the active
+        // field name. Without this fallback we'd display "Game ?" — the
+        // exact regression the user reported.
+        let raw = base_playoff(json!({
+            "seriesStatus": {
+                "gameNumberOfSeries": 5,
+                "round": 1,
+                "seriesAbbrev": "R1",
+                "seriesLetter": "B",
+                "topSeedTeamAbbrev": "TBL", "topSeedWins": 2,
+                "bottomSeedTeamAbbrev": "MTL", "bottomSeedWins": 3
+            }
+        }));
+        let g = parse_game(&raw, Some("2026-04-29")).expect("parses");
+        assert_eq!(g.series_game.as_deref(), Some("Game 5"),
+            "current API uses gameNumberOfSeries");
+        // away=NYR is bottom_seed; home=WSH is top_seed (from base_playoff).
+        // Wait — base_playoff has NYR away, WSH home. seriesStatus has
+        // TBL top, MTL bottom. The win-mapping should match by abbrev.
+        // NYR doesn't match TBL or MTL → wins remain None.
+        // For a meaningful assertion, build a fixture where abbrevs match.
+        let raw2 = json!({
+            "id": 2025030126,
+            "gameType": 3,
+            "awayTeam": {"abbrev":"MTL","placeName":{"default":"Montreal"}},
+            "homeTeam": {"abbrev":"TBL","placeName":{"default":"Tampa Bay"}},
+            "startTimeUTC": "2026-04-29T23:00:00Z",
+            "gameState": "FUT",
+            "seriesStatus": {
+                "gameNumberOfSeries": 5,
+                "topSeedTeamAbbrev": "TBL", "topSeedWins": 2,
+                "bottomSeedTeamAbbrev": "MTL", "bottomSeedWins": 3
+            }
+        });
+        let g2 = parse_game(&raw2, Some("2026-04-29")).expect("parses");
+        assert_eq!(g2.series_game.as_deref(), Some("Game 5"));
+        assert_eq!(g2.away_wins, Some(3), "MTL is bottom seed → 3 wins");
+        assert_eq!(g2.home_wins, Some(2), "TBL is top seed → 2 wins");
     }
 
     #[test]

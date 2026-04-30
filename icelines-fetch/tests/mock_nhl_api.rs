@@ -1081,6 +1081,113 @@ fn l0_parse_playoff_bracket_empty_off_season() {
 }
 
 #[test]
+fn l0_parse_playoff_bracket_flat_series_current_api() {
+    // Current `/v1/playoff-bracket/{year}` shape (verified 2026-04-29):
+    // a flat `series` array where each entry carries its own
+    // `playoffRound` and the wins live at the series level
+    // (`topSeedWins` / `bottomSeedWins`), not on the team object.
+    // The legacy `playoffRounds` shape does NOT appear.
+    use icelines_fetch::nhl_api::parse_playoff_bracket;
+    let raw: serde_json::Value = serde_json::from_str(r#"{
+        "bracketTitle": "2026 Stanley Cup Playoffs",
+        "series": [
+            {
+                "seriesLetter": "A",
+                "seriesAbbrev": "R1",
+                "seriesTitle": "1st Round",
+                "playoffRound": 1,
+                "topSeedRank": 1,
+                "topSeedRankAbbrev": "D1",
+                "topSeedWins": 3,
+                "bottomSeedRank": 4,
+                "bottomSeedRankAbbrev": "WC1",
+                "bottomSeedWins": 2,
+                "topSeedTeam":    {"abbrev":"BUF","name":{"default":"Buffalo Sabres"}},
+                "bottomSeedTeam": {"abbrev":"BOS","name":{"default":"Boston Bruins"}}
+            },
+            {
+                "seriesLetter": "B",
+                "seriesAbbrev": "R1",
+                "seriesTitle": "1st Round",
+                "playoffRound": 1,
+                "topSeedRank": 2,
+                "topSeedRankAbbrev": "D2",
+                "topSeedWins": 4,
+                "bottomSeedRank": 3,
+                "bottomSeedRankAbbrev": "WC2",
+                "bottomSeedWins": 1,
+                "topSeedTeam":    {"abbrev":"TBL","name":{"default":"Tampa Bay Lightning"}},
+                "bottomSeedTeam": {"abbrev":"MTL","name":{"default":"Montreal Canadiens"}}
+            }
+        ]
+    }"#).unwrap();
+    let bracket = parse_playoff_bracket(&raw);
+
+    // Bracket must NOT be empty — the regression that caused the TUI to
+    // show "Playoffs not yet active for this season" during round 1.
+    assert!(!bracket.is_empty(),
+        "current-shape bracket with 2 series must not be empty");
+    assert_eq!(bracket.rounds.len(), 1, "both series belong to round 1");
+    assert_eq!(bracket.rounds[0].round_number, 1);
+    assert_eq!(bracket.rounds[0].label, "1st Round",
+        "round label should come from seriesTitle when present");
+    assert_eq!(bracket.rounds[0].series.len(), 2);
+
+    // Wins must be read from the series-level fields, not the team
+    // objects (which no longer carry them in the current API).
+    let a = &bracket.rounds[0].series[0];
+    assert_eq!(a.top_seed_abbrev, "BUF");
+    assert_eq!(a.top_seed_wins, 3,
+        "topSeedWins lives at series level in the current API");
+    assert_eq!(a.bottom_seed_abbrev, "BOS");
+    assert_eq!(a.bottom_seed_wins, 2);
+    // Rank: prefer the abbreviated form when present.
+    assert_eq!(a.top_seed_rank.as_deref(), Some("D1"));
+    assert_eq!(a.bottom_seed_rank.as_deref(), Some("WC1"));
+
+    // Series B is a 4-1 sweep — `winner_abbrev` should infer from the
+    // 4-win threshold even without an explicit `winningTeam` field.
+    let b = bracket.find_series("B").expect("series B in fixture");
+    assert_eq!(b.top_seed_wins, 4);
+    assert_eq!(b.winner_abbrev.as_deref(), Some("TBL"),
+        "4 top-seed wins should infer TBL as winner");
+}
+
+#[test]
+fn l0_parse_playoff_bracket_groups_flat_series_by_round() {
+    // Multi-round flat series — verify bucketing.
+    use icelines_fetch::nhl_api::parse_playoff_bracket;
+    let raw: serde_json::Value = serde_json::from_str(r#"{
+        "series": [
+            {"seriesLetter":"A", "playoffRound": 1, "seriesTitle":"1st Round",
+             "topSeedWins": 4, "bottomSeedWins": 0,
+             "topSeedTeam":{"abbrev":"BUF","name":{"default":"BUF"}},
+             "bottomSeedTeam":{"abbrev":"BOS","name":{"default":"BOS"}}},
+            {"seriesLetter":"I", "playoffRound": 2, "seriesTitle":"2nd Round",
+             "topSeedWins": 1, "bottomSeedWins": 0,
+             "topSeedTeam":{"abbrev":"BUF","name":{"default":"BUF"}},
+             "bottomSeedTeam":{"abbrev":"NYR","name":{"default":"NYR"}}}
+        ]
+    }"#).unwrap();
+    let bracket = parse_playoff_bracket(&raw);
+    assert_eq!(bracket.rounds.len(), 2);
+    assert_eq!(bracket.rounds[0].round_number, 1);
+    assert_eq!(bracket.rounds[1].round_number, 2);
+    assert_eq!(bracket.rounds[0].series.len(), 1);
+    assert_eq!(bracket.rounds[1].series.len(), 1);
+}
+
+#[test]
+fn l0_parse_playoff_bracket_truly_empty_returns_empty() {
+    // Both shapes absent → off-season message remains correct.
+    use icelines_fetch::nhl_api::parse_playoff_bracket;
+    let raw: serde_json::Value = serde_json::from_str(r#"{"bracketTitle":"None"}"#).unwrap();
+    let bracket = parse_playoff_bracket(&raw);
+    assert!(bracket.is_empty(),
+        "neither playoffRounds nor series → empty bracket");
+}
+
+#[test]
 fn l0_playoff_series_summary_phrasing() {
     use icelines_fetch::nhl_api::parse_playoff_bracket;
     let raw: serde_json::Value = serde_json::from_str(FIXTURE_PLAYOFF_BRACKET).unwrap();

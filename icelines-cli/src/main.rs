@@ -27,7 +27,7 @@ async fn main() -> anyhow::Result<()> {
 
     let cli = Cli::parse();
     config::init_live_feeds(cli.no_live, &cfg);
-    config::init_dashboards(cli.dashboards, &cfg);
+    config::init_dashboards(cli.no_dashboards, &cfg);
 
     let result = dispatch(cli).await;
     if let Err(e) = result {
