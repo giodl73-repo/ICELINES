@@ -87,7 +87,12 @@ pub enum Screen {
     GroupDetail(String), // viewing members of a named group
     Fetch,
     Help,
-    Comps(usize),                    // similar-player comps for player at index
+    Comps(usize),                    // similar-player comps for player at index (legacy)
+    /// Hart.5c.6 Phase B-2: PlayerId-keyed comps screen. Replaces
+    /// `Comps(usize)` once all enter handlers migrate. D6 auto-pop UX:
+    /// if the PlayerId isn't in the active window, the renderer shows
+    /// a placeholder and the next event tick pops back to parent.
+    CompsById(PlayerId),
     Depth,                           // league-wide team depth rankings
     DepthTeam(String),               // one team's depth chart with fit coloring
     Schedule,                        // weekly view with team / matchup search

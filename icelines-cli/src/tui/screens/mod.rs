@@ -42,6 +42,7 @@ pub fn render(f: &mut Frame, app: &App) {
         Screen::Fetch               => misc::render_fetch(f, app, chunks[1]),
         Screen::Help                => home::render(f, app, chunks[1]),
         Screen::Comps(idx)          => comps::render(f, app, chunks[1], *idx),
+        Screen::CompsById(pid)      => comps::render_by_id(f, app, chunks[1], *pid),
         Screen::Depth               => depth::render_league(f, app, chunks[1]),
         Screen::DepthTeam(abbrev)   => depth::render_team(f, app, chunks[1], abbrev),
         Screen::Schedule                  => schedule::render(f, app, chunks[1]),
@@ -106,7 +107,7 @@ pub fn render(f: &mut Frame, app: &App) {
 fn tab_for_screen(screen: &Screen) -> usize {
     match screen {
         Screen::Home | Screen::Team(_) | Screen::Player(_)
-        | Screen::Comps(_)                                       => 0, // League
+        | Screen::Comps(_) | Screen::CompsById(_)                => 0, // League
         Screen::Depth | Screen::DepthTeam(_)                     => 1, // Depth
         Screen::Queries | Screen::Projections | Screen::Search   => 2, // Stats (default: Queries)
         Screen::Goalies | Screen::GoalieDetail(_)                => 3, // Goalies
