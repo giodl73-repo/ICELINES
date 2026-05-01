@@ -7,6 +7,30 @@
 
 ---
 
+## ⚠ Git identity — verify BEFORE every commit
+
+**This repo's commits go to the `gidol73-repo` GitHub account, NOT the work account.**
+
+Required local config (already set):
+- `user.name = gidol73-repo`
+- `user.email = giodl73@gmail.com`
+
+**Before any `git commit`, run:**
+```bash
+git config user.email
+```
+If it returns anything other than `giodl73@gmail.com` (especially anything `@microsoft.com`), STOP. Do not commit. Set it:
+```bash
+git config user.email giodl73@gmail.com
+git config user.name "gidol73-repo"
+```
+
+If git ever prints `Your name and email address were configured automatically based on your username and hostname` after a commit, that means the local config is missing — the commit just got authored as the auto-resolved identity (which is `giodl@microsoft.com` on this machine). Fix immediately, then `git commit --amend --reset-author --no-edit` to fix the most recent commit, or filter-branch for a chain.
+
+This applies to **every commit, every session**. Do not assume the config persists; verify each session.
+
+---
+
 ## Crate ownership — where to write code
 
 | What you're adding | Crate | Why |
