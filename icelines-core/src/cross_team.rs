@@ -42,6 +42,26 @@ pub fn fantasy_score(p: &Player) -> f64 {
         + p.blocked_shots as f64  * 0.5
 }
 
+/// Hart.5b2c — PlayerView analog of `fantasy_score`. Same Yahoo-style
+/// formula. Realtime stats (hits, blocked_shots) default to 0 when the
+/// view's realtime tier is None (cold-start).
+pub fn fantasy_score_view(v: &crate::stats_repository::PlayerView<'_>) -> f64 {
+    let totals = &v.stats.totals;
+    let pp_ast = (totals.pp_points as i32 - totals.pp_goals as i32).max(0) as f64;
+    let sh_ast = (totals.sh_points as i32 - totals.sh_goals as i32).max(0) as f64;
+    let hits = v.hits().unwrap_or(0);
+    let blocks = v.blocked_shots().unwrap_or(0);
+    totals.goals as f64        * 3.0
+        + totals.assists as f64 * 2.0
+        + totals.pp_goals as f64* 1.0
+        + pp_ast                * 0.5
+        + totals.sh_goals as f64* 1.0
+        + sh_ast                * 0.5
+        + totals.gwg as f64     * 0.5
+        + hits as f64           * 0.5
+        + blocks as f64         * 0.5
+}
+
 /// Aggregated strength for one team — top-4 per forward slot + top-6 D.
 #[derive(Debug, Clone)]
 pub struct TeamStrength {
@@ -191,6 +211,179 @@ fn rank_in(sort_key: f64, sorted_desc: &[f64]) -> u8 {
 /// Compute cross-team metrics for every player — Pace scoring (backward compat).
 pub fn compute_all(players: &[Player]) -> Vec<CrossTeamMetrics> {
     compute_all_with_mode(players, ScoringMode::Pace)
+}
+
+/// Hart.5b2c — PlayerView analog of `compute_all`.
+pub fn compute_all_views(views: &[crate::stats_repository::PlayerView<'_>]) -> Vec<CrossTeamMetrics> {
+    compute_all_views_with_mode(views, ScoringMode::Pace)
+}
+
+/// Hart.5b2c — PlayerView analog of `compute_all_with_mode`.
+pub fn compute_all_views_with_mode(
+    views: &[crate::stats_repository::PlayerView<'_>],
+    mode: ScoringMode,
+) -> Vec<CrossTeamMetrics> {
+    use crate::stats_repository::PlayerView;
+
+    // Build (team_str, pos) -> sorted scores desc.
+    let mut pos_index: HashMap<(String, Position), Vec<f64>> = HashMap::new();
+    for v in views {
+        let score = match mode {
+            ScoringMode::Pace => match v.pace_score() {
+                Some(s) => s.sort_key(),
+                None => continue,
+            },
+            ScoringMode::Fantasy => fantasy_score_view(v),
+        };
+        pos_index
+            .entry((v.team_display().to_owned(), v.position()))
+            .or_default()
+            .push(score);
+    }
+    for vec in pos_index.values_mut() {
+        vec.sort_by(|a, b| b.partial_cmp(a).unwrap_or(std::cmp::Ordering::Equal));
+    }
+
+    let all_teams: Vec<String> = {
+        let mut teams: Vec<String> = views.iter().map(|v| v.team_display().to_owned()).collect();
+        teams.sort();
+        teams.dedup();
+        teams
+    };
+
+    views
+        .iter()
+        .map(|v: &PlayerView<'_>| {
+            let sort_key = match mode {
+                ScoringMode::Pace => match v.pace_score() {
+                    Some(s) => s.sort_key(),
+                    None => {
+                        return CrossTeamMetrics {
+                            player_nhl_id: Some(v.id().0),
+                            own_line: 255,
+                            avg_other_line: 255.0,
+                            delta: 0.0,
+                        }
+                    }
+                },
+                ScoringMode::Fantasy => fantasy_score_view(v),
+            };
+
+            let own_team = v.team_display().to_owned();
+            let own_sorted = pos_index
+                .get(&(own_team.clone(), v.position()))
+                .map(|v| v.as_slice())
+                .unwrap_or(&[]);
+            let own_line = rank_in(sort_key, own_sorted);
+
+            let other_ranks: Vec<f32> = all_teams
+                .iter()
+                .filter(|t| **t != own_team)
+                .map(|t| {
+                    let other_sorted = pos_index
+                        .get(&(t.clone(), v.position()))
+                        .map(|v| v.as_slice())
+                        .unwrap_or(&[]);
+                    rank_in(sort_key, other_sorted) as f32
+                })
+                .collect();
+
+            let avg_other_line = if other_ranks.is_empty() {
+                own_line as f32
+            } else {
+                other_ranks.iter().sum::<f32>() / other_ranks.len() as f32
+            };
+            let delta = own_line as f32 - avg_other_line;
+
+            CrossTeamMetrics {
+                player_nhl_id: Some(v.id().0),
+                own_line,
+                avg_other_line,
+                delta,
+            }
+        })
+        .collect()
+}
+
+/// Hart.5b2c — PlayerView analog of `compute_team_strength`.
+pub fn compute_team_strength_views(
+    views: &[crate::stats_repository::PlayerView<'_>],
+    mode: ScoringMode,
+) -> HashMap<String, TeamStrength> {
+    let mut groups: HashMap<(String, Position), Vec<(f64, String)>> = HashMap::new();
+    for v in views {
+        let score = match mode {
+            ScoringMode::Fantasy => fantasy_score_view(v),
+            ScoringMode::Pace => v.pace_82().unwrap_or(0.0),
+        };
+        groups
+            .entry((v.team_display().to_owned(), v.position()))
+            .or_default()
+            .push((score, v.full_name().to_owned()));
+    }
+    for g in groups.values_mut() {
+        g.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+    }
+
+    let all_teams: Vec<String> = groups
+        .keys()
+        .map(|(t, _)| t.clone())
+        .collect::<std::collections::HashSet<_>>()
+        .into_iter()
+        .collect();
+
+    let mut out = HashMap::new();
+    for team in all_teams {
+        let c = groups
+            .get(&(team.clone(), Position::Center))
+            .map(|v| v.as_slice())
+            .unwrap_or(&[]);
+        let lw = groups
+            .get(&(team.clone(), Position::LeftWing))
+            .map(|v| v.as_slice())
+            .unwrap_or(&[]);
+        let rw = groups
+            .get(&(team.clone(), Position::RightWing))
+            .map(|v| v.as_slice())
+            .unwrap_or(&[]);
+        let d = groups
+            .get(&(team.clone(), Position::Defense))
+            .map(|v| v.as_slice())
+            .unwrap_or(&[]);
+
+        let c_score = c.iter().take(4).map(|(s, _)| s).sum();
+        let lw_score = lw.iter().take(4).map(|(s, _)| s).sum();
+        let rw_score = rw.iter().take(4).map(|(s, _)| s).sum();
+        let d_score = d.iter().take(6).map(|(s, _)| s).sum();
+
+        out.insert(
+            team,
+            TeamStrength {
+                c_score,
+                lw_score,
+                rw_score,
+                d_score,
+                total: c_score + lw_score + rw_score + d_score,
+                c_top: c
+                    .first()
+                    .map(|(_, n)| n.clone())
+                    .unwrap_or_else(|| "—".to_owned()),
+                lw_top: lw
+                    .first()
+                    .map(|(_, n)| n.clone())
+                    .unwrap_or_else(|| "—".to_owned()),
+                rw_top: rw
+                    .first()
+                    .map(|(_, n)| n.clone())
+                    .unwrap_or_else(|| "—".to_owned()),
+                d_top: d
+                    .first()
+                    .map(|(_, n)| n.clone())
+                    .unwrap_or_else(|| "—".to_owned()),
+            },
+        );
+    }
+    out
 }
 
 /// Compute cross-team metrics for every player using the given scoring mode.
