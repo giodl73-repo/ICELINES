@@ -21,7 +21,10 @@ pub enum ScheduleState {
 }
 
 pub type WeekCache       = Arc<Mutex<HashMap<String, ScheduleState>>>;
-pub type TeamSeasonCache = Arc<Mutex<HashMap<String, ScheduleState>>>;
+/// Hart.5c.6 Phase C — D5 cache key widening. Keyed by
+/// `(team_abbrev, season)` so a season switch can't return wrong-
+/// season schedule data after `repo_swap` (KEEL/HART catch).
+pub type TeamSeasonCache = Arc<Mutex<HashMap<(String, String), ScheduleState>>>;
 
 pub fn new_week_cache() -> WeekCache {
     Arc::new(Mutex::new(HashMap::new()))
@@ -142,9 +145,11 @@ pub fn prefetch_around(cache: WeekCache, from_week: &str) {
 }
 
 /// Trigger a background fetch for one team's full-season schedule if not
-/// already loading or loaded. Key is the uppercase team abbreviation.
+/// already loading or loaded. Key is `(team_abbrev_uppercase, season)` —
+/// post-Hart.5c.6 D5 widening so the cache survives a season switch
+/// without returning stale data.
 pub fn maybe_fetch_team(cache: TeamSeasonCache, team: String, season: String) {
-    let key = team.clone();
+    let key = (team.clone(), season.clone());
     if !crate::config::live_feeds_enabled() {
         cache.lock().unwrap()
             .insert(key, ScheduleState::Error(
@@ -353,5 +358,25 @@ mod tests {
         // Just check it contains both ends
         assert!(label.contains("Apr"));
         assert!(label.contains("May") || label.contains("Apr"));
+    }
+
+    #[test]
+    fn l0_team_cache_keyed_by_team_and_season_distinguishes_windows() {
+        // Hart.5c.6 Phase C — D5 cache key widening: pre-fix, the cache
+        // was keyed only by team, so a season switch returned wrong-
+        // season schedules. With the (team, season) key, two seasons
+        // produce two distinct entries that don't poison each other.
+        let cache = new_team_cache();
+        let key_24 = ("EDM".to_owned(), "20242025".to_owned());
+        let key_25 = ("EDM".to_owned(), "20252026".to_owned());
+        cache.lock().unwrap().insert(key_24.clone(), ScheduleState::Loaded(vec![]));
+        cache.lock().unwrap().insert(key_25.clone(), ScheduleState::Loading);
+
+        let map = cache.lock().unwrap();
+        // Both entries coexist; they don't collide on team alone.
+        assert!(matches!(map.get(&key_24), Some(ScheduleState::Loaded(_))));
+        assert!(matches!(map.get(&key_25), Some(ScheduleState::Loading)));
+        assert_eq!(map.len(), 2,
+            "two seasons must produce two distinct cache entries");
     }
 }

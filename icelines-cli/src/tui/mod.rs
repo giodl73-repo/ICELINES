@@ -86,27 +86,6 @@ async fn run_loop(
         // Pure decision in App; this loop just calls it once per frame.
         app.tick_auto_refresh();
 
-        // Poll for loaded players. Hart.5c.6 Phase B-2 step 3: after
-        // the migration, app.players is the legacy bridge for the
-        // few remaining consumers (depth.rs, queries.rs in B-3). The
-        // new path's league_context + dashboard_panel cache are
-        // populated via poll_repo_load above.
-        if app.players.is_empty() {
-            if let Some(players) = app.load_state.take_players() {
-                app.players = players;
-                app.status  = format!("{} players loaded — press ? for help", app.players.len());
-            }
-        }
-
-        // Phase G.3: poll for loaded goalies separately. Empty pool stays
-        // empty (no goalie data bundled / fetched) — Goalies tab handles
-        // the empty case.
-        if app.goalies.is_empty() {
-            if let Some(goalies) = app.load_state.take_goalies() {
-                app.goalies = goalies;
-            }
-        }
-
         // Phase T.5: poll for loaded transactions. Loaded-but-empty is a
         // valid state (renders the legend card), so we mark via fetched_at
         // rather than `is_empty()` to know if we've already pulled.

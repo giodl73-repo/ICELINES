@@ -1,17 +1,14 @@
-//! Background player loading for the TUI.
+//! Background data loading for the TUI.
 //!
-//! Loads all players from bundled/snapshot data without blocking the event loop.
-//!
-//! Hart.5c.6 Phase A: introduces the mpsc-based repo loader
-//! (`spawn_repo_load` + `RepoLoadResult`) alongside the existing
-//! `Arc<Mutex<LoadInner>>` path. The new shape is required because
-//! `LoadOutcome` (containing `StatsRepository`) is `!Send`, so the
-//! background task must run on a `tokio::task::spawn_local` inside a
-//! `LocalSet`. Subsequent phases migrate consumers off the legacy path
-//! and delete it.
+//! Hart.5c.6 Phase C: the legacy `Arc<Mutex<LoadInner>>` path that
+//! pre-populated `app.players` / `app.goalies` is gone. The mpsc-based
+//! repo loader (`spawn_repo_load` + `RepoLoadResult`) is now the only
+//! way data lands in `App.repo`. The transactions path keeps its own
+//! Arc<Mutex> shape because `Transaction` is `Send`-clean and runs
+//! parallel to the repo load — it doesn't touch `LoadOutcome` at all.
 
 use std::sync::{Arc, Mutex};
-use icelines_core::model::{Goalie, Player, Season};
+use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
 use icelines_core::Transaction;
 use icelines_fetch::stats_loader::LoadOutcome;
@@ -29,7 +26,10 @@ pub struct TransactionsLoad {
     pub stale:       bool,
 }
 
-/// Shared loading state readable from the event loop.
+/// Shared transactions-loading state readable from the event loop.
+/// Repo loading uses the mpsc channel in `spawn_repo_load`; this
+/// struct only carries transactions because they're Send and don't
+/// pass through `LoadOutcome`.
 #[derive(Debug, Clone)]
 pub struct LoadState {
     inner: Arc<Mutex<LoadInner>>,
@@ -37,8 +37,6 @@ pub struct LoadState {
 
 #[derive(Debug)]
 struct LoadInner {
-    pub players:      Vec<Player>,
-    pub goalies:      Vec<Goalie>,
     pub transactions: TransactionsLoad,
     pub loading:      bool,
     pub error:        Option<String>,
@@ -48,8 +46,6 @@ impl LoadState {
     pub fn new() -> Self {
         Self {
             inner: Arc::new(Mutex::new(LoadInner {
-                players:      Vec::new(),
-                goalies:      Vec::new(),
                 transactions: TransactionsLoad::default(),
                 loading:      true,
                 error:        None,
@@ -60,25 +56,6 @@ impl LoadState {
     #[allow(dead_code)]
     pub fn is_loading(&self) -> bool {
         self.inner.lock().map(|g| g.loading).unwrap_or(false)
-    }
-
-    pub fn take_players(&self) -> Option<Vec<Player>> {
-        let mut g = self.inner.lock().ok()?;
-        if !g.loading && g.error.is_none() && !g.players.is_empty() {
-            Some(std::mem::take(&mut g.players))
-        } else {
-            None
-        }
-    }
-
-    /// Pop the loaded goalie pool. Phase G.3.
-    pub fn take_goalies(&self) -> Option<Vec<Goalie>> {
-        let mut g = self.inner.lock().ok()?;
-        if !g.loading && g.error.is_none() && !g.goalies.is_empty() {
-            Some(std::mem::take(&mut g.goalies))
-        } else {
-            None
-        }
     }
 
     /// Pop the loaded transactions bundle. Phase T.5. Returns Some even
@@ -98,39 +75,21 @@ impl LoadState {
         self.inner.lock().ok().and_then(|g| g.error.clone())
     }
 
-    fn set_done(&self, players: Vec<Player>, goalies: Vec<Goalie>, transactions: TransactionsLoad) {
+    fn set_done(&self, transactions: TransactionsLoad) {
         if let Ok(mut g) = self.inner.lock() {
-            g.players      = players;
-            g.goalies      = goalies;
             g.transactions = transactions;
             g.loading      = false;
         }
     }
-
-    fn set_error(&self, msg: String) {
-        if let Ok(mut g) = self.inner.lock() {
-            g.error   = Some(msg);
-            g.loading = false;
-        }
-    }
 }
 
-/// Spawn a tokio task that loads players + goalies + transactions in
-/// parallel and stores them in `state`. Phase T.5 extends the goalies
-/// pattern with a third bundle.
+/// Spawn a tokio task that loads the transactions bundle. The repo
+/// load is independent — fired by `spawn_repo_load` from the TUI
+/// bootstrap (and on every season switch).
 pub fn spawn_loader(state: LoadState) {
     tokio::spawn(async move {
-        let players = crate::commands::players::load_all_players();
-        let goalies = crate::commands::players::load_all_goalies();
         let transactions = load_transactions_bundle();
-
-        match players {
-            Err(e) => { state.set_error(e.to_string()); }
-            Ok(p) => {
-                let g = goalies.unwrap_or_default();
-                state.set_done(p, g, transactions);
-            }
-        }
+        state.set_done(transactions);
     });
 }
 

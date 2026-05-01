@@ -212,7 +212,10 @@ pub fn render_team_schedule(f: &mut Frame, app: &App, area: Rect, team: &str) {
 
     let state = {
         let map = app.schedule_team_cache.lock().unwrap();
-        map.get(team).cloned().unwrap_or(ScheduleState::Idle)
+        // Hart.5c.6 Phase C — D5 widened key.
+        map.get(&(team.to_owned(), app.active_season.clone()))
+            .cloned()
+            .unwrap_or(ScheduleState::Idle)
     };
 
     match state {
@@ -347,7 +350,10 @@ pub fn render_matchup(f: &mut Frame, app: &App, area: Rect, t1: &str, t2: &str) 
 
     let state = {
         let map = app.schedule_team_cache.lock().unwrap();
-        map.get(t1).cloned().unwrap_or(ScheduleState::Idle)
+        // Hart.5c.6 Phase C — D5 widened key.
+        map.get(&(t1.to_owned(), app.active_season.clone()))
+            .cloned()
+            .unwrap_or(ScheduleState::Idle)
     };
 
     match state {
@@ -704,7 +710,7 @@ mod tests {
             fixture_game("VAN", "SEA", "2026-02-10", Some("FINAL"), Some((1,5)), Some("REG"), false, None),
         ];
         app.schedule_team_cache.lock().unwrap()
-            .insert("SEA".to_owned(), ScheduleState::Loaded(games));
+            .insert(("SEA".to_owned(), app.active_season.clone()), ScheduleState::Loaded(games));
 
         let text = render_team_to_text(&app, "SEA");
         // Title shows the team
@@ -749,7 +755,7 @@ mod tests {
             fixture_game("SEA", "VGK", "2026-02-01", Some("FINAL"), Some((3,2)), None, false, None),
         ];
         app.schedule_team_cache.lock().unwrap()
-            .insert("NYR".to_owned(), ScheduleState::Loaded(games));
+            .insert(("NYR".to_owned(), app.active_season.clone()), ScheduleState::Loaded(games));
 
         let text = render_matchup_to_text(&app, "NYR", "WSH");
 
@@ -773,7 +779,7 @@ mod tests {
             fixture_game("EDM", "NYR", "2025-11-01", Some("FINAL"), Some((1,3)), Some("REG"), false, None),
         ];
         app.schedule_team_cache.lock().unwrap()
-            .insert("NYR".to_owned(), ScheduleState::Loaded(games));
+            .insert(("NYR".to_owned(), app.active_season.clone()), ScheduleState::Loaded(games));
 
         let text = render_matchup_to_text(&app, "NYR", "WSH");
         assert!(

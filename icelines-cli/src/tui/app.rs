@@ -2,7 +2,7 @@
 use crate::tui::event::Action;
 use crate::tui::loader::{InstallState, RepoLoadResult};
 use icelines_core::identity::PlayerId;
-use icelines_core::model::{Player, Season, TeamAbbr};
+use icelines_core::model::{Season, TeamAbbr};
 use icelines_core::season_stats::SeasonType;
 use icelines_core::stats_repository::{PlayerView, StatsRepository};
 
@@ -110,10 +110,6 @@ pub struct App {
     pub screen: Screen,
     pub prev_screen: Option<Screen>,
     pub no_color: bool,
-    pub players: Vec<Player>,
-    /// Phase G.3: league goalie pool. Populated alongside `players`
-    /// from `load_state`. Empty until the loader returns.
-    pub goalies: Vec<icelines_core::model::Goalie>,
     /// Selected row on the Goalies tab.
     pub goalie_selected: usize,
     /// Sort cycle index on the Goalies tab.
@@ -237,8 +233,6 @@ impl App {
             screen: Screen::Home,
             prev_screen: None,
             no_color,
-            players: Vec::new(),
-            goalies: Vec::new(),
             goalie_selected: 0,
             goalie_sort: 0,    // SV% descending — Vezina-eligibility default
             goalie_min_gp: 15, // NHL leaderboard convention
@@ -1315,18 +1309,12 @@ impl App {
         false
     }
 
-    /// Reload app.players from the given season (bundled or installed).
+    /// Reload the repo from the given season (bundled or installed).
     ///
-    /// Hart.5c.6 Phase A.1: this is the single sync entry point for the
-    /// `y` season picker. It now keeps BOTH the legacy `players` /
-    /// `goalies` fields AND the new `repo` / `active_season_typed` /
-    /// `active_type` / `league_context` / `league_context_window`
-    /// fields in lockstep. Without this, screens that already read the
-    /// new path (Phase B) would silently render the old season's data.
-    ///
-    /// Single `load_into_repo` call — previously called twice (once for
-    /// players, once for goalies). Now once, with three projections off
-    /// the same outcome.
+    /// Hart.5c.6 Phase C: legacy `app.players` / `app.goalies` fields
+    /// are gone. The single sync entry point for the `y` season
+    /// picker now ONLY swaps the repo and rebuilds (season, type)-
+    /// coupled caches per D5. All consumers read through PlayerView.
     fn reload_for_season(&mut self, season_id: &str) {
         use icelines_fetch::snapshot::SnapshotStore;
         use icelines_fetch::stats_loader::{format_missing_sources, load_into_repo};
@@ -1343,39 +1331,26 @@ impl App {
             Err(_) => None,
         };
 
-        let (players, goalies) = match outcome {
-            Some(outcome) => {
-                #[allow(deprecated)]
-                let players = outcome.repo.flat_view_legacy(season, ty);
-                #[allow(deprecated)]
-                let goalies = outcome.repo.flat_view_legacy_goalies(season, ty);
+        if let Some(outcome) = outcome {
+            // Atomic repo swap; rebuild (season, type)-coupled caches per D5.
+            let _old = self.repo.repo_swap(outcome.repo);
+            self.active_season_typed = season;
+            self.active_type = ty;
+            self.league_context =
+                crate::tui::dashboard_panel::LeagueContext::build(&self.repo, season, ty);
+            self.league_context_window = (season, ty);
+            self.dashboard_panel.clear_cache();
 
-                // Hart.5c.6 Phase A.1 — atomic repo swap; rebuild
-                // (season, type)-coupled caches per D5.
-                let _old = self.repo.repo_swap(outcome.repo);
-                self.active_season_typed = season;
-                self.active_type = ty;
-                self.league_context =
-                    crate::tui::dashboard_panel::LeagueContext::build(&self.repo, season, ty);
-                self.league_context_window = (season, ty);
-                self.dashboard_panel.clear_cache();
-
-                if !outcome.missing.is_empty() {
-                    self.status = format_missing_sources(&outcome.missing);
-                }
-
-                (players, goalies)
+            if !outcome.missing.is_empty() {
+                self.status = format_missing_sources(&outcome.missing);
             }
-            None => (Vec::new(), Vec::new()),
-        };
+        }
 
         self.active_season = season_id.to_owned();
-        self.players = players;
-        self.goalies = goalies;
         self.selected = 0;
-        // Phase B/C will own the rest of the D5 invalidation matrix:
-        // tx_*, playoffs_*, query_result_scroll, schedule_team_cache
-        // (key widening). For Phase A.1 the legacy reload stays.
+        // D5 invalidation matrix completion (tx_*, playoffs_*,
+        // query_result_scroll, schedule_team_cache key widening) is a
+        // separate Phase C deliverable.
 
         if season_id == icelines_core::CURRENT_SEASON_STR {
             self.status = "Current season loaded.".to_owned();
@@ -1432,31 +1407,35 @@ impl App {
             }
 
             Screen::Projections => {
-                let mut sorted: Vec<&icelines_core::model::Player> = self
-                    .players
-                    .iter()
-                    .filter(|p| p.pace_score.is_some())
+                // Same sort shape as misc::render_projections: pace_82
+                // desc, None last, full_name asc tiebreak.
+                let mut sorted: Vec<icelines_core::stats_repository::PlayerView<'_>> = self
+                    .views()
+                    .into_iter()
+                    .filter(|v| v.pace_82().is_some())
                     .collect();
                 sorted.sort_by(|a, b| {
-                    let sa = a.pace_score.map(|s| s.pace_82).unwrap_or(0.0);
-                    let sb = b.pace_score.map(|s| s.pace_82).unwrap_or(0.0);
-                    sb.partial_cmp(&sa).unwrap_or(std::cmp::Ordering::Equal)
+                    let sa = a.pace_82().unwrap_or(f64::NEG_INFINITY);
+                    let sb = b.pace_82().unwrap_or(f64::NEG_INFINITY);
+                    sb.partial_cmp(&sa)
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                        .then_with(|| a.full_name().cmp(b.full_name()))
                 });
                 sorted
                     .get(self.selected)
-                    .map(|p| (p.name_normalized.clone(), p.full_name.clone()))
+                    .map(|v| (v.identity.name_normalized.clone(), v.full_name().to_owned()))
             }
 
             Screen::Search => {
-                let norm = icelines_core::name::normalize_name(&self.search_query);
-                let filtered: Vec<&icelines_core::model::Player> = self
-                    .players
-                    .iter()
-                    .filter(|p| p.name_normalized.contains(&norm))
-                    .collect();
-                filtered
+                // Same filter shape as screens::search::search_results.
+                let views = self.views();
+                let results = crate::tui::screens::search::search_results(
+                    &views,
+                    &self.search_query,
+                );
+                results
                     .get(self.selected)
-                    .map(|p| (p.name_normalized.clone(), p.full_name.clone()))
+                    .map(|v| (v.identity.name_normalized.clone(), v.full_name().to_owned()))
             }
 
             Screen::Queries => {
@@ -1930,7 +1909,8 @@ mod tests {
         let mut app = App::new(false);
         // Ensure we're on Home with no players → no target player.
         assert_eq!(app.screen, Screen::Home);
-        assert!(app.players.is_empty());
+        // Repo is empty until spawn_repo_load completes.
+        assert_eq!(app.views().len(), 0);
         app.handle(Action::AddToGroup);
         assert_eq!(
             app.screen,
