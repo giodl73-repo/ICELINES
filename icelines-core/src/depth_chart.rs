@@ -1,29 +1,10 @@
 use crate::model::{DepthChart, Player, Position, Season, TeamAbbr};
 use crate::scoring::sort_by_pace;
-use crate::stats_repository::PlayerView;
 use std::collections::HashMap;
 
 pub struct DepthChartBuilder;
 
 impl DepthChartBuilder {
-    /// Hart.5b2d — PlayerView analog of `build`. Converts each view to
-    /// the legacy `Player` shape internally via the
-    /// `stats_repository::player_from_view` adapter, then delegates to
-    /// `build`. Consumers (renderers) continue to receive a
-    /// `DepthChart<Player>`. Hart.5c will migrate `DepthChart` to hold
-    /// `PlayerView<'a>` after all renderers are off `Player`.
-    pub fn build_views(
-        team: TeamAbbr,
-        season: Season,
-        views: &[PlayerView<'_>],
-    ) -> DepthChart {
-        let players: Vec<Player> = views
-            .iter()
-            .map(crate::stats_repository::player_from_view)
-            .collect();
-        Self::build(team, season, players)
-    }
-
     /// Build a depth chart for one team.
     ///
     /// Position assignment is greedy (best-pace-first):
