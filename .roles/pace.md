@@ -54,7 +54,8 @@ stated what the formula is, what it assumes, and where its limits are.
 ## The Assumptions Log
 
 Every algorithmic decision in IceLines is documented in the assumptions log
-(`design/ARCHITECTURE.md`, Scoring section). Current assumptions:
+at `design/ARCHITECTURE.md` § "Scoring (PACE assumptions A1–A6)". Current
+assumptions:
 
 **A1 — PPG Definition**: Points = NHL goals + NHL assists for the current
 (season, season_type). The NHL API is authoritative.

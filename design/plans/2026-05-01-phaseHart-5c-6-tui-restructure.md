@@ -1,8 +1,10 @@
-# Phase Hart.5c.6 — TUI App Restructure (v0.3, post-second-round-review)
+# Phase Hart.5c.6 — TUI App Restructure (v0.4, post-third-round-review)
 
-**Status**: v0.3 — incorporates two 5-role review rounds. 35 of 36 v0.1 findings
-verified fixed in v0.2; v0.3 closes 3 BLOCKERs and ~10 mediums introduced by
-v0.2's own patches.
+**Status**: v0.4 — third 7-role review with HART + KEEL added. v0.3 closed all
+v0.2 findings; v0.4 patches the structural items HART/KEEL/EDGE caught on
+first-pass plus several FIXITs from refreshed roles. No design rework — local
+edits to the migration table, two new D-decisions (D10 team_views stint shape,
+D11 LeagueContext window invariant), and a regression test addition.
 **Date**: 2026-05-01
 **Trophy**: Hart (sub-phase of 5c)
 **Predecessor**: design/plans/2026-05-01-phaseHart-5c-final-cleanup.md (v0.3)
@@ -225,8 +227,15 @@ impl App {
         self.repo.goalies(self.active_season, self.active_type)
     }
     pub fn team_views(&self, team: &TeamAbbr) -> Vec<PlayerView<'_>> {
-        // Uses StatsRepository's rosters_last_stint HashMap index — O(1).
+        // O(1) index lookup + O(roster_size ≈ 25) view materialization.
+        // Last-stint roster only — see D10 for the all-stints variant.
         self.repo.team_roster(team, self.active_season, self.active_type)
+    }
+    pub fn team_views_all_stints(&self, team: &TeamAbbr) -> Vec<PlayerView<'_>> {
+        // Includes any player who played for `team` at any point in
+        // (active_season, active_type). Use this for the team page when
+        // mid-season trades should remain visible on both rosters.
+        self.repo.team_roster_all_stints(team, self.active_season, self.active_type)
     }
 }
 ```
@@ -244,6 +253,69 @@ produces one frame. Sub-millisecond at this scale (estimated; unmeasured).
 **`team_views` is cheap**: `team_roster` uses the `rosters_last_stint` HashMap
 index — O(1) lookup + O(roster_size ≈ 25) view materialization. No need to
 filter the full skater pool by team string.
+
+### D10 — `team_views` stint shape per screen (HART v3 FIXIT-2)
+
+**Problem**: `team_roster` returns last-stint roster; `team_roster_all_stints`
+returns any-stint. Mid-season trade case: Bo Horvat 2022-23 shows on NYI under
+`team_roster`, on both VAN and NYI under `team_roster_all_stints`. The v0.3
+spec defaulted every `team_views` call to last-stint without naming the
+decision per screen.
+
+**Decision**:
+
+| Screen / consumer | Variant | Why |
+|---|---|---|
+| `Screen::DepthTeam(team)` | `team_views` (last-stint) | Depth chart reflects current roster — a player traded in is on this team's lines, traded out is not. |
+| `screens/team.rs` team page | `team_views` (last-stint) | Team page = current roster. Historical trades belong on player pages, not team pages. |
+| Cross-team metrics (`compute_all_views`) | per-call iteration over `repo.skaters` | Operates on the full active-window skater set; not roster-scoped. |
+| Future: "team season summary" | `team_views_all_stints` | If a screen ever needs full-season team production, it must opt in explicitly. |
+
+D10 makes the default explicit (last-stint) and exposes the all-stints accessor
+on App so future screens can opt in. Per-call site picks deliberately; no
+silent stint shape changes.
+
+### D11 — `LeagueContext` single-window invariant (HART v3 FIXIT-3)
+
+**Problem**: `LeagueContext` keys percentile vectors by `Position` only. The
+`dashboard_panel.compile` cache keys on `(PlayerId, Season, SeasonType)` and
+sources percentile bars from `LeagueContext`. If a future caller computes a
+panel for a non-active window (e.g. side-by-side season compare),
+`LeagueContext` still holds the active-window vectors — bars would be stale by
+axis.
+
+**Decision**: pin the single-window invariant in `compile`. `LeagueContext` is
+explicitly active-window-only; cross-window panel compilation is rejected at
+the boundary with a clear error.
+
+```rust
+impl CompiledPanel {
+    pub fn compile(
+        &mut self,
+        repo: &StatsRepository,
+        season: Season,
+        season_type: SeasonType,
+        player_id: PlayerId,
+        ctx: &LeagueContext,
+        ctx_window: (Season, SeasonType),  // window the ctx was built for
+    ) -> Result<&CompiledOutput, DashboardError> {
+        if ctx_window != (season, season_type) {
+            return Err(DashboardError::CrossWindowCompile {
+                requested: (season, season_type),
+                ctx_for: ctx_window,
+            });
+        }
+        // ... unchanged
+    }
+}
+```
+
+Future side-by-side compare must build a per-window `LeagueContext` for each
+side. The error variant is a forcing function: callers cannot accidentally
+mix windows. Alternative (widening LeagueContext key to
+`HashMap<(Season, SeasonType, Position), Vec<f64>>`) was rejected — it
+permits cross-window mixing without surfacing the cost; the invariant is
+better as a hard boundary.
 
 ### D2 — `dashboard_panel.compile` API + cache invalidation
 
@@ -310,6 +382,9 @@ impl LeagueContext {
             }
         }
         for v in pace_82_by_pos.values_mut() {
+            // partial_cmp returns None only for NaN; pace_82() filters NaN
+            // (BelowThreshold returns None, never f64::NAN), so Equal is
+            // unreachable in practice. Defensive default keeps sort total.
             v.sort_by(|a, b| b.partial_cmp(a).unwrap_or(std::cmp::Ordering::Equal));
         }
         LeagueContext { pace_82_by_pos }
@@ -673,7 +748,7 @@ between commits 1 and 2.
 | `screens/game_detail.rs` | NHL boxscore (independent) | unchanged | None |
 | `screens/misc.rs::render_projections` | `app.players` at lines 327, 337 | per-frame views + sort | Medium |
 | `screens/misc.rs::render_groups`/`render_group_members` | `app.players` at line 480 | substring match on views | Low |
-| `screens/misc.rs::status_footer` | `app.players` at lines 617, 620 (`{} players loaded`) | `app.repo.skater_count(s, t)` | Low |
+| `screens/misc.rs::status_footer` | `app.players` at lines 617, 620 (`{} players loaded`) | `app.repo.skaters(s, t).count()` (no `skater_count` API exists; D5 / forge v1.1 N4) | Low |
 | `screens/mod.rs` | dispatch | screen variants update for D6 | Low |
 
 Net: **3 high-complexity files** (`app.rs`, `screens/depth.rs`, plus possibly
@@ -727,6 +802,29 @@ constant `"mcdavid"` because it stably matches "Connor McDavid" in the bundled
 season. If McDavid ever leaves the league or his name normalizes differently,
 the golden fails — that's an intentional canary for naming changes, not a
 fragility.
+
+**Snapshot determinism (bench v3)**: `StatsRepository.stats` is a `HashMap`
+with non-deterministic iteration order. Every screen renderer that consumes
+`repo.skaters(s, t)` MUST sort the result before rendering. Required sort
+keys per snapshotted screen:
+
+| Screen | Sort key | Tiebreak |
+|---|---|---|
+| `Home` | pace_82 desc | full_name asc |
+| `Players` | pace_82 desc | full_name asc |
+| `Depth` | team asc, position asc, pace_82 desc | full_name asc |
+| `DepthTeam(t)` | line slot asc | full_name asc |
+| `Goalies` | goalie.gaa asc | full_name asc |
+| `Search` | name_normalized.contains(q), then pace_82 desc | full_name asc |
+
+Any unsorted iteration over `repo.skaters` in renderer code is a snapshot
+flake source and a CI hard-block target.
+
+**Identity round-trip carry-forward (tape v3 + bench v3)**: Hart.5c.6 doesn't
+touch identity loading, but the Slafkovský diacritic round-trip assert in
+`mock_nhl_api_loader.rs` is required to remain green throughout the migration.
+A test-impact line is added below; the canonical assert lands in Hart.5c.7's
+final delete.
 
 **12 screens to snapshot** (was 9 in v0.1; +3 per glass F5 / bench F2):
 
@@ -802,7 +900,9 @@ This is the canonical signoff.
 | `app.rs` test mod | rewritten | LeagueContext build, repo_swap invariant, reload_for_season full invalidation |
 | `screens/*.rs` test mods | rewritten | per-screen render with view fixtures (reuses fixture_repo pattern) |
 | `loader.rs` test mod | LoadState::Loaded(LoadOutcome) | |
-| `dashboard_panel.rs` test mod | new compile signature, (PlayerId, Season, SeasonType) cache key | |
+| `dashboard_panel.rs` test mod | new compile signature, (PlayerId, Season, SeasonType) cache key, plus D11 cross-window rejection assert | |
+| `tui/schedule.rs` test mod | NEW: two-season `schedule_team_cache` regression — fetch EDM @ 20242025 then EDM @ 20252026, assert two distinct entries (bench v3 FIXIT) | |
+| `mock_nhl_api_loader.rs` (existing) | unchanged in 5c.6; Slafkovský diacritic round-trip must remain green throughout the migration (gates CI) | |
 
 ---
 
@@ -861,9 +961,19 @@ This is the canonical signoff.
    | `schedule_week_cache` | `HashMap<String, _>` keyed by Monday date | No (date is absolute) | safe |
    | `schedule_team_cache` | `HashMap<String, _>` keyed by team only | **YES — fixed in Commit 1** | widen key to `(String, Season)` |
    | `playoffs_cache` | `HashMap<u16, _>` keyed by playoff_year | No (year derived from season → distinct entries) | safe |
-   | `headshot_cache` | `HashMap<u32, _>` keyed by nhl_id | No (player ID stable across seasons) | safe |
+   | `headshot_cache` | `HashMap<u32, _>` keyed by nhl_id | No (player ID stable across seasons) | survives swap intentionally — see note below |
 
    Only `schedule_team_cache` was unsafe; v0.3 fixes the cache key shape.
+
+   **`headshot_cache` cross-correlation (keel v3 BLOCKER)**: post-swap, an
+   `nhl_id` can have a cached headshot but no `PlayerIdentity` in the new repo
+   (e.g., 1993-94 player with cached headshot is no longer in the 2025-26
+   repo). The cache survives the swap intentionally — headshots are stable
+   per nhl_id across all seasons, and pre-fetched bytes shouldn't be
+   discarded. The D6 auto-pop UX (`Screen::Player(missing_pid)` →
+   parent list + 2-second toast) is the load-bearing mitigation: the user
+   never reaches a card-render path with cached headshot but no identity. Do
+   not add identity-presence checks to the headshot fetch path; rely on D6.
 
 ---
 

@@ -20,8 +20,10 @@ one user's machine. Four surfaces share one engine:
 - **HTTP server** (`fantasy serve`) — axum on `127.0.0.1`, JSON API + HTML dashboard
   for fantasy league management.
 
-All four surfaces produce the same output for the same data state. They differ only
-in the renderer.
+All four surfaces produce the same output for the same data state along the
+canonical view path (depth chart, query, scouting, fantasy scoring). Surface-
+specific affordances exist (TUI admin overlay, fantasy SQLite, transactions UI);
+only the data + computation path is required to converge.
 
 ## Who uses it
 
