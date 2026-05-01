@@ -8,7 +8,7 @@
 //! It differs from the terminal `classify_fit()` which uses absolute pace
 //! thresholds.
 
-use crate::model::{Player, Position, TeamAbbr};
+use crate::model::Position;
 use std::collections::HashMap;
 
 /// Which metric to use when ranking players across teams.
@@ -27,24 +27,9 @@ impl ScoringMode {
     }
 }
 
-/// Yahoo-style fantasy points for a skater.
-pub fn fantasy_score(p: &Player) -> f64 {
-    let pp_ast = (p.pp_points as i32 - p.pp_goals as i32).max(0) as f64;
-    let sh_ast = (p.sh_points as i32 - p.sh_goals as i32).max(0) as f64;
-    p.season_goals as f64     * 3.0
-        + p.season_assists as f64 * 2.0
-        + p.pp_goals as f64       * 1.0
-        + pp_ast                  * 0.5
-        + p.sh_goals as f64       * 1.0
-        + sh_ast                  * 0.5
-        + p.gwg as f64            * 0.5
-        + p.hits as f64           * 0.5
-        + p.blocked_shots as f64  * 0.5
-}
-
-/// Hart.5b2c — PlayerView analog of `fantasy_score`. Same Yahoo-style
-/// formula. Realtime stats (hits, blocked_shots) default to 0 when the
-/// view's realtime tier is None (cold-start).
+/// Yahoo-style fantasy points for a skater. Realtime stats (hits,
+/// blocked_shots) default to 0 when the view's realtime tier is None
+/// (cold-start).
 pub fn fantasy_score_view(v: &crate::stats_repository::PlayerView<'_>) -> f64 {
     let totals = &v.stats.totals;
     let pp_ast = (totals.pp_points as i32 - totals.pp_goals as i32).max(0) as f64;
@@ -74,57 +59,6 @@ pub struct TeamStrength {
     pub lw_top:   String,
     pub rw_top:   String,
     pub d_top:    String,
-}
-
-/// Compute top-4 F / top-6 D team strength for all teams.
-pub fn compute_team_strength(
-    players: &[Player],
-    mode: ScoringMode,
-) -> HashMap<String, TeamStrength> {
-    // group by (team, position), score descending
-    let mut groups: HashMap<(String, Position), Vec<(f64, String)>> = HashMap::new();
-    for p in players {
-        let score = match mode {
-            ScoringMode::Fantasy => fantasy_score(p),
-            ScoringMode::Pace    => p.pace_score.map(|s| s.pace_82).unwrap_or(0.0),
-        };
-        groups
-            .entry((p.team.as_str().to_owned(), p.position))
-            .or_default()
-            .push((score, p.full_name.clone()));
-    }
-    for g in groups.values_mut() {
-        g.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
-    }
-
-    let all_teams: Vec<String> = groups.keys()
-        .map(|(t, _)| t.clone())
-        .collect::<std::collections::HashSet<_>>()
-        .into_iter()
-        .collect();
-
-    let mut out = HashMap::new();
-    for team in all_teams {
-        let c  = groups.get(&(team.clone(), Position::Center)).map(|v| v.as_slice()).unwrap_or(&[]);
-        let lw = groups.get(&(team.clone(), Position::LeftWing)).map(|v| v.as_slice()).unwrap_or(&[]);
-        let rw = groups.get(&(team.clone(), Position::RightWing)).map(|v| v.as_slice()).unwrap_or(&[]);
-        let d  = groups.get(&(team.clone(), Position::Defense)).map(|v| v.as_slice()).unwrap_or(&[]);
-
-        let c_score  = c.iter().take(4).map(|(s, _)| s).sum();
-        let lw_score = lw.iter().take(4).map(|(s, _)| s).sum();
-        let rw_score = rw.iter().take(4).map(|(s, _)| s).sum();
-        let d_score  = d.iter().take(6).map(|(s, _)| s).sum();
-
-        out.insert(team, TeamStrength {
-            c_score, lw_score, rw_score, d_score,
-            total: c_score + lw_score + rw_score + d_score,
-            c_top:  c.first().map(|(_, n)| n.clone()).unwrap_or_else(|| "—".to_owned()),
-            lw_top: lw.first().map(|(_, n)| n.clone()).unwrap_or_else(|| "—".to_owned()),
-            rw_top: rw.first().map(|(_, n)| n.clone()).unwrap_or_else(|| "—".to_owned()),
-            d_top:  d.first().map(|(_, n)| n.clone()).unwrap_or_else(|| "—".to_owned()),
-        });
-    }
-    out
 }
 
 /// Per-player cross-team metrics.
@@ -184,36 +118,13 @@ impl WebFitClass {
     }
 }
 
-/// Build a map: (team, position) → sorted list of sort keys (desc).
-fn build_pos_index(players: &[Player], mode: ScoringMode) -> HashMap<(&TeamAbbr, Position), Vec<f64>> {
-    let mut map: HashMap<(&TeamAbbr, Position), Vec<f64>> = HashMap::new();
-    for p in players {
-        let score = match mode {
-            ScoringMode::Pace => {
-                if let Some(s) = p.pace_score { s.sort_key() } else { continue; }
-            }
-            ScoringMode::Fantasy => fantasy_score(p),
-        };
-        map.entry((&p.team, p.position)).or_default().push(score);
-    }
-    for v in map.values_mut() {
-        v.sort_by(|a, b| b.partial_cmp(a).unwrap_or(std::cmp::Ordering::Equal));
-    }
-    map
-}
-
 /// Rank of a sort_key among a sorted (desc) list. 1-indexed.
 fn rank_in(sort_key: f64, sorted_desc: &[f64]) -> u8 {
     let rank = sorted_desc.iter().filter(|&&k| k > sort_key).count() + 1;
     rank.min(255) as u8
 }
 
-/// Compute cross-team metrics for every player — Pace scoring (backward compat).
-pub fn compute_all(players: &[Player]) -> Vec<CrossTeamMetrics> {
-    compute_all_with_mode(players, ScoringMode::Pace)
-}
-
-/// Hart.5b2c — PlayerView analog of `compute_all`.
+/// Compute cross-team metrics for every player — Pace scoring (default).
 pub fn compute_all_views(views: &[crate::stats_repository::PlayerView<'_>]) -> Vec<CrossTeamMetrics> {
     compute_all_views_with_mode(views, ScoringMode::Pace)
 }
@@ -386,134 +297,45 @@ pub fn compute_team_strength_views(
     out
 }
 
-/// Compute cross-team metrics for every player using the given scoring mode.
-pub fn compute_all_with_mode(players: &[Player], mode: ScoringMode) -> Vec<CrossTeamMetrics> {
-    let all_teams: Vec<&TeamAbbr> = {
-        let mut teams: Vec<&TeamAbbr> = players.iter().map(|p| &p.team).collect();
-        teams.sort_by(|a, b| a.0.cmp(&b.0));
-        teams.dedup();
-        teams
-    };
-
-    let pos_index = build_pos_index(players, mode);
-
-    players
-        .iter()
-        .map(|p| {
-            let sort_key = match mode {
-                ScoringMode::Pace => match p.pace_score {
-                    Some(s) => s.sort_key(),
-                    None => return CrossTeamMetrics {
-                        player_nhl_id: p.nhl_id,
-                        own_line: 255,
-                        avg_other_line: 255.0,
-                        delta: 0.0,
-                    },
-                },
-                ScoringMode::Fantasy => fantasy_score(p),
-            };
-
-            // Own rank on own team
-            let own_sorted = pos_index
-                .get(&(&p.team, p.position))
-                .map(|v| v.as_slice())
-                .unwrap_or(&[]);
-            let own_line = rank_in(sort_key, own_sorted);
-
-            // Average rank on each other team
-            let other_ranks: Vec<f32> = all_teams
-                .iter()
-                .filter(|&&t| t != &p.team)
-                .map(|t| {
-                    let other_sorted = pos_index
-                        .get(&(t, p.position))
-                        .map(|v| v.as_slice())
-                        .unwrap_or(&[]);
-                    rank_in(sort_key, other_sorted) as f32
-                })
-                .collect();
-
-            let avg_other_line = if other_ranks.is_empty() {
-                own_line as f32
-            } else {
-                other_ranks.iter().sum::<f32>() / other_ranks.len() as f32
-            };
-
-            let delta = own_line as f32 - avg_other_line;
-
-            CrossTeamMetrics {
-                player_nhl_id: p.nhl_id,
-                own_line,
-                avg_other_line,
-                delta,
-            }
-        })
-        .collect()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::{GpStatus, PaceScore};
-    use crate::name::normalize_name;
+    use crate::fixtures;
+    use crate::model::Season;
+    use crate::season_stats::SeasonType;
+    use crate::stats_repository::StatsRepository;
 
-    fn make_player(name: &str, team: &str, pos: Position, pace: f64) -> Player {
-        Player {
-            nhl_id: None,
-            full_name: name.to_owned(),
-            name_normalized: normalize_name(name),
-            team: TeamAbbr(team.to_owned()),
-            position: pos,
-            eligible_pos: vec![pos],
-            gp_status: GpStatus::Eligible(60),
-            season_goals: 20,
-            season_assists: 30,
-            season_points: 50,
-            pace_score: Some(PaceScore {
-                pace_82: pace,
-                goals_per_82: pace * 0.4,
-                raw_points: 50,
-                gp: 60,
-            }),
-            pp_goals: 0, pp_points: 0,
-            sh_goals: 0, sh_points: 0,
-            gwg: 0, ot_goals: 0,
-            shots: 0, shooting_pct: None,
-            plus_minus: 0,
-            toi_per_game_sec: None,
-            faceoff_win_pct: None,
-            hits: 0, blocked_shots: 0, missed_shots: 0,
-            giveaways: 0, takeaways: 0, pim: 0,
-            xg: None, xg_per_60: None, cf_pct_5v5: None, ff_pct_5v5: None, xgf_pct_5v5: None,
-            headshot_url: None,
-            sweater_number: None,
-            birth_date: None,
-            birth_country: None,
-            nationality_code: None,
-            birth_city: None,
-            birth_state_province: None,
-            shoots_catches: None,
-            height_in_inches: None,
-            weight_lbs: None,
-            draft_year: None,
-            draft_round: None,
-            draft_overall: None,
-            rookie_season: None,
-            contract_expiry_year: None,
-            expiry_type: None,
-            salary: None,
+    fn build_pool(seeds: &[(u32, &str, &str, Position, f64)]) -> StatsRepository {
+        let mut r = StatsRepository::new();
+        for &(id, name, team, pos, pace) in seeds {
+            let normalized = crate::name::normalize_name(name);
+            let identity = fixtures::identity(id).name(name, &normalized).build();
+            let mut stats = fixtures::stats(id, 20242025, team).position(pos).build();
+            if let Some(ref mut ps) = stats.totals.pace_score {
+                ps.pace_82 = pace;
+            }
+            r.upsert_identity(identity).unwrap();
+            r.upsert_stats(stats).unwrap();
         }
+        r
+    }
+
+    fn metrics_for(seeds: &[(u32, &str, &str, Position, f64)]) -> Vec<CrossTeamMetrics> {
+        let repo = build_pool(seeds);
+        let views: Vec<_> = repo
+            .skaters(Season(20242025), SeasonType::Regular)
+            .collect();
+        compute_all_views(&views)
     }
 
     #[test]
     fn l0_cross_team_rank_1_on_own_team() {
         // Top player on SEA should be rank 1 on their own team
-        let players = vec![
-            make_player("Elite", "SEA", Position::Center, 140.0),
-            make_player("Mid", "SEA", Position::Center, 70.0),
-            make_player("Depth", "SEA", Position::Center, 40.0),
-        ];
-        let metrics = compute_all(&players);
+        let metrics = metrics_for(&[
+            (1, "Elite", "SEA", Position::Center, 140.0),
+            (2, "Mid",   "SEA", Position::Center,  70.0),
+            (3, "Depth", "SEA", Position::Center,  40.0),
+        ]);
         let elite = metrics.iter().find(|m| m.avg_other_line < 2.0).unwrap();
         assert_eq!(elite.own_line, 1, "top player must be rank 1 on own team");
     }
@@ -522,19 +344,15 @@ mod tests {
     fn l0_cross_team_buried_detection() {
         // "Buried" is 3rd C on EDM (behind two elite players) but would be
         // #1 C on all other teams which have only weak/no centers.
-        let players = vec![
-            make_player("Star", "EDM", Position::Center, 140.0),
-            make_player("Good", "EDM", Position::Center, 120.0),
-            make_player("Buried", "EDM", Position::Center, 110.0),
-            // Other teams' Cs are much weaker → Buried ranks #1 there
-            make_player("SEA-C1", "SEA", Position::Center, 40.0),
-            make_player("NYR-C1", "NYR", Position::Center, 38.0),
-            make_player("TOR-C1", "TOR", Position::Center, 35.0),
-        ];
-        let metrics = compute_all(&players);
+        let metrics = metrics_for(&[
+            (1, "Star",   "EDM", Position::Center, 140.0),
+            (2, "Good",   "EDM", Position::Center, 120.0),
+            (3, "Buried", "EDM", Position::Center, 110.0),
+            (4, "SEA-C1", "SEA", Position::Center,  40.0),
+            (5, "NYR-C1", "NYR", Position::Center,  38.0),
+            (6, "TOR-C1", "TOR", Position::Center,  35.0),
+        ]);
         let buried = metrics.iter().find(|m| m.own_line == 3).unwrap();
-        // own_line=3 (3rd on EDM), avg_other_line≈1 (best C on SEA/NYR/TOR)
-        // delta = 3 - ~1 = ~2 > 0.75 → buried
         assert!(
             buried.delta > 0.75,
             "delta={}, expected > 0.75",

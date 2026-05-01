@@ -23,7 +23,9 @@ pub mod stats_repository;
 pub mod teams;
 pub mod transactions;
 
-pub use cross_team::{compute_all as compute_cross_team_metrics, CrossTeamMetrics, WebFitClass};
+pub use cross_team::{
+    compute_all_views as compute_cross_team_metrics_views, CrossTeamMetrics, WebFitClass,
+};
 pub use depth_chart::DepthChartBuilder;
 pub use error::IcelinesError;
 pub use filter::PlayerFilter;
