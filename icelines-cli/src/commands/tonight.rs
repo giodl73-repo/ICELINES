@@ -104,49 +104,89 @@ pub async fn run_schedule(team: Option<String>, days: u32) -> anyhow::Result<()>
 }
 
 pub async fn run_trade(player_out: String, player_in: String, team: Option<String>) -> anyhow::Result<()> {
-    use crate::commands::players::load_all_players;
-    use icelines_core::{name::normalize_name, model::Season, DepthChartBuilder, TeamAbbr};
+    use crate::config::Config;
+    use icelines_core::model::Season;
+    use icelines_core::name::normalize_name;
+    use icelines_core::season_stats::SeasonType;
+    use icelines_core::{DepthChartBuilder, TeamAbbr};
+    use icelines_fetch::snapshot::SnapshotStore;
+    use icelines_fetch::stats_loader::load_into_repo;
 
-    let players = load_all_players()?;
+    // Hart.5b2g: load via load_into_repo, find p_out / p_in among
+    // skaters as PlayerView. Build BEFORE/AFTER charts via build_views.
+    let cfg = Config::load()?;
+    let season_u32: u32 = cfg
+        .season_str()
+        .parse()
+        .unwrap_or(icelines_core::CURRENT_SEASON);
+    let store = SnapshotStore::new(cfg.snapshot_dir());
+    let outcome = load_into_repo(Season(season_u32), SeasonType::Regular, &store)
+        .with_context(|| format!("loading season {season_u32} for trade analysis"))?;
 
     let norm_out = normalize_name(&player_out);
-    let norm_in  = normalize_name(&player_in);
+    let norm_in = normalize_name(&player_in);
 
-    let p_out = players.iter().find(|p| p.name_normalized.contains(&norm_out))
-        .with_context(|| format!("player out '{player_out}' not found"))?
-        .clone();
-    let p_in = players.iter().find(|p| p.name_normalized.contains(&norm_in))
-        .with_context(|| format!("player in '{player_in}' not found"))?
-        .clone();
+    let v_out = outcome
+        .repo
+        .skaters(Season(season_u32), SeasonType::Regular)
+        .find(|v| v.name_normalized().contains(&norm_out))
+        .with_context(|| format!("player out '{player_out}' not found"))?;
+    let v_in = outcome
+        .repo
+        .skaters(Season(season_u32), SeasonType::Regular)
+        .find(|v| v.name_normalized().contains(&norm_in))
+        .with_context(|| format!("player in '{player_in}' not found"))?;
 
-    let team_abbr = team.as_deref().unwrap_or(p_out.team.as_str()).to_uppercase();
+    let team_abbr = team
+        .as_deref()
+        .unwrap_or(v_out.team_display())
+        .to_uppercase();
 
     println!("TRADE ANALYSIS — {} perspective", team_abbr);
-    println!("  OUT: {} ({:.2} pts/gp)", p_out.full_name,
-        p_out.pace_score.map(|s| s.pace_82/82.0).unwrap_or(0.0));
-    println!("  IN:  {} ({:.2} pts/gp)", p_in.full_name,
-        p_in.pace_score.map(|s| s.pace_82/82.0).unwrap_or(0.0));
+    println!(
+        "  OUT: {} ({:.2} pts/gp)",
+        v_out.full_name(),
+        v_out.pace_score().map(|s| s.pace_82 / 82.0).unwrap_or(0.0)
+    );
+    println!(
+        "  IN:  {} ({:.2} pts/gp)",
+        v_in.full_name(),
+        v_in.pace_score().map(|s| s.pace_82 / 82.0).unwrap_or(0.0)
+    );
     println!();
 
-    // Build BEFORE depth chart
-    let team_players_before: Vec<_> = players.iter()
-        .filter(|p| p.team.as_str() == team_abbr)
-        .cloned().collect();
-
-    // Build AFTER: remove p_out, add p_in (with team set to this team)
-    let mut p_in_adjusted = p_in.clone();
-    p_in_adjusted.team = TeamAbbr(team_abbr.clone());
-    let team_players_after: Vec<_> = players.iter()
-        .filter(|p| p.team.as_str() == team_abbr && p.name_normalized != norm_out)
-        .cloned()
-        .chain(std::iter::once(p_in_adjusted))
+    // BEFORE chart: skaters whose last-stint team is this team.
+    let team_views_before: Vec<_> = outcome
+        .repo
+        .team_roster(&TeamAbbr(team_abbr.clone()), Season(season_u32), SeasonType::Regular)
+        .into_iter()
+        .filter(|v| !v.is_goalie())
         .collect();
 
-    let chart_before = DepthChartBuilder::build(
-        TeamAbbr(team_abbr.clone()), Season(icelines_core::CURRENT_SEASON), team_players_before
+    // AFTER chart: BEFORE minus v_out, plus v_in. v_in's view points
+    // at his current-team stats; for the chart we still need a Player
+    // with team = team_abbr. Convert + clone to legacy Player here so
+    // we can mutate the team field (the only legitimate use of the
+    // mutable Player struct in the trade-hypothetical context).
+    let v_out_norm = v_out.name_normalized().to_owned();
+    let mut player_in_adjusted = icelines_core::stats_repository::player_from_view(&v_in);
+    player_in_adjusted.team = TeamAbbr(team_abbr.clone());
+    let mut team_players_after: Vec<_> = team_views_before
+        .iter()
+        .filter(|v| v.name_normalized() != v_out_norm)
+        .map(icelines_core::stats_repository::player_from_view)
+        .collect();
+    team_players_after.push(player_in_adjusted);
+
+    let chart_before = DepthChartBuilder::build_views(
+        TeamAbbr(team_abbr.clone()),
+        Season(season_u32),
+        &team_views_before,
     );
     let chart_after = DepthChartBuilder::build(
-        TeamAbbr(team_abbr.clone()), Season(icelines_core::CURRENT_SEASON), team_players_after
+        TeamAbbr(team_abbr.clone()),
+        Season(season_u32),
+        team_players_after,
     );
 
     let fmt3 = |row: Option<&[Option<icelines_core::model::Player>; 3]>| {
@@ -188,9 +228,10 @@ pub async fn run_trade(player_out: String, player_in: String, team: Option<Strin
         println!();
     }
 
-    // Score delta
-    let score = |p: &icelines_core::model::Player| p.pace_score.map(|s| s.pace_82).unwrap_or(0.0);
-    let delta = score(&p_in) - score(&p_out);
+    // Score delta — read pace_82 directly off the views.
+    let score_view =
+        |v: &icelines_core::stats_repository::PlayerView<'_>| v.pace_82().unwrap_or(0.0);
+    let delta = score_view(&v_in) - score_view(&v_out);
     if delta > 5.0 {
         println!("  Result: UPGRADE (+{:.1} projected pts/82)", delta);
     } else if delta < -5.0 {

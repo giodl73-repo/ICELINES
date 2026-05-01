@@ -776,8 +776,13 @@ impl PlayerView<'_> {
 // icelines-fetch/tests/stats_loader.rs verify equivalence on real
 // bundled data.
 
+/// Hart.5b transitional: convert a borrowed `PlayerView` back to the
+/// legacy owned `Player` shape. Used by `flat_view_legacy` and by
+/// trade-hypothetical scenarios (e.g. `tonight::run_trade`) that need
+/// to mutate a player's team in a hypothetical depth chart. Hart.5c
+/// deletes this alongside the `Player` struct.
 #[allow(deprecated)] // The function constructs a deprecated shim type.
-fn player_from_view(view: &PlayerView<'_>) -> Player {
+pub fn player_from_view(view: &PlayerView<'_>) -> Player {
     let stats = view.stats;
     let totals = &stats.totals;
     let bio = &view.identity.bio;
