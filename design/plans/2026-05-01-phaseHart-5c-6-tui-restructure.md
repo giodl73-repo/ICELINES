@@ -1,11 +1,11 @@
-# Phase Hart.5c.6 — TUI App Restructure (v0.5, post-fourth-round-review)
+# Phase Hart.5c.6 — TUI App Restructure (v0.6, post-pre-flight)
 
-**Status**: v0.5 — fourth 7-role review caught defects v0.4 introduced.
-Two BLOCKERs were "documentation became fiction" (TAPE F1 + BENCH B-5 — I
-documented an enum shape and a test file that didn't match reality);
-two more (FORGE F1 + EDGE B1) caught D11 added incompletely. v0.5 closes
-all 6 round-4 BLOCKERs and 16 FIXITs; spec is now backed by code or
-explicitly deferred to a named successor plan.
+**Status**: v0.6 — pre-flight grep against the codebase caught three
+spec-vs-code drifts: `compile()` framed as a migration of a method that
+doesn't exist (today's API is `lines_for_player`/`lines_for_goalie`),
+`format_missing_sources` referenced but undefined, and the chunked-vs-legacy
+precedence L1 test cited but not actually scheduled in Hart.6. v0.6 fixes
+all three with local edits; no design rework.
 **Date**: 2026-05-01
 **Trophy**: Hart (sub-phase of 5c)
 **Predecessor**: design/plans/2026-05-01-phaseHart-5c-final-cleanup.md (v0.3)
@@ -321,6 +321,15 @@ permits cross-window mixing without surfacing the cost; the invariant is
 better as a hard boundary.
 
 ### D2 — `dashboard_panel.compile` API + cache invalidation
+
+**What this replaces**: today's `CompiledPanel` exposes
+`lines_for_player(p: &Player, ctx: &LeagueContext) -> Vec<Line>` (called at
+`screens/player.rs:82`) and `lines_for_goalie(g: &Goalie) -> Vec<Line>`
+(called at `screens/goalies.rs:260`). Both take `&Player`/`&Goalie`
+(legacy types deleted in 5c.7) and neither caches across calls. Hart.5c.6
+introduces `compile()` as the post-Hart replacement: `PlayerView<'_>`-based,
+`(PlayerId, Season, SeasonType)`-keyed cache. The two existing methods are
+deleted in this commit.
 
 **Decision**: take `(repo, season, season_type, player_id)`. Cache key includes
 the (season, type) tuple, not just `PlayerId`. Cache clears on:
@@ -678,6 +687,26 @@ fn poll_load(&mut self) {
 }
 ```
 
+**`format_missing_sources` helper** (referenced in D4 / D5 / D8 above —
+single home in `tui/loader.rs`):
+
+```rust
+/// Map a non-empty MissingSource list to a one-line user-facing banner.
+/// Each variant contributes its label; reasons are dropped from the
+/// banner (kept in logs). The banner is intentionally short so it fits
+/// in the TUI status bar; full diagnostic detail goes through `tracing`.
+pub fn format_missing_sources(missing: &[MissingSource]) -> String {
+    use icelines_fetch::stats_loader::MissingSource;
+    let labels: Vec<&str> = missing.iter().map(|m| match m {
+        MissingSource::Realtime    { .. } => "realtime",
+        MissingSource::MoneyPuck   { .. } => "MoneyPuck",
+        MissingSource::Contracts   { .. } => "contracts",
+        MissingSource::GoalieStats { .. } => "goalie stats",
+    }).collect();
+    format!("Missing data: {}", labels.join(", "))
+}
+```
+
 Spawn site:
 
 ```rust
@@ -783,7 +812,7 @@ between commits 1 and 2.
 | `app.rs` | App struct + handlers; `app.players`/`app.goalies` at lines 105, 108, 1303, 1340, 1355, 1365, 1487, 1494, 1528, 1546, 1564, 1606, 1614, 1620, 1791 | full restructure per D1–D8 | **High** |
 | `tui/mod.rs` | loader callback writes `app.players`/`app.goalies` at lines 60, 69, 70, 77, 79 | apply `LoadOutcome` per D4; remove field writes | Medium |
 | `loader.rs` | returns `(Vec<Player>, Vec<Goalie>)` | returns `LoadOutcome` per D4 | Low |
-| `dashboard_panel.rs` | `compile(&[Player], &Player)` | per D2 (key shape change) | Medium |
+| `dashboard_panel.rs` | `lines_for_player(&Player, &LeagueContext)` and `lines_for_goalie(&Goalie)` exposed today (no caching) | replace both with `compile(repo, s, t, pid, ctx, ctx_window) -> Result<&CompiledOutput, DashboardError>` per D2 (cached + key includes (season, type)). Also `widgets/mod.rs::player_cell_text(&Player) → &PlayerView`. | Medium |
 | `widgets/mod.rs` | `player_cell_text(&Player, ...)` at line 10 | take `&PlayerView`; rename if helpful | Medium |
 | `tonight.rs` | (verify reads of `app.players`) | likely unchanged; spec audit at impl time | Low (tentative) |
 | `sparkline.rs` | (verify reads) | likely unchanged | None (tentative) |
@@ -794,10 +823,10 @@ between commits 1 and 2.
 | `screens/home.rs` | `app.players` for league rankings | `app.views().collect()` + sort | Low |
 | `screens/team.rs` | `app.players` filtered by team | `app.team_views(&team)` (O(1) hashmap) | Low |
 | `screens/depth.rs` | `app.players` at lines 26, 31, **93, 101, 111**, 136, 166 (7 reads); `Vec<&Player>` references | per-frame views + `compute_all_views` + `compute_team_strength_views`. High because Vec<&Player> won't compile after 5c.7. | **High** |
-| `screens/player.rs` | `app.players[idx]` from `Screen::Player(idx)` | `app.repo.view(pid, s, t)` from `Screen::Player(pid)`; auto-pop on missing per D6 | Medium |
+| `screens/player.rs` | `app.players[idx]` from `Screen::Player(idx)`; `app.dashboard_panel.lines_for_player(p, &app.league_context)` at line 82 | `app.repo.view(pid, s, t)` from `Screen::Player(pid)`; replace `lines_for_player` callsite with `compile(...)` per D2; auto-pop on missing per D6 | Medium |
 | `screens/comps.rs` | `app.players` at lines 34, 39 | view-based comps; `Screen::Comps(PlayerId)` per D6 | Medium |
 | `tui/schedule.rs` | (no `app.players` read; cache key fix) | widen `schedule_team_cache: HashMap<String, _>` → `HashMap<(String, Season), _>` and update `maybe_fetch_team` callsite to key by both. tape v1.1 NEW-1. | Low |
-| `screens/goalies.rs` | `app.goalies` for leaderboard | `app.goalie_views()` | Low |
+| `screens/goalies.rs` | `app.goalies` for leaderboard; `app.dashboard_panel.lines_for_goalie(g)` at line 260 | `app.goalie_views()` for leaderboard; replace `lines_for_goalie` callsite with `compile(...)` per D2 | Medium |
 | `screens/queries.rs` | `app.players` + saved query spec at lines 282–287 | `apply_views(views)` + sort; preserves saved-query JSON shape | Medium |
 | `screens/search.rs` | `app.players` substring match | `views.find(name_normalized.contains(q))` | Low |
 | `screens/schedule.rs` | NHL schedule (independent) | unchanged | None |

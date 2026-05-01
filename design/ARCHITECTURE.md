@@ -94,7 +94,11 @@ explicitly per-surface; only the data + computation path converges.
         │    when both chunked and legacy exist for the same   │
         │    (player, season, type), chunked wins; legacy is   │
         │    fallback only when chunked manifest is absent.    │
-        │    L1 test row in Hart.6 plan locks the tiebreak.    │
+        │    Asserted today by `bundled.rs::load_*_with_       │
+        │    fallback` integration tests (the chunked branch   │
+        │    short-circuits before legacy); a dedicated L1     │
+        │    test landing both forms simultaneously is         │
+        │    deferred to a future cleanup.                     │
         │                                                      │
         │    Integrity verification: every snapshot read calls │
         │    verify_integrity(filename, expected_sha256) before│
