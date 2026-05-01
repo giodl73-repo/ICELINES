@@ -194,3 +194,44 @@ impl GoalieStats {
             .trim()
     }
 }
+
+// ── ESPN Transactions feed (Phase T.1) ──────────────────────────────────────────
+//
+// Captured from ESPN's site.api at:
+//   https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/transactions
+//
+// `deny_unknown_fields` is intentionally ON. ESPN sometimes adds metadata
+// keys (e.g. `team.logos[]`); when that happens the fetcher falls back to
+// a `serde_json::Value` extraction in `EspnSource` and logs the unknown
+// field name — loud-on-change without losing the run. See spec
+// "Schema validation" for the rationale.
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct RawTransaction {
+    /// Raw timestamp from ESPN — typically date-only (`2026-04-29`),
+    /// occasionally ISO 8601 with time (`2026-04-29T04:00:00Z`).
+    /// Caller (T.3) is responsible for normalizing to America/New_York
+    /// before bucketing into `Transaction.date`.
+    pub date:        String,
+    /// Free-form English description. Always populated.
+    pub description: String,
+    /// Team that initiated / received the move. Some rows (league-wide
+    /// waiver windows, deadline-related notes) lack a team payload.
+    #[serde(default)]
+    pub team:        Option<RawTransactionTeam>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct RawTransactionTeam {
+    /// ESPN's internal numeric team id. Stringified in the response.
+    pub id:           String,
+    /// Short abbreviation as ESPN emits it. May need translation via
+    /// `crate::teams::espn_to_nhl_abbrev` (e.g. `TB` → `TBL`, `ARI` →
+    /// `UTA` post-2024-25).
+    pub abbreviation: String,
+    /// Full display name (e.g. "Edmonton Oilers"). Stored for the TUI
+    /// detail pane; not used for matching.
+    pub display_name: String,
+}

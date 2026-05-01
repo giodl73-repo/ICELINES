@@ -1,3 +1,5 @@
+pub mod aliases;
+
 /// Normalize a player name for fuzzy matching.
 /// Strips diacritics (Slafkovský → slafkovsky), lowercases, trims whitespace.
 /// Does NOT remove hyphens or apostrophes — they are part of names.

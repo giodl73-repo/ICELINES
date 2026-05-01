@@ -9,9 +9,9 @@
 
 use std::collections::HashMap;
 use std::io::Write as _;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-use serde::{Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
 
@@ -268,14 +268,11 @@ impl SnapshotStore {
         data: &[u8],
     ) -> Result<(), SnapshotError> {
         let dir = self.snapshot_dir(snapshot_name).join(tier.dir_name());
-        std::fs::create_dir_all(&dir)?;
         let path = dir.join(filename);
-        let tmp = path.with_extension("tmp");
-        let mut f = std::fs::File::create(&tmp)?;
-        f.write_all(data)?;
-        f.flush()?;
-        drop(f);
-        std::fs::rename(&tmp, &path)?;
+        // Phase T.0: route through the shared atomic writer — gives us the
+        // .bak preservation contract for free, and keeps the rename pattern
+        // in one place.
+        atomic_write_bytes(&path, data)?;
 
         // Update integrity hash
         let hex = sha256_hex(data);
@@ -858,6 +855,142 @@ fn sha256_hex(data: &[u8]) -> String {
     format!("{:x}", hasher.finalize())
 }
 
+// ── Per-season meta flags (Phase T.3) ─────────────────────────────────────────
+//
+// Lives at `~/.icelines/snapshots/{season}/_meta.json`. Tracks last-fetch
+// status for tiers that can degrade silently (transactions, future
+// network-only sources). Future tiers add fields with `#[serde(default)]`
+// so old binaries can read forward-compatible files.
+
+/// Status flags surfaced in the CLI ("snapshot is N days stale") and TUI
+/// (red [STALE] prefix). Persisted alongside the canonical snapshots.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct SnapshotMetaFlags {
+    /// True when the most-recent transactions fetch failed. Cleared on
+    /// the next successful fetch. The CLI / TUI WARN until the flag clears.
+    pub transactions_stale:      bool,
+    /// Last error message — surfaced in the WARN line. None when the
+    /// last fetch succeeded.
+    pub transactions_last_error: Option<String>,
+    /// Wall-clock of the most-recent transactions fetch attempt
+    /// (success or failure). Used by the TUI staleness check.
+    pub transactions_fetched_at: Option<String>,
+}
+
+impl SnapshotMetaFlags {
+    /// Read the flags file at the given root for the given season.
+    /// Missing file → default flags (no stale, no error). Corrupt file
+    /// falls through to `.bak` recovery via [`read_json_with_bak_fallback`].
+    pub fn load(snapshots_root: &Path, season: &str) -> Self {
+        let path = Self::path(snapshots_root, season);
+        if !path.exists() {
+            return Self::default();
+        }
+        read_json_with_bak_fallback::<SnapshotMetaFlags>(&path).unwrap_or_default()
+    }
+
+    /// Write atomically. Best-effort: callers do not propagate failure
+    /// because losing the meta file is recoverable on the next fetch.
+    pub fn save(&self, snapshots_root: &Path, season: &str) -> std::io::Result<()> {
+        let path = Self::path(snapshots_root, season);
+        atomic_write_json(&path, self)
+    }
+
+    fn path(snapshots_root: &Path, season: &str) -> PathBuf {
+        snapshots_root.join(season).join("_meta.json")
+    }
+}
+
+// ── Atomic snapshot writer (Phase T.0) ────────────────────────────────────────
+//
+// Two-step durability: write to `path.tmp`, fsync, then `rename(.tmp, path)`.
+// Any prior content at `path` is moved aside to `path.bak` first so a partial
+// write or a corrupt downstream snapshot can recover via the backup file.
+//
+// Used by every snapshot tier and by Phase T (transactions). The .bak is
+// best-effort — failure to back up does NOT abort the write, since a prior
+// good copy is less important than landing the new bytes correctly.
+
+/// Write `data` to `path` atomically. Any existing file at `path` is
+/// preserved at `path.bak` before the rename, so a corrupt downstream
+/// can recover via [`read_json_with_bak_fallback`].
+///
+/// Failure mode contract:
+/// - If the write to `path.tmp` fails, the original `path` is left untouched.
+/// - If the rename fails, both `path` and `path.tmp` may exist; caller can
+///   inspect and recover.
+/// - If the .bak copy fails, we proceed with the write anyway (a fresh good
+///   copy is more valuable than yesterday's preserved one).
+pub fn atomic_write_bytes(path: &Path, data: &[u8]) -> std::io::Result<()> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+
+    // Move-aside: best-effort copy of existing content to .bak.
+    if path.exists() {
+        let bak = bak_path(path);
+        // Ignore copy errors — we'd rather land the new write than fail on
+        // a missing backup. The .bak is a safety net, not a hard contract.
+        let _ = std::fs::copy(path, &bak);
+    }
+
+    let tmp = tmp_path(path);
+    let mut f = std::fs::File::create(&tmp)?;
+    f.write_all(data)?;
+    f.flush()?;
+    f.sync_all()?;
+    drop(f);
+    std::fs::rename(&tmp, path)?;
+    Ok(())
+}
+
+/// Serialize `value` as pretty JSON and atomically write it to `path`.
+/// Uses [`atomic_write_bytes`] so the .tmp + .bak + rename contract holds.
+pub fn atomic_write_json<T: Serialize>(path: &Path, value: &T) -> std::io::Result<()> {
+    let json = serde_json::to_vec_pretty(value)
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+    atomic_write_bytes(path, &json)
+}
+
+/// Read JSON from `path`, falling back to `path.bak` if the primary file
+/// is missing or fails to parse. Returns the *first* error if both fail.
+///
+/// Use for any tier-tier file written via [`atomic_write_json`] where a
+/// half-written or human-truncated primary should not fail the load.
+pub fn read_json_with_bak_fallback<T: DeserializeOwned>(path: &Path) -> std::io::Result<T> {
+    let primary_err = match try_read_json::<T>(path) {
+        Ok(value) => return Ok(value),
+        Err(e)    => e,
+    };
+    let bak = bak_path(path);
+    if !bak.exists() {
+        return Err(primary_err);
+    }
+    match try_read_json::<T>(&bak) {
+        Ok(value) => Ok(value),
+        Err(_)    => Err(primary_err), // surface the primary error, more useful
+    }
+}
+
+fn try_read_json<T: DeserializeOwned>(path: &Path) -> std::io::Result<T> {
+    let raw = std::fs::read_to_string(path)?;
+    serde_json::from_str(&raw)
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
+}
+
+fn tmp_path(path: &Path) -> PathBuf {
+    let mut s = path.as_os_str().to_owned();
+    s.push(".tmp");
+    PathBuf::from(s)
+}
+
+fn bak_path(path: &Path) -> PathBuf {
+    let mut s = path.as_os_str().to_owned();
+    s.push(".bak");
+    PathBuf::from(s)
+}
+
 fn now_rfc3339() -> String {
     chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()
 }
@@ -877,6 +1010,129 @@ mod tests {
         let dir = TempDir::new().unwrap();
         let store = SnapshotStore::new(dir.path());
         (dir, store)
+    }
+
+    // ── Phase T.0: atomic snapshot writer ─────────────────────────────────
+
+    #[test]
+    fn l0_atomic_write_json_helper_creates_file_no_tmp_left() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.path().join("hello.json");
+
+        atomic_write_json(&path, &serde_json::json!({"k": "v"}))
+            .expect("write must succeed");
+
+        assert!(path.exists(), "target file must exist after write");
+        assert!(!tmp_path(&path).exists(),
+            ".tmp file must be cleaned up by the rename");
+        let contents = std::fs::read_to_string(&path).unwrap();
+        assert!(contents.contains("\"k\""), "JSON content must round-trip");
+    }
+
+    #[test]
+    fn l0_atomic_write_creates_bak_when_target_exists() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.path().join("data.json");
+
+        // First write — no .bak yet.
+        atomic_write_json(&path, &serde_json::json!({"v": 1})).unwrap();
+        assert!(!bak_path(&path).exists(),
+            "no .bak on first write — nothing to back up");
+
+        // Second write — prior content moved to .bak.
+        atomic_write_json(&path, &serde_json::json!({"v": 2})).unwrap();
+        assert!(bak_path(&path).exists(), ".bak must exist after overwrite");
+
+        let bak_contents = std::fs::read_to_string(bak_path(&path)).unwrap();
+        assert!(bak_contents.contains("\"v\": 1"),
+            ".bak must contain the prior content, got: {bak_contents}");
+        let curr_contents = std::fs::read_to_string(&path).unwrap();
+        assert!(curr_contents.contains("\"v\": 2"),
+            "primary must contain the new content, got: {curr_contents}");
+    }
+
+    #[test]
+    fn l0_atomic_write_failure_keeps_prior_intact() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.path().join("data.json");
+
+        // Pre-populate target with known content.
+        atomic_write_json(&path, &serde_json::json!({"v": "original"})).unwrap();
+
+        // Force the .tmp open to fail by making `path.tmp` already exist as
+        // a directory — `File::create` then errors with EISDIR / similar
+        // ("Access is denied" on Windows). Either way the rename never
+        // happens, so the original must still be readable.
+        let tmp = tmp_path(&path);
+        std::fs::create_dir_all(&tmp).unwrap();
+
+        let result = atomic_write_json(&path, &serde_json::json!({"v": "new"}));
+        assert!(result.is_err(), "write must fail when .tmp can't be created");
+
+        // Original untouched.
+        let after = std::fs::read_to_string(&path).unwrap();
+        assert!(after.contains("\"v\": \"original\""),
+            "primary must be intact after failed write, got: {after}");
+
+        // Cleanup so tempdir drop doesn't trip on the directory-named .tmp.
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
+
+    #[test]
+    fn l0_read_json_with_bak_fallback_uses_primary_when_valid() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.path().join("data.json");
+        atomic_write_json(&path, &serde_json::json!({"who": "primary"})).unwrap();
+
+        let v: serde_json::Value =
+            read_json_with_bak_fallback(&path).expect("primary must load");
+        assert_eq!(v["who"], "primary");
+    }
+
+    #[test]
+    fn l0_read_json_with_bak_fallback_recovers_from_corrupt_primary() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.path().join("data.json");
+
+        // Establish primary then overwrite (creates .bak).
+        atomic_write_json(&path, &serde_json::json!({"v": 1})).unwrap();
+        atomic_write_json(&path, &serde_json::json!({"v": 2})).unwrap();
+        // Corrupt the primary.
+        std::fs::write(&path, "{ this is not valid json").unwrap();
+
+        // Loader falls through to .bak (which still has v: 1, the prior good
+        // content moved aside on the second write).
+        let v: serde_json::Value =
+            read_json_with_bak_fallback(&path).expect("must recover from .bak");
+        assert_eq!(v["v"], 1, "must serve the .bak content on primary corruption");
+    }
+
+    #[test]
+    fn l0_read_json_with_bak_fallback_errors_when_both_corrupt() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.path().join("data.json");
+
+        atomic_write_json(&path, &serde_json::json!({"v": 1})).unwrap();
+        atomic_write_json(&path, &serde_json::json!({"v": 2})).unwrap();
+        // Corrupt both.
+        std::fs::write(&path, "garbage primary").unwrap();
+        std::fs::write(bak_path(&path), "garbage bak").unwrap();
+
+        let result: std::io::Result<serde_json::Value> =
+            read_json_with_bak_fallback(&path);
+        assert!(result.is_err(),
+            "both primary and bak corrupt → loader returns Err, no panic");
+    }
+
+    #[test]
+    fn l0_read_json_with_bak_fallback_errors_when_primary_missing_no_bak() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.path().join("does-not-exist.json");
+
+        let result: std::io::Result<serde_json::Value> =
+            read_json_with_bak_fallback(&path);
+        assert!(result.is_err(),
+            "missing file with no .bak → Err, not panic");
     }
 
     #[test]

@@ -29,7 +29,13 @@ impl std::fmt::Display for Season {
 
 // ── TeamAbbr ─────────────────────────────────────────────────────────────────
 
+/// Newtype around a 3-letter NHL team abbreviation.
+///
+/// `#[serde(transparent)]` makes it serialize as the raw string ("TBL"),
+/// not as a tuple struct (`["TBL"]`). This is the natural shape for JSON
+/// snapshots and matches what the rest of the codebase already prints.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct TeamAbbr(pub String);
 
 impl TeamAbbr {
