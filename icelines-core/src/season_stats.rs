@@ -32,6 +32,16 @@ impl SeasonType {
     }
 }
 
+impl std::fmt::Display for SeasonType {
+    /// User-facing form (lowercase). Matches `label()` and the JSON
+    /// wire shape — keeps CLI/TUI banners consistent with persisted
+    /// data and avoids the Debug-format `Regular`/`Playoff` PascalCase
+    /// leaking into error messages.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.label())
+    }
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct StatTotals {
     pub gp: u32,

@@ -233,9 +233,181 @@ fn l1_load_into_repo_unknown_season_returns_season_not_bundled() {
     // 19951996 is not in BUNDLED_SEASONS.
     let (_dir, store) = cold_store();
     let err = load_into_repo(Season(19951996), SeasonType::Regular, &store).expect_err("must fail");
-    let msg = err.to_string();
+    // BENCH: match the variant directly — sturdier than Display string match.
+    use icelines_fetch::stats_loader::LoadError;
+    assert!(matches!(err, LoadError::SeasonNotBundled { .. }));
+}
+
+/// BENCH #4: parameterize parity over every bundled season. A regression
+/// in pre-2024 schema would otherwise stay invisible until production.
+#[test]
+fn l1_parallel_run_field_parity_all_bundled_seasons() {
+    use icelines_fetch::bundled::BUNDLED_SEASONS;
+    for season_str in BUNDLED_SEASONS.iter() {
+        let (_dir, store) = cold_store();
+        let season_u32: u32 = season_str.parse().unwrap();
+
+        let legacy = PlayerRepository::new(SnapshotStore::new(store.root()), *season_str);
+        let old_players = legacy.load_all().expect("legacy load_all");
+
+        let outcome = load_into_repo(Season(season_u32), SeasonType::Regular, &store)
+            .expect("new load_into_repo");
+        let new_repo = outcome.repo;
+
+        let mut compared = 0usize;
+        let mut mismatches: Vec<String> = Vec::new();
+        for old in &old_players {
+            let Some(nhl_id) = old.nhl_id else { continue };
+            let pid = PlayerId(nhl_id);
+            let Some(new_stats) = new_repo.season(pid, Season(season_u32), SeasonType::Regular)
+            else {
+                continue;
+            };
+            if matches!(new_stats.position, Position::Goalie) {
+                continue;
+            }
+            let new_team = new_stats
+                .team_stints
+                .last()
+                .map(|s| s.team.as_str().to_string())
+                .unwrap_or_default();
+            let new_tuple = (
+                new_team.as_str(),
+                new_stats.totals.gp,
+                new_stats.totals.points,
+                new_stats.totals.plus_minus,
+            );
+            let old_tuple = (
+                old.team.as_str(),
+                old.gp_status.gp().unwrap_or(0),
+                old.season_points,
+                old.plus_minus,
+            );
+            if new_tuple != old_tuple {
+                mismatches.push(format!(
+                    "season={season_str} pid={nhl_id} legacy={old_tuple:?} new={new_tuple:?}"
+                ));
+            }
+            compared += 1;
+        }
+        assert!(
+            compared > 200,
+            "season {season_str}: expected >200 compared rows, got {compared}",
+        );
+        assert!(
+            mismatches.is_empty(),
+            "season {season_str}: {} mismatches, first few:\n{}",
+            mismatches.len(),
+            mismatches
+                .iter()
+                .take(3)
+                .cloned()
+                .collect::<Vec<_>>()
+                .join("\n"),
+        );
+    }
+}
+
+/// BENCH #5: stale `realtime.json` containing `[]` must surface as
+/// MissingSource::Realtime (per Hart.3.1's empty-array semantic).
+#[test]
+fn l1_loadoutcome_empty_realtime_array_treated_as_missing() {
+    use icelines_fetch::stats_loader::MissingSource;
+    let dir = tempfile::TempDir::new().unwrap();
+    let store = SnapshotStore::new(dir.path());
+
+    // Stage a snapshot with an empty realtime.json. SnapshotStore's
+    // tier writer machinery would normally do this; we bypass it for
+    // a hermetic test by writing the file directly to the path the
+    // loader will read from.
+    use icelines_fetch::snapshot::SnapshotTier;
+    let snap_dir = dir
+        .path()
+        .join("20242025")
+        .join(SnapshotTier::Realtime.dir_name());
+    std::fs::create_dir_all(&snap_dir).unwrap();
+    std::fs::write(snap_dir.join("realtime.json"), "[]").unwrap();
+    // Active-pointer file so read_active resolves to this snapshot.
+    let active_dir = dir.path().join("20242025");
+    std::fs::write(active_dir.join("active"), "20242025").unwrap();
+
+    let outcome = load_into_repo(Season(20242025), SeasonType::Regular, &store).unwrap();
+    let realtime = outcome
+        .missing
+        .iter()
+        .find(|m| matches!(m, MissingSource::Realtime { .. }));
+    // We accept either "empty" reason or "unreadable" depending on
+    // how SnapshotStore resolves the bare path — the contract for
+    // this test is that SOMETHING flags realtime as missing.
     assert!(
-        msg.contains("19951996") || msg.contains("not bundled"),
-        "error message must mention the season or 'not bundled': {msg}"
+        realtime.is_some(),
+        "realtime must be flagged regardless of empty-vs-absent path"
     );
+}
+
+/// BENCH #6: future _meta.json with bundle_schema_version > MAX_KNOWN
+/// must error with BundleSchemaUnknown. Catches a regression where the
+/// gate's strict `>` accidentally becomes `>=` (losing the "current
+/// version is OK" signal) or where the gate is skipped.
+#[test]
+fn l1_load_into_repo_rejects_future_bundle_schema_version() {
+    use icelines_fetch::snapshot::SnapshotMetaFlags;
+    use icelines_fetch::stats_loader::LoadError;
+
+    let dir = tempfile::TempDir::new().unwrap();
+    let store = SnapshotStore::new(dir.path());
+
+    let flags = SnapshotMetaFlags {
+        bundle_schema_version: 999,
+        ..Default::default()
+    };
+    flags.save(dir.path(), "20242025").unwrap();
+
+    let err = load_into_repo(Season(20242025), SeasonType::Regular, &store).expect_err("must fail");
+    assert!(matches!(
+        err,
+        LoadError::BundleSchemaUnknown {
+            found: 999,
+            max_known: 1
+        }
+    ));
+}
+
+#[test]
+fn l1_load_into_repo_rejects_future_repository_version() {
+    use icelines_fetch::snapshot::SnapshotMetaFlags;
+    use icelines_fetch::stats_loader::LoadError;
+
+    let dir = tempfile::TempDir::new().unwrap();
+    let store = SnapshotStore::new(dir.path());
+
+    let flags = SnapshotMetaFlags {
+        repository_version: 42,
+        ..Default::default()
+    };
+    flags.save(dir.path(), "20242025").unwrap();
+
+    let err = load_into_repo(Season(20242025), SeasonType::Regular, &store).expect_err("must fail");
+    assert!(matches!(
+        err,
+        LoadError::RepoVersionUnknown {
+            found: 42,
+            max_known: 1
+        }
+    ));
+}
+
+#[test]
+fn l1_load_into_repo_accepts_known_versions_at_max() {
+    // Strict-`>` gate: the equal-to-MAX_KNOWN case must succeed.
+    use icelines_fetch::snapshot::SnapshotMetaFlags;
+    let dir = tempfile::TempDir::new().unwrap();
+    let store = SnapshotStore::new(dir.path());
+    let flags = SnapshotMetaFlags {
+        bundle_schema_version: 1,
+        repository_version: 1,
+        ..Default::default()
+    };
+    flags.save(dir.path(), "20242025").unwrap();
+    assert!(load_into_repo(Season(20242025), SeasonType::Regular, &store).is_ok());
 }

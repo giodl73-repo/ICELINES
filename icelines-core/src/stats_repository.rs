@@ -45,7 +45,7 @@ pub enum RepoError {
     IdentityMerge(#[from] IdentityMergeError),
     #[error(
         "stats upserted before identity for player {id} at \
-         {season:?}/{season_type:?}"
+         {season}/{season_type}"
     )]
     StatsWithoutIdentity {
         id: PlayerId,

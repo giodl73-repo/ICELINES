@@ -41,6 +41,7 @@ pub const MAX_KNOWN_REPO_VERSION: u32 = 1;
 // ── Errors ──────────────────────────────────────────────────────────────────
 
 #[derive(Debug, Error)]
+#[non_exhaustive]
 pub enum BundleError {
     #[error("io: {0}")]
     Io(#[from] std::io::Error),
@@ -49,10 +50,11 @@ pub enum BundleError {
 }
 
 #[derive(Debug, Error)]
+#[non_exhaustive]
 pub enum LoadError {
     #[error("season {season} not bundled in this build")]
     SeasonNotBundled { season: String },
-    #[error("season {season} has no {season_type:?} bundle")]
+    #[error("season {season} has no {season_type} bundle")]
     MissingBundle {
         season: String,
         season_type: SeasonType,
@@ -77,6 +79,7 @@ pub enum LoadError {
 /// Per-source partial-fetch signal. Each variant maps to a specific
 /// user-facing banner in the CLI / TUI.
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub enum MissingSource {
     Realtime {
         season: String,
@@ -139,8 +142,14 @@ pub fn load_into_repo(
 
     // Schema-version gate. Missing _meta.json (cold-start) is fine —
     // SnapshotMetaFlags::default() yields version 0, which we treat as
-    // "pre-Hart, no version stamp" and accept. Only positive values that
-    // *exceed* what this binary knows are an error.
+    // "pre-Hart, no version stamp" and accept. Only positive values
+    // that *exceed* what this binary knows are an error.
+    //
+    // TODO(Hart.N): when MAX_KNOWN_BUNDLE_SCHEMA bumps past 1, this
+    // gate must dispatch a migrator on `version < MAX_KNOWN` per the
+    // plan ("incoming < known = run a migrator"). Today it accepts
+    // silently because only versions 0 and 1 exist. Reviewer reading
+    // this comment after a future bump: write the migrator.
     let meta = SnapshotMetaFlags::load(store.root(), &season_str);
     if meta.bundle_schema_version > MAX_KNOWN_BUNDLE_SCHEMA {
         return Err(LoadError::BundleSchemaUnknown {
@@ -175,14 +184,29 @@ pub fn load_into_repo(
     let mut missing: Vec<MissingSource> = Vec::new();
     let mut missing_files: Vec<String> = Vec::new();
 
+    // For each tier: distinguish "absent file", "corrupt file", and
+    // "empty array" (treated as missing for UI parity — the user sees
+    // the same "no realtime data" banner either way). The reason
+    // string carries the underlying error so a corrupt/permission
+    // failure surfaces in diagnostics rather than being collapsed
+    // into "not present".
     let realtime: Vec<SkaterRealtime> =
         match store.read_tier::<Vec<SkaterRealtime>>(&SnapshotTier::Realtime, "realtime.json") {
-            Ok(rt) => rt,
-            Err(_) => {
+            Ok(rt) if !rt.is_empty() => rt,
+            Ok(_empty) => {
                 missing.push(MissingSource::Realtime {
                     season: season_str.clone(),
                     season_type,
-                    reason: "realtime.json not present in snapshot store".into(),
+                    reason: "realtime.json present but empty".into(),
+                });
+                missing_files.push("snapshot:realtime.json".into());
+                Vec::new()
+            }
+            Err(e) => {
+                missing.push(MissingSource::Realtime {
+                    season: season_str.clone(),
+                    season_type,
+                    reason: format!("realtime.json unreadable: {e}"),
                 });
                 missing_files.push("snapshot:realtime.json".into());
                 Vec::new()
@@ -190,11 +214,19 @@ pub fn load_into_repo(
         };
     let moneypuck: Vec<MoneyPuckStats> =
         match store.read_tier::<Vec<MoneyPuckStats>>(&SnapshotTier::MoneyPuck, "moneypuck.json") {
-            Ok(m) => m,
-            Err(_) => {
+            Ok(m) if !m.is_empty() => m,
+            Ok(_empty) => {
                 missing.push(MissingSource::MoneyPuck {
                     season: season_str.clone(),
-                    reason: "moneypuck.json not present in snapshot store".into(),
+                    reason: "moneypuck.json present but empty".into(),
+                });
+                missing_files.push("snapshot:moneypuck.json".into());
+                Vec::new()
+            }
+            Err(e) => {
+                missing.push(MissingSource::MoneyPuck {
+                    season: season_str.clone(),
+                    reason: format!("moneypuck.json unreadable: {e}"),
                 });
                 missing_files.push("snapshot:moneypuck.json".into());
                 Vec::new()
@@ -202,10 +234,17 @@ pub fn load_into_repo(
         };
     let contracts: Vec<LegacyContract> =
         match store.read_tier::<Vec<LegacyContract>>(&SnapshotTier::Contracts, "contracts.json") {
-            Ok(c) => c,
-            Err(_) => {
+            Ok(c) if !c.is_empty() => c,
+            Ok(_empty) => {
                 missing.push(MissingSource::Contracts {
-                    reason: "contracts.json not present in snapshot store".into(),
+                    reason: "contracts.json present but empty".into(),
+                });
+                missing_files.push("snapshot:contracts.json".into());
+                Vec::new()
+            }
+            Err(e) => {
+                missing.push(MissingSource::Contracts {
+                    reason: format!("contracts.json unreadable: {e}"),
                 });
                 missing_files.push("snapshot:contracts.json".into());
                 Vec::new()
@@ -459,6 +498,16 @@ fn build_goalie_season_stats(
         // Roughly equal split — sum-equals invariant on (gp, goals,
         // assists, points). The remainder lands on the LAST stint so
         // current-home semantics stay correct.
+        //
+        // FORGE: synthesize monotonically-increasing `started` strings
+        // ("AAAA-01", "AAAA-02", …) so the builder's stint sort
+        // preserves chronological insertion order. `team_abbrevs` is
+        // documented chronological (legacy schema.rs comment) — without
+        // synthetic dates the (None, None) sort tiebreak goes
+        // alphabetical, flipping `last()` for traded goalies whose
+        // chronological order is non-alphabetical (e.g. "OTT,BOS"
+        // would sort to [BOS, OTT] and report BOS as the destination
+        // when OTT was). Hart.6 replaces with real start/end dates.
         teams
             .iter()
             .enumerate()
@@ -473,7 +522,7 @@ fn build_goalie_season_stats(
                 };
                 TeamStint {
                     team: TeamAbbr((*t).to_owned()),
-                    started: None,
+                    started: Some(format!("AAAA-{:02}", i + 1)),
                     ended: None,
                     gp: take_n(g.games_played),
                     goals: take_n(g.goals),
@@ -545,45 +594,69 @@ mod tests {
     use super::*;
 
     #[test]
-    fn l0_bundle_error_wraps_io_and_parse() {
+    fn l0_hart3_bundle_error_wraps_io() {
         let io: BundleError = std::io::Error::new(std::io::ErrorKind::NotFound, "missing").into();
-        match io {
-            BundleError::Io(e) => assert_eq!(e.kind(), std::io::ErrorKind::NotFound),
-            other => panic!("expected Io, got {other:?}"),
-        }
+        assert!(matches!(io, BundleError::Io(_)));
     }
 
     #[test]
-    fn l0_load_error_repo_wraps_repo_error() {
+    fn l0_hart3_bundle_error_wraps_parse() {
+        // Force a serde_json::Error and convert via #[from].
+        let parse_err = serde_json::from_str::<u32>("not-a-number").unwrap_err();
+        let wrapped: BundleError = parse_err.into();
+        assert!(matches!(wrapped, BundleError::Parse(_)));
+    }
+
+    #[test]
+    fn l0_hart3_load_error_repo_wraps_repo_error() {
         let inner = RepoError::StatsWithoutIdentity {
             id: PlayerId(1),
             season: Season(20232024),
             season_type: SeasonType::Regular,
         };
         let outer: LoadError = inner.into();
-        match outer {
-            LoadError::Repo(_) => {}
-            other => panic!("expected Repo, got {other:?}"),
-        }
+        assert!(matches!(outer, LoadError::Repo(_)));
     }
 
     #[test]
-    fn l0_missing_source_partial_eq() {
-        let a = MissingSource::Realtime {
+    fn l0_hart3_load_error_bundle_wraps_io() {
+        let bundle_err = BundleError::Io(std::io::Error::new(
+            std::io::ErrorKind::PermissionDenied,
+            "x",
+        ));
+        let outer: LoadError = bundle_err.into();
+        // Display cascades through `{source}` to the inner io error message.
+        let s = outer.to_string();
+        assert!(s.starts_with("bundle read/parse failure"));
+        assert!(s.contains("io:"));
+    }
+
+    #[test]
+    fn l0_hart3_missing_source_partial_eq_all_variants() {
+        let realtime = MissingSource::Realtime {
             season: "20242025".into(),
             season_type: SeasonType::Regular,
             reason: "x".into(),
         };
-        let b = MissingSource::Realtime {
+        let mp = MissingSource::MoneyPuck {
+            season: "20242025".into(),
+            reason: "x".into(),
+        };
+        let contracts = MissingSource::Contracts { reason: "x".into() };
+        let goalie = MissingSource::GoalieStats {
             season: "20242025".into(),
             season_type: SeasonType::Regular,
             reason: "x".into(),
         };
-        assert_eq!(a, b);
+        assert_eq!(realtime.clone(), realtime);
+        assert_eq!(mp.clone(), mp);
+        assert_eq!(contracts.clone(), contracts);
+        assert_eq!(goalie.clone(), goalie);
+        assert_ne!(realtime, mp.clone());
     }
 
     #[test]
-    fn l0_playoff_returns_missing_bundle_for_now() {
+    fn l0_hart3_playoff_returns_missing_bundle_for_now() {
         let dir = tempfile::TempDir::new().unwrap();
         let store = SnapshotStore::new(dir.path());
         let err = load_into_repo(Season(20242025), SeasonType::Playoff, &store).unwrap_err();
@@ -593,5 +666,10 @@ mod tests {
             }
             other => panic!("expected MissingBundle, got {other:?}"),
         }
+        // WIRE: Display must use lowercase "playoff", not Debug "Playoff".
+        let err = load_into_repo(Season(20242025), SeasonType::Playoff, &store).unwrap_err();
+        let s = err.to_string();
+        assert!(s.contains("playoff"), "Display should use lowercase: {s}");
+        assert!(!s.contains("Playoff"), "Display must not leak Debug: {s}");
     }
 }
