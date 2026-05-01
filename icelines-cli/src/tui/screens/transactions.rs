@@ -232,12 +232,14 @@ fn render_footer(f: &mut Frame, area: Rect) {
     let line = Line::from(vec![
         Span::styled("  /", cyan),
         Span::styled(":search  ", dim),
+        Span::styled("t", cyan),
+        Span::styled("/", dim),
         Span::styled("T", cyan),
-        Span::styled(":team  ", dim),
+        Span::styled(":team ±  ", dim),
         Span::styled("k", cyan),
-        Span::styled(":kind  ", dim),
-        Span::styled("d", cyan),
-        Span::styled(":date  ", dim),
+        Span::styled("/", dim),
+        Span::styled("K", cyan),
+        Span::styled(":kind ±  ", dim),
         Span::styled("Esc", cyan),
         Span::styled(":clear filters", dim),
     ]);
@@ -300,6 +302,89 @@ fn glyph_legend_line(k: TransactionKind) -> Line<'static> {
             Style::default().fg(color).add_modifier(Modifier::BOLD),
         ),
     ])
+}
+
+// ── Filter ring helpers (T.5+: forward + Shift-backward) ──────────────────────
+
+/// Sorted, deduped list of every team label that appears in the loaded
+/// transactions, including the synthetic `LEAGUE` bucket for teamless rows.
+pub fn transactions_teams(transactions: &[Transaction]) -> Vec<String> {
+    let mut teams: Vec<String> = transactions.iter()
+        .map(|tx| tx.team.as_ref().map(|t| t.0.clone()).unwrap_or_else(|| "LEAGUE".to_owned()))
+        .collect();
+    teams.sort();
+    teams.dedup();
+    teams
+}
+
+/// Cycle team filter forward: None → first → next → ... → last → None (wrap).
+pub fn cycle_team_forward(current: Option<&str>, teams: &[String]) -> Option<String> {
+    match current {
+        None => teams.first().cloned(),
+        Some(curr) => {
+            let pos = teams.iter().position(|t| t == curr);
+            match pos {
+                Some(i) if i + 1 < teams.len() => Some(teams[i + 1].clone()),
+                _ => None, // wrap back to "all teams"
+            }
+        }
+    }
+}
+
+/// Cycle team filter backward: None → last → prev → ... → first → None (wrap).
+pub fn cycle_team_backward(current: Option<&str>, teams: &[String]) -> Option<String> {
+    if teams.is_empty() {
+        return None;
+    }
+    match current {
+        None => teams.last().cloned(),
+        Some(curr) => {
+            let pos = teams.iter().position(|t| t == curr);
+            match pos {
+                Some(0) => None, // wrap back to "all teams"
+                Some(i) => Some(teams[i - 1].clone()),
+                None    => None, // current isn't in list — drop the filter
+            }
+        }
+    }
+}
+
+/// Cycle kind filter forward: None → first → next → ... → last → None (wrap).
+pub fn cycle_kind_forward(
+    current: Option<TransactionKind>,
+    cycle:   &[TransactionKind],
+) -> Option<TransactionKind> {
+    match current {
+        None => cycle.first().copied(),
+        Some(curr) => {
+            let pos = cycle.iter().position(|k| *k == curr);
+            match pos {
+                Some(i) if i + 1 < cycle.len() => Some(cycle[i + 1]),
+                _ => None,
+            }
+        }
+    }
+}
+
+/// Cycle kind filter backward: None → last → prev → ... → first → None (wrap).
+pub fn cycle_kind_backward(
+    current: Option<TransactionKind>,
+    cycle:   &[TransactionKind],
+) -> Option<TransactionKind> {
+    if cycle.is_empty() {
+        return None;
+    }
+    match current {
+        None => cycle.last().copied(),
+        Some(curr) => {
+            let pos = cycle.iter().position(|k| *k == curr);
+            match pos {
+                Some(0) => None,
+                Some(i) => Some(cycle[i - 1]),
+                None    => None,
+            }
+        }
+    }
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -635,6 +720,112 @@ mod tests {
             "search bar must render when mode is active, got:\n{text}");
         assert!(text.contains("mcd"),
             "search bar must echo the typed query, got:\n{text}");
+    }
+
+    // ── Cycle ring helpers (forward + Shift-backward) ────────────────
+
+    fn three_teams() -> Vec<String> {
+        vec!["BOS".to_owned(), "CHI".to_owned(), "EDM".to_owned()]
+    }
+
+    #[test]
+    fn l0_cycle_team_forward_walks_in_order() {
+        let teams = three_teams();
+        assert_eq!(cycle_team_forward(None,        &teams), Some("BOS".to_owned()));
+        assert_eq!(cycle_team_forward(Some("BOS"), &teams), Some("CHI".to_owned()));
+        assert_eq!(cycle_team_forward(Some("CHI"), &teams), Some("EDM".to_owned()));
+        assert_eq!(cycle_team_forward(Some("EDM"), &teams), None,
+            "wraps from last → all teams");
+    }
+
+    #[test]
+    fn l0_cycle_team_backward_walks_in_reverse() {
+        let teams = three_teams();
+        assert_eq!(cycle_team_backward(None,        &teams), Some("EDM".to_owned()),
+            "Shift-T from None must jump to the last team");
+        assert_eq!(cycle_team_backward(Some("EDM"), &teams), Some("CHI".to_owned()));
+        assert_eq!(cycle_team_backward(Some("CHI"), &teams), Some("BOS".to_owned()));
+        assert_eq!(cycle_team_backward(Some("BOS"), &teams), None,
+            "wraps from first → all teams");
+    }
+
+    #[test]
+    fn l0_cycle_team_forward_then_backward_round_trips() {
+        let teams = three_teams();
+        // Tap team forward 4 times: None → BOS → CHI → EDM → None
+        // Shift-back 4 times: None → EDM → CHI → BOS → None
+        // End at the start.
+        let mut state: Option<String> = None;
+        for _ in 0..4 { state = cycle_team_forward(state.as_deref(), &teams); }
+        assert_eq!(state, None, "4 forwards on a 3-list must wrap to None");
+        for _ in 0..4 { state = cycle_team_backward(state.as_deref(), &teams); }
+        assert_eq!(state, None, "4 backwards must also wrap to None");
+    }
+
+    #[test]
+    fn l0_cycle_team_empty_list_safe() {
+        let teams: Vec<String> = vec![];
+        assert_eq!(cycle_team_forward(None,        &teams), None);
+        assert_eq!(cycle_team_backward(None,       &teams), None);
+        assert_eq!(cycle_team_forward(Some("ANY"), &teams), None);
+        assert_eq!(cycle_team_backward(Some("ANY"),&teams), None);
+    }
+
+    #[test]
+    fn l0_cycle_kind_forward_walks_full_ring() {
+        let cycle = TransactionKind::ALL;
+        let mut state: Option<TransactionKind> = None;
+        let mut seen = Vec::new();
+        for _ in 0..cycle.len() {
+            state = cycle_kind_forward(state, cycle);
+            seen.push(state);
+        }
+        // After ALL.len() forwards we should have seen every kind once.
+        assert_eq!(seen.iter().filter(|s| s.is_some()).count(), cycle.len(),
+            "every kind must appear exactly once during a full forward walk");
+        // One more tap wraps to None.
+        state = cycle_kind_forward(state, cycle);
+        assert_eq!(state, None);
+    }
+
+    #[test]
+    fn l0_cycle_kind_backward_walks_in_reverse() {
+        let cycle = TransactionKind::ALL;
+        let last = *cycle.last().unwrap();
+        assert_eq!(cycle_kind_backward(None, cycle), Some(last),
+            "Shift-K from None must jump to the last kind");
+        let second_last = cycle[cycle.len() - 2];
+        assert_eq!(cycle_kind_backward(Some(last), cycle), Some(second_last));
+    }
+
+    #[test]
+    fn l0_cycle_kind_forward_and_backward_invert() {
+        let cycle = TransactionKind::ALL;
+        for &k in cycle {
+            // forward(backward(k)) should always reach k somewhere on the path,
+            // but stronger property: backward then forward returns to k.
+            let back = cycle_kind_backward(Some(k), cycle);
+            let fwd  = cycle_kind_forward(back, cycle);
+            assert_eq!(fwd, Some(k),
+                "backward then forward from {:?} must round-trip; got {:?}", k, fwd);
+        }
+    }
+
+    #[test]
+    fn l0_transactions_teams_dedups_and_includes_LEAGUE() {
+        let txs = vec![
+            fixture_tx(TransactionKind::Trade, "EDM trade"), // team = EDM
+            Transaction {
+                date: "x".into(), team: None,
+                kind: TransactionKind::Other,
+                description: "League-wide".into(),
+                id: "i".into(), trade_group_id: None,
+                classifier_version: 1,
+            },
+            fixture_tx(TransactionKind::Recall, "EDM recall"), // dup team
+        ];
+        let teams = transactions_teams(&txs);
+        assert_eq!(teams, vec!["EDM".to_owned(), "LEAGUE".to_owned()]);
     }
 
     #[test]

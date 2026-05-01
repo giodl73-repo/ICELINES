@@ -106,23 +106,24 @@ pub fn render(f: &mut Frame, app: &App) {
 fn tab_for_screen(screen: &Screen) -> usize {
     match screen {
         Screen::Home | Screen::Team(_) | Screen::Player(_)
-        | Screen::Depth | Screen::DepthTeam(_) | Screen::Comps(_) => 0, // League
-        Screen::Projections | Screen::Queries | Screen::Search   => 1,  // Stats
-        Screen::Goalies | Screen::GoalieDetail(_)                => 2,  // Goalies
-        Screen::Tonight | Screen::GameDetail(_)                  => 3,  // Scores
+        | Screen::Comps(_)                                       => 0, // League
+        Screen::Depth | Screen::DepthTeam(_)                     => 1, // Depth
+        Screen::Queries | Screen::Projections | Screen::Search   => 2, // Stats (default: Queries)
+        Screen::Goalies | Screen::GoalieDetail(_)                => 3, // Goalies
+        Screen::Tonight | Screen::GameDetail(_)                  => 4, // Scores
         Screen::Schedule | Screen::ScheduleTeam(_)
-            | Screen::ScheduleMatchup(..)                        => 4,  // Schedule
-        Screen::Groups | Screen::GroupDetail(_)                  => 5,  // Groups
-        Screen::Transactions                                     => 6,  // Transactions (Phase T.5)
-        Screen::Playoffs | Screen::SeriesDetail(_)               => 7,  // Playoffs (pushed back)
-        _                                                        => 99, // no tab (Fetch, Help)
+            | Screen::ScheduleMatchup(..)                        => 5, // Schedule
+        Screen::Transactions                                     => 6, // Transactions
+        Screen::Playoffs | Screen::SeriesDetail(_)               => 7, // Playoffs
+        // Groups is not a tab (Phase T+1): reachable via `g` from anywhere.
+        _                                                        => 99,// no tab (Fetch, Help, Groups)
     }
 }
 
 fn render_nav(f: &mut Frame, app: &App, area: Rect) {
     let tab_labels = [
-        "League", "Stats", "Goalies", "Scores",
-        "Schedule", "Groups", "Transactions", "Playoffs",
+        "League", "Depth", "Stats", "Goalies", "Scores",
+        "Schedule", "Transactions", "Playoffs",
     ];
     let active_tab = tab_for_screen(&app.screen);
 
@@ -155,7 +156,7 @@ fn render_nav(f: &mut Frame, app: &App, area: Rect) {
     } else if app.show_season_picker {
         "  Esc:cancel picker"
     } else {
-        "  d:depth  y:season  F:admin  Tab:cycle  ←→:sub-view  ?:help  q:quit"
+        "  g:groups  y:season  F:admin  Tab:cycle  ?:help  q:quit"
     };
     spans.push(Span::styled(hint, Style::default().fg(Color::DarkGray)));
     f.render_widget(Paragraph::new(Line::from(spans)), area);
