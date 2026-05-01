@@ -95,6 +95,7 @@ pub enum Screen {
     GameDetail(u64),                     // boxscore for one game — keyed by game_id
     Goalies,                             // league goalie leaderboard (Phase G.3)
     GoalieDetail(usize),                 // index into App.goalies
+    Transactions,                        // league-wide moves feed (Phase T.5)
 }
 
 pub struct App {
@@ -172,6 +173,29 @@ pub struct App {
     /// Phase 8j: sorted-by-position pace_82 vectors for percentile
     /// lookups in the dashboard panel. Built once after players load.
     pub league_context:      crate::tui::dashboard_panel::LeagueContext,
+
+    // ── Phase T.5: Transactions tab ──────────────────────────────────────
+    /// Loaded transactions envelope (rows + provenance). Empty until the
+    /// loader picks up the snapshot.
+    pub transactions:        Vec<icelines_core::Transaction>,
+    /// Wall-clock string ("YYYY-MM-DDThh:mm:ss-04:00") from the snapshot
+    /// envelope; surfaced in the title bar for staleness display.
+    pub transactions_fetched_at: String,
+    /// True when the most recent fetch failed (read from
+    /// `SnapshotMetaFlags::transactions_stale`). Drives the red [STALE]
+    /// prefix in the title bar.
+    pub transactions_stale:  bool,
+    /// Selected row index on the Transactions tab.
+    pub tx_selected:         usize,
+    /// Filter to a single team abbrev (None = all). Cycles via `T`.
+    pub tx_team_filter:      Option<String>,
+    /// Filter to a single kind (None = all). Cycles via `k`.
+    pub tx_kind_filter:      Option<icelines_core::TransactionKind>,
+    /// Substring filter against the description (case-insensitive).
+    /// Live-applied as the user types in search mode.
+    pub tx_search_query:     String,
+    /// True while the `/` search bar is open and accepting characters.
+    pub tx_search_mode:      bool,
 }
 
 impl App {
@@ -231,6 +255,14 @@ impl App {
             query_saved_list:    Vec::new(),
             dashboard_panel:     crate::tui::dashboard_panel::CompiledPanel::new(),
             league_context:      crate::tui::dashboard_panel::LeagueContext::empty(),
+            transactions:        Vec::new(),
+            transactions_fetched_at: String::new(),
+            transactions_stale:  false,
+            tx_selected:         0,
+            tx_team_filter:      None,
+            tx_kind_filter:      None,
+            tx_search_query:     String::new(),
+            tx_search_mode:      false,
         }
     }
 
@@ -257,6 +289,12 @@ impl App {
         // Schedule search bar consumes all character-bearing actions while open.
         if self.screen == Screen::Schedule && self.schedule_search_mode {
             return self.handle_schedule_search(action);
+        }
+
+        // Transactions search bar — same shape but applies live as the
+        // user types (no validation step). Phase T+1.
+        if self.screen == Screen::Transactions && self.tx_search_mode {
+            return self.handle_transactions_search(action);
         }
 
         // Scores date picker consumes input similarly.
@@ -287,6 +325,8 @@ impl App {
                     self.schedule_selected = self.schedule_selected.saturating_add(1);
                 } else if self.screen == Screen::Goalies {
                     self.goalie_selected = self.goalie_selected.saturating_add(1);
+                } else if self.screen == Screen::Transactions {
+                    self.tx_selected = self.tx_selected.saturating_add(1);
                 } else if self.screen == Screen::Playoffs {
                     self.playoffs_series = self.playoffs_series.saturating_add(1);
                 } else if self.screen == Screen::Queries {
@@ -323,6 +363,8 @@ impl App {
                     self.schedule_selected = self.schedule_selected.saturating_sub(1);
                 } else if self.screen == Screen::Goalies {
                     self.goalie_selected = self.goalie_selected.saturating_sub(1);
+                } else if self.screen == Screen::Transactions {
+                    self.tx_selected = self.tx_selected.saturating_sub(1);
                 } else if self.screen == Screen::Playoffs {
                     self.playoffs_series = self.playoffs_series.saturating_sub(1);
                 } else if self.screen == Screen::Queries {
@@ -443,6 +485,13 @@ impl App {
                     self.schedule_query.clear();
                     self.schedule_filter_err = None;
                     self.status = "Search: type team (SEA) or matchup (NYR WSH) — Enter, Esc cancel".to_owned();
+                } else if self.screen == Screen::Transactions {
+                    // Transactions tab: '/' opens an in-tab description
+                    // substring search. Live-applied as the user types.
+                    self.tx_search_mode = true;
+                    self.tx_search_query.clear();
+                    self.tx_selected = 0;
+                    self.status = "Search transactions: type any substring — Enter applies, Esc clears".to_owned();
                 } else {
                     self.prev_screen = Some(self.screen.clone());
                     self.screen = Screen::Search;
@@ -531,6 +580,50 @@ impl App {
                     // Re-arm the auto-refresh timer for the live date.
                     self.last_auto_refresh = Some(std::time::Instant::now());
                     self.status = "Scores · Today".to_owned();
+                } else if self.screen == Screen::Transactions && c == 'T' {
+                    // Phase T.5: cycle team filter through every team that
+                    // appears in the loaded transactions. None → first → … → None.
+                    let mut teams: Vec<String> = self.transactions.iter()
+                        .map(|tx| tx.team.as_ref().map(|t| t.0.clone()).unwrap_or_else(|| "LEAGUE".to_owned()))
+                        .collect();
+                    teams.sort();
+                    teams.dedup();
+                    let next = match self.tx_team_filter.as_deref() {
+                        None => teams.first().cloned(),
+                        Some(curr) => {
+                            let pos = teams.iter().position(|t| t == curr);
+                            match pos {
+                                Some(i) if i + 1 < teams.len() => Some(teams[i + 1].clone()),
+                                _ => None,  // wrap back to "all teams"
+                            }
+                        }
+                    };
+                    self.tx_team_filter = next.clone();
+                    self.tx_selected    = 0;
+                    self.status = match next {
+                        Some(t) => format!("Transactions team filter: {t}"),
+                        None    => "Transactions team filter: all".to_owned(),
+                    };
+                } else if self.screen == Screen::Transactions && c == 'k' {
+                    // Cycle kind filter through every TransactionKind variant.
+                    use icelines_core::TransactionKind as K;
+                    let cycle = K::ALL;
+                    let next = match self.tx_kind_filter {
+                        None => Some(cycle[0]),
+                        Some(curr) => {
+                            let pos = cycle.iter().position(|k| *k == curr);
+                            match pos {
+                                Some(i) if i + 1 < cycle.len() => Some(cycle[i + 1]),
+                                _ => None,
+                            }
+                        }
+                    };
+                    self.tx_kind_filter = next;
+                    self.tx_selected    = 0;
+                    self.status = match next {
+                        Some(k) => format!("Transactions kind filter: {}", k.label()),
+                        None    => "Transactions kind filter: all".to_owned(),
+                    };
                 } else if c == 'F' {
                     self.show_admin = !self.show_admin;
                 } else if c == 'y' {
@@ -929,6 +1022,41 @@ impl App {
             // '/' while already in search mode — ignore (don't reopen, don't insert)
             Action::Search => {}
             // Up/Down/Left/Right/Tab/Help — ignored in search mode for now
+            _ => {}
+        }
+        false
+    }
+
+    /// Transactions tab `/` search — live substring match against the
+    /// description. Enter freezes the filter and exits search mode (the
+    /// query stays applied). Esc clears + exits.
+    fn handle_transactions_search(&mut self, action: Action) -> bool {
+        match action {
+            Action::Quit => return true,
+            Action::Back | Action::Escape => {
+                self.tx_search_mode = false;
+                self.tx_search_query.clear();
+                self.tx_selected = 0;
+                self.status = "Search cleared.".to_owned();
+            }
+            Action::Enter => {
+                // Apply: keep the query, exit search mode.
+                self.tx_search_mode = false;
+                self.tx_selected = 0;
+                self.status = format!("Filter: '{}'", self.tx_search_query);
+            }
+            Action::Backspace      => { self.tx_search_query.pop(); }
+            Action::Char(c)        => self.tx_search_query.push(c),
+            Action::Space          => self.tx_search_query.push(' '),
+            Action::Refresh        => self.tx_search_query.push('r'),
+            Action::Install        => self.tx_search_query.push('i'),
+            Action::AddToGroup     => self.tx_search_query.push('g'),
+            Action::AddToFavorites => self.tx_search_query.push('f'),
+            Action::GoToTab(n)     => {
+                let ch = char::from_digit((n + 1) as u32, 10).unwrap_or('?');
+                self.tx_search_query.push(ch);
+            }
+            Action::Search => {}
             _ => {}
         }
         false
@@ -1363,8 +1491,8 @@ impl App {
 
     fn cycle_screen(&mut self) {
         self.query_results_focused = false;
-        // Phase G.3: 7-tab cycle now —
-        //   League → Stats → Goalies → Scores → Schedule → Groups → Playoffs → League
+        // Phase T.5: 8-tab cycle now —
+        //   League → Stats → Goalies → Scores → Schedule → Groups → Transactions → Playoffs → League
         let next = match &self.screen {
             Screen::Home | Screen::Depth | Screen::DepthTeam(_)
             | Screen::Team(_) | Screen::Player(_) | Screen::Comps(_) => Screen::Projections,
@@ -1372,7 +1500,8 @@ impl App {
             Screen::Goalies | Screen::GoalieDetail(_)               => Screen::Tonight,
             Screen::Tonight | Screen::GameDetail(_)                 => Screen::Schedule,
             Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => Screen::Groups,
-            Screen::Groups | Screen::GroupDetail(_)                 => Screen::Playoffs,
+            Screen::Groups | Screen::GroupDetail(_)                 => Screen::Transactions,
+            Screen::Transactions                                    => Screen::Playoffs,
             Screen::Playoffs | Screen::SeriesDetail(_)              => Screen::Home,
             _                                                       => Screen::Home,
         };
@@ -1396,7 +1525,8 @@ impl App {
             Screen::Tonight | Screen::GameDetail(_)                 => Screen::Goalies,
             Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => Screen::Tonight,
             Screen::Groups | Screen::GroupDetail(_)                 => Screen::Schedule,
-            Screen::Playoffs | Screen::SeriesDetail(_)              => Screen::Groups,
+            Screen::Transactions                                    => Screen::Groups,
+            Screen::Playoffs | Screen::SeriesDetail(_)              => Screen::Transactions,
             _                                                       => Screen::Home,
         };
         self.screen = prev;
@@ -1437,6 +1567,8 @@ mod tests {
     #[test]
     fn l0_tui_tab_cycles_screens() {
         // 7 tabs (Phase G.3): League→Stats→Goalies→Scores→Schedule→Groups→Playoffs→League
+        // Phase T.5: 8 tabs now —
+        //   League → Stats → Goalies → Scores → Schedule → Groups → Transactions → Playoffs → wrap
         let mut app = App::new(false);
         app.handle(Action::Tab);
         assert_eq!(app.screen, Screen::Projections, "Home→Stats(Projections)");
@@ -1449,38 +1581,41 @@ mod tests {
         app.handle(Action::Tab);
         assert_eq!(app.screen, Screen::Groups, "Schedule→Groups");
         app.handle(Action::Tab);
-        assert_eq!(app.screen, Screen::Playoffs, "Groups→Playoffs");
+        assert_eq!(app.screen, Screen::Transactions, "Groups→Transactions");
+        app.handle(Action::Tab);
+        assert_eq!(app.screen, Screen::Playoffs, "Transactions→Playoffs");
         app.handle(Action::Tab);
         assert_eq!(app.screen, Screen::Home, "Playoffs→League (wraps)");
     }
 
     #[test]
     fn l0_tui_shift_tab_cycles_screens_backwards() {
-        // Shift-Tab walks the same seven tabs in reverse:
-        //   League ← Stats ← Goalies ← Scores ← Schedule ← Groups ← Playoffs ← League
+        // Shift-Tab walks the same eight tabs in reverse.
         let mut app = App::new(false);
         app.handle(Action::TabPrev);
-        assert_eq!(app.screen, Screen::Playoffs, "Home→Playoffs (wraps backwards)");
+        assert_eq!(app.screen, Screen::Playoffs,     "Home→Playoffs (wraps backwards)");
         app.handle(Action::TabPrev);
-        assert_eq!(app.screen, Screen::Groups,    "Playoffs→Groups");
+        assert_eq!(app.screen, Screen::Transactions, "Playoffs→Transactions");
         app.handle(Action::TabPrev);
-        assert_eq!(app.screen, Screen::Schedule,  "Groups→Schedule");
+        assert_eq!(app.screen, Screen::Groups,       "Transactions→Groups");
         app.handle(Action::TabPrev);
-        assert_eq!(app.screen, Screen::Tonight,   "Schedule→Scores");
+        assert_eq!(app.screen, Screen::Schedule,     "Groups→Schedule");
         app.handle(Action::TabPrev);
-        assert_eq!(app.screen, Screen::Goalies,   "Scores→Goalies");
+        assert_eq!(app.screen, Screen::Tonight,      "Schedule→Scores");
         app.handle(Action::TabPrev);
-        assert_eq!(app.screen, Screen::Projections, "Goalies→Stats");
+        assert_eq!(app.screen, Screen::Goalies,      "Scores→Goalies");
         app.handle(Action::TabPrev);
-        assert_eq!(app.screen, Screen::Home,      "Stats→League");
+        assert_eq!(app.screen, Screen::Projections,  "Goalies→Stats");
+        app.handle(Action::TabPrev);
+        assert_eq!(app.screen, Screen::Home,         "Stats→League");
     }
 
     #[test]
     fn l0_tui_tab_and_shift_tab_are_inverses() {
-        // Seven forward + seven backward should land on the original screen.
+        // Eight forward + eight backward should land on the original screen.
         let mut app = App::new(false);
-        for _ in 0..7 { app.handle(Action::Tab); }
-        for _ in 0..7 { app.handle(Action::TabPrev); }
+        for _ in 0..8 { app.handle(Action::Tab); }
+        for _ in 0..8 { app.handle(Action::TabPrev); }
         assert_eq!(app.screen, Screen::Home);
     }
 

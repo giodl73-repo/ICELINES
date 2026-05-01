@@ -216,7 +216,20 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
                         json, csv, out,
                     ).await?;
                 }
+                ExportShape::Transactions => {
+                    commands::transactions::run(
+                        team, None, None, None, None, player, None, Some(top),
+                        json, csv, out,
+                    ).await?;
+                }
             }
+        }
+        Commands::Transactions {
+            team, since, until, kind, search, player, season, top, json, csv, out,
+        } => {
+            commands::transactions::run(
+                team, since, until, kind, search, player, season, top, json, csv, out,
+            ).await?;
         }
         Commands::Mates { player, top, json, csv, out } => {
             commands::mates::run(player, top, json, csv, out).await?;

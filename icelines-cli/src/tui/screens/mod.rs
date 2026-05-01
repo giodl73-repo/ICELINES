@@ -10,6 +10,7 @@ pub mod schedule;
 pub mod playoffs;
 pub mod game_detail;
 pub mod goalies;
+pub mod transactions;
 
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
@@ -51,6 +52,7 @@ pub fn render(f: &mut Frame, app: &App) {
         Screen::GameDetail(game_id)       => game_detail::render(f, app, chunks[1], *game_id),
         Screen::Goalies                   => goalies::render(f, app, chunks[1]),
         Screen::GoalieDetail(idx)         => goalies::render_detail(f, app, chunks[1], *idx),
+        Screen::Transactions              => transactions::render(f, app, chunks[1]),
     }
 
     f.render_widget(
@@ -111,13 +113,17 @@ fn tab_for_screen(screen: &Screen) -> usize {
         Screen::Schedule | Screen::ScheduleTeam(_)
             | Screen::ScheduleMatchup(..)                        => 4,  // Schedule
         Screen::Groups | Screen::GroupDetail(_)                  => 5,  // Groups
-        Screen::Playoffs | Screen::SeriesDetail(_)               => 6,  // Playoffs
+        Screen::Transactions                                     => 6,  // Transactions (Phase T.5)
+        Screen::Playoffs | Screen::SeriesDetail(_)               => 7,  // Playoffs (pushed back)
         _                                                        => 99, // no tab (Fetch, Help)
     }
 }
 
 fn render_nav(f: &mut Frame, app: &App, area: Rect) {
-    let tab_labels = ["League", "Stats", "Goalies", "Scores", "Schedule", "Groups", "Playoffs"];
+    let tab_labels = [
+        "League", "Stats", "Goalies", "Scores",
+        "Schedule", "Groups", "Transactions", "Playoffs",
+    ];
     let active_tab = tab_for_screen(&app.screen);
 
     let mut spans: Vec<Span> = Vec::new();

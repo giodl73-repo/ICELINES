@@ -39,6 +39,13 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             if let Err(e) = do_contracts(&season, dry_run).await {
                 eprintln!("Warning: contract fetch failed (non-fatal): {e}");
             }
+            // Transactions (ESPN) are best-effort. Failure sets the
+            // SnapshotMetaFlags::transactions_stale flag so the next
+            // `icelines transactions` invocation surfaces a WARN until
+            // a successful run clears it. Phase T.3.
+            if let Err(e) = do_transactions(&season, dry_run).await {
+                eprintln!("Warning: transactions fetch failed (non-fatal): {e}");
+            }
             Ok(())
         }
         FetchSubcommand::Positions { season, dry_run } => do_positions(&season, dry_run).await,
@@ -46,6 +53,7 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
         FetchSubcommand::MoneyPuck { season, dry_run } => do_moneypuck(&season, dry_run).await,
         FetchSubcommand::Contracts { season, dry_run } => do_contracts(&season, dry_run).await,
         FetchSubcommand::Goalies { season, refresh: _, dry_run } => do_goalies(&season, dry_run).await,
+        FetchSubcommand::Transactions { season, dry_run } => do_transactions(&season, dry_run).await,
     }
 }
 
@@ -433,5 +441,115 @@ async fn do_positions(season: &str, dry_run: bool) -> anyhow::Result<()> {
         .set_active(&snap)
         .context("setting positions snapshot active")?;
     println!("Fetched positions for {} players", profiles.len());
+    Ok(())
+}
+
+/// Fetch league-wide transactions from ESPN — Phase T.3.
+///
+/// Hits ESPN's site.api, classifies each row, sanitizes descriptions,
+/// maps team abbrevs to canonical NHL form, writes
+/// `transactions.json` into a new snapshot, and updates
+/// `SnapshotMetaFlags::transactions_*` so callers can surface staleness.
+///
+/// Best-effort: failures log a WARN and set the stale flag, but don't
+/// abort `fetch all` (the rest of the pipeline still completes).
+async fn do_transactions(season: &str, dry_run: bool) -> anyhow::Result<()> {
+    use icelines_core::transactions::CURRENT_CLASSIFIER_VERSION;
+    use icelines_fetch::{
+        bundled::TransactionsEnvelope,
+        snapshot::SnapshotMetaFlags,
+        transactions::{raw_to_transactions, EspnSource},
+    };
+
+    let cfg = Config::load()?;
+    let store = SnapshotStore::new(cfg.snapshot_dir());
+    let snapshots_root = cfg.snapshot_dir();
+    let today = today_date();
+    let snap = format!("{season}-{today}-transactions");
+
+    if dry_run {
+        println!("Would fetch: ESPN site.api /transactions for season {season}");
+        return Ok(());
+    }
+
+    println!("Fetching transactions from ESPN...");
+    let espn = EspnSource::production();
+    let outcome = match espn.fetch_season(season).await {
+        Ok(o) => o,
+        Err(e) => {
+            // Set the stale flag so the next `icelines transactions`
+            // surfaces "snapshot is N days stale (last fetch failed)".
+            let mut flags = SnapshotMetaFlags::load(&snapshots_root, season);
+            flags.transactions_stale = true;
+            flags.transactions_last_error = Some(e.to_string());
+            flags.transactions_fetched_at = Some(today.clone());
+            let _ = flags.save(&snapshots_root, season); // best-effort
+            return Err(e.into());
+        }
+    };
+
+    if !outcome.dropped_unknown_schema.is_empty() {
+        eprintln!(
+            "  WARN: ESPN response contained unknown fields ({}): {:?}",
+            outcome.dropped_unknown_schema.len(),
+            outcome.dropped_unknown_schema,
+        );
+    }
+
+    let raw_count = outcome.rows.len();
+    let (rows, warnings) = raw_to_transactions(&outcome.rows, season);
+    for w in &warnings {
+        eprintln!("  WARN: {w}");
+    }
+
+    // Per-kind counts for the observability log.
+    let mut counts = std::collections::HashMap::<&'static str, usize>::new();
+    for row in &rows {
+        *counts.entry(row.kind.label()).or_default() += 1;
+    }
+    let other_count = counts.get("other").copied().unwrap_or(0);
+    let other_rate = if rows.is_empty() { 0.0 } else { other_count as f64 / rows.len() as f64 };
+
+    println!("  classified: {} rows", rows.len());
+    let mut kinds: Vec<_> = counts.into_iter().collect();
+    kinds.sort_by_key(|(_, n)| std::cmp::Reverse(*n));
+    for (label, n) in &kinds {
+        println!("    {label}: {n}");
+    }
+    if other_rate > 0.05 {
+        eprintln!("  WARN: other_rate is {:.1}% (>5% threshold) — \
+                   ESPN prose may have drifted; review the regex set",
+                  other_rate * 100.0);
+    }
+
+    let envelope = TransactionsEnvelope {
+        season:             season.to_owned(),
+        source:             "espn".to_owned(),
+        fetched_at:         outcome.fetched_at,
+        classifier_version: CURRENT_CLASSIFIER_VERSION,
+        rows,
+    };
+
+    store
+        .create(&snap, season, SnapshotTier::Stats, None, &today)
+        .context("creating transactions snapshot")?;
+    store
+        .write_file(
+            &snap,
+            &SnapshotTier::Stats,
+            "transactions.json",
+            &serde_json::to_vec_pretty(&envelope).context("serializing transactions")?,
+        )
+        .context("writing transactions.json")?;
+    store.seal(&snap).context("sealing transactions snapshot")?;
+
+    // Clear the stale flag on success.
+    let mut flags = SnapshotMetaFlags::load(&snapshots_root, season);
+    flags.transactions_stale = false;
+    flags.transactions_last_error = None;
+    flags.transactions_fetched_at = Some(today);
+    let _ = flags.save(&snapshots_root, season); // best-effort
+
+    println!("Snapshot '{snap}' sealed and set as active. Raw rows: {raw_count}.");
     Ok(())
 }
