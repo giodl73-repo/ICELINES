@@ -54,8 +54,11 @@ pub enum RepoError {
 }
 
 pub struct StatsRepository {
-    pub identities: HashMap<PlayerId, PlayerIdentity>,
-    pub stats: HashMap<(PlayerId, Season, SeasonType), SeasonStats>,
+    // pub(crate) so external code can't bypass roster index + LRU
+    // bookkeeping by mutating the HashMaps directly. Read access via
+    // `iter_identities()` / `iter_stats()`; mutation via `upsert_*`.
+    pub(crate) identities: HashMap<PlayerId, PlayerIdentity>,
+    pub(crate) stats: HashMap<(PlayerId, Season, SeasonType), SeasonStats>,
 
     rosters_last_stint: HashMap<(Season, SeasonType, TeamAbbr), Vec<PlayerId>>,
     rosters_all_stints: HashMap<(Season, SeasonType, TeamAbbr), Vec<PlayerId>>,
@@ -128,26 +131,32 @@ impl StatsRepository {
     // ── Career iterators (TAPE: typed, never mixed) ─────────────────────────
 
     /// Regular-season rows for one player, ordered ascending by season.
-    /// Returns `None` only if the player has zero rows of any kind;
-    /// `Some(empty_iter)` if they have only playoff rows.
-    pub fn career_regular(&self, id: PlayerId) -> Option<impl Iterator<Item = &SeasonStats>> {
-        if !self.identities.contains_key(&id) {
-            return None;
-        }
+    /// Returns `None` iff the player's identity is unknown to the repo;
+    /// returns `Some(empty_iter)` for an identity that exists but has
+    /// no Regular rows (e.g. a drafted prospect, or a player with only
+    /// Playoff rows resident in the LRU window). Explicit `<'a>` lifetime
+    /// per FORGE — survives 2024-edition RPIT-capture rule changes.
+    pub fn career_regular<'a>(
+        &'a self,
+        id: PlayerId,
+    ) -> Option<impl Iterator<Item = &'a SeasonStats> + 'a> {
+        self.identities.get(&id)?;
         Some(self.career_filtered(id, Some(SeasonType::Regular)))
     }
 
-    pub fn career_playoff(&self, id: PlayerId) -> Option<impl Iterator<Item = &SeasonStats>> {
-        if !self.identities.contains_key(&id) {
-            return None;
-        }
+    pub fn career_playoff<'a>(
+        &'a self,
+        id: PlayerId,
+    ) -> Option<impl Iterator<Item = &'a SeasonStats> + 'a> {
+        self.identities.get(&id)?;
         Some(self.career_filtered(id, Some(SeasonType::Playoff)))
     }
 
-    pub fn career_all(&self, id: PlayerId) -> Option<impl Iterator<Item = &SeasonStats>> {
-        if !self.identities.contains_key(&id) {
-            return None;
-        }
+    pub fn career_all<'a>(
+        &'a self,
+        id: PlayerId,
+    ) -> Option<impl Iterator<Item = &'a SeasonStats> + 'a> {
+        self.identities.get(&id)?;
         Some(self.career_filtered(id, None))
     }
 
@@ -174,8 +183,12 @@ impl StatsRepository {
 
     /// Every player with stats in the given (season, type), as views.
     /// Order is unspecified — callers that want deterministic ordering
-    /// should `.collect::<Vec>()` and sort.
-    pub fn league(&self, s: Season, t: SeasonType) -> impl Iterator<Item = PlayerView<'_>> {
+    /// should `.collect::<Vec>()` and sort. Explicit `<'a>` per FORGE.
+    pub fn league<'a>(
+        &'a self,
+        s: Season,
+        t: SeasonType,
+    ) -> impl Iterator<Item = PlayerView<'a>> + 'a {
         self.stats
             .iter()
             .filter_map(move |(&(pid, ks, kt), stats)| {
@@ -188,12 +201,41 @@ impl StatsRepository {
             })
     }
 
-    pub fn skaters(&self, s: Season, t: SeasonType) -> impl Iterator<Item = PlayerView<'_>> {
+    pub fn skaters<'a>(
+        &'a self,
+        s: Season,
+        t: SeasonType,
+    ) -> impl Iterator<Item = PlayerView<'a>> + 'a {
         self.league(s, t).filter(|v| !v.is_goalie())
     }
 
-    pub fn goalies(&self, s: Season, t: SeasonType) -> impl Iterator<Item = PlayerView<'_>> {
+    pub fn goalies<'a>(
+        &'a self,
+        s: Season,
+        t: SeasonType,
+    ) -> impl Iterator<Item = PlayerView<'a>> + 'a {
         self.league(s, t).filter(|v| v.is_goalie())
+    }
+
+    // ── Iter accessors (safe read paths over the locked-down HashMaps) ──────
+
+    /// Iterate every resident `PlayerIdentity`. Order is unspecified.
+    pub fn iter_identities<'a>(&'a self) -> impl Iterator<Item = &'a PlayerIdentity> + 'a {
+        self.identities.values()
+    }
+
+    /// Iterate every resident `SeasonStats` row. Order is unspecified.
+    /// For (season, type)-scoped iteration use `league()` instead.
+    pub fn iter_stats<'a>(&'a self) -> impl Iterator<Item = &'a SeasonStats> + 'a {
+        self.stats.values()
+    }
+
+    pub fn identities_len(&self) -> usize {
+        self.identities.len()
+    }
+
+    pub fn stats_len(&self) -> usize {
+        self.stats.len()
     }
 
     /// Players whose **last** stint was on `team` for (season, type).
@@ -311,14 +353,25 @@ impl StatsRepository {
         let s = stats.season;
         let t = stats.season_type;
 
+        // Dedup on insert. A re-acquired-mid-window player's stints can
+        // be e.g. [STL, NYR, STL]; without this guard, STL would
+        // double-push and `team_roster_all_stints("STL", ...)` would
+        // double-count. The retain-based unindex correctly removes a
+        // single occurrence regardless, so unindex stays unchanged.
         for stint in &stats.team_stints {
             let key = (s, t, stint.team.clone());
-            self.rosters_all_stints.entry(key).or_default().push(pid);
+            let entry = self.rosters_all_stints.entry(key).or_default();
+            if !entry.contains(&pid) {
+                entry.push(pid);
+            }
         }
 
         if let Some(last) = stats.team_stints.last() {
             let key = (s, t, last.team.clone());
-            self.rosters_last_stint.entry(key).or_default().push(pid);
+            let entry = self.rosters_last_stint.entry(key).or_default();
+            if !entry.contains(&pid) {
+                entry.push(pid);
+            }
         }
     }
 
@@ -368,7 +421,10 @@ impl StatsRepository {
     /// let mut repo = StatsRepository::new();
     /// let view = repo.view(PlayerId(1), Season(20232024), SeasonType::Regular);
     /// repo.repo_swap(StatsRepository::new()); // cannot borrow as mutable
-    /// drop(view);
+    /// drop(view); // load-bearing: keeps `view`'s &-borrow alive across
+    ///             // the swap call. Without it NLL would shorten the
+    ///             // borrow and the example would compile, silently
+    ///             // turning this contract test into a tautology.
     /// ```
     pub fn repo_swap(&mut self, new_repo: StatsRepository) -> StatsRepository {
         std::mem::replace(self, new_repo)
@@ -536,6 +592,12 @@ mod tests {
         assert_eq!(v.full_name(), "Connor McDavid");
         assert_eq!(v.team_display(), "EDM");
         assert_eq!(v.gp(), 70);
+        // Single-stint → was_traded_in_window must be false.
+        assert!(!v.was_traded_in_window());
+        // The fixture seeds a pace_score; accessor should surface it.
+        let pace = v.pace_score().expect("fixture pace_score is Some");
+        assert_eq!(pace.raw_points, 80);
+        assert_eq!(pace.gp, 70);
     }
 
     #[test]
@@ -543,6 +605,25 @@ mod tests {
         let r = make_repo_with_player(8478402);
         let v = r.view(PlayerId(8478402), Season(20222023), SeasonType::Regular);
         assert!(v.is_none(), "no stats yet — view must be None");
+    }
+
+    /// B5: full key tuple must match — Regular stats don't satisfy a
+    /// Playoff query for the same player/season. Catches a bug where
+    /// only the player_id is consulted.
+    #[test]
+    fn l0_hart2_view_none_for_other_season_type() {
+        let mut r = make_repo_with_player(8478402);
+        r.upsert_stats(skater_stats(8478402, 20222023, SeasonType::Regular, "EDM"))
+            .unwrap();
+        let regular = r.view(PlayerId(8478402), Season(20222023), SeasonType::Regular);
+        let playoff = r.view(PlayerId(8478402), Season(20222023), SeasonType::Playoff);
+        let other_season = r.view(PlayerId(8478402), Season(20212022), SeasonType::Regular);
+        assert!(regular.is_some());
+        assert!(
+            playoff.is_none(),
+            "playoff query must not match a Regular row"
+        );
+        assert!(other_season.is_none(), "other-season query must not match");
     }
 
     #[test]
@@ -632,6 +713,21 @@ mod tests {
         assert!(r.career_regular(PlayerId(99)).is_none());
         assert!(r.career_playoff(PlayerId(99)).is_none());
         assert!(r.career_all(PlayerId(99)).is_none());
+    }
+
+    /// B4: identity exists, but only Playoff rows resident. Per the
+    /// docstring contract, `career_regular` returns `Some(empty_iter)`
+    /// — not `None` (None means unknown identity).
+    #[test]
+    fn l0_hart2_career_regular_empty_when_only_playoff_rows() {
+        let mut r = make_repo_with_player(8478402);
+        r.upsert_stats(skater_stats(8478402, 20222023, SeasonType::Playoff, "EDM"))
+            .unwrap();
+
+        let reg: Vec<_> = r.career_regular(PlayerId(8478402)).unwrap().collect();
+        let pla: Vec<_> = r.career_playoff(PlayerId(8478402)).unwrap().collect();
+        assert!(reg.is_empty(), "Some(empty), not None");
+        assert_eq!(pla.len(), 1);
     }
 
     // ── League / skaters / goalies ──────────────────────────────────────────
@@ -828,6 +924,200 @@ mod tests {
         assert_eq!(bos_all.len(), 1, "BOS gets the new last-stint");
     }
 
+    /// EDGE+TAPE: a re-acquired-mid-window player has stints
+    /// `[STL, NYR, STL]`. Without index dedup, STL would appear twice
+    /// in `team_roster_all_stints("STL", ...)` and Hart.4's query layer
+    /// would double-count goals/points for STL. Pins the dedup fix in
+    /// `index_rosters`.
+    #[test]
+    fn l0_hart2_same_team_twice_in_stints_dedups_in_all_stints_index() {
+        let s1 = TeamStint {
+            team: TeamAbbr("STL".into()),
+            started: Some("2022-10-15".into()),
+            ended: Some("2023-01-15".into()),
+            gp: 30,
+            goals: 8,
+            assists: 10,
+            points: 18,
+            goalie: None,
+        };
+        let s2 = TeamStint {
+            team: TeamAbbr("NYR".into()),
+            started: Some("2023-01-16".into()),
+            ended: Some("2023-02-28".into()),
+            gp: 15,
+            goals: 4,
+            assists: 5,
+            points: 9,
+            goalie: None,
+        };
+        let s3 = TeamStint {
+            team: TeamAbbr("STL".into()),
+            started: Some("2023-03-01".into()),
+            ended: Some("2023-04-13".into()),
+            gp: 24,
+            goals: 6,
+            assists: 9,
+            points: 15,
+            goalie: None,
+        };
+        let stats = SeasonStatsBuilder::new(
+            PlayerId(8475765),
+            Season(20222023),
+            SeasonType::Regular,
+            Position::RightWing,
+        )
+        .add_team_stint(s1)
+        .add_team_stint(s2)
+        .add_team_stint(s3)
+        .with_totals(StatTotals {
+            gp: 69,
+            goals: 18,
+            assists: 24,
+            points: 42,
+            ..Default::default()
+        })
+        .build();
+
+        let mut r = StatsRepository::new();
+        r.upsert_identity(fixtures::identity(8475765).build())
+            .unwrap();
+        r.upsert_stats(stats).unwrap();
+
+        let stl = r.team_roster_all_stints(
+            &TeamAbbr("STL".into()),
+            Season(20222023),
+            SeasonType::Regular,
+        );
+        let nyr = r.team_roster_all_stints(
+            &TeamAbbr("NYR".into()),
+            Season(20222023),
+            SeasonType::Regular,
+        );
+        assert_eq!(
+            stl.len(),
+            1,
+            "STL appears once even though stints contain it twice"
+        );
+        assert_eq!(nyr.len(), 1);
+
+        // Last-stint roster: chronologically last stint is the second STL.
+        let stl_last = r.team_roster(
+            &TeamAbbr("STL".into()),
+            Season(20222023),
+            SeasonType::Regular,
+        );
+        assert_eq!(stl_last.len(), 1, "last-stint = the STL re-acquisition");
+    }
+
+    /// TAPE: a goalie traded mid-(season, type) must have both teams in
+    /// `rosters_all_stints` and the destination team in `rosters_last_stint`.
+    /// Repo logic is goalie-agnostic for indexing; this is a regression
+    /// fence around the Hart.1 invariant chain.
+    #[test]
+    fn l0_hart2_goalie_mid_trade_roster_indexed_for_both_teams() {
+        let stint_a = TeamStint {
+            team: TeamAbbr("BOS".into()),
+            started: Some("2024-04-22".into()),
+            ended: Some("2024-04-30".into()),
+            gp: 3,
+            goals: 0,
+            assists: 0,
+            points: 0,
+            goalie: Some(crate::season_stats::GoalieStintStats {
+                games_started: 3,
+                wins: 1,
+                losses: 2,
+                ot_losses: Some(0),
+            }),
+        };
+        let stint_b = TeamStint {
+            team: TeamAbbr("FLA".into()),
+            started: Some("2024-05-01".into()),
+            ended: Some("2024-06-15".into()),
+            gp: 7,
+            goals: 0,
+            assists: 0,
+            points: 0,
+            goalie: Some(crate::season_stats::GoalieStintStats {
+                games_started: 7,
+                wins: 4,
+                losses: 3,
+                ot_losses: Some(0),
+            }),
+        };
+        let stats = SeasonStatsBuilder::new(
+            PlayerId(9000001),
+            Season(20232024),
+            SeasonType::Playoff,
+            Position::Goalie,
+        )
+        .add_team_stint(stint_a)
+        .add_team_stint(stint_b)
+        .with_totals(StatTotals {
+            gp: 10,
+            ..Default::default()
+        })
+        .with_goalie(GoalieSeasonStats {
+            games_started: 10,
+            wins: 5,
+            losses: 5,
+            ot_losses: Some(0),
+            ties: None,
+            shots_against: 280,
+            goals_against: 28,
+            saves: 252,
+            save_pct: Some(0.900),
+            goals_against_average: Some(2.80),
+            shutouts: 0,
+            time_on_ice_sec: 600 * 60,
+        })
+        .build();
+
+        let mut r = StatsRepository::new();
+        r.upsert_identity(fixtures::identity(9000001).build())
+            .unwrap();
+        r.upsert_stats(stats).unwrap();
+
+        let bos_all = r.team_roster_all_stints(
+            &TeamAbbr("BOS".into()),
+            Season(20232024),
+            SeasonType::Playoff,
+        );
+        let fla_all = r.team_roster_all_stints(
+            &TeamAbbr("FLA".into()),
+            Season(20232024),
+            SeasonType::Playoff,
+        );
+        let bos_last = r.team_roster(
+            &TeamAbbr("BOS".into()),
+            Season(20232024),
+            SeasonType::Playoff,
+        );
+        let fla_last = r.team_roster(
+            &TeamAbbr("FLA".into()),
+            Season(20232024),
+            SeasonType::Playoff,
+        );
+
+        assert_eq!(bos_all.len(), 1, "BOS appears in all-stints (origin team)");
+        assert_eq!(
+            fla_all.len(),
+            1,
+            "FLA appears in all-stints (destination team)"
+        );
+        assert_eq!(
+            bos_last.len(),
+            0,
+            "BOS NOT in last-stint (player ended on FLA)"
+        );
+        assert_eq!(fla_last.len(), 1, "FLA in last-stint");
+
+        let v = fla_last.into_iter().next().unwrap();
+        assert!(v.is_goalie());
+        assert!(v.was_traded_in_window());
+    }
+
     // ── LRU eviction ────────────────────────────────────────────────────────
 
     /// BENCH-mandated: cap=2; load A, B, C (evicts A); load A again;
@@ -887,6 +1177,11 @@ mod tests {
             r.season(PlayerId(1), Season(20212022), SeasonType::Regular)
                 .is_some(),
             "A's stats reloaded cleanly"
+        );
+        assert_eq!(
+            r.resident_windows(),
+            2,
+            "deque must still respect cap=2 after eviction-then-reload"
         );
     }
 
@@ -952,6 +1247,78 @@ mod tests {
             r.has_window(Season(20232024), SeasonType::Regular),
             "C resident"
         );
+    }
+
+    /// B12: cap=4, load 6 windows. The first 2 must be evicted; the
+    /// last 4 (in order: oldest-resident-of-the-survivors → MRU) remain.
+    /// Catches a "pop_front called once per call instead of in a loop"
+    /// regression — though touch_window_lru is currently single-pop and
+    /// each upsert can only push one window, so eviction of multiple
+    /// windows happens across multiple upserts. This test pins that
+    /// multiple sequential upserts each evict their own LRU.
+    #[test]
+    fn l0_hart2_lru_multi_eviction_cap_4_load_6() {
+        let mut r = StatsRepository::with_lru_cap(4);
+        let windows: [(u32, SeasonType); 6] = [
+            (20192020, SeasonType::Regular),
+            (20202021, SeasonType::Regular),
+            (20212022, SeasonType::Regular),
+            (20222023, SeasonType::Regular),
+            (20232024, SeasonType::Regular),
+            (20242025, SeasonType::Regular),
+        ];
+        for (i, &(season, t)) in windows.iter().enumerate() {
+            let pid = (i + 1) as u32;
+            r.upsert_identity(fixtures::identity(pid).build()).unwrap();
+            r.upsert_stats(skater_stats(pid, season, t, "EDM")).unwrap();
+        }
+
+        assert_eq!(r.resident_windows(), 4, "cap honored");
+        assert!(
+            !r.has_window(Season(20192020), SeasonType::Regular),
+            "first evicted"
+        );
+        assert!(
+            !r.has_window(Season(20202021), SeasonType::Regular),
+            "second evicted"
+        );
+        assert!(r.has_window(Season(20212022), SeasonType::Regular));
+        assert!(r.has_window(Season(20222023), SeasonType::Regular));
+        assert!(r.has_window(Season(20232024), SeasonType::Regular));
+        assert!(r.has_window(Season(20242025), SeasonType::Regular));
+
+        // Verify the evicted windows' stats are gone.
+        assert!(r
+            .season(PlayerId(1), Season(20192020), SeasonType::Regular)
+            .is_none());
+        assert!(r
+            .season(PlayerId(2), Season(20202021), SeasonType::Regular)
+            .is_none());
+        // Verify the survivors' stats are reachable.
+        assert!(r
+            .season(PlayerId(3), Season(20212022), SeasonType::Regular)
+            .is_some());
+        assert!(r
+            .season(PlayerId(6), Season(20242025), SeasonType::Regular)
+            .is_some());
+    }
+
+    // ── iter accessors (lockdown sanity) ────────────────────────────────────
+
+    #[test]
+    fn l0_hart2_iter_identities_and_stats_yield_expected_counts() {
+        let mut r = StatsRepository::new();
+        r.upsert_identity(fixtures::identity(1).build()).unwrap();
+        r.upsert_identity(fixtures::identity(2).build()).unwrap();
+        r.upsert_stats(skater_stats(1, 20222023, SeasonType::Regular, "EDM"))
+            .unwrap();
+        r.upsert_stats(skater_stats(1, 20222023, SeasonType::Playoff, "EDM"))
+            .unwrap();
+
+        assert_eq!(r.iter_identities().count(), 2);
+        assert_eq!(r.identities_len(), 2);
+        assert_eq!(r.iter_stats().count(), 2);
+        assert_eq!(r.stats_len(), 2);
     }
 
     // ── repo_swap ──────────────────────────────────────────────────────────
