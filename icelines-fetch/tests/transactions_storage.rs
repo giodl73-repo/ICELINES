@@ -2,28 +2,32 @@
 //! re-classification on load + atomic-rename + .bak recovery semantics.
 //! Phase T.3.
 
-use icelines_core::{Transaction, TransactionKind};
 use icelines_core::model::TeamAbbr;
 use icelines_core::transactions::CURRENT_CLASSIFIER_VERSION;
+use icelines_core::{Transaction, TransactionKind};
 use icelines_fetch::bundled::{
     get_transactions, load_transactions_with_fallback, TransactionsEnvelope,
 };
 use icelines_fetch::snapshot::{SnapshotMetaFlags, SnapshotStore};
 use tempfile::TempDir;
 
-fn fixture_envelope(version: u16, kind: TransactionKind, description: &str) -> TransactionsEnvelope {
+fn fixture_envelope(
+    version: u16,
+    kind: TransactionKind,
+    description: &str,
+) -> TransactionsEnvelope {
     TransactionsEnvelope {
-        season:             "20252026".to_owned(),
-        source:             "espn".to_owned(),
-        fetched_at:         "2026-04-30T14:00:00-04:00".to_owned(),
+        season: "20252026".to_owned(),
+        source: "espn".to_owned(),
+        fetched_at: "2026-04-30T14:00:00-04:00".to_owned(),
         classifier_version: version,
         rows: vec![Transaction {
-            date:               "2026-04-29".to_owned(),
-            team:               Some(TeamAbbr("EDM".to_owned())),
+            date: "2026-04-29".to_owned(),
+            team: Some(TeamAbbr("EDM".to_owned())),
             kind,
-            description:        description.to_owned(),
-            id:                 "row-id".to_owned(),
-            trade_group_id:     None,
+            description: description.to_owned(),
+            id: "row-id".to_owned(),
+            trade_group_id: None,
             classifier_version: version,
         }],
     }
@@ -31,9 +35,11 @@ fn fixture_envelope(version: u16, kind: TransactionKind, description: &str) -> T
 
 #[test]
 fn l1_get_transactions_25_26_returns_some() {
-    let envelope = get_transactions("20252026")
-        .expect("25-26 transactions must be bundled");
-    assert!(!envelope.rows.is_empty(), "bundled fixture must contain rows");
+    let envelope = get_transactions("20252026").expect("25-26 transactions must be bundled");
+    assert!(
+        !envelope.rows.is_empty(),
+        "bundled fixture must contain rows"
+    );
     assert_eq!(envelope.season, "20252026");
 }
 
@@ -51,8 +57,8 @@ fn l1_bundled_transactions_present_for_every_covered_season() {
     // non-empty bundled envelope. This catches a future PR that bumps
     // the earliest constant without re-running the probe.
     for season in &["20212022", "20222023", "20232024", "20242025", "20252026"] {
-        let env = get_transactions(season)
-            .unwrap_or_else(|| panic!("season {season} must be bundled"));
+        let env =
+            get_transactions(season).unwrap_or_else(|| panic!("season {season} must be bundled"));
         assert!(
             !env.rows.is_empty(),
             "season {season} bundle is empty — regenerate with \
@@ -75,7 +81,9 @@ fn l1_bundled_other_rate_below_threshold_per_season() {
     for season in &["20212022", "20222023", "20232024", "20242025", "20252026"] {
         let env = get_transactions(season).expect("bundled");
         let total = env.rows.len() as f64;
-        let other = env.rows.iter()
+        let other = env
+            .rows
+            .iter()
             .filter(|tx| tx.kind == icelines_core::TransactionKind::Other)
             .count() as f64;
         let rate = other / total;
@@ -100,7 +108,9 @@ fn l1_bundled_smoke_signings_present_per_season() {
     use icelines_core::TransactionKind;
     for season in &["20212022", "20222023", "20232024", "20242025", "20252026"] {
         let env = get_transactions(season).expect("bundled");
-        let signings = env.rows.iter()
+        let signings = env
+            .rows
+            .iter()
             .filter(|tx| tx.kind == TransactionKind::Signing)
             .count();
         assert!(
@@ -140,7 +150,8 @@ fn l1_bundled_team_abbrevs_all_canonical() {
                 assert!(
                     canonical.contains(team.0.as_str()) || team.0 == "ARI" || team.0 == "ATL",
                     "season {season} has row with non-canonical team '{}': {:?}",
-                    team.0, tx.description,
+                    team.0,
+                    tx.description,
                 );
             }
         }
@@ -152,8 +163,8 @@ fn l1_load_transactions_with_fallback_finds_bundled() {
     // No snapshot store has been populated → falls through to bundled.
     let dir = TempDir::new().unwrap();
     let store = SnapshotStore::new(dir.path());
-    let envelope = load_transactions_with_fallback("20252026", &store)
-        .expect("bundled must satisfy load");
+    let envelope =
+        load_transactions_with_fallback("20252026", &store).expect("bundled must satisfy load");
     assert!(!envelope.rows.is_empty());
 }
 
@@ -164,10 +175,14 @@ fn l1_load_transactions_unknown_season_errors_with_hint() {
     let err = load_transactions_with_fallback("19951996", &store)
         .expect_err("pre-coverage season must error");
     let msg = format!("{err}");
-    assert!(msg.contains("transactions"),
-        "error must mention transactions, got: {msg}");
-    assert!(msg.contains("19951996"),
-        "error must name the season, got: {msg}");
+    assert!(
+        msg.contains("transactions"),
+        "error must mention transactions, got: {msg}"
+    );
+    assert!(
+        msg.contains("19951996"),
+        "error must name the season, got: {msg}"
+    );
 }
 
 #[test]
@@ -187,22 +202,39 @@ fn l1_classifier_version_stale_triggers_reclassify_on_load() {
 
     // Drop into the snapshot store at a sealed snapshot.
     let snap = "test-stale-classifier";
-    store.create(snap, "20252026", icelines_fetch::snapshot::SnapshotTier::Stats, None, "2026-04-30").unwrap();
-    store.write_file(
-        snap,
-        &icelines_fetch::snapshot::SnapshotTier::Stats,
-        "transactions.json",
-        &serde_json::to_vec_pretty(&env).unwrap(),
-    ).unwrap();
+    store
+        .create(
+            snap,
+            "20252026",
+            icelines_fetch::snapshot::SnapshotTier::Stats,
+            None,
+            "2026-04-30",
+        )
+        .unwrap();
+    store
+        .write_file(
+            snap,
+            &icelines_fetch::snapshot::SnapshotTier::Stats,
+            "transactions.json",
+            &serde_json::to_vec_pretty(&env).unwrap(),
+        )
+        .unwrap();
     store.seal(snap).unwrap();
 
-    let loaded = load_transactions_with_fallback("20252026", &store)
-        .expect("load must succeed");
-    assert_eq!(loaded.classifier_version, CURRENT_CLASSIFIER_VERSION,
-        "envelope-level version must be brought up to current");
-    assert_eq!(loaded.rows[0].classifier_version, CURRENT_CLASSIFIER_VERSION);
-    assert_eq!(loaded.rows[0].kind, TransactionKind::Trade,
-        "stale Other should be re-classified to Trade by the current rules");
+    let loaded = load_transactions_with_fallback("20252026", &store).expect("load must succeed");
+    assert_eq!(
+        loaded.classifier_version, CURRENT_CLASSIFIER_VERSION,
+        "envelope-level version must be brought up to current"
+    );
+    assert_eq!(
+        loaded.rows[0].classifier_version,
+        CURRENT_CLASSIFIER_VERSION
+    );
+    assert_eq!(
+        loaded.rows[0].kind,
+        TransactionKind::Trade,
+        "stale Other should be re-classified to Trade by the current rules"
+    );
 }
 
 #[test]
@@ -219,22 +251,39 @@ fn l1_classifier_version_downgrade_ignored_on_load() {
         "Future-version row written by a newer icelines binary",
     );
     let snap = "test-forward-compat";
-    store.create(snap, "20252026", icelines_fetch::snapshot::SnapshotTier::Stats, None, "2026-04-30").unwrap();
-    store.write_file(
-        snap,
-        &icelines_fetch::snapshot::SnapshotTier::Stats,
-        "transactions.json",
-        &serde_json::to_vec_pretty(&env).unwrap(),
-    ).unwrap();
+    store
+        .create(
+            snap,
+            "20252026",
+            icelines_fetch::snapshot::SnapshotTier::Stats,
+            None,
+            "2026-04-30",
+        )
+        .unwrap();
+    store
+        .write_file(
+            snap,
+            &icelines_fetch::snapshot::SnapshotTier::Stats,
+            "transactions.json",
+            &serde_json::to_vec_pretty(&env).unwrap(),
+        )
+        .unwrap();
     store.seal(snap).unwrap();
 
     let loaded = load_transactions_with_fallback("20252026", &store).unwrap();
-    assert_eq!(loaded.classifier_version, 99,
-        "forward-compat: envelope version preserved when > CURRENT");
-    assert_eq!(loaded.rows[0].classifier_version, 99,
-        "forward-compat: row version preserved");
-    assert_eq!(loaded.rows[0].kind, TransactionKind::Trade,
-        "forward-compat: kind not overwritten");
+    assert_eq!(
+        loaded.classifier_version, 99,
+        "forward-compat: envelope version preserved when > CURRENT"
+    );
+    assert_eq!(
+        loaded.rows[0].classifier_version, 99,
+        "forward-compat: row version preserved"
+    );
+    assert_eq!(
+        loaded.rows[0].kind,
+        TransactionKind::Trade,
+        "forward-compat: kind not overwritten"
+    );
 }
 
 // ── SnapshotMetaFlags ──────────────────────────────────────────────────
@@ -250,9 +299,10 @@ fn l0_snapshot_meta_flags_default_all_false() {
 #[test]
 fn l0_snapshot_meta_flags_serde_roundtrip() {
     let flags = SnapshotMetaFlags {
-        transactions_stale:      true,
+        transactions_stale: true,
         transactions_last_error: Some("ESPN 503".to_owned()),
         transactions_fetched_at: Some("2026-04-30".to_owned()),
+        ..Default::default()
     };
     let json = serde_json::to_string(&flags).unwrap();
     let back: SnapshotMetaFlags = serde_json::from_str(&json).unwrap();
@@ -280,16 +330,22 @@ fn l1_meta_flag_load_and_save_roundtrip() {
 
     // Save a non-default state.
     let flags1 = SnapshotMetaFlags {
-        transactions_stale:      true,
+        transactions_stale: true,
         transactions_last_error: Some("test error".to_owned()),
         transactions_fetched_at: Some("2026-04-30".to_owned()),
+        ..Default::default()
     };
-    flags1.save(snapshots_root, "20252026").expect("save must succeed");
+    flags1
+        .save(snapshots_root, "20252026")
+        .expect("save must succeed");
 
     // Reload — must round-trip.
     let flags2 = SnapshotMetaFlags::load(snapshots_root, "20252026");
     assert!(flags2.transactions_stale);
-    assert_eq!(flags2.transactions_last_error.as_deref(), Some("test error"));
+    assert_eq!(
+        flags2.transactions_last_error.as_deref(),
+        Some("test error")
+    );
 }
 
 #[test]
@@ -302,14 +358,20 @@ fn l1_meta_flag_corrupt_primary_recovers_via_bak() {
         transactions_stale: false,
         transactions_last_error: None,
         transactions_fetched_at: Some("v1".to_owned()),
-    }.save(snapshots_root, "20252026").unwrap();
+        ..Default::default()
+    }
+    .save(snapshots_root, "20252026")
+    .unwrap();
 
     // Second save creates .bak of the v1 state.
     SnapshotMetaFlags {
         transactions_stale: true,
         transactions_last_error: Some("v2 problem".to_owned()),
         transactions_fetched_at: Some("v2".to_owned()),
-    }.save(snapshots_root, "20252026").unwrap();
+        ..Default::default()
+    }
+    .save(snapshots_root, "20252026")
+    .unwrap();
 
     // Corrupt the primary.
     let primary = snapshots_root.join("20252026").join("_meta.json");
@@ -317,6 +379,9 @@ fn l1_meta_flag_corrupt_primary_recovers_via_bak() {
 
     // Loader falls through to .bak (the v1 state).
     let recovered = SnapshotMetaFlags::load(snapshots_root, "20252026");
-    assert_eq!(recovered.transactions_fetched_at.as_deref(), Some("v1"),
-        "corrupt primary must fall back to .bak (v1 content)");
+    assert_eq!(
+        recovered.transactions_fetched_at.as_deref(),
+        Some("v1"),
+        "corrupt primary must fall back to .bak (v1 content)"
+    );
 }

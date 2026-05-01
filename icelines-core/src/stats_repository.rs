@@ -24,6 +24,7 @@ use std::marker::PhantomData;
 use static_assertions::assert_not_impl_any;
 use thiserror::Error;
 
+use crate::contract::PlayerContract;
 use crate::identity::{IdentityMergeError, PlayerId, PlayerIdentity};
 use crate::model::{PaceScore, Position, Season, TeamAbbr};
 use crate::season_stats::SeasonStats;
@@ -53,12 +54,17 @@ pub enum RepoError {
     },
 }
 
+#[derive(Debug)]
 pub struct StatsRepository {
     // pub(crate) so external code can't bypass roster index + LRU
     // bookkeeping by mutating the HashMaps directly. Read access via
     // `iter_identities()` / `iter_stats()`; mutation via `upsert_*`.
     pub(crate) identities: HashMap<PlayerId, PlayerIdentity>,
     pub(crate) stats: HashMap<(PlayerId, Season, SeasonType), SeasonStats>,
+    /// Per-player contracts. Window-independent — contracts don't evict
+    /// when a (season, type) window does, and contracts are not keyed
+    /// by season. The current NHL landing API rarely populates these.
+    pub(crate) contracts: HashMap<PlayerId, PlayerContract>,
 
     rosters_last_stint: HashMap<(Season, SeasonType, TeamAbbr), Vec<PlayerId>>,
     rosters_all_stints: HashMap<(Season, SeasonType, TeamAbbr), Vec<PlayerId>>,
@@ -90,6 +96,7 @@ impl StatsRepository {
         Self {
             identities: HashMap::new(),
             stats: HashMap::new(),
+            contracts: HashMap::new(),
             rosters_last_stint: HashMap::new(),
             rosters_all_stints: HashMap::new(),
             window_lru: VecDeque::with_capacity(cap),
@@ -122,10 +129,19 @@ impl StatsRepository {
         self.stats.get(&(id, s, t))
     }
 
+    pub fn contract(&self, id: PlayerId) -> Option<&PlayerContract> {
+        self.contracts.get(&id)
+    }
+
     pub fn view(&self, id: PlayerId, s: Season, t: SeasonType) -> Option<PlayerView<'_>> {
         let identity = self.identities.get(&id)?;
         let stats = self.stats.get(&(id, s, t))?;
-        Some(PlayerView { identity, stats })
+        let contract = self.contracts.get(&id);
+        Some(PlayerView {
+            identity,
+            stats,
+            contract,
+        })
     }
 
     // ── Career iterators (TAPE: typed, never mixed) ─────────────────────────
@@ -194,7 +210,12 @@ impl StatsRepository {
             .filter_map(move |(&(pid, ks, kt), stats)| {
                 if ks == s && kt == t {
                     let identity = self.identities.get(&pid)?;
-                    Some(PlayerView { identity, stats })
+                    let contract = self.contracts.get(&pid);
+                    Some(PlayerView {
+                        identity,
+                        stats,
+                        contract,
+                    })
                 } else {
                     None
                 }
@@ -230,12 +251,24 @@ impl StatsRepository {
         self.stats.values()
     }
 
+    /// Iterate every resident `(PlayerId, &PlayerContract)`. Order
+    /// unspecified. Contracts don't evict with windows.
+    pub fn iter_contracts<'a>(
+        &'a self,
+    ) -> impl Iterator<Item = (PlayerId, &'a PlayerContract)> + 'a {
+        self.contracts.iter().map(|(k, v)| (*k, v))
+    }
+
     pub fn identities_len(&self) -> usize {
         self.identities.len()
     }
 
     pub fn stats_len(&self) -> usize {
         self.stats.len()
+    }
+
+    pub fn contracts_len(&self) -> usize {
+        self.contracts.len()
     }
 
     /// Players whose **last** stint was on `team` for (season, type).
@@ -271,6 +304,14 @@ impl StatsRepository {
     }
 
     // ── Mutators (loader path) ──────────────────────────────────────────────
+
+    /// Insert or replace a `PlayerContract` for the given player.
+    /// Idempotent — same contract twice is a no-op. Window-independent
+    /// (contracts don't evict with stats windows). No identity guard
+    /// because contracts can land before bios in some loader paths.
+    pub fn upsert_contract(&mut self, id: PlayerId, contract: PlayerContract) {
+        self.contracts.insert(id, contract);
+    }
 
     /// Insert or merge a `PlayerIdentity`. New IDs insert directly;
     /// existing IDs run through `PlayerIdentity::merge_with`'s
@@ -431,16 +472,17 @@ impl StatsRepository {
     }
 }
 
-/// Borrowed projection over `(PlayerIdentity, SeasonStats)`. Render code
-/// never sees raw structs — accesses go through these accessors. Lifetime
-/// is render-frame-scoped: a `PlayerView` MUST NOT outlive a frame, and
-/// MUST NOT be a field of any struct whose lifetime exceeds one render
-/// pass. (Hart.0 surveyed for current Player-storage patterns; none port
-/// to view-storage.)
+/// Borrowed projection over `(PlayerIdentity, SeasonStats, PlayerContract?)`.
+/// Render code never sees raw structs — accesses go through these
+/// accessors. Lifetime is render-frame-scoped: a `PlayerView` MUST NOT
+/// outlive a frame, and MUST NOT be a field of any struct whose lifetime
+/// exceeds one render pass. (Hart.0 surveyed for current Player-storage
+/// patterns; none port to view-storage.)
 #[derive(Debug, Clone, Copy)]
 pub struct PlayerView<'a> {
     pub identity: &'a PlayerIdentity,
     pub stats: &'a SeasonStats,
+    pub contract: Option<&'a PlayerContract>,
 }
 
 impl PlayerView<'_> {
@@ -541,6 +583,22 @@ impl PlayerView<'_> {
     }
     pub fn xgf_pct(&self) -> Option<f64> {
         self.stats.advanced.as_ref().and_then(|a| a.xgf_pct)
+    }
+
+    // ── Contract accessors (Hart.3) ────────────────────────────────────────
+    //
+    // None during cold-start / when the loader didn't fetch contracts.
+    // The current NHL landing API does not populate these fields; values
+    // are typically None even when a contract row exists.
+
+    pub fn contract_expiry_year(&self) -> Option<u16> {
+        self.contract.and_then(|c| c.expiry_year)
+    }
+    pub fn contract_expiry_type(&self) -> Option<&str> {
+        self.contract.and_then(|c| c.expiry_type.as_deref())
+    }
+    pub fn contract_salary(&self) -> Option<u64> {
+        self.contract.and_then(|c| c.salary)
     }
 }
 
@@ -1304,6 +1362,81 @@ mod tests {
     }
 
     // ── iter accessors (lockdown sanity) ────────────────────────────────────
+
+    #[test]
+    fn l0_hart3_upsert_contract_idempotent_and_view_carries_it() {
+        let mut r = make_repo_with_player(8478402);
+        r.upsert_stats(skater_stats(8478402, 20222023, SeasonType::Regular, "EDM"))
+            .unwrap();
+        let c = crate::contract::PlayerContract {
+            expiry_year: Some(2026),
+            expiry_type: Some("UFA".into()),
+            salary: Some(12_500_000),
+        };
+        r.upsert_contract(PlayerId(8478402), c.clone());
+
+        // Direct lookup.
+        assert_eq!(r.contract(PlayerId(8478402)), Some(&c));
+        assert_eq!(r.contracts_len(), 1);
+
+        // PlayerView carries it.
+        let v = r
+            .view(PlayerId(8478402), Season(20222023), SeasonType::Regular)
+            .unwrap();
+        assert_eq!(v.contract_expiry_year(), Some(2026));
+        assert_eq!(v.contract_expiry_type(), Some("UFA"));
+        assert_eq!(v.contract_salary(), Some(12_500_000));
+
+        // Re-upsert is idempotent.
+        r.upsert_contract(PlayerId(8478402), c.clone());
+        assert_eq!(r.contracts_len(), 1);
+    }
+
+    #[test]
+    fn l0_hart3_view_contract_none_when_unset() {
+        let mut r = make_repo_with_player(8478402);
+        r.upsert_stats(skater_stats(8478402, 20222023, SeasonType::Regular, "EDM"))
+            .unwrap();
+        let v = r
+            .view(PlayerId(8478402), Season(20222023), SeasonType::Regular)
+            .unwrap();
+        assert!(v.contract.is_none());
+        assert_eq!(v.contract_expiry_year(), None);
+    }
+
+    #[test]
+    fn l0_hart3_contract_survives_window_eviction() {
+        // Contracts are window-independent — evicting (s, t) drops stats
+        // and roster indexes but must NOT drop contracts. The next
+        // upsert into a fresh window can still see the contract.
+        let mut r = StatsRepository::with_lru_cap(2);
+        r.upsert_identity(fixtures::identity(1).build()).unwrap();
+        r.upsert_contract(
+            PlayerId(1),
+            crate::contract::PlayerContract {
+                expiry_year: Some(2026),
+                ..Default::default()
+            },
+        );
+        r.upsert_identity(fixtures::identity(2).build()).unwrap();
+        r.upsert_identity(fixtures::identity(3).build()).unwrap();
+
+        // Fill cap then push a third window — evicts the first.
+        r.upsert_stats(skater_stats(1, 20212022, SeasonType::Regular, "EDM"))
+            .unwrap();
+        r.upsert_stats(skater_stats(2, 20222023, SeasonType::Regular, "EDM"))
+            .unwrap();
+        r.upsert_stats(skater_stats(3, 20232024, SeasonType::Regular, "EDM"))
+            .unwrap();
+
+        // Player 1's stats are gone (window evicted) — but the contract
+        // must still be reachable.
+        assert!(r
+            .season(PlayerId(1), Season(20212022), SeasonType::Regular)
+            .is_none());
+        assert!(r.contract(PlayerId(1)).is_some());
+        assert_eq!(r.contract(PlayerId(1)).unwrap().expiry_year, Some(2026));
+    }
 
     #[test]
     fn l0_hart2_iter_identities_and_stats_yield_expected_counts() {

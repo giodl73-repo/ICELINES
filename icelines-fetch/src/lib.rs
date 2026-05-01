@@ -16,6 +16,7 @@ pub mod resolver;
 pub mod schema;
 pub mod shift_profile;
 pub mod snapshot;
+pub mod stats_loader;
 pub mod teams;
 pub mod transactions;
 

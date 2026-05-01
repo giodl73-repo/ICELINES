@@ -52,25 +52,25 @@ pub enum SnapshotError {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum SnapshotTier {
-    Rosters,    // Tier 1 — 32 team rosters + headshots
-    Stats,      // Tier 2 — skater bios + season stats
-    Positions,  // Tier 2b — boxscore-derived position eligibility
-    Realtime,   // Tier 2c — NHL realtime stats (hits, blocks, giveaways, takeaways)
-    MoneyPuck,  // Tier 3b — MoneyPuck xG, CF%, FF%, xGF%
-    Contracts,  // Tier 3c — NHL contract data (expiry type/year/salary)
-    Derived,    // Tier 3 — computed scores, depth charts (Phase 3)
+    Rosters,   // Tier 1 — 32 team rosters + headshots
+    Stats,     // Tier 2 — skater bios + season stats
+    Positions, // Tier 2b — boxscore-derived position eligibility
+    Realtime,  // Tier 2c — NHL realtime stats (hits, blocks, giveaways, takeaways)
+    MoneyPuck, // Tier 3b — MoneyPuck xG, CF%, FF%, xGF%
+    Contracts, // Tier 3c — NHL contract data (expiry type/year/salary)
+    Derived,   // Tier 3 — computed scores, depth charts (Phase 3)
 }
 
 impl SnapshotTier {
     pub fn dir_name(&self) -> &'static str {
         match self {
-            Self::Rosters   => "rosters",
-            Self::Stats     => "stats",
+            Self::Rosters => "rosters",
+            Self::Stats => "stats",
             Self::Positions => "positions",
-            Self::Realtime  => "realtime",
+            Self::Realtime => "realtime",
             Self::MoneyPuck => "moneypuck",
             Self::Contracts => "contracts",
-            Self::Derived   => "derived",
+            Self::Derived => "derived",
         }
     }
 }
@@ -114,11 +114,11 @@ pub struct SnapshotMeta {
 /// `{snapshot_dir}/chunked.json` when a snapshot is chunked.
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct ChunkedManifest {
-    pub version: u8,                         // schema version, currently 1
+    pub version: u8, // schema version, currently 1
     /// player_id (as JSON string key) → chunk hash for the bios record.
-    pub bios:    HashMap<u32, String>,
+    pub bios: HashMap<u32, String>,
     /// player_id → chunk hash for the stats record.
-    pub stats:   HashMap<u32, String>,
+    pub stats: HashMap<u32, String>,
 }
 
 /// Phase 8h: refcount table tracking how many chunked snapshots reference
@@ -133,35 +133,37 @@ pub struct ChunkRefs {
 /// so the CLI can print "swept N chunks, freed M KB".
 #[derive(Debug, Clone, Copy)]
 pub struct GcReport {
-    pub removed:     u32,
+    pub removed: u32,
     pub bytes_freed: u64,
-    pub dry_run:     bool,
+    pub dry_run: bool,
 }
 
 /// Phase 8f.2: result of a `prune` invocation.
 #[derive(Debug, Clone)]
 pub struct PruneReport {
-    pub planned: u32,        // count that *would* be deleted
-    pub deleted: u32,        // actually removed (== planned unless dry_run)
+    pub planned: u32, // count that *would* be deleted
+    pub deleted: u32, // actually removed (== planned unless dry_run)
     pub dry_run: bool,
-    pub names:   Vec<String>, // names slated for deletion, sorted
+    pub names: Vec<String>, // names slated for deletion, sorted
 }
 
 /// Phase 8f.3: result of `diff(a, b)`. All `player_id` lists are sorted.
 #[derive(Debug, Clone)]
 pub struct DiffReport {
-    pub a_name:        String,
-    pub b_name:        String,
-    pub added:         Vec<u32>,  // in B but not A
-    pub removed:       Vec<u32>,  // in A but not B
-    pub changed_bios:  Vec<u32>,  // bio hash differs
-    pub changed_stats: Vec<u32>,  // stats hash differs
+    pub a_name: String,
+    pub b_name: String,
+    pub added: Vec<u32>,         // in B but not A
+    pub removed: Vec<u32>,       // in A but not B
+    pub changed_bios: Vec<u32>,  // bio hash differs
+    pub changed_stats: Vec<u32>, // stats hash differs
 }
 
 impl DiffReport {
     pub fn is_empty(&self) -> bool {
-        self.added.is_empty() && self.removed.is_empty()
-            && self.changed_bios.is_empty() && self.changed_stats.is_empty()
+        self.added.is_empty()
+            && self.removed.is_empty()
+            && self.changed_bios.is_empty()
+            && self.changed_stats.is_empty()
     }
 }
 
@@ -181,6 +183,12 @@ impl SnapshotStore {
             .or_else(|_| std::env::var("HOME"))
             .unwrap_or_else(|_| ".".to_owned());
         PathBuf::from(home).join(".icelines").join("snapshots")
+    }
+
+    /// Read access to the on-disk root. Used by callers that need to
+    /// pass the path to lower-level helpers (e.g. `SnapshotMetaFlags::load`).
+    pub fn root(&self) -> &Path {
+        &self.root
     }
 
     fn index_path(&self) -> PathBuf {
@@ -441,7 +449,7 @@ impl SnapshotStore {
         // the bytes against the expected hash (the filename). Catches both
         // missing chunks and bit-rot of chunk files.
         if self.is_chunked(name) {
-            let cm    = self.load_chunked_manifest(name)?;
+            let cm = self.load_chunked_manifest(name)?;
             let store = self.chunk_store();
             for (player_id, hash) in cm.bios.iter().chain(cm.stats.iter()) {
                 match store.get(hash) {
@@ -457,9 +465,7 @@ impl SnapshotStore {
                         ));
                     }
                     Err(other) => {
-                        failures.push(format!(
-                            "CHUNK ERROR: player {player_id} → {other}"
-                        ));
+                        failures.push(format!("CHUNK ERROR: player {player_id} → {other}"));
                     }
                 }
             }
@@ -492,16 +498,20 @@ impl SnapshotStore {
         let ids_a: HashSet<u32> = cm_a.bios.keys().copied().collect();
         let ids_b: HashSet<u32> = cm_b.bios.keys().copied().collect();
 
-        let mut added:   Vec<u32> = ids_b.difference(&ids_a).copied().collect();
+        let mut added: Vec<u32> = ids_b.difference(&ids_a).copied().collect();
         let mut removed: Vec<u32> = ids_a.difference(&ids_b).copied().collect();
         added.sort();
         removed.sort();
 
-        let mut changed_bios:  Vec<u32> = Vec::new();
+        let mut changed_bios: Vec<u32> = Vec::new();
         let mut changed_stats: Vec<u32> = Vec::new();
         for id in ids_a.intersection(&ids_b) {
-            if cm_a.bios.get(id)  != cm_b.bios.get(id)  { changed_bios.push(*id); }
-            if cm_a.stats.get(id) != cm_b.stats.get(id) { changed_stats.push(*id); }
+            if cm_a.bios.get(id) != cm_b.bios.get(id) {
+                changed_bios.push(*id);
+            }
+            if cm_a.stats.get(id) != cm_b.stats.get(id) {
+                changed_stats.push(*id);
+            }
         }
         changed_bios.sort();
         changed_stats.sort();
@@ -509,7 +519,10 @@ impl SnapshotStore {
         Ok(DiffReport {
             a_name: a.to_owned(),
             b_name: b.to_owned(),
-            added, removed, changed_bios, changed_stats,
+            added,
+            removed,
+            changed_bios,
+            changed_stats,
         })
     }
 
@@ -529,8 +542,13 @@ impl SnapshotStore {
         // (stable tie-break by name to keep things deterministic).
         let mut by_tier: HashMap<&'static str, Vec<&SnapshotEntry>> = HashMap::new();
         for entry in &manifest.snapshots {
-            if !entry.sealed { continue; }
-            by_tier.entry(entry.tier.dir_name()).or_default().push(entry);
+            if !entry.sealed {
+                continue;
+            }
+            by_tier
+                .entry(entry.tier.dir_name())
+                .or_default()
+                .push(entry);
         }
         for entries in by_tier.values_mut() {
             entries.sort_by(|a, b| b.created_at.cmp(&a.created_at).then(b.name.cmp(&a.name)));
@@ -556,10 +574,10 @@ impl SnapshotStore {
             }
         }
         Ok(PruneReport {
-            planned:  to_delete.len() as u32,
+            planned: to_delete.len() as u32,
             deleted,
             dry_run,
-            names:    to_delete,
+            names: to_delete,
         })
     }
 
@@ -605,11 +623,15 @@ impl SnapshotStore {
     pub fn write_chunked_stats(
         &self,
         snapshot_name: &str,
-        bios:  &[crate::schema::SkaterBio],
+        bios: &[crate::schema::SkaterBio],
         stats: &[crate::schema::SkaterStats],
     ) -> Result<ChunkedManifest, SnapshotError> {
         let store = self.chunk_store();
-        let mut manifest = ChunkedManifest { version: 1, bios: HashMap::new(), stats: HashMap::new() };
+        let mut manifest = ChunkedManifest {
+            version: 1,
+            bios: HashMap::new(),
+            stats: HashMap::new(),
+        };
         let mut all_hashes: Vec<String> = Vec::with_capacity(bios.len() + stats.len());
 
         // Each chunk is the canonical JSON of one record.
@@ -637,7 +659,13 @@ impl SnapshotStore {
     pub fn read_chunked_stats(
         &self,
         snapshot_name: &str,
-    ) -> Result<(Vec<crate::schema::SkaterBio>, Vec<crate::schema::SkaterStats>), SnapshotError> {
+    ) -> Result<
+        (
+            Vec<crate::schema::SkaterBio>,
+            Vec<crate::schema::SkaterStats>,
+        ),
+        SnapshotError,
+    > {
         let cm = self.load_chunked_manifest(snapshot_name)?;
         let store = self.chunk_store();
 
@@ -656,27 +684,31 @@ impl SnapshotStore {
 
     /// True if the named snapshot has a chunked manifest on disk.
     pub fn is_chunked(&self, snapshot_name: &str) -> bool {
-        self.snapshot_dir(snapshot_name).join("chunked.json").exists()
+        self.snapshot_dir(snapshot_name)
+            .join("chunked.json")
+            .exists()
     }
 
     fn chunked_manifest_path(&self, snapshot_name: &str) -> PathBuf {
         self.snapshot_dir(snapshot_name).join("chunked.json")
     }
 
-    fn load_chunked_manifest(&self, snapshot_name: &str)
-        -> Result<ChunkedManifest, SnapshotError>
-    {
+    fn load_chunked_manifest(&self, snapshot_name: &str) -> Result<ChunkedManifest, SnapshotError> {
         let p = self.chunked_manifest_path(snapshot_name);
         if !p.exists() {
-            return Err(SnapshotError::NotFound { name: format!("{snapshot_name}/chunked.json") });
+            return Err(SnapshotError::NotFound {
+                name: format!("{snapshot_name}/chunked.json"),
+            });
         }
         let raw = std::fs::read_to_string(&p)?;
         Ok(serde_json::from_str(&raw)?)
     }
 
-    fn write_chunked_manifest(&self, snapshot_name: &str, cm: &ChunkedManifest)
-        -> Result<(), SnapshotError>
-    {
+    fn write_chunked_manifest(
+        &self,
+        snapshot_name: &str,
+        cm: &ChunkedManifest,
+    ) -> Result<(), SnapshotError> {
         let p = self.chunked_manifest_path(snapshot_name);
         if let Some(parent) = p.parent() {
             std::fs::create_dir_all(parent)?;
@@ -700,14 +732,18 @@ impl SnapshotStore {
     /// Load the refcount table; missing file → empty map (recoverable).
     pub fn load_refs(&self) -> Result<ChunkRefs, SnapshotError> {
         let p = self.refs_path();
-        if !p.exists() { return Ok(ChunkRefs::default()); }
+        if !p.exists() {
+            return Ok(ChunkRefs::default());
+        }
         let raw = std::fs::read_to_string(&p)?;
         Ok(serde_json::from_str(&raw).unwrap_or_default())
     }
 
     fn save_refs(&self, refs: &ChunkRefs) -> Result<(), SnapshotError> {
         let p = self.refs_path();
-        if let Some(parent) = p.parent() { std::fs::create_dir_all(parent)?; }
+        if let Some(parent) = p.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
         let tmp = p.with_extension("tmp");
         let json = serde_json::to_string_pretty(refs)?;
         let mut f = std::fs::File::create(&tmp)?;
@@ -734,7 +770,9 @@ impl SnapshotStore {
         for h in hashes {
             if let Some(c) = refs.counts.get_mut(h) {
                 *c = c.saturating_sub(1);
-                if *c == 0 { refs.counts.remove(h); }
+                if *c == 0 {
+                    refs.counts.remove(h);
+                }
             }
         }
         self.save_refs(&refs)
@@ -747,7 +785,9 @@ impl SnapshotStore {
         let manifest = self.load_manifest()?;
         let mut refs = ChunkRefs::default();
         for entry in &manifest.snapshots {
-            if !self.is_chunked(&entry.name) { continue; }
+            if !self.is_chunked(&entry.name) {
+                continue;
+            }
             if let Ok(cm) = self.load_chunked_manifest(&entry.name) {
                 for h in cm.bios.values().chain(cm.stats.values()) {
                     *refs.counts.entry(h.clone()).or_insert(0) += 1;
@@ -775,7 +815,9 @@ impl SnapshotStore {
         let mut removed = 0u32;
         let mut bytes_freed: u64 = 0;
         for (hash, path) in on_disk {
-            if refs.counts.contains_key(&hash) { continue; }
+            if refs.counts.contains_key(&hash) {
+                continue;
+            }
             // Zero-ref chunk → sweep
             if let Ok(meta) = std::fs::metadata(&path) {
                 bytes_freed += meta.len();
@@ -785,7 +827,11 @@ impl SnapshotStore {
                 store.delete(&hash).map_err(io_to_snapshot)?;
             }
         }
-        Ok(GcReport { removed, bytes_freed, dry_run })
+        Ok(GcReport {
+            removed,
+            bytes_freed,
+            dry_run,
+        })
     }
 
     /// One-shot migration of a legacy snapshot (with `stats/bios.json` and
@@ -800,7 +846,7 @@ impl SnapshotStore {
             return self.load_chunked_manifest(snapshot_name);
         }
         // Read the legacy files via the same on-disk paths used by `read`.
-        let bios:  Vec<crate::schema::SkaterBio>   =
+        let bios: Vec<crate::schema::SkaterBio> =
             self.read(snapshot_name, &SnapshotTier::Stats, "bios.json")?;
         let stats: Vec<crate::schema::SkaterStats> =
             self.read(snapshot_name, &SnapshotTier::Stats, "stats.json")?;
@@ -841,10 +887,13 @@ impl SnapshotStore {
 fn io_to_snapshot(e: crate::error::FetchError) -> SnapshotError {
     use crate::error::FetchError;
     match e {
-        FetchError::Io(inner)         => SnapshotError::Io(inner),
+        FetchError::Io(inner) => SnapshotError::Io(inner),
         FetchError::MissingChunk { hash } => SnapshotError::NotFound { name: hash },
-        FetchError::IntegrityViolation { expected, actual } =>
-            SnapshotError::IntegrityViolation { file: "chunk".to_owned(), expected, got: actual },
+        FetchError::IntegrityViolation { expected, actual } => SnapshotError::IntegrityViolation {
+            file: "chunk".to_owned(),
+            expected,
+            got: actual,
+        },
         other => SnapshotError::Io(std::io::Error::other(other.to_string())),
     }
 }
@@ -869,13 +918,28 @@ fn sha256_hex(data: &[u8]) -> String {
 pub struct SnapshotMetaFlags {
     /// True when the most-recent transactions fetch failed. Cleared on
     /// the next successful fetch. The CLI / TUI WARN until the flag clears.
-    pub transactions_stale:      bool,
+    pub transactions_stale: bool,
     /// Last error message — surfaced in the WARN line. None when the
     /// last fetch succeeded.
     pub transactions_last_error: Option<String>,
     /// Wall-clock of the most-recent transactions fetch attempt
     /// (success or failure). Used by the TUI staleness check.
     pub transactions_fetched_at: Option<String>,
+
+    // ── Phase Hart.3 — schema versioning ──────────────────────────────
+    //
+    // Older meta files don't have these — `#[serde(default)]` at the
+    // struct level fills with 0, which the loader interprets as
+    // "pre-Hart bundle" and accepts (the loader uses MAX_KNOWN_BUNDLE
+    // and MAX_KNOWN_REPO consts to decide whether to error out).
+    //
+    /// Bundled-JSON file format version. Loader validates: equal = OK;
+    /// `incoming > MAX_KNOWN_BUNDLE` = error with upgrade message;
+    /// `incoming < MAX_KNOWN_BUNDLE` = run a migrator on read.
+    pub bundle_schema_version: u32,
+    /// In-memory `StatsRepository` model version. Bumps on every
+    /// breaking change to the model. Phase Hart starts at 1.
+    pub repository_version: u32,
 }
 
 impl SnapshotMetaFlags {
@@ -961,7 +1025,7 @@ pub fn atomic_write_json<T: Serialize>(path: &Path, value: &T) -> std::io::Resul
 pub fn read_json_with_bak_fallback<T: DeserializeOwned>(path: &Path) -> std::io::Result<T> {
     let primary_err = match try_read_json::<T>(path) {
         Ok(value) => return Ok(value),
-        Err(e)    => e,
+        Err(e) => e,
     };
     let bak = bak_path(path);
     if !bak.exists() {
@@ -969,14 +1033,13 @@ pub fn read_json_with_bak_fallback<T: DeserializeOwned>(path: &Path) -> std::io:
     }
     match try_read_json::<T>(&bak) {
         Ok(value) => Ok(value),
-        Err(_)    => Err(primary_err), // surface the primary error, more useful
+        Err(_) => Err(primary_err), // surface the primary error, more useful
     }
 }
 
 fn try_read_json<T: DeserializeOwned>(path: &Path) -> std::io::Result<T> {
     let raw = std::fs::read_to_string(path)?;
-    serde_json::from_str(&raw)
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
+    serde_json::from_str(&raw).map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
 }
 
 fn tmp_path(path: &Path) -> PathBuf {
@@ -1019,12 +1082,13 @@ mod tests {
         let dir = TempDir::new().unwrap();
         let path = dir.path().join("hello.json");
 
-        atomic_write_json(&path, &serde_json::json!({"k": "v"}))
-            .expect("write must succeed");
+        atomic_write_json(&path, &serde_json::json!({"k": "v"})).expect("write must succeed");
 
         assert!(path.exists(), "target file must exist after write");
-        assert!(!tmp_path(&path).exists(),
-            ".tmp file must be cleaned up by the rename");
+        assert!(
+            !tmp_path(&path).exists(),
+            ".tmp file must be cleaned up by the rename"
+        );
         let contents = std::fs::read_to_string(&path).unwrap();
         assert!(contents.contains("\"k\""), "JSON content must round-trip");
     }
@@ -1036,19 +1100,25 @@ mod tests {
 
         // First write — no .bak yet.
         atomic_write_json(&path, &serde_json::json!({"v": 1})).unwrap();
-        assert!(!bak_path(&path).exists(),
-            "no .bak on first write — nothing to back up");
+        assert!(
+            !bak_path(&path).exists(),
+            "no .bak on first write — nothing to back up"
+        );
 
         // Second write — prior content moved to .bak.
         atomic_write_json(&path, &serde_json::json!({"v": 2})).unwrap();
         assert!(bak_path(&path).exists(), ".bak must exist after overwrite");
 
         let bak_contents = std::fs::read_to_string(bak_path(&path)).unwrap();
-        assert!(bak_contents.contains("\"v\": 1"),
-            ".bak must contain the prior content, got: {bak_contents}");
+        assert!(
+            bak_contents.contains("\"v\": 1"),
+            ".bak must contain the prior content, got: {bak_contents}"
+        );
         let curr_contents = std::fs::read_to_string(&path).unwrap();
-        assert!(curr_contents.contains("\"v\": 2"),
-            "primary must contain the new content, got: {curr_contents}");
+        assert!(
+            curr_contents.contains("\"v\": 2"),
+            "primary must contain the new content, got: {curr_contents}"
+        );
     }
 
     #[test]
@@ -1067,12 +1137,17 @@ mod tests {
         std::fs::create_dir_all(&tmp).unwrap();
 
         let result = atomic_write_json(&path, &serde_json::json!({"v": "new"}));
-        assert!(result.is_err(), "write must fail when .tmp can't be created");
+        assert!(
+            result.is_err(),
+            "write must fail when .tmp can't be created"
+        );
 
         // Original untouched.
         let after = std::fs::read_to_string(&path).unwrap();
-        assert!(after.contains("\"v\": \"original\""),
-            "primary must be intact after failed write, got: {after}");
+        assert!(
+            after.contains("\"v\": \"original\""),
+            "primary must be intact after failed write, got: {after}"
+        );
 
         // Cleanup so tempdir drop doesn't trip on the directory-named .tmp.
         let _ = std::fs::remove_dir_all(&tmp);
@@ -1084,8 +1159,7 @@ mod tests {
         let path = dir.path().join("data.json");
         atomic_write_json(&path, &serde_json::json!({"who": "primary"})).unwrap();
 
-        let v: serde_json::Value =
-            read_json_with_bak_fallback(&path).expect("primary must load");
+        let v: serde_json::Value = read_json_with_bak_fallback(&path).expect("primary must load");
         assert_eq!(v["who"], "primary");
     }
 
@@ -1104,7 +1178,10 @@ mod tests {
         // content moved aside on the second write).
         let v: serde_json::Value =
             read_json_with_bak_fallback(&path).expect("must recover from .bak");
-        assert_eq!(v["v"], 1, "must serve the .bak content on primary corruption");
+        assert_eq!(
+            v["v"], 1,
+            "must serve the .bak content on primary corruption"
+        );
     }
 
     #[test]
@@ -1118,10 +1195,11 @@ mod tests {
         std::fs::write(&path, "garbage primary").unwrap();
         std::fs::write(bak_path(&path), "garbage bak").unwrap();
 
-        let result: std::io::Result<serde_json::Value> =
-            read_json_with_bak_fallback(&path);
-        assert!(result.is_err(),
-            "both primary and bak corrupt → loader returns Err, no panic");
+        let result: std::io::Result<serde_json::Value> = read_json_with_bak_fallback(&path);
+        assert!(
+            result.is_err(),
+            "both primary and bak corrupt → loader returns Err, no panic"
+        );
     }
 
     #[test]
@@ -1129,10 +1207,11 @@ mod tests {
         let dir = TempDir::new().unwrap();
         let path = dir.path().join("does-not-exist.json");
 
-        let result: std::io::Result<serde_json::Value> =
-            read_json_with_bak_fallback(&path);
-        assert!(result.is_err(),
-            "missing file with no .bak → Err, not panic");
+        let result: std::io::Result<serde_json::Value> = read_json_with_bak_fallback(&path);
+        assert!(
+            result.is_err(),
+            "missing file with no .bak → Err, not panic"
+        );
     }
 
     #[test]
@@ -1271,54 +1350,60 @@ mod tests {
 
     fn fixture_bio(id: u32, name: &str) -> crate::schema::SkaterBio {
         crate::schema::SkaterBio {
-            player_id:           id,
-            skater_full_name:    name.to_owned(),
+            player_id: id,
+            skater_full_name: name.to_owned(),
             current_team_abbrev: Some("EDM".to_owned()),
-            position_code:       "C".to_owned(),
-            games_played:        50,
-            goals:               20,
-            assists:             30,
-            points:              50,
-            shoots_catches:      Some("L".to_owned()),
-            birth_date:          Some("1997-01-13".to_owned()),
-            birth_country:       Some("CAN".to_owned()),
-            nationality_code:    Some("CAN".to_owned()),
-            birth_city:          Some("Edmonton".to_owned()),
+            position_code: "C".to_owned(),
+            games_played: 50,
+            goals: 20,
+            assists: 30,
+            points: 50,
+            shoots_catches: Some("L".to_owned()),
+            birth_date: Some("1997-01-13".to_owned()),
+            birth_country: Some("CAN".to_owned()),
+            nationality_code: Some("CAN".to_owned()),
+            birth_city: Some("Edmonton".to_owned()),
             birth_state_province_code: Some("AB".to_owned()),
-            height:              Some(73),
-            weight:              Some(193),
-            draft_year:          Some(2015),
-            draft_round:         Some(1),
-            draft_overall:       Some(1),
+            height: Some(73),
+            weight: Some(193),
+            draft_year: Some(2015),
+            draft_round: Some(1),
+            draft_overall: Some(1),
             first_season_for_game_type: Some(20152016),
             is_in_hall_of_fame_yn: Some("N".to_owned()),
-            last_name:           name.split_whitespace().last().unwrap_or(name).to_owned(),
+            last_name: name.split_whitespace().last().unwrap_or(name).to_owned(),
         }
     }
 
     fn fixture_stats(id: u32, goals: u32) -> crate::schema::SkaterStats {
         crate::schema::SkaterStats {
-            player_id:           id,
-            games_played:        50,
+            player_id: id,
+            games_played: 50,
             goals,
-            assists:             30,
-            points:              goals + 30,
-            points_per_game:     1.0,
-            pp_goals:            5, pp_points: 10,
-            sh_goals:            0, sh_points: 0,
-            game_winning_goals:  3, ot_goals: 1,
-            shots:               150, shooting_pctg: None,
-            plus_minus:          5,
+            assists: 30,
+            points: goals + 30,
+            points_per_game: 1.0,
+            pp_goals: 5,
+            pp_points: 10,
+            sh_goals: 0,
+            sh_points: 0,
+            game_winning_goals: 3,
+            ot_goals: 1,
+            shots: 150,
+            shooting_pctg: None,
+            plus_minus: 5,
             time_on_ice_per_game: None,
-            faceoff_win_pct:     None,
+            faceoff_win_pct: None,
         }
     }
 
     #[test]
     fn l0_chunked_snapshot_write_then_read_roundtrip() {
         let (_dir, store) = store();
-        store.create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25").unwrap();
-        let bios  = vec![fixture_bio(1, "A One"), fixture_bio(2, "B Two")];
+        store
+            .create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25")
+            .unwrap();
+        let bios = vec![fixture_bio(1, "A One"), fixture_bio(2, "B Two")];
         let stats = vec![fixture_stats(1, 20), fixture_stats(2, 30)];
 
         let manifest = store.write_chunked_stats("a", &bios, &stats).unwrap();
@@ -1339,12 +1424,28 @@ mod tests {
         // Snapshot A: 3 players. Snapshot B: same 3 players, but player 2's
         // stats line changed. Players 1 and 3's chunks should be reused.
         let (_dir, store) = store();
-        store.create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25").unwrap();
-        store.create("b", "20252026", SnapshotTier::Stats, None, "2026-04-26").unwrap();
+        store
+            .create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25")
+            .unwrap();
+        store
+            .create("b", "20252026", SnapshotTier::Stats, None, "2026-04-26")
+            .unwrap();
 
-        let bios = vec![fixture_bio(1, "A"), fixture_bio(2, "B"), fixture_bio(3, "C")];
-        let stats_a = vec![fixture_stats(1, 10), fixture_stats(2, 20), fixture_stats(3, 30)];
-        let stats_b = vec![fixture_stats(1, 10), fixture_stats(2, 25), fixture_stats(3, 30)];
+        let bios = vec![
+            fixture_bio(1, "A"),
+            fixture_bio(2, "B"),
+            fixture_bio(3, "C"),
+        ];
+        let stats_a = vec![
+            fixture_stats(1, 10),
+            fixture_stats(2, 20),
+            fixture_stats(3, 30),
+        ];
+        let stats_b = vec![
+            fixture_stats(1, 10),
+            fixture_stats(2, 25),
+            fixture_stats(3, 30),
+        ];
 
         let m_a = store.write_chunked_stats("a", &bios, &stats_a).unwrap();
         let m_b = store.write_chunked_stats("b", &bios, &stats_b).unwrap();
@@ -1355,72 +1456,123 @@ mod tests {
         assert_eq!(m_a.bios[&3], m_b.bios[&3]);
         // Stats chunks: 1 + 3 unchanged, 2 differs
         assert_eq!(m_a.stats[&1], m_b.stats[&1]);
-        assert_ne!(m_a.stats[&2], m_b.stats[&2], "player 2 stats changed → new chunk");
+        assert_ne!(
+            m_a.stats[&2], m_b.stats[&2],
+            "player 2 stats changed → new chunk"
+        );
         assert_eq!(m_a.stats[&3], m_b.stats[&3]);
 
         // Total unique chunks on disk: 3 bios + 3 stats_a + 1 stats_b = 7
         let on_disk = store.chunk_store().iter_chunks().unwrap();
-        assert_eq!(on_disk.len(), 7,
+        assert_eq!(
+            on_disk.len(),
+            7,
             "expected 7 unique chunks (3 shared bios + 4 distinct stats), got {}",
-            on_disk.len());
+            on_disk.len()
+        );
     }
 
     #[test]
     fn l0_chunked_snapshot_inc_refs_on_write() {
         let (_dir, store) = store();
-        store.create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25").unwrap();
+        store
+            .create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25")
+            .unwrap();
         let bios = vec![fixture_bio(1, "A")];
         let stats = vec![fixture_stats(1, 10)];
         store.write_chunked_stats("a", &bios, &stats).unwrap();
         let refs = store.load_refs().unwrap();
         // One bio chunk + one stats chunk, each at refcount 1
         assert_eq!(refs.counts.len(), 2);
-        for c in refs.counts.values() { assert_eq!(*c, 1); }
+        for c in refs.counts.values() {
+            assert_eq!(*c, 1);
+        }
     }
 
     #[test]
     fn l0_chunked_snapshot_dec_refs_on_delete() {
         let (_dir, store) = store();
-        store.create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25").unwrap();
-        store.create("b", "20252026", SnapshotTier::Stats, None, "2026-04-26").unwrap();
+        store
+            .create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25")
+            .unwrap();
+        store
+            .create("b", "20252026", SnapshotTier::Stats, None, "2026-04-26")
+            .unwrap();
         let bios = vec![fixture_bio(1, "A")];
         let stats = vec![fixture_stats(1, 10)];
         store.write_chunked_stats("a", &bios, &stats).unwrap();
         store.write_chunked_stats("b", &bios, &stats).unwrap();
-        store.seal("a").unwrap();    // 'a' is now active
+        store.seal("a").unwrap(); // 'a' is now active
 
         // Both snapshots reference the same 2 chunks → refcount 2 each.
         let refs = store.load_refs().unwrap();
-        assert_eq!(refs.counts.values().copied().collect::<Vec<_>>(), vec![2, 2]
-            .into_iter().take(refs.counts.len()).collect::<Vec<_>>(),
-            "all hashes should have refcount 2");
+        assert_eq!(
+            refs.counts.values().copied().collect::<Vec<_>>(),
+            vec![2, 2]
+                .into_iter()
+                .take(refs.counts.len())
+                .collect::<Vec<_>>(),
+            "all hashes should have refcount 2"
+        );
 
         // Delete b (non-active): chunks drop to refcount 1, not removed.
         store.delete("b").unwrap();
         let refs = store.load_refs().unwrap();
         assert_eq!(refs.counts.len(), 2);
-        for c in refs.counts.values() { assert_eq!(*c, 1); }
+        for c in refs.counts.values() {
+            assert_eq!(*c, 1);
+        }
     }
 
     #[test]
     fn l0_chunked_snapshot_is_chunked_distinguishes_layouts() {
         let (_dir, store) = store();
-        store.create("legacy", "20252026", SnapshotTier::Stats, None, "2026-04-25").unwrap();
-        store.create("chunked", "20252026", SnapshotTier::Stats, None, "2026-04-26").unwrap();
+        store
+            .create(
+                "legacy",
+                "20252026",
+                SnapshotTier::Stats,
+                None,
+                "2026-04-25",
+            )
+            .unwrap();
+        store
+            .create(
+                "chunked",
+                "20252026",
+                SnapshotTier::Stats,
+                None,
+                "2026-04-26",
+            )
+            .unwrap();
 
         let bios = vec![fixture_bio(1, "A")];
         let stats = vec![fixture_stats(1, 10)];
         store.write_chunked_stats("chunked", &bios, &stats).unwrap();
 
-        assert!(!store.is_chunked("legacy"), "legacy snapshot must not look chunked");
-        assert!(store.is_chunked("chunked"), "chunked snapshot must report true");
+        assert!(
+            !store.is_chunked("legacy"),
+            "legacy snapshot must not look chunked"
+        );
+        assert!(
+            store.is_chunked("chunked"),
+            "chunked snapshot must report true"
+        );
     }
 
     #[test]
     fn l0_chunked_snapshot_read_legacy_returns_not_found() {
         // A snapshot that was never chunked has no chunked.json — read errors.
         let (_dir, store) = store();
-        store.create("legacy", "20252026", SnapshotTier::Stats, None, "2026-04-25").unwrap();
+        store
+            .create(
+                "legacy",
+                "20252026",
+                SnapshotTier::Stats,
+                None,
+                "2026-04-25",
+            )
+            .unwrap();
         let err = store.read_chunked_stats("legacy").unwrap_err();
         assert!(matches!(err, SnapshotError::NotFound { .. }));
     }
@@ -1430,7 +1582,9 @@ mod tests {
     #[test]
     fn l0_gc_dry_run_reports_zero_ref_chunks_without_deleting() {
         let (_dir, store) = store();
-        store.create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25").unwrap();
+        store
+            .create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25")
+            .unwrap();
         let bios = vec![fixture_bio(1, "A")];
         let stats = vec![fixture_stats(1, 10)];
         store.write_chunked_stats("a", &bios, &stats).unwrap();
@@ -1441,16 +1595,24 @@ mod tests {
 
         let report = store.gc_chunks(true).unwrap();
         assert!(report.dry_run);
-        assert_eq!(report.removed, 1, "exactly one zero-ref chunk should be reported");
+        assert_eq!(
+            report.removed, 1,
+            "exactly one zero-ref chunk should be reported"
+        );
         assert!(report.bytes_freed > 0);
         // Dry-run did NOT remove
-        assert!(store.chunk_store().exists(&stray_hash), "dry_run must not delete");
+        assert!(
+            store.chunk_store().exists(&stray_hash),
+            "dry_run must not delete"
+        );
     }
 
     #[test]
     fn l0_gc_real_run_sweeps_zero_ref_chunks() {
         let (_dir, store) = store();
-        store.create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25").unwrap();
+        store
+            .create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25")
+            .unwrap();
         let bios = vec![fixture_bio(1, "A")];
         let stats = vec![fixture_stats(1, 10)];
         store.write_chunked_stats("a", &bios, &stats).unwrap();
@@ -1459,21 +1621,30 @@ mod tests {
         let report = store.gc_chunks(false).unwrap();
         assert!(!report.dry_run);
         assert_eq!(report.removed, 1);
-        assert!(!store.chunk_store().exists(&stray_hash), "stray chunk must be swept");
+        assert!(
+            !store.chunk_store().exists(&stray_hash),
+            "stray chunk must be swept"
+        );
 
         // Referenced chunks are preserved
         let cm = store.load_chunked_manifest("a").unwrap();
         for h in cm.bios.values().chain(cm.stats.values()) {
-            assert!(store.chunk_store().exists(h),
-                "referenced chunk {h} must survive GC");
+            assert!(
+                store.chunk_store().exists(h),
+                "referenced chunk {h} must survive GC"
+            );
         }
     }
 
     #[test]
     fn l0_recompute_refs_rebuilds_from_manifests() {
         let (_dir, store) = store();
-        store.create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25").unwrap();
-        store.create("b", "20252026", SnapshotTier::Stats, None, "2026-04-26").unwrap();
+        store
+            .create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25")
+            .unwrap();
+        store
+            .create("b", "20252026", SnapshotTier::Stats, None, "2026-04-26")
+            .unwrap();
         let bios = vec![fixture_bio(1, "A")];
         let stats = vec![fixture_stats(1, 10)];
         store.write_chunked_stats("a", &bios, &stats).unwrap();
@@ -1484,13 +1655,17 @@ mod tests {
         let recomputed = store.recompute_refs().unwrap();
         // Two snapshots × two chunks each, all shared → 2 entries at refcount 2
         assert_eq!(recomputed.counts.len(), 2);
-        for c in recomputed.counts.values() { assert_eq!(*c, 2); }
+        for c in recomputed.counts.values() {
+            assert_eq!(*c, 2);
+        }
     }
 
     #[test]
     fn l0_rebuild_chunked_idempotent_on_already_chunked() {
         let (_dir, store) = store();
-        store.create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25").unwrap();
+        store
+            .create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25")
+            .unwrap();
         let bios = vec![fixture_bio(1, "A")];
         let stats = vec![fixture_stats(1, 10)];
         let m1 = store.write_chunked_stats("a", &bios, &stats).unwrap();
@@ -1499,13 +1674,17 @@ mod tests {
         assert_eq!(m1.stats, m2.stats);
         // Refs not double-incremented
         let refs = store.load_refs().unwrap();
-        for c in refs.counts.values() { assert_eq!(*c, 1); }
+        for c in refs.counts.values() {
+            assert_eq!(*c, 1);
+        }
     }
 
     // ── Prune (Phase 8f.2) ───────────────────────────────────────────────────
 
     fn create_sealed_dated(store: &SnapshotStore, name: &str, date: &str) {
-        store.create(name, "20252026", SnapshotTier::Stats, None, date).unwrap();
+        store
+            .create(name, "20252026", SnapshotTier::Stats, None, date)
+            .unwrap();
         store.seal(name).unwrap();
     }
 
@@ -1524,7 +1703,11 @@ mod tests {
         assert!(report.dry_run);
         // Newest 2 kept (28, 29); one of those (29) is active and excluded
         // from any deletion logic regardless. Three older ones planned.
-        assert_eq!(report.planned, 3, "expected 3 to prune, got {}", report.planned);
+        assert_eq!(
+            report.planned, 3,
+            "expected 3 to prune, got {}",
+            report.planned
+        );
         assert_eq!(report.deleted, 0, "dry_run must not actually delete");
         // All 5 still present
         assert_eq!(store.list().unwrap().len(), 5);
@@ -1533,7 +1716,13 @@ mod tests {
     #[test]
     fn l0_prune_real_run_deletes_oldest_keeps_newest() {
         let (_dir, store) = store();
-        for date in &["2026-04-25", "2026-04-26", "2026-04-27", "2026-04-28", "2026-04-29"] {
+        for date in &[
+            "2026-04-25",
+            "2026-04-26",
+            "2026-04-27",
+            "2026-04-28",
+            "2026-04-29",
+        ] {
             create_sealed_dated(&store, &format!("stats-{date}"), date);
         }
         let report = store.prune(2, false).unwrap();
@@ -1558,8 +1747,10 @@ mod tests {
         // (2026-04-25) must survive because prune skips the active.
         let report = store.prune(1, false).unwrap();
         let names: Vec<String> = store.list().unwrap().into_iter().map(|e| e.name).collect();
-        assert!(names.contains(&"stats-2026-04-25".to_owned()),
-            "active snapshot must always survive prune");
+        assert!(
+            names.contains(&"stats-2026-04-25".to_owned()),
+            "active snapshot must always survive prune"
+        );
         // We told prune to keep 1 newest; with 2026-04-27 newest, that's kept.
         // 2026-04-26 is the only one prune is allowed to delete (active is excluded).
         assert!(report.deleted >= 1);
@@ -1580,13 +1771,23 @@ mod tests {
         let (_dir, store) = store();
         // Create one sealed and one draft (un-sealed).
         create_sealed_dated(&store, "stats-2026-04-25", "2026-04-25");
-        store.create("stats-2026-04-26-draft", "20252026", SnapshotTier::Stats, None, "2026-04-26").unwrap();
+        store
+            .create(
+                "stats-2026-04-26-draft",
+                "20252026",
+                SnapshotTier::Stats,
+                None,
+                "2026-04-26",
+            )
+            .unwrap();
         // Don't seal the draft.
 
         let report = store.prune(0, true).unwrap();
         // Only the sealed one is countable; the draft is invisible to prune.
-        assert!(!report.names.contains(&"stats-2026-04-26-draft".to_owned()),
-            "drafts must be excluded from prune candidates");
+        assert!(
+            !report.names.contains(&"stats-2026-04-26-draft".to_owned()),
+            "drafts must be excluded from prune candidates"
+        );
     }
 
     // ── Diff (Phase 8f.3) ───────────────────────────────────────────────────
@@ -1594,35 +1795,52 @@ mod tests {
     #[test]
     fn l0_diff_identical_chunked_snapshots_returns_empty() {
         let (_dir, store) = store();
-        store.create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25").unwrap();
-        store.create("b", "20252026", SnapshotTier::Stats, None, "2026-04-26").unwrap();
-        let bios  = vec![fixture_bio(1, "A"), fixture_bio(2, "B")];
+        store
+            .create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25")
+            .unwrap();
+        store
+            .create("b", "20252026", SnapshotTier::Stats, None, "2026-04-26")
+            .unwrap();
+        let bios = vec![fixture_bio(1, "A"), fixture_bio(2, "B")];
         let stats = vec![fixture_stats(1, 10), fixture_stats(2, 20)];
         store.write_chunked_stats("a", &bios, &stats).unwrap();
         store.write_chunked_stats("b", &bios, &stats).unwrap();
 
         let diff = store.diff("a", "b").unwrap();
-        assert!(diff.is_empty(), "identical content must yield empty diff: {diff:?}");
+        assert!(
+            diff.is_empty(),
+            "identical content must yield empty diff: {diff:?}"
+        );
     }
 
     #[test]
     fn l0_diff_detects_added_and_removed_players() {
         let (_dir, store) = store();
-        store.create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25").unwrap();
-        store.create("b", "20252026", SnapshotTier::Stats, None, "2026-04-26").unwrap();
+        store
+            .create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25")
+            .unwrap();
+        store
+            .create("b", "20252026", SnapshotTier::Stats, None, "2026-04-26")
+            .unwrap();
         // a has {1, 2}, b has {2, 3}: removed=[1], added=[3]
-        store.write_chunked_stats("a",
-            &[fixture_bio(1, "A"), fixture_bio(2, "B")],
-            &[fixture_stats(1, 10), fixture_stats(2, 20)],
-        ).unwrap();
-        store.write_chunked_stats("b",
-            &[fixture_bio(2, "B"), fixture_bio(3, "C")],
-            &[fixture_stats(2, 20), fixture_stats(3, 30)],
-        ).unwrap();
+        store
+            .write_chunked_stats(
+                "a",
+                &[fixture_bio(1, "A"), fixture_bio(2, "B")],
+                &[fixture_stats(1, 10), fixture_stats(2, 20)],
+            )
+            .unwrap();
+        store
+            .write_chunked_stats(
+                "b",
+                &[fixture_bio(2, "B"), fixture_bio(3, "C")],
+                &[fixture_stats(2, 20), fixture_stats(3, 30)],
+            )
+            .unwrap();
 
         let diff = store.diff("a", "b").unwrap();
         assert_eq!(diff.removed, vec![1], "player 1 in A only");
-        assert_eq!(diff.added,   vec![3], "player 3 in B only");
+        assert_eq!(diff.added, vec![3], "player 3 in B only");
         assert!(diff.changed_bios.is_empty());
         assert!(diff.changed_stats.is_empty());
     }
@@ -1630,14 +1848,20 @@ mod tests {
     #[test]
     fn l0_diff_detects_changed_stats_only() {
         let (_dir, store) = store();
-        store.create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25").unwrap();
-        store.create("b", "20252026", SnapshotTier::Stats, None, "2026-04-26").unwrap();
+        store
+            .create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25")
+            .unwrap();
+        store
+            .create("b", "20252026", SnapshotTier::Stats, None, "2026-04-26")
+            .unwrap();
         // Same bios; player 2's stats differ between A and B.
-        let bios  = vec![fixture_bio(1, "A"), fixture_bio(2, "B")];
-        store.write_chunked_stats("a", &bios,
-            &[fixture_stats(1, 10), fixture_stats(2, 20)]).unwrap();
-        store.write_chunked_stats("b", &bios,
-            &[fixture_stats(1, 10), fixture_stats(2, 25)]).unwrap();
+        let bios = vec![fixture_bio(1, "A"), fixture_bio(2, "B")];
+        store
+            .write_chunked_stats("a", &bios, &[fixture_stats(1, 10), fixture_stats(2, 20)])
+            .unwrap();
+        store
+            .write_chunked_stats("b", &bios, &[fixture_stats(1, 10), fixture_stats(2, 25)])
+            .unwrap();
 
         let diff = store.diff("a", "b").unwrap();
         assert!(diff.added.is_empty());
@@ -1649,34 +1873,62 @@ mod tests {
     #[test]
     fn l0_diff_legacy_snapshot_errors_with_clear_message() {
         let (_dir, store) = store();
-        store.create("legacy", "20252026", SnapshotTier::Stats, None, "2026-04-25").unwrap();
-        store.create("chunked", "20252026", SnapshotTier::Stats, None, "2026-04-26").unwrap();
-        store.write_chunked_stats("chunked",
-            &[fixture_bio(1, "A")], &[fixture_stats(1, 10)]).unwrap();
+        store
+            .create(
+                "legacy",
+                "20252026",
+                SnapshotTier::Stats,
+                None,
+                "2026-04-25",
+            )
+            .unwrap();
+        store
+            .create(
+                "chunked",
+                "20252026",
+                SnapshotTier::Stats,
+                None,
+                "2026-04-26",
+            )
+            .unwrap();
+        store
+            .write_chunked_stats("chunked", &[fixture_bio(1, "A")], &[fixture_stats(1, 10)])
+            .unwrap();
 
         let err = store.diff("legacy", "chunked").unwrap_err().to_string();
-        assert!(err.contains("requires both snapshots to be chunked"),
-            "error must explain the requirement, got: {err}");
-        assert!(err.contains("rebuild --chunked"),
-            "error must hint at migration command, got: {err}");
+        assert!(
+            err.contains("requires both snapshots to be chunked"),
+            "error must explain the requirement, got: {err}"
+        );
+        assert!(
+            err.contains("rebuild --chunked"),
+            "error must hint at migration command, got: {err}"
+        );
     }
 
     #[test]
     fn l0_chunked_snapshot_verify_clean_returns_no_failures() {
         let (_dir, store) = store();
-        store.create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25").unwrap();
+        store
+            .create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25")
+            .unwrap();
         let bios = vec![fixture_bio(1, "A"), fixture_bio(2, "B")];
         let stats = vec![fixture_stats(1, 10), fixture_stats(2, 20)];
         store.write_chunked_stats("a", &bios, &stats).unwrap();
 
         let failures = store.verify("a").unwrap();
-        assert!(failures.is_empty(), "clean chunked snapshot must verify, got: {failures:?}");
+        assert!(
+            failures.is_empty(),
+            "clean chunked snapshot must verify, got: {failures:?}"
+        );
     }
 
     #[test]
     fn l0_chunked_snapshot_verify_catches_corrupted_chunk() {
         let (_dir, store) = store();
-        store.create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25").unwrap();
+        store
+            .create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25")
+            .unwrap();
         let bios = vec![fixture_bio(1, "A")];
         let stats = vec![fixture_stats(1, 10)];
         let cm = store.write_chunked_stats("a", &bios, &stats).unwrap();
@@ -1687,17 +1939,29 @@ mod tests {
         std::fs::write(&bio_path, b"tampered bytes").unwrap();
 
         let failures = store.verify("a").unwrap();
-        assert_eq!(failures.len(), 1, "exactly one failure expected, got {failures:?}");
-        assert!(failures[0].contains("CORRUPT CHUNK"),
-            "must classify as CORRUPT CHUNK, got: {}", failures[0]);
-        assert!(failures[0].contains(bio_hash),
-            "must mention the offending hash, got: {}", failures[0]);
+        assert_eq!(
+            failures.len(),
+            1,
+            "exactly one failure expected, got {failures:?}"
+        );
+        assert!(
+            failures[0].contains("CORRUPT CHUNK"),
+            "must classify as CORRUPT CHUNK, got: {}",
+            failures[0]
+        );
+        assert!(
+            failures[0].contains(bio_hash),
+            "must mention the offending hash, got: {}",
+            failures[0]
+        );
     }
 
     #[test]
     fn l0_chunked_snapshot_verify_catches_missing_chunk() {
         let (_dir, store) = store();
-        store.create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25").unwrap();
+        store
+            .create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25")
+            .unwrap();
         let bios = vec![fixture_bio(1, "A")];
         let stats = vec![fixture_stats(1, 10)];
         let cm = store.write_chunked_stats("a", &bios, &stats).unwrap();
@@ -1708,21 +1972,38 @@ mod tests {
 
         let failures = store.verify("a").unwrap();
         assert_eq!(failures.len(), 1);
-        assert!(failures[0].contains("MISSING CHUNK"),
-            "must classify as MISSING CHUNK, got: {}", failures[0]);
+        assert!(
+            failures[0].contains("MISSING CHUNK"),
+            "must classify as MISSING CHUNK, got: {}",
+            failures[0]
+        );
     }
 
     #[test]
     fn l0_rebuild_chunked_migrates_legacy_layout() {
         let (_dir, store) = store();
-        store.create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25").unwrap();
+        store
+            .create("a", "20252026", SnapshotTier::Stats, None, "2026-04-25")
+            .unwrap();
         // Write the legacy file-per-tier layout
         let bios = vec![fixture_bio(1, "A")];
         let stats = vec![fixture_stats(1, 10)];
-        store.write_file("a", &SnapshotTier::Stats, "bios.json",
-            &serde_json::to_vec(&bios).unwrap()).unwrap();
-        store.write_file("a", &SnapshotTier::Stats, "stats.json",
-            &serde_json::to_vec(&stats).unwrap()).unwrap();
+        store
+            .write_file(
+                "a",
+                &SnapshotTier::Stats,
+                "bios.json",
+                &serde_json::to_vec(&bios).unwrap(),
+            )
+            .unwrap();
+        store
+            .write_file(
+                "a",
+                &SnapshotTier::Stats,
+                "stats.json",
+                &serde_json::to_vec(&stats).unwrap(),
+            )
+            .unwrap();
         store.seal("a").unwrap();
         assert!(!store.is_chunked("a"), "starts as legacy");
 

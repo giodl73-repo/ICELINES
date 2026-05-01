@@ -3,6 +3,7 @@
 pub const CURRENT_SEASON:     u32  = 20_252_026;
 pub const CURRENT_SEASON_STR: &str = "20252026";
 
+pub mod contract;
 pub mod cross_team;
 pub mod depth_chart;
 pub mod error;
