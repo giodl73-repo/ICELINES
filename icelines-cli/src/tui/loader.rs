@@ -14,7 +14,10 @@ use std::sync::{Arc, Mutex};
 use icelines_core::model::{Goalie, Player, Season};
 use icelines_core::season_stats::SeasonType;
 use icelines_core::Transaction;
-use icelines_fetch::stats_loader::{LoadOutcome, MissingSource};
+use icelines_fetch::stats_loader::LoadOutcome;
+// Re-export for ergonomic import elsewhere in the TUI; canonical home is
+// icelines-fetch::stats_loader (KEEL v4 — pure logic shared across surfaces).
+pub use icelines_fetch::stats_loader::format_missing_sources;
 use tokio::sync::mpsc;
 
 /// Per-load transactions bundle. Empty/default when the snapshot is
@@ -166,29 +169,9 @@ pub fn spawn_repo_load(
     rx
 }
 
-/// Map a non-empty MissingSource list to a one-line user-facing banner.
-/// Each variant contributes its label; reasons are dropped from the
-/// banner (kept in logs). Banner is intentionally short so it fits in
-/// the TUI status bar.
-pub fn format_missing_sources(missing: &[MissingSource]) -> String {
-    let labels: Vec<&str> = missing
-        .iter()
-        .map(|m| match m {
-            MissingSource::Realtime { .. } => "realtime",
-            MissingSource::MoneyPuck { .. } => "MoneyPuck",
-            MissingSource::Contracts { .. } => "contracts",
-            MissingSource::GoalieStats { .. } => "goalie stats",
-            // MissingSource is #[non_exhaustive]; future variants get a
-            // generic label until format_missing_sources is updated.
-            _ => "other",
-        })
-        .collect();
-    if labels.is_empty() {
-        String::new()
-    } else {
-        format!("Missing data: {}", labels.join(", "))
-    }
-}
+// `format_missing_sources` lives in icelines-fetch::stats_loader (canonical
+// home — pure logic shared across all four surfaces). Re-exported above for
+// import ergonomics inside the TUI module tree.
 
 /// Best-effort transactions load. Failure to find a snapshot for the
 /// current season is normal (legend card path) — we never bail.

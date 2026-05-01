@@ -358,12 +358,12 @@ impl App {
                     self.active_type,
                 );
                 self.league_context_window = (self.active_season_typed, self.active_type);
-                // dashboard_panel cache: existing CompiledPanel is
-                // shared via Arc<Mutex>; reset by replacement.
-                self.dashboard_panel = crate::tui::dashboard_panel::CompiledPanel::new();
+                // Use the API surface — preserves any Arc<CompiledPanel>
+                // clone a future Phase B consumer might hold.
+                self.dashboard_panel.clear_cache();
                 if !outcome.missing.is_empty() {
                     self.status =
-                        crate::tui::loader::format_missing_sources(&outcome.missing);
+                        icelines_fetch::stats_loader::format_missing_sources(&outcome.missing);
                 }
             }
             Err(msg) => {
@@ -1310,64 +1310,66 @@ impl App {
     }
 
     /// Reload app.players from the given season (bundled or installed).
+    ///
+    /// Hart.5c.6 Phase A.1: this is the single sync entry point for the
+    /// `y` season picker. It now keeps BOTH the legacy `players` /
+    /// `goalies` fields AND the new `repo` / `active_season_typed` /
+    /// `active_type` / `league_context` / `league_context_window`
+    /// fields in lockstep. Without this, screens that already read the
+    /// new path (Phase B) would silently render the old season's data.
+    ///
+    /// Single `load_into_repo` call — previously called twice (once for
+    /// players, once for goalies). Now once, with three projections off
+    /// the same outcome.
     fn reload_for_season(&mut self, season_id: &str) {
         use icelines_fetch::snapshot::SnapshotStore;
-        use icelines_fetch::stats_loader::load_into_repo;
+        use icelines_fetch::stats_loader::{format_missing_sources, load_into_repo};
 
-        // Hart.5b1: skater path now uses load_into_repo + flat_view_legacy
-        // instead of bundled bios + player_builder::build_players_from_bios.
-        // Same data shape (legacy Player struct) — Hart.5b2 will swap to
-        // PlayerView accessors and delete the legacy types.
         let season_u32: u32 = season_id.parse().unwrap_or(icelines_core::CURRENT_SEASON);
-        let players = match crate::config::Config::load() {
+        let season = icelines_core::model::Season(season_u32);
+        let ty = icelines_core::season_stats::SeasonType::Regular;
+
+        let outcome = match crate::config::Config::load() {
             Ok(cfg) => {
                 let store = SnapshotStore::new(cfg.snapshot_dir());
-                #[allow(deprecated)]
-                match load_into_repo(
-                    icelines_core::model::Season(season_u32),
-                    icelines_core::season_stats::SeasonType::Regular,
-                    &store,
-                ) {
-                    Ok(outcome) => outcome.repo.flat_view_legacy(
-                        icelines_core::model::Season(season_u32),
-                        icelines_core::season_stats::SeasonType::Regular,
-                    ),
-                    Err(_) => Vec::new(),
-                }
+                load_into_repo(season, ty, &store).ok()
             }
-            Err(_) => Vec::new(),
+            Err(_) => None,
         };
 
-        // Phase G.7c: reload goalies for the requested season too. Without
-        // this, the GOALTENDING strip on Team and the Goalies tab keep
-        // showing current-season goalies while skater data is historical.
-        //
-        // Hart.5a: routed through load_into_repo + flat_view_legacy_goalies
-        // (was GoalieRepository::load_all directly).
-        let goalies = match crate::config::Config::load() {
-            Ok(cfg) => {
-                let season_u32: u32 = season_id.parse().unwrap_or(icelines_core::CURRENT_SEASON);
-                let store = SnapshotStore::new(cfg.snapshot_dir());
+        let (players, goalies) = match outcome {
+            Some(outcome) => {
                 #[allow(deprecated)]
-                match icelines_fetch::stats_loader::load_into_repo(
-                    icelines_core::model::Season(season_u32),
-                    icelines_core::season_stats::SeasonType::Regular,
-                    &store,
-                ) {
-                    Ok(outcome) => outcome.repo.flat_view_legacy_goalies(
-                        icelines_core::model::Season(season_u32),
-                        icelines_core::season_stats::SeasonType::Regular,
-                    ),
-                    Err(_) => Vec::new(),
+                let players = outcome.repo.flat_view_legacy(season, ty);
+                #[allow(deprecated)]
+                let goalies = outcome.repo.flat_view_legacy_goalies(season, ty);
+
+                // Hart.5c.6 Phase A.1 — atomic repo swap; rebuild
+                // (season, type)-coupled caches per D5.
+                let _old = self.repo.repo_swap(outcome.repo);
+                self.active_season_typed = season;
+                self.active_type = ty;
+                self.league_context =
+                    crate::tui::dashboard_panel::LeagueContext::build(&self.repo, season, ty);
+                self.league_context_window = (season, ty);
+                self.dashboard_panel.clear_cache();
+
+                if !outcome.missing.is_empty() {
+                    self.status = format_missing_sources(&outcome.missing);
                 }
+
+                (players, goalies)
             }
-            Err(_) => Vec::new(),
+            None => (Vec::new(), Vec::new()),
         };
 
         self.active_season = season_id.to_owned();
         self.players = players;
         self.goalies = goalies;
         self.selected = 0;
+        // Phase B/C will own the rest of the D5 invalidation matrix:
+        // tx_*, playoffs_*, query_result_scroll, schedule_team_cache
+        // (key widening). For Phase A.1 the legacy reload stays.
 
         if season_id == icelines_core::CURRENT_SEASON_STR {
             self.status = "Current season loaded.".to_owned();

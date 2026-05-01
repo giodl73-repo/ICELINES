@@ -157,7 +157,19 @@ pub struct CompiledPanel {
 
 #[derive(Default)]
 struct PanelState {
+    /// Legacy nhl_id-keyed cache used by `lines_for_player` /
+    /// `lines_for_goalie`. Implicitly current-season because the
+    /// callers (`screens/player.rs`, `screens/goalies.rs`) read from
+    /// `app.players` / `app.goalies` which are themselves
+    /// current-season. Lives until those callers migrate to `compile`.
     by_player: HashMap<u32, Vec<Line<'static>>>,
+
+    /// Hart.5c.6 view-based cache. Keyed by the full
+    /// `(nhl_id, Season, SeasonType)` triple per D2 — so a compiled
+    /// panel from one (season, type) window is never returned for
+    /// another. The window axis being part of the key is what makes
+    /// `repo_swap`-without-clear-cache safe at the type level.
+    by_view: HashMap<(u32, Season, SeasonType), Vec<Line<'static>>>,
 }
 
 impl CompiledPanel {
@@ -202,11 +214,14 @@ impl CompiledPanel {
         lines
     }
 
-    /// Drop all cached compilations. Used by tests that mutate fixture
-    /// data so subsequent calls re-build.
-    #[cfg(test)]
+    /// Drop all cached compilations across both legacy and
+    /// view-based caches. Called by `App::poll_repo_load` after every
+    /// `repo_swap` so post-swap renders rebuild against the new repo.
     pub fn clear_cache(&self) {
-        self.inner.lock().unwrap().by_player.clear();
+        if let Ok(mut guard) = self.inner.lock() {
+            guard.by_player.clear();
+            guard.by_view.clear();
+        }
     }
 }
 
@@ -282,25 +297,22 @@ impl CompiledPanel {
                 ctx_t: ctx_window.1,
             });
         }
-        // Hart.5c.6 Phase A: cache lookup uses the existing nhl_id-keyed
-        // store as the read path. The (season, season_type) component of
-        // the key is enforced by ctx_window above (rejecting cross-window
-        // compiles), and by the contract that App.dashboard_panel.clear_cache()
-        // fires on every repo_swap. Phase B / C tighten this when
-        // consumers fully migrate.
         let view = repo
             .view(player_id, season, season_type)
             .ok_or(DashboardError::PlayerNotInRepo { season, season_type })?;
 
-        let nhl_id = player_id.0;
+        // Triple-keyed cache (nhl_id, Season, SeasonType) per D2.
+        // `ctx_window == (season, season_type)` is asserted at the top
+        // of this function, so the cache key + ctx are coherent.
+        let key = (player_id.0, season, season_type);
         if let Ok(guard) = self.inner.lock() {
-            if let Some(cached) = guard.by_player.get(&nhl_id) {
+            if let Some(cached) = guard.by_view.get(&key) {
                 return Ok(CompiledOutput { lines: cached.clone() });
             }
         }
         let lines = build_panel_lines_view(&view, ctx);
         if let Ok(mut guard) = self.inner.lock() {
-            guard.by_player.insert(nhl_id, lines.clone());
+            guard.by_view.insert(key, lines.clone());
         }
         Ok(CompiledOutput { lines })
     }
@@ -1346,5 +1358,204 @@ mod tests {
         assert_eq!(fmt2(2.0),   "2.00");
         assert_eq!(fmt2(0.5),   "0.50");
         assert_eq!(fmt2(0.0),   "0.00");
+    }
+
+    // ── Hart.5c.6 Phase A.1 — view-based compile() tests ──────────────
+    //
+    // These tests lock the D11 forcing function (cross-window
+    // rejection), the triple-keyed cache shape, and the
+    // LeagueContext::build parity claim.
+
+    use icelines_core::fixtures;
+    use icelines_core::identity::PlayerId;
+    use icelines_core::model::Season;
+    use icelines_core::season_stats::SeasonType;
+
+    fn fixture_repo_with_one_skater() -> icelines_core::stats_repository::StatsRepository {
+        let identity = fixtures::identity(8478402).build();
+        let stats = fixtures::stats(8478402, 20242025, "EDM").build();
+        fixtures::test_repo_with(identity, stats)
+    }
+
+    #[test]
+    fn l0_compile_rejects_cross_window() {
+        // D11: ctx_window must equal (season, season_type) or compile
+        // refuses with CrossWindowCompile. This is the spec's named
+        // safety boundary; if this regresses, every other invariant
+        // about percentile bars rendering for the right window is moot.
+        let repo = fixture_repo_with_one_skater();
+        let panel = CompiledPanel::new();
+        let ctx = LeagueContext::empty();
+        let pid = PlayerId(8478402);
+        let s = Season(20242025);
+        let t = SeasonType::Regular;
+
+        // ctx_window deliberately doesn't match (season, type).
+        let result = panel.compile(
+            &repo, s, t, pid, &ctx,
+            (Season(20232024), SeasonType::Regular),
+        );
+        match result {
+            Err(DashboardError::CrossWindowCompile {
+                requested_s, requested_t, ctx_s, ctx_t,
+            }) => {
+                assert_eq!(requested_s, Season(20242025));
+                assert_eq!(requested_t, SeasonType::Regular);
+                assert_eq!(ctx_s, Season(20232024));
+                assert_eq!(ctx_t, SeasonType::Regular);
+            }
+            other => panic!("expected CrossWindowCompile, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn l0_compile_returns_player_not_in_repo_for_missing_pid() {
+        // Missing PID with valid ctx_window must surface PlayerNotInRepo
+        // — the call site (D6 auto-pop UX) routes on this variant.
+        let repo = fixture_repo_with_one_skater();
+        let panel = CompiledPanel::new();
+        let ctx = LeagueContext::empty();
+        let s = Season(20242025);
+        let t = SeasonType::Regular;
+
+        let result = panel.compile(
+            &repo, s, t,
+            PlayerId(99999),  // not in fixture
+            &ctx,
+            (s, t),
+        );
+        match result {
+            Err(DashboardError::PlayerNotInRepo { season, season_type }) => {
+                assert_eq!(season, s);
+                assert_eq!(season_type, t);
+            }
+            other => panic!("expected PlayerNotInRepo, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn l0_compile_succeeds_with_matching_ctx_window() {
+        // Happy path. Returns CompiledOutput; lines non-empty; cache
+        // gets populated under the triple key.
+        let repo = fixture_repo_with_one_skater();
+        let panel = CompiledPanel::new();
+        let ctx = LeagueContext::build(&repo, Season(20242025), SeasonType::Regular);
+        let pid = PlayerId(8478402);
+        let s = Season(20242025);
+        let t = SeasonType::Regular;
+
+        let out = panel.compile(&repo, s, t, pid, &ctx, (s, t))
+            .expect("happy-path compile");
+        assert!(!out.lines.is_empty(), "compile output must include header line");
+
+        // The cache must be keyed on (nhl_id, Season, SeasonType) — not
+        // just nhl_id. Verify by inspecting the inner state.
+        let guard = panel.inner.lock().unwrap();
+        assert!(
+            guard.by_view.contains_key(&(8478402, s, t)),
+            "compile must populate by_view with the triple key"
+        );
+        // The legacy by_player cache stays untouched by compile().
+        assert!(
+            !guard.by_player.contains_key(&8478402),
+            "compile must NOT populate the legacy nhl_id-only cache"
+        );
+    }
+
+    #[test]
+    fn l0_compile_cache_isolates_by_window() {
+        // The cache key is (nhl_id, Season, SeasonType), so the same
+        // player in two windows produces two distinct cache entries.
+        // Without this isolation, a season switch could return stale
+        // lines from the previous window.
+        let identity = fixtures::identity(8478402).build();
+        let stats_2024 = fixtures::stats(8478402, 20242025, "EDM").build();
+        let stats_2023 = fixtures::stats(8478402, 20232024, "EDM").build();
+        let mut repo = icelines_core::stats_repository::StatsRepository::new();
+        repo.upsert_identity(identity).unwrap();
+        repo.upsert_stats(stats_2024).unwrap();
+        repo.upsert_stats(stats_2023).unwrap();
+
+        let panel = CompiledPanel::new();
+        let pid = PlayerId(8478402);
+
+        let s_24 = Season(20242025);
+        let s_23 = Season(20232024);
+        let t = SeasonType::Regular;
+        let ctx_24 = LeagueContext::build(&repo, s_24, t);
+        let ctx_23 = LeagueContext::build(&repo, s_23, t);
+
+        let _ = panel.compile(&repo, s_24, t, pid, &ctx_24, (s_24, t)).unwrap();
+        let _ = panel.compile(&repo, s_23, t, pid, &ctx_23, (s_23, t)).unwrap();
+
+        let guard = panel.inner.lock().unwrap();
+        assert!(guard.by_view.contains_key(&(8478402, s_24, t)));
+        assert!(guard.by_view.contains_key(&(8478402, s_23, t)));
+        assert_eq!(guard.by_view.len(), 2,
+            "two distinct (player, window) entries — no collapse");
+    }
+
+    #[test]
+    fn l0_clear_cache_drops_both_caches() {
+        let repo = fixture_repo_with_one_skater();
+        let panel = CompiledPanel::new();
+        let ctx = LeagueContext::build(&repo, Season(20242025), SeasonType::Regular);
+        let pid = PlayerId(8478402);
+        let s = Season(20242025);
+        let t = SeasonType::Regular;
+
+        let _ = panel.compile(&repo, s, t, pid, &ctx, (s, t)).unwrap();
+        // Also seed the legacy cache via a hand-insert (simulates a
+        // legacy lines_for_player call).
+        panel.inner.lock().unwrap()
+            .by_player.insert(8478402, vec![Line::from("legacy")]);
+
+        panel.clear_cache();
+        let guard = panel.inner.lock().unwrap();
+        assert!(guard.by_view.is_empty(), "by_view must clear");
+        assert!(guard.by_player.is_empty(), "by_player must clear");
+    }
+
+    #[test]
+    fn l0_league_context_build_matches_from_players() {
+        // Parity claim: the new repo-based LeagueContext::build produces
+        // the same per-position pace_82 vectors as from_players for the
+        // same data. If they diverge, every percentile rendered post-Phase-B
+        // shifts silently.
+        let repo = fixture_repo_with_one_skater();
+        let s = Season(20242025);
+        let t = SeasonType::Regular;
+        let ctx_repo = LeagueContext::build(&repo, s, t);
+
+        // Project the repo to legacy Vec<Player> via flat_view_legacy
+        // (the shape from_players consumes), then build via the legacy
+        // path. They MUST agree key-by-key, value-by-value.
+        #[allow(deprecated)]
+        let players = repo.flat_view_legacy(s, t);
+        let ctx_players = LeagueContext::from_players(&players);
+
+        // Same set of position keys.
+        let mut keys_repo: Vec<Position> =
+            ctx_repo.pace_by_position.keys().copied().collect();
+        let mut keys_players: Vec<Position> =
+            ctx_players.pace_by_position.keys().copied().collect();
+        keys_repo.sort_by_key(|p| *p as u8);
+        keys_players.sort_by_key(|p| *p as u8);
+        assert_eq!(keys_repo, keys_players, "position bucket keys must match");
+
+        // Same vectors per key (already sorted ascending by both paths).
+        for k in keys_repo {
+            let v_repo = ctx_repo.pace_by_position.get(&k).unwrap();
+            let v_players = ctx_players.pace_by_position.get(&k).unwrap();
+            assert_eq!(
+                v_repo.len(), v_players.len(),
+                "bucket {k:?} length mismatch: repo {} vs players {}",
+                v_repo.len(), v_players.len(),
+            );
+            for (a, b) in v_repo.iter().zip(v_players.iter()) {
+                assert!((a - b).abs() < 1e-9,
+                    "bucket {k:?} value drift: {a} vs {b}");
+            }
+        }
     }
 }

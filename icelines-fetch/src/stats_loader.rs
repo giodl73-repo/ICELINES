@@ -92,6 +92,114 @@ pub enum MissingSource {
     },
 }
 
+impl MissingSource {
+    /// Short label used in user-facing status banners. Each variant has a
+    /// fixed string; this is the canonical mapping shared across surfaces
+    /// (TUI status bar, CLI WARN line, HTTP X-IceLines-Missing header).
+    pub fn label(&self) -> &'static str {
+        match self {
+            Self::Realtime { .. } => "realtime",
+            Self::MoneyPuck { .. } => "MoneyPuck",
+            Self::Contracts { .. } => "contracts",
+            Self::GoalieStats { .. } => "goalie stats",
+        }
+    }
+}
+
+/// Map a `&[MissingSource]` to a one-line user-facing banner. Called by
+/// the TUI status bar after a load completes; CLI / HTTP surfaces use
+/// the same helper. Returns the empty string for an empty slice so
+/// callers can compose without a separate branch.
+pub fn format_missing_sources(missing: &[MissingSource]) -> String {
+    if missing.is_empty() {
+        return String::new();
+    }
+    let labels: Vec<&str> = missing.iter().map(MissingSource::label).collect();
+    format!("Missing data: {}", labels.join(", "))
+}
+
+#[cfg(test)]
+mod missing_source_tests {
+    use super::*;
+
+    #[test]
+    fn l0_format_missing_sources_empty_returns_empty() {
+        assert_eq!(format_missing_sources(&[]), "");
+    }
+
+    #[test]
+    fn l0_format_missing_sources_single_realtime() {
+        let m = MissingSource::Realtime {
+            season: "20242025".into(),
+            season_type: SeasonType::Regular,
+            reason: "snapshot absent".into(),
+        };
+        assert_eq!(format_missing_sources(&[m]), "Missing data: realtime");
+    }
+
+    #[test]
+    fn l0_format_missing_sources_all_four_in_order() {
+        let entries = vec![
+            MissingSource::Realtime {
+                season: "20242025".into(),
+                season_type: SeasonType::Regular,
+                reason: "x".into(),
+            },
+            MissingSource::MoneyPuck {
+                season: "20242025".into(),
+                reason: "x".into(),
+            },
+            MissingSource::Contracts { reason: "x".into() },
+            MissingSource::GoalieStats {
+                season: "20242025".into(),
+                season_type: SeasonType::Regular,
+                reason: "x".into(),
+            },
+        ];
+        assert_eq!(
+            format_missing_sources(&entries),
+            "Missing data: realtime, MoneyPuck, contracts, goalie stats"
+        );
+    }
+
+    #[test]
+    fn l0_label_is_stable_per_variant() {
+        // Locks the labels — changes here must update both the help
+        // banner and any downstream consumer that pattern-matches on
+        // the visible string (CI dashboards, log scrapers).
+        assert_eq!(
+            MissingSource::Realtime {
+                season: "x".into(),
+                season_type: SeasonType::Regular,
+                reason: "x".into()
+            }
+            .label(),
+            "realtime"
+        );
+        assert_eq!(
+            MissingSource::MoneyPuck {
+                season: "x".into(),
+                reason: "x".into()
+            }
+            .label(),
+            "MoneyPuck"
+        );
+        assert_eq!(
+            MissingSource::Contracts { reason: "x".into() }.label(),
+            "contracts"
+        );
+        assert_eq!(
+            MissingSource::GoalieStats {
+                season: "x".into(),
+                season_type: SeasonType::Regular,
+                reason: "x".into()
+            }
+            .label(),
+            "goalie stats"
+        );
+    }
+}
+
 /// Result of populating a `StatsRepository` from one (season, type)
 /// load. `missing` is empty for a clean load; non-empty entries identify
 /// specific tiers that didn't materialize. `missing_files` is a
