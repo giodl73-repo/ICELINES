@@ -965,4 +965,84 @@ mod tests {
         assert_eq!(result.len(), 2, "two EDM players match");
         assert!(result.iter().all(|v| v.team_display() == "EDM"));
     }
+
+    /// Hart.5c.0: legacy `apply` (Player) and new `apply_views`
+    /// (PlayerView) must produce the same player-id set on the same
+    /// source data. Pinned for the duration of the migration so that a
+    /// future change to one path that drifts from the other surfaces
+    /// here, not in production. Deleted alongside `apply` in 5c.7.
+    #[test]
+    fn l0_hart5c_apply_and_apply_views_produce_same_player_set() {
+        use crate::stats_repository::StatsRepository;
+        use std::collections::BTreeSet;
+
+        let mut repo = StatsRepository::new();
+        // Mix of teams + positions so multiple filter axes get exercised.
+        for (pid, team) in [
+            (8478402u32, "EDM"),
+            (8479318, "TOR"),
+            (8480039, "EDM"),
+            (8478427, "FLA"),
+        ] {
+            repo.upsert_identity(crate::fixtures::identity(pid).build()).unwrap();
+            repo.upsert_stats(crate::fixtures::stats(pid, 20242025, team).build())
+                .unwrap();
+        }
+
+        // Several filter shapes, exercising different match paths.
+        let cases: Vec<PlayerFilter> = vec![
+            PlayerFilter::new(), // identity — both should accept everything
+            PlayerFilter {
+                teams: Some(vec!["EDM".into()]),
+                ..PlayerFilter::new()
+            },
+            PlayerFilter {
+                positions: Some(vec![Position::Center]),
+                ..PlayerFilter::new()
+            },
+            PlayerFilter {
+                gp_min: Some(50),
+                ..PlayerFilter::new()
+            },
+            PlayerFilter {
+                ppg_min: Some(1.0),
+                ..PlayerFilter::new()
+            },
+            PlayerFilter {
+                draft_years: Some(vec![2015]),
+                ..PlayerFilter::new()
+            },
+            PlayerFilter {
+                birth_provinces: Some(vec!["ON".into()]),
+                ..PlayerFilter::new()
+            },
+        ];
+
+        let s = crate::model::Season(20242025);
+        let t = crate::season_stats::SeasonType::Regular;
+
+        for filter in cases {
+            // Player-path via the deprecated legacy adapter.
+            #[allow(deprecated)]
+            let players: Vec<Player> = repo.flat_view_legacy(s, t);
+            #[allow(deprecated)]
+            let player_ids: BTreeSet<u32> = filter
+                .apply(&players)
+                .iter()
+                .filter_map(|p| p.nhl_id)
+                .collect();
+
+            // View-path.
+            let view_ids: BTreeSet<u32> = filter
+                .apply_views(repo.skaters(s, t))
+                .iter()
+                .map(|v| v.identity.id.0)
+                .collect();
+
+            assert_eq!(
+                player_ids, view_ids,
+                "apply / apply_views drifted under filter {filter:?}"
+            );
+        }
+    }
 }
