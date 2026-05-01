@@ -70,8 +70,9 @@ screens, fantasy server stable, ASCII headshots rendering.
 - Phase 8h chunked snapshots shipped.
 
 **In progress**:
-- Hart.5c.6 — TUI App restructure to own `StatsRepository` directly (instead of
-  long-lived `Vec<Player>`). The biggest single sub-phase; needs its own design spec.
+- [Hart.5c.6 — TUI App restructure](plans/2026-05-01-phaseHart-5c-6-tui-restructure.md)
+  to own `StatsRepository` directly (instead of long-lived `Vec<Player>`).
+  The biggest single sub-phase; sub-spec at v0.3.
 - Hart.5c.7 — final delete of legacy `Player`/`Goalie` types. Cleanup pass.
 
 **Specced but not implemented**:

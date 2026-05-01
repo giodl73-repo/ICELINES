@@ -1,10 +1,72 @@
-# Phase Hart.5c.6 — TUI App Restructure (v0.2, post-review)
+# Phase Hart.5c.6 — TUI App Restructure (v0.3, post-second-round-review)
 
-**Status**: v0.2 — incorporates 5-role review (forge / glass / bench / tape / pace)
+**Status**: v0.3 — incorporates two 5-role review rounds. 35 of 36 v0.1 findings
+verified fixed in v0.2; v0.3 closes 3 BLOCKERs and ~10 mediums introduced by
+v0.2's own patches.
 **Date**: 2026-05-01
 **Trophy**: Hart (sub-phase of 5c)
 **Predecessor**: design/plans/2026-05-01-phaseHart-5c-final-cleanup.md (v0.3)
 **Replaces**: nothing — sub-spec for the largest 5c sub-phase
+
+---
+
+## v0.2 → v0.3 changelog
+
+Second 5-role review round. v0.2 patches verified clean for 35 of 36 v0.1
+findings. The remaining issues are new defects v0.2 introduced via over-confident
+claims (Risk #9 blanket safety, "1k iterations" understatement, D9 split
+optimism). Resolutions:
+
+### BLOCKERs resolved
+
+- **tape NEW-1** — `schedule_team_cache: HashMap<String, _>` keyed by team only,
+  but data is `(team, season)`-shaped. After season swap, `Screen::ScheduleTeam(EDM)`
+  returns wrong-season schedule. v0.2's Risk #9 falsely claimed this cache was
+  safe. **Resolution**: widen the cache key to `(String, Season)` as a 5c.6
+  Commit 1 deliverable. Risk #9 replaced with per-cache verification table.
+
+- **forge N3 + glass new-issue** — D9's 3-commit split breaks the build-green
+  invariant. Once `App.players: Vec<Player>` flips to `repo: StatsRepository` in
+  commit 1, 6 unmigrated screens (player/comps/queries/depth/misc/widgets) fail
+  to compile. **Resolution**: collapse to 2 commits. Commit 1 = foundation +
+  all-screens atomic (whole TUI builds in one pass). Commit 2 = snapshot test
+  + final gate.
+
+- **forge N2** — `LoadState`'s `Arc<Mutex<LoadInner>>` polling pattern won't
+  compose with `!Send` repo. **Resolution**: D8 redesigned. Use `tokio::sync::mpsc`
+  channel from `spawn_local` task to App's per-tick `try_recv()` poll. No shared
+  state, no Mutex needed; fully single-threaded.
+
+### v0.2 mediums + tape still-broken resolved
+
+- forge N4: `skater_count` API doesn't exist. D5 sample uses
+  `self.repo.skaters(season, ty).count()`.
+- glass: `comps.rs` lines 34/39 added to migration row.
+- glass: `depth.rs` lines 93/101/111 added to migration row.
+- glass + bench: D9 collapse means commit 2's "doesn't include comps.rs" issue
+  goes away — all screens migrate atomically in commit 1.
+- glass: 8 omitted screens from snapshot list now have explicit rationale (no
+  `app.players`/`app.goalies` reads).
+- bench F4 partial → resolved: CI guardrail broadened to detect
+  `{CI, GITHUB_ACTIONS, BUILDKITE, JENKINS_URL, GITLAB_CI, CIRCLECI}`.
+- bench N5: `render_screen` signature extended with `ui_state` parameter; Search
+  fixture documents the fixed query "mcdavid".
+- pace NEW-1: D1's per-frame cost reframed honestly — `repo.skaters()` iterates
+  the full `stats` HashMap with up to `LRU_CAP × N` entries when historical
+  seasons are co-resident, filter-skipping non-matching windows. Still
+  sub-millisecond at current scale; scale-threshold table updated.
+- tape still-broken: `tx_search_mode` added to D5 invalidation list.
+- tape NEW-4: D8 explicitly scopes `spawn_local` requirement to repo-bearing
+  tasks; `schedule.rs`'s `tokio::spawn` is fine because it doesn't touch the
+  repo.
+- bench N4: arch doc updated to 7 Beniers asserts (added 50.0 giveaway-penalty).
+
+### v0.2 NITs resolved
+
+- forge: D8 boxing-escape sentence ("`Box<T>: Send` requires `T: Send`").
+- forge: tokio current_thread runtime hint added to D8 code block.
+- glass: Search query fixed value documented as fixture pin.
+- bench: IceLines.md links Hart.5c.6 symmetrically with Hart.6.
 
 ---
 
@@ -321,17 +383,24 @@ pub async fn reload_for_season(
     self.tx_team_filter = None;
     self.tx_kind_filter = None;
     self.tx_search_query.clear();
+    self.tx_search_mode = false;   // tape v1.1 still-broken: close any open search bar
 
     // 4. Playoff cursors — bracket data may be different shape.
     self.playoffs_round = 0;
     self.playoffs_series = 0;
 
     // 5. Selection state — clamp to new view set, don't reset.
-    let new_count = self.repo.skater_count(season, ty);
+    //    forge v1.1 N4: `skater_count` doesn't exist; use the iterator's count().
+    let new_count = self.repo.skaters(season, ty).count();
     self.selected = self.selected.min(new_count.saturating_sub(1));
 
     // 6. Saved-query scroll — results computed against OLD repo's view set.
     self.query_result_scroll = 0;
+
+    // 7. schedule_team_cache: NOT cleared here because Commit 1 widens its key
+    //    to (String, Season). Pre-fix, the cache returns wrong-season schedules
+    //    after a swap (tape v1.1 NEW-1). Post-fix, distinct seasons map to
+    //    distinct entries; old entries can stay (LRU eventually evicts).
 
     Ok(())
 }
@@ -408,56 +477,167 @@ If a future profile shows real cost, add a per-screen
 `(active_season, active_type, search_query, query_fields_hash)`. Otherwise season
 switch with the same query keeps stale results visible.
 
-### D8 — `!Send + !Sync` constraint and the load model
+### D8 — `!Send + !Sync` constraint, load model, and `LoadState` redesign
 
-**forge B1 / fix**: `StatsRepository` plants `PhantomData<*const ()>`
+**forge v1.0 B1 + v1.1 N2**: `StatsRepository` plants `PhantomData<*const ()>`
 (`stats_repository.rs:81`) and asserts not Send, not Sync (`:84`). After 5c.6,
-`LoadOutcome` (which contains a repo) is also `!Send`. Today's loader uses
-`tokio::spawn(async move { ... })` which requires `Send` futures — won't compile.
+`LoadOutcome` (which contains a repo) is also `!Send`. Two cascading consequences
+that the v0.2 spec partially missed:
 
-**Decision**: switch the TUI's load model to `spawn_local` + `LocalSet`.
+1. `tokio::spawn(async move { ... })` requires `Send` futures — won't compile
+   with a `LoadOutcome`-yielding task.
+2. Today's `LoadState` is shared via `Arc<Mutex<LoadInner>>`. `Mutex<T>: Send`
+   requires `T: Send`. After migration, `LoadInner` holds a `LoadOutcome` (and
+   thus a `StatsRepository`), which is `!Send` — the entire `Arc<Mutex<...>>`
+   pattern stops compiling.
 
-- `tokio::spawn` — out (requires `Send`).
-- `tokio::task::spawn_blocking` — out (return value must be `Send`).
-- `tokio::task::spawn_local` + `tokio::task::LocalSet` — **chosen**. Single-
-  threaded by construction; `!Send` is fine.
-- Synchronous on UI thread — rejected; ~50 ms stall on cold load is too long.
+**Decision (v0.3)**: redesign around `LocalSet` + a one-shot `mpsc` channel.
+No shared state, no Mutex, fully single-threaded.
+
+#### Alternatives considered
+
+- `tokio::spawn` — **out**. Requires `Send` future; `LoadOutcome` is `!Send`.
+- `tokio::task::spawn_blocking` — **out**. Return value `T` must be `Send`.
+  Boxing doesn't help: `Box<T>: Send` requires `T: Send`. The constraint is
+  the payload's marker traits, not the indirection.
+- `tokio::task::spawn_local` + `tokio::task::LocalSet` — **chosen**.
+  Single-threaded by construction; `!Send` is fine.
+- Synchronous on UI thread — rejected; ~50 ms stall on cold load freezes the
+  event loop and breaks live-scores polling.
+
+#### `LoadState` shape post-redesign
 
 ```rust
-// In TUI bootstrap (one place):
-let local = tokio::task::LocalSet::new();
-local.run_until(async {
-    tokio::task::spawn_local(initial_load_task(...));
-    run_event_loop(...).await;
-}).await;
+pub enum LoadState {
+    Idle,
+    Loading,
+    Loaded,                          // outcome already drained into App.repo
+    Error(String),
+}
+
+// On the App, alongside LoadState:
+load_rx: Option<tokio::sync::mpsc::UnboundedReceiver<LoadResult>>,
+
+// Where:
+type LoadResult = Result<LoadOutcome, String>;
 ```
 
-`reload_for_season` runs in the local set. Background fetches and installs that
-exist today already work this way; this just formalizes it.
+The receiver is created when a load is spawned and dropped after the result is
+drained. On every App tick:
 
-### D9 — Implementation split (3 commits)
+```rust
+fn poll_load(&mut self) {
+    if let Some(rx) = self.load_rx.as_mut() {
+        if let Ok(result) = rx.try_recv() {
+            match result {
+                Ok(outcome) => {
+                    let _old = self.repo.repo_swap(outcome.repo);
+                    self.league_context = LeagueContext::build(
+                        &self.repo, self.active_season, self.active_type);
+                    self.dashboard_panel.clear_cache();
+                    self.load_state = LoadState::Loaded;
+                }
+                Err(msg) => self.load_state = LoadState::Error(msg),
+            }
+            self.load_rx = None;
+        }
+    }
+}
+```
 
-Per glass N4. Each commit independently green; final gate at the end of commit 3.
+Spawn site:
+
+```rust
+fn spawn_load(&mut self, season: Season, ty: SeasonType) {
+    let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+    self.load_rx = Some(rx);
+    self.load_state = LoadState::Loading;
+    let snapshot_dir = self.config.snapshot_dir();
+    tokio::task::spawn_local(async move {
+        let store = SnapshotStore::new(&snapshot_dir);
+        let result = load_into_repo(season, ty, &store).map_err(|e| e.to_string());
+        let _ = tx.send(result);   // App may have moved on (rare); ignore.
+    });
+}
+```
+
+#### Bootstrap
+
+```rust
+// In main(): the TUI runtime must be current-thread + LocalSet.
+#[tokio::main(flavor = "current_thread")]
+async fn main() -> anyhow::Result<()> {
+    let local = tokio::task::LocalSet::new();
+    local.run_until(async {
+        let mut app = App::new(...);
+        app.spawn_load(initial_season, initial_type);
+        run_event_loop(&mut app).await
+    }).await
+}
+```
+
+`flavor = "current_thread"` is required: spawning multi-thread runtime + then
+constraining to LocalSet works but is a foot-gun (`spawn_local` outside a
+LocalSet panics). Pin it.
+
+#### Scope of the constraint
+
+`spawn_local` applies ONLY to tasks that touch the `StatsRepository`. The
+existing `tokio::spawn` calls in `schedule.rs`, `tonight.rs`, etc., that fetch
+boxscores, schedule data, and live scores remain `tokio::spawn` — those tasks
+pass `String`/`u64`/`Vec<ScheduledGame>` (all `Send`). Don't blanket-convert.
+A future refactor that closes those tasks over `app.repo` would silently break;
+add a clippy lint (`-D non_send_in_local`) once that kind of refactor lands.
+
+#### Background fetches and installs (today's flow)
+
+Today, `tui/loader.rs` and `tui/screens/misc.rs` already use a similar
+fire-and-forget pattern with `tokio::spawn` + `Arc<Mutex<...>>`. After 5c.6
+those that produce a `LoadOutcome` switch to `spawn_local` + mpsc. Those that
+produce non-repo data (`InstallPhase`, fetch progress) continue to use the
+existing pattern with no changes.
+
+### D9 — Implementation split (2 commits, atomic)
+
+**v0.3 collapse**: v0.2 proposed 3 commits but commit 1's App field flip
+(`Vec<Player>` → `repo: StatsRepository`) orphans 6 unmigrated screens that
+still read `app.players` (player/comps/queries/depth/misc/widgets) — those
+files fail to compile until commit 2 lands. Build-green invariant violated.
+
+The cleaner fix is to make commit 1 atomic. The migration set is medium-large
+but coherent (one concept: stop reading `app.players`). The shim alternative
+(`#[deprecated] pub fn players(&self) -> Vec<Player>`) adds rotting code in
+exchange for a smaller commit; not worth it.
 
 ```
-Commit 1 (foundation)
-  app.rs restructure (App fields), loader.rs LoadOutcome,
-  dashboard_panel.compile API + key shape, LeagueContext::build,
-  reload_for_season full invalidation. Low-complexity screens migrated:
-  home, team, goalies, search.
+Commit 1 (atomic foundation + all screens)
+  Single coherent change. After this commit:
+    • App owns repo: StatsRepository (D1)
+    • LoadState mpsc shape (D8); LocalSet bootstrap pinned to current_thread
+    • dashboard_panel.compile new signature with (PlayerId, Season, SeasonType) key (D2)
+    • LeagueContext::build associated function (D3)
+    • Loader returns LoadOutcome via mpsc (D4)
+    • reload_for_season clears 8 fields atomically (D5)
+    • Screen variants re-keyed on PlayerId (D6)
+    • schedule_team_cache key widened to (String, Season) (tape v1.1 NEW-1)
+    • All 14 affected screen files migrated to read views
+    • widgets/mod.rs::player_cell_text signature flips to &PlayerView
+    • Verification step: cargo build --workspace must succeed.
 
-Commit 2 (medium-complexity screens)
-  player, comps, queries, depth, misc.rs (split into 3 fns),
-  widgets/mod.rs::player_cell_text signature, tonight.rs, sparkline.rs.
-  Bumped depth.rs to High because of Vec<&Player> references that
-  won't compile post-5c.7.
-
-Commit 3 (snapshot test)
-  tests/tui_snapshot.rs harness + 12 goldens.
+Commit 2 (snapshot test + final gate)
+  tests/tui_snapshot.rs harness with 12 goldens.
   Final gate verification:
     grep -rn "app\.players\|app\.goalies" icelines-cli/src/tui/
   Must return zero hits to merge.
+  cargo test --workspace must be green.
 ```
+
+**Why this is OK as a single commit**: ~15 files, all touching the same
+conceptual layer (TUI App + screens reading it). No cross-layer surgery (no
+icelines-core changes; no icelines-fetch changes). Reviewable in one PR. The
+snapshot test in commit 2 catches output regressions; manual smoke test
+(launch TUI, navigate every tab, switch season via `y`) is the human gate
+between commits 1 and 2.
 
 ---
 
@@ -480,9 +660,10 @@ Commit 3 (snapshot test)
 | `schedule.rs` (cross-cutting) | schedule cache | unchanged | None |
 | `screens/home.rs` | `app.players` for league rankings | `app.views().collect()` + sort | Low |
 | `screens/team.rs` | `app.players` filtered by team | `app.team_views(&team)` (O(1) hashmap) | Low |
-| `screens/depth.rs` | `app.players` at lines 26, 31, 136, 166; `Vec<&Player>` references | per-frame views + `compute_all_views` + `compute_team_strength_views`. Bumped to High because Vec<&Player> won't compile after 5c.7. | **High** |
+| `screens/depth.rs` | `app.players` at lines 26, 31, **93, 101, 111**, 136, 166 (7 reads); `Vec<&Player>` references | per-frame views + `compute_all_views` + `compute_team_strength_views`. High because Vec<&Player> won't compile after 5c.7. | **High** |
 | `screens/player.rs` | `app.players[idx]` from `Screen::Player(idx)` | `app.repo.view(pid, s, t)` from `Screen::Player(pid)`; auto-pop on missing per D6 | Medium |
-| `screens/comps.rs` | similar to player.rs | view-based comps | Medium |
+| `screens/comps.rs` | `app.players` at lines 34, 39 | view-based comps; `Screen::Comps(PlayerId)` per D6 | Medium |
+| `tui/schedule.rs` | (no `app.players` read; cache key fix) | widen `schedule_team_cache: HashMap<String, _>` → `HashMap<(String, Season), _>` and update `maybe_fetch_team` callsite to key by both. tape v1.1 NEW-1. | Low |
 | `screens/goalies.rs` | `app.goalies` for leaderboard | `app.goalie_views()` | Low |
 | `screens/queries.rs` | `app.players` + saved query spec at lines 282–287 | `apply_views(views)` + sort; preserves saved-query JSON shape | Medium |
 | `screens/search.rs` | `app.players` substring match | `views.find(name_normalized.contains(q))` | Low |
@@ -508,20 +689,44 @@ Per Hart.5c v0.3, `icelines-cli/tests/tui_snapshot.rs` lands using
 ### Pinned signature
 
 ```rust
+/// UI state passed alongside the screen to make non-default goldens
+/// reproducible (search queries, list cursors, query field state).
+/// Default-constructible via UiState::default() — covers most goldens.
+pub struct UiState {
+    pub search_query: String,            // for Screen::Search
+    pub selected:     usize,             // for Players/Goalies/Transactions list rows
+    pub query_fields: Vec<QueryField>,   // for Screen::Queries; default = empty
+    pub depth_mode:   ScoringMode,       // for Screen::Depth (Pace vs Fantasy)
+}
+
 fn render_screen(
-    repo: &StatsRepository,
-    season: Season,
+    repo:        &StatsRepository,
+    season:      Season,
     season_type: SeasonType,
-    screen: Screen,
+    screen:      Screen,
+    ui:          &UiState,
 ) -> ratatui::buffer::Buffer
 ```
+
+bench v1.1 N5: v0.2 signature didn't take UI state, leaving `Screen::Search`'s
+query origin and list-screen selection cursors unspecified. v0.3 adds an
+explicit `UiState` parameter. Most goldens use `UiState::default()`; the Search
+golden pins `search_query: "mcdavid".to_string()` in its test body.
 
 ### Fixture and goldens
 
 **Fixture repo**: bundled current season (`CURRENT_SEASON`, `Regular`). Loads
 deterministically from the binary's embedded data. ~1000 skater + ~70 goalie
 records. No live network, no snapshot dependency. Reuses
-`integration_phase2.rs`-style fixture builders (per bench N3).
+`integration_phase2.rs::fixture_repo` pattern (per bench N3) — pure-data,
+calls `repo.upsert_identity` + `repo.upsert_stats` against
+`StatsRepository::new()`.
+
+**Search query is fixture-pinned**: the `Screen::Search` golden uses the
+constant `"mcdavid"` because it stably matches "Connor McDavid" in the bundled
+season. If McDavid ever leaves the league or his name normalizes differently,
+the golden fails — that's an intentional canary for naming changes, not a
+fragility.
 
 **12 screens to snapshot** (was 9 in v0.1; +3 per glass F5 / bench F2):
 
@@ -539,6 +744,18 @@ records. No live network, no snapshot dependency. Reuses
 | `Screen::Playoffs` | Playoffs bracket (1993-94 historical fixture) |
 | `Screen::Transactions` | Transactions feed (current season bundled) |
 | `Screen::Player(McDavidId)` | Player detail card + dashboard panel sparkline |
+
+**Screens deliberately not snapshotted** (glass v1.1 + bench v1.1):
+- `Tonight` / `GameDetail` — independent of `app.players` / `app.goalies`
+- `Projections` (sub-view of Stats tab — covered by `Players` golden)
+- `Groups` / `GroupDetail` — fully independent of player data spine
+- `ScheduleTeam(team)` / `ScheduleMatchup` / `SeriesDetail` — schedule data
+  spine, no app.players read
+- `Fetch` / admin overlay (covered indirectly via misc.rs's status footer)
+
+These are skipped because they don't read `app.players` or `app.goalies`. Their
+data path is unchanged in 5c.6, so snapshot regressions are out-of-scope for
+this commit. They get goldens in a follow-up if the screens themselves change.
 
 **Golden format**:
 - One `.snap` file per (screen, season, type) tuple at
@@ -558,9 +775,13 @@ INSIDE_GOLDEN_UPDATE=1 cargo test tui_snapshot
 Writes new snapshots; print `wrote N goldens — review and commit before push`
 to stderr.
 
-**CI guardrail (bench F4)**: if `INSIDE_GOLDEN_UPDATE` is set AND `CI=true`, the
-test harness errors out. Prevents accidental green CI runs that overwrite
-goldens.
+**CI guardrail (bench v1.1 F4)**: if `INSIDE_GOLDEN_UPDATE` is set AND any of
+`{CI, GITHUB_ACTIONS, BUILDKITE, JENKINS_URL, GITLAB_CI, CIRCLECI}` is set, the
+test harness errors out. Prevents accidental green runs on any major CI vendor
+that overwrite goldens. v0.2 only checked `CI=true`, which is unset on Docker
+devcontainers, self-hosted runners, and some vendors — silently bypassed the
+guard. The `any-of` set above covers ~95% of CI surfaces; for the rest, set
+`CI=true` manually in the runner config.
 
 ### Final gate (Glass #4 from 5c v0.3)
 
@@ -607,11 +828,19 @@ This is the canonical signoff.
    `selected.min(new_count.saturating_sub(1))` (D5, glass F3). User keeps cursor
    when both seasons have ≥ N players.
 
-6. **Per-frame `compute_all_views` cost on `Screen::Depth`** — at N=1000, ~320k
-   comparisons (<1 ms estimated). At N=10k (per-game shift logs), becomes
-   ~32M ops (~30 ms perceptible). If scale grows, cache `compute_all_views`
-   result on `Screen::Depth` keyed by `(season, type, mode)`; invalidate on
-   `repo_swap`. Not blocking 5c.6.
+6. **Per-frame view collection + cross-team cost** — pace v1.1 NEW-1 reframe:
+   `repo.skaters(s, t)` iterates the full `stats: HashMap<(PlayerId, Season,
+   SeasonType), SeasonStats>` and filter-skips non-matching `(s, t)` windows,
+   plus an `identities` and `contracts` HashMap probe per match. Worst-case
+   work after multi-season time-travel is `LRU_CAP × N` ≈ 8 × 1000 = 8k
+   iterations + 2k probes. Still sub-millisecond at current scale (estimated;
+   unmeasured). The architectural cost is on `Screen::Depth`'s
+   `compute_all_views` (~320k comparisons, <1 ms estimated); the per-frame
+   collect itself is cheaper. At N=10k active, multi-season-resident:
+   ~80k iterations + 160k probes (still <5 ms estimated) plus
+   compute_all_views ~32M ops (~30 ms — perceptible). If scale grows, cache
+   `compute_all_views` result on `Screen::Depth` keyed by `(season, type,
+   mode)`; invalidate on `repo_swap`. Not blocking 5c.6.
 
 7. **`!Send + !Sync` constraint** — handled by D8's `spawn_local + LocalSet`.
    Foreseeable failure: someone adds a new background task with `tokio::spawn`
@@ -622,12 +851,19 @@ This is the canonical signoff.
    migrations. High blast radius for a single 3-commit batch. Mitigation: TUI
    snapshot test catches output regressions; manual smoke test in commit 3.
 
-9. **Boxscore /v1/score data fetched into App** — `tonight_cache`,
-   `boxscore_cache`, `schedule_week_cache`, `schedule_team_cache`,
-   `playoffs_cache` are independent of player views. They survive `repo_swap`
-   without invalidation. **Verified safe**: these caches are keyed by
-   game_id / date / season_id / bracket_year, all independent of the
-   StatsRepository. No D5 reset needed for them.
+9. **App caches that survive `repo_swap`** — verified per cache (tape v1.1
+   NEW-1 caught a blanket "verified safe" claim that was wrong for one):
+
+   | Cache | Key shape | Season-coupled? | Action |
+   |---|---|---|---|
+   | `tonight_cache` | `HashMap<String, _>` keyed by date `YYYY-MM-DD` | No (date is absolute) | safe |
+   | `boxscore_cache` | `HashMap<u64, _>` keyed by `game_id` | No (game IDs are unique league-wide) | safe |
+   | `schedule_week_cache` | `HashMap<String, _>` keyed by Monday date | No (date is absolute) | safe |
+   | `schedule_team_cache` | `HashMap<String, _>` keyed by team only | **YES — fixed in Commit 1** | widen key to `(String, Season)` |
+   | `playoffs_cache` | `HashMap<u16, _>` keyed by playoff_year | No (year derived from season → distinct entries) | safe |
+   | `headshot_cache` | `HashMap<u32, _>` keyed by nhl_id | No (player ID stable across seasons) | safe |
+
+   Only `schedule_team_cache` was unsafe; v0.3 fixes the cache key shape.
 
 ---
 

@@ -428,8 +428,8 @@ L1 integration (~140 fetch lib + ~115 across 7 fetch integration files = ~255)
    stats_loader.rs (22), transactions_storage.rs (17), transactions_mock.rs (10),
    transactions_fixture.rs (4)
    StatsRepository + PlayerView fixtures, no live network, httpmock for NHL API
-   integration_phase2.rs preserves 6 Beniers known-value asserts:
-     179.0 / 50.0 / 130.0 / 122.0 / 195.0 / 440.0
+   integration_phase2.rs preserves 7 known-value asserts (bench v1.1 N4):
+     179.0 / 50.0 / 130.0 / 122.0 / 195.0 / 440.0 / 50.0 (giveaway-penalty)
    across yahoo / espn / simple / custom scheme variants
 
 L2 system (~140 in cli tests/system_tests.rs + 1 proof_lib_smoke.rs)
