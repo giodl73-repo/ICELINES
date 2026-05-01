@@ -14,7 +14,14 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
     let inner = block.inner(area);
     f.render_widget(block, area);
 
-    if app.players.is_empty() {
+    // Hart.5c.6 Phase B-1.3 — skater roster via team_views (last-stint
+    // index). Per spec D10: team page = current roster, so last-stint.
+    // Mid-season trades show only on the player's current team here;
+    // historical "played for both" lives on the player page.
+    let team_abbr = icelines_core::model::TeamAbbr(abbrev.to_owned());
+    let team_views = app.team_views(&team_abbr);
+
+    if team_views.is_empty() {
         let msg = vec![
             Line::from(format!("  {} — Lineup Card", abbrev)),
             Line::from(""),
@@ -27,23 +34,21 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
         return;
     }
 
-    let team_players: Vec<_> = app.players.iter()
-        .filter(|p| p.team.as_str() == abbrev)
-        .collect();
-
     let mut lines: Vec<Line> = vec![
-        Line::from(format!("  {} players  ·  ↑↓ select  ·  Enter: open player card", team_players.len())),
+        Line::from(format!("  {} players  ·  ↑↓ select  ·  Enter: open player card", team_views.len())),
         Line::from(""),
         Line::from(format!("  {:<22} {:<4}  {:>6}  {:>7}", "Player", "Pos", "PPG", "Pts/82")),
         Line::from(format!("  {}", "─".repeat(46))),
     ];
 
-    for (i, p) in team_players.iter().enumerate() {
-        let ppg  = p.pace_score.map(|s| format!("{:.3}", s.pace_82/82.0)).unwrap_or_else(|| "—".to_owned());
-        let proj = p.pace_score.map(|s| format!("{:.1}", s.pace_82)).unwrap_or_else(|| "—".to_owned());
-        let name = p.full_name.chars().take(22).collect::<String>();
+    for (i, v) in team_views.iter().enumerate() {
+        let p82 = v.pace_82();
+        let ppg  = p82.map(|p| format!("{:.3}", p / 82.0)).unwrap_or_else(|| "—".to_owned());
+        let proj = p82.map(|p| format!("{:.1}", p)).unwrap_or_else(|| "—".to_owned());
+        let name = v.full_name().chars().take(22).collect::<String>();
 
-        let text = format!("  {:<22} {:<4}  {:>6}  {:>7}", name, p.position.abbreviation(), ppg, proj);
+        let text = format!("  {:<22} {:<4}  {:>6}  {:>7}",
+            name, v.position().abbreviation(), ppg, proj);
 
         let style = if i == app.selected {
             Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
