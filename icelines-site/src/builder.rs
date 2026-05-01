@@ -7,14 +7,12 @@ use std::path::{Path, PathBuf};
 
 use icelines_core::{
     compute_cross_team_metrics,
-    model::{Player, Position},
+    model::{Player, Position, Season},
     scoring::sort_by_pace,
+    season_stats::SeasonType,
     CrossTeamMetrics, DepthChartBuilder, TeamAbbr,
 };
-use icelines_fetch::{
-    snapshot::SnapshotStore,
-    PlayerRepository,
-};
+use icelines_fetch::{snapshot::SnapshotStore, stats_loader::load_into_repo};
 
 use crate::{
     error::SiteError,
@@ -87,14 +85,15 @@ impl SiteBuilder {
 
     /// Build all docs/ markdown files from snapshot data.
     pub fn build(&self) -> Result<Vec<String>, SiteError> {
-        let repo = PlayerRepository::new(
-            SnapshotStore::new(&self.config.snapshot_dir),
-            self.config.season.to_string(),
-        );
-
-        // Load all players via PlayerRepository (snapshot → bundled fallback)
-        let mut all_players: Vec<Player> = repo.load_all()
+        // Hart.5b1: routed through load_into_repo + flat_view_legacy
+        // (was PlayerRepository::load_all directly).
+        let store = SnapshotStore::new(&self.config.snapshot_dir);
+        let outcome = load_into_repo(Season(self.config.season), SeasonType::Regular, &store)
             .map_err(|e| SiteError::Snapshot(e.to_string()))?;
+        #[allow(deprecated)]
+        let mut all_players: Vec<Player> = outcome
+            .repo
+            .flat_view_legacy(Season(self.config.season), SeasonType::Regular);
 
         sort_by_pace(&mut all_players);
 

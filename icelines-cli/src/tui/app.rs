@@ -1195,30 +1195,30 @@ impl App {
     /// Reload app.players from the given season (bundled or installed).
     fn reload_for_season(&mut self, season_id: &str) {
         use icelines_fetch::snapshot::SnapshotStore;
-        use icelines_fetch::{bundled, player_builder};
-        use std::collections::HashMap;
+        use icelines_fetch::stats_loader::load_into_repo;
 
-        let bios = bundled::get_bios(season_id).or_else(|| bundled::get_bios_installed(season_id));
-        let stats =
-            bundled::get_stats(season_id).or_else(|| bundled::get_stats_installed(season_id));
-
-        let players = if let Some(bios) = bios {
-            let stats_idx = stats
-                .as_ref()
-                .map(|s| player_builder::index_stats(s))
-                .unwrap_or_default();
-            player_builder::build_players_from_bios(
-                &bios,
-                &stats_idx,
-                &HashMap::new(),
-                &HashMap::new(),
-                &HashMap::new(),
-                icelines_core::model::Season(
-                    season_id.parse().unwrap_or(icelines_core::CURRENT_SEASON),
-                ),
-            )
-        } else {
-            Vec::new()
+        // Hart.5b1: skater path now uses load_into_repo + flat_view_legacy
+        // instead of bundled bios + player_builder::build_players_from_bios.
+        // Same data shape (legacy Player struct) — Hart.5b2 will swap to
+        // PlayerView accessors and delete the legacy types.
+        let season_u32: u32 = season_id.parse().unwrap_or(icelines_core::CURRENT_SEASON);
+        let players = match crate::config::Config::load() {
+            Ok(cfg) => {
+                let store = SnapshotStore::new(cfg.snapshot_dir());
+                #[allow(deprecated)]
+                match load_into_repo(
+                    icelines_core::model::Season(season_u32),
+                    icelines_core::season_stats::SeasonType::Regular,
+                    &store,
+                ) {
+                    Ok(outcome) => outcome.repo.flat_view_legacy(
+                        icelines_core::model::Season(season_u32),
+                        icelines_core::season_stats::SeasonType::Regular,
+                    ),
+                    Err(_) => Vec::new(),
+                }
+            }
+            Err(_) => Vec::new(),
         };
 
         // Phase G.7c: reload goalies for the requested season too. Without
