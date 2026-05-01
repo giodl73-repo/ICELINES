@@ -16,6 +16,19 @@ use serde::{Deserialize, Serialize};
 use crate::identity::PlayerId;
 use crate::model::{PaceScore, Position, Season, TeamAbbr};
 
+/// Synthetic-date prefix used by the goalie loader and fixture builders
+/// when real `started`/`ended` dates aren't available. Any string starting
+/// with this prefix sorts BEFORE any ISO-8601 date `YYYY-MM-DD` for
+/// `YYYY >= 1900`, so a stint with `started: Some("AAAA-01")` followed by
+/// `Some("2024-04-22")` preserves the synthetic-first ordering through
+/// `SeasonStatsBuilder::build()`'s sort.
+///
+/// Hart.4.1 v0.2: extracted to a const so the loader at
+/// `icelines-fetch::stats_loader::build_goalie_season_stats` and the
+/// `fixtures::*_trade*` builders share the invariant. Don't change this
+/// value without auditing both call sites.
+pub const SYNTHETIC_DATE_PREFIX: &str = "AAAA";
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum SeasonType {

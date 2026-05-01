@@ -18,7 +18,7 @@ use icelines_core::name::normalize_name;
 use icelines_core::scoring::compute_pace_score;
 use icelines_core::season_stats::{
     AdvancedStats, GoalieSeasonStats, RealtimeStats, SeasonStatsBuilder, SeasonType, StatTotals,
-    TeamStint,
+    TeamStint, SYNTHETIC_DATE_PREFIX,
 };
 use icelines_core::stats_repository::{RepoError, StatsRepository};
 use thiserror::Error;
@@ -45,15 +45,6 @@ pub const MAX_KNOWN_REPO_VERSION: u32 = SnapshotMetaFlags::CURRENT_REPOSITORY_VE
 
 #[derive(Debug, Error)]
 #[non_exhaustive]
-pub enum BundleError {
-    #[error("io: {0}")]
-    Io(#[from] std::io::Error),
-    #[error("json: {0}")]
-    Parse(#[from] serde_json::Error),
-}
-
-#[derive(Debug, Error)]
-#[non_exhaustive]
 pub enum LoadError {
     #[error("season {season} not bundled in this build")]
     SeasonNotBundled { season: String },
@@ -68,13 +59,11 @@ pub enum LoadError {
     RepoVersionUnknown { found: u32, max_known: u32 },
     #[error("repository error: {0}")]
     Repo(#[from] RepoError),
-    /// I/O + parse failures wrapped under one variant per FORGE: keeps
-    /// the public error surface small while `?` stays ergonomic.
-    #[error("bundle read/parse failure: {source}")]
-    Bundle {
-        #[from]
-        source: BundleError,
-    },
+    // Hart.4.1 v0.2 (Gap H): LoadError::Bundle and the BundleError enum
+    // were dropped. They were dead code (no path produced one — bundle
+    // reads went through .map_err(|_| SeasonNotBundled)). Reintroduce
+    // when a real call site emerges that needs distinct
+    // I/O-vs-Parse-vs-NotBundled error fidelity.
 }
 
 // ── LoadOutcome / MissingSource ─────────────────────────────────────────────
@@ -534,7 +523,7 @@ fn build_goalie_season_stats(
                 };
                 TeamStint {
                     team: TeamAbbr((*t).to_owned()),
-                    started: Some(format!("AAAA-{:02}", i + 1)),
+                    started: Some(format!("{SYNTHETIC_DATE_PREFIX}-{:02}", i + 1)),
                     ended: None,
                     gp: take_n(g.games_played),
                     goals: take_n(g.goals),
@@ -609,20 +598,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn l0_hart3_bundle_error_wraps_io() {
-        let io: BundleError = std::io::Error::new(std::io::ErrorKind::NotFound, "missing").into();
-        assert!(matches!(io, BundleError::Io(_)));
-    }
-
-    #[test]
-    fn l0_hart3_bundle_error_wraps_parse() {
-        // Force a serde_json::Error and convert via #[from].
-        let parse_err = serde_json::from_str::<u32>("not-a-number").unwrap_err();
-        let wrapped: BundleError = parse_err.into();
-        assert!(matches!(wrapped, BundleError::Parse(_)));
-    }
-
-    #[test]
     fn l0_hart3_load_error_repo_wraps_repo_error() {
         let inner = RepoError::StatsWithoutIdentity {
             id: PlayerId(1),
@@ -631,19 +606,6 @@ mod tests {
         };
         let outer: LoadError = inner.into();
         assert!(matches!(outer, LoadError::Repo(_)));
-    }
-
-    #[test]
-    fn l0_hart3_load_error_bundle_wraps_io() {
-        let bundle_err = BundleError::Io(std::io::Error::new(
-            std::io::ErrorKind::PermissionDenied,
-            "x",
-        ));
-        let outer: LoadError = bundle_err.into();
-        // Display cascades through `{source}` to the inner io error message.
-        let s = outer.to_string();
-        assert!(s.starts_with("bundle read/parse failure"));
-        assert!(s.contains("io:"));
     }
 
     #[test]
@@ -686,5 +648,70 @@ mod tests {
         let s = err.to_string();
         assert!(s.contains("playoff"), "Display should use lowercase: {s}");
         assert!(!s.contains("Playoff"), "Display must not leak Debug: {s}");
+    }
+
+    /// Hart.4.1 v0.2 Gap F: BENCH-mandated mid-playoff goalie trade
+    /// synthetic. L0 inside stats_loader.rs so we can exercise
+    /// `build_goalie_season_stats` directly without pub-ing it
+    /// (FORGE #2 — keeping the loader's public surface narrow).
+    /// Sum-equals invariant: per-stint gp/wins/losses == aggregate.
+    #[test]
+    fn l0_hart4_1_mid_playoff_goalie_trade_synthetic() {
+        let g = GoalieStats {
+            player_id: 9000001,
+            goalie_full_name: "Test Goalie".into(),
+            last_name: "Goalie".into(),
+            team_abbrevs: "BOS,FLA".into(),
+            season_id: 20232024,
+            shoots_catches: Some("L".into()),
+            games_played: 10,
+            games_started: 10,
+            wins: 5,
+            losses: 5,
+            ot_losses: Some(0),
+            ties: None,
+            shots_against: 280,
+            goals_against: 28,
+            saves: 252,
+            save_pct: Some(0.900),
+            goals_against_average: Some(2.80),
+            shutouts: 0,
+            time_on_ice: 600 * 60,
+            goals: 0,
+            assists: 0,
+            points: 0,
+            penalty_minutes: 4,
+        };
+        let stats =
+            build_goalie_season_stats(PlayerId(9000001), Season(20232024), SeasonType::Playoff, &g);
+
+        // Insertion order preserved through the builder sort because of
+        // the SYNTHETIC_DATE_PREFIX-prefixed `started` strings (Hart.3.1
+        // fix). BOS first chronologically per the legacy team_abbrevs
+        // convention ("BOS,FLA" = origin first).
+        assert_eq!(stats.team_stints.len(), 2, "two stints from team_abbrevs");
+        assert_eq!(
+            stats.team_stints[0].team.as_str(),
+            "BOS",
+            "origin team first"
+        );
+        assert_eq!(
+            stats.team_stints[1].team.as_str(),
+            "FLA",
+            "destination team last"
+        );
+
+        // Sum-equals on counters that the goalie split applies to.
+        let stint_gp: u32 = stats.team_stints.iter().map(|s| s.gp).sum();
+        assert_eq!(stint_gp, stats.totals.gp, "stint gp sum != totals.gp");
+        // Goalie aggregate is one struct (NOT split per-stint in the
+        // legacy data); the assertion is on the SeasonStats total, not
+        // on per-stint goalie counts (those are None for the loader-
+        // synthesized stints — Hart.6 captures real per-stint data).
+        let goalie = stats.goalie.as_ref().expect("goalie row populated");
+        assert_eq!(goalie.games_started, 10);
+        assert_eq!(goalie.wins, 5);
+        assert_eq!(goalie.losses, 5);
+        assert!(stats.is_goalie());
     }
 }

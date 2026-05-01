@@ -1611,4 +1611,301 @@ mod tests {
             .season(PlayerId(8478402), Season(20222023), SeasonType::Regular)
             .is_some());
     }
+
+    // ── Hart.4.1 v0.2 — invariant proptests ────────────────────────────────
+    //
+    // Two BENCH-deferred proptests from Hart.2.1 review land here:
+    //
+    // - LRU invariant proptest (Gap D): asserts the bidirectional
+    //   bijection between `repo.stats` and `repo.window_lru` after any
+    //   sequence of upserts, plus the strict cap bound (TAPE #7).
+    //
+    // - Roster sum invariant proptest (Gap E): asserts that for any
+    //   set of player stints (including raw possibly-duplicate stint
+    //   teams — Hart.2.1 dedup regression fence), the sum of
+    //   `team_roster_all_stints(team).len()` over teams equals the
+    //   count of distinct (player, team) pairs (BENCH #2).
+
+    use proptest::prelude::*;
+
+    /// Build a small alphabet of (Season, SeasonType) windows. Six
+    /// distinct values (3 seasons × 2 types) gives ~30% birthday-paradox
+    /// repeat rate at length 50, exercising the touch-then-promote LRU
+    /// path consistently.
+    fn lru_window_strategy() -> impl Strategy<Value = (Season, SeasonType)> {
+        (
+            0u32..3,
+            prop_oneof![Just(SeasonType::Regular), Just(SeasonType::Playoff)],
+        )
+            .prop_map(|(idx, t)| (Season(20212022 + idx * 10001), t))
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig {
+            cases: 256,
+            // Override via `PROPTEST_CASES` env if CI runtime regresses.
+            ..ProptestConfig::default()
+        })]
+
+        /// Gap D — LRU bidirectional bijection invariants.
+        /// Asserts after ANY sequence of upserts:
+        ///   1. resident_windows() <= cap
+        ///   2. ∀ (pid, s, t) ∈ stats → has_window(s, t)
+        ///   3. ∀ (s, t) ∈ window_lru → ∃ stats row keyed there
+        ///   4. The most-recently-upserted window is always resident
+        #[test]
+        fn lru_invariant_proptest(
+            cap in 1usize..=10,
+            ops in prop::collection::vec(lru_window_strategy(), 0..50),
+        ) {
+            let mut repo = StatsRepository::with_lru_cap(cap);
+
+            for (next_pid, (s, t)) in (1_u32..).zip(ops.iter()) {
+                let pid = PlayerId(next_pid);
+                repo.upsert_identity(crate::fixtures::identity(pid.0).build()).unwrap();
+                let stats = crate::fixtures::stats(pid.0, s.0, "EDM")
+                    .season_type(*t)
+                    .build();
+                repo.upsert_stats(stats).unwrap();
+                let last_window = (*s, *t);
+
+                // 1. cap bound
+                prop_assert!(
+                    repo.resident_windows() <= cap,
+                    "resident={} > cap={}", repo.resident_windows(), cap
+                );
+
+                // 2. stats → window_lru
+                for &(_, ks, kt) in repo.stats.keys() {
+                    prop_assert!(
+                        repo.has_window(ks, kt),
+                        "stats row at ({ks:?}, {kt:?}) but window not in LRU"
+                    );
+                }
+
+                // 3. window_lru → stats
+                for &(ws, wt) in &repo.window_lru {
+                    let any_match = repo
+                        .stats
+                        .keys()
+                        .any(|&(_, sk, tk)| sk == ws && tk == wt);
+                    prop_assert!(
+                        any_match,
+                        "window ({ws:?}, {wt:?}) in LRU but no stats row"
+                    );
+                }
+
+                // 4. last upsert always resident
+                let (lw_s, lw_t) = last_window;
+                prop_assert!(
+                    repo.has_window(lw_s, lw_t),
+                    "most-recent upsert ({lw_s:?}, {lw_t:?}) not resident"
+                );
+            }
+        }
+
+        /// Gap E — roster sum invariant. Strategy feeds raw
+        /// possibly-duplicate Vec<TeamAbbr> directly (no pre-dedup) so
+        /// the same-team-twice regression Hart.2.1 fixed surfaces here
+        /// (BENCH #2).
+        #[test]
+        fn roster_sum_invariant_proptest(
+            players in prop::collection::vec(
+                (1u32..1000, prop::collection::vec("[A-Z]{3}", 1..=4)),
+                1..=20,
+            )
+        ) {
+            use std::collections::HashSet;
+
+            let season = Season(20232024);
+            let stype = SeasonType::Regular;
+
+            // Reference: distinct (player, team) pairs across all input.
+            let expected_distinct_pairs: HashSet<(u32, String)> = players
+                .iter()
+                .flat_map(|(pid, teams)| {
+                    teams.iter().map(move |t| (*pid, t.clone()))
+                })
+                .collect();
+
+            let mut repo = StatsRepository::new();
+            // Dedup player_ids on input (one stats row per pid is the
+            // primary-key invariant; the proptest may emit duplicates).
+            let mut seen_pids: HashSet<u32> = HashSet::new();
+            let dedup_players: Vec<_> = players
+                .iter()
+                .filter(|(pid, _)| seen_pids.insert(*pid))
+                .collect();
+
+            for (pid, teams) in &dedup_players {
+                repo.upsert_identity(crate::fixtures::identity(*pid).build()).unwrap();
+                let stints: Vec<TeamStint> = teams
+                    .iter()
+                    .map(|t| TeamStint {
+                        team: TeamAbbr(t.clone()),
+                        started: None,
+                        ended: None,
+                        gp: 1,
+                        goals: 0,
+                        assists: 0,
+                        points: 0,
+                        goalie: None,
+                    })
+                    .collect();
+                let stats =
+                    crate::season_stats::SeasonStatsBuilder::new(
+                        PlayerId(*pid),
+                        season,
+                        stype,
+                        Position::Center,
+                    )
+                    .with_totals(crate::season_stats::StatTotals {
+                        gp: stints.len() as u32,
+                        ..Default::default()
+                    })
+                    .replace_team_stints(stints)
+                    .build();
+                repo.upsert_stats(stats).unwrap();
+            }
+
+            // Now compute: distinct (pid, team) pairs from the DEDUPED
+            // players (the proptest may emit duplicate pids; only the
+            // first is in the repo).
+            let distinct_dedup: HashSet<(u32, String)> = dedup_players
+                .iter()
+                .flat_map(|(pid, teams)| {
+                    teams.iter().map(move |t| (*pid, t.clone()))
+                })
+                .collect();
+
+            // All-stints sum: each distinct pair contributes one entry.
+            let all_teams: HashSet<String> =
+                distinct_dedup.iter().map(|(_, t)| t.clone()).collect();
+            let total_all_stints: usize = all_teams
+                .iter()
+                .map(|t| {
+                    repo.team_roster_all_stints(&TeamAbbr(t.clone()), season, stype)
+                        .len()
+                })
+                .sum();
+            prop_assert_eq!(
+                total_all_stints,
+                distinct_dedup.len(),
+                "all-stints roster sum != distinct (pid, team) pair count",
+            );
+
+            // Last-stint sum: each player has exactly one last-stint
+            // team, so total == count of dedup players (TAPE #8).
+            let total_last_stint: usize = all_teams
+                .iter()
+                .map(|t| repo.team_roster(&TeamAbbr(t.clone()), season, stype).len())
+                .sum();
+            prop_assert_eq!(
+                total_last_stint,
+                dedup_players.len(),
+                "last-stint roster sum != count of distinct players",
+            );
+
+            // Avoid unused-warning on the input-level distinct count.
+            let _ = expected_distinct_pairs;
+        }
+    }
+
+    /// Gap D companion — explicit case for `cap = 1` pure-churn path
+    /// (BENCH #3). Every upsert evicts the prior; the deque never
+    /// holds more than one window.
+    #[test]
+    fn l0_hart4_1_lru_cap_one_pure_churn() {
+        let mut repo = StatsRepository::with_lru_cap(1);
+        for i in 1..=5u32 {
+            let pid = PlayerId(i);
+            repo.upsert_identity(crate::fixtures::identity(i).build())
+                .unwrap();
+            let stats = crate::fixtures::stats(i, 20212022 + i * 10001, "EDM").build();
+            repo.upsert_stats(stats).unwrap();
+
+            assert_eq!(
+                repo.resident_windows(),
+                1,
+                "cap=1 must hold exactly 1 window"
+            );
+            // The most-recent upsert's window is the only resident one.
+            assert!(repo.has_window(Season(20212022 + i * 10001), SeasonType::Regular));
+            // Earlier windows are gone.
+            if i > 1 {
+                assert!(!repo.has_window(Season(20212022 + (i - 1) * 10001), SeasonType::Regular));
+                assert!(repo
+                    .season(
+                        PlayerId(i - 1),
+                        Season(20212022 + (i - 1) * 10001),
+                        SeasonType::Regular
+                    )
+                    .is_none());
+            }
+            let _ = pid;
+        }
+    }
+
+    /// Gap E companion — replace-path coverage (TAPE #9). The proptest
+    /// only fires `index_rosters`. This test fires `unindex_rosters_for`
+    /// by replacing a stats row with different team_stints.
+    #[test]
+    fn l0_hart4_1_replace_stats_unindexes_old_roster_entries() {
+        let mut repo = StatsRepository::new();
+        repo.upsert_identity(crate::fixtures::identity(8475765).build())
+            .unwrap();
+
+        // V1: stints [BOS, NYR]
+        let s1 = crate::fixtures::traded_skater(
+            8475765,
+            20222023,
+            TeamAbbr("BOS".into()),
+            TeamAbbr("NYR".into()),
+        )
+        .build();
+        repo.upsert_stats(s1).unwrap();
+        let bos = repo.team_roster_all_stints(
+            &TeamAbbr("BOS".into()),
+            Season(20222023),
+            SeasonType::Regular,
+        );
+        let nyr = repo.team_roster_all_stints(
+            &TeamAbbr("NYR".into()),
+            Season(20222023),
+            SeasonType::Regular,
+        );
+        assert_eq!(bos.len(), 1, "BOS in all-stints after v1");
+        assert_eq!(nyr.len(), 1, "NYR in all-stints after v1");
+
+        // V2: stints [TOR] only — replace
+        let s2 = crate::fixtures::stats(8475765, 20222023, "TOR").build();
+        repo.upsert_stats(s2).unwrap();
+
+        let bos = repo.team_roster_all_stints(
+            &TeamAbbr("BOS".into()),
+            Season(20222023),
+            SeasonType::Regular,
+        );
+        let nyr = repo.team_roster_all_stints(
+            &TeamAbbr("NYR".into()),
+            Season(20222023),
+            SeasonType::Regular,
+        );
+        let tor = repo.team_roster_all_stints(
+            &TeamAbbr("TOR".into()),
+            Season(20222023),
+            SeasonType::Regular,
+        );
+        assert_eq!(bos.len(), 0, "BOS unindexed after v2");
+        assert_eq!(nyr.len(), 0, "NYR unindexed after v2");
+        assert_eq!(tor.len(), 1, "TOR indexed by v2");
+
+        // Last-stint also reflects the replacement.
+        let tor_last = repo.team_roster(
+            &TeamAbbr("TOR".into()),
+            Season(20222023),
+            SeasonType::Regular,
+        );
+        assert_eq!(tor_last.len(), 1);
+    }
 }
