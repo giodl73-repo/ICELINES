@@ -1118,6 +1118,78 @@ mod tests {
         assert_eq!(s.giveaways, 41);
     }
 
+    /// Hart.5c.4: `score_team` end-to-end on a mixed roster.
+    /// Builds 1 skater + 1 goalie in a fresh repo; rosters 3 names
+    /// (skater hit, goalie hit, missing). Asserts:
+    /// - 2 results (missing player is dropped, not zero-scored)
+    /// - Results are sorted by score descending
+    /// - Both real players appear with non-empty names
+    ///
+    /// Pinned to catch regressions in the dual-pool lookup contract:
+    /// the post-Hart.5c shape must still treat the goalie pool as
+    /// fallback-only and silently skip rows that match neither.
+    #[test]
+    fn l0_hart5c4_score_team_mixes_skater_goalie_and_skips_missing() {
+        use icelines_core::TeamAbbr;
+        let mut repo = StatsRepository::new();
+
+        // Skater: McDavid-shape default fixture, normalized name "mcdavid".
+        let skater_id = fixtures::identity(8478402)
+            .name("McDavid", "mcdavid")
+            .build();
+        let skater_stats = fixtures::stats(8478402, 20242025, "EDM").build();
+        repo.upsert_identity(skater_id).unwrap();
+        repo.upsert_stats(skater_stats).unwrap();
+
+        // Goalie: solo_goalie fixture (50 GP, 30W, 18L, .913 SV%).
+        let goalie_id = fixtures::identity(8478406)
+            .name("Test Goalie", "test_goalie")
+            .build();
+        let goalie_stats = fixtures::solo_goalie(
+            8478406,
+            20242025,
+            TeamAbbr("OTT".into()),
+        )
+        .build();
+        repo.upsert_identity(goalie_id).unwrap();
+        repo.upsert_stats(goalie_stats).unwrap();
+
+        let skaters: Vec<PlayerView<'_>> = repo
+            .skaters(Season(20242025), SeasonType::Regular)
+            .collect();
+        let goalies: Vec<PlayerView<'_>> = repo
+            .goalies(Season(20242025), SeasonType::Regular)
+            .collect();
+        assert_eq!(skaters.len(), 1, "must have exactly one skater in fixture repo");
+        assert_eq!(goalies.len(), 1, "must have exactly one goalie in fixture repo");
+
+        let roster = vec![
+            "mcdavid".to_string(),
+            "test_goalie".to_string(),
+            "definitely_missing".to_string(),
+        ];
+        let scheme = Scheme::yahoo_standard();
+        let results = score_team(&roster, &skaters, &goalies, &scheme);
+
+        assert_eq!(
+            results.len(),
+            2,
+            "missing roster entry must be skipped, not zero-scored: {results:?}"
+        );
+        // Sorted descending by score.
+        assert!(
+            results[0].1 >= results[1].1,
+            "results must be sorted desc by score: {results:?}"
+        );
+        // Both real players appear; names come from view.identity.full_name.
+        let names: Vec<&str> = results.iter().map(|(n, _)| n.as_str()).collect();
+        assert!(names.contains(&"McDavid"), "missing skater in results: {names:?}");
+        assert!(names.contains(&"Test Goalie"), "missing goalie in results: {names:?}");
+        // Both real players score > 0 on Yahoo standard (a 30G/50A skater
+        // and a 30W goalie both have positive components).
+        assert!(results.iter().all(|(_, s)| *s > 0.0));
+    }
+
     /// Parity vs legacy adapter: `to_scheme_stats_view(view)` must equal
     /// `to_scheme_stats(&flat_view_legacy(view))` field-for-field on the
     /// same fixture. Pinned for the duration of the migration; deletes
