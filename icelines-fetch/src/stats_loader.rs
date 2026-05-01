@@ -32,11 +32,14 @@ use crate::snapshot::{SnapshotMetaFlags, SnapshotStore, SnapshotTier};
 
 /// Bundled-JSON file format version this binary understands. Bumps on
 /// non-`Option` field additions to existing types in the bundles.
-pub const MAX_KNOWN_BUNDLE_SCHEMA: u32 = 1;
+/// Aliases `SnapshotMetaFlags::CURRENT_BUNDLE_SCHEMA_VERSION` so the
+/// reader (this loader) and writer (`SnapshotMetaFlags::save`) stay
+/// in lockstep.
+pub const MAX_KNOWN_BUNDLE_SCHEMA: u32 = SnapshotMetaFlags::CURRENT_BUNDLE_SCHEMA_VERSION;
 
 /// In-memory `StatsRepository` model version. Bumps on every breaking
 /// change to the `icelines-core` model. Phase Hart starts at 1.
-pub const MAX_KNOWN_REPO_VERSION: u32 = 1;
+pub const MAX_KNOWN_REPO_VERSION: u32 = SnapshotMetaFlags::CURRENT_REPOSITORY_VERSION;
 
 // ── Errors ──────────────────────────────────────────────────────────────────
 

@@ -296,6 +296,37 @@ fn l0_snapshot_meta_flags_default_all_false() {
     assert!(flags.transactions_fetched_at.is_none());
 }
 
+/// Hart.3.3: every save() must stamp the current binary's
+/// CURRENT_BUNDLE_SCHEMA_VERSION + CURRENT_REPOSITORY_VERSION so the
+/// version gate sees a real value in production. Without this the
+/// gate is dead code on real disks.
+#[test]
+fn l1_meta_flag_save_stamps_current_versions() {
+    let dir = TempDir::new().unwrap();
+    let snapshots_root = dir.path();
+
+    // Caller passes flags with version=0 (the pre-Hart sentinel) — save
+    // must override with the current-binary versions.
+    let flags = SnapshotMetaFlags {
+        transactions_stale: true,
+        ..Default::default()
+    };
+    flags.save(snapshots_root, "20252026").unwrap();
+
+    let reloaded = SnapshotMetaFlags::load(snapshots_root, "20252026");
+    assert!(reloaded.transactions_stale);
+    assert_eq!(
+        reloaded.bundle_schema_version,
+        SnapshotMetaFlags::CURRENT_BUNDLE_SCHEMA_VERSION,
+        "save() must stamp the current bundle_schema_version"
+    );
+    assert_eq!(
+        reloaded.repository_version,
+        SnapshotMetaFlags::CURRENT_REPOSITORY_VERSION,
+        "save() must stamp the current repository_version"
+    );
+}
+
 #[test]
 fn l0_snapshot_meta_flags_serde_roundtrip() {
     let flags = SnapshotMetaFlags {

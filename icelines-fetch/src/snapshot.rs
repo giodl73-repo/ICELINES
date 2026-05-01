@@ -943,6 +943,16 @@ pub struct SnapshotMetaFlags {
 }
 
 impl SnapshotMetaFlags {
+    /// Current bundled-JSON file format version. Bumps whenever a
+    /// non-Option field is added to a bundled type. Hart.3 starts at 1.
+    /// Keep in sync with `stats_loader::MAX_KNOWN_BUNDLE_SCHEMA`.
+    pub const CURRENT_BUNDLE_SCHEMA_VERSION: u32 = 1;
+
+    /// Current in-memory `StatsRepository` model version. Bumps on every
+    /// breaking change to the icelines-core model. Hart.3 starts at 1.
+    /// Keep in sync with `stats_loader::MAX_KNOWN_REPO_VERSION`.
+    pub const CURRENT_REPOSITORY_VERSION: u32 = 1;
+
     /// Read the flags file at the given root for the given season.
     /// Missing file → default flags (no stale, no error). Corrupt file
     /// falls through to `.bak` recovery via [`read_json_with_bak_fallback`].
@@ -956,9 +966,19 @@ impl SnapshotMetaFlags {
 
     /// Write atomically. Best-effort: callers do not propagate failure
     /// because losing the meta file is recoverable on the next fetch.
+    ///
+    /// Hart.3.3: stamps both version fields with the current binary's
+    /// `CURRENT_*_VERSION` constants on every save. Without this, every
+    /// `_meta.json` on disk would stay at version 0 forever and the
+    /// loader's version gate would never see a real value in
+    /// production. The stamp is idempotent (loaders accept any value
+    /// `<= MAX_KNOWN`).
     pub fn save(&self, snapshots_root: &Path, season: &str) -> std::io::Result<()> {
+        let mut stamped = self.clone();
+        stamped.bundle_schema_version = Self::CURRENT_BUNDLE_SCHEMA_VERSION;
+        stamped.repository_version = Self::CURRENT_REPOSITORY_VERSION;
         let path = Self::path(snapshots_root, season);
-        atomic_write_json(&path, self)
+        atomic_write_json(&path, &stamped)
     }
 
     fn path(snapshots_root: &Path, season: &str) -> PathBuf {

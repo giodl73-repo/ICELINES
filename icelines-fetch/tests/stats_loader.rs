@@ -552,19 +552,31 @@ fn l1_loadoutcome_empty_realtime_array_treated_as_missing() {
 /// must error with BundleSchemaUnknown. Catches a regression where the
 /// gate's strict `>` accidentally becomes `>=` (losing the "current
 /// version is OK" signal) or where the gate is skipped.
+///
+/// Hart.3.3: `SnapshotMetaFlags::save` now auto-stamps the current
+/// binary's versions, so we can't use save() to plant a future-version
+/// meta file. Write the JSON directly to bypass the stamp.
+fn write_meta_raw(snapshots_root: &std::path::Path, season: &str, bundle_v: u32, repo_v: u32) {
+    let path = snapshots_root.join(season).join("_meta.json");
+    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+    let json = serde_json::json!({
+        "transactions_stale": false,
+        "transactions_last_error": null,
+        "transactions_fetched_at": null,
+        "bundle_schema_version": bundle_v,
+        "repository_version": repo_v,
+    });
+    std::fs::write(&path, serde_json::to_vec(&json).unwrap()).unwrap();
+}
+
 #[test]
 fn l1_load_into_repo_rejects_future_bundle_schema_version() {
-    use icelines_fetch::snapshot::SnapshotMetaFlags;
     use icelines_fetch::stats_loader::LoadError;
 
     let dir = tempfile::TempDir::new().unwrap();
     let store = SnapshotStore::new(dir.path());
 
-    let flags = SnapshotMetaFlags {
-        bundle_schema_version: 999,
-        ..Default::default()
-    };
-    flags.save(dir.path(), "20242025").unwrap();
+    write_meta_raw(dir.path(), "20242025", 999, 1);
 
     let err = load_into_repo(Season(20242025), SeasonType::Regular, &store).expect_err("must fail");
     assert!(matches!(
@@ -578,17 +590,12 @@ fn l1_load_into_repo_rejects_future_bundle_schema_version() {
 
 #[test]
 fn l1_load_into_repo_rejects_future_repository_version() {
-    use icelines_fetch::snapshot::SnapshotMetaFlags;
     use icelines_fetch::stats_loader::LoadError;
 
     let dir = tempfile::TempDir::new().unwrap();
     let store = SnapshotStore::new(dir.path());
 
-    let flags = SnapshotMetaFlags {
-        repository_version: 42,
-        ..Default::default()
-    };
-    flags.save(dir.path(), "20242025").unwrap();
+    write_meta_raw(dir.path(), "20242025", 1, 42);
 
     let err = load_into_repo(Season(20242025), SeasonType::Regular, &store).expect_err("must fail");
     assert!(matches!(
@@ -603,14 +610,29 @@ fn l1_load_into_repo_rejects_future_repository_version() {
 #[test]
 fn l1_load_into_repo_accepts_known_versions_at_max() {
     // Strict-`>` gate: the equal-to-MAX_KNOWN case must succeed.
-    use icelines_fetch::snapshot::SnapshotMetaFlags;
     let dir = tempfile::TempDir::new().unwrap();
     let store = SnapshotStore::new(dir.path());
-    let flags = SnapshotMetaFlags {
-        bundle_schema_version: 1,
-        repository_version: 1,
-        ..Default::default()
-    };
-    flags.save(dir.path(), "20242025").unwrap();
+    write_meta_raw(dir.path(), "20242025", 1, 1);
     assert!(load_into_repo(Season(20242025), SeasonType::Regular, &store).is_ok());
+}
+
+/// Hart.3.3 follow-up: the auto-stamping `save()` is what makes the
+/// gate work in production. Confirm: a save with version=0 in memory
+/// reloads at the current CURRENT_*_VERSION. Locking this prevents
+/// a future change from accidentally letting saves write 0.
+#[test]
+fn l1_meta_flag_save_stamps_current_versions_via_loader() {
+    use icelines_fetch::snapshot::SnapshotMetaFlags;
+    let dir = tempfile::TempDir::new().unwrap();
+    let flags = SnapshotMetaFlags::default();
+    flags.save(dir.path(), "20242025").unwrap();
+    let reloaded = SnapshotMetaFlags::load(dir.path(), "20242025");
+    assert_eq!(
+        reloaded.bundle_schema_version,
+        SnapshotMetaFlags::CURRENT_BUNDLE_SCHEMA_VERSION
+    );
+    assert_eq!(
+        reloaded.repository_version,
+        SnapshotMetaFlags::CURRENT_REPOSITORY_VERSION
+    );
 }
