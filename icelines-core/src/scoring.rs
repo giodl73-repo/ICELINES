@@ -54,6 +54,19 @@ pub fn classify_fit(pace_82: f64, position: Position) -> FitClass {
 /// Players with no pace score (below MIN_GP) sort to the end.
 /// Within the same pace score, goals per 82 breaks the tie.
 /// Final tiebreaker: nhl_id ascending (deterministic, avoids alphabetical bias).
+/// Sort views by pace_sort_key descending, with nhl_id tiebreak.
+/// Hart.5b2 prep — analog of the legacy `sort_by_pace(&mut [Player])`
+/// that consumers will swap to as they migrate to PlayerView.
+pub fn sort_views_by_pace(views: &mut [crate::stats_repository::PlayerView<'_>]) {
+    views.sort_by(|a, b| {
+        let sa = a.pace_score().map(|s| s.sort_key()).unwrap_or(-1.0);
+        let sb = b.pace_score().map(|s| s.sort_key()).unwrap_or(-1.0);
+        sb.partial_cmp(&sa)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| a.id().0.cmp(&b.id().0))
+    });
+}
+
 pub fn sort_by_pace(players: &mut [Player]) {
     players.sort_by(|a, b| {
         let sa = a.pace_score.map(|s| s.sort_key()).unwrap_or(-1.0);

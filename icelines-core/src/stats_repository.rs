@@ -657,6 +657,115 @@ impl PlayerView<'_> {
     pub fn contract_salary(&self) -> Option<u64> {
         self.contract.and_then(|c| c.salary)
     }
+
+    // ── Hart.5b2 prep — derived helpers matching legacy Player methods ──
+    //
+    // These are added so the Hart.5b2 consumer refactor becomes a
+    // mechanical rename (`p.foo()` → `view.foo()`) rather than per-site
+    // re-derivation. Semantics match the legacy Player impl in model.rs.
+
+    /// True iff this player's stats include a pace_score (legacy
+    /// `Player::is_rankable`).
+    pub fn is_rankable(&self) -> bool {
+        self.pace_score().is_some()
+    }
+
+    /// Power-play assists = pp_points - pp_goals.
+    pub fn pp_assists(&self) -> u32 {
+        self.stats
+            .totals
+            .pp_points
+            .saturating_sub(self.stats.totals.pp_goals)
+    }
+
+    /// Per-82 power-play points. None when gp == 0.
+    pub fn pp_points_per_82(&self) -> Option<f64> {
+        let gp = self.gp();
+        if gp == 0 {
+            None
+        } else {
+            Some(self.stats.totals.pp_points as f64 / gp as f64 * 82.0)
+        }
+    }
+
+    pub fn pp_goals_per_82(&self) -> Option<f64> {
+        let gp = self.gp();
+        if gp == 0 {
+            None
+        } else {
+            Some(self.stats.totals.pp_goals as f64 / gp as f64 * 82.0)
+        }
+    }
+
+    pub fn sh_goals_per_82(&self) -> Option<f64> {
+        let gp = self.gp();
+        if gp == 0 {
+            None
+        } else {
+            Some(self.stats.totals.sh_goals as f64 / gp as f64 * 82.0)
+        }
+    }
+
+    pub fn gwg_per_82(&self) -> Option<f64> {
+        let gp = self.gp();
+        if gp == 0 {
+            None
+        } else {
+            Some(self.stats.totals.gwg as f64 / gp as f64 * 82.0)
+        }
+    }
+
+    pub fn shots_per_82(&self) -> Option<f64> {
+        let gp = self.gp();
+        if gp == 0 {
+            None
+        } else {
+            Some(self.stats.totals.shots as f64 / gp as f64 * 82.0)
+        }
+    }
+
+    pub fn hits_per_82(&self) -> Option<f64> {
+        let gp = self.gp();
+        let hits = self.hits()?;
+        if gp == 0 {
+            None
+        } else {
+            Some(hits as f64 / gp as f64 * 82.0)
+        }
+    }
+
+    pub fn blocked_shots_per_82(&self) -> Option<f64> {
+        let gp = self.gp();
+        let b = self.blocked_shots()?;
+        if gp == 0 {
+            None
+        } else {
+            Some(b as f64 / gp as f64 * 82.0)
+        }
+    }
+
+    /// TOI per game formatted as "MM:SS", or None if unavailable.
+    pub fn toi_mmss(&self) -> Option<String> {
+        let sec = self.stats.totals.toi_per_game_sec?;
+        Some(format!("{:02}:{:02}", sec / 60, sec % 60))
+    }
+
+    /// Pace-projected points — convenience accessor for the
+    /// most-common rank/sort key.
+    pub fn pace_82(&self) -> Option<f64> {
+        self.pace_score().map(|s| s.pace_82)
+    }
+
+    pub fn goals_per_82(&self) -> Option<f64> {
+        self.pace_score().map(|s| s.goals_per_82)
+    }
+
+    /// Sort key for pace-based leaderboards. Mirrors
+    /// `PaceScore::sort_key` for views without a pace score
+    /// (returns 0.0 — sort places them last).
+    pub fn pace_sort_key(&self) -> f64 {
+        self.pace_score().map(|s| s.sort_key()).unwrap_or(0.0)
+    }
 }
 
 // ── Hart.4 legacy adapter ──────────────────────────────────────────────────
@@ -1936,6 +2045,84 @@ mod tests {
     /// Gap E companion — replace-path coverage (TAPE #9). The proptest
     /// only fires `index_rosters`. This test fires `unindex_rosters_for`
     /// by replacing a stats row with different team_stints.
+    /// Hart.5b2-prep: PlayerView derived helpers mirror the legacy
+    /// Player methods. Catches sign/scale errors in the per-82 helpers
+    /// and locks the gp=0 → None semantic.
+    #[test]
+    fn l0_hart5_view_derived_helpers_match_legacy_player_semantics() {
+        let mut r = make_repo_with_player(8478402);
+        r.upsert_stats(skater_stats(8478402, 20222023, SeasonType::Regular, "EDM"))
+            .unwrap();
+        let v = r
+            .view(PlayerId(8478402), Season(20222023), SeasonType::Regular)
+            .unwrap();
+
+        // is_rankable: pace_score is Some on the fixture.
+        assert!(v.is_rankable());
+
+        // pp_assists = pp_points - pp_goals = 28 - 10 = 18 (fixture defaults).
+        assert_eq!(v.pp_assists(), 18);
+
+        // Per-82 helpers: fixture has gp=70, pp_goals=10, pp_points=28,
+        // gwg=5, shots=220.
+        let pp_pts_82 = v.pp_points_per_82().unwrap();
+        let want_pp_pts_82 = 28.0 / 70.0 * 82.0;
+        assert!((pp_pts_82 - want_pp_pts_82).abs() < 1e-6);
+
+        let pp_g_82 = v.pp_goals_per_82().unwrap();
+        let want_pp_g_82 = 10.0 / 70.0 * 82.0;
+        assert!((pp_g_82 - want_pp_g_82).abs() < 1e-6);
+
+        let gwg_82 = v.gwg_per_82().unwrap();
+        let want_gwg_82 = 5.0 / 70.0 * 82.0;
+        assert!((gwg_82 - want_gwg_82).abs() < 1e-6);
+
+        // pace_82 / goals_per_82 from the seeded PaceScore.
+        assert!((v.pace_82().unwrap() - 93.7).abs() < 1e-6);
+        assert!((v.goals_per_82().unwrap() - 35.1).abs() < 1e-6);
+        // pace_sort_key combines them (per PaceScore::sort_key).
+        let sk = v.pace_sort_key();
+        assert!(sk > 93.7);
+        assert!(sk < 100.0);
+
+        // toi_mmss: fixture sets toi_per_game_sec = 20*60 = 1200 → "20:00".
+        assert_eq!(v.toi_mmss().as_deref(), Some("20:00"));
+
+        // Cold-start realtime is None: hits_per_82() and
+        // blocked_shots_per_82() return None (None-arm).
+        assert!(v.hits_per_82().is_none());
+        assert!(v.blocked_shots_per_82().is_none());
+    }
+
+    /// Hart.5b2-prep: the gp=0 edge case for per-82 helpers — must
+    /// return None (not divide-by-zero or 0.0).
+    #[test]
+    fn l0_hart5_view_per_82_helpers_none_when_gp_zero() {
+        let mut r = make_repo_with_player(8478402);
+        let stats = crate::fixtures::stats(8478402, 20222023, "EDM")
+            .build();
+        // Manually craft a stats row with gp=0 by going through the builder.
+        let mut zero_gp = stats.clone();
+        zero_gp.totals.gp = 0;
+        zero_gp.totals.pp_goals = 0;
+        zero_gp.totals.pp_points = 0;
+        zero_gp.totals.gwg = 0;
+        zero_gp.totals.shots = 0;
+        zero_gp.totals.pace_score = None;
+        r.upsert_stats(zero_gp).unwrap();
+
+        let v = r
+            .view(PlayerId(8478402), Season(20222023), SeasonType::Regular)
+            .unwrap();
+        assert_eq!(v.gp(), 0);
+        assert!(v.pp_points_per_82().is_none());
+        assert!(v.pp_goals_per_82().is_none());
+        assert!(v.gwg_per_82().is_none());
+        assert!(v.shots_per_82().is_none());
+        assert!(!v.is_rankable());
+        assert_eq!(v.pace_sort_key(), 0.0);
+    }
+
     #[test]
     fn l0_hart4_1_replace_stats_unindexes_old_roster_entries() {
         let mut repo = StatsRepository::new();
