@@ -324,7 +324,12 @@ pub fn render_projections(f: &mut Frame, app: &App, area: Rect) {
     let inner = block.inner(area);
     f.render_widget(block, area);
 
-    if app.players.is_empty() {
+    // Hart.5c.6 Phase B-1.2: collect views per frame, sort, render.
+    // Sort order matches the spec snapshot-determinism table for
+    // Projections (= Players sub-view sort): pace_82 desc, None last,
+    // full_name asc tiebreak.
+    let views = app.views();
+    if views.is_empty() {
         let lines = vec![
             Line::from(""),
             Line::from("  Loading player data…"),
@@ -334,11 +339,16 @@ pub fn render_projections(f: &mut Frame, app: &App, area: Rect) {
         return;
     }
 
-    let mut sorted: Vec<_> = app.players.iter().filter(|p| p.pace_score.is_some()).collect();
+    let mut sorted: Vec<_> = views
+        .iter()
+        .filter(|v| v.pace_82().is_some())
+        .collect();
     sorted.sort_by(|a, b| {
-        let sa = a.pace_score.map(|s| s.pace_82).unwrap_or(0.0);
-        let sb = b.pace_score.map(|s| s.pace_82).unwrap_or(0.0);
-        sb.partial_cmp(&sa).unwrap_or(std::cmp::Ordering::Equal)
+        let sa = a.pace_82().unwrap_or(f64::NEG_INFINITY);
+        let sb = b.pace_82().unwrap_or(f64::NEG_INFINITY);
+        sb.partial_cmp(&sa)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| a.full_name().cmp(b.full_name()))
     });
 
     let visible = inner.height.saturating_sub(3) as usize;
@@ -353,12 +363,13 @@ pub fn render_projections(f: &mut Frame, app: &App, area: Rect) {
         Line::styled(format!("  {}", "─".repeat(58)), dim),
     ];
 
-    for (i, p) in sorted.iter().skip(offset).take(visible).enumerate() {
+    for (i, v) in sorted.iter().skip(offset).take(visible).enumerate() {
         let global_rank = offset + i + 1;
-        let ppg  = p.pace_score.map(|s| format!("{:.3}", s.pace_82 / 82.0)).unwrap_or_else(|| "—".to_owned());
-        let proj = p.pace_score.map(|s| format!("{:.1}", s.pace_82)).unwrap_or_else(|| "—".to_owned());
-        let gp   = p.pace_score.map(|s| s.gp.to_string()).unwrap_or_else(|| "—".to_owned());
-        let name = p.full_name.chars().take(22).collect::<String>();
+        let p82  = v.pace_82();
+        let ppg  = p82.map(|p| format!("{:.3}", p / 82.0)).unwrap_or_else(|| "—".to_owned());
+        let proj = p82.map(|p| format!("{:.1}", p)).unwrap_or_else(|| "—".to_owned());
+        let gp   = if v.gp() > 0 { v.gp().to_string() } else { "—".to_owned() };
+        let name = v.full_name().chars().take(22).collect::<String>();
 
         let style = if offset + i == app.selected {
             Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
@@ -371,7 +382,8 @@ pub fn render_projections(f: &mut Frame, app: &App, area: Rect) {
         };
 
         lines.push(Line::styled(
-            format!("  {:<4} {:<22} {:<5} {:<4} {:>6}  {:>7}  {:>5}", global_rank, name, p.team.as_str(), p.position.abbreviation(), ppg, proj, gp),
+            format!("  {:<4} {:<22} {:<5} {:<4} {:>6}  {:>7}  {:>5}",
+                global_rank, name, v.team_display(), v.position().abbreviation(), ppg, proj, gp),
             style,
         ));
     }
@@ -476,18 +488,27 @@ pub fn render_group_members(f: &mut Frame, app: &App, area: Rect, group_name: &s
         Line::styled(format!("  {}", "─".repeat(46)), dim),
     ];
 
+    // Hart.5c.6 Phase B-1.2: resolve members against views, not
+    // app.players. Same name_normalized.contains() match — group
+    // membership semantics are unchanged.
+    let views = app.views();
     for (i, norm) in members.iter().enumerate() {
-        let player = app.players.iter().find(|p| p.name_normalized.contains(norm.as_str()));
+        let player = views
+            .iter()
+            .find(|v| v.identity.name_normalized.contains(norm.as_str()));
         let style = if i == app.selected {
             Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
         } else {
             Style::default()
         };
         let row = match player {
-            Some(p) => {
-                let proj = p.pace_score.map(|s| format!("{:.1}", s.pace_82)).unwrap_or_else(|| "—".to_owned());
-                let name = p.full_name.chars().take(24).collect::<String>();
-                format!("  {:<24} {:<5} {:<4} {:>8}", name, p.team.as_str(), p.position.abbreviation(), proj)
+            Some(v) => {
+                let proj = v.pace_82()
+                    .map(|p| format!("{:.1}", p))
+                    .unwrap_or_else(|| "—".to_owned());
+                let name = v.full_name().chars().take(24).collect::<String>();
+                format!("  {:<24} {:<5} {:<4} {:>8}",
+                    name, v.team_display(), v.position().abbreviation(), proj)
             }
             None => format!("  {}  (not in current data)", norm),
         };
@@ -614,10 +635,17 @@ pub fn render_fetch(f: &mut Frame, app: &App, area: Rect) {
     let fetch_inner = fetch_block.inner(chunks[0]);
     f.render_widget(fetch_block, chunks[0]);
 
-    let player_status = if app.players.is_empty() {
+    // Hart.5c.6 Phase B-1.2: count via repo, not Vec<Player>. Per
+    // spec D5/forge v1.1 N4 — `repo.skaters().count()` (the
+    // non-existent `skater_count` API was an old draft).
+    let skater_count = app
+        .repo
+        .skaters(app.active_season_typed, app.active_type)
+        .count();
+    let player_status = if skater_count == 0 {
         "loading…".to_owned()
     } else {
-        format!("{} players loaded", app.players.len())
+        format!("{} players loaded", skater_count)
     };
 
     let cmd = Style::default().fg(Color::Cyan);
