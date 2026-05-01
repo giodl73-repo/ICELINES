@@ -6,8 +6,10 @@ use ratatui::{
     Frame,
 };
 use icelines_core::cross_team::{
-    compute_all_with_mode, compute_team_strength, ScoringMode, WebFitClass,
+    compute_all_views_with_mode, compute_team_strength_views,
+    fantasy_score_view, ScoringMode, WebFitClass,
 };
+use icelines_core::stats_repository::PlayerView;
 use crate::tui::app::App;
 
 // ── League view ───────────────────────────────────────────────────────────────
@@ -23,12 +25,14 @@ pub fn render_league(f: &mut Frame, app: &App, area: Rect) {
     let inner = block.inner(area);
     f.render_widget(block, area);
 
-    if app.players.is_empty() {
+    // Hart.5c.6 Phase B-3.2: collect views, then compute team strength.
+    let views = app.views();
+    if views.is_empty() {
         f.render_widget(Paragraph::new("  Loading…"), inner);
         return;
     }
 
-    let strength = compute_team_strength(&app.players, mode);
+    let strength = compute_team_strength_views(&views, mode);
     let mut ranked: Vec<(&str, &icelines_core::cross_team::TeamStrength)> =
         strength.iter().map(|(k, v)| (k.as_str(), v)).collect();
     ranked.sort_by(|a, b| b.1.total.partial_cmp(&a.1.total).unwrap_or(std::cmp::Ordering::Equal));
@@ -90,7 +94,9 @@ pub fn render_team(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
     let inner = block.inner(area);
     f.render_widget(block, area);
 
-    if app.players.is_empty() {
+    // Hart.5c.6 Phase B-3.2: collect views, then compute metrics.
+    let views = app.views();
+    if views.is_empty() {
         f.render_widget(Paragraph::new("  Loading…"), inner);
         return;
     }
@@ -98,7 +104,6 @@ pub fn render_team(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
     // Phase G.4: split inner vertically — grid on top, goalie strip
     // below. Strip takes 5 lines (header + 1 separator + up to 3 goalies);
     // suppressed when the team has no goalies in the active window.
-    // Hart.5c.6 Phase B-3: migrated to view-based goalie collection.
     let goalie_views = app.goalie_views();
     let team_goalies = super::team::collect_team_goalie_views(&goalie_views, abbrev);
     let strip_height: u16 = if team_goalies.is_empty() { 0 } else { 5 };
@@ -109,15 +114,15 @@ pub fn render_team(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
     let grid_area  = outer[0];
     let strip_area = outer[1];
 
-    // Compute cross-team metrics for all players
-    let metrics = compute_all_with_mode(&app.players, mode);
+    // Compute cross-team metrics for all views — view-based path.
+    let metrics = compute_all_views_with_mode(&views, mode);
     let metrics_map: std::collections::HashMap<u32, &icelines_core::cross_team::CrossTeamMetrics> =
         metrics.iter().filter_map(|m| m.player_nhl_id.map(|id| (id, m))).collect();
 
-    let score_of = |p: &icelines_core::model::Player| -> f64 {
+    let score_of = |v: &PlayerView<'_>| -> f64 {
         match mode {
-            ScoringMode::Fantasy  => icelines_core::cross_team::fantasy_score(p),
-            ScoringMode::Pace     => p.pace_score.map(|s| s.pace_82 as f64).unwrap_or(0.0),
+            ScoringMode::Fantasy => fantasy_score_view(v),
+            ScoringMode::Pace    => v.pace_82().unwrap_or(0.0),
         }
     };
 
@@ -133,44 +138,48 @@ pub fn render_team(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
     // Greedy forward assignment: sort all forwards by score, assign to primary pos.
     // Overflow (>4 at any pos) spills into the thinnest other forward slot.
     use icelines_core::model::Position;
-    let mut fwd_buckets: std::collections::HashMap<Position, Vec<&icelines_core::model::Player>> =
+    let mut fwd_buckets: std::collections::HashMap<Position, Vec<&PlayerView<'_>>> =
         std::collections::HashMap::new();
-    let mut all_fwds: Vec<&icelines_core::model::Player> = app.players.iter()
-        .filter(|p| p.team.as_str() == abbrev && p.position.is_forward())
+    let mut all_fwds: Vec<&PlayerView<'_>> = views.iter()
+        .filter(|v| v.team_display() == abbrev && v.position().is_forward())
         .collect();
     all_fwds.sort_by(|a, b| score_of(b).partial_cmp(&score_of(a)).unwrap_or(std::cmp::Ordering::Equal));
 
-    for p in &all_fwds {
-        let bucket = fwd_buckets.entry(p.position).or_default();
+    for v in &all_fwds {
+        let bucket = fwd_buckets.entry(v.position()).or_default();
         if bucket.len() < 4 {
-            bucket.push(p);
+            bucket.push(v);
         } else {
             // Primary slot full — spill to natural wing based on shooting hand,
             // fall back to least-populated if natural wing is also full.
-            let natural = match p.shoots_catches.as_deref() {
+            let natural = match v.identity.bio.shoots_catches.as_deref() {
                 Some("R") => Position::RightWing,
                 _         => Position::LeftWing,  // lefty or unknown → LW
             };
-            let spill = if fwd_buckets.get(&natural).map_or(0, |v| v.len()) < 4 {
+            let spill = if fwd_buckets.get(&natural).map_or(0, |b| b.len()) < 4 {
                 natural
             } else {
                 [Position::LeftWing, Position::Center, Position::RightWing]
                     .iter()
-                    .min_by_key(|&&pos| fwd_buckets.get(&pos).map_or(0, |v| v.len()))
+                    .min_by_key(|&&pos| fwd_buckets.get(&pos).map_or(0, |b| b.len()))
                     .copied()
-                    .unwrap_or(p.position)
+                    .unwrap_or(v.position())
             };
-            fwd_buckets.entry(spill).or_default().push(p);
+            fwd_buckets.entry(spill).or_default().push(v);
         }
     }
 
     // Defense: split by handedness
-    let mut all_d: Vec<&icelines_core::model::Player> = app.players.iter()
-        .filter(|p| p.team.as_str() == abbrev && p.position == Position::Defense)
+    let mut all_d: Vec<&PlayerView<'_>> = views.iter()
+        .filter(|v| v.team_display() == abbrev && v.position() == Position::Defense)
         .collect();
     all_d.sort_by(|a, b| score_of(b).partial_cmp(&score_of(a)).unwrap_or(std::cmp::Ordering::Equal));
-    let ld_players: Vec<_> = all_d.iter().filter(|p| p.shoots_catches.as_deref() != Some("R")).copied().collect();
-    let rd_players: Vec<_> = all_d.iter().filter(|p| p.shoots_catches.as_deref() == Some("R")).copied().collect();
+    let ld_players: Vec<_> = all_d.iter()
+        .filter(|v| v.identity.bio.shoots_catches.as_deref() != Some("R"))
+        .copied().collect();
+    let rd_players: Vec<_> = all_d.iter()
+        .filter(|v| v.identity.bio.shoots_catches.as_deref() == Some("R"))
+        .copied().collect();
 
     let empty = vec![];
     let fwd_cols = [
@@ -239,9 +248,9 @@ fn render_pos_col(
     f: &mut Frame,
     area: Rect,
     label: &str,
-    players: &[&icelines_core::model::Player],
+    players: &[&PlayerView<'_>],
     depth: usize,
-    score_of: &impl Fn(&icelines_core::model::Player) -> f64,
+    score_of: &impl Fn(&PlayerView<'_>) -> f64,
     metrics_map: &std::collections::HashMap<u32, &icelines_core::cross_team::CrossTeamMetrics>,
     mode: ScoringMode,
 ) {
@@ -257,10 +266,12 @@ fn render_pos_col(
         Line::styled(format!(" {}", "─".repeat(22)), dim),
     ];
 
-    for (i, p) in players.iter().enumerate() {
-        let score = score_of(p);
-        let (fit_label, fit_color) = p.nhl_id
-            .and_then(|id| metrics_map.get(&id))
+    for (i, v) in players.iter().enumerate() {
+        let score = score_of(v);
+        // PlayerId.0 is the canonical nhl_id (post-Hart unified shape).
+        let nhl_id = v.identity.id.0;
+        let (fit_label, fit_color) = metrics_map
+            .get(&nhl_id)
             .map(|m| {
                 let cls = m.web_fit_class();
                 let color = match cls {
@@ -273,7 +284,7 @@ fn render_pos_col(
             })
             .unwrap_or(("?", Color::DarkGray));
 
-        let name = p.full_name.chars().take(14).collect::<String>();
+        let name = v.full_name().chars().take(14).collect::<String>();
         let base_style = if i < depth { Style::default() } else { dim };
         let sep = if i + 1 == depth { Style::default().fg(Color::DarkGray) } else { Style::default() };
 
