@@ -7,7 +7,7 @@ use ratatui::{
 };
 use icelines_core::{
     filter::PlayerFilter,
-    model::{Player, Position},
+    model::Position,
     position::PositionResolver,
     stats_repository::PlayerView,
 };
@@ -45,85 +45,12 @@ pub fn default_fields() -> Vec<QueryField> {
 
 // ── Query execution ───────────────────────────────────────────────────────────
 
-pub fn run_query<'a>(players: &'a [Player], fields: &[QueryField]) -> Vec<(usize, &'a Player)> {
-    let sort  = fields[0].value();
-    let pos   = fields[1].value();
-    let top: usize = fields[9].value().parse().unwrap_or(20);
-
-    let mut filter = PlayerFilter::new();
-
-    if pos != "all" {
-        if pos == "F" {
-            filter.positions = Some(vec![Position::Center, Position::LeftWing, Position::RightWing]);
-        } else if let Ok((primary, _)) = PositionResolver::parse(pos) {
-            filter.positions = Some(vec![primary]);
-        }
-    }
-    filter.age_max = parse_opt(fields[2].value());
-    filter.age_min = parse_opt(fields[3].value());
-    filter.gp_min  = parse_opt(fields[4].value());
-    filter.nationalities = if fields[5].value() == "any" { None } else { Some(vec![fields[5].value().to_uppercase()]) };
-    filter.draft_years   = parse_opt::<u16>(fields[6].value()).map(|y| vec![y]);
-    filter.draft_rounds  = parse_opt::<u8>(fields[7].value()).map(|r| vec![r]);
-
-    let mut matched: Vec<&Player> = filter.apply(players);
-    matched.sort_by(|a, b| sort_val(b, sort).partial_cmp(&sort_val(a, sort)).unwrap_or(std::cmp::Ordering::Equal));
-
-    matched.into_iter().take(top).enumerate().map(|(i, p)| (i + 1, p)).collect()
-}
-
 fn parse_opt<T: std::str::FromStr>(s: &str) -> Option<T> {
     if s == "any" { None } else { s.parse().ok() }
 }
 
-fn sort_val(p: &Player, sort: &str) -> f64 {
-    match sort {
-        "pts-pace"|"ppg"   => p.pace_score.map(|s| s.pace_82).unwrap_or(0.0),
-        "g-pace"|"gpg"     => p.pace_score.map(|s| s.goals_per_82).unwrap_or(0.0),
-        "pp-pts-pace"      => p.pp_points_per_82().unwrap_or(0.0),
-        "pp-g-pace"        => p.pp_goals_per_82().unwrap_or(0.0),
-        "sh-g-pace"        => p.sh_goals_per_82().unwrap_or(0.0),
-        "shots-pace"       => p.shots_per_82().unwrap_or(0.0),
-        "sh-pct"           => p.shooting_pct.unwrap_or(0.0) as f64,
-        "plus-minus"       => p.plus_minus as f64,
-        "toi"              => p.toi_per_game_sec.unwrap_or(0.0) as f64,
-        "fo-pct"           => p.faceoff_win_pct.unwrap_or(0.0) as f64,
-        "hits-pace"        => p.hits_per_82().unwrap_or(0.0),
-        "blocks-pace"      => p.blocked_shots_per_82().unwrap_or(0.0),
-        "xg"               => p.xg.unwrap_or(0.0) as f64,
-        "cf-pct"           => p.cf_pct_5v5.unwrap_or(50.0) as f64,
-        "xgf-pct"          => p.xgf_pct_5v5.unwrap_or(50.0) as f64,
-        "pts"              => p.season_points as f64,
-        "goals"            => p.season_goals as f64,
-        "assists"          => p.season_assists as f64,
-        "gp"               => p.gp().unwrap_or(0) as f64,
-        _                  => p.pace_score.map(|s| s.pace_82).unwrap_or(0.0),
-    }
-}
-
-fn display_val(p: &Player, sort: &str) -> String {
-    match sort {
-        "pts-pace"    => p.pace_score.map(|s| format!("{:.1}", s.pace_82)).unwrap_or_else(|| "—".to_owned()),
-        "ppg"         => p.pace_score.map(|s| format!("{:.3}", s.pace_82/82.0)).unwrap_or_else(|| "—".to_owned()),
-        "g-pace"      => p.pace_score.map(|s| format!("{:.1}", s.goals_per_82)).unwrap_or_else(|| "—".to_owned()),
-        "pp-pts-pace" => p.pp_points_per_82().map(|v| format!("{:.1}", v)).unwrap_or_else(|| "—".to_owned()),
-        "pp-g-pace"   => p.pp_goals_per_82().map(|v| format!("{:.1}", v)).unwrap_or_else(|| "—".to_owned()),
-        "sh-pct"      => p.shooting_pct.map(|v| format!("{:.1}%", v*100.0)).unwrap_or_else(|| "—".to_owned()),
-        "plus-minus"  => if p.plus_minus >= 0 { format!("+{}", p.plus_minus) } else { p.plus_minus.to_string() },
-        "toi"         => p.toi_mmss().unwrap_or_else(|| "—".to_owned()),
-        "xg"          => p.xg.map(|v| format!("{:.2}", v)).unwrap_or_else(|| "—".to_owned()),
-        "cf-pct"      => p.cf_pct_5v5.map(|v| format!("{:.1}%", v)).unwrap_or_else(|| "—".to_owned()),
-        "pts"         => p.season_points.to_string(),
-        "goals"       => p.season_goals.to_string(),
-        "assists"     => p.season_assists.to_string(),
-        "gp"          => p.gp().map(|g| g.to_string()).unwrap_or_else(|| "—".to_owned()),
-        _             => p.pace_score.map(|s| format!("{:.1}", s.pace_82)).unwrap_or_else(|| "—".to_owned()),
-    }
-}
-
-/// Hart.5c.6 Phase B-3.3 — view-based parallel to run_query. Same
-/// filter/sort/limit pipeline, but operates on `PlayerView<'_>` slices
-/// via `PlayerFilter::apply_views`.
+/// Filter + sort the players by the field selections. Operates on
+/// `PlayerView<'_>` slices via `PlayerFilter::matches_view`.
 pub fn run_query_views<'a>(
     views: &'a [PlayerView<'a>],
     fields: &[QueryField],

@@ -14,7 +14,6 @@ use ratatui::{
 
 use crate::tui::app::App;
 use crate::tui::headshot;
-use icelines_core::model::Goalie;
 
 /// Sort selectors. App stores the index; we map index → comparator here
 /// so the cycle order is centralised.
@@ -54,57 +53,11 @@ impl GoalieSort {
 /// NHL leaderboard thresholds rather than allowing arbitrary input.
 pub const MIN_GP_CYCLE: &[u32] = &[5, 15, 25, 40];
 
-/// Apply the App's sort selection to a vec of goalie references.
-pub fn sort_goalies<'a>(
-    goalies: &'a [Goalie],
-    sort: GoalieSort,
-    min_gp: u32,
-) -> Vec<&'a Goalie> {
-    let mut out: Vec<&Goalie> = goalies.iter()
-        .filter(|g| g.qualified(min_gp))
-        .collect();
-    use std::cmp::Ordering;
-    out.sort_by(|a, b| {
-        let sa = a.stats.as_ref();
-        let sb = b.stats.as_ref();
-        let ord = match sort {
-            GoalieSort::SvPctDesc => {
-                let av = sa.and_then(|s| s.save_pct).unwrap_or(0.0);
-                let bv = sb.and_then(|s| s.save_pct).unwrap_or(0.0);
-                bv.partial_cmp(&av).unwrap_or(Ordering::Equal)
-            }
-            GoalieSort::GaaAsc => {
-                let av = sa.and_then(|s| s.goals_against_average).unwrap_or(f32::INFINITY);
-                let bv = sb.and_then(|s| s.goals_against_average).unwrap_or(f32::INFINITY);
-                av.partial_cmp(&bv).unwrap_or(Ordering::Equal)
-            }
-            GoalieSort::WinsDesc =>
-                sb.map(|s| s.wins).unwrap_or(0).cmp(&sa.map(|s| s.wins).unwrap_or(0)),
-            GoalieSort::GpDesc =>
-                sb.map(|s| s.games_played).unwrap_or(0).cmp(&sa.map(|s| s.games_played).unwrap_or(0)),
-            GoalieSort::SavesDesc =>
-                sb.map(|s| s.saves).unwrap_or(0).cmp(&sa.map(|s| s.saves).unwrap_or(0)),
-            GoalieSort::ShutoutsDesc =>
-                sb.map(|s| s.shutouts).unwrap_or(0).cmp(&sa.map(|s| s.shutouts).unwrap_or(0)),
-        };
-        // Tiebreaker: SV% desc to keep the leaderboard stable under ties.
-        ord.then_with(|| {
-            let av = sa.and_then(|s| s.save_pct).unwrap_or(0.0);
-            let bv = sb.and_then(|s| s.save_pct).unwrap_or(0.0);
-            bv.partial_cmp(&av).unwrap_or(Ordering::Equal)
-        })
-    });
-    out
-}
-
-/// Hart.5c.6 Phase B-3 — view-based goalie sort. Same comparator as
-/// `sort_goalies`, but operates on `PlayerView<'_>` slices and reads
-/// GP from `view.gp()` (canonical post-Hart source per Hart.4.1)
-/// rather than the deleted GoalieSeasonStats.games_played field.
-///
-/// Pure function; testable without rendering. Filters to views where
-/// `view.is_goalie() == true` AND `view.gp() >= min_gp` so a stray
-/// non-goalie view in the input slice gets excluded.
+/// View-based goalie sort. Pure function; testable without rendering.
+/// Filters to views where `view.is_goalie() == true` AND
+/// `view.gp() >= min_gp` so a stray non-goalie view in the input slice
+/// gets excluded. GP comes from `view.gp()` (canonical post-Hart
+/// source per Hart.4.1).
 pub fn sort_goalie_views<'a>(
     views: &'a [icelines_core::stats_repository::PlayerView<'a>],
     sort: GoalieSort,
@@ -267,82 +220,92 @@ fn short_name(full: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use icelines_core::model::{Goalie, GoalieBio, GoalieSeasonStats, TeamAbbr};
+    use icelines_core::fixtures;
+    use icelines_core::model::Season;
+    use icelines_core::season_stats::{GoalieSeasonStats, SeasonType};
+    use icelines_core::stats_repository::StatsRepository;
 
-    fn fixture_goalie(id: u32, name: &str, team: &str, gp: u32, wins: u32,
-                      sv_pct: f32, gaa: f32, so: u32) -> Goalie {
-        Goalie {
-            nhl_id:          id,
-            full_name:       name.to_owned(),
-            name_normalized: name.to_lowercase().replace(' ', "_"),
-            team:            TeamAbbr(team.to_owned()),
-            stats: Some(GoalieSeasonStats {
-                games_played: gp, games_started: gp,
-                wins, losses: gp.saturating_sub(wins).saturating_sub(2),
+    fn build_goalie_pool(seeds: &[(u32, &str, &str, u32, u32, f32, f32, u32)]) -> StatsRepository {
+        // (id, name, team, gp, wins, sv_pct, gaa, shutouts)
+        let mut r = StatsRepository::new();
+        for &(id, name, team, gp, wins, sv_pct, gaa, so) in seeds {
+            let normalized = icelines_core::name::normalize_name(name);
+            let identity = fixtures::identity(id).name(name, &normalized).build();
+            let goalie_stats = GoalieSeasonStats {
+                games_started: gp, wins,
+                losses: gp.saturating_sub(wins).saturating_sub(2),
                 ot_losses: Some(2), ties: None,
                 shots_against: 30 * gp, goals_against: ((gaa as u32) * gp).max(0),
                 saves: 28 * gp,
                 save_pct: Some(sv_pct), goals_against_average: Some(gaa),
-                shutouts: so, time_on_ice: gp * 3600,
-            }),
-            bio: GoalieBio {
-                birth_date: None, birth_country: None, nationality_code: None,
-                catches: Some("L".to_owned()),
-                height_in_inches: None, weight_lbs: None,
-                draft_year: None, draft_round: None, draft_overall: None,
-                rookie_season: None,
-            },
-            headshot_url:   None,
-            sweater_number: None,
+                shutouts: so, time_on_ice_sec: gp * 3600,
+            };
+            // Build SeasonStats with goalie variant: position=Goalie + goalie:Some.
+            let mut stats = fixtures::stats(id, 20242025, team)
+                .position(icelines_core::model::Position::Goalie)
+                .goalie(goalie_stats)
+                .build();
+            // Override totals.gp so view.gp() returns the goalie's gp.
+            stats.totals.gp = gp;
+            r.upsert_identity(identity).unwrap();
+            r.upsert_stats(stats).unwrap();
         }
+        r
+    }
+
+    fn collect_goalie_views(repo: &StatsRepository) -> Vec<icelines_core::stats_repository::PlayerView<'_>> {
+        repo.goalies(Season(20242025), SeasonType::Regular).collect()
     }
 
     #[test]
-    fn l0_sort_goalies_sv_pct_desc_default() {
-        let pool = vec![
-            fixture_goalie(1, "Backup", "WPG", 20, 8,  0.890, 3.20, 0),
-            fixture_goalie(2, "Connor Hellebuyck", "WPG", 63, 47, 0.925, 2.00, 8),
-            fixture_goalie(3, "Mid Tier", "BOS", 35, 18, 0.910, 2.50, 2),
-        ];
-        let sorted = sort_goalies(&pool, GoalieSort::SvPctDesc, 15);
-        assert_eq!(sorted[0].full_name, "Connor Hellebuyck",
+    fn l0_sort_goalie_views_sv_pct_desc_default() {
+        let repo = build_goalie_pool(&[
+            (1, "Backup",            "WPG", 20, 8,  0.890, 3.20, 0),
+            (2, "Connor Hellebuyck", "WPG", 63, 47, 0.925, 2.00, 8),
+            (3, "Mid Tier",          "BOS", 35, 18, 0.910, 2.50, 2),
+        ]);
+        let views = collect_goalie_views(&repo);
+        let sorted = sort_goalie_views(&views, GoalieSort::SvPctDesc, 15);
+        assert_eq!(sorted[0].full_name(), "Connor Hellebuyck",
             "highest SV% should sort first");
-        assert_eq!(sorted[1].full_name, "Mid Tier");
-        assert_eq!(sorted[2].full_name, "Backup");
+        assert_eq!(sorted[1].full_name(), "Mid Tier");
+        assert_eq!(sorted[2].full_name(), "Backup");
     }
 
     #[test]
-    fn l0_sort_goalies_gaa_asc_low_is_best() {
-        let pool = vec![
-            fixture_goalie(1, "High GAA", "OTT", 30, 12, 0.900, 3.20, 1),
-            fixture_goalie(2, "Low GAA",  "WPG", 30, 18, 0.920, 2.00, 5),
-        ];
-        let sorted = sort_goalies(&pool, GoalieSort::GaaAsc, 15);
-        assert_eq!(sorted[0].full_name, "Low GAA",
+    fn l0_sort_goalie_views_gaa_asc_low_is_best() {
+        let repo = build_goalie_pool(&[
+            (1, "High GAA", "OTT", 30, 12, 0.900, 3.20, 1),
+            (2, "Low GAA",  "WPG", 30, 18, 0.920, 2.00, 5),
+        ]);
+        let views = collect_goalie_views(&repo);
+        let sorted = sort_goalie_views(&views, GoalieSort::GaaAsc, 15);
+        assert_eq!(sorted[0].full_name(), "Low GAA",
             "GAA sort: smaller is better — low GAA first");
     }
 
     #[test]
-    fn l0_sort_goalies_filters_by_min_gp() {
-        // Backup with 5 GP should NOT appear when min_gp = 15.
-        let pool = vec![
-            fixture_goalie(1, "Backup",  "WPG", 5,  2,  0.999, 1.00, 0),
-            fixture_goalie(2, "Starter", "WPG", 50, 28, 0.910, 2.50, 5),
-        ];
-        let sorted = sort_goalies(&pool, GoalieSort::SvPctDesc, 15);
+    fn l0_sort_goalie_views_filters_by_min_gp() {
+        let repo = build_goalie_pool(&[
+            (1, "Backup",  "WPG", 5,  2,  0.999, 1.00, 0),
+            (2, "Starter", "WPG", 50, 28, 0.910, 2.50, 5),
+        ]);
+        let views = collect_goalie_views(&repo);
+        let sorted = sort_goalie_views(&views, GoalieSort::SvPctDesc, 15);
         assert_eq!(sorted.len(), 1);
-        assert_eq!(sorted[0].full_name, "Starter");
+        assert_eq!(sorted[0].full_name(), "Starter");
     }
 
     #[test]
-    fn l0_sort_goalies_lower_min_gp_includes_more() {
-        let pool = vec![
-            fixture_goalie(1, "Backup",  "WPG", 7,  3, 0.940, 2.00, 1),
-            fixture_goalie(2, "Starter", "WPG", 50, 28, 0.910, 2.50, 5),
-        ];
-        let lo = sort_goalies(&pool, GoalieSort::SvPctDesc, 5);
+    fn l0_sort_goalie_views_lower_min_gp_includes_more() {
+        let repo = build_goalie_pool(&[
+            (1, "Backup",  "WPG", 7,  3,  0.940, 2.00, 1),
+            (2, "Starter", "WPG", 50, 28, 0.910, 2.50, 5),
+        ]);
+        let views = collect_goalie_views(&repo);
+        let lo = sort_goalie_views(&views, GoalieSort::SvPctDesc, 5);
         assert_eq!(lo.len(), 2, "min_gp=5 includes both");
-        let hi = sort_goalies(&pool, GoalieSort::SvPctDesc, 15);
+        let hi = sort_goalie_views(&views, GoalieSort::SvPctDesc, 15);
         assert_eq!(hi.len(), 1, "min_gp=15 excludes the backup");
     }
 
