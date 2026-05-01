@@ -100,7 +100,18 @@ pub struct PlayersArgs {
 }
 
 pub async fn run(args: PlayersArgs) -> anyhow::Result<()> {
-    let players = load_all_players()?;
+    // Hart.5b2: refactored off Vec<Player> onto PlayerView via
+    // load_into_repo + apply_views. Identity bio access (birth_date)
+    // goes through view.identity.bio per the new model.
+    let cfg = Config::load()?;
+    let season_u32: u32 = cfg
+        .season_str()
+        .parse()
+        .map_err(|_| anyhow::anyhow!("season '{}' is not a YYYYZZZZ id", cfg.season_str()))?;
+    let store = SnapshotStore::new(cfg.snapshot_dir());
+    let outcome = load_into_repo(Season(season_u32), SeasonType::Regular, &store)
+        .map_err(|e| anyhow::anyhow!("{e}\n  Try: icelines fetch all"))?;
+
     let mut filter = PlayerFilter::new();
     if let Some(p) = args.pos {
         if let Ok((primary, _)) = PositionResolver::parse(&p) {
@@ -118,7 +129,7 @@ pub async fn run(args: PlayersArgs) -> anyhow::Result<()> {
     filter.ppg_min = args.ppg_min;
     filter.gp_min = args.gp_min;
 
-    let matched = filter.apply(&players);
+    let matched = filter.apply_views(outcome.repo.skaters(Season(season_u32), SeasonType::Regular));
     let total = matched.len();
     let take = total.min(args.top);
 
@@ -127,15 +138,17 @@ pub async fn run(args: PlayersArgs) -> anyhow::Result<()> {
         .iter()
         .take(args.top)
         .enumerate()
-        .map(|(i, p)| {
-            let age = p
+        .map(|(i, v)| {
+            let age = v
+                .identity
+                .bio
                 .birth_date
                 .as_deref()
                 .and_then(|d| d.get(..4))
                 .and_then(|y| y.parse::<u16>().ok())
                 .map(|y| (2026u16.saturating_sub(y)).to_string())
                 .unwrap_or_else(|| "—".to_owned());
-            let (ppg, proj) = match p.pace_score {
+            let (ppg, proj) = match v.pace_score() {
                 Some(s) => (
                     format!("{:.2}", s.pace_82 / 82.0),
                     format!("{:.0}", s.pace_82),
@@ -144,9 +157,9 @@ pub async fn run(args: PlayersArgs) -> anyhow::Result<()> {
             };
             vec![
                 (i + 1).to_string(),
-                p.full_name.clone(),
-                p.team.as_str().to_owned(),
-                p.position.abbreviation().to_owned(),
+                v.full_name().to_owned(),
+                v.team_display().to_owned(),
+                v.position().abbreviation().to_owned(),
                 age,
                 ppg,
                 proj,

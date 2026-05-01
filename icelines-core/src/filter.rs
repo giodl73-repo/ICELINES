@@ -59,6 +59,230 @@ impl PlayerFilter {
         players.iter().filter(|p| self.matches(p)).collect()
     }
 
+    /// Apply the filter to PlayerView iterator, returning matching views
+    /// in iteration order. Hart.5b2 prep — parallels `apply` for the
+    /// new model. Field-for-field equivalent to `matches` semantics.
+    pub fn apply_views<'a, I>(&'a self, views: I) -> Vec<crate::stats_repository::PlayerView<'a>>
+    where
+        I: IntoIterator<Item = crate::stats_repository::PlayerView<'a>>,
+    {
+        views
+            .into_iter()
+            .filter(|v| self.matches_view(v))
+            .collect()
+    }
+
+    /// Field-for-field equivalent of `matches` against a PlayerView.
+    /// Hart.5b2 prep.
+    pub fn matches_view(&self, v: &crate::stats_repository::PlayerView<'_>) -> bool {
+        // Team filter
+        if let Some(ref teams) = self.teams {
+            if !teams
+                .iter()
+                .any(|t| t.eq_ignore_ascii_case(v.team_display()))
+            {
+                return false;
+            }
+        }
+
+        // Position filter (check primary position)
+        if let Some(ref positions) = self.positions {
+            if !positions.contains(&v.position()) {
+                return false;
+            }
+        }
+
+        // Age filter — birth_date lives on identity.bio.
+        if self.age_min.is_some() || self.age_max.is_some() {
+            let age_opt = v
+                .identity
+                .bio
+                .birth_date
+                .as_deref()
+                .and_then(|bd| bd.split('-').next())
+                .and_then(|yr| yr.parse::<u32>().ok())
+                .map(|birth_year| 2026u32.saturating_sub(birth_year) as u8);
+            match age_opt {
+                None => return false,
+                Some(age) => {
+                    if let Some(min) = self.age_min {
+                        if age < min {
+                            return false;
+                        }
+                    }
+                    if let Some(max) = self.age_max {
+                        if age > max {
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Nationality
+        if let Some(ref nats) = self.nationalities {
+            let m = v
+                .identity
+                .bio
+                .nationality_code
+                .as_deref()
+                .map(|nc| nats.iter().any(|n| n.eq_ignore_ascii_case(nc)))
+                .unwrap_or(false);
+            if !m {
+                return false;
+            }
+        }
+
+        // Region
+        if let Some(ref regions) = self.regions {
+            let m = v
+                .identity
+                .bio
+                .birth_country
+                .as_deref()
+                .map(|bc| regions.contains(&Region::from_country(bc)))
+                .unwrap_or(false);
+            if !m {
+                return false;
+            }
+        }
+
+        // Undrafted
+        if let Some(want_undrafted) = self.undrafted {
+            let is_undrafted = v.identity.bio.draft_year.is_none();
+            if want_undrafted != is_undrafted {
+                return false;
+            }
+        }
+
+        // Draft year
+        if let Some(ref years) = self.draft_years {
+            let m = v
+                .identity
+                .bio
+                .draft_year
+                .map(|dy| years.contains(&dy))
+                .unwrap_or(false);
+            if !m {
+                return false;
+            }
+        }
+
+        // Draft round
+        if let Some(ref rounds) = self.draft_rounds {
+            let m = v
+                .identity
+                .bio
+                .draft_round
+                .map(|dr| rounds.contains(&dr))
+                .unwrap_or(false);
+            if !m {
+                return false;
+            }
+        }
+
+        // Draft pick max
+        if let Some(max_pick) = self.draft_pick_max {
+            let m = v
+                .identity
+                .bio
+                .draft_overall
+                .map(|pick| pick <= max_pick)
+                .unwrap_or(false);
+            if !m {
+                return false;
+            }
+        }
+
+        // Rookie — legacy uses CURRENT_SEASON as a u32; new bio
+        // rookie_season is String "YYYYZZZZ".
+        if let Some(true) = self.rookie_only {
+            let want = crate::CURRENT_SEASON_STR;
+            if v.identity.bio.rookie_season.as_deref() != Some(want) {
+                return false;
+            }
+        }
+
+        // PPG min/max — pace_82 / 82
+        if let Some(ppg_min) = self.ppg_min {
+            let ppg = v.pace_82().map(|p| p / 82.0).unwrap_or(0.0);
+            if ppg < ppg_min {
+                return false;
+            }
+        }
+        if let Some(ppg_max) = self.ppg_max {
+            let ppg = v.pace_82().map(|p| p / 82.0).unwrap_or(0.0);
+            if ppg > ppg_max {
+                return false;
+            }
+        }
+
+        // GP min — view.gp() is u32 (always populated for resident rows).
+        if let Some(gp_min) = self.gp_min {
+            if v.gp() < gp_min {
+                return false;
+            }
+        }
+
+        // Handedness
+        if let Some(ref hand) = self.handedness {
+            let m = v
+                .identity
+                .bio
+                .shoots_catches
+                .as_deref()
+                .map(|sc| sc.eq_ignore_ascii_case(hand))
+                .unwrap_or(false);
+            if !m {
+                return false;
+            }
+        }
+
+        // TOI minimum (seconds per game). Legacy field is f32; new is u32.
+        if let Some(toi_min) = self.toi_min_sec {
+            let toi = v.stats.totals.toi_per_game_sec.map(|t| t as f32).unwrap_or(0.0);
+            if toi < toi_min {
+                return false;
+            }
+        }
+
+        // Plus/minus
+        if let Some(pm_min) = self.plus_minus_min {
+            if v.plus_minus() < pm_min {
+                return false;
+            }
+        }
+
+        // Shots per game
+        if let Some(spg_min) = self.shots_pg_min {
+            let gp = v.gp();
+            let spg = if gp > 0 {
+                v.shots() as f32 / gp as f32
+            } else {
+                0.0
+            };
+            if spg < spg_min {
+                return false;
+            }
+        }
+
+        // Birth province/state
+        if let Some(ref provinces) = self.birth_provinces {
+            let m = v
+                .identity
+                .bio
+                .birth_state_province
+                .as_deref()
+                .map(|prov| provinces.iter().any(|pr| pr.eq_ignore_ascii_case(prov)))
+                .unwrap_or(false);
+            if !m {
+                return false;
+            }
+        }
+
+        true
+    }
+
     fn matches(&self, p: &Player) -> bool {
         // Team filter
         if let Some(ref teams) = self.teams {
@@ -620,5 +844,125 @@ mod tests {
         let result = filter.apply(&players);
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].full_name, "Elite");
+    }
+
+    /// Hart.5b2-prep: matches_view mirrors matches against the new
+    /// PlayerView model. Verifies team / position / pp filters fire
+    /// identically to the legacy matches path.
+    #[test]
+    fn l0_hart5_matches_view_mirrors_legacy_matches() {
+        use crate::stats_repository::StatsRepository;
+
+        // Build a small repo: McDavid on EDM with the default fixture.
+        let mut repo = StatsRepository::new();
+        repo.upsert_identity(crate::fixtures::identity(8478402).build())
+            .unwrap();
+        repo.upsert_stats(crate::fixtures::stats(8478402, 20242025, "EDM").build())
+            .unwrap();
+        let v = repo
+            .view(
+                crate::identity::PlayerId(8478402),
+                crate::model::Season(20242025),
+                crate::season_stats::SeasonType::Regular,
+            )
+            .unwrap();
+
+        // Team filter — match.
+        let f = PlayerFilter {
+            teams: Some(vec!["EDM".to_string()]),
+            ..PlayerFilter::new()
+        };
+        assert!(f.matches_view(&v));
+
+        // Team filter — no match.
+        let f = PlayerFilter {
+            teams: Some(vec!["TOR".to_string()]),
+            ..PlayerFilter::new()
+        };
+        assert!(!f.matches_view(&v));
+
+        // Position filter — Center (fixture default).
+        let f = PlayerFilter {
+            positions: Some(vec![Position::Center]),
+            ..PlayerFilter::new()
+        };
+        assert!(f.matches_view(&v));
+        let f = PlayerFilter {
+            positions: Some(vec![Position::Defense]),
+            ..PlayerFilter::new()
+        };
+        assert!(!f.matches_view(&v));
+
+        // PPG min — fixture pace_82 = 93.7 → ppg ≈ 1.14.
+        let f = PlayerFilter {
+            ppg_min: Some(1.0),
+            ..PlayerFilter::new()
+        };
+        assert!(f.matches_view(&v));
+        let f = PlayerFilter {
+            ppg_min: Some(2.0),
+            ..PlayerFilter::new()
+        };
+        assert!(!f.matches_view(&v));
+
+        // GP min — fixture gp = 70.
+        let f = PlayerFilter {
+            gp_min: Some(50),
+            ..PlayerFilter::new()
+        };
+        assert!(f.matches_view(&v));
+        let f = PlayerFilter {
+            gp_min: Some(80),
+            ..PlayerFilter::new()
+        };
+        assert!(!f.matches_view(&v));
+
+        // Draft year — fixture draft_year = 2015.
+        let f = PlayerFilter {
+            draft_years: Some(vec![2015]),
+            ..PlayerFilter::new()
+        };
+        assert!(f.matches_view(&v));
+        let f = PlayerFilter {
+            draft_years: Some(vec![2014]),
+            ..PlayerFilter::new()
+        };
+        assert!(!f.matches_view(&v));
+
+        // Birth province — fixture has birth_state_province = "ON".
+        let f = PlayerFilter {
+            birth_provinces: Some(vec!["ON".to_string()]),
+            ..PlayerFilter::new()
+        };
+        assert!(f.matches_view(&v));
+        let f = PlayerFilter {
+            birth_provinces: Some(vec!["BC".to_string()]),
+            ..PlayerFilter::new()
+        };
+        assert!(!f.matches_view(&v));
+    }
+
+    /// Hart.5b2-prep: apply_views collects matching views in iteration
+    /// order and excludes non-matches.
+    #[test]
+    fn l0_hart5_apply_views_filters_correctly() {
+        use crate::stats_repository::StatsRepository;
+
+        let mut repo = StatsRepository::new();
+        for (pid, team) in [(1u32, "EDM"), (2, "TOR"), (3, "EDM")] {
+            repo.upsert_identity(crate::fixtures::identity(pid).build()).unwrap();
+            repo.upsert_stats(crate::fixtures::stats(pid, 20242025, team).build())
+                .unwrap();
+        }
+
+        let f = PlayerFilter {
+            teams: Some(vec!["EDM".to_string()]),
+            ..PlayerFilter::new()
+        };
+        let result = f.apply_views(
+            repo.skaters(crate::model::Season(20242025), crate::season_stats::SeasonType::Regular),
+        );
+        assert_eq!(result.len(), 2, "two EDM players match");
+        assert!(result.iter().all(|v| v.team_display() == "EDM"));
     }
 }
