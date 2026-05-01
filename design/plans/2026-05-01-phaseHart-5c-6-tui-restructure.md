@@ -1,11 +1,36 @@
-# Phase Hart.5c.6 — TUI App Restructure (v0.6, post-pre-flight)
+# Phase Hart.5c.6 — TUI App Restructure (v0.7, implementation reconciliation)
 
-**Status**: v0.6 — pre-flight grep against the codebase caught three
-spec-vs-code drifts: `compile()` framed as a migration of a method that
-doesn't exist (today's API is `lines_for_player`/`lines_for_goalie`),
-`format_missing_sources` referenced but undefined, and the chunked-vs-legacy
-precedence L1 test cited but not actually scheduled in Hart.6. v0.6 fixes
-all three with local edits; no design rework.
+**Status**: Phase A complete (commit `89ecac5c`); Phase A.1 patches
+4 review BLOCKERs + 5 FIXITs (commit `7b601b7d`). Phase B not yet
+started.
+
+v0.7 reconciles the spec text with the actual implemented shape after
+Phase A.1. Two specific drifts the spec had and reality didn't:
+- D2's `CompiledPanel { cache: HashMap<(PlayerId, Season, SeasonType),
+  CompiledOutput> }` ships in code as a dual-cache `PanelState` with
+  `by_player: HashMap<u32, Vec<Line>>` (legacy, kept until Phase B/C
+  consumers migrate) AND `by_view: HashMap<(u32, Season, SeasonType),
+  Vec<Line>>` (new, used by `compile()`). Functionally equivalent — the
+  triple-key contract holds — but the surface is dual-population so
+  legacy `lines_for_player` keeps its cache while migration is in
+  flight. Update D2 below.
+- `format_missing_sources` ships in `icelines-fetch::stats_loader`
+  (canonical home — pure logic shared across surfaces). Re-exported
+  through `tui::loader::format_missing_sources` for ergonomics. Spec
+  text said "single home in tui/loader.rs"; reality is the inverse
+  per KEEL v4. Update D8 below.
+
+v0.6 → v0.7 changelog (changes from spec→code, not new spec defects):
+- D2 dual-cache shape documented (was: single triple-keyed cache)
+- D8 format_missing_sources canonical home is icelines-fetch (was: tui/loader.rs)
+- Phase A status section added below the migration table
+
+Older changelog (preserved for traceability):
+- v0.6 — pre-flight grep against the codebase caught three drifts:
+  `compile()` framed as a migration of a method that doesn't exist
+  (today's API is `lines_for_player`/`lines_for_goalie`),
+  `format_missing_sources` referenced but undefined, chunked-vs-legacy
+  precedence L1 test cited but not scheduled in Hart.6.
 **Date**: 2026-05-01
 **Trophy**: Hart (sub-phase of 5c)
 **Predecessor**: design/plans/2026-05-01-phaseHart-5c-final-cleanup.md (v0.3)
@@ -338,43 +363,83 @@ the (season, type) tuple, not just `PlayerId`. Cache clears on:
    `~/.icelines/config.toml`).
 
 ```rust
+// Shipped in 7b601b7d. The cache is internal state; legacy and
+// post-Hart consumers share the CompiledPanel handle, so the cache
+// is actually two HashMaps under the same Arc<Mutex>.
+
 pub struct CompiledPanel {
-    cache: HashMap<(PlayerId, Season, SeasonType), CompiledOutput>,
+    inner: Arc<Mutex<PanelState>>,
+}
+
+#[derive(Default)]
+struct PanelState {
+    /// Legacy nhl_id-keyed cache used by `lines_for_player` /
+    /// `lines_for_goalie` until Phase B consumers migrate. Implicitly
+    /// current-season because callers read from `app.players` /
+    /// `app.goalies` (current-season Vecs).
+    by_player: HashMap<u32, Vec<Line<'static>>>,
+
+    /// Post-Hart triple-keyed cache used by `compile()`. The
+    /// (Season, SeasonType) component of the key is what makes
+    /// `repo_swap`-without-cache-clear safe at the type level.
+    by_view: HashMap<(u32, Season, SeasonType), Vec<Line<'static>>>,
 }
 
 impl CompiledPanel {
-    /// See D11 for the `ctx_window` argument and the cross-window
-    /// rejection rule. The arguments below are the canonical signature;
-    /// D11 elaborates the invariant only.
+    /// View-based panel compile. See D11 for the `ctx_window`
+    /// argument and the cross-window rejection rule.
     pub fn compile(
-        &mut self,
+        &self,                          // Arc<Mutex> — interior mut
         repo: &StatsRepository,
         season: Season,
         season_type: SeasonType,
         player_id: PlayerId,
         ctx: &LeagueContext,
         ctx_window: (Season, SeasonType),
-    ) -> Result<&CompiledOutput, DashboardError> {
+    ) -> Result<CompiledOutput, DashboardError> {
         if ctx_window != (season, season_type) {
             return Err(DashboardError::CrossWindowCompile {
-                requested: (season, season_type),
-                ctx_for: ctx_window,
+                requested_s: season, requested_t: season_type,
+                ctx_s: ctx_window.0, ctx_t: ctx_window.1,
             });
         }
-        let key = (player_id, season, season_type);
-        if !self.cache.contains_key(&key) {
-            let view = repo.view(player_id, season, season_type)
-                .ok_or(DashboardError::PlayerNotInRepo)?;
-            self.cache.insert(key, build_panel(&view, ctx)?);
+        let view = repo.view(player_id, season, season_type)
+            .ok_or(DashboardError::PlayerNotInRepo { season, season_type })?;
+        let key = (player_id.0, season, season_type);
+        if let Ok(g) = self.inner.lock() {
+            if let Some(cached) = g.by_view.get(&key) {
+                return Ok(CompiledOutput { lines: cached.clone() });
+            }
         }
-        Ok(&self.cache[&key])
+        let lines = build_panel_lines_view(&view, ctx);
+        if let Ok(mut g) = self.inner.lock() {
+            g.by_view.insert(key, lines.clone());
+        }
+        Ok(CompiledOutput { lines })
     }
 
-    pub fn clear_cache(&mut self) {
-        self.cache.clear();
-    }
+    /// Drops both caches. Called from `App::reload_for_season` and
+    /// `poll_repo_load` after every `repo_swap` so post-swap renders
+    /// rebuild against the new repo. Public (not cfg(test)) since it
+    /// is now part of the swap protocol.
+    pub fn clear_cache(&self);
 }
 ```
+
+Why two caches: Phase A.1 keeps `lines_for_player` / `lines_for_goalie`
+unchanged so screens can migrate one at a time. The legacy cache stays
+implicitly correct because legacy consumers read from `app.players` /
+`app.goalies` which `App::reload_for_season` rebuilds in lockstep with
+the new fields. Once Phase B/C migrates the last legacy consumer, the
+`by_player` cache and the legacy methods get deleted in a single
+follow-up commit.
+
+Cache key is `(u32, Season, SeasonType)` not `(PlayerId, Season,
+SeasonType)` for HashMap-key ergonomics — `PlayerId(u32)` derives Hash
+identically to its inner u32, so the keys are equivalent on the wire.
+Compile-time equivalence is locked by
+`l0_compile_succeeds_with_matching_ctx_window` which inspects
+`by_view` directly.
 
 Why the (season, type) in the key: percentile bars derive from `LeagueContext`,
 which is rebuilt on season switch. A pre-swap compiled panel reopened post-swap
@@ -687,25 +752,43 @@ fn poll_load(&mut self) {
 }
 ```
 
-**`format_missing_sources` helper** (referenced in D4 / D5 / D8 above —
-single home in `tui/loader.rs`):
+**`format_missing_sources` helper** — canonical home is
+`icelines-fetch::stats_loader` (post-KEEL-v4 review: pure logic shared
+across surfaces; not TUI-specific). The TUI re-exports it via
+`pub use icelines_fetch::stats_loader::format_missing_sources` for
+ergonomic imports inside the TUI module tree. CLI / HTTP / site builder
+will pick up the same helper without duplication.
+
+Shipped form (verbatim from `icelines-fetch/src/stats_loader.rs`):
 
 ```rust
-/// Map a non-empty MissingSource list to a one-line user-facing banner.
-/// Each variant contributes its label; reasons are dropped from the
-/// banner (kept in logs). The banner is intentionally short so it fits
-/// in the TUI status bar; full diagnostic detail goes through `tracing`.
+impl MissingSource {
+    pub fn label(&self) -> &'static str {
+        match self {
+            Self::Realtime    { .. } => "realtime",
+            Self::MoneyPuck   { .. } => "MoneyPuck",
+            Self::Contracts   { .. } => "contracts",
+            Self::GoalieStats { .. } => "goalie stats",
+        }
+    }
+}
+
 pub fn format_missing_sources(missing: &[MissingSource]) -> String {
-    use icelines_fetch::stats_loader::MissingSource;
-    let labels: Vec<&str> = missing.iter().map(|m| match m {
-        MissingSource::Realtime    { .. } => "realtime",
-        MissingSource::MoneyPuck   { .. } => "MoneyPuck",
-        MissingSource::Contracts   { .. } => "contracts",
-        MissingSource::GoalieStats { .. } => "goalie stats",
-    }).collect();
+    if missing.is_empty() { return String::new(); }
+    let labels: Vec<&str> = missing.iter().map(MissingSource::label).collect();
     format!("Missing data: {}", labels.join(", "))
 }
 ```
+
+Match is exhaustive (no wildcard) — `MissingSource` is
+`#[non_exhaustive]` per crate convention, but `format_missing_sources`
+lives in the same workspace as the enum, so adding a new variant
+forces an in-source compile error until the label is added (FORGE v4
+preference).
+
+Tests pin: empty → "", single variant → "Missing data: realtime",
+all four → "Missing data: realtime, MoneyPuck, contracts, goalie
+stats", per-variant `.label()` stability.
 
 Spawn site:
 
@@ -802,6 +885,44 @@ snapshot test in commit 2 catches output regressions; manual smoke test
 between commits 1 and 2.
 
 ---
+
+## Implementation status (running log)
+
+- **Phase A** (commit `89ecac5c`): additive foundation. Adds `App.repo`,
+  `active_season_typed`, `active_type`, `league_context_window`,
+  `load_rx`. Adds `views()`, `team_views()`, `team_views_all_stints()`,
+  `goalie_views()`, `view_for(pid)`, `poll_repo_load()`. Adds
+  `LeagueContext::build`, `position_rank_for`, `compile()` with
+  `DashboardError`. Bootstraps `LocalSet` in `run_tui`. No screen
+  changes; no consumer migrated.
+
+- **Phase A.1** (commit `7b601b7d`): closes 4 review BLOCKERs +
+  5 FIXITs. Real triple-keyed `by_view` cache in `CompiledPanel`.
+  `reload_for_season` now keeps new fields in lockstep with legacy
+  ones (closes EDGE B2 season-switch desync). `format_missing_sources`
+  promoted to `icelines-fetch::stats_loader` (KEEL). 6 new L0 tests
+  in `dashboard_panel.rs` (cross-window rejection, player-not-in-repo,
+  cache isolation by window, clear_cache, LeagueContext parity) +
+  4 new L0 tests in `stats_loader.rs` (format_missing_sources cases).
+  Workspace at 1030 tests, all green.
+
+- **Phase B** (not started): migrate 14 screens off `app.players` /
+  `app.goalies` to `app.views()` / `app.goalie_views()` /
+  `app.team_views()`. Per the migration table below. Sub-phases B-1
+  (read-only screens), B-2 (PlayerId-keyed screens), B-3 (complex:
+  depth + queries).
+
+- **Phase C** (not started): delete `app.players: Vec<Player>` and
+  `app.goalies: Vec<Goalie>` from App; widen `schedule_team_cache`
+  key to `(String, Season)`; flip `widgets/mod.rs::player_cell_text`
+  to `&PlayerView`; remove `lines_for_player` / `lines_for_goalie`
+  from `dashboard_panel.rs` and the legacy `by_player` cache; final
+  grep gate.
+
+- **L2 snapshot test** (not started): `tests/tui_snapshot.rs` per the
+  spec section below. Lands once Phase C completes — the gate is the
+  zero-hits grep on `app\.players\|app\.goalies` plus snapshot
+  goldens for the 12 listed screens.
 
 ## Per-screen migration table (revised)
 
