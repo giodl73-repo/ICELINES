@@ -29,6 +29,12 @@ pub struct PlayerBio {
     pub birth_country: Option<String>,
     #[serde(default)]
     pub nationality_code: Option<String>,
+    /// Birth city (legacy `Player.birth_city`). Hart.3.2 — restored.
+    #[serde(default)]
+    pub birth_city: Option<String>,
+    /// Birth state/province code (e.g. "ON", "CA"). Hart.3.2 — restored.
+    #[serde(default)]
+    pub birth_state_province: Option<String>,
     #[serde(default)]
     pub height_in_inches: Option<u32>,
     #[serde(default)]
@@ -132,6 +138,8 @@ impl PlayerIdentity {
             birth_date,
             birth_country,
             nationality_code,
+            birth_city,
+            birth_state_province,
             height_in_inches,
             weight_lbs,
             draft_year,
@@ -146,14 +154,21 @@ impl PlayerIdentity {
             self.bio.birth_date = birth_date;
         }
 
-        // Birth country / nationality: most-recent-non-null-wins
-        // (rare but legit corrections — ISO code refreshes, nationality
-        // updates after a player swaps federations).
+        // Birth country / nationality / birth_city / birth_state_province:
+        // most-recent-non-null-wins (rare but legit corrections — ISO
+        // code refreshes, nationality updates after a player swaps
+        // federations, city/province typo fixes).
         if birth_country.is_some() {
             self.bio.birth_country = birth_country;
         }
         if nationality_code.is_some() {
             self.bio.nationality_code = nationality_code;
+        }
+        if birth_city.is_some() {
+            self.bio.birth_city = birth_city;
+        }
+        if birth_state_province.is_some() {
+            self.bio.birth_state_province = birth_state_province;
         }
         // shoots_catches: naturally immutable. Fill if prior is None;
         // silent keep-prior on mismatch (Hart.3 attaches tracing::warn
@@ -220,6 +235,8 @@ mod tests {
                 birth_date: Some("1997-01-13".into()),
                 birth_country: Some("CAN".into()),
                 nationality_code: Some("CAN".into()),
+                birth_city: Some("Richmond Hill".into()),
+                birth_state_province: Some("ON".into()),
                 height_in_inches: Some(73),
                 weight_lbs: Some(193),
                 draft_year: Some(2015),

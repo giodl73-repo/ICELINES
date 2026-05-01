@@ -57,7 +57,18 @@ pub struct StatTotals {
     pub toi_per_game_sec: Option<u32>,
     pub pp_goals: u32,
     pub pp_points: u32,
+    /// Shorthanded goals. Hart.3.2 — added so fantasy SH-scoring
+    /// schemes survive the Hart.5 legacy-Player deletion.
+    #[serde(default)]
+    pub sh_goals: u32,
+    /// Shorthanded points (sh_goals + sh_assists). Hart.3.2.
+    #[serde(default)]
+    pub sh_points: u32,
+    /// Game-winning goals.
     pub gwg: u32,
+    /// Overtime goals. Hart.3.2 — added for fantasy OT-scoring.
+    #[serde(default)]
+    pub ot_goals: u32,
     #[serde(default)]
     pub faceoff_win_pct: Option<f32>,
     #[serde(default)]
@@ -70,6 +81,10 @@ pub struct RealtimeStats {
     pub blocked_shots: u32,
     pub takeaways: u32,
     pub giveaways: u32,
+    /// Shots this player took that missed the net. Hart.3.2 — was on
+    /// legacy Player but absent from Hart.1 RealtimeStats.
+    #[serde(default)]
+    pub missed_shots: u32,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -631,6 +646,7 @@ mod tests {
             blocked_shots: 12,
             takeaways: 80,
             giveaways: 60,
+            missed_shots: 25,
         })
         .with_advanced(AdvancedStats {
             xg: Some(28.5),

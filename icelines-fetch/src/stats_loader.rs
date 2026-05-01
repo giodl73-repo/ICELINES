@@ -357,6 +357,8 @@ fn build_identity(pid: PlayerId, bio: &SkaterBio) -> PlayerIdentity {
             birth_date: bio.birth_date.clone(),
             birth_country: bio.birth_country.clone(),
             nationality_code: bio.nationality_code.clone(),
+            birth_city: bio.birth_city.clone(),
+            birth_state_province: bio.birth_state_province_code.clone(),
             height_in_inches: bio.height,
             weight_lbs: bio.weight,
             draft_year: bio.draft_year.map(|v| v as u16),
@@ -401,7 +403,10 @@ fn build_skater_stats(
     let gp = stats.map(|s| s.games_played).unwrap_or(bio.games_played);
     let pp_goals = stats.map(|s| s.pp_goals).unwrap_or(0);
     let pp_points = stats.map(|s| s.pp_points).unwrap_or(0);
+    let sh_goals = stats.map(|s| s.sh_goals).unwrap_or(0);
+    let sh_points = stats.map(|s| s.sh_points).unwrap_or(0);
     let gwg = stats.map(|s| s.game_winning_goals).unwrap_or(0);
+    let ot_goals = stats.map(|s| s.ot_goals).unwrap_or(0);
     let plus_minus = stats.map(|s| s.plus_minus).unwrap_or(0);
     let shots = stats.map(|s| s.shots).unwrap_or(0);
     let shooting_pct = stats.and_then(|s| s.shooting_pctg);
@@ -420,7 +425,10 @@ fn build_skater_stats(
         toi_per_game_sec,
         pp_goals,
         pp_points,
+        sh_goals,
+        sh_points,
         gwg,
+        ot_goals,
         faceoff_win_pct,
         pace_score: compute_pace_score(goals, assists, gp),
     };
@@ -450,6 +458,7 @@ fn build_skater_stats(
             blocked_shots: rt.blocked_shots,
             takeaways: rt.takeaways,
             giveaways: rt.giveaways,
+            missed_shots: rt.missed_shots,
         });
     }
     if let Some(m) = mp {
@@ -550,7 +559,10 @@ fn build_goalie_season_stats(
         },
         pp_goals: 0,
         pp_points: 0,
+        sh_goals: 0,
+        sh_points: 0,
         gwg: 0,
+        ot_goals: 0,
         faceoff_win_pct: None,
         pace_score: None,
     };

@@ -34,6 +34,8 @@ pub fn identity(id: u32) -> IdentityFixture {
                 birth_date: Some("1997-01-13".into()),
                 birth_country: Some("CAN".into()),
                 nationality_code: Some("CAN".into()),
+                birth_city: Some("Richmond Hill".into()),
+                birth_state_province: Some("ON".into()),
                 height_in_inches: Some(73),
                 weight_lbs: Some(193),
                 draft_year: Some(2015),
@@ -106,7 +108,10 @@ pub fn stats(player_id: u32, season: u32, team: &str) -> StatsFixture {
         toi_per_game_sec: Some(20 * 60),
         pp_goals: 10,
         pp_points: 28,
+        sh_goals: 0,
+        sh_points: 0,
         gwg: 5,
+        ot_goals: 1,
         faceoff_win_pct: Some(56.0),
         pace_score: Some(PaceScore {
             pace_82: 93.7,
@@ -193,6 +198,7 @@ impl StatsFixture {
             blocked_shots: blocks,
             takeaways,
             giveaways,
+            missed_shots: 0,
         });
         self
     }

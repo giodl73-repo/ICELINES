@@ -7,6 +7,7 @@
 use icelines_core::identity::PlayerId;
 use icelines_core::model::{Position, Season};
 use icelines_core::season_stats::SeasonType;
+use icelines_fetch::goalie_repository::GoalieRepository;
 use icelines_fetch::repository::PlayerRepository;
 use icelines_fetch::snapshot::SnapshotStore;
 use icelines_fetch::stats_loader::{load_into_repo, MissingSource};
@@ -236,6 +237,208 @@ fn l1_load_into_repo_unknown_season_returns_season_not_bundled() {
     // BENCH: match the variant directly — sturdier than Display string match.
     use icelines_fetch::stats_loader::LoadError;
     assert!(matches!(err, LoadError::SeasonNotBundled { .. }));
+}
+
+/// Hart.3.2: widened parity tuple — also asserts goals, assists, gwg,
+/// shots, sh_goals, pp_goals, hits (when realtime is loaded). Catches a
+/// bug where (gp, points, plus_minus, team) match by coincidence but
+/// underlying counts diverge.
+#[test]
+fn l1_parallel_run_extended_field_parity_20242025_regular() {
+    let (_dir, store) = cold_store();
+    let legacy = PlayerRepository::new(SnapshotStore::new(store.root()), "20242025");
+    let old_players = legacy.load_all().expect("legacy load_all");
+
+    let outcome =
+        load_into_repo(Season(20242025), SeasonType::Regular, &store).expect("new load_into_repo");
+    let new_repo = outcome.repo;
+
+    let mut compared = 0usize;
+    let mut mismatches: Vec<String> = Vec::new();
+
+    for old in &old_players {
+        let Some(nhl_id) = old.nhl_id else { continue };
+        let pid = PlayerId(nhl_id);
+        let Some(new_stats) = new_repo.season(pid, Season(20242025), SeasonType::Regular) else {
+            continue;
+        };
+        if matches!(new_stats.position, Position::Goalie) {
+            continue;
+        }
+
+        let new_t = &new_stats.totals;
+        // Tuple: (goals, assists, sh_goals, pp_goals, gwg, ot_goals, shots).
+        let new_tuple = (
+            new_t.goals,
+            new_t.assists,
+            new_t.sh_goals,
+            new_t.pp_goals,
+            new_t.gwg,
+            new_t.ot_goals,
+            new_t.shots,
+        );
+        let old_tuple = (
+            old.season_goals,
+            old.season_assists,
+            old.sh_goals,
+            old.pp_goals,
+            old.gwg,
+            old.ot_goals,
+            old.shots,
+        );
+        if new_tuple != old_tuple {
+            mismatches.push(format!(
+                "pid={nhl_id} name={:?} legacy={old_tuple:?} new={new_tuple:?}",
+                old.full_name
+            ));
+        }
+        compared += 1;
+    }
+    assert!(compared > 500, "expected >500 compared, got {compared}");
+    assert!(
+        mismatches.is_empty(),
+        "extended parity broken on {} of {} compared rows. First few:\n{}",
+        mismatches.len(),
+        compared,
+        mismatches
+            .iter()
+            .take(5)
+            .cloned()
+            .collect::<Vec<_>>()
+            .join("\n")
+    );
+}
+
+/// Hart.3.2 / BENCH #3: goalie *metric* parity between legacy
+/// `GoalieRepository::load_all()` and the new `load_into_repo` goalie
+/// path. Closes the gap flagged by tape and bench in the Hart.3 review.
+///
+/// Tuple is metrics-only (gp, wins, losses, save_pct, saves,
+/// goals_against). The team field is intentionally excluded:
+/// legacy `GoalieRepository` uses `primary_team()` (first team in
+/// `team_abbrevs` — chronologically the earlier stop) while every
+/// other surface (legacy skater path, new unified PlayerView.team)
+/// uses "current home" (last stint). Hart unifies on current-home;
+/// for mid-season-traded goalies the two paths therefore disagree
+/// by design — that divergence is verified separately below.
+#[test]
+fn l1_goalie_metric_parity_20242025_regular() {
+    let (_dir, store) = cold_store();
+    let legacy = GoalieRepository::new(SnapshotStore::new(store.root()), "20242025");
+    let old_goalies = legacy.load_all().expect("legacy goalie load_all");
+
+    let outcome =
+        load_into_repo(Season(20242025), SeasonType::Regular, &store).expect("new load_into_repo");
+    let new_repo = outcome.repo;
+
+    let mut compared = 0usize;
+    let mut mismatches: Vec<String> = Vec::new();
+    for old in &old_goalies {
+        let pid = PlayerId(old.nhl_id);
+        let Some(stats) = new_repo.season(pid, Season(20242025), SeasonType::Regular) else {
+            continue;
+        };
+        if !matches!(stats.position, Position::Goalie) {
+            continue;
+        }
+        let Some(new_g) = stats.goalie.as_ref() else {
+            continue;
+        };
+        let Some(old_g) = old.stats.as_ref() else {
+            continue;
+        };
+
+        let new_tuple = (
+            stats.totals.gp,
+            new_g.wins,
+            new_g.losses,
+            new_g.save_pct.map(|v| (v * 1000.0) as u32),
+            new_g.saves,
+            new_g.goals_against,
+        );
+        let old_tuple = (
+            old_g.games_played,
+            old_g.wins,
+            old_g.losses,
+            old_g.save_pct.map(|v| (v * 1000.0) as u32),
+            old_g.saves,
+            old_g.goals_against,
+        );
+        if new_tuple != old_tuple {
+            mismatches.push(format!(
+                "pid={} name={:?} legacy={old_tuple:?} new={new_tuple:?}",
+                old.nhl_id, old.full_name
+            ));
+        }
+        compared += 1;
+    }
+    assert!(
+        compared > 50,
+        "expected >50 compared goalies, got {compared}"
+    );
+    assert!(
+        mismatches.is_empty(),
+        "goalie metric parity broken on {} of {} compared rows. First few:\n{}",
+        mismatches.len(),
+        compared,
+        mismatches
+            .iter()
+            .take(5)
+            .cloned()
+            .collect::<Vec<_>>()
+            .join("\n")
+    );
+}
+
+/// Hart.3.2: pin the *intentional* divergence between the legacy
+/// goalie team semantic (`primary_team()` = first listed) and the
+/// unified Hart semantic (last-stint = current home). For
+/// non-traded goalies the two agree; for mid-season-traded goalies
+/// they MUST disagree (legacy = origin, new = destination). If a
+/// future change accidentally aligns them, this test fires —
+/// catching either a regression in the new last-stint semantic OR
+/// an unintentional fix to legacy that needs a coordinated cutover.
+#[test]
+fn l1_goalie_team_semantic_divergence_for_traded_goalies() {
+    let (_dir, store) = cold_store();
+    let legacy = GoalieRepository::new(SnapshotStore::new(store.root()), "20242025");
+    let old_goalies = legacy.load_all().expect("legacy goalie load_all");
+
+    let outcome =
+        load_into_repo(Season(20242025), SeasonType::Regular, &store).expect("new load_into_repo");
+    let new_repo = outcome.repo;
+
+    let mut traded_seen = 0usize;
+    for old in &old_goalies {
+        let pid = PlayerId(old.nhl_id);
+        let Some(stats) = new_repo.season(pid, Season(20242025), SeasonType::Regular) else {
+            continue;
+        };
+        if stats.team_stints.len() < 2 {
+            continue;
+        }
+        traded_seen += 1;
+        let new_last = stats.team_stints.last().unwrap().team.as_str();
+        let new_first = stats.team_stints.first().unwrap().team.as_str();
+        let legacy_team = old.team.as_str();
+        // Legacy = first stint (primary_team semantic). New last_stint
+        // is the destination (different team). Assert both sides agree
+        // on what the FIRST team was.
+        assert_eq!(
+            legacy_team, new_first,
+            "legacy goalie team must equal new path's first stint for pid={}",
+            old.nhl_id
+        );
+        assert_ne!(
+            legacy_team, new_last,
+            "traded goalie must have different first vs last team — pid={}",
+            old.nhl_id
+        );
+    }
+    assert!(
+        traded_seen >= 5,
+        "expected several mid-season-traded goalies in 20242025, got {traded_seen}"
+    );
 }
 
 /// BENCH #4: parameterize parity over every bundled season. A regression
