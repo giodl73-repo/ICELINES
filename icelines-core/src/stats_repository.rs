@@ -26,7 +26,7 @@ use thiserror::Error;
 
 use crate::contract::PlayerContract;
 use crate::identity::{IdentityMergeError, PlayerId, PlayerIdentity};
-use crate::model::{PaceScore, Position, Season, TeamAbbr};
+use crate::model::{GpStatus, PaceScore, Player, Position, Season, TeamAbbr};
 use crate::season_stats::SeasonStats;
 use crate::season_stats::SeasonType;
 
@@ -446,6 +446,37 @@ impl StatsRepository {
 
     // ── Atomic replacement ──────────────────────────────────────────────────
 
+    // ── Hart.4 compatibility shim ───────────────────────────────────────────
+
+    /// Reproduce the legacy `PlayerRepository::load_all()` shape from
+    /// the new normalized model. Returns `Vec<Player>` for the given
+    /// (season, type), filtered to non-goalies (the legacy path
+    /// excluded goalies — they came from `GoalieRepository`).
+    ///
+    /// Hart.4 scaffolding: lets every CLI command swap its load
+    /// boundary in one line without refactoring its internals to use
+    /// `PlayerView`. Hart.5 deletes this method along with the legacy
+    /// `Player` struct after consumers migrate to the borrowed-view API.
+    /// Field-by-field equivalent to the legacy mapper — verified by
+    /// `l1_parallel_run_field_parity_*` and
+    /// `l1_parallel_run_extended_field_parity_*` in icelines-fetch.
+    #[deprecated(
+        note = "Hart.4 scaffolding. Migrate to repo.skaters(s, t) + PlayerView in Hart.5."
+    )]
+    pub fn flat_view_legacy(&self, s: Season, t: SeasonType) -> Vec<Player> {
+        let mut out: Vec<Player> = self
+            .skaters(s, t)
+            .map(|view| player_from_view(&view))
+            .collect();
+        // Defensive dedup, matching legacy behavior.
+        let mut seen: std::collections::HashSet<u32> = std::collections::HashSet::new();
+        out.retain(|p| match p.nhl_id {
+            Some(id) => seen.insert(id),
+            None => true,
+        });
+        out
+    }
+
     /// Swap the entire repository state. Returns the old repo so callers
     /// can drop, inspect, or roll back. All currently-borrowed
     /// `PlayerView`s are invalidated by the swap; render paths must drop
@@ -599,6 +630,112 @@ impl PlayerView<'_> {
     }
     pub fn contract_salary(&self) -> Option<u64> {
         self.contract.and_then(|c| c.salary)
+    }
+}
+
+// ── Hart.4 legacy adapter ──────────────────────────────────────────────────
+//
+// Reconstructs the legacy flat `Player` from a borrowed PlayerView.
+// Used by `StatsRepository::flat_view_legacy`. Field-for-field
+// equivalent to the legacy `make_player` path; the parity tests in
+// icelines-fetch/tests/stats_loader.rs verify equivalence on real
+// bundled data.
+
+#[allow(deprecated)] // The function constructs a deprecated shim type.
+fn player_from_view(view: &PlayerView<'_>) -> Player {
+    let stats = view.stats;
+    let totals = &stats.totals;
+    let bio = &view.identity.bio;
+    let team = view
+        .stats
+        .team_stints
+        .last()
+        .map(|s| s.team.clone())
+        .unwrap_or_else(|| TeamAbbr("RET".into()));
+
+    Player {
+        nhl_id: Some(view.identity.id.0),
+        full_name: view.identity.full_name.clone(),
+        name_normalized: view.identity.name_normalized.clone(),
+        team,
+        position: stats.position,
+        eligible_pos: vec![stats.position],
+        gp_status: GpStatus::from_gp(totals.gp),
+
+        season_goals: totals.goals,
+        season_assists: totals.assists,
+        season_points: totals.points,
+        pace_score: totals.pace_score,
+
+        pp_goals: totals.pp_goals,
+        pp_points: totals.pp_points,
+
+        sh_goals: totals.sh_goals,
+        sh_points: totals.sh_points,
+
+        gwg: totals.gwg,
+        ot_goals: totals.ot_goals,
+
+        shots: totals.shots,
+        shooting_pct: totals.shooting_pct,
+
+        plus_minus: totals.plus_minus,
+        toi_per_game_sec: totals.toi_per_game_sec.map(|v| v as f32),
+        faceoff_win_pct: totals.faceoff_win_pct,
+
+        hits: stats.realtime.as_ref().map(|r| r.hits).unwrap_or(0),
+        blocked_shots: stats
+            .realtime
+            .as_ref()
+            .map(|r| r.blocked_shots)
+            .unwrap_or(0),
+        missed_shots: stats.realtime.as_ref().map(|r| r.missed_shots).unwrap_or(0),
+        giveaways: stats.realtime.as_ref().map(|r| r.giveaways).unwrap_or(0),
+        takeaways: stats.realtime.as_ref().map(|r| r.takeaways).unwrap_or(0),
+        pim: totals.pim,
+
+        xg: stats.advanced.as_ref().and_then(|a| a.xg).map(|v| v as f32),
+        xg_per_60: stats
+            .advanced
+            .as_ref()
+            .and_then(|a| a.xg_per_60)
+            .map(|v| v as f32),
+        cf_pct_5v5: stats
+            .advanced
+            .as_ref()
+            .and_then(|a| a.cf_pct)
+            .map(|v| v as f32),
+        ff_pct_5v5: stats
+            .advanced
+            .as_ref()
+            .and_then(|a| a.ff_pct)
+            .map(|v| v as f32),
+        xgf_pct_5v5: stats
+            .advanced
+            .as_ref()
+            .and_then(|a| a.xgf_pct)
+            .map(|v| v as f32),
+
+        headshot_url: view.identity.headshot_canonical_url.clone(),
+        sweater_number: stats.sweater_number,
+
+        birth_date: bio.birth_date.clone(),
+        birth_country: bio.birth_country.clone(),
+        nationality_code: bio.nationality_code.clone(),
+        birth_city: bio.birth_city.clone(),
+        birth_state_province: bio.birth_state_province.clone(),
+        shoots_catches: bio.shoots_catches.clone(),
+        height_in_inches: bio.height_in_inches,
+        weight_lbs: bio.weight_lbs,
+
+        draft_year: bio.draft_year,
+        draft_round: bio.draft_round,
+        draft_overall: bio.draft_overall,
+        rookie_season: bio.rookie_season.as_deref().and_then(|s| s.parse().ok()),
+
+        contract_expiry_year: view.contract.and_then(|c| c.expiry_year),
+        expiry_type: view.contract.and_then(|c| c.expiry_type.clone()),
+        salary: view.contract.and_then(|c| c.salary),
     }
 }
 

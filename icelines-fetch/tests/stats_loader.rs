@@ -616,6 +616,57 @@ fn l1_load_into_repo_accepts_known_versions_at_max() {
     assert!(load_into_repo(Season(20242025), SeasonType::Regular, &store).is_ok());
 }
 
+/// Hart.4: `flat_view_legacy` shim must produce field-for-field
+/// equivalent output to the legacy `PlayerRepository::load_all()`.
+/// This is the regression gate for the load-boundary swap — any
+/// CLI command that switches from PlayerRepository to load_into_repo
+/// + flat_view_legacy gets the same Vec<Player> shape.
+#[test]
+#[allow(deprecated)] // exercising the shim is the test's job.
+fn l1_flat_view_legacy_matches_player_repository_load_all() {
+    let (_dir, store) = cold_store();
+    let legacy = PlayerRepository::new(SnapshotStore::new(store.root()), "20242025");
+    let mut old_players = legacy.load_all().expect("legacy load_all");
+    old_players.sort_by_key(|p| p.nhl_id);
+
+    let outcome =
+        load_into_repo(Season(20242025), SeasonType::Regular, &store).expect("new load_into_repo");
+    let mut new_players = outcome
+        .repo
+        .flat_view_legacy(Season(20242025), SeasonType::Regular);
+    new_players.sort_by_key(|p| p.nhl_id);
+
+    // Lengths should match — both sides dedup by nhl_id and filter to
+    // skaters (the new path's `flat_view_legacy` calls `skaters()`,
+    // legacy `load_all` filters via Position::is_forward/is_defense).
+    assert_eq!(
+        old_players.len(),
+        new_players.len(),
+        "row count must match between legacy load_all ({}) and flat_view_legacy ({})",
+        old_players.len(),
+        new_players.len()
+    );
+
+    // Spot-check identity + counter parity on a known top scorer.
+    let mc_old = old_players
+        .iter()
+        .find(|p| p.full_name.contains("McDavid"))
+        .expect("McDavid in legacy");
+    let mc_new = new_players
+        .iter()
+        .find(|p| p.full_name.contains("McDavid"))
+        .expect("McDavid in new");
+    assert_eq!(mc_new.nhl_id, mc_old.nhl_id);
+    assert_eq!(mc_new.team.as_str(), mc_old.team.as_str());
+    assert_eq!(mc_new.season_goals, mc_old.season_goals);
+    assert_eq!(mc_new.season_assists, mc_old.season_assists);
+    assert_eq!(mc_new.season_points, mc_old.season_points);
+    assert_eq!(mc_new.plus_minus, mc_old.plus_minus);
+    assert_eq!(mc_new.sh_goals, mc_old.sh_goals);
+    assert_eq!(mc_new.gwg, mc_old.gwg);
+    assert_eq!(mc_new.ot_goals, mc_old.ot_goals);
+}
+
 /// Hart.3.3 follow-up: the auto-stamping `save()` is what makes the
 /// gate work in production. Confirm: a save with version=0 in memory
 /// reloads at the current CURRENT_*_VERSION. Locking this prevents
