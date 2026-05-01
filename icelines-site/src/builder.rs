@@ -6,10 +6,11 @@ use std::io::Write as _;
 use std::path::{Path, PathBuf};
 
 use icelines_core::{
-    compute_cross_team_metrics,
-    model::{Player, Position, Season},
-    scoring::sort_by_pace,
+    cross_team::compute_all_views,
+    model::{Position, Season},
+    scoring::sort_views_by_pace,
     season_stats::SeasonType,
+    stats_repository::PlayerView,
     CrossTeamMetrics, DepthChartBuilder, TeamAbbr,
 };
 use icelines_fetch::{snapshot::SnapshotStore, stats_loader::load_into_repo};
@@ -85,27 +86,25 @@ impl SiteBuilder {
 
     /// Build all docs/ markdown files from snapshot data.
     pub fn build(&self) -> Result<Vec<String>, SiteError> {
-        // Hart.5b1: routed through load_into_repo + flat_view_legacy
-        // (was PlayerRepository::load_all directly).
+        // Hart.5c.1: load directly into a StatsRepository, take views
+        // through every downstream call. No more flat_view_legacy.
         let store = SnapshotStore::new(&self.config.snapshot_dir);
-        let outcome = load_into_repo(Season(self.config.season), SeasonType::Regular, &store)
+        let season = Season(self.config.season);
+        let outcome = load_into_repo(season, SeasonType::Regular, &store)
             .map_err(|e| SiteError::Snapshot(e.to_string()))?;
-        #[allow(deprecated)]
-        let mut all_players: Vec<Player> = outcome
-            .repo
-            .flat_view_legacy(Season(self.config.season), SeasonType::Regular);
+        let repo = &outcome.repo;
+        let mut all_views: Vec<PlayerView<'_>> = repo.skaters(season, SeasonType::Regular).collect();
+        sort_views_by_pace(&mut all_views);
 
-        sort_by_pace(&mut all_players);
-
-        // Compute cross-team metrics
-        let metrics_vec = compute_cross_team_metrics(&all_players);
+        // Compute cross-team metrics from views.
+        let metrics_vec = compute_all_views(&all_views);
         let metrics_map: HashMap<Option<u32>, CrossTeamMetrics> = metrics_vec
             .into_iter()
             .filter_map(|m| m.player_nhl_id.map(|id| (Some(id), m)))
             .collect();
 
-        // Team strength for tracker index
-        let team_strength = compute_team_strength(&all_players);
+        // Team strength for tracker index.
+        let team_strength = compute_team_strength_views(&all_views);
         let max_strength = team_strength.values().copied().fold(0.0_f32, f32::max);
         let mut ranked_teams: Vec<&str> = TEAM_NAMES.iter().map(|(a, _)| *a).collect();
         ranked_teams.sort_by(|a, b| {
@@ -114,7 +113,7 @@ impl SiteBuilder {
             sb.partial_cmp(&sa).unwrap_or(std::cmp::Ordering::Equal)
         });
 
-        // Generate team pages
+        // Generate team pages.
         let teams_dir = self.config.docs_dir.join("teams");
         std::fs::create_dir_all(&teams_dir)?;
 
@@ -122,17 +121,17 @@ impl SiteBuilder {
         for (rank, &abbrev) in ranked_teams.iter().enumerate() {
             let rank = rank + 1;
             let team = TeamAbbr(abbrev.to_string());
-            let team_players: Vec<&Player> = all_players
+            let team_views: Vec<PlayerView<'_>> = all_views
                 .iter()
-                .filter(|p| p.team.as_str() == abbrev)
+                .filter(|v| v.team_display() == abbrev)
+                .cloned()
                 .collect();
 
-            if team_players.is_empty() {
+            if team_views.is_empty() {
                 continue;
             }
 
-            let owned: Vec<Player> = team_players.iter().map(|p| (*p).clone()).collect();
-            let chart = DepthChartBuilder::build(team.clone(), icelines_core::model::Season(self.config.season), owned);
+            let chart = DepthChartBuilder::build_views(team.clone(), season, &team_views);
 
             let page = self.render_team_page(
                 abbrev,
@@ -188,15 +187,9 @@ impl SiteBuilder {
             let c = row.and_then(|r| r[1].as_ref());
             let rw = row.and_then(|r| r[2].as_ref());
 
-            let lw_m = lw
-                .and_then(|p| p.nhl_id)
-                .and_then(|id| metrics.get(&Some(id)));
-            let c_m = c
-                .and_then(|p| p.nhl_id)
-                .and_then(|id| metrics.get(&Some(id)));
-            let rw_m = rw
-                .and_then(|p| p.nhl_id)
-                .and_then(|id| metrics.get(&Some(id)));
+            let lw_m = lw.and_then(|s| metrics.get(&Some(s.player_id.0)));
+            let c_m = c.and_then(|s| metrics.get(&Some(s.player_id.0)));
+            let rw_m = rw.and_then(|s| metrics.get(&Some(s.player_id.0)));
 
             out.push_str("<tr>\n");
             out.push_str(&format!(
@@ -222,12 +215,8 @@ impl SiteBuilder {
             let row = chart.defense_pairs.get(pair_idx);
             let d1 = row.and_then(|r| r[0].as_ref());
             let d2 = row.and_then(|r| r[1].as_ref());
-            let d1_m = d1
-                .and_then(|p| p.nhl_id)
-                .and_then(|id| metrics.get(&Some(id)));
-            let d2_m = d2
-                .and_then(|p| p.nhl_id)
-                .and_then(|id| metrics.get(&Some(id)));
+            let d1_m = d1.and_then(|s| metrics.get(&Some(s.player_id.0)));
+            let d2_m = d2.and_then(|s| metrics.get(&Some(s.player_id.0)));
 
             out.push_str("<tr>\n");
             out.push_str(&format!(
@@ -299,15 +288,15 @@ impl SiteBuilder {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-fn compute_team_strength(players: &[Player]) -> HashMap<String, f32> {
+fn compute_team_strength_views(views: &[PlayerView<'_>]) -> HashMap<String, f32> {
     let mut map: HashMap<String, HashMap<Position, Vec<f32>>> = HashMap::new();
-    for p in players {
-        if let Some(s) = p.pace_score {
-            map.entry(p.team.as_str().to_owned())
+    for v in views {
+        if let Some(pace) = v.pace_82() {
+            map.entry(v.team_display().to_owned())
                 .or_default()
-                .entry(p.position)
+                .entry(v.position())
                 .or_default()
-                .push(s.pace_82 as f32);
+                .push(pace as f32);
         }
     }
     map.iter()

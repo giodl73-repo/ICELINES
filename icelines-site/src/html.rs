@@ -3,11 +3,11 @@
 
 use icelines_core::{
     cross_team::{CrossTeamMetrics, WebFitClass},
-    model::Player,
+    model::DepthChartSlot,
 };
 
-pub fn player_cell(player: Option<&Player>, metrics: Option<&CrossTeamMetrics>) -> String {
-    let Some(p) = player else {
+pub fn player_cell(slot: Option<&DepthChartSlot>, metrics: Option<&CrossTeamMetrics>) -> String {
+    let Some(s) = slot else {
         return r#"<td class="player-cell empty"><span class="player-name">—</span></td>"#
             .to_owned();
     };
@@ -27,40 +27,32 @@ pub fn player_cell(player: Option<&Player>, metrics: Option<&CrossTeamMetrics>) 
         None => ("fit", "no metrics".to_owned()),
     };
 
-    let photo = p.headshot_url.as_deref().unwrap_or("");
+    let photo = s.headshot_canonical_url.as_deref().unwrap_or("");
     let photo_tag = if photo.is_empty() {
         String::new()
     } else {
         format!(
             r#"<img class="player-photo" src="{photo}" alt="{name}" onerror="this.style.display='none'">"#,
-            name = p.full_name
+            name = s.full_name
         )
     };
 
-    let stat_str = match p.pace_score {
-        Some(s) => {
-            let ppg = s.pace_82 / 82.0;
-            let gpg = s.goals_per_82 / 82.0;
-            let proj = s.pace_82;
+    let stat_str = match (s.pace_82, s.goals_per_82, s.gp) {
+        (Some(pace), Some(gpz), Some(gp)) => {
+            let ppg = pace / 82.0;
+            let gpg = gpz / 82.0;
             format!(
-                r#"<span class="player-gp">{gp}gp &nbsp;·&nbsp; <b>{ppg:.2}</b> pts/gp &nbsp;·&nbsp; {gpg:.2} g/gp &nbsp;·&nbsp; {proj:.0} proj</span>"#,
-                gp = s.gp,
-                ppg = ppg,
-                gpg = gpg,
-                proj = proj,
+                r#"<span class="player-gp">{gp}gp &nbsp;·&nbsp; <b>{ppg:.2}</b> pts/gp &nbsp;·&nbsp; {gpg:.2} g/gp &nbsp;·&nbsp; {pace:.0} proj</span>"#
             )
         }
-        None => format!(
-            r#"<span class="player-gp">{} pts raw</span>"#,
-            p.season_points
-        ),
+        _ => r#"<span class="player-gp">no pace data</span>"#.to_owned(),
     };
 
     format!(
         r#"<td class="player-cell {css}">{photo}<span class="player-name">{name}</span>{stat}<span class="player-fit-label">{label}</span></td>"#,
         css = css,
         photo = photo_tag,
-        name = p.full_name,
+        name = s.full_name,
         stat = stat_str,
         label = label,
     )

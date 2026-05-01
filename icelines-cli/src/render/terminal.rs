@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use comfy_table::{Cell, Color, Table};
-use icelines_core::{classify_fit, DepthChart, FitClass, Player, Position};
+use icelines_core::{classify_fit, DepthChart, DepthChartSlot, FitClass, Player, Position};
 use owo_colors::OwoColorize;
 
 // ── Color helpers ─────────────────────────────────────────────────────────────
@@ -16,29 +16,25 @@ fn fit_color(fc: FitClass) -> Color {
     }
 }
 
-/// Format a player cell value.
+/// Format a depth-chart slot cell value.
 ///
 /// When `no_color` is false the cell foreground color is set via comfy-table.
 /// When `no_color` is true the FitClass label is prepended as plain text
 /// (e.g. "[Elite] McDavid 140.0").
-fn player_cell(player: &Player, no_color: bool) -> Cell {
-    let pace_str = player
-        .pace_score
-        .map(|ps| format!(" {:.1}", ps.pace_82))
+fn slot_cell(slot: &DepthChartSlot, no_color: bool) -> Cell {
+    let pace_str = slot
+        .pace_82
+        .map(|p| format!(" {p:.1}"))
         .unwrap_or_default();
 
     if no_color {
-        let fc = player
-            .pace_score
-            .map(|ps| classify_fit(ps.pace_82, player.position));
+        let fc = slot.pace_82.map(|p| classify_fit(p, slot.position));
         let prefix = fc.map(|f| format!("[{}] ", f.label())).unwrap_or_default();
-        Cell::new(format!("{}{}{}", prefix, player.full_name, pace_str))
+        Cell::new(format!("{}{}{}", prefix, slot.full_name, pace_str))
     } else {
-        let fc = player
-            .pace_score
-            .map(|ps| classify_fit(ps.pace_82, player.position));
+        let fc = slot.pace_82.map(|p| classify_fit(p, slot.position));
         let color = fc.map(fit_color).unwrap_or(Color::Reset);
-        Cell::new(format!("{}{}", player.full_name, pace_str)).fg(color)
+        Cell::new(format!("{}{}", slot.full_name, pace_str)).fg(color)
     }
 }
 
@@ -64,15 +60,15 @@ pub fn render_team_card(chart: &DepthChart, no_color: bool) {
         let line_label = format!("L{}", i + 1);
         let lw = row[0]
             .as_ref()
-            .map(|p| player_cell(p, no_color))
+            .map(|s| slot_cell(s, no_color))
             .unwrap_or_else(empty_cell);
         let c = row[1]
             .as_ref()
-            .map(|p| player_cell(p, no_color))
+            .map(|s| slot_cell(s, no_color))
             .unwrap_or_else(empty_cell);
         let rw = row[2]
             .as_ref()
-            .map(|p| player_cell(p, no_color))
+            .map(|s| slot_cell(s, no_color))
             .unwrap_or_else(empty_cell);
         fwd_table.add_row(vec![Cell::new(line_label), lw, c, rw]);
     }
@@ -87,11 +83,11 @@ pub fn render_team_card(chart: &DepthChart, no_color: bool) {
         let pair_label = format!("P{}", i + 1);
         let d1 = pair[0]
             .as_ref()
-            .map(|p| player_cell(p, no_color))
+            .map(|s| slot_cell(s, no_color))
             .unwrap_or_else(empty_cell);
         let d2 = pair[1]
             .as_ref()
-            .map(|p| player_cell(p, no_color))
+            .map(|s| slot_cell(s, no_color))
             .unwrap_or_else(empty_cell);
         def_table.add_row(vec![Cell::new(pair_label), d1, d2]);
     }
@@ -99,17 +95,17 @@ pub fn render_team_card(chart: &DepthChart, no_color: bool) {
 
     if !chart.unplaced.is_empty() {
         println!("\nAdditional ({}):", chart.unplaced.len());
-        for p in &chart.unplaced {
-            let ppg = p.pace_score.map(|s| format!("{:.2}", s.pace_82 / 82.0)).unwrap_or_else(|| "—".to_owned());
-            let gp  = p.gp().map(|g| g.to_string()).unwrap_or_else(|| "—".to_owned());
-            println!("  {:<24} {}  {}gp  {}", p.full_name, p.position.abbreviation(), gp, ppg);
+        for s in &chart.unplaced {
+            let ppg = s.pace_82.map(|p| format!("{:.2}", p / 82.0)).unwrap_or_else(|| "—".to_owned());
+            let gp  = s.gp.map(|g| g.to_string()).unwrap_or_else(|| "—".to_owned());
+            println!("  {:<24} {}  {}gp  {}", s.full_name, s.position.abbreviation(), gp, ppg);
         }
     }
     if !chart.below_min_gp.is_empty() {
         println!("\nBelow min GP ({}):", chart.below_min_gp.len());
-        for p in &chart.below_min_gp {
-            let gp = p.gp().map(|g| g.to_string()).unwrap_or_else(|| "0".to_owned());
-            println!("  {:<24} {}  {}gp", p.full_name, p.position.abbreviation(), gp);
+        for s in &chart.below_min_gp {
+            let gp = s.gp.map(|g| g.to_string()).unwrap_or_else(|| "0".to_owned());
+            println!("  {:<24} {}  {}gp", s.full_name, s.position.abbreviation(), gp);
         }
     }
 }

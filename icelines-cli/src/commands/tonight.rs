@@ -104,69 +104,81 @@ pub async fn run_schedule(team: Option<String>, days: u32) -> anyhow::Result<()>
 }
 
 pub async fn run_trade(player_out: String, player_in: String, team: Option<String>) -> anyhow::Result<()> {
-    use crate::commands::players::load_all_players;
-    use icelines_core::{name::normalize_name, model::Season, DepthChartBuilder, TeamAbbr};
+    use crate::config::Config;
+    use icelines_core::{
+        model::{DepthChartSlot, Season},
+        name::normalize_name,
+        season_stats::SeasonType,
+        DepthChartBuilder, TeamAbbr,
+    };
+    use icelines_fetch::{snapshot::SnapshotStore, stats_loader::load_into_repo};
 
-    let players = load_all_players()?;
+    let cfg = Config::load()?;
+    let season_u32: u32 = cfg
+        .season_str()
+        .parse()
+        .unwrap_or(icelines_core::CURRENT_SEASON);
+    let season = Season(season_u32);
+    let stype = SeasonType::Regular;
+
+    let store = SnapshotStore::new(&cfg.snapshot_dir());
+    let outcome = load_into_repo(season, stype, &store)
+        .map_err(|e| anyhow::anyhow!("loading repo: {e}"))?;
+    let repo = &outcome.repo;
 
     let norm_out = normalize_name(&player_out);
     let norm_in  = normalize_name(&player_in);
 
-    let p_out = players.iter().find(|p| p.name_normalized.contains(&norm_out))
-        .with_context(|| format!("player out '{player_out}' not found"))?
-        .clone();
-    let p_in = players.iter().find(|p| p.name_normalized.contains(&norm_in))
-        .with_context(|| format!("player in '{player_in}' not found"))?
-        .clone();
+    let view_out = repo
+        .skaters(season, stype)
+        .find(|v| v.identity.name_normalized.contains(&norm_out))
+        .with_context(|| format!("player out '{player_out}' not found"))?;
+    let view_in = repo
+        .skaters(season, stype)
+        .find(|v| v.identity.name_normalized.contains(&norm_in))
+        .with_context(|| format!("player in '{player_in}' not found"))?;
 
-    let team_abbr = team.as_deref().unwrap_or(p_out.team.as_str()).to_uppercase();
+    let team_abbr = team
+        .as_deref()
+        .map(|t| t.to_uppercase())
+        .unwrap_or_else(|| view_out.team_display().to_string());
+    let team_abbr_t = TeamAbbr(team_abbr.clone());
 
-    println!("TRADE ANALYSIS — {} perspective", team_abbr);
-    println!("  OUT: {} ({:.2} pts/gp)", p_out.full_name,
-        p_out.pace_score.map(|s| s.pace_82/82.0).unwrap_or(0.0));
-    println!("  IN:  {} ({:.2} pts/gp)", p_in.full_name,
-        p_in.pace_score.map(|s| s.pace_82/82.0).unwrap_or(0.0));
+    println!("TRADE ANALYSIS — {team_abbr} perspective");
+    println!("  OUT: {} ({:.2} pts/gp)", view_out.identity.full_name,
+        view_out.pace_82().map(|p| p / 82.0).unwrap_or(0.0));
+    println!("  IN:  {} ({:.2} pts/gp)", view_in.identity.full_name,
+        view_in.pace_82().map(|p| p / 82.0).unwrap_or(0.0));
     println!();
 
-    // Build BEFORE depth chart
-    let team_players_before: Vec<_> = players.iter()
-        .filter(|p| p.team.as_str() == team_abbr)
-        .cloned().collect();
+    let team_views = repo.team_roster(&team_abbr_t, season, stype);
 
-    // Build AFTER: remove p_out, add p_in (with team set to this team)
-    let mut p_in_adjusted = p_in.clone();
-    p_in_adjusted.team = TeamAbbr(team_abbr.clone());
-    let team_players_after: Vec<_> = players.iter()
-        .filter(|p| p.team.as_str() == team_abbr && p.name_normalized != norm_out)
-        .cloned()
-        .chain(std::iter::once(p_in_adjusted))
-        .collect();
-
-    let chart_before = DepthChartBuilder::build(
-        TeamAbbr(team_abbr.clone()), Season(icelines_core::CURRENT_SEASON), team_players_before
-    );
-    let chart_after = DepthChartBuilder::build(
-        TeamAbbr(team_abbr.clone()), Season(icelines_core::CURRENT_SEASON), team_players_after
+    let chart_before = DepthChartBuilder::build_views(team_abbr_t.clone(), season, &team_views);
+    let chart_after = DepthChartBuilder::build_views_with_swap(
+        team_abbr_t,
+        season,
+        &team_views,
+        view_in,
+        view_out.identity.id,
     );
 
-    let fmt3 = |row: Option<&[Option<icelines_core::model::Player>; 3]>| {
+    let fmt3 = |row: Option<&[Option<DepthChartSlot>; 3]>| {
         row.map(|r| r.iter()
-            .map(|s| s.as_ref().map(|p| p.full_name.chars().take(12).collect::<String>())
+            .map(|s| s.as_ref().map(|slot| slot.full_name.chars().take(12).collect::<String>())
                 .unwrap_or_else(|| "—".repeat(12)))
             .collect::<Vec<_>>()
             .join(" | ")
         ).unwrap_or_else(|| "—".to_owned())
     };
-    let fmt2 = |row: Option<&[Option<icelines_core::model::Player>; 2]>| {
+    let fmt2 = |row: Option<&[Option<DepthChartSlot>; 2]>| {
         row.map(|r| r.iter()
-            .map(|s| s.as_ref().map(|p| p.full_name.chars().take(16).collect::<String>())
+            .map(|s| s.as_ref().map(|slot| slot.full_name.chars().take(16).collect::<String>())
                 .unwrap_or_else(|| "—".repeat(16)))
             .collect::<Vec<_>>()
             .join(" | ")
         ).unwrap_or_else(|| "—".to_owned())
     };
 
-    // Compare top 3 forward lines
     println!("FORWARD LINES — BEFORE vs AFTER");
     println!("{}", "─".repeat(72usize));
     for line in 0..3 {
@@ -177,7 +189,6 @@ pub async fn run_trade(player_out: String, player_in: String, team: Option<Strin
         println!();
     }
 
-    // Compare top 3 defense pairs
     println!("DEFENSE PAIRS — BEFORE vs AFTER");
     println!("{}", "─".repeat(72usize));
     for pair in 0..3 {
@@ -188,15 +199,13 @@ pub async fn run_trade(player_out: String, player_in: String, team: Option<Strin
         println!();
     }
 
-    // Score delta
-    let score = |p: &icelines_core::model::Player| p.pace_score.map(|s| s.pace_82).unwrap_or(0.0);
-    let delta = score(&p_in) - score(&p_out);
+    let delta = view_in.pace_82().unwrap_or(0.0) - view_out.pace_82().unwrap_or(0.0);
     if delta > 5.0 {
-        println!("  Result: UPGRADE (+{:.1} projected pts/82)", delta);
+        println!("  Result: UPGRADE (+{delta:.1} projected pts/82)");
     } else if delta < -5.0 {
-        println!("  Result: DOWNGRADE ({:.1} projected pts/82)", delta);
+        println!("  Result: DOWNGRADE ({delta:.1} projected pts/82)");
     } else {
-        println!("  Result: roughly even ({:+.1} projected pts/82)", delta);
+        println!("  Result: roughly even ({delta:+.1} projected pts/82)");
     }
     Ok(())
 }

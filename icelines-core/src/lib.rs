@@ -29,8 +29,8 @@ pub use error::IcelinesError;
 pub use filter::PlayerFilter;
 pub use history::{CareerSummary, SeasonLine};
 pub use model::{
-    DepthChart, FitClass, GpStatus, LineAssignment, PaceScore, Player, Position, Region, Season,
-    Slot, TeamAbbr,
+    DepthChart, DepthChartSlot, FitClass, GpStatus, LineAssignment, PaceScore, Player, Position,
+    Region, Season, Slot, TeamAbbr,
 };
 pub use name::normalize_name;
 pub use position::PositionResolver;

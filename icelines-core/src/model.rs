@@ -1001,6 +1001,27 @@ pub enum Slot {
     Defense,
 }
 
+/// One filled slot in a `DepthChart`. Owned, model-decoupled — the
+/// builder copies the displayed fields out of each `PlayerView` so the
+/// chart survives drops of the source `StatsRepository` (Hart.5c.1
+/// design D1, Option B).
+///
+/// `team` is the destination team in `build_views_with_swap` and may
+/// not match the underlying view's `team()` for the swap-in slot — see
+/// `DepthChartBuilder::build_views_with_swap` rustdoc.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DepthChartSlot {
+    pub player_id: crate::identity::PlayerId,
+    pub full_name: String,
+    pub name_normalized: String,
+    pub team: TeamAbbr,
+    pub position: Position,
+    pub pace_82: Option<f64>,
+    pub goals_per_82: Option<f64>,
+    pub gp: Option<u32>,
+    pub headshot_canonical_url: Option<String>,
+}
+
 /// A depth chart for one NHL team.
 /// forward_lines: 4 rows × 3 slots (LW=0, C=1, RW=2), None = unfilled.
 /// defense_pairs: 3 rows × 2 slots, None = unfilled.
@@ -1008,8 +1029,8 @@ pub enum Slot {
 pub struct DepthChart {
     pub team: TeamAbbr,
     pub season: Season,
-    pub forward_lines: Vec<[Option<Player>; 3]>, // 4 rows
-    pub defense_pairs: Vec<[Option<Player>; 2]>, // 3 rows
-    pub unplaced: Vec<Player>,
-    pub below_min_gp: Vec<Player>,
+    pub forward_lines: Vec<[Option<DepthChartSlot>; 3]>, // 4 rows
+    pub defense_pairs: Vec<[Option<DepthChartSlot>; 2]>, // 3 rows
+    pub unplaced: Vec<DepthChartSlot>,
+    pub below_min_gp: Vec<DepthChartSlot>,
 }
