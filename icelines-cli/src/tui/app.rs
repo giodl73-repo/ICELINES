@@ -106,7 +106,11 @@ pub enum Screen {
     SeriesDetail(String),            // one series — keyed by series letter
     GameDetail(u64),                 // boxscore for one game — keyed by game_id
     Goalies,                         // league goalie leaderboard (Phase G.3)
-    GoalieDetail(usize),             // index into App.goalies
+    GoalieDetail(usize),             // index into App.goalies (legacy)
+    /// Hart.5c.6 Phase B-2: PlayerId-keyed goalie detail. Replaces
+    /// `GoalieDetail(usize)` once enter handlers migrate. D6 auto-pop
+    /// UX on missing pid.
+    GoalieDetailById(PlayerId),
     Transactions,                    // league-wide moves feed (Phase T.5)
 }
 
@@ -1774,7 +1778,7 @@ impl App {
             | Screen::Comps(_) | Screen::CompsById(_) => Screen::Depth,
             Screen::Depth | Screen::DepthTeam(_) => Screen::Queries,
             Screen::Queries | Screen::Projections | Screen::Search => Screen::Goalies,
-            Screen::Goalies | Screen::GoalieDetail(_) => Screen::Tonight,
+            Screen::Goalies | Screen::GoalieDetail(_) | Screen::GoalieDetailById(_) => Screen::Tonight,
             Screen::Tonight | Screen::GameDetail(_) => Screen::Schedule,
             Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => {
                 Screen::Transactions
@@ -1802,7 +1806,7 @@ impl App {
             }
             Screen::Depth | Screen::DepthTeam(_) => Screen::Home,
             Screen::Queries | Screen::Projections | Screen::Search => Screen::Depth,
-            Screen::Goalies | Screen::GoalieDetail(_) => Screen::Queries,
+            Screen::Goalies | Screen::GoalieDetail(_) | Screen::GoalieDetailById(_) => Screen::Queries,
             Screen::Tonight | Screen::GameDetail(_) => Screen::Goalies,
             Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => {
                 Screen::Tonight

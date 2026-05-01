@@ -310,7 +310,16 @@ impl CompiledPanel {
                 return Ok(CompiledOutput { lines: cached.clone() });
             }
         }
-        let lines = build_panel_lines_view(&view, ctx);
+        // Hart.5c.6 Phase B-2.3: branch on goalie discriminator
+        // (`is_goalie() == goalie.is_some()`, NOT position == Goalie —
+        // emergency-backup forwards have goalie:Some). Skater path
+        // renders sparklines for G/Pts/SOG; goalie path renders
+        // SV%/GAA/W.
+        let lines = if view.is_goalie() {
+            build_goalie_panel_lines_view(&view)
+        } else {
+            build_panel_lines_view(&view, ctx)
+        };
         if let Ok(mut guard) = self.inner.lock() {
             guard.by_view.insert(key, lines.clone());
         }
@@ -722,6 +731,67 @@ fn load_goalie_history(nhl_id: u32) -> Vec<GoalieHistoryRow> {
 ///   blank
 ///   trend block: SV%, GAA (colors inverted — lower=green=better), W
 ///   anchor row showing first→last absolute values for context
+/// Hart.5c.6 Phase B-2.3 — view-based goalie panel builder. Mirrors
+/// `build_goalie_panel_lines` but takes a `PlayerView` and reads
+/// nhl_id from `view.identity.id.0`. Same load_goalie_history call,
+/// same SV%/GAA/W sparkline layout, same colour semantics (GAA
+/// inverted because lower is better).
+fn build_goalie_panel_lines_view(v: &PlayerView<'_>) -> Vec<Line<'static>> {
+    let mut lines: Vec<Line<'static>> = Vec::with_capacity(10);
+    let dim    = Style::default().fg(DIM_COLOR);
+    let title  = Style::default().fg(TITLE_COLOR).add_modifier(Modifier::BOLD);
+    let accent = Style::default().fg(ACCENT_COLOR);
+
+    // Header — short identity line.
+    let full = v.full_name();
+    let last_name = full.rsplit_once(' ').map(|(_, l)| l).unwrap_or(full);
+    lines.push(Line::from(vec![
+        Span::styled(trim_to(last_name, 18), title),
+        Span::styled("  ·  ", dim),
+        Span::styled(v.team_display().to_owned(), accent),
+        Span::styled(" G", dim),
+    ]));
+    lines.push(Line::from(""));
+
+    let nhl_id = v.identity.id.0;
+    let history = load_goalie_history(nhl_id);
+    match history.len() {
+        0 => {
+            lines.push(Line::styled("Bundled history: none", dim));
+        }
+        1 => {
+            let row = &history[0];
+            lines.push(Line::styled(
+                format!("Bundled history: {}", short_season(row.season)),
+                dim,
+            ));
+        }
+        _ => {
+            let sv_values:  Vec<f64> = history.iter().map(|r| r.save_pct as f64).collect();
+            let gaa_values_inv: Vec<f64> = history.iter().map(|r| -(r.gaa as f64)).collect();
+            let w_values:   Vec<f64> = history.iter().map(|r| r.wins as f64).collect();
+            let first = &history[0];
+            let last  = &history[history.len() - 1];
+            let range = format!("{}→{}", short_year(first.season), short_year(last.season));
+            lines.push(Line::from(vec![
+                Span::styled("Last 5 seasons ", dim),
+                Span::styled(range, accent),
+            ]));
+            let pad = 5usize.saturating_sub(history.len());
+            let sv_spark = colored_spark_spans(&sv_values, history.len());
+            lines.push(goalie_spark_row("SV%", pad, sv_spark,
+                fmt3(first.save_pct), fmt3(last.save_pct), dim, accent));
+            let gaa_spark = colored_spark_spans(&gaa_values_inv, history.len());
+            lines.push(goalie_spark_row("GAA", pad, gaa_spark,
+                fmt2(first.gaa), fmt2(last.gaa), dim, accent));
+            let w_spark = colored_spark_spans(&w_values, history.len());
+            lines.push(goalie_spark_row("W  ", pad, w_spark,
+                first.wins.to_string(), last.wins.to_string(), dim, accent));
+        }
+    }
+    lines
+}
+
 fn build_goalie_panel_lines(g: &icelines_core::model::Goalie) -> Vec<Line<'static>> {
     let mut lines: Vec<Line<'static>> = Vec::with_capacity(10);
     let dim    = Style::default().fg(DIM_COLOR);

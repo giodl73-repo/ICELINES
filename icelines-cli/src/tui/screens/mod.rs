@@ -54,6 +54,7 @@ pub fn render(f: &mut Frame, app: &App) {
         Screen::GameDetail(game_id)       => game_detail::render(f, app, chunks[1], *game_id),
         Screen::Goalies                   => goalies::render(f, app, chunks[1]),
         Screen::GoalieDetail(idx)         => goalies::render_detail(f, app, chunks[1], *idx),
+        Screen::GoalieDetailById(pid)     => goalies::render_detail_by_id(f, app, chunks[1], *pid),
         Screen::Transactions              => transactions::render(f, app, chunks[1]),
     }
 
@@ -111,7 +112,8 @@ fn tab_for_screen(screen: &Screen) -> usize {
         | Screen::Comps(_) | Screen::CompsById(_)                => 0, // League
         Screen::Depth | Screen::DepthTeam(_)                     => 1, // Depth
         Screen::Queries | Screen::Projections | Screen::Search   => 2, // Stats (default: Queries)
-        Screen::Goalies | Screen::GoalieDetail(_)                => 3, // Goalies
+        Screen::Goalies | Screen::GoalieDetail(_)
+        | Screen::GoalieDetailById(_)                            => 3, // Goalies
         Screen::Tonight | Screen::GameDetail(_)                  => 4, // Scores
         Screen::Schedule | Screen::ScheduleTeam(_)
             | Screen::ScheduleMatchup(..)                        => 5, // Schedule

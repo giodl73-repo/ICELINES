@@ -448,3 +448,204 @@ mod tests {
         assert_eq!(short_name("Igor"),              "Igor");
     }
 }
+
+// ── Hart.5c.6 Phase B-2.3 — view-based goalie detail ─────────────────────────
+//
+// `render_detail_by_id` looks up the goalie view via `app.view_for(pid)`
+// and renders the same headshot | stats | dashboard layout as
+// `render_detail`. Field-by-field equivalent, sourcing through
+// PlayerView accessors instead of the legacy `&Goalie` struct.
+
+pub fn render_detail_by_id(
+    f: &mut Frame,
+    app: &App,
+    area: Rect,
+    pid: icelines_core::identity::PlayerId,
+) {
+    let Some(view) = app.view_for(pid) else {
+        let dim = Style::default().fg(Color::DarkGray);
+        let name = app
+            .repo
+            .identity(pid)
+            .map(|i| i.full_name.as_str())
+            .unwrap_or("Goalie");
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .title(" Goalie · Esc back ");
+        let inner = block.inner(area);
+        f.render_widget(block, area);
+        f.render_widget(
+            Paragraph::new(vec![
+                Line::from(""),
+                Line::styled(
+                    format!("  {} not in {} roster.", name, app.active_season),
+                    dim,
+                ),
+                Line::from(""),
+                Line::styled("  Press Esc to return.", dim),
+            ]),
+            inner,
+        );
+        return;
+    };
+
+    // Trigger headshot fetch if not cached. Same NHL CDN URL pattern.
+    let nhl_id = view.identity.id.0;
+    if app.headshot_cache.get(nhl_id).is_none() {
+        let url = view.identity.headshot_canonical_url.clone().unwrap_or_else(|| {
+            format!(
+                "https://assets.nhle.com/mugs/nhl/{}/{}/{}.png",
+                app.active_season,
+                view.team_display(),
+                nhl_id,
+            )
+        });
+        crate::tui::headshot::spawn_fetch(nhl_id, url, app.headshot_cache.clone(), 22, 15);
+    }
+
+    let title = format!(" Goalie — {}  ·  Esc back ", view.full_name());
+    let block = Block::default().borders(Borders::ALL).title(title);
+    let inner = block.inner(area);
+    f.render_widget(block, area);
+
+    let dashboards_on = crate::config::dashboards_enabled() && inner.width >= 100;
+    let constraints: Vec<Constraint> = if dashboards_on {
+        vec![Constraint::Length(26), Constraint::Min(0), Constraint::Length(34)]
+    } else {
+        vec![Constraint::Length(26), Constraint::Min(0)]
+    };
+    let layout = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(constraints)
+        .split(inner);
+
+    render_headshot_view(f, app, &view, layout[0]);
+    render_detail_stats_view(f, &view, layout[1]);
+    if dashboards_on {
+        if let Some(area_right) = layout.get(2).copied() {
+            let panel_block = Block::default()
+                .borders(Borders::ALL)
+                .title(" Scout card ")
+                .style(Style::default().fg(Color::DarkGray));
+            let panel_inner = panel_block.inner(area_right);
+            f.render_widget(panel_block, area_right);
+            // compile() branches on view.is_goalie() and uses the
+            // goalie panel builder when true.
+            let result = app.dashboard_panel.compile(
+                &app.repo,
+                app.active_season_typed,
+                app.active_type,
+                view.identity.id,
+                &app.league_context,
+                app.league_context_window,
+            );
+            match result {
+                Ok(out) => f.render_widget(Paragraph::new(out.lines), panel_inner),
+                Err(err) => {
+                    let dim = Style::default().fg(Color::DarkGray);
+                    f.render_widget(
+                        Paragraph::new(vec![
+                            Line::styled("  Scout card unavailable", dim),
+                            Line::styled(format!("  {err}"), dim),
+                        ]),
+                        panel_inner,
+                    );
+                }
+            }
+        }
+    }
+}
+
+fn render_headshot_view(
+    f: &mut Frame,
+    app: &App,
+    v: &icelines_core::stats_repository::PlayerView<'_>,
+    area: Rect,
+) {
+    let nhl_id = v.identity.id.0;
+    let rows = app.headshot_cache.get(nhl_id);
+    let lines: Vec<Line> = match rows.as_deref() {
+        None => {
+            let abbr = v.team_display();
+            vec![
+                Line::from(""),
+                Line::from(""),
+                Line::from(""),
+                Line::from(format!("  {:^20}", abbr)),
+                Line::from(""),
+                Line::from("  loading…"),
+            ]
+        }
+        Some(r) if crate::tui::headshot::is_loading(r) => vec![
+            Line::from(""),
+            Line::from("  downloading…"),
+        ],
+        Some(r) if crate::tui::headshot::is_error(r) => vec![
+            Line::from("  ┌──────────────────┐"),
+            Line::from("  │                  │"),
+            Line::from("  │   no headshot    │"),
+            Line::from("  │                  │"),
+            Line::from("  └──────────────────┘"),
+        ],
+        Some(rows) => rows
+            .iter()
+            .map(|row| Line::styled(row.clone(), Style::default().fg(Color::White)))
+            .collect(),
+    };
+    f.render_widget(Paragraph::new(lines), area);
+}
+
+fn render_detail_stats_view(
+    f: &mut Frame,
+    v: &icelines_core::stats_repository::PlayerView<'_>,
+    area: Rect,
+) {
+    let dim    = Style::default().fg(Color::DarkGray);
+    let gold   = Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD);
+    let cyan   = Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD);
+    let mut lines: Vec<Line> = Vec::new();
+    lines.push(Line::from(""));
+    lines.push(Line::from(vec![
+        Span::styled(format!("  {}", v.full_name()), gold),
+        Span::styled(format!("  ·  {}  ·  G", v.team_display()), dim),
+    ]));
+    if let Some(catches) = v.identity.bio.shoots_catches.as_deref() {
+        lines.push(Line::styled(format!("  Catches: {catches}"), dim));
+    }
+    lines.push(Line::from(""));
+
+    if let Some(s) = v.stats.goalie.as_ref() {
+        let record = match s.ot_losses {
+            Some(otl) => format!("{}-{}-{}", s.wins, s.losses, otl),
+            None      => format!("{}-{}",    s.wins, s.losses),
+        };
+        let sv  = s.save_pct.map(|x| format!("{:.4}", x)).unwrap_or_else(|| "—".to_owned());
+        let gaa = s.goals_against_average.map(|x| format!("{:.2}", x)).unwrap_or_else(|| "—".to_owned());
+        lines.push(Line::styled("  RECORD", gold));
+        // GP comes from view.gp() (i.e. SeasonStats.totals.gp), not
+        // GoalieSeasonStats — post-Hart the goalie struct doesn't
+        // carry games_played; Hart.4.1 documents the canonical source.
+        lines.push(Line::from(vec![
+            Span::styled("    GP    ", dim),
+            Span::styled(v.gp().to_string(), cyan),
+            Span::styled("       Record   ", dim),
+            Span::styled(record, cyan),
+        ]));
+        lines.push(Line::from(vec![
+            Span::styled("    SV%   ", dim),
+            Span::styled(sv, cyan),
+            Span::styled("    GAA  ", dim),
+            Span::styled(gaa, cyan),
+        ]));
+        lines.push(Line::from(vec![
+            Span::styled("    SO    ", dim),
+            Span::styled(s.shutouts.to_string(), cyan),
+            Span::styled("        Saves   ", dim),
+            Span::styled(s.saves.to_string(), cyan),
+        ]));
+    } else {
+        lines.push(Line::styled("  No stats recorded yet.", dim));
+    }
+
+    f.render_widget(Paragraph::new(lines), area);
+}
