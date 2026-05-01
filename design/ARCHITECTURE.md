@@ -1,8 +1,9 @@
 # IceLines — System Architecture
 
-**Version**: 2.0
+**Version**: 2.1
 **Date**: 2026-05-01
-**Status**: Active — replaces the v1 (pre-Hart) architecture doc
+**Status**: Active — replaces the v1 (pre-Hart) architecture doc.
+v2.0 → v2.1 incorporates 5-role review (forge / tape / glass / bench / pace).
 
 ---
 
@@ -59,21 +60,32 @@ data and computation paths converge.
         │   (season, season_type, &SnapshotStore)              │
         │                  │                                   │
         │                  ▼                                   │
-        │    5-tier fallback chain (top-down):                 │
+        │    Source-by-source fallback (NO single chain):      │
         │    ┌──────────────────────────────────────────┐      │
-        │    │ 1. Active snapshot (chunked or legacy)   │      │
-        │    │    ~/.icelines/snapshots/<active>/       │      │
-        │    │ 2. Installed season bundle               │      │
-        │    │    ~/.icelines/seasons/<id>/             │      │
-        │    │ 3. Bundled in binary (include_bytes!)    │      │
-        │    │    5 seasons embedded at compile time    │      │
-        │    │ 4. Optional silos (per source):          │      │
-        │    │      MoneyPuck CSV (advanced stats)      │      │
-        │    │      ESPN site.api (transactions)        │      │
-        │    │      NHL realtime endpoint (hits/blocks) │      │
-        │    │ 5. Live NHL API (icelines fetch *)       │      │
-        │    │    writes back to snapshot tier          │      │
+        │    │ bios + skater stats:                     │      │
+        │    │   chunked snapshot → legacy snapshot     │      │
+        │    │   → embedded (include_bytes!)            │      │
+        │    │                                          │      │
+        │    │ goalie stats:                            │      │
+        │    │   legacy snapshot → embedded             │      │
+        │    │   → installed bundle                     │      │
+        │    │                                          │      │
+        │    │ transactions:                            │      │
+        │    │   legacy snapshot → embedded             │      │
+        │    │   → installed bundle                     │      │
+        │    │                                          │      │
+        │    │ playoffs (bracket):                      │      │
+        │    │   installed bundle → embedded            │      │
+        │    │                                          │      │
+        │    │ realtime / moneypuck / contracts:        │      │
+        │    │   snapshot tier ONLY                     │      │
+        │    │   absent → MissingSource flag set        │      │
         │    └──────────────────────────────────────────┘      │
+        │                                                      │
+        │    Live NHL API is NOT a query-time tier — it is     │
+        │    the WRITE path for `icelines fetch *`, which      │
+        │    lands in the snapshot tier. Queries never fall    │
+        │    through to live.                                  │
         └──────────────────────────────────────────────────────┘
 ```
 
@@ -87,23 +99,32 @@ data and computation paths converge.
 │   PlayerIdentity            SeasonStats                                          │
 │   ─────────────             ──────────                                           │
 │   id: PlayerId       ───►   player_id, season, season_type, position             │
-│   full_name                 totals: StatTotals                                   │
-│   name_normalized           team_stints: Vec<TeamStint>  ← traded players kept   │
-│   bio: PlayerBio            realtime: Option<RealtimeStats>  ← cold-start = None│
-│   headshot_canonical_url    advanced: Option<AdvancedStats> ← MoneyPuck silo'd  │
+│   full_name                 sweater_number: Option<u32>                          │
+│   name_normalized           totals: StatTotals                                   │
+│   bio: PlayerBio            team_stints: Vec<TeamStint>  ← traded players kept   │
+│   headshot_canonical_url    realtime: Option<RealtimeStats>  ← cold-start = None│
+│                             advanced: Option<AdvancedStats> ← MoneyPuck silo'd  │
 │                             goalie:   Option<GoalieSeasonStats>                  │
 │                                                                                  │
-│   StatsRepository (LRU keyed by (player_id, season, season_type))                │
-│        │                                                                         │
+│   StatsRepository                                                                │
+│   ─ Internal storage: HashMap-indexed by primary keys                            │
+│   ─ LRU cap fires only under memory pressure (never at current scale)            │
+│   ─ !Send + !Sync (PhantomData<*const ()>) — single-threaded by construction.   │
+│     Background loads must use spawn_local + LocalSet, NOT tokio::spawn.          │
+│                                                                                  │
 │        ├── upsert_identity(PlayerIdentity) -> Result<(), RepoError>              │
 │        ├── upsert_stats(SeasonStats)       -> Result<(), RepoError>              │
 │        ├── upsert_contract(PlayerId, PlayerContract)                             │
-│        ├── repo_swap(other) -> ()    ← atomic season switch (borrow-checked)    │
+│        ├── repo_swap(new) -> StatsRepository                                     │
+│        │       ↑ returns OLD repo (mem::replace); atomic, borrow-checked         │
 │        │                                                                         │
 │        ├── view(pid, s, t)  -> Option<PlayerView<'_>>                            │
 │        ├── skaters(s, t)    -> impl Iterator<Item = PlayerView<'_>>              │
 │        ├── goalies(s, t)    -> impl Iterator<Item = PlayerView<'_>>              │
-│        └── team_roster(team, s, t) -> Vec<PlayerView<'_>>                        │
+│        ├── team_roster(team, s, t)             -> Vec<PlayerView<'_>>           │
+│        │       ↑ O(1) hashmap lookup via rosters_last_stint index               │
+│        └── team_roster_all_stints(team, s, t)  -> Vec<PlayerView<'_>>           │
+│                ↑ O(1) hashmap lookup via rosters_all_stints index               │
 │                                                                                  │
 │   PlayerView<'a>            ← borrowed projection over (identity, stats, ...)    │
 │   ─────────────                                                                  │
@@ -134,15 +155,19 @@ historical + playoff queries possible without schema gymnastics.
 │    ... per-screen UI state             │  │        .skaters(season, type)    │
 │  }                                     │  │        .collect();               │
 │                                        │  │    // filter / sort / render     │
-│  per render frame:                     │  │  }                               │
-│    let views = app.repo.skaters(...);  │  │                                  │
-│    screen.render(&views, ...);         │  │  one-shot: load → use → drop     │
+│  StatsRepository is !Send + !Sync.     │  │  }                               │
+│  Background loads use spawn_local +    │  │                                  │
+│  LocalSet, NOT tokio::spawn.           │  │  one-shot: load → use → drop     │
 │                                        │  │                                  │
-│  season switch (`y` key):              │  └──────────────────────────────────┘
-│    new_repo = load_into_repo(...);     │
-│    self.repo.repo_swap(new_repo);      │  ┌─ axum HTTP server ──────────────┐
-│    dashboard_panel.clear_cache();      │  │  (icelines fantasy serve)       │
-│    league_context = rebuild(&repo);    │  │                                 │
+│  per render frame:                     │  └──────────────────────────────────┘
+│    let views = app.repo.skaters(...);  │
+│    screen.render(&views, ...);         │  ┌─ axum HTTP server ──────────────┐
+│                                        │  │  (icelines fantasy serve)       │
+│  season switch (`y` key):              │  │                                 │
+│    new_repo = load_into_repo(...);     │  │  per request handler:           │
+│    let _old = self.repo.repo_swap(new);│  │    let (outcome, s) = load();   │
+│    dashboard_panel.clear_cache();      │  │    let views = pools_views(...);│
+│    league_context = rebuild(&repo);    │  │    score_team(...) -> JSON      │
 │                                        │  │  per request handler:           │
 └────────────────────────────────────────┘  │    let (outcome, s) = load();   │
                                             │    let views = pools_views(...);│
@@ -248,9 +273,12 @@ Historical (38 seasons via data install):
   Loaded one-at-a-time on season switch — never all in memory
 ```
 
-At this scale, **the answer is mostly on-the-fly**. A full filter + sort over 1,000
-records is microseconds on any modern CPU. ratatui re-renders the whole frame on
-every event (typically 10–60 fps), so even per-frame full passes are fine.
+At this scale, **the answer is mostly on-the-fly**. Numbers in this section are
+estimates against current scale (N ≈ 1000); no `criterion` benchmarks exist as of
+2026-05-01. If/when scale grows, run `cargo bench` before re-tuning. ratatui is
+event-driven — a frame redraws only when an event fires (key, resize, or the
+`tui/mod.rs:117` 100 ms poll tick). Effective worst-case is ~10 fps on a held-
+key; not a fixed 60 fps render loop.
 
 That said, there are real indices and caches. Inventory:
 
@@ -258,12 +286,18 @@ That said, there are real indices and caches. Inventory:
 
 ```
 StatsRepository internal HashMaps:
-  identities: HashMap<PlayerId, PlayerIdentity>                    O(1)
-  stats:      HashMap<(PlayerId, Season, SeasonType), SeasonStats> O(1)
-  contracts:  HashMap<PlayerId, PlayerContract>                    O(1)
+  identities:           HashMap<PlayerId, PlayerIdentity>                    O(1)
+  stats:                HashMap<(PlayerId, Season, SeasonType), SeasonStats> O(1)
+  contracts:            HashMap<PlayerId, PlayerContract>                    O(1)
+  rosters_last_stint:   HashMap<(Season, SeasonType, TeamAbbr), Vec<PlayerId>> O(1)
+  rosters_all_stints:   HashMap<(Season, SeasonType, TeamAbbr), Vec<PlayerId>> O(1)
+
+So `team_roster` and `team_roster_all_stints` are O(1) hashmap lookup +
+O(roster_size ≈ 25) view materialization. Indexes are rebuilt incrementally on
+every `upsert_stats`.
 
 Plus an LRU bidirectional bijection layer for memory bound (fires only under
-pressure; in practice never at current scale — 5 MB fits trivially).
+pressure; in practice never at current scale).
 ```
 
 ### What IS scanned (linear over the season's view set)
@@ -273,20 +307,14 @@ Every other operation:
 
   PlayerFilter::apply_views(views)         O(N)  filter by 19 fields
   sort_views_by_pace(&mut views)           O(N log N)
-  compute_all_views(views)                 O(N) skater pool +
-                                            O(N²) cross-team rank
-                                            (N ≈ 1000 → ~1 ms)
-  team_roster(team, s, t)                  O(N)  scans stats by team
+  compute_all_views(views)                 outer O(N); inner O(T·K)
+                                            where T = teams (~32), K = max
+                                            position bucket (~10).
+                                            Total ≈ N·T·K ≈ 320k comparisons.
+                                            Estimated <1 ms; unmeasured.
   fuzzy_find_view_in(views, query)         O(N)  substring match on name
   position_percentile(all, target, metric) O(N) per call
 ```
-
-`team_roster` is interesting — it COULD be indexed by team, but isn't. Reason:
-traded players have multiple `TeamStint`s, and the "roster at this moment" question
-depends on whether you want the last-stint team or all-stints membership. The repo
-exposes both (`team_roster` for last-stint, `team_roster_all_stints` for any-stint-
-on-this-team), and both linear-scan because the filter logic isn't a static team
-match.
 
 ### What IS cached (computed once, invalidated explicitly)
 
@@ -311,31 +339,38 @@ Site builder, CLI commands, HTTP handlers (one-shot, process exits or per-reques
 
 ```
 N (per season) ≈ 1,000 records.
-Filter + sort + render = microseconds on any modern CPU.
+Filter + sort + render at this N is sub-millisecond (estimated; unmeasured).
 
 The "real" cost is:
-  1. Loading the repo (disk I/O + JSON parse) — ~50 ms cold
-  2. compute_all_views cross-team ranking (O(N²)) — ~1 ms
+  1. Loading the repo (disk I/O + JSON parse) — ~50 ms cold (estimated)
+  2. compute_all_views cross-team ranking — ~320k comparisons (estimated <1 ms)
   3. Headshot fetch (network) — ~200 ms async
 
 None of these are query-time costs. They're load-time costs, amortized once per
 season switch.
 
-Adding indices for filter axes (team, position, etc.) would:
+Adding indices for filter axes (position, age, nationality) would:
   • Save microseconds per query
   • Add invalidation complexity on repo_swap
-  • Bloat memory by ~2× (each index = a copy of the keys)
+  • Bloat memory by ~2× per axis
   • Buy nothing observable
 
 Architectural rule (post-Hart): by-key lookups are O(1) (HashMap-indexed in the
-repo). Everything else is on-the-fly over per-season view iterators. Caches exist
-only where re-computation is genuinely expensive (`league_context`'s sorted-by-
-position pace vectors) or genuinely user-perceived (`dashboard_panel`'s sparkline
-rendering).
+repo, including team_roster). Everything else is on-the-fly over per-season view
+iterators. Caches exist only where re-computation is genuinely expensive
+(`league_context`'s sorted-by-position pace vectors) or genuinely user-perceived
+(`dashboard_panel`'s sparkline rendering).
 
-If scale ever grows past ~10× (e.g., per-game shift logs at ~100k rows), real
-indices become worthwhile — `team_roster_all_stints` would benefit most. Until
-then: scan it.
+Scale thresholds for revisiting (per operation):
+  • compute_all_views — first hot path: at N=10k, ~32M ops (~30 ms perceptible)
+  • filter + sort       — stays sub-5ms until N≈100k
+  • team_roster        — already O(1); scales freely
+  • Per-frame collect   — at N=10k, ~50 µs (still imperceptible)
+
+If scale grows past ~10× (e.g., per-game shift logs at ~100k rows),
+`compute_all_views` becomes the first thing to cache (per active screen, keyed by
+`(season, type, mode)`). Filter/sort can remain on-the-fly considerably longer.
+Add an index per operation, not globally.
 ```
 
 ---
@@ -359,8 +394,10 @@ Keys: season, snapshot_dir, no_live, dashboards
 ```
 Library crates:           thiserror enums, never panic in production paths
   icelines_core::IcelinesError
+  icelines_core::stats_repository::RepoError      ← upsert violations, LRU
+  icelines_core::identity::IdentityMergeError     ← name_normalized conflicts
   icelines_fetch::FetchError
-  icelines_fetch::LoadError
+  icelines_fetch::LoadError                       ← #[from] RepoError
   icelines_fetch::SnapshotError
   icelines_site::SiteError
 
@@ -383,16 +420,20 @@ Caches that depend on (s, t) (dashboard_panel, league_context) clear on swap.
 ### Test strategy (1,020 tests as of 2026-05-01)
 
 ```
-L0 unit (~310 in core, ~310 in cli)
+L0 unit (~308 core lib, ~315 cli main)
    inline #[cfg(test)], pure logic, microseconds
 
-L1 integration (~140 in fetch tests/, plus per-command test mods)
+L1 integration (~140 fetch lib + ~115 across 7 fetch integration files = ~255)
+   integration_phase2.rs (17), integration_pipeline.rs (10), mock_nhl_api.rs (35),
+   stats_loader.rs (22), transactions_storage.rs (17), transactions_mock.rs (10),
+   transactions_fixture.rs (4)
    StatsRepository + PlayerView fixtures, no live network, httpmock for NHL API
-   integration_phase2.rs preserves Beniers known-value asserts (179.0 / 130.0
-   / 122.0 / 50.0 / 440.0 / 195.0 across 5 fantasy schemes)
+   integration_phase2.rs preserves 6 Beniers known-value asserts:
+     179.0 / 50.0 / 130.0 / 122.0 / 195.0 / 440.0
+   across yahoo / espn / simple / custom scheme variants
 
-L2 system (~35 in cli tests/system_tests.rs)
-   subprocess invocation; tests every top-level command
+L2 system (~140 in cli tests/system_tests.rs + 1 proof_lib_smoke.rs)
+   subprocess invocation; covers every top-level command
 
 cargo test --workspace runs all tiers; CI gates green on every commit.
 ```
@@ -462,7 +503,11 @@ they don't compute.
 4. icelines data install 19931994 (optional)
    - downloads tarball from GitHub Releases
    - extracts to ~/.icelines/seasons/19931994/
-   - now `--season 19931994` works from CLI; `y` in TUI lists it as installed
+   - `y` in TUI lists it as installed
+   - Note: today's `load_into_repo` only falls back to embedded for bios/stats,
+     not to ~/.icelines/seasons/. Goalies, transactions, and playoffs DO have
+     installed-bundle fallback. This asymmetry is a known gap (filed under
+     plans/INDEX.md backlog "uniform installed-bundle fallback").
 
 5. icelines tui
    - launches ratatui, App owns repo

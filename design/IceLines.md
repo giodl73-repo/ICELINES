@@ -42,8 +42,9 @@ lives under `~/.icelines/`.
 
 The 28 commands working end-to-end against the post-Hart data model. Specifically:
 
-- **Analytics**: `query leaders/player/compare`, `rank`, `players`, `class`, `peers`,
-  `compare`, `history`, `mates`, `scouting`, `project`, `team`, `trade`
+- **Analytics**: `query` subcommands (leaders/player/compare/similar), plus
+  top-level `rank`, `players`, `class`, `peers`, `compare`, `history`, `mates`,
+  `scouting`, `project`, `team`, `trade`
 - **Fantasy**: `fantasy {league-create / team-{create,add,drop,show,list} / standings
   / trade / serve}`, `scheme {list,show,fromcsv}`
 - **Live**: `tonight`, `schedule`, `transactions`, plus the TUI Scores/Schedule/Playoffs tabs
@@ -74,8 +75,9 @@ screens, fantasy server stable, ASCII headshots rendering.
 - Hart.5c.7 — final delete of legacy `Player`/`Goalie` types. Cleanup pass.
 
 **Specced but not implemented**:
-- Hart.6 — per-player playoff stats. Specced at v0.2. Without it, season-type toggle
-  in the TUI returns `LoadError::MissingBundle` for playoffs.
+- [Hart.6 — per-player playoff stats](plans/2026-05-01-phaseHart-6-playoff-data.md).
+  Specced at v0.2. Without it, season-type toggle in the TUI returns
+  `LoadError::MissingBundle` for playoffs.
 
 ## Where we're going
 
