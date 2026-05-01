@@ -1744,21 +1744,21 @@ impl App {
             // rank back to a position in `app.goalies` so the detail
             // screen can address the goalie directly.
             Screen::Goalies => {
-                // Hart.5c.6 Phase B-2 step 2: goalies leaderboard still
-                // sorts via the legacy `&[Goalie]` path (B-3 migrates
-                // the leaderboard); we bridge through nhl_id → PlayerId
-                // and navigate via GoalieDetailById.
+                // Hart.5c.6 Phase B-3: leaderboard navigates via
+                // sort_goalie_views, picks the selected view, pushes
+                // GoalieDetailById from view.identity.id.
                 let sort = crate::tui::screens::goalies::SORTS
                     .get(self.goalie_sort as usize)
                     .copied()
                     .unwrap_or(crate::tui::screens::goalies::GoalieSort::SvPctDesc);
-                let qualified = crate::tui::screens::goalies::sort_goalies(
-                    &self.goalies,
+                let views = self.goalie_views();
+                let qualified = crate::tui::screens::goalies::sort_goalie_views(
+                    &views,
                     sort,
                     self.goalie_min_gp,
                 );
-                if let Some(g_ref) = qualified.get(self.goalie_selected) {
-                    let pid = icelines_core::identity::PlayerId(g_ref.nhl_id);
+                if let Some(v) = qualified.get(self.goalie_selected) {
+                    let pid = v.identity.id;
                     self.prev_screen = Some(Screen::Goalies);
                     self.screen = Screen::GoalieDetailById(pid);
                 }

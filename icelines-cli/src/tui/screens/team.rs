@@ -58,8 +58,11 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
         lines.push(Line::styled(text, style));
     }
 
-    // ── Goalie strip (Phase G.4) ──────────────────────────────────────────
-    let team_goalies = collect_team_goalies(&app.goalies, abbrev);
+    // ── Goalie strip (Phase G.4) — Hart.5c.6 Phase B-3 view-based ─────────
+    // Filter goalie_views to this team and order by GP desc (starter
+    // first). Mirrors `collect_team_goalies` semantics.
+    let goalie_views = app.goalie_views();
+    let team_goalies = collect_team_goalie_views(&goalie_views, abbrev);
     if !team_goalies.is_empty() {
         let dim  = Style::default().fg(Color::DarkGray);
         let gold = Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD);
@@ -67,19 +70,19 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
         lines.push(Line::styled("  GOALTENDING", gold));
         lines.push(Line::styled(format!("  {:<22} {:<4}  {:>6}  {:>7}",
             "Goalie", "GP", "SV%", "Record"), dim));
-        for g in &team_goalies {
-            let stats = match g.stats.as_ref() {
+        for v in &team_goalies {
+            let stats = match v.stats.goalie.as_ref() {
                 Some(s) => s,
                 None    => {
                     lines.push(Line::from(format!(
                         "  {:<22} {:<4}  {:>6}  {:>7}",
-                        g.full_name.chars().take(22).collect::<String>(),
+                        v.full_name().chars().take(22).collect::<String>(),
                         "—", "—", "—",
                     )));
                     continue;
                 }
             };
-            let sv_pct = stats.save_pct.map(|v| format!("{:.3}", v))
+            let sv_pct = stats.save_pct.map(|x| format!("{:.3}", x))
                 .unwrap_or_else(|| "—".to_owned());
             let record = match stats.ot_losses {
                 Some(otl) => format!("{}-{}-{}", stats.wins, stats.losses, otl),
@@ -87,8 +90,8 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
             };
             lines.push(Line::from(format!(
                 "  {:<22} {:<4}  {:>6}  {:>7}",
-                g.full_name.chars().take(22).collect::<String>(),
-                stats.games_played,
+                v.full_name().chars().take(22).collect::<String>(),
+                v.gp(),  // post-Hart canonical GP source
                 sv_pct,
                 record,
             )));
@@ -120,6 +123,22 @@ pub(crate) fn collect_team_goalies<'a>(
         bv.cmp(&av)
     });
     team_goalies
+}
+
+/// Hart.5c.6 Phase B-3 — view-based parallel to `collect_team_goalies`.
+/// Filters `goalie_views` to the given team abbrev and orders by
+/// `view.gp()` descending (starter first). Used by Screen::Team and
+/// Screen::DepthTeam goalie strips.
+pub(crate) fn collect_team_goalie_views<'a, 'v: 'a>(
+    goalie_views: &'a [icelines_core::stats_repository::PlayerView<'v>],
+    abbrev: &str,
+) -> Vec<&'a icelines_core::stats_repository::PlayerView<'v>> {
+    let mut out: Vec<&icelines_core::stats_repository::PlayerView<'v>> = goalie_views
+        .iter()
+        .filter(|v| v.team_display() == abbrev)
+        .collect();
+    out.sort_by(|a, b| b.gp().cmp(&a.gp()));
+    out
 }
 
 #[cfg(test)]

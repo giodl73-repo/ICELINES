@@ -97,6 +97,56 @@ pub fn sort_goalies<'a>(
     out
 }
 
+/// Hart.5c.6 Phase B-3 — view-based goalie sort. Same comparator as
+/// `sort_goalies`, but operates on `PlayerView<'_>` slices and reads
+/// GP from `view.gp()` (canonical post-Hart source per Hart.4.1)
+/// rather than the deleted GoalieSeasonStats.games_played field.
+///
+/// Pure function; testable without rendering. Filters to views where
+/// `view.is_goalie() == true` AND `view.gp() >= min_gp` so a stray
+/// non-goalie view in the input slice gets excluded.
+pub fn sort_goalie_views<'a>(
+    views: &'a [icelines_core::stats_repository::PlayerView<'a>],
+    sort: GoalieSort,
+    min_gp: u32,
+) -> Vec<&'a icelines_core::stats_repository::PlayerView<'a>> {
+    use std::cmp::Ordering;
+    let mut out: Vec<&icelines_core::stats_repository::PlayerView<'a>> = views
+        .iter()
+        .filter(|v| v.is_goalie() && v.gp() >= min_gp)
+        .collect();
+    out.sort_by(|a, b| {
+        let sa = a.stats.goalie.as_ref();
+        let sb = b.stats.goalie.as_ref();
+        let ord = match sort {
+            GoalieSort::SvPctDesc => {
+                let av = sa.and_then(|s| s.save_pct).unwrap_or(0.0);
+                let bv = sb.and_then(|s| s.save_pct).unwrap_or(0.0);
+                bv.partial_cmp(&av).unwrap_or(Ordering::Equal)
+            }
+            GoalieSort::GaaAsc => {
+                let av = sa.and_then(|s| s.goals_against_average).unwrap_or(f32::INFINITY);
+                let bv = sb.and_then(|s| s.goals_against_average).unwrap_or(f32::INFINITY);
+                av.partial_cmp(&bv).unwrap_or(Ordering::Equal)
+            }
+            GoalieSort::WinsDesc =>
+                sb.map(|s| s.wins).unwrap_or(0).cmp(&sa.map(|s| s.wins).unwrap_or(0)),
+            GoalieSort::GpDesc => b.gp().cmp(&a.gp()),
+            GoalieSort::SavesDesc =>
+                sb.map(|s| s.saves).unwrap_or(0).cmp(&sa.map(|s| s.saves).unwrap_or(0)),
+            GoalieSort::ShutoutsDesc =>
+                sb.map(|s| s.shutouts).unwrap_or(0).cmp(&sa.map(|s| s.shutouts).unwrap_or(0)),
+        };
+        // Tiebreaker: SV% desc, same as sort_goalies.
+        ord.then_with(|| {
+            let av = sa.and_then(|s| s.save_pct).unwrap_or(0.0);
+            let bv = sb.and_then(|s| s.save_pct).unwrap_or(0.0);
+            bv.partial_cmp(&av).unwrap_or(Ordering::Equal)
+        })
+    });
+    out
+}
+
 pub fn render(f: &mut Frame, app: &App, area: Rect) {
     let sort = SORTS.get(app.goalie_sort as usize).copied().unwrap_or(GoalieSort::SvPctDesc);
     let title = format!(
@@ -107,7 +157,12 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
     let inner = block.inner(area);
     f.render_widget(block, area);
 
-    if app.goalies.is_empty() {
+    // Hart.5c.6 Phase B-3: collect goalie views, then sort+filter.
+    // app.goalie_views() honors the active (season, season_type)
+    // window; the empty-pool branch fires when no goalies are
+    // populated for that window.
+    let views = app.goalie_views();
+    if views.is_empty() {
         let dim = Style::default().fg(Color::DarkGray);
         f.render_widget(Paragraph::new(vec![
             Line::from(""),
@@ -121,7 +176,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
         return;
     }
 
-    let qualified = sort_goalies(&app.goalies, sort, app.goalie_min_gp);
+    let qualified = sort_goalie_views(&views, sort, app.goalie_min_gp);
     if qualified.is_empty() {
         let dim = Style::default().fg(Color::DarkGray);
         f.render_widget(Paragraph::new(vec![
@@ -150,8 +205,8 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
     items.push(ListItem::new(Line::styled(format!("  {}", "─".repeat(80)), dim)));
 
     let selected_idx = app.goalie_selected.min(qualified.len().saturating_sub(1));
-    for (rank, g) in qualified.iter().enumerate() {
-        let stats = match g.stats.as_ref() {
+    for (rank, v) in qualified.iter().enumerate() {
+        let stats = match v.stats.goalie.as_ref() {
             Some(s) => s,
             None    => continue,
         };
@@ -166,9 +221,9 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
         let row = format!(
             "  {:<3}  {:<22} {:<5} {:<4}  {:<10}  {:<6}  {:<6}  {:<3}  {:<6}",
             rank + 1,
-            short_name(&g.full_name),
-            g.team.as_str(),
-            stats.games_played,
+            short_name(v.full_name()),
+            v.team_display(),
+            v.gp(),  // post-Hart canonical GP source
             record,
             sv_pct,
             gaa,

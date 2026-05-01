@@ -97,8 +97,10 @@ pub fn render_team(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
 
     // Phase G.4: split inner vertically — grid on top, goalie strip
     // below. Strip takes 5 lines (header + 1 separator + up to 3 goalies);
-    // suppressed when the team has no goalies in App.goalies.
-    let team_goalies = super::team::collect_team_goalies(&app.goalies, abbrev);
+    // suppressed when the team has no goalies in the active window.
+    // Hart.5c.6 Phase B-3: migrated to view-based goalie collection.
+    let goalie_views = app.goalie_views();
+    let team_goalies = super::team::collect_team_goalie_views(&goalie_views, abbrev);
     let strip_height: u16 = if team_goalies.is_empty() { 0 } else { 5 };
     let outer = Layout::default()
         .direction(Direction::Vertical)
@@ -196,7 +198,7 @@ pub fn render_team(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
 fn render_goalie_strip(
     f: &mut Frame,
     area: Rect,
-    goalies: &[&icelines_core::model::Goalie],
+    goalies: &[&icelines_core::stats_repository::PlayerView<'_>],
 ) {
     let dim  = Style::default().fg(Color::DarkGray);
     let gold = Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD);
@@ -204,19 +206,19 @@ fn render_goalie_strip(
     lines.push(Line::styled("  GOALTENDING", gold));
     lines.push(Line::styled(format!("  {:<22} {:<4}  {:>6}  {:>9}",
         "Goalie", "GP", "SV%", "Record"), dim));
-    for g in goalies {
-        let stats = match g.stats.as_ref() {
+    for v in goalies {
+        let stats = match v.stats.goalie.as_ref() {
             Some(s) => s,
             None    => {
                 lines.push(Line::from(format!(
                     "  {:<22} {:<4}  {:>6}  {:>9}",
-                    g.full_name.chars().take(22).collect::<String>(),
+                    v.full_name().chars().take(22).collect::<String>(),
                     "—", "—", "—",
                 )));
                 continue;
             }
         };
-        let sv_pct = stats.save_pct.map(|v| format!("{:.3}", v))
+        let sv_pct = stats.save_pct.map(|x| format!("{:.3}", x))
             .unwrap_or_else(|| "—".to_owned());
         let record = match stats.ot_losses {
             Some(otl) => format!("{}-{}-{}", stats.wins, stats.losses, otl),
@@ -224,8 +226,8 @@ fn render_goalie_strip(
         };
         lines.push(Line::from(format!(
             "  {:<22} {:<4}  {:>6}  {:>9}",
-            g.full_name.chars().take(22).collect::<String>(),
-            stats.games_played,
+            v.full_name().chars().take(22).collect::<String>(),
+            v.gp(),
             sv_pct,
             record,
         )));
