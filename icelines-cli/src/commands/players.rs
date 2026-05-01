@@ -6,12 +6,41 @@ use icelines_core::{
     model::{Goalie, Player},
     position::PositionResolver,
 };
-use icelines_fetch::{snapshot::SnapshotStore, stats_loader::load_into_repo, BUNDLED_SEASONS};
+use icelines_fetch::{
+    snapshot::SnapshotStore,
+    stats_loader::{load_into_repo, LoadOutcome},
+    BUNDLED_SEASONS,
+};
 
 /// Load all skaters via PlayerRepository (snapshot → bundled fallback).
 /// This is the single entry point for player data across all commands.
 pub fn load_all_players() -> anyhow::Result<Vec<Player>> {
     load_all_players_for_season(None)
+}
+
+/// Hart.5c.3: load a `LoadOutcome` for the requested season (or the
+/// configured / current season when `season` is None). Used by
+/// view-path consumers (query.rs and onward) so they can iterate
+/// `outcome.repo.skaters(...)` directly. The returned `Season` carries
+/// the season ID the caller should pass to `repo.skaters` /
+/// `repo.goalies` / `repo.team_roster`.
+pub fn load_repo_for_season(season: Option<&str>) -> anyhow::Result<(LoadOutcome, Season)> {
+    let cfg = Config::load()?;
+    let resolved_season = match season {
+        Some(s) => {
+            validate_bundled_season(s)?;
+            s.to_owned()
+        }
+        None => cfg.season_str(),
+    };
+    let season_u32: u32 = resolved_season
+        .parse()
+        .map_err(|_| anyhow::anyhow!("season '{resolved_season}' is not a YYYYZZZZ id"))?;
+    let season = Season(season_u32);
+    let store = SnapshotStore::new(cfg.snapshot_dir());
+    let outcome = load_into_repo(season, SeasonType::Regular, &store)
+        .map_err(|e| anyhow::anyhow!("{e}\n  Try: icelines fetch all"))?;
+    Ok((outcome, season))
 }
 
 /// Load all skaters for a specific bundled season, or use the configured /
