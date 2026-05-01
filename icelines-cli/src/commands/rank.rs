@@ -1,5 +1,4 @@
 use crate::commands::output::Format;
-use crate::commands::players::load_all_players;
 use crate::config::Config;
 use crate::render::terminal::render_rank_table;
 use icelines_core::model::Season;
@@ -23,24 +22,9 @@ pub async fn run(
 
     let format = Format::resolve(csv, json)?;
 
-    // Hart.5b2 (rank.rs proof-of-concept): table render uses the
-    // legacy Player-shaped path via `load_all_players()` because the
-    // `render_rank_table` helper still consumes `&[Player]`. Non-table
-    // export goes through the new PlayerView path directly — proves
-    // the per-consumer mechanical-refactor pattern works.
-    if format == Format::Table && out.is_none() {
-        let mut all_players = load_all_players()?;
-        if let Some(p) = pos_filter {
-            all_players.retain(|pl| pl.position == p);
-        }
-        all_players.retain(|p| p.is_rankable());
-        render_rank_table(&all_players, top, pos_filter, false);
-        return Ok(());
-    }
-
-    // PlayerView path — load via the new repo, iterate views, sort,
-    // render. Hart.5b2 demonstrates the pattern future consumer
-    // refactors will follow.
+    // Hart.5c.7: single load + view-based path for both Table and
+    // JSON/CSV outputs. The legacy load_all_players() / &[Player]
+    // bridge is gone.
     let cfg = Config::load()?;
     let season_u32: u32 = cfg
         .season_str()
@@ -57,6 +41,12 @@ pub async fn run(
         .filter(|v| v.is_rankable())
         .collect();
     sort_views_by_pace(&mut views);
+
+    if format == Format::Table && out.is_none() {
+        let view_refs: Vec<&_> = views.iter().collect();
+        render_rank_table(&view_refs, top, false);
+        return Ok(());
+    }
 
     let headers = &[
         "rank",

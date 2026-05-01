@@ -1,7 +1,8 @@
 #![allow(dead_code)]
 
 use comfy_table::{Cell, Color, Table};
-use icelines_core::{classify_fit, DepthChart, DepthChartSlot, FitClass, Player, Position};
+use icelines_core::{classify_fit, DepthChart, DepthChartSlot, FitClass, Position};
+use icelines_core::stats_repository::PlayerView;
 use owo_colors::OwoColorize;
 
 // ── Color helpers ─────────────────────────────────────────────────────────────
@@ -112,30 +113,21 @@ pub fn render_team_card(chart: &DepthChart, no_color: bool) {
 
 // ── render_rank_table ────────────────────────────────────────────────────────
 
-/// Print a ranked player table to stdout.
+/// Print a ranked player table to stdout from PlayerView slices.
 ///
 /// Columns: Rank | Name | Team | Pos | GP | PPG | Proj
 /// The Proj column is colored by FitClass (or prefixed when no_color=true).
+///
+/// Hart.5c.7: was render_rank_table(&[Player]); now operates on
+/// PlayerView<'_> directly. Caller is responsible for filtering /
+/// sorting / position-filtering before passing the slice in (pace
+/// score is read via `view.pace_82()`).
 pub fn render_rank_table(
-    players: &[Player],
+    views: &[&PlayerView<'_>],
     top: usize,
-    pos_filter: Option<Position>,
     no_color: bool,
 ) {
-    let filtered: Vec<&Player> = players
-        .iter()
-        .filter(|p| {
-            if let Some(pos) = pos_filter {
-                p.position == pos
-            } else {
-                true
-            }
-        })
-        .filter(|p| p.is_rankable())
-        .take(top)
-        .collect();
-
-    if filtered.is_empty() {
+    if views.is_empty() {
         println!("No rankable players found.");
         return;
     }
@@ -143,17 +135,21 @@ pub fn render_rank_table(
     let mut table = Table::new();
     table.set_header(vec!["Rank", "Name", "Team", "Pos", "GP", "PPG", "Proj"]);
 
-    for (rank, player) in filtered.iter().enumerate() {
-        // All rankable players have a pace_score — safe to unwrap with message.
-        let ps = player
-            .pace_score
-            .expect("player passed is_rankable() but has no pace_score");
+    for (rank, v) in views.iter().take(top).enumerate() {
+        // Caller filtered to rankable views — pace_82() should be Some.
+        let pace_82 = v
+            .pace_82()
+            .expect("view passed by caller has no pace_82 — caller must filter on is_rankable()");
+        let gp = v.gp();
+        let gp_str = gp.to_string();
+        let ppg_str = if gp > 0 {
+            format!("{:.2}", pace_82 / 82.0)
+        } else {
+            "—".to_owned()
+        };
+        let proj_str = format!("{:.1}", pace_82);
 
-        let gp_str = ps.gp.to_string();
-        let ppg_str = format!("{:.2}", ps.raw_points as f64 / ps.gp as f64);
-        let proj_str = format!("{:.1}", ps.pace_82);
-
-        let fc = classify_fit(ps.pace_82, player.position);
+        let fc = classify_fit(pace_82, v.position());
         let proj_cell = if no_color {
             Cell::new(format!("[{}] {}", fc.label(), proj_str))
         } else {
@@ -162,9 +158,9 @@ pub fn render_rank_table(
 
         table.add_row(vec![
             Cell::new((rank + 1).to_string()),
-            Cell::new(&player.full_name),
-            Cell::new(player.team.as_str()),
-            Cell::new(player.position.abbreviation()),
+            Cell::new(v.full_name()),
+            Cell::new(v.team_display()),
+            Cell::new(v.position().abbreviation()),
             Cell::new(gp_str),
             Cell::new(ppg_str),
             proj_cell,
