@@ -1,12 +1,30 @@
 //! class, peers, compare, history, group commands.
 
 use crate::cli::GroupSubcommand;
-use crate::commands::players::load_all_players;
+use crate::config::Config;
 use crate::db::GroupDb;
 use anyhow::{bail, Context};
-use icelines_core::{
-    filter::PlayerFilter, model::Player, name::normalize_name, position::PositionResolver,
-};
+use icelines_core::filter::PlayerFilter;
+use icelines_core::model::Season;
+use icelines_core::name::normalize_name;
+use icelines_core::position::PositionResolver;
+use icelines_core::season_stats::SeasonType;
+use icelines_core::stats_repository::PlayerView;
+use icelines_fetch::snapshot::SnapshotStore;
+use icelines_fetch::stats_loader::load_into_repo;
+
+/// Hart.5b2: load all skaters as PlayerView for the configured season.
+/// Caller holds the LoadOutcome alive so the views' borrows remain valid.
+fn load_views() -> anyhow::Result<icelines_fetch::stats_loader::LoadOutcome> {
+    let cfg = Config::load()?;
+    let season_u32: u32 = cfg
+        .season_str()
+        .parse()
+        .map_err(|_| anyhow::anyhow!("season '{}' is not a YYYYZZZZ id", cfg.season_str()))?;
+    let store = SnapshotStore::new(cfg.snapshot_dir());
+    load_into_repo(Season(season_u32), SeasonType::Regular, &store)
+        .map_err(|e| anyhow::anyhow!("{e}\n  Try: icelines fetch all"))
+}
 
 // ── icelines class ────────────────────────────────────────────────────────────
 
@@ -15,12 +33,14 @@ pub async fn run_class(
     pos: Option<String>,
     top: Option<usize>,
     json: bool,
-    csv:  bool,
-    out:  Option<std::path::PathBuf>,
+    csv: bool,
+    out: Option<std::path::PathBuf>,
 ) -> anyhow::Result<()> {
     use crate::commands::output::Format;
 
-    let players = load_all_players()?;
+    let outcome = load_views()?;
+    let cfg = Config::load()?;
+    let season_u32: u32 = cfg.season_str().parse().unwrap();
 
     let mut filter = PlayerFilter::new();
     filter.draft_years = Some(vec![year]);
@@ -30,7 +50,11 @@ pub async fn run_class(
         }
     }
 
-    let matched = filter.apply(&players);
+    let matched = filter.apply_views(
+        outcome
+            .repo
+            .skaters(Season(season_u32), SeasonType::Regular),
+    );
     let limit = top.unwrap_or(matched.len());
 
     if matched.is_empty() {
@@ -47,18 +71,28 @@ pub async fn run_class(
     }
 
     let headers = &["pick", "player", "team", "pos", "age", "ppg", "proj_82"];
-    let rows: Vec<Vec<String>> = matched.iter().take(limit).map(|p| {
-        let pick = p.draft_overall.map(|n| format!("#{n}")).unwrap_or_else(|| "UD".to_owned());
-        let (ppg, proj) = pace_strings(p);
-        vec![
-            pick,
-            p.full_name.clone(),
-            p.team.as_str().to_owned(),
-            p.position.abbreviation().to_owned(),
-            age_from_birth_date(p),
-            ppg, proj,
-        ]
-    }).collect();
+    let rows: Vec<Vec<String>> = matched
+        .iter()
+        .take(limit)
+        .map(|v| {
+            let pick = v
+                .identity
+                .bio
+                .draft_overall
+                .map(|n| format!("#{n}"))
+                .unwrap_or_else(|| "UD".to_owned());
+            let (ppg, proj) = pace_strings_view(v);
+            vec![
+                pick,
+                v.full_name().to_owned(),
+                v.team_display().to_owned(),
+                v.position().abbreviation().to_owned(),
+                age_from_view(v),
+                ppg,
+                proj,
+            ]
+        })
+        .collect();
 
     let format = Format::resolve(csv, json)?;
     if format == Format::Table && out.is_none() {
@@ -74,17 +108,32 @@ pub async fn run_peers(
     player_name: String,
     size: usize,
     json: bool,
-    csv:  bool,
-    out:  Option<std::path::PathBuf>,
+    csv: bool,
+    out: Option<std::path::PathBuf>,
 ) -> anyhow::Result<()> {
     use crate::commands::output::Format;
-    let players = load_all_players()?;
-    let target = find_player(&players, &player_name)?;
+
+    let outcome = load_views()?;
+    let cfg = Config::load()?;
+    let season_u32: u32 = cfg.season_str().parse().unwrap();
+
+    // Find target by partial name match across all skaters.
+    let target_norm = normalize_name(&player_name);
+    let target = outcome
+        .repo
+        .skaters(Season(season_u32), SeasonType::Regular)
+        .find(|v| v.name_normalized().contains(&target_norm))
+        .with_context(|| format!("player '{player_name}' not found in snapshot — try a partial name"))?;
 
     // Peer group: same draft year ± 1 and same position
-    let draft_year = target.draft_year.unwrap_or(0);
+    let draft_year = target.identity.bio.draft_year.unwrap_or(0);
+    let target_position = target.position();
+    let target_full_name = target.full_name().to_owned();
+    let target_team = target.team_display().to_owned();
+    let target_norm_owned = target.name_normalized().to_owned();
+
     let mut filter = PlayerFilter::new();
-    filter.positions = Some(vec![target.position]);
+    filter.positions = Some(vec![target_position]);
     filter.draft_years = Some(
         vec![draft_year.saturating_sub(1), draft_year, draft_year + 1]
             .into_iter()
@@ -92,43 +141,61 @@ pub async fn run_peers(
             .collect(),
     );
 
-    let mut peers: Vec<&Player> = filter.apply(&players);
+    let mut peers = filter.apply_views(
+        outcome
+            .repo
+            .skaters(Season(season_u32), SeasonType::Regular),
+    );
     peers.sort_by(|a, b| {
-        let sa = a.pace_score.map(|s| s.pace_82).unwrap_or(0.0);
-        let sb = b.pace_score.map(|s| s.pace_82).unwrap_or(0.0);
+        let sa = a.pace_82().unwrap_or(0.0);
+        let sb = b.pace_82().unwrap_or(0.0);
         sb.partial_cmp(&sa).unwrap_or(std::cmp::Ordering::Equal)
     });
 
     let target_rank = peers
         .iter()
-        .position(|p| p.name_normalized == target.name_normalized)
+        .position(|v| v.name_normalized() == target_norm_owned)
         .map(|i| i + 1)
         .unwrap_or(0);
 
     let headers = &["rank", "player", "team", "ppg", "proj_82", "is_target"];
-    let rows: Vec<Vec<String>> = peers.iter().take(size).enumerate().map(|(i, p)| {
-        let (ppg, proj) = pace_strings(p);
-        let is_target = if p.name_normalized == target.name_normalized { "true" } else { "false" };
-        vec![
-            (i + 1).to_string(),
-            p.full_name.clone(),
-            p.team.as_str().to_owned(),
-            ppg, proj,
-            is_target.to_owned(),
-        ]
-    }).collect();
+    let rows: Vec<Vec<String>> = peers
+        .iter()
+        .take(size)
+        .enumerate()
+        .map(|(i, v)| {
+            let (ppg, proj) = pace_strings_view(v);
+            let is_target = if v.name_normalized() == target_norm_owned {
+                "true"
+            } else {
+                "false"
+            };
+            vec![
+                (i + 1).to_string(),
+                v.full_name().to_owned(),
+                v.team_display().to_owned(),
+                ppg,
+                proj,
+                is_target.to_owned(),
+            ]
+        })
+        .collect();
 
     let format = Format::resolve(csv, json)?;
     if format == Format::Table && out.is_none() {
         println!(
             "PEERS OF {} ({} · {:?} · Draft {})",
-            target.full_name, target.team.as_str(), target.position, draft_year,
+            target_full_name, target_team, target_position, draft_year,
         );
     }
     format.emit_to(headers, &rows, out.as_deref())?;
     if format == Format::Table && out.is_none() {
-        println!("\n{} ranks #{} of {} in the peer group.",
-            target.full_name, target_rank, peers.len());
+        println!(
+            "\n{} ranks #{} of {} in the peer group.",
+            target_full_name,
+            target_rank,
+            peers.len()
+        );
     }
     Ok(())
 }
@@ -139,33 +206,53 @@ pub async fn run_compare(
     name1: String,
     name2: String,
     json: bool,
-    csv:  bool,
-    out:  Option<std::path::PathBuf>,
+    csv: bool,
+    out: Option<std::path::PathBuf>,
 ) -> anyhow::Result<()> {
     use crate::commands::output::Format;
-    let players = load_all_players()?;
-    let p1 = find_player(&players, &name1)?;
-    let p2 = find_player(&players, &name2)?;
 
-    let (ppg1, proj1) = pace_strings(p1);
-    let (ppg2, proj2) = pace_strings(p2);
-    let goals1 = p1.pace_score.map(|s| format!("{:.1}", s.goals_per_82)).unwrap_or_else(|| "—".to_owned());
-    let goals2 = p2.pace_score.map(|s| format!("{:.1}", s.goals_per_82)).unwrap_or_else(|| "—".to_owned());
+    let outcome = load_views()?;
+    let cfg = Config::load()?;
+    let season_u32: u32 = cfg.season_str().parse().unwrap();
+    let views: Vec<PlayerView<'_>> = outcome
+        .repo
+        .skaters(Season(season_u32), SeasonType::Regular)
+        .collect();
 
-    // Long-form rows: one row per stat with each player as a column.
-    // Excel-friendly and trivially extends if we add more stats.
-    let p1_label = p1.full_name.clone();
-    let p2_label = p2.full_name.clone();
+    let v1 = find_view(&views, &name1)?;
+    let v2 = find_view(&views, &name2)?;
+
+    let (ppg1, proj1) = pace_strings_view(v1);
+    let (ppg2, proj2) = pace_strings_view(v2);
+    let goals1 = v1
+        .pace_score()
+        .map(|s| format!("{:.1}", s.goals_per_82))
+        .unwrap_or_else(|| "—".to_owned());
+    let goals2 = v2
+        .pace_score()
+        .map(|s| format!("{:.1}", s.goals_per_82))
+        .unwrap_or_else(|| "—".to_owned());
+
+    let p1_label = v1.full_name().to_owned();
+    let p2_label = v2.full_name().to_owned();
     let headers: Vec<String> = vec!["stat".to_owned(), p1_label.clone(), p2_label.clone()];
     let header_refs: Vec<&str> = headers.iter().map(|s| s.as_str()).collect();
     let rows: Vec<Vec<String>> = vec![
-        vec!["team".to_owned(),       p1.team.as_str().to_owned(),    p2.team.as_str().to_owned()],
-        vec!["position".to_owned(),   p1.position.abbreviation().to_owned(), p2.position.abbreviation().to_owned()],
-        vec!["age".to_owned(),        age_from_birth_date(p1),        age_from_birth_date(p2)],
-        vec!["draft".to_owned(),      draft_str(p1),                  draft_str(p2)],
-        vec!["ppg".to_owned(),        ppg1,                           ppg2],
-        vec!["proj_82".to_owned(),    proj1,                          proj2],
-        vec!["goals_82".to_owned(),   goals1,                         goals2],
+        vec![
+            "team".to_owned(),
+            v1.team_display().to_owned(),
+            v2.team_display().to_owned(),
+        ],
+        vec![
+            "position".to_owned(),
+            v1.position().abbreviation().to_owned(),
+            v2.position().abbreviation().to_owned(),
+        ],
+        vec!["age".to_owned(), age_from_view(v1), age_from_view(v2)],
+        vec!["draft".to_owned(), draft_str_view(v1), draft_str_view(v2)],
+        vec!["ppg".to_owned(), ppg1, ppg2],
+        vec!["proj_82".to_owned(), proj1, proj2],
+        vec!["goals_82".to_owned(), goals1, goals2],
     ];
 
     let format = Format::resolve(csv, json)?;
@@ -279,15 +366,21 @@ pub async fn run_group(cmd: GroupSubcommand) -> anyhow::Result<()> {
                 return Ok(());
             }
 
-            let players = load_all_players()?;
+            let outcome = load_views()?;
+            let cfg = Config::load()?;
+            let season_u32: u32 = cfg.season_str().parse().unwrap();
+            let views: Vec<PlayerView<'_>> = outcome
+                .repo
+                .skaters(Season(season_u32), SeasonType::Regular)
+                .collect();
             for norm in &members {
-                if let Some(p) = players.iter().find(|p| p.name_normalized.contains(norm.as_str())) {
-                    let (ppg, proj) = pace_strings(p);
+                if let Some(v) = views.iter().find(|v| v.name_normalized().contains(norm.as_str())) {
+                    let (ppg, proj) = pace_strings_view(v);
                     println!(
                         "  {:<24} {:<5} {:<4} {} / {}",
-                        p.full_name,
-                        p.team.as_str(),
-                        p.position.abbreviation(),
+                        v.full_name(),
+                        v.team_display(),
+                        v.position().abbreviation(),
                         ppg,
                         proj
                     );
@@ -516,18 +609,21 @@ fn score_pair(away: Option<u8>, home: Option<u8>) -> String {
     }
 }
 
-// ── Shared helpers ─────────────────────────────────────────────────────────────
+// ── Shared helpers (Hart.5b2: PlayerView-based) ────────────────────────────────
 
-fn find_player<'a>(players: &'a [Player], name: &str) -> anyhow::Result<&'a Player> {
+fn find_view<'a, 'v>(
+    views: &'a [PlayerView<'v>],
+    name: &str,
+) -> anyhow::Result<&'a PlayerView<'v>> {
     let norm = normalize_name(name);
-    players
+    views
         .iter()
-        .find(|p| p.name_normalized.contains(&norm))
+        .find(|v| v.name_normalized().contains(&norm))
         .with_context(|| format!("player '{name}' not found in snapshot — try a partial name"))
 }
 
-fn pace_strings(p: &Player) -> (String, String) {
-    match p.pace_score {
+fn pace_strings_view(v: &PlayerView<'_>) -> (String, String) {
+    match v.pace_score() {
         Some(s) => (
             format!("{:.2}", s.pace_82 / 82.0),
             format!("{:.0}", s.pace_82),
@@ -536,8 +632,10 @@ fn pace_strings(p: &Player) -> (String, String) {
     }
 }
 
-fn age_from_birth_date(p: &Player) -> String {
-    p.birth_date
+fn age_from_view(v: &PlayerView<'_>) -> String {
+    v.identity
+        .bio
+        .birth_date
         .as_deref()
         .and_then(|d| d.get(..4))
         .and_then(|y| y.parse::<u16>().ok())
@@ -545,8 +643,9 @@ fn age_from_birth_date(p: &Player) -> String {
         .unwrap_or_else(|| "—".to_owned())
 }
 
-fn draft_str(p: &Player) -> String {
-    match (p.draft_year, p.draft_round, p.draft_overall) {
+fn draft_str_view(v: &PlayerView<'_>) -> String {
+    let bio = &v.identity.bio;
+    match (bio.draft_year, bio.draft_round, bio.draft_overall) {
         (Some(y), Some(r), Some(o)) => format!("{y} R{r} #{o}"),
         (Some(y), _, _) => format!("{y}"),
         _ => "Undrafted".to_owned(),
