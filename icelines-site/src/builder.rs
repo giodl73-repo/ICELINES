@@ -5,13 +5,11 @@ use std::collections::HashMap;
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
 
-use icelines_core::{
-    compute_cross_team_metrics,
-    model::{Player, Position, Season},
-    scoring::sort_by_pace,
-    season_stats::SeasonType,
-    CrossTeamMetrics, DepthChartBuilder, TeamAbbr,
-};
+use icelines_core::cross_team::compute_all_views as compute_cross_team_metrics_views;
+use icelines_core::model::{Position, Season};
+use icelines_core::season_stats::SeasonType;
+use icelines_core::stats_repository::PlayerView;
+use icelines_core::{CrossTeamMetrics, DepthChartBuilder, TeamAbbr};
 use icelines_fetch::{snapshot::SnapshotStore, stats_loader::load_into_repo};
 
 use crate::{
@@ -85,27 +83,28 @@ impl SiteBuilder {
 
     /// Build all docs/ markdown files from snapshot data.
     pub fn build(&self) -> Result<Vec<String>, SiteError> {
-        // Hart.5b1: routed through load_into_repo + flat_view_legacy
-        // (was PlayerRepository::load_all directly).
+        // Hart.5b2k: load via load_into_repo + iterate as PlayerView.
+        // Cross-team metrics + team-strength compute on views; depth
+        // charts go through DepthChartBuilder::build_views (which
+        // converts to legacy Player internally so the renderers see
+        // DepthChart<Player> as before).
         let store = SnapshotStore::new(&self.config.snapshot_dir);
         let outcome = load_into_repo(Season(self.config.season), SeasonType::Regular, &store)
             .map_err(|e| SiteError::Snapshot(e.to_string()))?;
-        #[allow(deprecated)]
-        let mut all_players: Vec<Player> = outcome
+        let views: Vec<PlayerView<'_>> = outcome
             .repo
-            .flat_view_legacy(Season(self.config.season), SeasonType::Regular);
+            .skaters(Season(self.config.season), SeasonType::Regular)
+            .collect();
 
-        sort_by_pace(&mut all_players);
-
-        // Compute cross-team metrics
-        let metrics_vec = compute_cross_team_metrics(&all_players);
+        // Cross-team metrics
+        let metrics_vec = compute_cross_team_metrics_views(&views);
         let metrics_map: HashMap<Option<u32>, CrossTeamMetrics> = metrics_vec
             .into_iter()
             .filter_map(|m| m.player_nhl_id.map(|id| (Some(id), m)))
             .collect();
 
         // Team strength for tracker index
-        let team_strength = compute_team_strength(&all_players);
+        let team_strength = compute_team_strength_views(&views);
         let max_strength = team_strength.values().copied().fold(0.0_f32, f32::max);
         let mut ranked_teams: Vec<&str> = TEAM_NAMES.iter().map(|(a, _)| *a).collect();
         ranked_teams.sort_by(|a, b| {
@@ -122,17 +121,24 @@ impl SiteBuilder {
         for (rank, &abbrev) in ranked_teams.iter().enumerate() {
             let rank = rank + 1;
             let team = TeamAbbr(abbrev.to_string());
-            let team_players: Vec<&Player> = all_players
-                .iter()
-                .filter(|p| p.team.as_str() == abbrev)
+            // team_roster gives last-stint roster (current home);
+            // filter to skaters since DepthChartBuilder expects them.
+            let team_views: Vec<_> = outcome
+                .repo
+                .team_roster(&team, Season(self.config.season), SeasonType::Regular)
+                .into_iter()
+                .filter(|v| !v.is_goalie())
                 .collect();
 
-            if team_players.is_empty() {
+            if team_views.is_empty() {
                 continue;
             }
 
-            let owned: Vec<Player> = team_players.iter().map(|p| (*p).clone()).collect();
-            let chart = DepthChartBuilder::build(team.clone(), icelines_core::model::Season(self.config.season), owned);
+            let chart = DepthChartBuilder::build_views(
+                team.clone(),
+                Season(self.config.season),
+                &team_views,
+            );
 
             let page = self.render_team_page(
                 abbrev,
@@ -299,13 +305,15 @@ impl SiteBuilder {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-fn compute_team_strength(players: &[Player]) -> HashMap<String, f32> {
+/// Hart.5b2k: PlayerView analog of the legacy `compute_team_strength`.
+/// Same formula (top-4 forwards per slot + top-6 D, summed as f32).
+fn compute_team_strength_views(views: &[PlayerView<'_>]) -> HashMap<String, f32> {
     let mut map: HashMap<String, HashMap<Position, Vec<f32>>> = HashMap::new();
-    for p in players {
-        if let Some(s) = p.pace_score {
-            map.entry(p.team.as_str().to_owned())
+    for v in views {
+        if let Some(s) = v.pace_score() {
+            map.entry(v.team_display().to_owned())
                 .or_default()
-                .entry(p.position)
+                .entry(v.position())
                 .or_default()
                 .push(s.pace_82 as f32);
         }
