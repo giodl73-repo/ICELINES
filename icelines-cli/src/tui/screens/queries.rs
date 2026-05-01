@@ -231,7 +231,7 @@ fn render_controls(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
     };
     let block = Block::default()
         .borders(Borders::ALL)
-        .title(" Query  ↑↓ · ←→ value · Space: results ")
+        .title(" Query  ↑↓ · ←→ value · Space: results · p: projections ")
         .border_style(border_style);
     let inner = block.inner(area);
     f.render_widget(block, area);

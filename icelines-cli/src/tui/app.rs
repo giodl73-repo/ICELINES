@@ -450,28 +450,20 @@ impl App {
                             self.playoffs_series = 0;
                         }
                     }
-                    // Sub-view switching: League ↔ Depth
-                    Screen::Home => {
+                    // Sub-view switching: Queries ↔ Projections.
+                    // Both live under the Stats tab; ←/→ flips between them.
+                    // (League / Depth used to do the same, but Depth is now
+                    // its own tab — toggle removed.)
+                    Screen::Queries if !self.query_results_focused => {
                         self.prev_screen = Some(self.screen.clone());
-                        self.screen = Screen::Depth;
+                        self.screen = Screen::Projections;
                         self.selected = 0;
                     }
-                    Screen::Depth => {
-                        self.prev_screen = Some(self.screen.clone());
-                        self.screen = Screen::Home;
-                        self.selected = 0;
-                    }
-                    // Sub-view switching: Projections ↔ Queries
                     Screen::Projections => {
                         self.prev_screen = Some(self.screen.clone());
                         self.screen = Screen::Queries;
                         self.selected = 0;
                         self.query_results_focused = false;
-                    }
-                    Screen::Queries if self.query_results_focused => {
-                        self.prev_screen = Some(self.screen.clone());
-                        self.screen = Screen::Projections;
-                        self.selected = 0;
                     }
                     _ => {}
                 }
@@ -503,6 +495,24 @@ impl App {
                 if self.screen == Screen::Search {
                     self.search_query.push(c);
                     self.selected = 0;
+                } else if self.screen == Screen::Queries
+                       && c == 'p'
+                       && !matches!(self.query_mode, QueryMode::SaveName)
+                {
+                    // `p` flips to the Projections sister-screen. ←/→ on
+                    // Queries is consumed by field editing, so this is
+                    // the only way out without going Tab → … → Tab back.
+                    self.prev_screen = Some(self.screen.clone());
+                    self.screen = Screen::Projections;
+                    self.selected = 0;
+                    self.query_results_focused = false;
+                    self.status = "Projections · p:queries  ↑↓:scroll  Enter:player card".to_owned();
+                } else if self.screen == Screen::Projections && c == 'p' {
+                    // Symmetric: `p` from Projections flips back to Queries.
+                    self.prev_screen = Some(self.screen.clone());
+                    self.screen = Screen::Queries;
+                    self.selected = 0;
+                    self.status = "Queries · p:projections  ←/→:edit  Tab:focus results".to_owned();
                 } else if self.screen == Screen::Queries {
                     match &self.query_mode {
                         QueryMode::SaveName => {
@@ -580,23 +590,17 @@ impl App {
                     // Re-arm the auto-refresh timer for the live date.
                     self.last_auto_refresh = Some(std::time::Instant::now());
                     self.status = "Scores · Today".to_owned();
-                } else if self.screen == Screen::Transactions && c == 'T' {
-                    // Phase T.5: cycle team filter through every team that
-                    // appears in the loaded transactions. None → first → … → None.
-                    let mut teams: Vec<String> = self.transactions.iter()
-                        .map(|tx| tx.team.as_ref().map(|t| t.0.clone()).unwrap_or_else(|| "LEAGUE".to_owned()))
-                        .collect();
-                    teams.sort();
-                    teams.dedup();
-                    let next = match self.tx_team_filter.as_deref() {
-                        None => teams.first().cloned(),
-                        Some(curr) => {
-                            let pos = teams.iter().position(|t| t == curr);
-                            match pos {
-                                Some(i) if i + 1 < teams.len() => Some(teams[i + 1].clone()),
-                                _ => None,  // wrap back to "all teams"
-                            }
-                        }
+                } else if self.screen == Screen::Transactions && (c == 't' || c == 'T') {
+                    // Phase T.5+: cycle team filter through every team that
+                    // appears in the loaded transactions.
+                    //   t       → forward  (None → first → … → None)
+                    //   Shift-T → backward (None → last  → … → None)
+                    use crate::tui::screens::transactions as tx_screen;
+                    let teams = tx_screen::transactions_teams(&self.transactions);
+                    let next = if c == 't' {
+                        tx_screen::cycle_team_forward(self.tx_team_filter.as_deref(), &teams)
+                    } else {
+                        tx_screen::cycle_team_backward(self.tx_team_filter.as_deref(), &teams)
                     };
                     self.tx_team_filter = next.clone();
                     self.tx_selected    = 0;
@@ -604,19 +608,15 @@ impl App {
                         Some(t) => format!("Transactions team filter: {t}"),
                         None    => "Transactions team filter: all".to_owned(),
                     };
-                } else if self.screen == Screen::Transactions && c == 'k' {
-                    // Cycle kind filter through every TransactionKind variant.
+                } else if self.screen == Screen::Transactions && (c == 'k' || c == 'K') {
+                    // Cycle kind filter; Shift-K reverses.
                     use icelines_core::TransactionKind as K;
+                    use crate::tui::screens::transactions as tx_screen;
                     let cycle = K::ALL;
-                    let next = match self.tx_kind_filter {
-                        None => Some(cycle[0]),
-                        Some(curr) => {
-                            let pos = cycle.iter().position(|k| *k == curr);
-                            match pos {
-                                Some(i) if i + 1 < cycle.len() => Some(cycle[i + 1]),
-                                _ => None,
-                            }
-                        }
+                    let next = if c == 'k' {
+                        tx_screen::cycle_kind_forward(self.tx_kind_filter, cycle)
+                    } else {
+                        tx_screen::cycle_kind_backward(self.tx_kind_filter, cycle)
                     };
                     self.tx_kind_filter = next;
                     self.tx_selected    = 0;
@@ -700,6 +700,8 @@ impl App {
                 let target_player = self.get_selected_player();
 
                 if let Some(player) = target_player {
+                    // On a player card / team roster: open the picker so
+                    // user can add this specific player to a group.
                     self.group_picker_list = crate::db::GroupDb::open()
                         .ok()
                         .and_then(|db| db.list_groups().ok())
@@ -713,6 +715,13 @@ impl App {
                         self.selected = 0;
                         self.status = "Add to group — ↑↓ select · Enter · Esc cancel".to_owned();
                     }
+                } else {
+                    // No player in scope: `g` becomes the global "open Groups"
+                    // shortcut. Phase T+1 — Groups was demoted from a tab.
+                    self.prev_screen = Some(self.screen.clone());
+                    self.screen = Screen::Groups;
+                    self.selected = 0;
+                    self.status = "Groups — ↑↓ select · Enter to view members · Esc back".to_owned();
                 }
             }
             Action::AddToFavorites => {
@@ -731,13 +740,16 @@ impl App {
             }
 
             Action::GoToTab(n) => {
-                // 1–6: League, Stats, Scores, Schedule, Groups, Playoffs
+                // 1–8: League, Depth, Stats(Queries), Goalies, Scores,
+                // Schedule, Transactions, Playoffs.
                 let tabs = [
                     Screen::Home,
-                    Screen::Projections,
+                    Screen::Depth,
+                    Screen::Queries,
+                    Screen::Goalies,
                     Screen::Tonight,
                     Screen::Schedule,
-                    Screen::Groups,
+                    Screen::Transactions,
                     Screen::Playoffs,
                 ];
                 if let Some(screen) = tabs.get(n) {
@@ -1491,16 +1503,17 @@ impl App {
 
     fn cycle_screen(&mut self) {
         self.query_results_focused = false;
-        // Phase T.5: 8-tab cycle now —
-        //   League → Stats → Goalies → Scores → Schedule → Groups → Transactions → Playoffs → League
+        // Phase T+1: 8-tab cycle. Groups is removed from the strip and
+        // accessed via `g` from anywhere. Stats defaults to Queries.
+        //   League → Depth → Queries → Goalies → Scores → Schedule
+        //   → Transactions → Playoffs → League
         let next = match &self.screen {
-            Screen::Home | Screen::Depth | Screen::DepthTeam(_)
-            | Screen::Team(_) | Screen::Player(_) | Screen::Comps(_) => Screen::Projections,
-            Screen::Projections | Screen::Queries | Screen::Search  => Screen::Goalies,
+            Screen::Home | Screen::Team(_) | Screen::Player(_) | Screen::Comps(_) => Screen::Depth,
+            Screen::Depth | Screen::DepthTeam(_)                    => Screen::Queries,
+            Screen::Queries | Screen::Projections | Screen::Search  => Screen::Goalies,
             Screen::Goalies | Screen::GoalieDetail(_)               => Screen::Tonight,
             Screen::Tonight | Screen::GameDetail(_)                 => Screen::Schedule,
-            Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => Screen::Groups,
-            Screen::Groups | Screen::GroupDetail(_)                 => Screen::Transactions,
+            Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => Screen::Transactions,
             Screen::Transactions                                    => Screen::Playoffs,
             Screen::Playoffs | Screen::SeriesDetail(_)              => Screen::Home,
             _                                                       => Screen::Home,
@@ -1518,14 +1531,13 @@ impl App {
     fn cycle_screen_back(&mut self) {
         self.query_results_focused = false;
         let prev = match &self.screen {
-            Screen::Home | Screen::Depth | Screen::DepthTeam(_)
-            | Screen::Team(_) | Screen::Player(_) | Screen::Comps(_) => Screen::Playoffs,
-            Screen::Projections | Screen::Queries | Screen::Search  => Screen::Home,
-            Screen::Goalies | Screen::GoalieDetail(_)               => Screen::Projections,
+            Screen::Home | Screen::Team(_) | Screen::Player(_) | Screen::Comps(_) => Screen::Playoffs,
+            Screen::Depth | Screen::DepthTeam(_)                    => Screen::Home,
+            Screen::Queries | Screen::Projections | Screen::Search  => Screen::Depth,
+            Screen::Goalies | Screen::GoalieDetail(_)               => Screen::Queries,
             Screen::Tonight | Screen::GameDetail(_)                 => Screen::Goalies,
             Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => Screen::Tonight,
-            Screen::Groups | Screen::GroupDetail(_)                 => Screen::Schedule,
-            Screen::Transactions                                    => Screen::Groups,
+            Screen::Transactions                                    => Screen::Schedule,
             Screen::Playoffs | Screen::SeriesDetail(_)              => Screen::Transactions,
             _                                                       => Screen::Home,
         };
@@ -1567,11 +1579,14 @@ mod tests {
     #[test]
     fn l0_tui_tab_cycles_screens() {
         // 7 tabs (Phase G.3): League→Stats→Goalies→Scores→Schedule→Groups→Playoffs→League
-        // Phase T.5: 8 tabs now —
-        //   League → Stats → Goalies → Scores → Schedule → Groups → Transactions → Playoffs → wrap
+        // Phase T+1: 8 tabs now (Groups demoted to `g` global shortcut) —
+        //   League → Depth → Stats(Queries) → Goalies → Scores → Schedule
+        //   → Transactions → Playoffs → wrap
         let mut app = App::new(false);
         app.handle(Action::Tab);
-        assert_eq!(app.screen, Screen::Projections, "Home→Stats(Projections)");
+        assert_eq!(app.screen, Screen::Depth, "Home→Depth");
+        app.handle(Action::Tab);
+        assert_eq!(app.screen, Screen::Queries, "Depth→Stats(Queries)");
         app.handle(Action::Tab);
         assert_eq!(app.screen, Screen::Goalies, "Stats→Goalies");
         app.handle(Action::Tab);
@@ -1579,9 +1594,7 @@ mod tests {
         app.handle(Action::Tab);
         assert_eq!(app.screen, Screen::Schedule, "Scores→Schedule");
         app.handle(Action::Tab);
-        assert_eq!(app.screen, Screen::Groups, "Schedule→Groups");
-        app.handle(Action::Tab);
-        assert_eq!(app.screen, Screen::Transactions, "Groups→Transactions");
+        assert_eq!(app.screen, Screen::Transactions, "Schedule→Transactions");
         app.handle(Action::Tab);
         assert_eq!(app.screen, Screen::Playoffs, "Transactions→Playoffs");
         app.handle(Action::Tab);
@@ -1597,17 +1610,17 @@ mod tests {
         app.handle(Action::TabPrev);
         assert_eq!(app.screen, Screen::Transactions, "Playoffs→Transactions");
         app.handle(Action::TabPrev);
-        assert_eq!(app.screen, Screen::Groups,       "Transactions→Groups");
-        app.handle(Action::TabPrev);
-        assert_eq!(app.screen, Screen::Schedule,     "Groups→Schedule");
+        assert_eq!(app.screen, Screen::Schedule,     "Transactions→Schedule");
         app.handle(Action::TabPrev);
         assert_eq!(app.screen, Screen::Tonight,      "Schedule→Scores");
         app.handle(Action::TabPrev);
         assert_eq!(app.screen, Screen::Goalies,      "Scores→Goalies");
         app.handle(Action::TabPrev);
-        assert_eq!(app.screen, Screen::Projections,  "Goalies→Stats");
+        assert_eq!(app.screen, Screen::Queries,      "Goalies→Stats");
         app.handle(Action::TabPrev);
-        assert_eq!(app.screen, Screen::Home,         "Stats→League");
+        assert_eq!(app.screen, Screen::Depth,        "Stats→Depth");
+        app.handle(Action::TabPrev);
+        assert_eq!(app.screen, Screen::Home,         "Depth→League");
     }
 
     #[test]
@@ -1617,6 +1630,20 @@ mod tests {
         for _ in 0..8 { app.handle(Action::Tab); }
         for _ in 0..8 { app.handle(Action::TabPrev); }
         assert_eq!(app.screen, Screen::Home);
+    }
+
+    #[test]
+    fn l0_tui_g_opens_groups_when_no_player_selected() {
+        // From the Home screen with no player loaded, `g` (AddToGroup) acts
+        // as the global "open Groups" shortcut now that Groups is no longer
+        // a tab. Phase T+1.
+        let mut app = App::new(false);
+        // Ensure we're on Home with no players → no target player.
+        assert_eq!(app.screen, Screen::Home);
+        assert!(app.players.is_empty());
+        app.handle(Action::AddToGroup);
+        assert_eq!(app.screen, Screen::Groups,
+            "g from a non-player screen with no target must open Groups");
     }
 
     #[test]

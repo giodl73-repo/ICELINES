@@ -320,7 +320,7 @@ fn fmt_et(utc_hhmm: &str) -> String {
 pub fn render_projections(f: &mut Frame, app: &App, area: Rect) {
     let block = Block::default()
         .borders(Borders::ALL)
-        .title(" Top Projections (pts/82)  ↑↓ scroll · Enter: player card ");
+        .title(" Top Projections (pts/82) · p: queries · ↑↓ scroll · Enter: player card ");
     let inner = block.inner(area);
     f.render_widget(block, area);
 
