@@ -3,7 +3,6 @@ use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
 use icelines_core::{
     filter::PlayerFilter,
-    model::{Goalie, Player},
     position::PositionResolver,
 };
 use icelines_fetch::{
@@ -11,12 +10,6 @@ use icelines_fetch::{
     stats_loader::{load_into_repo, LoadOutcome},
     BUNDLED_SEASONS,
 };
-
-/// Load all skaters via PlayerRepository (snapshot → bundled fallback).
-/// This is the single entry point for player data across all commands.
-pub fn load_all_players() -> anyhow::Result<Vec<Player>> {
-    load_all_players_for_season(None)
-}
 
 /// Hart.5c.3: load a `LoadOutcome` for the requested season (or the
 /// configured / current season when `season` is None). Used by
@@ -41,61 +34,6 @@ pub fn load_repo_for_season(season: Option<&str>) -> anyhow::Result<(LoadOutcome
     let outcome = load_into_repo(season, SeasonType::Regular, &store)
         .map_err(|e| anyhow::anyhow!("{e}\n  Try: icelines fetch all"))?;
     Ok((outcome, season))
-}
-
-/// Load all skaters for a specific bundled season, or use the configured /
-/// current season when `season` is None. Validates the season string against
-/// the bundled-seasons list and produces a clear error listing valid seasons
-/// when the request can't be served.
-///
-/// Phase 8f cherry-pick: backs the `--season` flag on query commands.
-///
-/// Hart.5a: this is the single load-boundary in icelines-cli that backs
-/// every consumer (rank / players / query / scouting / fantasy / etc.).
-/// The implementation now goes through `load_into_repo` + the
-/// `flat_view_legacy` adapter — the new normalized model is used
-/// internally, then projected back to `Vec<Player>` for the existing
-/// consumer code. Hart.5b will refactor consumers off Player onto
-/// PlayerView and delete the legacy types.
-#[allow(deprecated)] // intentional: shim is the migration path
-pub fn load_all_players_for_season(season: Option<&str>) -> anyhow::Result<Vec<Player>> {
-    let cfg = Config::load()?;
-    let resolved_season = match season {
-        Some(s) => {
-            validate_bundled_season(s)?;
-            s.to_owned()
-        }
-        None => cfg.season_str(),
-    };
-    let season_u32: u32 = resolved_season
-        .parse()
-        .map_err(|_| anyhow::anyhow!("season '{resolved_season}' is not a YYYYZZZZ id"))?;
-    let store = SnapshotStore::new(cfg.snapshot_dir());
-    let outcome = load_into_repo(Season(season_u32), SeasonType::Regular, &store)
-        .map_err(|e| anyhow::anyhow!("{e}\n  Try: icelines fetch all"))?;
-    Ok(outcome
-        .repo
-        .flat_view_legacy(Season(season_u32), SeasonType::Regular))
-}
-
-/// Load all goalies for the configured / current season. Mirror of
-/// `load_all_players`. Returns an empty Vec quietly if no goalie data
-/// is bundled or snapshotted.
-///
-/// Hart.5a: routed through `load_into_repo` + `flat_view_legacy_goalies`.
-#[allow(deprecated)] // intentional: shim is the migration path
-pub fn load_all_goalies() -> anyhow::Result<Vec<Goalie>> {
-    let cfg = Config::load()?;
-    let season_u32: u32 = cfg
-        .season_str()
-        .parse()
-        .map_err(|_| anyhow::anyhow!("season '{}' is not a YYYYZZZZ id", cfg.season_str()))?;
-    let store = SnapshotStore::new(cfg.snapshot_dir());
-    let outcome = load_into_repo(Season(season_u32), SeasonType::Regular, &store)
-        .map_err(|e| anyhow::anyhow!("{e}\n  Try: icelines fetch goalies"))?;
-    Ok(outcome
-        .repo
-        .flat_view_legacy_goalies(Season(season_u32), SeasonType::Regular))
 }
 
 /// Reject `--season` values that aren't in the bundled list. Empty string and
