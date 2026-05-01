@@ -16,6 +16,38 @@ use crate::season_stats::{
     AdvancedStats, GoalieSeasonStats, RealtimeStats, SeasonStats, SeasonStatsBuilder, SeasonType,
     StatTotals, TeamStint,
 };
+use crate::stats_repository::StatsRepository;
+
+// ── Hart.5c.2 — single-player repo helpers for consumer tests ──────────────────
+//
+// The Hart.5 consumer migrations (scouting, query, fantasy, export) need
+// a tiny `StatsRepository` + `PlayerView` for their render-path tests.
+// `test_repo_with` (skater) and `test_repo_with_goalie` (goalie) build
+// one-row repos from a known identity + stats pair. Identical bodies
+// today — `StatsRepository` is shape-agnostic, the goalie-ness lives in
+// `stats.goalie.is_some()` — but the pair exists for call-site
+// readability and so we can later add type-specific invariants without
+// migrating call sites.
+
+/// Build a one-row `StatsRepository` from the given (identity, stats)
+/// pair. Use for consumer-render-path tests that need a `PlayerView`
+/// against a known fixture.
+pub fn test_repo_with(identity: PlayerIdentity, stats: SeasonStats) -> StatsRepository {
+    let mut r = StatsRepository::new();
+    r.upsert_identity(identity).expect("identity upsert in fixture");
+    r.upsert_stats(stats).expect("stats upsert in fixture");
+    r
+}
+
+/// Goalie variant of `test_repo_with`. Identical body to the skater
+/// variant; the call site documents intent (and future invariants can
+/// hang off this signature without touching every test).
+pub fn test_repo_with_goalie(identity: PlayerIdentity, stats: SeasonStats) -> StatsRepository {
+    let mut r = StatsRepository::new();
+    r.upsert_identity(identity).expect("identity upsert in fixture");
+    r.upsert_stats(stats).expect("stats upsert in fixture");
+    r
+}
 
 pub struct IdentityFixture {
     inner: PlayerIdentity,

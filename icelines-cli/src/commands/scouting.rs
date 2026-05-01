@@ -1,15 +1,17 @@
 use anyhow::{bail, Context};
 use icelines_core::{
-    compute_cross_team_metrics, compute_projection,
-    cross_team::CrossTeamMetrics,
+    cross_team::{compute_all_views, CrossTeamMetrics},
     history::CareerSummary,
-    model::{Player, MIN_GP},
+    model::{Season, MIN_GP},
     name::normalize_name,
-    ProjectionMode,
+    season_stats::SeasonType,
+    stats_repository::PlayerView,
+    compute_projection, ProjectionMode,
 };
-use icelines_fetch::{career::load_career, snapshot::SnapshotStore};
+use icelines_fetch::{
+    career::load_career, snapshot::SnapshotStore, stats_loader::load_into_repo,
+};
 use std::fmt::Write as _;
-use crate::commands::players::load_all_players;
 use crate::config::Config;
 
 /// Normalize the user-supplied format string. Returns the canonical name
@@ -27,78 +29,89 @@ pub(crate) fn validate_format(format: &str) -> anyhow::Result<&'static str> {
 pub async fn run(player_name: String, format: String) -> anyhow::Result<()> {
     let fmt = validate_format(&format)?;
 
-    let players = load_all_players()?;
-    let norm    = normalize_name(&player_name);
-    let player  = players.iter()
-        .find(|p| p.name_normalized.contains(&norm))
+    let cfg = Config::load()?;
+    let season_u32: u32 = cfg
+        .season_str()
+        .parse()
+        .unwrap_or(icelines_core::CURRENT_SEASON);
+    let season = Season(season_u32);
+    let stype = SeasonType::Regular;
+
+    let store = SnapshotStore::new(cfg.snapshot_dir());
+    let outcome = load_into_repo(season, stype, &store)
+        .map_err(|e| anyhow::anyhow!("loading repo: {e}"))?;
+    let repo = &outcome.repo;
+    let all_views: Vec<PlayerView<'_>> = repo.skaters(season, stype).collect();
+
+    let norm = normalize_name(&player_name);
+    let view = all_views
+        .iter()
+        .find(|v| v.identity.name_normalized.contains(&norm))
+        .copied()
         .with_context(|| format!("player '{player_name}' not found"))?;
 
-    let career = {
-        let store = if let Ok(cfg) = Config::load() {
-            SnapshotStore::new(cfg.snapshot_dir())
-        } else {
-            SnapshotStore::new(SnapshotStore::default_root())
-        };
-        load_career(&player.full_name, 5, &store)
-    };
+    let career = load_career(&view.identity.full_name, 5, &store);
 
-    let metrics = compute_cross_team_metrics(&players);
-    let output  = render_report(player, &players, career.as_ref(), &metrics, fmt);
+    let metrics = compute_all_views(&all_views);
+    let output = render_report(&view, &all_views, career.as_ref(), &metrics, fmt);
     print!("{output}");
     Ok(())
 }
 
 /// Pure renderer: produces the full scouting report as a String. No I/O.
-/// Tests call this directly with a fixture `Player` + empty/synthetic
+/// Tests call this directly with a fixture `PlayerView` + empty/synthetic
 /// auxiliary data to assert section structure and format-specific output.
 pub(crate) fn render_report(
-    player:      &Player,
-    all_players: &[Player],
-    career:      Option<&CareerSummary>,
-    metrics:     &[CrossTeamMetrics],
-    format:      &str,
+    view:      &PlayerView<'_>,
+    all_views: &[PlayerView<'_>],
+    career:    Option<&CareerSummary>,
+    metrics:   &[CrossTeamMetrics],
+    format:    &str,
 ) -> String {
     let mut out = String::new();
     let md = format == "markdown";
 
-    let age = player.birth_date.as_deref()
+    let bio = &view.identity.bio;
+    let totals = &view.stats.totals;
+
+    let age = bio.birth_date.as_deref()
         .and_then(|d| d.get(..4)).and_then(|y| y.parse::<u16>().ok())
         .map(|y| 2026u16.saturating_sub(y).to_string()).unwrap_or_else(|| "—".to_owned());
-    let draft = match (player.draft_year, player.draft_round, player.draft_overall) {
+    let draft = match (bio.draft_year, bio.draft_round, bio.draft_overall) {
         (Some(y), Some(r), Some(o)) => format!("{y} · Round {r} · Pick #{o}"),
         (Some(y), _, _)             => y.to_string(),
         _                           => "Undrafted".to_owned(),
     };
 
+    let team_str = view.team_display();
+    let pace = view.pace_score().copied();
+
     // ── CSV output path ──────────────────────────────────────────────────────
-    // Long-form: one row per stat. Lets users open the report in Excel
-    // alongside other player CSVs and pivot/filter on `stat`.
     if format == "csv" {
-        let s = player.pace_score;
         let rows: &[(&str, String)] = &[
-            ("player",        player.full_name.clone()),
-            ("team",          player.team.as_str().to_owned()),
-            ("position",      player.position.abbreviation().to_owned()),
+            ("player",        view.identity.full_name.clone()),
+            ("team",          team_str.to_owned()),
+            ("position",      view.position().abbreviation().to_owned()),
             ("age",           age.clone()),
             ("draft",         draft.clone()),
-            ("nationality",   player.nationality_code.clone().unwrap_or_default()),
-            ("handedness",    player.shoots_catches.clone().unwrap_or_default()),
-            ("height_in",     player.height_in_inches.map(|h| h.to_string()).unwrap_or_default()),
-            ("weight_lbs",    player.weight_lbs.map(|w| w.to_string()).unwrap_or_default()),
-            ("gp",            player.gp().map(|g| g.to_string()).unwrap_or_default()),
-            ("goals",         player.season_goals.to_string()),
-            ("assists",       player.season_assists.to_string()),
-            ("points",        player.season_points.to_string()),
-            ("ppg",           s.map(|s| format!("{:.3}", s.pace_82 / 82.0)).unwrap_or_default()),
-            ("pts_82",        s.map(|s| format!("{:.1}", s.pace_82)).unwrap_or_default()),
-            ("goals_82",      s.map(|s| format!("{:.1}", s.goals_per_82)).unwrap_or_default()),
-            ("pp_goals",      player.pp_goals.to_string()),
-            ("pp_points",     player.pp_points.to_string()),
-            ("shots",         player.shots.to_string()),
-            ("shooting_pct",  player.shooting_pct.map(|p| format!("{:.3}", p)).unwrap_or_default()),
-            ("plus_minus",    player.plus_minus.to_string()),
-            ("toi_mmss",      player.toi_mmss().unwrap_or_default()),
-            ("contract_expiry_year", player.contract_expiry_year.map(|y| y.to_string()).unwrap_or_default()),
+            ("nationality",   bio.nationality_code.clone().unwrap_or_default()),
+            ("handedness",    bio.shoots_catches.clone().unwrap_or_default()),
+            ("height_in",     bio.height_in_inches.map(|h| h.to_string()).unwrap_or_default()),
+            ("weight_lbs",    bio.weight_lbs.map(|w| w.to_string()).unwrap_or_default()),
+            ("gp",            view.gp().to_string()),
+            ("goals",         totals.goals.to_string()),
+            ("assists",       totals.assists.to_string()),
+            ("points",        totals.points.to_string()),
+            ("ppg",           pace.map(|s| format!("{:.3}", s.pace_82 / 82.0)).unwrap_or_default()),
+            ("pts_82",        pace.map(|s| format!("{:.1}", s.pace_82)).unwrap_or_default()),
+            ("goals_82",      pace.map(|s| format!("{:.1}", s.goals_per_82)).unwrap_or_default()),
+            ("pp_goals",      totals.pp_goals.to_string()),
+            ("pp_points",     totals.pp_points.to_string()),
+            ("shots",         view.shots().to_string()),
+            ("shooting_pct",  totals.shooting_pct.map(|p| format!("{p:.3}")).unwrap_or_default()),
+            ("plus_minus",    view.plus_minus().to_string()),
+            ("toi_mmss",      view.toi_mmss().unwrap_or_default()),
+            ("contract_expiry_year", view.contract_expiry_year().map(|y| y.to_string()).unwrap_or_default()),
         ];
         let _ = writeln!(out, "stat,value");
         for (k, v) in rows {
@@ -112,34 +125,34 @@ pub(crate) fn render_report(
     // ── JSON output path ─────────────────────────────────────────────────────
     if format == "json" {
         let report = serde_json::json!({
-            "player":      player.full_name,
-            "team":        player.team.as_str(),
-            "position":    player.position.abbreviation(),
+            "player":      view.identity.full_name,
+            "team":        team_str,
+            "position":    view.position().abbreviation(),
             "age":         age,
             "draft":       draft,
-            "nationality": player.nationality_code,
-            "handedness":  player.shoots_catches,
-            "height_in":   player.height_in_inches,
-            "weight_lbs":  player.weight_lbs,
+            "nationality": bio.nationality_code,
+            "handedness":  bio.shoots_catches,
+            "height_in":   bio.height_in_inches,
+            "weight_lbs":  bio.weight_lbs,
             "current_season": {
-                "gp":        player.gp(),
-                "goals":     player.season_goals,
-                "assists":   player.season_assists,
-                "pts":       player.season_points,
-                "ppg":       player.pace_score.map(|s| s.pace_82 / 82.0),
-                "pts_82":    player.pace_score.map(|s| s.pace_82),
-                "goals_82":  player.pace_score.map(|s| s.goals_per_82),
-                "pp_goals":  player.pp_goals,
-                "pp_points": player.pp_points,
-                "gwg":       player.gwg,
-                "shots":     player.shots,
-                "shooting_pct": player.shooting_pct,
-                "plus_minus": player.plus_minus,
-                "toi_mmss":  player.toi_mmss(),
+                "gp":        view.gp(),
+                "goals":     totals.goals,
+                "assists":   totals.assists,
+                "pts":       totals.points,
+                "ppg":       pace.map(|s| s.pace_82 / 82.0),
+                "pts_82":    pace.map(|s| s.pace_82),
+                "goals_82":  pace.map(|s| s.goals_per_82),
+                "pp_goals":  totals.pp_goals,
+                "pp_points": totals.pp_points,
+                "gwg":       totals.gwg,
+                "shots":     view.shots(),
+                "shooting_pct": totals.shooting_pct,
+                "plus_minus": view.plus_minus(),
+                "toi_mmss":  view.toi_mmss(),
             },
             "contract": {
-                "expiry_year": player.contract_expiry_year,
-                "expiry_type": player.expiry_type,
+                "expiry_year": view.contract_expiry_year(),
+                "expiry_type": view.contract_expiry_type(),
             }
         });
         let pretty = serde_json::to_string_pretty(&report)
@@ -152,30 +165,30 @@ pub(crate) fn render_report(
 
     // ── Section 1: Bio ────────────────────────────────────────────────────────
     let _ = writeln!(out, "{}", if md {
-        format!("# Scouting Report — {}", player.full_name)
+        format!("# Scouting Report — {}", view.identity.full_name)
     } else {
-        format!("SCOUTING REPORT — {}", player.full_name)
+        format!("SCOUTING REPORT — {}", view.identity.full_name)
     });
     let _ = writeln!(out, "{sep}");
     let _ = writeln!(out);
     let _ = writeln!(out, "## 1. Bio");
-    let _ = writeln!(out, "  Team:         {} ({})", player.team.as_str(),
-        if md { format!("*{}*", player.team.as_str()) } else { player.team.as_str().to_owned() });
-    let _ = writeln!(out, "  Position:     {:?}", player.position);
-    let _ = writeln!(out, "  Age:          {}", age);
-    let _ = writeln!(out, "  Nationality:  {}", player.nationality_code.as_deref().unwrap_or("—"));
-    let _ = writeln!(out, "  Draft:        {}", draft);
-    let _ = writeln!(out, "  Handedness:   {}", player.shoots_catches.as_deref().unwrap_or("—"));
+    let _ = writeln!(out, "  Team:         {} ({})", team_str,
+        if md { format!("*{team_str}*") } else { team_str.to_owned() });
+    let _ = writeln!(out, "  Position:     {:?}", view.position());
+    let _ = writeln!(out, "  Age:          {age}");
+    let _ = writeln!(out, "  Nationality:  {}", bio.nationality_code.as_deref().unwrap_or("—"));
+    let _ = writeln!(out, "  Draft:        {draft}");
+    let _ = writeln!(out, "  Handedness:   {}", bio.shoots_catches.as_deref().unwrap_or("—"));
 
     // ── Section 2: Current season stats ──────────────────────────────────────
     let _ = writeln!(out);
     let _ = writeln!(out, "## 2. Current Season");
-    if let Some(s) = player.pace_score {
+    if let Some(s) = pace {
         let ppg  = s.pace_82 / 82.0;
         let gpg  = s.goals_per_82 / 82.0;
         let _ = writeln!(out, "  GP:           {}", s.gp);
-        let _ = writeln!(out, "  G:            {}  →  {:.0}/82", player.season_goals, s.goals_per_82);
-        let _ = writeln!(out, "  A:            {}  →  {:.0}/82", player.season_assists, s.pace_82 - s.goals_per_82);
+        let _ = writeln!(out, "  G:            {}  →  {:.0}/82", totals.goals, s.goals_per_82);
+        let _ = writeln!(out, "  A:            {}  →  {:.0}/82", totals.assists, s.pace_82 - s.goals_per_82);
         let _ = writeln!(out, "  PPG:          {ppg:.3} pts/gp");
         let _ = writeln!(out, "  G/gp:         {gpg:.3}");
         let _ = writeln!(out, "  Proj/82g:     {:.1}", s.pace_82);
@@ -212,20 +225,20 @@ pub(crate) fn render_report(
     // ── Section 4: Peer group rank ────────────────────────────────────────────
     let _ = writeln!(out);
     let _ = writeln!(out, "## 4. Peer Group Rank");
-    let draft_year = player.draft_year.unwrap_or(0);
+    let draft_year = bio.draft_year.unwrap_or(0);
     if draft_year > 0 {
-        let peers: Vec<_> = all_players.iter()
-            .filter(|p| {
-                p.position == player.position &&
-                p.draft_year.map(|y| (y as i32 - draft_year as i32).abs() <= 1).unwrap_or(false) &&
-                p.pace_score.is_some()
+        let peers: Vec<_> = all_views.iter()
+            .filter(|v| {
+                v.position() == view.position() &&
+                v.identity.bio.draft_year.map(|y| (y as i32 - draft_year as i32).abs() <= 1).unwrap_or(false) &&
+                v.pace_score().is_some()
             })
             .collect();
+        let my_pace = pace.map(|s| s.pace_82).unwrap_or(0.0);
         let rank = peers.iter()
-            .filter(|p| p.pace_score.map(|s| s.pace_82).unwrap_or(0.0) >
-                player.pace_score.map(|s| s.pace_82).unwrap_or(0.0))
+            .filter(|v| v.pace_82().unwrap_or(0.0) > my_pace)
             .count() + 1;
-        let _ = writeln!(out, "  Draft class:  {} ± 1 year, {:?}", draft_year, player.position);
+        let _ = writeln!(out, "  Draft class:  {} ± 1 year, {:?}", draft_year, view.position());
         let _ = writeln!(out, "  Peer count:   {}", peers.len());
         let _ = writeln!(out, "  Peer rank:    #{rank} of {}", peers.len());
         let pct = if peers.len() > 1 { 100 - (rank * 100 / peers.len()) } else { 100 };
@@ -243,35 +256,40 @@ pub(crate) fn render_report(
     let _ = writeln!(out, "## 5. Linemates");
     let _ = writeln!(out,
         "  Run `icelines fetch shifts` then `icelines mates {}` for shift-based linemate data.",
-        player.full_name.split_whitespace().last().unwrap_or(&player.full_name));
-    let teammates: Vec<_> = all_players.iter()
-        .filter(|p| p.team == player.team && p.position == player.position
-            && p.name_normalized != player.name_normalized && p.pace_score.is_some())
+        view.identity.full_name.split_whitespace().last().unwrap_or(&view.identity.full_name));
+    let teammates: Vec<_> = all_views.iter()
+        .filter(|v| v.team_display() == team_str
+            && v.position() == view.position()
+            && v.identity.name_normalized != view.identity.name_normalized
+            && v.pace_score().is_some())
         .take(3).collect();
     let _ = writeln!(out, "  Same-team same-position players:");
     for t in &teammates {
-        let ppg = t.pace_score.map(|s| format!("{:.2}", s.pace_82/82.0)).unwrap_or_else(|| "—".to_owned());
-        let _ = writeln!(out, "    {} ({} pts/gp)", t.full_name, ppg);
+        let ppg = t.pace_82().map(|p| format!("{:.2}", p / 82.0)).unwrap_or_else(|| "—".to_owned());
+        let _ = writeln!(out, "    {} ({} pts/gp)", t.identity.full_name, ppg);
     }
 
     // ── Section 6: Depth chart position ──────────────────────────────────────
     let _ = writeln!(out);
     let _ = writeln!(out, "## 6. Depth Chart Position");
-    let same_pos: Vec<_> = all_players.iter()
-        .filter(|p| p.team == player.team && p.position == player.position && p.pace_score.is_some())
+    let same_pos: Vec<_> = all_views.iter()
+        .filter(|v| v.team_display() == team_str
+            && v.position() == view.position()
+            && v.pace_score().is_some())
         .collect();
+    let my_pace = pace.map(|s| s.pace_82).unwrap_or(0.0);
     let rank_on_team = same_pos.iter()
-        .filter(|p| p.pace_score.map(|s| s.pace_82).unwrap_or(0.0) >
-            player.pace_score.map(|s| s.pace_82).unwrap_or(0.0))
+        .filter(|v| v.pace_82().unwrap_or(0.0) > my_pace)
         .count() + 1;
     let _ = writeln!(out, "  Line {} {:?} on {} (#{rank_on_team} of {} {:?}s)",
-        rank_on_team, player.position, player.team.as_str(),
-        same_pos.len(), player.position);
+        rank_on_team, view.position(), team_str,
+        same_pos.len(), view.position());
 
     // ── Section 7: Cross-team value ───────────────────────────────────────────
     let _ = writeln!(out);
     let _ = writeln!(out, "## 7. Cross-Team Value");
-    if let Some(m) = metrics.iter().find(|m| m.player_nhl_id == player.nhl_id) {
+    let pid = view.identity.id.0;
+    if let Some(m) = metrics.iter().find(|m| m.player_nhl_id == Some(pid)) {
         let _ = writeln!(out, "  Own line:      #{}", m.own_line);
         let _ = writeln!(out, "  Avg elsewhere: L{:.2}", m.avg_other_line);
         let _ = writeln!(out, "  Delta:         {:+.2}", m.delta);
@@ -289,7 +307,7 @@ pub(crate) fn render_report(
     // ── Section 8: Fit interpretation ────────────────────────────────────────
     let _ = writeln!(out);
     let _ = writeln!(out, "## 8. Fit Interpretation");
-    if let Some(s) = player.pace_score {
+    if let Some(s) = pace {
         let age_n: u8 = age.parse().unwrap_or(27);
         let proj = compute_projection(s.pace_82/82.0, None, s.gp, age_n, 20, ProjectionMode::Regressed);
         let _ = writeln!(out, "  Regressed projection (next 20 games): {:.1} pts", proj.projected_points);
@@ -312,75 +330,57 @@ pub(crate) fn render_report(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use icelines_core::model::{GpStatus, PaceScore, Player, Position, TeamAbbr};
+    use icelines_core::{
+        fixtures,
+        identity::PlayerId,
+        stats_repository::StatsRepository,
+    };
 
-    /// Build a Player fixture with all fields populated (modeled on
-    /// `make_test_player` in icelines-core::model::tests).
-    fn fixture_player() -> Player {
-        Player {
-            nhl_id: Some(8478402),
-            full_name: "Test Skater".to_owned(),
-            name_normalized: "test_skater".to_owned(),
-            team: TeamAbbr("EDM".to_owned()),
-            position: Position::Center,
-            eligible_pos: vec![Position::Center],
-            gp_status: GpStatus::Eligible(60),
-            season_goals: 30,
-            season_assists: 50,
-            season_points: 80,
-            pace_score: Some(PaceScore {
-                pace_82: 109.3,    // > 80 → elite-tier branch
-                goals_per_82: 41.0,
-                raw_points: 80,
-                gp: 60,
-            }),
-            pp_goals: 12,
-            pp_points: 22,
-            sh_goals: 1,
-            sh_points: 2,
-            gwg: 5,
-            ot_goals: 1,
-            shots: 200,
-            shooting_pct: Some(0.15),
-            plus_minus: 14,
-            toi_per_game_sec: Some(1240.0),
-            faceoff_win_pct: Some(0.51),
-            hits: 80,
-            blocked_shots: 35,
-            missed_shots: 30,
-            giveaways: 22,
-            takeaways: 38,
-            pim: 18,
-            xg: None, xg_per_60: None, cf_pct_5v5: None,
-            ff_pct_5v5: None, xgf_pct_5v5: None,
-            headshot_url: None,
-            sweater_number: Some(97),
-            birth_date: Some("1997-01-13".to_owned()),
-            birth_country: Some("CAN".to_owned()),
-            nationality_code: Some("CAN".to_owned()),
-            birth_city: Some("Edmonton".to_owned()),
-            birth_state_province: Some("AB".to_owned()),
-            shoots_catches: Some("L".to_owned()),
-            height_in_inches: Some(73),
-            weight_lbs: Some(193),
-            draft_year: Some(2015),
-            draft_round: Some(1),
-            draft_overall: Some(1),
-            rookie_season: None,
-            contract_expiry_year: None,
-            expiry_type: None,
-            salary: None,
-        }
+    /// Build a one-skater repo at McDavid's 2022-23 fixture defaults.
+    /// Pace_82 = 93.7 → > 80 elite-tier branch in section 8.
+    fn fixture_repo() -> (StatsRepository, PlayerId, Season, SeasonType) {
+        let id = fixtures::identity(8478402).build();
+        let stats = fixtures::stats(8478402, 20242025, "EDM").build();
+        let repo = fixtures::test_repo_with(id, stats);
+        (
+            repo,
+            PlayerId(8478402),
+            Season(20242025),
+            SeasonType::Regular,
+        )
     }
 
-    fn fixture_low_gp_player() -> Player {
-        let mut p = fixture_player();
-        p.gp_status = GpStatus::BelowThreshold(3);
-        p.pace_score = None;          // triggers the "not enough data" branch
-        p.season_goals = 1;
-        p.season_assists = 2;
-        p.season_points = 3;
-        p
+    /// A second fixture: same identity but stats with GP=3 (below MIN_GP)
+    /// so pace_score is None — exercises the "not enough data" branch.
+    fn fixture_repo_low_gp() -> (StatsRepository, PlayerId, Season, SeasonType) {
+        let id = fixtures::identity(8478402).build();
+        // Build a custom stats with low GP and no pace_score.
+        let totals = icelines_core::season_stats::StatTotals {
+            gp: 3, goals: 1, assists: 2, points: 3,
+            ..Default::default()
+        };
+        let stint = icelines_core::season_stats::TeamStint {
+            team: icelines_core::TeamAbbr("EDM".into()),
+            started: Some("2024-10-15".into()),
+            ended: Some("2024-10-30".into()),
+            gp: 3, goals: 1, assists: 2, points: 3, goalie: None,
+        };
+        let stats = icelines_core::season_stats::SeasonStatsBuilder::new(
+            PlayerId(8478402),
+            Season(20242025),
+            SeasonType::Regular,
+            icelines_core::Position::Center,
+        )
+        .with_totals(totals)
+        .add_team_stint(stint)
+        .build();
+        let repo = fixtures::test_repo_with(id, stats);
+        (
+            repo,
+            PlayerId(8478402),
+            Season(20242025),
+            SeasonType::Regular,
+        )
     }
 
     // ── validate_format ──────────────────────────────────────────────────────
@@ -399,7 +399,6 @@ mod tests {
         assert_eq!(validate_format("terminal").unwrap(), "terminal");
         assert_eq!(validate_format("markdown").unwrap(), "markdown");
         assert_eq!(validate_format("json").unwrap(), "json");
-        // Case-insensitive
         assert_eq!(validate_format("JSON").unwrap(), "json");
         assert_eq!(validate_format("Terminal").unwrap(), "terminal");
     }
@@ -408,47 +407,45 @@ mod tests {
 
     #[test]
     fn l0_format_terminal_includes_all_eight_sections() {
-        let p = fixture_player();
-        let out = render_report(&p, std::slice::from_ref(&p), None, &[], "terminal");
+        let (repo, pid, s, t) = fixture_repo();
+        let view = repo.view(pid, s, t).unwrap();
+        let out = render_report(&view, std::slice::from_ref(&view), None, &[], "terminal");
         for n in 1..=8 {
             let header = format!("## {n}.");
             assert!(out.contains(&header), "section header '{header}' missing in:\n{out}");
         }
-        // Terminal mode uses the unicode separator, not '---'
         assert!(out.contains("─"), "terminal separator missing");
         assert!(!out.starts_with("# "), "terminal must not start with markdown H1");
     }
 
     #[test]
     fn l0_format_markdown_uses_h2_headings() {
-        let p = fixture_player();
-        let out = render_report(&p, std::slice::from_ref(&p), None, &[], "markdown");
+        let (repo, pid, s, t) = fixture_repo();
+        let view = repo.view(pid, s, t).unwrap();
+        let out = render_report(&view, std::slice::from_ref(&view), None, &[], "markdown");
         assert!(out.starts_with("# Scouting Report"), "markdown H1 missing, got start: {}", &out[..40.min(out.len())]);
         assert!(out.contains("---"), "markdown horizontal rule missing");
         for n in 1..=8 {
             assert!(out.contains(&format!("## {n}.")), "section {n} heading missing");
         }
-        // Italic team annotation only in markdown
         assert!(out.contains("*EDM*"), "markdown italic team marker missing");
     }
 
     #[test]
     fn l0_format_json_has_section_keys() {
-        let p = fixture_player();
-        let out = render_report(&p, std::slice::from_ref(&p), None, &[], "json");
-        // Must be valid JSON
+        let (repo, pid, s, t) = fixture_repo();
+        let view = repo.view(pid, s, t).unwrap();
+        let out = render_report(&view, std::slice::from_ref(&view), None, &[], "json");
         let v: serde_json::Value = serde_json::from_str(out.trim())
             .expect("render_report json output must parse as JSON");
-        // Top-level keys
         for k in &["player", "team", "position", "age", "draft", "current_season", "contract"] {
             assert!(v.get(*k).is_some(), "JSON missing key '{k}'");
         }
-        // Nested current_season keys
         let cs = v.get("current_season").unwrap();
         for k in &["gp", "goals", "assists", "pts", "ppg", "pts_82", "shots"] {
             assert!(cs.get(*k).is_some(), "current_season missing '{k}'");
         }
-        assert_eq!(v["player"], "Test Skater");
+        assert_eq!(v["player"], "Connor McDavid");
         assert_eq!(v["team"], "EDM");
     }
 
@@ -456,23 +453,22 @@ mod tests {
 
     #[test]
     fn l0_low_gp_skips_current_season_numerics() {
-        let p = fixture_low_gp_player();
-        let out = render_report(&p, std::slice::from_ref(&p), None, &[], "terminal");
-        // Section 2 header still present
+        let (repo, pid, s, t) = fixture_repo_low_gp();
+        let view = repo.view(pid, s, t).unwrap();
+        let out = render_report(&view, std::slice::from_ref(&view), None, &[], "terminal");
         assert!(out.contains("## 2. Current Season"));
-        // But the content is the "not enough data" message, not numeric stats
         assert!(out.contains("not enough data"),
             "low-GP message missing, got:\n{out}");
-        // Numeric labels must be absent (no "PPG:", "G/gp:" etc.)
         assert!(!out.contains("PPG:"), "PPG label must be skipped for low-GP player");
         assert!(!out.contains("Proj/82g:"), "projection label must be skipped for low-GP player");
     }
 
     #[test]
     fn l0_render_report_returns_non_empty() {
-        let p = fixture_player();
+        let (repo, pid, s, t) = fixture_repo();
+        let view = repo.view(pid, s, t).unwrap();
         for fmt in &["terminal", "markdown", "json"] {
-            let out = render_report(&p, std::slice::from_ref(&p), None, &[], fmt);
+            let out = render_report(&view, std::slice::from_ref(&view), None, &[], fmt);
             assert!(!out.trim().is_empty(), "format '{fmt}' produced empty output");
         }
     }
