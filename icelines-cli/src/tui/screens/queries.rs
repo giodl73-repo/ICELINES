@@ -9,6 +9,7 @@ use icelines_core::{
     filter::PlayerFilter,
     model::{Player, Position},
     position::PositionResolver,
+    stats_repository::PlayerView,
 };
 
 // ── Field definitions ─────────────────────────────────────────────────────────
@@ -117,6 +118,107 @@ fn display_val(p: &Player, sort: &str) -> String {
         "assists"     => p.season_assists.to_string(),
         "gp"          => p.gp().map(|g| g.to_string()).unwrap_or_else(|| "—".to_owned()),
         _             => p.pace_score.map(|s| format!("{:.1}", s.pace_82)).unwrap_or_else(|| "—".to_owned()),
+    }
+}
+
+/// Hart.5c.6 Phase B-3.3 — view-based parallel to run_query. Same
+/// filter/sort/limit pipeline, but operates on `PlayerView<'_>` slices
+/// via `PlayerFilter::apply_views`.
+pub fn run_query_views<'a>(
+    views: &'a [PlayerView<'a>],
+    fields: &[QueryField],
+) -> Vec<(usize, PlayerView<'a>)> {
+    let sort  = fields[0].value();
+    let pos   = fields[1].value();
+    let top: usize = fields[9].value().parse().unwrap_or(20);
+
+    let mut filter = PlayerFilter::new();
+
+    if pos != "all" {
+        if pos == "F" {
+            filter.positions = Some(vec![Position::Center, Position::LeftWing, Position::RightWing]);
+        } else if let Ok((primary, _)) = PositionResolver::parse(pos) {
+            filter.positions = Some(vec![primary]);
+        }
+    }
+    filter.age_max = parse_opt(fields[2].value());
+    filter.age_min = parse_opt(fields[3].value());
+    filter.gp_min  = parse_opt(fields[4].value());
+    filter.nationalities = if fields[5].value() == "any" { None } else { Some(vec![fields[5].value().to_uppercase()]) };
+    filter.draft_years   = parse_opt::<u16>(fields[6].value()).map(|y| vec![y]);
+    filter.draft_rounds  = parse_opt::<u8>(fields[7].value()).map(|r| vec![r]);
+
+    // Bypass apply_views — its `&'a self` ties the return lifetime to
+    // the local filter. matches_view takes &self by value so we can
+    // hold the longer view lifetime intact.
+    let mut matched: Vec<PlayerView<'a>> = views
+        .iter()
+        .cloned()
+        .filter(|v| filter.matches_view(v))
+        .collect();
+    matched.sort_by(|a, b| {
+        sort_val_view(b, sort)
+            .partial_cmp(&sort_val_view(a, sort))
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+
+    matched.into_iter().take(top).enumerate().map(|(i, v)| (i + 1, v)).collect()
+}
+
+fn sort_val_view(v: &PlayerView<'_>, sort: &str) -> f64 {
+    let totals = &v.stats.totals;
+    match sort {
+        "pts-pace" | "ppg" => v.pace_82().unwrap_or(0.0),
+        "g-pace" | "gpg"   => totals.pace_score.as_ref().map(|s| s.goals_per_82).unwrap_or(0.0),
+        "pp-pts-pace"      => v.pp_points_per_82().unwrap_or(0.0),
+        "pp-g-pace"        => v.pp_goals_per_82().unwrap_or(0.0),
+        "sh-g-pace"        => v.sh_goals_per_82().unwrap_or(0.0),
+        "shots-pace"       => v.shots_per_82().unwrap_or(0.0),
+        "sh-pct"           => totals.shooting_pct.map(f64::from).unwrap_or(0.0),
+        "plus-minus"       => v.plus_minus() as f64,
+        "toi"              => totals.toi_per_game_sec.unwrap_or(0) as f64,
+        "fo-pct"           => totals.faceoff_win_pct.map(f64::from).unwrap_or(0.0),
+        "hits-pace"        => v.hits_per_82().unwrap_or(0.0),
+        "blocks-pace"      => v.blocked_shots_per_82().unwrap_or(0.0),
+        "xg"               => v.xg().unwrap_or(0.0),
+        "cf-pct" => v
+            .stats
+            .advanced
+            .as_ref()
+            .and_then(|a| a.cf_pct)
+            .unwrap_or(50.0),
+        "xgf-pct" => v
+            .stats
+            .advanced
+            .as_ref()
+            .and_then(|a| a.xgf_pct)
+            .unwrap_or(50.0),
+        "pts"              => totals.points as f64,
+        "goals"            => totals.goals as f64,
+        "assists"          => totals.assists as f64,
+        "gp"               => v.gp() as f64,
+        _                  => v.pace_82().unwrap_or(0.0),
+    }
+}
+
+fn display_val_view(v: &PlayerView<'_>, sort: &str) -> String {
+    let totals = &v.stats.totals;
+    match sort {
+        "pts-pace"    => v.pace_82().map(|p| format!("{:.1}", p)).unwrap_or_else(|| "—".to_owned()),
+        "ppg"         => v.pace_82().map(|p| format!("{:.3}", p / 82.0)).unwrap_or_else(|| "—".to_owned()),
+        "g-pace"      => totals.pace_score.as_ref().map(|s| format!("{:.1}", s.goals_per_82)).unwrap_or_else(|| "—".to_owned()),
+        "pp-pts-pace" => v.pp_points_per_82().map(|x| format!("{:.1}", x)).unwrap_or_else(|| "—".to_owned()),
+        "pp-g-pace"   => v.pp_goals_per_82().map(|x| format!("{:.1}", x)).unwrap_or_else(|| "—".to_owned()),
+        "sh-pct"      => totals.shooting_pct.map(|x| format!("{:.1}%", x)).unwrap_or_else(|| "—".to_owned()),
+        "plus-minus"  => if v.plus_minus() >= 0 { format!("+{}", v.plus_minus()) } else { v.plus_minus().to_string() },
+        "toi"         => v.toi_mmss().unwrap_or_else(|| "—".to_owned()),
+        "xg"          => v.xg().map(|x| format!("{:.2}", x)).unwrap_or_else(|| "—".to_owned()),
+        "cf-pct"      => v.stats.advanced.as_ref().and_then(|a| a.cf_pct).map(|x| format!("{:.1}%", x)).unwrap_or_else(|| "—".to_owned()),
+        "pts"         => totals.points.to_string(),
+        "goals"       => totals.goals.to_string(),
+        "assists"     => totals.assists.to_string(),
+        "gp"          => if v.gp() > 0 { v.gp().to_string() } else { "—".to_owned() },
+        _             => v.pace_82().map(|p| format!("{:.1}", p)).unwrap_or_else(|| "—".to_owned()),
     }
 }
 
@@ -279,12 +381,14 @@ fn render_results(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
     let inner = block.inner(area);
     f.render_widget(block, area);
 
-    if app.players.is_empty() {
+    // Hart.5c.6 Phase B-3.3: collect views, run view-based query.
+    let views = app.views();
+    if views.is_empty() {
         f.render_widget(Paragraph::new(vec![Line::from("  Loading…")]), inner);
         return;
     }
 
-    let results = run_query(&app.players, &app.query_fields);
+    let results = run_query_views(&views, &app.query_fields);
     let top: usize = app.query_fields[9].value().parse().unwrap_or(20);
     let clabel = col_label(sort);
     let dim = Style::default().fg(Color::DarkGray);
@@ -297,9 +401,9 @@ fn render_results(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
         Line::styled(format!("  {}", "─".repeat(48)), dim),
     ];
 
-    for (rank, p) in results.iter().skip(offset).take(visible) {
-        let name  = p.full_name.chars().take(22).collect::<String>();
-        let value = display_val(p, sort);
+    for (rank, v) in results.iter().skip(offset).take(visible) {
+        let name  = v.full_name().chars().take(22).collect::<String>();
+        let value = display_val_view(v, sort);
         let is_selected = offset + (lines.len() - 2) == app.query_result_scroll + app.selected.min(visible.saturating_sub(1));
         let style = if is_selected {
             Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
@@ -309,7 +413,14 @@ fn render_results(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
             Style::default()
         };
         lines.push(Line::styled(
-            format!("  {:<4} {:<22} {:<5} {:<4} {:>8}", rank, name, p.team.as_str(), p.position.abbreviation(), value),
+            format!(
+                "  {:<4} {:<22} {:<5} {:<4} {:>8}",
+                rank,
+                name,
+                v.team_display(),
+                v.position().abbreviation(),
+                value,
+            ),
             style,
         ));
     }

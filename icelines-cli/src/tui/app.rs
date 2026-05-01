@@ -456,8 +456,9 @@ impl App {
                     self.playoffs_series = self.playoffs_series.saturating_add(1);
                 } else if self.screen == Screen::Queries {
                     if self.query_results_focused {
-                        let results = crate::tui::screens::queries::run_query(
-                            &self.players,
+                        let views = self.views();
+                        let results = crate::tui::screens::queries::run_query_views(
+                            &views,
                             &self.query_fields,
                         );
                         let visible: usize = 20;
@@ -1423,12 +1424,11 @@ impl App {
                 .map(|i| (i.name_normalized.clone(), i.full_name.clone())),
 
             Screen::Team(abbrev) => {
-                let abbrev = abbrev.clone();
-                self.players
-                    .iter()
-                    .filter(|p| p.team.as_str() == abbrev.as_str())
+                let team_abbr = icelines_core::model::TeamAbbr(abbrev.clone());
+                self.team_views(&team_abbr)
+                    .into_iter()
                     .nth(self.selected)
-                    .map(|p| (p.name_normalized.clone(), p.full_name.clone()))
+                    .map(|v| (v.identity.name_normalized.clone(), v.full_name().to_owned()))
             }
 
             Screen::Projections => {
@@ -1460,26 +1460,31 @@ impl App {
             }
 
             Screen::Queries => {
-                let results =
-                    crate::tui::screens::queries::run_query(&self.players, &self.query_fields);
+                // Hart.5c.6 Phase B-3.3: queries runs against views now.
+                let views = self.views();
+                let results = crate::tui::screens::queries::run_query_views(
+                    &views,
+                    &self.query_fields,
+                );
                 let row_idx =
                     self.query_result_scroll + self.selected.min(results.len().saturating_sub(1));
                 results
                     .get(row_idx)
-                    .map(|(_, p)| (p.name_normalized.clone(), p.full_name.clone()))
+                    .map(|(_, v)| (v.identity.name_normalized.clone(), v.full_name().to_owned()))
             }
 
             Screen::GroupDetail(group_name) => {
                 let gn = group_name.clone();
+                let views = self.views();
                 crate::db::GroupDb::open()
                     .ok()
                     .and_then(|db| db.list_members(&gn).ok())
                     .and_then(|members| {
                         members.get(self.selected).cloned().and_then(|norm| {
-                            self.players
+                            views
                                 .iter()
-                                .find(|p| p.name_normalized.contains(&norm))
-                                .map(|p| (p.name_normalized.clone(), p.full_name.clone()))
+                                .find(|v| v.identity.name_normalized.contains(&norm))
+                                .map(|v| (v.identity.name_normalized.clone(), v.full_name().to_owned()))
                         })
                     })
             }
@@ -1612,25 +1617,19 @@ impl App {
                     }
                     QueryMode::Build => {
                         // Enter on a result row → player card. Hart.5c.6
-                        // Phase B-2 step 2: queries still runs against
-                        // legacy `&self.players` (Phase B-3 migrates
-                        // queries.rs); the resulting `p.nhl_id` is the
-                        // bridge — we wrap it in PlayerId and navigate
-                        // through the new variant.
-                        let results = crate::tui::screens::queries::run_query(
-                            &self.players,
+                        // Phase B-3.3: queries runs against views now.
+                        let views = self.views();
+                        let results = crate::tui::screens::queries::run_query_views(
+                            &views,
                             &self.query_fields,
                         );
                         let row_idx = self.query_result_scroll
                             + self.selected.min(results.len().saturating_sub(1));
-                        if let Some((_, p)) = results.get(row_idx) {
-                            if let Some(nhl_id) = p.nhl_id {
-                                self.prev_screen = Some(self.screen.clone());
-                                self.screen = Screen::PlayerById(
-                                    icelines_core::identity::PlayerId(nhl_id),
-                                );
-                                self.selected = 0;
-                            }
+                        if let Some((_, v)) = results.get(row_idx) {
+                            let pid = v.identity.id;
+                            self.prev_screen = Some(self.screen.clone());
+                            self.screen = Screen::PlayerById(pid);
+                            self.selected = 0;
                         }
                     }
                 }
@@ -1681,8 +1680,9 @@ impl App {
                 }
             }
             Screen::Depth => {
-                let strength = icelines_core::cross_team::compute_team_strength(
-                    &self.players,
+                let views = self.views();
+                let strength = icelines_core::cross_team::compute_team_strength_views(
+                    &views,
                     self.depth_mode,
                 );
                 let mut ranked: Vec<String> = strength.keys().cloned().collect();
