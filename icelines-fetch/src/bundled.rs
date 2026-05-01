@@ -50,6 +50,14 @@ static GOALIES_20232024: &[u8] = season_bytes!("20232024", "goalie-stats.json");
 static GOALIES_20222023: &[u8] = season_bytes!("20222023", "goalie-stats.json");
 static GOALIES_20212022: &[u8] = season_bytes!("20212022", "goalie-stats.json");
 
+// Transactions — Phases T.3 + T.6. All five bundled seasons captured from
+// ESPN's site.api via `cargo run --example probe_espn_seasons -- --write-bundle`.
+static TRANSACTIONS_20252026: &[u8] = season_bytes!("20252026", "transactions.json");
+static TRANSACTIONS_20242025: &[u8] = season_bytes!("20242025", "transactions.json");
+static TRANSACTIONS_20232024: &[u8] = season_bytes!("20232024", "transactions.json");
+static TRANSACTIONS_20222023: &[u8] = season_bytes!("20222023", "transactions.json");
+static TRANSACTIONS_20212022: &[u8] = season_bytes!("20212022", "transactions.json");
+
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /// List of bundled seasons, newest first.
@@ -106,6 +114,83 @@ pub fn get_goalie_stats_installed(season_id: &str) -> Option<Vec<GoalieStats>> {
     let path = season_bundle_dir(season_id)?.join("goalie-stats.json");
     let text = std::fs::read_to_string(path).ok()?;
     serde_json::from_str(&text).ok()
+}
+
+// ── Transactions (Phase T.3) ─────────────────────────────────────────────────
+
+/// On-disk envelope for `transactions.json`. Includes provenance
+/// (`source`, `fetched_at`, `classifier_version`) so a stale snapshot
+/// can be re-classified on load without re-fetching.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct TransactionsEnvelope {
+    pub season:             String,
+    pub source:             String,
+    pub fetched_at:         String,
+    pub classifier_version: u16,
+    pub rows:               Vec<icelines_core::Transaction>,
+}
+
+/// Read embedded transactions for a bundled season. Returns None for any
+/// season not in the include_bytes! set.
+pub fn get_transactions(season: &str) -> Option<TransactionsEnvelope> {
+    let bytes = match season {
+        "20252026" => TRANSACTIONS_20252026,
+        "20242025" => TRANSACTIONS_20242025,
+        "20232024" => TRANSACTIONS_20232024,
+        "20222023" => TRANSACTIONS_20222023,
+        "20212022" => TRANSACTIONS_20212022,
+        _          => return None,
+    };
+    serde_json::from_slice(bytes).ok()
+}
+
+/// Read transactions from an installed season bundle (~/.icelines/seasons/...).
+pub fn get_transactions_installed(season_id: &str) -> Option<TransactionsEnvelope> {
+    let path = season_bundle_dir(season_id)?.join("transactions.json");
+    let text = std::fs::read_to_string(path).ok()?;
+    serde_json::from_str(&text).ok()
+}
+
+/// Resolve transactions: legacy snapshot → embedded → installed bundle.
+/// On load, any row whose `classifier_version < CURRENT_CLASSIFIER_VERSION`
+/// is re-classified against `description` so bundled snapshots and live
+/// data never disagree on `kind`. Forward-compat: rows with a higher
+/// version are left alone.
+pub fn load_transactions_with_fallback(
+    season: &str,
+    store: &crate::snapshot::SnapshotStore,
+) -> Result<TransactionsEnvelope, FetchError> {
+    use icelines_core::transactions::CURRENT_CLASSIFIER_VERSION;
+
+    let mut envelope = if let Ok(env) = store.read_tier::<TransactionsEnvelope>(
+        &crate::snapshot::SnapshotTier::Stats, "transactions.json",
+    ) {
+        env
+    } else if let Some(env) = get_transactions(season) {
+        env
+    } else if let Some(env) = get_transactions_installed(season) {
+        env
+    } else {
+        return Err(FetchError::PlayerNotFound {
+            name: format!("no transactions for season {season} — run `icelines fetch transactions`"),
+        });
+    };
+
+    // Re-classification on stale envelope. Only when ALL rows look stale
+    // (`envelope.classifier_version < CURRENT`) — that's the fast path.
+    // Mixed-version envelopes (some rows from a partial fetch) re-classify
+    // per row.
+    if envelope.classifier_version < CURRENT_CLASSIFIER_VERSION {
+        for row in &mut envelope.rows {
+            if row.classifier_version < CURRENT_CLASSIFIER_VERSION {
+                row.kind = icelines_core::classify(&row.description);
+                row.classifier_version = CURRENT_CLASSIFIER_VERSION;
+            }
+        }
+        envelope.classifier_version = CURRENT_CLASSIFIER_VERSION;
+    }
+
+    Ok(envelope)
 }
 
 /// Resolve goalie stats: chunked snapshot → legacy snapshot → embedded
