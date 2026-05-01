@@ -78,7 +78,11 @@ pub enum QueryMode {
 pub enum Screen {
     Home,
     Team(String),  // team abbreviation
-    Player(usize), // index into loaded players
+    Player(usize), // index into loaded players (legacy)
+    /// Hart.5c.6 Phase B-2: PlayerId-keyed player card. Replaces
+    /// `Player(usize)` once enter handlers migrate. D6 auto-pop UX:
+    /// renderer shows a placeholder if pid isn't in the active window.
+    PlayerById(PlayerId),
     Search,
     Tonight,
     Projections,
@@ -1399,8 +1403,8 @@ impl App {
             match &self.screen {
                 Screen::DepthTeam(_) => Screen::Depth,
                 Screen::Team(_) => Screen::Home,
-                Screen::Player(_) => Screen::Home,
-                Screen::Comps(_) => Screen::Home,
+                Screen::Player(_) | Screen::PlayerById(_) => Screen::Home,
+                Screen::Comps(_) | Screen::CompsById(_) => Screen::Home,
                 Screen::GroupDetail(_) => Screen::Groups,
                 Screen::ScheduleTeam(_) => Screen::Schedule,
                 Screen::ScheduleMatchup(..) => Screen::Schedule,
@@ -1766,7 +1770,8 @@ impl App {
         //   League → Depth → Queries → Goalies → Scores → Schedule
         //   → Transactions → Playoffs → League
         let next = match &self.screen {
-            Screen::Home | Screen::Team(_) | Screen::Player(_) | Screen::Comps(_) => Screen::Depth,
+            Screen::Home | Screen::Team(_) | Screen::Player(_) | Screen::PlayerById(_)
+            | Screen::Comps(_) | Screen::CompsById(_) => Screen::Depth,
             Screen::Depth | Screen::DepthTeam(_) => Screen::Queries,
             Screen::Queries | Screen::Projections | Screen::Search => Screen::Goalies,
             Screen::Goalies | Screen::GoalieDetail(_) => Screen::Tonight,
@@ -1791,7 +1796,8 @@ impl App {
     fn cycle_screen_back(&mut self) {
         self.query_results_focused = false;
         let prev = match &self.screen {
-            Screen::Home | Screen::Team(_) | Screen::Player(_) | Screen::Comps(_) => {
+            Screen::Home | Screen::Team(_) | Screen::Player(_) | Screen::PlayerById(_)
+            | Screen::Comps(_) | Screen::CompsById(_) => {
                 Screen::Playoffs
             }
             Screen::Depth | Screen::DepthTeam(_) => Screen::Home,

@@ -33,6 +33,7 @@ pub fn render(f: &mut Frame, app: &App) {
         Screen::Home            => home::render(f, app, chunks[1]),
         Screen::Team(abbrev)    => team::render(f, app, chunks[1], abbrev),
         Screen::Player(idx)     => player::render(f, app, chunks[1], *idx),
+        Screen::PlayerById(pid) => player::render_by_id(f, app, chunks[1], *pid),
         Screen::Search          => search::render(f, app, chunks[1]),
         Screen::Queries         => queries::render(f, app, chunks[1]),
         Screen::Tonight         => misc::render_tonight(f, app, chunks[1]),
@@ -68,7 +69,7 @@ pub fn render(f: &mut Frame, app: &App) {
     if app.group_picker_open {
         // Skip if player/team screen — they render the overlay themselves
         let handled_locally = matches!(app.screen,
-            Screen::Player(_) | Screen::Team(_)
+            Screen::Player(_) | Screen::PlayerById(_) | Screen::Team(_)
         );
         if !handled_locally {
             player::render_group_picker(f, app, area);
@@ -106,7 +107,7 @@ pub fn render(f: &mut Frame, app: &App) {
 
 fn tab_for_screen(screen: &Screen) -> usize {
     match screen {
-        Screen::Home | Screen::Team(_) | Screen::Player(_)
+        Screen::Home | Screen::Team(_) | Screen::Player(_) | Screen::PlayerById(_)
         | Screen::Comps(_) | Screen::CompsById(_)                => 0, // League
         Screen::Depth | Screen::DepthTeam(_)                     => 1, // Depth
         Screen::Queries | Screen::Projections | Screen::Search   => 2, // Stats (default: Queries)
