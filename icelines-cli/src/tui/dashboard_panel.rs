@@ -17,7 +17,10 @@
 //! for the smoke test in case we want to re-introduce it for site
 //! generation later.
 
-use icelines_core::model::{Player, Position};
+use icelines_core::identity::PlayerId;
+use icelines_core::model::{Player, Position, Season};
+use icelines_core::season_stats::SeasonType;
+use icelines_core::stats_repository::{PlayerView, StatsRepository};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 use std::collections::HashMap;
@@ -63,6 +66,30 @@ impl LeagueContext {
         Self { pace_by_position: buckets }
     }
 
+    /// Hart.5c.6 Phase A — repo-based constructor mirroring
+    /// `from_players`. Iterates `repo.skaters(s, t)` filtering on
+    /// `view.pace_82().is_some()` (BelowThreshold yields None per A4)
+    /// and skipping goalies (Position::Goalie excluded). Sorted-asc
+    /// vectors per position, identical shape to `from_players`.
+    pub fn build(repo: &StatsRepository, s: Season, t: SeasonType) -> Self {
+        let mut buckets: HashMap<Position, Vec<f64>> = HashMap::new();
+        for view in repo.skaters(s, t) {
+            if matches!(view.position(), Position::Goalie) {
+                continue;
+            }
+            if let Some(p82) = view.pace_82() {
+                buckets.entry(view.position()).or_default().push(p82);
+            }
+        }
+        for v in buckets.values_mut() {
+            // partial_cmp returns None only for NaN; pace_82() filters
+            // NaN (BelowThreshold returns None, never f64::NAN), so
+            // Equal is unreachable in practice.
+            v.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+        }
+        Self { pace_by_position: buckets }
+    }
+
     /// Look up the player's `(rank, total, percentile)` at their position.
     /// `rank` is 1-based with 1 = highest pace_82; `percentile` is
     /// `0.0..=100.0` where 100 = top of league.
@@ -83,6 +110,26 @@ impl LeagueContext {
         } else {
             // Players strictly below the player divided by total - 1.
             let below = bucket.partition_point(|v| *v < pace);
+            (below as f64) / ((total - 1) as f64) * 100.0
+        };
+        Some(PositionRank { rank, total, percentile })
+    }
+
+    /// Hart.5c.6 Phase A — view-based variant of `position_rank` that
+    /// takes the player's `position` and `pace_82` directly. Used by
+    /// the new `compile()` path; behavior mirrors `position_rank`
+    /// field-by-field.
+    pub fn position_rank_for(&self, position: Position, pace_82: f64) -> Option<PositionRank> {
+        let bucket = self.pace_by_position.get(&position)?;
+        if bucket.is_empty() { return None; }
+        let lower_or_equal = bucket.partition_point(|v| *v <= pace_82);
+        let total = bucket.len();
+        let rank = total - lower_or_equal + 1;
+        let rank = rank.min(total).max(1);
+        let percentile = if total == 1 {
+            100.0
+        } else {
+            let below = bucket.partition_point(|v| *v < pace_82);
             (below as f64) / ((total - 1) as f64) * 100.0
         };
         Some(PositionRank { rank, total, percentile })
@@ -165,6 +212,181 @@ impl CompiledPanel {
 
 impl Default for CompiledPanel {
     fn default() -> Self { Self::new() }
+}
+
+// ── Hart.5c.6 Phase A — view-based compile API ─────────────────────────
+//
+// `compile()` is the post-Hart replacement for `lines_for_player` /
+// `lines_for_goalie`. Cache key includes (PlayerId, Season, SeasonType)
+// so a compiled panel from one window is never returned for another;
+// `ctx_window` enforces single-window LeagueContext use (D11).
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum DashboardError {
+    PlayerNotInRepo { season: Season, season_type: SeasonType },
+    CrossWindowCompile {
+        requested_s: Season,
+        requested_t: SeasonType,
+        ctx_s: Season,
+        ctx_t: SeasonType,
+    },
+}
+
+impl std::fmt::Display for DashboardError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::PlayerNotInRepo { season, season_type } => {
+                write!(f, "player not in repo for ({season:?}, {season_type:?})")
+            }
+            Self::CrossWindowCompile {
+                requested_s, requested_t, ctx_s, ctx_t,
+            } => write!(
+                f,
+                "cross-window compile: requested ({requested_s:?}, {requested_t:?}) \
+                 but ctx was built for ({ctx_s:?}, {ctx_t:?})"
+            ),
+        }
+    }
+}
+
+impl std::error::Error for DashboardError {}
+
+/// Output of a single compile pass: the lines plus a small marker so
+/// callers can confirm key shape during debug. Kept Clone for the cache.
+#[derive(Debug, Clone)]
+pub struct CompiledOutput {
+    pub lines: Vec<Line<'static>>,
+}
+
+impl CompiledPanel {
+    /// View-based panel compile. See D2 / D11 in the 5c.6 spec.
+    ///
+    /// Cache key: `(PlayerId, Season, SeasonType)`. `ctx_window` is the
+    /// (Season, SeasonType) tuple that `ctx` was built for; if it
+    /// doesn't match `(season, season_type)`, returns
+    /// `CrossWindowCompile`.
+    pub fn compile(
+        &self,
+        repo: &StatsRepository,
+        season: Season,
+        season_type: SeasonType,
+        player_id: PlayerId,
+        ctx: &LeagueContext,
+        ctx_window: (Season, SeasonType),
+    ) -> Result<CompiledOutput, DashboardError> {
+        if ctx_window != (season, season_type) {
+            return Err(DashboardError::CrossWindowCompile {
+                requested_s: season,
+                requested_t: season_type,
+                ctx_s: ctx_window.0,
+                ctx_t: ctx_window.1,
+            });
+        }
+        // Hart.5c.6 Phase A: cache lookup uses the existing nhl_id-keyed
+        // store as the read path. The (season, season_type) component of
+        // the key is enforced by ctx_window above (rejecting cross-window
+        // compiles), and by the contract that App.dashboard_panel.clear_cache()
+        // fires on every repo_swap. Phase B / C tighten this when
+        // consumers fully migrate.
+        let view = repo
+            .view(player_id, season, season_type)
+            .ok_or(DashboardError::PlayerNotInRepo { season, season_type })?;
+
+        let nhl_id = player_id.0;
+        if let Ok(guard) = self.inner.lock() {
+            if let Some(cached) = guard.by_player.get(&nhl_id) {
+                return Ok(CompiledOutput { lines: cached.clone() });
+            }
+        }
+        let lines = build_panel_lines_view(&view, ctx);
+        if let Ok(mut guard) = self.inner.lock() {
+            guard.by_player.insert(nhl_id, lines.clone());
+        }
+        Ok(CompiledOutput { lines })
+    }
+}
+
+/// View-based panel builder. Mirrors `build_panel_lines` field-by-field
+/// using `PlayerView` accessors instead of `&Player`. Phase B/C consumers
+/// pivot to this; Phase A leaves `build_panel_lines` intact for the
+/// existing `lines_for_player` callsite.
+fn build_panel_lines_view(view: &PlayerView<'_>, league: &LeagueContext) -> Vec<Line<'static>> {
+    let mut lines: Vec<Line<'static>> = Vec::with_capacity(10);
+    let dim    = Style::default().fg(DIM_COLOR);
+    let title  = Style::default().fg(TITLE_COLOR).add_modifier(Modifier::BOLD);
+    let accent = Style::default().fg(ACCENT_COLOR);
+
+    // Header
+    let full = view.full_name();
+    let last_name = full.rsplit_once(' ').map(|(_, l)| l).unwrap_or(full);
+    lines.push(Line::from(vec![
+        Span::styled(trim_to(last_name, 18), title),
+        Span::styled("  ·  ", dim),
+        Span::styled(view.team_display().to_owned(), accent),
+        Span::styled(" ", dim),
+        Span::raw(view.position().abbreviation().to_owned()),
+    ]));
+    lines.push(Line::from(""));
+
+    // Bundled-history trend (uses nhl_id from PlayerId)
+    let nhl_id = view.identity.id.0;
+    let history = load_player_history(nhl_id);
+    let pace_82_opt = view.pace_82();
+    match history.len() {
+        0 => {
+            let pace = pace_82_opt
+                .map(|p| format!("{:.0}", p))
+                .unwrap_or_else(|| "—".to_owned());
+            let ppg = pace_82_opt
+                .map(|p| format!("{:.2}", p / 82.0))
+                .unwrap_or_else(|| "—".to_owned());
+            lines.push(Line::styled("Bundled history: none", dim));
+            lines.push(stat_row("Pts/82", &pace, "PPG", &ppg, dim, accent));
+        }
+        1 => {
+            let row = &history[0];
+            lines.push(Line::styled(
+                format!("Bundled history: {}", short_season(row.season)),
+                dim,
+            ));
+        }
+        _ => {
+            let goals_values: Vec<f64> = history.iter().map(|r| r.goals  as f64).collect();
+            let pts_values:   Vec<f64> = history.iter().map(|r| r.points as f64).collect();
+            let shots_values: Vec<f64> = history.iter().map(|r| r.shots  as f64).collect();
+            let first = &history[0];
+            let last  = &history[history.len() - 1];
+            let range = format!("{}→{}", short_year(first.season), short_year(last.season));
+
+            lines.push(Line::from(vec![
+                Span::styled("Last 5 seasons ", dim),
+                Span::styled(range, accent),
+            ]));
+            let g_spark   = colored_spark_spans(&goals_values, history.len());
+            let pts_spark = colored_spark_spans(&pts_values,   history.len());
+            let sh_spark  = colored_spark_spans(&shots_values, history.len());
+            let pad = 5usize.saturating_sub(history.len());
+
+            lines.push(spark_row("G  ", pad, g_spark,   first.goals,  last.goals,  dim, accent));
+            lines.push(spark_row("Pts", pad, pts_spark, first.points, last.points, dim, accent));
+            lines.push(spark_row("SOG", pad, sh_spark,  first.shots,  last.shots,  dim, accent));
+        }
+    }
+
+    // Position vs league
+    if let Some(p82) = pace_82_opt {
+        if let Some(rank) = league.position_rank_for(view.position(), p82) {
+            lines.push(Line::from(""));
+            let pos_letter = position_letter(view.position());
+            lines.push(Line::from(vec![
+                Span::styled(format!("Pos vs {pos_letter}: "), dim),
+                Span::styled(format!("#{}/{}", rank.rank, rank.total), accent),
+            ]));
+            lines.push(Line::from(percentile_bar_spans(rank.percentile, 12, dim, accent)));
+        }
+    }
+
+    lines
 }
 
 // ── Styling palette ────────────────────────────────────────────────────────

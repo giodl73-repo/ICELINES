@@ -1,10 +1,21 @@
 //! Background player loading for the TUI.
 //!
 //! Loads all players from bundled/snapshot data without blocking the event loop.
+//!
+//! Hart.5c.6 Phase A: introduces the mpsc-based repo loader
+//! (`spawn_repo_load` + `RepoLoadResult`) alongside the existing
+//! `Arc<Mutex<LoadInner>>` path. The new shape is required because
+//! `LoadOutcome` (containing `StatsRepository`) is `!Send`, so the
+//! background task must run on a `tokio::task::spawn_local` inside a
+//! `LocalSet`. Subsequent phases migrate consumers off the legacy path
+//! and delete it.
 
 use std::sync::{Arc, Mutex};
-use icelines_core::model::{Goalie, Player};
+use icelines_core::model::{Goalie, Player, Season};
+use icelines_core::season_stats::SeasonType;
 use icelines_core::Transaction;
+use icelines_fetch::stats_loader::{LoadOutcome, MissingSource};
+use tokio::sync::mpsc;
 
 /// Per-load transactions bundle. Empty/default when the snapshot is
 /// missing — UI renders the empty legend card in that case.
@@ -118,6 +129,65 @@ pub fn spawn_loader(state: LoadState) {
             }
         }
     });
+}
+
+// ── Hart.5c.6 mpsc repo loader ────────────────────────────────────────────
+//
+// `RepoLoadResult` is the payload sent across the channel from the
+// background load task (running on `LocalSet`) to the TUI event loop.
+// `LoadOutcome` carries `StatsRepository` which is `!Send` — that's why
+// this whole chain runs single-threaded via `spawn_local`.
+
+/// One-shot result delivered by the spawned repo load.
+pub type RepoLoadResult = Result<LoadOutcome, String>;
+
+/// Spawn a `spawn_local` task that calls `load_into_repo(season, ty, store)`
+/// and forwards the result over the returned receiver. The receiver is
+/// `try_recv`-polled from the App's per-tick `poll_repo_load`.
+///
+/// **Must be called inside a `tokio::task::LocalSet`** — `spawn_local`
+/// panics otherwise. The TUI bootstrap pins this requirement.
+pub fn spawn_repo_load(
+    season: Season,
+    season_type: SeasonType,
+    snapshot_dir: std::path::PathBuf,
+) -> mpsc::UnboundedReceiver<RepoLoadResult> {
+    let (tx, rx) = mpsc::unbounded_channel::<RepoLoadResult>();
+    tokio::task::spawn_local(async move {
+        // Run the synchronous loader on the local task. It's I/O-bound
+        // (disk + JSON parse) but at N≈1000 the latency is ~50ms cold,
+        // well within the TUI's 100ms event poll.
+        let store = icelines_fetch::snapshot::SnapshotStore::new(snapshot_dir);
+        let result = icelines_fetch::stats_loader::load_into_repo(season, season_type, &store)
+            .map_err(|e| e.to_string());
+        // App may have moved on (rare); ignore send failures.
+        let _ = tx.send(result);
+    });
+    rx
+}
+
+/// Map a non-empty MissingSource list to a one-line user-facing banner.
+/// Each variant contributes its label; reasons are dropped from the
+/// banner (kept in logs). Banner is intentionally short so it fits in
+/// the TUI status bar.
+pub fn format_missing_sources(missing: &[MissingSource]) -> String {
+    let labels: Vec<&str> = missing
+        .iter()
+        .map(|m| match m {
+            MissingSource::Realtime { .. } => "realtime",
+            MissingSource::MoneyPuck { .. } => "MoneyPuck",
+            MissingSource::Contracts { .. } => "contracts",
+            MissingSource::GoalieStats { .. } => "goalie stats",
+            // MissingSource is #[non_exhaustive]; future variants get a
+            // generic label until format_missing_sources is updated.
+            _ => "other",
+        })
+        .collect();
+    if labels.is_empty() {
+        String::new()
+    } else {
+        format!("Missing data: {}", labels.join(", "))
+    }
 }
 
 /// Best-effort transactions load. Failure to find a snapshot for the

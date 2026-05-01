@@ -1,7 +1,10 @@
 #![allow(dead_code)]
 use crate::tui::event::Action;
-use crate::tui::loader::InstallState;
-use icelines_core::model::Player;
+use crate::tui::loader::{InstallState, RepoLoadResult};
+use icelines_core::identity::PlayerId;
+use icelines_core::model::{Player, Season, TeamAbbr};
+use icelines_core::season_stats::SeasonType;
+use icelines_core::stats_repository::{PlayerView, StatsRepository};
 
 /// Auto-refresh interval for the live Scores tab. Spec: `scores.md` §Auto-Refresh.
 pub(crate) const SCORES_AUTO_REFRESH_INTERVAL: std::time::Duration =
@@ -196,6 +199,31 @@ pub struct App {
     pub tx_search_query: String,
     /// True while the `/` search bar is open and accepting characters.
     pub tx_search_mode: bool,
+
+    // ── Hart.5c.6 Phase A — repo-based view fields (additive) ─────────
+    //
+    // Live alongside `players` / `goalies` for Phase A. Phase B/C
+    // migrate consumers off the legacy fields and remove them. Final
+    // gate: `grep app\.players\|app\.goalies` returns zero hits.
+    /// Post-Hart canonical store. `!Send + !Sync` by construction;
+    /// every async load runs on a `LocalSet`.
+    pub repo: StatsRepository,
+    /// Typed mirror of `active_season` — `Season(YYYYZZZZ)`. The
+    /// String form survives for legacy callers and the season-picker
+    /// UI; the typed form is what `repo.skaters` etc. require.
+    pub active_season_typed: Season,
+    /// Season-type axis (Regular | Playoff). Hart.5c.6 sets this from
+    /// the `y` season picker; today it's always Regular until Hart.6
+    /// lands playoff data.
+    pub active_type: SeasonType,
+    /// Window the current `league_context` was built for (D11 forcing
+    /// function). Set in lockstep with `league_context`; passed into
+    /// `dashboard_panel.compile` so cross-window construction is
+    /// rejected at the boundary.
+    pub league_context_window: (Season, SeasonType),
+    /// Receiver end of the spawn_local-based repo loader. `Some` while
+    /// a load is in flight; `None` after `poll_repo_load` drains it.
+    pub load_rx: Option<tokio::sync::mpsc::UnboundedReceiver<RepoLoadResult>>,
 }
 
 impl App {
@@ -262,7 +290,96 @@ impl App {
             tx_kind_filter: None,
             tx_search_query: String::new(),
             tx_search_mode: false,
+
+            // Hart.5c.6 Phase A — empty repo + current season as the
+            // initial typed window. The mpsc-based loader populates
+            // these via `poll_repo_load` after `spawn_repo_load` fires.
+            repo: StatsRepository::new(),
+            active_season_typed: Season(icelines_core::CURRENT_SEASON),
+            active_type: SeasonType::Regular,
+            league_context_window: (
+                Season(icelines_core::CURRENT_SEASON),
+                SeasonType::Regular,
+            ),
+            load_rx: None,
         }
+    }
+
+    // ── Hart.5c.6 Phase A — view-based accessors ─────────────────────
+    //
+    // Every accessor takes (active_season_typed, active_type) so the
+    // view set always reflects the current time-travel window.
+
+    /// Skater views for the active (season, season_type). O(LRU·N)
+    /// per call; renderers should collect once per frame.
+    pub fn views(&self) -> Vec<PlayerView<'_>> {
+        self.repo
+            .skaters(self.active_season_typed, self.active_type)
+            .collect()
+    }
+
+    /// Goalie views for the active window.
+    pub fn goalie_views(&self) -> Vec<PlayerView<'_>> {
+        self.repo
+            .goalies(self.active_season_typed, self.active_type)
+            .collect()
+    }
+
+    /// Last-stint roster for `team` in the active window. O(1) index
+    /// lookup + O(roster_size ≈ 25) view materialization. Used for
+    /// depth chart and team page (post-trade roster shape).
+    pub fn team_views(&self, team: &TeamAbbr) -> Vec<PlayerView<'_>> {
+        self.repo
+            .team_roster(team, self.active_season_typed, self.active_type)
+    }
+
+    /// All-stints roster for `team` — includes any player who
+    /// played for `team` at any point in the active window. Use when
+    /// mid-season trades should appear on both teams.
+    pub fn team_views_all_stints(&self, team: &TeamAbbr) -> Vec<PlayerView<'_>> {
+        self.repo
+            .team_roster_all_stints(team, self.active_season_typed, self.active_type)
+    }
+
+    /// Per-tick poll of the repo-load channel. On Ok(outcome): swap
+    /// in the new repo, rebuild league_context (and its window field
+    /// per D11), surface MissingSource entries to the status banner.
+    /// On Err(msg): set the load_state error variant. Either way the
+    /// receiver is dropped.
+    pub fn poll_repo_load(&mut self) {
+        let Some(rx) = self.load_rx.as_mut() else { return };
+        let Ok(result) = rx.try_recv() else { return };
+        match result {
+            Ok(outcome) => {
+                let _old = self.repo.repo_swap(outcome.repo);
+                self.league_context = crate::tui::dashboard_panel::LeagueContext::build(
+                    &self.repo,
+                    self.active_season_typed,
+                    self.active_type,
+                );
+                self.league_context_window = (self.active_season_typed, self.active_type);
+                // dashboard_panel cache: existing CompiledPanel is
+                // shared via Arc<Mutex>; reset by replacement.
+                self.dashboard_panel = crate::tui::dashboard_panel::CompiledPanel::new();
+                if !outcome.missing.is_empty() {
+                    self.status =
+                        crate::tui::loader::format_missing_sources(&outcome.missing);
+                }
+            }
+            Err(msg) => {
+                self.status = format!("load failed: {msg}");
+            }
+        }
+        self.load_rx = None;
+    }
+
+    /// Resolve a Player ID via the repo's identity index. Returns the
+    /// PlayerView if the player exists in the active window; None
+    /// otherwise (e.g. after a season switch into a window the player
+    /// wasn't active in). D6 auto-pop UX is the load-bearing
+    /// mitigation for the None case.
+    pub fn view_for(&self, pid: PlayerId) -> Option<PlayerView<'_>> {
+        self.repo.view(pid, self.active_season_typed, self.active_type)
     }
 
     /// Handle an action. Returns true if the app should quit.

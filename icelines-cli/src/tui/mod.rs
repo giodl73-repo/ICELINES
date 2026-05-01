@@ -21,6 +21,14 @@ use ratatui::{backend::CrosstermBackend, Terminal};
 use std::io;
 
 /// Entry point for the TUI. Sets up terminal, runs event loop, restores on exit.
+///
+/// Hart.5c.6 Phase A: the event loop body runs inside a
+/// `tokio::task::LocalSet` because the post-Hart loader yields
+/// `LoadOutcome` (carrying `StatsRepository: !Send`). `tokio::spawn`
+/// requires Send; `spawn_local` does not, but it panics outside a
+/// LocalSet. Pinning the LocalSet here means consumers don't have to
+/// know — they just call `loader::spawn_repo_load(...)` and we ensure
+/// the right runtime is in scope.
 pub async fn run_tui(no_color: bool) -> Result<()> {
     // Setup
     enable_raw_mode()?;
@@ -29,7 +37,8 @@ pub async fn run_tui(no_color: bool) -> Result<()> {
     let backend  = CrosstermBackend::new(stdout);
     let mut term = Terminal::new(backend)?;
 
-    let result = run_loop(&mut term, no_color).await;
+    let local = tokio::task::LocalSet::new();
+    let result = local.run_until(run_loop(&mut term, no_color)).await;
 
     // Restore terminal regardless of result
     disable_raw_mode()?;
@@ -48,9 +57,30 @@ async fn run_loop(
     // Start background player loading immediately
     loader::spawn_loader(app.load_state.clone());
 
+    // Hart.5c.6 Phase A — spawn_local-based repo loader running in
+    // parallel with the legacy spawn_loader. Both populate App;
+    // consumers migrate one at a time in Phase B/C, after which the
+    // legacy path is deleted.
+    {
+        let cfg = crate::config::Config::load().ok();
+        let snapshot_dir = cfg
+            .map(|c| c.snapshot_dir())
+            .unwrap_or_else(|| std::path::PathBuf::from("."));
+        app.load_rx = Some(loader::spawn_repo_load(
+            app.active_season_typed,
+            app.active_type,
+            snapshot_dir,
+        ));
+    }
+
     loop {
         // Tick counter for spinner animation
         app.tick = app.tick.wrapping_add(1);
+
+        // Hart.5c.6 Phase A — drain the spawn_local repo loader's
+        // mpsc channel. On Loaded, swaps repo + rebuilds league
+        // context. No-op when the channel is empty or absent.
+        app.poll_repo_load();
 
         // Auto-refresh live Scores every 30s while the tab is active.
         // Pure decision in App; this loop just calls it once per frame.
