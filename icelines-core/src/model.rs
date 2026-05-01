@@ -956,6 +956,23 @@ mod tests {
         assert_eq!(s.as_str(), "20252026");
     }
 
+    /// Phase Hart.0 verification: serde derives on a one-field tuple
+    /// struct (`Season(pub u32)`) emit the inner value bare — same as
+    /// `#[serde(transparent)]`. This test pins the current behavior;
+    /// when Hart.1 adds the explicit attribute it should be a no-op.
+    /// If this test ever fails, that's the canary that something
+    /// non-trivial about serde-derive behavior changed.
+    #[test]
+    fn l0_hart0_season_serde_emits_bare_number() {
+        let s = Season(20252026);
+        assert_eq!(
+            serde_json::to_string(&s).unwrap(),
+            "20252026",
+            "Season serializes as a bare number; Hart.1 will lock this \
+             with `#[serde(transparent)]` as a no-op stamp.",
+        );
+    }
+
     // ── FitClass ──────────────────────────────────────────────────────────────
 
     #[test]
