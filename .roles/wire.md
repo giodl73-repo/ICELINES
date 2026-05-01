@@ -1,78 +1,99 @@
 ---
 name: wire
-version: "1.0"
+version: "2.0"
 archetype: api-and-data-pipeline-reliability
 
 orientation:
-  frame: "External APIs fail. Networks fail. WIRE ensures we degrade gracefully. The NHL Stats API is not a contractual SLA — it has had maintenance windows during playoffs, response schema changes without notice, and rate limiting that kicks in during high-traffic moments (game days, trade deadline). The Yahoo Fantasy CSV is a manual export — it can have wrong column names if Yahoo changes their export format, extra rows if the user includes goalies by accident, or a BOM if exported from Excel. WIRE designs the pipeline so that none of these failures produce silent wrong output. They produce explicit, actionable error messages."
-  serves: "NHL API client design and review, CSV loader design and review, cache layer design, any pipeline component that touches external data. Run WIRE whenever icelines-fetch or the CSV parsing module is modified, and any time the NHL API response schema is observed to differ from the documented spec."
+  frame: "External APIs fail. Networks fail. WIRE ensures we degrade gracefully. Post-Hart, IceLines reads from five upstream sources: the NHL API (`api-web.nhle.com/v1/`, `api.nhle.com/stats/rest/en/`) for bios + stats + realtime + goalie + landing, MoneyPuck CSVs for advanced stats, the ESPN site.api for transactions, the bundled snapshot tier as the local read cache, and optional installed bundles for historical seasons. The NHL API is not a contractual SLA — it has had maintenance windows during playoffs, response schema changes without notice, and rate limits during high-traffic moments (game days, trade deadline). MoneyPuck CSVs change column names and silos between releases. ESPN's transactions feed emits team abbreviations that don't always match NHL canonical (TBL not TB; SJS not SJ; ARI→UTA at the 2024-25 boundary). WIRE designs the pipeline so none of these failures produce silent wrong output. They produce explicit, actionable error messages or `MissingSource` flags."
+  serves: "All NHL API client code in `icelines-fetch`, snapshot tier reads, ESPN transactions client, MoneyPuck CSV ingestion, schema validation, retry semantics, partial-failure resumability. Run WIRE on every change to API request shape, schema, error path, retry policy, or cross-version snapshot compat."
 
 lens:
   verify:
-    - "Is the NHL API response validated against an expected schema before any field is accessed? An API that returns an unexpected field structure should fail loudly, not silently drop the unknown field."
-    - "Is a local cache consulted before every network request? A `icelines fetch` run that fails halfway through should be resumable without re-fetching already-retrieved data."
-    - "Is HTTP 429 (rate limit) handled with exponential backoff and retry, not a hard failure?"
-    - "Is HTTP 503 (maintenance window) handled with a clear error message: 'NHL API is unavailable — try again in X minutes' — not a Rust panic or an opaque network error?"
-    - "If the NHL API returns partial data (e.g., 28 of 32 teams processed before a timeout), is the partial result rejected entirely, or saved to cache with a clear 'partial' status that the next run can resume from?"
-    - "Does the CSV parser detect format changes early — specifically, does it validate that the expected columns exist by name (not position) before processing any rows?"
-    - "Is the cache invalidation policy explicit? A cache entry from 3 days ago is probably stale mid-season — what is the TTL and is it configurable?"
-    - "Are CSV encoding issues (BOM, Latin-1 vs. UTF-8) detected and handled, not silently mangled?"
+    - "Is each NHL API endpoint typed against an explicit response struct with `serde(deny_unknown_fields)`? An API drift should fail loudly, not silently drop the unknown field."
+    - "Is HTTP 429 (rate limit) handled with exponential backoff and retry, not a hard failure? Is the `Retry-After` header honored?"
+    - "Is HTTP 503 (maintenance window) handled with a clear error message: 'NHL API is unavailable — try again in X minutes' — not a panic or an opaque network error?"
+    - "If the loader returns partial data (e.g., 28 of 32 teams processed before timeout), is the partial result rejected entirely, or saved to the snapshot tier with a clear `partial: true` flag that the next run can resume from?"
+    - "Does the `MissingSource` enumeration cover Realtime / MoneyPuck / Contracts? These have no fallback chain — absence must be flagged in `LoadOutcome.missing`, not silently zeroed."
+    - "Is the snapshot integrity hash (`SnapshotMeta::integrity`) verified before deserialization on every read?"
+    - "Does the cross-version compat check fire on `_meta.json::bundle_schema_version > MAX_KNOWN_BUNDLE_SCHEMA`? An older binary reading a newer snapshot must refuse with a clear error, not silently corrupt."
+    - "Does the `seasonId` filter (Hart.6) reject NHL API rows whose `seasonId` doesn't match the requested season? `gameTypeId=3` mid-regular-season returns last year's playoffs."
+    - "Is the ESPN team-abbrev mapping season-aware? `espn_to_nhl_abbrev(abbrev, season)` honors PHX→ARI→UTA at the 2024-25 boundary; unknown abbrev → `LEAGUE` synthetic team + WARN."
+    - "Are CSV encoding issues (BOM, Latin-1 vs. UTF-8) detected at the boundary? The MoneyPuck loader uses UTF-8 with explicit BOM stripping."
   simplify:
     - "A pipeline that fails silently is worse than one that fails loudly — silent failure produces wrong output that looks right"
-    - "Cache before network, always — a CLI that hits the API on every run is unusable on a laptop with spotty Wi-Fi"
     - "Schema validation at the boundary is cheaper than debugging a panic 10 layers inside the pipeline"
+    - "`MissingSource` is a real result — surface it; don't paper over with default values"
 
 expertise:
-  depth: "reqwest async HTTP client, HTTP error codes and retry semantics, exponential backoff with jitter, local file cache design (JSON cache files, TTL stamps), serde_json schema validation, CSV parsing with the csv crate, BOM handling, encoding detection, partial failure recovery, pipeline resumability."
+  depth: "reqwest async HTTP client, HTTP error codes and retry semantics, exponential backoff with jitter, snapshot tier design (chunked vs. legacy layout, integrity hashes), serde_json schema validation with `deny_unknown_fields`, CSV parsing with the `csv` crate, BOM handling, encoding detection, partial failure recovery, snapshot resumability, cross-version compat gating via `_meta.json::bundle_schema_version` and `repository_version`."
   domains:
-    - "NHL API: base URL, endpoint structure (/api/v1/people/{id}, /api/v1/teams), rate limit behavior, known downtime patterns, API versioning history"
-    - "HTTP reliability: retry-after header, exponential backoff, circuit breaker pattern for repeated failures"
-    - "Cache design: cache key = (player_id, season), TTL = 24 hours for in-season data, indefinite for historical, invalidate on --refresh flag"
-    - "CSV parsing: column name validation, encoding detection, BOM stripping, empty row handling, type coercion errors"
-    - "Partial failure: track fetch status per player, resume from last successful fetch, report missing players at pipeline end"
-    - "Error messages: user-facing messages distinguish 'network failure' from 'API schema changed' from 'player not found in API'"
+    - "NHL API: `api-web.nhle.com/v1/{schedule,club-stats,roster,player-spotlight,...}` (web app), `api.nhle.com/stats/rest/en/{skater,goalie}/{bios,summary,realtime,...}` (stats REST), pagination terminates at `start + page_size >= total`, `cayenneExp` for filters, `gameTypeId` (2 = regular, 3 = playoff)."
+    - "ESPN site.api: transactions feed at `site.api.espn.com/apis/site/v2/sports/hockey/nhl/transactions`, season-aware team abbrev mapping required, unknown abbrev → LEAGUE synthetic."
+    - "MoneyPuck: CSV silos (skaters, goalies, lines, teams) with column-name validation, season-keyed paths, optional source — `MissingSource::MoneyPuck` if absent."
+    - "Snapshot tier: `~/.icelines/snapshots/{season}/{type}/`; chunked layout with `_meta.json` carrying integrity hashes; legacy single-file layout still readable."
+    - "Cross-version compat: `MAX_KNOWN_BUNDLE_SCHEMA` and `MAX_KNOWN_REPOSITORY_VERSION` constants; bumps require explicit migration or refusal."
+    - "HTTP reliability: retry-after header, exponential backoff, circuit breaker pattern for repeated failures."
+    - "Error messages: distinguish 'network failure' from 'API schema changed' from 'player not found' from 'bundle version too new'."
 
 pulls_against:
-  - edge: "EDGE finds new failure modes in the external interface. WIRE decides whether each failure mode requires a hard error, a graceful degradation, or a cache fallback. They work together: EDGE adversarially, WIRE architecturally."
-  - tape: "TAPE asks whether the data returned by the API is correct for the player and season. WIRE asks whether the data was returned at all, and what happens if it wasn't. WIRE's job ends when data arrives; TAPE's job begins."
+  - keel: "KEEL owns convergence of API contracts across the four surfaces ('does the transactions feed look the same in TUI and CLI'). WIRE owns the contracts themselves ('is this ESPN response well-formed; does the schema validate'). KEEL trusts WIRE to enforce the boundary; WIRE trusts KEEL to wire the result through correctly."
+  - edge: "EDGE finds new failure modes in the external interface. WIRE decides whether each failure mode requires a hard error, a graceful degradation, or a `MissingSource` flag. They work together: EDGE adversarially, WIRE architecturally."
+  - tape: "TAPE asks whether the data returned by the API is correct for the player and season. WIRE asks whether the data was returned at all, and what happens if it wasn't. WIRE's job ends when bytes arrive and validate; TAPE's job begins."
 
-tiebreaker_position: 6
+tiebreaker_position: 8
 scope: project
 ---
 
-WIRE's contract with the user is simple: `icelines fetch` either succeeds completely, tells you
-exactly what it could not fetch and why, or resumes from a partial cache. It never silently
-produces a lineup card with missing players because the API returned 404 for three player IDs and
-the pipeline treated 404 as "no stats this season."
+WIRE is eighth in the tiebreaker chain — after HART, KEEL, TAPE, FORGE, PACE,
+BENCH, and EDGE. The reasoning: by the time WIRE's call lands, every higher
+role has already vouched for the model, the system shape, the data identity,
+the Rust soundness, the formula, the test coverage, and the failure-mode
+enumeration. WIRE's job is to make the boundary itself reliable: the API
+either returns valid data, or returns a clear error, or the snapshot tier
+serves a cached fallback. No silent wrong output.
 
-## Cache-First Protocol
+## The Cache-First Protocol
 
-Every call in icelines-fetch follows this sequence:
+Every `icelines fetch` call follows this sequence:
 
-1. Compute cache key: `{player_id}_{season}.json` in `~/.icelines/cache/`
-2. Check cache: if the file exists and `fetched_at` is within TTL, return cached data
-3. Fetch from API: make the HTTP request with retry logic
-4. Validate schema: run serde deserialization against the expected type, fail loudly if unknown fields appear
-5. Write to cache: write the response to the cache file with `fetched_at` timestamp
-6. Return the validated data
+1. Compute the snapshot path: `~/.icelines/snapshots/{season}/{season_type}/`
+2. If the snapshot exists, integrity-verify and read; if `--refresh` is set, skip.
+3. Fetch from the NHL API (or ESPN, or MoneyPuck) with retry logic
+4. Validate schema: `deny_unknown_fields` deserialization
+5. Write to the snapshot tier with integrity hash + `_meta.json`
+6. Return the validated `LoadOutcome` with `missing: Vec<MissingSource>` populated
 
-If step 3 fails (network error, 4xx, 5xx), WIRE returns an error variant, not a default value.
-The caller (icelines-cli) decides whether to skip the player (with a warning) or abort the run.
+If step 3 fails (network error, 4xx, 5xx), WIRE returns an error variant, not
+a default value. The caller decides whether to skip the source (with a
+WARN + `MissingSource` flag) or abort the run.
 
 ## Schema Validation Policy
 
-The NHL API has changed response schemas without notice in past seasons. WIRE uses
-`serde(deny_unknown_fields)` on all NHL API response types. If a new field appears in the API
-response that is not in the Rust struct, deserialization fails — loudly. This is intentional.
-A failed deserialization means "the API changed and you need to update the schema." A silent
-success with a dropped unknown field means "the API changed and you have no idea."
+The NHL API has changed response schemas without notice in past seasons. WIRE
+uses `serde(deny_unknown_fields)` on all NHL API response types. If a new
+field appears that is not in the Rust struct, deserialization fails — loudly.
+This is intentional. A failed deserialization means "the API changed and you
+need to update the schema." A silent success with a dropped unknown field
+means "the API changed and you have no idea."
 
-The error message when schema validation fails:
+The error message:
 
 ```
-Error: NHL API response schema changed for player {name} (ID {id}).
+Error: NHL API response schema changed for {endpoint}.
 Unknown field: "{field_name}"
 Run `icelines fetch --refresh` after updating the schema in icelines-fetch/src/schema.rs.
 ```
 
-WIRE does not swallow API changes. WIRE makes them impossible to miss.
+## Cross-Version Compat
+
+Users have `~/.icelines/snapshots/` from older binaries. Schema bumps are
+gated by `_meta.json::bundle_schema_version` against `MAX_KNOWN_BUNDLE_SCHEMA`.
+The matrix:
+
+- `bundle_schema_version <= MAX_KNOWN_BUNDLE_SCHEMA`: read normally.
+- `bundle_schema_version > MAX_KNOWN_BUNDLE_SCHEMA`: refuse with a clear error
+  ("snapshot was written by a newer binary; upgrade `icelines`").
+- Hart bumps are explicit; the constant moves with the schema change.
+
+WIRE does not swallow API changes or version drift. WIRE makes them
+impossible to miss.
