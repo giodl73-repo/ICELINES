@@ -17,6 +17,7 @@ pub mod schema;
 pub mod shift_profile;
 pub mod snapshot;
 pub mod teams;
+pub mod transactions;
 
 pub use teams::ALL_NHL_TEAMS;
 pub use boxscore_client::{aggregate_profiles, aggregate_shift_profiles, BoxscoreClient};
