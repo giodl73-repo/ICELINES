@@ -10,67 +10,100 @@ use axum::{
     Json,
 };
 use icelines_core::{
-    model::{Goalie, Player},
+    model::Season,
     name::normalize_name,
     scheme::{self, compute_fantasy_score, compute_goalie_fantasy_score, GoalieScoreStats, Scheme},
+    season_stats::SeasonType,
+    stats_repository::{PlayerView, StatsRepository},
 };
+use icelines_fetch::stats_loader::LoadOutcome;
 use serde_json::{json, Value};
 
-use crate::commands::players::{load_all_goalies, load_all_players};
 use crate::fantasy_db::{FantasyDb, LeagueRow, TeamRow};
 
-// ── Player → SkaterStats bridge ───────────────────────────────────────────────
+// ── PlayerView → SkaterStats bridge ───────────────────────────────────────────
+//
+// Hart.5c.4: cold-start mapping (per spec D5). Realtime fields
+// (hits / blocked_shots / takeaways / giveaways) are Option<u32> in the
+// new model — `unwrap_or(0)` preserves legacy behavior where the cold-
+// start case scored those categories as zero. The cold-start parity
+// test pins this so a future Option-aware fantasy rewrite knows what
+// it's changing.
 
-fn to_scheme_stats(p: &Player) -> scheme::SkaterStats {
+fn to_scheme_stats_view(v: &PlayerView<'_>) -> scheme::SkaterStats {
+    let totals = &v.stats.totals;
     scheme::SkaterStats {
-        goals: p.season_goals,
-        assists: p.season_assists,
-        pp_goals: p.pp_goals,
-        pp_assists: p.pp_points.saturating_sub(p.pp_goals),
-        sh_goals: p.sh_goals,
-        sh_assists: p.sh_points.saturating_sub(p.sh_goals),
-        gwg: p.gwg,
-        ot_goals: p.ot_goals,
-        hits: p.hits,
-        blocks: p.blocked_shots,
-        shots_on_goal: p.shots,
-        plus_minus: p.plus_minus,
-        takeaways: p.takeaways,
-        giveaways: p.giveaways,
-        faceoff_wins: 0,
+        goals:         totals.goals,
+        assists:       totals.assists,
+        pp_goals:      totals.pp_goals,
+        pp_assists:    totals.pp_points.saturating_sub(totals.pp_goals),
+        sh_goals:      totals.sh_goals,
+        sh_assists:    totals.sh_points.saturating_sub(totals.sh_goals),
+        gwg:           totals.gwg,
+        ot_goals:      totals.ot_goals,
+        hits:          v.hits().unwrap_or(0),
+        blocks:        v.blocked_shots().unwrap_or(0),
+        shots_on_goal: v.shots(),
+        plus_minus:    v.plus_minus(),
+        takeaways:     v.takeaways().unwrap_or(0),
+        giveaways:     v.giveaways().unwrap_or(0),
+        faceoff_wins:  0,
     }
 }
 
-/// Bridge `Goalie` → fantasy `GoalieScoreStats` for `compute_goalie_fantasy_score`.
-/// Returns None when the goalie has no `stats` block (rookies / call-ups
-/// not yet on the ice). Phase G.6.
-fn to_goalie_scheme_stats(g: &Goalie) -> Option<GoalieScoreStats> {
-    let s = g.stats.as_ref()?;
+/// Bridge a goalie `PlayerView` → fantasy `GoalieScoreStats`.
+/// Returns None when `stats.goalie` is unset (call-ups not yet on ice).
+fn to_goalie_scheme_stats_view(v: &PlayerView<'_>) -> Option<GoalieScoreStats> {
+    let g = v.stats.goalie.as_ref()?;
     Some(GoalieScoreStats {
-        games_played:  s.games_played,
-        wins:          s.wins,
-        losses:        s.losses,
-        saves:         s.saves,
-        goals_against: s.goals_against,
-        shutouts:      s.shutouts,
-        save_pct:      s.save_pct.unwrap_or(0.0),
+        games_played:  g.games_started,
+        wins:          g.wins,
+        losses:        g.losses,
+        saves:         g.saves,
+        goals_against: g.goals_against,
+        shutouts:      g.shutouts,
+        save_pct:      g.save_pct.unwrap_or(0.0),
     })
 }
 
-/// Goalies aren't in the skater pool — find by normalized name in the
-/// goalie list. Returns None when no match. Phase G.6.
-fn fuzzy_find_goalie<'a>(goalies: &'a [Goalie], query: &str) -> Option<&'a Goalie> {
+/// Find a view by partial normalized name in the given slice.
+fn fuzzy_find_view_in<'a, 'r>(
+    views: &'a [PlayerView<'r>],
+    query: &str,
+) -> Option<&'a PlayerView<'r>> {
     let norm = normalize_name(query);
-    goalies.iter().find(|g| g.name_normalized.contains(norm.as_str()))
+    views.iter().find(|v| v.identity.name_normalized.contains(norm.as_str()))
 }
 
-/// Load both pools at once. Goalie load failures are silently treated
-/// as an empty pool — fantasy scoring still works on skater-only
-/// rosters in environments without goalie data.
-fn load_pools() -> anyhow::Result<(Vec<Player>, Vec<Goalie>)> {
-    let players = load_all_players()?;
-    let goalies = load_all_goalies().unwrap_or_default();
-    Ok((players, goalies))
+/// Skater-pool fuzzy find with anyhow context for the team-add / trade
+/// flows. Mirrors the previous `fuzzy_find_player` shape.
+fn fuzzy_find_skater<'a, 'r>(
+    skaters: &'a [PlayerView<'r>],
+    query: &str,
+) -> anyhow::Result<&'a PlayerView<'r>> {
+    fuzzy_find_view_in(skaters, query).with_context(|| {
+        format!("no skater found matching '{query}' — try `icelines query goalies` if it's a goalie")
+    })
+}
+
+/// Load both pools at once as a `LoadOutcome` (which owns the
+/// `StatsRepository`) plus the `Season` callers should use to query.
+/// Hart.5c.4: replaces the previous `(Vec<Player>, Vec<Goalie>)` shape.
+fn load_pools() -> anyhow::Result<(LoadOutcome, Season)> {
+    crate::commands::players::load_repo_for_season(None)
+}
+
+/// Convenience: collect skaters and goalies from a repo into Vecs.
+/// Each caller holds the repo for the scope of its handler so the
+/// returned views borrow from it; this wraps the two collect calls.
+fn pools_views<'r>(
+    repo: &'r StatsRepository,
+    season: Season,
+) -> (Vec<PlayerView<'r>>, Vec<PlayerView<'r>>) {
+    (
+        repo.skaters(season, SeasonType::Regular).collect(),
+        repo.goalies(season, SeasonType::Regular).collect(),
+    )
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -87,58 +120,41 @@ fn resolve_scheme(name: &str) -> anyhow::Result<Scheme> {
     }
 }
 
-/// Fuzzy-find a player in `all_players` by partial normalized name.
-/// Returns the first match or an error if none found.
-fn fuzzy_find_player<'a>(
-    all_players: &'a [Player],
-    query: &str,
-) -> anyhow::Result<&'a Player> {
-    let norm = normalize_name(query);
-    all_players
-        .iter()
-        .find(|p| p.name_normalized.contains(norm.as_str()))
-        .with_context(|| format!(
-            "no skater found matching '{query}' — try `icelines query goalies` if it's a goalie"
-        ))
-}
-
 /// Score every name in a roster, returning `(full_name, score)` sorted
-/// desc. Phase G.6: also looks up goalies from `all_goalies` and scores
-/// them via `compute_goalie_fantasy_score`. A roster entry is matched
-/// in the skater pool first; if not found, the goalie pool.
+/// desc. Skater pool searched first; goalie pool as fallback.
 fn score_team(
     roster_norms: &[String],
-    all_players: &[Player],
-    all_goalies: &[Goalie],
+    skaters: &[PlayerView<'_>],
+    goalies: &[PlayerView<'_>],
     scheme: &Scheme,
 ) -> Vec<(String, f32)> {
     let mut results: Vec<(String, f32)> = Vec::new();
 
     for norm in roster_norms {
         // Skater first.
-        if let Some(p) = all_players.iter().find(|p| p.name_normalized.contains(norm.as_str())) {
-            let gp = p.gp().unwrap_or(0);
-            let score = compute_fantasy_score(&to_scheme_stats(p), &scheme.skater, gp)
+        if let Some(v) = skaters.iter().find(|v| v.identity.name_normalized.contains(norm.as_str())) {
+            let gp = v.gp();
+            let score = compute_fantasy_score(&to_scheme_stats_view(v), &scheme.skater, gp)
                 .map(|fs| fs.total)
                 .unwrap_or(0.0);
-            results.push((p.full_name.clone(), score));
+            results.push((v.identity.full_name.clone(), score));
             continue;
         }
         // Then goalie.
-        if let Some(g) = all_goalies.iter().find(|g| g.name_normalized.contains(norm.as_str())) {
-            let stats = match to_goalie_scheme_stats(g) {
+        if let Some(v) = goalies.iter().find(|v| v.identity.name_normalized.contains(norm.as_str())) {
+            let stats = match to_goalie_scheme_stats_view(v) {
                 Some(s) => s,
                 None    => {
                     // Goalie has no stats yet — counts as 0 score, still listed.
-                    results.push((g.full_name.clone(), 0.0));
+                    results.push((v.identity.full_name.clone(), 0.0));
                     continue;
                 }
             };
-            let gp = g.stats.as_ref().map(|s| s.games_played).unwrap_or(0);
+            let gp = v.stats.goalie.as_ref().map(|g| g.games_started).unwrap_or(0);
             let score = compute_goalie_fantasy_score(&stats, &scheme.goalie, gp)
                 .map(|fs| fs.total)
                 .unwrap_or(0.0);
-            results.push((g.full_name.clone(), score));
+            results.push((v.identity.full_name.clone(), score));
             continue;
         }
         eprintln!("  [warn] roster entry '{norm}' not found in current player or goalie pool");
@@ -281,7 +297,8 @@ pub async fn run_team_show(name: String, league_override: Option<String>) -> any
     let league = require_league(&db, &league_override)?;
     let team = require_team(&db, &league.id, &name)?;
     let scheme = resolve_scheme(&league.scheme)?;
-    let (all_players, all_goalies) = load_pools()?;
+    let (outcome, season) = load_pools()?;
+    let (all_skaters, all_goalies) = pools_views(&outcome.repo, season);
     let roster_norms = db.list_roster(&team.id)?;
 
     println!(
@@ -293,23 +310,20 @@ pub async fn run_team_show(name: String, league_override: Option<String>) -> any
     println!("{}", "─".repeat(72));
 
     let mut total_score = 0.0f32;
-    let scored = score_team(&roster_norms, &all_players, &all_goalies, &scheme);
+    let scored = score_team(&roster_norms, &all_skaters, &all_goalies, &scheme);
 
     for (rank, (full_name, fscore)) in scored.iter().enumerate() {
-        // Find the player to get their team/pos/gp/pts info.
         let norm_q = normalize_name(full_name);
-        let p = all_players
+        let v = all_skaters
             .iter()
-            .find(|p| p.name_normalized.contains(norm_q.as_str()));
+            .find(|v| v.identity.name_normalized.contains(norm_q.as_str()));
 
-        let (team_abbr, pos, gp_str, pts_str) = match p {
-            Some(pl) => (
-                pl.team.as_str().to_owned(),
-                pl.position.abbreviation().to_owned(),
-                pl.gp()
-                    .map(|g| g.to_string())
-                    .unwrap_or_else(|| "—".to_owned()),
-                pl.season_points.to_string(),
+        let (team_abbr, pos, gp_str, pts_str) = match v {
+            Some(view) => (
+                view.team_display().to_owned(),
+                view.position().abbreviation().to_owned(),
+                view.gp().to_string(),
+                view.stats.totals.points.to_string(),
             ),
             None => ("—".to_owned(), "—".to_owned(), "—".to_owned(), "—".to_owned()),
         };
@@ -341,25 +355,21 @@ pub async fn run_team_add(
     let db = FantasyDb::open()?;
     let league = require_league(&db, &league_override)?;
     let team = require_team(&db, &league.id, &team_name)?;
-    let (all_players, all_goalies) = load_pools()?;
+    let (outcome, season) = load_pools()?;
+    let (all_skaters, all_goalies) = pools_views(&outcome.repo, season);
 
-    // Phase G.6: search both pools. Skater takes priority — if a name
-    // matches both (extremely rare), the skater wins. Goalies surface
-    // only when no skater matches.
-    let (full_name, norm_owned, kind) = match fuzzy_find_player(&all_players, &player_query) {
-        Ok(p) => (p.full_name.clone(), p.name_normalized.clone(), "Skater"),
-        Err(skater_err) => match fuzzy_find_goalie(&all_goalies, &player_query) {
-            Some(g) => (g.full_name.clone(), g.name_normalized.clone(), "Goalie"),
+    // Search both pools — skater first, goalie fallback.
+    let (full_name, norm_owned, kind) = match fuzzy_find_skater(&all_skaters, &player_query) {
+        Ok(v) => (v.identity.full_name.clone(), v.identity.name_normalized.clone(), "Skater"),
+        Err(skater_err) => match fuzzy_find_view_in(&all_goalies, &player_query) {
+            Some(v) => (v.identity.full_name.clone(), v.identity.name_normalized.clone(), "Goalie"),
             None    => return Err(skater_err),
         }
     };
     let norm = norm_owned.as_str();
 
-    // Check if player is already on any team in this league.
     if let Some(taken_by) = db.is_on_any_team(&league.id, norm)? {
-        bail!(
-            "'{full_name}' is already on team '{taken_by}'. Drop them first."
-        );
+        bail!("'{full_name}' is already on team '{taken_by}'. Drop them first.");
     }
 
     db.add_player(&team.id, norm)?;
@@ -376,13 +386,13 @@ pub async fn run_team_drop(
     let db = FantasyDb::open()?;
     let league = require_league(&db, &league_override)?;
     let team = require_team(&db, &league.id, &team_name)?;
-    let (all_players, all_goalies) = load_pools()?;
+    let (outcome, season) = load_pools()?;
+    let (all_skaters, all_goalies) = pools_views(&outcome.repo, season);
 
-    // Same dual-pool resolution as team-add — drop works for goalies too.
-    let (full_name, norm_owned) = match fuzzy_find_player(&all_players, &player_query) {
-        Ok(p) => (p.full_name.clone(), p.name_normalized.clone()),
-        Err(skater_err) => match fuzzy_find_goalie(&all_goalies, &player_query) {
-            Some(g) => (g.full_name.clone(), g.name_normalized.clone()),
+    let (full_name, norm_owned) = match fuzzy_find_skater(&all_skaters, &player_query) {
+        Ok(v) => (v.identity.full_name.clone(), v.identity.name_normalized.clone()),
+        Err(skater_err) => match fuzzy_find_view_in(&all_goalies, &player_query) {
+            Some(v) => (v.identity.full_name.clone(), v.identity.name_normalized.clone()),
             None    => return Err(skater_err),
         }
     };
@@ -408,23 +418,24 @@ pub async fn run_standings(
     let league = require_league(&db, &league_override)?;
     let scheme_name = scheme_override.as_deref().unwrap_or(&league.scheme);
     let scheme = resolve_scheme(scheme_name)?;
-    let (all_players, all_goalies) = load_pools()?;
+    let (outcome, season) = load_pools()?;
+    let (all_skaters, all_goalies) = pools_views(&outcome.repo, season);
     let teams = db.list_teams(&league.id)?;
 
     // Compute scores for each team.
     let mut standings: Vec<(String, String, f32, f32)> = Vec::new(); // (team, owner, total, per_g)
     for team in &teams {
         let roster = db.list_roster(&team.id)?;
-        let scored = score_team(&roster, &all_players, &all_goalies, &scheme);
+        let scored = score_team(&roster, &all_skaters, &all_goalies, &scheme);
         let total: f32 = scored.iter().map(|(_, s)| s).sum();
         let gp_total: u32 = scored
             .iter()
             .filter_map(|(name, _)| {
                 let norm = normalize_name(name);
-                all_players
+                all_skaters
                     .iter()
-                    .find(|p| p.name_normalized.contains(norm.as_str()))
-                    .and_then(|p| p.gp())
+                    .find(|v| v.identity.name_normalized.contains(norm.as_str()))
+                    .map(|v| v.gp())
             })
             .sum();
         let per_g = if gp_total > 0 {
@@ -473,15 +484,16 @@ pub async fn run_trade(
     let db = FantasyDb::open()?;
     let league = require_league(&db, &league_override)?;
     let scheme = resolve_scheme(&league.scheme)?;
-    let (all_players, all_goalies) = load_pools()?;
+    let (outcome, season) = load_pools()?;
+    let (all_skaters, all_goalies) = pools_views(&outcome.repo, season);
 
     // Resolve players from queries.
-    let p1 = fuzzy_find_player(&all_players, &player1_q)?;
-    let p2 = fuzzy_find_player(&all_players, &player2_q)?;
-    let p1_norm = p1.name_normalized.clone();
-    let p2_norm = p2.name_normalized.clone();
-    let p1_name = p1.full_name.clone();
-    let p2_name = p2.full_name.clone();
+    let p1 = fuzzy_find_skater(&all_skaters, &player1_q)?;
+    let p2 = fuzzy_find_skater(&all_skaters, &player2_q)?;
+    let p1_norm = p1.identity.name_normalized.clone();
+    let p2_norm = p2.identity.name_normalized.clone();
+    let p1_name = p1.identity.full_name.clone();
+    let p2_name = p2.identity.full_name.clone();
 
     // Find which team has player1.
     let team1_name = db
@@ -504,11 +516,11 @@ pub async fn run_trade(
     // Compute BEFORE scores.
     let roster1_before = db.list_roster(&team1.id)?;
     let roster2_before = db.list_roster(&team2.id)?;
-    let score1_before: f32 = score_team(&roster1_before, &all_players, &all_goalies, &scheme)
+    let score1_before: f32 = score_team(&roster1_before, &all_skaters, &all_goalies, &scheme)
         .iter()
         .map(|(_, s)| s)
         .sum();
-    let score2_before: f32 = score_team(&roster2_before, &all_players, &all_goalies, &scheme)
+    let score2_before: f32 = score_team(&roster2_before, &all_skaters, &all_goalies, &scheme)
         .iter()
         .map(|(_, s)| s)
         .sum();
@@ -522,11 +534,11 @@ pub async fn run_trade(
         .iter()
         .map(|n| if n == &p2_norm { p1_norm.clone() } else { n.clone() })
         .collect();
-    let score1_after: f32 = score_team(&roster1_after, &all_players, &all_goalies, &scheme)
+    let score1_after: f32 = score_team(&roster1_after, &all_skaters, &all_goalies, &scheme)
         .iter()
         .map(|(_, s)| s)
         .sum();
-    let score2_after: f32 = score_team(&roster2_after, &all_players, &all_goalies, &scheme)
+    let score2_after: f32 = score_team(&roster2_after, &all_skaters, &all_goalies, &scheme)
         .iter()
         .map(|(_, s)| s)
         .sum();
@@ -603,8 +615,9 @@ async fn handle_root(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let (league, scheme) = get_league_and_scheme(&db, &state.league_name)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let (all_players, all_goalies) = load_pools()
+    let (outcome, season) = load_pools()
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let (all_skaters, all_goalies) = pools_views(&outcome.repo, season);
     let teams = db
         .list_teams(&league.id)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -615,7 +628,7 @@ async fn handle_root(
         let roster = db
             .list_roster(&team.id)
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let total: f32 = score_team(&roster, &all_players, &all_goalies, &scheme)
+        let total: f32 = score_team(&roster, &all_skaters, &all_goalies, &scheme)
             .iter()
             .map(|(_, s)| s)
             .sum();
@@ -690,8 +703,9 @@ async fn handle_api_standings(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let (league, scheme) = get_league_and_scheme(&db, &state.league_name)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let (all_players, all_goalies) = load_pools()
+    let (outcome, season) = load_pools()
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let (all_skaters, all_goalies) = pools_views(&outcome.repo, season);
     let teams = db
         .list_teams(&league.id)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -701,20 +715,20 @@ async fn handle_api_standings(
         let roster = db
             .list_roster(&team.id)
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let scored = score_team(&roster, &all_players, &all_goalies, &scheme);
+        let scored = score_team(&roster, &all_skaters, &all_goalies, &scheme);
         let total: f32 = scored.iter().map(|(_, s)| s).sum();
 
         let players_json: Vec<Value> = scored
             .iter()
             .map(|(name, score)| {
                 let norm = normalize_name(name);
-                let p = all_players
+                let v = all_skaters
                     .iter()
-                    .find(|p| p.name_normalized.contains(norm.as_str()));
+                    .find(|v| v.identity.name_normalized.contains(norm.as_str()));
                 json!({
                     "name": name,
-                    "pos": p.map(|pl| pl.position.abbreviation()).unwrap_or("—"),
-                    "gp": p.and_then(|pl| pl.gp()).unwrap_or(0),
+                    "pos": v.map(|view| view.position().abbreviation()).unwrap_or("—"),
+                    "gp": v.map(|view| view.gp()).unwrap_or(0),
                     "score": score,
                 })
             })
@@ -775,24 +789,25 @@ async fn handle_api_team_roster(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let team = require_team(&db, &league.id, &team_name)
         .map_err(|e| (StatusCode::NOT_FOUND, e.to_string()))?;
-    let (all_players, all_goalies) = load_pools()
+    let (outcome, season) = load_pools()
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let (all_skaters, all_goalies) = pools_views(&outcome.repo, season);
     let roster = db
         .list_roster(&team.id)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let scored = score_team(&roster, &all_players, &all_goalies, &scheme);
+    let scored = score_team(&roster, &all_skaters, &all_goalies, &scheme);
 
     let players_json: Vec<Value> = scored
         .iter()
         .map(|(name, score)| {
             let norm = normalize_name(name);
-            let p = all_players
+            let v = all_skaters
                 .iter()
-                .find(|p| p.name_normalized.contains(norm.as_str()));
+                .find(|v| v.identity.name_normalized.contains(norm.as_str()));
             json!({
                 "name": name,
-                "pos": p.map(|pl| pl.position.abbreviation()).unwrap_or("—"),
-                "gp": p.and_then(|pl| pl.gp()).unwrap_or(0),
+                "pos": v.map(|view| view.position().abbreviation()).unwrap_or("—"),
+                "gp": v.map(|view| view.gp()).unwrap_or(0),
                 "score": score,
             })
         })
@@ -822,13 +837,14 @@ async fn handle_api_team_add(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let team = require_team(&db, &league.id, &team_name)
         .map_err(|e| (StatusCode::NOT_FOUND, e.to_string()))?;
-    let (all_players, all_goalies) = load_pools()
+    let (outcome, season) = load_pools()
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let (all_skaters, _all_goalies) = pools_views(&outcome.repo, season);
 
-    let player = fuzzy_find_player(&all_players, &player_q)
+    let player = fuzzy_find_skater(&all_skaters, &player_q)
         .map_err(|e| (StatusCode::NOT_FOUND, e.to_string()))?;
-    let norm = player.name_normalized.clone();
-    let full_name = player.full_name.clone();
+    let norm = player.identity.name_normalized.clone();
+    let full_name = player.identity.full_name.clone();
 
     if let Some(taken) = db
         .is_on_any_team(&league.id, &norm)
@@ -863,13 +879,14 @@ async fn handle_api_team_drop(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let team = require_team(&db, &league.id, &team_name)
         .map_err(|e| (StatusCode::NOT_FOUND, e.to_string()))?;
-    let (all_players, all_goalies) = load_pools()
+    let (outcome, season) = load_pools()
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let (all_skaters, _all_goalies) = pools_views(&outcome.repo, season);
 
-    let player = fuzzy_find_player(&all_players, &player_q)
+    let player = fuzzy_find_skater(&all_skaters, &player_q)
         .map_err(|e| (StatusCode::NOT_FOUND, e.to_string()))?;
-    let norm = player.name_normalized.clone();
-    let full_name = player.full_name.clone();
+    let norm = player.identity.name_normalized.clone();
+    let full_name = player.identity.full_name.clone();
 
     let dropped = db
         .drop_player(&team.id, &norm)
@@ -909,17 +926,18 @@ async fn handle_api_trade(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let (league, scheme) = get_league_and_scheme(&db, &state.league_name)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let (all_players, all_goalies) = load_pools()
+    let (outcome, season) = load_pools()
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let (all_skaters, all_goalies) = pools_views(&outcome.repo, season);
 
-    let p1 = fuzzy_find_player(&all_players, &player1_q)
+    let p1 = fuzzy_find_skater(&all_skaters, &player1_q)
         .map_err(|e| (StatusCode::NOT_FOUND, e.to_string()))?;
-    let p2 = fuzzy_find_player(&all_players, &player2_q)
+    let p2 = fuzzy_find_skater(&all_skaters, &player2_q)
         .map_err(|e| (StatusCode::NOT_FOUND, e.to_string()))?;
-    let p1_norm = p1.name_normalized.clone();
-    let p2_norm = p2.name_normalized.clone();
-    let p1_name = p1.full_name.clone();
-    let p2_name = p2.full_name.clone();
+    let p1_norm = p1.identity.name_normalized.clone();
+    let p2_norm = p2.identity.name_normalized.clone();
+    let p1_name = p1.identity.full_name.clone();
+    let p2_name = p2.identity.full_name.clone();
 
     let team1_name = db
         .is_on_any_team(&league.id, &p1_norm)
@@ -942,11 +960,11 @@ async fn handle_api_trade(
         .list_roster(&team2.id)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let score1_before: f32 = score_team(&roster1, &all_players, &all_goalies, &scheme)
+    let score1_before: f32 = score_team(&roster1, &all_skaters, &all_goalies, &scheme)
         .iter()
         .map(|(_, s)| s)
         .sum();
-    let score2_before: f32 = score_team(&roster2, &all_players, &all_goalies, &scheme)
+    let score2_before: f32 = score_team(&roster2, &all_skaters, &all_goalies, &scheme)
         .iter()
         .map(|(_, s)| s)
         .sum();
@@ -959,11 +977,11 @@ async fn handle_api_trade(
         .iter()
         .map(|n| if n == &p2_norm { p1_norm.clone() } else { n.clone() })
         .collect();
-    let score1_after: f32 = score_team(&roster1_after, &all_players, &all_goalies, &scheme)
+    let score1_after: f32 = score_team(&roster1_after, &all_skaters, &all_goalies, &scheme)
         .iter()
         .map(|(_, s)| s)
         .sum();
-    let score2_after: f32 = score_team(&roster2_after, &all_players, &all_goalies, &scheme)
+    let score2_after: f32 = score_team(&roster2_after, &all_skaters, &all_goalies, &scheme)
         .iter()
         .map(|(_, s)| s)
         .sum();
@@ -1029,4 +1047,132 @@ pub async fn run_serve(port: u16, league_override: Option<String>) -> anyhow::Re
     axum::serve(listener, app).await?;
 
     Ok(())
+}
+
+// ── Tests ─────────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use icelines_core::{
+        fixtures,
+        identity::PlayerId,
+    };
+
+    /// Hart.5c.4 cold-start parity (per spec D5).
+    ///
+    /// A view with no realtime tier (cold-start) must produce a
+    /// `scheme::SkaterStats` whose realtime fields are zero — preserving
+    /// the legacy behavior where `to_scheme_stats(&player)` got
+    /// `player.hits/blocked_shots/takeaways/giveaways` zero-initialized
+    /// from `player_from_view(view).realtime.unwrap_or(zero)`. If a
+    /// future Option-aware fantasy rewrite changes this contract (e.g.
+    /// promotes None to a "missing data" signal instead of 0), this
+    /// test surfaces the change.
+    #[test]
+    fn l0_hart5c4_to_scheme_stats_view_cold_start_zeroes_realtime() {
+        let id = fixtures::identity(8478402).build();
+        // Default `fixtures::stats(...)` does NOT call .realtime(...) so
+        // realtime is None → cold-start path.
+        let stats = fixtures::stats(8478402, 20242025, "EDM").build();
+        assert!(stats.realtime.is_none(), "fixture must be cold-start");
+        let repo = fixtures::test_repo_with(id, stats);
+        let v = repo
+            .view(
+                PlayerId(8478402),
+                Season(20242025),
+                SeasonType::Regular,
+            )
+            .unwrap();
+
+        let s = to_scheme_stats_view(&v);
+        assert_eq!(s.hits, 0, "cold-start hits must map to 0");
+        assert_eq!(s.blocks, 0, "cold-start blocks must map to 0");
+        assert_eq!(s.takeaways, 0, "cold-start takeaways must map to 0");
+        assert_eq!(s.giveaways, 0, "cold-start giveaways must map to 0");
+        // Counter fields from totals are still populated.
+        assert_eq!(s.goals, 30, "fixture goals = 30");
+        assert_eq!(s.assists, 50, "fixture assists = 50");
+    }
+
+    /// Realtime present: view's hits etc. flow through to SkaterStats.
+    #[test]
+    fn l0_hart5c4_to_scheme_stats_view_with_realtime_passes_through() {
+        let id = fixtures::identity(8478402).build();
+        let stats = fixtures::stats(8478402, 20242025, "EDM")
+            .realtime(48, 22, 65, 41) // hits, blocks, takeaways, giveaways
+            .build();
+        let repo = fixtures::test_repo_with(id, stats);
+        let v = repo
+            .view(
+                PlayerId(8478402),
+                Season(20242025),
+                SeasonType::Regular,
+            )
+            .unwrap();
+
+        let s = to_scheme_stats_view(&v);
+        assert_eq!(s.hits, 48);
+        assert_eq!(s.blocks, 22);
+        assert_eq!(s.takeaways, 65);
+        assert_eq!(s.giveaways, 41);
+    }
+
+    /// Parity vs legacy adapter: `to_scheme_stats_view(view)` must equal
+    /// `to_scheme_stats(&flat_view_legacy(view))` field-for-field on the
+    /// same fixture. Pinned for the duration of the migration; deletes
+    /// alongside flat_view_legacy in 5c.7.
+    #[test]
+    fn l0_hart5c4_view_path_matches_legacy_player_path() {
+        let id = fixtures::identity(8478402).build();
+        let stats = fixtures::stats(8478402, 20242025, "EDM")
+            .realtime(48, 22, 65, 41)
+            .build();
+        let repo = fixtures::test_repo_with(id, stats);
+        let v = repo
+            .view(
+                PlayerId(8478402),
+                Season(20242025),
+                SeasonType::Regular,
+            )
+            .unwrap();
+
+        let view_path = to_scheme_stats_view(&v);
+
+        // Legacy adapter path. flat_view_legacy is deprecated in 5c; the
+        // #[allow(deprecated)] is the same pattern as the parity test in
+        // filter.rs (Hart.5c.0).
+        #[allow(deprecated)]
+        let players = repo.flat_view_legacy(Season(20242025), SeasonType::Regular);
+        let p = &players[0];
+        let legacy_path = scheme::SkaterStats {
+            goals: p.season_goals,
+            assists: p.season_assists,
+            pp_goals: p.pp_goals,
+            pp_assists: p.pp_points.saturating_sub(p.pp_goals),
+            sh_goals: p.sh_goals,
+            sh_assists: p.sh_points.saturating_sub(p.sh_goals),
+            gwg: p.gwg,
+            ot_goals: p.ot_goals,
+            hits: p.hits,
+            blocks: p.blocked_shots,
+            shots_on_goal: p.shots,
+            plus_minus: p.plus_minus,
+            takeaways: p.takeaways,
+            giveaways: p.giveaways,
+            faceoff_wins: 0,
+        };
+
+        assert_eq!(view_path.goals, legacy_path.goals);
+        assert_eq!(view_path.assists, legacy_path.assists);
+        assert_eq!(view_path.pp_goals, legacy_path.pp_goals);
+        assert_eq!(view_path.pp_assists, legacy_path.pp_assists);
+        assert_eq!(view_path.gwg, legacy_path.gwg);
+        assert_eq!(view_path.hits, legacy_path.hits);
+        assert_eq!(view_path.blocks, legacy_path.blocks);
+        assert_eq!(view_path.shots_on_goal, legacy_path.shots_on_goal);
+        assert_eq!(view_path.plus_minus, legacy_path.plus_minus);
+        assert_eq!(view_path.takeaways, legacy_path.takeaways);
+        assert_eq!(view_path.giveaways, legacy_path.giveaways);
+    }
 }

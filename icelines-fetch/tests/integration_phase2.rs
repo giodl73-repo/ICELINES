@@ -1,59 +1,28 @@
 /// L1 Phase 2 integration tests — scheme scoring and filter engine.
-/// No live network. Uses fixture data and computed values.
+///
+/// Hart.5c.4: rewritten against StatsRepository + PlayerView fixture
+/// pattern. The 5 known-value Beniers / fantasy assertions
+/// (179.0 / 130.0 / 122.0 / 50.0 / 440.0) are preserved — those are
+/// pure scheme tests with no Player coupling. Filter tests now build a
+/// small StatsRepository and exercise PlayerFilter::apply_views.
 use icelines_core::{
     filter::PlayerFilter,
-    model::{GpStatus, Player, Position},
-    name::normalize_name,
+    identity::PlayerId,
+    model::{Season, Position},
     scheme::{compute_fantasy_score, Scheme, SkaterStats},
-    scoring::compute_pace_score,
-    TeamAbbr,
+    season_stats::{SeasonStatsBuilder, SeasonType, StatTotals, TeamStint},
+    stats_repository::{PlayerView, StatsRepository},
+    PaceScore, TeamAbbr,
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-fn make_player(name: &str, team: &str, pos: Position, g: u32, a: u32, gp: u32) -> Player {
-    Player {
-        nhl_id: None,
-        full_name: name.to_owned(),
-        name_normalized: normalize_name(name),
-        team: TeamAbbr(team.to_owned()),
-        position: pos,
-        eligible_pos: vec![pos],
-        gp_status: GpStatus::from_gp(gp),
-        season_goals: g,
-        season_assists: a,
-        season_points: g + a,
-        pace_score: compute_pace_score(g, a, gp),
-        pp_goals: 0, pp_points: 0,
-        sh_goals: 0, sh_points: 0,
-        gwg: 0, ot_goals: 0,
-        shots: 0, shooting_pct: None,
-        plus_minus: 0,
-        toi_per_game_sec: None,
-        faceoff_win_pct: None,
-        hits: 0, blocked_shots: 0, missed_shots: 0,
-        giveaways: 0, takeaways: 0, pim: 0,
-        xg: None, xg_per_60: None, cf_pct_5v5: None, ff_pct_5v5: None, xgf_pct_5v5: None,
-        headshot_url: None,
-        sweater_number: None,
-        birth_date: None,
-        birth_country: None,
-        nationality_code: None,
-        birth_city: None,
-        birth_state_province: None,
-        shoots_catches: None,
-        height_in_inches: None,
-        weight_lbs: None,
-        draft_year: None,
-        draft_round: None,
-        draft_overall: None,
-        rookie_season: None,
-        contract_expiry_year: None,
-        expiry_type: None,
-        salary: None,
-    }
-}
+const SEASON: Season = Season(20242025);
+const STYPE: SeasonType = SeasonType::Regular;
 
+/// Beniers's documented 2025-26 stats line. Pure scheme input — no Player or
+/// PlayerView in the path. Pinned across the migration so the
+/// known-value Yahoo/ESPN/simple-pts assertions don't drift.
 fn beniers_stats() -> SkaterStats {
     // Matty Beniers 2025-26: 20G, 30A, 82GP, PPG=6, PPA=5, GWG=1, HIT=31, BLK=69
     SkaterStats {
@@ -68,7 +37,102 @@ fn beniers_stats() -> SkaterStats {
     }
 }
 
-// ── L1: Fantasy scheme scoring ────────────────────────────────────────────────
+/// Upsert a synthetic skater into `repo` for filter-engine tests. Builds
+/// a minimal SeasonStats with the given counters; pace is computed.
+fn upsert_skater(
+    repo: &mut StatsRepository,
+    pid: u32,
+    name: &str,
+    team: &str,
+    pos: Position,
+    g: u32,
+    a: u32,
+    gp: u32,
+) {
+    let id = icelines_core::fixtures::identity(pid)
+        .name(name, &name.to_lowercase())
+        .build();
+    let totals = StatTotals {
+        gp, goals: g, assists: a, points: g + a,
+        plus_minus: 0, pim: 0, shots: 0,
+        shooting_pct: None, toi_per_game_sec: None,
+        pp_goals: 0, pp_points: 0, sh_goals: 0, sh_points: 0,
+        gwg: 0, ot_goals: 0, faceoff_win_pct: None,
+        pace_score: if gp >= 10 {
+            let pace_82 = (g + a) as f64 / gp as f64 * 82.0;
+            let goals_per_82 = g as f64 / gp as f64 * 82.0;
+            Some(PaceScore { pace_82, goals_per_82, raw_points: g + a, gp })
+        } else {
+            None
+        },
+    };
+    let stint = TeamStint {
+        team: TeamAbbr(team.to_owned()),
+        started: Some("2024-10-15".into()),
+        ended: Some("2025-04-13".into()),
+        gp, goals: g, assists: a, points: g + a,
+        goalie: None,
+    };
+    let stats = SeasonStatsBuilder::new(PlayerId(pid), SEASON, STYPE, pos)
+        .with_totals(totals)
+        .add_team_stint(stint)
+        .build();
+    repo.upsert_identity(id).unwrap();
+    repo.upsert_stats(stats).unwrap();
+}
+
+fn upsert_skater_full(
+    repo: &mut StatsRepository,
+    pid: u32,
+    name: &str,
+    g: u32,
+    a: u32,
+    gp: u32,
+    toi_sec: u32,
+    plus_minus: i32,
+    shots: u32,
+) {
+    let id = icelines_core::fixtures::identity(pid)
+        .name(name, &name.to_lowercase())
+        .build();
+    let totals = StatTotals {
+        gp, goals: g, assists: a, points: g + a,
+        plus_minus, pim: 0, shots,
+        shooting_pct: None, toi_per_game_sec: Some(toi_sec),
+        pp_goals: 0, pp_points: 0, sh_goals: 0, sh_points: 0,
+        gwg: 0, ot_goals: 0, faceoff_win_pct: None,
+        pace_score: if gp >= 10 {
+            let pace_82 = (g + a) as f64 / gp as f64 * 82.0;
+            let goals_per_82 = g as f64 / gp as f64 * 82.0;
+            Some(PaceScore { pace_82, goals_per_82, raw_points: g + a, gp })
+        } else {
+            None
+        },
+    };
+    let stint = TeamStint {
+        team: TeamAbbr("SEA".into()),
+        started: Some("2024-10-15".into()),
+        ended: Some("2025-04-13".into()),
+        gp, goals: g, assists: a, points: g + a,
+        goalie: None,
+    };
+    let stats = SeasonStatsBuilder::new(PlayerId(pid), SEASON, STYPE, Position::Center)
+        .with_totals(totals)
+        .add_team_stint(stint)
+        .build();
+    repo.upsert_identity(id).unwrap();
+    repo.upsert_stats(stats).unwrap();
+}
+
+fn views<'r>(repo: &'r StatsRepository) -> Vec<PlayerView<'r>> {
+    repo.skaters(SEASON, STYPE).collect()
+}
+
+// ── L1: Fantasy scheme scoring (pure — no Player/PlayerView) ─────────────────
+//
+// Known-value assertions pinned per spec Bench B1: 179.0, 50.0, 130.0,
+// 122.0, 440.0, 195.0. These tests don't touch the migration surface,
+// they exercise `compute_fantasy_score` against `SkaterStats`. Kept as-is.
 
 #[test]
 fn l1_scheme_yahoo_standard_beniers_179() {
@@ -99,7 +163,6 @@ fn l1_scheme_breakdown_sum_invariant() {
 
 #[test]
 fn l1_scheme_simple_pts_equals_goals_plus_assists() {
-    // simple-pts: G=1, A=1 → 20+30 = 50
     let score = compute_fantasy_score(&beniers_stats(), &Scheme::simple_pts().skater, 82).unwrap();
     assert!(
         (score.total - 50.0).abs() < 0.001,
@@ -110,7 +173,6 @@ fn l1_scheme_simple_pts_equals_goals_plus_assists() {
 
 #[test]
 fn l1_scheme_espn_higher_than_yahoo_for_offensive_player() {
-    // ESPN weights goals(6) and assists(4) higher — total should be larger
     let yahoo =
         compute_fantasy_score(&beniers_stats(), &Scheme::yahoo_standard().skater, 82).unwrap();
     let espn =
@@ -121,104 +183,13 @@ fn l1_scheme_espn_higher_than_yahoo_for_offensive_player() {
     );
 }
 
-// ── L1: PlayerFilter engine ───────────────────────────────────────────────────
-
-fn players_fixture() -> Vec<Player> {
-    vec![
-        make_player("McDavid", "EDM", Position::Center, 50, 90, 82),
-        make_player("Beniers", "SEA", Position::Center, 20, 30, 82),
-        make_player("Tolvanen", "SEA", Position::LeftWing, 12, 24, 78),
-        make_player("Eberle", "SEA", Position::RightWing, 26, 29, 80),
-        make_player("Makar", "COL", Position::Defense, 21, 74, 82),
-    ]
-}
-
-#[test]
-fn l1_filter_by_position_centers_only() {
-    let players = players_fixture();
-    let mut f = PlayerFilter::new();
-    f.positions = Some(vec![Position::Center]);
-    let result = f.apply(&players);
-    assert!(result.iter().all(|p| p.position == Position::Center));
-    assert_eq!(result.len(), 2);
-}
-
-#[test]
-fn l1_filter_by_team_sea_only() {
-    let players = players_fixture();
-    let mut f = PlayerFilter::new();
-    f.teams = Some(vec!["SEA".to_owned()]);
-    let result = f.apply(&players);
-    assert!(result.iter().all(|p| p.team.as_str() == "SEA"));
-    assert_eq!(result.len(), 3);
-}
-
-#[test]
-fn l1_filter_ppg_min_excludes_low_scorers() {
-    let players = players_fixture();
-    let mut f = PlayerFilter::new();
-    // McDavid PPG = (50+90)/82 = 1.707, Beniers = (20+30)/82 = 0.610
-    // Only McDavid above 1.5 PPG
-    f.ppg_min = Some(1.5);
-    let result = f.apply(&players);
-    assert_eq!(result.len(), 1, "only McDavid should exceed 1.5 PPG");
-    assert_eq!(result[0].full_name, "McDavid");
-}
-
-#[test]
-fn l1_filter_combined_pos_and_team() {
-    let players = players_fixture();
-    let mut f = PlayerFilter::new();
-    f.positions = Some(vec![Position::Center]);
-    f.teams = Some(vec!["SEA".to_owned()]);
-    let result = f.apply(&players);
-    assert_eq!(result.len(), 1);
-    assert_eq!(result[0].full_name, "Beniers");
-}
-
-#[test]
-fn l1_filter_no_match_returns_empty() {
-    let players = players_fixture();
-    let mut f = PlayerFilter::new();
-    f.teams = Some(vec!["BOS".to_owned()]);
-    let result = f.apply(&players);
-    assert!(result.is_empty(), "no BOS players in fixture");
-}
-
-#[test]
-fn l1_filter_gp_min_excludes_below_threshold() {
-    let players = players_fixture();
-    let mut f = PlayerFilter::new();
-    f.gp_min = Some(80);
-    let result = f.apply(&players);
-    // Tolvanen has 78 GP — excluded
-    assert!(!result.iter().any(|p| p.full_name == "Tolvanen"));
-    // Eberle 80, Beniers/McDavid/Makar 82 — included
-    assert!(result.iter().any(|p| p.full_name == "Eberle"));
-}
-
-// ── L1: Fantasy scoring bridge — Player stats flow through to FantasyScore ────
-
-fn make_player_with_realtime(name: &str, hits: u32, blocks: u32, takeaways: u32) -> Player {
-    // make_player signature: (name, team, pos, g, a, gp)
-    let mut p = make_player(name, "SEA", icelines_core::model::Position::Center, 20, 30, 82);
-    p.hits = hits;
-    p.blocked_shots = blocks;
-    p.takeaways = takeaways;
-    p
-}
-
 #[test]
 fn l1_fantasy_score_includes_hits_and_blocks() {
     // Yahoo standard: hits=0.5, blocks=0.5
-    // Player: 20G(3), 30A(2), 0pp, 100 hits(0.5), 50 blocks(0.5)
-    // = 60 + 60 + 100*0.5 + 50*0.5 = 60 + 60 + 50 + 25 = 195
-    let p = make_player_with_realtime("Hitter", 100, 50, 0);
+    // 20G(3), 30A(2), 100 hits(0.5), 50 blocks(0.5)
+    // = 60 + 60 + 50 + 25 = 195
     let stats = SkaterStats {
-        goals: p.season_goals,
-        assists: p.season_assists,
-        hits: p.hits,
-        blocks: p.blocked_shots,
+        goals: 20, assists: 30, hits: 100, blocks: 50,
         ..Default::default()
     };
     let score = compute_fantasy_score(&stats, &Scheme::yahoo_standard().skater, 82).unwrap();
@@ -227,7 +198,6 @@ fn l1_fantasy_score_includes_hits_and_blocks() {
         "expected 195.0, got {}",
         score.total
     );
-    // Breakdown must include hits and blocks
     assert!(score.breakdown.contains_key("hits"), "hits must appear in breakdown");
     assert!(score.breakdown.contains_key("blocks"), "blocks must appear in breakdown");
 }
@@ -237,14 +207,11 @@ fn l1_fantasy_score_includes_pp_components() {
     // Yahoo standard: ppG=1, ppA=0.5
     // 6 pp_goals = 6.0 bonus, 8 pp_assists = 4.0 bonus
     let stats = SkaterStats {
-        goals: 20,
-        assists: 30,
-        pp_goals: 6,
-        pp_assists: 8,
+        goals: 20, assists: 30, pp_goals: 6, pp_assists: 8,
         ..Default::default()
     };
     let score = compute_fantasy_score(&stats, &Scheme::yahoo_standard().skater, 82).unwrap();
-    // G=20*3=60, A=30*2=60, PPG=6*1=6, PPA=8*0.5=4 → 130
+    // G=60, A=60, PPG=6, PPA=4 → 130
     assert!(
         (score.total - 130.0).abs() < 0.001,
         "expected 130.0, got {}",
@@ -256,15 +223,12 @@ fn l1_fantasy_score_includes_pp_components() {
 
 #[test]
 fn l1_fantasy_score_includes_gwg() {
-    // Yahoo standard: gwg=0.5
     let stats = SkaterStats {
-        goals: 20,
-        assists: 30,
-        gwg: 4,
+        goals: 20, assists: 30, gwg: 4,
         ..Default::default()
     };
     let score = compute_fantasy_score(&stats, &Scheme::yahoo_standard().skater, 82).unwrap();
-    // G=60, A=60, GWG=4*0.5=2 → 122
+    // G=60, A=60, GWG=2 → 122
     assert!(
         (score.total - 122.0).abs() < 0.001,
         "expected 122.0, got {}",
@@ -277,15 +241,11 @@ fn l1_fantasy_score_includes_gwg() {
 fn l1_fantasy_score_negative_giveaways_reduce_total() {
     // Custom scheme with giveaways penalty
     let weights = icelines_core::scheme::SkaterWeights {
-        goals: 3.0,
-        assists: 2.0,
-        giveaways: -0.5,
+        goals: 3.0, assists: 2.0, giveaways: -0.5,
         ..Default::default()
     };
     let stats = SkaterStats {
-        goals: 10,
-        assists: 20,
-        giveaways: 40,
+        goals: 10, assists: 20, giveaways: 40,
         ..Default::default()
     };
     let score = compute_fantasy_score(&stats, &weights, 82).unwrap();
@@ -299,15 +259,12 @@ fn l1_fantasy_score_negative_giveaways_reduce_total() {
 
 #[test]
 fn l1_fantasy_score_espn_includes_shots_on_goal() {
-    // ESPN standard: shots_on_goal=1
     let stats = SkaterStats {
-        goals: 20,
-        assists: 30,
-        shots_on_goal: 200,
+        goals: 20, assists: 30, shots_on_goal: 200,
         ..Default::default()
     };
     let score = compute_fantasy_score(&stats, &Scheme::espn_standard().skater, 82).unwrap();
-    // G=20*6=120, A=30*4=120, SOG=200*1=200 → 440
+    // G=120, A=120, SOG=200 → 440
     assert!(
         (score.total - 440.0).abs() < 0.001,
         "expected 440.0, got {}",
@@ -326,37 +283,96 @@ fn l1_fantasy_score_per_game_is_total_over_gp() {
     assert_eq!(score.gp, 82);
 }
 
-// ── L1: Filter — new statistical threshold filters combined ──────────────────
+// ── L1: PlayerFilter — exercise apply_views on a real StatsRepository ────────
 
-fn make_player_full(
-    name: &str,
-    gp: u32,
-    toi_sec: f32,
-    plus_minus: i32,
-    shots: u32,
-) -> Player {
-    // make_player signature: (name, team, pos, g, a, gp)
-    let mut p = make_player(name, "SEA", icelines_core::model::Position::Center, 15, 25, gp);
-    p.toi_per_game_sec = Some(toi_sec);
-    p.plus_minus = plus_minus;
-    p.shots = shots;
-    p
+fn fixture_repo() -> StatsRepository {
+    let mut repo = StatsRepository::new();
+    upsert_skater(&mut repo, 1, "McDavid", "EDM", Position::Center, 50, 90, 82);
+    upsert_skater(&mut repo, 2, "Beniers", "SEA", Position::Center, 20, 30, 82);
+    upsert_skater(&mut repo, 3, "Tolvanen", "SEA", Position::LeftWing, 12, 24, 78);
+    upsert_skater(&mut repo, 4, "Eberle", "SEA", Position::RightWing, 26, 29, 80);
+    upsert_skater(&mut repo, 5, "Makar", "COL", Position::Defense, 21, 74, 82);
+    repo
 }
 
 #[test]
-fn l1_filter_combined_toi_plus_minus_shots() {
-    // Only "Elite" passes all three thresholds
-    let players = vec![
-        make_player_full("Elite",    82, 1400.0,  20, 200),  // all pass
-        make_player_full("Low TOI",  82,  800.0,  15, 180),  // TOI fails
-        make_player_full("Negative", 82, 1300.0, -10, 190),  // plus-minus fails
-        make_player_full("FewShots", 82, 1250.0,   5,  60),  // shots fails
-    ];
+fn l1_filter_by_position_centers_only() {
+    let repo = fixture_repo();
     let mut f = PlayerFilter::new();
-    f.toi_min_sec     = Some(1200.0);         // ≥ 20 min/game
-    f.plus_minus_min  = Some(0);              // ≥ even
-    f.shots_pg_min    = Some(2.0);            // ≥ 2 shots/game
-    let result = f.apply(&players);
+    f.positions = Some(vec![Position::Center]);
+    let result = f.apply_views(views(&repo).into_iter());
+    assert!(result.iter().all(|v| v.position() == Position::Center));
+    assert_eq!(result.len(), 2);
+}
+
+#[test]
+fn l1_filter_by_team_sea_only() {
+    let repo = fixture_repo();
+    let mut f = PlayerFilter::new();
+    f.teams = Some(vec!["SEA".to_owned()]);
+    let result = f.apply_views(views(&repo).into_iter());
+    assert!(result.iter().all(|v| v.team_display() == "SEA"));
+    assert_eq!(result.len(), 3);
+}
+
+#[test]
+fn l1_filter_ppg_min_excludes_low_scorers() {
+    let repo = fixture_repo();
+    let mut f = PlayerFilter::new();
+    // McDavid PPG = 1.707, Beniers = 0.610. Only McDavid above 1.5.
+    f.ppg_min = Some(1.5);
+    let result = f.apply_views(views(&repo).into_iter());
+    assert_eq!(result.len(), 1, "only McDavid should exceed 1.5 PPG");
+    assert_eq!(result[0].identity.full_name, "McDavid");
+}
+
+#[test]
+fn l1_filter_combined_pos_and_team() {
+    let repo = fixture_repo();
+    let mut f = PlayerFilter::new();
+    f.positions = Some(vec![Position::Center]);
+    f.teams = Some(vec!["SEA".to_owned()]);
+    let result = f.apply_views(views(&repo).into_iter());
+    assert_eq!(result.len(), 1);
+    assert_eq!(result[0].identity.full_name, "Beniers");
+}
+
+#[test]
+fn l1_filter_no_match_returns_empty() {
+    let repo = fixture_repo();
+    let mut f = PlayerFilter::new();
+    f.teams = Some(vec!["BOS".to_owned()]);
+    let result = f.apply_views(views(&repo).into_iter());
+    assert!(result.is_empty(), "no BOS players in fixture");
+}
+
+#[test]
+fn l1_filter_gp_min_excludes_below_threshold() {
+    let repo = fixture_repo();
+    let mut f = PlayerFilter::new();
+    f.gp_min = Some(80);
+    let result = f.apply_views(views(&repo).into_iter());
+    // Tolvanen has 78 GP — excluded
+    assert!(!result.iter().any(|v| v.identity.full_name == "Tolvanen"));
+    // Eberle 80, Beniers/McDavid/Makar 82 — included
+    assert!(result.iter().any(|v| v.identity.full_name == "Eberle"));
+}
+
+// ── L1: Filter — combined statistical thresholds ─────────────────────────────
+
+#[test]
+fn l1_filter_combined_toi_plus_minus_shots() {
+    let mut repo = StatsRepository::new();
+    upsert_skater_full(&mut repo, 100, "Elite",    15, 25, 82, 1400, 20, 200);
+    upsert_skater_full(&mut repo, 101, "LowTOI",   15, 25, 82,  800, 15, 180);
+    upsert_skater_full(&mut repo, 102, "Negative", 15, 25, 82, 1300, -10, 190);
+    upsert_skater_full(&mut repo, 103, "FewShots", 15, 25, 82, 1250,   5,  60);
+
+    let mut f = PlayerFilter::new();
+    f.toi_min_sec     = Some(1200.0);
+    f.plus_minus_min  = Some(0);
+    f.shots_pg_min    = Some(2.0);
+    let result = f.apply_views(views(&repo).into_iter());
     assert_eq!(result.len(), 1, "only Elite should pass all three filters");
-    assert_eq!(result[0].full_name, "Elite");
+    assert_eq!(result[0].identity.full_name, "Elite");
 }
