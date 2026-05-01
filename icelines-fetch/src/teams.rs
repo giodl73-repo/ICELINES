@@ -20,6 +20,66 @@ pub const ALL_NHL_TEAMS: &[&str] = &[
     "TOR", "UTA", "VAN", "VGK", "WPG", "WSH",
 ];
 
+// ── ESPN → NHL abbrev mapping (Phase T.1) ─────────────────────────────────────
+//
+// ESPN's transactions feed and our NHL bios feed do not always agree on
+// short team codes. The two diverge in three classes:
+//
+// 1. **Two-letter shorthand** — `TB` / `SJ` from ESPN, `TBL` / `SJS` from NHL.
+// 2. **Relocations** — Coyotes `ARI` (and earlier `PHX`) became `UTA` for
+//    seasons ≥ 2024-25. ESPN may emit either depending on the row's date.
+// 3. **Defunct franchises** — Atlanta `ATL` (Thrashers, pre-2011) appears
+//    in any deep historical pull. We preserve it verbatim — it is NOT
+//    `WPG` (which post-2011 refers to the new Jets, not the 1996 ones).
+//
+// The mapper is **season-aware**: an `ARI` row for 2023-24 stays as `ARI`,
+// but an `ARI` row for 2024-25 maps to `UTA`. Tests cover the boundary.
+
+/// Convert an ESPN-emitted team abbrev into our canonical NHL form for the
+/// given season. Returns `None` for unknown abbrevs — callers should
+/// surface the row as teamless (`LEAGUE` bucket) rather than dropping it,
+/// and emit a WARN so we discover new ESPN codes early.
+pub fn espn_to_nhl_abbrev(abbrev: &str, season: &str) -> Option<&'static str> {
+    let upper = abbrev.to_ascii_uppercase();
+
+    // Two-letter shorthand and other ESPN-side variants — always map
+    // to the canonical NHL form regardless of season. Each entry here
+    // surfaced as a real "unmapped abbrev" warning during the T.6
+    // historical capture.
+    if let Some(canonical) = match upper.as_str() {
+        "TB"   => Some("TBL"),
+        "SJ"   => Some("SJS"),
+        "NJ"   => Some("NJD"),  // ESPN emits the two-letter form for NJ Devils
+        "LA"   => Some("LAK"),  // ESPN emits the two-letter form for LA Kings
+        "UTAH" => Some("UTA"),  // ESPN's full-word form for Utah HC
+        _     => None,
+    } {
+        return Some(canonical);
+    }
+
+    // Coyotes / Utah relocation. ESPN may emit either name for either
+    // season; we map by row season:
+    //   - Pre-2024-25: ARI (and legacy PHX) preserved as ARI.
+    //   - 2024-25 onward: ARI / PHX → UTA.
+    let season_int = season.parse::<u32>().unwrap_or(0);
+    let is_post_relocation = season_int >= 20242025;
+
+    match upper.as_str() {
+        "ARI" | "PHX" => {
+            return Some(if is_post_relocation { "UTA" } else { "ARI" });
+        }
+        // Atlanta Thrashers (pre-2011-12). We don't carry ATL in the
+        // canonical 32, but historical rows must round-trip.
+        "ATL" => return Some("ATL"),
+        _ => {}
+    }
+
+    // Whitelist passthrough: only when the abbrev already matches a
+    // canonical entry. Refuses to silently accept anything ESPN invents.
+    // We look up the &'static str rather than returning a fresh allocation.
+    ALL_NHL_TEAMS.iter().find(|t| **t == upper.as_str()).copied()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -116,5 +176,73 @@ mod tests {
                  ALL_NHL_TEAMS — canonical list out of date",
             );
         }
+    }
+
+    // ── ESPN → NHL abbrev mapper (Phase T.1) ──────────────────────────────────
+
+    #[test]
+    fn l0_espn_to_nhl_two_letter_shorthand() {
+        // The four ESPN shorthand divergences (TB/SJ/NJ/LA) plus the
+        // full-word UTAH form that surfaced during T.6 capture.
+        assert_eq!(espn_to_nhl_abbrev("TB",   "20252026"), Some("TBL"));
+        assert_eq!(espn_to_nhl_abbrev("SJ",   "20252026"), Some("SJS"));
+        assert_eq!(espn_to_nhl_abbrev("NJ",   "20252026"), Some("NJD"));
+        assert_eq!(espn_to_nhl_abbrev("LA",   "20252026"), Some("LAK"));
+        assert_eq!(espn_to_nhl_abbrev("UTAH", "20252026"), Some("UTA"));
+    }
+
+    #[test]
+    fn l0_espn_to_nhl_canonical_passthrough() {
+        // Already-canonical codes round-trip unchanged.
+        for &t in ALL_NHL_TEAMS {
+            assert_eq!(espn_to_nhl_abbrev(t, "20252026"), Some(t),
+                "canonical '{t}' must passthrough");
+        }
+    }
+
+    #[test]
+    fn l0_espn_to_nhl_unknown_returns_none() {
+        // BENCH-mandated: never silently accept an unmapped code.
+        assert_eq!(espn_to_nhl_abbrev("BOGUS", "20252026"), None);
+        assert_eq!(espn_to_nhl_abbrev("ZZZ",   "20252026"), None);
+        assert_eq!(espn_to_nhl_abbrev("",      "20252026"), None);
+    }
+
+    #[test]
+    fn l0_espn_to_nhl_case_insensitive_input() {
+        // ESPN sometimes lowercases (rare but real).
+        assert_eq!(espn_to_nhl_abbrev("edm", "20252026"), Some("EDM"));
+        assert_eq!(espn_to_nhl_abbrev("tb",  "20252026"), Some("TBL"));
+    }
+
+    #[test]
+    fn l0_espn_to_nhl_ari_pre_relocation_preserved() {
+        // 2023-24 — Coyotes still in Arizona.
+        assert_eq!(espn_to_nhl_abbrev("ARI", "20232024"), Some("ARI"));
+        assert_eq!(espn_to_nhl_abbrev("PHX", "20232024"), Some("ARI"),
+            "legacy PHX must normalize to ARI in pre-relocation seasons");
+    }
+
+    #[test]
+    fn l0_espn_to_nhl_ari_post_relocation_maps_to_uta() {
+        // 2024-25 onward — Coyotes are now Utah HC.
+        assert_eq!(espn_to_nhl_abbrev("ARI", "20242025"), Some("UTA"));
+        assert_eq!(espn_to_nhl_abbrev("ARI", "20252026"), Some("UTA"));
+        assert_eq!(espn_to_nhl_abbrev("PHX", "20242025"), Some("UTA"));
+    }
+
+    #[test]
+    fn l0_espn_to_nhl_atl_thrasher_era_preserved() {
+        // 2010-11 — Thrashers' last season before relocating to Winnipeg.
+        // We preserve ATL rather than mapping to WPG (different franchise
+        // history; the post-2011 WPG is the new Jets, not the 1996 ones).
+        assert_eq!(espn_to_nhl_abbrev("ATL", "20102011"), Some("ATL"));
+    }
+
+    #[test]
+    fn l0_espn_to_nhl_uta_in_post_relocation_season() {
+        // ESPN may emit UTA directly in 24-25 / 25-26 — must round-trip.
+        assert_eq!(espn_to_nhl_abbrev("UTA", "20242025"), Some("UTA"));
+        assert_eq!(espn_to_nhl_abbrev("UTA", "20252026"), Some("UTA"));
     }
 }

@@ -35,4 +35,24 @@ pub enum FetchError {
     /// Phase 8h: on-disk bytes for a chunk hashed to a different value.
     #[error("integrity violation — expected {expected}, got {actual}")]
     IntegrityViolation { expected: String, actual: String },
+
+    // ── Phase T.2 — transactions fetcher reliability ─────────────────────────
+
+    /// Circuit breaker tripped: ≥N consecutive non-200 responses inside a
+    /// single fetch run. Caller MUST NOT overwrite a richer snapshot when
+    /// this fires — the partial result is suspect.
+    #[error("circuit breaker tripped after {after_failures} consecutive failures: {url}")]
+    CircuitBreakerTripped { url: String, after_failures: usize },
+
+    /// Source returned 200 with an empty data array AND a non-empty snapshot
+    /// already exists on disk. The caller (T.3 fetcher) refuses the
+    /// overwrite to avoid silently zeroing out a season's transactions.
+    #[error("source returned empty array; refusing to overwrite non-empty snapshot for season {season}")]
+    EmptyResponseRefused { season: String },
+
+    /// HTTP 200 but the body is HTML (Cloudflare challenge, endpoint
+    /// removed, region-blocked content). Detected via Content-Type before
+    /// feeding to serde — never let HTML deserialize as JSON.
+    #[error("source returned HTML instead of JSON ({content_type}): {url}")]
+    HtmlBodyResponse { url: String, content_type: String },
 }

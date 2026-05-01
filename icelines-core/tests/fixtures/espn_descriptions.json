@@ -1,0 +1,50 @@
+{
+  "_comment": "Real ESPN transaction-feed descriptions captured during T.1 design (2026-04-30). Used by L0 classifier tests + the other_rate < 5% observability check. When a future PR bumps CURRENT_CLASSIFIER_VERSION, this fixture stays as-is and the goldens regenerate. New patterns observed in production should be appended here, not replace existing entries.",
+  "items": [
+    { "kind": "Trade",            "description": "Acquired D Ryan McDonagh from NSH for D Philippe Myers and a 2026 third-round pick" },
+    { "kind": "Trade",            "description": "Traded D Ryan McDonagh to TBL for D Philippe Myers and a 2026 third-round pick" },
+    { "kind": "Trade",            "description": "Acquired G Stuart Skinner from EDM in exchange for G Tristan Jarry and a conditional pick" },
+    { "kind": "Trade",            "description": "Traded F Vladimir Tarasenko to FLA for a 2027 second-round pick" },
+    { "kind": "Trade",            "description": "Acquired F Mason Marchment from DAL for two future picks" },
+
+    { "kind": "Signing",          "description": "Signed F Connor Bedard to an 8-year, $11.4M extension" },
+    { "kind": "Signing",          "description": "Re-signed G Connor Hellebuyck to a 7-year contract" },
+    { "kind": "Signing",          "description": "Signed F Filip Forsberg to a one-year, $750K deal" },
+    { "kind": "Signing",          "description": "Extended D Cale Makar through 2030" },
+    { "kind": "Signing",          "description": "Signed undrafted F Vitali Pinchuk to a one-year, entry-level contract" },
+
+    { "kind": "Recall",           "description": "Recalled F Vasily Podkolzin from Bakersfield (AHL)" },
+    { "kind": "Recall",           "description": "Recalled D Owen Power from Rochester (AHL)" },
+    { "kind": "Recall",           "description": "Recalled F X under emergency conditions" },
+    { "kind": "Recall",           "description": "Called up G Spencer Knight from the AHL" },
+    { "kind": "Recall",           "description": "Recalled F Marco Rossi from Iowa" },
+
+    { "kind": "Reassignment",     "description": "Reassigned F X to AHL" },
+    { "kind": "Reassignment",     "description": "Returned F Liam Foudy to Bakersfield" },
+    { "kind": "Reassignment",     "description": "Optioned G Devon Levi to Rochester (AHL)" },
+    { "kind": "Reassignment",     "description": "Sent down F Nicholas Robertson to the Marlies" },
+    { "kind": "Reassignment",     "description": "Loaned F Joey Anderson to the Toronto Marlies" },
+
+    { "kind": "WaiverPlacement",  "description": "Placed F Michael Pezzetta on waivers" },
+    { "kind": "WaiverPlacement",  "description": "Placed D X on waivers for purposes of assignment to AHL" },
+    { "kind": "WaiverClear",      "description": "Cleared waivers; assigned to Providence" },
+    { "kind": "WaiverClear",      "description": "F X cleared waivers" },
+    { "kind": "WaiverClaim",      "description": "Claimed F X off waivers from BOS" },
+    { "kind": "WaiverClaim",      "description": "Claimed G Y off waivers from MTL" },
+
+    { "kind": "InjuryReserve",    "description": "Placed F Sam Reinhart on IR (lower-body)" },
+    { "kind": "InjuryReserve",    "description": "Placed D X on long-term injured reserve" },
+    { "kind": "InjuryReserve",    "description": "Placed F Y on LTIR retroactive to October 12" },
+    { "kind": "InjuryReserve",    "description": "Activated F Z from injured reserve" },
+    { "kind": "InjuryReserve",    "description": "Activated D X from IR" },
+
+    { "kind": "Other",            "description": "Signed F Vladimir Sobotka to a PTO" },
+    { "kind": "Other",            "description": "Signed F X to a professional tryout" },
+    { "kind": "Other",            "description": "Signed F Y to an amateur tryout" },
+    { "kind": "Other",            "description": "Acquired the rights to RFA F X from BOS" },
+    { "kind": "Other",            "description": "Acquired negotiating rights to UFA G Y from MTL" },
+    { "kind": "Other",            "description": "Loaned G Z to Sweden for the IIHF World Championship" },
+    { "kind": "Other",            "description": "Loaned F W to Czechia for the World Junior Championship" },
+    { "kind": "Other",            "description": "Loaned D X to Switzerland for the Spengler Cup" }
+  ]
+}
