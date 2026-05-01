@@ -17,6 +17,7 @@ use crate::identity::PlayerId;
 use crate::model::{PaceScore, Position, Season, TeamAbbr};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum SeasonType {
     Regular,
     Playoff,
@@ -124,7 +125,10 @@ pub struct GoalieSeasonStats {
     #[serde(default)]
     pub goals_against_average: Option<f32>,
     pub shutouts: u32,
-    pub time_on_ice: u32,
+    /// Total time on ice in seconds. Suffix is mandatory — matches
+    /// `StatTotals.toi_per_game_sec` so no caller has to remember which
+    /// goalie field is in seconds vs minutes.
+    pub time_on_ice_sec: u32,
 }
 
 impl GoalieSeasonStats {
@@ -190,10 +194,14 @@ impl SeasonStats {
 /// Tagged projection — a points-per-82 figure for a regular season,
 /// versus a per-game figure for a playoff series (where there's no 82).
 /// FORGE: tagging prevents silent unit mixing in Phase S's accessor
-/// pattern.
+/// pattern. JSON shape: `{"scale": "per_82" | "per_game", "value": f64}` —
+/// flat, schema-friendly for export consumers.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "scale", content = "value")]
 pub enum Projection {
+    #[serde(rename = "per_82")]
     Per82(f64),
+    #[serde(rename = "per_game")]
     PerGame(f64),
 }
 
@@ -284,7 +292,9 @@ impl SeasonStatsBuilder {
         self
     }
 
-    pub fn with_team_stints(mut self, stints: Vec<TeamStint>) -> Self {
+    /// Replace any previously-added stints with `stints`. Destructive
+    /// on purpose (vs additive `add_team_stint`) — name reflects that.
+    pub fn replace_team_stints(mut self, stints: Vec<TeamStint>) -> Self {
         self.team_stints = stints;
         self
     }
@@ -314,12 +324,13 @@ impl SeasonStatsBuilder {
         self
     }
 
-    /// Finalize. Panics in debug if `team_stints` is empty (a SeasonStats
-    /// row without a team violates the invariant — caller bug). Sorts
+    /// Finalize. Panics if `team_stints` is empty — a SeasonStats row
+    /// without a team violates the documented `len() >= 1` invariant
+    /// that downstream `team_stints.last()` accessors rely on. Sorts
     /// stints into canonical order so consumers can rely on
     /// `team_stints.last()` for the most-recent team.
     pub fn build(mut self) -> SeasonStats {
-        debug_assert!(
+        assert!(
             !self.team_stints.is_empty(),
             "SeasonStats requires at least one TeamStint (player must have played for someone)"
         );
@@ -430,7 +441,7 @@ mod tests {
         let json = r#"{
             "player_id": 8475765,
             "season": 20222023,
-            "season_type": "Regular",
+            "season_type": "regular",
             "position": "RightWing",
             "team_stints": [
                 {"team": "NYR", "gp": 7, "goals": 1, "assists": 0, "points": 1}
@@ -498,7 +509,7 @@ mod tests {
             save_pct: Some(0.900),
             goals_against_average: Some(2.80),
             shutouts: 0,
-            time_on_ice: 600 * 60,
+            time_on_ice_sec: 600 * 60,
         };
 
         let stats = SeasonStatsBuilder::new(
@@ -517,7 +528,13 @@ mod tests {
         .build();
 
         // Sum-equals invariant: per-stint goalie counts add up to the
-        // season-aggregate goalie row.
+        // season-aggregate goalie row. Strict equality is fine here —
+        // this fixture is hand-built clean.
+        // TODO(Hart.2 L1): the *real-API* path needs a fixture with
+        // ±1 GP mismatch on game-of-trade plus a sum-equals-with-tolerance
+        // proptest that exercises the loader's "trust totals + clamp last
+        // stint + tracing::warn" policy (plan §"Mid-playoff-trade worked
+        // example", lines 174-180).
         let starts: u32 = stats
             .team_stints
             .iter()
@@ -582,6 +599,101 @@ mod tests {
             }
             other => panic!("expected PerGame, got {other:?}"),
         }
+    }
+
+    /// B5: round-trip a SeasonStats with realtime + advanced + goalie
+    /// all populated. The all-None case is covered separately; this
+    /// catches a field rename on any of the three sub-types that the
+    /// builder smoke test would otherwise miss.
+    #[test]
+    fn l0_hart1_round_trip_serde_all_optionals_populated() {
+        let stats = SeasonStatsBuilder::new(
+            PlayerId(8478402),
+            Season(20222023),
+            SeasonType::Regular,
+            Position::Center,
+        )
+        .with_sweater_number(97)
+        .add_team_stint(stl_stint(70, 30, 50))
+        .with_totals(skater_totals(70, 30, 50))
+        .with_realtime(RealtimeStats {
+            hits: 30,
+            blocked_shots: 12,
+            takeaways: 80,
+            giveaways: 60,
+        })
+        .with_advanced(AdvancedStats {
+            xg: Some(28.5),
+            xg_per_60: Some(1.07),
+            cf_pct: Some(54.2),
+            ff_pct: Some(53.8),
+            xgf_pct: Some(55.0),
+        })
+        .with_goalie(GoalieSeasonStats {
+            games_started: 50,
+            wins: 30,
+            losses: 18,
+            ot_losses: Some(2),
+            ties: None,
+            shots_against: 1500,
+            goals_against: 130,
+            saves: 1370,
+            save_pct: Some(0.913),
+            goals_against_average: Some(2.60),
+            shutouts: 5,
+            time_on_ice_sec: 3000 * 60,
+        })
+        .build();
+
+        let s = serde_json::to_string(&stats).unwrap();
+        let back: SeasonStats = serde_json::from_str(&s).unwrap();
+        assert_eq!(back, stats);
+        // Sanity-check: all three Optionals serialized non-null.
+        assert!(s.contains("\"hits\":30"));
+        assert!(s.contains("\"xg\":28.5"));
+        assert!(s.contains("\"shutouts\":5"));
+    }
+
+    /// B6: pin SeasonType wire shape. lowercase per W2 — matches the
+    /// `label()` method and the `ProjectionMode`/`SchemeSource` precedent
+    /// elsewhere in icelines-core. On-disk bundle compatibility relies
+    /// on this not silently flipping back to PascalCase.
+    #[test]
+    fn l0_hart1_season_type_serde_shape() {
+        assert_eq!(
+            serde_json::to_string(&SeasonType::Regular).unwrap(),
+            "\"regular\""
+        );
+        assert_eq!(
+            serde_json::to_string(&SeasonType::Playoff).unwrap(),
+            "\"playoff\""
+        );
+        let r: SeasonType = serde_json::from_str("\"regular\"").unwrap();
+        let p: SeasonType = serde_json::from_str("\"playoff\"").unwrap();
+        assert_eq!(r, SeasonType::Regular);
+        assert_eq!(p, SeasonType::Playoff);
+    }
+
+    /// B7: Projection JSON shape is `{"scale": ..., "value": ...}` per
+    /// W7 — flat, schema-friendly. Plus value() round-trips through both
+    /// variants without unit confusion.
+    #[test]
+    fn l0_hart1_projection_serde_shape_and_value() {
+        let p82 = Projection::Per82(138.0);
+        let pg = Projection::PerGame(0.954);
+
+        let s82 = serde_json::to_string(&p82).unwrap();
+        let sg = serde_json::to_string(&pg).unwrap();
+        assert_eq!(s82, r#"{"scale":"per_82","value":138.0}"#);
+        assert_eq!(sg, r#"{"scale":"per_game","value":0.954}"#);
+
+        let back82: Projection = serde_json::from_str(&s82).unwrap();
+        let backg: Projection = serde_json::from_str(&sg).unwrap();
+        assert_eq!(back82, p82);
+        assert_eq!(backg, pg);
+
+        assert_eq!(p82.value(), 138.0);
+        assert_eq!(pg.value(), 0.954);
     }
 
     proptest::proptest! {

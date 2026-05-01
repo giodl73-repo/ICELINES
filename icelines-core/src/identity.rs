@@ -67,6 +67,7 @@ const HEIGHT_FLOOR_IN: u32 = 60;
 const HEIGHT_CEIL_IN: u32 = 84;
 
 #[derive(Debug, Error, PartialEq)]
+#[non_exhaustive]
 pub enum IdentityMergeError {
     #[error(
         "likely PlayerId reissue: {id} prior_rookie={prior_rookie_season:?} \
@@ -145,18 +146,29 @@ impl PlayerIdentity {
             self.bio.birth_date = birth_date;
         }
 
-        // Birth country / nationality / shoots_catches: most-recent-non-null-wins
-        // for country and nationality (rare but legit corrections); shoots
-        // is naturally immutable but we just keep prior on mismatch
-        // rather than emit a runtime warning (Hart.3 wraps with tracing).
+        // Birth country / nationality: most-recent-non-null-wins
+        // (rare but legit corrections — ISO code refreshes, nationality
+        // updates after a player swaps federations).
         if birth_country.is_some() {
             self.bio.birth_country = birth_country;
         }
         if nationality_code.is_some() {
             self.bio.nationality_code = nationality_code;
         }
-        if self.bio.shoots_catches.is_none() {
-            self.bio.shoots_catches = shoots_catches;
+        // shoots_catches: naturally immutable. Fill if prior is None;
+        // silent keep-prior on mismatch (Hart.3 attaches tracing::warn
+        // on the mismatch arm so loader logs surface the divergence).
+        match (self.bio.shoots_catches.as_deref(), shoots_catches) {
+            (None, incoming @ Some(_)) => {
+                self.bio.shoots_catches = incoming;
+            }
+            (Some(prior), Some(new)) if prior != new => {
+                // TODO(Hart.3): tracing::warn!(
+                //     id = %self.id, prior, new,
+                //     "shoots_catches mismatch on identity merge — keeping prior",
+                // );
+            }
+            _ => {}
         }
 
         // Height / weight: accept only if within plausible NHL range.
@@ -358,6 +370,150 @@ mod tests {
         let incoming = base_identity();
         prior.merge_with(incoming).unwrap();
         assert_eq!(prior.full_name, "Connor McDavid");
+    }
+
+    /// B1: explicit boundary tests for the sanity-floor ranges.
+    /// Off-by-one in `..=` vs `..` would silently slip past the
+    /// proptest (which never samples boundary values directly).
+    #[test]
+    fn l0_hart1_merge_weight_boundaries() {
+        // weight=99 rejected (one below floor)
+        let mut p = base_identity();
+        let mut inc = base_identity();
+        inc.bio.weight_lbs = Some(99);
+        p.merge_with(inc).unwrap();
+        assert_eq!(p.bio.weight_lbs, Some(193), "weight=99 must be rejected");
+
+        // weight=100 accepted (exact floor)
+        let mut p = base_identity();
+        let mut inc = base_identity();
+        inc.bio.weight_lbs = Some(100);
+        p.merge_with(inc).unwrap();
+        assert_eq!(p.bio.weight_lbs, Some(100), "weight=100 must be accepted");
+
+        // weight=350 accepted (exact ceiling)
+        let mut p = base_identity();
+        let mut inc = base_identity();
+        inc.bio.weight_lbs = Some(350);
+        p.merge_with(inc).unwrap();
+        assert_eq!(p.bio.weight_lbs, Some(350), "weight=350 must be accepted");
+
+        // weight=351 rejected (one above ceiling)
+        let mut p = base_identity();
+        let mut inc = base_identity();
+        inc.bio.weight_lbs = Some(351);
+        p.merge_with(inc).unwrap();
+        assert_eq!(p.bio.weight_lbs, Some(193), "weight=351 must be rejected");
+    }
+
+    #[test]
+    fn l0_hart1_merge_height_boundaries() {
+        // height=59 rejected
+        let mut p = base_identity();
+        let mut inc = base_identity();
+        inc.bio.height_in_inches = Some(59);
+        p.merge_with(inc).unwrap();
+        assert_eq!(
+            p.bio.height_in_inches,
+            Some(73),
+            "height=59 must be rejected"
+        );
+
+        // height=60 accepted
+        let mut p = base_identity();
+        let mut inc = base_identity();
+        inc.bio.height_in_inches = Some(60);
+        p.merge_with(inc).unwrap();
+        assert_eq!(
+            p.bio.height_in_inches,
+            Some(60),
+            "height=60 must be accepted"
+        );
+
+        // height=84 accepted
+        let mut p = base_identity();
+        let mut inc = base_identity();
+        inc.bio.height_in_inches = Some(84);
+        p.merge_with(inc).unwrap();
+        assert_eq!(
+            p.bio.height_in_inches,
+            Some(84),
+            "height=84 must be accepted"
+        );
+
+        // height=85 rejected
+        let mut p = base_identity();
+        let mut inc = base_identity();
+        inc.bio.height_in_inches = Some(85);
+        p.merge_with(inc).unwrap();
+        assert_eq!(
+            p.bio.height_in_inches,
+            Some(73),
+            "height=85 must be rejected"
+        );
+    }
+
+    /// B2: every `if foo.is_some()` guard must keep prior intact when
+    /// incoming is None. Checks the negative branch of the
+    /// most-recent-non-null-wins fields.
+    #[test]
+    fn l0_hart1_merge_keeps_prior_on_none_incoming() {
+        let mut prior = base_identity();
+        let mut incoming = base_identity();
+
+        // Wipe every Optional on incoming.
+        incoming.bio.birth_date = None;
+        incoming.bio.birth_country = None;
+        incoming.bio.nationality_code = None;
+        incoming.bio.height_in_inches = None;
+        incoming.bio.weight_lbs = None;
+        incoming.bio.draft_year = None;
+        incoming.bio.draft_round = None;
+        incoming.bio.draft_overall = None;
+        incoming.bio.shoots_catches = None;
+        incoming.bio.rookie_season = None;
+        incoming.headshot_canonical_url = None;
+
+        prior.merge_with(incoming).unwrap();
+
+        assert_eq!(prior.bio.birth_date, Some("1997-01-13".into()));
+        assert_eq!(prior.bio.birth_country, Some("CAN".into()));
+        assert_eq!(prior.bio.nationality_code, Some("CAN".into()));
+        assert_eq!(prior.bio.height_in_inches, Some(73));
+        assert_eq!(prior.bio.weight_lbs, Some(193));
+        assert_eq!(prior.bio.draft_year, Some(2015));
+        assert_eq!(prior.bio.draft_round, Some(1));
+        assert_eq!(prior.bio.draft_overall, Some(1));
+        assert_eq!(prior.bio.shoots_catches, Some("L".into()));
+        assert_eq!(prior.bio.rookie_season, Some("20152016".into()));
+        assert!(prior.headshot_canonical_url.is_some());
+    }
+
+    /// B3: merging the same incoming twice yields the same result as
+    /// merging it once. Catches accumulator bugs (e.g. concatenating
+    /// names instead of replacing).
+    #[test]
+    fn l0_hart1_merge_is_idempotent() {
+        let mut once = base_identity();
+        let mut twice = base_identity();
+
+        // Drift prior so merge actually does something.
+        once.bio.weight_lbs = Some(180);
+        twice.bio.weight_lbs = Some(180);
+        once.bio.shoots_catches = None;
+        twice.bio.shoots_catches = None;
+
+        let incoming = base_identity();
+        once.merge_with(incoming.clone()).unwrap();
+
+        twice.merge_with(incoming.clone()).unwrap();
+        twice.merge_with(incoming).unwrap();
+
+        assert_eq!(once.full_name, twice.full_name);
+        assert_eq!(once.bio.weight_lbs, twice.bio.weight_lbs);
+        assert_eq!(once.bio.shoots_catches, twice.bio.shoots_catches);
+        assert_eq!(once.bio.rookie_season, twice.bio.rookie_season);
+        assert_eq!(once.headshot_canonical_url, twice.headshot_canonical_url);
     }
 
     proptest::proptest! {

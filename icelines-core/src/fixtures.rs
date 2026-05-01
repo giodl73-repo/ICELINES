@@ -151,7 +151,7 @@ impl StatsFixture {
         }
         b = b
             .with_totals(snap.totals)
-            .with_team_stints(snap.team_stints);
+            .replace_team_stints(snap.team_stints);
         if let Some(r) = snap.realtime {
             b = b.with_realtime(r);
         }
@@ -173,7 +173,7 @@ impl StatsFixture {
         }
         b = b
             .with_totals(snap.totals)
-            .with_team_stints(snap.team_stints);
+            .replace_team_stints(snap.team_stints);
         if let Some(r) = snap.realtime {
             b = b.with_realtime(r);
         }
