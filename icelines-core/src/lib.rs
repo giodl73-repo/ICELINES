@@ -18,6 +18,7 @@ pub mod projection;
 pub mod scheme;
 pub mod scoring;
 pub mod season_stats;
+pub mod stats_repository;
 pub mod teams;
 pub mod transactions;
 
