@@ -1,12 +1,29 @@
-# Phase Hart.5c — Final Cleanup Spec (v0.2, post-review)
+# Phase Hart.5c — Final Cleanup Spec (v0.3, Hart.6-aware)
 
-**Status**: v0.2 — incorporates 4-role review (forge / glass / bench / tape).
+**Status**: v0.3 — pins the TUI snapshot harness signature so Hart.6.6
+can extend it without rewriting. No other changes from v0.2.
 Ready to implement.
 **Date**: 2026-05-01
 **Trophy**: Hart (final cleanup sub-phase)
 **Predecessor**: design/plans/2026-04-30-phaseHart-normalization.md (master Hart
 plan), design/plans/2026-04-30-phaseHart-4-1-test-foundation.md
 **Replaces**: nothing — additive but is the closing phase
+
+---
+
+## v0.2 → v0.3 changelog
+
+One pinning amendment driven by Hart.6 v0.2 review (Bench F1):
+
+- **Hart.5c.6 TUI snapshot harness** must expose
+  `render_screen(repo, season, season_type, screen) -> Buffer` (or
+  equivalent). The signature MUST take `season_type: SeasonType` as a
+  parameter from day one. **Why**: Hart.6.6 extends this harness with a
+  playoff-toggle case; if 5c.6 lands without `season_type` in the
+  signature, Hart.6.6 must rewrite the harness before adding playoff
+  coverage. Pinning now is free; retrofitting later is not.
+
+The rest of v0.3 is identical to v0.2.
 
 ---
 
@@ -494,7 +511,27 @@ Each is a separate commit. L2 system tests gate every commit.
    TUI snapshot test at `icelines-cli/tests/tui_snapshot.rs` using
    `ratatui::backend::TestBackend` — render each top-level screen on a
    bundled-data fixture repo and assert frame-buffer matches a golden
-   `.snap` file (Bench #4 + Glass #5). **Final gate** (Glass #4):
+   `.snap` file (Bench #4 + Glass #5).
+
+   **Pinned harness signature** (v0.3, for Hart.6.6 extensibility):
+   ```rust
+   /// Render `screen` against the given repo+season+type and return the
+   /// frame buffer. Hart.5c.6 ships with `season_type: SeasonType::Regular`
+   /// as the only call-site value; Hart.6.6 extends to Playoff. Adding the
+   /// parameter NOW (even though only one value is used) avoids retrofit.
+   fn render_screen(
+       repo: &StatsRepository,
+       season: Season,
+       season_type: SeasonType,
+       screen: Screen,
+   ) -> ratatui::buffer::Buffer;
+   ```
+   Implementation: build a `TestBackend`, construct an `App` from
+   `(repo, season, season_type)`, navigate to `screen`, draw one frame,
+   return the backend's buffer. Goldens live at
+   `icelines-cli/tests/tui_snapshot/<screen>__<season>__<type>.snap`.
+
+   **Final gate** (Glass #4):
 
    ```bash
    $ Grep "app\.players|app\.goalies" icelines-cli/src/tui/
@@ -571,7 +608,9 @@ elsewhere).
    TUI rendering.~~ **PROMOTED to required deliverable** (Bench #4 +
    Glass #5): `tests/tui_snapshot.rs` using `ratatui::backend::TestBackend`
    renders each screen on a bundled-data fixture repo and asserts
-   frame-buffer == golden.
+   frame-buffer == golden. **v0.3**: harness signature is pinned to
+   `render_screen(repo, season, season_type, screen) -> Buffer` so
+   Hart.6.6 can extend with a Playoff case without rewriting.
 
 6. ~~**Hart.5c.7 deletion of integration_pipeline.rs / mock_nhl_api.rs
    loses test coverage**~~ **RESOLVED** (Bench #2 + Tape #8):
@@ -597,7 +636,8 @@ elsewhere).
 
 ## What's NOT in this spec
 
-- Hart.6 (playoff bundled data) — deferred per the master plan.
+- Hart.6 (playoff bundled data) — separate spec at
+  `design/plans/2026-05-01-phaseHart-6-playoff-data.md` (v0.2).
 - Renames or naming convention changes.
 - Multi-position eligibility (deferred per policy section above).
 - API stability beyond the workspace (icelines-core is internal; no
