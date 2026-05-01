@@ -32,7 +32,6 @@ pub fn render(f: &mut Frame, app: &App) {
     match &app.screen {
         Screen::Home            => home::render(f, app, chunks[1]),
         Screen::Team(abbrev)    => team::render(f, app, chunks[1], abbrev),
-        Screen::Player(idx)     => player::render(f, app, chunks[1], *idx),
         Screen::PlayerById(pid) => player::render_by_id(f, app, chunks[1], *pid),
         Screen::Search          => search::render(f, app, chunks[1]),
         Screen::Queries         => queries::render(f, app, chunks[1]),
@@ -42,7 +41,6 @@ pub fn render(f: &mut Frame, app: &App) {
         Screen::GroupDetail(name)   => misc::render_group_members(f, app, chunks[1], name),
         Screen::Fetch               => misc::render_fetch(f, app, chunks[1]),
         Screen::Help                => home::render(f, app, chunks[1]),
-        Screen::Comps(idx)          => comps::render(f, app, chunks[1], *idx),
         Screen::CompsById(pid)      => comps::render_by_id(f, app, chunks[1], *pid),
         Screen::Depth               => depth::render_league(f, app, chunks[1]),
         Screen::DepthTeam(abbrev)   => depth::render_team(f, app, chunks[1], abbrev),
@@ -53,7 +51,6 @@ pub fn render(f: &mut Frame, app: &App) {
         Screen::SeriesDetail(letter)      => playoffs::render_series_detail(f, app, chunks[1], letter),
         Screen::GameDetail(game_id)       => game_detail::render(f, app, chunks[1], *game_id),
         Screen::Goalies                   => goalies::render(f, app, chunks[1]),
-        Screen::GoalieDetail(idx)         => goalies::render_detail(f, app, chunks[1], *idx),
         Screen::GoalieDetailById(pid)     => goalies::render_detail_by_id(f, app, chunks[1], *pid),
         Screen::Transactions              => transactions::render(f, app, chunks[1]),
     }
@@ -70,7 +67,7 @@ pub fn render(f: &mut Frame, app: &App) {
     if app.group_picker_open {
         // Skip if player/team screen — they render the overlay themselves
         let handled_locally = matches!(app.screen,
-            Screen::Player(_) | Screen::PlayerById(_) | Screen::Team(_)
+            Screen::PlayerById(_) | Screen::Team(_)
         );
         if !handled_locally {
             player::render_group_picker(f, app, area);
@@ -108,12 +105,11 @@ pub fn render(f: &mut Frame, app: &App) {
 
 fn tab_for_screen(screen: &Screen) -> usize {
     match screen {
-        Screen::Home | Screen::Team(_) | Screen::Player(_) | Screen::PlayerById(_)
-        | Screen::Comps(_) | Screen::CompsById(_)                => 0, // League
+        Screen::Home | Screen::Team(_) | Screen::PlayerById(_)
+        | Screen::CompsById(_)                                   => 0, // League
         Screen::Depth | Screen::DepthTeam(_)                     => 1, // Depth
         Screen::Queries | Screen::Projections | Screen::Search   => 2, // Stats (default: Queries)
-        Screen::Goalies | Screen::GoalieDetail(_)
-        | Screen::GoalieDetailById(_)                            => 3, // Goalies
+        Screen::Goalies | Screen::GoalieDetailById(_)            => 3, // Goalies
         Screen::Tonight | Screen::GameDetail(_)                  => 4, // Scores
         Screen::Schedule | Screen::ScheduleTeam(_)
             | Screen::ScheduleMatchup(..)                        => 5, // Schedule

@@ -78,10 +78,8 @@ pub enum QueryMode {
 pub enum Screen {
     Home,
     Team(String),  // team abbreviation
-    Player(usize), // index into loaded players (legacy)
-    /// Hart.5c.6 Phase B-2: PlayerId-keyed player card. Replaces
-    /// `Player(usize)` once enter handlers migrate. D6 auto-pop UX:
-    /// renderer shows a placeholder if pid isn't in the active window.
+    /// PlayerId-keyed player card. D6 auto-pop UX: renderer shows a
+    /// placeholder if pid isn't in the active window.
     PlayerById(PlayerId),
     Search,
     Tonight,
@@ -91,11 +89,8 @@ pub enum Screen {
     GroupDetail(String), // viewing members of a named group
     Fetch,
     Help,
-    Comps(usize),                    // similar-player comps for player at index (legacy)
-    /// Hart.5c.6 Phase B-2: PlayerId-keyed comps screen. Replaces
-    /// `Comps(usize)` once all enter handlers migrate. D6 auto-pop UX:
-    /// if the PlayerId isn't in the active window, the renderer shows
-    /// a placeholder and the next event tick pops back to parent.
+    /// PlayerId-keyed comps screen. D6 auto-pop UX: if the PlayerId
+    /// isn't in the active window, the renderer shows a placeholder.
     CompsById(PlayerId),
     Depth,                           // league-wide team depth rankings
     DepthTeam(String),               // one team's depth chart with fit coloring
@@ -106,10 +101,7 @@ pub enum Screen {
     SeriesDetail(String),            // one series — keyed by series letter
     GameDetail(u64),                 // boxscore for one game — keyed by game_id
     Goalies,                         // league goalie leaderboard (Phase G.3)
-    GoalieDetail(usize),             // index into App.goalies (legacy)
-    /// Hart.5c.6 Phase B-2: PlayerId-keyed goalie detail. Replaces
-    /// `GoalieDetail(usize)` once enter handlers migrate. D6 auto-pop
-    /// UX on missing pid.
+    /// PlayerId-keyed goalie detail. D6 auto-pop UX on missing pid.
     GoalieDetailById(PlayerId),
     Transactions,                    // league-wide moves feed (Phase T.5)
 }
@@ -706,12 +698,6 @@ impl App {
                             self.status = "Saved queries — ↑↓ select · Enter to load · Del to delete · Esc to cancel".to_owned();
                         }
                         _ => {}
-                    }
-                } else if let Screen::Player(idx) = self.screen {
-                    if c == 'c' {
-                        self.prev_screen = Some(self.screen.clone());
-                        self.screen = Screen::Comps(idx);
-                        self.selected = 0;
                     }
                 } else if let Screen::PlayerById(pid) = self.screen {
                     if c == 'c' {
@@ -1413,8 +1399,8 @@ impl App {
             match &self.screen {
                 Screen::DepthTeam(_) => Screen::Depth,
                 Screen::Team(_) => Screen::Home,
-                Screen::Player(_) | Screen::PlayerById(_) => Screen::Home,
-                Screen::Comps(_) | Screen::CompsById(_) => Screen::Home,
+                Screen::PlayerById(_) => Screen::Home,
+                Screen::CompsById(_) => Screen::Home,
                 Screen::GroupDetail(_) => Screen::Groups,
                 Screen::ScheduleTeam(_) => Screen::Schedule,
                 Screen::ScheduleMatchup(..) => Screen::Schedule,
@@ -1431,11 +1417,6 @@ impl App {
     /// on whichever screen is active. Returns None on screens with no player list.
     fn get_selected_player(&self) -> Option<(String, String)> {
         match &self.screen {
-            Screen::Player(idx) => self
-                .players
-                .get(*idx)
-                .map(|p| (p.name_normalized.clone(), p.full_name.clone())),
-
             Screen::PlayerById(pid) => self
                 .repo
                 .identity(*pid)
@@ -1501,15 +1482,6 @@ impl App {
                                 .map(|p| (p.name_normalized.clone(), p.full_name.clone()))
                         })
                     })
-            }
-
-            Screen::Comps(target_idx) => {
-                let target_idx = *target_idx;
-                self.players.get(target_idx).and_then(|target| {
-                    crate::tui::screens::comps::find_comps(&self.players, target)
-                        .get(self.selected)
-                        .map(|p| (p.name_normalized.clone(), p.full_name.clone()))
-                })
             }
 
             Screen::CompsById(pid) => {
@@ -1726,21 +1698,6 @@ impl App {
                     self.selected = 0;
                 }
             }
-            Screen::Comps(target_idx) => {
-                let target_idx = *target_idx;
-                if let Some(target) = self.players.get(target_idx) {
-                    let comps = crate::tui::screens::comps::find_comps(&self.players, target);
-                    if let Some(comp) = comps.get(self.selected) {
-                        if let Some(global_idx) =
-                            self.players.iter().position(|p| p.nhl_id == comp.nhl_id)
-                        {
-                            self.prev_screen = Some(self.screen.clone());
-                            self.screen = Screen::Player(global_idx);
-                            self.selected = 0;
-                        }
-                    }
-                }
-            }
             Screen::CompsById(target_pid) => {
                 // Hart.5c.6 Phase B-2 step 2: view-based comps navigation.
                 let target_pid = *target_pid;
@@ -1825,11 +1782,11 @@ impl App {
         //   League → Depth → Queries → Goalies → Scores → Schedule
         //   → Transactions → Playoffs → League
         let next = match &self.screen {
-            Screen::Home | Screen::Team(_) | Screen::Player(_) | Screen::PlayerById(_)
-            | Screen::Comps(_) | Screen::CompsById(_) => Screen::Depth,
+            Screen::Home | Screen::Team(_) | Screen::PlayerById(_)
+            | Screen::CompsById(_) => Screen::Depth,
             Screen::Depth | Screen::DepthTeam(_) => Screen::Queries,
             Screen::Queries | Screen::Projections | Screen::Search => Screen::Goalies,
-            Screen::Goalies | Screen::GoalieDetail(_) | Screen::GoalieDetailById(_) => Screen::Tonight,
+            Screen::Goalies | Screen::GoalieDetailById(_) => Screen::Tonight,
             Screen::Tonight | Screen::GameDetail(_) => Screen::Schedule,
             Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => {
                 Screen::Transactions
@@ -1851,13 +1808,13 @@ impl App {
     fn cycle_screen_back(&mut self) {
         self.query_results_focused = false;
         let prev = match &self.screen {
-            Screen::Home | Screen::Team(_) | Screen::Player(_) | Screen::PlayerById(_)
-            | Screen::Comps(_) | Screen::CompsById(_) => {
+            Screen::Home | Screen::Team(_) | Screen::PlayerById(_)
+            | Screen::CompsById(_) => {
                 Screen::Playoffs
             }
             Screen::Depth | Screen::DepthTeam(_) => Screen::Home,
             Screen::Queries | Screen::Projections | Screen::Search => Screen::Depth,
-            Screen::Goalies | Screen::GoalieDetail(_) | Screen::GoalieDetailById(_) => Screen::Queries,
+            Screen::Goalies | Screen::GoalieDetailById(_) => Screen::Queries,
             Screen::Tonight | Screen::GameDetail(_) => Screen::Goalies,
             Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => {
                 Screen::Tonight
@@ -2026,7 +1983,7 @@ mod tests {
         app.selected = 0;
         app.handle(Action::Enter); // should not panic even with empty player list
                                    // With no players, selected player not found — stays on Team screen
-        assert!(matches!(app.screen, Screen::Team(_) | Screen::Player(_)));
+        assert!(matches!(app.screen, Screen::Team(_) | Screen::PlayerById(_)));
     }
 
     #[test]

@@ -86,16 +86,13 @@ async fn run_loop(
         // Pure decision in App; this loop just calls it once per frame.
         app.tick_auto_refresh();
 
-        // Poll for loaded players
+        // Poll for loaded players. Hart.5c.6 Phase B-2 step 3: after
+        // the migration, app.players is the legacy bridge for the
+        // few remaining consumers (depth.rs, queries.rs in B-3). The
+        // new path's league_context + dashboard_panel cache are
+        // populated via poll_repo_load above.
         if app.players.is_empty() {
             if let Some(players) = app.load_state.take_players() {
-                // Phase 8j: build the league context for percentile lookups
-                // in the dashboard panel. One scan, sorted vectors per
-                // position; reused for every player render thereafter.
-                app.league_context = crate::tui::dashboard_panel::LeagueContext::from_players(&players);
-                // Drop any panel cache that may have been computed with the
-                // empty context so the next render picks up the new percentiles.
-                app.dashboard_panel = crate::tui::dashboard_panel::CompiledPanel::new();
                 app.players = players;
                 app.status  = format!("{} players loaded — press ? for help", app.players.len());
             }
