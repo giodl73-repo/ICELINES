@@ -1,10 +1,11 @@
-# Phase Hart.5c.6 — TUI App Restructure (v0.4, post-third-round-review)
+# Phase Hart.5c.6 — TUI App Restructure (v0.5, post-fourth-round-review)
 
-**Status**: v0.4 — third 7-role review with HART + KEEL added. v0.3 closed all
-v0.2 findings; v0.4 patches the structural items HART/KEEL/EDGE caught on
-first-pass plus several FIXITs from refreshed roles. No design rework — local
-edits to the migration table, two new D-decisions (D10 team_views stint shape,
-D11 LeagueContext window invariant), and a regression test addition.
+**Status**: v0.5 — fourth 7-role review caught defects v0.4 introduced.
+Two BLOCKERs were "documentation became fiction" (TAPE F1 + BENCH B-5 — I
+documented an enum shape and a test file that didn't match reality);
+two more (FORGE F1 + EDGE B1) caught D11 added incompletely. v0.5 closes
+all 6 round-4 BLOCKERs and 16 FIXITs; spec is now backed by code or
+explicitly deferred to a named successor plan.
 **Date**: 2026-05-01
 **Trophy**: Hart (sub-phase of 5c)
 **Predecessor**: design/plans/2026-05-01-phaseHart-5c-final-cleanup.md (v0.3)
@@ -214,6 +215,8 @@ pub struct App {
     repo: StatsRepository,
     active_season: Season,
     active_type: SeasonType,
+    league_context: LeagueContext,
+    league_context_window: (Season, SeasonType),  // window the ctx was built for
     selected: usize,
     search_query: String,
     // ... non-data UI state (tabs, modes, caches)
@@ -331,18 +334,29 @@ pub struct CompiledPanel {
 }
 
 impl CompiledPanel {
+    /// See D11 for the `ctx_window` argument and the cross-window
+    /// rejection rule. The arguments below are the canonical signature;
+    /// D11 elaborates the invariant only.
     pub fn compile(
         &mut self,
         repo: &StatsRepository,
         season: Season,
         season_type: SeasonType,
         player_id: PlayerId,
+        ctx: &LeagueContext,
+        ctx_window: (Season, SeasonType),
     ) -> Result<&CompiledOutput, DashboardError> {
+        if ctx_window != (season, season_type) {
+            return Err(DashboardError::CrossWindowCompile {
+                requested: (season, season_type),
+                ctx_for: ctx_window,
+            });
+        }
         let key = (player_id, season, season_type);
         if !self.cache.contains_key(&key) {
             let view = repo.view(player_id, season, season_type)
                 .ok_or(DashboardError::PlayerNotInRepo)?;
-            self.cache.insert(key, build_panel(&view)?);
+            self.cache.insert(key, build_panel(&view, ctx)?);
         }
         Ok(&self.cache[&key])
     }
@@ -356,6 +370,13 @@ impl CompiledPanel {
 Why the (season, type) in the key: percentile bars derive from `LeagueContext`,
 which is rebuilt on season switch. A pre-swap compiled panel reopened post-swap
 would render stale bars without this keying. F1 from glass review.
+
+Callsites (in App): every `compile` invocation passes
+`(self.active_season, self.active_type, pid, &self.league_context,
+self.league_context_window)`. The `league_context_window` field is updated
+in lockstep with `league_context` itself — see D5 for the full
+update sequence. Without that field, the cross-window check at the top of
+`compile` is tautological (HART/EDGE v4 catch).
 
 ### D3 — `LeagueContext` rebuild
 
@@ -419,7 +440,13 @@ applies the `LoadOutcome`:
 if let LoadState::Loaded(outcome) = std::mem::replace(&mut self.load_state, LoadState::Idle) {
     let _old = self.repo.repo_swap(outcome.repo);
     self.league_context = LeagueContext::build(&self.repo, self.active_season, self.active_type);
+    self.league_context_window = (self.active_season, self.active_type);  // D11
     self.dashboard_panel.clear_cache();
+    if !outcome.missing.is_empty() {
+        // KEEL v4 F3: missing-source banner. Don't drop the partial-fetch signal.
+        self.status = format_missing_sources(&outcome.missing);
+        self.status_expires = Instant::now() + Duration::from_secs(5);
+    }
 }
 ```
 
@@ -447,6 +474,15 @@ pub async fn reload_for_season(
     self.dashboard_panel.clear_cache();
     let new_ctx = LeagueContext::build(&self.repo, season, ty);
     self.league_context = new_ctx;
+    self.league_context_window = (season, ty);  // D11 forcing function
+
+    // 2b. Surface partial-fetch warnings from the new outcome to the user.
+    //     poll_load drains outcome.missing into a status banner; here we
+    //     only handle the synchronous reload path.
+    if !outcome.missing.is_empty() {
+        self.status = format_missing_sources(&outcome.missing);
+        self.status_expires = Instant::now() + Duration::from_secs(5);
+    }
 
     // 3. Transactions — re-fetch envelope for the new season.
     let (rows, fetched_at, stale) = load_transactions_with_fallback(&self.config, season)
@@ -516,7 +552,7 @@ list screen** (Players / Goalies / DepthTeam) and set
 disruptive than landing on a blank card; preserves user orientation.
 
 ```rust
-fn render_player(&self, frame: &mut Frame, pid: PlayerId) {
+fn render_player(&mut self, frame: &mut Frame, pid: PlayerId) {
     let view = match self.repo.view(pid, self.active_season, self.active_type) {
         Some(v) => v,
         None => {
@@ -533,6 +569,20 @@ fn render_player(&self, frame: &mut Frame, pid: PlayerId) {
     // … render the card …
 }
 ```
+
+**Render-handler convention (HART v4 F1)**: `render_*` methods that mutate
+`self.screen` / `self.status` / `self.status_expires` (auto-pop UX) take
+`&mut self`. Pure-render handlers that only read App state and write to the
+frame buffer take `&self`. The auto-pop path is the only mutating render
+case in 5c.6; subsequent renders happen on the next event-loop tick after
+the pop has been applied.
+
+**Comps anchor missing case (HART v4 F2)**: `Screen::Comps(pid)` follows the
+same pattern as `Screen::Player(pid)` — the renderer first calls
+`self.repo.view(pid, s, t)` to resolve the anchor view; on `None` it
+auto-pops to `parent_for(Screen::Comps(pid))` (the Players list) and emits
+the same toast. The comps engine in `icelines-core` consumes
+`&[PlayerView<'_>]` only after the anchor is resolved.
 
 ### D7 — Sort/filter caching (deferred to v1.1, key shape pinned)
 
@@ -609,7 +659,15 @@ fn poll_load(&mut self) {
                     let _old = self.repo.repo_swap(outcome.repo);
                     self.league_context = LeagueContext::build(
                         &self.repo, self.active_season, self.active_type);
+                    self.league_context_window =
+                        (self.active_season, self.active_type);  // D11
                     self.dashboard_panel.clear_cache();
+                    // KEEL v4 F3: surface MissingSource entries; never silent.
+                    if !outcome.missing.is_empty() {
+                        self.status = format_missing_sources(&outcome.missing);
+                        self.status_expires =
+                            Instant::now() + Duration::from_secs(5);
+                    }
                     self.load_state = LoadState::Loaded;
                 }
                 Err(msg) => self.load_state = LoadState::Error(msg),
@@ -810,21 +868,36 @@ keys per snapshotted screen:
 
 | Screen | Sort key | Tiebreak |
 |---|---|---|
-| `Home` | pace_82 desc | full_name asc |
-| `Players` | pace_82 desc | full_name asc |
-| `Depth` | team asc, position asc, pace_82 desc | full_name asc |
-| `DepthTeam(t)` | line slot asc | full_name asc |
-| `Goalies` | goalie.gaa asc | full_name asc |
-| `Search` | name_normalized.contains(q), then pace_82 desc | full_name asc |
+| `Home`        | pace_82 desc, **None last** | full_name asc |
+| `Players`     | pace_82 desc, **None last** | full_name asc |
+| `Projections` | pace_82 desc, **None last** | full_name asc — same shape as Players (BENCH v4 B-1) |
+| `Depth`       | team asc, position asc, pace_82 desc (None last) | full_name asc |
+| `DepthTeam(t)`| line slot asc | full_name asc |
+| `Goalies`     | goalie.gaa asc, None last | full_name asc |
+| `Search`      | name_normalized.contains(q), then pace_82 desc (None last) | full_name asc |
+
+**None-last clause (PACE v4 F1)**: `view.pace_82()` returns `Option<f64>`
+(`None` for `gp_status == BelowThreshold` per A4). Default `Option<f64>`
+ordering puts `None` first under `desc`. Renderers MUST partition into
+`Some` / `None` groups, sort `Some` group by inner f64 desc, then
+concatenate Some-then-None. Equivalent: sort key
+`(pace_82.is_none(), Reverse(pace_82.unwrap_or(f64::NEG_INFINITY)))`.
+
+Stats tab default sub-view is **Projections**, not Players (per
+`docs/guides/06-tui.md:85-90`). The Projections golden uses the same sort
+shape as Players, so a single golden covers both. If Projections gets a
+bespoke layout in a follow-up, it earns its own golden then.
 
 Any unsorted iteration over `repo.skaters` in renderer code is a snapshot
 flake source and a CI hard-block target.
 
 **Identity round-trip carry-forward (tape v3 + bench v3)**: Hart.5c.6 doesn't
-touch identity loading, but the Slafkovský diacritic round-trip assert in
-`mock_nhl_api_loader.rs` is required to remain green throughout the migration.
-A test-impact line is added below; the canonical assert lands in Hart.5c.7's
-final delete.
+touch identity loading, but the Slafkovský diacritic round-trip assert at
+`icelines-fetch/tests/stats_loader.rs::l1_player_view_accessors_against_real_bundled_data`
+(diacritic block at lines 512-527 — finds any non-ASCII player name and
+asserts diacritic preservation + name_normalized ASCII-strip) is required to
+remain green throughout the migration. v0.4 referenced a non-existent
+`mock_nhl_api_loader.rs` (TAPE v4 F2 catch); v0.5 points at the real test.
 
 **12 screens to snapshot** (was 9 in v0.1; +3 per glass F5 / bench F2):
 
@@ -900,9 +973,12 @@ This is the canonical signoff.
 | `app.rs` test mod | rewritten | LeagueContext build, repo_swap invariant, reload_for_season full invalidation |
 | `screens/*.rs` test mods | rewritten | per-screen render with view fixtures (reuses fixture_repo pattern) |
 | `loader.rs` test mod | LoadState::Loaded(LoadOutcome) | |
-| `dashboard_panel.rs` test mod | new compile signature, (PlayerId, Season, SeasonType) cache key, plus D11 cross-window rejection assert | |
+| `dashboard_panel.rs` test mod | new compile signature, (PlayerId, Season, SeasonType) cache key, plus D11 cross-window rejection assert (compile() with `ctx_window != (s,t)` returns CrossWindowCompile error) | |
 | `tui/schedule.rs` test mod | NEW: two-season `schedule_team_cache` regression — fetch EDM @ 20242025 then EDM @ 20252026, assert two distinct entries (bench v3 FIXIT) | |
-| `mock_nhl_api_loader.rs` (existing) | unchanged in 5c.6; Slafkovský diacritic round-trip must remain green throughout the migration (gates CI) | |
+| `icelines-fetch/tests/stats_loader.rs::l1_player_view_accessors_against_real_bundled_data` (existing, diacritic block at lines 512-527) | unchanged in 5c.6; must remain green throughout the migration (L1 hard-block gate) | |
+| `icelines-core/src/stats_repository.rs` test mod | NEW: `team_views_all_stints` returns Bo Horvat (or any 2-stint synthetic fixture) on both pre-trade and post-trade team for the same (season, type); compared against `team_roster` returning him on last-stint team only (EDGE v4 F1) | |
+| `icelines-core/src/fixtures.rs` test mod | NEW: `upsert_stats_rejects_empty_team_stints` — upserting a SeasonStats with `team_stints: vec![]` returns `RepoError::EmptyStints`. Loader-level WARN+skip path tested via mocked SeasonStats with empty stints (HART v4 F3 + EDGE v4 F2) | |
+| `icelines-cli/tests/data_install.rs` (existing or NEW) | concurrent `data install` collision: two install processes targeting same season — second loses cleanly with a "season already installing" error or "last-writer wins, prior result discarded" outcome (EDGE v4 F3) | |
 
 ---
 
@@ -933,7 +1009,9 @@ This is the canonical signoff.
    SeasonType), SeasonStats>` and filter-skips non-matching `(s, t)` windows,
    plus an `identities` and `contracts` HashMap probe per match. Worst-case
    work after multi-season time-travel is `LRU_CAP × N` ≈ 8 × 1000 = 8k
-   iterations + 2k probes. Still sub-millisecond at current scale (estimated;
+   iterations + 2k probes. Note that LRU_CAP=8 windows can be 4 seasons × 2
+   types (Regular + Playoff) — a single "season" can contribute two windows
+   to the resident set after Hart.6 lands. Still sub-millisecond at current scale (estimated;
    unmeasured). The architectural cost is on `Screen::Depth`'s
    `compute_all_views` (~320k comparisons, <1 ms estimated); the per-frame
    collect itself is cheaper. At N=10k active, multi-season-resident:
@@ -948,8 +1026,10 @@ This is the canonical signoff.
    if needed; for now, code review.
 
 8. **Per-screen migration error surface** — 14 files, 7+ medium-complexity
-   migrations. High blast radius for a single 3-commit batch. Mitigation: TUI
-   snapshot test catches output regressions; manual smoke test in commit 3.
+   migrations. High blast radius for a single atomic commit (D9). Mitigation:
+   TUI snapshot test catches output regressions; manual smoke test between
+   Commit 1 (atomic foundation + screens) and Commit 2 (snapshot test +
+   final gate).
 
 9. **App caches that survive `repo_swap`** — verified per cache (tape v1.1
    NEW-1 caught a blanket "verified safe" claim that was wrong for one):

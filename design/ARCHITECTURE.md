@@ -15,8 +15,8 @@ CLI, mkdocs site, HTTP server — all driven by one data engine and one normaliz
 domain model.
 
 The architectural invariant: **for the canonical view path (depth chart, query,
-scouting, fantasy scoring), every surface produces the same output for the same
-data state.** The TUI's depth chart, the CLI's `team EDM`, the site's team page,
+scouting, fantasy scoring, `export md`, HTTP `/api/team/<abbr>/roster`), every
+surface produces the same output for the same data state.** The TUI's depth chart, the CLI's `team EDM`, the site's team page,
 and the HTTP server's `/api/team/EDM/roster` all call the same `StatsRepository`
 and the same `DepthChartBuilder::build_views`. Surface-specific behaviors
 (TUI admin overlay, fantasy SQLite, transactions feed UI affordances) are
@@ -88,10 +88,13 @@ explicitly per-surface; only the data + computation path converges.
         │    │   LoadOutcome.missing                    │      │
         │    └──────────────────────────────────────────┘      │
         │                                                      │
-        │    Snapshot tier precedence (when both exist):       │
-        │    chunked wins; legacy is fallback only when        │
-        │    chunked manifest is absent. L1 test asserts the   │
-        │    tiebreak.                                         │
+        │    Snapshot tier precedence (bios + skater stats     │
+        │    only — goalies/transactions are legacy-only       │
+        │    today; chunked path lands in Hart.6+):            │
+        │    when both chunked and legacy exist for the same   │
+        │    (player, season, type), chunked wins; legacy is   │
+        │    fallback only when chunked manifest is absent.    │
+        │    L1 test row in Hart.6 plan locks the tiebreak.    │
         │                                                      │
         │    Integrity verification: every snapshot read calls │
         │    verify_integrity(filename, expected_sha256) before│
@@ -120,9 +123,13 @@ explicitly per-surface; only the data + computation path converges.
 │   name_normalized           totals: StatTotals                                   │
 │     (NFD-stripped;          team_stints: Vec<TeamStint>  ← invariant len() ≥ 1; │
 │      uniqueness NOT           traded players kept; sum(stints.gp) == totals.gp  │
-│      guaranteed —             (Hart.4.1). Empty stints => loader bug, WARN+skip │
-│      Sebastian Aho            row, do not crash.                                 │
-│      collisions exist)      realtime: Option<RealtimeStats>  ← cold-start = None│
+│      guaranteed —             (Hart.4.1). Enforced at upsert boundary:           │
+│      Sebastian Aho            empty stints → RepoError::EmptyStints (refuse the  │
+│      collisions exist)        write). Loader maps the refusal to a WARN+skip-row │
+│                               outcome so a single bad row doesn't abort the     │
+│                               whole load. The in-memory invariant is uniformly  │
+│                               true for any row the repo accepted.               │
+│                             realtime: Option<RealtimeStats>  ← cold-start = None│
 │   bio: PlayerBio            advanced: Option<AdvancedStats> ← MoneyPuck silo'd  │
 │   headshot_canonical_url    goalie:   Option<GoalieSeasonStats>                  │
 │                               ↑ is_goalie() == goalie.is_some(), NOT             │
@@ -133,7 +140,8 @@ explicitly per-surface; only the data + computation path converges.
 │                                                                                  │
 │   StatsRepository                                                                │
 │   ─ Internal storage: HashMap-indexed by primary keys                            │
-│   ─ LRU cap fires only under memory pressure (never at current scale)            │
+│   ─ LRU cap = 8 (season, season_type) windows; eviction triggers on the 9th      │
+│     distinct window (deterministic — see "LRU eviction contract" below)          │
 │   ─ !Send + !Sync (PhantomData<*const ()>) — single-threaded by construction.   │
 │     Background loads must use spawn_local + LocalSet, NOT tokio::spawn.          │
 │                                                                                  │
@@ -166,11 +174,14 @@ Per-Hart-phase invariant: **`(player_id, season, season_type)` is the primary ke
 axis.** Pre-Hart, the data was implicitly current-season-regular-only. Hart makes
 historical + playoff queries possible without schema gymnastics.
 
-**Loader-side seasonId filter (Hart.6)**: NHL API queries with `gameTypeId=3`
-mid-regular-season return the most-recent completed playoff (e.g., querying for
-2025-26 playoffs in February 2026 returns 2024-25 rows). The loader must reject
-rows where `seasonId != requested_season` and emit a WARN. Cross-season API
-leakage is a known failure mode and is filtered at ingest, not at query time.
+**Loader-side seasonId filter (Hart.6 — pending)**: NHL API queries with
+`gameTypeId=3` mid-regular-season return the most-recent completed playoff
+(e.g., querying for 2025-26 playoffs in February 2026 returns 2024-25 rows).
+Hart.6 will reject rows where `seasonId != requested_season` at the schema
+deserialization layer and emit a WARN. Today only `GoalieStats` carries the
+`season_id` field (`schema.rs:154`); `SkaterStats` and `SkaterBio` get the
+field added in Hart.6.1, with the rejection rule in Hart.6.4. Until then,
+cross-season leakage is a documented gap, not a present-tense invariant.
 
 ---
 
@@ -228,24 +239,35 @@ season switch.
 
 ## Loader contract & invariants
 
-```
+```rust
 load_into_repo(season, season_type, &SnapshotStore) -> Result<LoadOutcome, LoadError>
 
+#[derive(Debug)]
 pub struct LoadOutcome {
-    pub repo:    StatsRepository,         // !Send + !Sync
-    pub missing: Vec<MissingSource>,      // realtime / moneypuck / contracts absences
+    pub repo:          StatsRepository,    // !Send + !Sync
+    pub missing:       Vec<MissingSource>, // tier-level partial-fetch signals
+    pub missing_files: Vec<String>,        // file-level diagnostic (paths attempted)
+    pub fetched_at:    String,             // ISO-8601 timestamp of the load
 }
 
+#[non_exhaustive]
 pub enum MissingSource {
-    Realtime,
-    MoneyPuck,
-    Contracts,
+    Realtime    { season: String, season_type: SeasonType, reason: String },
+    MoneyPuck   { season: String,                            reason: String },
+    Contracts   {                                            reason: String },
+    GoalieStats { season: String, season_type: SeasonType, reason: String },
 }
 ```
+
+Defined in `icelines-fetch::stats_loader`. The shape above is the load-bearing
+contract; each variant carries the (season, type, reason) tuple needed to
+render an actionable user-facing banner. `#[non_exhaustive]` permits future
+additions without a breaking-change bump.
 
 Callers MUST surface `LoadOutcome.missing` to the user — either as a TUI status
 toast, a CLI WARN line, or HTTP `X-IceLines-Missing` header. Silent zero-fill is
-never acceptable for these sources.
+never acceptable for these sources. The TUI's `poll_load` must drain
+`outcome.missing` into `app.status` before discarding the outcome (5c.6 D8).
 
 External-source schema validation: every NHL API / ESPN response struct in
 `icelines-fetch` carries `serde(deny_unknown_fields)`. New API fields must be
@@ -277,22 +299,49 @@ Compatibility matrix on every snapshot read:
 
 | Found version | Action |
 |---|---|
-| `version <= MAX_KNOWN`         | Read normally. |
-| `version > MAX_KNOWN`          | Refuse: `LoadError::SchemaTooNew { found, max_known }` — "snapshot was written by a newer binary; upgrade `icelines`." |
-| `version < MIN_SUPPORTED`      | Refuse: `LoadError::SchemaTooOld { found, required }` — "re-run `icelines data install <season>` against the latest bundle." |
+| `version <= MAX_KNOWN_BUNDLE_SCHEMA`  | Read normally. |
+| `version >  MAX_KNOWN_BUNDLE_SCHEMA`  | Refuse: `LoadError::BundleSchemaUnknown { found, max_known }` — "snapshot was written by a newer binary; upgrade `icelines`." |
+| `repo_version > MAX_KNOWN_REPO_VERSION` | Refuse: `LoadError::RepoVersionUnknown { found, max_known }` — "re-run `icelines data install <season>` against the latest bundle." |
+
+Today the migrator path for `version < MAX_KNOWN_BUNDLE_SCHEMA` is silent
+(only versions 0 and 1 exist; 0 = pre-Hart cold-start). Future bumps must
+add a migrator dispatch — flagged by an in-source TODO at
+`stats_loader.rs:139-144`.
 
 Hart bumps these constants explicitly. Old binaries reading new snapshots fail
 loudly; new binaries reading too-old snapshots fail loudly with a remediation
 hint. Silent corruption is the failure mode this gate exists to prevent.
 
 `data install` to a season that already has a live snapshot keeps the snapshot
-(snapshots win at query time); the installed bundle is fallback-only. Conflict
-resolution is precedence, not merge.
+for sources that have an installed-bundle tier (goalies, transactions,
+playoffs); snapshots win at query time, the installed bundle is fallback-only.
+Conflict resolution is precedence, not merge. Realtime, MoneyPuck, and
+contracts have no installed-bundle tier — the precedence rule does not apply
+to them; they remain snapshot-only with `MissingSource` flagging when absent.
 
-Snapshot writes use atomic rename (`write tmp/ + rename → dest/`). Two
-processes (`icelines tui` + `icelines fantasy serve`) reading concurrently
-tolerate each other; writers serialize via the rename boundary. No file-lock
-protocol beyond filesystem-atomic rename.
+**Snapshot write protocol**:
+
+- Legacy single-file tiers (`bios.json`, `stats.json`, `goalie-stats.json`,
+  `transactions.json`): write to `<dir>/.tmp/<file>` then `rename → <dir>/<file>`.
+  One rename = one atomic publish.
+- Chunked snapshot (Phase 8h): individual chunks under `chunks/ab/ab1f5c…`
+  are content-addressed (hash-named, write-once). A reader landing mid-write
+  may see an unreferenced chunk on disk — harmless, since the only mutable
+  entry points (`chunked.json` manifest and `chunkrefs.json` refcount table)
+  are written via tmp+rename. Garbage chunks survive until the next GC pass.
+- Cross-process readers (`icelines tui` + `icelines fantasy serve`) tolerate
+  each other; writers serialize via rename. No file-lock protocol beyond
+  filesystem-atomic rename.
+
+**Failed-rename recovery**: if a writer crashes between chunk writes and
+manifest rename (disk full, EACCES), the snapshot dir is left non-empty but
+without a sealed `chunked.json` / `snapshot.json`. On the next
+`load_into_repo`, the tier read returns `LoadError::SnapshotPartial { dir }`;
+caller surfaces a clear remediation ("snapshot at <dir> is incomplete; run
+`icelines fetch` to retry or `icelines snapshot delete <name>` to remove").
+The loader does NOT silently fall through to embedded — that would mask the
+corrupt mid-write state. Startup `icelines snapshot verify` enumerates all
+partial dirs.
 
 ---
 
@@ -547,10 +596,20 @@ Library crates:           thiserror enums, never panic in production paths
   icelines_core::stats_repository::RepoError      ← upsert violations, LRU
   icelines_core::identity::IdentityMergeError     ← name_normalized conflicts
   icelines_fetch::FetchError
-  icelines_fetch::LoadError                       ← #[from] RepoError
-                                                    SchemaTooNew { found, max_known }
-                                                    SchemaTooOld { found, required }
-  icelines_fetch::SnapshotError                   ← IntegrityViolation { file, expected, got }
+  icelines_fetch::LoadError                       ← #[non_exhaustive]
+                                                    SeasonNotBundled { season }
+                                                    MissingBundle { season, season_type }
+                                                    BundleSchemaUnknown { found, max_known }
+                                                    RepoVersionUnknown { found, max_known }
+                                                    SnapshotPartial { dir }   ← orphan tmp dir
+                                                    Repo(#[from] RepoError)
+  icelines_fetch::SnapshotError                   ← NotFound { name }
+                                                    NotSealed { name }
+                                                    IntegrityViolation { file, expected, got }
+                                                    MissingParent { name, parent }
+                                                    NoActiveSnapshot
+  icelines_cli::dashboard::DashboardError         ← PlayerNotInRepo
+                                                    CrossWindowCompile { requested, ctx_for }
   icelines_site::SiteError
 
 CLI binary (icelines-cli): anyhow::Error
@@ -569,7 +628,7 @@ Time-travel = repo_swap to a freshly loaded repo for new (s, t).
 Caches that depend on (s, t) (dashboard_panel, league_context) clear on swap.
 ```
 
-### Test strategy (1,020 tests as of 2026-05-01; ~1,032 expected post-Hart.5c.6)
+### Test strategy (1,020 tests as of 2026-05-01; floor must not regress)
 
 ```
 L0 unit (~308 core lib, ~315 cli main)
@@ -591,10 +650,15 @@ cargo test --workspace runs all tiers; CI gates green on every commit.
 
 CI policy: snapshot diffs and known-value assert failures are HARD-block
 (merge refused). Style-regression and lint-only failures are advisory.
-Hart.4.1 invariants (sum-equals across stints, monotonic stint dates,
-post-upsert roster sum-equals, LRU bidirectional bijection) are L0
-hard-block; the `repo_swap` borrow check is enforced by a compile_fail
-doctest at `stats_repository.rs:513` and is also hard-block.
+Hart.4.1 invariants are L0 hard-block — locked in `icelines-core/src/fixtures.rs`
+test mod with named tests `assert_stint_sum_equals_totals`,
+`monotonic_stints`, `post_upsert_roster_sum`, `lru_bijection`, plus
+`upsert_stats_rejects_empty_team_stints` (HART v4 F3) and
+`view_pace_82_returns_none_below_threshold` (PACE A4 lock). The `repo_swap`
+borrow check is enforced by a compile_fail doctest at
+`stats_repository.rs:513` and is also hard-block. The Slafkovský diacritic
+round-trip lives in `icelines-fetch/tests/stats_loader.rs::l1_player_view_accessors_against_real_bundled_data`
+(diacritic block at lines 512-527) and is part of the L1 hard-block set.
 
 Test-count regression: the post-merge harness asserts
 `expected_test_count >= prior_count`. A test deletion without a
