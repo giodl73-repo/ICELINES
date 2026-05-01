@@ -4,6 +4,16 @@
 
 use std::sync::{Arc, Mutex};
 use icelines_core::model::{Goalie, Player};
+use icelines_core::Transaction;
+
+/// Per-load transactions bundle. Empty/default when the snapshot is
+/// missing — UI renders the empty legend card in that case.
+#[derive(Debug, Clone, Default)]
+pub struct TransactionsLoad {
+    pub rows:        Vec<Transaction>,
+    pub fetched_at:  String,
+    pub stale:       bool,
+}
 
 /// Shared loading state readable from the event loop.
 #[derive(Debug, Clone)]
@@ -13,20 +23,22 @@ pub struct LoadState {
 
 #[derive(Debug)]
 struct LoadInner {
-    pub players: Vec<Player>,
-    pub goalies: Vec<Goalie>,
-    pub loading: bool,
-    pub error:   Option<String>,
+    pub players:      Vec<Player>,
+    pub goalies:      Vec<Goalie>,
+    pub transactions: TransactionsLoad,
+    pub loading:      bool,
+    pub error:        Option<String>,
 }
 
 impl LoadState {
     pub fn new() -> Self {
         Self {
             inner: Arc::new(Mutex::new(LoadInner {
-                players: Vec::new(),
-                goalies: Vec::new(),
-                loading: true,
-                error:   None,
+                players:      Vec::new(),
+                goalies:      Vec::new(),
+                transactions: TransactionsLoad::default(),
+                loading:      true,
+                error:        None,
             })),
         }
     }
@@ -55,16 +67,29 @@ impl LoadState {
         }
     }
 
+    /// Pop the loaded transactions bundle. Phase T.5. Returns Some even
+    /// when `rows.is_empty()` so the UI can distinguish "still loading"
+    /// from "loaded, empty" (and render the legend card for the latter).
+    pub fn take_transactions(&self) -> Option<TransactionsLoad> {
+        let mut g = self.inner.lock().ok()?;
+        if !g.loading && g.error.is_none() {
+            Some(std::mem::take(&mut g.transactions))
+        } else {
+            None
+        }
+    }
+
     #[allow(dead_code)]
     pub fn error(&self) -> Option<String> {
         self.inner.lock().ok().and_then(|g| g.error.clone())
     }
 
-    fn set_done(&self, players: Vec<Player>, goalies: Vec<Goalie>) {
+    fn set_done(&self, players: Vec<Player>, goalies: Vec<Goalie>, transactions: TransactionsLoad) {
         if let Ok(mut g) = self.inner.lock() {
-            g.players = players;
-            g.goalies = goalies;
-            g.loading = false;
+            g.players      = players;
+            g.goalies      = goalies;
+            g.transactions = transactions;
+            g.loading      = false;
         }
     }
 
@@ -76,18 +101,55 @@ impl LoadState {
     }
 }
 
-/// Spawn a tokio task that loads players + goalies in parallel and
-/// stores them in `state`. Phase G.3.
+/// Spawn a tokio task that loads players + goalies + transactions in
+/// parallel and stores them in `state`. Phase T.5 extends the goalies
+/// pattern with a third bundle.
 pub fn spawn_loader(state: LoadState) {
     tokio::spawn(async move {
         let players = crate::commands::players::load_all_players();
         let goalies = crate::commands::players::load_all_goalies();
-        match (players, goalies) {
-            (Ok(p), Ok(g))      => state.set_done(p, g),
-            (Ok(p), Err(_e))    => state.set_done(p, Vec::new()),  // skater-only fallback
-            (Err(e), _)         => state.set_error(e.to_string()),
+        let transactions = load_transactions_bundle();
+
+        match players {
+            Err(e) => { state.set_error(e.to_string()); }
+            Ok(p) => {
+                let g = goalies.unwrap_or_default();
+                state.set_done(p, g, transactions);
+            }
         }
     });
+}
+
+/// Best-effort transactions load. Failure to find a snapshot for the
+/// current season is normal (legend card path) — we never bail.
+fn load_transactions_bundle() -> TransactionsLoad {
+    use icelines_fetch::{
+        bundled::load_transactions_with_fallback,
+        snapshot::{SnapshotMetaFlags, SnapshotStore},
+    };
+
+    let cfg = match crate::config::Config::load() {
+        Ok(c) => c,
+        Err(_) => return TransactionsLoad::default(),
+    };
+    let snapshots_root = cfg.snapshot_dir();
+    let store = SnapshotStore::new(snapshots_root.clone());
+    let season = cfg.season_str();
+
+    let envelope = load_transactions_with_fallback(&season, &store);
+    let flags = SnapshotMetaFlags::load(&snapshots_root, &season);
+    match envelope {
+        Ok(env) => TransactionsLoad {
+            rows:       env.rows,
+            fetched_at: env.fetched_at,
+            stale:      flags.transactions_stale,
+        },
+        Err(_) => TransactionsLoad {
+            rows:       Vec::new(),
+            fetched_at: String::new(),
+            stale:      flags.transactions_stale,
+        },
+    }
 }
 
 // ── Season install state ──────────────────────────────────────────────────────

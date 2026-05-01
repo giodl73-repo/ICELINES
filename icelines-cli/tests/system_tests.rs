@@ -116,6 +116,20 @@ fn l2_cmd_fetch_goalies_dry_run_exits_zero() {
         "dry-run should mention the goalie endpoint, got:\n{stdout}");
 }
 
+#[test]
+fn l2_cmd_fetch_transactions_dry_run_exits_zero() {
+    // Phase T.3: `fetch transactions` dry-run announces the ESPN target.
+    let out = run(&["fetch", "transactions", "--dry-run"]);
+    assert!(out.status.success(),
+        "fetch transactions --dry-run stderr: {}",
+        String::from_utf8_lossy(&out.stderr));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("ESPN") || stdout.contains("Would fetch"),
+        "dry-run should mention ESPN or 'Would fetch', got:\n{stdout}"
+    );
+}
+
 // ── L2: team with no cache exits 1 with helpful message ──────────────────────
 
 #[test]
@@ -749,10 +763,270 @@ fn l2_x_help_lists_all_shapes() {
     let out = run(&["x", "--help"]);
     assert!(out.status.success(), "icelines x --help must exit 0");
     let stdout = String::from_utf8_lossy(&out.stdout);
-    for shape in &["rank", "leaders", "goalies", "players", "history", "peers", "compare"] {
+    for shape in &[
+        "rank", "leaders", "goalies", "players",
+        "history", "peers", "compare", "transactions",
+    ] {
         assert!(
             stdout.contains(shape),
             "x --help must list '{shape}' shape, got: {stdout}"
+        );
+    }
+}
+
+// ── L2: transactions (Phase T.4) ─────────────────────────────────────────────
+
+#[test]
+fn l2_cmd_transactions_exits_zero() {
+    let out = run(&["transactions"]);
+    assert!(out.status.success(),
+        "transactions must exit 0, stderr: {}",
+        String::from_utf8_lossy(&out.stderr));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("Transactions"), "header must mention Transactions, got: {stdout}");
+}
+
+#[test]
+fn l2_cmd_transactions_csv_emits_header_and_rows() {
+    let out = run(&["transactions", "--csv"]);
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let header = stdout.lines().next().unwrap_or("");
+    for col in &["date", "team", "kind", "description", "id"] {
+        assert!(header.contains(col),
+            "CSV header must include '{col}', got: {header}");
+    }
+    let lines = stdout.lines().count();
+    assert!(lines >= 2, "expected ≥2 lines (header + ≥1 row), got {lines}");
+}
+
+#[test]
+fn l2_cmd_transactions_team_edm_filters() {
+    let out = run(&["transactions", "--team", "EDM", "--csv"]);
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let body_lines: Vec<&str> = stdout.lines().skip(1).collect();
+    for line in &body_lines {
+        // Team col is the second CSV field.
+        let cols: Vec<&str> = line.split(',').collect();
+        assert!(cols.len() >= 2);
+        assert_eq!(cols[1], "EDM",
+            "every row must be EDM after --team filter, got: {line}");
+    }
+}
+
+#[test]
+fn l2_cmd_transactions_team_LEAGUE_returns_teamless() {
+    let out = run(&["transactions", "--team", "LEAGUE", "--csv"]);
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let body_lines: Vec<&str> = stdout.lines().skip(1).filter(|l| !l.is_empty()).collect();
+    for line in &body_lines {
+        let cols: Vec<&str> = line.split(',').collect();
+        assert_eq!(cols[1], "LEAGUE",
+            "--team LEAGUE must return only teamless rows, got: {line}");
+    }
+}
+
+#[test]
+fn l2_cmd_transactions_kind_trade_filters() {
+    let out = run(&["transactions", "--kind", "trade", "--csv"]);
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    for line in stdout.lines().skip(1).filter(|l| !l.is_empty()) {
+        let cols: Vec<&str> = line.split(',').collect();
+        assert_eq!(cols[2], "trade",
+            "--kind trade must return only trades, got: {line}");
+    }
+}
+
+#[test]
+fn l2_cmd_transactions_out_writes_file() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let path = tmp.path().join("tx.csv");
+    let out = run(&[
+        "transactions", "--out", path.to_str().unwrap(),
+    ]);
+    assert!(out.status.success(),
+        "transactions --out stderr: {}", String::from_utf8_lossy(&out.stderr));
+    let body = std::fs::read_to_string(&path).expect("output file must exist");
+    assert!(body.starts_with("date") || body.starts_with("[") || body.contains("kind"),
+        "output must contain a recognizable header / JSON, got: {body}");
+}
+
+#[test]
+fn l2_cmd_transactions_invalid_kind_exits_nonzero() {
+    let out = run(&["transactions", "--kind", "trades"]);  // typo plural
+    assert!(!out.status.success(), "invalid kind must exit non-zero");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("unknown kind"),
+        "error must mention 'unknown kind', got: {stderr}");
+    assert!(stderr.contains("trade"),
+        "error must list valid kinds, got: {stderr}");
+}
+
+#[test]
+fn l2_cmd_transactions_invalid_since_exits_nonzero() {
+    let out = run(&["transactions", "--since", "2026-13-40"]);
+    assert!(!out.status.success(), "invalid date must exit non-zero");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    let s = stderr.to_lowercase();
+    assert!(
+        s.contains("date") || stderr.contains("YYYY-MM-DD")
+            || s.contains("month") || s.contains("day") || s.contains("range"),
+        "error must hint at the offending date piece, got: {stderr}",
+    );
+}
+
+#[test]
+fn l2_cmd_transactions_since_after_until_exits_nonzero() {
+    let out = run(&[
+        "transactions", "--since", "2026-04-30", "--until", "2026-04-01",
+    ]);
+    assert!(!out.status.success(), "since > until must exit non-zero");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("after"),
+        "error must mention 'after', got: {stderr}");
+}
+
+#[test]
+fn l2_cmd_transactions_csv_and_json_mutually_exclusive() {
+    let out = run(&["transactions", "--csv", "--json"]);
+    assert!(!out.status.success(), "both flags must exit non-zero");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("exclusive") || stderr.contains("mutually"),
+        "error must mention mutual exclusion, got: {stderr}");
+}
+
+#[test]
+fn l2_cmd_transactions_top_combined_with_kind_returns_at_most_n() {
+    let out = run(&["transactions", "--kind", "trade", "--top", "1", "--csv"]);
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let body_lines = stdout.lines().skip(1).filter(|l| !l.is_empty()).count();
+    assert!(body_lines <= 1,
+        "--top 1 must return at most 1 row, got {body_lines}");
+}
+
+#[test]
+fn l2_cmd_transactions_lowercase_team_normalized() {
+    let out = run(&["transactions", "--team", "edm", "--csv"]);
+    assert!(out.status.success(),
+        "lowercase --team should normalize, stderr: {}",
+        String::from_utf8_lossy(&out.stderr));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    for line in stdout.lines().skip(1).filter(|l| !l.is_empty()) {
+        let cols: Vec<&str> = line.split(',').collect();
+        assert_eq!(cols[1], "EDM",
+            "lowercase 'edm' must normalize to 'EDM', got: {line}");
+    }
+}
+
+#[test]
+fn l2_cmd_transactions_pre_coverage_season_helpful_message() {
+    let out = run(&["transactions", "--season", "19951996"]);
+    assert!(!out.status.success(),
+        "pre-coverage season must exit non-zero, stdout: {}",
+        String::from_utf8_lossy(&out.stdout));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    // EDGE-mandated: NOT a "run icelines fetch" hint (which would 404).
+    assert!(stderr.contains("begins") || stderr.contains("not covered"),
+        "error must explain coverage, got: {stderr}");
+    assert!(!stderr.contains("run `icelines fetch transactions`"),
+        "must NOT suggest fetching for a pre-coverage season, got: {stderr}");
+}
+
+#[test]
+fn l2_cmd_transactions_json_output_is_valid_array() {
+    let out = run(&["transactions", "--json"]);
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let parsed: serde_json::Value = serde_json::from_str(stdout.trim())
+        .expect("--json output must be valid JSON");
+    assert!(parsed.is_array(), "--json output must be a top-level array");
+}
+
+#[test]
+fn l2_x_transactions_defaults_to_csv() {
+    let out = run(&["x", "transactions"]);
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.starts_with("date,team,kind"),
+        "x transactions must default to CSV (header first), got: {stdout}");
+}
+
+#[test]
+fn l2_cmd_transactions_search_filters_to_substring() {
+    // --search runs case-insensitive description substring match.
+    // We use --season 20232024 because the bundled snapshot has well-known
+    // signings (e.g. for any common surname) we can hit.
+    let out = run(&[
+        "transactions", "--season", "20232024",
+        "--search", "bedard", "--csv",
+    ]);
+    assert!(out.status.success(),
+        "transactions --search must exit 0, stderr: {}",
+        String::from_utf8_lossy(&out.stderr));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let body_lines: Vec<&str> = stdout.lines().skip(1).filter(|l| !l.is_empty()).collect();
+    // Every body row must mention 'bedard' in the description (case-insensitive).
+    for line in &body_lines {
+        assert!(
+            line.to_lowercase().contains("bedard"),
+            "every --search row must mention 'bedard', got: {line}",
+        );
+    }
+}
+
+#[test]
+fn l2_cmd_transactions_search_empty_passes_all() {
+    let raw = run(&["transactions", "--season", "20232024", "--csv"]);
+    let with_empty = run(&["transactions", "--season", "20232024", "--search", "", "--csv"]);
+    assert!(raw.status.success());
+    assert!(with_empty.status.success());
+    let n_raw = String::from_utf8_lossy(&raw.stdout).lines().count();
+    let n_emp = String::from_utf8_lossy(&with_empty.stdout).lines().count();
+    assert_eq!(n_raw, n_emp,
+        "--search '' must be a no-op; got {n_raw} vs {n_emp}");
+}
+
+#[test]
+fn l2_cmd_transactions_player_filter_works_by_last_name() {
+    // --player matches by last-name token, NFD-stripped.
+    let out = run(&[
+        "transactions", "--season", "20232024",
+        "--player", "Bedard", "--csv",
+    ]);
+    assert!(out.status.success(),
+        "transactions --player must exit 0, stderr: {}",
+        String::from_utf8_lossy(&out.stderr));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let body_lines: Vec<&str> = stdout.lines().skip(1).filter(|l| !l.is_empty()).collect();
+    for line in &body_lines {
+        assert!(
+            line.to_lowercase().contains("bedard"),
+            "every --player Bedard row must mention 'bedard', got: {line}",
+        );
+    }
+}
+
+#[test]
+fn l2_cmd_transactions_player_with_team_disambig() {
+    // --player + --team narrows to one team's appearances.
+    let out = run(&[
+        "transactions", "--season", "20232024",
+        "--player", "McDavid", "--team", "EDM", "--csv",
+    ]);
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let body_lines: Vec<&str> = stdout.lines().skip(1).filter(|l| !l.is_empty()).collect();
+    for line in &body_lines {
+        let cols: Vec<&str> = line.split(',').collect();
+        // Team col is 2nd. Either EDM or LEAGUE (teamless league-wide rows
+        // pass the team filter — see search.rs).
+        assert!(
+            cols.len() >= 2 && (cols[1] == "EDM" || cols[1] == "LEAGUE"),
+            "--player McDavid --team EDM row must be EDM or LEAGUE, got: {line}",
         );
     }
 }

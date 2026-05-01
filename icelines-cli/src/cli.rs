@@ -258,6 +258,34 @@ pub enum Commands {
         #[arg(long, value_name = "PATH")]
         out:  Option<std::path::PathBuf>,
     },
+    /// League-wide transactions feed: trades, waivers, signings, IR, recalls,
+    /// reassignments. Sourced from ESPN's site.api. Phase T.4.
+    Transactions {
+        /// Filter to one team (canonical NHL abbrev — TBL, EDM, …).
+        /// Use `LEAGUE` for league-wide / teamless rows.
+        #[arg(long)] team: Option<String>,
+        /// Only show transactions on/after this date (YYYY-MM-DD).
+        #[arg(long)] since: Option<String>,
+        /// Only show transactions on/before this date (YYYY-MM-DD).
+        #[arg(long)] until: Option<String>,
+        /// Filter by kind: trade, signing, recall, reassignment, ir,
+        /// waiver (or waiver_placement / waiver_clear / waiver_claim), other.
+        #[arg(long)] kind: Option<String>,
+        /// Free-form substring search against the description (case-insensitive,
+        /// diacritic-stripped). Works on player names, team names, anything.
+        #[arg(long)] search: Option<String>,
+        /// Show only transactions mentioning this player by last name.
+        /// Combine with --team to disambiguate shared last names.
+        #[arg(long)] player: Option<String>,
+        /// Use a bundled or installed historical season.
+        #[arg(long)] season: Option<String>,
+        /// Limit to first N rows (default: all).
+        #[arg(long)] top: Option<usize>,
+        #[arg(long)] json: bool,
+        #[arg(long)] csv:  bool,
+        #[arg(long, value_name = "PATH")]
+        out:  Option<std::path::PathBuf>,
+    },
     /// Manage player watchlists and custom groups.
     #[command(subcommand)]
     Group(GroupSubcommand),
@@ -362,6 +390,16 @@ pub enum FetchSubcommand {
         season: String,
         #[arg(long)]
         refresh: bool,
+        #[arg(long)]
+        dry_run: bool,
+    },
+    /// Fetch league-wide transactions from ESPN — Phase T.3.
+    /// Trades, waivers, signings, IR, recalls, reassignments. Writes
+    /// transactions.json into the active snapshot store and updates the
+    /// per-season `_meta.json` stale flag.
+    Transactions {
+        #[arg(long, default_value = icelines_core::CURRENT_SEASON_STR)]
+        season: String,
         #[arg(long)]
         dry_run: bool,
     },
@@ -889,4 +927,6 @@ pub enum ExportShape {
     Peers,
     /// Two-player comparison (mirrors `icelines compare`).
     Compare,
+    /// League-wide transactions feed (mirrors `icelines transactions`).
+    Transactions,
 }

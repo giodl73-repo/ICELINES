@@ -56,7 +56,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, idx: usize) {
         .split(inner);
 
     render_headshot(f, app, p, chunks[0]);
-    render_stats(f, p, chunks[1]);
+    render_stats(f, app, p, chunks[1]);
     if dashboards_on {
         render_dashboard_panel(f, app, p, chunks[2]);
     }
@@ -143,7 +143,7 @@ fn render_headshot(f: &mut Frame, app: &App, p: &icelines_core::model::Player, a
     f.render_widget(Paragraph::new(lines), area);
 }
 
-fn render_stats(f: &mut Frame, p: &icelines_core::model::Player, area: Rect) {
+fn render_stats(f: &mut Frame, app: &App, p: &icelines_core::model::Player, area: Rect) {
     let ppg  = p.pace_score.map(|s| format!("{:.3}", s.pace_82/82.0)).unwrap_or_else(|| "—".to_owned());
     let proj = p.pace_score.map(|s| format!("{:.1}", s.pace_82)).unwrap_or_else(|| "—".to_owned());
     let gp   = p.pace_score.map(|s| s.gp.to_string()).unwrap_or_else(|| "—".to_owned());
@@ -161,7 +161,7 @@ fn render_stats(f: &mut Frame, p: &icelines_core::model::Player, area: Rect) {
     let hi  = Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD);
     let dim = Style::default().fg(Color::DarkGray);
 
-    let lines = vec![
+    let mut lines = vec![
         Line::styled(format!(" {}", p.full_name), hi),
         Line::from(format!(" {} · {} · Age {}", p.team.as_str(), p.position.abbreviation(), age)),
         Line::from(""),
@@ -182,6 +182,38 @@ fn render_stats(f: &mut Frame, p: &icelines_core::model::Player, area: Rect) {
             p.nationality_code.as_deref().unwrap_or("—"),
             p.shoots_catches.as_deref().unwrap_or("—"))),
     ];
+
+    // ── Recent transactions section ─────────────────────────────────
+    // Phase T+1: surface every loaded transaction whose description
+    // mentions this player by last name. Team-disambiguated so the two
+    // Sebastian Ahos don't pollute each other's cards.
+    let team_for_disambig = p.team.as_str();
+    let hits = icelines_core::transactions::transactions_for_player(
+        &app.transactions,
+        &p.full_name,
+        Some(team_for_disambig),
+    );
+    if !hits.is_empty() {
+        lines.push(Line::from(""));
+        lines.push(Line::styled(" Recent moves", dim));
+        // Newest 5; full list available on the Transactions tab.
+        let mut sorted: Vec<&icelines_core::Transaction> = hits.clone();
+        sorted.sort_by(|a, b| b.date.cmp(&a.date));
+        for tx in sorted.into_iter().take(5) {
+            let kind = tx.kind.label();
+            // Truncate at 60 chars so the card row doesn't overflow on
+            // narrow terminals — full description is on the Transactions tab.
+            let desc: String = tx.description.chars().take(60).collect();
+            lines.push(Line::from(format!(" {}  {:<10}  {}", tx.date, kind, desc)));
+        }
+        if hits.len() > 5 {
+            lines.push(Line::styled(
+                format!(" ({} more on Transactions tab)", hits.len() - 5),
+                dim,
+            ));
+        }
+    }
+
     f.render_widget(Paragraph::new(lines), area);
 }
 
