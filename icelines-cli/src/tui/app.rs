@@ -713,6 +713,12 @@ impl App {
                         self.screen = Screen::Comps(idx);
                         self.selected = 0;
                     }
+                } else if let Screen::PlayerById(pid) = self.screen {
+                    if c == 'c' {
+                        self.prev_screen = Some(self.screen.clone());
+                        self.screen = Screen::CompsById(pid);
+                        self.selected = 0;
+                    }
                 } else if matches!(self.screen, Screen::Depth | Screen::DepthTeam(_)) && c == 's' {
                     self.depth_mode = self.depth_mode.toggle();
                     self.status = format!("Scoring: {}", self.depth_mode.label());
@@ -1430,6 +1436,11 @@ impl App {
                 .get(*idx)
                 .map(|p| (p.name_normalized.clone(), p.full_name.clone())),
 
+            Screen::PlayerById(pid) => self
+                .repo
+                .identity(*pid)
+                .map(|i| (i.name_normalized.clone(), i.full_name.clone())),
+
             Screen::Team(abbrev) => {
                 let abbrev = abbrev.clone();
                 self.players
@@ -1501,6 +1512,16 @@ impl App {
                 })
             }
 
+            Screen::CompsById(pid) => {
+                let pid = *pid;
+                let views = self.views();
+                self.view_for(pid).and_then(|target| {
+                    crate::tui::screens::comps::find_comps_views(&views, &target)
+                        .get(self.selected)
+                        .map(|v| (v.identity.name_normalized.clone(), v.full_name().to_owned()))
+                })
+            }
+
             _ => None,
         }
     }
@@ -1517,17 +1538,18 @@ impl App {
             }
             Screen::Team(abbrev) => {
                 // Select a player from the team roster → open their player card
-                let abbrev = abbrev.clone();
-                let global_idx = self
-                    .players
-                    .iter()
-                    .enumerate()
-                    .filter(|(_, p)| p.team.as_str() == abbrev.as_str())
-                    .nth(self.selected)
-                    .map(|(i, _)| i);
-                if let Some(idx) = global_idx {
+                // Hart.5c.6 Phase B-2 step 2: navigate via PlayerId.
+                // Resolve the selected row to its PlayerView and push
+                // PlayerById; the team_views accessor honors last-stint
+                // semantics per D10.
+                let team_abbr = icelines_core::model::TeamAbbr(abbrev.clone());
+                let pid = self
+                    .team_views(&team_abbr)
+                    .get(self.selected)
+                    .map(|v| v.identity.id);
+                if let Some(pid) = pid {
                     self.prev_screen = Some(self.screen.clone());
-                    self.screen = Screen::Player(idx);
+                    self.screen = Screen::PlayerById(pid);
                     self.selected = 0;
                 }
             }
@@ -1565,20 +1587,23 @@ impl App {
                 }
             }
             Screen::GroupDetail(_) => {
-                // Enter on a member row → player card
+                // Enter on a member row → player card. Hart.5c.6 Phase B-2 step 2:
+                // resolve the member's stored normalized name to a PlayerView in
+                // the active window, then navigate via PlayerById.
                 if let Screen::GroupDetail(ref group_name) = self.screen.clone() {
                     let members = crate::db::GroupDb::open()
                         .ok()
                         .and_then(|db| db.list_members(group_name).ok())
                         .unwrap_or_default();
                     if let Some(norm) = members.get(self.selected) {
-                        if let Some(global_idx) = self
-                            .players
+                        let views = self.views();
+                        let pid = views
                             .iter()
-                            .position(|p| p.name_normalized.contains(norm.as_str()))
-                        {
+                            .find(|v| v.identity.name_normalized.contains(norm.as_str()))
+                            .map(|v| v.identity.id);
+                        if let Some(pid) = pid {
                             self.prev_screen = Some(self.screen.clone());
-                            self.screen = Screen::Player(global_idx);
+                            self.screen = Screen::PlayerById(pid);
                             self.selected = 0;
                         }
                     }
@@ -1614,7 +1639,12 @@ impl App {
                         }
                     }
                     QueryMode::Build => {
-                        // Enter on a result row → player card
+                        // Enter on a result row → player card. Hart.5c.6
+                        // Phase B-2 step 2: queries still runs against
+                        // legacy `&self.players` (Phase B-3 migrates
+                        // queries.rs); the resulting `p.nhl_id` is the
+                        // bridge — we wrap it in PlayerId and navigate
+                        // through the new variant.
                         let results = crate::tui::screens::queries::run_query(
                             &self.players,
                             &self.query_fields,
@@ -1622,11 +1652,11 @@ impl App {
                         let row_idx = self.query_result_scroll
                             + self.selected.min(results.len().saturating_sub(1));
                         if let Some((_, p)) = results.get(row_idx) {
-                            if let Some(global_idx) =
-                                self.players.iter().position(|pl| pl.nhl_id == p.nhl_id)
-                            {
+                            if let Some(nhl_id) = p.nhl_id {
                                 self.prev_screen = Some(self.screen.clone());
-                                self.screen = Screen::Player(global_idx);
+                                self.screen = Screen::PlayerById(
+                                    icelines_core::identity::PlayerId(nhl_id),
+                                );
                                 self.selected = 0;
                             }
                         }
@@ -1634,44 +1664,49 @@ impl App {
                 }
             }
             Screen::Projections => {
-                // Enter on a projection row → player card
-                // The sorted order matches render order — find the Nth rankable player
-                let mut sorted_indices: Vec<usize> = self
-                    .players
-                    .iter()
-                    .enumerate()
-                    .filter(|(_, p)| p.pace_score.is_some())
-                    .collect::<Vec<_>>()
+                // Enter on a projection row → player card. Hart.5c.6
+                // Phase B-2 step 2: build the same sorted view set that
+                // misc::render_projections renders (pace_82 desc, None
+                // last, full_name asc tiebreak), then pick out the
+                // PlayerId at self.selected.
+                let mut sorted: Vec<icelines_core::stats_repository::PlayerView<'_>> = self
+                    .views()
                     .into_iter()
-                    .enumerate()
-                    .map(|(rank_pos, (global_idx, p))| {
-                        (
-                            rank_pos,
-                            global_idx,
-                            p.pace_score.map(|s| s.pace_82).unwrap_or(0.0),
-                        )
-                    })
-                    .collect::<Vec<_>>()
-                    .into_iter()
-                    .map(|(_, gi, _)| gi)
+                    .filter(|v| v.pace_82().is_some())
                     .collect();
-                // Sort by pace descending (same order as render)
-                sorted_indices.sort_by(|&a, &b| {
-                    let pa = self.players[a].pace_score.map(|s| s.pace_82).unwrap_or(0.0);
-                    let pb = self.players[b].pace_score.map(|s| s.pace_82).unwrap_or(0.0);
-                    pb.partial_cmp(&pa).unwrap_or(std::cmp::Ordering::Equal)
+                sorted.sort_by(|a, b| {
+                    let sa = a.pace_82().unwrap_or(f64::NEG_INFINITY);
+                    let sb = b.pace_82().unwrap_or(f64::NEG_INFINITY);
+                    sb.partial_cmp(&sa)
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                        .then_with(|| a.full_name().cmp(b.full_name()))
                 });
-                if let Some(&global_idx) = sorted_indices.get(self.selected) {
+                if let Some(v) = sorted.get(self.selected) {
+                    let pid = v.identity.id;
                     self.prev_screen = Some(self.screen.clone());
-                    self.screen = Screen::Player(global_idx);
+                    self.screen = Screen::PlayerById(pid);
                     self.selected = 0;
                 }
             }
             Screen::Search => {
-                // Navigate to player screen for selected search result
-                self.prev_screen = Some(Screen::Search);
-                self.screen = Screen::Player(self.selected);
-                self.selected = 0;
+                // Navigate to player screen for selected search result.
+                // Hart.5c.6 Phase B-2 step 2: legacy code did
+                // `Screen::Player(self.selected)` which used selected as
+                // a global index into app.players — broken for non-empty
+                // queries (jumped to Nth player in iteration order, not
+                // Nth match). Fixed by re-running search_results to find
+                // the actual selected match's PlayerId.
+                let views = self.views();
+                let results = crate::tui::screens::search::search_results(
+                    &views,
+                    &self.search_query,
+                );
+                if let Some(v) = results.get(self.selected) {
+                    let pid = v.identity.id;
+                    self.prev_screen = Some(Screen::Search);
+                    self.screen = Screen::PlayerById(pid);
+                    self.selected = 0;
+                }
             }
             Screen::Depth => {
                 let strength = icelines_core::cross_team::compute_team_strength(
@@ -1703,6 +1738,20 @@ impl App {
                             self.screen = Screen::Player(global_idx);
                             self.selected = 0;
                         }
+                    }
+                }
+            }
+            Screen::CompsById(target_pid) => {
+                // Hart.5c.6 Phase B-2 step 2: view-based comps navigation.
+                let target_pid = *target_pid;
+                let views = self.views();
+                if let Some(target) = self.view_for(target_pid) {
+                    let comps = crate::tui::screens::comps::find_comps_views(&views, &target);
+                    if let Some(comp) = comps.get(self.selected) {
+                        let pid = comp.identity.id;
+                        self.prev_screen = Some(self.screen.clone());
+                        self.screen = Screen::PlayerById(pid);
+                        self.selected = 0;
                     }
                 }
             }
@@ -1738,6 +1787,10 @@ impl App {
             // rank back to a position in `app.goalies` so the detail
             // screen can address the goalie directly.
             Screen::Goalies => {
+                // Hart.5c.6 Phase B-2 step 2: goalies leaderboard still
+                // sorts via the legacy `&[Goalie]` path (B-3 migrates
+                // the leaderboard); we bridge through nhl_id → PlayerId
+                // and navigate via GoalieDetailById.
                 let sort = crate::tui::screens::goalies::SORTS
                     .get(self.goalie_sort as usize)
                     .copied()
@@ -1748,11 +1801,9 @@ impl App {
                     self.goalie_min_gp,
                 );
                 if let Some(g_ref) = qualified.get(self.goalie_selected) {
-                    let nhl_id = g_ref.nhl_id;
-                    if let Some(idx) = self.goalies.iter().position(|g| g.nhl_id == nhl_id) {
-                        self.prev_screen = Some(Screen::Goalies);
-                        self.screen = Screen::GoalieDetail(idx);
-                    }
+                    let pid = icelines_core::identity::PlayerId(g_ref.nhl_id);
+                    self.prev_screen = Some(Screen::Goalies);
+                    self.screen = Screen::GoalieDetailById(pid);
                 }
             }
             // Scores: Enter on a game row opens GameDetail keyed by game_id.
