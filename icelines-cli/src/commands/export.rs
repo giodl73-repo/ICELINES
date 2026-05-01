@@ -1,26 +1,31 @@
 //! `icelines export md <shape>` — Phase 8d.
 //!
-//! Produces deterministic markdown tables consumable by proof's
-//! DASHBOARD-SPEC compiler (or any other markdown reader). Every shape
-//! follows the format from `design/specs/export-markdown.md`:
-//!   - YAML front-matter (`type`, `title`, `season`, `filters`, `proof:` hints)
+//! Produces deterministic markdown tables consumable by external readers.
+//! Every shape follows the format from `design/specs/export-markdown.md`:
+//!   - YAML front-matter (`type`, `title`, `season`, `filters`, hints)
 //!   - One or more GitHub-flavored markdown tables in the body
 //!
 //! The writer prints to stdout with `--out -`, otherwise writes to the
 //! given path, otherwise to `~/.icelines/reports/{shape}.md`.
+//!
+//! Hart.5c.5: every renderer takes `&[PlayerView<'_>]`. The five
+//! shapes (leaders, team, depth, compare, roster) preserve their
+//! exact deterministic output (front-matter format, table columns,
+//! sort tie-breaks).
 
 use anyhow::{bail, Context};
 use std::fmt::Write as _;
 use std::path::PathBuf;
 
 use icelines_core::{
+    cross_team::compute_all_views,
     filter::PlayerFilter,
-    model::Player,
-    scoring::sort_by_pace,
+    scoring::sort_views_by_pace,
+    stats_repository::PlayerView,
 };
 
 use crate::cli::{ExportSubcommand, MdShape};
-use crate::commands::players::load_all_players;
+use crate::commands::players::load_repo_for_season;
 
 pub async fn run(cmd: ExportSubcommand) -> anyhow::Result<()> {
     match cmd {
@@ -63,6 +68,14 @@ pub async fn run(cmd: ExportSubcommand) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Helper used by every render entry point: load a `LoadOutcome` and
+/// collect the skater views into a Vec the renderer borrows from. The
+/// outcome must outlive the views.
+fn load_views() -> anyhow::Result<icelines_fetch::stats_loader::LoadOutcome> {
+    let (outcome, _season) = load_repo_for_season(None)?;
+    Ok(outcome)
+}
+
 // ── leaders ──────────────────────────────────────────────────────────────────
 
 pub(crate) struct LeadersOpts {
@@ -75,14 +88,21 @@ pub(crate) struct LeadersOpts {
 }
 
 pub(crate) fn render_leaders(opts: LeadersOpts) -> anyhow::Result<String> {
-    let players = load_all_players()?;
-    render_leaders_from_players(&players, &opts)
+    let outcome = load_views()?;
+    let views: Vec<PlayerView<'_>> = outcome
+        .repo
+        .skaters(
+            icelines_core::model::Season(icelines_core::CURRENT_SEASON),
+            icelines_core::season_stats::SeasonType::Regular,
+        )
+        .collect();
+    render_leaders_from_views(&views, &opts)
 }
 
-/// Pure renderer separated from I/O so tests can inject fixture players.
-pub(crate) fn render_leaders_from_players(
-    players: &[Player],
-    opts:    &LeadersOpts,
+/// Pure renderer separated from I/O so tests can inject fixture views.
+pub(crate) fn render_leaders_from_views(
+    views: &[PlayerView<'_>],
+    opts:  &LeadersOpts,
 ) -> anyhow::Result<String> {
     let mut filter = PlayerFilter::new();
     if let Some(p) = &opts.pos {
@@ -94,18 +114,17 @@ pub(crate) fn render_leaders_from_players(
         filter.gp_min = Some(g);
     }
 
-    let mut filtered: Vec<&Player> = filter.apply(players);
+    let mut filtered: Vec<PlayerView<'_>> = filter.apply_views(views.iter().copied());
 
-    // Sort — only `pts-pace` (default) supported in 8d.1; others land
-    // in 8d.2 alongside the `team` shape work.
+    // Sort — only `pts-pace` (default) supported in 8d.1.
     match opts.sort.as_str() {
         "pts-pace" | "pace" | "pts" => {
             filtered.sort_by(|a, b| {
-                let pa = a.pace_score.map(|s| s.pace_82).unwrap_or(0.0);
-                let pb = b.pace_score.map(|s| s.pace_82).unwrap_or(0.0);
+                let pa = a.pace_82().unwrap_or(0.0);
+                let pb = b.pace_82().unwrap_or(0.0);
                 pb.partial_cmp(&pa).unwrap_or(std::cmp::Ordering::Equal)
-                    // Stable tie-break: nhl_id asc → byte-deterministic across runs.
-                    .then(a.nhl_id.cmp(&b.nhl_id))
+                    // Stable tie-break: player_id asc.
+                    .then(a.identity.id.0.cmp(&b.identity.id.0))
             });
         }
         other => bail!(
@@ -134,31 +153,31 @@ pub(crate) fn render_leaders_from_players(
         opts.width, opts.height,
     );
 
-    // Table
     let _ = writeln!(out, "| Rank | Player | Team | Pos | Age | GP | G | A | Pts | PPG | Pts/82 |");
     let _ = writeln!(out, "|-----:|--------|:----:|:---:|----:|---:|---:|---:|----:|----:|-------:|");
-    for (i, p) in top.iter().enumerate() {
+    for (i, v) in top.iter().enumerate() {
+        let totals = &v.stats.totals;
         let rank   = i + 1;
-        let name   = truncate(&p.full_name, 24);
-        let pos    = p.position.abbreviation();
-        let age    = p.birth_date.as_deref()
+        let name   = truncate(&v.identity.full_name, 24);
+        let pos    = v.position().abbreviation();
+        let age    = v.identity.bio.birth_date.as_deref()
             .and_then(|d| d.get(..4)).and_then(|y| y.parse::<u16>().ok())
             .map(|y| 2026u16.saturating_sub(y).to_string())
             .unwrap_or_else(|| "—".to_owned());
-        let gp     = p.gp().map(|g| g.to_string()).unwrap_or_else(|| "—".to_owned());
-        let goals  = p.season_goals;
-        let asts   = p.season_assists;
-        let pts    = p.season_points;
-        let ppg    = p.pace_score
-            .map(|s| format!("{:.3}", s.pace_82 / 82.0))
+        let gp     = v.gp().to_string();
+        let goals  = totals.goals;
+        let asts   = totals.assists;
+        let pts    = totals.points;
+        let ppg    = v.pace_82()
+            .map(|p| format!("{:.3}", p / 82.0))
             .unwrap_or_else(|| "—".to_owned());
-        let pts82  = p.pace_score
-            .map(|s| format!("{:.1}", s.pace_82))
+        let pts82  = v.pace_82()
+            .map(|p| format!("{p:.1}"))
             .unwrap_or_else(|| "—".to_owned());
         let _ = writeln!(
             out,
             "| {rank:>4} | {name} | {team} | {pos} | {age:>3} | {gp:>3} | {goals:>3} | {asts:>3} | {pts:>4} | {ppg:>5} | {pts82:>6} |",
-            team = p.team.as_str(),
+            team = v.team_display(),
         );
     }
 
@@ -174,19 +193,28 @@ pub(crate) struct TeamOpts {
 }
 
 pub(crate) fn render_team(opts: TeamOpts) -> anyhow::Result<String> {
-    let players = load_all_players()?;
-    render_team_from_players(&players, &opts)
+    let outcome = load_views()?;
+    let views: Vec<PlayerView<'_>> = outcome
+        .repo
+        .skaters(
+            icelines_core::model::Season(icelines_core::CURRENT_SEASON),
+            icelines_core::season_stats::SeasonType::Regular,
+        )
+        .collect();
+    render_team_from_views(&views, &opts)
 }
 
-pub(crate) fn render_team_from_players(
-    players: &[Player],
-    opts:    &TeamOpts,
+pub(crate) fn render_team_from_views(
+    views: &[PlayerView<'_>],
+    opts:  &TeamOpts,
 ) -> anyhow::Result<String> {
     let team_up = opts.team.to_uppercase();
-    let mut roster: Vec<&Player> = players.iter()
-        .filter(|p| p.team.as_str() == team_up.as_str())
+    let mut roster: Vec<PlayerView<'_>> = views
+        .iter()
+        .filter(|v| v.team_display() == team_up.as_str())
+        .copied()
         .collect();
-    sort_by_pace_refs(&mut roster);
+    sort_views_by_pace(&mut roster);
 
     let title = format!("{team_up} — Lineup card");
     let mut out = String::new();
@@ -207,20 +235,21 @@ pub(crate) fn render_team_from_players(
     let _ = writeln!(out);
     let _ = writeln!(out, "| Rank | Player | Pos | GP | G | A | Pts | Pts/82 |");
     let _ = writeln!(out, "|-----:|--------|:---:|---:|---:|---:|----:|-------:|");
-    for (i, p) in roster.iter().enumerate() {
+    for (i, v) in roster.iter().enumerate() {
+        let totals = &v.stats.totals;
         let rank  = i + 1;
-        let name  = truncate(&p.full_name, 24);
-        let gp    = p.gp().map(|g| g.to_string()).unwrap_or_else(|| "—".to_owned());
-        let pts82 = p.pace_score
-            .map(|s| format!("{:.1}", s.pace_82))
+        let name  = truncate(&v.identity.full_name, 24);
+        let gp    = v.gp().to_string();
+        let pts82 = v.pace_82()
+            .map(|p| format!("{p:.1}"))
             .unwrap_or_else(|| "—".to_owned());
         let _ = writeln!(
             out,
             "| {rank:>4} | {name} | {pos} | {gp:>3} | {g:>3} | {a:>3} | {pts:>4} | {pts82:>6} |",
-            pos  = p.position.abbreviation(),
-            g    = p.season_goals,
-            a    = p.season_assists,
-            pts  = p.season_points,
+            pos  = v.position().abbreviation(),
+            g    = totals.goals,
+            a    = totals.assists,
+            pts  = totals.points,
         );
     }
 
@@ -232,23 +261,28 @@ pub(crate) fn render_team_from_players(
 pub(crate) struct DepthOpts { pub width: u16, pub height: u16 }
 
 pub(crate) fn render_depth(opts: DepthOpts) -> anyhow::Result<String> {
-    let players = load_all_players()?;
-    render_depth_from_players(&players, &opts)
+    let outcome = load_views()?;
+    let views: Vec<PlayerView<'_>> = outcome
+        .repo
+        .skaters(
+            icelines_core::model::Season(icelines_core::CURRENT_SEASON),
+            icelines_core::season_stats::SeasonType::Regular,
+        )
+        .collect();
+    render_depth_from_views(&views, &opts)
 }
 
-pub(crate) fn render_depth_from_players(
-    players: &[Player],
-    opts:    &DepthOpts,
+pub(crate) fn render_depth_from_views(
+    views: &[PlayerView<'_>],
+    opts:  &DepthOpts,
 ) -> anyhow::Result<String> {
-    use icelines_core::compute_cross_team_metrics;
-    let metrics = compute_cross_team_metrics(players);
+    let metrics = compute_all_views(views);
 
-    // Index players by nhl_id so we can render names + teams alongside metrics.
-    let by_id: std::collections::HashMap<Option<u32>, &Player> =
-        players.iter().map(|p| (p.nhl_id, p)).collect();
+    // Index views by player_id so we can render names + teams alongside metrics.
+    let by_id: std::collections::HashMap<u32, &PlayerView<'_>> =
+        views.iter().map(|v| (v.identity.id.0, v)).collect();
 
-    // Sort by delta descending (most "buried" first — biggest "elsewhere they'd play higher" gap).
-    // Stable tie-break: nhl_id asc.
+    // Sort by delta descending; tie-break: player_nhl_id asc.
     let mut rows: Vec<&icelines_core::cross_team::CrossTeamMetrics> = metrics.iter().collect();
     rows.sort_by(|a, b| {
         b.delta.partial_cmp(&a.delta).unwrap_or(std::cmp::Ordering::Equal)
@@ -267,17 +301,21 @@ pub(crate) fn render_depth_from_players(
     let _ = writeln!(out, "| Rank | Player | Team | Pos | Own line | Avg other | Delta | Fit |");
     let _ = writeln!(out, "|-----:|--------|:----:|:---:|---------:|----------:|------:|:---:|");
     for (i, m) in rows.iter().take(50).enumerate() {
-        let p = match by_id.get(&m.player_nhl_id) {
-            Some(p) => *p,
+        let pid = match m.player_nhl_id {
+            Some(id) => id,
+            None => continue,
+        };
+        let v = match by_id.get(&pid) {
+            Some(v) => *v,
             None    => continue,
         };
         let _ = writeln!(
             out,
             "| {rank:>4} | {name} | {team} | {pos} | {own:>8} | {avg:>9.2} | {delta:>+6.2} | {fit} |",
             rank = i + 1,
-            name = truncate(&p.full_name, 24),
-            team = p.team.as_str(),
-            pos  = p.position.abbreviation(),
+            name = truncate(&v.identity.full_name, 24),
+            team = v.team_display(),
+            pos  = v.position().abbreviation(),
             own  = m.own_line,
             avg  = m.avg_other_line,
             delta= m.delta,
@@ -297,32 +335,39 @@ pub(crate) struct CompareOpts {
 }
 
 pub(crate) fn render_compare(opts: CompareOpts) -> anyhow::Result<String> {
-    let players = load_all_players()?;
-    render_compare_from_players(&players, &opts)
+    let outcome = load_views()?;
+    let views: Vec<PlayerView<'_>> = outcome
+        .repo
+        .skaters(
+            icelines_core::model::Season(icelines_core::CURRENT_SEASON),
+            icelines_core::season_stats::SeasonType::Regular,
+        )
+        .collect();
+    render_compare_from_views(&views, &opts)
 }
 
-pub(crate) fn render_compare_from_players(
-    players: &[Player],
-    opts:    &CompareOpts,
+pub(crate) fn render_compare_from_views(
+    views: &[PlayerView<'_>],
+    opts:  &CompareOpts,
 ) -> anyhow::Result<String> {
     use icelines_core::name::normalize_name;
     let n1 = normalize_name(&opts.p1);
     let n2 = normalize_name(&opts.p2);
-    let a = players.iter().find(|p| p.name_normalized.contains(&n1))
+    let a = views.iter().find(|v| v.identity.name_normalized.contains(&n1))
         .with_context(|| format!("player '{}' not found", opts.p1))?;
-    let b = players.iter().find(|p| p.name_normalized.contains(&n2))
+    let b = views.iter().find(|v| v.identity.name_normalized.contains(&n2))
         .with_context(|| format!("player '{}' not found", opts.p2))?;
 
     let mut out = String::new();
     write_front_matter(
         &mut out,
         "compare",
-        &format!("{} vs {}", a.full_name, b.full_name),
-        &[("p1", a.full_name.clone()), ("p2", b.full_name.clone())],
+        &format!("{} vs {}", a.identity.full_name, b.identity.full_name),
+        &[("p1", a.identity.full_name.clone()), ("p2", b.identity.full_name.clone())],
         opts.width, opts.height,
     );
 
-    let _ = writeln!(out, "| Stat | {} | {} | Diff |", a.full_name, b.full_name);
+    let _ = writeln!(out, "| Stat | {} | {} | Diff |", a.identity.full_name, b.identity.full_name);
     let _ = writeln!(out, "|------|------|------|-----:|");
 
     let row = |out: &mut String, label: &str, av: f64, bv: f64, fmt: &str| {
@@ -332,15 +377,15 @@ pub(crate) fn render_compare_from_players(
             fmt = match fmt { "0" => 0, _ => 2 },
         );
     };
-    row(&mut out, "GP",  a.gp().unwrap_or(0) as f64, b.gp().unwrap_or(0) as f64, "0");
-    row(&mut out, "G",   a.season_goals  as f64, b.season_goals  as f64, "0");
-    row(&mut out, "A",   a.season_assists as f64, b.season_assists as f64, "0");
-    row(&mut out, "Pts", a.season_points as f64, b.season_points as f64, "0");
-    let pa = a.pace_score.map(|s| s.pace_82).unwrap_or(0.0);
-    let pb = b.pace_score.map(|s| s.pace_82).unwrap_or(0.0);
+    row(&mut out, "GP",  a.gp() as f64, b.gp() as f64, "0");
+    row(&mut out, "G",   a.stats.totals.goals as f64,   b.stats.totals.goals as f64,   "0");
+    row(&mut out, "A",   a.stats.totals.assists as f64, b.stats.totals.assists as f64, "0");
+    row(&mut out, "Pts", a.stats.totals.points as f64,  b.stats.totals.points as f64,  "0");
+    let pa = a.pace_82().unwrap_or(0.0);
+    let pb = b.pace_82().unwrap_or(0.0);
     let _ = writeln!(out, "| Pts/82 | {pa:.1} | {pb:.1} | {:+.1} |", pa - pb);
-    let ppg_a = a.pace_score.map(|s| s.pace_82 / 82.0).unwrap_or(0.0);
-    let ppg_b = b.pace_score.map(|s| s.pace_82 / 82.0).unwrap_or(0.0);
+    let ppg_a = pa / 82.0;
+    let ppg_b = pb / 82.0;
     let _ = writeln!(out, "| PPG | {ppg_a:.3} | {ppg_b:.3} | {:+.3} |", ppg_a - ppg_b);
     Ok(out)
 }
@@ -354,28 +399,35 @@ pub(crate) struct RosterOpts {
 }
 
 pub(crate) fn render_roster(opts: RosterOpts) -> anyhow::Result<String> {
-    let players = load_all_players()?;
-    render_roster_from_players(&players, &opts)
+    let outcome = load_views()?;
+    let views: Vec<PlayerView<'_>> = outcome
+        .repo
+        .skaters(
+            icelines_core::model::Season(icelines_core::CURRENT_SEASON),
+            icelines_core::season_stats::SeasonType::Regular,
+        )
+        .collect();
+    render_roster_from_views(&views, &opts)
 }
 
-pub(crate) fn render_roster_from_players(
-    players: &[Player],
-    opts:    &RosterOpts,
+pub(crate) fn render_roster_from_views(
+    views: &[PlayerView<'_>],
+    opts:  &RosterOpts,
 ) -> anyhow::Result<String> {
     let mut filter = PlayerFilter::new();
     if let Some(p) = &opts.pos {
         if !p.is_empty() { filter.positions = Some(parse_positions(p)); }
     }
-    let mut filtered = filter.apply(players);
+    let mut filtered: Vec<PlayerView<'_>> = filter.apply_views(views.iter().copied());
     // Sort by team alpha, then pace desc within team (stable, deterministic).
     filtered.sort_by(|a, b| {
-        a.team.as_str().cmp(b.team.as_str())
+        a.team_display().cmp(b.team_display())
             .then_with(|| {
-                let pa = a.pace_score.map(|s| s.pace_82).unwrap_or(0.0);
-                let pb = b.pace_score.map(|s| s.pace_82).unwrap_or(0.0);
+                let pa = a.pace_82().unwrap_or(0.0);
+                let pb = b.pace_82().unwrap_or(0.0);
                 pb.partial_cmp(&pa).unwrap_or(std::cmp::Ordering::Equal)
             })
-            .then(a.nhl_id.cmp(&b.nhl_id))
+            .then(a.identity.id.0.cmp(&b.identity.id.0))
     });
 
     let mut out = String::new();
@@ -389,20 +441,21 @@ pub(crate) fn render_roster_from_players(
 
     let _ = writeln!(out, "| Team | Player | Pos | GP | G | A | Pts | Pts/82 |");
     let _ = writeln!(out, "|:----:|--------|:---:|---:|---:|---:|----:|-------:|");
-    for p in &filtered {
-        let pts82 = p.pace_score
-            .map(|s| format!("{:.1}", s.pace_82))
+    for v in &filtered {
+        let totals = &v.stats.totals;
+        let pts82 = v.pace_82()
+            .map(|p| format!("{p:.1}"))
             .unwrap_or_else(|| "—".to_owned());
-        let gp = p.gp().map(|g| g.to_string()).unwrap_or_else(|| "—".to_owned());
+        let gp = v.gp().to_string();
         let _ = writeln!(
             out,
             "| {team} | {name} | {pos} | {gp:>3} | {g:>3} | {a:>3} | {pts:>4} | {pts82:>6} |",
-            team = p.team.as_str(),
-            name = truncate(&p.full_name, 24),
-            pos  = p.position.abbreviation(),
-            g    = p.season_goals,
-            a    = p.season_assists,
-            pts  = p.season_points,
+            team = v.team_display(),
+            name = truncate(&v.identity.full_name, 24),
+            pos  = v.position().abbreviation(),
+            g    = totals.goals,
+            a    = totals.assists,
+            pts  = totals.points,
         );
     }
     Ok(out)
@@ -423,14 +476,6 @@ fn parse_positions(s: &str) -> Vec<icelines_core::model::Position> {
         })
         .flatten()
         .collect()
-}
-
-fn sort_by_pace_refs(players: &mut [&Player]) {
-    let mut owned: Vec<Player> = players.iter().map(|&p| p.clone()).collect();
-    sort_by_pace(&mut owned);
-    let order: std::collections::HashMap<Option<u32>, usize> =
-        owned.iter().enumerate().map(|(i, p)| (p.nhl_id, i)).collect();
-    players.sort_by_key(|p| order.get(&p.nhl_id).copied().unwrap_or(usize::MAX));
 }
 
 fn truncate(s: &str, max: usize) -> String {
@@ -481,7 +526,6 @@ fn write_or_print(out: &Option<String>, shape: &MdShape, body: &str) -> anyhow::
             Ok(())
         }
         None => {
-            // Default: ~/.icelines/reports/{shape}.md
             let home = std::env::var_os("USERPROFILE")
                 .or_else(|| std::env::var_os("HOME"))
                 .map(PathBuf::from)
@@ -500,56 +544,68 @@ fn write_or_print(out: &Option<String>, shape: &MdShape, body: &str) -> anyhow::
 #[cfg(test)]
 mod tests {
     use super::*;
-    use icelines_core::model::{GpStatus, PaceScore, Position, TeamAbbr};
+    use icelines_core::{
+        identity::PlayerId,
+        model::{Position, Season},
+        season_stats::{SeasonStatsBuilder, SeasonType, StatTotals, TeamStint},
+        PaceScore, TeamAbbr,
+    };
 
-    fn fixture(id: u32, name: &str, team: &str, pos: Position, pace: f64) -> Player {
-        Player {
-            nhl_id: Some(id),
-            full_name: name.to_owned(),
-            name_normalized: name.to_lowercase().replace(' ', "_"),
-            team: TeamAbbr(team.to_owned()),
-            position: pos,
-            eligible_pos: vec![pos],
-            gp_status: GpStatus::Eligible(60),
-            season_goals: 30, season_assists: 50, season_points: 80,
-            pace_score: Some(PaceScore {
-                pace_82: pace, goals_per_82: 30.0, raw_points: 80, gp: 60,
-            }),
-            pp_goals: 0, pp_points: 0, sh_goals: 0, sh_points: 0,
-            gwg: 0, ot_goals: 0, shots: 0, shooting_pct: None,
-            plus_minus: 0, toi_per_game_sec: None, faceoff_win_pct: None,
-            hits: 0, blocked_shots: 0, missed_shots: 0,
-            giveaways: 0, takeaways: 0, pim: 0,
-            xg: None, xg_per_60: None, cf_pct_5v5: None,
-            ff_pct_5v5: None, xgf_pct_5v5: None,
-            headshot_url: None, sweater_number: None,
-            birth_date: Some("1997-01-13".to_owned()),
-            birth_country: None, nationality_code: None,
-            birth_city: None, birth_state_province: None,
-            shoots_catches: None, height_in_inches: None, weight_lbs: None,
-            draft_year: None, draft_round: None, draft_overall: None,
-            rookie_season: None, contract_expiry_year: None,
-            expiry_type: None, salary: None,
+    /// Build a one-row repo at the given (id, name, team, pos, pace_82)
+    /// for export-shape tests. Pace_82 drives sort order; other counters
+    /// are filled from a default (30G, 50A, 60GP) shape.
+    fn fixture_repo(rows: &[(u32, &str, &str, Position, f64)]) -> icelines_core::stats_repository::StatsRepository {
+        let mut repo = icelines_core::stats_repository::StatsRepository::new();
+        for (id, name, team, pos, pace_82) in rows {
+            let identity = icelines_core::fixtures::identity(*id)
+                .name(name, &name.to_lowercase().replace(' ', "_"))
+                .build();
+            let totals = StatTotals {
+                gp: 60, goals: 30, assists: 50, points: 80,
+                plus_minus: 0, pim: 0, shots: 0,
+                shooting_pct: None, toi_per_game_sec: None,
+                pp_goals: 0, pp_points: 0, sh_goals: 0, sh_points: 0,
+                gwg: 0, ot_goals: 0, faceoff_win_pct: None,
+                pace_score: Some(PaceScore {
+                    pace_82: *pace_82, goals_per_82: 30.0, raw_points: 80, gp: 60,
+                }),
+            };
+            let stint = TeamStint {
+                team: TeamAbbr((*team).to_owned()),
+                started: Some("2024-10-15".into()),
+                ended: Some("2025-04-13".into()),
+                gp: 60, goals: 30, assists: 50, points: 80,
+                goalie: None,
+            };
+            let stats = SeasonStatsBuilder::new(PlayerId(*id), Season(20242025), SeasonType::Regular, *pos)
+                .with_totals(totals)
+                .add_team_stint(stint)
+                .build();
+            repo.upsert_identity(identity).unwrap();
+            repo.upsert_stats(stats).unwrap();
         }
+        repo
+    }
+
+    fn fixture_views(repo: &icelines_core::stats_repository::StatsRepository) -> Vec<PlayerView<'_>> {
+        repo.skaters(Season(20242025), SeasonType::Regular).collect()
     }
 
     #[test]
     fn l0_export_leaders_has_required_front_matter() {
-        let players = vec![
-            fixture(1, "A One", "EDM", Position::Center,    109.0),
-            fixture(2, "B Two", "COL", Position::Center,     95.0),
-            fixture(3, "C Tre", "SEA", Position::LeftWing,   80.0),
-        ];
+        let repo = fixture_repo(&[
+            (1, "A One", "EDM", Position::Center,    109.0),
+            (2, "B Two", "COL", Position::Center,     95.0),
+            (3, "C Tre", "SEA", Position::LeftWing,   80.0),
+        ]);
+        let views = fixture_views(&repo);
         let opts = LeadersOpts {
             pos: None, top: 25, sort: "pts-pace".into(),
             gp_min: None, width: 100, height: 30,
         };
-        let out = render_leaders_from_players(&players, &opts).unwrap();
-
-        // YAML front matter delimiters
+        let out = render_leaders_from_views(&views, &opts).unwrap();
         assert!(out.starts_with("---\n"));
         assert!(out.contains("\n---\n\n|"), "front-matter must precede the table");
-        // Required keys
         assert!(out.contains("type: leaderboard"));
         assert!(out.contains("title:"));
         assert!(out.contains("generated_at:"));
@@ -561,17 +617,16 @@ mod tests {
 
     #[test]
     fn l0_export_leaders_table_columns_in_canonical_order() {
-        let players = vec![fixture(1, "Solo", "EDM", Position::Center, 109.0)];
-        let out = render_leaders_from_players(
-            &players,
+        let repo = fixture_repo(&[(1, "Solo", "EDM", Position::Center, 109.0)]);
+        let views = fixture_views(&repo);
+        let out = render_leaders_from_views(
+            &views,
             &LeadersOpts {
                 pos: None, top: 25, sort: "pts-pace".into(),
                 gp_min: None, width: 80, height: 30,
             },
         ).unwrap();
-        // Header line
         assert!(out.contains("| Rank | Player | Team | Pos | Age | GP | G | A | Pts | PPG | Pts/82 |"));
-        // Data row
         assert!(out.contains("Solo"));
         assert!(out.contains("EDM"));
         assert!(out.contains("109.0"));
@@ -579,19 +634,19 @@ mod tests {
 
     #[test]
     fn l0_export_leaders_sort_is_descending_by_pace() {
-        let players = vec![
-            fixture(1, "Mid",  "EDM", Position::Center, 80.0),
-            fixture(2, "Top",  "COL", Position::Center, 110.0),
-            fixture(3, "Low",  "SEA", Position::LeftWing, 50.0),
-        ];
-        let out = render_leaders_from_players(
-            &players,
+        let repo = fixture_repo(&[
+            (1, "Mid", "EDM", Position::Center, 80.0),
+            (2, "Top", "COL", Position::Center, 110.0),
+            (3, "Low", "SEA", Position::LeftWing, 50.0),
+        ]);
+        let views = fixture_views(&repo);
+        let out = render_leaders_from_views(
+            &views,
             &LeadersOpts {
                 pos: None, top: 25, sort: "pts-pace".into(),
                 gp_min: None, width: 80, height: 30,
             },
         ).unwrap();
-        // "Top" must appear before "Mid" must appear before "Low".
         let i_top = out.find("Top").unwrap();
         let i_mid = out.find("Mid").unwrap();
         let i_low = out.find("Low").unwrap();
@@ -601,12 +656,13 @@ mod tests {
 
     #[test]
     fn l0_export_leaders_pos_filter_excludes_others() {
-        let players = vec![
-            fixture(1, "Cee",  "EDM", Position::Center,    100.0),
-            fixture(2, "Dee",  "COL", Position::Defense,    90.0),
-        ];
-        let out = render_leaders_from_players(
-            &players,
+        let repo = fixture_repo(&[
+            (1, "Cee", "EDM", Position::Center,  100.0),
+            (2, "Dee", "COL", Position::Defense,  90.0),
+        ]);
+        let views = fixture_views(&repo);
+        let out = render_leaders_from_views(
+            &views,
             &LeadersOpts {
                 pos: Some("C".into()), top: 25, sort: "pts-pace".into(),
                 gp_min: None, width: 80, height: 30,
@@ -619,17 +675,21 @@ mod tests {
 
     #[test]
     fn l0_export_leaders_top_limits_rows() {
-        let players: Vec<Player> = (1..=10)
-            .map(|i| fixture(i, &format!("P{i}"), "EDM", Position::Center, 100.0 - i as f64))
+        let rows: Vec<(u32, String, &str, Position, f64)> = (1..=10)
+            .map(|i| (i, format!("P{i}"), "EDM", Position::Center, 100.0 - i as f64))
             .collect();
-        let out = render_leaders_from_players(
-            &players,
+        // Need to re-borrow the strings — fixture_repo takes &[(u32, &str, &str, Position, f64)].
+        let row_refs: Vec<(u32, &str, &str, Position, f64)> =
+            rows.iter().map(|(i, n, t, p, pace)| (*i, n.as_str(), *t, *p, *pace)).collect();
+        let repo = fixture_repo(&row_refs);
+        let views = fixture_views(&repo);
+        let out = render_leaders_from_views(
+            &views,
             &LeadersOpts {
                 pos: None, top: 3, sort: "pts-pace".into(),
                 gp_min: None, width: 80, height: 30,
             },
         ).unwrap();
-        // Only first three players' rows
         assert!(out.contains("| P1 ") || out.contains("P1 "));
         assert!(out.contains("P3"));
         assert!(!out.contains("P4"), "top=3 must drop P4-P10");
@@ -637,9 +697,10 @@ mod tests {
 
     #[test]
     fn l0_export_leaders_unknown_sort_errors() {
-        let players = vec![fixture(1, "X", "EDM", Position::Center, 50.0)];
-        let err = render_leaders_from_players(
-            &players,
+        let repo = fixture_repo(&[(1, "X", "EDM", Position::Center, 50.0)]);
+        let views = fixture_views(&repo);
+        let err = render_leaders_from_views(
+            &views,
             &LeadersOpts {
                 pos: None, top: 25, sort: "invalid-metric".into(),
                 gp_min: None, width: 80, height: 30,
@@ -650,13 +711,14 @@ mod tests {
 
     #[test]
     fn l0_export_team_card_lists_only_target_team() {
-        let players = vec![
-            fixture(1, "Edm One", "EDM", Position::Center, 100.0),
-            fixture(2, "Col Two", "COL", Position::Center,  95.0),
-            fixture(3, "Edm Tre", "EDM", Position::Defense, 70.0),
-        ];
-        let out = render_team_from_players(
-            &players,
+        let repo = fixture_repo(&[
+            (1, "Edm One", "EDM", Position::Center,  100.0),
+            (2, "Col Two", "COL", Position::Center,   95.0),
+            (3, "Edm Tre", "EDM", Position::Defense,  70.0),
+        ]);
+        let views = fixture_views(&repo);
+        let out = render_team_from_views(
+            &views,
             &TeamOpts { team: "EDM".into(), width: 100, height: 30 },
         ).unwrap();
         assert!(out.contains("Edm One"));
@@ -666,40 +728,66 @@ mod tests {
         assert!(out.contains("EDM"));
     }
 
-    // ── Depth / Compare / Roster shapes ──────────────────────────────────────
-
     #[test]
     fn l0_export_depth_emits_cross_team_table() {
-        // Build at least one player at each forward + D position on two
-        // teams so cross_team::compute_cross_team_metrics has work to do.
-        let players = vec![
-            fixture(1, "EdmC1", "EDM", Position::Center,    109.0),
-            fixture(2, "EdmW1", "EDM", Position::LeftWing,   95.0),
-            fixture(3, "EdmD1", "EDM", Position::Defense,    80.0),
-            fixture(4, "ColC1", "COL", Position::Center,     85.0),
-            fixture(5, "ColD1", "COL", Position::Defense,    70.0),
-        ];
-        let out = render_depth_from_players(
-            &players,
+        let repo = fixture_repo(&[
+            (1, "EdmC1", "EDM", Position::Center,    109.0),
+            (2, "EdmW1", "EDM", Position::LeftWing,   95.0),
+            (3, "EdmD1", "EDM", Position::Defense,    80.0),
+            (4, "ColC1", "COL", Position::Center,     85.0),
+            (5, "ColD1", "COL", Position::Defense,    70.0),
+        ]);
+        let views = fixture_views(&repo);
+        let out = render_depth_from_views(
+            &views,
             &DepthOpts { width: 100, height: 30 },
         ).unwrap();
         assert!(out.contains("type: depth-rankings"));
         assert!(out.contains("Cross-team line value rankings"));
         assert!(out.contains("| Rank | Player | Team | Pos | Own line | Avg other | Delta | Fit |"));
-        // At least one player row
         assert!(out.matches("| EDM ").count() + out.matches("| COL ").count() >= 1);
     }
 
     #[test]
     fn l0_export_compare_finds_both_players_and_emits_diffs() {
-        let mut a = fixture(1, "Alpha A", "EDM", Position::Center, 100.0);
-        a.season_goals = 50; a.season_assists = 60; a.season_points = 110;
-        let mut b = fixture(2, "Bravo B", "COL", Position::Center,  80.0);
-        b.season_goals = 30; b.season_assists = 50; b.season_points = 80;
-        let players = vec![a, b];
-
-        let out = render_compare_from_players(
-            &players,
+        // Custom totals (50G/60A/110pts vs 30G/50A/80pts) — set explicitly.
+        let mut repo = icelines_core::stats_repository::StatsRepository::new();
+        for (id, name, g, a) in [
+            (1u32, "Alpha A", 50u32, 60u32),
+            (2u32, "Bravo B", 30u32, 50u32),
+        ] {
+            let identity = icelines_core::fixtures::identity(id)
+                .name(name, &name.to_lowercase().replace(' ', "_"))
+                .build();
+            let totals = StatTotals {
+                gp: 60, goals: g, assists: a, points: g + a,
+                plus_minus: 0, pim: 0, shots: 0,
+                shooting_pct: None, toi_per_game_sec: None,
+                pp_goals: 0, pp_points: 0, sh_goals: 0, sh_points: 0,
+                gwg: 0, ot_goals: 0, faceoff_win_pct: None,
+                pace_score: Some(PaceScore {
+                    pace_82: (g + a) as f64 / 60.0 * 82.0,
+                    goals_per_82: g as f64 / 60.0 * 82.0,
+                    raw_points: g + a, gp: 60,
+                }),
+            };
+            let team = if id == 1 { "EDM" } else { "COL" };
+            let stint = TeamStint {
+                team: TeamAbbr(team.into()),
+                started: Some("2024-10-15".into()),
+                ended: Some("2025-04-13".into()),
+                gp: 60, goals: g, assists: a, points: g + a, goalie: None,
+            };
+            let stats = SeasonStatsBuilder::new(PlayerId(id), Season(20242025), SeasonType::Regular, Position::Center)
+                .with_totals(totals)
+                .add_team_stint(stint)
+                .build();
+            repo.upsert_identity(identity).unwrap();
+            repo.upsert_stats(stats).unwrap();
+        }
+        let views = fixture_views(&repo);
+        let out = render_compare_from_views(
+            &views,
             &CompareOpts {
                 p1: "Alpha".into(), p2: "Bravo".into(),
                 width: 100, height: 30,
@@ -707,21 +795,20 @@ mod tests {
         ).unwrap();
         assert!(out.contains("type: compare"));
         assert!(out.contains("Alpha A vs Bravo B"));
-        // Header + rows
         assert!(out.contains("| Stat | Alpha A | Bravo B | Diff |"));
         assert!(out.contains("| G |"));
         assert!(out.contains("| A |"));
         assert!(out.contains("| Pts |"));
         assert!(out.contains("Pts/82"));
-        // Diff signs render
         assert!(out.contains("+20") || out.contains("+30") || out.contains("+10"));
     }
 
     #[test]
     fn l0_export_compare_unknown_player_errors() {
-        let players = vec![fixture(1, "Alpha", "EDM", Position::Center, 100.0)];
-        let err = render_compare_from_players(
-            &players,
+        let repo = fixture_repo(&[(1, "Alpha", "EDM", Position::Center, 100.0)]);
+        let views = fixture_views(&repo);
+        let err = render_compare_from_views(
+            &views,
             &CompareOpts {
                 p1: "Alpha".into(), p2: "Nope".into(),
                 width: 100, height: 30,
@@ -732,15 +819,15 @@ mod tests {
 
     #[test]
     fn l0_export_roster_groups_by_team_alpha() {
-        let players = vec![
-            fixture(1, "ZTeamPlayer", "ZZZ", Position::Center, 100.0),
-            fixture(2, "ATeamPlayer", "AAA", Position::Center,  50.0),
-        ];
-        let out = render_roster_from_players(
-            &players,
+        let repo = fixture_repo(&[
+            (1, "ZTeamPlayer", "ZZZ", Position::Center, 100.0),
+            (2, "ATeamPlayer", "AAA", Position::Center,  50.0),
+        ]);
+        let views = fixture_views(&repo);
+        let out = render_roster_from_views(
+            &views,
             &RosterOpts { pos: None, width: 100, height: 30 },
         ).unwrap();
-        // Team AAA must appear before team ZZZ in the output.
         let i_aaa = out.find("AAA").unwrap();
         let i_zzz = out.find("ZZZ").unwrap();
         assert!(i_aaa < i_zzz, "rosters must be grouped by team alphabetically");
@@ -749,12 +836,13 @@ mod tests {
 
     #[test]
     fn l0_export_roster_pos_filter_excludes_others() {
-        let players = vec![
-            fixture(1, "Cee", "EDM", Position::Center,  100.0),
-            fixture(2, "Dee", "EDM", Position::Defense,  90.0),
-        ];
-        let out = render_roster_from_players(
-            &players,
+        let repo = fixture_repo(&[
+            (1, "Cee", "EDM", Position::Center,  100.0),
+            (2, "Dee", "EDM", Position::Defense,  90.0),
+        ]);
+        let views = fixture_views(&repo);
+        let out = render_roster_from_views(
+            &views,
             &RosterOpts { pos: Some("D".into()), width: 100, height: 30 },
         ).unwrap();
         assert!(out.contains("Dee"));
@@ -763,21 +851,18 @@ mod tests {
 
     #[test]
     fn l0_export_front_matter_is_yaml_parseable() {
-        // Smoke test: every shape's front matter must be valid YAML when
-        // extracted, since proof reads it via serde_yaml internally.
-        let players = vec![fixture(1, "Solo", "EDM", Position::Center, 100.0)];
-        let body = render_leaders_from_players(
-            &players,
+        let repo = fixture_repo(&[(1, "Solo", "EDM", Position::Center, 100.0)]);
+        let views = fixture_views(&repo);
+        let body = render_leaders_from_views(
+            &views,
             &LeadersOpts {
                 pos: Some("C".into()), top: 5, sort: "pts-pace".into(),
                 gp_min: None, width: 80, height: 30,
             },
         ).unwrap();
-        // Strip the front matter and re-parse
         let after_open = body.strip_prefix("---\n").expect("front-matter opens with ---");
         let close = after_open.find("\n---\n").expect("front-matter closes with ---");
         let yaml = &after_open[..close];
-        // Manual key checks (avoids pulling serde_yaml as a dep)
         for key in &["type:", "title:", "generated_at:", "season:", "filters:", "proof:"] {
             assert!(yaml.contains(key), "front-matter missing '{key}'");
         }
