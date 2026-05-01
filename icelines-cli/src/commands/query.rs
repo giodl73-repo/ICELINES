@@ -869,8 +869,26 @@ pub struct GoaliesArgs {
     pub csv: bool,
 }
 
+/// JSON / CSV output row for `query goalies`. Hart.5c.7: stable shape
+/// for CLI consumers, decoupled from the icelines-core model. Mirrors
+/// the field set the legacy Goalie struct produced via serde.
+#[derive(serde::Serialize)]
+struct GoalieRow {
+    nhl_id: u32,
+    full_name: String,
+    team: String,
+    games_played: u32,
+    wins: u32,
+    losses: u32,
+    ot_losses: Option<u32>,
+    save_pct: Option<f32>,
+    goals_against_average: Option<f32>,
+    shutouts: u32,
+    saves: u32,
+}
+
 pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
-    use icelines_core::model::Goalie;
+    use icelines_core::stats_repository::PlayerView;
     use icelines_fetch::snapshot::SnapshotStore;
 
     if args.json && args.csv {
@@ -885,35 +903,36 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
         }
         None => cfg.season_str(),
     };
-    #[allow(deprecated)]
-    let mut goalies: Vec<Goalie> = {
-        let season_u32: u32 = season
-            .parse()
-            .map_err(|_| anyhow::anyhow!("season '{season}' is not a YYYYZZZZ id"))?;
-        let store = SnapshotStore::new(cfg.snapshot_dir());
-        let outcome = icelines_fetch::stats_loader::load_into_repo(
+    let season_u32: u32 = season
+        .parse()
+        .map_err(|_| anyhow::anyhow!("season '{season}' is not a YYYYZZZZ id"))?;
+    let store = SnapshotStore::new(cfg.snapshot_dir());
+    let outcome = icelines_fetch::stats_loader::load_into_repo(
+        icelines_core::model::Season(season_u32),
+        icelines_core::season_stats::SeasonType::Regular,
+        &store,
+    )
+    .map_err(|e| anyhow::anyhow!("{e}\n  Try: icelines fetch goalies"))?;
+
+    let mut views: Vec<PlayerView<'_>> = outcome
+        .repo
+        .goalies(
             icelines_core::model::Season(season_u32),
             icelines_core::season_stats::SeasonType::Regular,
-            &store,
         )
-        .map_err(|e| anyhow::anyhow!("{e}\n  Try: icelines fetch goalies"))?;
-        outcome.repo.flat_view_legacy_goalies(
-            icelines_core::model::Season(season_u32),
-            icelines_core::season_stats::SeasonType::Regular,
-        )
-    };
+        .filter(|v| v.gp() >= args.min_gp)
+        .collect();
 
     if let Some(team) = args.team.as_deref() {
         let abbrev = team.to_ascii_uppercase();
-        goalies.retain(|g| g.team.as_str() == abbrev);
+        views.retain(|v| v.team_display() == abbrev);
     }
-    goalies.retain(|g| g.qualified(args.min_gp));
 
     use std::cmp::Ordering;
     let sort_key = args.sort.to_ascii_lowercase();
-    goalies.sort_by(|a, b| {
-        let sa = a.stats.as_ref();
-        let sb = b.stats.as_ref();
+    views.sort_by(|a, b| {
+        let sa = a.stats.goalie.as_ref();
+        let sb = b.stats.goalie.as_ref();
         match sort_key.as_str() {
             "sv-pct" | "svpct" | "sv%" => {
                 let av = sa.and_then(|s| s.save_pct).unwrap_or(0.0);
@@ -926,7 +945,7 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
                 av.partial_cmp(&bv).unwrap_or(Ordering::Equal)
             }
             "wins" | "w" => sb.map(|s| s.wins).unwrap_or(0).cmp(&sa.map(|s| s.wins).unwrap_or(0)),
-            "gp" => sb.map(|s| s.games_played).unwrap_or(0).cmp(&sa.map(|s| s.games_played).unwrap_or(0)),
+            "gp" => b.gp().cmp(&a.gp()),
             "saves" => sb.map(|s| s.saves).unwrap_or(0).cmp(&sa.map(|s| s.saves).unwrap_or(0)),
             "so" | "shutouts" => sb.map(|s| s.shutouts).unwrap_or(0).cmp(&sa.map(|s| s.shutouts).unwrap_or(0)),
             other => {
@@ -937,32 +956,51 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
             }
         }
     });
-    goalies.truncate(args.top);
+    views.truncate(args.top);
+
+    let rows: Vec<GoalieRow> = views
+        .iter()
+        .map(|v| {
+            let s = v.stats.goalie.as_ref();
+            GoalieRow {
+                nhl_id: v.identity.id.0,
+                full_name: v.full_name().to_owned(),
+                team: v.team_display().to_owned(),
+                games_played: v.gp(),
+                wins: s.map(|s| s.wins).unwrap_or(0),
+                losses: s.map(|s| s.losses).unwrap_or(0),
+                ot_losses: s.and_then(|s| s.ot_losses),
+                save_pct: s.and_then(|s| s.save_pct),
+                goals_against_average: s.and_then(|s| s.goals_against_average),
+                shutouts: s.map(|s| s.shutouts).unwrap_or(0),
+                saves: s.map(|s| s.saves).unwrap_or(0),
+            }
+        })
+        .collect();
 
     if args.json {
         println!(
             "{}",
-            serde_json::to_string_pretty(&goalies).context("serializing goalies to JSON")?
+            serde_json::to_string_pretty(&rows).context("serializing goalies to JSON")?
         );
         return Ok(());
     }
     if args.csv {
         println!("rank,goalie,team,gp,wins,losses,ot_losses,sv_pct,gaa,so,saves");
-        for (i, g) in goalies.iter().enumerate() {
-            let s = g.stats.as_ref();
+        for (i, row) in rows.iter().enumerate() {
             println!(
                 "{},\"{}\",{},{},{},{},{},{:.4},{:.3},{},{}",
                 i + 1,
-                g.full_name,
-                g.team.as_str(),
-                s.map(|s| s.games_played).unwrap_or(0),
-                s.map(|s| s.wins).unwrap_or(0),
-                s.map(|s| s.losses).unwrap_or(0),
-                s.and_then(|s| s.ot_losses).unwrap_or(0),
-                s.and_then(|s| s.save_pct).unwrap_or(0.0),
-                s.and_then(|s| s.goals_against_average).unwrap_or(0.0),
-                s.map(|s| s.shutouts).unwrap_or(0),
-                s.map(|s| s.saves).unwrap_or(0),
+                row.full_name,
+                row.team,
+                row.games_played,
+                row.wins,
+                row.losses,
+                row.ot_losses.unwrap_or(0),
+                row.save_pct.unwrap_or(0.0),
+                row.goals_against_average.unwrap_or(0.0),
+                row.shutouts,
+                row.saves,
             );
         }
         return Ok(());
@@ -973,33 +1011,29 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
         "Rank", "Goalie", "Team", "GP", "W-L-OT", "SV%", "GAA", "SO", "Saves"
     );
     println!("{}", "─".repeat(80));
-    for (i, g) in goalies.iter().enumerate() {
-        let s = match g.stats.as_ref() {
-            Some(s) => s,
-            None => continue,
+    for (i, row) in rows.iter().enumerate() {
+        let record = match row.ot_losses {
+            Some(otl) => format!("{}-{}-{}", row.wins, row.losses, otl),
+            None => format!("{}-{}", row.wins, row.losses),
         };
-        let record = match s.ot_losses {
-            Some(otl) => format!("{}-{}-{}", s.wins, s.losses, otl),
-            None => format!("{}-{}", s.wins, s.losses),
-        };
-        let sv = s.save_pct.map(|v| format!("{v:.3}")).unwrap_or_else(|| "—".to_owned());
-        let gaa = s.goals_against_average.map(|v| format!("{v:.2}")).unwrap_or_else(|| "—".to_owned());
+        let sv = row.save_pct.map(|v| format!("{v:.3}")).unwrap_or_else(|| "—".to_owned());
+        let gaa = row.goals_against_average.map(|v| format!("{v:.2}")).unwrap_or_else(|| "—".to_owned());
         println!(
             "{:<4} {:<24} {:<5} {:<4} {:<10} {:<6} {:<6} {:<3} {:<6}",
             i + 1,
-            g.full_name.chars().take(24).collect::<String>(),
-            g.team.as_str(),
-            s.games_played,
+            row.full_name.chars().take(24).collect::<String>(),
+            row.team,
+            row.games_played,
             record,
             sv,
             gaa,
-            s.shutouts,
-            s.saves,
+            row.shutouts,
+            row.saves,
         );
     }
     println!(
         "\n{} goalies (min {} GP, sorted by {}) for season {}.",
-        goalies.len(),
+        rows.len(),
         args.min_gp,
         sort_key,
         season

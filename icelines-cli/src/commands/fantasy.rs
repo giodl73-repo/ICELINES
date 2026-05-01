@@ -1190,61 +1190,33 @@ mod tests {
         assert!(results.iter().all(|(_, s)| *s > 0.0));
     }
 
-    /// Parity vs legacy adapter: `to_scheme_stats_view(view)` must equal
-    /// `to_scheme_stats(&flat_view_legacy(view))` field-for-field on the
-    /// same fixture. Pinned for the duration of the migration; deletes
-    /// alongside flat_view_legacy in 5c.7.
+    /// Hart.5c.7: the parity test that compared
+    /// `to_scheme_stats_view(view)` against
+    /// `to_scheme_stats(&flat_view_legacy(view))` was the load-bearing
+    /// safety net during the 5c.4 migration. With the legacy path now
+    /// deleted, the parity test had no second path to compare against
+    /// and was removed. The view path is exercised by every other
+    /// fantasy test in this module that calls to_scheme_stats_view
+    /// against fixture views (Beniers known-value asserts, etc.).
     #[test]
-    fn l0_hart5c4_view_path_matches_legacy_player_path() {
+    fn l0_to_scheme_stats_view_pins_known_field_mapping() {
+        // Pinned known-value: McDavid 2024-25 fixture realtime block
+        // (hits=48, blocked_shots=22, takeaways=65, giveaways=41).
+        // Plus the default StatTotals fixture (goals=30, assists=50).
         let id = fixtures::identity(8478402).build();
         let stats = fixtures::stats(8478402, 20242025, "EDM")
             .realtime(48, 22, 65, 41)
             .build();
         let repo = fixtures::test_repo_with(id, stats);
         let v = repo
-            .view(
-                PlayerId(8478402),
-                Season(20242025),
-                SeasonType::Regular,
-            )
+            .view(PlayerId(8478402), Season(20242025), SeasonType::Regular)
             .unwrap();
-
-        let view_path = to_scheme_stats_view(&v);
-
-        // Legacy adapter path. flat_view_legacy is deprecated in 5c; the
-        // #[allow(deprecated)] is the same pattern as the parity test in
-        // filter.rs (Hart.5c.0).
-        #[allow(deprecated)]
-        let players = repo.flat_view_legacy(Season(20242025), SeasonType::Regular);
-        let p = &players[0];
-        let legacy_path = scheme::SkaterStats {
-            goals: p.season_goals,
-            assists: p.season_assists,
-            pp_goals: p.pp_goals,
-            pp_assists: p.pp_points.saturating_sub(p.pp_goals),
-            sh_goals: p.sh_goals,
-            sh_assists: p.sh_points.saturating_sub(p.sh_goals),
-            gwg: p.gwg,
-            ot_goals: p.ot_goals,
-            hits: p.hits,
-            blocks: p.blocked_shots,
-            shots_on_goal: p.shots,
-            plus_minus: p.plus_minus,
-            takeaways: p.takeaways,
-            giveaways: p.giveaways,
-            faceoff_wins: 0,
-        };
-
-        assert_eq!(view_path.goals, legacy_path.goals);
-        assert_eq!(view_path.assists, legacy_path.assists);
-        assert_eq!(view_path.pp_goals, legacy_path.pp_goals);
-        assert_eq!(view_path.pp_assists, legacy_path.pp_assists);
-        assert_eq!(view_path.gwg, legacy_path.gwg);
-        assert_eq!(view_path.hits, legacy_path.hits);
-        assert_eq!(view_path.blocks, legacy_path.blocks);
-        assert_eq!(view_path.shots_on_goal, legacy_path.shots_on_goal);
-        assert_eq!(view_path.plus_minus, legacy_path.plus_minus);
-        assert_eq!(view_path.takeaways, legacy_path.takeaways);
-        assert_eq!(view_path.giveaways, legacy_path.giveaways);
+        let s = to_scheme_stats_view(&v);
+        assert_eq!(s.goals, 30);
+        assert_eq!(s.assists, 50);
+        assert_eq!(s.hits, 48);
+        assert_eq!(s.blocks, 22);
+        assert_eq!(s.takeaways, 65);
+        assert_eq!(s.giveaways, 41);
     }
 }
