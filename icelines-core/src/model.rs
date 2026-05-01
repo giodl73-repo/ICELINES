@@ -6,7 +6,8 @@ pub const MIN_GP: u32 = 10;
 
 /// 8-digit YYYYZZZZ season identifier (e.g. Season(20252026)).
 /// Newtype prevents silent confusion with 4-digit year u32 values.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct Season(pub u32);
 
 impl Season {
@@ -135,7 +136,7 @@ impl GpStatus {
 
 /// Pace-projected stats for a skater.
 /// All values are per-82-game projections based on current season rate.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct PaceScore {
     /// Points per 82 games = (goals + assists) / gp * 82
     pub pace_82: f64,

@@ -7,7 +7,9 @@ pub mod cross_team;
 pub mod depth_chart;
 pub mod error;
 pub mod filter;
+pub mod fixtures;
 pub mod history;
+pub mod identity;
 pub mod model;
 pub mod name;
 pub mod position;
@@ -15,6 +17,7 @@ pub mod position_profile;
 pub mod projection;
 pub mod scheme;
 pub mod scoring;
+pub mod season_stats;
 pub mod teams;
 pub mod transactions;
 
