@@ -1,7 +1,7 @@
 #![allow(dead_code)]
-use icelines_core::model::Player;
 use crate::tui::event::Action;
 use crate::tui::loader::InstallState;
+use icelines_core::model::Player;
 
 /// Auto-refresh interval for the live Scores tab. Spec: `scores.md` §Auto-Refresh.
 pub(crate) const SCORES_AUTO_REFRESH_INTERVAL: std::time::Duration =
@@ -16,11 +16,11 @@ pub(crate) const SCORES_AUTO_REFRESH_INTERVAL: std::time::Duration =
 /// - Never when `last` is `None` — `maybe_fetch_scores` handles the initial
 ///   fetch on tab entry; the polling timer waits one interval after that.
 pub(crate) fn should_auto_refresh(
-    screen:      &Screen,
+    screen: &Screen,
     scores_date: &str,
-    last:        Option<std::time::Instant>,
-    now:         std::time::Instant,
-    interval:    std::time::Duration,
+    last: Option<std::time::Instant>,
+    now: std::time::Instant,
+    interval: std::time::Duration,
 ) -> bool {
     if !matches!(screen, Screen::Tonight) {
         return false;
@@ -30,7 +30,7 @@ pub(crate) fn should_auto_refresh(
     }
     match last {
         Some(t) => now.duration_since(t) >= interval,
-        None    => false,
+        None => false,
     }
 }
 
@@ -66,203 +66,202 @@ pub(crate) fn parse_picker_date(raw: &str) -> Result<String, String> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum QueryMode {
-    Build,      // normal — editing fields, viewing results
-    SaveName,   // typing a name to save the current query
-    LoadList,   // browsing saved queries to load
+    Build,    // normal — editing fields, viewing results
+    SaveName, // typing a name to save the current query
+    LoadList, // browsing saved queries to load
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Screen {
     Home,
-    Team(String),     // team abbreviation
-    Player(usize),    // index into loaded players
+    Team(String),  // team abbreviation
+    Player(usize), // index into loaded players
     Search,
     Tonight,
     Projections,
-    Queries,              // interactive query builder
+    Queries, // interactive query builder
     Groups,
-    GroupDetail(String),  // viewing members of a named group
+    GroupDetail(String), // viewing members of a named group
     Fetch,
     Help,
-    Comps(usize),         // similar-player comps for player at index
-    Depth,                // league-wide team depth rankings
-    DepthTeam(String),    // one team's depth chart with fit coloring
-    Schedule,                            // weekly view with team / matchup search
-    ScheduleTeam(String),                // full-season schedule for one team
-    ScheduleMatchup(String, String),     // head-to-head game log between two teams
-    Playoffs,                            // list-style bracket — rounds × series
-    SeriesDetail(String),                // one series — keyed by series letter
-    GameDetail(u64),                     // boxscore for one game — keyed by game_id
-    Goalies,                             // league goalie leaderboard (Phase G.3)
-    GoalieDetail(usize),                 // index into App.goalies
-    Transactions,                        // league-wide moves feed (Phase T.5)
+    Comps(usize),                    // similar-player comps for player at index
+    Depth,                           // league-wide team depth rankings
+    DepthTeam(String),               // one team's depth chart with fit coloring
+    Schedule,                        // weekly view with team / matchup search
+    ScheduleTeam(String),            // full-season schedule for one team
+    ScheduleMatchup(String, String), // head-to-head game log between two teams
+    Playoffs,                        // list-style bracket — rounds × series
+    SeriesDetail(String),            // one series — keyed by series letter
+    GameDetail(u64),                 // boxscore for one game — keyed by game_id
+    Goalies,                         // league goalie leaderboard (Phase G.3)
+    GoalieDetail(usize),             // index into App.goalies
+    Transactions,                    // league-wide moves feed (Phase T.5)
 }
 
 pub struct App {
-    pub screen:              Screen,
-    pub prev_screen:         Option<Screen>,
-    pub no_color:            bool,
-    pub players:             Vec<Player>,
+    pub screen: Screen,
+    pub prev_screen: Option<Screen>,
+    pub no_color: bool,
+    pub players: Vec<Player>,
     /// Phase G.3: league goalie pool. Populated alongside `players`
     /// from `load_state`. Empty until the loader returns.
-    pub goalies:             Vec<icelines_core::model::Goalie>,
+    pub goalies: Vec<icelines_core::model::Goalie>,
     /// Selected row on the Goalies tab.
-    pub goalie_selected:     usize,
+    pub goalie_selected: usize,
     /// Sort cycle index on the Goalies tab.
     /// 0=SV% desc, 1=GAA asc, 2=W desc, 3=GP desc, 4=Saves desc, 5=SO desc.
-    pub goalie_sort:         u8,
+    pub goalie_sort: u8,
     /// Min-GP filter on the Goalies tab. Cycles 5 → 15 → 25 → 40 → 5.
-    pub goalie_min_gp:       u32,
-    pub load_state:          crate::tui::loader::LoadState,
-    pub install_state:       InstallState,
-    pub tick:                u64,
-    pub selected:            usize,
-    pub search_query:        String,
-    pub status:              String,
-    pub show_help:           bool,
+    pub goalie_min_gp: u32,
+    pub load_state: crate::tui::loader::LoadState,
+    pub install_state: InstallState,
+    pub tick: u64,
+    pub selected: usize,
+    pub search_query: String,
+    pub status: String,
+    pub show_help: bool,
     // Headshot ASCII cache
-    pub headshot_cache:      crate::tui::headshot::HeadshotCache,
+    pub headshot_cache: crate::tui::headshot::HeadshotCache,
     // Group picker (shown as overlay on player card or team roster)
-    pub group_picker_open:   bool,
-    pub group_picker_list:   Vec<String>,           // group names
+    pub group_picker_open: bool,
+    pub group_picker_list: Vec<String>, // group names
     pub group_picker_player: Option<(String, String)>, // (normalized, full_name)
     // Depth chart tab
-    pub depth_mode:          icelines_core::cross_team::ScoringMode,
-    pub show_admin:          bool,
+    pub depth_mode: icelines_core::cross_team::ScoringMode,
+    pub show_admin: bool,
     // Season time-travel
-    pub active_season:       String,
-    pub show_season_picker:  bool,
-    pub picker_selected:     usize,
+    pub active_season: String,
+    pub show_season_picker: bool,
+    pub picker_selected: usize,
     // Scores (live schedule)
-    pub tonight_cache:       crate::tui::tonight::TonightCache,
-    pub boxscore_cache:      crate::tui::tonight::BoxscoreCache,
-    pub scores_date:         String,   // "YYYY-MM-DD", empty = today
-    pub scores_selected:     usize,    // selected game row
-    pub scores_picker_open:  bool,     // d-key date picker visible
-    pub scores_picker_input: String,   // text being typed in date picker
-    pub scores_picker_err:   Option<String>,  // validation error to display
+    pub tonight_cache: crate::tui::tonight::TonightCache,
+    pub boxscore_cache: crate::tui::tonight::BoxscoreCache,
+    pub scores_date: String,               // "YYYY-MM-DD", empty = today
+    pub scores_selected: usize,            // selected game row
+    pub scores_picker_open: bool,          // d-key date picker visible
+    pub scores_picker_input: String,       // text being typed in date picker
+    pub scores_picker_err: Option<String>, // validation error to display
     /// When the most recent live-Scores auto-refresh was triggered. `None`
     /// means the auto-refresh timer is dormant (e.g. user has not opened the
     /// Scores tab on a live date yet). The polling loop sets this on every
     /// tick that fires; the renderer uses it to draw "Updated Xs ago".
-    pub last_auto_refresh:   Option<std::time::Instant>,
+    pub last_auto_refresh: Option<std::time::Instant>,
     // Schedule tab — weekly view, search, team / matchup sub-views
     pub schedule_week_cache: crate::tui::schedule::WeekCache,
     pub schedule_team_cache: crate::tui::schedule::TeamSeasonCache,
-    pub schedule_week:       String,   // Monday "YYYY-MM-DD" of the week being viewed
-    pub schedule_query:      String,   // current text in the search bar
-    pub schedule_search_mode:bool,     // true while the search bar is open
-    pub schedule_filter:     crate::tui::schedule::SearchFilter, // applied filter
-    pub schedule_filter_err: Option<String>,                     // search validation error
-    pub schedule_selected:   usize,    // selected row on schedule
+    pub schedule_week: String, // Monday "YYYY-MM-DD" of the week being viewed
+    pub schedule_query: String, // current text in the search bar
+    pub schedule_search_mode: bool, // true while the search bar is open
+    pub schedule_filter: crate::tui::schedule::SearchFilter, // applied filter
+    pub schedule_filter_err: Option<String>, // search validation error
+    pub schedule_selected: usize, // selected row on schedule
     // Playoffs tab — bracket + series detail
-    pub playoffs_cache:      crate::tui::playoffs::PlayoffsCache,
-    pub playoffs_round:      usize,   // round index (0-based)
-    pub playoffs_series:     usize,   // series index within the current round
+    pub playoffs_cache: crate::tui::playoffs::PlayoffsCache,
+    pub playoffs_round: usize,  // round index (0-based)
+    pub playoffs_series: usize, // series index within the current round
     // Query manager state
-    pub query_fields:        Vec<crate::tui::screens::queries::QueryField>,
-    pub query_field_idx:     usize,       // which field row is active
-    pub query_result_scroll: usize,       // scroll offset in results panel
-    pub query_mode:          QueryMode,   // build | save-name | load-list
-    pub query_results_focused: bool,      // Tab toggles focus between field editor and result list
-    pub query_save_name:     String,      // name being typed for save
-    pub query_saved_list:    Vec<(String, String)>, // (name, json) loaded from DB
+    pub query_fields: Vec<crate::tui::screens::queries::QueryField>,
+    pub query_field_idx: usize,      // which field row is active
+    pub query_result_scroll: usize,  // scroll offset in results panel
+    pub query_mode: QueryMode,       // build | save-name | load-list
+    pub query_results_focused: bool, // Tab toggles focus between field editor and result list
+    pub query_save_name: String,     // name being typed for save
+    pub query_saved_list: Vec<(String, String)>, // (name, json) loaded from DB
     /// Phase 8j: lazy-compiled dashboard panel for the player card.
     /// Only consulted when `crate::config::dashboards_enabled()` is true.
-    pub dashboard_panel:     crate::tui::dashboard_panel::CompiledPanel,
+    pub dashboard_panel: crate::tui::dashboard_panel::CompiledPanel,
     /// Phase 8j: sorted-by-position pace_82 vectors for percentile
     /// lookups in the dashboard panel. Built once after players load.
-    pub league_context:      crate::tui::dashboard_panel::LeagueContext,
+    pub league_context: crate::tui::dashboard_panel::LeagueContext,
 
     // ── Phase T.5: Transactions tab ──────────────────────────────────────
     /// Loaded transactions envelope (rows + provenance). Empty until the
     /// loader picks up the snapshot.
-    pub transactions:        Vec<icelines_core::Transaction>,
+    pub transactions: Vec<icelines_core::Transaction>,
     /// Wall-clock string ("YYYY-MM-DDThh:mm:ss-04:00") from the snapshot
     /// envelope; surfaced in the title bar for staleness display.
     pub transactions_fetched_at: String,
     /// True when the most recent fetch failed (read from
     /// `SnapshotMetaFlags::transactions_stale`). Drives the red [STALE]
     /// prefix in the title bar.
-    pub transactions_stale:  bool,
+    pub transactions_stale: bool,
     /// Selected row index on the Transactions tab.
-    pub tx_selected:         usize,
+    pub tx_selected: usize,
     /// Filter to a single team abbrev (None = all). Cycles via `T`.
-    pub tx_team_filter:      Option<String>,
+    pub tx_team_filter: Option<String>,
     /// Filter to a single kind (None = all). Cycles via `k`.
-    pub tx_kind_filter:      Option<icelines_core::TransactionKind>,
+    pub tx_kind_filter: Option<icelines_core::TransactionKind>,
     /// Substring filter against the description (case-insensitive).
     /// Live-applied as the user types in search mode.
-    pub tx_search_query:     String,
+    pub tx_search_query: String,
     /// True while the `/` search bar is open and accepting characters.
-    pub tx_search_mode:      bool,
+    pub tx_search_mode: bool,
 }
 
 impl App {
     pub fn new(no_color: bool) -> Self {
         Self {
-            screen:              Screen::Home,
-            prev_screen:         None,
+            screen: Screen::Home,
+            prev_screen: None,
             no_color,
-            players:             Vec::new(),
-            goalies:             Vec::new(),
-            goalie_selected:     0,
-            goalie_sort:         0,   // SV% descending — Vezina-eligibility default
-            goalie_min_gp:       15,  // NHL leaderboard convention
-            load_state:          crate::tui::loader::LoadState::new(),
-            install_state:       InstallState::new(),
-            tick:                0,
-            selected:            0,
-            search_query:        String::new(),
-            status:              "Loading data… · Press ? for help · q to quit".to_owned(),
-            show_help:           false,
-            query_fields:        crate::tui::screens::queries::default_fields(),
-            query_field_idx:     0,
+            players: Vec::new(),
+            goalies: Vec::new(),
+            goalie_selected: 0,
+            goalie_sort: 0,    // SV% descending — Vezina-eligibility default
+            goalie_min_gp: 15, // NHL leaderboard convention
+            load_state: crate::tui::loader::LoadState::new(),
+            install_state: InstallState::new(),
+            tick: 0,
+            selected: 0,
+            search_query: String::new(),
+            status: "Loading data… · Press ? for help · q to quit".to_owned(),
+            show_help: false,
+            query_fields: crate::tui::screens::queries::default_fields(),
+            query_field_idx: 0,
             query_result_scroll: 0,
-            depth_mode:          icelines_core::cross_team::ScoringMode::Fantasy,
-            show_admin:          false,
-            active_season:       icelines_core::CURRENT_SEASON_STR.to_owned(),
-            show_season_picker:  false,
-            picker_selected:     0,
-            tonight_cache:       crate::tui::tonight::new_cache(),
-            boxscore_cache:      crate::tui::tonight::new_boxscore_cache(),
-            scores_date:         String::new(),
-            scores_selected:     0,
-            scores_picker_open:  false,
+            depth_mode: icelines_core::cross_team::ScoringMode::Fantasy,
+            show_admin: false,
+            active_season: icelines_core::CURRENT_SEASON_STR.to_owned(),
+            show_season_picker: false,
+            picker_selected: 0,
+            tonight_cache: crate::tui::tonight::new_cache(),
+            boxscore_cache: crate::tui::tonight::new_boxscore_cache(),
+            scores_date: String::new(),
+            scores_selected: 0,
+            scores_picker_open: false,
             scores_picker_input: String::new(),
-            scores_picker_err:   None,
-            last_auto_refresh:   None,
+            scores_picker_err: None,
+            last_auto_refresh: None,
             schedule_week_cache: crate::tui::schedule::new_week_cache(),
             schedule_team_cache: crate::tui::schedule::new_team_cache(),
-            schedule_week:       crate::tui::schedule::monday_of(
-                                     &crate::tui::schedule::today_iso()
-                                 ).unwrap_or_else(crate::tui::schedule::today_iso),
-            schedule_query:      String::new(),
-            schedule_search_mode:false,
-            schedule_filter:     crate::tui::schedule::SearchFilter::None,
+            schedule_week: crate::tui::schedule::monday_of(&crate::tui::schedule::today_iso())
+                .unwrap_or_else(crate::tui::schedule::today_iso),
+            schedule_query: String::new(),
+            schedule_search_mode: false,
+            schedule_filter: crate::tui::schedule::SearchFilter::None,
             schedule_filter_err: None,
-            schedule_selected:   0,
-            playoffs_cache:      crate::tui::playoffs::new_cache(),
-            playoffs_round:      0,
-            playoffs_series:     0,
-            group_picker_open:   false,
-            group_picker_list:   Vec::new(),
+            schedule_selected: 0,
+            playoffs_cache: crate::tui::playoffs::new_cache(),
+            playoffs_round: 0,
+            playoffs_series: 0,
+            group_picker_open: false,
+            group_picker_list: Vec::new(),
             group_picker_player: None,
-            headshot_cache:      crate::tui::headshot::HeadshotCache::new(),
-            query_mode:          QueryMode::Build,
+            headshot_cache: crate::tui::headshot::HeadshotCache::new(),
+            query_mode: QueryMode::Build,
             query_results_focused: false,
-            query_save_name:     String::new(),
-            query_saved_list:    Vec::new(),
-            dashboard_panel:     crate::tui::dashboard_panel::CompiledPanel::new(),
-            league_context:      crate::tui::dashboard_panel::LeagueContext::empty(),
-            transactions:        Vec::new(),
+            query_save_name: String::new(),
+            query_saved_list: Vec::new(),
+            dashboard_panel: crate::tui::dashboard_panel::CompiledPanel::new(),
+            league_context: crate::tui::dashboard_panel::LeagueContext::empty(),
+            transactions: Vec::new(),
             transactions_fetched_at: String::new(),
-            transactions_stale:  false,
-            tx_selected:         0,
-            tx_team_filter:      None,
-            tx_kind_filter:      None,
-            tx_search_query:     String::new(),
-            tx_search_mode:      false,
+            transactions_stale: false,
+            tx_selected: 0,
+            tx_team_filter: None,
+            tx_kind_filter: None,
+            tx_search_query: String::new(),
+            tx_search_mode: false,
         }
     }
 
@@ -310,7 +309,8 @@ impl App {
                     self.group_picker_open = false;
                     self.group_picker_player = None;
                     self.selected = 0;
-                    self.status = "  g = add to group from any player card or team roster".to_owned();
+                    self.status =
+                        "  g = add to group from any player card or team roster".to_owned();
                 } else if self.screen == Screen::Queries && self.query_mode != QueryMode::Build {
                     self.query_mode = QueryMode::Build;
                     self.status = "Cancelled  ·  s=save  l=load  r=reset".to_owned();
@@ -321,7 +321,10 @@ impl App {
             Action::Down => {
                 if self.screen == Screen::Tonight {
                     self.scores_selected = self.scores_selected.saturating_add(1);
-                } else if matches!(self.screen, Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(_, _)) {
+                } else if matches!(
+                    self.screen,
+                    Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(_, _)
+                ) {
                     self.schedule_selected = self.schedule_selected.saturating_add(1);
                 } else if self.screen == Screen::Goalies {
                     self.goalie_selected = self.goalie_selected.saturating_add(1);
@@ -331,13 +334,18 @@ impl App {
                     self.playoffs_series = self.playoffs_series.saturating_add(1);
                 } else if self.screen == Screen::Queries {
                     if self.query_results_focused {
-                        let results = crate::tui::screens::queries::run_query(&self.players, &self.query_fields);
+                        let results = crate::tui::screens::queries::run_query(
+                            &self.players,
+                            &self.query_fields,
+                        );
                         let visible: usize = 20;
                         if self.selected + 1 < visible {
-                            self.selected = (self.selected + 1).min(results.len().saturating_sub(1));
+                            self.selected =
+                                (self.selected + 1).min(results.len().saturating_sub(1));
                         } else {
                             let max_scroll = results.len().saturating_sub(visible);
-                            self.query_result_scroll = (self.query_result_scroll + 1).min(max_scroll);
+                            self.query_result_scroll =
+                                (self.query_result_scroll + 1).min(max_scroll);
                         }
                     } else {
                         let n = self.query_fields.len();
@@ -351,7 +359,11 @@ impl App {
                     }
                 } else if self.screen == Screen::Home {
                     let n = crate::tui::screens::home::RANKED_TEAMS.len();
-                    self.selected = if self.selected + 1 >= n { 0 } else { self.selected + 1 };
+                    self.selected = if self.selected + 1 >= n {
+                        0
+                    } else {
+                        self.selected + 1
+                    };
                 } else {
                     self.selected = self.selected.saturating_add(1);
                 }
@@ -359,7 +371,10 @@ impl App {
             Action::Up => {
                 if self.screen == Screen::Tonight {
                     self.scores_selected = self.scores_selected.saturating_sub(1);
-                } else if matches!(self.screen, Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(_, _)) {
+                } else if matches!(
+                    self.screen,
+                    Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(_, _)
+                ) {
                     self.schedule_selected = self.schedule_selected.saturating_sub(1);
                 } else if self.screen == Screen::Goalies {
                     self.goalie_selected = self.goalie_selected.saturating_sub(1);
@@ -382,7 +397,11 @@ impl App {
                     }
                 } else if self.screen == Screen::Home {
                     let n = crate::tui::screens::home::RANKED_TEAMS.len();
-                    self.selected = if self.selected == 0 { n - 1 } else { self.selected - 1 };
+                    self.selected = if self.selected == 0 {
+                        n - 1
+                    } else {
+                        self.selected - 1
+                    };
                 } else {
                     self.selected = self.selected.saturating_sub(1);
                 }
@@ -400,7 +419,11 @@ impl App {
                 match &self.screen {
                     Screen::Queries if !self.query_results_focused => {
                         if let Some(f) = self.query_fields.get_mut(self.query_field_idx) {
-                            if matches!(action, Action::Right) { f.next(); } else { f.prev(); }
+                            if matches!(action, Action::Right) {
+                                f.next();
+                            } else {
+                                f.prev();
+                            }
                         }
                         self.query_result_scroll = 0;
                     }
@@ -411,12 +434,17 @@ impl App {
                         } else {
                             self.scores_date.clone()
                         };
-                        let delta = if matches!(action, Action::Right) { 1 } else { -1 };
+                        let delta = if matches!(action, Action::Right) {
+                            1
+                        } else {
+                            -1
+                        };
                         if let Some(new_date) = crate::tui::schedule::add_days(&from, delta) {
                             self.scores_date = new_date.clone();
                             self.scores_selected = 0;
                             crate::tui::tonight::maybe_fetch(
-                                self.tonight_cache.clone(), new_date.clone(),
+                                self.tonight_cache.clone(),
+                                new_date.clone(),
                             );
                             // Past dates don't poll — clear the auto-refresh timer.
                             self.last_auto_refresh = None;
@@ -425,17 +453,22 @@ impl App {
                     }
                     // Schedule: ←/→ moves between weeks (overrides global sub-view nav)
                     Screen::Schedule => {
-                        let delta = if matches!(action, Action::Right) { 7 } else { -7 };
-                        if let Some(new_week) = crate::tui::schedule::add_days(&self.schedule_week, delta) {
+                        let delta = if matches!(action, Action::Right) {
+                            7
+                        } else {
+                            -7
+                        };
+                        if let Some(new_week) =
+                            crate::tui::schedule::add_days(&self.schedule_week, delta)
+                        {
                             self.schedule_week = new_week.clone();
                             self.schedule_selected = 0;
                             crate::tui::schedule::maybe_fetch_week(
-                                self.schedule_week_cache.clone(), new_week.clone(),
+                                self.schedule_week_cache.clone(),
+                                new_week.clone(),
                             );
-                            self.status = format!(
-                                "Week of {}",
-                                crate::tui::schedule::week_label(&new_week)
-                            );
+                            self.status =
+                                format!("Week of {}", crate::tui::schedule::week_label(&new_week));
                         }
                     }
                     // Playoffs: ←/→ moves between rounds
@@ -476,14 +509,18 @@ impl App {
                     self.schedule_search_mode = true;
                     self.schedule_query.clear();
                     self.schedule_filter_err = None;
-                    self.status = "Search: type team (SEA) or matchup (NYR WSH) — Enter, Esc cancel".to_owned();
+                    self.status =
+                        "Search: type team (SEA) or matchup (NYR WSH) — Enter, Esc cancel"
+                            .to_owned();
                 } else if self.screen == Screen::Transactions {
                     // Transactions tab: '/' opens an in-tab description
                     // substring search. Live-applied as the user types.
                     self.tx_search_mode = true;
                     self.tx_search_query.clear();
                     self.tx_selected = 0;
-                    self.status = "Search transactions: type any substring — Enter applies, Esc clears".to_owned();
+                    self.status =
+                        "Search transactions: type any substring — Enter applies, Esc clears"
+                            .to_owned();
                 } else {
                     self.prev_screen = Some(self.screen.clone());
                     self.screen = Screen::Search;
@@ -496,8 +533,8 @@ impl App {
                     self.search_query.push(c);
                     self.selected = 0;
                 } else if self.screen == Screen::Queries
-                       && c == 'p'
-                       && !matches!(self.query_mode, QueryMode::SaveName)
+                    && c == 'p'
+                    && !matches!(self.query_mode, QueryMode::SaveName)
                 {
                     // `p` flips to the Projections sister-screen. ←/→ on
                     // Queries is consumed by field editing, so this is
@@ -506,7 +543,8 @@ impl App {
                     self.screen = Screen::Projections;
                     self.selected = 0;
                     self.query_results_focused = false;
-                    self.status = "Projections · p:queries  ↑↓:scroll  Enter:player card".to_owned();
+                    self.status =
+                        "Projections · p:queries  ↑↓:scroll  Enter:player card".to_owned();
                 } else if self.screen == Screen::Projections && c == 'p' {
                     // Symmetric: `p` from Projections flips back to Queries.
                     self.prev_screen = Some(self.screen.clone());
@@ -523,7 +561,9 @@ impl App {
                             // Start save-name mode
                             self.query_mode = QueryMode::SaveName;
                             self.query_save_name.clear();
-                            self.status = "Save query as: (type name, Enter to save, Esc to cancel)".to_owned();
+                            self.status =
+                                "Save query as: (type name, Enter to save, Esc to cancel)"
+                                    .to_owned();
                         }
                         QueryMode::Build if c == 'l' => {
                             // Load saved queries list
@@ -551,12 +591,16 @@ impl App {
                     let n = crate::tui::screens::goalies::SORTS.len() as u8;
                     self.goalie_sort = (self.goalie_sort + 1) % n;
                     self.goalie_selected = 0;
-                    let label = crate::tui::screens::goalies::SORTS[self.goalie_sort as usize].label();
+                    let label =
+                        crate::tui::screens::goalies::SORTS[self.goalie_sort as usize].label();
                     self.status = format!("Goalies sort: {label}");
                 } else if self.screen == Screen::Goalies && c == 'm' {
                     // Cycle min-GP threshold 5 → 15 → 25 → 40
                     let cycle = crate::tui::screens::goalies::MIN_GP_CYCLE;
-                    let cur = cycle.iter().position(|v| *v == self.goalie_min_gp).unwrap_or(0);
+                    let cur = cycle
+                        .iter()
+                        .position(|v| *v == self.goalie_min_gp)
+                        .unwrap_or(0);
                     self.goalie_min_gp = cycle[(cur + 1) % cycle.len()];
                     self.goalie_selected = 0;
                     self.status = format!("Goalies min GP: {}", self.goalie_min_gp);
@@ -567,7 +611,8 @@ impl App {
                         self.schedule_week = monday.clone();
                         self.schedule_selected = 0;
                         crate::tui::schedule::maybe_fetch_week(
-                            self.schedule_week_cache.clone(), monday.clone(),
+                            self.schedule_week_cache.clone(),
+                            monday.clone(),
                         );
                         self.status = format!(
                             "Today — week of {}",
@@ -579,14 +624,14 @@ impl App {
                     self.scores_picker_open = true;
                     self.scores_picker_input.clear();
                     self.scores_picker_err = None;
-                    self.status = "Go to date — type YYYY-MM-DD or MM/DD, Enter applies, Esc cancels".to_owned();
+                    self.status =
+                        "Go to date — type YYYY-MM-DD or MM/DD, Enter applies, Esc cancels"
+                            .to_owned();
                 } else if self.screen == Screen::Tonight && c == 't' {
                     // 't' on Scores jumps back to today (live)
                     self.scores_date.clear();
                     self.scores_selected = 0;
-                    crate::tui::tonight::maybe_fetch(
-                        self.tonight_cache.clone(), String::new(),
-                    );
+                    crate::tui::tonight::maybe_fetch(self.tonight_cache.clone(), String::new());
                     // Re-arm the auto-refresh timer for the live date.
                     self.last_auto_refresh = Some(std::time::Instant::now());
                     self.status = "Scores · Today".to_owned();
@@ -603,15 +648,15 @@ impl App {
                         tx_screen::cycle_team_backward(self.tx_team_filter.as_deref(), &teams)
                     };
                     self.tx_team_filter = next.clone();
-                    self.tx_selected    = 0;
+                    self.tx_selected = 0;
                     self.status = match next {
                         Some(t) => format!("Transactions team filter: {t}"),
-                        None    => "Transactions team filter: all".to_owned(),
+                        None => "Transactions team filter: all".to_owned(),
                     };
                 } else if self.screen == Screen::Transactions && (c == 'k' || c == 'K') {
                     // Cycle kind filter; Shift-K reverses.
-                    use icelines_core::TransactionKind as K;
                     use crate::tui::screens::transactions as tx_screen;
+                    use icelines_core::TransactionKind as K;
                     let cycle = K::ALL;
                     let next = if c == 'k' {
                         tx_screen::cycle_kind_forward(self.tx_kind_filter, cycle)
@@ -619,10 +664,10 @@ impl App {
                         tx_screen::cycle_kind_backward(self.tx_kind_filter, cycle)
                     };
                     self.tx_kind_filter = next;
-                    self.tx_selected    = 0;
+                    self.tx_selected = 0;
                     self.status = match next {
                         Some(k) => format!("Transactions kind filter: {}", k.label()),
-                        None    => "Transactions kind filter: all".to_owned(),
+                        None => "Transactions kind filter: all".to_owned(),
                     };
                 } else if c == 'F' {
                     self.show_admin = !self.show_admin;
@@ -630,16 +675,19 @@ impl App {
                     self.show_season_picker = true;
                     // Start picker on current active season
                     let season_list = crate::tui::screens::misc::PICKER_SEASONS;
-                    self.picker_selected = season_list.iter()
+                    self.picker_selected = season_list
+                        .iter()
                         .position(|(id, _, _)| *id == self.active_season.as_str())
                         .unwrap_or(0);
-                } else if c == 'd' && !matches!(
-                    self.screen,
-                    // Skip text-input screens; 'd' is part of the typed query.
-                    Screen::Search | Screen::Tonight
-                ) && !(self.screen == Screen::Schedule && self.schedule_search_mode)
-                  && !(self.screen == Screen::Queries
-                       && matches!(self.query_mode, QueryMode::SaveName))
+                } else if c == 'd'
+                    && !matches!(
+                        self.screen,
+                        // Skip text-input screens; 'd' is part of the typed query.
+                        Screen::Search | Screen::Tonight
+                    )
+                    && !(self.screen == Screen::Schedule && self.schedule_search_mode)
+                    && !(self.screen == Screen::Queries
+                        && matches!(self.query_mode, QueryMode::SaveName))
                 {
                     // Global shortcut: jump to the league depth view.
                     // Already on a depth screen → toggle back to Home so
@@ -651,8 +699,10 @@ impl App {
                     };
                     self.selected = 0;
                     self.status = match &self.screen {
-                        Screen::Depth => "Depth chart — s: scoring  Enter: team chart  d: home".to_owned(),
-                        _             => "Home".to_owned(),
+                        Screen::Depth => {
+                            "Depth chart — s: scoring  Enter: team chart  d: home".to_owned()
+                        }
+                        _ => "Home".to_owned(),
                     };
                 }
             }
@@ -664,7 +714,7 @@ impl App {
                     self.query_save_name.pop();
                 }
             }
-            Action::Tab     => self.cycle_screen(),
+            Action::Tab => self.cycle_screen(),
             Action::TabPrev => self.cycle_screen_back(),
             Action::Refresh => {
                 if self.screen == Screen::Queries {
@@ -684,11 +734,18 @@ impl App {
                         self.schedule_week_cache.clone(),
                         self.schedule_week.clone(),
                     );
-                    self.status = format!("Retrying {}…", crate::tui::schedule::week_label(&self.schedule_week));
+                    self.status = format!(
+                        "Retrying {}…",
+                        crate::tui::schedule::week_label(&self.schedule_week)
+                    );
                 } else if matches!(self.screen, Screen::Playoffs | Screen::SeriesDetail(_)) {
-                    if let Some(year) = crate::tui::playoffs::playoff_year_for_season(&self.active_season) {
+                    if let Some(year) =
+                        crate::tui::playoffs::playoff_year_for_season(&self.active_season)
+                    {
                         crate::tui::playoffs::force_fetch_bracket(
-                            self.playoffs_cache.clone(), year, &self.active_season,
+                            self.playoffs_cache.clone(),
+                            year,
+                            &self.active_season,
                         );
                         self.status = format!("Retrying playoff bracket {year}…");
                     }
@@ -708,7 +765,8 @@ impl App {
                         .map(|gs| gs.into_iter().map(|g| g.name).collect())
                         .unwrap_or_default();
                     if self.group_picker_list.is_empty() {
-                        self.status = "No groups — create one with `icelines group create`".to_owned();
+                        self.status =
+                            "No groups — create one with `icelines group create`".to_owned();
                     } else {
                         self.group_picker_player = Some(player);
                         self.group_picker_open = true;
@@ -721,7 +779,8 @@ impl App {
                     self.prev_screen = Some(self.screen.clone());
                     self.screen = Screen::Groups;
                     self.selected = 0;
-                    self.status = "Groups — ↑↓ select · Enter to view members · Esc back".to_owned();
+                    self.status =
+                        "Groups — ↑↓ select · Enter to view members · Esc back".to_owned();
                 }
             }
             Action::AddToFavorites => {
@@ -731,9 +790,11 @@ impl App {
                 if let Some((norm, full)) = target {
                     if let Ok(db) = crate::db::GroupDb::open() {
                         match db.add_member("Favorites", &norm) {
-                            Ok(true)  => self.status = format!("★ Added {} to Favorites", full),
-                            Ok(false) => self.status = format!("★ {} is already in Favorites", full),
-                            Err(e)    => self.status = format!("Error: {e}"),
+                            Ok(true) => self.status = format!("★ Added {} to Favorites", full),
+                            Ok(false) => {
+                                self.status = format!("★ {} is already in Favorites", full)
+                            }
+                            Err(e) => self.status = format!("Error: {e}"),
                         }
                     }
                 }
@@ -794,10 +855,7 @@ impl App {
     /// Also (re)arms the auto-refresh timer so the next 30s tick starts from now.
     fn maybe_fetch_scores(&mut self) {
         if self.screen == Screen::Tonight {
-            crate::tui::tonight::maybe_fetch(
-                self.tonight_cache.clone(),
-                self.scores_date.clone(),
-            );
+            crate::tui::tonight::maybe_fetch(self.tonight_cache.clone(), self.scores_date.clone());
             // Arm the timer only when on a live date — past dates are
             // permanent (final scores don't change) and don't need polling.
             self.last_auto_refresh = if self.scores_date.is_empty() {
@@ -814,7 +872,9 @@ impl App {
     /// Phase 8f.1: also short-circuits when live feeds are disabled so the
     /// timer doesn't repeatedly write the "live disabled" error to the cache.
     pub fn tick_auto_refresh(&mut self) {
-        if !crate::config::live_feeds_enabled() { return; }
+        if !crate::config::live_feeds_enabled() {
+            return;
+        }
         let now = std::time::Instant::now();
         if should_auto_refresh(
             &self.screen,
@@ -823,10 +883,7 @@ impl App {
             now,
             SCORES_AUTO_REFRESH_INTERVAL,
         ) {
-            crate::tui::tonight::force_fetch(
-                self.tonight_cache.clone(),
-                self.scores_date.clone(),
-            );
+            crate::tui::tonight::force_fetch(self.tonight_cache.clone(), self.scores_date.clone());
             self.last_auto_refresh = Some(now);
         }
     }
@@ -851,11 +908,9 @@ impl App {
         if raw.is_empty() {
             self.scores_date.clear();
             self.scores_picker_open = false;
-            self.scores_picker_err  = None;
-            self.scores_selected    = 0;
-            crate::tui::tonight::maybe_fetch(
-                self.tonight_cache.clone(), String::new(),
-            );
+            self.scores_picker_err = None;
+            self.scores_selected = 0;
+            crate::tui::tonight::maybe_fetch(self.tonight_cache.clone(), String::new());
             // Empty date = live → arm the timer
             self.last_auto_refresh = Some(std::time::Instant::now());
             self.status = "Scores · Today".to_owned();
@@ -863,14 +918,12 @@ impl App {
         }
         match parse_picker_date(raw) {
             Ok(iso) => {
-                self.scores_date         = iso.clone();
-                self.scores_picker_open  = false;
-                self.scores_picker_err   = None;
+                self.scores_date = iso.clone();
+                self.scores_picker_open = false;
+                self.scores_picker_err = None;
                 self.scores_picker_input.clear();
-                self.scores_selected     = 0;
-                crate::tui::tonight::maybe_fetch(
-                    self.tonight_cache.clone(), iso.clone(),
-                );
+                self.scores_selected = 0;
+                crate::tui::tonight::maybe_fetch(self.tonight_cache.clone(), iso.clone());
                 // Specific date → no auto-refresh (final scores don't change)
                 self.last_auto_refresh = None;
                 self.status = format!("Scores · {iso}");
@@ -889,19 +942,22 @@ impl App {
             Action::Back | Action::Escape => {
                 self.scores_picker_open = false;
                 self.scores_picker_input.clear();
-                self.scores_picker_err  = None;
+                self.scores_picker_err = None;
                 self.status = "Date picker cancelled.".to_owned();
             }
-            Action::Enter      => self.apply_scores_date_picker(),
-            Action::Backspace  => { self.scores_picker_input.pop(); self.scores_picker_err = None; }
-            Action::Char(c)    => self.scores_picker_input.push(c),
+            Action::Enter => self.apply_scores_date_picker(),
+            Action::Backspace => {
+                self.scores_picker_input.pop();
+                self.scores_picker_err = None;
+            }
+            Action::Char(c) => self.scores_picker_input.push(c),
             // Map non-text actions back to their characters so digits/letters
             // typed at the picker behave naturally.
-            Action::Refresh        => self.scores_picker_input.push('r'),
-            Action::Install        => self.scores_picker_input.push('i'),
-            Action::AddToGroup     => self.scores_picker_input.push('g'),
+            Action::Refresh => self.scores_picker_input.push('r'),
+            Action::Install => self.scores_picker_input.push('i'),
+            Action::AddToGroup => self.scores_picker_input.push('g'),
             Action::AddToFavorites => self.scores_picker_input.push('f'),
-            Action::GoToTab(n)     => {
+            Action::GoToTab(n) => {
                 let ch = char::from_digit((n + 1) as u32, 10).unwrap_or('?');
                 self.scores_picker_input.push(ch);
             }
@@ -914,7 +970,7 @@ impl App {
     pub fn playoffs_round_count(&self) -> usize {
         let year = match crate::tui::playoffs::playoff_year_for_season(&self.active_season) {
             Some(y) => y,
-            None    => return 0,
+            None => return 0,
         };
         let map = self.playoffs_cache.lock().unwrap();
         match map.get(&year) {
@@ -926,7 +982,7 @@ impl App {
     /// Letter of the currently-selected series (used as SeriesDetail key).
     pub fn selected_series_letter(&self) -> Option<String> {
         let year = crate::tui::playoffs::playoff_year_for_season(&self.active_season)?;
-        let map  = self.playoffs_cache.lock().unwrap();
+        let map = self.playoffs_cache.lock().unwrap();
         match map.get(&year) {
             Some(crate::tui::playoffs::PlayoffsState::Loaded(b)) => {
                 let round = b.rounds.get(self.playoffs_round)?;
@@ -942,7 +998,9 @@ impl App {
         if matches!(self.screen, Screen::Playoffs | Screen::SeriesDetail(_)) {
             if let Some(year) = crate::tui::playoffs::playoff_year_for_season(&self.active_season) {
                 crate::tui::playoffs::maybe_fetch_bracket(
-                    self.playoffs_cache.clone(), year, &self.active_season,
+                    self.playoffs_cache.clone(),
+                    year,
+                    &self.active_season,
                 );
             }
         }
@@ -986,9 +1044,7 @@ impl App {
                 self.schedule_search_mode = false;
                 self.schedule_selected = 0;
                 self.status = match &self.schedule_filter {
-                    crate::tui::schedule::SearchFilter::None => {
-                        "Filter cleared.".to_owned()
-                    }
+                    crate::tui::schedule::SearchFilter::None => "Filter cleared.".to_owned(),
                     crate::tui::schedule::SearchFilter::Team(t) => {
                         format!("Filter: {t} — Enter to view full schedule")
                     }
@@ -1017,16 +1073,19 @@ impl App {
                 self.status = "Search cancelled.".to_owned();
             }
             Action::Enter => self.apply_schedule_query(),
-            Action::Backspace => { self.schedule_query.pop(); self.schedule_filter_err = None; }
-            Action::Char(c)         => self.schedule_query.push(c),
-            Action::Space           => self.schedule_query.push(' '),
+            Action::Backspace => {
+                self.schedule_query.pop();
+                self.schedule_filter_err = None;
+            }
+            Action::Char(c) => self.schedule_query.push(c),
+            Action::Space => self.schedule_query.push(' '),
             // While in search mode, hotkeys are treated as text input so
             // queries like "nyr" can be typed without firing Refresh/Install/etc.
-            Action::Refresh         => self.schedule_query.push('r'),
-            Action::Install         => self.schedule_query.push('i'),
-            Action::AddToGroup      => self.schedule_query.push('g'),
-            Action::AddToFavorites  => self.schedule_query.push('f'),
-            Action::GoToTab(n)      => {
+            Action::Refresh => self.schedule_query.push('r'),
+            Action::Install => self.schedule_query.push('i'),
+            Action::AddToGroup => self.schedule_query.push('g'),
+            Action::AddToFavorites => self.schedule_query.push('f'),
+            Action::GoToTab(n) => {
                 // Map digit-tabs back to their numeric character
                 let ch = char::from_digit((n + 1) as u32, 10).unwrap_or('?');
                 self.schedule_query.push(ch);
@@ -1057,14 +1116,16 @@ impl App {
                 self.tx_selected = 0;
                 self.status = format!("Filter: '{}'", self.tx_search_query);
             }
-            Action::Backspace      => { self.tx_search_query.pop(); }
-            Action::Char(c)        => self.tx_search_query.push(c),
-            Action::Space          => self.tx_search_query.push(' '),
-            Action::Refresh        => self.tx_search_query.push('r'),
-            Action::Install        => self.tx_search_query.push('i'),
-            Action::AddToGroup     => self.tx_search_query.push('g'),
+            Action::Backspace => {
+                self.tx_search_query.pop();
+            }
+            Action::Char(c) => self.tx_search_query.push(c),
+            Action::Space => self.tx_search_query.push(' '),
+            Action::Refresh => self.tx_search_query.push('r'),
+            Action::Install => self.tx_search_query.push('i'),
+            Action::AddToGroup => self.tx_search_query.push('g'),
             Action::AddToFavorites => self.tx_search_query.push('f'),
-            Action::GoToTab(n)     => {
+            Action::GoToTab(n) => {
                 let ch = char::from_digit((n + 1) as u32, 10).unwrap_or('?');
                 self.tx_search_query.push(ch);
             }
@@ -1091,11 +1152,13 @@ impl App {
                 self.picker_selected = self.picker_selected.saturating_sub(1);
             }
             Action::Enter => {
-                if let Some(&(season_id, _, is_lockout)) = PICKER_SEASONS.get(self.picker_selected) {
+                if let Some(&(season_id, _, is_lockout)) = PICKER_SEASONS.get(self.picker_selected)
+                {
                     if is_lockout {
                         self.status = "No season data — lockout year (2004-05).".to_owned();
                     } else {
-                        let is_bundled = icelines_fetch::bundled::BUNDLED_SEASONS.contains(&season_id);
+                        let is_bundled =
+                            icelines_fetch::bundled::BUNDLED_SEASONS.contains(&season_id);
                         let is_installed = icelines_fetch::bundled::is_installed(season_id);
                         if is_bundled || is_installed {
                             self.reload_for_season(season_id);
@@ -1110,7 +1173,8 @@ impl App {
                 }
             }
             Action::Char('i') => {
-                if let Some(&(season_id, _, is_lockout)) = PICKER_SEASONS.get(self.picker_selected) {
+                if let Some(&(season_id, _, is_lockout)) = PICKER_SEASONS.get(self.picker_selected)
+                {
                     if is_lockout {
                         self.status = "Cannot install — lockout year has no data.".to_owned();
                     } else if icelines_fetch::bundled::is_installed(season_id) {
@@ -1130,25 +1194,27 @@ impl App {
 
     /// Reload app.players from the given season (bundled or installed).
     fn reload_for_season(&mut self, season_id: &str) {
-        use icelines_fetch::{bundled, player_builder};
-        use icelines_fetch::goalie_repository::GoalieRepository;
         use icelines_fetch::snapshot::SnapshotStore;
+        use icelines_fetch::{bundled, player_builder};
         use std::collections::HashMap;
 
-        let bios = bundled::get_bios(season_id)
-            .or_else(|| bundled::get_bios_installed(season_id));
-        let stats = bundled::get_stats(season_id)
-            .or_else(|| bundled::get_stats_installed(season_id));
+        let bios = bundled::get_bios(season_id).or_else(|| bundled::get_bios_installed(season_id));
+        let stats =
+            bundled::get_stats(season_id).or_else(|| bundled::get_stats_installed(season_id));
 
         let players = if let Some(bios) = bios {
-            let stats_idx = stats.as_ref()
+            let stats_idx = stats
+                .as_ref()
                 .map(|s| player_builder::index_stats(s))
                 .unwrap_or_default();
             player_builder::build_players_from_bios(
-                &bios, &stats_idx,
-                &HashMap::new(), &HashMap::new(), &HashMap::new(),
+                &bios,
+                &stats_idx,
+                &HashMap::new(),
+                &HashMap::new(),
+                &HashMap::new(),
                 icelines_core::model::Season(
-                    season_id.parse().unwrap_or(icelines_core::CURRENT_SEASON)
+                    season_id.parse().unwrap_or(icelines_core::CURRENT_SEASON),
                 ),
             )
         } else {
@@ -1158,13 +1224,25 @@ impl App {
         // Phase G.7c: reload goalies for the requested season too. Without
         // this, the GOALTENDING strip on Team and the Goalies tab keep
         // showing current-season goalies while skater data is historical.
+        //
+        // Hart.5a: routed through load_into_repo + flat_view_legacy_goalies
+        // (was GoalieRepository::load_all directly).
         let goalies = match crate::config::Config::load() {
             Ok(cfg) => {
-                let repo = GoalieRepository::new(
-                    SnapshotStore::new(cfg.snapshot_dir()),
-                    season_id.to_owned(),
-                );
-                repo.load_all().unwrap_or_default()
+                let season_u32: u32 = season_id.parse().unwrap_or(icelines_core::CURRENT_SEASON);
+                let store = SnapshotStore::new(cfg.snapshot_dir());
+                #[allow(deprecated)]
+                match icelines_fetch::stats_loader::load_into_repo(
+                    icelines_core::model::Season(season_u32),
+                    icelines_core::season_stats::SeasonType::Regular,
+                    &store,
+                ) {
+                    Ok(outcome) => outcome.repo.flat_view_legacy_goalies(
+                        icelines_core::model::Season(season_u32),
+                        icelines_core::season_stats::SeasonType::Regular,
+                    ),
+                    Err(_) => Vec::new(),
+                }
             }
             Err(_) => Vec::new(),
         };
@@ -1177,11 +1255,15 @@ impl App {
         if season_id == icelines_core::CURRENT_SEASON_STR {
             self.status = "Current season loaded.".to_owned();
         } else {
-            let label = crate::tui::screens::misc::PICKER_SEASONS.iter()
+            let label = crate::tui::screens::misc::PICKER_SEASONS
+                .iter()
                 .find(|(id, _, _)| *id == season_id)
                 .map(|(_, label, _)| *label)
                 .unwrap_or(season_id);
-            self.status = format!("[{}] — historical season. Live features unavailable.", label);
+            self.status = format!(
+                "[{}] — historical season. Live features unavailable.",
+                label
+            );
         }
     }
 
@@ -1191,16 +1273,16 @@ impl App {
         } else {
             // Sensible parent for each drill-down screen when prev_screen is unset
             match &self.screen {
-                Screen::DepthTeam(_)        => Screen::Depth,
-                Screen::Team(_)             => Screen::Home,
-                Screen::Player(_)           => Screen::Home,
-                Screen::Comps(_)            => Screen::Home,
-                Screen::GroupDetail(_)      => Screen::Groups,
-                Screen::ScheduleTeam(_)     => Screen::Schedule,
+                Screen::DepthTeam(_) => Screen::Depth,
+                Screen::Team(_) => Screen::Home,
+                Screen::Player(_) => Screen::Home,
+                Screen::Comps(_) => Screen::Home,
+                Screen::GroupDetail(_) => Screen::Groups,
+                Screen::ScheduleTeam(_) => Screen::Schedule,
                 Screen::ScheduleMatchup(..) => Screen::Schedule,
-                Screen::SeriesDetail(_)     => Screen::Playoffs,
-                Screen::GameDetail(_)       => Screen::Tonight,
-                _                           => Screen::Home,
+                Screen::SeriesDetail(_) => Screen::Playoffs,
+                Screen::GameDetail(_) => Screen::Tonight,
+                _ => Screen::Home,
             }
         };
         self.selected = 0;
@@ -1211,56 +1293,71 @@ impl App {
     /// on whichever screen is active. Returns None on screens with no player list.
     fn get_selected_player(&self) -> Option<(String, String)> {
         match &self.screen {
-            Screen::Player(idx) => self.players.get(*idx)
+            Screen::Player(idx) => self
+                .players
+                .get(*idx)
                 .map(|p| (p.name_normalized.clone(), p.full_name.clone())),
 
             Screen::Team(abbrev) => {
                 let abbrev = abbrev.clone();
-                self.players.iter()
+                self.players
+                    .iter()
                     .filter(|p| p.team.as_str() == abbrev.as_str())
                     .nth(self.selected)
                     .map(|p| (p.name_normalized.clone(), p.full_name.clone()))
             }
 
             Screen::Projections => {
-                let mut sorted: Vec<&icelines_core::model::Player> = self.players.iter()
-                    .filter(|p| p.pace_score.is_some()).collect();
+                let mut sorted: Vec<&icelines_core::model::Player> = self
+                    .players
+                    .iter()
+                    .filter(|p| p.pace_score.is_some())
+                    .collect();
                 sorted.sort_by(|a, b| {
                     let sa = a.pace_score.map(|s| s.pace_82).unwrap_or(0.0);
                     let sb = b.pace_score.map(|s| s.pace_82).unwrap_or(0.0);
                     sb.partial_cmp(&sa).unwrap_or(std::cmp::Ordering::Equal)
                 });
-                sorted.get(self.selected)
+                sorted
+                    .get(self.selected)
                     .map(|p| (p.name_normalized.clone(), p.full_name.clone()))
             }
 
             Screen::Search => {
                 let norm = icelines_core::name::normalize_name(&self.search_query);
-                let filtered: Vec<&icelines_core::model::Player> = self.players.iter()
+                let filtered: Vec<&icelines_core::model::Player> = self
+                    .players
+                    .iter()
                     .filter(|p| p.name_normalized.contains(&norm))
                     .collect();
-                filtered.get(self.selected)
+                filtered
+                    .get(self.selected)
                     .map(|p| (p.name_normalized.clone(), p.full_name.clone()))
             }
 
             Screen::Queries => {
-                let results = crate::tui::screens::queries::run_query(&self.players, &self.query_fields);
-                let row_idx = self.query_result_scroll
-                    + self.selected.min(results.len().saturating_sub(1));
-                results.get(row_idx)
+                let results =
+                    crate::tui::screens::queries::run_query(&self.players, &self.query_fields);
+                let row_idx =
+                    self.query_result_scroll + self.selected.min(results.len().saturating_sub(1));
+                results
+                    .get(row_idx)
                     .map(|(_, p)| (p.name_normalized.clone(), p.full_name.clone()))
             }
 
             Screen::GroupDetail(group_name) => {
                 let gn = group_name.clone();
-                crate::db::GroupDb::open().ok()
+                crate::db::GroupDb::open()
+                    .ok()
                     .and_then(|db| db.list_members(&gn).ok())
-                    .and_then(|members| members.get(self.selected).cloned()
-                        .and_then(|norm| self.players.iter()
-                            .find(|p| p.name_normalized.contains(&norm))
-                            .map(|p| (p.name_normalized.clone(), p.full_name.clone()))
-                        )
-                    )
+                    .and_then(|members| {
+                        members.get(self.selected).cloned().and_then(|norm| {
+                            self.players
+                                .iter()
+                                .find(|p| p.name_normalized.contains(&norm))
+                                .map(|p| (p.name_normalized.clone(), p.full_name.clone()))
+                        })
+                    })
             }
 
             Screen::Comps(target_idx) => {
@@ -1289,7 +1386,9 @@ impl App {
             Screen::Team(abbrev) => {
                 // Select a player from the team roster → open their player card
                 let abbrev = abbrev.clone();
-                let global_idx = self.players.iter()
+                let global_idx = self
+                    .players
+                    .iter()
                     .enumerate()
                     .filter(|(_, p)| p.team.as_str() == abbrev.as_str())
                     .nth(self.selected)
@@ -1306,9 +1405,14 @@ impl App {
                     if let Some((norm, full)) = self.group_picker_player.take() {
                         if let Ok(db) = crate::db::GroupDb::open() {
                             match db.add_member(&group_name, &norm) {
-                                Ok(true)  => self.status = format!("✓ Added {} to '{}'", full, group_name),
-                                Ok(false) => self.status = format!("'{}' is already in '{}'", full, group_name),
-                                Err(e)    => self.status = format!("Error: {e}"),
+                                Ok(true) => {
+                                    self.status = format!("✓ Added {} to '{}'", full, group_name)
+                                }
+                                Ok(false) => {
+                                    self.status =
+                                        format!("'{}' is already in '{}'", full, group_name)
+                                }
+                                Err(e) => self.status = format!("Error: {e}"),
                             }
                         }
                     }
@@ -1336,7 +1440,11 @@ impl App {
                         .and_then(|db| db.list_members(group_name).ok())
                         .unwrap_or_default();
                     if let Some(norm) = members.get(self.selected) {
-                        if let Some(global_idx) = self.players.iter().position(|p| p.name_normalized.contains(norm.as_str())) {
+                        if let Some(global_idx) = self
+                            .players
+                            .iter()
+                            .position(|p| p.name_normalized.contains(norm.as_str()))
+                        {
                             self.prev_screen = Some(self.screen.clone());
                             self.screen = Screen::Player(global_idx);
                             self.selected = 0;
@@ -1350,10 +1458,12 @@ impl App {
                         // Save the current query with the typed name
                         let name = self.query_save_name.trim().to_owned();
                         if !name.is_empty() {
-                            let json = crate::tui::screens::queries::fields_to_json(&self.query_fields);
+                            let json =
+                                crate::tui::screens::queries::fields_to_json(&self.query_fields);
                             if let Ok(db) = crate::db::GroupDb::open() {
                                 let _ = db.save_query(&name, &json);
-                                self.status = format!("Saved query '{name}'  ·  l=load  s=save  r=reset");
+                                self.status =
+                                    format!("Saved query '{name}'  ·  l=load  s=save  r=reset");
                             }
                         }
                         self.query_mode = QueryMode::Build;
@@ -1361,18 +1471,28 @@ impl App {
                     QueryMode::LoadList => {
                         // Load the selected saved query
                         if let Some((name, json)) = self.query_saved_list.get(self.selected) {
-                            crate::tui::screens::queries::apply_saved_json(&mut self.query_fields, json);
-                            self.status = format!("Loaded query '{name}'  ·  ←→ to adjust  s=save  r=reset");
+                            crate::tui::screens::queries::apply_saved_json(
+                                &mut self.query_fields,
+                                json,
+                            );
+                            self.status =
+                                format!("Loaded query '{name}'  ·  ←→ to adjust  s=save  r=reset");
                             self.query_mode = QueryMode::Build;
                             self.query_result_scroll = 0;
                         }
                     }
                     QueryMode::Build => {
                         // Enter on a result row → player card
-                        let results = crate::tui::screens::queries::run_query(&self.players, &self.query_fields);
-                        let row_idx = self.query_result_scroll + self.selected.min(results.len().saturating_sub(1));
+                        let results = crate::tui::screens::queries::run_query(
+                            &self.players,
+                            &self.query_fields,
+                        );
+                        let row_idx = self.query_result_scroll
+                            + self.selected.min(results.len().saturating_sub(1));
                         if let Some((_, p)) = results.get(row_idx) {
-                            if let Some(global_idx) = self.players.iter().position(|pl| pl.nhl_id == p.nhl_id) {
+                            if let Some(global_idx) =
+                                self.players.iter().position(|pl| pl.nhl_id == p.nhl_id)
+                            {
                                 self.prev_screen = Some(self.screen.clone());
                                 self.screen = Screen::Player(global_idx);
                                 self.selected = 0;
@@ -1384,13 +1504,21 @@ impl App {
             Screen::Projections => {
                 // Enter on a projection row → player card
                 // The sorted order matches render order — find the Nth rankable player
-                let mut sorted_indices: Vec<usize> = self.players.iter()
+                let mut sorted_indices: Vec<usize> = self
+                    .players
+                    .iter()
                     .enumerate()
                     .filter(|(_, p)| p.pace_score.is_some())
                     .collect::<Vec<_>>()
                     .into_iter()
                     .enumerate()
-                    .map(|(rank_pos, (global_idx, p))| (rank_pos, global_idx, p.pace_score.map(|s| s.pace_82).unwrap_or(0.0)))
+                    .map(|(rank_pos, (global_idx, p))| {
+                        (
+                            rank_pos,
+                            global_idx,
+                            p.pace_score.map(|s| s.pace_82).unwrap_or(0.0),
+                        )
+                    })
                     .collect::<Vec<_>>()
                     .into_iter()
                     .map(|(_, gi, _)| gi)
@@ -1415,11 +1543,14 @@ impl App {
             }
             Screen::Depth => {
                 let strength = icelines_core::cross_team::compute_team_strength(
-                    &self.players, self.depth_mode
+                    &self.players,
+                    self.depth_mode,
                 );
                 let mut ranked: Vec<String> = strength.keys().cloned().collect();
                 ranked.sort_by(|a, b| {
-                    strength[b].total.partial_cmp(&strength[a].total)
+                    strength[b]
+                        .total
+                        .partial_cmp(&strength[a].total)
                         .unwrap_or(std::cmp::Ordering::Equal)
                 });
                 if let Some(team) = ranked.get(self.selected) {
@@ -1433,7 +1564,9 @@ impl App {
                 if let Some(target) = self.players.get(target_idx) {
                     let comps = crate::tui::screens::comps::find_comps(&self.players, target);
                     if let Some(comp) = comps.get(self.selected) {
-                        if let Some(global_idx) = self.players.iter().position(|p| p.nhl_id == comp.nhl_id) {
+                        if let Some(global_idx) =
+                            self.players.iter().position(|p| p.nhl_id == comp.nhl_id)
+                        {
                             self.prev_screen = Some(self.screen.clone());
                             self.screen = Screen::Player(global_idx);
                             self.selected = 0;
@@ -1474,10 +1607,13 @@ impl App {
             // screen can address the goalie directly.
             Screen::Goalies => {
                 let sort = crate::tui::screens::goalies::SORTS
-                    .get(self.goalie_sort as usize).copied()
+                    .get(self.goalie_sort as usize)
+                    .copied()
                     .unwrap_or(crate::tui::screens::goalies::GoalieSort::SvPctDesc);
                 let qualified = crate::tui::screens::goalies::sort_goalies(
-                    &self.goalies, sort, self.goalie_min_gp,
+                    &self.goalies,
+                    sort,
+                    self.goalie_min_gp,
                 );
                 if let Some(g_ref) = qualified.get(self.goalie_selected) {
                     let nhl_id = g_ref.nhl_id;
@@ -1492,9 +1628,7 @@ impl App {
                 if let Some(game_id) = self.selected_game_id() {
                     self.prev_screen = Some(Screen::Tonight);
                     self.screen = Screen::GameDetail(game_id);
-                    crate::tui::tonight::maybe_fetch_boxscore(
-                        self.boxscore_cache.clone(), game_id,
-                    );
+                    crate::tui::tonight::maybe_fetch_boxscore(self.boxscore_cache.clone(), game_id);
                 }
             }
             _ => {}
@@ -1509,14 +1643,16 @@ impl App {
         //   → Transactions → Playoffs → League
         let next = match &self.screen {
             Screen::Home | Screen::Team(_) | Screen::Player(_) | Screen::Comps(_) => Screen::Depth,
-            Screen::Depth | Screen::DepthTeam(_)                    => Screen::Queries,
-            Screen::Queries | Screen::Projections | Screen::Search  => Screen::Goalies,
-            Screen::Goalies | Screen::GoalieDetail(_)               => Screen::Tonight,
-            Screen::Tonight | Screen::GameDetail(_)                 => Screen::Schedule,
-            Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => Screen::Transactions,
-            Screen::Transactions                                    => Screen::Playoffs,
-            Screen::Playoffs | Screen::SeriesDetail(_)              => Screen::Home,
-            _                                                       => Screen::Home,
+            Screen::Depth | Screen::DepthTeam(_) => Screen::Queries,
+            Screen::Queries | Screen::Projections | Screen::Search => Screen::Goalies,
+            Screen::Goalies | Screen::GoalieDetail(_) => Screen::Tonight,
+            Screen::Tonight | Screen::GameDetail(_) => Screen::Schedule,
+            Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => {
+                Screen::Transactions
+            }
+            Screen::Transactions => Screen::Playoffs,
+            Screen::Playoffs | Screen::SeriesDetail(_) => Screen::Home,
+            _ => Screen::Home,
         };
         self.screen = next;
         self.selected = 0;
@@ -1531,15 +1667,19 @@ impl App {
     fn cycle_screen_back(&mut self) {
         self.query_results_focused = false;
         let prev = match &self.screen {
-            Screen::Home | Screen::Team(_) | Screen::Player(_) | Screen::Comps(_) => Screen::Playoffs,
-            Screen::Depth | Screen::DepthTeam(_)                    => Screen::Home,
-            Screen::Queries | Screen::Projections | Screen::Search  => Screen::Depth,
-            Screen::Goalies | Screen::GoalieDetail(_)               => Screen::Queries,
-            Screen::Tonight | Screen::GameDetail(_)                 => Screen::Goalies,
-            Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => Screen::Tonight,
-            Screen::Transactions                                    => Screen::Schedule,
-            Screen::Playoffs | Screen::SeriesDetail(_)              => Screen::Transactions,
-            _                                                       => Screen::Home,
+            Screen::Home | Screen::Team(_) | Screen::Player(_) | Screen::Comps(_) => {
+                Screen::Playoffs
+            }
+            Screen::Depth | Screen::DepthTeam(_) => Screen::Home,
+            Screen::Queries | Screen::Projections | Screen::Search => Screen::Depth,
+            Screen::Goalies | Screen::GoalieDetail(_) => Screen::Queries,
+            Screen::Tonight | Screen::GameDetail(_) => Screen::Goalies,
+            Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => {
+                Screen::Tonight
+            }
+            Screen::Transactions => Screen::Schedule,
+            Screen::Playoffs | Screen::SeriesDetail(_) => Screen::Transactions,
+            _ => Screen::Home,
         };
         self.screen = prev;
         self.selected = 0;
@@ -1606,29 +1746,37 @@ mod tests {
         // Shift-Tab walks the same eight tabs in reverse.
         let mut app = App::new(false);
         app.handle(Action::TabPrev);
-        assert_eq!(app.screen, Screen::Playoffs,     "Home→Playoffs (wraps backwards)");
+        assert_eq!(
+            app.screen,
+            Screen::Playoffs,
+            "Home→Playoffs (wraps backwards)"
+        );
         app.handle(Action::TabPrev);
         assert_eq!(app.screen, Screen::Transactions, "Playoffs→Transactions");
         app.handle(Action::TabPrev);
-        assert_eq!(app.screen, Screen::Schedule,     "Transactions→Schedule");
+        assert_eq!(app.screen, Screen::Schedule, "Transactions→Schedule");
         app.handle(Action::TabPrev);
-        assert_eq!(app.screen, Screen::Tonight,      "Schedule→Scores");
+        assert_eq!(app.screen, Screen::Tonight, "Schedule→Scores");
         app.handle(Action::TabPrev);
-        assert_eq!(app.screen, Screen::Goalies,      "Scores→Goalies");
+        assert_eq!(app.screen, Screen::Goalies, "Scores→Goalies");
         app.handle(Action::TabPrev);
-        assert_eq!(app.screen, Screen::Queries,      "Goalies→Stats");
+        assert_eq!(app.screen, Screen::Queries, "Goalies→Stats");
         app.handle(Action::TabPrev);
-        assert_eq!(app.screen, Screen::Depth,        "Stats→Depth");
+        assert_eq!(app.screen, Screen::Depth, "Stats→Depth");
         app.handle(Action::TabPrev);
-        assert_eq!(app.screen, Screen::Home,         "Depth→League");
+        assert_eq!(app.screen, Screen::Home, "Depth→League");
     }
 
     #[test]
     fn l0_tui_tab_and_shift_tab_are_inverses() {
         // Eight forward + eight backward should land on the original screen.
         let mut app = App::new(false);
-        for _ in 0..8 { app.handle(Action::Tab); }
-        for _ in 0..8 { app.handle(Action::TabPrev); }
+        for _ in 0..8 {
+            app.handle(Action::Tab);
+        }
+        for _ in 0..8 {
+            app.handle(Action::TabPrev);
+        }
         assert_eq!(app.screen, Screen::Home);
     }
 
@@ -1642,8 +1790,11 @@ mod tests {
         assert_eq!(app.screen, Screen::Home);
         assert!(app.players.is_empty());
         app.handle(Action::AddToGroup);
-        assert_eq!(app.screen, Screen::Groups,
-            "g from a non-player screen with no target must open Groups");
+        assert_eq!(
+            app.screen,
+            Screen::Groups,
+            "g from a non-player screen with no target must open Groups"
+        );
     }
 
     #[test]
@@ -1689,7 +1840,7 @@ mod tests {
         app.screen = Screen::Team("SEA".to_string());
         app.selected = 0;
         app.handle(Action::Enter); // should not panic even with empty player list
-        // With no players, selected player not found — stays on Team screen
+                                   // With no players, selected player not found — stays on Team screen
         assert!(matches!(app.screen, Screen::Team(_) | Screen::Player(_)));
     }
 
@@ -1720,7 +1871,11 @@ mod tests {
         app.screen = Screen::Schedule;
         app.handle(Action::Search);
         assert!(app.schedule_search_mode, "search mode should be open");
-        assert_eq!(app.screen, Screen::Schedule, "stays on Schedule, not the global Search screen");
+        assert_eq!(
+            app.screen,
+            Screen::Schedule,
+            "stays on Schedule, not the global Search screen"
+        );
         assert!(app.schedule_query.is_empty());
     }
 
@@ -1729,7 +1884,9 @@ mod tests {
         let mut app = App::new(false);
         app.screen = Screen::Schedule;
         app.handle(Action::Search);
-        for c in "SEA".chars() { app.handle(Action::Char(c)); }
+        for c in "SEA".chars() {
+            app.handle(Action::Char(c));
+        }
         app.handle(Action::Enter);
         assert!(!app.schedule_search_mode);
         assert_eq!(app.schedule_filter, SearchFilter::Team("SEA".to_owned()));
@@ -1740,9 +1897,13 @@ mod tests {
         let mut app = App::new(false);
         app.screen = Screen::Schedule;
         app.handle(Action::Search);
-        for c in "NYR".chars() { app.handle(Action::Char(c)); }
+        for c in "NYR".chars() {
+            app.handle(Action::Char(c));
+        }
         app.handle(Action::Space);
-        for c in "WSH".chars() { app.handle(Action::Char(c)); }
+        for c in "WSH".chars() {
+            app.handle(Action::Char(c));
+        }
         app.handle(Action::Enter);
         assert_eq!(
             app.schedule_filter,
@@ -1755,11 +1916,17 @@ mod tests {
         let mut app = App::new(false);
         app.screen = Screen::Schedule;
         app.handle(Action::Search);
-        for c in "XYZ".chars() { app.handle(Action::Char(c)); }
+        for c in "XYZ".chars() {
+            app.handle(Action::Char(c));
+        }
         app.handle(Action::Enter);
         // Search bar stays open on validation failure so user can correct
         assert!(app.schedule_search_mode);
-        assert!(app.schedule_filter_err.as_deref().unwrap_or("").contains("Unknown team"));
+        assert!(app
+            .schedule_filter_err
+            .as_deref()
+            .unwrap_or("")
+            .contains("Unknown team"));
         // Filter unchanged from default
         assert_eq!(app.schedule_filter, SearchFilter::None);
     }
@@ -1785,7 +1952,7 @@ mod tests {
         app.handle(Action::Search);
         app.handle(Action::Char('N'));
         app.handle(Action::Char('Y'));
-        app.handle(Action::Refresh);    // mapped from lowercase 'r'
+        app.handle(Action::Refresh); // mapped from lowercase 'r'
         assert_eq!(app.schedule_query, "NYr");
     }
 
@@ -1826,9 +1993,8 @@ mod tests {
         let mut app = App::new(false);
         app.screen = Screen::Schedule;
         // Move two weeks forward, then 't' should snap back to today's Monday
-        let today_monday = crate::tui::schedule::monday_of(
-            &crate::tui::schedule::today_iso()
-        ).unwrap();
+        let today_monday =
+            crate::tui::schedule::monday_of(&crate::tui::schedule::today_iso()).unwrap();
         app.handle(Action::Right);
         app.handle(Action::Right);
         assert_ne!(app.schedule_week, today_monday);
@@ -1851,30 +2017,36 @@ mod tests {
 
     fn fixture_series(letter: &str, top: &str, bot: &str, top_w: u8, bot_w: u8) -> PlayoffSeries {
         PlayoffSeries {
-            letter:             Some(letter.to_owned()),
-            top_seed_abbrev:    top.to_owned(),
-            top_seed_name:      top.to_owned(),
-            top_seed_wins:      top_w,
-            top_seed_rank:      None,
+            letter: Some(letter.to_owned()),
+            top_seed_abbrev: top.to_owned(),
+            top_seed_name: top.to_owned(),
+            top_seed_wins: top_w,
+            top_seed_rank: None,
             bottom_seed_abbrev: bot.to_owned(),
-            bottom_seed_name:   bot.to_owned(),
-            bottom_seed_wins:   bot_w,
-            bottom_seed_rank:   None,
-            winner_abbrev:      if top_w == 4 { Some(top.to_owned()) }
-                                else if bot_w == 4 { Some(bot.to_owned()) }
-                                else { None },
-            conference:         None,
-            games:              Vec::new(),
+            bottom_seed_name: bot.to_owned(),
+            bottom_seed_wins: bot_w,
+            bottom_seed_rank: None,
+            winner_abbrev: if top_w == 4 {
+                Some(top.to_owned())
+            } else if bot_w == 4 {
+                Some(bot.to_owned())
+            } else {
+                None
+            },
+            conference: None,
+            games: Vec::new(),
         }
     }
 
     fn seed_bracket(app: &mut App, year: u16, rounds: Vec<PlayoffRound>) {
         let bracket = PlayoffBracket {
-            season:        app.active_season.clone(),
+            season: app.active_season.clone(),
             current_round: None,
             rounds,
         };
-        app.playoffs_cache.lock().unwrap()
+        app.playoffs_cache
+            .lock()
+            .unwrap()
             .insert(year, PlayoffsState::Loaded(bracket));
     }
 
@@ -1887,10 +2059,16 @@ mod tests {
     #[test]
     fn l0_tui_playoffs_round_count_reflects_cache() {
         let mut app = App::new(false);
-        let r1 = PlayoffRound { round_number: 1, label: "First Round".into(),
-            series: vec![fixture_series("A", "FLA", "TBL", 4, 2)] };
-        let r2 = PlayoffRound { round_number: 2, label: "Second Round".into(),
-            series: vec![] };
+        let r1 = PlayoffRound {
+            round_number: 1,
+            label: "First Round".into(),
+            series: vec![fixture_series("A", "FLA", "TBL", 4, 2)],
+        };
+        let r2 = PlayoffRound {
+            round_number: 2,
+            label: "Second Round".into(),
+            series: vec![],
+        };
         seed_bracket(&mut app, 2026, vec![r1, r2]);
         assert_eq!(app.playoffs_round_count(), 2);
     }
@@ -1899,10 +2077,16 @@ mod tests {
     fn l0_tui_playoffs_left_right_changes_round() {
         let mut app = App::new(false);
         app.screen = Screen::Playoffs;
-        let r1 = PlayoffRound { round_number: 1, label: "First Round".into(),
-            series: vec![fixture_series("A", "FLA", "TBL", 4, 2)] };
-        let r2 = PlayoffRound { round_number: 2, label: "Second Round".into(),
-            series: vec![fixture_series("I", "FLA", "WSH", 1, 0)] };
+        let r1 = PlayoffRound {
+            round_number: 1,
+            label: "First Round".into(),
+            series: vec![fixture_series("A", "FLA", "TBL", 4, 2)],
+        };
+        let r2 = PlayoffRound {
+            round_number: 2,
+            label: "Second Round".into(),
+            series: vec![fixture_series("I", "FLA", "WSH", 1, 0)],
+        };
         seed_bracket(&mut app, 2026, vec![r1, r2]);
 
         assert_eq!(app.playoffs_round, 0);
@@ -1923,12 +2107,19 @@ mod tests {
     fn l0_tui_playoffs_round_change_resets_series_cursor() {
         let mut app = App::new(false);
         app.screen = Screen::Playoffs;
-        let r1 = PlayoffRound { round_number: 1, label: "First Round".into(), series: vec![
-            fixture_series("A", "FLA", "TBL", 4, 2),
-            fixture_series("B", "WSH", "NYR", 4, 3),
-        ] };
-        let r2 = PlayoffRound { round_number: 2, label: "Second Round".into(),
-            series: vec![fixture_series("I", "FLA", "WSH", 1, 0)] };
+        let r1 = PlayoffRound {
+            round_number: 1,
+            label: "First Round".into(),
+            series: vec![
+                fixture_series("A", "FLA", "TBL", 4, 2),
+                fixture_series("B", "WSH", "NYR", 4, 3),
+            ],
+        };
+        let r2 = PlayoffRound {
+            round_number: 2,
+            label: "Second Round".into(),
+            series: vec![fixture_series("I", "FLA", "WSH", 1, 0)],
+        };
         seed_bracket(&mut app, 2026, vec![r1, r2]);
 
         // Move down to series 1, then change rounds — cursor resets to 0
@@ -1936,15 +2127,21 @@ mod tests {
         assert_eq!(app.playoffs_series, 1);
         app.handle(Action::Right);
         assert_eq!(app.playoffs_round, 1);
-        assert_eq!(app.playoffs_series, 0, "switching rounds resets the series cursor");
+        assert_eq!(
+            app.playoffs_series, 0,
+            "switching rounds resets the series cursor"
+        );
     }
 
     #[test]
     fn l0_tui_playoffs_enter_opens_series_detail() {
         let mut app = App::new(false);
         app.screen = Screen::Playoffs;
-        let r1 = PlayoffRound { round_number: 1, label: "First Round".into(),
-            series: vec![fixture_series("A", "FLA", "TBL", 4, 2)] };
+        let r1 = PlayoffRound {
+            round_number: 1,
+            label: "First Round".into(),
+            series: vec![fixture_series("A", "FLA", "TBL", 4, 2)],
+        };
         seed_bracket(&mut app, 2026, vec![r1]);
         // Cursor on first series → Enter
         app.handle(Action::Enter);
@@ -1957,7 +2154,11 @@ mod tests {
         app.screen = Screen::Playoffs;
         // Cache is empty → no series letter to select
         app.handle(Action::Enter);
-        assert_eq!(app.screen, Screen::Playoffs, "Enter must not change screen when bracket isn't loaded");
+        assert_eq!(
+            app.screen,
+            Screen::Playoffs,
+            "Enter must not change screen when bracket isn't loaded"
+        );
     }
 
     #[test]
@@ -1974,7 +2175,10 @@ mod tests {
         app.screen = Screen::Playoffs;
         let initial = app.playoffs_round;
         app.handle(Action::Right);
-        assert_eq!(app.playoffs_round, initial, "no rounds loaded → no movement");
+        assert_eq!(
+            app.playoffs_round, initial,
+            "no rounds loaded → no movement"
+        );
     }
 
     #[test]
@@ -1993,40 +2197,51 @@ mod tests {
 
     fn fixture_scheduled_game(id: u64, away: &str, home: &str) -> ScheduledGame {
         ScheduledGame {
-            game_id:        id,
-            date:           "2026-04-28".to_owned(),
-            game_type:      2,
-            away_abbrev:    away.to_owned(),
-            away_name:      away.to_owned(),
-            home_abbrev:    home.to_owned(),
-            home_name:      home.to_owned(),
+            game_id: id,
+            date: "2026-04-28".to_owned(),
+            game_type: 2,
+            away_abbrev: away.to_owned(),
+            away_name: away.to_owned(),
+            home_abbrev: home.to_owned(),
+            home_name: home.to_owned(),
             start_time_utc: "2026-04-28T23:00:00Z".to_owned(),
-            away_score:     None,
-            home_score:     None,
-            game_state:     None,
-            last_period:    None,
-            series_game:    None,
-            away_wins:      None,
-            home_wins:      None,
+            away_score: None,
+            home_score: None,
+            game_state: None,
+            last_period: None,
+            series_game: None,
+            away_wins: None,
+            home_wins: None,
         }
     }
 
     fn seed_scores(app: &mut App, date_key: &str, games: Vec<ScheduledGame>) {
-        app.tonight_cache.lock().unwrap()
+        app.tonight_cache
+            .lock()
+            .unwrap()
             .insert(date_key.to_owned(), TonightState::Loaded(games));
     }
 
     #[test]
     fn l0_tui_parse_picker_date_iso() {
-        assert_eq!(super::parse_picker_date("2026-04-28").unwrap(), "2026-04-28");
-        assert_eq!(super::parse_picker_date("2026/04/28").unwrap(), "2026-04-28");
+        assert_eq!(
+            super::parse_picker_date("2026-04-28").unwrap(),
+            "2026-04-28"
+        );
+        assert_eq!(
+            super::parse_picker_date("2026/04/28").unwrap(),
+            "2026-04-28"
+        );
     }
 
     #[test]
     fn l0_tui_parse_picker_date_mm_dd_uses_current_year() {
         let parsed = super::parse_picker_date("04/28").unwrap();
         // The year is whatever Utc::now() returns — assert prefix and structure
-        assert!(parsed.ends_with("-04-28"), "must end with month-day, got: {parsed}");
+        assert!(
+            parsed.ends_with("-04-28"),
+            "must end with month-day, got: {parsed}"
+        );
         assert_eq!(parsed.len(), 10);
     }
 
@@ -2044,7 +2259,10 @@ mod tests {
         // Start on today (empty)
         assert!(app.scores_date.is_empty());
         app.handle(Action::Right);
-        assert!(!app.scores_date.is_empty(), "Right should set explicit date");
+        assert!(
+            !app.scores_date.is_empty(),
+            "Right should set explicit date"
+        );
         let after_right = app.scores_date.clone();
         app.handle(Action::Left);
         let after_left = app.scores_date.clone();
@@ -2057,7 +2275,10 @@ mod tests {
         app.screen = Screen::Tonight;
         app.scores_date = "2026-01-01".to_owned();
         app.handle(Action::Char('t'));
-        assert!(app.scores_date.is_empty(), "t must clear scores_date back to live");
+        assert!(
+            app.scores_date.is_empty(),
+            "t must clear scores_date back to live"
+        );
     }
 
     #[test]
@@ -2075,7 +2296,9 @@ mod tests {
         let mut app = App::new(false);
         app.screen = Screen::Tonight;
         app.handle(Action::Char('d'));
-        for c in "2026-04-28".chars() { app.handle(Action::Char(c)); }
+        for c in "2026-04-28".chars() {
+            app.handle(Action::Char(c));
+        }
         app.handle(Action::Enter);
         assert!(!app.scores_picker_open, "picker should close on apply");
         assert_eq!(app.scores_date, "2026-04-28");
@@ -2086,9 +2309,14 @@ mod tests {
         let mut app = App::new(false);
         app.screen = Screen::Tonight;
         app.handle(Action::Char('d'));
-        for c in "garbage".chars() { app.handle(Action::Char(c)); }
+        for c in "garbage".chars() {
+            app.handle(Action::Char(c));
+        }
         app.handle(Action::Enter);
-        assert!(app.scores_picker_open, "invalid input must keep picker open for correction");
+        assert!(
+            app.scores_picker_open,
+            "invalid input must keep picker open for correction"
+        );
         assert!(app.scores_picker_err.is_some());
     }
 
@@ -2097,7 +2325,9 @@ mod tests {
         let mut app = App::new(false);
         app.screen = Screen::Tonight;
         app.handle(Action::Char('d'));
-        for c in "abc".chars() { app.handle(Action::Char(c)); }
+        for c in "abc".chars() {
+            app.handle(Action::Char(c));
+        }
         app.handle(Action::Escape);
         assert!(!app.scores_picker_open);
         assert!(app.scores_picker_input.is_empty());
@@ -2110,8 +2340,8 @@ mod tests {
         app.screen = Screen::Tonight;
         app.handle(Action::Char('d'));
         app.handle(Action::Char('2'));
-        app.handle(Action::Refresh);   // → 'r'
-        // 'r' isn't a valid date character but should be in the buffer
+        app.handle(Action::Refresh); // → 'r'
+                                     // 'r' isn't a valid date character but should be in the buffer
         assert_eq!(app.scores_picker_input, "2r");
     }
 
@@ -2119,10 +2349,14 @@ mod tests {
     fn l0_tui_scores_enter_opens_game_detail() {
         let mut app = App::new(false);
         app.screen = Screen::Tonight;
-        seed_scores(&mut app, "", vec![
-            fixture_scheduled_game(2025020100, "SEA", "VGK"),
-            fixture_scheduled_game(2025020101, "NYR", "WSH"),
-        ]);
+        seed_scores(
+            &mut app,
+            "",
+            vec![
+                fixture_scheduled_game(2025020100, "SEA", "VGK"),
+                fixture_scheduled_game(2025020101, "NYR", "WSH"),
+            ],
+        );
         // Default selection (0) → first game
         app.handle(Action::Enter);
         assert_eq!(app.screen, Screen::GameDetail(2025020100));
@@ -2170,11 +2404,17 @@ mod tests {
         let initial = app.screen.clone();
         // Tab would normally cycle screens — must be suppressed
         app.handle(Action::Tab);
-        assert_eq!(app.screen, initial, "Tab while admin open must not change screen");
+        assert_eq!(
+            app.screen, initial,
+            "Tab while admin open must not change screen"
+        );
         assert!(app.show_admin, "Tab must not close the overlay");
         // Same for number-key tab jumps
         app.handle(Action::GoToTab(2));
-        assert_eq!(app.screen, initial, "GoToTab while admin open must not change screen");
+        assert_eq!(
+            app.screen, initial,
+            "GoToTab while admin open must not change screen"
+        );
         assert!(app.show_admin);
     }
 
@@ -2184,8 +2424,10 @@ mod tests {
         // be confused with the capital-F admin trigger.
         let mut app = App::new(false);
         app.handle(Action::AddToFavorites);
-        assert!(!app.show_admin,
-            "lowercase f (AddToFavorites action) must not open the admin overlay");
+        assert!(
+            !app.show_admin,
+            "lowercase f (AddToFavorites action) must not open the admin overlay"
+        );
     }
 
     // ── Scores auto-refresh (Phase 8b) ───────────────────────────────────────
@@ -2194,20 +2436,32 @@ mod tests {
     fn l0_scores_auto_refresh_fires_when_due() {
         let now = std::time::Instant::now();
         let last = now - std::time::Duration::from_secs(31);
-        assert!(super::should_auto_refresh(
-            &Screen::Tonight, "", Some(last), now,
-            super::SCORES_AUTO_REFRESH_INTERVAL,
-        ), "30s elapsed on live Scores tab must fire");
+        assert!(
+            super::should_auto_refresh(
+                &Screen::Tonight,
+                "",
+                Some(last),
+                now,
+                super::SCORES_AUTO_REFRESH_INTERVAL,
+            ),
+            "30s elapsed on live Scores tab must fire"
+        );
     }
 
     #[test]
     fn l0_scores_auto_refresh_holds_off_within_interval() {
         let now = std::time::Instant::now();
         let last = now - std::time::Duration::from_secs(10);
-        assert!(!super::should_auto_refresh(
-            &Screen::Tonight, "", Some(last), now,
-            super::SCORES_AUTO_REFRESH_INTERVAL,
-        ), "10s after last refresh must hold off");
+        assert!(
+            !super::should_auto_refresh(
+                &Screen::Tonight,
+                "",
+                Some(last),
+                now,
+                super::SCORES_AUTO_REFRESH_INTERVAL,
+            ),
+            "10s after last refresh must hold off"
+        );
     }
 
     #[test]
@@ -2215,12 +2469,24 @@ mod tests {
         let now = std::time::Instant::now();
         let last = now - std::time::Duration::from_secs(60);
         // Off the Scores tab → must not fire even if the interval passed.
-        for screen in [Screen::Home, Screen::Schedule, Screen::Playoffs, Screen::Groups,
-                       Screen::Projections, Screen::GameDetail(1234)] {
-            assert!(!super::should_auto_refresh(
-                &screen, "", Some(last), now,
-                super::SCORES_AUTO_REFRESH_INTERVAL,
-            ), "screen {screen:?} must not auto-refresh Scores");
+        for screen in [
+            Screen::Home,
+            Screen::Schedule,
+            Screen::Playoffs,
+            Screen::Groups,
+            Screen::Projections,
+            Screen::GameDetail(1234),
+        ] {
+            assert!(
+                !super::should_auto_refresh(
+                    &screen,
+                    "",
+                    Some(last),
+                    now,
+                    super::SCORES_AUTO_REFRESH_INTERVAL,
+                ),
+                "screen {screen:?} must not auto-refresh Scores"
+            );
         }
     }
 
@@ -2228,10 +2494,16 @@ mod tests {
     fn l0_scores_auto_refresh_paused_on_past_date() {
         let now = std::time::Instant::now();
         let last = now - std::time::Duration::from_secs(60);
-        assert!(!super::should_auto_refresh(
-            &Screen::Tonight, "2026-01-15", Some(last), now,
-            super::SCORES_AUTO_REFRESH_INTERVAL,
-        ), "non-empty scores_date (past or future) must not auto-refresh");
+        assert!(
+            !super::should_auto_refresh(
+                &Screen::Tonight,
+                "2026-01-15",
+                Some(last),
+                now,
+                super::SCORES_AUTO_REFRESH_INTERVAL,
+            ),
+            "non-empty scores_date (past or future) must not auto-refresh"
+        );
     }
 
     #[test]
@@ -2240,7 +2512,10 @@ mod tests {
         // not via the polling tick.
         let now = std::time::Instant::now();
         assert!(!super::should_auto_refresh(
-            &Screen::Tonight, "", None, now,
+            &Screen::Tonight,
+            "",
+            None,
+            now,
             super::SCORES_AUTO_REFRESH_INTERVAL,
         ));
     }
@@ -2254,7 +2529,10 @@ mod tests {
         app.last_auto_refresh = None;
         app.handle(Action::Char('t'));
         assert!(app.scores_date.is_empty(), "t must clear the date");
-        assert!(app.last_auto_refresh.is_some(), "t back to today must arm the timer");
+        assert!(
+            app.last_auto_refresh.is_some(),
+            "t back to today must arm the timer"
+        );
     }
 
     #[test]
@@ -2265,8 +2543,10 @@ mod tests {
         // Move to a specific date — auto-refresh must disengage
         app.handle(Action::Left);
         assert!(!app.scores_date.is_empty(), "Left must set a specific date");
-        assert!(app.last_auto_refresh.is_none(),
-            "moving to a specific date must disarm the auto-refresh timer");
+        assert!(
+            app.last_auto_refresh.is_none(),
+            "moving to a specific date must disarm the auto-refresh timer"
+        );
     }
 
     #[test]
@@ -2275,7 +2555,10 @@ mod tests {
         app.screen = Screen::Tonight;
         // Timer never armed — tick must not change anything
         app.tick_auto_refresh();
-        assert!(app.last_auto_refresh.is_none(), "tick must leave dormant timer alone");
+        assert!(
+            app.last_auto_refresh.is_none(),
+            "tick must leave dormant timer alone"
+        );
     }
 
     #[test]

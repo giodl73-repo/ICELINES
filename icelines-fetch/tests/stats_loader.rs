@@ -1192,6 +1192,49 @@ fn l1_load_into_repo_with_populated_snapshot_contracts() {
     assert!(other.contract.is_none());
 }
 
+/// Hart.5a: `flat_view_legacy_goalies` shim must produce field-for-field
+/// equivalent metrics to the legacy `GoalieRepository::load_all()` path.
+/// Same shape as `l1_flat_view_legacy_matches_player_repository_load_all`
+/// but for goalies. Excludes the team field (intentional Hart divergence
+/// between primary_team-style and last-stint semantics — see
+/// `l1_goalie_team_semantic_divergence_for_traded_goalies`).
+#[test]
+#[allow(deprecated)]
+fn l1_flat_view_legacy_goalies_metric_parity_20242025() {
+    let (_dir, store) = cold_store();
+    let legacy = GoalieRepository::new(SnapshotStore::new(store.root()), "20242025");
+    let old_goalies = legacy.load_all().expect("legacy load_all");
+
+    let outcome =
+        load_into_repo(Season(20242025), SeasonType::Regular, &store).expect("new load_into_repo");
+    let new_goalies = outcome
+        .repo
+        .flat_view_legacy_goalies(Season(20242025), SeasonType::Regular);
+
+    // Same count (both filter the same set of goalies).
+    assert_eq!(
+        old_goalies.len(),
+        new_goalies.len(),
+        "row count parity: legacy={} new={}",
+        old_goalies.len(),
+        new_goalies.len()
+    );
+
+    // Spot-check a known starter on the metrics tuple.
+    let pid = 8478406; // Mackenzie Blackwood — present in 24-25 bundled
+    let old = old_goalies.iter().find(|g| g.nhl_id == pid);
+    let new = new_goalies.iter().find(|g| g.nhl_id == pid);
+    if let (Some(old_g), Some(new_g)) = (old, new) {
+        let old_s = old_g.stats.as_ref().expect("legacy has stats");
+        let new_s = new_g.stats.as_ref().expect("new has stats");
+        assert_eq!(new_s.wins, old_s.wins);
+        assert_eq!(new_s.losses, old_s.losses);
+        assert_eq!(new_s.saves, old_s.saves);
+        assert_eq!(new_s.goals_against, old_s.goals_against);
+        assert_eq!(new_s.shots_against, old_s.shots_against);
+    }
+}
+
 // ── Hart.4.1 v0.2 — Gap H: error-path L1 audit ─────────────────────────────
 
 /// Gap H — exercises the StatsWithoutIdentity error path. Synthesize

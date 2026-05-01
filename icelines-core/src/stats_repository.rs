@@ -26,7 +26,10 @@ use thiserror::Error;
 
 use crate::contract::PlayerContract;
 use crate::identity::{IdentityMergeError, PlayerId, PlayerIdentity};
-use crate::model::{GpStatus, PaceScore, Player, Position, Season, TeamAbbr};
+use crate::model::{
+    Goalie, GoalieBio, GoalieSeasonStats as LegacyGoalieSeasonStats, GpStatus, PaceScore, Player,
+    Position, Season, TeamAbbr,
+};
 use crate::season_stats::SeasonStats;
 use crate::season_stats::SeasonType;
 
@@ -461,7 +464,7 @@ impl StatsRepository {
     /// `l1_parallel_run_field_parity_*` and
     /// `l1_parallel_run_extended_field_parity_*` in icelines-fetch.
     #[deprecated(
-        note = "Hart.4 scaffolding. Migrate to repo.skaters(s, t) + PlayerView in Hart.5."
+        note = "Hart.4 scaffolding. Migrate to repo.skaters(s, t) + PlayerView in Hart.5b."
     )]
     pub fn flat_view_legacy(&self, s: Season, t: SeasonType) -> Vec<Player> {
         let mut out: Vec<Player> = self
@@ -473,6 +476,29 @@ impl StatsRepository {
         out.retain(|p| match p.nhl_id {
             Some(id) => seen.insert(id),
             None => true,
+        });
+        out
+    }
+
+    /// Goalie analog of `flat_view_legacy`. Reproduces
+    /// `GoalieRepository::load_all()` shape (default-sorted by SV%
+    /// descending — matches legacy leaderboard convention) from the
+    /// new normalized model. Hart.5b deletes this method along with
+    /// the legacy `Goalie` struct.
+    #[deprecated(
+        note = "Hart.5a scaffolding. Migrate to repo.goalies(s, t) + PlayerView in Hart.5b."
+    )]
+    pub fn flat_view_legacy_goalies(&self, s: Season, t: SeasonType) -> Vec<Goalie> {
+        let mut out: Vec<Goalie> = self
+            .goalies(s, t)
+            .map(|view| goalie_from_view(&view))
+            .collect();
+        // Default sort: SV% descending — matches legacy
+        // GoalieRepository::load_all()'s final sort step.
+        out.sort_by(|a, b| {
+            let av = a.stats.as_ref().and_then(|s| s.save_pct).unwrap_or(0.0);
+            let bv = b.stats.as_ref().and_then(|s| s.save_pct).unwrap_or(0.0);
+            bv.partial_cmp(&av).unwrap_or(std::cmp::Ordering::Equal)
         });
         out
     }
@@ -736,6 +762,67 @@ fn player_from_view(view: &PlayerView<'_>) -> Player {
         contract_expiry_year: view.contract.and_then(|c| c.expiry_year),
         expiry_type: view.contract.and_then(|c| c.expiry_type.clone()),
         salary: view.contract.and_then(|c| c.salary),
+    }
+}
+
+/// Hart.5a goalie adapter — reconstruct legacy `Goalie` from a
+/// PlayerView whose stats has `goalie: Some(_)`. Returns a
+/// default-empty stats block for the rare case where the view's
+/// `goalie` field is None (shouldn't happen for `repo.goalies()`
+/// iterator output, but the fn is total).
+#[allow(deprecated)]
+fn goalie_from_view(view: &PlayerView<'_>) -> Goalie {
+    let bio = &view.identity.bio;
+    let team = view
+        .stats
+        .team_stints
+        .last()
+        .map(|s| s.team.clone())
+        .unwrap_or_else(|| TeamAbbr("RET".into()));
+    let stats = view.stats.goalie.as_ref().map(|g| LegacyGoalieSeasonStats {
+        // Legacy GoalieSeasonStats has games_played + games_started;
+        // the new model dropped games_played (derive from totals.gp).
+        games_played: view.stats.totals.gp,
+        games_started: g.games_started,
+        wins: g.wins,
+        losses: g.losses,
+        ot_losses: g.ot_losses,
+        ties: g.ties,
+        shots_against: g.shots_against,
+        goals_against: g.goals_against,
+        saves: g.saves,
+        save_pct: g.save_pct,
+        goals_against_average: g.goals_against_average,
+        shutouts: g.shutouts,
+        // Legacy field is `time_on_ice` (no _sec suffix); new model
+        // renamed to `time_on_ice_sec` in Hart.1.1.
+        time_on_ice: g.time_on_ice_sec,
+    });
+
+    Goalie {
+        nhl_id: view.identity.id.0,
+        full_name: view.identity.full_name.clone(),
+        name_normalized: view.identity.name_normalized.clone(),
+        team,
+        stats,
+        bio: GoalieBio {
+            birth_date: bio.birth_date.clone(),
+            birth_country: bio.birth_country.clone(),
+            nationality_code: bio.nationality_code.clone(),
+            // Legacy GoalieBio uses `catches`; PlayerBio uses
+            // `shoots_catches` (unified). For goalies, shoots_catches
+            // semantically IS catches.
+            catches: bio.shoots_catches.clone(),
+            height_in_inches: bio.height_in_inches,
+            weight_lbs: bio.weight_lbs,
+            draft_year: bio.draft_year,
+            draft_round: bio.draft_round,
+            draft_overall: bio.draft_overall,
+            // Legacy bio.rookie_season is u32; new bio.rookie_season is String.
+            rookie_season: bio.rookie_season.as_deref().and_then(|s| s.parse().ok()),
+        },
+        headshot_url: view.identity.headshot_canonical_url.clone(),
+        sweater_number: view.stats.sweater_number,
     }
 }
 
