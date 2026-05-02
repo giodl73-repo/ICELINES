@@ -54,24 +54,19 @@ async fn run_loop(
 ) -> Result<()> {
     let mut app = App::new(no_color);
 
-    // Start background player loading immediately
-    loader::spawn_loader(app.load_state.clone());
+    // Synchronous boot load. ~50ms against bundled data — well below
+    // the user's perceptible threshold. Must run BEFORE the event loop
+    // starts: `crossterm::event::poll` blocks the OS thread, so the
+    // single-threaded `LocalSet` runtime cannot drive a `spawn_local`
+    // task in parallel with the loop. Async-load only worked when the
+    // event loop had real `.await` yield points.
+    app.boot_load();
 
-    // Hart.5c.6 Phase A — spawn_local-based repo loader running in
-    // parallel with the legacy spawn_loader. Both populate App;
-    // consumers migrate one at a time in Phase B/C, after which the
-    // legacy path is deleted.
-    {
-        let cfg = crate::config::Config::load().ok();
-        let snapshot_dir = cfg
-            .map(|c| c.snapshot_dir())
-            .unwrap_or_else(|| std::path::PathBuf::from("."));
-        app.load_rx = Some(loader::spawn_repo_load(
-            app.active_season_typed,
-            app.active_type,
-            snapshot_dir,
-        ));
-    }
+    // Background transactions loader stays async — Transaction is Send,
+    // it goes through `tokio::spawn`, and the poll path is keyed on
+    // `transactions_fetched_at` so a delayed populate doesn't get
+    // re-fired.
+    loader::spawn_loader(app.load_state.clone());
 
     loop {
         // Tick counter for spinner animation

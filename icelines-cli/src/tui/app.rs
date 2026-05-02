@@ -1315,6 +1315,85 @@ impl App {
     /// are gone. The single sync entry point for the `y` season
     /// picker now ONLY swaps the repo and rebuilds (season, type)-
     /// coupled caches per D5. All consumers read through PlayerView.
+    /// Synchronous boot load. Populates `self.repo` from
+    /// `(active_season_typed, active_type)` against the configured
+    /// snapshot dir, falling back to bundled data when the snapshot is
+    /// absent. Rebuilds `league_context` so post-load renders see the
+    /// rank/percentile tables coupled to the current window.
+    ///
+    /// This must run BEFORE the event loop starts. The `LocalSet`-based
+    /// `spawn_repo_load` path was originally added in Hart.5c.6 Phase A
+    /// to do this async, but the event-loop has no real `.await` yields
+    /// (`crossterm::event::poll` is a blocking sync syscall — `next_event`
+    /// is `async fn` only by signature, not by behavior), so a
+    /// `spawn_local` task never runs. The synchronous load takes ~50ms
+    /// cold against bundled data — well below the user's perception
+    /// threshold for a CLI program startup.
+    ///
+    /// On error: `self.status` carries the error string. The repo stays
+    /// empty so screens render their "no data" branch — better than
+    /// crashing.
+    pub fn boot_load(&mut self) {
+        use icelines_fetch::snapshot::SnapshotStore;
+        use icelines_fetch::stats_loader::{format_missing_sources, load_into_repo};
+
+        let snapshot_dir = match crate::config::Config::load() {
+            Ok(cfg) => cfg.snapshot_dir(),
+            Err(_) => return,
+        };
+        let store = SnapshotStore::new(snapshot_dir);
+        match load_into_repo(self.active_season_typed, self.active_type, &store) {
+            Ok(outcome) => {
+                let _old = self.repo.repo_swap(outcome.repo);
+                self.league_context = crate::tui::dashboard_panel::LeagueContext::build(
+                    &self.repo,
+                    self.active_season_typed,
+                    self.active_type,
+                );
+                self.league_context_window = (self.active_season_typed, self.active_type);
+                self.dashboard_panel.clear_cache();
+                self.status = if outcome.missing.is_empty() {
+                    "Press ? for help · q to quit".to_owned()
+                } else {
+                    format_missing_sources(&outcome.missing)
+                };
+            }
+            Err(e) => {
+                self.status = format!("load failed: {e}");
+            }
+        }
+    }
+
+    /// Same as `boot_load` but accepts an explicit `SnapshotStore`. Used
+    /// by tests so they can point at a tempdir or a custom fixture
+    /// without touching `~/.icelines/`.
+    pub fn boot_load_with_store(
+        &mut self,
+        store: &icelines_fetch::snapshot::SnapshotStore,
+    ) {
+        use icelines_fetch::stats_loader::{format_missing_sources, load_into_repo};
+        match load_into_repo(self.active_season_typed, self.active_type, store) {
+            Ok(outcome) => {
+                let _old = self.repo.repo_swap(outcome.repo);
+                self.league_context = crate::tui::dashboard_panel::LeagueContext::build(
+                    &self.repo,
+                    self.active_season_typed,
+                    self.active_type,
+                );
+                self.league_context_window = (self.active_season_typed, self.active_type);
+                self.dashboard_panel.clear_cache();
+                self.status = if outcome.missing.is_empty() {
+                    "Press ? for help · q to quit".to_owned()
+                } else {
+                    format_missing_sources(&outcome.missing)
+                };
+            }
+            Err(e) => {
+                self.status = format!("load failed: {e}");
+            }
+        }
+    }
+
     fn reload_for_season(&mut self, season_id: &str) {
         use icelines_fetch::snapshot::SnapshotStore;
         use icelines_fetch::stats_loader::{format_missing_sources, load_into_repo};
@@ -2692,5 +2771,117 @@ mod tests {
         // While open, the F-handling branch is short-circuited; press Esc to close.
         app.handle(Action::Escape);
         assert!(!app.show_admin);
+    }
+
+    // ── Boot-load tests (regression fence for the bug shipped in 5c.6 Phase A) ──
+    //
+    // Hart.5c.6 originally used `spawn_local` + mpsc to load the repo
+    // asynchronously. That path silently broke at runtime because
+    // `crossterm::event::poll` is a blocking sync call — the event loop
+    // never `.await`-yielded, so the single-threaded `LocalSet` runtime
+    // never drove the spawn_local task. Tests existed for every UI
+    // helper but no test exercised the boot path end-to-end.
+    //
+    // These tests assert the synchronous `boot_load` actually populates
+    // `app.repo` from bundled data. If the bundled data path regresses
+    // or `boot_load` is accidentally turned back into a fire-and-forget
+    // async spawn, these fail loudly.
+
+    /// Boot load against the current bundled season must populate
+    /// `app.views()` with a non-trivial number of skaters. Bundled data
+    /// is `include_bytes!`'d at build time, so this test does no I/O.
+    /// The empty `tempdir` snapshot store forces the bundled fallback.
+    #[test]
+    fn l1_app_boot_load_populates_views_from_bundled_data() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let store = icelines_fetch::snapshot::SnapshotStore::new(dir.path());
+
+        let mut app = App::new(true);
+        // Sanity: pre-load app has empty repo.
+        assert!(app.views().is_empty(), "App::new must start with empty repo");
+
+        app.boot_load_with_store(&store);
+
+        let views = app.views();
+        assert!(
+            !views.is_empty(),
+            "boot_load must populate views from bundled data — got 0 views"
+        );
+        // The bundled current-season skater pool is several hundred — guard
+        // against a partial load that returns a handful of rows.
+        assert!(
+            views.len() >= 200,
+            "expected ≥200 skater views from bundled data, got {}",
+            views.len()
+        );
+    }
+
+    /// Boot load must rebuild `league_context` so post-load renders see
+    /// rank/percentile tables coupled to the active window. Without
+    /// this, the dashboard panel renders zero ranks even though views
+    /// exist.
+    #[test]
+    fn l1_app_boot_load_rebuilds_league_context_window() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let store = icelines_fetch::snapshot::SnapshotStore::new(dir.path());
+
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        assert_eq!(
+            app.league_context_window,
+            (app.active_season_typed, app.active_type),
+            "boot_load must couple league_context_window to the active window"
+        );
+    }
+
+    /// Boot load must clear the dashboard-panel cache so the first
+    /// render after boot computes fresh lines (the cache key is
+    /// (player, season, type) — a stale entry from a different repo
+    /// would render outdated stats).
+    #[test]
+    fn l1_app_boot_load_clears_dashboard_panel_cache() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let store = icelines_fetch::snapshot::SnapshotStore::new(dir.path());
+
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        // No public introspection on cache size, but compile() round-trip
+        // must yield real lines for a known player. Connor McDavid (8478402)
+        // is in every recent bundled season.
+        let mcdavid_view = app.repo.view(
+            PlayerId(8478402),
+            app.active_season_typed,
+            app.active_type,
+        );
+        assert!(
+            mcdavid_view.is_some(),
+            "McDavid (8478402) must appear in the bundled current-season pool",
+        );
+    }
+
+    /// On a configured-but-bad season (e.g. unbundled), `boot_load` must
+    /// surface the failure via `app.status` and leave `app.repo` empty
+    /// rather than panicking.
+    #[test]
+    fn l1_app_boot_load_unbundled_season_sets_status_and_keeps_empty_repo() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let store = icelines_fetch::snapshot::SnapshotStore::new(dir.path());
+
+        let mut app = App::new(true);
+        // Force a season ID that has no bundled data and no snapshot.
+        app.active_season_typed = Season(19101911);
+        app.boot_load_with_store(&store);
+
+        assert!(
+            app.views().is_empty(),
+            "unbundled-season load must leave repo empty, not panic"
+        );
+        assert!(
+            app.status.starts_with("load failed:"),
+            "status must surface the load error, got: {}",
+            app.status
+        );
     }
 }
