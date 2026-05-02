@@ -350,6 +350,60 @@ impl SnapshotStore {
         }
     }
 
+    /// Hart.6.9 — season-filtered variant of `find_snapshot_for_tier`.
+    /// Walks the parent chain skipping snapshots whose `meta.season`
+    /// doesn't match `requested_season`. Returns `NotFound` if no
+    /// snapshot in the chain is for the requested season.
+    ///
+    /// Without this, querying a historical season while the active
+    /// snapshot is current-season returns wrong-season data and trips
+    /// the Hart.6.4 SeasonIdMismatch fence.
+    pub fn find_snapshot_for_tier_and_season(
+        &self,
+        tier: &SnapshotTier,
+        requested_season: &str,
+    ) -> Result<String, SnapshotError> {
+        let manifest = self.load_manifest()?;
+        let active = manifest
+            .active
+            .as_deref()
+            .ok_or(SnapshotError::NoActiveSnapshot)?
+            .to_owned();
+
+        let mut name = active.clone();
+        loop {
+            let meta = self.load_meta(&name)?;
+            let tier_dir = self.snapshot_dir(&name).join(tier.dir_name());
+            if tier_dir.exists() && meta.sealed && meta.season == requested_season {
+                return Ok(name);
+            }
+            match meta.parent_key {
+                Some(parent) => name = parent,
+                None => {
+                    return Err(SnapshotError::NotFound {
+                        name: format!(
+                            "{} data for season {requested_season} not found in chain from '{active}'",
+                            tier.dir_name()
+                        ),
+                    })
+                }
+            }
+        }
+    }
+
+    /// Read a tier file from the latest snapshot in the chain whose
+    /// `meta.season` matches `requested_season`. Hart.6.9 — paired
+    /// with `find_snapshot_for_tier_and_season`.
+    pub fn read_tier_for_season<T: serde::de::DeserializeOwned>(
+        &self,
+        tier: &SnapshotTier,
+        filename: &str,
+        requested_season: &str,
+    ) -> Result<T, SnapshotError> {
+        let name = self.find_snapshot_for_tier_and_season(tier, requested_season)?;
+        self.read(&name, tier, filename)
+    }
+
     // ── Reading ───────────────────────────────────────────────────────────────
 
     /// Read a file from the active snapshot, verifying integrity.
@@ -920,7 +974,7 @@ impl SnapshotStore {
 
     // ── Internal ──────────────────────────────────────────────────────────────
 
-    fn load_meta(&self, name: &str) -> Result<SnapshotMeta, SnapshotError> {
+    pub fn load_meta(&self, name: &str) -> Result<SnapshotMeta, SnapshotError> {
         let p = self.meta_path(name);
         if !p.exists() {
             return Err(SnapshotError::NotFound {

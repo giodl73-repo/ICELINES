@@ -89,8 +89,11 @@ fn fuzzy_find_skater<'a, 'r>(
 /// Load both pools at once as a `LoadOutcome` (which owns the
 /// `StatsRepository`) plus the `Season` callers should use to query.
 /// Hart.5c.4: replaces the previous `(Vec<Player>, Vec<Goalie>)` shape.
+/// Hart.6.9: load_repo_for_season now returns a 3-tuple including
+/// season_type — fantasy is regular-only, drop the type.
 fn load_pools() -> anyhow::Result<(LoadOutcome, Season)> {
-    crate::commands::players::load_repo_for_season(None)
+    let (outcome, season, _ty) = crate::commands::players::load_repo_for_season(None, None)?;
+    Ok((outcome, season))
 }
 
 /// Convenience: collect skaters and goalies from a repo into Vecs.

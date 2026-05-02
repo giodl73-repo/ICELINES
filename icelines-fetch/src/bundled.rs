@@ -449,14 +449,22 @@ pub fn load_stats_with_fallback(
 /// chunked active → legacy file-per-tier active → embedded bundled →
 /// installed bundled. The legacy path uses `playoff-bios.json` inside
 /// the existing `Stats` tier dir (D3 co-location).
+///
+/// Hart.6.9 — snapshot reads are now season-filtered: only snapshots
+/// whose `meta.season` matches `season` are consulted, so a current-
+/// season active snapshot doesn't shadow a historical-season query.
 pub fn load_playoff_bios_with_fallback(
     season: &str,
     store: &crate::snapshot::SnapshotStore,
 ) -> Result<Vec<SkaterBio>, FetchError> {
-    if let Ok((bios, _)) = read_chunked_active_playoff(store) {
+    if let Ok((bios, _)) = read_chunked_active_playoff_for_season(store, season) {
         return Ok(bios);
     }
-    if let Ok(bios) = store.read_tier(&crate::snapshot::SnapshotTier::Stats, "playoff-bios.json") {
+    if let Ok(bios) = store.read_tier_for_season(
+        &crate::snapshot::SnapshotTier::Stats,
+        "playoff-bios.json",
+        season,
+    ) {
         return Ok(bios);
     }
     if let Some(bios) = get_playoff_bios(season) {
@@ -476,10 +484,14 @@ pub fn load_playoff_stats_with_fallback(
     season: &str,
     store: &crate::snapshot::SnapshotStore,
 ) -> Result<Vec<SkaterStats>, FetchError> {
-    if let Ok((_, stats)) = read_chunked_active_playoff(store) {
+    if let Ok((_, stats)) = read_chunked_active_playoff_for_season(store, season) {
         return Ok(stats);
     }
-    if let Ok(stats) = store.read_tier(&crate::snapshot::SnapshotTier::Stats, "playoff-stats.json") {
+    if let Ok(stats) = store.read_tier_for_season(
+        &crate::snapshot::SnapshotTier::Stats,
+        "playoff-stats.json",
+        season,
+    ) {
         return Ok(stats);
     }
     if let Some(stats) = get_playoff_stats(season) {
@@ -500,8 +512,10 @@ pub fn load_playoff_goalies_with_fallback(
     season: &str,
     store: &crate::snapshot::SnapshotStore,
 ) -> Result<Vec<GoalieStats>, FetchError> {
-    if let Ok(rows) = store.read_tier::<Vec<GoalieStats>>(
-        &crate::snapshot::SnapshotTier::Stats, "playoff-goalie-stats.json",
+    if let Ok(rows) = store.read_tier_for_season::<Vec<GoalieStats>>(
+        &crate::snapshot::SnapshotTier::Stats,
+        "playoff-goalie-stats.json",
+        season,
     ) {
         return Ok(rows);
     }
@@ -536,14 +550,26 @@ fn read_chunked_active(
 /// Hart.6.2 — same as `read_chunked_active` but for the playoff
 /// (bios, stats) pair. Returns `NotFound` if the active snapshot was
 /// written without playoff data.
-fn read_chunked_active_playoff(
+/// Hart.6.9 — season-filtered. Only reads the active snapshot's chunked
+/// playoff data when its `meta.season` matches `requested_season`.
+fn read_chunked_active_playoff_for_season(
     store: &crate::snapshot::SnapshotStore,
+    requested_season: &str,
 ) -> Result<(Vec<SkaterBio>, Vec<SkaterStats>), crate::snapshot::SnapshotError> {
     let manifest = store.load_manifest()?;
     let active = manifest
         .active
         .as_deref()
         .ok_or(crate::snapshot::SnapshotError::NoActiveSnapshot)?;
+    let meta = store.load_meta(active)?;
+    if meta.season != requested_season {
+        return Err(crate::snapshot::SnapshotError::NotFound {
+            name: format!(
+                "{active}/chunked.json: snapshot season {} != requested {}",
+                meta.season, requested_season
+            ),
+        });
+    }
     if !store.is_chunked(active) {
         return Err(crate::snapshot::SnapshotError::NotFound { name: format!("{active}/chunked.json") });
     }

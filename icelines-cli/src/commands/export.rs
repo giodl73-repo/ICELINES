@@ -72,7 +72,7 @@ pub async fn run(cmd: ExportSubcommand) -> anyhow::Result<()> {
 /// collect the skater views into a Vec the renderer borrows from. The
 /// outcome must outlive the views.
 fn load_views() -> anyhow::Result<icelines_fetch::stats_loader::LoadOutcome> {
-    let (outcome, _season) = load_repo_for_season(None)?;
+    let (outcome, _season, _ty) = load_repo_for_season(None, None)?;
     Ok(outcome)
 }
 

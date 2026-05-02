@@ -168,6 +168,7 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
                         toi_min: None, plus_minus_min: None, shots_pg_min: None,
                         ufa: false, rfa: false, elc: false, expiry_year: None,
                         seasons: 1, season: None,
+                        season_type: icelines_core::season_stats::SeasonType::Regular,
                         sort: "ppg".to_owned(), top,
                         rate: false, percentiles: false,
                         json, csv,
@@ -178,6 +179,7 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
                         top,
                         sort: "sv-pct".to_owned(),
                         team, min_gp: 5, season: None,
+                        season_type: icelines_core::season_stats::SeasonType::Regular,
                         json, csv,
                     }).await?;
                 }
@@ -248,7 +250,7 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
                 draft_year, round, draft_pick_max, undrafted, rookie,
                 handedness, ppg_min, gp_min, gp_max,
                 toi_min, plus_minus_min, shots_pg_min, birth_province,
-                seasons, season, sort, top, rate, percentiles, json, csv,
+                seasons, season, season_type, sort, top, rate, percentiles, json, csv,
                 ufa, rfa, elc, expiry_year,
             } => {
                 commands::query::run_leaders(commands::query::LeadersArgs {
@@ -257,18 +259,22 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
                     handedness, ppg_min, gp_min, gp_max,
                     birth_province, toi_min, plus_minus_min, shots_pg_min,
                     ufa, rfa, elc, expiry_year,
-                    seasons, season, sort, top, rate, percentiles, json, csv,
+                    seasons, season,
+                    season_type: season_type.to_core(),
+                    sort, top, rate, percentiles, json, csv,
                 }).await?;
             }
-            QuerySubcommand::Player { name, breakdown, percentiles, last_n, season } => {
-                commands::query::run_player(name, breakdown, percentiles, last_n, season).await?;
+            QuerySubcommand::Player { name, breakdown, percentiles, last_n, season, season_type } => {
+                commands::query::run_player(name, breakdown, percentiles, last_n, season, season_type.to_core()).await?;
             }
-            QuerySubcommand::Compare { player1, player2, similar, by, season } => {
-                commands::query::run_compare(player1, player2, similar, by, season).await?;
+            QuerySubcommand::Compare { player1, player2, similar, by, season, season_type } => {
+                commands::query::run_compare(player1, player2, similar, by, season, season_type.to_core()).await?;
             }
-            QuerySubcommand::Goalies { top, sort, team, min_gp, season, json, csv } => {
+            QuerySubcommand::Goalies { top, sort, team, min_gp, season, season_type, json, csv } => {
                 commands::query::run_goalies(commands::query::GoaliesArgs {
-                    top, sort, team, min_gp, season, json, csv,
+                    top, sort, team, min_gp, season,
+                    season_type: season_type.to_core(),
+                    json, csv,
                 }).await?;
             }
         },

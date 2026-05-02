@@ -329,6 +329,11 @@ pub struct LeadersArgs {
     pub seasons: u8,
     /// Specific historical season override (Phase 8f). Conflicts with `seasons > 1`.
     pub season: Option<String>,
+    /// Hart.6.9 — season-type window (Regular default, Playoff opt-in).
+    /// Conflicts with `seasons > 1` (the aggregate path is regular-only
+    /// today; folding playoff stats into a multi-season aggregate would
+    /// blur per-game vs per-series counting).
+    pub season_type: SeasonType,
     pub sort: String,
     pub top: usize,
     pub rate: bool,
@@ -350,17 +355,32 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
         );
     }
 
+    // Hart.6.9: aggregate path is regular-only. Reject the combo cleanly
+    // rather than silently falling back to regular for the playoff case.
+    if args.season_type == SeasonType::Playoff && args.seasons > 1 {
+        anyhow::bail!(
+            "--type playoff cannot be combined with --seasons N > 1.\n  \
+             The N-season aggregate path is regular-season only today; \
+             folding playoff series counts into per-game ratios would \
+             produce misleading numbers. Use --season YYYYZZZZ --type \
+             playoff for a single playoff window."
+        );
+    }
+
     // Load player pool — single season (default or overridden) or N-season aggregate.
     // Both paths produce a `(StatsRepository, Season)` pair so the iterator code
     // below is uniform.
-    let (repo, season_key) = if args.seasons > 1 {
-        aggregate::load_aggregate_into_repo(args.seasons as usize)
+    let (repo, season_key, season_type) = if args.seasons > 1 {
+        let (r, s) = aggregate::load_aggregate_into_repo(args.seasons as usize);
+        (r, s, SeasonType::Regular)
     } else {
-        let (outcome, season) =
-            crate::commands::players::load_repo_for_season(args.season.as_deref())?;
-        (outcome.repo, season)
+        let (outcome, season, ty) = crate::commands::players::load_repo_for_season(
+            args.season.as_deref(),
+            Some(args.season_type),
+        )?;
+        (outcome.repo, season, ty)
     };
-    let all_views: Vec<PlayerView<'_>> = repo.skaters(season_key, SeasonType::Regular).collect();
+    let all_views: Vec<PlayerView<'_>> = repo.skaters(season_key, season_type).collect();
 
     let mut filter = PlayerFilter::new();
     if let Some(ref p) = args.pos {
@@ -688,11 +708,12 @@ pub async fn run_player(
     percentiles: bool,
     last_n: Option<u32>,
     season: Option<String>,
+    season_type: SeasonType,
 ) -> anyhow::Result<()> {
-    let (outcome, season_key) =
-        crate::commands::players::load_repo_for_season(season.as_deref())?;
+    let (outcome, season_key, season_type) =
+        crate::commands::players::load_repo_for_season(season.as_deref(), Some(season_type))?;
     let repo = &outcome.repo;
-    let all_views: Vec<PlayerView<'_>> = repo.skaters(season_key, SeasonType::Regular).collect();
+    let all_views: Vec<PlayerView<'_>> = repo.skaters(season_key, season_type).collect();
     let v = find_view(&all_views, &name)?;
 
     let age = age_str(v);
@@ -865,6 +886,8 @@ pub struct GoaliesArgs {
     pub team: Option<String>,
     pub min_gp: u32,
     pub season: Option<String>,
+    /// Hart.6.9 — season-type window (Regular default, Playoff opt-in).
+    pub season_type: SeasonType,
     pub json: bool,
     pub csv: bool,
 }
@@ -909,17 +932,22 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
     let store = SnapshotStore::new(cfg.snapshot_dir());
     let outcome = icelines_fetch::stats_loader::load_into_repo(
         icelines_core::model::Season(season_u32),
-        icelines_core::season_stats::SeasonType::Regular,
+        args.season_type,
         &store,
     )
-    .map_err(|e| anyhow::anyhow!("{e}\n  Try: icelines fetch goalies"))?;
+    .map_err(|e| {
+        let hint = match args.season_type {
+            icelines_core::season_stats::SeasonType::Regular => "Try: icelines fetch goalies",
+            icelines_core::season_stats::SeasonType::Playoff => {
+                "Try: icelines fetch goalies --type playoff"
+            }
+        };
+        anyhow::anyhow!("{e}\n  {hint}")
+    })?;
 
     let mut views: Vec<PlayerView<'_>> = outcome
         .repo
-        .goalies(
-            icelines_core::model::Season(season_u32),
-            icelines_core::season_stats::SeasonType::Regular,
-        )
+        .goalies(icelines_core::model::Season(season_u32), args.season_type)
         .filter(|v| v.gp() >= args.min_gp)
         .collect();
 
@@ -1049,11 +1077,12 @@ pub async fn run_compare(
     similar: Option<usize>,
     _by: String,
     season: Option<String>,
+    season_type: SeasonType,
 ) -> anyhow::Result<()> {
-    let (outcome, season_key) =
-        crate::commands::players::load_repo_for_season(season.as_deref())?;
+    let (outcome, season_key, season_type) =
+        crate::commands::players::load_repo_for_season(season.as_deref(), Some(season_type))?;
     let repo = &outcome.repo;
-    let all_views: Vec<PlayerView<'_>> = repo.skaters(season_key, SeasonType::Regular).collect();
+    let all_views: Vec<PlayerView<'_>> = repo.skaters(season_key, season_type).collect();
 
     if let Some(n) = similar {
         run_similar(&all_views, &player1, n)

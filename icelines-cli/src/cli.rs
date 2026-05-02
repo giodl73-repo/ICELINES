@@ -337,6 +337,28 @@ pub enum FetchSeasonType {
     Both,
 }
 
+/// Hart.6.9 — `--type` flag for read-side query commands. Unlike
+/// `FetchSeasonType` there's no `Both`: a query operates on a single
+/// `(season, season_type)` window at a time. Maps cleanly to
+/// `icelines_core::season_stats::SeasonType`.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, ValueEnum, Default)]
+pub enum QuerySeasonType {
+    #[default]
+    #[clap(name = "regular")]
+    Regular,
+    #[clap(name = "playoff")]
+    Playoff,
+}
+
+impl QuerySeasonType {
+    pub fn to_core(self) -> icelines_core::season_stats::SeasonType {
+        match self {
+            Self::Regular => icelines_core::season_stats::SeasonType::Regular,
+            Self::Playoff => icelines_core::season_stats::SeasonType::Playoff,
+        }
+    }
+}
+
 #[derive(Debug, Subcommand)]
 pub enum FetchSubcommand {
     /// Fetch all 32 team rosters (headshots, positions, bios).
@@ -669,6 +691,10 @@ pub enum QuerySubcommand {
         /// --seasons N. Must match a bundled season — see icelines-fetch::BUNDLED_SEASONS.
         #[arg(long)]
         season: Option<String>,
+        /// Season type: regular (default) or playoff. `playoff` requires
+        /// the season's playoff data to be bundled or installed.
+        #[arg(long = "type", value_enum, default_value_t = QuerySeasonType::Regular)]
+        season_type: QuerySeasonType,
         /// Sort metric: pts-pace (default), ppg, g-pace, gpg, pts, goals, assists, gp,
         ///   pp-pts-pace, pp-g-pace, pp-pts, pp-g, sh-g-pace, sh-g, gwg-pace, gwg,
         ///   shots-pace, shots, sh-pct, plus-minus, toi, fo-pct,
@@ -721,6 +747,9 @@ pub enum QuerySubcommand {
         /// Query a specific historical season (e.g. 20242025).
         #[arg(long)]
         season: Option<String>,
+        /// Season type: regular (default) or playoff.
+        #[arg(long = "type", value_enum, default_value_t = QuerySeasonType::Regular)]
+        season_type: QuerySeasonType,
     },
 
     /// Side-by-side comparison or similarity search.
@@ -738,6 +767,9 @@ pub enum QuerySubcommand {
         /// Query a specific historical season (e.g. 20242025).
         #[arg(long)]
         season: Option<String>,
+        /// Season type: regular (default) or playoff.
+        #[arg(long = "type", value_enum, default_value_t = QuerySeasonType::Regular)]
+        season_type: QuerySeasonType,
     },
 
     /// Goalie leaderboard — Phase G.5.
@@ -758,6 +790,9 @@ pub enum QuerySubcommand {
         /// Query a specific historical season (e.g. 20242025).
         #[arg(long)]
         season: Option<String>,
+        /// Season type: regular (default) or playoff.
+        #[arg(long = "type", value_enum, default_value_t = QuerySeasonType::Regular)]
+        season_type: QuerySeasonType,
         /// Export as JSON.
         #[arg(long)]
         json: bool,

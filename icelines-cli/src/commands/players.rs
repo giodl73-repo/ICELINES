@@ -12,12 +12,15 @@ use icelines_fetch::{
 };
 
 /// Hart.5c.3: load a `LoadOutcome` for the requested season (or the
-/// configured / current season when `season` is None). Used by
-/// view-path consumers (query.rs and onward) so they can iterate
-/// `outcome.repo.skaters(...)` directly. The returned `Season` carries
-/// the season ID the caller should pass to `repo.skaters` /
-/// `repo.goalies` / `repo.team_roster`.
-pub fn load_repo_for_season(season: Option<&str>) -> anyhow::Result<(LoadOutcome, Season)> {
+/// configured / current season when `season` is None). Hart.6.9 added
+/// the `season_type` parameter so playoff loads ride the same path.
+/// `load_repo_for_season(s, None)` is a regular-season shortcut for
+/// existing callers; pass `Some(SeasonType::Playoff)` for the playoff
+/// window.
+pub fn load_repo_for_season(
+    season: Option<&str>,
+    season_type: Option<SeasonType>,
+) -> anyhow::Result<(LoadOutcome, Season, SeasonType)> {
     let cfg = Config::load()?;
     let resolved_season = match season {
         Some(s) => {
@@ -30,10 +33,16 @@ pub fn load_repo_for_season(season: Option<&str>) -> anyhow::Result<(LoadOutcome
         .parse()
         .map_err(|_| anyhow::anyhow!("season '{resolved_season}' is not a YYYYZZZZ id"))?;
     let season = Season(season_u32);
+    let ty = season_type.unwrap_or(SeasonType::Regular);
     let store = SnapshotStore::new(cfg.snapshot_dir());
-    let outcome = load_into_repo(season, SeasonType::Regular, &store)
-        .map_err(|e| anyhow::anyhow!("{e}\n  Try: icelines fetch all"))?;
-    Ok((outcome, season))
+    let outcome = load_into_repo(season, ty, &store).map_err(|e| {
+        let hint = match ty {
+            SeasonType::Regular => "Try: icelines fetch all",
+            SeasonType::Playoff => "Try: icelines fetch stats --type playoff",
+        };
+        anyhow::anyhow!("{e}\n  {hint}")
+    })?;
+    Ok((outcome, season, ty))
 }
 
 /// Reject `--season` values that aren't in the bundled list. Empty string and

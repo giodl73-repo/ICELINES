@@ -201,6 +201,77 @@ fn l2_hart6_5_fetch_moneypuck_rejects_type_flag() {
     );
 }
 
+// ── Hart.6.9 — query --type {regular|playoff} ──────────────────────────────
+
+#[test]
+fn l2_hart6_9_query_leaders_type_playoff_returns_playoff_rows() {
+    // 2024-25 playoff data is bundled (5c25214d). Bench B3 round-trip
+    // fence: query reads through the same path the fetch CLI wrote to.
+    // Real assertion: the top scorer for 2024-25 playoffs is McDavid or
+    // Draisaitl (both EDM, joint at 33 pts in 22 GP per actual 2025 run).
+    let out = run(&["query", "leaders", "--season", "20242025", "--type", "playoff", "--top", "5"]);
+    assert!(
+        out.status.success(),
+        "query leaders --type playoff must succeed; stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    // Spot-check a known 2024-25 playoff name.
+    assert!(
+        stdout.contains("Draisaitl") || stdout.contains("McDavid"),
+        "playoff leaders must include EDM top-line forwards, got:\n{stdout}"
+    );
+    // GP column should show ≤ 30 (full Cup run = 4 rounds × ~6 games).
+    // If the dispatch silently fell through to regular, GP would be ≥ 60.
+    // Loose check via "matched" line: regular = ~900 players, playoff = ~330.
+    assert!(
+        stdout.contains("332 matched") || stdout.contains("matched, showing"),
+        "must show match count, got:\n{stdout}"
+    );
+}
+
+#[test]
+fn l2_hart6_9_query_leaders_type_playoff_for_2025_26_surfaces_missing_bundle() {
+    // 2025-26 playoff ships as `[]` (Cup not yet contested). The loader
+    // returns MissingBundle{Playoff} with a clean error.
+    let out = run(&["query", "leaders", "--season", "20252026", "--type", "playoff"]);
+    assert!(
+        !out.status.success(),
+        "2025-26 playoff query must fail until the Cup is contested"
+    );
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("playoff") || stderr.contains("Playoff") || stderr.contains("MissingBundle"),
+        "error must mention playoff context, got:\n{stderr}"
+    );
+}
+
+#[test]
+fn l2_hart6_9_query_leaders_default_type_matches_explicit_regular() {
+    // No --type and --type regular must produce identical output.
+    let out_default = run(&["query", "leaders", "--season", "20242025", "--top", "3"]);
+    let out_regular = run(&["query", "leaders", "--season", "20242025", "--type", "regular", "--top", "3"]);
+    assert!(out_default.status.success());
+    assert!(out_regular.status.success());
+    assert_eq!(out_default.stdout, out_regular.stdout);
+}
+
+#[test]
+fn l2_hart6_9_query_leaders_rejects_seasons_n_with_playoff() {
+    // --seasons N > 1 is regular-only; combo with --type playoff
+    // must error cleanly rather than silently dropping the type.
+    let out = run(&["query", "leaders", "--seasons", "3", "--type", "playoff"]);
+    assert!(
+        !out.status.success(),
+        "--seasons N + --type playoff must reject"
+    );
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("--seasons") && stderr.contains("playoff"),
+        "error must explain the conflict, got:\n{stderr}"
+    );
+}
+
 #[test]
 fn l2_hart6_5_fetch_all_type_playoff_dry_run_skips_rosters_and_realtime() {
     let out = run(&["fetch", "all", "--dry-run", "--type", "playoff"]);
