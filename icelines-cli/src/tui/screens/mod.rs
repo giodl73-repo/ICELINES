@@ -172,3 +172,134 @@ fn centered_rect(pct_x: u16, pct_y: u16, r: Rect) -> Rect {
         popup_h,
     )
 }
+
+// ── Full-app snapshot tests (Hart.5c.6 deliverable) ──────────────────────────
+//
+// Drives the top-level `render(f, &app)` against a TestBackend across every
+// canonical landing screen with a freshly-constructed App (empty repo, cold
+// caches). Catches:
+//   - panics in any render path under the "no data loaded yet" common case
+//   - the nav bar regressing on tab count or label
+//   - a screen variant accidentally hiding the status bar or nav row
+//
+// Per-screen detail tests live under each screens/*.rs file. This is the
+// integration glue that proves the dispatcher in `render(f, &app)` and the
+// nav-bar layout stay coherent.
+#[cfg(test)]
+mod app_snapshot_tests {
+    use super::*;
+    use crate::tui::app::{App, Screen};
+    use ratatui::backend::TestBackend;
+    use ratatui::Terminal;
+
+    fn buffer_text(buf: &ratatui::buffer::Buffer) -> String {
+        let mut out = String::new();
+        for y in 0..buf.area.height {
+            for x in 0..buf.area.width {
+                out.push_str(buf[(x, y)].symbol());
+            }
+            out.push('\n');
+        }
+        out
+    }
+
+    fn render_app_to_text(app: &App, w: u16, h: u16) -> String {
+        let backend = TestBackend::new(w, h);
+        let mut term = Terminal::new(backend).unwrap();
+        term.draw(|f| super::render(f, app)).unwrap();
+        buffer_text(term.backend().buffer())
+    }
+
+    /// The 8 canonical tabs must appear in the nav bar on every screen.
+    /// Catches: tab dropped from the array, label renamed, layout truncated
+    /// at common widths.
+    #[test]
+    fn l0_app_nav_bar_renders_all_eight_tabs_at_120_cols() {
+        let app = App::new(true);
+        let text = render_app_to_text(&app, 120, 30);
+        for label in [
+            "League",
+            "Depth",
+            "Stats",
+            "Goalies",
+            "Scores",
+            "Schedule",
+            "Transactions",
+            "Playoffs",
+        ] {
+            assert!(
+                text.contains(label),
+                "nav bar missing tab label {label:?}; full output:\n{text}"
+            );
+        }
+    }
+
+    /// The status line is the bottom-row hint. It must be rendered on the
+    /// default Home screen so the user knows how to get help / quit.
+    #[test]
+    fn l0_app_status_line_present_on_home() {
+        let app = App::new(true);
+        let text = render_app_to_text(&app, 120, 30);
+        // Default status text — App::new initialises this string.
+        assert!(
+            text.contains("Loading data") || text.contains("Press ?"),
+            "status line missing from Home, got:\n{text}"
+        );
+    }
+
+    /// Render every canonical landing screen with the default empty App.
+    /// "Doesn't panic" is itself the invariant — these are the screens a
+    /// user can reach before any fetch completes, and a render-time crash
+    /// would dump the terminal.
+    #[test]
+    fn l0_app_renders_every_canonical_landing_screen_without_panic() {
+        let canonical_screens = [
+            Screen::Home,
+            Screen::Search,
+            Screen::Queries,
+            Screen::Tonight,
+            Screen::Projections,
+            Screen::Goalies,
+            Screen::Schedule,
+            Screen::Playoffs,
+            Screen::Transactions,
+            Screen::Depth,
+            Screen::Fetch,
+            Screen::Help,
+            Screen::Groups,
+        ];
+        for screen in canonical_screens {
+            let mut app = App::new(true);
+            app.screen = screen.clone();
+            // If render() panics, the test fails — that's the assertion.
+            let text = render_app_to_text(&app, 120, 30);
+            // Sanity: screen produced *some* output (non-empty buffer with
+            // at least the nav bar).
+            assert!(text.contains("League"), "nav bar missing on {screen:?}");
+        }
+    }
+
+    /// Help overlay is rendered on top — its title must appear.
+    #[test]
+    fn l0_app_help_overlay_renders_when_show_help_is_true() {
+        let mut app = App::new(true);
+        app.show_help = true;
+        let text = render_app_to_text(&app, 120, 30);
+        assert!(
+            text.contains("Help"),
+            "Help overlay title missing, got:\n{text}"
+        );
+    }
+
+    /// Admin overlay (F key) must render its frame title when toggled.
+    #[test]
+    fn l0_app_admin_overlay_renders_when_show_admin_is_true() {
+        let mut app = App::new(true);
+        app.show_admin = true;
+        let text = render_app_to_text(&app, 120, 30);
+        assert!(
+            text.contains("Admin"),
+            "Admin overlay title missing, got:\n{text}"
+        );
+    }
+}
