@@ -1,13 +1,78 @@
-# Phase Lindsay — Stat Catalog (v0.2, post-review)
+# Phase Lindsay — Stat Catalog (v0.3, R2-applied)
 
-**Status**: v0.2 — 8-role review punch list applied (HART, KEEL, TAPE, FORGE, EDGE, BENCH, WIRE, GLASS).
-24 BLOCKERs resolved inline. Ready to implement. SCOUT + PACE deferred to v0.3 if implementation surfaces concerns.
+**Status**: v0.3 — R2 review applied. R1 + R2 = 10-role coverage (HART, KEEL, TAPE, FORGE, EDGE, BENCH, WIRE, GLASS, SCOUT, PACE).
+R1 raised 29 BLOCKERs resolved in v0.2 changelog. R2 raised 24 NEW BLOCKERs against v0.2 (most were "v0.2 changelog said it but spec body didn't write it"). v0.3 applies the spec-body sweep + the SCOUT/PACE domain additions.
+**Ready to implement L.1.**
 **Date**: 2026-05-02
 **Trophy**: Lindsay (Ted Lindsay Award — players' choice; "complete picture of a player")
 **Predecessor**: design/plans/2026-04-30-phaseHart-normalization.md (master Hart),
 design/plans/2026-05-01-phaseHart-6-playoff-data.md (Hart.6 playoff data)
-**Review summary**: design/plans/2026-05-02-phaseLindsay-review-summary.md
+**Review summaries**: R1 at `design/plans/2026-05-02-phaseLindsay-review-summary.md`,
+R2 at `design/plans/2026-05-02-phaseLindsay-r2-summary.md`
 **Replaces**: nothing — additive
+
+---
+
+## v0.2 → v0.3 changelog
+
+R2 caught 24 new BLOCKERs. Most were spec-body drift (v0.2 changelog claimed fixes the spec body never wrote). Real new design gaps + SCOUT/PACE domain additions also surfaced.
+
+### Methodology + domain (4 — affect catalog surface)
+
+- **L2-B1** [PACE-B1] **`FilterOp::Equals` — type-aware tolerance.** Counts use exact integer; rates / percentages use `1e-6` tolerance keyed off `StatUnit`. Spec §"Filter semantics" updated.
+- **L2-B2** [PACE-B2] **MIN_GP guard on derived per-game stats.** `PointsPerGame`/`GoalsPerGame`/`AssistsPerGame` all return `None` when `gp < MIN_GP` (10). Mirrors `Pace82`.
+- **L2-B3** [SCOUT-B1] **GSAx / xGA family added to Goalie category.** New StatIds: `GoalieXgAgainst`, `GoalieXgAgainstPer60`, `GoalsSavedAboveExpected`, `Gsax60`. Tier-2 (fetched from MoneyPuck or NHL Edge).
+- **L2-B4** [SCOUT-B2] **IxG / xG family added to Possession category.** New StatIds: `IxG`, `IxgPer60`, `OnIceXgFor`, `OnIceXgAgainst`, `XgForPct`. Tier-2.
+
+### Spec body sweep — fix v0.2 changelog drift (8)
+
+- **L2-B5** [GLASS-R2-B1] Spec career-table sketch updated to `[`/`]` (not `←/→` or `<`/`>`). Three contradictory wordings consolidated.
+- **L2-B6** [GLASS-R2-F4] `<space>` collision — section toggle now `Tab`. Spec §TUI integration updated.
+- **L2-B7** [FORGE-R2-F12] `members(c) -> &'static [StatId]`. Spec line 77 fixed.
+- **L2-B8** [FORGE-R2-B2] `#[non_exhaustive]` mention removed from plan §Risks #1.
+- **L2-B9** [KEEL-R2-F1] Spec §integration sections gain a new "HTTP integration" subsection (axum). JSON keys = `StatId::cli_key()` strings.
+- **L2-B10** [WIRE-F1] `ReportKind::supports(season_type) -> bool` added to spec public-types section.
+- **L2-B11** [WIRE-F5] `load_report_with_fallback<T>` scheduled in L.1 deliverables.
+- **L2-B12** [FORGE-R2-B5] DI-25 made precise: legacy fixture checked in pre-L.5; load+re-serialize must equal **frozen golden**, not round-trip self-equality.
+
+### New design gaps pinned (6)
+
+- **L2-B13** [HART-R2-B1] **`extra_reports` LRU cascade.** Eviction of a `(season, season_type)` window from primary LRU MUST cascade-evict every `extra_reports` row whose key matches. Added as DI-12.
+- **L2-B14** [HART-R2-B2] `repository_version` check happens at `StatsRepository::load_window`, not deferred to `repo_swap`. Old binary on new snapshot errors at file-open boundary.
+- **L2-B15** [WIRE-B1] **`extra_reports` is RUNTIME-ONLY**, not persisted to disk. Fetching populates the in-process map; subsequent runs re-fetch. Avoids file-format proliferation; matches "Tier-2 = on-demand" semantics. Documented in L.6.
+- **L2-B16** [WIRE-B5] **Tier-1 typed substructs** load from **separate per-report files** (`timeonice.json`, `goalsForAgainst.json`, etc.) — NOT inline-merged into `stats.json`. The `SeasonStats` substructs are populated AT LOAD TIME by reading these new files. `bundle_schema_version=1` claim now coherent: new files, not new fields.
+- **L2-B17** [KEEL-R2-B3] **HTTP server is Tier-1 typed-only.** Tier-2 reports invisible to `/api/...` until promoted via AI-07. Documented.
+- **L2-B18** [PACE-F2] **`extra_reports` LRU cap at 4096 entries** (~40 MB ceiling at 10 KB/value). Added as DI-26.
+
+### Schema + ownership precision (3)
+
+- **L2-B19** [KEEL-R2-B1] **`StatId::toml_aliases()` + `StatId::cli_aliases()`** are SEPARATE methods. Both live in `icelines-core`. Documented.
+- **L2-B20** [KEEL-R2-B2] **L.5b sweep enumeration**: rendered headers (use `StatId::label()`), CSS class names (use `StatId::cli_key()` with `stat-` prefix → `.stat-pp-goals`), URL anchors (use `StatId::cli_key()`), search-index terms (free-form, allowlist-gated).
+- **L2-B21** [FORGE-R2-B1] **`ExtraReports` map: `BTreeMap` not `HashMap`** for deterministic iteration. Spec updated.
+
+### Test contract precision (3)
+
+- **L2-B22** [BENCH-R2-1] **Fixture-variant catalog** is a NAMED L.2 deliverable: `icelines-core/tests/fixtures/stat_catalog_variants.rs` with 6 variants enumerated.
+- **L2-B23** [BENCH-R2-2] **Capture-stdout golden BEFORE L.3** (not L.5). Two fences: post-L.3 + post-L.5. Sort ordering changes ride L.3, not L.5.
+- **L2-B24** [BENCH-R2-3] **Five legacy schemes named**: `yahoo-standard`, `espn-standard`, `custom-points-only`, `head-to-head-9cat`, `rotisserie-with-goalie`. Files at `icelines-fetch/tests/fixtures/legacy_schemes/`.
+
+### FIXITs applied inline
+
+L2-F1 through L2-F14 — see R2 summary for full list. Highlights:
+- Career table default columns: `GP G A P +/- PIM PPG SHG GWG Shots S% TOI/G` (Hits/Blocks → Two-way preset, not default).
+- `FaceoffWinPct` recategorized to `TwoWay`.
+- `EvenStrengthTimeOnIcePerGame` recategorized to `TimeOnIce`.
+- `available_since(Hits) == 20052006` (not 1997).
+- `PpAssists` raw count added.
+- `is_goalie()` per-row replaces `pos == Goalie` for goalie applicability.
+- Per-60 floor: soft floor `None if TOI < 300s`.
+- Multi-season aggregate `read()`: strict propagation (`None` if any window missing).
+- `StatId::sort_cmp(self, a, b) -> Ordering` signature explicit.
+- `FilterParseError` enum: 7 variants pinned.
+- L.5b grep pattern + allowlist file specified.
+
+The full R2 punch list (24 BLOCKERs / 16 FIXITs / 5 NITs) is at
+`design/plans/2026-05-02-phaseLindsay-r2-summary.md`.
 
 ---
 
