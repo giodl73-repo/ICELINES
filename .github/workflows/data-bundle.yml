@@ -127,15 +127,30 @@ jobs:
             GOALIES_COUNT=$(python3 -c "import json; print(len(json.load(open('${DATA_DIR}/goalie-stats.json'))))" 2>/dev/null || echo 0)
           fi
 
-          # Metadata — extended with goalies_count.
+          # Hart.6.3 — playoff trio ships in every tarball from this commit
+          # forward. Files are present on every bundled season as of
+          # 2026-05-02 (authored via `icelines fetch ... --type playoff`).
+          # The 2025-26 file is `[]` until the Cup is contested; bundling
+          # it anyway keeps the pipeline schema stable.
+          PLAYOFF_BIOS_COUNT=0
+          PLAYOFF_GOALIES_COUNT=0
+          if [ -f "${DATA_DIR}/playoff-bios.json" ]; then
+            cp "${DATA_DIR}/playoff-bios.json"         "/tmp/bundle-${SEASON}/playoff-bios.json"
+            cp "${DATA_DIR}/playoff-stats.json"        "/tmp/bundle-${SEASON}/playoff-stats.json"
+            cp "${DATA_DIR}/playoff-goalie-stats.json" "/tmp/bundle-${SEASON}/playoff-goalie-stats.json"
+            PLAYOFF_BIOS_COUNT=$(python3 -c "import json; print(len(json.load(open('${DATA_DIR}/playoff-bios.json'))))" 2>/dev/null || echo 0)
+            PLAYOFF_GOALIES_COUNT=$(python3 -c "import json; print(len(json.load(open('${DATA_DIR}/playoff-goalie-stats.json'))))" 2>/dev/null || echo 0)
+          fi
+
+          # Metadata — extended with goalies + playoff counts.
           BIOS_COUNT=$(python3 -c "import json; print(len(json.load(open('${DATA_DIR}/bios.json'))))" 2>/dev/null || echo 0)
-          echo "{\"season\":\"${SEASON}\",\"bundled_at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"bios_count\":${BIOS_COUNT},\"goalies_count\":${GOALIES_COUNT}}" \
+          echo "{\"season\":\"${SEASON}\",\"bundled_at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"bios_count\":${BIOS_COUNT},\"goalies_count\":${GOALIES_COUNT},\"playoff_bios_count\":${PLAYOFF_BIOS_COUNT},\"playoff_goalies_count\":${PLAYOFF_GOALIES_COUNT}}" \
             > "/tmp/bundle-${SEASON}/manifest.json"
 
           cd /tmp && tar czf "${BUNDLE}" "bundle-${SEASON}/"
 
           SIZE=$(stat -c%s "${BUNDLE}")
-          echo "Bundle ${SEASON}: ${SIZE} bytes compressed (${BIOS_COUNT} skaters, ${GOALIES_COUNT} goalies)"
+          echo "Bundle ${SEASON}: ${SIZE} bytes compressed (${BIOS_COUNT} skaters, ${GOALIES_COUNT} goalies, ${PLAYOFF_BIOS_COUNT} playoff skaters, ${PLAYOFF_GOALIES_COUNT} playoff goalies)"
 
           mv "${BUNDLE}" "$GITHUB_WORKSPACE/"
 
@@ -168,13 +183,17 @@ jobs:
             | `bios.json` | Skater biographical data (nationality, draft, age) |
             | `stats.json` | Skater season statistics (G, A, GP, PP, SH, GWG, shots, TOI) |
             | `goalie-stats.json` | Goalie season statistics (W, L, SV%, GAA, SO, saves, TOI) — added 2026-04-29 |
-            | `manifest.json` | Bundle metadata, skater count, goalie count |
+            | `playoff-bios.json` | Playoff-roster bios for the season — added 2026-05-02 (Hart.6) |
+            | `playoff-stats.json` | Per-player playoff stats (G, A, GP, PP, SH, GWG, shots) |
+            | `playoff-goalie-stats.json` | Playoff goalie stats (W, L, SV%, GAA, SO) |
+            | `manifest.json` | Bundle metadata: regular + playoff counts |
 
             Data sourced from the NHL public API. Historical seasons are immutable.
 
-            **Note**: bundles created before 2026-04-29 do not include
-            `goalie-stats.json`. Re-install with `icelines data install
-            --season {SEASON} --force` to refresh.
+            **Note**: bundles created before 2026-05-02 do not include
+            the `playoff-*.json` trio. Re-install with `icelines data
+            install --season {SEASON} --force` to pick up the new files.
+            Bundles before 2026-04-29 also lack `goalie-stats.json`.
           files: data-${{ matrix.season }}.tar.gz
           make_latest: false
         env:

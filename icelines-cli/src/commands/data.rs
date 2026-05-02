@@ -325,9 +325,19 @@ fn to_hex(bytes: &[u8]) -> String {
     s
 }
 
-/// Files we hash for a season bundle. Optional files (playoffs.json) are
-/// skipped silently when absent so older bundles still verify cleanly.
-const HASHED_FILES: &[&str] = &["bios.json", "stats.json", "playoffs.json"];
+/// Files we hash for a season bundle. Optional files are skipped
+/// silently when absent so older bundles (pre-Hart.6 / pre-G.0) still
+/// verify cleanly. The playoff trio (Hart.6.3, 2026-05-02) ships in
+/// every bundle authored from that date forward.
+const HASHED_FILES: &[&str] = &[
+    "bios.json",
+    "stats.json",
+    "goalie-stats.json",
+    "playoffs.json",
+    "playoff-bios.json",
+    "playoff-stats.json",
+    "playoff-goalie-stats.json",
+];
 
 /// Manifest written next to the bundle's JSON files at install time.
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
