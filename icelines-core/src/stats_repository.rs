@@ -446,14 +446,6 @@ impl StatsRepository {
 
     // ── Atomic replacement ──────────────────────────────────────────────────
 
-    // ── Hart.4 compatibility shim ───────────────────────────────────────────
-
-    /// Reproduce the legacy `PlayerRepository::load_all()` shape from
-    /// the new normalized model. Returns `Vec<Player>` for the given
-    /// (season, type), filtered to non-goalies (the legacy path
-    /// excluded goalies — they came from `GoalieRepository`).
-    ///
-    /// Hart.4 scaffolding: lets every CLI command swap its load
     /// Swap the entire repository state. Returns the old repo so callers
     /// can drop, inspect, or roll back. All currently-borrowed
     /// `PlayerView`s are invalidated by the swap; render paths must drop
