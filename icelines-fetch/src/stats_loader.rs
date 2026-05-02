@@ -59,6 +59,20 @@ pub enum LoadError {
     RepoVersionUnknown { found: u32, max_known: u32 },
     #[error("repository error: {0}")]
     Repo(#[from] RepoError),
+    /// Hart.6.4 (Tape B2 / Bench B2): a loaded row has a `seasonId` that
+    /// disagrees with the requested season. Indicates either a
+    /// mis-authored bundled file or a bug in the fetch CLI that wrote
+    /// the wrong season into a snapshot. The loader fails-loud here
+    /// rather than silently mixing seasons in `StatsRepository`.
+    #[error(
+        "season-id mismatch: requested {expected}, found {found} in {count} row(s) — \
+         re-run `icelines fetch stats` for season {expected} or fix the bundled file"
+    )]
+    SeasonIdMismatch {
+        expected: u32,
+        found: u32,
+        count: usize,
+    },
     // Hart.4.1 v0.2 (Gap H): LoadError::Bundle and the BundleError enum
     // were dropped. They were dead code (no path produced one — bundle
     // reads went through .map_err(|_| SeasonNotBundled)). Reintroduce
@@ -223,22 +237,17 @@ pub struct LoadOutcome {
 ///   `MissingSource` if not present.
 /// - goalie-stats: bundled-only for v0.13 — flagged if missing.
 ///
-/// Hart.6 captures playoff bundled data; until then this returns
-/// `LoadError::MissingBundle` for `season_type = SeasonType::Playoff`.
+/// Hart.6.4: type-keyed source selection. For `Regular`, reads from the
+/// existing bios/stats/goalies fallback chain. For `Playoff`, reads from
+/// the parallel `load_playoff_*_with_fallback` chain (Hart.6.2).
+/// Empty playoff bios surfaces as `MissingBundle { season_type: Playoff }`
+/// per Forge F4. Cross-season rows surface as `SeasonIdMismatch`.
 pub fn load_into_repo(
     season: Season,
     season_type: SeasonType,
     store: &SnapshotStore,
 ) -> Result<LoadOutcome, LoadError> {
     let season_str = season.as_str();
-
-    // Hart.6 will populate bundled playoff data; until then refuse cleanly.
-    if season_type == SeasonType::Playoff {
-        return Err(LoadError::MissingBundle {
-            season: season_str.clone(),
-            season_type,
-        });
-    }
 
     // Schema-version gate. Missing _meta.json (cold-start) is fine —
     // SnapshotMetaFlags::default() yields version 0, which we treat as
@@ -266,20 +275,81 @@ pub fn load_into_repo(
 
     // ── Tier reads ──────────────────────────────────────────────────────────
 
-    // Bios — fallback chain. Hard-fail if neither snapshot nor bundle has them
-    // (loader contract: identities are required, stats and below can be empty).
-    let bios = bundled::load_bios_with_fallback(&season_str, store).map_err(|_| {
-        LoadError::SeasonNotBundled {
-            season: season_str.clone(),
+    // Bios — fallback chain. Hard-fail if neither snapshot nor bundle has them.
+    // Loader contract: identities are required, stats and below can be empty.
+    // Empty playoff bios surfaces as MissingBundle (carries season_type) per
+    // Forge F4; empty regular bios surfaces as SeasonNotBundled (regular is
+    // assumed always-present for any season the binary knows).
+    let (bios, stats, goalie_stats) = match season_type {
+        SeasonType::Regular => {
+            let bios = bundled::load_bios_with_fallback(&season_str, store).map_err(|_| {
+                LoadError::SeasonNotBundled {
+                    season: season_str.clone(),
+                }
+            })?;
+            if bios.is_empty() {
+                return Err(LoadError::SeasonNotBundled {
+                    season: season_str.clone(),
+                });
+            }
+            let stats = bundled::load_stats_with_fallback(&season_str, store).unwrap_or_default();
+            let goalie_stats = bundled::get_goalie_stats(&season_str).unwrap_or_default();
+            (bios, stats, goalie_stats)
         }
-    })?;
-    if bios.is_empty() {
-        return Err(LoadError::SeasonNotBundled {
-            season: season_str.clone(),
+        SeasonType::Playoff => {
+            let bios =
+                bundled::load_playoff_bios_with_fallback(&season_str, store).unwrap_or_default();
+            if bios.is_empty() {
+                return Err(LoadError::MissingBundle {
+                    season: season_str.clone(),
+                    season_type,
+                });
+            }
+            let stats =
+                bundled::load_playoff_stats_with_fallback(&season_str, store).unwrap_or_default();
+            let goalie_stats =
+                bundled::load_playoff_goalies_with_fallback(&season_str, store).unwrap_or_default();
+            (bios, stats, goalie_stats)
+        }
+    };
+
+    // Tape B2: reject cross-season rows. `season_id` on bios is Option<u32>
+    // (bundled-pre-Hart.6 lacks it — None passes); `season_id` on stats is
+    // also Option<u32>. None means "trust this row" (bundled compat); Some(x)
+    // where x != requested.0 is a mismatch. GoalieStats's season_id is u32
+    // (always present per pre-Hart schema).
+    let expected = season.0;
+    let mismatched_bios: Vec<u32> = bios
+        .iter()
+        .filter_map(|b| b.season_id)
+        .filter(|sid| *sid != expected)
+        .collect();
+    let mismatched_stats: Vec<u32> = stats
+        .iter()
+        .filter_map(|s| s.season_id)
+        .filter(|sid| *sid != expected)
+        .collect();
+    let mismatched_goalies: Vec<u32> = goalie_stats
+        .iter()
+        .map(|g| g.season_id)
+        .filter(|sid| *sid != expected)
+        .collect();
+    let total_mismatched = mismatched_bios.len() + mismatched_stats.len() + mismatched_goalies.len();
+    if total_mismatched > 0 {
+        // Surface the first observed mismatched id so the error message
+        // points at concrete data, not just a count.
+        let found = mismatched_bios
+            .first()
+            .or_else(|| mismatched_stats.first())
+            .or_else(|| mismatched_goalies.first())
+            .copied()
+            .unwrap_or(0);
+        return Err(LoadError::SeasonIdMismatch {
+            expected,
+            found,
+            count: total_mismatched,
         });
     }
-    let stats = bundled::load_stats_with_fallback(&season_str, store).unwrap_or_default();
-    let goalie_stats = bundled::get_goalie_stats(&season_str).unwrap_or_default();
 
     let mut missing: Vec<MissingSource> = Vec::new();
     let mut missing_files: Vec<String> = Vec::new();
@@ -290,8 +360,14 @@ pub fn load_into_repo(
     // string carries the underlying error so a corrupt/permission
     // failure surfaces in diagnostics rather than being collapsed
     // into "not present".
-    let realtime: Vec<SkaterRealtime> =
-        match store.read_tier::<Vec<SkaterRealtime>>(&SnapshotTier::Realtime, "realtime.json") {
+    // Hart.6.4 / D6: Realtime is regular-season only. Playoff realtime
+    // is collected through the live game feed (not a separate dataset),
+    // so the playoff path returns an empty vec WITHOUT pushing to
+    // `missing` — the absence is by design, not a partial fetch.
+    let realtime: Vec<SkaterRealtime> = match season_type {
+        SeasonType::Regular => match store
+            .read_tier::<Vec<SkaterRealtime>>(&SnapshotTier::Realtime, "realtime.json")
+        {
             Ok(rt) if !rt.is_empty() => rt,
             Ok(_empty) => {
                 missing.push(MissingSource::Realtime {
@@ -311,9 +387,17 @@ pub fn load_into_repo(
                 missing_files.push("snapshot:realtime.json".into());
                 Vec::new()
             }
-        };
-    let moneypuck: Vec<MoneyPuckStats> =
-        match store.read_tier::<Vec<MoneyPuckStats>>(&SnapshotTier::MoneyPuck, "moneypuck.json") {
+        },
+        SeasonType::Playoff => Vec::new(),
+    };
+    // Hart.6.4 / D6: MoneyPuck doesn't expose a playoff endpoint
+    // (verified against /skaters.csv format). Playoff path surfaces a
+    // MoneyPuck `MissingSource` with an explanatory reason rather than
+    // attempting a read that always fails.
+    let moneypuck: Vec<MoneyPuckStats> = match season_type {
+        SeasonType::Regular => match store
+            .read_tier::<Vec<MoneyPuckStats>>(&SnapshotTier::MoneyPuck, "moneypuck.json")
+        {
             Ok(m) if !m.is_empty() => m,
             Ok(_empty) => {
                 missing.push(MissingSource::MoneyPuck {
@@ -331,7 +415,16 @@ pub fn load_into_repo(
                 missing_files.push("snapshot:moneypuck.json".into());
                 Vec::new()
             }
-        };
+        },
+        SeasonType::Playoff => {
+            missing.push(MissingSource::MoneyPuck {
+                season: season_str.clone(),
+                reason: "advanced stats not populated for playoff season_type — Hart.6 v1 limitation"
+                    .into(),
+            });
+            Vec::new()
+        }
+    };
     let contracts: Vec<LegacyContract> =
         match store.read_tier::<Vec<LegacyContract>>(&SnapshotTier::Contracts, "contracts.json") {
             Ok(c) if !c.is_empty() => c,

@@ -1108,17 +1108,17 @@ mod app_snapshot_tests {
     // sequentially so they don't race on the env. Each test gets its
     // own tempdir.
 
-    use std::sync::Mutex;
-    static ENV_LOCK: Mutex<()> = Mutex::new(());
-
     /// Run `f` with `USERPROFILE` and `HOME` pointed at a fresh tempdir.
-    /// Restores the previous env on drop. Serialized via ENV_LOCK so two
-    /// tests don't both rewrite the env at once.
+    /// Restores the previous env on drop. Serialized via the shared
+    /// process-wide `crate::test_utils::home_env_lock()` so SQLite
+    /// tests here don't race with the headshot / scheme tests in
+    /// other modules — they all read $HOME and would otherwise
+    /// corrupt each other under cargo's parallel runner.
     fn with_temp_home<F, R>(f: F) -> R
     where
         F: FnOnce(&std::path::Path) -> R,
     {
-        let _guard = ENV_LOCK.lock().unwrap_or_else(|p| p.into_inner());
+        let _guard = crate::test_utils::home_env_lock();
         let dir = tempfile::TempDir::new().unwrap();
         let prev_userprofile = std::env::var_os("USERPROFILE");
         let prev_home = std::env::var_os("HOME");

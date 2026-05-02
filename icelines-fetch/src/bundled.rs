@@ -616,15 +616,6 @@ mod tests {
         }
     }
 
-    /// Unknown / unbundled seasons return `None` from the stub —
-    /// distinct contract from "bundled with zero rows".
-    #[test]
-    fn l0_hart6_2_get_playoff_bios_returns_none_for_unbundled_season() {
-        assert!(get_playoff_bios("19961997").is_none());
-        assert!(get_playoff_stats("19961997").is_none());
-        assert!(get_playoff_goalie_stats("19961997").is_none());
-    }
-
     /// `load_playoff_bios_with_fallback` falls through the chain:
     /// chunked → tier file → embedded → installed. In a tempdir test
     /// env nothing is on disk, so the embedded stub fires and returns
@@ -638,17 +629,19 @@ mod tests {
         assert!(bios.is_empty(), "Hart.6.2 stub returns empty");
     }
 
-    /// Unbundled season hits the bottom of the chain and surfaces the
-    /// PlayerNotFound error with the run-this-command hint.
+    /// `get_playoff_bios` returns `None` for any season outside the
+    /// bundled set. Asserts ONLY on the in-binary stub — does not call
+    /// `load_playoff_*_with_fallback` because that chain reads
+    /// `$HOME/.icelines/seasons/<id>/...` for the installed-bundle
+    /// step, which races with parallel tests that mutate HOME (the
+    /// `with_temp_home` SQLite tests in icelines-cli).
     #[test]
-    fn l0_hart6_2_load_playoff_bios_unbundled_surfaces_error() {
-        let dir = tempfile::TempDir::new().unwrap();
-        let store = crate::snapshot::SnapshotStore::new(dir.path());
-        let err = load_playoff_bios_with_fallback("19961997", &store)
-            .expect_err("unbundled must fail");
-        assert!(
-            format!("{err}").contains("playoff"),
-            "error must mention playoff context, got: {err}"
-        );
+    fn l0_hart6_2_get_playoff_data_returns_none_for_unbundled() {
+        // 19961997 is not in BUNDLED_SEASONS — returns None.
+        assert!(get_playoff_bios("19961997").is_none());
+        assert!(get_playoff_stats("19961997").is_none());
+        assert!(get_playoff_goalie_stats("19961997").is_none());
+        // 18800000 — clearly fictitious, also None.
+        assert!(get_playoff_bios("18800000").is_none());
     }
 }

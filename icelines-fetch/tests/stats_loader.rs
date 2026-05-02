@@ -165,17 +165,261 @@ fn l1_loadoutcome_goalie_stats_present_for_bundled_seasons() {
     }
 }
 
+// ── Hart.6.4 — playoff dispatch (replaces the old early-bail fence) ─────────
+
+/// Hart.6.4 / Bench B1 — bundled-but-empty playoff data surfaces as
+/// MissingBundle (NOT SeasonNotBundled — that variant is regular-only
+/// per Forge F4). After Hart.6.3 fills the bundles this test will need
+/// to be re-pointed at a season with no bundled data.
 #[test]
-fn l1_load_into_repo_playoff_returns_missing_bundle() {
-    // Hart.6 captures playoff bundled data; until then the loader
-    // refuses cleanly.
+fn l1_load_into_repo_playoff_returns_missing_bundle_for_empty_bundle() {
+    use icelines_fetch::stats_loader::LoadError;
     let (_dir, store) = cold_store();
-    let err = load_into_repo(Season(20242025), SeasonType::Playoff, &store).expect_err("must fail");
-    let msg = err.to_string();
+    let err = load_into_repo(Season(20242025), SeasonType::Playoff, &store)
+        .expect_err("Hart.6.2 stubs are empty — must surface as MissingBundle");
     assert!(
-        msg.contains("Playoff") || msg.contains("playoff"),
-        "error message must mention playoff: {msg}"
+        matches!(
+            err,
+            LoadError::MissingBundle {
+                season_type: SeasonType::Playoff,
+                ..
+            }
+        ),
+        "must produce MissingBundle{{season_type: Playoff}}, got: {err:?}"
     );
+}
+
+/// Hart.6.4 / Bench B1 — unbundled season returns MissingBundle on the
+/// playoff path (the chain hits the bottom — None from the embedded
+/// stub, None from installed — which load_into_repo collapses to an
+/// empty bios → MissingBundle).
+#[test]
+fn l1_load_into_repo_playoff_returns_missing_bundle_for_unbundled_season() {
+    use icelines_fetch::stats_loader::LoadError;
+    let (_dir, store) = cold_store();
+    // 19951996 is not in BUNDLED_SEASONS.
+    let err = load_into_repo(Season(19951996), SeasonType::Playoff, &store)
+        .expect_err("unbundled season must fail on playoff path");
+    assert!(
+        matches!(
+            err,
+            LoadError::MissingBundle {
+                season_type: SeasonType::Playoff,
+                ..
+            }
+        ),
+        "must produce MissingBundle for unbundled, got: {err:?}"
+    );
+}
+
+/// Hart.6.4 — playoff dispatch succeeds end-to-end when actual playoff
+/// data exists. Writes a `playoff-bios.json` + `playoff-stats.json`
+/// directly to the snapshot tier dir (the path Hart.6.5's `fetch
+/// stats --type playoff` will populate), then asserts the loader picks
+/// it up via the playoff fallback chain. Proves the dispatch routes
+/// correctly without needing Hart.6.3's bundled data.
+#[test]
+fn l1_load_into_repo_playoff_succeeds_when_tier_file_present() {
+    use icelines_fetch::schema::{SkaterBio, SkaterStats};
+    use icelines_fetch::snapshot::SnapshotTier;
+
+    let (_dir, store) = cold_store();
+    let snap = "20242025-playoff-test";
+    store
+        .create(snap, "20242025", SnapshotTier::Stats, None, "2026-05-01")
+        .unwrap();
+
+    let bio = SkaterBio {
+        player_id: 8478402,
+        skater_full_name: "Connor McDavid".into(),
+        last_name: "McDavid".into(),
+        games_played: 12,
+        goals: 8,
+        assists: 14,
+        points: 22,
+        current_team_abbrev: Some("EDM".into()),
+        position_code: "C".into(),
+        birth_date: Some("1997-01-13".into()),
+        birth_country: Some("CAN".into()),
+        nationality_code: Some("CAN".into()),
+        shoots_catches: Some("L".into()),
+        draft_year: Some(2015),
+        draft_round: Some(1),
+        draft_overall: Some(1),
+        birth_city: Some("Edmonton".into()),
+        birth_state_province_code: Some("AB".into()),
+        height: Some(73),
+        weight: Some(193),
+        first_season_for_game_type: Some(20152016),
+        is_in_hall_of_fame_yn: Some("N".into()),
+        season_id: Some(20242025),
+    };
+    let stats = SkaterStats {
+        player_id: 8478402,
+        games_played: 12,
+        goals: 8,
+        assists: 14,
+        points: 22,
+        points_per_game: 1.83,
+        pp_goals: 3,
+        pp_points: 9,
+        sh_goals: 0,
+        sh_points: 0,
+        game_winning_goals: 1,
+        ot_goals: 0,
+        shots: 45,
+        shooting_pctg: Some(0.178),
+        plus_minus: 4,
+        time_on_ice_per_game: Some(1320.0),
+        faceoff_win_pct: Some(0.52),
+        season_id: Some(20242025),
+    };
+    store
+        .write_file(
+            snap,
+            &SnapshotTier::Stats,
+            "playoff-bios.json",
+            &serde_json::to_vec(&vec![bio]).unwrap(),
+        )
+        .unwrap();
+    store
+        .write_file(
+            snap,
+            &SnapshotTier::Stats,
+            "playoff-stats.json",
+            &serde_json::to_vec(&vec![stats]).unwrap(),
+        )
+        .unwrap();
+    store.seal(snap).unwrap();
+
+    let outcome = load_into_repo(Season(20242025), SeasonType::Playoff, &store)
+        .expect("playoff load must succeed when tier file exists");
+    let view = outcome
+        .repo
+        .view(PlayerId(8478402), Season(20242025), SeasonType::Playoff)
+        .expect("McDavid must appear under playoff window");
+    assert_eq!(view.gp(), 12);
+    assert_eq!(view.full_name(), "Connor McDavid");
+}
+
+/// Hart.6.4 / Bench B2 — cross-season rows in a bundled file fail-loud
+/// rather than silently mixing into the repo. Writes a playoff-stats
+/// file whose rows declare the WRONG seasonId; loader returns
+/// SeasonIdMismatch.
+#[test]
+fn l1_playoff_load_rejects_rows_with_wrong_seasonid() {
+    use icelines_fetch::schema::{SkaterBio, SkaterStats};
+    use icelines_fetch::snapshot::SnapshotTier;
+    use icelines_fetch::stats_loader::LoadError;
+
+    let (_dir, store) = cold_store();
+    let snap = "20242025-mismatch";
+    store
+        .create(snap, "20242025", SnapshotTier::Stats, None, "2026-05-01")
+        .unwrap();
+
+    // The bio is correct (season_id = 20242025).
+    let bio = SkaterBio {
+        player_id: 8478402,
+        skater_full_name: "Connor McDavid".into(),
+        last_name: "McDavid".into(),
+        games_played: 12,
+        goals: 8,
+        assists: 14,
+        points: 22,
+        current_team_abbrev: Some("EDM".into()),
+        position_code: "C".into(),
+        birth_date: None,
+        birth_country: None,
+        nationality_code: None,
+        shoots_catches: None,
+        draft_year: None,
+        draft_round: None,
+        draft_overall: None,
+        birth_city: None,
+        birth_state_province_code: None,
+        height: None,
+        weight: None,
+        first_season_for_game_type: None,
+        is_in_hall_of_fame_yn: None,
+        season_id: Some(20242025),
+    };
+    // The stats row claims seasonId = 20232024 — wrong! User asked for 20242025.
+    let bad_stats = SkaterStats {
+        player_id: 8478402,
+        games_played: 12,
+        goals: 8,
+        assists: 14,
+        points: 22,
+        points_per_game: 1.83,
+        pp_goals: 0,
+        pp_points: 0,
+        sh_goals: 0,
+        sh_points: 0,
+        game_winning_goals: 0,
+        ot_goals: 0,
+        shots: 45,
+        shooting_pctg: None,
+        plus_minus: 0,
+        time_on_ice_per_game: None,
+        faceoff_win_pct: None,
+        season_id: Some(20232024), // ← cross-season row
+    };
+    store
+        .write_file(
+            snap,
+            &SnapshotTier::Stats,
+            "playoff-bios.json",
+            &serde_json::to_vec(&vec![bio]).unwrap(),
+        )
+        .unwrap();
+    store
+        .write_file(
+            snap,
+            &SnapshotTier::Stats,
+            "playoff-stats.json",
+            &serde_json::to_vec(&vec![bad_stats]).unwrap(),
+        )
+        .unwrap();
+    store.seal(snap).unwrap();
+
+    let err = load_into_repo(Season(20242025), SeasonType::Playoff, &store)
+        .expect_err("cross-season row must be rejected");
+    assert!(
+        matches!(
+            err,
+            LoadError::SeasonIdMismatch {
+                expected: 20242025,
+                found: 20232024,
+                count: 1,
+            }
+        ),
+        "must produce SeasonIdMismatch with expected/found/count, got: {err:?}"
+    );
+}
+
+/// Hart.6.4 / Bench F3 — a cold-start playoff load (no snapshot, no
+/// regular-season bios pre-loaded) reads from `load_playoff_bios_with_fallback`
+/// independently. Catches a regression where the playoff path
+/// accidentally falls back to regular bios (which would produce a
+/// confusing mix of regular identities + playoff stats).
+#[test]
+fn l1_playoff_only_cold_start_uses_playoff_bios() {
+    use icelines_fetch::stats_loader::LoadError;
+    let (_dir, store) = cold_store();
+    // No snapshot writes. Bundled regular bios for 20242025 are present
+    // (bundled in the binary), bundled playoff bios are EMPTY (Hart.6.2
+    // stub). If the dispatch incorrectly fell through to regular, the
+    // load would succeed; correct behavior produces MissingBundle.
+    let err = load_into_repo(Season(20242025), SeasonType::Playoff, &store)
+        .expect_err("playoff dispatch must NOT fall through to regular bios");
+    assert!(matches!(
+        err,
+        LoadError::MissingBundle {
+            season_type: SeasonType::Playoff,
+            ..
+        }
+    ));
 }
 
 #[test]
