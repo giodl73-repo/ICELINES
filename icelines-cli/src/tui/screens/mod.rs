@@ -151,12 +151,27 @@ fn render_nav(f: &mut Frame, app: &App, area: Rect) {
         ));
     }
 
+    // Hart.6.9.B — playoff marker. Reverse-video so it pops; only
+    // shown when active_type is Playoff (Regular is the default —
+    // no marker keeps the bar quiet for the common case).
+    if app.active_type == icelines_core::season_stats::SeasonType::Playoff {
+        spans.push(Span::styled(
+            "  [PLAYOFF] ",
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        ));
+    }
+
     let hint = if app.show_admin {
         "  Esc:close admin"
     } else if app.show_season_picker {
         "  Esc:cancel picker"
+    } else if app.active_type == icelines_core::season_stats::SeasonType::Playoff {
+        "  Shift+P:regular  y:season  F:admin  ?:help  q:quit"
     } else {
-        "  g:groups  y:season  F:admin  Tab:cycle  ?:help  q:quit"
+        "  g:groups  y:season  Shift+P:playoff  F:admin  ?:help  q:quit"
     };
     spans.push(Span::styled(hint, Style::default().fg(Color::DarkGray)));
     f.render_widget(Paragraph::new(Line::from(spans)), area);
@@ -764,6 +779,130 @@ mod app_snapshot_tests {
 
         let should_quit = app.handle(Action::Quit);
         assert!(should_quit, "Quit action must return true to break run_loop");
+    }
+
+    // ── Hart.6.9.B — Shift+P playoff toggle ─────────────────────────────────
+
+    /// Pressing Shift+P (Char('P')) on a season with bundled playoff
+    /// data flips active_type Regular → Playoff and reloads the repo.
+    /// 2024-25 has real bundled playoff data so the flip succeeds.
+    #[test]
+    fn l1_userflow_shift_p_toggles_to_playoff_for_bundled_season() {
+        use icelines_core::season_stats::SeasonType;
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        // Force active_season to 2024-25 (has bundled playoff data).
+        app.active_season = "20242025".to_owned();
+        app.active_season_typed = icelines_core::model::Season(20242025);
+        app.boot_load_with_store(&store);
+        assert_eq!(app.active_type, SeasonType::Regular);
+
+        app.handle(Action::Char('P'));
+        assert_eq!(
+            app.active_type,
+            SeasonType::Playoff,
+            "Shift+P must flip active_type to Playoff for a bundled season"
+        );
+        // Repo must repopulate with playoff views (332 in 2024-25).
+        assert!(
+            !app.views().is_empty(),
+            "Playoff repo must populate; status={}",
+            app.status
+        );
+    }
+
+    /// Pressing Shift+P twice returns to Regular.
+    #[test]
+    fn l1_userflow_shift_p_twice_returns_to_regular() {
+        use icelines_core::season_stats::SeasonType;
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.active_season = "20242025".to_owned();
+        app.active_season_typed = icelines_core::model::Season(20242025);
+        app.boot_load_with_store(&store);
+
+        app.handle(Action::Char('P')); // → Playoff
+        app.handle(Action::Char('P')); // → Regular
+        assert_eq!(app.active_type, SeasonType::Regular);
+    }
+
+    /// On 2025-26 (Cup not contested → empty playoff bundle), Shift+P
+    /// must NOT flip active_type — the load fails and the user stays
+    /// in Regular with a clear status banner. Catches a regression
+    /// where the type would silently flip but data wouldn't load,
+    /// leaving the user staring at empty screens.
+    #[test]
+    fn l1_userflow_shift_p_keeps_regular_when_playoff_bundle_empty() {
+        use icelines_core::season_stats::SeasonType;
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        // 2025-26 = current season, ships as [] for playoff.
+        app.boot_load_with_store(&store);
+        assert_eq!(app.active_type, SeasonType::Regular);
+
+        app.handle(Action::Char('P'));
+        assert_eq!(
+            app.active_type,
+            SeasonType::Regular,
+            "Shift+P must NOT flip when playoff data is unavailable"
+        );
+        assert!(
+            app.status.to_lowercase().contains("playoff")
+                || app.status.contains("Cup"),
+            "status must explain why the toggle didn't take, got: {}",
+            app.status
+        );
+    }
+
+    /// Lowercase `p` (Queries↔Projections flip) must NOT trigger the
+    /// playoff toggle. Capital P and lowercase p are distinct Char
+    /// values — locks the contract.
+    #[test]
+    fn l1_userflow_lowercase_p_does_not_trigger_playoff_toggle() {
+        use icelines_core::season_stats::SeasonType;
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.active_season = "20242025".to_owned();
+        app.active_season_typed = icelines_core::model::Season(20242025);
+        app.boot_load_with_store(&store);
+
+        // Navigate to Queries first (lowercase p only fires from there).
+        app.handle(Action::GoToTab(2)); // Queries
+        app.handle(Action::Char('p'));
+        assert_eq!(
+            app.active_type,
+            SeasonType::Regular,
+            "lowercase p must NOT flip active_type"
+        );
+        // Side effect of the existing flip: should now be on Projections.
+        assert_eq!(app.screen, crate::tui::app::Screen::Projections);
+    }
+
+    /// `[PLAYOFF]` marker appears in the nav bar when active_type is
+    /// Playoff, hidden otherwise. Catches a regression where the user
+    /// flipped to playoff but the UI didn't reflect it.
+    #[test]
+    fn l1_userflow_playoff_marker_shows_in_nav_bar() {
+        use icelines_core::season_stats::SeasonType;
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        // Regular (default): no marker.
+        let regular = render_app_to_text(&app, 140, 30);
+        assert!(
+            !regular.contains("[PLAYOFF]"),
+            "Regular must not show [PLAYOFF] marker"
+        );
+
+        // Force-flip via direct field mutation (avoids data dependency
+        // on this test — toggle path is covered above).
+        app.active_type = SeasonType::Playoff;
+        let playoff = render_app_to_text(&app, 140, 30);
+        assert!(
+            playoff.contains("[PLAYOFF]"),
+            "Playoff active_type must show [PLAYOFF] marker, got:\n{playoff}"
+        );
     }
 
     // ── Schedule search input flow ──────────────────────────────────────────

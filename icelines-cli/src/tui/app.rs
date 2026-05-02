@@ -759,6 +759,12 @@ impl App {
                     };
                 } else if c == 'F' {
                     self.show_admin = !self.show_admin;
+                } else if c == 'P' {
+                    // Hart.6.9.B — Shift+P toggles between Regular and
+                    // Playoff for the active season. Lowercase `p` is
+                    // reserved for the Queries↔Projections flip; the
+                    // capital is the global playoff toggle.
+                    self.toggle_season_type();
                 } else if c == 'y' {
                     self.show_season_picker = true;
                     // Start picker on current active season
@@ -1411,12 +1417,26 @@ impl App {
     }
 
     fn reload_for_season(&mut self, season_id: &str) {
+        // Hart.6.9.B — preserves the current `active_type` so a user
+        // who's switched to Playoff and then picks a different season
+        // stays in Playoff mode. Use `reload_for_season_typed` if you
+        // want to force a specific type.
+        self.reload_for_season_typed(season_id, self.active_type);
+    }
+
+    /// Hart.6.9.B — explicit season-type variant. Used by
+    /// `toggle_season_type` to flip Regular ↔ Playoff in-place,
+    /// and by future callers that need a typed reload.
+    fn reload_for_season_typed(
+        &mut self,
+        season_id: &str,
+        ty: icelines_core::season_stats::SeasonType,
+    ) {
         use icelines_fetch::snapshot::SnapshotStore;
         use icelines_fetch::stats_loader::{format_missing_sources, load_into_repo};
 
         let season_u32: u32 = season_id.parse().unwrap_or(icelines_core::CURRENT_SEASON);
         let season = icelines_core::model::Season(season_u32);
-        let ty = icelines_core::season_stats::SeasonType::Regular;
 
         let outcome = match crate::config::Config::load() {
             Ok(cfg) => {
@@ -1439,6 +1459,19 @@ impl App {
             if !outcome.missing.is_empty() {
                 self.status = format_missing_sources(&outcome.missing);
             }
+        } else {
+            // Load failed (likely MissingBundle for playoff on an unbundled
+            // season). Surface clean status; don't swap the repo.
+            self.status = match ty {
+                icelines_core::season_stats::SeasonType::Regular => {
+                    format!("Failed to load season {season_id}.")
+                }
+                icelines_core::season_stats::SeasonType::Playoff => format!(
+                    "No playoff data for {season_id} (Cup not contested or not bundled). \
+                     Press Shift+P to return to Regular.",
+                ),
+            };
+            return;
         }
 
         self.active_season = season_id.to_owned();
@@ -1459,6 +1492,39 @@ impl App {
                 "[{}] — historical season. Live features unavailable.",
                 label
             );
+        }
+    }
+
+    /// Hart.6.9.B — flip the active season-type and reload. Triggered
+    /// by Shift+P (capital P) — global keybind that works on any
+    /// screen. Lowercase `p` is reserved for the Queries↔Projections
+    /// flip; capital P is the playoff toggle.
+    ///
+    /// On a season with no playoff data bundled (e.g. 2025-26 until
+    /// the Cup is contested), the load fails cleanly inside
+    /// `reload_for_season_typed` — `active_type` does NOT flip in that
+    /// case, and the status bar surfaces the missing-bundle reason.
+    pub fn toggle_season_type(&mut self) {
+        use icelines_core::season_stats::SeasonType;
+        let prev = self.active_type;
+        let next = match self.active_type {
+            SeasonType::Regular => SeasonType::Playoff,
+            SeasonType::Playoff => SeasonType::Regular,
+        };
+        let season_id = self.active_season.clone();
+        self.reload_for_season_typed(&season_id, next);
+        // If the load succeeded, status was set by the typed reload.
+        // If it failed, active_type was NOT flipped — surface that
+        // explicitly so the user isn't confused by "I pressed Shift+P
+        // but nothing changed."
+        if self.active_type == prev {
+            // Status was set inside reload_for_season_typed — leave it.
+        } else {
+            // Successful flip — overwrite with a concise marker.
+            self.status = match next {
+                SeasonType::Regular => "Switched to Regular season.".to_owned(),
+                SeasonType::Playoff => "Switched to Playoff. Shift+P to return.".to_owned(),
+            };
         }
     }
 
