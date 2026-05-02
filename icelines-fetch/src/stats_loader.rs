@@ -697,6 +697,13 @@ fn build_identity(pid: PlayerId, bio: &SkaterBio) -> PlayerIdentity {
 }
 
 fn build_goalie_identity(g: &GoalieStats) -> PlayerIdentity {
+    // **Sparse path** — used only when `/goalie/bios` data isn't loaded.
+    // Pre-Lindsay this was the only goalie-identity source. Phase Lindsay
+    // L.2.6 introduces `merge_goalie_bios_into_identity` for the full-data
+    // path that pulls birth/draft/height/weight from the dedicated
+    // `goalie_bios` substruct on `SeasonStats`. When both are available,
+    // the adapter overwrites the sparse fields below with goalie/bios
+    // data — see `merge_goalie_bios_into_identity`.
     PlayerIdentity {
         id: PlayerId(g.player_id),
         full_name: g.goalie_full_name.clone(),
@@ -708,6 +715,79 @@ fn build_goalie_identity(g: &GoalieStats) -> PlayerIdentity {
         bio: PlayerBio {
             shoots_catches: g.shoots_catches.clone(),
             ..Default::default()
+        },
+    }
+}
+
+/// Phase Lindsay L.2.6 — goalie bios merge adapter.
+///
+/// Pre-Lindsay the goalie identity path used `skater/bios` as a fallback
+/// — wrong shape (no goalie position context, missing
+/// `firstSeasonForGameType` in goalie semantics, `shoots_catches` field
+/// reused with skater meaning). Lindsay introduces the dedicated
+/// `goalie/bios` endpoint and a typed `GoalieBios` substruct on
+/// `SeasonStats`. This adapter merges that substruct INTO an existing
+/// (likely-sparse) `PlayerIdentity`, producing a full bio.
+///
+/// **Field-mapping table** (per L-B4 spec):
+///
+/// | source on `GoalieBios` | target on `PlayerIdentity.bio` | notes |
+/// |---|---|---|
+/// | `birth_date` | `birth_date` | passthrough |
+/// | `birth_country_code` | `birth_country` | rename |
+/// | `birth_city` | `birth_city` | passthrough |
+/// | `nationality_code` | `nationality_code` | passthrough |
+/// | `height_in_inches` | `height_in_inches` | passthrough |
+/// | `weight_in_pounds` | `weight_lbs` | rename to match Hart `PlayerBio` |
+/// | `shoots_catches` | `shoots_catches` | passthrough; "L"/"R" are goalie catches, NOT skater shoots |
+/// | `draft_year`/`round`/`overall` | parse `Option<String>` → `Option<u16>/u8/u16` | API emits strings (pre-1979 non-numeric); parser drops non-numeric values |
+/// | `first_season_for_game_type` | (no Hart `PlayerBio` field today) | dropped — future field if needed |
+///
+/// **Read-only on the input** — takes `&GoalieBios`, returns a new
+/// `PlayerIdentity` with bio merged. Existing identity fields (`id`,
+/// `full_name`) are preserved from the input identity.
+pub fn merge_goalie_bios_into_identity(
+    base: &PlayerIdentity,
+    bios: &icelines_core::season_stats::GoalieBios,
+) -> PlayerIdentity {
+    PlayerIdentity {
+        id: base.id,
+        full_name: base.full_name.clone(),
+        name_normalized: base.name_normalized.clone(),
+        headshot_canonical_url: base.headshot_canonical_url.clone(),
+        bio: PlayerBio {
+            // Bios fields — overwrite from the goalie/bios source when
+            // present, fall back to base when absent.
+            birth_date: bios.birth_date.clone()
+                .or_else(|| base.bio.birth_date.clone()),
+            birth_country: bios.birth_country_code.clone()
+                .or_else(|| base.bio.birth_country.clone()),
+            birth_city: bios.birth_city.clone()
+                .or_else(|| base.bio.birth_city.clone()),
+            nationality_code: bios.nationality_code.clone()
+                .or_else(|| base.bio.nationality_code.clone()),
+            height_in_inches: bios.height_in_inches
+                .or(base.bio.height_in_inches),
+            weight_lbs: bios.weight_in_pounds
+                .or(base.bio.weight_lbs),
+            shoots_catches: bios.shoots_catches.clone()
+                .or_else(|| base.bio.shoots_catches.clone()),
+            // Draft fields — API emits as String; parse to numeric.
+            // Non-numeric values (pre-1979 "Undrafted") drop to None.
+            draft_year: bios.draft_year.as_ref()
+                .and_then(|s| s.parse::<u16>().ok())
+                .or(base.bio.draft_year),
+            draft_round: bios.draft_round.as_ref()
+                .and_then(|s| s.parse::<u8>().ok())
+                .or(base.bio.draft_round),
+            draft_overall: bios.draft_overall.as_ref()
+                .and_then(|s| s.parse::<u16>().ok())
+                .or(base.bio.draft_overall),
+            // Other Hart `PlayerBio` fields — preserve from base.
+            // (`birth_state_province`, `rookie_season` aren't on
+            // `GoalieBios`; goalie `first_season_for_game_type` isn't a
+            // Hart bio field today.)
+            ..base.bio.clone()
         },
     }
 }
@@ -1053,5 +1133,105 @@ mod tests {
         assert_eq!(goalie.wins, 5);
         assert_eq!(goalie.losses, 5);
         assert!(stats.is_goalie());
+    }
+
+    // ─── Phase Lindsay L.2.6 — goalie bios merge adapter ──────────────────
+
+    #[test]
+    fn l0_lindsay_merge_goalie_bios_full_data_path() {
+        use icelines_core::season_stats::GoalieBios;
+        let base = PlayerIdentity {
+            id: PlayerId(8476434),
+            full_name: "Bob Goalie".into(),
+            name_normalized: "bob goalie".into(),
+            headshot_canonical_url: Some("https://example.test/8476434.png".into()),
+            bio: PlayerBio {
+                shoots_catches: Some("L".into()),
+                ..Default::default()
+            },
+        };
+        let bios = GoalieBios {
+            birth_city: Some("Helsinki".into()),
+            birth_country_code: Some("FIN".into()),
+            birth_date: Some("1989-09-04".into()),
+            current_team_abbrev: Some("FLA".into()),
+            draft_overall: Some("11".into()),
+            draft_round: Some("1".into()),
+            draft_year: Some("2007".into()),
+            first_season_for_game_type: Some(20132014),
+            height_in_centimeters: Some(187),
+            height_in_inches: Some(74),
+            nationality_code: Some("FIN".into()),
+            shoots_catches: Some("L".into()),
+            weight_in_pounds: Some(196),
+        };
+
+        let merged = merge_goalie_bios_into_identity(&base, &bios);
+
+        // Identity preserved.
+        assert_eq!(merged.id, PlayerId(8476434));
+        assert_eq!(merged.full_name, "Bob Goalie");
+        // Bios merged in.
+        assert_eq!(merged.bio.birth_city.as_deref(), Some("Helsinki"));
+        assert_eq!(merged.bio.birth_country.as_deref(), Some("FIN"));
+        assert_eq!(merged.bio.birth_date.as_deref(), Some("1989-09-04"));
+        assert_eq!(merged.bio.nationality_code.as_deref(), Some("FIN"));
+        assert_eq!(merged.bio.height_in_inches, Some(74));
+        assert_eq!(merged.bio.weight_lbs, Some(196));
+        assert_eq!(merged.bio.shoots_catches.as_deref(), Some("L"));
+        assert_eq!(merged.bio.draft_year, Some(2007));
+        assert_eq!(merged.bio.draft_round, Some(1));
+        assert_eq!(merged.bio.draft_overall, Some(11));
+    }
+
+    #[test]
+    fn l0_lindsay_merge_goalie_bios_pre_1979_undrafted_drops_non_numeric() {
+        use icelines_core::season_stats::GoalieBios;
+        let base = PlayerIdentity {
+            id: PlayerId(8400000),
+            full_name: "Old Goalie".into(),
+            name_normalized: "old goalie".into(),
+            headshot_canonical_url: None,
+            bio: PlayerBio::default(),
+        };
+        // Pre-1979: API emits "Undrafted" for draft fields.
+        let bios = GoalieBios {
+            draft_overall: Some("Undrafted".into()),
+            draft_round: Some("Undrafted".into()),
+            draft_year: Some("Undrafted".into()),
+            ..Default::default()
+        };
+        let merged = merge_goalie_bios_into_identity(&base, &bios);
+        assert_eq!(merged.bio.draft_year, None,
+            "non-numeric draft year drops to None, not panic");
+        assert_eq!(merged.bio.draft_round, None);
+        assert_eq!(merged.bio.draft_overall, None);
+    }
+
+    #[test]
+    fn l0_lindsay_merge_goalie_bios_falls_back_to_base_when_field_absent() {
+        use icelines_core::season_stats::GoalieBios;
+        let base = PlayerIdentity {
+            id: PlayerId(8400000),
+            full_name: "Base Goalie".into(),
+            name_normalized: "base goalie".into(),
+            headshot_canonical_url: None,
+            bio: PlayerBio {
+                birth_date: Some("1990-01-01".into()),
+                weight_lbs: Some(180),
+                ..Default::default()
+            },
+        };
+        // GoalieBios mostly empty.
+        let bios = GoalieBios {
+            shoots_catches: Some("R".into()),
+            ..Default::default()
+        };
+        let merged = merge_goalie_bios_into_identity(&base, &bios);
+        // Base values preserved when GoalieBios is None for that field.
+        assert_eq!(merged.bio.birth_date.as_deref(), Some("1990-01-01"));
+        assert_eq!(merged.bio.weight_lbs, Some(180));
+        // GoalieBios overrides for what it does have.
+        assert_eq!(merged.bio.shoots_catches.as_deref(), Some("R"));
     }
 }

@@ -44,6 +44,15 @@ pub struct PlayerFilter {
     pub shots_pg_min: Option<f32>,
     /// Birth province/state code filter (e.g. "ON", "AB", "QC")
     pub birth_provinces: Option<Vec<String>>,
+    /// Phase Lindsay L.2.4 — generic stat filters. Each entry is a
+    /// `(StatId, FilterOp, value)` triple constructed via `parse_filter`
+    /// or `StatFilter::new` (the finite-value gate). Multiple filters
+    /// on the same StatId compose per `normalize_stat_filters`:
+    ///   - Min+Min → tightest (max) lower bound
+    ///   - Max+Max → tightest (min) upper bound
+    ///   - Min+Max → closed range
+    ///   - Equals+Equals on same stat → rejected at parse time as `MultipleOps`
+    pub stat_filters: Vec<crate::stats_catalog::StatFilter>,
 }
 
 impl PlayerFilter {
@@ -274,7 +283,110 @@ impl PlayerFilter {
             }
         }
 
+        // ── Phase Lindsay L.2.4 — generic stat filters ──────────────────
+        if !self.matches_stat_filters(v) {
+            return false;
+        }
+
         true
+    }
+
+    /// Match every `stat_filters` entry against the view (DI-08).
+    /// Filters whose `StatId::applies_to(position, is_goalie)` is false
+    /// are silently dropped at row-level — same CLI grammar can target
+    /// `--filter "save-pct>=.91"` against a mixed pool without errors
+    /// for skater rows. Missing data (read returns None) → row fails
+    /// the filter (intentional per spec — `hits-min 100` shouldn't
+    /// surface pre-2005 rows where hits is unknown).
+    pub fn matches_stat_filters(
+        &self,
+        v: &crate::stats_repository::PlayerView<'_>,
+    ) -> bool {
+        use crate::stats_catalog::{FilterOp, StatUnit};
+        for f in &self.stat_filters {
+            // DI-08 — skip non-applicable filters silently.
+            if !f.stat.applies_to(v.position(), v.is_goalie()) {
+                continue;
+            }
+            let actual = match f.stat.read(v) {
+                Some(x) => x,
+                None    => return false,  // missing data ≠ matches
+            };
+            // Type-aware tolerance for Equals (L2-B1).
+            let ok = match f.op {
+                FilterOp::Min    => actual >= f.value,
+                FilterOp::Max    => actual <= f.value,
+                FilterOp::Equals => match f.stat.unit() {
+                    StatUnit::Count | StatUnit::Seconds => (actual - f.value).abs() < 0.5,
+                    StatUnit::Per60 => (actual - f.value).abs() < 1e-3,
+                    StatUnit::Pct | StatUnit::Rate | StatUnit::Inverted
+                        => (actual - f.value).abs() < 1e-6,
+                },
+            };
+            if !ok {
+                return false;
+            }
+        }
+        true
+    }
+
+    /// Same-StatId multi-filter normalization (EDGE-R2 / II-06):
+    ///
+    ///   - `Min+Min` on the same StatId → keep the tightest (max value).
+    ///   - `Max+Max` on the same StatId → keep the tightest (min value).
+    ///   - `Min+Max` mix → keep both (composes to a closed range).
+    ///   - `Equals+Equals` on the same StatId → reject at parse time
+    ///     (returns `Err(FilterParseError::MultipleOps)`), so this
+    ///     method never sees that case. If two such filters sneak in
+    ///     via direct mutation, the SECOND wins (last-write).
+    ///
+    /// Idempotent: calling twice has no effect after the first call.
+    /// Stable order: surviving filters appear in the order their
+    /// (stat, op-kind) pair was first seen.
+    pub fn normalize_stat_filters(&mut self) {
+        use crate::stats_catalog::FilterOp;
+
+        // Index by (StatId, op-kind) to find dupes, preserving first-seen
+        // order via `seen_order`.
+        let mut seen_order: Vec<(crate::stats_catalog::StatId, FilterOp)> = Vec::new();
+        let mut tightest: std::collections::HashMap<
+            (crate::stats_catalog::StatId, FilterOp),
+            f64,
+        > = std::collections::HashMap::new();
+
+        for f in &self.stat_filters {
+            let key = (f.stat, f.op);
+            match tightest.get(&key) {
+                None => {
+                    tightest.insert(key, f.value);
+                    seen_order.push(key);
+                }
+                Some(&existing) => {
+                    let new = match f.op {
+                        // Min: tightest = max of lower bounds.
+                        FilterOp::Min => existing.max(f.value),
+                        // Max: tightest = min of upper bounds.
+                        FilterOp::Max => existing.min(f.value),
+                        // Equals: last-write semantic (parser usually rejects).
+                        FilterOp::Equals => f.value,
+                    };
+                    tightest.insert(key, new);
+                }
+            }
+        }
+
+        // Rebuild stat_filters in seen-order with tightest values.
+        // `StatFilter::new` re-validates the (already-finite) value;
+        // unwrap is safe because the original `f.value` was finite by
+        // construction (StatFilter::new gate).
+        self.stat_filters = seen_order
+            .into_iter()
+            .map(|(stat, op)| {
+                let value = tightest[&(stat, op)];
+                crate::stats_catalog::StatFilter::new(stat, op, value)
+                    .expect("normalized values inherited finite-gate guarantee")
+            })
+            .collect();
     }
 }
 
@@ -373,5 +485,148 @@ mod tests {
                 "filter {filter:?} produced an id outside the source set"
             );
         }
+    }
+
+    // ─── L.2.4 — normalize_stat_filters + matches_stat_filters ────────────
+
+    use crate::fixtures::stat_catalog_variants;
+    use crate::stats_catalog::{FilterOp, StatFilter, StatId};
+    use crate::stats_repository::PlayerView;
+
+    /// Min+Min on same StatId → tightest (max value) lower bound.
+    #[test]
+    fn l0_lindsay_normalize_min_min_keeps_tightest() {
+        let mut pf = PlayerFilter::new();
+        pf.stat_filters = vec![
+            StatFilter::new(StatId::Hits, FilterOp::Min, 50.0).unwrap(),
+            StatFilter::new(StatId::Hits, FilterOp::Min, 100.0).unwrap(),
+        ];
+        pf.normalize_stat_filters();
+        assert_eq!(pf.stat_filters.len(), 1, "Min+Min should collapse to one");
+        assert_eq!(pf.stat_filters[0].value, 100.0, "tightest = max");
+    }
+
+    /// Max+Max on same StatId → tightest (min value) upper bound.
+    #[test]
+    fn l0_lindsay_normalize_max_max_keeps_tightest() {
+        let mut pf = PlayerFilter::new();
+        pf.stat_filters = vec![
+            StatFilter::new(StatId::Hits, FilterOp::Max, 200.0).unwrap(),
+            StatFilter::new(StatId::Hits, FilterOp::Max, 150.0).unwrap(),
+        ];
+        pf.normalize_stat_filters();
+        assert_eq!(pf.stat_filters.len(), 1);
+        assert_eq!(pf.stat_filters[0].value, 150.0, "tightest = min");
+    }
+
+    /// Min+Max on same StatId → keep both (closed range).
+    #[test]
+    fn l0_lindsay_normalize_min_max_composes_to_range() {
+        let mut pf = PlayerFilter::new();
+        pf.stat_filters = vec![
+            StatFilter::new(StatId::Hits, FilterOp::Min, 50.0).unwrap(),
+            StatFilter::new(StatId::Hits, FilterOp::Max, 200.0).unwrap(),
+        ];
+        pf.normalize_stat_filters();
+        assert_eq!(pf.stat_filters.len(), 2, "Min+Max → both kept");
+        assert!(pf.stat_filters.iter().any(|f| f.op == FilterOp::Min && f.value == 50.0));
+        assert!(pf.stat_filters.iter().any(|f| f.op == FilterOp::Max && f.value == 200.0));
+    }
+
+    /// Cross-stat filters preserved (Hits-min + Goals-max coexist).
+    #[test]
+    fn l0_lindsay_normalize_cross_stat_independent() {
+        let mut pf = PlayerFilter::new();
+        pf.stat_filters = vec![
+            StatFilter::new(StatId::Hits,  FilterOp::Min, 50.0).unwrap(),
+            StatFilter::new(StatId::Goals, FilterOp::Max, 30.0).unwrap(),
+        ];
+        pf.normalize_stat_filters();
+        assert_eq!(pf.stat_filters.len(), 2);
+    }
+
+    /// Idempotent: calling twice has no effect after the first call.
+    #[test]
+    fn l0_lindsay_normalize_idempotent() {
+        let mut pf = PlayerFilter::new();
+        pf.stat_filters = vec![
+            StatFilter::new(StatId::Hits, FilterOp::Min, 50.0).unwrap(),
+            StatFilter::new(StatId::Hits, FilterOp::Min, 100.0).unwrap(),
+            StatFilter::new(StatId::Hits, FilterOp::Max, 200.0).unwrap(),
+        ];
+        pf.normalize_stat_filters();
+        let first = pf.stat_filters.clone();
+        pf.normalize_stat_filters();
+        assert_eq!(pf.stat_filters, first, "idempotent");
+    }
+
+    /// `matches_stat_filters` — DI-08 silently drops non-applicable
+    /// filters. SavePct on a skater view is non-applicable; the row
+    /// passes (the filter is skipped, not failed).
+    #[test]
+    fn l0_lindsay_matches_skips_non_applicable_filters() {
+        let (id, stats) = stat_catalog_variants::skater_modern();
+        let view = PlayerView { identity: &id, stats: &stats, contract: None };
+        let mut pf = PlayerFilter::new();
+        // SavePct on a skater is non-applicable → silently dropped (DI-08).
+        pf.stat_filters = vec![
+            StatFilter::new(StatId::SavePct, FilterOp::Min, 0.91).unwrap(),
+        ];
+        assert!(pf.matches_stat_filters(&view), "non-applicable filter dropped silently");
+    }
+
+    /// `matches_stat_filters` — missing data fails the filter (per spec
+    /// "missing-data treats as `false`" semantic).
+    #[test]
+    fn l0_lindsay_matches_missing_data_fails_filter() {
+        let (id, stats) = stat_catalog_variants::skater_pre_2005();
+        let view = PlayerView { identity: &id, stats: &stats, contract: None };
+        let mut pf = PlayerFilter::new();
+        // Hits is era-gated for pre-2005 → read returns None → fail.
+        pf.stat_filters = vec![
+            StatFilter::new(StatId::Hits, FilterOp::Min, 50.0).unwrap(),
+        ];
+        assert!(!pf.matches_stat_filters(&view),
+            "pre-2005 hits=None should fail the filter");
+    }
+
+    /// `matches_stat_filters` — happy path: skater_modern has 30 hits
+    /// → passes "hits>=20", fails "hits>=50".
+    #[test]
+    fn l0_lindsay_matches_happy_path() {
+        let (id, stats) = stat_catalog_variants::skater_modern();
+        let view = PlayerView { identity: &id, stats: &stats, contract: None };
+
+        let mut pf = PlayerFilter::new();
+        pf.stat_filters = vec![
+            StatFilter::new(StatId::Hits, FilterOp::Min, 20.0).unwrap(),
+        ];
+        assert!(pf.matches_stat_filters(&view), "30 hits >= 20 must pass");
+
+        pf.stat_filters = vec![
+            StatFilter::new(StatId::Hits, FilterOp::Min, 50.0).unwrap(),
+        ];
+        assert!(!pf.matches_stat_filters(&view), "30 hits < 50 must fail");
+    }
+
+    /// Equals tolerance is unit-aware (L2-B1). Count uses < 0.5 (integer
+    /// compare); Pct uses 1e-6.
+    #[test]
+    fn l0_lindsay_matches_equals_unit_aware_tolerance() {
+        let (id, stats) = stat_catalog_variants::skater_modern();
+        let view = PlayerView { identity: &id, stats: &stats, contract: None };
+
+        // Count (Goals=50): 50.4 should match (< 0.5 tolerance).
+        let mut pf = PlayerFilter::new();
+        pf.stat_filters = vec![
+            StatFilter::new(StatId::Goals, FilterOp::Equals, 50.4).unwrap(),
+        ];
+        assert!(pf.matches_stat_filters(&view), "Goals=50 within 0.5 of 50.4");
+
+        // Goals=50, asking == 51.0 — outside Count tolerance.
+        pf.stat_filters = vec![
+            StatFilter::new(StatId::Goals, FilterOp::Equals, 51.0).unwrap(),
+        ];
+        assert!(!pf.matches_stat_filters(&view), "Goals=50 != 51");
     }
 }

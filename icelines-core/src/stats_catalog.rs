@@ -1,21 +1,1367 @@
-//! Phase Lindsay stat catalog — minimal L.1 surface.
+//! Phase Lindsay stat catalog.
 //!
-//! This module is intentionally lean for L.1: just the `ReportKind` enum
-//! and the supporting `Tier1ReportFile` / `MergeTarget` types that
-//! `icelines-fetch::nhl_api`, `icelines-fetch::snapshot::ChunkedManifest`,
-//! and `StatsRepository::load_window` need to dispatch.
+//! L.1 shipped the dispatch infrastructure: `ReportKind`, `Tier`,
+//! `MergeTarget`, `Tier1ReportFile`, `Tier1Row`. L.2 (this module's
+//! current surface) adds the catalog itself: `StatId` enum, `StatCategory`
+//! taxonomy, `StatUnit`, label/key accessor methods, the `read(view)`
+//! dispatch table, and the filter-grammar types.
 //!
-//! The full Lindsay catalog (`StatId`, `StatCategory`, `FilterOp`,
-//! `FilterParseError`, `StatFilter`, `aggregate_read`, `applies_to`, the
-//! 108 stat-enumeration arms, etc.) lands in **L.2** per the plan
-//! (`design/plans/2026-05-02-phaseLindsay-stat-catalog.md` v0.4
-//! §"Sub-phases"). Anything not strictly required to ship L.1 is held
-//! back so the reviewers' L.2 surface stays aligned with v0.4 §"Public
-//! types" rather than drifting from a partial L.1 ship.
+//! Spec: `design/specs/stat-catalog.md` v0.4 §"Public types" + §"Stat
+//! enumeration".
+//!
+//! **Stat count: 107**. Spec v0.4 §"Stat enumeration" prose totals 108
+//! with Goalie at 22; explicit enumeration shows Goalie at 23 (19 base
+//! + 4 GSAx) and double-lists `PpToiPerGame`/`ShToiPerGame` in both
+//! SpecialTeams AND TimeOnIce. The L.2 implementation rationalizes:
+//!   - Goalie 23 (follow the explicit list over the prose total),
+//!   - `PpToiPerGame`/`ShToiPerGame` in TimeOnIce only (natural domain
+//!     fit — TOI is deployment, not output).
+//! Net: 14 + 11 + 17 + 12 + 8 + 15 + 23 + 7 = 107 stats. HART/FORGE
+//! checkpoint pass-confirmed both calls.
 
 use serde::{Deserialize, Serialize};
 
+use crate::model::{Position, Season, MIN_GP};
 use crate::season_stats::SeasonType;
+use crate::stats_repository::PlayerView;
+
+// ─── L.2.1 — StatCategory + StatUnit ────────────────────────────────────────
+
+/// Hockey-domain categorization of a stat. The 9 categories drive TUI
+/// section grouping (Queries screen) and site-page column groupings.
+/// Iteration order matches `StatId::all()` — Identity first, then
+/// Scoring, etc., for stable UI rendering (AI-05).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum StatCategory {
+    /// Bios — never selectable for sort/filter; kept as a category for
+    /// completeness so the TUI Queries screen can render the identity
+    /// panel under the same structure.
+    Identity,
+    /// G, A, P, S%, EV/PP/SH goal counts.
+    Scoring,
+    /// PP/SH/Faceoff splits. `FaceoffWinPct` lives in `TwoWay` per
+    /// SCOUT-R2 L2-F2; per-zone splits stay here.
+    SpecialTeams,
+    /// PlusMinus, Pim, Hits, Blocks, Takeaways, Giveaways, FaceoffWinPct.
+    /// Most faceoffs happen at even strength → `FaceoffWinPct` is a
+    /// 200-foot stat, not a special-teams one.
+    TwoWay,
+    /// TOI splits + shifts. `EvenStrengthTimeOnIcePerGame` lives here per
+    /// SCOUT-R2 L2-F3 (sourced from `goalsForAgainst` endpoint but the
+    /// hockey-domain meaning is deployment, not goals).
+    TimeOnIce,
+    /// On-ice goals at each strength. **DI-11 — last-stint-only**:
+    /// `read()` returns `None` when `view.was_traded_in_window()`.
+    /// Guard fires at category boundary; adding a new variant inherits.
+    OnIceGoals,
+    /// Corsi/Fenwick + zone starts + xG family. Tier-2 sources
+    /// (puckPossessions, scoringRates, MoneyPuck CSV).
+    Possession,
+    /// Goalie-only stats. `applies_to(_, is_goalie=true)` is the gate.
+    Goalie,
+    /// Computed from Scoring + GP. Per-game and per-82 derived. Every
+    /// per-game / per-82 inherits the MIN_GP=10 guard (PACE-B2).
+    Derived,
+}
+
+impl StatCategory {
+    /// User-facing label for TUI section headers + site grouping.
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Identity     => "Identity",
+            Self::Scoring      => "Scoring",
+            Self::SpecialTeams => "Special Teams",
+            Self::TwoWay       => "Two-way",
+            Self::TimeOnIce    => "Time on Ice",
+            Self::OnIceGoals   => "On-ice Goals",
+            Self::Possession   => "Possession",
+            Self::Goalie       => "Goalie",
+            Self::Derived      => "Derived",
+        }
+    }
+
+    /// Every category in declaration order. Determinism backs UI
+    /// section ordering (AI-05).
+    pub fn all() -> &'static [StatCategory] {
+        use StatCategory::*;
+        &[Identity, Scoring, SpecialTeams, TwoWay, TimeOnIce, OnIceGoals,
+          Possession, Goalie, Derived]
+    }
+}
+
+/// How a stat's value formats + how `FilterOp::Equals` should compare it.
+/// Type-aware tolerance per L2-B1 (PACE-R2 fix replacing `f64::EPSILON`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum StatUnit {
+    /// Integer-valued count. `Equals` tolerance: `< 0.5` (exact integer).
+    Count,
+    /// Percentage in [0.0, 1.0] or [0, 100] depending on stat. Storage
+    /// preserves f32→f64 round-trip. `Equals` tolerance: `1e-6`.
+    Pct,
+    /// Per-60-minute rate. Source-rounded to 3 decimals. `Equals`
+    /// tolerance: `1e-3`.
+    Per60,
+    /// Integer seconds (TOI fields). `Equals` tolerance: `< 0.5`.
+    Seconds,
+    /// Generic floating-point rate (per-82, per-game). `Equals`
+    /// tolerance: `1e-6`.
+    Rate,
+    /// Lower-is-better (GAA, etc.). Sort direction defaults reversed.
+    /// `Equals` tolerance: `1e-6`.
+    Inverted,
+}
+
+// ─── L.2.1 — StatId enum (107 variants) ─────────────────────────────────────
+
+/// Every selectable stat in the IceLines catalog.
+///
+/// **Exhaustive — NOT `#[non_exhaustive]`** (per L-B17): the compiler
+/// enforces "added a stat → updated everywhere" across every consumer
+/// surface that matches on `StatId`.
+///
+/// **Declaration order is canonical**: `StatId::all()` returns variants
+/// in this order, `StatCategory::members(c)` filters but preserves
+/// order, and the cross-product fixture in `stat_catalog_variants.rs`
+/// iterates in this order. UI surfaces never reshuffle.
+///
+/// 107 variants total: Scoring 14 + SpecialTeams 11 + TwoWay 17 +
+/// TimeOnIce 12 + OnIceGoals 8 + Possession 15 + Goalie 23 + Derived 7.
+/// (See L.2.1 doc-comment on the module about the +/-2 spec drift —
+/// PpToiPerGame/ShToiPerGame consolidated into TimeOnIce, Goalie
+/// follows the explicit enumeration.)
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum StatId {
+    // ─── Scoring (14) ───────────────────────────────────────────────────
+    Goals, Assists, Points,
+    EvGoals, EvPoints,
+    PpGoals, PpAssists, PpPoints,
+    ShGoals, ShPoints,
+    Gwg, OtGoals,
+    Shots, ShootingPct,
+
+    // ─── SpecialTeams (11) ──────────────────────────────────────────────
+    // Note (L.2.1): spec v0.4 §"Stat enumeration" double-lists
+    // `PpToiPerGame` / `ShToiPerGame` here AND in `TimeOnIce`. They're
+    // the same conceptual stat (TOI split per game); the natural
+    // domain fit is `TimeOnIce`. Removed from `SpecialTeams` to avoid
+    // duplicate variants. SpecialTeams count: 13 → 11; total: 109 → 107.
+    PpGoalsPer60, PpPointsPer60, PpAssistsPer60, PpShootingPct,
+    ShGoalsPer60, ShPointsPer60, PpGoalsAgainstPer60,
+    FaceoffWins, FaceoffLosses,
+    OffensiveZoneFaceoffPct, DefensiveZoneFaceoffPct,
+
+    // ─── TwoWay (17) ────────────────────────────────────────────────────
+    PlusMinus, Pim,
+    Hits, BlockedShots, Takeaways, Giveaways, MissedShots,
+    HitsPer60, BlockedShotsPer60, TakeawaysPer60, GiveawaysPer60,
+    PenaltiesDrawn, PenaltiesDrawnPer60, PenaltiesTakenPer60,
+    NetPenalties, NetPenaltiesPer60,
+    FaceoffWinPct,
+
+    // ─── TimeOnIce (12) ─────────────────────────────────────────────────
+    TotalToi, TotalToiPerGame,
+    EvToi, EvToiPerGame, EvenStrengthTimeOnIcePerGame,
+    PpToi, PpToiPerGame,
+    ShToi, ShToiPerGame,
+    Shifts, ShiftsPerGame, ToiPerShift,
+
+    // ─── OnIceGoals (8) — DI-11 last-stint-only ────────────────────────
+    EvGoalsFor, EvGoalsAgainst, EvGoalsForPct,
+    PpGoalsFor, PpGoalsAgainst,
+    ShGoalsFor, ShGoalsAgainst,
+    EvenStrengthGoalDifference,
+
+    // ─── Possession (15) — Tier-2 sources ──────────────────────────────
+    SatPct, UsatPct,
+    OffensiveZoneStartPct, DefensiveZoneStartPct, NeutralZoneStartPct,
+    OnIceShootingPct,
+    Goals5v5, Assists5v5, Points5v5, PointsPer60_5v5,
+    // xG family (SCOUT-B2 addition)
+    IxG, IxgPer60, OnIceXgFor, OnIceXgAgainst, XgForPct,
+
+    // ─── Goalie (23) ────────────────────────────────────────────────────
+    GoalieGames, GoalieStarts,
+    Wins, Losses, OtLosses, Ties,
+    Saves, ShotsAgainst, GoalsAgainst,
+    SavePct, Gaa, Shutouts,
+    EvSavePct, PpSavePct, ShSavePct,
+    QualityStarts, QualityStartPct,
+    RegulationWins, RegulationLosses,
+    // GSAx family (SCOUT-B1 addition)
+    GoalieXgAgainst, GoalieXgAgainstPer60, GoalsSavedAboveExpected, Gsax60,
+
+    // ─── Derived (7) ────────────────────────────────────────────────────
+    Pace82, GoalsPer82, AssistsPer82,
+    PointsPerGame, GoalsPerGame, AssistsPerGame,
+    PaceSortKey,
+}
+
+impl StatId {
+    /// Hockey-domain category. Drives TUI section grouping + DI-11
+    /// trade-window guard placement (OnIceGoals fires the guard).
+    pub fn category(self) -> StatCategory {
+        use StatCategory::*;
+        use StatId::*;
+        match self {
+            // Scoring
+            Goals | Assists | Points
+            | EvGoals | EvPoints
+            | PpGoals | PpAssists | PpPoints
+            | ShGoals | ShPoints
+            | Gwg | OtGoals
+            | Shots | ShootingPct => Scoring,
+
+            // SpecialTeams
+            PpGoalsPer60 | PpPointsPer60 | PpAssistsPer60 | PpShootingPct
+            | ShGoalsPer60 | ShPointsPer60 | PpGoalsAgainstPer60
+            | FaceoffWins | FaceoffLosses
+            | OffensiveZoneFaceoffPct | DefensiveZoneFaceoffPct => SpecialTeams,
+
+            // TwoWay
+            PlusMinus | Pim
+            | Hits | BlockedShots | Takeaways | Giveaways | MissedShots
+            | HitsPer60 | BlockedShotsPer60 | TakeawaysPer60 | GiveawaysPer60
+            | PenaltiesDrawn | PenaltiesDrawnPer60 | PenaltiesTakenPer60
+            | NetPenalties | NetPenaltiesPer60
+            | FaceoffWinPct => TwoWay,
+
+            // TimeOnIce
+            TotalToi | TotalToiPerGame
+            | EvToi | EvToiPerGame | EvenStrengthTimeOnIcePerGame
+            | PpToi | PpToiPerGame
+            | ShToi | ShToiPerGame
+            | Shifts | ShiftsPerGame | ToiPerShift => TimeOnIce,
+
+            // OnIceGoals — DI-11 fires here
+            EvGoalsFor | EvGoalsAgainst | EvGoalsForPct
+            | PpGoalsFor | PpGoalsAgainst
+            | ShGoalsFor | ShGoalsAgainst
+            | EvenStrengthGoalDifference => OnIceGoals,
+
+            // Possession
+            SatPct | UsatPct
+            | OffensiveZoneStartPct | DefensiveZoneStartPct | NeutralZoneStartPct
+            | OnIceShootingPct
+            | Goals5v5 | Assists5v5 | Points5v5 | PointsPer60_5v5
+            | IxG | IxgPer60 | OnIceXgFor | OnIceXgAgainst | XgForPct => Possession,
+
+            // Goalie
+            GoalieGames | GoalieStarts
+            | Wins | Losses | OtLosses | Ties
+            | Saves | ShotsAgainst | GoalsAgainst
+            | SavePct | Gaa | Shutouts
+            | EvSavePct | PpSavePct | ShSavePct
+            | QualityStarts | QualityStartPct
+            | RegulationWins | RegulationLosses
+            | GoalieXgAgainst | GoalieXgAgainstPer60
+            | GoalsSavedAboveExpected | Gsax60 => Goalie,
+
+            // Derived
+            Pace82 | GoalsPer82 | AssistsPer82
+            | PointsPerGame | GoalsPerGame | AssistsPerGame
+            | PaceSortKey => Derived,
+        }
+    }
+
+    /// Storage unit + format hint. Drives `FilterOp::Equals` tolerance
+    /// (per L2-B1 — type-aware, replacing `f64::EPSILON`) and display
+    /// rendering. `Inverted` flags lower-is-better for sort defaults.
+    pub fn unit(self) -> StatUnit {
+        use StatId::*;
+        use StatUnit::*;
+        match self {
+            // Counts
+            Goals | Assists | Points
+            | EvGoals | EvPoints
+            | PpGoals | PpAssists | PpPoints
+            | ShGoals | ShPoints
+            | Gwg | OtGoals | Shots
+            | PlusMinus | Pim
+            | Hits | BlockedShots | Takeaways | Giveaways | MissedShots
+            | PenaltiesDrawn | NetPenalties
+            | FaceoffWins | FaceoffLosses
+            | Shifts
+            | EvGoalsFor | EvGoalsAgainst
+            | PpGoalsFor | PpGoalsAgainst
+            | ShGoalsFor | ShGoalsAgainst
+            | EvenStrengthGoalDifference
+            | Goals5v5 | Assists5v5 | Points5v5
+            | GoalieGames | GoalieStarts
+            | Wins | Losses | OtLosses | Ties
+            | Saves | ShotsAgainst | GoalsAgainst | Shutouts
+            | QualityStarts | RegulationWins | RegulationLosses => Count,
+
+            // Percentages [0.0, 1.0]
+            ShootingPct | PpShootingPct
+            | OffensiveZoneFaceoffPct | DefensiveZoneFaceoffPct
+            | FaceoffWinPct
+            | EvGoalsForPct
+            | SatPct | UsatPct
+            | OffensiveZoneStartPct | DefensiveZoneStartPct | NeutralZoneStartPct
+            | OnIceShootingPct | XgForPct
+            | SavePct | EvSavePct | PpSavePct | ShSavePct
+            | QualityStartPct => Pct,
+
+            // Per-60 rates
+            PpGoalsPer60 | PpPointsPer60 | PpAssistsPer60
+            | ShGoalsPer60 | ShPointsPer60 | PpGoalsAgainstPer60
+            | HitsPer60 | BlockedShotsPer60 | TakeawaysPer60 | GiveawaysPer60
+            | PenaltiesDrawnPer60 | PenaltiesTakenPer60 | NetPenaltiesPer60
+            | PointsPer60_5v5
+            | IxgPer60 | GoalieXgAgainstPer60 | Gsax60 => Per60,
+
+            // Seconds
+            TotalToi | TotalToiPerGame
+            | EvToi | EvToiPerGame | EvenStrengthTimeOnIcePerGame
+            | PpToi | PpToiPerGame
+            | ShToi | ShToiPerGame
+            | ShiftsPerGame | ToiPerShift => Seconds,
+
+            // xG (floating expected-goals — generic Rate)
+            IxG | OnIceXgFor | OnIceXgAgainst
+            | GoalieXgAgainst | GoalsSavedAboveExpected => Rate,
+
+            // Inverted (lower-is-better)
+            Gaa => Inverted,
+
+            // Derived per-82 / per-game (floating-point Rate)
+            Pace82 | GoalsPer82 | AssistsPer82
+            | PointsPerGame | GoalsPerGame | AssistsPerGame
+            | PaceSortKey => Rate,
+        }
+    }
+
+    /// True for stats where bigger is better (goals, hits, save pct).
+    /// False for inverted stats (GAA, goals against, losses).
+    ///
+    /// **Exhaustive — no `_` wildcard** (FORGE-R checkpoint #1). Each
+    /// new `StatId` variant MUST add an explicit arm here so a future
+    /// lower-is-better stat (e.g. `PpGoalsAgainst60` if added later)
+    /// can't silently default to "higher better."
+    pub fn higher_is_better(self) -> bool {
+        use StatId::*;
+        match self {
+            // ─── Lower-is-better (false) ────────────────────────────
+            Pim
+            | Giveaways | GiveawaysPer60
+            | Losses | OtLosses
+            | GoalsAgainst | Gaa
+            | PenaltiesTakenPer60
+            | EvGoalsAgainst | PpGoalsAgainst | ShGoalsAgainst
+            | OnIceXgAgainst
+            | GoalieXgAgainst | GoalieXgAgainstPer60
+            | DefensiveZoneFaceoffPct  // starting in own zone is "harder"
+            | DefensiveZoneStartPct => false,
+
+            // ─── Higher-is-better (true) — exhaustive list ──────────
+            // Scoring (14)
+            Goals | Assists | Points
+            | EvGoals | EvPoints
+            | PpGoals | PpAssists | PpPoints
+            | ShGoals | ShPoints
+            | Gwg | OtGoals
+            | Shots | ShootingPct
+            // SpecialTeams (11) — all higher-better in the catalog
+            | PpGoalsPer60 | PpPointsPer60 | PpAssistsPer60 | PpShootingPct
+            | ShGoalsPer60 | ShPointsPer60 | PpGoalsAgainstPer60
+            | FaceoffWins | FaceoffLosses
+            | OffensiveZoneFaceoffPct
+            // TwoWay — minus Pim/Giveaways/PenaltiesTaken (lower) above
+            | PlusMinus
+            | Hits | BlockedShots | Takeaways | MissedShots
+            | HitsPer60 | BlockedShotsPer60 | TakeawaysPer60
+            | PenaltiesDrawn | PenaltiesDrawnPer60
+            | NetPenalties | NetPenaltiesPer60
+            | FaceoffWinPct
+            // TimeOnIce — all higher-better (more deployment is "better")
+            | TotalToi | TotalToiPerGame
+            | EvToi | EvToiPerGame | EvenStrengthTimeOnIcePerGame
+            | PpToi | PpToiPerGame
+            | ShToi | ShToiPerGame
+            | Shifts | ShiftsPerGame | ToiPerShift
+            // OnIceGoals — minus *_Against (lower) above
+            | EvGoalsFor | EvGoalsForPct
+            | PpGoalsFor
+            | ShGoalsFor
+            | EvenStrengthGoalDifference
+            // Possession — minus DefensiveZone* (lower) above
+            | SatPct | UsatPct
+            | OffensiveZoneStartPct | NeutralZoneStartPct
+            | OnIceShootingPct
+            | Goals5v5 | Assists5v5 | Points5v5 | PointsPer60_5v5
+            | IxG | IxgPer60
+            | OnIceXgFor | XgForPct
+            // Goalie — minus Losses/OtLosses/GoalsAgainst/Gaa/xG (lower) above
+            | GoalieGames | GoalieStarts
+            | Wins | Ties
+            | Saves | ShotsAgainst
+            | SavePct | Shutouts
+            | EvSavePct | PpSavePct | ShSavePct
+            | QualityStarts | QualityStartPct
+            | RegulationWins | RegulationLosses
+            | GoalsSavedAboveExpected | Gsax60
+            // Derived — all higher-better
+            | Pace82 | GoalsPer82 | AssistsPer82
+            | PointsPerGame | GoalsPerGame | AssistsPerGame
+            | PaceSortKey => true,
+        }
+    }
+
+    /// Full human-readable label — used for dropdowns, table headers
+    /// (wide), and **site templates** (SI-03 / L.5b sweep).
+    pub fn label(self) -> &'static str {
+        use StatId::*;
+        match self {
+            // Scoring
+            Goals => "Goals",
+            Assists => "Assists",
+            Points => "Points",
+            EvGoals => "Even-Strength Goals",
+            EvPoints => "Even-Strength Points",
+            PpGoals => "Power-Play Goals",
+            PpAssists => "Power-Play Assists",
+            PpPoints => "Power-Play Points",
+            ShGoals => "Short-Handed Goals",
+            ShPoints => "Short-Handed Points",
+            Gwg => "Game-Winning Goals",
+            OtGoals => "Overtime Goals",
+            Shots => "Shots",
+            ShootingPct => "Shooting %",
+
+            // SpecialTeams
+            PpGoalsPer60 => "PP Goals / 60",
+            PpPointsPer60 => "PP Points / 60",
+            PpAssistsPer60 => "PP Assists / 60",
+            PpShootingPct => "PP Shooting %",
+            ShGoalsPer60 => "SH Goals / 60",
+            ShPointsPer60 => "SH Points / 60",
+            PpGoalsAgainstPer60 => "PP Goals Against / 60",
+            FaceoffWins => "Faceoff Wins",
+            FaceoffLosses => "Faceoff Losses",
+            OffensiveZoneFaceoffPct => "Offensive-Zone Faceoff %",
+            DefensiveZoneFaceoffPct => "Defensive-Zone Faceoff %",
+
+            // TwoWay
+            PlusMinus => "+/-",
+            Pim => "Penalty Minutes",
+            Hits => "Hits",
+            BlockedShots => "Blocked Shots",
+            Takeaways => "Takeaways",
+            Giveaways => "Giveaways",
+            MissedShots => "Missed Shots",
+            HitsPer60 => "Hits / 60",
+            BlockedShotsPer60 => "Blocked Shots / 60",
+            TakeawaysPer60 => "Takeaways / 60",
+            GiveawaysPer60 => "Giveaways / 60",
+            PenaltiesDrawn => "Penalties Drawn",
+            PenaltiesDrawnPer60 => "Penalties Drawn / 60",
+            PenaltiesTakenPer60 => "Penalties Taken / 60",
+            NetPenalties => "Net Penalties",
+            NetPenaltiesPer60 => "Net Penalties / 60",
+            FaceoffWinPct => "Faceoff Win %",
+
+            // TimeOnIce
+            TotalToi => "Total TOI",
+            TotalToiPerGame => "TOI / Game",
+            EvToi => "EV TOI",
+            EvToiPerGame => "EV TOI / Game",
+            EvenStrengthTimeOnIcePerGame => "EV Deployment TOI / Game",
+            PpToi => "PP TOI",
+            PpToiPerGame => "PP TOI / Game",
+            ShToi => "SH TOI",
+            ShToiPerGame => "SH TOI / Game",
+            Shifts => "Shifts",
+            ShiftsPerGame => "Shifts / Game",
+            ToiPerShift => "TOI / Shift",
+
+            // OnIceGoals
+            EvGoalsFor => "EV Goals For",
+            EvGoalsAgainst => "EV Goals Against",
+            EvGoalsForPct => "EV Goals-For %",
+            PpGoalsFor => "PP Goals For",
+            PpGoalsAgainst => "PP Goals Against",
+            ShGoalsFor => "SH Goals For",
+            ShGoalsAgainst => "SH Goals Against",
+            EvenStrengthGoalDifference => "EV Goal Differential",
+
+            // Possession
+            SatPct => "Corsi %",
+            UsatPct => "Fenwick %",
+            OffensiveZoneStartPct => "Offensive-Zone Start %",
+            DefensiveZoneStartPct => "Defensive-Zone Start %",
+            NeutralZoneStartPct => "Neutral-Zone Start %",
+            OnIceShootingPct => "On-Ice Shooting %",
+            Goals5v5 => "Goals (5v5)",
+            Assists5v5 => "Assists (5v5)",
+            Points5v5 => "Points (5v5)",
+            PointsPer60_5v5 => "Points / 60 (5v5)",
+            IxG => "Individual xG",
+            IxgPer60 => "Individual xG / 60",
+            OnIceXgFor => "On-Ice xG For",
+            OnIceXgAgainst => "On-Ice xG Against",
+            XgForPct => "xG For %",
+
+            // Goalie
+            GoalieGames => "Games",
+            GoalieStarts => "Starts",
+            Wins => "Wins",
+            Losses => "Losses",
+            OtLosses => "OT Losses",
+            Ties => "Ties",
+            Saves => "Saves",
+            ShotsAgainst => "Shots Against",
+            GoalsAgainst => "Goals Against",
+            SavePct => "Save %",
+            Gaa => "GAA",
+            Shutouts => "Shutouts",
+            EvSavePct => "EV Save %",
+            PpSavePct => "PP Save %",
+            ShSavePct => "SH Save %",
+            QualityStarts => "Quality Starts",
+            QualityStartPct => "Quality Start %",
+            RegulationWins => "Regulation Wins",
+            RegulationLosses => "Regulation Losses",
+            GoalieXgAgainst => "xG Against",
+            GoalieXgAgainstPer60 => "xG Against / 60",
+            GoalsSavedAboveExpected => "Goals Saved Above Expected",
+            Gsax60 => "GSAx / 60",
+
+            // Derived
+            Pace82 => "Points / 82",
+            GoalsPer82 => "Goals / 82",
+            AssistsPer82 => "Assists / 82",
+            PointsPerGame => "Points / Game",
+            GoalsPerGame => "Goals / Game",
+            AssistsPerGame => "Assists / Game",
+            PaceSortKey => "Pace Score",
+        }
+    }
+
+    /// Terse column-header label — used for wide tables. ~5-7 chars.
+    pub fn short_label(self) -> &'static str {
+        use StatId::*;
+        match self {
+            Goals => "G", Assists => "A", Points => "P",
+            EvGoals => "EV G", EvPoints => "EV P",
+            PpGoals => "PPG", PpAssists => "PPA", PpPoints => "PPP",
+            ShGoals => "SHG", ShPoints => "SHP",
+            Gwg => "GWG", OtGoals => "OTG",
+            Shots => "Shots", ShootingPct => "S%",
+
+            PpGoalsPer60 => "PPG/60", PpPointsPer60 => "PPP/60",
+            PpAssistsPer60 => "PPA/60", PpShootingPct => "PP S%",
+            ShGoalsPer60 => "SHG/60", ShPointsPer60 => "SHP/60",
+            PpGoalsAgainstPer60 => "PPGA/60",
+            FaceoffWins => "FOW", FaceoffLosses => "FOL",
+            OffensiveZoneFaceoffPct => "OZ FO%",
+            DefensiveZoneFaceoffPct => "DZ FO%",
+
+            PlusMinus => "+/-", Pim => "PIM",
+            Hits => "Hits", BlockedShots => "Blk",
+            Takeaways => "TkA", Giveaways => "GvA",
+            MissedShots => "Mis",
+            HitsPer60 => "Hits/60", BlockedShotsPer60 => "Blk/60",
+            TakeawaysPer60 => "TkA/60", GiveawaysPer60 => "GvA/60",
+            PenaltiesDrawn => "PenD",
+            PenaltiesDrawnPer60 => "PenD/60",
+            PenaltiesTakenPer60 => "PenT/60",
+            NetPenalties => "NetPen",
+            NetPenaltiesPer60 => "NetPen/60",
+            FaceoffWinPct => "FO%",
+
+            TotalToi => "TOI", TotalToiPerGame => "TOI/g",
+            EvToi => "EV TOI", EvToiPerGame => "EV TOI/g",
+            EvenStrengthTimeOnIcePerGame => "EV Dep/g",
+            PpToi => "PP TOI", PpToiPerGame => "PP TOI/g",
+            ShToi => "SH TOI", ShToiPerGame => "SH TOI/g",
+            Shifts => "Shft", ShiftsPerGame => "Shft/g",
+            ToiPerShift => "TOI/Shft",
+
+            EvGoalsFor => "EV GF", EvGoalsAgainst => "EV GA",
+            EvGoalsForPct => "EV GF%",
+            PpGoalsFor => "PP GF", PpGoalsAgainst => "PP GA",
+            ShGoalsFor => "SH GF", ShGoalsAgainst => "SH GA",
+            EvenStrengthGoalDifference => "EV +/-",
+
+            SatPct => "CF%", UsatPct => "FF%",
+            OffensiveZoneStartPct => "OZS%",
+            DefensiveZoneStartPct => "DZS%",
+            NeutralZoneStartPct => "NZS%",
+            OnIceShootingPct => "On-Ice S%",
+            Goals5v5 => "G 5v5", Assists5v5 => "A 5v5",
+            Points5v5 => "P 5v5", PointsPer60_5v5 => "P/60 5v5",
+            IxG => "ixG", IxgPer60 => "ixG/60",
+            OnIceXgFor => "xGF", OnIceXgAgainst => "xGA",
+            XgForPct => "xGF%",
+
+            GoalieGames => "GP", GoalieStarts => "GS",
+            Wins => "W", Losses => "L", OtLosses => "OTL", Ties => "T",
+            Saves => "Sv", ShotsAgainst => "SA",
+            GoalsAgainst => "GA", SavePct => "SV%",
+            Gaa => "GAA", Shutouts => "SO",
+            EvSavePct => "EV SV%", PpSavePct => "PP SV%",
+            ShSavePct => "SH SV%",
+            QualityStarts => "QS", QualityStartPct => "QS%",
+            RegulationWins => "RW", RegulationLosses => "RL",
+            GoalieXgAgainst => "xGA", GoalieXgAgainstPer60 => "xGA/60",
+            GoalsSavedAboveExpected => "GSAx", Gsax60 => "GSAx/60",
+
+            Pace82 => "P/82", GoalsPer82 => "G/82",
+            AssistsPer82 => "A/82",
+            PointsPerGame => "PPG", GoalsPerGame => "GPG",
+            AssistsPerGame => "APG",
+            PaceSortKey => "Pace",
+        }
+    }
+
+    /// Narrowest column-header label — used when terminal width < 90
+    /// cols. 1-3 chars, often single-letter. Default falls through to
+    /// `short_label` when no narrower form is available.
+    pub fn narrow_label(self) -> &'static str {
+        use StatId::*;
+        match self {
+            Goals => "G", Assists => "A", Points => "P",
+            Pim => "Pm", Shots => "Sh", ShootingPct => "S%",
+            Hits => "H", BlockedShots => "B",
+            FaceoffWinPct => "FO",
+            TotalToiPerGame => "TOI",
+            // Most variants don't have a distinct narrow form; reuse short.
+            _ => self.short_label(),
+        }
+    }
+
+    /// Hyphen-case canonical key — used for `--filter` / `--sort`
+    /// parsing, **CSS class suffix** (`.stat-pp-goals`), **URL anchor**
+    /// (`#hits-per-60`), and **HTTP JSON key**. Spec §"L.5b sweep
+    /// enumeration" pins these as the four string surfaces.
+    ///
+    /// Uniqueness is enforced by an L0 test
+    /// (`l0_lindsay_cli_keys_unique_across_catalog`).
+    pub fn cli_key(self) -> &'static str {
+        use StatId::*;
+        match self {
+            Goals => "goals", Assists => "assists", Points => "points",
+            EvGoals => "ev-goals", EvPoints => "ev-points",
+            PpGoals => "pp-goals", PpAssists => "pp-assists",
+            PpPoints => "pp-points",
+            ShGoals => "sh-goals", ShPoints => "sh-points",
+            Gwg => "gwg", OtGoals => "ot-goals",
+            Shots => "shots", ShootingPct => "shooting-pct",
+
+            PpGoalsPer60 => "pp-goals-per-60",
+            PpPointsPer60 => "pp-points-per-60",
+            PpAssistsPer60 => "pp-assists-per-60",
+            PpShootingPct => "pp-shooting-pct",
+            ShGoalsPer60 => "sh-goals-per-60",
+            ShPointsPer60 => "sh-points-per-60",
+            PpGoalsAgainstPer60 => "pp-goals-against-per-60",
+            FaceoffWins => "faceoff-wins",
+            FaceoffLosses => "faceoff-losses",
+            OffensiveZoneFaceoffPct => "offensive-zone-faceoff-pct",
+            DefensiveZoneFaceoffPct => "defensive-zone-faceoff-pct",
+
+            PlusMinus => "plus-minus", Pim => "pim",
+            Hits => "hits", BlockedShots => "blocked-shots",
+            Takeaways => "takeaways", Giveaways => "giveaways",
+            MissedShots => "missed-shots",
+            HitsPer60 => "hits-per-60",
+            BlockedShotsPer60 => "blocked-shots-per-60",
+            TakeawaysPer60 => "takeaways-per-60",
+            GiveawaysPer60 => "giveaways-per-60",
+            PenaltiesDrawn => "penalties-drawn",
+            PenaltiesDrawnPer60 => "penalties-drawn-per-60",
+            PenaltiesTakenPer60 => "penalties-taken-per-60",
+            NetPenalties => "net-penalties",
+            NetPenaltiesPer60 => "net-penalties-per-60",
+            FaceoffWinPct => "faceoff-win-pct",
+
+            TotalToi => "total-toi", TotalToiPerGame => "total-toi-per-game",
+            EvToi => "ev-toi", EvToiPerGame => "ev-toi-per-game",
+            EvenStrengthTimeOnIcePerGame => "even-strength-time-on-ice-per-game",
+            PpToi => "pp-toi", PpToiPerGame => "pp-toi-per-game",
+            ShToi => "sh-toi", ShToiPerGame => "sh-toi-per-game",
+            Shifts => "shifts", ShiftsPerGame => "shifts-per-game",
+            ToiPerShift => "toi-per-shift",
+
+            EvGoalsFor => "ev-goals-for",
+            EvGoalsAgainst => "ev-goals-against",
+            EvGoalsForPct => "ev-goals-for-pct",
+            PpGoalsFor => "pp-goals-for",
+            PpGoalsAgainst => "pp-goals-against",
+            ShGoalsFor => "sh-goals-for",
+            ShGoalsAgainst => "sh-goals-against",
+            EvenStrengthGoalDifference => "even-strength-goal-difference",
+
+            SatPct => "sat-pct", UsatPct => "usat-pct",
+            OffensiveZoneStartPct => "offensive-zone-start-pct",
+            DefensiveZoneStartPct => "defensive-zone-start-pct",
+            NeutralZoneStartPct => "neutral-zone-start-pct",
+            OnIceShootingPct => "on-ice-shooting-pct",
+            Goals5v5 => "goals-5v5", Assists5v5 => "assists-5v5",
+            Points5v5 => "points-5v5",
+            PointsPer60_5v5 => "points-per-60-5v5",
+            IxG => "ixg", IxgPer60 => "ixg-per-60",
+            OnIceXgFor => "on-ice-xg-for",
+            OnIceXgAgainst => "on-ice-xg-against",
+            XgForPct => "xg-for-pct",
+
+            GoalieGames => "goalie-games", GoalieStarts => "goalie-starts",
+            Wins => "wins", Losses => "losses",
+            OtLosses => "ot-losses", Ties => "ties",
+            Saves => "saves", ShotsAgainst => "shots-against",
+            GoalsAgainst => "goals-against",
+            SavePct => "save-pct", Gaa => "gaa",
+            Shutouts => "shutouts",
+            EvSavePct => "ev-save-pct",
+            PpSavePct => "pp-save-pct",
+            ShSavePct => "sh-save-pct",
+            QualityStarts => "quality-starts",
+            QualityStartPct => "quality-start-pct",
+            RegulationWins => "regulation-wins",
+            RegulationLosses => "regulation-losses",
+            GoalieXgAgainst => "goalie-xg-against",
+            GoalieXgAgainstPer60 => "goalie-xg-against-per-60",
+            GoalsSavedAboveExpected => "goals-saved-above-expected",
+            Gsax60 => "gsax-per-60",
+
+            Pace82 => "pace-82", GoalsPer82 => "goals-per-82",
+            AssistsPer82 => "assists-per-82",
+            PointsPerGame => "points-per-game",
+            GoalsPerGame => "goals-per-game",
+            AssistsPerGame => "assists-per-game",
+            PaceSortKey => "pace-sort-key",
+        }
+    }
+
+    /// Every variant in declaration order. Determinism backs UI
+    /// rendering (AI-05) and the cross-product fixture in
+    /// `stat_catalog_variants.rs`. Zero-alloc — `&'static`.
+    pub fn all() -> &'static [StatId] {
+        use StatId::*;
+        &[
+            // Scoring
+            Goals, Assists, Points,
+            EvGoals, EvPoints,
+            PpGoals, PpAssists, PpPoints,
+            ShGoals, ShPoints,
+            Gwg, OtGoals, Shots, ShootingPct,
+            // SpecialTeams
+            PpGoalsPer60, PpPointsPer60, PpAssistsPer60, PpShootingPct,
+            ShGoalsPer60, ShPointsPer60, PpGoalsAgainstPer60,
+            FaceoffWins, FaceoffLosses,
+            OffensiveZoneFaceoffPct, DefensiveZoneFaceoffPct,
+            // TwoWay
+            PlusMinus, Pim,
+            Hits, BlockedShots, Takeaways, Giveaways, MissedShots,
+            HitsPer60, BlockedShotsPer60, TakeawaysPer60, GiveawaysPer60,
+            PenaltiesDrawn, PenaltiesDrawnPer60, PenaltiesTakenPer60,
+            NetPenalties, NetPenaltiesPer60,
+            FaceoffWinPct,
+            // TimeOnIce
+            TotalToi, TotalToiPerGame,
+            EvToi, EvToiPerGame, EvenStrengthTimeOnIcePerGame,
+            PpToi, PpToiPerGame,
+            ShToi, ShToiPerGame,
+            Shifts, ShiftsPerGame, ToiPerShift,
+            // OnIceGoals
+            EvGoalsFor, EvGoalsAgainst, EvGoalsForPct,
+            PpGoalsFor, PpGoalsAgainst,
+            ShGoalsFor, ShGoalsAgainst,
+            EvenStrengthGoalDifference,
+            // Possession
+            SatPct, UsatPct,
+            OffensiveZoneStartPct, DefensiveZoneStartPct, NeutralZoneStartPct,
+            OnIceShootingPct,
+            Goals5v5, Assists5v5, Points5v5, PointsPer60_5v5,
+            IxG, IxgPer60, OnIceXgFor, OnIceXgAgainst, XgForPct,
+            // Goalie
+            GoalieGames, GoalieStarts,
+            Wins, Losses, OtLosses, Ties,
+            Saves, ShotsAgainst, GoalsAgainst,
+            SavePct, Gaa, Shutouts,
+            EvSavePct, PpSavePct, ShSavePct,
+            QualityStarts, QualityStartPct,
+            RegulationWins, RegulationLosses,
+            GoalieXgAgainst, GoalieXgAgainstPer60,
+            GoalsSavedAboveExpected, Gsax60,
+            // Derived
+            Pace82, GoalsPer82, AssistsPer82,
+            PointsPerGame, GoalsPerGame, AssistsPerGame,
+            PaceSortKey,
+        ]
+    }
+
+    /// Parse a `cli_key()` string back to a `StatId`. `None` for
+    /// unknown keys — the CLI front-end maps `None` to
+    /// `FilterParseError::UnknownStat` (L.2.4 grammar). Zero-alloc;
+    /// linear over `all()` (107 elements is fine for a one-shot parse).
+    pub fn from_cli_key(s: &str) -> Option<StatId> {
+        Self::all().iter().copied().find(|sid| sid.cli_key() == s)
+    }
+
+    /// Per-row applicability. Goalie-category stats apply when the view
+    /// IS a goalie (per-row, via `view.is_goalie()` — covers the
+    /// emergency-backup-goalie case where a skater is goalie for one
+    /// game). Faceoff-takers gated to centers; on-ice stats apply to
+    /// every skater regardless of position.
+    pub fn applies_to(self, pos: Position, is_goalie: bool) -> bool {
+        match self.category() {
+            StatCategory::Goalie    => is_goalie,
+            StatCategory::Identity  => true,
+            _ if is_goalie          => false,    // skater-only stats hidden on goalies
+            _ => match self {
+                // Faceoff-taker stats — centers only.
+                StatId::FaceoffWinPct
+                | StatId::FaceoffWins
+                | StatId::FaceoffLosses
+                    => pos == Position::Center,
+                // Zone-start / on-ice stats apply to all skaters.
+                _ => true,
+            },
+        }
+    }
+
+    /// First season with reliable data. `Season(0)` for always-available
+    /// (Scoring totals, Identity). Pre-2005 nulls realtime
+    /// (Hits/Blocks/Takeaways/Giveaways/MissedShots); pre-2007 nulls
+    /// possession + xG family. Per L2-F4 (SCOUT-R2): use `20052006`
+    /// for realtime — the data exists 1997+ but is unreliable until
+    /// the lockout era.
+    pub fn available_since(self) -> Season {
+        use StatId::*;
+        match self {
+            // Realtime — 2005-06 (data exists 1997+ but unreliable)
+            Hits | BlockedShots | Takeaways | Giveaways | MissedShots
+            | HitsPer60 | BlockedShotsPer60 | TakeawaysPer60 | GiveawaysPer60
+            | PenaltiesDrawn | PenaltiesDrawnPer60 | PenaltiesTakenPer60
+            | NetPenalties | NetPenaltiesPer60
+                => Season(20052006),
+            // Possession family — Corsi tracking starts 2007-08.
+            SatPct | UsatPct
+            | OffensiveZoneStartPct | DefensiveZoneStartPct | NeutralZoneStartPct
+            | OnIceShootingPct
+            | Goals5v5 | Assists5v5 | Points5v5 | PointsPer60_5v5
+                => Season(20072008),
+            // xG family — MoneyPuck / NHL Edge from ~2007-08.
+            IxG | IxgPer60 | OnIceXgFor | OnIceXgAgainst | XgForPct
+            | GoalieXgAgainst | GoalieXgAgainstPer60
+            | GoalsSavedAboveExpected | Gsax60
+                => Season(20072008),
+            // Goalie advanced (QS, complete-game) — 2009-10.
+            QualityStarts | QualityStartPct => Season(20092010),
+            // Save% by strength — 2014-15 when API exposed it.
+            EvSavePct | PpSavePct | ShSavePct => Season(20142015),
+            // OT goals — modern OT format from 2005-06.
+            OtGoals | OtLosses => Season(20052006),
+            // Scoring/Identity/TimeOnIce/SpecialTeams basics — always.
+            _ => Season(0),
+        }
+    }
+
+    /// Per-row era applicability.
+    pub fn applies_to_era(self, season: Season) -> bool {
+        season.0 >= self.available_since().0
+    }
+
+    /// Read the value for this stat off the given view. Returns `None`
+    /// when the underlying data isn't loaded, the stat isn't applicable
+    /// to the row, or a guard fires (DI-11 trade-window, MIN_GP, etc.).
+    ///
+    /// `read()` is the **only** function that knows where the value
+    /// lives. Sort, filter, display, export all call into this — a
+    /// change to where `Hits` is stored only touches one match arm.
+    ///
+    /// **DI-11 enforcement at category boundary**: OnIceGoals stats
+    /// short-circuit to `None` when the view was traded mid-window,
+    /// regardless of which OnIceGoals variant. Adding a new OnIceGoals
+    /// stat inherits the guard; moving a stat OUT of OnIceGoals (as
+    /// `EvenStrengthTimeOnIcePerGame` did in v0.4) removes the guard
+    /// automatically.
+    ///
+    /// **MIN_GP guard**: derived per-game / per-82 stats return `None`
+    /// when `gp < MIN_GP` (10). Inherited from the existing PaceScore
+    /// guard (PACE-B2 R2 fix).
+    ///
+    /// **Per-60 TOI floor**: per-60 rates require `total_toi_sec >= 300`
+    /// (PACE-F1 — soft floor). Below that, stats are statistical noise.
+    pub fn read(self, view: &PlayerView<'_>) -> Option<f64> {
+        use StatId::*;
+
+        // DI-11 enforcement at category boundary. OnIceGoals stats are
+        // last-stint-only; summing across stints is wrong-data.
+        if self.category() == StatCategory::OnIceGoals
+            && view.was_traded_in_window()
+        {
+            return None;
+        }
+
+        let stats = view.stats;
+
+        match self {
+            // ─── Scoring (14) ───────────────────────────────────────
+            Goals       => Some(stats.totals.goals as f64),
+            Assists     => Some(stats.totals.assists as f64),
+            Points      => Some(stats.totals.points as f64),
+            EvGoals     => {
+                // Even-strength = total minus PP minus SH.
+                let g = stats.totals.goals;
+                Some(g.saturating_sub(stats.totals.pp_goals)
+                      .saturating_sub(stats.totals.sh_goals) as f64)
+            }
+            EvPoints    => {
+                let p = stats.totals.points;
+                Some(p.saturating_sub(stats.totals.pp_points)
+                      .saturating_sub(stats.totals.sh_points) as f64)
+            }
+            PpGoals     => Some(stats.totals.pp_goals as f64),
+            PpAssists   => Some(view.pp_assists() as f64),
+            PpPoints    => Some(stats.totals.pp_points as f64),
+            ShGoals     => Some(stats.totals.sh_goals as f64),
+            ShPoints    => Some(stats.totals.sh_points as f64),
+            Gwg         => Some(stats.totals.gwg as f64),
+            OtGoals     => Some(stats.totals.ot_goals as f64),
+            Shots       => Some(stats.totals.shots as f64),
+            ShootingPct => stats.totals.shooting_pct.map(f64::from),
+
+            // ─── SpecialTeams (11) — all Tier-2, deferred to L.6 ───
+            // These need PP-TOI / PK-TOI denominators which only the
+            // powerplay / penaltykill endpoints emit. Computing per-60
+            // from per-82 (i.e. season totals) would need PP-TOI /
+            // total-TOI ratio — not the same numerator. HART-R checkpoint
+            // caught a numeric bug here in L.2.2's first draft; gate
+            // every SpecialTeams arm to `None` until the L.6 cache lands
+            // the powerplay/penaltykill rows with proper PP-TOI.
+            PpGoalsPer60        => None,  // L.6: powerplay endpoint
+            PpPointsPer60       => None,  // L.6: powerplay endpoint
+            PpAssistsPer60      => None,  // L.6: powerplay endpoint
+            PpShootingPct       => None,  // L.6: powerplay endpoint
+            ShGoalsPer60        => None,  // L.6: penaltykill endpoint
+            ShPointsPer60       => None,  // L.6: penaltykill endpoint
+            PpGoalsAgainstPer60 => None,  // L.6: penaltykill endpoint
+            FaceoffWins         => None,  // L.6: faceoffwins endpoint
+            FaceoffLosses       => None,  // L.6: faceoffwins endpoint
+            OffensiveZoneFaceoffPct => None,  // L.6: faceoffpercentages
+            DefensiveZoneFaceoffPct => None,  // L.6: faceoffpercentages
+
+            // ─── TwoWay (17) ────────────────────────────────────────
+            PlusMinus   => Some(stats.totals.plus_minus as f64),
+            Pim         => Some(stats.totals.pim as f64),
+            Hits        => view.hits().map(f64::from),
+            BlockedShots => view.blocked_shots().map(f64::from),
+            Takeaways   => view.takeaways().map(f64::from),
+            Giveaways   => view.giveaways().map(f64::from),
+            MissedShots => stats.realtime.as_ref().map(|r| r.missed_shots as f64),
+            HitsPer60         => per_60(view, view.hits()),
+            BlockedShotsPer60 => per_60(view, view.blocked_shots()),
+            TakeawaysPer60    => per_60(view, view.takeaways()),
+            GiveawaysPer60    => per_60(view, view.giveaways()),
+            PenaltiesDrawn        => None,  // L.6: penalties endpoint
+            PenaltiesDrawnPer60   => None,  // L.6
+            PenaltiesTakenPer60   => None,  // L.6
+            NetPenalties          => None,  // L.6
+            NetPenaltiesPer60     => None,  // L.6
+            FaceoffWinPct => stats.totals.faceoff_win_pct.map(f64::from),
+
+            // ─── TimeOnIce (12) ─────────────────────────────────────
+            TotalToi        => stats.time_on_ice.as_ref()
+                                  .map(|t| t.time_on_ice_sec as f64),
+            TotalToiPerGame => stats.totals.toi_per_game_sec.map(f64::from)
+                .or_else(|| stats.time_on_ice.as_ref()
+                              .map(|t| t.time_on_ice_per_game_sec as f64)),
+            EvToi           => stats.time_on_ice.as_ref()
+                                  .map(|t| t.ev_time_on_ice_sec as f64),
+            EvToiPerGame    => stats.time_on_ice.as_ref()
+                                  .map(|t| t.ev_time_on_ice_per_game_sec as f64),
+            // SCOUT-R2 L2-F3: sourced from goalsForAgainst, lives in
+            // TimeOnIce category (NOT subject to DI-11 since this
+            // category isn't OnIceGoals).
+            EvenStrengthTimeOnIcePerGame => stats.goals_for_against.as_ref()
+                .map(|g| g.ev_time_on_ice_per_game_sec as f64),
+            PpToi           => stats.time_on_ice.as_ref()
+                                  .map(|t| t.pp_time_on_ice_sec as f64),
+            PpToiPerGame    => stats.time_on_ice.as_ref()
+                                  .map(|t| t.pp_time_on_ice_per_game_sec as f64),
+            ShToi           => stats.time_on_ice.as_ref()
+                                  .map(|t| t.sh_time_on_ice_sec as f64),
+            ShToiPerGame    => stats.time_on_ice.as_ref()
+                                  .map(|t| t.sh_time_on_ice_per_game_sec as f64),
+            Shifts          => stats.time_on_ice.as_ref()
+                                  .map(|t| t.shifts as f64),
+            ShiftsPerGame   => stats.time_on_ice.as_ref()
+                                  .map(|t| f64::from(t.shifts_per_game)),
+            ToiPerShift     => stats.time_on_ice.as_ref()
+                                  .map(|t| f64::from(t.time_on_ice_per_shift_sec)),
+
+            // ─── OnIceGoals (8) — DI-11 already short-circuited ─────
+            EvGoalsFor          => stats.goals_for_against.as_ref()
+                                      .map(|g| g.ev_goals_for as f64),
+            EvGoalsAgainst      => stats.goals_for_against.as_ref()
+                                      .map(|g| g.ev_goals_against as f64),
+            EvGoalsForPct       => stats.goals_for_against.as_ref()
+                                      .and_then(|g| g.ev_goals_for_pct.map(f64::from)),
+            PpGoalsFor          => stats.goals_for_against.as_ref()
+                                      .map(|g| g.pp_goals_for as f64),
+            PpGoalsAgainst      => stats.goals_for_against.as_ref()
+                                      .map(|g| g.pp_goals_against as f64),
+            ShGoalsFor          => stats.goals_for_against.as_ref()
+                                      .map(|g| g.sh_goals_for as f64),
+            ShGoalsAgainst      => stats.goals_for_against.as_ref()
+                                      .map(|g| g.sh_goals_against as f64),
+            EvenStrengthGoalDifference => stats.goals_for_against.as_ref()
+                                      .map(|g| g.even_strength_goal_difference as f64),
+
+            // ─── Possession (15) — Tier-2 (L.6) ─────────────────────
+            // Most populate from extra_reports in L.6. The MoneyPuck
+            // CSV path (xg/cf_pct/ff_pct/xgf_pct on AdvancedStats) is
+            // the L.1 path that already exists.
+            SatPct          => view.cf_pct(),
+            UsatPct         => view.ff_pct(),
+            OffensiveZoneStartPct => None,  // L.6: puckPossessions
+            DefensiveZoneStartPct => None,
+            NeutralZoneStartPct   => None,
+            OnIceShootingPct      => None,
+            Goals5v5         => None,  // L.6: scoringRates
+            Assists5v5       => None,
+            Points5v5        => None,
+            PointsPer60_5v5  => None,
+            IxG              => view.xg(),  // existing MoneyPuck path
+            IxgPer60         => view.xg_per_60(),
+            OnIceXgFor       => None,  // L.6: distinct from individual xG
+            OnIceXgAgainst   => None,
+            XgForPct         => view.xgf_pct(),
+
+            // ─── Goalie (23) ────────────────────────────────────────
+            GoalieGames      => stats.goalie.as_ref().map(|_| stats.totals.gp as f64),
+            GoalieStarts     => stats.goalie.as_ref()
+                                  .map(|g| g.games_started as f64),
+            Wins             => stats.goalie.as_ref().map(|g| g.wins as f64),
+            Losses           => stats.goalie.as_ref().map(|g| g.losses as f64),
+            OtLosses         => stats.goalie.as_ref()
+                                  .and_then(|g| g.ot_losses.map(f64::from)),
+            Ties             => stats.goalie.as_ref()
+                                  .and_then(|g| g.ties.map(f64::from)),
+            Saves            => stats.goalie.as_ref().map(|g| g.saves as f64),
+            ShotsAgainst     => stats.goalie.as_ref()
+                                  .map(|g| g.shots_against as f64),
+            GoalsAgainst     => stats.goalie.as_ref()
+                                  .map(|g| g.goals_against as f64),
+            SavePct          => stats.goalie.as_ref()
+                                  .and_then(|g| g.save_pct.map(f64::from)),
+            Gaa              => stats.goalie.as_ref()
+                                  .and_then(|g| g.goals_against_average.map(f64::from)),
+            Shutouts         => stats.goalie.as_ref().map(|g| g.shutouts as f64),
+            EvSavePct        => stats.goalie_saves_by_strength.as_ref()
+                                  .and_then(|g| g.ev_save_pct.map(f64::from)),
+            PpSavePct        => stats.goalie_saves_by_strength.as_ref()
+                                  .and_then(|g| g.pp_save_pct.map(f64::from)),
+            ShSavePct        => stats.goalie_saves_by_strength.as_ref()
+                                  .and_then(|g| g.sh_save_pct.map(f64::from)),
+            QualityStarts    => stats.goalie_advanced.as_ref()
+                                  .map(|g| g.quality_starts as f64),
+            QualityStartPct  => stats.goalie_advanced.as_ref()
+                                  .and_then(|g| g.quality_starts_pct.map(f64::from)),
+            RegulationWins   => stats.goalie_advanced.as_ref()
+                                  .map(|g| g.regulation_wins as f64),
+            RegulationLosses => stats.goalie_advanced.as_ref()
+                                  .map(|g| g.regulation_losses as f64),
+            // GSAx family — Tier-2 (L.6 MoneyPuck/NHL Edge).
+            GoalieXgAgainst       => None,  // L.6
+            GoalieXgAgainstPer60  => None,  // L.6
+            GoalsSavedAboveExpected => None,  // L.6
+            Gsax60                => None,  // L.6
+
+            // ─── Derived (7) ────────────────────────────────────────
+            // All inherit MIN_GP guard.
+            Pace82       => view.pace_82(),
+            GoalsPer82   => view.goals_per_82(),
+            AssistsPer82 => {
+                let gp = view.gp();
+                if gp < MIN_GP { None }
+                else { Some(view.assists() as f64 / gp as f64 * 82.0) }
+            }
+            PointsPerGame => {
+                let gp = view.gp();
+                if gp < MIN_GP { None }
+                else { Some(view.points() as f64 / gp as f64) }
+            }
+            GoalsPerGame => {
+                let gp = view.gp();
+                if gp < MIN_GP { None }
+                else { Some(view.goals() as f64 / gp as f64) }
+            }
+            AssistsPerGame => {
+                let gp = view.gp();
+                if gp < MIN_GP { None }
+                else { Some(view.assists() as f64 / gp as f64) }
+            }
+            PaceSortKey => Some(view.pace_sort_key()),
+        }
+    }
+
+    /// Universal sort comparator (AI-06). Tiebreak: `(stat_value
+    /// desc/asc, nhl_id asc)`. `None` sorts last regardless of
+    /// `higher_is_better`. Codified here so every catalog-driven sort
+    /// across the app inherits the same ordering.
+    pub fn sort_cmp(self, a: &PlayerView<'_>, b: &PlayerView<'_>) -> std::cmp::Ordering {
+        use std::cmp::Ordering;
+        let va = self.read(a);
+        let vb = self.read(b);
+        match (va, vb) {
+            (Some(x), Some(y)) => {
+                let primary = if self.higher_is_better() {
+                    y.partial_cmp(&x).unwrap_or(Ordering::Equal)
+                } else {
+                    x.partial_cmp(&y).unwrap_or(Ordering::Equal)
+                };
+                primary.then_with(|| a.id().0.cmp(&b.id().0))
+            }
+            // None sorts last — direction-agnostic per AI-06.
+            (Some(_), None) => Ordering::Less,
+            (None, Some(_)) => Ordering::Greater,
+            (None, None) => a.id().0.cmp(&b.id().0),
+        }
+    }
+
+    /// Multi-window aggregate (AI-09 strict propagation). Returns
+    /// `Some(blend)` only when EVERY window in `views` has `Some`
+    /// from `read()`. ANY `None` (missing data, era gate, trade
+    /// guard, MIN_GP floor) propagates as `None` — no silent zeros.
+    ///
+    /// Blend semantics by unit (L.2.2 v1):
+    /// - **Count / Seconds**: integer sum.
+    /// - **Pct / Per60 / Rate / Inverted**: GP-weighted average.
+    ///   Falls back to simple mean when total GP is 0 (e.g. all
+    ///   views in a goalie career-window with `gp` defaulting low).
+    ///
+    /// **Future work** (FORGE-R follow-up): TOI-weighting for Per60
+    /// rates is the more accurate blend when TOI varies meaningfully
+    /// across windows (PP-only specialists, etc.). Lands when L.6
+    /// brings reliable PP-TOI / SH-TOI denominators online; for L.2
+    /// the GP weighting matches the spec's strict-propagation contract
+    /// without lying about a richer blend that isn't implemented.
+    pub fn aggregate_read(self, views: &[PlayerView<'_>]) -> Option<f64> {
+        if views.is_empty() {
+            return None;
+        }
+        // Read all — strict propagation: any None aborts.
+        let vals: Option<Vec<f64>> = views.iter().map(|v| self.read(v)).collect();
+        let vals = vals?;
+
+        match self.unit() {
+            // Sum semantics.
+            StatUnit::Count | StatUnit::Seconds => Some(vals.iter().sum()),
+
+            // Weighted blend. Use GP weights when applicable.
+            StatUnit::Pct
+            | StatUnit::Per60
+            | StatUnit::Rate
+            | StatUnit::Inverted => {
+                // GP-weighted blend.
+                let gps: Vec<f64> = views.iter().map(|v| v.gp() as f64).collect();
+                let total_gp: f64 = gps.iter().sum();
+                if total_gp <= 0.0 {
+                    // No weights — fall back to simple mean.
+                    return Some(vals.iter().sum::<f64>() / vals.len() as f64);
+                }
+                let weighted: f64 = vals.iter().zip(gps.iter())
+                    .map(|(v, w)| v * w)
+                    .sum();
+                Some(weighted / total_gp)
+            }
+        }
+    }
+}
+
+/// Per-60 helper — divides a `Some(count)` by total TOI seconds
+/// (multiplied to per-60 rate). Returns `None` when:
+///   - the count is `None` (e.g. realtime data absent for pre-2005),
+///   - total TOI is unavailable,
+///   - total TOI is below the 300s soft floor (PACE-F1 — statistical
+///     noise from microscopic ice time).
+fn per_60(view: &PlayerView<'_>, count: Option<u32>) -> Option<f64> {
+    let toi_sec = view.stats.time_on_ice.as_ref().map(|t| t.time_on_ice_sec)
+        .or_else(|| view.stats.totals.toi_per_game_sec
+            .map(|per_g| per_g.saturating_mul(view.gp())))?;
+    if toi_sec < 300 {
+        return None;
+    }
+    let n = count? as f64;
+    Some(n * 3600.0 / toi_sec as f64)
+}
+
+// ─── L.2.4 — Filter grammar primitives ──────────────────────────────────────
+
+/// Comparison op for `StatFilter`. Min = `>=`, Max = `<=`, Equals = `==` / `=`.
+/// `Equals` tolerance is unit-aware (per L2-B1 — replacing `f64::EPSILON`):
+/// Count/Seconds use exact integer compare; Pct/Rate/Inverted use 1e-6;
+/// Per60 uses 1e-3.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum FilterOp {
+    Min,
+    Max,
+    Equals,
+}
+
+/// Filter-grammar parse failure (FORGE-R2-B4 / EDGE-R2). Seven variants —
+/// every malformed-input class in II-05 / II-06 maps to exactly one variant.
+/// `Display` impl produces the user-facing error message; the CLI front-end
+/// renders `eprintln!("error: {}", e)` and exits non-zero.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FilterParseError {
+    /// `""` — empty `--filter` value.
+    EmptyInput,
+    /// `">=10"`, `"  >= 10"` — whitespace-only stat key.
+    EmptyStatKey,
+    /// `"hits10"`, `"hits 10"` — no op token.
+    MissingOp { input: String },
+    /// `"hits>=>5"`, `"hits===5"` — more than one op token.
+    MultipleOps { input: String },
+    /// `"hots-per-60>=1"` — parses but `from_cli_key` returns `None`.
+    UnknownStat { key: String },
+    /// `"hits>=abc"`, `"hits>=1,5"` (locale-comma decimals) — `f64::from_str` fails.
+    BadNumber { token: String },
+    /// `"hits>=NaN"`, `"hits>=inf"`, `"hits>=-inf"` — parsed but not finite.
+    NotFinite { token: String },
+}
+
+impl std::fmt::Display for FilterParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::EmptyInput =>
+                write!(f, "filter is empty — expected `<stat-key><op><value>` (e.g. \"goals>=30\")"),
+            Self::EmptyStatKey =>
+                write!(f, "filter stat-key is empty — expected `<stat-key><op><value>` (e.g. \"goals>=30\")"),
+            Self::MissingOp { input } =>
+                write!(f, "filter {input:?} has no op — expected one of `>=`, `<=`, `==`, `=`"),
+            Self::MultipleOps { input } =>
+                write!(f, "filter {input:?} has multiple ops — expected exactly one of `>=`, `<=`, `==`, `=`"),
+            Self::UnknownStat { key } =>
+                write!(f, "unknown stat key {key:?} — see `--help` or use one of the catalog cli_keys"),
+            Self::BadNumber { token } =>
+                write!(f, "filter value {token:?} is not a valid number (locale-comma `,` is not accepted; use `.`)"),
+            Self::NotFinite { token } =>
+                write!(f, "filter value {token:?} is not finite (NaN/inf rejected)"),
+        }
+    }
+}
+
+impl std::error::Error for FilterParseError {}
+
+/// One stat-vs-value filter. Constructed only via `StatFilter::new`
+/// (the finite-value gate) or `parse_filter` (which routes through
+/// `new`). Downstream code can assume `value.is_finite()` always.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct StatFilter {
+    pub stat: StatId,
+    pub op: FilterOp,
+    pub value: f64,
+}
+
+impl StatFilter {
+    /// Construct a `StatFilter`. Rejects NaN / infinity at the gate
+    /// (II-05 / EDGE-R2). The CLI parser routes through this; the TUI
+    /// numeric-input field validates before calling.
+    pub fn new(stat: StatId, op: FilterOp, value: f64) -> Result<Self, FilterParseError> {
+        if !value.is_finite() {
+            return Err(FilterParseError::NotFinite { token: value.to_string() });
+        }
+        Ok(Self { stat, op, value })
+    }
+}
+
+/// Parse a filter expression `<stat-key><op><value>` per II-05 grammar.
+///
+/// **Op tokens** in priority order: `>=`, `<=`, `==`, `=`. Whitespace
+/// allowed around the op AND surrounding the whole input.
+///
+/// **Trigger inputs** for each error variant:
+/// - `EmptyInput`: empty/whitespace-only string.
+/// - `EmptyStatKey`: stat-key portion empty after trim.
+/// - `MissingOp`: no recognized op token.
+/// - `MultipleOps`: more than one op token.
+/// - `UnknownStat`: stat-key not in `StatId::from_cli_key`.
+/// - `BadNumber`: number portion fails `f64::from_str` (includes
+///   locale comma `1,5`, alphabetic, empty).
+/// - `NotFinite`: parses to NaN / +inf / -inf.
+pub fn parse_filter(input: &str) -> Result<StatFilter, FilterParseError> {
+    let trimmed = input.trim();
+    if trimmed.is_empty() {
+        return Err(FilterParseError::EmptyInput);
+    }
+
+    // Find first op match. Order matters: `>=` / `<=` / `==` before `=`
+    // (single-char `=` is a substring of `==`).
+    const OPS: &[(&str, FilterOp)] = &[
+        (">=", FilterOp::Min),
+        ("<=", FilterOp::Max),
+        ("==", FilterOp::Equals),
+        ("=",  FilterOp::Equals),
+    ];
+
+    let (op, op_pos, op_len) = {
+        let mut best: Option<(FilterOp, usize, usize)> = None;
+        for (token, op) in OPS {
+            if let Some(pos) = trimmed.find(token) {
+                match best {
+                    None => best = Some((*op, pos, token.len())),
+                    Some((_, prev_pos, prev_len)) => {
+                        // Prefer the EARLIEST op; on tie, prefer the
+                        // LONGER op (so `>=` wins over `=` at the same
+                        // position). This routes `hits>=10` to `>=`,
+                        // not `=`.
+                        if pos < prev_pos || (pos == prev_pos && token.len() > prev_len) {
+                            best = Some((*op, pos, token.len()));
+                        }
+                    }
+                }
+            }
+        }
+        match best {
+            Some(b) => b,
+            None => return Err(FilterParseError::MissingOp { input: trimmed.to_owned() }),
+        }
+    };
+
+    let key_part = &trimmed[..op_pos];
+    let value_part = &trimmed[op_pos + op_len..];
+
+    // MultipleOps: any of `=`, `>`, `<` in the value part means a
+    // second op token leaked through. Catches `hits>=>5`, `hits===5`,
+    // `hits=5=`.
+    if value_part.contains('=') || value_part.contains('>') || value_part.contains('<') {
+        return Err(FilterParseError::MultipleOps { input: trimmed.to_owned() });
+    }
+    // Same check on the key part (defensive — splitting at first op
+    // means key_part shouldn't normally contain ops, but a leading op
+    // could leak; e.g. ">=hits>=5" would split as ""-">="-"hits>=5").
+    if key_part.contains('=') || key_part.contains('>') || key_part.contains('<') {
+        return Err(FilterParseError::MultipleOps { input: trimmed.to_owned() });
+    }
+
+    let stat_key = key_part.trim();
+    if stat_key.is_empty() {
+        return Err(FilterParseError::EmptyStatKey);
+    }
+
+    let value_str = value_part.trim();
+    if value_str.is_empty() {
+        return Err(FilterParseError::BadNumber { token: value_str.to_owned() });
+    }
+
+    // f64::from_str rejects locale comma `1,5` and bare alphabetic.
+    let value: f64 = value_str.parse().map_err(|_| {
+        FilterParseError::BadNumber { token: value_str.to_owned() }
+    })?;
+
+    if !value.is_finite() {
+        return Err(FilterParseError::NotFinite { token: value_str.to_owned() });
+    }
+
+    let stat = StatId::from_cli_key(stat_key)
+        .ok_or_else(|| FilterParseError::UnknownStat { key: stat_key.to_owned() })?;
+
+    StatFilter::new(stat, op, value)
+}
 
 /// One raw NHL API row from a Tier-1 endpoint. Implementors expose
 /// the `seasonId` field for the per-endpoint fence (DI-29).
@@ -444,5 +1790,686 @@ mod tests {
                  see data/api-probe-2026-05-02.txt for the inventory"
             );
         }
+    }
+
+    // ─── L.2.1 — StatId / StatCategory / StatUnit tests ─────────────────────
+
+    /// Pin total stat count. v0.4 spec §"Stat enumeration" prose totals
+    /// to 108; the L.2.1 implementation rationalizes two spec drifts:
+    ///   - Goalie was listed as 22 but enumerated 23 (19 base + 4 GSAx)
+    ///     → we go with 23 (the explicit list).
+    ///   - `PpToiPerGame` / `ShToiPerGame` were double-listed in both
+    ///     SpecialTeams AND TimeOnIce. We keep them only in TimeOnIce
+    ///     (natural domain fit) → SpecialTeams 13 → 11.
+    /// Net: 14 + 11 + 17 + 12 + 8 + 15 + 23 + 7 = 107. Drift recorded
+    /// for the HART/FORGE checkpoint to weigh in on whether to push
+    /// the spec or rebalance the catalog.
+    #[test]
+    fn l0_lindsay_stat_id_total_count() {
+        assert_eq!(
+            StatId::all().len(),
+            107,
+            "catalog total — drift from 107 means a variant added/removed \
+             without updating StatId::all() OR a category test below"
+        );
+    }
+
+    /// Per-category counts.
+    /// 14 + 11 + 17 + 12 + 8 + 15 + 23 + 7 = 107.
+    #[test]
+    fn l0_lindsay_stat_id_per_category_counts() {
+        let count_in = |c: StatCategory| -> usize {
+            StatId::all().iter().filter(|s| s.category() == c).count()
+        };
+        assert_eq!(count_in(StatCategory::Identity),     0,  "Identity");
+        assert_eq!(count_in(StatCategory::Scoring),      14, "Scoring");
+        assert_eq!(count_in(StatCategory::SpecialTeams), 11, "SpecialTeams (PpToiPerGame/ShToiPerGame relocated to TimeOnIce)");
+        assert_eq!(count_in(StatCategory::TwoWay),       17, "TwoWay");
+        assert_eq!(count_in(StatCategory::TimeOnIce),    12, "TimeOnIce");
+        assert_eq!(count_in(StatCategory::OnIceGoals),   8,  "OnIceGoals");
+        assert_eq!(count_in(StatCategory::Possession),   15, "Possession");
+        assert_eq!(count_in(StatCategory::Goalie),       23, "Goalie (19 base + 4 GSAx)");
+        assert_eq!(count_in(StatCategory::Derived),      7,  "Derived");
+    }
+
+    /// Iteration determinism — `StatId::all()` returns variants in a
+    /// stable order across runs (declaration order). UI dropdowns +
+    /// site rendering rely on this (AI-05).
+    #[test]
+    fn l0_lindsay_stat_id_iteration_deterministic() {
+        let first_run: Vec<StatId> = StatId::all().to_vec();
+        let second_run: Vec<StatId> = StatId::all().to_vec();
+        assert_eq!(first_run, second_run);
+        // First three should always be the Scoring leaders.
+        assert_eq!(first_run[0], StatId::Goals);
+        assert_eq!(first_run[1], StatId::Assists);
+        assert_eq!(first_run[2], StatId::Points);
+    }
+
+    /// Every variant has a unique `cli_key()`. Collisions would silently
+    /// route `--filter "X>=1"` to whichever `cli_key()` arm was checked
+    /// first by `from_cli_key`'s linear scan. Pin uniqueness here.
+    /// Catches accidental copy-paste duplicates across the 107 arms.
+    #[test]
+    fn l0_lindsay_cli_keys_unique_across_catalog() {
+        let mut seen = std::collections::HashSet::new();
+        for sid in StatId::all() {
+            let key = sid.cli_key();
+            assert!(
+                seen.insert(key),
+                "duplicate cli_key {key:?} — collision blocks --filter / \
+                 --sort routing for one of the colliding StatIds"
+            );
+        }
+        // Sanity: 107 unique keys.
+        assert_eq!(seen.len(), 107);
+    }
+
+    /// `from_cli_key` round-trip: every variant's `cli_key()` parses
+    /// back to itself. Catches a typo'd arm in either direction.
+    #[test]
+    fn l0_lindsay_cli_key_round_trip() {
+        for sid in StatId::all() {
+            let key = sid.cli_key();
+            let back = StatId::from_cli_key(key)
+                .unwrap_or_else(|| panic!("from_cli_key({key:?}) returned None"));
+            assert_eq!(*sid, back, "round-trip failed for cli_key {key:?}");
+        }
+    }
+
+    /// `from_cli_key` returns `None` for unknown keys. CLI grammar
+    /// (L.2.4) maps this to `FilterParseError::UnknownStat`.
+    #[test]
+    fn l0_lindsay_cli_key_unknown_returns_none() {
+        assert_eq!(StatId::from_cli_key("bogus-stat"), None);
+        assert_eq!(StatId::from_cli_key(""), None);
+        assert_eq!(StatId::from_cli_key("HITS"), None, "case-sensitive");
+    }
+
+    /// Every variant has non-empty `label()` / `short_label()` /
+    /// `narrow_label()`. Catches a missing arm or accidentally-empty
+    /// string (would render as "" in TUI / site columns).
+    #[test]
+    fn l0_lindsay_every_label_non_empty() {
+        for sid in StatId::all() {
+            assert!(!sid.label().is_empty(), "{sid:?} has empty label()");
+            assert!(!sid.short_label().is_empty(), "{sid:?} has empty short_label()");
+            assert!(!sid.narrow_label().is_empty(), "{sid:?} has empty narrow_label()");
+        }
+    }
+
+    /// `cli_key()` is hyphen-case lowercase ASCII. Site CSS class names
+    /// (`.stat-X`) and URL anchors (`#X`) need this property.
+    #[test]
+    fn l0_lindsay_cli_keys_are_kebab_case() {
+        for sid in StatId::all() {
+            let k = sid.cli_key();
+            assert!(
+                k.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-'),
+                "cli_key {k:?} has non-kebab-case chars (must be [a-z0-9-])",
+            );
+            assert!(
+                !k.starts_with('-') && !k.ends_with('-'),
+                "cli_key {k:?} has leading or trailing '-'"
+            );
+            assert!(!k.contains("--"), "cli_key {k:?} has consecutive '-'");
+        }
+    }
+
+    /// Inverted-unit stats (lower-is-better) report `higher_is_better()
+    /// == false`. The fix-point is `Gaa` — the canonical inverted stat.
+    /// A few Count stats (Pim, Losses, etc.) are also lower-is-better
+    /// but unit-typed as `Count`; the `higher_is_better` arm handles
+    /// them explicitly.
+    #[test]
+    fn l0_lindsay_higher_is_better_inverted_stats() {
+        assert!(!StatId::Gaa.higher_is_better(), "GAA must be lower-is-better");
+        assert!(!StatId::Losses.higher_is_better(), "Losses lower-is-better");
+        assert!(!StatId::OtLosses.higher_is_better());
+        assert!(!StatId::GoalsAgainst.higher_is_better());
+        assert!(!StatId::Pim.higher_is_better());
+        assert!(!StatId::Giveaways.higher_is_better());
+        assert!(!StatId::EvGoalsAgainst.higher_is_better());
+        // Sanity: the canonical higher-is-better Goals + SavePct.
+        assert!(StatId::Goals.higher_is_better());
+        assert!(StatId::SavePct.higher_is_better());
+        assert!(StatId::Hits.higher_is_better());
+    }
+
+    /// `unit()` matches the field-type discipline on the L.1 substructs:
+    /// counts → `u32` storage; pcts → `Option<f32>`; per-60 → `f32`;
+    /// seconds → `u32`. Pin a few representative arms.
+    #[test]
+    fn l0_lindsay_unit_classification_sanity() {
+        use StatUnit::*;
+        assert_eq!(StatId::Goals.unit(), Count);
+        assert_eq!(StatId::ShootingPct.unit(), Pct);
+        assert_eq!(StatId::HitsPer60.unit(), Per60);
+        assert_eq!(StatId::TotalToi.unit(), Seconds);
+        assert_eq!(StatId::Pace82.unit(), Rate);
+        assert_eq!(StatId::Gaa.unit(), Inverted);
+        assert_eq!(StatId::SavePct.unit(), Pct);
+        assert_eq!(StatId::IxG.unit(), Rate);
+    }
+
+    /// `StatCategory::all()` lists every category in declaration order.
+    /// Drives TUI section-stack rendering.
+    #[test]
+    fn l0_lindsay_stat_category_all_listed() {
+        let categories = StatCategory::all();
+        assert_eq!(categories.len(), 9);
+        assert_eq!(categories[0], StatCategory::Identity);
+        assert_eq!(categories.last(), Some(&StatCategory::Derived));
+    }
+
+    // ─── L.2.2 — read / applies_to / available_since tests ─────────────────
+
+    use crate::identity::PlayerId;
+    use crate::model::{Position, Season, TeamAbbr};
+    use crate::season_stats::{
+        SeasonStats, SeasonStatsBuilder, SeasonType, StatTotals,
+    };
+
+    /// `applies_to` truth table — Goalie stats only apply to goalies.
+    #[test]
+    fn l0_lindsay_applies_to_goalie_category() {
+        // Goalie stats — only when is_goalie=true.
+        for sid in StatId::all().iter().filter(|s| s.category() == StatCategory::Goalie) {
+            assert!(
+                !sid.applies_to(Position::Center, false),
+                "{sid:?} must not apply to skater"
+            );
+            assert!(
+                sid.applies_to(Position::Center, true),
+                "{sid:?} must apply to goalie (per-row is_goalie=true)"
+            );
+        }
+    }
+
+    /// `applies_to` — skater stats are HIDDEN on goalie views.
+    #[test]
+    fn l0_lindsay_applies_to_skater_stats_hidden_on_goalies() {
+        for sid in [StatId::Goals, StatId::Assists, StatId::Hits, StatId::PpToiPerGame] {
+            assert!(
+                sid.applies_to(Position::Center, false),
+                "{sid:?} must apply to skater"
+            );
+            assert!(
+                !sid.applies_to(Position::Center, true),
+                "{sid:?} must be hidden on goalie views"
+            );
+        }
+    }
+
+    /// `applies_to` — faceoff-taker stats gated to centers only.
+    #[test]
+    fn l0_lindsay_applies_to_faceoff_centers_only() {
+        for sid in [StatId::FaceoffWinPct, StatId::FaceoffWins, StatId::FaceoffLosses] {
+            assert!(sid.applies_to(Position::Center, false), "{sid:?} for C");
+            assert!(!sid.applies_to(Position::LeftWing, false), "{sid:?} blocked for LW");
+            assert!(!sid.applies_to(Position::Defense, false), "{sid:?} blocked for D");
+        }
+    }
+
+    /// `available_since` — pre-2005 era gates realtime stats.
+    #[test]
+    fn l0_lindsay_available_since_realtime_2005() {
+        for sid in [StatId::Hits, StatId::BlockedShots, StatId::Takeaways, StatId::Giveaways] {
+            assert!(!sid.applies_to_era(Season(20002001)), "{sid:?} not pre-2005");
+            assert!(sid.applies_to_era(Season(20052006)), "{sid:?} OK at 2005-06");
+            assert!(sid.applies_to_era(Season(20242025)), "{sid:?} OK modern");
+        }
+    }
+
+    /// `available_since` — pre-2007 era gates possession + xG.
+    #[test]
+    fn l0_lindsay_available_since_possession_2007() {
+        for sid in [StatId::SatPct, StatId::IxG, StatId::OnIceXgFor, StatId::Goals5v5] {
+            assert!(!sid.applies_to_era(Season(20062007)), "{sid:?} pre-2007 gate");
+            assert!(sid.applies_to_era(Season(20072008)), "{sid:?} OK at 2007-08");
+        }
+    }
+
+    /// `available_since` — Scoring basics always available.
+    #[test]
+    fn l0_lindsay_available_since_scoring_always() {
+        for sid in [StatId::Goals, StatId::Assists, StatId::Points, StatId::PlusMinus] {
+            assert_eq!(sid.available_since(), Season(0));
+            assert!(sid.applies_to_era(Season(19171918)));
+        }
+    }
+
+    fn synthetic_skater_view(stats: SeasonStats) -> (
+        crate::identity::PlayerIdentity,
+        SeasonStats,
+    ) {
+        let id = stats.player_id;
+        let identity = crate::identity::PlayerIdentity {
+            id,
+            full_name: "Test Skater".into(),
+            name_normalized: "test skater".into(),
+            headshot_canonical_url: None,
+            bio: crate::identity::PlayerBio::default(),
+        };
+        (identity, stats)
+    }
+
+    /// `read()` for Scoring basics returns the value from `totals`.
+    #[test]
+    fn l0_lindsay_read_scoring_basics() {
+        let stats = SeasonStatsBuilder::new(
+            PlayerId(8478402),
+            Season(20242025),
+            SeasonType::Regular,
+            Position::Center,
+        )
+        .add_team_stint(crate::season_stats::TeamStint {
+            team: TeamAbbr("EDM".into()),
+            started: Some("2024-10-09".into()),
+            ended: None,
+            gp: 70, goals: 30, assists: 80, points: 110,
+            goalie: None,
+        })
+        .with_totals(StatTotals {
+            gp: 70, goals: 30, assists: 80, points: 110,
+            shots: 280,
+            pp_goals: 12, pp_points: 36,
+            sh_goals: 1, sh_points: 1,
+            gwg: 8, ot_goals: 2,
+            ..Default::default()
+        })
+        .build();
+        let (identity, stats) = synthetic_skater_view(stats);
+        let view = PlayerView {
+            identity: &identity,
+            stats: &stats,
+            contract: None,
+        };
+
+        assert_eq!(StatId::Goals.read(&view),       Some(30.0));
+        assert_eq!(StatId::Assists.read(&view),     Some(80.0));
+        assert_eq!(StatId::Points.read(&view),      Some(110.0));
+        assert_eq!(StatId::PpGoals.read(&view),     Some(12.0));
+        assert_eq!(StatId::PpPoints.read(&view),    Some(36.0));
+        assert_eq!(StatId::ShGoals.read(&view),     Some(1.0));
+        assert_eq!(StatId::Gwg.read(&view),         Some(8.0));
+        assert_eq!(StatId::OtGoals.read(&view),     Some(2.0));
+        assert_eq!(StatId::Shots.read(&view),       Some(280.0));
+        // EvGoals = total - PP - SH = 30 - 12 - 1 = 17
+        assert_eq!(StatId::EvGoals.read(&view),     Some(17.0));
+    }
+
+    fn build_stats_with_totals(player_id: u32, season: u32, totals: StatTotals) -> SeasonStats {
+        SeasonStatsBuilder::new(
+            PlayerId(player_id),
+            Season(season),
+            SeasonType::Regular,
+            Position::Center,
+        )
+        .add_team_stint(crate::season_stats::TeamStint {
+            team: TeamAbbr("EDM".into()),
+            started: Some("2024-10-09".into()),
+            ended: None,
+            gp: totals.gp, goals: totals.goals, assists: totals.assists, points: totals.points,
+            goalie: None,
+        })
+        .with_totals(totals)
+        .build()
+    }
+
+    /// `read()` for derived per-game stats returns None below MIN_GP.
+    #[test]
+    fn l0_lindsay_read_per_game_below_min_gp() {
+        let stats = build_stats_with_totals(8400000, 20242025, StatTotals {
+            gp: 5, goals: 5, assists: 5, points: 10,
+            ..Default::default()
+        });
+        let (identity, stats) = synthetic_skater_view(stats);
+        let view = PlayerView { identity: &identity, stats: &stats, contract: None };
+        assert_eq!(StatId::PointsPerGame.read(&view), None,
+            "GP=5 < MIN_GP must return None");
+        assert_eq!(StatId::GoalsPerGame.read(&view), None);
+        assert_eq!(StatId::AssistsPerGame.read(&view), None);
+    }
+
+    /// `read()` for derived per-game stats works at MIN_GP boundary.
+    #[test]
+    fn l0_lindsay_read_per_game_at_min_gp() {
+        let stats = build_stats_with_totals(8400000, 20242025, StatTotals {
+            gp: 10, goals: 5, assists: 5, points: 10,
+            ..Default::default()
+        });
+        let (identity, stats) = synthetic_skater_view(stats);
+        let view = PlayerView { identity: &identity, stats: &stats, contract: None };
+        assert_eq!(StatId::PointsPerGame.read(&view), Some(1.0));
+        assert_eq!(StatId::GoalsPerGame.read(&view), Some(0.5));
+        assert_eq!(StatId::AssistsPerGame.read(&view), Some(0.5));
+    }
+
+    /// DI-11 — `read()` returns None for OnIceGoals stats when traded
+    /// in window (multi-stint). Category-boundary guard.
+    #[test]
+    fn l0_lindsay_read_on_ice_goals_di11_traded_in_window() {
+        let stats = SeasonStatsBuilder::new(
+            PlayerId(8400000),
+            Season(20242025),
+            SeasonType::Regular,
+            Position::Center,
+        )
+        .add_team_stint(crate::season_stats::TeamStint {
+            team: TeamAbbr("EDM".into()),
+            started: Some("2024-10-09".into()),
+            ended: Some("2025-02-01".into()),
+            gp: 40, goals: 15, assists: 25, points: 40,
+            goalie: None,
+        })
+        .add_team_stint(crate::season_stats::TeamStint {
+            team: TeamAbbr("FLA".into()),
+            started: Some("2025-02-02".into()),
+            ended: None,
+            gp: 30, goals: 10, assists: 15, points: 25,
+            goalie: None,
+        })
+        .with_totals(StatTotals {
+            gp: 70, goals: 25, assists: 40, points: 65,
+            ..Default::default()
+        })
+        .with_goals_for_against(crate::season_stats::GoalsForAgainstStats {
+            ev_goals_for: 100, ev_goals_against: 80,
+            ev_goals_for_pct: Some(0.555),
+            pp_goals_for: 30, pp_goals_against: 1,
+            sh_goals_for: 1, sh_goals_against: 5,
+            even_strength_goal_difference: 20,
+            ev_time_on_ice_per_game_sec: 1100,
+            offensive_points: Some(45),
+            defensive_points: Some(20),
+        })
+        .build();
+        let (identity, stats) = synthetic_skater_view(stats);
+        let view = PlayerView { identity: &identity, stats: &stats, contract: None };
+
+        // Multi-stint → was_traded_in_window() is true → DI-11 fires.
+        assert!(view.was_traded_in_window());
+        assert_eq!(StatId::EvGoalsFor.read(&view), None,
+            "DI-11 — OnIceGoals must short-circuit to None when traded");
+        assert_eq!(StatId::EvenStrengthGoalDifference.read(&view), None);
+
+        // EvenStrengthTimeOnIcePerGame is in TimeOnIce category, NOT
+        // OnIceGoals. DI-11 must NOT fire — stat reads through.
+        assert_eq!(
+            StatId::EvenStrengthTimeOnIcePerGame.read(&view),
+            Some(1100.0),
+            "TimeOnIce category exempt from DI-11"
+        );
+        // Scoring stats unaffected.
+        assert_eq!(StatId::Goals.read(&view), Some(25.0));
+    }
+
+    fn build_goalie_stats(
+        player_id: u32, season: u32, gaa: f32, sv_pct: f32,
+    ) -> SeasonStats {
+        SeasonStatsBuilder::new(
+            PlayerId(player_id),
+            Season(season),
+            SeasonType::Regular,
+            Position::Goalie,
+        )
+        .add_team_stint(crate::season_stats::TeamStint {
+            team: TeamAbbr("EDM".into()),
+            started: Some("2024-10-09".into()),
+            ended: None,
+            gp: 50, goals: 0, assists: 0, points: 0,
+            goalie: None,
+        })
+        .with_totals(StatTotals { gp: 50, ..Default::default() })
+        .with_goalie(crate::season_stats::GoalieSeasonStats {
+            games_started: 50, wins: 30, losses: 18,
+            ot_losses: Some(2), ties: None,
+            shots_against: 1500, goals_against: 130,
+            saves: 1370, save_pct: Some(sv_pct),
+            goals_against_average: Some(gaa),
+            shutouts: 5, time_on_ice_sec: 3000 * 60,
+        })
+        .build()
+    }
+
+    /// `sort_cmp`: higher_is_better stats sort descending; None last.
+    #[test]
+    fn l0_lindsay_sort_cmp_higher_is_better_descending() {
+        use std::cmp::Ordering;
+        let s1 = build_stats_with_totals(8478402, 20242025, StatTotals {
+            gp: 82, goals: 50, ..Default::default()
+        });
+        let s2 = build_stats_with_totals(8479318, 20242025, StatTotals {
+            gp: 82, goals: 30, ..Default::default()
+        });
+        let (id1, s1c) = synthetic_skater_view(s1);
+        let (id2, s2c) = synthetic_skater_view(s2);
+        let v1 = PlayerView { identity: &id1, stats: &s1c, contract: None };
+        let v2 = PlayerView { identity: &id2, stats: &s2c, contract: None };
+        // McDavid (50G) before Marner (30G) — descending Goals.
+        assert_eq!(StatId::Goals.sort_cmp(&v1, &v2), Ordering::Less);
+        // Reverse direction → reverse cmp.
+        assert_eq!(StatId::Goals.sort_cmp(&v2, &v1), Ordering::Greater);
+    }
+
+    /// `sort_cmp`: lower_is_better (Gaa) sorts ascending.
+    #[test]
+    fn l0_lindsay_sort_cmp_inverted_ascending() {
+        use std::cmp::Ordering;
+        let s1 = build_goalie_stats(8400001, 20242025, 2.50, 0.913);
+        let s2 = build_goalie_stats(8400002, 20242025, 3.10, 0.893);
+        let (id1, s1c) = synthetic_skater_view(s1);
+        let (id2, s2c) = synthetic_skater_view(s2);
+        let v1 = PlayerView { identity: &id1, stats: &s1c, contract: None };
+        let v2 = PlayerView { identity: &id2, stats: &s2c, contract: None };
+        // GAA 2.50 (better) before 3.10 — ascending GAA.
+        assert_eq!(StatId::Gaa.sort_cmp(&v1, &v2), Ordering::Less);
+    }
+
+    /// `aggregate_read` — strict propagation: any None → None.
+    #[test]
+    fn l0_lindsay_aggregate_read_strict_propagation() {
+        let s1 = build_stats_with_totals(8478402, 20242025, StatTotals {
+            gp: 82, goals: 50, ..Default::default()
+        });
+        let s2 = build_stats_with_totals(8478402, 20232024, StatTotals {
+            gp: 5, goals: 3, ..Default::default()  // < MIN_GP
+        });
+        let (id1, s1c) = synthetic_skater_view(s1);
+        let (id2, s2c) = synthetic_skater_view(s2);
+        let v1 = PlayerView { identity: &id1, stats: &s1c, contract: None };
+        let v2 = PlayerView { identity: &id2, stats: &s2c, contract: None };
+
+        // Goals (Count) — sums across windows even when GP varies.
+        assert_eq!(StatId::Goals.aggregate_read(&[v1, v2]), Some(53.0));
+
+        // PointsPerGame — second window below MIN_GP returns None →
+        // aggregate propagates None.
+        assert_eq!(StatId::PointsPerGame.aggregate_read(&[v1, v2]), None);
+    }
+
+    /// `aggregate_read` — empty slice returns None.
+    #[test]
+    fn l0_lindsay_aggregate_read_empty_returns_none() {
+        assert_eq!(StatId::Goals.aggregate_read(&[]), None);
+    }
+
+    // ─── L.2.4 — FilterParseError + parse_filter tests ─────────────────────
+
+    /// Happy path: all four ops parse + every category exercised.
+    #[test]
+    fn l0_lindsay_parse_filter_happy_paths() {
+        let f = parse_filter("goals>=30").unwrap();
+        assert_eq!(f.stat, StatId::Goals);
+        assert_eq!(f.op, FilterOp::Min);
+        assert_eq!(f.value, 30.0);
+
+        let f = parse_filter("save-pct==0.92").unwrap();
+        assert_eq!(f.stat, StatId::SavePct);
+        assert_eq!(f.op, FilterOp::Equals);
+        assert!((f.value - 0.92).abs() < 1e-9);
+
+        let f = parse_filter("hits-per-60<=2.0").unwrap();
+        assert_eq!(f.stat, StatId::HitsPer60);
+        assert_eq!(f.op, FilterOp::Max);
+
+        // Single-`=` shorthand for Equals.
+        let f = parse_filter("plus-minus=22").unwrap();
+        assert_eq!(f.stat, StatId::PlusMinus);
+        assert_eq!(f.op, FilterOp::Equals);
+        assert_eq!(f.value, 22.0);
+    }
+
+    /// Whitespace tolerance: trim, allowed around op.
+    #[test]
+    fn l0_lindsay_parse_filter_whitespace_tolerated() {
+        for input in &[
+            "  goals>=30  ",
+            "goals >= 30",
+            "  goals  >=  30  ",
+            "\tgoals\t>=\t30\t",
+        ] {
+            let f = parse_filter(input).unwrap_or_else(|e|
+                panic!("input {input:?} should parse: {e}"));
+            assert_eq!(f.stat, StatId::Goals);
+            assert_eq!(f.op, FilterOp::Min);
+            assert_eq!(f.value, 30.0);
+        }
+    }
+
+    /// EmptyInput: empty + whitespace-only.
+    #[test]
+    fn l0_lindsay_parse_filter_empty_input_variant() {
+        for input in &["", "   ", "\t\t", " \n\r"] {
+            assert_eq!(
+                parse_filter(input).unwrap_err(),
+                FilterParseError::EmptyInput,
+                "{input:?} should be EmptyInput"
+            );
+        }
+    }
+
+    /// EmptyStatKey: op present, stat-key empty/whitespace.
+    #[test]
+    fn l0_lindsay_parse_filter_empty_stat_key_variant() {
+        for input in &[">=10", "<=5", "==1", "  >=  10  "] {
+            let err = parse_filter(input).unwrap_err();
+            assert_eq!(
+                err, FilterParseError::EmptyStatKey,
+                "{input:?} should be EmptyStatKey, got {err:?}"
+            );
+        }
+    }
+
+    /// MissingOp: no op token.
+    #[test]
+    fn l0_lindsay_parse_filter_missing_op_variant() {
+        for input in &["hits10", "hits 10", "goals", "shots-per-game"] {
+            let err = parse_filter(input).unwrap_err();
+            assert!(
+                matches!(err, FilterParseError::MissingOp { .. }),
+                "{input:?} should be MissingOp, got {err:?}"
+            );
+        }
+    }
+
+    /// MultipleOps: more than one op token.
+    #[test]
+    fn l0_lindsay_parse_filter_multiple_ops_variant() {
+        for input in &["hits>=>5", "hits===5", "hits>=>=5", "hits<>=5"] {
+            let err = parse_filter(input).unwrap_err();
+            assert!(
+                matches!(err, FilterParseError::MultipleOps { .. }),
+                "{input:?} should be MultipleOps, got {err:?}"
+            );
+        }
+    }
+
+    /// UnknownStat: parses but not in catalog.
+    #[test]
+    fn l0_lindsay_parse_filter_unknown_stat_variant() {
+        for input in &["hots-per-60>=2", "foo=5", "GOALS>=10", "made-up-stat==1"] {
+            let err = parse_filter(input).unwrap_err();
+            assert!(
+                matches!(err, FilterParseError::UnknownStat { .. }),
+                "{input:?} should be UnknownStat, got {err:?}"
+            );
+        }
+    }
+
+    /// BadNumber: number portion fails f64 parse. Includes locale comma.
+    #[test]
+    fn l0_lindsay_parse_filter_bad_number_variant() {
+        for input in &[
+            "hits>=abc",
+            "hits>=1,5",  // locale comma — explicitly rejected
+            "hits>=",     // empty number
+            "hits>=1.2.3",
+        ] {
+            let err = parse_filter(input).unwrap_err();
+            assert!(
+                matches!(err, FilterParseError::BadNumber { .. }),
+                "{input:?} should be BadNumber, got {err:?}"
+            );
+        }
+    }
+
+    /// NotFinite: parses to NaN / +inf / -inf.
+    #[test]
+    fn l0_lindsay_parse_filter_not_finite_variant() {
+        for input in &["hits>=NaN", "hits>=inf", "hits>=-inf", "hits>=+inf"] {
+            let err = parse_filter(input).unwrap_err();
+            assert!(
+                matches!(err, FilterParseError::NotFinite { .. }),
+                "{input:?} should be NotFinite, got {err:?}"
+            );
+        }
+    }
+
+    /// `StatFilter::new` finite-value gate. Direct constructor path.
+    #[test]
+    fn l0_lindsay_stat_filter_new_finite_gate() {
+        // Finite values pass.
+        let f = StatFilter::new(StatId::Goals, FilterOp::Min, 30.0).unwrap();
+        assert_eq!(f.value, 30.0);
+        // NaN rejected.
+        let err = StatFilter::new(StatId::Goals, FilterOp::Min, f64::NAN).unwrap_err();
+        assert!(matches!(err, FilterParseError::NotFinite { .. }));
+        // +inf rejected.
+        let err = StatFilter::new(StatId::Goals, FilterOp::Min, f64::INFINITY).unwrap_err();
+        assert!(matches!(err, FilterParseError::NotFinite { .. }));
+        // -inf rejected.
+        let err = StatFilter::new(StatId::Goals, FilterOp::Min, f64::NEG_INFINITY).unwrap_err();
+        assert!(matches!(err, FilterParseError::NotFinite { .. }));
+    }
+
+    /// `FilterParseError` Display strings include actionable info.
+    #[test]
+    fn l0_lindsay_filter_parse_error_display_messages() {
+        let err = parse_filter("foo=5").unwrap_err();
+        let msg = err.to_string();
+        assert!(msg.contains("foo"), "UnknownStat msg should mention key: {msg}");
+        assert!(msg.contains("unknown stat"), "msg should label error class: {msg}");
+
+        let err = parse_filter("hits>=NaN").unwrap_err();
+        let msg = err.to_string();
+        assert!(msg.contains("not finite"), "NotFinite msg should label: {msg}");
+        assert!(msg.contains("NaN"), "NotFinite msg should mention token: {msg}");
+    }
+
+    /// Op-priority: `>=` wins over `=` at the same position.
+    /// Pin the routing for `hits>=10` (which contains `=` as a substring
+    /// of `>=`) — it must parse as Min, not Equals.
+    #[test]
+    fn l0_lindsay_parse_filter_op_priority_two_char_first() {
+        let f = parse_filter("hits>=10").unwrap();
+        assert_eq!(f.op, FilterOp::Min);
+        let f = parse_filter("hits<=10").unwrap();
+        assert_eq!(f.op, FilterOp::Max);
+        let f = parse_filter("hits==10").unwrap();
+        assert_eq!(f.op, FilterOp::Equals);
+        let f = parse_filter("hits=10").unwrap();
+        assert_eq!(f.op, FilterOp::Equals);
     }
 }

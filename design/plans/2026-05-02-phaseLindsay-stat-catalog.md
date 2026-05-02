@@ -600,7 +600,40 @@ This is v0.4. Status:
 4. ~~v0.4 spec-body sweep + plan refresh~~ — done.
 5. ~~R4 verification~~ — complete (18/18 R3 items cleared, no drift).
 6. ~~L.1 implementation~~ — **shipped 2026-05-02**. 45 new Lindsay-prefixed tests; 1119 workspace tests passing. See "L.1 ship summary" below.
-7. **L.2 next** — StatId catalog + StatCategory + PlayerView accessors + `ExtraReports` cache + goalie bios merge + `FilterParseError` 7-variant + `StatFilter::new` finite gate + `PlayerFilter::normalize_stat_filters` + `aggregate_read` (AI-09).
+7. ~~L.2 implementation~~ — **shipped 2026-05-02**. 65 new Lindsay-L.2 tests; 1184 workspace tests passing. See "L.2 ship summary" below.
+8. **L.3 next** — Query screen redesign (categorized sections, generic filter, StatId sort, search-as-you-type sort picker). Pre-L.3 stdout-golden capture is the entry criterion (BENCH-R2 L2-B23).
+
+---
+
+## L.2 ship summary (2026-05-02)
+
+L.2 implementation complete with 6 sub-phases + 2 role-review checkpoints, all green:
+
+| Sub-phase | Deliverables | Tests added |
+|---|---|---|
+| **L.2.1** | `StatId` enum (107 variants — exhaustive, NOT `#[non_exhaustive]`) + `StatCategory` (9 variants) + `StatUnit` + accessors (`category`, `unit`, `higher_is_better`, `label`, `short_label`, `narrow_label`, `cli_key`, `all`, `from_cli_key`). **Spec drift resolved**: spec totaled 108 with Goalie 22; explicit list shows Goalie 23 + double-listed `PpToiPerGame`/`ShToiPerGame` (SpecialTeams + TimeOnIce). Implementation rationalized to 107 (Goalie 23 per explicit list; PpToiPerGame/ShToiPerGame consolidated to TimeOnIce). HART/FORGE pass-confirmed. | 11 L0 |
+| **L.2.2** | `read(view) -> Option<f64>` for all 107 stats with DI-11 OnIceGoals trade-window guard at category boundary, MIN_GP guards on derived per-game/per-82, 300s TOI floor on per-60 rates (PACE-F1). `applies_to(pos, is_goalie)` + `applies_to_era(season)` + `available_since() -> Season`. `sort_cmp(a, b)` with universal AI-06 tiebreak. `aggregate_read(views)` with strict propagation per AI-09. | 14 L0 |
+| **L.2.3** | `crate::fixtures::stat_catalog_variants` module — 6 named PlayerView fixtures (skater_modern, skater_pre_2005, center_with_faceoffs, goalie, traded_multistint, low_gp). 642-cell cross-product L1 integration test (BENCH-R2 L2-B22 deliverable) at `tests/stat_catalog_variants.rs`. | 7 L1 |
+| **L.2.4** | `FilterOp` (Min/Max/Equals); `FilterParseError` 7-variant enum + Display; `StatFilter::new` finite-value gate (NaN/inf rejected at construction); `parse_filter` with op-priority routing (>=/<=/== before =), MultipleOps detection, locale-comma rejection. `PlayerFilter::stat_filters` + `normalize_stat_filters` (Min+Min→tightest, Max+Max→tightest, Min+Max→range, idempotent) + `matches_stat_filters` (DI-08 silent skip, missing-data fails, unit-aware Equals tolerance per L2-B1). | 21 L0 |
+| **L.2.5** | `StatsRepository::extra_reports: BTreeMap<(PlayerId, Season, SeasonType, ReportKind), serde_json::Value>` runtime-only Tier-2 cache. DI-12 cascade-evict on window drop. DI-26 cap at 4096 entries with LRU. DI-27 runtime-only. New `EXTRA_REPORTS_CAP` const + `ExtraReportKey` type alias. `fetched_report` accessor + `upsert_fetched_report` mutator + `fetched_reports_len` for observability. | 6 L0 |
+| **L.2.6** | `merge_goalie_bios_into_identity(base, &GoalieBios) -> PlayerIdentity` adapter (resolves L-B4 — switches goalie identity from skater/bios to dedicated goalie/bios endpoint). Field-mapping table + non-numeric draft graceful drop. 3 catalog-routed PlayerView accessors (proof-of-concept for OQ#4: catalog as source of truth). | 6 L0 |
+
+**Role-review checkpoints (all PASS):**
+- HART + FORGE on read dispatch (post-L.2.3) — 9/9 + 9/9. HART caught a real numeric bug (SpecialTeams per-60 arms returning per-game from `p82/82.0` — fixed: gated to `None` until L.6 brings PP-TOI). FORGE caught `higher_is_better` wildcard drift (fixed: now exhaustive enumeration). FORGE/HART noted spec-count drift (108 → 107 rationalized).
+- EDGE + BENCH closeout (post-L.2.6) — 9/9 + 11/11 after BENCH gap closure (`l0_lindsay_view_ev_goal_diff_via_catalog`).
+
+**Carry-forwards parked for L.3 / L.4 / L.7:**
+- `fetched_report` read should touch LRU (recency-bias for repeat readers) — L.3+
+- `fetched_reports_len` surfaced in `snapshot stats` CLI — L.6
+- `MultipleOps` defensive key-side check is unreachable — clean up or test directly — L.3
+- `Equals+Equals` direct-mutation last-write contract documented but untested — L.3
+- 23 Tier-2 read arms still return `None` placeholders ("L.6:" markers) — populated when extra_reports cache lights up
+- TOI-weighted `aggregate_read` blend deferred until L.6 brings reliable PP/SH-TOI denominators online
+
+**Test totals:**
+- Pre-L.2: 1119 workspace tests
+- Post-L.2: **1184 workspace tests** (+65 — 11 + 14 + 7 + 21 + 6 + 6 + 1 BENCH gap = 66; -1 net from L.2.5 cap test refactor)
+- All passing; no regressions; no live-network calls in tests; all fixtures synthesized via `stat_catalog_variants` builders or `tempfile`.
 
 ---
 
