@@ -75,3 +75,151 @@ pub fn bar_fill(pts: f32, max_pts: f32, width: u32) -> u32 {
     }
     ((pts / max_pts * width as f32) as u32).min(width)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use icelines_core::{
+        cross_team::{CrossTeamMetrics, WebFitClass},
+        identity::PlayerId,
+        model::{DepthChartSlot, Position, TeamAbbr},
+    };
+
+    fn slot(name: &str, pace: Option<f64>, gp: Option<u32>) -> DepthChartSlot {
+        DepthChartSlot {
+            player_id: PlayerId(8478402),
+            full_name: name.to_owned(),
+            name_normalized: name.to_lowercase(),
+            team: TeamAbbr("EDM".into()),
+            position: Position::Center,
+            pace_82: pace,
+            goals_per_82: pace.map(|p| p * 0.4),
+            gp,
+            headshot_canonical_url: None,
+        }
+    }
+
+    /// Build a CrossTeamMetrics whose `web_fit_class()` resolves to the
+    /// requested class. Encodes the thresholds in cross_team.rs:
+    /// Buried: own - avg > 0.75
+    /// Elite:  avg <= own + 0.5
+    /// Solid:  avg <= own + 1.25
+    /// Stretch: else
+    fn metrics_for(class: WebFitClass) -> CrossTeamMetrics {
+        let (own, avg) = match class {
+            WebFitClass::Buried => (4, 2.0),  // delta +2.0
+            WebFitClass::Elite => (1, 1.0),
+            WebFitClass::Solid => (1, 2.0),
+            WebFitClass::Stretch => (1, 3.0),
+        };
+        let m = CrossTeamMetrics {
+            player_nhl_id: Some(8478402),
+            own_line: own,
+            avg_other_line: avg,
+            delta: own as f32 - avg,
+        };
+        debug_assert_eq!(
+            m.web_fit_class(),
+            class,
+            "fixture must resolve to the requested class"
+        );
+        m
+    }
+
+    // ── team_logo_url ────────────────────────────────────────────────────────
+
+    /// Yahoo / ESPN abbrev variants must map to their NHL canonical form
+    /// before being substituted into the assets URL. The four legacy
+    /// abbrevs LA / NJ / TB / SJ are the full rewrite set.
+    #[test]
+    fn l0_team_logo_url_rewrites_legacy_abbrevs() {
+        assert!(team_logo_url("LA").contains("/LAK_light.svg"));
+        assert!(team_logo_url("NJ").contains("/NJD_light.svg"));
+        assert!(team_logo_url("TB").contains("/TBL_light.svg"));
+        assert!(team_logo_url("SJ").contains("/SJS_light.svg"));
+    }
+
+    /// Canonical 3-letter abbrevs pass through unchanged.
+    #[test]
+    fn l0_team_logo_url_passes_canonical_abbrevs_through() {
+        assert!(team_logo_url("EDM").ends_with("/EDM_light.svg"));
+        assert!(team_logo_url("WPG").ends_with("/WPG_light.svg"));
+    }
+
+    // ── bar_fill ─────────────────────────────────────────────────────────────
+
+    /// Zero (or negative) max yields zero fill — must not divide-by-zero
+    /// or produce NaN that would corrupt the inline-style integer.
+    #[test]
+    fn l0_bar_fill_zero_max_returns_zero() {
+        assert_eq!(bar_fill(50.0, 0.0, 120), 0);
+        assert_eq!(bar_fill(50.0, -1.0, 120), 0);
+    }
+
+    /// Half the max → half the width (within integer truncation).
+    #[test]
+    fn l0_bar_fill_half_proportional() {
+        assert_eq!(bar_fill(50.0, 100.0, 120), 60);
+    }
+
+    /// pts ≥ max must clamp to width — no overflow into the next column.
+    #[test]
+    fn l0_bar_fill_clamps_to_width_when_pts_exceed_max() {
+        assert_eq!(bar_fill(200.0, 100.0, 120), 120);
+        assert_eq!(bar_fill(100.0, 100.0, 120), 120);
+    }
+
+    // ── player_cell ──────────────────────────────────────────────────────────
+
+    /// None slot renders the empty placeholder cell — the empty class
+    /// hook is what the CSS targets to dim the row.
+    #[test]
+    fn l0_player_cell_none_renders_empty_placeholder() {
+        let html = player_cell(None, None);
+        assert!(html.contains(r#"class="player-cell empty""#));
+        assert!(html.contains(">—<"));
+    }
+
+    /// Filled slot with all pace fields renders gp / pts/gp / projection.
+    /// Asserts both the value formatting (2-decimal ppg, integer pace)
+    /// and the wrapping spans the CSS uses.
+    #[test]
+    fn l0_player_cell_filled_emits_pace_block() {
+        let s = slot("Connor McDavid", Some(140.0), Some(82));
+        let html = player_cell(Some(&s), None);
+        assert!(html.contains("Connor McDavid"));
+        assert!(html.contains("82gp"));
+        // 140 / 82 ≈ 1.71 ppg
+        assert!(html.contains("1.71"));
+        assert!(html.contains("140"));
+        assert!(html.contains(r#"class="player-name""#));
+    }
+
+    /// Filled slot whose pace fields are all None falls back to the
+    /// "no pace data" hint instead of formatting NaN/zero.
+    #[test]
+    fn l0_player_cell_filled_no_pace_uses_fallback_string() {
+        let s = slot("Sample Player", None, None);
+        let html = player_cell(Some(&s), None);
+        assert!(html.contains("no pace data"));
+        assert!(!html.contains("pts/gp"));
+    }
+
+    /// Metrics block sets the css class + label per WebFitClass — locks
+    /// the icon mapping (★ / ~ / ↑ / ↓) the CSS keys off.
+    #[test]
+    fn l0_player_cell_metrics_emits_class_and_icon() {
+        let s = slot("Connor McDavid", Some(140.0), Some(82));
+
+        let elite = player_cell(Some(&s), Some(&metrics_for(WebFitClass::Elite)));
+        assert!(elite.contains('★'), "Elite must use ★");
+
+        let buried = player_cell(Some(&s), Some(&metrics_for(WebFitClass::Buried)));
+        assert!(buried.contains('↑'), "Buried must use ↑");
+        assert!(buried.contains("underused"));
+
+        let stretch = player_cell(Some(&s), Some(&metrics_for(WebFitClass::Stretch)));
+        assert!(stretch.contains('↓'), "Stretch must use ↓");
+        assert!(stretch.contains("overextended"));
+    }
+}

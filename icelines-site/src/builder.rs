@@ -328,3 +328,138 @@ fn write_file(path: &Path, content: &str) -> Result<(), SiteError> {
     f.write_all(content.as_bytes())?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use icelines_core::{
+        season_stats::SeasonType, stats_repository::StatsRepository,
+    };
+
+    fn build_repo(rows: &[(u32, &str, Position, f32)]) -> StatsRepository {
+        let mut repo = StatsRepository::new();
+        for (pid, _team, pos, _pace) in rows {
+            repo.upsert_identity(icelines_core::fixtures::identity(*pid).build())
+                .unwrap();
+            // SAFETY: identity is set via upsert above, so upsert_stats won't error.
+            // We need a position-specific stats row. The default fixture is Center;
+            // override via .position(). The fixture's pace_score (93.7) is fine —
+            // tests build their own pace expectations relative to the fixture.
+            let _ = pos;
+        }
+        // Build stats with explicit pace + position so compute_team_strength
+        // ordering is deterministic.
+        for (pid, team, pos, pace) in rows {
+            let mut stats = icelines_core::fixtures::stats(*pid, 20252026, team)
+                .position(*pos)
+                .build();
+            // Force the per-row pace_82 so the sort order is testable.
+            stats.totals.pace_score = Some(icelines_core::model::PaceScore {
+                pace_82: *pace as f64,
+                goals_per_82: *pace as f64 * 0.4,
+                raw_points: 80,
+                gp: 70,
+            });
+            repo.upsert_stats(stats).unwrap();
+        }
+        repo
+    }
+
+    /// Team strength = (top-N forwards per position group, summed over LW/C/RW)
+    /// + (top-2*pairs defensemen). With one team and exactly enough players to
+    /// fill the lineup, the result must equal the sum of every player's pace.
+    #[test]
+    fn l0_compute_team_strength_single_team_simple_sum() {
+        // Build a roster with 4 LW, 4 C, 4 RW, 6 D — exactly the slots used.
+        // Each gets a unique pace so we can compute the expected total exactly.
+        let mut rows: Vec<(u32, &str, Position, f32)> = Vec::new();
+        for (i, pos) in [
+            Position::LeftWing,
+            Position::Center,
+            Position::RightWing,
+            Position::Defense,
+        ]
+        .iter()
+        .enumerate()
+        {
+            let count = if pos.is_forward() { 4 } else { 6 };
+            for j in 0..count {
+                let pid = (1000 + i * 100 + j) as u32;
+                rows.push((pid, "EDM", *pos, 80.0 + j as f32));
+            }
+        }
+        let repo = build_repo(&rows);
+        let views: Vec<PlayerView<'_>> =
+            repo.skaters(Season(20252026), SeasonType::Regular).collect();
+
+        let strength = compute_team_strength_views(&views);
+        let edm = strength.get("EDM").copied().unwrap_or(0.0);
+
+        // Expected: every paced player counts (top-4 of 4 fwds, top-6 of 6 D).
+        // Sum = (80+81+82+83) * 3 fwd groups + (80..85 sum)
+        let fwd_per_group: f32 = 80.0 + 81.0 + 82.0 + 83.0; // 326
+        let def_total: f32 = (80..86).map(|n| n as f32).sum();
+        let want = fwd_per_group * 3.0 + def_total;
+        assert!(
+            (edm - want).abs() < 1e-3,
+            "expected {want} got {edm}",
+            want = want,
+            edm = edm
+        );
+    }
+
+    /// Team-strength must clamp at top-N per position group: a 5th LW with
+    /// monster pace must not change the total because only the top-4 count.
+    #[test]
+    fn l0_compute_team_strength_clamps_top_n_per_position() {
+        // Build 4 baseline LW + 1 monster LW + 1 C/RW/D each (so the team has
+        // representatives in every group). The monster LW must NOT lift the
+        // total, because it falls outside the top-4 forward slots when
+        // grouped with itself? No — top-4 for THIS group of 5. So the
+        // weakest of the 5 must drop out.
+        let mut rows: Vec<(u32, &str, Position, f32)> = Vec::new();
+        for j in 0..4 {
+            rows.push((100 + j, "EDM", Position::LeftWing, 50.0 + j as f32));
+        }
+        // The monster — must DISPLACE the weakest LW (pace=50) from the top 4.
+        rows.push((200, "EDM", Position::LeftWing, 200.0));
+        rows.push((300, "EDM", Position::Center, 60.0));
+        rows.push((400, "EDM", Position::RightWing, 60.0));
+        rows.push((500, "EDM", Position::Defense, 60.0));
+
+        let repo = build_repo(&rows);
+        let views: Vec<PlayerView<'_>> =
+            repo.skaters(Season(20252026), SeasonType::Regular).collect();
+        let strength = compute_team_strength_views(&views);
+        let edm = strength.get("EDM").copied().unwrap_or(0.0);
+
+        // Top-4 LW = 200 + 53 + 52 + 51 = 356. Plus C=60, RW=60, D=60.
+        let want = 200.0_f32 + 53.0 + 52.0 + 51.0 + 60.0 + 60.0 + 60.0;
+        assert!(
+            (edm - want).abs() < 1e-3,
+            "monster LW must displace pace=50, expected {want} got {edm}",
+        );
+    }
+
+    /// A view with no pace_score must contribute zero — guards against
+    /// the `unwrap_or(0.0)` shape silently letting NaN through if pace_82()
+    /// ever changes shape.
+    #[test]
+    fn l0_compute_team_strength_skips_views_without_pace_score() {
+        let mut repo = StatsRepository::new();
+        repo.upsert_identity(icelines_core::fixtures::identity(8478402).build())
+            .unwrap();
+        let mut stats = icelines_core::fixtures::stats(8478402, 20252026, "EDM").build();
+        stats.totals.pace_score = None; // no pace
+        repo.upsert_stats(stats).unwrap();
+
+        let views: Vec<PlayerView<'_>> =
+            repo.skaters(Season(20252026), SeasonType::Regular).collect();
+        let strength = compute_team_strength_views(&views);
+        // Only pace-less player on EDM → no key for EDM at all.
+        assert!(
+            !strength.contains_key("EDM"),
+            "team with only pace-less players should not appear in strength map"
+        );
+    }
+}
