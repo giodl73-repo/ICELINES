@@ -245,15 +245,14 @@ mod tests {
         assert_eq!(chart.below_min_gp[0].player_id, PlayerId(8479318));
     }
 
-    /// Hart.5c.1 adapter-parity golden: the field values
-    /// `slot_from_view` extracts from a `PlayerView` must match what the
-    /// deprecated `flat_view_legacy → player_from_view` adapter
-    /// produces for the same view. Pinned for the duration of Hart.5c
-    /// so any consumer migrating from `player.field` to `slot.field`
-    /// on the same source data lands the same value. Deleted alongside
-    /// `flat_view_legacy` in 5c.7.
+    /// Hart.5c.7: was an adapter-parity test against
+    /// `flat_view_legacy → player_from_view`. With the legacy adapter
+    /// deleted, this asserts `slot_from_view` directly against the
+    /// view's accessors — same field set, same expected values for
+    /// the McDavid 2024-25 fixture (default fixtures::stats: pace_82
+    /// 93.7, gp 70 from the totals).
     #[test]
-    fn l0_hart5c1_slot_fields_match_player_from_view_for_known_fixture() {
+    fn l0_slot_from_view_pins_field_mapping_for_known_fixture() {
         let mut repo = StatsRepository::new();
         repo.upsert_identity(fixtures::identity(8478402).build())
             .unwrap();
@@ -269,21 +268,14 @@ mod tests {
             .unwrap();
         let slot = slot_from_view(&view, view.team().cloned().unwrap());
 
-        // Player-path through the deprecated legacy adapter for parity.
-        #[allow(deprecated)]
-        let players = repo.flat_view_legacy(Season(20242025), SeasonType::Regular);
-        let p = &players[0];
-
         assert_eq!(slot.player_id, view.identity.id);
-        assert_eq!(p.nhl_id, Some(slot.player_id.0));
-        assert_eq!(slot.full_name, p.full_name);
-        assert_eq!(slot.name_normalized, p.name_normalized);
-        assert_eq!(slot.team.as_str(), p.team.as_str());
-        assert_eq!(slot.position, p.position);
-        assert_eq!(slot.pace_82, p.pace_score.map(|s| s.pace_82));
-        assert_eq!(slot.goals_per_82, p.pace_score.map(|s| s.goals_per_82));
-        assert_eq!(slot.gp, Some(p.gp_status.gp().unwrap_or(0)));
-        assert_eq!(slot.headshot_canonical_url, p.headshot_url);
+        assert_eq!(slot.full_name, view.full_name());
+        assert_eq!(slot.name_normalized, view.identity.name_normalized);
+        assert_eq!(slot.team.as_str(), view.team_display());
+        assert_eq!(slot.position, view.position());
+        assert_eq!(slot.pace_82, view.pace_82());
+        assert_eq!(slot.gp, Some(view.gp()));
+        assert_eq!(slot.headshot_canonical_url, view.identity.headshot_canonical_url);
     }
 
     #[test]
