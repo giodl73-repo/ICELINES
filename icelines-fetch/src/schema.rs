@@ -50,6 +50,12 @@ pub struct SkaterBio {
     pub is_in_hall_of_fame_yn: Option<String>,
     pub last_name: String,
     pub points: u32,
+    /// `seasonId` from the NHL API (e.g. `20242025`). The live API
+    /// includes this in every row; bundled bios pre-Hart.6 lack it.
+    /// Loader rejects rows where `season_id != requested_season` per
+    /// Hart.6.4 — when `None`, the check is skipped (bundled trust).
+    #[serde(default)]
+    pub season_id: Option<u32>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -73,6 +79,13 @@ pub struct SkaterStats {
     pub plus_minus: i32,
     pub time_on_ice_per_game: Option<f32>,
     pub faceoff_win_pct: Option<f32>, // null for non-centers
+    /// `seasonId` from the NHL API (e.g. `20242025`). Every bundled
+    /// stats.json row carries it (verified 2026-05-01); the live API
+    /// returns it on every row. Loader rejects mismatched rows per
+    /// Hart.6.4. `Option` (with `serde(default)`) only as a safety
+    /// net for hand-edited fixtures.
+    #[serde(default)]
+    pub season_id: Option<u32>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -234,4 +247,106 @@ pub struct RawTransactionTeam {
     /// Full display name (e.g. "Edmonton Oilers"). Stored for the TUI
     /// detail pane; not used for matching.
     pub display_name: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Hart.6.1 — `season_id` rolls in as a `#[serde(default)]` field
+    /// on `SkaterStats`. Live API rows always carry it; bundled rows
+    /// always carry it; missing → `None` (defensive only).
+    #[test]
+    fn l0_hart6_1_skater_stats_seasonid_round_trips() {
+        let json = r#"{
+            "playerId": 8478402,
+            "gamesPlayed": 76,
+            "goals": 35,
+            "assists": 65,
+            "points": 100,
+            "pointsPerGame": 1.31,
+            "ppGoals": 10,
+            "ppPoints": 35,
+            "shGoals": 0,
+            "shPoints": 0,
+            "gameWinningGoals": 7,
+            "otGoals": 1,
+            "shots": 280,
+            "shootingPctg": 0.125,
+            "plusMinus": 22,
+            "timeOnIcePerGame": 1240.5,
+            "faceoffWinPct": 0.524,
+            "seasonId": 20242025
+        }"#;
+        let s: SkaterStats = serde_json::from_str(json).expect("parse");
+        assert_eq!(s.season_id, Some(20242025));
+    }
+
+    /// Hart.6.1 — `season_id` is optional via `#[serde(default)]`. When
+    /// the API or a hand-edited fixture omits it, the row still parses.
+    #[test]
+    fn l0_hart6_1_skater_stats_seasonid_missing_defaults_to_none() {
+        let json = r#"{
+            "playerId": 8478402,
+            "gamesPlayed": 1,
+            "goals": 0,
+            "assists": 0,
+            "points": 0,
+            "pointsPerGame": 0.0,
+            "ppGoals": 0,
+            "ppPoints": 0,
+            "shGoals": 0,
+            "shPoints": 0,
+            "gameWinningGoals": 0,
+            "otGoals": 0,
+            "shots": 0,
+            "shootingPctg": null,
+            "plusMinus": 0,
+            "timeOnIcePerGame": null,
+            "faceoffWinPct": null
+        }"#;
+        let s: SkaterStats = serde_json::from_str(json).expect("parse without seasonId");
+        assert_eq!(s.season_id, None);
+    }
+
+    /// Hart.6.1 — bundled bios pre-Hart.6 lack `seasonId`; the field
+    /// must default to `None` so existing bundled JSON parses cleanly.
+    #[test]
+    fn l0_hart6_1_skater_bio_seasonid_optional_for_bundled_compat() {
+        let json = r#"{
+            "playerId": 8478402,
+            "skaterFullName": "Connor McDavid",
+            "lastName": "McDavid",
+            "gamesPlayed": 76,
+            "goals": 35,
+            "assists": 65,
+            "points": 100,
+            "currentTeamAbbrev": "EDM",
+            "positionCode": "C"
+        }"#;
+        let b: SkaterBio = serde_json::from_str(json).expect("bundled bio parses without seasonId");
+        assert_eq!(b.season_id, None);
+        assert_eq!(b.player_id, 8478402);
+    }
+
+    /// Hart.6.1 — when present, `seasonId` round-trips on `SkaterBio` too.
+    /// Future-proofs the bundle authoring path which will inject seasonId
+    /// per the Hart.6.3 procedure.
+    #[test]
+    fn l0_hart6_1_skater_bio_seasonid_round_trips_when_present() {
+        let json = r#"{
+            "playerId": 8478402,
+            "skaterFullName": "Connor McDavid",
+            "lastName": "McDavid",
+            "gamesPlayed": 76,
+            "goals": 35,
+            "assists": 65,
+            "points": 100,
+            "currentTeamAbbrev": "EDM",
+            "positionCode": "C",
+            "seasonId": 20242025
+        }"#;
+        let b: SkaterBio = serde_json::from_str(json).expect("parse");
+        assert_eq!(b.season_id, Some(20242025));
+    }
 }

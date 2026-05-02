@@ -9,6 +9,7 @@
 //! httpmock starts an in-process HTTP server; NhlApiClient is pointed at it.
 
 use httpmock::prelude::*;
+use icelines_core::season_stats::SeasonType;
 use icelines_fetch::{
     nhl_api::NhlApiClient,
     schema::{PagedResponse, SkaterBio, SkaterRealtime, SkaterStats},
@@ -337,7 +338,7 @@ async fn l1_mock_fetch_bios_returns_3_players() {
     let client = NhlApiClient::new(&base_stats, "http://unused.local");
 
     let bios = client
-        .fetch_all_bios("20252026")
+        .fetch_all_bios("20252026", SeasonType::Regular)
         .await
         .expect("mock fetch_all_bios must succeed");
     assert_eq!(bios.len(), 3, "must parse 3 bios from mock response");
@@ -363,7 +364,7 @@ async fn l1_mock_fetch_stats_parses_pp_goals() {
     let client = NhlApiClient::new(&base_stats, "http://unused.local");
 
     let stats = client
-        .fetch_all_stats("20252026")
+        .fetch_all_stats("20252026", SeasonType::Regular)
         .await
         .expect("mock fetch_all_stats must succeed");
     assert_eq!(stats.len(), 3, "must parse 3 stats rows");
@@ -422,7 +423,7 @@ async fn l1_mock_fetch_goalies_parses_record_and_save_pct() {
     let client = NhlApiClient::new(&base_stats, "http://unused.local");
 
     let goalies = client
-        .fetch_all_goalies("20252026")
+        .fetch_all_goalies("20252026", SeasonType::Regular)
         .await
         .expect("mock fetch_all_goalies must succeed");
     assert_eq!(goalies.len(), 2, "must parse 2 goalie rows");
@@ -1172,9 +1173,81 @@ async fn l1_mock_http_server_404_returns_error() {
     let base_stats = server.url("");
     let client = NhlApiClient::new(&base_stats, "http://unused.local");
 
-    let result = client.fetch_all_bios("20252026").await;
+    let result = client.fetch_all_bios("20252026", SeasonType::Regular).await;
     assert!(
         result.is_err(),
         "404 response must return Err, not empty vec"
     );
+}
+
+// ── Hart.6.1: gameTypeId URL interpolation ───────────────────────────────────
+//
+// The fetch_all_{bios,stats,goalies} methods now take a `season_type`
+// parameter that maps to the `gameTypeId` query param: 2 = regular,
+// 3 = playoff. Pattern: register a strict mock that ONLY responds when
+// the cayenneExp query param contains the expected gameTypeId. If the
+// client emits the wrong gameTypeId, the request 404s and the test
+// fails — the URL contract is enforced at the matcher boundary.
+
+#[tokio::test]
+async fn l1_hart6_1_fetch_all_bios_emits_gametypeid_3_for_playoff() {
+    let server = MockServer::start();
+    let _mock = server.mock(|when, then| {
+        when.method(GET)
+            .path_contains("/skater/bios")
+            .query_param("cayenneExp", "seasonId=20242025 and gameTypeId=3");
+        then.status(200)
+            .header("content-type", "application/json")
+            .body(FIXTURE_BIOS_JSON);
+    });
+    let client = NhlApiClient::new(server.url(""), "http://unused.local");
+
+    // If the client encodes gameTypeId=2 instead, the mock won't match
+    // and the fetch errors out. Success here proves gameTypeId=3 was
+    // emitted.
+    let bios = client
+        .fetch_all_bios("20242025", SeasonType::Playoff)
+        .await
+        .expect("playoff bios fetch must encode gameTypeId=3");
+    assert_eq!(bios.len(), 3);
+}
+
+#[tokio::test]
+async fn l1_hart6_1_fetch_all_stats_emits_gametypeid_2_for_regular() {
+    let server = MockServer::start();
+    let _mock = server.mock(|when, then| {
+        when.method(GET)
+            .path_contains("/skater/summary")
+            .query_param("cayenneExp", "seasonId=20242025 and gameTypeId=2");
+        then.status(200)
+            .header("content-type", "application/json")
+            .body(FIXTURE_STATS_JSON);
+    });
+    let client = NhlApiClient::new(server.url(""), "http://unused.local");
+
+    let stats = client
+        .fetch_all_stats("20242025", SeasonType::Regular)
+        .await
+        .expect("regular stats fetch must encode gameTypeId=2");
+    assert_eq!(stats.len(), 3);
+}
+
+#[tokio::test]
+async fn l1_hart6_1_fetch_all_goalies_emits_gametypeid_3_for_playoff() {
+    let server = MockServer::start();
+    let _mock = server.mock(|when, then| {
+        when.method(GET)
+            .path_contains("/goalie/summary")
+            .query_param("cayenneExp", "seasonId=20242025 and gameTypeId=3");
+        then.status(200)
+            .header("content-type", "application/json")
+            .body(FIXTURE_GOALIES_JSON);
+    });
+    let client = NhlApiClient::new(server.url(""), "http://unused.local");
+
+    let goalies = client
+        .fetch_all_goalies("20242025", SeasonType::Playoff)
+        .await
+        .expect("playoff goalies fetch must encode gameTypeId=3");
+    assert_eq!(goalies.len(), 2);
 }

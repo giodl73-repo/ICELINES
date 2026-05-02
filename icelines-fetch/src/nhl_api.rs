@@ -1,7 +1,17 @@
 use crate::error::FetchError;
 use crate::schema::{PagedResponse, PlayerContract, RosterResponse, SkaterBio, SkaterRealtime, SkaterStats};
 use crate::teams::ALL_NHL_TEAMS as TEAMS;
+use icelines_core::season_stats::SeasonType;
 use std::time::Duration;
+
+/// Map `SeasonType` to the NHL API's `gameTypeId` query parameter.
+/// 2 = regular season, 3 = playoffs (cayenneExp filter values).
+fn game_type_id(season_type: SeasonType) -> u8 {
+    match season_type {
+        SeasonType::Regular => 2,
+        SeasonType::Playoff => 3,
+    }
+}
 
 /// Async NHL API client.
 /// `base_url_stats` and `base_url_web` are configurable to allow mocking in tests.
@@ -111,19 +121,29 @@ impl NhlApiClient {
 
     // ── Public API ───────────────────────────────────────────────────────────
 
-    /// Fetch all skater bios for a season (paginated).
-    pub async fn fetch_all_bios(&self, season: &str) -> Result<Vec<SkaterBio>, FetchError> {
+    /// Fetch all skater bios for a season + season-type (paginated).
+    pub async fn fetch_all_bios(
+        &self,
+        season: &str,
+        season_type: SeasonType,
+    ) -> Result<Vec<SkaterBio>, FetchError> {
+        let gt = game_type_id(season_type);
         let endpoint = format!(
-            "{}/skater/bios?cayenneExp=seasonId%3D{season}%20and%20gameTypeId%3D2",
+            "{}/skater/bios?cayenneExp=seasonId%3D{season}%20and%20gameTypeId%3D{gt}",
             self.base_stats
         );
         self.fetch_all_paged(&endpoint).await
     }
 
-    /// Fetch all skater season stats for a season (paginated).
-    pub async fn fetch_all_stats(&self, season: &str) -> Result<Vec<SkaterStats>, FetchError> {
+    /// Fetch all skater season stats for a season + season-type (paginated).
+    pub async fn fetch_all_stats(
+        &self,
+        season: &str,
+        season_type: SeasonType,
+    ) -> Result<Vec<SkaterStats>, FetchError> {
+        let gt = game_type_id(season_type);
         let endpoint = format!(
-            "{}/skater/summary?cayenneExp=seasonId%3D{season}%20and%20gameTypeId%3D2",
+            "{}/skater/summary?cayenneExp=seasonId%3D{season}%20and%20gameTypeId%3D{gt}",
             self.base_stats
         );
         self.fetch_all_paged(&endpoint).await
@@ -153,6 +173,9 @@ impl NhlApiClient {
     }
 
     /// Fetch all skater realtime stats for a season (paginated).
+    /// Realtime is regular-season only; the live game feed updates
+    /// realtime entries during playoffs through the same endpoint, so
+    /// no `season_type` parameter is exposed (per Hart.6 D6 / Risk #5).
     pub async fn fetch_all_realtime(&self, season: &str) -> Result<Vec<SkaterRealtime>, FetchError> {
         let endpoint = format!(
             "{}/skater/realtime?cayenneExp=seasonId%3D{season}%20and%20gameTypeId%3D2",
@@ -161,12 +184,17 @@ impl NhlApiClient {
         self.fetch_all_paged(&endpoint).await
     }
 
-    /// Fetch all goalie season stats for a season (paginated). Phase G.2.
+    /// Fetch all goalie season stats for a season + season-type (paginated).
     /// Returns the full league's goalies, including backups with low GP.
     /// Callers gate by `qualified()` for leaderboard rendering.
-    pub async fn fetch_all_goalies(&self, season: &str) -> Result<Vec<crate::schema::GoalieStats>, FetchError> {
+    pub async fn fetch_all_goalies(
+        &self,
+        season: &str,
+        season_type: SeasonType,
+    ) -> Result<Vec<crate::schema::GoalieStats>, FetchError> {
+        let gt = game_type_id(season_type);
         let endpoint = format!(
-            "{}/goalie/summary?cayenneExp=seasonId%3D{season}%20and%20gameTypeId%3D2",
+            "{}/goalie/summary?cayenneExp=seasonId%3D{season}%20and%20gameTypeId%3D{gt}",
             self.base_stats
         );
         self.fetch_all_paged(&endpoint).await

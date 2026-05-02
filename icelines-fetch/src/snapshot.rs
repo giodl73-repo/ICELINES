@@ -1392,6 +1392,7 @@ mod tests {
             first_season_for_game_type: Some(20152016),
             is_in_hall_of_fame_yn: Some("N".to_owned()),
             last_name: name.split_whitespace().last().unwrap_or(name).to_owned(),
+            season_id: None,
         }
     }
 
@@ -1414,6 +1415,7 @@ mod tests {
             plus_minus: 5,
             time_on_ice_per_game: None,
             faceoff_win_pct: None,
+            season_id: None,
         }
     }
 

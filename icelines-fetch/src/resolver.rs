@@ -119,6 +119,7 @@ mod tests {
             weight: None,
             first_season_for_game_type: None,
             is_in_hall_of_fame_yn: None,
+            season_id: None,
         }
     }
 

@@ -1,6 +1,7 @@
 use crate::cli::FetchSubcommand;
 use crate::config::Config;
 use anyhow::Context;
+use icelines_core::season_stats::SeasonType;
 use icelines_fetch::{
     boxscore_client::{aggregate_profiles, BoxscoreClient},
     moneypuck,
@@ -160,14 +161,14 @@ async fn do_stats(season: &str, refresh: bool, dry_run: bool, chunked: bool) -> 
 
     println!("Fetching bios...");
     let bios = client
-        .fetch_all_bios(season)
+        .fetch_all_bios(season, SeasonType::Regular)
         .await
         .context("fetching bios")?;
     println!("  {} players", bios.len());
 
     println!("Fetching stats...");
     let stats = client
-        .fetch_all_stats(season)
+        .fetch_all_stats(season, SeasonType::Regular)
         .await
         .context("fetching stats")?;
     println!("  {} players", stats.len());
@@ -286,7 +287,7 @@ async fn do_goalies(season: &str, dry_run: bool) -> anyhow::Result<()> {
 
     println!("Fetching goalie stats...");
     let goalies = client
-        .fetch_all_goalies(season)
+        .fetch_all_goalies(season, SeasonType::Regular)
         .await
         .context("fetching goalie stats")?;
     let qualified = goalies.iter().filter(|g| g.games_played >= 15).count();
