@@ -1,4 +1,4 @@
-use crate::cli::FetchSubcommand;
+use crate::cli::{FetchSeasonType, FetchSubcommand};
 use crate::config::Config;
 use anyhow::Context;
 use icelines_core::season_stats::SeasonType;
@@ -22,38 +22,53 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             refresh,
             dry_run,
             chunked,
-        } => do_stats(&season, refresh, dry_run, chunked).await,
+            season_type,
+        } => do_stats(&season, refresh, dry_run, chunked, season_type).await,
         FetchSubcommand::All {
             season,
             refresh,
             dry_run,
             chunked,
+            season_type,
         } => {
-            do_rosters(&season, refresh, dry_run).await?;
-            do_stats(&season, refresh, dry_run, chunked).await?;
+            // For `--type playoff` we skip rosters/contracts/transactions
+            // — they're regular-season-keyed concepts. For `--type both`
+            // we run the full regular pipe first, then the playoff trio.
+            let want_regular = matches!(season_type, FetchSeasonType::Regular | FetchSeasonType::Both);
+            let want_playoff = matches!(season_type, FetchSeasonType::Playoff | FetchSeasonType::Both);
+
+            if want_regular {
+                do_rosters(&season, refresh, dry_run).await?;
+            }
+            do_stats(&season, refresh, dry_run, chunked, season_type).await?;
             // Goalie stats are best-effort — non-skater data shouldn't block
-            // a partial fetch if the goalie endpoint goes down. Phase G.2.
-            if let Err(e) = do_goalies(&season, dry_run).await {
+            // a partial fetch if the goalie endpoint goes down.
+            if let Err(e) = do_goalies(&season, dry_run, season_type).await {
                 eprintln!("Warning: goalie fetch failed (non-fatal): {e}");
             }
-            // Contracts are best-effort — don't fail the whole fetch if they fail
-            if let Err(e) = do_contracts(&season, dry_run).await {
-                eprintln!("Warning: contract fetch failed (non-fatal): {e}");
+            if want_regular {
+                // Contracts and transactions are type-agnostic; they only
+                // run on the regular pass.
+                if let Err(e) = do_contracts(&season, dry_run).await {
+                    eprintln!("Warning: contract fetch failed (non-fatal): {e}");
+                }
+                if let Err(e) = do_transactions(&season, dry_run).await {
+                    eprintln!("Warning: transactions fetch failed (non-fatal): {e}");
+                }
             }
-            // Transactions (ESPN) are best-effort. Failure sets the
-            // SnapshotMetaFlags::transactions_stale flag so the next
-            // `icelines transactions` invocation surfaces a WARN until
-            // a successful run clears it. Phase T.3.
-            if let Err(e) = do_transactions(&season, dry_run).await {
-                eprintln!("Warning: transactions fetch failed (non-fatal): {e}");
-            }
+            let _ = want_playoff; // bound above; reserved for future per-type tuning
             Ok(())
         }
         FetchSubcommand::Positions { season, dry_run } => do_positions(&season, dry_run).await,
         FetchSubcommand::Realtime { season, dry_run } => do_realtime(&season, dry_run).await,
         FetchSubcommand::MoneyPuck { season, dry_run } => do_moneypuck(&season, dry_run).await,
         FetchSubcommand::Contracts { season, dry_run } => do_contracts(&season, dry_run).await,
-        FetchSubcommand::Goalies { season, refresh: _, dry_run } => do_goalies(&season, dry_run).await,
+        FetchSubcommand::Goalies {
+            season,
+            refresh: _,
+            dry_run,
+            season_type,
+        } => do_goalies(&season, dry_run, season_type).await,
         FetchSubcommand::Transactions { season, dry_run } => do_transactions(&season, dry_run).await,
     }
 }
@@ -122,7 +137,13 @@ async fn do_rosters(season: &str, refresh: bool, dry_run: bool) -> anyhow::Resul
     Ok(())
 }
 
-async fn do_stats(season: &str, refresh: bool, dry_run: bool, chunked: bool) -> anyhow::Result<()> {
+async fn do_stats(
+    season: &str,
+    refresh: bool,
+    dry_run: bool,
+    chunked: bool,
+    season_type: FetchSeasonType,
+) -> anyhow::Result<()> {
     let cfg = Config::load()?;
     let store = SnapshotStore::new(cfg.snapshot_dir());
     let client = NhlApiClient::production();
@@ -130,16 +151,27 @@ async fn do_stats(season: &str, refresh: bool, dry_run: bool, chunked: bool) -> 
     let snap = format!("{season}-{today}-stats");
 
     if dry_run {
-        println!("Would fetch: /stats/rest/en/skater/bios?seasonId={season}");
-        println!("Would fetch: /stats/rest/en/skater/summary?seasonId={season}");
-        println!("Would fetch: /stats/rest/en/skater/realtime?seasonId={season}");
+        let want_regular = matches!(season_type, FetchSeasonType::Regular | FetchSeasonType::Both);
+        let want_playoff = matches!(season_type, FetchSeasonType::Playoff | FetchSeasonType::Both);
+        if want_regular {
+            println!("Would fetch (regular): /stats/rest/en/skater/bios?seasonId={season}&gameTypeId=2");
+            println!("Would fetch (regular): /stats/rest/en/skater/summary?seasonId={season}&gameTypeId=2");
+            println!("Would fetch (regular): /stats/rest/en/skater/realtime?seasonId={season}&gameTypeId=2");
+        }
+        if want_playoff {
+            println!("Would fetch (playoff): /stats/rest/en/skater/bios?seasonId={season}&gameTypeId=3");
+            println!("Would fetch (playoff): /stats/rest/en/skater/summary?seasonId={season}&gameTypeId=3");
+            println!("Would write to playoff-bios.json + playoff-stats.json (co-located in stats/ tier).");
+        }
         if chunked {
             println!("Would write per-player chunks (--chunked) instead of single JSON files.");
         }
         return Ok(());
     }
 
-    // Check if already sealed today
+    // Check if already sealed today (idempotent for the snapshot, not per-type;
+    // the snapshot can hold both regular and playoff data after one --type=both
+    // run, so re-running with --refresh re-fetches everything for that day).
     if !refresh {
         if let Ok(entries) = store.list() {
             if entries.iter().any(|e| e.name == snap && e.sealed) {
@@ -159,70 +191,125 @@ async fn do_stats(season: &str, refresh: bool, dry_run: bool, chunked: bool) -> 
         .create(&snap, season, SnapshotTier::Stats, parent, &today)
         .context("creating stats snapshot")?;
 
-    println!("Fetching bios...");
-    let bios = client
-        .fetch_all_bios(season, SeasonType::Regular)
-        .await
-        .context("fetching bios")?;
-    println!("  {} players", bios.len());
-
-    println!("Fetching stats...");
-    let stats = client
-        .fetch_all_stats(season, SeasonType::Regular)
-        .await
-        .context("fetching stats")?;
-    println!("  {} players", stats.len());
-
-    if chunked {
-        // Phase 8h: per-player content-addressed chunks. Daily snapshots
-        // share unchanged player records — typical reuse is 95%+.
-        let cm = store
-            .write_chunked_stats(&snap, SeasonType::Regular, &bios, &stats)
-            .context("writing chunked bios+stats")?;
-        println!(
-            "  Wrote {} bio + {} stats chunks (chunked layout — Phase 8h).",
-            cm.bios.len(),
-            cm.stats.len(),
-        );
-    } else {
-        // Legacy file-per-tier layout. Larger but simpler to inspect with `cat`.
-        store
-            .write_file(
-                &snap,
-                &SnapshotTier::Stats,
-                "bios.json",
-                &serde_json::to_vec(&bios).context("serializing bios")?,
-            )
-            .context("writing bios")?;
-        store
-            .write_file(
-                &snap,
-                &SnapshotTier::Stats,
-                "stats.json",
-                &serde_json::to_vec(&stats).context("serializing stats")?,
-            )
-            .context("writing stats")?;
-    }
-
-    println!("Fetching realtime stats...");
-    let realtime = client
-        .fetch_all_realtime(season)
-        .await
-        .context("fetching realtime stats")?;
-    println!("  {} players", realtime.len());
-    // Write realtime.json under SnapshotTier::Realtime so the repository can find it
-    // via read_tier(&SnapshotTier::Realtime, "realtime.json") from the stats snapshot.
-    store
-        .write_file(
+    // Box::pin breaks the future-chain depth so debug builds don't blow
+    // the 8MB Windows main-thread stack. The fetch + serialize locals
+    // make this future fat enough to matter on debug builds.
+    if matches!(season_type, FetchSeasonType::Regular | FetchSeasonType::Both) {
+        Box::pin(run_stats_pass(
+            &store,
+            &client,
             &snap,
-            &SnapshotTier::Realtime,
-            "realtime.json",
-            &serde_json::to_vec(&realtime).context("serializing realtime")?,
-        )
-        .context("writing realtime")?;
+            season,
+            SeasonType::Regular,
+            chunked,
+        ))
+        .await?;
+    }
+    if matches!(season_type, FetchSeasonType::Playoff | FetchSeasonType::Both) {
+        Box::pin(run_stats_pass(
+            &store,
+            &client,
+            &snap,
+            season,
+            SeasonType::Playoff,
+            chunked,
+        ))
+        .await?;
+    }
 
     store.seal(&snap).context("sealing stats snapshot")?;
     println!("Snapshot '{snap}' sealed and set as active.");
+    Ok(())
+}
+
+/// One pass of bios + stats fetching for a single `season_type`.
+///
+/// Hart.6.5 — extracted from `do_stats` so a `--type both` run can
+/// invoke the same logic twice without re-creating the snapshot or
+/// fighting the daily-idempotence guard. Realtime is fetched only on
+/// the regular pass (Hart.6 D6 — playoff realtime flows through the
+/// live game feed).
+async fn run_stats_pass(
+    store: &SnapshotStore,
+    client: &NhlApiClient,
+    snap: &str,
+    season: &str,
+    ty: SeasonType,
+    chunked: bool,
+) -> anyhow::Result<()> {
+    let label = match ty {
+        SeasonType::Regular => "regular",
+        SeasonType::Playoff => "playoff",
+    };
+    println!("Fetching {label} bios...");
+    let bios = client
+        .fetch_all_bios(season, ty)
+        .await
+        .with_context(|| format!("fetching {label} bios"))?;
+    println!("  {} players", bios.len());
+
+    println!("Fetching {label} stats...");
+    let stats = client
+        .fetch_all_stats(season, ty)
+        .await
+        .with_context(|| format!("fetching {label} stats"))?;
+    println!("  {} players", stats.len());
+
+    if chunked {
+        let cm = store
+            .write_chunked_stats(snap, ty, &bios, &stats)
+            .with_context(|| format!("writing chunked {label} bios+stats"))?;
+        let (n_bios, n_stats) = match ty {
+            SeasonType::Regular => (cm.bios.len(), cm.stats.len()),
+            SeasonType::Playoff => (
+                cm.playoff_bios.as_ref().map(|m| m.len()).unwrap_or(0),
+                cm.playoff_stats.as_ref().map(|m| m.len()).unwrap_or(0),
+            ),
+        };
+        println!("  Wrote {} bio + {} stats chunks ({label}).", n_bios, n_stats);
+    } else {
+        // Hart.6.5 — playoff variants land under co-located filenames
+        // in the same Stats tier dir per Hart.6 D3. Loader resolves
+        // them via the Hart.6.2 `load_playoff_*_with_fallback` chain.
+        let (bios_filename, stats_filename) = match ty {
+            SeasonType::Regular => ("bios.json", "stats.json"),
+            SeasonType::Playoff => ("playoff-bios.json", "playoff-stats.json"),
+        };
+        store
+            .write_file(
+                snap,
+                &SnapshotTier::Stats,
+                bios_filename,
+                &serde_json::to_vec(&bios).with_context(|| format!("serializing {label} bios"))?,
+            )
+            .with_context(|| format!("writing {bios_filename}"))?;
+        store
+            .write_file(
+                snap,
+                &SnapshotTier::Stats,
+                stats_filename,
+                &serde_json::to_vec(&stats).with_context(|| format!("serializing {label} stats"))?,
+            )
+            .with_context(|| format!("writing {stats_filename}"))?;
+    }
+
+    // Realtime is regular-season only.
+    if ty == SeasonType::Regular {
+        println!("Fetching realtime stats...");
+        let realtime = client
+            .fetch_all_realtime(season)
+            .await
+            .context("fetching realtime stats")?;
+        println!("  {} players", realtime.len());
+        store
+            .write_file(
+                snap,
+                &SnapshotTier::Realtime,
+                "realtime.json",
+                &serde_json::to_vec(&realtime).context("serializing realtime")?,
+            )
+            .context("writing realtime")?;
+    }
     Ok(())
 }
 
@@ -269,7 +356,11 @@ async fn do_realtime(season: &str, dry_run: bool) -> anyhow::Result<()> {
 /// under `SnapshotTier::Stats` so the same fallback chain in
 /// `bundled::load_goalies_with_fallback` picks it up first when
 /// active.
-async fn do_goalies(season: &str, dry_run: bool) -> anyhow::Result<()> {
+async fn do_goalies(
+    season: &str,
+    dry_run: bool,
+    season_type: FetchSeasonType,
+) -> anyhow::Result<()> {
     let cfg = Config::load()?;
     let store = SnapshotStore::new(cfg.snapshot_dir());
     let client = NhlApiClient::production();
@@ -277,7 +368,15 @@ async fn do_goalies(season: &str, dry_run: bool) -> anyhow::Result<()> {
     let snap = format!("{season}-{today}-goalies");
 
     if dry_run {
-        println!("Would fetch: /stats/rest/en/goalie/summary?seasonId={season}");
+        let want_regular = matches!(season_type, FetchSeasonType::Regular | FetchSeasonType::Both);
+        let want_playoff = matches!(season_type, FetchSeasonType::Playoff | FetchSeasonType::Both);
+        if want_regular {
+            println!("Would fetch (regular): /stats/rest/en/goalie/summary?seasonId={season}&gameTypeId=2");
+        }
+        if want_playoff {
+            println!("Would fetch (playoff): /stats/rest/en/goalie/summary?seasonId={season}&gameTypeId=3");
+            println!("Would write playoff-goalie-stats.json (co-located in stats/ tier).");
+        }
         return Ok(());
     }
 
@@ -285,25 +384,50 @@ async fn do_goalies(season: &str, dry_run: bool) -> anyhow::Result<()> {
         .create(&snap, season, SnapshotTier::Stats, None, &today)
         .context("creating goalies snapshot")?;
 
-    println!("Fetching goalie stats...");
-    let goalies = client
-        .fetch_all_goalies(season, SeasonType::Regular)
-        .await
-        .context("fetching goalie stats")?;
-    let qualified = goalies.iter().filter(|g| g.games_played >= 15).count();
-    println!("  {} goalies ({} qualified at 15+ GP)", goalies.len(), qualified);
-
-    store
-        .write_file(
-            &snap,
-            &SnapshotTier::Stats,
-            "goalie-stats.json",
-            &serde_json::to_vec(&goalies).context("serializing goalie stats")?,
-        )
-        .context("writing goalie-stats.json")?;
+    if matches!(season_type, FetchSeasonType::Regular | FetchSeasonType::Both) {
+        Box::pin(run_goalies_pass(&store, &client, &snap, season, SeasonType::Regular)).await?;
+    }
+    if matches!(season_type, FetchSeasonType::Playoff | FetchSeasonType::Both) {
+        Box::pin(run_goalies_pass(&store, &client, &snap, season, SeasonType::Playoff)).await?;
+    }
 
     store.seal(&snap).context("sealing goalies snapshot")?;
     println!("Snapshot '{snap}' sealed and set as active.");
+    Ok(())
+}
+
+/// One pass of goalie fetching for a single `season_type`.
+async fn run_goalies_pass(
+    store: &SnapshotStore,
+    client: &NhlApiClient,
+    snap: &str,
+    season: &str,
+    ty: SeasonType,
+) -> anyhow::Result<()> {
+    let label = match ty {
+        SeasonType::Regular => "regular",
+        SeasonType::Playoff => "playoff",
+    };
+    println!("Fetching {label} goalie stats...");
+    let goalies = client
+        .fetch_all_goalies(season, ty)
+        .await
+        .with_context(|| format!("fetching {label} goalie stats"))?;
+    let qualified = goalies.iter().filter(|g| g.games_played >= 15).count();
+    println!("  {} goalies ({} qualified at 15+ GP)", goalies.len(), qualified);
+
+    let filename = match ty {
+        SeasonType::Regular => "goalie-stats.json",
+        SeasonType::Playoff => "playoff-goalie-stats.json",
+    };
+    store
+        .write_file(
+            snap,
+            &SnapshotTier::Stats,
+            filename,
+            &serde_json::to_vec(&goalies).with_context(|| format!("serializing {label} goalie stats"))?,
+        )
+        .with_context(|| format!("writing {filename}"))?;
     Ok(())
 }
 

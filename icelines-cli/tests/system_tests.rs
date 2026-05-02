@@ -116,6 +116,115 @@ fn l2_cmd_fetch_goalies_dry_run_exits_zero() {
         "dry-run should mention the goalie endpoint, got:\n{stdout}");
 }
 
+// ── Hart.6.5 — `--type {regular|playoff|both}` flag ─────────────────────────
+
+#[test]
+fn l2_hart6_5_fetch_stats_type_playoff_dry_run_mentions_gametypeid_3() {
+    let out = run(&["fetch", "stats", "--dry-run", "--type", "playoff"]);
+    assert!(
+        out.status.success(),
+        "fetch stats --type playoff --dry-run must exit 0; stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("gameTypeId=3"),
+        "playoff dry-run must reference gameTypeId=3, got:\n{stdout}"
+    );
+    assert!(
+        stdout.contains("playoff-bios.json") && stdout.contains("playoff-stats.json"),
+        "playoff dry-run must mention the co-located filenames, got:\n{stdout}"
+    );
+    assert!(
+        !stdout.contains("gameTypeId=2"),
+        "playoff-only run must NOT mention gameTypeId=2, got:\n{stdout}"
+    );
+}
+
+#[test]
+fn l2_hart6_5_fetch_stats_type_both_dry_run_mentions_both_gametypeids() {
+    let out = run(&["fetch", "stats", "--dry-run", "--type", "both"]);
+    assert!(out.status.success(), "fetch stats --type both --dry-run must exit 0");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("gameTypeId=2") && stdout.contains("gameTypeId=3"),
+        "type=both dry-run must mention both gameTypeIds, got:\n{stdout}"
+    );
+}
+
+#[test]
+fn l2_hart6_5_fetch_stats_type_regular_default_matches_pre_hart6() {
+    // Default (no --type flag) and explicit --type regular must produce
+    // the same output: gameTypeId=2 only, regular-season filenames.
+    let out_default = run(&["fetch", "stats", "--dry-run"]);
+    let out_regular = run(&["fetch", "stats", "--dry-run", "--type", "regular"]);
+    assert!(out_default.status.success());
+    assert!(out_regular.status.success());
+    let s_default = String::from_utf8_lossy(&out_default.stdout);
+    let s_regular = String::from_utf8_lossy(&out_regular.stdout);
+    assert_eq!(s_default, s_regular, "--type regular must match the default");
+    assert!(s_default.contains("gameTypeId=2"));
+    assert!(!s_default.contains("gameTypeId=3"));
+}
+
+#[test]
+fn l2_hart6_5_fetch_goalies_type_playoff_dry_run_mentions_correct_path() {
+    let out = run(&["fetch", "goalies", "--dry-run", "--type", "playoff"]);
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("gameTypeId=3"), "must mention gameTypeId=3");
+    assert!(
+        stdout.contains("playoff-goalie-stats.json"),
+        "must mention playoff-goalie-stats.json, got:\n{stdout}"
+    );
+}
+
+#[test]
+fn l2_hart6_5_fetch_realtime_rejects_type_flag() {
+    // Realtime is regular-season only — clap must reject --type as
+    // unknown. Hart.6 D6 / Risk #5: playoff realtime flows through the
+    // live game feed, not a separate dataset.
+    let out = run(&["fetch", "realtime", "--dry-run", "--type", "playoff"]);
+    assert!(
+        !out.status.success(),
+        "fetch realtime must reject --type flag (it's regular-season only)"
+    );
+}
+
+#[test]
+fn l2_hart6_5_fetch_moneypuck_rejects_type_flag() {
+    // MoneyPuck has no playoff endpoint — clap must reject --type.
+    let out = run(&["fetch", "moneypuck", "--dry-run", "--type", "playoff"]);
+    assert!(
+        !out.status.success(),
+        "fetch moneypuck must reject --type flag (no playoff variant)"
+    );
+}
+
+#[test]
+fn l2_hart6_5_fetch_all_type_playoff_dry_run_skips_rosters_and_realtime() {
+    let out = run(&["fetch", "all", "--dry-run", "--type", "playoff"]);
+    assert!(out.status.success(), "fetch all --type playoff --dry-run must exit 0");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    // Must include playoff stats + goalies
+    assert!(stdout.contains("playoff-stats.json"));
+    assert!(stdout.contains("playoff-goalie-stats.json"));
+    // Must NOT include rosters/realtime/moneypuck/contracts/transactions
+    // (they're regular-season-keyed concepts; type=playoff skips them).
+    assert!(
+        !stdout.contains("/v1/roster/"),
+        "type=playoff must skip rosters, got:\n{stdout}"
+    );
+    assert!(
+        !stdout.contains("realtime"),
+        "type=playoff must skip realtime, got:\n{stdout}"
+    );
+    assert!(
+        !stdout.contains("moneypuck"),
+        "type=playoff must skip moneypuck, got:\n{stdout}"
+    );
+}
+
 #[test]
 fn l2_cmd_fetch_transactions_dry_run_exits_zero() {
     // Phase T.3: `fetch transactions` dry-run announces the ESPN target.

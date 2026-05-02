@@ -318,6 +318,25 @@ pub enum Commands {
 
 // ── Fetch sub-commands ────────────────────────────────────────────────────────
 
+/// Hart.6.5 — `--type` flag value for `fetch stats|goalies|all`.
+/// `Regular` (default) fetches the regular-season dataset.
+/// `Playoff` fetches `gameTypeId=3` and writes co-located
+/// `playoff-bios.json` / `playoff-stats.json` / `playoff-goalie-stats.json`
+/// alongside the regular files. `Both` runs the regular pass first
+/// (full pipeline including realtime + moneypuck + contracts) then
+/// the playoff trio (bios + stats + goalies only — playoff has no
+/// realtime/moneypuck per Hart.6 D6).
+#[derive(Debug, Copy, Clone, PartialEq, Eq, ValueEnum, Default)]
+pub enum FetchSeasonType {
+    #[default]
+    #[clap(name = "regular")]
+    Regular,
+    #[clap(name = "playoff")]
+    Playoff,
+    #[clap(name = "both")]
+    Both,
+}
+
 #[derive(Debug, Subcommand)]
 pub enum FetchSubcommand {
     /// Fetch all 32 team rosters (headshots, positions, bios).
@@ -342,6 +361,9 @@ pub enum FetchSubcommand {
         /// content-addressed dedup; readers fall back transparently.
         #[arg(long)]
         chunked: bool,
+        /// Season type: regular (default), playoff, or both.
+        #[arg(long = "type", value_enum, default_value_t = FetchSeasonType::Regular)]
+        season_type: FetchSeasonType,
     },
     /// Fetch rosters then stats in one pass.
     All {
@@ -354,6 +376,12 @@ pub enum FetchSubcommand {
         /// Same as `fetch stats --chunked` — applies to the stats step.
         #[arg(long)]
         chunked: bool,
+        /// Season type: regular (default), playoff, or both. `playoff`
+        /// runs bios+stats+goalies only (skips realtime/moneypuck/
+        /// contracts — they're regular-season concepts). `both` runs
+        /// the full regular pipe first, then the playoff trio.
+        #[arg(long = "type", value_enum, default_value_t = FetchSeasonType::Regular)]
+        season_type: FetchSeasonType,
     },
     /// Refresh position eligibility from boxscore data (Phase 2).
     Positions {
@@ -384,7 +412,8 @@ pub enum FetchSubcommand {
         dry_run: bool,
     },
     /// Fetch goalie season stats (W/L/SV%/GAA/SO) — Phase G.2.
-    /// Writes goalie-stats.json into the active snapshot store.
+    /// Writes goalie-stats.json (or playoff-goalie-stats.json) into the
+    /// active snapshot store.
     Goalies {
         #[arg(long, default_value = icelines_core::CURRENT_SEASON_STR)]
         season: String,
@@ -392,6 +421,9 @@ pub enum FetchSubcommand {
         refresh: bool,
         #[arg(long)]
         dry_run: bool,
+        /// Season type: regular (default), playoff, or both.
+        #[arg(long = "type", value_enum, default_value_t = FetchSeasonType::Regular)]
+        season_type: FetchSeasonType,
     },
     /// Fetch league-wide transactions from ESPN — Phase T.3.
     /// Trades, waivers, signings, IR, recalls, reassignments. Writes
