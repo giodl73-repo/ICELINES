@@ -32,7 +32,13 @@ pub fn find_comps_views<'a>(
         })
         .collect();
 
-    pool.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
+    // PlayerId tiebreak — equal-distance comps would otherwise shuffle
+    // each frame because `views` came from a HashMap iterator.
+    pool.sort_by(|a, b| {
+        a.1.partial_cmp(&b.1)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| a.0.id().0.cmp(&b.0.id().0))
+    });
     pool.into_iter().take(20).map(|(v, _)| v).collect()
 }
 

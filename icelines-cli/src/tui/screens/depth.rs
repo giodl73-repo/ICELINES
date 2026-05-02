@@ -35,7 +35,17 @@ pub fn render_league(f: &mut Frame, app: &App, area: Rect) {
     let strength = compute_team_strength_views(&views, mode);
     let mut ranked: Vec<(&str, &icelines_core::cross_team::TeamStrength)> =
         strength.iter().map(|(k, v)| (k.as_str(), v)).collect();
-    ranked.sort_by(|a, b| b.1.total.partial_cmp(&a.1.total).unwrap_or(std::cmp::Ordering::Equal));
+    // Sort total desc, then team abbrev asc for tie-break — without
+    // the secondary key, teams that tie (especially common in playoff
+    // mode where non-qualifying teams all score 0) shuffle every
+    // frame because the input came from HashMap iteration. That's the
+    // visible flicker.
+    ranked.sort_by(|a, b| {
+        b.1.total
+            .partial_cmp(&a.1.total)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| a.0.cmp(b.0))
+    });
 
     let dim  = Style::default().fg(Color::DarkGray);
     let col_label = if mode == ScoringMode::Fantasy { "FPts" } else { "Pts/82" };
@@ -143,7 +153,15 @@ pub fn render_team(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
     let mut all_fwds: Vec<&PlayerView<'_>> = views.iter()
         .filter(|v| v.team_display() == abbrev && v.position().is_forward())
         .collect();
-    all_fwds.sort_by(|a, b| score_of(b).partial_cmp(&score_of(a)).unwrap_or(std::cmp::Ordering::Equal));
+    // PlayerId tiebreak — input from app.views() iterates a HashMap
+    // (non-deterministic order); without a tiebreak, equal-scored
+    // players swap each frame and cause depth-slot flicker.
+    all_fwds.sort_by(|a, b| {
+        score_of(b)
+            .partial_cmp(&score_of(a))
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| a.id().0.cmp(&b.id().0))
+    });
 
     for v in &all_fwds {
         let bucket = fwd_buckets.entry(v.position()).or_default();
@@ -173,7 +191,12 @@ pub fn render_team(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
     let mut all_d: Vec<&PlayerView<'_>> = views.iter()
         .filter(|v| v.team_display() == abbrev && v.position() == Position::Defense)
         .collect();
-    all_d.sort_by(|a, b| score_of(b).partial_cmp(&score_of(a)).unwrap_or(std::cmp::Ordering::Equal));
+    all_d.sort_by(|a, b| {
+        score_of(b)
+            .partial_cmp(&score_of(a))
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| a.id().0.cmp(&b.id().0))
+    });
     let ld_players: Vec<_> = all_d.iter()
         .filter(|v| v.identity.bio.shoots_catches.as_deref() != Some("R"))
         .copied().collect();
