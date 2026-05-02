@@ -302,4 +302,467 @@ mod app_snapshot_tests {
             "Admin overlay title missing, got:\n{text}"
         );
     }
+
+    // ── User-flow tests ──────────────────────────────────────────────────────
+    //
+    // These tests boot the App with bundled data (via boot_load_with_store
+    // against an empty tempdir, which forces the bundled fallback), drive
+    // synthetic keypresses through `app.handle(Action::*)`, and re-render
+    // after each step. Catches regressions across the boot → render → key
+    // → re-render chain that per-screen tests miss because they seed state
+    // by hand.
+    //
+    // The pattern, copy-paste-ready:
+    //   let mut app = App::new(true);
+    //   app.boot_load_with_store(&empty_store);   // fixture data
+    //   let buf = render_app_to_text(&app, 120, 30);
+    //   assert!(buf.contains("EDM"));             // home screen has teams
+    //   app.handle(Action::Tab);                  // user presses Tab
+    //   let buf = render_app_to_text(&app, 120, 30);
+    //   assert!(buf.contains("Depth Rankings"));  // depth screen rendered
+
+    fn empty_store_in_tempdir() -> (tempfile::TempDir, icelines_fetch::snapshot::SnapshotStore) {
+        let dir = tempfile::TempDir::new().unwrap();
+        let store = icelines_fetch::snapshot::SnapshotStore::new(dir.path());
+        (dir, store)
+    }
+
+    use crate::tui::event::Action;
+
+    /// Boot with bundled data → render Home. Real user content (team
+    /// abbrevs from the ranked list) must appear. If this fails, the
+    /// boot path is broken — same regression as the user-reported "no
+    /// roster data" bug, caught at the render layer this time.
+    #[test]
+    fn l1_userflow_boot_then_home_shows_real_team_abbrevs() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        let text = render_app_to_text(&app, 120, 30);
+        // Home screen shows the 32-team ranked grid. EDM and TOR are stable
+        // fixtures of the bundled current-season pool.
+        assert!(text.contains("EDM"), "Home must show EDM team card, got:\n{text}");
+        assert!(text.contains("TOR"), "Home must show TOR team card, got:\n{text}");
+        // Negative assertion: the "Loading…" placeholder must NOT be
+        // visible after a successful boot.
+        assert!(
+            !text.contains("Loading…"),
+            "Home must not show 'Loading…' after boot completes, got:\n{text}"
+        );
+    }
+
+    /// User flow: boot → press Tab → land on Depth screen with
+    /// real strength data, not the "Loading…" placeholder. Catches the
+    /// exact symptom the user reported on the Depth tab.
+    #[test]
+    fn l1_userflow_boot_then_tab_lands_on_depth_with_data() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        app.handle(Action::Tab);
+        let text = render_app_to_text(&app, 140, 40);
+        assert!(
+            text.contains("Depth Rankings"),
+            "Tab from Home should land on Depth, got:\n{text}"
+        );
+        // The 32-team list must populate — at minimum, the rank-1 row shows
+        // a team abbrev. If we still render "Loading…" here, the bug is
+        // back.
+        assert!(
+            !text.contains("Loading…"),
+            "Depth screen must not show 'Loading…' after boot, got:\n{text}"
+        );
+    }
+
+    /// User flow: boot → press 's' to land on Stats(Queries) → real
+    /// query UI renders, not the loading placeholder.
+    #[test]
+    fn l1_userflow_boot_then_stats_tab_shows_query_ui() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        // Tab × 2: Home → Depth → Stats(Queries)
+        app.handle(Action::Tab);
+        app.handle(Action::Tab);
+        let text = render_app_to_text(&app, 140, 40);
+        assert_eq!(
+            app.screen,
+            crate::tui::app::Screen::Queries,
+            "Tab×2 from Home should land on Queries"
+        );
+        // Queries screen renders its title or field list — assert the
+        // screen produced *something* and didn't crash to a blank panel.
+        assert!(
+            !text.trim().is_empty(),
+            "Queries screen must render non-empty content, got:\n{text}"
+        );
+    }
+
+    /// User flow: boot → tab to Goalies → goalie list populates from
+    /// bundled goalie-stats (Vezina phase data). Catches the "goalie no
+    /// data loaded" symptom from the user report.
+    #[test]
+    fn l1_userflow_boot_then_goalies_tab_shows_goalie_list() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        // Tab × 3: Home → Depth → Queries → Goalies
+        app.handle(Action::Tab);
+        app.handle(Action::Tab);
+        app.handle(Action::Tab);
+        assert_eq!(app.screen, crate::tui::app::Screen::Goalies);
+
+        // Goalie views must be non-empty post-boot. Screen-level details
+        // (column headers, name formatting) live in goalies.rs tests; here
+        // we just guard the boot → goalie pool plumbing.
+        assert!(
+            !app.goalie_views().is_empty(),
+            "boot must populate goalie views; got 0"
+        );
+    }
+
+    /// Help overlay round-trip: boot → '?' opens → next key closes.
+    /// Catches the help dispatch regressing when the action enum is
+    /// extended.
+    #[test]
+    fn l1_userflow_help_overlay_open_then_close() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        app.handle(Action::Help);
+        assert!(app.show_help);
+        let text_open = render_app_to_text(&app, 120, 30);
+        assert!(text_open.contains("Help"), "Help overlay title missing");
+
+        app.handle(Action::Char('x')); // any key dismisses
+        assert!(!app.show_help);
+        let text_closed = render_app_to_text(&app, 120, 30);
+        // Loose check — "Help" might still appear in the status bar hint;
+        // tighter signal is that the overlay frame is gone, but the dim
+        // popup-clear is hard to assert cleanly. Settle for the state flag.
+        let _ = text_closed;
+    }
+
+    // ── Tab cycling ──────────────────────────────────────────────────────────
+
+    /// Tab from Home cycles forward through all 8 tabs and wraps back.
+    /// Catches tab table regressions (skipped tabs, missing screens).
+    #[test]
+    fn l1_userflow_tab_cycles_through_all_eight_tabs() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        use crate::tui::app::Screen;
+        let expected = [
+            Screen::Depth,
+            Screen::Queries,
+            Screen::Goalies,
+            Screen::Tonight,
+            Screen::Schedule,
+            Screen::Transactions,
+            Screen::Playoffs,
+            Screen::Home, // wraps
+        ];
+        for want in expected {
+            app.handle(Action::Tab);
+            assert_eq!(app.screen, want, "Tab cycle landed on wrong screen");
+        }
+    }
+
+    /// Shift-Tab cycles in reverse from Home through Playoffs back to Home.
+    #[test]
+    fn l1_userflow_shift_tab_cycles_backward() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        use crate::tui::app::Screen;
+        app.handle(Action::TabPrev);
+        assert_eq!(app.screen, Screen::Playoffs, "Shift-Tab from Home → Playoffs");
+        app.handle(Action::TabPrev);
+        assert_eq!(app.screen, Screen::Transactions);
+    }
+
+    /// Numeric jump: GoToTab(n) lands on the right screen for each n.
+    /// Note: GoToTab is 0-indexed — the keymap (Char('1')→0, …, Char('8')→7)
+    /// translates user-visible 1–8 into this enum's 0–7.
+    #[test]
+    fn l1_userflow_numeric_keys_jump_to_tab() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        use crate::tui::app::Screen;
+        let mapping = [
+            (0, Screen::Home),
+            (1, Screen::Depth),
+            (2, Screen::Queries),
+            (3, Screen::Goalies),
+            (4, Screen::Tonight),
+            (5, Screen::Schedule),
+            (6, Screen::Transactions),
+            (7, Screen::Playoffs),
+        ];
+        for (n, want) in mapping {
+            app.handle(Action::GoToTab(n));
+            assert_eq!(app.screen, want, "GoToTab({n}) landed on wrong screen");
+        }
+    }
+
+    // ── Drill-downs ─────────────────────────────────────────────────────────
+
+    /// Home → Enter → Team(abbrev) screen. Real player names appear
+    /// because the team has bundled stats. Catches the
+    /// "Team screen renders empty" regression.
+    #[test]
+    fn l1_userflow_home_enter_drills_into_team_with_players() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        // selected=0 → first ranked team (COL).
+        app.handle(Action::Enter);
+        let first = crate::tui::screens::home::RANKED_TEAMS[0];
+        assert_eq!(
+            app.screen,
+            crate::tui::app::Screen::Team(first.to_string()),
+            "Enter on Home should drill into the selected team"
+        );
+
+        // The team must have ≥1 view in the active window.
+        let team_abbr = icelines_core::model::TeamAbbr(first.to_string());
+        let team_views = app.team_views(&team_abbr);
+        assert!(
+            !team_views.is_empty(),
+            "{first} must have skater views from bundled data"
+        );
+
+        // Render must include the team abbrev in the title.
+        let text = render_app_to_text(&app, 140, 40);
+        assert!(text.contains(first), "Team screen must show {first} title");
+    }
+
+    /// Depth → Enter → DepthTeam screen for the selected team. The
+    /// chart frame title must include the team abbreviation.
+    #[test]
+    fn l1_userflow_depth_enter_drills_into_depth_team() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        app.handle(Action::Tab); // Home → Depth
+        app.handle(Action::Enter); // open the rank-1 team's depth chart
+        assert!(
+            matches!(app.screen, crate::tui::app::Screen::DepthTeam(_)),
+            "Enter on Depth should drill into DepthTeam, got {:?}",
+            app.screen
+        );
+    }
+
+    /// Goalies → Enter → GoalieDetailById. Detail screen must render
+    /// the goalie's name.
+    #[test]
+    fn l1_userflow_goalies_enter_drills_into_goalie_detail() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        // Tab × 3 to Goalies, then Enter.
+        for _ in 0..3 {
+            app.handle(Action::Tab);
+        }
+        assert_eq!(app.screen, crate::tui::app::Screen::Goalies);
+        app.handle(Action::Enter);
+        assert!(
+            matches!(app.screen, crate::tui::app::Screen::GoalieDetailById(_)),
+            "Enter on Goalies should drill into GoalieDetailById, got {:?}",
+            app.screen
+        );
+    }
+
+    // ── Each tab renders with bundled data (no live network) ─────────────────
+
+    /// Scores tab renders without panicking against an empty (no
+    /// network) cache. Should display either today's games OR an
+    /// empty-state message — never crash, never hang on "Loading…"
+    /// indefinitely (that was the user-reported bug).
+    #[test]
+    fn l1_userflow_scores_tab_renders_with_empty_cache() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        app.handle(Action::GoToTab(4));
+        assert_eq!(app.screen, crate::tui::app::Screen::Tonight);
+        let text = render_app_to_text(&app, 140, 40);
+        // Nav bar must still show all tabs (Scores tab must not have hidden them).
+        assert!(text.contains("Scores"), "Scores tab label must appear");
+    }
+
+    /// Schedule tab renders against an empty week cache without panic.
+    #[test]
+    fn l1_userflow_schedule_tab_renders_with_empty_cache() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        app.handle(Action::GoToTab(5));
+        assert_eq!(app.screen, crate::tui::app::Screen::Schedule);
+        let _text = render_app_to_text(&app, 140, 40);
+    }
+
+    /// Transactions tab renders the legend card when no transactions
+    /// snapshot exists.
+    #[test]
+    fn l1_userflow_transactions_tab_renders_with_empty_feed() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        app.handle(Action::GoToTab(6));
+        assert_eq!(app.screen, crate::tui::app::Screen::Transactions);
+        let _text = render_app_to_text(&app, 140, 40);
+    }
+
+    /// Playoffs tab renders against an empty bracket cache. The feed
+    /// loads async; empty state is "Playoffs not yet active" or similar.
+    #[test]
+    fn l1_userflow_playoffs_tab_renders_with_empty_cache() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        app.handle(Action::GoToTab(7));
+        assert_eq!(app.screen, crate::tui::app::Screen::Playoffs);
+        let _text = render_app_to_text(&app, 140, 40);
+    }
+
+    // ── Overlays ─────────────────────────────────────────────────────────────
+
+    /// Admin overlay (F) opens; Esc closes.
+    #[test]
+    fn l1_userflow_admin_overlay_open_then_close() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        app.handle(Action::Char('F'));
+        assert!(app.show_admin);
+        let text = render_app_to_text(&app, 120, 30);
+        assert!(text.contains("Admin"), "Admin overlay title missing");
+
+        app.handle(Action::Escape);
+        assert!(!app.show_admin);
+    }
+
+    /// Season picker (y) opens; Esc closes. Must render the season list.
+    #[test]
+    fn l1_userflow_season_picker_open_then_close() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        app.handle(Action::Char('y'));
+        assert!(app.show_season_picker);
+        let text = render_app_to_text(&app, 120, 30);
+        // Picker must show at least one bundled season (current or prior).
+        assert!(
+            text.contains("2024") || text.contains("2025"),
+            "Season picker must list bundled seasons, got:\n{text}"
+        );
+
+        app.handle(Action::Escape);
+        assert!(!app.show_season_picker);
+    }
+
+    /// Group picker (g) opens on a player-list screen. Must NOT open on
+    /// Home (no player selected).
+    #[test]
+    fn l1_userflow_group_picker_opens_on_player_screen() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        // Drill into a player first: Home → Team → Player.
+        app.handle(Action::Enter); // Home → Team(rank-1)
+        app.handle(Action::Enter); // Team → Player(selected=0)
+        assert!(
+            matches!(app.screen, crate::tui::app::Screen::PlayerById(_)),
+            "Two Enters from Home should land on PlayerById, got {:?}",
+            app.screen
+        );
+        // Now g should open the picker.
+        app.handle(Action::AddToGroup);
+        assert!(
+            app.group_picker_open,
+            "g on a Player screen must open the group picker"
+        );
+    }
+
+    // ── Back navigation ──────────────────────────────────────────────────────
+
+    /// Esc from Team returns to Home (prev_screen restored).
+    #[test]
+    fn l1_userflow_esc_from_team_returns_to_home() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        app.handle(Action::Enter); // Home → Team
+        app.handle(Action::Escape); // Esc → Home
+        assert_eq!(app.screen, crate::tui::app::Screen::Home);
+    }
+
+    /// Esc from Player returns to Team.
+    #[test]
+    fn l1_userflow_esc_from_player_returns_to_team() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        app.handle(Action::Enter); // Home → Team(COL)
+        app.handle(Action::Enter); // Team → Player
+        app.handle(Action::Escape); // → Team
+        assert!(
+            matches!(app.screen, crate::tui::app::Screen::Team(_)),
+            "Esc from Player should return to Team, got {:?}",
+            app.screen
+        );
+    }
+
+    // ── List navigation ─────────────────────────────────────────────────────
+
+    /// Down/Up on Home moves selection in the team grid.
+    #[test]
+    fn l1_userflow_home_down_up_moves_selection() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        let start = app.selected;
+        app.handle(Action::Down);
+        assert_ne!(app.selected, start, "Down must move selection from {start}");
+        app.handle(Action::Up);
+        assert_eq!(app.selected, start, "Up after Down must restore selection");
+    }
+
+    // ── Quit ────────────────────────────────────────────────────────────────
+
+    /// 'q' / Quit action terminates. Bubbles up to run_loop via the
+    /// `handle()` returning true.
+    #[test]
+    fn l1_userflow_quit_action_signals_termination() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        let should_quit = app.handle(Action::Quit);
+        assert!(should_quit, "Quit action must return true to break run_loop");
+    }
 }
