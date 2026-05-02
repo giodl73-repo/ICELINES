@@ -13,7 +13,7 @@ For the app plan (mission, surfaces, non-goals), see [`../IceLines.md`](../IceLi
 | Plan | Status | Summary |
 |------|--------|---------|
 | [Phase Hart — Normalization](2026-04-30-phaseHart-normalization.md) | Active | (player_id, season, season_type) primary key axis. Sub-phases 4.1/5b/5c/6 |
-| [Hart.5c — Final Cleanup](2026-05-01-phaseHart-5c-final-cleanup.md) | Active (v0.3) | Consumer migration to PlayerView. 5c.0–5c.5 done; 5c.6 + 5c.7 remaining |
+| [Hart.5c — Final Cleanup](2026-05-01-phaseHart-5c-final-cleanup.md) | Implemented (v0.4) | Consumer migration to PlayerView. 5c.0–5c.7.12 shipped 2026-05-01. One followup (F1: contract helpers on PlayerView) tracked in plan. |
 | [Hart.5c.6 — TUI Restructure](2026-05-01-phaseHart-5c-6-tui-restructure.md) | Draft | App owns StatsRepository; 14 TUI screens migrate; L2 snapshot test |
 | [Hart.6 — Playoff Per-Player Data](2026-05-01-phaseHart-6-playoff-data.md) | Draft (v0.2) | Removes early-bail on SeasonType::Playoff; bundles playoff stats |
 

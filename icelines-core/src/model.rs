@@ -225,10 +225,12 @@ impl Region {
 //
 // Most legacy `Player::*` helpers (gp / pp_assists / per_82 ratios /
 // toi_mmss / is_rankable) ported to `PlayerView` and are covered in
-// `stats_repository.rs`'s view test mod. A few legacy helpers with no
-// post-Hart caller went away entirely — `takeaways_per_82`, `is_ufa`,
-// `is_rfa`, `seasons_remaining`. Reintroduce them on `PlayerView` if a
-// new caller emerges.
+// `stats_repository.rs`'s view test mod. Four contract / two-way
+// helpers (`is_ufa`, `is_rfa`, `seasons_remaining`, `takeaways_per_82`)
+// went away with no current post-Hart caller — restoration tracked as
+// followup F1 in `design/plans/2026-05-01-phaseHart-5c-final-cleanup.md`,
+// to be folded into whichever phase first ships the contract-display
+// surface.
 
 // ── Unit tests ────────────────────────────────────────────────────────────────
 

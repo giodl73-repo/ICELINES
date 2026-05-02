@@ -1,13 +1,33 @@
-# Phase Hart.5c — Final Cleanup Spec (v0.3, Hart.6-aware)
+# Phase Hart.5c — Final Cleanup Spec (v0.4, Hart.6-aware)
 
-**Status**: v0.3 — pins the TUI snapshot harness signature so Hart.6.6
-can extend it without rewriting. No other changes from v0.2.
-Ready to implement.
+**Status**: v0.4 — implementation complete (5c.0 through 5c.7.12 shipped
+2026-05-01). One follow-up tracked in §Post-implementation followups.
 **Date**: 2026-05-01
 **Trophy**: Hart (final cleanup sub-phase)
 **Predecessor**: design/plans/2026-04-30-phaseHart-normalization.md (master Hart
 plan), design/plans/2026-04-30-phaseHart-4-1-test-foundation.md
 **Replaces**: nothing — additive but is the closing phase
+
+---
+
+## v0.3 → v0.4 changelog
+
+Implementation closed 2026-05-01. Adds one §Post-implementation followups
+entry capturing a contract-helper regression discovered during the
+post-cleanup audit.
+
+- **Contract-helper regression** — `Player::is_ufa() / is_rfa() /
+  seasons_remaining()` were dropped in 5c.7.10 without view-side
+  replacements. They were originally added for contract handling
+  (`PlayerBio.draft_*` / `expiry_year` / `expiry_type` are still on
+  `PlayerBio`, so the underlying data path is intact — only the helpers
+  on top of it are gone). The 5c.7.10 commit message claimed view-side
+  equivalents existed; an audit in 5c.7.12 confirmed they don't, and no
+  post-Hart caller invokes them. Tracked as a followup, not a regression
+  to fix on the original phase commits — the surface is dead code today.
+  See §Post-implementation followups.
+
+The rest of v0.4 is identical to v0.3.
 
 ---
 
@@ -645,11 +665,74 @@ elsewhere).
 
 ## Next step
 
-This is v0.2 — review punch list applied. Ready to implement.
+This is v0.4 — implementation closed. Hart.5c shipped through 5c.7.12 on
+2026-05-01. Single-model invariant achieved (`Player`/`Goalie`/
+`player_builder`/`flat_view_legacy` all deleted). One follow-up tracked
+below.
 
-1. User reads v0.2 + signs off OR pushes back on a specific decision.
-2. Implement Hart.5c.0 (`PlayerFilter::apply_views`).
-3. Forge / tape / bench review on the implementation diff per sub-phase.
-4. Repeat for Hart.5c.1 through 5c.7.
-5. Hart phase ships with `model.rs::Player` and `model.rs::Goalie`
-   deleted. Single-model invariant achieved.
+---
+
+## Post-implementation followups
+
+### F1 — Restore contract helpers on `PlayerView` (deferred)
+
+**What**: 5c.7.10 deleted `Player::is_ufa()`, `Player::is_rfa()`,
+`Player::seasons_remaining(current_season_end_year)`,
+`Player::takeaways_per_82()` without view-side replacements. The 5c.7.10
+commit message claimed they ported; a 5c.7.12 audit confirmed they
+didn't, and no post-Hart caller invokes them.
+
+**Why this is a followup, not a fix on the original commits**:
+
+- The underlying data path is intact. `PlayerBio.draft_year` /
+  `draft_round` / `draft_overall` are still on the bio block, which is
+  what `seasons_remaining` keys off (via `expiry_year` on
+  `PlayerContract`). `is_ufa` / `is_rfa` key off `PlayerContract.expiry_type`,
+  which `PlayerView::contract_expiry_type()` already exposes.
+- Nothing currently calls them. They went away as dead code.
+- Re-adding them prematurely is YAGNI — but they were originally added
+  for contract surface UX (UFA/RFA badges, "1 year left" hints), and
+  re-adding them is **not free**: each requires choosing the right
+  granularity (`is_ufa(&self)` reads cleanly; `seasons_remaining` needs
+  to take or default a `current_season_end_year` parameter).
+
+**When to do it**: as part of a contract-display surface (e.g. a
+"Contracts" TUI tab, an `icelines query --filter ufa` flag, or a
+contract column on the team depth chart). Add the helpers to
+`PlayerView` (next to the existing `contract_expiry_year` /
+`contract_expiry_type` / `contract_salary` accessors) and add three
+unit tests, paralleling the deleted ones:
+
+```rust
+// in stats_repository.rs PlayerView impl
+pub fn is_ufa(&self) -> bool {
+    self.contract_expiry_type()
+        .map(|t| t.eq_ignore_ascii_case("UFA"))
+        .unwrap_or(false)
+}
+pub fn is_rfa(&self) -> bool {
+    self.contract_expiry_type()
+        .map(|t| t.eq_ignore_ascii_case("RFA"))
+        .unwrap_or(false)
+}
+pub fn seasons_remaining(&self, current_season_end_year: u16) -> Option<i32> {
+    self.contract_expiry_year()
+        .map(|exp| exp as i32 - current_season_end_year as i32)
+}
+pub fn takeaways_per_82(&self) -> Option<f64> {
+    let gp = self.gp();
+    let t = self.takeaways()?;
+    if gp == 0 { None } else { Some(t as f64 / gp as f64 * 82.0) }
+}
+```
+
+Tests to mirror the deleted `l0_player_is_ufa_*` / `l0_player_is_rfa_*` /
+`l0_player_seasons_remaining_*` / `l0_player_takeaways_per_82_*` set.
+
+**Out of scope for the followup**: extending the schema, adding new
+fetchers, or shipping the contract surface itself. F1 only restores the
+helpers + tests when something needs them.
+
+**Owner / Trigger**: whoever picks up the contract-display feature
+first. No standalone commit required — fold into the phase that adds
+the consumer.
