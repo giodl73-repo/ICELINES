@@ -294,8 +294,8 @@ fn render_dashboard_panel_view(f: &mut Frame, app: &App, v: &PlayerView<'_>, are
     f.render_widget(block, area);
 
     // Use the post-Hart compile() API. ctx_window must match the active
-    // window — reload_for_season + poll_repo_load keep these in
-    // lockstep, so the D11 cross-window rejection is a safety net.
+    // window — boot_load and reload_for_season keep these in lockstep,
+    // so the D11 cross-window rejection is a safety net.
     let result = app.dashboard_panel.compile(
         &app.repo,
         app.active_season_typed,

@@ -22,13 +22,9 @@ use std::io;
 
 /// Entry point for the TUI. Sets up terminal, runs event loop, restores on exit.
 ///
-/// Hart.5c.6 Phase A: the event loop body runs inside a
-/// `tokio::task::LocalSet` because the post-Hart loader yields
-/// `LoadOutcome` (carrying `StatsRepository: !Send`). `tokio::spawn`
-/// requires Send; `spawn_local` does not, but it panics outside a
-/// LocalSet. Pinning the LocalSet here means consumers don't have to
-/// know — they just call `loader::spawn_repo_load(...)` and we ensure
-/// the right runtime is in scope.
+/// Repo data is loaded synchronously in `App::boot_load` before the
+/// event loop starts. The transactions loader is `tokio::spawn`'d
+/// (Send-clean) — no `LocalSet` is required.
 pub async fn run_tui(no_color: bool) -> Result<()> {
     // Setup
     enable_raw_mode()?;
@@ -37,8 +33,7 @@ pub async fn run_tui(no_color: bool) -> Result<()> {
     let backend  = CrosstermBackend::new(stdout);
     let mut term = Terminal::new(backend)?;
 
-    let local = tokio::task::LocalSet::new();
-    let result = local.run_until(run_loop(&mut term, no_color)).await;
+    let result = run_loop(&mut term, no_color).await;
 
     // Restore terminal regardless of result
     disable_raw_mode()?;
@@ -55,11 +50,9 @@ async fn run_loop(
     let mut app = App::new(no_color);
 
     // Synchronous boot load. ~50ms against bundled data — well below
-    // the user's perceptible threshold. Must run BEFORE the event loop
-    // starts: `crossterm::event::poll` blocks the OS thread, so the
-    // single-threaded `LocalSet` runtime cannot drive a `spawn_local`
-    // task in parallel with the loop. Async-load only worked when the
-    // event loop had real `.await` yield points.
+    // the user's perceptible threshold. `crossterm::event::poll` (in
+    // the loop below) is a blocking sync syscall that pins the OS
+    // thread, so an async load via spawn_local would never run.
     app.boot_load();
 
     // Background transactions loader stays async — Transaction is Send,
@@ -71,11 +64,6 @@ async fn run_loop(
     loop {
         // Tick counter for spinner animation
         app.tick = app.tick.wrapping_add(1);
-
-        // Hart.5c.6 Phase A — drain the spawn_local repo loader's
-        // mpsc channel. On Loaded, swaps repo + rebuilds league
-        // context. No-op when the channel is empty or absent.
-        app.poll_repo_load();
 
         // Auto-refresh live Scores every 30s while the tab is active.
         // Pure decision in App; this loop just calls it once per frame.

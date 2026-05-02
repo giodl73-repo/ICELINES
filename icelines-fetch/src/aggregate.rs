@@ -205,7 +205,6 @@ pub fn load_improvement_map() -> HashMap<u32, f64> {
 mod tests {
     use super::*;
 
-    use icelines_core::model::Season;
     use icelines_core::season_stats::SeasonType;
 
     #[test]

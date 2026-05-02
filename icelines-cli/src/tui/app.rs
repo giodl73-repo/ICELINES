@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 use crate::tui::event::Action;
-use crate::tui::loader::{InstallState, RepoLoadResult};
+use crate::tui::loader::InstallState;
 use icelines_core::identity::PlayerId;
 use icelines_core::model::{Season, TeamAbbr};
 use icelines_core::season_stats::SeasonType;
@@ -201,13 +201,10 @@ pub struct App {
     /// True while the `/` search bar is open and accepting characters.
     pub tx_search_mode: bool,
 
-    // ── Hart.5c.6 Phase A — repo-based view fields (additive) ─────────
-    //
-    // Live alongside `players` / `goalies` for Phase A. Phase B/C
-    // migrate consumers off the legacy fields and remove them. Final
-    // gate: `grep app\.players\|app\.goalies` returns zero hits.
-    /// Post-Hart canonical store. `!Send + !Sync` by construction;
-    /// every async load runs on a `LocalSet`.
+    // ── Repo-backed view state ─────────────────────────────────────────
+    /// Post-Hart canonical store. `!Send + !Sync` by construction.
+    /// Populated synchronously by `App::boot_load` and refreshed by
+    /// `reload_for_season` on the season-picker `y` flow.
     pub repo: StatsRepository,
     /// Typed mirror of `active_season` — `Season(YYYYZZZZ)`. The
     /// String form survives for legacy callers and the season-picker
@@ -222,9 +219,6 @@ pub struct App {
     /// `dashboard_panel.compile` so cross-window construction is
     /// rejected at the boundary.
     pub league_context_window: (Season, SeasonType),
-    /// Receiver end of the spawn_local-based repo loader. `Some` while
-    /// a load is in flight; `None` after `poll_repo_load` drains it.
-    pub load_rx: Option<tokio::sync::mpsc::UnboundedReceiver<RepoLoadResult>>,
 }
 
 impl App {
@@ -290,9 +284,9 @@ impl App {
             tx_search_query: String::new(),
             tx_search_mode: false,
 
-            // Hart.5c.6 Phase A — empty repo + current season as the
-            // initial typed window. The mpsc-based loader populates
-            // these via `poll_repo_load` after `spawn_repo_load` fires.
+            // Empty repo + current season as the initial typed window.
+            // `App::boot_load` populates the repo synchronously before
+            // the event loop starts.
             repo: StatsRepository::new(),
             active_season_typed: Season(icelines_core::CURRENT_SEASON),
             active_type: SeasonType::Regular,
@@ -300,7 +294,6 @@ impl App {
                 Season(icelines_core::CURRENT_SEASON),
                 SeasonType::Regular,
             ),
-            load_rx: None,
         }
     }
 
@@ -338,38 +331,6 @@ impl App {
     pub fn team_views_all_stints(&self, team: &TeamAbbr) -> Vec<PlayerView<'_>> {
         self.repo
             .team_roster_all_stints(team, self.active_season_typed, self.active_type)
-    }
-
-    /// Per-tick poll of the repo-load channel. On Ok(outcome): swap
-    /// in the new repo, rebuild league_context (and its window field
-    /// per D11), surface MissingSource entries to the status banner.
-    /// On Err(msg): set the load_state error variant. Either way the
-    /// receiver is dropped.
-    pub fn poll_repo_load(&mut self) {
-        let Some(rx) = self.load_rx.as_mut() else { return };
-        let Ok(result) = rx.try_recv() else { return };
-        match result {
-            Ok(outcome) => {
-                let _old = self.repo.repo_swap(outcome.repo);
-                self.league_context = crate::tui::dashboard_panel::LeagueContext::build(
-                    &self.repo,
-                    self.active_season_typed,
-                    self.active_type,
-                );
-                self.league_context_window = (self.active_season_typed, self.active_type);
-                // Use the API surface — preserves any Arc<CompiledPanel>
-                // clone a future Phase B consumer might hold.
-                self.dashboard_panel.clear_cache();
-                if !outcome.missing.is_empty() {
-                    self.status =
-                        icelines_fetch::stats_loader::format_missing_sources(&outcome.missing);
-                }
-            }
-            Err(msg) => {
-                self.status = format!("load failed: {msg}");
-            }
-        }
-        self.load_rx = None;
     }
 
     /// Resolve a Player ID via the repo's identity index. Returns the
@@ -1373,25 +1334,16 @@ impl App {
         false
     }
 
-    /// Reload the repo from the given season (bundled or installed).
-    ///
-    /// Hart.5c.6 Phase C: legacy `app.players` / `app.goalies` fields
-    /// are gone. The single sync entry point for the `y` season
-    /// picker now ONLY swaps the repo and rebuilds (season, type)-
-    /// coupled caches per D5. All consumers read through PlayerView.
     /// Synchronous boot load. Populates `self.repo` from
     /// `(active_season_typed, active_type)` against the configured
     /// snapshot dir, falling back to bundled data when the snapshot is
     /// absent. Rebuilds `league_context` so post-load renders see the
     /// rank/percentile tables coupled to the current window.
     ///
-    /// This must run BEFORE the event loop starts. The `LocalSet`-based
-    /// `spawn_repo_load` path was originally added in Hart.5c.6 Phase A
-    /// to do this async, but the event-loop has no real `.await` yields
-    /// (`crossterm::event::poll` is a blocking sync syscall — `next_event`
-    /// is `async fn` only by signature, not by behavior), so a
-    /// `spawn_local` task never runs. The synchronous load takes ~50ms
-    /// cold against bundled data — well below the user's perception
+    /// Must run BEFORE the event loop starts. `crossterm::event::poll`
+    /// is a blocking sync syscall, so any async load in parallel would
+    /// never get a chance to run. The synchronous load takes ~50ms cold
+    /// against bundled data — well below the user's perception
     /// threshold for a CLI program startup.
     ///
     /// On error: `self.status` carries the error string. The repo stays

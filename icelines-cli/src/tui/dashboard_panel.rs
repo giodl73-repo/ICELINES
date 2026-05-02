@@ -126,9 +126,9 @@ impl CompiledPanel {
         Self { inner: Arc::new(Mutex::new(PanelState::default())) }
     }
 
-    /// Drop all cached compilations. Called by App::reload_for_season
-    /// and poll_repo_load after every repo_swap so post-swap renders
-    /// rebuild against the new repo.
+    /// Drop all cached compilations. Called after every `repo_swap`
+    /// (boot_load and reload_for_season) so post-swap renders rebuild
+    /// against the new repo.
     pub fn clear_cache(&self) {
         if let Ok(mut guard) = self.inner.lock() {
             guard.by_view.clear();

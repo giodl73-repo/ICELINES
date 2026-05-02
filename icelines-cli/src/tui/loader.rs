@@ -1,21 +1,17 @@
 //! Background data loading for the TUI.
 //!
-//! Hart.5c.6 Phase C: the legacy `Arc<Mutex<LoadInner>>` path that
-//! pre-populated `app.players` / `app.goalies` is gone. The mpsc-based
-//! repo loader (`spawn_repo_load` + `RepoLoadResult`) is now the only
-//! way data lands in `App.repo`. The transactions path keeps its own
-//! Arc<Mutex> shape because `Transaction` is `Send`-clean and runs
-//! parallel to the repo load — it doesn't touch `LoadOutcome` at all.
+//! Repo data is loaded synchronously at boot via `App::boot_load` —
+//! the original `spawn_local` mpsc path was deleted because the event
+//! loop has no real `.await` yields (`crossterm::event::poll` is a
+//! blocking sync syscall), so a `spawn_local` task never ran. The
+//! synchronous load takes ~50ms against bundled data.
+//!
+//! This module hosts the transactions background loader, which is
+//! tokio-spawned (Send-clean) and runs in parallel with rendering.
+//! Subscribers poll `LoadState::take_transactions()` on each tick.
 
 use std::sync::{Arc, Mutex};
-use icelines_core::model::Season;
-use icelines_core::season_stats::SeasonType;
 use icelines_core::Transaction;
-use icelines_fetch::stats_loader::LoadOutcome;
-// Re-export for ergonomic import elsewhere in the TUI; canonical home is
-// icelines-fetch::stats_loader (KEEL v4 — pure logic shared across surfaces).
-pub use icelines_fetch::stats_loader::format_missing_sources;
-use tokio::sync::mpsc;
 
 /// Per-load transactions bundle. Empty/default when the snapshot is
 /// missing — UI renders the empty legend card in that case.
@@ -92,45 +88,6 @@ pub fn spawn_loader(state: LoadState) {
         state.set_done(transactions);
     });
 }
-
-// ── Hart.5c.6 mpsc repo loader ────────────────────────────────────────────
-//
-// `RepoLoadResult` is the payload sent across the channel from the
-// background load task (running on `LocalSet`) to the TUI event loop.
-// `LoadOutcome` carries `StatsRepository` which is `!Send` — that's why
-// this whole chain runs single-threaded via `spawn_local`.
-
-/// One-shot result delivered by the spawned repo load.
-pub type RepoLoadResult = Result<LoadOutcome, String>;
-
-/// Spawn a `spawn_local` task that calls `load_into_repo(season, ty, store)`
-/// and forwards the result over the returned receiver. The receiver is
-/// `try_recv`-polled from the App's per-tick `poll_repo_load`.
-///
-/// **Must be called inside a `tokio::task::LocalSet`** — `spawn_local`
-/// panics otherwise. The TUI bootstrap pins this requirement.
-pub fn spawn_repo_load(
-    season: Season,
-    season_type: SeasonType,
-    snapshot_dir: std::path::PathBuf,
-) -> mpsc::UnboundedReceiver<RepoLoadResult> {
-    let (tx, rx) = mpsc::unbounded_channel::<RepoLoadResult>();
-    tokio::task::spawn_local(async move {
-        // Run the synchronous loader on the local task. It's I/O-bound
-        // (disk + JSON parse) but at N≈1000 the latency is ~50ms cold,
-        // well within the TUI's 100ms event poll.
-        let store = icelines_fetch::snapshot::SnapshotStore::new(snapshot_dir);
-        let result = icelines_fetch::stats_loader::load_into_repo(season, season_type, &store)
-            .map_err(|e| e.to_string());
-        // App may have moved on (rare); ignore send failures.
-        let _ = tx.send(result);
-    });
-    rx
-}
-
-// `format_missing_sources` lives in icelines-fetch::stats_loader (canonical
-// home — pure logic shared across all four surfaces). Re-exported above for
-// import ergonomics inside the TUI module tree.
 
 /// Best-effort transactions load. Failure to find a snapshot for the
 /// current season is normal (legend card path) — we never bail.
