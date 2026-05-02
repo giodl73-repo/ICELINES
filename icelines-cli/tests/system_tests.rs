@@ -1541,7 +1541,10 @@ fn l2_cmd_query_goalies_json_parses() {
     let arr = parsed.as_array().expect("top-level array");
     assert_eq!(arr.len(), 2);
     assert!(arr[0]["full_name"].is_string());
-    assert!(arr[0]["stats"]["save_pct"].is_number());
+    // Hart.5c.7.4 JSON shape: GoalieRow flattens the legacy nested
+    // `stats` object, so save_pct sits at the top level.
+    assert!(arr[0]["save_pct"].is_number());
+    assert!(arr[0]["games_played"].is_number());
 }
 
 #[test]
