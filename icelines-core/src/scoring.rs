@@ -1,4 +1,4 @@
-use crate::model::{FitClass, PaceScore, Player, Position, MIN_GP};
+use crate::model::{FitClass, PaceScore, Position, MIN_GP};
 
 /// Compute the pace-projected score for a skater.
 /// Returns None if GP is zero or below MIN_GP.
@@ -64,16 +64,6 @@ pub fn sort_views_by_pace(views: &mut [crate::stats_repository::PlayerView<'_>])
         sb.partial_cmp(&sa)
             .unwrap_or(std::cmp::Ordering::Equal)
             .then_with(|| a.id().0.cmp(&b.id().0))
-    });
-}
-
-pub fn sort_by_pace(players: &mut [Player]) {
-    players.sort_by(|a, b| {
-        let sa = a.pace_score.map(|s| s.sort_key()).unwrap_or(-1.0);
-        let sb = b.pace_score.map(|s| s.sort_key()).unwrap_or(-1.0);
-        sb.partial_cmp(&sa)
-            .unwrap_or(std::cmp::Ordering::Equal)
-            .then_with(|| a.nhl_id.cmp(&b.nhl_id))
     });
 }
 

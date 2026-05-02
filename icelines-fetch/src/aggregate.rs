@@ -10,7 +10,7 @@
 use crate::{bundled, schema::SkaterStats};
 use icelines_core::{
     identity::{PlayerBio, PlayerId, PlayerIdentity},
-    model::{GpStatus, PaceScore, Player, Season, TeamAbbr},
+    model::{PaceScore, Season, TeamAbbr},
     name::normalize_name,
     scoring::compute_pace_score,
     season_stats::{SeasonStatsBuilder, SeasonType, StatTotals, TeamStint},
@@ -37,109 +37,7 @@ struct Accum {
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
-/// Build aggregate players across the last `n` bundled seasons (max 5).
-///
-/// Stats (G, A, GP, PP, SH, GWG, shots) are summed across all seasons.
-/// Bio fields (team, nationality, draft, age) are taken from the most recent
-/// season's roster so they reflect the player's current situation.
-pub fn load_aggregate_players(n: usize) -> Vec<Player> {
-    let n = n.min(bundled::BUNDLED_SEASONS.len());
-    let seasons = &bundled::BUNDLED_SEASONS[..n];
-
-    // Accumulate stats per player_id across N seasons
-    let mut agg: HashMap<u32, Accum> = HashMap::new();
-    for season in seasons {
-        let bios  = bundled::get_bios(season).unwrap_or_default();
-        let stats = bundled::get_stats(season).unwrap_or_default();
-        let stats_idx: HashMap<u32, &SkaterStats> =
-            stats.iter().map(|s| (s.player_id, s)).collect();
-
-        for bio in &bios {
-            let s = stats_idx.get(&bio.player_id);
-            let e = agg.entry(bio.player_id).or_default();
-            e.total_gp       += s.map(|s| s.games_played).unwrap_or(0);
-            e.total_goals    += s.map(|s| s.goals).unwrap_or(0);
-            e.total_assists  += s.map(|s| s.assists).unwrap_or(0);
-            e.total_pp_goals += s.map(|s| s.pp_goals).unwrap_or(0);
-            e.total_pp_pts   += s.map(|s| s.pp_points).unwrap_or(0);
-            e.total_sh_goals += s.map(|s| s.sh_goals).unwrap_or(0);
-            e.total_sh_pts   += s.map(|s| s.sh_points).unwrap_or(0);
-            e.total_gwg      += s.map(|s| s.game_winning_goals).unwrap_or(0);
-            e.total_shots    += s.map(|s| s.shots).unwrap_or(0);
-            e.seasons        += 1;
-        }
-    }
-
-    // Build players from the most recent season's bios (current team, age, etc.)
-    // Deduplicate traded players: keep last occurrence (= current team row).
-    let current_bios = bundled::get_bios(bundled::BUNDLED_SEASONS[0]).unwrap_or_default();
-    let mut seen: HashSet<u32> = HashSet::new();
-    // Iterate in reverse to keep last occurrence (current-team row for traded players)
-    let deduped: Vec<_> = current_bios.iter().rev()
-        .filter(|b| seen.insert(b.player_id))
-        .collect::<Vec<_>>()
-        .into_iter().rev().collect();
-
-    let mut players: Vec<Player> = deduped.into_iter().filter_map(|bio| {
-        let acc = agg.get(&bio.player_id)?;
-        if acc.total_gp == 0 { return None; }
-
-        let position = Position::from_api_code(&bio.position_code)?;
-        if !position.is_forward() && !position.is_defense() { return None; }
-        let team_str = bio.current_team_abbrev.as_deref().unwrap_or("");
-        if team_str.is_empty() { return None; }
-
-        let full_name = bio.skater_full_name.clone();
-        let team = TeamAbbr(team_str.to_owned());
-
-        Some(Player {
-            nhl_id:          Some(bio.player_id),
-            full_name:       full_name.clone(),
-            name_normalized: normalize_name(&full_name),
-            team,
-            position,
-            eligible_pos:    vec![position],
-            gp_status:       GpStatus::from_gp(acc.total_gp),
-            season_goals:    acc.total_goals,
-            season_assists:  acc.total_assists,
-            season_points:   acc.total_goals + acc.total_assists,
-            pace_score:      compute_pace_score(acc.total_goals, acc.total_assists, acc.total_gp),
-            pp_goals:        acc.total_pp_goals,
-            pp_points:       acc.total_pp_pts,
-            sh_goals:        acc.total_sh_goals,
-            sh_points:       acc.total_sh_pts,
-            gwg:             acc.total_gwg,
-            shots:           acc.total_shots,
-            // Fields not aggregated — zeroed/None for aggregate view
-            ot_goals: 0, shooting_pct: None, plus_minus: 0,
-            toi_per_game_sec: None, faceoff_win_pct: None,
-            hits: 0, blocked_shots: 0, missed_shots: 0,
-            giveaways: 0, takeaways: 0, pim: 0,
-            xg: None, xg_per_60: None, cf_pct_5v5: None,
-            ff_pct_5v5: None, xgf_pct_5v5: None,
-            contract_expiry_year: None, expiry_type: None, salary: None,
-            headshot_url:         None,
-            sweater_number:       None,
-            birth_date:           bio.birth_date.clone(),
-            birth_country:        bio.birth_country.clone(),
-            nationality_code:     bio.nationality_code.clone(),
-            birth_city:           bio.birth_city.clone(),
-            birth_state_province: bio.birth_state_province_code.clone(),
-            shoots_catches:       bio.shoots_catches.clone(),
-            height_in_inches:     bio.height,
-            weight_lbs:           bio.weight,
-            draft_year:           bio.draft_year.map(|v| v as u16),
-            draft_round:          bio.draft_round.map(|v| v as u8),
-            draft_overall:        bio.draft_overall.map(|v| v as u16),
-            rookie_season:        bio.first_season_for_game_type,
-        })
-    }).collect();
-
-    icelines_core::scoring::sort_by_pace(&mut players);
-    players
-}
-
-/// Hart.5c.3: PlayerView analog of `load_aggregate_players`.
+/// Build an aggregate `StatsRepository` across the last `n` bundled seasons.
 ///
 /// Builds a `StatsRepository` whose stats are the N-season sum, attributed
 /// to the most-recent bundled season (caller queries with that season). Bio
@@ -307,44 +205,46 @@ pub fn load_improvement_map() -> HashMap<u32, f64> {
 mod tests {
     use super::*;
 
+    use icelines_core::model::Season;
+    use icelines_core::season_stats::SeasonType;
+
     #[test]
-    fn l0_aggregate_1_season_matches_bundled_player_count() {
-        let players = load_aggregate_players(1);
-        assert!(players.len() > 500, "expected 900+ players, got {}", players.len());
+    fn l0_aggregate_into_repo_1_season_matches_bundled_player_count() {
+        let (repo, season) = load_aggregate_into_repo(1);
+        let count = repo.skaters(season, SeasonType::Regular).count();
+        assert!(count > 500, "expected 900+ players, got {count}");
     }
 
     #[test]
-    fn l0_aggregate_5_seasons_has_more_gp_than_1() {
-        let one = load_aggregate_players(1);
-        let five = load_aggregate_players(5);
-        // At least some players should have more total GP across 5 seasons
-        let one_top_gp: u32 = one.iter()
-            .filter_map(|p| p.gp())
-            .max().unwrap_or(0);
-        let five_top_gp: u32 = five.iter()
-            .filter_map(|p| p.gp())
-            .max().unwrap_or(0);
-        assert!(five_top_gp > one_top_gp,
-            "5-season aggregate must have higher max GP than single season");
+    fn l0_aggregate_into_repo_5_seasons_has_more_gp_than_1() {
+        let (one_repo, one_season) = load_aggregate_into_repo(1);
+        let (five_repo, five_season) = load_aggregate_into_repo(5);
+        let one_top_gp: u32 = one_repo
+            .skaters(one_season, SeasonType::Regular)
+            .map(|v| v.gp())
+            .max()
+            .unwrap_or(0);
+        let five_top_gp: u32 = five_repo
+            .skaters(five_season, SeasonType::Regular)
+            .map(|v| v.gp())
+            .max()
+            .unwrap_or(0);
+        assert!(
+            five_top_gp > one_top_gp,
+            "5-season aggregate must have higher max GP than single season"
+        );
     }
 
     #[test]
-    fn l0_aggregate_no_duplicates() {
-        let players = load_aggregate_players(1);
-        let mut ids: Vec<_> = players.iter().filter_map(|p| p.nhl_id).collect();
+    fn l0_aggregate_into_repo_no_duplicates() {
+        let (repo, season) = load_aggregate_into_repo(1);
+        let mut ids: Vec<u32> = repo
+            .skaters(season, SeasonType::Regular)
+            .map(|v| v.identity.id.0)
+            .collect();
         ids.sort_unstable();
-        let unique_count = ids.windows(2).filter(|w| w[0] == w[1]).count();
-        assert_eq!(unique_count, 0, "aggregate must have no duplicate player IDs");
-    }
-
-    #[test]
-    fn l0_aggregate_sorted_by_pace() {
-        let players = load_aggregate_players(1);
-        let paces: Vec<f64> = players.iter()
-            .filter_map(|p| p.pace_score.map(|s| s.pace_82))
-            .take(10).collect();
-        assert!(paces.windows(2).all(|w| w[0] >= w[1]),
-            "aggregate players must be sorted by pace descending");
+        let dupes = ids.windows(2).filter(|w| w[0] == w[1]).count();
+        assert_eq!(dupes, 0, "aggregate must have no duplicate player IDs");
     }
 
     #[test]

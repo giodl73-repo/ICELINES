@@ -39,7 +39,7 @@ pub use position::PositionResolver;
 pub use position_profile::PositionProfile;
 pub use projection::{age_factor, compute_alpha, compute_projection, ProjectionMode, ProjectionResult};
 pub use scheme::{compute_fantasy_score, FantasyScore, Scheme, SkaterStats as SchemeSkaterStats};
-pub use scoring::{classify_fit, compute_pace_score, sort_by_pace};
+pub use scoring::{classify_fit, compute_pace_score, sort_views_by_pace};
 pub use teams::CANONICAL_TEAMS;
 pub use transactions::{
     classify, other_rate, sanitize_description, trade_group_id,

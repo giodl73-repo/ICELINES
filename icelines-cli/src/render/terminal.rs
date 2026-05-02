@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use comfy_table::{Cell, Color, Table};
-use icelines_core::{classify_fit, DepthChart, DepthChartSlot, FitClass, Position};
+use icelines_core::{classify_fit, DepthChart, DepthChartSlot, FitClass};
 use icelines_core::stats_repository::PlayerView;
 use owo_colors::OwoColorize;
 
