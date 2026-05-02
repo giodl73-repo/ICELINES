@@ -8,7 +8,6 @@ pub mod csv_loader;
 pub mod error;
 pub mod moneypuck;
 pub mod nhl_api;
-pub mod player_builder;
 pub mod playoffs_bundle;
 pub mod resolver;
 pub mod schema;
@@ -18,10 +17,9 @@ pub mod stats_loader;
 pub mod teams;
 pub mod transactions;
 
-// Hart.5b1: PlayerRepository / GoalieRepository deleted. Every consumer
-// uses load_into_repo + StatsRepository (via flat_view_legacy /
-// flat_view_legacy_goalies during the Hart.5b transition; Hart.5b2 will
-// refactor consumers off the legacy Player/Goalie types entirely).
+// Hart.5c.7: PlayerRepository / GoalieRepository / Player / Goalie / player_builder
+// all deleted. Every consumer reads StatsRepository + PlayerView<'_> via
+// `stats_loader::load_into_repo`.
 
 pub use boxscore_client::{aggregate_profiles, aggregate_shift_profiles, BoxscoreClient};
 pub use bundled::{

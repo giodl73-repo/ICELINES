@@ -369,9 +369,9 @@ pub fn load_into_repo(
     let contracts_idx: HashMap<u32, &LegacyContract> =
         contracts.iter().map(|c| (c.player_id, c)).collect();
 
-    // Dedup bios by player_id, last-occurrence-wins. Matches the OLD
-    // `build_players_from_bios` invariant: traded players emit one bio
-    // row per stint; we keep the most-recent (current-team) row.
+    // Dedup bios by player_id, last-occurrence-wins. The NHL bios endpoint
+    // emits one row per team-stint for traded players; keep the most-recent
+    // (current-team) row so the identity reflects the player's current club.
     let mut seen: std::collections::HashSet<u32> = std::collections::HashSet::new();
     let bios_dedup: Vec<&SkaterBio> = bios
         .iter()

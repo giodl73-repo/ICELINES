@@ -11,10 +11,8 @@
 use httpmock::prelude::*;
 use icelines_fetch::{
     nhl_api::NhlApiClient,
-    player_builder::{build_players_from_bios, index_bios, index_stats},
     schema::{PagedResponse, SkaterBio, SkaterRealtime, SkaterStats},
 };
-use std::collections::HashMap;
 
 // ── Fixture data ──────────────────────────────────────────────────────────────
 
@@ -313,189 +311,12 @@ fn l0_fixture_realtime_parses_correctly() {
     );
 }
 
-// ── L1: parse + build pipeline from fixture data (no network) ────────────────
-
-#[test]
-fn l1_fixture_bios_and_stats_produce_valid_players() {
-    let bios = parse_bios_fixture();
-    let stats = parse_stats_fixture();
-    let rt: Vec<SkaterRealtime> = parse_realtime_fixture();
-
-    let _bio_idx = index_bios(&bios);
-    let stats_idx = index_stats(&stats);
-    let rt_map: HashMap<u32, SkaterRealtime> =
-        rt.into_iter().map(|r| (r.player_id, r)).collect();
-    let empty_mp = HashMap::new();
-    let empty_contracts = HashMap::new();
-
-    let players = build_players_from_bios(
-        &bios,
-        &stats_idx,
-        &rt_map,
-        &empty_mp,
-        &empty_contracts,
-        icelines_core::model::Season(20252026),
-    );
-
-    // All 3 fixture players are skaters (C, C, D) and have teams — all must be built
-    assert_eq!(players.len(), 3, "all 3 fixture players must be built");
-
-    // Verify McPlayer
-    let mc = players.iter().find(|p| p.nhl_id == Some(8478402)).unwrap();
-    assert_eq!(mc.season_goals, 52);
-    assert_eq!(mc.season_assists, 89);
-    assert_eq!(mc.pp_goals, 18);
-    assert_eq!(mc.pp_points, 40);
-    assert_eq!(mc.gwg, 8);
-    assert_eq!(mc.shots, 290);
-    assert_eq!(mc.plus_minus, 22);
-    assert_eq!(mc.hits, 28);
-    assert_eq!(mc.blocked_shots, 15);
-    assert_eq!(mc.takeaways, 42);
-    assert!(mc.toi_per_game_sec.is_some(), "toi_per_game_sec must be populated");
-    assert!(
-        mc.shooting_pct.is_some(),
-        "shooting_pct must be populated when shots > 0"
-    );
-    assert!(
-        mc.faceoff_win_pct.is_some(),
-        "center must have faceoff_win_pct"
-    );
-    // Contract fields must be None (not fetched)
-    assert!(mc.contract_expiry_year.is_none(), "contract_expiry_year must be None");
-    assert!(mc.expiry_type.is_none(), "expiry_type must be None");
-    // MoneyPuck fields must be None (not fetched)
-    assert!(mc.xg.is_none(), "xg must be None when not fetched");
-    assert!(mc.cf_pct_5v5.is_none(), "cf_pct_5v5 must be None when not fetched");
-}
-
-#[test]
-fn l1_fixture_defenseman_has_no_faceoff_pct() {
-    let bios = parse_bios_fixture();
-    let stats = parse_stats_fixture();
-    let stats_idx = index_stats(&stats);
-    let empty_rt = HashMap::new();
-    let empty_mp = HashMap::new();
-    let empty_contracts = HashMap::new();
-
-    let players = build_players_from_bios(
-        &bios,
-        &stats_idx,
-        &empty_rt,
-        &empty_mp,
-        &empty_contracts,
-        icelines_core::model::Season(20252026),
-    );
-
-    let makar = players
-        .iter()
-        .find(|p| p.nhl_id == Some(8480069))
-        .expect("Makelar must be in players");
-    assert!(
-        makar.faceoff_win_pct.is_none(),
-        "defenseman must have no faceoff_win_pct (was None in fixture)"
-    );
-    assert_eq!(makar.position, icelines_core::model::Position::Defense);
-}
-
-#[test]
-fn l1_fixture_realtime_fields_populated_from_rt_map() {
-    let bios = parse_bios_fixture();
-    let stats = parse_stats_fixture();
-    let rt = parse_realtime_fixture();
-
-    let stats_idx = index_stats(&stats);
-    let rt_map: HashMap<u32, SkaterRealtime> =
-        rt.into_iter().map(|r| (r.player_id, r)).collect();
-    let empty_mp = HashMap::new();
-    let empty_contracts = HashMap::new();
-
-    let players = build_players_from_bios(
-        &bios,
-        &stats_idx,
-        &rt_map,
-        &empty_mp,
-        &empty_contracts,
-        icelines_core::model::Season(20252026),
-    );
-
-    // Beniers-like (Beplayer) should have realtime stats populated
-    let beniers = players
-        .iter()
-        .find(|p| p.nhl_id == Some(8482665))
-        .expect("Beplayer must be in players");
-    assert_eq!(beniers.hits, 55, "hits must come from realtime fixture");
-    assert_eq!(beniers.blocked_shots, 32, "blocks must come from realtime fixture");
-    assert_eq!(beniers.takeaways, 30, "takeaways must come from realtime fixture");
-    assert_eq!(beniers.pim, 18, "pim must come from realtime fixture");
-}
-
-#[test]
-fn l1_fixture_players_have_pace_score_when_eligible() {
-    let bios = parse_bios_fixture();
-    let stats = parse_stats_fixture();
-    let stats_idx = index_stats(&stats);
-    let empty_rt = HashMap::new();
-    let empty_mp = HashMap::new();
-    let empty_contracts = HashMap::new();
-
-    let players = build_players_from_bios(
-        &bios,
-        &stats_idx,
-        &empty_rt,
-        &empty_mp,
-        &empty_contracts,
-        icelines_core::model::Season(20252026),
-    );
-
-    // All 3 players have GP > MIN_GP — all must have a pace score
-    for p in &players {
-        assert!(
-            p.pace_score.is_some(),
-            "player {} must have pace_score (gp={})",
-            p.full_name,
-            p.gp().unwrap_or(0)
-        );
-    }
-
-    // McPlayer (52G+89A in 82GP) should be the top scorer
-    let mc = players.iter().find(|p| p.nhl_id == Some(8478402)).unwrap();
-    let expected_pace = (52.0 + 89.0) / 82.0 * 82.0; // = 141.0
-    let actual_pace = mc.pace_score.unwrap().pace_82;
-    assert!(
-        (actual_pace - expected_pace).abs() < 0.01,
-        "McPlayer pace_82 should be {:.1}, got {:.1}",
-        expected_pace,
-        actual_pace
-    );
-}
-
-#[test]
-fn l1_fixture_bio_demographics_populated() {
-    let bios = parse_bios_fixture();
-    let stats = parse_stats_fixture();
-    let stats_idx = index_stats(&stats);
-    let empty_rt = HashMap::new();
-    let empty_mp = HashMap::new();
-    let empty_contracts = HashMap::new();
-
-    let players = build_players_from_bios(
-        &bios,
-        &stats_idx,
-        &empty_rt,
-        &empty_mp,
-        &empty_contracts,
-        icelines_core::model::Season(20252026),
-    );
-
-    let mc = players.iter().find(|p| p.nhl_id == Some(8478402)).unwrap();
-    assert_eq!(mc.birth_country.as_deref(), Some("CAN"));
-    assert_eq!(mc.birth_state_province.as_deref(), Some("AB"));
-    assert_eq!(mc.draft_year, Some(2015));
-    assert_eq!(mc.draft_round, Some(1));
-    assert_eq!(mc.draft_overall, Some(1));
-    assert!(mc.rookie_season.is_some(), "rookie_season must be populated");
-}
+// Hart.5c.7.9: L1 fixture-build tests (l1_fixture_bios_and_stats_produce_valid_players,
+// l1_fixture_defenseman_has_no_faceoff_pct, l1_fixture_realtime_fields_populated_from_rt_map,
+// l1_fixture_players_have_pace_score_when_eligible, l1_fixture_bio_demographics_populated)
+// were deleted alongside player_builder. The same coverage now lives in
+// stats_loader.rs (load_into_repo path) — the post-Hart pipeline that produces
+// PlayerView<'_> rather than the deprecated flat Player struct.
 
 // ── L1: mock HTTP server tests ────────────────────────────────────────────────
 
@@ -633,97 +454,10 @@ async fn l1_mock_fetch_goalies_parses_record_and_save_pct() {
     assert_eq!(bob.wins, 32);
 }
 
-#[tokio::test]
-async fn l1_mock_player_build_all_fields_populated() {
-    // Build players from mock bios + stats + realtime (no contracts, no MoneyPuck)
-    let bios = parse_bios_fixture();
-    let stats = parse_stats_fixture();
-    let rt = parse_realtime_fixture();
-
-    let stats_idx = index_stats(&stats);
-    let rt_map: HashMap<u32, SkaterRealtime> =
-        rt.into_iter().map(|r| (r.player_id, r)).collect();
-    let empty_mp = HashMap::new();
-    let empty_contracts = HashMap::new();
-
-    let players = build_players_from_bios(
-        &bios,
-        &stats_idx,
-        &rt_map,
-        &empty_mp,
-        &empty_contracts,
-        icelines_core::model::Season(20252026),
-    );
-
-    assert_eq!(players.len(), 3, "all 3 players must be built");
-
-    let mc = players.iter().find(|p| p.nhl_id == Some(8478402)).unwrap();
-
-    // Stats fields
-    assert_eq!(mc.pp_goals, 18);
-    assert!(mc.toi_per_game_sec.is_some(), "toi must be populated");
-    assert!(mc.shooting_pct.is_some(), "shooting_pct must be populated");
-
-    // Realtime fields
-    assert_eq!(mc.hits, 28, "hits must flow from realtime");
-    assert_eq!(mc.blocked_shots, 15, "blocks must flow from realtime");
-    assert_eq!(mc.takeaways, 42, "takeaways must flow from realtime");
-    assert_eq!(mc.giveaways, 35, "giveaways must flow from realtime");
-
-    // Contract fields must be None (not fetched via contracts endpoint)
-    assert!(mc.contract_expiry_year.is_none(), "contract_expiry_year must be None");
-    assert!(mc.expiry_type.is_none(), "expiry_type must be None");
-    assert!(mc.salary.is_none(), "salary must be None");
-
-    // MoneyPuck fields must be None (not fetched)
-    assert!(mc.xg.is_none(), "xg must be None without MoneyPuck");
-    assert!(mc.cf_pct_5v5.is_none(), "cf_pct must be None without MoneyPuck");
-    assert!(mc.xgf_pct_5v5.is_none(), "xgf_pct must be None without MoneyPuck");
-}
-
-#[tokio::test]
-async fn l1_mock_player_build_graceful_with_missing_stats() {
-    // McPlayer has bio but no stats row — should be built with 0s from bio fallback
-    let bios = parse_bios_fixture();
-    // Only Beniers stats (exclude McPlayer and Makar)
-    let stats: Vec<SkaterStats> = parse_stats_fixture()
-        .into_iter()
-        .filter(|s| s.player_id == 8482665)
-        .collect();
-    let stats_idx = index_stats(&stats);
-    let empty_rt = HashMap::new();
-    let empty_mp = HashMap::new();
-    let empty_contracts = HashMap::new();
-
-    let players = build_players_from_bios(
-        &bios,
-        &stats_idx,
-        &empty_rt,
-        &empty_mp,
-        &empty_contracts,
-        icelines_core::model::Season(20252026),
-    );
-
-    // All 3 bios should produce players even when stats are missing for 2 of them
-    assert_eq!(
-        players.len(),
-        3,
-        "all bio players must be built even with missing stats rows"
-    );
-
-    // McPlayer without stats should fall back to bio's goals/assists/gp
-    let mc = players
-        .iter()
-        .find(|p| p.nhl_id == Some(8478402))
-        .expect("McPlayer must be in players even without stats row");
-    // Bio has goals=52, assists=89, gamesPlayed=82
-    assert_eq!(
-        mc.season_goals, 52,
-        "goals must fall back to bio when stats row is missing"
-    );
-    // pp_goals should be 0 (no stats row)
-    assert_eq!(mc.pp_goals, 0, "pp_goals must be 0 without stats row");
-}
+// Hart.5c.7.9: l1_mock_player_build_all_fields_populated and
+// l1_mock_player_build_graceful_with_missing_stats deleted alongside
+// player_builder. The post-Hart pipeline (load_into_repo) covers the
+// same field-population + missing-stats fallback in stats_loader.rs.
 
 // ── Schedule API fixtures (Phase 7d) ──────────────────────────────────────────
 
