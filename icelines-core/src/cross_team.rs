@@ -11,6 +11,33 @@
 use crate::model::Position;
 use std::collections::HashMap;
 
+/// Hart.6.6 / Tape B3 — debug-only homogeneity guard for cross-team
+/// aggregation entry points. Walks the view slice once; trips on the
+/// first row whose `(season, season_type)` differs from `views[0]`.
+/// `caller` shows up in the panic message so a bad consumer site is
+/// easy to find. Empty slices are vacuously homogeneous.
+#[inline]
+fn debug_assert_view_window_homogeneous(
+    views: &[crate::stats_repository::PlayerView<'_>],
+    caller: &'static str,
+) {
+    if cfg!(debug_assertions) {
+        if let Some(first) = views.first() {
+            let (s, t) = (first.season(), first.season_type());
+            for v in views.iter().skip(1) {
+                debug_assert!(
+                    v.season() == s && v.season_type() == t,
+                    "{caller}: views must be type-homogeneous; \
+                     first=({s:?}, {t:?}) but found ({other_s:?}, {other_t:?}) for player {pid}",
+                    other_s = v.season(),
+                    other_t = v.season_type(),
+                    pid = v.id().0,
+                );
+            }
+        }
+    }
+}
+
 /// Which metric to use when ranking players across teams.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ScoringMode {
@@ -125,15 +152,29 @@ fn rank_in(sort_key: f64, sorted_desc: &[f64]) -> u8 {
 }
 
 /// Compute cross-team metrics for every player — Pace scoring (default).
+///
+/// **Precondition** (Hart.6.6 / Tape B3): all views in `views` MUST belong
+/// to the same `(season, season_type)` window. Mixing playoff and regular
+/// stats — or two different seasons — corrupts the position-rank
+/// aggregates because the league-wide percentile baseline differs per
+/// window. The repository key tuple `(PlayerId, Season, SeasonType)`
+/// already enforces this at the source; this assertion fences the API
+/// boundary against callers building a mixed Vec by hand.
 pub fn compute_all_views(views: &[crate::stats_repository::PlayerView<'_>]) -> Vec<CrossTeamMetrics> {
     compute_all_views_with_mode(views, ScoringMode::Pace)
 }
 
 /// Hart.5b2c — PlayerView analog of `compute_all_with_mode`.
+///
+/// **Precondition**: see `compute_all_views`. `debug_assert!` enforces
+/// type-homogeneity in debug builds; release builds trust the caller
+/// (the repository key prevents a same-process consumer from violating
+/// the precondition through its public API).
 pub fn compute_all_views_with_mode(
     views: &[crate::stats_repository::PlayerView<'_>],
     mode: ScoringMode,
 ) -> Vec<CrossTeamMetrics> {
+    debug_assert_view_window_homogeneous(views, "compute_all_views_with_mode");
     use crate::stats_repository::PlayerView;
 
     // Build (team_str, pos) -> sorted scores desc.
@@ -217,10 +258,14 @@ pub fn compute_all_views_with_mode(
 }
 
 /// Hart.5b2c — PlayerView analog of `compute_team_strength`.
+///
+/// **Precondition** (Hart.6.6): all views in `views` MUST belong to the
+/// same `(season, season_type)` window. See `compute_all_views`.
 pub fn compute_team_strength_views(
     views: &[crate::stats_repository::PlayerView<'_>],
     mode: ScoringMode,
 ) -> HashMap<String, TeamStrength> {
+    debug_assert_view_window_homogeneous(views, "compute_team_strength_views");
     let mut groups: HashMap<(String, Position), Vec<(f64, String)>> = HashMap::new();
     for v in views {
         let score = match mode {
@@ -377,5 +422,78 @@ mod tests {
         assert_eq!(m(1, 2.5).web_fit_class(), WebFitClass::Stretch);
         // own=3, avg=1.5 → delta=1.5 > 0.75 → Buried
         assert_eq!(m(3, 1.5).web_fit_class(), WebFitClass::Buried);
+    }
+
+    // ── Hart.6.6 — type-homogeneity guards ──────────────────────────────────
+
+    /// Empty slice is vacuously homogeneous — no panic.
+    #[test]
+    fn l0_hart6_6_compute_all_views_empty_slice_does_not_panic() {
+        let views: Vec<crate::stats_repository::PlayerView<'_>> = Vec::new();
+        let m = compute_all_views(&views);
+        assert!(m.is_empty());
+    }
+
+    /// Single-window slice (all Regular) passes the guard.
+    #[test]
+    fn l0_hart6_6_compute_all_views_homogeneous_regular_succeeds() {
+        let metrics = metrics_for(&[
+            (1, "Top SEA", "SEA", Position::Center, 100.0),
+            (2, "Top BOS", "BOS", Position::Center, 95.0),
+        ]);
+        assert_eq!(metrics.len(), 2);
+    }
+
+    /// Mixed Regular + Playoff slice trips the debug assertion. Test
+    /// only fires under debug_assertions (cargo test default); release
+    /// builds skip the check entirely per the precondition contract.
+    #[test]
+    #[cfg(debug_assertions)]
+    #[should_panic(expected = "views must be type-homogeneous")]
+    fn l0_hart6_6_compute_all_views_panics_on_mixed_window() {
+        let mut r = StatsRepository::new();
+        // Player 1: Regular 20242025
+        r.upsert_identity(fixtures::identity(1).name("A", "a").build()).unwrap();
+        r.upsert_stats(fixtures::stats(1, 20242025, "EDM").position(Position::Center).build())
+            .unwrap();
+        // Player 2: Playoff 20242025 — same season, different type.
+        r.upsert_identity(fixtures::identity(2).name("B", "b").build()).unwrap();
+        r.upsert_stats(
+            fixtures::stats(2, 20242025, "EDM")
+                .position(Position::Center)
+                .season_type(SeasonType::Playoff)
+                .build(),
+        )
+        .unwrap();
+
+        let mut mixed: Vec<_> = r.skaters(Season(20242025), SeasonType::Regular).collect();
+        mixed.extend(r.skaters(Season(20242025), SeasonType::Playoff));
+        // Should panic: two windows in one slice.
+        let _ = compute_all_views(&mixed);
+    }
+
+    /// Same season but two season_types in the slice — separate test
+    /// targeting `compute_team_strength_views` to confirm the guard fires
+    /// on every entry point that takes a view slice.
+    #[test]
+    #[cfg(debug_assertions)]
+    #[should_panic(expected = "views must be type-homogeneous")]
+    fn l0_hart6_6_compute_team_strength_panics_on_mixed_window() {
+        let mut r = StatsRepository::new();
+        r.upsert_identity(fixtures::identity(1).name("A", "a").build()).unwrap();
+        r.upsert_stats(fixtures::stats(1, 20242025, "EDM").position(Position::Center).build())
+            .unwrap();
+        r.upsert_identity(fixtures::identity(2).name("B", "b").build()).unwrap();
+        r.upsert_stats(
+            fixtures::stats(2, 20242025, "EDM")
+                .position(Position::Center)
+                .season_type(SeasonType::Playoff)
+                .build(),
+        )
+        .unwrap();
+
+        let mut mixed: Vec<_> = r.skaters(Season(20242025), SeasonType::Regular).collect();
+        mixed.extend(r.skaters(Season(20242025), SeasonType::Playoff));
+        let _ = compute_team_strength_views(&mixed, ScoringMode::Pace);
     }
 }

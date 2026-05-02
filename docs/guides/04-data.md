@@ -40,6 +40,20 @@ first NHL season (rookie detection).
 Per-season statistics: G, A, Pts, GP, PP goals/pts, SH goals/pts,
 GWG, OT goals, shots, shooting%, +/-, TOI per game, faceoff win%.
 
+Pass `--type {regular|playoff|both}` to pick which game-type to fetch.
+Default is `regular`; `playoff` writes co-located `playoff-bios.json` /
+`playoff-stats.json` next to the regular files; `both` runs the full
+pipeline twice into one snapshot.
+
+```bash
+icelines fetch stats   --season 20242025 --type playoff
+icelines fetch goalies --season 20242025 --type playoff
+icelines fetch all     --season 20242025 --type both       # full season-end snapshot
+```
+
+`--type playoff` skips realtime and MoneyPuck — the NHL realtime feed
+is regular-season-only, and MoneyPuck has no playoff endpoint.
+
 ### NHL realtime (`fetch realtime`)
 
 Physical and two-way stats: hits, blocked shots, missed shots,
@@ -63,12 +77,19 @@ Five seasons are compiled into the `icelines` binary using Rust's `include_bytes
 Zero network access required:
 
 ```
-data/seasons/20252026/bios.json   ~449 KB
-data/seasons/20252026/stats.json  ~417 KB
-(× 5 seasons = ~4.3 MB total embedded in binary)
+data/seasons/20252026/bios.json                  ~449 KB
+data/seasons/20252026/stats.json                 ~417 KB
+data/seasons/20252026/goalie-stats.json          ~22 KB
+data/seasons/20252026/playoff-bios.json          (Hart.6.3 — 2026-05-02)
+data/seasons/20252026/playoff-stats.json
+data/seasons/20252026/playoff-goalie-stats.json
+(× 5 seasons = ~5.2 MB total embedded in binary)
 ```
 
 The bundled data is refreshed weekly in CI and published with each release.
+
+The 2025-26 playoff files ship as `[]` until the Stanley Cup is contested;
+the loader surfaces a clean `MissingBundle{Playoff}` error in that state.
 
 ---
 

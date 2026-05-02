@@ -504,6 +504,18 @@ impl PlayerView<'_> {
         self.stats.position
     }
 
+    /// The (season, season_type) window this view was drawn from.
+    /// Hart.6.6 — used by `cross_team` aggregation guards to assert
+    /// type-homogeneity across an input slice.
+    pub fn season(&self) -> Season {
+        self.stats.season
+    }
+
+    /// The season-type half of the view's window (Regular | Playoff).
+    pub fn season_type(&self) -> SeasonType {
+        self.stats.season_type
+    }
+
     pub fn sweater_number(&self) -> Option<u32> {
         self.stats.sweater_number
     }
