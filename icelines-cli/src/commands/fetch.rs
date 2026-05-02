@@ -177,7 +177,7 @@ async fn do_stats(season: &str, refresh: bool, dry_run: bool, chunked: bool) -> 
         // Phase 8h: per-player content-addressed chunks. Daily snapshots
         // share unchanged player records — typical reuse is 95%+.
         let cm = store
-            .write_chunked_stats(&snap, &bios, &stats)
+            .write_chunked_stats(&snap, SeasonType::Regular, &bios, &stats)
             .context("writing chunked bios+stats")?;
         println!(
             "  Wrote {} bio + {} stats chunks (chunked layout — Phase 8h).",

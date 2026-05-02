@@ -251,6 +251,81 @@ pub fn get_stats_installed(season_id: &str) -> Option<Vec<crate::schema::SkaterS
     serde_json::from_str(&text).ok()
 }
 
+// ── Hart.6.2 — playoff installed-bundle accessors ───────────────────────────
+//
+// Mirror chain of `get_bios_installed` / `get_stats_installed` /
+// `get_goalie_stats_installed` for the playoff variant. Reads from the
+// `playoff-bios.json` / `playoff-stats.json` / `playoff-goalie-stats.json`
+// files inside the installed bundle directory. Pre-Hart.6 installed
+// bundles don't carry these files; consumers see `None` and fall through.
+
+/// Read playoff bios from an installed season bundle. Returns None if
+/// the bundle isn't installed or the file isn't present.
+pub fn get_playoff_bios_installed(season_id: &str) -> Option<Vec<crate::schema::SkaterBio>> {
+    let path = season_bundle_dir(season_id)?.join("playoff-bios.json");
+    let text = std::fs::read_to_string(path).ok()?;
+    serde_json::from_str(&text).ok()
+}
+
+/// Read playoff stats from an installed season bundle. Returns None
+/// if the bundle isn't installed or the file isn't present.
+pub fn get_playoff_stats_installed(
+    season_id: &str,
+) -> Option<Vec<crate::schema::SkaterStats>> {
+    let path = season_bundle_dir(season_id)?.join("playoff-stats.json");
+    let text = std::fs::read_to_string(path).ok()?;
+    serde_json::from_str(&text).ok()
+}
+
+/// Read playoff goalie stats from an installed season bundle.
+pub fn get_playoff_goalie_stats_installed(
+    season_id: &str,
+) -> Option<Vec<GoalieStats>> {
+    let path = season_bundle_dir(season_id)?.join("playoff-goalie-stats.json");
+    let text = std::fs::read_to_string(path).ok()?;
+    serde_json::from_str(&text).ok()
+}
+
+// ── Hart.6.2 — playoff embedded-bundle accessors (stubbed) ──────────────────
+//
+// Hart.6.3 will replace these stubs with `include_bytes!`'d JSON for the
+// 5 bundled seasons. For now they return `Some(Vec::new())` for the
+// bundled set so the loader has a stable contract: "yes the season is
+// bundled, here are zero rows" — distinct from `None` which means
+// "season not bundled at all". The 2025-26 file ships as `[]` in 6.3
+// (cup not yet contested), so the empty-vec contract is permanent for
+// that season anyway.
+
+/// Stub: playoff bios for a bundled season. Returns `Some(vec![])` for
+/// the 5 bundled seasons; `None` otherwise. Hart.6.3 wires real data.
+pub fn get_playoff_bios(season_id: &str) -> Option<Vec<crate::schema::SkaterBio>> {
+    if BUNDLED_SEASONS.contains(&season_id) {
+        Some(Vec::new())
+    } else {
+        None
+    }
+}
+
+/// Stub: playoff stats for a bundled season. Returns `Some(vec![])`
+/// for the 5 bundled seasons; `None` otherwise.
+pub fn get_playoff_stats(season_id: &str) -> Option<Vec<crate::schema::SkaterStats>> {
+    if BUNDLED_SEASONS.contains(&season_id) {
+        Some(Vec::new())
+    } else {
+        None
+    }
+}
+
+/// Stub: playoff goalie stats for a bundled season. Returns
+/// `Some(vec![])` for the 5 bundled seasons; `None` otherwise.
+pub fn get_playoff_goalie_stats(season_id: &str) -> Option<Vec<GoalieStats>> {
+    if BUNDLED_SEASONS.contains(&season_id) {
+        Some(Vec::new())
+    } else {
+        None
+    }
+}
+
 // ── Historical playoffs (Phase 8c) ───────────────────────────────────────────
 
 /// Embedded `playoffs.json` files. Each entry is `(season_id, &[u8])`. Add new
@@ -337,6 +412,77 @@ pub fn load_stats_with_fallback(
     })
 }
 
+/// Hart.6.2 — load playoff bios. Mirrors `load_bios_with_fallback`:
+/// chunked active → legacy file-per-tier active → embedded bundled →
+/// installed bundled. The legacy path uses `playoff-bios.json` inside
+/// the existing `Stats` tier dir (D3 co-location).
+pub fn load_playoff_bios_with_fallback(
+    season: &str,
+    store: &crate::snapshot::SnapshotStore,
+) -> Result<Vec<SkaterBio>, FetchError> {
+    if let Ok((bios, _)) = read_chunked_active_playoff(store) {
+        return Ok(bios);
+    }
+    if let Ok(bios) = store.read_tier(&crate::snapshot::SnapshotTier::Stats, "playoff-bios.json") {
+        return Ok(bios);
+    }
+    if let Some(bios) = get_playoff_bios(season) {
+        return Ok(bios);
+    }
+    if let Some(bios) = get_playoff_bios_installed(season) {
+        return Ok(bios);
+    }
+    Err(FetchError::PlayerNotFound {
+        name: format!("no playoff bios for season {season} — run `icelines fetch stats --type playoff`"),
+    })
+}
+
+/// Hart.6.2 — load playoff stats. Same chain as
+/// `load_playoff_bios_with_fallback`.
+pub fn load_playoff_stats_with_fallback(
+    season: &str,
+    store: &crate::snapshot::SnapshotStore,
+) -> Result<Vec<SkaterStats>, FetchError> {
+    if let Ok((_, stats)) = read_chunked_active_playoff(store) {
+        return Ok(stats);
+    }
+    if let Ok(stats) = store.read_tier(&crate::snapshot::SnapshotTier::Stats, "playoff-stats.json") {
+        return Ok(stats);
+    }
+    if let Some(stats) = get_playoff_stats(season) {
+        return Ok(stats);
+    }
+    if let Some(stats) = get_playoff_stats_installed(season) {
+        return Ok(stats);
+    }
+    Err(FetchError::PlayerNotFound {
+        name: format!("no playoff stats for season {season} — run `icelines fetch stats --type playoff`"),
+    })
+}
+
+/// Hart.6.2 — load playoff goalie stats. Mirrors
+/// `load_goalies_with_fallback`. Snapshot path uses
+/// `playoff-goalie-stats.json` co-located with `goalie-stats.json`.
+pub fn load_playoff_goalies_with_fallback(
+    season: &str,
+    store: &crate::snapshot::SnapshotStore,
+) -> Result<Vec<GoalieStats>, FetchError> {
+    if let Ok(rows) = store.read_tier::<Vec<GoalieStats>>(
+        &crate::snapshot::SnapshotTier::Stats, "playoff-goalie-stats.json",
+    ) {
+        return Ok(rows);
+    }
+    if let Some(rows) = get_playoff_goalie_stats(season) {
+        return Ok(rows);
+    }
+    if let Some(rows) = get_playoff_goalie_stats_installed(season) {
+        return Ok(rows);
+    }
+    Err(FetchError::PlayerNotFound {
+        name: format!("no playoff goalie stats for season {season} — run `icelines fetch goalies --type playoff`"),
+    })
+}
+
 /// Read both bios + stats from the active chunked snapshot, if any. Returns
 /// `Err` if no snapshot is active, the active snapshot is not chunked, or
 /// any chunk fails its integrity check.
@@ -351,7 +497,24 @@ fn read_chunked_active(
     if !store.is_chunked(active) {
         return Err(crate::snapshot::SnapshotError::NotFound { name: format!("{active}/chunked.json") });
     }
-    store.read_chunked_stats(active)
+    store.read_chunked_stats(active, icelines_core::season_stats::SeasonType::Regular)
+}
+
+/// Hart.6.2 — same as `read_chunked_active` but for the playoff
+/// (bios, stats) pair. Returns `NotFound` if the active snapshot was
+/// written without playoff data.
+fn read_chunked_active_playoff(
+    store: &crate::snapshot::SnapshotStore,
+) -> Result<(Vec<SkaterBio>, Vec<SkaterStats>), crate::snapshot::SnapshotError> {
+    let manifest = store.load_manifest()?;
+    let active = manifest
+        .active
+        .as_deref()
+        .ok_or(crate::snapshot::SnapshotError::NoActiveSnapshot)?;
+    if !store.is_chunked(active) {
+        return Err(crate::snapshot::SnapshotError::NotFound { name: format!("{active}/chunked.json") });
+    }
+    store.read_chunked_stats(active, icelines_core::season_stats::SeasonType::Playoff)
 }
 
 #[cfg(test)]
@@ -436,5 +599,56 @@ mod tests {
         // No installed bundle in test env → falls back to embedded.
         let b = load_playoffs("19931994").expect("must resolve");
         assert_eq!(b.season, "19931994");
+    }
+
+    // ── Hart.6.2 — playoff stub accessors ───────────────────────────────────
+
+    /// All 5 bundled seasons must return `Some(vec![])` from the
+    /// playoff bios stub. Hart.6.3 replaces these stubs with real data;
+    /// the contract that `Some` means "season recognized" is permanent.
+    #[test]
+    fn l0_hart6_2_get_playoff_bios_returns_some_for_all_5_bundled_seasons() {
+        for season in BUNDLED_SEASONS {
+            let v = get_playoff_bios(season);
+            assert!(v.is_some(), "season {season} must be in the bundled set");
+            // Hart.6.2 stub: empty vec. Hart.6.3 wires real data.
+            assert!(v.unwrap().is_empty(), "Hart.6.2 stub must be empty for {season}");
+        }
+    }
+
+    /// Unknown / unbundled seasons return `None` from the stub —
+    /// distinct contract from "bundled with zero rows".
+    #[test]
+    fn l0_hart6_2_get_playoff_bios_returns_none_for_unbundled_season() {
+        assert!(get_playoff_bios("19961997").is_none());
+        assert!(get_playoff_stats("19961997").is_none());
+        assert!(get_playoff_goalie_stats("19961997").is_none());
+    }
+
+    /// `load_playoff_bios_with_fallback` falls through the chain:
+    /// chunked → tier file → embedded → installed. In a tempdir test
+    /// env nothing is on disk, so the embedded stub fires and returns
+    /// the empty vec from `get_playoff_bios`.
+    #[test]
+    fn l0_hart6_2_load_playoff_bios_falls_through_to_embedded_stub() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let store = crate::snapshot::SnapshotStore::new(dir.path());
+        let bios = load_playoff_bios_with_fallback("20242025", &store)
+            .expect("bundled stub must resolve");
+        assert!(bios.is_empty(), "Hart.6.2 stub returns empty");
+    }
+
+    /// Unbundled season hits the bottom of the chain and surfaces the
+    /// PlayerNotFound error with the run-this-command hint.
+    #[test]
+    fn l0_hart6_2_load_playoff_bios_unbundled_surfaces_error() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let store = crate::snapshot::SnapshotStore::new(dir.path());
+        let err = load_playoff_bios_with_fallback("19961997", &store)
+            .expect_err("unbundled must fail");
+        assert!(
+            format!("{err}").contains("playoff"),
+            "error must mention playoff context, got: {err}"
+        );
     }
 }
