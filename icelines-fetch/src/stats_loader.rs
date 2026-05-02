@@ -833,11 +833,17 @@ mod tests {
         assert_ne!(realtime, mp.clone());
     }
 
+    /// Hart.6.3 — re-points the original Hart.3 fence at 2025-26 (Cup
+    /// not yet contested → ships as `[]` → loader still returns
+    /// MissingBundle{Playoff}). Other 4 bundled seasons now load real
+    /// playoff data; that path is fenced in
+    /// `l1_load_into_repo_playoff_succeeds_when_tier_file_present`
+    /// and the per-season Hart.6.3 bundled-data tests.
     #[test]
-    fn l0_hart3_playoff_returns_missing_bundle_for_now() {
+    fn l0_hart6_3_playoff_returns_missing_bundle_for_2025_26_until_cup_contested() {
         let dir = tempfile::TempDir::new().unwrap();
         let store = SnapshotStore::new(dir.path());
-        let err = load_into_repo(Season(20242025), SeasonType::Playoff, &store).unwrap_err();
+        let err = load_into_repo(Season(20252026), SeasonType::Playoff, &store).unwrap_err();
         match err {
             LoadError::MissingBundle { season_type, .. } => {
                 assert_eq!(season_type, SeasonType::Playoff);
@@ -845,7 +851,7 @@ mod tests {
             other => panic!("expected MissingBundle, got {other:?}"),
         }
         // WIRE: Display must use lowercase "playoff", not Debug "Playoff".
-        let err = load_into_repo(Season(20242025), SeasonType::Playoff, &store).unwrap_err();
+        let err = load_into_repo(Season(20252026), SeasonType::Playoff, &store).unwrap_err();
         let s = err.to_string();
         assert!(s.contains("playoff"), "Display should use lowercase: {s}");
         assert!(!s.contains("Playoff"), "Display must not leak Debug: {s}");

@@ -169,14 +169,14 @@ fn l1_loadoutcome_goalie_stats_present_for_bundled_seasons() {
 
 /// Hart.6.4 / Bench B1 — bundled-but-empty playoff data surfaces as
 /// MissingBundle (NOT SeasonNotBundled — that variant is regular-only
-/// per Forge F4). After Hart.6.3 fills the bundles this test will need
-/// to be re-pointed at a season with no bundled data.
+/// per Forge F4). Hart.6.3 — re-pointed from 20242025 (now real) to
+/// 20252026 which ships as `[]` until the Cup is contested.
 #[test]
 fn l1_load_into_repo_playoff_returns_missing_bundle_for_empty_bundle() {
     use icelines_fetch::stats_loader::LoadError;
     let (_dir, store) = cold_store();
-    let err = load_into_repo(Season(20242025), SeasonType::Playoff, &store)
-        .expect_err("Hart.6.2 stubs are empty — must surface as MissingBundle");
+    let err = load_into_repo(Season(20252026), SeasonType::Playoff, &store)
+        .expect_err("2025-26 ships as [] — must surface as MissingBundle");
     assert!(
         matches!(
             err,
@@ -403,15 +403,19 @@ fn l1_playoff_load_rejects_rows_with_wrong_seasonid() {
 /// independently. Catches a regression where the playoff path
 /// accidentally falls back to regular bios (which would produce a
 /// confusing mix of regular identities + playoff stats).
+/// Hart.6.3 — re-pointed at 20252026 (empty playoff bundle). For
+/// seasons with real playoff data, the load now succeeds — the
+/// regression-fence semantic still holds because if dispatch fell
+/// through to regular, 2025-26 would succeed (regular has data).
 #[test]
 fn l1_playoff_only_cold_start_uses_playoff_bios() {
     use icelines_fetch::stats_loader::LoadError;
     let (_dir, store) = cold_store();
-    // No snapshot writes. Bundled regular bios for 20242025 are present
-    // (bundled in the binary), bundled playoff bios are EMPTY (Hart.6.2
-    // stub). If the dispatch incorrectly fell through to regular, the
-    // load would succeed; correct behavior produces MissingBundle.
-    let err = load_into_repo(Season(20242025), SeasonType::Playoff, &store)
+    // No snapshot writes. Bundled regular bios for 20252026 are present
+    // (~900 players); bundled playoff bios are []. If dispatch fell
+    // through to regular, the load would succeed (~900 rows); correct
+    // playoff-only dispatch produces MissingBundle.
+    let err = load_into_repo(Season(20252026), SeasonType::Playoff, &store)
         .expect_err("playoff dispatch must NOT fall through to regular bios");
     assert!(matches!(
         err,

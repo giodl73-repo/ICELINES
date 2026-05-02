@@ -58,6 +58,29 @@ static TRANSACTIONS_20232024: &[u8] = season_bytes!("20232024", "transactions.js
 static TRANSACTIONS_20222023: &[u8] = season_bytes!("20222023", "transactions.json");
 static TRANSACTIONS_20212022: &[u8] = season_bytes!("20212022", "transactions.json");
 
+// Hart.6.3 — playoff bios + stats + goalies for the five bundled seasons.
+// The 2025-26 file ships as `[]` (Cup not yet contested as of 2026-05-02);
+// the load surfaces MissingBundle{Playoff} cleanly via Hart.6.4 dispatch.
+// Authored 2026-05-02 by `icelines fetch stats|goalies --type playoff`
+// against api.nhle.com (Hart.6.5 surface).
+static PLAYOFF_BIOS_20252026:    &[u8] = season_bytes!("20252026", "playoff-bios.json");
+static PLAYOFF_BIOS_20242025:    &[u8] = season_bytes!("20242025", "playoff-bios.json");
+static PLAYOFF_BIOS_20232024:    &[u8] = season_bytes!("20232024", "playoff-bios.json");
+static PLAYOFF_BIOS_20222023:    &[u8] = season_bytes!("20222023", "playoff-bios.json");
+static PLAYOFF_BIOS_20212022:    &[u8] = season_bytes!("20212022", "playoff-bios.json");
+
+static PLAYOFF_STATS_20252026:   &[u8] = season_bytes!("20252026", "playoff-stats.json");
+static PLAYOFF_STATS_20242025:   &[u8] = season_bytes!("20242025", "playoff-stats.json");
+static PLAYOFF_STATS_20232024:   &[u8] = season_bytes!("20232024", "playoff-stats.json");
+static PLAYOFF_STATS_20222023:   &[u8] = season_bytes!("20222023", "playoff-stats.json");
+static PLAYOFF_STATS_20212022:   &[u8] = season_bytes!("20212022", "playoff-stats.json");
+
+static PLAYOFF_GOALIES_20252026: &[u8] = season_bytes!("20252026", "playoff-goalie-stats.json");
+static PLAYOFF_GOALIES_20242025: &[u8] = season_bytes!("20242025", "playoff-goalie-stats.json");
+static PLAYOFF_GOALIES_20232024: &[u8] = season_bytes!("20232024", "playoff-goalie-stats.json");
+static PLAYOFF_GOALIES_20222023: &[u8] = season_bytes!("20222023", "playoff-goalie-stats.json");
+static PLAYOFF_GOALIES_20212022: &[u8] = season_bytes!("20212022", "playoff-goalie-stats.json");
+
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /// List of bundled seasons, newest first.
@@ -286,44 +309,54 @@ pub fn get_playoff_goalie_stats_installed(
     serde_json::from_str(&text).ok()
 }
 
-// ── Hart.6.2 — playoff embedded-bundle accessors (stubbed) ──────────────────
+// ── Hart.6.3 — playoff embedded-bundle accessors ────────────────────────────
 //
-// Hart.6.3 will replace these stubs with `include_bytes!`'d JSON for the
-// 5 bundled seasons. For now they return `Some(Vec::new())` for the
-// bundled set so the loader has a stable contract: "yes the season is
-// bundled, here are zero rows" — distinct from `None` which means
-// "season not bundled at all". The 2025-26 file ships as `[]` in 6.3
-// (cup not yet contested), so the empty-vec contract is permanent for
-// that season anyway.
+// Replaces the Hart.6.2 stubs. Each bundled season carries playoff data
+// authored 2026-05-02 by `icelines fetch stats|goalies --type playoff`.
+// 2025-26 ships as `[]` (Cup not yet contested) — Hart.6.4 dispatch
+// converts an empty-bios result to MissingBundle{Playoff} so the TUI /
+// CLI can surface a clean "playoffs haven't started" banner.
 
-/// Stub: playoff bios for a bundled season. Returns `Some(vec![])` for
-/// the 5 bundled seasons; `None` otherwise. Hart.6.3 wires real data.
+/// Playoff bios for a bundled season. Returns `None` if the season
+/// isn't in `BUNDLED_SEASONS`; otherwise the embedded array (which may
+/// be empty for current-season-not-yet-played).
 pub fn get_playoff_bios(season_id: &str) -> Option<Vec<crate::schema::SkaterBio>> {
-    if BUNDLED_SEASONS.contains(&season_id) {
-        Some(Vec::new())
-    } else {
-        None
-    }
+    let bytes = match season_id {
+        "20252026" => PLAYOFF_BIOS_20252026,
+        "20242025" => PLAYOFF_BIOS_20242025,
+        "20232024" => PLAYOFF_BIOS_20232024,
+        "20222023" => PLAYOFF_BIOS_20222023,
+        "20212022" => PLAYOFF_BIOS_20212022,
+        _          => return None,
+    };
+    serde_json::from_slice(bytes).ok()
 }
 
-/// Stub: playoff stats for a bundled season. Returns `Some(vec![])`
-/// for the 5 bundled seasons; `None` otherwise.
+/// Playoff stats for a bundled season. See `get_playoff_bios` for
+/// semantics; same `BUNDLED_SEASONS` membership rule applies.
 pub fn get_playoff_stats(season_id: &str) -> Option<Vec<crate::schema::SkaterStats>> {
-    if BUNDLED_SEASONS.contains(&season_id) {
-        Some(Vec::new())
-    } else {
-        None
-    }
+    let bytes = match season_id {
+        "20252026" => PLAYOFF_STATS_20252026,
+        "20242025" => PLAYOFF_STATS_20242025,
+        "20232024" => PLAYOFF_STATS_20232024,
+        "20222023" => PLAYOFF_STATS_20222023,
+        "20212022" => PLAYOFF_STATS_20212022,
+        _          => return None,
+    };
+    serde_json::from_slice(bytes).ok()
 }
 
-/// Stub: playoff goalie stats for a bundled season. Returns
-/// `Some(vec![])` for the 5 bundled seasons; `None` otherwise.
+/// Playoff goalie stats for a bundled season.
 pub fn get_playoff_goalie_stats(season_id: &str) -> Option<Vec<GoalieStats>> {
-    if BUNDLED_SEASONS.contains(&season_id) {
-        Some(Vec::new())
-    } else {
-        None
-    }
+    let bytes = match season_id {
+        "20252026" => PLAYOFF_GOALIES_20252026,
+        "20242025" => PLAYOFF_GOALIES_20242025,
+        "20232024" => PLAYOFF_GOALIES_20232024,
+        "20222023" => PLAYOFF_GOALIES_20222023,
+        "20212022" => PLAYOFF_GOALIES_20212022,
+        _          => return None,
+    };
+    serde_json::from_slice(bytes).ok()
 }
 
 // ── Historical playoffs (Phase 8c) ───────────────────────────────────────────
@@ -603,30 +636,110 @@ mod tests {
 
     // ── Hart.6.2 — playoff stub accessors ───────────────────────────────────
 
-    /// All 5 bundled seasons must return `Some(vec![])` from the
-    /// playoff bios stub. Hart.6.3 replaces these stubs with real data;
-    /// the contract that `Some` means "season recognized" is permanent.
+    /// Hart.6.3 — every bundled season's playoff bios deserialize cleanly.
+    /// 4 of 5 carry real playoff data (2021-22 through 2024-25 Cup runs);
+    /// 2025-26 ships as `[]` (Cup not yet contested).
     #[test]
-    fn l0_hart6_2_get_playoff_bios_returns_some_for_all_5_bundled_seasons() {
+    fn l0_hart6_3_get_playoff_bios_parses_for_all_5_bundled_seasons() {
         for season in BUNDLED_SEASONS {
             let v = get_playoff_bios(season);
             assert!(v.is_some(), "season {season} must be in the bundled set");
-            // Hart.6.2 stub: empty vec. Hart.6.3 wires real data.
-            assert!(v.unwrap().is_empty(), "Hart.6.2 stub must be empty for {season}");
+        }
+        // 2025-26 is the deliberate empty (Cup not yet contested at
+        // bundle-authoring time). Asserted explicitly so a future
+        // accidental deletion of the playoff-bios.json file surfaces.
+        assert!(get_playoff_bios("20252026").unwrap().is_empty(),
+            "2025-26 ships as [] until the playoffs are bundled");
+        // Other 4 must have real data.
+        for season in ["20242025", "20232024", "20222023", "20212022"] {
+            let count = get_playoff_bios(season).unwrap().len();
+            assert!(count > 100,
+                "{season} playoff bios must have ≥100 rows (NHL playoff rosters), got {count}");
+        }
+    }
+
+    /// Hart.6.3 — every bundled season's playoff stats parse and the
+    /// row count matches the bios count for that season (every player
+    /// who has a bio also has a stats row).
+    #[test]
+    fn l0_hart6_3_get_playoff_stats_matches_bios_count_per_season() {
+        for season in ["20242025", "20232024", "20222023", "20212022"] {
+            let bios = get_playoff_bios(season).unwrap();
+            let stats = get_playoff_stats(season).unwrap();
+            assert_eq!(
+                bios.len(),
+                stats.len(),
+                "{season} bios/stats row count mismatch — bios={}, stats={}",
+                bios.len(),
+                stats.len(),
+            );
+        }
+    }
+
+    /// Hart.6.3 — every bundled playoff stats row has its `season_id`
+    /// matching the requested season. Catches a bundle-authoring bug
+    /// where seasons could get crossed.
+    #[test]
+    fn l0_hart6_3_playoff_stats_seasonid_matches_filename() {
+        for season in ["20242025", "20232024", "20222023", "20212022"] {
+            let expected: u32 = season.parse().unwrap();
+            let stats = get_playoff_stats(season).unwrap();
+            for s in &stats {
+                assert_eq!(
+                    s.season_id, Some(expected),
+                    "row in {season} carries seasonId={:?}; expected Some({expected})",
+                    s.season_id
+                );
+            }
+        }
+    }
+
+    /// Hart.6.3 — every bundled playoff goalie row has its `season_id`
+    /// matching the requested season. (Goalie season_id is u32, not
+    /// Option.)
+    #[test]
+    fn l0_hart6_3_playoff_goalies_seasonid_matches_filename() {
+        for season in ["20242025", "20232024", "20222023", "20212022"] {
+            let expected: u32 = season.parse().unwrap();
+            let goalies = get_playoff_goalie_stats(season).unwrap();
+            for g in &goalies {
+                assert_eq!(
+                    g.season_id, expected,
+                    "row in {season} carries seasonId={}; expected {expected}",
+                    g.season_id
+                );
+            }
         }
     }
 
     /// `load_playoff_bios_with_fallback` falls through the chain:
     /// chunked → tier file → embedded → installed. In a tempdir test
-    /// env nothing is on disk, so the embedded stub fires and returns
-    /// the empty vec from `get_playoff_bios`.
+    /// env nothing is on disk, so the embedded bundle fires.
+    /// Hart.6.3 — embedded data is now real (was empty in Hart.6.2),
+    /// so the assertion verifies a populated vec for 2024-25.
     #[test]
-    fn l0_hart6_2_load_playoff_bios_falls_through_to_embedded_stub() {
+    fn l0_hart6_3_load_playoff_bios_falls_through_to_embedded_bundle() {
         let dir = tempfile::TempDir::new().unwrap();
         let store = crate::snapshot::SnapshotStore::new(dir.path());
         let bios = load_playoff_bios_with_fallback("20242025", &store)
-            .expect("bundled stub must resolve");
-        assert!(bios.is_empty(), "Hart.6.2 stub returns empty");
+            .expect("bundled playoff bios must resolve");
+        assert!(
+            bios.len() > 100,
+            "20242025 playoff bios must have ≥100 rows, got {}",
+            bios.len()
+        );
+    }
+
+    /// 2025-26 ships as `[]` (Cup not yet contested). The fallback chain
+    /// still returns Ok(vec![]) — Hart.6.4 dispatch is what converts
+    /// that to MissingBundle{Playoff} for the user-visible error.
+    #[test]
+    fn l0_hart6_3_load_playoff_bios_2025_26_returns_empty_until_played() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let store = crate::snapshot::SnapshotStore::new(dir.path());
+        let bios = load_playoff_bios_with_fallback("20252026", &store)
+            .expect("2025-26 stub must resolve to Ok(empty)");
+        assert!(bios.is_empty(), "2025-26 ships as [] until playoffs run");
     }
 
     /// `get_playoff_bios` returns `None` for any season outside the
