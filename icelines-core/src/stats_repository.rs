@@ -1870,6 +1870,109 @@ mod tests {
         assert!(v.blocked_shots_per_82().is_none());
     }
 
+    /// Hart.5c.7.12 — gap-fill for the per-82 helpers whose happy-path
+    /// branches were not exercised after the legacy `Player` test mod was
+    /// deleted. Default fixture has gp=70, shots=220, sh_goals=0; adds a
+    /// realtime payload (hits=100, blocks=50) and overrides sh_goals to a
+    /// non-zero value so every per-82 helper that production code calls
+    /// has at least one Some-arm assertion.
+    #[test]
+    fn l0_hart5c7_view_per_82_happy_path_for_every_production_helper() {
+        let mut r = make_repo_with_player(8478402);
+        let mut stats = fixtures::stats(8478402, 20222023, "EDM")
+            .realtime(100, 50, 40, 20)
+            .build();
+        // Override sh_goals on the totals so sh_goals_per_82 has a non-zero
+        // numerator. Default fixture is sh_goals=0, which produces 0.0 and
+        // hides any sign/scale bug.
+        stats.totals.sh_goals = 4;
+        r.upsert_stats(stats).unwrap();
+
+        let v = r
+            .view(PlayerId(8478402), Season(20222023), SeasonType::Regular)
+            .unwrap();
+
+        // gp=70 baseline — hard-coded so the test fails loudly if the fixture
+        // shifts under it.
+        assert_eq!(v.gp(), 70);
+
+        let want_shots_82 = 220.0 / 70.0 * 82.0; // ≈ 257.71
+        assert!((v.shots_per_82().unwrap() - want_shots_82).abs() < 1e-6);
+
+        let want_sh_g_82 = 4.0 / 70.0 * 82.0; // ≈ 4.69
+        assert!((v.sh_goals_per_82().unwrap() - want_sh_g_82).abs() < 1e-6);
+
+        let want_hits_82 = 100.0 / 70.0 * 82.0; // ≈ 117.14
+        assert!((v.hits_per_82().unwrap() - want_hits_82).abs() < 1e-6);
+
+        let want_blocks_82 = 50.0 / 70.0 * 82.0; // ≈ 58.57
+        assert!((v.blocked_shots_per_82().unwrap() - want_blocks_82).abs() < 1e-6);
+    }
+
+    /// Hart.5c.7.12 — `toi_mmss` edge cases that the legacy
+    /// `l0_player_toi_mmss_*` tests covered before deletion: None
+    /// passthrough, "00:00" zero, exact-minute boundary, sub-minute
+    /// rounding via integer division.
+    #[test]
+    fn l0_hart5c7_view_toi_mmss_edge_cases() {
+        let mut r = make_repo_with_player(8478402);
+        let mut stats = fixtures::stats(8478402, 20222023, "EDM").build();
+
+        // 1: toi_per_game_sec = None → toi_mmss returns None.
+        stats.totals.toi_per_game_sec = None;
+        r.upsert_stats(stats.clone()).unwrap();
+        let v = r
+            .view(PlayerId(8478402), Season(20222023), SeasonType::Regular)
+            .unwrap();
+        assert!(v.toi_mmss().is_none());
+        let _ = v;
+
+        // 2: 0 seconds → "00:00".
+        stats.totals.toi_per_game_sec = Some(0);
+        r.upsert_stats(stats.clone()).unwrap();
+        let v = r
+            .view(PlayerId(8478402), Season(20222023), SeasonType::Regular)
+            .unwrap();
+        assert_eq!(v.toi_mmss().as_deref(), Some("00:00"));
+        let _ = v;
+
+        // 3: exactly 60s → "01:00".
+        stats.totals.toi_per_game_sec = Some(60);
+        r.upsert_stats(stats.clone()).unwrap();
+        let v = r
+            .view(PlayerId(8478402), Season(20222023), SeasonType::Regular)
+            .unwrap();
+        assert_eq!(v.toi_mmss().as_deref(), Some("01:00"));
+        let _ = v;
+
+        // 4: 1259s = 20:59 — exercises the minute/second split when seconds
+        // are not zero. Catches off-by-one bugs in the formatter.
+        stats.totals.toi_per_game_sec = Some(1259);
+        r.upsert_stats(stats).unwrap();
+        let v = r
+            .view(PlayerId(8478402), Season(20222023), SeasonType::Regular)
+            .unwrap();
+        assert_eq!(v.toi_mmss().as_deref(), Some("20:59"));
+    }
+
+    /// Hart.5c.7.12 — `pp_assists` saturating-sub edge case. Production
+    /// data should never have pp_goals > pp_points, but the helper uses
+    /// `saturating_sub` defensively. Locks the contract: never underflow.
+    #[test]
+    fn l0_hart5c7_view_pp_assists_saturating_sub() {
+        let mut r = make_repo_with_player(8478402);
+        let mut stats = fixtures::stats(8478402, 20222023, "EDM").build();
+        // Force the pathological case: pp_goals exceeds pp_points.
+        stats.totals.pp_goals = 5;
+        stats.totals.pp_points = 3;
+        r.upsert_stats(stats).unwrap();
+        let v = r
+            .view(PlayerId(8478402), Season(20222023), SeasonType::Regular)
+            .unwrap();
+        // 3 - 5 saturates to 0 — must NOT panic or wrap.
+        assert_eq!(v.pp_assists(), 0);
+    }
+
     /// Hart.5b2-prep: the gp=0 edge case for per-82 helpers — must
     /// return None (not divide-by-zero or 0.0).
     #[test]

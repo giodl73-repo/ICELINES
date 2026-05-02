@@ -222,6 +222,13 @@ impl Region {
 //     for owned data
 //   - `crate::season_stats::GoalieSeasonStats` for goalie totals
 // The CLI/TUI/site/HTTP surfaces all read through `PlayerView`.
+//
+// Most legacy `Player::*` helpers (gp / pp_assists / per_82 ratios /
+// toi_mmss / is_rankable) ported to `PlayerView` and are covered in
+// `stats_repository.rs`'s view test mod. A few legacy helpers with no
+// post-Hart caller went away entirely — `takeaways_per_82`, `is_ufa`,
+// `is_rfa`, `seasons_remaining`. Reintroduce them on `PlayerView` if a
+// new caller emerges.
 
 // ── Unit tests ────────────────────────────────────────────────────────────────
 
