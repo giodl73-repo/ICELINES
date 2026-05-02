@@ -16,7 +16,7 @@ For the app plan (mission, surfaces, non-goals), see [`../IceLines.md`](../IceLi
 | [Hart.5c — Final Cleanup](2026-05-01-phaseHart-5c-final-cleanup.md) | Implemented (v0.4) | Consumer migration to PlayerView. 5c.0–5c.7.12 shipped 2026-05-01. One followup (F1: contract helpers on PlayerView) tracked in plan. |
 | [Hart.5c.6 — TUI Restructure](2026-05-01-phaseHart-5c-6-tui-restructure.md) | Implemented | App owns StatsRepository; TUI screens migrated; user-flow + boot-load tests landed 2026-05-01. |
 | [Hart.6 — Playoff Per-Player Data](2026-05-01-phaseHart-6-playoff-data.md) | Implemented (v0.2) | Schema + API client + snapshot tier paths + loader dispatch + fetch CLI + bundled data (current 5 + 33 historical) + cross-team guards. Shipped 2026-05-02. |
-| [Phase Lindsay — Stat Catalog](2026-05-02-phaseLindsay-stat-catalog.md) | Active (v0.2) | Centralized `StatId` dispatch + 98 selectable stats + `--filter` grammar + categorized TUI Queries + career table + `fetch report --kind`. 8-role review applied; ready to implement. |
+| [Phase Lindsay — Stat Catalog](2026-05-02-phaseLindsay-stat-catalog.md) | L.1 Implemented (v0.4) | Centralized `StatId` dispatch + 108 selectable stats + `--filter` grammar + categorized TUI Queries + career table + `fetch report --kind`. L.1 shipped 2026-05-02 (Tier-1 schema + ChunkedManifest v=2 + DI-28 boundary check + `load_report_with_fallback` + rate-limit policy + `fetch report` CLI; +45 Lindsay-prefixed tests, 1119 workspace tests passing). L.2-L.8 pending. |
 
 ---
 

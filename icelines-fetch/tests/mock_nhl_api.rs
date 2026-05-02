@@ -1251,3 +1251,4 @@ async fn l1_hart6_1_fetch_all_goalies_emits_gametypeid_3_for_playoff() {
         .expect("playoff goalies fetch must encode gameTypeId=3");
     assert_eq!(goalies.len(), 2);
 }
+

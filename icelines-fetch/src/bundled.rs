@@ -88,6 +88,27 @@ pub const BUNDLED_SEASONS: &[&str] = &[
     "20252026", "20242025", "20232024", "20222023", "20212022",
 ];
 
+/// Phase Lindsay L.1.4 — bundled fallback for the new Tier-1 reports
+/// (timeonice, goalsForAgainst, goalie-advanced, goalie-savesByStrength,
+/// goalie-bios). Returns `None` for every kind today; **L.7** populates
+/// the include_bytes! map when the 38 historical seasons get bundled.
+///
+/// The slot exists at L.1.4 so `load_report_with_fallback` doesn't
+/// change shape between L.1 and L.7. Adding a bundled report later is
+/// one match arm + one `include_bytes!` in this function.
+///
+/// Returns the raw JSON bytes of `{"data": [...], "total": N}` for
+/// (season, season_type, kind), or `None` when not bundled.
+pub fn report_for_lindsay(
+    _season: &str,
+    _season_type: icelines_core::season_stats::SeasonType,
+    _kind: icelines_core::stats_catalog::ReportKind,
+) -> Option<Vec<u8>> {
+    // L.7 will replace this with a per-(season, season_type, kind)
+    // dispatch returning `Some(include_bytes!(…).to_vec())`.
+    None
+}
+
 /// Deserialize bundled bios for a season. Returns None if season not bundled.
 pub fn get_bios(season: &str) -> Option<Vec<SkaterBio>> {
     let bytes = match season {

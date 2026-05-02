@@ -1,15 +1,72 @@
-# Phase Lindsay — Stat Catalog (v0.3, R2-applied)
+# Phase Lindsay — Stat Catalog (v0.4, R3-applied)
 
-**Status**: v0.3 — R2 review applied. R1 + R2 = 10-role coverage (HART, KEEL, TAPE, FORGE, EDGE, BENCH, WIRE, GLASS, SCOUT, PACE).
-R1 raised 29 BLOCKERs resolved in v0.2 changelog. R2 raised 24 NEW BLOCKERs against v0.2 (most were "v0.2 changelog said it but spec body didn't write it"). v0.3 applies the spec-body sweep + the SCOUT/PACE domain additions.
+**Status**: v0.4 — R3 review applied. R1 + R2 + R3 = 10-role coverage across three rounds (HART, KEEL, TAPE, FORGE, EDGE, BENCH, WIRE, GLASS, SCOUT, PACE).
+R1 raised 29 BLOCKERs resolved in v0.2 changelog. R2 raised 24 NEW BLOCKERs against v0.2 (the changelog claimed fixes the spec body never wrote). R3 verified v0.3 had the SAME drift on ~14 items. v0.4 closes that loop with a literal spec-body sweep — no new design decisions, just transcribing what the changelogs already claimed, plus a few SCOUT/PACE corrections that the v0.3 prose flagged but the v0.3 body didn't apply (FaceoffWinPct / EvenStrengthTimeOnIcePerGame double-listings, PpAssists raw count).
 **Ready to implement L.1.**
 **Date**: 2026-05-02
 **Trophy**: Lindsay (Ted Lindsay Award — players' choice; "complete picture of a player")
 **Predecessor**: design/plans/2026-04-30-phaseHart-normalization.md (master Hart),
 design/plans/2026-05-01-phaseHart-6-playoff-data.md (Hart.6 playoff data)
 **Review summaries**: R1 at `design/plans/2026-05-02-phaseLindsay-review-summary.md`,
-R2 at `design/plans/2026-05-02-phaseLindsay-r2-summary.md`
+R2 at `design/plans/2026-05-02-phaseLindsay-r2-summary.md`,
+R3 at `design/plans/2026-05-02-phaseLindsay-r3-summary.md`
 **Replaces**: nothing — additive
+
+---
+
+## v0.3 → v0.4 changelog
+
+R3 verification (10 roles, both R2 reviewers + 2 fresh) confirmed v0.3 **had the same drift pattern R2 caught**: the v0.3 changelog claimed fixes the v0.3 spec body never wrote. Four roles cleared (KEEL, GLASS, SCOUT R2 deltas, PACE R2 deltas); six roles flagged still-BLOCKER items (HART, FORGE, BENCH, WIRE, TAPE, EDGE). v0.4 is the literal spec-body sweep.
+
+### Spec-body sweep — apply v0.3 changelog claims to v0.3 spec body (14)
+
+- **L3-B1** [HART-R3-B1] **`extra_reports` cascade eviction → DI-12** spelled out in spec body §"Repository lifecycle — extra_reports", with code sketch + L0 test name `l0_repo_extra_reports_cascade_evict_on_window_drop`.
+- **L3-B2** [HART-R3-B2] **`repository_version` boundary check at `load_window`** — spec body §"Repository lifecycle" pinned the failure point and L1 test name `l1_repo_load_window_rejects_repository_version_2_on_v1_binary`. Added as DI-28.
+- **L3-B3** [FORGE-R3-B1] **`ExtraReports` declared as `BTreeMap`** in spec body §Public types — was claimed in v0.3 changelog but body still showed `HashMap` from v0.1. Type alias pinned: `BTreeMap<(PlayerId, Season, SeasonType, ReportKind), serde_json::Value>`.
+- **L3-B4** [FORGE-R3-B4] **`FilterParseError` 7-variant enum** sketched in spec body §Public types: `EmptyInput`, `EmptyStatKey`, `MissingOp`, `MultipleOps`, `UnknownStat`, `BadNumber`, `NotFinite`. Triggering-input table in §"Parse-error variants".
+- **L3-B5** [FORGE-R3-B5] **DI-25 frozen-golden precision** — fixture is a fixed pre-L.5 capture, NOT post-Lindsay round-trip. New §"DI-25 — frozen-golden semantics" pins the capture step, the assertion, and the five named schemes.
+- **L3-B6** [BENCH-R3-1] **`stat_catalog_variants.rs` named L.2 deliverable** in plan §Sub-phases L.2 row. Six fixture variants enumerated in spec test contract.
+- **L3-B7** [BENCH-R3-2] **Two-fence stdout golden** — capture pre-L.3, reassert post-L.3 AND post-L.5 (sort ordering changes ride L.3). Plan §Sub-phases L.3 row + spec test contract row.
+- **L3-B8** [BENCH-R3-3] **Five named legacy schemes** in spec §"DI-25 frozen-golden semantics" + plan §Sub-phases L.5 row: `yahoo-standard`, `espn-standard`, `custom-points-only`, `head-to-head-9cat`, `rotisserie-with-goalie`.
+- **L3-B9** [WIRE-R3-B4] **`data/api-probe-2026-05-02.txt` artifact** elevated to L.1 entry-criterion in plan §Sub-phases L.1 row.
+- **L3-B10** [WIRE-R3-B5] **Tier-1 per-report file format** documented in spec body §"Tier-1 file format" with the 7-row substruct→filename→endpoint table.
+- **L3-B11** [WIRE-R3-B1] **`extra_reports` runtime-only declaration** spelled out in spec body §"Repository lifecycle" as DI-27 with L1 test `l1_repo_extra_reports_not_persisted`.
+- **L3-B12** [WIRE-R3-F5] **`load_report_with_fallback<T>`** signature pinned in spec body §Public types; L.1 deliverables row in plan now lists it explicitly.
+- **L3-B13** [TAPE-R3-1] **Per-endpoint seasonId fence** documented in spec body §"Per-endpoint seasonId fence" as DI-29; L1 test name template per endpoint.
+- **L3-B14** [TAPE-R3-2] **Rate-limit policy** new spec body §"Rate-limit policy" — sequential, exponential backoff on 429/5xx, bundled-data fallback first, concurrent-window fs lock at `~/.icelines/.fetch.lock`.
+
+### EDGE-R2 grammar precision (4)
+
+- **L3-B15** [EDGE-R2] **OnIceGoals trade-window guard** moved to category-boundary in `read()` (top of match) — spec body §"Read dispatch — the contract" code sketch updated.
+- **L3-B16** [EDGE-R2] **NaN/inf rejection** at construction — `StatFilter::new` validates `value.is_finite()`; downstream code never sees NaN/inf.
+- **L3-B17** [EDGE-R2] **Multi-filter same-StatId normalization** — `PlayerFilter::normalize_stat_filters` rules: Min+Min → tightest; Max+Max → tightest; Min+Max → range; Equals+Equals → reject as `MultipleOps`.
+- **L3-B18** [EDGE-R2] **Empty/whitespace stat-key error path** — `EmptyStatKey` variant covers both empty and whitespace-only keys; in spec body §"Parse-error variants" trigger table.
+
+### PACE-R2 + SCOUT-R2 v0.3 follow-through (4)
+
+- **L3-B19** [PACE-R2 F3] **Multi-season aggregate `read()`** — strict propagation: `aggregate_read` returns `Some(sum)` only when every window has `Some`. Spec body §"Read dispatch" includes `aggregate_read` signature.
+- **L3-B20** [SCOUT-R2 F2] **`FaceoffWinPct` actually moved** from SpecialTeams enumeration to TwoWay enumeration (v0.3 prose said this, body still listed it under SpecialTeams). v0.4 body fixes both tables.
+- **L3-B21** [SCOUT-R2 F3] **`EvenStrengthTimeOnIcePerGame` actually moved** from OnIceGoals enumeration to TimeOnIce enumeration (same pattern). v0.4 body fixes both tables; explicit note that this stat is exempt from DI-11 (TOI sums correctly across stints).
+- **L3-B22** [SCOUT-R2 F5] **`PpAssists` raw count** added to Scoring enumeration as a 14th stat. CLI alias `pp-assists`. Net stat count: 107 → 108.
+
+### Stat-count update
+
+- **v0.4 totals**: 14 + 13 + 17 + 12 + 8 + 15 + 22 + 7 = **108 selectable stats**.
+- (v0.2 was 98; v0.3 added 9 xG-family stats → 107; v0.4 adds `PpAssists` raw and applies category moves → 108. The category moves are zero-net — `FaceoffWinPct` shifted SpecialTeams → TwoWay, `EvenStrengthTimeOnIcePerGame` shifted OnIceGoals → TimeOnIce.)
+
+### New invariants in v0.4
+
+| ID | Statement |
+|---|---|
+| **DI-12** | Eviction of a `(season, season_type)` window from the typed LRU cascade-evicts every `extra_reports` entry whose key matches that window. |
+| **DI-26** | `extra_reports` is capped at 4096 entries (~40 MB ceiling at 10 KB/value). Insertion past the cap evicts oldest by LRU order. |
+| **DI-27** | `extra_reports` is runtime-only — never persisted to disk. Subsequent runs re-fetch. |
+| **DI-28** | `repository_version` boundary check fires at `StatsRepository::load_window`, not at `repo_swap`. Old binary on new snapshot errors at file-open. |
+| **DI-29** | Every Tier-1 deserializer asserts `row.seasonId == requested_season` for every row; mismatch errors `LoadError::SeasonIdMismatch` before the substruct populates. |
+| **AI-09** | `aggregate_read(views)` is strict-propagation: `Some(blend)` only when every window in the slice has `Some` from `read()`. ANY `None` propagates as `None`. |
+
+The full R3 punch list is at
+`design/plans/2026-05-02-phaseLindsay-r3-summary.md`.
 
 ---
 
@@ -324,14 +381,26 @@ Each typed Tier-1 substruct is a flat field set matching the API row shape, with
 ```rust
 pub struct StatsRepository {
     // existing fields …
-    extra_reports: HashMap<(PlayerId, Season, SeasonType, ReportKind), serde_json::Value>,
-    extra_reports_lru: LruCacheState,  // separate LRU policy from the typed model
+    // BTreeMap (NOT HashMap) for deterministic iteration — required for
+    // snapshot tests, debug dumps, and "list all fetched reports" UX
+    // (FORGE-R2-B1 / v0.4).
+    extra_reports: std::collections::BTreeMap<
+        (PlayerId, Season, SeasonType, ReportKind),
+        serde_json::Value,
+    >,
+    extra_reports_lru: LruCacheState,  // separate LRU cap (4096; DI-26) — runtime-only (DI-27)
 }
 ```
 
 This isolates the typed model from arbitrary blob storage. `SeasonStats` `PartialEq`, snapshot determinism, LRU sizing, and the Hart.4.1 sum-equals invariants all remain stable. Tier-2 reads go through a separate accessor `repo.fetched_report(pid, season, season_type, kind) -> Option<&serde_json::Value>`.
 
-**SeasonId fence on `extra_reports` writes**: every fetched-report write extracts `seasonId` from each row, asserts `== requested_season`, and errors `LoadError::SeasonIdMismatch` BEFORE the JSON lands in the map. Mirrors Hart.6.4 typed fence semantics for the untyped path.
+**Lifecycle rules** (v0.4 — see spec body §"Repository lifecycle — extra_reports" for full sketch + L0/L1 test names):
+
+- **DI-12 cascade-eviction**: typed-window LRU eviction cascade-evicts every `extra_reports` row for the same `(season, season_type)`.
+- **DI-26 cap**: 4096 entries (~40 MB ceiling).
+- **DI-27 runtime-only**: never written to disk; subsequent runs re-fetch.
+- **DI-28 `repository_version`**: boundary check fires at `StatsRepository::load_window`, not at `repo_swap`.
+- **DI-29 seasonId fence**: every fetched-report write extracts `seasonId` from each row, asserts `== requested_season`, errors `LoadError::SeasonIdMismatch` BEFORE the JSON lands in the map. Same fence applies on every Tier-1 deserializer.
 
 ---
 
@@ -339,14 +408,14 @@ This isolates the typed model from arbitrary blob storage. `SeasonStats` `Partia
 
 | # | What | Surface | Est. LOC |
 |---|---|---|---|
-| **L.1** | Schema for Tier-1 reports + generic `fetch report` CLI + `ChunkedManifest` v2 + `repository_version=2` | icelines-fetch | 1000 |
-| **L.2** | StatId catalog + StatCategory + PlayerView accessors + `ExtraReports` cache + goalie bios merge adapter | icelines-core | 800 |
-| **L.3** | Query screen redesign — categorized sections, generic filter, StatId sort, search-as-you-type sort picker | icelines-cli (TUI + CLI) | 900 |
+| **L.1** | Schema for Tier-1 reports + generic `fetch report` CLI + `ChunkedManifest` v2 + `repository_version=2` (boundary check at `load_window` per DI-28) + `load_report_with_fallback<T>` helper + per-endpoint seasonId fence (DI-29) + rate-limit policy implementation. **Entry criterion:** `data/api-probe-2026-05-02.txt` artifact committed (WIRE-R3-B4). | icelines-fetch | 1000 |
+| **L.2** | StatId catalog + StatCategory + PlayerView accessors + `ExtraReports: BTreeMap` cache (DI-12 cascade, DI-26 cap, DI-27 runtime-only) + goalie bios merge adapter + `FilterParseError` 7-variant enum + `StatFilter::new` finite-value gate + `PlayerFilter::normalize_stat_filters` + `aggregate_read` (AI-09 strict propagation). **Named deliverable:** `icelines-core/tests/fixtures/stat_catalog_variants.rs` enumerating 6 variants (skater-modern, skater-pre-2005, center, goalie, traded-multistint, GP=0) per BENCH-R2 L2-B22. | icelines-core | 800 |
+| **L.3** | Query screen redesign — categorized sections, generic filter, StatId sort, search-as-you-type sort picker. **Entry criterion (BENCH-R2 L2-B23):** capture stdout-golden of every legacy `--sort` value BEFORE this sub-phase lands. **Exit criterion:** reassert byte-equality post-L.3 (sort ordering changes ride here). | icelines-cli (TUI + CLI) | 900 |
 | **L.4** | Career table on player card with selectable columns + `[`/`]` keys + 80-col degradation | icelines-cli (TUI) | 500 |
-| **L.5** | Propagate to Leaders / Comps / Depth / Export / Fantasy / **axum HTTP server** | icelines-cli + icelines-cli/server | 500 |
-| **L.5b** | **Site stat-name sweep — atomic** (one PR, all team page headers via `StatId::label()`) | icelines-site | 200 |
-| **L.6** | Tier-2 fetched-only reports — `serde_json::Value` via `ExtraReports`; CLI `fetch report --kind <name>` | icelines-cli + icelines-fetch | 300 |
-| **L.7** | Bundle Tier 1 across all 38 historical seasons (data work) + 38-season parse-fence test | data/ + workflow | 0 (data) |
+| **L.5** | Propagate to Leaders / Comps / Depth / Export / Fantasy / **axum HTTP server** (Tier-1 typed-only per L2-B17). **Fantasy fixture:** five named legacy schemes at `icelines-fetch/tests/fixtures/legacy_schemes/{yahoo-standard,espn-standard,custom-points-only,head-to-head-9cat,rotisserie-with-goalie}.toml` with `<name>.golden.toml` companions (DI-25 frozen-golden). **Exit criterion:** stdout-golden second-fence reassertion post-L.5. | icelines-cli + icelines-cli/server | 500 |
+| **L.5b** | **Site stat-name sweep — atomic** (one PR, all team page headers via `StatId::label()`). Four string surfaces: rendered headers, CSS class names, URL anchors, search-index terms. CI grep test on `\b(Goals|Assists|Points|Hits|Blocks|Saves|GAA)\b` with allowlist at `icelines-site/.stat-name-allowlist`. | icelines-site | 200 |
+| **L.6** | Tier-2 fetched-only reports — `serde_json::Value` via `ExtraReports`; CLI `fetch report --kind <name>`. Concurrent-invocation guard via `~/.icelines/.fetch.lock` (TAPE-R3 rate-limit policy). | icelines-cli + icelines-fetch | 300 |
+| **L.7** | Bundle Tier 1 across all 38 historical seasons (data work) + `l0_lindsay_7_each_tier1_report_parses_for_all_38_bundled_seasons` cross-product test (L-B20). | data/ + workflow | 0 (data) |
 | **L.8** | Docs + integration cross-refs (`data-sources.md` becomes endpoint inventory) | design/specs + design/plans | 0 (docs) |
 
 **Total: ~4,200 LOC + data work, ~8 days.** (was ~3,300 LOC / 7 days in v0.1; review surfaced ~900 LOC of additional infrastructure we'd otherwise hand-roll later).
@@ -448,14 +517,20 @@ Mechanical: for each of 38 seasons, fetch the 5 new Tier-1 skater reports + 3 ne
 | **DI-09** | Data | Every Tier-1 substruct on `SeasonStats` is window-keyed `(season, season_type)` and is `None` when the loader hasn't fetched the corresponding report for *this* window. |
 | **DI-10** | Data | `StatId::read(view)` is row-local: a pure function of `&PlayerView<'_>`. No repository, no global state, no league context. Future stats needing context get a separate `read_with_context(view, ctx)` API — never pollute `read()`. |
 | **DI-11** | Data | `OnIceGoals` category stats are last-stint-only. `read()` returns `None` when `view.was_traded_in_window() == true`. Per-team semantics — summing across stints is wrong-data. |
-| **DI-25** | Data | Every pre-Lindsay scheme TOML loads byte-identical to its post-Lindsay output via the legacy-key alias map. Verified by L1 fixture `tests/fixtures/legacy_schemes/`. |
+| **DI-12** | Data | Eviction of a `(season, season_type)` window from the typed LRU cascade-evicts every `extra_reports` entry whose key matches that window. Without this rule, Tier-2 blobs leak across LRU sweeps. (HART-R3 / v0.4) |
+| **DI-25** | Data | Every pre-Lindsay scheme TOML loads byte-identical to its **frozen golden** (a fixed pre-L.5 capture, not post-Lindsay round-trip) via the legacy-key alias map. Verified by L1 fixture `icelines-fetch/tests/fixtures/legacy_schemes/<name>.golden.toml` for the 5 named schemes. (FORGE-R3 / v0.4) |
+| **DI-26** | Data | `extra_reports` is capped at 4096 entries (~40 MB ceiling at 10 KB/value). Insertion past the cap evicts oldest by LRU order. Independent of typed-window LRU. (PACE-R2 / v0.4) |
+| **DI-27** | Data | `extra_reports` is runtime-only. Never persisted to disk; subsequent runs re-fetch. Promotion to Tier-1 (AI-07) is the persistence path. (WIRE-R3 / v0.4) |
+| **DI-28** | Data | `repository_version` boundary check fires at `StatsRepository::load_window`, not at `repo_swap`. An old binary opening a v=2 snapshot errors at the file-open boundary with `LoadError::RepoVersionUnknown`. (HART-R3 / v0.4) |
+| **DI-29** | Data | Every Tier-1 deserializer asserts `row.seasonId == requested_season` for every row in the file; mismatch errors `LoadError::SeasonIdMismatch { expected, actual, endpoint }` BEFORE the substruct populates. Same fence applies to Tier-2 `extra_reports` writes. (TAPE-R3 / v0.4) |
 | **AI-05** | Algorithm | `StatId::all()` and `StatCategory::members(c)` both return their values in a stable order — declaration order in the enum. Iteration is deterministic. |
 | **AI-06** | Algorithm | Every catalog-driven sort is `(stat_value desc/asc, nhl_id asc)`. `nhl_id` is the universal tiebreak. `None` values sort last regardless of `higher_is_better`. Codified in `StatId::sort_cmp(view_a, view_b)` so every surface inherits the same tiebreak. |
 | **AI-07** | Algorithm | Any `ReportKind` read from `extra_reports` by ≥2 surfaces (CLI command + TUI screen counts as two) MUST be promoted to a typed sub-struct in `SeasonStats` and a `StatCategory` in the catalog before that second consumer ships. |
 | **AI-08** | Algorithm | Aggregations over `&[PlayerView]` that consume catalog reads MUST call `debug_assert_view_window_homogeneous` at the entry point. The catalog is not an escape hatch around the Hart.6.6 guard. |
+| **AI-09** | Algorithm | `aggregate_read(views)` is strict-propagation: returns `Some(blend)` only when every window in the slice has `Some` from `read()`. ANY `None` (missing data, era gate, trade guard, MIN_GP floor) propagates as `None` — no silent zeros. (PACE-R2 / v0.4) |
 | **II-04** | Interface | The CLI flag `--sort <stat-key>` accepts every `StatId::cli_key()` value. Unknown keys exit non-zero with the list of valid keys in stderr. |
-| **II-05** | Interface | The CLI flag `--filter "<key><op><value>"` parses with `op ∈ {">=", "<=", "==", "="}`. Whitespace allowed around the op. NaN, infinity, locale-comma decimals are all parse errors. Unknown keys exit non-zero. |
-| **II-06** | Interface | `--filter` and `--sort` accept identical grammars and StatId key sets across all 5 commands (`query leaders / player / compare / goalies` + `export md`). L2 test asserts `--help` output renders the same flag description string in every command. |
+| **II-05** | Interface | The CLI flag `--filter "<key><op><value>"` parses with `op ∈ {">=", "<=", "==", "="}`. Whitespace allowed around the op. Every malformed input maps to exactly one `FilterParseError` variant (7 total): `EmptyInput`, `EmptyStatKey`, `MissingOp`, `MultipleOps`, `UnknownStat`, `BadNumber`, `NotFinite`. NaN, infinity, locale-comma decimals all parse errors. (EDGE-R2 / FORGE-R3 / v0.4 precision) |
+| **II-06** | Interface | `--filter` and `--sort` accept identical grammars and StatId key sets across all 5 commands (`query leaders / player / compare / goalies` + `export md`). Same-StatId multi-filter normalization rule applies uniformly: Min+Min/Max+Max take tightest bound; Min+Max compose to range; Equals+Equals reject as `MultipleOps`. L2 test asserts `--help` output renders the same flag description string in every command. (EDGE-R2 / v0.4 precision) |
 | **SI-03** | Site | Every site page that surfaces a stat name uses the value from `StatId::label()` — site templates never hard-code a stat name string. Enforced via grep-based CI test. Site rename happens in atomic sub-phase L.5b. |
 
 ---
@@ -464,14 +539,19 @@ Mechanical: for each of 38 seasons, fetch the 5 new Tier-1 skater reports + 3 ne
 
 | File | Change | Sub-phase |
 |---|---|---|
-| `icelines-core/src/stats_catalog.rs` | NEW — full catalog L0 tests (every StatId reads correctly from a fixture view) | L.2 |
-| `icelines-core/src/filter.rs` | Add `apply_stat_filter` tests — Min/Max/Equals × every StatId category | L.2 |
-| `icelines-fetch/src/nhl_api.rs` | Add fetch_report L0/L1 tests for each new endpoint URL shape | L.1 |
-| `icelines-cli/tests/system_tests.rs` | New L2: `query leaders --filter ... --sort` round-trip per category | L.3 |
+| `icelines-core/src/stats_catalog.rs` | NEW — full catalog L0 tests: `StatId::read` × 6-variant fixture cross-product (~600 dispatch points) | L.2 |
+| `icelines-core/tests/fixtures/stat_catalog_variants.rs` | NEW — 6 fixture variants (skater-modern, skater-pre-2005, center, goalie, traded-multistint, GP=0) — explicit BENCH-R2 L2-B22 deliverable | L.2 |
+| `icelines-core/src/filter.rs` | Add `apply_stat_filter` tests — Min/Max/Equals × every StatId category; multi-filter normalization (Min+Min, Max+Max, Min+Max range, Equals+Equals reject); `FilterParseError` variant coverage (~7 × 3 trigger inputs each) | L.2 |
+| `icelines-core/src/stats_repository.rs` | `l0_repo_extra_reports_cascade_evict_on_window_drop` (DI-12); `l0_repo_extra_reports_cap_at_4096` (DI-26); `l1_repo_extra_reports_not_persisted` (DI-27); `l1_repo_load_window_rejects_repository_version_2_on_v1_binary` (DI-28) | L.2 |
+| `icelines-fetch/src/nhl_api.rs` | Add fetch_report L0/L1 tests for each new endpoint URL shape; `l1_<endpoint>_rejects_mismatched_season_id` per Tier-1 endpoint (DI-29); `l1_fetch_retry_backoff_on_429` and `l1_fetch_retry_backoff_on_5xx` (TAPE-R3 rate-limit policy) | L.1 |
+| `icelines-cli/tests/system_tests.rs` | New L2: `query leaders --filter ... --sort` round-trip per category; **stdout-golden capture pre-L.3** (BENCH-R2 L2-B23 first fence); reassert post-L.3 + post-L.5 (two fences, BENCH-R2 L2-B23); `l2_fetch_report_serializes_concurrent_invocations` (TAPE-R3 fs lock) | L.3 / L.5 |
 | `icelines-cli/src/tui/screens/queries.rs` test mod | Reorganize for categorized-section render assertions | L.3 |
 | `icelines-cli/src/tui/screens/player.rs` test mod | New career-table render + column-selector L0 | L.4 |
-| `icelines-fetch/src/bundled.rs` | Per-report parse + count tests for Tier-1 reports across all 5 bundled seasons | L.1, L.7 |
+| `icelines-fetch/tests/legacy_schemes_test.rs` | NEW — `l1_legacy_schemes_load_byte_identical` over 5 named schemes (DI-25 frozen-golden, BENCH-R2 L2-B24) | L.5 |
+| `icelines-fetch/src/bundled.rs` | Per-report parse + count tests for Tier-1 reports across all 5 bundled seasons; `l0_lindsay_7_each_tier1_report_parses_for_all_38_bundled_seasons` cross-product (L-B20) | L.1, L.7 |
 | `icelines-cli/src/commands/export.rs` | New `--columns` parse + emit tests | L.5 |
+| `icelines-site/tests/site_stat_name_grep.rs` | NEW — CI grep test for `\b(Goals|Assists|Points|Hits|Blocks|Saves|GAA)\b` outside comments + allowlist (SI-03) | L.5b |
+| `icelines-cli/tests/http_round_trip.rs` | NEW — `/api/team/:name/roster` JSON keys all `StatId::from_cli_key`-parseable; values match `read(view)` (KEEL-B1) | L.5 |
 
 ---
 
@@ -485,11 +565,11 @@ Existing typed filter flags (`--ppg-min`, `--gp-min`, `--toi-min`, `--plus-minus
 
 ## Risks
 
-1. **Catalog growth scales with effort** — adding a stat is enum-case + match-arm everywhere `StatId` is matched. Mitigation: use exhaustive `#[non_exhaustive]` only on the public re-export boundary; internal matches stay non-exhaustive so the compiler enforces "added a stat → updated everywhere."
+1. **Catalog growth scales with effort** — adding a stat is enum-case + match-arm everywhere `StatId` is matched. Mitigation: `StatId` stays exhaustive (NOT `#[non_exhaustive]`, resolved L-B17) so the compiler enforces "added a stat → updated everywhere" across all consumer surfaces.
 
 2. **Old seasons return null for many fields** — Hits/Blocks unavailable pre-2005, possession stats pre-2007. Mitigation: every `read()` returns `Option<f64>`; UI shows "—" not "0".
 
-3. **`fetched_reports: HashMap<ReportKind, serde_json::Value>`** is loose. Without a typed schema, consumers do JSON walks. Mitigation: that's the deliberate design for Tier 2 — typed schemas for things we depend on, JSON blobs for the long tail. Promote to typed when a Tier-2 report becomes used in 2+ surfaces.
+3. **`extra_reports: BTreeMap<(PlayerId, Season, SeasonType, ReportKind), serde_json::Value>`** is loose. Without a typed schema, consumers do JSON walks. Mitigation: that's the deliberate design for Tier 2 — typed schemas for things we depend on, JSON blobs for the long tail. Promote to typed when a Tier-2 report becomes used in 2+ surfaces (AI-07).
 
 4. **Query screen redesign churn** — categorized-sections layout is a real UX change. Mitigation: preserve the existing flat-list path as a fallback if any user reports the new sections are worse.
 
@@ -512,9 +592,49 @@ Existing typed filter flags (`--ppg-min`, `--gp-min`, `--toi-min`, `--plus-minus
 
 ## Next step
 
-This is v0.1. Pending:
+This is v0.4. Status:
 
-1. Multi-role review (HART, KEEL, TAPE, FORGE, EDGE, BENCH, WIRE, GLASS, PACE, SCOUT — at least HART/KEEL/FORGE/EDGE/BENCH/WIRE because the surface area is large)
-2. Punch-list applied → v0.2
-3. INDEX.md entry + cross-reference into Hart spec section "Sub-phases (review-revised)" pointing forward to Lindsay
-4. Implementation kickoff at L.1
+1. ~~R1 multi-role review~~ — complete (29 BLOCKERs, applied as v0.2 changelog).
+2. ~~R2 multi-role review~~ — complete (24 BLOCKERs, applied as v0.3 spec-body sweep).
+3. ~~R3 verification pass~~ — complete (~14 still-BLOCKERs: same drift defect as v0.2 → v0.3, applied as v0.4 spec-body sweep).
+4. ~~v0.4 spec-body sweep + plan refresh~~ — done.
+5. ~~R4 verification~~ — complete (18/18 R3 items cleared, no drift).
+6. ~~L.1 implementation~~ — **shipped 2026-05-02**. 45 new Lindsay-prefixed tests; 1119 workspace tests passing. See "L.1 ship summary" below.
+7. **L.2 next** — StatId catalog + StatCategory + PlayerView accessors + `ExtraReports` cache + goalie bios merge + `FilterParseError` 7-variant + `StatFilter::new` finite gate + `PlayerFilter::normalize_stat_filters` + `aggregate_read` (AI-09).
+
+---
+
+## L.1 ship summary (2026-05-02)
+
+L.1 implementation complete with 7 sub-phases + 4 role-review checkpoints, all green:
+
+| Sub-phase | Deliverables | Tests added |
+|---|---|---|
+| **L.1.0** | `data/api-probe-2026-05-02.txt` — 23/23 working endpoints + 8/8 broken endpoints verified, all Tier-1 supports playoff | (artifact only) |
+| **L.1.1** | 5 Tier-1 substructs on `SeasonStats`: `time_on_ice`, `goals_for_against`, `goalie_advanced`, `goalie_saves_by_strength`, `goalie_bios`. `Option<T>` + `#[serde(default)]` for forward-compat. Builder methods + serde round-trip tests. | 6 L0 |
+| **L.1.2** | New `icelines-core::stats_catalog` module: `ReportKind` (23 variants, camelCase serde), `Tier`, `MergeTarget`, `Tier1ReportFile`, `TIER1_REPORTS` table, `Tier1Row` trait. `ChunkedManifest` refactored to v=2 with unified `BTreeMap<ReportKind, BTreeMap<SeasonType, HashMap<u32, String>>>`. Custom Serialize/Deserialize accepts both v=1 (Hart.6.2 flat) and v=2 (nested), promotes v=1 → v=2 in-memory, rejects v≥3 with `RepoVersionUnknown`-shaped error. Backward-compat accessors `bios()`/`stats()`/`playoff_*` so call sites unchanged. | 13 L0 |
+| **L.1.3** | `SnapshotMetaFlags::CURRENT_REPOSITORY_VERSION` 1 → 2; DI-28 boundary check fires at `stats_loader::load_into_repo` with `RepoVersionUnknown`. Writer/reader version lockstep test. | 2 L1 |
+| **L.1.4** | `load_report_with_fallback<R: Tier1Row + DeserializeOwned>` in `stats_loader.rs` — snapshot dir → bundled fallback → `Ok(None)` decision tree. DI-29 per-row seasonId fence. Read-only contract pinned. New `LoadError::ReportLoad { kind, cause }` variant. `bundled::report_for_lindsay` stub (filled by L.7). | 8 L1 |
+| **L.1.5** | Rate-limit policy: retry surface widened from `{429}` → `{429, 5xx}`; max retries 3 → 5; base 1000 → 500ms; new `retry_cap_ms = 30_000`. New `icelines-fetch::fetch_lock` module — marker-file lock at `<icelines_home>/.fetch.lock`, RAII guard, 5-minute stale-lock GC. | 4 L0 + 7 L1 |
+| **L.1.6** | `icelines fetch report --kind <ReportKind> [--season N] [--type {regular\|playoff}] [--no-lock] [--dry-run]` CLI subcommand. `ReportKindArg` clap value-enum with kebab-case names. `do_report` dispatch: `is_known_working()` gate, Tier-1 only (Tier-2 errors with "deferred to L.6"), fs lock + 120s timeout, atomic JSON write to `<snapshot_root>/<season>/<season_type>/<filename>`. New `NhlApiClient::fetch_report_paged(kind, season, st)` generic helper. | 4 L2 |
+
+**Role-review checkpoints (all PASS):**
+- HART + FORGE on data model (post-L.1.1) — 6/6 + 8/8
+- HART + WIRE on schema evolution (post-L.1.2/3) — 6/6 + 7/7
+- TAPE on pipeline integrity (post-L.1.4/5) — 5 PASS, 2 PARTIAL with carry-forwards
+- KEEL + BENCH closeout (post-L.1.6) — 4 PASS / 3 PARTIAL + 5 PASS / 2 FAIL closed during sign-off
+
+**Carry-forwards parked for L.2 / L.6:**
+- L2 cross-process subprocess lock test (TAPE follow-up #1) — defer to L.2 if it stresses concurrency, else L.6
+- Tier separation in `--help` (KEEL #2) — L.6 ergonomics
+- `--type both` clap rejection vs internal loop (KEEL #1) — L.6 ergonomics
+- `SnapshotStore::list` enumeration of per-window report files (KEEL #7) — L.6
+- `MergeTarget::SkaterSummaryTotals` / `SkaterIdentity` deferred routing (HART) — L.7 historical bundling
+- Pre-Lindsay `SkaterSummary` chunks contained merged realtime+goalsForAgainst payload (HART) — L.4 needs an explicit "old chunks fall through fallback" path
+- Endpoint-specific httpmock fixtures with typed parsing (BENCH #2) — L.7 when bundled data lands
+- Optional `fs2` kernel-level lock (TAPE #4) — non-blocking
+
+**Test totals:**
+- Pre-Lindsay: 1057 workspace tests
+- Post-L.1: **1119 workspace tests** (+62 — 45 Lindsay-prefixed + 17 from migrated/extended pre-existing)
+- All passing; no regressions; no live-network calls in tests; mock fixtures cover the retry surface.

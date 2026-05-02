@@ -1,9 +1,11 @@
-use crate::cli::{FetchSeasonType, FetchSubcommand};
+use crate::cli::{FetchSeasonType, FetchSubcommand, QuerySeasonType, ReportKindArg};
 use crate::config::Config;
-use anyhow::Context;
+use anyhow::{anyhow, Context};
 use icelines_core::season_stats::SeasonType;
+use icelines_core::stats_catalog::{ReportKind, Tier, TIER1_REPORTS};
 use icelines_fetch::{
     boxscore_client::{aggregate_profiles, BoxscoreClient},
+    fetch_lock,
     moneypuck,
     nhl_api::NhlApiClient,
     schema::SkaterBio,
@@ -70,7 +72,145 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             season_type,
         } => do_goalies(&season, dry_run, season_type).await,
         FetchSubcommand::Transactions { season, dry_run } => do_transactions(&season, dry_run).await,
+        FetchSubcommand::Report {
+            kind,
+            season,
+            season_type,
+            no_lock,
+            dry_run,
+        } => do_report(kind, &season, season_type, no_lock, dry_run).await,
     }
+}
+
+/// Phase Lindsay L.1.6 — generic per-report fetcher.
+///
+/// Tier-1 only for L.1; Tier-2 lands in L.6 alongside the runtime
+/// `extra_reports` cache. Decision tree:
+///   1. validate `kind.is_known_working()` (TAPE-R3 follow-up #3)
+///   2. validate `kind.tier() == Tier1` (Tier-2 deferred)
+///   3. acquire fs lock (unless `--no-lock`) — TAPE-R3 cross-process guard
+///   4. fetch via `NhlApiClient::fetch_report_paged` (DI-29 fence applies
+///      at *load* time when the file is read back through
+///      `load_report_with_fallback`; here we just write the rows verbatim)
+///   5. write `{"data": [...], "total": N}` envelope to
+///      `<snapshot_root>/<season>/<season_type>/<filename>`
+async fn do_report(
+    kind_arg: ReportKindArg,
+    season: &str,
+    season_type: QuerySeasonType,
+    no_lock: bool,
+    dry_run: bool,
+) -> anyhow::Result<()> {
+    let kind: ReportKind = kind_arg.to_core();
+    let st: SeasonType = season_type.to_core();
+
+    // (1) Refuse known-broken endpoints up front. The current catalog
+    // doesn't list any, but the gate exists so a future variant addition
+    // can flip `is_known_working()` to `false` and have the CLI catch it
+    // without touching this dispatch.
+    if !kind.is_known_working() {
+        return Err(anyhow!(
+            "endpoint {:?} is documented-broken (returns 500 server-side); \
+             refusing to dispatch — see data/api-probe-2026-05-02.txt",
+            kind,
+        ));
+    }
+
+    // (2) Tier-1 only at L.1.6. Tier-2 is L.6 work.
+    if !matches!(kind.tier(), Tier::Tier1) {
+        return Err(anyhow!(
+            "Tier-2 fetch is deferred to Phase Lindsay L.6 \
+             (runtime `extra_reports` cache). Kind: {:?}",
+            kind,
+        ));
+    }
+
+    // Find the Tier-1 file dispatch row. The TIER1_REPORTS table is
+    // exhaustive over Tier-1 kinds (see L.1.2 test
+    // `l0_lindsay_tier1_reports_table_is_exhaustive`).
+    let file = TIER1_REPORTS
+        .iter()
+        .find(|r| r.kind == kind)
+        .ok_or_else(|| anyhow!("BUG: TIER1_REPORTS missing entry for {:?}", kind))?;
+
+    let url_preview = format!(
+        "https://api.nhle.com/stats/rest/en/{}?cayenneExp=seasonId={season} and gameTypeId={}",
+        kind.url_path(),
+        match st {
+            SeasonType::Regular => 2,
+            SeasonType::Playoff => 3,
+        },
+    );
+
+    if dry_run {
+        println!("[dry-run] fetch report kind={:?} season={season} type={:?}", kind, st);
+        println!("[dry-run] URL: {url_preview}");
+        let cfg = Config::load().context("loading icelines config")?;
+        let target = cfg
+            .snapshot_dir()
+            .join(season)
+            .join(st.label())
+            .join(file.filename);
+        println!("[dry-run] would write: {}", target.display());
+        return Ok(());
+    }
+
+    // (3) fs lock guard — released on Drop. `_lock` keeps the guard live
+    // for the duration of this function. `--no-lock` skips for users who
+    // accept the rate-limit risk (TAPE-R3 follow-up: error message
+    // references this flag).
+    let cfg = Config::load().context("loading icelines config")?;
+    let icelines_home = cfg
+        .snapshot_dir()
+        .parent()
+        .map(|p| p.to_path_buf())
+        .unwrap_or_else(|| std::path::PathBuf::from("."));
+    let _lock = if no_lock {
+        None
+    } else {
+        Some(
+            fetch_lock::acquire(&icelines_home, std::time::Duration::from_secs(120))
+                .with_context(|| format!(
+                    "acquiring fetch lock at {}/.fetch.lock",
+                    icelines_home.display(),
+                ))?,
+        )
+    };
+
+    // (4) HTTP fetch via the generic helper.
+    let client = NhlApiClient::production();
+    let rows = client
+        .fetch_report_paged(kind, season, st)
+        .await
+        .with_context(|| format!("fetching {} {} {}", kind.url_path(), season, st.label()))?;
+
+    // (5) Wrap in the API's `{"data": [...], "total": N}` envelope and
+    // write to the per-window file. Atomic write via the existing
+    // snapshot helpers.
+    let envelope = serde_json::json!({
+        "data": rows,
+        "total": rows.len(),
+    });
+    let target = cfg
+        .snapshot_dir()
+        .join(season)
+        .join(st.label())
+        .join(file.filename);
+    if let Some(parent) = target.parent() {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating dir {}", parent.display()))?;
+    }
+    icelines_fetch::snapshot::atomic_write_json(&target, &envelope)
+        .with_context(|| format!("writing {}", target.display()))?;
+
+    println!(
+        "✓ fetched {} rows for {} {} → {}",
+        rows.len(),
+        kind.url_path(),
+        st.label(),
+        target.display(),
+    );
+    Ok(())
 }
 
 const TEAMS: &[&str] = &[
@@ -260,10 +400,10 @@ async fn run_stats_pass(
             .write_chunked_stats(snap, ty, &bios, &stats)
             .with_context(|| format!("writing chunked {label} bios+stats"))?;
         let (n_bios, n_stats) = match ty {
-            SeasonType::Regular => (cm.bios.len(), cm.stats.len()),
+            SeasonType::Regular => (cm.bios().len(), cm.stats().len()),
             SeasonType::Playoff => (
-                cm.playoff_bios.as_ref().map(|m| m.len()).unwrap_or(0),
-                cm.playoff_stats.as_ref().map(|m| m.len()).unwrap_or(0),
+                cm.playoff_bios().map(|m| m.len()).unwrap_or(0),
+                cm.playoff_stats().map(|m| m.len()).unwrap_or(0),
             ),
         };
         println!("  Wrote {} bio + {} stats chunks ({label}).", n_bios, n_stats);

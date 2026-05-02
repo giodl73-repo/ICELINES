@@ -519,7 +519,7 @@ fn l1_load_into_repo_rejects_future_bundle_schema_version() {
 
 #[test]
 fn l1_load_into_repo_rejects_future_repository_version() {
-    use icelines_fetch::stats_loader::LoadError;
+    use icelines_fetch::stats_loader::{LoadError, MAX_KNOWN_REPO_VERSION};
 
     let dir = tempfile::TempDir::new().unwrap();
     let store = SnapshotStore::new(dir.path());
@@ -531,18 +531,76 @@ fn l1_load_into_repo_rejects_future_repository_version() {
         err,
         LoadError::RepoVersionUnknown {
             found: 42,
-            max_known: 1
-        }
+            max_known
+        } if max_known == MAX_KNOWN_REPO_VERSION,
     ));
 }
 
 #[test]
 fn l1_load_into_repo_accepts_known_versions_at_max() {
     // Strict-`>` gate: the equal-to-MAX_KNOWN case must succeed.
+    // Bundled bios for 20242025 backstop the load when no snapshot exists,
+    // so this positively-asserts the path through the version gate.
+    use icelines_fetch::stats_loader::MAX_KNOWN_REPO_VERSION;
     let dir = tempfile::TempDir::new().unwrap();
     let store = SnapshotStore::new(dir.path());
-    write_meta_raw(dir.path(), "20242025", 1, 1);
+    write_meta_raw(dir.path(), "20242025", 1, MAX_KNOWN_REPO_VERSION);
     assert!(load_into_repo(Season(20242025), SeasonType::Regular, &store).is_ok());
+}
+
+/// Phase Lindsay L.1.3 (DI-28): the boundary check fires at file-open
+/// time. An old binary opening a Lindsay-stamped (v=2) snapshot errors
+/// at `load_into_repo` BEFORE any chunk is touched. Test pin: synthesize
+/// a `_meta.json` with `repository_version` strictly above what THIS
+/// binary advertises, assert `LoadError::RepoVersionUnknown` is the
+/// first thing returned.
+///
+/// Generic over `MAX_KNOWN_REPO_VERSION + 1` so the test stays valid
+/// across future bumps — we always synthesize a "future" version
+/// relative to the current binary.
+#[test]
+fn l1_lindsay_load_rejects_repository_version_above_known() {
+    use icelines_fetch::stats_loader::{LoadError, MAX_KNOWN_REPO_VERSION};
+
+    let dir = tempfile::TempDir::new().unwrap();
+    let store = SnapshotStore::new(dir.path());
+
+    let future = MAX_KNOWN_REPO_VERSION + 1;
+    write_meta_raw(dir.path(), "20242025", 1, future);
+
+    let err = load_into_repo(Season(20242025), SeasonType::Regular, &store)
+        .expect_err("future repo version must reject");
+    assert!(
+        matches!(
+            err,
+            LoadError::RepoVersionUnknown {
+                found,
+                max_known,
+            } if found == future && max_known == MAX_KNOWN_REPO_VERSION,
+        ),
+        "expected RepoVersionUnknown {{ found: {}, max_known: {} }}, got: {:?}",
+        future,
+        MAX_KNOWN_REPO_VERSION,
+        err,
+    );
+}
+
+/// L.1.3 sanity: `CURRENT_REPOSITORY_VERSION` (the writer constant)
+/// equals `MAX_KNOWN_REPO_VERSION` (the reader constant). If these
+/// drift, a freshly-written snapshot would fail to load on the same
+/// binary. Lindsay L.1.3 bumps both to 2 in lockstep; this test
+/// catches a future-bump miss.
+#[test]
+fn l1_lindsay_current_and_max_repo_version_in_lockstep() {
+    use icelines_fetch::snapshot::SnapshotMetaFlags;
+    use icelines_fetch::stats_loader::MAX_KNOWN_REPO_VERSION;
+    assert_eq!(
+        SnapshotMetaFlags::CURRENT_REPOSITORY_VERSION,
+        MAX_KNOWN_REPO_VERSION,
+        "writer / reader version constants must match in lockstep — \
+         a writer-only bump leaves the binary unable to read its own \
+         freshly-written snapshots",
+    );
 }
 
 
@@ -1052,4 +1110,283 @@ fn l1_hart4_1_stats_without_identity_errors_through_repo() {
     let stats = icelines_core::fixtures::stats(99_111_333, 20242025, "EDM").build();
     let err = repo.upsert_stats(stats).unwrap_err();
     assert!(matches!(err, RepoError::StatsWithoutIdentity { .. }));
+}
+
+// ── Phase Lindsay L.1.4 — load_report_with_fallback<R> ─────────────────────
+
+/// Synthetic Tier-1 row. Used only by these L1 tests to exercise the
+/// loader's decision tree without dragging in real per-endpoint schemas
+/// (those land in L.1.6 with the `fetch report` CLI subcommand).
+/// camelCase to mirror the real NHL stats API JSON shape.
+#[derive(Debug, serde::Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+struct LindsayTestRow {
+    player_id: u32,
+    value: u32,
+    #[serde(default)]
+    season_id: Option<u32>,
+}
+
+impl icelines_core::stats_catalog::Tier1Row for LindsayTestRow {
+    fn season_id(&self) -> Option<u32> {
+        self.season_id
+    }
+}
+
+fn write_test_report(dir: &std::path::Path, season: &str, season_type: &str, filename: &str, body: &str) {
+    let file_dir = dir.join(season).join(season_type);
+    std::fs::create_dir_all(&file_dir).unwrap();
+    std::fs::write(file_dir.join(filename), body).unwrap();
+}
+
+fn lindsay_test_file() -> icelines_core::stats_catalog::Tier1ReportFile {
+    use icelines_core::stats_catalog::{MergeTarget, ReportKind, Tier1ReportFile};
+    Tier1ReportFile {
+        kind: ReportKind::SkaterTimeOnIce,
+        filename: "timeonice.json",
+        merge_target: MergeTarget::SkaterTimeOnIce,
+    }
+}
+
+/// Snapshot-path read returns Some(rows). Exercises the primary
+/// branch of the decision tree.
+#[test]
+fn l1_lindsay_load_report_snapshot_path() {
+    use icelines_fetch::stats_loader::load_report_with_fallback;
+    let dir = tempfile::TempDir::new().unwrap();
+    write_test_report(
+        dir.path(),
+        "20242025",
+        "regular",
+        "timeonice.json",
+        r#"{"data":[
+            {"playerId": 100, "value": 1500, "seasonId": 20242025},
+            {"playerId": 200, "value": 1200, "seasonId": 20242025}
+        ], "total": 2}"#,
+    );
+
+    let rows: Vec<LindsayTestRow> = load_report_with_fallback(
+        dir.path(),
+        Season(20242025),
+        SeasonType::Regular,
+        &lindsay_test_file(),
+    )
+    .expect("load OK")
+    .expect("Some(rows)");
+
+    assert_eq!(rows.len(), 2);
+    assert_eq!(rows[0].player_id, 100);
+    assert_eq!(rows[1].value, 1200);
+}
+
+/// Snapshot file absent + bundled fallback empty (L.1 stub returns
+/// None for every kind) → `Ok(None)`. The Tier-1 substruct stays
+/// `None` on `SeasonStats` (DI-09 distinction).
+#[test]
+fn l1_lindsay_load_report_neither_present_returns_none() {
+    use icelines_fetch::stats_loader::load_report_with_fallback;
+    let dir = tempfile::TempDir::new().unwrap();
+    // No file written; bundled is empty for Lindsay until L.7.
+    let result: Option<Vec<LindsayTestRow>> = load_report_with_fallback(
+        dir.path(),
+        Season(20242025),
+        SeasonType::Regular,
+        &lindsay_test_file(),
+    )
+    .expect("load OK");
+    assert!(result.is_none());
+}
+
+/// DI-29 fence: per-row seasonId mismatch errors before any data
+/// reaches the caller. The first mismatched id is surfaced in the
+/// error so the user gets a concrete pointer.
+#[test]
+fn l1_lindsay_load_report_seasonid_mismatch_fences() {
+    use icelines_fetch::stats_loader::{load_report_with_fallback, LoadError};
+    let dir = tempfile::TempDir::new().unwrap();
+    write_test_report(
+        dir.path(),
+        "20242025",
+        "regular",
+        "timeonice.json",
+        // Two rows, second one is from the wrong season.
+        r#"{"data":[
+            {"playerId": 100, "value": 1500, "seasonId": 20242025},
+            {"playerId": 200, "value": 1200, "seasonId": 20232024}
+        ], "total": 2}"#,
+    );
+
+    let err = load_report_with_fallback::<LindsayTestRow>(
+        dir.path(),
+        Season(20242025),
+        SeasonType::Regular,
+        &lindsay_test_file(),
+    )
+    .expect_err("seasonId fence must fire");
+
+    assert!(
+        matches!(
+            err,
+            LoadError::SeasonIdMismatch {
+                expected: 20242025,
+                found: 20232024,
+                count: 1,
+            }
+        ),
+        "got: {err:?}",
+    );
+}
+
+/// Pre-Hart.6 fixture compat: rows WITHOUT a `seasonId` field deserialize
+/// (`Option<u32>::default()` = None) and the fence skips them. Mirrors
+/// the existing `load_into_repo` fence semantic that None = bundled trust.
+#[test]
+fn l1_lindsay_load_report_seasonid_none_skips_fence() {
+    use icelines_fetch::stats_loader::load_report_with_fallback;
+    let dir = tempfile::TempDir::new().unwrap();
+    write_test_report(
+        dir.path(),
+        "20242025",
+        "regular",
+        "timeonice.json",
+        // No seasonId on either row — bundled-trust path.
+        r#"{"data":[
+            {"playerId": 100, "value": 1500},
+            {"playerId": 200, "value": 1200}
+        ], "total": 2}"#,
+    );
+
+    let rows: Vec<LindsayTestRow> = load_report_with_fallback(
+        dir.path(),
+        Season(20242025),
+        SeasonType::Regular,
+        &lindsay_test_file(),
+    )
+    .expect("load OK (no seasonId is bundled-trust)")
+    .expect("Some(rows)");
+
+    assert_eq!(rows.len(), 2);
+    assert!(rows.iter().all(|r| r.season_id.is_none()));
+}
+
+/// Empty data array (`{"data": [], "total": 0}`) returns `Ok(Some(vec![]))`.
+/// Distinct from "file not present" (`Ok(None)`). DI-09: zero-rows-known
+/// is real data, not "not loaded".
+#[test]
+fn l1_lindsay_load_report_empty_data_distinct_from_absent() {
+    use icelines_fetch::stats_loader::load_report_with_fallback;
+    let dir = tempfile::TempDir::new().unwrap();
+    write_test_report(
+        dir.path(),
+        "20242025",
+        "regular",
+        "timeonice.json",
+        r#"{"data": [], "total": 0}"#,
+    );
+
+    let result: Option<Vec<LindsayTestRow>> = load_report_with_fallback(
+        dir.path(),
+        Season(20242025),
+        SeasonType::Regular,
+        &lindsay_test_file(),
+    )
+    .expect("load OK");
+
+    let rows = result.expect("Some(empty vec) — distinct from absent file");
+    assert!(rows.is_empty());
+}
+
+/// Malformed JSON surfaces as `LoadError::ReportLoad` carrying the
+/// kind label and a parse-cause string. Loader doesn't silently skip.
+#[test]
+fn l1_lindsay_load_report_malformed_json_errors() {
+    use icelines_fetch::stats_loader::{load_report_with_fallback, LoadError};
+    let dir = tempfile::TempDir::new().unwrap();
+    write_test_report(
+        dir.path(),
+        "20242025",
+        "regular",
+        "timeonice.json",
+        "{not valid JSON",
+    );
+
+    let err = load_report_with_fallback::<LindsayTestRow>(
+        dir.path(),
+        Season(20242025),
+        SeasonType::Regular,
+        &lindsay_test_file(),
+    )
+    .expect_err("parse error must propagate");
+
+    assert!(
+        matches!(err, LoadError::ReportLoad { ref kind, ref cause }
+            if kind.contains("timeonice.json") && cause.contains("JSON parse")),
+        "got: {err:?}",
+    );
+}
+
+/// WIRE checkpoint follow-up #1: read-only contract — `load_report_with_fallback`
+/// must NOT mutate the snapshot dir. A v=1 / v=2 / any-version snapshot
+/// stays untouched on disk; even the parent dir's mtime should be stable
+/// (we only read).
+#[test]
+fn l1_lindsay_load_report_does_not_mutate_snapshot() {
+    use icelines_fetch::stats_loader::load_report_with_fallback;
+    let dir = tempfile::TempDir::new().unwrap();
+    write_test_report(
+        dir.path(),
+        "20242025",
+        "regular",
+        "timeonice.json",
+        r#"{"data":[{"playerId": 100, "value": 1500}], "total": 1}"#,
+    );
+    let file_path = dir.path().join("20242025").join("regular").join("timeonice.json");
+    let pre_meta = std::fs::metadata(&file_path).unwrap();
+    let pre_modified = pre_meta.modified().unwrap();
+
+    // Multiple loads: file content + mtime must stay byte-identical.
+    for _ in 0..3 {
+        let _ = load_report_with_fallback::<LindsayTestRow>(
+            dir.path(),
+            Season(20242025),
+            SeasonType::Regular,
+            &lindsay_test_file(),
+        )
+        .expect("load OK");
+    }
+
+    let post_meta = std::fs::metadata(&file_path).unwrap();
+    assert_eq!(
+        pre_modified,
+        post_meta.modified().unwrap(),
+        "load_report_with_fallback must be read-only — mtime drift",
+    );
+    assert_eq!(pre_meta.len(), post_meta.len(), "file size drift");
+}
+
+/// Playoff path: same decision tree with a different season-type
+/// subdir (`playoff/`). Verifies the season_type.label() pivot.
+#[test]
+fn l1_lindsay_load_report_playoff_path() {
+    use icelines_fetch::stats_loader::load_report_with_fallback;
+    let dir = tempfile::TempDir::new().unwrap();
+    write_test_report(
+        dir.path(),
+        "20232024",
+        "playoff",  // distinct from "regular"
+        "timeonice.json",
+        r#"{"data":[{"playerId": 8400000, "value": 800, "seasonId": 20232024}], "total": 1}"#,
+    );
+
+    let rows: Vec<LindsayTestRow> = load_report_with_fallback(
+        dir.path(),
+        Season(20232024),
+        SeasonType::Playoff,
+        &lindsay_test_file(),
+    )
+    .expect("playoff load OK")
+    .expect("Some(rows)");
+
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0].player_id, 8400000);
 }

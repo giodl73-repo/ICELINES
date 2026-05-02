@@ -1,0 +1,342 @@
+===============================================================================
+NHL Stats API — Endpoint Probe (Phase Lindsay L.1 entry criterion)
+===============================================================================
+
+Date:           2026-05-02
+Probed by:      curl + manual run (gidol73-repo)
+Base URL:       https://api.nhle.com/stats/rest/en
+Filter used:    cayenneExp=seasonId=20242025 and gameTypeId=2  (regular season, limit=1)
+Playoff probe:  gameTypeId=3 against season 20232024 for Tier-1 endpoints (sanity)
+Phase:          Lindsay L.1 — paired with design/specs/stat-catalog.md v0.4
+                + design/plans/2026-05-02-phaseLindsay-stat-catalog.md v0.4
+
+Purpose:        Lock the endpoint inventory before L.1 implementation. Every
+                URL listed here is what icelines-fetch::nhl_api will hit. Every
+                broken endpoint listed here is permanently skipped — the server
+                returns 500, not a missing field.
+
+Verdict:        23/23 documented-working endpoints returned 200.
+                8/8 documented-broken endpoints returned 500.
+                Tier-1 endpoints all support playoff filter (gameTypeId=3).
+                Inventory matches design/plans/2026-05-02-phaseLindsay-stat-catalog.md
+                §"Endpoint inventory (verified 2026-05-02)" exactly.
+
+===============================================================================
+SKATER ENDPOINTS — 15 working, 1 broken
+===============================================================================
+
+-------------------------------------------------------------------------------
+1. skater/summary                                       Tier 1 (already bundled)
+-------------------------------------------------------------------------------
+URL:    /skater/summary?cayenneExp=seasonId=20242025 and gameTypeId=2&limit=1
+Status: 200    Bytes: 478
+Sample: {"data":[{"assists":11,"evGoals":6,"evPoints":17,"faceoffWinPct":0.54295,
+        "gameWinningGoals":0,"gamesPlayed":82,"goals":6,"lastName":"Kuraly",
+        "otGoals":0,"penaltyMinutes":40,"playerId":8476374,"plusMinus":-4,
+        "points":17,"pointsPerGame":0.20731,"positionCode":"C","ppGoals":0,
+        "ppPoints":0,"seasonId":20242025,"shGoals":0,"shPoints":0,
+        "shootingPct":0.06818,"shootsCatches":"L","shots":88,
+        "skaterFullName":"Sean Kuraly","teamAbbrevs":"CBJ",
+        "timeOnIcePerGame":705.8414}],"total":920}
+
+-------------------------------------------------------------------------------
+2. skater/bios                                          Tier 1 (already bundled)
+-------------------------------------------------------------------------------
+URL:    /skater/bios?cayenneExp=seasonId=20242025 and gameTypeId=2&limit=1
+Status: 200    Bytes: 510
+Sample: {"data":[{"birthCity":"Brno","birthCountryCode":"CZE","birthDate":
+        "1985-04-08","birthStateProvinceCode":null,"currentTeamAbbrev":null,
+        "draftOverall":"103","draftRound":"4","draftYear":"2003","firstSeason
+        ForGameType":20062007,"heightInCentimeters":188,"heightInInches":74,
+        "lastName":"Plekanec","nationalityCode":"CZE","playerId":8470611,
+        "positionCode":"C","seasonId":20242025,"shootsCatches":"L",
+        "skaterFullName":"Tomas Plekanec","weightInPounds":198}],"total":920}
+
+-------------------------------------------------------------------------------
+3. skater/realtime                                      Tier 1 (NEW — bundle target)
+-------------------------------------------------------------------------------
+URL:    /skater/realtime?cayenneExp=seasonId=20242025 and gameTypeId=2&limit=1
+Status: 200    Bytes: 656
+Sample: {"data":[{"blockedShots":0,"blockedShotsPer60":0.0,"emptyNetAssists":0,
+        "emptyNetGoals":0,"emptyNetPoints":0,"firstGoals":0,"giveaways":0,
+        "giveawaysPer60":0.0,"hits":0,"hitsPer60":0.0,"missedShotCrossbar":0,
+        "missedShotGoalpost":0,"missedShotOverNet":0,"missedShotShort":0,
+        "missedShotWideOfNet":0,"missedShots":0,"otGoals":0,"playerId":...
+        "skaterFullName":"...","takeaways":0,"takeawaysPer60":0.0,
+        "teamAbbrevs":"...","timeOnIcePerGame":0,"...":...}],"total":...}
+
+-------------------------------------------------------------------------------
+4. skater/timeonice                                     Tier 1 (NEW — bundle target)
+-------------------------------------------------------------------------------
+URL:    /skater/timeonice?cayenneExp=seasonId=20242025 and gameTypeId=2&limit=1
+Status: 200    Bytes: 497
+Sample: {"data":[{"esTimeOnIce":...,"esTimeOnIcePerGame":...,"gamesPlayed":...,
+        "otTimeOnIce":...,"playerId":...,"ppTimeOnIce":...,
+        "ppTimeOnIcePerGame":...,"seasonId":20242025,"shTimeOnIce":...,
+        "shTimeOnIcePerGame":...,"shifts":...,"shiftsPerGame":...,
+        "skaterFullName":"...","teamAbbrevs":"...","timeOnIce":...,
+        "timeOnIcePerGame":...,"timeOnIcePerShift":...}]}
+
+-------------------------------------------------------------------------------
+5. skater/goalsForAgainst                               Tier 1 (NEW — bundle target)
+-------------------------------------------------------------------------------
+URL:    /skater/goalsForAgainst?cayenneExp=seasonId=20242025 and gameTypeId=2&limit=1
+Status: 200    Bytes: 545
+Sample: {"data":[{"defensivePoints":...,"evenStrengthGoalDifference":...,
+        "evenStrengthGoalsAgainst":...,"evenStrengthGoalsFor":...,
+        "evenStrengthGoalsForPct":...,"evenStrengthTimeOnIcePerGame":...,
+        "gamesPlayed":...,"offensivePoints":...,"playerId":...,
+        "powerPlayGoalsAgainst":...,"powerPlayGoalFor":...,
+        "shortHandedGoalsAgainst":...,"shortHandedGoalsFor":...,
+        "skaterFullName":"...","teamAbbrevs":"..."}]}
+
+-------------------------------------------------------------------------------
+6. skater/puckPossessions                               Tier 2 (fetch-only)
+-------------------------------------------------------------------------------
+URL:    /skater/puckPossessions?cayenneExp=...&limit=1
+Status: 200    Bytes: 506
+Sample: {"data":[{"satPercentage":...,"satRelative":...,"usatPercentage":...,
+        "zoneStartPctOffensive":...,"zoneStartPctDefensive":...,
+        "zoneStartPctNeutral":...,"playerId":...,"seasonId":20242025,
+        "skaterFullName":"...","teamAbbrevs":"..."}]}
+
+-------------------------------------------------------------------------------
+7. skater/scoringRates                                  Tier 2 (fetch-only)
+-------------------------------------------------------------------------------
+Status: 200    Bytes: 591
+Sample: {"data":[{"goals5v5":...,"assists5v5":...,"points5v5":...,
+        "goalsPer605v5":...,"primaryAssistsPer605v5":...,
+        "secondaryAssistsPer605v5":...,"pointsPer605v5":...,
+        "totalAssistsPer605v5":...,"totalPrimaryAssists":...,
+        "totalSecondaryAssists":...,"totalGoals5v5":...}]}
+
+-------------------------------------------------------------------------------
+8. skater/summaryshooting                               Tier 2 (fetch-only)
+-------------------------------------------------------------------------------
+Status: 200    Bytes: 483
+Sample: {"data":[{"satAhead":...,"satBehind":...,"satClose":...,"satTied":...,
+        "usatAhead":...,"usatBehind":...,"usatClose":...,"usatTied":...,
+        "playerId":...,"seasonId":20242025}]}
+
+-------------------------------------------------------------------------------
+9. skater/powerplay                                     Tier 2 (fetch-only)
+-------------------------------------------------------------------------------
+Status: 200    Bytes: 576
+Sample: {"data":[{"ppGoals":...,"ppGoalsPer60":...,"ppPoints":...,
+        "ppPointsPer60":...,"ppAssists":...,"ppAssistsPer60":...,
+        "ppPrimaryAssistsPer60":...,"ppSecondaryAssistsPer60":...,
+        "ppShootingPct":...,"ppTimeOnIce":...,"ppTimeOnIcePerGame":...,
+        "playerId":...,"seasonId":20242025}]}
+
+-------------------------------------------------------------------------------
+10. skater/penaltykill                                  Tier 2 (fetch-only)
+-------------------------------------------------------------------------------
+Status: 200    Bytes: 579
+Sample: {"data":[{"shGoals":...,"shGoalsPer60":...,"shPoints":...,
+        "shPointsPer60":...,"shAssists":...,"shAssistsPer60":...,
+        "ppGoalsAgainstPer60":...,"shTimeOnIce":...,"shTimeOnIcePerGame":...,
+        "playerId":...,"seasonId":20242025}]}
+
+-------------------------------------------------------------------------------
+11. skater/penalties                                    Tier 2 (fetch-only)
+-------------------------------------------------------------------------------
+Status: 200    Bytes: 554
+Sample: {"data":[{"penalties":...,"minorPenalties":...,"majorPenalties":...,
+        "matchPenalties":...,"misconductPenalties":...,"penaltiesDrawn":...,
+        "penaltiesDrawnPer60":...,"penaltiesTakenPer60":...,
+        "netPenalties":...,"netPenaltiesPer60":...,"playerId":...}]}
+
+-------------------------------------------------------------------------------
+12. skater/faceoffwins                                  Tier 2 (centers, fetch-only)
+-------------------------------------------------------------------------------
+Status: 200    Bytes: 668
+Sample: {"data":[{"defensiveZoneFaceoffWins":...,"defensiveZoneFaceoffLosses":...,
+        "evFaceoffWins":...,"evFaceoffLosses":...,"neutralZoneFaceoffWins":...,
+        "neutralZoneFaceoffLosses":...,"offensiveZoneFaceoffWins":...,
+        "offensiveZoneFaceoffLosses":...,"ppFaceoffWins":...,
+        "ppFaceoffLosses":...,"shFaceoffWins":...,"shFaceoffLosses":...,
+        "totalFaceoffWins":...,"totalFaceoffLosses":...,"playerId":...}]}
+
+-------------------------------------------------------------------------------
+13. skater/faceoffpercentages                           Tier 2 (centers, fetch-only)
+-------------------------------------------------------------------------------
+Status: 200    Bytes: 531
+Sample: {"data":[{"defensiveZoneFaceoffPct":...,"evFaceoffPct":...,
+        "neutralZoneFaceoffPct":...,"offensiveZoneFaceoffPct":...,
+        "ppFaceoffPct":...,"shFaceoffPct":...,"totalFaceoffPct":...,
+        "playerId":...,"seasonId":20242025}]}
+
+-------------------------------------------------------------------------------
+14. skater/shottype                                     Tier 2 (fetch-only)
+-------------------------------------------------------------------------------
+Status: 200    Bytes: 902
+Sample: {"data":[{"backhandGoals":...,"backhandShootingPct":...,
+        "backhandShots":...,"deflectedGoals":...,"slapGoals":...,
+        "slapShots":...,"snapGoals":...,"snapShots":...,"tipInGoals":...,
+        "tipInShots":...,"wrapAroundGoals":...,"wrapAroundShots":...,
+        "wristGoals":...,"wristShots":...,"playerId":...}]}
+
+-------------------------------------------------------------------------------
+15. skater/scoringpergame                               Tier 2 (fetch-only)
+-------------------------------------------------------------------------------
+Status: 200    Bytes: 620
+Sample: {"data":[{"goalsPerGame":...,"assistsPerGame":...,"pointsPerGame":...,
+        "ppGoalsPerGame":...,"ppPointsPerGame":...,"shotsPerGame":...,
+        "playerId":...,"seasonId":20242025}]}
+
+-------------------------------------------------------------------------------
+SKIPPED — skater/advanced                               BROKEN (returns 500)
+-------------------------------------------------------------------------------
+URL:    /skater/advanced?cayenneExp=...&limit=1
+Status: 500    Bytes: 454
+Body:   <h2>HTTP ERROR 500 Request failed.</h2> ... <td>Request failed.</td>
+Note:   Server-side disabled, not a transient failure. Documented in spec
+        endpoint inventory. icelines-fetch MUST NOT call this URL — the
+        client should not attempt and not retry.
+
+===============================================================================
+GOALIE ENDPOINTS — 8 working, 7 broken
+===============================================================================
+
+-------------------------------------------------------------------------------
+16. goalie/summary                                      Tier 1 (already bundled)
+-------------------------------------------------------------------------------
+URL:    /goalie/summary?cayenneExp=...&limit=1
+Status: 200    Bytes: 421
+Sample: {"data":[{"assists":...,"gamesPlayed":...,"gamesStarted":...,
+        "goalieFullName":"...","goalsAgainst":...,"goalsAgainstAverage":...,
+        "losses":...,"otLosses":...,"playerId":...,"savePct":...,
+        "saves":...,"seasonId":20242025,"shotsAgainst":...,"shutouts":...,
+        "ties":...,"timeOnIce":...,"wins":...}]}
+
+-------------------------------------------------------------------------------
+17. goalie/bios                                         Tier 1 (NEW — bundle target)
+-------------------------------------------------------------------------------
+Status: 200    Bytes: 481
+Note:   Goalie identity source. Pre-Lindsay we used skater/bios as fallback —
+        wrong shape. Lindsay switches goalie identity path to read this.
+Sample: {"data":[{"birthCity":"...","birthCountryCode":"...","birthDate":"...",
+        "currentTeamAbbrev":"...","draftOverall":"...","draftRound":"...",
+        "draftYear":"...","firstSeasonForGameType":...,"goalieFullName":"...",
+        "heightInCentimeters":...,"nationalityCode":"...","playerId":...,
+        "positionCode":"G","seasonId":20242025,"shootsCatches":"...",
+        "weightInPounds":...}]}
+
+-------------------------------------------------------------------------------
+18. goalie/advanced                                     Tier 1 (NEW — bundle target)
+-------------------------------------------------------------------------------
+Status: 200    Bytes: 506
+Sample: {"data":[{"completeGamePct":...,"completeGames":...,"goalsAgainst":...,
+        "incompleteGames":...,"qualityStart":...,"qualityStartsPct":...,
+        "regulationLosses":...,"regulationWins":...,"shotsAgainstPer60":...,
+        "playerId":...,"seasonId":20242025}]}
+
+-------------------------------------------------------------------------------
+19. goalie/savesByStrength                              Tier 1 (NEW — bundle target)
+-------------------------------------------------------------------------------
+Status: 200    Bytes: 537
+Sample: {"data":[{"evGoalsAgainst":...,"evSaves":...,"evSavePercentage":...,
+        "evShotsAgainst":...,"ppGoalsAgainst":...,"ppSaves":...,
+        "ppSavePercentage":...,"ppShotsAgainst":...,"shGoalsAgainst":...,
+        "shSaves":...,"shSavePercentage":...,"shShotsAgainst":...,
+        "playerId":...,"seasonId":20242025}]}
+
+-------------------------------------------------------------------------------
+20. goalie/startedVsRelieved                            Tier 2 (fetch-only)
+-------------------------------------------------------------------------------
+Status: 200    Bytes: 689
+Sample: {"data":[{"gamesRelieved":...,"gamesReliefWins":...,
+        "gamesReliefLosses":...,"gamesReliefOtLosses":...,
+        "gamesStarted":...,"gamesStartedWins":...,"gamesStartedLosses":...,
+        "gamesStartedOtLosses":...,"reliefSavePct":...,"startSavePct":...,
+        "playerId":...,"seasonId":20242025}]}
+
+-------------------------------------------------------------------------------
+21. goalie/daysrest                                     Tier 2 (fetch-only)
+-------------------------------------------------------------------------------
+Status: 200    Bytes: 525
+Sample: {"data":[{"daysRest0":...,"daysRest1":...,"daysRest2":...,
+        "daysRest3":...,"daysRest4Plus":...,"savePct0Days":...,
+        "savePct1Day":...,"savePct2Days":...,"savePct3Days":...,
+        "savePct4PlusDays":...,"playerId":...,"seasonId":20242025}]}
+
+-------------------------------------------------------------------------------
+22. goalie/penaltyShots                                 Tier 2 (fetch-only)
+-------------------------------------------------------------------------------
+Status: 200    Bytes: 343
+Sample: {"data":[{"goalsAgainst":...,"saves":...,"savePct":...,
+        "shotsAgainst":...,"playerId":...,"seasonId":20242025}]}
+
+-------------------------------------------------------------------------------
+23. goalie/shootout                                     Tier 2 (fetch-only)
+-------------------------------------------------------------------------------
+Status: 200    Bytes: 515
+Sample: {"data":[{"shootoutGoalsAgainst":...,"shootoutSaves":...,
+        "shootoutSavePct":...,"shootoutShotsAgainst":...,
+        "shootoutWins":...,"shootoutLosses":...,"shootoutGamesPlayed":...,
+        "playerId":...,"seasonId":20242025}]}
+
+-------------------------------------------------------------------------------
+SKIPPED — goalie/realtime                               BROKEN (returns 500)
+SKIPPED — goalie/savePercentage                         BROKEN (returns 500)
+SKIPPED — goalie/penaltykill                            BROKEN (returns 500)
+SKIPPED — goalie/percentages                            BROKEN (returns 500)
+SKIPPED — goalie/shottype                               BROKEN (returns 500)
+SKIPPED — goalie/timeonice                              BROKEN (returns 500)
+SKIPPED — goalie/goalsForAgainstByStrength              BROKEN (returns 500)
+-------------------------------------------------------------------------------
+All seven return identical 500 error: <h2>HTTP ERROR 500 Request failed.</h2>
+Server-side disabled. icelines-fetch MUST NOT call any of these URLs.
+
+===============================================================================
+PLAYOFF SANITY (gameTypeId=3 against 20232024) — Tier-1 endpoints
+===============================================================================
+
+skater/summary           status=200    ReportKind::supports(Playoff) = true
+skater/bios              status=200    ReportKind::supports(Playoff) = true
+skater/realtime          status=200    ReportKind::supports(Playoff) = true
+skater/timeonice         status=200    ReportKind::supports(Playoff) = true
+skater/goalsForAgainst   status=200    ReportKind::supports(Playoff) = true
+goalie/summary           status=200    ReportKind::supports(Playoff) = true
+goalie/bios              status=200    ReportKind::supports(Playoff) = true
+goalie/advanced          status=200    ReportKind::supports(Playoff) = true
+goalie/savesByStrength   status=200    ReportKind::supports(Playoff) = true
+
+All Tier-1 endpoints support playoff (gameTypeId=3). Tier-2 playoff support
+TBD per endpoint at L.6 time — sanity check NOT extended to Tier-2 in this
+artifact since Tier-2 fetches are runtime-only and any 500 is reported to the
+user as `Tier-2 unavailable for this season-type`, not an L.1 fence failure.
+
+===============================================================================
+Inventory totals
+===============================================================================
+
+Tier 1 typed (load + fetch):       9 endpoints (5 skater + 4 goalie)
+                                     of which 2 already bundled (skater
+                                     summary + bios) + 1 new bundled this
+                                     phase (goalie summary remains, plus
+                                     6 NEW: skater realtime, timeonice,
+                                     goalsForAgainst; goalie bios, advanced,
+                                     savesByStrength).
+
+Tier 2 fetch-only (extra_reports):  14 endpoints (10 skater + 4 goalie).
+
+Documented broken (skip):           8 endpoints (1 skater + 7 goalie).
+
+Total enumerated:                   31 (23 working + 8 broken).
+Total reachable URLs in nhl_api.rs: 23 — exactly matches the inventory in
+                                    spec §"Endpoint inventory (verified 2026-05-02)".
+
+===============================================================================
+Re-probing
+===============================================================================
+
+This artifact is a point-in-time snapshot dated 2026-05-02. Re-probe before
+any future endpoint addition by running scripts/api-probe.sh (added in L.1 if
+warranted) or:
+
+  curl 'https://api.nhle.com/stats/rest/en/<pos>/<kind>?cayenneExp=seasonId=<season>%20and%20gameTypeId=2&limit=1'
+
+If a previously-working endpoint regresses to 500: file a bug, do not silently
+remove from the catalog — `ReportKind::supports(season_type)` should grow a
+case rather than the user lose a stat.

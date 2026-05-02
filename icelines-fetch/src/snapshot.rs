@@ -7,11 +7,13 @@
 //! Each snapshot is immutable after sealing, integrity-verified on every read,
 //! and linked to its parent snapshot via a provenance key chain.
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
 
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use icelines_core::season_stats::SeasonType;
+use icelines_core::stats_catalog::ReportKind;
+use serde::{de::DeserializeOwned, Deserialize, Deserializer, Serialize, Serializer};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
 
@@ -109,29 +111,240 @@ pub struct SnapshotMeta {
     pub sealed: bool,
 }
 
-/// Phase 8h: per-snapshot mapping of player_id → chunk_hash for a Stats
-/// tier stored in the content-addressed `ChunkStore`. Lives at
+/// Phase 8h: per-snapshot mapping of `player_id → chunk_hash` for each
+/// stats report stored in the content-addressed `ChunkStore`. Lives at
 /// `{snapshot_dir}/chunked.json` when a snapshot is chunked.
 ///
-/// Hart.6.2: `playoff_bios` / `playoff_stats` are additive `Option`
-/// fields with `#[serde(default)]` so pre-Hart.6 manifests deserialize
-/// cleanly (None → no playoff data in this snapshot). The version
-/// constant stays at 1 because all additions are optional.
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+/// **Phase Lindsay L.1.2 (v=2)** — refactored to a unified
+/// `reports: BTreeMap<ReportKind, BTreeMap<SeasonType, ...>>` map so new
+/// Tier-1 reports (timeonice, goalsForAgainst, goalie-advanced,
+/// goalie-savesByStrength, goalie-bios) get a uniform key without
+/// multiplying flat fields. Custom `Deserialize` accepts both v=1 (flat
+/// `bios`/`stats`/`playoff_bios`/`playoff_stats` fields per Hart.6.2) and
+/// v=2 (nested) shapes; new writes always emit v=2. v=3+ manifests fail
+/// `Deserialize` with a `RepoVersionUnknown`-shaped error which the
+/// loader (L.1.3 / DI-28) re-wraps before surfacing.
+///
+/// `BTreeMap` (not `HashMap`) backs `reports` so iteration order is
+/// deterministic — required for snapshot diffing, GC walks, and the
+/// `iter_reports()` consumer pattern.
+///
+/// Backward-compat accessors (`bios()`, `stats()`, `playoff_bios()`,
+/// `playoff_stats()`) read from the `reports` map under the
+/// `SkaterBios`/`SkaterSummary` keys so existing call sites keep working
+/// with a single character delta (`cm.bios.iter()` → `cm.bios().iter()`).
+/// Per-(report kind, season type) chunk-hash storage. Lindsay L.1.2
+/// unified-key shape replacing the v=1 flat fields. Outer `BTreeMap`
+/// keyed by `ReportKind` for deterministic iteration; inner `BTreeMap`
+/// keyed by `SeasonType` so each report can have separate regular /
+/// playoff slots; innermost `HashMap` keyed by `player_id` is the
+/// existing chunk-hash mapping.
+pub type ChunkedReports =
+    BTreeMap<ReportKind, BTreeMap<SeasonType, HashMap<u32, String>>>;
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct ChunkedManifest {
-    pub version: u8, // schema version, currently 1
-    /// player_id (as JSON string key) → chunk hash for the regular-season bios record.
-    pub bios: HashMap<u32, String>,
-    /// player_id → chunk hash for the regular-season stats record.
-    pub stats: HashMap<u32, String>,
-    /// player_id → chunk hash for the playoff bios record.
-    /// `None` for snapshots that didn't write playoff data.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub playoff_bios: Option<HashMap<u32, String>>,
-    /// player_id → chunk hash for the playoff stats record.
-    /// `None` for snapshots that didn't write playoff data.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub playoff_stats: Option<HashMap<u32, String>>,
+    /// Schema version. v=1 = flat fields; v=2 = nested `reports` map.
+    /// New writes always emit v=2. Lindsay L.1.2 bumps from 1.
+    /// **In-memory invariant**: this field always equals `MAX_VERSION`
+    /// (v=2). Both `Default::default()` and `Deserialize` produce that
+    /// value; serialization always emits the constant. v=1 only exists
+    /// on disk in legacy snapshots and is promoted to v=2 on read.
+    pub version: u8,
+    /// Per-(report kind, season type) chunk-hash map. The unified
+    /// storage; flat-field accessors below read into this.
+    pub reports: ChunkedReports,
+}
+
+impl Default for ChunkedManifest {
+    fn default() -> Self {
+        // In-memory invariant: every ChunkedManifest has version=v2 once
+        // constructed. Default produces an empty Lindsay-aware manifest;
+        // the MAX_VERSION stamp matches what `Deserialize` returns + what
+        // `Serialize` emits — `eq` round-trips with no surprise.
+        Self {
+            version: Self::MAX_VERSION,
+            reports: BTreeMap::new(),
+        }
+    }
+}
+
+impl ChunkedManifest {
+    /// Highest manifest schema version this binary understands. `Deserialize`
+    /// errors on any input with `version > MAX_VERSION` — the loader
+    /// surfaces this as `LoadError::RepoVersionUnknown` (L.1.3 / DI-28).
+    pub const MAX_VERSION: u8 = 2;
+
+    /// Lookup: chunk-hash map for one (report kind, season type) pair.
+    /// Returns `None` when the snapshot didn't write that report.
+    pub fn report(
+        &self,
+        kind: ReportKind,
+        st: SeasonType,
+    ) -> Option<&HashMap<u32, String>> {
+        self.reports.get(&kind).and_then(|m| m.get(&st))
+    }
+
+    /// Set chunk-hash map for one (kind, st). Overwrites any prior entry.
+    pub fn set_report(
+        &mut self,
+        kind: ReportKind,
+        st: SeasonType,
+        m: HashMap<u32, String>,
+    ) {
+        self.reports.entry(kind).or_default().insert(st, m);
+    }
+
+    /// Iterate over every (kind, season-type, chunk-hash-map) entry.
+    /// Used by GC walks, `verify_layout`, and `delete` to enumerate every
+    /// referenced chunk regardless of which report holds it.
+    pub fn iter_reports(
+        &self,
+    ) -> impl Iterator<Item = (ReportKind, SeasonType, &HashMap<u32, String>)> {
+        self.reports.iter().flat_map(|(kind, by_st)| {
+            by_st.iter().map(move |(st, m)| (*kind, *st, m))
+        })
+    }
+
+    /// Backward-compat accessor — regular-season skater bios chunk-hashes.
+    /// Empty map when the snapshot wrote no regular-season skater bios.
+    pub fn bios(&self) -> &HashMap<u32, String> {
+        self.report(ReportKind::SkaterBios, SeasonType::Regular)
+            .unwrap_or(empty_chunk_map())
+    }
+
+    /// Backward-compat accessor — regular-season skater summary chunk-hashes.
+    /// Note: pre-Lindsay this map ALSO contained realtime + goalsForAgainst
+    /// fields merged into each chunk. Lindsay L.1.4 splits those out into
+    /// per-report files; the SkaterSummary chunk shrinks to summary-only
+    /// content over time. The accessor name stays for API stability.
+    pub fn stats(&self) -> &HashMap<u32, String> {
+        self.report(ReportKind::SkaterSummary, SeasonType::Regular)
+            .unwrap_or(empty_chunk_map())
+    }
+
+    /// Backward-compat accessor — playoff skater bios chunk-hashes.
+    /// `None` when the snapshot wrote no playoff data (Hart.6.2 semantic).
+    pub fn playoff_bios(&self) -> Option<&HashMap<u32, String>> {
+        self.report(ReportKind::SkaterBios, SeasonType::Playoff)
+    }
+
+    /// Backward-compat accessor — playoff skater summary chunk-hashes.
+    pub fn playoff_stats(&self) -> Option<&HashMap<u32, String>> {
+        self.report(ReportKind::SkaterSummary, SeasonType::Playoff)
+    }
+}
+
+/// Empty-map fallback for accessors that need a `&HashMap` even when
+/// the underlying entry is absent. `OnceLock` so we never allocate
+/// repeatedly on the hot path.
+fn empty_chunk_map() -> &'static HashMap<u32, String> {
+    use std::sync::OnceLock;
+    static E: OnceLock<HashMap<u32, String>> = OnceLock::new();
+    E.get_or_init(HashMap::new)
+}
+
+// ── ChunkedManifest serde impls ─────────────────────────────────────────────
+//
+// Custom impls so we can:
+//   - emit v=2 nested shape on every write (`Serialize`),
+//   - accept BOTH v=1 flat shape and v=2 nested shape on read
+//     (`Deserialize`),
+//   - error cleanly on v>2 with a string the loader can pattern-match
+//     into `LoadError::RepoVersionUnknown` at `load_window` time
+//     (L.1.3 / DI-28).
+
+impl Serialize for ChunkedManifest {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        use serde::ser::SerializeStruct as _;
+        // Always emit v=2 (Lindsay-aware writer).
+        let mut s = serializer.serialize_struct("ChunkedManifest", 2)?;
+        s.serialize_field("version", &Self::MAX_VERSION)?;
+        s.serialize_field("reports", &self.reports)?;
+        s.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for ChunkedManifest {
+    /// Accept v=1 (Hart.6.2 flat shape) and v=2 (Lindsay nested shape).
+    /// Promote v=1 flat fields into the unified `reports` map under
+    /// `SkaterBios` / `SkaterSummary` keys. Reject `version > MAX_VERSION`
+    /// with a descriptive error — the loader's DI-28 path re-wraps.
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        use serde::de::Error as _;
+
+        // Helper struct accepts both shapes simultaneously; every field
+        // is `#[serde(default)]` so unknown shapes fall through to None.
+        #[derive(Deserialize)]
+        struct Raw {
+            #[serde(default)]
+            version: u8,
+            // v=1 flat shape (Hart.6.2)
+            #[serde(default)]
+            bios: Option<HashMap<u32, String>>,
+            #[serde(default)]
+            stats: Option<HashMap<u32, String>>,
+            #[serde(default)]
+            playoff_bios: Option<HashMap<u32, String>>,
+            #[serde(default)]
+            playoff_stats: Option<HashMap<u32, String>>,
+            // v=2 nested shape (Lindsay)
+            #[serde(default)]
+            reports: Option<ChunkedReports>,
+        }
+
+        let raw = Raw::deserialize(deserializer)?;
+
+        if raw.version > ChunkedManifest::MAX_VERSION {
+            return Err(D::Error::custom(format!(
+                "ChunkedManifest version {} > supported {} \
+                 (RepoVersionUnknown — upgrade icelines)",
+                raw.version,
+                ChunkedManifest::MAX_VERSION,
+            )));
+        }
+
+        // Start from v=2 storage (empty if absent). Then promote any v=1
+        // flat fields. Promotion is additive: if BOTH flat fields and
+        // `reports` were somehow present (corrupted hand-edited file),
+        // the flat fields win for their slot — pre-Lindsay writers can
+        // only emit flat, so this is the safer recovery direction.
+        let mut reports: BTreeMap<ReportKind, BTreeMap<SeasonType, HashMap<u32, String>>> =
+            raw.reports.unwrap_or_default();
+
+        if let Some(m) = raw.bios {
+            reports
+                .entry(ReportKind::SkaterBios)
+                .or_default()
+                .insert(SeasonType::Regular, m);
+        }
+        if let Some(m) = raw.stats {
+            reports
+                .entry(ReportKind::SkaterSummary)
+                .or_default()
+                .insert(SeasonType::Regular, m);
+        }
+        if let Some(m) = raw.playoff_bios {
+            reports
+                .entry(ReportKind::SkaterBios)
+                .or_default()
+                .insert(SeasonType::Playoff, m);
+        }
+        if let Some(m) = raw.playoff_stats {
+            reports
+                .entry(ReportKind::SkaterSummary)
+                .or_default()
+                .insert(SeasonType::Playoff, m);
+        }
+
+        Ok(ChunkedManifest {
+            // In-memory we always represent as the latest version we know.
+            // Lifecycle: `Deserialize` reads → all fields land in `reports`
+            // → `Serialize` emits v=2. There's no in-memory "v=1" state.
+            version: ChunkedManifest::MAX_VERSION,
+            reports,
+        })
+    }
 }
 
 /// Phase 8h: refcount table tracking how many chunked snapshots reference
@@ -518,7 +731,7 @@ impl SnapshotStore {
         if self.is_chunked(name) {
             let cm = self.load_chunked_manifest(name)?;
             let store = self.chunk_store();
-            for (player_id, hash) in cm.bios.iter().chain(cm.stats.iter()) {
+            for (player_id, hash) in cm.bios().iter().chain(cm.stats().iter()) {
                 match store.get(hash) {
                     Ok(_) => {}
                     Err(crate::error::FetchError::MissingChunk { hash }) => {
@@ -562,8 +775,8 @@ impl SnapshotStore {
         let cm_b = self.load_chunked_manifest(b)?;
 
         use std::collections::HashSet;
-        let ids_a: HashSet<u32> = cm_a.bios.keys().copied().collect();
-        let ids_b: HashSet<u32> = cm_b.bios.keys().copied().collect();
+        let ids_a: HashSet<u32> = cm_a.bios().keys().copied().collect();
+        let ids_b: HashSet<u32> = cm_b.bios().keys().copied().collect();
 
         let mut added: Vec<u32> = ids_b.difference(&ids_a).copied().collect();
         let mut removed: Vec<u32> = ids_a.difference(&ids_b).copied().collect();
@@ -573,10 +786,10 @@ impl SnapshotStore {
         let mut changed_bios: Vec<u32> = Vec::new();
         let mut changed_stats: Vec<u32> = Vec::new();
         for id in ids_a.intersection(&ids_b) {
-            if cm_a.bios.get(id) != cm_b.bios.get(id) {
+            if cm_a.bios().get(id) != cm_b.bios().get(id) {
                 changed_bios.push(*id);
             }
-            if cm_a.stats.get(id) != cm_b.stats.get(id) {
+            if cm_a.stats().get(id) != cm_b.stats().get(id) {
                 changed_stats.push(*id);
             }
         }
@@ -661,7 +874,7 @@ impl SnapshotStore {
         }
         // If chunked, decrement refs before removing the directory.
         if let Ok(cm) = self.load_chunked_manifest(name) {
-            let hashes: Vec<String> = cm.bios.values().chain(cm.stats.values()).cloned().collect();
+            let hashes: Vec<String> = cm.bios().values().chain(cm.stats().values()).cloned().collect();
             self.dec_refs(&hashes)?;
         }
         let dir = self.snapshot_dir(name);
@@ -700,14 +913,15 @@ impl SnapshotStore {
         bios: &[crate::schema::SkaterBio],
         stats: &[crate::schema::SkaterStats],
     ) -> Result<ChunkedManifest, SnapshotError> {
-        use icelines_core::season_stats::SeasonType;
-
         let store = self.chunk_store();
         // Preserve the other-type fields if a manifest already exists on disk
         // (e.g. user fetched regular first, now fetching playoff for the same
         // snapshot). load_chunked_manifest returns NotFound when absent.
         let mut manifest = self.load_chunked_manifest(snapshot_name).unwrap_or_default();
-        manifest.version = 1;
+        // Lindsay L.1.2: writes always emit v=2 (the in-memory rep is
+        // unconditionally v=2; setting the field is redundant but
+        // explicit-is-better-than-implicit for future readers).
+        manifest.version = ChunkedManifest::MAX_VERSION;
 
         let mut written_bios: HashMap<u32, String> = HashMap::with_capacity(bios.len());
         let mut written_stats: HashMap<u32, String> = HashMap::with_capacity(stats.len());
@@ -727,16 +941,11 @@ impl SnapshotStore {
             all_hashes.push(hash);
         }
 
-        match season_type {
-            SeasonType::Regular => {
-                manifest.bios = written_bios;
-                manifest.stats = written_stats;
-            }
-            SeasonType::Playoff => {
-                manifest.playoff_bios = Some(written_bios);
-                manifest.playoff_stats = Some(written_stats);
-            }
-        }
+        // Lindsay L.1.2: store via the unified `reports` map. The
+        // accessors still expose `bios()`/`stats()`/`playoff_*` so
+        // existing readers don't need to know the new shape.
+        manifest.set_report(ReportKind::SkaterBios, season_type, written_bios);
+        manifest.set_report(ReportKind::SkaterSummary, season_type, written_stats);
 
         self.write_chunked_manifest(snapshot_name, &manifest)?;
         self.inc_refs(&all_hashes)?;
@@ -761,20 +970,18 @@ impl SnapshotStore {
         ),
         SnapshotError,
     > {
-        use icelines_core::season_stats::SeasonType;
-
         let cm = self.load_chunked_manifest(snapshot_name)?;
         let store = self.chunk_store();
 
         let (bios_idx, stats_idx) = match season_type {
-            SeasonType::Regular => (&cm.bios, &cm.stats),
+            SeasonType::Regular => (cm.bios(), cm.stats()),
             SeasonType::Playoff => {
-                let pb = cm.playoff_bios.as_ref().ok_or_else(|| {
+                let pb = cm.playoff_bios().ok_or_else(|| {
                     SnapshotError::NotFound {
                         name: format!("{snapshot_name}/chunked.json: no playoff_bios"),
                     }
                 })?;
-                let ps = cm.playoff_stats.as_ref().ok_or_else(|| {
+                let ps = cm.playoff_stats().ok_or_else(|| {
                     SnapshotError::NotFound {
                         name: format!("{snapshot_name}/chunked.json: no playoff_stats"),
                     }
@@ -903,7 +1110,7 @@ impl SnapshotStore {
                 continue;
             }
             if let Ok(cm) = self.load_chunked_manifest(&entry.name) {
-                for h in cm.bios.values().chain(cm.stats.values()) {
+                for h in cm.bios().values().chain(cm.stats().values()) {
                     *refs.counts.entry(h.clone()).or_insert(0) += 1;
                 }
             }
@@ -1065,12 +1272,25 @@ impl SnapshotMetaFlags {
     /// Current bundled-JSON file format version. Bumps whenever a
     /// non-Option field is added to a bundled type. Hart.3 starts at 1.
     /// Keep in sync with `stats_loader::MAX_KNOWN_BUNDLE_SCHEMA`.
+    ///
+    /// **Lindsay L.1** keeps this at 1 — Lindsay introduces NEW per-report
+    /// files (`timeonice.json`, etc.), not new fields on existing bundled
+    /// types. The schema-version bump is only for `repository_version`.
     pub const CURRENT_BUNDLE_SCHEMA_VERSION: u32 = 1;
 
     /// Current in-memory `StatsRepository` model version. Bumps on every
-    /// breaking change to the icelines-core model. Hart.3 starts at 1.
+    /// breaking change to the `icelines-core` model. Phase Hart started at 1.
     /// Keep in sync with `stats_loader::MAX_KNOWN_REPO_VERSION`.
-    pub const CURRENT_REPOSITORY_VERSION: u32 = 1;
+    ///
+    /// **Lindsay L.1.3 (DI-28)** bumps to 2: `SeasonStats` gains five
+    /// typed Tier-1 substructs (`time_on_ice`, `goals_for_against`,
+    /// `goalie_advanced`, `goalie_saves_by_strength`, `goalie_bios`) and
+    /// `ChunkedManifest` refactors to a unified per-report key map (v=2).
+    /// Old binaries (`MAX_KNOWN_REPO_VERSION = 1`) opening a v=2 stamped
+    /// snapshot error cleanly with `LoadError::RepoVersionUnknown` at the
+    /// `load_into_repo` boundary — DI-28 requires the failure point be at
+    /// load time, not at `repo_swap` after the fact.
+    pub const CURRENT_REPOSITORY_VERSION: u32 = 2;
 
     /// Read the flags file at the given root for the given season.
     /// Missing file → default flags (no stale, no error). Corrupt file
@@ -1548,8 +1768,8 @@ mod tests {
         let stats = vec![fixture_stats(1, 20), fixture_stats(2, 30)];
 
         let manifest = store.write_chunked_stats("a", icelines_core::season_stats::SeasonType::Regular, &bios, &stats).unwrap();
-        assert_eq!(manifest.bios.len(), 2);
-        assert_eq!(manifest.stats.len(), 2);
+        assert_eq!(manifest.bios().len(), 2);
+        assert_eq!(manifest.stats().len(), 2);
         assert!(store.is_chunked("a"));
 
         let (got_bios, got_stats) = store.read_chunked_stats("a", icelines_core::season_stats::SeasonType::Regular).unwrap();
@@ -1577,10 +1797,10 @@ mod tests {
             .write_chunked_stats("a", icelines_core::season_stats::SeasonType::Playoff, &bios, &stats)
             .unwrap();
         // Playoff fields populated, regular stays empty.
-        assert!(manifest.playoff_bios.as_ref().is_some_and(|m| m.len() == 1));
-        assert!(manifest.playoff_stats.as_ref().is_some_and(|m| m.len() == 1));
-        assert_eq!(manifest.bios.len(), 0);
-        assert_eq!(manifest.stats.len(), 0);
+        assert!(manifest.playoff_bios().is_some_and(|m| m.len() == 1));
+        assert!(manifest.playoff_stats().is_some_and(|m| m.len() == 1));
+        assert_eq!(manifest.bios().len(), 0);
+        assert_eq!(manifest.stats().len(), 0);
 
         let (got_bios, got_stats) = store
             .read_chunked_stats("a", icelines_core::season_stats::SeasonType::Playoff)
@@ -1654,9 +1874,9 @@ mod tests {
     fn l0_hart6_2_chunked_manifest_pre_hart6_json_deserializes_with_none_playoff() {
         let json = r#"{"version":1,"bios":{"1":"abc"},"stats":{"1":"def"}}"#;
         let m: ChunkedManifest = serde_json::from_str(json).expect("parse");
-        assert_eq!(m.bios.len(), 1);
-        assert!(m.playoff_bios.is_none());
-        assert!(m.playoff_stats.is_none());
+        assert_eq!(m.bios().len(), 1);
+        assert!(m.playoff_bios().is_none());
+        assert!(m.playoff_stats().is_none());
     }
 
     #[test]
@@ -1691,16 +1911,16 @@ mod tests {
         let m_b = store.write_chunked_stats("b", icelines_core::season_stats::SeasonType::Regular, &bios, &stats_b).unwrap();
 
         // Bio chunks: identical for all 3 players
-        assert_eq!(m_a.bios[&1], m_b.bios[&1]);
-        assert_eq!(m_a.bios[&2], m_b.bios[&2]);
-        assert_eq!(m_a.bios[&3], m_b.bios[&3]);
+        assert_eq!(m_a.bios()[&1], m_b.bios()[&1]);
+        assert_eq!(m_a.bios()[&2], m_b.bios()[&2]);
+        assert_eq!(m_a.bios()[&3], m_b.bios()[&3]);
         // Stats chunks: 1 + 3 unchanged, 2 differs
-        assert_eq!(m_a.stats[&1], m_b.stats[&1]);
+        assert_eq!(m_a.stats()[&1], m_b.stats()[&1]);
         assert_ne!(
-            m_a.stats[&2], m_b.stats[&2],
+            m_a.stats()[&2], m_b.stats()[&2],
             "player 2 stats changed → new chunk"
         );
-        assert_eq!(m_a.stats[&3], m_b.stats[&3]);
+        assert_eq!(m_a.stats()[&3], m_b.stats()[&3]);
 
         // Total unique chunks on disk: 3 bios + 3 stats_a + 1 stats_b = 7
         let on_disk = store.chunk_store().iter_chunks().unwrap();
@@ -1868,7 +2088,7 @@ mod tests {
 
         // Referenced chunks are preserved
         let cm = store.load_chunked_manifest("a").unwrap();
-        for h in cm.bios.values().chain(cm.stats.values()) {
+        for h in cm.bios().values().chain(cm.stats().values()) {
             assert!(
                 store.chunk_store().exists(h),
                 "referenced chunk {h} must survive GC"
@@ -1910,8 +2130,8 @@ mod tests {
         let stats = vec![fixture_stats(1, 10)];
         let m1 = store.write_chunked_stats("a", icelines_core::season_stats::SeasonType::Regular, &bios, &stats).unwrap();
         let m2 = store.rebuild_chunked("a").unwrap();
-        assert_eq!(m1.bios, m2.bios);
-        assert_eq!(m1.stats, m2.stats);
+        assert_eq!(m1.bios(), m2.bios());
+        assert_eq!(m1.stats(), m2.stats());
         // Refs not double-incremented
         let refs = store.load_refs().unwrap();
         for c in refs.counts.values() {
@@ -2176,7 +2396,7 @@ mod tests {
         let cm = store.write_chunked_stats("a", icelines_core::season_stats::SeasonType::Regular, &bios, &stats).unwrap();
 
         // Corrupt the bio chunk: write garbage at its on-disk path.
-        let bio_hash = cm.bios.values().next().unwrap();
+        let bio_hash = cm.bios().values().next().unwrap();
         let bio_path = store.chunk_store().path_for(bio_hash);
         std::fs::write(&bio_path, b"tampered bytes").unwrap();
 
@@ -2209,7 +2429,7 @@ mod tests {
         let cm = store.write_chunked_stats("a", icelines_core::season_stats::SeasonType::Regular, &bios, &stats).unwrap();
 
         // Remove the stats chunk from the global store.
-        let stats_hash = cm.stats.values().next().unwrap();
+        let stats_hash = cm.stats().values().next().unwrap();
         store.chunk_store().delete(stats_hash).unwrap();
 
         let failures = store.verify("a").unwrap();
@@ -2252,12 +2472,172 @@ mod tests {
         // Migrate
         let cm = store.rebuild_chunked("a").unwrap();
         assert!(store.is_chunked("a"), "now chunked");
-        assert_eq!(cm.bios.len(), 1);
-        assert_eq!(cm.stats.len(), 1);
+        assert_eq!(cm.bios().len(), 1);
+        assert_eq!(cm.stats().len(), 1);
 
         // Read-back works
         let (got_bios, got_stats) = store.read_chunked_stats("a", icelines_core::season_stats::SeasonType::Regular).unwrap();
         assert_eq!(got_bios.len(), 1);
         assert_eq!(got_stats[0].goals, 10);
+    }
+
+    // ── Phase Lindsay L.1.2 — ChunkedManifest v=2 ──────────────────────
+
+    /// L.1.2: a v=1 manifest (Hart.6.2 flat shape) loads and the data
+    /// reaches the new `reports` map under `SkaterBios`/`SkaterSummary`
+    /// keys. Backward-compat accessors (`bios()`, `stats()`,
+    /// `playoff_bios()`, `playoff_stats()`) return the same data.
+    #[test]
+    fn l0_lindsay_chunked_manifest_v1_promotion_to_v2() {
+        let v1_json = r#"{
+            "version": 1,
+            "bios": {"100": "h1", "200": "h2"},
+            "stats": {"100": "s1", "200": "s2"},
+            "playoff_bios": {"100": "ph1"},
+            "playoff_stats": {"100": "ps1"}
+        }"#;
+        let m: ChunkedManifest = serde_json::from_str(v1_json).expect("v1 parses");
+
+        // In-memory always represents as v=2 (the latest known shape).
+        assert_eq!(m.version, ChunkedManifest::MAX_VERSION);
+
+        // Flat-field data lands under the unified `reports` map.
+        assert_eq!(m.bios().len(), 2);
+        assert_eq!(m.stats().len(), 2);
+        assert_eq!(m.bios().get(&100).unwrap(), "h1");
+        assert_eq!(m.stats().get(&200).unwrap(), "s2");
+
+        // Playoff fields promoted into SeasonType::Playoff slot.
+        assert_eq!(m.playoff_bios().unwrap().len(), 1);
+        assert_eq!(m.playoff_stats().unwrap().len(), 1);
+        assert_eq!(m.playoff_bios().unwrap().get(&100).unwrap(), "ph1");
+    }
+
+    /// L.1.2: a v=1 manifest WITHOUT playoff fields promotes cleanly.
+    /// Pre-Hart.6 manifests produced this shape — ensure backward-compat
+    /// stays intact across the v=1 → v=2 schema bump.
+    #[test]
+    fn l0_lindsay_chunked_manifest_v1_no_playoff_promotion() {
+        let v1_json = r#"{
+            "version": 1,
+            "bios": {"7": "abc"},
+            "stats": {"7": "def"}
+        }"#;
+        let m: ChunkedManifest = serde_json::from_str(v1_json).expect("parse");
+        assert_eq!(m.version, ChunkedManifest::MAX_VERSION);
+        assert_eq!(m.bios().len(), 1);
+        assert_eq!(m.stats().len(), 1);
+        assert!(m.playoff_bios().is_none());
+        assert!(m.playoff_stats().is_none());
+    }
+
+    /// L.1.2: a v=2 manifest round-trips byte-equivalently. Catches any
+    /// drift between the custom Serialize emit shape and the custom
+    /// Deserialize parse shape.
+    #[test]
+    fn l0_lindsay_chunked_manifest_v2_round_trip() {
+        let mut m = ChunkedManifest::default();
+        m.set_report(
+            ReportKind::SkaterBios,
+            SeasonType::Regular,
+            HashMap::from([(100u32, "h1".to_owned())]),
+        );
+        m.set_report(
+            ReportKind::SkaterSummary,
+            SeasonType::Regular,
+            HashMap::from([(100u32, "s1".to_owned())]),
+        );
+        // L.1-NEW Tier-1 report — exercises the unified key path that
+        // pre-Lindsay had no field for.
+        m.set_report(
+            ReportKind::SkaterTimeOnIce,
+            SeasonType::Regular,
+            HashMap::from([(100u32, "toi1".to_owned())]),
+        );
+        m.set_report(
+            ReportKind::GoalieBios,
+            SeasonType::Playoff,
+            HashMap::from([(8400000u32, "gb-pp".to_owned())]),
+        );
+
+        let json = serde_json::to_string(&m).unwrap();
+        let back: ChunkedManifest = serde_json::from_str(&json).unwrap();
+        assert_eq!(back, m);
+
+        // v=2 emit shape: nested `reports` object keyed by camelCase
+        // ReportKind. Pin the wire format so we'd catch a casing slip
+        // (snake_case → camelCase regression on rename_all).
+        assert!(json.contains("\"version\":2"));
+        assert!(json.contains("\"skaterBios\""));
+        assert!(json.contains("\"skaterTimeOnIce\""));
+        assert!(json.contains("\"goalieBios\""));
+        assert!(json.contains("\"regular\""));
+        assert!(json.contains("\"playoff\""));
+    }
+
+    /// L.1.2 / DI-28: a v=3 manifest fails Deserialize with a
+    /// RepoVersionUnknown-shaped error. Loader (L.1.3) re-wraps this
+    /// into `LoadError::RepoVersionUnknown` at `load_window` boundary.
+    #[test]
+    fn l0_lindsay_chunked_manifest_v3_rejected() {
+        let v3_json = r#"{"version":3,"reports":{}}"#;
+        let err = serde_json::from_str::<ChunkedManifest>(v3_json)
+            .expect_err("v3 should reject");
+        let msg = err.to_string();
+        assert!(
+            msg.contains("RepoVersionUnknown")
+                || msg.contains("version 3"),
+            "expected RepoVersionUnknown-shaped error, got: {msg}",
+        );
+    }
+
+    /// L.1.2: v=2 storage keeps the new Tier-1 reports separate from
+    /// the legacy `bios()`/`stats()` accessors. Adding a `SkaterTimeOnIce`
+    /// entry does NOT inflate `cm.bios()` — they're distinct keys.
+    #[test]
+    fn l0_lindsay_chunked_manifest_new_reports_dont_leak_into_legacy_accessors() {
+        let mut m = ChunkedManifest::default();
+        m.set_report(
+            ReportKind::SkaterTimeOnIce,
+            SeasonType::Regular,
+            HashMap::from([(100u32, "toi1".to_owned())]),
+        );
+        assert_eq!(m.bios().len(), 0);
+        assert_eq!(m.stats().len(), 0);
+        assert_eq!(
+            m.report(ReportKind::SkaterTimeOnIce, SeasonType::Regular)
+                .unwrap()
+                .len(),
+            1,
+        );
+    }
+
+    /// L.1.2: `iter_reports()` enumerates every (kind, st, map) entry
+    /// in deterministic order. GC walks rely on this — `BTreeMap`
+    /// iteration is sorted.
+    #[test]
+    fn l0_lindsay_chunked_manifest_iter_reports_deterministic() {
+        let mut m = ChunkedManifest::default();
+        // Insert in scrambled order; iter should emit sorted.
+        m.set_report(ReportKind::SkaterTimeOnIce, SeasonType::Regular,
+                      HashMap::from([(1u32, "a".to_owned())]));
+        m.set_report(ReportKind::SkaterBios, SeasonType::Playoff,
+                      HashMap::from([(1u32, "b".to_owned())]));
+        m.set_report(ReportKind::SkaterBios, SeasonType::Regular,
+                      HashMap::from([(1u32, "c".to_owned())]));
+
+        let order: Vec<(ReportKind, SeasonType)> =
+            m.iter_reports().map(|(k, s, _)| (k, s)).collect();
+
+        // SkaterBios sorts before SkaterTimeOnIce (declaration order).
+        // Within SkaterBios, Regular sorts before Playoff (declaration).
+        assert_eq!(
+            order,
+            vec![
+                (ReportKind::SkaterBios, SeasonType::Regular),
+                (ReportKind::SkaterBios, SeasonType::Playoff),
+                (ReportKind::SkaterTimeOnIce, SeasonType::Regular),
+            ],
+        );
     }
 }

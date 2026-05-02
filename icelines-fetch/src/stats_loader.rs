@@ -20,7 +20,9 @@ use icelines_core::season_stats::{
     AdvancedStats, GoalieSeasonStats, RealtimeStats, SeasonStatsBuilder, SeasonType, StatTotals,
     TeamStint, SYNTHETIC_DATE_PREFIX,
 };
+use icelines_core::stats_catalog::{Tier1ReportFile, Tier1Row};
 use icelines_core::stats_repository::{RepoError, StatsRepository};
+use serde::de::DeserializeOwned;
 use thiserror::Error;
 
 use crate::bundled;
@@ -73,6 +75,13 @@ pub enum LoadError {
         found: u32,
         count: usize,
     },
+    /// Phase Lindsay L.1.4: per-report I/O or parse failure on a
+    /// Tier-1 file (`timeonice.json`, `goalsForAgainst.json`, etc.).
+    /// Carries the file kind + a stringified failure cause.
+    /// (Field name `cause` not `source` — thiserror treats `source`
+    /// as a magic `#[source]` field expecting `std::error::Error`.)
+    #[error("Tier-1 report load failed for {kind}: {cause}")]
+    ReportLoad { kind: String, cause: String },
     // Hart.4.1 v0.2 (Gap H): LoadError::Bundle and the BundleError enum
     // were dropped. They were dead code (no path produced one — bundle
     // reads went through .map_err(|_| SeasonNotBundled)). Reintroduce
@@ -249,10 +258,19 @@ pub fn load_into_repo(
 ) -> Result<LoadOutcome, LoadError> {
     let season_str = season.as_str();
 
-    // Schema-version gate. Missing _meta.json (cold-start) is fine —
-    // SnapshotMetaFlags::default() yields version 0, which we treat as
-    // "pre-Hart, no version stamp" and accept. Only positive values
-    // that *exceed* what this binary knows are an error.
+    // Schema-version gate (DI-28 / Lindsay L.1.3). Missing _meta.json
+    // (cold-start) is fine — `SnapshotMetaFlags::default()` yields
+    // version 0, which we treat as "pre-Hart, no version stamp" and
+    // accept. Only positive values that *exceed* what this binary knows
+    // are an error.
+    //
+    // **DI-28 contract**: this check fires at load-time (file-open
+    // boundary), NOT deferred to `StatsRepository::repo_swap`. An old
+    // binary opening a Lindsay-stamped (v=2) snapshot must error here
+    // with `LoadError::RepoVersionUnknown { found, max_known }`. The
+    // L1 test `l1_lindsay_load_rejects_repository_version_above_known`
+    // synthesizes a future-stamped `_meta.json` and asserts this fence
+    // fires before any chunk is touched.
     //
     // TODO(Hart.N): when MAX_KNOWN_BUNDLE_SCHEMA bumps past 1, this
     // gate must dispatch a migrator on `version < MAX_KNOWN` per the
@@ -533,6 +551,121 @@ pub fn load_into_repo(
         missing_files,
         fetched_at: now_iso8601(),
     })
+}
+
+// ── Phase Lindsay L.1.4 — Tier-1 per-report loader ──────────────────────────
+//
+// `load_report_with_fallback<R>` reads a Tier-1 per-report file for one
+// (season, season_type) window and returns the parsed rows. Decision tree:
+//   1. snapshot_dir/<season>/<season_type>/<file.filename>  — primary
+//   2. bundled in-binary fallback (currently no Lindsay reports are
+//      bundled — that's L.7 historical work). The slot is here so the
+//      loader signature doesn't change when L.7 wires it up.
+//   3. neither present → `Ok(None)`. The Tier-1 substruct on `SeasonStats`
+//      stays `None` (DI-09 distinction between "not loaded" and "real zero").
+//
+// Per-row seasonId fence (DI-29) fires before any rows reach the caller.
+
+/// API response wrapper used by every NHL stats endpoint:
+/// `{ "data": [...rows], "total": N }`. Re-declared here as a local
+/// helper rather than re-exported from `crate::schema::PagedResponse`
+/// to keep the loader's per-report helpers self-contained.
+#[derive(Debug, serde::Deserialize)]
+struct PagedResponseLocal<R> {
+    data: Vec<R>,
+    #[serde(default)]
+    #[allow(dead_code)] // shape pin: the API emits it but we don't consume it
+    total: u32,
+}
+
+/// Per-(season, season_type) Tier-1 report loader.
+///
+/// **DI-29 (seasonId fence)** — every row whose `season_id()` returns
+/// `Some(x)` is checked against the requested season; mismatch errors
+/// `LoadError::SeasonIdMismatch` BEFORE any data reaches the caller.
+/// Rows with `None` (pre-Hart.6 fixtures, hand-edited test data) are
+/// trusted — same precedent as `load_into_repo`'s existing Hart.6.4
+/// fence.
+///
+/// **DI-09 / "not loaded" vs "real zero"** — `Ok(None)` means the file
+/// is absent at every fallback level. Caller stores `None` on the
+/// substruct; consumers reading `view.stats.time_on_ice` see `None`
+/// and render "—" instead of `0`. An empty-data file (`{"data":[],
+/// "total":0}`) parses to `Ok(Some(Vec::new()))` — that's a real
+/// "zero rows for this season," distinct from "not loaded".
+///
+/// **Read-only — never mutates the snapshot.** Even a v=1 snapshot
+/// stays v=1 on disk (WIRE checkpoint follow-up #1 — read-only contract
+/// pinned at the function level + the
+/// `l1_lindsay_load_report_does_not_mutate_snapshot` test below).
+pub fn load_report_with_fallback<R>(
+    snapshot_dir: &std::path::Path,
+    season: Season,
+    season_type: SeasonType,
+    file: &Tier1ReportFile,
+) -> Result<Option<Vec<R>>, LoadError>
+where
+    R: Tier1Row + DeserializeOwned,
+{
+    // 1. Snapshot dir path: <snapshot_dir>/<season>/<season_type>/<filename>
+    let season_str = season.as_str();
+    let path = snapshot_dir
+        .join(&season_str)
+        .join(season_type.label())
+        .join(file.filename);
+
+    let raw_bytes = match std::fs::read(&path) {
+        Ok(bytes) => Some(bytes),
+        // Treat any missing-file as "fall through to bundled". Other I/O
+        // errors propagate so a corrupted disk surfaces clearly.
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
+        Err(e) => {
+            return Err(LoadError::ReportLoad {
+                kind: format!("{} ({} {})", file.filename, season.0, season_type.label()),
+                cause: format!("I/O: {e}"),
+            });
+        }
+    };
+
+    // 2. Bundled fallback (placeholder — L.7 wires the include_bytes! map
+    //    when the 38 historical seasons get bundled). For now this is a
+    //    no-op; the call slot is here so L.7 doesn't change the signature.
+    let bytes_opt = raw_bytes.or_else(|| bundled::report_for_lindsay(
+        &season_str, season_type, file.kind,
+    ));
+
+    let bytes = match bytes_opt {
+        Some(b) => b,
+        None => return Ok(None), // (3) neither present
+    };
+
+    // Parse the standard `{ "data": [...], "total": N }` envelope.
+    let parsed: PagedResponseLocal<R> = serde_json::from_slice(&bytes).map_err(|e| {
+        LoadError::ReportLoad {
+            kind: format!("{} ({} {})", file.filename, season.0, season_type.label()),
+            cause: format!("JSON parse: {e}"),
+        }
+    })?;
+
+    // DI-29 — per-row seasonId fence. Trust rows with `None` (bundled
+    // / hand-edited compat); reject any row with a `Some(x)` that
+    // disagrees with the requested season.
+    let expected = season.0;
+    let mismatched: Vec<u32> = parsed
+        .data
+        .iter()
+        .filter_map(|r| r.season_id())
+        .filter(|sid| *sid != expected)
+        .collect();
+    if !mismatched.is_empty() {
+        return Err(LoadError::SeasonIdMismatch {
+            expected,
+            found: mismatched[0],
+            count: mismatched.len(),
+        });
+    }
+
+    Ok(Some(parsed.data))
 }
 
 // ── Mappers ─────────────────────────────────────────────────────────────────

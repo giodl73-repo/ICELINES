@@ -6,6 +6,7 @@ pub mod career;
 pub mod chunkstore;
 pub mod csv_loader;
 pub mod error;
+pub mod fetch_lock;
 pub mod moneypuck;
 pub mod nhl_api;
 pub mod playoffs_bundle;

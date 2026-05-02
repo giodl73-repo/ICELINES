@@ -457,6 +457,125 @@ pub enum FetchSubcommand {
         #[arg(long)]
         dry_run: bool,
     },
+    /// Phase Lindsay L.1.6 — fetch one Tier-1 stats report per the
+    /// catalog dispatch.
+    ///
+    /// Generic wrapper around the 9 Tier-1 NHL stats endpoints (skater
+    /// summary/bios/realtime/timeonice/goalsForAgainst, goalie
+    /// summary/bios/advanced/savesByStrength). Tier-2 endpoints are
+    /// listed as `--kind` values for completeness but the CLI errors
+    /// (Tier-2 lands in L.6 with the runtime `extra_reports` cache).
+    ///
+    /// Writes to `<snapshot_root>/<season>/<season_type>/<filename>`.
+    /// Concurrent invocations are serialized via the fetch lock at
+    /// `<icelines_home>/.fetch.lock` (TAPE-R3 rate-limit policy).
+    Report {
+        /// Which report to fetch (camelCase variant of the L.2 catalog).
+        #[arg(long, value_enum)]
+        kind: ReportKindArg,
+        #[arg(long, default_value = icelines_core::CURRENT_SEASON_STR)]
+        season: String,
+        /// Single window — no `Both`. Use two `fetch report` invocations
+        /// with `--type regular` and `--type playoff` for both windows.
+        #[arg(long = "type", value_enum, default_value_t = QuerySeasonType::Regular)]
+        season_type: QuerySeasonType,
+        /// Skip the fs lock at `<icelines_home>/.fetch.lock`. Use only
+        /// when you accept the rate-limit risk of concurrent invocations
+        /// (TAPE-R3 follow-up: error message references this flag).
+        #[arg(long)]
+        no_lock: bool,
+        /// Print the URL + report kind WITHOUT issuing the HTTP call or
+        /// writing to disk. Useful for verifying dispatch + path joins.
+        #[arg(long)]
+        dry_run: bool,
+    },
+}
+
+/// CLI surface for `icelines-core::stats_catalog::ReportKind`. Mirror
+/// of the core enum — clap derive `ValueEnum` lives on this side so the
+/// core crate stays clap-independent. The mapping below is 1:1 by
+/// variant name (camelCase via `clap(name = ...)`).
+#[derive(Debug, Copy, Clone, PartialEq, Eq, ValueEnum)]
+pub enum ReportKindArg {
+    // Tier 1
+    #[clap(name = "skater-summary")]
+    SkaterSummary,
+    #[clap(name = "skater-bios")]
+    SkaterBios,
+    #[clap(name = "skater-realtime")]
+    SkaterRealtime,
+    #[clap(name = "skater-timeonice")]
+    SkaterTimeOnIce,
+    #[clap(name = "skater-goals-for-against")]
+    SkaterGoalsForAgainst,
+    #[clap(name = "goalie-summary")]
+    GoalieSummary,
+    #[clap(name = "goalie-bios")]
+    GoalieBios,
+    #[clap(name = "goalie-advanced")]
+    GoalieAdvanced,
+    #[clap(name = "goalie-saves-by-strength")]
+    GoalieSavesByStrength,
+    // Tier 2 (L.6)
+    #[clap(name = "skater-puck-possessions")]
+    SkaterPuckPossessions,
+    #[clap(name = "skater-scoring-rates")]
+    SkaterScoringRates,
+    #[clap(name = "skater-summary-shooting")]
+    SkaterSummaryShooting,
+    #[clap(name = "skater-power-play")]
+    SkaterPowerPlay,
+    #[clap(name = "skater-penalty-kill")]
+    SkaterPenaltyKill,
+    #[clap(name = "skater-penalties")]
+    SkaterPenalties,
+    #[clap(name = "skater-faceoff-wins")]
+    SkaterFaceoffWins,
+    #[clap(name = "skater-faceoff-percentages")]
+    SkaterFaceoffPercentages,
+    #[clap(name = "skater-shot-type")]
+    SkaterShotType,
+    #[clap(name = "skater-scoring-per-game")]
+    SkaterScoringPerGame,
+    #[clap(name = "goalie-started-vs-relieved")]
+    GoalieStartedVsRelieved,
+    #[clap(name = "goalie-days-rest")]
+    GoalieDaysRest,
+    #[clap(name = "goalie-penalty-shots")]
+    GoaliePenaltyShots,
+    #[clap(name = "goalie-shootout")]
+    GoalieShootout,
+}
+
+impl ReportKindArg {
+    pub fn to_core(self) -> icelines_core::stats_catalog::ReportKind {
+        use icelines_core::stats_catalog::ReportKind as R;
+        match self {
+            Self::SkaterSummary           => R::SkaterSummary,
+            Self::SkaterBios              => R::SkaterBios,
+            Self::SkaterRealtime          => R::SkaterRealtime,
+            Self::SkaterTimeOnIce         => R::SkaterTimeOnIce,
+            Self::SkaterGoalsForAgainst   => R::SkaterGoalsForAgainst,
+            Self::GoalieSummary           => R::GoalieSummary,
+            Self::GoalieBios              => R::GoalieBios,
+            Self::GoalieAdvanced          => R::GoalieAdvanced,
+            Self::GoalieSavesByStrength   => R::GoalieSavesByStrength,
+            Self::SkaterPuckPossessions   => R::SkaterPuckPossessions,
+            Self::SkaterScoringRates      => R::SkaterScoringRates,
+            Self::SkaterSummaryShooting   => R::SkaterSummaryShooting,
+            Self::SkaterPowerPlay         => R::SkaterPowerPlay,
+            Self::SkaterPenaltyKill       => R::SkaterPenaltyKill,
+            Self::SkaterPenalties         => R::SkaterPenalties,
+            Self::SkaterFaceoffWins       => R::SkaterFaceoffWins,
+            Self::SkaterFaceoffPercentages => R::SkaterFaceoffPercentages,
+            Self::SkaterShotType          => R::SkaterShotType,
+            Self::SkaterScoringPerGame    => R::SkaterScoringPerGame,
+            Self::GoalieStartedVsRelieved => R::GoalieStartedVsRelieved,
+            Self::GoalieDaysRest          => R::GoalieDaysRest,
+            Self::GoaliePenaltyShots      => R::GoaliePenaltyShots,
+            Self::GoalieShootout          => R::GoalieShootout,
+        }
+    }
 }
 
 #[derive(Debug, Subcommand)]

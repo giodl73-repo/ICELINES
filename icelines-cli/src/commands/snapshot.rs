@@ -122,8 +122,8 @@ pub async fn run(cmd: SnapshotSubcommand) -> anyhow::Result<()> {
                 .with_context(|| format!("rebuilding snapshot '{name}' as chunked"))?;
             println!(
                 "✓ Migrated '{name}' to chunked layout ({} bios + {} stats chunks).",
-                cm.bios.len(),
-                cm.stats.len(),
+                cm.bios().len(),
+                cm.stats().len(),
             );
             println!("  Run `icelines snapshot gc` to sweep any chunks now unreferenced.");
         }

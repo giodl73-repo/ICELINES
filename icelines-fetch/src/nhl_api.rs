@@ -19,8 +19,17 @@ pub struct NhlApiClient {
     client: reqwest::Client,
     base_stats: String, // https://api.nhle.com/stats/rest/en
     base_web: String,   // https://api-web.nhle.com/v1
+    /// Retry policy — Phase Lindsay L.1.5 (TAPE-R3 rate-limit policy):
+    /// exponential backoff, base 500ms, capped at 30s, max 5 retries.
+    /// Retries fire on 429 (rate-limited) AND 5xx (server-side transient).
+    /// Pre-Lindsay: 3 retries × 1000ms base × 429-only.
     max_retries: u32,
     retry_base_ms: u64,
+    /// Backoff cap (Lindsay L.1.5). Without this, attempt 5 at base
+    /// 500ms would wait 16 seconds — fine. With base 1000ms, attempt 5
+    /// would be 32s — over the spec's 30s cap. We cap at 30s
+    /// regardless of base*2^attempt.
+    retry_cap_ms: u64,
 }
 
 impl NhlApiClient {
@@ -34,8 +43,12 @@ impl NhlApiClient {
             client,
             base_stats: base_stats.into(),
             base_web: base_web.into(),
-            max_retries: 3,
-            retry_base_ms: 1000,
+            // Lindsay L.1.5: bumped from 3 → 5 retries, base 1000 → 500
+            // ms, retry surface widened from {429} → {429, 5xx}, with a
+            // 30s ceiling on the per-attempt sleep.
+            max_retries: 5,
+            retry_base_ms: 500,
+            retry_cap_ms: 30_000,
         }
     }
 
@@ -47,9 +60,36 @@ impl NhlApiClient {
         )
     }
 
+    /// Override the retry policy. Used by L1 tests to keep retry waits
+    /// at millisecond scale (production base is 500ms × 2^attempt — too
+    /// slow for tests). Production callers should NOT use this — the
+    /// defaults from `Self::new` reflect the L.1.5 spec contract.
+    pub fn with_retry_params(
+        mut self,
+        max_retries: u32,
+        retry_base_ms: u64,
+        retry_cap_ms: u64,
+    ) -> Self {
+        self.max_retries = max_retries;
+        self.retry_base_ms = retry_base_ms;
+        self.retry_cap_ms = retry_cap_ms;
+        self
+    }
+
     // ── Internal HTTP helper ─────────────────────────────────────────────────
 
     async fn get_json<T: serde::de::DeserializeOwned>(&self, url: &str) -> Result<T, FetchError> {
+        // Phase Lindsay L.1.5 (TAPE-R3 rate-limit policy):
+        //   - Retry surface: 429 (rate-limited) + 5xx (server-side transient).
+        //   - Backoff: exponential, base `retry_base_ms`, capped at
+        //     `retry_cap_ms`. Pre-Lindsay only retried 429 with no cap.
+        //   - Max retries: `max_retries` (5 in production).
+        // Other 4xx (auth, bad request, etc.) fail-fast — they won't
+        // succeed on retry. The `documented-broken` 500 endpoints
+        // (skater/advanced, several goalie/* per probe artifact) ARE
+        // 5xx — they'll retry uselessly. Mitigated by `ReportKind::tier`
+        // dispatch in L.1.6 (we never call broken endpoints) so the
+        // wasted retries should never fire in practice.
         let mut attempt = 0u32;
         loop {
             let resp = self
@@ -72,20 +112,29 @@ impl NhlApiClient {
                             detail: format!("{url}: {e}"),
                         });
                 }
-                429 => {
+                // Retryable: 429 (rate-limit) + 5xx (server-side transient).
+                429 | 500..=599 => {
                     if attempt >= self.max_retries {
-                        return Err(FetchError::RateLimited {
-                            url: url.to_owned(),
+                        // Choice of error: 429 → RateLimited; 5xx → Http
+                        // (carrying the actual status). Preserves the
+                        // pre-Lindsay error surface for 429-exhaust;
+                        // adds a clear "exhausted retries on 5xx" path.
+                        return Err(if status == 429 {
+                            FetchError::RateLimited { url: url.to_owned() }
+                        } else if status == 503 {
+                            FetchError::ServiceUnavailable { url: url.to_owned() }
+                        } else {
+                            FetchError::Http {
+                                status,
+                                url: url.to_owned(),
+                            }
                         });
                     }
-                    let delay = self.retry_base_ms * (1 << attempt); // 1s, 2s, 4s
+                    // Exponential backoff with cap.
+                    let raw_delay = self.retry_base_ms.saturating_mul(1 << attempt);
+                    let delay = raw_delay.min(self.retry_cap_ms);
                     tokio::time::sleep(Duration::from_millis(delay)).await;
                     attempt += 1;
-                }
-                503 => {
-                    return Err(FetchError::ServiceUnavailable {
-                        url: url.to_owned(),
-                    });
                 }
                 s => {
                     return Err(FetchError::Http {
@@ -170,6 +219,33 @@ impl NhlApiClient {
             results.push((team.to_string(), roster));
         }
         Ok(results)
+    }
+
+    /// Phase Lindsay L.1.6 — generic Tier-1/Tier-2 fetcher.
+    ///
+    /// Builds the URL from `kind.url_path()` + season-aware cayenneExp,
+    /// paginates via `fetch_all_paged`, and returns the rows as raw
+    /// `serde_json::Value`s. Callers that want typed deserialization
+    /// (Tier-1) can `serde_json::from_value::<R>` over the slice.
+    ///
+    /// Refuses to dispatch known-broken endpoints: per the probe artifact
+    /// 8 documented-broken URLs return 500 — we never call them. The
+    /// CLI gates on `kind.is_known_working()` BEFORE invoking this
+    /// helper so the L.1.5 5-retry-with-backoff policy doesn't burn
+    /// 2.5 minutes on a known-dead URL.
+    pub async fn fetch_report_paged(
+        &self,
+        kind: icelines_core::stats_catalog::ReportKind,
+        season: &str,
+        season_type: SeasonType,
+    ) -> Result<Vec<serde_json::Value>, FetchError> {
+        let gt = game_type_id(season_type);
+        let endpoint = format!(
+            "{}/{}?cayenneExp=seasonId%3D{season}%20and%20gameTypeId%3D{gt}",
+            self.base_stats,
+            kind.url_path(),
+        );
+        self.fetch_all_paged(&endpoint).await
     }
 
     /// Fetch all skater realtime stats for a season (paginated).

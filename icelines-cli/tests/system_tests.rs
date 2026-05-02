@@ -2054,3 +2054,153 @@ fn l2_cmd_group_export_to_stdout_emits_json() {
         .expect("stdout must be valid JSON");
     assert_eq!(parsed["name"].as_str(), Some("stdout-test"));
 }
+
+// ── Phase Lindsay L.1.6 — fetch report CLI ──────────────────────────────────
+
+/// `fetch report --kind <Tier-1> --dry-run` prints the URL + planned
+/// write target without making a network call. Pin the URL shape AND
+/// the per-window file path.
+#[test]
+fn l2_lindsay_fetch_report_tier1_dry_run() {
+    let out = run(&[
+        "fetch", "report",
+        "--kind", "skater-timeonice",
+        "--season", "20242025",
+        "--type", "regular",
+        "--dry-run",
+    ]);
+    assert!(
+        out.status.success(),
+        "fetch report --dry-run must exit 0; stderr: {}",
+        String::from_utf8_lossy(&out.stderr),
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("/skater/timeonice"), "URL must include endpoint path; got:\n{stdout}");
+    assert!(stdout.contains("seasonId=20242025"), "URL must carry season filter");
+    assert!(stdout.contains("gameTypeId=2"), "regular → gameTypeId=2");
+    assert!(stdout.contains("timeonice.json"), "must mention the per-window filename");
+    assert!(stdout.contains("\\20242025\\regular") || stdout.contains("/20242025/regular"),
+        "must mention the per-window dir layout");
+}
+
+/// `--type playoff` flips gameTypeId and the season-type subdir.
+#[test]
+fn l2_lindsay_fetch_report_tier1_playoff_dry_run() {
+    let out = run(&[
+        "fetch", "report",
+        "--kind", "goalie-savesByStrength",
+        "--season", "20232024",
+        "--type", "playoff",
+        "--dry-run",
+    ]);
+    // (clap normalizes the kebab-case name; `goalie-savesByStrength` is
+    // wrong — the value-enum spelling is `goalie-saves-by-strength`. Fix.)
+    let _ = out;
+    let out = run(&[
+        "fetch", "report",
+        "--kind", "goalie-saves-by-strength",
+        "--season", "20232024",
+        "--type", "playoff",
+        "--dry-run",
+    ]);
+    assert!(
+        out.status.success(),
+        "playoff dry-run must exit 0; stderr: {}",
+        String::from_utf8_lossy(&out.stderr),
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("/goalie/savesByStrength"));
+    assert!(stdout.contains("gameTypeId=3"), "playoff → gameTypeId=3");
+    assert!(stdout.contains("\\playoff") || stdout.contains("/playoff"));
+}
+
+/// Tier-2 dispatch is rejected with a "deferred to L.6" error and a
+/// non-zero exit code. Catches a regression where Tier-2 might
+/// silently no-op or hit the wire.
+#[test]
+fn l2_lindsay_fetch_report_tier2_rejected() {
+    let out = run(&[
+        "fetch", "report",
+        "--kind", "skater-puck-possessions",
+        "--dry-run",
+    ]);
+    assert!(
+        !out.status.success(),
+        "Tier-2 dispatch must non-zero exit; stdout: {} stderr: {}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr),
+    );
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("Tier-2") && stderr.contains("L.6"),
+        "error must mention Tier-2 and L.6 deferral; got:\n{stderr}",
+    );
+}
+
+/// `--kind` value-enum lists every catalog variant. Pin via `--help`
+/// containing all 9 Tier-1 names (camelCase → kebab-case).
+#[test]
+fn l2_lindsay_fetch_report_help_lists_all_tier1_kinds() {
+    let out = run(&["fetch", "report", "--help"]);
+    assert!(out.status.success());
+    let help = String::from_utf8_lossy(&out.stdout);
+    for kind in &[
+        "skater-summary",
+        "skater-bios",
+        "skater-realtime",
+        "skater-timeonice",
+        "skater-goals-for-against",
+        "goalie-summary",
+        "goalie-bios",
+        "goalie-advanced",
+        "goalie-saves-by-strength",
+    ] {
+        assert!(help.contains(kind), "--help must list Tier-1 kind {kind}");
+    }
+}
+
+/// BENCH closeout #1: `--no-lock` actually skips lock acquisition.
+/// Strategy: pre-create the lock file at the binary's icelines-home
+/// dir (`<HOME>/.icelines/.fetch.lock`) so the default lock path
+/// would block. Then invoke `fetch report --no-lock --dry-run` —
+/// it must exit 0 because the flag short-circuits the acquire.
+/// Without `--no-lock` the same setup would either spin (until our
+/// 120s timeout) or error.
+///
+/// `--dry-run` keeps this offline — the flag-skip path runs through
+/// the same gate logic regardless of dry-run, so dry-run is
+/// sufficient to prove the lock is bypassed.
+#[test]
+fn l2_lindsay_fetch_report_no_lock_skips_lock_acquisition() {
+    let home = tempfile::TempDir::new().expect("tempdir");
+    let icelines_home = home.path().join(".icelines");
+    std::fs::create_dir_all(&icelines_home).unwrap();
+    // Pre-occupy the lock path. Without --no-lock, acquire() would
+    // block trying to `create_new` over this file.
+    let lock_path = icelines_home.join(".fetch.lock");
+    std::fs::write(&lock_path, b"held-by-test").unwrap();
+
+    let out = run_isolated(
+        home.path(),
+        &[
+            "fetch", "report",
+            "--kind", "skater-timeonice",
+            "--season", "20242025",
+            "--type", "regular",
+            "--no-lock",
+            "--dry-run",
+        ],
+    );
+    assert!(
+        out.status.success(),
+        "--no-lock should bypass the held lock; exit={:?} stderr={}",
+        out.status.code(),
+        String::from_utf8_lossy(&out.stderr),
+    );
+    // The held lock file must STILL exist after `--no-lock` ran —
+    // the flag means "don't touch the lock", not "force-delete it".
+    assert!(
+        lock_path.exists(),
+        "--no-lock must NOT delete or modify the held lock file",
+    );
+}

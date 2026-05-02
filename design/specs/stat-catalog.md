@@ -1,11 +1,12 @@
 # IceLines Stat Catalog — Specification
 
-**Version**: 0.3 — Phase Lindsay (R2-applied, spec-body sweep)
+**Version**: 0.4 — Phase Lindsay (R3-applied — spec-body sweep + R3 follow-through)
 **Date**: 2026-05-02
-**Status**: Design — paired with `design/plans/2026-05-02-phaseLindsay-stat-catalog.md` v0.3.
-10-role review applied (HART, KEEL, TAPE, FORGE, EDGE, BENCH, WIRE, GLASS, SCOUT, PACE).
+**Status**: Design — paired with `design/plans/2026-05-02-phaseLindsay-stat-catalog.md` v0.4.
+10-role review applied across three rounds (HART, KEEL, TAPE, FORGE, EDGE, BENCH, WIRE, GLASS, SCOUT, PACE).
 R1 summary at `design/plans/2026-05-02-phaseLindsay-review-summary.md`,
-R2 summary at `design/plans/2026-05-02-phaseLindsay-r2-summary.md`.
+R2 summary at `design/plans/2026-05-02-phaseLindsay-r2-summary.md`,
+R3 summary at `design/plans/2026-05-02-phaseLindsay-r3-summary.md`.
 **Predecessor**: `design/specs/query-engine.md` (Tier 1/2/3 metric list — superseded by this catalog)
 
 ---
@@ -42,10 +43,12 @@ The catalog lives in a new module `icelines-core::stats_catalog`.
 ### Public types
 
 ```rust
-// 107 cases v0.3 — exhaustive, NOT #[non_exhaustive]. Compiler enforces
+// 108 cases v0.4 — exhaustive, NOT #[non_exhaustive]. Compiler enforces
 // "added a stat → updated everywhere" across all consumer surfaces.
-// (v0.2 was 98; v0.3 added the xG family per SCOUT R2 review.)
-pub enum StatId { /* 107 cases — see "Stat enumeration" below */ }
+// (v0.2 was 98; v0.3 added the 9-stat xG family per SCOUT R2; v0.4 adds
+// PpAssists raw + recategorizes FaceoffWinPct → TwoWay,
+// EvenStrengthTimeOnIcePerGame → TimeOnIce per SCOUT R2 follow-through.)
+pub enum StatId { /* 108 cases — see "Stat enumeration" below */ }
 pub enum StatCategory { Identity, Scoring, SpecialTeams, TwoWay, TimeOnIce, OnIceGoals, Possession, Goalie, Derived }
 pub enum StatUnit { Count, Pct, Per60, Seconds, Rate, Inverted /* lower-is-better */ }
 
@@ -55,6 +58,59 @@ pub struct StatFilter {
     pub value: f64,
 }
 pub enum FilterOp { Min, Max, Equals }
+
+/// Filter-grammar parse failure (FORGE-R2-B4 / EDGE-R2). Seven variants —
+/// every malformed-input class in II-05 / II-06 maps to exactly one variant.
+/// `Display` impl produces the user-facing error message; the CLI front-end
+/// renders `eprintln!("error: {}", e)` and exits non-zero.
+pub enum FilterParseError {
+    EmptyInput,                       // ""
+    EmptyStatKey,                     // ">=10"  (whitespace-only key also lands here)
+    MissingOp { input: String },      // "hits10"
+    MultipleOps { input: String },    // "hits>=>5"
+    UnknownStat { key: String },      // "hots-per-60"
+    BadNumber { token: String },      // "hits>=abc", "hits>=1,5" (locale comma)
+    NotFinite { token: String },      // "hits>=NaN", "hits>=inf"
+}
+
+/// Runtime-only Tier-2 cache (HART-R2-B1, FORGE-R2-B1, WIRE-R2-B1).
+/// `BTreeMap`, NOT `HashMap` — iteration order must be deterministic for
+/// snapshot tests, debug dumps, and "list all fetched reports" UX. Keyed
+/// by full window identity so eviction can cascade with the typed LRU.
+/// Lives on `StatsRepository`; never persisted to disk (see "Repository
+/// lifecycle — extra_reports" below).
+pub type ExtraReports =
+    std::collections::BTreeMap<(PlayerId, Season, SeasonType, ReportKind), serde_json::Value>;
+
+/// Per-window file format for Tier-1 reports (WIRE-R2-B5).
+/// Each typed substruct on `SeasonStats` is sourced from a SEPARATE
+/// per-report file under `~/.icelines/snapshots/<season>/<season_type>/`.
+/// Loaded lazily at `StatsRepository::load_window` time; merged onto the
+/// `SeasonStats` row by the loader, never inlined into `stats.json`.
+/// `bundle_schema_version=1` stays valid because no existing field shape
+/// changes — these are NEW files, not new inline fields.
+pub struct Tier1ReportFile {
+    pub kind: ReportKind,            // SkaterTimeOnIce, SkaterGoalsForAgainst, …
+    pub filename: &'static str,      // "timeonice.json", "goalsForAgainst.json"
+    pub merge_target: MergeTarget,   // SeasonStats::time_on_ice, SeasonStats::goals_for_against, …
+}
+pub enum MergeTarget {
+    SkaterRealtime, SkaterTimeOnIce, SkaterGoalsForAgainst,
+    GoalieAdvanced, GoalieSavesByStrength,
+    // … one variant per Tier-1 substruct on SeasonStats.
+}
+
+/// Per-window load-with-fallback (WIRE-R2-F5). Reads from primary snapshot
+/// directory, falls back to bundled in-binary data for the recent 5
+/// seasons + 33 historical bundled. Returns `None` only when neither
+/// source has the file. Used by `StatsRepository::load_window` for every
+/// Tier-1 substruct in the window.
+pub fn load_report_with_fallback<T: for<'de> serde::Deserialize<'de>>(
+    snapshot_dir: &Path,
+    season: Season,
+    season_type: SeasonType,
+    file: &Tier1ReportFile,
+) -> Result<Option<T>, LoadError>;
 ```
 
 ### Public methods on `StatId`
@@ -109,7 +165,7 @@ impl ReportKind {
 
 ---
 
-## Stat enumeration (v0.3 — 107 stats, listed by category)
+## Stat enumeration (v0.4 — 108 stats, listed by category)
 
 ### `Identity` — 0 stats (kept as a category for the bios block; never selectable for sort/filter)
 
@@ -119,13 +175,21 @@ filter axes already typed on `PlayerFilter`. The catalog includes the
 `Identity` category for completeness so TUI can render identity
 metadata under the same panel structure.
 
-### `Scoring` — 13 stats (from `summary`)
+### `Scoring` — 14 stats (from `summary`)
 
 `Goals`, `Assists`, `Points`, `EvGoals`, `EvPoints`,
-`PpGoals`, `PpPoints`, `ShGoals`, `ShPoints`,
+`PpGoals`, `PpAssists`, `PpPoints`, `ShGoals`, `ShPoints`,
 `Gwg`, `OtGoals`, `Shots`, `ShootingPct`
 
-### `SpecialTeams` — 14 stats (from `summary` + `powerplay` + `penaltykill` + `faceoffwins`)
+`PpAssists` (raw count, SCOUT-R2 L2-F5) is exposed as a first-class stat
+alongside `PpPoints`/`PpGoals`. Existing per-60 derivative `PpAssistsPer60`
+stays in `SpecialTeams`. CLI alias: `pp-assists`.
+
+### `SpecialTeams` — 13 stats (from `summary` + `powerplay` + `penaltykill` + `faceoffwins`)
+
+`FaceoffWinPct` is **not** in this category despite being sourced from the
+`summary` endpoint — see `TwoWay` (SCOUT-R2 L2-F2). Per-strength faceoff
+splits (zone-keyed) stay here.
 
 | StatId | Source | Notes |
 |---|---|---|
@@ -138,34 +202,48 @@ metadata under the same panel structure.
 | `ShGoalsPer60` | penaltykill | rate |
 | `ShPointsPer60` | penaltykill | rate |
 | `PpGoalsAgainstPer60` | penaltykill | rate (PK metric) |
-| `FaceoffWinPct` | summary | pct, centers only |
 | `FaceoffWins` | faceoffwins | count |
 | `FaceoffLosses` | faceoffwins | count |
 | `OffensiveZoneFaceoffPct` | faceoffpercentages | pct |
 | `DefensiveZoneFaceoffPct` | faceoffpercentages | pct |
 
-### `TwoWay` — 16 stats (from `summary` + `realtime` + `penalties`)
+### `TwoWay` — 17 stats (from `summary` + `realtime` + `penalties`)
 
 `PlusMinus`, `Pim`,
 `Hits`, `BlockedShots`, `Takeaways`, `Giveaways`, `MissedShots`,
 `HitsPer60`, `BlockedShotsPer60`, `TakeawaysPer60`, `GiveawaysPer60`,
 `PenaltiesDrawn`, `PenaltiesDrawnPer60`, `PenaltiesTakenPer60`,
-`NetPenalties`, `NetPenaltiesPer60`
+`NetPenalties`, `NetPenaltiesPer60`,
+`FaceoffWinPct`
 
-### `TimeOnIce` — 11 stats (from `timeonice`)
+`FaceoffWinPct` lives here (not `SpecialTeams`) per SCOUT-R2 L2-F2 — most
+faceoffs happen at even strength, not on special teams. `applies_to` still
+gates this stat to `Position::Center` (per-row).
+
+### `TimeOnIce` — 12 stats (from `timeonice` + `goalsForAgainst`)
 
 `TotalToi`, `TotalToiPerGame`,
-`EvToi`, `EvToiPerGame`,
+`EvToi`, `EvToiPerGame`, `EvenStrengthTimeOnIcePerGame`,
 `PpToi`, `PpToiPerGame`,
 `ShToi`, `ShToiPerGame`,
 `Shifts`, `ShiftsPerGame`, `ToiPerShift`
 
-### `OnIceGoals` — 9 stats (from `goalsForAgainst`)
+`EvenStrengthTimeOnIcePerGame` is sourced from the `goalsForAgainst`
+endpoint but is a **deployment** stat, not a goal stat (SCOUT-R2 L2-F3).
+Endpoint sourcing is a TAPE concern; the catalog category reflects the
+hockey-domain meaning. `read()` does NOT inherit the `OnIceGoals`
+trade-window guard (DI-11) — this stat sums correctly across stints.
+
+### `OnIceGoals` — 8 stats (from `goalsForAgainst`)
 
 `EvGoalsFor`, `EvGoalsAgainst`, `EvGoalsForPct`,
 `PpGoalsFor`, `PpGoalsAgainst`,
 `ShGoalsFor`, `ShGoalsAgainst`,
-`EvenStrengthGoalDifference`, `EvenStrengthTimeOnIcePerGame`
+`EvenStrengthGoalDifference`
+
+(`EvenStrengthTimeOnIcePerGame` was here in v0.3 but recategorized to
+`TimeOnIce` in v0.4 per SCOUT-R2 L2-F3. The eight remaining stats all
+inherit DI-11: `read()` returns `None` when `view.was_traded_in_window()`.)
 
 ### `Possession` — 15 stats (Tier 2 — `puckPossessions` + `scoringRates` + `summaryshooting` + xG)
 
@@ -201,28 +279,30 @@ metadata under the same panel structure.
 `PointsPerGame`, `GoalsPerGame`, `AssistsPerGame`,
 `PaceSortKey` (the Hart pace + goals tiebreak)
 
-**Total v0.3: 13 + 14 + 16 + 11 + 9 + 15 + 22 + 7 = 107 selectable stats.**
-(v0.2 was 98; v0.3 adds the 9-stat xG family across Possession + Goalie per SCOUT-B1/B2.)
+**Total v0.4: 14 + 13 + 17 + 12 + 8 + 15 + 22 + 7 = 108 selectable stats.**
+(v0.2 was 98; v0.3 added the 9-stat xG family across Possession + Goalie
+per SCOUT-B1/B2; v0.4 adds `PpAssists` raw count to Scoring (SCOUT-R2 L2-F5)
+and applies recategorization moves SCOUT R2 flagged: `FaceoffWinPct` →
+`TwoWay`, `EvenStrengthTimeOnIcePerGame` → `TimeOnIce`. Net delta: +1.)
 
 The number is approximate; the actual catalog will be settled when L.2
 implementation lands. New stats added later add a `StatId` variant and a
 `read` arm — the rest of the app inherits them automatically.
 
-### `FaceoffWinPct` recategorization (SCOUT FIXIT L2-F2)
+### Recategorization rationale (SCOUT-R2 L2-F2 / L2-F3, applied in v0.4)
 
-Despite being sourced from `summary` (which the Hart pipeline grouped
-under "scoring"), `FaceoffWinPct` is read as a **two-way / 200-foot**
-stat by hockey evaluators — most faceoffs happen at even strength, not
-on special teams. Recategorized to `TwoWay` (was `SpecialTeams` in v0.2).
-Per-strength faceoff splits (`PpFaceoffWinPct`, `ShFaceoffWinPct`,
-`OffensiveZoneFaceoffPct`, `DefensiveZoneFaceoffPct`) stay in `SpecialTeams`.
-
-### `EvenStrengthTimeOnIcePerGame` recategorization (SCOUT FIXIT L2-F3)
-
-Currently in `OnIceGoals` because it's sourced from the
-`goalsForAgainst` endpoint. **Hockey-domain category** is `TimeOnIce` —
-it's a deployment/usage stat, not an on-ice goal stat. The endpoint
-source is a TAPE concern, not a SCOUT one. Recategorized to `TimeOnIce`.
+- **`FaceoffWinPct` → `TwoWay`** (was `SpecialTeams` in v0.3 prose but
+  v0.3 spec body still listed it under SpecialTeams — fixed in v0.4).
+  Most faceoffs happen at even strength, not on special teams; hockey
+  evaluators read this as a 200-foot stat. Per-strength faceoff splits
+  (`OffensiveZoneFaceoffPct`, `DefensiveZoneFaceoffPct`) stay in
+  `SpecialTeams` — those are about deployment, not skill.
+- **`EvenStrengthTimeOnIcePerGame` → `TimeOnIce`** (was `OnIceGoals` in
+  v0.3 prose but v0.3 body still listed it under OnIceGoals — fixed in
+  v0.4). Endpoint sourcing (`goalsForAgainst`) is a TAPE concern; the
+  hockey-domain meaning is deployment / usage, which is `TimeOnIce`.
+  Side effect: this stat is **exempt from DI-11** (the `OnIceGoals`
+  trade-window guard) — TOI sums correctly across stints.
 
 ---
 
@@ -231,6 +311,19 @@ source is a TAPE concern, not a SCOUT one. Recategorized to `TimeOnIce`.
 ```rust
 impl StatId {
     pub fn read(self, view: &PlayerView<'_>) -> Option<f64> {
+        // DI-11 enforcement at category boundary (EDGE-R3 explicit guard).
+        // OnIceGoals stats are last-stint-only; summing across stints is
+        // wrong-data. The guard fires here, not at every match arm, so
+        // adding a new OnIceGoals stat doesn't require remembering the
+        // rule. `EvenStrengthTimeOnIcePerGame` is in TimeOnIce (v0.4
+        // recategorization) so it does NOT short-circuit here — TOI
+        // sums correctly across stints.
+        if self.category() == StatCategory::OnIceGoals
+            && view.was_traded_in_window()
+        {
+            return None;
+        }
+
         match self {
             // Identity — always None (not a stat); category-iterable but
             // not selectable.
@@ -239,6 +332,7 @@ impl StatId {
             StatId::Assists     => Some(view.stats.totals.assists as f64),
             StatId::Points      => Some(view.stats.totals.points as f64),
             StatId::PpGoals     => Some(view.stats.totals.pp_goals as f64),
+            StatId::PpAssists   => Some(view.stats.totals.pp_assists as f64),  // v0.4 — SCOUT L2-F5
             // Realtime — None when the season's realtime data is missing
             // (pre-2005 league era OR snapshot/bundle gap).
             StatId::Hits        => view.stats.realtime.as_ref()
@@ -270,13 +364,38 @@ impl StatId {
                 let hits = view.hits()?;
                 Some(hits as f64 / toi as f64 * 3600.0)
             }
-            // … one arm per StatId, ~107 total
+            // OnIceGoals (post-guard) — None when the goalsForAgainst
+            // substruct is unloaded for this window.
+            StatId::EvGoalsFor => view.stats.goals_for_against.as_ref()
+                                       .map(|g| f64::from(g.ev_goals_for)),
+            // … one arm per StatId, 108 total
         }
+    }
+
+    /// Multi-season aggregate read (PACE-R2 F3 — strict propagation).
+    /// Used by `query player --seasons N` and TUI career table totals.
+    /// Returns `Some(sum)` only when EVERY window in the slice has a
+    /// `Some` from `read()`. ANY `None` (missing data, era gate, trade
+    /// guard, MIN_GP floor) propagates as `None` — no silent zeros.
+    /// For non-Count units (Pct, Per60, Rate), `aggregate_read` is NOT
+    /// a sum — it routes through `category()` to compute the correct
+    /// blend (e.g. weighted by GP for percentages, weighted by TOI for
+    /// per-60 rates). Equivalent to the existing `view.career_totals()`
+    /// helper but catalog-driven.
+    pub fn aggregate_read(self, views: &[PlayerView<'_>]) -> Option<f64> {
+        // (signature pinned — implementation in L.2; behavior locked here.)
+        unimplemented!()
     }
 }
 ```
 
 `read()` is the **only** function that knows where the value lives. Everything else (sort, filter, display, export) calls into it. A change to where `Hits` is stored only touches one match arm.
+
+The leading DI-11 guard at the top of `read()` makes the trade-window
+short-circuit a property of the **category**, not of every match arm.
+Adding a new `OnIceGoals` stat inherits the guard for free; moving a
+stat OUT of `OnIceGoals` (as `EvenStrengthTimeOnIcePerGame` did in v0.4)
+removes the guard automatically.
 
 ---
 
@@ -355,14 +474,42 @@ the row-level filter.
 pub struct StatFilter {
     pub stat: StatId,
     pub op: FilterOp,    // Min | Max | Equals
-    pub value: f64,
+    pub value: f64,      // construction guarantees finite (parser rejects NaN/inf)
+}
+
+impl StatFilter {
+    /// Construction is the only place a `StatFilter` can be made.
+    /// `value.is_finite()` is enforced at construction; downstream code
+    /// (sort, dedup, eval) can assume no NaN/inf ever appears (II-05,
+    /// EDGE-R2). The CLI parser routes through this constructor; the TUI
+    /// numeric-input field validates before constructing.
+    pub fn new(stat: StatId, op: FilterOp, value: f64)
+        -> Result<Self, FilterParseError>
+    {
+        if !value.is_finite() {
+            return Err(FilterParseError::NotFinite { token: value.to_string() });
+        }
+        Ok(Self { stat, op, value })
+    }
 }
 
 impl PlayerFilter {
+    /// Same-StatId multi-filter normalization (EDGE-R2 / II-06).
+    /// Two filters on the same StatId+op compose deterministically:
+    ///   `--filter "hits-min 50" --filter "hits-min 100"`  →  effective `hits-min 100`
+    ///   `--filter "hits-max 200" --filter "hits-max 150"` →  effective `hits-max 150`
+    /// Mixed Min+Max on the same StatId compose to a closed range.
+    /// `Equals` on the same StatId TWICE is rejected at parse time as
+    /// `FilterParseError::MultipleOps` (no consistent normalization).
+    pub fn normalize_stat_filters(&mut self) {
+        // Group by (StatId, op kind), keep tightest bound per (stat, kind).
+        // Implementation lands in L.2; behavior locked here.
+    }
+
     pub fn matches_stat_filters(&self, view: &PlayerView<'_>) -> bool {
         for f in &self.stat_filters {
             // Skip non-applicable filters silently — DI-08.
-            if !f.stat.applies_to(view.position()) {
+            if !f.stat.applies_to(view.position(), view.is_goalie()) {
                 continue;
             }
             let actual = match f.stat.read(view) {
@@ -407,28 +554,194 @@ by `hits-min 100` should not include a player whose hit count is unknown
 filter      := <stat-key> <op> <number>
 stat-key    := letter (letter | digit | "-")*    -- e.g. "hits-per-60"
 op          := ">=" | "<=" | "==" | "="
-number      := <decimal>
+number      := <decimal>                          -- finite f64; NaN/inf REJECTED
 ```
 
 Whitespace allowed around `<op>`. Multiple `--filter` flags accumulate
-(implicit AND). `--sort <stat-key>` accepts the same key set.
+(implicit AND, then normalized per `PlayerFilter::normalize_stat_filters`).
+`--sort <stat-key>` accepts the same key set.
 
 Existing typed flags (`--ppg-min`, `--gp-min`, `--toi-min`, `--plus-minus-min`,
 `--shots-pg-min`) keep working. Internally they become typed slots on
 `PlayerFilter`; the new `--filter` just appends to `stat_filters`.
 
+### Parse-error variants
+
+Every malformed filter input maps to exactly one `FilterParseError` variant
+(EDGE-R2, FORGE-R2-B4). The CLI front-end renders `eprintln!("error: {}",
+err)` and exits non-zero. Variants and triggering inputs:
+
+| Variant | Triggering input examples |
+|---|---|
+| `EmptyInput` | `""` (empty `--filter` value) |
+| `EmptyStatKey` | `">=10"`, `"   >= 10"` (whitespace-only key) |
+| `MissingOp` | `"hits10"`, `"hits 10"` (no op token) |
+| `MultipleOps` | `"hits>=>5"`, `"hits===5"` (more than one op) |
+| `UnknownStat` | `"hots-per-60"`, `"foo"` (parses but `from_cli_key` returns `None`) |
+| `BadNumber` | `"hits>=abc"`, `"hits>=1,5"` (locale comma — explicit reject) |
+| `NotFinite` | `"hits>=NaN"`, `"hits>=inf"`, `"hits>=-inf"` |
+
 Backward-compatibility aliases (existing strings → canonical StatId
 short-key):
 
-| Legacy flag | StatId |
-|---|---|
-| `pts-pace` | `Pace82` |
-| `g-pace` | `GoalsPer82` |
-| `pp-g-pace` | `PpGoalsPer60` |
-| `sh-g-pace` | `ShGoalsPer60` |
-| `gwg-pace` | not a Lindsay stat (no `gwg-per-60` published) — keep typed handler |
-| `xg`, `cf-pct`, `xgf-pct` | `Possession` category — keep MoneyPuck path |
-| `improvement` | not a stat — keep as a special sort mode |
+| Legacy flag | StatId | Note |
+|---|---|---|
+| `pts-pace` | `Pace82` | |
+| `g-pace` | `GoalsPer82` | |
+| `pp-g-pace` | `PpGoalsPer60` | |
+| `sh-g-pace` | `ShGoalsPer60` | |
+| `gwg-pace` | not a Lindsay stat (no `gwg-per-60` published) — keep typed handler | intentional non-mapping |
+| `xg`, `cf-pct`, `xgf-pct` | `Possession` category — keep MoneyPuck path | |
+| `improvement` | not a stat — keep as a special sort mode | |
+| `--ppg-min N` | **divergent** from catalog `points-per-game>=N` | legacy `--ppg-min` uses Hart `pace_82/82` semantic; new catalog `points-per-game` uses `points / gp`. Documented intentional split (L-B5) — both paths stay live. |
+
+---
+
+## Repository lifecycle — `extra_reports`
+
+The Tier-2 `ExtraReports` cache (`BTreeMap<(PlayerId, Season, SeasonType,
+ReportKind), serde_json::Value>`) lives on `StatsRepository` alongside the
+typed-window LRU. Three rules govern it (HART-R3 / WIRE-R3 / PACE-R3):
+
+### Cascade eviction (DI-12)
+
+When the typed-window LRU evicts a `(season, season_type)` window, the
+repository MUST cascade-evict every `extra_reports` entry whose key
+prefix matches `(_, season, season_type, _)`. Without this rule, Tier-2
+blobs leak across LRU sweeps and resident memory grows unbounded as the
+user time-travels across seasons.
+
+```rust
+impl StatsRepository {
+    fn evict_window(&mut self, key: WindowKey) {
+        // Drop the typed substructs (existing).
+        self.windows.remove(&key);
+        // NEW v0.4: cascade-evict Tier-2 blobs for the same window.
+        self.extra_reports.retain(|(_, season, season_type, _), _|
+            (*season, *season_type) != (key.season, key.season_type)
+        );
+    }
+}
+```
+
+L0 test (`l0_repo_extra_reports_cascade_evict_on_window_drop`) asserts
+this property — fill primary LRU to capacity, force a window eviction,
+assert `extra_reports` for that window is empty.
+
+### Cap (DI-26)
+
+`extra_reports` is capped at **4096 entries** (~40 MB ceiling at 10 KB/value
+worst case). Insertion past the cap evicts the oldest entry by LRU order.
+The cap is independent of the typed-window LRU (DEFAULT_LRU_CAP=8) — Tier-2
+is a value cache, not a window cache.
+
+L0 test (`l0_repo_extra_reports_cap_at_4096`) asserts insertion 4097 evicts
+the oldest entry.
+
+### Runtime-only (DI-27)
+
+`extra_reports` is **never persisted to disk**. Fetching populates the
+in-process map; subsequent runs re-fetch. Avoids file-format proliferation
+and matches the "Tier-2 = on-demand" semantic. If a Tier-2 report graduates
+to ≥2 surfaces, AI-07 mandates promotion to a typed Tier-1 substruct first
+— at which point persistence is governed by the Tier-1 file format below,
+not by the cache.
+
+L1 test (`l1_repo_extra_reports_not_persisted`) asserts no file is written
+under `~/.icelines/snapshots/` after `fetch_report_into_extra` runs.
+
+### `repository_version` boundary check (HART-R3 / DI-28)
+
+The version check fires at `StatsRepository::load_window`, NOT at
+`repo_swap` (HART-R2-B2). An old binary opening a v=2 snapshot must error
+at the file-open boundary with `LoadError::RepoVersionUnknown { found,
+expected }`. Deferring the check until swap time leaves the repo in a
+half-loaded state.
+
+```rust
+impl StatsRepository {
+    pub fn load_window(&mut self, key: WindowKey) -> Result<(), LoadError> {
+        let manifest_version = read_manifest_version(&self.snapshot_dir, key)?;
+        if manifest_version > REPOSITORY_VERSION {
+            return Err(LoadError::RepoVersionUnknown {
+                found: manifest_version,
+                expected: REPOSITORY_VERSION,
+            });
+        }
+        // … typed substruct load …
+    }
+}
+```
+
+L1 test (`l1_repo_load_window_rejects_repository_version_2_on_v1_binary`)
+synthesizes a v=2 manifest and asserts the v=1 binary errors cleanly.
+
+---
+
+## Tier-1 file format (WIRE-R3 / DI-09 elaboration)
+
+Each typed Tier-1 substruct on `SeasonStats` is sourced from a SEPARATE
+per-report file under `~/.icelines/snapshots/<season>/<season_type>/`.
+The `bundle_schema_version=1` claim stays valid because no existing field
+shape changes — these are NEW files, not new inline fields.
+
+| Substruct on `SeasonStats` | Filename | Endpoint | Tier |
+|---|---|---|---|
+| `realtime` (existing) | `realtime.json` | `/skater/realtime` | 1 |
+| `time_on_ice` (NEW) | `timeonice.json` | `/skater/timeonice` | 1 |
+| `goals_for_against` (NEW) | `goalsForAgainst.json` | `/skater/goalsForAgainst` | 1 |
+| `goalie` (existing) | `goalie-summary.json` | `/goalie/summary` | 1 |
+| `goalie_advanced` (NEW) | `goalie-advanced.json` | `/goalie/advanced` | 1 |
+| `goalie_saves_by_strength` (NEW) | `goalie-savesByStrength.json` | `/goalie/savesByStrength` | 1 |
+| `goalie_bios` (NEW) | `goalie-bios.json` | `/goalie/bios` | 1 |
+
+Tier-2 reports do NOT live on `SeasonStats` — they live in `extra_reports`
+(the runtime-only `BTreeMap` above).
+
+### Load path
+
+`StatsRepository::load_window` reads each Tier-1 file via
+`load_report_with_fallback<T>` (signature in §Public types):
+
+1. Check the snapshot dir for `<season>/<season_type>/<filename>`.
+2. If absent, fall back to bundled in-binary data via `bundled::report_for(season, season_type, kind)`.
+3. If both absent, return `Ok(None)` — substruct stays `None` on `SeasonStats`.
+4. Any deserialization or seasonId-fence failure errors out at this boundary; the substruct never gets a partial-load state.
+
+### Per-endpoint seasonId fence (TAPE-R3 / DI-29)
+
+Every Tier-1 deserializer asserts `row.seasonId == requested_season` for
+every row in the file. Mismatch errors `LoadError::SeasonIdMismatch
+{ expected, actual, endpoint }` BEFORE the substruct populates. Mirrors
+the Hart.6.4 typed fence semantic for the new endpoints.
+
+L1 test for each new endpoint:
+`l1_<endpoint>_rejects_mismatched_season_id` synthesizes a row with
+mismatched seasonId, asserts the fence fires.
+
+The same fence applies on the Tier-2 `extra_reports` write path
+(L-B1 / WIRE-B6) — reaffirmed here for symmetry.
+
+### Rate-limit policy (TAPE-R3)
+
+The fetch CLI is the only path that issues HTTP requests. It enforces:
+
+1. **Sequential** — one in-flight request at a time. NHL stats API has no
+   documented rate ceiling, but historical experience (Phase Hart.6, Phase
+   Selke) shows degraded responses at >5 RPS sustained.
+2. **Backoff on 429 / 5xx** — exponential, base 500ms, cap 30s, max 5 retries.
+   Codified in `icelines_fetch::nhl_api::with_retry` (existing helper extended
+   to cover the new 23 endpoints).
+3. **Bundled-data fallback first** — `fetch report --kind X` checks the
+   bundled cache before issuing a request. Forces network only when
+   `--no-cache` is passed or the season isn't bundled.
+4. **Concurrent-window guard** — concurrent `fetch report` invocations on
+   the same `(kind, season, season_type)` triple are serialized via a
+   filesystem lock at `~/.icelines/.fetch.lock`.
+
+L2 test (`l2_fetch_report_serializes_concurrent_invocations`) launches two
+sub-processes targeting the same window and asserts only one network
+request is issued.
 
 ---
 
@@ -544,29 +857,63 @@ The scheme parser uses `StatId::from_cli_key` to convert string keys.
 Unknown keys log a warning, default coefficient = 0. Schemes from
 pre-Lindsay continue to work — the alias map handles legacy keys.
 
+### DI-25 — frozen-golden semantics (FORGE-R3 / R2-B12 precision)
+
+DI-25 reads "every pre-Lindsay scheme TOML loads byte-identical to its
+frozen golden via the legacy-key alias map" — NOT round-trip
+self-equality. The reference is a fixed pre-L.5 capture, not whatever
+post-Lindsay output the current binary emits.
+
+Specifically:
+
+1. **Pre-L.5 capture step.** Before L.5 lands, run each of the five named
+   legacy schemes through the scheme parser using the pre-Lindsay binary
+   and serialize the resulting `Scheme` struct to a frozen TOML golden at
+   `icelines-fetch/tests/fixtures/legacy_schemes/<name>.golden.toml`.
+   Commit goldens.
+2. **Post-L.5 assertion.** L1 test `l1_legacy_schemes_load_byte_identical`
+   reloads the same TOML through the post-Lindsay binary, serializes,
+   asserts byte-equality against the golden.
+3. **Five named legacy schemes** (BENCH-R2 L2-B24): `yahoo-standard`,
+   `espn-standard`, `custom-points-only`, `head-to-head-9cat`,
+   `rotisserie-with-goalie`. Files at
+   `icelines-fetch/tests/fixtures/legacy_schemes/<name>.toml`
+   with companions `<name>.golden.toml`.
+
+A round-trip self-equality test is weaker — it would pass even if the
+post-Lindsay parser silently dropped a legacy-key alias.
+
 ---
 
 ## Test contract
 
-| Layer | Tests | Count est |
-|---|---|---|
-| L0 catalog | `read()` returns expected value for every StatId given a fixture view; `applies_to` truth table; `from_cli_key` round-trip; aliases parse | ~200 |
-| L0 filter | `matches_stat_filters` against fixture views: Min/Max/Equals × every category | ~30 |
-| L0 grammar | `parse_filter("hits-per-60>=2.0")` round-trips; whitespace tolerance; bad input rejected | ~15 |
-| L1 fetch | Each new endpoint URL emits the right cayenneExp; mock fixture parses to typed Tier-1 struct | ~12 |
-| L2 system | `query leaders --filter ... --sort ... --top 5` returns expected rows for a known fixture (bundled 2024-25) | ~8 |
+| Layer | Tests | Count est | Notes |
+|---|---|---|---|
+| L0 catalog | `read()` returns expected value for every StatId × every fixture variant; `applies_to` truth table; `from_cli_key` round-trip; aliases parse | ~600 | Fixture variant catalog at `icelines-core/tests/fixtures/stat_catalog_variants.rs` enumerates: skater-modern, skater-pre-2005, center, goalie, traded-multistint, GP=0 (BENCH-R2 L2-B22). Cross-product = ~108 stats × 6 variants. |
+| L0 filter | `matches_stat_filters` against fixture views: Min/Max/Equals × every category; multi-filter normalization (Min+Min → tightest; Min+Max → range; Equals+Equals → reject) | ~50 | EDGE-R2 multi-filter rules covered. |
+| L0 grammar | `parse_filter("hits-per-60>=2.0")` round-trips; whitespace tolerance; every `FilterParseError` variant (~7) × ~3 trigger inputs each | ~25 | EDGE-R2 / II-05 grammar floor. |
+| L0 repo | `extra_reports` cascade-evict on window drop; cap at 4096; runtime-only (no disk write) | ~6 | HART-R3 / DI-12, DI-26, DI-27. |
+| L1 fetch | Each new endpoint URL emits the right cayenneExp; mock fixture parses to typed Tier-1 struct; per-endpoint seasonId fence; rate-limit retry/backoff | ~30 | TAPE-R3 fence + WIRE-R3 mock fixture coverage. |
+| L1 repo | `repository_version=2` snapshot rejected by v=1 binary at `load_window`; `load_report_with_fallback` snapshot→bundled→None decision tree | ~5 | HART-R3 / DI-28 boundary check. |
+| L1 schemes | Five named legacy schemes load byte-identical to frozen goldens (DI-25) | 5 | One per scheme. |
+| L1 site | Generation-determinism: every header in rendered templates equals `StatId::label()` for the corresponding StatId; grep CI test passes for the 38-season parse-fence | ~3 | SI-03 + L-B20 cross-product. |
+| L1 HTTP | Round-trip parity — JSON keys all parse via `from_cli_key`; values match `read(view)` | ~2 | KEEL-B1 / II-06 enforcement. |
+| L2 system | `query leaders --filter ... --sort ... --top 5` returns expected rows for a known fixture (bundled 2024-25); legacy `--sort` parity stdout fence (capture pre-L.3, reassert post-L.3 + post-L.5) | ~10 | BENCH-R2 L2-B23 — TWO fences (sort ordering changes ride L.3, not L.5). |
+| L2 fetch | `fetch report --kind X` serializes concurrent invocations on the same window | ~2 | TAPE-R3 lock guard. |
 
 ---
 
 ## Open questions
 
-1. **`fetched_reports: HashMap<ReportKind, serde_json::Value>`** — should this live on `SeasonStats` (per-window) or on a separate `ExtraReports` map keyed by `(player_id, season, season_type, kind)`? The latter is cleaner but adds a new lookup path; the former is closer to the existing shape but inflates `SeasonStats`. **Decision deferred to L.6**; current sketch leans toward separate map.
+All v0.1 open questions resolved through R1/R2/R3:
 
-2. **Site backward-compat** — existing site templates may hard-code stat names. Migration path: grep for stat strings, replace with `StatId` lookups in one commit. **Decision deferred to L.5**.
+1. ~~**`fetched_reports`** location~~ — **resolved v0.2 (L-B1) + v0.4 lifecycle pinning**. Tier-2 lives in a runtime-only `ExtraReports: BTreeMap` on `StatsRepository`, cascade-evicted with the typed LRU (DI-12), capped at 4096 entries (DI-26), never persisted to disk (DI-27).
 
-3. **Goalie `bios` is its own endpoint** — today we use the skater bios as the identity source for goalies (because the existing pipeline didn't differentiate). Is this a real bug? `goalie/bios` returns goalie-shaped fields. **Decision: bundle goalie/bios in L.1**, switch the goalie identity path to read from it. Track the bug as a Lindsay deliverable.
+2. ~~**Site backward-compat**~~ — **resolved v0.2 (L-B16) + v0.3 (L2-B20)**. Atomic L.5b sub-phase; four string surfaces enumerated (rendered headers, CSS class names, URL anchors, search-index terms); CI grep test on `\b(Goals|Assists|Points|Hits|Blocks|Saves|GAA)\b`.
 
-4. **Per-game derived stats** — the catalog sketch has `PointsPerGame`, `GoalsPerGame`, etc. These compute from `Points / GP`. Should they live on the catalog (centralized read) or on `PlayerView` (already there)? **Recommendation**: catalog is the source of truth; `PlayerView` keeps the convenience methods that wrap `StatId::X.read(self)` for ergonomics.
+3. ~~**Goalie `bios` endpoint**~~ — **resolved v0.2**. Bundled in L.1; goalie identity path switches to `goalie/bios`. `goalie-bios.json` per-window file format (see Tier-1 file format above).
+
+4. ~~**Per-game derived stats placement**~~ — **resolved v0.2**. Catalog is source of truth; `PlayerView::points_per_game()` and friends are ergonomic wrappers that call `StatId::PointsPerGame.read(self)` internally. MIN_GP=10 guard inherited from catalog (PACE-B2 / v0.3 fix).
 
 ---
 
