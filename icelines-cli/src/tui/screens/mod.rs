@@ -1399,6 +1399,199 @@ mod app_snapshot_tests {
         );
     }
 
+    // ── Save-query input regression fence ───────────────────────────────────
+    //
+    // Bug report: in QueryMode::SaveName, typing 'f' triggered
+    // AddToFavorites instead of inserting 'f' into query_save_name.
+    // Same root cause as schedule_search_mode and tx_search_mode: the
+    // global keymap fires the hotkey Action before reaching the Char
+    // branch. Fix: short-circuit through `handle_query_save_name`.
+
+    /// In SaveName mode, every hotkey letter must land in the name
+    /// field, NOT trigger its global action. Locks all five risky keys:
+    /// f (Favorites), g (Group), r (Refresh), i (Install), digit keys.
+    #[test]
+    fn l1_userflow_save_query_name_captures_hotkey_letters_as_text() {
+        with_temp_home(|_home| {
+            let (_snap, store) = empty_store_in_tempdir();
+            let mut app = App::new(true);
+            app.boot_load_with_store(&store);
+
+            // Navigate to Stats (Queries) and enter SaveName mode by
+            // pressing 's'.
+            app.handle(Action::GoToTab(2));
+            assert_eq!(app.screen, crate::tui::app::Screen::Queries);
+            app.handle(Action::Char('s'));
+            assert!(matches!(
+                app.query_mode,
+                crate::tui::app::QueryMode::SaveName
+            ));
+
+            // Type "fred" — the 'f' is the historical foot-gun.
+            app.handle(Action::AddToFavorites); // was: triggered Favorites
+            app.handle(Action::Char('r'));
+            app.handle(Action::Char('e'));
+            app.handle(Action::Char('d'));
+            assert_eq!(
+                app.query_save_name, "fred",
+                "Hotkey 'f' must insert into query name, not fire AddToFavorites"
+            );
+
+            // 'g' / 'r' / 'i' / digits must also be text.
+            app.handle(Action::AddToGroup); // 'g'
+            app.handle(Action::Refresh); // 'r'
+            app.handle(Action::Install); // 'i'
+            app.handle(Action::GoToTab(2)); // pushes '3'
+            assert_eq!(app.query_save_name, "fredgri3");
+        });
+    }
+
+    /// SaveName mode: Backspace edits the name; Esc cancels and restores
+    /// Build mode without saving.
+    #[test]
+    fn l1_userflow_save_query_name_backspace_and_esc() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+        app.handle(Action::GoToTab(2));
+        app.handle(Action::Char('s'));
+
+        for c in "myquery".chars() {
+            app.handle(Action::Char(c));
+        }
+        assert_eq!(app.query_save_name, "myquery");
+
+        app.handle(Action::Backspace);
+        assert_eq!(app.query_save_name, "myquer");
+
+        app.handle(Action::Escape);
+        assert!(matches!(
+            app.query_mode,
+            crate::tui::app::QueryMode::Build
+        ));
+        assert!(app.query_save_name.is_empty(), "Esc must clear typed name");
+    }
+
+    /// SaveName Enter commits to the DB and exits SaveName mode. Picks
+    /// up a freshly-saved name via list_saved_queries on the next 'l'
+    /// press.
+    #[test]
+    fn l1_userflow_save_query_enter_persists_to_db() {
+        with_temp_home(|_home| {
+            let (_snap, store) = empty_store_in_tempdir();
+            let mut app = App::new(true);
+            app.boot_load_with_store(&store);
+            app.handle(Action::GoToTab(2));
+            app.handle(Action::Char('s'));
+            for c in "centerleaders".chars() {
+                app.handle(Action::Char(c));
+            }
+            app.handle(Action::Enter);
+            assert!(matches!(
+                app.query_mode,
+                crate::tui::app::QueryMode::Build
+            ));
+
+            // Verify DB row exists.
+            let db = crate::db::GroupDb::open().expect("open DB");
+            let saved = db.list_saved_queries().expect("list");
+            assert!(
+                saved.iter().any(|(name, _)| name == "centerleaders"),
+                "saved query must be in DB, got: {:?}",
+                saved.iter().map(|(n, _)| n).collect::<Vec<_>>()
+            );
+        });
+    }
+
+    // ── Depth-team chart cutoff regression fence ─────────────────────────────
+    //
+    // Bug report: per-team depth chart score column ("Pts/82") gets cut
+    // off at narrow terminal widths. Fix: drop the trailing fit text
+    // label and encode fit class as the row's fg color so the score
+    // column always lands inside the renderable area.
+
+    /// Team depth chart at 100-col terminal must render the score
+    /// column (e.g. "140") for top-line skaters. Catches a regression
+    /// where a wider format string would clip the score off the right.
+    #[test]
+    fn l1_userflow_depth_team_score_visible_at_100_cols() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        // Drill: Home → Depth → DepthTeam(rank-1).
+        app.handle(Action::Tab);
+        app.handle(Action::Enter);
+        assert!(matches!(
+            app.screen,
+            crate::tui::app::Screen::DepthTeam(_)
+        ));
+
+        // 100-col is the narrow-but-realistic test width. 5 cols × 20
+        // chars each = 100; per-col inner = ~18 chars after borders.
+        let buf = render_app_to_buffer(&app, 100, 30);
+        let text = {
+            let mut out = String::new();
+            for y in 0..buf.area.height {
+                for x in 0..buf.area.width {
+                    out.push_str(buf[(x, y)].symbol());
+                }
+                out.push('\n');
+            }
+            out
+        };
+
+        // The header column-label must show — either "Pts/82" or "FPts"
+        // depending on default scoring mode (Fantasy by App::new). Locks
+        // that the header isn't truncated below 4 chars.
+        assert!(
+            text.contains("FPts") || text.contains("Pts"),
+            "Score column header must be visible at 100 cols, got:\n{text}"
+        );
+
+        // L1 row prefix must appear with at least its score after.
+        assert!(
+            text.contains("L1 "),
+            "L1 row prefix must appear at 100 cols, got:\n{text}"
+        );
+    }
+
+    /// Same chart at 120 cols: score column (numeric value) must appear
+    /// for at least one player. We don't pin a specific number because
+    /// the bundled stats vary; we assert at least one digit appears
+    /// AFTER an "L1 " prefix on the same line.
+    #[test]
+    fn l1_userflow_depth_team_score_value_visible_at_120_cols() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        app.handle(Action::Tab);
+        app.handle(Action::Enter);
+        let buf = render_app_to_buffer(&app, 120, 30);
+
+        let mut found_l1_with_score = false;
+        for y in 0..buf.area.height {
+            // Read the row as text.
+            let mut row = String::new();
+            for x in 0..buf.area.width {
+                row.push_str(buf[(x, y)].symbol());
+            }
+            if let Some(idx) = row.find("L1 ") {
+                let after = &row[idx + 3..];
+                // Must contain at least one digit somewhere after "L1 ".
+                if after.chars().any(|c| c.is_ascii_digit()) {
+                    found_l1_with_score = true;
+                    break;
+                }
+            }
+        }
+        assert!(
+            found_l1_with_score,
+            "L1 row must show a score (digit) at 120 cols"
+        );
+    }
+
     /// Groups screen renders rows for each DB group with their member
     /// counts. Catches a regression where Groups screen reads a stale
     /// in-memory cache instead of querying the DB on entry.

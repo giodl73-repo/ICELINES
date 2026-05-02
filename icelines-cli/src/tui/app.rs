@@ -417,6 +417,16 @@ impl App {
             return self.handle_scores_date_picker(action);
         }
 
+        // Queries save-name input must short-circuit so hotkey letters
+        // ('f' = AddToFavorites, 'r' = Refresh, etc.) become text input
+        // instead of firing the global hotkey. Without this, typing
+        // "fred" as a query name dispatched AddToFavorites on the 'f'.
+        if self.screen == Screen::Queries
+            && matches!(self.query_mode, QueryMode::SaveName)
+        {
+            return self.handle_query_save_name(action);
+        }
+
         match action {
             Action::Quit => return true,
             Action::Help => self.show_help = true,
@@ -1210,6 +1220,60 @@ impl App {
             // '/' while already in search mode — ignore (don't reopen, don't insert)
             Action::Search => {}
             // Up/Down/Left/Right/Tab/Help — ignored in search mode for now
+            _ => {}
+        }
+        false
+    }
+
+    /// Save-query name input. Mirrors `handle_transactions_search`:
+    /// while QueryMode::SaveName is active, every character-bearing
+    /// Action is treated as text input. Without this short-circuit, the
+    /// global keymap fires AddToFavorites/Refresh/etc instead of
+    /// typing the character into the name field — so the user couldn't
+    /// type "fred" because the 'f' opened the Favorites flow.
+    fn handle_query_save_name(&mut self, action: Action) -> bool {
+        match action {
+            Action::Quit => return true,
+            Action::Back | Action::Escape => {
+                // Cancel save — drop the typed name, go back to Build.
+                self.query_save_name.clear();
+                self.query_mode = QueryMode::Build;
+                self.status = "Save cancelled.".to_owned();
+            }
+            Action::Enter => {
+                let name = self.query_save_name.trim().to_owned();
+                if !name.is_empty() {
+                    let json =
+                        crate::tui::screens::queries::fields_to_json(&self.query_fields);
+                    if let Ok(db) = crate::db::GroupDb::open() {
+                        let _ = db.save_query(&name, &json);
+                        self.status =
+                            format!("Saved query '{name}'  ·  l=load  s=save  r=reset");
+                    }
+                }
+                self.query_mode = QueryMode::Build;
+            }
+            Action::Backspace => {
+                self.query_save_name.pop();
+            }
+            Action::Char(c) => self.query_save_name.push(c),
+            Action::Space => self.query_save_name.push(' '),
+            // Hotkey actions become their associated character. Without
+            // this, 'f' would fire AddToFavorites and the user could
+            // never type "fred", "fox", "ford" etc. as a query name.
+            Action::Refresh => self.query_save_name.push('r'),
+            Action::Install => self.query_save_name.push('i'),
+            Action::AddToGroup => self.query_save_name.push('g'),
+            Action::AddToFavorites => self.query_save_name.push('f'),
+            Action::GoToTab(n) => {
+                let ch = char::from_digit((n + 1) as u32, 10).unwrap_or('?');
+                self.query_save_name.push(ch);
+            }
+            // '/' while typing — ignore (don't reopen, don't insert)
+            Action::Search => {}
+            // Help opens the overlay only at end-of-name confusion; cleaner to
+            // treat as no-op so the user can press ? to see hints without
+            // losing their typed name.
             _ => {}
         }
         false

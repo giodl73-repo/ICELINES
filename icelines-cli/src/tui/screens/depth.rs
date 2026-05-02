@@ -261,39 +261,45 @@ fn render_pos_col(
     f.render_widget(block, area);
 
     let dim = Style::default().fg(Color::DarkGray);
+    // Header: Line / Name (12) / Score (4). Total visible = 19 chars,
+    // fits inside ~21-char column at 100-cols+ terminals. Fit class is
+    // encoded as the player-name color (Green=Elite, Yellow=Solid,
+    // Cyan=Buried, Red=Stretch) so the score column never truncates.
     let mut lines: Vec<Line> = vec![
-        Line::styled(format!(" {:<14} {:>5} Fit", "Player", mode.label()), dim),
-        Line::styled(format!(" {}", "─".repeat(22)), dim),
+        Line::styled(format!(" {:<12} {:>4}", "Player", mode.label()), dim),
+        Line::styled(format!(" {}", "─".repeat(18)), dim),
     ];
 
     for (i, v) in players.iter().enumerate() {
         let score = score_of(v);
         // PlayerId.0 is the canonical nhl_id (post-Hart unified shape).
         let nhl_id = v.identity.id.0;
-        let (fit_label, fit_color) = metrics_map
+        let fit_color = metrics_map
             .get(&nhl_id)
-            .map(|m| {
-                let cls = m.web_fit_class();
-                let color = match cls {
-                    WebFitClass::Elite   => Color::Green,
-                    WebFitClass::Solid   => Color::Yellow,
-                    WebFitClass::Buried  => Color::Cyan,
-                    WebFitClass::Stretch => Color::Red,
-                };
-                (cls.label(), color)
+            .map(|m| match m.web_fit_class() {
+                WebFitClass::Elite   => Color::Green,
+                WebFitClass::Solid   => Color::Yellow,
+                WebFitClass::Buried  => Color::Cyan,
+                WebFitClass::Stretch => Color::Red,
             })
-            .unwrap_or(("?", Color::DarkGray));
+            .unwrap_or(Color::DarkGray);
 
-        let name = v.full_name().chars().take(14).collect::<String>();
-        let base_style = if i < depth { Style::default() } else { dim };
-        let sep = if i + 1 == depth { Style::default().fg(Color::DarkGray) } else { Style::default() };
+        let name = v.full_name().chars().take(12).collect::<String>();
+        let line_style = if i < depth {
+            Style::default().fg(fit_color)
+        } else {
+            // Bench / overflow rows render dim so the eye anchors on the
+            // top-{depth} actually-skating skaters.
+            dim
+        };
+        let sep = if i + 1 == depth { dim } else { Style::default() };
 
-        lines.push(Line::from(vec![
-            Span::styled(format!(" L{} {:<14} {:>5.0} ", i + 1, name, score), base_style),
-            Span::styled(fit_label, Style::default().fg(fit_color).add_modifier(Modifier::BOLD)),
-        ]));
+        lines.push(Line::styled(
+            format!(" L{} {:<12} {:>4.0}", i + 1, name, score),
+            line_style,
+        ));
         if i + 1 == depth {
-            lines.push(Line::styled(format!(" {}", "┄".repeat(22)), sep));
+            lines.push(Line::styled(format!(" {}", "┄".repeat(18)), sep));
         }
     }
 
