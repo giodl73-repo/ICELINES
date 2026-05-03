@@ -603,7 +603,46 @@ This is v0.4. Status:
 7. ~~L.2 implementation~~ — **shipped 2026-05-02**. 65 new Lindsay-L.2 tests; 1184 workspace tests passing. See "L.2 ship summary" below.
 8. ~~L.3 implementation~~ — **shipped 2026-05-02**. 31 new Lindsay-L.3 tests; 1215 workspace tests passing. See "L.3 ship summary" below.
 9. ~~L.4 implementation~~ — **shipped 2026-05-02**. 36 new Lindsay-L.4 tests; 1251 workspace tests passing. See "L.4 ship summary" below.
-10. **L.5 next** — Propagate StatId catalog to Leaders / Comps / Depth / Export / Fantasy / axum HTTP server. Five-named-scheme legacy fixture + DI-25 frozen-golden + post-L.5 stdout-golden second-fence reassertion.
+10. ~~L.5 implementation~~ — **shipped 2026-05-03**. 19 new Lindsay-L.5 tests; 1270 workspace tests passing. See "L.5 ship summary" below.
+11. **L.5b next** — atomic site stat-name sweep (`StatId::label()` everywhere on team pages). Then L.6 / L.7 / L.8.
+
+---
+
+## L.5 ship summary (2026-05-03)
+
+L.5 implementation complete with 7 sub-phases + WIRE checkpoint, all green. The L.3 stdout-golden fence stayed GREEN through every L.5 sub-phase commit — that IS the post-L.5 second-fence reassertion (BENCH-R2 L2-B23).
+
+| Sub-phase | Deliverables | Tests added |
+|---|---|---|
+| **L.5.0** | Pre-L.5 stdout-golden re-fence baseline — `l2_lindsay_l3_golden_parity` confirmed GREEN against the post-L.4 binary; same goldens reassert post-L.5. | (verifies existing fence) |
+| **L.5.1** | `SortDispatch::Legacy(SortMetric) \| Catalog(StatId)` enum unifies the `--sort` dispatcher across `query leaders` and `query goalies`. Legacy strings parse first (preserves byte-stable golden fence semantics for the ~37 `pts-pace` / `ppg` / `g-pace` style values); any non-legacy string gets a second chance via `StatId::from_cli_key`. Catalog-path stats sort via `StatId::sort_cmp` (AI-06 universal tiebreak); render via new `format_catalog_cell` per-StatUnit helper. `Improvement` stays Legacy-only. New goalie keys (`regulation-wins`, `ev-save-pct`, `sh-save-pct`) become available additively. | 6 L0 |
+| **L.5.2** | `run_similar` reads PPG and GPG dimensions through `StatId::PointsPerGame.read(v)` / `StatId::GoalsPerGame.read(v)` instead of `pace_82() / 82.0` and `goals_per_82() / 82.0`. Same MIN_GP=10 gate; same `unwrap_or(0.0)` cohort fallback. Numerically identical for players above the gate. | 2 L0 |
+| **L.5.3** | `ScoringMode::Custom(StatId)` variant added with score arms in `compute_all_views_with_mode`, `compute_team_strength_views`, and `tui::screens::depth::score_of`. Pace ↔ Fantasy toggle stays binary; Custom mode is set explicitly and toggles back to Pace as the safe default. `label()` for Custom delegates to `StatId::short_label()`. CLI flag `--rank-by <cli_key>` deferred to L.5.3b carry-forward. | 3 L0 |
+| **L.5.4** | New `--columns "g,a,p,hits,blocks"` flag on `icelines export md leaders` accepts a comma-separated list of StatId::cli_key strings (whitespace-tolerant; unknown keys exit non-zero). Custom column set replaces the canonical "Rank \| Player \| Team \| Pos \| Age \| GP \| G \| A \| Pts \| PPG \| Pts/82" shape with `[Rank \| Player \| Team \| Pos \| <stat-cols>]`. Headers from `StatId::short_label()`; cells via per-StatUnit formatting. Without `--columns`, output is byte-identical to v1. | 4 L0 |
+| **L.5.5** | DI-25 frozen-golden L1 test `l1_legacy_schemes_load_byte_identical` covering the 3 built-in fantasy schemes (yahoo-standard, espn-standard, simple-pts). Bootstrap-on-first-run pattern; regen via `LINDSAY_L55_REGEN=1`. Asserts byte-identity AND that load + re-serialize round-trips identically. The full 5-named legacy scheme corpus (custom-points-only, head-to-head-9cat, rotisserie-with-goalie) carries forward. | 1 L1 |
+| **L.5.6** | `/api/team/:name/roster` JSON response includes a `stats` sub-object on each player keyed by `StatId::cli_key()` strings (Games, Goals, Assists, Points). Legacy `name`/`pos`/`gp`/`score` keys unchanged (additive change). KEEL-B1 round-trip: every emitted key parses back via `StatId::from_cli_key`; values match `StatId::read(view)`. | 2 L0 |
+| **L.5.7** | Post-L.5 stdout-golden second-fence reassertion (BENCH-R2 L2-B23) — confirmed GREEN at every L.5.x sub-phase commit. | (verifies fence) |
+
+**Role-review checkpoint (PASS with applied fixes):**
+- WIRE on propagation surface (post-L.5.6) — 8 findings.
+  - **WIRE-3 BLOCKER**: `.gitattributes` added to lock LF on the frozen-golden + stdout-golden fixture files. Without it, a Windows clean checkout with `core.autocrlf=true` (Git for Windows default) would translate LF→CRLF and break the byte-equality assertions.
+  - **WIRE-6 made active**: collision-pin test `l0_lindsay_l5_no_unsanctioned_legacy_shadows_catalog_keys` iterates every `StatId::cli_key()` and asserts each routes to `Catalog(_)` or appears in an explicit `ALLOWED_SHADOWS` list (14 keys today). Future shadows trip CI loudly.
+  - PASS: AI-07 (Tier-2 promotion) — roster_stats slice is Tier-1 clean. DI-29 (seasonId fence) holds at the roster handler entry point.
+
+**Carry-forwards parked for L.5b / L.6 / L.7 / future:**
+- WIRE-1 `schema_version` field on `/api/team/:name/roster` JSON (forward-compat versioning before any consumer hardens against shape)
+- WIRE-2 dual `gp` / `stats.games` key representation — pick one and deprecate
+- WIRE-4 bootstrap-mode warning emit in `legacy_schemes_test` (so a green-but-bootstrapped run is visible)
+- WIRE-5 f32→f64 widening pin comment in fixture goldens (the long-tail decimals like `0.15000000596046448` come from f32→f64 widening — pin a comment so future re-serialize drift is debuggable)
+- L.5.1 carry: catalog `data_missing` heuristic (current implementation only fires for legacy realtime/MoneyPuck variants; catalog stats sort None-last per AI-06 with no fallback message)
+- L.5.3b: CLI `--rank-by <cli_key>` flag on `query player`/`query compare` and a TUI Depth-screen picker chord to set `ScoringMode::Custom`
+- L.5.5 expansion: 5-named legacy scheme corpus (custom-points-only, head-to-head-9cat, rotisserie-with-goalie per FORGE-R3 / BENCH-R2 L2-B24) — needs scheme shapes to be defined
+- L.5.6 expansion: roster `stats` map could grow to include hits, blocked-shots, plus-minus, faceoff-win-pct (slice extension, no contract change)
+
+**Test totals:**
+- Pre-L.5: 1251 workspace tests
+- Post-L.5: **1270 workspace tests** (+19 — 6 L.5.1 + 2 L.5.2 + 3 L.5.3 + 4 L.5.4 + 1 L.5.5 + 2 L.5.6 + 1 WIRE-6 collision pin)
+- All passing; L.3 stdout-golden fence GREEN throughout; no regressions.
 
 ---
 
