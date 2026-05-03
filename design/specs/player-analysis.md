@@ -524,3 +524,42 @@ Groups and custom data persist to `~/.icelines/`:
 
 `groups.json` is intentionally plain JSON — users can hand-edit, commit to a dotfiles repo,
 or share with others. Player IDs are NHL canonical IDs so groups are portable across CSV exports.
+
+---
+
+## Career table column selection (Phase Lindsay L.4)
+
+The TUI player card renders a career table — one row per regular-season the
+player has appeared in, columns selected via 7 cycleable presets:
+
+| Preset | Source | Default visible cols (Center) |
+|--------|--------|-------------------------------|
+| **Default** | `StatId::default_in_career_table(pos)` | 15 (Games, Goals, Assists, Points, Gwg, +/-, Pim, PpGoals, PpPoints, Shots, Sh%, TOI/g, Hits, BlkS, FOWin%) |
+| **Scoring** | `s.category() == StatCategory::Scoring` | 15 |
+| **TwoWay** | `s.category() == StatCategory::TwoWay` | 12 |
+| **SpecialTeams** | `s.category() == StatCategory::SpecialTeams` | 17 |
+| **Time** | `s.category() == StatCategory::TimeOnIce` | 8 |
+| **Goalie** | `s.category() == StatCategory::Goalie` | 23 |
+| **All** | `applies_to(pos, is_goalie)` | 85 (debug) |
+
+Cycle: `[` / `]` keys move within the 7-preset cycle. Status line shows
+the active preset name. At <100-cell panel widths columns drop from the
+right (`fit_career_columns` helper); at <60-cell widths headers fall
+back to `narrow_label()` for tighter abbreviations.
+
+Position gating: skaters hide all `Goalie` category stats; goalies hide
+all skater stats. `FaceoffWinPct` gates to Center in the Default preset
+(carry-forward: extend gate to TwoWay/SpecialTeams presets).
+
+Per-StatUnit cell formatting (mirrors `query leaders --sort <cli_key>` and
+`export md leaders --columns`): Count → integer, Pct → `XX.X%` or `XX.X`
+(career table omits the `%` to save column width), Per60/Rate → 2 decimals,
+Seconds → `M:SS` (per-game) or `Nm` (totals), Inverted (GAA) → 2 decimals,
+None → `—`.
+
+Defaults curated per SCOUT review at L.4 CHECKPOINT (2026-05-02): added
+`Gwg` to skater default (canonical career-glance counter); added `Saves`
++ `ShotsAgainst` and dropped `RegulationWins` from goalie default
+(volume context required to interpret SV%/GAA). Carry-forwards include
+`PointsPerGame` for cross-season legibility, era-aware default for
+pre-2005 careers, D-specific default with `EvGoalsForPct`.

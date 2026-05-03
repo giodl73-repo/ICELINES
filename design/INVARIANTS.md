@@ -50,3 +50,35 @@ An invariant with no test is a promise. An invariant with a passing test is a gu
 - **OPEN** — invariant is stated, no enforcement mechanism or test yet
 - **ENFORCED** — structural enforcement exists (type system, validation at boundary) but no test
 - **VERIFIED** — a test would fail if the invariant were violated, and the test passes
+
+---
+
+## Phase Lindsay invariants (DI-07 through DI-29 / AI-05 through AI-09 / II-04 through II-06 / SI-03)
+
+The full Lindsay invariant table is the source of truth in
+`design/plans/2026-05-02-phaseLindsay-stat-catalog.md` (§"New
+invariants"). They are summarized here for cross-reference; the
+phase plan owns the canonical statements and the test references.
+
+| ID | Domain | Headline | Status |
+|---|---|---|---|
+| DI-07 | Data | `StatId::read(view)` is total — no panics; `Some` iff data + applies_to + applies_to_era; else `None`. | VERIFIED (L.2.3 cross-product 642-cell test) |
+| DI-08 | Data | `StatFilter` non-applicable to position is silently dropped at row iteration; CLI rejects at parse time when position context is known. | VERIFIED (L.2.4) |
+| DI-09 | Data | Every Tier-1 substruct on `SeasonStats` is window-keyed `(season, season_type)` and is `None` when not fetched. | VERIFIED (L.1) |
+| DI-10 | Data | `StatId::read(view)` is row-local — no repository, no global state. Future context-needing stats get `read_with_context`. | ENFORCED (signature) |
+| DI-11 | Data | `OnIceGoals` category stats are last-stint-only — `read()` returns `None` when `was_traded_in_window()`. | VERIFIED (L.2.3) |
+| DI-12 | Data | Eviction of a window from typed LRU cascade-evicts every `extra_reports` entry whose key matches that window. | VERIFIED (L.2.5) |
+| DI-25 | Data | Every pre-Lindsay scheme TOML loads byte-identical to its frozen golden via the legacy-key alias map. | VERIFIED (L.5.5 — 3 built-in schemes; full 5-named corpus carries forward) |
+| DI-26 | Data | `extra_reports` capped at 4096 entries with LRU eviction past the cap. | VERIFIED (L.2.5) |
+| DI-27 | Data | `extra_reports` is runtime-only — never persisted; subsequent runs re-fetch. | VERIFIED (L.2.5) |
+| DI-28 | Data | `repository_version` boundary check fires at `StatsRepository::load_window`; old binary on v=2 snapshot errors at file-open. | VERIFIED (L.1) |
+| DI-29 | Data | Every Tier-1 deserializer asserts `row.seasonId == requested_season` for every row; mismatch errors before the substruct populates. | VERIFIED (L.1) |
+| AI-05 | Algorithm | `StatId::all()` and `StatCategory::members(c)` return values in a stable declaration order. Iteration is deterministic. | VERIFIED (L.2.1) |
+| AI-06 | Algorithm | Every catalog-driven sort is `(stat_value desc/asc, nhl_id asc)`. Codified in `StatId::sort_cmp`. None values sort last regardless of `higher_is_better`. | VERIFIED (L.2.2 + L.3.2 + L.5.1) |
+| AI-07 | Algorithm | Any `ReportKind` read by ≥2 surfaces MUST be promoted to a typed sub-struct + a `StatCategory` before the second consumer ships. | OPEN (L.6 sets up the boundary; promotion happens case-by-case) |
+| AI-08 | Algorithm | Aggregations over `&[PlayerView]` that consume catalog reads MUST call `debug_assert_view_window_homogeneous`. | VERIFIED (Hart.6.6 + L.2.2) |
+| AI-09 | Algorithm | `aggregate_read(views)` is strict-propagation — Some only when every window has Some; any None propagates. | VERIFIED (L.2.2) |
+| II-04 | Interface | `--sort <stat-key>` accepts every `StatId::cli_key()`; unknown keys exit non-zero with the list of valid keys. | VERIFIED (L.5.1) |
+| II-05 | Interface | `--filter "<key><op><value>"` parses with op in `{>=, <=, ==, =}`; whitespace allowed; 7-variant `FilterParseError`; NaN/inf/locale-comma all parse-error. | VERIFIED (L.2.4 + L.3.1) |
+| II-06 | Interface | `--filter` and `--sort` accept identical grammars and StatId key sets across `query leaders / player / compare / goalies` + `export md`. Same-StatId multi-filter normalization rule applies uniformly. | PARTIAL (L.3.1 wired `query leaders`; rolling to player/compare carries forward) |
+| SI-03 | Site | Every site page that surfaces a stat name uses `StatId::label()`; site templates never hard-code a stat name string. | VERIFIED (L.5b — grep fence + allowlist) |

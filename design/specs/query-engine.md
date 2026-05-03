@@ -121,6 +121,23 @@ icelines query compare --draft-year 2022 --round 1 --sort xgf-pct
 
 ## Metrics catalog
 
+> **Phase Lindsay update (v0.2, 2026-05-03)**: this section is
+> **superseded** by the central `StatId` catalog at
+> `icelines-core::stats_catalog`. Every available metric — 108 total
+> across 9 categories (Identity / Scoring / SpecialTeams / TwoWay /
+> TimeOnIce / OnIceGoals / Possession / Goalie / Derived) — is
+> enumerated in code with `cli_key`, `label`, `short_label`,
+> `category`, `unit`, `higher_is_better`, `applies_to`, and
+> `available_since` accessors.
+>
+> CLI usage: `icelines query leaders --sort <cli_key>` accepts every
+> `StatId::cli_key()` value in addition to the legacy ~37 alias
+> strings (`pts-pace`, `ppg`, etc.). See L.5.1 in
+> `design/plans/2026-05-02-phaseLindsay-stat-catalog.md`.
+>
+> The legacy Tier 1/2/3 inline tables below are kept for historical
+> reference — the *canonical* catalog is the code, not this spec.
+
 ### Tier 1 — Available now (NHL API, bundled data)
 | Metric | Key | Notes |
 |--------|-----|-------|

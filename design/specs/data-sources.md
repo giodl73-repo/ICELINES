@@ -1,13 +1,21 @@
 # IceLines Data Sources — Full Specification
 
-**Version**: 0.1  
-**Date**: 2026-04-25  
-**Status**: Draft
+**Version**: 0.2 (Phase Lindsay)  
+**Date**: 2026-05-03  
+**Status**: Updated
 
 The goal of IceLines is the best possible lines analysis — not just fantasy points or PPG pace,
 but the full picture of how a player performs, how they are deployed, and what the game actually
 looked like around them. This spec defines every data source we compile, what it contributes,
 and how it feeds into the depth chart engine.
+
+> **Phase Lindsay update (v0.2)**: the per-report endpoint inventory
+> previously enumerated below is now authoritative in
+> `icelines-core::stats_catalog::ReportKind` (23 endpoints — 9 Tier-1
+> typed, 14 Tier-2 generic). Bundled-fallback dispatch lives at
+> `icelines_fetch::bundled::report_for_lindsay`. Working/broken status
+> is recorded in `data/api-probe-2026-05-02.txt`. See L.1 / L.6 / L.7
+> in `design/plans/2026-05-02-phaseLindsay-stat-catalog.md`.
 
 ---
 
