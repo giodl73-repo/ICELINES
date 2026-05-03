@@ -133,6 +133,8 @@ pub fn render_team(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
         match mode {
             ScoringMode::Fantasy => fantasy_score_view(v),
             ScoringMode::Pace    => v.pace_82().unwrap_or(0.0),
+            // Phase Lindsay L.5.3 — None → 0.0 (parity with Pace).
+            ScoringMode::Custom(sid) => sid.read(v).unwrap_or(0.0),
         }
     };
 

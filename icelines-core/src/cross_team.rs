@@ -39,18 +39,35 @@ fn debug_assert_view_window_homogeneous(
 }
 
 /// Which metric to use when ranking players across teams.
+///
+/// Phase Lindsay L.5.3 added `Custom(StatId)` — depth-rank metric source
+/// can be any catalog stat. The existing toggle stays binary (Pace ↔
+/// Fantasy); `Custom` is set explicitly (e.g. by a future `--rank-by
+/// <cli_key>` CLI flag) and is excluded from the cycle.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ScoringMode {
     Pace,    // pts/82 pace (default)
     Fantasy, // Yahoo-style: G×3 A×2 PPG×1 PPA×0.5 SHG×1 SHA×0.5 GWG×0.5 HIT×0.5 BLK×0.5
+    Custom(crate::stats_catalog::StatId),
 }
 
 impl ScoringMode {
     pub fn label(self) -> &'static str {
-        match self { Self::Pace => "Pts/82", Self::Fantasy => "FPts" }
+        match self {
+            Self::Pace => "Pts/82",
+            Self::Fantasy => "FPts",
+            // Custom uses the StatId's own short label (catalog-driven).
+            Self::Custom(sid) => sid.short_label(),
+        }
     }
+    /// Binary toggle between Pace and Fantasy. Custom mode falls back
+    /// to Pace on toggle (returning to a "safe" default).
     pub fn toggle(self) -> Self {
-        match self { Self::Pace => Self::Fantasy, Self::Fantasy => Self::Pace }
+        match self {
+            Self::Pace => Self::Fantasy,
+            Self::Fantasy => Self::Pace,
+            Self::Custom(_) => Self::Pace,
+        }
     }
 }
 
@@ -186,6 +203,11 @@ pub fn compute_all_views_with_mode(
                 None => continue,
             },
             ScoringMode::Fantasy => fantasy_score_view(v),
+            // Phase Lindsay L.5.3 — None reads skip (parity with Pace).
+            ScoringMode::Custom(sid) => match sid.read(v) {
+                Some(s) => s,
+                None => continue,
+            },
         };
         pos_index
             .entry((v.team_display().to_owned(), v.position()))
@@ -219,6 +241,19 @@ pub fn compute_all_views_with_mode(
                     }
                 },
                 ScoringMode::Fantasy => fantasy_score_view(v),
+                // Phase Lindsay L.5.3 — None propagates to sentinel
+                // metrics (parity with Pace's None-skip semantics).
+                ScoringMode::Custom(sid) => match sid.read(v) {
+                    Some(s) => s,
+                    None => {
+                        return CrossTeamMetrics {
+                            player_nhl_id: Some(v.id().0),
+                            own_line: 255,
+                            avg_other_line: 255.0,
+                            delta: 0.0,
+                        }
+                    }
+                },
             };
 
             let own_team = v.team_display().to_owned();
@@ -271,6 +306,8 @@ pub fn compute_team_strength_views(
         let score = match mode {
             ScoringMode::Fantasy => fantasy_score_view(v),
             ScoringMode::Pace => v.pace_82().unwrap_or(0.0),
+            // Phase Lindsay L.5.3 — None → 0.0 (parity with Pace).
+            ScoringMode::Custom(sid) => sid.read(v).unwrap_or(0.0),
         };
         groups
             .entry((v.team_display().to_owned(), v.position()))
@@ -495,5 +532,50 @@ mod tests {
         let mut mixed: Vec<_> = r.skaters(Season(20242025), SeasonType::Regular).collect();
         mixed.extend(r.skaters(Season(20242025), SeasonType::Playoff));
         let _ = compute_team_strength_views(&mixed, ScoringMode::Pace);
+    }
+
+    // ── Phase Lindsay L.5.3 — ScoringMode::Custom(StatId) ──────────────
+
+    /// `Custom(StatId)` label delegates to `StatId::short_label`.
+    #[test]
+    fn l0_lindsay_l5_scoring_mode_custom_label_delegates() {
+        let mode = ScoringMode::Custom(crate::stats_catalog::StatId::Goals);
+        assert_eq!(mode.label(), "G");
+        let mode = ScoringMode::Custom(crate::stats_catalog::StatId::PointsPerGame);
+        assert_eq!(mode.label(), "PPG");
+    }
+
+    /// `toggle()` from Custom returns to Pace (the safe default).
+    /// Pace ↔ Fantasy stays binary.
+    #[test]
+    fn l0_lindsay_l5_scoring_mode_custom_toggle_returns_to_pace() {
+        let custom = ScoringMode::Custom(crate::stats_catalog::StatId::Hits);
+        assert_eq!(custom.toggle(), ScoringMode::Pace);
+        // Binary toggle unchanged.
+        assert_eq!(ScoringMode::Pace.toggle(), ScoringMode::Fantasy);
+        assert_eq!(ScoringMode::Fantasy.toggle(), ScoringMode::Pace);
+    }
+
+    /// `compute_team_strength_views` with Custom mode reads the named
+    /// StatId. None → 0.0 fallback (parity with Pace's `unwrap_or(0.0)`
+    /// at the same call site).
+    #[test]
+    fn l0_lindsay_l5_scoring_mode_custom_team_strength_runs() {
+        let mut r = StatsRepository::new();
+        r.upsert_identity(fixtures::identity(1).name("A", "a").build()).unwrap();
+        r.upsert_stats(
+            fixtures::stats(1, 20242025, "EDM")
+                .position(Position::Center)
+                .build(),
+        )
+        .unwrap();
+        let views: Vec<_> = r.skaters(Season(20242025), SeasonType::Regular).collect();
+        // Should not panic, should not be empty.
+        let result = compute_team_strength_views(
+            &views,
+            ScoringMode::Custom(crate::stats_catalog::StatId::Goals),
+        );
+        assert!(!result.is_empty(),
+            "Custom-mode team strength must produce results");
     }
 }
