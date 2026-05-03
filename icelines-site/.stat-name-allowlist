@@ -1,0 +1,20 @@
+# Phase Lindsay L.5b — SI-03 site stat-name allowlist.
+#
+# The grep test at `tests/site_stat_name_grep.rs` scans rendered HTML
+# output for canonical stat names like "Goals", "Points", etc. Hits
+# outside this allowlist trip the test, forcing the contributor to
+# either route the stat name through `StatId::label()` / `short_label()`
+# or add an explicit entry here.
+#
+# Format: one regex pattern per line, lines starting with `#` are
+# comments. Patterns match against the rendered HTML; ANY occurrence
+# elsewhere fails the test.
+#
+# When you add an entry here:
+#   1. Justify in a comment WHY this string can't come from StatId.
+#   2. Include enough context (e.g. the surrounding HTML class) so a
+#      future reader can validate the entry is still earned.
+#
+# Initial allowlist is empty — the L.5b sweep starts from a clean
+# baseline. Future hardcoded additions either route through the
+# catalog or earn an explicit entry here with a stated reason.
