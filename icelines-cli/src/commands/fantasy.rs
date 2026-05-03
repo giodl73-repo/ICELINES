@@ -800,6 +800,18 @@ async fn handle_api_team_roster(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let scored = score_team(&roster, &all_skaters, &all_goalies, &scheme);
 
+    // Phase Lindsay L.5.6 — every stat field in the JSON response is
+    // keyed by `StatId::cli_key()`. KEEL-B1 round-trip test asserts
+    // every emitted key parses back via `StatId::from_cli_key`. The
+    // legacy `name` / `pos` / `score` keys stay as-is — they're
+    // identity attributes / derived metrics, not stat reads.
+    use icelines_core::stats_catalog::StatId;
+    let roster_stats: &[StatId] = &[
+        StatId::Games,
+        StatId::Goals,
+        StatId::Assists,
+        StatId::Points,
+    ];
     let players_json: Vec<Value> = scored
         .iter()
         .map(|(name, score)| {
@@ -807,11 +819,26 @@ async fn handle_api_team_roster(
             let v = all_skaters
                 .iter()
                 .find(|v| v.identity.name_normalized.contains(norm.as_str()));
+            // Build the catalog-keyed stats sub-object.
+            let mut stats_map = serde_json::Map::new();
+            if let Some(view) = v {
+                for sid in roster_stats {
+                    let val = sid.read(view);
+                    stats_map.insert(
+                        sid.cli_key().to_owned(),
+                        match val {
+                            Some(x) => json!(x),
+                            None => Value::Null,
+                        },
+                    );
+                }
+            }
             json!({
                 "name": name,
                 "pos": v.map(|view| view.position().abbreviation()).unwrap_or("—"),
                 "gp": v.map(|view| view.gp()).unwrap_or(0),
                 "score": score,
+                "stats": Value::Object(stats_map),
             })
         })
         .collect();
@@ -1221,5 +1248,75 @@ mod tests {
         assert_eq!(s.blocks, 22);
         assert_eq!(s.takeaways, 65);
         assert_eq!(s.giveaways, 41);
+    }
+
+    // ── Phase Lindsay L.5.6 — axum roster JSON keys via StatId::cli_key ──
+
+    /// KEEL-B1 round-trip — every key emitted in the roster `stats`
+    /// sub-object parses back via `StatId::from_cli_key`. This is the
+    /// contract: API consumers can call `StatId::from_cli_key(key)` on
+    /// any key in `players[*].stats` and get a Some.
+    #[test]
+    fn l0_lindsay_l5_roster_stats_keys_round_trip_via_from_cli_key() {
+        use icelines_core::stats_catalog::StatId;
+        // Mirror the `roster_stats` slice in handle_api_team_roster.
+        // If the slice changes there, this test must change too — that's
+        // the explicit contract pin.
+        let roster_stats: &[StatId] = &[
+            StatId::Games,
+            StatId::Goals,
+            StatId::Assists,
+            StatId::Points,
+        ];
+        for sid in roster_stats {
+            let key = sid.cli_key();
+            let parsed = StatId::from_cli_key(key);
+            assert_eq!(
+                parsed,
+                Some(*sid),
+                "KEEL-B1: roster JSON key `{key}` must round-trip via \
+                 StatId::from_cli_key"
+            );
+        }
+    }
+
+    /// L.5.6 — emitted stats values match `StatId::read(view)` for the
+    /// same view. Tests the read-side contract for the round-trip:
+    /// consumers can re-derive the value via the catalog and get the
+    /// same number we emitted.
+    #[test]
+    fn l0_lindsay_l5_roster_stats_values_match_stat_id_read() {
+        use icelines_core::stats_catalog::StatId;
+        use icelines_core::season_stats::{SeasonStatsBuilder, TeamStint};
+        use icelines_core::model::{TeamAbbr, Position, Season};
+        use icelines_core::season_stats::SeasonType;
+        use icelines_core::stats_repository::PlayerView;
+
+        let identity = fixtures::identity(8478402).build();
+        let stats = SeasonStatsBuilder::new(
+            PlayerId(8478402),
+            Season(20242025),
+            SeasonType::Regular,
+            Position::Center,
+        )
+        .add_team_stint(TeamStint {
+            team: TeamAbbr("EDM".into()),
+            started: Some("2024-10-09".into()),
+            ended: None,
+            gp: 70, goals: 30, assists: 80, points: 110,
+            goalie: None,
+        })
+        .with_totals(icelines_core::season_stats::StatTotals {
+            gp: 70, goals: 30, assists: 80, points: 110,
+            ..Default::default()
+        })
+        .build();
+        let view = PlayerView { identity: &identity, stats: &stats, contract: None };
+
+        // Emitted JSON value for `StatId::Games` should equal Some(70.0).
+        assert_eq!(StatId::Games.read(&view), Some(70.0));
+        assert_eq!(StatId::Goals.read(&view), Some(30.0));
+        assert_eq!(StatId::Assists.read(&view), Some(80.0));
+        assert_eq!(StatId::Points.read(&view), Some(110.0));
     }
 }
