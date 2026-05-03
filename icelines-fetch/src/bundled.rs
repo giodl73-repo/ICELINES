@@ -804,4 +804,86 @@ mod tests {
         // 18800000 — clearly fictitious, also None.
         assert!(get_playoff_bios("18800000").is_none());
     }
+
+    // ── Phase Lindsay L.7 — L-B20 cross-product parse test ──────────────
+
+    /// L-B20: every bundled (season × season_type × Tier-1 kind) cell
+    /// either returns `None` (not bundled at this slot) OR returns
+    /// bytes that parse as the envelope shape `{"data": [...], "total":
+    /// N}`. Today the L.7 fallback returns None for every cell —
+    /// test passes vacuously. The moment a `report_for_lindsay`
+    /// dispatch arm lands `Some(include_bytes!(…))`, this test starts
+    /// validating that the embedded bytes deserialize cleanly.
+    #[test]
+    fn l1_lindsay_l7_each_tier1_report_parses_for_all_bundled_seasons() {
+        use icelines_core::season_stats::SeasonType;
+        use icelines_core::stats_catalog::{ReportKind, Tier};
+
+        let tier1_kinds: Vec<ReportKind> = ReportKind::all()
+            .iter()
+            .filter(|k| matches!(k.tier(), Tier::Tier1))
+            .copied()
+            .collect();
+        assert!(
+            tier1_kinds.len() >= 9,
+            "expected ≥9 Tier-1 kinds (got {}) — catalog drift?",
+            tier1_kinds.len(),
+        );
+
+        let mut some_count = 0usize;
+        let mut none_count = 0usize;
+        for season in BUNDLED_SEASONS {
+            for st in [SeasonType::Regular, SeasonType::Playoff] {
+                for kind in &tier1_kinds {
+                    match report_for_lindsay(season, st, *kind) {
+                        Some(bytes) => {
+                            some_count += 1;
+                            // Envelope shape: must parse as JSON object
+                            // with `data` (array) + `total` (number).
+                            let v: serde_json::Value =
+                                serde_json::from_slice(&bytes).unwrap_or_else(|e| {
+                                    panic!(
+                                        "L-B20: bundled bytes for ({season}, \
+                                         {st:?}, {kind:?}) are not valid JSON: {e}"
+                                    )
+                                });
+                            let obj = v.as_object().unwrap_or_else(|| {
+                                panic!(
+                                    "L-B20: bundled JSON for ({season}, {st:?}, \
+                                     {kind:?}) is not an object — got {v:?}"
+                                )
+                            });
+                            assert!(
+                                obj.contains_key("data"),
+                                "L-B20: bundled JSON for ({season}, {st:?}, \
+                                 {kind:?}) missing `data` field"
+                            );
+                            assert!(
+                                obj["data"].is_array(),
+                                "L-B20: bundled `data` for ({season}, {st:?}, \
+                                 {kind:?}) is not an array"
+                            );
+                            assert!(
+                                obj.contains_key("total"),
+                                "L-B20: bundled JSON for ({season}, {st:?}, \
+                                 {kind:?}) missing `total` field"
+                            );
+                        }
+                        None => none_count += 1,
+                    }
+                }
+            }
+        }
+
+        // Sanity: total cells = BUNDLED_SEASONS × 2 × tier1_kinds.
+        let expected_cells = BUNDLED_SEASONS.len() * 2 * tier1_kinds.len();
+        assert_eq!(
+            some_count + none_count,
+            expected_cells,
+            "L-B20: cell count mismatch (some={some_count}, none={none_count}, \
+             expected={expected_cells})"
+        );
+        // No assertion on some/none ratio — today everything is None,
+        // L.7 will gradually flip cells to Some as bundles land.
+    }
 }
