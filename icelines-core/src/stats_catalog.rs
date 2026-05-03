@@ -11,11 +11,13 @@
 //!
 //! **Stat count: 108**. Spec v0.4 §"Stat enumeration" prose totals 108
 //! with Goalie at 22; explicit enumeration shows Goalie at 23 (19 base
-//! + 4 GSAx) and double-lists `PpToiPerGame`/`ShToiPerGame` in both
+//! plus 4 GSAx) and double-lists `PpToiPerGame`/`ShToiPerGame` in both
 //! SpecialTeams AND TimeOnIce. The L.2 implementation rationalizes:
-//!   - Goalie 23 (follow the explicit list over the prose total),
-//!   - `PpToiPerGame`/`ShToiPerGame` in TimeOnIce only (natural domain
-//!     fit — TOI is deployment, not output).
+//!
+//! - Goalie 23 (follow the explicit list over the prose total),
+//! - `PpToiPerGame`/`ShToiPerGame` in TimeOnIce only (natural domain
+//!   fit — TOI is deployment, not output).
+//!
 //! Net (post-L.4.1): 15 + 11 + 17 + 12 + 8 + 15 + 23 + 7 = 108 stats.
 //! L.2.1 rationalized to 107; L.4.1 added `Games` (skater GP) to
 //! Scoring → 108. HART/FORGE checkpoint pass-confirmed all calls.

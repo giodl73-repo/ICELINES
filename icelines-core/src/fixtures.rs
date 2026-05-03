@@ -1001,9 +1001,14 @@ pub mod stat_catalog_variants {
         (id, stats)
     }
 
+    /// `(name, builder fn)` pair for a stat-catalog variant. Type alias
+    /// keeps the `all()` return type readable without tripping
+    /// clippy::type_complexity.
+    pub type CatalogVariant = (&'static str, fn() -> (PlayerIdentity, SeasonStats));
+
     /// Catalog of all 6 variants by name + builder. Drives the
     /// cross-product test in `tests/stat_catalog_variants.rs`.
-    pub fn all() -> &'static [(&'static str, fn() -> (PlayerIdentity, SeasonStats))] {
+    pub fn all() -> &'static [CatalogVariant] {
         &[
             ("skater_modern", skater_modern),
             ("skater_pre_2005", skater_pre_2005),

@@ -365,7 +365,7 @@ mod tests {
     }
 
     /// Team strength = (top-N forwards per position group, summed over LW/C/RW)
-    /// + (top-2*pairs defensemen). With one team and exactly enough players to
+    /// plus (top-2*pairs defensemen). With one team and exactly enough players to
     /// fill the lineup, the result must equal the sum of every player's pace.
     #[test]
     fn l0_compute_team_strength_single_team_simple_sum() {

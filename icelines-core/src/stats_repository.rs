@@ -89,7 +89,7 @@ pub struct StatsRepository {
     /// Phase Lindsay L.2.5 — Tier-2 runtime-only blob cache.
     ///
     /// Storage: `BTreeMap` (deterministic iteration for snapshot tests
-    /// + debug dumps). Keyed by full window identity so DI-12
+    /// and debug dumps). Keyed by full window identity so DI-12
     /// cascade-eviction works by prefix match.
     ///
     /// **DI-12 (cascade)**: when `window_lru` evicts a `(season,

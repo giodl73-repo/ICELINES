@@ -1199,6 +1199,7 @@ fn parse_series(s: &serde_json::Value) -> PlayoffSeries {
 }
 
 #[cfg(test)]
+#[allow(non_snake_case)] // test names encode literal NHL API field names (camelCase): seriesSummary, gameLabel, etc.
 mod parse_game_tests {
     //! Unit tests for `parse_game` — the field-name fallbacks for series
     //! context have been a source of empty `Game ?` placeholders in the

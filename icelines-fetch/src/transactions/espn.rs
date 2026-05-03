@@ -25,6 +25,7 @@ const MAX_RETRIES: usize = 3;
 const CIRCUIT_BREAK_AFTER_FAILS: usize = 3;
 /// Server caps pageSize at 25 regardless of what we request. Send the
 /// request anyway (informational; some clones may honor a higher limit).
+#[allow(dead_code)]
 const PAGE_LIMIT: usize = 200;
 
 /// Convert an 8-digit NHL season ID (e.g. "20252026") into the ESPN
@@ -32,6 +33,7 @@ const PAGE_LIMIT: usize = 200;
 /// for that season — preseason camp through the Stanley Cup. Pre/post
 /// boundary is forgiving (Sept 1 → July 31 next year) so cup-final rows
 /// in late June/early July still land in the right season.
+#[allow(dead_code)]
 fn season_to_date_range(season: &str) -> Option<String> {
     if season.len() != 8 || !season.chars().all(|c| c.is_ascii_digit()) {
         return None;
@@ -87,7 +89,7 @@ fn days_in_month(year: u32, month: u32) -> u32 {
         1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
         4 | 6 | 9 | 11 => 30,
         2 => {
-            if (year % 4 == 0 && year % 100 != 0) || year % 400 == 0 {
+            if (year.is_multiple_of(4) && !year.is_multiple_of(100)) || year.is_multiple_of(400) {
                 29
             } else {
                 28
@@ -298,6 +300,7 @@ impl EspnSource {
 
 struct RawPage {
     body: serde_json::Value,
+    #[allow(dead_code)]
     page_count: Option<usize>,
 }
 

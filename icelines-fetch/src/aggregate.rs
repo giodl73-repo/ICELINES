@@ -271,7 +271,7 @@ mod tests {
     fn l0_improvement_map_values_are_reasonable() {
         let imp = load_improvement_map();
         // No improvement delta should exceed ±2.0 PPG (would indicate a data error)
-        for (_, delta) in &imp {
+        for delta in imp.values() {
             assert!(
                 delta.abs() <= 2.0,
                 "PPG delta {} is unreasonably large",

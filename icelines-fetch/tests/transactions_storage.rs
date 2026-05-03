@@ -337,7 +337,7 @@ fn l0_snapshot_meta_flags_serde_roundtrip() {
     };
     let json = serde_json::to_string(&flags).unwrap();
     let back: SnapshotMetaFlags = serde_json::from_str(&json).unwrap();
-    assert_eq!(back.transactions_stale, true);
+    assert!(back.transactions_stale);
     assert_eq!(back.transactions_last_error.as_deref(), Some("ESPN 503"));
 }
 

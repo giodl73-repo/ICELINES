@@ -46,6 +46,7 @@ pub struct FetchOutcome {
 }
 
 impl FetchOutcome {
+    #[allow(dead_code)]
     pub(crate) fn new(rows: Vec<RawTransaction>, fetched_at: String) -> Self {
         Self {
             rows,

@@ -30,13 +30,13 @@ use super::TransactionKind;
 /// Version history:
 /// - v1: initial regex set (T.1)
 /// - v2: added "Agreed to terms" → Signing, "Waived X" / "on unconditional
-///       waivers" → WaiverPlacement, "Singed" typo → Signing (T.6 capture
-///       surfaced these in real 21-22 ESPN prose).
+///   waivers" → WaiverPlacement, "Singed" typo → Signing (T.6 capture
+///   surfaced these in real 21-22 ESPN prose).
 /// - v3: rule order changed — Trade and IR now outrank Waivers in
-///       compound rows ("Placed X on IR. Designated Y for waivers."
-///       is primarily an IR move; the Marchment regression). Also
-///       added "Assigned X to AHL", "Reinstated X", "Sent X to AHL"
-///       (current-season AHL movement verbs).
+///   compound rows ("Placed X on IR. Designated Y for waivers."
+///   is primarily an IR move; the Marchment regression). Also
+///   added "Assigned X to AHL", "Reinstated X", "Sent X to AHL"
+///   (current-season AHL movement verbs).
 pub const CURRENT_CLASSIFIER_VERSION: u16 = 3;
 
 /// One rule = one regex + the kind to return on a match. Compiled once

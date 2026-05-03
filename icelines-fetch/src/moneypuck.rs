@@ -179,7 +179,7 @@ mod tests {
         let result = parse_csv(&csv);
         // Player without 5on5 row must be absent from results
         assert!(
-            result.get(&9999001).is_none(),
+            !result.contains_key(&9999001),
             "player missing 5on5 row should not appear in results"
         );
     }

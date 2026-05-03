@@ -39,6 +39,7 @@ fn beniers_stats() -> SkaterStats {
 
 /// Upsert a synthetic skater into `repo` for filter-engine tests. Builds
 /// a minimal SeasonStats with the given counters; pace is computed.
+#[allow(clippy::too_many_arguments)] // synthetic test fixture — readability beats struct
 fn upsert_skater(
     repo: &mut StatsRepository,
     pid: u32,
@@ -100,6 +101,7 @@ fn upsert_skater(
     repo.upsert_stats(stats).unwrap();
 }
 
+#[allow(clippy::too_many_arguments)] // synthetic test fixture — readability beats struct
 fn upsert_skater_full(
     repo: &mut StatsRepository,
     pid: u32,
@@ -379,7 +381,7 @@ fn l1_filter_by_position_centers_only() {
     let repo = fixture_repo();
     let mut f = PlayerFilter::new();
     f.positions = Some(vec![Position::Center]);
-    let result = f.apply_views(views(&repo).into_iter());
+    let result = f.apply_views(views(&repo));
     assert!(result.iter().all(|v| v.position() == Position::Center));
     assert_eq!(result.len(), 2);
 }
@@ -389,7 +391,7 @@ fn l1_filter_by_team_sea_only() {
     let repo = fixture_repo();
     let mut f = PlayerFilter::new();
     f.teams = Some(vec!["SEA".to_owned()]);
-    let result = f.apply_views(views(&repo).into_iter());
+    let result = f.apply_views(views(&repo));
     assert!(result.iter().all(|v| v.team_display() == "SEA"));
     assert_eq!(result.len(), 3);
 }
@@ -400,7 +402,7 @@ fn l1_filter_ppg_min_excludes_low_scorers() {
     let mut f = PlayerFilter::new();
     // McDavid PPG = 1.707, Beniers = 0.610. Only McDavid above 1.5.
     f.ppg_min = Some(1.5);
-    let result = f.apply_views(views(&repo).into_iter());
+    let result = f.apply_views(views(&repo));
     assert_eq!(result.len(), 1, "only McDavid should exceed 1.5 PPG");
     assert_eq!(result[0].identity.full_name, "McDavid");
 }
@@ -411,7 +413,7 @@ fn l1_filter_combined_pos_and_team() {
     let mut f = PlayerFilter::new();
     f.positions = Some(vec![Position::Center]);
     f.teams = Some(vec!["SEA".to_owned()]);
-    let result = f.apply_views(views(&repo).into_iter());
+    let result = f.apply_views(views(&repo));
     assert_eq!(result.len(), 1);
     assert_eq!(result[0].identity.full_name, "Beniers");
 }
@@ -421,7 +423,7 @@ fn l1_filter_no_match_returns_empty() {
     let repo = fixture_repo();
     let mut f = PlayerFilter::new();
     f.teams = Some(vec!["BOS".to_owned()]);
-    let result = f.apply_views(views(&repo).into_iter());
+    let result = f.apply_views(views(&repo));
     assert!(result.is_empty(), "no BOS players in fixture");
 }
 
@@ -430,7 +432,7 @@ fn l1_filter_gp_min_excludes_below_threshold() {
     let repo = fixture_repo();
     let mut f = PlayerFilter::new();
     f.gp_min = Some(80);
-    let result = f.apply_views(views(&repo).into_iter());
+    let result = f.apply_views(views(&repo));
     // Tolvanen has 78 GP — excluded
     assert!(!result.iter().any(|v| v.identity.full_name == "Tolvanen"));
     // Eberle 80, Beniers/McDavid/Makar 82 — included
@@ -451,7 +453,7 @@ fn l1_filter_combined_toi_plus_minus_shots() {
     f.toi_min_sec = Some(1200.0);
     f.plus_minus_min = Some(0);
     f.shots_pg_min = Some(2.0);
-    let result = f.apply_views(views(&repo).into_iter());
+    let result = f.apply_views(views(&repo));
     assert_eq!(result.len(), 1, "only Elite should pass all three filters");
     assert_eq!(result[0].identity.full_name, "Elite");
 }

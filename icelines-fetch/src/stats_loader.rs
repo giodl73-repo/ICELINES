@@ -806,6 +806,7 @@ pub fn merge_goalie_bios_into_identity(
     }
 }
 
+#[allow(clippy::too_many_arguments)] // 8 inputs by design — bio + 4 sources + 3 keys
 fn build_skater_stats(
     pid: PlayerId,
     season: Season,
@@ -977,11 +978,7 @@ fn build_goalie_season_stats(
         pim: g.penalty_minutes,
         shots: 0,
         shooting_pct: None,
-        toi_per_game_sec: if g.games_played > 0 {
-            Some(g.time_on_ice / g.games_played)
-        } else {
-            None
-        },
+        toi_per_game_sec: g.time_on_ice.checked_div(g.games_played),
         pp_goals: 0,
         pp_points: 0,
         sh_goals: 0,

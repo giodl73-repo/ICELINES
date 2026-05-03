@@ -359,7 +359,7 @@ fn l2_cmd_rank_no_cache_exits_nonzero() {
     if !out.status.success() {
         let stderr = String::from_utf8_lossy(&out.stderr);
         assert!(
-            stderr.contains("fetch") || stderr.len() > 0,
+            stderr.contains("fetch") || !stderr.is_empty(),
             "rank error must produce stderr output"
         );
     }
@@ -370,7 +370,8 @@ fn l2_cmd_rank_no_cache_exits_nonzero() {
 #[test]
 fn l2_cmd_stubs_exit_zero() {
     // tonight exits 0 even without cache (prints message gracefully)
-    for cmd in &["tonight"] {
+    {
+        let cmd = &"tonight";
         let out = run(&[cmd]);
         assert!(
             !String::from_utf8_lossy(&out.stderr).contains("panic"),
@@ -468,7 +469,7 @@ fn l2_cmd_snapshot_verify_no_active_exits_gracefully() {
         let stderr = String::from_utf8_lossy(&out.stderr);
         let stdout = String::from_utf8_lossy(&out.stdout);
         assert!(
-            stderr.len() > 0 || stdout.len() > 0,
+            !stderr.is_empty() || !stdout.is_empty(),
             "verify must produce output when it fails"
         );
     }
@@ -482,7 +483,7 @@ fn l2_cmd_players_no_cache_exits_gracefully() {
     if !out.status.success() {
         let stderr = String::from_utf8_lossy(&out.stderr);
         assert!(
-            stderr.contains("fetch") || stderr.len() > 0,
+            stderr.contains("fetch") || !stderr.is_empty(),
             "players must mention fetch when cache is missing"
         );
     }
@@ -494,7 +495,7 @@ fn l2_cmd_class_no_cache_exits_gracefully() {
     if !out.status.success() {
         let stderr = String::from_utf8_lossy(&out.stderr);
         assert!(
-            stderr.len() > 0,
+            !stderr.is_empty(),
             "class must produce error output when cache is missing"
         );
     }
@@ -518,7 +519,7 @@ fn l2_cmd_build_no_site_exits_gracefully() {
         let stderr = String::from_utf8_lossy(&out.stderr);
         let stdout = String::from_utf8_lossy(&out.stdout);
         assert!(
-            stderr.contains("fetch") || stdout.contains("fetch") || stderr.len() > 0,
+            stderr.contains("fetch") || stdout.contains("fetch") || !stderr.is_empty(),
             "build must mention fetch when cache is missing"
         );
     }
@@ -965,7 +966,7 @@ fn l2_cmd_query_leaders_invalid_sort_exits_nonzero() {
     );
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(
-        stderr.contains("rapm") || stderr.len() > 0,
+        stderr.contains("rapm") || !stderr.is_empty(),
         "error must mention invalid metric"
     );
 }

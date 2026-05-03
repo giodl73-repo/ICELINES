@@ -819,7 +819,7 @@ fn l1_player_view_accessors_against_real_bundled_data() {
         // string would not match itself. Stronger: assert that the
         // chars are >= 1-byte (sanity) and the view's name_normalized
         // is ASCII (the normalize_name strips diacritics).
-        assert!(v.full_name().chars().any(|c| !c.is_ascii()));
+        assert!(!v.full_name().is_ascii());
         assert!(
             v.name_normalized().is_ascii(),
             "normalize_name should strip diacritics"
