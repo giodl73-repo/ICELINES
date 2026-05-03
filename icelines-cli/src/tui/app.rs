@@ -69,9 +69,13 @@ pub(crate) fn parse_picker_date(raw: &str) -> Result<String, String> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum QueryMode {
-    Build,    // normal — editing fields, viewing results
-    SaveName, // typing a name to save the current query
-    LoadList, // browsing saved queries to load
+    Build,      // normal — editing fields, viewing results
+    SaveName,   // typing a name to save the current query
+    LoadList,   // browsing saved queries to load
+    /// Phase Lindsay L.3.4 — search-as-you-type sort picker overlay.
+    /// User types substring against `StatId::cli_key()`; up/down moves
+    /// selection within filtered list; Enter selects, Esc cancels.
+    SortPicker,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -175,6 +179,17 @@ pub struct App {
     pub query_results_focused: bool, // Space toggles focus between field editor and result list
     pub query_save_name: String,     // name being typed for save
     pub query_saved_list: Vec<(String, String)>, // (name, json) loaded from DB
+    /// Phase Lindsay L.3.4 — search query for the sort picker overlay.
+    /// Substring-matched (case-insensitive) against `StatId::cli_key()`.
+    pub sort_picker_query: String,
+    /// Phase Lindsay L.3.4 — selected index within the filtered StatId
+    /// list. Reset to 0 every time the search query changes.
+    pub sort_picker_idx: usize,
+    /// Phase Lindsay L.3.4 — the StatId chosen via the sort picker.
+    /// `Some(stat)` means subsequent sort uses `StatId::sort_cmp(stat, …)`
+    /// instead of the legacy QueryField[0] string. `None` means use the
+    /// legacy field (default behavior).
+    pub sort_stat_pick: Option<icelines_core::stats_catalog::StatId>,
     /// Phase 8j: lazy-compiled dashboard panel for the player card.
     /// Only consulted when `crate::config::dashboards_enabled()` is true.
     pub dashboard_panel: crate::tui::dashboard_panel::CompiledPanel,
@@ -278,6 +293,9 @@ impl App {
             query_results_focused: false,
             query_save_name: String::new(),
             query_saved_list: Vec::new(),
+            sort_picker_query: String::new(),
+            sort_picker_idx: 0,
+            sort_stat_pick: None,
             dashboard_panel: crate::tui::dashboard_panel::CompiledPanel::new(),
             league_context: crate::tui::dashboard_panel::LeagueContext::empty(),
             transactions: Vec::new(),
@@ -425,11 +443,22 @@ impl App {
                 } else if self.screen == Screen::Playoffs {
                     self.playoffs_series = self.playoffs_series.saturating_add(1);
                 } else if self.screen == Screen::Queries {
-                    if self.query_results_focused {
+                    if self.query_mode == QueryMode::SortPicker {
+                        // Phase Lindsay L.3.4 — sort picker Down moves
+                        // within filtered list, capped at len-1.
+                        let n = crate::tui::screens::queries::sort_picker_filter(
+                            &self.sort_picker_query,
+                        )
+                        .len();
+                        if n > 0 && self.sort_picker_idx + 1 < n {
+                            self.sort_picker_idx += 1;
+                        }
+                    } else if self.query_results_focused {
                         let views = self.views();
-                        let results = crate::tui::screens::queries::run_query_views(
+                        let results = crate::tui::screens::queries::run_query_views_with_pick(
                             &views,
                             &self.query_fields,
+                            self.sort_stat_pick,
                         );
                         let visible: usize = 20;
                         if self.selected + 1 < visible {
@@ -486,7 +515,11 @@ impl App {
                 } else if self.screen == Screen::Playoffs {
                     self.playoffs_series = self.playoffs_series.saturating_sub(1);
                 } else if self.screen == Screen::Queries {
-                    if self.query_results_focused {
+                    if self.query_mode == QueryMode::SortPicker {
+                        // Phase Lindsay L.3.4 — sort picker Up moves
+                        // within filtered list. Saturates at 0.
+                        self.sort_picker_idx = self.sort_picker_idx.saturating_sub(1);
+                    } else if self.query_results_focused {
                         if self.selected > 0 {
                             self.selected -= 1;
                         } else if self.query_result_scroll > 0 {
@@ -678,6 +711,13 @@ impl App {
                             // Typing the save name
                             self.query_save_name.push(c);
                         }
+                        QueryMode::SortPicker => {
+                            // Phase Lindsay L.3.4 — typing in the sort picker
+                            // appends to the search query and resets selection
+                            // index to 0 (top of newly-filtered list).
+                            self.sort_picker_query.push(c);
+                            self.sort_picker_idx = 0;
+                        }
                         QueryMode::Build if c == 's' => {
                             // Start save-name mode
                             self.query_mode = QueryMode::SaveName;
@@ -695,6 +735,15 @@ impl App {
                             self.query_mode = QueryMode::LoadList;
                             self.selected = 0;
                             self.status = "Saved queries — ↑↓ select · Enter to load · Del to delete · Esc to cancel".to_owned();
+                        }
+                        QueryMode::Build if c == '/' => {
+                            // Phase Lindsay L.3.4 — `/` on Queries opens
+                            // the sort picker overlay. Search-as-you-type
+                            // against catalog cli_keys.
+                            self.query_mode = QueryMode::SortPicker;
+                            self.sort_picker_query.clear();
+                            self.sort_picker_idx = 0;
+                            self.status = "Sort picker — type to filter · ↑↓ select · Enter accept · Esc cancel".to_owned();
                         }
                         _ => {}
                     }
@@ -839,6 +888,13 @@ impl App {
                     self.selected = 0;
                 } else if self.screen == Screen::Queries && self.query_mode == QueryMode::SaveName {
                     self.query_save_name.pop();
+                } else if self.screen == Screen::Queries
+                    && self.query_mode == QueryMode::SortPicker
+                {
+                    // Phase Lindsay L.3.4 — Backspace in sort picker
+                    // pops the search query and resets selection.
+                    self.sort_picker_query.pop();
+                    self.sort_picker_idx = 0;
                 }
             }
             Action::Tab => {
@@ -1662,9 +1718,10 @@ impl App {
             Screen::Queries => {
                 // Hart.5c.6 Phase B-3.3: queries runs against views now.
                 let views = self.views();
-                let results = crate::tui::screens::queries::run_query_views(
+                let results = crate::tui::screens::queries::run_query_views_with_pick(
                     &views,
                     &self.query_fields,
+                    self.sort_stat_pick,
                 );
                 let row_idx =
                     self.query_result_scroll + self.selected.min(results.len().saturating_sub(1));
@@ -1815,13 +1872,34 @@ impl App {
                             self.query_result_scroll = 0;
                         }
                     }
+                    QueryMode::SortPicker => {
+                        // Phase Lindsay L.3.4 — accept the highlighted
+                        // catalog stat as the active sort. Updates
+                        // `sort_stat_pick` (catalog override) and exits
+                        // the picker. The sort dispatch sees `Some(stat)`
+                        // on next render and uses `StatId::sort_cmp`.
+                        let results = crate::tui::screens::queries::sort_picker_filter(
+                            &self.sort_picker_query,
+                        );
+                        if let Some(&stat) = results.get(self.sort_picker_idx) {
+                            self.sort_stat_pick = Some(stat);
+                            self.status = format!(
+                                "Sort: {} ({})  ·  / picker  s save  l load",
+                                stat.label(),
+                                stat.cli_key(),
+                            );
+                        }
+                        self.query_mode = QueryMode::Build;
+                        self.query_result_scroll = 0;
+                    }
                     QueryMode::Build => {
                         // Enter on a result row → player card. Hart.5c.6
                         // Phase B-3.3: queries runs against views now.
                         let views = self.views();
-                        let results = crate::tui::screens::queries::run_query_views(
+                        let results = crate::tui::screens::queries::run_query_views_with_pick(
                             &views,
                             &self.query_fields,
+                            self.sort_stat_pick,
                         );
                         let row_idx = self.query_result_scroll
                             + self.selected.min(results.len().saturating_sub(1));

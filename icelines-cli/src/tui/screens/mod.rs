@@ -1917,6 +1917,165 @@ mod app_snapshot_tests {
         assert_eq!(visited[1], 9);
     }
 
+    // ─── Phase Lindsay L.3.4 — sort picker overlay ──────────────────────
+
+    /// `/` on Queries opens the sort picker overlay. Render shows the
+    /// search box + filtered list of catalog stats.
+    #[test]
+    fn l1_lindsay_queries_slash_opens_sort_picker() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+        app.handle(Action::Tab);
+        app.handle(Action::Tab);
+        assert_eq!(app.screen, crate::tui::app::Screen::Queries);
+
+        // Trigger picker via `/`.
+        app.handle(Action::Char('/'));
+        assert_eq!(app.query_mode, crate::tui::app::QueryMode::SortPicker);
+
+        let text = render_app_to_text(&app, 140, 40);
+        // Picker title + search prompt visible.
+        assert!(
+            text.contains("Sort by"),
+            "picker title 'Sort by' must render; got:\n{text}"
+        );
+        assert!(
+            text.contains("Search:"),
+            "picker search prompt must render; got:\n{text}"
+        );
+        // Default empty query → all 107 stats listed (count line).
+        assert!(
+            text.contains("107"),
+            "picker should show '107' in match count for empty query; got:\n{text}"
+        );
+    }
+
+    /// Type-as-you-go filters the picker list. Typing `"hits"` reduces
+    /// the visible count to a small subset.
+    #[test]
+    fn l1_lindsay_queries_sort_picker_search_filters_list() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+        app.handle(Action::Tab);
+        app.handle(Action::Tab);
+
+        app.handle(Action::Char('/'));
+        app.handle(Action::Char('h'));
+        app.handle(Action::Char('i'));
+        app.handle(Action::Char('t'));
+        app.handle(Action::Char('s'));
+        assert_eq!(app.sort_picker_query, "hits");
+
+        let text = render_app_to_text(&app, 140, 40);
+        // Filtered count is much smaller than 107.
+        assert!(
+            !text.contains("107 of 107"),
+            "filter should reduce result count below 107"
+        );
+        // "hits" stat is in the filtered list — its label "Hits" should
+        // appear (along with HitsPer60 etc.).
+        assert!(
+            text.contains("hits"),
+            "stat key 'hits' must appear in filtered list; got:\n{text}"
+        );
+    }
+
+    /// Backspace pops chars from the search query and rebuilds list.
+    #[test]
+    fn l1_lindsay_queries_sort_picker_backspace_pops() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+        app.handle(Action::Tab);
+        app.handle(Action::Tab);
+
+        app.handle(Action::Char('/'));
+        app.handle(Action::Char('h'));
+        app.handle(Action::Char('i'));
+        app.handle(Action::Char('t'));
+        app.handle(Action::Char('s'));
+        assert_eq!(app.sort_picker_query, "hits");
+
+        app.handle(Action::Backspace);
+        assert_eq!(app.sort_picker_query, "hit");
+        app.handle(Action::Backspace);
+        app.handle(Action::Backspace);
+        app.handle(Action::Backspace);
+        assert_eq!(app.sort_picker_query, "");
+    }
+
+    /// Enter on the picker accepts the highlighted stat → exits to
+    /// Build mode + sets `sort_stat_pick`.
+    #[test]
+    fn l1_lindsay_queries_sort_picker_enter_accepts_pick() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+        app.handle(Action::Tab);
+        app.handle(Action::Tab);
+
+        app.handle(Action::Char('/'));
+        // Empty search → first result is StatId::Goals (declaration order).
+        app.handle(Action::Enter);
+
+        assert_eq!(app.query_mode, crate::tui::app::QueryMode::Build,
+            "Enter should exit picker back to Build mode");
+        assert_eq!(
+            app.sort_stat_pick,
+            Some(icelines_core::stats_catalog::StatId::Goals),
+            "first-result accept should set sort_stat_pick = Goals"
+        );
+    }
+
+    /// Esc on the picker cancels — exits to Build, no pick made.
+    #[test]
+    fn l1_lindsay_queries_sort_picker_esc_cancels() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+        app.handle(Action::Tab);
+        app.handle(Action::Tab);
+
+        let pick_before = app.sort_stat_pick;
+        app.handle(Action::Char('/'));
+        app.handle(Action::Char('h'));
+        app.handle(Action::Escape);
+
+        assert_eq!(app.query_mode, crate::tui::app::QueryMode::Build,
+            "Esc should return to Build mode");
+        assert_eq!(app.sort_stat_pick, pick_before,
+            "Esc should NOT mutate sort_stat_pick");
+    }
+
+    /// Down arrow moves the picker selection within the filtered list.
+    /// Up arrow at index 0 stays at 0 (no wrap).
+    #[test]
+    fn l1_lindsay_queries_sort_picker_down_up_navigation() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+        app.handle(Action::Tab);
+        app.handle(Action::Tab);
+
+        app.handle(Action::Char('/'));
+        assert_eq!(app.sort_picker_idx, 0);
+
+        app.handle(Action::Down);
+        assert_eq!(app.sort_picker_idx, 1);
+        app.handle(Action::Down);
+        assert_eq!(app.sort_picker_idx, 2);
+
+        app.handle(Action::Up);
+        assert_eq!(app.sort_picker_idx, 1);
+        app.handle(Action::Up);
+        assert_eq!(app.sort_picker_idx, 0);
+        // Up at 0 saturates.
+        app.handle(Action::Up);
+        assert_eq!(app.sort_picker_idx, 0);
+    }
+
     /// `Action::Refresh` (`r` key) resets both `query_fields` AND
     /// `query_sections` to their defaults. After collapsing every
     /// section, Refresh restores the default expansion state.

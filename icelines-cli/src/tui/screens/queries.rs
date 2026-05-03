@@ -127,6 +127,31 @@ pub fn toggle_section_for_field(
     Some(sections[idx].expanded)
 }
 
+// ── Phase Lindsay L.3.4 — Sort picker filter ────────────────────────────────
+
+/// Filter every catalog `StatId` by case-insensitive substring match
+/// against `cli_key()`. Empty query returns the full catalog (107 stats).
+///
+/// Used by the sort picker overlay to filter as the user types. Result
+/// preserves `StatId::all()` declaration order — same as the catalog
+/// section grouping users see elsewhere (AI-05 determinism).
+pub fn sort_picker_filter(
+    query: &str,
+) -> Vec<icelines_core::stats_catalog::StatId> {
+    use icelines_core::stats_catalog::StatId;
+    let q = query.trim().to_ascii_lowercase();
+    StatId::all()
+        .iter()
+        .filter(|s| {
+            if q.is_empty() {
+                return true;
+            }
+            s.cli_key().to_ascii_lowercase().contains(&q)
+        })
+        .copied()
+        .collect()
+}
+
 // ── Query execution ───────────────────────────────────────────────────────────
 
 fn parse_opt<T: std::str::FromStr>(s: &str) -> Option<T> {
@@ -138,6 +163,18 @@ fn parse_opt<T: std::str::FromStr>(s: &str) -> Option<T> {
 pub fn run_query_views<'a>(
     views: &'a [PlayerView<'a>],
     fields: &[QueryField],
+) -> Vec<(usize, PlayerView<'a>)> {
+    run_query_views_with_pick(views, fields, None)
+}
+
+/// Phase Lindsay L.3.4 — variant that accepts a sort-picker override.
+/// When `sort_pick` is `Some(stat)`, sort uses `StatId::sort_cmp` (AI-06
+/// universal tiebreak) over the picked catalog stat. When `None`, falls
+/// back to the legacy QueryField[0] string-keyed sort.
+pub fn run_query_views_with_pick<'a>(
+    views: &'a [PlayerView<'a>],
+    fields: &[QueryField],
+    sort_pick: Option<icelines_core::stats_catalog::StatId>,
 ) -> Vec<(usize, PlayerView<'a>)> {
     let sort  = fields[0].value();
     let pos   = fields[1].value();
@@ -167,11 +204,21 @@ pub fn run_query_views<'a>(
         .cloned()
         .filter(|v| filter.matches_view(v))
         .collect();
-    matched.sort_by(|a, b| {
-        sort_val_view(b, sort)
-            .partial_cmp(&sort_val_view(a, sort))
-            .unwrap_or(std::cmp::Ordering::Equal)
-    });
+
+    // Phase Lindsay L.3.4 — when the sort picker chose a catalog stat,
+    // route through `StatId::sort_cmp` (deterministic AI-06 tiebreak).
+    // Otherwise fall back to the legacy string-keyed sort_val_view.
+    if let Some(stat) = sort_pick {
+        matched.sort_by(|a, b| stat.sort_cmp(a, b));
+    } else {
+        matched.sort_by(|a, b| {
+            sort_val_view(b, sort)
+                .partial_cmp(&sort_val_view(a, sort))
+                .unwrap_or(std::cmp::Ordering::Equal)
+                // Phase Lindsay L.3.2 — universal nhl_id tiebreak.
+                .then_with(|| a.identity.id.0.cmp(&b.identity.id.0))
+        });
+    }
 
     matched.into_iter().take(top).enumerate().map(|(i, v)| (i + 1, v)).collect()
 }
@@ -259,7 +306,7 @@ fn col_label(sort: &str) -> &'static str {
 pub fn render(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
     use crate::tui::app::QueryMode;
 
-    // Show save/load overlay instead of results when in those modes
+    // Show save/load/picker overlay instead of results when in those modes
     match app.query_mode {
         QueryMode::SaveName => {
             render_save_prompt(f, app, area);
@@ -267,6 +314,10 @@ pub fn render(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
         }
         QueryMode::LoadList => {
             render_load_list(f, app, area);
+            return;
+        }
+        QueryMode::SortPicker => {
+            render_sort_picker(f, app, area);
             return;
         }
         QueryMode::Build => {}
@@ -334,6 +385,88 @@ fn render_load_list(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
     }).collect();
 
     f.render_widget(List::new(items), inner);
+}
+
+/// Phase Lindsay L.3.4 — sort picker overlay. Search box + filtered
+/// list of catalog `StatId`s. Type to filter; Up/Down to move
+/// selection; Enter to pick; Esc to cancel.
+fn render_sort_picker(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .title(" Sort by — type to filter · ↑↓ select · Enter accept · Esc cancel ")
+        .border_style(Style::default().fg(Color::Cyan));
+    let inner = block.inner(area);
+    f.render_widget(block, area);
+
+    let dim = Style::default().fg(Color::DarkGray);
+
+    // Filter the catalog by the current search query.
+    let results = sort_picker_filter(&app.sort_picker_query);
+
+    // Cursor index, clamped to result length (the app handler also
+    // clamps but defensively here so a stale index can't panic on
+    // render).
+    let sel = app.sort_picker_idx.min(results.len().saturating_sub(1));
+
+    let mut lines: Vec<Line> = Vec::new();
+    lines.push(Line::from(""));
+    // Search prompt with cursor block.
+    lines.push(Line::from(vec![
+        Span::styled("  Search: ", Style::default().fg(Color::White)),
+        Span::styled(
+            format!("{}▌", app.sort_picker_query),
+            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+        ),
+    ]));
+    lines.push(Line::styled(
+        format!("  ({} of {} match)", results.len(), icelines_core::stats_catalog::StatId::all().len()),
+        dim,
+    ));
+    lines.push(Line::from(""));
+
+    if results.is_empty() {
+        lines.push(Line::styled(
+            "  No matches. Try a different substring.",
+            dim,
+        ));
+    } else {
+        // Show up to N results around the selection. Visible window
+        // is the inner area height minus header (~5 lines).
+        let visible = (inner.height as usize).saturating_sub(7).max(1);
+        let start = sel.saturating_sub(visible / 2);
+        let end = (start + visible).min(results.len());
+
+        for (i, sid) in results[start..end].iter().enumerate() {
+            let global_idx = start + i;
+            let active = global_idx == sel;
+            let style = if active {
+                Style::default()
+                    .fg(Color::Black)
+                    .bg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD)
+            } else {
+                Style::default()
+            };
+            // Format: " key — Label (Category)"
+            lines.push(Line::styled(
+                format!(
+                    "  {:<32} — {:<26} ({})",
+                    sid.cli_key(),
+                    sid.label(),
+                    sid.category().label(),
+                ),
+                style,
+            ));
+        }
+        if end < results.len() {
+            lines.push(Line::styled(
+                format!("  … {} more below", results.len() - end),
+                dim,
+            ));
+        }
+    }
+
+    f.render_widget(Paragraph::new(lines), inner);
 }
 
 fn render_controls(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
@@ -439,9 +572,14 @@ fn render_results(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
         return;
     }
 
-    let results = run_query_views(&views, &app.query_fields);
+    let results = run_query_views_with_pick(&views, &app.query_fields, app.sort_stat_pick);
     let top: usize = app.query_fields[9].value().parse().unwrap_or(20);
-    let clabel = col_label(sort);
+    // Phase Lindsay L.3.4 — when picker overrides legacy field, the
+    // column label comes from the StatId; fall back to legacy.
+    let clabel: String = match app.sort_stat_pick {
+        Some(stat) => stat.short_label().to_owned(),
+        None => col_label(sort).to_owned(),
+    };
     let dim = Style::default().fg(Color::DarkGray);
 
     let visible = inner.height.saturating_sub(4) as usize;
@@ -592,5 +730,80 @@ mod tests {
         assert_eq!(toggle_section_for_field(&mut sections, 99), None);
         let after: Vec<bool> = sections.iter().map(|s| s.expanded).collect();
         assert_eq!(snapshot, after, "no-op must not mutate section state");
+    }
+
+    // ─── L.3.4 sort picker filter tests ────────────────────────────────
+
+    /// Empty query returns the full catalog in declaration order.
+    #[test]
+    fn l0_lindsay_sort_picker_filter_empty_query_returns_all() {
+        let results = sort_picker_filter("");
+        assert_eq!(
+            results.len(),
+            icelines_core::stats_catalog::StatId::all().len(),
+            "empty query → all 107 stats"
+        );
+        // First entry is the first variant in declaration order (Goals).
+        assert_eq!(results[0], icelines_core::stats_catalog::StatId::Goals);
+    }
+
+    /// Substring match — `"hits"` returns Hits, HitsPer60.
+    #[test]
+    fn l0_lindsay_sort_picker_filter_substring_match() {
+        use icelines_core::stats_catalog::StatId;
+        let results = sort_picker_filter("hits");
+        assert!(results.contains(&StatId::Hits));
+        assert!(results.contains(&StatId::HitsPer60));
+        // None of the matches contain "hits" without the cli_key — sanity.
+        for r in &results {
+            assert!(
+                r.cli_key().contains("hits"),
+                "{:?} (cli_key {:?}) should not match `hits`",
+                r,
+                r.cli_key()
+            );
+        }
+    }
+
+    /// Case-insensitive — `"HITS"` matches the same set as `"hits"`.
+    #[test]
+    fn l0_lindsay_sort_picker_filter_case_insensitive() {
+        let lower = sort_picker_filter("hits");
+        let upper = sort_picker_filter("HITS");
+        assert_eq!(lower, upper);
+    }
+
+    /// Whitespace trimmed — `"  goals  "` is the same as `"goals"`.
+    #[test]
+    fn l0_lindsay_sort_picker_filter_trims_whitespace() {
+        let trimmed = sort_picker_filter("goals");
+        let padded = sort_picker_filter("  goals  ");
+        assert_eq!(trimmed, padded);
+    }
+
+    /// No-match query returns empty Vec (not panic).
+    #[test]
+    fn l0_lindsay_sort_picker_filter_no_match_empty_vec() {
+        let results = sort_picker_filter("xyz-nonexistent");
+        assert!(results.is_empty());
+    }
+
+    /// Determinism — declaration order preserved across runs.
+    #[test]
+    fn l0_lindsay_sort_picker_filter_declaration_order_preserved() {
+        let r1 = sort_picker_filter("goals");
+        let r2 = sort_picker_filter("goals");
+        assert_eq!(r1, r2);
+        // The order matches StatId::all() declaration order: Goals
+        // before PpGoals before ShGoals etc.
+        let order: Vec<_> = r1.iter()
+            .position(|&s| s == icelines_core::stats_catalog::StatId::Goals)
+            .into_iter()
+            .chain(r1.iter()
+                .position(|&s| s == icelines_core::stats_catalog::StatId::PpGoals))
+            .collect();
+        if order.len() == 2 {
+            assert!(order[0] < order[1], "Goals appears before PpGoals");
+        }
     }
 }
