@@ -13,6 +13,7 @@ use icelines_core::{
     name::normalize_name,
     position::PositionResolver,
     season_stats::SeasonType,
+    stats_catalog::{StatId, StatUnit},
     stats_repository::PlayerView,
 };
 use icelines_fetch::{aggregate, career::load_career, snapshot::SnapshotStore};
@@ -297,6 +298,112 @@ impl SortMetric {
     }
 }
 
+// ── Phase Lindsay L.5.1 — `--sort` dispatch ──────────────────────────────────
+//
+// `SortDispatch` is the unified `--sort` dispatcher. Legacy strings
+// (the ~37 `pts-pace` / `ppg` / `g-pace` style values) keep going through
+// `SortMetric` and its existing `display`/`header`/`sort_value` paths
+// — that's the byte-stable surface the L.3.0 stdout-golden fence locks.
+//
+// Any string that is NOT a legacy alias gets a second chance via
+// `StatId::from_cli_key`. On match, the catalog dispatches `read()`,
+// `sort_cmp()`, `label()`, `unit()` to render. Legacy-first precedence
+// preserves byte-equality for the fence; catalog-only stats become
+// available additively.
+//
+// `Improvement` stays Legacy-only — it's a derived comparison metric
+// computed from the Y/Y improvement_map, not a stat read.
+#[derive(Debug, Clone, Copy)]
+pub enum SortDispatch {
+    Legacy(SortMetric),
+    Catalog(StatId),
+}
+
+impl SortDispatch {
+    pub fn parse(s: &str) -> anyhow::Result<Self> {
+        // Legacy first: byte-stable fence semantics for ~37 strings.
+        if let Ok(m) = SortMetric::parse(s) {
+            return Ok(Self::Legacy(m));
+        }
+        // Catalog fallback: any StatId::cli_key.
+        if let Some(sid) = StatId::from_cli_key(s) {
+            return Ok(Self::Catalog(sid));
+        }
+        // Neither matched — emit the legacy help message so users see
+        // the supported set. Catalog keys self-document via `--help`.
+        SortMetric::parse(s).map(Self::Legacy)
+    }
+
+    pub fn is_improvement(self) -> bool {
+        matches!(self, Self::Legacy(SortMetric::Improvement))
+    }
+
+    /// Sort comparator: `(value desc/asc-by-unit, nhl_id asc)`. Catalog
+    /// path delegates to `StatId::sort_cmp` (AI-06). Legacy path
+    /// preserves the post-L.3.2 deterministic comparator.
+    pub fn cmp(self, a: &PlayerView<'_>, b: &PlayerView<'_>) -> std::cmp::Ordering {
+        use std::cmp::Ordering;
+        match self {
+            Self::Legacy(m) => m
+                .sort_value(b)
+                .partial_cmp(&m.sort_value(a))
+                .unwrap_or(Ordering::Equal)
+                .then_with(|| a.identity.id.0.cmp(&b.identity.id.0)),
+            Self::Catalog(sid) => sid.sort_cmp(a, b),
+        }
+    }
+
+    pub fn header(self, rate: bool) -> String {
+        match self {
+            Self::Legacy(m) => m.header(rate).to_owned(),
+            Self::Catalog(sid) => sid.short_label().to_owned(),
+        }
+    }
+
+    pub fn display(self, v: &PlayerView<'_>, rate: bool) -> String {
+        match self {
+            Self::Legacy(m) => m.display(v, rate),
+            Self::Catalog(sid) => format_catalog_cell(sid, v),
+        }
+    }
+
+    /// Used by `position_percentile` for the "% of peers better than
+    /// target" calculation. None reads sort to the bottom (NEG_INFINITY)
+    /// for higher_is_better stats; INFINITY for inverted (Gaa).
+    pub fn sort_value(self, v: &PlayerView<'_>) -> f64 {
+        match self {
+            Self::Legacy(m) => m.sort_value(v),
+            Self::Catalog(sid) => sid.read(v).unwrap_or(if sid.higher_is_better() {
+                f64::NEG_INFINITY
+            } else {
+                f64::INFINITY
+            }),
+        }
+    }
+}
+
+/// Phase Lindsay L.5.1 — render a catalog cell value for the leaders
+/// table. Mirrors `tui::screens::player::render_career_cell` (L.4.3) so
+/// `query leaders --sort <cli_key>` and the TUI career table speak the
+/// same value-formatting language. Output cells are short — the column
+/// is 10 chars wide.
+fn format_catalog_cell(sid: StatId, view: &PlayerView<'_>) -> String {
+    match sid.read(view) {
+        None => "—".to_owned(),
+        Some(v) => match sid.unit() {
+            StatUnit::Count => format!("{}", v as i64),
+            StatUnit::Seconds => {
+                let secs = v as u64;
+                if secs < 3600 { format!("{}:{:02}", secs / 60, secs % 60) }
+                else { format!("{}m", secs / 60) }
+            }
+            StatUnit::Pct => format!("{:.1}%", v * 100.0),
+            StatUnit::Per60 | StatUnit::Rate => format!("{v:.2}"),
+            StatUnit::Inverted => format!("{v:.2}"),
+        },
+    }
+}
+
 // ── Public arg structs ────────────────────────────────────────────────────────
 
 pub struct LeadersArgs {
@@ -350,7 +457,8 @@ pub struct LeadersArgs {
 // ── icelines query leaders ────────────────────────────────────────────────────
 
 pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
-    let metric = SortMetric::parse(&args.sort)?;
+    // Phase Lindsay L.5.1 — try legacy-first, fall through to catalog.
+    let metric = SortDispatch::parse(&args.sort)?;
 
     if args.season.is_some() && args.seasons > 1 {
         anyhow::bail!(
@@ -497,7 +605,7 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
     }
 
     // Improvement sort requires the Y/Y delta map.
-    if matches!(metric, SortMetric::Improvement) {
+    if metric.is_improvement() {
         let imp_map = aggregate::load_improvement_map();
         matched.sort_by(|a, b| {
             let da = imp_map.get(&a.identity.id.0).copied().unwrap_or(f64::NEG_INFINITY);
@@ -521,23 +629,27 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
     }
 
     // Warn if a realtime/MoneyPuck metric has no data (all None/zero).
+    // L.5.1: data-missing fallback only fires for the legacy realtime/
+    // MoneyPuck SortMetric variants. Catalog-path stats (any cli_key
+    // not in the legacy alias map) sort with `None` last per AI-06 —
+    // no fallback, the user sees correct output without a guess.
     let data_missing = match metric {
-        SortMetric::HitsPace
-        | SortMetric::Hits
-        | SortMetric::BlocksPace
-        | SortMetric::Blocks
-        | SortMetric::Takeaways
-        | SortMetric::Giveaways
-        | SortMetric::Pim => matched
+        SortDispatch::Legacy(SortMetric::HitsPace)
+        | SortDispatch::Legacy(SortMetric::Hits)
+        | SortDispatch::Legacy(SortMetric::BlocksPace)
+        | SortDispatch::Legacy(SortMetric::Blocks)
+        | SortDispatch::Legacy(SortMetric::Takeaways)
+        | SortDispatch::Legacy(SortMetric::Giveaways)
+        | SortDispatch::Legacy(SortMetric::Pim) => matched
             .iter()
             .all(|v| v.hits().unwrap_or(0) == 0
                 && v.blocked_shots().unwrap_or(0) == 0
                 && v.takeaways().unwrap_or(0) == 0),
-        SortMetric::Xg
-        | SortMetric::XgPer60
-        | SortMetric::CfPct
-        | SortMetric::FfPct
-        | SortMetric::XgfPct => matched
+        SortDispatch::Legacy(SortMetric::Xg)
+        | SortDispatch::Legacy(SortMetric::XgPer60)
+        | SortDispatch::Legacy(SortMetric::CfPct)
+        | SortDispatch::Legacy(SortMetric::FfPct)
+        | SortDispatch::Legacy(SortMetric::XgfPct) => matched
             .iter()
             .all(|v| v.xg().is_none() && v.cf_pct().is_none()),
         _ => false,
@@ -553,17 +665,7 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
                 .then_with(|| a.identity.id.0.cmp(&b.identity.id.0))
         });
     } else {
-        matched.sort_by(|a, b| {
-            // Phase Lindsay L.3.2 / AI-06 universal tiebreak: stable
-            // `nhl_id asc` for deterministic tied-value ordering
-            // (was HashMap-iteration random pre-Lindsay; Pastrnak
-            // and Draisaitl @ 106 pts swapped between invocations).
-            metric
-                .sort_value(b)
-                .partial_cmp(&metric.sort_value(a))
-                .unwrap_or(std::cmp::Ordering::Equal)
-                .then_with(|| a.identity.id.0.cmp(&b.identity.id.0))
-        });
+        matched.sort_by(|a, b| metric.cmp(a, b));
     }
     let total_matched = matched.len();
     let results: Vec<PlayerView<'_>> = matched.into_iter().take(args.top).collect();
@@ -601,7 +703,7 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
 fn leaders_table(
     views: &[PlayerView<'_>],
     percentiles: &[Option<u8>],
-    metric: SortMetric,
+    metric: SortDispatch,
     rate: bool,
     top: usize,
     total: usize,
@@ -610,7 +712,7 @@ fn leaders_table(
     let col = if seasons > 1 {
         format!("{} ({}yr)", metric.header(rate), seasons)
     } else {
-        metric.header(rate).to_owned()
+        metric.header(rate)
     };
     let show_pct = percentiles.iter().any(|p| p.is_some());
 
@@ -746,7 +848,7 @@ fn leaders_csv(views: &[PlayerView<'_>]) {
     }
 }
 
-fn position_percentile(all: &[PlayerView<'_>], target: &PlayerView<'_>, metric: SortMetric) -> Option<u8> {
+fn position_percentile(all: &[PlayerView<'_>], target: &PlayerView<'_>, metric: SortDispatch) -> Option<u8> {
     let peers: Vec<&PlayerView<'_>> = all
         .iter()
         .filter(|v| v.position() == target.position() && v.is_rankable())
@@ -1040,6 +1142,15 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
             "saves" => sb.map(|s| s.saves).unwrap_or(0).cmp(&sa.map(|s| s.saves).unwrap_or(0)),
             "so" | "shutouts" => sb.map(|s| s.shutouts).unwrap_or(0).cmp(&sa.map(|s| s.shutouts).unwrap_or(0)),
             other => {
+                // Phase Lindsay L.5.1 — catalog fallback for goalies.
+                // If the legacy alias doesn't match, try StatId::cli_key
+                // before warning. Routes through StatId::sort_cmp (AI-06
+                // tiebreak preserved). New goalie keys (e.g. ev-save-pct,
+                // sh-save-pct, regulation-wins) become available
+                // additively.
+                if let Some(sid) = StatId::from_cli_key(other) {
+                    return sid.sort_cmp(a, b);
+                }
                 eprintln!("  Hint: unknown sort '{other}' — falling back to sv-pct.");
                 let av = sa.and_then(|s| s.save_pct).unwrap_or(0.0);
                 let bv = sb.and_then(|s| s.save_pct).unwrap_or(0.0);
@@ -1547,5 +1658,114 @@ mod tests {
             .view(PlayerId(8478402), Season(20242025), SeasonType::Regular)
             .unwrap();
         assert_eq!(draft_str(&v), "UD");
+    }
+
+    // ── Phase Lindsay L.5.1 — SortDispatch tests ──────────────────────
+
+    /// Legacy strings parse via `SortDispatch::parse` to the legacy arm
+    /// (byte-stable golden fence semantics).
+    #[test]
+    fn l0_lindsay_l5_sort_dispatch_legacy_first() {
+        let m = SortDispatch::parse("pts-pace").expect("legacy parses");
+        assert!(matches!(m, SortDispatch::Legacy(SortMetric::PtsPace)));
+        let m = SortDispatch::parse("ppg").expect("legacy ppg parses");
+        assert!(matches!(m, SortDispatch::Legacy(SortMetric::Ppg)));
+        let m = SortDispatch::parse("xg").expect("legacy xg parses");
+        assert!(matches!(m, SortDispatch::Legacy(SortMetric::Xg)));
+    }
+
+    /// "goals" matches BOTH the legacy alias and `StatId::Goals.cli_key()` —
+    /// legacy-first precedence routes it through `SortMetric::Goals`. This
+    /// preserves byte-equality for the L.3.0 stdout-golden fence.
+    #[test]
+    fn l0_lindsay_l5_sort_dispatch_collision_prefers_legacy() {
+        let m = SortDispatch::parse("goals").expect("collision parses");
+        assert!(
+            matches!(m, SortDispatch::Legacy(SortMetric::Goals)),
+            "legacy-first precedence preserves fence semantics"
+        );
+        // Same for "shots", "assists", "points", "gp", "gwg", "pim".
+        for s in ["shots", "assists", "points", "gp", "gwg", "pim"] {
+            assert!(
+                matches!(SortDispatch::parse(s), Ok(SortDispatch::Legacy(_))),
+                "{s} should route through legacy (fence preservation)"
+            );
+        }
+    }
+
+    /// Catalog-only cli_keys (no legacy alias) route through Catalog.
+    #[test]
+    fn l0_lindsay_l5_sort_dispatch_catalog_fallback() {
+        // `points-per-game` is a StatId::PointsPerGame cli_key; not a
+        // legacy alias.
+        let m = SortDispatch::parse("points-per-game").expect("catalog parses");
+        assert!(matches!(m, SortDispatch::Catalog(StatId::PointsPerGame)));
+        // `regulation-wins` — goalie-only catalog key, no legacy.
+        let m = SortDispatch::parse("regulation-wins").expect("catalog parses");
+        assert!(matches!(m, SortDispatch::Catalog(StatId::RegulationWins)));
+        // `pp-goals-per-60` — pure catalog (no legacy alias).
+        let m = SortDispatch::parse("pp-goals-per-60")
+            .expect("catalog parses");
+        assert!(matches!(m, SortDispatch::Catalog(StatId::PpGoalsPer60)));
+    }
+
+    /// Unknown key fails with the legacy help-message format.
+    #[test]
+    fn l0_lindsay_l5_sort_dispatch_unknown_bails() {
+        let err = SortDispatch::parse("not-a-real-stat").expect_err("must fail");
+        let s = format!("{err}");
+        assert!(s.contains("unknown sort metric"),
+            "error must reference legacy help text — got: {s}");
+    }
+
+    /// `is_improvement()` returns true only for the legacy Improvement variant.
+    #[test]
+    fn l0_lindsay_l5_sort_dispatch_is_improvement() {
+        let m = SortDispatch::parse("improvement").expect("ok");
+        assert!(m.is_improvement());
+        let m = SortDispatch::parse("trend").expect("ok");
+        assert!(m.is_improvement());
+        let m = SortDispatch::parse("goals").expect("ok");
+        assert!(!m.is_improvement());
+        let m = SortDispatch::parse("points-per-game").expect("ok");
+        assert!(!m.is_improvement(),
+            "catalog stat is never improvement");
+    }
+
+    /// `format_catalog_cell` formats per `StatId::unit` — Count → integer,
+    /// Pct → percentage with 1 decimal, Per60/Rate → 2 decimals,
+    /// Inverted (GAA) → 2 decimals.
+    #[test]
+    fn l0_lindsay_l5_format_catalog_cell_unit_aware() {
+        let identity = fixtures::identity(8478402).build();
+        let stats = icelines_core::season_stats::SeasonStatsBuilder::new(
+            PlayerId(8478402),
+            Season(20242025),
+            SeasonType::Regular,
+            Position::Center,
+        )
+        .add_team_stint(icelines_core::season_stats::TeamStint {
+            team: icelines_core::model::TeamAbbr("EDM".into()),
+            started: Some("2024-10-09".into()),
+            ended: None,
+            gp: 70, goals: 30, assists: 80, points: 110,
+            goalie: None,
+        })
+        .with_totals(icelines_core::season_stats::StatTotals {
+            gp: 70, goals: 30, assists: 80, points: 110,
+            shots: 280,
+            shooting_pct: Some(0.107),
+            ..Default::default()
+        })
+        .build();
+        let view = PlayerView { identity: &identity, stats: &stats, contract: None };
+
+        // Count units render as integers.
+        assert_eq!(format_catalog_cell(StatId::Goals, &view), "30");
+        assert_eq!(format_catalog_cell(StatId::Games, &view), "70");
+        // Pct renders with `%` and 1 decimal (vs L.4.3 career-cell renderer
+        // which omits the `%` to save column width — different surface
+        // budget here).
+        assert_eq!(format_catalog_cell(StatId::ShootingPct, &view), "10.7%");
     }
 }
