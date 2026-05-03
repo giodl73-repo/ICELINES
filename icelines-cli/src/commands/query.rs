@@ -1349,13 +1349,19 @@ fn run_similar(views: &[PlayerView<'_>], target_name: &str, n: usize) -> anyhow:
         );
     }
 
+    // Phase Lindsay L.5.2 — similarity dimensions read via StatId
+    // catalog. PPG (StatId::PointsPerGame) and GPG (StatId::GoalsPerGame)
+    // gate at MIN_GP=10 same as the legacy pace_82 / goals_per_82
+    // helpers; the catalog `None → 0.0` fallback below preserves the
+    // legacy "missing / under-MIN_GP players cluster at zero" behavior
+    // that the cohort filter assumed.
     let ppgs: Vec<f64> = cohort
         .iter()
-        .map(|v| v.pace_82().map(|p| p / 82.0).unwrap_or(0.0))
+        .map(|v| StatId::PointsPerGame.read(v).unwrap_or(0.0))
         .collect();
     let gpgs: Vec<f64> = cohort
         .iter()
-        .map(|v| v.goals_per_82().map(|g| g / 82.0).unwrap_or(0.0))
+        .map(|v| StatId::GoalsPerGame.read(v).unwrap_or(0.0))
         .collect();
     let picks: Vec<f64> = cohort
         .iter()
@@ -1730,6 +1736,76 @@ mod tests {
         let m = SortDispatch::parse("points-per-game").expect("ok");
         assert!(!m.is_improvement(),
             "catalog stat is never improvement");
+    }
+
+    /// L.5.2 — similarity dimensions read via catalog produce the same
+    /// per-game values that the legacy formulas produced (points/gp and
+    /// goals/gp). Same MIN_GP=10 gate. Without this parity, the
+    /// similarity migration would silently change cohort distances.
+    #[test]
+    fn l0_lindsay_l5_similarity_ppg_parity_with_legacy() {
+        let identity = fixtures::identity(8478402).build();
+        let stats = icelines_core::season_stats::SeasonStatsBuilder::new(
+            PlayerId(8478402),
+            Season(20242025),
+            SeasonType::Regular,
+            Position::Center,
+        )
+        .add_team_stint(icelines_core::season_stats::TeamStint {
+            team: icelines_core::model::TeamAbbr("EDM".into()),
+            started: Some("2024-10-09".into()),
+            ended: None,
+            gp: 70, goals: 30, assists: 80, points: 110,
+            goalie: None,
+        })
+        .with_totals(icelines_core::season_stats::StatTotals {
+            gp: 70, goals: 30, assists: 80, points: 110,
+            ..Default::default()
+        })
+        .build();
+        let view = PlayerView { identity: &identity, stats: &stats, contract: None };
+
+        let catalog_ppg = StatId::PointsPerGame.read(&view).expect("PPG over MIN_GP");
+        let expected_ppg = 110.0 / 70.0;
+        assert!((catalog_ppg - expected_ppg).abs() < 1e-9,
+            "PPG: catalog={catalog_ppg} expected={expected_ppg}");
+
+        let catalog_gpg = StatId::GoalsPerGame.read(&view).expect("GPG over MIN_GP");
+        let expected_gpg = 30.0 / 70.0;
+        assert!((catalog_gpg - expected_gpg).abs() < 1e-9,
+            "GPG: catalog={catalog_gpg} expected={expected_gpg}");
+    }
+
+    /// MIN_GP gate fires for sub-10-GP players in similarity reads.
+    /// Catalog returns None — caller must apply `.unwrap_or(0.0)` so
+    /// the cohort distance calc treats them as zero (parity with the
+    /// legacy `.unwrap_or(0.0)`).
+    #[test]
+    fn l0_lindsay_l5_similarity_min_gp_gate_returns_none() {
+        let identity = fixtures::identity(8478402).build();
+        let stats = icelines_core::season_stats::SeasonStatsBuilder::new(
+            PlayerId(8478402),
+            Season(20242025),
+            SeasonType::Regular,
+            Position::Center,
+        )
+        .add_team_stint(icelines_core::season_stats::TeamStint {
+            team: icelines_core::model::TeamAbbr("EDM".into()),
+            started: Some("2024-10-09".into()),
+            ended: None,
+            gp: 5, goals: 2, assists: 3, points: 5,
+            goalie: None,
+        })
+        .with_totals(icelines_core::season_stats::StatTotals {
+            gp: 5, goals: 2, assists: 3, points: 5,
+            ..Default::default()
+        })
+        .build();
+        let view = PlayerView { identity: &identity, stats: &stats, contract: None };
+
+        assert_eq!(StatId::PointsPerGame.read(&view), None,
+            "below MIN_GP=10 returns None");
+        assert_eq!(StatId::GoalsPerGame.read(&view), None);
     }
 
     /// `format_catalog_cell` formats per `StatId::unit` — Count → integer,
