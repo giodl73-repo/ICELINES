@@ -947,6 +947,9 @@ pub async fn run_player(
     // Phase Lindsay L.5.3b — optional override for the percentile/rank
     // metric. None falls back to legacy Pts/82 ranking.
     rank_by: Option<String>,
+    // Phase Lindsay D1b — narrow the percentile peer pool. Empty Vec
+    // preserves the legacy "all same-position rankable peers" behavior.
+    filters: Vec<String>,
 ) -> anyhow::Result<()> {
     // Resolve `--rank-by` once at command entry so a typo errors with
     // a clear message before we load the snapshot.
@@ -954,11 +957,28 @@ pub async fn run_player(
         Some(s) => Some(SortDispatch::parse(s)?),
         None => None,
     };
+    // D1b — parse filter exprs up front so a typo errors before the
+    // snapshot read.
+    let mut peer_filter = PlayerFilter::new();
+    for s in &filters {
+        peer_filter
+            .stat_filters
+            .push(icelines_core::stats_catalog::parse_filter(s)?);
+    }
+    peer_filter.normalize_stat_filters();
     let (outcome, season_key, season_type) =
         crate::commands::players::load_repo_for_season(season.as_deref(), Some(season_type))?;
     let repo = &outcome.repo;
     let all_views: Vec<PlayerView<'_>> = repo.skaters(season_key, season_type).collect();
     let v = find_view(&all_views, &name)?;
+    // D1b — apply the filter to compute the peer pool. The target
+    // player itself stays available via `find_view(&all_views, ...)`
+    // — only the percentile/rank cohort is narrowed.
+    let peer_views: Vec<PlayerView<'_>> = if peer_filter.stat_filters.is_empty() {
+        all_views.clone()
+    } else {
+        peer_filter.apply_views(all_views.iter().copied())
+    };
 
     let age = age_str(v);
     let draft = draft_str(v);
@@ -981,7 +1001,7 @@ pub async fn run_player(
         "career" | "career-arc" => {
             print_current_stats(v);
             if percentiles {
-                print_percentile(&all_views, v, rank_metric);
+                print_percentile(&peer_views, v, rank_metric);
             }
             print_career(v).await;
         }
@@ -991,7 +1011,7 @@ pub async fn run_player(
             println!();
             print_current_stats(v);
             if percentiles {
-                print_percentile(&all_views, v, rank_metric);
+                print_percentile(&peer_views, v, rank_metric);
             }
         }
         other => bail!("unknown breakdown '{other}' — valid: career, situation"),
@@ -1409,14 +1429,32 @@ pub async fn run_compare(
     _by: String,
     season: Option<String>,
     season_type: SeasonType,
+    // Phase Lindsay D1b — narrow the similarity cohort. Only applies
+    // when --similar N is set (head-to-head shows just two players, no
+    // cohort to filter).
+    filters: Vec<String>,
 ) -> anyhow::Result<()> {
+    // D1b — parse filter exprs up front; typos exit before snapshot load.
+    let mut cohort_filter = PlayerFilter::new();
+    for s in &filters {
+        cohort_filter
+            .stat_filters
+            .push(icelines_core::stats_catalog::parse_filter(s)?);
+    }
+    cohort_filter.normalize_stat_filters();
     let (outcome, season_key, season_type) =
         crate::commands::players::load_repo_for_season(season.as_deref(), Some(season_type))?;
     let repo = &outcome.repo;
     let all_views: Vec<PlayerView<'_>> = repo.skaters(season_key, season_type).collect();
 
     if let Some(n) = similar {
-        run_similar(&all_views, &player1, n)
+        // D1b — narrow cohort. Empty filter passes through unchanged.
+        let cohort_views: Vec<PlayerView<'_>> = if cohort_filter.stat_filters.is_empty() {
+            all_views.clone()
+        } else {
+            cohort_filter.apply_views(all_views.iter().copied())
+        };
+        run_similar(&cohort_views, &player1, n)
     } else if let Some(p2_name) = player2 {
         let v1 = find_view(&all_views, &player1)?;
         let v2 = find_view(&all_views, &p2_name)?;

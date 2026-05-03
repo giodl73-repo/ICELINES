@@ -434,6 +434,7 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
                 season,
                 season_type,
                 rank_by,
+                filters,
             } => {
                 commands::query::run_player(
                     name,
@@ -443,6 +444,7 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
                     season,
                     season_type.to_core(),
                     rank_by,
+                    filters,
                 )
                 .await?;
             }
@@ -453,6 +455,7 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
                 by,
                 season,
                 season_type,
+                filters,
             } => {
                 commands::query::run_compare(
                     player1,
@@ -461,6 +464,7 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
                     by,
                     season,
                     season_type.to_core(),
+                    filters,
                 )
                 .await?;
             }

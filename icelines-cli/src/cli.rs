@@ -912,6 +912,13 @@ pub enum QuerySubcommand {
         /// Example: `--rank-by goals-per-60`.
         #[arg(long)]
         rank_by: Option<String>,
+        /// Phase Lindsay D1b — narrow the percentile peer pool. Same
+        /// grammar as `query leaders --filter`. Repeatable. Example:
+        /// `--filter "gp>=20"` ranks the target only against same-pos
+        /// peers with ≥20 GP (filters out call-ups distorting the
+        /// curve).
+        #[arg(long = "filter")]
+        filters: Vec<String>,
     },
 
     /// Side-by-side comparison or similarity search.
@@ -932,6 +939,13 @@ pub enum QuerySubcommand {
         /// Season type: regular (default) or playoff.
         #[arg(long = "type", value_enum, default_value_t = QuerySeasonType::Regular)]
         season_type: QuerySeasonType,
+        /// Phase Lindsay D1b — narrow the similarity cohort (only
+        /// applies when `--similar N` is set). Same grammar as `query
+        /// leaders --filter`. Repeatable. Example: `--filter "age>=22"
+        /// --filter "gp>=10"` finds similar-aged peers with enough
+        /// games for a stable comparison.
+        #[arg(long = "filter")]
+        filters: Vec<String>,
     },
 
     /// Goalie leaderboard — Phase G.5.
