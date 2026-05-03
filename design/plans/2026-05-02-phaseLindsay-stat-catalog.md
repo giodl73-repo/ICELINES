@@ -604,7 +604,8 @@ This is v0.4. Status:
 8. ~~L.3 implementation~~ — **shipped 2026-05-02**. 31 new Lindsay-L.3 tests; 1215 workspace tests passing. See "L.3 ship summary" below.
 9. ~~L.4 implementation~~ — **shipped 2026-05-02**. 36 new Lindsay-L.4 tests; 1251 workspace tests passing. See "L.4 ship summary" below.
 10. ~~L.5 implementation~~ — **shipped 2026-05-03**. 19 new Lindsay-L.5 tests; 1270 workspace tests passing. See "L.5 ship summary" below.
-11. **L.5b next** — atomic site stat-name sweep (`StatId::label()` everywhere on team pages). Then L.6 / L.7 / L.8.
+11. ~~L.5b implementation~~ — **shipped 2026-05-03**. SI-03 grep fence at `icelines-site/tests/site_stat_name_grep.rs` + empty `.stat-name-allowlist` baseline. Forces future hardcoded canonical stat names (`Goals`, `Points`, etc.) to either route through `StatId::label()` or earn an explicit allowlist entry. Workspace 1271 tests passing.
+12. **L.6 next** — Tier-2 fetched-only reports via `serde_json::Value` ExtraReports + `fetch report --kind <name>` + concurrent-invocation lock. Then L.7 (38-season historical bundling) and L.8 (cross-ref docs).
 
 ---
 
