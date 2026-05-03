@@ -1052,6 +1052,12 @@ pub enum ExportSubcommand {
         /// Min-GP filter for `leaders` (default = current MIN_GP).
         #[arg(long)]
         gp_min: Option<u32>,
+        /// Phase Lindsay L.5.4 — comma-separated `StatId::cli_key` list
+        /// for the `leaders` shape. Replaces the canonical column set.
+        /// Example: `--columns "goals,assists,points,hits,blocked-shots"`.
+        /// Unknown keys exit non-zero with a list of valid keys.
+        #[arg(long)]
+        columns: Option<String>,
         /// First player for `compare`.
         #[arg(long)]
         p1: Option<String>,

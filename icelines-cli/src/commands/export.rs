@@ -30,7 +30,7 @@ use crate::commands::players::load_repo_for_season;
 pub async fn run(cmd: ExportSubcommand) -> anyhow::Result<()> {
     match cmd {
         ExportSubcommand::Md {
-            shape, out, pos, team, top, sort, gp_min,
+            shape, out, pos, team, top, sort, gp_min, columns,
             p1, p2, series: _, width, height,
         } => {
             let body = match shape {
@@ -39,6 +39,7 @@ pub async fn run(cmd: ExportSubcommand) -> anyhow::Result<()> {
                     top,
                     sort:   sort.clone(),
                     gp_min,
+                    columns: columns.clone(),
                     width, height,
                 })?,
                 MdShape::Team => render_team(TeamOpts {
@@ -83,8 +84,33 @@ pub(crate) struct LeadersOpts {
     pub top:    usize,
     pub sort:   String,
     pub gp_min: Option<u32>,
+    /// Phase Lindsay L.5.4 — optional StatId column override. None = canonical.
+    pub columns: Option<String>,
     pub width:  u16,
     pub height: u16,
+}
+
+/// Phase Lindsay L.5.4 — parse `--columns "g,a,p,hits,blocks"` into a
+/// `Vec<StatId>`. Whitespace around commas tolerated; empty string after
+/// trim returns Ok(vec![]). Unknown keys bail with the list-of-valid hint.
+pub(crate) fn parse_columns_list(
+    s: &str,
+) -> anyhow::Result<Vec<icelines_core::stats_catalog::StatId>> {
+    use icelines_core::stats_catalog::StatId;
+    let mut out: Vec<StatId> = Vec::new();
+    for raw in s.split(',') {
+        let key = raw.trim();
+        if key.is_empty() { continue; }
+        let sid = StatId::from_cli_key(key).ok_or_else(|| {
+            anyhow::anyhow!(
+                "unknown column `{key}`. Valid keys are any StatId::cli_key — \
+                 see `icelines query leaders --help` or the catalog \
+                 documentation for the full list."
+            )
+        })?;
+        out.push(sid);
+    }
+    Ok(out)
 }
 
 pub(crate) fn render_leaders(opts: LeadersOpts) -> anyhow::Result<String> {
@@ -153,35 +179,101 @@ pub(crate) fn render_leaders_from_views(
         opts.width, opts.height,
     );
 
-    let _ = writeln!(out, "| Rank | Player | Team | Pos | Age | GP | G | A | Pts | PPG | Pts/82 |");
-    let _ = writeln!(out, "|-----:|--------|:----:|:---:|----:|---:|---:|---:|----:|----:|-------:|");
-    for (i, v) in top.iter().enumerate() {
-        let totals = &v.stats.totals;
-        let rank   = i + 1;
-        let name   = truncate(&v.identity.full_name, 24);
-        let pos    = v.position().abbreviation();
-        let age    = v.identity.bio.birth_date.as_deref()
-            .and_then(|d| d.get(..4)).and_then(|y| y.parse::<u16>().ok())
-            .map(|y| 2026u16.saturating_sub(y).to_string())
-            .unwrap_or_else(|| "—".to_owned());
-        let gp     = v.gp().to_string();
-        let goals  = totals.goals;
-        let asts   = totals.assists;
-        let pts    = totals.points;
-        let ppg    = v.pace_82()
-            .map(|p| format!("{:.3}", p / 82.0))
-            .unwrap_or_else(|| "—".to_owned());
-        let pts82  = v.pace_82()
-            .map(|p| format!("{p:.1}"))
-            .unwrap_or_else(|| "—".to_owned());
-        let _ = writeln!(
-            out,
-            "| {rank:>4} | {name} | {team} | {pos} | {age:>3} | {gp:>3} | {goals:>3} | {asts:>3} | {pts:>4} | {ppg:>5} | {pts82:>6} |",
-            team = v.team_display(),
-        );
+    // Phase Lindsay L.5.4 — `--columns` overrides the canonical column
+    // set. None preserves the v1 hardcoded shape (Rank Player Team Pos
+    // Age GP G A Pts PPG Pts/82) byte-identically.
+    if let Some(cols_spec) = opts.columns.as_deref() {
+        let stat_cols = parse_columns_list(cols_spec)?;
+        write_leaders_table_with_columns(&mut out, &top, &stat_cols);
+    } else {
+        let _ = writeln!(out, "| Rank | Player | Team | Pos | Age | GP | G | A | Pts | PPG | Pts/82 |");
+        let _ = writeln!(out, "|-----:|--------|:----:|:---:|----:|---:|---:|---:|----:|----:|-------:|");
+        for (i, v) in top.iter().enumerate() {
+            let totals = &v.stats.totals;
+            let rank   = i + 1;
+            let name   = truncate(&v.identity.full_name, 24);
+            let pos    = v.position().abbreviation();
+            let age    = v.identity.bio.birth_date.as_deref()
+                .and_then(|d| d.get(..4)).and_then(|y| y.parse::<u16>().ok())
+                .map(|y| 2026u16.saturating_sub(y).to_string())
+                .unwrap_or_else(|| "—".to_owned());
+            let gp     = v.gp().to_string();
+            let goals  = totals.goals;
+            let asts   = totals.assists;
+            let pts    = totals.points;
+            let ppg    = v.pace_82()
+                .map(|p| format!("{:.3}", p / 82.0))
+                .unwrap_or_else(|| "—".to_owned());
+            let pts82  = v.pace_82()
+                .map(|p| format!("{p:.1}"))
+                .unwrap_or_else(|| "—".to_owned());
+            let _ = writeln!(
+                out,
+                "| {rank:>4} | {name} | {team} | {pos} | {age:>3} | {gp:>3} | {goals:>3} | {asts:>3} | {pts:>4} | {ppg:>5} | {pts82:>6} |",
+                team = v.team_display(),
+            );
+        }
     }
 
     Ok(out)
+}
+
+/// Phase Lindsay L.5.4 — render leaders table with custom StatId columns.
+/// Headers come from `StatId::short_label()`; cells route through the
+/// same per-StatUnit formatting (Count → integer, Pct → `XX.X%`,
+/// Per60/Rate → `X.XX`, Seconds → `M:SS`, Inverted → `X.XX`).
+fn write_leaders_table_with_columns(
+    out: &mut String,
+    top: &[PlayerView<'_>],
+    stat_cols: &[icelines_core::stats_catalog::StatId],
+) {
+    use icelines_core::stats_catalog::{StatId, StatUnit};
+    // Header row.
+    out.push_str("| Rank | Player | Team | Pos");
+    for sid in stat_cols {
+        let _ = write!(out, " | {}", sid.short_label());
+    }
+    out.push_str(" |\n");
+    // Alignment row — right-align numeric columns.
+    out.push_str("|-----:|--------|:----:|:---:");
+    for _ in stat_cols { out.push_str("|----:"); }
+    out.push_str("|\n");
+    // Data rows.
+    for (i, v) in top.iter().enumerate() {
+        let rank = i + 1;
+        let name = truncate(&v.identity.full_name, 24);
+        let pos  = v.position().abbreviation();
+        let _ = write!(
+            out,
+            "| {rank:>4} | {name} | {team} | {pos}",
+            team = v.team_display(),
+        );
+        for sid in stat_cols {
+            let cell = render_cell(*sid, v);
+            let _ = write!(out, " | {cell}");
+        }
+        out.push_str(" |\n");
+    }
+
+    fn render_cell(
+        sid: icelines_core::stats_catalog::StatId,
+        v: &PlayerView<'_>,
+    ) -> String {
+        match sid.read(v) {
+            None => "—".to_owned(),
+            Some(val) => match sid.unit() {
+                StatUnit::Count => format!("{}", val as i64),
+                StatUnit::Seconds => {
+                    let s = val as u64;
+                    if s < 3600 { format!("{}:{:02}", s / 60, s % 60) }
+                    else { format!("{}m", s / 60) }
+                }
+                StatUnit::Pct => format!("{:.1}%", val * 100.0),
+                StatUnit::Per60 | StatUnit::Rate => format!("{val:.2}"),
+                StatUnit::Inverted => format!("{val:.2}"),
+            },
+        }
+    }
 }
 
 // ── team ─────────────────────────────────────────────────────────────────────
@@ -601,7 +693,7 @@ mod tests {
         let views = fixture_views(&repo);
         let opts = LeadersOpts {
             pos: None, top: 25, sort: "pts-pace".into(),
-            gp_min: None, width: 100, height: 30,
+            gp_min: None, columns: None, width: 100, height: 30,
         };
         let out = render_leaders_from_views(&views, &opts).unwrap();
         assert!(out.starts_with("---\n"));
@@ -623,7 +715,7 @@ mod tests {
             &views,
             &LeadersOpts {
                 pos: None, top: 25, sort: "pts-pace".into(),
-                gp_min: None, width: 80, height: 30,
+                gp_min: None, columns: None, width: 80, height: 30,
             },
         ).unwrap();
         assert!(out.contains("| Rank | Player | Team | Pos | Age | GP | G | A | Pts | PPG | Pts/82 |"));
@@ -644,7 +736,7 @@ mod tests {
             &views,
             &LeadersOpts {
                 pos: None, top: 25, sort: "pts-pace".into(),
-                gp_min: None, width: 80, height: 30,
+                gp_min: None, columns: None, width: 80, height: 30,
             },
         ).unwrap();
         let i_top = out.find("Top").unwrap();
@@ -665,7 +757,7 @@ mod tests {
             &views,
             &LeadersOpts {
                 pos: Some("C".into()), top: 25, sort: "pts-pace".into(),
-                gp_min: None, width: 80, height: 30,
+                gp_min: None, columns: None, width: 80, height: 30,
             },
         ).unwrap();
         assert!(out.contains("Cee"));
@@ -687,7 +779,7 @@ mod tests {
             &views,
             &LeadersOpts {
                 pos: None, top: 3, sort: "pts-pace".into(),
-                gp_min: None, width: 80, height: 30,
+                gp_min: None, columns: None, width: 80, height: 30,
             },
         ).unwrap();
         assert!(out.contains("| P1 ") || out.contains("P1 "));
@@ -703,10 +795,78 @@ mod tests {
             &views,
             &LeadersOpts {
                 pos: None, top: 25, sort: "invalid-metric".into(),
-                gp_min: None, width: 80, height: 30,
+                gp_min: None, columns: None, width: 80, height: 30,
             },
         ).unwrap_err();
         assert!(err.to_string().contains("invalid-metric"));
+    }
+
+    // ── Phase Lindsay L.5.4 — `--columns` StatId list ─────────────────
+
+    /// `parse_columns_list` parses comma-separated StatId::cli_key strings,
+    /// trims whitespace, and yields `Vec<StatId>` in declaration order.
+    #[test]
+    fn l0_lindsay_l5_export_columns_parse_basic() {
+        use icelines_core::stats_catalog::StatId;
+        let parsed = parse_columns_list("goals,assists,points").unwrap();
+        assert_eq!(parsed, vec![StatId::Goals, StatId::Assists, StatId::Points]);
+        // Whitespace tolerated.
+        let parsed = parse_columns_list("  goals  ,assists,  points  ").unwrap();
+        assert_eq!(parsed, vec![StatId::Goals, StatId::Assists, StatId::Points]);
+    }
+
+    /// Empty / whitespace-only input parses to empty vec (renderer falls
+    /// back to a 4-col table; no panic).
+    #[test]
+    fn l0_lindsay_l5_export_columns_parse_empty() {
+        let parsed = parse_columns_list("").unwrap();
+        assert!(parsed.is_empty());
+        let parsed = parse_columns_list("   ").unwrap();
+        assert!(parsed.is_empty());
+        // A trailing comma drops the empty entry, doesn't error.
+        let parsed = parse_columns_list("goals,").unwrap();
+        assert_eq!(parsed.len(), 1);
+    }
+
+    /// Unknown key bails with the actionable hint.
+    #[test]
+    fn l0_lindsay_l5_export_columns_parse_unknown_bails() {
+        let err = parse_columns_list("not-a-real-stat").unwrap_err();
+        let s = err.to_string();
+        assert!(s.contains("not-a-real-stat"),
+            "error must mention the bad key — got {s}");
+        assert!(s.contains("StatId"),
+            "error must hint at StatId catalog — got {s}");
+    }
+
+    /// `--columns` overrides the canonical column set in the rendered
+    /// table. Header reads from `StatId::short_label`; cells from
+    /// `StatId::read` + per-StatUnit formatting.
+    #[test]
+    fn l0_lindsay_l5_export_columns_renders_custom_table() {
+        let repo = fixture_repo(&[
+            (1, "Alice One", "EDM", Position::Center,  100.0),
+            (2, "Bob Two",   "EDM", Position::Center,   85.0),
+        ]);
+        let views = fixture_views(&repo);
+        let out = render_leaders_from_views(
+            &views,
+            &LeadersOpts {
+                pos: None, top: 10, sort: "pts-pace".into(),
+                gp_min: None,
+                columns: Some("goals,assists,points".into()),
+                width: 80, height: 30,
+            },
+        ).unwrap();
+        // Header reflects StatId::short_label — Points is "P", not "Pts".
+        // (The canonical hardcoded shape was "G | A | Pts | PPG | Pts/82";
+        // under --columns we emit "G | A | P" since those are the cli_keys
+        // requested, mapped to short_label.)
+        assert!(out.contains("| G | A | P |"),
+            "custom header must use short_label values — got:\n{out}");
+        // The canonical "Pts/82" column is dropped under --columns.
+        assert!(!out.contains("Pts/82 |"),
+            "Pts/82 column header must be absent under custom columns");
     }
 
     #[test]
@@ -857,7 +1017,7 @@ mod tests {
             &views,
             &LeadersOpts {
                 pos: Some("C".into()), top: 5, sort: "pts-pace".into(),
-                gp_min: None, width: 80, height: 30,
+                gp_min: None, columns: None, width: 80, height: 30,
             },
         ).unwrap();
         let after_open = body.strip_prefix("---\n").expect("front-matter opens with ---");
