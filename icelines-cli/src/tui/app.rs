@@ -166,9 +166,13 @@ pub struct App {
     // Query manager state
     pub query_fields: Vec<crate::tui::screens::queries::QueryField>,
     pub query_field_idx: usize,      // which field row is active
+    /// Phase Lindsay L.3.3 — categorized sections grouping `query_fields`.
+    /// Tab toggles the section containing `query_field_idx`. Collapsed
+    /// sections hide their fields from cursor + render.
+    pub query_sections: Vec<crate::tui::screens::queries::QuerySection>,
     pub query_result_scroll: usize,  // scroll offset in results panel
     pub query_mode: QueryMode,       // build | save-name | load-list
-    pub query_results_focused: bool, // Tab toggles focus between field editor and result list
+    pub query_results_focused: bool, // Space toggles focus between field editor and result list
     pub query_save_name: String,     // name being typed for save
     pub query_saved_list: Vec<(String, String)>, // (name, json) loaded from DB
     /// Phase 8j: lazy-compiled dashboard panel for the player card.
@@ -239,6 +243,7 @@ impl App {
             show_help: false,
             query_fields: crate::tui::screens::queries::default_fields(),
             query_field_idx: 0,
+            query_sections: crate::tui::screens::queries::default_sections(),
             query_result_scroll: 0,
             depth_mode: icelines_core::cross_team::ScoringMode::Fantasy,
             show_admin: false,
@@ -436,13 +441,23 @@ impl App {
                                 (self.query_result_scroll + 1).min(max_scroll);
                         }
                     } else {
-                        let n = self.query_fields.len();
-                        if self.query_field_idx + 1 < n {
-                            self.query_field_idx += 1;
-                        } else {
-                            self.query_results_focused = true;
-                            self.selected = 0;
-                            self.query_result_scroll = 0;
+                        // Phase Lindsay L.3.3 — cursor skips fields in
+                        // collapsed sections. `visible_field_indices`
+                        // returns the cursor-stoppable subset.
+                        let visible = crate::tui::screens::queries::visible_field_indices(
+                            &self.query_sections,
+                        );
+                        let cur_pos = visible.iter().position(|&i| i == self.query_field_idx);
+                        match cur_pos {
+                            Some(pos) if pos + 1 < visible.len() => {
+                                self.query_field_idx = visible[pos + 1];
+                            }
+                            _ => {
+                                // Past last visible — focus results.
+                                self.query_results_focused = true;
+                                self.selected = 0;
+                                self.query_result_scroll = 0;
+                            }
                         }
                     }
                 } else if self.screen == Screen::Home {
@@ -477,11 +492,29 @@ impl App {
                         } else if self.query_result_scroll > 0 {
                             self.query_result_scroll -= 1;
                         } else {
+                            // Phase Lindsay L.3.3 — snap to LAST visible field.
                             self.query_results_focused = false;
-                            self.query_field_idx = self.query_fields.len().saturating_sub(1);
+                            let visible = crate::tui::screens::queries::visible_field_indices(
+                                &self.query_sections,
+                            );
+                            self.query_field_idx = *visible.last().unwrap_or(&0);
                         }
                     } else {
-                        self.query_field_idx = self.query_field_idx.saturating_sub(1);
+                        // Phase Lindsay L.3.3 — cursor skips fields in
+                        // collapsed sections.
+                        let visible = crate::tui::screens::queries::visible_field_indices(
+                            &self.query_sections,
+                        );
+                        let cur_pos = visible.iter().position(|&i| i == self.query_field_idx);
+                        if let Some(pos) = cur_pos {
+                            if pos > 0 {
+                                self.query_field_idx = visible[pos - 1];
+                            }
+                            // pos == 0 → already at first visible, stay.
+                        } else if let Some(&first) = visible.first() {
+                            // Cursor was on a now-hidden field — snap to first visible.
+                            self.query_field_idx = first;
+                        }
                     }
                 } else if self.screen == Screen::Home {
                     let n = crate::tui::screens::home::RANKED_TEAMS.len();
@@ -808,11 +841,38 @@ impl App {
                     self.query_save_name.pop();
                 }
             }
-            Action::Tab => self.cycle_screen(),
+            Action::Tab => {
+                // Phase Lindsay L.3.3 — Tab on the Queries screen
+                // toggles the section containing the current field
+                // cursor (per v0.4 spec §"TUI integration"). Save/load
+                // overlays + results-focus get cycle-screen still.
+                let in_queries_build = self.screen == Screen::Queries
+                    && self.query_mode == QueryMode::Build
+                    && !self.query_results_focused;
+                if in_queries_build {
+                    let _ = crate::tui::screens::queries::toggle_section_for_field(
+                        &mut self.query_sections,
+                        self.query_field_idx,
+                    );
+                    // After collapse, cursor may now point at a hidden
+                    // field — snap to nearest visible.
+                    let visible = crate::tui::screens::queries::visible_field_indices(
+                        &self.query_sections,
+                    );
+                    if !visible.contains(&self.query_field_idx) {
+                        if let Some(&first) = visible.first() {
+                            self.query_field_idx = first;
+                        }
+                    }
+                } else {
+                    self.cycle_screen();
+                }
+            }
             Action::TabPrev => self.cycle_screen_back(),
             Action::Refresh => {
                 if self.screen == Screen::Queries {
                     self.query_fields = crate::tui::screens::queries::default_fields();
+                    self.query_sections = crate::tui::screens::queries::default_sections();
                     self.query_field_idx = 0;
                     self.query_result_scroll = 0;
                     self.status = "Query fields reset.".to_owned();
@@ -1915,7 +1975,7 @@ impl App {
         }
     }
 
-    fn cycle_screen(&mut self) {
+    pub(crate) fn cycle_screen(&mut self) {
         self.query_results_focused = false;
         // Phase T+1: 8-tab cycle. Groups is removed from the strip and
         // accessed via `g` from anywhere. Stats defaults to Queries.
@@ -1945,7 +2005,7 @@ impl App {
     }
 
     /// Reverse of `cycle_screen` — Shift-Tab.
-    fn cycle_screen_back(&mut self) {
+    pub(crate) fn cycle_screen_back(&mut self) {
         self.query_results_focused = false;
         let prev = match &self.screen {
             Screen::Home | Screen::Team(_) | Screen::PlayerById(_)
@@ -2000,16 +2060,21 @@ mod tests {
 
     #[test]
     fn l0_tui_tab_cycles_screens() {
-        // 7 tabs (Phase G.3): League→Stats→Goalies→Scores→Schedule→Groups→Playoffs→League
-        // Phase T+1: 8 tabs now (Groups demoted to `g` global shortcut) —
+        // 8 tabs (Phase T+1):
         //   League → Depth → Stats(Queries) → Goalies → Scores → Schedule
         //   → Transactions → Playoffs → wrap
+        //
+        // Phase Lindsay L.3.3 — Tab on Queries now toggles the
+        // section expansion (per spec §"TUI integration"). To advance
+        // past Queries we call `cycle_screen()` directly. The test
+        // still proves the global cycle order; for the Queries-Tab
+        // section-toggle behavior see `l0_lindsay_tui_tab_on_queries_toggles_section`.
         let mut app = App::new(false);
         app.handle(Action::Tab);
         assert_eq!(app.screen, Screen::Depth, "Home→Depth");
         app.handle(Action::Tab);
         assert_eq!(app.screen, Screen::Queries, "Depth→Stats(Queries)");
-        app.handle(Action::Tab);
+        app.cycle_screen();  // bypass Lindsay Tab-on-Queries intercept
         assert_eq!(app.screen, Screen::Goalies, "Stats→Goalies");
         app.handle(Action::Tab);
         assert_eq!(app.screen, Screen::Tonight, "Goalies→Scores");
@@ -2021,6 +2086,44 @@ mod tests {
         assert_eq!(app.screen, Screen::Playoffs, "Transactions→Playoffs");
         app.handle(Action::Tab);
         assert_eq!(app.screen, Screen::Home, "Playoffs→League (wraps)");
+    }
+
+    /// Phase Lindsay L.3.3 — Tab on the Queries screen toggles the
+    /// section containing the current field cursor; it does NOT
+    /// advance to the next screen. Cursor snaps to the next visible
+    /// field if its current field becomes hidden via collapse.
+    #[test]
+    fn l0_lindsay_tui_tab_on_queries_toggles_section() {
+        let mut app = App::new(false);
+        app.handle(Action::Tab);  // Home → Depth
+        app.handle(Action::Tab);  // Depth → Queries
+        assert_eq!(app.screen, Screen::Queries);
+
+        // Default: cursor on field 0 (Sort by) which is in section 0.
+        // Section 0 starts expanded.
+        let initial_s0 = app.query_sections[0].expanded;
+        assert!(initial_s0, "section 0 starts expanded by default");
+
+        // Tab → toggles section 0 (cursor's section). Screen does NOT advance.
+        app.handle(Action::Tab);
+        assert_eq!(app.screen, Screen::Queries,
+            "Tab on Queries toggles section, doesn't advance screen");
+        assert_eq!(app.query_sections[0].expanded, !initial_s0,
+            "section 0 expansion flipped by Tab");
+
+        // After collapsing section 0, field 0 is hidden. Cursor
+        // snapped to the next visible field — field 1 (Position),
+        // which lives in section 1.
+        assert_eq!(app.query_field_idx, 1,
+            "cursor snaps to next visible field after section collapse");
+
+        // Second Tab now targets section 1 (where the cursor lives).
+        let initial_s1 = app.query_sections[1].expanded;
+        app.handle(Action::Tab);
+        assert_eq!(app.query_sections[1].expanded, !initial_s1,
+            "second Tab toggles section 1 (cursor's new home)");
+        // Section 0 still collapsed — wasn't touched by the second Tab.
+        assert_eq!(app.query_sections[0].expanded, !initial_s0);
     }
 
     #[test]
@@ -2052,12 +2155,15 @@ mod tests {
     #[test]
     fn l0_tui_tab_and_shift_tab_are_inverses() {
         // Eight forward + eight backward should land on the original screen.
+        // Phase Lindsay L.3.3 — Tab on Queries no longer cycles screens
+        // (it toggles a section). Use `cycle_screen` / `cycle_screen_back`
+        // directly so the inverse test still exercises the full ring.
         let mut app = App::new(false);
         for _ in 0..8 {
-            app.handle(Action::Tab);
+            app.cycle_screen();
         }
         for _ in 0..8 {
-            app.handle(Action::TabPrev);
+            app.cycle_screen_back();
         }
         assert_eq!(app.screen, Screen::Home);
     }

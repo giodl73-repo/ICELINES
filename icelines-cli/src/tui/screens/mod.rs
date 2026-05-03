@@ -425,10 +425,13 @@ mod app_snapshot_tests {
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
 
-        // Tab × 3: Home → Depth → Queries → Goalies
+        // Home → Depth → Queries → Goalies. Phase Lindsay L.3.3 — Tab
+        // on Queries toggles section expansion (per spec); use
+        // `cycle_screen()` directly to advance past Queries in this
+        // navigation-only test.
         app.handle(Action::Tab);
         app.handle(Action::Tab);
-        app.handle(Action::Tab);
+        app.cycle_screen();  // Queries → Goalies (Lindsay L.3.3 bypass)
         assert_eq!(app.screen, crate::tui::app::Screen::Goalies);
 
         // Goalie views must be non-empty post-boot. Screen-level details
@@ -484,9 +487,14 @@ mod app_snapshot_tests {
             Screen::Playoffs,
             Screen::Home, // wraps
         ];
+        // Phase Lindsay L.3.3 — Tab on Queries no longer cycles screens
+        // (it toggles section expansion). Use `cycle_screen()` directly
+        // here to test the screen-cycle ring; the per-screen
+        // `Tab`-handler behavior on Queries is exercised by
+        // `l0_lindsay_tui_tab_on_queries_toggles_section`.
         for want in expected {
-            app.handle(Action::Tab);
-            assert_eq!(app.screen, want, "Tab cycle landed on wrong screen");
+            app.cycle_screen();
+            assert_eq!(app.screen, want, "screen cycle landed on wrong screen");
         }
     }
 
@@ -588,10 +596,12 @@ mod app_snapshot_tests {
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
 
-        // Tab × 3 to Goalies, then Enter.
-        for _ in 0..3 {
-            app.handle(Action::Tab);
-        }
+        // Home → Depth → Queries → Goalies. Phase Lindsay L.3.3 — Tab
+        // on Queries toggles section, not screen; use `cycle_screen()`
+        // to advance past Queries.
+        app.handle(Action::Tab);  // Home → Depth
+        app.handle(Action::Tab);  // Depth → Queries
+        app.cycle_screen();        // Queries → Goalies
         assert_eq!(app.screen, crate::tui::app::Screen::Goalies);
         app.handle(Action::Enter);
         assert!(

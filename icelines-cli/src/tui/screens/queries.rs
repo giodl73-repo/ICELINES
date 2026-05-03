@@ -43,6 +43,90 @@ pub fn default_fields() -> Vec<QueryField> {
     ]
 }
 
+// ── Phase Lindsay L.3.3 — Categorized sections ─────────────────────────────
+//
+// Group the 10 default fields into 4 named sections. Each section has an
+// expanded/collapsed state — Tab toggles the section containing the
+// currently-selected field. When collapsed, the section's fields are
+// hidden from the cursor and from the render.
+//
+// Future work: replace fields with per-`StatId` filter rows (one per
+// catalog stat in each `StatCategory`) — that's the full v0.4 spec.
+// L.3.3 v1 keeps the existing 10 fields and just groups them so the
+// section + Tab-toggle UI is in place ahead of the L.3.4 sort picker.
+
+pub struct QuerySection {
+    /// User-visible header label.
+    pub label: &'static str,
+    /// Indices into `query_fields`. Order is render order within section.
+    pub fields: Vec<usize>,
+    /// Tab-toggleable. Collapsed sections hide their fields from cursor + render.
+    pub expanded: bool,
+}
+
+/// Default 4-section grouping of the 10 default fields.
+///
+/// The "Sort & Display" section is always expanded by default — those
+/// are the most-used fields. "Position & Age" too. The bulk-filter
+/// sections ("Origin", "Stats") start collapsed to keep the screen
+/// uncluttered for the median user, who's just changing the sort.
+pub fn default_sections() -> Vec<QuerySection> {
+    vec![
+        QuerySection {
+            label: "Sort & Display",
+            fields: vec![0, 9, 8],  // Sort by, Show top, Seasons
+            expanded: true,
+        },
+        QuerySection {
+            label: "Position & Age",
+            fields: vec![1, 2, 3],  // Position, Age max, Age min
+            expanded: true,
+        },
+        QuerySection {
+            label: "Origin & Draft",
+            fields: vec![5, 6, 7],  // Nationality, Draft year, Draft round
+            expanded: false,
+        },
+        QuerySection {
+            label: "Stats Thresholds",
+            fields: vec![4],  // GP min (more L.3.4 / future fields here)
+            expanded: false,
+        },
+    ]
+}
+
+/// Find which section owns the given field index, if any. Returns the
+/// section index in `sections` (0-based). `None` if the field isn't
+/// listed in any section (shouldn't happen for default sections; defensive).
+pub fn section_index_for_field(sections: &[QuerySection], field_idx: usize) -> Option<usize> {
+    sections
+        .iter()
+        .position(|s| s.fields.contains(&field_idx))
+}
+
+/// Field indices that should be visible (cursor-stoppable + rendered)
+/// given the current expansion state. Collapsed sections contribute
+/// nothing; expanded sections contribute all their `fields` in order.
+pub fn visible_field_indices(sections: &[QuerySection]) -> Vec<usize> {
+    sections
+        .iter()
+        .filter(|s| s.expanded)
+        .flat_map(|s| s.fields.iter().copied())
+        .collect()
+}
+
+/// Toggle the section containing `field_idx`. Returns the new
+/// `expanded` state of that section. If the field doesn't belong to
+/// any section, no-op and returns `None`.
+pub fn toggle_section_for_field(
+    sections: &mut [QuerySection],
+    field_idx: usize,
+) -> Option<bool> {
+    let idx = section_index_for_field(sections, field_idx)?;
+    sections[idx].expanded = !sections[idx].expanded;
+    Some(sections[idx].expanded)
+}
+
 // ── Query execution ───────────────────────────────────────────────────────────
 
 fn parse_opt<T: std::str::FromStr>(s: &str) -> Option<T> {
@@ -260,7 +344,7 @@ fn render_controls(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
     };
     let block = Block::default()
         .borders(Borders::ALL)
-        .title(" Query  ↑↓ · ←→ value · Space: results · p: projections ")
+        .title(" Query  ↑↓ · ←→ value · Tab: section · Space: results ")
         .border_style(border_style);
     let inner = block.inner(area);
     f.render_widget(block, area);
@@ -268,27 +352,67 @@ fn render_controls(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
     let sel = app.query_field_idx;
     let dim = Style::default().fg(Color::DarkGray);
 
-    let items: Vec<ListItem> = app.query_fields.iter().enumerate().map(|(i, field)| {
-        let active = i == sel;
-        let lbl_style = if active { Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD) } else { Style::default().fg(Color::White) };
-        let val_style = if active { Style::default().fg(Color::Black).bg(Color::Yellow).add_modifier(Modifier::BOLD) } else { Style::default().fg(Color::Yellow) };
-        let arr = if active { "◄" } else { " " };
+    // Phase Lindsay L.3.3 — render by section. Each section gets a
+    // header line (▶/▼ + label); expanded sections also render their
+    // fields indented under the header. Collapsed sections show
+    // header only — fields hidden + cursor-skipped.
+    let mut all_items: Vec<ListItem> = Vec::new();
+    for section in &app.query_sections {
+        // Section header: ▶/▼ + label. Headers are not cursor-stoppable
+        // in L.3.3 v1; Tab toggles the section that owns the current
+        // field cursor. (Future revision: header-as-cursor-stop.)
+        let arrow = if section.expanded { "▼" } else { "▶" };
+        let header_style = Style::default()
+            .fg(Color::Cyan)
+            .add_modifier(Modifier::BOLD);
+        all_items.push(ListItem::new(Line::styled(
+            format!(" {arrow} {}", section.label),
+            header_style,
+        )));
 
-        ListItem::new(Line::from(vec![
-            Span::styled(format!(" {:<11}", field.label), lbl_style),
-            Span::styled(arr, if active { Style::default().fg(Color::Cyan) } else { dim }),
-            Span::styled(format!("{:<9}", field.value()), val_style),
-            Span::styled(if active { "►" } else { " " }, if active { Style::default().fg(Color::Cyan) } else { dim }),
-        ]))
-    }).collect();
+        if !section.expanded {
+            continue;
+        }
 
-    let mut all_items = items;
+        // Render the section's fields (indented).
+        for &i in &section.fields {
+            let field = match app.query_fields.get(i) {
+                Some(f) => f,
+                None => continue,  // defensive — section refers to a missing field
+            };
+            let active = i == sel;
+            let lbl_style = if active {
+                Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(Color::White)
+            };
+            let val_style = if active {
+                Style::default().fg(Color::Black).bg(Color::Yellow).add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(Color::Yellow)
+            };
+            let cursor_arrow = if active { "◄" } else { " " };
+            let cursor_arrow_r = if active { "►" } else { " " };
+            let cursor_color = if active {
+                Style::default().fg(Color::Cyan)
+            } else {
+                dim
+            };
+            all_items.push(ListItem::new(Line::from(vec![
+                Span::styled(format!("    {:<10}", field.label), lbl_style),
+                Span::styled(cursor_arrow, cursor_color),
+                Span::styled(format!("{:<9}", field.value()), val_style),
+                Span::styled(cursor_arrow_r, cursor_color),
+            ])));
+        }
+    }
+
     all_items.push(ListItem::new(Line::from("")));
-    all_items.push(ListItem::new(Line::from("")));
-    all_items.push(ListItem::new(Line::styled(" s  save this query", Style::default().fg(Color::Green))));
-    all_items.push(ListItem::new(Line::styled(" l  load saved query", Style::default().fg(Color::Green))));
+    all_items.push(ListItem::new(Line::styled(" Tab  collapse/expand section", Style::default().fg(Color::Green))));
+    all_items.push(ListItem::new(Line::styled(" s    save this query", Style::default().fg(Color::Green))));
+    all_items.push(ListItem::new(Line::styled(" l    load saved query", Style::default().fg(Color::Green))));
     all_items.push(ListItem::new(Line::styled(" Enter  player card", dim)));
-    all_items.push(ListItem::new(Line::styled(" r  reset filters", dim)));
+    all_items.push(ListItem::new(Line::styled(" r    reset filters", dim)));
 
     f.render_widget(List::new(all_items), inner);
 }
@@ -384,5 +508,89 @@ pub fn apply_saved_json(fields: &mut [QueryField], json: &str) {
                 }
             }
         }
+    }
+}
+
+
+// ── L.3.3 unit tests ─────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Default sections cover every default field exactly once. Drift
+    /// (a field added without a section assignment) breaks rendering
+    /// silently — this test catches it.
+    #[test]
+    fn l0_lindsay_default_sections_cover_all_fields_exactly_once() {
+        let fields = default_fields();
+        let sections = default_sections();
+        let mut covered: Vec<usize> = sections.iter()
+            .flat_map(|s| s.fields.iter().copied())
+            .collect();
+        covered.sort();
+        let expected: Vec<usize> = (0..fields.len()).collect();
+        assert_eq!(covered, expected,
+            "default_sections must cover every default field exactly once");
+    }
+
+    /// `visible_field_indices` returns only fields in expanded sections,
+    /// preserving their declaration order.
+    #[test]
+    fn l0_lindsay_visible_field_indices_respects_collapsed_sections() {
+        let mut sections = default_sections();
+        // All expanded by default — visible matches declaration order.
+        sections[0].expanded = true;
+        sections[1].expanded = true;
+        sections[2].expanded = true;
+        sections[3].expanded = true;
+        let visible_all = visible_field_indices(&sections);
+        let total: usize = sections.iter().map(|s| s.fields.len()).sum();
+        assert_eq!(visible_all.len(), total);
+
+        // Collapse section 2 — its fields drop out.
+        sections[2].expanded = false;
+        let visible_partial = visible_field_indices(&sections);
+        let collapsed_count = sections[2].fields.len();
+        assert_eq!(visible_partial.len(), total - collapsed_count);
+        // Collapsed section's fields don't appear.
+        for f in &sections[2].fields {
+            assert!(!visible_partial.contains(f),
+                "field {f} from collapsed section must not appear in visible");
+        }
+    }
+
+    /// `section_index_for_field` finds the right section for each field.
+    #[test]
+    fn l0_lindsay_section_index_for_field_lookup() {
+        let sections = default_sections();
+        // Field 0 (Sort by) → section 0 (Sort & Display).
+        assert_eq!(section_index_for_field(&sections, 0), Some(0));
+        // Field 4 (GP min) → section 3 (Stats Thresholds).
+        assert_eq!(section_index_for_field(&sections, 4), Some(3));
+        // Field 99 doesn't exist anywhere.
+        assert_eq!(section_index_for_field(&sections, 99), None);
+    }
+
+    /// `toggle_section_for_field` flips the expanded state and returns
+    /// the new value. Idempotent (toggle twice = original).
+    #[test]
+    fn l0_lindsay_toggle_section_for_field_flips_and_returns() {
+        let mut sections = default_sections();
+        let initial = sections[0].expanded;
+        let after_first = toggle_section_for_field(&mut sections, 0).unwrap();
+        assert_eq!(after_first, !initial);
+        let after_second = toggle_section_for_field(&mut sections, 0).unwrap();
+        assert_eq!(after_second, initial);
+    }
+
+    /// Toggling a missing field is a no-op (returns None, no panic).
+    #[test]
+    fn l0_lindsay_toggle_section_for_missing_field_no_op() {
+        let mut sections = default_sections();
+        let snapshot: Vec<bool> = sections.iter().map(|s| s.expanded).collect();
+        assert_eq!(toggle_section_for_field(&mut sections, 99), None);
+        let after: Vec<bool> = sections.iter().map(|s| s.expanded).collect();
+        assert_eq!(snapshot, after, "no-op must not mutate section state");
     }
 }
