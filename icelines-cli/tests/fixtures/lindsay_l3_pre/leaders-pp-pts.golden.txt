@@ -2,9 +2,9 @@ Rank Player                   Team  Pos  GP   PP-Pts
 ───────────────────────────────────────────────────────
 1    Nikita Kucherov          TBL   RW   78   46        
 2    Nathan MacKinnon         COL   C    79   38        
-3    Lucas Raymond            DET   LW   82   37        
-4    Clayton Keller           UTA   RW   81   37        
-5    Martin Necas             COL   C    79   37        
+3    Clayton Keller           UTA   RW   81   37        
+4    Martin Necas             COL   C    79   37        
+5    Lucas Raymond            DET   LW   82   37        
 6    Cale Makar               COL   D    80   35        
 7    Jack Eichel              VGK   C    77   34        
 8    Dylan Strome             WSH   C    82   34        

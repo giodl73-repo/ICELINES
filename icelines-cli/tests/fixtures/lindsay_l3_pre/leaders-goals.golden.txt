@@ -8,7 +8,7 @@ Rank Player                   Team  Pos  GP   Goals
 6    Brayden Point            TBL   C    77   42        
 7    Jake Guentzel            TBL   C    80   41        
 8    Kyle Connor              WPG   LW   82   41        
-9    Alex DeBrincat           DET   RW   82   39        
+9    Mark Scheifele           WPG   C    82   39        
 10   Sam Reinhart             FLA   C    79   39        
 
 905 matched, showing 10.

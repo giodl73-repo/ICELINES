@@ -21,12 +21,7 @@
 //!
 //! **Regenerate goldens** when an INTENDED ordering change ships:
 //!     LINDSAY_L3_REGEN=1 cargo test --release -p icelines-cli \
-//!         --test lindsay_l3_golden l2_lindsay_l3_golden_parity \
-//!         -- --include-ignored
-//! `--include-ignored` is required because the test is `#[ignore]`d
-//! pre-L.3.2; without that flag the regen path never executes. After
-//! L.3.2 makes `--sort` deterministic, drop the `#[ignore]` and run
-//! without `--include-ignored` for both regen + verify.
+//!         --test lindsay_l3_golden l2_lindsay_l3_golden_parity
 //! Commit the diffs alongside the change that necessitated them.
 
 use std::path::PathBuf;
@@ -102,31 +97,26 @@ fn capture_leaders(sort: &str) -> String {
 /// L.3 fence test (BENCH-R2 L2-B23). Captures stdout for every legacy
 /// --sort value and asserts byte-equality against the L.3 goldens.
 ///
-/// **Status: `#[ignore]` until L.3.2 lands.**
-/// The legacy `--sort` path uses an unstable HashMap-iteration tiebreak
-/// — runs that share the same binary AND same process produce identical
-/// output, but ACROSS process invocations the ordering of tied rows is
-/// randomized (verified 2026-05-02: Pastrnak/Draisaitl both 106 pts swap
-/// positions across invocations). The pre-L.3 goldens captured in
-/// `lindsay_l3_pre/` represent ONE valid ordering of that randomness.
+/// **Status: ACTIVE post-L.3.2** (un-ignored 2026-05-02). The legacy
+/// `--sort` paths now apply the AI-06 universal `nhl_id asc` tiebreak,
+/// so tied-value ordering is deterministic across process invocations.
+/// Goldens were re-captured under deterministic sort and committed.
 ///
-/// L.3.2 routes `--sort` through `StatId::sort_cmp` which carries the
-/// universal AI-06 `(stat_value, nhl_id asc)` tiebreak — deterministic.
-/// After L.3.2 lands:
-///   1. Run with `LINDSAY_L3_REGEN=1` to capture the new (deterministic)
-///      stable goldens.
-///   2. Drop the `#[ignore]` attribute below.
-///   3. Diff vs the pre-L.3 captures — tied-row swaps are noise; any
-///      non-tied-row divergence is a real ordering regression.
+/// **What this fence catches**:
+/// - Silent ordering changes during refactor (StatId migration, etc.)
+/// - Format/display drift (column widths, separators, footer wording)
+/// - The "improvement" special-case path through `compute_improvement_map`
 ///
-/// Post-L.5 the test runs again as the second fence.
+/// Two-fence checkpoint: this same test runs again post-L.5 (BENCH-R2
+/// L2-B23 second fence) when site/HTTP migration could re-touch
+/// ordering paths.
 ///
 /// **Regenerate goldens** when an INTENDED ordering change ships:
 ///     LINDSAY_L3_REGEN=1 cargo test --release -p icelines-cli \
-///         --test lindsay_l3_golden l2_lindsay_l3_golden_parity \
-///         -- --include-ignored
+///         --test lindsay_l3_golden l2_lindsay_l3_golden_parity
+/// (No more `--include-ignored` needed — the test is active.)
+/// Commit the diffs alongside the change that necessitated them.
 #[test]
-#[ignore = "BENCH-R2 L2-B23: un-ignore after L.3.2 makes --sort deterministic via StatId::sort_cmp"]
 fn l2_lindsay_l3_golden_parity() {
     let regen = std::env::var("LINDSAY_L3_REGEN").is_ok();
     let dir = fixtures_dir();

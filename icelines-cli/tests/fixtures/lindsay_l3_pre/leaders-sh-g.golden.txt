@@ -6,9 +6,9 @@ Rank Player                   Team  Pos  GP   SH-Goals
 4    Seth Jarvis              CAR   C    73   5         
 5    Chris Kreider            ANA   LW   68   4         
 6    Anthony Cirelli          TBL   C    80   4         
-7    Wyatt Johnston           DAL   C    82   3         
-8    Shane Pinto              OTT   C    70   3         
-9    Brandon Hagel            TBL   LW   82   3         
-10   Ryan McLeod              BUF   C    79   3         
+7    Brock Nelson             COL   C    80   3         
+8    Jonathan Huberdeau       CGY   LW   81   3         
+9    Joel Armia               LAK   RW   81   3         
+10   Jake Evans               MTL   C    82   3         
 
 905 matched, showing 10.

@@ -8,7 +8,7 @@ Rank Player                   Team  Pos  GP   Assists
 6    Jack Eichel              VGK   C    77   66        
 7    David Pastrnak           BOS   RW   82   63        
 8    Cale Makar               COL   D    80   62        
-9    Quinn Hughes             MIN   D    68   60        
-10   Lane Hutson              MTL   D    82   60        
+9    Clayton Keller           UTA   RW   81   60        
+10   Robert Thomas            STL   C    70   60        
 
 905 matched, showing 10.

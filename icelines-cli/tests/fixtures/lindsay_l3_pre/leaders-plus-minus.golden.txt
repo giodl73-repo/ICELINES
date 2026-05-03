@@ -3,12 +3,12 @@ Rank Player                   Team  Pos  GP   +/-
 1    Ryan McDonagh            TBL   D    82   +43       
 2    Brayden McNabb           VGK   D    82   +42       
 3    Aliaksei Protas          WSH   LW   76   +40       
-4    Warren Foegele           OTT   LW   82   +36       
-5    Artturi Lehkonen         COL   LW   69   +36       
-6    Dylan Samberg            WPG   D    60   +34       
-7    Esa Lindell              DAL   D    80   +34       
+4    Artturi Lehkonen         COL   LW   69   +36       
+5    Warren Foegele           OTT   LW   82   +36       
+6    Esa Lindell              DAL   D    80   +34       
+7    Dylan Samberg            WPG   D    60   +34       
 8    Brandon Hagel            TBL   LW   82   +33       
-9    Thomas Harley            DAL   D    78   +32       
+9    Leon Draisaitl           EDM   C    71   +32       
 10   Jack Eichel              VGK   C    77   +32       
 
 905 matched, showing 10.

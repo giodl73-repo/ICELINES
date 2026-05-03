@@ -502,7 +502,12 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
         matched.sort_by(|a, b| {
             let da = imp_map.get(&a.identity.id.0).copied().unwrap_or(f64::NEG_INFINITY);
             let db = imp_map.get(&b.identity.id.0).copied().unwrap_or(f64::NEG_INFINITY);
+            // Phase Lindsay L.3.2 / AI-06 universal tiebreak: stable
+            // `nhl_id asc` so tied values produce deterministic order
+            // across process invocations. Pre-Lindsay this was
+            // HashMap-iteration random.
             db.partial_cmp(&da).unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| a.identity.id.0.cmp(&b.identity.id.0))
         });
         let total_matched = matched.len();
         let results: Vec<PlayerView<'_>> = matched.iter().copied().take(args.top).collect();
@@ -543,14 +548,21 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
         matched.sort_by(|a, b| {
             let sa = a.pace_82().unwrap_or(0.0);
             let sb = b.pace_82().unwrap_or(0.0);
+            // Phase Lindsay L.3.2 / AI-06 universal tiebreak.
             sb.partial_cmp(&sa).unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| a.identity.id.0.cmp(&b.identity.id.0))
         });
     } else {
         matched.sort_by(|a, b| {
+            // Phase Lindsay L.3.2 / AI-06 universal tiebreak: stable
+            // `nhl_id asc` for deterministic tied-value ordering
+            // (was HashMap-iteration random pre-Lindsay; Pastrnak
+            // and Draisaitl @ 106 pts swapped between invocations).
             metric
                 .sort_value(b)
                 .partial_cmp(&metric.sort_value(a))
                 .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| a.identity.id.0.cmp(&b.identity.id.0))
         });
     }
     let total_matched = matched.len();
@@ -1012,7 +1024,7 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
     views.sort_by(|a, b| {
         let sa = a.stats.goalie.as_ref();
         let sb = b.stats.goalie.as_ref();
-        match sort_key.as_str() {
+        let primary = match sort_key.as_str() {
             "sv-pct" | "svpct" | "sv%" => {
                 let av = sa.and_then(|s| s.save_pct).unwrap_or(0.0);
                 let bv = sb.and_then(|s| s.save_pct).unwrap_or(0.0);
@@ -1033,7 +1045,9 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
                 let bv = sb.and_then(|s| s.save_pct).unwrap_or(0.0);
                 bv.partial_cmp(&av).unwrap_or(Ordering::Equal)
             }
-        }
+        };
+        // Phase Lindsay L.3.2 / AI-06 universal tiebreak.
+        primary.then_with(|| a.identity.id.0.cmp(&b.identity.id.0))
     });
     views.truncate(args.top);
 
@@ -1264,7 +1278,11 @@ fn run_similar(views: &[PlayerView<'_>], target_name: &str, n: usize) -> anyhow:
         })
         .collect();
 
-    scored.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
+    // Phase Lindsay L.3.2 / AI-06 universal tiebreak.
+    scored.sort_by(|a, b| {
+        a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| a.0.identity.id.0.cmp(&b.0.identity.id.0))
+    });
     scored.retain(|(v, _)| &v.identity.name_normalized != target_norm);
 
     let age_s = target_age.map(|a| a.to_string()).unwrap_or_else(|| "?".to_owned());

@@ -1,14 +1,14 @@
 Rank Player                   Team  Pos  GP   SH%       
 ───────────────────────────────────────────────────────
-1    Skyler Brind'Amour       CAR   C    2    100.0%    
-2    John Farinacci           BOS   C    1    100.0%    
-3    Michael Sgarbossa        RET   C    3    100.0%    
+1    Michael Sgarbossa        RET   C    3    100.0%    
+2    Skyler Brind'Amour       CAR   C    2    100.0%    
+3    John Farinacci           BOS   C    1    100.0%    
 4    Dylan Duke               TBL   LW   2    100.0%    
 5    Sam Morton               CGY   C    1    100.0%    
-6    Justin Sourdif           WSH   C    1    50.0%     
-7    Zayne Parekh             CGY   D    1    50.0%     
-8    Tanner Laczynski         VGK   C    8    50.0%     
-9    Parker Ford              WPG   C    3    50.0%     
-10   Nikita Chibrikov         WPG   RW   4    33.3%     
+6    Tanner Laczynski         VGK   C    8    50.0%     
+7    Justin Sourdif           WSH   C    1    50.0%     
+8    Parker Ford              WPG   C    3    50.0%     
+9    Zayne Parekh             CGY   D    1    50.0%     
+10   Isaak Phillips           WPG   D    3    33.3%     
 
 905 matched, showing 10.

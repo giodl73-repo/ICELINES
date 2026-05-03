@@ -6,8 +6,8 @@ Rank Player                   Team  Pos  GP   GWG/82
 4    Mark Scheifele           WPG   C    82   11.0      
 5    Dylan Guenther           UTA   RW   70   10.5      
 6    Sidney Crosby            PIT   C    80   10.2      
-7    Matt Boldy               MIN   LW   82   10.0      
-8    Kirill Kaprizov          MIN   LW   41   10.0      
+7    Kirill Kaprizov          MIN   LW   41   10.0      
+8    Matt Boldy               MIN   LW   82   10.0      
 9    Nikita Kucherov          TBL   RW   78   9.5       
 10   Jack Hughes              NJD   C    62   9.3       
 

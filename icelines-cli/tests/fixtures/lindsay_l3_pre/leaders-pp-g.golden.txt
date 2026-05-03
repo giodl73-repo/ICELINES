@@ -1,14 +1,14 @@
 Rank Player                   Team  Pos  GP   PP-Goals  
 ───────────────────────────────────────────────────────
 1    Jake Guentzel            TBL   C    80   17        
-2    Brayden Point            TBL   C    77   16        
-3    Leon Draisaitl           EDM   C    71   16        
+2    Leon Draisaitl           EDM   C    71   16        
+3    Brayden Point            TBL   C    77   16        
 4    Patrik Laine             MTL   LW   52   15        
-5    Jake DeBrusk             VAN   LW   82   14        
-6    Tomas Hertl              VGK   C    73   14        
-7    Steven Stamkos           NSH   C    82   14        
+5    Alex Ovechkin            WSH   LW   65   14        
+6    Steven Stamkos           NSH   C    82   14        
+7    Tomas Hertl              VGK   C    73   14        
 8    Kevin Fiala              LAK   LW   81   14        
-9    Brady Tkachuk            OTT   LW   72   14        
+9    Jake DeBrusk             VAN   LW   82   14        
 10   Nico Hischier            NJD   C    75   14        
 
 905 matched, showing 10.

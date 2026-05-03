@@ -1,5 +1,3 @@
-  Warning: no realtime/MoneyPuck data loaded for sort 'blocks-pace'. Run `icelines fetch` to download it.
-  Results below are sorted by Pts/82 as a fallback.
 Rank Player                   Team  Pos  GP   Blk/82    
 ───────────────────────────────────────────────────────
 1    Nikita Kucherov          TBL   RW   78   0.0       
