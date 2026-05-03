@@ -605,7 +605,8 @@ This is v0.4. Status:
 9. ~~L.4 implementation~~ — **shipped 2026-05-02**. 36 new Lindsay-L.4 tests; 1251 workspace tests passing. See "L.4 ship summary" below.
 10. ~~L.5 implementation~~ — **shipped 2026-05-03**. 19 new Lindsay-L.5 tests; 1270 workspace tests passing. See "L.5 ship summary" below.
 11. ~~L.5b implementation~~ — **shipped 2026-05-03**. SI-03 grep fence at `icelines-site/tests/site_stat_name_grep.rs` + empty `.stat-name-allowlist` baseline. Forces future hardcoded canonical stat names (`Goals`, `Points`, etc.) to either route through `StatId::label()` or earn an explicit allowlist entry. Workspace 1271 tests passing.
-12. **L.6 next** — Tier-2 fetched-only reports via `serde_json::Value` ExtraReports + `fetch report --kind <name>` + concurrent-invocation lock. Then L.7 (38-season historical bundling) and L.8 (cross-ref docs).
+12. ~~L.6 implementation~~ — **shipped 2026-05-03**. `do_report` Tier-1-only gate lifted; Tier-2 endpoints route through the same fetch flow with filename derived from `kind.url_path()` (e.g. `skater/summaryshooting` → `skater-summaryshooting.json`). The `fetch_lock::acquire` cross-process guard (TAPE-R3) was already in place at the L.1.6 dispatch — Tier-2 inherits it. 3 L0 tests (Tier-1 dispatch-table lookup, Tier-2 url_path derivation, total-over-all-kinds). Workspace 1274 tests passing. Dedicated L2 stress test for parallel subprocess invocations carries forward.
+13. **L.7 next** — bundle Tier-1 across all 38 historical seasons (data work) + cross-product test. Then L.8 (cross-ref docs).
 
 ---
 
