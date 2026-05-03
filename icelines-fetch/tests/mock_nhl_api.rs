@@ -302,7 +302,8 @@ fn l0_fixture_realtime_parses_correctly() {
     assert_eq!(mc_rt.blocked_shots, 15);
     assert_eq!(mc_rt.takeaways, 42);
     assert_eq!(mc_rt.giveaways, 35);
-    assert_eq!(mc_rt.pim, 14);
+    // L.7a — pim is now Option<u32> (NHL API removed pim from realtime).
+    assert_eq!(mc_rt.pim, Some(14));
 
     // Makelar (defenseman) should have more blocks
     let makar_rt = rt.iter().find(|r| r.player_id == 8480069).unwrap();
@@ -404,7 +405,7 @@ async fn l1_mock_fetch_realtime_parses_hits() {
     assert_eq!(mc_rt.blocked_shots, 15, "blocked_shots must be parsed");
     assert_eq!(mc_rt.takeaways, 42, "takeaways must be parsed");
     assert_eq!(mc_rt.giveaways, 35, "giveaways must be parsed");
-    assert_eq!(mc_rt.pim, 14, "pim must be parsed");
+    assert_eq!(mc_rt.pim, Some(14), "pim must be parsed (Option<u32> per L.7a)");
 }
 
 #[tokio::test]

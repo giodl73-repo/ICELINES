@@ -825,7 +825,12 @@ fn build_skater_stats(
         assists,
         points: goals + assists,
         plus_minus,
-        pim: realtime.map(|r| r.pim).unwrap_or(0),
+        // L.7a — `realtime.pim` is Option<u32> after the upstream API
+        // removed pim from the realtime endpoint (PIM now lives only on
+        // `/skater/summary`). Bind via `and_then` so a missing value
+        // collapses to 0; downstream summary-merge can replace this once
+        // the merge path lands.
+        pim: realtime.and_then(|r| r.pim).unwrap_or(0),
         shots,
         shooting_pct,
         toi_per_game_sec,

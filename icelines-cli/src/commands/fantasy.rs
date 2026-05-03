@@ -786,9 +786,21 @@ async fn handle_api_teams(
 /// `StatId::cli_key()`. KEEL-B1 round-trip contract: every emitted key
 /// parses back via `StatId::from_cli_key`; values match `StatId::read(view)`.
 ///
-/// The legacy `name` / `pos` / `gp` / `score` keys stay as-is — they're
-/// identity attributes / derived metrics, not stat reads. The `stats`
-/// sub-object is the catalog-keyed addition.
+/// **Top-level keys** (identity / derived — NOT stat reads):
+///   - `name`, `pos`, `score` (fantasy score is a derived metric)
+///
+/// **`stats` sub-object** (every key is a `StatId::cli_key`):
+///   - Games, Goals, Assists, Points (initial v1 corpus, L.5.6)
+///   - Hits, BlockedShots, PlusMinus, ShootingPct, TotalToiPerGame,
+///     FaceoffWinPct (C4 L.5b post-fix expansion — gives consumers
+///     enough breadth to render a useful skater card)
+///
+/// **WIRE-2 (L.5b post-fix)**: the top-level `gp` key was removed.
+/// Games count now lives only at `stats.games` (single source of
+/// truth, keyed by StatId::cli_key). API consumers reading `gp` must
+/// migrate to `stats.games`. The wrapping response carries
+/// `schema_version: 1` (WIRE-1) so any future shape change is
+/// negotiable rather than silent.
 ///
 /// Extracted as a pure helper (no DB, no async) so the JSON shape is
 /// L0-testable without spinning up the axum server.
@@ -798,11 +810,21 @@ pub(crate) fn build_roster_player_json(
     view: Option<&PlayerView<'_>>,
 ) -> Value {
     use icelines_core::stats_catalog::StatId;
+    // C4 L.5b post-fix expansion — extended from 4 to 10 stats so the
+    // roster response carries enough breadth to render a player card
+    // without a second round-trip.
     const ROSTER_STATS: &[StatId] = &[
         StatId::Games,
         StatId::Goals,
         StatId::Assists,
         StatId::Points,
+        StatId::PlusMinus,
+        StatId::Shots,
+        StatId::ShootingPct,
+        StatId::TotalToiPerGame,
+        StatId::Hits,
+        StatId::BlockedShots,
+        StatId::FaceoffWinPct,
     ];
 
     let mut stats_map = serde_json::Map::new();
@@ -822,7 +844,6 @@ pub(crate) fn build_roster_player_json(
     json!({
         "name": name,
         "pos": view.map(|v| v.position().abbreviation()).unwrap_or("—"),
-        "gp": view.map(|v| v.gp()).unwrap_or(0),
         "score": score,
         "stats": Value::Object(stats_map),
     })
@@ -858,7 +879,12 @@ async fn handle_api_team_roster(
         })
         .collect();
 
+    // WIRE-1 (L.5b post-fix) — `schema_version` field on the response
+    // top-level. Forward-compat versioning before any consumer hardens
+    // against the shape; future shape changes (rename a key, replace
+    // `players` with a paginated envelope, etc.) bump this value.
     Ok(Json(json!({
+        "schema_version": 1,
         "team": team.name,
         "owner": team.owner,
         "players": players_json,
@@ -1327,11 +1353,12 @@ mod tests {
         let view = PlayerView { identity: &identity, stats: &stats, contract: None };
 
         let json = build_roster_player_json("Connor McDavid", 42.5, Some(&view));
-        // Top-level keys.
+        // Top-level keys (post-WIRE-2: `gp` removed; lives at stats.games).
         assert_eq!(json["name"], "Connor McDavid");
         assert_eq!(json["pos"], "C");
-        assert_eq!(json["gp"], 70);
         assert_eq!(json["score"], 42.5);
+        assert!(json.get("gp").is_none(),
+            "WIRE-2: top-level `gp` removed — use stats.games");
         // The `stats` object: every key parses via `StatId::from_cli_key`,
         // values match `StatId::read(&view)`.
         let stats_obj = json["stats"].as_object()
@@ -1350,25 +1377,35 @@ mod tests {
                 (e, v) => panic!("shape mismatch for `{key}`: expected={e:?} got={v:?}"),
             }
         }
-        // The 4 canonical roster stats are present (stored as f64 since
-        // catalog reads return Option<f64>, regardless of underlying
-        // unit — Count stats round-trip cleanly).
+        // Core stats round-trip cleanly (stored as f64 since catalog
+        // reads return Option<f64>).
         assert_eq!(stats_obj["games"].as_f64(), Some(70.0));
         assert_eq!(stats_obj["goals"].as_f64(), Some(30.0));
         assert_eq!(stats_obj["assists"].as_f64(), Some(80.0));
         assert_eq!(stats_obj["points"].as_f64(), Some(110.0));
+        // C4 (L.5b expansion) — broader stat slice present.
+        assert!(stats_obj.contains_key("hits"),
+            "C4: hits key present in expanded slice");
+        assert!(stats_obj.contains_key("blocked-shots"),
+            "C4: blocked-shots key present");
+        assert!(stats_obj.contains_key("plus-minus"),
+            "C4: plus-minus key present");
+        assert!(stats_obj.contains_key("faceoff-win-pct"),
+            "C4: faceoff-win-pct key present");
     }
 
     /// L.5.6 (gap-fill) — `build_roster_player_json` for a player
     /// WITHOUT a matched view (cold-start: name in roster but no view
-    /// in pool) emits sentinel values: pos="—", gp=0, empty stats map.
+    /// in pool) emits sentinel values: pos="—", empty stats map.
+    /// Top-level `gp` is gone post-WIRE-2.
     #[test]
     fn l0_lindsay_l5_build_roster_player_json_no_view() {
         let json = build_roster_player_json("Phantom Player", 0.0, None);
         assert_eq!(json["name"], "Phantom Player");
         assert_eq!(json["pos"], "—");
-        assert_eq!(json["gp"], 0);
         assert_eq!(json["score"], 0.0);
+        assert!(json.get("gp").is_none(),
+            "WIRE-2: top-level `gp` removed");
         // Empty stats map — no entries since no view was matched.
         let stats_obj = json["stats"].as_object()
             .expect("stats sub-object always present, even when empty");

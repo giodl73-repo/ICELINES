@@ -2204,16 +2204,17 @@ mod app_snapshot_tests {
         assert_eq!(app.career_table_preset, CareerTablePreset::TwoWay);
 
         // Cycle forward through remaining; verify wrap.
-        for _ in 0..5 {
+        // Post-SCOUT-6 (L.5b): cycle has 6 entries, not 7. Started at
+        // TwoWay (index 2); +4 → index 6 % 6 = 0 → Default.
+        for _ in 0..4 {
             app.handle(Action::Char(']'));
         }
-        // Started at TwoWay (index 2); +5 → index 7 % 7 = 0 → Default.
         assert_eq!(app.career_table_preset, CareerTablePreset::Default,
-            "forward cycle wraps All → Default");
+            "forward cycle wraps Goalie → Default (post-SCOUT-6)");
     }
 
     /// `[` on the player card cycles career-table preset BACKWARD.
-    /// Default → wraps to All → Goalie → ... → back.
+    /// Default → wraps to Goalie (last in cycle post-SCOUT-6) → ...
     #[test]
     fn l1_lindsay_career_table_left_bracket_cycles_backward() {
         let (_dir, store) = empty_store_in_tempdir();
@@ -2226,11 +2227,11 @@ mod app_snapshot_tests {
         assert_eq!(app.career_table_preset, CareerTablePreset::Default);
 
         app.handle(Action::Char('['));
-        // Default.prev() = All (wraps).
-        assert_eq!(app.career_table_preset, CareerTablePreset::All);
+        // Default.prev() = Goalie (wraps; post-SCOUT-6 L.5b).
+        assert_eq!(app.career_table_preset, CareerTablePreset::Goalie);
 
         app.handle(Action::Char('['));
-        assert_eq!(app.career_table_preset, CareerTablePreset::Goalie);
+        assert_eq!(app.career_table_preset, CareerTablePreset::Time);
     }
 
     /// Status line surfaces the current preset name after cycle.

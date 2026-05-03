@@ -58,6 +58,18 @@ fn l1_legacy_schemes_load_byte_identical() {
 
         if regen || !path.exists() {
             std::fs::write(&path, &canonical).expect("write golden");
+            // WIRE-4 (L.5b post-fix) — emit on stderr so a green-but-
+            // bootstrapped run is visible (CI captures stderr per-test;
+            // local `cargo test` shows it inline). Without this, a clean
+            // checkout that's missing the fixture would pass silently
+            // while subsequent runs would assert against the now-written
+            // file — a confusing one-time-only "first pass green".
+            eprintln!(
+                "WARN [WIRE-4]: bootstrapped frozen-golden fixture at {} \
+                 (test passed without comparison this run; subsequent \
+                 runs will assert byte-identity)",
+                path.display()
+            );
             if regen {
                 println!("regenerated {}", path.display());
             }

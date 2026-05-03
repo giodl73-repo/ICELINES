@@ -902,7 +902,8 @@ fn stage_realtime_snapshot(
             missed_shots: missed,
             giveaways: give,
             takeaways: take,
-            pim: 4,
+            // L.7a — pim is Option<u32> (NHL API removed pim from realtime).
+            pim: Some(4),
         })
         .collect();
     let bytes = serde_json::to_vec(&payload).unwrap();

@@ -39,6 +39,11 @@ pub enum CareerTablePreset {
 impl CareerTablePreset {
     /// Cycle order. `[` moves to the previous; `]` moves to the next.
     /// Wraps at the boundaries.
+    ///
+    /// SCOUT-6 (L.5b post-fix): `All` removed from the cycle — 85
+    /// columns at any reasonable terminal width is a debug surface,
+    /// not a scout surface. Still reachable programmatically (e.g.
+    /// for `--columns all` debugging) but not via the keyboard cycle.
     pub const ALL: &'static [CareerTablePreset] = &[
         CareerTablePreset::Default,
         CareerTablePreset::Scoring,
@@ -46,7 +51,6 @@ impl CareerTablePreset {
         CareerTablePreset::SpecialTeams,
         CareerTablePreset::Time,
         CareerTablePreset::Goalie,
-        CareerTablePreset::All,
     ];
 
     /// Human-readable label for the status bar.
@@ -58,7 +62,7 @@ impl CareerTablePreset {
             Self::SpecialTeams => "Special Teams",
             Self::Time         => "Time",
             Self::Goalie       => "Goalie",
-            Self::All          => "All",
+            Self::All          => "All (debug)",
         }
     }
 
@@ -77,17 +81,23 @@ impl CareerTablePreset {
                 .filter(|s| s.category() == StatCategory::Scoring)
                 .filter(|s| s.applies_to(pos, pos == Position::Goalie))
                 .collect(),
+            // SCOUT-4 L.5b post-fix: gate Faceoff* stats to Center in
+            // both TwoWay AND SpecialTeams presets. Wingers/D take ~0
+            // faceoffs/season; the column would render mostly "—" or a
+            // misleading 100%/0% spike on the rare emergency draw.
             Self::TwoWay => StatId::all()
                 .iter()
                 .copied()
                 .filter(|s| s.category() == StatCategory::TwoWay)
                 .filter(|s| s.applies_to(pos, pos == Position::Goalie))
+                .filter(|s| !is_faceoff_stat(*s) || pos == Position::Center)
                 .collect(),
             Self::SpecialTeams => StatId::all()
                 .iter()
                 .copied()
                 .filter(|s| s.category() == StatCategory::SpecialTeams)
                 .filter(|s| s.applies_to(pos, pos == Position::Goalie))
+                .filter(|s| !is_faceoff_stat(*s) || pos == Position::Center)
                 .collect(),
             Self::Time => StatId::all()
                 .iter()
@@ -125,6 +135,20 @@ impl Default for CareerTablePreset {
     fn default() -> Self {
         Self::Default
     }
+}
+
+/// SCOUT-4 (L.5b post-fix) — true for stats that only Centers
+/// generate meaningfully. Wingers/D take ~0 faceoffs per season; the
+/// column on those positions surfaces mostly None or a misleading
+/// 100%/0% spike on the rare emergency draw.
+fn is_faceoff_stat(s: StatId) -> bool {
+    matches!(s,
+        StatId::FaceoffWinPct
+        | StatId::FaceoffWins
+        | StatId::FaceoffLosses
+        | StatId::OffensiveZoneFaceoffPct
+        | StatId::DefensiveZoneFaceoffPct
+    )
 }
 
 /// Phase Lindsay L.4.3 — render a single career-table cell value.
@@ -257,7 +281,7 @@ mod dashboard_tests {
 pub fn render_by_id(f: &mut Frame, app: &App, area: Rect, pid: PlayerId) {
     let block = Block::default()
         .borders(Borders::ALL)
-        .title(" Player Card  ·  c: comps  ·  g: group  ·  f: favorites  ·  Esc: back ");
+        .title(" Player Card  ·  [/]: preset  ·  c: comps  ·  g: group  ·  f: favorites  ·  Esc: back ");
     let inner = block.inner(area);
     f.render_widget(block, area);
 
@@ -409,14 +433,25 @@ fn render_stats_view(f: &mut Frame, app: &App, v: &PlayerView<'_>, area: Rect) {
             preset.label(),
             columns.len(),
             all_columns.len(),
-            if dropped > 0 { format!(" — narrow: -{dropped}") } else { String::new() },
+            // GLASS-9 L.5b post-fix — "3 hidden" reads cleaner than
+            // "narrow: -3" (the leading dash glances as "negative 3").
+            if dropped > 0 { format!(", {dropped} hidden") } else { String::new() },
         ),
         dim,
     ));
 
     if columns.is_empty() {
+        // GLASS-4 L.5b post-fix — distinguish "preset has 0 columns
+        // applicable to this position" from "panel is too narrow to
+        // fit anything". Both look the same to the user without
+        // disambiguation.
+        let msg = if all_columns.is_empty() {
+            "  (no columns in this preset for this position — try [/] to cycle)"
+        } else {
+            "  (panel too narrow to fit any column — widen terminal)"
+        };
         lines.push(Line::styled(
-            "  (no columns in this preset / panel too narrow)",
+            msg,
             dim,
         ));
     } else {
@@ -550,46 +585,53 @@ mod l4_preset_tests {
     use super::*;
     use icelines_core::model::Position::*;
 
-    /// Cycle order ALL contains 7 distinct presets. `[`/`]` move within
-    /// it. Pin the count + identity at boundaries.
+    /// Cycle order ALL contains 6 distinct presets (SCOUT-6 L.5b
+    /// post-fix removed `All` from the cycle — still reachable
+    /// programmatically but not via keyboard).
     #[test]
     fn l0_lindsay_career_preset_cycle_count_seven() {
-        assert_eq!(CareerTablePreset::ALL.len(), 7);
+        assert_eq!(CareerTablePreset::ALL.len(), 6);
         assert_eq!(CareerTablePreset::ALL[0], CareerTablePreset::Default);
-        assert_eq!(CareerTablePreset::ALL[6], CareerTablePreset::All);
+        assert_eq!(CareerTablePreset::ALL[5], CareerTablePreset::Goalie);
+        // `All` is NOT in the keyboard cycle.
+        assert!(!CareerTablePreset::ALL.contains(&CareerTablePreset::All));
     }
 
-    /// `next` wraps from last (All) → first (Default).
+    /// `next` wraps from last (Goalie) → first (Default).
     #[test]
     fn l0_lindsay_career_preset_next_wraps() {
-        assert_eq!(CareerTablePreset::All.next(), CareerTablePreset::Default);
+        assert_eq!(CareerTablePreset::Goalie.next(), CareerTablePreset::Default);
         assert_eq!(CareerTablePreset::Default.next(), CareerTablePreset::Scoring);
     }
 
-    /// `prev` wraps from first (Default) → last (All).
+    /// `prev` wraps from first (Default) → last (Goalie).
     #[test]
     fn l0_lindsay_career_preset_prev_wraps() {
-        assert_eq!(CareerTablePreset::Default.prev(), CareerTablePreset::All);
+        assert_eq!(CareerTablePreset::Default.prev(), CareerTablePreset::Goalie);
         assert_eq!(CareerTablePreset::Scoring.prev(), CareerTablePreset::Default);
     }
 
-    /// Default preset for Center returns 15 columns (14 skater common
-    /// post-SCOUT-L.4 + FaceoffWinPct).
+    /// Default preset for Center returns 16 columns (15 skater common
+    /// post-SCOUT-3 L.5b + FaceoffWinPct).
     #[test]
     fn l0_lindsay_career_preset_default_center_14_cols() {
         let cols = CareerTablePreset::Default.columns(Center);
-        assert_eq!(cols.len(), 15);
+        assert_eq!(cols.len(), 16);
         assert!(cols.contains(&StatId::Games));
         assert!(cols.contains(&StatId::Gwg));
+        assert!(cols.contains(&StatId::PointsPerGame));
         assert!(cols.contains(&StatId::FaceoffWinPct));
     }
 
-    /// Default preset for Defense returns 14 (no FaceoffWinPct).
+    /// Default preset for Defense returns 16 (skater common 15 +
+    /// EvGoalsForPct per SCOUT-8 L.5b).
     #[test]
     fn l0_lindsay_career_preset_default_defense_13_cols() {
         let cols = CareerTablePreset::Default.columns(Defense);
-        assert_eq!(cols.len(), 14);
+        assert_eq!(cols.len(), 16);
         assert!(!cols.contains(&StatId::FaceoffWinPct));
+        assert!(cols.contains(&StatId::EvGoalsForPct),
+            "Defense default surfaces EvGoalsForPct (SCOUT-8)");
     }
 
     /// Default preset for Goalie returns 11 goalie-specific columns
@@ -718,15 +760,15 @@ mod l4_preset_tests {
 
     // ── L.4.5 narrow-mode column fit tests ─────────────────────────────
 
-    /// At 140 cols, Center default preset (15 cols post-SCOUT-L.4)
+    /// At 140 cols, Center default preset (16 cols post-SCOUT-3 L.5b)
     /// fits entirely — no narrow mode, nothing dropped.
     #[test]
     fn l0_lindsay_fit_career_columns_140_fits_all_default_center() {
         let cols = CareerTablePreset::Default.columns(Center);
-        assert_eq!(cols.len(), 15);
+        assert_eq!(cols.len(), 16);
         let (fit, dropped, narrow) = fit_career_columns(&cols, 140);
-        // (140 - 11) / 8 = 16, capped to 15.
-        assert_eq!(fit.len(), 15);
+        // (140 - 11) / 8 = 16, exactly fits.
+        assert_eq!(fit.len(), 16);
         assert_eq!(dropped, 0);
         assert!(!narrow);
     }
@@ -736,9 +778,9 @@ mod l4_preset_tests {
     fn l0_lindsay_fit_career_columns_100_drops_rightmost() {
         let cols = CareerTablePreset::Default.columns(Center);
         let (fit, dropped, narrow) = fit_career_columns(&cols, 100);
-        // (100 - 11) / 8 = 11. 15 - 11 = 4 dropped.
+        // (100 - 11) / 8 = 11. 16 - 11 = 5 dropped.
         assert_eq!(fit.len(), 11);
-        assert_eq!(dropped, 4);
+        assert_eq!(dropped, 5);
         assert!(!narrow);
         // Truncation is from the right — first column preserved.
         assert_eq!(fit[0], cols[0]);
@@ -749,9 +791,9 @@ mod l4_preset_tests {
     fn l0_lindsay_fit_career_columns_80_clips_heavy() {
         let cols = CareerTablePreset::Default.columns(Center);
         let (fit, dropped, narrow) = fit_career_columns(&cols, 80);
-        // (80 - 11) / 8 = 8. 15 - 8 = 7 dropped.
+        // (80 - 11) / 8 = 8. 16 - 8 = 8 dropped.
         assert_eq!(fit.len(), 8);
-        assert_eq!(dropped, 7);
+        assert_eq!(dropped, 8);
         assert!(!narrow);
     }
 
@@ -762,7 +804,7 @@ mod l4_preset_tests {
         let (fit, dropped, narrow) = fit_career_columns(&cols, 50);
         // (50 - 11) / 8 = 4 cols.
         assert_eq!(fit.len(), 4);
-        assert_eq!(dropped, 11);
+        assert_eq!(dropped, 12);
         assert!(narrow);
     }
 

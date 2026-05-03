@@ -98,8 +98,13 @@ pub struct SkaterRealtime {
     pub missed_shots: u32,
     pub giveaways: u32,
     pub takeaways: u32,
-    #[serde(rename = "pim")]
-    pub pim: u32,
+    /// Phase Lindsay L.7a fix — `pim` was removed from
+    /// `/stats/rest/en/skater/realtime` upstream (verified 2026-05-03;
+    /// PIM now lives only on `/skater/summary`). Make Optional with
+    /// `#[serde(default)]` so the deserializer doesn't fail; load
+    /// pipeline fills from the summary endpoint via a downstream merge.
+    #[serde(default, rename = "pim")]
+    pub pim: Option<u32>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

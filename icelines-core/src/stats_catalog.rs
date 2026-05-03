@@ -845,20 +845,25 @@ impl StatId {
     /// preset templates via `[`/`]` to see other categories.
     ///
     /// Per-position defaults (matching hockey-reference convention):
-    /// - **Skater (C/LW/RW/D)**: GP G A P GWG +/- PIM PPG PPP Shots S%
-    ///   TOI Hits Blk (14 columns).
-    /// - **Center additionally**: FaceoffWinPct (15 columns).
+    /// - **Skater (C/LW/RW/D)**: GP G A P PPG GWG +/- PIM PPG PPP Shots
+    ///   S% TOI Hits Blk (15 columns).
+    /// - **Center additionally**: FaceoffWinPct (16 columns).
+    /// - **Defense additionally**: EvGoalsForPct (16 columns) — SCOUT-8.
     /// - **Goalie**: GP GS W L OTL Sv SA Sv% GAA SO QS (11 columns).
     ///
     /// Identity / non-selectable stats always return false.
     pub fn default_in_career_table(self, pos: Position) -> bool {
         use Position::*;
         use StatId::*;
-        // Common skater defaults (excludes Center-specific FaceoffWinPct).
+        // Common skater defaults (excludes position-specific stats).
+        //
         // SCOUT L.4 review: added Gwg (canonical career-glance counter).
+        // SCOUT-3 L.5b post-fix: added PointsPerGame (cross-season
+        // legibility — without it, raw season totals compress rookie
+        // years into noise).
         let skater_common = matches!(
             self,
-            Games | Goals | Assists | Points | Gwg
+            Games | Goals | Assists | Points | PointsPerGame | Gwg
             | PlusMinus | Pim
             | PpGoals | PpPoints
             | Shots | ShootingPct
@@ -879,7 +884,13 @@ impl StatId {
         match pos {
             Goalie => goalie_default,
             Center => skater_common || self == FaceoffWinPct,
-            LeftWing | RightWing | Defense => skater_common,
+            // SCOUT-8 L.5b post-fix: defenseman default adds
+            // EvGoalsForPct — closest hockey analog to "RBI", a
+            // single-number measure of how much a D drives play. The
+            // OnIceGoals category fires DI-11 for traded-window views
+            // (returns None there); that's the right semantic.
+            Defense => skater_common || self == EvGoalsForPct,
+            LeftWing | RightWing => skater_common,
         }
     }
 
@@ -1290,8 +1301,25 @@ impl std::fmt::Display for FilterParseError {
                 write!(f, "filter stat-key is empty — expected `<stat-key><op><value>` (e.g. \"goals>=30\")"),
             Self::MissingOp { input } =>
                 write!(f, "filter {input:?} has no op — expected one of `>=`, `<=`, `==`, `=`"),
-            Self::MultipleOps { input } =>
-                write!(f, "filter {input:?} has multiple ops — expected exactly one of `>=`, `<=`, `==`, `=`"),
+            Self::MultipleOps { input } => {
+                // KEEL D2 (L.5b post-fix) — typo hint for `=>` / `=<`.
+                // Both transpositions classify as MultipleOps in the
+                // current parser (the `=` and `>` each detect as ops).
+                // The user's mental model has `=` first because it's
+                // spelled "is greater than or equal"; without this
+                // hint the generic "multiple ops" message doesn't
+                // help them spot the transposition.
+                if input.contains("=>") {
+                    write!(f, "filter {input:?} has multiple ops — did you mean `>=`? \
+                              (got `=>`; the equals-sign comes second)")
+                } else if input.contains("=<") {
+                    write!(f, "filter {input:?} has multiple ops — did you mean `<=`? \
+                              (got `=<`; the equals-sign comes second)")
+                } else {
+                    write!(f, "filter {input:?} has multiple ops — expected exactly \
+                              one of `>=`, `<=`, `==`, `=`")
+                }
+            }
             Self::UnknownStat { key } =>
                 write!(f, "unknown stat key {key:?} — see `--help` or use one of the catalog cli_keys"),
             Self::BadNumber { token } =>
@@ -2389,9 +2417,9 @@ mod tests {
             "Games should iterate before Goals (declaration order)");
     }
 
-    /// `default_in_career_table` for skaters: the 14 expected default
+    /// `default_in_career_table` for skaters: the 15 expected default
     /// stats return true; non-default stats return false.
-    /// (Post-SCOUT L.4: Gwg added → 14 common + FaceoffWinPct = 15 for C.)
+    /// (Post-SCOUT-3 L.5b: PointsPerGame added → 15 common + FaceoffWinPct = 16 for C.)
     #[test]
     fn l0_lindsay_default_in_career_table_skater_defaults() {
         use crate::model::Position::*;
@@ -2400,19 +2428,22 @@ mod tests {
             .copied()
             .filter(|s| s.default_in_career_table(Center))
             .collect();
-        assert_eq!(center_defaults.len(), 15, "Center default = 15 (skater 14 + FOWinPct)");
+        assert_eq!(center_defaults.len(), 16,
+            "Center default = 16 (skater_common 15 + FOWinPct)");
         assert!(center_defaults.contains(&StatId::Games));
         assert!(center_defaults.contains(&StatId::Goals));
         assert!(center_defaults.contains(&StatId::Gwg),
             "Gwg in skater default (SCOUT L.4)");
+        assert!(center_defaults.contains(&StatId::PointsPerGame),
+            "PointsPerGame in skater default (SCOUT-3 L.5b)");
         assert!(center_defaults.contains(&StatId::FaceoffWinPct));
         // Non-default stat for Center.
         assert!(!StatId::PpAssistsPer60.default_in_career_table(Center));
         assert!(!StatId::SatPct.default_in_career_table(Center));
     }
 
-    /// LeftWing/RightWing/Defense get the same 14 skater defaults
-    /// (no FaceoffWinPct).
+    /// LeftWing/RightWing get the 15 skater defaults (no position
+    /// extras). Defense gets 15 + EvGoalsForPct = 16 per SCOUT-8 L.5b.
     #[test]
     fn l0_lindsay_default_in_career_table_wingers_no_faceoff() {
         use crate::model::Position::*;
@@ -2421,16 +2452,21 @@ mod tests {
             .copied()
             .filter(|s| s.default_in_career_table(LeftWing))
             .collect();
-        assert_eq!(lw_defaults.len(), 14, "LW default = 14 skater common");
+        assert_eq!(lw_defaults.len(), 15, "LW default = 15 skater common");
         assert!(!lw_defaults.contains(&StatId::FaceoffWinPct),
             "FaceoffWinPct is Center-only");
+        assert!(!lw_defaults.contains(&StatId::EvGoalsForPct),
+            "EvGoalsForPct is Defense-only (SCOUT-8 L.5b)");
 
         let d_defaults: Vec<StatId> = StatId::all()
             .iter()
             .copied()
             .filter(|s| s.default_in_career_table(Defense))
             .collect();
-        assert_eq!(d_defaults.len(), 14);
+        assert_eq!(d_defaults.len(), 16,
+            "Defense default = 16 (skater_common 15 + EvGoalsForPct)");
+        assert!(d_defaults.contains(&StatId::EvGoalsForPct),
+            "EvGoalsForPct in Defense default (SCOUT-8 L.5b)");
     }
 
     /// Goalie gets 11 goalie-specific default columns. (Post-SCOUT L.4:
@@ -2555,6 +2591,27 @@ mod tests {
                 "{input:?} should be MissingOp, got {err:?}"
             );
         }
+    }
+
+    /// KEEL D2 (L.5b post-fix) — `=>` / `=<` typos get a "did you mean
+    /// `>=` / `<=`?" hint in the error message. Both classify as
+    /// MultipleOps in the current parser (the `=` and `>` each detect
+    /// as ops).
+    #[test]
+    fn l0_lindsay_l5b_parse_filter_typo_hint_for_swapped_op() {
+        let err = parse_filter("hits=>10").unwrap_err();
+        let msg = err.to_string();
+        assert!(
+            msg.contains("did you mean `>=`?"),
+            "expected typo hint for `=>`; got {msg:?}"
+        );
+
+        let err = parse_filter("hits=<10").unwrap_err();
+        let msg = err.to_string();
+        assert!(
+            msg.contains("did you mean `<=`?"),
+            "expected typo hint for `=<`; got {msg:?}"
+        );
     }
 
     /// MultipleOps: more than one op token.

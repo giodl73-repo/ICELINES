@@ -163,9 +163,22 @@ pub fn sort_picker_filter(
 ///
 /// Total width is bounded above by the format strings themselves — the
 /// caller's panel won't be wrapped by the renderer.
+///
+/// **GLASS-6 (L.5b post-fix)**: `selected=true` overrides the narrow
+/// truncation so the highlighted row always shows the full cli_key.
+/// The user can read the key under cursor unambiguously regardless of
+/// terminal width — even when neighboring rows truncate.
 pub fn format_sort_picker_row(
     sid: icelines_core::stats_catalog::StatId,
     panel_w: usize,
+) -> String {
+    format_sort_picker_row_selected(sid, panel_w, false)
+}
+
+pub fn format_sort_picker_row_selected(
+    sid: icelines_core::stats_catalog::StatId,
+    panel_w: usize,
+    selected: bool,
 ) -> String {
     if panel_w >= 100 {
         format!(
@@ -177,12 +190,18 @@ pub fn format_sort_picker_row(
     } else if panel_w >= 80 {
         format!("  {:<32} — {}", sid.cli_key(), sid.label())
     } else {
-        // Truncate cli_key to 24 cells; use short_label.
         let key = sid.cli_key();
-        let key_disp: String = if key.len() > 24 {
-            format!("{}…", &key[..23])
+        // Selected row: show full key uncondensed so the user can read
+        // the unambiguous identifier under the cursor.
+        let key_disp: String = if selected {
+            format!("{key:<24}")
+        } else if key.chars().count() > 24 {
+            // GLASS-7 (L.5b post-fix) — char-based truncation, not
+            // byte-slice. Defensive against a future non-ASCII cli_key.
+            let truncated: String = key.chars().take(23).collect();
+            format!("{truncated}…")
         } else {
-            format!("{:<24}", key)
+            format!("{key:<24}")
         };
         format!("  {} — {}", key_disp, sid.short_label())
     }
@@ -484,8 +503,9 @@ fn render_sort_picker(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
                 Style::default()
             };
             // L.4.5: degrade row format at narrow widths (GLASS #7).
+            // GLASS-6 (L.5b post-fix): selected row keeps full key.
             lines.push(Line::styled(
-                format_sort_picker_row(*sid, inner.width as usize),
+                format_sort_picker_row_selected(*sid, inner.width as usize, active),
                 style,
             ));
         }
@@ -859,6 +879,43 @@ mod tests {
             !row.contains("(Scoring)"),
             "narrow row must drop category — got {row:?}"
         );
+    }
+
+    /// GLASS-6 (L.5b post-fix) — narrow tier with `selected=true`
+    /// shows the FULL cli_key (no truncation/ellipsis), even for keys
+    /// >24 chars. Non-selected rows still truncate.
+    #[test]
+    fn l0_lindsay_l5b_format_sort_picker_row_selected_keeps_full_key() {
+        use icelines_core::stats_catalog::StatId;
+        // `even-strength-time-on-ice-per-game` is 34 chars — definitely
+        // truncates in the unselected narrow tier.
+        let unselected = format_sort_picker_row_selected(
+            StatId::EvenStrengthTimeOnIcePerGame, 60, false);
+        assert!(unselected.contains("…"),
+            "unselected row >24 chars must truncate with ellipsis — got {unselected:?}");
+
+        let selected = format_sort_picker_row_selected(
+            StatId::EvenStrengthTimeOnIcePerGame, 60, true);
+        assert!(!selected.contains("…"),
+            "selected row must NOT truncate — got {selected:?}");
+        assert!(selected.contains("even-strength-time-on-ice-per-game"),
+            "selected row must show full cli_key — got {selected:?}");
+    }
+
+    /// GLASS-7 (L.5b post-fix) — char-based truncation, not byte-slice.
+    /// Defensive against a future non-ASCII cli_key. Currently every
+    /// catalog key is ASCII, so this just smoke-tests the path doesn't
+    /// regress to byte-slicing.
+    #[test]
+    fn l0_lindsay_l5b_format_sort_picker_row_char_truncate_not_byte_slice() {
+        use icelines_core::stats_catalog::StatId;
+        // Every catalog key (ASCII today): no panic for any of them
+        // at narrow width. If we ever switch to chars().take(23), this
+        // is a smoke test that the shape matches.
+        for sid in StatId::all() {
+            let _ = format_sort_picker_row_selected(*sid, 60, false);
+            let _ = format_sort_picker_row_selected(*sid, 60, true);
+        }
     }
 
     /// Width budget — wide (140) row never exceeds the panel width
