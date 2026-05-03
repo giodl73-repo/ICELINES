@@ -190,6 +190,10 @@ pub struct App {
     /// instead of the legacy QueryField[0] string. `None` means use the
     /// legacy field (default behavior).
     pub sort_stat_pick: Option<icelines_core::stats_catalog::StatId>,
+    /// Phase Lindsay L.4 — active career-table column preset on the
+    /// player card. `[`/`]` cycle through `CareerTablePreset::ALL`
+    /// (Default | Scoring | Two-way | Special Teams | Time | Goalie | All).
+    pub career_table_preset: crate::tui::screens::player::CareerTablePreset,
     /// Phase 8j: lazy-compiled dashboard panel for the player card.
     /// Only consulted when `crate::config::dashboards_enabled()` is true.
     pub dashboard_panel: crate::tui::dashboard_panel::CompiledPanel,
@@ -296,6 +300,7 @@ impl App {
             sort_picker_query: String::new(),
             sort_picker_idx: 0,
             sort_stat_pick: None,
+            career_table_preset: Default::default(),
             dashboard_panel: crate::tui::dashboard_panel::CompiledPanel::new(),
             league_context: crate::tui::dashboard_panel::LeagueContext::empty(),
             transactions: Vec::new(),
@@ -764,6 +769,21 @@ impl App {
                         self.prev_screen = Some(self.screen.clone());
                         self.screen = Screen::CompsById(pid);
                         self.selected = 0;
+                    } else if c == '[' {
+                        // Phase Lindsay L.4.4 — `[` cycles career-table
+                        // preset BACKWARD (vim-canonical bracket motion).
+                        self.career_table_preset = self.career_table_preset.prev();
+                        self.status = format!(
+                            "Career preset: {}  ·  [/]: cycle  ·  c: comps",
+                            self.career_table_preset.label(),
+                        );
+                    } else if c == ']' {
+                        // Phase Lindsay L.4.4 — `]` cycles FORWARD.
+                        self.career_table_preset = self.career_table_preset.next();
+                        self.status = format!(
+                            "Career preset: {}  ·  [/]: cycle  ·  c: comps",
+                            self.career_table_preset.label(),
+                        );
                     }
                 } else if matches!(self.screen, Screen::Depth | Screen::DepthTeam(_)) && c == 's' {
                     self.depth_mode = self.depth_mode.toggle();

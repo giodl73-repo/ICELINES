@@ -147,11 +147,12 @@ fn l1_lindsay_faceoff_applies_to_center_only() {
 }
 
 /// Cross-product cardinality: every (variant, StatId) pair has a
-/// well-defined return. 107 × 6 = 642 cells. The point of this test
-/// is the iteration count — read() must be total over the entire
-/// catalog × variant cross-product.
+/// well-defined return. 108 × 6 = 648 cells (L.4.1 added Games to
+/// the catalog → was 107 × 6 = 642). The point of this test is the
+/// iteration count — read() must be total over the entire catalog ×
+/// variant cross-product.
 #[test]
-fn l1_lindsay_cross_product_cardinality_is_642() {
+fn l1_lindsay_cross_product_cardinality_is_648() {
     let mut total_cells = 0usize;
     for (_, builder) in stat_catalog_variants::all() {
         let (identity, stats) = builder();
@@ -162,5 +163,5 @@ fn l1_lindsay_cross_product_cardinality_is_642() {
             total_cells += 1;
         }
     }
-    assert_eq!(total_cells, 107 * 6, "expected 642 cross-product cells");
+    assert_eq!(total_cells, 108 * 6, "expected 648 cross-product cells");
 }

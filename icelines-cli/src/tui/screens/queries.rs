@@ -152,6 +152,42 @@ pub fn sort_picker_filter(
         .collect()
 }
 
+/// Phase Lindsay L.4.5 — format a sort-picker row for a given panel width.
+///
+/// GLASS #7 carry-forward: the legacy row at ~77 chars wraps at 80-col
+/// terminals. Three width tiers, picked from the inner panel width:
+///   - **wide** (≥100): `key (32) — label (26) (category)`
+///   - **medium** (80..100): `key (32) — label` (drop category)
+///   - **narrow** (<80): `key (24) — short_label` (truncate key column,
+///     use shorter labels)
+///
+/// Total width is bounded above by the format strings themselves — the
+/// caller's panel won't be wrapped by the renderer.
+pub fn format_sort_picker_row(
+    sid: icelines_core::stats_catalog::StatId,
+    panel_w: usize,
+) -> String {
+    if panel_w >= 100 {
+        format!(
+            "  {:<32} — {:<26} ({})",
+            sid.cli_key(),
+            sid.label(),
+            sid.category().label(),
+        )
+    } else if panel_w >= 80 {
+        format!("  {:<32} — {}", sid.cli_key(), sid.label())
+    } else {
+        // Truncate cli_key to 24 cells; use short_label.
+        let key = sid.cli_key();
+        let key_disp: String = if key.len() > 24 {
+            format!("{}…", &key[..23])
+        } else {
+            format!("{:<24}", key)
+        };
+        format!("  {} — {}", key_disp, sid.short_label())
+    }
+}
+
 // ── Query execution ───────────────────────────────────────────────────────────
 
 fn parse_opt<T: std::str::FromStr>(s: &str) -> Option<T> {
@@ -447,14 +483,9 @@ fn render_sort_picker(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
             } else {
                 Style::default()
             };
-            // Format: " key — Label (Category)"
+            // L.4.5: degrade row format at narrow widths (GLASS #7).
             lines.push(Line::styled(
-                format!(
-                    "  {:<32} — {:<26} ({})",
-                    sid.cli_key(),
-                    sid.label(),
-                    sid.category().label(),
-                ),
+                format_sort_picker_row(*sid, inner.width as usize),
                 style,
             ));
         }
@@ -741,10 +772,11 @@ mod tests {
         assert_eq!(
             results.len(),
             icelines_core::stats_catalog::StatId::all().len(),
-            "empty query → all 107 stats"
+            "empty query → all 108 stats (L.4.1 added Games)"
         );
-        // First entry is the first variant in declaration order (Goals).
-        assert_eq!(results[0], icelines_core::stats_catalog::StatId::Goals);
+        // First entry is the first variant in declaration order
+        // (post-L.4.1: Games; was Goals pre-L.4.1).
+        assert_eq!(results[0], icelines_core::stats_catalog::StatId::Games);
     }
 
     /// Substring match — `"hits"` returns Hits, HitsPer60.
@@ -786,6 +818,87 @@ mod tests {
     fn l0_lindsay_sort_picker_filter_no_match_empty_vec() {
         let results = sort_picker_filter("xyz-nonexistent");
         assert!(results.is_empty());
+    }
+
+    // ── L.4.5 sort-picker row width-degradation tests ─────────────────
+
+    /// Wide (≥100): full row with category column.
+    #[test]
+    fn l0_lindsay_format_sort_picker_row_wide_includes_category() {
+        use icelines_core::stats_catalog::StatId;
+        let row = format_sort_picker_row(StatId::Goals, 140);
+        assert!(row.contains("goals"));
+        assert!(row.contains("Goals"));
+        // Category appears in parens at wide widths.
+        assert!(
+            row.contains("(Scoring)"),
+            "wide row should include `(Scoring)` category — got {row:?}"
+        );
+    }
+
+    /// Medium (80..100): drops the trailing `(category)` segment.
+    #[test]
+    fn l0_lindsay_format_sort_picker_row_medium_drops_category() {
+        use icelines_core::stats_catalog::StatId;
+        let row = format_sort_picker_row(StatId::Goals, 90);
+        assert!(row.contains("goals"));
+        assert!(row.contains("Goals"));
+        assert!(
+            !row.contains("(Scoring)"),
+            "medium row must drop category — got {row:?}"
+        );
+    }
+
+    /// Narrow (<80): truncates the cli_key column AND uses short_label.
+    #[test]
+    fn l0_lindsay_format_sort_picker_row_narrow_truncates() {
+        use icelines_core::stats_catalog::StatId;
+        let row = format_sort_picker_row(StatId::Goals, 60);
+        assert!(row.contains("goals"));
+        assert!(
+            !row.contains("(Scoring)"),
+            "narrow row must drop category — got {row:?}"
+        );
+    }
+
+    /// Width budget — wide (140) row never exceeds the panel width
+    /// (catalog max key + max label + category fits inside 100).
+    #[test]
+    fn l0_lindsay_format_sort_picker_row_wide_fits_under_100() {
+        use icelines_core::stats_catalog::StatId;
+        for sid in StatId::all() {
+            let row = format_sort_picker_row(*sid, 140);
+            assert!(
+                row.chars().count() < 100,
+                "row {row:?} exceeds 100 cells for {sid:?}"
+            );
+        }
+    }
+
+    /// Width budget — medium (90) row never exceeds 80 cells.
+    #[test]
+    fn l0_lindsay_format_sort_picker_row_medium_fits_under_80() {
+        use icelines_core::stats_catalog::StatId;
+        for sid in StatId::all() {
+            let row = format_sort_picker_row(*sid, 90);
+            assert!(
+                row.chars().count() < 80,
+                "medium row {row:?} exceeds 80 cells for {sid:?}"
+            );
+        }
+    }
+
+    /// Width budget — narrow (60) row never exceeds 60 cells.
+    #[test]
+    fn l0_lindsay_format_sort_picker_row_narrow_fits_under_60() {
+        use icelines_core::stats_catalog::StatId;
+        for sid in StatId::all() {
+            let row = format_sort_picker_row(*sid, 60);
+            assert!(
+                row.chars().count() <= 60,
+                "narrow row {row:?} exceeds 60 cells for {sid:?}"
+            );
+        }
     }
 
     /// Determinism — declaration order preserved across runs.

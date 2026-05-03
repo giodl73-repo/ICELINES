@@ -9,15 +9,16 @@
 //! Spec: `design/specs/stat-catalog.md` v0.4 §"Public types" + §"Stat
 //! enumeration".
 //!
-//! **Stat count: 107**. Spec v0.4 §"Stat enumeration" prose totals 108
+//! **Stat count: 108**. Spec v0.4 §"Stat enumeration" prose totals 108
 //! with Goalie at 22; explicit enumeration shows Goalie at 23 (19 base
 //! + 4 GSAx) and double-lists `PpToiPerGame`/`ShToiPerGame` in both
 //! SpecialTeams AND TimeOnIce. The L.2 implementation rationalizes:
 //!   - Goalie 23 (follow the explicit list over the prose total),
 //!   - `PpToiPerGame`/`ShToiPerGame` in TimeOnIce only (natural domain
 //!     fit — TOI is deployment, not output).
-//! Net: 14 + 11 + 17 + 12 + 8 + 15 + 23 + 7 = 107 stats. HART/FORGE
-//! checkpoint pass-confirmed both calls.
+//! Net (post-L.4.1): 15 + 11 + 17 + 12 + 8 + 15 + 23 + 7 = 108 stats.
+//! L.2.1 rationalized to 107; L.4.1 added `Games` (skater GP) to
+//! Scoring → 108. HART/FORGE checkpoint pass-confirmed all calls.
 
 use serde::{Deserialize, Serialize};
 
@@ -111,7 +112,7 @@ pub enum StatUnit {
     Inverted,
 }
 
-// ─── L.2.1 — StatId enum (107 variants) ─────────────────────────────────────
+// ─── L.2.1 + L.4.1 — StatId enum (108 variants) ─────────────────────────────
 
 /// Every selectable stat in the IceLines catalog.
 ///
@@ -124,14 +125,18 @@ pub enum StatUnit {
 /// order, and the cross-product fixture in `stat_catalog_variants.rs`
 /// iterates in this order. UI surfaces never reshuffle.
 ///
-/// 107 variants total: Scoring 14 + SpecialTeams 11 + TwoWay 17 +
+/// 108 variants total: Scoring 15 + SpecialTeams 11 + TwoWay 17 +
 /// TimeOnIce 12 + OnIceGoals 8 + Possession 15 + Goalie 23 + Derived 7.
-/// (See L.2.1 doc-comment on the module about the +/-2 spec drift —
-/// PpToiPerGame/ShToiPerGame consolidated into TimeOnIce, Goalie
-/// follows the explicit enumeration.)
+/// L.2.1 had 107; L.4.1 added `Games` (skater GP — KEEL carry-forward
+/// closing the `--filter "games>=70"` catalog gap).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum StatId {
-    // ─── Scoring (14) ───────────────────────────────────────────────────
+    // ─── Scoring (15) ───────────────────────────────────────────────────
+    /// Games played — `view.stats.totals.gp`. Phase Lindsay L.4.1
+    /// adds this to close the catalog gap KEEL caught in L.3 (the
+    /// `--filter "gp>=70"` request errored as UnknownStat). cli_key
+    /// is `games` to disambiguate from the goalie-only `goalie-games`.
+    Games,
     Goals, Assists, Points,
     EvGoals, EvPoints,
     PpGoals, PpAssists, PpPoints,
@@ -204,7 +209,8 @@ impl StatId {
         use StatId::*;
         match self {
             // Scoring
-            Goals | Assists | Points
+            Games
+            | Goals | Assists | Points
             | EvGoals | EvPoints
             | PpGoals | PpAssists | PpPoints
             | ShGoals | ShPoints
@@ -271,7 +277,8 @@ impl StatId {
         use StatUnit::*;
         match self {
             // Counts
-            Goals | Assists | Points
+            Games
+            | Goals | Assists | Points
             | EvGoals | EvPoints
             | PpGoals | PpAssists | PpPoints
             | ShGoals | ShPoints
@@ -354,8 +361,9 @@ impl StatId {
             | DefensiveZoneStartPct => false,
 
             // ─── Higher-is-better (true) — exhaustive list ──────────
-            // Scoring (14)
-            Goals | Assists | Points
+            // Scoring (15)
+            Games
+            | Goals | Assists | Points
             | EvGoals | EvPoints
             | PpGoals | PpAssists | PpPoints
             | ShGoals | ShPoints
@@ -413,6 +421,7 @@ impl StatId {
         use StatId::*;
         match self {
             // Scoring
+            Games => "Games Played",
             Goals => "Goals",
             Assists => "Assists",
             Points => "Points",
@@ -541,6 +550,7 @@ impl StatId {
     pub fn short_label(self) -> &'static str {
         use StatId::*;
         match self {
+            Games => "GP",
             Goals => "G", Assists => "A", Points => "P",
             EvGoals => "EV G", EvPoints => "EV P",
             PpGoals => "PPG", PpAssists => "PPA", PpPoints => "PPP",
@@ -640,6 +650,7 @@ impl StatId {
     pub fn cli_key(self) -> &'static str {
         use StatId::*;
         match self {
+            Games => "games",
             Goals => "goals", Assists => "assists", Points => "points",
             EvGoals => "ev-goals", EvPoints => "ev-points",
             PpGoals => "pp-goals", PpAssists => "pp-assists",
@@ -740,6 +751,7 @@ impl StatId {
         use StatId::*;
         &[
             // Scoring
+            Games,
             Goals, Assists, Points,
             EvGoals, EvPoints,
             PpGoals, PpAssists, PpPoints,
@@ -794,7 +806,7 @@ impl StatId {
     /// Parse a `cli_key()` string back to a `StatId`. `None` for
     /// unknown keys — the CLI front-end maps `None` to
     /// `FilterParseError::UnknownStat` (L.2.4 grammar). Zero-alloc;
-    /// linear over `all()` (107 elements is fine for a one-shot parse).
+    /// linear over `all()` (108 elements is fine for a one-shot parse).
     pub fn from_cli_key(s: &str) -> Option<StatId> {
         Self::all().iter().copied().find(|sid| sid.cli_key() == s)
     }
@@ -827,6 +839,47 @@ impl StatId {
     /// possession + xG family. Per L2-F4 (SCOUT-R2): use `20052006`
     /// for realtime — the data exists 1997+ but is unreliable until
     /// the lockout era.
+    /// Phase Lindsay L.4.1 — curated default columns for the career
+    /// table on the player card. Returns true for the per-position
+    /// "must-have" stats that show by default; users cycle through
+    /// preset templates via `[`/`]` to see other categories.
+    ///
+    /// Per-position defaults (matching hockey-reference convention):
+    /// - **Skater (C/LW/RW/D)**: GP G A P +/- PIM PPG PPP Shots S%
+    ///   TOI Hits Blk (13 columns).
+    /// - **Center additionally**: FaceoffWinPct (14 columns).
+    /// - **Goalie**: GP GS W L OTL Sv% GAA SO QS RW (10 columns).
+    ///
+    /// Identity / non-selectable stats always return false.
+    pub fn default_in_career_table(self, pos: Position) -> bool {
+        use Position::*;
+        use StatId::*;
+        // Common skater defaults (excludes Center-specific FaceoffWinPct).
+        let skater_common = matches!(
+            self,
+            Games | Goals | Assists | Points
+            | PlusMinus | Pim
+            | PpGoals | PpPoints
+            | Shots | ShootingPct
+            | TotalToiPerGame
+            | Hits | BlockedShots
+        );
+        // Goalie defaults.
+        let goalie_default = matches!(
+            self,
+            GoalieGames | GoalieStarts
+            | Wins | Losses | OtLosses
+            | SavePct | Gaa
+            | Shutouts
+            | QualityStarts | RegulationWins
+        );
+        match pos {
+            Goalie => goalie_default,
+            Center => skater_common || self == FaceoffWinPct,
+            LeftWing | RightWing | Defense => skater_common,
+        }
+    }
+
     pub fn available_since(self) -> Season {
         use StatId::*;
         match self {
@@ -898,7 +951,8 @@ impl StatId {
         let stats = view.stats;
 
         match self {
-            // ─── Scoring (14) ───────────────────────────────────────
+            // ─── Scoring (15) ───────────────────────────────────────
+            Games       => Some(stats.totals.gp as f64),
             Goals       => Some(stats.totals.goals as f64),
             Assists     => Some(stats.totals.assists as f64),
             Points      => Some(stats.totals.points as f64),
@@ -1794,35 +1848,37 @@ mod tests {
 
     // ─── L.2.1 — StatId / StatCategory / StatUnit tests ─────────────────────
 
-    /// Pin total stat count. v0.4 spec §"Stat enumeration" prose totals
-    /// to 108; the L.2.1 implementation rationalizes two spec drifts:
-    ///   - Goalie was listed as 22 but enumerated 23 (19 base + 4 GSAx)
-    ///     → we go with 23 (the explicit list).
-    ///   - `PpToiPerGame` / `ShToiPerGame` were double-listed in both
-    ///     SpecialTeams AND TimeOnIce. We keep them only in TimeOnIce
-    ///     (natural domain fit) → SpecialTeams 13 → 11.
-    /// Net: 14 + 11 + 17 + 12 + 8 + 15 + 23 + 7 = 107. Drift recorded
-    /// for the HART/FORGE checkpoint to weigh in on whether to push
-    /// the spec or rebalance the catalog.
+    /// Pin total stat count. L.2.1 rationalized to 107; L.4.1 added
+    /// `Games` (skater GP — KEEL carry-forward) → 108. Per-category
+    /// breakdown:
+    ///   Scoring 15 (was 14, +Games)
+    ///   SpecialTeams 11
+    ///   TwoWay 17
+    ///   TimeOnIce 12
+    ///   OnIceGoals 8
+    ///   Possession 15
+    ///   Goalie 23
+    ///   Derived 7
+    /// Total: 108.
     #[test]
     fn l0_lindsay_stat_id_total_count() {
         assert_eq!(
             StatId::all().len(),
-            107,
-            "catalog total — drift from 107 means a variant added/removed \
+            108,
+            "catalog total — drift from 108 means a variant added/removed \
              without updating StatId::all() OR a category test below"
         );
     }
 
     /// Per-category counts.
-    /// 14 + 11 + 17 + 12 + 8 + 15 + 23 + 7 = 107.
+    /// 15 + 11 + 17 + 12 + 8 + 15 + 23 + 7 = 108.
     #[test]
     fn l0_lindsay_stat_id_per_category_counts() {
         let count_in = |c: StatCategory| -> usize {
             StatId::all().iter().filter(|s| s.category() == c).count()
         };
         assert_eq!(count_in(StatCategory::Identity),     0,  "Identity");
-        assert_eq!(count_in(StatCategory::Scoring),      14, "Scoring");
+        assert_eq!(count_in(StatCategory::Scoring),      15, "Scoring (L.4.1 +Games)");
         assert_eq!(count_in(StatCategory::SpecialTeams), 11, "SpecialTeams (PpToiPerGame/ShToiPerGame relocated to TimeOnIce)");
         assert_eq!(count_in(StatCategory::TwoWay),       17, "TwoWay");
         assert_eq!(count_in(StatCategory::TimeOnIce),    12, "TimeOnIce");
@@ -1840,10 +1896,12 @@ mod tests {
         let first_run: Vec<StatId> = StatId::all().to_vec();
         let second_run: Vec<StatId> = StatId::all().to_vec();
         assert_eq!(first_run, second_run);
-        // First three should always be the Scoring leaders.
-        assert_eq!(first_run[0], StatId::Goals);
-        assert_eq!(first_run[1], StatId::Assists);
-        assert_eq!(first_run[2], StatId::Points);
+        // First four should always be the Scoring leaders (post-L.4.1
+        // Games is first; Goals/Assists/Points follow).
+        assert_eq!(first_run[0], StatId::Games);
+        assert_eq!(first_run[1], StatId::Goals);
+        assert_eq!(first_run[2], StatId::Assists);
+        assert_eq!(first_run[3], StatId::Points);
     }
 
     /// Every variant has a unique `cli_key()`. Collisions would silently
@@ -1861,8 +1919,8 @@ mod tests {
                  --sort routing for one of the colliding StatIds"
             );
         }
-        // Sanity: 107 unique keys.
-        assert_eq!(seen.len(), 107);
+        // Sanity: 108 unique keys (L.4.1 +Games).
+        assert_eq!(seen.len(), 108);
     }
 
     /// `from_cli_key` round-trip: every variant's `cli_key()` parses
@@ -2293,6 +2351,119 @@ mod tests {
     #[test]
     fn l0_lindsay_aggregate_read_empty_returns_none() {
         assert_eq!(StatId::Goals.aggregate_read(&[]), None);
+    }
+
+    // ─── L.4.1 — Games StatId + default_in_career_table tests ────────────
+
+    /// `Games` parses from cli_key `"games"`. Closes the L.3 catalog
+    /// gap KEEL flagged: `--filter "games>=70"` previously errored as
+    /// UnknownStat; post-L.4.1 it routes to `StatId::Games`.
+    #[test]
+    fn l0_lindsay_games_stat_id_from_cli_key() {
+        assert_eq!(StatId::from_cli_key("games"), Some(StatId::Games));
+    }
+
+    /// `Games::read(view)` returns `view.stats.totals.gp` as f64.
+    #[test]
+    fn l0_lindsay_games_stat_id_reads_gp_from_totals() {
+        let stats = build_stats_with_totals(8478402, 20242025, StatTotals {
+            gp: 70, goals: 30, assists: 50, points: 80,
+            ..Default::default()
+        });
+        let (identity, stats) = synthetic_skater_view(stats);
+        let view = PlayerView { identity: &identity, stats: &stats, contract: None };
+        assert_eq!(StatId::Games.read(&view), Some(70.0));
+    }
+
+    /// `Games` is in the Scoring category; iteration order places it
+    /// before Goals (declaration-first).
+    #[test]
+    fn l0_lindsay_games_in_scoring_category() {
+        assert_eq!(StatId::Games.category(), StatCategory::Scoring);
+        let pos_games = StatId::all().iter().position(|&s| s == StatId::Games).unwrap();
+        let pos_goals = StatId::all().iter().position(|&s| s == StatId::Goals).unwrap();
+        assert!(pos_games < pos_goals,
+            "Games should iterate before Goals (declaration order)");
+    }
+
+    /// `default_in_career_table` for skaters: the 13 expected default
+    /// stats return true; non-default stats return false.
+    #[test]
+    fn l0_lindsay_default_in_career_table_skater_defaults() {
+        use crate::model::Position::*;
+        // McDavid-style (Center) — 13 common + 1 center extra (FaceoffWinPct) = 14.
+        let center_defaults: Vec<StatId> = StatId::all()
+            .iter()
+            .copied()
+            .filter(|s| s.default_in_career_table(Center))
+            .collect();
+        assert_eq!(center_defaults.len(), 14, "Center default = 14 (skater 13 + FOWinPct)");
+        assert!(center_defaults.contains(&StatId::Games));
+        assert!(center_defaults.contains(&StatId::Goals));
+        assert!(center_defaults.contains(&StatId::FaceoffWinPct));
+        // Non-default stat for Center.
+        assert!(!StatId::PpAssistsPer60.default_in_career_table(Center));
+        assert!(!StatId::SatPct.default_in_career_table(Center));
+    }
+
+    /// LeftWing/RightWing/Defense get the same 13 skater defaults
+    /// (no FaceoffWinPct).
+    #[test]
+    fn l0_lindsay_default_in_career_table_wingers_no_faceoff() {
+        use crate::model::Position::*;
+        let lw_defaults: Vec<StatId> = StatId::all()
+            .iter()
+            .copied()
+            .filter(|s| s.default_in_career_table(LeftWing))
+            .collect();
+        assert_eq!(lw_defaults.len(), 13, "LW default = 13 skater common");
+        assert!(!lw_defaults.contains(&StatId::FaceoffWinPct),
+            "FaceoffWinPct is Center-only");
+
+        let d_defaults: Vec<StatId> = StatId::all()
+            .iter()
+            .copied()
+            .filter(|s| s.default_in_career_table(Defense))
+            .collect();
+        assert_eq!(d_defaults.len(), 13);
+    }
+
+    /// Goalie gets 10 goalie-specific default columns.
+    #[test]
+    fn l0_lindsay_default_in_career_table_goalie() {
+        use crate::model::Position::*;
+        let goalie_defaults: Vec<StatId> = StatId::all()
+            .iter()
+            .copied()
+            .filter(|s| s.default_in_career_table(Goalie))
+            .collect();
+        assert_eq!(goalie_defaults.len(), 10, "Goalie default = 10");
+        assert!(goalie_defaults.contains(&StatId::SavePct));
+        assert!(goalie_defaults.contains(&StatId::Gaa));
+        assert!(goalie_defaults.contains(&StatId::QualityStarts));
+        // Skater stats are NOT in goalie defaults.
+        assert!(!goalie_defaults.contains(&StatId::Games));
+        assert!(!goalie_defaults.contains(&StatId::Goals));
+    }
+
+    /// Identity / non-selectable stats never appear in any career-table default.
+    #[test]
+    fn l0_lindsay_default_in_career_table_identity_excluded() {
+        use crate::model::Position::*;
+        // Pick a few clearly-non-default stats.
+        let non_defaults = [
+            StatId::PpGoalsAgainstPer60,
+            StatId::OnIceXgFor,
+            StatId::PaceSortKey,
+        ];
+        for s in non_defaults {
+            for pos in [Center, LeftWing, RightWing, Defense, Goalie] {
+                assert!(
+                    !s.default_in_career_table(pos),
+                    "{s:?} should not be a default for {pos:?}"
+                );
+            }
+        }
     }
 
     // ─── L.2.4 — FilterParseError + parse_filter tests ─────────────────────

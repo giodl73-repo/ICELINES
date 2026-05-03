@@ -1944,10 +1944,11 @@ mod app_snapshot_tests {
             text.contains("Search:"),
             "picker search prompt must render; got:\n{text}"
         );
-        // Default empty query → all 107 stats listed (count line).
+        // Default empty query → all 108 stats listed (count line).
+        // L.4.1 added Games (skater GP) → 107 → 108.
         assert!(
-            text.contains("107"),
-            "picker should show '107' in match count for empty query; got:\n{text}"
+            text.contains("108"),
+            "picker should show '108' in match count for empty query; got:\n{text}"
         );
     }
 
@@ -2017,15 +2018,16 @@ mod app_snapshot_tests {
         app.handle(Action::Tab);
 
         app.handle(Action::Char('/'));
-        // Empty search → first result is StatId::Goals (declaration order).
+        // Empty search → first result is StatId::Games (post-L.4.1
+        // declaration order; was Goals pre-L.4.1).
         app.handle(Action::Enter);
 
         assert_eq!(app.query_mode, crate::tui::app::QueryMode::Build,
             "Enter should exit picker back to Build mode");
         assert_eq!(
             app.sort_stat_pick,
-            Some(icelines_core::stats_catalog::StatId::Goals),
-            "first-result accept should set sort_stat_pick = Goals"
+            Some(icelines_core::stats_catalog::StatId::Games),
+            "first-result accept should set sort_stat_pick = Games (declaration order, L.4.1)"
         );
     }
 
@@ -2041,12 +2043,12 @@ mod app_snapshot_tests {
         app.handle(Action::Tab);
         app.handle(Action::Tab);
 
-        // Open picker, accept first result (Goals).
+        // Open picker, accept first result (Games — L.4.1 declaration order).
         app.handle(Action::Char('/'));
         app.handle(Action::Enter);
         assert_eq!(
             app.sort_stat_pick,
-            Some(icelines_core::stats_catalog::StatId::Goals),
+            Some(icelines_core::stats_catalog::StatId::Games),
             "picker should set sort_stat_pick"
         );
         assert_eq!(app.query_mode, crate::tui::app::QueryMode::Build);
@@ -2109,6 +2111,80 @@ mod app_snapshot_tests {
         // Up at 0 saturates.
         app.handle(Action::Up);
         assert_eq!(app.sort_picker_idx, 0);
+    }
+
+    // ─── Phase Lindsay L.4.4 — career-table bracket cycle ───────────────
+
+    /// `]` on the player card cycles career-table preset forward.
+    /// Default → Scoring → TwoWay → ... → All → wraps to Default.
+    #[test]
+    fn l1_lindsay_career_table_right_bracket_cycles_forward() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        // Navigate to a player card via PlayerById. Pick the first
+        // skater from the bundled views.
+        let pid = app
+            .views()
+            .iter()
+            .next()
+            .map(|v| v.identity.id)
+            .expect("bundled views must have at least one player");
+        app.screen = crate::tui::app::Screen::PlayerById(pid);
+
+        use crate::tui::screens::player::CareerTablePreset;
+        assert_eq!(app.career_table_preset, CareerTablePreset::Default);
+
+        app.handle(Action::Char(']'));
+        assert_eq!(app.career_table_preset, CareerTablePreset::Scoring);
+        app.handle(Action::Char(']'));
+        assert_eq!(app.career_table_preset, CareerTablePreset::TwoWay);
+
+        // Cycle forward through remaining; verify wrap.
+        for _ in 0..5 {
+            app.handle(Action::Char(']'));
+        }
+        // Started at TwoWay (index 2); +5 → index 7 % 7 = 0 → Default.
+        assert_eq!(app.career_table_preset, CareerTablePreset::Default,
+            "forward cycle wraps All → Default");
+    }
+
+    /// `[` on the player card cycles career-table preset BACKWARD.
+    /// Default → wraps to All → Goalie → ... → back.
+    #[test]
+    fn l1_lindsay_career_table_left_bracket_cycles_backward() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+        let pid = app.views().iter().next().map(|v| v.identity.id).unwrap();
+        app.screen = crate::tui::app::Screen::PlayerById(pid);
+
+        use crate::tui::screens::player::CareerTablePreset;
+        assert_eq!(app.career_table_preset, CareerTablePreset::Default);
+
+        app.handle(Action::Char('['));
+        // Default.prev() = All (wraps).
+        assert_eq!(app.career_table_preset, CareerTablePreset::All);
+
+        app.handle(Action::Char('['));
+        assert_eq!(app.career_table_preset, CareerTablePreset::Goalie);
+    }
+
+    /// Status line surfaces the current preset name after cycle.
+    #[test]
+    fn l1_lindsay_career_table_cycle_updates_status_line() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+        let pid = app.views().iter().next().map(|v| v.identity.id).unwrap();
+        app.screen = crate::tui::app::Screen::PlayerById(pid);
+
+        app.handle(Action::Char(']'));
+        assert!(app.status.contains("Scoring"),
+            "status should mention 'Scoring' after `]`; got: {}", app.status);
+        assert!(app.status.contains("[/]"),
+            "status should remind users of the bracket keys; got: {}", app.status);
     }
 
     /// `Action::Refresh` (`r` key) resets both `query_fields` AND
