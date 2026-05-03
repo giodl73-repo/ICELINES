@@ -602,7 +602,49 @@ This is v0.4. Status:
 6. ~~L.1 implementation~~ — **shipped 2026-05-02**. 45 new Lindsay-prefixed tests; 1119 workspace tests passing. See "L.1 ship summary" below.
 7. ~~L.2 implementation~~ — **shipped 2026-05-02**. 65 new Lindsay-L.2 tests; 1184 workspace tests passing. See "L.2 ship summary" below.
 8. ~~L.3 implementation~~ — **shipped 2026-05-02**. 31 new Lindsay-L.3 tests; 1215 workspace tests passing. See "L.3 ship summary" below.
-9. **L.4 next** — Career table on player card with selectable columns + `[`/`]` keys + 80-col degradation.
+9. ~~L.4 implementation~~ — **shipped 2026-05-02**. 36 new Lindsay-L.4 tests; 1251 workspace tests passing. See "L.4 ship summary" below.
+10. **L.5 next** — Propagate StatId catalog to Leaders / Comps / Depth / Export / Fantasy / axum HTTP server. Five-named-scheme legacy fixture + DI-25 frozen-golden + post-L.5 stdout-golden second-fence reassertion.
+
+---
+
+## L.4 ship summary (2026-05-02)
+
+L.4 implementation complete with 5 sub-phases + 1 role-review checkpoint, all green:
+
+| Sub-phase | Deliverables | Tests added |
+|---|---|---|
+| **L.4.1** | `StatId::Games` (skater GP — fills KEEL L.3 carry-forward gap) brings catalog from 107 → 108. `StatId::default_in_career_table(pos)` per-position default-column membership predicate. Initial: 13 skater-common (incl. Games) + FaceoffWinPct on Center → 14 default for Center, 13 for LW/RW/D; 10 for Goalie. (SCOUT-L.4 review later expanded to Gwg + Saves + ShotsAgainst, dropped RegulationWins → final 14 skater-common, 15 Center, 14 LW/RW/D, 11 Goalie.) | 4 L0 |
+| **L.4.2** | `CareerTablePreset` enum (7 presets: Default / Scoring / TwoWay / SpecialTeams / Time / Goalie / All) with `next()` / `prev()` cycling and `columns(pos)` returning a position-applicable, declaration-order, `applies_to`-filtered Vec<StatId>. Goalies hide skater stats (and vice versa); FaceoffWinPct gates to Center in `Default`. | 8 L0 |
+| **L.4.3** | `render_career_cell(sid, view)` per-StatUnit formatting (Count→i64, Seconds→M:SS or `Nm`, Pct→`12.5`, Per60/Rate/Inverted→2dp, None→"—"). `render_stats_view` rewrite: career table reads `app.repo.career_regular(pid)`, sorts newest-first, renders one row per season with header + separator + bio + transactions sections. `app.career_table_preset` field on `App`. | 4 L0 |
+| **L.4.4** | `[` / `]` Char handlers under `Screen::PlayerById(pid)` cycle the preset; status-line shows `"Career preset: {label}  ·  [/]: cycle  ·  c: comps"`. | 3 L1 |
+| **L.4.5** | `fit_career_columns(all_columns, panel_w) -> (Vec<StatId>, dropped, use_narrow)` helper drops cols from right at <100 cells (8 cells/col + 11 fixed) and falls back to `narrow_label()` at <60 cells. `format_sort_picker_row(sid, panel_w)` 3-tier degradation (≥100 wide / 80–100 medium drops `(category)` / <80 narrow truncates cli_key + uses short_label). Resolves GLASS #7 carry-forward from L.3 closeout. | 5 L0 + 7 L0 |
+
+**Role-review checkpoint (PASS with applied fixes):**
+- GLASS + SCOUT on career table — 10 GLASS findings + 8 SCOUT findings. Pre-commit fixes landed:
+  - SCOUT-1 BLOCKER: added `Gwg` to skater default (canonical career-glance counter)
+  - SCOUT-2 BLOCKER: dropped `RegulationWins` from goalie default; added `Saves` + `ShotsAgainst` (volume context for SV%/GAA)
+  - GLASS-1 NIT: clip header labels to 7 cells in `render_stats_view` (some short_labels exceed 7 chars and broke alignment)
+
+**Carry-forwards parked for L.5+:**
+- GLASS-2 fixed-overhead 11 vs 9 cells (slack tolerated)
+- GLASS-3 narrow_label() coverage <60 cols (only 9/108 overridden — rename or expand)
+- GLASS-4 empty-preset feedback ambiguity (preset-empty vs panel-narrow)
+- GLASS-5 [/] affordance not in title bar (only in status line after first press)
+- GLASS-6 picker truncation reversibility — show full key on selected row
+- GLASS-7 picker `&key[..23]` byte-slice UTF-8 hardening
+- GLASS-8 separator-length math redundant after fit_career_columns
+- GLASS-9 narrow indicator format ("-3" reads negative)
+- GLASS-10 TestBackend snapshot integration test for `render_stats_view` + `render_sort_picker`
+- SCOUT-3 add `PointsPerGame` to skater default (cross-season legibility)
+- SCOUT-4 gate `FaceoffWinPct` to Center in TwoWay/SpecialTeams presets
+- SCOUT-5 era-blind realtime defaults (accept "—" for pre-2005 careers)
+- SCOUT-6 "All" preset rename to "All (debug)" or hide from cycle
+- SCOUT-8 D-specific default (add `EvGoalsForPct`)
+
+**Test totals:**
+- Pre-L.4: 1215 workspace tests
+- Post-L.4: **1251 workspace tests** (+36 — 4 L.4.1 + 8 L.4.2 + 4 L.4.3 + 3 L.4.4 + 12 L.4.5 + 5 SCOUT-checkpoint adjustments)
+- All passing; no regressions.
 
 ---
 
