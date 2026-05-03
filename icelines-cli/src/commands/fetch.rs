@@ -116,22 +116,15 @@ async fn do_report(
         ));
     }
 
-    // (2) Tier-1 only at L.1.6. Tier-2 is L.6 work.
-    if !matches!(kind.tier(), Tier::Tier1) {
-        return Err(anyhow!(
-            "Tier-2 fetch is deferred to Phase Lindsay L.6 \
-             (runtime `extra_reports` cache). Kind: {:?}",
-            kind,
-        ));
-    }
-
-    // Find the Tier-1 file dispatch row. The TIER1_REPORTS table is
-    // exhaustive over Tier-1 kinds (see L.1.2 test
-    // `l0_lindsay_tier1_reports_table_is_exhaustive`).
-    let file = TIER1_REPORTS
-        .iter()
-        .find(|r| r.kind == kind)
-        .ok_or_else(|| anyhow!("BUG: TIER1_REPORTS missing entry for {:?}", kind))?;
+    // (2) Phase Lindsay L.6 — Tier-1 uses the explicit TIER1_REPORTS
+    // dispatch table for filename. Tier-2 derives filename from
+    // `kind.url_path()` since Tier-2 has no typed deserializer (per
+    // DI-27 / runtime-only `extra_reports` cache). The fetch flow is
+    // otherwise identical: same fs lock, same fetch_report_paged,
+    // same envelope shape, same atomic write. The deserialization
+    // boundary is the only Tier-1/Tier-2 split — handled at load
+    // time, not fetch time.
+    let filename: String = report_filename(kind)?;
 
     let url_preview = format!(
         "https://api.nhle.com/stats/rest/en/{}?cayenneExp=seasonId={season} and gameTypeId={}",
@@ -150,7 +143,7 @@ async fn do_report(
             .snapshot_dir()
             .join(season)
             .join(st.label())
-            .join(file.filename);
+            .join(&filename);
         println!("[dry-run] would write: {}", target.display());
         return Ok(());
     }
@@ -195,7 +188,7 @@ async fn do_report(
         .snapshot_dir()
         .join(season)
         .join(st.label())
-        .join(file.filename);
+        .join(&filename);
     if let Some(parent) = target.parent() {
         std::fs::create_dir_all(parent)
             .with_context(|| format!("creating dir {}", parent.display()))?;
@@ -817,4 +810,74 @@ async fn do_transactions(season: &str, dry_run: bool) -> anyhow::Result<()> {
 
     println!("Snapshot '{snap}' sealed and set as active. Raw rows: {raw_count}.");
     Ok(())
+}
+
+/// Phase Lindsay L.6 — derive the per-window filename for a report.
+///
+/// Tier-1 reads from the explicit `TIER1_REPORTS` dispatch table
+/// (filename pinned alongside the typed deserializer). Tier-2 has no
+/// typed deserializer (per DI-27 / runtime-only `extra_reports` cache),
+/// so we derive the filename from `kind.url_path()` by replacing `/`
+/// with `-` and appending `.json`. Examples:
+///   skater/summaryshooting          → skater-summaryshooting.json
+///   skater/scoringRates             → skater-scoringRates.json
+///   goalie/startedVsRelieved        → goalie-startedVsRelieved.json
+fn report_filename(kind: ReportKind) -> anyhow::Result<String> {
+    match kind.tier() {
+        Tier::Tier1 => Ok(TIER1_REPORTS
+            .iter()
+            .find(|r| r.kind == kind)
+            .ok_or_else(|| anyhow!("BUG: TIER1_REPORTS missing entry for {:?}", kind))?
+            .filename
+            .to_owned()),
+        Tier::Tier2 => Ok(format!("{}.json", kind.url_path().replace('/', "-"))),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Tier-1 filename comes from the dispatch table verbatim.
+    #[test]
+    fn l0_lindsay_l6_report_filename_tier1_uses_dispatch_table() {
+        let f = report_filename(ReportKind::SkaterSummary).unwrap();
+        assert_eq!(f, "summary.json");
+        let f = report_filename(ReportKind::SkaterTimeOnIce).unwrap();
+        assert_eq!(f, "timeonice.json");
+        let f = report_filename(ReportKind::GoalieSavesByStrength).unwrap();
+        assert_eq!(f, "goalie-savesByStrength.json");
+    }
+
+    /// Tier-2 filename is derived from `kind.url_path()` with `/` → `-`.
+    /// Pin a few representative variants so a future url_path rename
+    /// surfaces the cache-key drift loudly.
+    #[test]
+    fn l0_lindsay_l6_report_filename_tier2_derived_from_url_path() {
+        let f = report_filename(ReportKind::SkaterSummaryShooting).unwrap();
+        assert_eq!(f, "skater-summaryshooting.json");
+        let f = report_filename(ReportKind::SkaterPuckPossessions).unwrap();
+        assert_eq!(f, "skater-puckPossessions.json");
+        let f = report_filename(ReportKind::GoalieStartedVsRelieved).unwrap();
+        assert_eq!(f, "goalie-startedVsRelieved.json");
+    }
+
+    /// Every ReportKind variant produces a non-empty filename ending
+    /// in `.json` — total over the 23-endpoint catalog.
+    #[test]
+    fn l0_lindsay_l6_report_filename_total_over_all_kinds() {
+        for kind in ReportKind::all() {
+            // Skip known-broken endpoints (none today, but this gate
+            // exists for future).
+            if !kind.is_known_working() {
+                continue;
+            }
+            let f = report_filename(*kind)
+                .unwrap_or_else(|e| panic!("{kind:?} failed: {e}"));
+            assert!(f.ends_with(".json"),
+                "{kind:?} filename `{f}` must end with `.json`");
+            assert!(!f.contains('/'),
+                "{kind:?} filename `{f}` must have `/` replaced");
+        }
+    }
 }
