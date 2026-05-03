@@ -1699,6 +1699,54 @@ mod tests {
         }
     }
 
+    /// WIRE-6 (L.5 review carry-forward made-active) — collision pin.
+    ///
+    /// Every `StatId::cli_key()` either routes to `Catalog(_)` or
+    /// appears in this explicit allow-list of intentional legacy
+    /// shadows. New collisions trip CI loudly so a contributor must
+    /// either pick a non-conflicting cli_key or update the allow-list
+    /// and acknowledge the legacy-first routing.
+    #[test]
+    fn l0_lindsay_l5_no_unsanctioned_legacy_shadows_catalog_keys() {
+        // The seven currently-shadowed keys (post-L.5.1). If you're
+        // adding a new StatId whose cli_key collides with a legacy
+        // SortMetric alias and you want legacy-first to keep winning,
+        // add the cli_key here. Otherwise pick a different cli_key.
+        // Every cli_key that the legacy SortMetric::parse map matches.
+        // Includes both unique aliases (e.g. "ppg" has no catalog key
+        // by that exact spelling but still routes via legacy) AND any
+        // cli_key that happens to equal a legacy alias spelling.
+        const ALLOWED_SHADOWS: &[&str] = &[
+            "goals", "assists", "points", "gp", "gwg", "pim", "shots",
+            "plus-minus", "hits", "blocks", "takeaways", "giveaways",
+            "toi", "xg",
+        ];
+
+        for sid in StatId::all() {
+            let key = sid.cli_key();
+            let parsed = SortDispatch::parse(key)
+                .expect("every cli_key must parse");
+            match parsed {
+                SortDispatch::Catalog(s) => {
+                    assert_eq!(
+                        s, *sid,
+                        "round-trip drift: {key} parsed to a different StatId"
+                    );
+                }
+                SortDispatch::Legacy(_) => {
+                    assert!(
+                        ALLOWED_SHADOWS.contains(&key),
+                        "WIRE-6: cli_key `{key}` ({sid:?}) is shadowed by a \
+                         legacy SortMetric alias but isn't in ALLOWED_SHADOWS. \
+                         Either pick a non-conflicting cli_key or add `{key}` \
+                         to ALLOWED_SHADOWS to acknowledge the legacy-first \
+                         routing."
+                    );
+                }
+            }
+        }
+    }
+
     /// Catalog-only cli_keys (no legacy alias) route through Catalog.
     #[test]
     fn l0_lindsay_l5_sort_dispatch_catalog_fallback() {

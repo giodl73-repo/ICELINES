@@ -1,0 +1,7 @@
+# Phase Lindsay L.5.5 — frozen-golden fixtures must remain LF-encoded
+# regardless of platform autocrlf settings. Otherwise the byte-equality
+# assertion in `legacy_schemes_test.rs` fails on Windows clean checkouts.
+icelines-fetch/tests/fixtures/legacy_schemes/*.toml text eol=lf
+
+# Phase Lindsay L.3.0 — pre-L.3 stdout-golden fixtures (same reason).
+icelines-cli/tests/fixtures/lindsay_l3_pre/*.txt text eol=lf
