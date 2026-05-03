@@ -845,33 +845,36 @@ impl StatId {
     /// preset templates via `[`/`]` to see other categories.
     ///
     /// Per-position defaults (matching hockey-reference convention):
-    /// - **Skater (C/LW/RW/D)**: GP G A P +/- PIM PPG PPP Shots S%
-    ///   TOI Hits Blk (13 columns).
-    /// - **Center additionally**: FaceoffWinPct (14 columns).
-    /// - **Goalie**: GP GS W L OTL Sv% GAA SO QS RW (10 columns).
+    /// - **Skater (C/LW/RW/D)**: GP G A P GWG +/- PIM PPG PPP Shots S%
+    ///   TOI Hits Blk (14 columns).
+    /// - **Center additionally**: FaceoffWinPct (15 columns).
+    /// - **Goalie**: GP GS W L OTL Sv SA Sv% GAA SO QS (11 columns).
     ///
     /// Identity / non-selectable stats always return false.
     pub fn default_in_career_table(self, pos: Position) -> bool {
         use Position::*;
         use StatId::*;
         // Common skater defaults (excludes Center-specific FaceoffWinPct).
+        // SCOUT L.4 review: added Gwg (canonical career-glance counter).
         let skater_common = matches!(
             self,
-            Games | Goals | Assists | Points
+            Games | Goals | Assists | Points | Gwg
             | PlusMinus | Pim
             | PpGoals | PpPoints
             | Shots | ShootingPct
             | TotalToiPerGame
             | Hits | BlockedShots
         );
-        // Goalie defaults.
+        // Goalie defaults. SCOUT L.4 review: dropped RegulationWins
+        // (non-canonical, fantasy-derived), added Saves + ShotsAgainst
+        // (volume context required to interpret SV%/GAA).
         let goalie_default = matches!(
             self,
             GoalieGames | GoalieStarts
             | Wins | Losses | OtLosses
+            | Saves | ShotsAgainst
             | SavePct | Gaa
-            | Shutouts
-            | QualityStarts | RegulationWins
+            | Shutouts | QualityStarts
         );
         match pos {
             Goalie => goalie_default,
@@ -2386,27 +2389,29 @@ mod tests {
             "Games should iterate before Goals (declaration order)");
     }
 
-    /// `default_in_career_table` for skaters: the 13 expected default
+    /// `default_in_career_table` for skaters: the 14 expected default
     /// stats return true; non-default stats return false.
+    /// (Post-SCOUT L.4: Gwg added → 14 common + FaceoffWinPct = 15 for C.)
     #[test]
     fn l0_lindsay_default_in_career_table_skater_defaults() {
         use crate::model::Position::*;
-        // McDavid-style (Center) — 13 common + 1 center extra (FaceoffWinPct) = 14.
         let center_defaults: Vec<StatId> = StatId::all()
             .iter()
             .copied()
             .filter(|s| s.default_in_career_table(Center))
             .collect();
-        assert_eq!(center_defaults.len(), 14, "Center default = 14 (skater 13 + FOWinPct)");
+        assert_eq!(center_defaults.len(), 15, "Center default = 15 (skater 14 + FOWinPct)");
         assert!(center_defaults.contains(&StatId::Games));
         assert!(center_defaults.contains(&StatId::Goals));
+        assert!(center_defaults.contains(&StatId::Gwg),
+            "Gwg in skater default (SCOUT L.4)");
         assert!(center_defaults.contains(&StatId::FaceoffWinPct));
         // Non-default stat for Center.
         assert!(!StatId::PpAssistsPer60.default_in_career_table(Center));
         assert!(!StatId::SatPct.default_in_career_table(Center));
     }
 
-    /// LeftWing/RightWing/Defense get the same 13 skater defaults
+    /// LeftWing/RightWing/Defense get the same 14 skater defaults
     /// (no FaceoffWinPct).
     #[test]
     fn l0_lindsay_default_in_career_table_wingers_no_faceoff() {
@@ -2416,7 +2421,7 @@ mod tests {
             .copied()
             .filter(|s| s.default_in_career_table(LeftWing))
             .collect();
-        assert_eq!(lw_defaults.len(), 13, "LW default = 13 skater common");
+        assert_eq!(lw_defaults.len(), 14, "LW default = 14 skater common");
         assert!(!lw_defaults.contains(&StatId::FaceoffWinPct),
             "FaceoffWinPct is Center-only");
 
@@ -2425,10 +2430,11 @@ mod tests {
             .copied()
             .filter(|s| s.default_in_career_table(Defense))
             .collect();
-        assert_eq!(d_defaults.len(), 13);
+        assert_eq!(d_defaults.len(), 14);
     }
 
-    /// Goalie gets 10 goalie-specific default columns.
+    /// Goalie gets 11 goalie-specific default columns. (Post-SCOUT L.4:
+    /// dropped RegulationWins, added Saves + ShotsAgainst — net 10 → 11.)
     #[test]
     fn l0_lindsay_default_in_career_table_goalie() {
         use crate::model::Position::*;
@@ -2437,10 +2443,16 @@ mod tests {
             .copied()
             .filter(|s| s.default_in_career_table(Goalie))
             .collect();
-        assert_eq!(goalie_defaults.len(), 10, "Goalie default = 10");
+        assert_eq!(goalie_defaults.len(), 11, "Goalie default = 11");
         assert!(goalie_defaults.contains(&StatId::SavePct));
         assert!(goalie_defaults.contains(&StatId::Gaa));
         assert!(goalie_defaults.contains(&StatId::QualityStarts));
+        assert!(goalie_defaults.contains(&StatId::Saves),
+            "Saves added per SCOUT L.4 (volume context for SV%)");
+        assert!(goalie_defaults.contains(&StatId::ShotsAgainst),
+            "ShotsAgainst added per SCOUT L.4 (volume context for GAA)");
+        assert!(!goalie_defaults.contains(&StatId::RegulationWins),
+            "RegulationWins dropped from default (non-canonical)");
         // Skater stats are NOT in goalie defaults.
         assert!(!goalie_defaults.contains(&StatId::Games));
         assert!(!goalie_defaults.contains(&StatId::Goals));

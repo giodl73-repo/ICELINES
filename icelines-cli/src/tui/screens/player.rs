@@ -424,10 +424,14 @@ fn render_stats_view(f: &mut Frame, app: &App, v: &PlayerView<'_>, area: Rect) {
             if use_narrow { sid.narrow_label() } else { sid.short_label() }
         };
 
-        // Header row — Season + StatId labels.
+        // Header row — Season + StatId labels. GLASS L.4 fix: clip
+        // labels >7 chars (e.g. "On-Ice S%", "EV Dep/g") so they don't
+        // overrun the 8-cell column budget and break alignment.
         let mut header = format!(" {:<8}", "Season");
         for sid in &columns {
-            header.push_str(&format!(" {:>7}", label_for(*sid)));
+            let lbl = label_for(*sid);
+            let clipped: String = lbl.chars().take(7).collect();
+            header.push_str(&format!(" {:>7}", clipped));
         }
         lines.push(Line::styled(header, dim));
 
@@ -569,31 +573,35 @@ mod l4_preset_tests {
         assert_eq!(CareerTablePreset::Scoring.prev(), CareerTablePreset::Default);
     }
 
-    /// Default preset for Center returns 14 columns (13 skater common +
-    /// FaceoffWinPct).
+    /// Default preset for Center returns 15 columns (14 skater common
+    /// post-SCOUT-L.4 + FaceoffWinPct).
     #[test]
     fn l0_lindsay_career_preset_default_center_14_cols() {
         let cols = CareerTablePreset::Default.columns(Center);
-        assert_eq!(cols.len(), 14);
+        assert_eq!(cols.len(), 15);
         assert!(cols.contains(&StatId::Games));
+        assert!(cols.contains(&StatId::Gwg));
         assert!(cols.contains(&StatId::FaceoffWinPct));
     }
 
-    /// Default preset for Defense returns 13 (no FaceoffWinPct).
+    /// Default preset for Defense returns 14 (no FaceoffWinPct).
     #[test]
     fn l0_lindsay_career_preset_default_defense_13_cols() {
         let cols = CareerTablePreset::Default.columns(Defense);
-        assert_eq!(cols.len(), 13);
+        assert_eq!(cols.len(), 14);
         assert!(!cols.contains(&StatId::FaceoffWinPct));
     }
 
-    /// Default preset for Goalie returns 10 goalie-specific columns.
+    /// Default preset for Goalie returns 11 goalie-specific columns
+    /// (post-SCOUT-L.4: + Saves, + ShotsAgainst, − RegulationWins).
     #[test]
     fn l0_lindsay_career_preset_default_goalie_10_cols() {
         let cols = CareerTablePreset::Default.columns(Goalie);
-        assert_eq!(cols.len(), 10);
+        assert_eq!(cols.len(), 11);
         assert!(cols.contains(&StatId::SavePct));
         assert!(cols.contains(&StatId::Gaa));
+        assert!(cols.contains(&StatId::Saves));
+        assert!(cols.contains(&StatId::ShotsAgainst));
     }
 
     /// Scoring preset for skaters returns the 15 Scoring-category stats.
@@ -710,15 +718,15 @@ mod l4_preset_tests {
 
     // ── L.4.5 narrow-mode column fit tests ─────────────────────────────
 
-    /// At 140 cols, Center default preset (14 cols) fits entirely —
-    /// no narrow mode, nothing dropped.
+    /// At 140 cols, Center default preset (15 cols post-SCOUT-L.4)
+    /// fits entirely — no narrow mode, nothing dropped.
     #[test]
     fn l0_lindsay_fit_career_columns_140_fits_all_default_center() {
         let cols = CareerTablePreset::Default.columns(Center);
-        assert_eq!(cols.len(), 14);
+        assert_eq!(cols.len(), 15);
         let (fit, dropped, narrow) = fit_career_columns(&cols, 140);
-        // (140 - 11) / 8 = 16, capped to 14.
-        assert_eq!(fit.len(), 14);
+        // (140 - 11) / 8 = 16, capped to 15.
+        assert_eq!(fit.len(), 15);
         assert_eq!(dropped, 0);
         assert!(!narrow);
     }
@@ -728,9 +736,9 @@ mod l4_preset_tests {
     fn l0_lindsay_fit_career_columns_100_drops_rightmost() {
         let cols = CareerTablePreset::Default.columns(Center);
         let (fit, dropped, narrow) = fit_career_columns(&cols, 100);
-        // (100 - 11) / 8 = 11. 14 - 11 = 3 dropped.
+        // (100 - 11) / 8 = 11. 15 - 11 = 4 dropped.
         assert_eq!(fit.len(), 11);
-        assert_eq!(dropped, 3);
+        assert_eq!(dropped, 4);
         assert!(!narrow);
         // Truncation is from the right — first column preserved.
         assert_eq!(fit[0], cols[0]);
@@ -741,9 +749,9 @@ mod l4_preset_tests {
     fn l0_lindsay_fit_career_columns_80_clips_heavy() {
         let cols = CareerTablePreset::Default.columns(Center);
         let (fit, dropped, narrow) = fit_career_columns(&cols, 80);
-        // (80 - 11) / 8 = 8. 14 - 8 = 6 dropped.
+        // (80 - 11) / 8 = 8. 15 - 8 = 7 dropped.
         assert_eq!(fit.len(), 8);
-        assert_eq!(dropped, 6);
+        assert_eq!(dropped, 7);
         assert!(!narrow);
     }
 
@@ -754,7 +762,7 @@ mod l4_preset_tests {
         let (fit, dropped, narrow) = fit_career_columns(&cols, 50);
         // (50 - 11) / 8 = 4 cols.
         assert_eq!(fit.len(), 4);
-        assert_eq!(dropped, 10);
+        assert_eq!(dropped, 11);
         assert!(narrow);
     }
 
@@ -768,13 +776,13 @@ mod l4_preset_tests {
         assert!(narrow);
     }
 
-    /// Goalie default (10 cols) at 100 cells fits entirely.
+    /// Goalie default (11 cols post-SCOUT-L.4) at 100 cells fits entirely.
     #[test]
     fn l0_lindsay_fit_career_columns_100_fits_goalie_default() {
         let cols = CareerTablePreset::Default.columns(Goalie);
-        assert_eq!(cols.len(), 10);
+        assert_eq!(cols.len(), 11);
         let (fit, dropped, narrow) = fit_career_columns(&cols, 100);
-        assert_eq!(fit.len(), 10);
+        assert_eq!(fit.len(), 11);
         assert_eq!(dropped, 0);
         assert!(!narrow);
     }
