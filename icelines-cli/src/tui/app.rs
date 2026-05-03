@@ -1976,9 +1976,22 @@ impl App {
                                 stat.label(),
                                 stat.cli_key(),
                             );
+                            self.query_mode = QueryMode::Build;
+                            self.query_result_scroll = 0;
+                        } else {
+                            // EDGE-7 (L.5b post-fix) — empty filter,
+                            // Enter pressed. Don't silently drop the
+                            // input; refresh status to surface the
+                            // dead-end and keep the picker open so the
+                            // user can refine the query.
+                            self.status = format!(
+                                "No matches for {:?} — type to refine \
+                                 or Esc to cancel",
+                                self.sort_picker_query
+                            );
+                            // Picker stays open (do NOT switch back to
+                            // Build mode). The user adjusts the query.
                         }
-                        self.query_mode = QueryMode::Build;
-                        self.query_result_scroll = 0;
                     }
                     QueryMode::Build => {
                         // Enter on a result row → player card. Hart.5c.6

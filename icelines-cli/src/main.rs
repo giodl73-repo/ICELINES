@@ -182,6 +182,7 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
                         team, min_gp: 5, season: None,
                         season_type: icelines_core::season_stats::SeasonType::Regular,
                         json, csv,
+                        filters: Vec::new(),
                     }).await?;
                 }
                 ExportShape::Players => {
@@ -266,14 +267,15 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
                     filters,
                 }).await?;
             }
-            QuerySubcommand::Player { name, breakdown, percentiles, last_n, season, season_type } => {
-                commands::query::run_player(name, breakdown, percentiles, last_n, season, season_type.to_core()).await?;
+            QuerySubcommand::Player { name, breakdown, percentiles, last_n, season, season_type, rank_by } => {
+                commands::query::run_player(name, breakdown, percentiles, last_n, season, season_type.to_core(), rank_by).await?;
             }
             QuerySubcommand::Compare { player1, player2, similar, by, season, season_type } => {
                 commands::query::run_compare(player1, player2, similar, by, season, season_type.to_core()).await?;
             }
-            QuerySubcommand::Goalies { top, sort, team, min_gp, season, season_type, json, csv } => {
+            QuerySubcommand::Goalies { top, sort, team, min_gp, season, season_type, json, csv, filters } => {
                 commands::query::run_goalies(commands::query::GoaliesArgs {
+                    filters,
                     top, sort, team, min_gp, season,
                     season_type: season_type.to_core(),
                     json, csv,

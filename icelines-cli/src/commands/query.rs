@@ -874,7 +874,16 @@ pub async fn run_player(
     last_n: Option<u32>,
     season: Option<String>,
     season_type: SeasonType,
+    // Phase Lindsay L.5.3b — optional override for the percentile/rank
+    // metric. None falls back to legacy Pts/82 ranking.
+    rank_by: Option<String>,
 ) -> anyhow::Result<()> {
+    // Resolve `--rank-by` once at command entry so a typo errors with
+    // a clear message before we load the snapshot.
+    let rank_metric: Option<SortDispatch> = match rank_by.as_deref() {
+        Some(s) => Some(SortDispatch::parse(s)?),
+        None => None,
+    };
     let (outcome, season_key, season_type) =
         crate::commands::players::load_repo_for_season(season.as_deref(), Some(season_type))?;
     let repo = &outcome.repo;
@@ -902,7 +911,7 @@ pub async fn run_player(
         "career" | "career-arc" => {
             print_current_stats(v);
             if percentiles {
-                print_percentile(&all_views, v);
+                print_percentile(&all_views, v, rank_metric);
             }
             print_career(v).await;
         }
@@ -912,7 +921,7 @@ pub async fn run_player(
             println!();
             print_current_stats(v);
             if percentiles {
-                print_percentile(&all_views, v);
+                print_percentile(&all_views, v, rank_metric);
             }
         }
         other => bail!("unknown breakdown '{other}' — valid: career, situation"),
@@ -974,7 +983,13 @@ fn print_current_stats(v: &PlayerView<'_>) {
     }
 }
 
-fn print_percentile(all: &[PlayerView<'_>], target: &PlayerView<'_>) {
+fn print_percentile(
+    all: &[PlayerView<'_>],
+    target: &PlayerView<'_>,
+    // Phase Lindsay L.5.3b — when Some, use the dispatched metric for
+    // the rank/percentile. None preserves legacy Pts/82 ranking.
+    metric: Option<SortDispatch>,
+) {
     let peers: Vec<&PlayerView<'_>> = all
         .iter()
         .filter(|v| v.position() == target.position() && v.is_rankable())
@@ -982,18 +997,39 @@ fn print_percentile(all: &[PlayerView<'_>], target: &PlayerView<'_>) {
     if peers.is_empty() {
         return;
     }
-    let target_val = target.pace_82().unwrap_or(0.0);
-    let n_better = peers
-        .iter()
-        .filter(|v| v.pace_82().unwrap_or(0.0) > target_val)
-        .count();
+
+    let (target_val, n_better, label) = match metric {
+        Some(m) => {
+            // Catalog/legacy via SortDispatch. `sort_value` returns
+            // None as ±infinity (worst) per the SortDispatch contract,
+            // so the percentile is well-defined even when target/peer
+            // reads are None.
+            let target_val = m.sort_value(target);
+            let n_better = peers.iter()
+                .filter(|v| m.sort_value(v) > target_val)
+                .count();
+            // Header text uses the metric's catalog/legacy label.
+            let label = m.header(false);
+            (target_val, n_better, label)
+        }
+        None => {
+            // Legacy default: Pts/82 ranking.
+            let target_val = target.pace_82().unwrap_or(0.0);
+            let n_better = peers.iter()
+                .filter(|v| v.pace_82().unwrap_or(0.0) > target_val)
+                .count();
+            (target_val, n_better, "Pts/82".to_owned())
+        }
+    };
+    let _ = target_val;  // used only for closure capture above
+
     let rank = n_better + 1;
     let pct = ((1.0 - n_better as f64 / peers.len() as f64) * 100.0) as u8;
     println!(
-        "LEAGUE RANK  #{rank} of {} {}'s  ({pct}{} percentile by Pts/82)",
+        "LEAGUE RANK  #{rank} of {} {}'s  ({pct}{} percentile by {label})",
         peers.len(),
         target.position().abbreviation(),
-        ordinal(pct)
+        ordinal(pct),
     );
     println!();
 }
@@ -1055,6 +1091,9 @@ pub struct GoaliesArgs {
     pub season_type: SeasonType,
     pub json: bool,
     pub csv: bool,
+    /// Phase Lindsay L.5b post-fix (II-06 partial roll) — generic
+    /// stat filters in the same grammar as `query leaders --filter`.
+    pub filters: Vec<String>,
 }
 
 /// JSON / CSV output row for `query goalies`. Hart.5c.7: stable shape
@@ -1119,6 +1158,22 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
     if let Some(team) = args.team.as_deref() {
         let abbrev = team.to_ascii_uppercase();
         views.retain(|v| v.team_display() == abbrev);
+    }
+
+    // Phase Lindsay L.5b post-fix (D1 / II-06 partial roll) — apply
+    // generic catalog `--filter` expressions against the goalie pool.
+    // Same parse_filter grammar as query leaders; filter typos exit
+    // non-zero with the actionable hint (KEEL D2 typo path also fires
+    // here for free).
+    let mut filter = PlayerFilter::new();
+    if !args.filters.is_empty() {
+        use icelines_core::stats_catalog::parse_filter;
+        for s in &args.filters {
+            let stat_filter = parse_filter(s)?;
+            filter.stat_filters.push(stat_filter);
+        }
+        filter.normalize_stat_filters();
+        views = filter.apply_views(views.iter().copied());
     }
 
     use std::cmp::Ordering;

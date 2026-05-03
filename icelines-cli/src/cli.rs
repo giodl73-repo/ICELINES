@@ -881,6 +881,12 @@ pub enum QuerySubcommand {
         /// Season type: regular (default) or playoff.
         #[arg(long = "type", value_enum, default_value_t = QuerySeasonType::Regular)]
         season_type: QuerySeasonType,
+        /// Phase Lindsay L.5.3b — override the percentile/rank metric
+        /// to any catalog `cli_key` (or any legacy `--sort` alias).
+        /// Default behavior (omit flag) ranks by Pts/82.
+        /// Example: `--rank-by goals-per-60`.
+        #[arg(long)]
+        rank_by: Option<String>,
     },
 
     /// Side-by-side comparison or similarity search.
@@ -930,6 +936,12 @@ pub enum QuerySubcommand {
         /// Export as CSV.
         #[arg(long)]
         csv: bool,
+        /// Phase Lindsay L.5b post-fix (II-06 partial roll) — generic
+        /// stat filter, repeatable. Same grammar as `query leaders
+        /// --filter`. Example: `--filter "save-pct>=0.910" --filter
+        /// "goalie-games>=20"`.
+        #[arg(long = "filter")]
+        filters: Vec<String>,
     },
 }
 

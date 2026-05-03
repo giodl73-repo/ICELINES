@@ -2356,6 +2356,62 @@ mod tests {
         assert_eq!(StatId::Gaa.sort_cmp(&v1, &v2), Ordering::Less);
     }
 
+    // ── EDGE E1 (L.5b post-fix) — sort_cmp picker edge cases ────────────
+
+    /// EDGE E1.1 — `sort_cmp` for Gaa (Inverted unit / lower_is_better)
+    /// sorts ascending AND a None value sorts last regardless of
+    /// direction. Without this, picking `gaa` in the picker would put
+    /// goalies-without-data at the TOP (artificial low-GAA zero) — the
+    /// opposite of what the user wants.
+    #[test]
+    fn l0_lindsay_l5b_edge_picker_gaa_none_sorts_last() {
+        use std::cmp::Ordering;
+        let s_with_gaa = build_goalie_stats(8400001, 20242025, 2.50, 0.913);
+        let s_no_gaa = build_stats_with_totals(8400002, 20242025, StatTotals {
+            gp: 70, goals: 30, assists: 50, points: 80, ..Default::default()
+        });
+        let (id1, s1c) = synthetic_skater_view(s_with_gaa);
+        let (id2, s2c) = synthetic_skater_view(s_no_gaa);
+        let v_gaa = PlayerView { identity: &id1, stats: &s1c, contract: None };
+        let v_no = PlayerView { identity: &id2, stats: &s2c, contract: None };
+        // GAA reads Some on the goalie view, None on the skater view.
+        // Sort: goalie-with-data first, no-data last.
+        assert_eq!(StatId::Gaa.sort_cmp(&v_gaa, &v_no), Ordering::Less,
+            "Some(Gaa) before None — None sorts last per AI-06");
+        assert_eq!(StatId::Gaa.sort_cmp(&v_no, &v_gaa), Ordering::Greater,
+            "None after Some(Gaa) — None sorts last per AI-06");
+    }
+
+    /// EDGE E1.2 — `EvGoalsForPct` picker pick on a multi-stint view
+    /// returns None per DI-11 (OnIceGoals category trade-window guard).
+    /// `sort_cmp` sorts None last, so traded players don't show
+    /// artificial zero values at the top.
+    #[test]
+    fn l0_lindsay_l5b_edge_picker_ev_goals_for_pct_traded_returns_none() {
+        let (identity, stats) =
+            crate::fixtures::stat_catalog_variants::traded_multistint();
+        let view = PlayerView { identity: &identity, stats: &stats, contract: None };
+        // DI-11 fires — the OnIceGoals trade-window guard.
+        assert_eq!(StatId::EvGoalsForPct.read(&view), None,
+            "DI-11: OnIceGoals reads return None on multi-stint views");
+    }
+
+    /// EDGE E1.3 — `PointsPerGame` picker pick on a sub-MIN_GP view
+    /// returns None per the MIN_GP=10 derived-rate gate. Sub-MIN_GP
+    /// players don't appear at the top of a PPG-sorted leaderboard
+    /// with artificial 0.0 values.
+    #[test]
+    fn l0_lindsay_l5b_edge_picker_points_per_game_below_min_gp_returns_none() {
+        let (identity, stats) = crate::fixtures::stat_catalog_variants::low_gp();
+        let view = PlayerView { identity: &identity, stats: &stats, contract: None };
+        // GP < 10 → PointsPerGame returns None per MIN_GP guard.
+        assert_eq!(StatId::PointsPerGame.read(&view), None,
+            "MIN_GP=10 guard: derived rate returns None below threshold");
+        // Sanity — Goals (Count) is unaffected by the gate.
+        assert!(StatId::Goals.read(&view).is_some(),
+            "raw counts not gated by MIN_GP");
+    }
+
     /// `aggregate_read` — strict propagation: any None → None.
     #[test]
     fn l0_lindsay_aggregate_read_strict_propagation() {
