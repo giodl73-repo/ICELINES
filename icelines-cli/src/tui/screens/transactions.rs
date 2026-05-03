@@ -153,7 +153,7 @@ fn title_text(app: &App) -> Line<'static> {
     Line::from(spans)
 }
 
-pub fn filter_rows<'a>(app: &'a App) -> Vec<&'a Transaction> {
+pub fn filter_rows(app: &App) -> Vec<&Transaction> {
     app.transactions
         .iter()
         .filter(|tx| {
@@ -906,6 +906,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(non_snake_case)] // Test name encodes the literal "LEAGUE" sentinel value.
     fn l0_transactions_teams_dedups_and_includes_LEAGUE() {
         let txs = vec![
             fixture_tx(TransactionKind::Trade, "EDM trade"), // team = EDM
@@ -925,6 +926,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(non_snake_case)] // Test name encodes the literal "LEAGUE" sentinel value.
     fn l0_filter_rows_team_LEAGUE_returns_only_teamless() {
         let mut app = App::new(false);
         app.transactions = vec![

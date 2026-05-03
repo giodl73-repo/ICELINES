@@ -15,6 +15,7 @@ const BLOCKS: &[char] = &['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'
 
 /// Render a sparkline from `values` clamped/scaled to `width` columns.
 /// See `columns` for behaviour notes — this is just a string convenience.
+#[allow(dead_code)] // Kept as public string-form helper alongside `columns`.
 pub fn render(values: &[f64], width: usize) -> String {
     columns(values, width).into_iter().map(|(c, _)| c).collect()
 }

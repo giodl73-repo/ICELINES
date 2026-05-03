@@ -17,7 +17,7 @@ pub async fn run(team: String, _scheme: Option<String>, no_color: bool) -> anyho
 
     // Hart.5c.1: load directly into a StatsRepository, take the team's
     // roster as PlayerView slice, build the depth chart from views.
-    let store = SnapshotStore::new(&cfg.snapshot_dir());
+    let store = SnapshotStore::new(cfg.snapshot_dir());
     let outcome = load_into_repo(season, SeasonType::Regular, &store)
         .map_err(|e| anyhow::anyhow!("loading repo: {e}"))?;
     let views = outcome

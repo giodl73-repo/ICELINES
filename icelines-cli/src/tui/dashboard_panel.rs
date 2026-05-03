@@ -399,15 +399,13 @@ const ACCENT_COLOR: Color = Color::Cyan;
 /// Width of the panel content (inside the ratatui border). Matches the
 /// `Constraint::Length(30)` minus 2 for the border in
 /// `tui::screens::player::render_dashboard_panel`.
+#[allow(dead_code)] // Documented constant; reserved for future cell-budgeting refactor.
 const PANEL_WIDTH: usize = 28;
 
-/// Build the full set of styled lines for one player. Sections, in order:
-///
-/// 1. **Header** — compact `Lastname · TEAM POS` confirms which player
-///    the panel is showing without duplicating the full name + bio that
-///    the left stats column already displays.
-/// 2. **5-season trend** — three coloured sparklines (G, Pts, SOG) with
-///    range marker and first→last anchors.
+// (Orphan doc comment for a previously-public `build_lines` function
+// removed in an earlier phase. Kept the placeholder note here so a
+// future reader of git blame doesn't wonder what was deleted.)
+
 /// Letter abbreviation used in the position-rank header.
 fn position_letter(pos: Position) -> &'static str {
     match pos {
@@ -532,7 +530,7 @@ fn median_of(values: &[f64]) -> f64 {
     let mut sorted: Vec<f64> = values.to_vec();
     sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
     let mid = sorted.len() / 2;
-    if sorted.len() % 2 == 0 {
+    if sorted.len().is_multiple_of(2) {
         (sorted[mid - 1] + sorted[mid]) / 2.0
     } else {
         sorted[mid]
@@ -764,6 +762,7 @@ mod tests {
     /// Concatenate every line's text content (ignoring styles) into a
     /// single string for test assertions. ratatui's `Line` impls
     /// `Display` which already does this per line.
+    #[allow(dead_code)] // Reserved test helper — kept alongside the panel renderers it exercises.
     fn lines_to_text(lines: &[Line<'static>]) -> String {
         lines
             .iter()
@@ -806,7 +805,7 @@ mod tests {
     fn l0_build_panel_lines_single_season_shows_row_no_spark() {
         // 1-season history: just confirm the bundled season — counting
         // stats live on the left column of the player screen.
-        let history = vec![HistoryRow {
+        let history = [HistoryRow {
             season: "20252026",
             goals: 12,
             points: 30,

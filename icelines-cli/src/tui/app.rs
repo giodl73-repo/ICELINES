@@ -244,6 +244,16 @@ pub struct App {
     pub league_context_window: (Season, SeasonType),
 }
 
+/// True iff the current screen is a text-input surface where typed
+/// letters belong to the input box (not to the global `d` chord).
+/// Pulled out into a free fn to keep the `else if` arm readable —
+/// inlining the matches!() chain trips `clippy::blocks_in_conditions`.
+fn is_text_input_active(app: &App) -> bool {
+    matches!(app.screen, Screen::Search | Screen::Tonight)
+        || (app.screen == Screen::Schedule && app.schedule_search_mode)
+        || (app.screen == Screen::Queries && matches!(app.query_mode, QueryMode::SaveName))
+}
+
 impl App {
     pub fn new(no_color: bool) -> Self {
         Self {
@@ -937,16 +947,7 @@ impl App {
                         .iter()
                         .position(|(id, _, _)| *id == self.active_season.as_str())
                         .unwrap_or(0);
-                } else if c == 'd'
-                    && !matches!(
-                        self.screen,
-                        // Skip text-input screens; 'd' is part of the typed query.
-                        Screen::Search | Screen::Tonight
-                    )
-                    && !(self.screen == Screen::Schedule && self.schedule_search_mode)
-                    && !(self.screen == Screen::Queries
-                        && matches!(self.query_mode, QueryMode::SaveName))
-                {
+                } else if c == 'd' && !is_text_input_active(self) {
                     // Global shortcut: jump to the league depth view.
                     // Already on a depth screen → toggle back to Home so
                     // the key can hide the chart too.

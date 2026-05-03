@@ -20,8 +20,11 @@ use icelines_fetch::{aggregate, career::load_career, snapshot::SnapshotStore};
 
 // ── Sort metric ───────────────────────────────────────────────────────────────
 
+// `SortMetric` lives at `pub(crate)` so it's visible through
+// `SortDispatch::Legacy(SortMetric)` (which is `pub` for the same crate).
+// Without this the visibility leak fires `clippy::private_interfaces`.
 #[derive(Debug, Clone, Copy)]
-enum SortMetric {
+pub(crate) enum SortMetric {
     // All-situations pace
     PtsPace,
     Ppg,
@@ -937,6 +940,7 @@ fn position_percentile(
 
 // ── icelines query player ─────────────────────────────────────────────────────
 
+#[allow(clippy::too_many_arguments)] // 8 inputs by design; struct would obscure CLI dispatch.
 pub async fn run_player(
     name: String,
     breakdown: String,

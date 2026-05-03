@@ -268,7 +268,7 @@ fn write_leaders_table_with_columns(
     top: &[PlayerView<'_>],
     stat_cols: &[icelines_core::stats_catalog::StatId],
 ) {
-    use icelines_core::stats_catalog::{StatId, StatUnit};
+    use icelines_core::stats_catalog::StatUnit;
     // Header row.
     out.push_str("| Rank | Player | Team | Pos");
     for sid in stat_cols {

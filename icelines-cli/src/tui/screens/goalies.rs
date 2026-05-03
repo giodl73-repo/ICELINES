@@ -13,7 +13,6 @@ use ratatui::{
 };
 
 use crate::tui::app::App;
-use crate::tui::headshot;
 
 /// Sort selectors. App stores the index; we map index → comparator here
 /// so the cycle order is centralised.
@@ -258,6 +257,7 @@ fn short_name(full: &str) -> String {
 }
 
 #[cfg(test)]
+#[allow(clippy::items_after_test_module)] // render_detail_by_id + helpers live below; keeping tests next to sort_goalie_views.
 mod tests {
     use super::*;
     use icelines_core::fixtures;
@@ -265,8 +265,10 @@ mod tests {
     use icelines_core::season_stats::{GoalieSeasonStats, SeasonType};
     use icelines_core::stats_repository::StatsRepository;
 
-    fn build_goalie_pool(seeds: &[(u32, &str, &str, u32, u32, f32, f32, u32)]) -> StatsRepository {
-        // (id, name, team, gp, wins, sv_pct, gaa, shutouts)
+    /// `(id, name, team, gp, wins, sv_pct, gaa, shutouts)` test seed tuple.
+    type GoalieSeed<'a> = (u32, &'a str, &'a str, u32, u32, f32, f32, u32);
+
+    fn build_goalie_pool(seeds: &[GoalieSeed<'_>]) -> StatsRepository {
         let mut r = StatsRepository::new();
         for &(id, name, team, gp, wins, sv_pct, gaa, so) in seeds {
             let normalized = icelines_core::name::normalize_name(name);
@@ -278,7 +280,7 @@ mod tests {
                 ot_losses: Some(2),
                 ties: None,
                 shots_against: 30 * gp,
-                goals_against: ((gaa as u32) * gp).max(0),
+                goals_against: (gaa as u32) * gp,
                 saves: 28 * gp,
                 save_pct: Some(sv_pct),
                 goals_against_average: Some(gaa),

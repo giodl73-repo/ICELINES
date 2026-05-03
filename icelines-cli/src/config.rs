@@ -110,14 +110,10 @@ pub fn init_live_feeds(cli_no_live: bool, cfg: &Config) {
             !s.is_empty() && s != "0" && !s.eq_ignore_ascii_case("false")
         })
         .unwrap_or(false);
-    let resolved = if cli_no_live {
+    let resolved = if cli_no_live || env_disable {
         false
-    } else if env_disable {
-        false
-    } else if let Some(c) = cfg.live {
-        c
     } else {
-        true
+        cfg.live.unwrap_or(true)
     };
     let _ = LIVE_FEEDS.set(resolved);
 }
@@ -169,14 +165,10 @@ pub fn init_dashboards(cli_no_dashboards: bool, cfg: &Config) {
             s == "0" || s.eq_ignore_ascii_case("false") || s.eq_ignore_ascii_case("off")
         })
         .unwrap_or(false);
-    let resolved = if cli_no_dashboards {
+    let resolved = if cli_no_dashboards || env_off {
         false
-    } else if env_off {
-        false
-    } else if let Some(c) = cfg.dashboards {
-        c
     } else {
-        true
+        cfg.dashboards.unwrap_or(true)
     };
     let _ = DASHBOARDS.set(resolved);
 }
@@ -210,76 +202,6 @@ pub fn resolve_dashboards(cli_no: bool, env_off: bool, config: Option<bool>) -> 
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-// ── Tests for live-feeds precedence (Phase 8f.1) ──────────────────────────────
-
-#[cfg(test)]
-mod live_feeds_tests {
-    use super::*;
-
-    #[test]
-    fn l0_resolve_live_default_is_on() {
-        assert_eq!(resolve_live(false, false, None), true);
-    }
-
-    #[test]
-    fn l0_resolve_live_cli_flag_wins_over_everything() {
-        // CLI true → live disabled regardless of env / config
-        assert_eq!(resolve_live(true, false, None), false);
-        assert_eq!(resolve_live(true, false, Some(true)), false);
-        assert_eq!(resolve_live(true, true, Some(true)), false);
-    }
-
-    #[test]
-    fn l0_resolve_live_env_wins_over_config() {
-        // env disable beats config = true
-        assert_eq!(resolve_live(false, true, Some(true)), false);
-        // env unset → config wins
-        assert_eq!(resolve_live(false, false, Some(true)), true);
-        assert_eq!(resolve_live(false, false, Some(false)), false);
-    }
-
-    #[test]
-    fn l0_resolve_live_config_only_when_no_higher_signal() {
-        assert_eq!(resolve_live(false, false, Some(false)), false);
-        assert_eq!(resolve_live(false, false, Some(true)), true);
-        // No config → default true
-        assert_eq!(resolve_live(false, false, None), true);
-    }
-
-    // ── Phase 8j: dashboards flag precedence (now opt-OUT — on by default) ──
-
-    #[test]
-    fn l0_resolve_dashboards_default_is_on() {
-        // With no CLI flag, no env var, and no config — dashboards render.
-        assert_eq!(resolve_dashboards(false, false, None), true);
-    }
-
-    #[test]
-    fn l0_resolve_dashboards_cli_no_wins_over_everything() {
-        // `--no-dashboards` forces off no matter what env/config say.
-        assert_eq!(resolve_dashboards(true, false, None), false);
-        assert_eq!(resolve_dashboards(true, false, Some(true)), false);
-        assert_eq!(resolve_dashboards(true, true, Some(true)), false);
-    }
-
-    #[test]
-    fn l0_resolve_dashboards_env_off_wins_over_config() {
-        // `ICELINES_DASHBOARDS=0` disables even with `dashboards = true`.
-        assert_eq!(resolve_dashboards(false, true, Some(true)), false);
-        // env unset → config wins.
-        assert_eq!(resolve_dashboards(false, false, Some(false)), false);
-        assert_eq!(resolve_dashboards(false, false, Some(true)), true);
-    }
-
-    #[test]
-    fn l0_resolve_dashboards_config_only_when_no_higher_signal() {
-        assert_eq!(resolve_dashboards(false, false, Some(true)), true);
-        assert_eq!(resolve_dashboards(false, false, Some(false)), false);
-        // No config → default true.
-        assert_eq!(resolve_dashboards(false, false, None), true);
-    }
-}
-
 /// Return the current user's home directory.
 fn home_dir() -> anyhow::Result<PathBuf> {
     // `std::env::home_dir` is deprecated (and unreliable on Windows in old Rust).
@@ -288,4 +210,74 @@ fn home_dir() -> anyhow::Result<PathBuf> {
         .or_else(|| std::env::var_os("USERPROFILE"))
         .map(PathBuf::from)
         .ok_or_else(|| anyhow::anyhow!("cannot determine home directory; set HOME or USERPROFILE"))
+}
+
+// ── Tests for live-feeds precedence (Phase 8f.1) ──────────────────────────────
+
+#[cfg(test)]
+mod live_feeds_tests {
+    use super::*;
+
+    #[test]
+    fn l0_resolve_live_default_is_on() {
+        assert!(resolve_live(false, false, None));
+    }
+
+    #[test]
+    fn l0_resolve_live_cli_flag_wins_over_everything() {
+        // CLI true → live disabled regardless of env / config
+        assert!(!resolve_live(true, false, None));
+        assert!(!resolve_live(true, false, Some(true)));
+        assert!(!resolve_live(true, true, Some(true)));
+    }
+
+    #[test]
+    fn l0_resolve_live_env_wins_over_config() {
+        // env disable beats config = true
+        assert!(!resolve_live(false, true, Some(true)));
+        // env unset → config wins
+        assert!(resolve_live(false, false, Some(true)));
+        assert!(!resolve_live(false, false, Some(false)));
+    }
+
+    #[test]
+    fn l0_resolve_live_config_only_when_no_higher_signal() {
+        assert!(!resolve_live(false, false, Some(false)));
+        assert!(resolve_live(false, false, Some(true)));
+        // No config → default true
+        assert!(resolve_live(false, false, None));
+    }
+
+    // ── Phase 8j: dashboards flag precedence (now opt-OUT — on by default) ──
+
+    #[test]
+    fn l0_resolve_dashboards_default_is_on() {
+        // With no CLI flag, no env var, and no config — dashboards render.
+        assert!(resolve_dashboards(false, false, None));
+    }
+
+    #[test]
+    fn l0_resolve_dashboards_cli_no_wins_over_everything() {
+        // `--no-dashboards` forces off no matter what env/config say.
+        assert!(!resolve_dashboards(true, false, None));
+        assert!(!resolve_dashboards(true, false, Some(true)));
+        assert!(!resolve_dashboards(true, true, Some(true)));
+    }
+
+    #[test]
+    fn l0_resolve_dashboards_env_off_wins_over_config() {
+        // `ICELINES_DASHBOARDS=0` disables even with `dashboards = true`.
+        assert!(!resolve_dashboards(false, true, Some(true)));
+        // env unset → config wins.
+        assert!(!resolve_dashboards(false, false, Some(false)));
+        assert!(resolve_dashboards(false, false, Some(true)));
+    }
+
+    #[test]
+    fn l0_resolve_dashboards_config_only_when_no_higher_signal() {
+        assert!(resolve_dashboards(false, false, Some(true)));
+        assert!(!resolve_dashboards(false, false, Some(false)));
+        // No config → default true.
+        assert!(resolve_dashboards(false, false, None));
+    }
 }

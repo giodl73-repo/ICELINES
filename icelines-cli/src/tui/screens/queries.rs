@@ -236,6 +236,7 @@ pub fn sort_picker_filter(query: &str) -> Vec<icelines_core::stats_catalog::Stat
 /// truncation so the highlighted row always shows the full cli_key.
 /// The user can read the key under cursor unambiguously regardless of
 /// terminal width — even when neighboring rows truncate.
+#[allow(dead_code)] // Public string-form helper — kept alongside `format_sort_picker_row_selected`.
 pub fn format_sort_picker_row(sid: icelines_core::stats_catalog::StatId, panel_w: usize) -> String {
     format_sort_picker_row_selected(sid, panel_w, false)
 }
@@ -284,6 +285,7 @@ fn parse_opt<T: std::str::FromStr>(s: &str) -> Option<T> {
 
 /// Filter + sort the players by the field selections. Operates on
 /// `PlayerView<'_>` slices via `PlayerFilter::matches_view`.
+#[allow(dead_code)] // Public helper — superseded by `run_query_views_with_pick`; kept for API stability.
 pub fn run_query_views<'a>(
     views: &'a [PlayerView<'a>],
     fields: &[QueryField],

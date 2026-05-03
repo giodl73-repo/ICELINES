@@ -47,6 +47,7 @@ impl Format {
     /// Emit a header row + data rows in the chosen format. Width is
     /// auto-fitted for Table; CSV escapes commas/quotes/newlines per
     /// RFC 4180; JSON emits an array of objects keyed by header name.
+    #[allow(dead_code)] // Kept as a public helper; current call sites use `render` directly.
     pub fn emit(self, headers: &[&str], rows: &[Vec<String>]) {
         let s = self.render(headers, rows);
         println!("{s}");

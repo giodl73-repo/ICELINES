@@ -140,7 +140,7 @@ fn render_scores_list(
     };
     let filtered: Vec<&icelines_fetch::nhl_api::ScheduledGame> = games
         .iter()
-        .filter(|g| target_dates.iter().any(|d| *d == g.date))
+        .filter(|g| target_dates.contains(&g.date))
         .collect();
 
     if filtered.is_empty() {
@@ -879,7 +879,7 @@ pub fn render_season_picker(f: &mut Frame, app: &App, area: Rect) {
     use icelines_fetch::bundled::{is_installed, BUNDLED_SEASONS};
 
     let popup_h = (area.height * 70 / 100).min(44);
-    let popup_w = (area.width * 50 / 100).min(52).max(44);
+    let popup_w = (area.width * 50 / 100).clamp(44, 52);
     let popup = Rect::new(
         area.x + (area.width - popup_w) / 2,
         area.y + (area.height - popup_h) / 2,
@@ -998,7 +998,6 @@ pub fn render_admin(f: &mut Frame, app: &App, area: Rect) {
 #[cfg(test)]
 mod tests {
     //! L0 render tests for the admin overlay (Phase 8a.2).
-    use super::*;
     use crate::tui::app::App;
     use crate::tui::loader::InstallPhase;
     use ratatui::backend::TestBackend;
@@ -1308,6 +1307,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(non_snake_case)] // Test name encodes the literal "LIVE" tag.
     fn l0_scores_live_game_shows_LIVE_tag() {
         let mut g = fixture_game("2026-04-28", "MTL", "TBL", 23);
         g.away_score = Some(2);

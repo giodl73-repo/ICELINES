@@ -209,15 +209,15 @@ fn team_leader_lines(team_label: &str, skaters: &[SkaterLine]) -> Vec<Line<'stat
         &[
             (
                 "SOG",
-                sog_leader.map(|s| (s.sog as u32, short_name(&s.player_name))),
+                sog_leader.map(|s| (s.sog, short_name(&s.player_name))),
             ),
             (
                 "Hits",
-                hits_leader.map(|s| (s.hits as u32, short_name(&s.player_name))),
+                hits_leader.map(|s| (s.hits, short_name(&s.player_name))),
             ),
             (
                 "Blocks",
-                blocks_leader.map(|s| (s.blocked_shots as u32, short_name(&s.player_name))),
+                blocks_leader.map(|s| (s.blocked_shots, short_name(&s.player_name))),
             ),
         ],
         dim,
@@ -233,11 +233,11 @@ fn team_leader_lines(team_label: &str, skaters: &[SkaterLine]) -> Vec<Line<'stat
         &[
             (
                 "Takeaways",
-                take_leader.map(|s| (s.takeaways as u32, short_name(&s.player_name))),
+                take_leader.map(|s| (s.takeaways, short_name(&s.player_name))),
             ),
             (
                 "Giveaways",
-                give_leader.map(|s| (s.giveaways as u32, short_name(&s.player_name))),
+                give_leader.map(|s| (s.giveaways, short_name(&s.player_name))),
             ),
         ],
         dim,
@@ -468,6 +468,7 @@ mod tests {
 
     /// Compact `SkaterLine` builder used by `fixture_boxscore` to keep
     /// the test fixture readable.
+    #[allow(clippy::too_many_arguments)] // synthetic test fixture; struct would be noisier.
     fn fixture_skater(
         name: &str,
         team: &str,

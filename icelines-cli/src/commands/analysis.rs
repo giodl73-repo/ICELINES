@@ -542,8 +542,8 @@ pub async fn run_games(cmd: crate::cli::GamesSubcommand) -> anyhow::Result<()> {
                 return Ok(());
             }
             println!(
-                "{:<10} {:<12} {:<24} {:<8} {}",
-                "Game ID", "Date", "Matchup", "Score", "Note"
+                "{:<10} {:<12} {:<24} {:<8} Note",
+                "Game ID", "Date", "Matchup", "Score"
             );
             println!("{}", "─".repeat(78));
             for r in &rows {

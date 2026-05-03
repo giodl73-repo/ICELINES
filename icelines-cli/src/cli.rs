@@ -404,7 +404,7 @@ pub enum FetchSubcommand {
         #[arg(long)]
         dry_run: bool,
         /// Write per-player chunks (Phase 8h) instead of single bios.json
-        /// + stats.json files. Daily-cadence storage shrinks ~10–15× via
+        /// and stats.json files. Daily-cadence storage shrinks ~10–15× via
         /// content-addressed dedup; readers fall back transparently.
         #[arg(long)]
         chunked: bool,

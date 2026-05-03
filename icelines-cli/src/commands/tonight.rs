@@ -153,7 +153,7 @@ pub async fn run_trade(
     let season = Season(season_u32);
     let stype = SeasonType::Regular;
 
-    let store = SnapshotStore::new(&cfg.snapshot_dir());
+    let store = SnapshotStore::new(cfg.snapshot_dir());
     let outcome =
         load_into_repo(season, stype, &store).map_err(|e| anyhow::anyhow!("loading repo: {e}"))?;
     let repo = &outcome.repo;

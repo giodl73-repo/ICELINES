@@ -403,6 +403,7 @@ impl GroupDb {
     }
 
     /// True iff this game is already on the attended list.
+    #[allow(dead_code)] // Public API surface; reserved for future "already-attended" UI marker.
     pub fn is_attended(&self, game_id: u64) -> anyhow::Result<bool> {
         let exists: bool = self
             .conn
@@ -460,6 +461,7 @@ pub struct AttendedGameInput {
 
 /// One row in the attended-games list view.
 #[derive(Debug, Clone)]
+#[allow(dead_code)] // `attended_at` populated for future audit / sort-by-date UI; not yet displayed.
 pub struct AttendedGameRow {
     pub game_id: u64,
     pub game_date: Option<String>,

@@ -22,9 +22,11 @@ use ratatui::{
 // Order is the cycle order — `[` moves backward, `]` moves forward.
 // Wraps at boundaries.
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[allow(dead_code)] // `All` variant kept for `--columns all` debug surface; SCOUT-6 removed it from the keyboard cycle.
 pub enum CareerTablePreset {
     /// Per-position curated default (`StatId::default_in_career_table`).
+    #[default]
     Default,
     Scoring,
     TwoWay,
@@ -128,12 +130,6 @@ impl CareerTablePreset {
     pub fn next(self) -> Self {
         let cur = Self::ALL.iter().position(|p| *p == self).unwrap_or(0);
         Self::ALL[(cur + 1) % Self::ALL.len()]
-    }
-}
-
-impl Default for CareerTablePreset {
-    fn default() -> Self {
-        Self::Default
     }
 }
 
@@ -502,7 +498,7 @@ fn render_stats_view(f: &mut Frame, app: &App, v: &PlayerView<'_>, area: Rect) {
             .career_regular(v.identity.id)
             .map(|it| it.collect())
             .unwrap_or_default();
-        seasons.sort_by(|a, b| b.season.cmp(&a.season)); // newest first
+        seasons.sort_by_key(|s| std::cmp::Reverse(s.season)); // newest first
 
         for stats in seasons {
             // Build a transient PlayerView for this season to feed

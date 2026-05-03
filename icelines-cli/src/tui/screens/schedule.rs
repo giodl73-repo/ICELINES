@@ -606,6 +606,7 @@ mod tests {
     use ratatui::backend::TestBackend;
     use ratatui::Terminal;
 
+    #[allow(clippy::too_many_arguments)] // synthetic test fixture; struct would be noisier.
     fn fixture_game(
         away: &str,
         home: &str,

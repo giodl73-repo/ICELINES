@@ -214,7 +214,6 @@ fn centered_rect(pct_x: u16, pct_y: u16, r: Rect) -> Rect {
 // nav-bar layout stay coherent.
 #[cfg(test)]
 mod app_snapshot_tests {
-    use super::*;
     use crate::tui::app::{App, Screen};
     use ratatui::backend::TestBackend;
     use ratatui::Terminal;
@@ -1202,7 +1201,7 @@ mod app_snapshot_tests {
                 let mut matched = true;
                 for (i, want_ch) in needle.chars().enumerate() {
                     let got = buf[(x + i as u16, y)].symbol();
-                    if got.chars().next() != Some(want_ch) {
+                    if !got.starts_with(want_ch) {
                         matched = false;
                         break;
                     }
@@ -1416,12 +1415,12 @@ mod app_snapshot_tests {
             // migration 001) and the user-created Watchlist.
             let names: Vec<&str> = app.group_picker_list.iter().map(|s| s.as_str()).collect();
             assert!(
-                names.iter().any(|n| *n == "Favorites"),
+                names.contains(&"Favorites"),
                 "picker must list Favorites, got: {:?}",
                 names
             );
             assert!(
-                names.iter().any(|n| *n == "Watchlist"),
+                names.contains(&"Watchlist"),
                 "picker must list user-created Watchlist, got: {:?}",
                 names
             );
@@ -1940,9 +1939,8 @@ mod app_snapshot_tests {
             app.query_field_idx, 3,
             "should reach field 3 after 5 Downs from field 0"
         );
-        assert!(app.query_sections[2].expanded || !app.query_sections[2].expanded);
-        // Note: walking through fields 0,9,8,1,2,3 = 5 stops total
-        // means after 5 Downs we land on field 3 (index 5 in the visit
+        // Walking through fields 0,9,8,1,2,3 = 5 stops total means
+        // after 5 Downs we land on field 3 (index 5 in the visit
         // sequence is field 3, last of section 1) — section 2 still
         // collapsed at this moment because the boundary cross hasn't
         // happened yet.
@@ -2240,8 +2238,7 @@ mod app_snapshot_tests {
         // skater from the bundled views.
         let pid = app
             .views()
-            .iter()
-            .next()
+            .first()
             .map(|v| v.identity.id)
             .expect("bundled views must have at least one player");
         app.screen = crate::tui::app::Screen::PlayerById(pid);
@@ -2274,7 +2271,7 @@ mod app_snapshot_tests {
         let (_dir, store) = empty_store_in_tempdir();
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
-        let pid = app.views().iter().next().map(|v| v.identity.id).unwrap();
+        let pid = app.views().first().map(|v| v.identity.id).unwrap();
         app.screen = crate::tui::app::Screen::PlayerById(pid);
 
         use crate::tui::screens::player::CareerTablePreset;
@@ -2294,7 +2291,7 @@ mod app_snapshot_tests {
         let (_dir, store) = empty_store_in_tempdir();
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
-        let pid = app.views().iter().next().map(|v| v.identity.id).unwrap();
+        let pid = app.views().first().map(|v| v.identity.id).unwrap();
         app.screen = crate::tui::app::Screen::PlayerById(pid);
 
         app.handle(Action::Char(']'));
@@ -2325,7 +2322,7 @@ mod app_snapshot_tests {
         let (_dir, store) = empty_store_in_tempdir();
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
-        let pid = app.views().iter().next().map(|v| v.identity.id).unwrap();
+        let pid = app.views().first().map(|v| v.identity.id).unwrap();
         app.screen = crate::tui::app::Screen::PlayerById(pid);
 
         let text = render_app_to_text(&app, 140, 40);
@@ -2357,7 +2354,7 @@ mod app_snapshot_tests {
         let (_dir, store) = empty_store_in_tempdir();
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
-        let pid = app.views().iter().next().map(|v| v.identity.id).unwrap();
+        let pid = app.views().first().map(|v| v.identity.id).unwrap();
         app.screen = crate::tui::app::Screen::PlayerById(pid);
 
         // Render at 80 cols — Default preset (15 cols) won't fit; some

@@ -343,6 +343,7 @@ fn render_goalie_strip(
     f.render_widget(Paragraph::new(lines), area);
 }
 
+#[allow(clippy::too_many_arguments)] // Render fn signature: 4 layout + 2 data + 2 mode params.
 fn render_pos_col(
     f: &mut Frame,
     area: Rect,

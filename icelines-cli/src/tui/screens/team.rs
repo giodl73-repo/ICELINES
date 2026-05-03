@@ -149,6 +149,6 @@ pub(crate) fn collect_team_goalie_views<'a, 'v: 'a>(
         .iter()
         .filter(|v| v.team_display() == abbrev)
         .collect();
-    out.sort_by(|a, b| b.gp().cmp(&a.gp()));
+    out.sort_by_key(|v| std::cmp::Reverse(v.gp()));
     out
 }

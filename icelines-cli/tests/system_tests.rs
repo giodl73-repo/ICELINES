@@ -1232,6 +1232,7 @@ fn l2_cmd_transactions_team_edm_filters() {
 }
 
 #[test]
+#[allow(non_snake_case)] // Test name encodes the literal "LEAGUE" sentinel value.
 fn l2_cmd_transactions_team_LEAGUE_returns_teamless() {
     let out = run(&["transactions", "--team", "LEAGUE", "--csv"]);
     assert!(out.status.success());
