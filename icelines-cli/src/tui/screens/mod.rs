@@ -2029,6 +2029,41 @@ mod app_snapshot_tests {
         );
     }
 
+    /// EDGE checkpoint pre-commit: Esc on Build with an active pick
+    /// clears `sort_stat_pick`, restoring the legacy QueryField sort
+    /// path. Without this affordance the picker sticks once activated
+    /// and Left/Right on the legacy "Sort by" field is silently ignored.
+    #[test]
+    fn l1_lindsay_queries_esc_clears_active_sort_pick() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+        app.handle(Action::Tab);
+        app.handle(Action::Tab);
+
+        // Open picker, accept first result (Goals).
+        app.handle(Action::Char('/'));
+        app.handle(Action::Enter);
+        assert_eq!(
+            app.sort_stat_pick,
+            Some(icelines_core::stats_catalog::StatId::Goals),
+            "picker should set sort_stat_pick"
+        );
+        assert_eq!(app.query_mode, crate::tui::app::QueryMode::Build);
+
+        // Esc on Build with active pick clears the pick.
+        app.handle(Action::Escape);
+        assert_eq!(app.sort_stat_pick, None,
+            "Esc on Build with active pick must clear sort_stat_pick");
+        // Mode stays Build (Esc didn't drop us anywhere else).
+        assert_eq!(app.query_mode, crate::tui::app::QueryMode::Build);
+        // Status line surfaces the clear action.
+        assert!(
+            app.status.contains("cleared") || app.status.contains("Sort pick"),
+            "status should mention pick clear; got: {}", app.status
+        );
+    }
+
     /// Esc on the picker cancels — exits to Build, no pick made.
     #[test]
     fn l1_lindsay_queries_sort_picker_esc_cancels() {

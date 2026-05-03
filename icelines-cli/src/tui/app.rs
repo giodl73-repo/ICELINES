@@ -424,6 +424,18 @@ impl App {
                 } else if self.screen == Screen::Queries && self.query_mode != QueryMode::Build {
                     self.query_mode = QueryMode::Build;
                     self.status = "Cancelled  ·  s=save  l=load  r=reset".to_owned();
+                } else if self.screen == Screen::Queries
+                    && self.query_mode == QueryMode::Build
+                    && self.sort_stat_pick.is_some()
+                {
+                    // Phase Lindsay L.3.4 (EDGE checkpoint fix): Esc on
+                    // Queries Build mode with an active picker selection
+                    // clears the pick, restoring the legacy "Sort by"
+                    // QueryField path. Without this, Left/Right on the
+                    // Sort by field is silently ignored once the picker
+                    // has fired (sticky-pick UX wart).
+                    self.sort_stat_pick = None;
+                    self.status = "Sort pick cleared  ·  / picker  s=save  l=load  r=reset".to_owned();
                 } else {
                     self.go_back();
                 }

@@ -601,7 +601,44 @@ This is v0.4. Status:
 5. ~~R4 verification~~ — complete (18/18 R3 items cleared, no drift).
 6. ~~L.1 implementation~~ — **shipped 2026-05-02**. 45 new Lindsay-prefixed tests; 1119 workspace tests passing. See "L.1 ship summary" below.
 7. ~~L.2 implementation~~ — **shipped 2026-05-02**. 65 new Lindsay-L.2 tests; 1184 workspace tests passing. See "L.2 ship summary" below.
-8. **L.3 next** — Query screen redesign (categorized sections, generic filter, StatId sort, search-as-you-type sort picker). Pre-L.3 stdout-golden capture is the entry criterion (BENCH-R2 L2-B23).
+8. ~~L.3 implementation~~ — **shipped 2026-05-02**. 31 new Lindsay-L.3 tests; 1215 workspace tests passing. See "L.3 ship summary" below.
+9. **L.4 next** — Career table on player card with selectable columns + `[`/`]` keys + 80-col degradation.
+
+---
+
+## L.3 ship summary (2026-05-02)
+
+L.3 implementation complete with 5 sub-phases + 2 role-review checkpoints, all green:
+
+| Sub-phase | Deliverables | Tests added |
+|---|---|---|
+| **L.3.0** | Pre-L.3 stdout-golden capture (BENCH-R2 L2-B23 entry criterion). 35 goldens at `icelines-cli/tests/fixtures/lindsay_l3_pre/leaders-<sort>.golden.txt` covering every legacy `--sort` value of `query leaders`. New L2 fence test `l2_lindsay_l3_golden_parity` with `LINDSAY_L3_REGEN=1` regen mode. Discovered legacy sort tiebreak is non-deterministic across process invocations (HashMap iteration order). | 1 L2 (initially `#[ignore]`d) |
+| **L.3.1** | New `--filter "<key><op><value>"` flag on `query leaders` — repeatable, routes through `parse_filter` (NaN/inf gate at construction; 7-variant `FilterParseError` with actionable Display strings). `normalize_stat_filters` runs before apply. DI-08 silent skip on non-applicable. Coexists independently with legacy typed flags. KEEL pre-commit fix: sparse-data hint when filtering by unloaded Lindsay-tier stat. | 6 L2 |
+| **L.3.2** | AI-06 universal `nhl_id asc` tiebreak applied to all 5 sort sites in `commands/query.rs` (Improvement, Pts/82 fallback, standard SortMetric, goalies, similar-players). Sort now deterministic across process invocations. L.3.0 fence test goldens regenerated under deterministic sort; `#[ignore]` dropped — fence active for L.3 + L.5. | (regen + un-ignore) |
+| **L.3.3** | TUI Queries categorized sections — new `QuerySection` model groups 10 default fields into 4 named sections ("Sort & Display" + "Position & Age" expanded; "Origin & Draft" + "Stats Thresholds" collapsed). `Tab` toggles section containing cursor. Renderer rewrite: ▶/▼ markers + indented field rows for expanded sections. Cursor up/down skips collapsed-section fields. `Action::Refresh` resets sections. `cycle_screen` exposed `pub(crate)` for test-only screen advancement. | 5 L0 + 1 L0 + 5 L1 (gap-fill) |
+| **L.3.4** | Search-as-you-type sort picker overlay — `/` opens picker; type filters by `cli_key` substring (case-insensitive); Up/Down navigates filtered list; Enter accepts; Esc cancels (overlay) or clears active pick (Build). `sort_picker_filter(query) -> Vec<StatId>` helper. New `run_query_views_with_pick` variant routes selected stat through `StatId::sort_cmp` (AI-06 tiebreak). EDGE checkpoint fix: Esc on Build with active pick clears `sort_stat_pick` (no more sticky pick). | 6 L0 + 7 L1 |
+| **L.3.5** | Post-L.3 stdout-golden reassertion (exit criterion). Fence test passing post-L.3 against the regenerated deterministic goldens. | (verifies L.3.0 fence) |
+
+**Role-review checkpoints (all PASS):**
+- KEEL + BENCH on CLI surface (post-L.3.1) — 4 PASS / 3 PARTIAL + 5 PASS / 2 PARTIAL. Pre-commit fixes landed: sparse-data hint, regen instructions, typed-flag coexistence test.
+- GLASS + EDGE on TUI + filter integration (post-L.3.3/4) — 7/8 + 7/8. Sticky-pick UX wart caught by EDGE; pre-commit Esc-clears-pick fix landed.
+
+**Carry-forwards parked for L.4 / L.5+:**
+- 80-col degradation for sort picker rows (~70+ char width wraps) — GLASS #7
+- Header-as-cursor-stop in Queries (currently sections only togglable via cursor's field) — GLASS
+- L0 contract tests for picker edge cases (Gaa ascending, EvGoalsFor multi-stint None-last, PointsPerGame sub-MIN_GP None-last) — EDGE
+- Status-line refresh on empty-list Enter in picker — EDGE #7
+- Doc comment on `sort_val_view` noting picker/legacy MIN_GP semantic split — EDGE #5
+- Roll `--filter` to `query player/compare/goalies` (II-06 uniformity) — KEEL
+- Add `Games` StatId for skater GP (catalog gap) — KEEL
+- "Did you mean `>=`?" hint for `=>` typo — KEEL
+- Same-key Min+Min L2 normalization pin — BENCH
+- Replace flat fields with per-StatId filter rows (full v0.4 spec — 1 row per stat per category) — L.4+
+
+**Test totals:**
+- Pre-L.3: 1184 workspace tests
+- Post-L.3: **1215 workspace tests** (+31 — 6 L.3.1 + 5 L.3.3 + 5 L.3.3 gap-fill + 6 L.3.4 L0 + 7 L.3.4 L1 + 1 L.3.4 EDGE + 1 fence un-ignored)
+- All passing; no regressions.
 
 ---
 
