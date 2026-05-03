@@ -1,0 +1,14 @@
+Rank Player                   Team  Pos  GP   FO%       
+───────────────────────────────────────────────────────
+1    Thomas Bordeleau         STL   C    1    100.0%    
+2    Joshua Roy               MTL   RW   12   100.0%    
+3    Drake Caggiula           RET   LW   7    100.0%    
+4    Dryden Hunt              CGY   LW   5    100.0%    
+5    Filip Hronek             VAN   D    61   100.0%    
+6    Jani Nyman               SEA   RW   12   100.0%    
+7    Callahan Burke           RET   C    7    100.0%    
+8    Andrei Kuzmenko          LAK   LW   66   100.0%    
+9    James Malatesta          CBJ   LW   2    100.0%    
+10   Taylor Ward              LAK   RW   1    100.0%    
+
+905 matched, showing 10.

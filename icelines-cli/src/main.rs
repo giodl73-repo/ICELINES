@@ -172,6 +172,7 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
                         sort: "ppg".to_owned(), top,
                         rate: false, percentiles: false,
                         json, csv,
+                        filters: Vec::new(),
                     }).await?;
                 }
                 ExportShape::Goalies => {
@@ -251,7 +252,7 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
                 handedness, ppg_min, gp_min, gp_max,
                 toi_min, plus_minus_min, shots_pg_min, birth_province,
                 seasons, season, season_type, sort, top, rate, percentiles, json, csv,
-                ufa, rfa, elc, expiry_year,
+                ufa, rfa, elc, expiry_year, filters,
             } => {
                 commands::query::run_leaders(commands::query::LeadersArgs {
                     pos, team, age_min, age_max, nationality,
@@ -262,6 +263,7 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
                     seasons, season,
                     season_type: season_type.to_core(),
                     sort, top, rate, percentiles, json, csv,
+                    filters,
                 }).await?;
             }
             QuerySubcommand::Player { name, breakdown, percentiles, last_n, season, season_type } => {

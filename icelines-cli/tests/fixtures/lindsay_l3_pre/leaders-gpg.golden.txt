@@ -1,0 +1,14 @@
+Rank Player                   Team  Pos  GP   GPG       
+───────────────────────────────────────────────────────
+1    Leon Draisaitl           EDM   C    71   0.732     
+2    Alex Ovechkin            WSH   LW   65   0.677     
+3    Kirill Kaprizov          MIN   LW   41   0.610     
+4    Tage Thompson            BUF   C    76   0.579     
+5    William Nylander         TOR   RW   82   0.549     
+6    Brayden Point            TBL   C    77   0.545     
+7    David Pastrnak           BOS   RW   82   0.524     
+8    Jake Guentzel            TBL   C    80   0.512     
+9    John Tavares             TOR   C    75   0.507     
+10   Kyle Connor              WPG   LW   82   0.500     
+
+905 matched, showing 10.

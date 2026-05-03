@@ -1,0 +1,16 @@
+  Warning: no realtime/MoneyPuck data loaded for sort 'giveaways'. Run `icelines fetch` to download it.
+  Results below are sorted by Pts/82 as a fallback.
+Rank Player                   Team  Pos  GP   GvA       
+───────────────────────────────────────────────────────
+1    Nikita Kucherov          TBL   RW   78   0         
+2    Leon Draisaitl           EDM   C    71   0         
+3    Connor McDavid           EDM   C    67   0         
+4    Nathan MacKinnon         COL   C    79   0         
+5    Kirill Kaprizov          MIN   LW   41   0         
+6    David Pastrnak           BOS   RW   82   0         
+7    Mitch Marner             VGK   RW   81   0         
+8    Jack Eichel              VGK   C    77   0         
+9    Kyle Connor              WPG   LW   82   0         
+10   Auston Matthews          TOR   C    67   0         
+
+905 matched, showing 10.

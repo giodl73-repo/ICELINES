@@ -340,6 +340,11 @@ pub struct LeadersArgs {
     pub percentiles: bool,
     pub json: bool,
     pub csv: bool,
+    /// Phase Lindsay L.3.1 — generic stat filters. Each string is parsed
+    /// via `icelines_core::stats_catalog::parse_filter` and added to
+    /// `PlayerFilter.stat_filters`; `normalize_stat_filters` runs before
+    /// apply.
+    pub filters: Vec<String>,
 }
 
 // ── icelines query leaders ────────────────────────────────────────────────────
@@ -411,6 +416,18 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
         .birth_province
         .map(|bp| bp.split(',').map(|s| s.trim().to_uppercase()).collect());
 
+    // Phase Lindsay L.3.1 — generic stat filters. Each --filter flag
+    // routes through `parse_filter` (which gates NaN/inf at construction
+    // and rejects malformed grammar with a 7-variant error). Multiple
+    // --filter flags accumulate (implicit AND); `normalize_stat_filters`
+    // collapses Min+Min/Max+Max to tightest bounds before apply.
+    for raw in &args.filters {
+        let f = icelines_core::stats_catalog::parse_filter(raw)
+            .with_context(|| format!("--filter {raw:?}"))?;
+        filter.stat_filters.push(f);
+    }
+    filter.normalize_stat_filters();
+
     let mut matched: Vec<PlayerView<'_>> = filter.apply_views(all_views.iter().copied());
 
     // gp_max (not in PlayerFilter — inline here)
@@ -442,6 +459,40 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
     if matched.is_empty() {
         if let Some(ref nats) = filter.nationalities {
             eprintln!("  Hint: no players found for nationality code(s) {:?}. Use ISO-3166 alpha-3 (e.g. CAN, USA, SWE, FIN, RUS, CZE, SVK, DEU).", nats);
+        }
+        // Phase Lindsay L.3.1 — KEEL pre-commit fix: surface a hint when
+        // an empty result set traces back to an unloaded Lindsay substruct
+        // rather than a real "no matches" outcome. Reads from realtime /
+        // possession / goalsForAgainst / xG return None pre-bundling, so
+        // any --filter on those StatIds returns 0 silently. Hint user
+        // toward `fetch report` (the L.1 path that populates per-window
+        // files) so the empty result doesn't read as a contradiction
+        // ("Goal-scoring leaders have ZERO hits?").
+        let has_lindsay_filter = filter.stat_filters.iter().any(|f| {
+            use icelines_core::stats_catalog::StatCategory::*;
+            matches!(
+                f.stat.category(),
+                Possession | OnIceGoals | TimeOnIce
+            ) || matches!(
+                f.stat,
+                icelines_core::stats_catalog::StatId::Hits
+                | icelines_core::stats_catalog::StatId::BlockedShots
+                | icelines_core::stats_catalog::StatId::Takeaways
+                | icelines_core::stats_catalog::StatId::Giveaways
+                | icelines_core::stats_catalog::StatId::MissedShots
+                | icelines_core::stats_catalog::StatId::HitsPer60
+                | icelines_core::stats_catalog::StatId::BlockedShotsPer60
+                | icelines_core::stats_catalog::StatId::TakeawaysPer60
+                | icelines_core::stats_catalog::StatId::GiveawaysPer60
+            )
+        });
+        if has_lindsay_filter {
+            eprintln!(
+                "  Hint: Lindsay-tier stat data (realtime / possession / TOI splits / xG) \
+                 isn't fully bundled yet. Run `icelines fetch report --kind <kind> \
+                 --season {}` to populate per-window files, or wait for L.7 historical bundling.",
+                args.season.as_deref().unwrap_or(icelines_core::CURRENT_SEASON_STR),
+            );
         }
     }
 

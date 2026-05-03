@@ -1,0 +1,14 @@
+Rank Player                   Team  Pos  GP   SH-G/82   
+───────────────────────────────────────────────────────
+1    Anthony Mantha           PIT   RW   13   6.3       
+2    Vincent Trocheck         NYR   C    82   6.0       
+3    Alex Tuch                BUF   RW   82   6.0       
+4    Seth Jarvis              CAR   C    73   5.6       
+5    Sam Reinhart             FLA   C    79   5.2       
+6    Chris Kreider            ANA   LW   68   4.8       
+7    Josh Norris              BUF   C    56   4.4       
+8    Anthony Cirelli          TBL   C    80   4.1       
+9    Shane Pinto              OTT   C    70   3.5       
+10   Aliaksei Protas          WSH   LW   76   3.2       
+
+905 matched, showing 10.

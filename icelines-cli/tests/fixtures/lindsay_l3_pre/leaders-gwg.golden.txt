@@ -1,0 +1,14 @@
+Rank Player                   Team  Pos  GP   GWG       
+───────────────────────────────────────────────────────
+1    Mark Scheifele           WPG   C    82   11        
+2    Leon Draisaitl           EDM   C    71   11        
+3    Sidney Crosby            PIT   C    80   10        
+4    Matt Boldy               MIN   LW   82   10        
+5    Dylan Guenther           UTA   RW   70   9         
+6    Nikita Kucherov          TBL   RW   78   9         
+7    Nick Suzuki              MTL   C    82   9         
+8    Martin Necas             COL   C    79   8         
+9    Kyle Connor              WPG   LW   82   8         
+10   Cole Caufield            MTL   RW   82   8         
+
+905 matched, showing 10.

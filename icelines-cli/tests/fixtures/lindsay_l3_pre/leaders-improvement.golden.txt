@@ -1,0 +1,15 @@
+IMPROVEMENT LEADERS — Y/Y PPG delta (current vs prior season)
+Rank Player                   Team  Pos  GP   Curr     Prior    Δ PPG   
+─────────────────────────────────────────────────────────────────────
+1    Macklin Celebrini        SJS   C    70   0.900    0.398    +0.502  
+2    Darren Raddysh           TBL   D    73   0.507    0.055    +0.452  
+3    Charlie McAvoy           BOS   D    50   0.460    0.036    +0.424  
+4    Viktor Arvidsson         BOS   LW   67   0.403    0.023    +0.380  
+5    Cutter Gauthier          ANA   LW   82   0.537    0.165    +0.371  
+6    Leo Carlsson             ANA   C    76   0.592    0.227    +0.365  
+7    Evgeni Malkin            PIT   C    68   0.735    0.381    +0.354  
+8    Evan Bouchard            EDM   D    82   0.817    0.476    +0.341  
+9    Oliver Kapanen           MTL   C    18   0.111    -0.229   +0.340  
+10   Lawson Crouse            UTA   LW   81   0.222    -0.099   +0.321  
+
+905 matched, showing 10.

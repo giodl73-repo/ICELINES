@@ -1,0 +1,14 @@
+Rank Player                   Team  Pos  GP   Goals     
+───────────────────────────────────────────────────────
+1    Leon Draisaitl           EDM   C    71   52        
+2    William Nylander         TOR   RW   82   45        
+3    Alex Ovechkin            WSH   LW   65   44        
+4    Tage Thompson            BUF   C    76   44        
+5    David Pastrnak           BOS   RW   82   43        
+6    Brayden Point            TBL   C    77   42        
+7    Jake Guentzel            TBL   C    80   41        
+8    Kyle Connor              WPG   LW   82   41        
+9    Alex DeBrincat           DET   RW   82   39        
+10   Sam Reinhart             FLA   C    79   39        
+
+905 matched, showing 10.

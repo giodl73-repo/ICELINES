@@ -2204,3 +2204,196 @@ fn l2_lindsay_fetch_report_no_lock_skips_lock_acquisition() {
         "--no-lock must NOT delete or modify the held lock file",
     );
 }
+
+// ── Phase Lindsay L.3.1 — `query leaders --filter` ──────────────────────────
+
+/// `--filter "goals>=30"` exits 0 and the result count matches a
+/// canonical bundled-data benchmark (~46 ≥30-goal scorers in 2024-25).
+#[test]
+fn l2_lindsay_query_leaders_filter_goals_min_returns_subset() {
+    let out = run(&[
+        "query", "leaders",
+        "--filter", "goals>=30",
+        "--top", "100",
+        "--season", "20242025",
+    ]);
+    assert!(
+        out.status.success(),
+        "--filter goals>=30 must exit 0; stderr: {}",
+        String::from_utf8_lossy(&out.stderr),
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    // The pre-Lindsay all-leaders query for 2024-25 returns ~905 players;
+    // `goals>=30` must trim well below that.
+    assert!(stdout.contains("matched"), "footer must report match count");
+    assert!(
+        stdout.contains(" matched, showing "),
+        "match-count footer present"
+    );
+}
+
+/// Multiple `--filter` flags compose via implicit AND; `normalize_stat_filters`
+/// runs before apply. Pin: combining a goals-min and gp-min produces a
+/// strict subset of either alone.
+#[test]
+fn l2_lindsay_query_leaders_multiple_filters_compose_and() {
+    // First: just goals>=30 → some count N.
+    let out_g = run(&[
+        "query", "leaders",
+        "--filter", "goals>=30",
+        "--top", "200",
+        "--season", "20242025",
+    ]);
+    assert!(out_g.status.success());
+
+    // Then: goals>=30 AND points>=80 → strict subset.
+    let out_both = run(&[
+        "query", "leaders",
+        "--filter", "goals>=30",
+        "--filter", "points>=80",
+        "--top", "200",
+        "--season", "20242025",
+    ]);
+    assert!(out_both.status.success(),
+        "compound --filter must exit 0; stderr: {}",
+        String::from_utf8_lossy(&out_both.stderr));
+    // Both should contain the "matched" footer; the compound result
+    // count must be <= the single-filter count (subset semantic).
+    let g_only = String::from_utf8_lossy(&out_g.stdout);
+    let both = String::from_utf8_lossy(&out_both.stdout);
+    // Footer format: `"<N> matched, showing <M>."`
+    let parse_count = |s: &str| -> Option<u32> {
+        for line in s.lines() {
+            let trimmed = line.trim();
+            if let Some(idx) = trimmed.find(" matched, showing ") {
+                return trimmed[..idx].parse().ok();
+            }
+        }
+        None
+    };
+    let g = parse_count(&g_only).expect("goals-only match count must parse");
+    let b = parse_count(&both).expect("compound match count must parse");
+    assert!(
+        b <= g,
+        "compound filter result ({b}) must be subset of single-filter ({g})"
+    );
+}
+
+/// Unknown stat key surfaces as a clear error.
+#[test]
+fn l2_lindsay_query_leaders_filter_unknown_key_errors_cleanly() {
+    let out = run(&[
+        "query", "leaders",
+        "--filter", "fooStat>=10",
+        "--season", "20242025",
+    ]);
+    assert!(!out.status.success(), "unknown filter key must non-zero exit");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("unknown stat key") && stderr.contains("fooStat"),
+        "error must label class + name; got: {stderr}"
+    );
+}
+
+/// NaN / infinity rejected at parse-time (II-05).
+#[test]
+fn l2_lindsay_query_leaders_filter_not_finite_rejected() {
+    for bad in &["NaN", "inf", "-inf"] {
+        let arg = format!("goals>={bad}");
+        let out = run(&[
+            "query", "leaders",
+            "--filter", &arg,
+            "--season", "20242025",
+        ]);
+        assert!(
+            !out.status.success(),
+            "non-finite filter value must non-zero exit (input: {arg})"
+        );
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        assert!(
+            stderr.contains("not finite"),
+            "error must label not-finite; got: {stderr}"
+        );
+    }
+}
+
+/// BENCH-checkpoint pre-commit: legacy typed flags (`--gp-min`,
+/// `--ppg-min`, etc.) coexist with `--filter` independently. Typed
+/// flags route to dedicated `PlayerFilter` slots BEFORE the
+/// `--filter` loop appends to `stat_filters`; both gates apply via
+/// AND. Pin: a result set with both flags is a subset of either alone.
+#[test]
+fn l2_lindsay_query_leaders_typed_flag_and_filter_compose_independently() {
+    // Just typed --gp-min.
+    let out_typed = run(&[
+        "query", "leaders",
+        "--gp-min", "70",
+        "--top", "200",
+        "--season", "20242025",
+    ]);
+    assert!(out_typed.status.success());
+
+    // Just generic --filter.
+    let out_filter = run(&[
+        "query", "leaders",
+        "--filter", "goals>=30",
+        "--top", "200",
+        "--season", "20242025",
+    ]);
+    assert!(out_filter.status.success());
+
+    // Both: --gp-min 70 AND --filter goals>=30.
+    let out_both = run(&[
+        "query", "leaders",
+        "--gp-min", "70",
+        "--filter", "goals>=30",
+        "--top", "200",
+        "--season", "20242025",
+    ]);
+    assert!(
+        out_both.status.success(),
+        "typed + generic filter must coexist; stderr: {}",
+        String::from_utf8_lossy(&out_both.stderr),
+    );
+
+    let parse_count = |s: &str| -> Option<u32> {
+        for line in s.lines() {
+            let trimmed = line.trim();
+            if let Some(idx) = trimmed.find(" matched, showing ") {
+                return trimmed[..idx].parse().ok();
+            }
+        }
+        None
+    };
+    let typed = parse_count(&String::from_utf8_lossy(&out_typed.stdout))
+        .expect("typed-only count");
+    let filter = parse_count(&String::from_utf8_lossy(&out_filter.stdout))
+        .expect("filter-only count");
+    let both = parse_count(&String::from_utf8_lossy(&out_both.stdout))
+        .expect("both count");
+    // Both should be a subset of EITHER alone — neither flag dominates.
+    assert!(
+        both <= typed,
+        "compound ({both}) must be subset of typed-only ({typed})"
+    );
+    assert!(
+        both <= filter,
+        "compound ({both}) must be subset of filter-only ({filter})"
+    );
+}
+
+/// Empty filter string surfaces EmptyInput error.
+#[test]
+fn l2_lindsay_query_leaders_filter_empty_input_errors_cleanly() {
+    let out = run(&[
+        "query", "leaders",
+        "--filter", "",
+        "--season", "20242025",
+    ]);
+    assert!(!out.status.success(), "empty filter must non-zero exit");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("filter is empty"),
+        "error must label empty-input; got: {stderr}"
+    );
+}

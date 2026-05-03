@@ -848,6 +848,18 @@ pub enum QuerySubcommand {
         /// Filter by contract expiry year (e.g. 2026)
         #[arg(long)]
         expiry_year: Option<u16>,
+        /// Phase Lindsay L.3.1 — generic stat filter. Repeatable; multiple
+        /// --filter flags accumulate (implicit AND). Grammar:
+        /// `<stat-key><op><value>` where op is `>=` `<=` `==` `=`.
+        ///
+        /// Examples:
+        ///   --filter "hits>=20" --filter "blocks>=10"
+        ///   --filter "save-pct>=.910" --filter "gp>=15"
+        ///
+        /// Stat keys: any catalog cli_key (run `--help` for the full list,
+        /// or see `design/specs/stat-catalog.md`).
+        #[arg(long = "filter", value_name = "STAT-KEY OP VALUE")]
+        filters: Vec<String>,
     },
 
     /// Deep dive on a single player — career arc, league rank, percentiles.

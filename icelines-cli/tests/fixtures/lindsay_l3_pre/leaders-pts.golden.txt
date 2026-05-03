@@ -1,0 +1,14 @@
+Rank Player                   Team  Pos  GP   Pts       
+───────────────────────────────────────────────────────
+1    Nikita Kucherov          TBL   RW   78   121       
+2    Nathan MacKinnon         COL   C    79   116       
+3    Leon Draisaitl           EDM   C    71   106       
+4    David Pastrnak           BOS   RW   82   106       
+5    Mitch Marner             VGK   RW   81   102       
+6    Connor McDavid           EDM   C    67   100       
+7    Kyle Connor              WPG   LW   82   97        
+8    Jack Eichel              VGK   C    77   94        
+9    Cale Makar               COL   D    80   92        
+10   Sidney Crosby            PIT   C    80   91        
+
+905 matched, showing 10.

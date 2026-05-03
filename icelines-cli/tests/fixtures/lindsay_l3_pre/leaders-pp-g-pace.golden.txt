@@ -1,0 +1,14 @@
+Rank Player                   Team  Pos  GP   PP-G/82   
+───────────────────────────────────────────────────────
+1    Taylor Ward              LAK   RW   1    82.0      
+2    Patrik Laine             MTL   LW   52   23.7      
+3    Leon Draisaitl           EDM   C    71   18.5      
+4    Alex Ovechkin            WSH   LW   65   17.7      
+5    Jake Guentzel            TBL   C    80   17.4      
+6    Matthew Tkachuk          FLA   LW   52   17.3      
+7    Brayden Point            TBL   C    77   17.0      
+8    Brady Tkachuk            OTT   LW   72   15.9      
+9    Tomas Hertl              VGK   C    73   15.7      
+10   Nico Hischier            NJD   C    75   15.3      
+
+905 matched, showing 10.
