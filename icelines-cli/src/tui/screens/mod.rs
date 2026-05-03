@@ -1775,4 +1775,177 @@ mod app_snapshot_tests {
             );
         });
     }
+
+    // ─── Phase Lindsay L.3.3 — Queries categorized-sections render ───────
+
+    /// Render snapshot: the Queries screen shows all 4 section headers
+    /// with the right ▼/▶ markers (Sort & Display + Position & Age
+    /// expanded, Origin & Draft + Stats Thresholds collapsed by default).
+    /// Catches a regression where a section was dropped from
+    /// `default_sections` or the renderer skipped a section.
+    #[test]
+    fn l1_lindsay_queries_renders_all_four_section_headers() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+        // Navigate to Queries (Tab × 2 from Home).
+        app.handle(Action::Tab);
+        app.handle(Action::Tab);
+        assert_eq!(app.screen, crate::tui::app::Screen::Queries);
+
+        let text = render_app_to_text(&app, 140, 40);
+        // Expanded sections show ▼; collapsed sections show ▶.
+        assert!(
+            text.contains("▼ Sort & Display"),
+            "expanded Sort & Display section must show ▼ marker; got:\n{text}"
+        );
+        assert!(
+            text.contains("▼ Position & Age"),
+            "expanded Position & Age section must show ▼; got:\n{text}"
+        );
+        assert!(
+            text.contains("▶ Origin & Draft"),
+            "collapsed Origin & Draft section must show ▶; got:\n{text}"
+        );
+        assert!(
+            text.contains("▶ Stats Thresholds"),
+            "collapsed Stats Thresholds section must show ▶; got:\n{text}"
+        );
+    }
+
+    /// Render snapshot: expanded sections show their fields indented;
+    /// collapsed sections do NOT show their fields. Default state:
+    /// "Position" (in expanded section 1) is visible; "Nationality"
+    /// (in collapsed section 2) is NOT.
+    #[test]
+    fn l1_lindsay_queries_collapsed_section_hides_its_fields() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+        app.handle(Action::Tab);
+        app.handle(Action::Tab);
+
+        let text = render_app_to_text(&app, 140, 40);
+
+        // Position (field 1, section "Position & Age", expanded by default).
+        assert!(
+            text.contains("Position"),
+            "expanded section's field 'Position' must render; got:\n{text}"
+        );
+        // Nationality (field 5, section "Origin & Draft", collapsed by default).
+        // The label "Nationality" should NOT appear in field-row form
+        // (we look for the indented form to avoid false matches).
+        assert!(
+            !text.contains("    Nationality"),
+            "collapsed section's field 'Nationality' must NOT render its row; got:\n{text}"
+        );
+    }
+
+    /// Tab on Queries collapses the cursor's section. After collapsing
+    /// "Sort & Display", the "Sort by" field row disappears from the
+    /// rendered output.
+    #[test]
+    fn l1_lindsay_queries_tab_collapse_hides_field_row() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+        app.handle(Action::Tab);
+        app.handle(Action::Tab);
+        assert_eq!(app.screen, crate::tui::app::Screen::Queries);
+
+        // Initial: "Sort by" field row is visible (section 0 expanded).
+        let pre = render_app_to_text(&app, 140, 40);
+        assert!(pre.contains("    Sort by"),
+            "Sort by row must be visible pre-collapse; got:\n{pre}");
+
+        // Tab on Queries → collapse cursor's section (section 0 = Sort & Display).
+        app.handle(Action::Tab);
+
+        let post = render_app_to_text(&app, 140, 40);
+        // Section header now shows ▶ (collapsed).
+        assert!(
+            post.contains("▶ Sort & Display"),
+            "collapsed Sort & Display must show ▶ post-Tab; got:\n{post}"
+        );
+        // Field row is hidden — no indented "Sort by" row.
+        assert!(
+            !post.contains("    Sort by"),
+            "Sort by row must hide post-collapse; got:\n{post}"
+        );
+    }
+
+    /// Cursor Down past the last visible field of an expanded section
+    /// jumps to the first visible field of the next expanded section,
+    /// skipping any collapsed sections in between.
+    #[test]
+    fn l1_lindsay_queries_cursor_down_skips_collapsed_section_fields() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+        app.handle(Action::Tab);  // Home → Depth
+        app.handle(Action::Tab);  // Depth → Queries
+
+        // Cursor starts at field 0 (Sort by, section 0). Walk Down
+        // through each visible field. After section 0's three fields
+        // (0, 9, 8 — Sort by, Show top, Seasons), Down should skip to
+        // section 1's first field (1 — Position) without landing on
+        // any field of the COLLAPSED section 2 (Origin & Draft) or
+        // section 3 (Stats Thresholds) in between.
+        let mut visited = vec![app.query_field_idx];
+        for _ in 0..6 {
+            app.handle(Action::Down);
+            // Stop when results panel takes focus.
+            if app.query_results_focused {
+                break;
+            }
+            visited.push(app.query_field_idx);
+        }
+        // Visited fields must all be in expanded sections (section 0
+        // with [0, 9, 8] + section 1 with [1, 2, 3]). Field 4 (in
+        // section 3 — Stats) and 5/6/7 (in section 2 — Origin) must
+        // NOT appear.
+        for f in [4u32, 5, 6, 7] {
+            assert!(
+                !visited.contains(&(f as usize)),
+                "cursor must NOT land on field {f} (collapsed section); visited: {visited:?}"
+            );
+        }
+        // First two cursor stops are field 0 (Sort by) then field 9
+        // (Show top) — section 0's first two fields in declaration
+        // order.
+        assert_eq!(visited[0], 0);
+        assert_eq!(visited[1], 9);
+    }
+
+    /// `Action::Refresh` (`r` key) resets both `query_fields` AND
+    /// `query_sections` to their defaults. After collapsing every
+    /// section, Refresh restores the default expansion state.
+    #[test]
+    fn l1_lindsay_queries_refresh_resets_sections_to_default() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+        app.handle(Action::Tab);  // Home → Depth
+        app.handle(Action::Tab);  // Depth → Queries
+
+        // Collapse section 0 + section 1. Then refresh — defaults restore.
+        app.handle(Action::Tab);  // collapse section 0 (cursor's section)
+        // Cursor moved to field 1 (section 1). Tab again collapses section 1.
+        app.handle(Action::Tab);
+        // At least one of the originally-expanded sections is now collapsed.
+        let any_collapsed = !app.query_sections[0].expanded
+            || !app.query_sections[1].expanded;
+        assert!(any_collapsed, "post-Tab×2 at least one section should be collapsed");
+
+        // Refresh.
+        app.handle(Action::Refresh);
+
+        // Defaults restored: section 0 + 1 expanded, section 2 + 3 collapsed.
+        assert!(app.query_sections[0].expanded, "Refresh must re-expand section 0");
+        assert!(app.query_sections[1].expanded, "Refresh must re-expand section 1");
+        assert!(!app.query_sections[2].expanded, "Refresh must keep section 2 collapsed");
+        assert!(!app.query_sections[3].expanded, "Refresh must keep section 3 collapsed");
+        // Cursor reset too.
+        assert_eq!(app.query_field_idx, 0);
+    }
 }
