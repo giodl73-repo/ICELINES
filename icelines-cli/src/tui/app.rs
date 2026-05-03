@@ -488,8 +488,15 @@ impl App {
                         }
                     } else {
                         // Phase Lindsay L.3.3 — cursor skips fields in
-                        // collapsed sections. `visible_field_indices`
-                        // returns the cursor-stoppable subset.
+                        // collapsed sections. L.5b user-bug fix: when
+                        // Down would otherwise leap to the results pane
+                        // (past the last visible field), first check if
+                        // there's a collapsed section AFTER the current
+                        // one. If yes, auto-expand it and land on its
+                        // first field — gives the user a keyboard path
+                        // through every section instead of getting
+                        // stranded in early sections with `▶` headers
+                        // visible but unreachable.
                         let visible = crate::tui::screens::queries::visible_field_indices(
                             &self.query_sections,
                         );
@@ -499,10 +506,35 @@ impl App {
                                 self.query_field_idx = visible[pos + 1];
                             }
                             _ => {
-                                // Past last visible — focus results.
-                                self.query_results_focused = true;
-                                self.selected = 0;
-                                self.query_result_scroll = 0;
+                                // Past last visible — try to find a
+                                // collapsed section AFTER the current
+                                // cursor's section. If found, expand
+                                // it and land on its first field.
+                                let cur_section = crate::tui::screens::queries
+                                    ::section_index_for_field(
+                                        &self.query_sections,
+                                        self.query_field_idx,
+                                    )
+                                    .unwrap_or(0);
+                                let next_collapsed = self.query_sections
+                                    .iter()
+                                    .enumerate()
+                                    .skip(cur_section + 1)
+                                    .find(|(_, s)| !s.expanded)
+                                    .map(|(i, _)| i);
+                                if let Some(idx) = next_collapsed {
+                                    self.query_sections[idx].expanded = true;
+                                    if let Some(&first) = self.query_sections[idx]
+                                        .fields.first()
+                                    {
+                                        self.query_field_idx = first;
+                                    }
+                                } else {
+                                    // No collapsed section ahead — focus results.
+                                    self.query_results_focused = true;
+                                    self.selected = 0;
+                                    self.query_result_scroll = 0;
+                                }
                             }
                         }
                     }
@@ -551,7 +583,11 @@ impl App {
                         }
                     } else {
                         // Phase Lindsay L.3.3 — cursor skips fields in
-                        // collapsed sections.
+                        // collapsed sections. Symmetric L.5b fix: when
+                        // Up at the top of the first expanded section,
+                        // auto-expand the previous collapsed section
+                        // and land on its LAST field. Same intent as
+                        // the Down auto-expand.
                         let visible = crate::tui::screens::queries::visible_field_indices(
                             &self.query_sections,
                         );
@@ -559,8 +595,28 @@ impl App {
                         if let Some(pos) = cur_pos {
                             if pos > 0 {
                                 self.query_field_idx = visible[pos - 1];
+                            } else {
+                                // pos == 0 → at first visible. Try
+                                // to expand a previous collapsed section.
+                                let cur_section = crate::tui::screens::queries
+                                    ::section_index_for_field(
+                                        &self.query_sections,
+                                        self.query_field_idx,
+                                    )
+                                    .unwrap_or(0);
+                                let prev_collapsed = (0..cur_section)
+                                    .rev()
+                                    .find(|&i| !self.query_sections[i].expanded);
+                                if let Some(idx) = prev_collapsed {
+                                    self.query_sections[idx].expanded = true;
+                                    if let Some(&last) = self.query_sections[idx]
+                                        .fields.last()
+                                    {
+                                        self.query_field_idx = last;
+                                    }
+                                }
+                                // else: at top with no collapsed-prior, stay.
                             }
-                            // pos == 0 → already at first visible, stay.
                         } else if let Some(&first) = visible.first() {
                             // Cursor was on a now-hidden field — snap to first visible.
                             self.query_field_idx = first;
