@@ -47,12 +47,12 @@ pub fn espn_to_nhl_abbrev(abbrev: &str, season: &str) -> Option<&'static str> {
     // surfaced as a real "unmapped abbrev" warning during the T.6
     // historical capture.
     if let Some(canonical) = match upper.as_str() {
-        "TB"   => Some("TBL"),
-        "SJ"   => Some("SJS"),
-        "NJ"   => Some("NJD"),  // ESPN emits the two-letter form for NJ Devils
-        "LA"   => Some("LAK"),  // ESPN emits the two-letter form for LA Kings
-        "UTAH" => Some("UTA"),  // ESPN's full-word form for Utah HC
-        _     => None,
+        "TB" => Some("TBL"),
+        "SJ" => Some("SJS"),
+        "NJ" => Some("NJD"),   // ESPN emits the two-letter form for NJ Devils
+        "LA" => Some("LAK"),   // ESPN emits the two-letter form for LA Kings
+        "UTAH" => Some("UTA"), // ESPN's full-word form for Utah HC
+        _ => None,
     } {
         return Some(canonical);
     }
@@ -77,7 +77,10 @@ pub fn espn_to_nhl_abbrev(abbrev: &str, season: &str) -> Option<&'static str> {
     // Whitelist passthrough: only when the abbrev already matches a
     // canonical entry. Refuses to silently accept anything ESPN invents.
     // We look up the &'static str rather than returning a fresh allocation.
-    ALL_NHL_TEAMS.iter().find(|t| **t == upper.as_str()).copied()
+    ALL_NHL_TEAMS
+        .iter()
+        .find(|t| **t == upper.as_str())
+        .copied()
 }
 
 #[cfg(test)]
@@ -88,7 +91,8 @@ mod tests {
     #[test]
     fn l0_all_nhl_teams_has_thirty_two_franchises() {
         assert_eq!(
-            ALL_NHL_TEAMS.len(), 32,
+            ALL_NHL_TEAMS.len(),
+            32,
             "NHL has 32 franchises; list drift will break joins. Got {} entries.",
             ALL_NHL_TEAMS.len(),
         );
@@ -98,7 +102,8 @@ mod tests {
     fn l0_all_nhl_teams_has_no_duplicates() {
         let set: HashSet<&str> = ALL_NHL_TEAMS.iter().copied().collect();
         assert_eq!(
-            set.len(), ALL_NHL_TEAMS.len(),
+            set.len(),
+            ALL_NHL_TEAMS.len(),
             "ALL_NHL_TEAMS must contain unique abbrevs",
         );
     }
@@ -108,7 +113,8 @@ mod tests {
         let mut sorted = ALL_NHL_TEAMS.to_vec();
         sorted.sort();
         assert_eq!(
-            sorted.as_slice(), ALL_NHL_TEAMS,
+            sorted.as_slice(),
+            ALL_NHL_TEAMS,
             "list must stay sorted — drift makes diffs unreviewable",
         );
     }
@@ -118,10 +124,22 @@ mod tests {
         // Concrete invariants around the two abbrevs that diverged
         // historically (TBL vs TB, SJS vs SJ). The NHL API uses the
         // 3-letter form for these — anything else breaks roster fetches.
-        assert!(ALL_NHL_TEAMS.contains(&"TBL"), "Tampa Bay must be 'TBL', not 'TB'");
-        assert!(ALL_NHL_TEAMS.contains(&"SJS"), "San Jose must be 'SJS', not 'SJ'");
-        assert!(!ALL_NHL_TEAMS.contains(&"TB"),  "'TB' is not a valid NHL API abbrev");
-        assert!(!ALL_NHL_TEAMS.contains(&"SJ"),  "'SJ' is not a valid NHL API abbrev");
+        assert!(
+            ALL_NHL_TEAMS.contains(&"TBL"),
+            "Tampa Bay must be 'TBL', not 'TB'"
+        );
+        assert!(
+            ALL_NHL_TEAMS.contains(&"SJS"),
+            "San Jose must be 'SJS', not 'SJ'"
+        );
+        assert!(
+            !ALL_NHL_TEAMS.contains(&"TB"),
+            "'TB' is not a valid NHL API abbrev"
+        );
+        assert!(
+            !ALL_NHL_TEAMS.contains(&"SJ"),
+            "'SJ' is not a valid NHL API abbrev"
+        );
     }
 
     #[test]
@@ -132,7 +150,8 @@ mod tests {
         // Home → Team navigation for that team will look empty.
         let bios = crate::bundled::get_bios(icelines_core::CURRENT_SEASON_STR)
             .expect("25-26 bios must be bundled");
-        let teams_in_bios: HashSet<String> = bios.iter()
+        let teams_in_bios: HashSet<String> = bios
+            .iter()
             .filter_map(|b| b.current_team_abbrev.clone())
             .collect();
 
@@ -163,7 +182,8 @@ mod tests {
         // commas (e.g. "EDM,PIT"), so we expand each entry.
         let goalies = crate::bundled::get_goalie_stats(icelines_core::CURRENT_SEASON_STR)
             .expect("25-26 goalie-stats must be bundled");
-        let teams_in_goalies: HashSet<String> = goalies.iter()
+        let teams_in_goalies: HashSet<String> = goalies
+            .iter()
             .flat_map(|g| g.team_abbrevs.split(',').map(|s| s.trim().to_owned()))
             .filter(|s| !s.is_empty())
             .collect();
@@ -184,10 +204,10 @@ mod tests {
     fn l0_espn_to_nhl_two_letter_shorthand() {
         // The four ESPN shorthand divergences (TB/SJ/NJ/LA) plus the
         // full-word UTAH form that surfaced during T.6 capture.
-        assert_eq!(espn_to_nhl_abbrev("TB",   "20252026"), Some("TBL"));
-        assert_eq!(espn_to_nhl_abbrev("SJ",   "20252026"), Some("SJS"));
-        assert_eq!(espn_to_nhl_abbrev("NJ",   "20252026"), Some("NJD"));
-        assert_eq!(espn_to_nhl_abbrev("LA",   "20252026"), Some("LAK"));
+        assert_eq!(espn_to_nhl_abbrev("TB", "20252026"), Some("TBL"));
+        assert_eq!(espn_to_nhl_abbrev("SJ", "20252026"), Some("SJS"));
+        assert_eq!(espn_to_nhl_abbrev("NJ", "20252026"), Some("NJD"));
+        assert_eq!(espn_to_nhl_abbrev("LA", "20252026"), Some("LAK"));
         assert_eq!(espn_to_nhl_abbrev("UTAH", "20252026"), Some("UTA"));
     }
 
@@ -195,8 +215,11 @@ mod tests {
     fn l0_espn_to_nhl_canonical_passthrough() {
         // Already-canonical codes round-trip unchanged.
         for &t in ALL_NHL_TEAMS {
-            assert_eq!(espn_to_nhl_abbrev(t, "20252026"), Some(t),
-                "canonical '{t}' must passthrough");
+            assert_eq!(
+                espn_to_nhl_abbrev(t, "20252026"),
+                Some(t),
+                "canonical '{t}' must passthrough"
+            );
         }
     }
 
@@ -204,23 +227,26 @@ mod tests {
     fn l0_espn_to_nhl_unknown_returns_none() {
         // BENCH-mandated: never silently accept an unmapped code.
         assert_eq!(espn_to_nhl_abbrev("BOGUS", "20252026"), None);
-        assert_eq!(espn_to_nhl_abbrev("ZZZ",   "20252026"), None);
-        assert_eq!(espn_to_nhl_abbrev("",      "20252026"), None);
+        assert_eq!(espn_to_nhl_abbrev("ZZZ", "20252026"), None);
+        assert_eq!(espn_to_nhl_abbrev("", "20252026"), None);
     }
 
     #[test]
     fn l0_espn_to_nhl_case_insensitive_input() {
         // ESPN sometimes lowercases (rare but real).
         assert_eq!(espn_to_nhl_abbrev("edm", "20252026"), Some("EDM"));
-        assert_eq!(espn_to_nhl_abbrev("tb",  "20252026"), Some("TBL"));
+        assert_eq!(espn_to_nhl_abbrev("tb", "20252026"), Some("TBL"));
     }
 
     #[test]
     fn l0_espn_to_nhl_ari_pre_relocation_preserved() {
         // 2023-24 — Coyotes still in Arizona.
         assert_eq!(espn_to_nhl_abbrev("ARI", "20232024"), Some("ARI"));
-        assert_eq!(espn_to_nhl_abbrev("PHX", "20232024"), Some("ARI"),
-            "legacy PHX must normalize to ARI in pre-relocation seasons");
+        assert_eq!(
+            espn_to_nhl_abbrev("PHX", "20232024"),
+            Some("ARI"),
+            "legacy PHX must normalize to ARI in pre-relocation seasons"
+        );
     }
 
     #[test]

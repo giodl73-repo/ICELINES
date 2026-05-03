@@ -37,9 +37,9 @@ impl Format {
     /// is a usage error and surfaces as `Err`.
     pub fn resolve(csv: bool, json: bool) -> anyhow::Result<Self> {
         match (csv, json) {
-            (true, true)   => bail!("--csv and --json are mutually exclusive"),
-            (true, false)  => Ok(Format::Csv),
-            (false, true)  => Ok(Format::Json),
+            (true, true) => bail!("--csv and --json are mutually exclusive"),
+            (true, false) => Ok(Format::Csv),
+            (false, true) => Ok(Format::Json),
             (false, false) => Ok(Format::Table),
         }
     }
@@ -53,12 +53,17 @@ impl Format {
     }
 
     /// Emit to a file path (used by `--out`) or stdout when path is None.
-    pub fn emit_to(self, headers: &[&str], rows: &[Vec<String>], out: Option<&std::path::Path>) -> anyhow::Result<()> {
+    pub fn emit_to(
+        self,
+        headers: &[&str],
+        rows: &[Vec<String>],
+        out: Option<&std::path::Path>,
+    ) -> anyhow::Result<()> {
         let s = self.render(headers, rows);
         match out {
             Some(p) => std::fs::write(p, format!("{s}\n"))
                 .with_context(|| format!("writing report to {}", p.display()))?,
-            None    => println!("{s}"),
+            None => println!("{s}"),
         }
         Ok(())
     }
@@ -68,8 +73,8 @@ impl Format {
     pub fn render(self, headers: &[&str], rows: &[Vec<String>]) -> String {
         match self {
             Format::Table => render_table(headers, rows),
-            Format::Csv   => render_csv(headers, rows),
-            Format::Json  => render_json(headers, rows),
+            Format::Csv => render_csv(headers, rows),
+            Format::Json => render_json(headers, rows),
         }
     }
 }
@@ -78,22 +83,36 @@ impl Format {
 
 fn render_csv(headers: &[&str], rows: &[Vec<String>]) -> String {
     let mut out = String::new();
-    out.push_str(&headers.iter().map(|h| escape_csv(h)).collect::<Vec<_>>().join(","));
+    out.push_str(
+        &headers
+            .iter()
+            .map(|h| escape_csv(h))
+            .collect::<Vec<_>>()
+            .join(","),
+    );
     for row in rows {
         out.push('\n');
-        out.push_str(&row.iter().map(|c| escape_csv(c)).collect::<Vec<_>>().join(","));
+        out.push_str(
+            &row.iter()
+                .map(|c| escape_csv(c))
+                .collect::<Vec<_>>()
+                .join(","),
+        );
     }
     out
 }
 
 fn render_json(headers: &[&str], rows: &[Vec<String>]) -> String {
-    let array: Vec<serde_json::Map<String, serde_json::Value>> = rows.iter().map(|row| {
-        let mut obj = serde_json::Map::new();
-        for (h, v) in headers.iter().zip(row.iter()) {
-            obj.insert((*h).to_owned(), value_for_json(v));
-        }
-        obj
-    }).collect();
+    let array: Vec<serde_json::Map<String, serde_json::Value>> = rows
+        .iter()
+        .map(|row| {
+            let mut obj = serde_json::Map::new();
+            for (h, v) in headers.iter().zip(row.iter()) {
+                obj.insert((*h).to_owned(), value_for_json(v));
+            }
+            obj
+        })
+        .collect();
     serde_json::to_string_pretty(&array).unwrap_or_else(|_| "[]".to_owned())
 }
 
@@ -110,10 +129,14 @@ fn render_table(headers: &[&str], rows: &[Vec<String>]) -> String {
         }
     }
     let render_row = |cols: &[String]| -> String {
-        cols.iter().enumerate().map(|(i, c)| {
-            let w = widths.get(i).copied().unwrap_or(0);
-            format!("{c:<w$}")
-        }).collect::<Vec<_>>().join("  ")
+        cols.iter()
+            .enumerate()
+            .map(|(i, c)| {
+                let w = widths.get(i).copied().unwrap_or(0);
+                format!("{c:<w$}")
+            })
+            .collect::<Vec<_>>()
+            .join("  ")
     };
     let header_strings: Vec<String> = headers.iter().map(|h| (*h).to_owned()).collect();
     let mut out = String::new();
@@ -181,8 +204,10 @@ mod tests {
 
     #[test]
     fn l0_format_resolve_both_flags_errors() {
-        assert!(Format::resolve(true, true).is_err(),
-            "passing both --csv and --json must be a usage error");
+        assert!(
+            Format::resolve(true, true).is_err(),
+            "passing both --csv and --json must be a usage error"
+        );
     }
 
     #[test]
@@ -221,13 +246,18 @@ mod tests {
     fn l0_value_for_json_treats_dash_as_null() {
         assert_eq!(value_for_json("—"), serde_json::Value::Null);
         assert_eq!(value_for_json("-"), serde_json::Value::Null);
-        assert_eq!(value_for_json(""),  serde_json::Value::Null);
+        assert_eq!(value_for_json(""), serde_json::Value::Null);
     }
 
     #[test]
     fn l0_value_for_json_keeps_strings_when_not_numeric() {
-        assert_eq!(value_for_json("EDM"), serde_json::Value::String("EDM".to_owned()));
-        assert_eq!(value_for_json("Connor McDavid"),
-            serde_json::Value::String("Connor McDavid".to_owned()));
+        assert_eq!(
+            value_for_json("EDM"),
+            serde_json::Value::String("EDM".to_owned())
+        );
+        assert_eq!(
+            value_for_json("Connor McDavid"),
+            serde_json::Value::String("Connor McDavid".to_owned())
+        );
     }
 }

@@ -139,8 +139,7 @@ pub struct SnapshotMeta {
 /// keyed by `SeasonType` so each report can have separate regular /
 /// playoff slots; innermost `HashMap` keyed by `player_id` is the
 /// existing chunk-hash mapping.
-pub type ChunkedReports =
-    BTreeMap<ReportKind, BTreeMap<SeasonType, HashMap<u32, String>>>;
+pub type ChunkedReports = BTreeMap<ReportKind, BTreeMap<SeasonType, HashMap<u32, String>>>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ChunkedManifest {
@@ -177,21 +176,12 @@ impl ChunkedManifest {
 
     /// Lookup: chunk-hash map for one (report kind, season type) pair.
     /// Returns `None` when the snapshot didn't write that report.
-    pub fn report(
-        &self,
-        kind: ReportKind,
-        st: SeasonType,
-    ) -> Option<&HashMap<u32, String>> {
+    pub fn report(&self, kind: ReportKind, st: SeasonType) -> Option<&HashMap<u32, String>> {
         self.reports.get(&kind).and_then(|m| m.get(&st))
     }
 
     /// Set chunk-hash map for one (kind, st). Overwrites any prior entry.
-    pub fn set_report(
-        &mut self,
-        kind: ReportKind,
-        st: SeasonType,
-        m: HashMap<u32, String>,
-    ) {
+    pub fn set_report(&mut self, kind: ReportKind, st: SeasonType, m: HashMap<u32, String>) {
         self.reports.entry(kind).or_default().insert(st, m);
     }
 
@@ -201,9 +191,9 @@ impl ChunkedManifest {
     pub fn iter_reports(
         &self,
     ) -> impl Iterator<Item = (ReportKind, SeasonType, &HashMap<u32, String>)> {
-        self.reports.iter().flat_map(|(kind, by_st)| {
-            by_st.iter().map(move |(st, m)| (*kind, *st, m))
-        })
+        self.reports
+            .iter()
+            .flat_map(|(kind, by_st)| by_st.iter().map(move |(st, m)| (*kind, *st, m)))
     }
 
     /// Backward-compat accessor — regular-season skater bios chunk-hashes.
@@ -595,9 +585,9 @@ impl SnapshotStore {
                 None => {
                     return Err(SnapshotError::NotFound {
                         name: format!(
-                            "{} data for season {requested_season} not found in chain from '{active}'",
-                            tier.dir_name()
-                        ),
+                        "{} data for season {requested_season} not found in chain from '{active}'",
+                        tier.dir_name()
+                    ),
                     })
                 }
             }
@@ -874,7 +864,12 @@ impl SnapshotStore {
         }
         // If chunked, decrement refs before removing the directory.
         if let Ok(cm) = self.load_chunked_manifest(name) {
-            let hashes: Vec<String> = cm.bios().values().chain(cm.stats().values()).cloned().collect();
+            let hashes: Vec<String> = cm
+                .bios()
+                .values()
+                .chain(cm.stats().values())
+                .cloned()
+                .collect();
             self.dec_refs(&hashes)?;
         }
         let dir = self.snapshot_dir(name);
@@ -917,7 +912,9 @@ impl SnapshotStore {
         // Preserve the other-type fields if a manifest already exists on disk
         // (e.g. user fetched regular first, now fetching playoff for the same
         // snapshot). load_chunked_manifest returns NotFound when absent.
-        let mut manifest = self.load_chunked_manifest(snapshot_name).unwrap_or_default();
+        let mut manifest = self
+            .load_chunked_manifest(snapshot_name)
+            .unwrap_or_default();
         // Lindsay L.1.2: writes always emit v=2 (the in-memory rep is
         // unconditionally v=2; setting the field is redundant but
         // explicit-is-better-than-implicit for future readers).
@@ -976,15 +973,11 @@ impl SnapshotStore {
         let (bios_idx, stats_idx) = match season_type {
             SeasonType::Regular => (cm.bios(), cm.stats()),
             SeasonType::Playoff => {
-                let pb = cm.playoff_bios().ok_or_else(|| {
-                    SnapshotError::NotFound {
-                        name: format!("{snapshot_name}/chunked.json: no playoff_bios"),
-                    }
+                let pb = cm.playoff_bios().ok_or_else(|| SnapshotError::NotFound {
+                    name: format!("{snapshot_name}/chunked.json: no playoff_bios"),
                 })?;
-                let ps = cm.playoff_stats().ok_or_else(|| {
-                    SnapshotError::NotFound {
-                        name: format!("{snapshot_name}/chunked.json: no playoff_stats"),
-                    }
+                let ps = cm.playoff_stats().ok_or_else(|| SnapshotError::NotFound {
+                    name: format!("{snapshot_name}/chunked.json: no playoff_stats"),
                 })?;
                 (pb, ps)
             }
@@ -1767,12 +1760,21 @@ mod tests {
         let bios = vec![fixture_bio(1, "A One"), fixture_bio(2, "B Two")];
         let stats = vec![fixture_stats(1, 20), fixture_stats(2, 30)];
 
-        let manifest = store.write_chunked_stats("a", icelines_core::season_stats::SeasonType::Regular, &bios, &stats).unwrap();
+        let manifest = store
+            .write_chunked_stats(
+                "a",
+                icelines_core::season_stats::SeasonType::Regular,
+                &bios,
+                &stats,
+            )
+            .unwrap();
         assert_eq!(manifest.bios().len(), 2);
         assert_eq!(manifest.stats().len(), 2);
         assert!(store.is_chunked("a"));
 
-        let (got_bios, got_stats) = store.read_chunked_stats("a", icelines_core::season_stats::SeasonType::Regular).unwrap();
+        let (got_bios, got_stats) = store
+            .read_chunked_stats("a", icelines_core::season_stats::SeasonType::Regular)
+            .unwrap();
         assert_eq!(got_bios.len(), 2);
         assert_eq!(got_stats.len(), 2);
         // Players present (unordered — HashMap iteration)
@@ -1788,13 +1790,20 @@ mod tests {
     #[test]
     fn l0_hart6_2_chunked_playoff_write_lands_in_playoff_fields() {
         let (_dir, store) = store();
-        store.create("a", "20242025", SnapshotTier::Stats, None, "2026-04-25").unwrap();
+        store
+            .create("a", "20242025", SnapshotTier::Stats, None, "2026-04-25")
+            .unwrap();
 
         let bios = vec![fixture_bio(101, "Playoff A")];
         let stats = vec![fixture_stats(101, 50)];
 
         let manifest = store
-            .write_chunked_stats("a", icelines_core::season_stats::SeasonType::Playoff, &bios, &stats)
+            .write_chunked_stats(
+                "a",
+                icelines_core::season_stats::SeasonType::Playoff,
+                &bios,
+                &stats,
+            )
             .unwrap();
         // Playoff fields populated, regular stays empty.
         assert!(manifest.playoff_bios().is_some_and(|m| m.len() == 1));
@@ -1816,11 +1825,18 @@ mod tests {
     #[test]
     fn l0_hart6_2_chunked_playoff_read_misses_when_only_regular_present() {
         let (_dir, store) = store();
-        store.create("a", "20242025", SnapshotTier::Stats, None, "2026-04-25").unwrap();
+        store
+            .create("a", "20242025", SnapshotTier::Stats, None, "2026-04-25")
+            .unwrap();
         let bios = vec![fixture_bio(1, "A")];
         let stats = vec![fixture_stats(1, 10)];
         store
-            .write_chunked_stats("a", icelines_core::season_stats::SeasonType::Regular, &bios, &stats)
+            .write_chunked_stats(
+                "a",
+                icelines_core::season_stats::SeasonType::Regular,
+                &bios,
+                &stats,
+            )
             .unwrap();
 
         let err = store
@@ -1835,7 +1851,9 @@ mod tests {
     #[test]
     fn l0_hart6_2_chunked_regular_then_playoff_preserves_both() {
         let (_dir, store) = store();
-        store.create("a", "20242025", SnapshotTier::Stats, None, "2026-04-25").unwrap();
+        store
+            .create("a", "20242025", SnapshotTier::Stats, None, "2026-04-25")
+            .unwrap();
 
         store
             .write_chunked_stats(
@@ -1907,8 +1925,22 @@ mod tests {
             fixture_stats(3, 30),
         ];
 
-        let m_a = store.write_chunked_stats("a", icelines_core::season_stats::SeasonType::Regular, &bios, &stats_a).unwrap();
-        let m_b = store.write_chunked_stats("b", icelines_core::season_stats::SeasonType::Regular, &bios, &stats_b).unwrap();
+        let m_a = store
+            .write_chunked_stats(
+                "a",
+                icelines_core::season_stats::SeasonType::Regular,
+                &bios,
+                &stats_a,
+            )
+            .unwrap();
+        let m_b = store
+            .write_chunked_stats(
+                "b",
+                icelines_core::season_stats::SeasonType::Regular,
+                &bios,
+                &stats_b,
+            )
+            .unwrap();
 
         // Bio chunks: identical for all 3 players
         assert_eq!(m_a.bios()[&1], m_b.bios()[&1]);
@@ -1917,7 +1949,8 @@ mod tests {
         // Stats chunks: 1 + 3 unchanged, 2 differs
         assert_eq!(m_a.stats()[&1], m_b.stats()[&1]);
         assert_ne!(
-            m_a.stats()[&2], m_b.stats()[&2],
+            m_a.stats()[&2],
+            m_b.stats()[&2],
             "player 2 stats changed → new chunk"
         );
         assert_eq!(m_a.stats()[&3], m_b.stats()[&3]);
@@ -1940,7 +1973,14 @@ mod tests {
             .unwrap();
         let bios = vec![fixture_bio(1, "A")];
         let stats = vec![fixture_stats(1, 10)];
-        store.write_chunked_stats("a", icelines_core::season_stats::SeasonType::Regular, &bios, &stats).unwrap();
+        store
+            .write_chunked_stats(
+                "a",
+                icelines_core::season_stats::SeasonType::Regular,
+                &bios,
+                &stats,
+            )
+            .unwrap();
         let refs = store.load_refs().unwrap();
         // One bio chunk + one stats chunk, each at refcount 1
         assert_eq!(refs.counts.len(), 2);
@@ -1960,8 +2000,22 @@ mod tests {
             .unwrap();
         let bios = vec![fixture_bio(1, "A")];
         let stats = vec![fixture_stats(1, 10)];
-        store.write_chunked_stats("a", icelines_core::season_stats::SeasonType::Regular, &bios, &stats).unwrap();
-        store.write_chunked_stats("b", icelines_core::season_stats::SeasonType::Regular, &bios, &stats).unwrap();
+        store
+            .write_chunked_stats(
+                "a",
+                icelines_core::season_stats::SeasonType::Regular,
+                &bios,
+                &stats,
+            )
+            .unwrap();
+        store
+            .write_chunked_stats(
+                "b",
+                icelines_core::season_stats::SeasonType::Regular,
+                &bios,
+                &stats,
+            )
+            .unwrap();
         store.seal("a").unwrap(); // 'a' is now active
 
         // Both snapshots reference the same 2 chunks → refcount 2 each.
@@ -2008,7 +2062,14 @@ mod tests {
 
         let bios = vec![fixture_bio(1, "A")];
         let stats = vec![fixture_stats(1, 10)];
-        store.write_chunked_stats("chunked", icelines_core::season_stats::SeasonType::Regular, &bios, &stats).unwrap();
+        store
+            .write_chunked_stats(
+                "chunked",
+                icelines_core::season_stats::SeasonType::Regular,
+                &bios,
+                &stats,
+            )
+            .unwrap();
 
         assert!(
             !store.is_chunked("legacy"),
@@ -2033,7 +2094,9 @@ mod tests {
                 "2026-04-25",
             )
             .unwrap();
-        let err = store.read_chunked_stats("legacy", icelines_core::season_stats::SeasonType::Regular).unwrap_err();
+        let err = store
+            .read_chunked_stats("legacy", icelines_core::season_stats::SeasonType::Regular)
+            .unwrap_err();
         assert!(matches!(err, SnapshotError::NotFound { .. }));
     }
 
@@ -2047,7 +2110,14 @@ mod tests {
             .unwrap();
         let bios = vec![fixture_bio(1, "A")];
         let stats = vec![fixture_stats(1, 10)];
-        store.write_chunked_stats("a", icelines_core::season_stats::SeasonType::Regular, &bios, &stats).unwrap();
+        store
+            .write_chunked_stats(
+                "a",
+                icelines_core::season_stats::SeasonType::Regular,
+                &bios,
+                &stats,
+            )
+            .unwrap();
 
         // Manually drop a stray chunk that nothing references.
         let stray_hash = store.chunk_store().put(b"unreferenced bytes").unwrap();
@@ -2075,7 +2145,14 @@ mod tests {
             .unwrap();
         let bios = vec![fixture_bio(1, "A")];
         let stats = vec![fixture_stats(1, 10)];
-        store.write_chunked_stats("a", icelines_core::season_stats::SeasonType::Regular, &bios, &stats).unwrap();
+        store
+            .write_chunked_stats(
+                "a",
+                icelines_core::season_stats::SeasonType::Regular,
+                &bios,
+                &stats,
+            )
+            .unwrap();
         let stray_hash = store.chunk_store().put(b"unreferenced").unwrap();
 
         let report = store.gc_chunks(false).unwrap();
@@ -2107,8 +2184,22 @@ mod tests {
             .unwrap();
         let bios = vec![fixture_bio(1, "A")];
         let stats = vec![fixture_stats(1, 10)];
-        store.write_chunked_stats("a", icelines_core::season_stats::SeasonType::Regular, &bios, &stats).unwrap();
-        store.write_chunked_stats("b", icelines_core::season_stats::SeasonType::Regular, &bios, &stats).unwrap();
+        store
+            .write_chunked_stats(
+                "a",
+                icelines_core::season_stats::SeasonType::Regular,
+                &bios,
+                &stats,
+            )
+            .unwrap();
+        store
+            .write_chunked_stats(
+                "b",
+                icelines_core::season_stats::SeasonType::Regular,
+                &bios,
+                &stats,
+            )
+            .unwrap();
 
         // Manually corrupt the refs file
         std::fs::write(store.refs_path(), "{}").unwrap();
@@ -2128,7 +2219,14 @@ mod tests {
             .unwrap();
         let bios = vec![fixture_bio(1, "A")];
         let stats = vec![fixture_stats(1, 10)];
-        let m1 = store.write_chunked_stats("a", icelines_core::season_stats::SeasonType::Regular, &bios, &stats).unwrap();
+        let m1 = store
+            .write_chunked_stats(
+                "a",
+                icelines_core::season_stats::SeasonType::Regular,
+                &bios,
+                &stats,
+            )
+            .unwrap();
         let m2 = store.rebuild_chunked("a").unwrap();
         assert_eq!(m1.bios(), m2.bios());
         assert_eq!(m1.stats(), m2.stats());
@@ -2263,8 +2361,22 @@ mod tests {
             .unwrap();
         let bios = vec![fixture_bio(1, "A"), fixture_bio(2, "B")];
         let stats = vec![fixture_stats(1, 10), fixture_stats(2, 20)];
-        store.write_chunked_stats("a", icelines_core::season_stats::SeasonType::Regular, &bios, &stats).unwrap();
-        store.write_chunked_stats("b", icelines_core::season_stats::SeasonType::Regular, &bios, &stats).unwrap();
+        store
+            .write_chunked_stats(
+                "a",
+                icelines_core::season_stats::SeasonType::Regular,
+                &bios,
+                &stats,
+            )
+            .unwrap();
+        store
+            .write_chunked_stats(
+                "b",
+                icelines_core::season_stats::SeasonType::Regular,
+                &bios,
+                &stats,
+            )
+            .unwrap();
 
         let diff = store.diff("a", "b").unwrap();
         assert!(
@@ -2319,10 +2431,20 @@ mod tests {
         // Same bios; player 2's stats differ between A and B.
         let bios = vec![fixture_bio(1, "A"), fixture_bio(2, "B")];
         store
-            .write_chunked_stats("a", icelines_core::season_stats::SeasonType::Regular, &bios, &[fixture_stats(1, 10), fixture_stats(2, 20)])
+            .write_chunked_stats(
+                "a",
+                icelines_core::season_stats::SeasonType::Regular,
+                &bios,
+                &[fixture_stats(1, 10), fixture_stats(2, 20)],
+            )
             .unwrap();
         store
-            .write_chunked_stats("b", icelines_core::season_stats::SeasonType::Regular, &bios, &[fixture_stats(1, 10), fixture_stats(2, 25)])
+            .write_chunked_stats(
+                "b",
+                icelines_core::season_stats::SeasonType::Regular,
+                &bios,
+                &[fixture_stats(1, 10), fixture_stats(2, 25)],
+            )
             .unwrap();
 
         let diff = store.diff("a", "b").unwrap();
@@ -2354,7 +2476,12 @@ mod tests {
             )
             .unwrap();
         store
-            .write_chunked_stats("chunked", icelines_core::season_stats::SeasonType::Regular, &[fixture_bio(1, "A")], &[fixture_stats(1, 10)])
+            .write_chunked_stats(
+                "chunked",
+                icelines_core::season_stats::SeasonType::Regular,
+                &[fixture_bio(1, "A")],
+                &[fixture_stats(1, 10)],
+            )
             .unwrap();
 
         let err = store.diff("legacy", "chunked").unwrap_err().to_string();
@@ -2376,7 +2503,14 @@ mod tests {
             .unwrap();
         let bios = vec![fixture_bio(1, "A"), fixture_bio(2, "B")];
         let stats = vec![fixture_stats(1, 10), fixture_stats(2, 20)];
-        store.write_chunked_stats("a", icelines_core::season_stats::SeasonType::Regular, &bios, &stats).unwrap();
+        store
+            .write_chunked_stats(
+                "a",
+                icelines_core::season_stats::SeasonType::Regular,
+                &bios,
+                &stats,
+            )
+            .unwrap();
 
         let failures = store.verify("a").unwrap();
         assert!(
@@ -2393,7 +2527,14 @@ mod tests {
             .unwrap();
         let bios = vec![fixture_bio(1, "A")];
         let stats = vec![fixture_stats(1, 10)];
-        let cm = store.write_chunked_stats("a", icelines_core::season_stats::SeasonType::Regular, &bios, &stats).unwrap();
+        let cm = store
+            .write_chunked_stats(
+                "a",
+                icelines_core::season_stats::SeasonType::Regular,
+                &bios,
+                &stats,
+            )
+            .unwrap();
 
         // Corrupt the bio chunk: write garbage at its on-disk path.
         let bio_hash = cm.bios().values().next().unwrap();
@@ -2426,7 +2567,14 @@ mod tests {
             .unwrap();
         let bios = vec![fixture_bio(1, "A")];
         let stats = vec![fixture_stats(1, 10)];
-        let cm = store.write_chunked_stats("a", icelines_core::season_stats::SeasonType::Regular, &bios, &stats).unwrap();
+        let cm = store
+            .write_chunked_stats(
+                "a",
+                icelines_core::season_stats::SeasonType::Regular,
+                &bios,
+                &stats,
+            )
+            .unwrap();
 
         // Remove the stats chunk from the global store.
         let stats_hash = cm.stats().values().next().unwrap();
@@ -2476,7 +2624,9 @@ mod tests {
         assert_eq!(cm.stats().len(), 1);
 
         // Read-back works
-        let (got_bios, got_stats) = store.read_chunked_stats("a", icelines_core::season_stats::SeasonType::Regular).unwrap();
+        let (got_bios, got_stats) = store
+            .read_chunked_stats("a", icelines_core::season_stats::SeasonType::Regular)
+            .unwrap();
         assert_eq!(got_bios.len(), 1);
         assert_eq!(got_stats[0].goals, 10);
     }
@@ -2581,12 +2731,10 @@ mod tests {
     #[test]
     fn l0_lindsay_chunked_manifest_v3_rejected() {
         let v3_json = r#"{"version":3,"reports":{}}"#;
-        let err = serde_json::from_str::<ChunkedManifest>(v3_json)
-            .expect_err("v3 should reject");
+        let err = serde_json::from_str::<ChunkedManifest>(v3_json).expect_err("v3 should reject");
         let msg = err.to_string();
         assert!(
-            msg.contains("RepoVersionUnknown")
-                || msg.contains("version 3"),
+            msg.contains("RepoVersionUnknown") || msg.contains("version 3"),
             "expected RepoVersionUnknown-shaped error, got: {msg}",
         );
     }
@@ -2619,12 +2767,21 @@ mod tests {
     fn l0_lindsay_chunked_manifest_iter_reports_deterministic() {
         let mut m = ChunkedManifest::default();
         // Insert in scrambled order; iter should emit sorted.
-        m.set_report(ReportKind::SkaterTimeOnIce, SeasonType::Regular,
-                      HashMap::from([(1u32, "a".to_owned())]));
-        m.set_report(ReportKind::SkaterBios, SeasonType::Playoff,
-                      HashMap::from([(1u32, "b".to_owned())]));
-        m.set_report(ReportKind::SkaterBios, SeasonType::Regular,
-                      HashMap::from([(1u32, "c".to_owned())]));
+        m.set_report(
+            ReportKind::SkaterTimeOnIce,
+            SeasonType::Regular,
+            HashMap::from([(1u32, "a".to_owned())]),
+        );
+        m.set_report(
+            ReportKind::SkaterBios,
+            SeasonType::Playoff,
+            HashMap::from([(1u32, "b".to_owned())]),
+        );
+        m.set_report(
+            ReportKind::SkaterBios,
+            SeasonType::Regular,
+            HashMap::from([(1u32, "c".to_owned())]),
+        );
 
         let order: Vec<(ReportKind, SeasonType)> =
             m.iter_reports().map(|(k, s, _)| (k, s)).collect();

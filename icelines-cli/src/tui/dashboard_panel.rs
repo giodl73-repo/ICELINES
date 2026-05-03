@@ -46,7 +46,9 @@ pub struct LeagueContext {
 impl LeagueContext {
     /// Empty context — every percentile lookup returns `None`. Used as a
     /// placeholder before the player pool has loaded.
-    pub fn empty() -> Self { Self::default() }
+    pub fn empty() -> Self {
+        Self::default()
+    }
 
     /// Build from a `StatsRepository`. Iterates `repo.skaters(s, t)`
     /// filtering on `view.pace_82().is_some()` (BelowThreshold yields
@@ -69,7 +71,9 @@ impl LeagueContext {
             // Equal is unreachable in practice.
             v.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
         }
-        Self { pace_by_position: buckets }
+        Self {
+            pace_by_position: buckets,
+        }
     }
 
     /// Look up the player's `(rank, total, percentile)` at their position.
@@ -78,7 +82,9 @@ impl LeagueContext {
     /// Returns `None` for the empty bucket case (e.g. empty context).
     pub fn position_rank_for(&self, position: Position, pace_82: f64) -> Option<PositionRank> {
         let bucket = self.pace_by_position.get(&position)?;
-        if bucket.is_empty() { return None; }
+        if bucket.is_empty() {
+            return None;
+        }
         let lower_or_equal = bucket.partition_point(|v| *v <= pace_82);
         let total = bucket.len();
         let rank = total - lower_or_equal + 1;
@@ -89,16 +95,20 @@ impl LeagueContext {
             let below = bucket.partition_point(|v| *v < pace_82);
             (below as f64) / ((total - 1) as f64) * 100.0
         };
-        Some(PositionRank { rank, total, percentile })
+        Some(PositionRank {
+            rank,
+            total,
+            percentile,
+        })
     }
 }
 
 /// Result of a position-rank lookup.
 #[derive(Debug, Clone, Copy)]
 pub struct PositionRank {
-    pub rank:       usize,  // 1-based, top = 1
-    pub total:      usize,  // count of qualifying peers at the position
-    pub percentile: f64,    // 0.0 ..= 100.0
+    pub rank: usize,     // 1-based, top = 1
+    pub total: usize,    // count of qualifying peers at the position
+    pub percentile: f64, // 0.0 ..= 100.0
 }
 
 /// A panel rendered for a specific player. Returns `Line<'static>` so
@@ -123,7 +133,9 @@ struct PanelState {
 
 impl CompiledPanel {
     pub fn new() -> Self {
-        Self { inner: Arc::new(Mutex::new(PanelState::default())) }
+        Self {
+            inner: Arc::new(Mutex::new(PanelState::default())),
+        }
     }
 
     /// Drop all cached compilations. Called after every `repo_swap`
@@ -137,7 +149,9 @@ impl CompiledPanel {
 }
 
 impl Default for CompiledPanel {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 // ── Hart.5c.6 Phase A — view-based compile API ─────────────────────────
@@ -149,7 +163,10 @@ impl Default for CompiledPanel {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DashboardError {
-    PlayerNotInRepo { season: Season, season_type: SeasonType },
+    PlayerNotInRepo {
+        season: Season,
+        season_type: SeasonType,
+    },
     CrossWindowCompile {
         requested_s: Season,
         requested_t: SeasonType,
@@ -161,11 +178,17 @@ pub enum DashboardError {
 impl std::fmt::Display for DashboardError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::PlayerNotInRepo { season, season_type } => {
+            Self::PlayerNotInRepo {
+                season,
+                season_type,
+            } => {
                 write!(f, "player not in repo for ({season:?}, {season_type:?})")
             }
             Self::CrossWindowCompile {
-                requested_s, requested_t, ctx_s, ctx_t,
+                requested_s,
+                requested_t,
+                ctx_s,
+                ctx_t,
             } => write!(
                 f,
                 "cross-window compile: requested ({requested_s:?}, {requested_t:?}) \
@@ -208,9 +231,12 @@ impl CompiledPanel {
                 ctx_t: ctx_window.1,
             });
         }
-        let view = repo
-            .view(player_id, season, season_type)
-            .ok_or(DashboardError::PlayerNotInRepo { season, season_type })?;
+        let view =
+            repo.view(player_id, season, season_type)
+                .ok_or(DashboardError::PlayerNotInRepo {
+                    season,
+                    season_type,
+                })?;
 
         // Triple-keyed cache (nhl_id, Season, SeasonType) per D2.
         // `ctx_window == (season, season_type)` is asserted at the top
@@ -218,7 +244,9 @@ impl CompiledPanel {
         let key = (player_id.0, season, season_type);
         if let Ok(guard) = self.inner.lock() {
             if let Some(cached) = guard.by_view.get(&key) {
-                return Ok(CompiledOutput { lines: cached.clone() });
+                return Ok(CompiledOutput {
+                    lines: cached.clone(),
+                });
             }
         }
         // Hart.5c.6 Phase B-2.3: branch on goalie discriminator
@@ -244,8 +272,10 @@ impl CompiledPanel {
 /// existing `lines_for_player` callsite.
 fn build_panel_lines_view(view: &PlayerView<'_>, league: &LeagueContext) -> Vec<Line<'static>> {
     let mut lines: Vec<Line<'static>> = Vec::with_capacity(10);
-    let dim    = Style::default().fg(DIM_COLOR);
-    let title  = Style::default().fg(TITLE_COLOR).add_modifier(Modifier::BOLD);
+    let dim = Style::default().fg(DIM_COLOR);
+    let title = Style::default()
+        .fg(TITLE_COLOR)
+        .add_modifier(Modifier::BOLD);
     let accent = Style::default().fg(ACCENT_COLOR);
 
     // Header
@@ -283,25 +313,49 @@ fn build_panel_lines_view(view: &PlayerView<'_>, league: &LeagueContext) -> Vec<
             ));
         }
         _ => {
-            let goals_values: Vec<f64> = history.iter().map(|r| r.goals  as f64).collect();
-            let pts_values:   Vec<f64> = history.iter().map(|r| r.points as f64).collect();
-            let shots_values: Vec<f64> = history.iter().map(|r| r.shots  as f64).collect();
+            let goals_values: Vec<f64> = history.iter().map(|r| r.goals as f64).collect();
+            let pts_values: Vec<f64> = history.iter().map(|r| r.points as f64).collect();
+            let shots_values: Vec<f64> = history.iter().map(|r| r.shots as f64).collect();
             let first = &history[0];
-            let last  = &history[history.len() - 1];
+            let last = &history[history.len() - 1];
             let range = format!("{}→{}", short_year(first.season), short_year(last.season));
 
             lines.push(Line::from(vec![
                 Span::styled("Last 5 seasons ", dim),
                 Span::styled(range, accent),
             ]));
-            let g_spark   = colored_spark_spans(&goals_values, history.len());
-            let pts_spark = colored_spark_spans(&pts_values,   history.len());
-            let sh_spark  = colored_spark_spans(&shots_values, history.len());
+            let g_spark = colored_spark_spans(&goals_values, history.len());
+            let pts_spark = colored_spark_spans(&pts_values, history.len());
+            let sh_spark = colored_spark_spans(&shots_values, history.len());
             let pad = 5usize.saturating_sub(history.len());
 
-            lines.push(spark_row("G  ", pad, g_spark,   first.goals,  last.goals,  dim, accent));
-            lines.push(spark_row("Pts", pad, pts_spark, first.points, last.points, dim, accent));
-            lines.push(spark_row("SOG", pad, sh_spark,  first.shots,  last.shots,  dim, accent));
+            lines.push(spark_row(
+                "G  ",
+                pad,
+                g_spark,
+                first.goals,
+                last.goals,
+                dim,
+                accent,
+            ));
+            lines.push(spark_row(
+                "Pts",
+                pad,
+                pts_spark,
+                first.points,
+                last.points,
+                dim,
+                accent,
+            ));
+            lines.push(spark_row(
+                "SOG",
+                pad,
+                sh_spark,
+                first.shots,
+                last.shots,
+                dim,
+                accent,
+            ));
         }
     }
 
@@ -314,7 +368,12 @@ fn build_panel_lines_view(view: &PlayerView<'_>, league: &LeagueContext) -> Vec<
                 Span::styled(format!("Pos vs {pos_letter}: "), dim),
                 Span::styled(format!("#{}/{}", rank.rank, rank.total), accent),
             ]));
-            lines.push(Line::from(percentile_bar_spans(rank.percentile, 12, dim, accent)));
+            lines.push(Line::from(percentile_bar_spans(
+                rank.percentile,
+                12,
+                dim,
+                accent,
+            )));
         }
     }
 
@@ -325,13 +384,13 @@ fn build_panel_lines_view(view: &PlayerView<'_>, league: &LeagueContext) -> Vec<
 
 /// Colour for sparkline columns above the player's median. Bright green —
 /// the season was a high water mark.
-const HIGH_COLOR:  Color = Color::Green;
+const HIGH_COLOR: Color = Color::Green;
 /// Colour for columns at the median. Plain white.
-const MID_COLOR:   Color = Color::White;
+const MID_COLOR: Color = Color::White;
 /// Colour for columns below the median. Red — the season was a dip.
-const LOW_COLOR:   Color = Color::Red;
+const LOW_COLOR: Color = Color::Red;
 /// Dim grey for chrome/labels.
-const DIM_COLOR:   Color = Color::DarkGray;
+const DIM_COLOR: Color = Color::DarkGray;
 /// Header / title color.
 const TITLE_COLOR: Color = Color::Yellow;
 /// Bright accent for the headline number on each row.
@@ -352,11 +411,11 @@ const PANEL_WIDTH: usize = 28;
 /// Letter abbreviation used in the position-rank header.
 fn position_letter(pos: Position) -> &'static str {
     match pos {
-        Position::Center    => "C",
-        Position::LeftWing  => "LW",
+        Position::Center => "C",
+        Position::LeftWing => "LW",
         Position::RightWing => "RW",
-        Position::Defense   => "D",
-        Position::Goalie    => "G",
+        Position::Defense => "D",
+        Position::Goalie => "G",
     }
 }
 
@@ -371,10 +430,15 @@ fn percentile_bar_spans(
 ) -> Vec<Span<'static>> {
     let pct = percentile.clamp(0.0, 100.0);
     let filled = ((pct / 100.0) * width as f64).round() as usize;
-    let band_color = if pct >= 75.0 { Color::Green }
-                     else if pct >= 50.0 { Color::Yellow }
-                     else if pct >= 25.0 { Color::White }
-                     else { Color::Red };
+    let band_color = if pct >= 75.0 {
+        Color::Green
+    } else if pct >= 50.0 {
+        Color::Yellow
+    } else if pct >= 25.0 {
+        Color::White
+    } else {
+        Color::Red
+    };
     let mut spans: Vec<Span<'static>> = Vec::with_capacity(4);
     if filled > 0 {
         spans.push(Span::styled(
@@ -387,7 +451,10 @@ fn percentile_bar_spans(
     }
     spans.push(Span::styled("  ".to_owned(), dim));
     // Round-half-up percentage label so a 96.5 reads as 97.
-    spans.push(Span::styled(format!("top {}%", percentile_to_top_pct(pct)), accent));
+    spans.push(Span::styled(
+        format!("top {}%", percentile_to_top_pct(pct)),
+        accent,
+    ));
     spans
 }
 
@@ -400,10 +467,7 @@ fn percentile_to_top_pct(percentile: f64) -> u32 {
 }
 
 /// Render one `LABEL  VALUE   LABEL  VALUE` row with split colours.
-fn stat_row(
-    l1: &str, v1: &str, l2: &str, v2: &str,
-    dim: Style, accent: Style,
-) -> Line<'static> {
+fn stat_row(l1: &str, v1: &str, l2: &str, v2: &str, dim: Style, accent: Style) -> Line<'static> {
     Line::from(vec![
         Span::styled(format!("{l1} "), dim),
         Span::styled(format!("{v1:>3}"), accent),
@@ -447,9 +511,13 @@ fn colored_spark_spans(values: &[f64], width: usize) -> Vec<Span<'static>> {
     let median = median_of(values);
     cols.into_iter()
         .map(|(ch, val)| {
-            let color = if val > median { HIGH_COLOR }
-                        else if val < median { LOW_COLOR }
-                        else { MID_COLOR };
+            let color = if val > median {
+                HIGH_COLOR
+            } else if val < median {
+                LOW_COLOR
+            } else {
+                MID_COLOR
+            };
             Span::styled(ch.to_string(), Style::default().fg(color))
         })
         .collect()
@@ -458,7 +526,9 @@ fn colored_spark_spans(values: &[f64], width: usize) -> Vec<Span<'static>> {
 /// Median of a numeric slice. Returns `0.0` for empty input — caller
 /// should not pass empty slices in practice (the sparkline path guards).
 fn median_of(values: &[f64]) -> f64 {
-    if values.is_empty() { return 0.0; }
+    if values.is_empty() {
+        return 0.0;
+    }
     let mut sorted: Vec<f64> = values.to_vec();
     sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
     let mid = sorted.len() / 2;
@@ -482,10 +552,10 @@ fn short_year(season: &str) -> String {
 /// One row of bundled-history data for a player.
 #[derive(Debug, Clone)]
 struct HistoryRow {
-    season: &'static str,  // e.g. "20242025"
-    goals:  u32,
+    season: &'static str, // e.g. "20242025"
+    goals: u32,
     points: u32,
-    shots:  u32,
+    shots: u32,
 }
 
 /// Walk the bundled-history seasons (currently 5) in chronological order
@@ -502,9 +572,9 @@ fn load_player_history(nhl_id: u32) -> Vec<HistoryRow> {
             if let Some(row) = stats.iter().find(|s| s.player_id == nhl_id) {
                 out.push(HistoryRow {
                     season,
-                    goals:  row.goals,
+                    goals: row.goals,
                     points: row.points,
-                    shots:  row.shots,
+                    shots: row.shots,
                 });
             }
         }
@@ -517,10 +587,10 @@ fn load_player_history(nhl_id: u32) -> Vec<HistoryRow> {
 /// One row of bundled goalie history.
 #[derive(Debug, Clone)]
 struct GoalieHistoryRow {
-    season:   &'static str,  // e.g. "20242025"
-    save_pct: f32,           // 0.0..=1.0
-    gaa:      f32,
-    wins:     u32,
+    season: &'static str, // e.g. "20242025"
+    save_pct: f32,        // 0.0..=1.0
+    gaa: f32,
+    wins: u32,
 }
 
 /// Walk the 5 bundled seasons and pull the goalie's row from each.
@@ -534,8 +604,8 @@ fn load_goalie_history(nhl_id: u32) -> Vec<GoalieHistoryRow> {
                 out.push(GoalieHistoryRow {
                     season,
                     save_pct: row.save_pct.unwrap_or(0.0),
-                    gaa:      row.goals_against_average.unwrap_or(0.0),
-                    wins:     row.wins,
+                    gaa: row.goals_against_average.unwrap_or(0.0),
+                    wins: row.wins,
                 });
             }
         }
@@ -556,8 +626,10 @@ fn load_goalie_history(nhl_id: u32) -> Vec<GoalieHistoryRow> {
 /// inverted because lower is better).
 fn build_goalie_panel_lines_view(v: &PlayerView<'_>) -> Vec<Line<'static>> {
     let mut lines: Vec<Line<'static>> = Vec::with_capacity(10);
-    let dim    = Style::default().fg(DIM_COLOR);
-    let title  = Style::default().fg(TITLE_COLOR).add_modifier(Modifier::BOLD);
+    let dim = Style::default().fg(DIM_COLOR);
+    let title = Style::default()
+        .fg(TITLE_COLOR)
+        .add_modifier(Modifier::BOLD);
     let accent = Style::default().fg(ACCENT_COLOR);
 
     // Header — short identity line.
@@ -585,11 +657,11 @@ fn build_goalie_panel_lines_view(v: &PlayerView<'_>) -> Vec<Line<'static>> {
             ));
         }
         _ => {
-            let sv_values:  Vec<f64> = history.iter().map(|r| r.save_pct as f64).collect();
+            let sv_values: Vec<f64> = history.iter().map(|r| r.save_pct as f64).collect();
             let gaa_values_inv: Vec<f64> = history.iter().map(|r| -(r.gaa as f64)).collect();
-            let w_values:   Vec<f64> = history.iter().map(|r| r.wins as f64).collect();
+            let w_values: Vec<f64> = history.iter().map(|r| r.wins as f64).collect();
             let first = &history[0];
-            let last  = &history[history.len() - 1];
+            let last = &history[history.len() - 1];
             let range = format!("{}→{}", short_year(first.season), short_year(last.season));
             lines.push(Line::from(vec![
                 Span::styled("Last 5 seasons ", dim),
@@ -597,14 +669,35 @@ fn build_goalie_panel_lines_view(v: &PlayerView<'_>) -> Vec<Line<'static>> {
             ]));
             let pad = 5usize.saturating_sub(history.len());
             let sv_spark = colored_spark_spans(&sv_values, history.len());
-            lines.push(goalie_spark_row("SV%", pad, sv_spark,
-                fmt3(first.save_pct), fmt3(last.save_pct), dim, accent));
+            lines.push(goalie_spark_row(
+                "SV%",
+                pad,
+                sv_spark,
+                fmt3(first.save_pct),
+                fmt3(last.save_pct),
+                dim,
+                accent,
+            ));
             let gaa_spark = colored_spark_spans(&gaa_values_inv, history.len());
-            lines.push(goalie_spark_row("GAA", pad, gaa_spark,
-                fmt2(first.gaa), fmt2(last.gaa), dim, accent));
+            lines.push(goalie_spark_row(
+                "GAA",
+                pad,
+                gaa_spark,
+                fmt2(first.gaa),
+                fmt2(last.gaa),
+                dim,
+                accent,
+            ));
             let w_spark = colored_spark_spans(&w_values, history.len());
-            lines.push(goalie_spark_row("W  ", pad, w_spark,
-                first.wins.to_string(), last.wins.to_string(), dim, accent));
+            lines.push(goalie_spark_row(
+                "W  ",
+                pad,
+                w_spark,
+                first.wins.to_string(),
+                last.wins.to_string(),
+                dim,
+                accent,
+            ));
         }
     }
     lines
@@ -621,7 +714,9 @@ fn goalie_spark_row(
 ) -> Line<'static> {
     let mut spans: Vec<Span<'static>> = Vec::with_capacity(4 + spark.len());
     spans.push(Span::styled(format!("{label} "), dim));
-    if pad > 0 { spans.push(Span::raw(" ".repeat(pad))); }
+    if pad > 0 {
+        spans.push(Span::raw(" ".repeat(pad)));
+    }
     spans.extend(spark);
     spans.push(Span::styled("    ".to_owned(), dim));
     spans.push(Span::styled(first, accent));
@@ -654,7 +749,9 @@ fn short_season(season: &str) -> String {
 
 /// Truncate a string to at most `max` chars, appending `…` when cut.
 fn trim_to(s: &str, max: usize) -> String {
-    if s.chars().count() <= max { return s.to_owned(); }
+    if s.chars().count() <= max {
+        return s.to_owned();
+    }
     let mut out: String = s.chars().take(max.saturating_sub(1)).collect();
     out.push('…');
     out
@@ -668,7 +765,11 @@ mod tests {
     /// single string for test assertions. ratatui's `Line` impls
     /// `Display` which already does this per line.
     fn lines_to_text(lines: &[Line<'static>]) -> String {
-        lines.iter().map(|l| l.to_string()).collect::<Vec<_>>().join("\n")
+        lines
+            .iter()
+            .map(|l| l.to_string())
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 
     #[test]
@@ -682,27 +783,35 @@ mod tests {
         // 64 is the max → must be the highest column above the median.
         let span_color = |i: usize| spans[i].style.fg.unwrap();
         assert_eq!(span_color(1), HIGH_COLOR, "max value should be green");
-        assert_eq!(span_color(3), LOW_COLOR,  "min value should be red");
+        assert_eq!(span_color(3), LOW_COLOR, "min value should be red");
         // The median value renders as MID_COLOR, but with an even-count
         // series the median is the average of the two middle values
         // (here 44 — exactly equal to spans[0]). Assert spans[0] is mid.
-        assert_eq!(span_color(0), MID_COLOR,
-            "value equal to median should be white");
+        assert_eq!(
+            span_color(0),
+            MID_COLOR,
+            "value equal to median should be white"
+        );
     }
 
     #[test]
     fn l0_median_of_even_and_odd_series() {
-        assert_eq!(median_of(&[1.0, 3.0, 5.0]), 3.0);          // odd
-        assert_eq!(median_of(&[1.0, 2.0, 3.0, 4.0]), 2.5);     // even avg
-        assert_eq!(median_of(&[]), 0.0);                       // empty
-        assert_eq!(median_of(&[7.0]), 7.0);                    // single
+        assert_eq!(median_of(&[1.0, 3.0, 5.0]), 3.0); // odd
+        assert_eq!(median_of(&[1.0, 2.0, 3.0, 4.0]), 2.5); // even avg
+        assert_eq!(median_of(&[]), 0.0); // empty
+        assert_eq!(median_of(&[7.0]), 7.0); // single
     }
 
     #[test]
     fn l0_build_panel_lines_single_season_shows_row_no_spark() {
         // 1-season history: just confirm the bundled season — counting
         // stats live on the left column of the player screen.
-        let history = vec![HistoryRow { season: "20252026", goals: 12, points: 30, shots: 80 }];
+        let history = vec![HistoryRow {
+            season: "20252026",
+            goals: 12,
+            points: 30,
+            shots: 80,
+        }];
         assert_eq!(short_season(history[0].season), "25-26");
         let row = format!("Bundled history: {}", short_season(history[0].season));
         assert_eq!(row, "Bundled history: 25-26");
@@ -713,14 +822,18 @@ mod tests {
         // McDavid is in every bundled season; verify rows come back
         // oldest → newest so the sparkline reads left-to-right in time.
         let history = load_player_history(8478402);
-        assert!(history.len() >= 4,
+        assert!(
+            history.len() >= 4,
             "McDavid should appear in most/all 5 bundled seasons, got {}",
-            history.len());
+            history.len()
+        );
         let seasons: Vec<&str> = history.iter().map(|r| r.season).collect();
         let mut sorted = seasons.clone();
         sorted.sort();
-        assert_eq!(seasons, sorted,
-            "history must be chronological, got: {seasons:?}");
+        assert_eq!(
+            seasons, sorted,
+            "history must be chronological, got: {seasons:?}"
+        );
     }
 
     #[test]
@@ -735,8 +848,10 @@ mod tests {
         assert_eq!(trim_to("Short", 26), "Short");
         let trimmed = trim_to(&"A".repeat(40), 26);
         assert!(trimmed.chars().count() <= 26);
-        assert!(trimmed.ends_with('…'),
-            "expected trailing ellipsis, got {trimmed}");
+        assert!(
+            trimmed.ends_with('…'),
+            "expected trailing ellipsis, got {trimmed}"
+        );
     }
 
     #[test]
@@ -752,27 +867,29 @@ mod tests {
 
     #[test]
     fn l0_percentile_to_top_pct_floors_complement() {
-        assert_eq!(percentile_to_top_pct(100.0), 0);   // top of league
-        assert_eq!(percentile_to_top_pct(96.5), 3);    // floor(3.5) = 3
+        assert_eq!(percentile_to_top_pct(100.0), 0); // top of league
+        assert_eq!(percentile_to_top_pct(96.5), 3); // floor(3.5) = 3
         assert_eq!(percentile_to_top_pct(50.0), 50);
         assert_eq!(percentile_to_top_pct(0.0), 100);
     }
 
     #[test]
     fn l0_percentile_bar_spans_fill_proportional_to_rank() {
-        let dim    = Style::default().fg(DIM_COLOR);
+        let dim = Style::default().fg(DIM_COLOR);
         let accent = Style::default().fg(ACCENT_COLOR);
 
         // 50% percentile, 12-col bar → 6 filled + 6 empty.
         let spans = percentile_bar_spans(50.0, 12, dim, accent);
         let filled_text: String = spans.iter().map(|s| s.content.to_string()).collect();
         let filled = filled_text.chars().filter(|c| *c == '█').count();
-        let empty  = filled_text.chars().filter(|c| *c == '░').count();
+        let empty = filled_text.chars().filter(|c| *c == '░').count();
         assert_eq!(filled, 6);
-        assert_eq!(empty,  6);
+        assert_eq!(empty, 6);
         // Label says "top 50%".
-        assert!(filled_text.contains("top 50%"),
-            "percentile label missing, got {filled_text}");
+        assert!(
+            filled_text.contains("top 50%"),
+            "percentile label missing, got {filled_text}"
+        );
     }
 
     // ── Goalie panel (Phase G.7) ─────────────────────────────────────────
@@ -780,10 +897,10 @@ mod tests {
     #[test]
     fn l0_fmt3_drops_leading_zero() {
         // SV% goalie convention is ".925" not "0.925".
-        assert_eq!(fmt3(0.925),  ".925");
+        assert_eq!(fmt3(0.925), ".925");
         assert_eq!(fmt3(0.9008), ".901");
         // 1.0 (theoretical max) keeps the "1." form.
-        assert_eq!(fmt3(1.0),    "1.000");
+        assert_eq!(fmt3(1.0), "1.000");
     }
 
     #[test]
@@ -805,10 +922,10 @@ mod tests {
     fn l0_fmt2_keeps_two_decimals_for_gaa() {
         // GAA uses standard 2-decimal formatting; no leading-zero strip.
         // (Goalies often show GAA < 1.00 in tiny samples, so we keep the 0.)
-        assert_eq!(fmt2(2.05),  "2.05");
-        assert_eq!(fmt2(2.0),   "2.00");
-        assert_eq!(fmt2(0.5),   "0.50");
-        assert_eq!(fmt2(0.0),   "0.00");
+        assert_eq!(fmt2(2.05), "2.05");
+        assert_eq!(fmt2(2.0), "2.00");
+        assert_eq!(fmt2(0.5), "0.50");
+        assert_eq!(fmt2(0.0), "0.00");
     }
 
     // ── Hart.5c.6 Phase A.1 — view-based compile() tests ──────────────
@@ -843,12 +960,19 @@ mod tests {
 
         // ctx_window deliberately doesn't match (season, type).
         let result = panel.compile(
-            &repo, s, t, pid, &ctx,
+            &repo,
+            s,
+            t,
+            pid,
+            &ctx,
             (Season(20232024), SeasonType::Regular),
         );
         match result {
             Err(DashboardError::CrossWindowCompile {
-                requested_s, requested_t, ctx_s, ctx_t,
+                requested_s,
+                requested_t,
+                ctx_s,
+                ctx_t,
             }) => {
                 assert_eq!(requested_s, Season(20242025));
                 assert_eq!(requested_t, SeasonType::Regular);
@@ -870,13 +994,18 @@ mod tests {
         let t = SeasonType::Regular;
 
         let result = panel.compile(
-            &repo, s, t,
-            PlayerId(99999),  // not in fixture
+            &repo,
+            s,
+            t,
+            PlayerId(99999), // not in fixture
             &ctx,
             (s, t),
         );
         match result {
-            Err(DashboardError::PlayerNotInRepo { season, season_type }) => {
+            Err(DashboardError::PlayerNotInRepo {
+                season,
+                season_type,
+            }) => {
                 assert_eq!(season, s);
                 assert_eq!(season_type, t);
             }
@@ -895,9 +1024,13 @@ mod tests {
         let s = Season(20242025);
         let t = SeasonType::Regular;
 
-        let out = panel.compile(&repo, s, t, pid, &ctx, (s, t))
+        let out = panel
+            .compile(&repo, s, t, pid, &ctx, (s, t))
             .expect("happy-path compile");
-        assert!(!out.lines.is_empty(), "compile output must include header line");
+        assert!(
+            !out.lines.is_empty(),
+            "compile output must include header line"
+        );
 
         // The cache must be keyed on (nhl_id, Season, SeasonType) — not
         // just nhl_id. Verify by inspecting the inner state.
@@ -931,14 +1064,21 @@ mod tests {
         let ctx_24 = LeagueContext::build(&repo, s_24, t);
         let ctx_23 = LeagueContext::build(&repo, s_23, t);
 
-        let _ = panel.compile(&repo, s_24, t, pid, &ctx_24, (s_24, t)).unwrap();
-        let _ = panel.compile(&repo, s_23, t, pid, &ctx_23, (s_23, t)).unwrap();
+        let _ = panel
+            .compile(&repo, s_24, t, pid, &ctx_24, (s_24, t))
+            .unwrap();
+        let _ = panel
+            .compile(&repo, s_23, t, pid, &ctx_23, (s_23, t))
+            .unwrap();
 
         let guard = panel.inner.lock().unwrap();
         assert!(guard.by_view.contains_key(&(8478402, s_24, t)));
         assert!(guard.by_view.contains_key(&(8478402, s_23, t)));
-        assert_eq!(guard.by_view.len(), 2,
-            "two distinct (player, window) entries — no collapse");
+        assert_eq!(
+            guard.by_view.len(),
+            2,
+            "two distinct (player, window) entries — no collapse"
+        );
     }
 
     #[test]

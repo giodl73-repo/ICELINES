@@ -1,9 +1,7 @@
 use crate::config::Config;
 use crate::render::terminal::render_team_card;
 use anyhow::bail;
-use icelines_core::{
-    model::Season, season_stats::SeasonType, DepthChartBuilder, TeamAbbr,
-};
+use icelines_core::{model::Season, season_stats::SeasonType, DepthChartBuilder, TeamAbbr};
 use icelines_fetch::{snapshot::SnapshotStore, stats_loader::load_into_repo};
 
 pub async fn run(team: String, _scheme: Option<String>, no_color: bool) -> anyhow::Result<()> {

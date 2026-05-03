@@ -43,27 +43,30 @@ pub fn transactions_for_player<'a>(
 ) -> Vec<&'a Transaction> {
     let last = match last_token(full_name) {
         Some(s) => s,
-        None    => return Vec::new(),
+        None => return Vec::new(),
     };
     let last_norm = normalize_name(last);
     if last_norm.is_empty() {
         return Vec::new();
     }
 
-    transactions.iter().filter(|tx| {
-        // Team disambiguation. Rows with no team are always considered
-        // (league-wide notes shouldn't drop on team filter), but rows
-        // with a different team are filtered out when we have one.
-        if let Some(want) = team_filter {
-            if let Some(t) = &tx.team {
-                if !t.0.eq_ignore_ascii_case(want) {
-                    return false;
+    transactions
+        .iter()
+        .filter(|tx| {
+            // Team disambiguation. Rows with no team are always considered
+            // (league-wide notes shouldn't drop on team filter), but rows
+            // with a different team are filtered out when we have one.
+            if let Some(want) = team_filter {
+                if let Some(t) = &tx.team {
+                    if !t.0.eq_ignore_ascii_case(want) {
+                        return false;
+                    }
                 }
             }
-        }
-        let desc_norm = normalize_name(&tx.description);
-        desc_norm.contains(&last_norm)
-    }).collect()
+            let desc_norm = normalize_name(&tx.description);
+            desc_norm.contains(&last_norm)
+        })
+        .collect()
 }
 
 /// Last whitespace-separated token of `name`, or None when input is empty.
@@ -79,12 +82,12 @@ mod tests {
 
     fn fixture(team: Option<&str>, description: &str) -> Transaction {
         Transaction {
-            date:               "2026-04-29".to_owned(),
-            team:               team.map(|t| TeamAbbr(t.to_owned())),
-            kind:               TransactionKind::Trade,
-            description:        description.to_owned(),
-            id:                 "id".to_owned(),
-            trade_group_id:     None,
+            date: "2026-04-29".to_owned(),
+            team: team.map(|t| TeamAbbr(t.to_owned())),
+            kind: TransactionKind::Trade,
+            description: description.to_owned(),
+            id: "id".to_owned(),
+            trade_group_id: None,
             classifier_version: 1,
         }
     }
@@ -99,22 +102,40 @@ mod tests {
 
     #[test]
     fn l0_search_substring_match_case_insensitive() {
-        assert!(description_matches_query("Acquired D Ryan McDonagh from NSH", "mcdonagh"));
-        assert!(description_matches_query("Acquired D Ryan McDonagh from NSH", "MCDONAGH"));
-        assert!(description_matches_query("Acquired D Ryan McDonagh from NSH", "ryan mcd"));
+        assert!(description_matches_query(
+            "Acquired D Ryan McDonagh from NSH",
+            "mcdonagh"
+        ));
+        assert!(description_matches_query(
+            "Acquired D Ryan McDonagh from NSH",
+            "MCDONAGH"
+        ));
+        assert!(description_matches_query(
+            "Acquired D Ryan McDonagh from NSH",
+            "ryan mcd"
+        ));
     }
 
     #[test]
     fn l0_search_no_match_returns_false() {
-        assert!(!description_matches_query("Recalled F X from AHL", "tarasenko"));
+        assert!(!description_matches_query(
+            "Recalled F X from AHL",
+            "tarasenko"
+        ));
     }
 
     #[test]
     fn l0_search_diacritic_stripped_both_sides() {
         // ESPN sometimes drops diacritics, sometimes preserves. The
         // query must match either spelling.
-        assert!(description_matches_query("Signed F Patric Hörnqvist", "hornqvist"));
-        assert!(description_matches_query("Signed F Patric Hornqvist", "hörnqvist"));
+        assert!(description_matches_query(
+            "Signed F Patric Hörnqvist",
+            "hornqvist"
+        ));
+        assert!(description_matches_query(
+            "Signed F Patric Hornqvist",
+            "hörnqvist"
+        ));
     }
 
     // ── transactions_for_player ─────────────────────────────────────
@@ -133,7 +154,10 @@ mod tests {
 
     #[test]
     fn l0_player_match_works_with_only_last_name() {
-        let txs = vec![fixture(Some("CHI"), "Signed F Connor Bedard to an extension")];
+        let txs = vec![fixture(
+            Some("CHI"),
+            "Signed F Connor Bedard to an extension",
+        )];
         let hits = transactions_for_player(&txs, "Bedard", None);
         assert_eq!(hits.len(), 1);
     }
@@ -158,8 +182,8 @@ mod tests {
         // legitimately surfaces.
         let txs = vec![
             fixture(Some("EDM"), "Signed F McDavid to an extension"),
-            fixture(None,        "League-wide: McDavid named to All-Star Team"),
-            fixture(Some("CHI"), "Acquired F McDavid from BOS"),  // hypothetical
+            fixture(None, "League-wide: McDavid named to All-Star Team"),
+            fixture(Some("CHI"), "Acquired F McDavid from BOS"), // hypothetical
         ];
         let edm_only = transactions_for_player(&txs, "Connor McDavid", Some("EDM"));
         // EDM row + league-wide row, NOT the CHI row.
@@ -176,7 +200,10 @@ mod tests {
     #[test]
     fn l0_player_match_diacritic_normalized_both_sides() {
         // ESPN: "Hornqvist". Player struct: "Hörnqvist". Match must work.
-        let txs = vec![fixture(Some("NSH"), "Signed F Patric Hornqvist to a 1-year deal")];
+        let txs = vec![fixture(
+            Some("NSH"),
+            "Signed F Patric Hornqvist to a 1-year deal",
+        )];
         let hits = transactions_for_player(&txs, "Patric Hörnqvist", None);
         assert_eq!(hits.len(), 1);
     }
@@ -190,10 +217,10 @@ mod tests {
 
     #[test]
     fn l0_last_token_handles_single_name() {
-        assert_eq!(last_token("Bedard"),         Some("Bedard"));
+        assert_eq!(last_token("Bedard"), Some("Bedard"));
         assert_eq!(last_token("Connor McDavid"), Some("McDavid"));
-        assert_eq!(last_token("J.T. Compher"),   Some("Compher"));
-        assert_eq!(last_token(""),               None);
-        assert_eq!(last_token("   "),            None);
+        assert_eq!(last_token("J.T. Compher"), Some("Compher"));
+        assert_eq!(last_token(""), None);
+        assert_eq!(last_token("   "), None);
     }
 }

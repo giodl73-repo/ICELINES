@@ -24,7 +24,11 @@ fn l1_lindsay_stat_catalog_variants_no_panics_across_cross_product() {
     let mut totals = Vec::new();
     for (name, builder) in stat_catalog_variants::all() {
         let (identity, stats) = builder();
-        let view = PlayerView { identity: &identity, stats: &stats, contract: None };
+        let view = PlayerView {
+            identity: &identity,
+            stats: &stats,
+            contract: None,
+        };
         let mut some_count = 0usize;
         for sid in StatId::all() {
             // The read() call: if it panics, the test fails. We don't
@@ -55,12 +59,21 @@ fn l1_lindsay_stat_catalog_variants_no_panics_across_cross_product() {
 #[test]
 fn l1_lindsay_pre_2005_realtime_stats_are_none() {
     let (identity, stats) = stat_catalog_variants::skater_pre_2005();
-    let view = PlayerView { identity: &identity, stats: &stats, contract: None };
+    let view = PlayerView {
+        identity: &identity,
+        stats: &stats,
+        contract: None,
+    };
     for sid in [
-        StatId::Hits, StatId::BlockedShots, StatId::Takeaways,
-        StatId::Giveaways, StatId::MissedShots,
-        StatId::HitsPer60, StatId::BlockedShotsPer60,
-        StatId::TakeawaysPer60, StatId::GiveawaysPer60,
+        StatId::Hits,
+        StatId::BlockedShots,
+        StatId::Takeaways,
+        StatId::Giveaways,
+        StatId::MissedShots,
+        StatId::HitsPer60,
+        StatId::BlockedShotsPer60,
+        StatId::TakeawaysPer60,
+        StatId::GiveawaysPer60,
     ] {
         assert!(
             sid.read(&view).is_none(),
@@ -76,9 +89,16 @@ fn l1_lindsay_pre_2005_realtime_stats_are_none() {
 #[test]
 fn l1_lindsay_traded_multistint_di11_blocks_on_ice_goals() {
     let (identity, stats) = stat_catalog_variants::traded_multistint();
-    let view = PlayerView { identity: &identity, stats: &stats, contract: None };
+    let view = PlayerView {
+        identity: &identity,
+        stats: &stats,
+        contract: None,
+    };
     assert!(view.was_traded_in_window());
-    for sid in StatId::all().iter().filter(|s| s.category() == StatCategory::OnIceGoals) {
+    for sid in StatId::all()
+        .iter()
+        .filter(|s| s.category() == StatCategory::OnIceGoals)
+    {
         assert!(
             sid.read(&view).is_none(),
             "{sid:?} (OnIceGoals) should be None when traded mid-window"
@@ -96,10 +116,18 @@ fn l1_lindsay_traded_multistint_di11_blocks_on_ice_goals() {
 #[test]
 fn l1_lindsay_low_gp_min_gp_gate_blocks_derived() {
     let (identity, stats) = stat_catalog_variants::low_gp();
-    let view = PlayerView { identity: &identity, stats: &stats, contract: None };
+    let view = PlayerView {
+        identity: &identity,
+        stats: &stats,
+        contract: None,
+    };
     for sid in [
-        StatId::PointsPerGame, StatId::GoalsPerGame, StatId::AssistsPerGame,
-        StatId::Pace82, StatId::GoalsPer82, StatId::AssistsPer82,
+        StatId::PointsPerGame,
+        StatId::GoalsPerGame,
+        StatId::AssistsPerGame,
+        StatId::Pace82,
+        StatId::GoalsPer82,
+        StatId::AssistsPer82,
     ] {
         assert!(
             sid.read(&view).is_none(),
@@ -118,14 +146,26 @@ fn l1_lindsay_low_gp_min_gp_gate_blocks_derived() {
 #[test]
 fn l1_lindsay_goalie_category_populates_for_goalie_variant() {
     let (identity, stats) = stat_catalog_variants::goalie();
-    let view = PlayerView { identity: &identity, stats: &stats, contract: None };
+    let view = PlayerView {
+        identity: &identity,
+        stats: &stats,
+        contract: None,
+    };
     assert!(view.is_goalie());
     for sid in [
-        StatId::Wins, StatId::Losses, StatId::Saves, StatId::ShotsAgainst,
-        StatId::SavePct, StatId::Gaa, StatId::Shutouts,
-        StatId::EvSavePct, StatId::ShSavePct,
-        StatId::QualityStarts, StatId::QualityStartPct,
-        StatId::RegulationWins, StatId::RegulationLosses,
+        StatId::Wins,
+        StatId::Losses,
+        StatId::Saves,
+        StatId::ShotsAgainst,
+        StatId::SavePct,
+        StatId::Gaa,
+        StatId::Shutouts,
+        StatId::EvSavePct,
+        StatId::ShSavePct,
+        StatId::QualityStarts,
+        StatId::QualityStartPct,
+        StatId::RegulationWins,
+        StatId::RegulationLosses,
     ] {
         assert!(
             sid.read(&view).is_some(),
@@ -156,7 +196,11 @@ fn l1_lindsay_cross_product_cardinality_is_648() {
     let mut total_cells = 0usize;
     for (_, builder) in stat_catalog_variants::all() {
         let (identity, stats) = builder();
-        let view = PlayerView { identity: &identity, stats: &stats, contract: None };
+        let view = PlayerView {
+            identity: &identity,
+            stats: &stats,
+            contract: None,
+        };
         for sid in StatId::all() {
             // Force the read — discard the value.
             let _ = sid.read(&view);

@@ -22,8 +22,8 @@ async fn l1_lindsay_fetch_429_with_zero_retries_surfaces_rate_limited() {
         then.status(429);
     });
 
-    let client = NhlApiClient::new(server.url(""), "http://unused.local")
-        .with_retry_params(0, 1, 100);
+    let client =
+        NhlApiClient::new(server.url(""), "http://unused.local").with_retry_params(0, 1, 100);
 
     let err = client
         .fetch_all_bios("20252026", SeasonType::Regular)
@@ -47,8 +47,8 @@ async fn l1_lindsay_fetch_503_with_zero_retries_surfaces_service_unavailable() {
         then.status(503);
     });
 
-    let client = NhlApiClient::new(server.url(""), "http://unused.local")
-        .with_retry_params(0, 1, 100);
+    let client =
+        NhlApiClient::new(server.url(""), "http://unused.local").with_retry_params(0, 1, 100);
 
     let err = client
         .fetch_all_bios("20252026", SeasonType::Regular)
@@ -71,8 +71,8 @@ async fn l1_lindsay_fetch_500_with_zero_retries_surfaces_http_500() {
         then.status(500);
     });
 
-    let client = NhlApiClient::new(server.url(""), "http://unused.local")
-        .with_retry_params(0, 1, 100);
+    let client =
+        NhlApiClient::new(server.url(""), "http://unused.local").with_retry_params(0, 1, 100);
 
     let err = client
         .fetch_all_bios("20252026", SeasonType::Regular)
@@ -96,8 +96,8 @@ async fn l1_lindsay_fetch_404_does_not_retry() {
         then.status(404);
     });
 
-    let client = NhlApiClient::new(server.url(""), "http://unused.local")
-        .with_retry_params(5, 1, 100);
+    let client =
+        NhlApiClient::new(server.url(""), "http://unused.local").with_retry_params(5, 1, 100);
 
     let err = client
         .fetch_all_bios("20252026", SeasonType::Regular)
@@ -124,8 +124,8 @@ async fn l1_lindsay_fetch_401_does_not_retry() {
         then.status(401);
     });
 
-    let client = NhlApiClient::new(server.url(""), "http://unused.local")
-        .with_retry_params(5, 1, 100);
+    let client =
+        NhlApiClient::new(server.url(""), "http://unused.local").with_retry_params(5, 1, 100);
 
     let _err = client
         .fetch_all_bios("20252026", SeasonType::Regular)
@@ -146,8 +146,8 @@ async fn l1_lindsay_fetch_retry_cap_caps_per_attempt_sleep() {
         then.status(429);
     });
 
-    let client = NhlApiClient::new(server.url(""), "http://unused.local")
-        .with_retry_params(3, 100, 10);
+    let client =
+        NhlApiClient::new(server.url(""), "http://unused.local").with_retry_params(3, 100, 10);
 
     let started = std::time::Instant::now();
     let _err = client
@@ -173,8 +173,8 @@ async fn l1_lindsay_fetch_429_with_retries_does_retry() {
         then.status(429);
     });
 
-    let client = NhlApiClient::new(server.url(""), "http://unused.local")
-        .with_retry_params(3, 1, 10);
+    let client =
+        NhlApiClient::new(server.url(""), "http://unused.local").with_retry_params(3, 1, 10);
 
     let _err = client
         .fetch_all_bios("20252026", SeasonType::Regular)

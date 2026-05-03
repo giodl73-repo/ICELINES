@@ -33,7 +33,7 @@ pub struct SkaterBio {
     pub games_played: u32,
     pub goals: u32,
     pub assists: u32,
-    pub current_team_abbrev: Option<String>,  // null for retired/unsigned players
+    pub current_team_abbrev: Option<String>, // null for retired/unsigned players
     pub position_code: String,
     pub birth_date: Option<String>,
     pub birth_country: Option<String>,
@@ -75,7 +75,7 @@ pub struct SkaterStats {
     pub ot_goals: u32,
     pub shots: u32,
     #[serde(rename = "shootingPct", alias = "shootingPctg")]
-    pub shooting_pctg: Option<f32>,   // null for players with 0 shots
+    pub shooting_pctg: Option<f32>, // null for players with 0 shots
     pub plus_minus: i32,
     pub time_on_ice_per_game: Option<f32>,
     pub faceoff_win_pct: Option<f32>, // null for non-centers
@@ -164,34 +164,34 @@ impl std::fmt::Display for LocalizedString {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GoalieStats {
-    pub player_id:             u32,
-    pub goalie_full_name:      String,
-    pub last_name:             String,
+    pub player_id: u32,
+    pub goalie_full_name: String,
+    pub last_name: String,
     /// Comma-separated abbrevs when traded mid-season (e.g. "BOS,OTT").
-    pub team_abbrevs:          String,
-    pub season_id:             u32,
-    pub shoots_catches:        Option<String>,
-    pub games_played:          u32,
-    pub games_started:         u32,
-    pub wins:                  u32,
-    pub losses:                u32,
-    pub ot_losses:             Option<u32>,
-    pub ties:                  Option<u32>,
-    pub shots_against:         u32,
-    pub goals_against:         u32,
-    pub saves:                 u32,
+    pub team_abbrevs: String,
+    pub season_id: u32,
+    pub shoots_catches: Option<String>,
+    pub games_played: u32,
+    pub games_started: u32,
+    pub wins: u32,
+    pub losses: u32,
+    pub ot_losses: Option<u32>,
+    pub ties: Option<u32>,
+    pub shots_against: u32,
+    pub goals_against: u32,
+    pub saves: u32,
     /// Save percentage as a 0.0..=1.0 decimal. Null when shots_against=0.
     #[serde(rename = "savePct", alias = "savePctg")]
-    pub save_pct:              Option<f32>,
+    pub save_pct: Option<f32>,
     /// Goals-against average. Null when games_played=0.
     pub goals_against_average: Option<f32>,
-    pub shutouts:              u32,
-    pub time_on_ice:           u32,  // seconds
+    pub shutouts: u32,
+    pub time_on_ice: u32, // seconds
     /// Goalie scoring (rare but real — empty-net assists, occasional goals).
-    pub goals:                 u32,
-    pub assists:               u32,
-    pub points:                u32,
-    pub penalty_minutes:       u32,
+    pub goals: u32,
+    pub assists: u32,
+    pub points: u32,
+    pub penalty_minutes: u32,
 }
 
 impl GoalieStats {
@@ -205,11 +205,7 @@ impl GoalieStats {
     /// Primary team abbrev — for traded goalies, returns the first one
     /// listed in `team_abbrevs` (chronologically the earlier stop).
     pub fn primary_team(&self) -> &str {
-        self.team_abbrevs
-            .split(',')
-            .next()
-            .unwrap_or("")
-            .trim()
+        self.team_abbrevs.split(',').next().unwrap_or("").trim()
     }
 }
 
@@ -231,20 +227,20 @@ pub struct RawTransaction {
     /// occasionally ISO 8601 with time (`2026-04-29T04:00:00Z`).
     /// Caller (T.3) is responsible for normalizing to America/New_York
     /// before bucketing into `Transaction.date`.
-    pub date:        String,
+    pub date: String,
     /// Free-form English description. Always populated.
     pub description: String,
     /// Team that initiated / received the move. Some rows (league-wide
     /// waiver windows, deadline-related notes) lack a team payload.
     #[serde(default)]
-    pub team:        Option<RawTransactionTeam>,
+    pub team: Option<RawTransactionTeam>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct RawTransactionTeam {
     /// ESPN's internal numeric team id. Stringified in the response.
-    pub id:           String,
+    pub id: String,
     /// Short abbreviation as ESPN emits it. May need translation via
     /// `crate::teams::espn_to_nhl_abbrev` (e.g. `TB` → `TBL`, `ARI` →
     /// `UTA` post-2024-25).

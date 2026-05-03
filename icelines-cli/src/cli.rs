@@ -69,9 +69,9 @@ pub enum Commands {
         #[arg(long)]
         json: bool,
         #[arg(long)]
-        csv:  bool,
+        csv: bool,
         #[arg(long, value_name = "PATH")]
-        out:  Option<std::path::PathBuf>,
+        out: Option<std::path::PathBuf>,
     },
 
     /// Manage named data snapshots.
@@ -88,47 +88,59 @@ pub enum Commands {
 
     /// Serve the static site locally (builds first, then launches mkdocs serve).
     Serve {
-        #[arg(long, default_value_t = 8000)] port: u16,
+        #[arg(long, default_value_t = 8000)]
+        port: u16,
     },
     /// Deploy the site to GitHub Pages.
     Deploy {
-        #[arg(long, default_value = "origin")] remote: String,
+        #[arg(long, default_value = "origin")]
+        remote: String,
     },
     /// Show tonight's NHL games.
     Tonight {
         /// Filter to games involving this team.
-        #[arg(long)] team: Option<String>,
+        #[arg(long)]
+        team: Option<String>,
     },
     /// Show upcoming schedule.
     Schedule {
-        #[arg(long)] team: Option<String>,
-        #[arg(long, default_value_t = 7)] days: u32,
+        #[arg(long)]
+        team: Option<String>,
+        #[arg(long, default_value_t = 7)]
+        days: u32,
     },
     /// Evaluate a trade — depth chart before/after.
     Trade {
         /// Player leaving (partial name OK).
         player_out: String,
         /// Literal "for".
-        #[arg(value_name = "for")] _for: String,
+        #[arg(value_name = "for")]
+        _for: String,
         /// Player arriving.
         player_in: String,
         /// Team perspective [default: player_out's team].
-        #[arg(long)] team: Option<String>,
+        #[arg(long)]
+        team: Option<String>,
     },
     /// Project rest-of-season performance.
     Project {
         /// Player name (partial match OK). Omit to use --team.
         player: Option<String>,
         /// Project all skaters on a team.
-        #[arg(long)] team: Option<String>,
+        #[arg(long)]
+        team: Option<String>,
         /// Projection mode: pace | regressed | composite [default: regressed]
-        #[arg(long, default_value = "regressed")] mode: String,
+        #[arg(long, default_value = "regressed")]
+        mode: String,
         /// Override remaining games (default: auto from schedule).
-        #[arg(long)] games: Option<u32>,
-        #[arg(long)] json: bool,
-        #[arg(long)] csv:  bool,
+        #[arg(long)]
+        games: Option<u32>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long)]
+        csv: bool,
         #[arg(long, value_name = "PATH")]
-        out:  Option<std::path::PathBuf>,
+        out: Option<std::path::PathBuf>,
     },
     /// Launch the interactive TUI.
     Tui,
@@ -191,10 +203,10 @@ pub enum Commands {
         json: bool,
         /// Emit RFC-4180 CSV (one header row + data rows). Mutually exclusive with --json.
         #[arg(long)]
-        csv:  bool,
+        csv: bool,
         /// Write the report to a file instead of stdout.
         #[arg(long, value_name = "PATH")]
-        out:  Option<std::path::PathBuf>,
+        out: Option<std::path::PathBuf>,
     },
     /// Show a draft class — all players from a given draft year.
     Class {
@@ -206,9 +218,9 @@ pub enum Commands {
         #[arg(long)]
         json: bool,
         #[arg(long)]
-        csv:  bool,
+        csv: bool,
         #[arg(long, value_name = "PATH")]
-        out:  Option<std::path::PathBuf>,
+        out: Option<std::path::PathBuf>,
     },
     /// Find statistical peers for a player (same draft era and position).
     Peers {
@@ -218,9 +230,9 @@ pub enum Commands {
         #[arg(long)]
         json: bool,
         #[arg(long)]
-        csv:  bool,
+        csv: bool,
         #[arg(long, value_name = "PATH")]
-        out:  Option<std::path::PathBuf>,
+        out: Option<std::path::PathBuf>,
     },
     /// Head-to-head player comparison.
     Compare {
@@ -229,9 +241,9 @@ pub enum Commands {
         #[arg(long)]
         json: bool,
         #[arg(long)]
-        csv:  bool,
+        csv: bool,
         #[arg(long, value_name = "PATH")]
-        out:  Option<std::path::PathBuf>,
+        out: Option<std::path::PathBuf>,
     },
     /// Show a player's historical season stats.
     History {
@@ -242,9 +254,9 @@ pub enum Commands {
         #[arg(long)]
         json: bool,
         #[arg(long)]
-        csv:  bool,
+        csv: bool,
         #[arg(long, value_name = "PATH")]
-        out:  Option<std::path::PathBuf>,
+        out: Option<std::path::PathBuf>,
     },
     /// Find line-mates for a player.
     Mates {
@@ -253,38 +265,50 @@ pub enum Commands {
         /// Number of top linemates to display.
         #[arg(long, default_value_t = 5)]
         top: usize,
-        #[arg(long)] json: bool,
-        #[arg(long)] csv:  bool,
+        #[arg(long)]
+        json: bool,
+        #[arg(long)]
+        csv: bool,
         #[arg(long, value_name = "PATH")]
-        out:  Option<std::path::PathBuf>,
+        out: Option<std::path::PathBuf>,
     },
     /// League-wide transactions feed: trades, waivers, signings, IR, recalls,
     /// reassignments. Sourced from ESPN's site.api. Phase T.4.
     Transactions {
         /// Filter to one team (canonical NHL abbrev — TBL, EDM, …).
         /// Use `LEAGUE` for league-wide / teamless rows.
-        #[arg(long)] team: Option<String>,
+        #[arg(long)]
+        team: Option<String>,
         /// Only show transactions on/after this date (YYYY-MM-DD).
-        #[arg(long)] since: Option<String>,
+        #[arg(long)]
+        since: Option<String>,
         /// Only show transactions on/before this date (YYYY-MM-DD).
-        #[arg(long)] until: Option<String>,
+        #[arg(long)]
+        until: Option<String>,
         /// Filter by kind: trade, signing, recall, reassignment, ir,
         /// waiver (or waiver_placement / waiver_clear / waiver_claim), other.
-        #[arg(long)] kind: Option<String>,
+        #[arg(long)]
+        kind: Option<String>,
         /// Free-form substring search against the description (case-insensitive,
         /// diacritic-stripped). Works on player names, team names, anything.
-        #[arg(long)] search: Option<String>,
+        #[arg(long)]
+        search: Option<String>,
         /// Show only transactions mentioning this player by last name.
         /// Combine with --team to disambiguate shared last names.
-        #[arg(long)] player: Option<String>,
+        #[arg(long)]
+        player: Option<String>,
         /// Use a bundled or installed historical season.
-        #[arg(long)] season: Option<String>,
+        #[arg(long)]
+        season: Option<String>,
         /// Limit to first N rows (default: all).
-        #[arg(long)] top: Option<usize>,
-        #[arg(long)] json: bool,
-        #[arg(long)] csv:  bool,
+        #[arg(long)]
+        top: Option<usize>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long)]
+        csv: bool,
         #[arg(long, value_name = "PATH")]
-        out:  Option<std::path::PathBuf>,
+        out: Option<std::path::PathBuf>,
     },
     /// Manage player watchlists and custom groups.
     #[command(subcommand)]
@@ -295,13 +319,14 @@ pub enum Commands {
     /// Full 8-section scouting report for a player.
     Scouting {
         player: String,
-        #[arg(long, default_value = "terminal")] format: String,
+        #[arg(long, default_value = "terminal")]
+        format: String,
     },
     /// Manage fantasy scoring schemes.
     #[command(subcommand)]
     Scheme(SchemeSubcommand),
     /// Open the league dashboard (alias for `icelines tui`).
-    Dashboard,  // → launches TUI
+    Dashboard, // → launches TUI
 
     /// Download and manage additional season data bundles.
     #[command(subcommand)]
@@ -551,29 +576,29 @@ impl ReportKindArg {
     pub fn to_core(self) -> icelines_core::stats_catalog::ReportKind {
         use icelines_core::stats_catalog::ReportKind as R;
         match self {
-            Self::SkaterSummary           => R::SkaterSummary,
-            Self::SkaterBios              => R::SkaterBios,
-            Self::SkaterRealtime          => R::SkaterRealtime,
-            Self::SkaterTimeOnIce         => R::SkaterTimeOnIce,
-            Self::SkaterGoalsForAgainst   => R::SkaterGoalsForAgainst,
-            Self::GoalieSummary           => R::GoalieSummary,
-            Self::GoalieBios              => R::GoalieBios,
-            Self::GoalieAdvanced          => R::GoalieAdvanced,
-            Self::GoalieSavesByStrength   => R::GoalieSavesByStrength,
-            Self::SkaterPuckPossessions   => R::SkaterPuckPossessions,
-            Self::SkaterScoringRates      => R::SkaterScoringRates,
-            Self::SkaterSummaryShooting   => R::SkaterSummaryShooting,
-            Self::SkaterPowerPlay         => R::SkaterPowerPlay,
-            Self::SkaterPenaltyKill       => R::SkaterPenaltyKill,
-            Self::SkaterPenalties         => R::SkaterPenalties,
-            Self::SkaterFaceoffWins       => R::SkaterFaceoffWins,
+            Self::SkaterSummary => R::SkaterSummary,
+            Self::SkaterBios => R::SkaterBios,
+            Self::SkaterRealtime => R::SkaterRealtime,
+            Self::SkaterTimeOnIce => R::SkaterTimeOnIce,
+            Self::SkaterGoalsForAgainst => R::SkaterGoalsForAgainst,
+            Self::GoalieSummary => R::GoalieSummary,
+            Self::GoalieBios => R::GoalieBios,
+            Self::GoalieAdvanced => R::GoalieAdvanced,
+            Self::GoalieSavesByStrength => R::GoalieSavesByStrength,
+            Self::SkaterPuckPossessions => R::SkaterPuckPossessions,
+            Self::SkaterScoringRates => R::SkaterScoringRates,
+            Self::SkaterSummaryShooting => R::SkaterSummaryShooting,
+            Self::SkaterPowerPlay => R::SkaterPowerPlay,
+            Self::SkaterPenaltyKill => R::SkaterPenaltyKill,
+            Self::SkaterPenalties => R::SkaterPenalties,
+            Self::SkaterFaceoffWins => R::SkaterFaceoffWins,
             Self::SkaterFaceoffPercentages => R::SkaterFaceoffPercentages,
-            Self::SkaterShotType          => R::SkaterShotType,
-            Self::SkaterScoringPerGame    => R::SkaterScoringPerGame,
+            Self::SkaterShotType => R::SkaterShotType,
+            Self::SkaterScoringPerGame => R::SkaterScoringPerGame,
             Self::GoalieStartedVsRelieved => R::GoalieStartedVsRelieved,
-            Self::GoalieDaysRest          => R::GoalieDaysRest,
-            Self::GoaliePenaltyShots      => R::GoaliePenaltyShots,
-            Self::GoalieShootout          => R::GoalieShootout,
+            Self::GoalieDaysRest => R::GoalieDaysRest,
+            Self::GoaliePenaltyShots => R::GoaliePenaltyShots,
+            Self::GoalieShootout => R::GoalieShootout,
         }
     }
 }
@@ -1113,12 +1138,12 @@ impl MdShape {
     pub fn label(&self) -> &'static str {
         match self {
             MdShape::Leaders => "leaders",
-            MdShape::Team    => "team",
-            MdShape::Depth   => "depth",
+            MdShape::Team => "team",
+            MdShape::Depth => "depth",
             MdShape::Fantasy => "fantasy",
             MdShape::Compare => "compare",
-            MdShape::Series  => "series",
-            MdShape::Roster  => "roster",
+            MdShape::Series => "series",
+            MdShape::Roster => "roster",
         }
     }
 }

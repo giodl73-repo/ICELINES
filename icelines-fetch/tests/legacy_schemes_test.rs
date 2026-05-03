@@ -53,8 +53,7 @@ fn l1_legacy_schemes_load_byte_identical() {
         let path = dir.join(&fname);
 
         // Canonical bytes: serialize the in-memory builtin via toml.
-        let canonical = toml::to_string_pretty(&scheme)
-            .expect("serialize scheme");
+        let canonical = toml::to_string_pretty(&scheme).expect("serialize scheme");
 
         if regen || !path.exists() {
             std::fs::write(&path, &canonical).expect("write golden");
@@ -76,11 +75,11 @@ fn l1_legacy_schemes_load_byte_identical() {
             continue;
         }
 
-        let golden = std::fs::read_to_string(&path)
-            .expect("read golden");
+        let golden = std::fs::read_to_string(&path).expect("read golden");
 
         assert_eq!(
-            canonical, golden,
+            canonical,
+            golden,
             "DI-25: scheme {} serializes differently than its frozen golden \
              at {}.\n\nIf this drift is intentional, re-run with \
              LINDSAY_L55_REGEN=1 to regenerate the golden, then commit it.",
@@ -91,10 +90,8 @@ fn l1_legacy_schemes_load_byte_identical() {
         // Also verify load → re-serialize round-trips byte-identically:
         // catches loader-side drift (e.g. an alias map that loses fidelity
         // on a known field).
-        let loaded: Scheme = toml::from_str(&golden)
-            .expect("load golden as Scheme");
-        let re_serialized = toml::to_string_pretty(&loaded)
-            .expect("re-serialize loaded scheme");
+        let loaded: Scheme = toml::from_str(&golden).expect("load golden as Scheme");
+        let re_serialized = toml::to_string_pretty(&loaded).expect("re-serialize loaded scheme");
         assert_eq!(
             canonical, re_serialized,
             "DI-25 round-trip drift: load + re-serialize ≠ canonical for {}",
@@ -128,20 +125,21 @@ fn l1_lindsay_l55_legacy_scheme_corpus_round_trips() {
             "L.5.5 corpus fixture missing at {}",
             path.display(),
         );
-        let raw = std::fs::read_to_string(&path)
-            .unwrap_or_else(|e| panic!("read {name}: {e}"));
-        let scheme: Scheme = toml::from_str(&raw)
-            .unwrap_or_else(|e| panic!("parse {name} as Scheme: {e}"));
+        let raw = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {name}: {e}"));
+        let scheme: Scheme =
+            toml::from_str(&raw).unwrap_or_else(|e| panic!("parse {name} as Scheme: {e}"));
         // Sanity: name field matches the file name.
-        assert_eq!(scheme.name, name,
+        assert_eq!(
+            scheme.name, name,
             "scheme name field `{}` doesn't match filename `{name}`",
-            scheme.name);
+            scheme.name
+        );
         // Round-trip: re-serialize and load again; the second load
         // must equal the first. Catches loader/serializer asymmetry.
-        let re_serialized = toml::to_string_pretty(&scheme)
-            .unwrap_or_else(|e| panic!("re-serialize {name}: {e}"));
-        let scheme2: Scheme = toml::from_str(&re_serialized)
-            .unwrap_or_else(|e| panic!("re-parse {name}: {e}"));
+        let re_serialized =
+            toml::to_string_pretty(&scheme).unwrap_or_else(|e| panic!("re-serialize {name}: {e}"));
+        let scheme2: Scheme =
+            toml::from_str(&re_serialized).unwrap_or_else(|e| panic!("re-parse {name}: {e}"));
         assert_eq!(scheme.name, scheme2.name);
         assert_eq!(scheme.description, scheme2.description);
         // Compare a representative subset of weights — full equality

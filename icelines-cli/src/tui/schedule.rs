@@ -20,7 +20,7 @@ pub enum ScheduleState {
     Error(String),
 }
 
-pub type WeekCache       = Arc<Mutex<HashMap<String, ScheduleState>>>;
+pub type WeekCache = Arc<Mutex<HashMap<String, ScheduleState>>>;
 /// Hart.5c.6 Phase C — D5 cache key widening. Keyed by
 /// `(team_abbrev, season)` so a season switch can't return wrong-
 /// season schedule data after `repo_swap` (KEEL/HART catch).
@@ -74,9 +74,10 @@ pub fn week_label(monday: &str) -> String {
 /// (must be a Monday) if the entry is Idle or missing.
 pub fn maybe_fetch_week(cache: WeekCache, week_start: String) {
     if !crate::config::live_feeds_enabled() {
-        cache.lock().unwrap()
-            .insert(week_start, ScheduleState::Error(
-                crate::tui::tonight::LIVE_DISABLED_MSG.to_owned()));
+        cache.lock().unwrap().insert(
+            week_start,
+            ScheduleState::Error(crate::tui::tonight::LIVE_DISABLED_MSG.to_owned()),
+        );
         return;
     }
     {
@@ -95,14 +96,14 @@ pub fn maybe_fetch_week(cache: WeekCache, week_start: String) {
     }
 
     let cache2 = cache.clone();
-    let key    = week_start.clone();
+    let key = week_start.clone();
     tokio::spawn(async move {
         let client = NhlApiClient::production();
         let result = client.fetch_schedule_for_date(&key).await;
         let mut map = cache2.lock().unwrap();
         match result {
             Ok(games) => map.insert(key, ScheduleState::Loaded(games)),
-            Err(e)    => map.insert(key, ScheduleState::Error(e.to_string())),
+            Err(e) => map.insert(key, ScheduleState::Error(e.to_string())),
         };
     });
 }
@@ -110,9 +111,10 @@ pub fn maybe_fetch_week(cache: WeekCache, week_start: String) {
 /// Force a refetch even if the cache already has data — used by `r` (retry).
 pub fn force_fetch_week(cache: WeekCache, week_start: String) {
     if !crate::config::live_feeds_enabled() {
-        cache.lock().unwrap()
-            .insert(week_start, ScheduleState::Error(
-                crate::tui::tonight::LIVE_DISABLED_MSG.to_owned()));
+        cache.lock().unwrap().insert(
+            week_start,
+            ScheduleState::Error(crate::tui::tonight::LIVE_DISABLED_MSG.to_owned()),
+        );
         return;
     }
     {
@@ -123,14 +125,14 @@ pub fn force_fetch_week(cache: WeekCache, week_start: String) {
         return;
     }
     let cache2 = cache.clone();
-    let key    = week_start.clone();
+    let key = week_start.clone();
     tokio::spawn(async move {
         let client = NhlApiClient::production();
         let result = client.fetch_schedule_for_date(&key).await;
         let mut map = cache2.lock().unwrap();
         match result {
             Ok(games) => map.insert(key, ScheduleState::Loaded(games)),
-            Err(e)    => map.insert(key, ScheduleState::Error(e.to_string())),
+            Err(e) => map.insert(key, ScheduleState::Error(e.to_string())),
         };
     });
 }
@@ -139,8 +141,12 @@ pub fn force_fetch_week(cache: WeekCache, week_start: String) {
 pub fn prefetch_around(cache: WeekCache, from_week: &str) {
     if let Some(monday0) = monday_of(from_week) {
         maybe_fetch_week(cache.clone(), monday0.clone());
-        if let Some(w1) = add_days(&monday0, 7)  { maybe_fetch_week(cache.clone(), w1); }
-        if let Some(w2) = add_days(&monday0, 14) { maybe_fetch_week(cache, w2);          }
+        if let Some(w1) = add_days(&monday0, 7) {
+            maybe_fetch_week(cache.clone(), w1);
+        }
+        if let Some(w2) = add_days(&monday0, 14) {
+            maybe_fetch_week(cache, w2);
+        }
     }
 }
 
@@ -151,9 +157,10 @@ pub fn prefetch_around(cache: WeekCache, from_week: &str) {
 pub fn maybe_fetch_team(cache: TeamSeasonCache, team: String, season: String) {
     let key = (team.clone(), season.clone());
     if !crate::config::live_feeds_enabled() {
-        cache.lock().unwrap()
-            .insert(key, ScheduleState::Error(
-                crate::tui::tonight::LIVE_DISABLED_MSG.to_owned()));
+        cache.lock().unwrap().insert(
+            key,
+            ScheduleState::Error(crate::tui::tonight::LIVE_DISABLED_MSG.to_owned()),
+        );
         return;
     }
     {
@@ -176,7 +183,7 @@ pub fn maybe_fetch_team(cache: TeamSeasonCache, team: String, season: String) {
         let mut map = cache2.lock().unwrap();
         match result {
             Ok(games) => map.insert(key, ScheduleState::Loaded(games)),
-            Err(e)    => map.insert(key, ScheduleState::Error(e.to_string())),
+            Err(e) => map.insert(key, ScheduleState::Error(e.to_string())),
         };
     });
 }
@@ -220,11 +227,9 @@ pub fn parse_search(query: &str) -> Result<SearchFilter, String> {
 
 fn validate_team(abbrev: &str) -> Result<(), String> {
     use icelines_core::TeamAbbr;
-    TeamAbbr::parse(abbrev).map(|_| ()).map_err(|_| {
-        format!(
-            "Unknown team: '{abbrev}'. Try: SEA, NYR, EDM, ..."
-        )
-    })
+    TeamAbbr::parse(abbrev)
+        .map(|_| ())
+        .map_err(|_| format!("Unknown team: '{abbrev}'. Try: SEA, NYR, EDM, ..."))
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -238,9 +243,9 @@ impl SearchFilter {
     /// True if the game matches the active filter (or filter is None).
     pub fn matches(&self, g: &ScheduledGame) -> bool {
         match self {
-            SearchFilter::None              => true,
-            SearchFilter::Team(t)           => g.involves(t),
-            SearchFilter::Matchup(a, b)     => g.involves(a) && g.involves(b),
+            SearchFilter::None => true,
+            SearchFilter::Team(t) => g.involves(t),
+            SearchFilter::Matchup(a, b) => g.involves(a) && g.involves(b),
         }
     }
 }
@@ -263,10 +268,10 @@ mod tests {
 
     #[test]
     fn l0_schedule_add_days_helper() {
-        assert_eq!(add_days("2026-04-27",  7), Some("2026-05-04".to_owned()));
+        assert_eq!(add_days("2026-04-27", 7), Some("2026-05-04".to_owned()));
         assert_eq!(add_days("2026-04-27", -7), Some("2026-04-20".to_owned()));
         // Wraps month boundary
-        assert_eq!(add_days("2026-04-30",  1), Some("2026-05-01".to_owned()));
+        assert_eq!(add_days("2026-04-30", 1), Some("2026-05-01".to_owned()));
     }
 
     #[test]
@@ -288,9 +293,15 @@ mod tests {
 
         // Alternate forms — "vs" and "@" should be treated as separators
         let f2 = parse_search("nyr vs wsh").unwrap();
-        assert_eq!(f2, SearchFilter::Matchup("NYR".to_owned(), "WSH".to_owned()));
+        assert_eq!(
+            f2,
+            SearchFilter::Matchup("NYR".to_owned(), "WSH".to_owned())
+        );
         let f3 = parse_search("NYR @ WSH").unwrap();
-        assert_eq!(f3, SearchFilter::Matchup("NYR".to_owned(), "WSH".to_owned()));
+        assert_eq!(
+            f3,
+            SearchFilter::Matchup("NYR".to_owned(), "WSH".to_owned())
+        );
     }
 
     #[test]
@@ -311,7 +322,7 @@ mod tests {
 
     #[test]
     fn l0_schedule_search_empty_returns_none() {
-        assert_eq!(parse_search("").unwrap(),    SearchFilter::None);
+        assert_eq!(parse_search("").unwrap(), SearchFilter::None);
         assert_eq!(parse_search("   ").unwrap(), SearchFilter::None);
     }
 
@@ -324,13 +335,21 @@ mod tests {
     #[test]
     fn l0_schedule_filter_matches() {
         let mk_game = |away: &str, home: &str| icelines_fetch::nhl_api::ScheduledGame {
-            game_id: 1, date: "2026-04-28".to_owned(), game_type: 2,
-            away_abbrev: away.to_owned(), away_name: away.to_owned(),
-            home_abbrev: home.to_owned(), home_name: home.to_owned(),
+            game_id: 1,
+            date: "2026-04-28".to_owned(),
+            game_type: 2,
+            away_abbrev: away.to_owned(),
+            away_name: away.to_owned(),
+            home_abbrev: home.to_owned(),
+            home_name: home.to_owned(),
             start_time_utc: "2026-04-28T23:00:00Z".to_owned(),
-            away_score: None, home_score: None,
-            game_state: None, last_period: None,
-            series_game: None, away_wins: None, home_wins: None,
+            away_score: None,
+            home_score: None,
+            game_state: None,
+            last_period: None,
+            series_game: None,
+            away_wins: None,
+            home_wins: None,
         };
 
         let g1 = mk_game("SEA", "VGK");
@@ -369,14 +388,23 @@ mod tests {
         let cache = new_team_cache();
         let key_24 = ("EDM".to_owned(), "20242025".to_owned());
         let key_25 = ("EDM".to_owned(), "20252026".to_owned());
-        cache.lock().unwrap().insert(key_24.clone(), ScheduleState::Loaded(vec![]));
-        cache.lock().unwrap().insert(key_25.clone(), ScheduleState::Loading);
+        cache
+            .lock()
+            .unwrap()
+            .insert(key_24.clone(), ScheduleState::Loaded(vec![]));
+        cache
+            .lock()
+            .unwrap()
+            .insert(key_25.clone(), ScheduleState::Loading);
 
         let map = cache.lock().unwrap();
         // Both entries coexist; they don't collide on team alone.
         assert!(matches!(map.get(&key_24), Some(ScheduleState::Loaded(_))));
         assert!(matches!(map.get(&key_25), Some(ScheduleState::Loading)));
-        assert_eq!(map.len(), 2,
-            "two seasons must produce two distinct cache entries");
+        assert_eq!(
+            map.len(),
+            2,
+            "two seasons must produce two distinct cache entries"
+        );
     }
 }

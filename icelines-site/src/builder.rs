@@ -93,7 +93,8 @@ impl SiteBuilder {
         let outcome = load_into_repo(season, SeasonType::Regular, &store)
             .map_err(|e| SiteError::Snapshot(e.to_string()))?;
         let repo = &outcome.repo;
-        let mut all_views: Vec<PlayerView<'_>> = repo.skaters(season, SeasonType::Regular).collect();
+        let mut all_views: Vec<PlayerView<'_>> =
+            repo.skaters(season, SeasonType::Regular).collect();
         sort_views_by_pace(&mut all_views);
 
         // Compute cross-team metrics from views.
@@ -332,9 +333,7 @@ fn write_file(path: &Path, content: &str) -> Result<(), SiteError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use icelines_core::{
-        season_stats::SeasonType, stats_repository::StatsRepository,
-    };
+    use icelines_core::{season_stats::SeasonType, stats_repository::StatsRepository};
 
     fn build_repo(rows: &[(u32, &str, Position, f32)]) -> StatsRepository {
         let mut repo = StatsRepository::new();
@@ -389,8 +388,9 @@ mod tests {
             }
         }
         let repo = build_repo(&rows);
-        let views: Vec<PlayerView<'_>> =
-            repo.skaters(Season(20252026), SeasonType::Regular).collect();
+        let views: Vec<PlayerView<'_>> = repo
+            .skaters(Season(20252026), SeasonType::Regular)
+            .collect();
 
         let strength = compute_team_strength_views(&views);
         let edm = strength.get("EDM").copied().unwrap_or(0.0);
@@ -428,8 +428,9 @@ mod tests {
         rows.push((500, "EDM", Position::Defense, 60.0));
 
         let repo = build_repo(&rows);
-        let views: Vec<PlayerView<'_>> =
-            repo.skaters(Season(20252026), SeasonType::Regular).collect();
+        let views: Vec<PlayerView<'_>> = repo
+            .skaters(Season(20252026), SeasonType::Regular)
+            .collect();
         let strength = compute_team_strength_views(&views);
         let edm = strength.get("EDM").copied().unwrap_or(0.0);
 
@@ -453,8 +454,9 @@ mod tests {
         stats.totals.pace_score = None; // no pace
         repo.upsert_stats(stats).unwrap();
 
-        let views: Vec<PlayerView<'_>> =
-            repo.skaters(Season(20252026), SeasonType::Regular).collect();
+        let views: Vec<PlayerView<'_>> = repo
+            .skaters(Season(20252026), SeasonType::Regular)
+            .collect();
         let strength = compute_team_strength_views(&views);
         // Only pace-less player on EDM → no key for EDM at all.
         assert!(

@@ -186,7 +186,11 @@ impl SortMetric {
         match self {
             Self::PtsPace => match v.pace_82() {
                 Some(p) => {
-                    if rate { format!("{:.3}", p / 82.0) } else { format!("{p:.1}") }
+                    if rate {
+                        format!("{:.3}", p / 82.0)
+                    } else {
+                        format!("{p:.1}")
+                    }
                 }
                 None => "—".to_owned(),
             },
@@ -196,7 +200,11 @@ impl SortMetric {
             },
             Self::GPace => match v.goals_per_82() {
                 Some(g) => {
-                    if rate { format!("{:.3}", g / 82.0) } else { format!("{g:.1}") }
+                    if rate {
+                        format!("{:.3}", g / 82.0)
+                    } else {
+                        format!("{g:.1}")
+                    }
                 }
                 None => "—".to_owned(),
             },
@@ -229,7 +237,11 @@ impl SortMetric {
             // Two-way
             Self::PlusMinus => {
                 let pm = v.plus_minus();
-                if pm >= 0 { format!("+{pm}") } else { pm.to_string() }
+                if pm >= 0 {
+                    format!("+{pm}")
+                } else {
+                    pm.to_string()
+                }
             }
             Self::Toi => v.toi_mmss().unwrap_or_else(|| "—".to_owned()),
             Self::FoPct => totals
@@ -246,20 +258,47 @@ impl SortMetric {
             Self::Pim => totals.pim.to_string(),
             // MoneyPuck — display path uses None → "—" (no median sentinel here;
             // the sentinel is sort-only).
-            Self::Xg => v.xg().map(|val| format!("{val:.2}")).unwrap_or_else(|| "—".to_owned()),
-            Self::XgPer60 => v.xg_per_60().map(|val| format!("{val:.2}")).unwrap_or_else(|| "—".to_owned()),
-            Self::CfPct => v.cf_pct().map(|val| format!("{val:.1}%")).unwrap_or_else(|| "—".to_owned()),
-            Self::FfPct => v.ff_pct().map(|val| format!("{val:.1}%")).unwrap_or_else(|| "—".to_owned()),
-            Self::XgfPct => v.xgf_pct().map(|val| format!("{val:.1}%")).unwrap_or_else(|| "—".to_owned()),
+            Self::Xg => v
+                .xg()
+                .map(|val| format!("{val:.2}"))
+                .unwrap_or_else(|| "—".to_owned()),
+            Self::XgPer60 => v
+                .xg_per_60()
+                .map(|val| format!("{val:.2}"))
+                .unwrap_or_else(|| "—".to_owned()),
+            Self::CfPct => v
+                .cf_pct()
+                .map(|val| format!("{val:.1}%"))
+                .unwrap_or_else(|| "—".to_owned()),
+            Self::FfPct => v
+                .ff_pct()
+                .map(|val| format!("{val:.1}%"))
+                .unwrap_or_else(|| "—".to_owned()),
+            Self::XgfPct => v
+                .xgf_pct()
+                .map(|val| format!("{val:.1}%"))
+                .unwrap_or_else(|| "—".to_owned()),
             Self::Improvement => "—".to_owned(), // displayed by special-case handler
         }
     }
 
     fn header(self, rate: bool) -> &'static str {
         match self {
-            Self::PtsPace => if rate { "PPG" } else { "Pts/82" },
+            Self::PtsPace => {
+                if rate {
+                    "PPG"
+                } else {
+                    "Pts/82"
+                }
+            }
             Self::Ppg => "PPG",
-            Self::GPace => if rate { "GPG" } else { "G/82" },
+            Self::GPace => {
+                if rate {
+                    "GPG"
+                } else {
+                    "G/82"
+                }
+            }
             Self::Gpg => "GPG",
             Self::Pts => "Pts",
             Self::Goals => "Goals",
@@ -394,8 +433,11 @@ fn format_catalog_cell(sid: StatId, view: &PlayerView<'_>) -> String {
             StatUnit::Count => format!("{}", v as i64),
             StatUnit::Seconds => {
                 let secs = v as u64;
-                if secs < 3600 { format!("{}:{:02}", secs / 60, secs % 60) }
-                else { format!("{}m", secs / 60) }
+                if secs < 3600 {
+                    format!("{}:{:02}", secs / 60, secs % 60)
+                } else {
+                    format!("{}m", secs / 60)
+                }
             }
             StatUnit::Pct => format!("{:.1}%", v * 100.0),
             StatUnit::Per60 | StatUnit::Rate => format!("{v:.2}"),
@@ -546,10 +588,18 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
     // Contract filters
     let wants_contract = args.ufa || args.rfa || args.elc || args.expiry_year.is_some();
     if args.ufa {
-        matched.retain(|v| v.contract_expiry_type().map(|t| t.eq_ignore_ascii_case("UFA")).unwrap_or(false));
+        matched.retain(|v| {
+            v.contract_expiry_type()
+                .map(|t| t.eq_ignore_ascii_case("UFA"))
+                .unwrap_or(false)
+        });
     }
     if args.rfa {
-        matched.retain(|v| v.contract_expiry_type().map(|t| t.eq_ignore_ascii_case("RFA")).unwrap_or(false));
+        matched.retain(|v| {
+            v.contract_expiry_type()
+                .map(|t| t.eq_ignore_ascii_case("RFA"))
+                .unwrap_or(false)
+        });
     }
     if args.elc {
         matched.retain(|v| {
@@ -578,28 +628,28 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
         // ("Goal-scoring leaders have ZERO hits?").
         let has_lindsay_filter = filter.stat_filters.iter().any(|f| {
             use icelines_core::stats_catalog::StatCategory::*;
-            matches!(
-                f.stat.category(),
-                Possession | OnIceGoals | TimeOnIce
-            ) || matches!(
-                f.stat,
-                icelines_core::stats_catalog::StatId::Hits
-                | icelines_core::stats_catalog::StatId::BlockedShots
-                | icelines_core::stats_catalog::StatId::Takeaways
-                | icelines_core::stats_catalog::StatId::Giveaways
-                | icelines_core::stats_catalog::StatId::MissedShots
-                | icelines_core::stats_catalog::StatId::HitsPer60
-                | icelines_core::stats_catalog::StatId::BlockedShotsPer60
-                | icelines_core::stats_catalog::StatId::TakeawaysPer60
-                | icelines_core::stats_catalog::StatId::GiveawaysPer60
-            )
+            matches!(f.stat.category(), Possession | OnIceGoals | TimeOnIce)
+                || matches!(
+                    f.stat,
+                    icelines_core::stats_catalog::StatId::Hits
+                        | icelines_core::stats_catalog::StatId::BlockedShots
+                        | icelines_core::stats_catalog::StatId::Takeaways
+                        | icelines_core::stats_catalog::StatId::Giveaways
+                        | icelines_core::stats_catalog::StatId::MissedShots
+                        | icelines_core::stats_catalog::StatId::HitsPer60
+                        | icelines_core::stats_catalog::StatId::BlockedShotsPer60
+                        | icelines_core::stats_catalog::StatId::TakeawaysPer60
+                        | icelines_core::stats_catalog::StatId::GiveawaysPer60
+                )
         });
         if has_lindsay_filter {
             eprintln!(
                 "  Hint: Lindsay-tier stat data (realtime / possession / TOI splits / xG) \
                  isn't fully bundled yet. Run `icelines fetch report --kind <kind> \
                  --season {}` to populate per-window files, or wait for L.7 historical bundling.",
-                args.season.as_deref().unwrap_or(icelines_core::CURRENT_SEASON_STR),
+                args.season
+                    .as_deref()
+                    .unwrap_or(icelines_core::CURRENT_SEASON_STR),
             );
         }
     }
@@ -608,13 +658,20 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
     if metric.is_improvement() {
         let imp_map = aggregate::load_improvement_map();
         matched.sort_by(|a, b| {
-            let da = imp_map.get(&a.identity.id.0).copied().unwrap_or(f64::NEG_INFINITY);
-            let db = imp_map.get(&b.identity.id.0).copied().unwrap_or(f64::NEG_INFINITY);
+            let da = imp_map
+                .get(&a.identity.id.0)
+                .copied()
+                .unwrap_or(f64::NEG_INFINITY);
+            let db = imp_map
+                .get(&b.identity.id.0)
+                .copied()
+                .unwrap_or(f64::NEG_INFINITY);
             // Phase Lindsay L.3.2 / AI-06 universal tiebreak: stable
             // `nhl_id asc` so tied values produce deterministic order
             // across process invocations. Pre-Lindsay this was
             // HashMap-iteration random.
-            db.partial_cmp(&da).unwrap_or(std::cmp::Ordering::Equal)
+            db.partial_cmp(&da)
+                .unwrap_or(std::cmp::Ordering::Equal)
                 .then_with(|| a.identity.id.0.cmp(&b.identity.id.0))
         });
         let total_matched = matched.len();
@@ -640,11 +697,11 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
         | SortDispatch::Legacy(SortMetric::Blocks)
         | SortDispatch::Legacy(SortMetric::Takeaways)
         | SortDispatch::Legacy(SortMetric::Giveaways)
-        | SortDispatch::Legacy(SortMetric::Pim) => matched
-            .iter()
-            .all(|v| v.hits().unwrap_or(0) == 0
+        | SortDispatch::Legacy(SortMetric::Pim) => matched.iter().all(|v| {
+            v.hits().unwrap_or(0) == 0
                 && v.blocked_shots().unwrap_or(0) == 0
-                && v.takeaways().unwrap_or(0) == 0),
+                && v.takeaways().unwrap_or(0) == 0
+        }),
         SortDispatch::Legacy(SortMetric::Xg)
         | SortDispatch::Legacy(SortMetric::XgPer60)
         | SortDispatch::Legacy(SortMetric::CfPct)
@@ -661,7 +718,8 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
             let sa = a.pace_82().unwrap_or(0.0);
             let sb = b.pace_82().unwrap_or(0.0);
             // Phase Lindsay L.3.2 / AI-06 universal tiebreak.
-            sb.partial_cmp(&sa).unwrap_or(std::cmp::Ordering::Equal)
+            sb.partial_cmp(&sa)
+                .unwrap_or(std::cmp::Ordering::Equal)
                 .then_with(|| a.identity.id.0.cmp(&b.identity.id.0))
         });
     } else {
@@ -724,7 +782,9 @@ fn leaders_table(
         println!("{}", "─".repeat(61));
         for (i, (v, pct)) in views.iter().zip(percentiles.iter()).enumerate() {
             let val = metric.display(v, rate);
-            let pct_s = pct.map(|x| format!("{x}{}", ordinal(x))).unwrap_or_else(|| "—".to_owned());
+            let pct_s = pct
+                .map(|x| format!("{x}{}", ordinal(x)))
+                .unwrap_or_else(|| "—".to_owned());
             println!(
                 "{:<4} {:<24} {:<5} {:<4} {:<4} {:<10} {:<6}",
                 i + 1,
@@ -781,8 +841,14 @@ fn print_improvement_table(
     println!("{}", "─".repeat(69));
     for (i, v) in views.iter().enumerate() {
         let delta = imp_map.get(&v.identity.id.0).copied().unwrap_or(0.0);
-        let curr_ppg = v.pace_82().map(|p| format!("{:.3}", p / 82.0)).unwrap_or_else(|| "—".to_owned());
-        let prior_ppg = format!("{:.3}", v.pace_82().map(|p| p / 82.0).unwrap_or(0.0) - delta);
+        let curr_ppg = v
+            .pace_82()
+            .map(|p| format!("{:.3}", p / 82.0))
+            .unwrap_or_else(|| "—".to_owned());
+        let prior_ppg = format!(
+            "{:.3}",
+            v.pace_82().map(|p| p / 82.0).unwrap_or(0.0) - delta
+        );
         let delta_s = if delta >= 0.0 {
             format!("+{delta:.3}")
         } else {
@@ -848,7 +914,11 @@ fn leaders_csv(views: &[PlayerView<'_>]) {
     }
 }
 
-fn position_percentile(all: &[PlayerView<'_>], target: &PlayerView<'_>, metric: SortDispatch) -> Option<u8> {
+fn position_percentile(
+    all: &[PlayerView<'_>],
+    target: &PlayerView<'_>,
+    metric: SortDispatch,
+) -> Option<u8> {
     let peers: Vec<&PlayerView<'_>> = all
         .iter()
         .filter(|v| v.position() == target.position() && v.is_rankable())
@@ -938,7 +1008,11 @@ fn print_current_stats(v: &PlayerView<'_>) {
         .map(|val| format!("{:.1}%", val * 100.0))
         .unwrap_or_else(|| "—".to_owned());
     let pm_val = v.plus_minus();
-    let pm = if pm_val >= 0 { format!("+{pm_val}") } else { pm_val.to_string() };
+    let pm = if pm_val >= 0 {
+        format!("+{pm_val}")
+    } else {
+        pm_val.to_string()
+    };
     println!("CURRENT SEASON");
     println!(
         "  GP {:<4}  G {:<4}  A {:<4}  Pts {:<4}  PPG {}  Pts/82 {}",
@@ -951,7 +1025,12 @@ fn print_current_stats(v: &PlayerView<'_>) {
     );
     println!(
         "  PP: {:<3}G / {:<3}Pts   SH: {}G   GWG: {}   Shots: {}   SH%: {}",
-        totals.pp_goals, totals.pp_points, totals.sh_goals, totals.gwg, v.shots(), sh_pct
+        totals.pp_goals,
+        totals.pp_points,
+        totals.sh_goals,
+        totals.gwg,
+        v.shots(),
+        sh_pct
     );
     println!(
         "  +/-: {:<5}  TOI/g: {:<6}{}",
@@ -1005,7 +1084,8 @@ fn print_percentile(
             // so the percentile is well-defined even when target/peer
             // reads are None.
             let target_val = m.sort_value(target);
-            let n_better = peers.iter()
+            let n_better = peers
+                .iter()
                 .filter(|v| m.sort_value(v) > target_val)
                 .count();
             // Header text uses the metric's catalog/legacy label.
@@ -1015,13 +1095,14 @@ fn print_percentile(
         None => {
             // Legacy default: Pts/82 ranking.
             let target_val = target.pace_82().unwrap_or(0.0);
-            let n_better = peers.iter()
+            let n_better = peers
+                .iter()
                 .filter(|v| v.pace_82().unwrap_or(0.0) > target_val)
                 .count();
             (target_val, n_better, "Pts/82".to_owned())
         }
     };
-    let _ = target_val;  // used only for closure capture above
+    let _ = target_val; // used only for closure capture above
 
     let rank = n_better + 1;
     let pct = ((1.0 - n_better as f64 / peers.len() as f64) * 100.0) as u8;
@@ -1188,14 +1269,27 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
                 bv.partial_cmp(&av).unwrap_or(Ordering::Equal)
             }
             "gaa" => {
-                let av = sa.and_then(|s| s.goals_against_average).unwrap_or(f32::INFINITY);
-                let bv = sb.and_then(|s| s.goals_against_average).unwrap_or(f32::INFINITY);
+                let av = sa
+                    .and_then(|s| s.goals_against_average)
+                    .unwrap_or(f32::INFINITY);
+                let bv = sb
+                    .and_then(|s| s.goals_against_average)
+                    .unwrap_or(f32::INFINITY);
                 av.partial_cmp(&bv).unwrap_or(Ordering::Equal)
             }
-            "wins" | "w" => sb.map(|s| s.wins).unwrap_or(0).cmp(&sa.map(|s| s.wins).unwrap_or(0)),
+            "wins" | "w" => sb
+                .map(|s| s.wins)
+                .unwrap_or(0)
+                .cmp(&sa.map(|s| s.wins).unwrap_or(0)),
             "gp" => b.gp().cmp(&a.gp()),
-            "saves" => sb.map(|s| s.saves).unwrap_or(0).cmp(&sa.map(|s| s.saves).unwrap_or(0)),
-            "so" | "shutouts" => sb.map(|s| s.shutouts).unwrap_or(0).cmp(&sa.map(|s| s.shutouts).unwrap_or(0)),
+            "saves" => sb
+                .map(|s| s.saves)
+                .unwrap_or(0)
+                .cmp(&sa.map(|s| s.saves).unwrap_or(0)),
+            "so" | "shutouts" => sb
+                .map(|s| s.shutouts)
+                .unwrap_or(0)
+                .cmp(&sa.map(|s| s.shutouts).unwrap_or(0)),
             other => {
                 // Phase Lindsay L.5.1 — catalog fallback for goalies.
                 // If the legacy alias doesn't match, try StatId::cli_key
@@ -1275,8 +1369,14 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
             Some(otl) => format!("{}-{}-{}", row.wins, row.losses, otl),
             None => format!("{}-{}", row.wins, row.losses),
         };
-        let sv = row.save_pct.map(|v| format!("{v:.3}")).unwrap_or_else(|| "—".to_owned());
-        let gaa = row.goals_against_average.map(|v| format!("{v:.2}")).unwrap_or_else(|| "—".to_owned());
+        let sv = row
+            .save_pct
+            .map(|v| format!("{v:.3}"))
+            .unwrap_or_else(|| "—".to_owned());
+        let gaa = row
+            .goals_against_average
+            .map(|v| format!("{v:.2}"))
+            .unwrap_or_else(|| "—".to_owned());
         println!(
             "{:<4} {:<24} {:<5} {:<4} {:<10} {:<6} {:<6} {:<3} {:<6}",
             i + 1,
@@ -1338,7 +1438,10 @@ fn print_head_to_head(v1: &PlayerView<'_>, v2: &PlayerView<'_>) {
     let (ppg2, proj2) = pace_strings(v2);
     let col = 28usize;
 
-    println!("{:<col$} {:<col$}", v1.identity.full_name, v2.identity.full_name);
+    println!(
+        "{:<col$} {:<col$}",
+        v1.identity.full_name, v2.identity.full_name
+    );
     println!("{:<col$} {:<col$}", v1.team_display(), v2.team_display());
     println!("{}", "─".repeat(col * 2 + 2));
 
@@ -1346,7 +1449,11 @@ fn print_head_to_head(v1: &PlayerView<'_>, v2: &PlayerView<'_>) {
         println!("  {:<18} {:<col$} {:<col$}", label, c1, c2, col = col - 2);
     };
 
-    row("Position", v1.position().abbreviation(), v2.position().abbreviation());
+    row(
+        "Position",
+        v1.position().abbreviation(),
+        v2.position().abbreviation(),
+    );
     row("Age", &age_str(v1), &age_str(v2));
     row("Draft", &draft_str(v1), &draft_str(v2));
     row("GP", &v1.gp().to_string(), &v2.gp().to_string());
@@ -1354,30 +1461,72 @@ fn print_head_to_head(v1: &PlayerView<'_>, v2: &PlayerView<'_>) {
     row("Pts/82", &proj1, &proj2);
     row(
         "Goals/82",
-        &v1.goals_per_82().map(|g| format!("{g:.1}")).unwrap_or_else(|| "—".to_owned()),
-        &v2.goals_per_82().map(|g| format!("{g:.1}")).unwrap_or_else(|| "—".to_owned()),
+        &v1.goals_per_82()
+            .map(|g| format!("{g:.1}"))
+            .unwrap_or_else(|| "—".to_owned()),
+        &v2.goals_per_82()
+            .map(|g| format!("{g:.1}"))
+            .unwrap_or_else(|| "—".to_owned()),
     );
-    row("PP Points", &v1.stats.totals.pp_points.to_string(), &v2.stats.totals.pp_points.to_string());
-    row("PP Goals", &v1.stats.totals.pp_goals.to_string(), &v2.stats.totals.pp_goals.to_string());
-    row("GWG", &v1.stats.totals.gwg.to_string(), &v2.stats.totals.gwg.to_string());
+    row(
+        "PP Points",
+        &v1.stats.totals.pp_points.to_string(),
+        &v2.stats.totals.pp_points.to_string(),
+    );
+    row(
+        "PP Goals",
+        &v1.stats.totals.pp_goals.to_string(),
+        &v2.stats.totals.pp_goals.to_string(),
+    );
+    row(
+        "GWG",
+        &v1.stats.totals.gwg.to_string(),
+        &v2.stats.totals.gwg.to_string(),
+    );
     row("Shots", &v1.shots().to_string(), &v2.shots().to_string());
     row(
         "SH%",
-        &v1.stats.totals.shooting_pct.map(|val| format!("{:.1}%", val * 100.0)).unwrap_or_else(|| "—".to_owned()),
-        &v2.stats.totals.shooting_pct.map(|val| format!("{:.1}%", val * 100.0)).unwrap_or_else(|| "—".to_owned()),
+        &v1.stats
+            .totals
+            .shooting_pct
+            .map(|val| format!("{:.1}%", val * 100.0))
+            .unwrap_or_else(|| "—".to_owned()),
+        &v2.stats
+            .totals
+            .shooting_pct
+            .map(|val| format!("{:.1}%", val * 100.0))
+            .unwrap_or_else(|| "—".to_owned()),
     );
-    let pm_str = |pm: i32| if pm >= 0 { format!("+{pm}") } else { pm.to_string() };
+    let pm_str = |pm: i32| {
+        if pm >= 0 {
+            format!("+{pm}")
+        } else {
+            pm.to_string()
+        }
+    };
     row("+/-", &pm_str(v1.plus_minus()), &pm_str(v2.plus_minus()));
-    row("TOI/g", &v1.toi_mmss().unwrap_or_else(|| "—".to_owned()), &v2.toi_mmss().unwrap_or_else(|| "—".to_owned()));
+    row(
+        "TOI/g",
+        &v1.toi_mmss().unwrap_or_else(|| "—".to_owned()),
+        &v2.toi_mmss().unwrap_or_else(|| "—".to_owned()),
+    );
     row(
         "Contract",
-        &v1.contract_expiry_type().map(|t| t.to_uppercase()).unwrap_or_else(|| "—".to_owned()),
-        &v2.contract_expiry_type().map(|t| t.to_uppercase()).unwrap_or_else(|| "—".to_owned()),
+        &v1.contract_expiry_type()
+            .map(|t| t.to_uppercase())
+            .unwrap_or_else(|| "—".to_owned()),
+        &v2.contract_expiry_type()
+            .map(|t| t.to_uppercase())
+            .unwrap_or_else(|| "—".to_owned()),
     );
     row(
         "Expires",
-        &v1.contract_expiry_year().map(|y| y.to_string()).unwrap_or_else(|| "—".to_owned()),
-        &v2.contract_expiry_year().map(|y| y.to_string()).unwrap_or_else(|| "—".to_owned()),
+        &v1.contract_expiry_year()
+            .map(|y| y.to_string())
+            .unwrap_or_else(|| "—".to_owned()),
+        &v2.contract_expiry_year()
+            .map(|y| y.to_string())
+            .unwrap_or_else(|| "—".to_owned()),
     );
 }
 
@@ -1420,7 +1569,13 @@ fn run_similar(views: &[PlayerView<'_>], target_name: &str, n: usize) -> anyhow:
         .collect();
     let picks: Vec<f64> = cohort
         .iter()
-        .map(|v| v.identity.bio.draft_overall.map(|pk| 1.0 - (pk as f64 - 1.0) / 399.0).unwrap_or(0.0))
+        .map(|v| {
+            v.identity
+                .bio
+                .draft_overall
+                .map(|pk| 1.0 - (pk as f64 - 1.0) / 399.0)
+                .unwrap_or(0.0)
+        })
         .collect();
 
     let (ppg_mu, ppg_sd) = mean_std(&ppgs);
@@ -1452,12 +1607,15 @@ fn run_similar(views: &[PlayerView<'_>], target_name: &str, n: usize) -> anyhow:
 
     // Phase Lindsay L.3.2 / AI-06 universal tiebreak.
     scored.sort_by(|a, b| {
-        a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal)
+        a.1.partial_cmp(&b.1)
+            .unwrap_or(std::cmp::Ordering::Equal)
             .then_with(|| a.0.identity.id.0.cmp(&b.0.identity.id.0))
     });
     scored.retain(|(v, _)| &v.identity.name_normalized != target_norm);
 
-    let age_s = target_age.map(|a| a.to_string()).unwrap_or_else(|| "?".to_owned());
+    let age_s = target_age
+        .map(|a| a.to_string())
+        .unwrap_or_else(|| "?".to_owned());
     let draft_s = draft_str(target);
     println!(
         "SIMILAR PLAYERS TO {} ({} · {} · Age {} · {})",
@@ -1475,9 +1633,14 @@ fn run_similar(views: &[PlayerView<'_>], target_name: &str, n: usize) -> anyhow:
     println!("{}", "─".repeat(72));
 
     for (i, (v, dist)) in scored.iter().take(n).enumerate() {
-        let age = view_age(v).map(|a| a.to_string()).unwrap_or_else(|| "?".to_owned());
+        let age = view_age(v)
+            .map(|a| a.to_string())
+            .unwrap_or_else(|| "?".to_owned());
         let draft = draft_str(v);
-        let ppg = v.pace_82().map(|p| format!("{:.3}", p / 82.0)).unwrap_or_else(|| "—".to_owned());
+        let ppg = v
+            .pace_82()
+            .map(|p| format!("{:.3}", p / 82.0))
+            .unwrap_or_else(|| "—".to_owned());
         let sim = (100.0 / (1.0 + dist)) as u32;
         println!(
             "{:<6} {:<24} {:<5} {:<4} {:<10} {:<8} {sim}%",
@@ -1510,7 +1673,10 @@ fn parse_positions(s: &str) -> Vec<Position> {
     }
 }
 
-fn find_view<'a, 'r>(views: &'a [PlayerView<'r>], name: &str) -> anyhow::Result<&'a PlayerView<'r>> {
+fn find_view<'a, 'r>(
+    views: &'a [PlayerView<'r>],
+    name: &str,
+) -> anyhow::Result<&'a PlayerView<'r>> {
     let norm = normalize_name(name);
     views
         .iter()
@@ -1529,7 +1695,9 @@ fn view_age(v: &PlayerView<'_>) -> Option<u8> {
 }
 
 fn age_str(v: &PlayerView<'_>) -> String {
-    view_age(v).map(|a| a.to_string()).unwrap_or_else(|| "—".to_owned())
+    view_age(v)
+        .map(|a| a.to_string())
+        .unwrap_or_else(|| "—".to_owned())
 }
 
 fn draft_str(v: &PlayerView<'_>) -> String {
@@ -1543,10 +1711,7 @@ fn draft_str(v: &PlayerView<'_>) -> String {
 
 fn pace_strings(v: &PlayerView<'_>) -> (String, String) {
     match v.pace_82() {
-        Some(p) => (
-            format!("{:.3}", p / 82.0),
-            format!("{p:.1}"),
-        ),
+        Some(p) => (format!("{:.3}", p / 82.0), format!("{p:.1}")),
         None => ("—".to_owned(), "—".to_owned()),
     }
 }
@@ -1603,40 +1768,85 @@ mod tests {
 
     #[test]
     fn l0_sort_metric_parse_valid() {
-        assert!(matches!(SortMetric::parse("pts-pace"), Ok(SortMetric::PtsPace)));
+        assert!(matches!(
+            SortMetric::parse("pts-pace"),
+            Ok(SortMetric::PtsPace)
+        ));
         assert!(matches!(SortMetric::parse("ppg"), Ok(SortMetric::Ppg)));
         assert!(matches!(SortMetric::parse("g-pace"), Ok(SortMetric::GPace)));
         assert!(matches!(SortMetric::parse("gpg"), Ok(SortMetric::Gpg)));
         assert!(matches!(SortMetric::parse("pts"), Ok(SortMetric::Pts)));
         assert!(matches!(SortMetric::parse("goals"), Ok(SortMetric::Goals)));
-        assert!(matches!(SortMetric::parse("assists"), Ok(SortMetric::Assists)));
+        assert!(matches!(
+            SortMetric::parse("assists"),
+            Ok(SortMetric::Assists)
+        ));
         assert!(matches!(SortMetric::parse("gp"), Ok(SortMetric::Gp)));
-        assert!(matches!(SortMetric::parse("pp-pts-pace"), Ok(SortMetric::PpPtsPace)));
-        assert!(matches!(SortMetric::parse("pp-g-pace"), Ok(SortMetric::PpGPace)));
+        assert!(matches!(
+            SortMetric::parse("pp-pts-pace"),
+            Ok(SortMetric::PpPtsPace)
+        ));
+        assert!(matches!(
+            SortMetric::parse("pp-g-pace"),
+            Ok(SortMetric::PpGPace)
+        ));
         assert!(matches!(SortMetric::parse("pp-pts"), Ok(SortMetric::PpPts)));
         assert!(matches!(SortMetric::parse("pp-g"), Ok(SortMetric::PpGoals)));
-        assert!(matches!(SortMetric::parse("sh-g-pace"), Ok(SortMetric::ShGPace)));
+        assert!(matches!(
+            SortMetric::parse("sh-g-pace"),
+            Ok(SortMetric::ShGPace)
+        ));
         assert!(matches!(SortMetric::parse("sh-g"), Ok(SortMetric::ShGoals)));
-        assert!(matches!(SortMetric::parse("gwg-pace"), Ok(SortMetric::GwgPace)));
+        assert!(matches!(
+            SortMetric::parse("gwg-pace"),
+            Ok(SortMetric::GwgPace)
+        ));
         assert!(matches!(SortMetric::parse("gwg"), Ok(SortMetric::Gwg)));
-        assert!(matches!(SortMetric::parse("shots-pace"), Ok(SortMetric::ShotsPace)));
+        assert!(matches!(
+            SortMetric::parse("shots-pace"),
+            Ok(SortMetric::ShotsPace)
+        ));
         assert!(matches!(SortMetric::parse("shots"), Ok(SortMetric::Shots)));
         assert!(matches!(SortMetric::parse("sh-pct"), Ok(SortMetric::ShPct)));
-        assert!(matches!(SortMetric::parse("plus-minus"), Ok(SortMetric::PlusMinus)));
+        assert!(matches!(
+            SortMetric::parse("plus-minus"),
+            Ok(SortMetric::PlusMinus)
+        ));
         assert!(matches!(SortMetric::parse("toi"), Ok(SortMetric::Toi)));
         assert!(matches!(SortMetric::parse("fo-pct"), Ok(SortMetric::FoPct)));
-        assert!(matches!(SortMetric::parse("hits-pace"), Ok(SortMetric::HitsPace)));
+        assert!(matches!(
+            SortMetric::parse("hits-pace"),
+            Ok(SortMetric::HitsPace)
+        ));
         assert!(matches!(SortMetric::parse("hits"), Ok(SortMetric::Hits)));
-        assert!(matches!(SortMetric::parse("blocks-pace"), Ok(SortMetric::BlocksPace)));
-        assert!(matches!(SortMetric::parse("blocks"), Ok(SortMetric::Blocks)));
-        assert!(matches!(SortMetric::parse("takeaways"), Ok(SortMetric::Takeaways)));
-        assert!(matches!(SortMetric::parse("giveaways"), Ok(SortMetric::Giveaways)));
+        assert!(matches!(
+            SortMetric::parse("blocks-pace"),
+            Ok(SortMetric::BlocksPace)
+        ));
+        assert!(matches!(
+            SortMetric::parse("blocks"),
+            Ok(SortMetric::Blocks)
+        ));
+        assert!(matches!(
+            SortMetric::parse("takeaways"),
+            Ok(SortMetric::Takeaways)
+        ));
+        assert!(matches!(
+            SortMetric::parse("giveaways"),
+            Ok(SortMetric::Giveaways)
+        ));
         assert!(matches!(SortMetric::parse("pim"), Ok(SortMetric::Pim)));
         assert!(matches!(SortMetric::parse("xg"), Ok(SortMetric::Xg)));
-        assert!(matches!(SortMetric::parse("xg-per-60"), Ok(SortMetric::XgPer60)));
+        assert!(matches!(
+            SortMetric::parse("xg-per-60"),
+            Ok(SortMetric::XgPer60)
+        ));
         assert!(matches!(SortMetric::parse("cf-pct"), Ok(SortMetric::CfPct)));
         assert!(matches!(SortMetric::parse("ff-pct"), Ok(SortMetric::FfPct)));
-        assert!(matches!(SortMetric::parse("xgf-pct"), Ok(SortMetric::XgfPct)));
+        assert!(matches!(
+            SortMetric::parse("xgf-pct"),
+            Ok(SortMetric::XgfPct)
+        ));
     }
 
     #[test]
@@ -1657,7 +1867,10 @@ mod tests {
     fn l0_mean_std_constant_returns_std_one() {
         let (mu, sd) = mean_std(&[3.0, 3.0, 3.0]);
         assert!((mu - 3.0).abs() < 1e-10);
-        assert!((sd - 1.0).abs() < 1e-10, "constant sequence must give sd=1.0");
+        assert!(
+            (sd - 1.0).abs() < 1e-10,
+            "constant sequence must give sd=1.0"
+        );
     }
 
     #[test]
@@ -1693,9 +1906,7 @@ mod tests {
     fn l0_draft_str_full() {
         // Hart.5c.3: rewritten on the PlayerView fixture pattern. Replaces a
         // 60-line Player struct literal.
-        let id = fixtures::identity(8478402)
-            .draft(2019, 1, 3)
-            .build();
+        let id = fixtures::identity(8478402).draft(2019, 1, 3).build();
         let stats = fixtures::stats(8478402, 20242025, "EDM").build();
         let repo = fixtures::test_repo_with(id, stats);
         let v = repo
@@ -1772,15 +1983,25 @@ mod tests {
         // by that exact spelling but still routes via legacy) AND any
         // cli_key that happens to equal a legacy alias spelling.
         const ALLOWED_SHADOWS: &[&str] = &[
-            "goals", "assists", "points", "gp", "gwg", "pim", "shots",
-            "plus-minus", "hits", "blocks", "takeaways", "giveaways",
-            "toi", "xg",
+            "goals",
+            "assists",
+            "points",
+            "gp",
+            "gwg",
+            "pim",
+            "shots",
+            "plus-minus",
+            "hits",
+            "blocks",
+            "takeaways",
+            "giveaways",
+            "toi",
+            "xg",
         ];
 
         for sid in StatId::all() {
             let key = sid.cli_key();
-            let parsed = SortDispatch::parse(key)
-                .expect("every cli_key must parse");
+            let parsed = SortDispatch::parse(key).expect("every cli_key must parse");
             match parsed {
                 SortDispatch::Catalog(s) => {
                     assert_eq!(
@@ -1813,8 +2034,7 @@ mod tests {
         let m = SortDispatch::parse("regulation-wins").expect("catalog parses");
         assert!(matches!(m, SortDispatch::Catalog(StatId::RegulationWins)));
         // `pp-goals-per-60` — pure catalog (no legacy alias).
-        let m = SortDispatch::parse("pp-goals-per-60")
-            .expect("catalog parses");
+        let m = SortDispatch::parse("pp-goals-per-60").expect("catalog parses");
         assert!(matches!(m, SortDispatch::Catalog(StatId::PpGoalsPer60)));
     }
 
@@ -1823,8 +2043,10 @@ mod tests {
     fn l0_lindsay_l5_sort_dispatch_unknown_bails() {
         let err = SortDispatch::parse("not-a-real-stat").expect_err("must fail");
         let s = format!("{err}");
-        assert!(s.contains("unknown sort metric"),
-            "error must reference legacy help text — got: {s}");
+        assert!(
+            s.contains("unknown sort metric"),
+            "error must reference legacy help text — got: {s}"
+        );
     }
 
     /// `is_improvement()` returns true only for the legacy Improvement variant.
@@ -1837,8 +2059,7 @@ mod tests {
         let m = SortDispatch::parse("goals").expect("ok");
         assert!(!m.is_improvement());
         let m = SortDispatch::parse("points-per-game").expect("ok");
-        assert!(!m.is_improvement(),
-            "catalog stat is never improvement");
+        assert!(!m.is_improvement(), "catalog stat is never improvement");
     }
 
     /// L.5.2 — similarity dimensions read via catalog produce the same
@@ -1858,25 +2079,39 @@ mod tests {
             team: icelines_core::model::TeamAbbr("EDM".into()),
             started: Some("2024-10-09".into()),
             ended: None,
-            gp: 70, goals: 30, assists: 80, points: 110,
+            gp: 70,
+            goals: 30,
+            assists: 80,
+            points: 110,
             goalie: None,
         })
         .with_totals(icelines_core::season_stats::StatTotals {
-            gp: 70, goals: 30, assists: 80, points: 110,
+            gp: 70,
+            goals: 30,
+            assists: 80,
+            points: 110,
             ..Default::default()
         })
         .build();
-        let view = PlayerView { identity: &identity, stats: &stats, contract: None };
+        let view = PlayerView {
+            identity: &identity,
+            stats: &stats,
+            contract: None,
+        };
 
         let catalog_ppg = StatId::PointsPerGame.read(&view).expect("PPG over MIN_GP");
         let expected_ppg = 110.0 / 70.0;
-        assert!((catalog_ppg - expected_ppg).abs() < 1e-9,
-            "PPG: catalog={catalog_ppg} expected={expected_ppg}");
+        assert!(
+            (catalog_ppg - expected_ppg).abs() < 1e-9,
+            "PPG: catalog={catalog_ppg} expected={expected_ppg}"
+        );
 
         let catalog_gpg = StatId::GoalsPerGame.read(&view).expect("GPG over MIN_GP");
         let expected_gpg = 30.0 / 70.0;
-        assert!((catalog_gpg - expected_gpg).abs() < 1e-9,
-            "GPG: catalog={catalog_gpg} expected={expected_gpg}");
+        assert!(
+            (catalog_gpg - expected_gpg).abs() < 1e-9,
+            "GPG: catalog={catalog_gpg} expected={expected_gpg}"
+        );
     }
 
     /// MIN_GP gate fires for sub-10-GP players in similarity reads.
@@ -1896,18 +2131,31 @@ mod tests {
             team: icelines_core::model::TeamAbbr("EDM".into()),
             started: Some("2024-10-09".into()),
             ended: None,
-            gp: 5, goals: 2, assists: 3, points: 5,
+            gp: 5,
+            goals: 2,
+            assists: 3,
+            points: 5,
             goalie: None,
         })
         .with_totals(icelines_core::season_stats::StatTotals {
-            gp: 5, goals: 2, assists: 3, points: 5,
+            gp: 5,
+            goals: 2,
+            assists: 3,
+            points: 5,
             ..Default::default()
         })
         .build();
-        let view = PlayerView { identity: &identity, stats: &stats, contract: None };
+        let view = PlayerView {
+            identity: &identity,
+            stats: &stats,
+            contract: None,
+        };
 
-        assert_eq!(StatId::PointsPerGame.read(&view), None,
-            "below MIN_GP=10 returns None");
+        assert_eq!(
+            StatId::PointsPerGame.read(&view),
+            None,
+            "below MIN_GP=10 returns None"
+        );
         assert_eq!(StatId::GoalsPerGame.read(&view), None);
     }
 
@@ -1927,17 +2175,27 @@ mod tests {
             team: icelines_core::model::TeamAbbr("EDM".into()),
             started: Some("2024-10-09".into()),
             ended: None,
-            gp: 70, goals: 30, assists: 80, points: 110,
+            gp: 70,
+            goals: 30,
+            assists: 80,
+            points: 110,
             goalie: None,
         })
         .with_totals(icelines_core::season_stats::StatTotals {
-            gp: 70, goals: 30, assists: 80, points: 110,
+            gp: 70,
+            goals: 30,
+            assists: 80,
+            points: 110,
             shots: 280,
             shooting_pct: Some(0.107),
             ..Default::default()
         })
         .build();
-        let view = PlayerView { identity: &identity, stats: &stats, contract: None };
+        let view = PlayerView {
+            identity: &identity,
+            stats: &stats,
+            contract: None,
+        };
 
         // Count units render as integers.
         assert_eq!(format_catalog_cell(StatId::Goals, &view), "30");

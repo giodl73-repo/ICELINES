@@ -25,67 +25,67 @@ use crate::nhl_api::{PlayoffBracket, PlayoffGameResult, PlayoffGoal, PlayoffRoun
 /// `PlayoffBracket` happens via `to_bracket`.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct PlayoffsBundle {
-    pub season:      String,                  // "19931994"
-    pub champion:    Option<String>,          // team abbrev that won the Cup
-    pub conn_smythe: Option<String>,          // playoff MVP
-    pub rounds:      Vec<PlayoffsBundleRound>,
+    pub season: String,              // "19931994"
+    pub champion: Option<String>,    // team abbrev that won the Cup
+    pub conn_smythe: Option<String>, // playoff MVP
+    pub rounds: Vec<PlayoffsBundleRound>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct PlayoffsBundleRound {
-    pub round:  u8,                            // 1..=4
+    pub round: u8, // 1..=4
     #[serde(default)]
-    pub label:  Option<String>,                // "First Round" — derived if omitted
+    pub label: Option<String>, // "First Round" — derived if omitted
     pub series: Vec<PlayoffsBundleSeries>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct PlayoffsBundleSeries {
-    pub top_seed:        String,               // abbrev — required
-    pub bottom_seed:     String,               // abbrev — required
-    pub winner:          Option<String>,       // abbrev — None = incomplete
+    pub top_seed: String,       // abbrev — required
+    pub bottom_seed: String,    // abbrev — required
+    pub winner: Option<String>, // abbrev — None = incomplete
     /// Per-game count actually played. Used to derive wins when not directly
     /// provided in `top_wins` / `bottom_wins`.
     #[serde(default)]
-    pub games:           Option<u8>,
+    pub games: Option<u8>,
     #[serde(default)]
-    pub top_wins:         Option<u8>,
+    pub top_wins: Option<u8>,
     #[serde(default)]
-    pub bottom_wins:      Option<u8>,
+    pub bottom_wins: Option<u8>,
     #[serde(default)]
-    pub top_seed_name:    Option<String>,      // "New York Rangers"
+    pub top_seed_name: Option<String>, // "New York Rangers"
     #[serde(default)]
     pub bottom_seed_name: Option<String>,
     #[serde(default)]
-    pub top_seed_rank:    Option<String>,      // "A1", "WC2", or freeform "1"
+    pub top_seed_rank: Option<String>, // "A1", "WC2", or freeform "1"
     #[serde(default)]
     pub bottom_seed_rank: Option<String>,
     #[serde(default)]
-    pub conference:       Option<String>,      // "Eastern" | "Western"
+    pub conference: Option<String>, // "Eastern" | "Western"
     #[serde(default)]
-    pub letter:           Option<String>,      // stable key — auto-assigned if absent
+    pub letter: Option<String>, // stable key — auto-assigned if absent
     #[serde(default)]
-    pub results:          Vec<PlayoffsBundleGame>,
+    pub results: Vec<PlayoffsBundleGame>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct PlayoffsBundleGame {
-    pub date:         String,                  // "1994-06-14"
-    pub home:         String,                  // abbrev
-    pub away:         String,                  // abbrev
-    pub home_score:   u8,
-    pub away_score:   u8,
+    pub date: String, // "1994-06-14"
+    pub home: String, // abbrev
+    pub away: String, // abbrev
+    pub home_score: u8,
+    pub away_score: u8,
     /// e.g. "NYR 1-0", "tied 2-2". If absent, computed at render time.
     #[serde(default)]
     pub series_after: Option<String>,
     #[serde(default)]
-    pub goals:        Vec<PlayoffsBundleGoal>,
+    pub goals: Vec<PlayoffsBundleGoal>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct PlayoffsBundleGoal {
     pub scorer: String,
-    pub team:   String,
+    pub team: String,
 }
 
 // ── Conversion ────────────────────────────────────────────────────────────────
@@ -99,7 +99,10 @@ impl PlayoffsBundle {
         let mut next_letter = b'A';
         let mut rounds = Vec::with_capacity(self.rounds.len());
         for r in &self.rounds {
-            let label = r.label.clone().unwrap_or_else(|| default_round_label(r.round));
+            let label = r
+                .label
+                .clone()
+                .unwrap_or_else(|| default_round_label(r.round));
             let mut series_out = Vec::with_capacity(r.series.len());
             for s in &r.series {
                 let letter = s.letter.clone().unwrap_or_else(|| {
@@ -117,7 +120,7 @@ impl PlayoffsBundle {
         }
         rounds.sort_by_key(|r| r.round_number);
         PlayoffBracket {
-            season:        self.season.clone(),
+            season: self.season.clone(),
             current_round: rounds.iter().map(|r| r.round_number).max(),
             rounds,
         }
@@ -138,43 +141,58 @@ fn bundle_series_to_playoff_series(s: &PlayoffsBundleSeries, letter: String) -> 
     // Compute wins. Priority: explicit top_wins/bottom_wins, then count from results,
     // then fall back to (4, games-4) when only `games` and `winner` are set.
     let (top_wins, bot_wins) = derive_wins(s);
-    let games = s.results.iter().enumerate().map(|(i, g)| {
-        let series_after = g.series_after.clone().unwrap_or_else(|| {
-            // Recompute from the running tally up to and including this game.
-            let mut t = 0u8;
-            let mut b = 0u8;
-            for prior in s.results.iter().take(i + 1) {
-                let (top, bot) = side_winners(prior, &s.top_seed, &s.bottom_seed);
-                t += top as u8;
-                b += bot as u8;
+    let games = s
+        .results
+        .iter()
+        .enumerate()
+        .map(|(i, g)| {
+            let series_after = g.series_after.clone().unwrap_or_else(|| {
+                // Recompute from the running tally up to and including this game.
+                let mut t = 0u8;
+                let mut b = 0u8;
+                for prior in s.results.iter().take(i + 1) {
+                    let (top, bot) = side_winners(prior, &s.top_seed, &s.bottom_seed);
+                    t += top as u8;
+                    b += bot as u8;
+                }
+                format_series_after(&s.top_seed, &s.bottom_seed, t, b)
+            });
+            PlayoffGameResult {
+                date: g.date.clone(),
+                home_abbrev: g.home.clone(),
+                away_abbrev: g.away.clone(),
+                home_score: g.home_score,
+                away_score: g.away_score,
+                series_after,
+                goals: g
+                    .goals
+                    .iter()
+                    .map(|gl| PlayoffGoal {
+                        scorer: gl.scorer.clone(),
+                        team: gl.team.clone(),
+                    })
+                    .collect(),
             }
-            format_series_after(&s.top_seed, &s.bottom_seed, t, b)
-        });
-        PlayoffGameResult {
-            date:         g.date.clone(),
-            home_abbrev:  g.home.clone(),
-            away_abbrev:  g.away.clone(),
-            home_score:   g.home_score,
-            away_score:   g.away_score,
-            series_after,
-            goals: g.goals.iter().map(|gl| PlayoffGoal {
-                scorer: gl.scorer.clone(),
-                team:   gl.team.clone(),
-            }).collect(),
-        }
-    }).collect();
+        })
+        .collect();
     PlayoffSeries {
-        letter:             Some(letter),
-        top_seed_abbrev:    s.top_seed.clone(),
-        top_seed_name:      s.top_seed_name.clone().unwrap_or_else(|| s.top_seed.clone()),
-        top_seed_wins:      top_wins,
-        top_seed_rank:      s.top_seed_rank.clone(),
+        letter: Some(letter),
+        top_seed_abbrev: s.top_seed.clone(),
+        top_seed_name: s
+            .top_seed_name
+            .clone()
+            .unwrap_or_else(|| s.top_seed.clone()),
+        top_seed_wins: top_wins,
+        top_seed_rank: s.top_seed_rank.clone(),
         bottom_seed_abbrev: s.bottom_seed.clone(),
-        bottom_seed_name:   s.bottom_seed_name.clone().unwrap_or_else(|| s.bottom_seed.clone()),
-        bottom_seed_wins:   bot_wins,
-        bottom_seed_rank:   s.bottom_seed_rank.clone(),
-        winner_abbrev:      s.winner.clone(),
-        conference:         s.conference.clone(),
+        bottom_seed_name: s
+            .bottom_seed_name
+            .clone()
+            .unwrap_or_else(|| s.bottom_seed.clone()),
+        bottom_seed_wins: bot_wins,
+        bottom_seed_rank: s.bottom_seed_rank.clone(),
+        winner_abbrev: s.winner.clone(),
+        conference: s.conference.clone(),
         games,
     }
 }
@@ -234,30 +252,36 @@ mod tests {
 
     fn fixture_two_games_nyr_3_0() -> PlayoffsBundleSeries {
         PlayoffsBundleSeries {
-            top_seed:         "NYR".to_owned(),
-            bottom_seed:      "NYI".to_owned(),
-            winner:           None,
-            games:            None,
-            top_wins:         None,
-            bottom_wins:      None,
-            top_seed_name:    Some("New York Rangers".to_owned()),
+            top_seed: "NYR".to_owned(),
+            bottom_seed: "NYI".to_owned(),
+            winner: None,
+            games: None,
+            top_wins: None,
+            bottom_wins: None,
+            top_seed_name: Some("New York Rangers".to_owned()),
             bottom_seed_name: Some("New York Islanders".to_owned()),
-            top_seed_rank:    Some("1".to_owned()),
+            top_seed_rank: Some("1".to_owned()),
             bottom_seed_rank: Some("8".to_owned()),
-            conference:       Some("Eastern".to_owned()),
-            letter:           None,
+            conference: Some("Eastern".to_owned()),
+            letter: None,
             results: vec![
                 PlayoffsBundleGame {
                     date: "1994-04-17".to_owned(),
-                    home: "NYR".to_owned(), away: "NYI".to_owned(),
-                    home_score: 6, away_score: 0,
-                    series_after: None, goals: vec![],
+                    home: "NYR".to_owned(),
+                    away: "NYI".to_owned(),
+                    home_score: 6,
+                    away_score: 0,
+                    series_after: None,
+                    goals: vec![],
                 },
                 PlayoffsBundleGame {
                     date: "1994-04-18".to_owned(),
-                    home: "NYR".to_owned(), away: "NYI".to_owned(),
-                    home_score: 6, away_score: 0,
-                    series_after: None, goals: vec![],
+                    home: "NYR".to_owned(),
+                    away: "NYI".to_owned(),
+                    home_score: 6,
+                    away_score: 0,
+                    series_after: None,
+                    goals: vec![],
                 },
             ],
         }
@@ -287,25 +311,41 @@ mod tests {
     fn l0_to_bracket_assigns_letters_in_declaration_order() {
         let bundle = PlayoffsBundle {
             season: "19931994".to_owned(),
-            champion: None, conn_smythe: None,
+            champion: None,
+            conn_smythe: None,
             rounds: vec![PlayoffsBundleRound {
-                round: 1, label: None,
+                round: 1,
+                label: None,
                 series: vec![
                     PlayoffsBundleSeries {
-                        top_seed: "NYR".to_owned(), bottom_seed: "NYI".to_owned(),
-                        winner: Some("NYR".to_owned()), games: Some(4),
-                        top_wins: None, bottom_wins: None,
-                        top_seed_name: None, bottom_seed_name: None,
-                        top_seed_rank: None, bottom_seed_rank: None,
-                        conference: None, letter: None, results: vec![],
+                        top_seed: "NYR".to_owned(),
+                        bottom_seed: "NYI".to_owned(),
+                        winner: Some("NYR".to_owned()),
+                        games: Some(4),
+                        top_wins: None,
+                        bottom_wins: None,
+                        top_seed_name: None,
+                        bottom_seed_name: None,
+                        top_seed_rank: None,
+                        bottom_seed_rank: None,
+                        conference: None,
+                        letter: None,
+                        results: vec![],
                     },
                     PlayoffsBundleSeries {
-                        top_seed: "NJD".to_owned(), bottom_seed: "BUF".to_owned(),
-                        winner: Some("NJD".to_owned()), games: Some(7),
-                        top_wins: None, bottom_wins: None,
-                        top_seed_name: None, bottom_seed_name: None,
-                        top_seed_rank: None, bottom_seed_rank: None,
-                        conference: None, letter: None, results: vec![],
+                        top_seed: "NJD".to_owned(),
+                        bottom_seed: "BUF".to_owned(),
+                        winner: Some("NJD".to_owned()),
+                        games: Some(7),
+                        top_wins: None,
+                        bottom_wins: None,
+                        top_seed_name: None,
+                        bottom_seed_name: None,
+                        top_seed_rank: None,
+                        bottom_seed_rank: None,
+                        conference: None,
+                        letter: None,
+                        results: vec![],
                     },
                 ],
             }],
@@ -325,12 +365,19 @@ mod tests {
     #[test]
     fn l0_derive_wins_falls_back_to_games_winner() {
         let s = PlayoffsBundleSeries {
-            top_seed: "NYR".to_owned(), bottom_seed: "VAN".to_owned(),
-            winner: Some("NYR".to_owned()), games: Some(7),
-            top_wins: None, bottom_wins: None,
-            top_seed_name: None, bottom_seed_name: None,
-            top_seed_rank: None, bottom_seed_rank: None,
-            conference: None, letter: None, results: vec![],
+            top_seed: "NYR".to_owned(),
+            bottom_seed: "VAN".to_owned(),
+            winner: Some("NYR".to_owned()),
+            games: Some(7),
+            top_wins: None,
+            bottom_wins: None,
+            top_seed_name: None,
+            bottom_seed_name: None,
+            top_seed_rank: None,
+            bottom_seed_rank: None,
+            conference: None,
+            letter: None,
+            results: vec![],
         };
         assert_eq!(derive_wins(&s), (4, 3));
     }
@@ -348,9 +395,13 @@ mod tests {
     fn l0_to_bracket_recomputes_series_after_when_missing() {
         let s = fixture_two_games_nyr_3_0();
         let bundle = PlayoffsBundle {
-            season: "19931994".to_owned(), champion: None, conn_smythe: None,
+            season: "19931994".to_owned(),
+            champion: None,
+            conn_smythe: None,
             rounds: vec![PlayoffsBundleRound {
-                round: 1, label: None, series: vec![s],
+                round: 1,
+                label: None,
+                series: vec![s],
             }],
         };
         let br = bundle.to_bracket();
@@ -363,12 +414,30 @@ mod tests {
     #[test]
     fn l0_to_bracket_default_round_labels() {
         let bundle = PlayoffsBundle {
-            season: "19931994".to_owned(), champion: None, conn_smythe: None,
+            season: "19931994".to_owned(),
+            champion: None,
+            conn_smythe: None,
             rounds: vec![
-                PlayoffsBundleRound { round: 1, label: None, series: vec![] },
-                PlayoffsBundleRound { round: 2, label: None, series: vec![] },
-                PlayoffsBundleRound { round: 3, label: None, series: vec![] },
-                PlayoffsBundleRound { round: 4, label: None, series: vec![] },
+                PlayoffsBundleRound {
+                    round: 1,
+                    label: None,
+                    series: vec![],
+                },
+                PlayoffsBundleRound {
+                    round: 2,
+                    label: None,
+                    series: vec![],
+                },
+                PlayoffsBundleRound {
+                    round: 3,
+                    label: None,
+                    series: vec![],
+                },
+                PlayoffsBundleRound {
+                    round: 4,
+                    label: None,
+                    series: vec![],
+                },
             ],
         };
         let br = bundle.to_bracket();

@@ -33,21 +33,21 @@ use crate::fantasy_db::{FantasyDb, LeagueRow, TeamRow};
 fn to_scheme_stats_view(v: &PlayerView<'_>) -> scheme::SkaterStats {
     let totals = &v.stats.totals;
     scheme::SkaterStats {
-        goals:         totals.goals,
-        assists:       totals.assists,
-        pp_goals:      totals.pp_goals,
-        pp_assists:    totals.pp_points.saturating_sub(totals.pp_goals),
-        sh_goals:      totals.sh_goals,
-        sh_assists:    totals.sh_points.saturating_sub(totals.sh_goals),
-        gwg:           totals.gwg,
-        ot_goals:      totals.ot_goals,
-        hits:          v.hits().unwrap_or(0),
-        blocks:        v.blocked_shots().unwrap_or(0),
+        goals: totals.goals,
+        assists: totals.assists,
+        pp_goals: totals.pp_goals,
+        pp_assists: totals.pp_points.saturating_sub(totals.pp_goals),
+        sh_goals: totals.sh_goals,
+        sh_assists: totals.sh_points.saturating_sub(totals.sh_goals),
+        gwg: totals.gwg,
+        ot_goals: totals.ot_goals,
+        hits: v.hits().unwrap_or(0),
+        blocks: v.blocked_shots().unwrap_or(0),
         shots_on_goal: v.shots(),
-        plus_minus:    v.plus_minus(),
-        takeaways:     v.takeaways().unwrap_or(0),
-        giveaways:     v.giveaways().unwrap_or(0),
-        faceoff_wins:  0,
+        plus_minus: v.plus_minus(),
+        takeaways: v.takeaways().unwrap_or(0),
+        giveaways: v.giveaways().unwrap_or(0),
+        faceoff_wins: 0,
     }
 }
 
@@ -56,13 +56,13 @@ fn to_scheme_stats_view(v: &PlayerView<'_>) -> scheme::SkaterStats {
 fn to_goalie_scheme_stats_view(v: &PlayerView<'_>) -> Option<GoalieScoreStats> {
     let g = v.stats.goalie.as_ref()?;
     Some(GoalieScoreStats {
-        games_played:  g.games_started,
-        wins:          g.wins,
-        losses:        g.losses,
-        saves:         g.saves,
+        games_played: g.games_started,
+        wins: g.wins,
+        losses: g.losses,
+        saves: g.saves,
         goals_against: g.goals_against,
-        shutouts:      g.shutouts,
-        save_pct:      g.save_pct.unwrap_or(0.0),
+        shutouts: g.shutouts,
+        save_pct: g.save_pct.unwrap_or(0.0),
     })
 }
 
@@ -72,7 +72,9 @@ fn fuzzy_find_view_in<'a, 'r>(
     query: &str,
 ) -> Option<&'a PlayerView<'r>> {
     let norm = normalize_name(query);
-    views.iter().find(|v| v.identity.name_normalized.contains(norm.as_str()))
+    views
+        .iter()
+        .find(|v| v.identity.name_normalized.contains(norm.as_str()))
 }
 
 /// Skater-pool fuzzy find with anyhow context for the team-add / trade
@@ -82,7 +84,9 @@ fn fuzzy_find_skater<'a, 'r>(
     query: &str,
 ) -> anyhow::Result<&'a PlayerView<'r>> {
     fuzzy_find_view_in(skaters, query).with_context(|| {
-        format!("no skater found matching '{query}' — try `icelines query goalies` if it's a goalie")
+        format!(
+            "no skater found matching '{query}' — try `icelines query goalies` if it's a goalie"
+        )
     })
 }
 
@@ -117,9 +121,7 @@ fn resolve_scheme(name: &str) -> anyhow::Result<Scheme> {
         "yahoo-standard" => Ok(Scheme::yahoo_standard()),
         "espn-standard" => Ok(Scheme::espn_standard()),
         "simple-pts" => Ok(Scheme::simple_pts()),
-        other => bail!(
-            "unknown scheme '{other}'. Try: yahoo-standard, espn-standard, simple-pts"
-        ),
+        other => bail!("unknown scheme '{other}'. Try: yahoo-standard, espn-standard, simple-pts"),
     }
 }
 
@@ -135,7 +137,10 @@ fn score_team(
 
     for norm in roster_norms {
         // Skater first.
-        if let Some(v) = skaters.iter().find(|v| v.identity.name_normalized.contains(norm.as_str())) {
+        if let Some(v) = skaters
+            .iter()
+            .find(|v| v.identity.name_normalized.contains(norm.as_str()))
+        {
             let gp = v.gp();
             let score = compute_fantasy_score(&to_scheme_stats_view(v), &scheme.skater, gp)
                 .map(|fs| fs.total)
@@ -144,16 +149,24 @@ fn score_team(
             continue;
         }
         // Then goalie.
-        if let Some(v) = goalies.iter().find(|v| v.identity.name_normalized.contains(norm.as_str())) {
+        if let Some(v) = goalies
+            .iter()
+            .find(|v| v.identity.name_normalized.contains(norm.as_str()))
+        {
             let stats = match to_goalie_scheme_stats_view(v) {
                 Some(s) => s,
-                None    => {
+                None => {
                     // Goalie has no stats yet — counts as 0 score, still listed.
                     results.push((v.identity.full_name.clone(), 0.0));
                     continue;
                 }
             };
-            let gp = v.stats.goalie.as_ref().map(|g| g.games_started).unwrap_or(0);
+            let gp = v
+                .stats
+                .goalie
+                .as_ref()
+                .map(|g| g.games_started)
+                .unwrap_or(0);
             let score = compute_goalie_fantasy_score(&stats, &scheme.goalie, gp)
                 .map(|fs| fs.total)
                 .unwrap_or(0.0);
@@ -168,21 +181,21 @@ fn score_team(
 }
 
 /// Require an active league, or use the given override.
-fn require_league(
-    db: &FantasyDb,
-    league_override: &Option<String>,
-) -> anyhow::Result<LeagueRow> {
+fn require_league(db: &FantasyDb, league_override: &Option<String>) -> anyhow::Result<LeagueRow> {
     if let Some(name) = league_override {
         let leagues = db.list_leagues()?;
         leagues
             .into_iter()
             .find(|l| &l.name == name)
-            .with_context(|| format!("league '{name}' not found — run `icelines fantasy league-list`"))
+            .with_context(|| {
+                format!("league '{name}' not found — run `icelines fantasy league-list`")
+            })
     } else {
-        db.get_active_league()?
-            .ok_or_else(|| anyhow::anyhow!(
+        db.get_active_league()?.ok_or_else(|| {
+            anyhow::anyhow!(
                 "no active league. Use `icelines fantasy league-use <name>` or --league."
-            ))
+            )
+        })
     }
 }
 
@@ -233,12 +246,12 @@ pub async fn run_league_list() -> anyhow::Result<()> {
 /// `icelines fantasy league-use <name>` / `icelines fantasy league-switch <name>`
 pub async fn run_league_use(name: String) -> anyhow::Result<()> {
     let db = FantasyDb::open()?;
-    db.set_active_league(&name)
-        .with_context(|| format!("league '{name}' not found — run `icelines fantasy league-list`"))?;
+    db.set_active_league(&name).with_context(|| {
+        format!("league '{name}' not found — run `icelines fantasy league-list`")
+    })?;
     println!("Active league set to '{name}'.");
     Ok(())
 }
-
 
 /// `icelines fantasy league-delete <name>`
 pub async fn run_league_delete(name: String) -> anyhow::Result<()> {
@@ -283,10 +296,7 @@ pub async fn run_team_list(league_override: Option<String>) -> anyhow::Result<()
     }
 
     println!("League: {} ({})", league.name, league.scheme);
-    println!(
-        "{:<28} {:<20} {:<8}",
-        "Team", "Owner", "Players"
-    );
+    println!("{:<28} {:<20} {:<8}", "Team", "Owner", "Players");
     println!("{}", "─".repeat(58));
     for t in &teams {
         println!("{:<28} {:<20} {:<8}", t.name, t.owner, t.player_count);
@@ -309,7 +319,10 @@ pub async fn run_team_show(name: String, league_override: Option<String>) -> any
         team.name, league.name, league.scheme
     );
     println!("{}", "─".repeat(72));
-    println!("  {:<4} {:<24} {:<5} {:<4} {:<5} {:<7} Fantasy", "#", "Player", "Team", "Pos", "GP", "Pts");
+    println!(
+        "  {:<4} {:<24} {:<5} {:<4} {:<5} {:<7} Fantasy",
+        "#", "Player", "Team", "Pos", "GP", "Pts"
+    );
     println!("{}", "─".repeat(72));
 
     let mut total_score = 0.0f32;
@@ -328,7 +341,12 @@ pub async fn run_team_show(name: String, league_override: Option<String>) -> any
                 view.gp().to_string(),
                 view.stats.totals.points.to_string(),
             ),
-            None => ("—".to_owned(), "—".to_owned(), "—".to_owned(), "—".to_owned()),
+            None => (
+                "—".to_owned(),
+                "—".to_owned(),
+                "—".to_owned(),
+                "—".to_owned(),
+            ),
         };
 
         println!(
@@ -363,11 +381,19 @@ pub async fn run_team_add(
 
     // Search both pools — skater first, goalie fallback.
     let (full_name, norm_owned, kind) = match fuzzy_find_skater(&all_skaters, &player_query) {
-        Ok(v) => (v.identity.full_name.clone(), v.identity.name_normalized.clone(), "Skater"),
+        Ok(v) => (
+            v.identity.full_name.clone(),
+            v.identity.name_normalized.clone(),
+            "Skater",
+        ),
         Err(skater_err) => match fuzzy_find_view_in(&all_goalies, &player_query) {
-            Some(v) => (v.identity.full_name.clone(), v.identity.name_normalized.clone(), "Goalie"),
-            None    => return Err(skater_err),
-        }
+            Some(v) => (
+                v.identity.full_name.clone(),
+                v.identity.name_normalized.clone(),
+                "Goalie",
+            ),
+            None => return Err(skater_err),
+        },
     };
     let norm = norm_owned.as_str();
 
@@ -393,11 +419,17 @@ pub async fn run_team_drop(
     let (all_skaters, all_goalies) = pools_views(&outcome.repo, season);
 
     let (full_name, norm_owned) = match fuzzy_find_skater(&all_skaters, &player_query) {
-        Ok(v) => (v.identity.full_name.clone(), v.identity.name_normalized.clone()),
+        Ok(v) => (
+            v.identity.full_name.clone(),
+            v.identity.name_normalized.clone(),
+        ),
         Err(skater_err) => match fuzzy_find_view_in(&all_goalies, &player_query) {
-            Some(v) => (v.identity.full_name.clone(), v.identity.name_normalized.clone()),
-            None    => return Err(skater_err),
-        }
+            Some(v) => (
+                v.identity.full_name.clone(),
+                v.identity.name_normalized.clone(),
+            ),
+            None => return Err(skater_err),
+        },
     };
     let norm = norm_owned.as_str();
 
@@ -451,17 +483,17 @@ pub async fn run_standings(
 
     standings.sort_by(|a, b| b.2.partial_cmp(&a.2).unwrap_or(std::cmp::Ordering::Equal));
 
-    println!(
-        "\nSTANDINGS — {} ({})",
-        league.name, scheme_name
-    );
+    println!("\nSTANDINGS — {} ({})", league.name, scheme_name);
     println!("{}", "─".repeat(60));
-    println!("{:<5} {:<22} {:<16} {:<10} Per/G", "Rank", "Team", "Owner", "Score");
+    println!(
+        "{:<5} {:<22} {:<16} {:<10} Per/G",
+        "Rank", "Team", "Owner", "Score"
+    );
     println!("{}", "─".repeat(60));
     for (rank, (team_name, owner, total, per_g)) in standings.iter().enumerate() {
         // Avoid -0.0 display for empty teams (IEEE 754 negative zero)
         let total_display = if *total == 0.0 { 0.0f32 } else { *total };
-        let perg_display  = if *per_g  == 0.0 { 0.0f32 } else { *per_g  };
+        let perg_display = if *per_g == 0.0 { 0.0f32 } else { *per_g };
         println!(
             "{:<5} {:<22} {:<16} {:<10.1} {:.2}",
             rank + 1,
@@ -531,11 +563,23 @@ pub async fn run_trade(
     // Simulate AFTER scores (swap player norms in rosters).
     let roster1_after: Vec<String> = roster1_before
         .iter()
-        .map(|n| if n == &p1_norm { p2_norm.clone() } else { n.clone() })
+        .map(|n| {
+            if n == &p1_norm {
+                p2_norm.clone()
+            } else {
+                n.clone()
+            }
+        })
         .collect();
     let roster2_after: Vec<String> = roster2_before
         .iter()
-        .map(|n| if n == &p2_norm { p1_norm.clone() } else { n.clone() })
+        .map(|n| {
+            if n == &p2_norm {
+                p1_norm.clone()
+            } else {
+                n.clone()
+            }
+        })
         .collect();
     let score1_after: f32 = score_team(&roster1_after, &all_skaters, &all_goalies, &scheme)
         .iter()
@@ -550,10 +594,7 @@ pub async fn run_trade(
     println!("{}", "─".repeat(60));
     println!("  {p1_name} ({team1_name})  <->  {p2_name} ({to_team_name})");
     println!("{}", "─".repeat(60));
-    println!(
-        "  {:<22}  BEFORE    AFTER     DELTA",
-        "Team"
-    );
+    println!("  {:<22}  BEFORE    AFTER     DELTA", "Team");
     println!("{}", "─".repeat(60));
     println!(
         "  {:<22}  {:<9.1} {:<9.1} {:+.1}",
@@ -618,8 +659,8 @@ async fn handle_root(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let (league, scheme) = get_league_and_scheme(&db, &state.league_name)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let (outcome, season) = load_pools()
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let (outcome, season) =
+        load_pools().map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let (all_skaters, all_goalies) = pools_views(&outcome.repo, season);
     let teams = db
         .list_teams(&league.id)
@@ -706,8 +747,8 @@ async fn handle_api_standings(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let (league, scheme) = get_league_and_scheme(&db, &state.league_name)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let (outcome, season) = load_pools()
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let (outcome, season) =
+        load_pools().map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let (all_skaters, all_goalies) = pools_views(&outcome.repo, season);
     let teams = db
         .list_teams(&league.id)
@@ -860,8 +901,8 @@ async fn handle_api_team_roster(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let team = require_team(&db, &league.id, &team_name)
         .map_err(|e| (StatusCode::NOT_FOUND, e.to_string()))?;
-    let (outcome, season) = load_pools()
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let (outcome, season) =
+        load_pools().map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let (all_skaters, all_goalies) = pools_views(&outcome.repo, season);
     let roster = db
         .list_roster(&team.id)
@@ -908,8 +949,8 @@ async fn handle_api_team_add(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let team = require_team(&db, &league.id, &team_name)
         .map_err(|e| (StatusCode::NOT_FOUND, e.to_string()))?;
-    let (outcome, season) = load_pools()
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let (outcome, season) =
+        load_pools().map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let (all_skaters, _all_goalies) = pools_views(&outcome.repo, season);
 
     let player = fuzzy_find_skater(&all_skaters, &player_q)
@@ -930,7 +971,9 @@ async fn handle_api_team_add(
     db.add_player(&team.id, &norm)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    Ok(Json(json!({ "status": "added", "player": full_name, "team": team_name })))
+    Ok(Json(
+        json!({ "status": "added", "player": full_name, "team": team_name }),
+    ))
 }
 
 async fn handle_api_team_drop(
@@ -950,8 +993,8 @@ async fn handle_api_team_drop(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let team = require_team(&db, &league.id, &team_name)
         .map_err(|e| (StatusCode::NOT_FOUND, e.to_string()))?;
-    let (outcome, season) = load_pools()
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let (outcome, season) =
+        load_pools().map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let (all_skaters, _all_goalies) = pools_views(&outcome.repo, season);
 
     let player = fuzzy_find_skater(&all_skaters, &player_q)
@@ -997,8 +1040,8 @@ async fn handle_api_trade(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let (league, scheme) = get_league_and_scheme(&db, &state.league_name)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let (outcome, season) = load_pools()
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let (outcome, season) =
+        load_pools().map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let (all_skaters, all_goalies) = pools_views(&outcome.repo, season);
 
     let p1 = fuzzy_find_skater(&all_skaters, &player1_q)
@@ -1042,11 +1085,23 @@ async fn handle_api_trade(
 
     let roster1_after: Vec<String> = roster1
         .iter()
-        .map(|n| if n == &p1_norm { p2_norm.clone() } else { n.clone() })
+        .map(|n| {
+            if n == &p1_norm {
+                p2_norm.clone()
+            } else {
+                n.clone()
+            }
+        })
         .collect();
     let roster2_after: Vec<String> = roster2
         .iter()
-        .map(|n| if n == &p2_norm { p1_norm.clone() } else { n.clone() })
+        .map(|n| {
+            if n == &p2_norm {
+                p1_norm.clone()
+            } else {
+                n.clone()
+            }
+        })
         .collect();
     let score1_after: f32 = score_team(&roster1_after, &all_skaters, &all_goalies, &scheme)
         .iter()
@@ -1125,10 +1180,7 @@ pub async fn run_serve(port: u16, league_override: Option<String>) -> anyhow::Re
 #[cfg(test)]
 mod tests {
     use super::*;
-    use icelines_core::{
-        fixtures,
-        identity::PlayerId,
-    };
+    use icelines_core::{fixtures, identity::PlayerId};
 
     /// Hart.5c.4 cold-start parity (per spec D5).
     ///
@@ -1149,11 +1201,7 @@ mod tests {
         assert!(stats.realtime.is_none(), "fixture must be cold-start");
         let repo = fixtures::test_repo_with(id, stats);
         let v = repo
-            .view(
-                PlayerId(8478402),
-                Season(20242025),
-                SeasonType::Regular,
-            )
+            .view(PlayerId(8478402), Season(20242025), SeasonType::Regular)
             .unwrap();
 
         let s = to_scheme_stats_view(&v);
@@ -1175,11 +1223,7 @@ mod tests {
             .build();
         let repo = fixtures::test_repo_with(id, stats);
         let v = repo
-            .view(
-                PlayerId(8478402),
-                Season(20242025),
-                SeasonType::Regular,
-            )
+            .view(PlayerId(8478402), Season(20242025), SeasonType::Regular)
             .unwrap();
 
         let s = to_scheme_stats_view(&v);
@@ -1216,12 +1260,7 @@ mod tests {
         let goalie_id = fixtures::identity(8478406)
             .name("Test Goalie", "test_goalie")
             .build();
-        let goalie_stats = fixtures::solo_goalie(
-            8478406,
-            20242025,
-            TeamAbbr("OTT".into()),
-        )
-        .build();
+        let goalie_stats = fixtures::solo_goalie(8478406, 20242025, TeamAbbr("OTT".into())).build();
         repo.upsert_identity(goalie_id).unwrap();
         repo.upsert_stats(goalie_stats).unwrap();
 
@@ -1231,8 +1270,16 @@ mod tests {
         let goalies: Vec<PlayerView<'_>> = repo
             .goalies(Season(20242025), SeasonType::Regular)
             .collect();
-        assert_eq!(skaters.len(), 1, "must have exactly one skater in fixture repo");
-        assert_eq!(goalies.len(), 1, "must have exactly one goalie in fixture repo");
+        assert_eq!(
+            skaters.len(),
+            1,
+            "must have exactly one skater in fixture repo"
+        );
+        assert_eq!(
+            goalies.len(),
+            1,
+            "must have exactly one goalie in fixture repo"
+        );
 
         let roster = vec![
             "mcdavid".to_string(),
@@ -1254,8 +1301,14 @@ mod tests {
         );
         // Both real players appear; names come from view.identity.full_name.
         let names: Vec<&str> = results.iter().map(|(n, _)| n.as_str()).collect();
-        assert!(names.contains(&"McDavid"), "missing skater in results: {names:?}");
-        assert!(names.contains(&"Test Goalie"), "missing goalie in results: {names:?}");
+        assert!(
+            names.contains(&"McDavid"),
+            "missing skater in results: {names:?}"
+        );
+        assert!(
+            names.contains(&"Test Goalie"),
+            "missing goalie in results: {names:?}"
+        );
         // Both real players score > 0 on Yahoo standard (a 30G/50A skater
         // and a 30W goalie both have positive components).
         assert!(results.iter().all(|(_, s)| *s > 0.0));
@@ -1326,10 +1379,10 @@ mod tests {
     /// a populated `stats` object keyed by `StatId::cli_key`.
     #[test]
     fn l0_lindsay_l5_build_roster_player_json_with_view() {
-        use icelines_core::stats_catalog::StatId;
-        use icelines_core::season_stats::{SeasonStatsBuilder, TeamStint};
-        use icelines_core::model::{TeamAbbr, Position, Season};
+        use icelines_core::model::{Position, Season, TeamAbbr};
         use icelines_core::season_stats::SeasonType;
+        use icelines_core::season_stats::{SeasonStatsBuilder, TeamStint};
+        use icelines_core::stats_catalog::StatId;
 
         let identity = fixtures::identity(8478402).build();
         let stats = SeasonStatsBuilder::new(
@@ -1342,26 +1395,39 @@ mod tests {
             team: TeamAbbr("EDM".into()),
             started: Some("2024-10-09".into()),
             ended: None,
-            gp: 70, goals: 30, assists: 80, points: 110,
+            gp: 70,
+            goals: 30,
+            assists: 80,
+            points: 110,
             goalie: None,
         })
         .with_totals(icelines_core::season_stats::StatTotals {
-            gp: 70, goals: 30, assists: 80, points: 110,
+            gp: 70,
+            goals: 30,
+            assists: 80,
+            points: 110,
             ..Default::default()
         })
         .build();
-        let view = PlayerView { identity: &identity, stats: &stats, contract: None };
+        let view = PlayerView {
+            identity: &identity,
+            stats: &stats,
+            contract: None,
+        };
 
         let json = build_roster_player_json("Connor McDavid", 42.5, Some(&view));
         // Top-level keys (post-WIRE-2: `gp` removed; lives at stats.games).
         assert_eq!(json["name"], "Connor McDavid");
         assert_eq!(json["pos"], "C");
         assert_eq!(json["score"], 42.5);
-        assert!(json.get("gp").is_none(),
-            "WIRE-2: top-level `gp` removed — use stats.games");
+        assert!(
+            json.get("gp").is_none(),
+            "WIRE-2: top-level `gp` removed — use stats.games"
+        );
         // The `stats` object: every key parses via `StatId::from_cli_key`,
         // values match `StatId::read(&view)`.
-        let stats_obj = json["stats"].as_object()
+        let stats_obj = json["stats"]
+            .as_object()
             .expect("stats sub-object must be present");
         for (key, value) in stats_obj {
             let sid = StatId::from_cli_key(key)
@@ -1369,9 +1435,13 @@ mod tests {
             let expected = sid.read(&view);
             match (expected, value) {
                 (Some(x), v) => {
-                    let got = v.as_f64().unwrap_or_else(|| panic!("`{key}` must be number"));
-                    assert!((x - got).abs() < 1e-9,
-                        "value mismatch for `{key}`: expected={x} got={got}");
+                    let got = v
+                        .as_f64()
+                        .unwrap_or_else(|| panic!("`{key}` must be number"));
+                    assert!(
+                        (x - got).abs() < 1e-9,
+                        "value mismatch for `{key}`: expected={x} got={got}"
+                    );
                 }
                 (None, Value::Null) => {}
                 (e, v) => panic!("shape mismatch for `{key}`: expected={e:?} got={v:?}"),
@@ -1384,14 +1454,22 @@ mod tests {
         assert_eq!(stats_obj["assists"].as_f64(), Some(80.0));
         assert_eq!(stats_obj["points"].as_f64(), Some(110.0));
         // C4 (L.5b expansion) — broader stat slice present.
-        assert!(stats_obj.contains_key("hits"),
-            "C4: hits key present in expanded slice");
-        assert!(stats_obj.contains_key("blocked-shots"),
-            "C4: blocked-shots key present");
-        assert!(stats_obj.contains_key("plus-minus"),
-            "C4: plus-minus key present");
-        assert!(stats_obj.contains_key("faceoff-win-pct"),
-            "C4: faceoff-win-pct key present");
+        assert!(
+            stats_obj.contains_key("hits"),
+            "C4: hits key present in expanded slice"
+        );
+        assert!(
+            stats_obj.contains_key("blocked-shots"),
+            "C4: blocked-shots key present"
+        );
+        assert!(
+            stats_obj.contains_key("plus-minus"),
+            "C4: plus-minus key present"
+        );
+        assert!(
+            stats_obj.contains_key("faceoff-win-pct"),
+            "C4: faceoff-win-pct key present"
+        );
     }
 
     /// L.5.6 (gap-fill) — `build_roster_player_json` for a player
@@ -1404,13 +1482,15 @@ mod tests {
         assert_eq!(json["name"], "Phantom Player");
         assert_eq!(json["pos"], "—");
         assert_eq!(json["score"], 0.0);
-        assert!(json.get("gp").is_none(),
-            "WIRE-2: top-level `gp` removed");
+        assert!(json.get("gp").is_none(), "WIRE-2: top-level `gp` removed");
         // Empty stats map — no entries since no view was matched.
-        let stats_obj = json["stats"].as_object()
+        let stats_obj = json["stats"]
+            .as_object()
             .expect("stats sub-object always present, even when empty");
-        assert!(stats_obj.is_empty(),
-            "no view → no catalog reads → empty stats map");
+        assert!(
+            stats_obj.is_empty(),
+            "no view → no catalog reads → empty stats map"
+        );
     }
 
     /// L.5.6 — emitted stats values match `StatId::read(view)` for the
@@ -1419,10 +1499,10 @@ mod tests {
     /// same number we emitted.
     #[test]
     fn l0_lindsay_l5_roster_stats_values_match_stat_id_read() {
-        use icelines_core::stats_catalog::StatId;
-        use icelines_core::season_stats::{SeasonStatsBuilder, TeamStint};
-        use icelines_core::model::{TeamAbbr, Position, Season};
+        use icelines_core::model::{Position, Season, TeamAbbr};
         use icelines_core::season_stats::SeasonType;
+        use icelines_core::season_stats::{SeasonStatsBuilder, TeamStint};
+        use icelines_core::stats_catalog::StatId;
         use icelines_core::stats_repository::PlayerView;
 
         let identity = fixtures::identity(8478402).build();
@@ -1436,15 +1516,25 @@ mod tests {
             team: TeamAbbr("EDM".into()),
             started: Some("2024-10-09".into()),
             ended: None,
-            gp: 70, goals: 30, assists: 80, points: 110,
+            gp: 70,
+            goals: 30,
+            assists: 80,
+            points: 110,
             goalie: None,
         })
         .with_totals(icelines_core::season_stats::StatTotals {
-            gp: 70, goals: 30, assists: 80, points: 110,
+            gp: 70,
+            goals: 30,
+            assists: 80,
+            points: 110,
             ..Default::default()
         })
         .build();
-        let view = PlayerView { identity: &identity, stats: &stats, contract: None };
+        let view = PlayerView {
+            identity: &identity,
+            stats: &stats,
+            contract: None,
+        };
 
         // Emitted JSON value for `StatId::Games` should equal Some(70.0).
         assert_eq!(StatId::Games.read(&view), Some(70.0));

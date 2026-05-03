@@ -33,7 +33,14 @@ fn icelines_bin() -> PathBuf {
 #[test]
 fn l2_lindsay_l5_query_leaders_catalog_sort_points_per_game() {
     let out = Command::new(icelines_bin())
-        .args(["query", "leaders", "--sort", "points-per-game", "--top", "5"])
+        .args([
+            "query",
+            "leaders",
+            "--sort",
+            "points-per-game",
+            "--top",
+            "5",
+        ])
         .output()
         .expect("spawn icelines");
     let status = out.status;
@@ -50,7 +57,13 @@ fn l2_lindsay_l5_query_leaders_catalog_sort_points_per_game() {
     // 5 ranked rows + header + separator + footer.
     let row_count = stdout
         .lines()
-        .filter(|l| l.starts_with("1 ") || l.starts_with("2 ") || l.starts_with("3 ") || l.starts_with("4 ") || l.starts_with("5 "))
+        .filter(|l| {
+            l.starts_with("1 ")
+                || l.starts_with("2 ")
+                || l.starts_with("3 ")
+                || l.starts_with("4 ")
+                || l.starts_with("5 ")
+        })
         .count();
     assert_eq!(
         row_count, 5,
@@ -83,10 +96,15 @@ fn l2_lindsay_l5_query_leaders_catalog_sort_goalie_key_no_panic() {
 fn l2_lindsay_l5_export_md_leaders_columns_renders_custom_table() {
     let out = Command::new(icelines_bin())
         .args([
-            "export", "md", "leaders",
-            "--out", "-",
-            "--columns", "goals,assists,points",
-            "--top", "3",
+            "export",
+            "md",
+            "leaders",
+            "--out",
+            "-",
+            "--columns",
+            "goals,assists,points",
+            "--top",
+            "3",
         ])
         .output()
         .expect("spawn icelines");
@@ -122,10 +140,15 @@ fn l2_lindsay_l5_export_md_leaders_columns_renders_custom_table() {
 fn l2_lindsay_l5_export_md_leaders_columns_unknown_bails() {
     let out = Command::new(icelines_bin())
         .args([
-            "export", "md", "leaders",
-            "--out", "-",
-            "--columns", "not-a-real-stat",
-            "--top", "3",
+            "export",
+            "md",
+            "leaders",
+            "--out",
+            "-",
+            "--columns",
+            "not-a-real-stat",
+            "--top",
+            "3",
         ])
         .output()
         .expect("spawn icelines");

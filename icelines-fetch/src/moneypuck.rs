@@ -35,11 +35,11 @@ pub struct MoneyPuckRow {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MoneyPuckStats {
     pub player_id: u32,
-    pub xg_all: f32,       // ixG all situations
-    pub xg_per_60: f32,    // ixG per 60 minutes
-    pub cf_pct_5v5: f32,   // CF% at 5v5 (0–100)
-    pub ff_pct_5v5: f32,   // FF% at 5v5
-    pub xgf_pct_5v5: f32,  // xGF% at 5v5
+    pub xg_all: f32,      // ixG all situations
+    pub xg_per_60: f32,   // ixG per 60 minutes
+    pub cf_pct_5v5: f32,  // CF% at 5v5 (0–100)
+    pub ff_pct_5v5: f32,  // FF% at 5v5
+    pub xgf_pct_5v5: f32, // xGF% at 5v5
 }
 
 /// Parse a MoneyPuck CSV string into a player_id → MoneyPuckStats map.
@@ -120,11 +120,17 @@ mod tests {
     fn l0_csv_url_format() {
         assert_eq!(
             csv_url("20252026"),
-            Some("https://moneypuck.com/moneypuck/playerData/seasonSummary/2025/regular/skaters.csv".to_owned())
+            Some(
+                "https://moneypuck.com/moneypuck/playerData/seasonSummary/2025/regular/skaters.csv"
+                    .to_owned()
+            )
         );
         assert_eq!(
             csv_url("20242025"),
-            Some("https://moneypuck.com/moneypuck/playerData/seasonSummary/2024/regular/skaters.csv".to_owned())
+            Some(
+                "https://moneypuck.com/moneypuck/playerData/seasonSummary/2024/regular/skaters.csv"
+                    .to_owned()
+            )
         );
         assert_eq!(csv_url("short"), None);
     }
@@ -188,15 +194,19 @@ mod tests {
              9999002,5on5,0,0,20.0,20.0,50.0,50.0,40.0,40.0\n"
         );
         let result = parse_csv(&csv);
-        let stats = result.get(&9999002).expect("player must be found despite zero icetime");
+        let stats = result
+            .get(&9999002)
+            .expect("player must be found despite zero icetime");
         assert!(
             (stats.xg_per_60 - 0.0).abs() < 0.001,
             "xg_per_60 must be 0.0 when icetime=0, got {}",
             stats.xg_per_60
         );
         // cf_pct should be 50.0 when totals are zero
-        assert!((stats.cf_pct_5v5 - 50.0).abs() < 0.1,
-            "cf_pct should default to 50.0 when cf_for+cf_against=0");
+        assert!(
+            (stats.cf_pct_5v5 - 50.0).abs() < 0.1,
+            "cf_pct should default to 50.0 when cf_for+cf_against=0"
+        );
     }
 
     #[test]

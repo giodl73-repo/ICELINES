@@ -19,14 +19,13 @@ use crate::schema::{RawTransaction, RawTransactionTeam};
 use super::FetchOutcome;
 
 /// Default ESPN base URL. Tests override via `EspnSource::with_base_url`.
-pub const DEFAULT_ESPN_BASE: &str =
-    "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl";
+pub const DEFAULT_ESPN_BASE: &str = "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl";
 
-const MAX_RETRIES:                 usize = 3;
-const CIRCUIT_BREAK_AFTER_FAILS:   usize = 3;
+const MAX_RETRIES: usize = 3;
+const CIRCUIT_BREAK_AFTER_FAILS: usize = 3;
 /// Server caps pageSize at 25 regardless of what we request. Send the
 /// request anyway (informational; some clones may honor a higher limit).
-const PAGE_LIMIT:                  usize = 200;
+const PAGE_LIMIT: usize = 200;
 
 /// Convert an 8-digit NHL season ID (e.g. "20252026") into the ESPN
 /// `?dates=YYYYMMDD-YYYYMMDD` range that covers the full hockey calendar
@@ -38,7 +37,7 @@ fn season_to_date_range(season: &str) -> Option<String> {
         return None;
     }
     let start_year: u32 = season[..4].parse().ok()?;
-    let end_year:   u32 = season[4..].parse().ok()?;
+    let end_year: u32 = season[4..].parse().ok()?;
     if end_year != start_year + 1 {
         return None;
     }
@@ -55,24 +54,24 @@ fn season_month_windows(season: &str) -> Option<Vec<String>> {
         return None;
     }
     let start_year: u32 = season[..4].parse().ok()?;
-    let end_year:   u32 = season[4..].parse().ok()?;
+    let end_year: u32 = season[4..].parse().ok()?;
     if end_year != start_year + 1 {
         return None;
     }
 
     // (year, month) tuples — 11 months: Sept(start) → July(end).
     let months = [
-        (start_year,  9),
+        (start_year, 9),
         (start_year, 10),
         (start_year, 11),
         (start_year, 12),
-        (end_year,    1),
-        (end_year,    2),
-        (end_year,    3),
-        (end_year,    4),
-        (end_year,    5),
-        (end_year,    6),
-        (end_year,    7),
+        (end_year, 1),
+        (end_year, 2),
+        (end_year, 3),
+        (end_year, 4),
+        (end_year, 5),
+        (end_year, 6),
+        (end_year, 7),
     ];
     let mut out = Vec::with_capacity(months.len());
     for (y, m) in months {
@@ -88,7 +87,11 @@ fn days_in_month(year: u32, month: u32) -> u32 {
         1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
         4 | 6 | 9 | 11 => 30,
         2 => {
-            if (year % 4 == 0 && year % 100 != 0) || year % 400 == 0 { 29 } else { 28 }
+            if (year % 4 == 0 && year % 100 != 0) || year % 400 == 0 {
+                29
+            } else {
+                28
+            }
         }
         _ => 30,
     }
@@ -96,32 +99,36 @@ fn days_in_month(year: u32, month: u32) -> u32 {
 
 /// Configurable HTTP source. Concrete in v1 (no trait per FORGE).
 pub struct EspnSource {
-    client:        reqwest::Client,
-    base_url:      String,
-    sleep:         Arc<dyn SleepFn>,
+    client: reqwest::Client,
+    base_url: String,
+    sleep: Arc<dyn SleepFn>,
 }
 
 /// Indirection so tests can run the retry chain without real wall-clock
 /// sleeps. Production uses [`TokioSleep`]; tests inject [`NoopSleep`].
 pub trait SleepFn: Send + Sync {
-    fn sleep<'a>(&'a self, dur: Duration)
-        -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send + 'a>>;
+    fn sleep<'a>(
+        &'a self,
+        dur: Duration,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send + 'a>>;
 }
 
 pub struct TokioSleep;
 impl SleepFn for TokioSleep {
-    fn sleep<'a>(&'a self, dur: Duration)
-        -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send + 'a>>
-    {
+    fn sleep<'a>(
+        &'a self,
+        dur: Duration,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send + 'a>> {
         Box::pin(tokio::time::sleep(dur))
     }
 }
 
 pub struct NoopSleep;
 impl SleepFn for NoopSleep {
-    fn sleep<'a>(&'a self, _dur: Duration)
-        -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send + 'a>>
-    {
+    fn sleep<'a>(
+        &'a self,
+        _dur: Duration,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send + 'a>> {
         Box::pin(async {})
     }
 }
@@ -162,10 +169,8 @@ impl EspnSource {
     /// safe across overlapping windows.
     pub async fn fetch_season(&self, season: &str) -> Result<FetchOutcome, FetchError> {
         let fetched_at = now_rfc3339();
-        let windows = season_month_windows(season).ok_or_else(|| {
-            FetchError::SchemaChanged {
-                detail: format!("invalid season ID '{season}' — expected 8 digits"),
-            }
+        let windows = season_month_windows(season).ok_or_else(|| FetchError::SchemaChanged {
+            detail: format!("invalid season ID '{season}' — expected 8 digits"),
         })?;
         let mut all_rows: Vec<RawTransaction> = Vec::new();
         let mut all_dropped: Vec<String> = Vec::new();
@@ -174,10 +179,7 @@ impl EspnSource {
             std::collections::HashSet::new();
 
         for window in windows {
-            let url = format!(
-                "{}/transactions?dates={window}&limit=1000",
-                self.base_url
-            );
+            let url = format!("{}/transactions?dates={window}&limit=1000", self.base_url);
 
             let page = match self.fetch_page_with_retries(&url).await {
                 Ok(p) => {
@@ -223,8 +225,8 @@ impl EspnSource {
             let result = self.fetch_once(url).await;
             match result {
                 Ok(page) => return Ok(page),
-                Err(FetchError::Http { status, .. }) if (status == 429 || (500..600).contains(&status))
-                    && attempt < MAX_RETRIES =>
+                Err(FetchError::Http { status, .. })
+                    if (status == 429 || (500..600).contains(&status)) && attempt < MAX_RETRIES =>
                 {
                     let backoff = backoff_with_jitter(attempt);
                     self.sleep.sleep(backoff).await;
@@ -239,7 +241,11 @@ impl EspnSource {
     /// Single HTTP call. Returns the body text on 200 (caller distinguishes
     /// HTML vs JSON), or a typed error on non-200.
     async fn fetch_once(&self, url: &str) -> Result<RawPage, FetchError> {
-        let resp = self.client.get(url).send().await
+        let resp = self
+            .client
+            .get(url)
+            .send()
+            .await
             .map_err(|e| FetchError::Http {
                 status: 0,
                 url: format!("{url}: {e}"),
@@ -249,12 +255,16 @@ impl EspnSource {
         if status != 200 {
             // Surface the raw HTTP code so the caller's retry policy can
             // pattern-match (we retry 429 + 5xx, fail-fast otherwise).
-            return Err(FetchError::Http { status, url: url.to_owned() });
+            return Err(FetchError::Http {
+                status,
+                url: url.to_owned(),
+            });
         }
 
         // 200 — distinguish JSON from HTML by Content-Type before reading
         // the body, so a Cloudflare interstitial never feeds serde.
-        let content_type = resp.headers()
+        let content_type = resp
+            .headers()
             .get("content-type")
             .and_then(|v| v.to_str().ok())
             .unwrap_or("")
@@ -263,9 +273,7 @@ impl EspnSource {
             // Empty content-type is rare but seen in mocks; we let it
             // through and let serde decide. A clear HTML or text/* type
             // is rejected here.
-            if content_type.contains("text/html")
-               || content_type.starts_with("text/")
-            {
+            if content_type.contains("text/html") || content_type.starts_with("text/") {
                 return Err(FetchError::HtmlBodyResponse {
                     url: url.to_owned(),
                     content_type,
@@ -276,11 +284,11 @@ impl EspnSource {
         // Capture pageCount from JSON. If parsing fails outright, we
         // surface SchemaChanged so the run aborts — empty/truncated bodies
         // shouldn't silently zero out the season.
-        let body: serde_json::Value = resp.json().await
-            .map_err(|e| FetchError::SchemaChanged {
-                detail: format!("ESPN body not parseable as JSON: {e}"),
-            })?;
-        let page_count = body.get("pageCount")
+        let body: serde_json::Value = resp.json().await.map_err(|e| FetchError::SchemaChanged {
+            detail: format!("ESPN body not parseable as JSON: {e}"),
+        })?;
+        let page_count = body
+            .get("pageCount")
             .and_then(|v| v.as_u64())
             .map(|n| n as usize);
 
@@ -289,7 +297,7 @@ impl EspnSource {
 }
 
 struct RawPage {
-    body:       serde_json::Value,
+    body: serde_json::Value,
     page_count: Option<usize>,
 }
 
@@ -319,11 +327,22 @@ fn parse_page_with_fallback(body: &serde_json::Value) -> (Vec<RawTransaction>, V
             }
         }
         // Best-effort row extraction.
-        let date = raw.get("date").and_then(|v| v.as_str()).unwrap_or("").to_owned();
-        let description = raw.get("description").and_then(|v| v.as_str()).unwrap_or("").to_owned();
+        let date = raw
+            .get("date")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_owned();
+        let description = raw
+            .get("description")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_owned();
         let team = raw.get("team").and_then(|tv| {
-            let id           = tv.get("id").and_then(|v| v.as_str()).unwrap_or("");
-            let abbreviation = tv.get("abbreviation").and_then(|v| v.as_str()).unwrap_or("");
+            let id = tv.get("id").and_then(|v| v.as_str()).unwrap_or("");
+            let abbreviation = tv
+                .get("abbreviation")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
             let display_name = tv.get("displayName").and_then(|v| v.as_str()).unwrap_or("");
             // Surface unknown team fields too.
             for (k, _) in tv.as_object().into_iter().flat_map(|m| m.iter()) {
@@ -348,7 +367,11 @@ fn parse_page_with_fallback(body: &serde_json::Value) -> (Vec<RawTransaction>, V
         if date.is_empty() && description.is_empty() {
             continue;
         }
-        rows.push(RawTransaction { date, description, team });
+        rows.push(RawTransaction {
+            date,
+            description,
+            team,
+        });
     }
     (rows, dropped)
 }
@@ -366,7 +389,10 @@ fn backoff_with_jitter(attempt: usize) -> Duration {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
         .subsec_nanos() as u64;
-    let jitter = (nanos.wrapping_mul(2_654_435_761).wrapping_add(attempt as u64)) % base_ms.max(1);
+    let jitter = (nanos
+        .wrapping_mul(2_654_435_761)
+        .wrapping_add(attempt as u64))
+        % base_ms.max(1);
     Duration::from_millis(base_ms + jitter)
 }
 
@@ -396,11 +422,14 @@ mod tests {
 
     #[test]
     fn l0_season_to_date_range_invalid() {
-        assert_eq!(season_to_date_range("2025"),       None);
-        assert_eq!(season_to_date_range("20252027"),   None,
-            "non-consecutive years must reject");
-        assert_eq!(season_to_date_range("abcdefgh"),   None);
-        assert_eq!(season_to_date_range(""),           None);
+        assert_eq!(season_to_date_range("2025"), None);
+        assert_eq!(
+            season_to_date_range("20252027"),
+            None,
+            "non-consecutive years must reject"
+        );
+        assert_eq!(season_to_date_range("abcdefgh"), None);
+        assert_eq!(season_to_date_range(""), None);
     }
 
     #[test]
@@ -463,10 +492,16 @@ mod tests {
         // Permissive path still extracts the row.
         assert_eq!(rows.len(), 1);
         // Drift fields surface at full path.
-        assert!(dropped.iter().any(|d| d.contains("newField")),
-            "expected 'newField' in dropped, got: {:?}", dropped);
-        assert!(dropped.iter().any(|d| d.contains("team.logos")),
-            "expected 'team.logos' in dropped, got: {:?}", dropped);
+        assert!(
+            dropped.iter().any(|d| d.contains("newField")),
+            "expected 'newField' in dropped, got: {:?}",
+            dropped
+        );
+        assert!(
+            dropped.iter().any(|d| d.contains("team.logos")),
+            "expected 'team.logos' in dropped, got: {:?}",
+            dropped
+        );
     }
 
     #[test]
@@ -479,8 +514,10 @@ mod tests {
         });
         let (rows, _) = parse_page_with_fallback(&body);
         assert_eq!(rows.len(), 1);
-        assert!(rows[0].team.is_none(),
-            "missing team field must produce team=None");
+        assert!(
+            rows[0].team.is_none(),
+            "missing team field must produce team=None"
+        );
     }
 
     #[test]

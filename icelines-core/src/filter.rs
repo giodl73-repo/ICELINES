@@ -67,10 +67,7 @@ impl PlayerFilter {
     where
         I: IntoIterator<Item = crate::stats_repository::PlayerView<'a>>,
     {
-        views
-            .into_iter()
-            .filter(|v| self.matches_view(v))
-            .collect()
+        views.into_iter().filter(|v| self.matches_view(v)).collect()
     }
 
     /// Field-by-field match against a single `PlayerView`. Pure boolean
@@ -243,7 +240,12 @@ impl PlayerFilter {
 
         // TOI minimum (seconds per game). Legacy field is f32; new is u32.
         if let Some(toi_min) = self.toi_min_sec {
-            let toi = v.stats.totals.toi_per_game_sec.map(|t| t as f32).unwrap_or(0.0);
+            let toi = v
+                .stats
+                .totals
+                .toi_per_game_sec
+                .map(|t| t as f32)
+                .unwrap_or(0.0);
             if toi < toi_min {
                 return false;
             }
@@ -298,10 +300,7 @@ impl PlayerFilter {
     /// for skater rows. Missing data (read returns None) → row fails
     /// the filter (intentional per spec — `hits-min 100` shouldn't
     /// surface pre-2005 rows where hits is unknown).
-    pub fn matches_stat_filters(
-        &self,
-        v: &crate::stats_repository::PlayerView<'_>,
-    ) -> bool {
+    pub fn matches_stat_filters(&self, v: &crate::stats_repository::PlayerView<'_>) -> bool {
         use crate::stats_catalog::{FilterOp, StatUnit};
         for f in &self.stat_filters {
             // DI-08 — skip non-applicable filters silently.
@@ -310,17 +309,18 @@ impl PlayerFilter {
             }
             let actual = match f.stat.read(v) {
                 Some(x) => x,
-                None    => return false,  // missing data ≠ matches
+                None => return false, // missing data ≠ matches
             };
             // Type-aware tolerance for Equals (L2-B1).
             let ok = match f.op {
-                FilterOp::Min    => actual >= f.value,
-                FilterOp::Max    => actual <= f.value,
+                FilterOp::Min => actual >= f.value,
+                FilterOp::Max => actual <= f.value,
                 FilterOp::Equals => match f.stat.unit() {
                     StatUnit::Count | StatUnit::Seconds => (actual - f.value).abs() < 0.5,
                     StatUnit::Per60 => (actual - f.value).abs() < 1e-3,
-                    StatUnit::Pct | StatUnit::Rate | StatUnit::Inverted
-                        => (actual - f.value).abs() < 1e-6,
+                    StatUnit::Pct | StatUnit::Rate | StatUnit::Inverted => {
+                        (actual - f.value).abs() < 1e-6
+                    }
                 },
             };
             if !ok {
@@ -349,10 +349,8 @@ impl PlayerFilter {
         // Index by (StatId, op-kind) to find dupes, preserving first-seen
         // order via `seen_order`.
         let mut seen_order: Vec<(crate::stats_catalog::StatId, FilterOp)> = Vec::new();
-        let mut tightest: std::collections::HashMap<
-            (crate::stats_catalog::StatId, FilterOp),
-            f64,
-        > = std::collections::HashMap::new();
+        let mut tightest: std::collections::HashMap<(crate::stats_catalog::StatId, FilterOp), f64> =
+            std::collections::HashMap::new();
 
         for f in &self.stat_filters {
             let key = (f.stat, f.op);
@@ -404,7 +402,8 @@ mod tests {
     fn l0_apply_views_filters_correctly() {
         let mut repo = StatsRepository::new();
         for (pid, team) in [(1u32, "EDM"), (2, "TOR"), (3, "EDM")] {
-            repo.upsert_identity(crate::fixtures::identity(pid).build()).unwrap();
+            repo.upsert_identity(crate::fixtures::identity(pid).build())
+                .unwrap();
             repo.upsert_stats(crate::fixtures::stats(pid, 20242025, team).build())
                 .unwrap();
         }
@@ -413,9 +412,10 @@ mod tests {
             teams: Some(vec!["EDM".to_string()]),
             ..PlayerFilter::new()
         };
-        let result = f.apply_views(
-            repo.skaters(crate::model::Season(20242025), crate::season_stats::SeasonType::Regular),
-        );
+        let result = f.apply_views(repo.skaters(
+            crate::model::Season(20242025),
+            crate::season_stats::SeasonType::Regular,
+        ));
         assert_eq!(result.len(), 2, "two EDM players match");
         assert!(result.iter().all(|v| v.team_display() == "EDM"));
     }
@@ -431,7 +431,8 @@ mod tests {
             (8480039, "EDM"),
             (8478427, "FLA"),
         ] {
-            repo.upsert_identity(crate::fixtures::identity(pid).build()).unwrap();
+            repo.upsert_identity(crate::fixtures::identity(pid).build())
+                .unwrap();
             repo.upsert_stats(crate::fixtures::stats(pid, 20242025, team).build())
                 .unwrap();
         }
@@ -529,8 +530,14 @@ mod tests {
         ];
         pf.normalize_stat_filters();
         assert_eq!(pf.stat_filters.len(), 2, "Min+Max → both kept");
-        assert!(pf.stat_filters.iter().any(|f| f.op == FilterOp::Min && f.value == 50.0));
-        assert!(pf.stat_filters.iter().any(|f| f.op == FilterOp::Max && f.value == 200.0));
+        assert!(pf
+            .stat_filters
+            .iter()
+            .any(|f| f.op == FilterOp::Min && f.value == 50.0));
+        assert!(pf
+            .stat_filters
+            .iter()
+            .any(|f| f.op == FilterOp::Max && f.value == 200.0));
     }
 
     /// Cross-stat filters preserved (Hits-min + Goals-max coexist).
@@ -538,7 +545,7 @@ mod tests {
     fn l0_lindsay_normalize_cross_stat_independent() {
         let mut pf = PlayerFilter::new();
         pf.stat_filters = vec![
-            StatFilter::new(StatId::Hits,  FilterOp::Min, 50.0).unwrap(),
+            StatFilter::new(StatId::Hits, FilterOp::Min, 50.0).unwrap(),
             StatFilter::new(StatId::Goals, FilterOp::Max, 30.0).unwrap(),
         ];
         pf.normalize_stat_filters();
@@ -566,13 +573,18 @@ mod tests {
     #[test]
     fn l0_lindsay_matches_skips_non_applicable_filters() {
         let (id, stats) = stat_catalog_variants::skater_modern();
-        let view = PlayerView { identity: &id, stats: &stats, contract: None };
+        let view = PlayerView {
+            identity: &id,
+            stats: &stats,
+            contract: None,
+        };
         let mut pf = PlayerFilter::new();
         // SavePct on a skater is non-applicable → silently dropped (DI-08).
-        pf.stat_filters = vec![
-            StatFilter::new(StatId::SavePct, FilterOp::Min, 0.91).unwrap(),
-        ];
-        assert!(pf.matches_stat_filters(&view), "non-applicable filter dropped silently");
+        pf.stat_filters = vec![StatFilter::new(StatId::SavePct, FilterOp::Min, 0.91).unwrap()];
+        assert!(
+            pf.matches_stat_filters(&view),
+            "non-applicable filter dropped silently"
+        );
     }
 
     /// `matches_stat_filters` — missing data fails the filter (per spec
@@ -580,14 +592,18 @@ mod tests {
     #[test]
     fn l0_lindsay_matches_missing_data_fails_filter() {
         let (id, stats) = stat_catalog_variants::skater_pre_2005();
-        let view = PlayerView { identity: &id, stats: &stats, contract: None };
+        let view = PlayerView {
+            identity: &id,
+            stats: &stats,
+            contract: None,
+        };
         let mut pf = PlayerFilter::new();
         // Hits is era-gated for pre-2005 → read returns None → fail.
-        pf.stat_filters = vec![
-            StatFilter::new(StatId::Hits, FilterOp::Min, 50.0).unwrap(),
-        ];
-        assert!(!pf.matches_stat_filters(&view),
-            "pre-2005 hits=None should fail the filter");
+        pf.stat_filters = vec![StatFilter::new(StatId::Hits, FilterOp::Min, 50.0).unwrap()];
+        assert!(
+            !pf.matches_stat_filters(&view),
+            "pre-2005 hits=None should fail the filter"
+        );
     }
 
     /// `matches_stat_filters` — happy path: skater_modern has 30 hits
@@ -595,17 +611,17 @@ mod tests {
     #[test]
     fn l0_lindsay_matches_happy_path() {
         let (id, stats) = stat_catalog_variants::skater_modern();
-        let view = PlayerView { identity: &id, stats: &stats, contract: None };
+        let view = PlayerView {
+            identity: &id,
+            stats: &stats,
+            contract: None,
+        };
 
         let mut pf = PlayerFilter::new();
-        pf.stat_filters = vec![
-            StatFilter::new(StatId::Hits, FilterOp::Min, 20.0).unwrap(),
-        ];
+        pf.stat_filters = vec![StatFilter::new(StatId::Hits, FilterOp::Min, 20.0).unwrap()];
         assert!(pf.matches_stat_filters(&view), "30 hits >= 20 must pass");
 
-        pf.stat_filters = vec![
-            StatFilter::new(StatId::Hits, FilterOp::Min, 50.0).unwrap(),
-        ];
+        pf.stat_filters = vec![StatFilter::new(StatId::Hits, FilterOp::Min, 50.0).unwrap()];
         assert!(!pf.matches_stat_filters(&view), "30 hits < 50 must fail");
     }
 
@@ -614,19 +630,22 @@ mod tests {
     #[test]
     fn l0_lindsay_matches_equals_unit_aware_tolerance() {
         let (id, stats) = stat_catalog_variants::skater_modern();
-        let view = PlayerView { identity: &id, stats: &stats, contract: None };
+        let view = PlayerView {
+            identity: &id,
+            stats: &stats,
+            contract: None,
+        };
 
         // Count (Goals=50): 50.4 should match (< 0.5 tolerance).
         let mut pf = PlayerFilter::new();
-        pf.stat_filters = vec![
-            StatFilter::new(StatId::Goals, FilterOp::Equals, 50.4).unwrap(),
-        ];
-        assert!(pf.matches_stat_filters(&view), "Goals=50 within 0.5 of 50.4");
+        pf.stat_filters = vec![StatFilter::new(StatId::Goals, FilterOp::Equals, 50.4).unwrap()];
+        assert!(
+            pf.matches_stat_filters(&view),
+            "Goals=50 within 0.5 of 50.4"
+        );
 
         // Goals=50, asking == 51.0 — outside Count tolerance.
-        pf.stat_filters = vec![
-            StatFilter::new(StatId::Goals, FilterOp::Equals, 51.0).unwrap(),
-        ];
+        pf.stat_filters = vec![StatFilter::new(StatId::Goals, FilterOp::Equals, 51.0).unwrap()];
         assert!(!pf.matches_stat_filters(&view), "Goals=50 != 51");
     }
 }

@@ -169,8 +169,8 @@ fn l1_cache_hit_skips_stale() {
 fn l1_historical_playoffs_19931994_loads_via_bundled_path() {
     // Full chain: load bundled JSON → convert to PlayoffBracket → verify fields
     // that the TUI relies on. Proves no-network historical bracket support.
-    let bundle = icelines_fetch::bundled::load_playoffs("19931994")
-        .expect("19931994 must be bundled");
+    let bundle =
+        icelines_fetch::bundled::load_playoffs("19931994").expect("19931994 must be bundled");
     assert_eq!(bundle.season, "19931994");
     assert_eq!(bundle.champion.as_deref(), Some("NYR"));
 

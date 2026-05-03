@@ -1,5 +1,6 @@
 //! TUI screens: Tonight/Scores, Projections, Groups, Fetch+Install, Schedule, Playoffs, Admin.
 
+use crate::tui::app::App;
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -7,7 +8,6 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, Paragraph},
     Frame,
 };
-use crate::tui::app::App;
 
 // ── Scores / Tonight ─────────────────────────────────────────────────────────
 
@@ -27,8 +27,10 @@ pub fn render_tonight(f: &mut Frame, app: &App, area: Rect) {
     let updated = scores_updated_indicator(app);
 
     let title = match &state {
-        TonightState::Loading  => format!(" Scores · {date_label} · fetching…{updated} "),
-        TonightState::Error(_) => format!(" Scores · {date_label} · fetch failed · r:retry{updated} "),
+        TonightState::Loading => format!(" Scores · {date_label} · fetching…{updated} "),
+        TonightState::Error(_) => {
+            format!(" Scores · {date_label} · fetch failed · r:retry{updated} ")
+        }
         _ => format!(" Scores · {date_label} ·  ←→:date  d:jump  t:today  Enter:detail{updated} "),
     };
 
@@ -40,26 +42,35 @@ pub fn render_tonight(f: &mut Frame, app: &App, area: Rect) {
 
     match state {
         TonightState::Idle => {
-            f.render_widget(Paragraph::new(vec![
-                Line::from(""),
-                Line::styled("  Loading schedule…", dim),
-            ]), inner);
+            f.render_widget(
+                Paragraph::new(vec![
+                    Line::from(""),
+                    Line::styled("  Loading schedule…", dim),
+                ]),
+                inner,
+            );
         }
         TonightState::Loading => {
-            f.render_widget(Paragraph::new(vec![
-                Line::from(""),
-                Line::styled("  Fetching NHL schedule…", Style::default().fg(Color::Cyan)),
-            ]), inner);
+            f.render_widget(
+                Paragraph::new(vec![
+                    Line::from(""),
+                    Line::styled("  Fetching NHL schedule…", Style::default().fg(Color::Cyan)),
+                ]),
+                inner,
+            );
         }
         TonightState::Error(e) => {
-            f.render_widget(Paragraph::new(vec![
-                Line::from(""),
-                Line::styled(format!("  Error: {e}"), Style::default().fg(Color::Red)),
-                Line::from(""),
-                Line::styled("  Press r to retry.", dim),
-                Line::from(""),
-                Line::styled("  Or use the CLI: icelines tonight", dim),
-            ]), inner);
+            f.render_widget(
+                Paragraph::new(vec![
+                    Line::from(""),
+                    Line::styled(format!("  Error: {e}"), Style::default().fg(Color::Red)),
+                    Line::from(""),
+                    Line::styled("  Press r to retry.", dim),
+                    Line::from(""),
+                    Line::styled("  Or use the CLI: icelines tonight", dim),
+                ]),
+                inner,
+            );
         }
         TonightState::Loaded(games) => {
             render_scores_list(f, app, inner, &games);
@@ -72,7 +83,9 @@ pub fn render_tonight(f: &mut Frame, app: &App, area: Rect) {
 }
 
 fn render_scores_date_picker(f: &mut Frame, app: &App, area: Rect) {
-    let block = Block::default().borders(Borders::ALL).title(" Go to date — Enter applies, Esc cancels ");
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .title(" Go to date — Enter applies, Esc cancels ");
     let inner = block.inner(area);
     f.render_widget(block, area);
 
@@ -92,9 +105,14 @@ fn render_scores_date_picker(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(Paragraph::new(prompt), inner);
 }
 
-fn render_scores_list(f: &mut Frame, app: &App, area: Rect, games: &[icelines_fetch::nhl_api::ScheduledGame]) {
+fn render_scores_list(
+    f: &mut Frame,
+    app: &App,
+    area: Rect,
+    games: &[icelines_fetch::nhl_api::ScheduledGame],
+) {
     let date_label = scores_date_label(&app.scores_date);
-    let dim_style  = Style::default().fg(Color::DarkGray);
+    let dim_style = Style::default().fg(Color::DarkGray);
 
     // The NHL `/v1/schedule/now` endpoint returns the whole "gameWeek"
     // (up to 7 days) — so we filter games to the user's selected date.
@@ -104,13 +122,24 @@ fn render_scores_list(f: &mut Frame, app: &App, area: Rect, games: &[icelines_fe
     // can use either depending on the game's time. Accept BOTH local
     // and UTC "today" so the user always sees tonight's games.
     let target_dates: Vec<String> = if app.scores_date.is_empty() {
-        let local = chrono::Local::now().date_naive().format("%Y-%m-%d").to_string();
-        let utc   = chrono::Utc::now().date_naive().format("%Y-%m-%d").to_string();
-        if local == utc { vec![local] } else { vec![local, utc] }
+        let local = chrono::Local::now()
+            .date_naive()
+            .format("%Y-%m-%d")
+            .to_string();
+        let utc = chrono::Utc::now()
+            .date_naive()
+            .format("%Y-%m-%d")
+            .to_string();
+        if local == utc {
+            vec![local]
+        } else {
+            vec![local, utc]
+        }
     } else {
         vec![app.scores_date.clone()]
     };
-    let filtered: Vec<&icelines_fetch::nhl_api::ScheduledGame> = games.iter()
+    let filtered: Vec<&icelines_fetch::nhl_api::ScheduledGame> = games
+        .iter()
         .filter(|g| target_dates.iter().any(|d| *d == g.date))
         .collect();
 
@@ -120,39 +149,51 @@ fn render_scores_list(f: &mut Frame, app: &App, area: Rect, games: &[icelines_fe
         // navigation mismatch. Surface the first available date so the
         // user can hit ←/→ to find it instead of staring at "no games".
         let hint = if !games.is_empty() && app.scores_date.is_empty() {
-            let earliest = games.iter()
+            let earliest = games
+                .iter()
                 .map(|g| g.date.as_str())
                 .filter(|d| !d.is_empty())
                 .min()
                 .unwrap_or("");
-            format!("  Schedule has {} game(s) starting {} — press → to view.",
-                games.len(), earliest)
+            format!(
+                "  Schedule has {} game(s) starting {} — press → to view.",
+                games.len(),
+                earliest
+            )
         } else if app.scores_date.is_empty() {
             "  No games scheduled today.".to_owned()
         } else {
             format!("  No games scheduled for {date_label}.")
         };
-        f.render_widget(Paragraph::new(vec![
-            Line::from(""),
-            Line::styled(hint, dim_style),
-            Line::from(""),
-            Line::styled("  ←/→ navigate days  ·  d jump to date  ·  Esc back", dim_style),
-        ]), area);
+        f.render_widget(
+            Paragraph::new(vec![
+                Line::from(""),
+                Line::styled(hint, dim_style),
+                Line::from(""),
+                Line::styled(
+                    "  ←/→ navigate days  ·  d jump to date  ·  Esc back",
+                    dim_style,
+                ),
+            ]),
+            area,
+        );
         return;
     }
 
     // Detect if any game is a playoff game
     let has_playoffs = filtered.iter().any(|g| g.is_playoff());
-    let has_regular  = filtered.iter().any(|g| !g.is_playoff());
+    let has_regular = filtered.iter().any(|g| !g.is_playoff());
 
     let section_label = match (has_playoffs, has_regular) {
-        (true,  false) => "  PLAYOFFS",
-        (false, true)  => "  REGULAR SEASON",
-        _              => "  TONIGHT",
+        (true, false) => "  PLAYOFFS",
+        (false, true) => "  REGULAR SEASON",
+        _ => "  TONIGHT",
     };
 
-    let dim   = Style::default().fg(Color::DarkGray);
-    let gold  = Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD);
+    let dim = Style::default().fg(Color::DarkGray);
+    let gold = Style::default()
+        .fg(Color::Yellow)
+        .add_modifier(Modifier::BOLD);
 
     let mut items: Vec<ratatui::widgets::ListItem> = vec![
         ratatui::widgets::ListItem::new(Line::styled(section_label, gold)),
@@ -161,14 +202,16 @@ fn render_scores_list(f: &mut Frame, app: &App, area: Rect, games: &[icelines_fe
 
     use ratatui::text::Span;
     for (i, game) in filtered.iter().enumerate() {
-        let utc  = game.start_time_utc.get(11..16).unwrap_or("?");
-        let et   = fmt_et(utc);
+        let utc = game.start_time_utc.get(11..16).unwrap_or("?");
+        let et = fmt_et(utc);
         let selected = i == app.scores_selected;
 
         // The series tag is the game number ("Game 5") for playoff games.
         // For regular-season games it's empty.
         let series_tag = if game.is_playoff() {
-            game.series_game.clone().unwrap_or_else(|| "Playoffs".to_owned())
+            game.series_game
+                .clone()
+                .unwrap_or_else(|| "Playoffs".to_owned())
         } else {
             String::new()
         };
@@ -179,55 +222,82 @@ fn render_scores_list(f: &mut Frame, app: &App, area: Rect, games: &[icelines_fe
         //   greyed so the numbers carry the eye.
         // Future games: time-of-day in cyan.
         let row_base = if selected {
-            Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::Cyan)
+                .add_modifier(Modifier::BOLD)
         } else if game.is_playoff() {
             Style::default().fg(Color::White)
         } else {
             Style::default().fg(Color::DarkGray)
         };
         let label_dim = if selected { row_base } else { dim };
-        let accent    = if selected { row_base } else {
-            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)
+        let accent = if selected {
+            row_base
+        } else {
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD)
         };
 
         let mut spans: Vec<Span<'static>> = Vec::new();
         // Indent + matchup column ("  MTL @ TBL  ").
         spans.push(Span::styled("  ".to_owned(), label_dim));
         spans.push(Span::styled(format!("{:>4} ", game.away_abbrev), label_dim));
-        spans.push(Span::styled("@ ".to_owned(), if selected { row_base } else { dim }));
+        spans.push(Span::styled(
+            "@ ".to_owned(),
+            if selected { row_base } else { dim },
+        ));
         spans.push(Span::styled(format!("{:<4}", game.home_abbrev), label_dim));
         // Series tag (game number) — distinct, dim.
         if !series_tag.is_empty() {
             spans.push(Span::styled(format!("  {series_tag}"), label_dim));
         }
         // Padding to push the score block to a fixed right-side column.
-        let prefix_width = 2 + 5 + 2 + 4 + if series_tag.is_empty() { 0 } else { 2 + series_tag.chars().count() };
-        let target_col   = 36usize;  // score column starts here, regardless of prefix
+        let prefix_width = 2
+            + 5
+            + 2
+            + 4
+            + if series_tag.is_empty() {
+                0
+            } else {
+                2 + series_tag.chars().count()
+            };
+        let target_col = 36usize; // score column starts here, regardless of prefix
         let pad = target_col.saturating_sub(prefix_width);
-        if pad > 0 { spans.push(Span::raw(" ".repeat(pad))); }
+        if pad > 0 {
+            spans.push(Span::raw(" ".repeat(pad)));
+        }
 
         // Score / time block.
         if game.is_final() || game.is_live() {
             let aw = game.away_score.unwrap_or(0);
             let hw = game.home_score.unwrap_or(0);
             let (away_style, home_style) = match aw.cmp(&hw) {
-                std::cmp::Ordering::Greater => (accent,    label_dim),
-                std::cmp::Ordering::Less    => (label_dim, accent),
-                std::cmp::Ordering::Equal   => (label_dim, label_dim),
+                std::cmp::Ordering::Greater => (accent, label_dim),
+                std::cmp::Ordering::Less => (label_dim, accent),
+                std::cmp::Ordering::Equal => (label_dim, label_dim),
             };
             spans.push(Span::styled(format!("{aw:>2}"), away_style));
-            spans.push(Span::styled(" – ".to_owned(),
-                if selected { row_base } else { dim }));
+            spans.push(Span::styled(
+                " – ".to_owned(),
+                if selected { row_base } else { dim },
+            ));
             spans.push(Span::styled(format!("{hw}"), home_style));
             // Final / LIVE tag at the far right.
-            let tag = if game.is_live() { "LIVE" }
-                      else { match game.last_period.as_deref() {
-                          Some("OT") => "Final/OT",
-                          Some("SO") => "Final/SO",
-                          _          => "Final",
-                      }};
+            let tag = if game.is_live() {
+                "LIVE"
+            } else {
+                match game.last_period.as_deref() {
+                    Some("OT") => "Final/OT",
+                    Some("SO") => "Final/SO",
+                    _ => "Final",
+                }
+            };
             let tag_style = if game.is_live() {
-                Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD)
             } else {
                 label_dim
             };
@@ -242,15 +312,18 @@ fn render_scores_list(f: &mut Frame, app: &App, area: Rect, games: &[icelines_fe
         if game.is_playoff() {
             if let (Some(aw), Some(hw)) = (game.away_wins, game.home_wins) {
                 let ctx = match aw.cmp(&hw) {
-                    std::cmp::Ordering::Greater =>
-                        format!("         {} leads series {}-{}", game.away_abbrev, aw, hw),
-                    std::cmp::Ordering::Less =>
-                        format!("         {} leads series {}-{}", game.home_abbrev, hw, aw),
-                    std::cmp::Ordering::Equal =>
-                        format!("         Series tied {}-{}", aw, hw),
+                    std::cmp::Ordering::Greater => {
+                        format!("         {} leads series {}-{}", game.away_abbrev, aw, hw)
+                    }
+                    std::cmp::Ordering::Less => {
+                        format!("         {} leads series {}-{}", game.home_abbrev, hw, aw)
+                    }
+                    std::cmp::Ordering::Equal => format!("         Series tied {}-{}", aw, hw),
                 };
                 let ctx_style = if selected { row_base } else { dim };
-                items.push(ratatui::widgets::ListItem::new(Line::styled(ctx, ctx_style)));
+                items.push(ratatui::widgets::ListItem::new(Line::styled(
+                    ctx, ctx_style,
+                )));
             }
         }
     }
@@ -269,7 +342,8 @@ fn render_scores_list(f: &mut Frame, app: &App, area: Rect, games: &[icelines_fe
         dim,
     )));
     items.push(ratatui::widgets::ListItem::new(Line::styled(
-        "  Times shown in ET  ·  data from NHL public API", dim
+        "  Times shown in ET  ·  data from NHL public API",
+        dim,
     )));
 
     f.render_widget(ratatui::widgets::List::new(items), area);
@@ -281,7 +355,7 @@ fn render_scores_list(f: &mut Frame, app: &App, area: Rect, games: &[icelines_fe
 fn scores_updated_indicator(app: &App) -> String {
     let last = match app.last_auto_refresh {
         Some(t) => t,
-        None    => return String::new(),
+        None => return String::new(),
     };
     let elapsed = std::time::Instant::now().duration_since(last).as_secs();
     format!("  ·  Updated {}s ago", elapsed)
@@ -308,7 +382,10 @@ fn fmt_et(utc_hhmm: &str) -> String {
         if let (Ok(h), Ok(m)) = (h.parse::<u32>(), m.parse::<u32>()) {
             let et_h = (h + 24 - 4) % 24;
             let period = if et_h < 12 { "AM" } else { "PM" };
-            let display = match et_h % 12 { 0 => 12, n => n };
+            let display = match et_h % 12 {
+                0 => 12,
+                n => n,
+            };
             return format!("{display}:{m:02} {period}");
         }
     }
@@ -339,10 +416,7 @@ pub fn render_projections(f: &mut Frame, app: &App, area: Rect) {
         return;
     }
 
-    let mut sorted: Vec<_> = views
-        .iter()
-        .filter(|v| v.pace_82().is_some())
-        .collect();
+    let mut sorted: Vec<_> = views.iter().filter(|v| v.pace_82().is_some()).collect();
     sorted.sort_by(|a, b| {
         let sa = a.pace_82().unwrap_or(f64::NEG_INFINITY);
         let sb = b.pace_82().unwrap_or(f64::NEG_INFINITY);
@@ -352,12 +426,18 @@ pub fn render_projections(f: &mut Frame, app: &App, area: Rect) {
     });
 
     let visible = inner.height.saturating_sub(3) as usize;
-    let offset  = app.selected.saturating_sub(visible / 2).min(sorted.len().saturating_sub(visible));
+    let offset = app
+        .selected
+        .saturating_sub(visible / 2)
+        .min(sorted.len().saturating_sub(visible));
 
     let dim = Style::default().fg(Color::DarkGray);
     let mut lines = vec![
         Line::styled(
-            format!("  {:<4} {:<22} {:<5} {:<4} {:>6}  {:>7}  {:>5}", "Rank","Player","Team","Pos","PPG","Pts/82","GP"),
+            format!(
+                "  {:<4} {:<22} {:<5} {:<4} {:>6}  {:>7}  {:>5}",
+                "Rank", "Player", "Team", "Pos", "PPG", "Pts/82", "GP"
+            ),
             dim,
         ),
         Line::styled(format!("  {}", "─".repeat(58)), dim),
@@ -365,14 +445,25 @@ pub fn render_projections(f: &mut Frame, app: &App, area: Rect) {
 
     for (i, v) in sorted.iter().skip(offset).take(visible).enumerate() {
         let global_rank = offset + i + 1;
-        let p82  = v.pace_82();
-        let ppg  = p82.map(|p| format!("{:.3}", p / 82.0)).unwrap_or_else(|| "—".to_owned());
-        let proj = p82.map(|p| format!("{:.1}", p)).unwrap_or_else(|| "—".to_owned());
-        let gp   = if v.gp() > 0 { v.gp().to_string() } else { "—".to_owned() };
+        let p82 = v.pace_82();
+        let ppg = p82
+            .map(|p| format!("{:.3}", p / 82.0))
+            .unwrap_or_else(|| "—".to_owned());
+        let proj = p82
+            .map(|p| format!("{:.1}", p))
+            .unwrap_or_else(|| "—".to_owned());
+        let gp = if v.gp() > 0 {
+            v.gp().to_string()
+        } else {
+            "—".to_owned()
+        };
         let name = v.full_name().chars().take(22).collect::<String>();
 
         let style = if offset + i == app.selected {
-            Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::Cyan)
+                .add_modifier(Modifier::BOLD)
         } else if global_rank <= 5 {
             Style::default().fg(Color::Green)
         } else if global_rank <= 20 {
@@ -382,8 +473,16 @@ pub fn render_projections(f: &mut Frame, app: &App, area: Rect) {
         };
 
         lines.push(Line::styled(
-            format!("  {:<4} {:<22} {:<5} {:<4} {:>6}  {:>7}  {:>5}",
-                global_rank, name, v.team_display(), v.position().abbreviation(), ppg, proj, gp),
+            format!(
+                "  {:<4} {:<22} {:<5} {:<4} {:>6}  {:>7}  {:>5}",
+                global_rank,
+                name,
+                v.team_display(),
+                v.position().abbreviation(),
+                ppg,
+                proj,
+                gp
+            ),
             style,
         ));
     }
@@ -410,7 +509,9 @@ pub fn render_groups(f: &mut Frame, app: &App, area: Rect) {
 
     if groups.is_empty() {
         let dim = Style::default().fg(Color::DarkGray);
-        let cmd = Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD);
+        let cmd = Style::default()
+            .fg(Color::Cyan)
+            .add_modifier(Modifier::BOLD);
         let lines = vec![
             Line::from(""),
             Line::from("  No groups yet. Create one in your terminal:"),
@@ -430,12 +531,18 @@ pub fn render_groups(f: &mut Frame, app: &App, area: Rect) {
             format!("  {:<24} {:>7}  {}", "Group", "Members", "Description"),
             Style::default().fg(Color::DarkGray),
         ),
-        Line::styled(format!("  {}", "─".repeat(60)), Style::default().fg(Color::DarkGray)),
+        Line::styled(
+            format!("  {}", "─".repeat(60)),
+            Style::default().fg(Color::DarkGray),
+        ),
     ];
 
     for (i, g) in groups.iter().enumerate() {
         let style = if i == app.selected {
-            Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::Cyan)
+                .add_modifier(Modifier::BOLD)
         } else {
             Style::default()
         };
@@ -484,7 +591,13 @@ pub fn render_group_members(f: &mut Frame, app: &App, area: Rect, group_name: &s
 
     let dim = Style::default().fg(Color::DarkGray);
     let mut lines = vec![
-        Line::styled(format!("  {:<24} {:<5} {:<4} {:>8}", "Player", "Team", "Pos", "Pts/82"), dim),
+        Line::styled(
+            format!(
+                "  {:<24} {:<5} {:<4} {:>8}",
+                "Player", "Team", "Pos", "Pts/82"
+            ),
+            dim,
+        ),
         Line::styled(format!("  {}", "─".repeat(46)), dim),
     ];
 
@@ -497,18 +610,27 @@ pub fn render_group_members(f: &mut Frame, app: &App, area: Rect, group_name: &s
             .iter()
             .find(|v| v.identity.name_normalized.contains(norm.as_str()));
         let style = if i == app.selected {
-            Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::Cyan)
+                .add_modifier(Modifier::BOLD)
         } else {
             Style::default()
         };
         let row = match player {
             Some(v) => {
-                let proj = v.pace_82()
+                let proj = v
+                    .pace_82()
                     .map(|p| format!("{:.1}", p))
                     .unwrap_or_else(|| "—".to_owned());
                 let name = v.full_name().chars().take(24).collect::<String>();
-                format!("  {:<24} {:<5} {:<4} {:>8}",
-                    name, v.team_display(), v.position().abbreviation(), proj)
+                format!(
+                    "  {:<24} {:<5} {:<4} {:>8}",
+                    name,
+                    v.team_display(),
+                    v.position().abbreviation(),
+                    proj
+                )
             }
             None => format!("  {}  (not in current data)", norm),
         };
@@ -525,87 +647,87 @@ pub fn render_group_members(f: &mut Frame, app: &App, area: Rect, group_name: &s
 /// Season list for the picker overlay: (season_id, display_label, is_lockout).
 /// Includes the 2004-05 lockout as an unselectable entry.
 pub const PICKER_SEASONS: &[(&str, &str, bool)] = &[
-    ("20252026","2025-26  (current)",               false),
-    ("20242025","2024-25",                          false),
-    ("20232024","2023-24",                          false),
-    ("20222023","2022-23",                          false),
-    ("20212022","2021-22",                          false),
-    ("20202021","2020-21  (COVID bubble)",          false),
-    ("20192020","2019-20",                          false),
-    ("20182019","2018-19",                          false),
-    ("20172018","2017-18",                          false),
-    ("20162017","2016-17",                          false),
-    ("20152016","2015-16  (McDavid rookie)",        false),
-    ("20142015","2014-15",                          false),
-    ("20132014","2013-14",                          false),
-    ("20122013","2012-13  (lockout-shortened)",     false),
-    ("20112012","2011-12",                          false),
-    ("20102011","2010-11",                          false),
-    ("20092010","2009-10",                          false),
-    ("20082009","2008-09",                          false),
-    ("20072008","2007-08",                          false),
-    ("20062007","2006-07",                          false),
-    ("20052006","2005-06  (Ovechkin/Crosby)",       false),
-    ("20042005","✗ 2004-05  LOCKOUT — no season",   true),
-    ("20032004","2003-04",                          false),
-    ("20022003","2002-03",                          false),
-    ("20012002","2001-02",                          false),
-    ("20002001","2000-01",                          false),
-    ("19992000","1999-2000",                        false),
-    ("19981999","1998-99",                          false),
-    ("19971998","1997-98",                          false),
-    ("19961997","1996-97",                          false),
-    ("19951996","1995-96",                          false),
-    ("19941995","1994-95  (lockout-shortened)",     false),
-    ("19931994","1993-94",                          false),
-    ("19921993","1992-93",                          false),
-    ("19911992","1991-92",                          false),
-    ("19901991","1990-91",                          false),
-    ("19891990","1989-90",                          false),
-    ("19881989","1988-89",                          false),
-    ("19871988","1987-88  (Gretzky to LA)",         false),
+    ("20252026", "2025-26  (current)", false),
+    ("20242025", "2024-25", false),
+    ("20232024", "2023-24", false),
+    ("20222023", "2022-23", false),
+    ("20212022", "2021-22", false),
+    ("20202021", "2020-21  (COVID bubble)", false),
+    ("20192020", "2019-20", false),
+    ("20182019", "2018-19", false),
+    ("20172018", "2017-18", false),
+    ("20162017", "2016-17", false),
+    ("20152016", "2015-16  (McDavid rookie)", false),
+    ("20142015", "2014-15", false),
+    ("20132014", "2013-14", false),
+    ("20122013", "2012-13  (lockout-shortened)", false),
+    ("20112012", "2011-12", false),
+    ("20102011", "2010-11", false),
+    ("20092010", "2009-10", false),
+    ("20082009", "2008-09", false),
+    ("20072008", "2007-08", false),
+    ("20062007", "2006-07", false),
+    ("20052006", "2005-06  (Ovechkin/Crosby)", false),
+    ("20042005", "✗ 2004-05  LOCKOUT — no season", true),
+    ("20032004", "2003-04", false),
+    ("20022003", "2002-03", false),
+    ("20012002", "2001-02", false),
+    ("20002001", "2000-01", false),
+    ("19992000", "1999-2000", false),
+    ("19981999", "1998-99", false),
+    ("19971998", "1997-98", false),
+    ("19961997", "1996-97", false),
+    ("19951996", "1995-96", false),
+    ("19941995", "1994-95  (lockout-shortened)", false),
+    ("19931994", "1993-94", false),
+    ("19921993", "1992-93", false),
+    ("19911992", "1991-92", false),
+    ("19901991", "1990-91", false),
+    ("19891990", "1989-90", false),
+    ("19881989", "1988-89", false),
+    ("19871988", "1987-88  (Gretzky to LA)", false),
 ];
 
 /// All 38 seasons newest-first (mirrors AVAILABLE_SEASONS in data.rs).
 pub const ALL_SEASONS: &[(&str, &str)] = &[
-    ("20252026","2025-26 Current"),
-    ("20242025","2024-25"),
-    ("20232024","2023-24"),
-    ("20222023","2022-23"),
-    ("20212022","2021-22"),
-    ("20202021","2020-21 (COVID bubble)"),
-    ("20192020","2019-20"),
-    ("20182019","2018-19"),
-    ("20172018","2017-18"),
-    ("20162017","2016-17"),
-    ("20152016","2015-16 (McDavid rookie)"),
-    ("20142015","2014-15"),
-    ("20132014","2013-14"),
-    ("20122013","2012-13 (lockout-shortened)"),
-    ("20112012","2011-12"),
-    ("20102011","2010-11"),
-    ("20092010","2009-10"),
-    ("20082009","2008-09"),
-    ("20072008","2007-08"),
-    ("20062007","2006-07"),
-    ("20052006","2005-06 (Ovechkin/Crosby rookies)"),
-    ("20032004","2003-04"),
-    ("20022003","2002-03"),
-    ("20012002","2001-02"),
-    ("20002001","2000-01"),
-    ("19992000","1999-2000"),
-    ("19981999","1998-99"),
-    ("19971998","1997-98"),
-    ("19961997","1996-97"),
-    ("19951996","1995-96"),
-    ("19941995","1994-95 (lockout-shortened)"),
-    ("19931994","1993-94"),
-    ("19921993","1992-93"),
-    ("19911992","1991-92"),
-    ("19901991","1990-91"),
-    ("19891990","1989-90"),
-    ("19881989","1988-89"),
-    ("19871988","1987-88 (Gretzky to LA)"),
+    ("20252026", "2025-26 Current"),
+    ("20242025", "2024-25"),
+    ("20232024", "2023-24"),
+    ("20222023", "2022-23"),
+    ("20212022", "2021-22"),
+    ("20202021", "2020-21 (COVID bubble)"),
+    ("20192020", "2019-20"),
+    ("20182019", "2018-19"),
+    ("20172018", "2017-18"),
+    ("20162017", "2016-17"),
+    ("20152016", "2015-16 (McDavid rookie)"),
+    ("20142015", "2014-15"),
+    ("20132014", "2013-14"),
+    ("20122013", "2012-13 (lockout-shortened)"),
+    ("20112012", "2011-12"),
+    ("20102011", "2010-11"),
+    ("20092010", "2009-10"),
+    ("20082009", "2008-09"),
+    ("20072008", "2007-08"),
+    ("20062007", "2006-07"),
+    ("20052006", "2005-06 (Ovechkin/Crosby rookies)"),
+    ("20032004", "2003-04"),
+    ("20022003", "2002-03"),
+    ("20012002", "2001-02"),
+    ("20002001", "2000-01"),
+    ("19992000", "1999-2000"),
+    ("19981999", "1998-99"),
+    ("19971998", "1997-98"),
+    ("19961997", "1996-97"),
+    ("19951996", "1995-96"),
+    ("19941995", "1994-95 (lockout-shortened)"),
+    ("19931994", "1993-94"),
+    ("19921993", "1992-93"),
+    ("19911992", "1991-92"),
+    ("19901991", "1990-91"),
+    ("19891990", "1989-90"),
+    ("19881989", "1988-89"),
+    ("19871988", "1987-88 (Gretzky to LA)"),
 ];
 
 fn season_installed(season: &str) -> bool {
@@ -654,26 +776,36 @@ pub fn render_fetch(f: &mut Frame, app: &App, area: Rect) {
         Line::styled(format!("  Data: {}", player_status), dim),
         Line::from(""),
         Line::styled("  icelines fetch all", cmd),
-        Line::styled("  → rosters + stats from NHL API (~5 min, run in terminal)", dim),
-        Line::styled("  icelines fetch realtime  |  icelines fetch money-puck", cmd),
+        Line::styled(
+            "  → rosters + stats from NHL API (~5 min, run in terminal)",
+            dim,
+        ),
+        Line::styled(
+            "  icelines fetch realtime  |  icelines fetch money-puck",
+            cmd,
+        ),
     ];
     f.render_widget(Paragraph::new(fetch_lines), fetch_inner);
 
     // ── Bottom: Season install list ──────────────────────────────────────────
     let install_title = match app.install_state.phase() {
         InstallPhase::Downloading(ref s) => format!(" Installing {}… ⠋ ", s),
-        InstallPhase::Done(ref s, kb)    => format!(" ✓ {} installed ({} KB) — ↑↓ for more · i to install ", s, kb),
-        InstallPhase::Error(_, _)        => " Install failed — see status bar ".to_owned(),
-        InstallPhase::Idle               => " Season History — ↑↓ select · i to install ".to_owned(),
+        InstallPhase::Done(ref s, kb) => format!(
+            " ✓ {} installed ({} KB) — ↑↓ for more · i to install ",
+            s, kb
+        ),
+        InstallPhase::Error(_, _) => " Install failed — see status bar ".to_owned(),
+        InstallPhase::Idle => " Season History — ↑↓ select · i to install ".to_owned(),
     };
-    let install_block = Block::default()
-        .borders(Borders::ALL)
-        .title(install_title);
+    let install_block = Block::default().borders(Borders::ALL).title(install_title);
     let install_inner = install_block.inner(chunks[1]);
     f.render_widget(install_block, chunks[1]);
 
     let visible = install_inner.height as usize;
-    let offset  = app.selected.saturating_sub(visible / 2).min(ALL_SEASONS.len().saturating_sub(visible));
+    let offset = app
+        .selected
+        .saturating_sub(visible / 2)
+        .min(ALL_SEASONS.len().saturating_sub(visible));
 
     let installing_id = match app.install_state.phase() {
         InstallPhase::Downloading(ref s) => Some(s.clone()),
@@ -684,16 +816,17 @@ pub fn render_fetch(f: &mut Frame, app: &App, area: Rect) {
         _ => None,
     };
 
-    let spinner_frames = ["⠋","⠙","⠹","⠸","⠼","⠴","⠦","⠧","⠇","⠏"];
+    let spinner_frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
     let spinner = spinner_frames[(app.tick / 2 % 10) as usize];
 
-    let items: Vec<ListItem> = ALL_SEASONS.iter()
+    let items: Vec<ListItem> = ALL_SEASONS
+        .iter()
         .enumerate()
         .skip(offset)
         .take(visible)
         .map(|(i, (season_id, label))| {
-            let installed = season_installed(season_id)
-                || just_done_id.as_deref() == Some(season_id);
+            let installed =
+                season_installed(season_id) || just_done_id.as_deref() == Some(season_id);
             let is_installing = installing_id.as_deref() == Some(season_id);
 
             let (marker, marker_style) = if is_installing {
@@ -705,7 +838,10 @@ pub fn render_fetch(f: &mut Frame, app: &App, area: Rect) {
             };
 
             let row_style = if i == app.selected {
-                Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Color::Black)
+                    .bg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD)
             } else if is_installing {
                 Style::default().fg(Color::Yellow)
             } else if installed {
@@ -723,7 +859,14 @@ pub fn render_fetch(f: &mut Frame, app: &App, area: Rect) {
             };
 
             let text = format!("  {} {:<10}  {}{}", marker, season_id, label, hint);
-            ListItem::new(Line::styled(text, if is_installing { marker_style } else { row_style }))
+            ListItem::new(Line::styled(
+                text,
+                if is_installing {
+                    marker_style
+                } else {
+                    row_style
+                },
+            ))
         })
         .collect();
 
@@ -736,11 +879,12 @@ pub fn render_season_picker(f: &mut Frame, app: &App, area: Rect) {
     use icelines_fetch::bundled::{is_installed, BUNDLED_SEASONS};
 
     let popup_h = (area.height * 70 / 100).min(44);
-    let popup_w = (area.width  * 50 / 100).min(52).max(44);
+    let popup_w = (area.width * 50 / 100).min(52).max(44);
     let popup = Rect::new(
-        area.x + (area.width  - popup_w) / 2,
+        area.x + (area.width - popup_w) / 2,
         area.y + (area.height - popup_h) / 2,
-        popup_w, popup_h,
+        popup_w,
+        popup_h,
     );
     f.render_widget(ratatui::widgets::Clear, popup);
 
@@ -752,23 +896,39 @@ pub fn render_season_picker(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(block, popup);
 
     let visible = inner.height as usize;
-    let total   = PICKER_SEASONS.len();
-    let offset  = app.picker_selected.saturating_sub(visible / 2).min(total.saturating_sub(visible));
+    let total = PICKER_SEASONS.len();
+    let offset = app
+        .picker_selected
+        .saturating_sub(visible / 2)
+        .min(total.saturating_sub(visible));
 
-    let items: Vec<ListItem> = PICKER_SEASONS.iter().enumerate()
-        .skip(offset).take(visible)
+    let items: Vec<ListItem> = PICKER_SEASONS
+        .iter()
+        .enumerate()
+        .skip(offset)
+        .take(visible)
         .map(|(i, (season_id, label, is_lockout))| {
-            let is_current  = *season_id == app.active_season.as_str();
-            let is_bundled  = BUNDLED_SEASONS.contains(season_id);
-            let installed   = is_bundled || is_installed(season_id);
-            let selected    = i == app.picker_selected;
+            let is_current = *season_id == app.active_season.as_str();
+            let is_bundled = BUNDLED_SEASONS.contains(season_id);
+            let installed = is_bundled || is_installed(season_id);
+            let selected = i == app.picker_selected;
 
-            let prefix = if is_current  { "▶ " }
-                         else if installed { "✓ " }
-                         else             { "  " };
+            let prefix = if is_current {
+                "▶ "
+            } else if installed {
+                "✓ "
+            } else {
+                "  "
+            };
 
             let (style, suffix) = if selected {
-                (Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD), "")
+                (
+                    Style::default()
+                        .fg(Color::Black)
+                        .bg(Color::Cyan)
+                        .add_modifier(Modifier::BOLD),
+                    "",
+                )
             } else if *is_lockout {
                 (Style::default().fg(Color::DarkGray), "")
             } else if !installed {
@@ -787,25 +947,31 @@ pub fn render_season_picker(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(List::new(items), inner);
 }
 
-
 // ── Admin overlay ─────────────────────────────────────────────────────────────
 
 pub fn render_admin(f: &mut Frame, app: &App, area: Rect) {
     use crate::tui::loader::InstallPhase;
 
-    let dim  = Style::default().fg(Color::DarkGray);
-    let cmd  = Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD);
-    let hi   = Style::default().fg(Color::White);
+    let dim = Style::default().fg(Color::DarkGray);
+    let cmd = Style::default()
+        .fg(Color::Yellow)
+        .add_modifier(Modifier::BOLD);
+    let hi = Style::default().fg(Color::White);
 
     let phase_line = match app.install_state.phase() {
-        InstallPhase::Idle =>
-            Line::styled("  No install in progress.", dim),
-        InstallPhase::Downloading(ref s) =>
-            Line::styled(format!("  Installing {s}…"), Style::default().fg(Color::Cyan)),
-        InstallPhase::Done(ref s, kb) =>
-            Line::styled(format!("  ✓ {s} installed ({kb} KB)"), Style::default().fg(Color::Green)),
-        InstallPhase::Error(_, ref msg) =>
-            Line::styled(format!("  ✗ Failed: {msg}"), Style::default().fg(Color::Red)),
+        InstallPhase::Idle => Line::styled("  No install in progress.", dim),
+        InstallPhase::Downloading(ref s) => Line::styled(
+            format!("  Installing {s}…"),
+            Style::default().fg(Color::Cyan),
+        ),
+        InstallPhase::Done(ref s, kb) => Line::styled(
+            format!("  ✓ {s} installed ({kb} KB)"),
+            Style::default().fg(Color::Green),
+        ),
+        InstallPhase::Error(_, ref msg) => Line::styled(
+            format!("  ✗ Failed: {msg}"),
+            Style::default().fg(Color::Red),
+        ),
     };
 
     let lines = vec![
@@ -855,7 +1021,8 @@ mod tests {
         term.draw(|f| {
             let area = f.area();
             super::render_admin(f, app, area);
-        }).unwrap();
+        })
+        .unwrap();
         buffer_text(term.backend().buffer())
     }
 
@@ -864,8 +1031,10 @@ mod tests {
         let app = App::new(false);
         // Default phase is Idle
         let text = render_admin_to_text(&app);
-        assert!(text.contains("No install in progress"),
-            "Idle phase must show 'No install in progress', got:\n{text}");
+        assert!(
+            text.contains("No install in progress"),
+            "Idle phase must show 'No install in progress', got:\n{text}"
+        );
         // Canonical CLI commands listed
         assert!(text.contains("icelines fetch all"), "fetch hint missing");
         assert!(text.contains("icelines data list"), "list hint missing");
@@ -874,10 +1043,13 @@ mod tests {
     #[test]
     fn l0_render_admin_downloading_phase_shows_spinner() {
         let app = App::new(false);
-        app.install_state.force_phase(InstallPhase::Downloading("19931994".to_owned()));
+        app.install_state
+            .force_phase(InstallPhase::Downloading("19931994".to_owned()));
         let text = render_admin_to_text(&app);
-        assert!(text.contains("Installing 19931994"),
-            "Downloading phase must show season being installed, got:\n{text}");
+        assert!(
+            text.contains("Installing 19931994"),
+            "Downloading phase must show season being installed, got:\n{text}"
+        );
     }
 
     #[test]
@@ -890,19 +1062,26 @@ mod tests {
         let text = render_admin_to_text(&app);
         // TestBackend captures characters but not ANSI colors. Verify the
         // textual content of the error branch reaches the buffer.
-        assert!(text.contains("Failed"),
-            "Error phase must show 'Failed:' prefix, got:\n{text}");
-        assert!(text.contains("connection refused"),
-            "Error phase must include the error message, got:\n{text}");
+        assert!(
+            text.contains("Failed"),
+            "Error phase must show 'Failed:' prefix, got:\n{text}"
+        );
+        assert!(
+            text.contains("connection refused"),
+            "Error phase must include the error message, got:\n{text}"
+        );
     }
 
     #[test]
     fn l0_render_admin_done_phase_shows_check_and_size() {
         let app = App::new(false);
-        app.install_state.force_phase(InstallPhase::Done("19931994".to_owned(), 4321));
+        app.install_state
+            .force_phase(InstallPhase::Done("19931994".to_owned(), 4321));
         let text = render_admin_to_text(&app);
-        assert!(text.contains("19931994") && text.contains("4321"),
-            "Done phase must show season + KB, got:\n{text}");
+        assert!(
+            text.contains("19931994") && text.contains("4321"),
+            "Done phase must show season + KB, got:\n{text}"
+        );
     }
 
     // ── Scores auto-refresh indicator (Phase 8b) ─────────────────────────────
@@ -913,7 +1092,8 @@ mod tests {
         term.draw(|f| {
             let area = f.area();
             super::render_tonight(f, app, area);
-        }).unwrap();
+        })
+        .unwrap();
         buffer_text(term.backend().buffer())
     }
 
@@ -941,7 +1121,10 @@ mod tests {
         // Past dates leave last_auto_refresh as None — no indicator.
         app.last_auto_refresh = None;
         let text = render_tonight_to_text(&app);
-        assert!(!text.contains("Updated "), "indicator must not render on past dates");
+        assert!(
+            !text.contains("Updated "),
+            "indicator must not render on past dates"
+        );
     }
 
     // ── Scores tab date filtering (regression: 2026-04-29) ──────────────────
@@ -951,8 +1134,8 @@ mod tests {
     // as if they were all tonight's. These tests pin the per-date filter
     // so the regression doesn't come back.
 
-    use icelines_fetch::nhl_api::ScheduledGame;
     use crate::tui::tonight::TonightState;
+    use icelines_fetch::nhl_api::ScheduledGame;
 
     fn fixture_game(date: &str, away: &str, home: &str, hour_utc: u8) -> ScheduledGame {
         ScheduledGame {
@@ -960,9 +1143,9 @@ mod tests {
             date: date.to_owned(),
             game_type: 3,
             away_abbrev: away.to_owned(),
-            away_name:   format!("Away {away}"),
+            away_name: format!("Away {away}"),
             home_abbrev: home.to_owned(),
-            home_name:   format!("Home {home}"),
+            home_name: format!("Home {home}"),
             start_time_utc: format!("{date}T{hour_utc:02}:00:00Z"),
             away_score: None,
             home_score: None,
@@ -978,7 +1161,9 @@ mod tests {
         let mut app = App::new(false);
         app.screen = crate::tui::app::Screen::Tonight;
         app.scores_date = scores_date.to_owned();
-        app.tonight_cache.lock().unwrap()
+        app.tonight_cache
+            .lock()
+            .unwrap()
             .insert(scores_date.to_owned(), TonightState::Loaded(games));
         render_tonight_to_text(&app)
     }
@@ -993,12 +1178,18 @@ mod tests {
             fixture_game("2026-04-29", "BUF", "BOS", 23),
         ];
         let text = render_with_games("2026-04-28", games);
-        assert!(text.contains("PIT") && text.contains("PHI"),
-            "selected-date game must render, got:\n{text}");
-        assert!(!text.contains("MTL"),
-            "earlier-date game must NOT render, got:\n{text}");
-        assert!(!text.contains("BUF"),
-            "later-date game must NOT render, got:\n{text}");
+        assert!(
+            text.contains("PIT") && text.contains("PHI"),
+            "selected-date game must render, got:\n{text}"
+        );
+        assert!(
+            !text.contains("MTL"),
+            "earlier-date game must NOT render, got:\n{text}"
+        );
+        assert!(
+            !text.contains("BUF"),
+            "later-date game must NOT render, got:\n{text}"
+        );
     }
 
     #[test]
@@ -1006,19 +1197,26 @@ mod tests {
         // Empty scores_date == "today" — populate the cache under the
         // empty-string key (the canonical TonightCache key for "now")
         // and verify only games with today's date render.
-        let today = chrono::Local::now().date_naive().format("%Y-%m-%d").to_string();
-        let two_weeks_ago = (chrono::Local::now().date_naive()
-            - chrono::Duration::days(14))
-            .format("%Y-%m-%d").to_string();
+        let today = chrono::Local::now()
+            .date_naive()
+            .format("%Y-%m-%d")
+            .to_string();
+        let two_weeks_ago = (chrono::Local::now().date_naive() - chrono::Duration::days(14))
+            .format("%Y-%m-%d")
+            .to_string();
         let games = vec![
             fixture_game(&two_weeks_ago, "MTL", "TBL", 23),
-            fixture_game(&today,         "PIT", "PHI", 23),
+            fixture_game(&today, "PIT", "PHI", 23),
         ];
         let text = render_with_games("", games);
-        assert!(text.contains("PIT"),
-            "today's game must render, got:\n{text}");
-        assert!(!text.contains("MTL"),
-            "two-weeks-ago game must NOT render under empty scores_date, got:\n{text}");
+        assert!(
+            text.contains("PIT"),
+            "today's game must render, got:\n{text}"
+        );
+        assert!(
+            !text.contains("MTL"),
+            "two-weeks-ago game must NOT render under empty scores_date, got:\n{text}"
+        );
     }
 
     #[test]
@@ -1028,11 +1226,16 @@ mod tests {
         // the NHL day-wrapper grouping uses either depending on the
         // game's time slot. This test pins the relaxation: a game on
         // today-in-UTC (which could be tomorrow-in-local) renders OK.
-        let utc_today = chrono::Utc::now().date_naive().format("%Y-%m-%d").to_string();
+        let utc_today = chrono::Utc::now()
+            .date_naive()
+            .format("%Y-%m-%d")
+            .to_string();
         let games = vec![fixture_game(&utc_today, "MTL", "TBL", 23)];
         let text = render_with_games("", games);
-        assert!(text.contains("MTL"),
-            "UTC-today game must render even when local is yesterday, got:\n{text}");
+        assert!(
+            text.contains("MTL"),
+            "UTC-today game must render even when local is yesterday, got:\n{text}"
+        );
     }
 
     #[test]
@@ -1041,20 +1244,26 @@ mod tests {
         // either timezone, show a helpful hint with the earliest
         // upcoming date instead of "No games scheduled today" — the
         // user can then hit → to navigate to the games.
-        let future = (chrono::Local::now().date_naive()
-            + chrono::Duration::days(3))
-            .format("%Y-%m-%d").to_string();
+        let future = (chrono::Local::now().date_naive() + chrono::Duration::days(3))
+            .format("%Y-%m-%d")
+            .to_string();
         let games = vec![
             fixture_game(&future, "PIT", "PHI", 23),
             fixture_game(&future, "BUF", "BOS", 23),
         ];
         let text = render_with_games("", games);
-        assert!(text.contains("Schedule has 2 game"),
-            "diagnostic count missing, got:\n{text}");
-        assert!(text.contains(&future),
-            "diagnostic should name the earliest available date, got:\n{text}");
-        assert!(text.contains("press →"),
-            "diagnostic should prompt for navigation, got:\n{text}");
+        assert!(
+            text.contains("Schedule has 2 game"),
+            "diagnostic count missing, got:\n{text}"
+        );
+        assert!(
+            text.contains(&future),
+            "diagnostic should name the earliest available date, got:\n{text}"
+        );
+        assert!(
+            text.contains("press →"),
+            "diagnostic should prompt for navigation, got:\n{text}"
+        );
     }
 
     #[test]
@@ -1065,10 +1274,14 @@ mod tests {
         let mut g = fixture_game("2026-04-28", "WSH", "NYR", 23);
         g.series_game = Some("Game 4".to_owned());
         let text = render_with_games("2026-04-28", vec![g]);
-        assert!(text.contains("Game 4"),
-            "series label must render verbatim, got:\n{text}");
-        assert!(!text.contains("Game ?"),
-            "no question-mark placeholder when label is present, got:\n{text}");
+        assert!(
+            text.contains("Game 4"),
+            "series label must render verbatim, got:\n{text}"
+        );
+        assert!(
+            !text.contains("Game ?"),
+            "no question-mark placeholder when label is present, got:\n{text}"
+        );
     }
 
     #[test]
@@ -1077,17 +1290,21 @@ mod tests {
         // separator. The user's Scores tab now surfaces the score
         // distinctly from the matchup column.
         let mut g = fixture_game("2026-04-28", "MTL", "TBL", 23);
-        g.away_score  = Some(3);
-        g.home_score  = Some(2);
-        g.game_state  = Some("OFF".to_owned());
+        g.away_score = Some(3);
+        g.home_score = Some(2);
+        g.game_state = Some("OFF".to_owned());
         g.last_period = Some("REG".to_owned());
         let text = render_with_games("2026-04-28", vec![g]);
         // Score numbers AND em-dash separator both visible.
-        assert!(text.contains(" 3 – 2"),
-            "score should render as `3 – 2`, got:\n{text}");
+        assert!(
+            text.contains(" 3 – 2"),
+            "score should render as `3 – 2`, got:\n{text}"
+        );
         // Final tag at the right.
-        assert!(text.contains("Final"),
-            "Final tag should appear for completed games, got:\n{text}");
+        assert!(
+            text.contains("Final"),
+            "Final tag should appear for completed games, got:\n{text}"
+        );
     }
 
     #[test]
@@ -1097,10 +1314,14 @@ mod tests {
         g.home_score = Some(1);
         g.game_state = Some("LIVE".to_owned());
         let text = render_with_games("2026-04-28", vec![g]);
-        assert!(text.contains("LIVE"),
-            "LIVE tag must render for in-progress games, got:\n{text}");
-        assert!(text.contains("2 – 1"),
-            "live games show their running score, got:\n{text}");
+        assert!(
+            text.contains("LIVE"),
+            "LIVE tag must render for in-progress games, got:\n{text}"
+        );
+        assert!(
+            text.contains("2 – 1"),
+            "live games show their running score, got:\n{text}"
+        );
     }
 
     #[test]
@@ -1110,9 +1331,13 @@ mod tests {
         let g = fixture_game("2026-04-28", "MTL", "TBL", 23);
         let text = render_with_games("2026-04-28", vec![g]);
         // 23:00 UTC = 7:00 PM ET (during DST).
-        assert!(text.contains("7:00 PM") || text.contains("8:00 PM"),
-            "future games show ET start time, got:\n{text}");
-        assert!(!text.contains("Final"),
-            "future games should NOT render the Final tag, got:\n{text}");
+        assert!(
+            text.contains("7:00 PM") || text.contains("8:00 PM"),
+            "future games show ET start time, got:\n{text}"
+        );
+        assert!(
+            !text.contains("Final"),
+            "future games should NOT render the Final tag, got:\n{text}"
+        );
     }
 }

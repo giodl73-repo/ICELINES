@@ -63,14 +63,8 @@ pub struct BoxscorePlayerEntry {
 /// Returns 0 on any parse error (no panics in library code).
 pub fn parse_toi_mmss(s: &str) -> u32 {
     let mut parts = s.splitn(2, ':');
-    let mins: u32 = parts
-        .next()
-        .and_then(|m| m.parse().ok())
-        .unwrap_or(0);
-    let secs: u32 = parts
-        .next()
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(0);
+    let mins: u32 = parts.next().and_then(|m| m.parse().ok()).unwrap_or(0);
+    let secs: u32 = parts.next().and_then(|s| s.parse().ok()).unwrap_or(0);
     mins * 60 + secs
 }
 
@@ -96,10 +90,7 @@ pub fn build_profile_from_boxscores(
 
     for boxscore in boxscores {
         // Find the target player in this game.
-        let target = boxscore
-            .players
-            .iter()
-            .find(|p| p.player_id == player_id);
+        let target = boxscore.players.iter().find(|p| p.player_id == player_id);
 
         let target = match target {
             Some(t) => t,
@@ -130,8 +121,7 @@ pub fn build_profile_from_boxscores(
         return None;
     }
 
-    let avg_ev_toi_seconds_per_game =
-        (total_toi_secs / u64::from(games_analyzed)) as u32;
+    let avg_ev_toi_seconds_per_game = (total_toi_secs / u64::from(games_analyzed)) as u32;
 
     // Build top-5 linemates sorted by shared_shifts descending.
     let mut linemate_vec: Vec<(u32, u32)> = shared_game_counts.into_iter().collect();
@@ -168,7 +158,12 @@ fn is_forward(position: &str) -> bool {
 mod tests {
     use super::*;
 
-    fn make_entry(player_id: u32, team: &str, position: &str, toi_mmss: &str) -> BoxscorePlayerEntry {
+    fn make_entry(
+        player_id: u32,
+        team: &str,
+        position: &str,
+        toi_mmss: &str,
+    ) -> BoxscorePlayerEntry {
         BoxscorePlayerEntry {
             player_id,
             team: team.to_owned(),
@@ -186,11 +181,11 @@ mod tests {
             home_team: "NYR".to_owned(),
             away_team: "BOS".to_owned(),
             players: vec![
-                make_entry(10, "NYR", "C",  "18:30"), // target
-                make_entry(11, "NYR", "L",  "15:00"), // forward teammate A
-                make_entry(12, "NYR", "R",  "12:00"), // forward teammate B
-                make_entry(13, "NYR", "D",  "22:00"), // defenseman — excluded
-                make_entry(20, "BOS", "C",  "17:00"), // opponent — excluded
+                make_entry(10, "NYR", "C", "18:30"), // target
+                make_entry(11, "NYR", "L", "15:00"), // forward teammate A
+                make_entry(12, "NYR", "R", "12:00"), // forward teammate B
+                make_entry(13, "NYR", "D", "22:00"), // defenseman — excluded
+                make_entry(20, "BOS", "C", "17:00"), // opponent — excluded
             ],
         };
 
@@ -203,7 +198,11 @@ mod tests {
         // Both forward teammates should appear.
         assert_eq!(profile.top_linemates.len(), 2);
 
-        let ids: Vec<u32> = profile.top_linemates.iter().map(|lm| lm.partner_id).collect();
+        let ids: Vec<u32> = profile
+            .top_linemates
+            .iter()
+            .map(|lm| lm.partner_id)
+            .collect();
         assert!(ids.contains(&11));
         assert!(ids.contains(&12));
 

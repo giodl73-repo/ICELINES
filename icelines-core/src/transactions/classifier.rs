@@ -43,7 +43,7 @@ pub const CURRENT_CLASSIFIER_VERSION: u16 = 3;
 /// per process via `Lazy<Regex>` inside the rules accessor.
 struct Rule {
     pattern: &'static Lazy<Regex>,
-    kind:    TransactionKind,
+    kind: TransactionKind,
 }
 
 // ── Compiled-once regexes ──────────────────────────────────────────────
@@ -57,63 +57,75 @@ struct Rule {
 // One Lazy per regex is the cleanest path that keeps the rule list visibly
 // ordered + allocation-free.
 
-static RE_PTO: Lazy<Regex> = Lazy::new(|| Regex::new(
-    r"(?i)\bsigned\b.*\bto an?\s+(PTO|professional[- ]?tryout|amateur[- ]?tryout|ATO)\b"
-).expect("PTO regex must compile"));
+static RE_PTO: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?i)\bsigned\b.*\bto an?\s+(PTO|professional[- ]?tryout|amateur[- ]?tryout|ATO)\b")
+        .expect("PTO regex must compile")
+});
 
-static RE_RIGHTS: Lazy<Regex> = Lazy::new(|| Regex::new(
-    r"(?i)\bacquired\b.*\b(the\s+)?(negotiating\s+)?rights\b"
-).expect("rights regex must compile"));
+static RE_RIGHTS: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?i)\bacquired\b.*\b(the\s+)?(negotiating\s+)?rights\b")
+        .expect("rights regex must compile")
+});
 
-static RE_INTL_LOAN: Lazy<Regex> = Lazy::new(|| Regex::new(
-    r"(?i)\bloaned\b.*\b(IIHF|Olympic|World\s+(Junior|Championship)|Spengler)\b"
-).expect("intl loan regex must compile"));
+static RE_INTL_LOAN: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?i)\bloaned\b.*\b(IIHF|Olympic|World\s+(Junior|Championship)|Spengler)\b")
+        .expect("intl loan regex must compile")
+});
 
-static RE_WAIVER_CLAIM: Lazy<Regex> = Lazy::new(|| Regex::new(
-    r"(?i)\bclaimed\b.*\boff\s+waivers\b"
-).expect("waiver claim regex must compile"));
+static RE_WAIVER_CLAIM: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?i)\bclaimed\b.*\boff\s+waivers\b").expect("waiver claim regex must compile")
+});
 
-static RE_WAIVER_CLEAR: Lazy<Regex> = Lazy::new(|| Regex::new(
-    r"(?i)\bcleared\s+waivers\b"
-).expect("waiver clear regex must compile"));
+static RE_WAIVER_CLEAR: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?i)\bcleared\s+waivers\b").expect("waiver clear regex must compile")
+});
 
-static RE_WAIVER_PLACEMENT: Lazy<Regex> = Lazy::new(|| Regex::new(
-    // ESPN historically writes "Placed C X on (unconditional )?waivers"
-    // and the bare "Waived RW X" verb. Both are placements.
-    r"(?i)(\bplaced\b.*\bwaivers\b|\bwaived\b)"
-).expect("waiver placement regex must compile"));
+static RE_WAIVER_PLACEMENT: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(
+        // ESPN historically writes "Placed C X on (unconditional )?waivers"
+        // and the bare "Waived RW X" verb. Both are placements.
+        r"(?i)(\bplaced\b.*\bwaivers\b|\bwaived\b)",
+    )
+    .expect("waiver placement regex must compile")
+});
 
-static RE_TRADE: Lazy<Regex> = Lazy::new(|| Regex::new(
-    r"(?i)\b(traded|acquired)\b"
-).expect("trade regex must compile"));
+static RE_TRADE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"(?i)\b(traded|acquired)\b").expect("trade regex must compile"));
 
-static RE_IR: Lazy<Regex> = Lazy::new(|| Regex::new(
+static RE_IR: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(
     // "Activated F X from long-term injured reserve" — handles the
     // hyphenated long-term form between `from` and `injured reserve`.
     // "Reinstated F X" / "Reinstated F X from conditioning" — current-
     // season verb for IR / conditioning returns.
     r"(?i)(\bplaced\b.*\bon\s+(injured\s+reserve|IR\b|LTIR|long[- ]term)|\bactivated\b.*\b(injured\s+reserve|IR|LTIR)|\breinstated\b)"
-).expect("IR regex must compile"));
+).expect("IR regex must compile")
+});
 
-static RE_RECALL: Lazy<Regex> = Lazy::new(|| Regex::new(
-    r"(?i)\b(recalled|called\s+up)\b"
-).expect("recall regex must compile"));
+static RE_RECALL: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"(?i)\b(recalled|called\s+up)\b").expect("recall regex must compile"));
 
-static RE_REASSIGN: Lazy<Regex> = Lazy::new(|| Regex::new(
-    // ESPN's daily AHL movement uses bare "Assigned X to Y (AHL)" in
-    // current-season feeds. "Sent X to AHL" without "down" also recurs.
-    // International-loan rule fires before this so non-AHL "loaned" /
-    // "sent" are pre-empted.
-    r"(?i)\b(reassigned|returned|sent(\s+down)?|optioned|loaned|assigned)\b"
-).expect("reassignment regex must compile"));
+static RE_REASSIGN: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(
+        // ESPN's daily AHL movement uses bare "Assigned X to Y (AHL)" in
+        // current-season feeds. "Sent X to AHL" without "down" also recurs.
+        // International-loan rule fires before this so non-AHL "loaned" /
+        // "sent" are pre-empted.
+        r"(?i)\b(reassigned|returned|sent(\s+down)?|optioned|loaned|assigned)\b",
+    )
+    .expect("reassignment regex must compile")
+});
 
-static RE_SIGNING: Lazy<Regex> = Lazy::new(|| Regex::new(
-    // "Agreed to terms with F X on a 1-year contract" — ESPN's most
-    // common prose for off-season signings; was missed entirely in v0.
-    // "Singed" is a real ESPN typo that recurs ~11×/season; accept it
-    // rather than lose those rows to Other.
-    r"(?i)(\b(signed|re-signed|singed|extended)\b|\bagree(d)?\s+to\s+terms\b)"
-).expect("signing regex must compile"));
+static RE_SIGNING: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(
+        // "Agreed to terms with F X on a 1-year contract" — ESPN's most
+        // common prose for off-season signings; was missed entirely in v0.
+        // "Singed" is a real ESPN typo that recurs ~11×/season; accept it
+        // rather than lose those rows to Other.
+        r"(?i)(\b(signed|re-signed|singed|extended)\b|\bagree(d)?\s+to\s+terms\b)",
+    )
+    .expect("signing regex must compile")
+});
 
 /// Ordered rule list. Earlier rules win; `Other`-promoting negatives
 /// (PTO, rights-acquisition, international loan) come first.
@@ -129,26 +141,59 @@ static RE_SIGNING: Lazy<Regex> = Lazy::new(|| Regex::new(
 fn rules() -> [Rule; 11] {
     [
         // Negative rules (promote to Other before broader catches fire).
-        Rule { pattern: &RE_PTO,        kind: TransactionKind::Other },
-        Rule { pattern: &RE_RIGHTS,     kind: TransactionKind::Other },
-        Rule { pattern: &RE_INTL_LOAN,  kind: TransactionKind::Other },
+        Rule {
+            pattern: &RE_PTO,
+            kind: TransactionKind::Other,
+        },
+        Rule {
+            pattern: &RE_RIGHTS,
+            kind: TransactionKind::Other,
+        },
+        Rule {
+            pattern: &RE_INTL_LOAN,
+            kind: TransactionKind::Other,
+        },
         // Trade outranks all daily-movement rules — a deadline trade
         // can mention recalls/IR/waivers as riders, but the primary event
         // is the trade.
-        Rule { pattern: &RE_TRADE,      kind: TransactionKind::Trade },
+        Rule {
+            pattern: &RE_TRADE,
+            kind: TransactionKind::Trade,
+        },
         // IR before Waivers — "Placed X on IR. Designated Y for waivers."
         // is primarily an IR move. Real-world Marchment row.
-        Rule { pattern: &RE_IR,         kind: TransactionKind::InjuryReserve },
+        Rule {
+            pattern: &RE_IR,
+            kind: TransactionKind::InjuryReserve,
+        },
         // Waiver kinds.
-        Rule { pattern: &RE_WAIVER_CLAIM,     kind: TransactionKind::WaiverClaim },
-        Rule { pattern: &RE_WAIVER_CLEAR,     kind: TransactionKind::WaiverClear },
-        Rule { pattern: &RE_WAIVER_PLACEMENT, kind: TransactionKind::WaiverPlacement },
+        Rule {
+            pattern: &RE_WAIVER_CLAIM,
+            kind: TransactionKind::WaiverClaim,
+        },
+        Rule {
+            pattern: &RE_WAIVER_CLEAR,
+            kind: TransactionKind::WaiverClear,
+        },
+        Rule {
+            pattern: &RE_WAIVER_PLACEMENT,
+            kind: TransactionKind::WaiverPlacement,
+        },
         // Daily AHL movement.
-        Rule { pattern: &RE_RECALL,     kind: TransactionKind::Recall },
-        Rule { pattern: &RE_REASSIGN,   kind: TransactionKind::Reassignment },
+        Rule {
+            pattern: &RE_RECALL,
+            kind: TransactionKind::Recall,
+        },
+        Rule {
+            pattern: &RE_REASSIGN,
+            kind: TransactionKind::Reassignment,
+        },
         // Signing last among substantive rules — PTO/rights are pre-empted
         // by the negative rules above.
-        Rule { pattern: &RE_SIGNING,    kind: TransactionKind::Signing },
+        Rule {
+            pattern: &RE_SIGNING,
+            kind: TransactionKind::Signing,
+        },
     ]
 }
 
@@ -175,7 +220,11 @@ pub fn other_rate<'a, I: IntoIterator<Item = &'a str>>(descriptions: I) -> f64 {
             other += 1;
         }
     }
-    if total == 0 { 0.0 } else { other as f64 / total as f64 }
+    if total == 0 {
+        0.0
+    } else {
+        other as f64 / total as f64
+    }
 }
 
 #[cfg(test)]
@@ -188,22 +237,34 @@ mod tests {
 
     #[test]
     fn l0_classify_acquired_is_trade() {
-        assert_eq!(classify("Acquired D Ryan McDonagh from NSH for D Philippe Myers"), Trade);
+        assert_eq!(
+            classify("Acquired D Ryan McDonagh from NSH for D Philippe Myers"),
+            Trade
+        );
     }
 
     #[test]
     fn l0_classify_traded_is_trade() {
-        assert_eq!(classify("Traded D Ryan McDonagh to TBL for D Philippe Myers"), Trade);
+        assert_eq!(
+            classify("Traded D Ryan McDonagh to TBL for D Philippe Myers"),
+            Trade
+        );
     }
 
     #[test]
     fn l0_classify_signed_to_contract_is_signing() {
-        assert_eq!(classify("Signed F Connor Bedard to a 8-year, $11.4M extension"), Signing);
+        assert_eq!(
+            classify("Signed F Connor Bedard to a 8-year, $11.4M extension"),
+            Signing
+        );
     }
 
     #[test]
     fn l0_classify_re_signed_is_signing() {
-        assert_eq!(classify("Re-signed G Connor Hellebuyck to a 7-year contract"), Signing);
+        assert_eq!(
+            classify("Re-signed G Connor Hellebuyck to a 7-year contract"),
+            Signing
+        );
     }
 
     #[test]
@@ -218,14 +279,23 @@ mod tests {
     fn l0_classify_rights_acquisition_is_other_not_trade() {
         // TAPE-flagged miss: acquiring negotiating rights is NOT a roster trade.
         assert_eq!(classify("Acquired the rights to RFA F X from BOS"), Other);
-        assert_eq!(classify("Acquired negotiating rights to UFA G Y from MTL"), Other);
+        assert_eq!(
+            classify("Acquired negotiating rights to UFA G Y from MTL"),
+            Other
+        );
     }
 
     #[test]
     fn l0_classify_intl_loan_is_other_not_reassignment() {
         // TAPE-flagged miss: international loans are not AHL demotions.
-        assert_eq!(classify("Loaned G X to Sweden for the IIHF World Championship"), Other);
-        assert_eq!(classify("Loaned F Y to Czechia for the World Junior Championship"), Other);
+        assert_eq!(
+            classify("Loaned G X to Sweden for the IIHF World Championship"),
+            Other
+        );
+        assert_eq!(
+            classify("Loaned F Y to Czechia for the World Junior Championship"),
+            Other
+        );
     }
 
     #[test]
@@ -245,7 +315,10 @@ mod tests {
 
     #[test]
     fn l0_classify_recalled_is_recall() {
-        assert_eq!(classify("Recalled F Vasily Podkolzin from Bakersfield (AHL)"), Recall);
+        assert_eq!(
+            classify("Recalled F Vasily Podkolzin from Bakersfield (AHL)"),
+            Recall
+        );
     }
 
     #[test]
@@ -288,27 +361,42 @@ mod tests {
 
     #[test]
     fn l0_classify_placed_on_ir_is_ir() {
-        assert_eq!(classify("Placed F Sam Reinhart on IR (lower body)"), InjuryReserve);
+        assert_eq!(
+            classify("Placed F Sam Reinhart on IR (lower body)"),
+            InjuryReserve
+        );
     }
 
     #[test]
     fn l0_classify_placed_on_ltir_is_ir() {
-        assert_eq!(classify("Placed F X on LTIR retroactive to Oct 12"), InjuryReserve);
+        assert_eq!(
+            classify("Placed F X on LTIR retroactive to Oct 12"),
+            InjuryReserve
+        );
     }
 
     #[test]
     fn l0_classify_placed_on_long_term_is_ir() {
-        assert_eq!(classify("Placed F X on long-term injured reserve"), InjuryReserve);
+        assert_eq!(
+            classify("Placed F X on long-term injured reserve"),
+            InjuryReserve
+        );
     }
 
     #[test]
     fn l0_classify_activated_from_ir_is_ir() {
-        assert_eq!(classify("Activated F X from injured reserve"), InjuryReserve);
+        assert_eq!(
+            classify("Activated F X from injured reserve"),
+            InjuryReserve
+        );
     }
 
     #[test]
     fn l0_classify_unknown_pattern_is_other() {
-        assert_eq!(classify("Some new ESPN prose pattern we have not seen yet"), Other);
+        assert_eq!(
+            classify("Some new ESPN prose pattern we have not seen yet"),
+            Other
+        );
         assert_eq!(classify(""), Other);
     }
 
@@ -381,8 +469,10 @@ mod tests {
             "Signed F Y to a 1-year contract",
             "Recalled G Z from AHL",
         ];
-        assert!(other_rate(inputs.into_iter()) < 0.01,
-            "all-match input should yield other_rate ≈ 0");
+        assert!(
+            other_rate(inputs.into_iter()) < 0.01,
+            "all-match input should yield other_rate ≈ 0"
+        );
     }
 
     #[test]

@@ -150,7 +150,8 @@ mod tests {
     fn build_repo(rows: &[(u32, Position, u32, u32, &str)], season: u32) -> StatsRepository {
         let mut repo = StatsRepository::new();
         for (pid, pos, gp, points, team) in rows {
-            repo.upsert_identity(fixtures::identity(*pid).build()).unwrap();
+            repo.upsert_identity(fixtures::identity(*pid).build())
+                .unwrap();
             // Custom stats: vary gp/points so pace_82 ordering is meaningful.
             let totals = StatTotals {
                 gp: *gp,
@@ -191,9 +192,7 @@ mod tests {
                 points: *points,
                 goalie: None,
             };
-            let stats = fixtures::stats(*pid, season, team)
-                .position(*pos)
-                .build();
+            let stats = fixtures::stats(*pid, season, team).position(*pos).build();
             // Replace fixture totals + stint with our own.
             let stats = crate::season_stats::SeasonStatsBuilder::new(
                 stats.player_id,
@@ -225,15 +224,27 @@ mod tests {
             .collect();
         let chart =
             DepthChartBuilder::build_views(TeamAbbr("SEA".into()), Season(20242025), &views);
-        assert!(chart.defense_pairs[2][0].is_none(), "pair 3 slot 0 should be empty");
-        assert!(chart.defense_pairs[2][1].is_none(), "pair 3 slot 1 should be empty");
-        assert!(chart.defense_pairs[0][0].is_some(), "pair 1 slot 0 should be filled");
+        assert!(
+            chart.defense_pairs[2][0].is_none(),
+            "pair 3 slot 0 should be empty"
+        );
+        assert!(
+            chart.defense_pairs[2][1].is_none(),
+            "pair 3 slot 1 should be empty"
+        );
+        assert!(
+            chart.defense_pairs[0][0].is_some(),
+            "pair 1 slot 0 should be filled"
+        );
     }
 
     #[test]
     fn l0_depth_chart_gp_zero_goes_to_below_min() {
         let repo = build_repo(
-            &[(8478402, Position::Center, 50, 30, "SEA"), (8479318, Position::RightWing, 0, 0, "SEA")],
+            &[
+                (8478402, Position::Center, 50, 30, "SEA"),
+                (8479318, Position::RightWing, 0, 0, "SEA"),
+            ],
             20242025,
         );
         let views: Vec<PlayerView<'_>> = repo
@@ -260,11 +271,7 @@ mod tests {
             .unwrap();
 
         let view = repo
-            .view(
-                PlayerId(8478402),
-                Season(20242025),
-                SeasonType::Regular,
-            )
+            .view(PlayerId(8478402), Season(20242025), SeasonType::Regular)
             .unwrap();
         let slot = slot_from_view(&view, view.team().cloned().unwrap());
 
@@ -275,7 +282,10 @@ mod tests {
         assert_eq!(slot.position, view.position());
         assert_eq!(slot.pace_82, view.pace_82());
         assert_eq!(slot.gp, Some(view.gp()));
-        assert_eq!(slot.headshot_canonical_url, view.identity.headshot_canonical_url);
+        assert_eq!(
+            slot.headshot_canonical_url,
+            view.identity.headshot_canonical_url
+        );
     }
 
     #[test]
@@ -288,8 +298,11 @@ mod tests {
             ],
             20242025,
         );
-        let edm_views: Vec<PlayerView<'_>> = repo
-            .team_roster(&TeamAbbr("EDM".into()), Season(20242025), SeasonType::Regular);
+        let edm_views: Vec<PlayerView<'_>> = repo.team_roster(
+            &TeamAbbr("EDM".into()),
+            Season(20242025),
+            SeasonType::Regular,
+        );
         let tor_view = repo
             .view(PlayerId(3), Season(20242025), SeasonType::Regular)
             .unwrap();

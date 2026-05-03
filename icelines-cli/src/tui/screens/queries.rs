@@ -1,3 +1,6 @@
+use icelines_core::{
+    filter::PlayerFilter, model::Position, position::PositionResolver, stats_repository::PlayerView,
+};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -5,41 +8,113 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, Paragraph},
     Frame,
 };
-use icelines_core::{
-    filter::PlayerFilter,
-    model::Position,
-    position::PositionResolver,
-    stats_repository::PlayerView,
-};
 
 // ── Field definitions ─────────────────────────────────────────────────────────
 
 pub struct QueryField {
-    pub label:    &'static str,
-    pub options:  Vec<&'static str>,
+    pub label: &'static str,
+    pub options: Vec<&'static str>,
     pub selected: usize,
 }
 
 impl QueryField {
-    pub fn value(&self) -> &str { self.options[self.selected] }
-    pub fn next(&mut self) { self.selected = (self.selected + 1) % self.options.len(); }
+    pub fn value(&self) -> &str {
+        self.options[self.selected]
+    }
+    pub fn next(&mut self) {
+        self.selected = (self.selected + 1) % self.options.len();
+    }
     pub fn prev(&mut self) {
-        self.selected = if self.selected == 0 { self.options.len() - 1 } else { self.selected - 1 };
+        self.selected = if self.selected == 0 {
+            self.options.len() - 1
+        } else {
+            self.selected - 1
+        };
     }
 }
 
 pub fn default_fields() -> Vec<QueryField> {
     vec![
-        QueryField { label: "Sort by",     selected: 0, options: vec!["pts-pace","ppg","g-pace","gpg","pp-pts-pace","pp-g-pace","sh-g-pace","shots-pace","sh-pct","plus-minus","toi","fo-pct","hits-pace","blocks-pace","xg","cf-pct","xgf-pct","improvement","pts","goals","assists","gp"] },
-        QueryField { label: "Position",    selected: 0, options: vec!["all","C","LW","RW","D","F"] },
-        QueryField { label: "Age max",     selected: 0, options: vec!["any","21","22","23","24","25","26","27","28","30","35"] },
-        QueryField { label: "Age min",     selected: 0, options: vec!["any","18","20","22","24","26","28","30"] },
-        QueryField { label: "GP min",      selected: 0, options: vec!["any","10","20","30","40","50","60","70"] },
-        QueryField { label: "Nationality", selected: 0, options: vec!["any","CAN","USA","SWE","FIN","RUS","CZE","SVK","GER","NOR","DEN"] },
-        QueryField { label: "Draft year",  selected: 0, options: vec!["any","2024","2023","2022","2021","2020","2019","2018","2017","2016","2015","2014","2013"] },
-        QueryField { label: "Draft round", selected: 0, options: vec!["any","1","2","3","4","5","6","7"] },
-        QueryField { label: "Seasons",     selected: 0, options: vec!["1","2","3","4","5","10","20","38"] },
-        QueryField { label: "Show top",    selected: 1, options: vec!["10","20","30","50","100"] },
+        QueryField {
+            label: "Sort by",
+            selected: 0,
+            options: vec![
+                "pts-pace",
+                "ppg",
+                "g-pace",
+                "gpg",
+                "pp-pts-pace",
+                "pp-g-pace",
+                "sh-g-pace",
+                "shots-pace",
+                "sh-pct",
+                "plus-minus",
+                "toi",
+                "fo-pct",
+                "hits-pace",
+                "blocks-pace",
+                "xg",
+                "cf-pct",
+                "xgf-pct",
+                "improvement",
+                "pts",
+                "goals",
+                "assists",
+                "gp",
+            ],
+        },
+        QueryField {
+            label: "Position",
+            selected: 0,
+            options: vec!["all", "C", "LW", "RW", "D", "F"],
+        },
+        QueryField {
+            label: "Age max",
+            selected: 0,
+            options: vec![
+                "any", "21", "22", "23", "24", "25", "26", "27", "28", "30", "35",
+            ],
+        },
+        QueryField {
+            label: "Age min",
+            selected: 0,
+            options: vec!["any", "18", "20", "22", "24", "26", "28", "30"],
+        },
+        QueryField {
+            label: "GP min",
+            selected: 0,
+            options: vec!["any", "10", "20", "30", "40", "50", "60", "70"],
+        },
+        QueryField {
+            label: "Nationality",
+            selected: 0,
+            options: vec![
+                "any", "CAN", "USA", "SWE", "FIN", "RUS", "CZE", "SVK", "GER", "NOR", "DEN",
+            ],
+        },
+        QueryField {
+            label: "Draft year",
+            selected: 0,
+            options: vec![
+                "any", "2024", "2023", "2022", "2021", "2020", "2019", "2018", "2017", "2016",
+                "2015", "2014", "2013",
+            ],
+        },
+        QueryField {
+            label: "Draft round",
+            selected: 0,
+            options: vec!["any", "1", "2", "3", "4", "5", "6", "7"],
+        },
+        QueryField {
+            label: "Seasons",
+            selected: 0,
+            options: vec!["1", "2", "3", "4", "5", "10", "20", "38"],
+        },
+        QueryField {
+            label: "Show top",
+            selected: 1,
+            options: vec!["10", "20", "30", "50", "100"],
+        },
     ]
 }
 
@@ -74,22 +149,22 @@ pub fn default_sections() -> Vec<QuerySection> {
     vec![
         QuerySection {
             label: "Sort & Display",
-            fields: vec![0, 9, 8],  // Sort by, Show top, Seasons
+            fields: vec![0, 9, 8], // Sort by, Show top, Seasons
             expanded: true,
         },
         QuerySection {
             label: "Position & Age",
-            fields: vec![1, 2, 3],  // Position, Age max, Age min
+            fields: vec![1, 2, 3], // Position, Age max, Age min
             expanded: true,
         },
         QuerySection {
             label: "Origin & Draft",
-            fields: vec![5, 6, 7],  // Nationality, Draft year, Draft round
+            fields: vec![5, 6, 7], // Nationality, Draft year, Draft round
             expanded: false,
         },
         QuerySection {
             label: "Stats Thresholds",
-            fields: vec![4],  // GP min (more L.3.4 / future fields here)
+            fields: vec![4], // GP min (more L.3.4 / future fields here)
             expanded: false,
         },
     ]
@@ -99,9 +174,7 @@ pub fn default_sections() -> Vec<QuerySection> {
 /// section index in `sections` (0-based). `None` if the field isn't
 /// listed in any section (shouldn't happen for default sections; defensive).
 pub fn section_index_for_field(sections: &[QuerySection], field_idx: usize) -> Option<usize> {
-    sections
-        .iter()
-        .position(|s| s.fields.contains(&field_idx))
+    sections.iter().position(|s| s.fields.contains(&field_idx))
 }
 
 /// Field indices that should be visible (cursor-stoppable + rendered)
@@ -118,10 +191,7 @@ pub fn visible_field_indices(sections: &[QuerySection]) -> Vec<usize> {
 /// Toggle the section containing `field_idx`. Returns the new
 /// `expanded` state of that section. If the field doesn't belong to
 /// any section, no-op and returns `None`.
-pub fn toggle_section_for_field(
-    sections: &mut [QuerySection],
-    field_idx: usize,
-) -> Option<bool> {
+pub fn toggle_section_for_field(sections: &mut [QuerySection], field_idx: usize) -> Option<bool> {
     let idx = section_index_for_field(sections, field_idx)?;
     sections[idx].expanded = !sections[idx].expanded;
     Some(sections[idx].expanded)
@@ -135,9 +205,7 @@ pub fn toggle_section_for_field(
 /// Used by the sort picker overlay to filter as the user types. Result
 /// preserves `StatId::all()` declaration order — same as the catalog
 /// section grouping users see elsewhere (AI-05 determinism).
-pub fn sort_picker_filter(
-    query: &str,
-) -> Vec<icelines_core::stats_catalog::StatId> {
+pub fn sort_picker_filter(query: &str) -> Vec<icelines_core::stats_catalog::StatId> {
     use icelines_core::stats_catalog::StatId;
     let q = query.trim().to_ascii_lowercase();
     StatId::all()
@@ -168,10 +236,7 @@ pub fn sort_picker_filter(
 /// truncation so the highlighted row always shows the full cli_key.
 /// The user can read the key under cursor unambiguously regardless of
 /// terminal width — even when neighboring rows truncate.
-pub fn format_sort_picker_row(
-    sid: icelines_core::stats_catalog::StatId,
-    panel_w: usize,
-) -> String {
+pub fn format_sort_picker_row(sid: icelines_core::stats_catalog::StatId, panel_w: usize) -> String {
     format_sort_picker_row_selected(sid, panel_w, false)
 }
 
@@ -210,7 +275,11 @@ pub fn format_sort_picker_row_selected(
 // ── Query execution ───────────────────────────────────────────────────────────
 
 fn parse_opt<T: std::str::FromStr>(s: &str) -> Option<T> {
-    if s == "any" { None } else { s.parse().ok() }
+    if s == "any" {
+        None
+    } else {
+        s.parse().ok()
+    }
 }
 
 /// Filter + sort the players by the field selections. Operates on
@@ -231,25 +300,33 @@ pub fn run_query_views_with_pick<'a>(
     fields: &[QueryField],
     sort_pick: Option<icelines_core::stats_catalog::StatId>,
 ) -> Vec<(usize, PlayerView<'a>)> {
-    let sort  = fields[0].value();
-    let pos   = fields[1].value();
+    let sort = fields[0].value();
+    let pos = fields[1].value();
     let top: usize = fields[9].value().parse().unwrap_or(20);
 
     let mut filter = PlayerFilter::new();
 
     if pos != "all" {
         if pos == "F" {
-            filter.positions = Some(vec![Position::Center, Position::LeftWing, Position::RightWing]);
+            filter.positions = Some(vec![
+                Position::Center,
+                Position::LeftWing,
+                Position::RightWing,
+            ]);
         } else if let Ok((primary, _)) = PositionResolver::parse(pos) {
             filter.positions = Some(vec![primary]);
         }
     }
     filter.age_max = parse_opt(fields[2].value());
     filter.age_min = parse_opt(fields[3].value());
-    filter.gp_min  = parse_opt(fields[4].value());
-    filter.nationalities = if fields[5].value() == "any" { None } else { Some(vec![fields[5].value().to_uppercase()]) };
-    filter.draft_years   = parse_opt::<u16>(fields[6].value()).map(|y| vec![y]);
-    filter.draft_rounds  = parse_opt::<u8>(fields[7].value()).map(|r| vec![r]);
+    filter.gp_min = parse_opt(fields[4].value());
+    filter.nationalities = if fields[5].value() == "any" {
+        None
+    } else {
+        Some(vec![fields[5].value().to_uppercase()])
+    };
+    filter.draft_years = parse_opt::<u16>(fields[6].value()).map(|y| vec![y]);
+    filter.draft_rounds = parse_opt::<u8>(fields[7].value()).map(|r| vec![r]);
 
     // Bypass apply_views — its `&'a self` ties the return lifetime to
     // the local filter. matches_view takes &self by value so we can
@@ -275,25 +352,34 @@ pub fn run_query_views_with_pick<'a>(
         });
     }
 
-    matched.into_iter().take(top).enumerate().map(|(i, v)| (i + 1, v)).collect()
+    matched
+        .into_iter()
+        .take(top)
+        .enumerate()
+        .map(|(i, v)| (i + 1, v))
+        .collect()
 }
 
 fn sort_val_view(v: &PlayerView<'_>, sort: &str) -> f64 {
     let totals = &v.stats.totals;
     match sort {
         "pts-pace" | "ppg" => v.pace_82().unwrap_or(0.0),
-        "g-pace" | "gpg"   => totals.pace_score.as_ref().map(|s| s.goals_per_82).unwrap_or(0.0),
-        "pp-pts-pace"      => v.pp_points_per_82().unwrap_or(0.0),
-        "pp-g-pace"        => v.pp_goals_per_82().unwrap_or(0.0),
-        "sh-g-pace"        => v.sh_goals_per_82().unwrap_or(0.0),
-        "shots-pace"       => v.shots_per_82().unwrap_or(0.0),
-        "sh-pct"           => totals.shooting_pct.map(f64::from).unwrap_or(0.0),
-        "plus-minus"       => v.plus_minus() as f64,
-        "toi"              => totals.toi_per_game_sec.unwrap_or(0) as f64,
-        "fo-pct"           => totals.faceoff_win_pct.map(f64::from).unwrap_or(0.0),
-        "hits-pace"        => v.hits_per_82().unwrap_or(0.0),
-        "blocks-pace"      => v.blocked_shots_per_82().unwrap_or(0.0),
-        "xg"               => v.xg().unwrap_or(0.0),
+        "g-pace" | "gpg" => totals
+            .pace_score
+            .as_ref()
+            .map(|s| s.goals_per_82)
+            .unwrap_or(0.0),
+        "pp-pts-pace" => v.pp_points_per_82().unwrap_or(0.0),
+        "pp-g-pace" => v.pp_goals_per_82().unwrap_or(0.0),
+        "sh-g-pace" => v.sh_goals_per_82().unwrap_or(0.0),
+        "shots-pace" => v.shots_per_82().unwrap_or(0.0),
+        "sh-pct" => totals.shooting_pct.map(f64::from).unwrap_or(0.0),
+        "plus-minus" => v.plus_minus() as f64,
+        "toi" => totals.toi_per_game_sec.unwrap_or(0) as f64,
+        "fo-pct" => totals.faceoff_win_pct.map(f64::from).unwrap_or(0.0),
+        "hits-pace" => v.hits_per_82().unwrap_or(0.0),
+        "blocks-pace" => v.blocked_shots_per_82().unwrap_or(0.0),
+        "xg" => v.xg().unwrap_or(0.0),
         "cf-pct" => v
             .stats
             .advanced
@@ -306,53 +392,96 @@ fn sort_val_view(v: &PlayerView<'_>, sort: &str) -> f64 {
             .as_ref()
             .and_then(|a| a.xgf_pct)
             .unwrap_or(50.0),
-        "pts"              => totals.points as f64,
-        "goals"            => totals.goals as f64,
-        "assists"          => totals.assists as f64,
-        "gp"               => v.gp() as f64,
-        _                  => v.pace_82().unwrap_or(0.0),
+        "pts" => totals.points as f64,
+        "goals" => totals.goals as f64,
+        "assists" => totals.assists as f64,
+        "gp" => v.gp() as f64,
+        _ => v.pace_82().unwrap_or(0.0),
     }
 }
 
 fn display_val_view(v: &PlayerView<'_>, sort: &str) -> String {
     let totals = &v.stats.totals;
     match sort {
-        "pts-pace"    => v.pace_82().map(|p| format!("{:.1}", p)).unwrap_or_else(|| "—".to_owned()),
-        "ppg"         => v.pace_82().map(|p| format!("{:.3}", p / 82.0)).unwrap_or_else(|| "—".to_owned()),
-        "g-pace"      => totals.pace_score.as_ref().map(|s| format!("{:.1}", s.goals_per_82)).unwrap_or_else(|| "—".to_owned()),
-        "pp-pts-pace" => v.pp_points_per_82().map(|x| format!("{:.1}", x)).unwrap_or_else(|| "—".to_owned()),
-        "pp-g-pace"   => v.pp_goals_per_82().map(|x| format!("{:.1}", x)).unwrap_or_else(|| "—".to_owned()),
-        "sh-pct"      => totals.shooting_pct.map(|x| format!("{:.1}%", x)).unwrap_or_else(|| "—".to_owned()),
-        "plus-minus"  => if v.plus_minus() >= 0 { format!("+{}", v.plus_minus()) } else { v.plus_minus().to_string() },
-        "toi"         => v.toi_mmss().unwrap_or_else(|| "—".to_owned()),
-        "xg"          => v.xg().map(|x| format!("{:.2}", x)).unwrap_or_else(|| "—".to_owned()),
-        "cf-pct"      => v.stats.advanced.as_ref().and_then(|a| a.cf_pct).map(|x| format!("{:.1}%", x)).unwrap_or_else(|| "—".to_owned()),
-        "pts"         => totals.points.to_string(),
-        "goals"       => totals.goals.to_string(),
-        "assists"     => totals.assists.to_string(),
-        "gp"          => if v.gp() > 0 { v.gp().to_string() } else { "—".to_owned() },
-        _             => v.pace_82().map(|p| format!("{:.1}", p)).unwrap_or_else(|| "—".to_owned()),
+        "pts-pace" => v
+            .pace_82()
+            .map(|p| format!("{:.1}", p))
+            .unwrap_or_else(|| "—".to_owned()),
+        "ppg" => v
+            .pace_82()
+            .map(|p| format!("{:.3}", p / 82.0))
+            .unwrap_or_else(|| "—".to_owned()),
+        "g-pace" => totals
+            .pace_score
+            .as_ref()
+            .map(|s| format!("{:.1}", s.goals_per_82))
+            .unwrap_or_else(|| "—".to_owned()),
+        "pp-pts-pace" => v
+            .pp_points_per_82()
+            .map(|x| format!("{:.1}", x))
+            .unwrap_or_else(|| "—".to_owned()),
+        "pp-g-pace" => v
+            .pp_goals_per_82()
+            .map(|x| format!("{:.1}", x))
+            .unwrap_or_else(|| "—".to_owned()),
+        "sh-pct" => totals
+            .shooting_pct
+            .map(|x| format!("{:.1}%", x))
+            .unwrap_or_else(|| "—".to_owned()),
+        "plus-minus" => {
+            if v.plus_minus() >= 0 {
+                format!("+{}", v.plus_minus())
+            } else {
+                v.plus_minus().to_string()
+            }
+        }
+        "toi" => v.toi_mmss().unwrap_or_else(|| "—".to_owned()),
+        "xg" => v
+            .xg()
+            .map(|x| format!("{:.2}", x))
+            .unwrap_or_else(|| "—".to_owned()),
+        "cf-pct" => v
+            .stats
+            .advanced
+            .as_ref()
+            .and_then(|a| a.cf_pct)
+            .map(|x| format!("{:.1}%", x))
+            .unwrap_or_else(|| "—".to_owned()),
+        "pts" => totals.points.to_string(),
+        "goals" => totals.goals.to_string(),
+        "assists" => totals.assists.to_string(),
+        "gp" => {
+            if v.gp() > 0 {
+                v.gp().to_string()
+            } else {
+                "—".to_owned()
+            }
+        }
+        _ => v
+            .pace_82()
+            .map(|p| format!("{:.1}", p))
+            .unwrap_or_else(|| "—".to_owned()),
     }
 }
 
 fn col_label(sort: &str) -> &'static str {
     match sort {
-        "pts-pace"    => "Pts/82",
-        "ppg"         => "PPG",
-        "g-pace"      => "G/82",
+        "pts-pace" => "Pts/82",
+        "ppg" => "PPG",
+        "g-pace" => "G/82",
         "pp-pts-pace" => "PP/82",
-        "pp-g-pace"   => "PPG/82",
-        "sh-pct"      => "SH%",
-        "plus-minus"  => "+/-",
-        "toi"         => "TOI",
-        "xg"          => "xG",
-        "cf-pct"      => "CF%",
-        "xgf-pct"     => "xGF%",
-        "pts"         => "Pts",
-        "goals"       => "Goals",
-        "assists"     => "Ast",
-        "gp"          => "GP",
-        _             => "Value",
+        "pp-g-pace" => "PPG/82",
+        "sh-pct" => "SH%",
+        "plus-minus" => "+/-",
+        "toi" => "TOI",
+        "xg" => "xG",
+        "cf-pct" => "CF%",
+        "xgf-pct" => "xGF%",
+        "pts" => "Pts",
+        "goals" => "Goals",
+        "assists" => "Ast",
+        "gp" => "GP",
+        _ => "Value",
     }
 }
 
@@ -388,7 +517,6 @@ pub fn render(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
 }
 
 fn render_save_prompt(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
-
     let block = Block::default()
         .borders(Borders::ALL)
         .title(" Save Query — type a name, Enter to save, Esc to cancel ");
@@ -402,7 +530,9 @@ fn render_save_prompt(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
         Line::from(""),
         Line::styled(
             format!("  ▶ {}▌", app.query_save_name),
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
         ),
         Line::from(""),
         Line::styled("  Enter = save · Esc = cancel", dim),
@@ -430,14 +560,22 @@ fn render_load_list(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
         return;
     }
 
-    let items: Vec<ListItem> = app.query_saved_list.iter().enumerate().map(|(i, (name, _))| {
-        let style = if i == app.selected {
-            Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
-        } else {
-            Style::default()
-        };
-        ListItem::new(Line::styled(format!("  {}", name), style))
-    }).collect();
+    let items: Vec<ListItem> = app
+        .query_saved_list
+        .iter()
+        .enumerate()
+        .map(|(i, (name, _))| {
+            let style = if i == app.selected {
+                Style::default()
+                    .fg(Color::Black)
+                    .bg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD)
+            } else {
+                Style::default()
+            };
+            ListItem::new(Line::styled(format!("  {}", name), style))
+        })
+        .collect();
 
     f.render_widget(List::new(items), inner);
 }
@@ -470,11 +608,17 @@ fn render_sort_picker(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
         Span::styled("  Search: ", Style::default().fg(Color::White)),
         Span::styled(
             format!("{}▌", app.sort_picker_query),
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
         ),
     ]));
     lines.push(Line::styled(
-        format!("  ({} of {} match)", results.len(), icelines_core::stats_catalog::StatId::all().len()),
+        format!(
+            "  ({} of {} match)",
+            results.len(),
+            icelines_core::stats_catalog::StatId::all().len()
+        ),
         dim,
     ));
     lines.push(Line::from(""));
@@ -562,16 +706,21 @@ fn render_controls(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
         for &i in &section.fields {
             let field = match app.query_fields.get(i) {
                 Some(f) => f,
-                None => continue,  // defensive — section refers to a missing field
+                None => continue, // defensive — section refers to a missing field
             };
             let active = i == sel;
             let lbl_style = if active {
-                Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(Color::White)
             };
             let val_style = if active {
-                Style::default().fg(Color::Black).bg(Color::Yellow).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Color::Black)
+                    .bg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(Color::Yellow)
             };
@@ -592,9 +741,18 @@ fn render_controls(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
     }
 
     all_items.push(ListItem::new(Line::from("")));
-    all_items.push(ListItem::new(Line::styled(" Tab  collapse/expand section", Style::default().fg(Color::Green))));
-    all_items.push(ListItem::new(Line::styled(" s    save this query", Style::default().fg(Color::Green))));
-    all_items.push(ListItem::new(Line::styled(" l    load saved query", Style::default().fg(Color::Green))));
+    all_items.push(ListItem::new(Line::styled(
+        " Tab  collapse/expand section",
+        Style::default().fg(Color::Green),
+    )));
+    all_items.push(ListItem::new(Line::styled(
+        " s    save this query",
+        Style::default().fg(Color::Green),
+    )));
+    all_items.push(ListItem::new(Line::styled(
+        " l    load saved query",
+        Style::default().fg(Color::Green),
+    )));
     all_items.push(ListItem::new(Line::styled(" Enter  player card", dim)));
     all_items.push(ListItem::new(Line::styled(" r    reset filters", dim)));
 
@@ -634,19 +792,29 @@ fn render_results(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
     let dim = Style::default().fg(Color::DarkGray);
 
     let visible = inner.height.saturating_sub(4) as usize;
-    let offset  = app.query_result_scroll;
+    let offset = app.query_result_scroll;
 
     let mut lines = vec![
-        Line::styled(format!("  {:<4} {:<22} {:<5} {:<4} {:>8}", "#", "Player", "Team", "Pos", clabel), dim),
+        Line::styled(
+            format!(
+                "  {:<4} {:<22} {:<5} {:<4} {:>8}",
+                "#", "Player", "Team", "Pos", clabel
+            ),
+            dim,
+        ),
         Line::styled(format!("  {}", "─".repeat(48)), dim),
     ];
 
     for (rank, v) in results.iter().skip(offset).take(visible) {
-        let name  = v.full_name().chars().take(22).collect::<String>();
+        let name = v.full_name().chars().take(22).collect::<String>();
         let value = display_val_view(v, sort);
-        let is_selected = offset + (lines.len() - 2) == app.query_result_scroll + app.selected.min(visible.saturating_sub(1));
+        let is_selected = offset + (lines.len() - 2)
+            == app.query_result_scroll + app.selected.min(visible.saturating_sub(1));
         let style = if is_selected {
-            Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::Cyan)
+                .add_modifier(Modifier::BOLD)
         } else if *rank <= 3 {
             Style::default().fg(Color::Green)
         } else {
@@ -667,7 +835,12 @@ fn render_results(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
 
     lines.push(Line::from(""));
     lines.push(Line::styled(
-        format!("  Showing {} of {} (top {})", results.len().min(top), results.len(), top),
+        format!(
+            "  Showing {} of {} (top {})",
+            results.len().min(top),
+            results.len(),
+            top
+        ),
         dim,
     ));
 
@@ -678,7 +851,8 @@ fn render_results(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
 
 /// Serialize current field selections to JSON for storage.
 pub fn fields_to_json(fields: &[QueryField]) -> String {
-    let pairs: Vec<String> = fields.iter()
+    let pairs: Vec<String> = fields
+        .iter()
         .map(|f| format!("{{\"label\":\"{}\",\"selected\":{}}}", f.label, f.selected))
         .collect();
     format!("[{}]", pairs.join(","))
@@ -688,10 +862,8 @@ pub fn fields_to_json(fields: &[QueryField]) -> String {
 pub fn apply_saved_json(fields: &mut [QueryField], json: &str) {
     if let Ok(arr) = serde_json::from_str::<Vec<serde_json::Value>>(json) {
         for entry in &arr {
-            if let (Some(label), Some(sel)) = (
-                entry["label"].as_str(),
-                entry["selected"].as_u64(),
-            ) {
+            if let (Some(label), Some(sel)) = (entry["label"].as_str(), entry["selected"].as_u64())
+            {
                 if let Some(f) = fields.iter_mut().find(|f| f.label == label) {
                     f.selected = (sel as usize).min(f.options.len().saturating_sub(1));
                 }
@@ -699,7 +871,6 @@ pub fn apply_saved_json(fields: &mut [QueryField], json: &str) {
         }
     }
 }
-
 
 // ── L.3.3 unit tests ─────────────────────────────────────────────────────
 
@@ -714,13 +885,16 @@ mod tests {
     fn l0_lindsay_default_sections_cover_all_fields_exactly_once() {
         let fields = default_fields();
         let sections = default_sections();
-        let mut covered: Vec<usize> = sections.iter()
+        let mut covered: Vec<usize> = sections
+            .iter()
             .flat_map(|s| s.fields.iter().copied())
             .collect();
         covered.sort();
         let expected: Vec<usize> = (0..fields.len()).collect();
-        assert_eq!(covered, expected,
-            "default_sections must cover every default field exactly once");
+        assert_eq!(
+            covered, expected,
+            "default_sections must cover every default field exactly once"
+        );
     }
 
     /// `visible_field_indices` returns only fields in expanded sections,
@@ -744,8 +918,10 @@ mod tests {
         assert_eq!(visible_partial.len(), total - collapsed_count);
         // Collapsed section's fields don't appear.
         for f in &sections[2].fields {
-            assert!(!visible_partial.contains(f),
-                "field {f} from collapsed section must not appear in visible");
+            assert!(
+                !visible_partial.contains(f),
+                "field {f} from collapsed section must not appear in visible"
+            );
         }
     }
 
@@ -889,17 +1065,23 @@ mod tests {
         use icelines_core::stats_catalog::StatId;
         // `even-strength-time-on-ice-per-game` is 34 chars — definitely
         // truncates in the unselected narrow tier.
-        let unselected = format_sort_picker_row_selected(
-            StatId::EvenStrengthTimeOnIcePerGame, 60, false);
-        assert!(unselected.contains("…"),
-            "unselected row >24 chars must truncate with ellipsis — got {unselected:?}");
+        let unselected =
+            format_sort_picker_row_selected(StatId::EvenStrengthTimeOnIcePerGame, 60, false);
+        assert!(
+            unselected.contains("…"),
+            "unselected row >24 chars must truncate with ellipsis — got {unselected:?}"
+        );
 
-        let selected = format_sort_picker_row_selected(
-            StatId::EvenStrengthTimeOnIcePerGame, 60, true);
-        assert!(!selected.contains("…"),
-            "selected row must NOT truncate — got {selected:?}");
-        assert!(selected.contains("even-strength-time-on-ice-per-game"),
-            "selected row must show full cli_key — got {selected:?}");
+        let selected =
+            format_sort_picker_row_selected(StatId::EvenStrengthTimeOnIcePerGame, 60, true);
+        assert!(
+            !selected.contains("…"),
+            "selected row must NOT truncate — got {selected:?}"
+        );
+        assert!(
+            selected.contains("even-strength-time-on-ice-per-game"),
+            "selected row must show full cli_key — got {selected:?}"
+        );
     }
 
     /// GLASS-7 (L.5b post-fix) — char-based truncation, not byte-slice.
@@ -966,11 +1148,14 @@ mod tests {
         assert_eq!(r1, r2);
         // The order matches StatId::all() declaration order: Goals
         // before PpGoals before ShGoals etc.
-        let order: Vec<_> = r1.iter()
+        let order: Vec<_> = r1
+            .iter()
             .position(|&s| s == icelines_core::stats_catalog::StatId::Goals)
             .into_iter()
-            .chain(r1.iter()
-                .position(|&s| s == icelines_core::stats_catalog::StatId::PpGoals))
+            .chain(
+                r1.iter()
+                    .position(|&s| s == icelines_core::stats_catalog::StatId::PpGoals),
+            )
             .collect();
         if order.len() == 2 {
             assert!(order[0] < order[1], "Goals appears before PpGoals");

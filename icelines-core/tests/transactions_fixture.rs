@@ -19,7 +19,7 @@ struct Fixture {
 
 #[derive(Debug, Deserialize)]
 struct FixtureItem {
-    kind:        String,
+    kind: String,
     description: String,
 }
 
@@ -30,15 +30,15 @@ fn load_fixture() -> Fixture {
 
 fn parse_kind(label: &str) -> TransactionKind {
     match label {
-        "Trade"            => TransactionKind::Trade,
-        "Signing"          => TransactionKind::Signing,
-        "Recall"           => TransactionKind::Recall,
-        "Reassignment"     => TransactionKind::Reassignment,
-        "WaiverPlacement"  => TransactionKind::WaiverPlacement,
-        "WaiverClear"      => TransactionKind::WaiverClear,
-        "WaiverClaim"      => TransactionKind::WaiverClaim,
-        "InjuryReserve"    => TransactionKind::InjuryReserve,
-        "Other"            => TransactionKind::Other,
+        "Trade" => TransactionKind::Trade,
+        "Signing" => TransactionKind::Signing,
+        "Recall" => TransactionKind::Recall,
+        "Reassignment" => TransactionKind::Reassignment,
+        "WaiverPlacement" => TransactionKind::WaiverPlacement,
+        "WaiverClear" => TransactionKind::WaiverClear,
+        "WaiverClaim" => TransactionKind::WaiverClaim,
+        "InjuryReserve" => TransactionKind::InjuryReserve,
+        "Other" => TransactionKind::Other,
         bad => panic!("fixture has unknown kind label: {bad}"),
     }
 }
@@ -46,13 +46,16 @@ fn parse_kind(label: &str) -> TransactionKind {
 #[test]
 fn l1_fixture_every_description_classifies_to_expected_kind() {
     let fixture = load_fixture();
-    assert!(fixture.items.len() >= 30,
-        "fixture must carry ≥30 strings (we have {}); add real ESPN strings, not synthetic", fixture.items.len());
+    assert!(
+        fixture.items.len() >= 30,
+        "fixture must carry ≥30 strings (we have {}); add real ESPN strings, not synthetic",
+        fixture.items.len()
+    );
 
     let mut failures: Vec<String> = Vec::new();
     for item in &fixture.items {
         let expected = parse_kind(&item.kind);
-        let actual   = classify(&item.description);
+        let actual = classify(&item.description);
         if actual != expected {
             failures.push(format!(
                 "  description: {:?}\n    expected: {:?}\n    actual:   {:?}",
@@ -63,7 +66,9 @@ fn l1_fixture_every_description_classifies_to_expected_kind() {
     assert!(
         failures.is_empty(),
         "{} of {} fixture descriptions classified incorrectly:\n{}",
-        failures.len(), fixture.items.len(), failures.join("\n"),
+        failures.len(),
+        fixture.items.len(),
+        failures.join("\n"),
     );
 }
 
@@ -76,7 +81,9 @@ fn l1_fixture_other_rate_is_under_5_percent_excluding_intentional_other_rows() {
     // misclassification. If real-row other_rate creeps above 5%, ESPN
     // has changed prose and the regex set needs an update.
     let fixture = load_fixture();
-    let real_descriptions: Vec<&str> = fixture.items.iter()
+    let real_descriptions: Vec<&str> = fixture
+        .items
+        .iter()
         .filter(|item| item.kind != "Other")
         .map(|item| item.description.as_str())
         .collect();
@@ -118,17 +125,19 @@ fn l1_fixture_covers_every_kind() {
     let labels: HashSet<&str> = fixture.items.iter().map(|i| i.kind.as_str()).collect();
     for k in TransactionKind::ALL {
         let label = match k {
-            TransactionKind::Trade            => "Trade",
-            TransactionKind::Signing          => "Signing",
-            TransactionKind::Recall           => "Recall",
-            TransactionKind::Reassignment     => "Reassignment",
-            TransactionKind::WaiverPlacement  => "WaiverPlacement",
-            TransactionKind::WaiverClear      => "WaiverClear",
-            TransactionKind::WaiverClaim      => "WaiverClaim",
-            TransactionKind::InjuryReserve    => "InjuryReserve",
-            TransactionKind::Other            => "Other",
+            TransactionKind::Trade => "Trade",
+            TransactionKind::Signing => "Signing",
+            TransactionKind::Recall => "Recall",
+            TransactionKind::Reassignment => "Reassignment",
+            TransactionKind::WaiverPlacement => "WaiverPlacement",
+            TransactionKind::WaiverClear => "WaiverClear",
+            TransactionKind::WaiverClaim => "WaiverClaim",
+            TransactionKind::InjuryReserve => "InjuryReserve",
+            TransactionKind::Other => "Other",
         };
-        assert!(labels.contains(label),
-            "fixture has no rows for kind {label}; add at least one");
+        assert!(
+            labels.contains(label),
+            "fixture has no rows for kind {label}; add at least one"
+        );
     }
 }

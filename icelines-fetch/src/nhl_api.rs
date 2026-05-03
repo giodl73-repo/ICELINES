@@ -1,5 +1,7 @@
 use crate::error::FetchError;
-use crate::schema::{PagedResponse, PlayerContract, RosterResponse, SkaterBio, SkaterRealtime, SkaterStats};
+use crate::schema::{
+    PagedResponse, PlayerContract, RosterResponse, SkaterBio, SkaterRealtime, SkaterStats,
+};
 use crate::teams::ALL_NHL_TEAMS as TEAMS;
 use icelines_core::season_stats::SeasonType;
 use std::time::Duration;
@@ -120,9 +122,13 @@ impl NhlApiClient {
                         // pre-Lindsay error surface for 429-exhaust;
                         // adds a clear "exhausted retries on 5xx" path.
                         return Err(if status == 429 {
-                            FetchError::RateLimited { url: url.to_owned() }
+                            FetchError::RateLimited {
+                                url: url.to_owned(),
+                            }
                         } else if status == 503 {
-                            FetchError::ServiceUnavailable { url: url.to_owned() }
+                            FetchError::ServiceUnavailable {
+                                url: url.to_owned(),
+                            }
                         } else {
                             FetchError::Http {
                                 status,
@@ -252,7 +258,10 @@ impl NhlApiClient {
     /// Realtime is regular-season only; the live game feed updates
     /// realtime entries during playoffs through the same endpoint, so
     /// no `season_type` parameter is exposed (per Hart.6 D6 / Risk #5).
-    pub async fn fetch_all_realtime(&self, season: &str) -> Result<Vec<SkaterRealtime>, FetchError> {
+    pub async fn fetch_all_realtime(
+        &self,
+        season: &str,
+    ) -> Result<Vec<SkaterRealtime>, FetchError> {
         let endpoint = format!(
             "{}/skater/realtime?cayenneExp=seasonId%3D{season}%20and%20gameTypeId%3D2",
             self.base_stats
@@ -361,7 +370,10 @@ impl NhlApiClient {
 
     /// Fetch the gameWeek starting at a specific date (YYYY-MM-DD).
     /// Returns up to 7 days of games beginning from that date.
-    pub async fn fetch_schedule_for_date(&self, date: &str) -> Result<Vec<ScheduledGame>, FetchError> {
+    pub async fn fetch_schedule_for_date(
+        &self,
+        date: &str,
+    ) -> Result<Vec<ScheduledGame>, FetchError> {
         let url = format!("{}/schedule/{}", self.base_web, date);
         self.fetch_schedule_url(&url).await
     }
@@ -414,22 +426,31 @@ fn parse_game(g: &serde_json::Value, fallback_date: Option<&str>) -> Option<Sche
     if game_id == 0 {
         return None;
     }
-    let date = g["gameDate"].as_str()
+    let date = g["gameDate"]
+        .as_str()
         .map(str::to_owned)
         .or_else(|| fallback_date.map(str::to_owned))
         .unwrap_or_default();
 
-    let away      = g["awayTeam"]["abbrev"].as_str().unwrap_or("").to_owned();
-    let away_name = g["awayTeam"]["placeName"]["default"].as_str().unwrap_or(&away).to_owned();
-    let home      = g["homeTeam"]["abbrev"].as_str().unwrap_or("").to_owned();
-    let home_name = g["homeTeam"]["placeName"]["default"].as_str().unwrap_or(&home).to_owned();
-    let start     = g["startTimeUTC"].as_str().unwrap_or("").to_owned();
+    let away = g["awayTeam"]["abbrev"].as_str().unwrap_or("").to_owned();
+    let away_name = g["awayTeam"]["placeName"]["default"]
+        .as_str()
+        .unwrap_or(&away)
+        .to_owned();
+    let home = g["homeTeam"]["abbrev"].as_str().unwrap_or("").to_owned();
+    let home_name = g["homeTeam"]["placeName"]["default"]
+        .as_str()
+        .unwrap_or(&home)
+        .to_owned();
+    let start = g["startTimeUTC"].as_str().unwrap_or("").to_owned();
     let game_type = g["gameType"].as_u64().unwrap_or(2) as u8;
 
     let away_score = g["awayTeam"]["score"].as_u64().map(|v| v as u8);
     let home_score = g["homeTeam"]["score"].as_u64().map(|v| v as u8);
     let game_state = g["gameState"].as_str().map(str::to_owned);
-    let last_period = g["gameOutcome"]["lastPeriodType"].as_str().map(str::to_owned);
+    let last_period = g["gameOutcome"]["lastPeriodType"]
+        .as_str()
+        .map(str::to_owned);
 
     // Series context for playoff games. The NHL API has used several
     // shapes over time and the schedule-now / club-schedule endpoints
@@ -443,7 +464,9 @@ fn parse_game(g: &serde_json::Value, fallback_date: Option<&str>) -> Option<Sche
     let ss = &g["seriesSummary"];
     let st = &g["seriesStatus"];
 
-    let series_game = ss["gameLabel"].as_str().map(str::to_owned)
+    let series_game = ss["gameLabel"]
+        .as_str()
+        .map(str::to_owned)
         .or_else(|| st["gameLabel"].as_str().map(str::to_owned))
         .or_else(|| g["gameLabel"].as_str().map(str::to_owned))
         .or_else(|| {
@@ -454,7 +477,8 @@ fn parse_game(g: &serde_json::Value, fallback_date: Option<&str>) -> Option<Sche
             //   * `gameNumberOfSeven` (older variant)
             //   * `gameNumber`         (some other endpoints)
             // Convert the first hit to a "Game N" label.
-            let n = st["gameNumberOfSeries"].as_u64()
+            let n = st["gameNumberOfSeries"]
+                .as_u64()
                 .or_else(|| st["gameNumberOfSeven"].as_u64())
                 .or_else(|| ss["gameNumber"].as_u64())
                 .or_else(|| g["gameNumber"].as_u64())?;
@@ -465,27 +489,37 @@ fn parse_game(g: &serde_json::Value, fallback_date: Option<&str>) -> Option<Sche
     // We map them to (away, home) by matching the team abbrevs since the
     // NHL doesn't always tell us which side is "top seed" in the schedule
     // payload.
-    let away_wins = ss["awayWins"].as_u64()
+    let away_wins = ss["awayWins"]
+        .as_u64()
         .or_else(|| {
             // seriesStatus uses topSeedWins/bottomSeedWins — pair by abbrev.
-            let top_abbrev    = st["topSeedTeamAbbrev"].as_str().unwrap_or("");
+            let top_abbrev = st["topSeedTeamAbbrev"].as_str().unwrap_or("");
             let bottom_abbrev = st["bottomSeedTeamAbbrev"].as_str().unwrap_or("");
-            let top_wins      = st["topSeedWins"].as_u64();
-            let bottom_wins   = st["bottomSeedWins"].as_u64();
-            if away == top_abbrev { top_wins }
-            else if away == bottom_abbrev { bottom_wins }
-            else { None }
+            let top_wins = st["topSeedWins"].as_u64();
+            let bottom_wins = st["bottomSeedWins"].as_u64();
+            if away == top_abbrev {
+                top_wins
+            } else if away == bottom_abbrev {
+                bottom_wins
+            } else {
+                None
+            }
         })
         .map(|v| v as u8);
-    let home_wins = ss["homeWins"].as_u64()
+    let home_wins = ss["homeWins"]
+        .as_u64()
         .or_else(|| {
-            let top_abbrev    = st["topSeedTeamAbbrev"].as_str().unwrap_or("");
+            let top_abbrev = st["topSeedTeamAbbrev"].as_str().unwrap_or("");
             let bottom_abbrev = st["bottomSeedTeamAbbrev"].as_str().unwrap_or("");
-            let top_wins      = st["topSeedWins"].as_u64();
-            let bottom_wins   = st["bottomSeedWins"].as_u64();
-            if home == top_abbrev { top_wins }
-            else if home == bottom_abbrev { bottom_wins }
-            else { None }
+            let top_wins = st["topSeedWins"].as_u64();
+            let bottom_wins = st["bottomSeedWins"].as_u64();
+            if home == top_abbrev {
+                top_wins
+            } else if home == bottom_abbrev {
+                bottom_wins
+            } else {
+                None
+            }
         })
         .map(|v| v as u8);
 
@@ -510,27 +544,29 @@ fn parse_game(g: &serde_json::Value, fallback_date: Option<&str>) -> Option<Sche
 
 #[derive(Debug, Clone)]
 pub struct ScheduledGame {
-    pub game_id:         u64,
-    pub date:            String,  // "YYYY-MM-DD"
-    pub game_type:       u8,      // 1=preseason 2=regular 3=playoff
-    pub away_abbrev:     String,
-    pub away_name:       String,
-    pub home_abbrev:     String,
-    pub home_name:       String,
-    pub start_time_utc:  String,
+    pub game_id: u64,
+    pub date: String,  // "YYYY-MM-DD"
+    pub game_type: u8, // 1=preseason 2=regular 3=playoff
+    pub away_abbrev: String,
+    pub away_name: String,
+    pub home_abbrev: String,
+    pub home_name: String,
+    pub start_time_utc: String,
     // Result fields — populated for completed/live games
-    pub away_score:      Option<u8>,
-    pub home_score:      Option<u8>,
-    pub game_state:      Option<String>,  // "FUT","PRE","LIVE","CRIT","FINAL","OFF"
-    pub last_period:     Option<String>,  // "REG","OT","SO" (when final)
+    pub away_score: Option<u8>,
+    pub home_score: Option<u8>,
+    pub game_state: Option<String>, // "FUT","PRE","LIVE","CRIT","FINAL","OFF"
+    pub last_period: Option<String>, // "REG","OT","SO" (when final)
     // Playoff series context (game_type == 3 only)
-    pub series_game:     Option<String>,  // e.g. "Game 4"
-    pub away_wins:       Option<u8>,
-    pub home_wins:       Option<u8>,
+    pub series_game: Option<String>, // e.g. "Game 4"
+    pub away_wins: Option<u8>,
+    pub home_wins: Option<u8>,
 }
 
 impl ScheduledGame {
-    pub fn is_playoff(&self) -> bool { self.game_type == 3 }
+    pub fn is_playoff(&self) -> bool {
+        self.game_type == 3
+    }
 
     /// True once the game has ended (FINAL or OFF).
     pub fn is_final(&self) -> bool {
@@ -552,7 +588,10 @@ impl ScheduledGame {
         let gm = self.series_game.as_deref()?;
         let aw = self.away_wins?;
         let hw = self.home_wins?;
-        Some(format!("{} {aw}–{hw} {} · {gm}", self.away_abbrev, self.home_abbrev))
+        Some(format!(
+            "{} {aw}–{hw} {} · {gm}",
+            self.away_abbrev, self.home_abbrev
+        ))
     }
 }
 
@@ -561,15 +600,15 @@ impl ScheduledGame {
 /// One goal scored in a game.
 #[derive(Debug, Clone)]
 pub struct Goal {
-    pub period:        u8,        // 1, 2, 3, OT=4+
-    pub period_type:   String,    // "REG" | "OT" | "SO"
-    pub time_in_period:String,    // "MM:SS"
-    pub scorer_name:   String,
-    pub scorer_team:   String,    // home/away abbrev
-    pub assist1_name:  Option<String>,
-    pub assist2_name:  Option<String>,
-    pub away_score:    u8,
-    pub home_score:    u8,
+    pub period: u8,             // 1, 2, 3, OT=4+
+    pub period_type: String,    // "REG" | "OT" | "SO"
+    pub time_in_period: String, // "MM:SS"
+    pub scorer_name: String,
+    pub scorer_team: String, // home/away abbrev
+    pub assist1_name: Option<String>,
+    pub assist2_name: Option<String>,
+    pub away_score: u8,
+    pub home_score: u8,
 }
 
 /// Goalie line for one team's starting goalie in a game.
@@ -577,9 +616,9 @@ pub struct Goal {
 pub struct GoalieLine {
     pub player_name: String,
     pub team_abbrev: String,
-    pub saves:       u32,
-    pub shots:       u32,
-    pub decision:    Option<String>, // "W" | "L" | "OTL" | None
+    pub saves: u32,
+    pub shots: u32,
+    pub decision: Option<String>, // "W" | "L" | "OTL" | None
 }
 
 /// One skater's line in a single game's boxscore. Sourced from
@@ -588,40 +627,40 @@ pub struct GoalieLine {
 /// pick out per-team stat leaders (TOI, SOG, Hits, Blocks, Takeaways).
 #[derive(Debug, Clone)]
 pub struct SkaterLine {
-    pub player_id:      u32,
-    pub player_name:    String,
-    pub team_abbrev:    String,
-    pub position:       String,         // "C" | "L" | "R" | "D"
+    pub player_id: u32,
+    pub player_name: String,
+    pub team_abbrev: String,
+    pub position: String, // "C" | "L" | "R" | "D"
     /// Time on ice in seconds. Parsed from the API's "MM:SS" string.
-    pub toi_seconds:    u32,
-    pub goals:          u32,
-    pub assists:        u32,
-    pub plus_minus:     i32,
-    pub sog:            u32,
-    pub hits:           u32,
-    pub blocked_shots:  u32,
-    pub takeaways:      u32,
-    pub giveaways:      u32,
-    pub pim:            u32,
+    pub toi_seconds: u32,
+    pub goals: u32,
+    pub assists: u32,
+    pub plus_minus: i32,
+    pub sog: u32,
+    pub hits: u32,
+    pub blocked_shots: u32,
+    pub takeaways: u32,
+    pub giveaways: u32,
+    pub pim: u32,
 }
 
 /// Detailed boxscore for one game.
 #[derive(Debug, Clone)]
 pub struct Boxscore {
-    pub game_id:        u64,
-    pub away_abbrev:    String,
-    pub home_abbrev:    String,
-    pub away_score:     u8,
-    pub home_score:     u8,
-    pub game_state:     Option<String>,
-    pub last_period:    Option<String>,
-    pub goals:          Vec<Goal>,
-    pub goalies:        Vec<GoalieLine>,
+    pub game_id: u64,
+    pub away_abbrev: String,
+    pub home_abbrev: String,
+    pub away_score: u8,
+    pub home_score: u8,
+    pub game_state: Option<String>,
+    pub last_period: Option<String>,
+    pub goals: Vec<Goal>,
+    pub goalies: Vec<GoalieLine>,
     /// Per-team skater rows with full stat block. `away_skaters` first,
     /// `home_skaters` second. Empty when the boxscore endpoint
     /// pre-dates the `playerByGameStats` schema.
-    pub away_skaters:   Vec<SkaterLine>,
-    pub home_skaters:   Vec<SkaterLine>,
+    pub away_skaters: Vec<SkaterLine>,
+    pub home_skaters: Vec<SkaterLine>,
 }
 
 impl NhlApiClient {
@@ -638,34 +677,40 @@ impl NhlApiClient {
 pub fn parse_boxscore(raw: &serde_json::Value, game_id: u64) -> Boxscore {
     let away_abbrev = raw["awayTeam"]["abbrev"].as_str().unwrap_or("").to_owned();
     let home_abbrev = raw["homeTeam"]["abbrev"].as_str().unwrap_or("").to_owned();
-    let away_score  = raw["awayTeam"]["score"].as_u64().unwrap_or(0) as u8;
-    let home_score  = raw["homeTeam"]["score"].as_u64().unwrap_or(0) as u8;
-    let game_state  = raw["gameState"].as_str().map(str::to_owned);
-    let last_period = raw["gameOutcome"]["lastPeriodType"].as_str().map(str::to_owned);
+    let away_score = raw["awayTeam"]["score"].as_u64().unwrap_or(0) as u8;
+    let home_score = raw["homeTeam"]["score"].as_u64().unwrap_or(0) as u8;
+    let game_state = raw["gameState"].as_str().map(str::to_owned);
+    let last_period = raw["gameOutcome"]["lastPeriodType"]
+        .as_str()
+        .map(str::to_owned);
 
     // Goals — try a few common nesting paths
     let mut goals = Vec::new();
-    let goal_arrays: Vec<&serde_json::Value> = if let Some(arr) = raw["summary"]["scoring"].as_array() {
-        // Newer endpoint: summary.scoring is array of period blocks; each has "goals"
-        arr.iter().collect()
-    } else if let Some(arr) = raw["scoring"].as_array() {
-        arr.iter().collect()
-    } else {
-        Vec::new()
-    };
+    let goal_arrays: Vec<&serde_json::Value> =
+        if let Some(arr) = raw["summary"]["scoring"].as_array() {
+            // Newer endpoint: summary.scoring is array of period blocks; each has "goals"
+            arr.iter().collect()
+        } else if let Some(arr) = raw["scoring"].as_array() {
+            arr.iter().collect()
+        } else {
+            Vec::new()
+        };
 
     for period_block in goal_arrays {
-        let period_num = period_block["periodDescriptor"]["number"].as_u64()
+        let period_num = period_block["periodDescriptor"]["number"]
+            .as_u64()
             .or_else(|| period_block["period"].as_u64())
             .unwrap_or(0) as u8;
-        let period_type = period_block["periodDescriptor"]["periodType"].as_str()
+        let period_type = period_block["periodDescriptor"]["periodType"]
+            .as_str()
             .or_else(|| period_block["periodType"].as_str())
             .unwrap_or("REG")
             .to_owned();
 
         if let Some(g_arr) = period_block["goals"].as_array() {
             for g in g_arr {
-                let scorer_name = g["firstName"]["default"].as_str()
+                let scorer_name = g["firstName"]["default"]
+                    .as_str()
                     .map(|fn_| {
                         let ln = g["lastName"]["default"].as_str().unwrap_or("");
                         format!("{fn_} {ln}").trim().to_owned()
@@ -673,11 +718,13 @@ pub fn parse_boxscore(raw: &serde_json::Value, game_id: u64) -> Boxscore {
                     .or_else(|| g["name"]["default"].as_str().map(str::to_owned))
                     .or_else(|| g["scorer"].as_str().map(str::to_owned))
                     .unwrap_or_default();
-                let scorer_team = g["teamAbbrev"]["default"].as_str()
+                let scorer_team = g["teamAbbrev"]["default"]
+                    .as_str()
                     .or_else(|| g["teamAbbrev"].as_str())
                     .unwrap_or("")
                     .to_owned();
-                let time_in_period = g["timeInPeriod"].as_str()
+                let time_in_period = g["timeInPeriod"]
+                    .as_str()
                     .or_else(|| g["time"].as_str())
                     .unwrap_or("")
                     .to_owned();
@@ -703,15 +750,15 @@ pub fn parse_boxscore(raw: &serde_json::Value, game_id: u64) -> Boxscore {
                 let hm_score = g["homeScore"].as_u64().unwrap_or(0) as u8;
 
                 goals.push(Goal {
-                    period:         period_num,
-                    period_type:    period_type.clone(),
+                    period: period_num,
+                    period_type: period_type.clone(),
                     time_in_period,
                     scorer_name,
                     scorer_team,
                     assist1_name,
                     assist2_name,
-                    away_score:     aw_score,
-                    home_score:     hm_score,
+                    away_score: aw_score,
+                    home_score: hm_score,
                 });
             }
         }
@@ -720,15 +767,28 @@ pub fn parse_boxscore(raw: &serde_json::Value, game_id: u64) -> Boxscore {
     // Goalies — try common shapes: playerByGameStats.{home,away}Team.goalies / boxscore.goalies
     let mut goalies = Vec::new();
     let goalie_paths = [
-        (&raw["playerByGameStats"]["awayTeam"]["goalies"], away_abbrev.as_str()),
-        (&raw["playerByGameStats"]["homeTeam"]["goalies"], home_abbrev.as_str()),
-        (&raw["boxscore"]["awayTeam"]["goalies"],          away_abbrev.as_str()),
-        (&raw["boxscore"]["homeTeam"]["goalies"],          home_abbrev.as_str()),
+        (
+            &raw["playerByGameStats"]["awayTeam"]["goalies"],
+            away_abbrev.as_str(),
+        ),
+        (
+            &raw["playerByGameStats"]["homeTeam"]["goalies"],
+            home_abbrev.as_str(),
+        ),
+        (
+            &raw["boxscore"]["awayTeam"]["goalies"],
+            away_abbrev.as_str(),
+        ),
+        (
+            &raw["boxscore"]["homeTeam"]["goalies"],
+            home_abbrev.as_str(),
+        ),
     ];
     for (val, team) in goalie_paths {
         if let Some(arr) = val.as_array() {
             for g in arr {
-                let player_name = g["name"]["default"].as_str()
+                let player_name = g["name"]["default"]
+                    .as_str()
                     .map(str::to_owned)
                     .or_else(|| {
                         let fnm = g["firstName"]["default"].as_str()?;
@@ -737,7 +797,8 @@ pub fn parse_boxscore(raw: &serde_json::Value, game_id: u64) -> Boxscore {
                     })
                     .unwrap_or_default();
                 let saves = g["saves"].as_u64().unwrap_or(0) as u32;
-                let shots = g["shotsAgainst"].as_u64()
+                let shots = g["shotsAgainst"]
+                    .as_u64()
                     .or_else(|| g["shots"].as_u64())
                     .unwrap_or(0) as u32;
                 let decision = g["decision"].as_str().map(str::to_owned);
@@ -745,7 +806,9 @@ pub fn parse_boxscore(raw: &serde_json::Value, game_id: u64) -> Boxscore {
                     goalies.push(GoalieLine {
                         player_name,
                         team_abbrev: team.to_owned(),
-                        saves, shots, decision,
+                        saves,
+                        shots,
+                        decision,
                     });
                 }
             }
@@ -760,10 +823,17 @@ pub fn parse_boxscore(raw: &serde_json::Value, game_id: u64) -> Boxscore {
     let home_skaters = parse_skater_lines(&pgs["homeTeam"], &home_abbrev);
 
     Boxscore {
-        game_id, away_abbrev, home_abbrev,
-        away_score, home_score, game_state, last_period,
-        goals, goalies,
-        away_skaters, home_skaters,
+        game_id,
+        away_abbrev,
+        home_abbrev,
+        away_score,
+        home_score,
+        game_state,
+        last_period,
+        goals,
+        goalies,
+        away_skaters,
+        home_skaters,
     }
 }
 
@@ -775,10 +845,13 @@ pub fn parse_boxscore(raw: &serde_json::Value, game_id: u64) -> Boxscore {
 fn parse_skater_lines(team: &serde_json::Value, abbrev: &str) -> Vec<SkaterLine> {
     let mut out = Vec::new();
     for group in &["forwards", "defense"] {
-        let Some(arr) = team[group].as_array() else { continue };
+        let Some(arr) = team[group].as_array() else {
+            continue;
+        };
         for p in arr {
-            let player_id   = p["playerId"].as_u64().unwrap_or(0) as u32;
-            let player_name = p["name"]["default"].as_str()
+            let player_id = p["playerId"].as_u64().unwrap_or(0) as u32;
+            let player_name = p["name"]["default"]
+                .as_str()
                 .or_else(|| p["name"].as_str())
                 .unwrap_or("")
                 .to_owned();
@@ -790,15 +863,15 @@ fn parse_skater_lines(team: &serde_json::Value, abbrev: &str) -> Vec<SkaterLine>
                 team_abbrev: abbrev.to_owned(),
                 position,
                 toi_seconds,
-                goals:         p["goals"]         .as_u64().unwrap_or(0) as u32,
-                assists:       p["assists"]       .as_u64().unwrap_or(0) as u32,
-                plus_minus:    p["plusMinus"]     .as_i64().unwrap_or(0) as i32,
-                sog:           p["sog"]           .as_u64().unwrap_or(0) as u32,
-                hits:          p["hits"]          .as_u64().unwrap_or(0) as u32,
-                blocked_shots: p["blockedShots"]  .as_u64().unwrap_or(0) as u32,
-                takeaways:     p["takeaways"]     .as_u64().unwrap_or(0) as u32,
-                giveaways:     p["giveaways"]     .as_u64().unwrap_or(0) as u32,
-                pim:           p["pim"]           .as_u64().unwrap_or(0) as u32,
+                goals: p["goals"].as_u64().unwrap_or(0) as u32,
+                assists: p["assists"].as_u64().unwrap_or(0) as u32,
+                plus_minus: p["plusMinus"].as_i64().unwrap_or(0) as i32,
+                sog: p["sog"].as_u64().unwrap_or(0) as u32,
+                hits: p["hits"].as_u64().unwrap_or(0) as u32,
+                blocked_shots: p["blockedShots"].as_u64().unwrap_or(0) as u32,
+                takeaways: p["takeaways"].as_u64().unwrap_or(0) as u32,
+                giveaways: p["giveaways"].as_u64().unwrap_or(0) as u32,
+                pim: p["pim"].as_u64().unwrap_or(0) as u32,
             });
         }
     }
@@ -810,8 +883,14 @@ fn parse_skater_lines(team: &serde_json::Value, abbrev: &str) -> Vec<SkaterLine>
 /// minutes-seconds string ("18:45") rather than a number.
 fn parse_mmss(s: &str) -> u32 {
     let mut parts = s.splitn(2, ':');
-    let m = parts.next().and_then(|p| p.parse::<u32>().ok()).unwrap_or(0);
-    let s = parts.next().and_then(|p| p.parse::<u32>().ok()).unwrap_or(0);
+    let m = parts
+        .next()
+        .and_then(|p| p.parse::<u32>().ok())
+        .unwrap_or(0);
+    let s = parts
+        .next()
+        .and_then(|p| p.parse::<u32>().ok())
+        .unwrap_or(0);
     m * 60 + s
 }
 
@@ -820,21 +899,21 @@ fn parse_mmss(s: &str) -> u32 {
 /// One series in a playoff round.
 #[derive(Debug, Clone)]
 pub struct PlayoffSeries {
-    pub letter:             Option<String>, // e.g. "A" — used as a stable key
-    pub top_seed_abbrev:    String,
-    pub top_seed_name:      String,
-    pub top_seed_wins:      u8,
-    pub top_seed_rank:      Option<String>, // e.g. "A1", "WC1"
+    pub letter: Option<String>, // e.g. "A" — used as a stable key
+    pub top_seed_abbrev: String,
+    pub top_seed_name: String,
+    pub top_seed_wins: u8,
+    pub top_seed_rank: Option<String>, // e.g. "A1", "WC1"
     pub bottom_seed_abbrev: String,
-    pub bottom_seed_name:   String,
-    pub bottom_seed_wins:   u8,
-    pub bottom_seed_rank:   Option<String>,
-    pub winner_abbrev:      Option<String>, // None until series concludes
-    pub conference:         Option<String>, // "Eastern" | "Western" | None
+    pub bottom_seed_name: String,
+    pub bottom_seed_wins: u8,
+    pub bottom_seed_rank: Option<String>,
+    pub winner_abbrev: Option<String>, // None until series concludes
+    pub conference: Option<String>,    // "Eastern" | "Western" | None
     /// Per-game results for this series. Empty when the live API source
     /// does not include game logs; populated for historical bundles.
     /// Phase 8c.
-    pub games:              Vec<PlayoffGameResult>,
+    pub games: Vec<PlayoffGameResult>,
 }
 
 /// One game inside a playoff series. Sourced from bundled `playoffs.json`
@@ -843,13 +922,13 @@ pub struct PlayoffSeries {
 /// this vector is empty.
 #[derive(Debug, Clone)]
 pub struct PlayoffGameResult {
-    pub date:         String,        // ISO 8601 (YYYY-MM-DD)
-    pub home_abbrev:  String,
-    pub away_abbrev:  String,
-    pub home_score:   u8,
-    pub away_score:   u8,
-    pub series_after: String,        // e.g. "TBL 1-0", "tied 2-2"
-    pub goals:        Vec<PlayoffGoal>,
+    pub date: String, // ISO 8601 (YYYY-MM-DD)
+    pub home_abbrev: String,
+    pub away_abbrev: String,
+    pub home_score: u8,
+    pub away_score: u8,
+    pub series_after: String, // e.g. "TBL 1-0", "tied 2-2"
+    pub goals: Vec<PlayoffGoal>,
 }
 
 /// One goal scored in a playoff game. v1 of the bundle records scorer name
@@ -857,7 +936,7 @@ pub struct PlayoffGameResult {
 #[derive(Debug, Clone)]
 pub struct PlayoffGoal {
     pub scorer: String,
-    pub team:   String,
+    pub team: String,
 }
 
 impl PlayoffSeries {
@@ -875,13 +954,19 @@ impl PlayoffSeries {
     pub fn summary(&self) -> String {
         let (t, b) = (self.top_seed_wins, self.bottom_seed_wins);
         if let Some(w) = &self.winner_abbrev {
-            format!("{} {t}-{b} {} · {w} wins", self.top_seed_abbrev, self.bottom_seed_abbrev)
+            format!(
+                "{} {t}-{b} {} · {w} wins",
+                self.top_seed_abbrev, self.bottom_seed_abbrev
+            )
         } else if t > b {
             format!("{} leads {t}-{b}", self.top_seed_abbrev)
         } else if b > t {
             format!("{} leads {b}-{t}", self.bottom_seed_abbrev)
         } else if t == 0 {
-            format!("{} vs {} · series begins", self.top_seed_abbrev, self.bottom_seed_abbrev)
+            format!(
+                "{} vs {} · series begins",
+                self.top_seed_abbrev, self.bottom_seed_abbrev
+            )
         } else {
             format!("Tied {t}-{b}")
         }
@@ -891,17 +976,17 @@ impl PlayoffSeries {
 /// One round of a playoff bracket.
 #[derive(Debug, Clone)]
 pub struct PlayoffRound {
-    pub round_number: u8,    // 1..=4
-    pub label:        String, // "First Round", "Second Round", "Conf Final", "Stanley Cup Final"
-    pub series:       Vec<PlayoffSeries>,
+    pub round_number: u8, // 1..=4
+    pub label: String,    // "First Round", "Second Round", "Conf Final", "Stanley Cup Final"
+    pub series: Vec<PlayoffSeries>,
 }
 
 /// Full playoff bracket for one season.
 #[derive(Debug, Clone)]
 pub struct PlayoffBracket {
-    pub season:        String,
+    pub season: String,
     pub current_round: Option<u8>,
-    pub rounds:        Vec<PlayoffRound>,
+    pub rounds: Vec<PlayoffRound>,
 }
 
 impl PlayoffBracket {
@@ -937,23 +1022,27 @@ impl NhlApiClient {
 /// API has historically used (`series` list grouped by `playoffRounds`) and
 /// extracts the fields we render. Unknown fields are silently dropped.
 pub fn parse_playoff_bracket(raw: &serde_json::Value) -> PlayoffBracket {
-    let season = raw["season"].as_str()
+    let season = raw["season"]
+        .as_str()
         .or_else(|| raw["seasonId"].as_str())
         .map(str::to_owned)
         .unwrap_or_default();
-    let current_round = raw["currentRound"].as_u64()
+    let current_round = raw["currentRound"]
+        .as_u64()
         .or_else(|| raw["roundNumber"].as_u64())
         .map(|v| v as u8);
 
     let mut rounds: Vec<PlayoffRound> = Vec::new();
 
     // Shape A: legacy nested form — `playoffRounds: [{ roundNumber, series: [..] }]`.
-    let round_arrays = raw["playoffRounds"].as_array()
+    let round_arrays = raw["playoffRounds"]
+        .as_array()
         .or_else(|| raw["rounds"].as_array());
     if let Some(arr) = round_arrays {
         for r in arr {
             let round_number = r["roundNumber"].as_u64().unwrap_or(0) as u8;
-            let label = r["roundLabel"].as_str()
+            let label = r["roundLabel"]
+                .as_str()
                 .or_else(|| r["roundName"].as_str())
                 .map(str::to_owned)
                 .unwrap_or_else(|| default_round_label(round_number));
@@ -963,7 +1052,11 @@ pub fn parse_playoff_bracket(raw: &serde_json::Value) -> PlayoffBracket {
                     series.push(parse_series(s));
                 }
             }
-            rounds.push(PlayoffRound { round_number, label, series });
+            rounds.push(PlayoffRound {
+                round_number,
+                label,
+                series,
+            });
         }
     }
 
@@ -973,9 +1066,10 @@ pub fn parse_playoff_bracket(raw: &serde_json::Value) -> PlayoffBracket {
         if let Some(arr) = raw["series"].as_array() {
             use std::collections::BTreeMap;
             let mut by_round: BTreeMap<u8, Vec<PlayoffSeries>> = BTreeMap::new();
-            let mut labels:   BTreeMap<u8, String>             = BTreeMap::new();
+            let mut labels: BTreeMap<u8, String> = BTreeMap::new();
             for s in arr {
-                let rn = s["playoffRound"].as_u64()
+                let rn = s["playoffRound"]
+                    .as_u64()
                     .or_else(|| s["roundNumber"].as_u64())
                     .unwrap_or(0) as u8;
                 if let Some(t) = s["seriesTitle"].as_str() {
@@ -984,15 +1078,25 @@ pub fn parse_playoff_bracket(raw: &serde_json::Value) -> PlayoffBracket {
                 by_round.entry(rn).or_default().push(parse_series(s));
             }
             for (rn, ser) in by_round {
-                let label = labels.get(&rn).cloned()
+                let label = labels
+                    .get(&rn)
+                    .cloned()
                     .unwrap_or_else(|| default_round_label(rn));
-                rounds.push(PlayoffRound { round_number: rn, label, series: ser });
+                rounds.push(PlayoffRound {
+                    round_number: rn,
+                    label,
+                    series: ser,
+                });
             }
         }
     }
 
     rounds.sort_by_key(|r| r.round_number);
-    PlayoffBracket { season, current_round, rounds }
+    PlayoffBracket {
+        season,
+        current_round,
+        rounds,
+    }
 }
 
 fn default_round_label(round_number: u8) -> String {
@@ -1006,26 +1110,31 @@ fn default_round_label(round_number: u8) -> String {
 }
 
 fn parse_series(s: &serde_json::Value) -> PlayoffSeries {
-    let letter = s["seriesLetter"].as_str()
+    let letter = s["seriesLetter"]
+        .as_str()
         .or_else(|| s["seriesAbbrev"].as_str())
         .map(str::to_owned);
 
-    let top    = &s["topSeedTeam"];
+    let top = &s["topSeedTeam"];
     let bottom = &s["bottomSeedTeam"];
 
     let top_abbrev = top["abbrev"].as_str().unwrap_or("").to_owned();
-    let top_name   = top["name"]["default"].as_str()
+    let top_name = top["name"]["default"]
+        .as_str()
         .or_else(|| top["placeName"]["default"].as_str())
-        .unwrap_or(&top_abbrev).to_owned();
+        .unwrap_or(&top_abbrev)
+        .to_owned();
     // Wins: legacy nested API put it on the team object; current API
     // (verified 2026-04-29 against /v1/playoff-bracket/2026) puts it at
     // the series level as `topSeedWins`/`bottomSeedWins`.
-    let top_wins = top["wins"].as_u64()
+    let top_wins = top["wins"]
+        .as_u64()
         .or_else(|| s["topSeedWins"].as_u64())
         .unwrap_or(0) as u8;
     // Rank: prefer the abbreviated form ("D1", "WC1") when present —
     // matches what users see in the playoff bracket header.
-    let top_rank = s["topSeedRankAbbrev"].as_str()
+    let top_rank = s["topSeedRankAbbrev"]
+        .as_str()
         .or_else(|| top["seed"].as_str())
         .or_else(|| s["topSeedRank"].as_str())
         .map(str::to_owned)
@@ -1034,28 +1143,38 @@ fn parse_series(s: &serde_json::Value) -> PlayoffSeries {
         .or_else(|| s["topSeedRank"].as_u64().map(|n| n.to_string()));
 
     let bot_abbrev = bottom["abbrev"].as_str().unwrap_or("").to_owned();
-    let bot_name   = bottom["name"]["default"].as_str()
+    let bot_name = bottom["name"]["default"]
+        .as_str()
         .or_else(|| bottom["placeName"]["default"].as_str())
-        .unwrap_or(&bot_abbrev).to_owned();
-    let bot_wins = bottom["wins"].as_u64()
+        .unwrap_or(&bot_abbrev)
+        .to_owned();
+    let bot_wins = bottom["wins"]
+        .as_u64()
         .or_else(|| s["bottomSeedWins"].as_u64())
         .unwrap_or(0) as u8;
-    let bot_rank = s["bottomSeedRankAbbrev"].as_str()
+    let bot_rank = s["bottomSeedRankAbbrev"]
+        .as_str()
         .or_else(|| bottom["seed"].as_str())
         .or_else(|| s["bottomSeedRank"].as_str())
         .map(str::to_owned)
         .or_else(|| s["bottomSeedRank"].as_u64().map(|n| n.to_string()));
 
     // Winner: explicit field or inferred from 4-win threshold
-    let winner_abbrev = s["winningTeam"]["abbrev"].as_str()
+    let winner_abbrev = s["winningTeam"]["abbrev"]
+        .as_str()
         .map(str::to_owned)
         .or_else(|| {
-            if top_wins == 4 { Some(top_abbrev.clone()) }
-            else if bot_wins == 4 { Some(bot_abbrev.clone()) }
-            else { None }
+            if top_wins == 4 {
+                Some(top_abbrev.clone())
+            } else if bot_wins == 4 {
+                Some(bot_abbrev.clone())
+            } else {
+                None
+            }
         });
 
-    let conference = s["conferenceAbbrev"].as_str()
+    let conference = s["conferenceAbbrev"]
+        .as_str()
         .or_else(|| s["conference"].as_str())
         .map(|c| match c {
             "E" | "EAST" | "Eastern" => "Eastern".to_owned(),
@@ -1065,14 +1184,14 @@ fn parse_series(s: &serde_json::Value) -> PlayoffSeries {
 
     PlayoffSeries {
         letter,
-        top_seed_abbrev:    top_abbrev,
-        top_seed_name:      top_name,
-        top_seed_wins:      top_wins,
-        top_seed_rank:      top_rank,
+        top_seed_abbrev: top_abbrev,
+        top_seed_name: top_name,
+        top_seed_wins: top_wins,
+        top_seed_rank: top_rank,
         bottom_seed_abbrev: bot_abbrev,
-        bottom_seed_name:   bot_name,
-        bottom_seed_wins:   bot_wins,
-        bottom_seed_rank:   bot_rank,
+        bottom_seed_name: bot_name,
+        bottom_seed_wins: bot_wins,
+        bottom_seed_rank: bot_rank,
         winner_abbrev,
         conference,
         games: Vec::new(),
@@ -1102,7 +1221,9 @@ mod parse_game_tests {
         });
         if let serde_json::Value::Object(extra_map) = extra {
             if let serde_json::Value::Object(base) = &mut v {
-                for (k, val) in extra_map { base.insert(k, val); }
+                for (k, val) in extra_map {
+                    base.insert(k, val);
+                }
             }
         }
         v
@@ -1154,8 +1275,11 @@ mod parse_game_tests {
             }
         }));
         let g = parse_game(&raw, Some("2026-04-28")).expect("parses");
-        assert_eq!(g.series_game.as_deref(), Some("Game 3"),
-            "numeric gameNumberOfSeven should synthesise a 'Game N' label");
+        assert_eq!(
+            g.series_game.as_deref(),
+            Some("Game 3"),
+            "numeric gameNumberOfSeven should synthesise a 'Game N' label"
+        );
         assert_eq!(g.away_wins, Some(1));
         assert_eq!(g.home_wins, Some(1));
     }
@@ -1177,8 +1301,11 @@ mod parse_game_tests {
             }
         }));
         let g = parse_game(&raw, Some("2026-04-29")).expect("parses");
-        assert_eq!(g.series_game.as_deref(), Some("Game 5"),
-            "current API uses gameNumberOfSeries");
+        assert_eq!(
+            g.series_game.as_deref(),
+            Some("Game 5"),
+            "current API uses gameNumberOfSeries"
+        );
         // away=NYR is bottom_seed; home=WSH is top_seed (from base_playoff).
         // Wait — base_playoff has NYR away, WSH home. seriesStatus has
         // TBL top, MTL bottom. The win-mapping should match by abbrev.

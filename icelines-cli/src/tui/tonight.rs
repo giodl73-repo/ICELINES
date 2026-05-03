@@ -40,7 +40,9 @@ pub fn new_cache() -> TonightCache {
 /// `YYYY-MM-DD` and fetched via `/v1/schedule/{date}`.
 pub fn maybe_fetch(cache: TonightCache, date_key: String) {
     if !crate::config::live_feeds_enabled() {
-        cache.lock().unwrap()
+        cache
+            .lock()
+            .unwrap()
             .insert(date_key, TonightState::Error(LIVE_DISABLED_MSG.to_owned()));
         return;
     }
@@ -68,7 +70,7 @@ pub fn maybe_fetch(cache: TonightCache, date_key: String) {
         let mut map = cache2.lock().unwrap();
         match result {
             Ok(games) => map.insert(date_key, TonightState::Loaded(games)),
-            Err(e)    => map.insert(date_key, TonightState::Error(e.to_string())),
+            Err(e) => map.insert(date_key, TonightState::Error(e.to_string())),
         };
     });
 }
@@ -76,11 +78,16 @@ pub fn maybe_fetch(cache: TonightCache, date_key: String) {
 /// Force-refetch even if the cache has data (used by the `r` key).
 pub fn force_fetch(cache: TonightCache, date_key: String) {
     if !crate::config::live_feeds_enabled() {
-        cache.lock().unwrap()
+        cache
+            .lock()
+            .unwrap()
             .insert(date_key, TonightState::Error(LIVE_DISABLED_MSG.to_owned()));
         return;
     }
-    cache.lock().unwrap().insert(date_key.clone(), TonightState::Loading);
+    cache
+        .lock()
+        .unwrap()
+        .insert(date_key.clone(), TonightState::Loading);
     if tokio::runtime::Handle::try_current().is_err() {
         return;
     }
@@ -95,7 +102,7 @@ pub fn force_fetch(cache: TonightCache, date_key: String) {
         let mut map = cache2.lock().unwrap();
         match result {
             Ok(games) => map.insert(date_key, TonightState::Loaded(games)),
-            Err(e)    => map.insert(date_key, TonightState::Error(e.to_string())),
+            Err(e) => map.insert(date_key, TonightState::Error(e.to_string())),
         };
     });
 }
@@ -125,7 +132,9 @@ pub fn new_boxscore_cache() -> BoxscoreCache {
 
 pub fn maybe_fetch_boxscore(cache: BoxscoreCache, game_id: u64) {
     if !crate::config::live_feeds_enabled() {
-        cache.lock().unwrap()
+        cache
+            .lock()
+            .unwrap()
             .insert(game_id, BoxscoreState::Error(LIVE_DISABLED_MSG.to_owned()));
         return;
     }
@@ -148,7 +157,7 @@ pub fn maybe_fetch_boxscore(cache: BoxscoreCache, game_id: u64) {
         let result = client.fetch_boxscore(game_id).await;
         let mut map = cache2.lock().unwrap();
         match result {
-            Ok(b)  => map.insert(game_id, BoxscoreState::Loaded(b)),
+            Ok(b) => map.insert(game_id, BoxscoreState::Loaded(b)),
             Err(e) => map.insert(game_id, BoxscoreState::Error(e.to_string())),
         };
     });

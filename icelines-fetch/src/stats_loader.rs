@@ -352,7 +352,8 @@ pub fn load_into_repo(
         .map(|g| g.season_id)
         .filter(|sid| *sid != expected)
         .collect();
-    let total_mismatched = mismatched_bios.len() + mismatched_stats.len() + mismatched_goalies.len();
+    let total_mismatched =
+        mismatched_bios.len() + mismatched_stats.len() + mismatched_goalies.len();
     if total_mismatched > 0 {
         // Surface the first observed mismatched id so the error message
         // points at concrete data, not just a count.
@@ -383,29 +384,29 @@ pub fn load_into_repo(
     // so the playoff path returns an empty vec WITHOUT pushing to
     // `missing` — the absence is by design, not a partial fetch.
     let realtime: Vec<SkaterRealtime> = match season_type {
-        SeasonType::Regular => match store
-            .read_tier::<Vec<SkaterRealtime>>(&SnapshotTier::Realtime, "realtime.json")
-        {
-            Ok(rt) if !rt.is_empty() => rt,
-            Ok(_empty) => {
-                missing.push(MissingSource::Realtime {
-                    season: season_str.clone(),
-                    season_type,
-                    reason: "realtime.json present but empty".into(),
-                });
-                missing_files.push("snapshot:realtime.json".into());
-                Vec::new()
+        SeasonType::Regular => {
+            match store.read_tier::<Vec<SkaterRealtime>>(&SnapshotTier::Realtime, "realtime.json") {
+                Ok(rt) if !rt.is_empty() => rt,
+                Ok(_empty) => {
+                    missing.push(MissingSource::Realtime {
+                        season: season_str.clone(),
+                        season_type,
+                        reason: "realtime.json present but empty".into(),
+                    });
+                    missing_files.push("snapshot:realtime.json".into());
+                    Vec::new()
+                }
+                Err(e) => {
+                    missing.push(MissingSource::Realtime {
+                        season: season_str.clone(),
+                        season_type,
+                        reason: format!("realtime.json unreadable: {e}"),
+                    });
+                    missing_files.push("snapshot:realtime.json".into());
+                    Vec::new()
+                }
             }
-            Err(e) => {
-                missing.push(MissingSource::Realtime {
-                    season: season_str.clone(),
-                    season_type,
-                    reason: format!("realtime.json unreadable: {e}"),
-                });
-                missing_files.push("snapshot:realtime.json".into());
-                Vec::new()
-            }
-        },
+        }
         SeasonType::Playoff => Vec::new(),
     };
     // Hart.6.4 / D6: MoneyPuck doesn't expose a playoff endpoint
@@ -437,8 +438,9 @@ pub fn load_into_repo(
         SeasonType::Playoff => {
             missing.push(MissingSource::MoneyPuck {
                 season: season_str.clone(),
-                reason: "advanced stats not populated for playoff season_type — Hart.6 v1 limitation"
-                    .into(),
+                reason:
+                    "advanced stats not populated for playoff season_type — Hart.6 v1 limitation"
+                        .into(),
             });
             Vec::new()
         }
@@ -630,9 +632,8 @@ where
     // 2. Bundled fallback (placeholder — L.7 wires the include_bytes! map
     //    when the 38 historical seasons get bundled). For now this is a
     //    no-op; the call slot is here so L.7 doesn't change the signature.
-    let bytes_opt = raw_bytes.or_else(|| bundled::report_for_lindsay(
-        &season_str, season_type, file.kind,
-    ));
+    let bytes_opt =
+        raw_bytes.or_else(|| bundled::report_for_lindsay(&season_str, season_type, file.kind));
 
     let bytes = match bytes_opt {
         Some(b) => b,
@@ -640,12 +641,11 @@ where
     };
 
     // Parse the standard `{ "data": [...], "total": N }` envelope.
-    let parsed: PagedResponseLocal<R> = serde_json::from_slice(&bytes).map_err(|e| {
-        LoadError::ReportLoad {
+    let parsed: PagedResponseLocal<R> =
+        serde_json::from_slice(&bytes).map_err(|e| LoadError::ReportLoad {
             kind: format!("{} ({} {})", file.filename, season.0, season_type.label()),
             cause: format!("JSON parse: {e}"),
-        }
-    })?;
+        })?;
 
     // DI-29 — per-row seasonId fence. Trust rows with `None` (bundled
     // / hand-edited compat); reject any row with a `Some(x)` that
@@ -758,29 +758,43 @@ pub fn merge_goalie_bios_into_identity(
         bio: PlayerBio {
             // Bios fields — overwrite from the goalie/bios source when
             // present, fall back to base when absent.
-            birth_date: bios.birth_date.clone()
+            birth_date: bios
+                .birth_date
+                .clone()
                 .or_else(|| base.bio.birth_date.clone()),
-            birth_country: bios.birth_country_code.clone()
+            birth_country: bios
+                .birth_country_code
+                .clone()
                 .or_else(|| base.bio.birth_country.clone()),
-            birth_city: bios.birth_city.clone()
+            birth_city: bios
+                .birth_city
+                .clone()
                 .or_else(|| base.bio.birth_city.clone()),
-            nationality_code: bios.nationality_code.clone()
+            nationality_code: bios
+                .nationality_code
+                .clone()
                 .or_else(|| base.bio.nationality_code.clone()),
-            height_in_inches: bios.height_in_inches
-                .or(base.bio.height_in_inches),
-            weight_lbs: bios.weight_in_pounds
-                .or(base.bio.weight_lbs),
-            shoots_catches: bios.shoots_catches.clone()
+            height_in_inches: bios.height_in_inches.or(base.bio.height_in_inches),
+            weight_lbs: bios.weight_in_pounds.or(base.bio.weight_lbs),
+            shoots_catches: bios
+                .shoots_catches
+                .clone()
                 .or_else(|| base.bio.shoots_catches.clone()),
             // Draft fields — API emits as String; parse to numeric.
             // Non-numeric values (pre-1979 "Undrafted") drop to None.
-            draft_year: bios.draft_year.as_ref()
+            draft_year: bios
+                .draft_year
+                .as_ref()
                 .and_then(|s| s.parse::<u16>().ok())
                 .or(base.bio.draft_year),
-            draft_round: bios.draft_round.as_ref()
+            draft_round: bios
+                .draft_round
+                .as_ref()
                 .and_then(|s| s.parse::<u8>().ok())
                 .or(base.bio.draft_round),
-            draft_overall: bios.draft_overall.as_ref()
+            draft_overall: bios
+                .draft_overall
+                .as_ref()
                 .and_then(|s| s.parse::<u16>().ok())
                 .or(base.bio.draft_overall),
             // Other Hart `PlayerBio` fields — preserve from base.
@@ -1207,8 +1221,10 @@ mod tests {
             ..Default::default()
         };
         let merged = merge_goalie_bios_into_identity(&base, &bios);
-        assert_eq!(merged.bio.draft_year, None,
-            "non-numeric draft year drops to None, not panic");
+        assert_eq!(
+            merged.bio.draft_year, None,
+            "non-numeric draft year drops to None, not panic"
+        );
         assert_eq!(merged.bio.draft_round, None);
         assert_eq!(merged.bio.draft_overall, None);
     }

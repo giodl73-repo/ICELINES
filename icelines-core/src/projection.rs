@@ -21,10 +21,12 @@ impl std::str::FromStr for ProjectionMode {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
-            "pace"      => Ok(Self::Pace),
+            "pace" => Ok(Self::Pace),
             "regressed" => Ok(Self::Regressed),
             "composite" => Ok(Self::Composite),
-            other       => Err(format!("unknown mode '{other}' — use pace|regressed|composite")),
+            other => Err(format!(
+                "unknown mode '{other}' — use pace|regressed|composite"
+            )),
         }
     }
 }
@@ -33,15 +35,15 @@ impl std::str::FromStr for ProjectionMode {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProjectionResult {
-    pub mode:             ProjectionMode,
-    pub current_ppg:      f64,     // points per game this season
-    pub career_ppg:       Option<f64>,  // career average (None if not available)
-    pub alpha:            f64,     // regressed blend weight (0–1)
-    pub age_factor:       f64,     // age curve multiplier (1.0 at peak)
-    pub remaining_games:  u32,
-    pub projected_points: f64,     // main output
-    pub low_band:         f64,     // projected_points - 1σ
-    pub high_band:        f64,     // projected_points + 1σ
+    pub mode: ProjectionMode,
+    pub current_ppg: f64,        // points per game this season
+    pub career_ppg: Option<f64>, // career average (None if not available)
+    pub alpha: f64,              // regressed blend weight (0–1)
+    pub age_factor: f64,         // age curve multiplier (1.0 at peak)
+    pub remaining_games: u32,
+    pub projected_points: f64, // main output
+    pub low_band: f64,         // projected_points - 1σ
+    pub high_band: f64,        // projected_points + 1σ
 }
 
 impl ProjectionResult {
@@ -73,20 +75,20 @@ pub fn compute_alpha(gp: u32) -> f64 {
 pub fn age_factor(age: u8) -> f64 {
     match age {
         0..=20 => 0.88,
-        21     => 0.92,
-        22     => 0.95,
-        23     => 0.97,
-        24     => 0.99,
+        21 => 0.92,
+        22 => 0.95,
+        23 => 0.97,
+        24 => 0.99,
         25..=27 => 1.00,
-        28     => 0.98,
-        29     => 0.96,
-        30     => 0.94,
-        31     => 0.92,
-        32     => 0.90,
-        33     => 0.87,
-        34     => 0.84,
-        35     => 0.80,
-        _      => 0.76,
+        28 => 0.98,
+        29 => 0.96,
+        30 => 0.94,
+        31 => 0.92,
+        32 => 0.90,
+        33 => 0.87,
+        34 => 0.84,
+        35 => 0.80,
+        _ => 0.76,
     }
 }
 
@@ -96,7 +98,9 @@ pub fn age_factor(age: u8) -> f64 {
 /// Smaller GP → wider band (more uncertainty).
 /// Uses empirical approximation: σ ≈ 0.65 / sqrt(GP)
 pub fn per_game_sigma(ppg: f64, gp: u32) -> f64 {
-    if gp == 0 { return ppg; }
+    if gp == 0 {
+        return ppg;
+    }
     // Typical NHL skater point variance ≈ 0.65 per game
     0.65 / (gp as f64).sqrt()
 }
@@ -113,17 +117,17 @@ pub fn per_game_sigma(ppg: f64, gp: u32) -> f64 {
 ///   remaining_games — remaining regular season games for this player
 ///   mode            — which projection formula to use
 pub fn compute_projection(
-    current_ppg:     f64,
-    career_ppg:      Option<f64>,
-    gp:              u32,
-    age:             u8,
+    current_ppg: f64,
+    career_ppg: Option<f64>,
+    gp: u32,
+    age: u8,
     remaining_games: u32,
-    mode:            ProjectionMode,
+    mode: ProjectionMode,
 ) -> ProjectionResult {
-    let alpha      = compute_alpha(gp);
-    let age_fac    = age_factor(age);
-    let career     = career_ppg.unwrap_or(current_ppg);
-    let sigma      = per_game_sigma(current_ppg, gp);
+    let alpha = compute_alpha(gp);
+    let age_fac = age_factor(age);
+    let career = career_ppg.unwrap_or(current_ppg);
+    let sigma = per_game_sigma(current_ppg, gp);
 
     let effective_ppg = match mode {
         ProjectionMode::Pace => {
@@ -142,7 +146,7 @@ pub fn compute_projection(
         }
     };
 
-    let projected  = effective_ppg * remaining_games as f64;
+    let projected = effective_ppg * remaining_games as f64;
     let band_width = sigma * remaining_games as f64;
 
     ProjectionResult {
@@ -153,8 +157,8 @@ pub fn compute_projection(
         age_factor: age_fac,
         remaining_games,
         projected_points: projected,
-        low_band:         (projected - band_width).max(0.0),
-        high_band:        projected + band_width,
+        low_band: (projected - band_width).max(0.0),
+        high_band: projected + band_width,
     }
 }
 
@@ -193,22 +197,28 @@ mod tests {
     fn l0_age_factor_peak_is_one() {
         // Age 25, 26, 27 → factor = 1.0
         for age in [25u8, 26, 27] {
-            assert!((age_factor(age) - 1.0).abs() < 0.001,
-                "peak age {age} must have factor 1.0");
+            assert!(
+                (age_factor(age) - 1.0).abs() < 0.001,
+                "peak age {age} must have factor 1.0"
+            );
         }
     }
 
     #[test]
     fn l0_age_factor_30_decline() {
         // Age 30 → 0.94 (two years past peak → ~6% decline)
-        assert!((age_factor(30) - 0.94).abs() < 0.001,
-            "age 30 must have factor 0.94");
+        assert!(
+            (age_factor(30) - 0.94).abs() < 0.001,
+            "age 30 must have factor 0.94"
+        );
     }
 
     #[test]
     fn l0_age_factor_35_significant_decline() {
-        assert!((age_factor(35) - 0.80).abs() < 0.001,
-            "age 35 must have factor 0.80");
+        assert!(
+            (age_factor(35) - 0.80).abs() < 0.001,
+            "age 35 must have factor 0.80"
+        );
     }
 
     #[test]
@@ -224,8 +234,11 @@ mod tests {
     fn l0_pace_mode_is_ppg_times_remaining() {
         // pace: 1.68 ppg × 30 remaining = 50.4 pts
         let r = compute_projection(1.68, None, 82, 27, 30, ProjectionMode::Pace);
-        assert!((r.projected_points - 50.4).abs() < 0.001,
-            "expected 50.4, got {}", r.projected_points);
+        assert!(
+            (r.projected_points - 50.4).abs() < 0.001,
+            "expected 50.4, got {}",
+            r.projected_points
+        );
     }
 
     #[test]
@@ -233,8 +246,10 @@ mod tests {
         // At GP=50, α=1.0, regressed = 1.0×current + 0.0×career = pace
         let pace = compute_projection(1.0, Some(0.8), 50, 27, 20, ProjectionMode::Pace);
         let regr = compute_projection(1.0, Some(0.8), 50, 27, 20, ProjectionMode::Regressed);
-        assert!((pace.projected_points - regr.projected_points).abs() < 0.001,
-            "at GP=50 regressed must equal pace");
+        assert!(
+            (pace.projected_points - regr.projected_points).abs() < 0.001,
+            "at GP=50 regressed must equal pace"
+        );
     }
 
     #[test]
@@ -243,34 +258,44 @@ mod tests {
         // regressed = 0.2×1.5 + 0.8×0.7 = 0.3 + 0.56 = 0.86 ppg
         // projected = 0.86 × 20 = 17.2
         let r = compute_projection(1.5, Some(0.7), 10, 27, 20, ProjectionMode::Regressed);
-        assert!((r.projected_points - 17.2).abs() < 0.01,
-            "expected ~17.2, got {}", r.projected_points);
+        assert!(
+            (r.projected_points - 17.2).abs() < 0.01,
+            "expected ~17.2, got {}",
+            r.projected_points
+        );
         // Must be between pace (30.0) and career (14.0)
         let pace_pts = 1.5 * 20.0;
         let career_pts = 0.7 * 20.0;
-        assert!(r.projected_points > career_pts && r.projected_points < pace_pts,
-            "regressed must be between pace ({pace_pts}) and career ({career_pts})");
+        assert!(
+            r.projected_points > career_pts && r.projected_points < pace_pts,
+            "regressed must be between pace ({pace_pts}) and career ({career_pts})"
+        );
     }
 
     #[test]
     fn l0_composite_applies_age_discount_post_peak() {
         // Age 35: factor = 0.80. Regressed at 50GP (α=1.0) = current.
         // composite = current × 0.80
-        let current = 1.0; let remaining = 20;
+        let current = 1.0;
+        let remaining = 20;
         let regr = compute_projection(current, None, 50, 27, remaining, ProjectionMode::Regressed);
         let comp = compute_projection(current, None, 50, 35, remaining, ProjectionMode::Composite);
         let expected_ratio = 0.80;
         let actual_ratio = comp.projected_points / regr.projected_points;
-        assert!((actual_ratio - expected_ratio).abs() < 0.001,
-            "composite at age 35 must be 0.80× of regressed, got ratio {actual_ratio}");
+        assert!(
+            (actual_ratio - expected_ratio).abs() < 0.001,
+            "composite at age 35 must be 0.80× of regressed, got ratio {actual_ratio}"
+        );
     }
 
     #[test]
     fn l0_confidence_band_wider_at_low_gp() {
         let high_gp = compute_projection(1.0, None, 82, 27, 20, ProjectionMode::Pace);
-        let low_gp  = compute_projection(1.0, None, 10, 27, 20, ProjectionMode::Pace);
-        assert!(low_gp.confidence_band_width() > high_gp.confidence_band_width(),
-            "smaller sample must produce wider confidence band");
+        let low_gp = compute_projection(1.0, None, 10, 27, 20, ProjectionMode::Pace);
+        assert!(
+            low_gp.confidence_band_width() > high_gp.confidence_band_width(),
+            "smaller sample must produce wider confidence band"
+        );
     }
 
     // ── Proptest ──────────────────────────────────────────────────────────────

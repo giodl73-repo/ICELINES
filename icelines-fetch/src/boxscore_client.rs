@@ -10,8 +10,7 @@ use serde::Deserialize;
 
 use crate::error::FetchError;
 use crate::shift_profile::{
-    parse_toi_mmss, BoxscoreData, BoxscorePlayerEntry, ShiftProfile,
-    build_profile_from_boxscores,
+    build_profile_from_boxscores, parse_toi_mmss, BoxscoreData, BoxscorePlayerEntry, ShiftProfile,
 };
 
 // ── Internal response shapes ──────────────────────────────────────────────────
@@ -53,9 +52,9 @@ struct TeamStatsResponse {
 #[serde(rename_all = "camelCase")]
 struct SkaterEntry {
     player_id: u32,
-    position: String,  // "C", "L", "R", "D"
+    position: String, // "C", "L", "R", "D"
     #[serde(default)]
-    toi: Option<String>,    // "MM:SS" even-strength TOI
+    toi: Option<String>, // "MM:SS" even-strength TOI
     #[serde(default)]
     shifts: Option<u32>,
 }
@@ -148,10 +147,22 @@ impl BoxscoreClient {
         let mut positions: HashMap<u32, String> = HashMap::new();
 
         let all_teams = [
-            ("home", resp.player_by_game_stats.home_team.forwards.as_slice()),
-            ("home", resp.player_by_game_stats.home_team.defense.as_slice()),
-            ("away", resp.player_by_game_stats.away_team.forwards.as_slice()),
-            ("away", resp.player_by_game_stats.away_team.defense.as_slice()),
+            (
+                "home",
+                resp.player_by_game_stats.home_team.forwards.as_slice(),
+            ),
+            (
+                "home",
+                resp.player_by_game_stats.home_team.defense.as_slice(),
+            ),
+            (
+                "away",
+                resp.player_by_game_stats.away_team.forwards.as_slice(),
+            ),
+            (
+                "away",
+                resp.player_by_game_stats.away_team.defense.as_slice(),
+            ),
         ];
 
         for (_side, team_skaters) in &all_teams {
@@ -169,10 +180,7 @@ impl BoxscoreClient {
     /// produce 0 without panicking.
     ///
     /// Endpoint: `GET {base_web}/v1/gamecenter/{game_id}/boxscore`
-    pub async fn fetch_boxscore_data(
-        &self,
-        game_id: u64,
-    ) -> Result<BoxscoreData, FetchError> {
+    pub async fn fetch_boxscore_data(&self, game_id: u64) -> Result<BoxscoreData, FetchError> {
         let url = format!("{}/gamecenter/{game_id}/boxscore", self.base_web);
         let resp: BoxscoreResponse = self.get_json(&url).await?;
 
@@ -186,17 +194,21 @@ impl BoxscoreClient {
         let mut players: Vec<BoxscorePlayerEntry> = Vec::new();
 
         let teams: [(&str, &[SkaterEntry], &[SkaterEntry]); 2] = [
-            (&home_abbrev, &resp.player_by_game_stats.home_team.forwards, &resp.player_by_game_stats.home_team.defense),
-            (&away_abbrev, &resp.player_by_game_stats.away_team.forwards, &resp.player_by_game_stats.away_team.defense),
+            (
+                &home_abbrev,
+                &resp.player_by_game_stats.home_team.forwards,
+                &resp.player_by_game_stats.home_team.defense,
+            ),
+            (
+                &away_abbrev,
+                &resp.player_by_game_stats.away_team.forwards,
+                &resp.player_by_game_stats.away_team.defense,
+            ),
         ];
 
         for (team_token, forwards, defense) in &teams {
             for skater in forwards.iter().chain(defense.iter()) {
-                let toi_secs = skater
-                    .toi
-                    .as_deref()
-                    .map(parse_toi_mmss)
-                    .unwrap_or(0);
+                let toi_secs = skater.toi.as_deref().map(parse_toi_mmss).unwrap_or(0);
                 players.push(BoxscorePlayerEntry {
                     player_id: skater.player_id,
                     team: team_token.to_string(),

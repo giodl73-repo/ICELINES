@@ -1,3 +1,4 @@
+use crate::tui::app::App;
 use ratatui::{
     layout::Rect,
     style::{Color, Modifier, Style},
@@ -5,12 +6,12 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
-use crate::tui::app::App;
 
 pub fn render(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
-    let block = Block::default()
-        .borders(Borders::ALL)
-        .title(format!(" {} — Roster  ·  g: add to group  ·  Enter: player card  ·  Esc: back ", abbrev));
+    let block = Block::default().borders(Borders::ALL).title(format!(
+        " {} — Roster  ·  g: add to group  ·  Enter: player card  ·  Esc: back ",
+        abbrev
+    ));
     let inner = block.inner(area);
     f.render_widget(block, area);
 
@@ -35,23 +36,41 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
     }
 
     let mut lines: Vec<Line> = vec![
-        Line::from(format!("  {} players  ·  ↑↓ select  ·  Enter: open player card", team_views.len())),
+        Line::from(format!(
+            "  {} players  ·  ↑↓ select  ·  Enter: open player card",
+            team_views.len()
+        )),
         Line::from(""),
-        Line::from(format!("  {:<22} {:<4}  {:>6}  {:>7}", "Player", "Pos", "PPG", "Pts/82")),
+        Line::from(format!(
+            "  {:<22} {:<4}  {:>6}  {:>7}",
+            "Player", "Pos", "PPG", "Pts/82"
+        )),
         Line::from(format!("  {}", "─".repeat(46))),
     ];
 
     for (i, v) in team_views.iter().enumerate() {
         let p82 = v.pace_82();
-        let ppg  = p82.map(|p| format!("{:.3}", p / 82.0)).unwrap_or_else(|| "—".to_owned());
-        let proj = p82.map(|p| format!("{:.1}", p)).unwrap_or_else(|| "—".to_owned());
+        let ppg = p82
+            .map(|p| format!("{:.3}", p / 82.0))
+            .unwrap_or_else(|| "—".to_owned());
+        let proj = p82
+            .map(|p| format!("{:.1}", p))
+            .unwrap_or_else(|| "—".to_owned());
         let name = v.full_name().chars().take(22).collect::<String>();
 
-        let text = format!("  {:<22} {:<4}  {:>6}  {:>7}",
-            name, v.position().abbreviation(), ppg, proj);
+        let text = format!(
+            "  {:<22} {:<4}  {:>6}  {:>7}",
+            name,
+            v.position().abbreviation(),
+            ppg,
+            proj
+        );
 
         let style = if i == app.selected {
-            Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::Cyan)
+                .add_modifier(Modifier::BOLD)
         } else {
             Style::default()
         };
@@ -64,34 +83,45 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
     let goalie_views = app.goalie_views();
     let team_goalies = collect_team_goalie_views(&goalie_views, abbrev);
     if !team_goalies.is_empty() {
-        let dim  = Style::default().fg(Color::DarkGray);
-        let gold = Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD);
+        let dim = Style::default().fg(Color::DarkGray);
+        let gold = Style::default()
+            .fg(Color::Yellow)
+            .add_modifier(Modifier::BOLD);
         lines.push(Line::from(""));
         lines.push(Line::styled("  GOALTENDING", gold));
-        lines.push(Line::styled(format!("  {:<22} {:<4}  {:>6}  {:>7}",
-            "Goalie", "GP", "SV%", "Record"), dim));
+        lines.push(Line::styled(
+            format!(
+                "  {:<22} {:<4}  {:>6}  {:>7}",
+                "Goalie", "GP", "SV%", "Record"
+            ),
+            dim,
+        ));
         for v in &team_goalies {
             let stats = match v.stats.goalie.as_ref() {
                 Some(s) => s,
-                None    => {
+                None => {
                     lines.push(Line::from(format!(
                         "  {:<22} {:<4}  {:>6}  {:>7}",
                         v.full_name().chars().take(22).collect::<String>(),
-                        "—", "—", "—",
+                        "—",
+                        "—",
+                        "—",
                     )));
                     continue;
                 }
             };
-            let sv_pct = stats.save_pct.map(|x| format!("{:.3}", x))
+            let sv_pct = stats
+                .save_pct
+                .map(|x| format!("{:.3}", x))
                 .unwrap_or_else(|| "—".to_owned());
             let record = match stats.ot_losses {
                 Some(otl) => format!("{}-{}-{}", stats.wins, stats.losses, otl),
-                None      => format!("{}-{}",    stats.wins, stats.losses),
+                None => format!("{}-{}", stats.wins, stats.losses),
             };
             lines.push(Line::from(format!(
                 "  {:<22} {:<4}  {:>6}  {:>7}",
                 v.full_name().chars().take(22).collect::<String>(),
-                v.gp(),  // post-Hart canonical GP source
+                v.gp(), // post-Hart canonical GP source
                 sv_pct,
                 record,
             )));

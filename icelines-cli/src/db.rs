@@ -93,12 +93,11 @@ impl GroupDb {
             .ok_or_else(|| anyhow::anyhow!("cannot determine home directory"))?;
 
         let dir = home.join(".icelines");
-        std::fs::create_dir_all(&dir)
-            .with_context(|| format!("create {}", dir.display()))?;
+        std::fs::create_dir_all(&dir).with_context(|| format!("create {}", dir.display()))?;
 
         let db_path = dir.join("icelines.db");
-        let conn = Connection::open(&db_path)
-            .with_context(|| format!("open {}", db_path.display()))?;
+        let conn =
+            Connection::open(&db_path).with_context(|| format!("open {}", db_path.display()))?;
 
         // Enable WAL for better concurrent write performance.
         conn.execute_batch("PRAGMA journal_mode = WAL;")
@@ -143,7 +142,10 @@ impl GroupDb {
     pub fn delete_group(&self, name: &str) -> anyhow::Result<bool> {
         let rows = self
             .conn
-            .execute("DELETE FROM groups WHERE name = ?1", rusqlite::params![name])
+            .execute(
+                "DELETE FROM groups WHERE name = ?1",
+                rusqlite::params![name],
+            )
             .with_context(|| format!("delete group '{name}'"))?;
         Ok(rows > 0)
     }
@@ -155,7 +157,8 @@ impl GroupDb {
         self.require_group(group)?;
 
         let now = now_utc();
-        let rows = self.conn
+        let rows = self
+            .conn
             .execute(
                 "INSERT OR IGNORE INTO group_members \
                  (group_name, player_normalized, added_at) VALUES (?1, ?2, ?3)",
@@ -177,7 +180,8 @@ impl GroupDb {
         self.require_group(old)?;
         // Reject collisions explicitly so the user sees a clean message rather
         // than rusqlite's UNIQUE-constraint-violated error.
-        let collides: bool = self.conn
+        let collides: bool = self
+            .conn
             .query_row(
                 "SELECT 1 FROM groups WHERE name = ?1",
                 rusqlite::params![new],
@@ -207,9 +211,11 @@ impl GroupDb {
 
     /// Bulk-insert members into a group (used by `group import`). Returns the
     /// number of new rows actually inserted (duplicates are silently skipped).
-    pub fn add_members_bulk(&self, group: &str, players_normalized: &[String])
-        -> anyhow::Result<usize>
-    {
+    pub fn add_members_bulk(
+        &self,
+        group: &str,
+        players_normalized: &[String],
+    ) -> anyhow::Result<usize> {
         self.require_group(group)?;
         let now = now_utc();
         let tx = self.conn.unchecked_transaction()?;
@@ -231,7 +237,8 @@ impl GroupDb {
     /// Look up a group's description (returns Ok("") when the group has none).
     pub fn group_description(&self, name: &str) -> anyhow::Result<String> {
         self.require_group(name)?;
-        let desc: String = self.conn
+        let desc: String = self
+            .conn
             .query_row(
                 "SELECT description FROM groups WHERE name = ?1",
                 rusqlite::params![name],
@@ -331,19 +338,24 @@ impl GroupDb {
 
     /// List all saved queries, newest first.
     pub fn list_saved_queries(&self) -> anyhow::Result<Vec<(String, String)>> {
-        let mut stmt = self.conn.prepare(
-            "SELECT name, fields_json FROM saved_queries ORDER BY created_at DESC"
-        )?;
-        let rows = stmt.query_map([], |row| {
-            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
-        })?.collect::<Result<Vec<_>, _>>()?;
+        let mut stmt = self
+            .conn
+            .prepare("SELECT name, fields_json FROM saved_queries ORDER BY created_at DESC")?;
+        let rows = stmt
+            .query_map([], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(rows)
     }
 
     /// Delete a saved query by name.
     #[allow(dead_code)]
     pub fn delete_saved_query(&self, name: &str) -> anyhow::Result<()> {
-        self.conn.execute("DELETE FROM saved_queries WHERE name = ?1", rusqlite::params![name])?;
+        self.conn.execute(
+            "DELETE FROM saved_queries WHERE name = ?1",
+            rusqlite::params![name],
+        )?;
         Ok(())
     }
 
@@ -356,36 +368,50 @@ impl GroupDb {
     /// usefully even after the API rotates older boxscores out.
     pub fn add_attended_game(&self, row: &AttendedGameInput) -> anyhow::Result<()> {
         let now = now_utc();
-        self.conn.execute(
-            "INSERT OR REPLACE INTO attended_games \
+        self.conn
+            .execute(
+                "INSERT OR REPLACE INTO attended_games \
              (game_id, game_date, away_abbrev, home_abbrev, \
               away_score, home_score, note, attended_at) \
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-            rusqlite::params![
-                row.game_id, row.game_date, row.away_abbrev, row.home_abbrev,
-                row.away_score, row.home_score, row.note, now,
-            ],
-        ).with_context(|| format!("record attended game {}", row.game_id))?;
+                rusqlite::params![
+                    row.game_id,
+                    row.game_date,
+                    row.away_abbrev,
+                    row.home_abbrev,
+                    row.away_score,
+                    row.home_score,
+                    row.note,
+                    now,
+                ],
+            )
+            .with_context(|| format!("record attended game {}", row.game_id))?;
         Ok(())
     }
 
     /// Remove a game from the attended list. Returns `true` if a row
     /// was actually deleted, `false` if the game wasn't on the list.
     pub fn remove_attended_game(&self, game_id: u64) -> anyhow::Result<bool> {
-        let n = self.conn.execute(
-            "DELETE FROM attended_games WHERE game_id = ?1",
-            rusqlite::params![game_id],
-        ).with_context(|| format!("delete attended game {game_id}"))?;
+        let n = self
+            .conn
+            .execute(
+                "DELETE FROM attended_games WHERE game_id = ?1",
+                rusqlite::params![game_id],
+            )
+            .with_context(|| format!("delete attended game {game_id}"))?;
         Ok(n > 0)
     }
 
     /// True iff this game is already on the attended list.
     pub fn is_attended(&self, game_id: u64) -> anyhow::Result<bool> {
-        let exists: bool = self.conn.query_row(
-            "SELECT 1 FROM attended_games WHERE game_id = ?1",
-            rusqlite::params![game_id],
-            |_| Ok(true),
-        ).unwrap_or(false);
+        let exists: bool = self
+            .conn
+            .query_row(
+                "SELECT 1 FROM attended_games WHERE game_id = ?1",
+                rusqlite::params![game_id],
+                |_| Ok(true),
+            )
+            .unwrap_or(false);
         Ok(exists)
     }
 
@@ -398,19 +424,20 @@ impl GroupDb {
              FROM attended_games
              ORDER BY game_date DESC NULLS LAST, attended_at DESC",
         )?;
-        let rows = stmt.query_map([], |r| {
-            Ok(AttendedGameRow {
-                game_id:     r.get::<_, i64>(0)? as u64,
-                game_date:   r.get::<_, Option<String>>(1)?,
-                away_abbrev: r.get::<_, Option<String>>(2)?.unwrap_or_default(),
-                home_abbrev: r.get::<_, Option<String>>(3)?.unwrap_or_default(),
-                away_score:  r.get::<_, Option<i64>>(4)?.map(|n| n as u8),
-                home_score:  r.get::<_, Option<i64>>(5)?.map(|n| n as u8),
-                note:        r.get::<_, String>(6)?,
-                attended_at: r.get::<_, String>(7)?,
-            })
-        })?
-        .collect::<Result<Vec<_>, _>>()?;
+        let rows = stmt
+            .query_map([], |r| {
+                Ok(AttendedGameRow {
+                    game_id: r.get::<_, i64>(0)? as u64,
+                    game_date: r.get::<_, Option<String>>(1)?,
+                    away_abbrev: r.get::<_, Option<String>>(2)?.unwrap_or_default(),
+                    home_abbrev: r.get::<_, Option<String>>(3)?.unwrap_or_default(),
+                    away_score: r.get::<_, Option<i64>>(4)?.map(|n| n as u8),
+                    home_score: r.get::<_, Option<i64>>(5)?.map(|n| n as u8),
+                    note: r.get::<_, String>(6)?,
+                    attended_at: r.get::<_, String>(7)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(rows)
     }
 }
@@ -422,25 +449,25 @@ impl GroupDb {
 /// boxscores.
 #[derive(Debug, Clone)]
 pub struct AttendedGameInput {
-    pub game_id:     u64,
-    pub game_date:   Option<String>,   // "YYYY-MM-DD"
+    pub game_id: u64,
+    pub game_date: Option<String>, // "YYYY-MM-DD"
     pub away_abbrev: Option<String>,
     pub home_abbrev: Option<String>,
-    pub away_score:  Option<u8>,
-    pub home_score:  Option<u8>,
-    pub note:        String,
+    pub away_score: Option<u8>,
+    pub home_score: Option<u8>,
+    pub note: String,
 }
 
 /// One row in the attended-games list view.
 #[derive(Debug, Clone)]
 pub struct AttendedGameRow {
-    pub game_id:     u64,
-    pub game_date:   Option<String>,
+    pub game_id: u64,
+    pub game_date: Option<String>,
     pub away_abbrev: String,
     pub home_abbrev: String,
-    pub away_score:  Option<u8>,
-    pub home_score:  Option<u8>,
-    pub note:        String,
+    pub away_score: Option<u8>,
+    pub home_score: Option<u8>,
+    pub note: String,
     pub attended_at: String,
 }
 
@@ -490,7 +517,8 @@ mod tests {
     #[test]
     fn l1_db_create_and_list_group() {
         let db = GroupDb::open_in_memory().expect("open in-memory db");
-        db.create_group("myteam", "My fantasy team").expect("create group");
+        db.create_group("myteam", "My fantasy team")
+            .expect("create group");
 
         let groups = db.list_groups().expect("list groups");
         assert_eq!(groups.len(), 1);
@@ -511,7 +539,8 @@ mod tests {
         assert_eq!(members.len(), 2);
         assert!(members.contains(&"connor_mcdavid".to_owned()));
 
-        db.remove_member("g1", "leon_draisaitl").expect("remove member");
+        db.remove_member("g1", "leon_draisaitl")
+            .expect("remove member");
         let members = db.list_members("g1").expect("list members after remove");
         assert_eq!(members.len(), 1);
         assert_eq!(members[0], "connor_mcdavid");
@@ -521,8 +550,10 @@ mod tests {
     fn l1_db_delete_group_cascades_members() {
         let db = GroupDb::open_in_memory().expect("open in-memory db");
         db.create_group("watchlist", "").expect("create group");
-        db.add_member("watchlist", "player_one").expect("add member");
-        db.add_member("watchlist", "player_two").expect("add member");
+        db.add_member("watchlist", "player_one")
+            .expect("add member");
+        db.add_member("watchlist", "player_two")
+            .expect("add member");
 
         let deleted = db.delete_group("watchlist").expect("delete group");
         assert!(deleted, "delete should return true when group existed");
@@ -544,7 +575,8 @@ mod tests {
         let db = GroupDb::open_in_memory().expect("open in-memory db");
         db.create_group("dups", "").expect("create group");
 
-        db.add_member("dups", "nathan_mackinnon").expect("first add");
+        db.add_member("dups", "nathan_mackinnon")
+            .expect("first add");
         // Second add should NOT error.
         db.add_member("dups", "nathan_mackinnon")
             .expect("duplicate add should not error");
@@ -558,15 +590,18 @@ mod tests {
     #[test]
     fn l1_db_rename_group_moves_members() {
         let db = GroupDb::open_in_memory().expect("open in-memory db");
-        db.create_group("old-name", "to be renamed").expect("create");
+        db.create_group("old-name", "to be renamed")
+            .expect("create");
         db.add_member("old-name", "alice").expect("add");
         db.add_member("old-name", "bob").expect("add");
 
         db.rename_group("old-name", "new-name").expect("rename");
 
         // Old name is gone.
-        assert!(db.list_members("old-name").is_err(),
-            "old name should no longer exist");
+        assert!(
+            db.list_members("old-name").is_err(),
+            "old name should no longer exist"
+        );
         // New name has both members.
         let mut members = db.list_members("new-name").expect("list new");
         members.sort();
@@ -590,10 +625,17 @@ mod tests {
         db.create_group("a", "").expect("create a");
         db.create_group("b", "").expect("create b");
         let err = db.rename_group("a", "b").unwrap_err().to_string();
-        assert!(err.contains("already exists"),
-            "collision must mention 'already exists', got: {err}");
+        assert!(
+            err.contains("already exists"),
+            "collision must mention 'already exists', got: {err}"
+        );
         // Both groups still exist with their original names.
-        let names: Vec<String> = db.list_groups().unwrap().into_iter().map(|g| g.name).collect();
+        let names: Vec<String> = db
+            .list_groups()
+            .unwrap()
+            .into_iter()
+            .map(|g| g.name)
+            .collect();
         assert!(names.contains(&"a".to_owned()));
         assert!(names.contains(&"b".to_owned()));
     }
@@ -602,8 +644,10 @@ mod tests {
     fn l1_db_rename_unknown_group_errors() {
         let db = GroupDb::open_in_memory().expect("open in-memory db");
         let err = db.rename_group("ghost", "phantom").unwrap_err().to_string();
-        assert!(err.contains("not found"),
-            "unknown old name must error, got: {err}");
+        assert!(
+            err.contains("not found"),
+            "unknown old name must error, got: {err}"
+        );
     }
 
     #[test]
@@ -620,26 +664,41 @@ mod tests {
 
     // ── Attended games ─────────────────────────────────────────────────────
 
-    fn fixture_attended(game_id: u64, date: &str, away: &str, home: &str,
-                        score: (u8, u8), note: &str) -> AttendedGameInput {
+    fn fixture_attended(
+        game_id: u64,
+        date: &str,
+        away: &str,
+        home: &str,
+        score: (u8, u8),
+        note: &str,
+    ) -> AttendedGameInput {
         AttendedGameInput {
             game_id,
-            game_date:   Some(date.to_owned()),
+            game_date: Some(date.to_owned()),
             away_abbrev: Some(away.to_owned()),
             home_abbrev: Some(home.to_owned()),
-            away_score:  Some(score.0),
-            home_score:  Some(score.1),
-            note:        note.to_owned(),
+            away_score: Some(score.0),
+            home_score: Some(score.1),
+            note: note.to_owned(),
         }
     }
 
     #[test]
     fn l1_db_attended_add_query_round_trip() {
         let db = GroupDb::open_in_memory().expect("in-memory");
-        let g  = fixture_attended(2025020100, "2026-01-15", "SEA", "VGK",
-                                  (3, 2), "Kraken first home win of 2026");
+        let g = fixture_attended(
+            2025020100,
+            "2026-01-15",
+            "SEA",
+            "VGK",
+            (3, 2),
+            "Kraken first home win of 2026",
+        );
 
-        assert!(!db.is_attended(g.game_id).unwrap(), "fresh db: not attended");
+        assert!(
+            !db.is_attended(g.game_id).unwrap(),
+            "fresh db: not attended"
+        );
         db.add_attended_game(&g).expect("record");
         assert!(db.is_attended(g.game_id).unwrap(), "after add: attended");
 
@@ -659,12 +718,24 @@ mod tests {
         // Re-adding the same game_id should overwrite the row so the
         // user can edit the note after the fact.
         let db = GroupDb::open_in_memory().expect("in-memory");
-        db.add_attended_game(&fixture_attended(1, "2026-01-15", "BOS", "MTL",
-                                               (1, 0), "first attempt"))
-            .expect("first add");
-        db.add_attended_game(&fixture_attended(1, "2026-01-15", "BOS", "MTL",
-                                               (1, 0), "edited note"))
-            .expect("second add");
+        db.add_attended_game(&fixture_attended(
+            1,
+            "2026-01-15",
+            "BOS",
+            "MTL",
+            (1, 0),
+            "first attempt",
+        ))
+        .expect("first add");
+        db.add_attended_game(&fixture_attended(
+            1,
+            "2026-01-15",
+            "BOS",
+            "MTL",
+            (1, 0),
+            "edited note",
+        ))
+        .expect("second add");
         let rows = db.list_attended_games().unwrap();
         assert_eq!(rows.len(), 1, "still one row after overwrite");
         assert_eq!(rows[0].note, "edited note");
@@ -680,8 +751,7 @@ mod tests {
     #[test]
     fn l1_db_attended_remove_then_list_excludes_row() {
         let db = GroupDb::open_in_memory().expect("in-memory");
-        db.add_attended_game(&fixture_attended(1, "2026-01-15", "BOS", "MTL",
-                                               (1, 0), ""))
+        db.add_attended_game(&fixture_attended(1, "2026-01-15", "BOS", "MTL", (1, 0), ""))
             .expect("add");
         let removed = db.remove_attended_game(1).unwrap();
         assert!(removed);
@@ -693,17 +763,21 @@ mod tests {
     fn l1_db_attended_list_orders_newest_first() {
         // Sort by game_date DESC — earlier dates render below later ones.
         let db = GroupDb::open_in_memory().expect("in-memory");
-        db.add_attended_game(&fixture_attended(1, "2025-12-01", "A", "B",
-                                               (1, 0), "")).expect("add");
-        db.add_attended_game(&fixture_attended(2, "2026-03-15", "C", "D",
-                                               (2, 1), "")).expect("add");
-        db.add_attended_game(&fixture_attended(3, "2026-01-15", "E", "F",
-                                               (3, 2), "")).expect("add");
+        db.add_attended_game(&fixture_attended(1, "2025-12-01", "A", "B", (1, 0), ""))
+            .expect("add");
+        db.add_attended_game(&fixture_attended(2, "2026-03-15", "C", "D", (2, 1), ""))
+            .expect("add");
+        db.add_attended_game(&fixture_attended(3, "2026-01-15", "E", "F", (3, 2), ""))
+            .expect("add");
         let rows = db.list_attended_games().unwrap();
-        let dates: Vec<_> = rows.iter()
+        let dates: Vec<_> = rows
+            .iter()
             .map(|r| r.game_date.clone().unwrap_or_default())
             .collect();
-        assert_eq!(dates, vec!["2026-03-15", "2026-01-15", "2025-12-01"],
-            "newest first by game_date, got: {dates:?}");
+        assert_eq!(
+            dates,
+            vec!["2026-03-15", "2026-01-15", "2025-12-01"],
+            "newest first by game_date, got: {dates:?}"
+        );
     }
 }

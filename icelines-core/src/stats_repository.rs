@@ -56,8 +56,12 @@ pub enum RepoError {
 
 /// Phase Lindsay L.2.5 — `ExtraReports` cache key. Full window identity
 /// so DI-12 cascade-eviction can match by `(season, season_type)` prefix.
-pub type ExtraReportKey =
-    (PlayerId, Season, SeasonType, crate::stats_catalog::ReportKind);
+pub type ExtraReportKey = (
+    PlayerId,
+    Season,
+    SeasonType,
+    crate::stats_catalog::ReportKind,
+);
 
 /// Phase Lindsay L.2.5 (DI-26): cap on the runtime-only Tier-2 cache.
 /// 4096 entries × ~10 KB / value worst case ≈ 40 MB resident ceiling.
@@ -98,8 +102,7 @@ pub struct StatsRepository {
     /// **DI-27 (runtime-only)**: never persisted to disk. The lifecycle
     /// is "fetch populates, query reads, eviction drops, process exit
     /// loses." No snapshot write path includes this map.
-    pub(crate) extra_reports:
-        std::collections::BTreeMap<ExtraReportKey, serde_json::Value>,
+    pub(crate) extra_reports: std::collections::BTreeMap<ExtraReportKey, serde_json::Value>,
 
     /// LRU order for `extra_reports`. Front = oldest; back = newest.
     /// Touched on insert (push_back). Mirrors the typed-window LRU
@@ -2134,8 +2137,7 @@ mod tests {
     #[test]
     fn l0_hart5_view_per_82_helpers_none_when_gp_zero() {
         let mut r = make_repo_with_player(8478402);
-        let stats = crate::fixtures::stats(8478402, 20222023, "EDM")
-            .build();
+        let stats = crate::fixtures::stats(8478402, 20222023, "EDM").build();
         // Manually craft a stats row with gp=0 by going through the builder.
         let mut zero_gp = stats.clone();
         zero_gp.totals.gp = 0;
@@ -2222,12 +2224,7 @@ mod tests {
 
     use crate::stats_catalog::ReportKind;
 
-    fn synthesize_view(
-        repo: &mut StatsRepository,
-        player_id: u32,
-        season: u32,
-        team: &str,
-    ) {
+    fn synthesize_view(repo: &mut StatsRepository, player_id: u32, season: u32, team: &str) {
         let identity = crate::fixtures::identity(player_id).build();
         let stats = crate::fixtures::stats(player_id, season, team).build();
         repo.upsert_identity(identity).unwrap();
@@ -2243,13 +2240,17 @@ mod tests {
         let key_pid = PlayerId(8478402);
         let value = serde_json::json!({"satPercentage": 0.55, "playerId": 8478402});
         repo.upsert_fetched_report(
-            key_pid, Season(20242025), SeasonType::Regular,
+            key_pid,
+            Season(20242025),
+            SeasonType::Regular,
             ReportKind::SkaterPuckPossessions,
             value.clone(),
         );
 
         let got = repo.fetched_report(
-            key_pid, Season(20242025), SeasonType::Regular,
+            key_pid,
+            Season(20242025),
+            SeasonType::Regular,
             ReportKind::SkaterPuckPossessions,
         );
         assert_eq!(got, Some(&value));
@@ -2282,7 +2283,7 @@ mod tests {
     /// Other windows survive.
     #[test]
     fn l0_lindsay_extra_reports_cascade_evict_on_window_drop() {
-        let mut repo = StatsRepository::with_lru_cap(2);  // small cap to force eviction
+        let mut repo = StatsRepository::with_lru_cap(2); // small cap to force eviction
         synthesize_view(&mut repo, 8478402, 20242025, "EDM");
         synthesize_view(&mut repo, 8479318, 20242025, "TOR");
 
@@ -2292,12 +2293,27 @@ mod tests {
         let t = SeasonType::Regular;
 
         // Populate Tier-2 entries for the resident window.
-        repo.upsert_fetched_report(pid_a, s, t, ReportKind::SkaterPuckPossessions,
-            serde_json::json!({"x": 1}));
-        repo.upsert_fetched_report(pid_b, s, t, ReportKind::SkaterScoringRates,
-            serde_json::json!({"x": 2}));
-        repo.upsert_fetched_report(pid_a, s, t, ReportKind::SkaterScoringRates,
-            serde_json::json!({"x": 3}));
+        repo.upsert_fetched_report(
+            pid_a,
+            s,
+            t,
+            ReportKind::SkaterPuckPossessions,
+            serde_json::json!({"x": 1}),
+        );
+        repo.upsert_fetched_report(
+            pid_b,
+            s,
+            t,
+            ReportKind::SkaterScoringRates,
+            serde_json::json!({"x": 2}),
+        );
+        repo.upsert_fetched_report(
+            pid_a,
+            s,
+            t,
+            ReportKind::SkaterScoringRates,
+            serde_json::json!({"x": 3}),
+        );
         assert_eq!(repo.fetched_reports_len(), 3);
 
         // Synthesize TWO more windows to push out the (20242025, Regular).
@@ -2305,13 +2321,19 @@ mod tests {
         synthesize_view(&mut repo, 8400000, 20232024, "BOS");
         synthesize_view(&mut repo, 8400001, 20222023, "MTL");
 
-        assert!(!repo.has_window(s, t),
-            "20242025 Regular must have been evicted from typed LRU");
+        assert!(
+            !repo.has_window(s, t),
+            "20242025 Regular must have been evicted from typed LRU"
+        );
         // DI-12: cascade — every extra_reports for that window dropped.
-        assert_eq!(repo.fetched_reports_len(), 0,
-            "extra_reports must cascade-evict with the typed window");
-        assert!(repo.fetched_report(pid_a, s, t,
-            ReportKind::SkaterPuckPossessions).is_none());
+        assert_eq!(
+            repo.fetched_reports_len(),
+            0,
+            "extra_reports must cascade-evict with the typed window"
+        );
+        assert!(repo
+            .fetched_report(pid_a, s, t, ReportKind::SkaterPuckPossessions)
+            .is_none());
     }
 
     /// DI-12: cascade-evict ONLY drops matching window — other windows
@@ -2327,12 +2349,16 @@ mod tests {
 
         // One entry per window.
         repo.upsert_fetched_report(
-            pid_a, Season(20242025), SeasonType::Regular,
+            pid_a,
+            Season(20242025),
+            SeasonType::Regular,
             ReportKind::SkaterPuckPossessions,
             serde_json::json!({"in": "newer-window"}),
         );
         repo.upsert_fetched_report(
-            pid_b, Season(20232024), SeasonType::Regular,
+            pid_b,
+            Season(20232024),
+            SeasonType::Regular,
             ReportKind::SkaterPuckPossessions,
             serde_json::json!({"in": "older-window"}),
         );
@@ -2348,10 +2374,14 @@ mod tests {
         let surviving = repo.fetched_reports_len();
         assert!(surviving <= 2, "no entries should leak beyond their window");
         // Specifically, no entry for the (20242025, Regular) window:
-        assert!(repo.fetched_report(
-            pid_a, Season(20242025), SeasonType::Regular,
-            ReportKind::SkaterPuckPossessions,
-        ).is_none());
+        assert!(repo
+            .fetched_report(
+                pid_a,
+                Season(20242025),
+                SeasonType::Regular,
+                ReportKind::SkaterPuckPossessions,
+            )
+            .is_none());
     }
 
     /// DI-26 cap: insertion past 4096 entries evicts the oldest by
@@ -2381,8 +2411,7 @@ mod tests {
         'outer: for player_id in 1..=200 {
             let pid = PlayerId(player_id as u32);
             for &kind in crate::stats_catalog::ReportKind::all() {
-                repo.upsert_fetched_report(pid, s, t, kind,
-                    serde_json::json!({"i": count}));
+                repo.upsert_fetched_report(pid, s, t, kind, serde_json::json!({"i": count}));
                 count += 1;
                 if count > EXTRA_REPORTS_CAP {
                     break 'outer;
@@ -2405,9 +2434,12 @@ mod tests {
     #[test]
     fn l0_lindsay_extra_reports_runtime_only_cold_start() {
         let repo = StatsRepository::new();
-        assert_eq!(repo.fetched_reports_len(), 0,
+        assert_eq!(
+            repo.fetched_reports_len(),
+            0,
             "fresh repo must have no resident Tier-2 cache state — \
-             runtime-only contract (DI-27)");
+             runtime-only contract (DI-27)"
+        );
     }
 
     // ─── L.2.6 — catalog-routed PlayerView accessors ────────────────────
@@ -2423,10 +2455,10 @@ mod tests {
             .view(PlayerId(8478402), Season(20242025), SeasonType::Regular)
             .unwrap();
         let direct = crate::stats_catalog::StatId::PointsPerGame.read(&view);
-        let via    = view.points_per_game_via_catalog();
+        let via = view.points_per_game_via_catalog();
         assert_eq!(direct, via);
         // Sanity: 80 / 70 ≈ 1.143
-        assert!((via.unwrap() - 80.0/70.0).abs() < 1e-9);
+        assert!((via.unwrap() - 80.0 / 70.0).abs() < 1e-9);
     }
 
     /// `toi_per_game_sec_via_catalog` matches `TotalToiPerGame.read`.
@@ -2453,7 +2485,7 @@ mod tests {
             .view(PlayerId(8478402), Season(20242025), SeasonType::Regular)
             .unwrap();
         let direct = crate::stats_catalog::StatId::EvenStrengthGoalDifference.read(&view);
-        let via    = view.ev_goal_diff_via_catalog();
+        let via = view.ev_goal_diff_via_catalog();
         assert_eq!(direct, via);
         // fixtures::stats has no goals_for_against substruct → None.
         assert_eq!(via, None);

@@ -41,8 +41,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ]
     } else if args.len() == 2 {
         // Range: start..=end inclusive, in YYYYZZZZ form.
-        let start: u32 = args[0].parse().map_err(|_| "first arg must be 8-digit season")?;
-        let end:   u32 = args[1].parse().map_err(|_| "second arg must be 8-digit season")?;
+        let start: u32 = args[0]
+            .parse()
+            .map_err(|_| "first arg must be 8-digit season")?;
+        let end: u32 = args[1]
+            .parse()
+            .map_err(|_| "second arg must be 8-digit season")?;
         (start..=end)
             .step_by(10001) // 20212022 → 20222023 step
             .map(|n| format!("{n:08}"))
@@ -51,12 +55,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         args
     };
 
-    println!("ESPN transactions archive probe — {} seasons", seasons.len());
+    println!(
+        "ESPN transactions archive probe — {} seasons",
+        seasons.len()
+    );
     if write_bundle {
         println!("Writing captured envelopes to data/seasons/{{season}}/transactions.json");
     }
     println!("{}", "─".repeat(70));
-    println!("{:<10}  {:>8}  {:>8}  {}", "Season", "Rows", "Drift", "Notes");
+    println!(
+        "{:<10}  {:>8}  {:>8}  {}",
+        "Season", "Rows", "Drift", "Notes"
+    );
 
     let source = EspnSource::production();
 
@@ -66,7 +76,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Ok(outcome) => {
                 // Cross-page dedup of the drift list — the per-page parser
                 // can't see history.
-                let unique: HashSet<String> = outcome.dropped_unknown_schema.iter().cloned().collect();
+                let unique: HashSet<String> =
+                    outcome.dropped_unknown_schema.iter().cloned().collect();
                 let dropped = unique.len();
                 let n = outcome.rows.len();
                 let note = if outcome.partial { " [PARTIAL]" } else { "" };
@@ -83,16 +94,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         eprintln!("           WARN: {w}");
                     }
                     let envelope = TransactionsEnvelope {
-                        season:             season.to_owned(),
-                        source:             "espn".to_owned(),
-                        fetched_at:         outcome.fetched_at,
+                        season: season.to_owned(),
+                        source: "espn".to_owned(),
+                        fetched_at: outcome.fetched_at,
                         classifier_version: CURRENT_CLASSIFIER_VERSION,
                         rows,
                     };
                     let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
                         .parent()
                         .ok_or("cannot resolve workspace root")?
-                        .join("data").join("seasons").join(season);
+                        .join("data")
+                        .join("seasons")
+                        .join(season);
                     std::fs::create_dir_all(&dir)?;
                     let path = dir.join("transactions.json");
                     let json = serde_json::to_vec_pretty(&envelope)?;

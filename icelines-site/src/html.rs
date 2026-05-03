@@ -107,7 +107,7 @@ mod tests {
     /// Stretch: else
     fn metrics_for(class: WebFitClass) -> CrossTeamMetrics {
         let (own, avg) = match class {
-            WebFitClass::Buried => (4, 2.0),  // delta +2.0
+            WebFitClass::Buried => (4, 2.0), // delta +2.0
             WebFitClass::Elite => (1, 1.0),
             WebFitClass::Solid => (1, 2.0),
             WebFitClass::Stretch => (1, 3.0),

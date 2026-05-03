@@ -1,58 +1,62 @@
-pub mod home;
-pub mod team;
-pub mod player;
-pub mod search;
-pub mod misc;
-pub mod queries;
 pub mod comps;
 pub mod depth;
-pub mod schedule;
-pub mod playoffs;
 pub mod game_detail;
 pub mod goalies;
+pub mod home;
+pub mod misc;
+pub mod player;
+pub mod playoffs;
+pub mod queries;
+pub mod schedule;
+pub mod search;
+pub mod team;
 pub mod transactions;
 
-use ratatui::Frame;
+use crate::tui::app::{App, Screen};
+use crate::tui::widgets::help_lines;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Clear, Paragraph};
-use crate::tui::app::{App, Screen};
-use crate::tui::widgets::help_lines;
+use ratatui::Frame;
 
 pub fn render(f: &mut Frame, app: &App) {
     let area = f.area();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(1), Constraint::Min(0), Constraint::Length(1)])
+        .constraints([
+            Constraint::Length(1),
+            Constraint::Min(0),
+            Constraint::Length(1),
+        ])
         .split(area);
 
     render_nav(f, app, chunks[0]);
 
     match &app.screen {
-        Screen::Home            => home::render(f, app, chunks[1]),
-        Screen::Team(abbrev)    => team::render(f, app, chunks[1], abbrev),
+        Screen::Home => home::render(f, app, chunks[1]),
+        Screen::Team(abbrev) => team::render(f, app, chunks[1], abbrev),
         Screen::PlayerById(pid) => player::render_by_id(f, app, chunks[1], *pid),
-        Screen::Search          => search::render(f, app, chunks[1]),
-        Screen::Queries         => queries::render(f, app, chunks[1]),
-        Screen::Tonight         => misc::render_tonight(f, app, chunks[1]),
-        Screen::Projections     => misc::render_projections(f, app, chunks[1]),
-        Screen::Groups              => misc::render_groups(f, app, chunks[1]),
-        Screen::GroupDetail(name)   => misc::render_group_members(f, app, chunks[1], name),
-        Screen::Fetch               => misc::render_fetch(f, app, chunks[1]),
-        Screen::Help                => home::render(f, app, chunks[1]),
-        Screen::CompsById(pid)      => comps::render_by_id(f, app, chunks[1], *pid),
-        Screen::Depth               => depth::render_league(f, app, chunks[1]),
-        Screen::DepthTeam(abbrev)   => depth::render_team(f, app, chunks[1], abbrev),
-        Screen::Schedule                  => schedule::render(f, app, chunks[1]),
-        Screen::ScheduleTeam(team)        => schedule::render_team_schedule(f, app, chunks[1], team),
-        Screen::ScheduleMatchup(t1, t2)   => schedule::render_matchup(f, app, chunks[1], t1, t2),
-        Screen::Playoffs                  => playoffs::render(f, app, chunks[1]),
-        Screen::SeriesDetail(letter)      => playoffs::render_series_detail(f, app, chunks[1], letter),
-        Screen::GameDetail(game_id)       => game_detail::render(f, app, chunks[1], *game_id),
-        Screen::Goalies                   => goalies::render(f, app, chunks[1]),
-        Screen::GoalieDetailById(pid)     => goalies::render_detail_by_id(f, app, chunks[1], *pid),
-        Screen::Transactions              => transactions::render(f, app, chunks[1]),
+        Screen::Search => search::render(f, app, chunks[1]),
+        Screen::Queries => queries::render(f, app, chunks[1]),
+        Screen::Tonight => misc::render_tonight(f, app, chunks[1]),
+        Screen::Projections => misc::render_projections(f, app, chunks[1]),
+        Screen::Groups => misc::render_groups(f, app, chunks[1]),
+        Screen::GroupDetail(name) => misc::render_group_members(f, app, chunks[1], name),
+        Screen::Fetch => misc::render_fetch(f, app, chunks[1]),
+        Screen::Help => home::render(f, app, chunks[1]),
+        Screen::CompsById(pid) => comps::render_by_id(f, app, chunks[1], *pid),
+        Screen::Depth => depth::render_league(f, app, chunks[1]),
+        Screen::DepthTeam(abbrev) => depth::render_team(f, app, chunks[1], abbrev),
+        Screen::Schedule => schedule::render(f, app, chunks[1]),
+        Screen::ScheduleTeam(team) => schedule::render_team_schedule(f, app, chunks[1], team),
+        Screen::ScheduleMatchup(t1, t2) => schedule::render_matchup(f, app, chunks[1], t1, t2),
+        Screen::Playoffs => playoffs::render(f, app, chunks[1]),
+        Screen::SeriesDetail(letter) => playoffs::render_series_detail(f, app, chunks[1], letter),
+        Screen::GameDetail(game_id) => game_detail::render(f, app, chunks[1], *game_id),
+        Screen::Goalies => goalies::render(f, app, chunks[1]),
+        Screen::GoalieDetailById(pid) => goalies::render_detail_by_id(f, app, chunks[1], *pid),
+        Screen::Transactions => transactions::render(f, app, chunks[1]),
     }
 
     f.render_widget(
@@ -66,9 +70,7 @@ pub fn render(f: &mut Frame, app: &App) {
     //  This catches Projections, Search, Queries, GroupDetail.)
     if app.group_picker_open {
         // Skip if player/team screen — they render the overlay themselves
-        let handled_locally = matches!(app.screen,
-            Screen::PlayerById(_) | Screen::Team(_)
-        );
+        let handled_locally = matches!(app.screen, Screen::PlayerById(_) | Screen::Team(_));
         if !handled_locally {
             player::render_group_picker(f, app, area);
         }
@@ -105,25 +107,29 @@ pub fn render(f: &mut Frame, app: &App) {
 
 fn tab_for_screen(screen: &Screen) -> usize {
     match screen {
-        Screen::Home | Screen::Team(_) | Screen::PlayerById(_)
-        | Screen::CompsById(_)                                   => 0, // League
-        Screen::Depth | Screen::DepthTeam(_)                     => 1, // Depth
-        Screen::Queries | Screen::Projections | Screen::Search   => 2, // Stats (default: Queries)
-        Screen::Goalies | Screen::GoalieDetailById(_)            => 3, // Goalies
-        Screen::Tonight | Screen::GameDetail(_)                  => 4, // Scores
-        Screen::Schedule | Screen::ScheduleTeam(_)
-            | Screen::ScheduleMatchup(..)                        => 5, // Schedule
-        Screen::Transactions                                     => 6, // Transactions
-        Screen::Playoffs | Screen::SeriesDetail(_)               => 7, // Playoffs
+        Screen::Home | Screen::Team(_) | Screen::PlayerById(_) | Screen::CompsById(_) => 0, // League
+        Screen::Depth | Screen::DepthTeam(_) => 1,                                          // Depth
+        Screen::Queries | Screen::Projections | Screen::Search => 2, // Stats (default: Queries)
+        Screen::Goalies | Screen::GoalieDetailById(_) => 3,          // Goalies
+        Screen::Tonight | Screen::GameDetail(_) => 4,                // Scores
+        Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => 5, // Schedule
+        Screen::Transactions => 6,                                   // Transactions
+        Screen::Playoffs | Screen::SeriesDetail(_) => 7,             // Playoffs
         // Groups is not a tab (Phase T+1): reachable via `g` from anywhere.
-        _                                                        => 99,// no tab (Fetch, Help, Groups)
+        _ => 99, // no tab (Fetch, Help, Groups)
     }
 }
 
 fn render_nav(f: &mut Frame, app: &App, area: Rect) {
     let tab_labels = [
-        "League", "Depth", "Stats", "Goalies", "Scores",
-        "Schedule", "Transactions", "Playoffs",
+        "League",
+        "Depth",
+        "Stats",
+        "Goalies",
+        "Scores",
+        "Schedule",
+        "Transactions",
+        "Playoffs",
     ];
     let active_tab = tab_for_screen(&app.screen);
 
@@ -131,7 +137,10 @@ fn render_nav(f: &mut Frame, app: &App, area: Rect) {
     for (i, label) in tab_labels.iter().enumerate() {
         let active = i == active_tab;
         let style = if active {
-            Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::Cyan)
+                .add_modifier(Modifier::BOLD)
         } else {
             Style::default().fg(Color::DarkGray)
         };
@@ -141,13 +150,16 @@ fn render_nav(f: &mut Frame, app: &App, area: Rect) {
 
     // Season indicator — shown when a historical season is active
     if app.active_season != icelines_core::CURRENT_SEASON_STR {
-        let label = crate::tui::screens::misc::PICKER_SEASONS.iter()
+        let label = crate::tui::screens::misc::PICKER_SEASONS
+            .iter()
             .find(|(id, _, _)| *id == app.active_season.as_str())
             .map(|(_, l, _)| *l)
             .unwrap_or(app.active_season.as_str());
         spans.push(Span::styled(
             format!("  [{}] ", label.split_whitespace().next().unwrap_or(label)),
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
         ));
     }
 
@@ -179,9 +191,9 @@ fn render_nav(f: &mut Frame, app: &App, area: Rect) {
 
 fn centered_rect(pct_x: u16, pct_y: u16, r: Rect) -> Rect {
     let popup_h = r.height * pct_y / 100;
-    let popup_w = r.width  * pct_x / 100;
+    let popup_w = r.width * pct_x / 100;
     Rect::new(
-        r.x + (r.width  - popup_w) / 2,
+        r.x + (r.width - popup_w) / 2,
         r.y + (r.height - popup_h) / 2,
         popup_w,
         popup_h,
@@ -357,8 +369,14 @@ mod app_snapshot_tests {
         let text = render_app_to_text(&app, 120, 30);
         // Home screen shows the 32-team ranked grid. EDM and TOR are stable
         // fixtures of the bundled current-season pool.
-        assert!(text.contains("EDM"), "Home must show EDM team card, got:\n{text}");
-        assert!(text.contains("TOR"), "Home must show TOR team card, got:\n{text}");
+        assert!(
+            text.contains("EDM"),
+            "Home must show EDM team card, got:\n{text}"
+        );
+        assert!(
+            text.contains("TOR"),
+            "Home must show TOR team card, got:\n{text}"
+        );
         // Negative assertion: the "Loading…" placeholder must NOT be
         // visible after a successful boot.
         assert!(
@@ -431,7 +449,7 @@ mod app_snapshot_tests {
         // navigation-only test.
         app.handle(Action::Tab);
         app.handle(Action::Tab);
-        app.cycle_screen();  // Queries → Goalies (Lindsay L.3.3 bypass)
+        app.cycle_screen(); // Queries → Goalies (Lindsay L.3.3 bypass)
         assert_eq!(app.screen, crate::tui::app::Screen::Goalies);
 
         // Goalie views must be non-empty post-boot. Screen-level details
@@ -507,7 +525,11 @@ mod app_snapshot_tests {
 
         use crate::tui::app::Screen;
         app.handle(Action::TabPrev);
-        assert_eq!(app.screen, Screen::Playoffs, "Shift-Tab from Home → Playoffs");
+        assert_eq!(
+            app.screen,
+            Screen::Playoffs,
+            "Shift-Tab from Home → Playoffs"
+        );
         app.handle(Action::TabPrev);
         assert_eq!(app.screen, Screen::Transactions);
     }
@@ -599,9 +621,9 @@ mod app_snapshot_tests {
         // Home → Depth → Queries → Goalies. Phase Lindsay L.3.3 — Tab
         // on Queries toggles section, not screen; use `cycle_screen()`
         // to advance past Queries.
-        app.handle(Action::Tab);  // Home → Depth
-        app.handle(Action::Tab);  // Depth → Queries
-        app.cycle_screen();        // Queries → Goalies
+        app.handle(Action::Tab); // Home → Depth
+        app.handle(Action::Tab); // Depth → Queries
+        app.cycle_screen(); // Queries → Goalies
         assert_eq!(app.screen, crate::tui::app::Screen::Goalies);
         app.handle(Action::Enter);
         assert!(
@@ -788,7 +810,10 @@ mod app_snapshot_tests {
         app.boot_load_with_store(&store);
 
         let should_quit = app.handle(Action::Quit);
-        assert!(should_quit, "Quit action must return true to break run_loop");
+        assert!(
+            should_quit,
+            "Quit action must return true to break run_loop"
+        );
     }
 
     // ── Hart.6.9.B — Shift+P playoff toggle ─────────────────────────────────
@@ -857,8 +882,7 @@ mod app_snapshot_tests {
             "Shift+P must NOT flip when playoff data is unavailable"
         );
         assert!(
-            app.status.to_lowercase().contains("playoff")
-                || app.status.contains("Cup"),
+            app.status.to_lowercase().contains("playoff") || app.status.contains("Cup"),
             "status must explain why the toggle didn't take, got: {}",
             app.status
         );
@@ -947,10 +971,14 @@ mod app_snapshot_tests {
         // Apply.
         app.handle(Action::Enter);
         assert!(!app.schedule_search_mode, "Enter must exit search mode");
-        assert!(matches!(
-            app.schedule_filter,
-            crate::tui::schedule::SearchFilter::Team(_)
-        ), "Enter on 'sea' must produce a Team filter, got {:?}", app.schedule_filter);
+        assert!(
+            matches!(
+                app.schedule_filter,
+                crate::tui::schedule::SearchFilter::Team(_)
+            ),
+            "Enter on 'sea' must produce a Team filter, got {:?}",
+            app.schedule_filter
+        );
     }
 
     /// Schedule search: matchup syntax "NYR WSH" produces a Matchup filter.
@@ -969,10 +997,13 @@ mod app_snapshot_tests {
             }
         }
         app.handle(Action::Enter);
-        assert!(matches!(
-            app.schedule_filter,
-            crate::tui::schedule::SearchFilter::Matchup(_, _)
-        ), "Enter on 'nyr wsh' must produce a Matchup filter");
+        assert!(
+            matches!(
+                app.schedule_filter,
+                crate::tui::schedule::SearchFilter::Matchup(_, _)
+            ),
+            "Enter on 'nyr wsh' must produce a Matchup filter"
+        );
     }
 
     /// Schedule search: backspace edits the query.
@@ -1049,7 +1080,10 @@ mod app_snapshot_tests {
 
         app.handle(Action::Enter);
         assert!(!app.tx_search_mode, "Enter must exit search mode");
-        assert_eq!(app.tx_search_query, "trade", "Enter must keep query applied");
+        assert_eq!(
+            app.tx_search_query, "trade",
+            "Enter must keep query applied"
+        );
     }
 
     /// Transactions search: Esc clears the query and exits mode.
@@ -1345,8 +1379,7 @@ mod app_snapshot_tests {
             app.handle(Action::AddToFavorites);
             app.handle(Action::AddToFavorites);
             assert!(
-                app.status.contains("already")
-                    || app.status.to_lowercase().contains("already in"),
+                app.status.contains("already") || app.status.to_lowercase().contains("already in"),
                 "second press must surface 'already in Favorites', got: {}",
                 app.status
             );
@@ -1381,11 +1414,7 @@ mod app_snapshot_tests {
             assert!(app.group_picker_open, "g must open the group picker");
             // Picker list must include both Favorites (seeded by
             // migration 001) and the user-created Watchlist.
-            let names: Vec<&str> = app
-                .group_picker_list
-                .iter()
-                .map(|s| s.as_str())
-                .collect();
+            let names: Vec<&str> = app.group_picker_list.iter().map(|s| s.as_str()).collect();
             assert!(
                 names.iter().any(|n| *n == "Favorites"),
                 "picker must list Favorites, got: {:?}",
@@ -1484,7 +1513,10 @@ mod app_snapshot_tests {
         let text = render_app_to_text(&app, 140, 40);
 
         // Title must show NYR @ WSH 2-3 with OT suffix.
-        assert!(text.contains("NYR"), "title must show away abbrev NYR, got:\n{text}");
+        assert!(
+            text.contains("NYR"),
+            "title must show away abbrev NYR, got:\n{text}"
+        );
         assert!(text.contains("WSH"), "title must show home abbrev WSH");
         assert!(text.contains("2"), "score 2 must appear");
         assert!(text.contains("3"), "score 3 must appear");
@@ -1542,8 +1574,10 @@ mod app_snapshot_tests {
         // The screen must surface either the raw message or some
         // user-readable indicator.
         assert!(
-            text.contains("503") || text.to_lowercase().contains("error") ||
-            text.to_lowercase().contains("unavailable") || text.to_lowercase().contains("failed"),
+            text.contains("503")
+                || text.to_lowercase().contains("error")
+                || text.to_lowercase().contains("unavailable")
+                || text.to_lowercase().contains("failed"),
             "Error-state Game Detail must surface the failure, got:\n{text}"
         );
     }
@@ -1614,10 +1648,7 @@ mod app_snapshot_tests {
         assert_eq!(app.query_save_name, "myquer");
 
         app.handle(Action::Escape);
-        assert!(matches!(
-            app.query_mode,
-            crate::tui::app::QueryMode::Build
-        ));
+        assert!(matches!(app.query_mode, crate::tui::app::QueryMode::Build));
         assert!(app.query_save_name.is_empty(), "Esc must clear typed name");
     }
 
@@ -1636,10 +1667,7 @@ mod app_snapshot_tests {
                 app.handle(Action::Char(c));
             }
             app.handle(Action::Enter);
-            assert!(matches!(
-                app.query_mode,
-                crate::tui::app::QueryMode::Build
-            ));
+            assert!(matches!(app.query_mode, crate::tui::app::QueryMode::Build));
 
             // Verify DB row exists.
             let db = crate::db::GroupDb::open().expect("open DB");
@@ -1671,10 +1699,7 @@ mod app_snapshot_tests {
         // Drill: Home → Depth → DepthTeam(rank-1).
         app.handle(Action::Tab);
         app.handle(Action::Enter);
-        assert!(matches!(
-            app.screen,
-            crate::tui::app::Screen::DepthTeam(_)
-        ));
+        assert!(matches!(app.screen, crate::tui::app::Screen::DepthTeam(_)));
 
         // 100-col is the narrow-but-realistic test width. 5 cols × 20
         // chars each = 100; per-col inner = ~18 chars after borders.
@@ -1855,8 +1880,10 @@ mod app_snapshot_tests {
 
         // Initial: "Sort by" field row is visible (section 0 expanded).
         let pre = render_app_to_text(&app, 140, 40);
-        assert!(pre.contains("    Sort by"),
-            "Sort by row must be visible pre-collapse; got:\n{pre}");
+        assert!(
+            pre.contains("    Sort by"),
+            "Sort by row must be visible pre-collapse; got:\n{pre}"
+        );
 
         // Tab on Queries → collapse cursor's section (section 0 = Sort & Display).
         app.handle(Action::Tab);
@@ -1883,22 +1910,36 @@ mod app_snapshot_tests {
         let (_dir, store) = empty_store_in_tempdir();
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
-        app.handle(Action::Tab);  // Home → Depth
-        app.handle(Action::Tab);  // Depth → Queries
+        app.handle(Action::Tab); // Home → Depth
+        app.handle(Action::Tab); // Depth → Queries
 
         // Boot state: sections 0 + 1 expanded, 2 + 3 collapsed.
-        assert!(app.query_sections[0].expanded, "section 0 expanded by default");
-        assert!(app.query_sections[1].expanded, "section 1 expanded by default");
-        assert!(!app.query_sections[2].expanded, "section 2 collapsed by default");
-        assert!(!app.query_sections[3].expanded, "section 3 collapsed by default");
+        assert!(
+            app.query_sections[0].expanded,
+            "section 0 expanded by default"
+        );
+        assert!(
+            app.query_sections[1].expanded,
+            "section 1 expanded by default"
+        );
+        assert!(
+            !app.query_sections[2].expanded,
+            "section 2 collapsed by default"
+        );
+        assert!(
+            !app.query_sections[3].expanded,
+            "section 3 collapsed by default"
+        );
 
         // Walk to the last field of section 1 (field 3 — last in
         // section 1.fields = [1, 2, 3]).
         for _ in 0..5 {
             app.handle(Action::Down);
         }
-        assert_eq!(app.query_field_idx, 3,
-            "should reach field 3 after 5 Downs from field 0");
+        assert_eq!(
+            app.query_field_idx, 3,
+            "should reach field 3 after 5 Downs from field 0"
+        );
         assert!(app.query_sections[2].expanded || !app.query_sections[2].expanded);
         // Note: walking through fields 0,9,8,1,2,3 = 5 stops total
         // means after 5 Downs we land on field 3 (index 5 in the visit
@@ -1940,8 +1981,8 @@ mod app_snapshot_tests {
         let (_dir, store) = empty_store_in_tempdir();
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
-        app.handle(Action::Tab);  // Home → Depth
-        app.handle(Action::Tab);  // Depth → Queries
+        app.handle(Action::Tab); // Home → Depth
+        app.handle(Action::Tab); // Depth → Queries
 
         // Cursor starts at field 0 (Sort by, section 0). Section 0 +
         // section 1 are expanded by default; sections 2 + 3 collapsed.
@@ -1967,8 +2008,7 @@ mod app_snapshot_tests {
         // (Origin & Draft) and lands on its first field. Section 2
         // and 3 fields appear in `visited` because the auto-expand
         // exposes them.
-        let unique: std::collections::HashSet<usize> =
-            visited.iter().copied().collect();
+        let unique: std::collections::HashSet<usize> = visited.iter().copied().collect();
         // All 10 fields (0..=9) should be visitable after enough
         // Downs because every section gets auto-expanded in turn.
         for i in 0..=9usize {
@@ -2084,8 +2124,11 @@ mod app_snapshot_tests {
         // declaration order; was Goals pre-L.4.1).
         app.handle(Action::Enter);
 
-        assert_eq!(app.query_mode, crate::tui::app::QueryMode::Build,
-            "Enter should exit picker back to Build mode");
+        assert_eq!(
+            app.query_mode,
+            crate::tui::app::QueryMode::Build,
+            "Enter should exit picker back to Build mode"
+        );
         assert_eq!(
             app.sort_stat_pick,
             Some(icelines_core::stats_catalog::StatId::Games),
@@ -2117,14 +2160,17 @@ mod app_snapshot_tests {
 
         // Esc on Build with active pick clears the pick.
         app.handle(Action::Escape);
-        assert_eq!(app.sort_stat_pick, None,
-            "Esc on Build with active pick must clear sort_stat_pick");
+        assert_eq!(
+            app.sort_stat_pick, None,
+            "Esc on Build with active pick must clear sort_stat_pick"
+        );
         // Mode stays Build (Esc didn't drop us anywhere else).
         assert_eq!(app.query_mode, crate::tui::app::QueryMode::Build);
         // Status line surfaces the clear action.
         assert!(
             app.status.contains("cleared") || app.status.contains("Sort pick"),
-            "status should mention pick clear; got: {}", app.status
+            "status should mention pick clear; got: {}",
+            app.status
         );
     }
 
@@ -2142,10 +2188,15 @@ mod app_snapshot_tests {
         app.handle(Action::Char('h'));
         app.handle(Action::Escape);
 
-        assert_eq!(app.query_mode, crate::tui::app::QueryMode::Build,
-            "Esc should return to Build mode");
-        assert_eq!(app.sort_stat_pick, pick_before,
-            "Esc should NOT mutate sort_stat_pick");
+        assert_eq!(
+            app.query_mode,
+            crate::tui::app::QueryMode::Build,
+            "Esc should return to Build mode"
+        );
+        assert_eq!(
+            app.sort_stat_pick, pick_before,
+            "Esc should NOT mutate sort_stat_pick"
+        );
     }
 
     /// Down arrow moves the picker selection within the filtered list.
@@ -2209,8 +2260,11 @@ mod app_snapshot_tests {
         for _ in 0..4 {
             app.handle(Action::Char(']'));
         }
-        assert_eq!(app.career_table_preset, CareerTablePreset::Default,
-            "forward cycle wraps Goalie → Default (post-SCOUT-6)");
+        assert_eq!(
+            app.career_table_preset,
+            CareerTablePreset::Default,
+            "forward cycle wraps Goalie → Default (post-SCOUT-6)"
+        );
     }
 
     /// `[` on the player card cycles career-table preset BACKWARD.
@@ -2244,10 +2298,16 @@ mod app_snapshot_tests {
         app.screen = crate::tui::app::Screen::PlayerById(pid);
 
         app.handle(Action::Char(']'));
-        assert!(app.status.contains("Scoring"),
-            "status should mention 'Scoring' after `]`; got: {}", app.status);
-        assert!(app.status.contains("[/]"),
-            "status should remind users of the bracket keys; got: {}", app.status);
+        assert!(
+            app.status.contains("Scoring"),
+            "status should mention 'Scoring' after `]`; got: {}",
+            app.status
+        );
+        assert!(
+            app.status.contains("[/]"),
+            "status should remind users of the bracket keys; got: {}",
+            app.status
+        );
     }
 
     /// L.4 GLASS-10 (gap-fill) — TestBackend snapshot of `render_stats_view`.
@@ -2269,16 +2329,24 @@ mod app_snapshot_tests {
         app.screen = crate::tui::app::Screen::PlayerById(pid);
 
         let text = render_app_to_text(&app, 140, 40);
-        assert!(text.contains("Career"),
-            "career-table header `Career` must render — got:\n{text}");
-        assert!(text.contains("Season"),
-            "career-table column `Season` must render — got:\n{text}");
+        assert!(
+            text.contains("Career"),
+            "career-table header `Career` must render — got:\n{text}"
+        );
+        assert!(
+            text.contains("Season"),
+            "career-table column `Season` must render — got:\n{text}"
+        );
         // The preset label appears in the status header line.
-        assert!(text.contains("Default"),
-            "active preset name `Default` must appear — got:\n{text}");
+        assert!(
+            text.contains("Default"),
+            "active preset name `Default` must appear — got:\n{text}"
+        );
         // Bio section renders after the table.
-        assert!(text.contains("Bio") || text.contains("Draft"),
-            "bio section (Bio/Draft) must render — got:\n{text}");
+        assert!(
+            text.contains("Bio") || text.contains("Draft"),
+            "bio section (Bio/Draft) must render — got:\n{text}"
+        );
     }
 
     /// L.4 GLASS-10 — at narrow widths (80 cols), the career-table
@@ -2295,11 +2363,15 @@ mod app_snapshot_tests {
         // Render at 80 cols — Default preset (15 cols) won't fit; some
         // columns drop. Status line uses "narrow: -N" format.
         let text = render_app_to_text(&app, 80, 30);
-        assert!(text.contains("Career"),
-            "career-table header must render even at narrow widths — got:\n{text}");
+        assert!(
+            text.contains("Career"),
+            "career-table header must render even at narrow widths — got:\n{text}"
+        );
         // The "(N of M cols" pattern appears in the status line.
-        assert!(text.contains(" of "),
-            "status line should show `N of M cols` indicator — got:\n{text}");
+        assert!(
+            text.contains(" of "),
+            "status line should show `N of M cols` indicator — got:\n{text}"
+        );
     }
 
     /// `Action::Refresh` (`r` key) resets both `query_fields` AND
@@ -2310,26 +2382,40 @@ mod app_snapshot_tests {
         let (_dir, store) = empty_store_in_tempdir();
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
-        app.handle(Action::Tab);  // Home → Depth
-        app.handle(Action::Tab);  // Depth → Queries
+        app.handle(Action::Tab); // Home → Depth
+        app.handle(Action::Tab); // Depth → Queries
 
         // Collapse section 0 + section 1. Then refresh — defaults restore.
-        app.handle(Action::Tab);  // collapse section 0 (cursor's section)
-        // Cursor moved to field 1 (section 1). Tab again collapses section 1.
+        app.handle(Action::Tab); // collapse section 0 (cursor's section)
+                                 // Cursor moved to field 1 (section 1). Tab again collapses section 1.
         app.handle(Action::Tab);
         // At least one of the originally-expanded sections is now collapsed.
-        let any_collapsed = !app.query_sections[0].expanded
-            || !app.query_sections[1].expanded;
-        assert!(any_collapsed, "post-Tab×2 at least one section should be collapsed");
+        let any_collapsed = !app.query_sections[0].expanded || !app.query_sections[1].expanded;
+        assert!(
+            any_collapsed,
+            "post-Tab×2 at least one section should be collapsed"
+        );
 
         // Refresh.
         app.handle(Action::Refresh);
 
         // Defaults restored: section 0 + 1 expanded, section 2 + 3 collapsed.
-        assert!(app.query_sections[0].expanded, "Refresh must re-expand section 0");
-        assert!(app.query_sections[1].expanded, "Refresh must re-expand section 1");
-        assert!(!app.query_sections[2].expanded, "Refresh must keep section 2 collapsed");
-        assert!(!app.query_sections[3].expanded, "Refresh must keep section 3 collapsed");
+        assert!(
+            app.query_sections[0].expanded,
+            "Refresh must re-expand section 0"
+        );
+        assert!(
+            app.query_sections[1].expanded,
+            "Refresh must re-expand section 1"
+        );
+        assert!(
+            !app.query_sections[2].expanded,
+            "Refresh must keep section 2 collapsed"
+        );
+        assert!(
+            !app.query_sections[3].expanded,
+            "Refresh must keep section 3 collapsed"
+        );
         // Cursor reset too.
         assert_eq!(app.query_field_idx, 0);
     }

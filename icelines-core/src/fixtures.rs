@@ -35,7 +35,8 @@ use crate::stats_repository::StatsRepository;
 /// against a known fixture.
 pub fn test_repo_with(identity: PlayerIdentity, stats: SeasonStats) -> StatsRepository {
     let mut r = StatsRepository::new();
-    r.upsert_identity(identity).expect("identity upsert in fixture");
+    r.upsert_identity(identity)
+        .expect("identity upsert in fixture");
     r.upsert_stats(stats).expect("stats upsert in fixture");
     r
 }
@@ -45,7 +46,8 @@ pub fn test_repo_with(identity: PlayerIdentity, stats: SeasonStats) -> StatsRepo
 /// hang off this signature without touching every test).
 pub fn test_repo_with_goalie(identity: PlayerIdentity, stats: SeasonStats) -> StatsRepository {
     let mut r = StatsRepository::new();
-    r.upsert_identity(identity).expect("identity upsert in fixture");
+    r.upsert_identity(identity)
+        .expect("identity upsert in fixture");
     r.upsert_stats(stats).expect("stats upsert in fixture");
     r
 }
@@ -643,32 +645,48 @@ pub mod stat_catalog_variants {
             team: TeamAbbr("EDM".into()),
             started: Some("2024-10-09".into()),
             ended: None,
-            gp: 82, goals: 50, assists: 80, points: 130,
+            gp: 82,
+            goals: 50,
+            assists: 80,
+            points: 130,
             goalie: None,
         })
         .with_totals(StatTotals {
-            gp: 82, goals: 50, assists: 80, points: 130,
+            gp: 82,
+            goals: 50,
+            assists: 80,
+            points: 130,
             plus_minus: 22,
             pim: 28,
             shots: 320,
             shooting_pct: Some(0.156),
             toi_per_game_sec: Some(22 * 60),
-            pp_goals: 18, pp_points: 50,
-            sh_goals: 0, sh_points: 0,
-            gwg: 9, ot_goals: 3,
+            pp_goals: 18,
+            pp_points: 50,
+            sh_goals: 0,
+            sh_points: 0,
+            gwg: 9,
+            ot_goals: 3,
             faceoff_win_pct: Some(0.563),
             pace_score: Some(PaceScore {
-                pace_82: 130.0, goals_per_82: 50.0,
-                raw_points: 130, gp: 82,
+                pace_82: 130.0,
+                goals_per_82: 50.0,
+                raw_points: 130,
+                gp: 82,
             }),
         })
         .with_realtime(RealtimeStats {
-            hits: 30, blocked_shots: 18, takeaways: 80,
-            giveaways: 60, missed_shots: 25,
+            hits: 30,
+            blocked_shots: 18,
+            takeaways: 80,
+            giveaways: 60,
+            missed_shots: 25,
         })
         .with_advanced(AdvancedStats {
-            xg: Some(35.5), xg_per_60: Some(1.42),
-            cf_pct: Some(54.2), ff_pct: Some(53.8),
+            xg: Some(35.5),
+            xg_per_60: Some(1.42),
+            cf_pct: Some(54.2),
+            ff_pct: Some(53.8),
             xgf_pct: Some(56.0),
         })
         .with_time_on_ice(TimeOnIceStats {
@@ -686,10 +704,13 @@ pub mod stat_catalog_variants {
             time_on_ice_per_shift_sec: 41.0,
         })
         .with_goals_for_against(GoalsForAgainstStats {
-            ev_goals_for: 110, ev_goals_against: 75,
+            ev_goals_for: 110,
+            ev_goals_against: 75,
             ev_goals_for_pct: Some(0.595),
-            pp_goals_for: 40, pp_goals_against: 1,
-            sh_goals_for: 1, sh_goals_against: 6,
+            pp_goals_for: 40,
+            pp_goals_against: 1,
+            sh_goals_for: 1,
+            sh_goals_against: 6,
             even_strength_goal_difference: 35,
             ev_time_on_ice_per_game_sec: 17 * 60,
             offensive_points: Some(85),
@@ -703,7 +724,7 @@ pub mod stat_catalog_variants {
     /// goals_for_against / advanced data (era gate fires for those
     /// stats). Total scoring + Pim still populated.
     pub fn skater_pre_2005() -> (PlayerIdentity, SeasonStats) {
-        let id = identity(8467396).build();  // Brendan Shanahan-era id
+        let id = identity(8467396).build(); // Brendan Shanahan-era id
         let stats = SeasonStatsBuilder::new(
             PlayerId(8467396),
             Season(20012002),
@@ -714,23 +735,34 @@ pub mod stat_catalog_variants {
             team: TeamAbbr("DET".into()),
             started: Some("2001-10-04".into()),
             ended: None,
-            gp: 80, goals: 37, assists: 38, points: 75,
+            gp: 80,
+            goals: 37,
+            assists: 38,
+            points: 75,
             goalie: None,
         })
         .with_totals(StatTotals {
-            gp: 80, goals: 37, assists: 38, points: 75,
+            gp: 80,
+            goals: 37,
+            assists: 38,
+            points: 75,
             plus_minus: 23,
             pim: 118,
             shots: 282,
             shooting_pct: Some(0.131),
             toi_per_game_sec: Some(20 * 60),
-            pp_goals: 13, pp_points: 23,
-            sh_goals: 0, sh_points: 0,
-            gwg: 6, ot_goals: 1,
+            pp_goals: 13,
+            pp_points: 23,
+            sh_goals: 0,
+            sh_points: 0,
+            gwg: 6,
+            ot_goals: 1,
             faceoff_win_pct: None,
             pace_score: Some(PaceScore {
-                pace_82: 76.9, goals_per_82: 37.9,
-                raw_points: 75, gp: 80,
+                pace_82: 76.9,
+                goals_per_82: 37.9,
+                raw_points: 75,
+                gp: 80,
             }),
         })
         // No `with_realtime`, `with_time_on_ice`, `with_goals_for_against`,
@@ -759,7 +791,7 @@ pub mod stat_catalog_variants {
     /// 2024-25 starter shape: GP=55, .913 SV%, 2.50 GAA. All Lindsay
     /// goalie substructs (advanced, saves_by_strength, bios) populated.
     pub fn goalie() -> (PlayerIdentity, SeasonStats) {
-        let id = identity(8476434).build();  // Sergei Bobrovsky-era id
+        let id = identity(8476434).build(); // Sergei Bobrovsky-era id
         let stats = SeasonStatsBuilder::new(
             PlayerId(8476434),
             Season(20242025),
@@ -770,42 +802,68 @@ pub mod stat_catalog_variants {
             team: TeamAbbr("FLA".into()),
             started: Some("2024-10-09".into()),
             ended: None,
-            gp: 55, goals: 0, assists: 1, points: 1,
+            gp: 55,
+            goals: 0,
+            assists: 1,
+            points: 1,
             goalie: None,
         })
         .with_totals(StatTotals {
-            gp: 55, goals: 0, assists: 1, points: 1,
-            plus_minus: 0, pim: 6,
-            shots: 0, shooting_pct: None,
+            gp: 55,
+            goals: 0,
+            assists: 1,
+            points: 1,
+            plus_minus: 0,
+            pim: 6,
+            shots: 0,
+            shooting_pct: None,
             toi_per_game_sec: Some(60 * 55),
-            pp_goals: 0, pp_points: 0,
-            sh_goals: 0, sh_points: 0,
-            gwg: 0, ot_goals: 0,
+            pp_goals: 0,
+            pp_points: 0,
+            sh_goals: 0,
+            sh_points: 0,
+            gwg: 0,
+            ot_goals: 0,
             faceoff_win_pct: None,
             pace_score: None,
         })
         .with_goalie(GoalieSeasonStats {
-            games_started: 53, wins: 33, losses: 18,
-            ot_losses: Some(4), ties: None,
-            shots_against: 1620, goals_against: 138,
-            saves: 1482, save_pct: Some(0.915),
+            games_started: 53,
+            wins: 33,
+            losses: 18,
+            ot_losses: Some(4),
+            ties: None,
+            shots_against: 1620,
+            goals_against: 138,
+            saves: 1482,
+            save_pct: Some(0.915),
             goals_against_average: Some(2.50),
-            shutouts: 5, time_on_ice_sec: 60 * 55 * 60,
+            shutouts: 5,
+            time_on_ice_sec: 60 * 55 * 60,
         })
         .with_goalie_advanced(GoalieAdvancedStats {
-            quality_starts: 32, quality_starts_pct: Some(0.604),
-            regulation_wins: 28, regulation_losses: 14,
-            complete_games: 48, incomplete_games: 5,
+            quality_starts: 32,
+            quality_starts_pct: Some(0.604),
+            regulation_wins: 28,
+            regulation_losses: 14,
+            complete_games: 48,
+            incomplete_games: 5,
             complete_game_pct: Some(0.906),
             shots_against_per_60: Some(29.5),
         })
         .with_goalie_saves_by_strength(GoalieSavesByStrengthStats {
-            ev_saves: 1100, ev_shots_against: 1180,
-            ev_goals_against: 80, ev_save_pct: Some(0.932),
-            pp_saves: 0, pp_shots_against: 0, pp_goals_against: 0,
+            ev_saves: 1100,
+            ev_shots_against: 1180,
+            ev_goals_against: 80,
+            ev_save_pct: Some(0.932),
+            pp_saves: 0,
+            pp_shots_against: 0,
+            pp_goals_against: 0,
             pp_save_pct: None,
-            sh_saves: 380, sh_shots_against: 440,
-            sh_goals_against: 60, sh_save_pct: Some(0.864),
+            sh_saves: 380,
+            sh_shots_against: 440,
+            sh_goals_against: 60,
+            sh_save_pct: Some(0.864),
         })
         .with_goalie_bios(GoalieBios {
             birth_city: Some("Helsinki".into()),
@@ -830,7 +888,7 @@ pub mod stat_catalog_variants {
     /// guard fires for OnIceGoals reads. EvenStrengthTimeOnIcePerGame
     /// (TimeOnIce category) is exempt — TOI sums correctly.
     pub fn traded_multistint() -> (PlayerIdentity, SeasonStats) {
-        let id = identity(8475158).build();  // Bo Horvat-style mid-season
+        let id = identity(8475158).build(); // Bo Horvat-style mid-season
         let stats = SeasonStatsBuilder::new(
             PlayerId(8475158),
             Season(20242025),
@@ -841,36 +899,54 @@ pub mod stat_catalog_variants {
             team: TeamAbbr("VAN".into()),
             started: Some("2024-10-09".into()),
             ended: Some("2025-01-30".into()),
-            gp: 49, goals: 31, assists: 23, points: 54,
+            gp: 49,
+            goals: 31,
+            assists: 23,
+            points: 54,
             goalie: None,
         })
         .add_team_stint(TeamStint {
             team: TeamAbbr("NYI".into()),
             started: Some("2025-01-31".into()),
             ended: None,
-            gp: 30, goals: 7, assists: 9, points: 16,
+            gp: 30,
+            goals: 7,
+            assists: 9,
+            points: 16,
             goalie: None,
         })
         .with_totals(StatTotals {
-            gp: 79, goals: 38, assists: 32, points: 70,
+            gp: 79,
+            goals: 38,
+            assists: 32,
+            points: 70,
             plus_minus: -3,
-            pim: 28, shots: 215,
+            pim: 28,
+            shots: 215,
             shooting_pct: Some(0.177),
             toi_per_game_sec: Some(19 * 60),
-            pp_goals: 15, pp_points: 28,
-            sh_goals: 0, sh_points: 0,
-            gwg: 7, ot_goals: 2,
+            pp_goals: 15,
+            pp_points: 28,
+            sh_goals: 0,
+            sh_points: 0,
+            gwg: 7,
+            ot_goals: 2,
             faceoff_win_pct: Some(0.541),
             pace_score: Some(PaceScore {
-                pace_82: 72.7, goals_per_82: 39.4,
-                raw_points: 70, gp: 79,
+                pace_82: 72.7,
+                goals_per_82: 39.4,
+                raw_points: 70,
+                gp: 79,
             }),
         })
         .with_goals_for_against(GoalsForAgainstStats {
-            ev_goals_for: 88, ev_goals_against: 92,
+            ev_goals_for: 88,
+            ev_goals_against: 92,
             ev_goals_for_pct: Some(0.489),
-            pp_goals_for: 30, pp_goals_against: 1,
-            sh_goals_for: 0, sh_goals_against: 5,
+            pp_goals_for: 30,
+            pp_goals_against: 1,
+            sh_goals_for: 0,
+            sh_goals_against: 5,
             even_strength_goal_difference: -4,
             ev_time_on_ice_per_game_sec: 14 * 60 + 30,
             offensive_points: Some(48),
@@ -885,7 +961,7 @@ pub mod stat_catalog_variants {
     /// also None via the 300s TOI floor (5 games × 18min = 5400s
     /// — above floor so that's fine; tweak by reducing TOI).
     pub fn low_gp() -> (PlayerIdentity, SeasonStats) {
-        let id = identity(8482001).build();  // Synthetic call-up
+        let id = identity(8482001).build(); // Synthetic call-up
         let stats = SeasonStatsBuilder::new(
             PlayerId(8482001),
             Season(20242025),
@@ -896,19 +972,30 @@ pub mod stat_catalog_variants {
             team: TeamAbbr("EDM".into()),
             started: Some("2024-10-09".into()),
             ended: None,
-            gp: 5, goals: 1, assists: 1, points: 2,
+            gp: 5,
+            goals: 1,
+            assists: 1,
+            points: 2,
             goalie: None,
         })
         .with_totals(StatTotals {
-            gp: 5, goals: 1, assists: 1, points: 2,
-            plus_minus: 0, pim: 0,
-            shots: 8, shooting_pct: Some(0.125),
+            gp: 5,
+            goals: 1,
+            assists: 1,
+            points: 2,
+            plus_minus: 0,
+            pim: 0,
+            shots: 8,
+            shooting_pct: Some(0.125),
             toi_per_game_sec: Some(8 * 60),
-            pp_goals: 0, pp_points: 0,
-            sh_goals: 0, sh_points: 0,
-            gwg: 0, ot_goals: 0,
+            pp_goals: 0,
+            pp_points: 0,
+            sh_goals: 0,
+            sh_points: 0,
+            gwg: 0,
+            ot_goals: 0,
             faceoff_win_pct: None,
-            pace_score: None,  // pace_score is None below MIN_GP
+            pace_score: None, // pace_score is None below MIN_GP
         })
         .build();
         (id, stats)
@@ -918,12 +1005,12 @@ pub mod stat_catalog_variants {
     /// cross-product test in `tests/stat_catalog_variants.rs`.
     pub fn all() -> &'static [(&'static str, fn() -> (PlayerIdentity, SeasonStats))] {
         &[
-            ("skater_modern",     skater_modern),
-            ("skater_pre_2005",   skater_pre_2005),
-            ("center",            center_with_faceoffs),
-            ("goalie",            goalie),
+            ("skater_modern", skater_modern),
+            ("skater_pre_2005", skater_pre_2005),
+            ("center", center_with_faceoffs),
+            ("goalie", goalie),
             ("traded_multistint", traded_multistint),
-            ("low_gp",            low_gp),
+            ("low_gp", low_gp),
         ]
     }
 }

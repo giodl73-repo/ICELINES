@@ -27,19 +27,19 @@ macro_rules! season_bytes {
     };
 }
 
-static BIOS_20252026:  &[u8] = season_bytes!("20252026", "bios.json");
+static BIOS_20252026: &[u8] = season_bytes!("20252026", "bios.json");
 static STATS_20252026: &[u8] = season_bytes!("20252026", "stats.json");
 
-static BIOS_20242025:  &[u8] = season_bytes!("20242025", "bios.json");
+static BIOS_20242025: &[u8] = season_bytes!("20242025", "bios.json");
 static STATS_20242025: &[u8] = season_bytes!("20242025", "stats.json");
 
-static BIOS_20232024:  &[u8] = season_bytes!("20232024", "bios.json");
+static BIOS_20232024: &[u8] = season_bytes!("20232024", "bios.json");
 static STATS_20232024: &[u8] = season_bytes!("20232024", "stats.json");
 
-static BIOS_20222023:  &[u8] = season_bytes!("20222023", "bios.json");
+static BIOS_20222023: &[u8] = season_bytes!("20222023", "bios.json");
 static STATS_20222023: &[u8] = season_bytes!("20222023", "stats.json");
 
-static BIOS_20212022:  &[u8] = season_bytes!("20212022", "bios.json");
+static BIOS_20212022: &[u8] = season_bytes!("20212022", "bios.json");
 static STATS_20212022: &[u8] = season_bytes!("20212022", "stats.json");
 
 // Goalie summaries — Phase G.1. Same five seasons embedded, separate
@@ -63,17 +63,17 @@ static TRANSACTIONS_20212022: &[u8] = season_bytes!("20212022", "transactions.js
 // the load surfaces MissingBundle{Playoff} cleanly via Hart.6.4 dispatch.
 // Authored 2026-05-02 by `icelines fetch stats|goalies --type playoff`
 // against api.nhle.com (Hart.6.5 surface).
-static PLAYOFF_BIOS_20252026:    &[u8] = season_bytes!("20252026", "playoff-bios.json");
-static PLAYOFF_BIOS_20242025:    &[u8] = season_bytes!("20242025", "playoff-bios.json");
-static PLAYOFF_BIOS_20232024:    &[u8] = season_bytes!("20232024", "playoff-bios.json");
-static PLAYOFF_BIOS_20222023:    &[u8] = season_bytes!("20222023", "playoff-bios.json");
-static PLAYOFF_BIOS_20212022:    &[u8] = season_bytes!("20212022", "playoff-bios.json");
+static PLAYOFF_BIOS_20252026: &[u8] = season_bytes!("20252026", "playoff-bios.json");
+static PLAYOFF_BIOS_20242025: &[u8] = season_bytes!("20242025", "playoff-bios.json");
+static PLAYOFF_BIOS_20232024: &[u8] = season_bytes!("20232024", "playoff-bios.json");
+static PLAYOFF_BIOS_20222023: &[u8] = season_bytes!("20222023", "playoff-bios.json");
+static PLAYOFF_BIOS_20212022: &[u8] = season_bytes!("20212022", "playoff-bios.json");
 
-static PLAYOFF_STATS_20252026:   &[u8] = season_bytes!("20252026", "playoff-stats.json");
-static PLAYOFF_STATS_20242025:   &[u8] = season_bytes!("20242025", "playoff-stats.json");
-static PLAYOFF_STATS_20232024:   &[u8] = season_bytes!("20232024", "playoff-stats.json");
-static PLAYOFF_STATS_20222023:   &[u8] = season_bytes!("20222023", "playoff-stats.json");
-static PLAYOFF_STATS_20212022:   &[u8] = season_bytes!("20212022", "playoff-stats.json");
+static PLAYOFF_STATS_20252026: &[u8] = season_bytes!("20252026", "playoff-stats.json");
+static PLAYOFF_STATS_20242025: &[u8] = season_bytes!("20242025", "playoff-stats.json");
+static PLAYOFF_STATS_20232024: &[u8] = season_bytes!("20232024", "playoff-stats.json");
+static PLAYOFF_STATS_20222023: &[u8] = season_bytes!("20222023", "playoff-stats.json");
+static PLAYOFF_STATS_20212022: &[u8] = season_bytes!("20212022", "playoff-stats.json");
 
 static PLAYOFF_GOALIES_20252026: &[u8] = season_bytes!("20252026", "playoff-goalie-stats.json");
 static PLAYOFF_GOALIES_20242025: &[u8] = season_bytes!("20242025", "playoff-goalie-stats.json");
@@ -84,9 +84,7 @@ static PLAYOFF_GOALIES_20212022: &[u8] = season_bytes!("20212022", "playoff-goal
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /// List of bundled seasons, newest first.
-pub const BUNDLED_SEASONS: &[&str] = &[
-    "20252026", "20242025", "20232024", "20222023", "20212022",
-];
+pub const BUNDLED_SEASONS: &[&str] = &["20252026", "20242025", "20232024", "20222023", "20212022"];
 
 /// Phase Lindsay L.1.4 — bundled fallback for the new Tier-1 reports
 /// (timeonice, goalsForAgainst, goalie-advanced, goalie-savesByStrength,
@@ -117,7 +115,7 @@ pub fn get_bios(season: &str) -> Option<Vec<SkaterBio>> {
         "20232024" => BIOS_20232024,
         "20222023" => BIOS_20222023,
         "20212022" => BIOS_20212022,
-        _          => return None,
+        _ => return None,
     };
     serde_json::from_slice(bytes).ok()
 }
@@ -130,7 +128,7 @@ pub fn get_stats(season: &str) -> Option<Vec<SkaterStats>> {
         "20232024" => STATS_20232024,
         "20222023" => STATS_20222023,
         "20212022" => STATS_20212022,
-        _          => return None,
+        _ => return None,
     };
     serde_json::from_slice(bytes).ok()
 }
@@ -146,7 +144,7 @@ pub fn get_goalie_stats(season: &str) -> Option<Vec<GoalieStats>> {
         "20232024" => GOALIES_20232024,
         "20222023" => GOALIES_20222023,
         "20212022" => GOALIES_20212022,
-        _          => return None,
+        _ => return None,
     };
     serde_json::from_slice(bytes).ok()
 }
@@ -167,11 +165,11 @@ pub fn get_goalie_stats_installed(season_id: &str) -> Option<Vec<GoalieStats>> {
 /// can be re-classified on load without re-fetching.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct TransactionsEnvelope {
-    pub season:             String,
-    pub source:             String,
-    pub fetched_at:         String,
+    pub season: String,
+    pub source: String,
+    pub fetched_at: String,
     pub classifier_version: u16,
-    pub rows:               Vec<icelines_core::Transaction>,
+    pub rows: Vec<icelines_core::Transaction>,
 }
 
 /// Read embedded transactions for a bundled season. Returns None for any
@@ -183,7 +181,7 @@ pub fn get_transactions(season: &str) -> Option<TransactionsEnvelope> {
         "20232024" => TRANSACTIONS_20232024,
         "20222023" => TRANSACTIONS_20222023,
         "20212022" => TRANSACTIONS_20212022,
-        _          => return None,
+        _ => return None,
     };
     serde_json::from_slice(bytes).ok()
 }
@@ -207,7 +205,8 @@ pub fn load_transactions_with_fallback(
     use icelines_core::transactions::CURRENT_CLASSIFIER_VERSION;
 
     let mut envelope = if let Ok(env) = store.read_tier::<TransactionsEnvelope>(
-        &crate::snapshot::SnapshotTier::Stats, "transactions.json",
+        &crate::snapshot::SnapshotTier::Stats,
+        "transactions.json",
     ) {
         env
     } else if let Some(env) = get_transactions(season) {
@@ -216,7 +215,9 @@ pub fn load_transactions_with_fallback(
         env
     } else {
         return Err(FetchError::PlayerNotFound {
-            name: format!("no transactions for season {season} — run `icelines fetch transactions`"),
+            name: format!(
+                "no transactions for season {season} — run `icelines fetch transactions`"
+            ),
         });
     };
 
@@ -246,15 +247,19 @@ pub fn load_goalies_with_fallback(
     store: &crate::snapshot::SnapshotStore,
 ) -> Result<Vec<GoalieStats>, FetchError> {
     // 1. Legacy file-per-tier active snapshot (chunked path lands in G.2+).
-    if let Ok(rows) = store.read_tier::<Vec<GoalieStats>>(
-        &crate::snapshot::SnapshotTier::Stats, "goalie-stats.json",
-    ) {
+    if let Ok(rows) = store
+        .read_tier::<Vec<GoalieStats>>(&crate::snapshot::SnapshotTier::Stats, "goalie-stats.json")
+    {
         return Ok(rows);
     }
     // 2. Bundled data.
-    if let Some(rows) = get_goalie_stats(season) { return Ok(rows); }
+    if let Some(rows) = get_goalie_stats(season) {
+        return Ok(rows);
+    }
     // 3. Installed (historical) bundle.
-    if let Some(rows) = get_goalie_stats_installed(season) { return Ok(rows); }
+    if let Some(rows) = get_goalie_stats_installed(season) {
+        return Ok(rows);
+    }
     Err(FetchError::PlayerNotFound {
         name: format!("no goalie stats for season {season} — run `icelines fetch goalies`"),
     })
@@ -267,11 +272,13 @@ fn season_bundle_dir(season_id: &str) -> Option<std::path::PathBuf> {
     let home = std::env::var("USERPROFILE")
         .or_else(|_| std::env::var("HOME"))
         .ok()?;
-    Some(std::path::Path::new(&home)
-        .join(".icelines")
-        .join("seasons")
-        .join(season_id)
-        .join(format!("bundle-{season_id}")))
+    Some(
+        std::path::Path::new(&home)
+            .join(".icelines")
+            .join("seasons")
+            .join(season_id)
+            .join(format!("bundle-{season_id}")),
+    )
 }
 
 /// Returns true if a season has been installed to disk.
@@ -313,18 +320,14 @@ pub fn get_playoff_bios_installed(season_id: &str) -> Option<Vec<crate::schema::
 
 /// Read playoff stats from an installed season bundle. Returns None
 /// if the bundle isn't installed or the file isn't present.
-pub fn get_playoff_stats_installed(
-    season_id: &str,
-) -> Option<Vec<crate::schema::SkaterStats>> {
+pub fn get_playoff_stats_installed(season_id: &str) -> Option<Vec<crate::schema::SkaterStats>> {
     let path = season_bundle_dir(season_id)?.join("playoff-stats.json");
     let text = std::fs::read_to_string(path).ok()?;
     serde_json::from_str(&text).ok()
 }
 
 /// Read playoff goalie stats from an installed season bundle.
-pub fn get_playoff_goalie_stats_installed(
-    season_id: &str,
-) -> Option<Vec<GoalieStats>> {
+pub fn get_playoff_goalie_stats_installed(season_id: &str) -> Option<Vec<GoalieStats>> {
     let path = season_bundle_dir(season_id)?.join("playoff-goalie-stats.json");
     let text = std::fs::read_to_string(path).ok()?;
     serde_json::from_str(&text).ok()
@@ -348,7 +351,7 @@ pub fn get_playoff_bios(season_id: &str) -> Option<Vec<crate::schema::SkaterBio>
         "20232024" => PLAYOFF_BIOS_20232024,
         "20222023" => PLAYOFF_BIOS_20222023,
         "20212022" => PLAYOFF_BIOS_20212022,
-        _          => return None,
+        _ => return None,
     };
     serde_json::from_slice(bytes).ok()
 }
@@ -362,7 +365,7 @@ pub fn get_playoff_stats(season_id: &str) -> Option<Vec<crate::schema::SkaterSta
         "20232024" => PLAYOFF_STATS_20232024,
         "20222023" => PLAYOFF_STATS_20222023,
         "20212022" => PLAYOFF_STATS_20212022,
-        _          => return None,
+        _ => return None,
     };
     serde_json::from_slice(bytes).ok()
 }
@@ -375,7 +378,7 @@ pub fn get_playoff_goalie_stats(season_id: &str) -> Option<Vec<GoalieStats>> {
         "20232024" => PLAYOFF_GOALIES_20232024,
         "20222023" => PLAYOFF_GOALIES_20222023,
         "20212022" => PLAYOFF_GOALIES_20212022,
-        _          => return None,
+        _ => return None,
     };
     serde_json::from_slice(bytes).ok()
 }
@@ -385,12 +388,13 @@ pub fn get_playoff_goalie_stats(season_id: &str) -> Option<Vec<GoalieStats>> {
 /// Embedded `playoffs.json` files. Each entry is `(season_id, &[u8])`. Add new
 /// historical seasons here as their bundles are authored. The 1993-94 NYR Cup
 /// run is the canonical first fixture per `design/specs/playoffs.md`.
-static BUNDLED_PLAYOFFS: &[(&str, &[u8])] = &[
-    ("19931994", include_bytes!(concat!(
+static BUNDLED_PLAYOFFS: &[(&str, &[u8])] = &[(
+    "19931994",
+    include_bytes!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/../data/seasons/19931994/playoffs.json"
-    ))),
-];
+    )),
+)];
 
 /// List of seasons with bundled playoff data.
 pub fn bundled_playoff_seasons() -> Vec<&'static str> {
@@ -400,7 +404,8 @@ pub fn bundled_playoff_seasons() -> Vec<&'static str> {
 /// Deserialize bundled `playoffs.json` for a season. Returns None if no
 /// bundle has been authored for that season yet.
 pub fn get_playoffs(season_id: &str) -> Option<PlayoffsBundle> {
-    let bytes = BUNDLED_PLAYOFFS.iter()
+    let bytes = BUNDLED_PLAYOFFS
+        .iter()
         .find_map(|(s, b)| (*s == season_id).then_some(*b))?;
     serde_json::from_slice(bytes).ok()
 }
@@ -495,7 +500,9 @@ pub fn load_playoff_bios_with_fallback(
         return Ok(bios);
     }
     Err(FetchError::PlayerNotFound {
-        name: format!("no playoff bios for season {season} — run `icelines fetch stats --type playoff`"),
+        name: format!(
+            "no playoff bios for season {season} — run `icelines fetch stats --type playoff`"
+        ),
     })
 }
 
@@ -522,7 +529,9 @@ pub fn load_playoff_stats_with_fallback(
         return Ok(stats);
     }
     Err(FetchError::PlayerNotFound {
-        name: format!("no playoff stats for season {season} — run `icelines fetch stats --type playoff`"),
+        name: format!(
+            "no playoff stats for season {season} — run `icelines fetch stats --type playoff`"
+        ),
     })
 }
 
@@ -563,7 +572,9 @@ fn read_chunked_active(
         .as_deref()
         .ok_or(crate::snapshot::SnapshotError::NoActiveSnapshot)?;
     if !store.is_chunked(active) {
-        return Err(crate::snapshot::SnapshotError::NotFound { name: format!("{active}/chunked.json") });
+        return Err(crate::snapshot::SnapshotError::NotFound {
+            name: format!("{active}/chunked.json"),
+        });
     }
     store.read_chunked_stats(active, icelines_core::season_stats::SeasonType::Regular)
 }
@@ -592,7 +603,9 @@ fn read_chunked_active_playoff_for_season(
         });
     }
     if !store.is_chunked(active) {
-        return Err(crate::snapshot::SnapshotError::NotFound { name: format!("{active}/chunked.json") });
+        return Err(crate::snapshot::SnapshotError::NotFound {
+            name: format!("{active}/chunked.json"),
+        });
     }
     store.read_chunked_stats(active, icelines_core::season_stats::SeasonType::Playoff)
 }
@@ -609,7 +622,11 @@ mod tests {
             Err(e) => panic!("20252026 bios failed to parse: {e}"),
             Ok(bios) => {
                 assert!(!bios.is_empty(), "bundled bios must not be empty");
-                assert!(bios.len() > 500, "expected 900+ players, got {}", bios.len());
+                assert!(
+                    bios.len() > 500,
+                    "expected 900+ players, got {}",
+                    bios.len()
+                );
             }
         }
     }
@@ -619,7 +636,11 @@ mod tests {
         let result = serde_json::from_slice::<Vec<SkaterStats>>(STATS_20252026);
         match &result {
             Err(e) => panic!("20252026 stats failed to parse: {e}"),
-            Ok(stats) => assert!(stats.len() > 500, "expected 900+ players, got {}", stats.len()),
+            Ok(stats) => assert!(
+                stats.len() > 500,
+                "expected 900+ players, got {}",
+                stats.len()
+            ),
         }
     }
 
@@ -634,8 +655,14 @@ mod tests {
     #[test]
     fn l0_bundled_all_5_seasons_present() {
         for season in BUNDLED_SEASONS {
-            assert!(get_bios(season).is_some(), "season {season} bios not bundled");
-            assert!(get_stats(season).is_some(), "season {season} stats not bundled");
+            assert!(
+                get_bios(season).is_some(),
+                "season {season} bios not bundled"
+            );
+            assert!(
+                get_stats(season).is_some(),
+                "season {season} stats not bundled"
+            );
         }
     }
 
@@ -663,12 +690,21 @@ mod tests {
     #[test]
     fn l0_bundled_playoffs_19931994_cup_final_has_seven_games() {
         let b = get_playoffs("19931994").expect("19931994 bundled");
-        let cup = b.rounds.iter().find(|r| r.round == 4).expect("round 4 present");
+        let cup = b
+            .rounds
+            .iter()
+            .find(|r| r.round == 4)
+            .expect("round 4 present");
         assert_eq!(cup.series.len(), 1, "Cup Final has one series");
         assert_eq!(cup.series[0].results.len(), 7, "Cup Final ran 7 games");
         // Convert via to_bracket and verify wins were derived correctly.
         let br = b.to_bracket();
-        let cup_series = &br.rounds.iter().find(|r| r.round_number == 4).unwrap().series[0];
+        let cup_series = &br
+            .rounds
+            .iter()
+            .find(|r| r.round_number == 4)
+            .unwrap()
+            .series[0];
         assert_eq!(cup_series.top_seed_wins, 4);
         assert_eq!(cup_series.bottom_seed_wins, 3);
         assert_eq!(cup_series.games.len(), 7);
@@ -695,13 +731,17 @@ mod tests {
         // 2025-26 is the deliberate empty (Cup not yet contested at
         // bundle-authoring time). Asserted explicitly so a future
         // accidental deletion of the playoff-bios.json file surfaces.
-        assert!(get_playoff_bios("20252026").unwrap().is_empty(),
-            "2025-26 ships as [] until the playoffs are bundled");
+        assert!(
+            get_playoff_bios("20252026").unwrap().is_empty(),
+            "2025-26 ships as [] until the playoffs are bundled"
+        );
         // Other 4 must have real data.
         for season in ["20242025", "20232024", "20222023", "20212022"] {
             let count = get_playoff_bios(season).unwrap().len();
-            assert!(count > 100,
-                "{season} playoff bios must have ≥100 rows (NHL playoff rosters), got {count}");
+            assert!(
+                count > 100,
+                "{season} playoff bios must have ≥100 rows (NHL playoff rosters), got {count}"
+            );
         }
     }
 
@@ -733,7 +773,8 @@ mod tests {
             let stats = get_playoff_stats(season).unwrap();
             for s in &stats {
                 assert_eq!(
-                    s.season_id, Some(expected),
+                    s.season_id,
+                    Some(expected),
                     "row in {season} carries seasonId={:?}; expected Some({expected})",
                     s.season_id
                 );
@@ -840,8 +881,8 @@ mod tests {
                             some_count += 1;
                             // Envelope shape: must parse as JSON object
                             // with `data` (array) + `total` (number).
-                            let v: serde_json::Value =
-                                serde_json::from_slice(&bytes).unwrap_or_else(|e| {
+                            let v: serde_json::Value = serde_json::from_slice(&bytes)
+                                .unwrap_or_else(|e| {
                                     panic!(
                                         "L-B20: bundled bytes for ({season}, \
                                          {st:?}, {kind:?}) are not valid JSON: {e}"

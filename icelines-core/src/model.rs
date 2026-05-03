@@ -332,16 +332,36 @@ mod tests {
 
     #[test]
     fn l0_pace_score_sort_key_orders_by_pace_then_goals() {
-        let a = PaceScore { pace_82: 100.0, goals_per_82: 50.0, raw_points: 100, gp: 82 };
-        let b = PaceScore { pace_82: 100.0, goals_per_82: 40.0, raw_points: 100, gp: 82 };
+        let a = PaceScore {
+            pace_82: 100.0,
+            goals_per_82: 50.0,
+            raw_points: 100,
+            gp: 82,
+        };
+        let b = PaceScore {
+            pace_82: 100.0,
+            goals_per_82: 40.0,
+            raw_points: 100,
+            gp: 82,
+        };
         // Same pace, higher goals → higher sort_key
         assert!(a.sort_key() > b.sort_key());
     }
 
     #[test]
     fn l0_pace_score_sort_key_higher_pace_wins() {
-        let a = PaceScore { pace_82: 120.0, goals_per_82: 10.0, raw_points: 120, gp: 82 };
-        let b = PaceScore { pace_82: 100.0, goals_per_82: 50.0, raw_points: 100, gp: 82 };
+        let a = PaceScore {
+            pace_82: 120.0,
+            goals_per_82: 10.0,
+            raw_points: 120,
+            gp: 82,
+        };
+        let b = PaceScore {
+            pace_82: 100.0,
+            goals_per_82: 50.0,
+            raw_points: 100,
+            gp: 82,
+        };
         // Higher pace wins even with fewer goals
         assert!(a.sort_key() > b.sort_key());
     }

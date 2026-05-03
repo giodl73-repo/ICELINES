@@ -1,3 +1,9 @@
+use crate::tui::app::App;
+use crate::tui::headshot;
+use icelines_core::identity::PlayerId;
+use icelines_core::model::Position;
+use icelines_core::stats_catalog::{StatCategory, StatId, StatUnit};
+use icelines_core::stats_repository::PlayerView;
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -5,12 +11,6 @@ use ratatui::{
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph},
     Frame,
 };
-use icelines_core::identity::PlayerId;
-use icelines_core::model::Position;
-use icelines_core::stats_catalog::{StatCategory, StatId, StatUnit};
-use icelines_core::stats_repository::PlayerView;
-use crate::tui::app::App;
-use crate::tui::headshot;
 
 // ─── Phase Lindsay L.4.2 — career table column preset templates ────────────
 //
@@ -56,13 +56,13 @@ impl CareerTablePreset {
     /// Human-readable label for the status bar.
     pub fn label(self) -> &'static str {
         match self {
-            Self::Default      => "Default",
-            Self::Scoring      => "Scoring",
-            Self::TwoWay       => "Two-way",
+            Self::Default => "Default",
+            Self::Scoring => "Scoring",
+            Self::TwoWay => "Two-way",
             Self::SpecialTeams => "Special Teams",
-            Self::Time         => "Time",
-            Self::Goalie       => "Goalie",
-            Self::All          => "All (debug)",
+            Self::Time => "Time",
+            Self::Goalie => "Goalie",
+            Self::All => "All (debug)",
         }
     }
 
@@ -142,12 +142,13 @@ impl Default for CareerTablePreset {
 /// column on those positions surfaces mostly None or a misleading
 /// 100%/0% spike on the rare emergency draw.
 fn is_faceoff_stat(s: StatId) -> bool {
-    matches!(s,
+    matches!(
+        s,
         StatId::FaceoffWinPct
-        | StatId::FaceoffWins
-        | StatId::FaceoffLosses
-        | StatId::OffensiveZoneFaceoffPct
-        | StatId::DefensiveZoneFaceoffPct
+            | StatId::FaceoffWins
+            | StatId::FaceoffLosses
+            | StatId::OffensiveZoneFaceoffPct
+            | StatId::DefensiveZoneFaceoffPct
     )
 }
 
@@ -192,10 +193,7 @@ pub fn render_career_cell(sid: StatId, view: &PlayerView<'_>) -> String {
 ///   - `dropped`: how many were trimmed from the right
 ///   - `use_narrow`: whether headers should fall back to `narrow_label()`
 ///     (panel width < 60 cells)
-pub fn fit_career_columns(
-    all_columns: &[StatId],
-    panel_w: usize,
-) -> (Vec<StatId>, usize, bool) {
+pub fn fit_career_columns(all_columns: &[StatId], panel_w: usize) -> (Vec<StatId>, usize, bool) {
     let use_narrow = panel_w < 60;
     let avail = panel_w.saturating_sub(11);
     let fit_count = (avail / 8).min(all_columns.len());
@@ -222,14 +220,22 @@ pub fn render_group_picker(f: &mut Frame, app: &App, area: Rect) {
     let inner = block.inner(popup);
     f.render_widget(block, popup);
 
-    let items: Vec<ListItem> = app.group_picker_list.iter().enumerate().map(|(i, name)| {
-        let style = if i == app.selected {
-            Style::default().fg(Color::Black).bg(Color::Yellow).add_modifier(Modifier::BOLD)
-        } else {
-            Style::default()
-        };
-        ListItem::new(Line::styled(format!("  ★  {}", name), style))
-    }).collect();
+    let items: Vec<ListItem> = app
+        .group_picker_list
+        .iter()
+        .enumerate()
+        .map(|(i, name)| {
+            let style = if i == app.selected {
+                Style::default()
+                    .fg(Color::Black)
+                    .bg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD)
+            } else {
+                Style::default()
+            };
+            ListItem::new(Line::styled(format!("  ★  {}", name), style))
+        })
+        .collect();
     f.render_widget(List::new(items), inner);
 }
 
@@ -254,17 +260,17 @@ mod dashboard_tests {
         // test binary. Other tests in the same binary may already have
         // set the flag, so we test the resolver logic directly here.
         let cfg = Config {
-            csv_path:   None,
-            cache_dir:  PathBuf::from("/tmp"),
-            season:     None,
-            live:       None,
+            csv_path: None,
+            cache_dir: PathBuf::from("/tmp"),
+            season: None,
+            live: None,
             dashboards: Some(true),
         };
         init_dashboards(true, &cfg); // idempotent — first call wins
-        // Verifying `dashboards_enabled()` here would race with other tests
-        // that initialize the flag differently. The pure resolver
-        // (`crate::config::resolve_dashboards`) covers the precedence
-        // matrix in config.rs::tests; the OnceLock contract is set-once.
+                                     // Verifying `dashboards_enabled()` here would race with other tests
+                                     // that initialize the flag differently. The pure resolver
+                                     // (`crate::config::resolve_dashboards`) covers the precedence
+                                     // matrix in config.rs::tests; the OnceLock contract is set-once.
     }
 }
 
@@ -279,9 +285,9 @@ mod dashboard_tests {
 // migrate to `Screen::PlayerById`.
 
 pub fn render_by_id(f: &mut Frame, app: &App, area: Rect, pid: PlayerId) {
-    let block = Block::default()
-        .borders(Borders::ALL)
-        .title(" Player Card  ·  [/]: preset  ·  c: comps  ·  g: group  ·  f: favorites  ·  Esc: back ");
+    let block = Block::default().borders(Borders::ALL).title(
+        " Player Card  ·  [/]: preset  ·  c: comps  ·  g: group  ·  f: favorites  ·  Esc: back ",
+    );
     let inner = block.inner(area);
     f.render_widget(block, area);
 
@@ -310,20 +316,28 @@ pub fn render_by_id(f: &mut Frame, app: &App, area: Rect, pid: PlayerId) {
     // Headshot fetch — same NHL CDN URL pattern as the legacy path.
     let nhl_id = view.identity.id.0;
     if app.headshot_cache.get(nhl_id).is_none() {
-        let url = view.identity.headshot_canonical_url.clone().unwrap_or_else(|| {
-            format!(
-                "https://assets.nhle.com/mugs/nhl/{}/{}/{}.png",
-                app.active_season,
-                view.team_display(),
-                nhl_id,
-            )
-        });
+        let url = view
+            .identity
+            .headshot_canonical_url
+            .clone()
+            .unwrap_or_else(|| {
+                format!(
+                    "https://assets.nhle.com/mugs/nhl/{}/{}/{}.png",
+                    app.active_season,
+                    view.team_display(),
+                    nhl_id,
+                )
+            });
         headshot::spawn_fetch(nhl_id, url, app.headshot_cache.clone(), 22, 15);
     }
 
     let dashboards_on = crate::config::dashboards_enabled() && inner.width >= 100;
     let constraints: Vec<Constraint> = if dashboards_on {
-        vec![Constraint::Length(26), Constraint::Min(0), Constraint::Length(30)]
+        vec![
+            Constraint::Length(26),
+            Constraint::Min(0),
+            Constraint::Length(30),
+        ]
     } else {
         vec![Constraint::Length(26), Constraint::Min(0)]
     };
@@ -358,10 +372,7 @@ fn render_headshot_view(f: &mut Frame, app: &App, v: &PlayerView<'_>, area: Rect
                 Line::from("  loading…"),
             ]
         }
-        Some(r) if headshot::is_loading(r) => vec![
-            Line::from(""),
-            Line::from("  downloading…"),
-        ],
+        Some(r) if headshot::is_loading(r) => vec![Line::from(""), Line::from("  downloading…")],
         Some(r) if headshot::is_error(r) => vec![
             Line::from("  ┌──────────────────┐"),
             Line::from("  │                  │"),
@@ -397,11 +408,14 @@ fn render_stats_view(f: &mut Frame, app: &App, v: &PlayerView<'_>, area: Rect) {
         _ => "Undrafted".to_owned(),
     };
 
-    let hi  = Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD);
+    let hi = Style::default()
+        .fg(Color::Cyan)
+        .add_modifier(Modifier::BOLD);
     let dim = Style::default().fg(Color::DarkGray);
 
     // Header — name + team + position + age + sweater + handedness
-    let sweater = v.sweater_number()
+    let sweater = v
+        .sweater_number()
         .map(|n| format!(" · #{n}"))
         .unwrap_or_default();
     let hand = v.identity.bio.shoots_catches.as_deref().unwrap_or("—");
@@ -435,7 +449,11 @@ fn render_stats_view(f: &mut Frame, app: &App, v: &PlayerView<'_>, area: Rect) {
             all_columns.len(),
             // GLASS-9 L.5b post-fix — "3 hidden" reads cleaner than
             // "narrow: -3" (the leading dash glances as "negative 3").
-            if dropped > 0 { format!(", {dropped} hidden") } else { String::new() },
+            if dropped > 0 {
+                format!(", {dropped} hidden")
+            } else {
+                String::new()
+            },
         ),
         dim,
     ));
@@ -450,13 +468,14 @@ fn render_stats_view(f: &mut Frame, app: &App, v: &PlayerView<'_>, area: Rect) {
         } else {
             "  (panel too narrow to fit any column — widen terminal)"
         };
-        lines.push(Line::styled(
-            msg,
-            dim,
-        ));
+        lines.push(Line::styled(msg, dim));
     } else {
         let label_for = |sid: StatId| -> &'static str {
-            if use_narrow { sid.narrow_label() } else { sid.short_label() }
+            if use_narrow {
+                sid.narrow_label()
+            } else {
+                sid.short_label()
+            }
         };
 
         // Header row — Season + StatId labels. GLASS L.4 fix: clip
@@ -483,7 +502,7 @@ fn render_stats_view(f: &mut Frame, app: &App, v: &PlayerView<'_>, area: Rect) {
             .career_regular(v.identity.id)
             .map(|it| it.collect())
             .unwrap_or_default();
-        seasons.sort_by(|a, b| b.season.cmp(&a.season));  // newest first
+        seasons.sort_by(|a, b| b.season.cmp(&a.season)); // newest first
 
         for stats in seasons {
             // Build a transient PlayerView for this season to feed
@@ -577,7 +596,6 @@ fn render_dashboard_panel_view(f: &mut Frame, app: &App, v: &PlayerView<'_>, are
     }
 }
 
-
 // ── L.4.2 unit tests — career table preset templates ───────────────────────
 
 #[cfg(test)]
@@ -601,14 +619,20 @@ mod l4_preset_tests {
     #[test]
     fn l0_lindsay_career_preset_next_wraps() {
         assert_eq!(CareerTablePreset::Goalie.next(), CareerTablePreset::Default);
-        assert_eq!(CareerTablePreset::Default.next(), CareerTablePreset::Scoring);
+        assert_eq!(
+            CareerTablePreset::Default.next(),
+            CareerTablePreset::Scoring
+        );
     }
 
     /// `prev` wraps from first (Default) → last (Goalie).
     #[test]
     fn l0_lindsay_career_preset_prev_wraps() {
         assert_eq!(CareerTablePreset::Default.prev(), CareerTablePreset::Goalie);
-        assert_eq!(CareerTablePreset::Scoring.prev(), CareerTablePreset::Default);
+        assert_eq!(
+            CareerTablePreset::Scoring.prev(),
+            CareerTablePreset::Default
+        );
     }
 
     /// Default preset for Center returns 16 columns (15 skater common
@@ -630,8 +654,10 @@ mod l4_preset_tests {
         let cols = CareerTablePreset::Default.columns(Defense);
         assert_eq!(cols.len(), 16);
         assert!(!cols.contains(&StatId::FaceoffWinPct));
-        assert!(cols.contains(&StatId::EvGoalsForPct),
-            "Defense default surfaces EvGoalsForPct (SCOUT-8)");
+        assert!(
+            cols.contains(&StatId::EvGoalsForPct),
+            "Defense default surfaces EvGoalsForPct (SCOUT-8)"
+        );
     }
 
     /// Default preset for Goalie returns 11 goalie-specific columns
@@ -653,8 +679,11 @@ mod l4_preset_tests {
         assert_eq!(cols.len(), 15);
         // Goalies hide skater stats — Scoring preset on goalie is empty.
         let goalie_cols = CareerTablePreset::Scoring.columns(Goalie);
-        assert_eq!(goalie_cols.len(), 0,
-            "Scoring preset on goalie hides all (skater stats not applicable)");
+        assert_eq!(
+            goalie_cols.len(),
+            0,
+            "Scoring preset on goalie hides all (skater stats not applicable)"
+        );
     }
 
     /// Goalie preset returns 23 (always — independent of position;
@@ -690,12 +719,12 @@ mod l4_preset_tests {
     use icelines_core::fixtures;
     use icelines_core::identity::PlayerId;
     use icelines_core::model::{Position, Season, TeamAbbr};
-    use icelines_core::season_stats::{
-        SeasonStatsBuilder, SeasonType, StatTotals, TeamStint,
-    };
+    use icelines_core::season_stats::{SeasonStatsBuilder, SeasonType, StatTotals, TeamStint};
 
-    fn build_skater_view() -> (icelines_core::identity::PlayerIdentity,
-                                icelines_core::season_stats::SeasonStats) {
+    fn build_skater_view() -> (
+        icelines_core::identity::PlayerIdentity,
+        icelines_core::season_stats::SeasonStats,
+    ) {
         let identity = fixtures::identity(8478402).build();
         let stats = SeasonStatsBuilder::new(
             PlayerId(8478402),
@@ -707,14 +736,20 @@ mod l4_preset_tests {
             team: TeamAbbr("EDM".into()),
             started: Some("2024-10-09".into()),
             ended: None,
-            gp: 70, goals: 30, assists: 80, points: 110,
+            gp: 70,
+            goals: 30,
+            assists: 80,
+            points: 110,
             goalie: None,
         })
         .with_totals(StatTotals {
-            gp: 70, goals: 30, assists: 80, points: 110,
+            gp: 70,
+            goals: 30,
+            assists: 80,
+            points: 110,
             shots: 280,
-            shooting_pct: Some(0.107),  // 10.7%
-            toi_per_game_sec: Some(20 * 60 + 32),  // 20:32
+            shooting_pct: Some(0.107),            // 10.7%
+            toi_per_game_sec: Some(20 * 60 + 32), // 20:32
             ..Default::default()
         })
         .build();
@@ -725,7 +760,11 @@ mod l4_preset_tests {
     #[test]
     fn l0_lindsay_render_career_cell_count_integer() {
         let (id, stats) = build_skater_view();
-        let view = PlayerView { identity: &id, stats: &stats, contract: None };
+        let view = PlayerView {
+            identity: &id,
+            stats: &stats,
+            contract: None,
+        };
         assert_eq!(render_career_cell(StatId::Goals, &view), "30");
         assert_eq!(render_career_cell(StatId::Points, &view), "110");
         assert_eq!(render_career_cell(StatId::Games, &view), "70");
@@ -735,7 +774,11 @@ mod l4_preset_tests {
     #[test]
     fn l0_lindsay_render_career_cell_pct_one_decimal() {
         let (id, stats) = build_skater_view();
-        let view = PlayerView { identity: &id, stats: &stats, contract: None };
+        let view = PlayerView {
+            identity: &id,
+            stats: &stats,
+            contract: None,
+        };
         // shooting_pct = 0.107 → "10.7"
         assert_eq!(render_career_cell(StatId::ShootingPct, &view), "10.7");
     }
@@ -744,7 +787,11 @@ mod l4_preset_tests {
     #[test]
     fn l0_lindsay_render_career_cell_seconds_mmss_format() {
         let (id, stats) = build_skater_view();
-        let view = PlayerView { identity: &id, stats: &stats, contract: None };
+        let view = PlayerView {
+            identity: &id,
+            stats: &stats,
+            contract: None,
+        };
         // toi_per_game_sec = 20*60+32 = 1232 → "20:32"
         assert_eq!(render_career_cell(StatId::TotalToiPerGame, &view), "20:32");
     }
@@ -753,7 +800,11 @@ mod l4_preset_tests {
     #[test]
     fn l0_lindsay_render_career_cell_none_renders_dash() {
         let (id, stats) = build_skater_view();
-        let view = PlayerView { identity: &id, stats: &stats, contract: None };
+        let view = PlayerView {
+            identity: &id,
+            stats: &stats,
+            contract: None,
+        };
         // Hits is None on this fixture (no realtime data).
         assert_eq!(render_career_cell(StatId::Hits, &view), "—");
     }

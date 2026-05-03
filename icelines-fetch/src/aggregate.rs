@@ -23,16 +23,16 @@ use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Default)]
 struct Accum {
-    total_gp:       u32,
-    total_goals:    u32,
-    total_assists:  u32,
+    total_gp: u32,
+    total_goals: u32,
+    total_assists: u32,
     total_pp_goals: u32,
-    total_pp_pts:   u32,
+    total_pp_pts: u32,
     total_sh_goals: u32,
-    total_sh_pts:   u32,
-    total_gwg:      u32,
-    total_shots:    u32,
-    seasons:        u8,
+    total_sh_pts: u32,
+    total_gwg: u32,
+    total_shots: u32,
+    seasons: u8,
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -50,39 +50,45 @@ pub fn load_aggregate_into_repo(n: usize) -> (StatsRepository, Season) {
     let n = n.min(bundled::BUNDLED_SEASONS.len());
     let seasons = &bundled::BUNDLED_SEASONS[..n];
     let current_season_str = bundled::BUNDLED_SEASONS[0];
-    let current_season_u32: u32 = current_season_str.parse().expect("bundled season id is YYYYZZZZ");
+    let current_season_u32: u32 = current_season_str
+        .parse()
+        .expect("bundled season id is YYYYZZZZ");
     let current_season = Season(current_season_u32);
 
     // Accumulate counters per player_id across N seasons (mirror of load_aggregate_players).
     let mut agg: HashMap<u32, Accum> = HashMap::new();
     for season in seasons {
-        let bios  = bundled::get_bios(season).unwrap_or_default();
+        let bios = bundled::get_bios(season).unwrap_or_default();
         let stats = bundled::get_stats(season).unwrap_or_default();
         let stats_idx: HashMap<u32, &SkaterStats> =
             stats.iter().map(|s| (s.player_id, s)).collect();
         for bio in &bios {
             let s = stats_idx.get(&bio.player_id);
             let e = agg.entry(bio.player_id).or_default();
-            e.total_gp       += s.map(|s| s.games_played).unwrap_or(0);
-            e.total_goals    += s.map(|s| s.goals).unwrap_or(0);
-            e.total_assists  += s.map(|s| s.assists).unwrap_or(0);
+            e.total_gp += s.map(|s| s.games_played).unwrap_or(0);
+            e.total_goals += s.map(|s| s.goals).unwrap_or(0);
+            e.total_assists += s.map(|s| s.assists).unwrap_or(0);
             e.total_pp_goals += s.map(|s| s.pp_goals).unwrap_or(0);
-            e.total_pp_pts   += s.map(|s| s.pp_points).unwrap_or(0);
+            e.total_pp_pts += s.map(|s| s.pp_points).unwrap_or(0);
             e.total_sh_goals += s.map(|s| s.sh_goals).unwrap_or(0);
-            e.total_sh_pts   += s.map(|s| s.sh_points).unwrap_or(0);
-            e.total_gwg      += s.map(|s| s.game_winning_goals).unwrap_or(0);
-            e.total_shots    += s.map(|s| s.shots).unwrap_or(0);
-            e.seasons        += 1;
+            e.total_sh_pts += s.map(|s| s.sh_points).unwrap_or(0);
+            e.total_gwg += s.map(|s| s.game_winning_goals).unwrap_or(0);
+            e.total_shots += s.map(|s| s.shots).unwrap_or(0);
+            e.seasons += 1;
         }
     }
 
     // Most-recent bios provide the canonical identity (current team, age, etc.).
     let current_bios = bundled::get_bios(current_season_str).unwrap_or_default();
     let mut seen: HashSet<u32> = HashSet::new();
-    let deduped: Vec<_> = current_bios.iter().rev()
+    let deduped: Vec<_> = current_bios
+        .iter()
+        .rev()
         .filter(|b| seen.insert(b.player_id))
         .collect::<Vec<_>>()
-        .into_iter().rev().collect();
+        .into_iter()
+        .rev()
+        .collect();
 
     let mut repo = StatsRepository::new();
     for bio in deduped {
@@ -130,7 +136,8 @@ pub fn load_aggregate_into_repo(n: usize) -> (StatsRepository, Season) {
             goals: acc.total_goals,
             assists: acc.total_assists,
             points: acc.total_goals + acc.total_assists,
-            plus_minus: 0, pim: 0,
+            plus_minus: 0,
+            pim: 0,
             shots: acc.total_shots,
             shooting_pct: None,
             toi_per_game_sec: None,
@@ -141,13 +148,14 @@ pub fn load_aggregate_into_repo(n: usize) -> (StatsRepository, Season) {
             gwg: acc.total_gwg,
             ot_goals: 0,
             faceoff_win_pct: None,
-            pace_score: compute_pace_score(acc.total_goals, acc.total_assists, acc.total_gp)
-                .map(|s| PaceScore {
+            pace_score: compute_pace_score(acc.total_goals, acc.total_assists, acc.total_gp).map(
+                |s| PaceScore {
                     pace_82: s.pace_82,
                     goals_per_82: s.goals_per_82,
                     raw_points: s.raw_points,
                     gp: s.gp,
-                }),
+                },
+            ),
         };
         let stint = TeamStint {
             team: TeamAbbr(team_str.to_owned()),
@@ -178,12 +186,16 @@ pub fn load_improvement_map() -> HashMap<u32, f64> {
     let curr_stats = bundled::get_stats(bundled::BUNDLED_SEASONS[0]).unwrap_or_default();
     let prev_stats = bundled::get_stats(bundled::BUNDLED_SEASONS[1]).unwrap_or_default();
 
-    let curr_idx: HashMap<u32, &SkaterStats> = curr_stats.iter().map(|s| (s.player_id, s)).collect();
-    let prev_idx: HashMap<u32, &SkaterStats> = prev_stats.iter().map(|s| (s.player_id, s)).collect();
+    let curr_idx: HashMap<u32, &SkaterStats> =
+        curr_stats.iter().map(|s| (s.player_id, s)).collect();
+    let prev_idx: HashMap<u32, &SkaterStats> =
+        prev_stats.iter().map(|s| (s.player_id, s)).collect();
 
     let mut result = HashMap::new();
     for (pid, curr) in &curr_idx {
-        if curr.games_played < 10 { continue; }
+        if curr.games_played < 10 {
+            continue;
+        }
         let curr_ppg = (curr.goals + curr.assists) as f64 / curr.games_played as f64;
         // Only include players who appeared in BOTH seasons with ≥10 GP.
         // Players missing from the prior season (true rookies or data gaps) are
@@ -191,7 +203,7 @@ pub fn load_improvement_map() -> HashMap<u32, f64> {
         // inflates the leaderboard misleadingly.
         let prev = match prev_idx.get(pid).filter(|p| p.games_played >= 10) {
             Some(p) => p,
-            None    => continue,
+            None => continue,
         };
         let prev_ppg = (prev.goals + prev.assists) as f64 / prev.games_played as f64;
         result.insert(*pid, curr_ppg - prev_ppg);
@@ -249,7 +261,10 @@ mod tests {
     #[test]
     fn l0_improvement_map_nonempty() {
         let imp = load_improvement_map();
-        assert!(!imp.is_empty(), "improvement map must contain entries from bundled data");
+        assert!(
+            !imp.is_empty(),
+            "improvement map must contain entries from bundled data"
+        );
     }
 
     #[test]
@@ -257,8 +272,11 @@ mod tests {
         let imp = load_improvement_map();
         // No improvement delta should exceed ±2.0 PPG (would indicate a data error)
         for (_, delta) in &imp {
-            assert!(delta.abs() <= 2.0,
-                "PPG delta {} is unreasonably large", delta);
+            assert!(
+                delta.abs() <= 2.0,
+                "PPG delta {} is unreasonably large",
+                delta
+            );
         }
     }
 
@@ -269,7 +287,8 @@ mod tests {
         // current bundled stats
         let imp = load_improvement_map();
         let curr_stats = bundled::get_stats(bundled::BUNDLED_SEASONS[0]).unwrap_or_default();
-        let curr_idx: HashMap<u32, &SkaterStats> = curr_stats.iter().map(|s| (s.player_id, s)).collect();
+        let curr_idx: HashMap<u32, &SkaterStats> =
+            curr_stats.iter().map(|s| (s.player_id, s)).collect();
 
         for pid in imp.keys() {
             let gp = curr_idx.get(pid).map(|s| s.games_played).unwrap_or(0);

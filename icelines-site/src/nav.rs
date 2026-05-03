@@ -112,7 +112,11 @@ nav:
         let out = std::fs::read_to_string(&path).unwrap();
 
         // Exactly one `nav:` key.
-        assert_eq!(out.matches("\nnav:\n").count(), 1, "must have exactly one nav block, got {out}");
+        assert_eq!(
+            out.matches("\nnav:\n").count(),
+            1,
+            "must have exactly one nav block, got {out}"
+        );
         // Old entry must be gone.
         assert!(!out.contains("OLD"), "stale nav entry must be stripped");
         // New entry present.

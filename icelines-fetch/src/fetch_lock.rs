@@ -106,7 +106,10 @@ pub fn acquire(home_dir: &Path, timeout: Duration) -> Result<FetchLockGuard, Fet
                 std::thread::sleep(POLL_INTERVAL);
             }
             Err(e) => {
-                return Err(FetchLockError::Io { path: lock_path, source: e });
+                return Err(FetchLockError::Io {
+                    path: lock_path,
+                    source: e,
+                });
             }
         }
     }
@@ -122,7 +125,11 @@ pub enum FetchLockError {
     Timeout { path: PathBuf, waited: Duration },
 
     #[error("fetch-lock I/O error at {}: {source}", path.display())]
-    Io { path: PathBuf, #[source] source: std::io::Error },
+    Io {
+        path: PathBuf,
+        #[source]
+        source: std::io::Error,
+    },
 }
 
 #[cfg(test)]
@@ -144,11 +151,14 @@ mod tests {
     #[test]
     fn l0_lindsay_fetch_lock_concurrent_acquires_serialize() {
         let dir = tempfile::TempDir::new().unwrap();
-        let _held = acquire(dir.path(), Duration::from_millis(200))
-            .expect("first acquire — no contention");
+        let _held =
+            acquire(dir.path(), Duration::from_millis(200)).expect("first acquire — no contention");
         let err = acquire(dir.path(), Duration::from_millis(200))
             .expect_err("second acquire must time out while first is held");
-        assert!(matches!(err, FetchLockError::Timeout { .. }), "got: {err:?}");
+        assert!(
+            matches!(err, FetchLockError::Timeout { .. }),
+            "got: {err:?}"
+        );
     }
 
     /// Stale lock GC: if a `.fetch.lock` file is older than STALE_AGE,
@@ -161,8 +171,8 @@ mod tests {
     #[test]
     fn l0_lindsay_fetch_lock_acquire_succeeds_on_clean_dir() {
         let dir = tempfile::TempDir::new().unwrap();
-        let g = acquire(dir.path(), Duration::from_millis(100))
-            .expect("clean dir → instant acquire");
+        let g =
+            acquire(dir.path(), Duration::from_millis(100)).expect("clean dir → instant acquire");
         drop(g);
         // After Drop, the file should be gone.
         assert!(
@@ -228,7 +238,10 @@ mod tests {
         a.join().expect("A thread joined");
         let b_acquired_at = b.join().expect("B thread joined");
 
-        let release_a = release_a_at.lock().unwrap().expect("A recorded release time");
+        let release_a = release_a_at
+            .lock()
+            .unwrap()
+            .expect("A recorded release time");
         let start_b = start_b_at.lock().unwrap().expect("B recorded start time");
 
         // Sanity: B started before A released.

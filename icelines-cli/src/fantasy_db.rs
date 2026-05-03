@@ -94,8 +94,7 @@ impl FantasyDb {
             .ok_or_else(|| anyhow::anyhow!("cannot determine home directory"))?;
 
         let dir = home.join(".icelines");
-        std::fs::create_dir_all(&dir)
-            .with_context(|| format!("create {}", dir.display()))?;
+        std::fs::create_dir_all(&dir).with_context(|| format!("create {}", dir.display()))?;
 
         let db_path = dir.join("icelines.db");
         Self::open_path(db_path)
@@ -103,8 +102,8 @@ impl FantasyDb {
 
     /// Open a database at the given path (used by the HTTP server).
     pub fn open_path(db_path: std::path::PathBuf) -> anyhow::Result<Self> {
-        let conn = Connection::open(&db_path)
-            .with_context(|| format!("open {}", db_path.display()))?;
+        let conn =
+            Connection::open(&db_path).with_context(|| format!("open {}", db_path.display()))?;
 
         // Enable WAL for better concurrent write performance.
         conn.execute_batch("PRAGMA journal_mode = WAL;")
@@ -241,12 +240,7 @@ impl FantasyDb {
     // ── Team operations ────────────────────────────────────────────────────────
 
     /// Create a team inside the given league.  Returns its UUID.
-    pub fn create_team(
-        &self,
-        league_id: &str,
-        name: &str,
-        owner: &str,
-    ) -> anyhow::Result<String> {
+    pub fn create_team(&self, league_id: &str, name: &str, owner: &str) -> anyhow::Result<String> {
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
         self.conn
@@ -287,11 +281,7 @@ impl FantasyDb {
     }
 
     /// Look up a team by name within a league.
-    pub fn get_team_by_name(
-        &self,
-        league_id: &str,
-        name: &str,
-    ) -> anyhow::Result<Option<TeamRow>> {
+    pub fn get_team_by_name(&self, league_id: &str, name: &str) -> anyhow::Result<Option<TeamRow>> {
         let mut stmt = self.conn.prepare(
             "SELECT t.id, t.name, t.owner, COUNT(r.player_normalized) AS player_count
              FROM fl_teams t
@@ -586,7 +576,10 @@ mod tests {
             .conn
             .query_row("SELECT COUNT(*) FROM fl_roster", [], |r| r.get(0))
             .expect("count roster");
-        assert_eq!(roster_count, 0, "roster rows must cascade-delete with league");
+        assert_eq!(
+            roster_count, 0,
+            "roster rows must cascade-delete with league"
+        );
     }
 
     #[test]
@@ -605,7 +598,8 @@ mod tests {
         let team_id = db
             .create_team(&league_id, "Drop Team", "Bob")
             .expect("create team");
-        db.add_player(&team_id, "connor_mcdavid").expect("add player");
+        db.add_player(&team_id, "connor_mcdavid")
+            .expect("add player");
 
         let deleted = db
             .delete_team(&league_id, "Drop Team")
@@ -654,7 +648,10 @@ mod tests {
     fn l1_fantasy_set_active_unknown_league_errors() {
         let db = FantasyDb::open_in_memory().expect("open in-memory db");
         let result = db.set_active_league("Ghost League");
-        assert!(result.is_err(), "setting active on nonexistent league must error");
+        assert!(
+            result.is_err(),
+            "setting active on nonexistent league must error"
+        );
     }
 
     #[test]

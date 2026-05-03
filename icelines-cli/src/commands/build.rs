@@ -14,7 +14,10 @@ pub async fn run(no_site: bool) -> anyhow::Result<()> {
         docs_dir: docs_dir.clone(),
         mkdocs_yml: mkdocs_yml.clone(),
         snapshot_dir: cfg.snapshot_dir(),
-        season: cfg.season_str().parse().unwrap_or(icelines_core::CURRENT_SEASON),
+        season: cfg
+            .season_str()
+            .parse()
+            .unwrap_or(icelines_core::CURRENT_SEASON),
     });
 
     println!("Building site from snapshot data...");

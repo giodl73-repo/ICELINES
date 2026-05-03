@@ -5,8 +5,7 @@ use icelines_core::season_stats::SeasonType;
 use icelines_core::stats_catalog::{ReportKind, Tier, TIER1_REPORTS};
 use icelines_fetch::{
     boxscore_client::{aggregate_profiles, BoxscoreClient},
-    fetch_lock,
-    moneypuck,
+    fetch_lock, moneypuck,
     nhl_api::NhlApiClient,
     schema::SkaterBio,
     snapshot::{today_date, SnapshotStore, SnapshotTier},
@@ -36,8 +35,14 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             // For `--type playoff` we skip rosters/contracts/transactions
             // — they're regular-season-keyed concepts. For `--type both`
             // we run the full regular pipe first, then the playoff trio.
-            let want_regular = matches!(season_type, FetchSeasonType::Regular | FetchSeasonType::Both);
-            let want_playoff = matches!(season_type, FetchSeasonType::Playoff | FetchSeasonType::Both);
+            let want_regular = matches!(
+                season_type,
+                FetchSeasonType::Regular | FetchSeasonType::Both
+            );
+            let want_playoff = matches!(
+                season_type,
+                FetchSeasonType::Playoff | FetchSeasonType::Both
+            );
 
             if want_regular {
                 do_rosters(&season, refresh, dry_run).await?;
@@ -71,7 +76,9 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             dry_run,
             season_type,
         } => do_goalies(&season, dry_run, season_type).await,
-        FetchSubcommand::Transactions { season, dry_run } => do_transactions(&season, dry_run).await,
+        FetchSubcommand::Transactions { season, dry_run } => {
+            do_transactions(&season, dry_run).await
+        }
         FetchSubcommand::Report {
             kind,
             season,
@@ -136,7 +143,10 @@ async fn do_report(
     );
 
     if dry_run {
-        println!("[dry-run] fetch report kind={:?} season={season} type={:?}", kind, st);
+        println!(
+            "[dry-run] fetch report kind={:?} season={season} type={:?}",
+            kind, st
+        );
         println!("[dry-run] URL: {url_preview}");
         let cfg = Config::load().context("loading icelines config")?;
         let target = cfg
@@ -162,11 +172,14 @@ async fn do_report(
         None
     } else {
         Some(
-            fetch_lock::acquire(&icelines_home, std::time::Duration::from_secs(120))
-                .with_context(|| format!(
-                    "acquiring fetch lock at {}/.fetch.lock",
-                    icelines_home.display(),
-                ))?,
+            fetch_lock::acquire(&icelines_home, std::time::Duration::from_secs(120)).with_context(
+                || {
+                    format!(
+                        "acquiring fetch lock at {}/.fetch.lock",
+                        icelines_home.display(),
+                    )
+                },
+            )?,
         )
     };
 
@@ -284,15 +297,25 @@ async fn do_stats(
     let snap = format!("{season}-{today}-stats");
 
     if dry_run {
-        let want_regular = matches!(season_type, FetchSeasonType::Regular | FetchSeasonType::Both);
-        let want_playoff = matches!(season_type, FetchSeasonType::Playoff | FetchSeasonType::Both);
+        let want_regular = matches!(
+            season_type,
+            FetchSeasonType::Regular | FetchSeasonType::Both
+        );
+        let want_playoff = matches!(
+            season_type,
+            FetchSeasonType::Playoff | FetchSeasonType::Both
+        );
         if want_regular {
-            println!("Would fetch (regular): /stats/rest/en/skater/bios?seasonId={season}&gameTypeId=2");
+            println!(
+                "Would fetch (regular): /stats/rest/en/skater/bios?seasonId={season}&gameTypeId=2"
+            );
             println!("Would fetch (regular): /stats/rest/en/skater/summary?seasonId={season}&gameTypeId=2");
             println!("Would fetch (regular): /stats/rest/en/skater/realtime?seasonId={season}&gameTypeId=2");
         }
         if want_playoff {
-            println!("Would fetch (playoff): /stats/rest/en/skater/bios?seasonId={season}&gameTypeId=3");
+            println!(
+                "Would fetch (playoff): /stats/rest/en/skater/bios?seasonId={season}&gameTypeId=3"
+            );
             println!("Would fetch (playoff): /stats/rest/en/skater/summary?seasonId={season}&gameTypeId=3");
             println!("Would write to playoff-bios.json + playoff-stats.json (co-located in stats/ tier).");
         }
@@ -327,7 +350,10 @@ async fn do_stats(
     // Box::pin breaks the future-chain depth so debug builds don't blow
     // the 8MB Windows main-thread stack. The fetch + serialize locals
     // make this future fat enough to matter on debug builds.
-    if matches!(season_type, FetchSeasonType::Regular | FetchSeasonType::Both) {
+    if matches!(
+        season_type,
+        FetchSeasonType::Regular | FetchSeasonType::Both
+    ) {
         Box::pin(run_stats_pass(
             &store,
             &client,
@@ -338,7 +364,10 @@ async fn do_stats(
         ))
         .await?;
     }
-    if matches!(season_type, FetchSeasonType::Playoff | FetchSeasonType::Both) {
+    if matches!(
+        season_type,
+        FetchSeasonType::Playoff | FetchSeasonType::Both
+    ) {
         Box::pin(run_stats_pass(
             &store,
             &client,
@@ -399,7 +428,10 @@ async fn run_stats_pass(
                 cm.playoff_stats().map(|m| m.len()).unwrap_or(0),
             ),
         };
-        println!("  Wrote {} bio + {} stats chunks ({label}).", n_bios, n_stats);
+        println!(
+            "  Wrote {} bio + {} stats chunks ({label}).",
+            n_bios, n_stats
+        );
     } else {
         // Hart.6.5 — playoff variants land under co-located filenames
         // in the same Stats tier dir per Hart.6 D3. Loader resolves
@@ -421,7 +453,8 @@ async fn run_stats_pass(
                 snap,
                 &SnapshotTier::Stats,
                 stats_filename,
-                &serde_json::to_vec(&stats).with_context(|| format!("serializing {label} stats"))?,
+                &serde_json::to_vec(&stats)
+                    .with_context(|| format!("serializing {label} stats"))?,
             )
             .with_context(|| format!("writing {stats_filename}"))?;
     }
@@ -501,8 +534,14 @@ async fn do_goalies(
     let snap = format!("{season}-{today}-goalies");
 
     if dry_run {
-        let want_regular = matches!(season_type, FetchSeasonType::Regular | FetchSeasonType::Both);
-        let want_playoff = matches!(season_type, FetchSeasonType::Playoff | FetchSeasonType::Both);
+        let want_regular = matches!(
+            season_type,
+            FetchSeasonType::Regular | FetchSeasonType::Both
+        );
+        let want_playoff = matches!(
+            season_type,
+            FetchSeasonType::Playoff | FetchSeasonType::Both
+        );
         if want_regular {
             println!("Would fetch (regular): /stats/rest/en/goalie/summary?seasonId={season}&gameTypeId=2");
         }
@@ -517,11 +556,31 @@ async fn do_goalies(
         .create(&snap, season, SnapshotTier::Stats, None, &today)
         .context("creating goalies snapshot")?;
 
-    if matches!(season_type, FetchSeasonType::Regular | FetchSeasonType::Both) {
-        Box::pin(run_goalies_pass(&store, &client, &snap, season, SeasonType::Regular)).await?;
+    if matches!(
+        season_type,
+        FetchSeasonType::Regular | FetchSeasonType::Both
+    ) {
+        Box::pin(run_goalies_pass(
+            &store,
+            &client,
+            &snap,
+            season,
+            SeasonType::Regular,
+        ))
+        .await?;
     }
-    if matches!(season_type, FetchSeasonType::Playoff | FetchSeasonType::Both) {
-        Box::pin(run_goalies_pass(&store, &client, &snap, season, SeasonType::Playoff)).await?;
+    if matches!(
+        season_type,
+        FetchSeasonType::Playoff | FetchSeasonType::Both
+    ) {
+        Box::pin(run_goalies_pass(
+            &store,
+            &client,
+            &snap,
+            season,
+            SeasonType::Playoff,
+        ))
+        .await?;
     }
 
     store.seal(&snap).context("sealing goalies snapshot")?;
@@ -547,7 +606,11 @@ async fn run_goalies_pass(
         .await
         .with_context(|| format!("fetching {label} goalie stats"))?;
     let qualified = goalies.iter().filter(|g| g.games_played >= 15).count();
-    println!("  {} goalies ({} qualified at 15+ GP)", goalies.len(), qualified);
+    println!(
+        "  {} goalies ({} qualified at 15+ GP)",
+        goalies.len(),
+        qualified
+    );
 
     let filename = match ty {
         SeasonType::Regular => "goalie-stats.json",
@@ -558,15 +621,17 @@ async fn run_goalies_pass(
             snap,
             &SnapshotTier::Stats,
             filename,
-            &serde_json::to_vec(&goalies).with_context(|| format!("serializing {label} goalie stats"))?,
+            &serde_json::to_vec(&goalies)
+                .with_context(|| format!("serializing {label} goalie stats"))?,
         )
         .with_context(|| format!("writing {filename}"))?;
     Ok(())
 }
 
 async fn do_moneypuck(season: &str, dry_run: bool) -> anyhow::Result<()> {
-    let url = moneypuck::csv_url(season)
-        .with_context(|| format!("invalid season format '{season}' — expected 8 digits like 20252026"))?;
+    let url = moneypuck::csv_url(season).with_context(|| {
+        format!("invalid season format '{season}' — expected 8 digits like 20252026")
+    })?;
 
     if dry_run {
         println!("Would download MoneyPuck CSV: {url}");
@@ -614,9 +679,9 @@ async fn do_contracts(season: &str, dry_run: bool) -> anyhow::Result<()> {
     let store = SnapshotStore::new(cfg.snapshot_dir());
 
     // Load player IDs from the active Stats snapshot bios.json (same pattern as do_positions).
-    let bios: Vec<SkaterBio> = store
-        .read_tier(&SnapshotTier::Stats, "bios.json")
-        .context("reading bios.json from active Stats snapshot — run `icelines fetch stats` first")?;
+    let bios: Vec<SkaterBio> = store.read_tier(&SnapshotTier::Stats, "bios.json").context(
+        "reading bios.json from active Stats snapshot — run `icelines fetch stats` first",
+    )?;
 
     let player_ids: Vec<u32> = bios.iter().map(|b| b.player_id).collect();
     let n = player_ids.len();
@@ -641,7 +706,10 @@ async fn do_contracts(season: &str, dry_run: bool) -> anyhow::Result<()> {
         .create(&snap, season, SnapshotTier::Contracts, None, &today)
         .context("creating contracts snapshot")?;
 
-    println!("Fetching contract data for {n} players (this takes ~{}s)...", (n as f64 * 0.05).ceil() as u64);
+    println!(
+        "Fetching contract data for {n} players (this takes ~{}s)...",
+        (n as f64 * 0.05).ceil() as u64
+    );
     let client = NhlApiClient::production();
     let contracts = client.fetch_all_contracts(&player_ids).await;
     let found = contracts.len();
@@ -766,7 +834,11 @@ async fn do_transactions(season: &str, dry_run: bool) -> anyhow::Result<()> {
         *counts.entry(row.kind.label()).or_default() += 1;
     }
     let other_count = counts.get("other").copied().unwrap_or(0);
-    let other_rate = if rows.is_empty() { 0.0 } else { other_count as f64 / rows.len() as f64 };
+    let other_rate = if rows.is_empty() {
+        0.0
+    } else {
+        other_count as f64 / rows.len() as f64
+    };
 
     println!("  classified: {} rows", rows.len());
     let mut kinds: Vec<_> = counts.into_iter().collect();
@@ -775,15 +847,17 @@ async fn do_transactions(season: &str, dry_run: bool) -> anyhow::Result<()> {
         println!("    {label}: {n}");
     }
     if other_rate > 0.05 {
-        eprintln!("  WARN: other_rate is {:.1}% (>5% threshold) — \
+        eprintln!(
+            "  WARN: other_rate is {:.1}% (>5% threshold) — \
                    ESPN prose may have drifted; review the regex set",
-                  other_rate * 100.0);
+            other_rate * 100.0
+        );
     }
 
     let envelope = TransactionsEnvelope {
-        season:             season.to_owned(),
-        source:             "espn".to_owned(),
-        fetched_at:         outcome.fetched_at,
+        season: season.to_owned(),
+        source: "espn".to_owned(),
+        fetched_at: outcome.fetched_at,
         classifier_version: CURRENT_CLASSIFIER_VERSION,
         rows,
     };
@@ -872,12 +946,15 @@ mod tests {
             if !kind.is_known_working() {
                 continue;
             }
-            let f = report_filename(*kind)
-                .unwrap_or_else(|e| panic!("{kind:?} failed: {e}"));
-            assert!(f.ends_with(".json"),
-                "{kind:?} filename `{f}` must end with `.json`");
-            assert!(!f.contains('/'),
-                "{kind:?} filename `{f}` must have `/` replaced");
+            let f = report_filename(*kind).unwrap_or_else(|e| panic!("{kind:?} failed: {e}"));
+            assert!(
+                f.ends_with(".json"),
+                "{kind:?} filename `{f}` must end with `.json`"
+            );
+            assert!(
+                !f.contains('/'),
+                "{kind:?} filename `{f}` must have `/` replaced"
+            );
         }
     }
 }

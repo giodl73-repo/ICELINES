@@ -88,15 +88,15 @@ impl TransactionKind {
     /// Lower-case label for CLI `--kind` filtering and observability logs.
     pub fn label(self) -> &'static str {
         match self {
-            Self::Trade            => "trade",
-            Self::WaiverPlacement  => "waiver_placement",
-            Self::WaiverClear      => "waiver_clear",
-            Self::WaiverClaim      => "waiver_claim",
-            Self::Signing          => "signing",
-            Self::Recall           => "recall",
-            Self::Reassignment     => "reassignment",
-            Self::InjuryReserve    => "ir",
-            Self::Other            => "other",
+            Self::Trade => "trade",
+            Self::WaiverPlacement => "waiver_placement",
+            Self::WaiverClear => "waiver_clear",
+            Self::WaiverClaim => "waiver_claim",
+            Self::Signing => "signing",
+            Self::Recall => "recall",
+            Self::Reassignment => "reassignment",
+            Self::InjuryReserve => "ir",
+            Self::Other => "other",
         }
     }
 
@@ -119,16 +119,20 @@ impl TransactionKind {
     /// caller decides how to handle the multi-match — typically OR).
     pub fn parse_filter(s: &str) -> Result<Vec<TransactionKind>, String> {
         match s.to_ascii_lowercase().as_str() {
-            "trade"            => Ok(vec![Self::Trade]),
+            "trade" => Ok(vec![Self::Trade]),
             "signing" | "sign" => Ok(vec![Self::Signing]),
-            "recall"           => Ok(vec![Self::Recall]),
+            "recall" => Ok(vec![Self::Recall]),
             "reassignment" | "reassign" => Ok(vec![Self::Reassignment]),
             "ir" | "injuredreserve" => Ok(vec![Self::InjuryReserve]),
-            "waiver"           => Ok(vec![Self::WaiverPlacement, Self::WaiverClear, Self::WaiverClaim]),
+            "waiver" => Ok(vec![
+                Self::WaiverPlacement,
+                Self::WaiverClear,
+                Self::WaiverClaim,
+            ]),
             "waiver_placement" | "waiver-placement" => Ok(vec![Self::WaiverPlacement]),
-            "waiver_clear"     | "waiver-clear"     => Ok(vec![Self::WaiverClear]),
-            "waiver_claim"     | "waiver-claim"     => Ok(vec![Self::WaiverClaim]),
-            "other"            => Ok(vec![Self::Other]),
+            "waiver_clear" | "waiver-clear" => Ok(vec![Self::WaiverClear]),
+            "waiver_claim" | "waiver-claim" => Ok(vec![Self::WaiverClaim]),
+            "other" => Ok(vec![Self::Other]),
             unknown => Err(format!(
                 "unknown kind '{unknown}'. valid: trade, signing, recall, \
                  reassignment, ir, waiver (or waiver_placement / waiver_clear \
@@ -145,41 +149,68 @@ mod tests {
     #[test]
     fn l0_transactions_earliest_season_constant_is_set() {
         // BENCH-mandated: prove the probe was run.
-        assert!(!TRANSACTIONS_EARLIEST_SEASON.is_empty(),
-            "TRANSACTIONS_EARLIEST_SEASON must be set after T.2 probe");
-        assert_eq!(TRANSACTIONS_EARLIEST_SEASON.len(), 8,
-            "season ID must be 8 digits, got: '{TRANSACTIONS_EARLIEST_SEASON}'");
-        assert!(TRANSACTIONS_EARLIEST_SEASON.chars().all(|c| c.is_ascii_digit()),
-            "season ID must be all digits");
+        assert!(
+            !TRANSACTIONS_EARLIEST_SEASON.is_empty(),
+            "TRANSACTIONS_EARLIEST_SEASON must be set after T.2 probe"
+        );
+        assert_eq!(
+            TRANSACTIONS_EARLIEST_SEASON.len(),
+            8,
+            "season ID must be 8 digits, got: '{TRANSACTIONS_EARLIEST_SEASON}'"
+        );
+        assert!(
+            TRANSACTIONS_EARLIEST_SEASON
+                .chars()
+                .all(|c| c.is_ascii_digit()),
+            "season ID must be all digits"
+        );
     }
 
     #[test]
     fn l0_kind_label_uniqueness() {
         let mut seen = std::collections::HashSet::new();
         for k in TransactionKind::ALL {
-            assert!(seen.insert(k.label()),
-                "duplicate label for kind: {:?}", k);
+            assert!(seen.insert(k.label()), "duplicate label for kind: {:?}", k);
         }
     }
 
     #[test]
     fn l0_kind_parse_filter_known_kinds() {
-        assert_eq!(TransactionKind::parse_filter("trade").unwrap(), vec![TransactionKind::Trade]);
-        assert_eq!(TransactionKind::parse_filter("TRADE").unwrap(), vec![TransactionKind::Trade]);
-        assert_eq!(TransactionKind::parse_filter("ir").unwrap(),    vec![TransactionKind::InjuryReserve]);
+        assert_eq!(
+            TransactionKind::parse_filter("trade").unwrap(),
+            vec![TransactionKind::Trade]
+        );
+        assert_eq!(
+            TransactionKind::parse_filter("TRADE").unwrap(),
+            vec![TransactionKind::Trade]
+        );
+        assert_eq!(
+            TransactionKind::parse_filter("ir").unwrap(),
+            vec![TransactionKind::InjuryReserve]
+        );
     }
 
     #[test]
     fn l0_kind_parse_filter_waiver_expands_to_three() {
         let v = TransactionKind::parse_filter("waiver").unwrap();
-        assert_eq!(v.len(), 3, "bare 'waiver' must expand to all three waiver kinds");
+        assert_eq!(
+            v.len(),
+            3,
+            "bare 'waiver' must expand to all three waiver kinds"
+        );
     }
 
     #[test]
     fn l0_kind_parse_filter_unknown_returns_helpful_error() {
         let err = TransactionKind::parse_filter("trades").unwrap_err();
-        assert!(err.contains("unknown kind"), "error must say 'unknown kind', got: {err}");
-        assert!(err.contains("trade"), "error must list valid options, got: {err}");
+        assert!(
+            err.contains("unknown kind"),
+            "error must say 'unknown kind', got: {err}"
+        );
+        assert!(
+            err.contains("trade"),
+            "error must list valid options, got: {err}"
+        );
     }
 
     #[test]
@@ -210,7 +241,9 @@ mod tests {
             classifier_version: 1,
         };
         let json = serde_json::to_string(&tx).unwrap();
-        assert!(json.contains("\"team\":null"),
-            "team=None must serialize as null, got: {json}");
+        assert!(
+            json.contains("\"team\":null"),
+            "team=None must serialize as null, got: {json}"
+        );
     }
 }

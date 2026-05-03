@@ -51,24 +51,48 @@ fn fixtures_dir() -> PathBuf {
 /// here.
 const LEGACY_SORTS: &[&str] = &[
     // All-situations pace
-    "pts-pace", "ppg", "g-pace", "gpg",
+    "pts-pace",
+    "ppg",
+    "g-pace",
+    "gpg",
     // Raw season totals
-    "pts", "goals", "assists", "gp",
+    "pts",
+    "goals",
+    "assists",
+    "gp",
     // Power play
-    "pp-pts-pace", "pp-g-pace", "pp-pts", "pp-g",
+    "pp-pts-pace",
+    "pp-g-pace",
+    "pp-pts",
+    "pp-g",
     // Shorthanded
-    "sh-g-pace", "sh-g",
+    "sh-g-pace",
+    "sh-g",
     // GWG / OT
-    "gwg-pace", "gwg",
+    "gwg-pace",
+    "gwg",
     // Shots
-    "shots-pace", "shots", "sh-pct",
+    "shots-pace",
+    "shots",
+    "sh-pct",
     // Two-way / TOI / FO
-    "plus-minus", "toi", "fo-pct",
+    "plus-minus",
+    "toi",
+    "fo-pct",
     // Realtime physical
-    "hits-pace", "hits", "blocks-pace", "blocks",
-    "takeaways", "giveaways", "pim",
+    "hits-pace",
+    "hits",
+    "blocks-pace",
+    "blocks",
+    "takeaways",
+    "giveaways",
+    "pim",
     // MoneyPuck
-    "xg", "xg-per-60", "cf-pct", "ff-pct", "xgf-pct",
+    "xg",
+    "xg-per-60",
+    "cf-pct",
+    "ff-pct",
+    "xgf-pct",
     // Trend
     "improvement",
 ];
@@ -76,10 +100,9 @@ const LEGACY_SORTS: &[&str] = &[
 /// Run `query leaders --sort <metric>` and return stdout (utf-8).
 fn capture_leaders(sort: &str) -> String {
     let out = Command::new(icelines_bin())
-        .args(["query", "leaders",
-               "--sort", sort,
-               "--top", "10",
-               "--season", "20242025"])
+        .args([
+            "query", "leaders", "--sort", sort, "--top", "10", "--season", "20242025",
+        ])
         .output()
         .unwrap_or_else(|e| panic!("failed to run icelines (`cargo build --release` first?): {e}"));
     // For sorts that exit non-zero (none expected today), capture the
@@ -130,8 +153,9 @@ fn l2_lindsay_l3_golden_parity() {
         let golden_path = dir.join(format!("leaders-{sort}.golden.txt"));
 
         if regen {
-            std::fs::write(&golden_path, &actual)
-                .unwrap_or_else(|e| panic!("failed to write golden {}: {e}", golden_path.display()));
+            std::fs::write(&golden_path, &actual).unwrap_or_else(|e| {
+                panic!("failed to write golden {}: {e}", golden_path.display())
+            });
             continue;
         }
 
@@ -151,8 +175,10 @@ fn l2_lindsay_l3_golden_parity() {
                 "DIVERGENCE: --sort {sort}\n\
                  ─── golden ({} bytes) ───\n{}\n\
                  ─── actual ({} bytes) ───\n{}\n",
-                golden.len(), golden,
-                actual.len(), actual,
+                golden.len(),
+                golden,
+                actual.len(),
+                actual,
             ));
         }
     }

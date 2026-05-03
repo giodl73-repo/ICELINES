@@ -33,9 +33,7 @@ fn load_allowlist() -> Vec<Regex> {
         .map(str::trim)
         .filter(|l| !l.is_empty() && !l.starts_with('#'))
         .map(|pat| {
-            Regex::new(pat).unwrap_or_else(|e| {
-                panic!("invalid allowlist regex `{pat}`: {e}")
-            })
+            Regex::new(pat).unwrap_or_else(|e| panic!("invalid allowlist regex `{pat}`: {e}"))
         })
         .collect()
 }
@@ -60,8 +58,8 @@ fn enumerate_rs_files(dir: &std::path::Path) -> Vec<PathBuf> {
 #[test]
 fn l1_lindsay_l5b_site_source_no_hardcoded_stat_names() {
     // Word-boundary match so `Goals` matches but `goalsForPct` doesn't.
-    let pattern = Regex::new(r"\b(Goals|Assists|Points|Hits|Blocks|Saves|GAA)\b")
-        .expect("regex compiles");
+    let pattern =
+        Regex::new(r"\b(Goals|Assists|Points|Hits|Blocks|Saves|GAA)\b").expect("regex compiles");
     let allowlist = load_allowlist();
     let files = enumerate_rs_files(&site_src_dir());
     assert!(
@@ -131,8 +129,8 @@ fn l1_lindsay_l5b_rendered_markdown_no_hardcoded_stat_names() {
         return;
     }
 
-    let pattern = Regex::new(r"\b(Goals|Assists|Points|Hits|Blocks|Saves|GAA)\b")
-        .expect("regex compiles");
+    let pattern =
+        Regex::new(r"\b(Goals|Assists|Points|Hits|Blocks|Saves|GAA)\b").expect("regex compiles");
     let allowlist = load_allowlist();
 
     // Collect target files: docs/index.md + docs/teams/*.md.
@@ -143,7 +141,10 @@ fn l1_lindsay_l5b_rendered_markdown_no_hardcoded_stat_names() {
     }
     let teams_dir = docs_dir.join("teams");
     if teams_dir.is_dir() {
-        for entry in std::fs::read_dir(&teams_dir).expect("read teams dir").flatten() {
+        for entry in std::fs::read_dir(&teams_dir)
+            .expect("read teams dir")
+            .flatten()
+        {
             let p = entry.path();
             if p.extension().and_then(|s| s.to_str()) == Some("md") {
                 files.push(p);
@@ -152,7 +153,7 @@ fn l1_lindsay_l5b_rendered_markdown_no_hardcoded_stat_names() {
     }
 
     if files.is_empty() {
-        return;  // No rendered output to scan.
+        return; // No rendered output to scan.
     }
 
     let mut violations: Vec<String> = Vec::new();

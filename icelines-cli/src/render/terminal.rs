@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
 use comfy_table::{Cell, Color, Table};
-use icelines_core::{classify_fit, DepthChart, DepthChartSlot, FitClass};
 use icelines_core::stats_repository::PlayerView;
+use icelines_core::{classify_fit, DepthChart, DepthChartSlot, FitClass};
 use owo_colors::OwoColorize;
 
 // ── Color helpers ─────────────────────────────────────────────────────────────
@@ -23,10 +23,7 @@ fn fit_color(fc: FitClass) -> Color {
 /// When `no_color` is true the FitClass label is prepended as plain text
 /// (e.g. "[Elite] McDavid 140.0").
 fn slot_cell(slot: &DepthChartSlot, no_color: bool) -> Cell {
-    let pace_str = slot
-        .pace_82
-        .map(|p| format!(" {p:.1}"))
-        .unwrap_or_default();
+    let pace_str = slot.pace_82.map(|p| format!(" {p:.1}")).unwrap_or_default();
 
     if no_color {
         let fc = slot.pace_82.map(|p| classify_fit(p, slot.position));
@@ -97,16 +94,34 @@ pub fn render_team_card(chart: &DepthChart, no_color: bool) {
     if !chart.unplaced.is_empty() {
         println!("\nAdditional ({}):", chart.unplaced.len());
         for s in &chart.unplaced {
-            let ppg = s.pace_82.map(|p| format!("{:.2}", p / 82.0)).unwrap_or_else(|| "—".to_owned());
-            let gp  = s.gp.map(|g| g.to_string()).unwrap_or_else(|| "—".to_owned());
-            println!("  {:<24} {}  {}gp  {}", s.full_name, s.position.abbreviation(), gp, ppg);
+            let ppg = s
+                .pace_82
+                .map(|p| format!("{:.2}", p / 82.0))
+                .unwrap_or_else(|| "—".to_owned());
+            let gp =
+                s.gp.map(|g| g.to_string())
+                    .unwrap_or_else(|| "—".to_owned());
+            println!(
+                "  {:<24} {}  {}gp  {}",
+                s.full_name,
+                s.position.abbreviation(),
+                gp,
+                ppg
+            );
         }
     }
     if !chart.below_min_gp.is_empty() {
         println!("\nBelow min GP ({}):", chart.below_min_gp.len());
         for s in &chart.below_min_gp {
-            let gp = s.gp.map(|g| g.to_string()).unwrap_or_else(|| "0".to_owned());
-            println!("  {:<24} {}  {}gp", s.full_name, s.position.abbreviation(), gp);
+            let gp =
+                s.gp.map(|g| g.to_string())
+                    .unwrap_or_else(|| "0".to_owned());
+            println!(
+                "  {:<24} {}  {}gp",
+                s.full_name,
+                s.position.abbreviation(),
+                gp
+            );
         }
     }
 }
@@ -122,11 +137,7 @@ pub fn render_team_card(chart: &DepthChart, no_color: bool) {
 /// PlayerView<'_> directly. Caller is responsible for filtering /
 /// sorting / position-filtering before passing the slice in (pace
 /// score is read via `view.pace_82()`).
-pub fn render_rank_table(
-    views: &[&PlayerView<'_>],
-    top: usize,
-    no_color: bool,
-) {
+pub fn render_rank_table(views: &[&PlayerView<'_>], top: usize, no_color: bool) {
     if views.is_empty() {
         println!("No rankable players found.");
         return;

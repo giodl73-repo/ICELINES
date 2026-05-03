@@ -4,7 +4,9 @@ use std::process::Command;
 fn project_root() -> anyhow::Result<std::path::PathBuf> {
     let mut dir = std::env::current_dir()?;
     loop {
-        if dir.join("mkdocs.yml").exists() { return Ok(dir); }
+        if dir.join("mkdocs.yml").exists() {
+            return Ok(dir);
+        }
         match dir.parent() {
             Some(p) => dir = p.to_owned(),
             None => anyhow::bail!("mkdocs.yml not found — run from the project root"),

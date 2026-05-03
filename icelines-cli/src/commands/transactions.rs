@@ -10,8 +10,8 @@ use std::path::PathBuf;
 use anyhow::{bail, Context};
 
 use icelines_core::transactions::{
-    description_matches_query, transactions_for_player,
-    Transaction, TransactionKind, TRANSACTIONS_EARLIEST_SEASON,
+    description_matches_query, transactions_for_player, Transaction, TransactionKind,
+    TRANSACTIONS_EARLIEST_SEASON,
 };
 use icelines_fetch::{
     bundled::load_transactions_with_fallback,
@@ -55,7 +55,7 @@ pub async fn run(
     // ── Validate filter args before doing any I/O ─────────────────────
     let kind_filter: Option<Vec<TransactionKind>> = match kind.as_deref() {
         Some(k) => Some(TransactionKind::parse_filter(k).map_err(anyhow::Error::msg)?),
-        None    => None,
+        None => None,
     };
     if let Some(s) = since.as_deref() {
         validate_iso_date(s, "--since")?;
@@ -91,46 +91,57 @@ pub async fn run(
     // few-thousand-row dataset). Empty Vec when --player is None.
     let player_hits: Vec<*const Transaction> = match player.as_deref() {
         Some(name) => {
-            let team_for_disambig = team_norm.as_deref()
+            let team_for_disambig = team_norm
+                .as_deref()
                 .filter(|t| !t.eq_ignore_ascii_case("LEAGUE"));
             transactions_for_player(&envelope.rows, name, team_for_disambig)
-                .iter().map(|tx| *tx as *const Transaction).collect()
+                .iter()
+                .map(|tx| *tx as *const Transaction)
+                .collect()
         }
         None => Vec::new(),
     };
     let player_active = player.is_some();
 
-    let mut rows: Vec<&Transaction> = envelope.rows.iter().filter(|tx| {
-        if let Some(team) = team_norm.as_deref() {
-            let row_label = tx.team.as_ref().map(|t| t.0.as_str()).unwrap_or("LEAGUE");
-            if !row_label.eq_ignore_ascii_case(team) {
-                return false;
+    let mut rows: Vec<&Transaction> = envelope
+        .rows
+        .iter()
+        .filter(|tx| {
+            if let Some(team) = team_norm.as_deref() {
+                let row_label = tx.team.as_ref().map(|t| t.0.as_str()).unwrap_or("LEAGUE");
+                if !row_label.eq_ignore_ascii_case(team) {
+                    return false;
+                }
             }
-        }
-        if let Some(s) = since.as_deref() {
-            if tx.date.as_str() < s { return false; }
-        }
-        if let Some(u) = until.as_deref() {
-            if tx.date.as_str() > u { return false; }
-        }
-        if let Some(kinds) = &kind_filter {
-            if !kinds.contains(&tx.kind) {
-                return false;
+            if let Some(s) = since.as_deref() {
+                if tx.date.as_str() < s {
+                    return false;
+                }
             }
-        }
-        if let Some(q) = search.as_deref() {
-            if !description_matches_query(&tx.description, q) {
-                return false;
+            if let Some(u) = until.as_deref() {
+                if tx.date.as_str() > u {
+                    return false;
+                }
             }
-        }
-        if player_active {
-            let ptr = *tx as *const Transaction;
-            if !player_hits.contains(&ptr) {
-                return false;
+            if let Some(kinds) = &kind_filter {
+                if !kinds.contains(&tx.kind) {
+                    return false;
+                }
             }
-        }
-        true
-    }).collect();
+            if let Some(q) = search.as_deref() {
+                if !description_matches_query(&tx.description, q) {
+                    return false;
+                }
+            }
+            if player_active {
+                let ptr = *tx as *const Transaction;
+                if !player_hits.contains(&ptr) {
+                    return false;
+                }
+            }
+            true
+        })
+        .collect();
 
     // ── Sort newest-first for human-readable output ──────────────────
     rows.sort_by(|a, b| b.date.cmp(&a.date));
@@ -140,22 +151,32 @@ pub async fn run(
 
     // ── Emit ─────────────────────────────────────────────────────────
     let headers = &["date", "team", "kind", "description", "id"];
-    let body: Vec<Vec<String>> = rows.iter().map(|tx| {
-        let team_label = tx.team.as_ref().map(|t| t.0.clone()).unwrap_or_else(|| "LEAGUE".to_owned());
-        vec![
-            tx.date.clone(),
-            team_label,
-            tx.kind.label().to_owned(),
-            tx.description.clone(),
-            tx.id.clone(),
-        ]
-    }).collect();
+    let body: Vec<Vec<String>> = rows
+        .iter()
+        .map(|tx| {
+            let team_label = tx
+                .team
+                .as_ref()
+                .map(|t| t.0.clone())
+                .unwrap_or_else(|| "LEAGUE".to_owned());
+            vec![
+                tx.date.clone(),
+                team_label,
+                tx.kind.label().to_owned(),
+                tx.description.clone(),
+                tx.id.clone(),
+            ]
+        })
+        .collect();
 
     if format == Format::Table && out.is_none() {
         let total = envelope.rows.len();
         let shown = body.len();
-        println!("Transactions · ESPN · season {} · as of {}",
-            format_season(&season), envelope.fetched_at);
+        println!(
+            "Transactions · ESPN · season {} · as of {}",
+            format_season(&season),
+            envelope.fetched_at
+        );
         println!("{shown} of {total} rows shown");
     }
     format.emit_to(headers, &body, out.as_deref())?;
@@ -174,9 +195,7 @@ fn format_season(s: &str) -> String {
 /// Validate a `YYYY-MM-DD` argument. We don't depend on chrono::NaiveDate
 /// here — a small char-level check is enough and produces nicer errors.
 fn validate_iso_date(s: &str, flag: &str) -> anyhow::Result<()> {
-    let bad = || anyhow::anyhow!(
-        "{flag} is not a valid date (expected YYYY-MM-DD): '{s}'"
-    );
+    let bad = || anyhow::anyhow!("{flag} is not a valid date (expected YYYY-MM-DD): '{s}'");
     if s.len() != 10 {
         return Err(bad());
     }
@@ -194,7 +213,7 @@ fn validate_iso_date(s: &str, flag: &str) -> anyhow::Result<()> {
     // accept "filter on this calendar date" than block the user on
     // technically-invalid dates.
     let month: u8 = s[5..7].parse().map_err(|_| bad())?;
-    let day:   u8 = s[8..10].parse().map_err(|_| bad())?;
+    let day: u8 = s[8..10].parse().map_err(|_| bad())?;
     if !(1..=12).contains(&month) {
         return Err(anyhow::anyhow!("{flag} month out of range: '{s}'"));
     }
@@ -224,8 +243,10 @@ mod tests {
             "2026-04",
             "2026-04-29T00:00:00Z",
         ] {
-            assert!(validate_iso_date(bad, "--since").is_err(),
-                "{bad:?} should not validate");
+            assert!(
+                validate_iso_date(bad, "--since").is_err(),
+                "{bad:?} should not validate"
+            );
         }
     }
 

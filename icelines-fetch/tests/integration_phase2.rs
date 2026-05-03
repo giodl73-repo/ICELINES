@@ -8,7 +8,7 @@
 use icelines_core::{
     filter::PlayerFilter,
     identity::PlayerId,
-    model::{Season, Position},
+    model::{Position, Season},
     scheme::{compute_fantasy_score, Scheme, SkaterStats},
     season_stats::{SeasonStatsBuilder, SeasonType, StatTotals, TeamStint},
     stats_repository::{PlayerView, StatsRepository},
@@ -53,15 +53,31 @@ fn upsert_skater(
         .name(name, &name.to_lowercase())
         .build();
     let totals = StatTotals {
-        gp, goals: g, assists: a, points: g + a,
-        plus_minus: 0, pim: 0, shots: 0,
-        shooting_pct: None, toi_per_game_sec: None,
-        pp_goals: 0, pp_points: 0, sh_goals: 0, sh_points: 0,
-        gwg: 0, ot_goals: 0, faceoff_win_pct: None,
+        gp,
+        goals: g,
+        assists: a,
+        points: g + a,
+        plus_minus: 0,
+        pim: 0,
+        shots: 0,
+        shooting_pct: None,
+        toi_per_game_sec: None,
+        pp_goals: 0,
+        pp_points: 0,
+        sh_goals: 0,
+        sh_points: 0,
+        gwg: 0,
+        ot_goals: 0,
+        faceoff_win_pct: None,
         pace_score: if gp >= 10 {
             let pace_82 = (g + a) as f64 / gp as f64 * 82.0;
             let goals_per_82 = g as f64 / gp as f64 * 82.0;
-            Some(PaceScore { pace_82, goals_per_82, raw_points: g + a, gp })
+            Some(PaceScore {
+                pace_82,
+                goals_per_82,
+                raw_points: g + a,
+                gp,
+            })
         } else {
             None
         },
@@ -70,7 +86,10 @@ fn upsert_skater(
         team: TeamAbbr(team.to_owned()),
         started: Some("2024-10-15".into()),
         ended: Some("2025-04-13".into()),
-        gp, goals: g, assists: a, points: g + a,
+        gp,
+        goals: g,
+        assists: a,
+        points: g + a,
         goalie: None,
     };
     let stats = SeasonStatsBuilder::new(PlayerId(pid), SEASON, STYPE, pos)
@@ -96,15 +115,31 @@ fn upsert_skater_full(
         .name(name, &name.to_lowercase())
         .build();
     let totals = StatTotals {
-        gp, goals: g, assists: a, points: g + a,
-        plus_minus, pim: 0, shots,
-        shooting_pct: None, toi_per_game_sec: Some(toi_sec),
-        pp_goals: 0, pp_points: 0, sh_goals: 0, sh_points: 0,
-        gwg: 0, ot_goals: 0, faceoff_win_pct: None,
+        gp,
+        goals: g,
+        assists: a,
+        points: g + a,
+        plus_minus,
+        pim: 0,
+        shots,
+        shooting_pct: None,
+        toi_per_game_sec: Some(toi_sec),
+        pp_goals: 0,
+        pp_points: 0,
+        sh_goals: 0,
+        sh_points: 0,
+        gwg: 0,
+        ot_goals: 0,
+        faceoff_win_pct: None,
         pace_score: if gp >= 10 {
             let pace_82 = (g + a) as f64 / gp as f64 * 82.0;
             let goals_per_82 = g as f64 / gp as f64 * 82.0;
-            Some(PaceScore { pace_82, goals_per_82, raw_points: g + a, gp })
+            Some(PaceScore {
+                pace_82,
+                goals_per_82,
+                raw_points: g + a,
+                gp,
+            })
         } else {
             None
         },
@@ -113,7 +148,10 @@ fn upsert_skater_full(
         team: TeamAbbr("SEA".into()),
         started: Some("2024-10-15".into()),
         ended: Some("2025-04-13".into()),
-        gp, goals: g, assists: a, points: g + a,
+        gp,
+        goals: g,
+        assists: a,
+        points: g + a,
         goalie: None,
     };
     let stats = SeasonStatsBuilder::new(PlayerId(pid), SEASON, STYPE, Position::Center)
@@ -189,7 +227,10 @@ fn l1_fantasy_score_includes_hits_and_blocks() {
     // 20G(3), 30A(2), 100 hits(0.5), 50 blocks(0.5)
     // = 60 + 60 + 50 + 25 = 195
     let stats = SkaterStats {
-        goals: 20, assists: 30, hits: 100, blocks: 50,
+        goals: 20,
+        assists: 30,
+        hits: 100,
+        blocks: 50,
         ..Default::default()
     };
     let score = compute_fantasy_score(&stats, &Scheme::yahoo_standard().skater, 82).unwrap();
@@ -198,8 +239,14 @@ fn l1_fantasy_score_includes_hits_and_blocks() {
         "expected 195.0, got {}",
         score.total
     );
-    assert!(score.breakdown.contains_key("hits"), "hits must appear in breakdown");
-    assert!(score.breakdown.contains_key("blocks"), "blocks must appear in breakdown");
+    assert!(
+        score.breakdown.contains_key("hits"),
+        "hits must appear in breakdown"
+    );
+    assert!(
+        score.breakdown.contains_key("blocks"),
+        "blocks must appear in breakdown"
+    );
 }
 
 #[test]
@@ -207,7 +254,10 @@ fn l1_fantasy_score_includes_pp_components() {
     // Yahoo standard: ppG=1, ppA=0.5
     // 6 pp_goals = 6.0 bonus, 8 pp_assists = 4.0 bonus
     let stats = SkaterStats {
-        goals: 20, assists: 30, pp_goals: 6, pp_assists: 8,
+        goals: 20,
+        assists: 30,
+        pp_goals: 6,
+        pp_assists: 8,
         ..Default::default()
     };
     let score = compute_fantasy_score(&stats, &Scheme::yahoo_standard().skater, 82).unwrap();
@@ -224,7 +274,9 @@ fn l1_fantasy_score_includes_pp_components() {
 #[test]
 fn l1_fantasy_score_includes_gwg() {
     let stats = SkaterStats {
-        goals: 20, assists: 30, gwg: 4,
+        goals: 20,
+        assists: 30,
+        gwg: 4,
         ..Default::default()
     };
     let score = compute_fantasy_score(&stats, &Scheme::yahoo_standard().skater, 82).unwrap();
@@ -234,18 +286,25 @@ fn l1_fantasy_score_includes_gwg() {
         "expected 122.0, got {}",
         score.total
     );
-    assert!(score.breakdown.contains_key("gwg"), "gwg must appear in breakdown");
+    assert!(
+        score.breakdown.contains_key("gwg"),
+        "gwg must appear in breakdown"
+    );
 }
 
 #[test]
 fn l1_fantasy_score_negative_giveaways_reduce_total() {
     // Custom scheme with giveaways penalty
     let weights = icelines_core::scheme::SkaterWeights {
-        goals: 3.0, assists: 2.0, giveaways: -0.5,
+        goals: 3.0,
+        assists: 2.0,
+        giveaways: -0.5,
         ..Default::default()
     };
     let stats = SkaterStats {
-        goals: 10, assists: 20, giveaways: 40,
+        goals: 10,
+        assists: 20,
+        giveaways: 40,
         ..Default::default()
     };
     let score = compute_fantasy_score(&stats, &weights, 82).unwrap();
@@ -260,7 +319,9 @@ fn l1_fantasy_score_negative_giveaways_reduce_total() {
 #[test]
 fn l1_fantasy_score_espn_includes_shots_on_goal() {
     let stats = SkaterStats {
-        goals: 20, assists: 30, shots_on_goal: 200,
+        goals: 20,
+        assists: 30,
+        shots_on_goal: 200,
         ..Default::default()
     };
     let score = compute_fantasy_score(&stats, &Scheme::espn_standard().skater, 82).unwrap();
@@ -289,8 +350,26 @@ fn fixture_repo() -> StatsRepository {
     let mut repo = StatsRepository::new();
     upsert_skater(&mut repo, 1, "McDavid", "EDM", Position::Center, 50, 90, 82);
     upsert_skater(&mut repo, 2, "Beniers", "SEA", Position::Center, 20, 30, 82);
-    upsert_skater(&mut repo, 3, "Tolvanen", "SEA", Position::LeftWing, 12, 24, 78);
-    upsert_skater(&mut repo, 4, "Eberle", "SEA", Position::RightWing, 26, 29, 80);
+    upsert_skater(
+        &mut repo,
+        3,
+        "Tolvanen",
+        "SEA",
+        Position::LeftWing,
+        12,
+        24,
+        78,
+    );
+    upsert_skater(
+        &mut repo,
+        4,
+        "Eberle",
+        "SEA",
+        Position::RightWing,
+        26,
+        29,
+        80,
+    );
     upsert_skater(&mut repo, 5, "Makar", "COL", Position::Defense, 21, 74, 82);
     repo
 }
@@ -363,15 +442,15 @@ fn l1_filter_gp_min_excludes_below_threshold() {
 #[test]
 fn l1_filter_combined_toi_plus_minus_shots() {
     let mut repo = StatsRepository::new();
-    upsert_skater_full(&mut repo, 100, "Elite",    15, 25, 82, 1400, 20, 200);
-    upsert_skater_full(&mut repo, 101, "LowTOI",   15, 25, 82,  800, 15, 180);
+    upsert_skater_full(&mut repo, 100, "Elite", 15, 25, 82, 1400, 20, 200);
+    upsert_skater_full(&mut repo, 101, "LowTOI", 15, 25, 82, 800, 15, 180);
     upsert_skater_full(&mut repo, 102, "Negative", 15, 25, 82, 1300, -10, 190);
-    upsert_skater_full(&mut repo, 103, "FewShots", 15, 25, 82, 1250,   5,  60);
+    upsert_skater_full(&mut repo, 103, "FewShots", 15, 25, 82, 1250, 5, 60);
 
     let mut f = PlayerFilter::new();
-    f.toi_min_sec     = Some(1200.0);
-    f.plus_minus_min  = Some(0);
-    f.shots_pg_min    = Some(2.0);
+    f.toi_min_sec = Some(1200.0);
+    f.plus_minus_min = Some(0);
+    f.shots_pg_min = Some(2.0);
     let result = f.apply_views(views(&repo).into_iter());
     assert_eq!(result.len(), 1, "only Elite should pass all three filters");
     assert_eq!(result[0].identity.full_name, "Elite");

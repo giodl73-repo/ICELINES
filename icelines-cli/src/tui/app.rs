@@ -69,9 +69,9 @@ pub(crate) fn parse_picker_date(raw: &str) -> Result<String, String> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum QueryMode {
-    Build,      // normal — editing fields, viewing results
-    SaveName,   // typing a name to save the current query
-    LoadList,   // browsing saved queries to load
+    Build,    // normal — editing fields, viewing results
+    SaveName, // typing a name to save the current query
+    LoadList, // browsing saved queries to load
     /// Phase Lindsay L.3.4 — search-as-you-type sort picker overlay.
     /// User types substring against `StatId::cli_key()`; up/down moves
     /// selection within filtered list; Enter selects, Esc cancels.
@@ -81,7 +81,7 @@ pub enum QueryMode {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Screen {
     Home,
-    Team(String),  // team abbreviation
+    Team(String), // team abbreviation
     /// PlayerId-keyed player card. D6 auto-pop UX: renderer shows a
     /// placeholder if pid isn't in the active window.
     PlayerById(PlayerId),
@@ -107,7 +107,7 @@ pub enum Screen {
     Goalies,                         // league goalie leaderboard (Phase G.3)
     /// PlayerId-keyed goalie detail. D6 auto-pop UX on missing pid.
     GoalieDetailById(PlayerId),
-    Transactions,                    // league-wide moves feed (Phase T.5)
+    Transactions, // league-wide moves feed (Phase T.5)
 }
 
 pub struct App {
@@ -169,7 +169,7 @@ pub struct App {
     pub playoffs_series: usize, // series index within the current round
     // Query manager state
     pub query_fields: Vec<crate::tui::screens::queries::QueryField>,
-    pub query_field_idx: usize,      // which field row is active
+    pub query_field_idx: usize, // which field row is active
     /// Phase Lindsay L.3.3 — categorized sections grouping `query_fields`.
     /// Tab toggles the section containing `query_field_idx`. Collapsed
     /// sections hide their fields from cursor + render.
@@ -318,10 +318,7 @@ impl App {
             repo: StatsRepository::new(),
             active_season_typed: Season(icelines_core::CURRENT_SEASON),
             active_type: SeasonType::Regular,
-            league_context_window: (
-                Season(icelines_core::CURRENT_SEASON),
-                SeasonType::Regular,
-            ),
+            league_context_window: (Season(icelines_core::CURRENT_SEASON), SeasonType::Regular),
         }
     }
 
@@ -367,7 +364,8 @@ impl App {
     /// wasn't active in). D6 auto-pop UX is the load-bearing
     /// mitigation for the None case.
     pub fn view_for(&self, pid: PlayerId) -> Option<PlayerView<'_>> {
-        self.repo.view(pid, self.active_season_typed, self.active_type)
+        self.repo
+            .view(pid, self.active_season_typed, self.active_type)
     }
 
     /// Handle an action. Returns true if the app should quit.
@@ -410,9 +408,7 @@ impl App {
         // ('f' = AddToFavorites, 'r' = Refresh, etc.) become text input
         // instead of firing the global hotkey. Without this, typing
         // "fred" as a query name dispatched AddToFavorites on the 'f'.
-        if self.screen == Screen::Queries
-            && matches!(self.query_mode, QueryMode::SaveName)
-        {
+        if self.screen == Screen::Queries && matches!(self.query_mode, QueryMode::SaveName) {
             return self.handle_query_save_name(action);
         }
 
@@ -440,7 +436,8 @@ impl App {
                     // Sort by field is silently ignored once the picker
                     // has fired (sticky-pick UX wart).
                     self.sort_stat_pick = None;
-                    self.status = "Sort pick cleared  ·  / picker  s=save  l=load  r=reset".to_owned();
+                    self.status =
+                        "Sort pick cleared  ·  / picker  s=save  l=load  r=reset".to_owned();
                 } else {
                     self.go_back();
                 }
@@ -510,13 +507,14 @@ impl App {
                                 // collapsed section AFTER the current
                                 // cursor's section. If found, expand
                                 // it and land on its first field.
-                                let cur_section = crate::tui::screens::queries
-                                    ::section_index_for_field(
+                                let cur_section =
+                                    crate::tui::screens::queries::section_index_for_field(
                                         &self.query_sections,
                                         self.query_field_idx,
                                     )
                                     .unwrap_or(0);
-                                let next_collapsed = self.query_sections
+                                let next_collapsed = self
+                                    .query_sections
                                     .iter()
                                     .enumerate()
                                     .skip(cur_section + 1)
@@ -524,9 +522,7 @@ impl App {
                                     .map(|(i, _)| i);
                                 if let Some(idx) = next_collapsed {
                                     self.query_sections[idx].expanded = true;
-                                    if let Some(&first) = self.query_sections[idx]
-                                        .fields.first()
-                                    {
+                                    if let Some(&first) = self.query_sections[idx].fields.first() {
                                         self.query_field_idx = first;
                                     }
                                 } else {
@@ -598,8 +594,8 @@ impl App {
                             } else {
                                 // pos == 0 → at first visible. Try
                                 // to expand a previous collapsed section.
-                                let cur_section = crate::tui::screens::queries
-                                    ::section_index_for_field(
+                                let cur_section =
+                                    crate::tui::screens::queries::section_index_for_field(
                                         &self.query_sections,
                                         self.query_field_idx,
                                     )
@@ -609,9 +605,7 @@ impl App {
                                     .find(|&i| !self.query_sections[i].expanded);
                                 if let Some(idx) = prev_collapsed {
                                     self.query_sections[idx].expanded = true;
-                                    if let Some(&last) = self.query_sections[idx]
-                                        .fields.last()
-                                    {
+                                    if let Some(&last) = self.query_sections[idx].fields.last() {
                                         self.query_field_idx = last;
                                     }
                                 }
@@ -976,8 +970,7 @@ impl App {
                     self.selected = 0;
                 } else if self.screen == Screen::Queries && self.query_mode == QueryMode::SaveName {
                     self.query_save_name.pop();
-                } else if self.screen == Screen::Queries
-                    && self.query_mode == QueryMode::SortPicker
+                } else if self.screen == Screen::Queries && self.query_mode == QueryMode::SortPicker
                 {
                     // Phase Lindsay L.3.4 — Backspace in sort picker
                     // pops the search query and resets selection.
@@ -1000,9 +993,8 @@ impl App {
                     );
                     // After collapse, cursor may now point at a hidden
                     // field — snap to nearest visible.
-                    let visible = crate::tui::screens::queries::visible_field_indices(
-                        &self.query_sections,
-                    );
+                    let visible =
+                        crate::tui::screens::queries::visible_field_indices(&self.query_sections);
                     if !visible.contains(&self.query_field_idx) {
                         if let Some(&first) = visible.first() {
                             self.query_field_idx = first;
@@ -1414,12 +1406,10 @@ impl App {
             Action::Enter => {
                 let name = self.query_save_name.trim().to_owned();
                 if !name.is_empty() {
-                    let json =
-                        crate::tui::screens::queries::fields_to_json(&self.query_fields);
+                    let json = crate::tui::screens::queries::fields_to_json(&self.query_fields);
                     if let Ok(db) = crate::db::GroupDb::open() {
                         let _ = db.save_query(&name, &json);
-                        self.status =
-                            format!("Saved query '{name}'  ·  l=load  s=save  r=reset");
+                        self.status = format!("Saved query '{name}'  ·  l=load  s=save  r=reset");
                     }
                 }
                 self.query_mode = QueryMode::Build;
@@ -1593,10 +1583,7 @@ impl App {
     /// Same as `boot_load` but accepts an explicit `SnapshotStore`. Used
     /// by tests so they can point at a tempdir or a custom fixture
     /// without touching `~/.icelines/`.
-    pub fn boot_load_with_store(
-        &mut self,
-        store: &icelines_fetch::snapshot::SnapshotStore,
-    ) {
+    pub fn boot_load_with_store(&mut self, store: &icelines_fetch::snapshot::SnapshotStore) {
         use icelines_fetch::stats_loader::{format_missing_sources, load_into_repo};
         match load_into_repo(self.active_season_typed, self.active_type, store) {
             Ok(outcome) => {
@@ -1794,10 +1781,8 @@ impl App {
             Screen::Search => {
                 // Same filter shape as screens::search::search_results.
                 let views = self.views();
-                let results = crate::tui::screens::search::search_results(
-                    &views,
-                    &self.search_query,
-                );
+                let results =
+                    crate::tui::screens::search::search_results(&views, &self.search_query);
                 results
                     .get(self.selected)
                     .map(|v| (v.identity.name_normalized.clone(), v.full_name().to_owned()))
@@ -1829,7 +1814,9 @@ impl App {
                             views
                                 .iter()
                                 .find(|v| v.identity.name_normalized.contains(&norm))
-                                .map(|v| (v.identity.name_normalized.clone(), v.full_name().to_owned()))
+                                .map(|v| {
+                                    (v.identity.name_normalized.clone(), v.full_name().to_owned())
+                                })
                         })
                     })
             }
@@ -2047,10 +2034,8 @@ impl App {
                 // Nth match). Fixed by re-running search_results to find
                 // the actual selected match's PlayerId.
                 let views = self.views();
-                let results = crate::tui::screens::search::search_results(
-                    &views,
-                    &self.search_query,
-                );
+                let results =
+                    crate::tui::screens::search::search_results(&views, &self.search_query);
                 if let Some(v) = results.get(self.selected) {
                     let pid = v.identity.id;
                     self.prev_screen = Some(Screen::Search);
@@ -2060,10 +2045,8 @@ impl App {
             }
             Screen::Depth => {
                 let views = self.views();
-                let strength = icelines_core::cross_team::compute_team_strength_views(
-                    &views,
-                    self.depth_mode,
-                );
+                let strength =
+                    icelines_core::cross_team::compute_team_strength_views(&views, self.depth_mode);
                 let mut ranked: Vec<String> = strength.keys().cloned().collect();
                 ranked.sort_by(|a, b| {
                     strength[b]
@@ -2161,8 +2144,9 @@ impl App {
         //   League → Depth → Queries → Goalies → Scores → Schedule
         //   → Transactions → Playoffs → League
         let next = match &self.screen {
-            Screen::Home | Screen::Team(_) | Screen::PlayerById(_)
-            | Screen::CompsById(_) => Screen::Depth,
+            Screen::Home | Screen::Team(_) | Screen::PlayerById(_) | Screen::CompsById(_) => {
+                Screen::Depth
+            }
             Screen::Depth | Screen::DepthTeam(_) => Screen::Queries,
             Screen::Queries | Screen::Projections | Screen::Search => Screen::Goalies,
             Screen::Goalies | Screen::GoalieDetailById(_) => Screen::Tonight,
@@ -2187,8 +2171,7 @@ impl App {
     pub(crate) fn cycle_screen_back(&mut self) {
         self.query_results_focused = false;
         let prev = match &self.screen {
-            Screen::Home | Screen::Team(_) | Screen::PlayerById(_)
-            | Screen::CompsById(_) => {
+            Screen::Home | Screen::Team(_) | Screen::PlayerById(_) | Screen::CompsById(_) => {
                 Screen::Playoffs
             }
             Screen::Depth | Screen::DepthTeam(_) => Screen::Home,
@@ -2253,7 +2236,7 @@ mod tests {
         assert_eq!(app.screen, Screen::Depth, "Home→Depth");
         app.handle(Action::Tab);
         assert_eq!(app.screen, Screen::Queries, "Depth→Stats(Queries)");
-        app.cycle_screen();  // bypass Lindsay Tab-on-Queries intercept
+        app.cycle_screen(); // bypass Lindsay Tab-on-Queries intercept
         assert_eq!(app.screen, Screen::Goalies, "Stats→Goalies");
         app.handle(Action::Tab);
         assert_eq!(app.screen, Screen::Tonight, "Goalies→Scores");
@@ -2274,8 +2257,8 @@ mod tests {
     #[test]
     fn l0_lindsay_tui_tab_on_queries_toggles_section() {
         let mut app = App::new(false);
-        app.handle(Action::Tab);  // Home → Depth
-        app.handle(Action::Tab);  // Depth → Queries
+        app.handle(Action::Tab); // Home → Depth
+        app.handle(Action::Tab); // Depth → Queries
         assert_eq!(app.screen, Screen::Queries);
 
         // Default: cursor on field 0 (Sort by) which is in section 0.
@@ -2285,22 +2268,31 @@ mod tests {
 
         // Tab → toggles section 0 (cursor's section). Screen does NOT advance.
         app.handle(Action::Tab);
-        assert_eq!(app.screen, Screen::Queries,
-            "Tab on Queries toggles section, doesn't advance screen");
-        assert_eq!(app.query_sections[0].expanded, !initial_s0,
-            "section 0 expansion flipped by Tab");
+        assert_eq!(
+            app.screen,
+            Screen::Queries,
+            "Tab on Queries toggles section, doesn't advance screen"
+        );
+        assert_eq!(
+            app.query_sections[0].expanded, !initial_s0,
+            "section 0 expansion flipped by Tab"
+        );
 
         // After collapsing section 0, field 0 is hidden. Cursor
         // snapped to the next visible field — field 1 (Position),
         // which lives in section 1.
-        assert_eq!(app.query_field_idx, 1,
-            "cursor snaps to next visible field after section collapse");
+        assert_eq!(
+            app.query_field_idx, 1,
+            "cursor snaps to next visible field after section collapse"
+        );
 
         // Second Tab now targets section 1 (where the cursor lives).
         let initial_s1 = app.query_sections[1].expanded;
         app.handle(Action::Tab);
-        assert_eq!(app.query_sections[1].expanded, !initial_s1,
-            "second Tab toggles section 1 (cursor's new home)");
+        assert_eq!(
+            app.query_sections[1].expanded, !initial_s1,
+            "second Tab toggles section 1 (cursor's new home)"
+        );
         // Section 0 still collapsed — wasn't touched by the second Tab.
         assert_eq!(app.query_sections[0].expanded, !initial_s0);
     }
@@ -2409,7 +2401,10 @@ mod tests {
         app.selected = 0;
         app.handle(Action::Enter); // should not panic even with empty player list
                                    // With no players, selected player not found — stays on Team screen
-        assert!(matches!(app.screen, Screen::Team(_) | Screen::PlayerById(_)));
+        assert!(matches!(
+            app.screen,
+            Screen::Team(_) | Screen::PlayerById(_)
+        ));
     }
 
     #[test]
@@ -3165,7 +3160,10 @@ mod tests {
 
         let mut app = App::new(true);
         // Sanity: pre-load app has empty repo.
-        assert!(app.views().is_empty(), "App::new must start with empty repo");
+        assert!(
+            app.views().is_empty(),
+            "App::new must start with empty repo"
+        );
 
         app.boot_load_with_store(&store);
 
@@ -3217,11 +3215,9 @@ mod tests {
         // No public introspection on cache size, but compile() round-trip
         // must yield real lines for a known player. Connor McDavid (8478402)
         // is in every recent bundled season.
-        let mcdavid_view = app.repo.view(
-            PlayerId(8478402),
-            app.active_season_typed,
-            app.active_type,
-        );
+        let mcdavid_view =
+            app.repo
+                .view(PlayerId(8478402), app.active_season_typed, app.active_type);
         assert!(
             mcdavid_view.is_some(),
             "McDavid (8478402) must appear in the bundled current-season pool",

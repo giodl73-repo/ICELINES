@@ -31,15 +31,15 @@ use crate::tui::app::App;
 /// even with all color stripped, every row is unambiguous.
 pub fn glyph_for(k: TransactionKind) -> &'static str {
     match k {
-        TransactionKind::Trade            => "⇄",
-        TransactionKind::Signing          => "$",
-        TransactionKind::Recall           => "↑",
-        TransactionKind::Reassignment     => "↓",
-        TransactionKind::WaiverPlacement  => "⊘",
-        TransactionKind::WaiverClear      => "↻",
-        TransactionKind::WaiverClaim      => "+",
-        TransactionKind::InjuryReserve    => "✚",
-        TransactionKind::Other            => "◇",
+        TransactionKind::Trade => "⇄",
+        TransactionKind::Signing => "$",
+        TransactionKind::Recall => "↑",
+        TransactionKind::Reassignment => "↓",
+        TransactionKind::WaiverPlacement => "⊘",
+        TransactionKind::WaiverClear => "↻",
+        TransactionKind::WaiverClaim => "+",
+        TransactionKind::InjuryReserve => "✚",
+        TransactionKind::Other => "◇",
     }
 }
 
@@ -47,30 +47,30 @@ pub fn glyph_for(k: TransactionKind) -> &'static str {
 /// protanopia) — WaiverClaim uses Blue+Bold instead.
 pub fn color_for(k: TransactionKind) -> Color {
     match k {
-        TransactionKind::Trade            => Color::Cyan,
-        TransactionKind::Signing          => Color::Yellow,
-        TransactionKind::Recall           => Color::Green,
-        TransactionKind::Reassignment     => Color::DarkGray,
-        TransactionKind::WaiverPlacement  => Color::Blue,
-        TransactionKind::WaiverClear      => Color::Blue,
-        TransactionKind::WaiverClaim      => Color::Blue,
-        TransactionKind::InjuryReserve    => Color::Red,
-        TransactionKind::Other            => Color::White,
+        TransactionKind::Trade => Color::Cyan,
+        TransactionKind::Signing => Color::Yellow,
+        TransactionKind::Recall => Color::Green,
+        TransactionKind::Reassignment => Color::DarkGray,
+        TransactionKind::WaiverPlacement => Color::Blue,
+        TransactionKind::WaiverClear => Color::Blue,
+        TransactionKind::WaiverClaim => Color::Blue,
+        TransactionKind::InjuryReserve => Color::Red,
+        TransactionKind::Other => Color::White,
     }
 }
 
 /// Capitalized kind label used in the KIND column (`Trade`, `Signing`, …).
 pub fn kind_display(k: TransactionKind) -> &'static str {
     match k {
-        TransactionKind::Trade            => "Trade",
-        TransactionKind::Signing          => "Signing",
-        TransactionKind::Recall           => "Recall",
-        TransactionKind::Reassignment     => "Reassign",
-        TransactionKind::WaiverPlacement  => "WaiverPlace",
-        TransactionKind::WaiverClear      => "WaiverClear",
-        TransactionKind::WaiverClaim      => "WaiverClaim",
-        TransactionKind::InjuryReserve    => "IR",
-        TransactionKind::Other            => "Other",
+        TransactionKind::Trade => "Trade",
+        TransactionKind::Signing => "Signing",
+        TransactionKind::Recall => "Recall",
+        TransactionKind::Reassignment => "Reassign",
+        TransactionKind::WaiverPlacement => "WaiverPlace",
+        TransactionKind::WaiverClear => "WaiverClear",
+        TransactionKind::WaiverClaim => "WaiverClaim",
+        TransactionKind::InjuryReserve => "IR",
+        TransactionKind::Other => "Other",
     }
 }
 
@@ -92,7 +92,11 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
 
     let show_search = app.tx_search_mode || !app.tx_search_query.is_empty();
     let constraints: Vec<Constraint> = if show_search {
-        vec![Constraint::Length(1), Constraint::Min(0), Constraint::Length(1)]
+        vec![
+            Constraint::Length(1),
+            Constraint::Min(0),
+            Constraint::Length(1),
+        ]
     } else {
         vec![Constraint::Min(0), Constraint::Length(1)]
     };
@@ -113,7 +117,9 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
 
 fn render_search_bar(f: &mut Frame, app: &App, area: Rect) {
     let dim = Style::default().fg(Color::DarkGray);
-    let cyan = Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD);
+    let cyan = Style::default()
+        .fg(Color::Cyan)
+        .add_modifier(Modifier::BOLD);
     let cursor = if app.tx_search_mode { "_" } else { "" };
     let line = Line::from(vec![
         Span::styled("  /", cyan),
@@ -148,25 +154,28 @@ fn title_text(app: &App) -> Line<'static> {
 }
 
 pub fn filter_rows<'a>(app: &'a App) -> Vec<&'a Transaction> {
-    app.transactions.iter().filter(|tx| {
-        if let Some(team) = app.tx_team_filter.as_deref() {
-            let row_label = tx.team.as_ref().map(|t| t.0.as_str()).unwrap_or("LEAGUE");
-            if !row_label.eq_ignore_ascii_case(team) {
+    app.transactions
+        .iter()
+        .filter(|tx| {
+            if let Some(team) = app.tx_team_filter.as_deref() {
+                let row_label = tx.team.as_ref().map(|t| t.0.as_str()).unwrap_or("LEAGUE");
+                if !row_label.eq_ignore_ascii_case(team) {
+                    return false;
+                }
+            }
+            if let Some(k) = app.tx_kind_filter {
+                if tx.kind != k {
+                    return false;
+                }
+            }
+            if !app.tx_search_query.trim().is_empty()
+                && !description_matches_query(&tx.description, &app.tx_search_query)
+            {
                 return false;
             }
-        }
-        if let Some(k) = app.tx_kind_filter {
-            if tx.kind != k {
-                return false;
-            }
-        }
-        if !app.tx_search_query.trim().is_empty()
-            && !description_matches_query(&tx.description, &app.tx_search_query)
-        {
-            return false;
-        }
-        true
-    }).collect()
+            true
+        })
+        .collect()
 }
 
 fn render_rows(f: &mut Frame, app: &App, area: Rect, rows: &[&Transaction]) {
@@ -190,45 +199,54 @@ fn render_rows(f: &mut Frame, app: &App, area: Rect, rows: &[&Transaction]) {
     let desc_w = inner_w.saturating_sub(fixed).max(20);
 
     let selected = app.tx_selected.min(rows.len().saturating_sub(1));
-    let items: Vec<ListItem> = rows.iter().enumerate().map(|(i, tx)| {
-        let team_label = tx.team.as_ref().map(|t| t.0.as_str()).unwrap_or("LEAGUE");
-        let glyph      = glyph_for(tx.kind);
-        let kind_label = kind_display(tx.kind);
-        let kind_color = color_for(tx.kind);
-        let date       = tx.date.as_str();
-        let desc       = truncate_with_ellipsis(&tx.description, desc_w);
+    let items: Vec<ListItem> = rows
+        .iter()
+        .enumerate()
+        .map(|(i, tx)| {
+            let team_label = tx.team.as_ref().map(|t| t.0.as_str()).unwrap_or("LEAGUE");
+            let glyph = glyph_for(tx.kind);
+            let kind_label = kind_display(tx.kind);
+            let kind_color = color_for(tx.kind);
+            let date = tx.date.as_str();
+            let desc = truncate_with_ellipsis(&tx.description, desc_w);
 
-        // GLASS contract: only the kind cell is colored (glyph + label
-        // together, bold). All other cells default fg.
-        let row_style = if i == selected {
-            Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
-        } else {
-            Style::default()
-        };
-        let kind_style = if i == selected {
-            // On the selected row, color is taken over by the highlight bg.
-            // Bold + glyph still distinguishes the kind even when fg is
-            // overridden by the selection.
-            row_style
-        } else {
-            Style::default().fg(kind_color).add_modifier(Modifier::BOLD)
-        };
+            // GLASS contract: only the kind cell is colored (glyph + label
+            // together, bold). All other cells default fg.
+            let row_style = if i == selected {
+                Style::default()
+                    .fg(Color::Black)
+                    .bg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD)
+            } else {
+                Style::default()
+            };
+            let kind_style = if i == selected {
+                // On the selected row, color is taken over by the highlight bg.
+                // Bold + glyph still distinguishes the kind even when fg is
+                // overridden by the selection.
+                row_style
+            } else {
+                Style::default().fg(kind_color).add_modifier(Modifier::BOLD)
+            };
 
-        let line = Line::from(vec![
-            Span::styled(format!("  {team_label:<6}"), row_style),
-            Span::styled(format!(" {glyph} {kind_label:<10}"), kind_style),
-            Span::styled(format!(" {date:<10}"), row_style),
-            Span::styled(format!(" {desc}"), row_style),
-        ]);
-        ListItem::new(line)
-    }).collect();
+            let line = Line::from(vec![
+                Span::styled(format!("  {team_label:<6}"), row_style),
+                Span::styled(format!(" {glyph} {kind_label:<10}"), kind_style),
+                Span::styled(format!(" {date:<10}"), row_style),
+                Span::styled(format!(" {desc}"), row_style),
+            ]);
+            ListItem::new(line)
+        })
+        .collect();
 
     f.render_widget(List::new(items), area);
 }
 
 fn render_footer(f: &mut Frame, area: Rect) {
     let dim = Style::default().fg(Color::DarkGray);
-    let cyan = Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD);
+    let cyan = Style::default()
+        .fg(Color::Cyan)
+        .add_modifier(Modifier::BOLD);
     let line = Line::from(vec![
         Span::styled("  /", cyan),
         Span::styled(":search  ", dim),
@@ -259,7 +277,9 @@ fn render_empty_legend_card(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(outer, area);
 
     let dim = Style::default().fg(Color::DarkGray);
-    let gold = Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD);
+    let gold = Style::default()
+        .fg(Color::Yellow)
+        .add_modifier(Modifier::BOLD);
 
     let coverage_line = format!(
         "  Coverage begins {}.",
@@ -309,8 +329,14 @@ fn glyph_legend_line(k: TransactionKind) -> Line<'static> {
 /// Sorted, deduped list of every team label that appears in the loaded
 /// transactions, including the synthetic `LEAGUE` bucket for teamless rows.
 pub fn transactions_teams(transactions: &[Transaction]) -> Vec<String> {
-    let mut teams: Vec<String> = transactions.iter()
-        .map(|tx| tx.team.as_ref().map(|t| t.0.clone()).unwrap_or_else(|| "LEAGUE".to_owned()))
+    let mut teams: Vec<String> = transactions
+        .iter()
+        .map(|tx| {
+            tx.team
+                .as_ref()
+                .map(|t| t.0.clone())
+                .unwrap_or_else(|| "LEAGUE".to_owned())
+        })
         .collect();
     teams.sort();
     teams.dedup();
@@ -343,7 +369,7 @@ pub fn cycle_team_backward(current: Option<&str>, teams: &[String]) -> Option<St
             match pos {
                 Some(0) => None, // wrap back to "all teams"
                 Some(i) => Some(teams[i - 1].clone()),
-                None    => None, // current isn't in list — drop the filter
+                None => None, // current isn't in list — drop the filter
             }
         }
     }
@@ -352,7 +378,7 @@ pub fn cycle_team_backward(current: Option<&str>, teams: &[String]) -> Option<St
 /// Cycle kind filter forward: None → first → next → ... → last → None (wrap).
 pub fn cycle_kind_forward(
     current: Option<TransactionKind>,
-    cycle:   &[TransactionKind],
+    cycle: &[TransactionKind],
 ) -> Option<TransactionKind> {
     match current {
         None => cycle.first().copied(),
@@ -369,7 +395,7 @@ pub fn cycle_kind_forward(
 /// Cycle kind filter backward: None → last → prev → ... → first → None (wrap).
 pub fn cycle_kind_backward(
     current: Option<TransactionKind>,
-    cycle:   &[TransactionKind],
+    cycle: &[TransactionKind],
 ) -> Option<TransactionKind> {
     if cycle.is_empty() {
         return None;
@@ -381,7 +407,7 @@ pub fn cycle_kind_backward(
             match pos {
                 Some(0) => None,
                 Some(i) => Some(cycle[i - 1]),
-                None    => None,
+                None => None,
             }
         }
     }
@@ -434,9 +460,7 @@ mod tests {
         // BENCH/GLASS-mandated colorblind safety: every kind has its own
         // glyph so the rendered text alone is sufficient to distinguish.
         use std::collections::HashSet;
-        let glyphs: HashSet<&str> = TransactionKind::ALL.iter()
-            .map(|k| glyph_for(*k))
-            .collect();
+        let glyphs: HashSet<&str> = TransactionKind::ALL.iter().map(|k| glyph_for(*k)).collect();
         assert_eq!(
             glyphs.len(),
             TransactionKind::ALL.len(),
@@ -453,7 +477,8 @@ mod tests {
             let text: String = line.spans.iter().map(|s| s.content.as_ref()).collect();
             assert!(
                 text.contains(glyph_for(*k)),
-                "legend line for {:?} must include its glyph, got: {text}", k,
+                "legend line for {:?} must include its glyph, got: {text}",
+                k,
             );
         }
     }
@@ -461,11 +486,15 @@ mod tests {
     #[test]
     fn l0_kind_display_label_uniqueness() {
         use std::collections::HashSet;
-        let labels: HashSet<&str> = TransactionKind::ALL.iter()
+        let labels: HashSet<&str> = TransactionKind::ALL
+            .iter()
             .map(|k| kind_display(*k))
             .collect();
-        assert_eq!(labels.len(), TransactionKind::ALL.len(),
-            "every kind must have a unique display label");
+        assert_eq!(
+            labels.len(),
+            TransactionKind::ALL.len(),
+            "every kind must have a unique display label"
+        );
     }
 
     #[test]
@@ -475,7 +504,8 @@ mod tests {
 
     #[test]
     fn l0_truncate_with_ellipsis_long_appends_dots() {
-        let s = "Acquired D Ryan McDonagh from NSH for D Philippe Myers and a 2026 third-round pick";
+        let s =
+            "Acquired D Ryan McDonagh from NSH for D Philippe Myers and a 2026 third-round pick";
         let t = truncate_with_ellipsis(s, 30);
         assert_eq!(t.chars().count(), 30, "truncated to exact width");
         assert!(t.ends_with('…'), "must end with ellipsis, got: {t}");
@@ -498,7 +528,7 @@ mod tests {
     fn l0_filter_rows_no_filter_returns_all() {
         let mut app = App::new(false);
         app.transactions = vec![
-            fixture_tx(TransactionKind::Trade,   "Trade row"),
+            fixture_tx(TransactionKind::Trade, "Trade row"),
             fixture_tx(TransactionKind::Signing, "Signing row"),
         ];
         let rows = filter_rows(&app);
@@ -509,7 +539,7 @@ mod tests {
     fn l0_filter_rows_team_filter_drops_non_matching() {
         let mut app = App::new(false);
         app.transactions = vec![
-            fixture_tx(TransactionKind::Trade,   "Trade row"),  // EDM
+            fixture_tx(TransactionKind::Trade, "Trade row"), // EDM
             Transaction {
                 date: "2026-04-29".to_owned(),
                 team: Some(TeamAbbr("CHI".to_owned())),
@@ -530,9 +560,9 @@ mod tests {
     fn l0_filter_rows_kind_filter_drops_non_matching() {
         let mut app = App::new(false);
         app.transactions = vec![
-            fixture_tx(TransactionKind::Trade,   "Trade row"),
+            fixture_tx(TransactionKind::Trade, "Trade row"),
             fixture_tx(TransactionKind::Signing, "Signing row"),
-            fixture_tx(TransactionKind::Recall,  "Recall row"),
+            fixture_tx(TransactionKind::Recall, "Recall row"),
         ];
         app.tx_kind_filter = Some(TransactionKind::Trade);
         let rows = filter_rows(&app);
@@ -562,22 +592,25 @@ mod tests {
         term.draw(|f| {
             let area = f.area();
             super::render(f, app, area);
-        }).unwrap();
+        })
+        .unwrap();
         buffer_text(term.backend().buffer())
     }
 
     fn one_row_per_kind() -> Vec<Transaction> {
-        TransactionKind::ALL.iter().enumerate().map(|(i, k)| {
-            Transaction {
-                date:               format!("2026-04-{:02}", 10 + i),
-                team:               Some(TeamAbbr("EDM".to_owned())),
-                kind:               *k,
-                description:        format!("description for {}", kind_display(*k)),
-                id:                 format!("id-{i}"),
-                trade_group_id:     None,
+        TransactionKind::ALL
+            .iter()
+            .enumerate()
+            .map(|(i, k)| Transaction {
+                date: format!("2026-04-{:02}", 10 + i),
+                team: Some(TeamAbbr("EDM".to_owned())),
+                kind: *k,
+                description: format!("description for {}", kind_display(*k)),
+                id: format!("id-{i}"),
+                trade_group_id: None,
                 classifier_version: 1,
-            }
-        }).collect()
+            })
+            .collect()
     }
 
     #[test]
@@ -628,8 +661,10 @@ mod tests {
         app.transactions_stale = true;
 
         let text = render_transactions_to_text(&app);
-        assert!(text.contains("[STALE]"),
-            "stale flag must render '[STALE]' in title, got:\n{text}");
+        assert!(
+            text.contains("[STALE]"),
+            "stale flag must render '[STALE]' in title, got:\n{text}"
+        );
     }
 
     #[test]
@@ -639,41 +674,57 @@ mod tests {
         let app = App::new(false);
         let text = render_transactions_to_text(&app);
         for k in TransactionKind::ALL {
-            assert!(text.contains(glyph_for(*k)),
-                "empty-state legend missing glyph for {:?}", k);
+            assert!(
+                text.contains(glyph_for(*k)),
+                "empty-state legend missing glyph for {:?}",
+                k
+            );
         }
-        assert!(text.contains("Coverage begins"),
-            "empty-state must hint at coverage starting season, got:\n{text}");
+        assert!(
+            text.contains("Coverage begins"),
+            "empty-state must hint at coverage starting season, got:\n{text}"
+        );
     }
 
     #[test]
     fn l1_tui_long_description_truncated_with_ellipsis() {
         let mut app = App::new(false);
-        let long = "Acquired D Ryan McDonagh from NSH for D Philippe Myers and a 2026 third-round pick \
+        let long =
+            "Acquired D Ryan McDonagh from NSH for D Philippe Myers and a 2026 third-round pick \
                     plus future considerations and a conditional 2027 second";
         app.transactions = vec![fixture_tx(TransactionKind::Trade, long)];
         app.transactions_fetched_at = "2026-04-30".to_owned();
 
         let text = render_transactions_to_text(&app);
-        assert!(text.contains("…"),
-            "long description must be truncated with ellipsis, got:\n{text}");
+        assert!(
+            text.contains("…"),
+            "long description must be truncated with ellipsis, got:\n{text}"
+        );
         // No newline mid-description (description must NEVER wrap).
         // Loose check: each line in the buffer is exactly the buffer width
         // chars long, so wrapping wouldn't split a single tx into two
         // visible lines. Sanity-check by counting lines starting with "  EDM"
         // — should be exactly one.
         let edm_lines = text.lines().filter(|l| l.contains("EDM")).count();
-        assert_eq!(edm_lines, 1,
-            "description must not wrap (expected 1 EDM row, got {edm_lines})");
+        assert_eq!(
+            edm_lines, 1,
+            "description must not wrap (expected 1 EDM row, got {edm_lines})"
+        );
     }
 
     #[test]
     fn l0_filter_rows_search_query_substring_match() {
         let mut app = App::new(false);
         app.transactions = vec![
-            fixture_tx(TransactionKind::Trade,   "Acquired D Ryan McDonagh from NSH"),
-            fixture_tx(TransactionKind::Signing, "Signed F Connor Bedard to a 8-year extension"),
-            fixture_tx(TransactionKind::Recall,  "Recalled F Vasily Podkolzin from Bakersfield"),
+            fixture_tx(TransactionKind::Trade, "Acquired D Ryan McDonagh from NSH"),
+            fixture_tx(
+                TransactionKind::Signing,
+                "Signed F Connor Bedard to a 8-year extension",
+            ),
+            fixture_tx(
+                TransactionKind::Recall,
+                "Recalled F Vasily Podkolzin from Bakersfield",
+            ),
         ];
         app.tx_search_query = "bedard".to_owned();
         let rows = filter_rows(&app);
@@ -685,7 +736,7 @@ mod tests {
     fn l0_filter_rows_search_query_empty_matches_all() {
         let mut app = App::new(false);
         app.transactions = vec![
-            fixture_tx(TransactionKind::Trade,   "row a"),
+            fixture_tx(TransactionKind::Trade, "row a"),
             fixture_tx(TransactionKind::Signing, "row b"),
         ];
         app.tx_search_query = "".to_owned();
@@ -698,8 +749,11 @@ mod tests {
     fn l0_filter_rows_search_combines_with_other_filters() {
         let mut app = App::new(false);
         app.transactions = vec![
-            fixture_tx(TransactionKind::Trade,   "Acquired D Ryan McDonagh from NSH"),  // EDM
-            fixture_tx(TransactionKind::Signing, "Signed F McDonagh to a 1-year deal"), // EDM (hypothetical)
+            fixture_tx(TransactionKind::Trade, "Acquired D Ryan McDonagh from NSH"), // EDM
+            fixture_tx(
+                TransactionKind::Signing,
+                "Signed F McDonagh to a 1-year deal",
+            ), // EDM (hypothetical)
         ];
         app.tx_search_query = "mcdonagh".to_owned();
         app.tx_kind_filter = Some(TransactionKind::Trade);
@@ -716,10 +770,14 @@ mod tests {
         app.tx_search_mode = true;
         app.tx_search_query = "mcd".to_owned();
         let text = render_transactions_to_text(&app);
-        assert!(text.contains("search:"),
-            "search bar must render when mode is active, got:\n{text}");
-        assert!(text.contains("mcd"),
-            "search bar must echo the typed query, got:\n{text}");
+        assert!(
+            text.contains("search:"),
+            "search bar must render when mode is active, got:\n{text}"
+        );
+        assert!(
+            text.contains("mcd"),
+            "search bar must echo the typed query, got:\n{text}"
+        );
     }
 
     // ── Cycle ring helpers (forward + Shift-backward) ────────────────
@@ -731,22 +789,43 @@ mod tests {
     #[test]
     fn l0_cycle_team_forward_walks_in_order() {
         let teams = three_teams();
-        assert_eq!(cycle_team_forward(None,        &teams), Some("BOS".to_owned()));
-        assert_eq!(cycle_team_forward(Some("BOS"), &teams), Some("CHI".to_owned()));
-        assert_eq!(cycle_team_forward(Some("CHI"), &teams), Some("EDM".to_owned()));
-        assert_eq!(cycle_team_forward(Some("EDM"), &teams), None,
-            "wraps from last → all teams");
+        assert_eq!(cycle_team_forward(None, &teams), Some("BOS".to_owned()));
+        assert_eq!(
+            cycle_team_forward(Some("BOS"), &teams),
+            Some("CHI".to_owned())
+        );
+        assert_eq!(
+            cycle_team_forward(Some("CHI"), &teams),
+            Some("EDM".to_owned())
+        );
+        assert_eq!(
+            cycle_team_forward(Some("EDM"), &teams),
+            None,
+            "wraps from last → all teams"
+        );
     }
 
     #[test]
     fn l0_cycle_team_backward_walks_in_reverse() {
         let teams = three_teams();
-        assert_eq!(cycle_team_backward(None,        &teams), Some("EDM".to_owned()),
-            "Shift-T from None must jump to the last team");
-        assert_eq!(cycle_team_backward(Some("EDM"), &teams), Some("CHI".to_owned()));
-        assert_eq!(cycle_team_backward(Some("CHI"), &teams), Some("BOS".to_owned()));
-        assert_eq!(cycle_team_backward(Some("BOS"), &teams), None,
-            "wraps from first → all teams");
+        assert_eq!(
+            cycle_team_backward(None, &teams),
+            Some("EDM".to_owned()),
+            "Shift-T from None must jump to the last team"
+        );
+        assert_eq!(
+            cycle_team_backward(Some("EDM"), &teams),
+            Some("CHI".to_owned())
+        );
+        assert_eq!(
+            cycle_team_backward(Some("CHI"), &teams),
+            Some("BOS".to_owned())
+        );
+        assert_eq!(
+            cycle_team_backward(Some("BOS"), &teams),
+            None,
+            "wraps from first → all teams"
+        );
     }
 
     #[test]
@@ -756,19 +835,23 @@ mod tests {
         // Shift-back 4 times: None → EDM → CHI → BOS → None
         // End at the start.
         let mut state: Option<String> = None;
-        for _ in 0..4 { state = cycle_team_forward(state.as_deref(), &teams); }
+        for _ in 0..4 {
+            state = cycle_team_forward(state.as_deref(), &teams);
+        }
         assert_eq!(state, None, "4 forwards on a 3-list must wrap to None");
-        for _ in 0..4 { state = cycle_team_backward(state.as_deref(), &teams); }
+        for _ in 0..4 {
+            state = cycle_team_backward(state.as_deref(), &teams);
+        }
         assert_eq!(state, None, "4 backwards must also wrap to None");
     }
 
     #[test]
     fn l0_cycle_team_empty_list_safe() {
         let teams: Vec<String> = vec![];
-        assert_eq!(cycle_team_forward(None,        &teams), None);
-        assert_eq!(cycle_team_backward(None,       &teams), None);
+        assert_eq!(cycle_team_forward(None, &teams), None);
+        assert_eq!(cycle_team_backward(None, &teams), None);
         assert_eq!(cycle_team_forward(Some("ANY"), &teams), None);
-        assert_eq!(cycle_team_backward(Some("ANY"),&teams), None);
+        assert_eq!(cycle_team_backward(Some("ANY"), &teams), None);
     }
 
     #[test]
@@ -781,8 +864,11 @@ mod tests {
             seen.push(state);
         }
         // After ALL.len() forwards we should have seen every kind once.
-        assert_eq!(seen.iter().filter(|s| s.is_some()).count(), cycle.len(),
-            "every kind must appear exactly once during a full forward walk");
+        assert_eq!(
+            seen.iter().filter(|s| s.is_some()).count(),
+            cycle.len(),
+            "every kind must appear exactly once during a full forward walk"
+        );
         // One more tap wraps to None.
         state = cycle_kind_forward(state, cycle);
         assert_eq!(state, None);
@@ -792,8 +878,11 @@ mod tests {
     fn l0_cycle_kind_backward_walks_in_reverse() {
         let cycle = TransactionKind::ALL;
         let last = *cycle.last().unwrap();
-        assert_eq!(cycle_kind_backward(None, cycle), Some(last),
-            "Shift-K from None must jump to the last kind");
+        assert_eq!(
+            cycle_kind_backward(None, cycle),
+            Some(last),
+            "Shift-K from None must jump to the last kind"
+        );
         let second_last = cycle[cycle.len() - 2];
         assert_eq!(cycle_kind_backward(Some(last), cycle), Some(second_last));
     }
@@ -805,9 +894,14 @@ mod tests {
             // forward(backward(k)) should always reach k somewhere on the path,
             // but stronger property: backward then forward returns to k.
             let back = cycle_kind_backward(Some(k), cycle);
-            let fwd  = cycle_kind_forward(back, cycle);
-            assert_eq!(fwd, Some(k),
-                "backward then forward from {:?} must round-trip; got {:?}", k, fwd);
+            let fwd = cycle_kind_forward(back, cycle);
+            assert_eq!(
+                fwd,
+                Some(k),
+                "backward then forward from {:?} must round-trip; got {:?}",
+                k,
+                fwd
+            );
         }
     }
 
@@ -816,10 +910,12 @@ mod tests {
         let txs = vec![
             fixture_tx(TransactionKind::Trade, "EDM trade"), // team = EDM
             Transaction {
-                date: "x".into(), team: None,
+                date: "x".into(),
+                team: None,
                 kind: TransactionKind::Other,
                 description: "League-wide".into(),
-                id: "i".into(), trade_group_id: None,
+                id: "i".into(),
+                trade_group_id: None,
                 classifier_version: 1,
             },
             fixture_tx(TransactionKind::Recall, "EDM recall"), // dup team

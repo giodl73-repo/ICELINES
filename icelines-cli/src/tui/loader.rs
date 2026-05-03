@@ -10,16 +10,16 @@
 //! tokio-spawned (Send-clean) and runs in parallel with rendering.
 //! Subscribers poll `LoadState::take_transactions()` on each tick.
 
-use std::sync::{Arc, Mutex};
 use icelines_core::Transaction;
+use std::sync::{Arc, Mutex};
 
 /// Per-load transactions bundle. Empty/default when the snapshot is
 /// missing — UI renders the empty legend card in that case.
 #[derive(Debug, Clone, Default)]
 pub struct TransactionsLoad {
-    pub rows:        Vec<Transaction>,
-    pub fetched_at:  String,
-    pub stale:       bool,
+    pub rows: Vec<Transaction>,
+    pub fetched_at: String,
+    pub stale: bool,
 }
 
 /// Shared transactions-loading state readable from the event loop.
@@ -34,8 +34,8 @@ pub struct LoadState {
 #[derive(Debug)]
 struct LoadInner {
     pub transactions: TransactionsLoad,
-    pub loading:      bool,
-    pub error:        Option<String>,
+    pub loading: bool,
+    pub error: Option<String>,
 }
 
 impl LoadState {
@@ -43,8 +43,8 @@ impl LoadState {
         Self {
             inner: Arc::new(Mutex::new(LoadInner {
                 transactions: TransactionsLoad::default(),
-                loading:      true,
-                error:        None,
+                loading: true,
+                error: None,
             })),
         }
     }
@@ -74,7 +74,7 @@ impl LoadState {
     fn set_done(&self, transactions: TransactionsLoad) {
         if let Ok(mut g) = self.inner.lock() {
             g.transactions = transactions;
-            g.loading      = false;
+            g.loading = false;
         }
     }
 }
@@ -109,14 +109,14 @@ fn load_transactions_bundle() -> TransactionsLoad {
     let flags = SnapshotMetaFlags::load(&snapshots_root, &season);
     match envelope {
         Ok(env) => TransactionsLoad {
-            rows:       env.rows,
+            rows: env.rows,
             fetched_at: env.fetched_at,
-            stale:      flags.transactions_stale,
+            stale: flags.transactions_stale,
         },
         Err(_) => TransactionsLoad {
-            rows:       Vec::new(),
+            rows: Vec::new(),
             fetched_at: String::new(),
-            stale:      flags.transactions_stale,
+            stale: flags.transactions_stale,
         },
     }
 }
@@ -126,8 +126,8 @@ fn load_transactions_bundle() -> TransactionsLoad {
 #[derive(Debug, Clone, PartialEq)]
 pub enum InstallPhase {
     Idle,
-    Downloading(String), // season id
-    Done(String, u64),   // season id, KB
+    Downloading(String),   // season id
+    Done(String, u64),     // season id, KB
     Error(String, String), // season id, message
 }
 
@@ -138,15 +138,22 @@ pub struct InstallState {
 
 impl InstallState {
     pub fn new() -> Self {
-        Self { inner: Arc::new(Mutex::new(InstallPhase::Idle)) }
+        Self {
+            inner: Arc::new(Mutex::new(InstallPhase::Idle)),
+        }
     }
 
     pub fn phase(&self) -> InstallPhase {
-        self.inner.lock().map(|g| g.clone()).unwrap_or(InstallPhase::Idle)
+        self.inner
+            .lock()
+            .map(|g| g.clone())
+            .unwrap_or(InstallPhase::Idle)
     }
 
     fn set(&self, phase: InstallPhase) {
-        if let Ok(mut g) = self.inner.lock() { *g = phase; }
+        if let Ok(mut g) = self.inner.lock() {
+            *g = phase;
+        }
     }
 
     /// Drive a specific phase from a test. Bypasses the spawn_install pipeline
@@ -163,8 +170,8 @@ pub fn spawn_install(season: String, state: InstallState) {
     state.set(InstallPhase::Downloading(season.clone()));
     tokio::spawn(async move {
         match crate::commands::data::install_season_tui(&season).await {
-            Ok(kb)  => state2.set(InstallPhase::Done(season, kb)),
-            Err(e)  => state2.set(InstallPhase::Error(season, e.to_string())),
+            Ok(kb) => state2.set(InstallPhase::Done(season, kb)),
+            Err(e) => state2.set(InstallPhase::Error(season, e.to_string())),
         }
     });
 }

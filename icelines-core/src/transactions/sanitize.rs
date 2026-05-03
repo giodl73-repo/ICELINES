@@ -48,8 +48,10 @@ mod tests {
 
     #[test]
     fn l0_sanitize_collapses_whitespace_runs() {
-        assert_eq!(sanitize("Signed   F   Connor   Bedard"),
-                   "Signed F Connor Bedard");
+        assert_eq!(
+            sanitize("Signed   F   Connor   Bedard"),
+            "Signed F Connor Bedard"
+        );
     }
 
     #[test]
@@ -69,8 +71,10 @@ mod tests {
     fn l0_sanitize_preserves_unicode_letters() {
         // Hörnqvist, Slafkovský — accented characters must NOT be stripped.
         // (Diacritic stripping is a separate concern handled in name::normalize_name.)
-        assert_eq!(sanitize("Signed F Patric Hörnqvist"),
-                   "Signed F Patric Hörnqvist");
+        assert_eq!(
+            sanitize("Signed F Patric Hörnqvist"),
+            "Signed F Patric Hörnqvist"
+        );
     }
 
     #[test]

@@ -84,7 +84,6 @@ fn l1_load_into_repo_bundled_smoke_20242025_regular() {
         .any(|m| matches!(m, MissingSource::Contracts { .. })));
 }
 
-
 /// Hart.3 partial-fetch variants: bundled cold-start surfaces realtime,
 /// moneypuck, and contracts as `MissingSource`. GoalieStats are bundled
 /// for every season we ship, so they should NOT be missing here.
@@ -436,10 +435,6 @@ fn l1_load_into_repo_unknown_season_returns_season_not_bundled() {
     assert!(matches!(err, LoadError::SeasonNotBundled { .. }));
 }
 
-
-
-
-
 /// BENCH #5: stale `realtime.json` containing `[]` must surface as
 /// MissingSource::Realtime (per Hart.3.1's empty-array semantic).
 #[test]
@@ -602,7 +597,6 @@ fn l1_lindsay_current_and_max_repo_version_in_lockstep() {
          freshly-written snapshots",
     );
 }
-
 
 /// Hart.3.3 follow-up: the auto-stamping `save()` is what makes the
 /// gate work in production. Confirm: a save with version=0 in memory
@@ -1098,7 +1092,6 @@ fn l1_load_into_repo_with_populated_snapshot_contracts() {
     assert!(other.contract.is_none());
 }
 
-
 // ── Hart.4.1 v0.2 — Gap H: error-path L1 audit ─────────────────────────────
 
 /// Gap H — exercises the StatsWithoutIdentity error path. Synthesize
@@ -1134,7 +1127,13 @@ impl icelines_core::stats_catalog::Tier1Row for LindsayTestRow {
     }
 }
 
-fn write_test_report(dir: &std::path::Path, season: &str, season_type: &str, filename: &str, body: &str) {
+fn write_test_report(
+    dir: &std::path::Path,
+    season: &str,
+    season_type: &str,
+    filename: &str,
+    body: &str,
+) {
     let file_dir = dir.join(season).join(season_type);
     std::fs::create_dir_all(&file_dir).unwrap();
     std::fs::write(file_dir.join(filename), body).unwrap();
@@ -1341,7 +1340,11 @@ fn l1_lindsay_load_report_does_not_mutate_snapshot() {
         "timeonice.json",
         r#"{"data":[{"playerId": 100, "value": 1500}], "total": 1}"#,
     );
-    let file_path = dir.path().join("20242025").join("regular").join("timeonice.json");
+    let file_path = dir
+        .path()
+        .join("20242025")
+        .join("regular")
+        .join("timeonice.json");
     let pre_meta = std::fs::metadata(&file_path).unwrap();
     let pre_modified = pre_meta.modified().unwrap();
 
@@ -1374,7 +1377,7 @@ fn l1_lindsay_load_report_playoff_path() {
     write_test_report(
         dir.path(),
         "20232024",
-        "playoff",  // distinct from "regular"
+        "playoff", // distinct from "regular"
         "timeonice.json",
         r#"{"data":[{"playerId": 8400000, "value": 800, "seasonId": 20232024}], "total": 1}"#,
     );

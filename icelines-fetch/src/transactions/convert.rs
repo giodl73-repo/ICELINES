@@ -134,7 +134,10 @@ fn id_for(date: &str, team: Option<&TeamAbbr>, description: &str) -> String {
 #[allow(unused_imports)]
 use chrono::Local;
 #[allow(dead_code)]
-fn _silence_unused() { let _ = Local::now; let _ = chrono::Utc.timestamp_opt(0, 0); }
+fn _silence_unused() {
+    let _ = Local::now;
+    let _ = chrono::Utc.timestamp_opt(0, 0);
+}
 
 #[cfg(test)]
 mod tests {
@@ -168,32 +171,43 @@ mod tests {
     fn l0_convert_two_letter_espn_abbrev_normalizes() {
         let r = raw(Some("TB"), "Acquired D X from NSH");
         let t = raw_to_transaction(&r, "20252026");
-        assert_eq!(t.team.as_ref().unwrap().0, "TBL",
-            "TB must normalize to canonical TBL");
+        assert_eq!(
+            t.team.as_ref().unwrap().0,
+            "TBL",
+            "TB must normalize to canonical TBL"
+        );
     }
 
     #[test]
     fn l0_convert_ari_2024_25_maps_to_uta() {
         let r = raw(Some("ARI"), "Signed F X to a 1-year contract");
         let t = raw_to_transaction(&r, "20242025");
-        assert_eq!(t.team.as_ref().unwrap().0, "UTA",
-            "post-relocation: ARI must map to UTA");
+        assert_eq!(
+            t.team.as_ref().unwrap().0,
+            "UTA",
+            "post-relocation: ARI must map to UTA"
+        );
     }
 
     #[test]
     fn l0_convert_ari_2023_24_preserved_as_ari() {
         let r = raw(Some("ARI"), "Signed F X to a 1-year contract");
         let t = raw_to_transaction(&r, "20232024");
-        assert_eq!(t.team.as_ref().unwrap().0, "ARI",
-            "pre-relocation: ARI preserved");
+        assert_eq!(
+            t.team.as_ref().unwrap().0,
+            "ARI",
+            "pre-relocation: ARI preserved"
+        );
     }
 
     #[test]
     fn l0_convert_unknown_abbrev_becomes_league_bucket() {
         let r = raw(Some("BOGUS"), "Some move by a fake team");
         let t = raw_to_transaction(&r, "20252026");
-        assert!(t.team.is_none(),
-            "unmapped abbrev must produce team=None for LEAGUE bucket");
+        assert!(
+            t.team.is_none(),
+            "unmapped abbrev must produce team=None for LEAGUE bucket"
+        );
     }
 
     #[test]
@@ -209,7 +223,10 @@ mod tests {
         let r2 = raw(Some("EDM"), "Recalled F X from AHL");
         let t1 = raw_to_transaction(&r1, "20252026");
         let t2 = raw_to_transaction(&r2, "20252026");
-        assert_eq!(t1.id, t2.id, "same (date, team, description) must produce same id");
+        assert_eq!(
+            t1.id, t2.id,
+            "same (date, team, description) must produce same id"
+        );
     }
 
     #[test]
@@ -237,8 +254,11 @@ mod tests {
     #[test]
     fn l0_bucket_date_iso8601_pre_midnight_et_buckets_prior_day() {
         // 03:30 UTC in April = 11:30 PM EDT prior calendar day.
-        assert_eq!(bucket_date_to_et("2026-04-29T03:30:00Z"), "2026-04-28",
-            "edt-midnight boundary: a row at 03:30 UTC should bucket to 04-28 ET");
+        assert_eq!(
+            bucket_date_to_et("2026-04-29T03:30:00Z"),
+            "2026-04-28",
+            "edt-midnight boundary: a row at 03:30 UTC should bucket to 04-28 ET"
+        );
     }
 
     #[test]
@@ -252,14 +272,18 @@ mod tests {
     #[test]
     fn l0_raw_to_transactions_collects_unmapped_warnings() {
         let raws = vec![
-            raw(Some("EDM"),   "Recalled F X"),
+            raw(Some("EDM"), "Recalled F X"),
             raw(Some("BOGUS"), "Move by fake team"),
             raw(Some("BOGUS"), "Same fake team again"), // dedup'd warning
-            raw(None,          "League-wide note"),
+            raw(None, "League-wide note"),
         ];
         let (txs, warnings) = raw_to_transactions(&raws, "20252026");
         assert_eq!(txs.len(), 4);
-        assert_eq!(warnings.len(), 1, "duplicate unmapped abbrev should warn once");
+        assert_eq!(
+            warnings.len(),
+            1,
+            "duplicate unmapped abbrev should warn once"
+        );
         assert!(warnings[0].contains("BOGUS"));
     }
 }

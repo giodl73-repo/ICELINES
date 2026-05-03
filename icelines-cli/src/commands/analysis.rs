@@ -123,7 +123,9 @@ pub async fn run_peers(
         .repo
         .skaters(Season(season_u32), SeasonType::Regular)
         .find(|v| v.name_normalized().contains(&target_norm))
-        .with_context(|| format!("player '{player_name}' not found in snapshot — try a partial name"))?;
+        .with_context(|| {
+            format!("player '{player_name}' not found in snapshot — try a partial name")
+        })?;
 
     // Peer group: same draft year ± 1 and same position
     let draft_year = target.identity.bio.draft_year.unwrap_or(0);
@@ -266,15 +268,15 @@ pub async fn run_history(
     player_name: String,
     seasons: usize,
     json: bool,
-    csv:  bool,
-    out:  Option<std::path::PathBuf>,
+    csv: bool,
+    out: Option<std::path::PathBuf>,
 ) -> anyhow::Result<()> {
-    use icelines_fetch::career::load_career;
     use crate::commands::output::Format;
     use crate::config::Config;
+    use icelines_fetch::career::load_career;
     use icelines_fetch::snapshot::SnapshotStore;
 
-    let cfg   = Config::load()?;
+    let cfg = Config::load()?;
     let store = SnapshotStore::new(cfg.snapshot_dir());
 
     let summary = load_career(&player_name, seasons, &store)
@@ -283,30 +285,53 @@ pub async fn run_history(
              Tip: install older seasons with `icelines data install <YYYYZZZZ>` to view historical players."
         ))?;
 
-    let headers = &["season", "team", "gp", "goals", "assists", "ppg", "pts_per_82"];
-    let rows: Vec<Vec<String>> = summary.seasons.iter().map(|line| vec![
-        line.season.clone(),
-        line.team.clone(),
-        line.gp.to_string(),
-        line.goals.to_string(),
-        line.assists.to_string(),
-        format!("{:.3}", line.ppg),
-        format!("{:.1}", line.pts_per_82()),
-    ]).collect();
+    let headers = &[
+        "season",
+        "team",
+        "gp",
+        "goals",
+        "assists",
+        "ppg",
+        "pts_per_82",
+    ];
+    let rows: Vec<Vec<String>> = summary
+        .seasons
+        .iter()
+        .map(|line| {
+            vec![
+                line.season.clone(),
+                line.team.clone(),
+                line.gp.to_string(),
+                line.goals.to_string(),
+                line.assists.to_string(),
+                format!("{:.3}", line.ppg),
+                format!("{:.1}", line.pts_per_82()),
+            ]
+        })
+        .collect();
 
     let format = Format::resolve(csv, json)?;
     if format == Format::Table && out.is_none() {
-        println!("CAREER HISTORY — {} (last {} seasons)",
-            summary.full_name, summary.seasons.len());
+        println!(
+            "CAREER HISTORY — {} (last {} seasons)",
+            summary.full_name,
+            summary.seasons.len()
+        );
     }
     format.emit_to(headers, &rows, out.as_deref())?;
     if format == Format::Table && out.is_none() {
         let peak_label = {
             let s = &summary.peak_season;
-            if s.len() == 8 { format!("{}-{}", &s[2..4], &s[6..8]) } else { s.clone() }
+            if s.len() == 8 {
+                format!("{}-{}", &s[2..4], &s[6..8])
+            } else {
+                s.clone()
+            }
         };
-        println!("\nCareer: {:.3} pts/gp  |  Peak: {} ({:.3} pts/gp)",
-            summary.career_ppg, peak_label, summary.peak_ppg);
+        println!(
+            "\nCareer: {:.3} pts/gp  |  Peak: {} ({:.3} pts/gp)",
+            summary.career_ppg, peak_label, summary.peak_ppg
+        );
     }
     Ok(())
 }
@@ -374,7 +399,10 @@ pub async fn run_group(cmd: GroupSubcommand) -> anyhow::Result<()> {
                 .skaters(Season(season_u32), SeasonType::Regular)
                 .collect();
             for norm in &members {
-                if let Some(v) = views.iter().find(|v| v.name_normalized().contains(norm.as_str())) {
+                if let Some(v) = views
+                    .iter()
+                    .find(|v| v.name_normalized().contains(norm.as_str()))
+                {
                     let (ppg, proj) = pace_strings_view(v);
                     println!(
                         "  {:<24} {:<5} {:<4} {} / {}",
@@ -401,20 +429,22 @@ pub async fn run_group(cmd: GroupSubcommand) -> anyhow::Result<()> {
         // ── Phase 8f.6: portable group I/O ──────────────────────────────────
         GroupSubcommand::Export { name, out } => {
             let payload = build_export_payload(&db, &name)?;
-            let json = serde_json::to_string_pretty(&payload)
-                .context("serializing group export")?;
+            let json =
+                serde_json::to_string_pretty(&payload).context("serializing group export")?;
             if out == "-" {
                 println!("{json}");
             } else {
-                std::fs::write(&out, &json)
-                    .with_context(|| format!("writing {out}"))?;
-                println!("✓ Exported group '{}' ({} members) to {}",
-                    payload.name, payload.members.len(), out);
+                std::fs::write(&out, &json).with_context(|| format!("writing {out}"))?;
+                println!(
+                    "✓ Exported group '{}' ({} members) to {}",
+                    payload.name,
+                    payload.members.len(),
+                    out
+                );
             }
         }
         GroupSubcommand::Import { path, as_name } => {
-            let text = std::fs::read_to_string(&path)
-                .with_context(|| format!("reading {path}"))?;
+            let text = std::fs::read_to_string(&path).with_context(|| format!("reading {path}"))?;
             let mut payload: GroupExport = serde_json::from_str(&text)
                 .with_context(|| format!("parsing {path} as a group export"))?;
             if let Some(rename) = as_name {
@@ -423,8 +453,10 @@ pub async fn run_group(cmd: GroupSubcommand) -> anyhow::Result<()> {
             db.create_group(&payload.name, &payload.description)
                 .with_context(|| format!("creating group '{}'", payload.name))?;
             let inserted = db.add_members_bulk(&payload.name, &payload.members)?;
-            println!("✓ Imported group '{}' — created with {} member(s).",
-                payload.name, inserted);
+            println!(
+                "✓ Imported group '{}' — created with {} member(s).",
+                payload.name, inserted
+            );
         }
         GroupSubcommand::Rename { old, new } => {
             db.rename_group(&old, &new)?;
@@ -440,16 +472,18 @@ pub async fn run_group(cmd: GroupSubcommand) -> anyhow::Result<()> {
 /// JSON is committable and shareable, so additive changes only.
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 struct GroupExport {
-    name:        String,
+    name: String,
     #[serde(default)]
     description: String,
-    members:     Vec<String>, // normalized names
+    members: Vec<String>, // normalized names
     /// Schema version. Bump when the wire format changes.
     #[serde(default = "default_export_version")]
-    version:     u32,
+    version: u32,
 }
 
-fn default_export_version() -> u32 { 1 }
+fn default_export_version() -> u32 {
+    1
+}
 
 fn build_export_payload(db: &GroupDb, name: &str) -> anyhow::Result<GroupExport> {
     let members = db.list_members(name)?;
@@ -476,19 +510,22 @@ pub async fn run_games(cmd: crate::cli::GamesSubcommand) -> anyhow::Result<()> {
             let meta = lookup_game_meta(game_id).await;
             db.add_attended_game(&AttendedGameInput {
                 game_id,
-                game_date:   meta.as_ref().and_then(|m| m.date.clone()),
+                game_date: meta.as_ref().and_then(|m| m.date.clone()),
                 away_abbrev: meta.as_ref().map(|m| m.away_abbrev.clone()),
                 home_abbrev: meta.as_ref().map(|m| m.home_abbrev.clone()),
-                away_score:  meta.as_ref().and_then(|m| m.away_score),
-                home_score:  meta.as_ref().and_then(|m| m.home_score),
+                away_score: meta.as_ref().and_then(|m| m.away_score),
+                home_score: meta.as_ref().and_then(|m| m.home_score),
                 note,
             })?;
             match meta {
-                Some(m) => println!("✓ Recorded: {} {} @ {} ({})",
+                Some(m) => println!(
+                    "✓ Recorded: {} {} @ {} ({})",
                     m.date.as_deref().unwrap_or("?"),
-                    m.away_abbrev, m.home_abbrev,
-                    score_pair(m.away_score, m.home_score)),
-                None    => println!("✓ Recorded game {game_id} (boxscore unavailable; row saved)"),
+                    m.away_abbrev,
+                    m.home_abbrev,
+                    score_pair(m.away_score, m.home_score)
+                ),
+                None => println!("✓ Recorded game {game_id} (boxscore unavailable; row saved)"),
             }
         }
         GamesSubcommand::Remove { game_id } => {
@@ -504,15 +541,19 @@ pub async fn run_games(cmd: crate::cli::GamesSubcommand) -> anyhow::Result<()> {
                 println!("No attended games yet. Add one with `icelines games add <game_id>`.");
                 return Ok(());
             }
-            println!("{:<10} {:<12} {:<24} {:<8} {}",
-                "Game ID", "Date", "Matchup", "Score", "Note");
+            println!(
+                "{:<10} {:<12} {:<24} {:<8} {}",
+                "Game ID", "Date", "Matchup", "Score", "Note"
+            );
             println!("{}", "─".repeat(78));
             for r in &rows {
                 let date = r.game_date.as_deref().unwrap_or("—");
                 let matchup = format!("{} @ {}", r.away_abbrev, r.home_abbrev);
                 let score = score_pair(r.away_score, r.home_score);
-                println!("{:<10} {:<12} {:<24} {:<8} {}",
-                    r.game_id, date, matchup, score, r.note);
+                println!(
+                    "{:<10} {:<12} {:<24} {:<8} {}",
+                    r.game_id, date, matchup, score, r.note
+                );
             }
             println!("\n{} game(s) attended.", rows.len());
         }
@@ -521,35 +562,51 @@ pub async fn run_games(cmd: crate::cli::GamesSubcommand) -> anyhow::Result<()> {
             let body = if json {
                 serde_json::to_string_pretty(&AttendedGamesExport {
                     version: 1,
-                    games: rows.iter().map(|r| ExportRow {
-                        game_id: r.game_id,
-                        date:    r.game_date.clone(),
-                        away:    r.away_abbrev.clone(),
-                        home:    r.home_abbrev.clone(),
-                        away_score: r.away_score,
-                        home_score: r.home_score,
-                        note:    r.note.clone(),
-                    }).collect(),
-                }).context("serializing attended games")?
+                    games: rows
+                        .iter()
+                        .map(|r| ExportRow {
+                            game_id: r.game_id,
+                            date: r.game_date.clone(),
+                            away: r.away_abbrev.clone(),
+                            home: r.home_abbrev.clone(),
+                            away_score: r.away_score,
+                            home_score: r.home_score,
+                            note: r.note.clone(),
+                        })
+                        .collect(),
+                })
+                .context("serializing attended games")?
             } else {
                 // Default: CSV — opens directly in Excel.
-                let headers = &["game_id", "date", "away", "home", "away_score", "home_score", "note"];
-                let csv_rows: Vec<Vec<String>> = rows.iter().map(|r| vec![
-                    r.game_id.to_string(),
-                    r.game_date.clone().unwrap_or_default(),
-                    r.away_abbrev.clone(),
-                    r.home_abbrev.clone(),
-                    r.away_score.map(|n| n.to_string()).unwrap_or_default(),
-                    r.home_score.map(|n| n.to_string()).unwrap_or_default(),
-                    r.note.clone(),
-                ]).collect();
+                let headers = &[
+                    "game_id",
+                    "date",
+                    "away",
+                    "home",
+                    "away_score",
+                    "home_score",
+                    "note",
+                ];
+                let csv_rows: Vec<Vec<String>> = rows
+                    .iter()
+                    .map(|r| {
+                        vec![
+                            r.game_id.to_string(),
+                            r.game_date.clone().unwrap_or_default(),
+                            r.away_abbrev.clone(),
+                            r.home_abbrev.clone(),
+                            r.away_score.map(|n| n.to_string()).unwrap_or_default(),
+                            r.home_score.map(|n| n.to_string()).unwrap_or_default(),
+                            r.note.clone(),
+                        ]
+                    })
+                    .collect();
                 crate::commands::output::Format::Csv.render(headers, &csv_rows)
             };
             if out == "-" {
                 println!("{body}");
             } else {
-                std::fs::write(&out, &body)
-                    .with_context(|| format!("writing {out}"))?;
+                std::fs::write(&out, &body).with_context(|| format!("writing {out}"))?;
                 println!("✓ Exported {} game(s) to {}", rows.len(), out);
             }
         }
@@ -560,27 +617,27 @@ pub async fn run_games(cmd: crate::cli::GamesSubcommand) -> anyhow::Result<()> {
 #[derive(Debug, serde::Serialize)]
 struct AttendedGamesExport {
     version: u32,
-    games:   Vec<ExportRow>,
+    games: Vec<ExportRow>,
 }
 
 #[derive(Debug, serde::Serialize)]
 struct ExportRow {
-    game_id:    u64,
-    date:       Option<String>,
-    away:       String,
-    home:       String,
+    game_id: u64,
+    date: Option<String>,
+    away: String,
+    home: String,
     away_score: Option<u8>,
     home_score: Option<u8>,
-    note:       String,
+    note: String,
 }
 
 #[derive(Debug, Clone)]
 struct GameMeta {
-    date:        Option<String>,
+    date: Option<String>,
     away_abbrev: String,
     home_abbrev: String,
-    away_score:  Option<u8>,
-    home_score:  Option<u8>,
+    away_score: Option<u8>,
+    home_score: Option<u8>,
 }
 
 /// Best-effort fetch of metadata for a game_id. Returns `None` on any
@@ -597,15 +654,15 @@ async fn lookup_game_meta(game_id: u64) -> Option<GameMeta> {
         date: None,
         away_abbrev: bs.away_abbrev,
         home_abbrev: bs.home_abbrev,
-        away_score:  Some(bs.away_score),
-        home_score:  Some(bs.home_score),
+        away_score: Some(bs.away_score),
+        home_score: Some(bs.home_score),
     })
 }
 
 fn score_pair(away: Option<u8>, home: Option<u8>) -> String {
     match (away, home) {
         (Some(a), Some(h)) => format!("{a}-{h}"),
-        _                  => "—".to_owned(),
+        _ => "—".to_owned(),
     }
 }
 

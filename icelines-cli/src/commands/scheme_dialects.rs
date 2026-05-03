@@ -31,18 +31,18 @@ pub enum Platform {
 impl Platform {
     pub fn parse(s: &str) -> Option<Self> {
         match s.to_ascii_lowercase().as_str() {
-            "yahoo"   => Some(Self::Yahoo),
-            "espn"    => Some(Self::Espn),
+            "yahoo" => Some(Self::Yahoo),
+            "espn" => Some(Self::Espn),
             "sleeper" => Some(Self::Sleeper),
             "fantrax" => Some(Self::Fantrax),
-            _         => None,
+            _ => None,
         }
     }
 
     pub fn name(self) -> &'static str {
         match self {
-            Self::Yahoo   => "Yahoo",
-            Self::Espn    => "ESPN",
+            Self::Yahoo => "Yahoo",
+            Self::Espn => "ESPN",
             Self::Sleeper => "Sleeper",
             Self::Fantrax => "Fantrax",
         }
@@ -52,25 +52,25 @@ impl Platform {
 /// One platform's CSV dialect — signature tokens for auto-detection plus the
 /// column → normalized-stat-key mapping that drives template generation.
 pub struct Dialect {
-    pub platform:    Platform,
+    pub platform: Platform,
     /// Columns whose presence in the header strongly indicates this platform.
     /// Detection counts how many of these appear and picks the leader.
-    pub signatures:  &'static [&'static str],
+    pub signatures: &'static [&'static str],
     /// `(column_name, normalized_stat_key)` pairs. The normalized keys match
     /// `icelines_core::scheme::SkaterWeights` / `GoalieWeights` field names
     /// so a generated template lines up with the Scheme struct.
-    pub stat_cols:   &'static [(&'static str, &'static str)],
+    pub stat_cols: &'static [(&'static str, &'static str)],
 }
 
 /// All known dialects, in detection priority order.
 pub const ALL_DIALECTS: &[Dialect] = &[
     // Yahoo — original supported format. Distinctive `(P)` / `(G)` suffixes.
     Dialect {
-        platform:   Platform::Yahoo,
+        platform: Platform::Yahoo,
         signatures: &["(P)", "(G)", "Owner", "Fan Pts"],
         stat_cols: &[
-            ("G (P)",   "goals"),
-            ("A (P)",   "assists"),
+            ("G (P)", "goals"),
+            ("A (P)", "assists"),
             ("PPG (P)", "pp_goals"),
             ("PPA (P)", "pp_assists"),
             ("SHG (P)", "sh_goals"),
@@ -83,10 +83,10 @@ pub const ALL_DIALECTS: &[Dialect] = &[
             ("PIM (P)", "pim"),
             ("FOW (P)", "faceoff_wins"),
             // Goalie
-            ("W (G)",   "goalie_wins"),
-            ("L (G)",   "goalie_losses"),
-            ("GA (G)",  "goalie_ga"),
-            ("SV (G)",  "goalie_saves"),
+            ("W (G)", "goalie_wins"),
+            ("L (G)", "goalie_losses"),
+            ("GA (G)", "goalie_ga"),
+            ("SV (G)", "goalie_saves"),
             ("SHO (G)", "goalie_shutouts"),
             ("SV% (G)", "goalie_save_pct"),
         ],
@@ -94,37 +94,37 @@ pub const ALL_DIALECTS: &[Dialect] = &[
     // ESPN — bare column names; signature is the canonical RANK-PLAYER-TEAM-POS
     // quad followed by the season totals.
     Dialect {
-        platform:   Platform::Espn,
+        platform: Platform::Espn,
         signatures: &["RANK", "OWNER", "PLAYER", "TYPE", "STATUS"],
         stat_cols: &[
-            ("G",     "goals"),
-            ("A",     "assists"),
-            ("PPG",   "pp_goals"),
-            ("PPA",   "pp_assists"),
-            ("SHG",   "sh_goals"),
-            ("GWG",   "gwg"),
-            ("SOG",   "shots_on_goal"),
-            ("+/-",   "plus_minus"),
-            ("PIM",   "pim"),
-            ("HIT",   "hits"),
-            ("BLK",   "blocks"),
-            ("FW",    "faceoff_wins"),
+            ("G", "goals"),
+            ("A", "assists"),
+            ("PPG", "pp_goals"),
+            ("PPA", "pp_assists"),
+            ("SHG", "sh_goals"),
+            ("GWG", "gwg"),
+            ("SOG", "shots_on_goal"),
+            ("+/-", "plus_minus"),
+            ("PIM", "pim"),
+            ("HIT", "hits"),
+            ("BLK", "blocks"),
+            ("FW", "faceoff_wins"),
             // Goalie
-            ("W",     "goalie_wins"),
-            ("L",     "goalie_losses"),
-            ("GAA",   "goalie_gaa"),
-            ("SV",    "goalie_saves"),
-            ("SO",    "goalie_shutouts"),
-            ("SV%",   "goalie_save_pct"),
+            ("W", "goalie_wins"),
+            ("L", "goalie_losses"),
+            ("GAA", "goalie_gaa"),
+            ("SV", "goalie_saves"),
+            ("SO", "goalie_shutouts"),
+            ("SV%", "goalie_save_pct"),
         ],
     },
     // Sleeper — `Roster ID` / `On Roster Of` are unique identifiers.
     Dialect {
-        platform:   Platform::Sleeper,
+        platform: Platform::Sleeper,
         signatures: &["Roster ID", "On Roster Of", "Sleeper"],
         stat_cols: &[
-            ("G",   "goals"),
-            ("A",   "assists"),
+            ("G", "goals"),
+            ("A", "assists"),
             ("PPP", "pp_points"),
             ("SHP", "sh_points"),
             ("PTS", "points"),
@@ -135,20 +135,20 @@ pub const ALL_DIALECTS: &[Dialect] = &[
             ("BLK", "blocks"),
             ("FOW", "faceoff_wins"),
             // Goalie
-            ("W",   "goalie_wins"),
-            ("L",   "goalie_losses"),
-            ("GA",  "goalie_ga"),
-            ("SV",  "goalie_saves"),
-            ("SO",  "goalie_shutouts"),
+            ("W", "goalie_wins"),
+            ("L", "goalie_losses"),
+            ("GA", "goalie_ga"),
+            ("SV", "goalie_saves"),
+            ("SO", "goalie_shutouts"),
         ],
     },
     // Fantrax — `Fantrax`, `FPts`, `FP/G` are distinctive.
     Dialect {
-        platform:   Platform::Fantrax,
+        platform: Platform::Fantrax,
         signatures: &["Fantrax", "FPts", "FP/G", "Status"],
         stat_cols: &[
-            ("G",   "goals"),
-            ("A",   "assists"),
+            ("G", "goals"),
+            ("A", "assists"),
             ("Pts", "points"),
             ("PPG", "pp_goals"),
             ("PPA", "pp_assists"),
@@ -157,15 +157,15 @@ pub const ALL_DIALECTS: &[Dialect] = &[
             ("GWG", "gwg"),
             ("OTG", "ot_goals"),
             ("SOG", "shots_on_goal"),
-            ("HT",  "hits"),
+            ("HT", "hits"),
             ("BLK", "blocks"),
             ("PIM", "pim"),
-            ("FW",  "faceoff_wins"),
+            ("FW", "faceoff_wins"),
             // Goalie
-            ("W",   "goalie_wins"),
-            ("L",   "goalie_losses"),
-            ("GA",  "goalie_ga"),
-            ("SV",  "goalie_saves"),
+            ("W", "goalie_wins"),
+            ("L", "goalie_losses"),
+            ("GA", "goalie_ga"),
+            ("SV", "goalie_saves"),
             ("SHO", "goalie_shutouts"),
         ],
     },
@@ -181,10 +181,14 @@ pub const ALL_DIALECTS: &[Dialect] = &[
 pub fn detect_platform(header: &str) -> Option<&'static Dialect> {
     let mut best: Option<(&Dialect, usize)> = None;
     for d in ALL_DIALECTS {
-        let hits = d.signatures.iter()
+        let hits = d
+            .signatures
+            .iter()
             .filter(|s| header_contains_token(header, s))
             .count();
-        if hits == 0 { continue; }
+        if hits == 0 {
+            continue;
+        }
         match best {
             Some((_, prev)) if prev >= hits => {} // earlier dialect wins ties
             _ => best = Some((d, hits)),
@@ -196,7 +200,8 @@ pub fn detect_platform(header: &str) -> Option<&'static Dialect> {
 /// Look up a dialect by explicit platform selector. Distinct from `detect_*`
 /// so callers can short-circuit auto-detection when `--platform` is set.
 pub fn dialect_for(platform: Platform) -> &'static Dialect {
-    ALL_DIALECTS.iter()
+    ALL_DIALECTS
+        .iter()
         .find(|d| d.platform == platform)
         .expect("every Platform variant has a corresponding dialect entry")
 }
@@ -205,7 +210,8 @@ pub fn dialect_for(platform: Platform) -> &'static Dialect {
 /// pairs whose `column` is present. The order matches the dialect's `stat_cols`
 /// declaration (which is curated to be the most user-friendly listing).
 pub fn matched_stats<'d>(d: &'d Dialect, header: &str) -> Vec<&'d (&'static str, &'static str)> {
-    d.stat_cols.iter()
+    d.stat_cols
+        .iter()
         .filter(|(col, _)| header_contains_token(header, col))
         .collect()
 }
@@ -221,7 +227,8 @@ fn header_contains_token(header: &str, token: &str) -> bool {
         return header.contains(token);
     }
     // For short alphanumeric tokens, walk comma/whitespace boundaries.
-    header.split(|c: char| c == ',' || c.is_whitespace())
+    header
+        .split(|c: char| c == ',' || c.is_whitespace())
         .any(|tok| tok == token)
 }
 
@@ -246,15 +253,16 @@ mod tests {
         let stats = matched_stats(d, YAHOO_HEADER);
         let keys: Vec<&str> = stats.iter().map(|(_, k)| *k).collect();
         for expected in ["goals", "assists", "pp_goals", "hits", "blocks"] {
-            assert!(keys.contains(&expected),
-                "yahoo header should match {expected}, got: {keys:?}");
+            assert!(
+                keys.contains(&expected),
+                "yahoo header should match {expected}, got: {keys:?}"
+            );
         }
     }
 
     // ── ESPN ──────────────────────────────────────────────────────────────────
 
-    const ESPN_HEADER: &str =
-        "RANK,PLAYER,TEAM,POS,STATUS,OWNER,G,A,+/-,PIM,SOG,HIT,BLK,FW";
+    const ESPN_HEADER: &str = "RANK,PLAYER,TEAM,POS,STATUS,OWNER,G,A,+/-,PIM,SOG,HIT,BLK,FW";
 
     #[test]
     fn l0_detect_espn_from_signature_columns() {
@@ -267,16 +275,25 @@ mod tests {
         let d = dialect_for(Platform::Espn);
         let stats = matched_stats(d, ESPN_HEADER);
         let keys: Vec<&str> = stats.iter().map(|(_, k)| *k).collect();
-        for expected in ["goals", "assists", "plus_minus", "pim", "shots_on_goal", "hits", "blocks"] {
-            assert!(keys.contains(&expected),
-                "espn header should match {expected}, got: {keys:?}");
+        for expected in [
+            "goals",
+            "assists",
+            "plus_minus",
+            "pim",
+            "shots_on_goal",
+            "hits",
+            "blocks",
+        ] {
+            assert!(
+                keys.contains(&expected),
+                "espn header should match {expected}, got: {keys:?}"
+            );
         }
     }
 
     // ── Sleeper ───────────────────────────────────────────────────────────────
 
-    const SLEEPER_HEADER: &str =
-        "Player,Pos,Team,Roster ID,G,A,PTS,PPP,SHP,SOG,PIM,HIT,BLK";
+    const SLEEPER_HEADER: &str = "Player,Pos,Team,Roster ID,G,A,PTS,PPP,SHP,SOG,PIM,HIT,BLK";
 
     #[test]
     fn l0_detect_sleeper_from_roster_id_signature() {
@@ -289,8 +306,10 @@ mod tests {
         let d = dialect_for(Platform::Sleeper);
         let stats = matched_stats(d, SLEEPER_HEADER);
         let keys: Vec<&str> = stats.iter().map(|(_, k)| *k).collect();
-        assert!(keys.contains(&"pp_points"),
-            "PPP should map to pp_points, got: {keys:?}");
+        assert!(
+            keys.contains(&"pp_points"),
+            "PPP should map to pp_points, got: {keys:?}"
+        );
     }
 
     // ── Fantrax ───────────────────────────────────────────────────────────────
@@ -310,8 +329,10 @@ mod tests {
         let stats = matched_stats(d, FANTRAX_HEADER);
         let keys: Vec<&str> = stats.iter().map(|(_, k)| *k).collect();
         // Fantrax uses `HT` not `HIT` for hits — the dialect must respect that.
-        assert!(keys.contains(&"hits"),
-            "fantrax HT should map to hits, got: {keys:?}");
+        assert!(
+            keys.contains(&"hits"),
+            "fantrax HT should map to hits, got: {keys:?}"
+        );
     }
 
     // ── Detection edge cases ─────────────────────────────────────────────────
@@ -334,8 +355,8 @@ mod tests {
 
     #[test]
     fn l0_platform_parse_case_insensitive() {
-        assert_eq!(Platform::parse("yahoo"),   Some(Platform::Yahoo));
-        assert_eq!(Platform::parse("ESPN"),    Some(Platform::Espn));
+        assert_eq!(Platform::parse("yahoo"), Some(Platform::Yahoo));
+        assert_eq!(Platform::parse("ESPN"), Some(Platform::Espn));
         assert_eq!(Platform::parse("Sleeper"), Some(Platform::Sleeper));
         assert_eq!(Platform::parse("FaNtRaX"), Some(Platform::Fantrax));
         assert_eq!(Platform::parse("draftkings"), None);

@@ -81,7 +81,9 @@ impl ChunkStore {
         let path = self.path_for(hash);
         let data = std::fs::read(&path).map_err(|e| {
             if e.kind() == std::io::ErrorKind::NotFound {
-                FetchError::MissingChunk { hash: hash.to_owned() }
+                FetchError::MissingChunk {
+                    hash: hash.to_owned(),
+                }
             } else {
                 FetchError::Io(e)
             }
@@ -137,7 +139,9 @@ impl ChunkStore {
     }
 
     /// Root directory for the store — used by tests and GC reporters.
-    pub fn root(&self) -> &Path { &self.root }
+    pub fn root(&self) -> &Path {
+        &self.root
+    }
 }
 
 #[cfg(test)]
@@ -148,7 +152,7 @@ mod tests {
 
     fn store() -> (ChunkStore, tempfile::TempDir) {
         let dir = tempdir().expect("tempdir");
-        let cs  = ChunkStore::new(dir.path().to_path_buf());
+        let cs = ChunkStore::new(dir.path().to_path_buf());
         (cs, dir)
     }
 
@@ -190,7 +194,10 @@ mod tests {
         let prefix = &hash[..2];
         // Path must be {root}/{prefix}/{hash}
         let expected = dir.path().join(prefix).join(&hash);
-        assert!(expected.exists(), "chunk must be at sharded path {expected:?}");
+        assert!(
+            expected.exists(),
+            "chunk must be at sharded path {expected:?}"
+        );
     }
 
     #[test]
@@ -284,6 +291,9 @@ mod tests {
         assert_eq!(h1, h2);
         assert_eq!(h1.len(), 64);
         // Known SHA-256 of "abc"
-        assert_eq!(h1, "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+        assert_eq!(
+            h1,
+            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        );
     }
 }

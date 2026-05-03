@@ -1,10 +1,7 @@
 use crate::config::Config;
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
-use icelines_core::{
-    filter::PlayerFilter,
-    position::PositionResolver,
-};
+use icelines_core::{filter::PlayerFilter, position::PositionResolver};
 use icelines_fetch::{
     snapshot::SnapshotStore,
     stats_loader::{load_into_repo, LoadOutcome},
@@ -105,7 +102,11 @@ pub async fn run(args: PlayersArgs) -> anyhow::Result<()> {
     filter.ppg_min = args.ppg_min;
     filter.gp_min = args.gp_min;
 
-    let matched = filter.apply_views(outcome.repo.skaters(Season(season_u32), SeasonType::Regular));
+    let matched = filter.apply_views(
+        outcome
+            .repo
+            .skaters(Season(season_u32), SeasonType::Regular),
+    );
     let total = matched.len();
     let take = total.min(args.top);
 

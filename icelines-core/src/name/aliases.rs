@@ -23,38 +23,38 @@ use std::sync::OnceLock;
 /// Canonical → variants. Single source of truth; the variant→canonical
 /// HashMap is built lazily from this table.
 const ALIAS_TABLE: &[(&str, &[&str])] = &[
-    ("Michael",   &["Mike", "Mick", "Mikey"]),
-    ("Thomas",    &["Tom", "Tommy"]),
+    ("Michael", &["Mike", "Mick", "Mikey"]),
+    ("Thomas", &["Tom", "Tommy"]),
     ("Alexander", &["Alex", "Aleksander", "Aleksandr", "Sasha"]),
-    ("Matthew",   &["Matt", "Mat"]),
-    ("Samuel",    &["Sam", "Sammy"]),
-    ("Nicholas",  &["Nick", "Nico"]),
-    ("Anthony",   &["Tony"]),
-    ("Daniel",    &["Dan", "Danny"]),
-    ("David",     &["Dave"]),
-    ("Robert",    &["Rob", "Bob", "Bobby"]),
-    ("William",   &["Will", "Bill", "Billy"]),
-    ("Joseph",    &["Joe", "Joey"]),
+    ("Matthew", &["Matt", "Mat"]),
+    ("Samuel", &["Sam", "Sammy"]),
+    ("Nicholas", &["Nick", "Nico"]),
+    ("Anthony", &["Tony"]),
+    ("Daniel", &["Dan", "Danny"]),
+    ("David", &["Dave"]),
+    ("Robert", &["Rob", "Bob", "Bobby"]),
+    ("William", &["Will", "Bill", "Billy"]),
+    ("Joseph", &["Joe", "Joey"]),
     ("Christopher", &["Chris"]),
-    ("Patrick",   &["Pat"]),
-    ("Andrew",    &["Andy", "Drew"]),
-    ("Jonathan",  &["Jon", "Jonny"]),
-    ("Benjamin",  &["Ben", "Benny"]),
-    ("Theodore",  &["Teddy", "Ted"]),
-    ("Edward",    &["Ed", "Eddie"]),
-    ("J.T.",      &["JT"]),
-    ("T.J.",      &["TJ"]),
-    ("J.J.",      &["JJ"]),
+    ("Patrick", &["Pat"]),
+    ("Andrew", &["Andy", "Drew"]),
+    ("Jonathan", &["Jon", "Jonny"]),
+    ("Benjamin", &["Ben", "Benny"]),
+    ("Theodore", &["Teddy", "Ted"]),
+    ("Edward", &["Ed", "Eddie"]),
+    ("J.T.", &["JT"]),
+    ("T.J.", &["TJ"]),
+    ("J.J.", &["JJ"]),
     // Cyrillic-origin transliterations the NHL feeds normalize differently.
-    ("Evgeny",    &["Evgeni", "Yevgeni"]),
-    ("Kirill",    &["Kiril"]),
-    ("Andrei",    &["Andrey"]),
-    ("Sergei",    &["Sergey"]),
-    ("Dmitri",    &["Dmitry", "Dmitrii"]),
-    ("Nikita",    &["Nikitia"]),
-    ("Yegor",     &["Egor"]),
-    ("Iurii",     &["Yuri", "Yury"]),
-    ("Aleksei",   &["Alexei", "Alexey"]),
+    ("Evgeny", &["Evgeni", "Yevgeni"]),
+    ("Kirill", &["Kiril"]),
+    ("Andrei", &["Andrey"]),
+    ("Sergei", &["Sergey"]),
+    ("Dmitri", &["Dmitry", "Dmitrii"]),
+    ("Nikita", &["Nikitia"]),
+    ("Yegor", &["Egor"]),
+    ("Iurii", &["Yuri", "Yury"]),
+    ("Aleksei", &["Alexei", "Alexey"]),
 ];
 
 static VARIANT_TO_CANONICAL: OnceLock<HashMap<&'static str, &'static str>> = OnceLock::new();
@@ -104,8 +104,10 @@ mod tests {
         assert_eq!(canonical_for("Alex"), "Alexander");
         assert_eq!(canonical_for("Aleksander"), "Alexander");
         assert_eq!(canonical_for("Alexander"), "Alexander");
-        assert!(equivalent("Alex", "Aleksander"),
-            "Alex and Aleksander must be alias-equivalent");
+        assert!(
+            equivalent("Alex", "Aleksander"),
+            "Alex and Aleksander must be alias-equivalent"
+        );
     }
 
     #[test]

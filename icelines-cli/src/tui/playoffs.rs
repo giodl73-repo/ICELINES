@@ -42,7 +42,10 @@ pub fn playoff_year_for_season(season: &str) -> Option<u16> {
 /// caller can skip the network fetch). Phase 8c.
 fn try_load_bundle(cache: &PlayoffsCache, year: u16, season: &str) -> bool {
     if let Some(b) = load_playoffs(season) {
-        cache.lock().unwrap().insert(year, PlayoffsState::Loaded(b.to_bracket()));
+        cache
+            .lock()
+            .unwrap()
+            .insert(year, PlayoffsState::Loaded(b.to_bracket()));
         return true;
     }
     false
@@ -63,9 +66,12 @@ fn is_current_season(season: &str) -> bool {
 pub fn maybe_fetch_bracket(cache: PlayoffsCache, year: u16, season: &str) {
     {
         let map = cache.lock().unwrap();
-        if matches!(map.get(&year),
-            Some(PlayoffsState::Loading) | Some(PlayoffsState::Loaded(_)) | Some(PlayoffsState::Error(_)))
-        {
+        if matches!(
+            map.get(&year),
+            Some(PlayoffsState::Loading)
+                | Some(PlayoffsState::Loaded(_))
+                | Some(PlayoffsState::Error(_))
+        ) {
             return;
         }
     }
@@ -75,14 +81,17 @@ pub fn maybe_fetch_bracket(cache: PlayoffsCache, year: u16, season: &str) {
     // Historical season with no bundled data → show explicit message; do not
     // attempt a network fetch (the live API only covers recent seasons).
     if !is_current_season(season) {
-        cache.lock().unwrap().insert(year, PlayoffsState::Error(
-            format!("no bundled playoff data for season {season}")));
+        cache.lock().unwrap().insert(
+            year,
+            PlayoffsState::Error(format!("no bundled playoff data for season {season}")),
+        );
         return;
     }
     if !crate::config::live_feeds_enabled() {
-        cache.lock().unwrap()
-            .insert(year, PlayoffsState::Error(
-                crate::tui::tonight::LIVE_DISABLED_MSG.to_owned()));
+        cache.lock().unwrap().insert(
+            year,
+            PlayoffsState::Error(crate::tui::tonight::LIVE_DISABLED_MSG.to_owned()),
+        );
         return;
     }
     cache.lock().unwrap().insert(year, PlayoffsState::Loading);
@@ -95,7 +104,7 @@ pub fn maybe_fetch_bracket(cache: PlayoffsCache, year: u16, season: &str) {
         let result = client.fetch_playoff_bracket(year).await;
         let mut map = cache2.lock().unwrap();
         match result {
-            Ok(b)  => map.insert(year, PlayoffsState::Loaded(b)),
+            Ok(b) => map.insert(year, PlayoffsState::Loaded(b)),
             Err(e) => map.insert(year, PlayoffsState::Error(e.to_string())),
         };
     });
@@ -109,14 +118,17 @@ pub fn force_fetch_bracket(cache: PlayoffsCache, year: u16, season: &str) {
         return;
     }
     if !is_current_season(season) {
-        cache.lock().unwrap().insert(year, PlayoffsState::Error(
-            format!("no bundled playoff data for season {season}")));
+        cache.lock().unwrap().insert(
+            year,
+            PlayoffsState::Error(format!("no bundled playoff data for season {season}")),
+        );
         return;
     }
     if !crate::config::live_feeds_enabled() {
-        cache.lock().unwrap()
-            .insert(year, PlayoffsState::Error(
-                crate::tui::tonight::LIVE_DISABLED_MSG.to_owned()));
+        cache.lock().unwrap().insert(
+            year,
+            PlayoffsState::Error(crate::tui::tonight::LIVE_DISABLED_MSG.to_owned()),
+        );
         return;
     }
     cache.lock().unwrap().insert(year, PlayoffsState::Loading);
@@ -129,7 +141,7 @@ pub fn force_fetch_bracket(cache: PlayoffsCache, year: u16, season: &str) {
         let result = client.fetch_playoff_bracket(year).await;
         let mut map = cache2.lock().unwrap();
         match result {
-            Ok(b)  => map.insert(year, PlayoffsState::Loaded(b)),
+            Ok(b) => map.insert(year, PlayoffsState::Loaded(b)),
             Err(e) => map.insert(year, PlayoffsState::Error(e.to_string())),
         };
     });
@@ -173,8 +185,10 @@ mod tests {
         let state = cache.lock().unwrap().get(&1996).cloned();
         match state {
             Some(PlayoffsState::Error(e)) => {
-                assert!(e.contains("no bundled playoff data"),
-                    "expected explicit no-bundle message, got: {e}");
+                assert!(
+                    e.contains("no bundled playoff data"),
+                    "expected explicit no-bundle message, got: {e}"
+                );
             }
             other => panic!("expected Error, got {other:?}"),
         }
@@ -184,7 +198,10 @@ mod tests {
     fn l0_force_fetch_bundled_historical_replaces_existing_state() {
         // Pre-seed Error to verify force_fetch overwrites it for historical seasons.
         let cache = new_cache();
-        cache.lock().unwrap().insert(1994, PlayoffsState::Error("stale".to_owned()));
+        cache
+            .lock()
+            .unwrap()
+            .insert(1994, PlayoffsState::Error("stale".to_owned()));
         force_fetch_bracket(cache.clone(), 1994, "19931994");
         let state = cache.lock().unwrap().get(&1994).cloned();
         assert!(matches!(state, Some(PlayoffsState::Loaded(_))));

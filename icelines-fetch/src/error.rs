@@ -37,7 +37,6 @@ pub enum FetchError {
     IntegrityViolation { expected: String, actual: String },
 
     // ── Phase T.2 — transactions fetcher reliability ─────────────────────────
-
     /// Circuit breaker tripped: ≥N consecutive non-200 responses inside a
     /// single fetch run. Caller MUST NOT overwrite a richer snapshot when
     /// this fires — the partial result is suspect.
@@ -47,7 +46,9 @@ pub enum FetchError {
     /// Source returned 200 with an empty data array AND a non-empty snapshot
     /// already exists on disk. The caller (T.3 fetcher) refuses the
     /// overwrite to avoid silently zeroing out a season's transactions.
-    #[error("source returned empty array; refusing to overwrite non-empty snapshot for season {season}")]
+    #[error(
+        "source returned empty array; refusing to overwrite non-empty snapshot for season {season}"
+    )]
     EmptyResponseRefused { season: String },
 
     /// HTTP 200 but the body is HTML (Cloudflare challenge, endpoint

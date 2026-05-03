@@ -1,14 +1,14 @@
-use ratatui::{
-    layout::Rect,
-    style::{Color, Modifier, Style},
-    text::Line,
-    widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
-    layout::{Direction, Constraint, Layout},
-    Frame,
-};
 use crate::tui::app::App;
 use icelines_core::name::normalize_name;
 use icelines_core::stats_repository::PlayerView;
+use ratatui::{
+    layout::Rect,
+    layout::{Constraint, Direction, Layout},
+    style::{Color, Modifier, Style},
+    text::Line,
+    widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
+    Frame,
+};
 
 /// Cap on results shown — same limit pre and post migration.
 const MAX_RESULTS: usize = 20;
@@ -23,10 +23,7 @@ const MAX_RESULTS: usize = 20;
 /// Empty query → top MAX_RESULTS by pace.
 /// Non-empty query → matches by `name_normalized.contains(q)`, then
 /// the same sort, capped at MAX_RESULTS.
-pub fn search_results<'a>(
-    views: &'a [PlayerView<'a>],
-    query: &str,
-) -> Vec<&'a PlayerView<'a>> {
+pub fn search_results<'a>(views: &'a [PlayerView<'a>], query: &str) -> Vec<&'a PlayerView<'a>> {
     let q = normalize_name(query);
     let mut filtered: Vec<&PlayerView<'a>> = if q.is_empty() {
         views.iter().collect()
@@ -44,9 +41,7 @@ pub fn search_results<'a>(
         match (pa, pb) {
             (Some(_), None) => std::cmp::Ordering::Less,
             (None, Some(_)) => std::cmp::Ordering::Greater,
-            (Some(x), Some(y)) => y
-                .partial_cmp(&x)
-                .unwrap_or(std::cmp::Ordering::Equal),
+            (Some(x), Some(y)) => y.partial_cmp(&x).unwrap_or(std::cmp::Ordering::Equal),
             (None, None) => std::cmp::Ordering::Equal,
         }
         .then_with(|| a.full_name().cmp(b.full_name()))
@@ -62,8 +57,11 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
         .split(area);
 
     // Search input box
-    let input = Paragraph::new(format!("/ {}_", app.search_query))
-        .block(Block::default().borders(Borders::ALL).title(" Search Players "));
+    let input = Paragraph::new(format!("/ {}_", app.search_query)).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .title(" Search Players "),
+    );
     f.render_widget(input, chunks[0]);
 
     // Hart.5c.6 Phase B-1: collect views once per frame, filter+sort
@@ -72,17 +70,22 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
     let views = app.views();
     let results = search_results(&views, &app.search_query);
 
-    let items: Vec<ListItem> = results.iter().map(|v| {
-        let ppg = v.pace_82()
-            .map(|p| format!("{:.2}", p / 82.0))
-            .unwrap_or_else(|| "—".to_owned());
-        ListItem::new(Line::from(format!("  {:<22} {:<5} {:<4}  {} pts/gp",
-            v.full_name().chars().take(22).collect::<String>(),
-            v.team_display(),
-            v.position().abbreviation(),
-            ppg,
-        )))
-    }).collect();
+    let items: Vec<ListItem> = results
+        .iter()
+        .map(|v| {
+            let ppg = v
+                .pace_82()
+                .map(|p| format!("{:.2}", p / 82.0))
+                .unwrap_or_else(|| "—".to_owned());
+            ListItem::new(Line::from(format!(
+                "  {:<22} {:<5} {:<4}  {} pts/gp",
+                v.full_name().chars().take(22).collect::<String>(),
+                v.team_display(),
+                v.position().abbreviation(),
+                ppg,
+            )))
+        })
+        .collect();
 
     let mut state = ListState::default();
     state.select(Some(app.selected.min(results.len().saturating_sub(1))));
@@ -95,7 +98,11 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
 
     let list = List::new(items)
         .block(Block::default().borders(Borders::ALL).title(label))
-        .highlight_style(Style::default().bg(Color::DarkGray).add_modifier(Modifier::BOLD));
+        .highlight_style(
+            Style::default()
+                .bg(Color::DarkGray)
+                .add_modifier(Modifier::BOLD),
+        );
 
     f.render_stateful_widget(list, chunks[1], &mut state);
 }
@@ -113,9 +120,7 @@ mod tests {
             // Use the production normalizer so diacritic stripping is
             // exercised in tests (Slafkovský → "slafkovsky").
             let normalized = icelines_core::name::normalize_name(name);
-            let identity = fixtures::identity(id)
-                .name(name, &normalized)
-                .build();
+            let identity = fixtures::identity(id).name(name, &normalized).build();
             // Hand-build StatsFixture for arbitrary pace; the default
             // fixture hardcodes pace_82=93.7.
             let mut stats = fixtures::stats(id, 20242025, team).build();
@@ -132,8 +137,8 @@ mod tests {
     fn l0_search_empty_query_returns_top_by_pace_desc() {
         let repo = build_repo(&[
             (1, "Alice Anderson", "EDM", 60.0),
-            (2, "Bob Brown",      "TOR", 90.0),
-            (3, "Cara Carter",    "BOS", 75.0),
+            (2, "Bob Brown", "TOR", 90.0),
+            (3, "Cara Carter", "BOS", 75.0),
         ]);
         let views: Vec<_> = repo
             .skaters(
@@ -151,9 +156,9 @@ mod tests {
     #[test]
     fn l0_search_nonempty_query_filters_by_name_normalized() {
         let repo = build_repo(&[
-            (1, "Connor McDavid",     "EDM", 138.0),
-            (2, "Nikita Kucherov",    "TBL", 140.0),
-            (3, "Auston Matthews",    "TOR", 110.0),
+            (1, "Connor McDavid", "EDM", 138.0),
+            (2, "Nikita Kucherov", "TBL", 140.0),
+            (3, "Auston Matthews", "TOR", 110.0),
         ]);
         let views: Vec<_> = repo
             .skaters(
@@ -189,8 +194,8 @@ mod tests {
     #[test]
     fn l0_search_full_name_tiebreak_when_pace_equal() {
         let repo = build_repo(&[
-            (1, "Bravo",   "EDM", 80.0),
-            (2, "Alpha",   "EDM", 80.0),
+            (1, "Bravo", "EDM", 80.0),
+            (2, "Alpha", "EDM", 80.0),
             (3, "Charlie", "EDM", 80.0),
         ]);
         let views: Vec<_> = repo
@@ -210,9 +215,7 @@ mod tests {
         // "Slafkovsky" (no accent) should match "Slafkovský" (accented)
         // because name_normalized strips diacritics and the query is
         // normalize_name'd before contains().
-        let repo = build_repo(&[
-            (1, "Juraj Slafkovský", "MTL", 50.0),
-        ]);
+        let repo = build_repo(&[(1, "Juraj Slafkovský", "MTL", 50.0)]);
         let views: Vec<_> = repo
             .skaters(
                 icelines_core::model::Season(20242025),

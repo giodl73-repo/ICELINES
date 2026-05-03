@@ -80,29 +80,29 @@ pub fn fantasy_score_view(v: &crate::stats_repository::PlayerView<'_>) -> f64 {
     let sh_ast = (totals.sh_points as i32 - totals.sh_goals as i32).max(0) as f64;
     let hits = v.hits().unwrap_or(0);
     let blocks = v.blocked_shots().unwrap_or(0);
-    totals.goals as f64        * 3.0
+    totals.goals as f64 * 3.0
         + totals.assists as f64 * 2.0
-        + totals.pp_goals as f64* 1.0
-        + pp_ast                * 0.5
-        + totals.sh_goals as f64* 1.0
-        + sh_ast                * 0.5
-        + totals.gwg as f64     * 0.5
-        + hits as f64           * 0.5
-        + blocks as f64         * 0.5
+        + totals.pp_goals as f64 * 1.0
+        + pp_ast * 0.5
+        + totals.sh_goals as f64 * 1.0
+        + sh_ast * 0.5
+        + totals.gwg as f64 * 0.5
+        + hits as f64 * 0.5
+        + blocks as f64 * 0.5
 }
 
 /// Aggregated strength for one team — top-4 per forward slot + top-6 D.
 #[derive(Debug, Clone)]
 pub struct TeamStrength {
-    pub c_score:  f64,
+    pub c_score: f64,
     pub lw_score: f64,
     pub rw_score: f64,
-    pub d_score:  f64,
-    pub total:    f64,
-    pub c_top:    String,
-    pub lw_top:   String,
-    pub rw_top:   String,
-    pub d_top:    String,
+    pub d_score: f64,
+    pub total: f64,
+    pub c_top: String,
+    pub lw_top: String,
+    pub rw_top: String,
+    pub d_top: String,
 }
 
 /// Per-player cross-team metrics.
@@ -177,7 +177,9 @@ fn rank_in(sort_key: f64, sorted_desc: &[f64]) -> u8 {
 /// window. The repository key tuple `(PlayerId, Season, SeasonType)`
 /// already enforces this at the source; this assertion fences the API
 /// boundary against callers building a mixed Vec by hand.
-pub fn compute_all_views(views: &[crate::stats_repository::PlayerView<'_>]) -> Vec<CrossTeamMetrics> {
+pub fn compute_all_views(
+    views: &[crate::stats_repository::PlayerView<'_>],
+) -> Vec<CrossTeamMetrics> {
     compute_all_views_with_mode(views, ScoringMode::Pace)
 }
 
@@ -415,8 +417,8 @@ mod tests {
         // Top player on SEA should be rank 1 on their own team
         let metrics = metrics_for(&[
             (1, "Elite", "SEA", Position::Center, 140.0),
-            (2, "Mid",   "SEA", Position::Center,  70.0),
-            (3, "Depth", "SEA", Position::Center,  40.0),
+            (2, "Mid", "SEA", Position::Center, 70.0),
+            (3, "Depth", "SEA", Position::Center, 40.0),
         ]);
         let elite = metrics.iter().find(|m| m.avg_other_line < 2.0).unwrap();
         assert_eq!(elite.own_line, 1, "top player must be rank 1 on own team");
@@ -427,12 +429,12 @@ mod tests {
         // "Buried" is 3rd C on EDM (behind two elite players) but would be
         // #1 C on all other teams which have only weak/no centers.
         let metrics = metrics_for(&[
-            (1, "Star",   "EDM", Position::Center, 140.0),
-            (2, "Good",   "EDM", Position::Center, 120.0),
+            (1, "Star", "EDM", Position::Center, 140.0),
+            (2, "Good", "EDM", Position::Center, 120.0),
             (3, "Buried", "EDM", Position::Center, 110.0),
-            (4, "SEA-C1", "SEA", Position::Center,  40.0),
-            (5, "NYR-C1", "NYR", Position::Center,  38.0),
-            (6, "TOR-C1", "TOR", Position::Center,  35.0),
+            (4, "SEA-C1", "SEA", Position::Center, 40.0),
+            (5, "NYR-C1", "NYR", Position::Center, 38.0),
+            (6, "TOR-C1", "TOR", Position::Center, 35.0),
         ]);
         let buried = metrics.iter().find(|m| m.own_line == 3).unwrap();
         assert!(
@@ -490,11 +492,17 @@ mod tests {
     fn l0_hart6_6_compute_all_views_panics_on_mixed_window() {
         let mut r = StatsRepository::new();
         // Player 1: Regular 20242025
-        r.upsert_identity(fixtures::identity(1).name("A", "a").build()).unwrap();
-        r.upsert_stats(fixtures::stats(1, 20242025, "EDM").position(Position::Center).build())
+        r.upsert_identity(fixtures::identity(1).name("A", "a").build())
             .unwrap();
+        r.upsert_stats(
+            fixtures::stats(1, 20242025, "EDM")
+                .position(Position::Center)
+                .build(),
+        )
+        .unwrap();
         // Player 2: Playoff 20242025 — same season, different type.
-        r.upsert_identity(fixtures::identity(2).name("B", "b").build()).unwrap();
+        r.upsert_identity(fixtures::identity(2).name("B", "b").build())
+            .unwrap();
         r.upsert_stats(
             fixtures::stats(2, 20242025, "EDM")
                 .position(Position::Center)
@@ -517,10 +525,16 @@ mod tests {
     #[should_panic(expected = "views must be type-homogeneous")]
     fn l0_hart6_6_compute_team_strength_panics_on_mixed_window() {
         let mut r = StatsRepository::new();
-        r.upsert_identity(fixtures::identity(1).name("A", "a").build()).unwrap();
-        r.upsert_stats(fixtures::stats(1, 20242025, "EDM").position(Position::Center).build())
+        r.upsert_identity(fixtures::identity(1).name("A", "a").build())
             .unwrap();
-        r.upsert_identity(fixtures::identity(2).name("B", "b").build()).unwrap();
+        r.upsert_stats(
+            fixtures::stats(1, 20242025, "EDM")
+                .position(Position::Center)
+                .build(),
+        )
+        .unwrap();
+        r.upsert_identity(fixtures::identity(2).name("B", "b").build())
+            .unwrap();
         r.upsert_stats(
             fixtures::stats(2, 20242025, "EDM")
                 .position(Position::Center)
@@ -562,7 +576,8 @@ mod tests {
     #[test]
     fn l0_lindsay_l5_scoring_mode_custom_team_strength_runs() {
         let mut r = StatsRepository::new();
-        r.upsert_identity(fixtures::identity(1).name("A", "a").build()).unwrap();
+        r.upsert_identity(fixtures::identity(1).name("A", "a").build())
+            .unwrap();
         r.upsert_stats(
             fixtures::stats(1, 20242025, "EDM")
                 .position(Position::Center)
@@ -575,7 +590,9 @@ mod tests {
             &views,
             ScoringMode::Custom(crate::stats_catalog::StatId::Goals),
         );
-        assert!(!result.is_empty(),
-            "Custom-mode team strength must produce results");
+        assert!(
+            !result.is_empty(),
+            "Custom-mode team strength must produce results"
+        );
     }
 }

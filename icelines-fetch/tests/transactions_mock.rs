@@ -55,16 +55,28 @@ async fn l1_mock_200_fixture_payload() {
     });
 
     let src = EspnSource::for_testing(server.url(""));
-    let outcome = src.fetch_season("20252026").await.expect("fetch must succeed");
+    let outcome = src
+        .fetch_season("20252026")
+        .await
+        .expect("fetch must succeed");
 
     assert_eq!(outcome.rows.len(), 3);
-    assert_eq!(outcome.dropped_unknown_schema.len(), 0,
-        "clean fixture must produce zero drift markers");
-    assert!(!outcome.partial);
-    assert!(outcome.rows.iter().any(|r| r.description.contains("Bedard")),
-        "Bedard signing must round-trip from the fixture");
     assert_eq!(
-        outcome.rows[0].team.as_ref().unwrap().abbreviation, "TBL",
+        outcome.dropped_unknown_schema.len(),
+        0,
+        "clean fixture must produce zero drift markers"
+    );
+    assert!(!outcome.partial);
+    assert!(
+        outcome
+            .rows
+            .iter()
+            .any(|r| r.description.contains("Bedard")),
+        "Bedard signing must round-trip from the fixture"
+    );
+    assert_eq!(
+        outcome.rows[0].team.as_ref().unwrap().abbreviation,
+        "TBL",
         "team abbrev must round-trip"
     );
 }
@@ -79,15 +91,20 @@ async fn l1_mock_429_retried_then_eventually_errors() {
     let server = MockServer::start();
     let mock = server.mock(|when, then| {
         when.method(GET).path_contains("/transactions");
-        then.status(429).header("retry-after", "1").body("rate limited");
+        then.status(429)
+            .header("retry-after", "1")
+            .body("rate limited");
     });
 
     let src = EspnSource::for_testing(server.url(""));
     let result = src.fetch_season("20252026").await;
     assert!(result.is_err(), "perpetual 429 must eventually error");
     // 1 initial attempt + MAX_RETRIES (3) = 4 hits.
-    assert!(mock.hits() >= 4,
-        "expected ≥4 hits (initial + 3 retries), got {}", mock.hits());
+    assert!(
+        mock.hits() >= 4,
+        "expected ≥4 hits (initial + 3 retries), got {}",
+        mock.hits()
+    );
 }
 
 #[tokio::test]
@@ -107,8 +124,11 @@ async fn l1_mock_500_x3_circuit_breaks() {
     // an acceptable failure mode here — both prove we don't silently
     // succeed.
     let acceptable = matches!(err, FetchError::CircuitBreakerTripped { .. })
-                  || matches!(err, FetchError::Http { status: 500, .. });
-    assert!(acceptable, "expected CircuitBreakerTripped or Http(500), got: {err:?}");
+        || matches!(err, FetchError::Http { status: 500, .. });
+    assert!(
+        acceptable,
+        "expected CircuitBreakerTripped or Http(500), got: {err:?}"
+    );
 }
 
 #[tokio::test]
@@ -156,7 +176,8 @@ async fn l1_mock_unknown_field_drops_to_drift_log() {
         when.method(GET).path_contains("/transactions");
         then.status(200)
             .header("content-type", "application/json")
-            .body(r#"{
+            .body(
+                r#"{
               "pageCount": 1,
               "transactions": [
                 {
@@ -171,17 +192,37 @@ async fn l1_mock_unknown_field_drops_to_drift_log() {
                   }
                 }
               ]
-            }"#);
+            }"#,
+            );
     });
 
     let src = EspnSource::for_testing(server.url(""));
-    let outcome = src.fetch_season("20252026").await.expect("permissive path must succeed");
+    let outcome = src
+        .fetch_season("20252026")
+        .await
+        .expect("permissive path must succeed");
 
-    assert_eq!(outcome.rows.len(), 1, "row still extracted via permissive path");
-    assert!(outcome.dropped_unknown_schema.iter().any(|d| d.contains("newField")),
-        "expected 'newField' in dropped, got: {:?}", outcome.dropped_unknown_schema);
-    assert!(outcome.dropped_unknown_schema.iter().any(|d| d.contains("team.logos")),
-        "expected 'team.logos' in dropped, got: {:?}", outcome.dropped_unknown_schema);
+    assert_eq!(
+        outcome.rows.len(),
+        1,
+        "row still extracted via permissive path"
+    );
+    assert!(
+        outcome
+            .dropped_unknown_schema
+            .iter()
+            .any(|d| d.contains("newField")),
+        "expected 'newField' in dropped, got: {:?}",
+        outcome.dropped_unknown_schema
+    );
+    assert!(
+        outcome
+            .dropped_unknown_schema
+            .iter()
+            .any(|d| d.contains("team.logos")),
+        "expected 'team.logos' in dropped, got: {:?}",
+        outcome.dropped_unknown_schema
+    );
 }
 
 #[tokio::test]
@@ -191,19 +232,23 @@ async fn l1_mock_team_none_routes_to_league_bucket() {
         when.method(GET).path_contains("/transactions");
         then.status(200)
             .header("content-type", "application/json")
-            .body(r#"{
+            .body(
+                r#"{
               "pageCount": 1,
               "transactions": [
                 { "date": "2026-04-27", "description": "League-wide reassignment deadline" }
               ]
-            }"#);
+            }"#,
+            );
     });
 
     let src = EspnSource::for_testing(server.url(""));
     let outcome = src.fetch_season("20252026").await.expect("must succeed");
     assert_eq!(outcome.rows.len(), 1);
-    assert!(outcome.rows[0].team.is_none(),
-        "missing team payload must produce team=None for LEAGUE bucket");
+    assert!(
+        outcome.rows[0].team.is_none(),
+        "missing team payload must produce team=None for LEAGUE bucket"
+    );
 }
 
 #[tokio::test]
@@ -217,10 +262,15 @@ async fn l1_mock_empty_array_returns_zero_rows_no_drift() {
     });
 
     let src = EspnSource::for_testing(server.url(""));
-    let outcome = src.fetch_season("20252026").await.expect("empty must succeed");
+    let outcome = src
+        .fetch_season("20252026")
+        .await
+        .expect("empty must succeed");
     assert!(outcome.rows.is_empty());
-    assert!(outcome.dropped_unknown_schema.is_empty(),
-        "explicit empty array is NOT drift");
+    assert!(
+        outcome.dropped_unknown_schema.is_empty(),
+        "explicit empty array is NOT drift"
+    );
     assert!(!outcome.partial);
 }
 
@@ -236,24 +286,39 @@ async fn l1_mock_month_windows_concatenate_and_dedup() {
         when.method(GET).path_contains("/transactions");
         then.status(200)
             .header("content-type", "application/json")
-            .body(r#"{
+            .body(
+                r#"{
               "pageCount": 1,
               "transactions": [
                 { "date": "2026-04-29", "description": "Row A" },
                 { "date": "2026-04-29", "description": "Row B" }
               ]
-            }"#);
+            }"#,
+            );
     });
 
     let src = EspnSource::for_testing(server.url(""));
-    let outcome = src.fetch_season("20252026").await
+    let outcome = src
+        .fetch_season("20252026")
+        .await
         .expect("month-windowed fetch must succeed");
     // Even though 11 month-window calls all return the same 2 rows, dedup
     // via (date, description) collapses them to 2 rows total.
-    assert_eq!(outcome.rows.len(), 2,
+    assert_eq!(
+        outcome.rows.len(),
+        2,
         "(date, description) dedup must collapse repeated content across windows, got: {:?}",
-        outcome.rows.iter().map(|r| &r.description).collect::<Vec<_>>());
-    let descriptions: Vec<&str> = outcome.rows.iter().map(|r| r.description.as_str()).collect();
+        outcome
+            .rows
+            .iter()
+            .map(|r| &r.description)
+            .collect::<Vec<_>>()
+    );
+    let descriptions: Vec<&str> = outcome
+        .rows
+        .iter()
+        .map(|r| r.description.as_str())
+        .collect();
     assert!(descriptions.contains(&"Row A"));
     assert!(descriptions.contains(&"Row B"));
 }

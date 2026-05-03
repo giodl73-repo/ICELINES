@@ -32,7 +32,9 @@ pub struct HeadshotCache {
 
 impl HeadshotCache {
     pub fn new() -> Self {
-        Self { inner: Arc::new(Mutex::new(HashMap::new())) }
+        Self {
+            inner: Arc::new(Mutex::new(HashMap::new())),
+        }
     }
 
     pub fn get(&self, id: u32) -> Option<Vec<String>> {
@@ -40,12 +42,14 @@ impl HeadshotCache {
     }
 
     pub fn set(&self, id: u32, rows: Vec<String>) {
-        if let Ok(mut g) = self.inner.lock() { g.insert(id, rows); }
+        if let Ok(mut g) = self.inner.lock() {
+            g.insert(id, rows);
+        }
     }
 }
 
-const LOADING_MARKER: &str = "⌛";   // stored as single-string vec when in-flight
-const ERROR_MARKER:   &str = "✗";
+const LOADING_MARKER: &str = "⌛"; // stored as single-string vec when in-flight
+const ERROR_MARKER: &str = "✗";
 
 pub fn is_loading(rows: &[String]) -> bool {
     rows.len() == 1 && rows[0] == LOADING_MARKER
@@ -58,7 +62,13 @@ pub fn is_error(rows: &[String]) -> bool {
 /// Tries the disk cache first; only hits the network on a true miss.
 /// Successful network fetches are written back to disk for next session.
 /// Uses braille dither for maximum resolution (2×4 pixels per char).
-pub fn spawn_fetch(nhl_id: u32, url: String, cache: HeadshotCache, target_cols: u32, target_rows: u32) {
+pub fn spawn_fetch(
+    nhl_id: u32,
+    url: String,
+    cache: HeadshotCache,
+    target_cols: u32,
+    target_rows: u32,
+) {
     cache.set(nhl_id, vec![LOADING_MARKER.to_owned()]);
     let cache2 = cache.clone();
     tokio::spawn(async move {
@@ -74,7 +84,7 @@ pub fn spawn_fetch(nhl_id: u32, url: String, cache: HeadshotCache, target_cols: 
                 let _ = write_to_disk(nhl_id, &rows);
                 cache2.set(nhl_id, rows);
             }
-            Err(_)   => cache2.set(nhl_id, vec![ERROR_MARKER.to_owned()]),
+            Err(_) => cache2.set(nhl_id, vec![ERROR_MARKER.to_owned()]),
         }
     });
 }
@@ -102,7 +112,9 @@ fn read_from_disk(nhl_id: u32) -> Option<Vec<String>> {
     let path = disk_path(nhl_id)?;
     let text = std::fs::read_to_string(&path).ok()?;
     let rows: Vec<String> = text.lines().map(str::to_owned).collect();
-    if rows.is_empty() { return None; }
+    if rows.is_empty() {
+        return None;
+    }
     Some(rows)
 }
 
@@ -110,8 +122,8 @@ fn read_from_disk(nhl_id: u32) -> Option<Vec<String>> {
 /// silently ignored (read-only home, disk full, etc.). The in-memory
 /// cache still serves the rest of the session.
 fn write_to_disk(nhl_id: u32, rows: &[String]) -> std::io::Result<()> {
-    let path = disk_path(nhl_id).ok_or_else(|| std::io::Error::new(
-        std::io::ErrorKind::NotFound, "no home directory"))?;
+    let path = disk_path(nhl_id)
+        .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, "no home directory"))?;
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
     }
@@ -137,10 +149,14 @@ async fn fetch_bytes(url: &str) -> anyhow::Result<Vec<u8>> {
 /// Braille dither — 2×4 pixels per braille character (U+2800–U+28FF).
 /// Each output char encodes 2 image columns × 4 image rows.
 /// At 22 cols × 15 rows out → 44×60 image pixels: enough for facial detail.
-async fn fetch_and_dither_braille(url: &str, out_cols: u32, out_rows: u32) -> anyhow::Result<Vec<String>> {
+async fn fetch_and_dither_braille(
+    url: &str,
+    out_cols: u32,
+    out_rows: u32,
+) -> anyhow::Result<Vec<String>> {
     let bytes = fetch_bytes(url).await?;
-    let img   = image::load_from_memory(&bytes)?;
-    let gray  = img.to_luma8();
+    let img = image::load_from_memory(&bytes)?;
+    let gray = img.to_luma8();
 
     // Braille: each output char = 2×4 pixels
     let img_w = out_cols * 2;
@@ -165,21 +181,25 @@ async fn fetch_and_dither_braille(url: &str, out_cols: u32, out_rows: u32) -> an
         image::Luma([stretched])
     });
 
-    let out: Vec<String> = (0..out_rows).map(|row| {
-        (0..out_cols).map(|col| {
-            let px = col * 2;
-            let py = row * 4;
-            let mut dots = [false; 8];
-            for dot in 0..8usize {
-                let x = px + DOT_X[dot];
-                let y = py + DOT_Y[dot];
-                if x < img_w && y < img_h && enhanced.get_pixel(x, y)[0] >= THRESHOLD {
-                    dots[dot] = true;
-                }
-            }
-            pixels_to_braille(dots)
-        }).collect()
-    }).collect();
+    let out: Vec<String> = (0..out_rows)
+        .map(|row| {
+            (0..out_cols)
+                .map(|col| {
+                    let px = col * 2;
+                    let py = row * 4;
+                    let mut dots = [false; 8];
+                    for dot in 0..8usize {
+                        let x = px + DOT_X[dot];
+                        let y = py + DOT_Y[dot];
+                        if x < img_w && y < img_h && enhanced.get_pixel(x, y)[0] >= THRESHOLD {
+                            dots[dot] = true;
+                        }
+                    }
+                    pixels_to_braille(dots)
+                })
+                .collect()
+        })
+        .collect();
 
     Ok(out)
 }
@@ -193,7 +213,7 @@ async fn fetch_and_dither_braille(url: &str, out_cols: u32, out_rows: u32) -> an
 ///   dot 7 (bit 6) = (0,3)    dot 8 (bit 7) = (1,3)
 pub(crate) const DOT_X: [u32; 8] = [0, 0, 0, 1, 1, 1, 0, 1];
 pub(crate) const DOT_Y: [u32; 8] = [0, 1, 2, 0, 1, 2, 3, 3];
-pub(crate) const THRESHOLD: u8   = 128;
+pub(crate) const THRESHOLD: u8 = 128;
 
 /// Encode a 2×4 pixel block as a braille character. The 8-bit input is
 /// indexed by dot number (0..8) per the canonical braille layout above —
@@ -201,29 +221,44 @@ pub(crate) const THRESHOLD: u8   = 128;
 pub(crate) fn pixels_to_braille(dots: [bool; 8]) -> char {
     let mut bits: u8 = 0;
     for (i, on) in dots.iter().enumerate() {
-        if *on { bits |= 1 << i; }
+        if *on {
+            bits |= 1 << i;
+        }
     }
     char::from_u32(0x2800 + bits as u32).unwrap_or(' ')
 }
 
 /// Team logo dither — block mode for clean high-contrast logos.
 #[allow(dead_code)]
-pub async fn fetch_logo_ascii(url: &str, out_cols: u32, out_rows: u32) -> anyhow::Result<Vec<String>> {
+pub async fn fetch_logo_ascii(
+    url: &str,
+    out_cols: u32,
+    out_rows: u32,
+) -> anyhow::Result<Vec<String>> {
     let bytes = fetch_bytes(url).await?;
-    let img   = image::load_from_memory(&bytes)?;
-    let gray  = img.to_luma8();
+    let img = image::load_from_memory(&bytes)?;
+    let gray = img.to_luma8();
 
     // Block chars: ' ' '░' '▒' '▓' '█'  — 5 shades
     const BLOCKS: &[char] = &[' ', '░', '▒', '▓', '█'];
 
-    let resized = image::imageops::resize(&gray, out_cols, out_rows, image::imageops::FilterType::Lanczos3);
+    let resized = image::imageops::resize(
+        &gray,
+        out_cols,
+        out_rows,
+        image::imageops::FilterType::Lanczos3,
+    );
 
-    let out: Vec<String> = (0..out_rows).map(|y| {
-        (0..out_cols).map(|x| {
-            let v = resized.get_pixel(x, y)[0] as usize;
-            BLOCKS[v * (BLOCKS.len() - 1) / 255]
-        }).collect()
-    }).collect();
+    let out: Vec<String> = (0..out_rows)
+        .map(|y| {
+            (0..out_cols)
+                .map(|x| {
+                    let v = resized.get_pixel(x, y)[0] as usize;
+                    BLOCKS[v * (BLOCKS.len() - 1) / 255]
+                })
+                .collect()
+        })
+        .collect();
 
     Ok(out)
 }
@@ -277,7 +312,10 @@ mod tests {
     fn l0_threshold_constant_is_midpoint() {
         // Document the threshold contract — must remain at the 8-bit midpoint.
         // Changing this value alters every rendered headshot.
-        assert_eq!(THRESHOLD, 128, "THRESHOLD constant changed — review headshot tone");
+        assert_eq!(
+            THRESHOLD, 128,
+            "THRESHOLD constant changed — review headshot tone"
+        );
     }
 
     // ── Cache ────────────────────────────────────────────────────────────────
@@ -343,8 +381,10 @@ mod tests {
     fn l0_disk_read_returns_none_when_file_missing() {
         let _g = crate::test_utils::home_env_lock();
         let (_keep, _) = isolate_home();
-        assert!(read_from_disk(99999999).is_none(),
-            "absent file → None, no panic");
+        assert!(
+            read_from_disk(99999999).is_none(),
+            "absent file → None, no panic"
+        );
     }
 
     #[test]
@@ -369,8 +409,7 @@ mod tests {
         // Parent doesn't exist yet on first call.
         assert!(!cache_dir.exists());
         write_to_disk(1234567, &["row".to_owned()]).expect("write must succeed");
-        assert!(cache_dir.exists(),
-            "write_to_disk must mkdir -p the parent");
+        assert!(cache_dir.exists(), "write_to_disk must mkdir -p the parent");
     }
 
     #[test]
@@ -381,7 +420,9 @@ mod tests {
         // return None so the network path runs.
         std::fs::create_dir_all(&cache_dir).unwrap();
         std::fs::write(cache_dir.join("0.txt"), "").unwrap();
-        assert!(read_from_disk(0).is_none(),
-            "empty file should not look like a cached headshot");
+        assert!(
+            read_from_disk(0).is_none(),
+            "empty file should not look like a cached headshot"
+        );
     }
 }

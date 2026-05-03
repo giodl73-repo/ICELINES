@@ -73,7 +73,9 @@ impl Config {
 
     /// Return the season as an 8-digit string (e.g. "20252026").
     pub fn season_str(&self) -> String {
-        self.season.unwrap_or(icelines_core::CURRENT_SEASON).to_string()
+        self.season
+            .unwrap_or(icelines_core::CURRENT_SEASON)
+            .to_string()
     }
 
     /// Directory for named snapshots: ~/.icelines/snapshots/
@@ -133,9 +135,15 @@ pub fn live_feeds_enabled() -> bool {
 /// the same logic against env/config inputs.
 #[allow(dead_code)] // production path uses init_live_feeds; tests use this.
 pub fn resolve_live(cli_no_live: bool, env_no_live: bool, config_live: Option<bool>) -> bool {
-    if cli_no_live      { return false; }
-    if env_no_live      { return false; }
-    if let Some(c) = config_live { return c; }
+    if cli_no_live {
+        return false;
+    }
+    if env_no_live {
+        return false;
+    }
+    if let Some(c) = config_live {
+        return c;
+    }
     true
 }
 
@@ -188,9 +196,15 @@ pub fn dashboards_enabled() -> bool {
 /// optional `dashboards` config-file key.
 #[allow(dead_code)]
 pub fn resolve_dashboards(cli_no: bool, env_off: bool, config: Option<bool>) -> bool {
-    if cli_no         { return false; }
-    if env_off        { return false; }
-    if let Some(c) = config { return c; }
+    if cli_no {
+        return false;
+    }
+    if env_off {
+        return false;
+    }
+    if let Some(c) = config {
+        return c;
+    }
     true
 }
 
@@ -210,26 +224,26 @@ mod live_feeds_tests {
     #[test]
     fn l0_resolve_live_cli_flag_wins_over_everything() {
         // CLI true → live disabled regardless of env / config
-        assert_eq!(resolve_live(true, false, None),        false);
-        assert_eq!(resolve_live(true, false, Some(true)),  false);
-        assert_eq!(resolve_live(true, true,  Some(true)),  false);
+        assert_eq!(resolve_live(true, false, None), false);
+        assert_eq!(resolve_live(true, false, Some(true)), false);
+        assert_eq!(resolve_live(true, true, Some(true)), false);
     }
 
     #[test]
     fn l0_resolve_live_env_wins_over_config() {
         // env disable beats config = true
-        assert_eq!(resolve_live(false, true,  Some(true)),  false);
+        assert_eq!(resolve_live(false, true, Some(true)), false);
         // env unset → config wins
-        assert_eq!(resolve_live(false, false, Some(true)),  true);
+        assert_eq!(resolve_live(false, false, Some(true)), true);
         assert_eq!(resolve_live(false, false, Some(false)), false);
     }
 
     #[test]
     fn l0_resolve_live_config_only_when_no_higher_signal() {
         assert_eq!(resolve_live(false, false, Some(false)), false);
-        assert_eq!(resolve_live(false, false, Some(true)),  true);
+        assert_eq!(resolve_live(false, false, Some(true)), true);
         // No config → default true
-        assert_eq!(resolve_live(false, false, None),        true);
+        assert_eq!(resolve_live(false, false, None), true);
     }
 
     // ── Phase 8j: dashboards flag precedence (now opt-OUT — on by default) ──
@@ -243,26 +257,26 @@ mod live_feeds_tests {
     #[test]
     fn l0_resolve_dashboards_cli_no_wins_over_everything() {
         // `--no-dashboards` forces off no matter what env/config say.
-        assert_eq!(resolve_dashboards(true, false, None),         false);
-        assert_eq!(resolve_dashboards(true, false, Some(true)),   false);
-        assert_eq!(resolve_dashboards(true, true,  Some(true)),   false);
+        assert_eq!(resolve_dashboards(true, false, None), false);
+        assert_eq!(resolve_dashboards(true, false, Some(true)), false);
+        assert_eq!(resolve_dashboards(true, true, Some(true)), false);
     }
 
     #[test]
     fn l0_resolve_dashboards_env_off_wins_over_config() {
         // `ICELINES_DASHBOARDS=0` disables even with `dashboards = true`.
-        assert_eq!(resolve_dashboards(false, true,  Some(true)),  false);
+        assert_eq!(resolve_dashboards(false, true, Some(true)), false);
         // env unset → config wins.
         assert_eq!(resolve_dashboards(false, false, Some(false)), false);
-        assert_eq!(resolve_dashboards(false, false, Some(true)),  true);
+        assert_eq!(resolve_dashboards(false, false, Some(true)), true);
     }
 
     #[test]
     fn l0_resolve_dashboards_config_only_when_no_higher_signal() {
-        assert_eq!(resolve_dashboards(false, false, Some(true)),  true);
+        assert_eq!(resolve_dashboards(false, false, Some(true)), true);
         assert_eq!(resolve_dashboards(false, false, Some(false)), false);
         // No config → default true.
-        assert_eq!(resolve_dashboards(false, false, None),        true);
+        assert_eq!(resolve_dashboards(false, false, None), true);
     }
 }
 

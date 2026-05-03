@@ -7,8 +7,11 @@ pub async fn run(cmd: SchemeSubcommand) -> anyhow::Result<()> {
     match cmd {
         SchemeSubcommand::List => run_list().await,
         SchemeSubcommand::Show { name, source } => run_show(&name, source).await,
-        SchemeSubcommand::FromCsv { path, name, platform } =>
-            run_from_csv(&path, name.as_deref(), platform.as_deref()).await,
+        SchemeSubcommand::FromCsv {
+            path,
+            name,
+            platform,
+        } => run_from_csv(&path, name.as_deref(), platform.as_deref()).await,
     }
 }
 
@@ -28,10 +31,7 @@ async fn run_list() -> anyhow::Result<()> {
     match load_user_schemes() {
         Ok(user) => {
             for s in user {
-                println!(
-                    "{:<20} {:<12} {}",
-                    s.name, "user", s.description,
-                );
+                println!("{:<20} {:<12} {}", s.name, "user", s.description,);
             }
         }
         Err(e) => eprintln!("  warning: could not enumerate user schemes — {e}"),
@@ -48,8 +48,7 @@ pub async fn run_show(name: &str, source: bool) -> anyhow::Result<()> {
     if source {
         // Phase 8f.5: --source emits the scheme as pretty JSON for
         // copy/paste, diffing, or piping into another tool.
-        let json = serde_json::to_string_pretty(&scheme)
-            .context("serializing scheme to JSON")?;
+        let json = serde_json::to_string_pretty(&scheme).context("serializing scheme to JSON")?;
         println!("{json}");
         return Ok(());
     }
@@ -114,9 +113,9 @@ async fn run_from_csv(
 
     // Phase 8f.7: pick a dialect by explicit --platform, otherwise auto-detect.
     let dialect = if let Some(p) = platform {
-        let parsed = Platform::parse(p).ok_or_else(|| anyhow::anyhow!(
-            "unknown platform '{p}' — supported: yahoo, espn, sleeper, fantrax"
-        ))?;
+        let parsed = Platform::parse(p).ok_or_else(|| {
+            anyhow::anyhow!("unknown platform '{p}' — supported: yahoo, espn, sleeper, fantrax")
+        })?;
         dialect_for(parsed)
     } else {
         match detect_platform(&header) {
@@ -131,12 +130,25 @@ async fn run_from_csv(
 
     let stats = matched_stats(dialect, &header);
     let scheme_name = name.unwrap_or("my-league");
-    println!("Platform: {} ({} signature{} detected)",
+    println!(
+        "Platform: {} ({} signature{} detected)",
         dialect.platform.name(),
-        dialect.signatures.iter()
+        dialect
+            .signatures
+            .iter()
             .filter(|s| header.contains(*s))
             .count(),
-        if dialect.signatures.iter().filter(|s| header.contains(*s)).count() == 1 { "" } else { "s" },
+        if dialect
+            .signatures
+            .iter()
+            .filter(|s| header.contains(*s))
+            .count()
+            == 1
+        {
+            ""
+        } else {
+            "s"
+        },
     );
     println!("Detected {} scoreable stat(s) in '{path}':", stats.len());
     for (col, key) in &stats {
@@ -158,7 +170,9 @@ fn find_builtin(name: &str) -> Option<Scheme> {
 /// Look up a scheme by name, preferring a user file when present so users can
 /// override a builtin (e.g., a tweaked `yahoo-standard.toml`).
 fn find_scheme(name: &str) -> Option<Scheme> {
-    if let Some(s) = load_user_scheme(name) { return Some(s); }
+    if let Some(s) = load_user_scheme(name) {
+        return Some(s);
+    }
     find_builtin(name)
 }
 
@@ -169,7 +183,9 @@ fn find_scheme(name: &str) -> Option<Scheme> {
 /// via the dedicated `load_user_scheme_strict` path below.
 fn load_user_scheme(name: &str) -> Option<Scheme> {
     let path = user_schemes_dir().ok()?.join(format!("{name}.toml"));
-    if !path.exists() { return None; }
+    if !path.exists() {
+        return None;
+    }
     let text = std::fs::read_to_string(&path).ok()?;
     toml::from_str(&text).ok()
 }
@@ -179,14 +195,16 @@ fn load_user_scheme(name: &str) -> Option<Scheme> {
 /// half-edited templates; `scheme show NAME` is the place for strict errors.
 fn load_user_schemes() -> anyhow::Result<Vec<Scheme>> {
     let dir = user_schemes_dir()?;
-    if !dir.exists() { return Ok(Vec::new()); }
+    if !dir.exists() {
+        return Ok(Vec::new());
+    }
     let mut out = Vec::new();
-    for entry in std::fs::read_dir(&dir)
-        .with_context(|| format!("reading {}", dir.display()))?
-    {
+    for entry in std::fs::read_dir(&dir).with_context(|| format!("reading {}", dir.display()))? {
         let entry = entry?;
         let path = entry.path();
-        if path.extension().and_then(|e| e.to_str()) != Some("toml") { continue; }
+        if path.extension().and_then(|e| e.to_str()) != Some("toml") {
+            continue;
+        }
         let text = match std::fs::read_to_string(&path) {
             Ok(t) => t,
             Err(_) => continue,
@@ -233,7 +251,8 @@ mod tests {
 
     /// A minimal valid scheme TOML matching the Scheme serde shape.
     fn minimal_scheme_toml(name: &str) -> String {
-        format!(r#"
+        format!(
+            r#"
 name = "{name}"
 description = "test scheme"
 source = "custom"
@@ -244,7 +263,8 @@ assists = 3.0
 
 [goalie]
 wins = 5.0
-"#)
+"#
+        )
     }
 
     #[test]
@@ -269,11 +289,14 @@ wins = 5.0
         let _guard = crate::test_utils::home_env_lock();
         let (_keep, schemes) = isolate_home();
         // Override the builtin yahoo-standard with a user scheme.
-        write_user_scheme(&schemes, "yahoo-standard", &minimal_scheme_toml("yahoo-standard"));
+        write_user_scheme(
+            &schemes,
+            "yahoo-standard",
+            &minimal_scheme_toml("yahoo-standard"),
+        );
         let s = find_scheme("yahoo-standard").expect("must resolve");
         // Our user scheme has goals=4.0 — different from the real builtin (3.0).
-        assert_eq!(s.skater.goals, 4.0,
-            "user scheme should override builtin");
+        assert_eq!(s.skater.goals, 4.0, "user scheme should override builtin");
     }
 
     #[test]
@@ -297,8 +320,10 @@ wins = 5.0
         let all = load_user_schemes().expect("listing must not fail");
         let names: Vec<&str> = all.iter().map(|s| s.name.as_str()).collect();
         assert!(names.contains(&"valid"));
-        assert!(!names.contains(&"broken"),
-            "malformed toml should be skipped, got: {names:?}");
+        assert!(
+            !names.contains(&"broken"),
+            "malformed toml should be skipped, got: {names:?}"
+        );
     }
 
     #[test]
@@ -308,5 +333,4 @@ wins = 5.0
         let all = load_user_schemes().expect("must succeed on empty dir");
         assert!(all.is_empty(), "empty dir should produce empty list");
     }
-
 }

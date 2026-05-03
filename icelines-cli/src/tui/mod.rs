@@ -2,11 +2,11 @@ pub mod app;
 pub mod dashboard_panel;
 pub mod event;
 pub mod headshot;
-pub mod sparkline;
 pub mod loader;
 pub mod playoffs;
 pub mod schedule;
 pub mod screens;
+pub mod sparkline;
 pub mod tonight;
 pub mod widgets;
 
@@ -30,7 +30,7 @@ pub async fn run_tui(no_color: bool) -> Result<()> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen)?;
-    let backend  = CrosstermBackend::new(stdout);
+    let backend = CrosstermBackend::new(stdout);
     let mut term = Terminal::new(backend)?;
 
     let result = run_loop(&mut term, no_color).await;
@@ -43,10 +43,7 @@ pub async fn run_tui(no_color: bool) -> Result<()> {
     result
 }
 
-async fn run_loop(
-    term: &mut Terminal<CrosstermBackend<io::Stdout>>,
-    no_color: bool,
-) -> Result<()> {
+async fn run_loop(term: &mut Terminal<CrosstermBackend<io::Stdout>>, no_color: bool) -> Result<()> {
     let mut app = App::new(no_color);
 
     // Synchronous boot load. ~50ms against bundled data — well below
@@ -74,9 +71,9 @@ async fn run_loop(
         // rather than `is_empty()` to know if we've already pulled.
         if app.transactions.is_empty() && app.transactions_fetched_at.is_empty() {
             if let Some(bundle) = app.load_state.take_transactions() {
-                app.transactions             = bundle.rows;
-                app.transactions_fetched_at  = bundle.fetched_at;
-                app.transactions_stale       = bundle.stale;
+                app.transactions = bundle.rows;
+                app.transactions_fetched_at = bundle.fetched_at;
+                app.transactions_stale = bundle.stale;
             }
         }
 
@@ -84,7 +81,7 @@ async fn run_loop(
         use loader::InstallPhase;
         match app.install_state.phase() {
             InstallPhase::Downloading(season) => {
-                let frames = ["⠋","⠙","⠹","⠸","⠼","⠴","⠦","⠧","⠇","⠏"];
+                let frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
                 let spinner = frames[(app.tick / 2 % 10) as usize];
                 app.status = format!("{spinner} Installing {season}…");
             }

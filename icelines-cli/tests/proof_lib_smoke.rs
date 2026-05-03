@@ -21,7 +21,9 @@ fn proof_compiles_a_dashboard_spec() {
 
     // Minimal dashboard fixture matching proof's `two-region` test shape:
     // YAML front-matter declares region geometry, body fills each region.
-    std::fs::write(&src, "\
+    std::fs::write(
+        &src,
+        "\
 ---
 dashboard:
   width: 20
@@ -39,7 +41,9 @@ HEADER CONTENT
 ```proof:region name=bottom
 FOOTER CONTENT
 ```
-").unwrap();
+",
+    )
+    .unwrap();
 
     let cfg = GlintConfig::default();
     let result = compile_file(&src, &out, dir.path(), &cfg).unwrap();
@@ -47,11 +51,14 @@ FOOTER CONTENT
     // Print the full result up front so any failure below has the diagnostic
     // context the proof team asked for in the hand-off note.
     eprintln!("CompileResult.written = {}", result.written);
-    eprintln!("CompileResult.directives_resolved = {}", result.directives_resolved);
+    eprintln!(
+        "CompileResult.directives_resolved = {}",
+        result.directives_resolved
+    );
     eprintln!("CompileResult.from_cache = {}", result.from_cache);
     for v in &result.violations {
         let sev = match v.severity {
-            ViolationSeverity::Error   => "ERROR",
+            ViolationSeverity::Error => "ERROR",
             ViolationSeverity::Warning => "warning",
         };
         eprintln!(
@@ -70,10 +77,19 @@ FOOTER CONTENT
     // own canonical `two-region.dashboard.source.md` fixture has the same
     // shape. Don't assert >= 1 here.
     assert!(
-        result.violations.iter().all(|v| !matches!(v.severity, ViolationSeverity::Error)),
+        result
+            .violations
+            .iter()
+            .all(|v| !matches!(v.severity, ViolationSeverity::Error)),
         "no error-level violations expected",
     );
     let rendered = std::fs::read_to_string(&out).unwrap();
-    assert!(rendered.contains("HEADER"), "compiled output should contain region body");
-    assert!(rendered.contains("FOOTER"), "compiled output should contain second region body");
+    assert!(
+        rendered.contains("HEADER"),
+        "compiled output should contain region body"
+    );
+    assert!(
+        rendered.contains("FOOTER"),
+        "compiled output should contain second region body"
+    );
 }

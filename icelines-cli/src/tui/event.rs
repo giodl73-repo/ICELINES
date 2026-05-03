@@ -7,7 +7,8 @@ use std::time::Duration;
 pub enum Action {
     Quit,
     Help,
-    #[allow(dead_code)] Back,
+    #[allow(dead_code)]
+    Back,
     Escape,
     Up,
     Down,
@@ -19,11 +20,11 @@ pub enum Action {
     /// Shift-Tab — cycle tabs in reverse.
     TabPrev,
     Refresh,
-    Install,          // 'i' on Fetch+Install screen
-    AddToGroup,       // 'g' — open group picker on any player-list screen
-    AddToFavorites,   // 'f' — instant add to Favorites group (no picker)
-    GoToTab(usize),   // '1'–'7' — jump directly to a tab
-    Space,            // Space — toggle focus in split-pane screens
+    Install,        // 'i' on Fetch+Install screen
+    AddToGroup,     // 'g' — open group picker on any player-list screen
+    AddToFavorites, // 'f' — instant add to Favorites group (no picker)
+    GoToTab(usize), // '1'–'7' — jump directly to a tab
+    Space,          // Space — toggle focus in split-pane screens
     Char(char),
     Backspace,
 }
@@ -67,19 +68,19 @@ fn map_key(k: crossterm::event::KeyEvent) -> Option<Action> {
         Char('5') => Some(Action::GoToTab(4)),
         Char('6') => Some(Action::GoToTab(5)),
         Char(' ') => Some(Action::Space),
-        Char(c)   => Some(Action::Char(c)),
-        Esc       => Some(Action::Escape),
+        Char(c) => Some(Action::Char(c)),
+        Esc => Some(Action::Escape),
         Backspace => Some(Action::Backspace),
-        Up    => Some(Action::Up),
-        Down  => Some(Action::Down),
-        Left  => Some(Action::Left),
+        Up => Some(Action::Up),
+        Down => Some(Action::Down),
+        Left => Some(Action::Left),
         Right => Some(Action::Right),
         Enter => Some(Action::Enter),
         // Tab handling: many terminals deliver Shift-Tab as a distinct
         // `BackTab` keycode; others deliver `Tab` with `SHIFT`. Cover both.
         Tab if k.modifiers.contains(KeyModifiers::SHIFT) => Some(Action::TabPrev),
         BackTab => Some(Action::TabPrev),
-        Tab     => Some(Action::Tab),
-        _     => None,
+        Tab => Some(Action::Tab),
+        _ => None,
     }
 }

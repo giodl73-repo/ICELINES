@@ -139,10 +139,7 @@ pub async fn run(cmd: SnapshotSubcommand) -> anyhow::Result<()> {
             } else if report.removed == 0 {
                 println!("Nothing to sweep — all chunks are still referenced.");
             } else {
-                println!(
-                    "✓ Swept {} chunk(s), freed ~{} KB.",
-                    report.removed, kb,
-                );
+                println!("✓ Swept {} chunk(s), freed ~{} KB.", report.removed, kb,);
             }
         }
 
@@ -156,44 +153,81 @@ pub async fn run(cmd: SnapshotSubcommand) -> anyhow::Result<()> {
                         "Dry run — would delete {} snapshot(s) (keeping newest {keep} per tier):",
                         report.planned,
                     );
-                    for n in &report.names { println!("  {n}"); }
+                    for n in &report.names {
+                        println!("  {n}");
+                    }
                     println!("Run without --dry-run to commit. Then `snapshot gc` to reclaim chunk space.");
                 }
             } else if report.deleted == 0 {
                 println!("Nothing to prune (kept {keep} per tier).");
             } else {
                 println!("✓ Pruned {} snapshot(s):", report.deleted);
-                for n in &report.names { println!("  {n}"); }
+                for n in &report.names {
+                    println!("  {n}");
+                }
                 println!("Run `icelines snapshot gc` to reclaim freed chunk space.");
             }
         }
 
         SnapshotSubcommand::Diff { a, b } => {
-            let report = store.diff(&a, &b)
+            let report = store
+                .diff(&a, &b)
                 .with_context(|| format!("diff '{a}' vs '{b}'"))?;
             if report.is_empty() {
                 println!("No differences between '{a}' and '{b}'.");
             } else {
                 println!("Diff: '{a}' → '{b}'");
                 if !report.removed.is_empty() {
-                    println!("  Removed players ({}): {}", report.removed.len(),
-                        report.removed.iter().take(10).map(u32::to_string)
-                            .collect::<Vec<_>>().join(", "));
+                    println!(
+                        "  Removed players ({}): {}",
+                        report.removed.len(),
+                        report
+                            .removed
+                            .iter()
+                            .take(10)
+                            .map(u32::to_string)
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    );
                 }
                 if !report.added.is_empty() {
-                    println!("  Added players ({}): {}", report.added.len(),
-                        report.added.iter().take(10).map(u32::to_string)
-                            .collect::<Vec<_>>().join(", "));
+                    println!(
+                        "  Added players ({}): {}",
+                        report.added.len(),
+                        report
+                            .added
+                            .iter()
+                            .take(10)
+                            .map(u32::to_string)
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    );
                 }
                 if !report.changed_bios.is_empty() {
-                    println!("  Changed bios ({}): {}", report.changed_bios.len(),
-                        report.changed_bios.iter().take(10).map(u32::to_string)
-                            .collect::<Vec<_>>().join(", "));
+                    println!(
+                        "  Changed bios ({}): {}",
+                        report.changed_bios.len(),
+                        report
+                            .changed_bios
+                            .iter()
+                            .take(10)
+                            .map(u32::to_string)
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    );
                 }
                 if !report.changed_stats.is_empty() {
-                    println!("  Changed stats ({}): {}", report.changed_stats.len(),
-                        report.changed_stats.iter().take(10).map(u32::to_string)
-                            .collect::<Vec<_>>().join(", "));
+                    println!(
+                        "  Changed stats ({}): {}",
+                        report.changed_stats.len(),
+                        report
+                            .changed_stats
+                            .iter()
+                            .take(10)
+                            .map(u32::to_string)
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    );
                 }
             }
         }

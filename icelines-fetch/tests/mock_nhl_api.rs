@@ -289,7 +289,10 @@ fn l0_fixture_stats_parses_correctly() {
 
     // Makelar (Makar-like): no faceoff data (defenseman)
     let makar_stats = stats.iter().find(|s| s.player_id == 8480069).unwrap();
-    assert!(makar_stats.faceoff_win_pct.is_none(), "defenseman must have None faceoff%");
+    assert!(
+        makar_stats.faceoff_win_pct.is_none(),
+        "defenseman must have None faceoff%"
+    );
 }
 
 #[test]
@@ -328,8 +331,7 @@ async fn l1_mock_fetch_bios_returns_3_players() {
 
     // Mock the paginated bios endpoint — single page with all 3 players
     let _mock = server.mock(|when, then| {
-        when.method(GET)
-            .path_contains("/skater/bios");
+        when.method(GET).path_contains("/skater/bios");
         then.status(200)
             .header("content-type", "application/json")
             .body(FIXTURE_BIOS_JSON);
@@ -354,8 +356,7 @@ async fn l1_mock_fetch_stats_parses_pp_goals() {
     let server = MockServer::start();
 
     let _mock = server.mock(|when, then| {
-        when.method(GET)
-            .path_contains("/skater/summary");
+        when.method(GET).path_contains("/skater/summary");
         then.status(200)
             .header("content-type", "application/json")
             .body(FIXTURE_STATS_JSON);
@@ -371,8 +372,14 @@ async fn l1_mock_fetch_stats_parses_pp_goals() {
     assert_eq!(stats.len(), 3, "must parse 3 stats rows");
 
     let mc_stats = stats.iter().find(|s| s.player_id == 8478402).unwrap();
-    assert_eq!(mc_stats.pp_goals, 18, "pp_goals must be parsed from fixture");
-    assert_eq!(mc_stats.pp_points, 40, "pp_points must be parsed from fixture");
+    assert_eq!(
+        mc_stats.pp_goals, 18,
+        "pp_goals must be parsed from fixture"
+    );
+    assert_eq!(
+        mc_stats.pp_points, 40,
+        "pp_points must be parsed from fixture"
+    );
     assert!(
         mc_stats.shooting_pctg.is_some(),
         "shooting_pct must be Some when shots > 0"
@@ -384,8 +391,7 @@ async fn l1_mock_fetch_realtime_parses_hits() {
     let server = MockServer::start();
 
     let _mock = server.mock(|when, then| {
-        when.method(GET)
-            .path_contains("/skater/realtime");
+        when.method(GET).path_contains("/skater/realtime");
         then.status(200)
             .header("content-type", "application/json")
             .body(FIXTURE_REALTIME_JSON);
@@ -405,7 +411,11 @@ async fn l1_mock_fetch_realtime_parses_hits() {
     assert_eq!(mc_rt.blocked_shots, 15, "blocked_shots must be parsed");
     assert_eq!(mc_rt.takeaways, 42, "takeaways must be parsed");
     assert_eq!(mc_rt.giveaways, 35, "giveaways must be parsed");
-    assert_eq!(mc_rt.pim, Some(14), "pim must be parsed (Option<u32> per L.7a)");
+    assert_eq!(
+        mc_rt.pim,
+        Some(14),
+        "pim must be parsed (Option<u32> per L.7a)"
+    );
 }
 
 #[tokio::test]
@@ -413,8 +423,7 @@ async fn l1_mock_fetch_goalies_parses_record_and_save_pct() {
     let server = MockServer::start();
 
     let _mock = server.mock(|when, then| {
-        when.method(GET)
-            .path_contains("/goalie/summary");
+        when.method(GET).path_contains("/goalie/summary");
         then.status(200)
             .header("content-type", "application/json")
             .body(FIXTURE_GOALIES_JSON);
@@ -429,7 +438,9 @@ async fn l1_mock_fetch_goalies_parses_record_and_save_pct() {
         .expect("mock fetch_all_goalies must succeed");
     assert_eq!(goalies.len(), 2, "must parse 2 goalie rows");
 
-    let hb = goalies.iter().find(|g| g.player_id == 8476945)
+    let hb = goalies
+        .iter()
+        .find(|g| g.player_id == 8476945)
         .expect("Hellebuyck must be present in fixture");
     assert_eq!(hb.last_name, "Hellebuyck");
     assert_eq!(hb.team_abbrevs, "WPG");
@@ -444,12 +455,18 @@ async fn l1_mock_fetch_goalies_parses_record_and_save_pct() {
         hb.save_pct,
     );
     assert!(
-        hb.goals_against_average.is_some_and(|g| (g - 2.00461).abs() < 1e-3),
+        hb.goals_against_average
+            .is_some_and(|g| (g - 2.00461).abs() < 1e-3),
         "goals_against_average must parse from camelCase",
     );
-    assert!(hb.qualified(15), "Hellebuyck with 63 GP must clear 15-GP threshold");
+    assert!(
+        hb.qualified(15),
+        "Hellebuyck with 63 GP must clear 15-GP threshold"
+    );
 
-    let bob = goalies.iter().find(|g| g.player_id == 8476434)
+    let bob = goalies
+        .iter()
+        .find(|g| g.player_id == 8476434)
         .expect("Bobrovsky must be present in fixture");
     assert_eq!(bob.team_abbrevs, "FLA");
     assert_eq!(bob.primary_team(), "FLA");
@@ -553,7 +570,9 @@ async fn l1_mock_fetch_schedule_for_date_parses_gameweek() {
     });
 
     let client = NhlApiClient::new("http://unused.local", server.url(""));
-    let games = client.fetch_schedule_for_date("2026-04-27").await
+    let games = client
+        .fetch_schedule_for_date("2026-04-27")
+        .await
         .expect("mock fetch_schedule_for_date must succeed");
 
     // 3 games across 2 days
@@ -594,7 +613,10 @@ async fn l1_mock_fetch_schedule_extracts_final_scores() {
     }
     let upcoming: Vec<_> = games.iter().filter(|g| !g.is_final()).collect();
     assert_eq!(upcoming.len(), 1, "fixture has 1 future game");
-    assert!(upcoming[0].away_score.is_none(), "future game has no score yet");
+    assert!(
+        upcoming[0].away_score.is_none(),
+        "future game has no score yet"
+    );
 }
 
 #[tokio::test]
@@ -608,13 +630,20 @@ async fn l1_mock_fetch_schedule_extracts_playoff_series() {
     let client = NhlApiClient::new("http://unused.local", server.url(""));
     let games = client.fetch_schedule_for_date("2026-04-27").await.unwrap();
 
-    let playoff = games.iter().find(|g| g.is_playoff())
+    let playoff = games
+        .iter()
+        .find(|g| g.is_playoff())
         .expect("fixture must include one playoff game");
     assert_eq!(playoff.series_game.as_deref(), Some("Game 5"));
     assert_eq!(playoff.away_wins, Some(2));
     assert_eq!(playoff.home_wins, Some(2));
-    let label = playoff.series_label().expect("series_label must format from fixture data");
-    assert!(label.contains("Game 5"), "label must include game number, got: {label}");
+    let label = playoff
+        .series_label()
+        .expect("series_label must format from fixture data");
+    assert!(
+        label.contains("Game 5"),
+        "label must include game number, got: {label}"
+    );
     assert!(label.contains("NYR"), "label must include away abbrev");
 }
 
@@ -622,14 +651,17 @@ async fn l1_mock_fetch_schedule_extracts_playoff_series() {
 async fn l1_mock_fetch_team_season_schedule_parses_games() {
     let server = MockServer::start();
     let _mock = server.mock(|when, then| {
-        when.method(GET).path_contains("/club-schedule-season/SEA/20252026");
+        when.method(GET)
+            .path_contains("/club-schedule-season/SEA/20252026");
         then.status(200)
             .header("content-type", "application/json")
             .body(FIXTURE_TEAM_SEASON_SCHEDULE);
     });
 
     let client = NhlApiClient::new("http://unused.local", server.url(""));
-    let games = client.fetch_team_season_schedule("SEA", "20252026").await
+    let games = client
+        .fetch_team_season_schedule("SEA", "20252026")
+        .await
         .expect("mock fetch_team_season_schedule must succeed");
 
     assert_eq!(games.len(), 3, "fixture has 3 games");
@@ -644,7 +676,9 @@ async fn l1_mock_fetch_team_season_schedule_parses_games() {
     assert_eq!(games.iter().filter(|g| !g.is_final()).count(), 1);
 
     // SO last_period flows through
-    let so_game = games.iter().find(|g| g.last_period.as_deref() == Some("SO"))
+    let so_game = games
+        .iter()
+        .find(|g| g.last_period.as_deref() == Some("SO"))
         .expect("fixture has one SO game");
     assert_eq!(so_game.away_abbrev, "SEA");
 }
@@ -658,11 +692,19 @@ async fn l1_mock_fetch_team_season_involves_helper() {
     });
 
     let client = NhlApiClient::new("http://unused.local", server.url(""));
-    let games = client.fetch_team_season_schedule("SEA", "20252026").await.unwrap();
+    let games = client
+        .fetch_team_season_schedule("SEA", "20252026")
+        .await
+        .unwrap();
 
     // Every fixture game must involve SEA (the team we asked for)
     for g in &games {
-        assert!(g.involves("SEA"), "game must involve SEA, got {} @ {}", g.away_abbrev, g.home_abbrev);
+        assert!(
+            g.involves("SEA"),
+            "game must involve SEA, got {} @ {}",
+            g.away_abbrev,
+            g.home_abbrev
+        );
     }
     // None should match a team that isn't in the fixture
     assert_eq!(
@@ -808,13 +850,23 @@ fn l0_parse_boxscore_skater_lines_per_team() {
     let bs = parse_boxscore(&raw, 2025020100);
 
     // Away (NYR): 2 forwards + 1 defenseman = 3 skaters
-    assert_eq!(bs.away_skaters.len(), 3, "expected 3 NYR skaters: {:?}",
-        bs.away_skaters.iter().map(|s| &s.player_name).collect::<Vec<_>>());
+    assert_eq!(
+        bs.away_skaters.len(),
+        3,
+        "expected 3 NYR skaters: {:?}",
+        bs.away_skaters
+            .iter()
+            .map(|s| &s.player_name)
+            .collect::<Vec<_>>()
+    );
     // Home (WSH): 2 forwards + 1 defenseman = 3 skaters
     assert_eq!(bs.home_skaters.len(), 3);
 
     // Spot-check field shape on Adam Fox (highest TOI on NYR).
-    let fox = bs.away_skaters.iter().find(|s| s.player_name == "Adam Fox")
+    let fox = bs
+        .away_skaters
+        .iter()
+        .find(|s| s.player_name == "Adam Fox")
         .expect("Fox in fixture");
     assert_eq!(fox.team_abbrev, "NYR");
     assert_eq!(fox.position, "D");
@@ -823,7 +875,10 @@ fn l0_parse_boxscore_skater_lines_per_team() {
     assert_eq!(fox.plus_minus, -1);
 
     // Tom Wilson — high hits leader on WSH side.
-    let wilson = bs.home_skaters.iter().find(|s| s.player_name == "Tom Wilson")
+    let wilson = bs
+        .home_skaters
+        .iter()
+        .find(|s| s.player_name == "Tom Wilson")
         .expect("Wilson in fixture");
     assert_eq!(wilson.hits, 5);
     assert_eq!(wilson.pim, 2);
@@ -835,12 +890,15 @@ fn l0_parse_boxscore_handles_missing_player_by_game_stats() {
     // entirely. The parser must return empty skater vectors without
     // panicking so the game-detail screen can fall back gracefully.
     use icelines_fetch::nhl_api::parse_boxscore;
-    let raw: serde_json::Value = serde_json::from_str(r#"{
+    let raw: serde_json::Value = serde_json::from_str(
+        r#"{
         "id": 999,
         "awayTeam": {"abbrev": "BOS", "score": 0},
         "homeTeam": {"abbrev": "MTL", "score": 0},
         "gameState": "FUT"
-    }"#).unwrap();
+    }"#,
+    )
+    .unwrap();
     let bs = parse_boxscore(&raw, 999);
     assert!(bs.away_skaters.is_empty());
     assert!(bs.home_skaters.is_empty());
@@ -850,14 +908,17 @@ fn l0_parse_boxscore_handles_missing_player_by_game_stats() {
 async fn l1_mock_fetch_boxscore_parses_goals() {
     let server = MockServer::start();
     let _mock = server.mock(|when, then| {
-        when.method(GET).path_contains("/gamecenter/2025020100/boxscore");
+        when.method(GET)
+            .path_contains("/gamecenter/2025020100/boxscore");
         then.status(200)
             .header("content-type", "application/json")
             .body(FIXTURE_BOXSCORE);
     });
 
     let client = NhlApiClient::new("http://unused.local", server.url(""));
-    let bs = client.fetch_boxscore(2025020100).await
+    let bs = client
+        .fetch_boxscore(2025020100)
+        .await
         .expect("mock fetch_boxscore must succeed");
     assert_eq!(bs.goals.len(), 2);
     assert_eq!(bs.goalies.len(), 2);
@@ -954,8 +1015,11 @@ fn l0_parse_playoff_bracket_basic() {
 
     // Series B (WSH-NYR) — winner inferred from 4-win threshold
     let b = &r1.series[1];
-    assert_eq!(b.winner_abbrev.as_deref(), Some("WSH"),
-        "winner must be inferred when explicit winningTeam is absent but top_seed reaches 4 wins");
+    assert_eq!(
+        b.winner_abbrev.as_deref(),
+        Some("WSH"),
+        "winner must be inferred when explicit winningTeam is absent but top_seed reaches 4 wins"
+    );
 
     // Second round series I — in progress, no winner
     let r2 = &bracket.rounds[1];
@@ -969,7 +1033,8 @@ fn l0_parse_playoff_bracket_basic() {
 #[test]
 fn l0_parse_playoff_bracket_empty_off_season() {
     use icelines_fetch::nhl_api::parse_playoff_bracket;
-    let raw: serde_json::Value = serde_json::from_str(r#"{"season":"20252026","playoffRounds":[]}"#).unwrap();
+    let raw: serde_json::Value =
+        serde_json::from_str(r#"{"season":"20252026","playoffRounds":[]}"#).unwrap();
     let bracket = parse_playoff_bracket(&raw);
     assert!(bracket.is_empty(), "empty rounds means off-season");
     assert_eq!(bracket.rounds.len(), 0);
@@ -983,7 +1048,8 @@ fn l0_parse_playoff_bracket_flat_series_current_api() {
     // (`topSeedWins` / `bottomSeedWins`), not on the team object.
     // The legacy `playoffRounds` shape does NOT appear.
     use icelines_fetch::nhl_api::parse_playoff_bracket;
-    let raw: serde_json::Value = serde_json::from_str(r#"{
+    let raw: serde_json::Value = serde_json::from_str(
+        r#"{
         "bracketTitle": "2026 Stanley Cup Playoffs",
         "series": [
             {
@@ -1015,25 +1081,33 @@ fn l0_parse_playoff_bracket_flat_series_current_api() {
                 "bottomSeedTeam": {"abbrev":"MTL","name":{"default":"Montreal Canadiens"}}
             }
         ]
-    }"#).unwrap();
+    }"#,
+    )
+    .unwrap();
     let bracket = parse_playoff_bracket(&raw);
 
     // Bracket must NOT be empty — the regression that caused the TUI to
     // show "Playoffs not yet active for this season" during round 1.
-    assert!(!bracket.is_empty(),
-        "current-shape bracket with 2 series must not be empty");
+    assert!(
+        !bracket.is_empty(),
+        "current-shape bracket with 2 series must not be empty"
+    );
     assert_eq!(bracket.rounds.len(), 1, "both series belong to round 1");
     assert_eq!(bracket.rounds[0].round_number, 1);
-    assert_eq!(bracket.rounds[0].label, "1st Round",
-        "round label should come from seriesTitle when present");
+    assert_eq!(
+        bracket.rounds[0].label, "1st Round",
+        "round label should come from seriesTitle when present"
+    );
     assert_eq!(bracket.rounds[0].series.len(), 2);
 
     // Wins must be read from the series-level fields, not the team
     // objects (which no longer carry them in the current API).
     let a = &bracket.rounds[0].series[0];
     assert_eq!(a.top_seed_abbrev, "BUF");
-    assert_eq!(a.top_seed_wins, 3,
-        "topSeedWins lives at series level in the current API");
+    assert_eq!(
+        a.top_seed_wins, 3,
+        "topSeedWins lives at series level in the current API"
+    );
     assert_eq!(a.bottom_seed_abbrev, "BOS");
     assert_eq!(a.bottom_seed_wins, 2);
     // Rank: prefer the abbreviated form when present.
@@ -1044,15 +1118,19 @@ fn l0_parse_playoff_bracket_flat_series_current_api() {
     // 4-win threshold even without an explicit `winningTeam` field.
     let b = bracket.find_series("B").expect("series B in fixture");
     assert_eq!(b.top_seed_wins, 4);
-    assert_eq!(b.winner_abbrev.as_deref(), Some("TBL"),
-        "4 top-seed wins should infer TBL as winner");
+    assert_eq!(
+        b.winner_abbrev.as_deref(),
+        Some("TBL"),
+        "4 top-seed wins should infer TBL as winner"
+    );
 }
 
 #[test]
 fn l0_parse_playoff_bracket_groups_flat_series_by_round() {
     // Multi-round flat series — verify bucketing.
     use icelines_fetch::nhl_api::parse_playoff_bracket;
-    let raw: serde_json::Value = serde_json::from_str(r#"{
+    let raw: serde_json::Value = serde_json::from_str(
+        r#"{
         "series": [
             {"seriesLetter":"A", "playoffRound": 1, "seriesTitle":"1st Round",
              "topSeedWins": 4, "bottomSeedWins": 0,
@@ -1063,7 +1141,9 @@ fn l0_parse_playoff_bracket_groups_flat_series_by_round() {
              "topSeedTeam":{"abbrev":"BUF","name":{"default":"BUF"}},
              "bottomSeedTeam":{"abbrev":"NYR","name":{"default":"NYR"}}}
         ]
-    }"#).unwrap();
+    }"#,
+    )
+    .unwrap();
     let bracket = parse_playoff_bracket(&raw);
     assert_eq!(bracket.rounds.len(), 2);
     assert_eq!(bracket.rounds[0].round_number, 1);
@@ -1078,8 +1158,10 @@ fn l0_parse_playoff_bracket_truly_empty_returns_empty() {
     use icelines_fetch::nhl_api::parse_playoff_bracket;
     let raw: serde_json::Value = serde_json::from_str(r#"{"bracketTitle":"None"}"#).unwrap();
     let bracket = parse_playoff_bracket(&raw);
-    assert!(bracket.is_empty(),
-        "neither playoffRounds nor series → empty bracket");
+    assert!(
+        bracket.is_empty(),
+        "neither playoffRounds nor series → empty bracket"
+    );
 }
 
 #[test]
@@ -1089,13 +1171,19 @@ fn l0_playoff_series_summary_phrasing() {
     let bracket = parse_playoff_bracket(&raw);
 
     let a = bracket.find_series("A").unwrap();
-    assert!(a.summary().contains("FLA wins"), "completed series → 'wins', got: {}", a.summary());
+    assert!(
+        a.summary().contains("FLA wins"),
+        "completed series → 'wins', got: {}",
+        a.summary()
+    );
 
     let i = bracket.find_series("I").unwrap();
     let s = i.summary();
     // 2-1 in progress with FLA on top → "FLA leads 2-1"
-    assert!(s.contains("leads") && s.contains("2-1"),
-        "in-progress lead phrasing missing, got: {s}");
+    assert!(
+        s.contains("leads") && s.contains("2-1"),
+        "in-progress lead phrasing missing, got: {s}"
+    );
 }
 
 #[test]
@@ -1105,7 +1193,10 @@ fn l0_playoff_bracket_find_series_by_letter() {
     let bracket = parse_playoff_bracket(&raw);
 
     assert!(bracket.find_series("A").is_some(), "A is in fixture");
-    assert!(bracket.find_series("I").is_some(), "I is in fixture (round 2)");
+    assert!(
+        bracket.find_series("I").is_some(),
+        "I is in fixture (round 2)"
+    );
     assert!(bracket.find_series("Z").is_none(), "Z is not in fixture");
 }
 
@@ -1120,19 +1211,30 @@ async fn l1_mock_fetch_playoff_bracket_parses_two_rounds() {
     });
 
     let client = NhlApiClient::new("http://unused.local", server.url(""));
-    let bracket = client.fetch_playoff_bracket(2026).await
+    let bracket = client
+        .fetch_playoff_bracket(2026)
+        .await
         .expect("mock fetch_playoff_bracket must succeed");
 
     assert_eq!(bracket.rounds.len(), 2, "fixture has 2 rounds");
-    assert_eq!(bracket.rounds[0].series.len(), 3, "first round has 3 series");
+    assert_eq!(
+        bracket.rounds[0].series.len(),
+        3,
+        "first round has 3 series"
+    );
     assert_eq!(bracket.current_round, Some(2));
 
     // Spot-check that conference grouping flowed through
-    let east_series_count = bracket.rounds.iter()
+    let east_series_count = bracket
+        .rounds
+        .iter()
         .flat_map(|r| r.series.iter())
         .filter(|s| s.conference.as_deref() == Some("Eastern"))
         .count();
-    assert_eq!(east_series_count, 3, "two east first-round + one east second-round");
+    assert_eq!(
+        east_series_count, 3,
+        "two east first-round + one east second-round"
+    );
 }
 
 #[tokio::test]
@@ -1252,4 +1354,3 @@ async fn l1_hart6_1_fetch_all_goalies_emits_gametypeid_3_for_playoff() {
         .expect("playoff goalies fetch must encode gameTypeId=3");
     assert_eq!(goalies.len(), 2);
 }
-

@@ -593,10 +593,7 @@ impl SeasonStatsBuilder {
         self
     }
 
-    pub fn with_goalie_saves_by_strength(
-        mut self,
-        g: GoalieSavesByStrengthStats,
-    ) -> Self {
+    pub fn with_goalie_saves_by_strength(mut self, g: GoalieSavesByStrengthStats) -> Self {
         self.goalie_saves_by_strength = Some(g);
         self
     }

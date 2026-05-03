@@ -32,10 +32,15 @@ pub fn columns(values: &[f64], width: usize) -> Vec<(char, f64)> {
     if values.is_empty() || width == 0 {
         return Vec::new();
     }
-    let cols = if width >= values.len() { values.len() } else { width };
+    let cols = if width >= values.len() {
+        values.len()
+    } else {
+        width
+    };
     let bucketed = bucket(values, cols);
 
-    let (min, max) = bucketed.iter()
+    let (min, max) = bucketed
+        .iter()
         .copied()
         .fold((f64::INFINITY, f64::NEG_INFINITY), |(lo, hi), v| {
             (lo.min(v), hi.max(v))
@@ -49,9 +54,10 @@ pub fn columns(values: &[f64], width: usize) -> Vec<(char, f64)> {
         let mid = BLOCKS[BLOCKS.len() / 2 - 1];
         return bucketed.into_iter().map(|v| (mid, v)).collect();
     }
-    bucketed.into_iter()
+    bucketed
+        .into_iter()
         .map(|v| {
-            let normalized = (v - min) / span;          // 0.0 ..= 1.0
+            let normalized = (v - min) / span; // 0.0 ..= 1.0
             let idx = (normalized * (BLOCKS.len() - 1) as f64).round() as usize;
             (BLOCKS[idx.min(BLOCKS.len() - 1)], v)
         })
@@ -92,47 +98,61 @@ mod tests {
         let s = render(&[42.0], 10);
         assert_eq!(s.chars().count(), 1, "one input → one column");
         // All-equal → middle-band block (▄).
-        assert!(s.contains('▄'), "single value should be middle-band, got {s:?}");
+        assert!(
+            s.contains('▄'),
+            "single value should be middle-band, got {s:?}"
+        );
     }
 
     #[test]
     fn l0_render_all_equal_uses_middle_band() {
         let s = render(&[5.0, 5.0, 5.0, 5.0], 4);
-        assert!(s.chars().all(|c| c == '▄'),
-            "constant series must render flat middle band, got {s:?}");
+        assert!(
+            s.chars().all(|c| c == '▄'),
+            "constant series must render flat middle band, got {s:?}"
+        );
     }
 
     #[test]
     fn l0_render_increasing_walks_low_to_high() {
         // 5 increasing values, 5 columns → first should be lowest block,
         // last should be highest. Middle values progress upward.
-        let s: Vec<char> = render(&[1.0, 2.0, 3.0, 4.0, 5.0], 5)
-            .chars().collect();
+        let s: Vec<char> = render(&[1.0, 2.0, 3.0, 4.0, 5.0], 5).chars().collect();
         assert_eq!(s.len(), 5);
         assert_eq!(s[0], '▁', "min input → lowest block, got {s:?}");
         assert_eq!(s[4], '█', "max input → highest block, got {s:?}");
         // Strictly non-decreasing block indices on a strictly-increasing
         // input — the bin indices map to BLOCKS in the same order.
-        let idxs: Vec<usize> = s.iter()
+        let idxs: Vec<usize> = s
+            .iter()
             .map(|c| BLOCKS.iter().position(|b| b == c).unwrap())
             .collect();
-        assert!(idxs.windows(2).all(|w| w[0] <= w[1]),
-            "increasing input → non-decreasing blocks, got {idxs:?}");
+        assert!(
+            idxs.windows(2).all(|w| w[0] <= w[1]),
+            "increasing input → non-decreasing blocks, got {idxs:?}"
+        );
     }
 
     #[test]
     fn l0_render_buckets_when_input_longer_than_width() {
         // 10 values into 5 cols → averaging halves of each pair.
         let s = render(&[1.0, 1.0, 5.0, 5.0, 9.0, 9.0, 5.0, 5.0, 1.0, 1.0], 5);
-        assert_eq!(s.chars().count(), 5,
-            "must hit requested width when over-binning, got {s:?}");
+        assert_eq!(
+            s.chars().count(),
+            5,
+            "must hit requested width when over-binning, got {s:?}"
+        );
         // Peak in the middle, low on the edges → first/last lower than middle.
         let chars: Vec<char> = s.chars().collect();
         let pos = |c: char| BLOCKS.iter().position(|b| *b == c).unwrap();
-        assert!(pos(chars[0]) < pos(chars[2]),
-            "valley on left should be lower than peak in middle, got {s:?}");
-        assert!(pos(chars[4]) < pos(chars[2]),
-            "valley on right should be lower than peak in middle, got {s:?}");
+        assert!(
+            pos(chars[0]) < pos(chars[2]),
+            "valley on left should be lower than peak in middle, got {s:?}"
+        );
+        assert!(
+            pos(chars[4]) < pos(chars[2]),
+            "valley on right should be lower than peak in middle, got {s:?}"
+        );
     }
 
     #[test]
@@ -151,13 +171,17 @@ mod tests {
         let s = render(&[44.0, 64.0, 32.0, 26.0, 48.0], 5);
         let chars: Vec<char> = s.chars().collect();
         let pos = |c: char| BLOCKS.iter().position(|b| *b == c).unwrap();
-        assert_eq!(pos(chars[1]), BLOCKS.len() - 1,
-            "64 (max) should be ▇█, got {s:?}");
-        assert_eq!(pos(chars[3]), 0,
-            "26 (min) should be ▁, got {s:?}");
+        assert_eq!(
+            pos(chars[1]),
+            BLOCKS.len() - 1,
+            "64 (max) should be ▇█, got {s:?}"
+        );
+        assert_eq!(pos(chars[3]), 0, "26 (min) should be ▁, got {s:?}");
         // Recover: idx 4 (48) should be higher than idx 3 (26).
-        assert!(pos(chars[4]) > pos(chars[3]),
-            "recovery should be visible, got {s:?}");
+        assert!(
+            pos(chars[4]) > pos(chars[3]),
+            "recovery should be visible, got {s:?}"
+        );
     }
 
     #[test]
