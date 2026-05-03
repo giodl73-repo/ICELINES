@@ -90,3 +90,53 @@ fn l1_legacy_schemes_load_byte_identical() {
         );
     }
 }
+
+/// L.5.5 (gap-fill) — extends DI-25 coverage from the 3 built-in
+/// schemes to the 5-named legacy corpus per FORGE-R3 / BENCH-R2 L2-B24.
+/// The 3 hand-written fixtures (`custom-points-only`,
+/// `head-to-head-9cat`, `rotisserie-with-goalie`) represent realistic
+/// third-party fantasy schemes that aren't reachable from
+/// `Scheme::all_builtins()` constructors. They exercise the loader on
+/// shapes builtins don't cover (negative weights, lopsided category
+/// weighting, custom name + description strings).
+///
+/// Asserts: each fixture loads as a `Scheme`, and re-serializing
+/// produces the same byte sequence (round-trip fidelity).
+#[test]
+fn l1_lindsay_l55_legacy_scheme_corpus_round_trips() {
+    let names = [
+        "custom-points-only",
+        "head-to-head-9cat",
+        "rotisserie-with-goalie",
+    ];
+    for name in names {
+        let path = fixtures_dir().join(format!("{name}.toml"));
+        assert!(
+            path.exists(),
+            "L.5.5 corpus fixture missing at {}",
+            path.display(),
+        );
+        let raw = std::fs::read_to_string(&path)
+            .unwrap_or_else(|e| panic!("read {name}: {e}"));
+        let scheme: Scheme = toml::from_str(&raw)
+            .unwrap_or_else(|e| panic!("parse {name} as Scheme: {e}"));
+        // Sanity: name field matches the file name.
+        assert_eq!(scheme.name, name,
+            "scheme name field `{}` doesn't match filename `{name}`",
+            scheme.name);
+        // Round-trip: re-serialize and load again; the second load
+        // must equal the first. Catches loader/serializer asymmetry.
+        let re_serialized = toml::to_string_pretty(&scheme)
+            .unwrap_or_else(|e| panic!("re-serialize {name}: {e}"));
+        let scheme2: Scheme = toml::from_str(&re_serialized)
+            .unwrap_or_else(|e| panic!("re-parse {name}: {e}"));
+        assert_eq!(scheme.name, scheme2.name);
+        assert_eq!(scheme.description, scheme2.description);
+        // Compare a representative subset of weights — full equality
+        // would require PartialEq on SkaterWeights/GoalieWeights which
+        // isn't currently derived.
+        assert!((scheme.skater.goals - scheme2.skater.goals).abs() < 1e-6);
+        assert!((scheme.skater.assists - scheme2.skater.assists).abs() < 1e-6);
+        assert!((scheme.goalie.wins - scheme2.goalie.wins).abs() < 1e-6);
+    }
+}

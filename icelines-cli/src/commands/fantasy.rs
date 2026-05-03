@@ -781,6 +781,53 @@ async fn handle_api_teams(
     Ok(Json(json!(list)))
 }
 
+/// Phase Lindsay L.5.6 — build the per-player JSON record for the
+/// `/api/team/:name/roster` response. Every stat field is keyed by
+/// `StatId::cli_key()`. KEEL-B1 round-trip contract: every emitted key
+/// parses back via `StatId::from_cli_key`; values match `StatId::read(view)`.
+///
+/// The legacy `name` / `pos` / `gp` / `score` keys stay as-is — they're
+/// identity attributes / derived metrics, not stat reads. The `stats`
+/// sub-object is the catalog-keyed addition.
+///
+/// Extracted as a pure helper (no DB, no async) so the JSON shape is
+/// L0-testable without spinning up the axum server.
+pub(crate) fn build_roster_player_json(
+    name: &str,
+    score: f32,
+    view: Option<&PlayerView<'_>>,
+) -> Value {
+    use icelines_core::stats_catalog::StatId;
+    const ROSTER_STATS: &[StatId] = &[
+        StatId::Games,
+        StatId::Goals,
+        StatId::Assists,
+        StatId::Points,
+    ];
+
+    let mut stats_map = serde_json::Map::new();
+    if let Some(v) = view {
+        for sid in ROSTER_STATS {
+            let val = sid.read(v);
+            stats_map.insert(
+                sid.cli_key().to_owned(),
+                match val {
+                    Some(x) => json!(x),
+                    None => Value::Null,
+                },
+            );
+        }
+    }
+
+    json!({
+        "name": name,
+        "pos": view.map(|v| v.position().abbreviation()).unwrap_or("—"),
+        "gp": view.map(|v| v.gp()).unwrap_or(0),
+        "score": score,
+        "stats": Value::Object(stats_map),
+    })
+}
+
 async fn handle_api_team_roster(
     State(state): State<Arc<AppState>>,
     Path(team_name): Path<String>,
@@ -800,18 +847,6 @@ async fn handle_api_team_roster(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let scored = score_team(&roster, &all_skaters, &all_goalies, &scheme);
 
-    // Phase Lindsay L.5.6 — every stat field in the JSON response is
-    // keyed by `StatId::cli_key()`. KEEL-B1 round-trip test asserts
-    // every emitted key parses back via `StatId::from_cli_key`. The
-    // legacy `name` / `pos` / `score` keys stay as-is — they're
-    // identity attributes / derived metrics, not stat reads.
-    use icelines_core::stats_catalog::StatId;
-    let roster_stats: &[StatId] = &[
-        StatId::Games,
-        StatId::Goals,
-        StatId::Assists,
-        StatId::Points,
-    ];
     let players_json: Vec<Value> = scored
         .iter()
         .map(|(name, score)| {
@@ -819,27 +854,7 @@ async fn handle_api_team_roster(
             let v = all_skaters
                 .iter()
                 .find(|v| v.identity.name_normalized.contains(norm.as_str()));
-            // Build the catalog-keyed stats sub-object.
-            let mut stats_map = serde_json::Map::new();
-            if let Some(view) = v {
-                for sid in roster_stats {
-                    let val = sid.read(view);
-                    stats_map.insert(
-                        sid.cli_key().to_owned(),
-                        match val {
-                            Some(x) => json!(x),
-                            None => Value::Null,
-                        },
-                    );
-                }
-            }
-            json!({
-                "name": name,
-                "pos": v.map(|view| view.position().abbreviation()).unwrap_or("—"),
-                "gp": v.map(|view| view.gp()).unwrap_or(0),
-                "score": score,
-                "stats": Value::Object(stats_map),
-            })
+            build_roster_player_json(name, *score, v)
         })
         .collect();
 
@@ -1278,6 +1293,87 @@ mod tests {
                  StatId::from_cli_key"
             );
         }
+    }
+
+    /// L.5.6 (gap-fill) — `build_roster_player_json` for a player WITH
+    /// a matched view emits the full shape: name, pos, gp, score, and
+    /// a populated `stats` object keyed by `StatId::cli_key`.
+    #[test]
+    fn l0_lindsay_l5_build_roster_player_json_with_view() {
+        use icelines_core::stats_catalog::StatId;
+        use icelines_core::season_stats::{SeasonStatsBuilder, TeamStint};
+        use icelines_core::model::{TeamAbbr, Position, Season};
+        use icelines_core::season_stats::SeasonType;
+
+        let identity = fixtures::identity(8478402).build();
+        let stats = SeasonStatsBuilder::new(
+            PlayerId(8478402),
+            Season(20242025),
+            SeasonType::Regular,
+            Position::Center,
+        )
+        .add_team_stint(TeamStint {
+            team: TeamAbbr("EDM".into()),
+            started: Some("2024-10-09".into()),
+            ended: None,
+            gp: 70, goals: 30, assists: 80, points: 110,
+            goalie: None,
+        })
+        .with_totals(icelines_core::season_stats::StatTotals {
+            gp: 70, goals: 30, assists: 80, points: 110,
+            ..Default::default()
+        })
+        .build();
+        let view = PlayerView { identity: &identity, stats: &stats, contract: None };
+
+        let json = build_roster_player_json("Connor McDavid", 42.5, Some(&view));
+        // Top-level keys.
+        assert_eq!(json["name"], "Connor McDavid");
+        assert_eq!(json["pos"], "C");
+        assert_eq!(json["gp"], 70);
+        assert_eq!(json["score"], 42.5);
+        // The `stats` object: every key parses via `StatId::from_cli_key`,
+        // values match `StatId::read(&view)`.
+        let stats_obj = json["stats"].as_object()
+            .expect("stats sub-object must be present");
+        for (key, value) in stats_obj {
+            let sid = StatId::from_cli_key(key)
+                .unwrap_or_else(|| panic!("KEEL-B1: emitted key `{key}` does not parse"));
+            let expected = sid.read(&view);
+            match (expected, value) {
+                (Some(x), v) => {
+                    let got = v.as_f64().unwrap_or_else(|| panic!("`{key}` must be number"));
+                    assert!((x - got).abs() < 1e-9,
+                        "value mismatch for `{key}`: expected={x} got={got}");
+                }
+                (None, Value::Null) => {}
+                (e, v) => panic!("shape mismatch for `{key}`: expected={e:?} got={v:?}"),
+            }
+        }
+        // The 4 canonical roster stats are present (stored as f64 since
+        // catalog reads return Option<f64>, regardless of underlying
+        // unit — Count stats round-trip cleanly).
+        assert_eq!(stats_obj["games"].as_f64(), Some(70.0));
+        assert_eq!(stats_obj["goals"].as_f64(), Some(30.0));
+        assert_eq!(stats_obj["assists"].as_f64(), Some(80.0));
+        assert_eq!(stats_obj["points"].as_f64(), Some(110.0));
+    }
+
+    /// L.5.6 (gap-fill) — `build_roster_player_json` for a player
+    /// WITHOUT a matched view (cold-start: name in roster but no view
+    /// in pool) emits sentinel values: pos="—", gp=0, empty stats map.
+    #[test]
+    fn l0_lindsay_l5_build_roster_player_json_no_view() {
+        let json = build_roster_player_json("Phantom Player", 0.0, None);
+        assert_eq!(json["name"], "Phantom Player");
+        assert_eq!(json["pos"], "—");
+        assert_eq!(json["gp"], 0);
+        assert_eq!(json["score"], 0.0);
+        // Empty stats map — no entries since no view was matched.
+        let stats_obj = json["stats"].as_object()
+            .expect("stats sub-object always present, even when empty");
+        assert!(stats_obj.is_empty(),
+            "no view → no catalog reads → empty stats map");
     }
 
     /// L.5.6 — emitted stats values match `StatId::read(view)` for the

@@ -2114,26 +2114,35 @@ fn l2_lindsay_fetch_report_tier1_playoff_dry_run() {
     assert!(stdout.contains("\\playoff") || stdout.contains("/playoff"));
 }
 
-/// Tier-2 dispatch is rejected with a "deferred to L.6" error and a
-/// non-zero exit code. Catches a regression where Tier-2 might
-/// silently no-op or hit the wire.
+/// Phase Lindsay L.6 — Tier-2 dispatch is ACCEPTED. The Tier-1-only
+/// gate from L.1.6 was lifted; Tier-2 endpoints now route through the
+/// same fetch flow with a filename derived from `kind.url_path()`.
+/// Verifies via --dry-run (no network): exit 0, the URL preview shows
+/// the catalog url_path, the planned write target uses the
+/// derived filename `{path-with-slash-replaced}.json`.
 #[test]
-fn l2_lindsay_fetch_report_tier2_rejected() {
+fn l2_lindsay_l6_fetch_report_tier2_accepted() {
     let out = run(&[
         "fetch", "report",
         "--kind", "skater-puck-possessions",
         "--dry-run",
     ]);
     assert!(
-        !out.status.success(),
-        "Tier-2 dispatch must non-zero exit; stdout: {} stderr: {}",
+        out.status.success(),
+        "Tier-2 dispatch must succeed at L.6; stdout: {} stderr: {}",
         String::from_utf8_lossy(&out.stdout),
         String::from_utf8_lossy(&out.stderr),
     );
-    let stderr = String::from_utf8_lossy(&out.stderr);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    // URL preview shows the Tier-2 url_path.
     assert!(
-        stderr.contains("Tier-2") && stderr.contains("L.6"),
-        "error must mention Tier-2 and L.6 deferral; got:\n{stderr}",
+        stdout.contains("/skater/puckPossessions"),
+        "expected url_path for skater-puck-possessions — got:\n{stdout}",
+    );
+    // Filename derives from url_path (`/` → `-`).
+    assert!(
+        stdout.contains("skater-puckPossessions.json"),
+        "expected derived filename `skater-puckPossessions.json` — got:\n{stdout}",
     );
 }
 

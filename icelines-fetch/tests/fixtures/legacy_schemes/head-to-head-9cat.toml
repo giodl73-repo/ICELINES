@@ -1,0 +1,28 @@
+name = "head-to-head-9cat"
+description = "9-category H2H scheme — points league approximation of category league weights (G/A/PPP/SHP/SOG/HIT/BLK; goalie W/SV%)"
+source = "custom"
+
+[skater]
+goals = 4.0
+assists = 3.0
+pp_goals = 0.0
+pp_assists = 0.0
+sh_goals = 1.0
+sh_assists = 1.0
+gwg = 0.0
+ot_goals = 0.0
+hits = 0.5
+blocks = 0.5
+shots_on_goal = 0.5
+plus_minus = 1.0
+takeaways = 0.0
+giveaways = 0.0
+faceoff_wins = 0.0
+
+[goalie]
+wins = 5.0
+losses = 0.0
+saves = 0.0
+goals_against = 0.0
+shutouts = 5.0
+save_pct = 100.0

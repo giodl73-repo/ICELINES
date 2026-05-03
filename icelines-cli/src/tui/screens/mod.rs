@@ -2187,6 +2187,58 @@ mod app_snapshot_tests {
             "status should remind users of the bracket keys; got: {}", app.status);
     }
 
+    /// L.4 GLASS-10 (gap-fill) — TestBackend snapshot of `render_stats_view`.
+    /// Renders the player card through the full `render(f, &app)` dispatch
+    /// at 140×40 and asserts the career table region appears (Career
+    /// header, Season column, separator). Catches future regressions
+    /// in section ordering or layout truncation.
+    ///
+    /// Uses `#[tokio::test]` because the headshot loader (PlayerById
+    /// render path) calls `tokio::spawn` for the network/disk-cache
+    /// path. The headshot fetches are best-effort and don't block
+    /// rendering — the buffer text is still meaningful.
+    #[tokio::test]
+    async fn l1_lindsay_career_table_test_backend_renders_at_140_cols() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+        let pid = app.views().iter().next().map(|v| v.identity.id).unwrap();
+        app.screen = crate::tui::app::Screen::PlayerById(pid);
+
+        let text = render_app_to_text(&app, 140, 40);
+        assert!(text.contains("Career"),
+            "career-table header `Career` must render — got:\n{text}");
+        assert!(text.contains("Season"),
+            "career-table column `Season` must render — got:\n{text}");
+        // The preset label appears in the status header line.
+        assert!(text.contains("Default"),
+            "active preset name `Default` must appear — got:\n{text}");
+        // Bio section renders after the table.
+        assert!(text.contains("Bio") || text.contains("Draft"),
+            "bio section (Bio/Draft) must render — got:\n{text}");
+    }
+
+    /// L.4 GLASS-10 — at narrow widths (80 cols), the career-table
+    /// status line announces dropped columns. Catches regressions in
+    /// `fit_career_columns` integration with `render_stats_view`.
+    #[tokio::test]
+    async fn l1_lindsay_career_table_test_backend_narrow_width_announces_dropped() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+        let pid = app.views().iter().next().map(|v| v.identity.id).unwrap();
+        app.screen = crate::tui::app::Screen::PlayerById(pid);
+
+        // Render at 80 cols — Default preset (15 cols) won't fit; some
+        // columns drop. Status line uses "narrow: -N" format.
+        let text = render_app_to_text(&app, 80, 30);
+        assert!(text.contains("Career"),
+            "career-table header must render even at narrow widths — got:\n{text}");
+        // The "(N of M cols" pattern appears in the status line.
+        assert!(text.contains(" of "),
+            "status line should show `N of M cols` indicator — got:\n{text}");
+    }
+
     /// `Action::Refresh` (`r` key) resets both `query_fields` AND
     /// `query_sections` to their defaults. After collapsing every
     /// section, Refresh restores the default expansion state.

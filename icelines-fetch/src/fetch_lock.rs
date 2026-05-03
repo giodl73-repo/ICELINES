@@ -183,4 +183,70 @@ mod tests {
         }
         assert!(!dir.path().join(".fetch.lock").exists());
     }
+
+    /// L.6 (gap-fill) — two-thread serialization scenario. Thread A
+    /// acquires + holds for 200ms then releases. Thread B starts
+    /// shortly after with a generous timeout (1s), attempts acquire,
+    /// must succeed only AFTER A releases (not before; not via
+    /// timeout).
+    ///
+    /// Catches:
+    ///   - lock file isn't actually exclusive (B acquires while A holds)
+    ///   - Drop doesn't clean up (B times out even after A releases)
+    ///   - polling cadence too slow (B times out before A finishes)
+    #[test]
+    fn l1_lindsay_l6_fetch_lock_thread_serialization_full_handoff() {
+        let dir = std::sync::Arc::new(tempfile::TempDir::new().unwrap());
+        let dir_a = dir.clone();
+        let dir_b = dir.clone();
+
+        // Thread A: hold the lock for 200ms.
+        let start_b_at = std::sync::Arc::new(std::sync::Mutex::new(None::<std::time::Instant>));
+        let release_a_at = std::sync::Arc::new(std::sync::Mutex::new(None::<std::time::Instant>));
+        let (start_b_w, release_a_w) = (start_b_at.clone(), release_a_at.clone());
+
+        let a = std::thread::spawn(move || {
+            let _g = acquire(dir_a.path(), Duration::from_millis(100))
+                .expect("A: instant acquire on clean dir");
+            std::thread::sleep(Duration::from_millis(200));
+            *release_a_w.lock().unwrap() = Some(std::time::Instant::now());
+            drop(_g);
+        });
+
+        // Thread B: start ~50ms later (well within A's hold), generous
+        // 1s timeout, must succeed AFTER A releases.
+        let b = std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(50));
+            *start_b_w.lock().unwrap() = Some(std::time::Instant::now());
+            let g = acquire(dir_b.path(), Duration::from_secs(1))
+                .expect("B: must acquire after A releases (not time out)");
+            let acquired_at = std::time::Instant::now();
+            drop(g);
+            acquired_at
+        });
+
+        a.join().expect("A thread joined");
+        let b_acquired_at = b.join().expect("B thread joined");
+
+        let release_a = release_a_at.lock().unwrap().expect("A recorded release time");
+        let start_b = start_b_at.lock().unwrap().expect("B recorded start time");
+
+        // Sanity: B started before A released.
+        assert!(
+            start_b < release_a,
+            "B started ({start_b:?}) after A released ({release_a:?}) — \
+             test scheduling is broken, can't prove serialization"
+        );
+        // B acquired AFTER A released (the full-handoff property).
+        assert!(
+            b_acquired_at >= release_a,
+            "B acquired ({b_acquired_at:?}) BEFORE A released ({release_a:?}) — \
+             lock isn't exclusive!"
+        );
+        // The lock file is gone after both Drops.
+        assert!(
+            !dir.path().join(".fetch.lock").exists(),
+            "lock file leaked after both threads released"
+        );
+    }
 }
