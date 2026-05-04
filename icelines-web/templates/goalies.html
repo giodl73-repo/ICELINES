@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Goalies{% endblock %}
+
+{% block content %}
+<h1>Goalies</h1>
+
+<p style="color: #616161; margin-bottom: 1rem;">
+    Top {{ rows.len() }} goalies by save percentage · {{ active_label }}
+    · qualified threshold: {{ qualified_threshold }}+ GP
+    {% if total > rows.len() %}
+        · {{ total }} qualified
+    {% endif %}
+</p>
+
+<div class="table-scroll">
+<table>
+    <thead>
+        <tr>
+            <th style="text-align: right;">#</th>
+            <th>Goalie</th>
+            <th>Team</th>
+            <th style="text-align: right;">GP</th>
+            <th style="text-align: right;">W</th>
+            <th style="text-align: right;">L</th>
+            <th style="text-align: right;">SV%</th>
+            <th style="text-align: right;">GAA</th>
+            <th style="text-align: right;">SO</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in rows %}
+        <tr>
+            <td style="text-align: right; color: #616161;">{{ loop.index }}</td>
+            <td><strong><a href="/player/{{ row.nhl_id }}" style="color: #1565c0;">{{ row.name }}</a></strong></td>
+            <td>{{ row.team }}</td>
+            <td style="text-align: right;">{{ row.gp }}</td>
+            <td style="text-align: right;">{{ row.wins }}</td>
+            <td style="text-align: right;">{{ row.losses }}</td>
+            <td style="text-align: right;"><strong>{{ row.save_pct_str }}</strong></td>
+            <td style="text-align: right;">{{ row.gaa_str }}</td>
+            <td style="text-align: right;">{{ row.shutouts }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+<p style="margin-top: 2rem; color: #616161; font-size: 0.9rem;">
+    Sorted by save percentage with a {{ qualified_threshold }}-GP qualified threshold
+    (the spec's rate-stat floor — without it, a goalie with 1 perfect game tops the list).
+    King.5.2 will add filter form + sort picker; King.5.3 adds the
+    <code>/api/v1/goalies</code> JSON twin.
+</p>
+{% endblock %}

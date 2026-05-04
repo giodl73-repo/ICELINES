@@ -133,6 +133,30 @@ pub struct LeaderRow {
     pub ppg_str: String,
 }
 
+/// `goalies.html` — King.5.1 minimum viable goalie leaderboard.
+#[derive(Template)]
+#[template(path = "goalies.html")]
+pub struct GoaliesTemplate {
+    pub active_label: String,
+    pub rows: Vec<GoalieRow>,
+    pub total: usize,
+    pub qualified_threshold: u32,
+}
+
+/// One row in the goalie leaderboard.
+#[derive(Debug, Clone)]
+pub struct GoalieRow {
+    pub nhl_id: u32,
+    pub name: String,
+    pub team: String,
+    pub gp: u32,
+    pub wins: u32,
+    pub losses: u32,
+    pub shutouts: u32,
+    pub save_pct_str: String,
+    pub gaa_str: String,
+}
+
 /// `player.html` — King.3.1 player card.
 #[derive(Template)]
 #[template(path = "player.html")]

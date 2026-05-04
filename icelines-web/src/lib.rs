@@ -66,11 +66,12 @@ pub fn router(state: WebState) -> Router {
         .route("/api/v1/leaders", get(handlers::leaders::get_leaders_json))
         // Player card — King.3.1. Name links on /leaders point here.
         .route("/player/:id", get(handlers::player::get_player))
+        // Goalie leaderboard — King.5.1.
+        .route("/goalies", get(handlers::goalies::get_goalies))
         // Coming-soon stubs for the rest of the section nav links.
         // Each lands on a real page (with the active-season header)
         // so clicks don't fail with a bare 404. Replaced by real
         // handlers in their respective sub-phases.
-        .route("/goalies", get(cs::goalies))
         .route("/scores", get(cs::scores))
         .route("/playoffs", get(cs::playoffs))
         .route("/transactions", get(cs::transactions))
@@ -109,19 +110,8 @@ mod handlers {
             }
         }
 
-        // `leaders` stub removed in King.2.1 — real handler at
-        // `handlers::leaders::get_leaders` ships top-20 skaters from
-        // bundled data. King.2.2/.2.3 add filter form + JSON twin.
-        pub async fn goalies(State(s): State<WebState>) -> Response {
-            render(
-                s,
-                "Goalies",
-                "King.5",
-                "Goalie leaderboard with save-percentage, GAA, quality starts, and the \
-                 advanced report toggles. Mirrors `icelines query goalies`.",
-            )
-            .await
-        }
+        // `leaders` and `goalies` stubs removed (real handlers at
+        // `handlers::leaders` and `handlers::goalies`).
 
         pub async fn scores(State(s): State<WebState>) -> Response {
             render(
@@ -823,6 +813,114 @@ mod handlers {
         }
 
         fn error_page(msg: String) -> Response {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Html(format!(
+                    "<!doctype html><html><body><h1>500</h1><p>{msg}</p></body></html>"
+                )),
+            )
+                .into_response()
+        }
+    }
+
+    /// `/goalies` — King.5.1 minimum viable goalie leaderboard.
+    pub mod goalies {
+        use crate::state::WebState;
+        use crate::templates::{GoalieRow, GoaliesTemplate};
+        use askama::Template;
+        use axum::extract::State;
+        use axum::http::StatusCode;
+        use axum::response::{Html, IntoResponse, Response};
+        use icelines_core::model::Season;
+        use icelines_core::season_stats::SeasonType;
+
+        /// Spec's rate-stat floor for goalie save-pct: 5+ GP qualifies
+        /// for ranking. Without this, a goalie who plays one perfect
+        /// period tops the leaderboard at 1.000 SV%.
+        const QUALIFIED_GP_REGULAR: u32 = 5;
+        const QUALIFIED_GP_PLAYOFF: u32 = 1;
+
+        pub async fn get_goalies(State(state): State<WebState>) -> Response {
+            let (season_str, season_type, active_label) = {
+                let cfg = state.config.read().await;
+                let st = match cfg.active_season_type.as_str() {
+                    "playoff" | "playoffs" => SeasonType::Playoff,
+                    _ => SeasonType::Regular,
+                };
+                (cfg.active_season.clone(), st, cfg.active_label.clone())
+            };
+            let season_u32: u32 = match season_str.parse() {
+                Ok(n) => n,
+                Err(_) => {
+                    return error_500(format!("active season '{season_str}' is not a YYYYZZZZ id"));
+                }
+            };
+            let season = Season(season_u32);
+
+            let qualified_threshold = match season_type {
+                SeasonType::Regular => QUALIFIED_GP_REGULAR,
+                SeasonType::Playoff => QUALIFIED_GP_PLAYOFF,
+            };
+
+            let (rows, total) = {
+                let repo = state.repo.read().await;
+                let mut all: Vec<GoalieRow> = repo
+                    .goalies(season, season_type)
+                    .filter(|v| v.gp() >= qualified_threshold)
+                    .filter_map(|v| {
+                        // Goalie stats live on SeasonStats.goalie.
+                        // If a player iterates as a goalie but has
+                        // no goalie row (data gap), drop them.
+                        let g = v.stats.goalie.as_ref()?;
+                        let save_pct_str = match g.save_pct {
+                            Some(p) => format!("{:.3}", p),
+                            None => "—".to_owned(),
+                        };
+                        let gaa_str = match g.goals_against_average {
+                            Some(a) => format!("{:.2}", a),
+                            None => "—".to_owned(),
+                        };
+                        Some(GoalieRow {
+                            nhl_id: v.id().0,
+                            name: v.full_name().to_owned(),
+                            team: v.team_display().to_owned(),
+                            gp: v.gp(),
+                            wins: g.wins,
+                            losses: g.losses,
+                            shutouts: g.shutouts,
+                            save_pct_str,
+                            gaa_str,
+                        })
+                    })
+                    .collect();
+                let total = all.len();
+                // Sort by save_pct desc. Parse from the formatted
+                // string (we drop "—" goalies via partial_cmp).
+                all.sort_by(|a, b| {
+                    let ap = a.save_pct_str.parse::<f64>().unwrap_or(0.0);
+                    let bp = b.save_pct_str.parse::<f64>().unwrap_or(0.0);
+                    bp.partial_cmp(&ap)
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                        .then(b.wins.cmp(&a.wins))
+                        .then(a.name.cmp(&b.name))
+                });
+                all.truncate(20);
+                (all, total)
+            };
+
+            let tmpl = GoaliesTemplate {
+                active_label,
+                rows,
+                total,
+                qualified_threshold,
+            };
+            match tmpl.render() {
+                Ok(html) => Html(html).into_response(),
+                Err(e) => error_500(format!("template render failed: {e}")),
+            }
+        }
+
+        fn error_500(msg: String) -> Response {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Html(format!(
