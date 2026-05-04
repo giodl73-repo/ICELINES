@@ -32,6 +32,7 @@
 //! `icelines-core` if King.6 needs it shared without inverting the
 //! crate dependency chain.
 
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use icelines_core::stats_repository::StatsRepository;
@@ -64,6 +65,13 @@ pub struct WebState {
     /// King.6's PATCH `/api/v1/active-season` mutates this through
     /// `RwLock::write`.
     pub config: Arc<RwLock<WebConfig>>,
+
+    /// `~/.icelines/snapshots/` — passed to handlers that need to
+    /// reconstruct a `SnapshotStore` for non-stats payloads
+    /// (transactions, etc.). Wrapped in `Arc<PathBuf>` so the per-
+    /// request clone is one pointer bump. `None` in unit-test
+    /// constructors that don't touch disk.
+    pub snapshots_root: Arc<Option<PathBuf>>,
     // Future fields land alongside the routes that need them:
     //   pub fantasy_db: Arc<FantasyDb>,                 // King.9
     //   pub group_db: Arc<GroupDb>,                     // King.8
@@ -86,6 +94,7 @@ impl WebState {
         Self {
             repo: Arc::new(RwLock::new(repo)),
             config: Arc::new(RwLock::new(WebConfig::default())),
+            snapshots_root: Arc::new(None),
         }
     }
 
@@ -95,6 +104,7 @@ impl WebState {
         Self {
             repo: Arc::new(RwLock::new(repo)),
             config: Arc::new(RwLock::new(config)),
+            snapshots_root: Arc::new(None),
         }
     }
 }

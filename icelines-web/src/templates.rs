@@ -140,6 +140,47 @@ pub struct LeaderRow {
     pub ppg_str: String,
 }
 
+/// `transactions.html` — King.8.2. League moves feed for the active
+/// season. Source: ESPN site.api via `load_transactions_with_fallback`.
+#[derive(Template)]
+#[template(path = "transactions.html")]
+pub struct TransactionsTemplate {
+    pub active_label: String,
+    pub season_pretty: String,
+    /// Pre-projected rows in chronological order (newest first).
+    pub rows: Vec<TransactionRow>,
+    pub total: usize,
+    /// True when no rows landed AND no filters applied — we render
+    /// a friendly "fetch transactions to populate" hint instead of
+    /// an empty table.
+    pub empty_unfiltered: bool,
+    /// Active `?kind=` token (or empty for "all kinds"). Used to
+    /// render the active state on filter chips.
+    pub active_kind: String,
+    /// Active `?team=` token uppercased (or empty for "all teams").
+    pub active_team: String,
+    /// True when the snapshot is missing AND we don't have a bundled
+    /// or installed fallback. Triggers a yellow "out of coverage" note.
+    pub out_of_coverage: bool,
+    /// Earliest season ESPN archives, surfaced in the out-of-coverage
+    /// note so the user knows what's available.
+    pub earliest_season_pretty: String,
+}
+
+/// One row in the transactions feed, projected for the template so
+/// askama doesn't reach into icelines-core types directly.
+#[derive(Debug, Clone)]
+pub struct TransactionRow {
+    pub date: String,
+    /// Empty string for league-wide rows.
+    pub team: String,
+    /// Lower-case label like "trade", "signing", "recall".
+    pub kind_label: String,
+    /// Pretty kind name for the chip ("Trade", "Signing").
+    pub kind_pretty: String,
+    pub description: String,
+}
+
 /// `docs.html` — King.8.1. Rendered COMMANDS.md.
 #[derive(Template)]
 #[template(path = "docs.html")]

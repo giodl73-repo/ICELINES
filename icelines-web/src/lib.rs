@@ -66,11 +66,15 @@ pub fn router(state: WebState) -> Router {
         .route("/api/v1/leaders", get(handlers::leaders::get_leaders_json))
         // Player card — King.3.1. Name links on /leaders point here.
         .route("/player/:id", get(handlers::player::get_player))
+        // JSON twin — King.3.3.
+        .route("/api/v1/player/:id", get(handlers::player::get_player_json))
         // Goalie leaderboard — King.5.1 / .5.2.
         .route("/goalies", get(handlers::goalies::get_goalies))
         .route("/api/v1/goalies", get(handlers::goalies::get_goalies_json))
         // Team roster — King.4.1. /team/SEA, /team/EDM, etc.
         .route("/team/:abbrev", get(handlers::team::get_team))
+        // JSON twin — King.4.2.
+        .route("/api/v1/team/:abbrev", get(handlers::team::get_team_json))
         // Docs — King.8.1. Rendered COMMANDS.md.
         .route("/docs", get(handlers::docs::get_docs))
         // Coming-soon stubs for the rest of the section nav links.
@@ -79,7 +83,11 @@ pub fn router(state: WebState) -> Router {
         // handlers in their respective sub-phases.
         .route("/scores", get(cs::scores))
         .route("/playoffs", get(cs::playoffs))
-        .route("/transactions", get(cs::transactions))
+        // Transactions feed — King.8.2.
+        .route(
+            "/transactions",
+            get(handlers::transactions::get_transactions),
+        )
         .route("/fantasy", get(cs::fantasy))
         .with_state(state)
 }
@@ -139,16 +147,8 @@ mod handlers {
             .await
         }
 
-        pub async fn transactions(State(s): State<WebState>) -> Response {
-            render(
-                s,
-                "Transactions",
-                "King.8",
-                "League-wide transactions feed: trades, signings, recalls, IR, waivers. \
-                 Filterable by team / player / date / kind. Same data as `icelines transactions`.",
-            )
-            .await
-        }
+        // `transactions` stub removed in King.8.2 — real handler at
+        // `handlers::transactions::get_transactions`.
 
         pub async fn fantasy(State(s): State<WebState>) -> Response {
             render(
@@ -1007,6 +1007,180 @@ mod handlers {
                     .into_response(),
             }
         }
+
+        // ── King.4.2 — JSON twin ──────────────────────────────────────
+
+        #[derive(Debug, serde::Serialize)]
+        pub struct TeamEnvelope {
+            pub schema_version: u32,
+            pub route: &'static str,
+            pub data: TeamData,
+            pub meta: TeamMeta,
+        }
+
+        #[derive(Debug, serde::Serialize)]
+        pub struct TeamData {
+            pub team_abbrev: String,
+            pub skaters: Vec<TeamSkaterRow>,
+            pub goalies: Vec<TeamGoalieRow>,
+        }
+
+        #[derive(Debug, serde::Serialize)]
+        pub struct TeamSkaterRow {
+            pub nhl_id: u32,
+            pub name: String,
+            pub position: String,
+            pub games: u32,
+            pub goals: u32,
+            pub assists: u32,
+            pub points: u32,
+            pub points_per_game: Option<f64>,
+        }
+
+        #[derive(Debug, serde::Serialize)]
+        pub struct TeamGoalieRow {
+            pub nhl_id: u32,
+            pub name: String,
+            pub games: u32,
+            pub wins: u32,
+            pub losses: u32,
+            pub shutouts: u32,
+            pub save_pct: Option<f64>,
+            pub goals_against_average: Option<f64>,
+        }
+
+        #[derive(Debug, serde::Serialize)]
+        pub struct TeamMeta {
+            pub team_abbrev: String,
+            pub season: String,
+            pub season_type: String,
+            pub skater_count: usize,
+            pub goalie_count: usize,
+        }
+
+        /// `GET /api/v1/team/:abbrev` — JSON twin of `/team/:abbrev`.
+        pub async fn get_team_json(
+            State(state): State<WebState>,
+            Path(abbrev_raw): Path<String>,
+        ) -> Response {
+            let abbrev_upper = abbrev_raw.to_ascii_uppercase();
+            let team = match TeamAbbr::parse(&abbrev_upper) {
+                Ok(t) => t,
+                Err(e) => {
+                    return (
+                        StatusCode::NOT_FOUND,
+                        axum::Json(serde_json::json!({
+                            "error": "unknown_team",
+                            "message": format!(
+                                "'{abbrev_upper}' is not a recognized NHL team abbrev: {e}"
+                            ),
+                            "team_abbrev": abbrev_upper,
+                        })),
+                    )
+                        .into_response();
+                }
+            };
+
+            let (season_str, season_type) = {
+                let cfg = state.config.read().await;
+                let st = match cfg.active_season_type.as_str() {
+                    "playoff" | "playoffs" => SeasonType::Playoff,
+                    _ => SeasonType::Regular,
+                };
+                (cfg.active_season.clone(), st)
+            };
+            let season_u32: u32 = match season_str.parse() {
+                Ok(n) => n,
+                Err(_) => {
+                    return (
+                        StatusCode::BAD_REQUEST,
+                        axum::Json(serde_json::json!({
+                            "error": "bad_active_season",
+                            "message": format!("Season '{season_str}' is not a valid YYYYZZZZ id"),
+                        })),
+                    )
+                        .into_response();
+                }
+            };
+            let season = Season(season_u32);
+
+            let (skaters, goalies) = {
+                let repo = state.repo.read().await;
+                let roster = repo.team_roster(&team, season, season_type);
+
+                let mut skaters: Vec<TeamSkaterRow> = roster
+                    .iter()
+                    .filter(|v| !v.is_goalie())
+                    .map(|v| {
+                        let gp = v.gp();
+                        let points = v.points();
+                        let ppg = if gp > 0 {
+                            Some((points as f64) / (gp as f64))
+                        } else {
+                            None
+                        };
+                        TeamSkaterRow {
+                            nhl_id: v.id().0,
+                            name: v.full_name().to_owned(),
+                            position: v.position().abbreviation().to_owned(),
+                            games: gp,
+                            goals: v.goals(),
+                            assists: v.assists(),
+                            points,
+                            points_per_game: ppg,
+                        }
+                    })
+                    .collect();
+                skaters.sort_by(|a, b| {
+                    b.points
+                        .cmp(&a.points)
+                        .then(b.goals.cmp(&a.goals))
+                        .then(a.name.cmp(&b.name))
+                });
+
+                let mut goalies: Vec<TeamGoalieRow> = roster
+                    .iter()
+                    .filter(|v| v.is_goalie())
+                    .filter_map(|v| {
+                        let g = v.stats.goalie.as_ref()?;
+                        Some(TeamGoalieRow {
+                            nhl_id: v.id().0,
+                            name: v.full_name().to_owned(),
+                            games: v.gp(),
+                            wins: g.wins,
+                            losses: g.losses,
+                            shutouts: g.shutouts,
+                            save_pct: g.save_pct.map(f64::from),
+                            goals_against_average: g.goals_against_average.map(f64::from),
+                        })
+                    })
+                    .collect();
+                goalies.sort_by(|a, b| b.wins.cmp(&a.wins).then(a.name.cmp(&b.name)));
+
+                (skaters, goalies)
+            };
+
+            let envelope = TeamEnvelope {
+                schema_version: 1,
+                route: "team",
+                meta: TeamMeta {
+                    team_abbrev: team.0.to_string(),
+                    season: season_str,
+                    season_type: match season_type {
+                        SeasonType::Regular => "regular".to_owned(),
+                        SeasonType::Playoff => "playoff".to_owned(),
+                    },
+                    skater_count: skaters.len(),
+                    goalie_count: goalies.len(),
+                },
+                data: TeamData {
+                    team_abbrev: team.0.to_string(),
+                    skaters,
+                    goalies,
+                },
+            };
+            axum::Json(envelope).into_response()
+        }
     }
 
     /// `/goalies` — King.5.1 + King.5.2 goalie leaderboard.
@@ -1485,6 +1659,215 @@ mod handlers {
             )
                 .into_response()
         }
+
+        // ── King.3.3 — JSON twin ──────────────────────────────────────
+
+        #[derive(Debug, serde::Serialize)]
+        pub struct PlayerEnvelope {
+            pub schema_version: u32,
+            pub route: &'static str,
+            pub data: PlayerData,
+            pub meta: PlayerMeta,
+        }
+
+        #[derive(Debug, serde::Serialize)]
+        pub struct PlayerData {
+            pub nhl_id: u32,
+            pub full_name: String,
+            pub position: String,
+            pub team: String,
+            pub headshot_url: Option<String>,
+            pub active_season_stats: PlayerActiveStats,
+            pub career: Vec<PlayerCareerRow>,
+        }
+
+        #[derive(Debug, serde::Serialize)]
+        pub struct PlayerActiveStats {
+            pub season: String,
+            pub season_type: String,
+            pub games: u32,
+            pub goals: u32,
+            pub assists: u32,
+            pub points: u32,
+            pub points_per_game: Option<f64>,
+        }
+
+        #[derive(Debug, serde::Serialize)]
+        pub struct PlayerCareerRow {
+            pub season: String,
+            pub season_type: String,
+            pub team: String,
+            pub games: u32,
+            pub goals: u32,
+            pub assists: u32,
+            pub points: u32,
+            pub points_per_game: Option<f64>,
+        }
+
+        #[derive(Debug, serde::Serialize)]
+        pub struct PlayerMeta {
+            pub season: String,
+            pub season_type: String,
+            pub career_rows: usize,
+        }
+
+        /// `GET /api/v1/player/:id` — JSON twin of `/player/:id`.
+        ///
+        /// Same load + projection path as the HTML handler. Errors for
+        /// unknown id collapse into a 404 JSON body (axum default body
+        /// is fine — clients should branch on status code).
+        pub async fn get_player_json(
+            State(state): State<WebState>,
+            Path(id): Path<u32>,
+        ) -> Response {
+            let (season_str, season_type) = {
+                let cfg = state.config.read().await;
+                let st = match cfg.active_season_type.as_str() {
+                    "playoff" | "playoffs" => SeasonType::Playoff,
+                    _ => SeasonType::Regular,
+                };
+                (cfg.active_season.clone(), st)
+            };
+            let season_u32: u32 = match season_str.parse() {
+                Ok(n) => n,
+                Err(_) => {
+                    return (
+                        StatusCode::BAD_REQUEST,
+                        axum::Json(serde_json::json!({
+                            "error": "bad_active_season",
+                            "message": format!("Season '{season_str}' is not a valid YYYYZZZZ id"),
+                        })),
+                    )
+                        .into_response();
+                }
+            };
+            let season = Season(season_u32);
+            let pid = PlayerId(id);
+
+            // Mirror the HTML handler's lazy career fan-out.
+            {
+                let mut repo = state.repo.write().await;
+                if let Err(e) =
+                    icelines_fetch::stats_loader::load_player_career_into_repo(&mut repo, pid)
+                {
+                    eprintln!(
+                        "warn: career fan-out for pid={id} failed: {e} — \
+                         /api/v1/player/:id will return only seasons already loaded"
+                    );
+                }
+            }
+
+            let repo = state.repo.read().await;
+            let identity = match repo.identity(pid) {
+                Some(i) => i,
+                None => {
+                    return (
+                        StatusCode::NOT_FOUND,
+                        axum::Json(serde_json::json!({
+                            "error": "player_not_found",
+                            "message": format!(
+                                "No player with NHL id {id} in the active repository."
+                            ),
+                            "nhl_id": id,
+                        })),
+                    )
+                        .into_response();
+                }
+            };
+
+            let (gp, goals, assists, points, position, team) =
+                match repo.view(pid, season, season_type) {
+                    Some(v) => (
+                        v.gp(),
+                        v.goals(),
+                        v.assists(),
+                        v.points(),
+                        v.position().abbreviation().to_owned(),
+                        v.team_display().to_owned(),
+                    ),
+                    None => (0, 0, 0, 0, String::new(), String::new()),
+                };
+            let ppg = if gp > 0 {
+                Some((points as f64) / (gp as f64))
+            } else {
+                None
+            };
+
+            let mut career: Vec<PlayerCareerRow> = match repo.career_all(pid) {
+                Some(iter) => iter
+                    .filter_map(|s| {
+                        let totals = &s.totals;
+                        if totals.gp == 0 {
+                            return None;
+                        }
+                        let last_team = s
+                            .team_stints
+                            .last()
+                            .map(|st| st.team.0.as_str().to_owned())
+                            .unwrap_or_default();
+                        let ppg = if totals.gp > 0 {
+                            Some((totals.points as f64) / (totals.gp as f64))
+                        } else {
+                            None
+                        };
+                        Some(PlayerCareerRow {
+                            season: pretty_season(s.season),
+                            season_type: match s.season_type {
+                                SeasonType::Regular => "regular".to_owned(),
+                                SeasonType::Playoff => "playoff".to_owned(),
+                            },
+                            team: last_team,
+                            games: totals.gp,
+                            goals: totals.goals,
+                            assists: totals.assists,
+                            points: totals.points,
+                            points_per_game: ppg,
+                        })
+                    })
+                    .collect(),
+                None => Vec::new(),
+            };
+            career.sort_by(|a, b| {
+                b.season
+                    .cmp(&a.season)
+                    .then(a.season_type.cmp(&b.season_type))
+            });
+            let career_rows_n = career.len();
+
+            let envelope = PlayerEnvelope {
+                schema_version: 1,
+                route: "player",
+                data: PlayerData {
+                    nhl_id: id,
+                    full_name: identity.full_name.clone(),
+                    position,
+                    team,
+                    headshot_url: identity.headshot_canonical_url.clone(),
+                    active_season_stats: PlayerActiveStats {
+                        season: season_str.clone(),
+                        season_type: match season_type {
+                            SeasonType::Regular => "regular".to_owned(),
+                            SeasonType::Playoff => "playoff".to_owned(),
+                        },
+                        games: gp,
+                        goals,
+                        assists,
+                        points,
+                        points_per_game: ppg,
+                    },
+                    career,
+                },
+                meta: PlayerMeta {
+                    season: season_str,
+                    season_type: match season_type {
+                        SeasonType::Regular => "regular".to_owned(),
+                        SeasonType::Playoff => "playoff".to_owned(),
+                    },
+                    career_rows: career_rows_n,
+                },
+            };
+            axum::Json(envelope).into_response()
+        }
     }
 
     pub mod home {
@@ -1606,6 +1989,173 @@ mod handlers {
                 active_label,
                 top_skaters,
                 top_goalies,
+            };
+            match tmpl.render() {
+                Ok(html) => Html(html).into_response(),
+                Err(e) => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Html(format!(
+                        "<!doctype html><html><body><h1>500</h1>\
+                         <p>template render failed: {e}</p></body></html>"
+                    )),
+                )
+                    .into_response(),
+            }
+        }
+    }
+
+    /// `/transactions` — King.8.2. League moves feed for the active
+    /// season. Uses `load_transactions_with_fallback` so the handler
+    /// works against bundled snapshots, installed bundles, OR a
+    /// fetched snapshot (priority: snapshot store → embedded →
+    /// installed bundle).
+    pub mod transactions {
+        use crate::state::WebState;
+        use crate::templates::{TransactionRow, TransactionsTemplate};
+        use askama::Template;
+        use axum::extract::{Query, State};
+        use axum::http::StatusCode;
+        use axum::response::{Html, IntoResponse, Response};
+        use icelines_core::transactions::{TransactionKind, TRANSACTIONS_EARLIEST_SEASON};
+        use serde::Deserialize;
+
+        /// Query params accepted by `/transactions`.
+        #[derive(Debug, Deserialize, Default)]
+        pub struct TransactionsQuery {
+            /// Filter by kind: `trade`, `signing`, `recall`,
+            /// `reassignment`, `waiver` (expands to all 3 waiver kinds),
+            /// `ir`, `other`. Unknown → 400.
+            #[serde(default)]
+            pub kind: Option<String>,
+            /// Filter by team abbreviation (case-insensitive).
+            #[serde(default)]
+            pub team: Option<String>,
+        }
+
+        fn pretty_season(s: &str) -> String {
+            if s.len() == 8 {
+                format!("{}-{}", &s[0..4], &s[6..8])
+            } else {
+                s.to_owned()
+            }
+        }
+
+        /// Pretty-cased label per kind, for the chip column. Matches the
+        /// CLI's display style ("Waiver claim" not "waiver_claim").
+        fn pretty_kind(k: TransactionKind) -> &'static str {
+            match k {
+                TransactionKind::Trade => "Trade",
+                TransactionKind::WaiverPlacement => "Waivers",
+                TransactionKind::WaiverClear => "Waivers",
+                TransactionKind::WaiverClaim => "Waiver claim",
+                TransactionKind::Signing => "Signing",
+                TransactionKind::Recall => "Recall",
+                TransactionKind::Reassignment => "Reassignment",
+                TransactionKind::InjuryReserve => "IR",
+                TransactionKind::Other => "Other",
+            }
+        }
+
+        pub async fn get_transactions(
+            State(state): State<WebState>,
+            Query(q): Query<TransactionsQuery>,
+        ) -> Response {
+            let (season_str, active_label) = {
+                let cfg = state.config.read().await;
+                (cfg.active_season.clone(), cfg.active_label.clone())
+            };
+
+            // Validate the kind filter early. Bad input → 400, not 500.
+            let kind_filter: Option<Vec<TransactionKind>> = match q.kind.as_deref() {
+                None | Some("") => None,
+                Some(k) => match TransactionKind::parse_filter(k) {
+                    Ok(v) => Some(v),
+                    Err(msg) => {
+                        return (
+                            StatusCode::BAD_REQUEST,
+                            Html(format!(
+                                "<!doctype html><html><body>\
+                                 <h1>Bad filter</h1><p>{msg}</p>\
+                                 <p><a href=\"/transactions\">← back to transactions</a></p>\
+                                 </body></html>",
+                            )),
+                        )
+                            .into_response();
+                    }
+                },
+            };
+            let team_filter = q
+                .team
+                .as_deref()
+                .map(|t| t.trim().to_ascii_uppercase())
+                .filter(|t| !t.is_empty());
+            let active_kind = q.kind.clone().unwrap_or_default();
+            let active_team = team_filter.clone().unwrap_or_default();
+
+            // Out-of-coverage check matches the CLI behavior.
+            let out_of_coverage = season_str.as_str() < TRANSACTIONS_EARLIEST_SEASON;
+
+            // Build the SnapshotStore for this request. Cheap — just a
+            // PathBuf wrap. If `snapshots_root` is None (test setup),
+            // fall back to the default (~/.icelines/snapshots).
+            let snapshots_root = match state.snapshots_root.as_ref() {
+                Some(p) => p.clone(),
+                None => icelines_fetch::snapshot::SnapshotStore::default_root(),
+            };
+            let store = icelines_fetch::snapshot::SnapshotStore::new(snapshots_root);
+
+            let envelope_result = if out_of_coverage {
+                Err(())
+            } else {
+                icelines_fetch::bundled::load_transactions_with_fallback(&season_str, &store)
+                    .map_err(|_| ())
+            };
+
+            let mut rows: Vec<TransactionRow> = match envelope_result {
+                Ok(env) => env
+                    .rows
+                    .into_iter()
+                    .filter(|t| match &kind_filter {
+                        None => true,
+                        Some(kinds) => kinds.contains(&t.kind),
+                    })
+                    .filter(|t| match &team_filter {
+                        None => true,
+                        Some(team) => t
+                            .team
+                            .as_ref()
+                            .map(|a| a.as_str().eq_ignore_ascii_case(team))
+                            .unwrap_or(false),
+                    })
+                    .map(|t| TransactionRow {
+                        date: t.date,
+                        team: t.team.map(|a| a.as_str().to_owned()).unwrap_or_default(),
+                        kind_label: t.kind.label().to_owned(),
+                        kind_pretty: pretty_kind(t.kind).to_owned(),
+                        description: t.description,
+                    })
+                    .collect(),
+                Err(()) => Vec::new(),
+            };
+
+            // Newest first. Date is YYYY-MM-DD so string sort works.
+            rows.sort_by(|a, b| b.date.cmp(&a.date));
+            // Cap to 1000 to keep the page render bounded.
+            rows.truncate(1000);
+            let total = rows.len();
+            let empty_unfiltered =
+                rows.is_empty() && kind_filter.is_none() && team_filter.is_none();
+
+            let tmpl = TransactionsTemplate {
+                active_label,
+                season_pretty: pretty_season(&season_str),
+                rows,
+                total,
+                empty_unfiltered,
+                active_kind,
+                active_team,
+                out_of_coverage,
+                earliest_season_pretty: pretty_season(TRANSACTIONS_EARLIEST_SEASON),
             };
             match tmpl.render() {
                 Ok(html) => Html(html).into_response(),

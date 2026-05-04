@@ -92,6 +92,7 @@ pub async fn run(
     let state = WebState {
         repo: std::sync::Arc::new(tokio::sync::RwLock::new(repo)),
         config: std::sync::Arc::new(tokio::sync::RwLock::new(web_config.clone())),
+        snapshots_root: std::sync::Arc::new(Some(cfg.snapshot_dir())),
     };
 
     let app = router(state);
