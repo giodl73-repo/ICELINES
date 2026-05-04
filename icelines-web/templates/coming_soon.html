@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} — coming soon{% endblock %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+<p style="font-size: 1.1rem;">
+    Coming in <strong>{{ king_phase }}</strong> of Phase King Clancy.
+</p>
+
+<p>{{ description }}</p>
+
+<p style="margin-top: 2rem; color: #616161;">
+    The Phase King Clancy plan ships sub-phases incrementally so each
+    surface can be reviewed independently. See
+    <a href="/docs">the docs</a> for the full sub-phase plan, or
+    <a href="/">return to the dashboard</a>.
+</p>
+
+<p style="margin-top: 1.5rem; font-size: 0.85rem; color: #616161;">
+    Active context: <code>{{ active_label }}</code>.
+</p>
+{% endblock %}

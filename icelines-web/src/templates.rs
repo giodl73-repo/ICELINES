@@ -48,6 +48,21 @@ pub struct HomeTemplate {
     pub active_label: String,
 }
 
+/// `coming_soon.html` — placeholder for routes that have a slot in
+/// the spec but no handler shipped yet. Each section nav link on the
+/// home page mounts one of these so a click lands on a real page
+/// (with the active-season header + back-to-dashboard link) rather
+/// than axum's bare 404. As real handlers ship in King.2+, the
+/// coming-soon mounts get replaced.
+#[derive(Template)]
+#[template(path = "coming_soon.html")]
+pub struct ComingSoonTemplate {
+    pub title: String,
+    pub king_phase: String,
+    pub description: String,
+    pub active_label: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
