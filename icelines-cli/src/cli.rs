@@ -154,6 +154,12 @@ DEPRECATIONS
         /// Default: no CORS headers (localhost-only is the secure default).
         #[arg(long)]
         cors_origin: Option<String>,
+        /// Path to the built mkdocs site to mount at `/site/*`.
+        /// Defaults to `../fantasy-site` (matches `mkdocs.yml`).
+        /// If the path doesn't exist, `/site` shows a friendly
+        /// "run `icelines site build` first" page.
+        #[arg(long)]
+        site_dir: Option<std::path::PathBuf>,
     },
 
     // ── Site (mkdocs) — Phase King Clancy King.1.0 rename ─────────────────────

@@ -162,8 +162,10 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             no_open,
             no_cache,
             cors_origin,
+            site_dir,
         } => {
-            commands::serve::run(port, bind, no_open, no_cache, cors_origin, &cfg).await?;
+            commands::serve::run(port, bind, no_open, no_cache, cors_origin, site_dir, &cfg)
+                .await?;
         }
         Commands::Deploy { remote } => {
             eprintln!(

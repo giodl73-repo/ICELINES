@@ -47,7 +47,7 @@ image       = { version = "0.25", default-features = false, features = ["png", "
 tempfile    = "3"
 axum        = { version = "0.7", features = ["json"] }
 tower       = { version = "0.4", features = ["util"] }
-tower-http  = { version = "0.5", features = ["compression-gzip", "cors", "trace"] }
+tower-http  = { version = "0.5", features = ["compression-gzip", "cors", "trace", "fs"] }
 ulid        = "1"
 askama      = "0.12"
 open        = "5"
