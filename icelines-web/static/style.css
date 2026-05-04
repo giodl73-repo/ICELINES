@@ -1,0 +1,226 @@
+/*
+ * IceLines — base stylesheet (King.1.3).
+ *
+ * Hand-rolled, ~5 KB. No build step. Vendored verbatim into the
+ * binary via include_bytes!() and served from /static/style.css with
+ * `Cache-Control: public, max-age=31536000, immutable` plus an ETag
+ * derived from CARGO_PKG_VERSION.
+ *
+ * The CSS class contract (`.fit-elite` / `.fit-solid` / `.fit-fringe`
+ * / `.fit-buried` and the `.score-*` set) is the spec's
+ * "CSS class contract" subsection. Hex values match `glass.md` so the
+ * web view aligns with the TUI's color encoding. `l1_html_no_color
+ * _only_encoding` (King.2) checks that every color class is paired
+ * with text/icon, not used as the sole signal.
+ */
+
+/* ── Reset + base typography ────────────────────────────────────── */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    color: #1a1a1a;
+    background: #fafafa;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+}
+
+main {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem;
+}
+
+h1, h2, h3 {
+    line-height: 1.2;
+    margin: 0 0 0.5em 0;
+}
+
+a {
+    color: #1565c0;
+    text-decoration: underline;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+    outline: 2px solid #1565c0;
+    outline-offset: 2px;
+}
+
+/* Skip-to-content link — visible only on keyboard focus.
+   broadcast a11y baseline. */
+.skip-link {
+    position: absolute;
+    left: 0.5rem;
+    top: -3rem;
+    background: #1565c0;
+    color: #fff;
+    padding: 0.5rem 1rem;
+    text-decoration: none;
+    border-radius: 0 0 4px 4px;
+    z-index: 100;
+}
+.skip-link:focus {
+    top: 0;
+}
+
+/* ── Active (season, season_type) sticky header ─────────────────── */
+.season-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #1a1a1a;
+    color: #fff;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #1565c0;
+}
+.season-header a {
+    color: inherit;
+}
+
+/* ── Fit classes — spec CSS class contract ──────────────────────── */
+/* Hex values lock-stepped with glass.md TUI palette. */
+.fit-elite   { background-color: #2e7d32; color: #fff; }
+.fit-solid   { background-color: #1565c0; color: #fff; }
+.fit-fringe  { background-color: #f9a825; color: #000; }
+.fit-buried  { background-color: #b71c1c; color: #fff; }
+
+.fit-elite, .fit-solid, .fit-fringe, .fit-buried {
+    padding: 0.125rem 0.375rem;
+    border-radius: 3px;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+/* ── Score-state classes ────────────────────────────────────────── */
+.score-leading  { color: #2e7d32; font-weight: 700; }
+.score-trailing { color: #b71c1c; font-weight: 700; }
+.score-tied     { color: #616161; font-weight: 600; }
+
+/* ── Tables ─────────────────────────────────────────────────────── */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+th, td {
+    padding: 0.4rem 0.5rem;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+}
+th {
+    background: #f0f0f0;
+    font-weight: 600;
+    position: sticky;
+    top: 2.5rem;  /* Below sticky season-header */
+    z-index: 5;
+}
+tbody tr:hover {
+    background: #f5f5f5;
+}
+
+/* Horizontal scroll wrapper for tables on narrow viewports. */
+.table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ── Forms (filter/sort) ────────────────────────────────────────── */
+input, select, button {
+    font: inherit;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid #c0c0c0;
+    border-radius: 3px;
+    background: #fff;
+}
+button {
+    cursor: pointer;
+    background: #1565c0;
+    color: #fff;
+    border-color: #1565c0;
+}
+button:hover {
+    background: #0d47a1;
+}
+
+/* ── Loading + spinner ──────────────────────────────────────────── */
+.spinner {
+    display: none;
+    border: 3px solid #e0e0e0;
+    border-top-color: #1565c0;
+    border-radius: 50%;
+    width: 1.5rem;
+    height: 1.5rem;
+    animation: icelines-spin 0.8s linear infinite;
+}
+.htmx-request .spinner {
+    display: inline-block;
+}
+@keyframes icelines-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* prefers-reduced-motion: kill the spin animation. */
+@media (prefers-reduced-motion: reduce) {
+    .spinner {
+        animation: none;
+        border-top-color: #1565c0;
+    }
+    * {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+    }
+}
+
+/* ── Error pages ────────────────────────────────────────────────── */
+.error-message {
+    font-size: 1.05rem;
+    margin: 1rem 0;
+}
+.error-hint {
+    background: #fff3e0;
+    border-left: 4px solid #f9a825;
+    padding: 0.75rem 1rem;
+    margin: 1rem 0;
+}
+.error-request-id {
+    color: #616161;
+    font-size: 0.85rem;
+    margin-top: 2rem;
+}
+.error-request-id code {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    background: #f0f0f0;
+    padding: 0.1rem 0.3rem;
+    border-radius: 2px;
+}
+
+/* ── Mobile / narrow viewport ───────────────────────────────────── */
+/* Single breakpoint at 600px per spec — dual-pane → single-column. */
+@media (max-width: 600px) {
+    main {
+        padding: 1rem 0.5rem;
+    }
+    th, td {
+        padding: 0.3rem 0.4rem;
+        font-size: 0.85rem;
+    }
+    .season-header {
+        font-size: 0.75rem;
+    }
+}

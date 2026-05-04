@@ -32,6 +32,7 @@
 pub mod config;
 pub mod error;
 pub mod state;
+pub mod static_assets;
 
 use axum::{routing::get, Router};
 
@@ -41,11 +42,16 @@ pub use state::WebState;
 
 /// Build the axum router for the IceLines web dashboard.
 ///
-/// King.1.1 mounts a single `/` placeholder. Later sub-phases attach
-/// real surfaces (`/leaders`, `/player/:id`, `/api/v1/*`, ...).
+/// Routes mounted today:
+/// - `GET /` — placeholder home (King.1.1)
+/// - `GET /static/:asset` — vendored CSS / HTMX / logo (King.1.3)
+///
+/// Later sub-phases attach real surfaces (`/leaders`, `/player/:id`,
+/// `/api/v1/*`, ...).
 pub fn router(state: WebState) -> Router {
     Router::new()
         .route("/", get(handlers::home::get_home))
+        .route("/static/:asset", get(static_assets::serve_static))
         .with_state(state)
 }
 
