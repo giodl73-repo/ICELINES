@@ -62,6 +62,77 @@ async fn l1_get_root_returns_200_html() {
         "home page should be a full HTML document; got body starting with: {}",
         &body[..body.len().min(80)]
     );
+    // King.1.4 — content from the askama template should appear.
+    assert!(
+        body.contains("Welcome"),
+        "home page should render the askama template content"
+    );
+}
+
+/// l1_html_each_route_has_active_season_header
+/// — King.1.4 fence (broadcast finding, advanced from King.6 → King.1.4):
+///   every HTML page must render the active-(season, season_type)
+///   sticky header so time-travel via PATCH is never silent.
+///
+/// Today only `/` is mounted. Each future sub-phase adds its routes
+/// to the route list below — King.2 adds `/leaders`, King.3 adds
+/// `/player/:id`, etc. The fence catches any route that forgets to
+/// thread `active_label` into its template.
+#[tokio::test]
+async fn l1_html_each_route_has_active_season_header() {
+    let app = router(WebState::new());
+
+    // Default WebConfig::default() uses CURRENT_SEASON_STR + "regular"
+    // → label "25-26 · Regular". The fence checks for the structural
+    // marker (the season-header CSS class) plus the label substring.
+    let html_routes: &[&str] = &[
+        "/",
+        // King.2: "/leaders",
+        // King.3: "/player/8478402",
+        // King.4: "/team/SEA", "/depth", "/class/2022",
+        // King.5: "/goalies",
+        // King.6: "/reports", "/seasons",
+        // King.7: "/scores", "/schedule", "/playoffs",
+        // King.8: "/transactions", "/groups", "/games", "/search", "/docs",
+        // King.9: "/fantasy",
+    ];
+
+    for route in html_routes {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri(*route)
+                    .body(Body::empty())
+                    .expect("request builder ok"),
+            )
+            .await
+            .expect("dispatch ok");
+
+        assert_eq!(
+            response.status(),
+            StatusCode::OK,
+            "{route} should return 200"
+        );
+
+        let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+            .await
+            .expect("body fits");
+        let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+
+        assert!(
+            body.contains("season-header"),
+            "{route} must include the .season-header element \
+             (broadcast a11y/UX contract)"
+        );
+        // CURRENT_SEASON_STR is "20252026" → label "25-26 · Regular"
+        assert!(
+            body.contains("25-26 · Regular"),
+            "{route} must render the active-season label '25-26 · Regular' \
+             (got body without it — make sure the route's template extends \
+             base.html and the handler passes active_label)"
+        );
+    }
 }
 
 /// l1_unknown_route_returns_404

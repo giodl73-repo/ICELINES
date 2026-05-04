@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}IceLines{% endblock %} — IceLines</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="icon" type="image/svg+xml" href="/static/icelines.svg">
+    {# King.2 will load HTMX once the first interactive form ships:
+       <script src="/static/htmx.min.js" defer></script> #}
+</head>
+<body>
+    <a href="#main" class="skip-link">Skip to content</a>
+
+    {# Active-(season, season_type) sticky header — broadcast finding,
+       l1_html_each_route_has_active_season_header fence enforces
+       presence on every page. The label format ("25-26 · Regular")
+       is locked by config::tests::l0_active_label_format. #}
+    <div class="season-header" role="region" aria-label="Active season">
+        <span>
+            <strong>IceLines</strong> · {{ active_label }}
+        </span>
+        <span>
+            <a href="/seasons">change…</a>
+        </span>
+    </div>
+
+    <main id="main">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

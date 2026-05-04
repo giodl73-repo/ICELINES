@@ -19,6 +19,7 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 ulid = { workspace = true }
 anyhow = { workspace = true }
+askama = { workspace = true }
 
 [dev-dependencies]
 tower = { workspace = true }

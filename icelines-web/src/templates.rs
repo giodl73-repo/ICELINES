@@ -1,0 +1,118 @@
+//! Askama template structs.
+//!
+//! Phase King Clancy King.1.4 — `base.html` + `home.html` ship today.
+//! Each future sub-phase adds its own template alongside the matching
+//! handler:
+//!
+//! - King.2 — `leaders.html`, `leaders_partial.html` (HTMX fragment)
+//! - King.3 — `player.html`, `player_partial.html`, `compare.html`, `comps.html`
+//! - King.4 — `team.html`, `depth.html`, `class.html`, `trade.html`
+//! - King.5 — `goalies.html`, `goalie.html`
+//! - King.6 — `reports.html`, `seasons.html`
+//! - King.7 — `scores.html`, `schedule.html`, `playoffs.html`, `series.html`, `game.html`
+//! - King.8 — `transactions.html`, `search.html`, `docs.html`, `groups.html`, `games.html`
+//! - King.9 — `fantasy/*.html`
+//!
+//! ## Inheritance
+//!
+//! Every page extends `base.html`. The base owns:
+//! - `<head>`: charset, viewport, title block, stylesheet link, favicon
+//! - skip-to-content link
+//! - active-(season, season_type) sticky header
+//! - `<main id="main">` landmark
+//!
+//! Pages override `{% block title %}` and `{% block content %}`. Every
+//! page must therefore receive `active_label: String` so the base
+//! header renders. The `l1_html_each_route_has_active_season_header`
+//! fence (King.1.4 closeout) walks the router and asserts the label
+//! appears in every HTML response.
+//!
+//! ## Compile-time templates
+//!
+//! `askama` parses templates at *build* time. A typo in a template
+//! (`{% if foo` instead of `{% if foo %}`) fails `cargo build`, not
+//! a runtime request. This is one of the spec's "vendored
+//! interactivity" wins — no runtime template engine, no runtime
+//! template fetch.
+
+use askama::Template;
+
+/// `home.html` — the `/` page.
+///
+/// Carries `active_label` (e.g. `"25-26 · Regular"`) into the base
+/// template so the season header renders. Also displayed inline in
+/// the page footer for visual confirmation.
+#[derive(Template)]
+#[template(path = "home.html")]
+pub struct HomeTemplate {
+    pub active_label: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// l0_home_template_renders
+    /// — askama parses templates at build time, so a render failure
+    ///   here means a runtime substitution issue (e.g. malformed
+    ///   variable). Lock the rendered output contains both the
+    ///   page-specific copy AND the base-inherited active-season
+    ///   header label.
+    #[test]
+    fn l0_home_template_renders() {
+        let tmpl = HomeTemplate {
+            active_label: "25-26 · Regular".to_owned(),
+        };
+        let html = tmpl.render().expect("home template renders");
+        // Page-specific content
+        assert!(html.contains("Welcome"));
+        // Base-inherited active-season header
+        assert!(
+            html.contains("25-26 · Regular"),
+            "base template must render active_label, got: {html}"
+        );
+        // Sticky header structure
+        assert!(html.contains("season-header"));
+    }
+
+    /// l0_home_template_includes_a11y_baseline
+    /// — broadcast finding: every page MUST carry viewport meta,
+    ///   skip-link, and `<main>` landmark. The base template owns
+    ///   these; this test asserts the inheritance still emits them.
+    #[test]
+    fn l0_home_template_includes_a11y_baseline() {
+        let tmpl = HomeTemplate {
+            active_label: "x".to_owned(),
+        };
+        let html = tmpl.render().unwrap();
+        assert!(
+            html.contains("name=\"viewport\""),
+            "every page must include viewport meta"
+        );
+        assert!(
+            html.contains("skip-link"),
+            "every page must include skip-to-content link"
+        );
+        assert!(
+            html.contains("id=\"main\"") || html.contains("id='main'"),
+            "every page must include <main id='main'> landmark"
+        );
+        assert!(
+            html.contains("lang=\"en\""),
+            "every page must declare a lang"
+        );
+    }
+
+    /// l0_home_template_links_static_assets
+    /// — base must reference /static/style.css and /static/icelines.svg
+    ///   from the King.1.3 vendored asset pipeline.
+    #[test]
+    fn l0_home_template_links_static_assets() {
+        let tmpl = HomeTemplate {
+            active_label: "x".to_owned(),
+        };
+        let html = tmpl.render().unwrap();
+        assert!(html.contains("/static/style.css"));
+        assert!(html.contains("/static/icelines.svg"));
+    }
+}

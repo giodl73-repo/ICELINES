@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<h1>IceLines</h1>
+<p>
+    Welcome — this is the IceLines web dashboard. The full surface (leaderboards,
+    player cards, team depth charts, fantasy, transactions) is being built out
+    across Phase King Clancy. King.1.4 is the templating skeleton.
+</p>
+
+<nav aria-label="Sections">
+    <ul>
+        {# These are placeholders — each route lights up in its sub-phase
+           per the spec's Phase plan. Linked now so the nav shape is
+           visible from day one. #}
+        <li><a href="/leaders">Leaders</a> <small>(King.2)</small></li>
+        <li><a href="/goalies">Goalies</a> <small>(King.5)</small></li>
+        <li><a href="/scores">Scores</a> <small>(King.7)</small></li>
+        <li><a href="/playoffs">Playoffs</a> <small>(King.7)</small></li>
+        <li><a href="/transactions">Transactions</a> <small>(King.8)</small></li>
+        <li><a href="/fantasy">Fantasy</a> <small>(King.9)</small></li>
+        <li><a href="/docs">Docs</a> <small>(King.8)</small></li>
+    </ul>
+</nav>
+
+<p style="color: #616161; font-size: 0.85rem; margin-top: 2rem;">
+    King Clancy King.1.4 — askama template skeleton.
+    Active context: <code>{{ active_label }}</code>.
+</p>
+{% endblock %}
