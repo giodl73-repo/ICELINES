@@ -68,6 +68,8 @@ pub fn router(state: WebState) -> Router {
         .route("/player/:id", get(handlers::player::get_player))
         // Goalie leaderboard — King.5.1.
         .route("/goalies", get(handlers::goalies::get_goalies))
+        // Team roster — King.4.1. /team/SEA, /team/EDM, etc.
+        .route("/team/:abbrev", get(handlers::team::get_team))
         // Coming-soon stubs for the rest of the section nav links.
         // Each lands on a real page (with the active-season header)
         // so clicks don't fail with a bare 404. Replaced by real
@@ -820,6 +822,145 @@ mod handlers {
                 )),
             )
                 .into_response()
+        }
+    }
+
+    /// `/team/:abbrev` — King.4.1 roster page.
+    pub mod team {
+        use crate::state::WebState;
+        use crate::templates::{GoalieRow, LeaderRow, TeamTemplate};
+        use askama::Template;
+        use axum::extract::{Path, State};
+        use axum::http::StatusCode;
+        use axum::response::{Html, IntoResponse, Response};
+        use icelines_core::model::{Season, TeamAbbr};
+        use icelines_core::season_stats::SeasonType;
+
+        pub async fn get_team(
+            State(state): State<WebState>,
+            Path(abbrev_raw): Path<String>,
+        ) -> Response {
+            let abbrev_upper = abbrev_raw.to_ascii_uppercase();
+            let team = match TeamAbbr::parse(&abbrev_upper) {
+                Ok(t) => t,
+                Err(e) => {
+                    return (
+                        StatusCode::NOT_FOUND,
+                        Html(format!(
+                            "<!doctype html><html><body><h1>Unknown team</h1>\
+                             <p>'{abbrev_upper}' is not a recognized NHL team abbrev: {e}</p>\
+                             <p><a href=\"/leaders\">← back to leaders</a></p>\
+                             </body></html>"
+                        )),
+                    )
+                        .into_response();
+                }
+            };
+
+            let (season_str, season_type, active_label) = {
+                let cfg = state.config.read().await;
+                let st = match cfg.active_season_type.as_str() {
+                    "playoff" | "playoffs" => SeasonType::Playoff,
+                    _ => SeasonType::Regular,
+                };
+                (cfg.active_season.clone(), st, cfg.active_label.clone())
+            };
+            let season_u32: u32 = match season_str.parse() {
+                Ok(n) => n,
+                Err(_) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Html(format!(
+                            "<!doctype html><html><body><h1>500</h1>\
+                             <p>Active season '{season_str}' is not a YYYYZZZZ id</p>\
+                             </body></html>"
+                        )),
+                    )
+                        .into_response();
+                }
+            };
+            let season = Season(season_u32);
+
+            let (skaters, goalies) = {
+                let repo = state.repo.read().await;
+                let roster = repo.team_roster(&team, season, season_type);
+
+                let mut skaters: Vec<LeaderRow> = roster
+                    .iter()
+                    .filter(|v| !v.is_goalie())
+                    .map(|v| {
+                        let gp = v.gp();
+                        let points = v.points();
+                        let ppg_str = if gp > 0 {
+                            format!("{:.2}", points as f64 / gp as f64)
+                        } else {
+                            String::new()
+                        };
+                        LeaderRow {
+                            nhl_id: v.id().0,
+                            name: v.full_name().to_owned(),
+                            position: v.position().abbreviation().to_owned(),
+                            team: v.team_display().to_owned(),
+                            gp,
+                            goals: v.goals(),
+                            assists: v.assists(),
+                            points,
+                            ppg_str,
+                        }
+                    })
+                    .collect();
+                skaters.sort_by(|a, b| {
+                    b.points
+                        .cmp(&a.points)
+                        .then(b.goals.cmp(&a.goals))
+                        .then(a.name.cmp(&b.name))
+                });
+
+                let mut goalies: Vec<GoalieRow> = roster
+                    .iter()
+                    .filter(|v| v.is_goalie())
+                    .filter_map(|v| {
+                        let g = v.stats.goalie.as_ref()?;
+                        let save_pct_str = match g.save_pct {
+                            Some(p) => format!("{:.3}", p),
+                            None => "—".to_owned(),
+                        };
+                        let gaa_str = match g.goals_against_average {
+                            Some(a) => format!("{:.2}", a),
+                            None => "—".to_owned(),
+                        };
+                        Some(GoalieRow {
+                            nhl_id: v.id().0,
+                            name: v.full_name().to_owned(),
+                            team: v.team_display().to_owned(),
+                            gp: v.gp(),
+                            wins: g.wins,
+                            losses: g.losses,
+                            shutouts: g.shutouts,
+                            save_pct_str,
+                            gaa_str,
+                        })
+                    })
+                    .collect();
+                goalies.sort_by(|a, b| b.wins.cmp(&a.wins).then(a.name.cmp(&b.name)));
+
+                (skaters, goalies)
+            };
+
+            let tmpl = TeamTemplate {
+                active_label,
+                team_abbrev: team.0.to_string(),
+                skaters,
+                goalies,
+            };
+            match tmpl.render() {
+                Ok(html) => Html(html).into_response(),
+                Err(e) => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Html(format!("template render failed: {e}")),
+                )
+                    .into_response(),
+            }
         }
     }
 

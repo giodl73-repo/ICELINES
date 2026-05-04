@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}{{ team_abbrev }} roster{% endblock %}
+
+{% block content %}
+<p style="margin-bottom: 0.5rem;">
+    <a href="/leaders">← back to leaders</a>
+</p>
+
+<h1>{{ team_abbrev }} · {{ active_label }}</h1>
+<p style="color: #616161;">
+    {{ skaters.len() }} skater{% if skaters.len() != 1 %}s{% endif %}
+    · {{ goalies.len() }} goalie{% if goalies.len() != 1 %}s{% endif %}
+</p>
+
+<h2 style="margin-top: 1.5rem;">Skaters</h2>
+
+{% if skaters.is_empty() %}
+<p style="color: #616161;">No skaters loaded for this team in the active season.</p>
+{% else %}
+<div class="table-scroll">
+<table>
+    <thead>
+        <tr>
+            <th style="text-align: right;">#</th>
+            <th>Player</th>
+            <th>Pos</th>
+            <th style="text-align: right;">GP</th>
+            <th style="text-align: right;">G</th>
+            <th style="text-align: right;">A</th>
+            <th style="text-align: right;">P</th>
+            <th style="text-align: right;">P/GP</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in skaters %}
+        <tr>
+            <td style="text-align: right; color: #616161;">{{ loop.index }}</td>
+            <td><strong><a href="/player/{{ row.nhl_id }}" style="color: #1565c0;">{{ row.name }}</a></strong></td>
+            <td>{{ row.position }}</td>
+            <td style="text-align: right;">{{ row.gp }}</td>
+            <td style="text-align: right;">{{ row.goals }}</td>
+            <td style="text-align: right;">{{ row.assists }}</td>
+            <td style="text-align: right;"><strong>{{ row.points }}</strong></td>
+            <td style="text-align: right;">{% if row.ppg_str.is_empty() %}—{% else %}{{ row.ppg_str }}{% endif %}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endif %}
+
+<h2 style="margin-top: 1.5rem;">Goalies</h2>
+
+{% if goalies.is_empty() %}
+<p style="color: #616161;">No goalies loaded for this team in the active season.</p>
+{% else %}
+<div class="table-scroll">
+<table>
+    <thead>
+        <tr>
+            <th>Goalie</th>
+            <th style="text-align: right;">GP</th>
+            <th style="text-align: right;">W</th>
+            <th style="text-align: right;">L</th>
+            <th style="text-align: right;">SV%</th>
+            <th style="text-align: right;">GAA</th>
+            <th style="text-align: right;">SO</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in goalies %}
+        <tr>
+            <td><strong><a href="/player/{{ row.nhl_id }}" style="color: #1565c0;">{{ row.name }}</a></strong></td>
+            <td style="text-align: right;">{{ row.gp }}</td>
+            <td style="text-align: right;">{{ row.wins }}</td>
+            <td style="text-align: right;">{{ row.losses }}</td>
+            <td style="text-align: right;">{{ row.save_pct_str }}</td>
+            <td style="text-align: right;">{{ row.gaa_str }}</td>
+            <td style="text-align: right;">{{ row.shutouts }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endif %}
+
+<p style="margin-top: 2rem; color: #616161; font-size: 0.9rem;">
+    King.4.1 ships the basic roster. King.4.2 will add cross-team fit
+    coloring (depth chart with position-fit highlights);
+    King.4.3 adds the trade simulator.
+</p>
+{% endblock %}

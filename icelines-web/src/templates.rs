@@ -133,6 +133,16 @@ pub struct LeaderRow {
     pub ppg_str: String,
 }
 
+/// `team.html` — King.4.1. Roster page for one team.
+#[derive(Template)]
+#[template(path = "team.html")]
+pub struct TeamTemplate {
+    pub active_label: String,
+    pub team_abbrev: String,
+    pub skaters: Vec<LeaderRow>,
+    pub goalies: Vec<GoalieRow>,
+}
+
 /// `goalies.html` — King.5.1 minimum viable goalie leaderboard.
 #[derive(Template)]
 #[template(path = "goalies.html")]
