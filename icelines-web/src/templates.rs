@@ -140,6 +140,135 @@ pub struct LeaderRow {
     pub ppg_str: String,
 }
 
+/// `scores.html` — King.7.1. Live NHL schedule for a given date
+/// (default: today). Uses `NhlApiClient::fetch_today_schedule` /
+/// `fetch_schedule_for_date`.
+#[derive(Template)]
+#[template(path = "scores.html")]
+pub struct ScoresTemplate {
+    pub active_label: String,
+    /// Active calendar date (YYYY-MM-DD). The fetch returns the full
+    /// game-week starting from this date, so the template groups rows
+    /// by date.
+    pub active_date: String,
+    /// Pre-calculated previous/next-week date strings for the picker
+    /// arrows. ISO YYYY-MM-DD; the template just emits links.
+    pub prev_date: String,
+    pub next_date: String,
+    pub today_date: String,
+    /// Pre-grouped by date, sorted ascending. Each `(date_label, rows)`
+    /// pair becomes one section in the template.
+    pub days: Vec<ScoresDay>,
+    pub total_games: usize,
+    /// Set when the live fetch failed entirely. Renders an inline
+    /// error block instead of the games list.
+    pub fetch_error: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ScoresDay {
+    pub date: String,
+    /// Pretty label like "Mon, May 4". Computed in the handler.
+    pub date_pretty: String,
+    pub rows: Vec<ScoreRow>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ScoreRow {
+    pub away_abbrev: String,
+    pub away_name: String,
+    pub home_abbrev: String,
+    pub home_name: String,
+    /// Empty string when score not yet available (FUT/PRE).
+    pub away_score_str: String,
+    pub home_score_str: String,
+    /// "FINAL", "FINAL/OT", "LIVE", "PRE", "FUT", etc. Pre-formatted.
+    pub state_label: String,
+    /// "live" / "final" / "future" — used as a CSS class hook.
+    pub state_class: String,
+    /// Pretty start time like "19:00 UTC" or empty when unknown.
+    pub start_time_label: String,
+    /// True for playoff games — template adds a series-context line.
+    pub is_playoff: bool,
+    /// "Game 4 · FLA leads 2-1" style line (only when is_playoff).
+    pub series_context: String,
+}
+
+/// `playoffs.html` — King.7.2. Bracket view (round-by-round).
+#[derive(Template)]
+#[template(path = "playoffs.html")]
+pub struct PlayoffsTemplate {
+    pub active_label: String,
+    pub season_pretty: String,
+    /// "bundled" or "live" — surfaced in the page so the user knows
+    /// whether they're looking at a static historical bundle or a
+    /// live-API snapshot.
+    pub source_label: String,
+    pub rounds: Vec<PlayoffsRoundView>,
+    /// True when the bracket has zero series (off-season for live
+    /// API, missing bundle for older seasons).
+    pub empty: bool,
+    pub fetch_error: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct PlayoffsRoundView {
+    pub round_number: u8,
+    pub label: String,
+    pub series: Vec<PlayoffsSeriesView>,
+}
+
+#[derive(Debug, Clone)]
+pub struct PlayoffsSeriesView {
+    pub top_abbrev: String,
+    pub top_name: String,
+    pub top_wins: u8,
+    pub bottom_abbrev: String,
+    pub bottom_name: String,
+    pub bottom_wins: u8,
+    /// Pre-formatted summary line ("FLA 4-2 TBL · FLA wins" or
+    /// "tied 2-2", "FLA leads 3-1"). Source: `PlayoffSeries::summary`.
+    pub summary: String,
+    /// True when one side has 4 wins.
+    pub is_complete: bool,
+    pub conference: String,
+}
+
+/// `schedule.html` — King.7.3. Team-season schedule view.
+#[derive(Template)]
+#[template(path = "schedule.html")]
+pub struct ScheduleTemplate {
+    pub active_label: String,
+    pub season_pretty: String,
+    /// Active team abbrev (uppercase) or empty when no team selected.
+    pub active_team: String,
+    pub team_chips: Vec<TeamChip>,
+    pub rows: Vec<ScheduleRow>,
+    pub total: usize,
+    pub fetch_error: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct TeamChip {
+    pub abbrev: String,
+    pub is_active: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct ScheduleRow {
+    pub date: String,
+    pub away_abbrev: String,
+    pub home_abbrev: String,
+    pub away_score_str: String,
+    pub home_score_str: String,
+    pub state_label: String,
+    /// "home" / "away" — perspective of the active team.
+    pub home_or_away: String,
+    /// Opponent abbrev — convenience for the template.
+    pub opponent_abbrev: String,
+    pub is_playoff: bool,
+}
+
 /// `transactions.html` — King.8.2. League moves feed for the active
 /// season. Source: ESPN site.api via `load_transactions_with_fallback`.
 #[derive(Template)]

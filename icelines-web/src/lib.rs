@@ -77,12 +77,10 @@ pub fn router(state: WebState) -> Router {
         .route("/api/v1/team/:abbrev", get(handlers::team::get_team_json))
         // Docs — King.8.1. Rendered COMMANDS.md.
         .route("/docs", get(handlers::docs::get_docs))
-        // Coming-soon stubs for the rest of the section nav links.
-        // Each lands on a real page (with the active-season header)
-        // so clicks don't fail with a bare 404. Replaced by real
-        // handlers in their respective sub-phases.
-        .route("/scores", get(cs::scores))
-        .route("/playoffs", get(cs::playoffs))
+        // Live NHL data — King.7.
+        .route("/scores", get(handlers::scores::get_scores))
+        .route("/schedule", get(handlers::schedule::get_schedule))
+        .route("/playoffs", get(handlers::playoffs::get_playoffs))
         // Transactions feed — King.8.2.
         .route(
             "/transactions",
@@ -125,30 +123,9 @@ mod handlers {
         // `leaders` and `goalies` stubs removed (real handlers at
         // `handlers::leaders` and `handlers::goalies`).
 
-        pub async fn scores(State(s): State<WebState>) -> Response {
-            render(
-                s,
-                "Scores",
-                "King.7",
-                "Tonight's NHL games + a date picker for any past or future date. \
-                 Live data from the NHL API.",
-            )
-            .await
-        }
-
-        pub async fn playoffs(State(s): State<WebState>) -> Response {
-            render(
-                s,
-                "Playoffs",
-                "King.7",
-                "Current playoff bracket (or a historical season's). Click a series \
-                 for the per-game log; click a game for the full boxscore.",
-            )
-            .await
-        }
-
-        // `transactions` stub removed in King.8.2 — real handler at
-        // `handlers::transactions::get_transactions`.
+        // `scores`, `playoffs`, `transactions` stubs removed —
+        // real handlers at `handlers::scores`, `handlers::playoffs`,
+        // `handlers::transactions` (King.7.1, King.7.2, King.8.2).
 
         pub async fn fantasy(State(s): State<WebState>) -> Response {
             render(
@@ -2165,6 +2142,451 @@ mod handlers {
                         "<!doctype html><html><body><h1>500</h1>\
                          <p>template render failed: {e}</p></body></html>"
                     )),
+                )
+                    .into_response(),
+            }
+        }
+    }
+
+    // ── King.7 — live NHL data ────────────────────────────────────────
+
+    /// Build a fresh `NhlApiClient` per request. Cheap (just
+    /// constructs the reqwest client) and avoids holding a long-lived
+    /// HTTP client in `WebState` until we have a concrete reason to
+    /// (cookie pool, custom retry, etc.). Lindsay L.1.5 retry policy
+    /// fires inside the client.
+    fn nhl_client() -> icelines_fetch::nhl_api::NhlApiClient {
+        icelines_fetch::nhl_api::NhlApiClient::production()
+    }
+
+    /// `/scores` — King.7.1. Live NHL schedule for one game-week.
+    pub mod scores {
+        use crate::state::WebState;
+        use crate::templates::{ScoreRow, ScoresDay, ScoresTemplate};
+        use askama::Template;
+        use axum::extract::{Query, State};
+        use axum::http::StatusCode;
+        use axum::response::{Html, IntoResponse, Response};
+        use chrono::{Datelike, Duration, NaiveDate, Utc, Weekday};
+        use serde::Deserialize;
+
+        #[derive(Debug, Deserialize, Default)]
+        pub struct ScoresQuery {
+            /// YYYY-MM-DD. The NHL API returns a 7-day window starting
+            /// from this date. Default: today.
+            #[serde(default)]
+            pub date: Option<String>,
+        }
+
+        fn parse_date(s: &str) -> Option<NaiveDate> {
+            NaiveDate::parse_from_str(s, "%Y-%m-%d").ok()
+        }
+
+        fn pretty_day(d: NaiveDate) -> String {
+            let weekday = match d.weekday() {
+                Weekday::Mon => "Mon",
+                Weekday::Tue => "Tue",
+                Weekday::Wed => "Wed",
+                Weekday::Thu => "Thu",
+                Weekday::Fri => "Fri",
+                Weekday::Sat => "Sat",
+                Weekday::Sun => "Sun",
+            };
+            let month = match d.month() {
+                1 => "Jan",
+                2 => "Feb",
+                3 => "Mar",
+                4 => "Apr",
+                5 => "May",
+                6 => "Jun",
+                7 => "Jul",
+                8 => "Aug",
+                9 => "Sep",
+                10 => "Oct",
+                11 => "Nov",
+                12 => "Dec",
+                _ => "?",
+            };
+            format!("{}, {} {}, {}", weekday, month, d.day(), d.year())
+        }
+
+        fn state_to_class_label(
+            state: Option<&str>,
+            last_period: Option<&str>,
+        ) -> (String, String) {
+            match state.unwrap_or("") {
+                "FINAL" | "OFF" => {
+                    let label = match last_period.unwrap_or("REG") {
+                        "OT" => "FINAL/OT".to_owned(),
+                        "SO" => "FINAL/SO".to_owned(),
+                        _ => "FINAL".to_owned(),
+                    };
+                    ("final".to_owned(), label)
+                }
+                "LIVE" | "CRIT" => ("live".to_owned(), "LIVE".to_owned()),
+                "PRE" => ("future".to_owned(), "Pre-game".to_owned()),
+                "FUT" | "" => ("future".to_owned(), "Scheduled".to_owned()),
+                other => ("future".to_owned(), other.to_owned()),
+            }
+        }
+
+        /// Drop the date portion of an ISO-8601 timestamp and emit
+        /// just `HH:MM UTC`. Inputs look like `2026-05-04T19:00:00Z`.
+        fn pretty_time_utc(ts: &str) -> String {
+            if let Some(t) = ts.split('T').nth(1) {
+                let hhmm: String = t.chars().take(5).collect();
+                if hhmm.len() == 5 {
+                    return format!("{hhmm} UTC");
+                }
+            }
+            String::new()
+        }
+
+        pub async fn get_scores(
+            State(state): State<WebState>,
+            Query(q): Query<ScoresQuery>,
+        ) -> Response {
+            let active_label = state.config.read().await.active_label.clone();
+
+            let today = Utc::now().date_naive();
+            let active_date = q.date.as_deref().and_then(parse_date).unwrap_or(today);
+            let prev_date = active_date - Duration::days(7);
+            let next_date = active_date + Duration::days(7);
+
+            let client = super::nhl_client();
+            let fetch_result = if q.date.is_some() {
+                client
+                    .fetch_schedule_for_date(&active_date.format("%Y-%m-%d").to_string())
+                    .await
+            } else {
+                client.fetch_today_schedule().await
+            };
+
+            let (days, total_games, fetch_error) = match fetch_result {
+                Ok(games) => {
+                    use std::collections::BTreeMap;
+                    let mut by_date: BTreeMap<String, Vec<ScoreRow>> = BTreeMap::new();
+                    let total = games.len();
+                    for g in games {
+                        let (state_class, state_label) =
+                            state_to_class_label(g.game_state.as_deref(), g.last_period.as_deref());
+                        let series_context = if g.is_playoff() {
+                            let series_game = g.series_game.unwrap_or_default();
+                            let aw = g.away_wins.unwrap_or(0);
+                            let hw = g.home_wins.unwrap_or(0);
+                            let series_state = if aw > hw {
+                                format!("{} leads {}-{}", g.away_abbrev, aw, hw)
+                            } else if hw > aw {
+                                format!("{} leads {}-{}", g.home_abbrev, hw, aw)
+                            } else if aw == 0 {
+                                "series begins".to_owned()
+                            } else {
+                                format!("tied {}-{}", aw, hw)
+                            };
+                            if series_game.is_empty() {
+                                series_state
+                            } else {
+                                format!("{series_game} · {series_state}")
+                            }
+                        } else {
+                            String::new()
+                        };
+                        let row = ScoreRow {
+                            away_abbrev: g.away_abbrev,
+                            away_name: g.away_name,
+                            home_abbrev: g.home_abbrev,
+                            home_name: g.home_name,
+                            away_score_str: g.away_score.map(|s| s.to_string()).unwrap_or_default(),
+                            home_score_str: g.home_score.map(|s| s.to_string()).unwrap_or_default(),
+                            state_label,
+                            state_class,
+                            start_time_label: pretty_time_utc(&g.start_time_utc),
+                            is_playoff: g.game_type == 3,
+                            series_context,
+                        };
+                        by_date.entry(g.date).or_default().push(row);
+                    }
+                    let days: Vec<ScoresDay> = by_date
+                        .into_iter()
+                        .map(|(date, rows)| {
+                            let date_pretty = parse_date(&date)
+                                .map(pretty_day)
+                                .unwrap_or_else(|| date.clone());
+                            ScoresDay {
+                                date,
+                                date_pretty,
+                                rows,
+                            }
+                        })
+                        .collect();
+                    (days, total, None)
+                }
+                Err(e) => (Vec::new(), 0, Some(e.to_string())),
+            };
+
+            let tmpl = ScoresTemplate {
+                active_label,
+                active_date: active_date.format("%Y-%m-%d").to_string(),
+                prev_date: prev_date.format("%Y-%m-%d").to_string(),
+                next_date: next_date.format("%Y-%m-%d").to_string(),
+                today_date: today.format("%Y-%m-%d").to_string(),
+                days,
+                total_games,
+                fetch_error,
+            };
+            match tmpl.render() {
+                Ok(html) => Html(html).into_response(),
+                Err(e) => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Html(format!("template render failed: {e}")),
+                )
+                    .into_response(),
+            }
+        }
+    }
+
+    /// `/playoffs` — King.7.2. Bracket view, bundled fallback.
+    pub mod playoffs {
+        use crate::state::WebState;
+        use crate::templates::{PlayoffsRoundView, PlayoffsSeriesView, PlayoffsTemplate};
+        use askama::Template;
+        use axum::extract::State;
+        use axum::http::StatusCode;
+        use axum::response::{Html, IntoResponse, Response};
+
+        fn pretty_season(s: &str) -> String {
+            if s.len() == 8 {
+                format!("{}-{}", &s[0..4], &s[6..8])
+            } else {
+                s.to_owned()
+            }
+        }
+
+        /// Convert a `PlayoffBracket` (live or bundled-derived) into
+        /// the template's view shape.
+        fn project_bracket(b: icelines_fetch::nhl_api::PlayoffBracket) -> Vec<PlayoffsRoundView> {
+            b.rounds
+                .into_iter()
+                .map(|r| {
+                    let series = r
+                        .series
+                        .iter()
+                        .map(|s| PlayoffsSeriesView {
+                            top_abbrev: s.top_seed_abbrev.clone(),
+                            top_name: s.top_seed_name.clone(),
+                            top_wins: s.top_seed_wins,
+                            bottom_abbrev: s.bottom_seed_abbrev.clone(),
+                            bottom_name: s.bottom_seed_name.clone(),
+                            bottom_wins: s.bottom_seed_wins,
+                            summary: s.summary(),
+                            is_complete: s.is_complete(),
+                            conference: s.conference.clone().unwrap_or_default(),
+                        })
+                        .collect();
+                    PlayoffsRoundView {
+                        round_number: r.round_number,
+                        label: r.label,
+                        series,
+                    }
+                })
+                .collect()
+        }
+
+        pub async fn get_playoffs(State(state): State<WebState>) -> Response {
+            let (active_label, season_str) = {
+                let cfg = state.config.read().await;
+                (cfg.active_label.clone(), cfg.active_season.clone())
+            };
+
+            // 1. Try bundled (instant, historical seasons).
+            let bundled =
+                icelines_fetch::bundled::load_playoffs(&season_str).map(|b| b.to_bracket());
+
+            let (rounds, source_label, fetch_error) = if let Some(bracket) = bundled {
+                (
+                    project_bracket(bracket),
+                    "historical bundle".to_owned(),
+                    None,
+                )
+            } else {
+                // 2. Fall back to the live API. The playoff endpoint takes
+                //    the second year of the season (2026 for 25-26).
+                let year: u16 = season_str
+                    .get(4..8)
+                    .and_then(|s| s.parse().ok())
+                    .unwrap_or(0);
+                if year == 0 {
+                    (
+                        Vec::new(),
+                        "—".to_owned(),
+                        Some(format!(
+                            "Cannot derive playoff year from season '{season_str}'"
+                        )),
+                    )
+                } else {
+                    let client = super::nhl_client();
+                    match client.fetch_playoff_bracket(year).await {
+                        Ok(b) => (
+                            project_bracket(b),
+                            format!("live · /v1/playoff-bracket/{year}"),
+                            None,
+                        ),
+                        Err(e) => (Vec::new(), "—".to_owned(), Some(e.to_string())),
+                    }
+                }
+            };
+
+            let empty = rounds.iter().all(|r| r.series.is_empty());
+
+            let tmpl = PlayoffsTemplate {
+                active_label,
+                season_pretty: pretty_season(&season_str),
+                source_label,
+                rounds,
+                empty,
+                fetch_error,
+            };
+            match tmpl.render() {
+                Ok(html) => Html(html).into_response(),
+                Err(e) => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Html(format!("template render failed: {e}")),
+                )
+                    .into_response(),
+            }
+        }
+    }
+
+    /// `/schedule` — King.7.3. Team-season schedule view.
+    pub mod schedule {
+        use crate::state::WebState;
+        use crate::templates::{ScheduleRow, ScheduleTemplate, TeamChip};
+        use askama::Template;
+        use axum::extract::{Query, State};
+        use axum::http::StatusCode;
+        use axum::response::{Html, IntoResponse, Response};
+        use serde::Deserialize;
+
+        #[derive(Debug, Deserialize, Default)]
+        pub struct ScheduleQuery {
+            #[serde(default)]
+            pub team: Option<String>,
+        }
+
+        fn pretty_season(s: &str) -> String {
+            if s.len() == 8 {
+                format!("{}-{}", &s[0..4], &s[6..8])
+            } else {
+                s.to_owned()
+            }
+        }
+
+        /// 32 active NHL franchises. Used to populate the team
+        /// picker chip strip. Uppercase, alphabetical.
+        const ALL_TEAM_ABBREVS: &[&str] = &[
+            "ANA", "BOS", "BUF", "CAR", "CBJ", "CGY", "CHI", "COL", "DAL", "DET", "EDM", "FLA",
+            "LAK", "MIN", "MTL", "NJD", "NSH", "NYI", "NYR", "OTT", "PHI", "PIT", "SEA", "SJS",
+            "STL", "TBL", "TOR", "UTA", "VAN", "VGK", "WPG", "WSH",
+        ];
+
+        pub async fn get_schedule(
+            State(state): State<WebState>,
+            Query(q): Query<ScheduleQuery>,
+        ) -> Response {
+            let (active_label, season_str) = {
+                let cfg = state.config.read().await;
+                (cfg.active_label.clone(), cfg.active_season.clone())
+            };
+
+            let team_upper = q
+                .team
+                .as_deref()
+                .map(|t| t.trim().to_ascii_uppercase())
+                .filter(|t| !t.is_empty())
+                .unwrap_or_default();
+
+            let team_chips: Vec<TeamChip> = ALL_TEAM_ABBREVS
+                .iter()
+                .map(|a| TeamChip {
+                    abbrev: (*a).to_owned(),
+                    is_active: a.eq_ignore_ascii_case(&team_upper),
+                })
+                .collect();
+
+            let (rows, total, fetch_error) = if team_upper.is_empty() {
+                (Vec::new(), 0, None)
+            } else {
+                let client = super::nhl_client();
+                match client
+                    .fetch_team_season_schedule(&team_upper, &season_str)
+                    .await
+                {
+                    Ok(games) => {
+                        let mut rows: Vec<ScheduleRow> = games
+                            .into_iter()
+                            .map(|g| {
+                                let is_home = g.home_abbrev.eq_ignore_ascii_case(&team_upper);
+                                let opponent = if is_home {
+                                    g.away_abbrev.clone()
+                                } else {
+                                    g.home_abbrev.clone()
+                                };
+                                let state_label = match g.game_state.as_deref() {
+                                    Some("FINAL") | Some("OFF") => match g.last_period.as_deref() {
+                                        Some("OT") => "FINAL/OT".to_owned(),
+                                        Some("SO") => "FINAL/SO".to_owned(),
+                                        _ => "FINAL".to_owned(),
+                                    },
+                                    Some("LIVE") | Some("CRIT") => "LIVE".to_owned(),
+                                    Some("PRE") => "Pre-game".to_owned(),
+                                    Some("FUT") | None => "Scheduled".to_owned(),
+                                    Some(s) => s.to_owned(),
+                                };
+                                ScheduleRow {
+                                    date: g.date,
+                                    away_abbrev: g.away_abbrev.clone(),
+                                    home_abbrev: g.home_abbrev.clone(),
+                                    away_score_str: g
+                                        .away_score
+                                        .map(|s| s.to_string())
+                                        .unwrap_or_default(),
+                                    home_score_str: g
+                                        .home_score
+                                        .map(|s| s.to_string())
+                                        .unwrap_or_default(),
+                                    state_label,
+                                    home_or_away: if is_home {
+                                        "Home".to_owned()
+                                    } else {
+                                        "Away".to_owned()
+                                    },
+                                    opponent_abbrev: opponent,
+                                    is_playoff: g.game_type == 3,
+                                }
+                            })
+                            .collect();
+                        rows.sort_by(|a, b| a.date.cmp(&b.date));
+                        let total = rows.len();
+                        (rows, total, None)
+                    }
+                    Err(e) => (Vec::new(), 0, Some(e.to_string())),
+                }
+            };
+
+            let tmpl = ScheduleTemplate {
+                active_label,
+                season_pretty: pretty_season(&season_str),
+                active_team: team_upper,
+                team_chips,
+                rows,
+                total,
+                fetch_error,
+            };
+            match tmpl.render() {
+                Ok(html) => Html(html).into_response(),
+                Err(e) => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Html(format!("template render failed: {e}")),
                 )
                     .into_response(),
             }

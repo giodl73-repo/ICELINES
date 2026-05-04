@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Schedule{% endblock %}
+
+{% block content %}
+<p style="margin-bottom: 0.5rem;">
+    <a href="/">← back to dashboard</a>
+</p>
+
+<h1>Team schedule — {{ season_pretty }}</h1>
+<p style="color:#616161; margin-top:-0.25rem;">
+    Full season schedule for one team. Source:
+    <code>api-web.nhle.com/v1/club-schedule-season</code>
+</p>
+
+<nav aria-label="Team picker" style="margin: 0.5rem 0 1rem 0;">
+    <strong>Team:</strong>
+    {% for t in team_chips %}
+        {% if t.is_active %}
+            <strong style="margin-right:0.4rem;">{{ t.abbrev }}</strong>
+        {% else %}
+            <a href="/schedule?team={{ t.abbrev }}" style="margin-right:0.4rem;">{{ t.abbrev }}</a>
+        {% endif %}
+    {% endfor %}
+</nav>
+
+{% match fetch_error %}
+    {% when Some with (msg) %}
+        <p style="background:#ffebee; border-left:4px solid #c62828; padding:0.5rem 0.75rem;">
+            Schedule fetch failed: {{ msg }}
+        </p>
+    {% when None %}
+{% endmatch %}
+
+{% if active_team == "" %}
+    <p style="color:#616161;">
+        Pick a team from the strip above to view its season schedule.
+    </p>
+{% else %}
+    {% if rows.is_empty() && fetch_error.is_none() %}
+        <p style="color:#616161;">No games found for {{ active_team }} in {{ season_pretty }}.</p>
+    {% else %}
+        <p style="color:#616161; font-size:0.85rem;">
+            {{ total }} games for <strong>{{ active_team }}</strong>.
+        </p>
+        <table>
+            <thead>
+                <tr><th>Date</th><th>H/A</th><th>Opponent</th><th>Score</th><th>Result</th></tr>
+            </thead>
+            <tbody>
+                {% for r in rows %}
+                <tr>
+                    <td><code>{{ r.date }}</code></td>
+                    <td>{{ r.home_or_away }}</td>
+                    <td><a href="/team/{{ r.opponent_abbrev }}">{{ r.opponent_abbrev }}</a>{% if r.is_playoff %} <span class="kind-chip kind-playoff" style="background:#ffe0b2;color:#bf360c;padding:0.05rem 0.3rem;border-radius:3px;font-size:0.75em;">playoff</span>{% endif %}</td>
+                    <td style="font-variant-numeric:tabular-nums;">
+                        {% if r.away_score_str != "" %}
+                            {{ r.away_abbrev }} {{ r.away_score_str }} @ {{ r.home_abbrev }} {{ r.home_score_str }}
+                        {% else %}
+                            <span style="color:#9e9e9e;">—</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ r.state_label }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endif %}
+{% endblock %}

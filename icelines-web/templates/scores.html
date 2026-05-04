@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Scores{% endblock %}
+
+{% block content %}
+<p style="margin-bottom: 0.5rem;">
+    <a href="/">← back to dashboard</a>
+</p>
+
+<h1>Scores</h1>
+<p style="color:#616161; margin-top:-0.25rem;">
+    Live NHL schedule — source: <code>api-web.nhle.com/v1/schedule</code>
+</p>
+
+<nav aria-label="Date picker" style="margin: 0.5rem 0 1rem 0;">
+    <a href="/scores?date={{ prev_date }}">← prev week</a>
+    <span style="margin:0 0.5rem;">|</span>
+    <a href="/scores">today</a>
+    <span style="margin:0 0.5rem;">|</span>
+    <a href="/scores?date={{ next_date }}">next week →</a>
+    <span style="margin-left:1rem; color:#616161;">
+        showing week starting <strong>{{ active_date }}</strong>
+    </span>
+</nav>
+
+{% match fetch_error %}
+    {% when Some with (msg) %}
+        <p style="background:#ffebee; border-left:4px solid #c62828; padding:0.5rem 0.75rem;">
+            Live schedule fetch failed: {{ msg }}
+        </p>
+    {% when None %}
+{% endmatch %}
+
+{% if days.is_empty() && fetch_error.is_none() %}
+    <p style="color:#616161;">No games scheduled for this week.</p>
+{% endif %}
+
+{% for d in days %}
+<section style="margin: 1rem 0;">
+    <h2 style="margin-bottom:0.25rem; font-size:1.1rem;">{{ d.date_pretty }}</h2>
+    <table>
+        <thead>
+            <tr><th>Time</th><th>Away</th><th></th><th>Home</th><th></th><th>State</th></tr>
+        </thead>
+        <tbody>
+            {% for r in d.rows %}
+            <tr class="game-{{ r.state_class }}">
+                <td><code>{{ r.start_time_label }}</code></td>
+                <td><a href="/team/{{ r.away_abbrev }}">{{ r.away_name }}</a> ({{ r.away_abbrev }})</td>
+                <td style="text-align:right; font-variant-numeric:tabular-nums;">{{ r.away_score_str }}</td>
+                <td><a href="/team/{{ r.home_abbrev }}">{{ r.home_name }}</a> ({{ r.home_abbrev }})</td>
+                <td style="text-align:right; font-variant-numeric:tabular-nums;">{{ r.home_score_str }}</td>
+                <td>
+                    {{ r.state_label }}
+                    {% if r.is_playoff %}
+                        <br><small style="color:#616161;">{{ r.series_context }}</small>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endfor %}
+
+{% if total_games > 0 %}
+<p style="color:#616161; font-size:0.85rem; margin-top:1rem;">
+    Total: {{ total_games }} games.
+</p>
+{% endif %}
+
+<style>
+    tr.game-live td { background: #fff3e0; }
+    tr.game-final td { color: #424242; }
+</style>
+{% endblock %}
