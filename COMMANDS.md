@@ -340,15 +340,11 @@ icelines serve --port 9000             # custom port
 icelines serve --no-open               # print URL, don't auto-open
 icelines serve --bind 0.0.0.0          # LAN-accessible (warning prints)
 
-# Site generation (mkdocs)
-icelines site build                    # generate mkdocs site
-icelines site serve                    # serve mkdocs preview locally
-icelines site deploy                   # deploy to GitHub Pages
-
-# Deprecated mkdocs aliases (removed in v0.14):
-#   icelines build  →  icelines site build
-#   icelines deploy →  icelines site deploy
-#   (`icelines serve` was reclaimed for the web dashboard in v0.13)
+# Removed 2026-05-04 — the mkdocs static-site frontend (`build`,
+# `site`, `deploy`, `--site-dir`, `/site/*` mount) is gone. The new
+# web dashboard at `icelines serve` is the single web frontend.
+# The `icelines-site` crate still exists for markdown generation
+# but has no CLI entry point.
 ```
 
 ---

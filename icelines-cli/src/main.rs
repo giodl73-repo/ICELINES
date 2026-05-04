@@ -66,19 +66,6 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             commands::snapshot::run(sub).await?;
         }
 
-        // ── Site (mkdocs) — Phase King Clancy King.1.0 rename ────────────────
-        Commands::Site(sub) => {
-            commands::site::run(sub).await?;
-        }
-        // Deprecated top-level aliases. Removed in v0.14.
-        Commands::Build { no_site } => {
-            eprintln!(
-                "WARNING: 'icelines build' moved to 'icelines site build' in v0.13.\n\
-                 The old alias is removed in v0.14. Run 'icelines site build' instead."
-            );
-            commands::build::run(no_site).await?;
-        }
-
         // ── Phase 2 player analysis ───────────────────────────────────────────
         Commands::Players {
             pos,
@@ -162,17 +149,8 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             no_open,
             no_cache,
             cors_origin,
-            site_dir,
         } => {
-            commands::serve::run(port, bind, no_open, no_cache, cors_origin, site_dir, &cfg)
-                .await?;
-        }
-        Commands::Deploy { remote } => {
-            eprintln!(
-                "WARNING: 'icelines deploy' moved to 'icelines site deploy' in v0.13.\n\
-                 The old alias is removed in v0.14. Run 'icelines site deploy' instead."
-            );
-            commands::serve_deploy::run_deploy(&remote).await?;
+            commands::serve::run(port, bind, no_open, no_cache, cors_origin, &cfg).await?;
         }
         Commands::Tonight { team } => {
             commands::tonight::run(team).await?;

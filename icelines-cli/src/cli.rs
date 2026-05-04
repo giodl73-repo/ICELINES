@@ -154,41 +154,14 @@ DEPRECATIONS
         /// Default: no CORS headers (localhost-only is the secure default).
         #[arg(long)]
         cors_origin: Option<String>,
-        /// Path to the built mkdocs site to mount at `/site/*`.
-        /// Defaults to `../fantasy-site` (matches `mkdocs.yml`).
-        /// If the path doesn't exist, `/site` shows a friendly
-        /// "run `icelines site build` first" page.
-        #[arg(long)]
-        site_dir: Option<std::path::PathBuf>,
     },
 
-    // ── Site (mkdocs) — Phase King Clancy King.1.0 rename ─────────────────────
-    /// Build / serve / deploy the static documentation site (mkdocs).
-    ///
-    /// Phase King Clancy reclaims the bare `icelines serve` for the web
-    /// dashboard. Use `icelines site serve` for the mkdocs preview going
-    /// forward. The top-level `build` / `serve` / `deploy` aliases keep
-    /// working for one release with a deprecation warning, then drop in v0.14.
-    #[command(subcommand)]
-    Site(SiteSubcommand),
-
-    /// (deprecated) Use `icelines site build`. Removed in v0.14.
-    #[command(hide = true)]
-    Build {
-        #[arg(long)]
-        no_site: bool,
-    },
-
-    // King.1.5 reclaimed `icelines serve` for the web dashboard.
-    // The previous DeprecatedServe alias (mkdocs preview) is gone —
-    // users who want the mkdocs preview run `icelines site serve`.
-    // The migration story is in COMMANDS.md + the release notes.
-    /// (deprecated) Use `icelines site deploy`. Removed in v0.14.
-    #[command(hide = true)]
-    Deploy {
-        #[arg(long, default_value = "origin")]
-        remote: String,
-    },
+    // mkdocs surface (Commands::Site / Build / Deploy) was removed
+    // 2026-05-04 — `icelines serve` is the single web frontend.
+    // `icelines-site` crate, `docs/`, and `mkdocs.yml` remain on
+    // disk for now in case the markdown-generation logic is
+    // repurposed by future King.X handlers; nothing in the CLI
+    // surface mounts them.
     /// Show tonight's NHL games.
     Tonight {
         /// Filter to games involving this team.
@@ -481,31 +454,7 @@ impl QuerySeasonType {
     }
 }
 
-/// Static site (mkdocs) lifecycle — Phase King Clancy King.1.0.
-///
-/// Owns the build / serve / deploy verbs for the documentation site.
-/// The top-level `Commands::Build`, `Commands::Serve`, and
-/// `Commands::Deploy` are now hidden deprecated aliases that dispatch
-/// here with a stderr deprecation note (removed in v0.14).
-#[derive(Debug, Subcommand)]
-pub enum SiteSubcommand {
-    /// Generate site markdown from cached snapshot data.
-    Build {
-        /// Generate markdown only, do not run mkdocs.
-        #[arg(long)]
-        no_site: bool,
-    },
-    /// Serve the static site locally (builds first, then launches mkdocs serve).
-    Serve {
-        #[arg(long, default_value_t = 8000)]
-        port: u16,
-    },
-    /// Deploy the site to GitHub Pages.
-    Deploy {
-        #[arg(long, default_value = "origin")]
-        remote: String,
-    },
-}
+// SiteSubcommand removed 2026-05-04 alongside the mkdocs-frontend cut.
 
 #[derive(Debug, Subcommand)]
 pub enum FetchSubcommand {

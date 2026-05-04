@@ -19,22 +19,19 @@
 //! 6. `--bind 0.0.0.0`: print a `WARNING: LAN mode...` banner.
 
 use std::net::SocketAddr;
-use std::path::PathBuf;
 use std::process;
 
 use crate::config::Config;
 use icelines_core::CURRENT_SEASON_STR;
-use icelines_web::{router_with, RouterConfig, WebConfig, WebState};
+use icelines_web::{router, WebConfig, WebState};
 
 /// Entry point — `Commands::Serve` arm of `dispatch()` calls this.
-#[allow(clippy::too_many_arguments)]
 pub async fn run(
     port: u16,
     bind: Option<String>,
     no_open: bool,
     no_cache: bool,
     cors_origin: Option<String>,
-    site_dir: Option<PathBuf>,
     cfg: &Config,
 ) -> anyhow::Result<()> {
     // King.1.5 doesn't yet implement --no-cache or --cors-origin
@@ -70,34 +67,7 @@ pub async fn run(
         config: std::sync::Arc::new(tokio::sync::RwLock::new(web_config.clone())),
     };
 
-    // Resolve site_dir: CLI flag wins; default to mkdocs's
-    // configured output (`../fantasy-site` per mkdocs.yml). If the
-    // resolved path doesn't exist, the router still mounts a stub
-    // /site page that explains `icelines site build`.
-    let resolved_site_dir = site_dir.or_else(|| {
-        let default = PathBuf::from("../fantasy-site");
-        // Only use the default if it actually points somewhere — if
-        // the user is running from outside the workspace, don't
-        // pretend to know.
-        Some(default)
-    });
-    if let Some(path) = &resolved_site_dir {
-        if path.is_dir() {
-            println!("  mkdocs site mounted at /site/  (from {})", path.display());
-        } else {
-            println!(
-                "  /site/  → run `icelines site build` first (looking at {})",
-                path.display()
-            );
-        }
-    }
-
-    let app = router_with(
-        state,
-        RouterConfig {
-            site_dir: resolved_site_dir,
-        },
-    );
+    let app = router(state);
 
     // Bind. Fail loud on AddrInUse — auto-bump silently changes the
     // printed URL and breaks scripts.

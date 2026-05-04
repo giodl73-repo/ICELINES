@@ -72,17 +72,17 @@ fn l2_cmd_help_exits_zero_and_lists_commands() {
     let out = run(&["--help"]);
     assert!(out.status.success(), "--help must exit 0");
     let stdout = String::from_utf8_lossy(&out.stdout);
-    // King.1.0 grouped `build` / `serve` / `deploy` under `site` and
-    // hid the flat aliases. Help should list `site` (not the leaves).
-    for cmd in &["fetch", "team", "rank", "site", "tui"] {
+    // After the 2026-05-04 mkdocs cut, the user-visible top-level
+    // subcommands include the new `serve` (web dashboard) plus the
+    // long-standing fetch/team/rank/tui set. `site/build/deploy` are
+    // GONE — `serve` is the single web frontend.
+    for cmd in &["fetch", "team", "rank", "serve", "tui"] {
         assert!(stdout.contains(cmd), "--help must list '{cmd}' subcommand");
     }
-    // The deprecated aliases should NOT appear in the top-level help —
-    // they're `#[command(hide = true)]` and only callable for back-compat.
-    for hidden in &["\n  build ", "\n  serve ", "\n  deploy "] {
+    for absent in &["\n  build ", "\n  deploy ", "\n  site "] {
         assert!(
-            !stdout.contains(hidden),
-            "--help must NOT list deprecated alias matching '{hidden}'"
+            !stdout.contains(absent),
+            "--help must NOT list removed subcommand matching '{absent}'"
         );
     }
 }
@@ -524,20 +524,10 @@ fn l2_cmd_group_list_exits_zero() {
     );
 }
 
-#[test]
-fn l2_cmd_build_no_site_exits_gracefully() {
-    // Without a snapshot, build should fail gracefully (not panic)
-    let out = run(&["build", "--no-site"]);
-    // Either succeeds (if snapshot exists) or fails with a clear message
-    if !out.status.success() {
-        let stderr = String::from_utf8_lossy(&out.stderr);
-        let stdout = String::from_utf8_lossy(&out.stdout);
-        assert!(
-            stderr.contains("fetch") || stdout.contains("fetch") || !stderr.is_empty(),
-            "build must mention fetch when cache is missing"
-        );
-    }
-}
+// `l2_cmd_build_no_site_exits_gracefully` was removed 2026-05-04 alongside
+// the mkdocs-frontend cut. `icelines build` is no longer a subcommand;
+// the markdown-generation crate (`icelines-site`) lives on as a library
+// without a CLI entry point.
 
 // ── L2: Phase 3 commands ──────────────────────────────────────────────────────
 

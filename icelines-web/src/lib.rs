@@ -36,107 +36,29 @@ pub mod static_assets;
 pub mod templates;
 
 use axum::{routing::get, Router};
-use std::path::PathBuf;
 
 pub use config::WebConfig;
 pub use error::{Wants, WebError};
 pub use state::WebState;
-
-/// Optional configuration when constructing the router.
-#[derive(Debug, Clone, Default)]
-pub struct RouterConfig {
-    /// Directory containing the built mkdocs site. When set AND the
-    /// directory exists, it's mounted at `/site/*`. When the directory
-    /// is missing, `/site` returns a friendly "run `icelines site
-    /// build` first" page instead of a generic 404.
-    pub site_dir: Option<PathBuf>,
-}
 
 /// Build the axum router for the IceLines web dashboard.
 ///
 /// Routes mounted today:
 /// - `GET /` — placeholder home (King.1.1)
 /// - `GET /static/:asset` — vendored CSS / HTMX / logo (King.1.3)
-/// - `GET /site/*` — mounted mkdocs static site (King.1.5b, optional)
 ///
 /// Later sub-phases attach real surfaces (`/leaders`, `/player/:id`,
 /// `/api/v1/*`, ...).
+///
+/// Note: `/site/*` mkdocs mount + the corresponding `RouterConfig` /
+/// `router_with` constructor were removed 2026-05-04 alongside the
+/// mkdocs-frontend cut. If a future sub-phase wants optional disk
+/// directory mounts, reintroduce a `RouterConfig` then.
 pub fn router(state: WebState) -> Router {
-    router_with(state, RouterConfig::default())
-}
-
-/// Same as [`router`] but takes a [`RouterConfig`] for optional
-/// extras like the mkdocs `/site/*` mount. Used by the `icelines
-/// serve` driver when `--site-dir PATH` is supplied (or its default
-/// `../fantasy-site` exists on disk).
-pub fn router_with(state: WebState, cfg: RouterConfig) -> Router {
-    let mut app = Router::new()
+    Router::new()
         .route("/", get(handlers::home::get_home))
-        .route("/static/:asset", get(static_assets::serve_static));
-
-    // Mount mkdocs site at /site/* if a build directory was provided.
-    if let Some(site_dir) = cfg.site_dir.as_ref() {
-        if site_dir.is_dir() {
-            // ServeDir serves files from disk. fallback_index ensures
-            // mkdocs-style pretty URLs (`/site/teams/SEA/`) resolve to
-            // the matching `index.html` on disk.
-            let svc = tower_http::services::ServeDir::new(site_dir)
-                .append_index_html_on_directories(true);
-            app = app.nest_service("/site", svc);
-        } else {
-            // Directory configured but missing — surface a helpful
-            // page instead of a silent 404. Capture the path for the
-            // closure.
-            let path_str = site_dir.display().to_string();
-            app = app.route(
-                "/site",
-                get(move || {
-                    let p = path_str.clone();
-                    async move { axum::response::Html(missing_site_html(&p)) }
-                }),
-            );
-        }
-    }
-
-    app.with_state(state)
-}
-
-/// Friendly error page when `/site/*` is requested but the configured
-/// site_dir doesn't exist on disk yet.
-fn missing_site_html(path: &str) -> String {
-    format!(
-        "<!doctype html>\n\
-         <html lang=\"en\"><head>\
-         <meta charset=\"utf-8\">\
-         <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\
-         <title>Site not built — IceLines</title>\
-         <link rel=\"stylesheet\" href=\"/static/style.css\">\
-         </head><body><main id=\"main\">\
-         <h1>Site not built yet</h1>\
-         <p>The mkdocs documentation site is mounted under \
-         <code>/site/</code>, but the build directory is missing:</p>\
-         <p><code>{}</code></p>\
-         <h2>To build it</h2>\
-         <pre>icelines site build</pre>\
-         <p>Then refresh this page. The build is idempotent and \
-         takes ~10–20 s.</p>\
-         <p><a href=\"/\">← back to dashboard</a></p>\
-         </main></body></html>\n",
-        html_escape(path)
-    )
-}
-
-fn html_escape(s: &str) -> String {
-    s.chars()
-        .map(|c| match c {
-            '<' => "&lt;".to_owned(),
-            '>' => "&gt;".to_owned(),
-            '&' => "&amp;".to_owned(),
-            '"' => "&quot;".to_owned(),
-            '\'' => "&#39;".to_owned(),
-            other => other.to_string(),
-        })
-        .collect()
+        .route("/static/:asset", get(static_assets::serve_static))
+        .with_state(state)
 }
 
 mod handlers {

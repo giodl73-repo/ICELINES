@@ -807,8 +807,11 @@ fn p288_tonight_help() {
 }
 
 #[test]
-fn p289_build_help() {
-    ok(&["build", "--help"]);
+fn p289_serve_help() {
+    // 2026-05-04 — `build` subcommand removed alongside the mkdocs cut;
+    // the equivalent persona check here is `serve --help` (the new
+    // user-facing web entry point that replaced the mkdocs surface).
+    ok(&["serve", "--help"]);
 }
 
 #[test]
