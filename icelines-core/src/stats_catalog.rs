@@ -1844,6 +1844,87 @@ impl std::fmt::Display for FilterParseError {
 
 impl std::error::Error for FilterParseError {}
 
+impl FilterParseError {
+    /// Structured hint for the front-end. Extracted from the variant
+    /// shape (not by parsing the `Display` string) so CLI and web
+    /// error paths can both surface the same hint without text-search.
+    ///
+    /// Phase King Clancy King.1.x patch (post-review): edge flagged
+    /// the original "hint lives only in `Display`" pattern as fragile
+    /// — the web `From<FilterParseError> for WebError` bridge would
+    /// have to substring-match the rendered message to extract the
+    /// typo hint. This accessor surfaces the hint directly.
+    pub fn hint(&self) -> Option<&'static str> {
+        match self {
+            Self::MultipleOps { input } => {
+                // The typo case is `=>` / `=<` where the user has the
+                // equals-sign first. If the input ALSO contains the
+                // canonical `>=` / `<=` form, this isn't a typo —
+                // they typed an actual multi-op (e.g. `g>=>50`).
+                let has_typo_ge = input.contains("=>") && !input.contains(">=");
+                let has_typo_le = input.contains("=<") && !input.contains("<=");
+                if has_typo_ge {
+                    Some("did you mean `>=`? The equals sign comes second.")
+                } else if has_typo_le {
+                    Some("did you mean `<=`? The equals sign comes second.")
+                } else {
+                    None
+                }
+            }
+            Self::EmptyInput | Self::EmptyStatKey => {
+                Some("expected `<stat-key><op><value>`, e.g. \"goals>=30\"")
+            }
+            Self::MissingOp { .. } => Some("the operator must be one of `>=`, `<=`, `==`, `=`"),
+            Self::UnknownStat { .. } => {
+                Some("see `icelines docs` or `--help` for the StatId catalog cli_keys")
+            }
+            Self::BadNumber { .. } => Some("locale-comma `,` is not accepted; use `.`"),
+            Self::NotFinite { .. } => Some("NaN and infinity are rejected"),
+            Self::UnclosedParen => Some("every `(` needs a matching `)`"),
+            Self::UnexpectedRParen => Some("no matching `(` was opened"),
+            Self::UnexpectedEnd => {
+                Some("the expression ended mid-grammar (e.g. `g>=30 AND` with nothing after)")
+            }
+            Self::UnexpectedToken { .. } => None,
+        }
+    }
+}
+
+#[cfg(test)]
+mod filter_parse_error_hint_tests {
+    use super::*;
+
+    /// l0_filter_parse_error_hint_arrow_typo
+    /// — King.1.x patch fence: the `=>` typo hint must be reachable
+    ///   structurally, not by string-grepping `Display`. CLI and web
+    ///   error paths share this surface.
+    #[test]
+    fn l0_filter_parse_error_hint_arrow_typo() {
+        let err = FilterParseError::MultipleOps {
+            input: "g=>50".into(),
+        };
+        assert!(err.hint().unwrap().contains(">="));
+
+        let err = FilterParseError::MultipleOps {
+            input: "g=<50".into(),
+        };
+        assert!(err.hint().unwrap().contains("<="));
+
+        // Multiple ops without a typo pattern → no hint
+        let err = FilterParseError::MultipleOps {
+            input: "g>=>50".into(),
+        };
+        assert!(err.hint().is_none());
+    }
+
+    /// l0_filter_parse_error_hint_unknown_stat_points_at_catalog
+    #[test]
+    fn l0_filter_parse_error_hint_unknown_stat_points_at_catalog() {
+        let err = FilterParseError::UnknownStat { key: "hots".into() };
+        assert!(err.hint().unwrap().contains("catalog"));
+    }
+}
+
 /// One stat-vs-value filter. Constructed only via `StatFilter::new`
 /// (the finite-value gate) or `parse_filter` (which routes through
 /// `new`). Downstream code can assume `value.is_finite()` always.

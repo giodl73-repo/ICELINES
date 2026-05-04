@@ -122,9 +122,14 @@ pub enum Commands {
     },
 
     /// (deprecated) Use `icelines site serve`. Removed in v0.14. The bare
-    /// `icelines serve` will mean the web dashboard once Phase King Clancy ships.
-    #[command(hide = true)]
-    Serve {
+    /// `icelines serve` will mean the web dashboard once Phase King Clancy
+    /// King.1.5 ships. **Variant deliberately renamed** to
+    /// `DeprecatedServe` (King.1.x patch, keel review) so the new
+    /// web-dashboard `Commands::Serve` can land in King.1.5 without a
+    /// clap collision. Clap surfaces it under the bare `serve` subcommand
+    /// name regardless via the `name = "serve"` attribute below.
+    #[command(name = "serve", hide = true)]
+    DeprecatedServe {
         #[arg(long, default_value_t = 8000)]
         port: u16,
     },

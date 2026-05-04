@@ -156,7 +156,7 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
             commands::analysis::run_games(sub).await?;
         }
 
-        Commands::Serve { port } => {
+        Commands::DeprecatedServe { port } => {
             eprintln!(
                 "WARNING: 'icelines serve' is being reclaimed for the web dashboard\n\
                  in Phase King Clancy. Use 'icelines site serve' for the mkdocs preview.\n\

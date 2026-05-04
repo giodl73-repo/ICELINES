@@ -44,6 +44,14 @@ async fn l1_get_root_returns_200_html() {
         content_type.starts_with("text/html"),
         "home page should be HTML, got Content-Type: {content_type}"
     );
+    // King.1.x patch (broadcast review): lock the charset so a future
+    // template refactor doesn't accidentally serve raw bytes that the
+    // browser interprets in the wrong encoding (UTF-8 is mandatory
+    // for the multi-language player names like "Slafkovský").
+    assert!(
+        content_type.contains("charset=utf-8") || content_type.contains("charset=UTF-8"),
+        "home page Content-Type must declare charset=utf-8, got: {content_type}"
+    );
 
     let body_bytes = axum::body::to_bytes(response.into_body(), 64 * 1024)
         .await
