@@ -133,6 +133,16 @@ pub struct LeaderRow {
     pub ppg_str: String,
 }
 
+/// `docs.html` — King.8.1. Rendered COMMANDS.md.
+#[derive(Template)]
+#[template(path = "docs.html")]
+pub struct DocsTemplate {
+    pub active_label: String,
+    /// Pre-rendered HTML from pulldown-cmark. The template uses
+    /// `|safe` to skip askama's auto-escape.
+    pub rendered_html: String,
+}
+
 /// `team.html` — King.4.1. Roster page for one team.
 #[derive(Template)]
 #[template(path = "team.html")]

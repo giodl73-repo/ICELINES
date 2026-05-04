@@ -71,6 +71,8 @@ pub fn router(state: WebState) -> Router {
         .route("/api/v1/goalies", get(handlers::goalies::get_goalies_json))
         // Team roster — King.4.1. /team/SEA, /team/EDM, etc.
         .route("/team/:abbrev", get(handlers::team::get_team))
+        // Docs — King.8.1. Rendered COMMANDS.md.
+        .route("/docs", get(handlers::docs::get_docs))
         // Coming-soon stubs for the rest of the section nav links.
         // Each lands on a real page (with the active-season header)
         // so clicks don't fail with a bare 404. Replaced by real
@@ -79,7 +81,6 @@ pub fn router(state: WebState) -> Router {
         .route("/playoffs", get(cs::playoffs))
         .route("/transactions", get(cs::transactions))
         .route("/fantasy", get(cs::fantasy))
-        .route("/docs", get(cs::docs))
         .with_state(state)
 }
 
@@ -160,16 +161,8 @@ mod handlers {
             .await
         }
 
-        pub async fn docs(State(s): State<WebState>) -> Response {
-            render(
-                s,
-                "Docs",
-                "King.8",
-                "The full COMMANDS.md command reference, rendered as HTML. \
-                 Until then, run `icelines docs` from the terminal for the same content.",
-            )
-            .await
-        }
+        // `docs` stub removed in King.8.1 — real handler at
+        // `handlers::docs::get_docs` renders COMMANDS.md as HTML.
     }
 
     /// `/leaders` — King.2.1 minimum viable real-data leaderboard.
@@ -823,6 +816,57 @@ mod handlers {
                 )),
             )
                 .into_response()
+        }
+    }
+
+    /// `/docs` — King.8.1. Renders COMMANDS.md as HTML.
+    pub mod docs {
+        use crate::state::WebState;
+        use crate::templates::DocsTemplate;
+        use askama::Template;
+        use axum::extract::State;
+        use axum::http::StatusCode;
+        use axum::response::{Html, IntoResponse, Response};
+        use std::sync::OnceLock;
+
+        /// COMMANDS.md is embedded at compile time. Same source the
+        /// CLI's `icelines docs` subcommand reads — no drift.
+        const COMMANDS_MD: &str = include_str!("../../COMMANDS.md");
+
+        /// Pre-rendered HTML cached for the lifetime of the process.
+        /// COMMANDS.md changes only at compile time (it's a baked-in
+        /// asset), so rendering once at first request and caching
+        /// forever is correct.
+        static RENDERED: OnceLock<String> = OnceLock::new();
+
+        fn rendered() -> &'static str {
+            RENDERED.get_or_init(|| {
+                use pulldown_cmark::{html, Options, Parser};
+                let mut opts = Options::empty();
+                opts.insert(Options::ENABLE_TABLES);
+                opts.insert(Options::ENABLE_STRIKETHROUGH);
+                opts.insert(Options::ENABLE_FOOTNOTES);
+                let parser = Parser::new_ext(COMMANDS_MD, opts);
+                let mut out = String::with_capacity(COMMANDS_MD.len() * 2);
+                html::push_html(&mut out, parser);
+                out
+            })
+        }
+
+        pub async fn get_docs(State(state): State<WebState>) -> Response {
+            let active_label = state.config.read().await.active_label.clone();
+            let tmpl = DocsTemplate {
+                active_label,
+                rendered_html: rendered().to_owned(),
+            };
+            match tmpl.render() {
+                Ok(html) => Html(html).into_response(),
+                Err(e) => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Html(format!("template render failed: {e}")),
+                )
+                    .into_response(),
+            }
         }
     }
 
