@@ -63,10 +63,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("Writing captured envelopes to data/seasons/{{season}}/transactions.json");
     }
     println!("{}", "─".repeat(70));
-    println!(
-        "{:<10}  {:>8}  {:>8}  {}",
-        "Season", "Rows", "Drift", "Notes"
-    );
+    println!("{:<10}  {:>8}  {:>8}  Notes", "Season", "Rows", "Drift");
 
     let source = EspnSource::production();
 

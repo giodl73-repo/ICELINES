@@ -163,6 +163,11 @@ async fn install_season(
     write_bundle_manifest(&dest, season)
         .with_context(|| format!("writing manifest for {season}"))?;
 
+    // Phase 8f.8: write a SHA-256 manifest covering each JSON file in the
+    // extracted bundle so `data verify` can flag corruption / tampering.
+    write_bundle_manifest(&dest, season)
+        .with_context(|| format!("writing manifest for {season}"))?;
+
     println!("Installed season {season} → {}", dest.display());
     Ok(())
 }
