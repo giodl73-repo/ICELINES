@@ -32,14 +32,14 @@ async fn main() -> anyhow::Result<()> {
     config::init_live_feeds(cli.no_live, &cfg);
     config::init_dashboards(cli.no_dashboards, &cfg);
 
-    let result = dispatch(cli).await;
+    let result = dispatch(cli, cfg).await;
     if let Err(e) = result {
         error::handle_error(e);
     }
     Ok(())
 }
 
-async fn dispatch(cli: Cli) -> anyhow::Result<()> {
+async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
     match cli.command {
         // ── Phase 1 implemented commands ──────────────────────────────────────
         Commands::Fetch(sub) => {
@@ -156,13 +156,14 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
             commands::analysis::run_games(sub).await?;
         }
 
-        Commands::DeprecatedServe { port } => {
-            eprintln!(
-                "WARNING: 'icelines serve' is being reclaimed for the web dashboard\n\
-                 in Phase King Clancy. Use 'icelines site serve' for the mkdocs preview.\n\
-                 The old top-level alias is removed in v0.14."
-            );
-            commands::serve_deploy::run_serve(port).await?;
+        Commands::Serve {
+            port,
+            bind,
+            no_open,
+            no_cache,
+            cors_origin,
+        } => {
+            commands::serve::run(port, bind, no_open, no_cache, cors_origin, &cfg).await?;
         }
         Commands::Deploy { remote } => {
             eprintln!(

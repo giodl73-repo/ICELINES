@@ -13,6 +13,7 @@ pub mod rank;
 pub mod scheme;
 pub mod scheme_dialects;
 pub mod scouting;
+pub mod serve;
 pub mod serve_deploy;
 pub mod site;
 pub mod snapshot;

@@ -33,22 +33,21 @@ mod tests {
     //! relies on the cargo build + clippy + manual smoke for now.
 
     /// l0_deprecation_warning_text_mentions_v0_14
-    /// — every deprecation message must name v0.14 as the removal target
-    ///   so users have a concrete deadline. We check that the version string
-    ///   appears somewhere AFTER each deprecation block's anchor phrase.
+    /// — every surviving deprecation message must name v0.14 as the
+    ///   removal target so users have a concrete deadline.
+    ///
+    /// Note (King.1.5): the `serve` deprecation alias is GONE —
+    /// `icelines serve` now opens the web dashboard, not the mkdocs
+    /// preview. Only `build` and `deploy` retain mkdocs aliases.
     #[test]
     fn l0_deprecation_warning_text_mentions_v0_14() {
         let main_rs = include_str!("../main.rs");
-        for anchor in [
-            "'icelines build' moved",
-            "'icelines serve' is being reclaimed",
-            "'icelines deploy' moved",
-        ] {
+        for anchor in ["'icelines build' moved", "'icelines deploy' moved"] {
             let start = main_rs
                 .find(anchor)
                 .unwrap_or_else(|| panic!("main.rs missing deprecation anchor: {anchor}"));
-            // Look for v0.14 in the next ~600 chars (a generous window;
-            // bounded by char count via take to avoid byte-boundary slicing).
+            // Look for v0.14 in the next ~600 chars (bounded by char
+            // count via take to avoid byte-boundary slicing).
             let after: String = main_rs[start..].chars().take(600).collect();
             assert!(
                 after.contains("v0.14"),
@@ -58,18 +57,14 @@ mod tests {
     }
 
     /// l0_deprecation_warnings_point_users_at_site_subcommands
-    /// — each warning must tell the user the new path so they can fix
-    ///   their scripts immediately.
+    /// — each surviving warning must tell the user the new path.
+    /// `serve` is no longer a deprecation alias (King.1.5).
     #[test]
     fn l0_deprecation_warnings_point_users_at_site_subcommands() {
         let main_rs = include_str!("../main.rs");
         assert!(
             main_rs.contains("'icelines site build'"),
             "build deprecation must direct users to 'icelines site build'"
-        );
-        assert!(
-            main_rs.contains("'icelines site serve'"),
-            "serve deprecation must direct users to 'icelines site serve'"
         );
         assert!(
             main_rs.contains("'icelines site deploy'"),

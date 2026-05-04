@@ -11,6 +11,7 @@ path = "src/main.rs"
 icelines-core  = { path = "../icelines-core" }
 icelines-fetch = { path = "../icelines-fetch" }
 icelines-site  = { path = "../icelines-site" }
+icelines-web   = { path = "../icelines-web" }
 clap.workspace        = true
 anyhow.workspace      = true
 tokio.workspace       = true
@@ -31,6 +32,7 @@ axum.workspace        = true
 tower.workspace       = true
 uuid.workspace        = true
 chrono.workspace      = true
+open.workspace        = true
 
 [dev-dependencies]
 # proof_lib is parked as a dev-dep — the smoke test in

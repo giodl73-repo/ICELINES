@@ -104,6 +104,58 @@ pub enum Commands {
     #[command(subcommand)]
     Snapshot(SnapshotSubcommand),
 
+    // ── Web dashboard — Phase King Clancy King.1.5 ────────────────────────────
+    /// Open the IceLines web dashboard in your browser.
+    ///
+    /// Boots a localhost web server on port 8000 (configurable) and
+    /// auto-opens your default browser. Same data as `icelines tui` —
+    /// just rendered as HTML instead of a terminal UI.
+    ///
+    /// Not to be confused with `icelines site serve` — that's the
+    /// mkdocs documentation-site preview. The bare `serve` is the
+    /// new web dashboard (Phase King Clancy King.1.5).
+    #[command(long_about = r#"
+icelines serve — open the IceLines web dashboard in your browser.
+
+Boots a localhost web server (axum) and auto-opens your default
+browser. Same data as `icelines tui` — just rendered as HTML.
+
+EXAMPLES
+  icelines serve                       # 127.0.0.1:8000, auto-open browser
+  icelines serve --port 9000           # custom port
+  icelines serve --no-open             # print URL, don't auto-open
+  icelines serve --bind 0.0.0.0        # LAN-accessible (LAN warning prints)
+  icelines serve --no-cache            # bypass response cache (dev mode)
+
+NOT THE SAME AS
+  icelines site serve  → mkdocs documentation-site preview (renamed in v0.13)
+
+DEPRECATIONS
+  Pre-v0.13:  icelines serve  → mkdocs preview (now `icelines site serve`)
+  v0.13+:     icelines serve  → web dashboard (this command)
+  v0.14:      old `serve` alias for mkdocs is removed
+"#)]
+    Serve {
+        /// Port to bind. Default 8000. Shorthand for `--bind 127.0.0.1:N`.
+        #[arg(long, default_value_t = 8000)]
+        port: u16,
+        /// Bind address (HOST or HOST:PORT). Default `127.0.0.1`.
+        /// Pass `0.0.0.0` for LAN access (prints a security warning).
+        #[arg(long)]
+        bind: Option<String>,
+        /// Don't auto-open the browser. The URL still prints to stdout.
+        #[arg(long)]
+        no_open: bool,
+        /// Bypass the per-request response cache (dev mode). Does NOT
+        /// bypass disk-level integrity checks.
+        #[arg(long)]
+        no_cache: bool,
+        /// Allowed CORS origin (only meaningful with `--bind 0.0.0.0`).
+        /// Default: no CORS headers (localhost-only is the secure default).
+        #[arg(long)]
+        cors_origin: Option<String>,
+    },
+
     // ── Site (mkdocs) — Phase King Clancy King.1.0 rename ─────────────────────
     /// Build / serve / deploy the static documentation site (mkdocs).
     ///
@@ -121,19 +173,10 @@ pub enum Commands {
         no_site: bool,
     },
 
-    /// (deprecated) Use `icelines site serve`. Removed in v0.14. The bare
-    /// `icelines serve` will mean the web dashboard once Phase King Clancy
-    /// King.1.5 ships. **Variant deliberately renamed** to
-    /// `DeprecatedServe` (King.1.x patch, keel review) so the new
-    /// web-dashboard `Commands::Serve` can land in King.1.5 without a
-    /// clap collision. Clap surfaces it under the bare `serve` subcommand
-    /// name regardless via the `name = "serve"` attribute below.
-    #[command(name = "serve", hide = true)]
-    DeprecatedServe {
-        #[arg(long, default_value_t = 8000)]
-        port: u16,
-    },
-
+    // King.1.5 reclaimed `icelines serve` for the web dashboard.
+    // The previous DeprecatedServe alias (mkdocs preview) is gone —
+    // users who want the mkdocs preview run `icelines site serve`.
+    // The migration story is in COMMANDS.md + the release notes.
     /// (deprecated) Use `icelines site deploy`. Removed in v0.14.
     #[command(hide = true)]
     Deploy {

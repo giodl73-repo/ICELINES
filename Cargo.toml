@@ -50,3 +50,4 @@ tower       = { version = "0.4", features = ["util"] }
 tower-http  = { version = "0.5", features = ["compression-gzip", "cors", "trace"] }
 ulid        = "1"
 askama      = "0.12"
+open        = "5"
