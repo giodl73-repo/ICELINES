@@ -4,6 +4,7 @@ members = [
     "icelines-core",
     "icelines-fetch",
     "icelines-site",
+    "icelines-web",
     "icelines-cli",
 ]
 
@@ -45,4 +46,6 @@ static_assertions = "1"
 image       = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
 tempfile    = "3"
 axum        = { version = "0.7", features = ["json"] }
-tower       = "0.4"
+tower       = { version = "0.4", features = ["util"] }
+tower-http  = { version = "0.5", features = ["compression-gzip", "cors", "trace"] }
+ulid        = "1"
