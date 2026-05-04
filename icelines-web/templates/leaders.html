@@ -25,6 +25,49 @@
     {% endfor %}
 </nav>
 
+{# Filter form — King.2.3. Submits via GET so the URL is
+   bookmarkable. Each row in the form becomes one ?filter= param.
+   Per spec: repeated ?filter= keys ARE preserved (Vec extractor) and
+   ANDed at the top level. The hidden inputs preserve sort/pos/top. #}
+<form method="get" action="" style="margin-bottom: 1.5rem; padding: 1rem; background: #f0f0f0; border-radius: 4px;">
+    <input type="hidden" name="sort" value="{{ active_sort }}">
+    <input type="hidden" name="pos" value="{{ active_pos }}">
+    <input type="hidden" name="top" value="{{ active_top }}">
+    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+        <label for="filter-1" style="font-weight: 600;">Filter:</label>
+        <input id="filter-1" type="text" name="filter"
+               placeholder="g&gt;=50 OR a&gt;=50"
+               value="{% if active_filters.len() > 0 %}{{ active_filters[0] }}{% endif %}"
+               style="flex: 1; min-width: 200px; font-family: ui-monospace, Consolas, monospace;">
+        {% if active_filters.len() > 1 %}
+            {# Render extra filter inputs for each additional ?filter= #}
+            {% for extra in active_filters %}
+                {% if loop.index0 > 0 %}
+                <input type="text" name="filter" value="{{ extra }}"
+                       style="flex: 1; min-width: 200px; font-family: ui-monospace, Consolas, monospace;">
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+        <button type="submit">Apply</button>
+        {% if active_filters.len() > 0 %}
+            <a href="?sort={{ active_sort }}&pos={{ active_pos }}&top={{ active_top }}"
+               style="padding: 0.4rem 0.6rem;">Clear</a>
+        {% endif %}
+    </div>
+    <p style="margin: 0.5rem 0 0 0; color: #616161; font-size: 0.85rem;">
+        Grammar: <code>&lt;stat&gt;&lt;op&gt;&lt;value&gt;</code> with <code>AND / OR / NOT</code> and parens.
+        Examples: <code>g&gt;=50</code>, <code>g&gt;=30 AND a&gt;=30</code>, <code>(g&gt;=40 OR a&gt;=60) AND gp&gt;=70</code>.
+        Stat keys: <code>g/a/p/gp/hits/blocks/ppg/...</code> (run <code>icelines docs</code> for the full catalog).
+    </p>
+</form>
+
+{% if active_filters.len() > 0 %}
+<p style="color: #2e7d32; font-size: 0.9rem; margin-bottom: 1rem;">
+    Active filters (AND'd):
+    {% for f in active_filters %}<code style="background: #fff; padding: 0.1rem 0.3rem; border-radius: 2px; margin: 0 0.25rem;">{{ f }}</code>{% endfor %}
+</p>
+{% endif %}
+
 <div class="table-scroll">
 <table>
     <thead>

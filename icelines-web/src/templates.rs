@@ -87,6 +87,9 @@ pub struct LeadersTemplate {
     pub pos_chips: Vec<PosChip>,
     /// Column headers — same pre-computation pattern.
     pub col_headers: Vec<ColHeader>,
+    /// Active `?filter=` strings, in URL order. Each renders as one
+    /// row in the filter form. Empty Vec → form starts blank.
+    pub active_filters: Vec<String>,
 }
 
 /// One chip in the position-filter strip.

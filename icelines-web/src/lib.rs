@@ -197,8 +197,14 @@ mod handlers {
         use icelines_core::season_stats::SeasonType;
         use serde::Deserialize;
 
-        /// Query params accepted by `/leaders`. King.2.2 ships
-        /// `sort`, `pos`, `top`. King.2.3 will add `filter`.
+        /// Query params accepted by `/leaders`. King.2.2 added
+        /// `sort`/`pos`/`top`; King.2.3 adds `filter` (repeatable).
+        ///
+        /// `filter` uses a custom Vec-preserving extractor (see
+        /// `parse_filters_from_query` below) because the default
+        /// `Query<HashMap>` collapses repeated `?filter=` keys into
+        /// one — silent data loss per the spec's wire-contract
+        /// review.
         #[derive(Debug, Deserialize, Default)]
         pub struct LeadersQuery {
             /// Sort key: `points` (default), `goals`, `assists`, `gp`,
@@ -263,7 +269,15 @@ mod handlers {
         pub async fn get_leaders(
             State(state): State<WebState>,
             Query(q): Query<LeadersQuery>,
+            uri: axum::http::Uri,
         ) -> Response {
+            // Extract repeated `?filter=` from the raw query string.
+            // The default `Query<HashMap>` collapses repeats; the
+            // typed `Query<LeadersQuery>` above only captures
+            // sort/pos/top because Option<String> overwrites on
+            // re-parse. For filter, we need ALL occurrences ANDed.
+            let raw_filters = parse_filters_from_query(uri.query().unwrap_or(""));
+            let filter_expr_result = combine_filters(&raw_filters);
             // Resolve active (season, season_type) from config.
             let (season_str, season_type, active_label) = {
                 let cfg = state.config.read().await;
@@ -291,6 +305,31 @@ mod handlers {
             let pos_filter = q.pos.as_deref().and_then(parse_position_filter);
             let top_n = q.top.unwrap_or(20).clamp(1, 500);
 
+            // If filter parsing failed, render a 400 page with the
+            // hint surfaced from the parser. (Per spec: BadFilter is
+            // a 400, not a 500 — the user typed something invalid;
+            // it's not an internal bug.)
+            let filter_expr = match filter_expr_result {
+                Ok(opt) => opt,
+                Err(e) => {
+                    let hint = e
+                        .hint()
+                        .unwrap_or("see `icelines docs` for the filter grammar");
+                    return (
+                        StatusCode::BAD_REQUEST,
+                        Html(format!(
+                            "<!doctype html><html><body>\
+                             <h1>Bad filter</h1>\
+                             <p>{e}</p>\
+                             <p style=\"color:#b71c1c\"><strong>Hint:</strong> {hint}</p>\
+                             <p><a href=\"/leaders\">← back to leaders</a></p>\
+                             </body></html>",
+                        )),
+                    )
+                        .into_response();
+                }
+            };
+
             // Brief read of the repo. Project each PlayerView into a
             // LeaderRow inside the lock scope (per spec: views must
             // not escape the lock; we copy out scalar fields).
@@ -305,6 +344,10 @@ mod handlers {
                             v.position(),
                             Position::Center | Position::LeftWing | Position::RightWing
                         ),
+                    })
+                    .filter(|v| match &filter_expr {
+                        None => true,
+                        Some(expr) => expr.matches(v),
                     })
                     .map(|v| {
                         let gp = v.gp();
@@ -407,6 +450,7 @@ mod handlers {
                 active_top: top_n,
                 pos_chips,
                 col_headers,
+                active_filters: raw_filters,
             };
             match tmpl.render() {
                 Ok(html) => Html(html).into_response(),
@@ -419,6 +463,90 @@ mod handlers {
                 "playoff" | "playoffs" => SeasonType::Playoff,
                 _ => SeasonType::Regular,
             }
+        }
+
+        /// Pull every `filter=...` occurrence out of a raw query
+        /// string, in order. URL-decodes each value. Empty-string
+        /// values (`?filter=`) are dropped (per spec).
+        ///
+        /// We do this by hand instead of using `serde_urlencoded` /
+        /// `serde_qs` because axum's stock `Query<T>` extractor
+        /// silently collapses repeated keys when T deserializes as
+        /// `Option<String>` — the spec's wire-review flagged this as
+        /// a silent-data-loss bug.
+        pub fn parse_filters_from_query(qs: &str) -> Vec<String> {
+            qs.split('&')
+                .filter_map(|pair| {
+                    let (k, v) = pair.split_once('=')?;
+                    if k != "filter" {
+                        return None;
+                    }
+                    let decoded = urldecode(v);
+                    if decoded.is_empty() {
+                        None
+                    } else {
+                        Some(decoded)
+                    }
+                })
+                .collect()
+        }
+
+        /// Tiny URL-decoder for the filter parameter. Handles `%XX`
+        /// escapes and `+` → space (form-encoding convention). We
+        /// don't pull `percent-encoding` as a workspace dep just for
+        /// this — the filter character set is small and bounded.
+        fn urldecode(s: &str) -> String {
+            let bytes = s.as_bytes();
+            let mut out = Vec::with_capacity(bytes.len());
+            let mut i = 0;
+            while i < bytes.len() {
+                match bytes[i] {
+                    b'+' => {
+                        out.push(b' ');
+                        i += 1;
+                    }
+                    b'%' if i + 2 < bytes.len() => {
+                        let hex = std::str::from_utf8(&bytes[i + 1..i + 3]).unwrap_or("");
+                        match u8::from_str_radix(hex, 16) {
+                            Ok(b) => {
+                                out.push(b);
+                                i += 3;
+                            }
+                            Err(_) => {
+                                out.push(bytes[i]);
+                                i += 1;
+                            }
+                        }
+                    }
+                    other => {
+                        out.push(other);
+                        i += 1;
+                    }
+                }
+            }
+            String::from_utf8(out).unwrap_or_default()
+        }
+
+        /// Combine multiple `?filter=` strings into one `FilterExpr`.
+        /// Each is parsed independently; results are ANDed at the
+        /// top level (spec rule: repeated keys = AND, mirroring the
+        /// CLI's repeated `--filter` semantics).
+        pub fn combine_filters(
+            raw: &[String],
+        ) -> Result<
+            Option<icelines_core::stats_catalog::FilterExpr>,
+            icelines_core::stats_catalog::FilterParseError,
+        > {
+            use icelines_core::stats_catalog::{parse_filter_expr, FilterExpr};
+            let mut combined: Option<FilterExpr> = None;
+            for raw_str in raw {
+                let parsed = parse_filter_expr(raw_str)?;
+                combined = Some(match combined {
+                    None => parsed,
+                    Some(existing) => FilterExpr::And(Box::new(existing), Box::new(parsed)),
+                });
+            }
+            Ok(combined)
         }
 
         /// What `?pos=X` means after parsing.
