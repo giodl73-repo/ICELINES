@@ -61,6 +61,9 @@ pub fn router(state: WebState) -> Router {
         .route("/static/:asset", get(static_assets::serve_static))
         // Real handlers — replace coming-soon stubs as each lands.
         .route("/leaders", get(handlers::leaders::get_leaders))
+        // JSON API — King.2.4. /api/v1/leaders is the JSON twin of
+        // /leaders. Same query params; envelope shape per spec.
+        .route("/api/v1/leaders", get(handlers::leaders::get_leaders_json))
         // Coming-soon stubs for the rest of the section nav links.
         // Each lands on a real page (with the active-season header)
         // so clicks don't fail with a bare 404. Replaced by real
@@ -264,6 +267,252 @@ mod handlers {
                     Self::PointsPerGame => "ppg",
                 }
             }
+        }
+
+        /// JSON envelope returned by `/api/v1/leaders`. Per spec
+        /// "URL & API contract → Response envelope":
+        ///     { schema_version, route, data: [...rows], meta: {...} }
+        ///
+        /// `data` rows use snake_case keys (spec WIRE-1 contract for
+        /// non-stat keys: `nhl_id`, `team_abbrev`, ...). The HTML
+        /// surface and the JSON surface share the same upstream
+        /// projection (`build_leader_rows`) so KEEL-B1 round-trip is
+        /// straightforward.
+        #[derive(Debug, serde::Serialize)]
+        pub struct LeadersEnvelope {
+            pub schema_version: u32,
+            pub route: &'static str,
+            pub data: Vec<LeaderJsonRow>,
+            pub meta: LeadersMeta,
+        }
+
+        #[derive(Debug, serde::Serialize)]
+        pub struct LeaderJsonRow {
+            pub name: String,
+            pub position: String,
+            pub team: String,
+            pub games: u32,
+            pub goals: u32,
+            pub assists: u32,
+            pub points: u32,
+            pub points_per_game: Option<f64>,
+        }
+
+        #[derive(Debug, serde::Serialize)]
+        pub struct LeadersMeta {
+            pub season: String,
+            pub season_type: String,
+            pub sort: String,
+            pub position_filter: Option<String>,
+            pub active_filters: Vec<String>,
+            pub total: usize,
+            pub returned: usize,
+            pub top: usize,
+        }
+
+        /// Shared data-path: resolves query params, applies filters,
+        /// sorts, returns rows + total. Both the HTML and JSON
+        /// handlers call this so they can't drift.
+        struct LeaderResult {
+            rows: Vec<LeaderRow>,
+            total: usize,
+            sort_key: SortKey,
+            pos_active_upper: String,
+            top_n: usize,
+            raw_filters: Vec<String>,
+            active_label: String,
+            active_season: String,
+            active_season_type: SeasonType,
+        }
+
+        async fn build_leader_result(
+            state: &WebState,
+            q: &LeadersQuery,
+            raw_query: &str,
+        ) -> Result<LeaderResult, Response> {
+            let (season_str, season_type, active_label) = {
+                let cfg = state.config.read().await;
+                (
+                    cfg.active_season.clone(),
+                    parse_season_type(&cfg.active_season_type),
+                    cfg.active_label.clone(),
+                )
+            };
+            let season_u32: u32 = season_str.parse().map_err(|e| {
+                error_page(format!(
+                    "active season '{season_str}' is not a valid YYYYZZZZ id: {e}"
+                ))
+            })?;
+            let season = Season(season_u32);
+
+            let raw_filters = parse_filters_from_query(raw_query);
+            let filter_expr = combine_filters(&raw_filters).map_err(|e| {
+                let hint = e
+                    .hint()
+                    .unwrap_or("see `icelines docs` for the filter grammar");
+                (
+                    StatusCode::BAD_REQUEST,
+                    Html(format!(
+                        "<!doctype html><html><body>\
+                         <h1>Bad filter</h1><p>{e}</p>\
+                         <p style=\"color:#b71c1c\"><strong>Hint:</strong> {hint}</p>\
+                         <p><a href=\"/leaders\">← back to leaders</a></p>\
+                         </body></html>",
+                    )),
+                )
+                    .into_response()
+            })?;
+
+            let sort_key = SortKey::from_query(q.sort.as_deref());
+            let pos_filter = q.pos.as_deref().and_then(parse_position_filter);
+            let top_n = q.top.unwrap_or(20).clamp(1, 500);
+            let pos_active_upper = q
+                .pos
+                .as_deref()
+                .map(str::to_ascii_uppercase)
+                .unwrap_or_default();
+
+            let (rows, total) = {
+                let repo = state.repo.read().await;
+                let mut all: Vec<LeaderRow> = repo
+                    .skaters(season, season_type)
+                    .filter(|v| match pos_filter {
+                        None => true,
+                        Some(PosFilter::Exact(p)) => v.position() == p,
+                        Some(PosFilter::Forwards) => matches!(
+                            v.position(),
+                            Position::Center | Position::LeftWing | Position::RightWing
+                        ),
+                    })
+                    .filter(|v| match &filter_expr {
+                        None => true,
+                        Some(expr) => expr.matches(v),
+                    })
+                    .map(|v| {
+                        let gp = v.gp();
+                        let points = v.points();
+                        let ppg_str = if gp > 0 {
+                            format!("{:.2}", points as f64 / gp as f64)
+                        } else {
+                            String::new()
+                        };
+                        LeaderRow {
+                            name: v.full_name().to_owned(),
+                            position: v.position().abbreviation().to_owned(),
+                            team: v.team_display().to_owned(),
+                            gp,
+                            goals: v.goals(),
+                            assists: v.assists(),
+                            points,
+                            ppg_str,
+                        }
+                    })
+                    .collect();
+                let total = all.len();
+
+                all.sort_by(|a, b| {
+                    let primary = match sort_key {
+                        SortKey::Points => b.points.cmp(&a.points),
+                        SortKey::Goals => b.goals.cmp(&a.goals),
+                        SortKey::Assists => b.assists.cmp(&a.assists),
+                        SortKey::Games => b.gp.cmp(&a.gp),
+                        SortKey::PointsPerGame => {
+                            let ap = if a.gp > 0 {
+                                a.points as f64 / a.gp as f64
+                            } else {
+                                0.0
+                            };
+                            let bp = if b.gp > 0 {
+                                b.points as f64 / b.gp as f64
+                            } else {
+                                0.0
+                            };
+                            bp.partial_cmp(&ap).unwrap_or(std::cmp::Ordering::Equal)
+                        }
+                    };
+                    primary
+                        .then(b.goals.cmp(&a.goals))
+                        .then(a.name.cmp(&b.name))
+                });
+                all.truncate(top_n);
+                (all, total)
+            };
+
+            Ok(LeaderResult {
+                rows,
+                total,
+                sort_key,
+                pos_active_upper,
+                top_n,
+                raw_filters,
+                active_label,
+                active_season: season_str,
+                active_season_type: season_type,
+            })
+        }
+
+        /// `GET /api/v1/leaders` — JSON twin of `/leaders`.
+        pub async fn get_leaders_json(
+            State(state): State<WebState>,
+            Query(q): Query<LeadersQuery>,
+            uri: axum::http::Uri,
+        ) -> Response {
+            let raw_query = uri.query().unwrap_or("");
+            let result = match build_leader_result(&state, &q, raw_query).await {
+                Ok(r) => r,
+                Err(resp) => return resp,
+            };
+
+            let returned = result.rows.len();
+            let data: Vec<LeaderJsonRow> = result
+                .rows
+                .iter()
+                .map(|r| LeaderJsonRow {
+                    name: r.name.clone(),
+                    position: r.position.clone(),
+                    team: r.team.clone(),
+                    games: r.gp,
+                    goals: r.goals,
+                    assists: r.assists,
+                    points: r.points,
+                    points_per_game: if r.gp > 0 {
+                        Some(r.points as f64 / r.gp as f64)
+                    } else {
+                        None
+                    },
+                })
+                .collect();
+
+            let envelope = LeadersEnvelope {
+                schema_version: 1,
+                route: "leaders",
+                data,
+                meta: LeadersMeta {
+                    season: result.active_season,
+                    season_type: match result.active_season_type {
+                        SeasonType::Regular => "regular".to_owned(),
+                        SeasonType::Playoff => "playoff".to_owned(),
+                    },
+                    sort: result.sort_key.url_token().to_owned(),
+                    position_filter: if result.pos_active_upper.is_empty() {
+                        None
+                    } else {
+                        Some(result.pos_active_upper)
+                    },
+                    active_filters: result.raw_filters,
+                    total: result.total,
+                    returned,
+                    top: result.top_n,
+                },
+            };
+
+            // Suppress unused warning on active_label — the JSON
+            // surface doesn't render it (the meta has season +
+            // season_type which clients can format themselves).
+            let _ = result.active_label;
+            let _ = uri;
+
+            axum::Json(envelope).into_response()
         }
 
         pub async fn get_leaders(
