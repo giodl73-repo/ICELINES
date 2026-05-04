@@ -8,27 +8,27 @@
 <tbody>
 <tr>
 <td class="line-num-cell">Line 1</td>
-<td class="player-cell fit"><span class="player-name">Juraj Slafkovský</span><span class="player-gp">82gp &nbsp;·&nbsp; <b>0.89</b> pts/gp &nbsp;·&nbsp; 0.37 g/gp &nbsp;·&nbsp; 73 proj</span><span class="player-fit-label">★ avg L1.4</span></td>
-<td class="player-cell fit"><span class="player-name">Nick Suzuki</span><span class="player-gp">82gp &nbsp;·&nbsp; <b>1.23</b> pts/gp &nbsp;·&nbsp; 0.35 g/gp &nbsp;·&nbsp; 101 proj</span><span class="player-fit-label">★ avg L1.2</span></td>
-<td class="player-cell fit"><span class="player-name">Cole Caufield</span><span class="player-gp">81gp &nbsp;·&nbsp; <b>1.09</b> pts/gp &nbsp;·&nbsp; 0.63 g/gp &nbsp;·&nbsp; 89 proj</span><span class="player-fit-label">★ avg L1.2</span></td>
+<td class="player-cell fit"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8483515.png" alt="Juraj Slafkovský" onerror="this.style.display='none'"><span class="player-name">Juraj Slafkovský</span><span class="player-gp">82gp &nbsp;·&nbsp; <b>0.89</b> pts/gp &nbsp;·&nbsp; 0.37 g/gp &nbsp;·&nbsp; 73 proj</span><span class="player-fit-label">★ avg L1.4</span></td>
+<td class="player-cell fit"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8480018.png" alt="Nick Suzuki" onerror="this.style.display='none'"><span class="player-name">Nick Suzuki</span><span class="player-gp">82gp &nbsp;·&nbsp; <b>1.23</b> pts/gp &nbsp;·&nbsp; 0.35 g/gp &nbsp;·&nbsp; 101 proj</span><span class="player-fit-label">★ avg L1.2</span></td>
+<td class="player-cell fit"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8481540.png" alt="Cole Caufield" onerror="this.style.display='none'"><span class="player-name">Cole Caufield</span><span class="player-gp">81gp &nbsp;·&nbsp; <b>1.09</b> pts/gp &nbsp;·&nbsp; 0.63 g/gp &nbsp;·&nbsp; 89 proj</span><span class="player-fit-label">★ avg L1.2</span></td>
 </tr>
 <tr>
 <td class="line-num-cell">Line 2</td>
-<td class="player-cell solid"><span class="player-name">Alexandre Texier</span><span class="player-gp">51gp &nbsp;·&nbsp; <b>0.41</b> pts/gp &nbsp;·&nbsp; 0.16 g/gp &nbsp;·&nbsp; 34 proj</span><span class="player-fit-label">~ avg L2.9</span></td>
-<td class="player-cell solid"><span class="player-name">Alex Newhook</span><span class="player-gp">42gp &nbsp;·&nbsp; <b>0.60</b> pts/gp &nbsp;·&nbsp; 0.31 g/gp &nbsp;·&nbsp; 49 proj</span><span class="player-fit-label">~ avg L3.2</span></td>
-<td class="player-cell fit"><span class="player-name">Ivan Demidov</span><span class="player-gp">82gp &nbsp;·&nbsp; <b>0.76</b> pts/gp &nbsp;·&nbsp; 0.23 g/gp &nbsp;·&nbsp; 62 proj</span><span class="player-fit-label">★ avg L1.7</span></td>
+<td class="player-cell solid"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8480074.png" alt="Alexandre Texier" onerror="this.style.display='none'"><span class="player-name">Alexandre Texier</span><span class="player-gp">51gp &nbsp;·&nbsp; <b>0.41</b> pts/gp &nbsp;·&nbsp; 0.16 g/gp &nbsp;·&nbsp; 34 proj</span><span class="player-fit-label">~ avg L2.9</span></td>
+<td class="player-cell solid"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8481618.png" alt="Alex Newhook" onerror="this.style.display='none'"><span class="player-name">Alex Newhook</span><span class="player-gp">42gp &nbsp;·&nbsp; <b>0.60</b> pts/gp &nbsp;·&nbsp; 0.31 g/gp &nbsp;·&nbsp; 49 proj</span><span class="player-fit-label">~ avg L3.2</span></td>
+<td class="player-cell fit"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8484984.png" alt="Ivan Demidov" onerror="this.style.display='none'"><span class="player-name">Ivan Demidov</span><span class="player-gp">82gp &nbsp;·&nbsp; <b>0.76</b> pts/gp &nbsp;·&nbsp; 0.23 g/gp &nbsp;·&nbsp; 62 proj</span><span class="player-fit-label">★ avg L1.7</span></td>
 </tr>
 <tr>
 <td class="line-num-cell">Line 3</td>
-<td class="player-cell fit"><span class="player-name">Samuel Blais</span><span class="player-gp">21gp &nbsp;·&nbsp; <b>0.38</b> pts/gp &nbsp;·&nbsp; 0.14 g/gp &nbsp;·&nbsp; 31 proj</span><span class="player-fit-label">★ avg L3.1</span></td>
-<td class="player-cell solid"><span class="player-name">Oliver Kapanen</span><span class="player-gp">82gp &nbsp;·&nbsp; <b>0.45</b> pts/gp &nbsp;·&nbsp; 0.27 g/gp &nbsp;·&nbsp; 37 proj</span><span class="player-fit-label">~ avg L4.2</span></td>
-<td class="player-cell fit"><span class="player-name">Zachary Bolduc</span><span class="player-gp">78gp &nbsp;·&nbsp; <b>0.38</b> pts/gp &nbsp;·&nbsp; 0.15 g/gp &nbsp;·&nbsp; 32 proj</span><span class="player-fit-label">★ avg L3.3</span></td>
+<td class="player-cell fit"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8478104.png" alt="Samuel Blais" onerror="this.style.display='none'"><span class="player-name">Samuel Blais</span><span class="player-gp">21gp &nbsp;·&nbsp; <b>0.38</b> pts/gp &nbsp;·&nbsp; 0.14 g/gp &nbsp;·&nbsp; 31 proj</span><span class="player-fit-label">★ avg L3.1</span></td>
+<td class="player-cell solid"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8482775.png" alt="Oliver Kapanen" onerror="this.style.display='none'"><span class="player-name">Oliver Kapanen</span><span class="player-gp">82gp &nbsp;·&nbsp; <b>0.45</b> pts/gp &nbsp;·&nbsp; 0.27 g/gp &nbsp;·&nbsp; 37 proj</span><span class="player-fit-label">~ avg L4.2</span></td>
+<td class="player-cell fit"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8482737.png" alt="Zachary Bolduc" onerror="this.style.display='none'"><span class="player-name">Zachary Bolduc</span><span class="player-gp">78gp &nbsp;·&nbsp; <b>0.38</b> pts/gp &nbsp;·&nbsp; 0.15 g/gp &nbsp;·&nbsp; 32 proj</span><span class="player-fit-label">★ avg L3.3</span></td>
 </tr>
 <tr>
 <td class="line-num-cell">Line 4</td>
 <td class="player-cell empty"><span class="player-name">—</span></td>
-<td class="player-cell solid"><span class="player-name">Kirby Dach</span><span class="player-gp">37gp &nbsp;·&nbsp; <b>0.41</b> pts/gp &nbsp;·&nbsp; 0.22 g/gp &nbsp;·&nbsp; 33 proj</span><span class="player-fit-label">~ avg L4.6</span></td>
-<td class="player-cell fit"><span class="player-name">Josh Anderson</span><span class="player-gp">72gp &nbsp;·&nbsp; <b>0.32</b> pts/gp &nbsp;·&nbsp; 0.19 g/gp &nbsp;·&nbsp; 26 proj</span><span class="player-fit-label">★ avg L3.5</span></td>
+<td class="player-cell solid"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8481523.png" alt="Kirby Dach" onerror="this.style.display='none'"><span class="player-name">Kirby Dach</span><span class="player-gp">37gp &nbsp;·&nbsp; <b>0.41</b> pts/gp &nbsp;·&nbsp; 0.22 g/gp &nbsp;·&nbsp; 33 proj</span><span class="player-fit-label">~ avg L4.6</span></td>
+<td class="player-cell fit"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8476981.png" alt="Josh Anderson" onerror="this.style.display='none'"><span class="player-name">Josh Anderson</span><span class="player-gp">72gp &nbsp;·&nbsp; <b>0.32</b> pts/gp &nbsp;·&nbsp; 0.19 g/gp &nbsp;·&nbsp; 26 proj</span><span class="player-fit-label">★ avg L3.5</span></td>
 </tr>
 </tbody></table></div>
 
@@ -40,18 +40,18 @@
 <tbody>
 <tr>
 <td class="pair-num-cell">Pair 1</td>
-<td class="player-cell fit"><span class="player-name">Lane Hutson</span><span class="player-gp">82gp &nbsp;·&nbsp; <b>0.95</b> pts/gp &nbsp;·&nbsp; 0.15 g/gp &nbsp;·&nbsp; 78 proj</span><span class="player-fit-label">★ avg L1.2</span></td>
-<td class="player-cell fit"><span class="player-name">Noah Dobson</span><span class="player-gp">80gp &nbsp;·&nbsp; <b>0.59</b> pts/gp &nbsp;·&nbsp; 0.15 g/gp &nbsp;·&nbsp; 48 proj</span><span class="player-fit-label">★ avg L1.8</span></td>
+<td class="player-cell fit"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8483457.png" alt="Lane Hutson" onerror="this.style.display='none'"><span class="player-name">Lane Hutson</span><span class="player-gp">82gp &nbsp;·&nbsp; <b>0.95</b> pts/gp &nbsp;·&nbsp; 0.15 g/gp &nbsp;·&nbsp; 78 proj</span><span class="player-fit-label">★ avg L1.2</span></td>
+<td class="player-cell fit"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8480865.png" alt="Noah Dobson" onerror="this.style.display='none'"><span class="player-name">Noah Dobson</span><span class="player-gp">80gp &nbsp;·&nbsp; <b>0.59</b> pts/gp &nbsp;·&nbsp; 0.15 g/gp &nbsp;·&nbsp; 48 proj</span><span class="player-fit-label">★ avg L1.8</span></td>
 </tr>
 <tr>
 <td class="pair-num-cell">Pair 2</td>
-<td class="player-cell fit"><span class="player-name">Mike Matheson</span><span class="player-gp">78gp &nbsp;·&nbsp; <b>0.47</b> pts/gp &nbsp;·&nbsp; 0.09 g/gp &nbsp;·&nbsp; 39 proj</span><span class="player-fit-label">★ avg L2.3</span></td>
-<td class="player-cell fit"><span class="player-name">Alexandre Carrier</span><span class="player-gp">73gp &nbsp;·&nbsp; <b>0.30</b> pts/gp &nbsp;·&nbsp; 0.10 g/gp &nbsp;·&nbsp; 25 proj</span><span class="player-fit-label">★ avg L4.2</span></td>
+<td class="player-cell fit"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8476875.png" alt="Mike Matheson" onerror="this.style.display='none'"><span class="player-name">Mike Matheson</span><span class="player-gp">78gp &nbsp;·&nbsp; <b>0.47</b> pts/gp &nbsp;·&nbsp; 0.09 g/gp &nbsp;·&nbsp; 39 proj</span><span class="player-fit-label">★ avg L2.3</span></td>
+<td class="player-cell fit"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8478851.png" alt="Alexandre Carrier" onerror="this.style.display='none'"><span class="player-name">Alexandre Carrier</span><span class="player-gp">73gp &nbsp;·&nbsp; <b>0.30</b> pts/gp &nbsp;·&nbsp; 0.10 g/gp &nbsp;·&nbsp; 25 proj</span><span class="player-fit-label">★ avg L4.2</span></td>
 </tr>
 <tr>
 <td class="pair-num-cell">Pair 3</td>
-<td class="player-cell fit"><span class="player-name">Kaiden Guhle</span><span class="player-gp">39gp &nbsp;·&nbsp; <b>0.28</b> pts/gp &nbsp;·&nbsp; 0.05 g/gp &nbsp;·&nbsp; 23 proj</span><span class="player-fit-label">★ avg L4.3</span></td>
-<td class="player-cell fit"><span class="player-name">Jayden Struble</span><span class="player-gp">59gp &nbsp;·&nbsp; <b>0.20</b> pts/gp &nbsp;·&nbsp; 0.03 g/gp &nbsp;·&nbsp; 17 proj</span><span class="player-fit-label">★ avg L6.2</span></td>
+<td class="player-cell fit"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8482087.png" alt="Kaiden Guhle" onerror="this.style.display='none'"><span class="player-name">Kaiden Guhle</span><span class="player-gp">39gp &nbsp;·&nbsp; <b>0.28</b> pts/gp &nbsp;·&nbsp; 0.05 g/gp &nbsp;·&nbsp; 23 proj</span><span class="player-fit-label">★ avg L4.3</span></td>
+<td class="player-cell fit"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8481593.png" alt="Jayden Struble" onerror="this.style.display='none'"><span class="player-name">Jayden Struble</span><span class="player-gp">59gp &nbsp;·&nbsp; <b>0.20</b> pts/gp &nbsp;·&nbsp; 0.03 g/gp &nbsp;·&nbsp; 17 proj</span><span class="player-fit-label">★ avg L6.2</span></td>
 </tr>
 </tbody></table></div>
 

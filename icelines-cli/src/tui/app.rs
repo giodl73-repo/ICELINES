@@ -141,6 +141,14 @@ pub struct App {
     pub active_season: String,
     pub show_season_picker: bool,
     pub picker_selected: usize,
+    // Phase Reports — overlay state (R key opens; toggles per-Tier-1 reports)
+    pub show_reports_overlay: bool,
+    pub reports_selected: usize,
+    pub reports: crate::config::ReportToggles,
+    // UX.1 — set of PlayerIds whose career has already been merged into
+    // `repo` from the bundled-season fan-out. Idempotent guard so the
+    // pre-render hook doesn't re-scan 38 seasons every frame.
+    pub career_loaded_ids: std::collections::HashSet<icelines_core::identity::PlayerId>,
     // Scores (live schedule)
     pub tonight_cache: crate::tui::tonight::TonightCache,
     pub boxscore_cache: crate::tui::tonight::BoxscoreCache,
@@ -279,6 +287,10 @@ impl App {
             active_season: icelines_core::CURRENT_SEASON_STR.to_owned(),
             show_season_picker: false,
             picker_selected: 0,
+            show_reports_overlay: false,
+            reports_selected: 0,
+            reports: crate::config::ReportToggles::default(),
+            career_loaded_ids: std::collections::HashSet::new(),
             tonight_cache: crate::tui::tonight::new_cache(),
             boxscore_cache: crate::tui::tonight::new_boxscore_cache(),
             scores_date: String::new(),
@@ -325,7 +337,14 @@ impl App {
             // Empty repo + current season as the initial typed window.
             // `App::boot_load` populates the repo synchronously before
             // the event loop starts.
-            repo: StatsRepository::new(),
+            // UX.1 — bump from default 8 windows to 80 so the lazy
+            // career loader can hold every (season, season_type) for
+            // a 20-year veteran (38 seasons × 2 types ≈ 76 windows)
+            // without LRU-evicting the player's earliest seasons.
+            // Player-career windows carry 1 row each, so the memory
+            // cost is bounded by full active-season windows the user
+            // navigates to (which is the same shape pre-UX.1).
+            repo: StatsRepository::with_lru_cap(80),
             active_season_typed: Season(icelines_core::CURRENT_SEASON),
             active_type: SeasonType::Regular,
             league_context_window: (Season(icelines_core::CURRENT_SEASON), SeasonType::Regular),
@@ -396,6 +415,10 @@ impl App {
 
         if self.show_season_picker {
             return self.handle_season_picker(action);
+        }
+
+        if self.show_reports_overlay {
+            return self.handle_reports_overlay(action);
         }
 
         // Schedule search bar consumes all character-bearing actions while open.
@@ -822,6 +845,24 @@ impl App {
                             self.sort_picker_idx = 0;
                             self.status = "Sort picker — type to filter · ↑↓ select · Enter accept · Esc cancel".to_owned();
                         }
+                        QueryMode::Build if c == 'o' && !self.query_results_focused => {
+                            // UX.3 — `o` toggles the section that owns
+                            // the current field cursor. Replaces the
+                            // pre-UX.3 Tab→section binding (Tab now
+                            // cycles screens unconditionally).
+                            let _ = crate::tui::screens::queries::toggle_section_for_field(
+                                &mut self.query_sections,
+                                self.query_field_idx,
+                            );
+                            let visible = crate::tui::screens::queries::visible_field_indices(
+                                &self.query_sections,
+                            );
+                            if !visible.contains(&self.query_field_idx) {
+                                if let Some(&first) = visible.first() {
+                                    self.query_field_idx = first;
+                                }
+                            }
+                        }
                         _ => {}
                     }
                 } else if let Screen::PlayerById(pid) = self.screen {
@@ -947,6 +988,13 @@ impl App {
                         .iter()
                         .position(|(id, _, _)| *id == self.active_season.as_str())
                         .unwrap_or(0);
+                } else if c == 'R' && !is_text_input_active(self) {
+                    // Phase Reports — capital R opens the overlay so it
+                    // doesn't collide with lowercase r (refresh) or with
+                    // search/filter input fields. Don't trip while a text
+                    // input is focused.
+                    self.show_reports_overlay = true;
+                    self.reports_selected = 0;
                 } else if c == 'd' && !is_text_input_active(self) {
                     // Global shortcut: jump to the league depth view.
                     // Already on a depth screen → toggle back to Home so
@@ -980,30 +1028,12 @@ impl App {
                 }
             }
             Action::Tab => {
-                // Phase Lindsay L.3.3 — Tab on the Queries screen
-                // toggles the section containing the current field
-                // cursor (per v0.4 spec §"TUI integration"). Save/load
-                // overlays + results-focus get cycle-screen still.
-                let in_queries_build = self.screen == Screen::Queries
-                    && self.query_mode == QueryMode::Build
-                    && !self.query_results_focused;
-                if in_queries_build {
-                    let _ = crate::tui::screens::queries::toggle_section_for_field(
-                        &mut self.query_sections,
-                        self.query_field_idx,
-                    );
-                    // After collapse, cursor may now point at a hidden
-                    // field — snap to nearest visible.
-                    let visible =
-                        crate::tui::screens::queries::visible_field_indices(&self.query_sections);
-                    if !visible.contains(&self.query_field_idx) {
-                        if let Some(&first) = visible.first() {
-                            self.query_field_idx = first;
-                        }
-                    }
-                } else {
-                    self.cycle_screen();
-                }
+                // UX.3 — Tab always cycles screens, no exceptions. The
+                // earlier override that made Tab toggle Queries
+                // sections trapped users on the Stats tab. Section
+                // toggle moved to `o` below; auto-expand on Down/Up
+                // already covers most navigation needs.
+                self.cycle_screen();
             }
             Action::TabPrev => self.cycle_screen_back(),
             Action::Refresh => {
@@ -1535,6 +1565,76 @@ impl App {
         false
     }
 
+    /// UX.1 — Lazy per-player career loader. When the active screen is
+    /// a `PlayerById`, fan out across `BUNDLED_SEASONS` to pull just
+    /// that player's bios + stats rows into `self.repo`. The HashSet
+    /// guard makes the call a no-op for already-loaded ids — safe to
+    /// invoke once per render tick from the main loop.
+    ///
+    /// First load for a player is ~5 ms (38 seasons × O(N) scan over
+    /// bundled bios/stats arrays), subsequent renders are O(1).
+    pub fn ensure_career_loaded_for_current_screen(&mut self) {
+        let pid = match self.screen {
+            Screen::PlayerById(p) => p,
+            _ => return,
+        };
+        if self.career_loaded_ids.contains(&pid) {
+            return;
+        }
+        // The loader walks bundled-season data only — no I/O, no
+        // network, deterministic. Errors here are RepoError variants
+        // (identity merge conflicts on suspicious id reuse). Silently
+        // mark loaded on either path so we don't retry a hopeless id
+        // every frame.
+        let _ = icelines_fetch::stats_loader::load_player_career_into_repo(&mut self.repo, pid);
+        self.career_loaded_ids.insert(pid);
+    }
+
+    /// Phase Reports — overlay key handler. Up/Down moves the selection
+    /// among controllable Tier-1 reports; Space/Enter toggles the
+    /// highlighted row; Esc closes the overlay AND persists toggles to
+    /// `~/.icelines/config.toml`. Quit (q) propagates so the global
+    /// shortcut works while the overlay is open.
+    fn handle_reports_overlay(&mut self, action: Action) -> bool {
+        let kinds = crate::config::ReportToggles::controllable_kinds();
+        let n = kinds.len();
+        match action {
+            Action::Quit => return true,
+            Action::Back | Action::Escape => {
+                self.show_reports_overlay = false;
+                // Persist on close. A failed save shouldn't break the
+                // session — surface it in the status line and continue.
+                let cfg = crate::config::Config {
+                    csv_path: None,
+                    cache_dir: std::path::PathBuf::new(),
+                    season: None,
+                    live: None,
+                    dashboards: None,
+                    reports: self.reports,
+                };
+                if let Err(e) = cfg.save_reports() {
+                    self.status = format!("Reports saved in-memory (config write failed: {e})");
+                } else {
+                    self.status = "Reports saved.".to_owned();
+                }
+            }
+            Action::Down => {
+                self.reports_selected = (self.reports_selected + 1).min(n.saturating_sub(1));
+            }
+            Action::Up => {
+                self.reports_selected = self.reports_selected.saturating_sub(1);
+            }
+            Action::Char(' ') | Action::Enter => {
+                if let Some(&kind) = kinds.get(self.reports_selected) {
+                    let now = self.reports.is_enabled(kind);
+                    self.reports.set(kind, !now);
+                }
+            }
+            _ => {}
+        }
+        false
+    }
+
     /// Synchronous boot load. Populates `self.repo` from
     /// `(active_season_typed, active_type)` against the configured
     /// snapshot dir, falling back to bundled data when the snapshot is
@@ -1554,10 +1654,17 @@ impl App {
         use icelines_fetch::snapshot::SnapshotStore;
         use icelines_fetch::stats_loader::{format_missing_sources, load_into_repo};
 
-        let snapshot_dir = match crate::config::Config::load() {
-            Ok(cfg) => cfg.snapshot_dir(),
+        let (snapshot_dir, reports) = match crate::config::Config::load() {
+            Ok(cfg) => {
+                // Phase Reports — pull persisted toggles into App so the
+                // overlay opens with the user's last-saved state, and
+                // column gating reflects it from the first render.
+                self.reports = cfg.reports;
+                (cfg.snapshot_dir(), cfg.reports)
+            }
             Err(_) => return,
         };
+        let _ = reports; // silence unused while overlay rendering lands.
         let store = SnapshotStore::new(snapshot_dir);
         match load_into_repo(self.active_season_typed, self.active_type, &store) {
             Ok(outcome) => {
@@ -2251,12 +2358,12 @@ mod tests {
         assert_eq!(app.screen, Screen::Home, "Playoffs→League (wraps)");
     }
 
-    /// Phase Lindsay L.3.3 — Tab on the Queries screen toggles the
-    /// section containing the current field cursor; it does NOT
-    /// advance to the next screen. Cursor snaps to the next visible
-    /// field if its current field becomes hidden via collapse.
+    /// UX.3 — `o` on Queries toggles the section containing the
+    /// current field cursor (was Tab pre-UX.3; Tab now unconditionally
+    /// cycles screens). Cursor snaps to the next visible field if its
+    /// current field becomes hidden via collapse.
     #[test]
-    fn l0_lindsay_tui_tab_on_queries_toggles_section() {
+    fn l0_ux3_o_on_queries_toggles_section() {
         let mut app = App::new(false);
         app.handle(Action::Tab); // Home → Depth
         app.handle(Action::Tab); // Depth → Queries
@@ -2267,16 +2374,16 @@ mod tests {
         let initial_s0 = app.query_sections[0].expanded;
         assert!(initial_s0, "section 0 starts expanded by default");
 
-        // Tab → toggles section 0 (cursor's section). Screen does NOT advance.
-        app.handle(Action::Tab);
+        // `o` → toggles section 0 (cursor's section). Screen unchanged.
+        app.handle(Action::Char('o'));
         assert_eq!(
             app.screen,
             Screen::Queries,
-            "Tab on Queries toggles section, doesn't advance screen"
+            "o on Queries toggles section, doesn't advance screen"
         );
         assert_eq!(
             app.query_sections[0].expanded, !initial_s0,
-            "section 0 expansion flipped by Tab"
+            "section 0 expansion flipped by o"
         );
 
         // After collapsing section 0, field 0 is hidden. Cursor
@@ -2287,15 +2394,38 @@ mod tests {
             "cursor snaps to next visible field after section collapse"
         );
 
-        // Second Tab now targets section 1 (where the cursor lives).
+        // Second `o` now targets section 1 (where the cursor lives).
         let initial_s1 = app.query_sections[1].expanded;
-        app.handle(Action::Tab);
+        app.handle(Action::Char('o'));
         assert_eq!(
             app.query_sections[1].expanded, !initial_s1,
-            "second Tab toggles section 1 (cursor's new home)"
+            "second o toggles section 1 (cursor's new home)"
         );
-        // Section 0 still collapsed — wasn't touched by the second Tab.
+        // Section 0 still collapsed — wasn't touched by the second o.
         assert_eq!(app.query_sections[0].expanded, !initial_s0);
+    }
+
+    /// UX.3 — Tab on the Queries screen now cycles screens
+    /// unconditionally. Pre-UX.3 it toggled sections, trapping users
+    /// on the Stats tab.
+    #[test]
+    fn l0_ux3_tab_on_queries_advances_screen() {
+        let mut app = App::new(false);
+        app.handle(Action::Tab); // Home → Depth
+        app.handle(Action::Tab); // Depth → Queries
+        assert_eq!(app.screen, Screen::Queries);
+
+        // Sections starts in default state — Tab must NOT touch them.
+        let s0_before = app.query_sections[0].expanded;
+
+        app.handle(Action::Tab);
+        assert_ne!(
+            app.screen,
+            Screen::Queries,
+            "Tab on Queries must advance to the next screen"
+        );
+        // Sections untouched.
+        assert_eq!(app.query_sections[0].expanded, s0_before);
     }
 
     #[test]
@@ -3247,5 +3377,169 @@ mod tests {
             "status must surface the load error, got: {}",
             app.status
         );
+    }
+
+    // ── Phase Reports — overlay behavior ──────────────────────────────────
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn l0_tui_reports_capital_R_opens_overlay() {
+        let mut app = App::new(false);
+        app.screen = Screen::Home;
+        assert!(!app.show_reports_overlay);
+        app.handle(Action::Char('R'));
+        assert!(
+            app.show_reports_overlay,
+            "Capital R from a non-text screen must open the Reports overlay"
+        );
+        assert_eq!(
+            app.reports_selected, 0,
+            "selection must reset to top on open"
+        );
+    }
+
+    #[test]
+    fn l0_tui_reports_lowercase_r_does_not_open_overlay() {
+        // Lowercase 'r' fires Action::Refresh — must not collide with R.
+        let mut app = App::new(false);
+        app.screen = Screen::Home;
+        app.handle(Action::Refresh);
+        assert!(
+            !app.show_reports_overlay,
+            "Action::Refresh (lowercase r) must not open the Reports overlay"
+        );
+    }
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn l0_tui_reports_R_ignored_while_text_input_active() {
+        // The Search screen counts as text-input-active per
+        // is_text_input_active — typing a capital R there should land
+        // in the search box, not open the Reports overlay.
+        let mut app = App::new(false);
+        app.screen = Screen::Search;
+        app.handle(Action::Char('R'));
+        assert!(
+            !app.show_reports_overlay,
+            "R while text-input is active must not open the overlay (collides with typing)"
+        );
+    }
+
+    #[test]
+    fn l0_tui_reports_overlay_down_arrow_navigates_and_clamps() {
+        let mut app = App::new(false);
+        app.show_reports_overlay = true;
+        let n = crate::config::ReportToggles::controllable_kinds().len();
+        // Walk past the end — selection clamps to n-1, doesn't wrap.
+        for _ in 0..(n + 5) {
+            app.handle(Action::Down);
+        }
+        assert_eq!(app.reports_selected, n - 1, "Down must clamp at n-1");
+    }
+
+    #[test]
+    fn l0_tui_reports_overlay_up_arrow_navigates_and_clamps_to_zero() {
+        let mut app = App::new(false);
+        app.show_reports_overlay = true;
+        app.reports_selected = 2;
+        for _ in 0..10 {
+            app.handle(Action::Up);
+        }
+        assert_eq!(app.reports_selected, 0, "Up must clamp at 0");
+    }
+
+    #[test]
+    fn l0_tui_reports_overlay_space_toggles_selected_kind() {
+        let mut app = App::new(false);
+        app.show_reports_overlay = true;
+        // Index 0 == SkaterRealtime per controllable_kinds() order.
+        app.reports_selected = 0;
+        let before = app.reports.realtime;
+        app.handle(Action::Char(' '));
+        assert_eq!(
+            app.reports.realtime, !before,
+            "Space on selected row must flip that report's toggle in-memory"
+        );
+        // Toggle back so future tests start from a known-good state.
+        app.handle(Action::Char(' '));
+        assert_eq!(app.reports.realtime, before);
+    }
+
+    #[test]
+    fn l0_tui_reports_overlay_enter_also_toggles() {
+        // Enter is an alias for Space inside the overlay so users
+        // who reach for the more-prominent key still toggle.
+        let mut app = App::new(false);
+        app.show_reports_overlay = true;
+        app.reports_selected = 1; // SkaterTimeOnIce
+        let before = app.reports.timeonice;
+        app.handle(Action::Enter);
+        assert_eq!(app.reports.timeonice, !before);
+    }
+
+    #[test]
+    fn l0_tui_reports_overlay_q_propagates_quit_signal() {
+        // q while overlay is open must still quit the app — global
+        // shortcut precedence comes via handle_reports_overlay returning
+        // true on Action::Quit.
+        let mut app = App::new(false);
+        app.show_reports_overlay = true;
+        let should_quit = app.handle(Action::Quit);
+        assert!(
+            should_quit,
+            "Quit (q) while overlay is open must propagate to the event loop"
+        );
+    }
+
+    #[test]
+    fn l0_tui_reports_overlay_esc_closes_overlay_in_memory() {
+        // Esc closes the overlay and persists the toggles. The
+        // persistence path writes to ~/.icelines/config.toml — we point
+        // HOME / USERPROFILE at a tempdir so the write doesn't pollute
+        // the user's real config under cargo test. Serialized via the
+        // shared home_env_lock to avoid races with other HOME-touching
+        // tests.
+        let _guard = crate::test_utils::home_env_lock();
+        let dir = tempfile::TempDir::new().unwrap();
+        let prev_userprofile = std::env::var_os("USERPROFILE");
+        let prev_home = std::env::var_os("HOME");
+        std::env::set_var("USERPROFILE", dir.path());
+        std::env::set_var("HOME", dir.path());
+
+        let mut app = App::new(false);
+        app.show_reports_overlay = true;
+        app.reports_selected = 2;
+        // Flip Goals For/Against on so we have a non-default state.
+        app.handle(Action::Char(' '));
+        app.handle(Action::Escape);
+        assert!(!app.show_reports_overlay, "Esc must close the overlay");
+        // Status should reflect the save outcome (success path).
+        assert!(
+            app.status.contains("Reports") || app.status.contains("saved"),
+            "Esc must update status to reflect save, got: {}",
+            app.status
+        );
+        // Persisted file lives at $HOME/.icelines/config.toml — verify
+        // the write happened so the toggle survives a restart.
+        let cfg_path = dir.path().join(".icelines/config.toml");
+        assert!(
+            cfg_path.exists(),
+            "Esc save must create config.toml in HOME"
+        );
+        let body = std::fs::read_to_string(&cfg_path).unwrap();
+        assert!(
+            body.contains("[reports]") && body.contains("goals_for_against"),
+            "config.toml must carry the [reports] section, got:\n{body}"
+        );
+
+        // Restore env.
+        match prev_userprofile {
+            Some(p) => std::env::set_var("USERPROFILE", p),
+            None => std::env::remove_var("USERPROFILE"),
+        }
+        match prev_home {
+            Some(p) => std::env::set_var("HOME", p),
+            None => std::env::remove_var("HOME"),
+        }
     }
 }

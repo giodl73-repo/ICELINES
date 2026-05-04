@@ -6,6 +6,32 @@ use clap::{Parser, Subcommand, ValueEnum};
 #[command(
     name = "icelines",
     about = "NHL fantasy depth-chart and ranking tool",
+    long_about = r#"
+icelines — NHL analytics + fantasy CLI with 38 seasons of history bundled in.
+
+QUICK START
+  icelines query leaders --top 10                       # current season scorers
+  icelines query player "Connor McDavid" --seasons 38   # full bundled career
+  icelines query compare "Wayne Gretzky" "Mario Lemieux" --seasons 38
+  icelines query goalies --filter "save-pct>=0.92"
+  icelines tui                                          # interactive dashboard
+
+MULTI-FILTER PATTERNS
+  --filter is repeatable and ANDed. Use canonical cli_keys (goals, points,
+  blocked-shots, ...) or short aliases (g, p, blk, gp, ppg, sv%, ...).
+
+  icelines query leaders --age-max 24 --filter "hits>=200" --filter "p>=40"
+  icelines query leaders --seasons 3 --filter "g>=60" --filter "a>=60"
+
+DOCS
+  icelines docs                  Print the full command reference.
+  icelines <subcommand> --help   Per-command help with examples.
+  README.md and COMMANDS.md      Single-page references in the source tree.
+
+FLAGS
+  --no-live           Disable live NHL API calls (deterministic / offline).
+  --no-dashboards     Hide the TUI dashboard side panel.
+"#,
     version,
     propagate_version = true
 )]
@@ -144,6 +170,10 @@ pub enum Commands {
     },
     /// Launch the interactive TUI.
     Tui,
+
+    /// Print the full command reference (embedded COMMANDS.md). No
+    /// internet required — the doc ships inside the binary.
+    Docs,
     /// Export analytical output as markdown tables (Phase 8d).
     /// Bridges to proof's DASHBOARD-SPEC compiler — see
     /// `design/specs/export-markdown.md`.
@@ -773,6 +803,51 @@ pub enum SnapshotSubcommand {
 #[derive(Debug, Subcommand)]
 pub enum QuerySubcommand {
     /// Ranked leaderboard — filter by any combination of demographics and stats.
+    #[command(long_about = r#"
+icelines query leaders — top-N players by any of 30+ sort metrics.
+
+EXAMPLES
+  icelines query leaders --top 20
+  icelines query leaders --pos C --sort ppg --top 15
+  icelines query leaders --season 19921993 --filter "g>=50"
+  icelines query leaders --age-max 24 --filter "hits>=200" --filter "p>=40"
+  icelines query leaders --seasons 3 --filter "g>=60" --filter "a>=60"
+  icelines query leaders --json | jq '.[0]'
+
+FILTER GRAMMAR (each --filter is a full boolean expression)
+  <expr>     := <or-expr>
+  <or-expr>  := <and-expr> ( OR  <and-expr> )*
+  <and-expr> := <unary>    ( AND <unary>    )*
+  <unary>    := NOT <unary> | <primary>
+  <primary>  := '(' <expr> ')' | <atom>
+  <atom>     := <stat> <op> <value>
+
+  ops: >=  <=  >  <  ==
+  Precedence: NOT > AND > OR (standard). Keywords case-insensitive.
+  Multiple --filter flags ANDed at top level (so --filter "a>=20 OR b>=20"
+  --filter "gp>=70" means "(a OR b) AND gp>=70").
+
+  Stats: any cli_key from the catalog (108 stats) or a short alias:
+    g  → goals       a  → assists      p, pts → points     gp → games
+    s  → shots       blk → blocked-shots  ppg → points-per-game
+    +/- → plus-minus  pim → pim         tk / gv → takeaways/giveaways
+  Filter keys are case-insensitive (HITS works the same as hits).
+  Note: `age` is NOT a stat; use --age-min N / --age-max N flags below.
+
+  Examples:
+    --filter "g>=50 OR a>=80"
+    --filter "(g>=30 AND a>=30) OR p>=80"
+    --filter "NOT pim>=100"
+
+SORTS (use canonical cli_key or alias)
+  pts-pace (default), ppg, pts/p, goals/g, assists/a, gp, hits, blocks,
+  pp-pts-pace, pp-g-pace, sh-g-pace, gwg-pace, shots-pace, shooting-pct,
+  plus-minus, toi, fo-pct, takeaways, giveaways, pim, xg, xg-per-60,
+  cf-pct, ff-pct, xgf-pct, improvement (Y/Y PPG delta).
+
+OUTPUT
+  --json / --csv to stdout, or --out PATH to a file.
+"#)]
     Leaders {
         /// Position filter: C, LW, RW, D, F (all forwards), G
         #[arg(long)]
@@ -888,6 +963,28 @@ pub enum QuerySubcommand {
     },
 
     /// Deep dive on a single player — career arc, league rank, percentiles.
+    /// Deep dive on a single player — career arc, league rank, percentiles.
+    #[command(long_about = r#"
+icelines query player NAME — full profile for a single player.
+
+Searches both skater AND goalie bios; historical players resolve without
+--season via cross-bundled name lookup.
+
+EXAMPLES
+  icelines query player "Connor McDavid"                       # current season
+  icelines query player "Connor McDavid" --seasons 38          # full bundled career
+  icelines query player "McDavid" --percentiles
+  icelines query player "McDavid" --rank-by g --percentiles    # rank by goals not pts
+  icelines query player "McDavid" --filter "gp>=60"            # narrow peer pool
+  icelines query player "Wayne Gretzky"                        # historical (no --season needed)
+  icelines query player "Patrick Roy" --season 19951996        # historical goalie
+
+NOTES
+  - --seasons N (default 38) controls how many bundled seasons land in the
+    career arc (1 = current only, 38 = full bundled history).
+  - --filter narrows the percentile peer pool (e.g. only score-vs-similar-GP).
+  - --rank-by overrides the default Pts/82 ranking with any cli_key.
+"#)]
     Player {
         /// Player name (partial match OK)
         name: String,
@@ -919,9 +1016,32 @@ pub enum QuerySubcommand {
         /// curve).
         #[arg(long = "filter")]
         filters: Vec<String>,
+        /// Gaps.2 — number of bundled seasons to include in the career
+        /// arc (newest-first). Default 38 = full history. Set to 5 for
+        /// the pre-L.7b "modern era" view.
+        #[arg(long, default_value_t = 38)]
+        seasons: u8,
     },
 
     /// Side-by-side comparison or similarity search.
+    #[command(long_about = r#"
+icelines query compare PLAYER1 [PLAYER2] — head-to-head or similarity search.
+
+EXAMPLES
+  icelines query compare "Connor McDavid" "Sidney Crosby"
+  icelines query compare "Wayne Gretzky" "Mario Lemieux" --seasons 38
+  icelines query compare "Matty Beniers" --similar 8
+  icelines query compare "McDavid" --similar 5 --filter "gp>=20"
+
+MODES
+  Two players → head-to-head table (per-stat side-by-side).
+  --similar N → N most-similar peers via Z-score distance (Phase Lindsay L.5.2).
+
+NOTES
+  - --seasons N prints each player's career arc after the head-to-head.
+  - --filter narrows the similarity cohort (only when --similar is set).
+  - Historical players resolve without --season (cross-bundled name lookup).
+"#)]
     Compare {
         /// First player name (partial match OK)
         player1: String,
@@ -946,10 +1066,39 @@ pub enum QuerySubcommand {
         /// games for a stable comparison.
         #[arg(long = "filter")]
         filters: Vec<String>,
+        /// Gaps.3 — number of bundled seasons to include in each
+        /// player's career line for head-to-head context. Default 38 =
+        /// full history. Active only on head-to-head (player2 set);
+        /// `--similar` is single-season Z-score and ignores this.
+        #[arg(long, default_value_t = 38)]
+        seasons: u8,
     },
 
     /// Goalie leaderboard — Phase G.5.
     /// `sv-pct` (default) | `gaa` | `wins` | `gp` | `saves` | `so`.
+    #[command(long_about = r#"
+icelines query goalies — top-N goalies by save % / GAA / wins / etc.
+
+EXAMPLES
+  icelines query goalies --top 10
+  icelines query goalies --filter "gp>=30" --filter "save-pct>=0.92"
+  icelines query goalies --filter "wins>=30" --filter "so>=4"
+  icelines query goalies --season 19981999 --top 10                  # Hasek era
+  icelines query goalies --json
+
+GOALIE FILTER REWRITE (Gaps.4)
+  Skater-context keys auto-rewrite: `gp` → `goalie-games`, `starts` →
+  `goalie-starts`. So you can type `gp>=15` naturally without knowing
+  the goalie cli_key namespace.
+
+ALIASES
+  w  → wins        l  → losses        ot → ot-losses     so → shutouts
+  sv → saves       sa → shots-against ga → goals-against
+  sv%, save%       → save-pct
+
+OUTPUT
+  --json / --csv to stdout, --out PATH to a file.
+"#)]
     Goalies {
         /// Number of goalies to show.
         #[arg(long, default_value_t = 20)]

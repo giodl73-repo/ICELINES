@@ -261,6 +261,7 @@ mod dashboard_tests {
             season: None,
             live: None,
             dashboards: Some(true),
+            reports: crate::config::ReportToggles::default(),
         };
         init_dashboards(true, &cfg); // idempotent — first call wins
                                      // Verifying `dashboards_enabled()` here would race with other tests
@@ -432,8 +433,17 @@ fn render_stats_view(f: &mut Frame, app: &App, v: &PlayerView<'_>, area: Rect) {
     // degradation. At <90 cols panel width, we drop columns from the
     // right to fit. At <60 cols we also fall back to `narrow_label()`
     // for tighter headers (vs `short_label()`).
+    //
+    // Phase Reports — additionally hide columns whose backing Tier-1
+    // report is disabled (`app.reports.is_stat_visible`). Stats whose
+    // `report_source()` is `None` (core / Tier-2 / derived) are always
+    // visible.
     let preset = app.career_table_preset;
-    let all_columns = preset.columns(v.position());
+    let all_columns: Vec<icelines_core::stats_catalog::StatId> = preset
+        .columns(v.position())
+        .into_iter()
+        .filter(|sid| app.reports.is_stat_visible(*sid))
+        .collect();
     let panel_w = area.width as usize;
     let (columns, dropped, use_narrow) = fit_career_columns(&all_columns, panel_w);
 
@@ -708,6 +718,140 @@ mod l4_preset_tests {
         let goalie_cols = CareerTablePreset::All.columns(Goalie);
         // Goalie applies_to is true ONLY for Goalie category.
         assert_eq!(goalie_cols.len(), 23);
+    }
+
+    // ── Phase Reports — career-table column visibility gating ──────────────
+
+    /// Mirror of player.rs's render-time filter — applies a
+    /// `ReportToggles` to a preset's column list and returns the
+    /// surviving StatIds. Gives tests a pure-logic surface to assert
+    /// against without spinning up a Frame.
+    fn gated_columns(
+        preset: CareerTablePreset,
+        pos: icelines_core::model::Position,
+        reports: crate::config::ReportToggles,
+    ) -> Vec<StatId> {
+        preset
+            .columns(pos)
+            .into_iter()
+            .filter(|sid| reports.is_stat_visible(*sid))
+            .collect()
+    }
+
+    #[test]
+    fn l0_reports_career_table_default_center_drops_realtime_off_columns() {
+        // Default preset for Center carries Hits/Blocks (realtime).
+        // Default reports → realtime ON → those columns survive.
+        let r_on = crate::config::ReportToggles::default();
+        let on = gated_columns(CareerTablePreset::Default, Center, r_on);
+        assert!(on.contains(&StatId::Hits));
+        assert!(on.contains(&StatId::BlockedShots));
+
+        // Flip realtime off → Hits/Blocks vanish; core stats stay.
+        let r_off = crate::config::ReportToggles {
+            realtime: false,
+            ..Default::default()
+        };
+        let off = gated_columns(CareerTablePreset::Default, Center, r_off);
+        assert!(!off.contains(&StatId::Hits));
+        assert!(!off.contains(&StatId::BlockedShots));
+        assert!(off.contains(&StatId::Goals), "Goals always visible");
+        assert!(
+            off.len() < on.len(),
+            "realtime off must remove ≥1 column ({} vs {})",
+            off.len(),
+            on.len()
+        );
+    }
+
+    #[test]
+    fn l0_reports_career_table_defense_evgoalsforpct_gated_by_goals_for_against() {
+        // Default Defense preset includes EvGoalsForPct (SCOUT-8).
+        // EvGoalsForPct → SkaterGoalsForAgainst → default off → hidden.
+        let r_default = crate::config::ReportToggles::default();
+        let cols_default = gated_columns(CareerTablePreset::Default, Defense, r_default);
+        assert!(
+            !cols_default.contains(&StatId::EvGoalsForPct),
+            "default reports hide EvGoalsForPct (goals_for_against off by default)"
+        );
+
+        // Turn goals_for_against on → EvGoalsForPct surfaces.
+        let r_on = crate::config::ReportToggles {
+            goals_for_against: true,
+            ..Default::default()
+        };
+        let cols_on = gated_columns(CareerTablePreset::Default, Defense, r_on);
+        assert!(
+            cols_on.contains(&StatId::EvGoalsForPct),
+            "goals_for_against on surfaces EvGoalsForPct"
+        );
+    }
+
+    #[test]
+    fn l0_reports_career_table_goalie_advanced_columns_gated_by_toggle() {
+        // Goalie preset has 23 stats including QualityStarts (Advanced)
+        // and EvSavePct (SavesByStrength). Defaults off → both hidden.
+        let r_default = crate::config::ReportToggles::default();
+        let off = gated_columns(CareerTablePreset::Goalie, Goalie, r_default);
+        assert!(!off.contains(&StatId::QualityStarts));
+        assert!(!off.contains(&StatId::EvSavePct));
+        // Core goalie stats stay.
+        assert!(off.contains(&StatId::Wins));
+        assert!(off.contains(&StatId::SavePct));
+        assert!(off.contains(&StatId::Gaa));
+
+        // Flip both Tier-1 goalie reports on → both surface.
+        let r_on = crate::config::ReportToggles {
+            goalie_advanced: true,
+            goalie_saves_by_strength: true,
+            ..Default::default()
+        };
+        let on = gated_columns(CareerTablePreset::Goalie, Goalie, r_on);
+        assert!(on.contains(&StatId::QualityStarts));
+        assert!(on.contains(&StatId::EvSavePct));
+        assert!(
+            on.len() > off.len(),
+            "enabling Tier-1 goalie reports must add columns"
+        );
+    }
+
+    #[test]
+    fn l0_reports_career_table_all_off_keeps_only_summary_and_derived() {
+        // With every Tier-1 toggle off, only summary-backed and derived
+        // stats survive. Sanity: Goals/Assists/Points (summary) +
+        // Pace82/PointsPerGame (derived) all stay; every gated stat
+        // disappears.
+        let r_off = crate::config::ReportToggles {
+            realtime: false,
+            timeonice: false,
+            goals_for_against: false,
+            goalie_advanced: false,
+            goalie_saves_by_strength: false,
+        };
+        let cols = gated_columns(CareerTablePreset::All, Center, r_off);
+        for must in [
+            StatId::Goals,
+            StatId::Assists,
+            StatId::Points,
+            StatId::Pim,
+            StatId::PointsPerGame,
+            StatId::Pace82,
+            StatId::TotalToiPerGame, // summary, not gated
+        ] {
+            assert!(cols.contains(&must), "{must:?} must survive all-off");
+        }
+        for must_not in [
+            StatId::Hits,
+            StatId::BlockedShots,
+            StatId::PpToi,
+            StatId::EvGoalsFor,
+            StatId::EvenStrengthTimeOnIcePerGame,
+        ] {
+            assert!(
+                !cols.contains(&must_not),
+                "{must_not:?} must disappear when its report is off"
+            );
+        }
     }
 
     // ── L.4.3 cell formatting tests ────────────────────────────────────

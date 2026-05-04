@@ -85,10 +85,14 @@ bash scripts/build-guides.sh --check               # validate without writing
 ## Key constants and files
 
 - **Current season**: `icelines_core::CURRENT_SEASON = 20_252_026` — change here each October, nowhere else
-- **Bundled data**: `src/icelines-fetch/src/bundled.rs` — 5 seasons embedded via `include_bytes!()`
-- **Player loading**: always use `PlayerRepository::new(store, season).load_all()` — never reach into snapshot store directly from a command
+- **Bundled data**: `src/icelines-fetch/src/bundled.rs` — **38 seasons** (1987-88 through 2025-26, except 2004-05 lockout) embedded via table-driven `include_bytes!()`. `BUNDLED_SEASONS` is the full list; `MODERN_BUNDLED_SEASONS` is the 5-season subset that carries the full Tier-1 report suite.
+- **Player loading**: always use `icelines_fetch::stats_loader::load_into_repo(season, season_type, store)` → returns `LoadOutcome { repo: StatsRepository, missing }`. Never reach into snapshot store directly from a command. (The legacy `PlayerRepository` path was deleted in Hart.5b1.)
+- **Per-player career fan-out**: `icelines_fetch::stats_loader::load_player_career_into_repo(repo, pid)` walks every bundled season and merges that player's bios+stats into the repo. Used by the TUI lazy loader (UX.1) and the CLI's historical-name fallback in `query player`/`compare`.
+- **Resolve historical name**: `icelines_fetch::stats_loader::resolve_player_id_by_name(name)` walks bundled bios+goalies for a partial name match. The CLI uses this so `query player Wayne Gretzky` resolves without `--season`.
 - **Snapshot store**: `~/.icelines/snapshots/` — never hardcode paths, use `Config::load()?.snapshot_dir()`
+- **Config**: `~/.icelines/config.toml` — carries `[reports]` section (`realtime`/`timeonice`/`goals_for_against`/`goalie_advanced`/`goalie_saves_by_strength` toggles). Persisted by the TUI Reports overlay (R key) via `Config::save_reports()`.
 - **SQLite DB**: `~/.icelines/icelines.db` — shared by GroupDb and FantasyDb
+- **Repo LRU cap**: `load_into_repo` constructs `StatsRepository::with_lru_cap(80)` so a downstream lazy career fan-out (38 seasons × 2 types ≈ 76 windows) doesn't evict the active season. The legacy default of 8 only covered current-era queries.
 
 ---
 
@@ -110,29 +114,35 @@ The mock NHL API fixture is at `src/icelines-fetch/tests/mock_nhl_api.rs` — us
 
 1. **No live network calls in tests** — all L1/L2 tests use bundled data or httpmock
 2. **No season literals** — use `CURRENT_SEASON` / `CURRENT_SEASON_STR`, not `"20252026"`
-3. **Dedup players by nhl_id** — the NHL bios API emits multiple rows for traded players; `PlayerRepository` deduplicates but stay alert
-4. **Option<T> for all nullable API fields** — `shooting_pct`, `toi_per_game_sec`, `faceoff_win_pct` etc. are null in real data
+3. **Dedup players by nhl_id** — the NHL bios API emits multiple rows for traded players; `StatsRepository::upsert_*` deduplicates but stay alert (the bundle itself can carry duplicates — see persona_wave3 p238)
+4. **Option<T> for all nullable API fields** — `shooting_pct`, `toi_per_game_sec`, `faceoff_win_pct`, `realtime.pim` etc. are null in real data
 5. **MoneyPuck is silo'd** — all MoneyPuck code lives in `icelines-fetch/src/moneypuck.rs`; removing it only requires deleting that file and the Option fields on Player
 6. **CLI commands are async** — all `run()` functions are `async fn` dispatched by `tokio::main`
+7. **Filter aliases live in `StatId::from_cli_key`** — `g`→`goals`, `p`→`points`, `gp`→`games`, `ppg`→`points-per-game`, `blk`→`blocked-shots`, `tk`→`takeaways`, `gv`→`giveaways`, `pen`→`pim`, `+/-`→`plus-minus`, `sv%`→`save-pct`, plus uppercase-insensitive (`HITS`→`Hits`). Adding a new alias is one match arm; the alias must resolve to an existing `cli_key()`.
+8. **Goalie filter rewrite** in `query goalies` — `gp`/`games` rewrites to `goalie-games`, `starts` to `goalie-starts` BEFORE `parse_filter` runs. See `goalie_filter_rewrite` in `icelines-cli/src/commands/query.rs`.
+9. **`age` is a flag, not a StatId** — surfaced as `--age-min N` / `--age-max N` on `query leaders`. Don't try to add it to the catalog; it's bio data, not a stat.
+10. **Filter.OR — boolean filter grammar** — `parse_filter_expr` returns a `FilterExpr` (Atom / And / Or / Not). The CLI tries the boolean parser first; bare atoms route to `PlayerFilter::stat_filters` (preserves Min+Min normalization), compound expressions route to `PlayerFilter::expr_filters`. `apply_views` ANDs both. To extend the grammar, edit the recursive descent in `parse_filter_expr` (precedence: NOT > AND > OR). Tests live alongside in `stats_catalog.rs::tests::l0_filter_expr_*`.
 
 ---
 
 ## What's been built
 
 - `icelines fetch` — NHL API data pipeline (bios, stats, realtime, rosters, contracts)
-- `icelines query leaders/player/compare` — full query engine (30+ sort metrics, --seasons N, --sort improvement, percentiles, JSON/CSV export)
+- `icelines query leaders/player/compare/goalies` — full query engine: 30+ sort metrics, `--filter` catalog grammar with short aliases, `--seasons N` aggregate (1-38), historical name resolution, percentiles, JSON/CSV export
 - `icelines fantasy` — full fantasy league (SQLite, scoring, trades, axum HTTP server)
 - `icelines rank/team/players/history/project/scouting/mates/peers/compare/class`
-- `icelines tui` — ratatui interactive dashboard (8 screens)
+- `icelines export md` — markdown data tables (Phase 8d, shipped)
+- `icelines x` — quick CSV/JSON export of any report shape (mirrors leaders/goalies/rank/players/class/history/peers/compare/transactions)
+- `icelines tui` — ratatui interactive dashboard. Six tabs (League / Depth / Stats / Goalies / Scores / Schedule + Playoffs + Transactions overlays). Key bindings: `Tab`/`Shift+Tab` cycle screens, `y` season picker, `R` Reports overlay, `Shift+P` season-type toggle, `o` section toggle on Queries, `[` / `]` cycle career-table presets, `/` open sort picker
+- **Reports overlay (R)** — toggles which Tier-1 reports populate columns (realtime, timeonice, goalsForAgainst, goalie-advanced, goalie-savesByStrength). Persists to `~/.icelines/config.toml`. Disabled reports drop their columns from career tables / sort picker / query output. See `design/specs/stat-catalog.md` and `Reports.1`-`Reports.7` in this codebase.
+- **Lazy career loader (UX.1)** — opening a player card fans out across all 38 bundled seasons, pulling that player's career into the repo. ~50 ms per first open, cached after.
+- **38-season bundle (L.7b)** — `BUNDLED_SEASONS` covers 1987-88 → 2025-26. Binary 56 MB. Adding a season: drop files into `data/seasons/YYYYZZZZ/` and add the row to each lookup table in `bundled.rs`.
 - `icelines build/serve/deploy` — mkdocs static site
-- 338 tests across L0/L1/L2 including mock NHL API fixture
+- ~1720 tests across L0/L1/L2 + 4 persona-scenario waves (`persona_scenarios.rs` + `persona_wave2.rs/wave3/wave4`) including mock NHL API fixture
 
 ## Pending (see design/plans/INDEX.md)
-- NHL Edge skating speed stats
-- `icelines export md` — markdown data tables for proof/mdpath integration
+- NHL Edge skating speed stats — blocked, no public JSON endpoint (memory `nhl_edge_data_blocked.md`)
 - Fantasy daily delta scoring
-- Historical season queries (`--season 20242025`)
-- DASHBOARD-SPEC integration (waiting on proof)
 
 ---
 
@@ -152,11 +162,13 @@ Run `/review-specs` to invoke all roles on a spec or implementation.
 
 ---
 
-## Proof/mdpath integration (future)
+## Documentation surface for users + AIs
 
-When `proof` DASHBOARD-SPEC is ready:
-- `icelines export md` generates stats tables at `~/.icelines/reports/`
-- Each TUI screen becomes a `.dashboard.source.md` template
-- `proof compile --width N --height N` renders the template
-- TUI renders the compiled ASCII string
-- See `design/specs/dashboard-engine.md` and memory at `C:/Users/giodl/.claude/projects/C--src-NHL/proof_integration.md`
+If a user / future AI lands on this repo and needs to learn the CLI, the canonical entry points are:
+
+1. **`COMMANDS.md`** — single-page reference: every subcommand with examples, the catalog `--filter` grammar, the short alias table (`g`/`p`/`gp`/`ppg`/`blk`/...), the TUI keybind matrix.
+2. **`README.md`** — installation + usage primer with copy-paste examples.
+3. **`icelines --help`** — clap auto-generated help; top-level + per-subcommand `long_about` carries inline examples.
+4. **`design/specs/stat-catalog.md`** — the StatId catalog spec with all 108 stats, categories, units, report sources.
+
+When updating the CLI surface (new flag, new subcommand, new keybind, new alias) update `COMMANDS.md` AND the relevant clap `long_about` in the same change. The release artifact ships with `--help` text; if it's not in --help or COMMANDS.md, the user has no way to discover it.

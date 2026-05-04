@@ -1,11 +1,24 @@
 //! Historical season data bundled directly into the binary via include_bytes!().
 //!
-//! Five seasons ship with every icelines binary — no download required.
-//! `icelines fetch all` updates the current season in ~/.icelines/snapshots/
-//! and takes precedence via the normal snapshot store lookup.
+//! All 38 NHL seasons since 1987-88 ship with every icelines binary — no
+//! download required. `icelines fetch all` updates the current season in
+//! `~/.icelines/snapshots/` and takes precedence via the normal snapshot
+//! store lookup.
 //!
-//! Data source: NHL API bios + summary endpoints.
+//! Data sources:
+//! - NHL API bios + summary endpoints (regular + playoff)
+//! - Goalie summaries (Phase G.1) for all 38 seasons
+//! - Transactions (Phase T.3) — modern era only (2021-22 through 2025-26)
+//!   because ESPN's site.api doesn't carry pre-2021 transaction logs.
+//!
 //! Historical seasons are immutable — they never change after the season ends.
+//!
+//! The 2004-05 lockout year is intentionally absent.
+//!
+//! L.7b (2026-05-03) — expanded the bundle from 5 to 38 seasons via the
+//! table-driven layout below. Binary grew ~23 MB → ~56 MB; closes the
+//! "BUNDLED_SEASONS != all-seasons" gap that forced `data install` for
+//! historical queries.
 
 use crate::{
     error::FetchError,
@@ -15,76 +28,314 @@ use crate::{
 
 // ── Embedded season data (compiled into binary at build time) ─────────────────
 
-macro_rules! season_bytes {
+/// Builds one (season, &[u8]) tuple for inclusion in a per-kind lookup
+/// table. Used by the `BUNDLED_*` slices below — `include_bytes!` is
+/// the only way to embed a literal-path file at compile time, so the
+/// season list is open-coded once per kind.
+macro_rules! season_entry {
     ($season:literal, $file:literal) => {
-        include_bytes!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/../data/seasons/",
+        (
             $season,
-            "/",
-            $file
-        ))
+            include_bytes!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../data/seasons/",
+                $season,
+                "/",
+                $file
+            )) as &[u8],
+        )
     };
 }
 
-static BIOS_20252026: &[u8] = season_bytes!("20252026", "bios.json");
-static STATS_20252026: &[u8] = season_bytes!("20252026", "stats.json");
+/// Per-kind lookup tables. Newest first to match `BUNDLED_SEASONS` order
+/// (which `aggregate.rs` and `dashboard_panel.rs` rely on).
+///
+/// 38 entries each — every season since 1987-88 except the 2004-05
+/// lockout. Order must match `BUNDLED_SEASONS`.
+static BUNDLED_BIOS: &[(&str, &[u8])] = &[
+    season_entry!("20252026", "bios.json"),
+    season_entry!("20242025", "bios.json"),
+    season_entry!("20232024", "bios.json"),
+    season_entry!("20222023", "bios.json"),
+    season_entry!("20212022", "bios.json"),
+    season_entry!("20202021", "bios.json"),
+    season_entry!("20192020", "bios.json"),
+    season_entry!("20182019", "bios.json"),
+    season_entry!("20172018", "bios.json"),
+    season_entry!("20162017", "bios.json"),
+    season_entry!("20152016", "bios.json"),
+    season_entry!("20142015", "bios.json"),
+    season_entry!("20132014", "bios.json"),
+    season_entry!("20122013", "bios.json"),
+    season_entry!("20112012", "bios.json"),
+    season_entry!("20102011", "bios.json"),
+    season_entry!("20092010", "bios.json"),
+    season_entry!("20082009", "bios.json"),
+    season_entry!("20072008", "bios.json"),
+    season_entry!("20062007", "bios.json"),
+    season_entry!("20052006", "bios.json"),
+    season_entry!("20032004", "bios.json"),
+    season_entry!("20022003", "bios.json"),
+    season_entry!("20012002", "bios.json"),
+    season_entry!("20002001", "bios.json"),
+    season_entry!("19992000", "bios.json"),
+    season_entry!("19981999", "bios.json"),
+    season_entry!("19971998", "bios.json"),
+    season_entry!("19961997", "bios.json"),
+    season_entry!("19951996", "bios.json"),
+    season_entry!("19941995", "bios.json"),
+    season_entry!("19931994", "bios.json"),
+    season_entry!("19921993", "bios.json"),
+    season_entry!("19911992", "bios.json"),
+    season_entry!("19901991", "bios.json"),
+    season_entry!("19891990", "bios.json"),
+    season_entry!("19881989", "bios.json"),
+    season_entry!("19871988", "bios.json"),
+];
 
-static BIOS_20242025: &[u8] = season_bytes!("20242025", "bios.json");
-static STATS_20242025: &[u8] = season_bytes!("20242025", "stats.json");
+static BUNDLED_STATS: &[(&str, &[u8])] = &[
+    season_entry!("20252026", "stats.json"),
+    season_entry!("20242025", "stats.json"),
+    season_entry!("20232024", "stats.json"),
+    season_entry!("20222023", "stats.json"),
+    season_entry!("20212022", "stats.json"),
+    season_entry!("20202021", "stats.json"),
+    season_entry!("20192020", "stats.json"),
+    season_entry!("20182019", "stats.json"),
+    season_entry!("20172018", "stats.json"),
+    season_entry!("20162017", "stats.json"),
+    season_entry!("20152016", "stats.json"),
+    season_entry!("20142015", "stats.json"),
+    season_entry!("20132014", "stats.json"),
+    season_entry!("20122013", "stats.json"),
+    season_entry!("20112012", "stats.json"),
+    season_entry!("20102011", "stats.json"),
+    season_entry!("20092010", "stats.json"),
+    season_entry!("20082009", "stats.json"),
+    season_entry!("20072008", "stats.json"),
+    season_entry!("20062007", "stats.json"),
+    season_entry!("20052006", "stats.json"),
+    season_entry!("20032004", "stats.json"),
+    season_entry!("20022003", "stats.json"),
+    season_entry!("20012002", "stats.json"),
+    season_entry!("20002001", "stats.json"),
+    season_entry!("19992000", "stats.json"),
+    season_entry!("19981999", "stats.json"),
+    season_entry!("19971998", "stats.json"),
+    season_entry!("19961997", "stats.json"),
+    season_entry!("19951996", "stats.json"),
+    season_entry!("19941995", "stats.json"),
+    season_entry!("19931994", "stats.json"),
+    season_entry!("19921993", "stats.json"),
+    season_entry!("19911992", "stats.json"),
+    season_entry!("19901991", "stats.json"),
+    season_entry!("19891990", "stats.json"),
+    season_entry!("19881989", "stats.json"),
+    season_entry!("19871988", "stats.json"),
+];
 
-static BIOS_20232024: &[u8] = season_bytes!("20232024", "bios.json");
-static STATS_20232024: &[u8] = season_bytes!("20232024", "stats.json");
+static BUNDLED_GOALIES: &[(&str, &[u8])] = &[
+    season_entry!("20252026", "goalie-stats.json"),
+    season_entry!("20242025", "goalie-stats.json"),
+    season_entry!("20232024", "goalie-stats.json"),
+    season_entry!("20222023", "goalie-stats.json"),
+    season_entry!("20212022", "goalie-stats.json"),
+    season_entry!("20202021", "goalie-stats.json"),
+    season_entry!("20192020", "goalie-stats.json"),
+    season_entry!("20182019", "goalie-stats.json"),
+    season_entry!("20172018", "goalie-stats.json"),
+    season_entry!("20162017", "goalie-stats.json"),
+    season_entry!("20152016", "goalie-stats.json"),
+    season_entry!("20142015", "goalie-stats.json"),
+    season_entry!("20132014", "goalie-stats.json"),
+    season_entry!("20122013", "goalie-stats.json"),
+    season_entry!("20112012", "goalie-stats.json"),
+    season_entry!("20102011", "goalie-stats.json"),
+    season_entry!("20092010", "goalie-stats.json"),
+    season_entry!("20082009", "goalie-stats.json"),
+    season_entry!("20072008", "goalie-stats.json"),
+    season_entry!("20062007", "goalie-stats.json"),
+    season_entry!("20052006", "goalie-stats.json"),
+    season_entry!("20032004", "goalie-stats.json"),
+    season_entry!("20022003", "goalie-stats.json"),
+    season_entry!("20012002", "goalie-stats.json"),
+    season_entry!("20002001", "goalie-stats.json"),
+    season_entry!("19992000", "goalie-stats.json"),
+    season_entry!("19981999", "goalie-stats.json"),
+    season_entry!("19971998", "goalie-stats.json"),
+    season_entry!("19961997", "goalie-stats.json"),
+    season_entry!("19951996", "goalie-stats.json"),
+    season_entry!("19941995", "goalie-stats.json"),
+    season_entry!("19931994", "goalie-stats.json"),
+    season_entry!("19921993", "goalie-stats.json"),
+    season_entry!("19911992", "goalie-stats.json"),
+    season_entry!("19901991", "goalie-stats.json"),
+    season_entry!("19891990", "goalie-stats.json"),
+    season_entry!("19881989", "goalie-stats.json"),
+    season_entry!("19871988", "goalie-stats.json"),
+];
 
-static BIOS_20222023: &[u8] = season_bytes!("20222023", "bios.json");
-static STATS_20222023: &[u8] = season_bytes!("20222023", "stats.json");
+static BUNDLED_PLAYOFF_BIOS: &[(&str, &[u8])] = &[
+    season_entry!("20252026", "playoff-bios.json"),
+    season_entry!("20242025", "playoff-bios.json"),
+    season_entry!("20232024", "playoff-bios.json"),
+    season_entry!("20222023", "playoff-bios.json"),
+    season_entry!("20212022", "playoff-bios.json"),
+    season_entry!("20202021", "playoff-bios.json"),
+    season_entry!("20192020", "playoff-bios.json"),
+    season_entry!("20182019", "playoff-bios.json"),
+    season_entry!("20172018", "playoff-bios.json"),
+    season_entry!("20162017", "playoff-bios.json"),
+    season_entry!("20152016", "playoff-bios.json"),
+    season_entry!("20142015", "playoff-bios.json"),
+    season_entry!("20132014", "playoff-bios.json"),
+    season_entry!("20122013", "playoff-bios.json"),
+    season_entry!("20112012", "playoff-bios.json"),
+    season_entry!("20102011", "playoff-bios.json"),
+    season_entry!("20092010", "playoff-bios.json"),
+    season_entry!("20082009", "playoff-bios.json"),
+    season_entry!("20072008", "playoff-bios.json"),
+    season_entry!("20062007", "playoff-bios.json"),
+    season_entry!("20052006", "playoff-bios.json"),
+    season_entry!("20032004", "playoff-bios.json"),
+    season_entry!("20022003", "playoff-bios.json"),
+    season_entry!("20012002", "playoff-bios.json"),
+    season_entry!("20002001", "playoff-bios.json"),
+    season_entry!("19992000", "playoff-bios.json"),
+    season_entry!("19981999", "playoff-bios.json"),
+    season_entry!("19971998", "playoff-bios.json"),
+    season_entry!("19961997", "playoff-bios.json"),
+    season_entry!("19951996", "playoff-bios.json"),
+    season_entry!("19941995", "playoff-bios.json"),
+    season_entry!("19931994", "playoff-bios.json"),
+    season_entry!("19921993", "playoff-bios.json"),
+    season_entry!("19911992", "playoff-bios.json"),
+    season_entry!("19901991", "playoff-bios.json"),
+    season_entry!("19891990", "playoff-bios.json"),
+    season_entry!("19881989", "playoff-bios.json"),
+    season_entry!("19871988", "playoff-bios.json"),
+];
 
-static BIOS_20212022: &[u8] = season_bytes!("20212022", "bios.json");
-static STATS_20212022: &[u8] = season_bytes!("20212022", "stats.json");
+static BUNDLED_PLAYOFF_STATS: &[(&str, &[u8])] = &[
+    season_entry!("20252026", "playoff-stats.json"),
+    season_entry!("20242025", "playoff-stats.json"),
+    season_entry!("20232024", "playoff-stats.json"),
+    season_entry!("20222023", "playoff-stats.json"),
+    season_entry!("20212022", "playoff-stats.json"),
+    season_entry!("20202021", "playoff-stats.json"),
+    season_entry!("20192020", "playoff-stats.json"),
+    season_entry!("20182019", "playoff-stats.json"),
+    season_entry!("20172018", "playoff-stats.json"),
+    season_entry!("20162017", "playoff-stats.json"),
+    season_entry!("20152016", "playoff-stats.json"),
+    season_entry!("20142015", "playoff-stats.json"),
+    season_entry!("20132014", "playoff-stats.json"),
+    season_entry!("20122013", "playoff-stats.json"),
+    season_entry!("20112012", "playoff-stats.json"),
+    season_entry!("20102011", "playoff-stats.json"),
+    season_entry!("20092010", "playoff-stats.json"),
+    season_entry!("20082009", "playoff-stats.json"),
+    season_entry!("20072008", "playoff-stats.json"),
+    season_entry!("20062007", "playoff-stats.json"),
+    season_entry!("20052006", "playoff-stats.json"),
+    season_entry!("20032004", "playoff-stats.json"),
+    season_entry!("20022003", "playoff-stats.json"),
+    season_entry!("20012002", "playoff-stats.json"),
+    season_entry!("20002001", "playoff-stats.json"),
+    season_entry!("19992000", "playoff-stats.json"),
+    season_entry!("19981999", "playoff-stats.json"),
+    season_entry!("19971998", "playoff-stats.json"),
+    season_entry!("19961997", "playoff-stats.json"),
+    season_entry!("19951996", "playoff-stats.json"),
+    season_entry!("19941995", "playoff-stats.json"),
+    season_entry!("19931994", "playoff-stats.json"),
+    season_entry!("19921993", "playoff-stats.json"),
+    season_entry!("19911992", "playoff-stats.json"),
+    season_entry!("19901991", "playoff-stats.json"),
+    season_entry!("19891990", "playoff-stats.json"),
+    season_entry!("19881989", "playoff-stats.json"),
+    season_entry!("19871988", "playoff-stats.json"),
+];
 
-// Goalie summaries — Phase G.1. Same five seasons embedded, separate
-// arrays so the bins/stats lookups stay narrow.
-static GOALIES_20252026: &[u8] = season_bytes!("20252026", "goalie-stats.json");
-static GOALIES_20242025: &[u8] = season_bytes!("20242025", "goalie-stats.json");
-static GOALIES_20232024: &[u8] = season_bytes!("20232024", "goalie-stats.json");
-static GOALIES_20222023: &[u8] = season_bytes!("20222023", "goalie-stats.json");
-static GOALIES_20212022: &[u8] = season_bytes!("20212022", "goalie-stats.json");
+static BUNDLED_PLAYOFF_GOALIES: &[(&str, &[u8])] = &[
+    season_entry!("20252026", "playoff-goalie-stats.json"),
+    season_entry!("20242025", "playoff-goalie-stats.json"),
+    season_entry!("20232024", "playoff-goalie-stats.json"),
+    season_entry!("20222023", "playoff-goalie-stats.json"),
+    season_entry!("20212022", "playoff-goalie-stats.json"),
+    season_entry!("20202021", "playoff-goalie-stats.json"),
+    season_entry!("20192020", "playoff-goalie-stats.json"),
+    season_entry!("20182019", "playoff-goalie-stats.json"),
+    season_entry!("20172018", "playoff-goalie-stats.json"),
+    season_entry!("20162017", "playoff-goalie-stats.json"),
+    season_entry!("20152016", "playoff-goalie-stats.json"),
+    season_entry!("20142015", "playoff-goalie-stats.json"),
+    season_entry!("20132014", "playoff-goalie-stats.json"),
+    season_entry!("20122013", "playoff-goalie-stats.json"),
+    season_entry!("20112012", "playoff-goalie-stats.json"),
+    season_entry!("20102011", "playoff-goalie-stats.json"),
+    season_entry!("20092010", "playoff-goalie-stats.json"),
+    season_entry!("20082009", "playoff-goalie-stats.json"),
+    season_entry!("20072008", "playoff-goalie-stats.json"),
+    season_entry!("20062007", "playoff-goalie-stats.json"),
+    season_entry!("20052006", "playoff-goalie-stats.json"),
+    season_entry!("20032004", "playoff-goalie-stats.json"),
+    season_entry!("20022003", "playoff-goalie-stats.json"),
+    season_entry!("20012002", "playoff-goalie-stats.json"),
+    season_entry!("20002001", "playoff-goalie-stats.json"),
+    season_entry!("19992000", "playoff-goalie-stats.json"),
+    season_entry!("19981999", "playoff-goalie-stats.json"),
+    season_entry!("19971998", "playoff-goalie-stats.json"),
+    season_entry!("19961997", "playoff-goalie-stats.json"),
+    season_entry!("19951996", "playoff-goalie-stats.json"),
+    season_entry!("19941995", "playoff-goalie-stats.json"),
+    season_entry!("19931994", "playoff-goalie-stats.json"),
+    season_entry!("19921993", "playoff-goalie-stats.json"),
+    season_entry!("19911992", "playoff-goalie-stats.json"),
+    season_entry!("19901991", "playoff-goalie-stats.json"),
+    season_entry!("19891990", "playoff-goalie-stats.json"),
+    season_entry!("19881989", "playoff-goalie-stats.json"),
+    season_entry!("19871988", "playoff-goalie-stats.json"),
+];
 
-// Transactions — Phases T.3 + T.6. All five bundled seasons captured from
-// ESPN's site.api via `cargo run --example probe_espn_seasons -- --write-bundle`.
-static TRANSACTIONS_20252026: &[u8] = season_bytes!("20252026", "transactions.json");
-static TRANSACTIONS_20242025: &[u8] = season_bytes!("20242025", "transactions.json");
-static TRANSACTIONS_20232024: &[u8] = season_bytes!("20232024", "transactions.json");
-static TRANSACTIONS_20222023: &[u8] = season_bytes!("20222023", "transactions.json");
-static TRANSACTIONS_20212022: &[u8] = season_bytes!("20212022", "transactions.json");
+// Transactions — Phases T.3 + T.6. Modern era only — pre-2021 transaction
+// logs aren't on ESPN's site.api. Captured via
+// `cargo run --example probe_espn_seasons -- --write-bundle`.
+static BUNDLED_TRANSACTIONS: &[(&str, &[u8])] = &[
+    season_entry!("20252026", "transactions.json"),
+    season_entry!("20242025", "transactions.json"),
+    season_entry!("20232024", "transactions.json"),
+    season_entry!("20222023", "transactions.json"),
+    season_entry!("20212022", "transactions.json"),
+];
 
-// Hart.6.3 — playoff bios + stats + goalies for the five bundled seasons.
-// The 2025-26 file ships as `[]` (Cup not yet contested as of 2026-05-02);
-// the load surfaces MissingBundle{Playoff} cleanly via Hart.6.4 dispatch.
-// Authored 2026-05-02 by `icelines fetch stats|goalies --type playoff`
-// against api.nhle.com (Hart.6.5 surface).
-static PLAYOFF_BIOS_20252026: &[u8] = season_bytes!("20252026", "playoff-bios.json");
-static PLAYOFF_BIOS_20242025: &[u8] = season_bytes!("20242025", "playoff-bios.json");
-static PLAYOFF_BIOS_20232024: &[u8] = season_bytes!("20232024", "playoff-bios.json");
-static PLAYOFF_BIOS_20222023: &[u8] = season_bytes!("20222023", "playoff-bios.json");
-static PLAYOFF_BIOS_20212022: &[u8] = season_bytes!("20212022", "playoff-bios.json");
-
-static PLAYOFF_STATS_20252026: &[u8] = season_bytes!("20252026", "playoff-stats.json");
-static PLAYOFF_STATS_20242025: &[u8] = season_bytes!("20242025", "playoff-stats.json");
-static PLAYOFF_STATS_20232024: &[u8] = season_bytes!("20232024", "playoff-stats.json");
-static PLAYOFF_STATS_20222023: &[u8] = season_bytes!("20222023", "playoff-stats.json");
-static PLAYOFF_STATS_20212022: &[u8] = season_bytes!("20212022", "playoff-stats.json");
-
-static PLAYOFF_GOALIES_20252026: &[u8] = season_bytes!("20252026", "playoff-goalie-stats.json");
-static PLAYOFF_GOALIES_20242025: &[u8] = season_bytes!("20242025", "playoff-goalie-stats.json");
-static PLAYOFF_GOALIES_20232024: &[u8] = season_bytes!("20232024", "playoff-goalie-stats.json");
-static PLAYOFF_GOALIES_20222023: &[u8] = season_bytes!("20222023", "playoff-goalie-stats.json");
-static PLAYOFF_GOALIES_20212022: &[u8] = season_bytes!("20212022", "playoff-goalie-stats.json");
+/// Lookup helper — returns the embedded bytes for `season` from `table`,
+/// or `None` if the season isn't in that table.
+#[inline]
+fn lookup<'a>(table: &'a [(&'static str, &'static [u8])], season: &str) -> Option<&'a [u8]> {
+    table.iter().find_map(|(s, b)| (*s == season).then_some(*b))
+}
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
-/// List of bundled seasons, newest first.
-pub const BUNDLED_SEASONS: &[&str] = &["20252026", "20242025", "20232024", "20222023", "20212022"];
+/// List of bundled seasons, newest first. Now covers every NHL season
+/// from 1987-88 forward except the 2004-05 lockout (38 entries).
+pub const BUNDLED_SEASONS: &[&str] = &[
+    "20252026", "20242025", "20232024", "20222023", "20212022", "20202021", "20192020", "20182019",
+    "20172018", "20162017", "20152016", "20142015", "20132014", "20122013", "20112012", "20102011",
+    "20092010", "20082009", "20072008", "20062007", "20052006", "20032004", "20022003", "20012002",
+    "20002001", "19992000", "19981999", "19971998", "19961997", "19951996", "19941995", "19931994",
+    "19921993", "19911992", "19901991", "19891990", "19881989", "19871988",
+];
+
+/// Modern-era seasons that carry the full Phase Lindsay Tier-1 report
+/// suite (realtime, time-on-ice, goalsForAgainst, goalie-advanced,
+/// goalie-savesByStrength). Subset of `BUNDLED_SEASONS`.
+///
+/// Used by `aggregate.rs` / `dashboard_panel.rs` callers that intend to
+/// scope to "rich-data seasons" rather than the full historical span.
+pub const MODERN_BUNDLED_SEASONS: &[&str] =
+    &["20252026", "20242025", "20232024", "20222023", "20212022"];
 
 /// Phase Lindsay L.1.4 — bundled fallback for the new Tier-1 reports
 /// (timeonice, goalsForAgainst, goalie-advanced, goalie-savesByStrength,
@@ -109,43 +360,22 @@ pub fn report_for_lindsay(
 
 /// Deserialize bundled bios for a season. Returns None if season not bundled.
 pub fn get_bios(season: &str) -> Option<Vec<SkaterBio>> {
-    let bytes = match season {
-        "20252026" => BIOS_20252026,
-        "20242025" => BIOS_20242025,
-        "20232024" => BIOS_20232024,
-        "20222023" => BIOS_20222023,
-        "20212022" => BIOS_20212022,
-        _ => return None,
-    };
+    let bytes = lookup(BUNDLED_BIOS, season)?;
     serde_json::from_slice(bytes).ok()
 }
 
 /// Deserialize bundled stats for a season. Returns None if season not bundled.
 pub fn get_stats(season: &str) -> Option<Vec<SkaterStats>> {
-    let bytes = match season {
-        "20252026" => STATS_20252026,
-        "20242025" => STATS_20242025,
-        "20232024" => STATS_20232024,
-        "20222023" => STATS_20222023,
-        "20212022" => STATS_20212022,
-        _ => return None,
-    };
+    let bytes = lookup(BUNDLED_STATS, season)?;
     serde_json::from_slice(bytes).ok()
 }
 
 /// Deserialize bundled goalie stats for a season (Phase G.1). Returns
-/// None when the season isn't one of the five embedded current seasons.
-/// Use `get_goalie_stats_installed` to read from `~/.icelines/seasons/`
-/// for historical seasons that were brought in via `data install`.
+/// `None` when the season isn't one of the 38 embedded seasons. Use
+/// `get_goalie_stats_installed` to read from `~/.icelines/seasons/` for
+/// pre-1987 seasons or fresher data brought in via `data install`.
 pub fn get_goalie_stats(season: &str) -> Option<Vec<GoalieStats>> {
-    let bytes = match season {
-        "20252026" => GOALIES_20252026,
-        "20242025" => GOALIES_20242025,
-        "20232024" => GOALIES_20232024,
-        "20222023" => GOALIES_20222023,
-        "20212022" => GOALIES_20212022,
-        _ => return None,
-    };
+    let bytes = lookup(BUNDLED_GOALIES, season)?;
     serde_json::from_slice(bytes).ok()
 }
 
@@ -173,16 +403,10 @@ pub struct TransactionsEnvelope {
 }
 
 /// Read embedded transactions for a bundled season. Returns None for any
-/// season not in the include_bytes! set.
+/// season not in the include_bytes! set (modern era only — pre-2021
+/// transaction logs aren't available on ESPN's site.api).
 pub fn get_transactions(season: &str) -> Option<TransactionsEnvelope> {
-    let bytes = match season {
-        "20252026" => TRANSACTIONS_20252026,
-        "20242025" => TRANSACTIONS_20242025,
-        "20232024" => TRANSACTIONS_20232024,
-        "20222023" => TRANSACTIONS_20222023,
-        "20212022" => TRANSACTIONS_20212022,
-        _ => return None,
-    };
+    let bytes = lookup(BUNDLED_TRANSACTIONS, season)?;
     serde_json::from_slice(bytes).ok()
 }
 
@@ -345,41 +569,20 @@ pub fn get_playoff_goalie_stats_installed(season_id: &str) -> Option<Vec<GoalieS
 /// isn't in `BUNDLED_SEASONS`; otherwise the embedded array (which may
 /// be empty for current-season-not-yet-played).
 pub fn get_playoff_bios(season_id: &str) -> Option<Vec<crate::schema::SkaterBio>> {
-    let bytes = match season_id {
-        "20252026" => PLAYOFF_BIOS_20252026,
-        "20242025" => PLAYOFF_BIOS_20242025,
-        "20232024" => PLAYOFF_BIOS_20232024,
-        "20222023" => PLAYOFF_BIOS_20222023,
-        "20212022" => PLAYOFF_BIOS_20212022,
-        _ => return None,
-    };
+    let bytes = lookup(BUNDLED_PLAYOFF_BIOS, season_id)?;
     serde_json::from_slice(bytes).ok()
 }
 
 /// Playoff stats for a bundled season. See `get_playoff_bios` for
 /// semantics; same `BUNDLED_SEASONS` membership rule applies.
 pub fn get_playoff_stats(season_id: &str) -> Option<Vec<crate::schema::SkaterStats>> {
-    let bytes = match season_id {
-        "20252026" => PLAYOFF_STATS_20252026,
-        "20242025" => PLAYOFF_STATS_20242025,
-        "20232024" => PLAYOFF_STATS_20232024,
-        "20222023" => PLAYOFF_STATS_20222023,
-        "20212022" => PLAYOFF_STATS_20212022,
-        _ => return None,
-    };
+    let bytes = lookup(BUNDLED_PLAYOFF_STATS, season_id)?;
     serde_json::from_slice(bytes).ok()
 }
 
 /// Playoff goalie stats for a bundled season.
 pub fn get_playoff_goalie_stats(season_id: &str) -> Option<Vec<GoalieStats>> {
-    let bytes = match season_id {
-        "20252026" => PLAYOFF_GOALIES_20252026,
-        "20242025" => PLAYOFF_GOALIES_20242025,
-        "20232024" => PLAYOFF_GOALIES_20232024,
-        "20222023" => PLAYOFF_GOALIES_20222023,
-        "20212022" => PLAYOFF_GOALIES_20212022,
-        _ => return None,
-    };
+    let bytes = lookup(BUNDLED_PLAYOFF_GOALIES, season_id)?;
     serde_json::from_slice(bytes).ok()
 }
 
@@ -617,31 +820,23 @@ mod tests {
     #[test]
     fn l0_bundled_current_season_bios_parse() {
         // Verify bundled JSON parses correctly — catches malformed data at compile time
-        let result = serde_json::from_slice::<Vec<SkaterBio>>(BIOS_20252026);
-        match &result {
-            Err(e) => panic!("20252026 bios failed to parse: {e}"),
-            Ok(bios) => {
-                assert!(!bios.is_empty(), "bundled bios must not be empty");
-                assert!(
-                    bios.len() > 500,
-                    "expected 900+ players, got {}",
-                    bios.len()
-                );
-            }
-        }
+        let bios = get_bios("20252026").expect("20252026 must be bundled");
+        assert!(!bios.is_empty(), "bundled bios must not be empty");
+        assert!(
+            bios.len() > 500,
+            "expected 900+ players, got {}",
+            bios.len()
+        );
     }
 
     #[test]
     fn l0_bundled_current_season_stats_parse() {
-        let result = serde_json::from_slice::<Vec<SkaterStats>>(STATS_20252026);
-        match &result {
-            Err(e) => panic!("20252026 stats failed to parse: {e}"),
-            Ok(stats) => assert!(
-                stats.len() > 500,
-                "expected 900+ players, got {}",
-                stats.len()
-            ),
-        }
+        let stats = get_stats("20252026").expect("20252026 must be bundled");
+        assert!(
+            stats.len() > 500,
+            "expected 900+ players, got {}",
+            stats.len()
+        );
     }
 
     #[test]
@@ -653,23 +848,68 @@ mod tests {
     }
 
     #[test]
-    fn l0_bundled_all_5_seasons_present() {
+    fn l0_bundled_unknown_season_returns_none() {
+        // 2004-05 is the lockout year — never has data, never bundled.
+        assert!(get_bios("20042005").is_none());
+        assert!(get_stats("20042005").is_none());
+        // Pre-1987 seasons have no data files in the repo.
+        assert!(get_bios("19861987").is_none());
+        assert!(get_stats("19861987").is_none());
+    }
+
+    /// L.7b — every season in `BUNDLED_SEASONS` has bios + stats +
+    /// goalie-stats + playoff-{bios,stats,goalie-stats}. 38 seasons × 6
+    /// kinds = 228 cells must all be `Some`. Catches a missing data
+    /// file at the bundle-authoring stage rather than at runtime.
+    #[test]
+    fn l0_bundled_all_seasons_have_all_six_kinds() {
+        assert_eq!(
+            BUNDLED_SEASONS.len(),
+            38,
+            "BUNDLED_SEASONS drift — expected 38 entries (1987-88 forward, no 2004-05 lockout)"
+        );
         for season in BUNDLED_SEASONS {
             assert!(
                 get_bios(season).is_some(),
-                "season {season} bios not bundled"
+                "season {season} missing bios.json"
             );
             assert!(
                 get_stats(season).is_some(),
-                "season {season} stats not bundled"
+                "season {season} missing stats.json"
+            );
+            assert!(
+                get_goalie_stats(season).is_some(),
+                "season {season} missing goalie-stats.json"
+            );
+            assert!(
+                get_playoff_bios(season).is_some(),
+                "season {season} missing playoff-bios.json"
+            );
+            assert!(
+                get_playoff_stats(season).is_some(),
+                "season {season} missing playoff-stats.json"
+            );
+            assert!(
+                get_playoff_goalie_stats(season).is_some(),
+                "season {season} missing playoff-goalie-stats.json"
             );
         }
     }
 
+    /// L.7b — `MODERN_BUNDLED_SEASONS` is a strict subset of
+    /// `BUNDLED_SEASONS` and matches the 5 seasons that carry the full
+    /// Phase Lindsay Tier-1 report suite.
     #[test]
-    fn l0_bundled_unknown_season_returns_none() {
-        assert!(get_bios("19951996").is_none());
-        assert!(get_stats("19951996").is_none());
+    fn l0_modern_bundled_is_subset_of_all_bundled() {
+        for season in MODERN_BUNDLED_SEASONS {
+            assert!(
+                BUNDLED_SEASONS.contains(season),
+                "modern season {season} must also be in BUNDLED_SEASONS"
+            );
+        }
+        assert_eq!(MODERN_BUNDLED_SEASONS.len(), 5);
+        // Modern is the head of BUNDLED_SEASONS (newest 5).
+        assert_eq!(MODERN_BUNDLED_SEASONS, &BUNDLED_SEASONS[..5]);
     }
 
     // ── Phase 8c: bundled playoffs ─────────────────────────────────────────
@@ -720,10 +960,10 @@ mod tests {
     // ── Hart.6.2 — playoff stub accessors ───────────────────────────────────
 
     /// Hart.6.3 — every bundled season's playoff bios deserialize cleanly.
-    /// 4 of 5 carry real playoff data (2021-22 through 2024-25 Cup runs);
+    /// 37 of 38 carry real playoff data (every contested year);
     /// 2025-26 ships as `[]` (Cup not yet contested).
     #[test]
-    fn l0_hart6_3_get_playoff_bios_parses_for_all_5_bundled_seasons() {
+    fn l0_hart6_3_get_playoff_bios_parses_for_all_bundled_seasons() {
         for season in BUNDLED_SEASONS {
             let v = get_playoff_bios(season);
             assert!(v.is_some(), "season {season} must be in the bundled set");
@@ -735,8 +975,9 @@ mod tests {
             get_playoff_bios("20252026").unwrap().is_empty(),
             "2025-26 ships as [] until the playoffs are bundled"
         );
-        // Other 4 must have real data.
-        for season in ["20242025", "20232024", "20222023", "20212022"] {
+        // Every other bundled season had a contested playoff and must
+        // carry ≥100 roster rows.
+        for season in BUNDLED_SEASONS.iter().filter(|s| **s != "20252026") {
             let count = get_playoff_bios(season).unwrap().len();
             assert!(
                 count > 100,
@@ -747,10 +988,11 @@ mod tests {
 
     /// Hart.6.3 — every bundled season's playoff stats parse and the
     /// row count matches the bios count for that season (every player
-    /// who has a bio also has a stats row).
+    /// who has a bio also has a stats row). Skips 2025-26 (empty until
+    /// playoffs run).
     #[test]
     fn l0_hart6_3_get_playoff_stats_matches_bios_count_per_season() {
-        for season in ["20242025", "20232024", "20222023", "20212022"] {
+        for season in BUNDLED_SEASONS.iter().filter(|s| **s != "20252026") {
             let bios = get_playoff_bios(season).unwrap();
             let stats = get_playoff_stats(season).unwrap();
             assert_eq!(
@@ -768,7 +1010,7 @@ mod tests {
     /// where seasons could get crossed.
     #[test]
     fn l0_hart6_3_playoff_stats_seasonid_matches_filename() {
-        for season in ["20242025", "20232024", "20222023", "20212022"] {
+        for season in BUNDLED_SEASONS.iter().filter(|s| **s != "20252026") {
             let expected: u32 = season.parse().unwrap();
             let stats = get_playoff_stats(season).unwrap();
             for s in &stats {
@@ -787,7 +1029,7 @@ mod tests {
     /// Option.)
     #[test]
     fn l0_hart6_3_playoff_goalies_seasonid_matches_filename() {
-        for season in ["20242025", "20232024", "20222023", "20212022"] {
+        for season in BUNDLED_SEASONS.iter().filter(|s| **s != "20252026") {
             let expected: u32 = season.parse().unwrap();
             let goalies = get_playoff_goalie_stats(season).unwrap();
             for g in &goalies {
@@ -838,10 +1080,10 @@ mod tests {
     /// `with_temp_home` SQLite tests in icelines-cli).
     #[test]
     fn l0_hart6_2_get_playoff_data_returns_none_for_unbundled() {
-        // 19961997 is not in BUNDLED_SEASONS — returns None.
-        assert!(get_playoff_bios("19961997").is_none());
-        assert!(get_playoff_stats("19961997").is_none());
-        assert!(get_playoff_goalie_stats("19961997").is_none());
+        // 2004-05 lockout — never had data and can never be bundled.
+        assert!(get_playoff_bios("20042005").is_none());
+        assert!(get_playoff_stats("20042005").is_none());
+        assert!(get_playoff_goalie_stats("20042005").is_none());
         // 18800000 — clearly fictitious, also None.
         assert!(get_playoff_bios("18800000").is_none());
     }

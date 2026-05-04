@@ -383,30 +383,18 @@ pub fn load_into_repo(
     // is collected through the live game feed (not a separate dataset),
     // so the playoff path returns an empty vec WITHOUT pushing to
     // `missing` — the absence is by design, not a partial fetch.
+    // Phase Reports — realtime missing is no longer surfaced as a
+    // banner. The Reports overlay (Reports.4) lets users opt in/out
+    // explicitly; an absent realtime.json is downstream-handled per
+    // player (Option<&SkaterRealtime>) and the Hits/Blocks columns
+    // either render with their values or get hidden when the user
+    // toggles realtime off. The missing-data banner only ever fired
+    // for realtime in practice (other reports also missing-banner
+    // but those branches stay) and was noise-not-signal.
     let realtime: Vec<SkaterRealtime> = match season_type {
-        SeasonType::Regular => {
-            match store.read_tier::<Vec<SkaterRealtime>>(&SnapshotTier::Realtime, "realtime.json") {
-                Ok(rt) if !rt.is_empty() => rt,
-                Ok(_empty) => {
-                    missing.push(MissingSource::Realtime {
-                        season: season_str.clone(),
-                        season_type,
-                        reason: "realtime.json present but empty".into(),
-                    });
-                    missing_files.push("snapshot:realtime.json".into());
-                    Vec::new()
-                }
-                Err(e) => {
-                    missing.push(MissingSource::Realtime {
-                        season: season_str.clone(),
-                        season_type,
-                        reason: format!("realtime.json unreadable: {e}"),
-                    });
-                    missing_files.push("snapshot:realtime.json".into());
-                    Vec::new()
-                }
-            }
-        }
+        SeasonType::Regular => store
+            .read_tier::<Vec<SkaterRealtime>>(&SnapshotTier::Realtime, "realtime.json")
+            .unwrap_or_default(),
         SeasonType::Playoff => Vec::new(),
     };
     // Hart.6.4 / D6: MoneyPuck doesn't expose a playoff endpoint
@@ -497,7 +485,12 @@ pub fn load_into_repo(
 
     // ── Populate repository ─────────────────────────────────────────────────
 
-    let mut repo = StatsRepository::new();
+    // Gaps.2/3 — bump the LRU cap to 80 windows so a downstream lazy
+    // career fan-out doesn't evict the active season (38 historical
+    // seasons × 2 types ≈ 76 windows + active = 77; cap of 80 gives
+    // headroom). Memory cost is bounded by actual rows inserted —
+    // single-player career windows hold ~1 row each.
+    let mut repo = StatsRepository::with_lru_cap(80);
 
     // 1. Skater identities + stats.
     for bio in &bios_dedup {
@@ -666,6 +659,155 @@ where
     }
 
     Ok(Some(parsed.data))
+}
+
+/// Gaps.2/5 — resolve a player NAME (case-insensitive partial match)
+/// to a PlayerId by walking bundled season bios newest-first. Returns
+/// the first matching id, or `None` if no bundle carries the player.
+///
+/// Used by the player/compare CLI commands so a query like
+/// `query player Wayne Gretzky` resolves even when the active season
+/// is post-1999 and Gretzky's bio isn't in the active repo.
+///
+/// Order: skater bios first across all bundled seasons, then goalie
+/// bios. Newest-first so a name collision (rare) prefers the most
+/// recent player.
+pub fn resolve_player_id_by_name(name: &str) -> Option<u32> {
+    use crate::bundled;
+    let needle = icelines_core::name::normalize_name(name);
+
+    // Skater bios first.
+    for season_id in bundled::BUNDLED_SEASONS {
+        if let Some(bios) = bundled::get_bios(season_id) {
+            if let Some(bio) = bios.iter().find(|b| {
+                icelines_core::name::normalize_name(&b.skater_full_name).contains(&needle)
+            }) {
+                return Some(bio.player_id);
+            }
+        }
+    }
+    // Goalie summary rows carry the name on `goalie_full_name`.
+    for season_id in bundled::BUNDLED_SEASONS {
+        if let Some(goalies) = bundled::get_goalie_stats(season_id) {
+            if let Some(g) = goalies.iter().find(|g| {
+                icelines_core::name::normalize_name(&g.goalie_full_name).contains(&needle)
+            }) {
+                return Some(g.player_id);
+            }
+        }
+    }
+    None
+}
+
+// ── Phase UX.1 — lazy per-player career loader ──────────────────────────────
+
+/// Pull a single player's bios + stats rows from every bundled season
+/// and merge them into `repo`. Used by the TUI player card to surface a
+/// player's full historical record without paying the cost of loading
+/// every player × every season into the active repo.
+///
+/// Behavior:
+/// - Iterates `BUNDLED_SEASONS` (newest-first); for each season, walks
+///   the bundled bios looking for a row whose `playerId == pid`.
+/// - When found, upserts identity (if not already present) and stats
+///   for both Regular and Playoff (if the playoff bundle carries the
+///   player) into `repo`.
+/// - Skips seasons the player didn't appear in.
+/// - Returns the count of (season, season_type) windows inserted —
+///   useful for tests and status messaging.
+///
+/// Idempotent: re-calling for the same `pid` is a no-op aside from
+/// re-running the bundle scans (~5 ms). Caller should dedupe via a
+/// HashSet at the App layer to avoid the redundant scans.
+///
+/// Doesn't touch realtime / moneypuck — those are snapshot-only and
+/// not bundled. Career-table consumers handle missing realtime via the
+/// per-season `Option<&SkaterRealtime>` already.
+pub fn load_player_career_into_repo(
+    repo: &mut StatsRepository,
+    pid: PlayerId,
+) -> Result<usize, RepoError> {
+    use crate::bundled;
+    use icelines_core::season_stats::SeasonType;
+
+    let mut inserted = 0usize;
+    // Identity merge across many seasons trips `LikelyIdReissue` when
+    // `firstSeasonForGameType` differs between regular and playoff bios
+    // (the API anchors playoff bios to the player's first PLAYOFF
+    // season, regular bios to first regular season — they won't match
+    // for any player). The fan-out only needs ONE identity row; subsequent
+    // seasons write stats directly. Track first-success per pid here.
+    let mut identity_inserted = repo.identity(pid).is_some();
+
+    for season_id in bundled::BUNDLED_SEASONS {
+        let season_u32: u32 = match season_id.parse() {
+            Ok(n) => n,
+            Err(_) => continue,
+        };
+        let season = Season(season_u32);
+
+        // ── Regular season ──
+        if let Some(bios) = bundled::get_bios(season_id) {
+            if let Some(bio) = bios.iter().find(|b| b.player_id == pid.0) {
+                let position = match Position::from_api_code(&bio.position_code) {
+                    Some(p) if !matches!(p, Position::Goalie) => p,
+                    _ => continue, // Goalie rows handled by the goalie path
+                };
+                if !identity_inserted {
+                    let identity = build_identity(pid, bio);
+                    repo.upsert_identity(identity)?;
+                    identity_inserted = true;
+                }
+
+                let stats_vec = bundled::get_stats(season_id).unwrap_or_default();
+                let stats_row = stats_vec.iter().find(|s| s.player_id == pid.0);
+                let stats = build_skater_stats(
+                    pid,
+                    season,
+                    SeasonType::Regular,
+                    position,
+                    bio,
+                    stats_row,
+                    None,
+                    None,
+                );
+                repo.upsert_stats(stats)?;
+                inserted += 1;
+            }
+        }
+
+        // ── Playoff season ──
+        if let Some(po_bios) = bundled::get_playoff_bios(season_id) {
+            if let Some(bio) = po_bios.iter().find(|b| b.player_id == pid.0) {
+                let position = match Position::from_api_code(&bio.position_code) {
+                    Some(p) if !matches!(p, Position::Goalie) => p,
+                    _ => continue,
+                };
+                if !identity_inserted {
+                    let identity = build_identity(pid, bio);
+                    repo.upsert_identity(identity)?;
+                    identity_inserted = true;
+                }
+
+                let po_stats_vec = bundled::get_playoff_stats(season_id).unwrap_or_default();
+                let stats_row = po_stats_vec.iter().find(|s| s.player_id == pid.0);
+                let stats = build_skater_stats(
+                    pid,
+                    season,
+                    SeasonType::Playoff,
+                    position,
+                    bio,
+                    stats_row,
+                    None,
+                    None,
+                );
+                repo.upsert_stats(stats)?;
+                inserted += 1;
+            }
+        }
+    }
+
+    Ok(inserted)
 }
 
 // ── Mappers ─────────────────────────────────────────────────────────────────

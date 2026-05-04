@@ -595,8 +595,14 @@ fn render_sort_picker(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
 
     let dim = Style::default().fg(Color::DarkGray);
 
-    // Filter the catalog by the current search query.
-    let results = sort_picker_filter(&app.sort_picker_query);
+    // Filter the catalog by the current search query, then drop any
+    // StatId whose backing report is disabled in the Reports overlay
+    // (Phase Reports — visibility gating). Catalog ordering is preserved.
+    let results: Vec<icelines_core::stats_catalog::StatId> =
+        sort_picker_filter(&app.sort_picker_query)
+            .into_iter()
+            .filter(|sid| app.reports.is_stat_visible(*sid))
+            .collect();
 
     // Cursor index, clamped to result length (the app handler also
     // clamps but defensively here so a stale index can't panic on
@@ -672,9 +678,12 @@ fn render_controls(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
     } else {
         Style::default().fg(Color::DarkGray)
     };
+    // UX.2 + UX.3 — surface the [/] sort-picker shortcut so users
+    // discover the 108-stat catalog browser, and document the new
+    // o=section binding (Tab now always cycles screens).
     let block = Block::default()
         .borders(Borders::ALL)
-        .title(" Query  ↑↓ · ←→ value · Tab: section · Space: results ")
+        .title(" Query  ↑↓ · ←→ · o:section · Space:results · [/] all stats ")
         .border_style(border_style);
     let inner = block.inner(area);
     f.render_widget(block, area);
@@ -879,6 +888,101 @@ pub fn apply_saved_json(fields: &mut [QueryField], json: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // ── Phase Reports — sort picker visibility gating ───────────────────────
+
+    /// Mirrors the report-aware filter chain inside `render_sort_picker`.
+    /// Lifted into a test helper so we can exercise the pure logic
+    /// without a Frame / TestBackend round-trip.
+    fn filter_with_reports(
+        query: &str,
+        reports: crate::config::ReportToggles,
+    ) -> Vec<icelines_core::stats_catalog::StatId> {
+        sort_picker_filter(query)
+            .into_iter()
+            .filter(|sid| reports.is_stat_visible(*sid))
+            .collect()
+    }
+
+    #[test]
+    fn l0_reports_sort_picker_default_includes_realtime_excludes_others() {
+        use icelines_core::stats_catalog::StatId;
+        let r = crate::config::ReportToggles::default(); // realtime ON
+        let visible = filter_with_reports("", r);
+        assert!(
+            visible.contains(&StatId::Hits),
+            "default toggles include Realtime → Hits visible"
+        );
+        // Goals For/Against off by default → EvGoalsFor hidden.
+        assert!(
+            !visible.contains(&StatId::EvGoalsFor),
+            "Goals-for-against off by default → EvGoalsFor hidden"
+        );
+        // Time on Ice off by default → PpToi hidden.
+        assert!(
+            !visible.contains(&StatId::PpToi),
+            "Time-on-ice off by default → PpToi hidden"
+        );
+        // Core stat always visible.
+        assert!(visible.contains(&StatId::Goals));
+        assert!(visible.contains(&StatId::Points));
+    }
+
+    #[test]
+    fn l0_reports_sort_picker_all_off_only_core_visible() {
+        use icelines_core::stats_catalog::StatId;
+        let r = crate::config::ReportToggles {
+            realtime: false,
+            timeonice: false,
+            goals_for_against: false,
+            goalie_advanced: false,
+            goalie_saves_by_strength: false,
+        };
+        let visible = filter_with_reports("", r);
+        assert!(visible.contains(&StatId::Goals), "Core stat always visible");
+        assert!(!visible.contains(&StatId::Hits));
+        assert!(!visible.contains(&StatId::PpToi));
+        assert!(!visible.contains(&StatId::EvGoalsFor));
+        assert!(!visible.contains(&StatId::QualityStarts));
+        assert!(!visible.contains(&StatId::EvSavePct));
+    }
+
+    #[test]
+    fn l0_reports_sort_picker_all_on_includes_every_tier1_stat() {
+        use icelines_core::stats_catalog::StatId;
+        let r = crate::config::ReportToggles {
+            realtime: true,
+            timeonice: true,
+            goals_for_against: true,
+            goalie_advanced: true,
+            goalie_saves_by_strength: true,
+        };
+        let visible = filter_with_reports("", r);
+        assert!(visible.contains(&StatId::Hits));
+        assert!(visible.contains(&StatId::PpToi));
+        assert!(visible.contains(&StatId::EvGoalsFor));
+        assert!(visible.contains(&StatId::QualityStarts));
+        assert!(visible.contains(&StatId::EvSavePct));
+    }
+
+    #[test]
+    fn l0_reports_sort_picker_query_search_intersects_with_visibility() {
+        use icelines_core::stats_catalog::StatId;
+        // Search "hit" + realtime ON → Hits/HitsPer60 in result.
+        let r = crate::config::ReportToggles::default();
+        let visible = filter_with_reports("hit", r);
+        assert!(visible.contains(&StatId::Hits));
+        // Same search with realtime OFF → empty (no core stat matches "hit").
+        let r_off = crate::config::ReportToggles {
+            realtime: false,
+            ..Default::default()
+        };
+        let visible_off = filter_with_reports("hit", r_off);
+        assert!(
+            !visible_off.contains(&StatId::Hits),
+            "Hits hidden when realtime is off, regardless of search query"
+        );
+    }
 
     /// Default sections cover every default field exactly once. Drift
     /// (a field added without a section assignment) breaks rendering

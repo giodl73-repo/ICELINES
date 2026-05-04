@@ -182,6 +182,12 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
         Commands::Tui => {
             tui::run_tui(false).await?;
         }
+        Commands::Docs => {
+            // Embed COMMANDS.md at compile time. Always in lockstep
+            // with the shipped binary — no internet, no fetching, no
+            // chance of drift between docs and behavior.
+            print!("{}", include_str!("../../COMMANDS.md"));
+        }
         Commands::Export(sub) => {
             commands::export::run(sub).await?;
         }
@@ -435,6 +441,7 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
                 season_type,
                 rank_by,
                 filters,
+                seasons,
             } => {
                 commands::query::run_player(
                     name,
@@ -445,6 +452,7 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
                     season_type.to_core(),
                     rank_by,
                     filters,
+                    seasons,
                 )
                 .await?;
             }
@@ -456,6 +464,7 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
                 season,
                 season_type,
                 filters,
+                seasons,
             } => {
                 commands::query::run_compare(
                     player1,
@@ -465,6 +474,7 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
                     season,
                     season_type.to_core(),
                     filters,
+                    seasons,
                 )
                 .await?;
             }

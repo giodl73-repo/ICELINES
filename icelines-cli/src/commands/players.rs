@@ -170,7 +170,8 @@ mod tests {
 
     #[test]
     fn l0_validate_bundled_season_rejects_unbundled() {
-        let err = validate_bundled_season("19951996").unwrap_err().to_string();
+        // 2004-05 is the lockout — never had a season, will never bundle.
+        let err = validate_bundled_season("20042005").unwrap_err().to_string();
         assert!(
             err.contains("not bundled"),
             "must say 'not bundled', got: {err}"

@@ -53,6 +53,12 @@ pub struct PlayerFilter {
     ///   - Min+Max → closed range
     ///   - Equals+Equals on same stat → rejected at parse time as `MultipleOps`
     pub stat_filters: Vec<crate::stats_catalog::StatFilter>,
+    /// Filter.OR — boolean filter expressions (AND / OR / NOT / parens).
+    /// Multiple entries are ANDed at the top level. The CLI populates
+    /// this when `parse_filter_expr` returns a compound; bare atoms
+    /// still flow through `stat_filters` to keep normalization
+    /// (Min+Min → tightest, etc.) working for the simple case.
+    pub expr_filters: Vec<crate::stats_catalog::FilterExpr>,
 }
 
 impl PlayerFilter {
@@ -288,6 +294,14 @@ impl PlayerFilter {
         // ── Phase Lindsay L.2.4 — generic stat filters ──────────────────
         if !self.matches_stat_filters(v) {
             return false;
+        }
+
+        // ── Filter.OR — boolean filter expressions ─────────────────────
+        // Each top-level expression is ANDed against the others.
+        for expr in &self.expr_filters {
+            if !expr.matches(v) {
+                return false;
+            }
         }
 
         true

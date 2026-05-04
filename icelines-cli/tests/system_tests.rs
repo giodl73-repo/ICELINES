@@ -1909,7 +1909,9 @@ fn l2_cmd_query_leaders_season_bundled_succeeds() {
 
 #[test]
 fn l2_cmd_query_leaders_season_unbundled_errors_with_hint() {
-    let out = run(&["query", "leaders", "--season", "19951996", "--top", "5"]);
+    // 2004-05 is the lockout — never had a season, never bundled.
+    // (Used to be 19951996 pre-L.7b when only 5 modern seasons shipped.)
+    let out = run(&["query", "leaders", "--season", "20042005", "--top", "5"]);
     assert!(
         !out.status.success(),
         "non-bundled --season must exit nonzero"

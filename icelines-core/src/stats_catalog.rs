@@ -1097,8 +1097,122 @@ impl StatId {
     /// unknown keys — the CLI front-end maps `None` to
     /// `FilterParseError::UnknownStat` (L.2.4 grammar). Zero-alloc;
     /// linear over `all()` (108 elements is fine for a one-shot parse).
+    ///
+    /// Gaps.1 — also accepts the short common aliases users naturally
+    /// type (`g`, `a`, `p`, `gp`, `ppg`, `s`, `blk`, `tk`, `gv`, `+/-`).
+    /// The aliases resolve to the full cli_key without surfacing in
+    /// `cli_key()` output (round-trip stays unambiguous).
     pub fn from_cli_key(s: &str) -> Option<StatId> {
-        Self::all().iter().copied().find(|sid| sid.cli_key() == s)
+        let lower = s.to_ascii_lowercase();
+        // Hand-curated alias table — only the keys users naturally
+        // shorten. New aliases need a corresponding catalog cli_key
+        // they map to; conflicts with an existing cli_key would shadow
+        // it (none today).
+        let resolved: &str = match lower.as_str() {
+            // Scoring shortcuts
+            "g" => "goals",
+            "a" => "assists",
+            "p" | "pts" => "points",
+            "s" | "sog" => "shots",
+            "shootingpct" | "shooting%" | "sh%" => "shooting-pct",
+            "ppg" => "points-per-game",
+            "gpg" => "goals-per-game",
+            "apg" => "assists-per-game",
+            // Schedule shortcuts
+            "gp" | "games-played" => "games",
+            // Two-way shortcuts
+            "+/-" | "plusminus" => "plus-minus",
+            "pen" | "penaltyminutes" | "penalty-minutes" => "pim",
+            "blk" | "blocks" => "blocked-shots",
+            "tk" => "takeaways",
+            "gv" => "giveaways",
+            "mis" | "missed" => "missed-shots",
+            "fow%" | "fow-pct" => "faceoff-win-pct",
+            // Special teams shortcuts
+            "ppg-rate" | "pp-goals-rate" => "pp-goals-per-60",
+            // Goalie shortcuts (the `gp`/`games` collision is resolved
+            // by the goalie command's filter parser preferring
+            // goalie-games when both available — see Gaps.4).
+            "sv%" | "save%" => "save-pct",
+            "sv" => "saves",
+            "sa" => "shots-against",
+            "ga" => "goals-against",
+            "w" => "wins",
+            "l" => "losses",
+            "ot" => "ot-losses",
+            "so" => "shutouts",
+            // Rate / derived
+            "pace" => "pace-82",
+            // Anything else: pass through unchanged so existing
+            // catalog cli_keys still work directly.
+            _ => lower.as_str(),
+        };
+        Self::all()
+            .iter()
+            .copied()
+            .find(|sid| sid.cli_key() == resolved)
+    }
+
+    /// Phase Reports — which Tier-1 ReportKind (if any) provides the
+    /// data backing this stat. `None` means the stat is sourced from
+    /// `/skater/summary` / `/goalie/summary` / a Tier-2 endpoint /
+    /// or computed from other stats — in any of those cases the user
+    /// can't toggle it off via the Reports overlay (it's either always
+    /// available or fetched on-demand).
+    ///
+    /// Used by:
+    /// - The Reports overlay column-visibility filter (Reports.5): a
+    ///   StatId whose `report_source()` is `Some(kind)` and whose
+    ///   `kind` is disabled in `ReportToggles` is hidden from sort
+    ///   pickers / career tables / query outputs.
+    /// - The missing-source banner gate (Reports.3): a snapshot read
+    ///   for a disabled report is silently skipped (returns empty)
+    ///   instead of pushing `MissingSource::*` to the status bar.
+    ///
+    /// The mapping mirrors the spec at `design/specs/stat-catalog.md`
+    /// §"Stat enumeration". Cross-cutting stats (e.g.
+    /// `EvenStrengthTimeOnIcePerGame` is in `TimeOnIce` category but
+    /// sourced from the `goalsForAgainst` endpoint) return their
+    /// actual data source, not their hockey-domain category.
+    pub fn report_source(self) -> Option<ReportKind> {
+        use ReportKind::*;
+        use StatId::*;
+        match self {
+            // ── Realtime — Hits/Blocks/Take/Give/Missed + per-60 derivatives ──
+            Hits | BlockedShots | Takeaways | Giveaways | MissedShots | HitsPer60
+            | BlockedShotsPer60 | TakeawaysPer60 | GiveawaysPer60 => Some(SkaterRealtime),
+
+            // ── TimeOnIce — splits + shifts ──
+            // TotalToiPerGame is intentionally NOT here: summary already
+            // carries `timeOnIcePerGame`, so users without timeonice
+            // enabled still see it.
+            TotalToi | EvToi | EvToiPerGame | PpToi | PpToiPerGame | ShToi | ShToiPerGame
+            | Shifts | ShiftsPerGame | ToiPerShift => Some(SkaterTimeOnIce),
+
+            // ── GoalsForAgainst — on-ice goals + EV TOI per game ──
+            // EvenStrengthTimeOnIcePerGame is sourced here per spec
+            // SCOUT-R2 L2-F3 (deployment stat, not a goal stat).
+            EvGoalsFor
+            | EvGoalsAgainst
+            | EvGoalsForPct
+            | PpGoalsFor
+            | PpGoalsAgainst
+            | ShGoalsFor
+            | ShGoalsAgainst
+            | EvenStrengthGoalDifference
+            | EvenStrengthTimeOnIcePerGame => Some(SkaterGoalsForAgainst),
+
+            // ── GoalieAdvanced — quality starts + regulation W/L ──
+            QualityStarts | QualityStartPct | RegulationWins | RegulationLosses => {
+                Some(GoalieAdvanced)
+            }
+
+            // ── GoalieSavesByStrength — situational save percentages ──
+            EvSavePct | PpSavePct | ShSavePct => Some(GoalieSavesByStrength),
+
+            // Everything else: summary / Tier-2 / MoneyPuck / derived.
+            _ => None,
+        }
     }
 
     /// Per-row applicability. Goalie-category stats apply when the view
@@ -1672,6 +1786,14 @@ pub enum FilterParseError {
     BadNumber { token: String },
     /// `"hits>=NaN"`, `"hits>=inf"`, `"hits>=-inf"` — parsed but not finite.
     NotFinite { token: String },
+    /// Filter.OR — open paren without a matching close, e.g. `"(g>=30 AND a>=30"`.
+    UnclosedParen,
+    /// Filter.OR — close paren without a matching open, e.g. `"g>=30)"`.
+    UnexpectedRParen,
+    /// Filter.OR — expression ends mid-parse (e.g. `"g>=30 AND"` or `"NOT"`).
+    UnexpectedEnd,
+    /// Filter.OR — token sequence the parser can't make sense of.
+    UnexpectedToken { token: String },
 }
 
 impl std::fmt::Display for FilterParseError {
@@ -1708,6 +1830,14 @@ impl std::fmt::Display for FilterParseError {
                 write!(f, "filter value {token:?} is not a valid number (locale-comma `,` is not accepted; use `.`)"),
             Self::NotFinite { token } =>
                 write!(f, "filter value {token:?} is not finite (NaN/inf rejected)"),
+            Self::UnclosedParen =>
+                write!(f, "filter expression has an unclosed `(` — every `(` needs a matching `)`"),
+            Self::UnexpectedRParen =>
+                write!(f, "filter expression has an unexpected `)` — no matching `(` opened"),
+            Self::UnexpectedEnd =>
+                write!(f, "filter expression ends mid-grammar (e.g. `g>=30 AND` with nothing after AND)"),
+            Self::UnexpectedToken { token } =>
+                write!(f, "unexpected token {token:?} in filter expression"),
         }
     }
 }
@@ -1843,6 +1973,316 @@ pub fn parse_filter(input: &str) -> Result<StatFilter, FilterParseError> {
     })?;
 
     StatFilter::new(stat, op, value)
+}
+
+// ── Filter.OR — boolean filter expressions (AND / OR / NOT / parens) ──────────
+
+/// A boolean expression over `StatFilter` atoms. Built by
+/// `parse_filter_expr` from user input; evaluated against a
+/// `PlayerView` via `FilterExpr::matches`. Atoms are the existing
+/// single-comparison filters (e.g. `g>=50`); compound expressions
+/// combine them with AND / OR / NOT / parens.
+///
+/// Single-atom expressions (e.g. `parse_filter_expr("g>=50")`) round-
+/// trip to `FilterExpr::Atom(StatFilter)` so existing filter inputs
+/// stay backward-compatible.
+#[derive(Debug, Clone, PartialEq)]
+pub enum FilterExpr {
+    Atom(StatFilter),
+    And(Box<FilterExpr>, Box<FilterExpr>),
+    Or(Box<FilterExpr>, Box<FilterExpr>),
+    Not(Box<FilterExpr>),
+}
+
+impl FilterExpr {
+    /// True iff this expression accepts the given view. Atoms use the
+    /// same per-row applicability + Equals-tolerance logic as
+    /// `PlayerFilter::matches_stat_filters`. Compound expressions
+    /// short-circuit normally.
+    ///
+    /// **Missing data semantic** matches the legacy
+    /// `matches_stat_filters` rule: when `stat.read(view)` returns
+    /// `None`, the atom evaluates to `false` (not `None`). This means
+    /// `NOT (hits>=200)` accepts pre-2010 rows where hits was never
+    /// tracked — they fail `hits>=200` and the NOT flips that to true.
+    /// If the user actually wants "tracked AND below threshold,"
+    /// they should add a guard like `gp>=1` in the AND chain.
+    pub fn matches(&self, v: &crate::stats_repository::PlayerView<'_>) -> bool {
+        match self {
+            FilterExpr::Atom(f) => atom_matches(f, v),
+            FilterExpr::And(a, b) => a.matches(v) && b.matches(v),
+            FilterExpr::Or(a, b) => a.matches(v) || b.matches(v),
+            FilterExpr::Not(inner) => !inner.matches(v),
+        }
+    }
+
+    /// True iff this expression is a single Atom (no AND / OR / NOT).
+    /// Used by the CLI to route single-atom filters through the
+    /// legacy `stat_filters` path (which gets normalization for free).
+    pub fn is_atom(&self) -> bool {
+        matches!(self, FilterExpr::Atom(_))
+    }
+
+    /// Extract the atom if this is an `Atom` variant. `None` for
+    /// compound expressions.
+    pub fn as_atom(&self) -> Option<&StatFilter> {
+        match self {
+            FilterExpr::Atom(f) => Some(f),
+            _ => None,
+        }
+    }
+}
+
+/// Single-atom evaluator — same logic as
+/// `PlayerFilter::matches_stat_filters` but on one atom. Lifted into
+/// a free function so `FilterExpr::matches` doesn't need a borrow on
+/// PlayerFilter.
+fn atom_matches(f: &StatFilter, v: &crate::stats_repository::PlayerView<'_>) -> bool {
+    if !f.stat.applies_to(v.position(), v.is_goalie()) {
+        // DI-08 — non-applicable filters silently pass for the atom.
+        // (matches_stat_filters does `continue`; here we return true
+        // so the atom is a no-op when AND-chained.)
+        return true;
+    }
+    let actual = match f.stat.read(v) {
+        Some(x) => x,
+        None => return false,
+    };
+    match f.op {
+        FilterOp::Min => actual >= f.value,
+        FilterOp::Max => actual <= f.value,
+        FilterOp::Equals => match f.stat.unit() {
+            StatUnit::Count | StatUnit::Seconds => (actual - f.value).abs() < 0.5,
+            StatUnit::Per60 => (actual - f.value).abs() < 1e-3,
+            StatUnit::Pct | StatUnit::Rate | StatUnit::Inverted => (actual - f.value).abs() < 1e-6,
+        },
+    }
+}
+
+/// Parse a boolean filter expression with AND / OR / NOT / parens.
+///
+/// Grammar (precedence: NOT > AND > OR; standard left-associativity):
+/// ```text
+///   expr    := or_expr
+///   or_expr := and_expr ( OR  and_expr )*
+///   and_expr:= unary    ( AND unary    )*
+///   unary   := NOT unary | primary
+///   primary := '(' expr ')' | atom
+///   atom    := <key OP value>  (delegated to parse_filter)
+/// ```
+///
+/// Keywords `AND`, `OR`, `NOT` are case-insensitive and matched only
+/// at word boundaries (whitespace / `(` / `)` / start / end), so they
+/// don't collide with stat keys. A bare atom like `"g>=50"` parses as
+/// `FilterExpr::Atom(StatFilter)` — backward-compatible with the
+/// existing single-filter input shape.
+///
+/// Examples:
+/// - `"g>=50"` → Atom
+/// - `"g>=50 OR a>=50"` → Or(Atom, Atom)
+/// - `"(g>=30 AND a>=30) OR p>=80"` → Or(And(Atom, Atom), Atom)
+/// - `"NOT pim>=100"` → Not(Atom)
+pub fn parse_filter_expr(input: &str) -> Result<FilterExpr, FilterParseError> {
+    let trimmed = input.trim();
+    if trimmed.is_empty() {
+        return Err(FilterParseError::EmptyInput);
+    }
+    let tokens = tokenize_filter_expr(trimmed);
+    if tokens.is_empty() {
+        return Err(FilterParseError::EmptyInput);
+    }
+    let mut p = ExprParser {
+        tokens: &tokens,
+        pos: 0,
+    };
+    let expr = p.parse_or()?;
+    if p.pos < p.tokens.len() {
+        let leftover = match &p.tokens[p.pos] {
+            ExprToken::Atom(s) => s.clone(),
+            ExprToken::LParen => "(".to_owned(),
+            ExprToken::RParen => ")".to_owned(),
+            ExprToken::And => "AND".to_owned(),
+            ExprToken::Or => "OR".to_owned(),
+            ExprToken::Not => "NOT".to_owned(),
+        };
+        return Err(FilterParseError::UnexpectedToken { token: leftover });
+    }
+    Ok(expr)
+}
+
+#[derive(Debug, Clone)]
+enum ExprToken {
+    LParen,
+    RParen,
+    And,
+    Or,
+    Not,
+    /// A `key OP value` fragment (or a partial fragment that
+    /// `parse_filter` will validate). Whitespace inside is preserved.
+    Atom(String),
+}
+
+/// Walk the input character-by-character, peeling off parens and
+/// keywords (AND/OR/NOT) at word boundaries. Everything else
+/// accumulates into the next `Atom` token.
+fn tokenize_filter_expr(input: &str) -> Vec<ExprToken> {
+    let mut tokens = Vec::new();
+    let mut atom = String::new();
+    let chars: Vec<char> = input.chars().collect();
+    let mut i = 0;
+
+    let flush = |atom: &mut String, tokens: &mut Vec<ExprToken>| {
+        let trimmed = atom.trim();
+        if !trimmed.is_empty() {
+            tokens.push(ExprToken::Atom(trimmed.to_owned()));
+        }
+        atom.clear();
+    };
+
+    while i < chars.len() {
+        let c = chars[i];
+        match c {
+            '(' => {
+                flush(&mut atom, &mut tokens);
+                tokens.push(ExprToken::LParen);
+                i += 1;
+            }
+            ')' => {
+                flush(&mut atom, &mut tokens);
+                tokens.push(ExprToken::RParen);
+                i += 1;
+            }
+            _ => {
+                let prev_is_boundary = i == 0
+                    || chars[i - 1].is_whitespace()
+                    || chars[i - 1] == '('
+                    || chars[i - 1] == ')';
+                if prev_is_boundary {
+                    if let Some((kw, kw_len)) = match_keyword_at(&chars, i) {
+                        flush(&mut atom, &mut tokens);
+                        tokens.push(kw);
+                        i += kw_len;
+                        continue;
+                    }
+                }
+                atom.push(c);
+                i += 1;
+            }
+        }
+    }
+    flush(&mut atom, &mut tokens);
+    tokens
+}
+
+/// If position `i` in `chars` starts a keyword (`AND` / `OR` / `NOT`)
+/// followed by a word boundary (whitespace / paren / EOI), return the
+/// token and length. Else `None`. Case-insensitive.
+fn match_keyword_at(chars: &[char], i: usize) -> Option<(ExprToken, usize)> {
+    fn match_at(chars: &[char], i: usize, kw: &str) -> bool {
+        if i + kw.len() > chars.len() {
+            return false;
+        }
+        for (j, kc) in kw.chars().enumerate() {
+            if chars[i + j].to_ascii_uppercase() != kc {
+                return false;
+            }
+        }
+        true
+    }
+    fn next_is_boundary(chars: &[char], i: usize) -> bool {
+        match chars.get(i) {
+            None => true,
+            Some(&c) => c.is_whitespace() || c == '(' || c == ')',
+        }
+    }
+
+    if match_at(chars, i, "AND") && next_is_boundary(chars, i + 3) {
+        return Some((ExprToken::And, 3));
+    }
+    if match_at(chars, i, "NOT") && next_is_boundary(chars, i + 3) {
+        return Some((ExprToken::Not, 3));
+    }
+    if match_at(chars, i, "OR") && next_is_boundary(chars, i + 2) {
+        return Some((ExprToken::Or, 2));
+    }
+    None
+}
+
+struct ExprParser<'a> {
+    tokens: &'a [ExprToken],
+    pos: usize,
+}
+
+impl<'a> ExprParser<'a> {
+    fn peek(&self) -> Option<&ExprToken> {
+        self.tokens.get(self.pos)
+    }
+
+    fn advance(&mut self) -> Option<&ExprToken> {
+        let t = self.tokens.get(self.pos);
+        if t.is_some() {
+            self.pos += 1;
+        }
+        t
+    }
+
+    fn parse_or(&mut self) -> Result<FilterExpr, FilterParseError> {
+        let mut left = self.parse_and()?;
+        while matches!(self.peek(), Some(ExprToken::Or)) {
+            self.advance();
+            let right = self.parse_and()?;
+            left = FilterExpr::Or(Box::new(left), Box::new(right));
+        }
+        Ok(left)
+    }
+
+    fn parse_and(&mut self) -> Result<FilterExpr, FilterParseError> {
+        let mut left = self.parse_unary()?;
+        while matches!(self.peek(), Some(ExprToken::And)) {
+            self.advance();
+            let right = self.parse_unary()?;
+            left = FilterExpr::And(Box::new(left), Box::new(right));
+        }
+        Ok(left)
+    }
+
+    fn parse_unary(&mut self) -> Result<FilterExpr, FilterParseError> {
+        if matches!(self.peek(), Some(ExprToken::Not)) {
+            self.advance();
+            let inner = self.parse_unary()?;
+            return Ok(FilterExpr::Not(Box::new(inner)));
+        }
+        self.parse_primary()
+    }
+
+    fn parse_primary(&mut self) -> Result<FilterExpr, FilterParseError> {
+        match self.peek() {
+            Some(ExprToken::LParen) => {
+                self.advance();
+                let expr = self.parse_or()?;
+                match self.peek() {
+                    Some(ExprToken::RParen) => {
+                        self.advance();
+                        Ok(expr)
+                    }
+                    _ => Err(FilterParseError::UnclosedParen),
+                }
+            }
+            Some(ExprToken::RParen) => Err(FilterParseError::UnexpectedRParen),
+            Some(ExprToken::Atom(_)) => {
+                let s = match self.advance() {
+                    Some(ExprToken::Atom(s)) => s.clone(),
+                    _ => unreachable!(),
+                };
+                let atom = parse_filter(&s)?;
+                Ok(FilterExpr::Atom(atom))
+            }
+            None => Err(FilterParseError::UnexpectedEnd),
+            Some(t) => Err(FilterParseError::UnexpectedToken {
+                token: format!("{t:?}"),
+            }),
+        }
+    }
 }
 
 /// One raw NHL API row from a Tier-1 endpoint. Implementors expose
@@ -2145,6 +2585,86 @@ pub const TIER1_REPORTS: &[Tier1ReportFile] = &[
 mod tests {
     use super::*;
 
+    // ── Phase Reports — StatId::report_source mapping ────────────────────
+
+    /// Every Tier-1 report kind that the Reports overlay can toggle has
+    /// at least one `StatId` whose `report_source()` returns it. If the
+    /// mapping ever drifts (e.g. SkaterRealtime is removed but no Hits
+    /// re-categorization), this test fires.
+    #[test]
+    fn l0_reports_each_toggleable_report_owns_at_least_one_stat() {
+        use ReportKind::*;
+        for kind in [
+            SkaterRealtime,
+            SkaterTimeOnIce,
+            SkaterGoalsForAgainst,
+            GoalieAdvanced,
+            GoalieSavesByStrength,
+        ] {
+            let count = StatId::all()
+                .iter()
+                .filter(|s| s.report_source() == Some(kind))
+                .count();
+            assert!(
+                count > 0,
+                "ReportKind::{kind:?} owns 0 StatIds — mapping drift in StatId::report_source"
+            );
+        }
+    }
+
+    /// Sanity-check the canonical mappings: Hits → SkaterRealtime,
+    /// EvGoalsFor → SkaterGoalsForAgainst, EvSavePct → GoalieSavesByStrength,
+    /// QualityStarts → GoalieAdvanced, PpToi → SkaterTimeOnIce.
+    #[test]
+    fn l0_reports_canonical_stat_to_report_mappings() {
+        use ReportKind::*;
+        assert_eq!(StatId::Hits.report_source(), Some(SkaterRealtime));
+        assert_eq!(StatId::BlockedShots.report_source(), Some(SkaterRealtime));
+        assert_eq!(StatId::PpToi.report_source(), Some(SkaterTimeOnIce));
+        assert_eq!(
+            StatId::EvGoalsFor.report_source(),
+            Some(SkaterGoalsForAgainst)
+        );
+        assert_eq!(
+            StatId::EvSavePct.report_source(),
+            Some(GoalieSavesByStrength)
+        );
+        assert_eq!(StatId::QualityStarts.report_source(), Some(GoalieAdvanced));
+    }
+
+    /// Core stats (always available from summary or computed) return
+    /// `None` — they're not gated behind any toggle.
+    #[test]
+    fn l0_reports_core_stats_have_no_report_source() {
+        // Summary skater stats
+        assert_eq!(StatId::Goals.report_source(), None);
+        assert_eq!(StatId::Assists.report_source(), None);
+        assert_eq!(StatId::Points.report_source(), None);
+        assert_eq!(StatId::PlusMinus.report_source(), None);
+        assert_eq!(StatId::Pim.report_source(), None);
+        assert_eq!(StatId::FaceoffWinPct.report_source(), None);
+        // Summary-derived TOI per game
+        assert_eq!(StatId::TotalToiPerGame.report_source(), None);
+        // Goalie summary
+        assert_eq!(StatId::Wins.report_source(), None);
+        assert_eq!(StatId::SavePct.report_source(), None);
+        assert_eq!(StatId::Gaa.report_source(), None);
+        // Derived
+        assert_eq!(StatId::Pace82.report_source(), None);
+        assert_eq!(StatId::PointsPerGame.report_source(), None);
+    }
+
+    /// Possession + xG stats are Tier-2 / MoneyPuck — not gated by the
+    /// overlay toggles (they're on-demand fetched, not bundled).
+    #[test]
+    fn l0_reports_tier2_and_moneypuck_stats_return_none() {
+        assert_eq!(StatId::SatPct.report_source(), None);
+        assert_eq!(StatId::IxG.report_source(), None);
+        assert_eq!(StatId::OnIceXgFor.report_source(), None);
+        assert_eq!(StatId::GoalieXgAgainst.report_source(), None);
+        assert_eq!(StatId::GoalsSavedAboveExpected.report_source(), None);
+    }
+
     /// Pin: `ReportKind::all().len()` matches the documented inventory.
     /// 9 Tier-1 + 14 Tier-2 = 23 working endpoints. Matches the spec
     /// §"Endpoint inventory" and the probe artifact.
@@ -2388,12 +2908,22 @@ mod tests {
     }
 
     /// `from_cli_key` returns `None` for unknown keys. CLI grammar
-    /// (L.2.4) maps this to `FilterParseError::UnknownStat`.
+    /// (L.2.4) maps this to `FilterParseError::UnknownStat`. Gaps.1
+    /// — parse is now case-insensitive (HITS resolves to Hits) and
+    /// accepts short aliases (g→goals, gp→games).
     #[test]
     fn l0_lindsay_cli_key_unknown_returns_none() {
         assert_eq!(StatId::from_cli_key("bogus-stat"), None);
         assert_eq!(StatId::from_cli_key(""), None);
-        assert_eq!(StatId::from_cli_key("HITS"), None, "case-sensitive");
+        // Gaps.1 — case-insensitive now.
+        assert_eq!(StatId::from_cli_key("HITS"), Some(StatId::Hits));
+        // Aliases resolve to canonical StatIds.
+        assert_eq!(StatId::from_cli_key("g"), Some(StatId::Goals));
+        assert_eq!(StatId::from_cli_key("gp"), Some(StatId::Games));
+        assert_eq!(StatId::from_cli_key("ppg"), Some(StatId::PointsPerGame));
+        assert_eq!(StatId::from_cli_key("blk"), Some(StatId::BlockedShots));
+        // Truly unknown still returns None.
+        assert_eq!(StatId::from_cli_key("does-not-exist"), None);
     }
 
     /// Every variant has non-empty `label()` / `short_label()` /
@@ -3346,10 +3876,18 @@ mod tests {
         }
     }
 
-    /// UnknownStat: parses but not in catalog.
+    /// UnknownStat: parses but not in catalog. Gaps.1 — UPPERCASE
+    /// keys now resolve case-insensitively (HITS → Hits), so
+    /// `GOALS>=10` is no longer an UnknownStat. Adjusted inputs to
+    /// genuinely-unknown keys.
     #[test]
     fn l0_lindsay_parse_filter_unknown_stat_variant() {
-        for input in &["hots-per-60>=2", "foo=5", "GOALS>=10", "made-up-stat==1"] {
+        for input in &[
+            "hots-per-60>=2",
+            "foo=5",
+            "totally-fake-stat>=10",
+            "made-up-stat==1",
+        ] {
             let err = parse_filter(input).unwrap_err();
             assert!(
                 matches!(err, FilterParseError::UnknownStat { .. }),
@@ -3443,5 +3981,195 @@ mod tests {
         assert_eq!(f.op, FilterOp::Equals);
         let f = parse_filter("hits=10").unwrap();
         assert_eq!(f.op, FilterOp::Equals);
+    }
+
+    // ── Filter.OR — boolean grammar (AND / OR / NOT / parens) ──────────
+
+    #[test]
+    fn l0_filter_expr_bare_atom_round_trips_to_atom_variant() {
+        let e = parse_filter_expr("g>=50").unwrap();
+        assert!(e.is_atom());
+        let atom = e.as_atom().unwrap();
+        assert_eq!(atom.stat, StatId::Goals);
+        assert_eq!(atom.value, 50.0);
+    }
+
+    #[test]
+    fn l0_filter_expr_or_two_atoms() {
+        let e = parse_filter_expr("g>=50 OR a>=50").unwrap();
+        match e {
+            FilterExpr::Or(a, b) => {
+                assert_eq!(a.as_atom().unwrap().stat, StatId::Goals);
+                assert_eq!(b.as_atom().unwrap().stat, StatId::Assists);
+            }
+            other => panic!("expected Or, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn l0_filter_expr_and_two_atoms() {
+        let e = parse_filter_expr("g>=30 AND a>=30").unwrap();
+        match e {
+            FilterExpr::And(a, b) => {
+                assert_eq!(a.as_atom().unwrap().stat, StatId::Goals);
+                assert_eq!(b.as_atom().unwrap().stat, StatId::Assists);
+            }
+            other => panic!("expected And, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn l0_filter_expr_not_unary() {
+        let e = parse_filter_expr("NOT pim>=100").unwrap();
+        match e {
+            FilterExpr::Not(inner) => {
+                assert_eq!(inner.as_atom().unwrap().stat, StatId::Pim);
+            }
+            other => panic!("expected Not, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn l0_filter_expr_parens_grouping_changes_associativity() {
+        // `(g>=30 AND a>=30) OR p>=80` — parens force OR at top.
+        let e = parse_filter_expr("(g>=30 AND a>=30) OR p>=80").unwrap();
+        match e {
+            FilterExpr::Or(a, b) => {
+                assert!(matches!(*a, FilterExpr::And(_, _)));
+                assert_eq!(b.as_atom().unwrap().stat, StatId::Points);
+            }
+            other => panic!("expected Or-of-And, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn l0_filter_expr_precedence_and_binds_tighter_than_or() {
+        // No parens: `g>=30 AND a>=30 OR p>=80` parses as
+        // `(g>=30 AND a>=30) OR p>=80`.
+        let e = parse_filter_expr("g>=30 AND a>=30 OR p>=80").unwrap();
+        match e {
+            FilterExpr::Or(a, b) => {
+                assert!(matches!(*a, FilterExpr::And(_, _)));
+                assert_eq!(b.as_atom().unwrap().stat, StatId::Points);
+            }
+            other => panic!("AND must bind tighter than OR; got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn l0_filter_expr_keywords_case_insensitive() {
+        // Both `or` and `OR` work; same for and/AND, not/NOT.
+        let e1 = parse_filter_expr("g>=50 or a>=50").unwrap();
+        let e2 = parse_filter_expr("g>=50 OR a>=50").unwrap();
+        let e3 = parse_filter_expr("g>=50 Or a>=50").unwrap();
+        assert!(matches!(e1, FilterExpr::Or(_, _)));
+        assert!(matches!(e2, FilterExpr::Or(_, _)));
+        assert!(matches!(e3, FilterExpr::Or(_, _)));
+    }
+
+    #[test]
+    fn l0_filter_expr_keyword_inside_atom_is_not_a_keyword() {
+        // `goals` contains "OR" embedded but it's not a word boundary
+        // hit — the atom parses as a stat, not as a malformed expr.
+        let e = parse_filter_expr("goals>=30").unwrap();
+        assert_eq!(e.as_atom().unwrap().stat, StatId::Goals);
+    }
+
+    #[test]
+    fn l0_filter_expr_double_not_cancels() {
+        let e = parse_filter_expr("NOT NOT g>=30").unwrap();
+        match e {
+            FilterExpr::Not(inner) => match *inner {
+                FilterExpr::Not(_) => {}
+                other => panic!("expected Not-of-Not, got {other:?}"),
+            },
+            other => panic!("expected Not at top, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn l0_filter_expr_unclosed_paren_errors() {
+        let err = parse_filter_expr("(g>=30 AND a>=30").unwrap_err();
+        assert_eq!(err, FilterParseError::UnclosedParen);
+    }
+
+    #[test]
+    fn l0_filter_expr_unexpected_rparen_errors() {
+        // Trailing `)` after a complete expression — the top-level
+        // parser surfaces it as UnexpectedToken because parse_or
+        // already returned a clean tree before seeing the rparen.
+        // The mid-expression rparen path returns UnexpectedRParen
+        // (covered by the leading-rparen test below).
+        let err = parse_filter_expr("g>=30)").unwrap_err();
+        assert!(
+            matches!(
+                err,
+                FilterParseError::UnexpectedToken { .. } | FilterParseError::UnexpectedRParen
+            ),
+            "got {err:?}"
+        );
+    }
+
+    #[test]
+    fn l0_filter_expr_leading_rparen_errors() {
+        let err = parse_filter_expr(") g>=30").unwrap_err();
+        assert_eq!(err, FilterParseError::UnexpectedRParen);
+    }
+
+    #[test]
+    fn l0_filter_expr_dangling_and_errors() {
+        let err = parse_filter_expr("g>=30 AND").unwrap_err();
+        assert_eq!(err, FilterParseError::UnexpectedEnd);
+    }
+
+    #[test]
+    fn l0_filter_expr_dangling_not_errors() {
+        let err = parse_filter_expr("NOT").unwrap_err();
+        assert_eq!(err, FilterParseError::UnexpectedEnd);
+    }
+
+    #[test]
+    fn l0_filter_expr_propagates_atom_errors() {
+        // Invalid atom inside the expression — propagates via parse_filter.
+        let err = parse_filter_expr("totally-fake>=10 OR g>=50").unwrap_err();
+        assert!(matches!(err, FilterParseError::UnknownStat { .. }));
+    }
+
+    #[test]
+    fn l0_filter_expr_empty_input_errors() {
+        let err = parse_filter_expr("").unwrap_err();
+        assert_eq!(err, FilterParseError::EmptyInput);
+    }
+
+    #[test]
+    fn l0_filter_expr_whitespace_only_errors() {
+        let err = parse_filter_expr("   ").unwrap_err();
+        assert_eq!(err, FilterParseError::EmptyInput);
+    }
+
+    #[test]
+    fn l0_filter_expr_aliases_inside_compound() {
+        // Short aliases must work inside boolean expressions too.
+        let e = parse_filter_expr("g>=50 OR a>=50").unwrap();
+        match e {
+            FilterExpr::Or(a, b) => {
+                assert_eq!(a.as_atom().unwrap().stat, StatId::Goals);
+                assert_eq!(b.as_atom().unwrap().stat, StatId::Assists);
+            }
+            _ => panic!("expected Or"),
+        }
+    }
+
+    #[test]
+    fn l0_filter_expr_three_way_or_left_associative() {
+        // `g>=50 OR a>=50 OR p>=80` parses as `((g OR a) OR p)`.
+        let e = parse_filter_expr("g>=50 OR a>=50 OR p>=80").unwrap();
+        match e {
+            FilterExpr::Or(left, right) => {
+                assert!(matches!(*left, FilterExpr::Or(_, _)));
+                assert_eq!(right.as_atom().unwrap().stat, StatId::Points);
+            }
+            _ => panic!("expected nested Or"),
+        }
     }
 }

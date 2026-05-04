@@ -556,10 +556,12 @@ struct HistoryRow {
     shots: u32,
 }
 
-/// Walk the bundled-history seasons (currently 5) in chronological order
-/// and pick out the player's stats row. Missing seasons are skipped —
-/// the sparkline accepts any length ≥ 2 and the label row carries the
-/// actual season tags so gaps are obvious if they occur.
+/// Walk the bundled-history seasons (38 entries since L.7b) in
+/// chronological order and pick out the player's stats row. Missing
+/// seasons are skipped — the sparkline accepts any length ≥ 2 and the
+/// label row carries the actual season tags so gaps are obvious if they
+/// occur. Most modern players surface 1–5 history rows; long-career
+/// veterans will surface their entire NHL career.
 fn load_player_history(nhl_id: u32) -> Vec<HistoryRow> {
     use icelines_fetch::bundled;
     let mut out = Vec::new();
@@ -591,8 +593,9 @@ struct GoalieHistoryRow {
     wins: u32,
 }
 
-/// Walk the 5 bundled seasons and pull the goalie's row from each.
-/// Missing seasons skipped — sparkline accepts variable length.
+/// Walk the bundled seasons (38 entries since L.7b) and pull the
+/// goalie's row from each. Missing seasons skipped — sparkline accepts
+/// variable length.
 fn load_goalie_history(nhl_id: u32) -> Vec<GoalieHistoryRow> {
     use icelines_fetch::bundled;
     let mut out = Vec::new();

@@ -947,6 +947,93 @@ pub fn render_season_picker(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(List::new(items), inner);
 }
 
+// ── Phase Reports — overlay (R key) ──────────────────────────────────────────
+
+/// Display label + one-line summary per controllable Tier-1 report.
+/// Order matches `ReportToggles::controllable_kinds()` so the overlay
+/// rendering and the key handler agree on indexing.
+pub fn report_kind_label(
+    kind: icelines_core::stats_catalog::ReportKind,
+) -> (&'static str, &'static str) {
+    use icelines_core::stats_catalog::ReportKind::*;
+    match kind {
+        SkaterRealtime => (
+            "Realtime",
+            "Hits, Blocks, Takeaways, Giveaways, MissedShots",
+        ),
+        SkaterTimeOnIce => ("Time on Ice", "PP TOI, SH TOI, EV TOI, Shifts/game"),
+        SkaterGoalsForAgainst => ("Goals For/Against", "EV GF%, on-ice EV/PP/SH GF/GA"),
+        GoalieAdvanced => ("Goalie Advanced", "Quality Starts, QS%, Reg W/L"),
+        GoalieSavesByStrength => ("Goalie SV% by Strength", "EV SV%, PP SV%, SH SV%"),
+        // Catch-all so the function stays total (rendering won't fire for
+        // non-controllable kinds — controllable_kinds() filters them out).
+        _ => ("(unknown)", ""),
+    }
+}
+
+/// Render the Reports overlay. Mirrors the season-picker layout: a
+/// centered popup with a list. Each row shows a checkbox `[✓]` / `[ ]`
+/// + the report label + dim summary, with the highlighted row reversed.
+pub fn render_reports_overlay(f: &mut Frame, app: &App, area: Rect) {
+    use crate::config::ReportToggles;
+
+    let popup_h = 16;
+    let popup_w = (area.width * 60 / 100).clamp(54, 70);
+    let popup = Rect::new(
+        area.x + (area.width.saturating_sub(popup_w)) / 2,
+        area.y + (area.height.saturating_sub(popup_h)) / 2,
+        popup_w,
+        popup_h,
+    );
+    f.render_widget(ratatui::widgets::Clear, popup);
+
+    let block = ratatui::widgets::Block::default()
+        .borders(Borders::ALL)
+        .title(" Reports — space toggles · esc saves · q quits ")
+        .style(Style::default().fg(Color::Cyan));
+    let inner = block.inner(popup);
+    f.render_widget(block, popup);
+
+    let dim = Style::default().fg(Color::DarkGray);
+    let title = Style::default().add_modifier(Modifier::BOLD);
+
+    let mut lines: Vec<Line> = Vec::with_capacity(16);
+    lines.push(Line::styled("  Core (always on)", title));
+    lines.push(Line::styled(
+        "  [✓] Skater summary    G, A, P, +/-, S%, TOI/g, FOW%",
+        dim,
+    ));
+    lines.push(Line::styled(
+        "  [✓] Goalie summary    W, SV%, GAA, Saves, SO",
+        dim,
+    ));
+    lines.push(Line::from(""));
+    lines.push(Line::styled("  Tier-1 — extra columns when on", title));
+
+    for (i, &kind) in ReportToggles::controllable_kinds().iter().enumerate() {
+        let on = app.reports.is_enabled(kind);
+        let mark = if on { "✓" } else { " " };
+        let (label, desc) = report_kind_label(kind);
+        let text = format!("  [{mark}] {label:<22}  {desc}");
+        let style = if i == app.reports_selected {
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::Cyan)
+                .add_modifier(Modifier::BOLD)
+        } else {
+            Style::default()
+        };
+        lines.push(Line::styled(text, style));
+    }
+    lines.push(Line::from(""));
+    lines.push(Line::styled(
+        "  ↑↓: select · space: toggle · esc: save & close",
+        dim,
+    ));
+
+    f.render_widget(ratatui::widgets::Paragraph::new(lines), inner);
+}
+
 // ── Admin overlay ─────────────────────────────────────────────────────────────
 
 pub fn render_admin(f: &mut Frame, app: &App, area: Rect) {
@@ -1081,6 +1168,135 @@ mod tests {
             text.contains("19931994") && text.contains("4321"),
             "Done phase must show season + KB, got:\n{text}"
         );
+    }
+
+    // ── Phase Reports — overlay render tests ─────────────────────────────────
+
+    fn render_reports_overlay_to_text(app: &App) -> String {
+        let backend = TestBackend::new(80, 24);
+        let mut term = Terminal::new(backend).unwrap();
+        term.draw(|f| {
+            let area = f.area();
+            super::render_reports_overlay(f, app, area);
+        })
+        .unwrap();
+        buffer_text(term.backend().buffer())
+    }
+
+    #[test]
+    fn l0_render_reports_overlay_lists_all_5_controllable_kinds() {
+        let app = App::new(false);
+        let text = render_reports_overlay_to_text(&app);
+        // Each row label from `report_kind_label` must appear.
+        for needle in [
+            "Realtime",
+            "Time on Ice",
+            "Goals For/Against",
+            "Goalie Advanced",
+            "Goalie SV% by Strength",
+        ] {
+            assert!(
+                text.contains(needle),
+                "overlay must list {needle:?}, got:\n{text}"
+            );
+        }
+    }
+
+    #[test]
+    fn l0_render_reports_overlay_default_realtime_checked_others_unchecked() {
+        // Default ReportToggles → realtime ON, others OFF. The
+        // overlay should render `[✓]` adjacent to "Realtime" and `[ ]`
+        // for the other four.
+        let app = App::new(false);
+        let text = render_reports_overlay_to_text(&app);
+        // Locate the line containing "Realtime  " (the row, not the
+        // section title) and assert it has the checked mark.
+        let realtime_line = text
+            .lines()
+            .find(|l| l.contains("Realtime") && l.contains(" Hits,"))
+            .unwrap_or_else(|| panic!("could not find Realtime row in:\n{text}"));
+        assert!(
+            realtime_line.contains("[✓]"),
+            "Realtime defaults ON — row must show [✓], got: {realtime_line:?}"
+        );
+        // Time on Ice default OFF.
+        let toi_line = text
+            .lines()
+            .find(|l| l.contains("Time on Ice"))
+            .unwrap_or_else(|| panic!("could not find Time on Ice row in:\n{text}"));
+        assert!(
+            toi_line.contains("[ ]"),
+            "Time on Ice defaults OFF — row must show [ ], got: {toi_line:?}"
+        );
+    }
+
+    #[test]
+    fn l0_render_reports_overlay_toggle_state_surfaces_visually() {
+        // After flipping realtime off + timeonice on in-memory, the
+        // checkboxes flip too — proves the renderer reads from
+        // `app.reports`, not a hardcoded default snapshot.
+        let mut app = App::new(false);
+        app.reports.realtime = false;
+        app.reports.timeonice = true;
+        let text = render_reports_overlay_to_text(&app);
+        let realtime_line = text
+            .lines()
+            .find(|l| l.contains("Realtime") && l.contains(" Hits,"))
+            .unwrap_or_else(|| panic!("Realtime row missing:\n{text}"));
+        assert!(
+            realtime_line.contains("[ ]"),
+            "flipped-off Realtime row must show [ ], got: {realtime_line:?}"
+        );
+        let toi_line = text
+            .lines()
+            .find(|l| l.contains("Time on Ice"))
+            .unwrap_or_else(|| panic!("Time on Ice row missing:\n{text}"));
+        assert!(
+            toi_line.contains("[✓]"),
+            "flipped-on Time on Ice row must show [✓], got: {toi_line:?}"
+        );
+    }
+
+    #[test]
+    fn l0_render_reports_overlay_title_and_help_keys_present() {
+        // Overlay title + footer help text are part of the ergonomic
+        // promise: users must know how to toggle/save/quit. The render
+        // pin catches accidental string drift.
+        let app = App::new(false);
+        let text = render_reports_overlay_to_text(&app);
+        assert!(
+            text.contains("Reports") && text.contains("space"),
+            "overlay must show Reports title + space hint, got:\n{text}"
+        );
+        assert!(
+            text.contains("esc") || text.contains("Esc"),
+            "overlay must show esc hint, got:\n{text}"
+        );
+        // Core (always-on) section is named so users know what they
+        // can't disable.
+        assert!(
+            text.contains("Core (always on)"),
+            "overlay must label the always-on Core section, got:\n{text}"
+        );
+    }
+
+    #[test]
+    fn l0_render_reports_overlay_kind_labels_match_helper() {
+        // The `report_kind_label` helper is the source of truth for
+        // overlay rows. Pin: every controllable kind has a non-empty
+        // label + description, so a future kind addition can't
+        // accidentally render `(unknown)` to users.
+        for &kind in crate::config::ReportToggles::controllable_kinds() {
+            let (label, desc) = super::report_kind_label(kind);
+            assert!(
+                !label.is_empty() && label != "(unknown)",
+                "kind {kind:?} must have a non-placeholder label"
+            );
+            assert!(
+                !desc.is_empty(),
+                "kind {kind:?} must have a non-empty description"
+            );
+        }
     }
 
     // ── Scores auto-refresh indicator (Phase 8b) ─────────────────────────────

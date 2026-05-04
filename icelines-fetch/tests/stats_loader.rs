@@ -70,10 +70,16 @@ fn l1_load_into_repo_bundled_smoke_20242025_regular() {
     );
 
     // Snapshot tiers were never populated → MissingSource entries.
-    assert!(outcome
-        .missing
-        .iter()
-        .any(|m| matches!(m, MissingSource::Realtime { .. })));
+    // Phase Reports — realtime is no longer surfaced as a banner; the
+    // overlay controls that visibility instead. MoneyPuck + contracts
+    // remain because they're not part of the Reports overlay.
+    assert!(
+        !outcome
+            .missing
+            .iter()
+            .any(|m| matches!(m, MissingSource::Realtime { .. })),
+        "Phase Reports — realtime missing-source banner removed",
+    );
     assert!(outcome
         .missing
         .iter()
@@ -84,26 +90,32 @@ fn l1_load_into_repo_bundled_smoke_20242025_regular() {
         .any(|m| matches!(m, MissingSource::Contracts { .. })));
 }
 
-/// Hart.3 partial-fetch variants: bundled cold-start surfaces realtime,
-/// moneypuck, and contracts as `MissingSource`. GoalieStats are bundled
-/// for every season we ship, so they should NOT be missing here.
+/// Phase Reports — realtime is no longer surfaced as a `MissingSource`
+/// banner; the loader treats an absent `realtime.json` as an empty
+/// dataset (each player surfaces `Option<&SkaterRealtime> = None`).
+/// Visibility of Hits/Blocks columns is now controlled by the Reports
+/// overlay (`R` key in TUI), not by the loader's missing-source list.
 #[test]
-fn l1_loadoutcome_partial_fetch_realtime() {
+fn l1_loadoutcome_partial_fetch_realtime_no_longer_flagged() {
     let (_dir, store) = cold_store();
     let outcome = load_into_repo(Season(20242025), SeasonType::Regular, &store).unwrap();
 
-    let realtime = outcome
-        .missing
-        .iter()
-        .find(|m| matches!(m, MissingSource::Realtime { .. }));
+    // Realtime missing-source push is gone (Phase Reports).
     assert!(
-        realtime.is_some(),
-        "Realtime must be flagged on a cold-start bundled load"
+        !outcome
+            .missing
+            .iter()
+            .any(|m| matches!(m, MissingSource::Realtime { .. })),
+        "Phase Reports — realtime missing-source banner removed",
     );
-    assert!(outcome
-        .missing_files
-        .iter()
-        .any(|f| f == "snapshot:realtime.json"));
+    // The legacy `missing_files` snapshot entry is also gone.
+    assert!(
+        !outcome
+            .missing_files
+            .iter()
+            .any(|f| f == "snapshot:realtime.json"),
+        "snapshot:realtime.json no longer appears in missing_files",
+    );
 }
 
 #[test]
@@ -196,8 +208,8 @@ fn l1_load_into_repo_playoff_returns_missing_bundle_for_empty_bundle() {
 fn l1_load_into_repo_playoff_returns_missing_bundle_for_unbundled_season() {
     use icelines_fetch::stats_loader::LoadError;
     let (_dir, store) = cold_store();
-    // 19951996 is not in BUNDLED_SEASONS.
-    let err = load_into_repo(Season(19951996), SeasonType::Playoff, &store)
+    // 2004-05 (lockout) is not in BUNDLED_SEASONS — never had a season.
+    let err = load_into_repo(Season(20042005), SeasonType::Playoff, &store)
         .expect_err("unbundled season must fail on playoff path");
     assert!(
         matches!(
@@ -427,26 +439,26 @@ fn l1_playoff_only_cold_start_uses_playoff_bios() {
 
 #[test]
 fn l1_load_into_repo_unknown_season_returns_season_not_bundled() {
-    // 19951996 is not in BUNDLED_SEASONS.
+    // 2004-05 (lockout) is not in BUNDLED_SEASONS — never had a season.
     let (_dir, store) = cold_store();
-    let err = load_into_repo(Season(19951996), SeasonType::Regular, &store).expect_err("must fail");
+    let err = load_into_repo(Season(20042005), SeasonType::Regular, &store).expect_err("must fail");
     // BENCH: match the variant directly — sturdier than Display string match.
     use icelines_fetch::stats_loader::LoadError;
     assert!(matches!(err, LoadError::SeasonNotBundled { .. }));
 }
 
-/// BENCH #5: stale `realtime.json` containing `[]` must surface as
-/// MissingSource::Realtime (per Hart.3.1's empty-array semantic).
+/// Phase Reports — realtime banner is suppressed; absent/empty
+/// realtime.json is silently treated as no-data. Per-player
+/// `Option<&SkaterRealtime>` already carries the absence; the Reports
+/// overlay (`R` in TUI) is what shows users whether realtime is on.
 #[test]
-fn l1_loadoutcome_empty_realtime_array_treated_as_missing() {
+fn l1_loadoutcome_empty_realtime_array_no_longer_banner() {
     use icelines_fetch::stats_loader::MissingSource;
     let dir = tempfile::TempDir::new().unwrap();
     let store = SnapshotStore::new(dir.path());
 
-    // Stage a snapshot with an empty realtime.json. SnapshotStore's
-    // tier writer machinery would normally do this; we bypass it for
-    // a hermetic test by writing the file directly to the path the
-    // loader will read from.
+    // Stage a snapshot with an empty realtime.json — was BENCH #5's
+    // "stale realtime" trigger; now treated as OK (just no data).
     use icelines_fetch::snapshot::SnapshotTier;
     let snap_dir = dir
         .path()
@@ -454,21 +466,16 @@ fn l1_loadoutcome_empty_realtime_array_treated_as_missing() {
         .join(SnapshotTier::Realtime.dir_name());
     std::fs::create_dir_all(&snap_dir).unwrap();
     std::fs::write(snap_dir.join("realtime.json"), "[]").unwrap();
-    // Active-pointer file so read_active resolves to this snapshot.
     let active_dir = dir.path().join("20242025");
     std::fs::write(active_dir.join("active"), "20242025").unwrap();
 
     let outcome = load_into_repo(Season(20242025), SeasonType::Regular, &store).unwrap();
-    let realtime = outcome
-        .missing
-        .iter()
-        .find(|m| matches!(m, MissingSource::Realtime { .. }));
-    // We accept either "empty" reason or "unreadable" depending on
-    // how SnapshotStore resolves the bare path — the contract for
-    // this test is that SOMETHING flags realtime as missing.
     assert!(
-        realtime.is_some(),
-        "realtime must be flagged regardless of empty-vs-absent path"
+        !outcome
+            .missing
+            .iter()
+            .any(|m| matches!(m, MissingSource::Realtime { .. })),
+        "Phase Reports — realtime banner removed even on empty/stale snapshot",
     );
 }
 
@@ -1393,4 +1400,101 @@ fn l1_lindsay_load_report_playoff_path() {
 
     assert_eq!(rows.len(), 1);
     assert_eq!(rows[0].player_id, 8400000);
+}
+
+// ── UX.1 — lazy per-player career loader ──────────────────────────────────
+
+/// `load_player_career_into_repo` populates a player's full bundled
+/// history into a fresh repo. Connor McDavid (8478402) appears in every
+/// regular season from 2015-16 onward — verify ≥9 regular-season rows
+/// land after the fan-out, and that they're sorted ascending by season
+/// when read back via `repo.career_regular`.
+#[test]
+fn l1_ux1_load_player_career_populates_full_regular_history() {
+    use icelines_core::identity::PlayerId;
+    use icelines_core::stats_repository::StatsRepository;
+    use icelines_fetch::stats_loader::load_player_career_into_repo;
+
+    // Lazy career loader inserts one window per (season, type). The
+    // App raises lru_cap to 80 for the same reason; tests follow suit
+    // so old seasons don't evict before we can read them back.
+    let mut repo = StatsRepository::with_lru_cap(80);
+    // Pre-condition: cold repo has zero rows for McDavid.
+    assert!(repo.career_regular(PlayerId(8478402)).is_none());
+
+    let inserted = load_player_career_into_repo(&mut repo, PlayerId(8478402))
+        .expect("McDavid bundled rows must merge cleanly");
+
+    // McDavid's first NHL season was 2015-16 → 11 regular seasons through
+    // 2025-26 minimum, plus several playoff appearances. The fan-out
+    // should insert at least 11 windows (regular seasons; playoffs
+    // depend on whether EDM made the postseason in each year).
+    assert!(
+        inserted >= 11,
+        "expected ≥11 (season, type) rows for McDavid, got {inserted}"
+    );
+
+    let rows: Vec<_> = repo
+        .career_regular(PlayerId(8478402))
+        .expect("identity must exist after load")
+        .collect();
+    assert!(
+        rows.len() >= 11,
+        "expected ≥11 regular-season rows for McDavid, got {}",
+        rows.len()
+    );
+
+    // Ordering: ascending by season per career_regular contract.
+    let mut prev = rows[0].season;
+    for r in rows.iter().skip(1) {
+        assert!(
+            r.season >= prev,
+            "career_regular must be ascending — got {} after {}",
+            r.season.0,
+            prev.0
+        );
+        prev = r.season;
+    }
+}
+
+/// Loader is idempotent for unknown ids — returns Ok(0), doesn't error.
+#[test]
+fn l1_ux1_load_player_career_unknown_id_returns_zero() {
+    use icelines_core::identity::PlayerId;
+    use icelines_core::stats_repository::StatsRepository;
+    use icelines_fetch::stats_loader::load_player_career_into_repo;
+
+    let mut repo = StatsRepository::new();
+    let inserted = load_player_career_into_repo(&mut repo, PlayerId(999_999_999)).unwrap();
+    assert_eq!(inserted, 0);
+}
+
+/// Calling the loader twice for the same player merges cleanly via
+/// upsert (no LikelyIdReissue panic). Asserts the repo's row count is
+/// stable across repeat calls — important because the App's pre-render
+/// hook can race a re-render before the HashSet guard lands the id.
+#[test]
+fn l1_ux1_load_player_career_idempotent_on_repeat_call() {
+    use icelines_core::identity::PlayerId;
+    use icelines_core::stats_repository::StatsRepository;
+    use icelines_fetch::stats_loader::load_player_career_into_repo;
+
+    let mut repo = StatsRepository::with_lru_cap(80);
+    let first = load_player_career_into_repo(&mut repo, PlayerId(8478402)).unwrap();
+    let count_after_first = repo
+        .career_regular(PlayerId(8478402))
+        .map(|it| it.count())
+        .unwrap_or(0);
+
+    let second = load_player_career_into_repo(&mut repo, PlayerId(8478402)).unwrap();
+    let count_after_second = repo
+        .career_regular(PlayerId(8478402))
+        .map(|it| it.count())
+        .unwrap_or(0);
+
+    assert_eq!(first, second, "repeat call must insert same row count");
+    assert_eq!(
+        count_after_first, count_after_second,
+        "repeat call must not duplicate rows"
+    );
 }

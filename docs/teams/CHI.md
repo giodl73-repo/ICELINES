@@ -8,26 +8,26 @@
 <tbody>
 <tr>
 <td class="line-num-cell">Line 1</td>
-<td class="player-cell solid"><span class="player-name">Tyler Bertuzzi</span><span class="player-gp">79gp &nbsp;·&nbsp; <b>0.73</b> pts/gp &nbsp;·&nbsp; 0.41 g/gp &nbsp;·&nbsp; 60 proj</span><span class="player-fit-label">~ avg L1.7</span></td>
-<td class="player-cell fit"><span class="player-name">Connor Bedard</span><span class="player-gp">69gp &nbsp;·&nbsp; <b>1.09</b> pts/gp &nbsp;·&nbsp; 0.43 g/gp &nbsp;·&nbsp; 89 proj</span><span class="player-fit-label">★ avg L1.3</span></td>
-<td class="player-cell stretch"><span class="player-name">Ilya Mikheyev</span><span class="player-gp">77gp &nbsp;·&nbsp; <b>0.47</b> pts/gp &nbsp;·&nbsp; 0.23 g/gp &nbsp;·&nbsp; 38 proj</span><span class="player-fit-label">↓ avg L2.8 — overextended</span></td>
+<td class="player-cell solid"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8477479.png" alt="Tyler Bertuzzi" onerror="this.style.display='none'"><span class="player-name">Tyler Bertuzzi</span><span class="player-gp">79gp &nbsp;·&nbsp; <b>0.73</b> pts/gp &nbsp;·&nbsp; 0.41 g/gp &nbsp;·&nbsp; 60 proj</span><span class="player-fit-label">~ avg L1.7</span></td>
+<td class="player-cell fit"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8484144.png" alt="Connor Bedard" onerror="this.style.display='none'"><span class="player-name">Connor Bedard</span><span class="player-gp">69gp &nbsp;·&nbsp; <b>1.09</b> pts/gp &nbsp;·&nbsp; 0.43 g/gp &nbsp;·&nbsp; 89 proj</span><span class="player-fit-label">★ avg L1.3</span></td>
+<td class="player-cell stretch"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8481624.png" alt="Ilya Mikheyev" onerror="this.style.display='none'"><span class="player-name">Ilya Mikheyev</span><span class="player-gp">77gp &nbsp;·&nbsp; <b>0.47</b> pts/gp &nbsp;·&nbsp; 0.23 g/gp &nbsp;·&nbsp; 38 proj</span><span class="player-fit-label">↓ avg L2.8 — overextended</span></td>
 </tr>
 <tr>
 <td class="line-num-cell">Line 2</td>
-<td class="player-cell solid"><span class="player-name">Andre Burakovsky</span><span class="player-gp">75gp &nbsp;·&nbsp; <b>0.44</b> pts/gp &nbsp;·&nbsp; 0.15 g/gp &nbsp;·&nbsp; 36 proj</span><span class="player-fit-label">~ avg L2.7</span></td>
-<td class="player-cell fit"><span class="player-name">Anton Frondell</span><span class="player-gp">12gp &nbsp;·&nbsp; <b>0.75</b> pts/gp &nbsp;·&nbsp; 0.25 g/gp &nbsp;·&nbsp; 62 proj</span><span class="player-fit-label">★ avg L2.4</span></td>
+<td class="player-cell solid"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8477444.png" alt="Andre Burakovsky" onerror="this.style.display='none'"><span class="player-name">Andre Burakovsky</span><span class="player-gp">75gp &nbsp;·&nbsp; <b>0.44</b> pts/gp &nbsp;·&nbsp; 0.15 g/gp &nbsp;·&nbsp; 36 proj</span><span class="player-fit-label">~ avg L2.7</span></td>
+<td class="player-cell fit"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8485391.png" alt="Anton Frondell" onerror="this.style.display='none'"><span class="player-name">Anton Frondell</span><span class="player-gp">12gp &nbsp;·&nbsp; <b>0.75</b> pts/gp &nbsp;·&nbsp; 0.25 g/gp &nbsp;·&nbsp; 62 proj</span><span class="player-fit-label">★ avg L2.4</span></td>
 <td class="player-cell empty"><span class="player-name">—</span></td>
 </tr>
 <tr>
 <td class="line-num-cell">Line 3</td>
-<td class="player-cell fit"><span class="player-name">Nick Lardis</span><span class="player-gp">41gp &nbsp;·&nbsp; <b>0.37</b> pts/gp &nbsp;·&nbsp; 0.24 g/gp &nbsp;·&nbsp; 30 proj</span><span class="player-fit-label">★ avg L3.3</span></td>
-<td class="player-cell fit"><span class="player-name">Frank Nazar</span><span class="player-gp">66gp &nbsp;·&nbsp; <b>0.62</b> pts/gp &nbsp;·&nbsp; 0.23 g/gp &nbsp;·&nbsp; 51 proj</span><span class="player-fit-label">★ avg L3.1</span></td>
+<td class="player-cell fit"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8484185.png" alt="Nick Lardis" onerror="this.style.display='none'"><span class="player-name">Nick Lardis</span><span class="player-gp">41gp &nbsp;·&nbsp; <b>0.37</b> pts/gp &nbsp;·&nbsp; 0.24 g/gp &nbsp;·&nbsp; 30 proj</span><span class="player-fit-label">★ avg L3.3</span></td>
+<td class="player-cell fit"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8483493.png" alt="Frank Nazar" onerror="this.style.display='none'"><span class="player-name">Frank Nazar</span><span class="player-gp">66gp &nbsp;·&nbsp; <b>0.62</b> pts/gp &nbsp;·&nbsp; 0.23 g/gp &nbsp;·&nbsp; 51 proj</span><span class="player-fit-label">★ avg L3.1</span></td>
 <td class="player-cell empty"><span class="player-name">—</span></td>
 </tr>
 <tr>
 <td class="line-num-cell">Line 4</td>
-<td class="player-cell fit"><span class="player-name">Andrew Mangiapane</span><span class="player-gp">62gp &nbsp;·&nbsp; <b>0.26</b> pts/gp &nbsp;·&nbsp; 0.13 g/gp &nbsp;·&nbsp; 21 proj</span><span class="player-fit-label">★ avg L3.8</span></td>
-<td class="player-cell fit"><span class="player-name">Teuvo Teravainen</span><span class="player-gp">75gp &nbsp;·&nbsp; <b>0.47</b> pts/gp &nbsp;·&nbsp; 0.19 g/gp &nbsp;·&nbsp; 38 proj</span><span class="player-fit-label">★ avg L3.9</span></td>
+<td class="player-cell fit"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8478233.png" alt="Andrew Mangiapane" onerror="this.style.display='none'"><span class="player-name">Andrew Mangiapane</span><span class="player-gp">62gp &nbsp;·&nbsp; <b>0.26</b> pts/gp &nbsp;·&nbsp; 0.13 g/gp &nbsp;·&nbsp; 21 proj</span><span class="player-fit-label">★ avg L3.8</span></td>
+<td class="player-cell fit"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8476882.png" alt="Teuvo Teravainen" onerror="this.style.display='none'"><span class="player-name">Teuvo Teravainen</span><span class="player-gp">75gp &nbsp;·&nbsp; <b>0.47</b> pts/gp &nbsp;·&nbsp; 0.19 g/gp &nbsp;·&nbsp; 38 proj</span><span class="player-fit-label">★ avg L3.9</span></td>
 <td class="player-cell empty"><span class="player-name">—</span></td>
 </tr>
 </tbody></table></div>
@@ -40,18 +40,18 @@
 <tbody>
 <tr>
 <td class="pair-num-cell">Pair 1</td>
-<td class="player-cell stretch"><span class="player-name">Artyom Levshunov</span><span class="player-gp">68gp &nbsp;·&nbsp; <b>0.35</b> pts/gp &nbsp;·&nbsp; 0.03 g/gp &nbsp;·&nbsp; 29 proj</span><span class="player-fit-label">↓ avg L3.7 — overextended</span></td>
-<td class="player-cell stretch"><span class="player-name">Louis Crevier</span><span class="player-gp">78gp &nbsp;·&nbsp; <b>0.32</b> pts/gp &nbsp;·&nbsp; 0.09 g/gp &nbsp;·&nbsp; 26 proj</span><span class="player-fit-label">↓ avg L4.0 — overextended</span></td>
+<td class="player-cell stretch"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8484783.png" alt="Artyom Levshunov" onerror="this.style.display='none'"><span class="player-name">Artyom Levshunov</span><span class="player-gp">68gp &nbsp;·&nbsp; <b>0.35</b> pts/gp &nbsp;·&nbsp; 0.03 g/gp &nbsp;·&nbsp; 29 proj</span><span class="player-fit-label">↓ avg L3.7 — overextended</span></td>
+<td class="player-cell stretch"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8481806.png" alt="Louis Crevier" onerror="this.style.display='none'"><span class="player-name">Louis Crevier</span><span class="player-gp">78gp &nbsp;·&nbsp; <b>0.32</b> pts/gp &nbsp;·&nbsp; 0.09 g/gp &nbsp;·&nbsp; 26 proj</span><span class="player-fit-label">↓ avg L4.0 — overextended</span></td>
 </tr>
 <tr>
 <td class="pair-num-cell">Pair 2</td>
-<td class="player-cell stretch"><span class="player-name">Sam Rinzel</span><span class="player-gp">54gp &nbsp;·&nbsp; <b>0.26</b> pts/gp &nbsp;·&nbsp; 0.07 g/gp &nbsp;·&nbsp; 21 proj</span><span class="player-fit-label">↓ avg L4.9 — overextended</span></td>
-<td class="player-cell solid"><span class="player-name">Alex Vlasic</span><span class="player-gp">81gp &nbsp;·&nbsp; <b>0.26</b> pts/gp &nbsp;·&nbsp; 0.02 g/gp &nbsp;·&nbsp; 21 proj</span><span class="player-fit-label">~ avg L4.9</span></td>
+<td class="player-cell stretch"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8483506.png" alt="Sam Rinzel" onerror="this.style.display='none'"><span class="player-name">Sam Rinzel</span><span class="player-gp">54gp &nbsp;·&nbsp; <b>0.26</b> pts/gp &nbsp;·&nbsp; 0.07 g/gp &nbsp;·&nbsp; 21 proj</span><span class="player-fit-label">↓ avg L4.9 — overextended</span></td>
+<td class="player-cell solid"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8481568.png" alt="Alex Vlasic" onerror="this.style.display='none'"><span class="player-name">Alex Vlasic</span><span class="player-gp">81gp &nbsp;·&nbsp; <b>0.26</b> pts/gp &nbsp;·&nbsp; 0.02 g/gp &nbsp;·&nbsp; 21 proj</span><span class="player-fit-label">~ avg L4.9</span></td>
 </tr>
 <tr>
 <td class="pair-num-cell">Pair 3</td>
-<td class="player-cell solid"><span class="player-name">Wyatt Kaiser</span><span class="player-gp">77gp &nbsp;·&nbsp; <b>0.22</b> pts/gp &nbsp;·&nbsp; 0.08 g/gp &nbsp;·&nbsp; 18 proj</span><span class="player-fit-label">~ avg L5.6</span></td>
-<td class="player-cell solid"><span class="player-name">Matt Grzelcyk</span><span class="player-gp">69gp &nbsp;·&nbsp; <b>0.17</b> pts/gp &nbsp;·&nbsp; 0.00 g/gp &nbsp;·&nbsp; 14 proj</span><span class="player-fit-label">~ avg L7.0</span></td>
+<td class="player-cell solid"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8482176.png" alt="Wyatt Kaiser" onerror="this.style.display='none'"><span class="player-name">Wyatt Kaiser</span><span class="player-gp">77gp &nbsp;·&nbsp; <b>0.22</b> pts/gp &nbsp;·&nbsp; 0.08 g/gp &nbsp;·&nbsp; 18 proj</span><span class="player-fit-label">~ avg L5.6</span></td>
+<td class="player-cell solid"><img class="player-photo" src="https://assets.nhle.com/mugs/nhl/default/8476891.png" alt="Matt Grzelcyk" onerror="this.style.display='none'"><span class="player-name">Matt Grzelcyk</span><span class="player-gp">69gp &nbsp;·&nbsp; <b>0.17</b> pts/gp &nbsp;·&nbsp; 0.00 g/gp &nbsp;·&nbsp; 14 proj</span><span class="player-fit-label">~ avg L7.0</span></td>
 </tr>
 </tbody></table></div>
 

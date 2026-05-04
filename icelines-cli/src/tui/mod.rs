@@ -96,6 +96,11 @@ async fn run_loop(term: &mut Terminal<CrosstermBackend<io::Stdout>>, no_color: b
             InstallPhase::Idle => {}
         }
 
+        // UX.1 — pull a player's full career from bundled seasons the
+        // first time their card is shown. Idempotent (HashSet guard) so
+        // safe to call every tick.
+        app.ensure_career_loaded_for_current_screen();
+
         // Draw
         term.draw(|f| screens::render(f, &app))?;
 

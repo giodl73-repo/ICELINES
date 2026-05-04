@@ -103,6 +103,10 @@ pub fn render(f: &mut Frame, app: &App) {
     if app.show_season_picker {
         misc::render_season_picker(f, app, area);
     }
+
+    if app.show_reports_overlay {
+        misc::render_reports_overlay(f, app, area);
+    }
 }
 
 fn tab_for_screen(screen: &Screen) -> usize {
@@ -1865,11 +1869,11 @@ mod app_snapshot_tests {
         );
     }
 
-    /// Tab on Queries collapses the cursor's section. After collapsing
-    /// "Sort & Display", the "Sort by" field row disappears from the
-    /// rendered output.
+    /// UX.3 — `o` on Queries collapses the cursor's section (was Tab
+    /// pre-UX.3). After collapsing "Sort & Display", the "Sort by"
+    /// field row disappears from the rendered output.
     #[test]
-    fn l1_lindsay_queries_tab_collapse_hides_field_row() {
+    fn l1_ux3_queries_o_collapse_hides_field_row() {
         let (_dir, store) = empty_store_in_tempdir();
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
@@ -1884,14 +1888,14 @@ mod app_snapshot_tests {
             "Sort by row must be visible pre-collapse; got:\n{pre}"
         );
 
-        // Tab on Queries → collapse cursor's section (section 0 = Sort & Display).
-        app.handle(Action::Tab);
+        // `o` on Queries → collapse cursor's section (section 0 = Sort & Display).
+        app.handle(Action::Char('o'));
 
         let post = render_app_to_text(&app, 140, 40);
         // Section header now shows ▶ (collapsed).
         assert!(
             post.contains("▶ Sort & Display"),
-            "collapsed Sort & Display must show ▶ post-Tab; got:\n{post}"
+            "collapsed Sort & Display must show ▶ post-o; got:\n{post}"
         );
         // Field row is hidden — no indented "Sort by" row.
         assert!(
@@ -2382,15 +2386,16 @@ mod app_snapshot_tests {
         app.handle(Action::Tab); // Home → Depth
         app.handle(Action::Tab); // Depth → Queries
 
-        // Collapse section 0 + section 1. Then refresh — defaults restore.
-        app.handle(Action::Tab); // collapse section 0 (cursor's section)
-                                 // Cursor moved to field 1 (section 1). Tab again collapses section 1.
-        app.handle(Action::Tab);
+        // UX.3 — section toggle moved from Tab to `o`. Collapse section 0
+        // + section 1, then refresh — defaults restore.
+        app.handle(Action::Char('o')); // collapse section 0 (cursor's section)
+                                       // Cursor moved to field 1 (section 1). Another `o` collapses section 1.
+        app.handle(Action::Char('o'));
         // At least one of the originally-expanded sections is now collapsed.
         let any_collapsed = !app.query_sections[0].expanded || !app.query_sections[1].expanded;
         assert!(
             any_collapsed,
-            "post-Tab×2 at least one section should be collapsed"
+            "post-o×2 at least one section should be collapsed"
         );
 
         // Refresh.

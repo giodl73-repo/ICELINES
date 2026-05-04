@@ -575,9 +575,16 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
     // --filter flags accumulate (implicit AND); `normalize_stat_filters`
     // collapses Min+Min/Max+Max to tightest bounds before apply.
     for raw in &args.filters {
-        let f = icelines_core::stats_catalog::parse_filter(raw)
+        // Filter.OR — try the boolean grammar (AND / OR / NOT / parens)
+        // first. Bare atoms (e.g. "g>=50") still produce a single
+        // StatFilter and route through stat_filters so normalization
+        // (Min+Min → tightest) keeps working.
+        let expr = icelines_core::stats_catalog::parse_filter_expr(raw)
             .with_context(|| format!("--filter {raw:?}"))?;
-        filter.stat_filters.push(f);
+        match expr.as_atom() {
+            Some(atom) => filter.stat_filters.push(*atom),
+            None => filter.expr_filters.push(expr),
+        }
     }
     filter.normalize_stat_filters();
 
@@ -940,7 +947,7 @@ fn position_percentile(
 
 // ── icelines query player ─────────────────────────────────────────────────────
 
-#[allow(clippy::too_many_arguments)] // 8 inputs by design; struct would obscure CLI dispatch.
+#[allow(clippy::too_many_arguments)] // CLI inputs by design; struct would obscure dispatch.
 pub async fn run_player(
     name: String,
     breakdown: String,
@@ -954,6 +961,9 @@ pub async fn run_player(
     // Phase Lindsay D1b — narrow the percentile peer pool. Empty Vec
     // preserves the legacy "all same-position rankable peers" behavior.
     filters: Vec<String>,
+    // Gaps.2 — number of bundled seasons to include in the career arc
+    // (newest-first). 38 = full bundled history. 5 = legacy modern-era.
+    seasons: u8,
 ) -> anyhow::Result<()> {
     // Resolve `--rank-by` once at command entry so a typo errors with
     // a clear message before we load the snapshot.
@@ -965,15 +975,60 @@ pub async fn run_player(
     // snapshot read.
     let mut peer_filter = PlayerFilter::new();
     for s in &filters {
-        peer_filter
-            .stat_filters
-            .push(icelines_core::stats_catalog::parse_filter(s)?);
+        // Filter.OR — boolean grammar accepted; bare atoms route to stat_filters.
+        let expr = icelines_core::stats_catalog::parse_filter_expr(s)?;
+        match expr.as_atom() {
+            Some(atom) => peer_filter.stat_filters.push(*atom),
+            None => peer_filter.expr_filters.push(expr),
+        }
     }
     peer_filter.normalize_stat_filters();
-    let (outcome, season_key, season_type) =
+    let (mut outcome, season_key, season_type) =
         crate::commands::players::load_repo_for_season(season.as_deref(), Some(season_type))?;
+    // Gaps.2/5 — if the player isn't in the active season, fall back
+    // to a bundled-season name lookup + lazy career fan-out so
+    // historical players (Gretzky, Lemieux, Roy) resolve naturally
+    // without forcing the user to know which season they played in.
+    let mut historical_pid: Option<icelines_core::identity::PlayerId> = None;
+    {
+        let active_views: Vec<PlayerView<'_>> = outcome
+            .repo
+            .skaters(season_key, season_type)
+            .chain(outcome.repo.goalies(season_key, season_type))
+            .collect();
+        if find_view(&active_views, &name).is_err() {
+            drop(active_views);
+            if let Some(pid) = icelines_fetch::stats_loader::resolve_player_id_by_name(&name) {
+                let pid = icelines_core::identity::PlayerId(pid);
+                let _ = icelines_fetch::stats_loader::load_player_career_into_repo(
+                    &mut outcome.repo,
+                    pid,
+                );
+                historical_pid = Some(pid);
+            }
+        }
+    }
+    // Gaps.5 — search both skaters and goalies in the active window.
+    // Gaps.2 — for historical-only players, append the most-recent
+    // career row as a synthetic view so find_view resolves.
     let repo = &outcome.repo;
-    let all_views: Vec<PlayerView<'_>> = repo.skaters(season_key, season_type).collect();
+    let mut all_views: Vec<PlayerView<'_>> = repo
+        .skaters(season_key, season_type)
+        .chain(repo.goalies(season_key, season_type))
+        .collect();
+    if let Some(pid) = historical_pid {
+        // Walk career_all and grab the most-recent row to use as the
+        // primary view for find_view + percentile rendering. The lazy
+        // loader populated all seasons, so career_all returns ≥1.
+        if let Some(career_iter) = repo.career_all(pid) {
+            let career: Vec<_> = career_iter.collect();
+            if let Some(last) = career.last() {
+                if let Some(v) = repo.view(pid, last.season, last.season_type) {
+                    all_views.push(v);
+                }
+            }
+        }
+    }
     let v = find_view(&all_views, &name)?;
     // D1b — apply the filter to compute the peer pool. The target
     // player itself stays available via `find_view(&all_views, ...)`
@@ -1007,7 +1062,7 @@ pub async fn run_player(
             if percentiles {
                 print_percentile(&peer_views, v, rank_metric);
             }
-            print_career(v).await;
+            print_career(v, seasons as usize).await;
         }
         "situation" => {
             println!("  Situational breakdown (5v5/PP/PK) requires Phase 5C shift data.");
@@ -1139,13 +1194,16 @@ fn print_percentile(
     println!();
 }
 
-async fn print_career(v: &PlayerView<'_>) {
+async fn print_career(v: &PlayerView<'_>, seasons: usize) {
     let cfg = match Config::load() {
         Ok(c) => c,
         Err(_) => return,
     };
     let store = SnapshotStore::new(cfg.snapshot_dir());
-    match load_career(&v.identity.full_name, 5, &store) {
+    // Clamp at the bundled-season floor so a user passing `--seasons 100`
+    // gets the maximum (38) without erroring. 0 also clamps to 1.
+    let n = seasons.clamp(1, icelines_fetch::BUNDLED_SEASONS.len());
+    match load_career(&v.identity.full_name, n, &store) {
         Some(career) => {
             println!("CAREER ARC — {} seasons", career.seasons.len());
             println!(
@@ -1272,10 +1330,23 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
     // here for free).
     let mut filter = PlayerFilter::new();
     if !args.filters.is_empty() {
-        use icelines_core::stats_catalog::parse_filter;
+        use icelines_core::stats_catalog::parse_filter_expr;
         for s in &args.filters {
-            let stat_filter = parse_filter(s)?;
-            filter.stat_filters.push(stat_filter);
+            // Gaps.4 — rewrite each atom's leading key to its goalie
+            // context equivalent before parsing. `gp` → `goalie-games`,
+            // `starts` → `goalie-starts`. Filter.OR — the rewrite walks
+            // the WHOLE expression text, so atoms inside AND/OR/NOT/
+            // parens get rewritten too.
+            let rewritten = goalie_filter_rewrite_expr(s);
+            let expr = parse_filter_expr(&rewritten).map_err(|e| {
+                anyhow::anyhow!(
+                    "--filter {s:?}\n  {e}\n  hint: goalies use `goalie-games`, `goalie-starts`, `save-pct`, `gaa`, `wins`, `losses`, `ot-losses`, `shutouts`"
+                )
+            })?;
+            match expr.as_atom() {
+                Some(atom) => filter.stat_filters.push(*atom),
+                None => filter.expr_filters.push(expr),
+            }
         }
         filter.normalize_stat_filters();
         views = filter.apply_views(views.iter().copied());
@@ -1426,6 +1497,7 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
 
 // ── icelines query compare ────────────────────────────────────────────────────
 
+#[allow(clippy::too_many_arguments)]
 pub async fn run_compare(
     player1: String,
     player2: Option<String>,
@@ -1437,19 +1509,81 @@ pub async fn run_compare(
     // when --similar N is set (head-to-head shows just two players, no
     // cohort to filter).
     filters: Vec<String>,
+    // Gaps.3 — number of bundled seasons to print under each player on
+    // head-to-head. Active only on head-to-head; --similar ignores this
+    // (it's already an N-cohort Z-score over a single window).
+    seasons: u8,
 ) -> anyhow::Result<()> {
     // D1b — parse filter exprs up front; typos exit before snapshot load.
+    // Filter.OR — boolean grammar accepted; bare atoms route to stat_filters.
     let mut cohort_filter = PlayerFilter::new();
     for s in &filters {
-        cohort_filter
-            .stat_filters
-            .push(icelines_core::stats_catalog::parse_filter(s)?);
+        let expr = icelines_core::stats_catalog::parse_filter_expr(s)?;
+        match expr.as_atom() {
+            Some(atom) => cohort_filter.stat_filters.push(*atom),
+            None => cohort_filter.expr_filters.push(expr),
+        }
     }
     cohort_filter.normalize_stat_filters();
-    let (outcome, season_key, season_type) =
+    let (mut outcome, season_key, season_type) =
         crate::commands::players::load_repo_for_season(season.as_deref(), Some(season_type))?;
+    // Gaps.3 — same historical-resolution fallback as run_player.
+    // For each side of the head-to-head, if the name isn't in the
+    // active window, fan out across bundled seasons.
+    let active_names_present = {
+        let active_views: Vec<PlayerView<'_>> = outcome
+            .repo
+            .skaters(season_key, season_type)
+            .chain(outcome.repo.goalies(season_key, season_type))
+            .collect();
+        let p1_in = find_view(&active_views, &player1).is_ok();
+        let p2_in = match &player2 {
+            Some(n) => find_view(&active_views, n).is_ok(),
+            None => true, // similar mode — only player1 needs to resolve
+        };
+        (p1_in, p2_in)
+    };
+    if !active_names_present.0 {
+        if let Some(pid) = icelines_fetch::stats_loader::resolve_player_id_by_name(&player1) {
+            let _ = icelines_fetch::stats_loader::load_player_career_into_repo(
+                &mut outcome.repo,
+                icelines_core::identity::PlayerId(pid),
+            );
+        }
+    }
+    if let Some(p2_name) = &player2 {
+        if !active_names_present.1 {
+            if let Some(pid) = icelines_fetch::stats_loader::resolve_player_id_by_name(p2_name) {
+                let _ = icelines_fetch::stats_loader::load_player_career_into_repo(
+                    &mut outcome.repo,
+                    icelines_core::identity::PlayerId(pid),
+                );
+            }
+        }
+    }
     let repo = &outcome.repo;
-    let all_views: Vec<PlayerView<'_>> = repo.skaters(season_key, season_type).collect();
+    let mut all_views: Vec<PlayerView<'_>> = repo
+        .skaters(season_key, season_type)
+        .chain(repo.goalies(season_key, season_type))
+        .collect();
+    // Append a most-recent-window view for each historical-only
+    // identity loaded above.
+    for player_name in std::iter::once(&player1).chain(player2.iter()) {
+        if let Some(raw_pid) = icelines_fetch::stats_loader::resolve_player_id_by_name(player_name)
+        {
+            let pid = icelines_core::identity::PlayerId(raw_pid);
+            if all_views.iter().all(|v| v.identity.id != pid) {
+                if let Some(career_iter) = repo.career_all(pid) {
+                    let career: Vec<_> = career_iter.collect();
+                    if let Some(last) = career.last() {
+                        if let Some(v) = repo.view(pid, last.season, last.season_type) {
+                            all_views.push(v);
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     if let Some(n) = similar {
         // D1b — narrow cohort. Empty filter passes through unchanged.
@@ -1469,6 +1603,16 @@ pub async fn run_compare(
             );
         }
         print_head_to_head(v1, v2);
+
+        // Gaps.3 — multi-season career arcs for context. Reuses the
+        // print_career helper used by run_player; runs sequentially
+        // for each player so the two arcs land back-to-back in stdout.
+        if seasons > 1 {
+            println!();
+            print_career(v1, seasons as usize).await;
+            println!();
+            print_career(v2, seasons as usize).await;
+        }
         Ok(())
     } else {
         bail!("provide a second player name, or use --similar N for similarity search")
@@ -1704,6 +1848,97 @@ fn run_similar(views: &[PlayerView<'_>], target_name: &str, n: usize) -> anyhow:
 }
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
+
+/// Gaps.4 — rewrite a `key OP value` filter expression so common
+/// short keys map to their goalie-context cli_key. `gp>=15` becomes
+/// `goalie-games>=15`. The rewrite happens BEFORE `parse_filter` runs,
+/// so the existing parser doesn't need a goalie mode.
+///
+/// Only the leading key portion (before any `<`/`>`/`!`/`=`) is
+/// considered. Anything that doesn't match a known short key passes
+/// through unchanged.
+/// Filter.OR — apply `goalie_filter_rewrite` to every atom inside a
+/// boolean filter expression. Splits on `(`, `)`, and case-insensitive
+/// keyword boundaries (AND/OR/NOT), rewrites each atom-segment, then
+/// rejoins. Whitespace is preserved verbatim around delimiters.
+fn goalie_filter_rewrite_expr(expr: &str) -> String {
+    // Walk the chars and split into segments. Keywords + parens are
+    // preserved verbatim; everything else is an atom we rewrite.
+    let chars: Vec<char> = expr.chars().collect();
+    let mut out = String::with_capacity(expr.len() + 16);
+    let mut atom = String::new();
+    let mut i = 0;
+    let flush_atom = |atom: &mut String, out: &mut String| {
+        if !atom.is_empty() {
+            out.push_str(&goalie_filter_rewrite(atom.trim()));
+            // Preserve trailing whitespace before the next delimiter.
+            let trailing: String = atom
+                .chars()
+                .rev()
+                .take_while(|c| c.is_whitespace())
+                .collect();
+            out.push_str(&trailing.chars().rev().collect::<String>());
+            atom.clear();
+        }
+    };
+    while i < chars.len() {
+        let c = chars[i];
+        if c == '(' || c == ')' {
+            flush_atom(&mut atom, &mut out);
+            out.push(c);
+            i += 1;
+            continue;
+        }
+        // Keyword detection at word boundary.
+        let prev_is_boundary =
+            i == 0 || chars[i - 1].is_whitespace() || chars[i - 1] == '(' || chars[i - 1] == ')';
+        if prev_is_boundary {
+            for kw in ["AND", "OR", "NOT"] {
+                if i + kw.len() <= chars.len() {
+                    let upper: String = chars[i..i + kw.len()]
+                        .iter()
+                        .map(|c| c.to_ascii_uppercase())
+                        .collect();
+                    let next_is_boundary = match chars.get(i + kw.len()) {
+                        None => true,
+                        Some(&c) => c.is_whitespace() || c == '(' || c == ')',
+                    };
+                    if upper == kw && next_is_boundary {
+                        flush_atom(&mut atom, &mut out);
+                        out.push_str(&chars[i..i + kw.len()].iter().collect::<String>());
+                        i += kw.len();
+                        continue;
+                    }
+                }
+            }
+        }
+        atom.push(c);
+        i += 1;
+    }
+    flush_atom(&mut atom, &mut out);
+    out
+}
+
+fn goalie_filter_rewrite(expr: &str) -> String {
+    // Find the operator boundary — first occurrence of `<`, `>`, `!`,
+    // or `=` after the key. Whitespace inside the key is unusual but
+    // tolerable; trim it on the key side.
+    let split_at = expr.find(['<', '>', '!', '=']).unwrap_or(expr.len());
+    let (key_part, rest) = expr.split_at(split_at);
+    let key = key_part.trim().to_ascii_lowercase();
+
+    let goalie_key: Option<&str> = match key.as_str() {
+        // GP collisions — in goalie context these mean goalie-games.
+        "gp" | "games" | "games-played" => Some("goalie-games"),
+        "starts" | "gs" | "games-started" => Some("goalie-starts"),
+        // No rewrite — pass the original expression through.
+        _ => None,
+    };
+    match goalie_key {
+        Some(g) => format!("{g}{rest}"),
+        None => expr.to_owned(),
+    }
+}
 
 fn parse_positions(s: &str) -> Vec<Position> {
     match s.to_uppercase().as_str() {

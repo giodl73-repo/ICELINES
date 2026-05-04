@@ -1,5 +1,104 @@
 # IceLines Changelog
 
+## v0.13.0 — 2026-05-03
+
+Headline: **38 seasons bundled in (1987-88 → 2025-26), Reports overlay,
+boolean filter grammar, and ~1720 tests across 4 persona-scenario waves.**
+Binary grew 23 MB → 57 MB to fit the full historical era.
+
+### Added
+- **L.7b 38-season bundle.** `BUNDLED_SEASONS` now covers every NHL
+  season from 1987-88 forward except the 2004-05 lockout. Refactored
+  `bundled.rs` to a table-driven layout (228 lookup-table entries,
+  one macro per season). Mario Lemieux's 1992-93 (218.7 Pts/82) and
+  Wayne Gretzky's 1987-88 (190.9 Pts/82) are queryable from a fresh
+  binary with no `data install` needed.
+- **Phase Reports — `R` overlay in TUI.** Toggleable Tier-1 reports
+  (realtime / timeonice / goalsForAgainst / goalie-advanced /
+  goalie-savesByStrength). Disabled reports drop their columns from
+  career tables, sort pickers, and query results. Persists to
+  `~/.icelines/config.toml`. New `Config::reports` field +
+  `ReportToggles::is_stat_visible(stat)` gate. Removes the noisy
+  "Missing data: realtime" banner.
+- **UX.1 — Lazy career loader on player card open.** `app.repo` LRU
+  cap bumped 8 → 80. Opening a player card fans out across all 38
+  bundled seasons, pulling that player's career into the repo. ~50 ms
+  per first open, cached after. McDavid surfaces 11+ regular seasons,
+  Gretzky 12, Crosby 18+, Ovechkin 18+.
+- **UX.2 — `[/]` discoverability hint** in Queries title bar.
+- **UX.3 — Tab unconditionally cycles screens.** Pre-UX.3, Tab
+  toggled section expand/collapse on Queries (trapped users on the
+  Stats tab). Section toggle moved to `o`. New tests pin the rebind.
+- **Gaps.1 — Short filter aliases.** `--filter "g>=50"` works as
+  `goals>=50`. Aliases: `g`/`a`/`p`/`pts`/`s`/`gp`/`ppg`/`gpg`/`apg`/
+  `+/-`/`pim`/`pen`/`blk`/`tk`/`gv`/`mis`/`fow%`/`pace`/`sv%`/`sv`/
+  `ga`/`sa`/`w`/`l`/`so`/`ot`. Filter keys are case-insensitive.
+- **Gaps.2 — `query player --seasons N`.** Full bundled-history
+  career arc on the CLI. Default 38 = full history.
+- **Gaps.3 — `query compare --seasons N`.** Multi-season head-to-head
+  with each player's career arc printed alongside.
+- **Gaps.4 — Goalie filter rewrite.** `query goalies --filter "gp>=15"`
+  rewrites `gp`→`goalie-games` before parsing; `starts`→`goalie-starts`.
+  Error messages hint goalie-specific keys.
+- **Gaps.5 — `query player` accepts goalies.** `query player Patrick Roy`
+  resolves now (chains skater + goalie bios).
+- **Gaps.6 — Cross-bundled name lookup.** `query player Wayne Gretzky`
+  resolves without `--season` via `resolve_player_id_by_name` walking
+  bundled bios + lazy career fan-out.
+- **Filter.OR — Boolean filter grammar.** `--filter` now accepts AND /
+  OR / NOT / parens. Recursive descent parser, precedence NOT > AND > OR.
+  Bare atoms still route through `stat_filters` for normalization;
+  compound expressions go to new `expr_filters`. Multiple `--filter`
+  flags ANDed at top level. 19 new L0 tests.
+- **`icelines docs` subcommand.** Embeds `COMMANDS.md` via
+  `include_str!()` so the full command reference ships inside the
+  binary. No internet needed to learn the CLI.
+- **`COMMANDS.md`** — single-page command reference with every
+  subcommand, examples, the alias table, the filter grammar BNF, and
+  the TUI keybind matrix.
+- **Rich `--help` long_about** for top-level + `query leaders`,
+  `query player`, `query compare`, `query goalies`. Examples,
+  alias hints, and filter grammar inline in `--help` output.
+- **400 persona-scenario tests** across 4 waves
+  (`persona_scenarios.rs`, `persona_wave2.rs`, `persona_wave3.rs`,
+  `persona_wave4.rs`). Cover: historical seasons, multi-filter
+  patterns, lazy career loading, Reports overlay, goalie filter
+  rewrite, JSON/CSV output, bundle integrity, robustness, edge cases.
+
+### Changed
+- **Workspace tests: ~1720** (up from ~1275). 400 new persona scenarios
+  + 19 filter-expr tests + Reports / UX / Gaps coverage.
+- **Binary size: 57 MB** (up from 23 MB). 33 historical seasons + 5
+  current = 38 total at ~1 MB / season bundled JSON.
+- **Player loading API**: legacy `PlayerRepository::new(store, season).load_all()`
+  references in CLAUDE.md replaced with the actual
+  `icelines_fetch::stats_loader::load_into_repo(season, season_type, store)`
+  surface.
+- **`load_into_repo` LRU cap**: 8 → 80 windows so historical fan-outs
+  don't evict the active season.
+- **`from_cli_key` is case-insensitive** and accepts the alias map.
+
+### Fixed
+- "Missing data: realtime" banner removed — was noise, not signal.
+  Phase Reports overlay handles per-report visibility properly.
+- NHL API breaking change: `pim` removed from `/skater/realtime`.
+  Schema field made `Option<u32>` with `#[serde(default)]`.
+- 19951996 / 19961997 unbundled-season tests swapped to 20042005
+  (lockout, never bundled) to remain truly unbundled after L.7b.
+
+### Docs
+- **CLAUDE.md** — refreshed AI-instruction surface. Removed misleading
+  references to deleted `PlayerRepository`, "5 seasons bundled",
+  "338 tests", and the cancelled proof / DASHBOARD-SPEC integration.
+  Added sections on the Reports overlay, lazy career loader,
+  short-alias rule, goalie filter rewrite, Filter.OR grammar.
+- **README.md** — bundled count 5 → 38, test count 338 → 1720.
+  New sections: catalog filter grammar with alias table, multi-season
+  player/compare examples, TUI keybind reference (R, y, Shift+P, o,
+  `[`, `]`, `/`).
+- **COMMANDS.md (new)** — single-page reference designed for AIs and
+  new users. Embedded into the binary via `icelines docs`.
+
 ## Unreleased
 
 ### Changed

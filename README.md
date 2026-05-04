@@ -1,6 +1,6 @@
 # IceLines — NHL Analytics Platform
 
-NHL depth charts, pace-adjusted rankings, query engine, fantasy league management, and 38 seasons of history — all from a single Rust CLI with 5 seasons bundled in, no fetch required.
+NHL depth charts, pace-adjusted rankings, query engine, fantasy league management, and 38 seasons of history — all from a single Rust CLI with **every season from 1987-88 to 2025-26 bundled in**, no fetch required.
 
 **[→ View the site](https://giodl73-repo.github.io/ICELINES/)**
 
@@ -23,7 +23,9 @@ icelines fetch all        # download current NHL data (~5 seconds)
 icelines tui              # launch the interactive app
 ```
 
-That's it. Five seasons of data are bundled in — no database setup, no accounts.
+That's it. **38 seasons of NHL data** ship inside the binary — Gretzky's first LA year through this morning. No database setup, no accounts.
+
+For the complete command reference, run `icelines docs` (or read [COMMANDS.md](COMMANDS.md)).
 
 ---
 
@@ -35,7 +37,7 @@ cd ICELINES
 cargo build --release
 ```
 
-Works immediately — five seasons of NHL data ship inside the binary:
+Works immediately — **all 38 seasons of NHL data** ship inside the binary:
 
 ```bash
 icelines rank --top 10
@@ -71,6 +73,12 @@ icelines query player "McDavid" --breakdown career
 # Comparison — head-to-head or similarity search
 icelines query compare "McDavid" "MacKinnon"
 icelines query compare "Matty Beniers" --similar 8   # finds historical comps
+icelines query compare "Wayne Gretzky" "Mario Lemieux" --seasons 38   # full-history side-by-side
+
+# Player profile — career arc + multi-season window
+icelines query player "McDavid" --seasons 38 --percentiles   # full bundled history
+icelines query player "Patrick Roy" --season 19951996        # historical goalies work too
+icelines query player "Wayne Gretzky"                        # historical name resolves without --season
 ```
 
 ### Sort metrics
@@ -92,7 +100,7 @@ icelines query compare "Matty Beniers" --similar 8   # finds historical comps
 ```bash
 --pos C|LW|RW|D|F|G     # position (F = all forwards)
 --team EDM               # team abbreviation
---age-min / --age-max    # age range
+--age-min / --age-max    # age range (uses CURRENT age, not age-at-season)
 --nationality FIN        # ISO-3166 alpha-3 (FIN, SWE, CAN, ...)
 --birth-province ON,QC   # province/state codes, comma-separated
 --draft-year 2022        # draft year
@@ -110,6 +118,58 @@ icelines query compare "Matty Beniers" --similar 8   # finds historical comps
 --ufa / --rfa / --elc    # contract status (requires fetch contracts)
 --expiry-year 2026       # contracts expiring this year
 ```
+
+### Catalog filter grammar (`--filter` — boolean expressions over 108 stats)
+
+Beyond the pre-baked flags above, **any of the 108 catalog stats** is filterable through the generic `--filter` grammar. Each `--filter` value is a full boolean expression with **AND / OR / NOT / parens**, and multiple `--filter` flags are ANDed at the top level.
+
+```bash
+# OR — either threshold qualifies
+icelines query leaders --filter "g>=50 OR a>=80"
+
+# Parens — group / override precedence (NOT > AND > OR)
+icelines query leaders --filter "(g>=30 AND a>=30) OR p>=80"
+
+# NOT — invert
+icelines query leaders --filter "NOT pim>=100" --filter "p>=70"
+```
+
+```bash
+# Young power forward — the canonical multi-filter pattern
+icelines query leaders --age-max 24 --filter "hits>=200" --filter "points>=40"
+
+# Clean scorer — high points, low penalties
+icelines query leaders --filter "p>=50" --filter "pim<=30"
+
+# Disciplined grinder — high hits, low PIM
+icelines query leaders --filter "hits>=200" --filter "pim<=40"
+
+# 3-season aggregate of the user pattern
+icelines query leaders --seasons 3 --age-max 25 --filter "hits>=600" --filter "p>=120"
+
+# Operators: >=, <=, >, <, ==
+icelines query leaders --filter "g==50"            # exactly 50 goals
+icelines query leaders --filter "shooting-pct>=0.18" --filter "shots>=200"
+```
+
+**Short aliases** — the filter parser accepts both the canonical `cli_key` and short forms users naturally type:
+
+| Short | Canonical | Short | Canonical |
+|---|---|---|---|
+| `g` | `goals` | `gp` | `games` |
+| `a` | `assists` | `ppg` | `points-per-game` |
+| `p`, `pts` | `points` | `gpg` | `goals-per-game` |
+| `s`, `sog` | `shots` | `apg` | `assists-per-game` |
+| `pen` | `pim` | `pace` | `pace-82` |
+| `+/-` | `plus-minus` | `sv%`, `sv` | `save-pct`, `saves` |
+| `blk`, `blocks` | `blocked-shots` | `w`, `l`, `so` | `wins`, `losses`, `shutouts` |
+| `tk` | `takeaways` | `ga`, `sa` | `goals-against`, `shots-against` |
+| `gv` | `giveaways` | | |
+| `mis` | `missed-shots` | | |
+
+Filter keys are also case-insensitive: `--filter "HITS>=200"` resolves to Hits.
+
+`age` is **not** a catalog stat — use the `--age-min` / `--age-max` flags above.
 
 ### Team depth charts
 
@@ -189,6 +249,30 @@ icelines query leaders --seasons 5  --sort pts-pace --top 10
 
 **38 seasons available** — back to 1987-88 (Gretzky trade to LA Kings). Skip 2004-05 (full lockout).
 
+### TUI (`icelines tui` or `icelines dashboard`)
+
+Interactive dashboard with six tabs (League / Depth / Stats / Goalies / Scores / Schedule), plus Playoffs and Transactions overlays. Player cards lazy-load every player's full historical career across all 38 bundled seasons on first open.
+
+| Key | Action |
+|---|---|
+| `Tab` / `Shift+Tab` | Cycle tabs forward / backward |
+| `1` / `↑↓` | Navigate within a tab |
+| `Enter` | Drill into selection (team / player / game) |
+| `Esc` / `q` | Back / quit |
+| `?` | Help overlay |
+| `R` | **Reports overlay** — toggle which Tier-1 reports populate columns |
+| `y` | Season picker — jump to any of the 38 bundled seasons |
+| `Shift+P` | Toggle Regular ↔ Playoff for the active season |
+| `o` | Toggle the current section on the Stats / Queries screen |
+| `[` / `]` | Cycle career-table column presets on a player card |
+| `/` | Open the sort picker (search-as-you-type across 108 stats) |
+| `r` | Refresh the current view |
+| `d` | Jump to depth chart (or jump-to-date on Scores) |
+| `F` | Toggle admin overlay |
+| `g` | Add to group from a player card / team roster |
+
+The Reports overlay (`R`) persists toggles to `~/.icelines/config.toml`. Disabled reports drop their columns from career tables, sort pickers, and query results — your view stays focused on the stats you care about.
+
 ### Other commands
 
 ```bash
@@ -236,14 +320,14 @@ icelines-site    mkdocs static site generation
 icelines-cli     thin UI layer — commands, TUI, HTTP server (axum)
 ```
 
-4-crate Rust workspace. 338 tests: L0 unit · L1 integration · L2 system · mock NHL API fixture.
+4-crate Rust workspace. **~1720 tests** across L0 unit · L1 integration · L2 system · mock NHL API fixture · 4 persona-scenario waves (`persona_scenarios.rs` + `persona_wave2/3/4.rs`, 400 end-to-end CLI scenarios).
 
 ---
 
 ## Tests
 
 ```bash
-cargo test                    # 338 tests — L0, L1, L2, mock API
+cargo test                    # ~1720 tests — L0, L1, L2, mock API, persona waves
 cargo clippy -- -D warnings   # must be clean
 cargo fmt --check             # must be clean
 ```
