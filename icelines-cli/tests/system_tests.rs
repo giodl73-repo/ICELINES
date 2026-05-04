@@ -55,9 +55,13 @@ fn l2_cmd_version_exits_zero() {
         stdout.contains("icelines"),
         "--version must print 'icelines'"
     );
+    // Workspace version is sourced from Cargo.toml at compile time.
+    // Pin against the workspace constant rather than a literal so this
+    // test doesn't drift each release.
+    let expected = env!("CARGO_PKG_VERSION");
     assert!(
-        stdout.contains("0.1.0"),
-        "--version must print version number"
+        stdout.contains(expected),
+        "--version must print '{expected}', got: {stdout}"
     );
 }
 
@@ -68,8 +72,18 @@ fn l2_cmd_help_exits_zero_and_lists_commands() {
     let out = run(&["--help"]);
     assert!(out.status.success(), "--help must exit 0");
     let stdout = String::from_utf8_lossy(&out.stdout);
-    for cmd in &["fetch", "team", "rank", "build", "tui"] {
+    // King.1.0 grouped `build` / `serve` / `deploy` under `site` and
+    // hid the flat aliases. Help should list `site` (not the leaves).
+    for cmd in &["fetch", "team", "rank", "site", "tui"] {
         assert!(stdout.contains(cmd), "--help must list '{cmd}' subcommand");
+    }
+    // The deprecated aliases should NOT appear in the top-level help —
+    // they're `#[command(hide = true)]` and only callable for back-compat.
+    for hidden in &["\n  build ", "\n  serve ", "\n  deploy "] {
+        assert!(
+            !stdout.contains(hidden),
+            "--help must NOT list deprecated alias matching '{hidden}'"
+        );
     }
 }
 

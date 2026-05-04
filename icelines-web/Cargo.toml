@@ -7,7 +7,9 @@ edition.workspace = true
 path = "src/lib.rs"
 
 [dependencies]
-icelines-core = { path = "../icelines-core" }
+# `send-sync` drops the !Send + !Sync soft-lint on StatsRepository so
+# we can hold `Arc<RwLock<StatsRepository>>` in axum's State<_>. King.1.2.
+icelines-core = { path = "../icelines-core", features = ["send-sync"] }
 icelines-fetch = { path = "../icelines-fetch" }
 axum = { workspace = true }
 tower-http = { workspace = true }

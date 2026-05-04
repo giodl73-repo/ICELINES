@@ -242,10 +242,10 @@ Total: 15 (above King.1 floor of 10+5 = 15 ✓)
 
 ## Outcomes (filled in at close)
 
-- **Concurrency model chosen**: TBD
-- **Compile-time delta**: TBD
-- **Binary size delta**: TBD
-- **Cold-start latency measured**: TBD (target <500ms)
+- **Concurrency model chosen** (King.1.2 — 2026-05-04): `Arc<RwLock<StatsRepository>>` via the new `send-sync` cargo feature on `icelines-core`. The Phase Hart `PhantomData<*const ()>` marker was a soft-lint enforcing "wrap me in `Arc<RwLock<_>>` at the call site" — but the marker itself prevented that exact wrapping. King.1.2 gates the marker behind `#[cfg(not(feature = "send-sync"))]`. `icelines-web` enables the feature; CLI/TUI consumers default to the original `!Send + !Sync` lint. Audit confirmed all `StatsRepository` fields (`HashMap`, `BTreeMap`, `VecDeque`, `usize`, `serde_json::Value`) are naturally Send+Sync — the marker was the only blocker. No `LocalSet`+`Rc<RefCell>` fallback was needed. L0 fence `state::l0_web_state_is_send_sync` proves `Arc<RwLock<StatsRepository>>` IS Send+Sync now.
+- **Compile-time delta**: TBD (measured at King.1.5 close, after `commands::serve` driver + browser auto-open ship)
+- **Binary size delta**: TBD (King.1.10 close)
+- **Cold-start latency measured**: TBD (King.1.5 close, target <500ms)
 
 ---
 

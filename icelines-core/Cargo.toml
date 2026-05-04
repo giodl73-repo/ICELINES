@@ -12,5 +12,20 @@ sha2.workspace             = true
 once_cell.workspace        = true
 static_assertions.workspace = true
 
+[features]
+# Default: StatsRepository is `!Send + !Sync` via PhantomData<*const ()> —
+# a soft-lint preventing accidental cross-thread sharing in CLI / TUI
+# code paths that don't wrap the repo in a synchronization primitive.
+default = []
+
+# Phase King Clancy King.1.2 — drop the !Send + !Sync marker so
+# `icelines-web` can store StatsRepository in `Arc<RwLock<_>>` for
+# axum's multi-threaded runtime. The marker is a lint, not a
+# correctness mechanism: Rust's borrow checker still prevents
+# concurrent mutation through `&` shared access. Enabling this
+# feature is workspace-wide (cargo features are additive); CLI/TUI
+# don't notice because they never try to share the repo.
+send-sync = []
+
 [dev-dependencies]
 proptest = { workspace = true }

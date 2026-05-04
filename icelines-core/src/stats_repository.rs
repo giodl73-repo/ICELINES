@@ -14,13 +14,30 @@
 //! Window LRU bounds memory at `lru_cap` resident (Season, SeasonType)
 //! windows. Identities never evict (cheap and stable).
 //!
-//! `!Send + !Sync` by construction (`PhantomData<*const ()>`). Concurrent
-//! upserts could tear the roster indexes; tokio-spawning callers must
-//! wrap in `Arc<RwLock<_>>` at the call site.
+//! `!Send + !Sync` by construction (`PhantomData<*const ()>`) **by
+//! default**. Concurrent upserts could tear the roster indexes;
+//! tokio-spawning callers must wrap in `Arc<RwLock<_>>` at the call
+//! site. The marker is a soft-lint, not a memory-safety requirement
+//! — every field is naturally Send + Sync; the borrow checker
+//! prevents tearing.
+//!
+//! ## `send-sync` feature (Phase King Clancy King.1.2)
+//!
+//! `icelines-web` runs handlers on tokio's multi-threaded runtime and
+//! needs `Arc<RwLock<StatsRepository>>` in axum's `State<_>`. That
+//! requires `StatsRepository: Send + Sync`. Enabling the `send-sync`
+//! feature on `icelines-core` drops the `PhantomData<*const ()>`
+//! field and flips the static assertion. CLI/TUI consumers see no
+//! behavior change — they just lose the lint that warned them
+//! against passing the bare repo across threads.
 
 use std::collections::{HashMap, VecDeque};
+#[cfg(not(feature = "send-sync"))]
 use std::marker::PhantomData;
 
+#[cfg(feature = "send-sync")]
+use static_assertions::assert_impl_all;
+#[cfg(not(feature = "send-sync"))]
 use static_assertions::assert_not_impl_any;
 use thiserror::Error;
 
@@ -110,13 +127,19 @@ pub struct StatsRepository {
     /// granularity since Tier-2 reports are per-row.
     pub(crate) extra_reports_lru: VecDeque<ExtraReportKey>,
 
-    /// `*const ()` makes this type both `!Send` AND `!Sync`. Concurrent
-    /// upserts can race the roster indexes; the static assertion below
-    /// enforces this contract.
+    /// `*const ()` makes this type both `!Send` AND `!Sync` by
+    /// default. Concurrent upserts can race the roster indexes; the
+    /// static assertion below enforces this contract. Removed when
+    /// the `send-sync` feature is enabled (King.1.2 — see crate
+    /// docs).
+    #[cfg(not(feature = "send-sync"))]
     _not_send_sync: PhantomData<*const ()>,
 }
 
+#[cfg(not(feature = "send-sync"))]
 assert_not_impl_any!(StatsRepository: Send, Sync);
+#[cfg(feature = "send-sync")]
+assert_impl_all!(StatsRepository: Send, Sync);
 
 impl Default for StatsRepository {
     fn default() -> Self {
@@ -141,6 +164,7 @@ impl StatsRepository {
             lru_cap: cap,
             extra_reports: std::collections::BTreeMap::new(),
             extra_reports_lru: VecDeque::new(),
+            #[cfg(not(feature = "send-sync"))]
             _not_send_sync: PhantomData,
         }
     }
