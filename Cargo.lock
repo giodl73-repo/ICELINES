@@ -1396,7 +1396,7 @@ dependencies = [
 
 [[package]]
 name = "icelines-cli"
-version = "0.1.0"
+version = "0.13.0"
 dependencies = [
  "anyhow",
  "axum",
@@ -1427,7 +1427,7 @@ dependencies = [
 
 [[package]]
 name = "icelines-core"
-version = "0.1.0"
+version = "0.13.0"
 dependencies = [
  "once_cell",
  "proptest",
@@ -1441,7 +1441,7 @@ dependencies = [
 
 [[package]]
 name = "icelines-fetch"
-version = "0.1.0"
+version = "0.13.0"
 dependencies = [
  "chrono",
  "csv",
@@ -1460,7 +1460,7 @@ dependencies = [
 
 [[package]]
 name = "icelines-site"
-version = "0.1.0"
+version = "0.13.0"
 dependencies = [
  "icelines-core",
  "icelines-fetch",
