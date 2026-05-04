@@ -66,8 +66,9 @@ pub fn router(state: WebState) -> Router {
         .route("/api/v1/leaders", get(handlers::leaders::get_leaders_json))
         // Player card — King.3.1. Name links on /leaders point here.
         .route("/player/:id", get(handlers::player::get_player))
-        // Goalie leaderboard — King.5.1.
+        // Goalie leaderboard — King.5.1 / .5.2.
         .route("/goalies", get(handlers::goalies::get_goalies))
+        .route("/api/v1/goalies", get(handlers::goalies::get_goalies_json))
         // Team roster — King.4.1. /team/SEA, /team/EDM, etc.
         .route("/team/:abbrev", get(handlers::team::get_team))
         // Coming-soon stubs for the rest of the section nav links.
@@ -964,16 +965,17 @@ mod handlers {
         }
     }
 
-    /// `/goalies` — King.5.1 minimum viable goalie leaderboard.
+    /// `/goalies` — King.5.1 + King.5.2 goalie leaderboard.
     pub mod goalies {
         use crate::state::WebState;
         use crate::templates::{GoalieRow, GoaliesTemplate};
         use askama::Template;
-        use axum::extract::State;
+        use axum::extract::{Query, State};
         use axum::http::StatusCode;
         use axum::response::{Html, IntoResponse, Response};
         use icelines_core::model::Season;
         use icelines_core::season_stats::SeasonType;
+        use serde::Deserialize;
 
         /// Spec's rate-stat floor for goalie save-pct: 5+ GP qualifies
         /// for ranking. Without this, a goalie who plays one perfect
@@ -981,7 +983,72 @@ mod handlers {
         const QUALIFIED_GP_REGULAR: u32 = 5;
         const QUALIFIED_GP_PLAYOFF: u32 = 1;
 
-        pub async fn get_goalies(State(state): State<WebState>) -> Response {
+        #[derive(Debug, Deserialize, Default)]
+        pub struct GoaliesQuery {
+            /// Sort key: `save_pct` (default), `wins`, `gaa`, `gp`,
+            /// `shutouts`. Aliases `sv-pct` and `sv%` accepted.
+            #[serde(default)]
+            pub sort: Option<String>,
+            /// Top-N rows. Default 20, clamped 1..=200.
+            #[serde(default)]
+            pub top: Option<usize>,
+            /// Skip the gp_min floor (e.g. show all goalies, not
+            /// just those with 5+ GP). Spec'd flag.
+            #[serde(default)]
+            pub include_below_threshold: Option<bool>,
+        }
+
+        #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+        pub enum GoalieSort {
+            SavePct,
+            Wins,
+            Losses,
+            Games,
+            Shutouts,
+            GaaAsc, // GAA: lower is better, sort ascending
+        }
+
+        impl GoalieSort {
+            pub fn from_query(s: Option<&str>) -> Self {
+                match s.unwrap_or("").to_ascii_lowercase().as_str() {
+                    "wins" | "w" => Self::Wins,
+                    "losses" | "l" => Self::Losses,
+                    "gp" | "games" => Self::Games,
+                    "shutouts" | "so" => Self::Shutouts,
+                    "gaa" | "goals-against-avg" => Self::GaaAsc,
+                    _ => Self::SavePct,
+                }
+            }
+            #[allow(dead_code)]
+            pub fn label(self) -> &'static str {
+                match self {
+                    Self::SavePct => "Save %",
+                    Self::Wins => "Wins",
+                    Self::Losses => "Losses",
+                    Self::Games => "Games",
+                    Self::Shutouts => "Shutouts",
+                    Self::GaaAsc => "GAA",
+                }
+            }
+        }
+
+        /// Shared data path so HTML + JSON can't drift.
+        struct GoalieResult {
+            rows: Vec<GoalieRow>,
+            total: usize,
+            sort: GoalieSort,
+            qualified_threshold: u32,
+            include_below_threshold: bool,
+            active_label: String,
+            active_season: String,
+            active_season_type: SeasonType,
+            top_n: usize,
+        }
+
+        async fn build_goalie_result(
+            state: &WebState,
+            q: &GoaliesQuery,
+        ) -> Result<GoalieResult, Response> {
             let (season_str, season_type, active_label) = {
                 let cfg = state.config.read().await;
                 let st = match cfg.active_season_type.as_str() {
@@ -990,28 +1057,29 @@ mod handlers {
                 };
                 (cfg.active_season.clone(), st, cfg.active_label.clone())
             };
-            let season_u32: u32 = match season_str.parse() {
-                Ok(n) => n,
-                Err(_) => {
-                    return error_500(format!("active season '{season_str}' is not a YYYYZZZZ id"));
-                }
-            };
+            let season_u32: u32 = season_str.parse().map_err(|_| {
+                error_500(format!("active season '{season_str}' is not a YYYYZZZZ id"))
+            })?;
             let season = Season(season_u32);
-
             let qualified_threshold = match season_type {
                 SeasonType::Regular => QUALIFIED_GP_REGULAR,
                 SeasonType::Playoff => QUALIFIED_GP_PLAYOFF,
             };
+            let include_below_threshold = q.include_below_threshold.unwrap_or(false);
+            let effective_floor = if include_below_threshold {
+                0
+            } else {
+                qualified_threshold
+            };
+            let sort = GoalieSort::from_query(q.sort.as_deref());
+            let top_n = q.top.unwrap_or(20).clamp(1, 200);
 
             let (rows, total) = {
                 let repo = state.repo.read().await;
                 let mut all: Vec<GoalieRow> = repo
                     .goalies(season, season_type)
-                    .filter(|v| v.gp() >= qualified_threshold)
+                    .filter(|v| v.gp() >= effective_floor)
                     .filter_map(|v| {
-                        // Goalie stats live on SeasonStats.goalie.
-                        // If a player iterates as a goalie but has
-                        // no goalie row (data gap), drop them.
                         let g = v.stats.goalie.as_ref()?;
                         let save_pct_str = match g.save_pct {
                             Some(p) => format!("{:.3}", p),
@@ -1035,30 +1103,153 @@ mod handlers {
                     })
                     .collect();
                 let total = all.len();
-                // Sort by save_pct desc. Parse from the formatted
-                // string (we drop "—" goalies via partial_cmp).
+
                 all.sort_by(|a, b| {
-                    let ap = a.save_pct_str.parse::<f64>().unwrap_or(0.0);
-                    let bp = b.save_pct_str.parse::<f64>().unwrap_or(0.0);
-                    bp.partial_cmp(&ap)
-                        .unwrap_or(std::cmp::Ordering::Equal)
-                        .then(b.wins.cmp(&a.wins))
-                        .then(a.name.cmp(&b.name))
+                    let primary = match sort {
+                        GoalieSort::SavePct => {
+                            let ap = a.save_pct_str.parse::<f64>().unwrap_or(0.0);
+                            let bp = b.save_pct_str.parse::<f64>().unwrap_or(0.0);
+                            bp.partial_cmp(&ap).unwrap_or(std::cmp::Ordering::Equal)
+                        }
+                        GoalieSort::Wins => b.wins.cmp(&a.wins),
+                        GoalieSort::Losses => b.losses.cmp(&a.losses),
+                        GoalieSort::Games => b.gp.cmp(&a.gp),
+                        GoalieSort::Shutouts => b.shutouts.cmp(&a.shutouts),
+                        GoalieSort::GaaAsc => {
+                            // Lower GAA is better; sort ascending.
+                            // Treat "—" as worst.
+                            let av = a.gaa_str.parse::<f64>().unwrap_or(f64::INFINITY);
+                            let bv = b.gaa_str.parse::<f64>().unwrap_or(f64::INFINITY);
+                            av.partial_cmp(&bv).unwrap_or(std::cmp::Ordering::Equal)
+                        }
+                    };
+                    primary.then(b.wins.cmp(&a.wins)).then(a.name.cmp(&b.name))
                 });
-                all.truncate(20);
+                all.truncate(top_n);
                 (all, total)
             };
 
-            let tmpl = GoaliesTemplate {
-                active_label,
+            Ok(GoalieResult {
                 rows,
                 total,
+                sort,
                 qualified_threshold,
+                include_below_threshold,
+                active_label,
+                active_season: season_str,
+                active_season_type: season_type,
+                top_n,
+            })
+        }
+
+        pub async fn get_goalies(
+            State(state): State<WebState>,
+            Query(q): Query<GoaliesQuery>,
+        ) -> Response {
+            let r = match build_goalie_result(&state, &q).await {
+                Ok(v) => v,
+                Err(resp) => return resp,
+            };
+            let _ = r.include_below_threshold;
+            let tmpl = GoaliesTemplate {
+                active_label: r.active_label,
+                rows: r.rows,
+                total: r.total,
+                qualified_threshold: r.qualified_threshold,
             };
             match tmpl.render() {
                 Ok(html) => Html(html).into_response(),
                 Err(e) => error_500(format!("template render failed: {e}")),
             }
+        }
+
+        // ── King.5.2 — JSON envelope ─────────────────────────────────
+
+        #[derive(Debug, serde::Serialize)]
+        pub struct GoaliesEnvelope {
+            pub schema_version: u32,
+            pub route: &'static str,
+            pub data: Vec<GoalieJsonRow>,
+            pub meta: GoaliesMeta,
+        }
+
+        #[derive(Debug, serde::Serialize)]
+        pub struct GoalieJsonRow {
+            pub nhl_id: u32,
+            pub name: String,
+            pub team: String,
+            pub games: u32,
+            pub wins: u32,
+            pub losses: u32,
+            pub shutouts: u32,
+            pub save_pct: Option<f64>,
+            pub goals_against_average: Option<f64>,
+        }
+
+        #[derive(Debug, serde::Serialize)]
+        pub struct GoaliesMeta {
+            pub season: String,
+            pub season_type: String,
+            pub sort: String,
+            pub qualified_gp_min: u32,
+            pub include_below_threshold: bool,
+            pub total: usize,
+            pub returned: usize,
+            pub top: usize,
+        }
+
+        pub async fn get_goalies_json(
+            State(state): State<WebState>,
+            Query(q): Query<GoaliesQuery>,
+        ) -> Response {
+            let r = match build_goalie_result(&state, &q).await {
+                Ok(v) => v,
+                Err(resp) => return resp,
+            };
+            let returned = r.rows.len();
+            let data: Vec<GoalieJsonRow> = r
+                .rows
+                .iter()
+                .map(|row| GoalieJsonRow {
+                    nhl_id: row.nhl_id,
+                    name: row.name.clone(),
+                    team: row.team.clone(),
+                    games: row.gp,
+                    wins: row.wins,
+                    losses: row.losses,
+                    shutouts: row.shutouts,
+                    save_pct: row.save_pct_str.parse().ok(),
+                    goals_against_average: row.gaa_str.parse().ok(),
+                })
+                .collect();
+
+            let envelope = GoaliesEnvelope {
+                schema_version: 1,
+                route: "goalies",
+                data,
+                meta: GoaliesMeta {
+                    season: r.active_season,
+                    season_type: match r.active_season_type {
+                        SeasonType::Regular => "regular".to_owned(),
+                        SeasonType::Playoff => "playoff".to_owned(),
+                    },
+                    sort: match r.sort {
+                        GoalieSort::SavePct => "save_pct".to_owned(),
+                        GoalieSort::Wins => "wins".to_owned(),
+                        GoalieSort::Losses => "losses".to_owned(),
+                        GoalieSort::Games => "gp".to_owned(),
+                        GoalieSort::Shutouts => "shutouts".to_owned(),
+                        GoalieSort::GaaAsc => "gaa".to_owned(),
+                    },
+                    qualified_gp_min: r.qualified_threshold,
+                    include_below_threshold: r.include_below_threshold,
+                    total: r.total,
+                    returned,
+                    top: r.top_n,
+                },
+            };
+            let _ = r.active_label;
+            axum::Json(envelope).into_response()
         }
 
         fn error_500(msg: String) -> Response {
