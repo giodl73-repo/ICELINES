@@ -157,7 +157,7 @@ pub struct GoalieRow {
     pub gaa_str: String,
 }
 
-/// `player.html` — King.3.1 player card.
+/// `player.html` — King.3.1 + King.3.2. Player card with career table.
 #[derive(Template)]
 #[template(path = "player.html")]
 pub struct PlayerTemplate {
@@ -167,6 +167,26 @@ pub struct PlayerTemplate {
     pub position: String,
     pub team: String,
     pub headshot_url: Option<String>,
+    pub gp: u32,
+    pub goals: u32,
+    pub assists: u32,
+    pub points: u32,
+    pub ppg_str: String,
+    /// Full career — one row per (season, type) the player has stats
+    /// for. King.3.2 lands this; the row count for a 10-year veteran
+    /// is ~10-20 (regular only) or ~15-30 (regular + playoff).
+    pub career_rows: Vec<CareerRow>,
+}
+
+/// One row in the player-card career table.
+#[derive(Debug, Clone)]
+pub struct CareerRow {
+    /// Pretty season label e.g. "2024-25".
+    pub season: String,
+    /// "Regular" or "Playoff".
+    pub season_type: String,
+    /// Last team in that (season, type).
+    pub team: String,
     pub gp: u32,
     pub goals: u32,
     pub assists: u32,

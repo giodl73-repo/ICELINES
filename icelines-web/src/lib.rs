@@ -931,10 +931,10 @@ mod handlers {
         }
     }
 
-    /// `/player/:id` — King.3.1 player card.
+    /// `/player/:id` — King.3.1 + King.3.2. Player card + career table.
     pub mod player {
         use crate::state::WebState;
-        use crate::templates::PlayerTemplate;
+        use crate::templates::{CareerRow, PlayerTemplate};
         use askama::Template;
         use axum::extract::{Path, State};
         use axum::http::StatusCode;
@@ -942,6 +942,17 @@ mod handlers {
         use icelines_core::identity::PlayerId;
         use icelines_core::model::Season;
         use icelines_core::season_stats::SeasonType;
+
+        /// Format a YYYYZZZZ season as "YYYY-YY" (e.g. 20242025 → "2024-25").
+        fn pretty_season(s: Season) -> String {
+            let raw = s.0;
+            if raw < 10_000_000 {
+                return raw.to_string();
+            }
+            let yyyy_start = raw / 10_000;
+            let yy_end = raw % 100;
+            format!("{:04}-{:02}", yyyy_start, yy_end)
+        }
 
         pub async fn get_player(State(state): State<WebState>, Path(id): Path<u32>) -> Response {
             let (season_str, season_type, active_label) = {
@@ -962,6 +973,23 @@ mod handlers {
             };
             let season = Season(season_u32);
             let pid = PlayerId(id);
+
+            // King.3.2 — lazy career fan-out (UX.1 pattern). Brief
+            // write lock loads all 38 bundled seasons for this pid
+            // into the repo. Idempotent — re-opening the same player
+            // is a ~5ms no-op aside from the bundle scans.
+            // Per spec: subsequent reads are concurrent (RwLock).
+            {
+                let mut repo = state.repo.write().await;
+                if let Err(e) =
+                    icelines_fetch::stats_loader::load_player_career_into_repo(&mut repo, pid)
+                {
+                    eprintln!(
+                        "warn: career fan-out for pid={id} failed: {e} — \
+                         player card will show only seasons already loaded"
+                    );
+                }
+            }
 
             let projection = {
                 let repo = state.repo.read().await;
@@ -995,6 +1023,53 @@ mod handlers {
                 } else {
                     String::new()
                 };
+
+                // King.3.2 — collect every (season, type) row this
+                // player has stats for. Newest first. Skips empty
+                // (gp=0) rows so a player who was rostered but never
+                // played a regular-season game in a given (year,type)
+                // doesn't add noise.
+                let mut career_rows: Vec<CareerRow> = match repo.career_all(pid) {
+                    Some(iter) => iter
+                        .filter_map(|s| {
+                            let totals = &s.totals;
+                            if totals.gp == 0 {
+                                return None;
+                            }
+                            let last_team = s
+                                .team_stints
+                                .last()
+                                .map(|st| st.team.0.as_str().to_owned())
+                                .unwrap_or_else(|| "—".to_owned());
+                            let ppg_str = if totals.gp > 0 {
+                                format!("{:.2}", totals.points as f64 / totals.gp as f64)
+                            } else {
+                                String::new()
+                            };
+                            Some(CareerRow {
+                                season: pretty_season(s.season),
+                                season_type: match s.season_type {
+                                    SeasonType::Regular => "Regular".to_owned(),
+                                    SeasonType::Playoff => "Playoff".to_owned(),
+                                },
+                                team: last_team,
+                                gp: totals.gp,
+                                goals: totals.goals,
+                                assists: totals.assists,
+                                points: totals.points,
+                                ppg_str,
+                            })
+                        })
+                        .collect(),
+                    None => Vec::new(),
+                };
+                // Newest season first; within a season, regular before playoff.
+                career_rows.sort_by(|a, b| {
+                    b.season
+                        .cmp(&a.season)
+                        .then(a.season_type.cmp(&b.season_type))
+                });
+
                 PlayerTemplate {
                     active_label: active_label.clone(),
                     nhl_id: id,
@@ -1007,6 +1082,7 @@ mod handlers {
                     assists,
                     points,
                     ppg_str,
+                    career_rows,
                 }
             };
 
