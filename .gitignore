@@ -9,3 +9,6 @@ __pycache__/
 # Per-developer cargo overrides for proof + mdpath path patches.
 # See `.cargo/config.toml.example` for the template.
 .cargo/config.toml
+# Editor + tool caches — never tracked.
+.vscode/
+.proof/
