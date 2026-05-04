@@ -64,6 +64,8 @@ pub fn router(state: WebState) -> Router {
         // JSON API — King.2.4. /api/v1/leaders is the JSON twin of
         // /leaders. Same query params; envelope shape per spec.
         .route("/api/v1/leaders", get(handlers::leaders::get_leaders_json))
+        // Player card — King.3.1. Name links on /leaders point here.
+        .route("/player/:id", get(handlers::player::get_player))
         // Coming-soon stubs for the rest of the section nav links.
         // Each lands on a real page (with the active-season header)
         // so clicks don't fail with a bare 404. Replaced by real
@@ -397,6 +399,7 @@ mod handlers {
                             String::new()
                         };
                         LeaderRow {
+                            nhl_id: v.id().0,
                             name: v.full_name().to_owned(),
                             position: v.position().abbreviation().to_owned(),
                             team: v.team_display().to_owned(),
@@ -607,6 +610,7 @@ mod handlers {
                             String::new()
                         };
                         LeaderRow {
+                            nhl_id: v.id().0,
                             name: v.full_name().to_owned(),
                             position: v.position().abbreviation().to_owned(),
                             team: v.team_display().to_owned(),
@@ -823,6 +827,110 @@ mod handlers {
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Html(format!(
                     "<!doctype html><html><body><h1>500</h1><p>{msg}</p></body></html>"
+                )),
+            )
+                .into_response()
+        }
+    }
+
+    /// `/player/:id` — King.3.1 player card.
+    pub mod player {
+        use crate::state::WebState;
+        use crate::templates::PlayerTemplate;
+        use askama::Template;
+        use axum::extract::{Path, State};
+        use axum::http::StatusCode;
+        use axum::response::{Html, IntoResponse, Response};
+        use icelines_core::identity::PlayerId;
+        use icelines_core::model::Season;
+        use icelines_core::season_stats::SeasonType;
+
+        pub async fn get_player(State(state): State<WebState>, Path(id): Path<u32>) -> Response {
+            let (season_str, season_type, active_label) = {
+                let cfg = state.config.read().await;
+                let st = match cfg.active_season_type.as_str() {
+                    "playoff" | "playoffs" => SeasonType::Playoff,
+                    _ => SeasonType::Regular,
+                };
+                (cfg.active_season.clone(), st, cfg.active_label.clone())
+            };
+            let season_u32: u32 = match season_str.parse() {
+                Ok(n) => n,
+                Err(_) => {
+                    return not_found_page(format!(
+                        "Season '{season_str}' is not a valid YYYYZZZZ id"
+                    ));
+                }
+            };
+            let season = Season(season_u32);
+            let pid = PlayerId(id);
+
+            let projection = {
+                let repo = state.repo.read().await;
+                let identity = match repo.identity(pid) {
+                    Some(i) => i,
+                    None => {
+                        return not_found_page(format!(
+                            "No player with NHL id {id} in the active repository. \
+                             They may not have a row in the {season_str} season — \
+                             try editing `~/.icelines/config.toml` to switch seasons."
+                        ));
+                    }
+                };
+                // Try the active season's view; fall back to None if
+                // the player has no row that season (e.g. injured all
+                // year, traded mid-season, retired).
+                let view = repo.view(pid, season, season_type);
+                let (gp, goals, assists, points, position, team) = match view {
+                    Some(v) => (
+                        v.gp(),
+                        v.goals(),
+                        v.assists(),
+                        v.points(),
+                        v.position().abbreviation().to_owned(),
+                        v.team_display().to_owned(),
+                    ),
+                    None => (0, 0, 0, 0, "—".to_owned(), "—".to_owned()),
+                };
+                let ppg_str = if gp > 0 {
+                    format!("{:.2}", points as f64 / gp as f64)
+                } else {
+                    String::new()
+                };
+                PlayerTemplate {
+                    active_label: active_label.clone(),
+                    nhl_id: id,
+                    full_name: identity.full_name.clone(),
+                    position,
+                    team,
+                    headshot_url: identity.headshot_canonical_url.clone(),
+                    gp,
+                    goals,
+                    assists,
+                    points,
+                    ppg_str,
+                }
+            };
+
+            match projection.render() {
+                Ok(html) => Html(html).into_response(),
+                Err(e) => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Html(format!("template render failed: {e}")),
+                )
+                    .into_response(),
+            }
+        }
+
+        fn not_found_page(msg: String) -> Response {
+            (
+                StatusCode::NOT_FOUND,
+                Html(format!(
+                    "<!doctype html><html><body>\
+                     <h1>Player not found</h1>\
+                     <p>{msg}</p>\
+                     <p><a href=\"/leaders\">← back to leaders</a></p>\
+                     </body></html>"
                 )),
             )
                 .into_response()

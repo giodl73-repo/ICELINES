@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}{{ full_name }}{% endblock %}
+
+{% block content %}
+<p style="margin-bottom: 0.5rem;">
+    <a href="/leaders">← back to leaders</a>
+</p>
+
+<div style="display: flex; gap: 1.5rem; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap;">
+    {% match headshot_url %}
+        {% when Some with (url) %}
+            <img src="{{ url }}" alt="Headshot of {{ full_name }}"
+                 style="width: 96px; height: 96px; border-radius: 4px; background: #f0f0f0;">
+        {% when None %}
+    {% endmatch %}
+    <div>
+        <h1 style="margin: 0;">{{ full_name }}</h1>
+        <p style="color: #616161; margin: 0.25rem 0 0 0;">
+            {{ position }} · {{ team }} · NHL #{{ nhl_id }} · {{ active_label }}
+        </p>
+    </div>
+</div>
+
+<h2 style="margin-top: 1.5rem;">Current season</h2>
+
+<div class="table-scroll">
+<table>
+    <thead>
+        <tr>
+            <th style="text-align: right;">GP</th>
+            <th style="text-align: right;">G</th>
+            <th style="text-align: right;">A</th>
+            <th style="text-align: right;">P</th>
+            <th style="text-align: right;">P/GP</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td style="text-align: right;">{{ gp }}</td>
+            <td style="text-align: right;">{{ goals }}</td>
+            <td style="text-align: right;">{{ assists }}</td>
+            <td style="text-align: right;"><strong>{{ points }}</strong></td>
+            <td style="text-align: right;">{% if ppg_str.is_empty() %}—{% else %}{{ ppg_str }}{% endif %}</td>
+        </tr>
+    </tbody>
+</table>
+</div>
+
+<p style="margin-top: 2rem; color: #616161; font-size: 0.9rem;">
+    King.3.1 ships current-season only. King.3.2 adds the full
+    38-season career table; King.3.3 adds the comps panel and
+    similarity search; King.3.4 adds rate-stat percentile rank.
+</p>
+{% endblock %}

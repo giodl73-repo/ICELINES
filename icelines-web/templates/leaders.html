@@ -92,7 +92,7 @@
         {% for row in rows %}
         <tr>
             <td style="text-align: right; color: #616161;">{{ loop.index }}</td>
-            <td><strong>{{ row.name }}</strong></td>
+            <td><strong><a href="/player/{{ row.nhl_id }}" style="color: #1565c0;">{{ row.name }}</a></strong></td>
             <td>{{ row.position }}</td>
             <td>{{ row.team }}</td>
             <td style="text-align: right;">{{ row.gp }}</td>

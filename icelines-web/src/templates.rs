@@ -119,6 +119,9 @@ pub struct ColHeader {
 /// (askama doesn't allow `as f64` casts inline; ppg is precomputed).
 #[derive(Debug, Clone)]
 pub struct LeaderRow {
+    /// NHL player id (e.g. 8478402 = Connor McDavid). Used to build
+    /// the link to `/player/:id`.
+    pub nhl_id: u32,
     pub name: String,
     pub position: String,
     pub team: String,
@@ -127,6 +130,23 @@ pub struct LeaderRow {
     pub assists: u32,
     pub points: u32,
     /// Points per game, formatted to 2 decimals. Empty string if gp=0.
+    pub ppg_str: String,
+}
+
+/// `player.html` — King.3.1 player card.
+#[derive(Template)]
+#[template(path = "player.html")]
+pub struct PlayerTemplate {
+    pub active_label: String,
+    pub nhl_id: u32,
+    pub full_name: String,
+    pub position: String,
+    pub team: String,
+    pub headshot_url: Option<String>,
+    pub gp: u32,
+    pub goals: u32,
+    pub assists: u32,
+    pub points: u32,
     pub ppg_str: String,
 }
 
