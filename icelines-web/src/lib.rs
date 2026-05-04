@@ -190,13 +190,80 @@ mod handlers {
         use crate::state::WebState;
         use crate::templates::{LeaderRow, LeadersTemplate};
         use askama::Template;
-        use axum::extract::State;
+        use axum::extract::{Query, State};
         use axum::http::StatusCode;
         use axum::response::{Html, IntoResponse, Response};
-        use icelines_core::model::Season;
+        use icelines_core::model::{Position, Season};
         use icelines_core::season_stats::SeasonType;
+        use serde::Deserialize;
 
-        pub async fn get_leaders(State(state): State<WebState>) -> Response {
+        /// Query params accepted by `/leaders`. King.2.2 ships
+        /// `sort`, `pos`, `top`. King.2.3 will add `filter`.
+        #[derive(Debug, Deserialize, Default)]
+        pub struct LeadersQuery {
+            /// Sort key: `points` (default), `goals`, `assists`, `gp`,
+            /// `ppg`. Aliases `g`/`a`/`p` accepted.
+            #[serde(default)]
+            pub sort: Option<String>,
+            /// Position filter: `C`, `LW`, `RW`, `D`, `F` (forwards),
+            /// `G` (goalies — empty for now since /leaders is skaters
+            /// only; King.5 has /goalies). Case-insensitive.
+            #[serde(default)]
+            pub pos: Option<String>,
+            /// Top-N rows to render. Default 20, clamped 1..=500.
+            #[serde(default)]
+            pub top: Option<usize>,
+        }
+
+        /// Sort key parsed from the `?sort=` param. Stable PascalCase
+        /// for use in template (`{% if active_sort == "Points" %}`).
+        #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+        pub enum SortKey {
+            Points,
+            Goals,
+            Assists,
+            Games,
+            PointsPerGame,
+        }
+
+        impl SortKey {
+            pub fn from_query(s: Option<&str>) -> Self {
+                match s.unwrap_or("").to_ascii_lowercase().as_str() {
+                    "g" | "goals" => Self::Goals,
+                    "a" | "assists" => Self::Assists,
+                    "gp" | "games" => Self::Games,
+                    "ppg" | "points-per-game" => Self::PointsPerGame,
+                    // p / pts / points / "" / unknown → Points (default)
+                    _ => Self::Points,
+                }
+            }
+
+            pub fn label(self) -> &'static str {
+                match self {
+                    Self::Points => "Points",
+                    Self::Goals => "Goals",
+                    Self::Assists => "Assists",
+                    Self::Games => "Games",
+                    Self::PointsPerGame => "Points/Game",
+                }
+            }
+
+            /// Stable URL token for column-header links.
+            pub fn url_token(self) -> &'static str {
+                match self {
+                    Self::Points => "points",
+                    Self::Goals => "goals",
+                    Self::Assists => "assists",
+                    Self::Games => "gp",
+                    Self::PointsPerGame => "ppg",
+                }
+            }
+        }
+
+        pub async fn get_leaders(
+            State(state): State<WebState>,
+            Query(q): Query<LeadersQuery>,
+        ) -> Response {
             // Resolve active (season, season_type) from config.
             let (season_str, season_type, active_label) = {
                 let cfg = state.config.read().await;
@@ -216,6 +283,14 @@ mod handlers {
             };
             let season = Season(season_u32);
 
+            // Resolve query params into typed values. Invalid
+            // `?pos=` is treated as no filter (per spec: don't error
+            // for things the user might be exploring); invalid sort
+            // falls through to the default (Points).
+            let sort_key = SortKey::from_query(q.sort.as_deref());
+            let pos_filter = q.pos.as_deref().and_then(parse_position_filter);
+            let top_n = q.top.unwrap_or(20).clamp(1, 500);
+
             // Brief read of the repo. Project each PlayerView into a
             // LeaderRow inside the lock scope (per spec: views must
             // not escape the lock; we copy out scalar fields).
@@ -223,34 +298,115 @@ mod handlers {
                 let repo = state.repo.read().await;
                 let mut all: Vec<LeaderRow> = repo
                     .skaters(season, season_type)
-                    .map(|v| LeaderRow {
-                        name: v.full_name().to_owned(),
-                        position: v.position().abbreviation().to_owned(),
-                        team: v.team_display().to_owned(),
-                        gp: v.gp(),
-                        goals: v.goals(),
-                        assists: v.assists(),
-                        points: v.points(),
+                    .filter(|v| match pos_filter {
+                        None => true,
+                        Some(PosFilter::Exact(p)) => v.position() == p,
+                        Some(PosFilter::Forwards) => matches!(
+                            v.position(),
+                            Position::Center | Position::LeftWing | Position::RightWing
+                        ),
+                    })
+                    .map(|v| {
+                        let gp = v.gp();
+                        let points = v.points();
+                        let ppg_str = if gp > 0 {
+                            format!("{:.2}", points as f64 / gp as f64)
+                        } else {
+                            String::new()
+                        };
+                        LeaderRow {
+                            name: v.full_name().to_owned(),
+                            position: v.position().abbreviation().to_owned(),
+                            team: v.team_display().to_owned(),
+                            gp,
+                            goals: v.goals(),
+                            assists: v.assists(),
+                            points,
+                            ppg_str,
+                        }
                     })
                     .collect();
                 let total = all.len();
-                // Sort by points descending (the default per spec).
-                // Stable secondary sort: goals desc, then name asc so
-                // ties render deterministically.
+
+                // Sort by chosen key descending. Secondary: goals
+                // desc, then name asc — deterministic tie-break.
                 all.sort_by(|a, b| {
-                    b.points
-                        .cmp(&a.points)
+                    let primary = match sort_key {
+                        SortKey::Points => b.points.cmp(&a.points),
+                        SortKey::Goals => b.goals.cmp(&a.goals),
+                        SortKey::Assists => b.assists.cmp(&a.assists),
+                        SortKey::Games => b.gp.cmp(&a.gp),
+                        SortKey::PointsPerGame => {
+                            let a_ppg = if a.gp > 0 {
+                                a.points as f64 / a.gp as f64
+                            } else {
+                                0.0
+                            };
+                            let b_ppg = if b.gp > 0 {
+                                b.points as f64 / b.gp as f64
+                            } else {
+                                0.0
+                            };
+                            b_ppg
+                                .partial_cmp(&a_ppg)
+                                .unwrap_or(std::cmp::Ordering::Equal)
+                        }
+                    };
+                    primary
                         .then(b.goals.cmp(&a.goals))
                         .then(a.name.cmp(&b.name))
                 });
-                all.truncate(20);
+                all.truncate(top_n);
                 (all, total)
             };
+
+            let active_sort_token = sort_key.url_token().to_owned();
+            let active_pos = q
+                .pos
+                .as_deref()
+                .map(str::to_ascii_uppercase)
+                .unwrap_or_default();
+
+            // Pre-compute the position chips + column headers so the
+            // askama template doesn't need to compare String to &str.
+            let pos_chips = ["", "C", "LW", "RW", "F", "D"]
+                .iter()
+                .map(|p| crate::templates::PosChip {
+                    label: if p.is_empty() {
+                        "All".to_owned()
+                    } else {
+                        (*p).to_owned()
+                    },
+                    value: (*p).to_owned(),
+                    is_active: *p == active_pos.as_str(),
+                })
+                .collect();
+
+            let col_headers = [
+                ("gp", "GP"),
+                ("goals", "G"),
+                ("assists", "A"),
+                ("points", "P"),
+                ("ppg", "P/GP"),
+            ]
+            .iter()
+            .map(|(token, label)| crate::templates::ColHeader {
+                url_token: (*token).to_owned(),
+                label: (*label).to_owned(),
+                is_active: *token == active_sort_token.as_str(),
+            })
+            .collect();
 
             let tmpl = LeadersTemplate {
                 active_label,
                 rows,
                 total,
+                active_sort_label: sort_key.label().to_owned(),
+                active_sort: active_sort_token,
+                active_pos,
+                active_top: top_n,
+                pos_chips,
+                col_headers,
             };
             match tmpl.render() {
                 Ok(html) => Html(html).into_response(),
@@ -262,6 +418,26 @@ mod handlers {
             match s {
                 "playoff" | "playoffs" => SeasonType::Playoff,
                 _ => SeasonType::Regular,
+            }
+        }
+
+        /// What `?pos=X` means after parsing.
+        enum PosFilter {
+            /// Single-position filter (C / LW / RW / D / G).
+            Exact(Position),
+            /// `?pos=F` — forwards = C ∪ LW ∪ RW.
+            Forwards,
+        }
+
+        fn parse_position_filter(s: &str) -> Option<PosFilter> {
+            match s.to_ascii_uppercase().as_str() {
+                "C" => Some(PosFilter::Exact(Position::Center)),
+                "LW" => Some(PosFilter::Exact(Position::LeftWing)),
+                "RW" => Some(PosFilter::Exact(Position::RightWing)),
+                "D" => Some(PosFilter::Exact(Position::Defense)),
+                "G" => Some(PosFilter::Exact(Position::Goalie)),
+                "F" | "FORWARD" | "FORWARDS" => Some(PosFilter::Forwards),
+                _ => None,
             }
         }
 

@@ -63,20 +63,57 @@ pub struct ComingSoonTemplate {
     pub active_label: String,
 }
 
-/// `leaders.html` — King.2.1 minimum viable leaderboards. Renders
-/// the top-N skaters by points for the active season. King.2.2 will
-/// add the filter form + sort picker + pagination; King.2.3 adds the
-/// `/api/v1/leaders` JSON twin.
+/// `leaders.html` — King.2.x leaderboards. King.2.1 shipped the
+/// minimum viable real-data path; King.2.2 adds sort + position +
+/// top-N query params; King.2.3 adds the boolean filter form;
+/// King.2.4 adds the JSON twin at `/api/v1/leaders`.
 #[derive(Template)]
 #[template(path = "leaders.html")]
 pub struct LeadersTemplate {
     pub active_label: String,
     pub rows: Vec<LeaderRow>,
     pub total: usize,
+    /// Human label for the active sort, e.g. "Points/Game".
+    pub active_sort_label: String,
+    /// Active sort URL token (`points`/`goals`/`assists`/`gp`/`ppg`).
+    pub active_sort: String,
+    /// Active position filter URL token (`C`/`LW`/`F`/... or `""`).
+    pub active_pos: String,
+    /// Top-N rows requested (default 20).
+    pub active_top: usize,
+    /// Position-filter strip — pre-computed (label, url-value, is_active)
+    /// triples so the template doesn't need to compare String against
+    /// &str (askama doesn't auto-coerce).
+    pub pos_chips: Vec<PosChip>,
+    /// Column headers — same pre-computation pattern.
+    pub col_headers: Vec<ColHeader>,
+}
+
+/// One chip in the position-filter strip.
+#[derive(Debug, Clone)]
+pub struct PosChip {
+    /// What the user sees ("All", "C", "LW", ...).
+    pub label: String,
+    /// `?pos=` value (empty for "All").
+    pub value: String,
+    /// True when this chip matches the active filter.
+    pub is_active: bool,
+}
+
+/// One sortable column header.
+#[derive(Debug, Clone)]
+pub struct ColHeader {
+    /// `?sort=` URL token.
+    pub url_token: String,
+    /// Visible header label ("GP", "G", "A", "P", "P/GP").
+    pub label: String,
+    /// True when this column is the active sort.
+    pub is_active: bool,
 }
 
 /// One row in the leaderboard. Pre-projected from the
-/// `PlayerView` so the template doesn't reach into core types.
+/// `PlayerView` so the template doesn't reach into core types
+/// (askama doesn't allow `as f64` casts inline; ppg is precomputed).
 #[derive(Debug, Clone)]
 pub struct LeaderRow {
     pub name: String,
@@ -86,6 +123,8 @@ pub struct LeaderRow {
     pub goals: u32,
     pub assists: u32,
     pub points: u32,
+    /// Points per game, formatted to 2 decimals. Empty string if gp=0.
+    pub ppg_str: String,
 }
 
 #[cfg(test)]

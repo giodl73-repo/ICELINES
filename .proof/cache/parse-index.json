@@ -1,0 +1,50 @@
+{
+  "C:/src/ICELINES/src/guides\\00-getting-started.source.md": {
+    "parse_key": "c29fd5021a98789f",
+    "mtime_ms": 1777412933583,
+    "size": 2991,
+    "content_hash": "b4cec03adceab5e0"
+  },
+  "C:/src/ICELINES/src/guides\\03-fantasy.source.md": {
+    "parse_key": "16a766a7bb862073",
+    "mtime_ms": 1777354471874,
+    "size": 6783,
+    "content_hash": "fec13dc3ef1b934f"
+  },
+  "C:/src/ICELINES/src/guides\\04-data.source.md": {
+    "parse_key": "03813953d04c8e5c",
+    "mtime_ms": 1777354471875,
+    "size": 5367,
+    "content_hash": "0010026714d2bfd0"
+  },
+  "C:/src/ICELINES/src/guides\\02-team-depth.source.md": {
+    "parse_key": "fa6b1a00717c47cc",
+    "mtime_ms": 1777354471873,
+    "size": 3765,
+    "content_hash": "e659e95f96ccda43"
+  },
+  "C:/src/ICELINES/src/guides/06-tui.source.md": {
+    "parse_key": "e3f01fa17b7f336e",
+    "mtime_ms": 1777419736949,
+    "size": 20002,
+    "content_hash": "1b1368a06964b11e"
+  },
+  "C:/src/ICELINES/src/guides\\05-comps-history.source.md": {
+    "parse_key": "30541de91703e339",
+    "mtime_ms": 1777354471877,
+    "size": 5497,
+    "content_hash": "ec8467a10109d381"
+  },
+  "C:/src/ICELINES/src/guides\\01-query.source.md": {
+    "parse_key": "e47caedbd5b40a39",
+    "mtime_ms": 1777354471871,
+    "size": 6387,
+    "content_hash": "a0b1d7f878b46af1"
+  },
+  "C:/src/ICELINES/src/guides\\06-tui.source.md": {
+    "parse_key": "268a10bdab50111a",
+    "mtime_ms": 1777412921964,
+    "size": 12910,
+    "content_hash": "c99ff7b17a3a2876"
+  }
+}

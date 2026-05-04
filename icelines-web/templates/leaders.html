@@ -5,12 +5,25 @@
 {% block content %}
 <h1>Leaderboards</h1>
 
-<p style="color: #616161; margin-bottom: 1rem;">
-    Top {{ rows.len() }} skaters by points · {{ active_label }}
+<p style="color: #616161; margin-bottom: 0.5rem;">
+    Top {{ rows.len() }} skaters by {{ active_sort_label }} · {{ active_label }}
     {% if total > rows.len() %}
-        · {{ total }} skaters total in repository
+        · {{ total }} total
     {% endif %}
 </p>
+
+{# Position filter strip — King.2.2. Each link preserves the active
+   sort + top via query string. Active chip highlighted via .fit-solid. #}
+<nav aria-label="Position filter" style="margin-bottom: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+    <span style="color: #616161; font-size: 0.9rem; align-self: center;">Position:</span>
+    {% for chip in pos_chips %}
+        <a href="?sort={{ active_sort }}&pos={{ chip.value }}&top={{ active_top }}"
+           {% if chip.is_active %}class="fit-solid"{% endif %}
+           style="text-decoration: {% if chip.is_active %}none{% else %}underline{% endif %}; padding: 0.2rem 0.6rem; border-radius: 3px;">
+            {{ chip.label }}
+        </a>
+    {% endfor %}
+</nav>
 
 <div class="table-scroll">
 <table>
@@ -20,10 +33,16 @@
             <th>Player</th>
             <th>Pos</th>
             <th>Team</th>
-            <th style="text-align: right;">GP</th>
-            <th style="text-align: right;">G</th>
-            <th style="text-align: right;">A</th>
-            <th style="text-align: right;">P</th>
+            {% for col in col_headers %}
+                <th style="text-align: right;"
+                    {% if col.is_active %}aria-sort="descending"{% endif %}>
+                    <a href="?sort={{ col.url_token }}&pos={{ active_pos }}&top={{ active_top }}"
+                       style="text-decoration: none; color: inherit; {% if col.is_active %}font-weight: 700;{% else %}font-weight: 400;{% endif %}"
+                       title="Sort by {{ col.label }}">
+                        {{ col.label }}{% if col.is_active %} ↓{% endif %}
+                    </a>
+                </th>
+            {% endfor %}
         </tr>
     </thead>
     <tbody>
@@ -37,6 +56,7 @@
             <td style="text-align: right;">{{ row.goals }}</td>
             <td style="text-align: right;">{{ row.assists }}</td>
             <td style="text-align: right;"><strong>{{ row.points }}</strong></td>
+            <td style="text-align: right;">{% if row.ppg_str.is_empty() %}—{% else %}{{ row.ppg_str }}{% endif %}</td>
         </tr>
         {% endfor %}
     </tbody>
@@ -44,8 +64,9 @@
 </div>
 
 <p style="margin-top: 2rem; color: #616161; font-size: 0.9rem;">
-    King.2 (next sub-phase) adds: filter form (boolean grammar — `g>=50 OR a>=50`),
-    sort picker (30+ metrics), pagination, JSON twin at <code>/api/v1/leaders</code>,
-    and the response cache. King.2.1 (today) ships the minimum viable real-data path.
+    Click any column header to sort by it. Click a position chip to filter.
+    Default: top 20, sorted by points.
+    King.2.3 adds the boolean filter grammar (e.g. <code>g&gt;=50 AND hits&gt;=200</code>);
+    King.2.4 adds the <code>/api/v1/leaders</code> JSON twin.
 </p>
 {% endblock %}
