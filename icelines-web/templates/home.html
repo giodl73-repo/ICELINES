@@ -5,28 +5,84 @@
 {% block content %}
 <h1>IceLines</h1>
 <p>
-    Welcome — this is the IceLines web dashboard. The full surface (leaderboards,
-    player cards, team depth charts, fantasy, transactions) is being built out
-    across Phase King Clancy. King.1.4 is the templating skeleton.
+    NHL analytics dashboard for <code>{{ active_label }}</code>.
 </p>
 
-<nav aria-label="Sections">
+<section style="margin-top: 1.5rem;">
+    <h2 style="margin-bottom: 0.25rem;">Top scorers</h2>
+    {% if top_skaters.is_empty() %}
+        <p style="color:#616161;">
+            No skater stats loaded for the active season yet —
+            run <code>icelines fetch</code> or pick a bundled season.
+        </p>
+    {% else %}
+        <table>
+            <thead>
+                <tr><th>#</th><th>Player</th><th>Pos</th><th>Team</th><th>GP</th><th>G</th><th>A</th><th>P</th></tr>
+            </thead>
+            <tbody>
+                {% for r in top_skaters %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td><a href="/player/{{ r.nhl_id }}">{{ r.name }}</a></td>
+                    <td>{{ r.position }}</td>
+                    <td>{{ r.team }}</td>
+                    <td>{{ r.gp }}</td>
+                    <td>{{ r.goals }}</td>
+                    <td>{{ r.assists }}</td>
+                    <td><strong>{{ r.points }}</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <p style="margin-top: 0.25rem;">
+            <a href="/leaders">full leaderboard →</a>
+        </p>
+    {% endif %}
+</section>
+
+<section style="margin-top: 1.5rem;">
+    <h2 style="margin-bottom: 0.25rem;">Top goalies (SV%)</h2>
+    {% if top_goalies.is_empty() %}
+        <p style="color:#616161;">
+            No qualified goalies for the active season yet.
+        </p>
+    {% else %}
+        <table>
+            <thead>
+                <tr><th>#</th><th>Goalie</th><th>Team</th><th>GP</th><th>W</th><th>L</th><th>SV%</th><th>GAA</th></tr>
+            </thead>
+            <tbody>
+                {% for r in top_goalies %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td><a href="/player/{{ r.nhl_id }}">{{ r.name }}</a></td>
+                    <td>{{ r.team }}</td>
+                    <td>{{ r.gp }}</td>
+                    <td>{{ r.wins }}</td>
+                    <td>{{ r.losses }}</td>
+                    <td><strong>{{ r.save_pct_str }}</strong></td>
+                    <td>{{ r.gaa_str }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <p style="margin-top: 0.25rem;">
+            <a href="/goalies">full goalie leaderboard →</a>
+        </p>
+    {% endif %}
+</section>
+
+<nav aria-label="Sections" style="margin-top: 2rem;">
+    <h2 style="margin-bottom: 0.25rem;">More</h2>
     <ul>
-        {# These are placeholders — each route lights up in its sub-phase
-           per the spec's Phase plan. Linked now so the nav shape is
-           visible from day one. #}
-        <li><a href="/leaders">Leaders</a> <small>(King.2)</small></li>
-        <li><a href="/goalies">Goalies</a> <small>(King.5)</small></li>
-        <li><a href="/scores">Scores</a> <small>(King.7)</small></li>
-        <li><a href="/playoffs">Playoffs</a> <small>(King.7)</small></li>
-        <li><a href="/transactions">Transactions</a> <small>(King.8)</small></li>
-        <li><a href="/fantasy">Fantasy</a> <small>(King.9)</small></li>
-        <li><a href="/docs">Docs</a> <small>(King.8)</small></li>
+        <li><a href="/leaders">Leaders</a> — skater leaderboards w/ filters</li>
+        <li><a href="/goalies">Goalies</a> — goalie leaderboards</li>
+        <li><a href="/scores">Scores</a> <small>(soon — King.7)</small></li>
+        <li><a href="/playoffs">Playoffs</a> <small>(soon — King.7)</small></li>
+        <li><a href="/transactions">Transactions</a> <small>(soon — King.8)</small></li>
+        <li><a href="/fantasy">Fantasy</a> <small>(soon — King.9)</small></li>
+        <li><a href="/docs">Docs</a> — CLI reference</li>
     </ul>
 </nav>
-
-<p style="color: #616161; font-size: 0.85rem; margin-top: 2rem;">
-    King Clancy King.1.4 — askama template skeleton.
-    Active context: <code>{{ active_label }}</code>.
-</p>
 {% endblock %}

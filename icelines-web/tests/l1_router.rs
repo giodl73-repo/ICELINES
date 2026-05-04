@@ -63,8 +63,11 @@ async fn l1_get_root_returns_200_html() {
         &body[..body.len().min(80)]
     );
     // King.1.4 — content from the askama template should appear.
+    // Originally checked for "Welcome"; the home page was rebuilt
+    // with top-3 preview sections in King.8.x. The IceLines title
+    // and the "Top scorers" / "Top goalies" headings are stable.
     assert!(
-        body.contains("Welcome"),
+        body.contains("IceLines") && body.contains("Top scorers"),
         "home page should render the askama template content"
     );
 }

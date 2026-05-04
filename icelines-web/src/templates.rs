@@ -40,12 +40,19 @@ use askama::Template;
 /// `home.html` — the `/` page.
 ///
 /// Carries `active_label` (e.g. `"25-26 · Regular"`) into the base
-/// template so the season header renders. Also displayed inline in
-/// the page footer for visual confirmation.
+/// template so the season header renders. Also carries top-3 preview
+/// slices so the dashboard's first impression is real data, not a
+/// templating skeleton.
 #[derive(Template)]
 #[template(path = "home.html")]
 pub struct HomeTemplate {
     pub active_label: String,
+    /// Top-3 skaters by points in the active (season, season_type).
+    /// Empty if the repo has no skater rows for that window.
+    pub top_skaters: Vec<LeaderRow>,
+    /// Top-3 qualified goalies by save percentage.
+    /// Empty if no goalie meets the qualified-GP threshold.
+    pub top_goalies: Vec<GoalieRow>,
 }
 
 /// `coming_soon.html` — placeholder for routes that have a slot in
@@ -228,10 +235,16 @@ mod tests {
     fn l0_home_template_renders() {
         let tmpl = HomeTemplate {
             active_label: "25-26 · Regular".to_owned(),
+            top_skaters: Vec::new(),
+            top_goalies: Vec::new(),
         };
         let html = tmpl.render().expect("home template renders");
-        // Page-specific content
-        assert!(html.contains("Welcome"));
+        // Page-specific content — the home dashboard has top-3
+        // preview sections and section nav. Empty-vec branches
+        // render the "no data loaded" copy.
+        assert!(html.contains("IceLines"));
+        assert!(html.contains("Top scorers"));
+        assert!(html.contains("Top goalies"));
         // Base-inherited active-season header
         assert!(
             html.contains("25-26 · Regular"),
@@ -239,6 +252,45 @@ mod tests {
         );
         // Sticky header structure
         assert!(html.contains("season-header"));
+    }
+
+    /// l0_home_template_renders_with_preview
+    /// — when the handler populates top_skaters / top_goalies, the
+    ///   preview tables MUST surface the player name + linked card
+    ///   so a user clicks straight into /player/:id from the home.
+    #[test]
+    fn l0_home_template_renders_with_preview() {
+        let tmpl = HomeTemplate {
+            active_label: "25-26 · Regular".to_owned(),
+            top_skaters: vec![LeaderRow {
+                nhl_id: 8478402,
+                name: "Connor McDavid".to_owned(),
+                position: "C".to_owned(),
+                team: "EDM".to_owned(),
+                gp: 50,
+                goals: 30,
+                assists: 60,
+                points: 90,
+                ppg_str: "1.80".to_owned(),
+            }],
+            top_goalies: vec![GoalieRow {
+                nhl_id: 8476945,
+                name: "Connor Hellebuyck".to_owned(),
+                team: "WPG".to_owned(),
+                gp: 40,
+                wins: 30,
+                losses: 8,
+                shutouts: 4,
+                save_pct_str: "0.925".to_owned(),
+                gaa_str: "2.20".to_owned(),
+            }],
+        };
+        let html = tmpl.render().expect("home template renders with preview");
+        assert!(html.contains("Connor McDavid"));
+        assert!(html.contains("/player/8478402"));
+        assert!(html.contains("Connor Hellebuyck"));
+        assert!(html.contains("/player/8476945"));
+        assert!(html.contains("0.925"));
     }
 
     /// l0_home_template_includes_a11y_baseline
@@ -249,6 +301,8 @@ mod tests {
     fn l0_home_template_includes_a11y_baseline() {
         let tmpl = HomeTemplate {
             active_label: "x".to_owned(),
+            top_skaters: Vec::new(),
+            top_goalies: Vec::new(),
         };
         let html = tmpl.render().unwrap();
         assert!(
@@ -276,6 +330,8 @@ mod tests {
     fn l0_home_template_links_static_assets() {
         let tmpl = HomeTemplate {
             active_label: "x".to_owned(),
+            top_skaters: Vec::new(),
+            top_goalies: Vec::new(),
         };
         let html = tmpl.render().unwrap();
         assert!(html.contains("/static/style.css"));
