@@ -300,7 +300,7 @@ All JSON routes mount under `/api/v1/`. `schema_version` is per-envelope so a ro
 }
 ```
 
-- `schema_version`: per-envelope integer. Additive changes do NOT bump it. Renames or removals DO bump it (and that route alone moves to `/api/v2/...` next major release).
+- `schema_version`: per-envelope integer. Additive changes do NOT bump it. Renames or removals DO bump it (and that route alone moves to `/api/v2/...` next major release). **Sunset policy**: when route X gets a `/api/v2/`, the `/api/v1/X` stays one full release (deprecated, `Deprecation: true` HTTP header), removed in the release after. So embedders pin one version at a time, not forever.
 - `route`: discriminator so embedders can pin per-shape (`"leaders"`, `"player"`, `"goalies"`).
 - `data`: payload (array or object).
 - `meta`: pagination + active-filter echo + (season, season_type) self-description + `implicit_filters` (e.g. default `gp_min` floor on rate-stat sorts).
@@ -326,7 +326,7 @@ Every list route (`/api/leaders`, `/api/goalies`, `/api/transactions`, `/api/dep
 }
 ```
 
-Error kinds: `UnknownStat`, `UnknownSort`, `UnknownSeason`, `UnknownPlayer`, `BadFilter`, `BadParam`, `ConflictingParams`, `NotFound`, `RateLimited`, `Internal`, `CorruptSnapshot`. HTTP status: 400 for client errors, 404 for missing resources, 421 for DNS-rebinding rejects, 500 for `Internal`. `request_id` is a ULID logged server-side; clients include it in bug reports.
+Error kinds: `UnknownStat`, `UnknownSort`, `UnknownSeason`, `UnknownPlayer`, `BadFilter`, `BadParam`, `ConflictingParams`, `NotFound`, `RateLimited`, `Internal`, `CorruptSnapshot`. HTTP status: 400 for client errors, 404 for missing resources, 421 for DNS-rebinding rejects, 500 for `Internal`. `request_id` is a ULID generated via the `ulid` crate per request, attached as both an HTTP response header (`X-Request-Id: ...`) AND inside the error envelope; logged at WARN+ via `tracing` so server-side correlation works. Clients include it in bug reports.
 
 `WebError` is a `thiserror` enum implementing `IntoResponse` — single source of truth for the kind→status mapping. PATCH/POST bodies deserialize with `serde(deny_unknown_fields)`.
 
@@ -474,7 +474,9 @@ pub struct WebState {
 - **Lazy career loads** (UX.1 fan-out) load into a *temp* `StatsRepository`, then take `repo.write().await` only for the brief LRU swap. The 50ms fan-out never blocks readers.
 - **Config writes** (PATCH `/api/v1/reports`, PATCH `/api/v1/active-season`) hold the config write lock for the file flush only (single ms), not the response render.
 - **No mutex held across `.await`** — use `tokio::sync::RwLock` (parking_lot doesn't support async fairness).
+- **`tokio::sync::RwLock` is NOT reentrant** — a handler holding a read lock that calls a helper which also takes the read lock can deadlock when a pending writer is queued. Either pass the guard down or release+reacquire. Audit all helper functions.
 - **`PlayerView<'_>` lifetime**: handlers must not return a view; derive view inside the lock scope, render to HTML/JSON, drop, release lock.
+- **No `unwrap()` / `expect()` in `icelines-web` handler bodies** — every `Result` flows through `WebError`. Library-code unwrap ban from `forge.md` applies to the new crate. Tests are the only exception.
 
 ### Response cache
 Per-(season, season_type, route, sort, filter-hash, type, preset) memoization with 30-second TTL. Invalidated on any `PATCH /api/v1/reports` or `PATCH /api/v1/active-season`. Backed by `moka::sync::Cache`.
@@ -635,7 +637,7 @@ A user comparing a 22-year-old C to "peers" knows the pool is 20-24 year-old cen
 | King.9 | 15 | 8 | 240 |
 | King.10 | 10 | 5 | **≥260** |
 
-`240` is the floor; sub-phases can exceed but not ship under.
+`260` is the cumulative King.10 floor (per the table); a sub-phase can exceed its row's floor but cannot ship under. Add tests rather than skim.
 
 ### Snapshot tooling
 `insta` (already used for ratatui buffers). HTML snapshots in `icelines-web/tests/snapshots/<route>/<scenario>.snap`. Reviewed via `cargo insta review`. HTMX fragments snapshotted separately from full pages.
@@ -645,7 +647,7 @@ A user comparing a 22-year-old C to "peers" knows the pool is 20-24 year-old cen
 1. **`l0_filter_url_parity`** — parameterized golden: each filter expression parsed twice (CLI string and URL-decoded form), assert resulting `FilterExpr` AST equal.
 2. **`l1_keel_b1_cross_surface_json_keys`** — fire `query leaders --json` and `GET /api/v1/leaders` against same fixture; assert identical key sets. Mirrors L.5.6 precedent.
 3. **`l1_filter_url_repeats_anded`** — `?filter=g>=50&filter=a>=20` applies both (no silent drop).
-4. **`l1_concurrent_request_swarm`** — `tokio::join!` 16 concurrent `/api/v1/leaders` + 4 `/player/:id` cold opens; no deadlock + correct results.
+4. **`l1_concurrent_request_swarm`** — `tokio::join!` 16 concurrent `/api/v1/leaders` + 4 `/player/:id` cold opens; no deadlock + correct results. Wrap the `join!` in `tokio::time::timeout(Duration::from_secs(10), ...)` so a true deadlock fails the test as a Timeout error rather than hanging out to CI's outer timeout.
 5. **`l1_patch_isolates_via_tempdir`** — every PATCH/POST/DELETE uses `Config::with_root(tempdir)`. Stomping the dev's real config = CI-failing.
 6. **`l0_schema_version_present_on_every_api_response`** — walk router, fire each GET, assert envelope has `schema_version: 1`.
 7. **`l1_reports_round_trip_tui_to_web_to_tui`** — described above.
@@ -654,6 +656,7 @@ A user comparing a 22-year-old C to "peers" knows the pool is 20-24 year-old cen
 10. **`l1_html_no_color_only_encoding`** — described in UX patterns (a11y).
 11. **`l1_api_keys_are_snake_case`** — non-stat keys (bio/identity) follow `snake_case` contract.
 12. **`l1_htmx_swap_idempotent`** — same `?partial=` target hit twice produces byte-identical HTML.
+13. **`l0_peer_pool_block_present_on_comps_response`** — `/api/v1/player/:id/comps` and `/api/v1/player/:id/peers` always include the `peer_pool` block (transparency contract).
 
 ### Test seam: `Config::with_root(tempdir)`
 New constructor on `Config` that points all reads/writes at a tempdir. Every PATCH-touching test uses it. `XDG_CONFIG_HOME` env override is the fallback.
