@@ -66,8 +66,16 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
             commands::snapshot::run(sub).await?;
         }
 
-        // ── Phase 2 implemented commands ─────────────────────────────────────
+        // ── Site (mkdocs) — Phase King Clancy King.1.0 rename ────────────────
+        Commands::Site(sub) => {
+            commands::site::run(sub).await?;
+        }
+        // Deprecated top-level aliases. Removed in v0.14.
         Commands::Build { no_site } => {
+            eprintln!(
+                "WARNING: 'icelines build' moved to 'icelines site build' in v0.13.\n\
+                 The old alias is removed in v0.14. Run 'icelines site build' instead."
+            );
             commands::build::run(no_site).await?;
         }
 
@@ -149,9 +157,18 @@ async fn dispatch(cli: Cli) -> anyhow::Result<()> {
         }
 
         Commands::Serve { port } => {
+            eprintln!(
+                "WARNING: 'icelines serve' is being reclaimed for the web dashboard\n\
+                 in Phase King Clancy. Use 'icelines site serve' for the mkdocs preview.\n\
+                 The old top-level alias is removed in v0.14."
+            );
             commands::serve_deploy::run_serve(port).await?;
         }
         Commands::Deploy { remote } => {
+            eprintln!(
+                "WARNING: 'icelines deploy' moved to 'icelines site deploy' in v0.13.\n\
+                 The old alias is removed in v0.14. Run 'icelines site deploy' instead."
+            );
             commands::serve_deploy::run_deploy(&remote).await?;
         }
         Commands::Tonight { team } => {

@@ -14,6 +14,7 @@ pub mod scheme;
 pub mod scheme_dialects;
 pub mod scouting;
 pub mod serve_deploy;
+pub mod site;
 pub mod snapshot;
 pub mod team;
 pub mod tonight;

@@ -334,10 +334,20 @@ icelines snapshot verify
 # Trade simulator (depth-chart impact, not fantasy)
 icelines trade "Bouchard" for "Fox" --team EDM
 
-# Site generation
-icelines build                         # generate mkdocs site
-icelines serve                         # serve site locally
-icelines deploy                        # deploy to GitHub Pages
+# Site generation (mkdocs)
+#
+# Phase King Clancy reclaims the bare `icelines serve` for the new web
+# dashboard (`icelines-web` / King.1+). Use the `site` subcommand group
+# for the mkdocs preview going forward. The flat aliases still work for
+# one release with a stderr deprecation warning, then drop in v0.14.
+icelines site build                    # generate mkdocs site
+icelines site serve                    # serve site locally (mkdocs)
+icelines site deploy                   # deploy to GitHub Pages
+
+# Deprecated, removed in v0.14:
+#   icelines build  →  icelines site build
+#   icelines serve  →  icelines site serve
+#   icelines deploy →  icelines site deploy
 ```
 
 ---
