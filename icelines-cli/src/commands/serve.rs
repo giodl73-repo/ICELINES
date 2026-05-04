@@ -59,11 +59,38 @@ pub async fn run(
         .unwrap_or_else(|| CURRENT_SEASON_STR.to_owned());
     // King.6 will introduce a per-user season-type setting; for
     // now everyone defaults to regular season.
-    let web_config = WebConfig::new(active_season, "regular");
+    let web_config = WebConfig::new(active_season.clone(), "regular");
+
+    // King.2.1 — load the active season's skater + goalie data into
+    // the repo at boot. Same code path the CLI's query commands use.
+    // First-paint cost is one-time at boot (~hundreds of ms for the
+    // bundled current season); per-request handlers just take a brief
+    // read lock.
+    let active_season_u32: u32 = active_season.parse().map_err(|e| {
+        anyhow::anyhow!("active season '{active_season}' is not a YYYYZZZZ id: {e}")
+    })?;
+    let store = icelines_fetch::snapshot::SnapshotStore::new(cfg.snapshot_dir());
+    let load_outcome = icelines_fetch::stats_loader::load_into_repo(
+        icelines_core::model::Season(active_season_u32),
+        icelines_core::season_stats::SeasonType::Regular,
+        &store,
+    );
+    let repo = match load_outcome {
+        Ok(o) => {
+            let n_identities = o.repo.iter_identities().count();
+            println!("  loaded {n_identities} player identities for season {active_season}");
+            o.repo
+        }
+        Err(e) => {
+            eprintln!("warn: failed to load season {active_season} into repo: {e}");
+            eprintln!("      /leaders will show an empty table. To populate, run:");
+            eprintln!("        icelines fetch all  (or `icelines fetch stats`)");
+            icelines_core::stats_repository::StatsRepository::new()
+        }
+    };
+
     let state = WebState {
-        repo: std::sync::Arc::new(tokio::sync::RwLock::new(
-            icelines_core::stats_repository::StatsRepository::new(),
-        )),
+        repo: std::sync::Arc::new(tokio::sync::RwLock::new(repo)),
         config: std::sync::Arc::new(tokio::sync::RwLock::new(web_config.clone())),
     };
 

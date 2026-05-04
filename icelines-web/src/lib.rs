@@ -59,11 +59,12 @@ pub fn router(state: WebState) -> Router {
     Router::new()
         .route("/", get(handlers::home::get_home))
         .route("/static/:asset", get(static_assets::serve_static))
-        // Coming-soon stubs for the section nav links on home.html.
-        // Each mounts a real page (with the active-season header)
-        // so clicks don't fail with a bare 404. Real handlers ship
-        // in King.2+ and replace these mounts one by one.
-        .route("/leaders", get(cs::leaders))
+        // Real handlers — replace coming-soon stubs as each lands.
+        .route("/leaders", get(handlers::leaders::get_leaders))
+        // Coming-soon stubs for the rest of the section nav links.
+        // Each lands on a real page (with the active-season header)
+        // so clicks don't fail with a bare 404. Replaced by real
+        // handlers in their respective sub-phases.
         .route("/goalies", get(cs::goalies))
         .route("/scores", get(cs::scores))
         .route("/playoffs", get(cs::playoffs))
@@ -103,18 +104,9 @@ mod handlers {
             }
         }
 
-        pub async fn leaders(State(s): State<WebState>) -> Response {
-            render(
-                s,
-                "Leaderboards",
-                "King.2",
-                "Top-N skater leaderboards by any of 30+ sort metrics, with the full \
-                 boolean filter grammar (g>=50 AND hits>=200, etc.). Same data the CLI's \
-                 `query leaders` exposes — just rendered as an HTML table with a filter form.",
-            )
-            .await
-        }
-
+        // `leaders` stub removed in King.2.1 — real handler at
+        // `handlers::leaders::get_leaders` ships top-20 skaters from
+        // bundled data. King.2.2/.2.3 add filter form + JSON twin.
         pub async fn goalies(State(s): State<WebState>) -> Response {
             render(
                 s,
@@ -179,6 +171,108 @@ mod handlers {
                  Until then, run `icelines docs` from the terminal for the same content.",
             )
             .await
+        }
+    }
+
+    /// `/leaders` — King.2.1 minimum viable real-data leaderboard.
+    ///
+    /// Reads the active season + season type out of `WebState.config`,
+    /// iterates `repo.skaters(...)`, sorts by points descending, takes
+    /// top 20, projects each into a `LeaderRow`, renders the template.
+    ///
+    /// What's NOT here yet (lands in King.2.2/.2.3):
+    /// - filter form (?filter=g>=50)
+    /// - sort picker (?sort=ppg, ?sort=hits)
+    /// - pagination (?limit/?offset)
+    /// - JSON twin at /api/v1/leaders
+    /// - moka response cache
+    pub mod leaders {
+        use crate::state::WebState;
+        use crate::templates::{LeaderRow, LeadersTemplate};
+        use askama::Template;
+        use axum::extract::State;
+        use axum::http::StatusCode;
+        use axum::response::{Html, IntoResponse, Response};
+        use icelines_core::model::Season;
+        use icelines_core::season_stats::SeasonType;
+
+        pub async fn get_leaders(State(state): State<WebState>) -> Response {
+            // Resolve active (season, season_type) from config.
+            let (season_str, season_type, active_label) = {
+                let cfg = state.config.read().await;
+                (
+                    cfg.active_season.clone(),
+                    parse_season_type(&cfg.active_season_type),
+                    cfg.active_label.clone(),
+                )
+            };
+            let season_u32: u32 = match season_str.parse() {
+                Ok(n) => n,
+                Err(e) => {
+                    return error_page(format!(
+                        "active season '{season_str}' is not a valid YYYYZZZZ id: {e}"
+                    ));
+                }
+            };
+            let season = Season(season_u32);
+
+            // Brief read of the repo. Project each PlayerView into a
+            // LeaderRow inside the lock scope (per spec: views must
+            // not escape the lock; we copy out scalar fields).
+            let (rows, total) = {
+                let repo = state.repo.read().await;
+                let mut all: Vec<LeaderRow> = repo
+                    .skaters(season, season_type)
+                    .map(|v| LeaderRow {
+                        name: v.full_name().to_owned(),
+                        position: v.position().abbreviation().to_owned(),
+                        team: v.team_display().to_owned(),
+                        gp: v.gp(),
+                        goals: v.goals(),
+                        assists: v.assists(),
+                        points: v.points(),
+                    })
+                    .collect();
+                let total = all.len();
+                // Sort by points descending (the default per spec).
+                // Stable secondary sort: goals desc, then name asc so
+                // ties render deterministically.
+                all.sort_by(|a, b| {
+                    b.points
+                        .cmp(&a.points)
+                        .then(b.goals.cmp(&a.goals))
+                        .then(a.name.cmp(&b.name))
+                });
+                all.truncate(20);
+                (all, total)
+            };
+
+            let tmpl = LeadersTemplate {
+                active_label,
+                rows,
+                total,
+            };
+            match tmpl.render() {
+                Ok(html) => Html(html).into_response(),
+                Err(e) => error_page(format!("template render failed: {e}")),
+            }
+        }
+
+        fn parse_season_type(s: &str) -> SeasonType {
+            match s {
+                "playoff" | "playoffs" => SeasonType::Playoff,
+                _ => SeasonType::Regular,
+            }
+        }
+
+        fn error_page(msg: String) -> Response {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Html(format!(
+                    "<!doctype html><html><body><h1>500</h1><p>{msg}</p></body></html>"
+                )),
+            )
+                .into_response()
         }
     }
 

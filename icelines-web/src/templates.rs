@@ -63,6 +63,31 @@ pub struct ComingSoonTemplate {
     pub active_label: String,
 }
 
+/// `leaders.html` — King.2.1 minimum viable leaderboards. Renders
+/// the top-N skaters by points for the active season. King.2.2 will
+/// add the filter form + sort picker + pagination; King.2.3 adds the
+/// `/api/v1/leaders` JSON twin.
+#[derive(Template)]
+#[template(path = "leaders.html")]
+pub struct LeadersTemplate {
+    pub active_label: String,
+    pub rows: Vec<LeaderRow>,
+    pub total: usize,
+}
+
+/// One row in the leaderboard. Pre-projected from the
+/// `PlayerView` so the template doesn't reach into core types.
+#[derive(Debug, Clone)]
+pub struct LeaderRow {
+    pub name: String,
+    pub position: String,
+    pub team: String,
+    pub gp: u32,
+    pub goals: u32,
+    pub assists: u32,
+    pub points: u32,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
