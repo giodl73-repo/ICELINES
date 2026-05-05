@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "icelines-core",
+    "icelines-query",
     "icelines-fetch",
     "icelines-site",
     "icelines-web",

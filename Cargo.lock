@@ -1572,6 +1572,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "icelines-query"
+version = "0.13.0"
+dependencies = [
+ "icelines-core",
+]
+
+[[package]]
 name = "icelines-site"
 version = "0.13.0"
 dependencies = [
@@ -1594,6 +1601,7 @@ dependencies = [
  "chrono",
  "icelines-core",
  "icelines-fetch",
+ "icelines-query",
  "pulldown-cmark",
  "serde",
  "serde_json",
