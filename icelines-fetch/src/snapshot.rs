@@ -1804,6 +1804,7 @@ mod tests {
             time_on_ice_per_game: None,
             faceoff_win_pct: None,
             season_id: None,
+            team_abbrevs: None,
         }
     }
 

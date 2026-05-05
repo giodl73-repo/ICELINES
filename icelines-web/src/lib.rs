@@ -79,6 +79,12 @@ pub fn router(state: WebState) -> Router {
         .route("/api/v1/team/:abbrev", get(handlers::team::get_team_json))
         // Docs — King.8.1. Rendered COMMANDS.md.
         .route("/docs", get(handlers::docs::get_docs))
+        // Season-type flip — UX.E. Click writes WebState.config and
+        // redirects back to the page the user came from (Referer).
+        .route(
+            "/season-type/:kind",
+            get(handlers::season_type::set_season_type),
+        )
         // Live NHL data — King.7.
         .route("/scores", get(handlers::scores::get_scores))
         .route("/schedule", get(handlers::schedule::get_schedule))
@@ -1776,6 +1782,17 @@ mod handlers {
                                 .last()
                                 .map(|st| st.team.0.as_str().to_owned())
                                 .unwrap_or_else(|| "—".to_owned());
+                            // Link only when the team is a single
+                            // 2-3 char alpha abbrev — multi-team
+                            // values like "SEA/NYR" or sentinels
+                            // like "—"/"RET" don't get a /team/ URL.
+                            let team_link = if last_team.chars().all(|c| c.is_ascii_alphabetic())
+                                && (2..=3).contains(&last_team.len())
+                            {
+                                last_team.clone()
+                            } else {
+                                String::new()
+                            };
                             let ppg_str = if totals.gp > 0 {
                                 format!("{:.2}", totals.points as f64 / totals.gp as f64)
                             } else {
@@ -1788,6 +1805,7 @@ mod handlers {
                                     SeasonType::Playoff => "Playoff".to_owned(),
                                 },
                                 team: last_team,
+                                team_link,
                                 gp: totals.gp,
                                 goals: totals.goals,
                                 assists: totals.assists,
@@ -3056,6 +3074,59 @@ mod handlers {
                 )
                     .into_response(),
             }
+        }
+    }
+
+    /// `/season-type/:kind` — UX.E. Mutates `WebState.config.active_season_type`
+    /// to "regular" or "playoff" and 303-redirects back to the page
+    /// the user came from (Referer header), defaulting to `/`.
+    pub mod season_type {
+        use crate::config::WebConfig;
+        use crate::state::WebState;
+        use axum::extract::{Path, State};
+        use axum::http::{header, HeaderMap, StatusCode};
+        use axum::response::{IntoResponse, Response};
+
+        pub async fn set_season_type(
+            State(state): State<WebState>,
+            Path(kind): Path<String>,
+            headers: HeaderMap,
+        ) -> Response {
+            // Normalize: accept "playoff" / "playoffs" / "regular" /
+            // anything-else as regular. Whitelist on the way in so a
+            // malformed URL can't poison the config.
+            let normalized = match kind.to_ascii_lowercase().as_str() {
+                "playoff" | "playoffs" => "playoff",
+                _ => "regular",
+            };
+            {
+                let mut cfg = state.config.write().await;
+                let new_cfg = WebConfig::new(cfg.active_season.clone(), normalized);
+                *cfg = new_cfg;
+            }
+            // Bounce back to where the user clicked from. Empty/foreign
+            // referers fall through to "/" so we never redirect off-site.
+            let target = headers
+                .get(header::REFERER)
+                .and_then(|h| h.to_str().ok())
+                .filter(|r| {
+                    r.starts_with('/') || r.contains("://127.0.0.1") || r.contains("://localhost")
+                })
+                .map(|r| {
+                    // Strip absolute prefix to keep relative for safety.
+                    if let Some(idx) = r.find("://") {
+                        let after = &r[idx + 3..];
+                        if let Some(slash) = after.find('/') {
+                            after[slash..].to_owned()
+                        } else {
+                            "/".to_owned()
+                        }
+                    } else {
+                        r.to_owned()
+                    }
+                })
+                .unwrap_or_else(|| "/".to_owned());
+            (StatusCode::SEE_OTHER, [(header::LOCATION, target)]).into_response()
         }
     }
 }

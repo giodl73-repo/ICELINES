@@ -830,14 +830,35 @@ pub fn load_player_career_into_repo(
                 }
 
                 let po_stats_vec = bundled::get_playoff_stats(season_id).unwrap_or_default();
-                let stats_row = po_stats_vec.iter().find(|s| s.player_id == pid.0);
+                let mut stats_row_owned =
+                    po_stats_vec.iter().find(|s| s.player_id == pid.0).cloned();
+                // Playoff stats bundles don't carry teamAbbrevs (verified
+                // 2026-05-04 against bundled JSON). Borrow the team from
+                // the same year's REGULAR stats — Stanley Cup playoffs
+                // always use the team that ended the regular season, so
+                // this is correct even for traded players. If both rows
+                // are missing teamAbbrevs we fall through to the bio's
+                // current_team_abbrev (the historical-wrong fallback).
+                if let Some(po_row) = stats_row_owned.as_mut() {
+                    if po_row.team_abbrevs.is_none() {
+                        let reg_stats_vec = bundled::get_stats(season_id).unwrap_or_default();
+                        if let Some(reg_row) = reg_stats_vec.iter().find(|s| s.player_id == pid.0) {
+                            // For multi-team trades, the playoff team is
+                            // the LAST entry in the regular-season list.
+                            po_row.team_abbrevs = reg_row
+                                .team_abbrevs
+                                .as_ref()
+                                .map(|s| s.split(',').next_back().unwrap_or("").trim().to_owned());
+                        }
+                    }
+                }
                 let stats = build_skater_stats(
                     pid,
                     season,
                     SeasonType::Playoff,
                     position,
                     bio,
-                    stats_row,
+                    stats_row_owned.as_ref(),
                     None,
                     None,
                 );
@@ -1041,12 +1062,31 @@ fn build_skater_stats(
         pace_score: compute_pace_score(goals, assists, gp),
     };
 
-    // Single TeamStint synthesized from current_team_abbrev — bundled
-    // bios don't carry stint history. Retired/unsigned players land
-    // under "RET" matching the OLD path.
-    let team_str = bio.current_team_abbrev.as_deref().unwrap_or("RET");
+    // Per-season team resolution (UX bug fix 2026-05-04):
+    // `bio.current_team_abbrev` is the player's CURRENT team regardless of
+    // which season the bio row belongs to — so e.g. Tye Kartye's 2024-25
+    // bundled bio reports NYR even though he played that whole season for
+    // SEA. The per-season `stats.team_abbrevs` field carries the actual
+    // historical team(s) for the season ("SEA" or "SEA,NYR" mid-season
+    // trade). Prefer it whenever it's present.
+    //
+    // For multi-team rows we synthesize a SINGLE TeamStint per season
+    // because the bundled feed doesn't break out date ranges. The
+    // career-table renderer formats the comma-separated abbrev as-is
+    // (e.g. "SEA/NYR"). True per-stint splits would need the roster
+    // history endpoint and is out of scope for this fix.
+    let team_str = stats
+        .and_then(|s| s.team_abbrevs.as_deref())
+        .filter(|t| !t.is_empty())
+        .map(|t| t.replace(',', "/"))
+        .unwrap_or_else(|| {
+            bio.current_team_abbrev
+                .as_deref()
+                .unwrap_or("RET")
+                .to_owned()
+        });
     let stint = TeamStint {
-        team: TeamAbbr(team_str.to_owned()),
+        team: TeamAbbr(team_str),
         started: None,
         ended: None,
         gp,

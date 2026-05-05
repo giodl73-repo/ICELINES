@@ -32,6 +32,23 @@
         <a href="/playoffs">Playoffs</a>
         <a href="/transactions">Transactions</a>
         <a href="/docs">Docs</a>
+
+        {# Season-type toggle (UX.E). Active type derived from
+           `active_label` so we don't have to thread a new field
+           through every template struct. #}
+        <span class="season-type-toggle" aria-label="Season type">
+            {% if active_label.contains("Regular") %}
+                <strong>Regular</strong>
+            {% else %}
+                <a href="/season-type/regular">Regular</a>
+            {% endif %}
+            ·
+            {% if active_label.contains("Playoff") %}
+                <strong>Playoffs</strong>
+            {% else %}
+                <a href="/season-type/playoff">Playoffs</a>
+            {% endif %}
+        </span>
     </nav>
 
     <main id="main">

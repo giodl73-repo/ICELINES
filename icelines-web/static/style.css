@@ -117,6 +117,18 @@ input:focus-visible {
     text-decoration: underline;
 }
 
+/* Season-type toggle on the right of the global nav. */
+.season-type-toggle {
+    margin-left: auto;
+    color: #616161;
+}
+.season-type-toggle strong {
+    color: #1565c0;
+    background: #e3f2fd;
+    padding: 0.1rem 0.35rem;
+    border-radius: 2px;
+}
+
 /* ── Fit classes — spec CSS class contract ──────────────────────── */
 /* Hex values lock-stepped with glass.md TUI palette. */
 .fit-elite   { background-color: #2e7d32; color: #fff; }

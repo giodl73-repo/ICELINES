@@ -477,8 +477,14 @@ pub struct CareerRow {
     pub season: String,
     /// "Regular" or "Playoff".
     pub season_type: String,
-    /// Last team in that (season, type).
+    /// Last team in that (season, type). For mid-season trades this
+    /// is rendered as "SEA/NYR" (slash-joined) directly from the
+    /// per-season stats row.
     pub team: String,
+    /// Empty when `team` is "—", multi-team ("SEA/NYR"), or otherwise
+    /// not a clean single-abbrev team. Drives the `<a href="/team/…">`
+    /// rendering in the template.
+    pub team_link: String,
     pub gp: u32,
     pub goals: u32,
     pub assists: u32,

@@ -94,10 +94,10 @@
             <td><strong>{{ row.season }}</strong></td>
             <td>{{ row.season_type }}</td>
             <td>
-                {% if row.team == "—" %}
+                {% if row.team_link == "" %}
                     {{ row.team }}
                 {% else %}
-                    <a href="/team/{{ row.team }}">{{ row.team }}</a>
+                    <a href="/team/{{ row.team_link }}">{{ row.team }}</a>
                 {% endif %}
             </td>
             <td style="text-align: right;">{{ row.gp }}</td>

@@ -58,7 +58,7 @@ pub struct SkaterBio {
     pub season_id: Option<u32>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SkaterStats {
     pub player_id: u32,
@@ -86,6 +86,16 @@ pub struct SkaterStats {
     /// net for hand-edited fixtures.
     #[serde(default)]
     pub season_id: Option<u32>,
+
+    /// Comma-separated team abbrevs the player suited up for in this
+    /// season — e.g. `"SEA"`, or `"SEA,NYR"` for a mid-season trade.
+    /// Critical for the career table: `bios.currentTeamAbbrev` always
+    /// reflects the player's *current* team regardless of which
+    /// season's bios you query, so historical seasons need this
+    /// per-row field instead. `Option` so older bundled files (pre-
+    /// 2026-05) that omit it don't fail to deserialize.
+    #[serde(default)]
+    pub team_abbrevs: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
