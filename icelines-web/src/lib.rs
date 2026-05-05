@@ -103,11 +103,13 @@ pub fn router(state: WebState) -> Router {
 }
 
 mod handlers {
-    /// Compute a player's hockey age as of the active season's
-    /// reference date (Sep 15 of the season's first year — the
-    /// NHL's standard age cutoff for roster decisions). Returns
-    /// None when the bio's birth date is missing or unparsable.
-    /// Sasq.9 — used by /leaders bio filters.
+    /// Compute a player's stats-convention age for the active
+    /// season. Reference date: **end of January 31 of the season's
+    /// second year** (e.g. 2026-01-31 for season 20252026). This is
+    /// the Hockey-Reference / NHL.com stats convention — different
+    /// from the September-15 contract/draft cutoff. Returns None
+    /// when the bio's birth date is missing or unparsable.
+    /// Sasq.9/.11 — used by /leaders bio filters.
     pub(crate) fn compute_age(birth_date: &str, season: u32) -> Option<u32> {
         // birth_date is "YYYY-MM-DD"; season is YYYYZZZZ.
         let parts: Vec<&str> = birth_date.split('-').collect();
@@ -117,14 +119,13 @@ mod handlers {
         let by: i32 = parts[0].parse().ok()?;
         let bm: i32 = parts[1].parse().ok()?;
         let bd: i32 = parts[2].parse().ok()?;
-        // Hockey age cutoff: Sep 15 of the first year of the season
-        // (Bettman-era convention; matches CapFriendly + NHL.com).
-        let season_start_year: i32 = (season / 10_000) as i32;
-        let mut age = season_start_year - by;
-        // Subtract one if their birthday hasn't reached Sep 15 yet
-        // in the season-start year (born after the cutoff → still
-        // the previous age on opening night).
-        if (bm, bd) > (9, 15) {
+        // Hockey-Reference: age = years-days as of end of Jan 31 of
+        // the season. For YYYYZZZZ that's Jan 31 of ZZZZ.
+        let season_end_year: i32 = (season % 10_000) as i32;
+        let mut age = season_end_year - by;
+        // Subtract one if their birthday hasn't been reached yet by
+        // Jan 31 of season_end_year — i.e. born in Feb..=Dec.
+        if (bm, bd) > (1, 31) {
             age -= 1;
         }
         if !(0..=60).contains(&age) {
@@ -1854,27 +1855,53 @@ mod handlers {
                 assert!(split_top_level_and("g>=50)").is_none());
             }
 
-            // ── compute_age ────────────────────────────────────────
+            // ── compute_age (Hockey-Reference convention) ─────────
+            // Age is computed as of end of Jan 31 of season_end_year.
+            // For 20252026 that's 2026-01-31. Born in Jan → already
+            // aged-up that year; born Feb-Dec → still the year-prior
+            // age on Jan 31.
 
-            /// l0_compute_age_after_cutoff
-            /// — born after Sep 15 → still pre-aging on opening night.
-            ///   2003-04-30 against 2025-26 season: 2025 - 2003 = 22.
-            ///   April is BEFORE Sep 15 so no -1 deduction → 22.
+            /// l0_compute_age_january_birthday_aged_up
+            /// — born Jan 15: by Jan 31 of season_end_year, already
+            ///   reached this year's birthday. 2026 - 2003 = 23.
             #[test]
-            fn l0_compute_age_after_cutoff() {
+            fn l0_compute_age_january_birthday_aged_up() {
+                let age = super::super::compute_age("2003-01-15", 20252026).unwrap();
+                assert_eq!(age, 23);
+            }
+
+            /// l0_compute_age_april_birthday_subtracts_one
+            /// — born Apr 30: by Jan 31, 2026 hasn't reached the
+            ///   2026 birthday yet → 2026 - 2003 - 1 = 22.
+            #[test]
+            fn l0_compute_age_april_birthday_subtracts_one() {
                 let age = super::super::compute_age("2003-04-30", 20252026).unwrap();
                 assert_eq!(age, 22);
             }
 
-            /// l0_compute_age_before_cutoff_subtracts_one
-            /// — born after Sep 15 (e.g. Dec) → still 21 by opening
-            ///   night of the season they turn 22.
+            /// l0_compute_age_dec_birthday_subtracts_one
+            /// — born Dec 1: clearly before Jan 31 of 2026 hasn't
+            ///   reached the 2026 birthday → 22.
             #[test]
-            fn l0_compute_age_before_cutoff_subtracts_one() {
-                // Dec 1 2003: hasn't reached Sep 15 cutoff yet by
-                // 2025-09-15 → still 21 going into 25-26.
+            fn l0_compute_age_dec_birthday_subtracts_one() {
                 let age = super::super::compute_age("2003-12-01", 20252026).unwrap();
-                assert_eq!(age, 21);
+                assert_eq!(age, 22);
+            }
+
+            /// l0_compute_age_jan_31_boundary_aged_up
+            /// — exact Jan 31 birthday: aged-up by end of Jan 31.
+            #[test]
+            fn l0_compute_age_jan_31_boundary_aged_up() {
+                let age = super::super::compute_age("2003-01-31", 20252026).unwrap();
+                assert_eq!(age, 23);
+            }
+
+            /// l0_compute_age_feb_1_boundary_subtracts_one
+            /// — Feb 1 birthday: not yet reached by Jan 31 → -1.
+            #[test]
+            fn l0_compute_age_feb_1_boundary_subtracts_one() {
+                let age = super::super::compute_age("2003-02-01", 20252026).unwrap();
+                assert_eq!(age, 22);
             }
 
             /// l0_compute_age_garbage_returns_none
