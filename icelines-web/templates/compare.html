@@ -150,62 +150,62 @@ Source: IceLines · /compare?a={{ pa.nhl_id }}&b={{ pb.nhl_id }}
     </thead>
     <tbody>
         <tr><td>GP</td>
-            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.gp }}{% when None %}—{% endmatch %}</td>
-            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.gp }}{% when None %}—{% endmatch %}</td></tr>
+            <td style="text-align:right;" class="{% if winners.gp_a %}winner{% endif %}">{% match a %}{% when Some with (p) %}{{ p.gp }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;" class="{% if winners.gp_b %}winner{% endif %}">{% match b %}{% when Some with (p) %}{{ p.gp }}{% when None %}—{% endmatch %}</td></tr>
         <tr><td>Goals</td>
-            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.goals }}{% when None %}—{% endmatch %}</td>
-            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.goals }}{% when None %}—{% endmatch %}</td></tr>
+            <td style="text-align:right;" class="{% if winners.goals_a %}winner{% endif %}">{% match a %}{% when Some with (p) %}{{ p.goals }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;" class="{% if winners.goals_b %}winner{% endif %}">{% match b %}{% when Some with (p) %}{{ p.goals }}{% when None %}—{% endmatch %}</td></tr>
         <tr><td>Assists</td>
-            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.assists }}{% when None %}—{% endmatch %}</td>
-            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.assists }}{% when None %}—{% endmatch %}</td></tr>
+            <td style="text-align:right;" class="{% if winners.assists_a %}winner{% endif %}">{% match a %}{% when Some with (p) %}{{ p.assists }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;" class="{% if winners.assists_b %}winner{% endif %}">{% match b %}{% when Some with (p) %}{{ p.assists }}{% when None %}—{% endmatch %}</td></tr>
         <tr><td><strong>Points</strong></td>
-            <td style="text-align:right;"><strong>{% match a %}{% when Some with (p) %}{{ p.points }}{% when None %}—{% endmatch %}</strong></td>
-            <td style="text-align:right;"><strong>{% match b %}{% when Some with (p) %}{{ p.points }}{% when None %}—{% endmatch %}</strong></td></tr>
+            <td style="text-align:right;" class="{% if winners.points_a %}winner{% endif %}">{% match a %}{% when Some with (p) %}{{ p.points }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;" class="{% if winners.points_b %}winner{% endif %}">{% match b %}{% when Some with (p) %}{{ p.points }}{% when None %}—{% endmatch %}</td></tr>
         <tr><td>P/GP</td>
-            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{% if p.ppg_str.is_empty() %}—{% else %}{{ p.ppg_str }}{% endif %}{% when None %}—{% endmatch %}</td>
-            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{% if p.ppg_str.is_empty() %}—{% else %}{{ p.ppg_str }}{% endif %}{% when None %}—{% endmatch %}</td></tr>
+            <td style="text-align:right;" class="{% if winners.ppg_a %}winner{% endif %}">{% match a %}{% when Some with (p) %}{% if p.ppg_str.is_empty() %}—{% else %}{{ p.ppg_str }}{% endif %}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;" class="{% if winners.ppg_b %}winner{% endif %}">{% match b %}{% when Some with (p) %}{% if p.ppg_str.is_empty() %}—{% else %}{{ p.ppg_str }}{% endif %}{% when None %}—{% endmatch %}</td></tr>
         <tr><td>+/-</td>
-            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.plus_minus_str }}{% when None %}—{% endmatch %}</td>
-            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.plus_minus_str }}{% when None %}—{% endmatch %}</td></tr>
-        <tr><td>PIM</td>
-            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.pim_str }}{% when None %}—{% endmatch %}</td>
-            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.pim_str }}{% when None %}—{% endmatch %}</td></tr>
+            <td style="text-align:right;" class="{% if winners.plus_minus_a %}winner{% endif %}">{% match a %}{% when Some with (p) %}{{ p.plus_minus_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;" class="{% if winners.plus_minus_b %}winner{% endif %}">{% match b %}{% when Some with (p) %}{{ p.plus_minus_str }}{% when None %}—{% endmatch %}</td></tr>
+        <tr><td>PIM <small style="color:#9e9e9e;">(lower)</small></td>
+            <td style="text-align:right;" class="{% if winners.pim_a %}winner{% endif %}">{% match a %}{% when Some with (p) %}{{ p.pim_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;" class="{% if winners.pim_b %}winner{% endif %}">{% match b %}{% when Some with (p) %}{{ p.pim_str }}{% when None %}—{% endmatch %}</td></tr>
         <tr><td>SOG</td>
-            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.shots_str }}{% when None %}—{% endmatch %}</td>
-            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.shots_str }}{% when None %}—{% endmatch %}</td></tr>
+            <td style="text-align:right;" class="{% if winners.shots_a %}winner{% endif %}">{% match a %}{% when Some with (p) %}{{ p.shots_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;" class="{% if winners.shots_b %}winner{% endif %}">{% match b %}{% when Some with (p) %}{{ p.shots_str }}{% when None %}—{% endmatch %}</td></tr>
         <tr><td>SH%</td>
-            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.shooting_pct_str }}{% when None %}—{% endmatch %}</td>
-            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.shooting_pct_str }}{% when None %}—{% endmatch %}</td></tr>
+            <td style="text-align:right;" class="{% if winners.shooting_pct_a %}winner{% endif %}">{% match a %}{% when Some with (p) %}{{ p.shooting_pct_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;" class="{% if winners.shooting_pct_b %}winner{% endif %}">{% match b %}{% when Some with (p) %}{{ p.shooting_pct_str }}{% when None %}—{% endmatch %}</td></tr>
         <tr><td>Hits</td>
-            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.hits_str }}{% when None %}—{% endmatch %}</td>
-            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.hits_str }}{% when None %}—{% endmatch %}</td></tr>
+            <td style="text-align:right;" class="{% if winners.hits_a %}winner{% endif %}">{% match a %}{% when Some with (p) %}{{ p.hits_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;" class="{% if winners.hits_b %}winner{% endif %}">{% match b %}{% when Some with (p) %}{{ p.hits_str }}{% when None %}—{% endmatch %}</td></tr>
         <tr><td>Blocks</td>
-            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.blocks_str }}{% when None %}—{% endmatch %}</td>
-            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.blocks_str }}{% when None %}—{% endmatch %}</td></tr>
+            <td style="text-align:right;" class="{% if winners.blocks_a %}winner{% endif %}">{% match a %}{% when Some with (p) %}{{ p.blocks_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;" class="{% if winners.blocks_b %}winner{% endif %}">{% match b %}{% when Some with (p) %}{{ p.blocks_str }}{% when None %}—{% endmatch %}</td></tr>
         <tr><td>TK</td>
-            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.takeaways_str }}{% when None %}—{% endmatch %}</td>
-            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.takeaways_str }}{% when None %}—{% endmatch %}</td></tr>
-        <tr><td>GV</td>
-            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.giveaways_str }}{% when None %}—{% endmatch %}</td>
-            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.giveaways_str }}{% when None %}—{% endmatch %}</td></tr>
+            <td style="text-align:right;" class="{% if winners.takeaways_a %}winner{% endif %}">{% match a %}{% when Some with (p) %}{{ p.takeaways_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;" class="{% if winners.takeaways_b %}winner{% endif %}">{% match b %}{% when Some with (p) %}{{ p.takeaways_str }}{% when None %}—{% endmatch %}</td></tr>
+        <tr><td>GV <small style="color:#9e9e9e;">(lower)</small></td>
+            <td style="text-align:right;" class="{% if winners.giveaways_a %}winner{% endif %}">{% match a %}{% when Some with (p) %}{{ p.giveaways_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;" class="{% if winners.giveaways_b %}winner{% endif %}">{% match b %}{% when Some with (p) %}{{ p.giveaways_str }}{% when None %}—{% endmatch %}</td></tr>
         <tr><td>FOW%</td>
-            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.faceoff_pct_str }}{% when None %}—{% endmatch %}</td>
-            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.faceoff_pct_str }}{% when None %}—{% endmatch %}</td></tr>
+            <td style="text-align:right;" class="{% if winners.faceoff_pct_a %}winner{% endif %}">{% match a %}{% when Some with (p) %}{{ p.faceoff_pct_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;" class="{% if winners.faceoff_pct_b %}winner{% endif %}">{% match b %}{% when Some with (p) %}{{ p.faceoff_pct_str }}{% when None %}—{% endmatch %}</td></tr>
         <tr><td>PP G</td>
-            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.pp_goals_str }}{% when None %}—{% endmatch %}</td>
-            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.pp_goals_str }}{% when None %}—{% endmatch %}</td></tr>
+            <td style="text-align:right;" class="{% if winners.pp_goals_a %}winner{% endif %}">{% match a %}{% when Some with (p) %}{{ p.pp_goals_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;" class="{% if winners.pp_goals_b %}winner{% endif %}">{% match b %}{% when Some with (p) %}{{ p.pp_goals_str }}{% when None %}—{% endmatch %}</td></tr>
         <tr><td>PP P</td>
-            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.pp_points_str }}{% when None %}—{% endmatch %}</td>
-            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.pp_points_str }}{% when None %}—{% endmatch %}</td></tr>
+            <td style="text-align:right;" class="{% if winners.pp_points_a %}winner{% endif %}">{% match a %}{% when Some with (p) %}{{ p.pp_points_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;" class="{% if winners.pp_points_b %}winner{% endif %}">{% match b %}{% when Some with (p) %}{{ p.pp_points_str }}{% when None %}—{% endmatch %}</td></tr>
         <tr><td>SH G</td>
-            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.sh_goals_str }}{% when None %}—{% endmatch %}</td>
-            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.sh_goals_str }}{% when None %}—{% endmatch %}</td></tr>
+            <td style="text-align:right;" class="{% if winners.sh_goals_a %}winner{% endif %}">{% match a %}{% when Some with (p) %}{{ p.sh_goals_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;" class="{% if winners.sh_goals_b %}winner{% endif %}">{% match b %}{% when Some with (p) %}{{ p.sh_goals_str }}{% when None %}—{% endmatch %}</td></tr>
         <tr><td>GWG</td>
-            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.gwg_str }}{% when None %}—{% endmatch %}</td>
-            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.gwg_str }}{% when None %}—{% endmatch %}</td></tr>
+            <td style="text-align:right;" class="{% if winners.gwg_a %}winner{% endif %}">{% match a %}{% when Some with (p) %}{{ p.gwg_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;" class="{% if winners.gwg_b %}winner{% endif %}">{% match b %}{% when Some with (p) %}{{ p.gwg_str }}{% when None %}—{% endmatch %}</td></tr>
         <tr><td>TOI/G</td>
-            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.toi_per_game_str }}{% when None %}—{% endmatch %}</td>
-            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.toi_per_game_str }}{% when None %}—{% endmatch %}</td></tr>
+            <td style="text-align:right;" class="{% if winners.toi_per_game_a %}winner{% endif %}">{% match a %}{% when Some with (p) %}{{ p.toi_per_game_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;" class="{% if winners.toi_per_game_b %}winner{% endif %}">{% match b %}{% when Some with (p) %}{{ p.toi_per_game_str }}{% when None %}—{% endmatch %}</td></tr>
     </tbody>
 </table>
 {% else %}

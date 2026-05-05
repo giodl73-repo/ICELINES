@@ -357,6 +357,18 @@ tbody tr:last-child td {
 .delta-down { background: #fce4e6; color: #c62828; }
 .delta-flat { background: #f0f0f0; color: #616161; }
 
+/* ── Compare-page winner highlights — Sasq.8 ────────────────────── */
+/*
+ * Bold + accent color the better stat per row on /compare. Lower-is-
+ * better stats (PIM, GV) flip the comparator before storing the
+ * flag, so the rule itself doesn't have to know.
+ */
+td.winner {
+    font-weight: 800;
+    color: var(--nhl-navy);
+    background: linear-gradient(90deg, transparent 0%, rgba(21, 101, 192, 0.07) 50%, transparent 100%);
+}
+
 .table-scroll {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;

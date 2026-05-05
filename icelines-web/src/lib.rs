@@ -2710,6 +2710,7 @@ mod handlers {
                         error: Some(format!(
                             "Active season '{season_str}' is not a valid YYYYZZZZ id"
                         )),
+                        winners: crate::templates::CompareWinners::default(),
                     };
                     return match tmpl.render() {
                         Ok(html) => Html(html).into_response(),
@@ -2788,11 +2789,23 @@ mod handlers {
                     .map(|id| format!("No player with NHL id {id}."))
             };
 
+            // Sasq.8 — compute per-stat winner flags so the template
+            // can bold whichever side has the better value. Most
+            // stats are higher-is-better; PIM and giveaways are
+            // flipped (lower-is-better in modern hockey
+            // contexts — fewer minor penalties / fewer turnovers
+            // are signals of cleaner play).
+            let winners = match (&a_card, &b_card) {
+                (Some(pa), Some(pb)) => build_compare_winners(pa, pb),
+                _ => crate::templates::CompareWinners::default(),
+            };
+
             let tmpl = CompareTemplate {
                 active_label,
                 a: a_card,
                 b: b_card,
                 error,
+                winners,
             };
             match tmpl.render() {
                 Ok(html) => Html(html).into_response(),
@@ -2802,6 +2815,80 @@ mod handlers {
                 )
                     .into_response(),
             }
+        }
+
+        /// Compute per-stat winner flags for two ComparePlayerCards.
+        /// Higher-is-better unless explicitly flipped (PIM, GV).
+        /// Numeric stats (gp, goals, etc.) compare directly; string
+        /// stats parse out a leading number where possible. Strings
+        /// containing "—" or that fail to parse skip the comparison
+        /// (both flags stay false → neither side bolded).
+        fn build_compare_winners(
+            pa: &ComparePlayerCard,
+            pb: &ComparePlayerCard,
+        ) -> crate::templates::CompareWinners {
+            use crate::templates::CompareWinners;
+            // Parse a stat string like "+12", "1.78", "10.5%", "20:20",
+            // "—" into Option<f64>. The "20:20" TOI/G case is M:SS
+            // which we convert to total seconds for comparison.
+            fn parse_stat(s: &str) -> Option<f64> {
+                let t = s.trim();
+                if t.is_empty() || t == "—" {
+                    return None;
+                }
+                if let Some((m, s)) = t.split_once(':') {
+                    if let (Ok(mi), Ok(se)) = (m.parse::<u32>(), s.parse::<u32>()) {
+                        return Some(f64::from(mi) * 60.0 + f64::from(se));
+                    }
+                }
+                let stripped = t.trim_end_matches('%');
+                stripped.parse::<f64>().ok()
+            }
+            // Compare two values with `higher_better` bias and write
+            // the (a_wins, b_wins) booleans. Equality → both false.
+            fn cmp_pair(a: f64, b: f64, higher_better: bool) -> (bool, bool) {
+                use std::cmp::Ordering;
+                let ord = a.partial_cmp(&b).unwrap_or(Ordering::Equal);
+                if higher_better {
+                    (ord == Ordering::Greater, ord == Ordering::Less)
+                } else {
+                    (ord == Ordering::Less, ord == Ordering::Greater)
+                }
+            }
+            fn cmp_strs(sa: &str, sb: &str, higher_better: bool) -> (bool, bool) {
+                match (parse_stat(sa), parse_stat(sb)) {
+                    (Some(a), Some(b)) => cmp_pair(a, b, higher_better),
+                    _ => (false, false),
+                }
+            }
+            fn cmp_u32(a: u32, b: u32) -> (bool, bool) {
+                cmp_pair(f64::from(a), f64::from(b), true)
+            }
+            let mut w = CompareWinners::default();
+            (w.gp_a, w.gp_b) = cmp_u32(pa.gp, pb.gp);
+            (w.goals_a, w.goals_b) = cmp_u32(pa.goals, pb.goals);
+            (w.assists_a, w.assists_b) = cmp_u32(pa.assists, pb.assists);
+            (w.points_a, w.points_b) = cmp_u32(pa.points, pb.points);
+            (w.ppg_a, w.ppg_b) = cmp_strs(&pa.ppg_str, &pb.ppg_str, true);
+            (w.plus_minus_a, w.plus_minus_b) =
+                cmp_strs(&pa.plus_minus_str, &pb.plus_minus_str, true);
+            (w.pim_a, w.pim_b) = cmp_strs(&pa.pim_str, &pb.pim_str, false); // lower better
+            (w.shots_a, w.shots_b) = cmp_strs(&pa.shots_str, &pb.shots_str, true);
+            (w.shooting_pct_a, w.shooting_pct_b) =
+                cmp_strs(&pa.shooting_pct_str, &pb.shooting_pct_str, true);
+            (w.hits_a, w.hits_b) = cmp_strs(&pa.hits_str, &pb.hits_str, true);
+            (w.blocks_a, w.blocks_b) = cmp_strs(&pa.blocks_str, &pb.blocks_str, true);
+            (w.takeaways_a, w.takeaways_b) = cmp_strs(&pa.takeaways_str, &pb.takeaways_str, true);
+            (w.giveaways_a, w.giveaways_b) = cmp_strs(&pa.giveaways_str, &pb.giveaways_str, false); // lower better
+            (w.faceoff_pct_a, w.faceoff_pct_b) =
+                cmp_strs(&pa.faceoff_pct_str, &pb.faceoff_pct_str, true);
+            (w.pp_goals_a, w.pp_goals_b) = cmp_strs(&pa.pp_goals_str, &pb.pp_goals_str, true);
+            (w.pp_points_a, w.pp_points_b) = cmp_strs(&pa.pp_points_str, &pb.pp_points_str, true);
+            (w.sh_goals_a, w.sh_goals_b) = cmp_strs(&pa.sh_goals_str, &pb.sh_goals_str, true);
+            (w.gwg_a, w.gwg_b) = cmp_strs(&pa.gwg_str, &pb.gwg_str, true);
+            (w.toi_per_game_a, w.toi_per_game_b) =
+                cmp_strs(&pa.toi_per_game_str, &pb.toi_per_game_str, true);
+            w
         }
     }
 

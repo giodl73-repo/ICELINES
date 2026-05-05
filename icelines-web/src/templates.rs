@@ -389,6 +389,56 @@ pub struct CompareTemplate {
     /// Set when `?a=` or `?b=` is missing or malformed. Renders an
     /// error block + a hint to use the player-card "Compare" form.
     pub error: Option<String>,
+    /// Sasq.8 — per-stat winner flags. The template applies a
+    /// `winner` CSS class on the bolded side. Defaults to all-false
+    /// (no bolding) when one or both players are missing.
+    pub winners: CompareWinners,
+}
+
+/// Per-stat "which side has the better value" flags. `_a` is true
+/// when player A wins (strictly), `_b` is true when player B wins.
+/// Both false on equality. For lower-is-better stats (PIM,
+/// giveaways) the comparator is flipped before storing.
+#[derive(Debug, Clone, Default)]
+pub struct CompareWinners {
+    pub gp_a: bool,
+    pub gp_b: bool,
+    pub goals_a: bool,
+    pub goals_b: bool,
+    pub assists_a: bool,
+    pub assists_b: bool,
+    pub points_a: bool,
+    pub points_b: bool,
+    pub ppg_a: bool,
+    pub ppg_b: bool,
+    pub plus_minus_a: bool,
+    pub plus_minus_b: bool,
+    pub pim_a: bool,
+    pub pim_b: bool, // lower-is-better
+    pub shots_a: bool,
+    pub shots_b: bool,
+    pub shooting_pct_a: bool,
+    pub shooting_pct_b: bool,
+    pub hits_a: bool,
+    pub hits_b: bool,
+    pub blocks_a: bool,
+    pub blocks_b: bool,
+    pub takeaways_a: bool,
+    pub takeaways_b: bool,
+    pub giveaways_a: bool,
+    pub giveaways_b: bool, // lower-is-better
+    pub faceoff_pct_a: bool,
+    pub faceoff_pct_b: bool,
+    pub pp_goals_a: bool,
+    pub pp_goals_b: bool,
+    pub pp_points_a: bool,
+    pub pp_points_b: bool,
+    pub sh_goals_a: bool,
+    pub sh_goals_b: bool,
+    pub gwg_a: bool,
+    pub gwg_b: bool,
+    pub toi_per_game_a: bool,
+    pub toi_per_game_b: bool,
 }
 
 #[derive(Debug, Clone)]
