@@ -926,7 +926,43 @@ mod handlers {
             // sort/pos/top because Option<String> overwrites on
             // re-parse. For filter, we need ALL occurrences ANDed.
             let raw_filters = parse_filters_from_query(uri.query().unwrap_or(""));
-            let filter_expr_result = combine_filters(&raw_filters);
+
+            // Sasq.10 — pre-extract bio atoms from each filter's
+            // top-level AND chain. Each raw filter string is split
+            // on " AND " (case-insensitive, paren-aware); pieces that
+            // parse as bio atoms are pulled into `extracted_bio`,
+            // remaining (stat-only) pieces are recombined for the
+            // catalog parser.
+            //
+            // Limitation: a filter that contains OR/NOT or parens
+            // around bio terms goes whole-cloth to the stat parser
+            // (which will fail on bio keys). Users with that need can
+            // fall back to the discrete Bio Filters accordion.
+            let mut extracted_bio: Vec<BioAtom> = Vec::new();
+            let mut stat_filters: Vec<String> = Vec::with_capacity(raw_filters.len());
+            for raw in &raw_filters {
+                match split_top_level_and(raw) {
+                    Some(pieces) => {
+                        let mut stat_pieces: Vec<String> = Vec::new();
+                        for p in pieces {
+                            match try_parse_bio_atom(&p) {
+                                Some(atoms) => extracted_bio.extend(atoms),
+                                None => stat_pieces.push(p),
+                            }
+                        }
+                        if !stat_pieces.is_empty() {
+                            stat_filters.push(stat_pieces.join(" AND "));
+                        }
+                    }
+                    None => {
+                        // Couldn't split (OR/NOT/parens) — pass whole
+                        // to stat parser as-is.
+                        stat_filters.push(raw.clone());
+                    }
+                }
+            }
+
+            let filter_expr_result = combine_filters(&stat_filters);
             // Resolve active (season, season_type) from config.
             let (season_str, season_type, active_label) = {
                 let cfg = state.config.read().await;
@@ -982,24 +1018,73 @@ mod handlers {
             // Sasq.9 — bio filter snapshot (cheap clones, used inside
             // the closure below). Country and shoots are uppercased
             // for case-insensitive match against bio.
-            let bio_age_min = q.age_min;
-            let bio_age_max = q.age_max;
-            let bio_draft_min = q.draft_year_min;
-            let bio_draft_max = q.draft_year_max;
-            let bio_height_min = q.height_min;
-            let bio_height_max = q.height_max;
-            let bio_weight_min = q.weight_min;
-            let bio_weight_max = q.weight_max;
-            let bio_country = q
+            let mut bio_age_min = q.age_min;
+            let mut bio_age_max = q.age_max;
+            let mut bio_draft_min = q.draft_year_min;
+            let mut bio_draft_max = q.draft_year_max;
+            let mut bio_height_min = q.height_min;
+            let mut bio_height_max = q.height_max;
+            let mut bio_weight_min = q.weight_min;
+            let mut bio_weight_max = q.weight_max;
+            let mut bio_country = q
                 .country
                 .as_deref()
                 .map(|s| s.trim().to_ascii_uppercase())
                 .filter(|s| !s.is_empty());
-            let bio_shoots = q
+
+            // Sasq.10 — merge bio atoms extracted from the filter
+            // grammar. Discrete params (?age-min=) and grammar atoms
+            // (?filter=age>=22) compose by tightening: min takes the
+            // larger value, max takes the smaller. Country / shoots
+            // overwrite (last wins, stable per the iteration order).
+            for atom in &extracted_bio {
+                use std::cmp::{max, min};
+                match atom {
+                    BioAtom::AgeMin(v) => {
+                        bio_age_min = Some(bio_age_min.map_or(*v, |cur| max(cur, *v)))
+                    }
+                    BioAtom::AgeMax(v) => {
+                        bio_age_max = Some(bio_age_max.map_or(*v, |cur| min(cur, *v)))
+                    }
+                    BioAtom::DraftMin(v) => {
+                        bio_draft_min = Some(bio_draft_min.map_or(*v, |cur| max(cur, *v)))
+                    }
+                    BioAtom::DraftMax(v) => {
+                        bio_draft_max = Some(bio_draft_max.map_or(*v, |cur| min(cur, *v)))
+                    }
+                    BioAtom::HeightMin(v) => {
+                        bio_height_min = Some(bio_height_min.map_or(*v, |cur| max(cur, *v)))
+                    }
+                    BioAtom::HeightMax(v) => {
+                        bio_height_max = Some(bio_height_max.map_or(*v, |cur| min(cur, *v)))
+                    }
+                    BioAtom::WeightMin(v) => {
+                        bio_weight_min = Some(bio_weight_min.map_or(*v, |cur| max(cur, *v)))
+                    }
+                    BioAtom::WeightMax(v) => {
+                        bio_weight_max = Some(bio_weight_max.map_or(*v, |cur| min(cur, *v)))
+                    }
+                    BioAtom::Country(s) => bio_country = Some(s.clone()),
+                    BioAtom::Shoots(s) => {
+                        // bio_shoots is declared further down; defer
+                        // by stashing into a local + applying after.
+                        let _ = s;
+                    }
+                }
+            }
+            // Shoots is declared a few lines below; reuse the same
+            // merge pattern. Pull from extracted_bio in a second
+            // pass so we don't fight Rust borrow ordering.
+            let mut bio_shoots = q
                 .shoots
                 .as_deref()
                 .map(|s| s.trim().to_ascii_uppercase())
                 .filter(|s| !s.is_empty());
+            for atom in &extracted_bio {
+                if let BioAtom::Shoots(s) = atom {
+                    bio_shoots = Some(s.clone());
+                }
+            }
 
             // Brief read of the repo. Project each PlayerView into a
             // LeaderRow inside the lock scope (per spec: views must
@@ -1434,6 +1519,371 @@ mod handlers {
                 });
             }
             Ok(combined)
+        }
+
+        /// Sasq.10 — bio atom that lives outside the StatId catalog.
+        /// Per CLAUDE.md, age/draft/height/weight aren't stats so they
+        /// can't go through `parse_filter_expr` directly. We pre-extract
+        /// these from the top-level AND chain in the web handler, then
+        /// pass the residue (stat-only) through the existing parser.
+        #[derive(Debug, Clone)]
+        pub enum BioAtom {
+            AgeMin(u32),
+            AgeMax(u32),
+            DraftMin(u16),
+            DraftMax(u16),
+            HeightMin(u32),
+            HeightMax(u32),
+            WeightMin(u32),
+            WeightMax(u32),
+            Country(String),
+            Shoots(String),
+        }
+
+        /// Try to parse a single filter atom (no AND/OR/NOT/parens) as
+        /// a bio term. Returns `Some(BioAtom)` when the key matches a
+        /// bio field, `None` when the key is unrecognized (in which
+        /// case the caller should pass the atom to the StatId parser).
+        ///
+        /// Recognized syntaxes:
+        ///   age>=22        AgeMin(22)
+        ///   age<=28        AgeMax(28)
+        ///   age=24         AgeMin(24)+AgeMax(24)  -- caller emits both
+        ///   draft>=2020    DraftMin(2020)
+        ///   height>=72     HeightMin(72)
+        ///   weight<=200    WeightMax(200)
+        ///   country=CAN    Country("CAN")
+        ///   shoots=L       Shoots("L")
+        pub fn try_parse_bio_atom(s: &str) -> Option<Vec<BioAtom>> {
+            let t = s.trim();
+            // Find the operator. Order matters: ">=" / "<=" before "=".
+            let (key, op, val) = if let Some((k, v)) = t.split_once(">=") {
+                (k.trim(), ">=", v.trim())
+            } else if let Some((k, v)) = t.split_once("<=") {
+                (k.trim(), "<=", v.trim())
+            } else if let Some((k, v)) = t.split_once('=') {
+                (k.trim(), "=", v.trim())
+            } else {
+                return None;
+            };
+            let key_norm = key.to_ascii_lowercase();
+            let key_norm = key_norm.replace('_', "-");
+            // Numeric bio keys.
+            let numeric: Option<&str> = match key_norm.as_str() {
+                "age" => Some("age"),
+                "draft" | "draft-year" | "draft-yr" => Some("draft"),
+                "height" | "ht" => Some("height"),
+                "weight" | "wt" => Some("weight"),
+                _ => None,
+            };
+            if let Some(kind) = numeric {
+                let n: u32 = val.parse().ok()?;
+                let n_u16: u16 = val.parse().ok().unwrap_or(0);
+                let mut out = Vec::new();
+                match (kind, op) {
+                    ("age", ">=") => out.push(BioAtom::AgeMin(n)),
+                    ("age", "<=") => out.push(BioAtom::AgeMax(n)),
+                    ("age", "=") => {
+                        out.push(BioAtom::AgeMin(n));
+                        out.push(BioAtom::AgeMax(n));
+                    }
+                    ("draft", ">=") => out.push(BioAtom::DraftMin(n_u16)),
+                    ("draft", "<=") => out.push(BioAtom::DraftMax(n_u16)),
+                    ("draft", "=") => {
+                        out.push(BioAtom::DraftMin(n_u16));
+                        out.push(BioAtom::DraftMax(n_u16));
+                    }
+                    ("height", ">=") => out.push(BioAtom::HeightMin(n)),
+                    ("height", "<=") => out.push(BioAtom::HeightMax(n)),
+                    ("height", "=") => {
+                        out.push(BioAtom::HeightMin(n));
+                        out.push(BioAtom::HeightMax(n));
+                    }
+                    ("weight", ">=") => out.push(BioAtom::WeightMin(n)),
+                    ("weight", "<=") => out.push(BioAtom::WeightMax(n)),
+                    ("weight", "=") => {
+                        out.push(BioAtom::WeightMin(n));
+                        out.push(BioAtom::WeightMax(n));
+                    }
+                    _ => return None,
+                }
+                return Some(out);
+            }
+            // String bio keys — country / shoots use only `=`.
+            if op != "=" {
+                return None;
+            }
+            match key_norm.as_str() {
+                "country" | "nation" | "nationality" => {
+                    Some(vec![BioAtom::Country(val.to_ascii_uppercase())])
+                }
+                "shoots" | "hand" | "catches" => {
+                    Some(vec![BioAtom::Shoots(val.to_ascii_uppercase())])
+                }
+                _ => None,
+            }
+        }
+
+        /// Split a filter string on top-level " AND " (case-insensitive),
+        /// honoring paren depth so `(g>=30 AND a>=30)` stays as one
+        /// piece. Returns None when the string contains OR / NOT or
+        /// any unbalanced parens — the caller falls back to passing
+        /// the whole expression to the stat-only parser.
+        pub fn split_top_level_and(s: &str) -> Option<Vec<String>> {
+            let upper = s.to_ascii_uppercase();
+            // Bail if the string contains OR or NOT — bio extraction
+            // only handles pure top-level AND chains. The full parser
+            // will get the whole thing.
+            // Match at word boundaries to avoid hitting "OR" inside a
+            // stat key (none of the catalog keys contain OR/NOT but
+            // be defensive anyway).
+            let has_or = upper.split_whitespace().any(|w| w == "OR");
+            let has_not = upper.split_whitespace().any(|w| w == "NOT");
+            if has_or || has_not {
+                return None;
+            }
+            let mut depth = 0i32;
+            let mut pieces: Vec<String> = Vec::new();
+            let mut cur = String::new();
+            let bytes = s.as_bytes();
+            let mut i = 0;
+            while i < bytes.len() {
+                let c = bytes[i] as char;
+                if c == '(' {
+                    depth += 1;
+                    cur.push(c);
+                    i += 1;
+                    continue;
+                }
+                if c == ')' {
+                    depth -= 1;
+                    if depth < 0 {
+                        return None; // unbalanced
+                    }
+                    cur.push(c);
+                    i += 1;
+                    continue;
+                }
+                if depth == 0 && (c == ' ' || c == '\t') {
+                    // Look ahead for "AND " (case-insensitive).
+                    let rest = &s[i..];
+                    let rest_upper = rest.to_ascii_uppercase();
+                    let trimmed = rest_upper.trim_start();
+                    if trimmed.starts_with("AND ") || trimmed.starts_with("AND\t") {
+                        // Consume whitespace + AND + trailing whitespace
+                        let lead_ws = rest.len() - rest.trim_start().len();
+                        let advance = lead_ws + 3; // "AND" length
+                        i += advance;
+                        // Skip following whitespace
+                        while i < bytes.len() && (bytes[i] as char).is_whitespace() {
+                            i += 1;
+                        }
+                        if !cur.trim().is_empty() {
+                            pieces.push(cur.trim().to_owned());
+                        }
+                        cur.clear();
+                        continue;
+                    }
+                }
+                cur.push(c);
+                i += 1;
+            }
+            if depth != 0 {
+                return None;
+            }
+            if !cur.trim().is_empty() {
+                pieces.push(cur.trim().to_owned());
+            }
+            Some(pieces)
+        }
+
+        #[cfg(test)]
+        mod bio_atom_tests {
+            use super::*;
+
+            // ── try_parse_bio_atom ──────────────────────────────────
+
+            /// l0_bio_atom_age_min_max
+            /// — `age>=22` and `age<=28` produce the matching min/max.
+            #[test]
+            fn l0_bio_atom_age_min_max() {
+                let got = try_parse_bio_atom("age>=22").unwrap();
+                assert!(matches!(got.as_slice(), [BioAtom::AgeMin(22)]));
+                let got = try_parse_bio_atom("age<=28").unwrap();
+                assert!(matches!(got.as_slice(), [BioAtom::AgeMax(28)]));
+            }
+
+            /// l0_bio_atom_age_eq_emits_both_bounds
+            /// — `age=24` should pin to a single age (min and max).
+            #[test]
+            fn l0_bio_atom_age_eq_emits_both_bounds() {
+                let got = try_parse_bio_atom("age=24").unwrap();
+                assert_eq!(got.len(), 2);
+                assert!(matches!(got[0], BioAtom::AgeMin(24)));
+                assert!(matches!(got[1], BioAtom::AgeMax(24)));
+            }
+
+            /// l0_bio_atom_draft_aliases
+            /// — draft / draft-year / draft_year all parse the same.
+            #[test]
+            fn l0_bio_atom_draft_aliases() {
+                for k in ["draft>=2020", "draft-year>=2020", "draft_year>=2020"] {
+                    let got = try_parse_bio_atom(k).unwrap();
+                    assert!(
+                        matches!(got.as_slice(), [BioAtom::DraftMin(2020)]),
+                        "key {k} should parse as DraftMin(2020)"
+                    );
+                }
+            }
+
+            /// l0_bio_atom_height_weight
+            #[test]
+            fn l0_bio_atom_height_weight() {
+                assert!(matches!(
+                    try_parse_bio_atom("height>=72").unwrap().as_slice(),
+                    [BioAtom::HeightMin(72)]
+                ));
+                assert!(matches!(
+                    try_parse_bio_atom("weight<=200").unwrap().as_slice(),
+                    [BioAtom::WeightMax(200)]
+                ));
+            }
+
+            /// l0_bio_atom_country_uppercase_normalized
+            /// — input case shouldn't matter; storage is uppercase.
+            #[test]
+            fn l0_bio_atom_country_uppercase_normalized() {
+                let got = try_parse_bio_atom("country=can").unwrap();
+                assert!(matches!(&got[0], BioAtom::Country(s) if s == "CAN"));
+                let got = try_parse_bio_atom("Country=Swe").unwrap();
+                assert!(matches!(&got[0], BioAtom::Country(s) if s == "SWE"));
+            }
+
+            /// l0_bio_atom_shoots
+            #[test]
+            fn l0_bio_atom_shoots() {
+                let got = try_parse_bio_atom("shoots=L").unwrap();
+                assert!(matches!(&got[0], BioAtom::Shoots(s) if s == "L"));
+            }
+
+            /// l0_bio_atom_unknown_key_returns_none
+            /// — stat keys (g, p, hits, …) MUST return None so the
+            ///   caller routes them to the StatId catalog parser.
+            #[test]
+            fn l0_bio_atom_unknown_key_returns_none() {
+                for s in ["g>=50", "p>=80", "hits>=200", "ppg>=1.5", "blocks>=100"] {
+                    assert!(
+                        try_parse_bio_atom(s).is_none(),
+                        "stat key {s} must NOT match a bio atom"
+                    );
+                }
+            }
+
+            /// l0_bio_atom_country_only_uses_eq
+            /// — `country>=CAN` is meaningless; must NOT match.
+            #[test]
+            fn l0_bio_atom_country_only_uses_eq() {
+                assert!(try_parse_bio_atom("country>=CAN").is_none());
+                assert!(try_parse_bio_atom("country<=CAN").is_none());
+            }
+
+            /// l0_bio_atom_garbage_value_returns_none
+            /// — `age>=lots` shouldn't crash or partial-parse.
+            #[test]
+            fn l0_bio_atom_garbage_value_returns_none() {
+                assert!(try_parse_bio_atom("age>=lots").is_none());
+                assert!(try_parse_bio_atom("draft>=").is_none());
+            }
+
+            // ── split_top_level_and ────────────────────────────────
+
+            /// l0_split_simple_and_chain
+            /// — `a AND b AND c` → 3 pieces.
+            #[test]
+            fn l0_split_simple_and_chain() {
+                let got = split_top_level_and("g>=50 AND a>=50 AND age>=22").unwrap();
+                assert_eq!(got, vec!["g>=50", "a>=50", "age>=22"]);
+            }
+
+            /// l0_split_case_insensitive_and
+            #[test]
+            fn l0_split_case_insensitive_and() {
+                let got = split_top_level_and("g>=50 and a>=50 And age>=22").unwrap();
+                assert_eq!(got.len(), 3);
+            }
+
+            /// l0_split_no_and_returns_single_piece
+            /// — bare atom → one piece, no error.
+            #[test]
+            fn l0_split_no_and_returns_single_piece() {
+                let got = split_top_level_and("age>=22").unwrap();
+                assert_eq!(got, vec!["age>=22"]);
+            }
+
+            /// l0_split_or_returns_none
+            /// — OR forces fallback to the stat-only parser.
+            #[test]
+            fn l0_split_or_returns_none() {
+                assert!(split_top_level_and("g>=50 OR a>=50").is_none());
+                assert!(split_top_level_and("g>=50 or a>=50").is_none());
+            }
+
+            /// l0_split_not_returns_none
+            #[test]
+            fn l0_split_not_returns_none() {
+                assert!(split_top_level_and("NOT pim>=100").is_none());
+                assert!(split_top_level_and("g>=50 AND NOT pim>=100").is_none());
+            }
+
+            /// l0_split_keeps_paren_group_intact
+            /// — top-level AND outside parens splits; parens stay
+            ///   atomic so the StatId parser can handle them.
+            ///   But OR inside parens still trips the bail above —
+            ///   conservative behavior.
+            #[test]
+            fn l0_split_keeps_paren_group_intact() {
+                // Without OR: parens keep their content as one piece.
+                let got = split_top_level_and("(g>=30 AND a>=30) AND age>=22").unwrap();
+                assert_eq!(got, vec!["(g>=30 AND a>=30)", "age>=22"]);
+            }
+
+            /// l0_split_unbalanced_paren_returns_none
+            #[test]
+            fn l0_split_unbalanced_paren_returns_none() {
+                assert!(split_top_level_and("(g>=50 AND a>=50").is_none());
+                assert!(split_top_level_and("g>=50)").is_none());
+            }
+
+            // ── compute_age ────────────────────────────────────────
+
+            /// l0_compute_age_after_cutoff
+            /// — born after Sep 15 → still pre-aging on opening night.
+            ///   2003-04-30 against 2025-26 season: 2025 - 2003 = 22.
+            ///   April is BEFORE Sep 15 so no -1 deduction → 22.
+            #[test]
+            fn l0_compute_age_after_cutoff() {
+                let age = super::super::compute_age("2003-04-30", 20252026).unwrap();
+                assert_eq!(age, 22);
+            }
+
+            /// l0_compute_age_before_cutoff_subtracts_one
+            /// — born after Sep 15 (e.g. Dec) → still 21 by opening
+            ///   night of the season they turn 22.
+            #[test]
+            fn l0_compute_age_before_cutoff_subtracts_one() {
+                // Dec 1 2003: hasn't reached Sep 15 cutoff yet by
+                // 2025-09-15 → still 21 going into 25-26.
+                let age = super::super::compute_age("2003-12-01", 20252026).unwrap();
+                assert_eq!(age, 21);
+            }
+
+            /// l0_compute_age_garbage_returns_none
+            #[test]
+            fn l0_compute_age_garbage_returns_none() {
+                assert!(super::super::compute_age("not-a-date", 20252026).is_none());
+                assert!(super::super::compute_age("2003", 20252026).is_none());
+                assert!(super::super::compute_age("2003-04", 20252026).is_none());
+            }
         }
 
         /// What `?pos=X` means after parsing.
