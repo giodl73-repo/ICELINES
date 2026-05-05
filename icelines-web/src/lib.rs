@@ -1977,6 +1977,22 @@ mod handlers {
                     gwg_str,
                     toi_per_game_str,
                     career_rows,
+                    // UX.H — every active player + goalie name in
+                    // the repo, sorted alphabetically. Renders as a
+                    // <datalist> on the page so the Compare-with
+                    // input gets native browser autocomplete with
+                    // zero JS. Skips the player you're already
+                    // viewing — comparing someone with themselves is
+                    // never useful.
+                    compare_suggestions: {
+                        let mut pairs: Vec<(String, u32)> = repo
+                            .iter_identities()
+                            .filter(|i| i.id.0 != pid.0)
+                            .map(|i| (i.full_name.clone(), i.id.0))
+                            .collect();
+                        pairs.sort_by(|a, b| a.0.cmp(&b.0));
+                        pairs
+                    },
                 }
             };
 
@@ -2229,10 +2245,38 @@ mod handlers {
 
         #[derive(Debug, Deserialize, Default)]
         pub struct CompareQuery {
+            /// Either a NHL id ("8478402") or a player name
+            /// ("Connor McDavid"). UX.H — the player card's compare
+            /// form posts a name selected from the autocomplete
+            /// datalist; deep-linked URLs may still pass an id.
             #[serde(default)]
-            pub a: Option<u32>,
+            pub a: Option<String>,
             #[serde(default)]
-            pub b: Option<u32>,
+            pub b: Option<String>,
+        }
+
+        /// Resolve a `?a=` / `?b=` query value (id or name) into a
+        /// numeric NHL id. Pure u32 short-circuits; otherwise the
+        /// first repo identity whose `full_name` matches
+        /// case-insensitively wins. Returns None when there's no
+        /// match, so callers can render a friendly error instead of
+        /// silently picking the wrong player.
+        async fn resolve_id(state: &WebState, raw: &str) -> Option<u32> {
+            let trimmed = raw.trim();
+            if trimmed.is_empty() {
+                return None;
+            }
+            if let Ok(id) = trimmed.parse::<u32>() {
+                return Some(id);
+            }
+            let needle = trimmed.to_ascii_lowercase();
+            let repo = state.repo.read().await;
+            for identity in repo.iter_identities() {
+                if identity.full_name.to_ascii_lowercase() == needle {
+                    return Some(identity.id.0);
+                }
+            }
+            None
         }
 
         fn opt_u(o: Option<u32>) -> String {
@@ -2434,7 +2478,25 @@ mod handlers {
             };
             let season = Season(season_u32);
 
-            let (a_card, a_missing) = match q.a {
+            // Resolve "a" and "b" to numeric NHL ids. Each may be
+            // either a u32 (deep-linked URL like
+            // /compare?a=8478402&b=8477934) or a name typed into
+            // the player-card autocomplete ("Connor McDavid"). A
+            // raw value that doesn't parse as u32 AND isn't a known
+            // repo identity name surfaces as `unresolved` so the
+            // template can name what failed.
+            let a_raw = q.a.as_deref().map(str::trim).filter(|s| !s.is_empty());
+            let b_raw = q.b.as_deref().map(str::trim).filter(|s| !s.is_empty());
+            let a_id = match a_raw {
+                Some(raw) => resolve_id(&state, raw).await,
+                None => None,
+            };
+            let b_id = match b_raw {
+                Some(raw) => resolve_id(&state, raw).await,
+                None => None,
+            };
+
+            let (a_card, a_missing) = match a_id {
                 Some(id) => {
                     let card = build_card(&state, id, season, season_type).await;
                     let missing = card.is_none();
@@ -2442,7 +2504,7 @@ mod handlers {
                 }
                 None => (None, None),
             };
-            let (b_card, b_missing) = match q.b {
+            let (b_card, b_missing) = match b_id {
                 Some(id) => {
                     let card = build_card(&state, id, season, season_type).await;
                     let missing = card.is_none();
@@ -2451,16 +2513,34 @@ mod handlers {
                 None => (None, None),
             };
 
-            let error = match (q.a, q.b, a_missing, b_missing) {
-                (None, None, _, _) => None,
-                (Some(_), None, _, _) => Some("Missing ?b= player id.".to_owned()),
-                (None, Some(_), _, _) => Some("Missing ?a= player id.".to_owned()),
-                (_, _, Some(id_a), Some(id_b)) => Some(format!(
+            // Distinguish "no input given" vs "input given but didn't
+            // resolve to a known player". The latter is more useful to
+            // surface with the typed text.
+            let a_unresolved = a_raw.filter(|_| a_id.is_none());
+            let b_unresolved = b_raw.filter(|_| b_id.is_none());
+
+            let error = if a_raw.is_none() && b_raw.is_none() {
+                None
+            } else if a_raw.is_none() {
+                Some("Missing first player (?a=).".to_owned())
+            } else if b_raw.is_none() {
+                Some("Missing second player (?b=).".to_owned())
+            } else if let (Some(a_text), Some(b_text)) = (a_unresolved, b_unresolved) {
+                Some(format!(
+                    "Neither '{a_text}' nor '{b_text}' matches a player in the active repository."
+                ))
+            } else if let Some(text) = a_unresolved {
+                Some(format!("No player matches '{text}'."))
+            } else if let Some(text) = b_unresolved {
+                Some(format!("No player matches '{text}'."))
+            } else if let (Some(id_a), Some(id_b)) = (a_missing, b_missing) {
+                Some(format!(
                     "Neither player {id_a} nor {id_b} is in the active repository."
-                )),
-                (_, _, Some(id), _) => Some(format!("No player with NHL id {id}.")),
-                (_, _, _, Some(id)) => Some(format!("No player with NHL id {id}.")),
-                _ => None,
+                ))
+            } else if let Some(id) = a_missing.or(b_missing) {
+                Some(format!("No player with NHL id {id}."))
+            } else {
+                None
             };
 
             let tmpl = CompareTemplate {

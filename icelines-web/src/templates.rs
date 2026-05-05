@@ -475,6 +475,12 @@ pub struct PlayerTemplate {
     /// for. King.3.2 lands this; the row count for a 10-year veteran
     /// is ~10-20 (regular only) or ~15-30 (regular + playoff).
     pub career_rows: Vec<CareerRow>,
+    /// (name, nhl_id) pairs for every active skater + goalie in the
+    /// active-season repo, used to populate the Compare-with
+    /// datalist. UX.H — lets the user type a name with native browser
+    /// autocomplete instead of memorizing a 7-digit NHL id. Sorted
+    /// alphabetically by name.
+    pub compare_suggestions: Vec<(String, u32)>,
 }
 
 /// One row in the player-card career table.

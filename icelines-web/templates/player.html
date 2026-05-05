@@ -15,9 +15,15 @@
     <span style="flex:1"></span>
     <form method="get" action="/compare" style="display:flex; gap:0.4rem; align-items:center;">
         <input type="hidden" name="a" value="{{ nhl_id }}">
-        <label for="compare-b" style="font-size:0.85rem; color:#616161;">Compare with NHL id:</label>
-        <input id="compare-b" type="number" name="b" placeholder="e.g. 8477934"
-               style="width: 8rem; font-family: ui-monospace, Consolas, monospace;">
+        <label for="compare-b" style="font-size:0.85rem; color:#616161;">Compare with:</label>
+        <input id="compare-b" type="text" name="b" placeholder="type a player name…"
+               list="compare-suggestions" autocomplete="off"
+               style="width: 16rem;">
+        <datalist id="compare-suggestions">
+            {% for s in compare_suggestions %}
+            <option value="{{ s.0 }}"></option>
+            {% endfor %}
+        </datalist>
         <button type="submit">Compare</button>
     </form>
 </nav>
