@@ -13,6 +13,7 @@ adding a new phase means picking a trophy that fits.
 |---|---|---|---|
 | 1 — Foundation | **Calder** | Initial Rust CLI, fetch pipeline, snapshot store | Rookie of the Year — the project's first draft. |
 | 2 — Site | **Lady Byng** | mkdocs static site, ranked-team index, lineup cards | Sportsmanship + skill — the polished, restrained, public-facing output. |
+| LB — TUI experiences (2026-05) | **Lady Byng** *(reuse — second use)* | Per-surface TUI launchers (`tui goalies`, `tui player Bedard`), looping `icelines menu`, drill-down resolution. Same polish/UX angle. | Reuse acknowledged: commits use `Phase Lady Byng (TUI experiences):` to disambiguate. Plan: `plans/2026-05-05-phaseLadyByng-tui-experiences.md`. |
 | 3 — Projections | **Art Ross** | TUI projections leaderboard, pace_82 sorting | Most points — the scoring title, the headline leaderboard. |
 | 4 — History polish | **King Clancy** | Career history, historical seasons, data hygiene | Leadership + community — long-term data quality work that benefits every later phase. |
 | 5 — Query engine | **Bill Masterton** | `query leaders/player/compare`, --seasons N, percentiles | Perseverance — the hard, unglamorous filter/sort/score plumbing. |
@@ -30,6 +31,7 @@ adding a new phase means picking a trophy that fits.
 |---|---|---|---|
 | Presidents — Season type | **Presidents'** | **Folded into Hart** | Regular vs playoff scoping. Naturally falls out of the (player_id, season, type) primary key after Hart. |
 | Cup — Live game tracking | **Conn Smythe** | Future | Real-time playoff game tracking, series momentum, Cup-run player narratives. |
+| LP — CLI parity (2026-05) | **Lester Patrick** | Stub | Closes CLI gaps in the surface portfolio: `icelines schedule` / `playoffs` / `transactions` (mirror the `tonight` pattern), plus an in-TUI docs overlay. Service-to-completion work. Plan: `plans/2026-05-05-phaseLesterPatrick-cli-parity.md`. |
 | (TBD) — Scoring scheme builder | **Frank Selke** | Future | Defensive-leaning fantasy scheme (penalty kills, shorthanded points, blocks-heavy) — a complement to the offense-tuned Yahoo/ESPN defaults. |
 
 ## Naming conventions

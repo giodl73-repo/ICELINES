@@ -46,6 +46,7 @@ For active work and backlog, see [`../plans/INDEX.md`](../plans/INDEX.md).
 |------|--------|---------|
 | [tui.md](tui.md) | Implemented | v1 as-built: 8 tabs (now 7 post-v2), all current screens, key bindings |
 | [tui-v2.md](tui-v2.md) | Implemented | v2 redesign: 6+1 tabs (Phase 7a–e shipped; Goalies tab added in Vezina) |
+| [tui-experiences.md](tui-experiences.md) | Draft | Per-surface launchers — `tui --start <slug>`, sugar subcommands, `icelines menu`. Phase Lester Patrick (provisional). |
 | [tui-admin-overlay.md](tui-admin-overlay.md) | Implemented (basic) | `F` overlay, install status. v2 features (action menu, `:` prompt) Draft. Tests Recommended (not yet written). |
 | [depth-chart.md](depth-chart.md) | Implemented (partial) | Cross-team line value rankings + team depth grid. Goalie tier deferred. Multi-position eligibility documented as known limitation (singular post-Hart). |
 | [scores.md](scores.md) | Implemented | Live game scores, date navigation, game detail (Phase 7c) |

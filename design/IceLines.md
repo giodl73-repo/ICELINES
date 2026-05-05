@@ -41,6 +41,48 @@ A single user on their own machine. Specifically:
 There is no auth, no cloud, no multi-tenant. There is no "IceLines.com." All data
 lives under `~/.icelines/`.
 
+## Feature × surface portfolio
+
+A new feature in IceLines should ship on **every applicable surface** (CLI / TUI /
+Web) unless there's a documented reason otherwise. The shared engine
+(`icelines-core` for data + filters, `icelines-query` for grammar, `icelines-fetch`
+for I/O) means the marginal cost of a third surface is presentation, not logic.
+
+When a feature spec is written, declare its surface coverage upfront:
+
+```
+Surface coverage:  CLI ✅   TUI ✅   Web ✅
+```
+
+If any surface has ❌, add a one-line `Reason:` in the spec. Acceptable reasons
+include: deliberate scope (fantasy is local-only today), data-source constraint
+(Edge speed has no public API), or "deferred to phase X" with a tracked plan.
+
+### Current portfolio (as of 2026-05-05, post-v0.13.0 + planned Phase Lady Byng)
+
+| Feature | CLI | TUI | Web |
+|---|---|---|---|
+| Skater leaderboard | ✅ `query leaders` | ✅ `tui stats` *(LB)* | ✅ `/leaders` |
+| Goalie leaderboard | ✅ `query goalies` | ✅ `tui goalies` *(LB)* | ✅ `/goalies` |
+| Player card | ✅ `query player <name>` | ✅ `tui player <name>` *(LB)* | ✅ `/player/:id` |
+| Team depth | ✅ `team EDM` | ✅ `tui team EDM` *(LB)* | ✅ `/team/:abbrev` |
+| Compare | ✅ `query compare A B` | ✅ `tui comps <name>` *(LB)* | ✅ `/compare?a=…&b=…` |
+| League rankings | ✅ `rank` | ✅ `tui league` *(LB)* | ✅ home preview |
+| Tonight's scores | ✅ `tonight` | ✅ `tui scores` *(LB)* | ✅ `/scores` |
+| Schedule | ❌ *(Lester Patrick)* | ✅ `tui schedule` *(LB)* | ✅ `/schedule` |
+| Playoffs | ❌ *(Lester Patrick)* | ✅ `tui playoffs` *(LB)* | ✅ `/playoffs` |
+| Transactions | ❌ *(Lester Patrick)* | ✅ `tui transactions` *(LB)* | ✅ `/transactions` |
+| Docs reference | ✅ `docs` | ❌ *(Lester Patrick — overlay)* | ✅ `/docs` |
+| Fantasy | ✅ `fantasy …` | (deep links via groups) | ❌ *(deferred — Phase Frank Selke when revisited)* |
+
+*(LB)* = ships in Phase Lady Byng (per `plans/2026-05-05-phaseLadyByng-tui-experiences.md`).
+
+The four ❌ rows in the planned-LB column are scheduled for **Phase Lester Patrick**
+(see `plans/2026-05-05-phaseLesterPatrick-cli-parity.md`) — `icelines schedule`,
+`icelines playoffs`, `icelines transactions`, plus an in-TUI docs overlay. The
+fantasy-on-web ❌ is intentionally deferred (single-user local-only fantasy is
+the v1 stance; the web surface stays read-only for analytical features).
+
 ## What the v1.0 surface is
 
 The 28 commands working end-to-end against the post-Hart data model. Specifically:
