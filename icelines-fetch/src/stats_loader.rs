@@ -391,9 +391,24 @@ pub fn load_into_repo(
     // toggles realtime off. The missing-data banner only ever fired
     // for realtime in practice (other reports also missing-banner
     // but those branches stay) and was noise-not-signal.
+    // Realtime resolution — try the season-and-tier-aware reader
+    // first (scans the full snapshot index for the right season's
+    // realtime/realtime.json). The active-snapshot-chain reader
+    // (`read_tier`) misses when the user fetched realtime in a
+    // separate call, since the active pointer floats with the most
+    // recent fetch. We fall through to chain lookup only as a
+    // backstop to preserve legacy behavior for already-installed
+    // setups that put realtime in the active chain.
     let realtime: Vec<SkaterRealtime> = match season_type {
         SeasonType::Regular => store
-            .read_tier::<Vec<SkaterRealtime>>(&SnapshotTier::Realtime, "realtime.json")
+            .read_tier_any_for_season::<Vec<SkaterRealtime>>(
+                &SnapshotTier::Realtime,
+                "realtime.json",
+                &season_str,
+            )
+            .or_else(|_| {
+                store.read_tier::<Vec<SkaterRealtime>>(&SnapshotTier::Realtime, "realtime.json")
+            })
             .unwrap_or_default(),
         SeasonType::Playoff => Vec::new(),
     };
@@ -728,6 +743,7 @@ pub fn load_player_career_into_repo(
     pid: PlayerId,
 ) -> Result<usize, RepoError> {
     use crate::bundled;
+    use crate::snapshot::{SnapshotStore, SnapshotTier};
     use icelines_core::season_stats::SeasonType;
 
     let mut inserted = 0usize;
@@ -739,12 +755,36 @@ pub fn load_player_career_into_repo(
     // seasons write stats directly. Track first-success per pid here.
     let mut identity_inserted = repo.identity(pid).is_some();
 
+    // Realtime data lives in the snapshot store (not bundled). Cache
+    // per-season reads so fanning out across 38 seasons doesn't
+    // re-parse the same JSON 38 times. Per UX.B/realtime fix: the
+    // player card was rendering "—" for hits/blocks/TK/GV because
+    // the fan-out passed None and overwrote the active-season row
+    // that DID have realtime loaded. Fix: read snapshot realtime per
+    // season (where it exists) and merge it into the upsert.
+    let store = SnapshotStore::new(SnapshotStore::default_root());
+    let mut realtime_cache: std::collections::HashMap<&'static str, Vec<SkaterRealtime>> =
+        std::collections::HashMap::new();
+
     for season_id in bundled::BUNDLED_SEASONS {
         let season_u32: u32 = match season_id.parse() {
             Ok(n) => n,
             Err(_) => continue,
         };
         let season = Season(season_u32);
+
+        // Lazy-resolve realtime for this season once.
+        let realtime_for_season: &Vec<SkaterRealtime> =
+            realtime_cache.entry(season_id).or_insert_with(|| {
+                store
+                    .read_tier_any_for_season::<Vec<SkaterRealtime>>(
+                        &SnapshotTier::Realtime,
+                        "realtime.json",
+                        season_id,
+                    )
+                    .unwrap_or_default()
+            });
+        let realtime_row = realtime_for_season.iter().find(|r| r.player_id == pid.0);
 
         // ── Regular season ──
         if let Some(bios) = bundled::get_bios(season_id) {
@@ -768,7 +808,7 @@ pub fn load_player_career_into_repo(
                     position,
                     bio,
                     stats_row,
-                    None,
+                    realtime_row,
                     None,
                 );
                 repo.upsert_stats(stats)?;

@@ -607,6 +607,62 @@ impl SnapshotStore {
         self.read(&name, tier, filename)
     }
 
+    /// Find any sealed snapshot for the given season whose directory
+    /// contains the requested tier's data — irrespective of the
+    /// active/parent chain.
+    ///
+    /// `find_snapshot_for_tier_and_season` only walks the parent chain
+    /// from the active snapshot. That works when the user fetched in
+    /// dependency order, but a side-fetch (e.g. `fetch transactions`
+    /// for one season followed by `fetch realtime` for another) leaves
+    /// the realtime data orphaned from the active chain. The web
+    /// dashboard hits this every time: the active is wherever the last
+    /// CLI command landed, but the loader is asked for a specific
+    /// season's realtime block.
+    ///
+    /// This scans the full manifest list and returns the most recent
+    /// (lexicographic name desc) sealed snapshot for `requested_season`
+    /// that has the tier directory on disk. Use this for tiers like
+    /// `Realtime` that are commonly fetched out-of-band from the
+    /// rosters→stats chain.
+    pub fn find_any_snapshot_with_tier_for_season(
+        &self,
+        tier: &SnapshotTier,
+        requested_season: &str,
+    ) -> Result<String, SnapshotError> {
+        let manifest = self.load_manifest()?;
+        let mut candidates: Vec<&SnapshotEntry> = manifest
+            .snapshots
+            .iter()
+            .filter(|e| e.season == requested_season && e.sealed)
+            .filter(|e| self.snapshot_dir(&e.name).join(tier.dir_name()).exists())
+            .collect();
+        candidates.sort_by(|a, b| b.name.cmp(&a.name));
+        match candidates.first() {
+            Some(e) => Ok(e.name.clone()),
+            None => Err(SnapshotError::NotFound {
+                name: format!(
+                    "no sealed snapshot for season {requested_season} contains \
+                     {tier_dir}/* on disk",
+                    tier_dir = tier.dir_name(),
+                ),
+            }),
+        }
+    }
+
+    /// Season-aware tier read that scans the full manifest list, not
+    /// just the active snapshot's parent chain. See
+    /// `find_any_snapshot_with_tier_for_season`.
+    pub fn read_tier_any_for_season<T: serde::de::DeserializeOwned>(
+        &self,
+        tier: &SnapshotTier,
+        filename: &str,
+        requested_season: &str,
+    ) -> Result<T, SnapshotError> {
+        let name = self.find_any_snapshot_with_tier_for_season(tier, requested_season)?;
+        self.read(&name, tier, filename)
+    }
+
     // ── Reading ───────────────────────────────────────────────────────────────
 
     /// Read a file from the active snapshot, verifying integrity.

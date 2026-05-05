@@ -94,12 +94,20 @@
             <td style="text-align: right; color: #616161;">{{ loop.index }}</td>
             <td><strong><a href="/player/{{ row.nhl_id }}" style="color: #1565c0;">{{ row.name }}</a></strong></td>
             <td>{{ row.position }}</td>
-            <td>{{ row.team }}</td>
+            <td><a href="/team/{{ row.team }}">{{ row.team }}</a></td>
             <td style="text-align: right;">{{ row.gp }}</td>
             <td style="text-align: right;">{{ row.goals }}</td>
             <td style="text-align: right;">{{ row.assists }}</td>
             <td style="text-align: right;"><strong>{{ row.points }}</strong></td>
             <td style="text-align: right;">{% if row.ppg_str.is_empty() %}—{% else %}{{ row.ppg_str }}{% endif %}</td>
+            <td style="text-align: right;">{{ row.plus_minus_str }}</td>
+            <td style="text-align: right;">{{ row.pim }}</td>
+            <td style="text-align: right;">{{ row.shots }}</td>
+            <td style="text-align: right;">{{ row.shooting_pct_str }}</td>
+            <td style="text-align: right;">{{ row.hits_str }}</td>
+            <td style="text-align: right;">{{ row.blocks_str }}</td>
+            <td style="text-align: right;">{{ row.faceoff_pct_str }}</td>
+            <td style="text-align: right;">{{ row.pp_points }}</td>
         </tr>
         {% endfor %}
     </tbody>
@@ -107,9 +115,10 @@
 </div>
 
 <p style="margin-top: 2rem; color: #616161; font-size: 0.9rem;">
-    Click any column header to sort by it. Click a position chip to filter.
+    Click any column header to sort by that stat. Click a position chip to filter.
     Default: top 20, sorted by points.
-    King.2.3 adds the boolean filter grammar (e.g. <code>g&gt;=50 AND hits&gt;=200</code>);
-    King.2.4 adds the <code>/api/v1/leaders</code> JSON twin.
+    Filter grammar examples: <code>g&gt;=50 AND hits&gt;=200</code>,
+    <code>(g&gt;=40 OR a&gt;=60) AND gp&gt;=70</code>.
+    JSON twin: <a href="/api/v1/leaders"><code>/api/v1/leaders</code></a>.
 </p>
 {% endblock %}

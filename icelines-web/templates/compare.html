@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Compare{% endblock %}
+
+{% block content %}
+<p style="margin-bottom: 0.5rem;">
+    <a href="/leaders">← Leaders</a>
+</p>
+
+<h1>Compare players</h1>
+
+{% match error %}
+    {% when Some with (msg) %}
+        <p style="background:#ffebee; border-left:4px solid #c62828; padding:0.5rem 0.75rem;">
+            {{ msg }}
+        </p>
+    {% when None %}
+{% endmatch %}
+
+{% if !a.is_none() && !b.is_none() %}
+{# Side-by-side stat comparison. Both cards exist; render two columns. #}
+<div style="display:grid; grid-template-columns: 1fr 1fr; gap:2rem;">
+    {% match a %}
+        {% when Some with (p) %}
+            <section>
+                <div style="display:flex; gap:1rem; align-items:flex-start; margin-bottom:1rem;">
+                    {% match p.headshot_url %}
+                        {% when Some with (url) %}
+                            <img src="{{ url }}" alt="" style="width:64px; height:64px; border-radius:4px; background:#f0f0f0;">
+                        {% when None %}
+                    {% endmatch %}
+                    <div>
+                        <h2 style="margin:0;">
+                            <a href="/player/{{ p.nhl_id }}" style="color:inherit; text-decoration:none;">{{ p.full_name }}</a>
+                        </h2>
+                        <p style="color:#616161; margin:0.25rem 0 0 0;">
+                            {{ p.position }} ·
+                            {% if p.team_link != "" %}
+                                <a href="/team/{{ p.team_link }}">{{ p.team }}</a>
+                            {% else %}
+                                {{ p.team }}
+                            {% endif %}
+                            · #{{ p.nhl_id }}
+                        </p>
+                    </div>
+                </div>
+            </section>
+        {% when None %}
+    {% endmatch %}
+
+    {% match b %}
+        {% when Some with (p) %}
+            <section>
+                <div style="display:flex; gap:1rem; align-items:flex-start; margin-bottom:1rem;">
+                    {% match p.headshot_url %}
+                        {% when Some with (url) %}
+                            <img src="{{ url }}" alt="" style="width:64px; height:64px; border-radius:4px; background:#f0f0f0;">
+                        {% when None %}
+                    {% endmatch %}
+                    <div>
+                        <h2 style="margin:0;">
+                            <a href="/player/{{ p.nhl_id }}" style="color:inherit; text-decoration:none;">{{ p.full_name }}</a>
+                        </h2>
+                        <p style="color:#616161; margin:0.25rem 0 0 0;">
+                            {{ p.position }} ·
+                            {% if p.team_link != "" %}
+                                <a href="/team/{{ p.team_link }}">{{ p.team }}</a>
+                            {% else %}
+                                {{ p.team }}
+                            {% endif %}
+                            · #{{ p.nhl_id }}
+                        </p>
+                    </div>
+                </div>
+            </section>
+        {% when None %}
+    {% endmatch %}
+</div>
+
+<table style="margin-top:1rem;">
+    <thead>
+        <tr>
+            <th></th>
+            <th style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.full_name }}{% when None %}—{% endmatch %}</th>
+            <th style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.full_name }}{% when None %}—{% endmatch %}</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr><td>GP</td>
+            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.gp }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.gp }}{% when None %}—{% endmatch %}</td></tr>
+        <tr><td>Goals</td>
+            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.goals }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.goals }}{% when None %}—{% endmatch %}</td></tr>
+        <tr><td>Assists</td>
+            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.assists }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.assists }}{% when None %}—{% endmatch %}</td></tr>
+        <tr><td><strong>Points</strong></td>
+            <td style="text-align:right;"><strong>{% match a %}{% when Some with (p) %}{{ p.points }}{% when None %}—{% endmatch %}</strong></td>
+            <td style="text-align:right;"><strong>{% match b %}{% when Some with (p) %}{{ p.points }}{% when None %}—{% endmatch %}</strong></td></tr>
+        <tr><td>P/GP</td>
+            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{% if p.ppg_str.is_empty() %}—{% else %}{{ p.ppg_str }}{% endif %}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{% if p.ppg_str.is_empty() %}—{% else %}{{ p.ppg_str }}{% endif %}{% when None %}—{% endmatch %}</td></tr>
+        <tr><td>+/-</td>
+            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.plus_minus_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.plus_minus_str }}{% when None %}—{% endmatch %}</td></tr>
+        <tr><td>PIM</td>
+            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.pim_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.pim_str }}{% when None %}—{% endmatch %}</td></tr>
+        <tr><td>SOG</td>
+            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.shots_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.shots_str }}{% when None %}—{% endmatch %}</td></tr>
+        <tr><td>SH%</td>
+            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.shooting_pct_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.shooting_pct_str }}{% when None %}—{% endmatch %}</td></tr>
+        <tr><td>Hits</td>
+            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.hits_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.hits_str }}{% when None %}—{% endmatch %}</td></tr>
+        <tr><td>Blocks</td>
+            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.blocks_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.blocks_str }}{% when None %}—{% endmatch %}</td></tr>
+        <tr><td>TK</td>
+            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.takeaways_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.takeaways_str }}{% when None %}—{% endmatch %}</td></tr>
+        <tr><td>GV</td>
+            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.giveaways_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.giveaways_str }}{% when None %}—{% endmatch %}</td></tr>
+        <tr><td>FOW%</td>
+            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.faceoff_pct_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.faceoff_pct_str }}{% when None %}—{% endmatch %}</td></tr>
+        <tr><td>PP G</td>
+            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.pp_goals_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.pp_goals_str }}{% when None %}—{% endmatch %}</td></tr>
+        <tr><td>PP P</td>
+            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.pp_points_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.pp_points_str }}{% when None %}—{% endmatch %}</td></tr>
+        <tr><td>SH G</td>
+            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.sh_goals_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.sh_goals_str }}{% when None %}—{% endmatch %}</td></tr>
+        <tr><td>GWG</td>
+            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.gwg_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.gwg_str }}{% when None %}—{% endmatch %}</td></tr>
+        <tr><td>TOI/G</td>
+            <td style="text-align:right;">{% match a %}{% when Some with (p) %}{{ p.toi_per_game_str }}{% when None %}—{% endmatch %}</td>
+            <td style="text-align:right;">{% match b %}{% when Some with (p) %}{{ p.toi_per_game_str }}{% when None %}—{% endmatch %}</td></tr>
+    </tbody>
+</table>
+{% else %}
+<p style="color:#616161;">
+    Pick two players to compare. Open any
+    <a href="/leaders">leaderboard row</a>, then use the "Compare with…" form on
+    the player card to land here. URL: <code>/compare?a=NHL_ID&amp;b=NHL_ID</code>.
+</p>
+{% endif %}
+{% endblock %}

@@ -68,6 +68,8 @@ pub fn router(state: WebState) -> Router {
         .route("/player/:id", get(handlers::player::get_player))
         // JSON twin — King.3.3.
         .route("/api/v1/player/:id", get(handlers::player::get_player_json))
+        // Compare — UX.D. Side-by-side stats for two players.
+        .route("/compare", get(handlers::compare::get_compare))
         // Goalie leaderboard — King.5.1 / .5.2.
         .route("/goalies", get(handlers::goalies::get_goalies))
         .route("/api/v1/goalies", get(handlers::goalies::get_goalies_json))
@@ -91,6 +93,70 @@ pub fn router(state: WebState) -> Router {
 }
 
 mod handlers {
+    /// Project a `PlayerView` into the `LeaderRow` shape that the
+    /// /leaders, /team, and home-preview templates all consume. Centralized
+    /// so the new realtime + special-teams columns (UX.C) get the same
+    /// formatting everywhere.
+    fn project_leader_row(
+        v: &icelines_core::stats_repository::PlayerView,
+    ) -> crate::templates::LeaderRow {
+        let gp = v.gp();
+        let points = v.points();
+        let ppg_str = if gp > 0 {
+            format!("{:.2}", points as f64 / gp as f64)
+        } else {
+            String::new()
+        };
+        let totals = &v.stats.totals;
+        let plus_minus = v.plus_minus();
+        let hits = v.hits();
+        let blocks = v.blocked_shots();
+        let shooting_pct = totals.shooting_pct;
+        let faceoff_pct = totals.faceoff_win_pct;
+        let opt_u = |o: Option<u32>| -> String {
+            match o {
+                Some(n) => n.to_string(),
+                None => "—".to_owned(),
+            }
+        };
+        let opt_pct = |o: Option<f32>| -> String {
+            match o {
+                Some(p) => {
+                    if p.abs() <= 1.5 {
+                        format!("{:.1}%", p * 100.0)
+                    } else {
+                        format!("{:.1}%", p)
+                    }
+                }
+                None => "—".to_owned(),
+            }
+        };
+        crate::templates::LeaderRow {
+            nhl_id: v.id().0,
+            name: v.full_name().to_owned(),
+            position: v.position().abbreviation().to_owned(),
+            team: v.team_display().to_owned(),
+            gp,
+            goals: v.goals(),
+            assists: v.assists(),
+            points,
+            ppg_str,
+            plus_minus_str: format!("{:+}", plus_minus),
+            pim: totals.pim,
+            shots: totals.shots,
+            shooting_pct_str: opt_pct(shooting_pct),
+            hits_str: opt_u(hits),
+            blocks_str: opt_u(blocks),
+            faceoff_pct_str: opt_pct(faceoff_pct),
+            pp_points: totals.pp_points,
+            plus_minus,
+            shooting_pct,
+            hits,
+            blocks,
+            faceoff_pct,
+        }
+    }
+
     /// Coming-soon stub handlers for routes whose real implementation
     /// hasn't shipped yet. Each fn renders the same template with a
     /// title + King.X label + one-sentence description.
@@ -191,6 +257,9 @@ mod handlers {
 
         /// Sort key parsed from the `?sort=` param. Stable PascalCase
         /// for use in template (`{% if active_sort == "Points" %}`).
+        ///
+        /// UX.C — added every column the table renders so each header
+        /// is a sortable link.
         #[derive(Debug, Clone, Copy, PartialEq, Eq)]
         pub enum SortKey {
             Points,
@@ -198,6 +267,14 @@ mod handlers {
             Assists,
             Games,
             PointsPerGame,
+            PlusMinus,
+            Pim,
+            Shots,
+            ShootingPct,
+            Hits,
+            Blocks,
+            FaceoffPct,
+            PowerPlayPoints,
         }
 
         impl SortKey {
@@ -207,6 +284,14 @@ mod handlers {
                     "a" | "assists" => Self::Assists,
                     "gp" | "games" => Self::Games,
                     "ppg" | "points-per-game" => Self::PointsPerGame,
+                    "+/-" | "plus-minus" | "plusminus" => Self::PlusMinus,
+                    "pim" => Self::Pim,
+                    "sog" | "shots" => Self::Shots,
+                    "sh%" | "shooting-pct" | "shootingpct" => Self::ShootingPct,
+                    "hits" => Self::Hits,
+                    "blk" | "blocks" | "blocked-shots" => Self::Blocks,
+                    "fow%" | "faceoff" | "faceoff-win-pct" => Self::FaceoffPct,
+                    "ppp" | "pp-points" | "power-play-points" => Self::PowerPlayPoints,
                     // p / pts / points / "" / unknown → Points (default)
                     _ => Self::Points,
                 }
@@ -219,6 +304,14 @@ mod handlers {
                     Self::Assists => "Assists",
                     Self::Games => "Games",
                     Self::PointsPerGame => "Points/Game",
+                    Self::PlusMinus => "+/-",
+                    Self::Pim => "PIM",
+                    Self::Shots => "Shots",
+                    Self::ShootingPct => "SH%",
+                    Self::Hits => "Hits",
+                    Self::Blocks => "Blocks",
+                    Self::FaceoffPct => "FOW%",
+                    Self::PowerPlayPoints => "PP P",
                 }
             }
 
@@ -230,8 +323,35 @@ mod handlers {
                     Self::Assists => "assists",
                     Self::Games => "gp",
                     Self::PointsPerGame => "ppg",
+                    Self::PlusMinus => "plus-minus",
+                    Self::Pim => "pim",
+                    Self::Shots => "shots",
+                    Self::ShootingPct => "shooting-pct",
+                    Self::Hits => "hits",
+                    Self::Blocks => "blocks",
+                    Self::FaceoffPct => "faceoff",
+                    Self::PowerPlayPoints => "ppp",
                 }
             }
+
+            /// All sort keys, in display order. The leaderboard column
+            /// header strip iterates this so adding a variant lights
+            /// up a new column without further wiring.
+            pub const ALL: &'static [SortKey] = &[
+                Self::Games,
+                Self::Goals,
+                Self::Assists,
+                Self::Points,
+                Self::PointsPerGame,
+                Self::PlusMinus,
+                Self::Pim,
+                Self::Shots,
+                Self::ShootingPct,
+                Self::Hits,
+                Self::Blocks,
+                Self::FaceoffPct,
+                Self::PowerPlayPoints,
+            ];
         }
 
         /// JSON envelope returned by `/api/v1/leaders`. Per spec
@@ -353,26 +473,7 @@ mod handlers {
                         None => true,
                         Some(expr) => expr.matches(v),
                     })
-                    .map(|v| {
-                        let gp = v.gp();
-                        let points = v.points();
-                        let ppg_str = if gp > 0 {
-                            format!("{:.2}", points as f64 / gp as f64)
-                        } else {
-                            String::new()
-                        };
-                        LeaderRow {
-                            nhl_id: v.id().0,
-                            name: v.full_name().to_owned(),
-                            position: v.position().abbreviation().to_owned(),
-                            team: v.team_display().to_owned(),
-                            gp,
-                            goals: v.goals(),
-                            assists: v.assists(),
-                            points,
-                            ppg_str,
-                        }
-                    })
+                    .map(|v| super::project_leader_row(&v))
                     .collect();
                 let total = all.len();
 
@@ -395,9 +496,25 @@ mod handlers {
                             };
                             bp.partial_cmp(&ap).unwrap_or(std::cmp::Ordering::Equal)
                         }
+                        SortKey::PlusMinus => b.plus_minus.cmp(&a.plus_minus),
+                        SortKey::Pim => b.pim.cmp(&a.pim),
+                        SortKey::Shots => b.shots.cmp(&a.shots),
+                        SortKey::ShootingPct => {
+                            let av = a.shooting_pct.unwrap_or(f32::NEG_INFINITY);
+                            let bv = b.shooting_pct.unwrap_or(f32::NEG_INFINITY);
+                            bv.partial_cmp(&av).unwrap_or(std::cmp::Ordering::Equal)
+                        }
+                        SortKey::Hits => b.hits.unwrap_or(0).cmp(&a.hits.unwrap_or(0)),
+                        SortKey::Blocks => b.blocks.unwrap_or(0).cmp(&a.blocks.unwrap_or(0)),
+                        SortKey::FaceoffPct => {
+                            let av = a.faceoff_pct.unwrap_or(f32::NEG_INFINITY);
+                            let bv = b.faceoff_pct.unwrap_or(f32::NEG_INFINITY);
+                            bv.partial_cmp(&av).unwrap_or(std::cmp::Ordering::Equal)
+                        }
+                        SortKey::PowerPlayPoints => b.pp_points.cmp(&a.pp_points),
                     };
                     primary
-                        .then(b.goals.cmp(&a.goals))
+                        .then(b.points.cmp(&a.points))
                         .then(a.name.cmp(&b.name))
                 });
                 all.truncate(top_n);
@@ -564,26 +681,7 @@ mod handlers {
                         None => true,
                         Some(expr) => expr.matches(v),
                     })
-                    .map(|v| {
-                        let gp = v.gp();
-                        let points = v.points();
-                        let ppg_str = if gp > 0 {
-                            format!("{:.2}", points as f64 / gp as f64)
-                        } else {
-                            String::new()
-                        };
-                        LeaderRow {
-                            nhl_id: v.id().0,
-                            name: v.full_name().to_owned(),
-                            position: v.position().abbreviation().to_owned(),
-                            team: v.team_display().to_owned(),
-                            gp,
-                            goals: v.goals(),
-                            assists: v.assists(),
-                            points,
-                            ppg_str,
-                        }
-                    })
+                    .map(|v| super::project_leader_row(&v))
                     .collect();
                 let total = all.len();
 
@@ -610,9 +708,25 @@ mod handlers {
                                 .partial_cmp(&a_ppg)
                                 .unwrap_or(std::cmp::Ordering::Equal)
                         }
+                        SortKey::PlusMinus => b.plus_minus.cmp(&a.plus_minus),
+                        SortKey::Pim => b.pim.cmp(&a.pim),
+                        SortKey::Shots => b.shots.cmp(&a.shots),
+                        SortKey::ShootingPct => {
+                            let av = a.shooting_pct.unwrap_or(f32::NEG_INFINITY);
+                            let bv = b.shooting_pct.unwrap_or(f32::NEG_INFINITY);
+                            bv.partial_cmp(&av).unwrap_or(std::cmp::Ordering::Equal)
+                        }
+                        SortKey::Hits => b.hits.unwrap_or(0).cmp(&a.hits.unwrap_or(0)),
+                        SortKey::Blocks => b.blocks.unwrap_or(0).cmp(&a.blocks.unwrap_or(0)),
+                        SortKey::FaceoffPct => {
+                            let av = a.faceoff_pct.unwrap_or(f32::NEG_INFINITY);
+                            let bv = b.faceoff_pct.unwrap_or(f32::NEG_INFINITY);
+                            bv.partial_cmp(&av).unwrap_or(std::cmp::Ordering::Equal)
+                        }
+                        SortKey::PowerPlayPoints => b.pp_points.cmp(&a.pp_points),
                     };
                     primary
-                        .then(b.goals.cmp(&a.goals))
+                        .then(b.points.cmp(&a.points))
                         .then(a.name.cmp(&b.name))
                 });
                 all.truncate(top_n);
@@ -641,20 +755,24 @@ mod handlers {
                 })
                 .collect();
 
-            let col_headers = [
-                ("gp", "GP"),
-                ("goals", "G"),
-                ("assists", "A"),
-                ("points", "P"),
-                ("ppg", "P/GP"),
-            ]
-            .iter()
-            .map(|(token, label)| crate::templates::ColHeader {
-                url_token: (*token).to_owned(),
-                label: (*label).to_owned(),
-                is_active: *token == active_sort_token.as_str(),
-            })
-            .collect();
+            // UX.C — every SortKey variant lights up a header.
+            // Display order matches `SortKey::ALL`. Adding a new
+            // sort key automatically adds a column header.
+            let col_headers = SortKey::ALL
+                .iter()
+                .map(|k| crate::templates::ColHeader {
+                    url_token: k.url_token().to_owned(),
+                    label: match k {
+                        SortKey::Games => "GP".to_owned(),
+                        SortKey::Goals => "G".to_owned(),
+                        SortKey::Assists => "A".to_owned(),
+                        SortKey::Points => "P".to_owned(),
+                        SortKey::PointsPerGame => "P/GP".to_owned(),
+                        _ => k.label().to_owned(),
+                    },
+                    is_active: k.url_token() == active_sort_token.as_str(),
+                })
+                .collect();
 
             let tmpl = LeadersTemplate {
                 active_label,
@@ -910,26 +1028,7 @@ mod handlers {
                 let mut skaters: Vec<LeaderRow> = roster
                     .iter()
                     .filter(|v| !v.is_goalie())
-                    .map(|v| {
-                        let gp = v.gp();
-                        let points = v.points();
-                        let ppg_str = if gp > 0 {
-                            format!("{:.2}", points as f64 / gp as f64)
-                        } else {
-                            String::new()
-                        };
-                        LeaderRow {
-                            nhl_id: v.id().0,
-                            name: v.full_name().to_owned(),
-                            position: v.position().abbreviation().to_owned(),
-                            team: v.team_display().to_owned(),
-                            gp,
-                            goals: v.goals(),
-                            assists: v.assists(),
-                            points,
-                            ppg_str,
-                        }
-                    })
+                    .map(|v| super::project_leader_row(v))
                     .collect();
                 skaters.sort_by(|a, b| {
                     b.points
@@ -1534,16 +1633,125 @@ mod handlers {
                 // the player has no row that season (e.g. injured all
                 // year, traded mid-season, retired).
                 let view = repo.view(pid, season, season_type);
-                let (gp, goals, assists, points, position, team) = match view {
-                    Some(v) => (
-                        v.gp(),
-                        v.goals(),
-                        v.assists(),
-                        v.points(),
-                        v.position().abbreviation().to_owned(),
-                        v.team_display().to_owned(),
+
+                // UX.B — pull the expanded stat slice. Each
+                // pre-formatted to a String so the template renders
+                // without inline casts and Option<> shows "—".
+                let opt_u = |o: Option<u32>| -> String {
+                    match o {
+                        Some(n) => n.to_string(),
+                        None => "—".to_owned(),
+                    }
+                };
+                let opt_pct = |o: Option<f32>| -> String {
+                    match o {
+                        Some(p) => {
+                            // NHL APIs report shooting/faceoff% as
+                            // 0.105 (10.5%) — surface as percentage
+                            // with one decimal so users see "10.5".
+                            if p.abs() <= 1.5 {
+                                format!("{:.1}%", p * 100.0)
+                            } else {
+                                format!("{:.1}%", p)
+                            }
+                        }
+                        None => "—".to_owned(),
+                    }
+                };
+                let toi_mmss = |o: Option<u32>| -> String {
+                    match o {
+                        Some(secs) => {
+                            let m = secs / 60;
+                            let s = secs % 60;
+                            format!("{m}:{s:02}")
+                        }
+                        None => "—".to_owned(),
+                    }
+                };
+
+                let (
+                    gp,
+                    goals,
+                    assists,
+                    points,
+                    position,
+                    team,
+                    team_link,
+                    plus_minus_str,
+                    pim_str,
+                    shots_str,
+                    shooting_pct_str,
+                    hits_str,
+                    blocks_str,
+                    takeaways_str,
+                    giveaways_str,
+                    faceoff_pct_str,
+                    pp_goals_str,
+                    pp_points_str,
+                    sh_goals_str,
+                    gwg_str,
+                    toi_per_game_str,
+                ) = match view {
+                    Some(v) => {
+                        let totals = &v.stats.totals;
+                        let team_display = v.team_display().to_owned();
+                        // Only build a /team/ link when the display is
+                        // a single uppercase abbrev (skip the "TBL/CGY"
+                        // mid-season-trade format).
+                        let team_link = if team_display.chars().all(|c| c.is_ascii_alphabetic())
+                            && team_display.len() <= 3
+                        {
+                            team_display.clone()
+                        } else {
+                            String::new()
+                        };
+                        (
+                            v.gp(),
+                            v.goals(),
+                            v.assists(),
+                            v.points(),
+                            v.position().abbreviation().to_owned(),
+                            team_display,
+                            team_link,
+                            format!("{:+}", v.plus_minus()),
+                            totals.pim.to_string(),
+                            totals.shots.to_string(),
+                            opt_pct(totals.shooting_pct),
+                            opt_u(v.hits()),
+                            opt_u(v.blocked_shots()),
+                            opt_u(v.takeaways()),
+                            opt_u(v.giveaways()),
+                            opt_pct(totals.faceoff_win_pct),
+                            totals.pp_goals.to_string(),
+                            totals.pp_points.to_string(),
+                            totals.sh_goals.to_string(),
+                            totals.gwg.to_string(),
+                            toi_mmss(totals.toi_per_game_sec),
+                        )
+                    }
+                    None => (
+                        0,
+                        0,
+                        0,
+                        0,
+                        "—".to_owned(),
+                        "—".to_owned(),
+                        String::new(),
+                        "—".to_owned(),
+                        "—".to_owned(),
+                        "—".to_owned(),
+                        "—".to_owned(),
+                        "—".to_owned(),
+                        "—".to_owned(),
+                        "—".to_owned(),
+                        "—".to_owned(),
+                        "—".to_owned(),
+                        "—".to_owned(),
+                        "—".to_owned(),
+                        "—".to_owned(),
+                        "—".to_owned(),
+                        "—".to_owned(),
                     ),
-                    None => (0, 0, 0, 0, "—".to_owned(), "—".to_owned()),
                 };
                 let ppg_str = if gp > 0 {
                     format!("{:.2}", points as f64 / gp as f64)
@@ -1603,12 +1811,27 @@ mod handlers {
                     full_name: identity.full_name.clone(),
                     position,
                     team,
+                    team_link,
                     headshot_url: identity.headshot_canonical_url.clone(),
                     gp,
                     goals,
                     assists,
                     points,
                     ppg_str,
+                    plus_minus_str,
+                    pim_str,
+                    shots_str,
+                    shooting_pct_str,
+                    hits_str,
+                    blocks_str,
+                    takeaways_str,
+                    giveaways_str,
+                    faceoff_pct_str,
+                    pp_goals_str,
+                    pp_points_str,
+                    sh_goals_str,
+                    gwg_str,
+                    toi_per_game_str,
                     career_rows,
                 }
             };
@@ -1847,6 +2070,268 @@ mod handlers {
         }
     }
 
+    /// `/compare` — UX.D. Side-by-side stat comparison of two players.
+    pub mod compare {
+        use crate::state::WebState;
+        use crate::templates::{ComparePlayerCard, CompareTemplate};
+        use askama::Template;
+        use axum::extract::{Query, State};
+        use axum::http::StatusCode;
+        use axum::response::{Html, IntoResponse, Response};
+        use icelines_core::identity::PlayerId;
+        use icelines_core::model::Season;
+        use icelines_core::season_stats::SeasonType;
+        use serde::Deserialize;
+
+        #[derive(Debug, Deserialize, Default)]
+        pub struct CompareQuery {
+            #[serde(default)]
+            pub a: Option<u32>,
+            #[serde(default)]
+            pub b: Option<u32>,
+        }
+
+        fn opt_u(o: Option<u32>) -> String {
+            match o {
+                Some(n) => n.to_string(),
+                None => "—".to_owned(),
+            }
+        }
+        fn opt_pct(o: Option<f32>) -> String {
+            match o {
+                Some(p) => {
+                    if p.abs() <= 1.5 {
+                        format!("{:.1}%", p * 100.0)
+                    } else {
+                        format!("{:.1}%", p)
+                    }
+                }
+                None => "—".to_owned(),
+            }
+        }
+        fn toi_mmss(o: Option<u32>) -> String {
+            match o {
+                Some(secs) => {
+                    let m = secs / 60;
+                    let s = secs % 60;
+                    format!("{m}:{s:02}")
+                }
+                None => "—".to_owned(),
+            }
+        }
+
+        async fn build_card(
+            state: &WebState,
+            id: u32,
+            season: Season,
+            season_type: SeasonType,
+        ) -> Option<ComparePlayerCard> {
+            // Lazy career fan-out so a freshly-opened player has full
+            // career loaded — same pattern as the player handler.
+            let pid = PlayerId(id);
+            {
+                let mut repo = state.repo.write().await;
+                let _ = icelines_fetch::stats_loader::load_player_career_into_repo(&mut repo, pid);
+            }
+            let repo = state.repo.read().await;
+            let identity = repo.identity(pid)?;
+            let view = repo.view(pid, season, season_type);
+            let (
+                gp,
+                goals,
+                assists,
+                points,
+                position,
+                team,
+                team_link,
+                plus_minus_str,
+                pim_str,
+                shots_str,
+                shooting_pct_str,
+                hits_str,
+                blocks_str,
+                takeaways_str,
+                giveaways_str,
+                faceoff_pct_str,
+                pp_goals_str,
+                pp_points_str,
+                sh_goals_str,
+                gwg_str,
+                toi_per_game_str,
+            ) = match view {
+                Some(v) => {
+                    let totals = &v.stats.totals;
+                    let team_display = v.team_display().to_owned();
+                    let team_link = if team_display.chars().all(|c| c.is_ascii_alphabetic())
+                        && team_display.len() <= 3
+                    {
+                        team_display.clone()
+                    } else {
+                        String::new()
+                    };
+                    (
+                        v.gp(),
+                        v.goals(),
+                        v.assists(),
+                        v.points(),
+                        v.position().abbreviation().to_owned(),
+                        team_display,
+                        team_link,
+                        format!("{:+}", v.plus_minus()),
+                        totals.pim.to_string(),
+                        totals.shots.to_string(),
+                        opt_pct(totals.shooting_pct),
+                        opt_u(v.hits()),
+                        opt_u(v.blocked_shots()),
+                        opt_u(v.takeaways()),
+                        opt_u(v.giveaways()),
+                        opt_pct(totals.faceoff_win_pct),
+                        totals.pp_goals.to_string(),
+                        totals.pp_points.to_string(),
+                        totals.sh_goals.to_string(),
+                        totals.gwg.to_string(),
+                        toi_mmss(totals.toi_per_game_sec),
+                    )
+                }
+                None => (
+                    0,
+                    0,
+                    0,
+                    0,
+                    "—".to_owned(),
+                    "—".to_owned(),
+                    String::new(),
+                    "—".to_owned(),
+                    "—".to_owned(),
+                    "—".to_owned(),
+                    "—".to_owned(),
+                    "—".to_owned(),
+                    "—".to_owned(),
+                    "—".to_owned(),
+                    "—".to_owned(),
+                    "—".to_owned(),
+                    "—".to_owned(),
+                    "—".to_owned(),
+                    "—".to_owned(),
+                    "—".to_owned(),
+                    "—".to_owned(),
+                ),
+            };
+            let ppg_str = if gp > 0 {
+                format!("{:.2}", points as f64 / gp as f64)
+            } else {
+                String::new()
+            };
+            Some(ComparePlayerCard {
+                nhl_id: id,
+                full_name: identity.full_name.clone(),
+                position,
+                team,
+                team_link,
+                headshot_url: identity.headshot_canonical_url.clone(),
+                gp,
+                goals,
+                assists,
+                points,
+                ppg_str,
+                plus_minus_str,
+                pim_str,
+                shots_str,
+                shooting_pct_str,
+                hits_str,
+                blocks_str,
+                takeaways_str,
+                giveaways_str,
+                faceoff_pct_str,
+                pp_goals_str,
+                pp_points_str,
+                sh_goals_str,
+                gwg_str,
+                toi_per_game_str,
+            })
+        }
+
+        pub async fn get_compare(
+            State(state): State<WebState>,
+            Query(q): Query<CompareQuery>,
+        ) -> Response {
+            let (season_str, season_type, active_label) = {
+                let cfg = state.config.read().await;
+                let st = match cfg.active_season_type.as_str() {
+                    "playoff" | "playoffs" => SeasonType::Playoff,
+                    _ => SeasonType::Regular,
+                };
+                (cfg.active_season.clone(), st, cfg.active_label.clone())
+            };
+            let season_u32: u32 = match season_str.parse() {
+                Ok(n) => n,
+                Err(_) => {
+                    let tmpl = CompareTemplate {
+                        active_label,
+                        a: None,
+                        b: None,
+                        error: Some(format!(
+                            "Active season '{season_str}' is not a valid YYYYZZZZ id"
+                        )),
+                    };
+                    return match tmpl.render() {
+                        Ok(html) => Html(html).into_response(),
+                        Err(e) => (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            Html(format!("template render failed: {e}")),
+                        )
+                            .into_response(),
+                    };
+                }
+            };
+            let season = Season(season_u32);
+
+            let (a_card, a_missing) = match q.a {
+                Some(id) => {
+                    let card = build_card(&state, id, season, season_type).await;
+                    let missing = card.is_none();
+                    (card, missing.then_some(id))
+                }
+                None => (None, None),
+            };
+            let (b_card, b_missing) = match q.b {
+                Some(id) => {
+                    let card = build_card(&state, id, season, season_type).await;
+                    let missing = card.is_none();
+                    (card, missing.then_some(id))
+                }
+                None => (None, None),
+            };
+
+            let error = match (q.a, q.b, a_missing, b_missing) {
+                (None, None, _, _) => None,
+                (Some(_), None, _, _) => Some("Missing ?b= player id.".to_owned()),
+                (None, Some(_), _, _) => Some("Missing ?a= player id.".to_owned()),
+                (_, _, Some(id_a), Some(id_b)) => Some(format!(
+                    "Neither player {id_a} nor {id_b} is in the active repository."
+                )),
+                (_, _, Some(id), _) => Some(format!("No player with NHL id {id}.")),
+                (_, _, _, Some(id)) => Some(format!("No player with NHL id {id}.")),
+                _ => None,
+            };
+
+            let tmpl = CompareTemplate {
+                active_label,
+                a: a_card,
+                b: b_card,
+                error,
+            };
+            match tmpl.render() {
+                Ok(html) => Html(html).into_response(),
+                Err(e) => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Html(format!("template render failed: {e}")),
+                )
+                    .into_response(),
+            }
+        }
+    }
+
     pub mod home {
         use crate::state::WebState;
         use crate::templates::{GoalieRow, HomeTemplate, LeaderRow};
@@ -1892,26 +2377,7 @@ mod handlers {
 
                     let mut skaters: Vec<LeaderRow> = repo
                         .skaters(season, season_type)
-                        .map(|v| {
-                            let gp = v.gp();
-                            let points = v.points();
-                            let ppg_str = if gp > 0 {
-                                format!("{:.2}", points as f64 / gp as f64)
-                            } else {
-                                String::new()
-                            };
-                            LeaderRow {
-                                nhl_id: v.id().0,
-                                name: v.full_name().to_owned(),
-                                position: v.position().abbreviation().to_owned(),
-                                team: v.team_display().to_owned(),
-                                gp,
-                                goals: v.goals(),
-                                assists: v.assists(),
-                                points,
-                                ppg_str,
-                            }
-                        })
+                        .map(|v| super::project_leader_row(&v))
                         .collect();
                     skaters.sort_by(|a, b| {
                         b.points

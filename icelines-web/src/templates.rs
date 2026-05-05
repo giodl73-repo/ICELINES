@@ -123,7 +123,14 @@ pub struct ColHeader {
 
 /// One row in the leaderboard. Pre-projected from the
 /// `PlayerView` so the template doesn't reach into core types
-/// (askama doesn't allow `as f64` casts inline; ppg is precomputed).
+/// (askama doesn't allow `as f64` casts inline; rate stats and
+/// Option<>'s are formatted to strings here).
+///
+/// UX.C (2026-05-04) added the realtime + special-teams columns:
+/// `plus_minus_str`, `pim`, `shots`, `shooting_pct_str`,
+/// `hits_str`, `blocks_str`, `faceoff_pct_str`, `pp_points`. The
+/// extra fields are pre-formatted strings so the template doesn't
+/// need to branch on Option<>.
 #[derive(Debug, Clone)]
 pub struct LeaderRow {
     /// NHL player id (e.g. 8478402 = Connor McDavid). Used to build
@@ -138,6 +145,26 @@ pub struct LeaderRow {
     pub points: u32,
     /// Points per game, formatted to 2 decimals. Empty string if gp=0.
     pub ppg_str: String,
+    /// Pre-formatted "+12" / "-3" — leading sign always present.
+    pub plus_minus_str: String,
+    pub pim: u32,
+    pub shots: u32,
+    /// "10.5%" or "—".
+    pub shooting_pct_str: String,
+    /// "—" when realtime data is missing for this row.
+    pub hits_str: String,
+    pub blocks_str: String,
+    /// "55.2%" or "—". Forwards only have meaningful values.
+    pub faceoff_pct_str: String,
+    pub pp_points: u32,
+    // Numeric backing for sort comparators. We could re-derive from
+    // strings in the sort closure but keeping the raw values here
+    // means O(1) compare without re-parsing.
+    pub plus_minus: i32,
+    pub shooting_pct: Option<f32>,
+    pub hits: Option<u32>,
+    pub blocks: Option<u32>,
+    pub faceoff_pct: Option<f32>,
 }
 
 /// `scores.html` — King.7.1. Live NHL schedule for a given date
@@ -310,6 +337,48 @@ pub struct TransactionRow {
     pub description: String,
 }
 
+/// `compare.html` — UX.D. Side-by-side comparison of two players.
+/// Linked from each player card's "Compare with…" form.
+#[derive(Template)]
+#[template(path = "compare.html")]
+pub struct CompareTemplate {
+    pub active_label: String,
+    pub a: Option<ComparePlayerCard>,
+    pub b: Option<ComparePlayerCard>,
+    /// Set when `?a=` or `?b=` is missing or malformed. Renders an
+    /// error block + a hint to use the player-card "Compare" form.
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ComparePlayerCard {
+    pub nhl_id: u32,
+    pub full_name: String,
+    pub position: String,
+    pub team: String,
+    pub team_link: String,
+    pub headshot_url: Option<String>,
+    pub gp: u32,
+    pub goals: u32,
+    pub assists: u32,
+    pub points: u32,
+    pub ppg_str: String,
+    pub plus_minus_str: String,
+    pub pim_str: String,
+    pub shots_str: String,
+    pub shooting_pct_str: String,
+    pub hits_str: String,
+    pub blocks_str: String,
+    pub takeaways_str: String,
+    pub giveaways_str: String,
+    pub faceoff_pct_str: String,
+    pub pp_goals_str: String,
+    pub pp_points_str: String,
+    pub sh_goals_str: String,
+    pub gwg_str: String,
+    pub toi_per_game_str: String,
+}
+
 /// `docs.html` — King.8.1. Rendered COMMANDS.md.
 #[derive(Template)]
 #[template(path = "docs.html")]
@@ -355,6 +424,13 @@ pub struct GoalieRow {
 }
 
 /// `player.html` — King.3.1 + King.3.2. Player card with career table.
+///
+/// UX.B (2026-05-04) expanded the active-season stat block: in
+/// addition to the basic counting stats, the card now surfaces
+/// +/-, PIM, SOG, shooting %, hits, blocks, takeaways, giveaways,
+/// faceoff %, and special-teams totals. Each is `String` so the
+/// handler can format `Option<>` / floats / `—` placeholders once
+/// (askama doesn't support inline casts).
 #[derive(Template)]
 #[template(path = "player.html")]
 pub struct PlayerTemplate {
@@ -363,12 +439,31 @@ pub struct PlayerTemplate {
     pub full_name: String,
     pub position: String,
     pub team: String,
+    /// Empty when the player has no team in the active (season, type)
+    /// — used to suppress the "/team/" link.
+    pub team_link: String,
     pub headshot_url: Option<String>,
     pub gp: u32,
     pub goals: u32,
     pub assists: u32,
     pub points: u32,
     pub ppg_str: String,
+    /// Active-season detail block — pre-formatted strings so the
+    /// template doesn't duplicate the "—" / decimal logic.
+    pub plus_minus_str: String,
+    pub pim_str: String,
+    pub shots_str: String,
+    pub shooting_pct_str: String,
+    pub hits_str: String,
+    pub blocks_str: String,
+    pub takeaways_str: String,
+    pub giveaways_str: String,
+    pub faceoff_pct_str: String,
+    pub pp_goals_str: String,
+    pub pp_points_str: String,
+    pub sh_goals_str: String,
+    pub gwg_str: String,
+    pub toi_per_game_str: String,
     /// Full career — one row per (season, type) the player has stats
     /// for. King.3.2 lands this; the row count for a 10-year veteran
     /// is ~10-20 (regular only) or ~15-30 (regular + playoff).
@@ -442,6 +537,19 @@ mod tests {
                 assists: 60,
                 points: 90,
                 ppg_str: "1.80".to_owned(),
+                plus_minus_str: "+12".to_owned(),
+                pim: 14,
+                shots: 220,
+                shooting_pct_str: "13.6%".to_owned(),
+                hits_str: "30".to_owned(),
+                blocks_str: "10".to_owned(),
+                faceoff_pct_str: "53.0%".to_owned(),
+                pp_points: 30,
+                plus_minus: 12,
+                shooting_pct: Some(0.136),
+                hits: Some(30),
+                blocks: Some(10),
+                faceoff_pct: Some(0.530),
             }],
             top_goalies: vec![GoalieRow {
                 nhl_id: 8476945,

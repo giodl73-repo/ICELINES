@@ -3,9 +3,24 @@
 {% block title %}{{ full_name }}{% endblock %}
 
 {% block content %}
-<p style="margin-bottom: 0.5rem;">
-    <a href="/leaders">← back to leaders</a>
-</p>
+{# Top action row — UX.B. Breadcrumb-style nav + compare form so the
+   player card is a hub, not a dead end. #}
+<nav aria-label="Player actions" style="display:flex; gap:1rem; flex-wrap:wrap; align-items:center; margin-bottom:0.75rem; font-size:0.9rem;">
+    <a href="/leaders">← Leaders</a>
+    {% if team_link != "" %}
+        <a href="/team/{{ team_link }}">{{ team_link }} roster →</a>
+    {% endif %}
+    <a href="/goalies">Goalies</a>
+    <a href="/transactions?team={{ team_link }}">Transactions</a>
+    <span style="flex:1"></span>
+    <form method="get" action="/compare" style="display:flex; gap:0.4rem; align-items:center;">
+        <input type="hidden" name="a" value="{{ nhl_id }}">
+        <label for="compare-b" style="font-size:0.85rem; color:#616161;">Compare with NHL id:</label>
+        <input id="compare-b" type="number" name="b" placeholder="e.g. 8477934"
+               style="width: 8rem; font-family: ui-monospace, Consolas, monospace;">
+        <button type="submit">Compare</button>
+    </form>
+</nav>
 
 <div style="display: flex; gap: 1.5rem; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap;">
     {% match headshot_url %}
@@ -17,10 +32,42 @@
     <div>
         <h1 style="margin: 0;">{{ full_name }}</h1>
         <p style="color: #616161; margin: 0.25rem 0 0 0;">
-            {{ position }} · {{ team }} · NHL #{{ nhl_id }} · {{ active_label }}
+            {{ position }} ·
+            {% if team_link != "" %}
+                <a href="/team/{{ team_link }}">{{ team }}</a>
+            {% else %}
+                {{ team }}
+            {% endif %}
+            · NHL #{{ nhl_id }} · {{ active_label }}
         </p>
     </div>
 </div>
+
+{# Expanded active-season stat block — UX.B. #}
+<section aria-label="Active season stats">
+    <h2 style="margin-top:0; margin-bottom:0.5rem; font-size:1.05rem;">{{ active_label }} stats</h2>
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap:0.75rem 1rem; max-width: 900px;">
+        <div><div style="color:#616161; font-size:0.8rem;">GP</div><strong style="font-size:1.1rem;">{{ gp }}</strong></div>
+        <div><div style="color:#616161; font-size:0.8rem;">Goals</div><strong style="font-size:1.1rem;">{{ goals }}</strong></div>
+        <div><div style="color:#616161; font-size:0.8rem;">Assists</div><strong style="font-size:1.1rem;">{{ assists }}</strong></div>
+        <div><div style="color:#616161; font-size:0.8rem;">Points</div><strong style="font-size:1.1rem; color:#1565c0;">{{ points }}</strong></div>
+        <div><div style="color:#616161; font-size:0.8rem;">P/GP</div><strong style="font-size:1.1rem;">{% if ppg_str.is_empty() %}—{% else %}{{ ppg_str }}{% endif %}</strong></div>
+        <div><div style="color:#616161; font-size:0.8rem;">+/-</div><strong style="font-size:1.1rem;">{{ plus_minus_str }}</strong></div>
+        <div><div style="color:#616161; font-size:0.8rem;">PIM</div><strong style="font-size:1.1rem;">{{ pim_str }}</strong></div>
+        <div><div style="color:#616161; font-size:0.8rem;">SOG</div><strong style="font-size:1.1rem;">{{ shots_str }}</strong></div>
+        <div><div style="color:#616161; font-size:0.8rem;">SH%</div><strong style="font-size:1.1rem;">{{ shooting_pct_str }}</strong></div>
+        <div><div style="color:#616161; font-size:0.8rem;">Hits</div><strong style="font-size:1.1rem;">{{ hits_str }}</strong></div>
+        <div><div style="color:#616161; font-size:0.8rem;">Blocks</div><strong style="font-size:1.1rem;">{{ blocks_str }}</strong></div>
+        <div><div style="color:#616161; font-size:0.8rem;">TK</div><strong style="font-size:1.1rem;">{{ takeaways_str }}</strong></div>
+        <div><div style="color:#616161; font-size:0.8rem;">GV</div><strong style="font-size:1.1rem;">{{ giveaways_str }}</strong></div>
+        <div><div style="color:#616161; font-size:0.8rem;">FOW%</div><strong style="font-size:1.1rem;">{{ faceoff_pct_str }}</strong></div>
+        <div><div style="color:#616161; font-size:0.8rem;">PP G</div><strong style="font-size:1.1rem;">{{ pp_goals_str }}</strong></div>
+        <div><div style="color:#616161; font-size:0.8rem;">PP P</div><strong style="font-size:1.1rem;">{{ pp_points_str }}</strong></div>
+        <div><div style="color:#616161; font-size:0.8rem;">SH G</div><strong style="font-size:1.1rem;">{{ sh_goals_str }}</strong></div>
+        <div><div style="color:#616161; font-size:0.8rem;">GWG</div><strong style="font-size:1.1rem;">{{ gwg_str }}</strong></div>
+        <div><div style="color:#616161; font-size:0.8rem;">TOI/G</div><strong style="font-size:1.1rem;">{{ toi_per_game_str }}</strong></div>
+    </div>
+</section>
 
 <h2 style="margin-top: 1.5rem;">Career — {{ career_rows.len() }} season{% if career_rows.len() != 1 %}s{% endif %}</h2>
 
@@ -46,7 +93,13 @@
         <tr>
             <td><strong>{{ row.season }}</strong></td>
             <td>{{ row.season_type }}</td>
-            <td>{{ row.team }}</td>
+            <td>
+                {% if row.team == "—" %}
+                    {{ row.team }}
+                {% else %}
+                    <a href="/team/{{ row.team }}">{{ row.team }}</a>
+                {% endif %}
+            </td>
             <td style="text-align: right;">{{ row.gp }}</td>
             <td style="text-align: right;">{{ row.goals }}</td>
             <td style="text-align: right;">{{ row.assists }}</td>
@@ -61,7 +114,6 @@
 
 <p style="margin-top: 2rem; color: #616161; font-size: 0.9rem;">
     Career table sourced from the 38-season bundle (1987-88 → 2025-26).
-    King.3.3 adds the comps panel + similarity search;
-    King.3.4 adds rate-stat percentile rank.
+    JSON twin: <a href="/api/v1/player/{{ nhl_id }}"><code>/api/v1/player/{{ nhl_id }}</code></a>.
 </p>
 {% endblock %}
