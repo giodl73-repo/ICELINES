@@ -252,11 +252,17 @@ th {
     text-transform: uppercase;
     letter-spacing: 0.05em;
     font-size: 0.78rem;
-    position: sticky;
-    top: 4.1rem;
-    z-index: 5;
     border-bottom: 2px solid var(--nhl-navy);
 }
+/*
+ * Sticky table headers were overlapping the row beneath them by ~0.7rem
+ * on every page because the season-header + global-nav stack measures
+ * ~4.7rem in practice (font/line-height/padding combine differently
+ * across viewports than a fixed `top: 4rem` can pin). The sticky thead
+ * also collided with the season-type-toggle z-index. Tables sit fine
+ * inside the existing chrome — the season-header and global-nav stay
+ * sticky, which is enough top-of-page context for column orientation.
+ */
 th a {
     color: inherit;
     text-decoration: none;
@@ -457,8 +463,5 @@ a.team-link:hover {
     }
     .global-nav a {
         padding: 0.2rem 0.4rem;
-    }
-    th {
-        top: 4.6rem;
     }
 }
