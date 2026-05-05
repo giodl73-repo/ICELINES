@@ -270,12 +270,73 @@ th a {
 th a:hover {
     color: var(--nhl-red);
 }
+tbody tr:nth-child(even) {
+    background: rgba(232, 240, 248, 0.35);
+}
 tbody tr:hover {
-    background: #f5f9fd;
+    background: #e8f1fb;
 }
 tbody tr:last-child td {
     border-bottom: none;
 }
+
+/* ── Player cell — UX.G ─────────────────────────────────────────── */
+/*
+ * Used by /leaders, /goalies, /team, and the home preview to render
+ * a player name with their headshot avatar and position chip. The
+ * link itself stays plain (no underline) and uses a strong navy
+ * color — the avatar + bold name carry the click affordance, and
+ * hover lights up the surrounding cell.
+ */
+.player-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 2.4rem;
+}
+.player-cell .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--ice-divider);
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 2px solid var(--ice-surface);
+    box-shadow: 0 0 0 1px var(--ice-divider);
+}
+.player-cell a.player-name {
+    color: var(--nhl-navy);
+    text-decoration: none;
+    font-weight: 700;
+    letter-spacing: 0.005em;
+}
+.player-cell a.player-name:hover {
+    color: var(--nhl-red);
+    text-decoration: none;
+}
+
+/* Position pill — colored chip per position. Centers, wingers,
+   defense, and goalies get distinct accent hues so a glance at
+   the column reveals lineup balance. */
+.pos-chip {
+    display: inline-block;
+    padding: 0.1rem 0.45rem;
+    border-radius: 10px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #fff;
+    line-height: 1.4;
+    min-width: 2.1rem;
+    text-align: center;
+}
+.pos-C  { background: #1565c0; }
+.pos-LW { background: #2e7d32; }
+.pos-RW { background: #ad1457; }
+.pos-D  { background: #5e35b1; }
+.pos-G  { background: #ef6c00; }
+.pos-F  { background: #455a64; }
 
 .table-scroll {
     overflow-x: auto;

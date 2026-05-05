@@ -79,7 +79,6 @@
     <thead>
         <tr>
             <th>Season</th>
-            <th>Type</th>
             <th>Team</th>
             <th style="text-align: right;">GP</th>
             <th style="text-align: right;">G</th>
@@ -92,7 +91,6 @@
         {% for row in career_rows %}
         <tr>
             <td><strong>{{ row.season }}</strong></td>
-            <td>{{ row.season_type }}</td>
             <td>
                 {% if row.team_link == "" %}
                     {{ row.team }}

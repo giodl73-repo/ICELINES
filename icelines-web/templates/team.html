@@ -39,8 +39,13 @@
         {% for row in skaters %}
         <tr>
             <td style="text-align: right; color: #616161;">{{ loop.index }}</td>
-            <td><strong><a href="/player/{{ row.nhl_id }}" style="color: #1565c0;">{{ row.name }}</a></strong></td>
-            <td>{{ row.position }}</td>
+            <td>
+                <div class="player-cell">
+                    <img class="avatar" src="https://assets.nhle.com/mugs/nhl/default/{{ row.nhl_id }}.png" alt="" loading="lazy">
+                    <a class="player-name" href="/player/{{ row.nhl_id }}">{{ row.name }}</a>
+                </div>
+            </td>
+            <td><span class="pos-chip pos-{{ row.position }}">{{ row.position }}</span></td>
             <td style="text-align: right;">{{ row.gp }}</td>
             <td style="text-align: right;">{{ row.goals }}</td>
             <td style="text-align: right;">{{ row.assists }}</td>
@@ -74,7 +79,12 @@
     <tbody>
         {% for row in goalies %}
         <tr>
-            <td><strong><a href="/player/{{ row.nhl_id }}" style="color: #1565c0;">{{ row.name }}</a></strong></td>
+            <td>
+                <div class="player-cell">
+                    <img class="avatar" src="https://assets.nhle.com/mugs/nhl/default/{{ row.nhl_id }}.png" alt="" loading="lazy">
+                    <a class="player-name" href="/player/{{ row.nhl_id }}">{{ row.name }}</a>
+                </div>
+            </td>
             <td style="text-align: right;">{{ row.gp }}</td>
             <td style="text-align: right;">{{ row.wins }}</td>
             <td style="text-align: right;">{{ row.losses }}</td>

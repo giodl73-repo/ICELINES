@@ -1770,8 +1770,14 @@ mod handlers {
                 // (gp=0) rows so a player who was rostered but never
                 // played a regular-season game in a given (year,type)
                 // doesn't add noise.
+                //
+                // UX.G — filter to the active season_type so the
+                // career table matches what the global toggle says.
+                // Mixing Regular + Playoff rows under a "Regular"
+                // toggle was confusing.
                 let mut career_rows: Vec<CareerRow> = match repo.career_all(pid) {
                     Some(iter) => iter
+                        .filter(|s| s.season_type == season_type)
                         .filter_map(|s| {
                             let totals = &s.totals;
                             if totals.gp == 0 {

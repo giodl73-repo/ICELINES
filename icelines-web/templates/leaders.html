@@ -92,8 +92,13 @@
         {% for row in rows %}
         <tr>
             <td style="text-align: right; color: #616161;">{{ loop.index }}</td>
-            <td><strong><a href="/player/{{ row.nhl_id }}" style="color: #1565c0;">{{ row.name }}</a></strong></td>
-            <td>{{ row.position }}</td>
+            <td>
+                <div class="player-cell">
+                    <img class="avatar" src="https://assets.nhle.com/mugs/nhl/default/{{ row.nhl_id }}.png" alt="" loading="lazy">
+                    <a class="player-name" href="/player/{{ row.nhl_id }}">{{ row.name }}</a>
+                </div>
+            </td>
+            <td><span class="pos-chip pos-{{ row.position }}">{{ row.position }}</span></td>
             <td><a class="team-link team-{{ row.team }}" href="/team/{{ row.team }}">{{ row.team }}</a></td>
             <td style="text-align: right;">{{ row.gp }}</td>
             <td style="text-align: right;">{{ row.goals }}</td>
