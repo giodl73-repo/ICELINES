@@ -115,6 +115,17 @@
             <td style="text-align: right;">{{ row.blocks_str }}</td>
             <td style="text-align: right;">{{ row.faceoff_pct_str }}</td>
             <td style="text-align: right;">{{ row.pp_points }}</td>
+            <td style="text-align: right;">{{ row.points_per_60_str }}</td>
+            <td style="text-align: right;">{{ row.goals_per_60_str }}</td>
+            <td style="text-align: right;">{{ row.assists_per_60_str }}</td>
+            <td style="text-align: right;">{{ row.hits_per_60_str }}</td>
+            <td style="text-align: right;">{{ row.blocks_per_60_str }}</td>
+            <td style="text-align: right;">
+                {% if row.points_delta_str.is_empty() %}—{% else %}<span class="stat-delta {{ row.points_delta_class }}">{{ row.points_delta_str }}</span>{% endif %}
+            </td>
+            <td style="text-align: right;">
+                {% if row.points_delta_str.is_empty() %}—{% else %}<span class="stat-delta {{ row.points_delta_class }}">{{ row.points_delta_str }}</span>{% endif %}
+            </td>
         </tr>
         {% endfor %}
     </tbody>

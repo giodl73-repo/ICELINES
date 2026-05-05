@@ -198,6 +198,18 @@ mod handlers {
     fn project_leader_row(
         v: &icelines_core::stats_repository::PlayerView,
     ) -> crate::templates::LeaderRow {
+        project_leader_row_with_prior(v, None)
+    }
+
+    /// Same as `project_leader_row` but takes an optional
+    /// `prior_points` (the player's points from the prior season,
+    /// same season-type) so the row can carry a YoY delta. Used by
+    /// /leaders for breakout/decline sorting; the team page and home
+    /// preview pass None.
+    fn project_leader_row_with_prior(
+        v: &icelines_core::stats_repository::PlayerView,
+        prior_points: Option<u32>,
+    ) -> crate::templates::LeaderRow {
         let gp = v.gp();
         let points = v.points();
         let ppg_str = if gp > 0 {
@@ -239,6 +251,39 @@ mod handlers {
         let headshot_url = build_headshot_url(v.season().0, &primary_team, v.id().0);
         let headshot_fallback_url =
             format!("https://assets.nhle.com/mugs/nhl/default/{}.png", v.id().0);
+
+        // Sasq.5 — per-60 rates: stat × 3600 / total_toi_seconds.
+        // total_toi_seconds = toi_per_game (sec) × gp. None when toi
+        // data is missing so we don't emit "0.00" for half the league.
+        let total_toi_secs: Option<u64> = totals
+            .toi_per_game_sec
+            .map(|tpg| u64::from(tpg) * u64::from(gp))
+            .filter(|s| *s > 0);
+        let per_60 =
+            |stat: f64| -> Option<f64> { total_toi_secs.map(|toi| stat * 3600.0 / toi as f64) };
+        let opt_p60 = |o: Option<f64>| -> String {
+            match o {
+                Some(v) => format!("{:.2}", v),
+                None => "—".to_owned(),
+            }
+        };
+        let goals_per_60 = per_60(v.goals() as f64);
+        let assists_per_60 = per_60(v.assists() as f64);
+        let points_per_60 = per_60(v.points() as f64);
+        let hits_per_60 = hits.and_then(|h| per_60(h as f64));
+        let blocks_per_60 = blocks.and_then(|b| per_60(b as f64));
+
+        // Sasq.4 — point delta vs prior season. None when no prior
+        // row exists. Pre-format the chip string + class so the
+        // template doesn't have to branch.
+        let points_delta = prior_points.map(|prev| v.points() as i32 - prev as i32);
+        let (points_delta_str, points_delta_class) = match points_delta {
+            Some(d) if d > 0 => (format!("{:+}", d), "delta-up".to_owned()),
+            Some(d) if d < 0 => (format!("{:+}", d), "delta-down".to_owned()),
+            Some(_) => ("0".to_owned(), "delta-flat".to_owned()),
+            None => (String::new(), String::new()),
+        };
+
         crate::templates::LeaderRow {
             nhl_id: v.id().0,
             name: v.full_name().to_owned(),
@@ -264,6 +309,19 @@ mod handlers {
             faceoff_pct,
             headshot_url,
             headshot_fallback_url,
+            points_per_60_str: opt_p60(points_per_60),
+            goals_per_60_str: opt_p60(goals_per_60),
+            assists_per_60_str: opt_p60(assists_per_60),
+            hits_per_60_str: opt_p60(hits_per_60),
+            blocks_per_60_str: opt_p60(blocks_per_60),
+            points_per_60,
+            goals_per_60,
+            assists_per_60,
+            hits_per_60,
+            blocks_per_60,
+            points_delta,
+            points_delta_str,
+            points_delta_class,
         }
     }
 
@@ -385,6 +443,15 @@ mod handlers {
             Blocks,
             FaceoffPct,
             PowerPlayPoints,
+            // Sasq.5 — per-60 rates.
+            PointsPer60,
+            GoalsPer60,
+            AssistsPer60,
+            HitsPer60,
+            BlocksPer60,
+            // Sasq.4 — YoY point delta surfaces.
+            Breakout,
+            Decline,
         }
 
         impl SortKey {
@@ -402,6 +469,13 @@ mod handlers {
                     "blk" | "blocks" | "blocked-shots" => Self::Blocks,
                     "fow%" | "faceoff" | "faceoff-win-pct" => Self::FaceoffPct,
                     "ppp" | "pp-points" | "power-play-points" => Self::PowerPlayPoints,
+                    "p/60" | "points-per-60" | "p60" => Self::PointsPer60,
+                    "g/60" | "goals-per-60" | "g60" => Self::GoalsPer60,
+                    "a/60" | "assists-per-60" | "a60" => Self::AssistsPer60,
+                    "hits/60" | "h/60" | "hits-per-60" => Self::HitsPer60,
+                    "blocks/60" | "blk/60" | "blocks-per-60" => Self::BlocksPer60,
+                    "breakout" | "yoy-up" | "yoy" => Self::Breakout,
+                    "decline" | "yoy-down" => Self::Decline,
                     // p / pts / points / "" / unknown → Points (default)
                     _ => Self::Points,
                 }
@@ -422,6 +496,13 @@ mod handlers {
                     Self::Blocks => "Blocks",
                     Self::FaceoffPct => "FOW%",
                     Self::PowerPlayPoints => "PP P",
+                    Self::PointsPer60 => "P/60",
+                    Self::GoalsPer60 => "G/60",
+                    Self::AssistsPer60 => "A/60",
+                    Self::HitsPer60 => "Hits/60",
+                    Self::BlocksPer60 => "Blocks/60",
+                    Self::Breakout => "YoY ▲",
+                    Self::Decline => "YoY ▼",
                 }
             }
 
@@ -441,6 +522,13 @@ mod handlers {
                     Self::Blocks => "blocks",
                     Self::FaceoffPct => "faceoff",
                     Self::PowerPlayPoints => "ppp",
+                    Self::PointsPer60 => "p60",
+                    Self::GoalsPer60 => "g60",
+                    Self::AssistsPer60 => "a60",
+                    Self::HitsPer60 => "hits60",
+                    Self::BlocksPer60 => "blocks60",
+                    Self::Breakout => "breakout",
+                    Self::Decline => "decline",
                 }
             }
 
@@ -461,6 +549,13 @@ mod handlers {
                 Self::Blocks,
                 Self::FaceoffPct,
                 Self::PowerPlayPoints,
+                Self::PointsPer60,
+                Self::GoalsPer60,
+                Self::AssistsPer60,
+                Self::HitsPer60,
+                Self::BlocksPer60,
+                Self::Breakout,
+                Self::Decline,
             ];
         }
 
@@ -569,6 +664,21 @@ mod handlers {
 
             let (rows, total) = {
                 let repo = state.repo.read().await;
+
+                // Sasq.4 — build a pid→prior_points map by reading
+                // the prior season same-type once. The lazy career
+                // fan-out (UX.1) ensures historical seasons are
+                // loaded into the repo when player cards have been
+                // visited; otherwise this map is empty and breakout
+                // sort silently degrades to 0-everywhere.
+                let prior_season = icelines_core::model::Season(
+                    season.0.saturating_sub(10001), // YYYYZZZZ → (Y-1)(Z-1)
+                );
+                let prior_points: std::collections::HashMap<u32, u32> = repo
+                    .skaters(prior_season, season_type)
+                    .map(|v| (v.id().0, v.points()))
+                    .collect();
+
                 let mut all: Vec<LeaderRow> = repo
                     .skaters(season, season_type)
                     .filter(|v| match pos_filter {
@@ -583,7 +693,10 @@ mod handlers {
                         None => true,
                         Some(expr) => expr.matches(v),
                     })
-                    .map(|v| super::project_leader_row(&v))
+                    .map(|v| {
+                        let prev = prior_points.get(&v.id().0).copied();
+                        super::project_leader_row_with_prior(&v, prev)
+                    })
                     .collect();
                 let total = all.len();
 
@@ -622,6 +735,41 @@ mod handlers {
                             bv.partial_cmp(&av).unwrap_or(std::cmp::Ordering::Equal)
                         }
                         SortKey::PowerPlayPoints => b.pp_points.cmp(&a.pp_points),
+                        SortKey::PointsPer60 => {
+                            let av = a.points_per_60.unwrap_or(f64::NEG_INFINITY);
+                            let bv = b.points_per_60.unwrap_or(f64::NEG_INFINITY);
+                            bv.partial_cmp(&av).unwrap_or(std::cmp::Ordering::Equal)
+                        }
+                        SortKey::GoalsPer60 => {
+                            let av = a.goals_per_60.unwrap_or(f64::NEG_INFINITY);
+                            let bv = b.goals_per_60.unwrap_or(f64::NEG_INFINITY);
+                            bv.partial_cmp(&av).unwrap_or(std::cmp::Ordering::Equal)
+                        }
+                        SortKey::AssistsPer60 => {
+                            let av = a.assists_per_60.unwrap_or(f64::NEG_INFINITY);
+                            let bv = b.assists_per_60.unwrap_or(f64::NEG_INFINITY);
+                            bv.partial_cmp(&av).unwrap_or(std::cmp::Ordering::Equal)
+                        }
+                        SortKey::HitsPer60 => {
+                            let av = a.hits_per_60.unwrap_or(f64::NEG_INFINITY);
+                            let bv = b.hits_per_60.unwrap_or(f64::NEG_INFINITY);
+                            bv.partial_cmp(&av).unwrap_or(std::cmp::Ordering::Equal)
+                        }
+                        SortKey::BlocksPer60 => {
+                            let av = a.blocks_per_60.unwrap_or(f64::NEG_INFINITY);
+                            let bv = b.blocks_per_60.unwrap_or(f64::NEG_INFINITY);
+                            bv.partial_cmp(&av).unwrap_or(std::cmp::Ordering::Equal)
+                        }
+                        SortKey::Breakout => {
+                            let av = a.points_delta.unwrap_or(i32::MIN);
+                            let bv = b.points_delta.unwrap_or(i32::MIN);
+                            bv.cmp(&av)
+                        }
+                        SortKey::Decline => {
+                            let av = a.points_delta.unwrap_or(i32::MAX);
+                            let bv = b.points_delta.unwrap_or(i32::MAX);
+                            av.cmp(&bv)
+                        }
                     };
                     primary
                         .then(b.points.cmp(&a.points))
@@ -834,6 +982,41 @@ mod handlers {
                             bv.partial_cmp(&av).unwrap_or(std::cmp::Ordering::Equal)
                         }
                         SortKey::PowerPlayPoints => b.pp_points.cmp(&a.pp_points),
+                        SortKey::PointsPer60 => {
+                            let av = a.points_per_60.unwrap_or(f64::NEG_INFINITY);
+                            let bv = b.points_per_60.unwrap_or(f64::NEG_INFINITY);
+                            bv.partial_cmp(&av).unwrap_or(std::cmp::Ordering::Equal)
+                        }
+                        SortKey::GoalsPer60 => {
+                            let av = a.goals_per_60.unwrap_or(f64::NEG_INFINITY);
+                            let bv = b.goals_per_60.unwrap_or(f64::NEG_INFINITY);
+                            bv.partial_cmp(&av).unwrap_or(std::cmp::Ordering::Equal)
+                        }
+                        SortKey::AssistsPer60 => {
+                            let av = a.assists_per_60.unwrap_or(f64::NEG_INFINITY);
+                            let bv = b.assists_per_60.unwrap_or(f64::NEG_INFINITY);
+                            bv.partial_cmp(&av).unwrap_or(std::cmp::Ordering::Equal)
+                        }
+                        SortKey::HitsPer60 => {
+                            let av = a.hits_per_60.unwrap_or(f64::NEG_INFINITY);
+                            let bv = b.hits_per_60.unwrap_or(f64::NEG_INFINITY);
+                            bv.partial_cmp(&av).unwrap_or(std::cmp::Ordering::Equal)
+                        }
+                        SortKey::BlocksPer60 => {
+                            let av = a.blocks_per_60.unwrap_or(f64::NEG_INFINITY);
+                            let bv = b.blocks_per_60.unwrap_or(f64::NEG_INFINITY);
+                            bv.partial_cmp(&av).unwrap_or(std::cmp::Ordering::Equal)
+                        }
+                        SortKey::Breakout => {
+                            let av = a.points_delta.unwrap_or(i32::MIN);
+                            let bv = b.points_delta.unwrap_or(i32::MIN);
+                            bv.cmp(&av)
+                        }
+                        SortKey::Decline => {
+                            let av = a.points_delta.unwrap_or(i32::MAX);
+                            let bv = b.points_delta.unwrap_or(i32::MAX);
+                            av.cmp(&bv)
+                        }
                     };
                     primary
                         .then(b.points.cmp(&a.points))

@@ -187,6 +187,25 @@ pub struct LeaderRow {
     pub hits: Option<u32>,
     pub blocks: Option<u32>,
     pub faceoff_pct: Option<f32>,
+    // Sasq.5 — per-60 rate stats. Computed as
+    // `stat * 3600 / (toi_per_game * gp)`. None when toi data is
+    // missing or gp == 0.
+    pub points_per_60_str: String,
+    pub goals_per_60_str: String,
+    pub assists_per_60_str: String,
+    pub hits_per_60_str: String,
+    pub blocks_per_60_str: String,
+    pub points_per_60: Option<f64>,
+    pub goals_per_60: Option<f64>,
+    pub assists_per_60: Option<f64>,
+    pub hits_per_60: Option<f64>,
+    pub blocks_per_60: Option<f64>,
+    /// Sasq.4 — point delta vs prior season same-type. Used for the
+    /// breakout / decline leaderboards. None when no prior season
+    /// row exists (rookies, retired). Pre-formatted to "+12" / "-3".
+    pub points_delta: Option<i32>,
+    pub points_delta_str: String,
+    pub points_delta_class: String,
 }
 
 /// `scores.html` — King.7.1. Live NHL schedule for a given date
@@ -606,6 +625,19 @@ mod tests {
                     .to_owned(),
                 headshot_fallback_url: "https://assets.nhle.com/mugs/nhl/default/8478402.png"
                     .to_owned(),
+                points_per_60_str: "4.32".to_owned(),
+                goals_per_60_str: "1.44".to_owned(),
+                assists_per_60_str: "2.88".to_owned(),
+                hits_per_60_str: "1.44".to_owned(),
+                blocks_per_60_str: "0.48".to_owned(),
+                points_per_60: Some(4.32),
+                goals_per_60: Some(1.44),
+                assists_per_60: Some(2.88),
+                hits_per_60: Some(1.44),
+                blocks_per_60: Some(0.48),
+                points_delta: Some(12),
+                points_delta_str: "+12".to_owned(),
+                points_delta_class: "delta-up".to_owned(),
             }],
             top_goalies: vec![GoalieRow {
                 nhl_id: 8476945,
