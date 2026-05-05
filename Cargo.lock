@@ -1519,6 +1519,7 @@ dependencies = [
  "flate2",
  "icelines-core",
  "icelines-fetch",
+ "icelines-query",
  "icelines-web",
  "image",
  "open",

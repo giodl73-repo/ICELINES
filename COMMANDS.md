@@ -80,13 +80,30 @@ icelines query leaders --filter "g>=20 OR a>=40" --filter "gp>=70"
 
 Filter keys are case-insensitive: `--filter "HITS>=200"` resolves correctly.
 
-`age` is **not** a stat — use the `--age-min N` / `--age-max N` flags on `query leaders` instead.
+### Bio keys inside `--filter` (QueryB)
+
+Bio fields aren't in the StatId catalog (per CLAUDE.md they're per-player facts, not stats), but you can mix them into the top-level AND chain of any `--filter` expression on `query leaders / player / compare / goalies`:
+
+| Key | Operators | Example |
+|-----|-----------|---------|
+| `age`, `draft` (also `draft-year`), `height` (also `ht`), `weight` (also `wt`) | `>=`, `<=`, `=` | `--filter "age<=24 AND p>=80"` |
+| `country` (also `nation`/`nationality`), `shoots` (also `hand`/`catches`) | `=` only | `--filter "country=SWE AND height>=72 AND p>=40"` |
+
+Bio keys go through the shared `icelines-query` engine — same engine the web `/leaders` page uses, so the URL `?filter=age<=24 AND p>=80` returns the same set as the CLI.
+
+Limitation: bio keys must be on the **top-level AND chain** of a single `--filter`. Mixing bio terms inside `OR` / `NOT` / parens isn't extracted (the catalog parser will reject the bio key with a "did you mean a stat?" hint). For OR with bio terms, run the query twice and union the results, or fall back to the discrete `--age-min` / `--age-max` flags.
 
 ### Common filter recipes
 
 ```bash
-# Young power forward
+# Young power forward (bio mixed into the filter grammar)
+icelines query leaders --filter "age<=24 AND hits>=200 AND p>=40"
+
+# Or with discrete --age-max flag
 icelines query leaders --age-max 24 --filter "hits>=200" --filter "p>=40"
+
+# Tall Swedish forwards with 40+ pts
+icelines query leaders --filter "country=SWE AND height>=72 AND p>=40"
 
 # Clean scorer (high points, low penalties)
 icelines query leaders --filter "p>=50" --filter "pim<=30"

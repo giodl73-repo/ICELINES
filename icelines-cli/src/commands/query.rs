@@ -17,6 +17,22 @@ use icelines_core::{
     stats_repository::PlayerView,
 };
 use icelines_fetch::{aggregate, career::load_career, snapshot::SnapshotStore};
+use icelines_query::{extract_bio, BioConstraints};
+
+/// QueryB — pre-extract bio atoms (`age<=24`, `country=CAN`, `height>=72`,
+/// etc.) from a list of `--filter` strings. Returns the folded
+/// `BioConstraints` plus the stat residue (filter strings with bio atoms
+/// peeled off the top-level AND chain). Filter strings containing OR/NOT
+/// pass through unchanged in the residue — the catalog parser handles
+/// or rejects them.
+fn extract_bio_for_cli(raw_filters: &[String]) -> (BioConstraints, Vec<String>) {
+    let (atoms, residue) = extract_bio(raw_filters);
+    let mut bc = BioConstraints::default();
+    for atom in &atoms {
+        bc.merge(atom);
+    }
+    (bc, residue)
+}
 
 // ── Sort metric ───────────────────────────────────────────────────────────────
 
@@ -569,12 +585,19 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
         .birth_province
         .map(|bp| bp.split(',').map(|s| s.trim().to_uppercase()).collect());
 
+    // QueryB — pre-extract bio atoms (`age<=24`, `country=CAN`, `height>=72`)
+    // from each --filter's top-level AND chain. Stat residue continues
+    // through the existing parse_filter_expr loop; BioConstraints is
+    // applied as a post-step. Filters containing OR/NOT bypass the
+    // splitter and pass whole-cloth to the catalog parser.
+    let (bio_constraints, stat_residue) = extract_bio_for_cli(&args.filters);
+
     // Phase Lindsay L.3.1 — generic stat filters. Each --filter flag
     // routes through `parse_filter` (which gates NaN/inf at construction
     // and rejects malformed grammar with a 7-variant error). Multiple
     // --filter flags accumulate (implicit AND); `normalize_stat_filters`
     // collapses Min+Min/Max+Max to tightest bounds before apply.
-    for raw in &args.filters {
+    for raw in &stat_residue {
         // Filter.OR — try the boolean grammar (AND / OR / NOT / parens)
         // first. Bare atoms (e.g. "g>=50") still produce a single
         // StatFilter and route through stat_filters so normalization
@@ -589,6 +612,17 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
     filter.normalize_stat_filters();
 
     let mut matched: Vec<PlayerView<'_>> = filter.apply_views(all_views.iter().copied());
+
+    // QueryB — apply bio constraints from the filter grammar after
+    // PlayerFilter. The CLI's --age-min/--age-max already flow
+    // through PlayerFilter; bio atoms from --filter use Hockey-
+    // Reference's Jan-31 age convention (slightly different but
+    // documented). Atoms for keys without dedicated CLI flags
+    // (height, weight, country, draft year range) get applied here
+    // for the first time.
+    if bio_constraints.is_active() {
+        matched.retain(|v| bio_constraints.matches(v, season_key.0));
+    }
 
     // gp_max (not in PlayerFilter — inline here)
     if let Some(gp_max) = args.gp_max {
@@ -973,8 +1007,12 @@ pub async fn run_player(
     };
     // D1b — parse filter exprs up front so a typo errors before the
     // snapshot read.
+    // QueryB — bio atoms (`age<=24`, `country=CAN`, `height>=72`)
+    // pre-extracted from the top-level AND chain; stat residue
+    // continues through the catalog parser as before.
+    let (peer_bio, peer_stat_residue) = extract_bio_for_cli(&filters);
     let mut peer_filter = PlayerFilter::new();
-    for s in &filters {
+    for s in &peer_stat_residue {
         // Filter.OR — boolean grammar accepted; bare atoms route to stat_filters.
         let expr = icelines_core::stats_catalog::parse_filter_expr(s)?;
         match expr.as_atom() {
@@ -1033,11 +1071,16 @@ pub async fn run_player(
     // D1b — apply the filter to compute the peer pool. The target
     // player itself stays available via `find_view(&all_views, ...)`
     // — only the percentile/rank cohort is narrowed.
-    let peer_views: Vec<PlayerView<'_>> = if peer_filter.stat_filters.is_empty() {
-        all_views.clone()
-    } else {
-        peer_filter.apply_views(all_views.iter().copied())
-    };
+    let peer_views: Vec<PlayerView<'_>> =
+        if peer_filter.stat_filters.is_empty() && !peer_bio.is_active() {
+            all_views.clone()
+        } else {
+            let mut pool = peer_filter.apply_views(all_views.iter().copied());
+            if peer_bio.is_active() {
+                pool.retain(|v| peer_bio.matches(v, season_key.0));
+            }
+            pool
+        };
 
     let age = age_str(v);
     let draft = draft_str(v);
@@ -1328,10 +1371,14 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
     // Same parse_filter grammar as query leaders; filter typos exit
     // non-zero with the actionable hint (KEEL D2 typo path also fires
     // here for free).
+    // QueryB — bio atoms (`age<=24`, `country=CAN`) pre-extracted
+    // from the top-level AND chain. Stat residue routes through the
+    // catalog parser; bio constraints are applied as a post-step.
+    let (goalie_bio, goalie_stat_residue) = extract_bio_for_cli(&args.filters);
     let mut filter = PlayerFilter::new();
-    if !args.filters.is_empty() {
+    if !goalie_stat_residue.is_empty() {
         use icelines_core::stats_catalog::parse_filter_expr;
-        for s in &args.filters {
+        for s in &goalie_stat_residue {
             // Gaps.4 — rewrite each atom's leading key to its goalie
             // context equivalent before parsing. `gp` → `goalie-games`,
             // `starts` → `goalie-starts`. Filter.OR — the rewrite walks
@@ -1350,6 +1397,9 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
         }
         filter.normalize_stat_filters();
         views = filter.apply_views(views.iter().copied());
+    }
+    if goalie_bio.is_active() {
+        views.retain(|v| goalie_bio.matches(v, season_u32));
     }
 
     use std::cmp::Ordering;
@@ -1516,8 +1566,11 @@ pub async fn run_compare(
 ) -> anyhow::Result<()> {
     // D1b — parse filter exprs up front; typos exit before snapshot load.
     // Filter.OR — boolean grammar accepted; bare atoms route to stat_filters.
+    // QueryB — bio atoms (`age<=24`, `country=CAN`, `height>=72`)
+    // pre-extracted from the top-level AND chain.
+    let (cohort_bio, cohort_stat_residue) = extract_bio_for_cli(&filters);
     let mut cohort_filter = PlayerFilter::new();
-    for s in &filters {
+    for s in &cohort_stat_residue {
         let expr = icelines_core::stats_catalog::parse_filter_expr(s)?;
         match expr.as_atom() {
             Some(atom) => cohort_filter.stat_filters.push(*atom),
@@ -1587,11 +1640,16 @@ pub async fn run_compare(
 
     if let Some(n) = similar {
         // D1b — narrow cohort. Empty filter passes through unchanged.
-        let cohort_views: Vec<PlayerView<'_>> = if cohort_filter.stat_filters.is_empty() {
-            all_views.clone()
-        } else {
-            cohort_filter.apply_views(all_views.iter().copied())
-        };
+        let cohort_views: Vec<PlayerView<'_>> =
+            if cohort_filter.stat_filters.is_empty() && !cohort_bio.is_active() {
+                all_views.clone()
+            } else {
+                let mut pool = cohort_filter.apply_views(all_views.iter().copied());
+                if cohort_bio.is_active() {
+                    pool.retain(|v| cohort_bio.matches(v, season_key.0));
+                }
+                pool
+            };
         run_similar(&cohort_views, &player1, n)
     } else if let Some(p2_name) = player2 {
         let v1 = find_view(&all_views, &player1)?;

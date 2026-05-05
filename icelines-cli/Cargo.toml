@@ -10,6 +10,7 @@ path = "src/main.rs"
 [dependencies]
 icelines-core  = { path = "../icelines-core" }
 icelines-fetch = { path = "../icelines-fetch" }
+icelines-query = { path = "../icelines-query" }
 icelines-web   = { path = "../icelines-web" }
 # icelines-site dropped 2026-05-04 alongside the mkdocs-frontend cut.
 # The crate stays in the workspace (cargo test still exercises it)
