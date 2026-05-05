@@ -17,7 +17,7 @@
 <nav aria-label="Position filter" style="margin-bottom: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
     <span style="color: #616161; font-size: 0.9rem; align-self: center;">Position:</span>
     {% for chip in pos_chips %}
-        <a href="?sort={{ active_sort }}&pos={{ chip.value }}&top={{ active_top }}"
+        <a href="?sort={{ active_sort }}&pos={{ chip.value }}&top={{ active_top }}{{ bio_query_suffix }}"
            {% if chip.is_active %}class="fit-solid"{% endif %}
            style="text-decoration: {% if chip.is_active %}none{% else %}underline{% endif %}; padding: 0.2rem 0.6rem; border-radius: 3px;">
             {{ chip.label }}
@@ -50,7 +50,7 @@
         {% endif %}
         <button type="submit">Apply</button>
         {% if active_filters.len() > 0 %}
-            <a href="?sort={{ active_sort }}&pos={{ active_pos }}&top={{ active_top }}"
+            <a href="?sort={{ active_sort }}&pos={{ active_pos }}&top={{ active_top }}{{ bio_query_suffix }}"
                style="padding: 0.4rem 0.6rem;">Clear</a>
         {% endif %}
     </div>
@@ -68,6 +68,70 @@
 </p>
 {% endif %}
 
+{# Sasq.9 — bio filter accordion. Open by default when any bio
+   filter is currently active so the user sees what's narrowing
+   the table. Plain GET form so the URL stays bookmarkable. #}
+<details class="bio-filter" {% if bio_active %}open{% endif %}>
+    <summary style="cursor:pointer; font-weight:600; color:var(--nhl-navy); padding:0.5rem 0; user-select:none;">
+        Bio filters
+        {% if bio_active %}<span style="color:var(--nhl-red); font-weight:700;">●</span>{% endif %}
+    </summary>
+    <form method="get" action="" style="margin: 0.5rem 0 1.25rem 0; padding: 0.85rem 1rem; background: var(--ice-divider); border-radius: 5px;">
+        <input type="hidden" name="sort" value="{{ active_sort }}">
+        <input type="hidden" name="pos" value="{{ active_pos }}">
+        <input type="hidden" name="top" value="{{ active_top }}">
+        {% for f in active_filters %}<input type="hidden" name="filter" value="{{ f }}">{% endfor %}
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:0.6rem 1rem;">
+            <label style="font-size:0.85rem;">Age
+                <span style="display:flex; gap:0.25rem; margin-top:0.15rem;">
+                    <input type="number" name="age-min" min="16" max="50" placeholder="min" value="{{ bio_age_min_str }}" style="width: 5rem;">
+                    <input type="number" name="age-max" min="16" max="50" placeholder="max" value="{{ bio_age_max_str }}" style="width: 5rem;">
+                </span>
+            </label>
+            <label style="font-size:0.85rem;">Draft year
+                <span style="display:flex; gap:0.25rem; margin-top:0.15rem;">
+                    <input type="number" name="draft-min" min="1960" max="2030" placeholder="min" value="{{ bio_draft_min_str }}" style="width: 5.5rem;">
+                    <input type="number" name="draft-max" min="1960" max="2030" placeholder="max" value="{{ bio_draft_max_str }}" style="width: 5.5rem;">
+                </span>
+            </label>
+            <label style="font-size:0.85rem;">Height (in)
+                <span style="display:flex; gap:0.25rem; margin-top:0.15rem;">
+                    <input type="number" name="height-min" min="60" max="84" placeholder="min" value="{{ bio_height_min_str }}" style="width: 5rem;">
+                    <input type="number" name="height-max" min="60" max="84" placeholder="max" value="{{ bio_height_max_str }}" style="width: 5rem;">
+                </span>
+            </label>
+            <label style="font-size:0.85rem;">Weight (lb)
+                <span style="display:flex; gap:0.25rem; margin-top:0.15rem;">
+                    <input type="number" name="weight-min" min="120" max="290" placeholder="min" value="{{ bio_weight_min_str }}" style="width: 5rem;">
+                    <input type="number" name="weight-max" min="120" max="290" placeholder="max" value="{{ bio_weight_max_str }}" style="width: 5rem;">
+                </span>
+            </label>
+            <label style="font-size:0.85rem;">Country
+                <input type="text" name="country" placeholder="CAN" maxlength="3" value="{{ bio_country }}"
+                       style="width: 6rem; text-transform:uppercase; margin-top:0.15rem;">
+            </label>
+            <label style="font-size:0.85rem;">Shoots
+                <select name="shoots" style="margin-top:0.15rem;">
+                    <option value="" {% if bio_shoots == "" %}selected{% endif %}>—</option>
+                    <option value="L" {% if bio_shoots == "L" %}selected{% endif %}>Left</option>
+                    <option value="R" {% if bio_shoots == "R" %}selected{% endif %}>Right</option>
+                </select>
+            </label>
+        </div>
+        <div style="display:flex; gap:0.5rem; margin-top: 0.75rem;">
+            <button type="submit">Apply bio filters</button>
+            {% if bio_active %}
+                <a href="?sort={{ active_sort }}&pos={{ active_pos }}&top={{ active_top }}{% for f in active_filters %}&filter={{ f }}{% endfor %}"
+                   style="padding: 0.4rem 0.6rem; align-self:center;">Clear bio filters</a>
+            {% endif %}
+        </div>
+        <p style="margin: 0.55rem 0 0 0; color: #616161; font-size: 0.78rem;">
+            Age cutoff is hockey-standard Sept 15. Country accepts ISO 3-letter codes (CAN, USA, SWE, FIN, RUS, …).
+            Players missing the relevant bio field are excluded from filtered results.
+        </p>
+    </form>
+</details>
+
 <div class="table-scroll">
 <table>
     <thead>
@@ -79,7 +143,7 @@
             {% for col in col_headers %}
                 <th style="text-align: right;"
                     {% if col.is_active %}aria-sort="descending"{% endif %}>
-                    <a href="?sort={{ col.url_token }}&pos={{ active_pos }}&top={{ active_top }}"
+                    <a href="?sort={{ col.url_token }}&pos={{ active_pos }}&top={{ active_top }}{{ bio_query_suffix }}{% for f in active_filters %}&filter={{ f }}{% endfor %}"
                        style="text-decoration: none; color: inherit; {% if col.is_active %}font-weight: 700;{% else %}font-weight: 400;{% endif %}"
                        title="Sort by {{ col.label }}">
                         {{ col.label }}{% if col.is_active %} ↓{% endif %}

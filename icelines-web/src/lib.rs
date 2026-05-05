@@ -103,6 +103,36 @@ pub fn router(state: WebState) -> Router {
 }
 
 mod handlers {
+    /// Compute a player's hockey age as of the active season's
+    /// reference date (Sep 15 of the season's first year — the
+    /// NHL's standard age cutoff for roster decisions). Returns
+    /// None when the bio's birth date is missing or unparsable.
+    /// Sasq.9 — used by /leaders bio filters.
+    pub(crate) fn compute_age(birth_date: &str, season: u32) -> Option<u32> {
+        // birth_date is "YYYY-MM-DD"; season is YYYYZZZZ.
+        let parts: Vec<&str> = birth_date.split('-').collect();
+        if parts.len() != 3 {
+            return None;
+        }
+        let by: i32 = parts[0].parse().ok()?;
+        let bm: i32 = parts[1].parse().ok()?;
+        let bd: i32 = parts[2].parse().ok()?;
+        // Hockey age cutoff: Sep 15 of the first year of the season
+        // (Bettman-era convention; matches CapFriendly + NHL.com).
+        let season_start_year: i32 = (season / 10_000) as i32;
+        let mut age = season_start_year - by;
+        // Subtract one if their birthday hasn't reached Sep 15 yet
+        // in the season-start year (born after the cutoff → still
+        // the previous age on opening night).
+        if (bm, bd) > (9, 15) {
+            age -= 1;
+        }
+        if !(0..=60).contains(&age) {
+            return None;
+        }
+        Some(age as u32)
+    }
+
     /// Build the NHL CDN headshot URL for a player. UX.G2 — the
     /// `mugs/nhl/default/{id}.png` path serves silhouettes for many
     /// players; the seasonal `mugs/nhl/{season}/{team}/{id}.png` path
@@ -421,6 +451,35 @@ mod handlers {
             /// Top-N rows to render. Default 20, clamped 1..=500.
             #[serde(default)]
             pub top: Option<usize>,
+
+            // Sasq.9 — bio filters. All optional. Empty = no constraint.
+            // The dashes-vs-underscores split on `?age-min=` happens
+            // because serde_urlencoded normalizes `-` → `_` for field
+            // matching when we use serde(rename) below.
+            #[serde(default, rename = "age-min")]
+            pub age_min: Option<u32>,
+            #[serde(default, rename = "age-max")]
+            pub age_max: Option<u32>,
+            #[serde(default, rename = "draft-min")]
+            pub draft_year_min: Option<u16>,
+            #[serde(default, rename = "draft-max")]
+            pub draft_year_max: Option<u16>,
+            #[serde(default, rename = "height-min")]
+            pub height_min: Option<u32>, // inches
+            #[serde(default, rename = "height-max")]
+            pub height_max: Option<u32>,
+            #[serde(default, rename = "weight-min")]
+            pub weight_min: Option<u32>, // pounds
+            #[serde(default, rename = "weight-max")]
+            pub weight_max: Option<u32>,
+            /// Three-letter ISO country code, e.g. "CAN", "USA", "SWE".
+            /// Case-insensitive. Matched against bio.birth_country.
+            #[serde(default)]
+            pub country: Option<String>,
+            /// "L" or "R". Case-insensitive. Matched against
+            /// bio.shoots_catches.
+            #[serde(default)]
+            pub shoots: Option<String>,
         }
 
         /// Sort key parsed from the `?sort=` param. Stable PascalCase
@@ -920,6 +979,28 @@ mod handlers {
                 }
             };
 
+            // Sasq.9 — bio filter snapshot (cheap clones, used inside
+            // the closure below). Country and shoots are uppercased
+            // for case-insensitive match against bio.
+            let bio_age_min = q.age_min;
+            let bio_age_max = q.age_max;
+            let bio_draft_min = q.draft_year_min;
+            let bio_draft_max = q.draft_year_max;
+            let bio_height_min = q.height_min;
+            let bio_height_max = q.height_max;
+            let bio_weight_min = q.weight_min;
+            let bio_weight_max = q.weight_max;
+            let bio_country = q
+                .country
+                .as_deref()
+                .map(|s| s.trim().to_ascii_uppercase())
+                .filter(|s| !s.is_empty());
+            let bio_shoots = q
+                .shoots
+                .as_deref()
+                .map(|s| s.trim().to_ascii_uppercase())
+                .filter(|s| !s.is_empty());
+
             // Brief read of the repo. Project each PlayerView into a
             // LeaderRow inside the lock scope (per spec: views must
             // not escape the lock; we copy out scalar fields).
@@ -938,6 +1019,93 @@ mod handlers {
                     .filter(|v| match &filter_expr {
                         None => true,
                         Some(expr) => expr.matches(v),
+                    })
+                    // Sasq.9 — bio filters. Each is a no-op if the
+                    // corresponding query param wasn't set; players
+                    // without the relevant bio data are excluded
+                    // from filtered results (we can't say a
+                    // None-height player is between 70 and 75).
+                    .filter(|v| {
+                        let bio = &v.identity.bio;
+                        if let (Some(mn), Some(mx)) = (bio_age_min, bio_age_max) {
+                            let _ = (mn, mx); // shape-check only
+                        }
+                        if bio_age_min.is_some() || bio_age_max.is_some() {
+                            let age = bio
+                                .birth_date
+                                .as_deref()
+                                .and_then(|d| super::compute_age(d, season.0));
+                            match age {
+                                Some(a) => {
+                                    if let Some(mn) = bio_age_min {
+                                        if a < mn {
+                                            return false;
+                                        }
+                                    }
+                                    if let Some(mx) = bio_age_max {
+                                        if a > mx {
+                                            return false;
+                                        }
+                                    }
+                                }
+                                None => return false,
+                            }
+                        }
+                        if let Some(mn) = bio_draft_min {
+                            match bio.draft_year {
+                                Some(y) if y >= mn => {}
+                                _ => return false,
+                            }
+                        }
+                        if let Some(mx) = bio_draft_max {
+                            match bio.draft_year {
+                                Some(y) if y <= mx => {}
+                                _ => return false,
+                            }
+                        }
+                        if let Some(mn) = bio_height_min {
+                            match bio.height_in_inches {
+                                Some(h) if h >= mn => {}
+                                _ => return false,
+                            }
+                        }
+                        if let Some(mx) = bio_height_max {
+                            match bio.height_in_inches {
+                                Some(h) if h <= mx => {}
+                                _ => return false,
+                            }
+                        }
+                        if let Some(mn) = bio_weight_min {
+                            match bio.weight_lbs {
+                                Some(w) if w >= mn => {}
+                                _ => return false,
+                            }
+                        }
+                        if let Some(mx) = bio_weight_max {
+                            match bio.weight_lbs {
+                                Some(w) if w <= mx => {}
+                                _ => return false,
+                            }
+                        }
+                        if let Some(c) = &bio_country {
+                            // Match against either birth_country or
+                            // nationality_code so the user can pick
+                            // either. Both are 3-letter ISO codes.
+                            let bc = bio.birth_country.as_deref().map(str::to_ascii_uppercase);
+                            let nc = bio.nationality_code.as_deref().map(str::to_ascii_uppercase);
+                            let matches = bc.as_deref() == Some(c.as_str())
+                                || nc.as_deref() == Some(c.as_str());
+                            if !matches {
+                                return false;
+                            }
+                        }
+                        if let Some(s) = &bio_shoots {
+                            match bio.shoots_catches.as_deref().map(str::to_ascii_uppercase) {
+                                Some(sc) if &sc == s => {}
+                                _ => return false,
+                            }
+                        }
+                        true
                     })
                     .map(|v| super::project_leader_row(&v))
                     .collect();
@@ -1067,6 +1235,86 @@ mod handlers {
                 })
                 .collect();
 
+            // Sasq.9 — bio filter values back into the template so
+            // the form re-renders with the user's current selection.
+            let opt_str = |o: Option<&dyn std::fmt::Display>| -> String {
+                o.map(|v| v.to_string()).unwrap_or_default()
+            };
+            let bio_age_min_str = bio_age_min.as_ref().map(u32::to_string).unwrap_or_default();
+            let bio_age_max_str = bio_age_max.as_ref().map(u32::to_string).unwrap_or_default();
+            let bio_draft_min_str = bio_draft_min
+                .as_ref()
+                .map(u16::to_string)
+                .unwrap_or_default();
+            let bio_draft_max_str = bio_draft_max
+                .as_ref()
+                .map(u16::to_string)
+                .unwrap_or_default();
+            let bio_height_min_str = bio_height_min
+                .as_ref()
+                .map(u32::to_string)
+                .unwrap_or_default();
+            let bio_height_max_str = bio_height_max
+                .as_ref()
+                .map(u32::to_string)
+                .unwrap_or_default();
+            let bio_weight_min_str = bio_weight_min
+                .as_ref()
+                .map(u32::to_string)
+                .unwrap_or_default();
+            let bio_weight_max_str = bio_weight_max
+                .as_ref()
+                .map(u32::to_string)
+                .unwrap_or_default();
+            let bio_country_str = bio_country.clone().unwrap_or_default();
+            let bio_shoots_str = bio_shoots.clone().unwrap_or_default();
+            let bio_active = bio_age_min.is_some()
+                || bio_age_max.is_some()
+                || bio_draft_min.is_some()
+                || bio_draft_max.is_some()
+                || bio_height_min.is_some()
+                || bio_height_max.is_some()
+                || bio_weight_min.is_some()
+                || bio_weight_max.is_some()
+                || bio_country.is_some()
+                || bio_shoots.is_some();
+            let _ = opt_str;
+
+            // Build &-prefixed URL suffix so chip/column-header links
+            // preserve bio narrowing across nav. urlencoding-light:
+            // values are numeric or short ASCII so we just push raw.
+            let mut bio_query_suffix = String::new();
+            if let Some(v) = bio_age_min {
+                bio_query_suffix.push_str(&format!("&age-min={v}"));
+            }
+            if let Some(v) = bio_age_max {
+                bio_query_suffix.push_str(&format!("&age-max={v}"));
+            }
+            if let Some(v) = bio_draft_min {
+                bio_query_suffix.push_str(&format!("&draft-min={v}"));
+            }
+            if let Some(v) = bio_draft_max {
+                bio_query_suffix.push_str(&format!("&draft-max={v}"));
+            }
+            if let Some(v) = bio_height_min {
+                bio_query_suffix.push_str(&format!("&height-min={v}"));
+            }
+            if let Some(v) = bio_height_max {
+                bio_query_suffix.push_str(&format!("&height-max={v}"));
+            }
+            if let Some(v) = bio_weight_min {
+                bio_query_suffix.push_str(&format!("&weight-min={v}"));
+            }
+            if let Some(v) = bio_weight_max {
+                bio_query_suffix.push_str(&format!("&weight-max={v}"));
+            }
+            if let Some(v) = &bio_country {
+                bio_query_suffix.push_str(&format!("&country={v}"));
+            }
+            if let Some(v) = &bio_shoots {
+                bio_query_suffix.push_str(&format!("&shoots={v}"));
+            }
+
             let tmpl = LeadersTemplate {
                 active_label,
                 rows,
@@ -1078,6 +1326,18 @@ mod handlers {
                 pos_chips,
                 col_headers,
                 active_filters: raw_filters,
+                bio_age_min_str,
+                bio_age_max_str,
+                bio_draft_min_str,
+                bio_draft_max_str,
+                bio_height_min_str,
+                bio_height_max_str,
+                bio_weight_min_str,
+                bio_weight_max_str,
+                bio_country: bio_country_str,
+                bio_shoots: bio_shoots_str,
+                bio_active,
+                bio_query_suffix,
             };
             match tmpl.render() {
                 Ok(html) => Html(html).into_response(),

@@ -108,6 +108,29 @@ pub struct LeadersTemplate {
     /// Active `?filter=` strings, in URL order. Each renders as one
     /// row in the filter form. Empty Vec → form starts blank.
     pub active_filters: Vec<String>,
+    /// Sasq.9 — bio-filter values. Each is the empty string when
+    /// the corresponding query param wasn't set, so the template
+    /// can put them in `value="…"` attributes without conditionals.
+    /// `_str` because integers may be 0 legitimately so we can't
+    /// use 0-as-sentinel.
+    pub bio_age_min_str: String,
+    pub bio_age_max_str: String,
+    pub bio_draft_min_str: String,
+    pub bio_draft_max_str: String,
+    pub bio_height_min_str: String,
+    pub bio_height_max_str: String,
+    pub bio_weight_min_str: String,
+    pub bio_weight_max_str: String,
+    pub bio_country: String,
+    pub bio_shoots: String,
+    /// True when ANY bio filter is active, used to expand the
+    /// filter accordion on page load.
+    pub bio_active: bool,
+    /// URL fragment like "&age-min=22&age-max=28&country=CAN" that
+    /// every chip / column-header / pagination link appends so
+    /// changing position or sort doesn't drop the bio narrowing.
+    /// Empty when no bio filters set. Pre-encoded.
+    pub bio_query_suffix: String,
 }
 
 /// One chip in the position-filter strip.
