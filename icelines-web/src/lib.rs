@@ -99,6 +99,94 @@ pub fn router(state: WebState) -> Router {
 }
 
 mod handlers {
+    /// Build the NHL CDN headshot URL for a player. UX.G2 — the
+    /// `mugs/nhl/default/{id}.png` path serves silhouettes for many
+    /// players; the seasonal `mugs/nhl/{season}/{team}/{id}.png` path
+    /// serves real mug shots for current rosters. For multi-team rows
+    /// pick the primary (first) team. For empty/sentinel teams fall
+    /// through to `default` since we have nothing better.
+    pub(crate) fn build_headshot_url(season: u32, team: &str, nhl_id: u32) -> String {
+        let team = team.trim();
+        // Validate against the NHL team-abbrev shape: 2-3 uppercase
+        // ASCII letters only. Anything else (sentinels like "RET" or
+        // "—", multi-team rows like "SEA/NYR", or lowercase/numeric
+        // garbage from a malformed bundle) hits the silhouette
+        // fallback rather than building a 404-prone URL.
+        let valid_shape =
+            (2..=3).contains(&team.len()) && team.chars().all(|c| c.is_ascii_uppercase());
+        let valid_team = valid_shape && team != "RET";
+        if !valid_team {
+            return format!("https://assets.nhle.com/mugs/nhl/default/{nhl_id}.png");
+        }
+        format!("https://assets.nhle.com/mugs/nhl/{season}/{team}/{nhl_id}.png")
+    }
+
+    /// Same as `build_headshot_url` but takes a multi-team display
+    /// string ("EDM" or "EDM/CGY") and uses the primary (first) team.
+    pub(crate) fn build_headshot_url_for_display(
+        season: u32,
+        team_display: &str,
+        nhl_id: u32,
+    ) -> String {
+        let primary = team_display.split('/').next().unwrap_or("").trim();
+        build_headshot_url(season, primary, nhl_id)
+    }
+
+    #[cfg(test)]
+    mod headshot_url_tests {
+        use super::*;
+
+        /// l0_headshot_seasonal_team_path
+        /// — single-team rows must hit the seasonal CDN path that
+        ///   serves real mug shots, not the silhouette fallback.
+        #[test]
+        fn l0_headshot_seasonal_team_path() {
+            let url = build_headshot_url(20252026, "EDM", 8478402);
+            assert_eq!(
+                url,
+                "https://assets.nhle.com/mugs/nhl/20252026/EDM/8478402.png"
+            );
+        }
+
+        /// l0_headshot_falls_back_to_default_for_sentinel_team
+        /// — RET / "—" / empty string land on the default silhouette.
+        ///   Anything else where we'd otherwise build a broken URL
+        ///   (numeric chars, lowercase, slashes) also falls back.
+        #[test]
+        fn l0_headshot_falls_back_to_default_for_sentinel_team() {
+            for sentinel in ["", "—", "RET", "EDM/CGY", "edm", "abc123"] {
+                let url = build_headshot_url(20252026, sentinel, 1);
+                assert_eq!(
+                    url, "https://assets.nhle.com/mugs/nhl/default/1.png",
+                    "sentinel team {sentinel:?} should fall back to default"
+                );
+            }
+        }
+
+        /// l0_headshot_for_display_picks_primary_team_in_trade
+        /// — a "SEA/NYR" mid-season trade row should key the URL by
+        ///   the primary (first) team listed.
+        #[test]
+        fn l0_headshot_for_display_picks_primary_team_in_trade() {
+            let url = build_headshot_url_for_display(20252026, "SEA/NYR", 8481789);
+            assert_eq!(
+                url,
+                "https://assets.nhle.com/mugs/nhl/20252026/SEA/8481789.png"
+            );
+        }
+
+        /// l0_headshot_for_display_passthrough_for_single_team
+        /// — single-team display strings build the same URL as the
+        ///   bare-abbrev variant.
+        #[test]
+        fn l0_headshot_for_display_passthrough_for_single_team() {
+            assert_eq!(
+                build_headshot_url_for_display(20252026, "EDM", 8478402),
+                build_headshot_url(20252026, "EDM", 8478402),
+            );
+        }
+    }
+
     /// Project a `PlayerView` into the `LeaderRow` shape that the
     /// /leaders, /team, and home-preview templates all consume. Centralized
     /// so the new realtime + special-teams columns (UX.C) get the same
@@ -137,11 +225,19 @@ mod handlers {
                 None => "—".to_owned(),
             }
         };
+        let team_display = v.team_display().to_owned();
+        let primary_team = team_display
+            .split('/')
+            .next()
+            .unwrap_or("")
+            .trim()
+            .to_owned();
+        let headshot_url = build_headshot_url(v.season().0, &primary_team, v.id().0);
         crate::templates::LeaderRow {
             nhl_id: v.id().0,
             name: v.full_name().to_owned(),
             position: v.position().abbreviation().to_owned(),
-            team: v.team_display().to_owned(),
+            team: team_display,
             gp,
             goals: v.goals(),
             assists: v.assists(),
@@ -160,6 +256,7 @@ mod handlers {
             hits,
             blocks,
             faceoff_pct,
+            headshot_url,
         }
     }
 
@@ -1056,16 +1153,23 @@ mod handlers {
                             Some(a) => format!("{:.2}", a),
                             None => "—".to_owned(),
                         };
+                        let team_display = v.team_display().to_owned();
+                        let headshot_url = super::build_headshot_url_for_display(
+                            v.season().0,
+                            &team_display,
+                            v.id().0,
+                        );
                         Some(GoalieRow {
                             nhl_id: v.id().0,
                             name: v.full_name().to_owned(),
-                            team: v.team_display().to_owned(),
+                            team: team_display,
                             gp: v.gp(),
                             wins: g.wins,
                             losses: g.losses,
                             shutouts: g.shutouts,
                             save_pct_str,
                             gaa_str,
+                            headshot_url,
                         })
                     })
                     .collect();
@@ -1389,16 +1493,23 @@ mod handlers {
                             Some(a) => format!("{:.2}", a),
                             None => "—".to_owned(),
                         };
+                        let team_display = v.team_display().to_owned();
+                        let headshot_url = super::build_headshot_url_for_display(
+                            v.season().0,
+                            &team_display,
+                            v.id().0,
+                        );
                         Some(GoalieRow {
                             nhl_id: v.id().0,
                             name: v.full_name().to_owned(),
-                            team: v.team_display().to_owned(),
+                            team: team_display,
                             gp: v.gp(),
                             wins: g.wins,
                             losses: g.losses,
                             shutouts: g.shutouts,
                             save_pct_str,
                             gaa_str,
+                            headshot_url,
                         })
                     })
                     .collect();
@@ -1835,8 +1946,17 @@ mod handlers {
                     full_name: identity.full_name.clone(),
                     position,
                     team,
-                    team_link,
-                    headshot_url: identity.headshot_canonical_url.clone(),
+                    team_link: team_link.clone(),
+                    // Prefer the seasonal team-keyed CDN path (real
+                    // mug shot for current rosters); fall back to the
+                    // legacy `default/{id}.png` (silhouette for many
+                    // players) only when we don't have a team to key
+                    // by.
+                    headshot_url: if !team_link.is_empty() {
+                        Some(super::build_headshot_url(season.0, &team_link, id))
+                    } else {
+                        identity.headshot_canonical_url.clone()
+                    },
                     gp,
                     goals,
                     assists,
@@ -2251,8 +2371,12 @@ mod handlers {
                 full_name: identity.full_name.clone(),
                 position,
                 team,
-                team_link,
-                headshot_url: identity.headshot_canonical_url.clone(),
+                team_link: team_link.clone(),
+                headshot_url: if !team_link.is_empty() {
+                    Some(super::build_headshot_url(season.0, &team_link, id))
+                } else {
+                    identity.headshot_canonical_url.clone()
+                },
                 gp,
                 goals,
                 assists,
@@ -2424,16 +2548,23 @@ mod handlers {
                                 Some(a) => format!("{:.2}", a),
                                 None => "—".to_owned(),
                             };
+                            let team_display = v.team_display().to_owned();
+                            let headshot_url = super::build_headshot_url_for_display(
+                                v.season().0,
+                                &team_display,
+                                v.id().0,
+                            );
                             Some(GoalieRow {
                                 nhl_id: v.id().0,
                                 name: v.full_name().to_owned(),
-                                team: v.team_display().to_owned(),
+                                team: team_display,
                                 gp: v.gp(),
                                 wins: g.wins,
                                 losses: g.losses,
                                 shutouts: g.shutouts,
                                 save_pct_str,
                                 gaa_str,
+                                headshot_url,
                             })
                         })
                         .collect();

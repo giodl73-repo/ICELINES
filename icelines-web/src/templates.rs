@@ -145,6 +145,12 @@ pub struct LeaderRow {
     pub points: u32,
     /// Points per game, formatted to 2 decimals. Empty string if gp=0.
     pub ppg_str: String,
+    /// Pre-built NHL CDN headshot URL for this row. UX.G2 — switched
+    /// from the `mugs/nhl/default/{id}.png` pattern (which serves
+    /// silhouettes for many players) to the seasonal team-keyed
+    /// `mugs/nhl/{season}/{team}/{id}.png` which carries real
+    /// photos for current rosters.
+    pub headshot_url: String,
     /// Pre-formatted "+12" / "-3" — leading sign always present.
     pub plus_minus_str: String,
     pub pim: u32,
@@ -421,6 +427,7 @@ pub struct GoalieRow {
     pub shutouts: u32,
     pub save_pct_str: String,
     pub gaa_str: String,
+    pub headshot_url: String,
 }
 
 /// `player.html` — King.3.1 + King.3.2. Player card with career table.
@@ -556,6 +563,8 @@ mod tests {
                 hits: Some(30),
                 blocks: Some(10),
                 faceoff_pct: Some(0.530),
+                headshot_url: "https://assets.nhle.com/mugs/nhl/20252026/EDM/8478402.png"
+                    .to_owned(),
             }],
             top_goalies: vec![GoalieRow {
                 nhl_id: 8476945,
@@ -567,6 +576,8 @@ mod tests {
                 shutouts: 4,
                 save_pct_str: "0.925".to_owned(),
                 gaa_str: "2.20".to_owned(),
+                headshot_url: "https://assets.nhle.com/mugs/nhl/20252026/WPG/8476945.png"
+                    .to_owned(),
             }],
         };
         let html = tmpl.render().expect("home template renders with preview");

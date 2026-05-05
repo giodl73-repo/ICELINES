@@ -26,7 +26,7 @@
                     <td>{{ loop.index }}</td>
                     <td>
                         <div class="player-cell">
-                            <img class="avatar" src="https://assets.nhle.com/mugs/nhl/default/{{ r.nhl_id }}.png" alt="" loading="lazy">
+                            <img class="avatar" src="{{ r.headshot_url }}" alt="" loading="lazy">
                             <a class="player-name" href="/player/{{ r.nhl_id }}">{{ r.name }}</a>
                         </div>
                     </td>
@@ -63,7 +63,7 @@
                     <td>{{ loop.index }}</td>
                     <td>
                         <div class="player-cell">
-                            <img class="avatar" src="https://assets.nhle.com/mugs/nhl/default/{{ r.nhl_id }}.png" alt="" loading="lazy">
+                            <img class="avatar" src="{{ r.headshot_url }}" alt="" loading="lazy">
                             <a class="player-name" href="/player/{{ r.nhl_id }}">{{ r.name }}</a>
                         </div>
                     </td>

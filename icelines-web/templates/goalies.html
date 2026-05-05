@@ -34,7 +34,7 @@
             <td style="text-align: right; color: #616161;">{{ loop.index }}</td>
             <td>
                 <div class="player-cell">
-                    <img class="avatar" src="https://assets.nhle.com/mugs/nhl/default/{{ row.nhl_id }}.png" alt="" loading="lazy">
+                    <img class="avatar" src="{{ row.headshot_url }}" alt="" loading="lazy">
                     <a class="player-name" href="/player/{{ row.nhl_id }}">{{ row.name }}</a>
                 </div>
             </td>

@@ -295,13 +295,13 @@ tbody tr:last-child td {
     min-height: 2.4rem;
 }
 .player-cell .avatar {
-    width: 36px;
-    height: 36px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
     background: var(--ice-divider);
     object-fit: cover;
     flex-shrink: 0;
-    border: 2px solid var(--ice-surface);
+    border: 1px solid var(--ice-surface);
     box-shadow: 0 0 0 1px var(--ice-divider);
 }
 .player-cell a.player-name {
