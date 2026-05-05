@@ -1754,6 +1754,134 @@ mod tests {
         assert_eq!(manifest.snapshots[0].name, "new");
     }
 
+    // ── find_any_snapshot_with_tier_for_season (2026-05-04) ─────────────
+    //
+    // The active-snapshot-chain reader (`find_snapshot_for_tier`) only
+    // walks parent_keys from the active pointer. That misses realtime
+    // data when a user fetches realtime in a separate, non-chained
+    // snapshot — common in practice because the CLI's `fetch
+    // transactions` command leaves the active pointing at a transactions
+    // snapshot that has no parent linking back to stats/realtime.
+    //
+    // The new full-list scanner finds any sealed snapshot for the
+    // requested season that has the tier directory on disk, regardless
+    // of the active chain.
+
+    /// l0_find_any_snapshot_finds_orphaned_tier_data
+    /// — fixture: two snapshots, neither in the active chain. The
+    ///   stats one carries a `realtime/` subdir. Active is the
+    ///   transactions one (no realtime). Old finder returns
+    ///   NotFound; new finder returns the stats snapshot.
+    #[test]
+    fn l0_find_any_snapshot_finds_orphaned_tier_data() {
+        let (_dir, store) = store();
+        // 1) Stats snapshot for 25-26 with realtime data inside.
+        store
+            .create(
+                "snap-stats",
+                "20252026",
+                SnapshotTier::Stats,
+                None,
+                "2026-05-03",
+            )
+            .unwrap();
+        store
+            .write_file(
+                "snap-stats",
+                &SnapshotTier::Realtime,
+                "realtime.json",
+                b"[]",
+            )
+            .unwrap();
+        store.seal("snap-stats").unwrap();
+
+        // 2) Transactions snapshot — separate, no parent link to stats.
+        //    Active will point at THIS one.
+        store
+            .create(
+                "snap-tx",
+                "20252026",
+                SnapshotTier::Stats,
+                None,
+                "2026-05-03",
+            )
+            .unwrap();
+        store
+            .write_file("snap-tx", &SnapshotTier::Stats, "transactions.json", b"[]")
+            .unwrap();
+        store.seal("snap-tx").unwrap(); // makes snap-tx active
+
+        // The chain-walking reader can't reach the realtime data:
+        let chain_err = store.find_snapshot_for_tier(&SnapshotTier::Realtime);
+        assert!(chain_err.is_err(), "chain walker MUST NOT find orphan");
+
+        // The full-list scanner does:
+        let found = store
+            .find_any_snapshot_with_tier_for_season(&SnapshotTier::Realtime, "20252026")
+            .expect("full-list scanner must find the orphaned realtime snapshot");
+        assert_eq!(found, "snap-stats");
+    }
+
+    /// l0_find_any_snapshot_filters_by_season
+    /// — same tier on disk for two different seasons; the scanner must
+    ///   return only the one matching `requested_season`.
+    #[test]
+    fn l0_find_any_snapshot_filters_by_season() {
+        let (_dir, store) = store();
+        for season in &["20242025", "20252026"] {
+            let name = format!("snap-{season}");
+            store
+                .create(&name, season, SnapshotTier::Stats, None, "2026-05-03")
+                .unwrap();
+            store
+                .write_file(&name, &SnapshotTier::Realtime, "realtime.json", b"[]")
+                .unwrap();
+            store.seal(&name).unwrap();
+        }
+        let found = store
+            .find_any_snapshot_with_tier_for_season(&SnapshotTier::Realtime, "20242025")
+            .unwrap();
+        assert_eq!(found, "snap-20242025");
+        let found = store
+            .find_any_snapshot_with_tier_for_season(&SnapshotTier::Realtime, "20252026")
+            .unwrap();
+        assert_eq!(found, "snap-20252026");
+    }
+
+    /// l0_find_any_snapshot_skips_unsealed_candidates
+    /// — half-fetched / aborted snapshots are unsealed. They MUST NOT
+    ///   be returned because their integrity hashes aren't stamped yet
+    ///   and reading would fail integrity verification anyway.
+    #[test]
+    fn l0_find_any_snapshot_skips_unsealed_candidates() {
+        let (_dir, store) = store();
+        store
+            .create(
+                "half-fetched",
+                "20252026",
+                SnapshotTier::Stats,
+                None,
+                "2026-05-03",
+            )
+            .unwrap();
+        store
+            .write_file(
+                "half-fetched",
+                &SnapshotTier::Realtime,
+                "realtime.json",
+                b"[]",
+            )
+            .unwrap();
+        // No seal — snapshot stays in-progress.
+        let err = store
+            .find_any_snapshot_with_tier_for_season(&SnapshotTier::Realtime, "20252026")
+            .unwrap_err();
+        match err {
+            SnapshotError::NotFound { .. } => {}
+            other => panic!("expected NotFound, got {other:?}"),
+        }
+    }
+
     // ── Chunked storage (Phase 8h) ───────────────────────────────────────────
 
     fn fixture_bio(id: u32, name: &str) -> crate::schema::SkaterBio {

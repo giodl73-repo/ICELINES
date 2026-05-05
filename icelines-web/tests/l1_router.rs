@@ -158,3 +158,211 @@ async fn l1_unknown_route_returns_404() {
 
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
 }
+
+// ── Season-type toggle (UX.E, 2026-05-04) ───────────────────────────
+//
+// `/season-type/:kind` flips `WebState.config.active_season_type` and
+// redirects back to where the user came from. The route is the
+// only writer of season-type today (the Reports overlay's PATCH
+// /api/v1/active-season is the long-term destination per the spec).
+//
+// Locked behavior:
+// - `playoff` and `playoffs` both normalize to "playoff".
+// - `regular` and anything-else (including injection attempts)
+//   normalize to "regular" — the whitelist is the security boundary
+//   so a malformed URL can't poison config.
+// - Response is 303 See Other with a Location header (per HTTP, GET
+//   handlers redirect with 303, not 302, when the result is a new
+//   resource view).
+// - Location preserves the user's previous page when Referer is set
+//   to a same-origin URL; falls back to "/" otherwise.
+
+/// Helper — dispatch one request and return (status, location header).
+async fn flip_season_type(
+    state: WebState,
+    kind: &str,
+    referer: Option<&str>,
+) -> (StatusCode, Option<String>) {
+    let app = router(state);
+    let mut req = Request::builder().uri(format!("/season-type/{kind}"));
+    if let Some(r) = referer {
+        req = req.header(axum::http::header::REFERER, r);
+    }
+    let response = app
+        .oneshot(req.body(Body::empty()).expect("build request"))
+        .await
+        .expect("oneshot");
+    let location = response
+        .headers()
+        .get(axum::http::header::LOCATION)
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_owned());
+    (response.status(), location)
+}
+
+/// l1_season_type_playoff_flips_state_and_redirects_303
+/// — happy path: `/season-type/playoff` flips state.config.active_season_type
+///   from default ("regular") to "playoff" AND returns 303.
+#[tokio::test]
+async fn l1_season_type_playoff_flips_state_and_redirects_303() {
+    let state = WebState::new();
+    let captured = state.config.clone();
+
+    let (status, location) = flip_season_type(state, "playoff", None).await;
+
+    assert_eq!(status, StatusCode::SEE_OTHER);
+    assert_eq!(location.as_deref(), Some("/"));
+    let cfg = captured.read().await;
+    assert_eq!(cfg.active_season_type, "playoff");
+    assert!(
+        cfg.active_label.contains("Playoff"),
+        "active_label should reflect the new type, got: {}",
+        cfg.active_label
+    );
+}
+
+/// l1_season_type_regular_flips_back
+/// — round-trip: after a flip to playoff, flipping to "regular" must
+///   return state.config to "regular". Active label re-formats too.
+#[tokio::test]
+async fn l1_season_type_regular_flips_back() {
+    let state = WebState::new();
+    {
+        let mut cfg = state.config.write().await;
+        *cfg = icelines_web::WebConfig::new("20252026", "playoff");
+    }
+    let captured = state.config.clone();
+
+    let (status, _) = flip_season_type(state, "regular", None).await;
+
+    assert_eq!(status, StatusCode::SEE_OTHER);
+    let cfg = captured.read().await;
+    assert_eq!(cfg.active_season_type, "regular");
+    assert!(cfg.active_label.contains("Regular"));
+}
+
+/// l1_season_type_plural_playoffs_normalizes_to_singular
+/// — both "playoff" and "playoffs" must work. The path token may
+///   read more naturally as "playoffs" but the canonical config
+///   value is the singular form (lockstep with the CLI's
+///   `--season-type` flag).
+#[tokio::test]
+async fn l1_season_type_plural_playoffs_normalizes_to_singular() {
+    let state = WebState::new();
+    let captured = state.config.clone();
+
+    let (status, _) = flip_season_type(state, "playoffs", None).await;
+
+    assert_eq!(status, StatusCode::SEE_OTHER);
+    let cfg = captured.read().await;
+    assert_eq!(cfg.active_season_type, "playoff");
+}
+
+/// l1_season_type_unknown_kind_falls_back_to_regular
+/// — security boundary: a bogus path component MUST NOT poison the
+///   config (e.g. /season-type/<script>alert(1)</script>). Whitelist
+///   on the way in: anything not "playoff*" → "regular". This test
+///   also covers the case where a user follows a stale link with
+///   "Regular" capitalized — case-insensitive.
+#[tokio::test]
+async fn l1_season_type_unknown_kind_falls_back_to_regular() {
+    let state = WebState::new();
+    {
+        let mut cfg = state.config.write().await;
+        *cfg = icelines_web::WebConfig::new("20252026", "playoff");
+    }
+    let captured = state.config.clone();
+
+    let (status, _) = flip_season_type(state, "garbage-input", None).await;
+
+    assert_eq!(status, StatusCode::SEE_OTHER);
+    let cfg = captured.read().await;
+    assert_eq!(cfg.active_season_type, "regular");
+}
+
+/// l1_season_type_redirect_honors_relative_referer
+/// — when the user clicks the toggle while on /leaders, they should
+///   land back on /leaders (not /). Relative referers pass through.
+#[tokio::test]
+async fn l1_season_type_redirect_honors_relative_referer() {
+    let state = WebState::new();
+
+    let (status, location) = flip_season_type(state, "playoff", Some("/leaders?sort=hits")).await;
+
+    assert_eq!(status, StatusCode::SEE_OTHER);
+    assert_eq!(location.as_deref(), Some("/leaders?sort=hits"));
+}
+
+/// l1_season_type_redirect_strips_localhost_origin
+/// — same-origin absolute URLs (http://127.0.0.1:8000/leaders) are
+///   common when browsers send the full Referer. The handler strips
+///   the origin to keep the redirect relative — open-redirect
+///   protection by construction.
+#[tokio::test]
+async fn l1_season_type_redirect_strips_localhost_origin() {
+    let state = WebState::new();
+
+    let (status, location) = flip_season_type(
+        state,
+        "playoff",
+        Some("http://127.0.0.1:8000/player/8478402"),
+    )
+    .await;
+
+    assert_eq!(status, StatusCode::SEE_OTHER);
+    assert_eq!(location.as_deref(), Some("/player/8478402"));
+}
+
+/// l1_season_type_redirect_drops_off_site_referer
+/// — open-redirect defense: a referer pointing somewhere external
+///   (https://evil.example/x) MUST NOT become the Location target.
+///   Falls through to "/" instead.
+#[tokio::test]
+async fn l1_season_type_redirect_drops_off_site_referer() {
+    let state = WebState::new();
+
+    let (status, location) =
+        flip_season_type(state, "playoff", Some("https://evil.example/leaders")).await;
+
+    assert_eq!(status, StatusCode::SEE_OTHER);
+    assert_eq!(location.as_deref(), Some("/"));
+}
+
+/// l1_season_type_toggle_visible_in_global_nav
+/// — render-time fence: the global-nav strip on every page MUST
+///   show both options (Regular | Playoffs) with the active one
+///   bolded. If the base.html toggle is ever removed by accident
+///   this catches it.
+#[tokio::test]
+async fn l1_season_type_toggle_visible_in_global_nav() {
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/")
+                .body(Body::empty())
+                .expect("build request"),
+        )
+        .await
+        .expect("oneshot");
+
+    let body_bytes = axum::body::to_bytes(response.into_body(), 64 * 1024)
+        .await
+        .expect("body");
+    let body = std::str::from_utf8(&body_bytes).expect("utf-8");
+
+    // Active option is bolded; inactive option is a link to the flip.
+    assert!(
+        body.contains("<strong>Regular</strong>"),
+        "Default state has Regular active (bolded)"
+    );
+    assert!(
+        body.contains("/season-type/playoff"),
+        "Inactive option is a link to flip"
+    );
+    // Class hook for CSS — the toggle has its own class so a future
+    // CSS refactor that drops the styling is detectable by other
+    // means than a visual scan.
+    assert!(body.contains("season-type-toggle"));
+}

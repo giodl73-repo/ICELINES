@@ -1284,6 +1284,208 @@ mod tests {
         assert_ne!(realtime, mp.clone());
     }
 
+    // ── Career-team fix (2026-05-04) ────────────────────────────────
+    //
+    // Locked behavior: `build_skater_stats` MUST prefer
+    // `stats.team_abbrevs` over `bio.current_team_abbrev` when present,
+    // because the bundled bios always carry the player's CURRENT team
+    // (the NHL API has no per-season team field on the bios endpoint).
+    // Without this, the career table renders the player's current team
+    // for every season they ever played.
+    //
+    // The four cases that matter:
+    // 1. Single historical team:  stats.team_abbrevs = "SEA" → "SEA"
+    // 2. Mid-season trade:        stats.team_abbrevs = "SEA,NYR" → "SEA/NYR"
+    // 3. Stats says None:         falls back to bio.current_team_abbrev
+    // 4. Stats says Some(""):     also falls back (defensive)
+
+    fn fixture_skater_bio(id: u32, current_team: &str) -> SkaterBio {
+        SkaterBio {
+            player_id: id,
+            skater_full_name: "Test Player".to_owned(),
+            current_team_abbrev: Some(current_team.to_owned()),
+            position_code: "C".to_owned(),
+            games_played: 50,
+            goals: 20,
+            assists: 30,
+            points: 50,
+            shoots_catches: Some("L".to_owned()),
+            birth_date: Some("2001-04-30".to_owned()),
+            birth_country: Some("CAN".to_owned()),
+            nationality_code: Some("CAN".to_owned()),
+            birth_city: Some("Kingston".to_owned()),
+            birth_state_province_code: Some("ON".to_owned()),
+            height: Some(71),
+            weight: Some(202),
+            draft_year: None,
+            draft_round: None,
+            draft_overall: None,
+            first_season_for_game_type: Some(20232024),
+            is_in_hall_of_fame_yn: Some("N".to_owned()),
+            last_name: "Player".to_owned(),
+            season_id: None,
+        }
+    }
+
+    fn fixture_skater_stats_for_team(id: u32, team_abbrevs: Option<&str>) -> SkaterStats {
+        SkaterStats {
+            player_id: id,
+            games_played: 50,
+            goals: 20,
+            assists: 30,
+            points: 50,
+            points_per_game: 1.0,
+            pp_goals: 0,
+            pp_points: 0,
+            sh_goals: 0,
+            sh_points: 0,
+            game_winning_goals: 0,
+            ot_goals: 0,
+            shots: 100,
+            shooting_pctg: None,
+            plus_minus: 0,
+            time_on_ice_per_game: None,
+            faceoff_win_pct: None,
+            season_id: None,
+            team_abbrevs: team_abbrevs.map(|s| s.to_owned()),
+        }
+    }
+
+    /// l0_career_team_prefers_stats_team_abbrevs_over_bio
+    /// — the bug that motivated the fix: bio.current_team_abbrev is
+    ///   the player's *current* team for every season; only
+    ///   stats.team_abbrevs carries the per-season historical team.
+    #[test]
+    fn l0_career_team_prefers_stats_team_abbrevs_over_bio() {
+        let bio = fixture_skater_bio(8481789, "NYR"); // current team
+        let stats = fixture_skater_stats_for_team(8481789, Some("SEA")); // 24-25 team
+        let result = build_skater_stats(
+            PlayerId(8481789),
+            Season(20242025),
+            SeasonType::Regular,
+            Position::Center,
+            &bio,
+            Some(&stats),
+            None,
+            None,
+        );
+        let team = result
+            .team_stints
+            .last()
+            .map(|s| s.team.0.as_str())
+            .unwrap_or("?");
+        assert_eq!(
+            team, "SEA",
+            "stats.team_abbrevs MUST win over bio.current_team_abbrev"
+        );
+    }
+
+    /// l0_career_team_renders_multi_team_trade_with_slash
+    /// — mid-season trades come back as "SEA,NYR"; we render with a
+    ///   slash so it doesn't get misread as a comma list and so the
+    ///   player-card template can detect it (single-team links to
+    ///   /team/:abbrev, multi-team renders plain text).
+    #[test]
+    fn l0_career_team_renders_multi_team_trade_with_slash() {
+        let bio = fixture_skater_bio(1, "SEA");
+        let stats = fixture_skater_stats_for_team(1, Some("SEA,NYR"));
+        let result = build_skater_stats(
+            PlayerId(1),
+            Season(20252026),
+            SeasonType::Regular,
+            Position::Center,
+            &bio,
+            Some(&stats),
+            None,
+            None,
+        );
+        let team = result
+            .team_stints
+            .last()
+            .map(|s| s.team.0.as_str())
+            .unwrap_or("?");
+        assert_eq!(team, "SEA/NYR");
+    }
+
+    /// l0_career_team_falls_back_to_bio_when_stats_team_is_none
+    /// — older bundled stats files (pre-2026-05) don't carry the
+    ///   field at all. We MUST fall through to bio.current_team_abbrev
+    ///   so historical seasons keep rendering, even if the team is
+    ///   slightly wrong. Without this we'd show "RET" for every old
+    ///   row.
+    #[test]
+    fn l0_career_team_falls_back_to_bio_when_stats_team_is_none() {
+        let bio = fixture_skater_bio(99, "TBL");
+        let stats = fixture_skater_stats_for_team(99, None);
+        let result = build_skater_stats(
+            PlayerId(99),
+            Season(20132014),
+            SeasonType::Regular,
+            Position::RightWing,
+            &bio,
+            Some(&stats),
+            None,
+            None,
+        );
+        let team = result
+            .team_stints
+            .last()
+            .map(|s| s.team.0.as_str())
+            .unwrap_or("?");
+        assert_eq!(team, "TBL");
+    }
+
+    /// l0_career_team_falls_back_to_bio_when_stats_team_is_empty_string
+    /// — defensive: a malformed bundle could ship Some("") instead of
+    ///   None. Treat empty same as None.
+    #[test]
+    fn l0_career_team_falls_back_to_bio_when_stats_team_is_empty_string() {
+        let bio = fixture_skater_bio(100, "BOS");
+        let stats = fixture_skater_stats_for_team(100, Some(""));
+        let result = build_skater_stats(
+            PlayerId(100),
+            Season(20232024),
+            SeasonType::Regular,
+            Position::LeftWing,
+            &bio,
+            Some(&stats),
+            None,
+            None,
+        );
+        let team = result
+            .team_stints
+            .last()
+            .map(|s| s.team.0.as_str())
+            .unwrap_or("?");
+        assert_eq!(team, "BOS");
+    }
+
+    /// l0_career_team_falls_back_to_RET_when_bio_has_no_current_team
+    /// — retired/unsigned players: bio.current_team_abbrev is None.
+    ///   Output stable string "RET" matches legacy behavior.
+    #[test]
+    fn l0_career_team_falls_back_to_ret_when_bio_has_no_current_team() {
+        let mut bio = fixture_skater_bio(101, "");
+        bio.current_team_abbrev = None;
+        let stats = fixture_skater_stats_for_team(101, None);
+        let result = build_skater_stats(
+            PlayerId(101),
+            Season(20012002),
+            SeasonType::Regular,
+            Position::Center,
+            &bio,
+            Some(&stats),
+            None,
+            None,
+        );
+        let team = result
+            .team_stints
+            .last()
+            .map(|s| s.team.0.as_str())
+            .unwrap_or("?");
+        assert_eq!(team, "RET");
+    }
+
     /// Hart.6.3 — re-points the original Hart.3 fence at 2025-26 (Cup
     /// not yet contested → ships as `[]` → loader still returns
     /// MissingBundle{Playoff}). Other 4 bundled seasons now load real

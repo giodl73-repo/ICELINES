@@ -284,6 +284,7 @@ fn l1_load_into_repo_playoff_succeeds_when_tier_file_present() {
         time_on_ice_per_game: Some(1320.0),
         faceoff_win_pct: Some(0.52),
         season_id: Some(20242025),
+        team_abbrevs: None,
     };
     store
         .write_file(
@@ -375,6 +376,7 @@ fn l1_playoff_load_rejects_rows_with_wrong_seasonid() {
         time_on_ice_per_game: None,
         faceoff_win_pct: None,
         season_id: Some(20232024), // ← cross-season row
+        team_abbrevs: None,
     };
     store
         .write_file(
