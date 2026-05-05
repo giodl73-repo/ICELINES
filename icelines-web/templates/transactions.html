@@ -68,7 +68,7 @@
                     {% if r.team == "" %}
                         <span style="color:#9e9e9e;">LEAGUE</span>
                     {% else %}
-                        <a href="/team/{{ r.team }}">{{ r.team }}</a>
+                        <a class="team-link team-{{ r.team }}" href="/team/{{ r.team }}">{{ r.team }}</a>
                     {% endif %}
                 </td>
                 <td><span class="kind-chip kind-{{ r.kind_label }}">{{ r.kind_pretty }}</span></td>

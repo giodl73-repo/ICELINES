@@ -42,9 +42,9 @@
             <div style="border:1px solid #e0e0e0; border-radius:4px; padding:0.5rem 0.75rem; {% if s.is_complete %}background:#f5f5f5;{% endif %}">
                 <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:0.25rem;">
                     <strong>
-                        <a href="/team/{{ s.top_abbrev }}">{{ s.top_abbrev }}</a>
+                        <a class="team-link team-{{ s.top_abbrev }}" href="/team/{{ s.top_abbrev }}">{{ s.top_abbrev }}</a>
                         vs
-                        <a href="/team/{{ s.bottom_abbrev }}">{{ s.bottom_abbrev }}</a>
+                        <a class="team-link team-{{ s.bottom_abbrev }}" href="/team/{{ s.bottom_abbrev }}">{{ s.bottom_abbrev }}</a>
                     </strong>
                     <span style="font-variant-numeric:tabular-nums; font-size:1.1rem;">
                         {{ s.top_wins }}–{{ s.bottom_wins }}

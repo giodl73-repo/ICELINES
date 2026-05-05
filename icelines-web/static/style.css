@@ -1,18 +1,46 @@
 /*
- * IceLines — base stylesheet (King.1.3).
+ * IceLines — base stylesheet.
  *
- * Hand-rolled, ~5 KB. No build step. Vendored verbatim into the
- * binary via include_bytes!() and served from /static/style.css with
+ * Hand-rolled, no build step. Vendored verbatim into the binary via
+ * include_bytes!() and served from /static/style.css with
  * `Cache-Control: public, max-age=31536000, immutable` plus an ETag
  * derived from CARGO_PKG_VERSION.
  *
+ * Visual identity (UX.F):
+ *   - NHL shield navy (#041E42) and red (#C8102E) ground the chrome.
+ *   - 32 team color classes (.team-EDM, .team-MTL, ...) expose
+ *     --team-primary / --team-secondary custom properties so any
+ *     element scoped under a team class can theme itself.
+ *   - Tabular numerals everywhere stats render so columns align.
+ *
  * The CSS class contract (`.fit-elite` / `.fit-solid` / `.fit-fringe`
- * / `.fit-buried` and the `.score-*` set) is the spec's
- * "CSS class contract" subsection. Hex values match `glass.md` so the
- * web view aligns with the TUI's color encoding. `l1_html_no_color
- * _only_encoding` (King.2) checks that every color class is paired
- * with text/icon, not used as the sole signal.
+ * / `.fit-buried` and the `.score-*` set) matches `glass.md`. The
+ * `l1_html_no_color_only_encoding` fence (King.2) checks every color
+ * class is paired with text/icon, not used as the sole signal.
  */
+
+/* ── Palette tokens ─────────────────────────────────────────────── */
+:root {
+    --nhl-navy: #041E42;
+    --nhl-navy-2: #0b2c5e;
+    --nhl-red: #C8102E;
+    --nhl-red-2: #a30d24;
+    --nhl-silver: #A2AAAD;
+
+    --ice-bg: #f8fafd;
+    --ice-surface: #ffffff;
+    --ice-divider: #e5edf5;
+    --ice-muted: #647386;
+    --ice-fg: #0a1626;
+
+    --link: #1565c0;
+    --link-hover: #0d47a1;
+    --link-bg-soft: #e3f2fd;
+
+    --accent-good: #2e7d32;
+    --accent-warn: #f9a825;
+    --accent-bad: #b71c1c;
+}
 
 /* ── Reset + base typography ────────────────────────────────────── */
 *,
@@ -22,12 +50,12 @@
 }
 
 html {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
         Roboto, "Helvetica Neue", Arial, sans-serif;
     font-size: 16px;
     line-height: 1.5;
-    color: #1a1a1a;
-    background: #fafafa;
+    color: var(--ice-fg);
+    background: var(--ice-bg);
 }
 
 body {
@@ -42,29 +70,50 @@ main {
 }
 
 h1, h2, h3 {
-    line-height: 1.2;
+    line-height: 1.15;
     margin: 0 0 0.5em 0;
+    letter-spacing: -0.01em;
+}
+
+h1 {
+    font-weight: 800;
+}
+
+h2 {
+    font-weight: 700;
+    color: var(--nhl-navy);
 }
 
 a {
-    color: #1565c0;
+    color: var(--link);
     text-decoration: underline;
+    text-underline-offset: 2px;
+}
+a:hover {
+    color: var(--link-hover);
 }
 
 a:focus-visible,
 button:focus-visible,
 input:focus-visible {
-    outline: 2px solid #1565c0;
+    outline: 2px solid var(--link);
     outline-offset: 2px;
 }
 
-/* Skip-to-content link — visible only on keyboard focus.
-   broadcast a11y baseline. */
+code {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    background: var(--ice-divider);
+    padding: 0.05rem 0.3rem;
+    border-radius: 3px;
+    font-size: 0.92em;
+}
+
+/* Skip-to-content link. */
 .skip-link {
     position: absolute;
     left: 0.5rem;
     top: -3rem;
-    background: #1565c0;
+    background: var(--nhl-red);
     color: #fff;
     padding: 0.5rem 1rem;
     text-decoration: none;
@@ -80,61 +129,89 @@ input:focus-visible {
     position: sticky;
     top: 0;
     z-index: 10;
-    background: #1a1a1a;
+    background: linear-gradient(90deg, var(--nhl-navy) 0%, var(--nhl-navy-2) 100%);
     color: #fff;
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
+    padding: 0.55rem 1.1rem;
+    font-size: 0.9rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 2px solid #1565c0;
+    border-bottom: 3px solid var(--nhl-red);
+    box-shadow: 0 1px 4px rgba(4, 30, 66, 0.18);
+}
+.season-header strong {
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-size: 0.95rem;
 }
 .season-header a {
     color: inherit;
+    text-decoration: none;
+}
+.season-header a:hover {
+    color: #ffd1d8;
 }
 
-/* ── Global nav bar — surfaced on every page ───────────────────── */
+/* ── Global nav bar ──────────────────────────────────────────────── */
 .global-nav {
-    background: #f5f5f5;
-    border-bottom: 1px solid #e0e0e0;
-    padding: 0.4rem 1rem;
+    background: var(--ice-surface);
+    border-bottom: 1px solid var(--ice-divider);
+    padding: 0.45rem 1.1rem;
     display: flex;
     flex-wrap: wrap;
-    gap: 0.25rem 1rem;
-    font-size: 0.9rem;
+    gap: 0.25rem 0.5rem;
+    align-items: center;
+    font-size: 0.92rem;
     position: sticky;
-    top: 2.25rem;  /* below the .season-header */
+    top: 2.45rem;
     z-index: 9;
+    box-shadow: 0 1px 0 rgba(4, 30, 66, 0.04);
 }
 .global-nav a {
-    color: #1565c0;
+    color: var(--nhl-navy);
     text-decoration: none;
-    padding: 0.1rem 0.25rem;
-    border-radius: 2px;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
 }
 .global-nav a:hover {
-    background: #e3f2fd;
-    text-decoration: underline;
+    background: var(--link-bg-soft);
+    color: var(--nhl-navy);
 }
 
 /* Season-type toggle on the right of the global nav. */
 .season-type-toggle {
     margin-left: auto;
-    color: #616161;
+    color: var(--ice-muted);
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.season-type-toggle a {
+    color: var(--ice-muted);
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    text-decoration: none;
+}
+.season-type-toggle a:hover {
+    background: var(--ice-divider);
+    color: var(--nhl-navy);
 }
 .season-type-toggle strong {
-    color: #1565c0;
-    background: #e3f2fd;
-    padding: 0.1rem 0.35rem;
-    border-radius: 2px;
+    color: #fff;
+    background: var(--nhl-red);
+    padding: 0.15rem 0.55rem;
+    border-radius: 3px;
+    font-weight: 700;
 }
 
 /* ── Fit classes — spec CSS class contract ──────────────────────── */
-/* Hex values lock-stepped with glass.md TUI palette. */
-.fit-elite   { background-color: #2e7d32; color: #fff; }
-.fit-solid   { background-color: #1565c0; color: #fff; }
-.fit-fringe  { background-color: #f9a825; color: #000; }
-.fit-buried  { background-color: #b71c1c; color: #fff; }
+.fit-elite   { background-color: var(--accent-good); color: #fff; }
+.fit-solid   { background-color: var(--link); color: #fff; }
+.fit-fringe  { background-color: var(--accent-warn); color: #000; }
+.fit-buried  { background-color: var(--accent-bad); color: #fff; }
 
 .fit-elite, .fit-solid, .fit-fringe, .fit-buried {
     padding: 0.125rem 0.375rem;
@@ -144,78 +221,105 @@ input:focus-visible {
 }
 
 /* ── Score-state classes ────────────────────────────────────────── */
-.score-leading  { color: #2e7d32; font-weight: 700; }
-.score-trailing { color: #b71c1c; font-weight: 700; }
-.score-tied     { color: #616161; font-weight: 600; }
+.score-leading  { color: var(--accent-good); font-weight: 700; }
+.score-trailing { color: var(--accent-bad); font-weight: 700; }
+.score-tied     { color: var(--ice-muted); font-weight: 600; }
 
 /* ── Tables ─────────────────────────────────────────────────────── */
 table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.9rem;
+    font-size: 0.92rem;
+    background: var(--ice-surface);
+    border: 1px solid var(--ice-divider);
+    border-radius: 6px;
+    overflow: hidden;
 }
 th, td {
-    padding: 0.4rem 0.5rem;
+    padding: 0.5rem 0.65rem;
     text-align: left;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid var(--ice-divider);
+}
+/* All numeric cells get tabular-nums so columns line up. */
+td[style*="text-align: right"],
+th[style*="text-align: right"] {
+    font-variant-numeric: tabular-nums;
 }
 th {
-    background: #f0f0f0;
-    font-weight: 600;
+    background: linear-gradient(180deg, #f0f5fb 0%, #e7eef7 100%);
+    color: var(--nhl-navy);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.78rem;
     position: sticky;
-    top: 4rem;  /* Below sticky season-header + global-nav */
+    top: 4.1rem;
     z-index: 5;
+    border-bottom: 2px solid var(--nhl-navy);
+}
+th a {
+    color: inherit;
+    text-decoration: none;
+}
+th a:hover {
+    color: var(--nhl-red);
 }
 tbody tr:hover {
-    background: #f5f5f5;
+    background: #f5f9fd;
+}
+tbody tr:last-child td {
+    border-bottom: none;
 }
 
-/* Horizontal scroll wrapper for tables on narrow viewports. */
 .table-scroll {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    border-radius: 6px;
 }
 
-/* ── Forms (filter/sort) ────────────────────────────────────────── */
+/* ── Forms ──────────────────────────────────────────────────────── */
 input, select, button {
     font: inherit;
-    padding: 0.4rem 0.6rem;
-    border: 1px solid #c0c0c0;
-    border-radius: 3px;
+    padding: 0.4rem 0.7rem;
+    border: 1px solid #c4ccd6;
+    border-radius: 4px;
     background: #fff;
+}
+input:focus {
+    border-color: var(--nhl-navy);
 }
 button {
     cursor: pointer;
-    background: #1565c0;
+    background: var(--nhl-navy);
     color: #fff;
-    border-color: #1565c0;
+    border-color: var(--nhl-navy);
+    font-weight: 600;
+    letter-spacing: 0.02em;
 }
 button:hover {
-    background: #0d47a1;
+    background: var(--nhl-red);
+    border-color: var(--nhl-red);
 }
 
 /* ── Loading + spinner ──────────────────────────────────────────── */
 .spinner {
     display: none;
-    border: 3px solid #e0e0e0;
-    border-top-color: #1565c0;
+    border: 3px solid var(--ice-divider);
+    border-top-color: var(--nhl-red);
     border-radius: 50%;
     width: 1.5rem;
     height: 1.5rem;
     animation: icelines-spin 0.8s linear infinite;
 }
-.htmx-request .spinner {
-    display: inline-block;
-}
+.htmx-request .spinner { display: inline-block; }
 @keyframes icelines-spin {
     to { transform: rotate(360deg); }
 }
 
-/* prefers-reduced-motion: kill the spin animation. */
 @media (prefers-reduced-motion: reduce) {
     .spinner {
         animation: none;
-        border-top-color: #1565c0;
+        border-top-color: var(--nhl-red);
     }
     * {
         transition-duration: 0.01ms !important;
@@ -230,24 +334,111 @@ button:hover {
 }
 .error-hint {
     background: #fff3e0;
-    border-left: 4px solid #f9a825;
+    border-left: 4px solid var(--accent-warn);
     padding: 0.75rem 1rem;
     margin: 1rem 0;
 }
 .error-request-id {
-    color: #616161;
+    color: var(--ice-muted);
     font-size: 0.85rem;
     margin-top: 2rem;
 }
-.error-request-id code {
-    font-family: ui-monospace, "SF Mono", Consolas, monospace;
-    background: #f0f0f0;
-    padding: 0.1rem 0.3rem;
-    border-radius: 2px;
+
+/* ── Team links — UX.F ──────────────────────────────────────────── */
+/*
+ * Every <a class="team-link team-{ABBREV}"> across the site picks up
+ * its team's primary color via --team-primary. The leading bar (3px
+ * left border) is the team's secondary color so two-color identities
+ * (e.g. EDM navy + orange, MTL red + navy) read at a glance.
+ */
+a.team-link {
+    color: var(--team-primary, var(--link));
+    text-decoration: none;
+    font-weight: 700;
+    border-left: 3px solid var(--team-secondary, transparent);
+    padding: 0.05rem 0.3rem 0.05rem 0.4rem;
+    border-radius: 0 3px 3px 0;
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    transition: background 0.12s ease;
+    letter-spacing: 0.02em;
+}
+a.team-link:hover {
+    background: var(--team-primary-soft, var(--link-bg-soft));
+    color: var(--team-primary, var(--link-hover));
 }
 
+/* Team-themed hero banner used on /team/:abbrev and the player-card
+   identity strip (when the player has a single current team). */
+.team-banner {
+    background: linear-gradient(
+        135deg,
+        var(--team-primary, var(--nhl-navy)) 0%,
+        var(--team-secondary, var(--nhl-navy-2)) 100%
+    );
+    color: #fff;
+    padding: 1.1rem 1.3rem;
+    border-radius: 8px;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 2px 8px rgba(4, 30, 66, 0.15);
+}
+.team-banner h1 {
+    color: #fff;
+    margin: 0;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+.team-banner a {
+    color: #fff;
+}
+
+/* ── 32 NHL team color classes ──────────────────────────────────── */
+/*
+ * Hex values from each franchise's most recent published brand
+ * guidelines (verified 2026-05-04). Two colors per team: primary on
+ * the text, secondary as the accent bar. UTA covers the new Utah
+ * Hockey Club identity (formerly ARI; see icelines-core/teams.md).
+ */
+.team-ANA { --team-primary: #F47A38; --team-secondary: #B9975B; --team-primary-soft: #ffe9d6; }
+.team-BOS { --team-primary: #FFB81C; --team-secondary: #000000; --team-primary-soft: #fff3cb; }
+.team-BUF { --team-primary: #002654; --team-secondary: #FCB514; --team-primary-soft: #d8e0eb; }
+.team-CGY { --team-primary: #C8102E; --team-secondary: #F1BE48; --team-primary-soft: #ffd6dd; }
+.team-CAR { --team-primary: #CC0000; --team-secondary: #000000; --team-primary-soft: #ffd1d1; }
+.team-CHI { --team-primary: #CF0A2C; --team-secondary: #000000; --team-primary-soft: #ffd1da; }
+.team-COL { --team-primary: #6F263D; --team-secondary: #236192; --team-primary-soft: #f1d6df; }
+.team-CBJ { --team-primary: #002654; --team-secondary: #CE1126; --team-primary-soft: #d8e0eb; }
+.team-DAL { --team-primary: #006847; --team-secondary: #8F8F8C; --team-primary-soft: #cfe6dc; }
+.team-DET { --team-primary: #CE1126; --team-secondary: #FFFFFF; --team-primary-soft: #ffd6dc; }
+.team-EDM { --team-primary: #041E42; --team-secondary: #FF4C00; --team-primary-soft: #d6dde8; }
+.team-FLA { --team-primary: #041E42; --team-secondary: #C8102E; --team-primary-soft: #d6dde8; }
+.team-LAK { --team-primary: #111111; --team-secondary: #A2AAAD; --team-primary-soft: #d8d8d8; }
+.team-MIN { --team-primary: #154734; --team-secondary: #A6192E; --team-primary-soft: #d3e0d9; }
+.team-MTL { --team-primary: #AF1E2D; --team-secondary: #192168; --team-primary-soft: #ffd9dd; }
+.team-NSH { --team-primary: #FFB81C; --team-secondary: #041E42; --team-primary-soft: #fff3cb; }
+.team-NJD { --team-primary: #CE1126; --team-secondary: #000000; --team-primary-soft: #ffd6dc; }
+.team-NYI { --team-primary: #00539B; --team-secondary: #F47D30; --team-primary-soft: #d4e3f1; }
+.team-NYR { --team-primary: #0038A8; --team-secondary: #CE1126; --team-primary-soft: #d4dff2; }
+.team-OTT { --team-primary: #C52032; --team-secondary: #C2912C; --team-primary-soft: #ffd5da; }
+.team-PHI { --team-primary: #F74902; --team-secondary: #000000; --team-primary-soft: #ffdacb; }
+.team-PIT { --team-primary: #FCB514; --team-secondary: #000000; --team-primary-soft: #fff3cb; }
+.team-SJS { --team-primary: #006D75; --team-secondary: #EA7200; --team-primary-soft: #cfe6e8; }
+.team-SEA { --team-primary: #001628; --team-secondary: #99D9D9; --team-primary-soft: #d3d8de; }
+.team-STL { --team-primary: #002F87; --team-secondary: #FCB514; --team-primary-soft: #d4dceb; }
+.team-TBL { --team-primary: #002868; --team-secondary: #FFFFFF; --team-primary-soft: #d4dde9; }
+.team-TOR { --team-primary: #00205B; --team-secondary: #FFFFFF; --team-primary-soft: #d4dae6; }
+.team-UTA { --team-primary: #71AFE5; --team-secondary: #000000; --team-primary-soft: #e1eef9; }
+.team-VAN { --team-primary: #00205B; --team-secondary: #00843D; --team-primary-soft: #d4dae6; }
+.team-VGK { --team-primary: #B4975A; --team-secondary: #333F42; --team-primary-soft: #f1e8d6; }
+.team-WPG { --team-primary: #041E42; --team-secondary: #AC162C; --team-primary-soft: #d6dde8; }
+.team-WSH { --team-primary: #041E42; --team-secondary: #C8102E; --team-primary-soft: #d6dde8; }
+/* Legacy / pre-2024 fallback so old career rows render. ARI relocated
+   to UTA on 2024-04-18; render Coyotes-era rows in the original
+   brick + sand colors. */
+.team-ARI { --team-primary: #8C2633; --team-secondary: #E2D6B5; --team-primary-soft: #f0d9dc; }
+
 /* ── Mobile / narrow viewport ───────────────────────────────────── */
-/* Single breakpoint at 600px per spec — dual-pane → single-column. */
 @media (max-width: 600px) {
     main {
         padding: 1rem 0.5rem;
@@ -257,6 +448,17 @@ button:hover {
         font-size: 0.85rem;
     }
     .season-header {
-        font-size: 0.75rem;
+        font-size: 0.78rem;
+        padding: 0.45rem 0.7rem;
+    }
+    .global-nav {
+        padding: 0.4rem 0.5rem;
+        font-size: 0.85rem;
+    }
+    .global-nav a {
+        padding: 0.2rem 0.4rem;
+    }
+    th {
+        top: 4.6rem;
     }
 }

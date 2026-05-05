@@ -575,6 +575,18 @@ mod tests {
         assert!(html.contains("Connor Hellebuyck"));
         assert!(html.contains("/player/8476945"));
         assert!(html.contains("0.925"));
+        // UX.F — team-link class with team-{ABBREV} class for color
+        // theming. If a future template refactor drops the class,
+        // every team link site-wide loses its color and this test
+        // catches it before it ships.
+        assert!(
+            html.contains("team-link team-EDM"),
+            "skater team cell must carry team-link class for CSS theming"
+        );
+        assert!(
+            html.contains("team-link team-WPG"),
+            "goalie team cell must carry team-link class for CSS theming"
+        );
     }
 
     /// l0_home_template_includes_a11y_baseline

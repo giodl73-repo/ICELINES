@@ -52,7 +52,7 @@
                 <tr>
                     <td><code>{{ r.date }}</code></td>
                     <td>{{ r.home_or_away }}</td>
-                    <td><a href="/team/{{ r.opponent_abbrev }}">{{ r.opponent_abbrev }}</a>{% if r.is_playoff %} <span class="kind-chip kind-playoff" style="background:#ffe0b2;color:#bf360c;padding:0.05rem 0.3rem;border-radius:3px;font-size:0.75em;">playoff</span>{% endif %}</td>
+                    <td><a class="team-link team-{{ r.opponent_abbrev }}" href="/team/{{ r.opponent_abbrev }}">{{ r.opponent_abbrev }}</a>{% if r.is_playoff %} <span class="kind-chip kind-playoff" style="background:#ffe0b2;color:#bf360c;padding:0.05rem 0.3rem;border-radius:3px;font-size:0.75em;">playoff</span>{% endif %}</td>
                     <td style="font-variant-numeric:tabular-nums;">
                         {% if r.away_score_str != "" %}
                             {{ r.away_abbrev }} {{ r.away_score_str }} @ {{ r.home_abbrev }} {{ r.home_score_str }}

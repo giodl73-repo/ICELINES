@@ -94,7 +94,7 @@
             <td style="text-align: right; color: #616161;">{{ loop.index }}</td>
             <td><strong><a href="/player/{{ row.nhl_id }}" style="color: #1565c0;">{{ row.name }}</a></strong></td>
             <td>{{ row.position }}</td>
-            <td><a href="/team/{{ row.team }}">{{ row.team }}</a></td>
+            <td><a class="team-link team-{{ row.team }}" href="/team/{{ row.team }}">{{ row.team }}</a></td>
             <td style="text-align: right;">{{ row.gp }}</td>
             <td style="text-align: right;">{{ row.goals }}</td>
             <td style="text-align: right;">{{ row.assists }}</td>

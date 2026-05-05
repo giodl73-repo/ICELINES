@@ -36,7 +36,7 @@
                         <p style="color:#616161; margin:0.25rem 0 0 0;">
                             {{ p.position }} ·
                             {% if p.team_link != "" %}
-                                <a href="/team/{{ p.team_link }}">{{ p.team }}</a>
+                                <a class="team-link team-{{ p.team_link }}" href="/team/{{ p.team_link }}">{{ p.team }}</a>
                             {% else %}
                                 {{ p.team }}
                             {% endif %}
@@ -64,7 +64,7 @@
                         <p style="color:#616161; margin:0.25rem 0 0 0;">
                             {{ p.position }} ·
                             {% if p.team_link != "" %}
-                                <a href="/team/{{ p.team_link }}">{{ p.team }}</a>
+                                <a class="team-link team-{{ p.team_link }}" href="/team/{{ p.team_link }}">{{ p.team }}</a>
                             {% else %}
                                 {{ p.team }}
                             {% endif %}

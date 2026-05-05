@@ -7,11 +7,14 @@
     <a href="/leaders">← back to leaders</a>
 </p>
 
-<h1>{{ team_abbrev }} · {{ active_label }}</h1>
-<p style="color: #616161;">
-    {{ skaters.len() }} skater{% if skaters.len() != 1 %}s{% endif %}
-    · {{ goalies.len() }} goalie{% if goalies.len() != 1 %}s{% endif %}
-</p>
+<header class="team-banner team-{{ team_abbrev }}">
+    <h1>{{ team_abbrev }}</h1>
+    <p style="margin: 0.25rem 0 0 0; opacity: 0.92;">
+        {{ active_label }} ·
+        {{ skaters.len() }} skater{% if skaters.len() != 1 %}s{% endif %}
+        · {{ goalies.len() }} goalie{% if goalies.len() != 1 %}s{% endif %}
+    </p>
+</header>
 
 <h2 style="margin-top: 1.5rem;">Skaters</h2>
 

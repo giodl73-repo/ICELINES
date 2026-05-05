@@ -26,7 +26,7 @@
                     <td>{{ loop.index }}</td>
                     <td><a href="/player/{{ r.nhl_id }}">{{ r.name }}</a></td>
                     <td>{{ r.position }}</td>
-                    <td>{{ r.team }}</td>
+                    <td><a class="team-link team-{{ r.team }}" href="/team/{{ r.team }}">{{ r.team }}</a></td>
                     <td>{{ r.gp }}</td>
                     <td>{{ r.goals }}</td>
                     <td>{{ r.assists }}</td>
@@ -57,7 +57,7 @@
                 <tr>
                     <td>{{ loop.index }}</td>
                     <td><a href="/player/{{ r.nhl_id }}">{{ r.name }}</a></td>
-                    <td>{{ r.team }}</td>
+                    <td><a class="team-link team-{{ r.team }}" href="/team/{{ r.team }}">{{ r.team }}</a></td>
                     <td>{{ r.gp }}</td>
                     <td>{{ r.wins }}</td>
                     <td>{{ r.losses }}</td>
