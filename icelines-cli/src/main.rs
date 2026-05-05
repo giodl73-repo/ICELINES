@@ -10,7 +10,7 @@ mod test_utils;
 mod tui;
 
 use anyhow::Context;
-use clap::Parser;
+use clap::{CommandFactory, Parser};
 use cli::{Cli, Commands, FantasySubcommand, QuerySubcommand};
 use config::Config;
 
@@ -19,13 +19,17 @@ async fn main() -> anyhow::Result<()> {
     // Load config early so any error surfaces before command dispatch.
     let cfg = Config::load()?;
 
-    // icelines with no args → launch TUI. Resolve the live-feeds and
-    // dashboards toggles from env + config (no CLI flag yet because
-    // we haven't parsed).
+    // Bare `icelines` (no args) prints --help, then exits 0. Users
+    // explicitly opt in to a surface:
+    //   icelines tui      → launch the TUI
+    //   icelines serve    → launch the web dashboard
+    //   icelines query …  → CLI queries
+    // (Auto-launching TUI on no-args was surprising for users who
+    // hit Enter expecting to see what the binary does first.)
     if std::env::args().len() == 1 {
-        config::init_live_feeds(false, &cfg);
-        config::init_dashboards(false, &cfg);
-        return tui::run_tui(false).await;
+        Cli::command().print_help()?;
+        println!();
+        return Ok(());
     }
 
     let cli = Cli::parse();

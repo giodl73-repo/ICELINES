@@ -2537,10 +2537,10 @@ mod handlers {
                 Some(format!(
                     "Neither player {id_a} nor {id_b} is in the active repository."
                 ))
-            } else if let Some(id) = a_missing.or(b_missing) {
-                Some(format!("No player with NHL id {id}."))
             } else {
-                None
+                a_missing
+                    .or(b_missing)
+                    .map(|id| format!("No player with NHL id {id}."))
             };
 
             let tmpl = CompareTemplate {
