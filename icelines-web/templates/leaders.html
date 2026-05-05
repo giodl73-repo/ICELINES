@@ -94,7 +94,9 @@
             <td style="text-align: right; color: #616161;">{{ loop.index }}</td>
             <td>
                 <div class="player-cell">
-                    <img class="avatar" src="{{ row.headshot_url }}" alt="" loading="lazy">
+                    <img class="avatar" src="{{ row.headshot_url }}" alt="" loading="lazy"
+                         onerror="if(this.src!==this.dataset.fallback){this.src=this.dataset.fallback;}"
+                         data-fallback="{{ row.headshot_fallback_url }}">
                     <a class="player-name" href="/player/{{ row.nhl_id }}">{{ row.name }}</a>
                 </div>
             </td>

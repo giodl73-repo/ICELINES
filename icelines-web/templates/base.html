@@ -6,6 +6,16 @@
     <title>{% block title %}IceLines{% endblock %} — IceLines</title>
     <link rel="stylesheet" href="/static/style.css">
     <link rel="icon" type="image/svg+xml" href="/static/icelines.svg">
+    {# Open Graph + Twitter card — Sasq.1. Each page-level template
+       can override the og block; default carries IceLines branding
+       so even routes without per-page metadata still preview cleanly. #}
+    {% block og %}
+    <meta property="og:site_name" content="IceLines">
+    <meta property="og:title" content="IceLines">
+    <meta property="og:description" content="NHL analytics dashboard — leaders, goalies, teams, transactions, live scores.">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary">
+    {% endblock %}
 </head>
 <body>
     <a href="#main" class="skip-link">Skip to content</a>
@@ -54,5 +64,43 @@
     <main id="main">
         {% block content %}{% endblock %}
     </main>
+
+    {# Sasq.2 — Copy-as-markdown handler. Any button with id="copy-md-btn"
+       and a data-target attribute pointing at a <script type="text/plain">
+       node copies that script's text content to the clipboard. Two
+       paths: the modern Clipboard API (HTTPS or localhost) and a
+       textarea + execCommand fallback for older browsers / file://. #}
+    <script>
+    (function() {
+        const btn = document.getElementById('copy-md-btn');
+        if (!btn) return;
+        btn.addEventListener('click', async function() {
+            const targetId = btn.getAttribute('data-target');
+            const node = document.getElementById(targetId);
+            if (!node) return;
+            const text = node.textContent.trim();
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(text);
+                } else {
+                    const ta = document.createElement('textarea');
+                    ta.value = text;
+                    ta.style.position = 'fixed';
+                    ta.style.left = '-9999px';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                }
+                const original = btn.textContent;
+                btn.textContent = 'Copied ✓';
+                setTimeout(function() { btn.textContent = original; }, 1500);
+            } catch (err) {
+                btn.textContent = 'Copy failed';
+                setTimeout(function() { btn.textContent = 'Copy as Markdown'; }, 2000);
+            }
+        });
+    })();
+    </script>
 </body>
 </html>

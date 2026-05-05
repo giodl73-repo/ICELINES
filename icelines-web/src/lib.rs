@@ -95,6 +95,10 @@ pub fn router(state: WebState) -> Router {
             get(handlers::transactions::get_transactions),
         )
         .route("/fantasy", get(cs::fantasy))
+        // Sasq.7 — friendly 404 with a player-search input replaces
+        // axum's bare default. Wired as router fallback so any
+        // unmatched path lands here.
+        .fallback(handlers::not_found::get_not_found)
         .with_state(state)
 }
 
@@ -233,6 +237,8 @@ mod handlers {
             .trim()
             .to_owned();
         let headshot_url = build_headshot_url(v.season().0, &primary_team, v.id().0);
+        let headshot_fallback_url =
+            format!("https://assets.nhle.com/mugs/nhl/default/{}.png", v.id().0);
         crate::templates::LeaderRow {
             nhl_id: v.id().0,
             name: v.full_name().to_owned(),
@@ -257,6 +263,7 @@ mod handlers {
             blocks,
             faceoff_pct,
             headshot_url,
+            headshot_fallback_url,
         }
     }
 
@@ -1170,6 +1177,10 @@ mod handlers {
                             save_pct_str,
                             gaa_str,
                             headshot_url,
+                            headshot_fallback_url: format!(
+                                "https://assets.nhle.com/mugs/nhl/default/{}.png",
+                                v.id().0
+                            ),
                         })
                     })
                     .collect();
@@ -1510,6 +1521,10 @@ mod handlers {
                             save_pct_str,
                             gaa_str,
                             headshot_url,
+                            headshot_fallback_url: format!(
+                                "https://assets.nhle.com/mugs/nhl/default/{}.png",
+                                v.id().0
+                            ),
                         })
                     })
                     .collect();
@@ -1940,6 +1955,44 @@ mod handlers {
                         .then(a.season_type.cmp(&b.season_type))
                 });
 
+                // Sasq.3 — compute YoY delta against the prior season
+                // of the SAME season-type (Regular vs Playoff).
+                // career_rows is already filtered to active type and
+                // sorted newest-first, so the prior season's row is
+                // index 1 (index 0 is the active season we're showing).
+                let prior_row = career_rows.get(1);
+                let prior_season_label = prior_row
+                    .map(|r| format!("vs {}", r.season))
+                    .unwrap_or_default();
+
+                fn delta_int(now: i64, prior: i64, prior_exists: bool) -> (String, String) {
+                    if !prior_exists {
+                        return (String::new(), String::new());
+                    }
+                    let d = now - prior;
+                    let class = if d > 0 {
+                        "delta-up"
+                    } else if d < 0 {
+                        "delta-down"
+                    } else {
+                        "delta-flat"
+                    };
+                    (format!("{:+}", d), class.to_owned())
+                }
+
+                let prior_exists = prior_row.is_some();
+                let prior_gp = prior_row.map(|r| r.gp as i64).unwrap_or(0);
+                let prior_goals = prior_row.map(|r| r.goals as i64).unwrap_or(0);
+                let prior_assists = prior_row.map(|r| r.assists as i64).unwrap_or(0);
+                let prior_points = prior_row.map(|r| r.points as i64).unwrap_or(0);
+                let (gp_delta, gp_delta_class) = delta_int(gp as i64, prior_gp, prior_exists);
+                let (goals_delta, goals_delta_class) =
+                    delta_int(goals as i64, prior_goals, prior_exists);
+                let (assists_delta, assists_delta_class) =
+                    delta_int(assists as i64, prior_assists, prior_exists);
+                let (points_delta, points_delta_class) =
+                    delta_int(points as i64, prior_points, prior_exists);
+
                 PlayerTemplate {
                     active_label: active_label.clone(),
                     nhl_id: id,
@@ -1976,6 +2029,15 @@ mod handlers {
                     sh_goals_str,
                     gwg_str,
                     toi_per_game_str,
+                    goals_delta,
+                    goals_delta_class,
+                    assists_delta,
+                    assists_delta_class,
+                    points_delta,
+                    points_delta_class,
+                    gp_delta,
+                    gp_delta_class,
+                    prior_season_label,
                     career_rows,
                     // UX.H — every active player + goalie name in
                     // the repo, sorted alphabetically. Renders as a
@@ -2645,6 +2707,10 @@ mod handlers {
                                 save_pct_str,
                                 gaa_str,
                                 headshot_url,
+                                headshot_fallback_url: format!(
+                                    "https://assets.nhle.com/mugs/nhl/default/{}.png",
+                                    v.id().0
+                                ),
                             })
                         })
                         .collect();
@@ -3344,6 +3410,45 @@ mod handlers {
                 })
                 .unwrap_or_else(|| "/".to_owned());
             (StatusCode::SEE_OTHER, [(header::LOCATION, target)]).into_response()
+        }
+    }
+
+    /// `not_found` — Sasq.7. Friendly 404 page with a player search
+    /// input, replacing axum's bare default. Wired as the router's
+    /// `.fallback(...)`, so any unmatched path lands here with the
+    /// requested URI surfaced for context.
+    pub mod not_found {
+        use crate::state::WebState;
+        use crate::templates::NotFoundTemplate;
+        use askama::Template;
+        use axum::extract::State;
+        use axum::http::{StatusCode, Uri};
+        use axum::response::{Html, IntoResponse, Response};
+
+        pub async fn get_not_found(State(state): State<WebState>, uri: Uri) -> Response {
+            let active_label = state.config.read().await.active_label.clone();
+            let compare_suggestions = {
+                let repo = state.repo.read().await;
+                let mut pairs: Vec<(String, u32)> = repo
+                    .iter_identities()
+                    .map(|i| (i.full_name.clone(), i.id.0))
+                    .collect();
+                pairs.sort_by(|a, b| a.0.cmp(&b.0));
+                pairs
+            };
+            let tmpl = NotFoundTemplate {
+                active_label,
+                requested_path: uri.path().to_owned(),
+                compare_suggestions,
+            };
+            match tmpl.render() {
+                Ok(html) => (StatusCode::NOT_FOUND, Html(html)).into_response(),
+                Err(_) => (
+                    StatusCode::NOT_FOUND,
+                    Html("<!doctype html><html><body><h1>404</h1></body></html>"),
+                )
+                    .into_response(),
+            }
         }
     }
 }

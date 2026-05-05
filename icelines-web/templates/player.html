@@ -2,6 +2,21 @@
 
 {% block title %}{{ full_name }}{% endblock %}
 
+{% block og %}
+<meta property="og:site_name" content="IceLines">
+<meta property="og:title" content="{{ full_name }} · {{ position }} · {{ team }}">
+<meta property="og:description" content="{{ goals }}G {{ assists }}A {{ points }}P in {{ gp }} GP · {% if !ppg_str.is_empty() %}{{ ppg_str }} P/GP · {% endif %}{{ active_label }}">
+<meta property="og:type" content="profile">
+{% match headshot_url %}
+    {% when Some with (url) %}
+        <meta property="og:image" content="{{ url }}">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="{{ url }}">
+    {% when None %}
+        <meta name="twitter:card" content="summary">
+{% endmatch %}
+{% endblock %}
+
 {% block content %}
 {# Top action row — UX.B. Breadcrumb-style nav + compare form so the
    player card is a hub, not a dead end. #}
@@ -26,7 +41,26 @@
         </datalist>
         <button type="submit">Compare</button>
     </form>
+    <button type="button" id="copy-md-btn" data-target="player-md"
+            style="background:#fff; color:var(--nhl-navy); border:1px solid var(--nhl-navy);"
+            title="Copy a paste-ready markdown stat block">
+        Copy as Markdown
+    </button>
 </nav>
+
+{# Sasq.2 — paste-ready markdown for blog/podcast notes. Hidden
+   from view; one click on the Copy as Markdown button copies it
+   to the clipboard via the inline script at the bottom of <main>. #}
+<script id="player-md" type="text/plain">
+**{{ full_name }}** · {{ position }} · {{ team }} · NHL #{{ nhl_id }}
+*{{ active_label }}*
+
+| GP | G | A | P | P/GP | +/- | PIM | SOG | SH% | Hits | Blocks | TK | GV | FOW% | PP G | PP P | SH G | GWG | TOI/G |
+|----|---|---|---|------|-----|-----|-----|-----|------|--------|----|----|------|------|------|------|-----|-------|
+| {{ gp }} | {{ goals }} | {{ assists }} | **{{ points }}** | {% if ppg_str.is_empty() %}—{% else %}{{ ppg_str }}{% endif %} | {{ plus_minus_str }} | {{ pim_str }} | {{ shots_str }} | {{ shooting_pct_str }} | {{ hits_str }} | {{ blocks_str }} | {{ takeaways_str }} | {{ giveaways_str }} | {{ faceoff_pct_str }} | {{ pp_goals_str }} | {{ pp_points_str }} | {{ sh_goals_str }} | {{ gwg_str }} | {{ toi_per_game_str }} |
+
+Source: IceLines · /player/{{ nhl_id }}
+</script>
 
 <div style="display: flex; gap: 1.5rem; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap;">
     {% match headshot_url %}
@@ -51,12 +85,33 @@
 
 {# Expanded active-season stat block — UX.B. #}
 <section aria-label="Active season stats">
-    <h2 style="margin-top:0; margin-bottom:0.5rem; font-size:1.05rem;">{{ active_label }} stats</h2>
+    <h2 style="margin-top:0; margin-bottom:0.5rem; font-size:1.05rem;">
+        {{ active_label }} stats
+        {% if prior_season_label != "" %}
+            <span style="color:#616161; font-size:0.85rem; font-weight:400;">— {{ prior_season_label }}</span>
+        {% endif %}
+    </h2>
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap:0.75rem 1rem; max-width: 900px;">
-        <div><div style="color:#616161; font-size:0.8rem;">GP</div><strong style="font-size:1.1rem;">{{ gp }}</strong></div>
-        <div><div style="color:#616161; font-size:0.8rem;">Goals</div><strong style="font-size:1.1rem;">{{ goals }}</strong></div>
-        <div><div style="color:#616161; font-size:0.8rem;">Assists</div><strong style="font-size:1.1rem;">{{ assists }}</strong></div>
-        <div><div style="color:#616161; font-size:0.8rem;">Points</div><strong style="font-size:1.1rem; color:#1565c0;">{{ points }}</strong></div>
+        <div>
+            <div style="color:#616161; font-size:0.8rem;">GP</div>
+            <strong style="font-size:1.1rem;">{{ gp }}</strong>
+            {% if gp_delta != "" %}<span class="stat-delta {{ gp_delta_class }}">{{ gp_delta }}</span>{% endif %}
+        </div>
+        <div>
+            <div style="color:#616161; font-size:0.8rem;">Goals</div>
+            <strong style="font-size:1.1rem;">{{ goals }}</strong>
+            {% if goals_delta != "" %}<span class="stat-delta {{ goals_delta_class }}">{{ goals_delta }}</span>{% endif %}
+        </div>
+        <div>
+            <div style="color:#616161; font-size:0.8rem;">Assists</div>
+            <strong style="font-size:1.1rem;">{{ assists }}</strong>
+            {% if assists_delta != "" %}<span class="stat-delta {{ assists_delta_class }}">{{ assists_delta }}</span>{% endif %}
+        </div>
+        <div>
+            <div style="color:#616161; font-size:0.8rem;">Points</div>
+            <strong style="font-size:1.1rem; color:#1565c0;">{{ points }}</strong>
+            {% if points_delta != "" %}<span class="stat-delta {{ points_delta_class }}">{{ points_delta }}</span>{% endif %}
+        </div>
         <div><div style="color:#616161; font-size:0.8rem;">P/GP</div><strong style="font-size:1.1rem;">{% if ppg_str.is_empty() %}—{% else %}{{ ppg_str }}{% endif %}</strong></div>
         <div><div style="color:#616161; font-size:0.8rem;">+/-</div><strong style="font-size:1.1rem;">{{ plus_minus_str }}</strong></div>
         <div><div style="color:#616161; font-size:0.8rem;">PIM</div><strong style="font-size:1.1rem;">{{ pim_str }}</strong></div>

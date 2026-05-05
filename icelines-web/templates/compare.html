@@ -2,12 +2,75 @@
 
 {% block title %}Compare{% endblock %}
 
+{% block og %}
+<meta property="og:site_name" content="IceLines">
+{% match a %}
+    {% when Some with (pa) %}
+        {% match b %}
+            {% when Some with (pb) %}
+                <meta property="og:title" content="{{ pa.full_name }} vs {{ pb.full_name }}">
+                <meta property="og:description" content="{{ pa.points }} P · {{ pa.team }}  vs  {{ pb.points }} P · {{ pb.team }} — IceLines compare">
+            {% when None %}
+                <meta property="og:title" content="{{ pa.full_name }} — pick a player to compare">
+                <meta property="og:description" content="IceLines side-by-side stat compare">
+        {% endmatch %}
+    {% when None %}
+        <meta property="og:title" content="Compare players — IceLines">
+        <meta property="og:description" content="Side-by-side stat compare for any two NHL players">
+{% endmatch %}
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+{% endblock %}
+
 {% block content %}
 <p style="margin-bottom: 0.5rem;">
     <a href="/leaders">← Leaders</a>
 </p>
 
-<h1>Compare players</h1>
+<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+    <h1 style="margin:0;">Compare players</h1>
+    {% if !a.is_none() && !b.is_none() %}
+    <button type="button" id="copy-md-btn" data-target="compare-md"
+            style="background:#fff; color:var(--nhl-navy); border:1px solid var(--nhl-navy);"
+            title="Copy a paste-ready markdown stat block">
+        Copy as Markdown
+    </button>
+    {% endif %}
+</div>
+
+{# Sasq.2 — paste-ready markdown side-by-side. Hidden script node;
+   the inline clipboard handler in base.html copies it on click. #}
+{% match a %}
+    {% when Some with (pa) %}
+        {% match b %}
+            {% when Some with (pb) %}
+<script id="compare-md" type="text/plain">
+**{{ pa.full_name }}** ({{ pa.team }}) vs **{{ pb.full_name }}** ({{ pb.team }})
+*{{ active_label }}*
+
+| Stat | {{ pa.full_name }} | {{ pb.full_name }} |
+|------|--------------------|--------------------|
+| GP   | {{ pa.gp }}        | {{ pb.gp }}        |
+| G    | {{ pa.goals }}     | {{ pb.goals }}     |
+| A    | {{ pa.assists }}   | {{ pb.assists }}   |
+| P    | **{{ pa.points }}** | **{{ pb.points }}** |
+| P/GP | {% if pa.ppg_str.is_empty() %}—{% else %}{{ pa.ppg_str }}{% endif %} | {% if pb.ppg_str.is_empty() %}—{% else %}{{ pb.ppg_str }}{% endif %} |
+| +/-  | {{ pa.plus_minus_str }} | {{ pb.plus_minus_str }} |
+| PIM  | {{ pa.pim_str }}   | {{ pb.pim_str }}   |
+| SOG  | {{ pa.shots_str }} | {{ pb.shots_str }} |
+| SH%  | {{ pa.shooting_pct_str }} | {{ pb.shooting_pct_str }} |
+| Hits | {{ pa.hits_str }}  | {{ pb.hits_str }}  |
+| Blk  | {{ pa.blocks_str }} | {{ pb.blocks_str }} |
+| FOW% | {{ pa.faceoff_pct_str }} | {{ pb.faceoff_pct_str }} |
+| PP P | {{ pa.pp_points_str }} | {{ pb.pp_points_str }} |
+| TOI/G | {{ pa.toi_per_game_str }} | {{ pb.toi_per_game_str }} |
+
+Source: IceLines · /compare?a={{ pa.nhl_id }}&b={{ pb.nhl_id }}
+</script>
+            {% when None %}
+        {% endmatch %}
+    {% when None %}
+{% endmatch %}
 
 {% match error %}
     {% when Some with (msg) %}

@@ -338,6 +338,25 @@ tbody tr:last-child td {
 .pos-G  { background: #ef6c00; }
 .pos-F  { background: #455a64; }
 
+/* ── YoY delta chips on the player card — Sasq.3 ────────────────── */
+/*
+ * Inline next to each active-season stat. Up = green, down = red,
+ * flat = muted. Tabular-nums so "+12" / "-3" / "0" line up.
+ */
+.stat-delta {
+    margin-left: 0.35rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.05rem 0.35rem;
+    border-radius: 3px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    vertical-align: middle;
+}
+.delta-up   { background: #e6f4ea; color: #1e7e34; }
+.delta-down { background: #fce4e6; color: #c62828; }
+.delta-flat { background: #f0f0f0; color: #616161; }
+
 .table-scroll {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;

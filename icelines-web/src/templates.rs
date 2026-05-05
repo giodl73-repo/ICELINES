@@ -55,6 +55,17 @@ pub struct HomeTemplate {
     pub top_goalies: Vec<GoalieRow>,
 }
 
+/// `not_found.html` — Sasq.7. Friendly 404 with a player-search
+/// input. Replaces axum's default bare 404 for a typo'd URL like
+/// `/playr/8478402` so users land somewhere useful.
+#[derive(Template)]
+#[template(path = "not_found.html")]
+pub struct NotFoundTemplate {
+    pub active_label: String,
+    pub requested_path: String,
+    pub compare_suggestions: Vec<(String, u32)>,
+}
+
 /// `coming_soon.html` — placeholder for routes that have a slot in
 /// the spec but no handler shipped yet. Each section nav link on the
 /// home page mounts one of these so a click lands on a real page
@@ -151,6 +162,11 @@ pub struct LeaderRow {
     /// `mugs/nhl/{season}/{team}/{id}.png` which carries real
     /// photos for current rosters.
     pub headshot_url: String,
+    /// Sasq.6 — fallback URL when `headshot_url` 404s (e.g. a
+    /// player not yet on the seasonal roster). The template wires
+    /// this into an `onerror` handler so the silhouette only shows
+    /// after the real attempt fails.
+    pub headshot_fallback_url: String,
     /// Pre-formatted "+12" / "-3" — leading sign always present.
     pub plus_minus_str: String,
     pub pim: u32,
@@ -428,6 +444,7 @@ pub struct GoalieRow {
     pub save_pct_str: String,
     pub gaa_str: String,
     pub headshot_url: String,
+    pub headshot_fallback_url: String,
 }
 
 /// `player.html` — King.3.1 + King.3.2. Player card with career table.
@@ -471,6 +488,22 @@ pub struct PlayerTemplate {
     pub sh_goals_str: String,
     pub gwg_str: String,
     pub toi_per_game_str: String,
+    /// YoY delta strings (Sasq.3). Pre-formatted with sign + comparison
+    /// to the player's prior-season totals from the same season-type.
+    /// Empty string when no prior-season row exists (rookies, retired
+    /// players, etc.). Each is paired with a CSS class hint:
+    /// "delta-up" / "delta-down" / "delta-flat" / "" so the template
+    /// can color-code without parsing.
+    pub goals_delta: String,
+    pub goals_delta_class: String,
+    pub assists_delta: String,
+    pub assists_delta_class: String,
+    pub points_delta: String,
+    pub points_delta_class: String,
+    pub gp_delta: String,
+    pub gp_delta_class: String,
+    /// Pretty label of the prior season for the YoY caption (e.g. "vs 2024-25").
+    pub prior_season_label: String,
     /// Full career — one row per (season, type) the player has stats
     /// for. King.3.2 lands this; the row count for a 10-year veteran
     /// is ~10-20 (regular only) or ~15-30 (regular + playoff).
@@ -571,6 +604,8 @@ mod tests {
                 faceoff_pct: Some(0.530),
                 headshot_url: "https://assets.nhle.com/mugs/nhl/20252026/EDM/8478402.png"
                     .to_owned(),
+                headshot_fallback_url: "https://assets.nhle.com/mugs/nhl/default/8478402.png"
+                    .to_owned(),
             }],
             top_goalies: vec![GoalieRow {
                 nhl_id: 8476945,
@@ -583,6 +618,8 @@ mod tests {
                 save_pct_str: "0.925".to_owned(),
                 gaa_str: "2.20".to_owned(),
                 headshot_url: "https://assets.nhle.com/mugs/nhl/20252026/WPG/8476945.png"
+                    .to_owned(),
+                headshot_fallback_url: "https://assets.nhle.com/mugs/nhl/default/8476945.png"
                     .to_owned(),
             }],
         };
