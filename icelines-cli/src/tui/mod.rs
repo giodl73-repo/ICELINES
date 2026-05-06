@@ -14,33 +14,104 @@ pub use app::App;
 
 use anyhow::Result;
 use crossterm::{
+    cursor::Show as ShowCursor,
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::{backend::CrosstermBackend, Terminal};
-use std::io;
+use std::io::{self, Write};
+
+/// LB.0.5 — RAII terminal teardown.
+///
+/// Constructed immediately after `enable_raw_mode()` succeeds. Drop
+/// runs on every return path, including unwinding panics. Without
+/// this, a panic inside `run_loop` (or any nested screen handler)
+/// would skip the manual cleanup and leave the terminal wedged in
+/// alt-screen + raw-mode — fatal for the looping `icelines menu`
+/// (LB.4) which would re-render onto a corrupted screen.
+///
+/// All operations in `drop` swallow errors via `let _ = ...`.
+/// A guard whose Drop can panic causes a double-panic abort during
+/// unwinding, which is worse than the original panic.
+struct TerminalGuard;
+
+impl Drop for TerminalGuard {
+    fn drop(&mut self) {
+        let _ = disable_raw_mode();
+        // LeaveAlternateScreen + ShowCursor are idempotent; safe to
+        // run even if alt-screen was never entered (e.g., setup
+        // failed between guard construction and EnterAlternateScreen).
+        let _ = execute!(io::stdout(), LeaveAlternateScreen, ShowCursor);
+        let _ = io::stdout().flush();
+    }
+}
 
 /// Entry point for the TUI. Sets up terminal, runs event loop, restores on exit.
 ///
 /// Repo data is loaded synchronously in `App::boot_load` before the
 /// event loop starts. The transactions loader is `tokio::spawn`'d
 /// (Send-clean) — no `LocalSet` is required.
+///
+/// Terminal teardown is RAII via `TerminalGuard` (LB.0.5) — panic-safe.
 pub async fn run_tui(no_color: bool) -> Result<()> {
-    // Setup
+    // Setup. Construct the guard immediately after `enable_raw_mode`
+    // so any subsequent failure (EnterAlternateScreen, Terminal::new,
+    // run_loop panic) triggers the guard's Drop and restores the
+    // terminal cleanly.
     enable_raw_mode()?;
+    let _guard = TerminalGuard;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen)?;
     let backend = CrosstermBackend::new(stdout);
     let mut term = Terminal::new(backend)?;
 
-    let result = run_loop(&mut term, no_color).await;
+    run_loop(&mut term, no_color).await
+    // _guard dropped here on happy path; restoration happens in Drop.
+}
 
-    // Restore terminal regardless of result
-    disable_raw_mode()?;
-    execute!(term.backend_mut(), LeaveAlternateScreen)?;
-    term.show_cursor()?;
+#[cfg(test)]
+mod terminal_guard_tests {
+    use super::TerminalGuard;
+    use std::panic;
 
-    result
+    /// LB.0.5 / l0_terminal_guard_drops_without_panic
+    /// — TerminalGuard's Drop must use `let _ = ...` for every fallible
+    ///   call. A guard whose Drop panics would cause double-panic
+    ///   abort during unwinding. Construct + drop the guard inside
+    ///   catch_unwind; assert no panic propagates.
+    #[test]
+    fn l0_terminal_guard_drops_without_panic() {
+        let result = panic::catch_unwind(|| {
+            let _guard = TerminalGuard;
+            // Drop happens at end of scope.
+        });
+        assert!(
+            result.is_ok(),
+            "TerminalGuard's Drop must not panic — got {:?}",
+            result.err()
+        );
+    }
+
+    /// LB.0.5 / l0_terminal_guard_runs_drop_on_panic_unwind
+    /// — A panic inside the scope must still trigger Drop. If Drop
+    ///   ran but also panicked we'd see a panic of a different type
+    ///   (or a process abort). Reaching the assert proves the panic
+    ///   unwound cleanly past the guard.
+    #[test]
+    fn l0_terminal_guard_runs_drop_on_panic_unwind() {
+        let result = panic::catch_unwind(|| {
+            let _guard = TerminalGuard;
+            panic!("simulated TUI panic — guard must restore terminal");
+        });
+        assert!(
+            result.is_err(),
+            "expected the simulated panic to propagate; got Ok"
+        );
+        // If Drop had panicked too, the process would have aborted
+        // (panic-during-panic) and we'd never reach this assert. The
+        // fact that catch_unwind returned Err(_) — not aborted — is
+        // the panic-safety proof.
+    }
 }
 
 async fn run_loop(term: &mut Terminal<CrosstermBackend<io::Stdout>>, no_color: bool) -> Result<()> {
