@@ -585,6 +585,16 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 })
                 .await?;
             }
+            QuerySubcommand::Career {
+                league,
+                season,
+                top,
+                sort,
+                json,
+                csv,
+            } => {
+                commands::query_career::run(league, season, top, sort, json, csv).await?;
+            }
         },
         Commands::Fantasy(sub) => match sub {
             FantasySubcommand::LeagueCreate { name, scheme } => {

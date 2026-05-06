@@ -180,6 +180,72 @@ async fn l1_depth_route_returns_200_html() {
     );
 }
 
+/// l1_career_route_missing_league_returns_400 (Calder.4)
+/// — `/career` without `?league=…` rejects with 400 + helpful body.
+#[tokio::test]
+async fn l1_career_route_missing_league_returns_400() {
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/career")
+                .body(Body::empty())
+                .expect("ok"),
+        )
+        .await
+        .expect("dispatch ok");
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    let bytes = axum::body::to_bytes(response.into_body(), 64 * 1024)
+        .await
+        .expect("body");
+    let body = std::str::from_utf8(&bytes).unwrap_or("");
+    assert!(
+        body.contains("league") && body.contains("OHL"),
+        "error body should hint at the right call shape, got:\n{body}"
+    );
+}
+
+/// l1_api_career_envelope_shape (Calder.4)
+/// — `/api/v1/career` envelope. When the local store is empty the
+///   handler returns 400 with a helpful message; we accept either
+///   shape and assert the right keys for whichever side fires.
+#[tokio::test]
+async fn l1_api_career_envelope_shape() {
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/career?league=OHL&season=20142015")
+                .body(Body::empty())
+                .expect("ok"),
+        )
+        .await
+        .expect("dispatch ok");
+    let status = response.status();
+    let bytes = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+        .await
+        .expect("body");
+    let v: serde_json::Value = serde_json::from_slice(&bytes).expect("valid json");
+    let obj = v.as_object().expect("object");
+    if status == StatusCode::OK {
+        // Store populated — assert envelope shape.
+        let keys: std::collections::BTreeSet<_> = obj.keys().map(String::as_str).collect();
+        let want: std::collections::BTreeSet<_> = ["data", "meta", "route", "schema_version"]
+            .iter()
+            .copied()
+            .collect();
+        assert_eq!(keys, want, "envelope diverged: {keys:?}");
+        assert_eq!(obj["route"], serde_json::json!("career"));
+        assert!(obj["data"].is_array());
+    } else {
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+        assert!(
+            obj.contains_key("error"),
+            "BAD_REQUEST must carry error field"
+        );
+    }
+}
+
 /// l1_depth_json_envelope_shape (T3)
 /// — `/api/v1/depth` is the JSON twin of `/depth`. Every list page on
 ///   the web surface gets one (King.2.4 convention) so external scripts

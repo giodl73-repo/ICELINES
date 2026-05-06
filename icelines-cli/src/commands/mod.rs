@@ -10,6 +10,7 @@ pub mod players;
 pub mod playoffs;
 pub mod project;
 pub mod query;
+pub mod query_career;
 pub mod rank;
 pub mod scheme;
 pub mod scheme_dialects;

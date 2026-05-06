@@ -3162,6 +3162,108 @@ fn l2_cmd_schedule_json_envelope_shape() {
     assert!(obj["data"].is_array());
 }
 
+// ── L2: `icelines query career` (Calder.4) ───────────────────────────────────
+//
+// Calder.4 ships a cross-league leaderboard. The L2 surface assumes
+// the local store may or may not be populated on the test runner;
+// tests that actually need a populated store are gated below with
+// an env-var check (`ICELINES_HAS_CAREER_STORE=1`) so CI doesn't
+// silently green-pass when the store is empty.
+
+/// Calder.4 / l2_cmd_query_career_help_listed
+/// — `query --help` lists the new `career` subcommand.
+#[test]
+fn l2_cmd_query_career_help_listed() {
+    let out = run(&["query", "--help"]);
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("career"),
+        "query --help must list the new `career` subcommand"
+    );
+}
+
+/// Calder.4 / l2_cmd_query_career_unknown_sort_rejected
+/// — `--sort xyz` must error cleanly (typed enum-ish parser).
+#[test]
+fn l2_cmd_query_career_unknown_sort_rejected() {
+    let out = run(&["query", "career", "--league", "OHL", "--sort", "xyz"]);
+    assert!(!out.status.success(), "bad --sort must non-zero exit");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        !stderr.contains("panicked"),
+        "must not panic, stderr: {stderr}"
+    );
+    assert!(
+        stderr.contains("unknown --sort"),
+        "should explain the bad sort, stderr: {stderr}"
+    );
+}
+
+/// Calder.4 / l2_cmd_query_career_invalid_season_format_rejected
+/// — `--season abc` rejected at parse time.
+#[test]
+fn l2_cmd_query_career_invalid_season_format_rejected() {
+    let out = run(&[
+        "query",
+        "career",
+        "--league",
+        "OHL",
+        "--season",
+        "not-a-year",
+    ]);
+    assert!(!out.status.success());
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        !stderr.contains("panicked"),
+        "must not panic, stderr: {stderr}"
+    );
+}
+
+/// Calder.4 / l2_cmd_query_career_json_envelope_shape
+/// — Pin the King.2.4 envelope literal keys when the store is
+///   populated. Skipped on CI where the store may be empty.
+#[test]
+fn l2_cmd_query_career_json_envelope_shape() {
+    if std::env::var("ICELINES_HAS_CAREER_STORE").is_err() {
+        eprintln!(
+            "skipped: set ICELINES_HAS_CAREER_STORE=1 after `fetch career --bundled-seasons 5`"
+        );
+        return;
+    }
+    let out = run(&[
+        "query", "career", "--league", "OHL", "--season", "20142015", "--json",
+    ]);
+    assert!(out.status.success(), "must exit 0");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let v: serde_json::Value =
+        serde_json::from_str(&stdout).unwrap_or_else(|e| panic!("invalid JSON: {e}\n{stdout}"));
+    let obj = v.as_object().expect("envelope must be object");
+    let keys: std::collections::BTreeSet<_> = obj.keys().map(String::as_str).collect();
+    assert_eq!(
+        keys,
+        ["data", "meta", "route", "schema_version"]
+            .iter()
+            .copied()
+            .collect::<std::collections::BTreeSet<_>>(),
+        "envelope keys diverged: {keys:?}"
+    );
+    assert_eq!(obj["route"], serde_json::json!("career"));
+    assert_eq!(obj["schema_version"], serde_json::json!(1));
+    assert!(obj["data"].is_array());
+    let meta_keys: std::collections::BTreeSet<_> = obj["meta"]
+        .as_object()
+        .expect("meta is an object")
+        .keys()
+        .map(String::as_str)
+        .collect();
+    let want: std::collections::BTreeSet<_> = ["count", "league", "season", "sort", "total"]
+        .iter()
+        .copied()
+        .collect();
+    assert_eq!(meta_keys, want, "meta keys diverged: {meta_keys:?}");
+}
+
 /// Calder.2 / l2_cmd_fetch_career_dry_run_exits_zero
 /// — `fetch career --dry-run` accepts the flag and prints the plan.
 ///   Real network call short-circuits in dry-run mode.

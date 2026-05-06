@@ -1486,6 +1486,53 @@ OUTPUT
         #[arg(long = "filter")]
         filters: Vec<String>,
     },
+    /// Phase Calder.4 — cross-league cohort leaderboard.
+    ///
+    /// Lists top scorers from a non-NHL league/season window, drawn
+    /// from the local career-history store populated by
+    /// `icelines fetch career`. Useful for "OHL leaders 2014-15" or
+    /// "AHL goal-scorers 2024-25" queries the existing
+    /// `query leaders` (NHL-only) can't answer.
+    #[command(long_about = r#"
+icelines query career — top-N players in a non-NHL league/season.
+
+EXAMPLES
+  icelines query career --league OHL --season 20142015
+  icelines query career --league AHL --season 20242025 --top 30
+  icelines query career --league NCAA --season 20132014 --sort goals
+  icelines query career --league WHL --json | jq '.data[0]'
+
+NOTES
+  - Source: ~/.icelines/career_history.json (run `icelines fetch
+    career` first to populate the store).
+  - Cohort scope: only players who have an NHL roster appearance in
+    the last 5 bundled seasons (the fetch target). Career history
+    for players who never reached the NHL is not in scope.
+  - --season defaults to the most-recent season for the chosen
+    league when omitted.
+"#)]
+    Career {
+        /// League abbreviation (e.g. OHL, WHL, QMJHL, AHL, NCAA, KHL,
+        /// SHL, Liiga). Case-insensitive.
+        #[arg(long)]
+        league: String,
+        /// Season in YYYYZZZZ form (e.g. 20142015). Defaults to the
+        /// most recent season for that league in the store.
+        #[arg(long)]
+        season: Option<String>,
+        /// Number of rows to show.
+        #[arg(long, default_value_t = 20)]
+        top: usize,
+        /// Sort metric: points (default) | goals | assists | gp | ppg.
+        #[arg(long, default_value = "points")]
+        sort: String,
+        /// Emit JSON envelope (King.2.4 shape).
+        #[arg(long)]
+        json: bool,
+        /// Emit CSV (one row per player).
+        #[arg(long)]
+        csv: bool,
+    },
 }
 
 // ── Fantasy sub-commands ──────────────────────────────────────────────────────
