@@ -3162,6 +3162,37 @@ fn l2_cmd_schedule_json_envelope_shape() {
     assert!(obj["data"].is_array());
 }
 
+/// Calder.2 / l2_cmd_fetch_career_dry_run_exits_zero
+/// — `fetch career --dry-run` accepts the flag and prints the plan.
+///   Real network call short-circuits in dry-run mode.
+#[test]
+fn l2_cmd_fetch_career_dry_run_exits_zero() {
+    let out = run(&["fetch", "career", "--dry-run"]);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        out.status.success(),
+        "fetch career --dry-run must exit 0; stderr: {stderr}"
+    );
+    assert!(
+        stdout.contains("Would fetch career history") && stdout.contains("landing"),
+        "dry-run output missing plan, stdout: {stdout}"
+    );
+}
+
+/// Calder.2 / l2_cmd_fetch_career_help_listed
+/// — the new subcommand must show up in `fetch --help`.
+#[test]
+fn l2_cmd_fetch_career_help_listed() {
+    let out = run(&["fetch", "--help"]);
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("career"),
+        "fetch --help must list the new `career` subcommand"
+    );
+}
+
 /// T2 / l2_cmd_tonight_no_json_flag_documented
 /// — `tonight` does not carry a `--json` flag today; document that
 ///   here so a future addition has to re-read this test (and then the

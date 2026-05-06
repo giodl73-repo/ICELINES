@@ -330,6 +330,36 @@ impl NhlApiClient {
         })
     }
 
+    /// Phase Calder.2 — batch career-history fetch.
+    ///
+    /// Sequential with a small per-request delay (50ms — matches
+    /// `fetch_all_contracts`). Skip-and-log on individual failures
+    /// rather than fail the batch: 700 players × 99% success is much
+    /// more useful than 0 players because one returned 404.
+    ///
+    /// Returns (histories, skipped_pids). Caller decides whether
+    /// `skipped > 0` is acceptable (typically yes for a one-shot
+    /// refresh; surface-level callers can re-try the skipped pids
+    /// later).
+    pub async fn fetch_all_career_histories(
+        &self,
+        player_ids: &[u32],
+    ) -> (
+        Vec<icelines_core::career_history::CareerHistory>,
+        Vec<(u32, String)>,
+    ) {
+        let mut histories = Vec::with_capacity(player_ids.len());
+        let mut skipped: Vec<(u32, String)> = Vec::new();
+        for &pid in player_ids {
+            match self.fetch_player_career_history(pid).await {
+                Ok(h) => histories.push(h),
+                Err(e) => skipped.push((pid, e.to_string())),
+            }
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
+        (histories, skipped)
+    }
+
     pub async fn fetch_player_landing_contract(
         &self,
         player_id: u32,

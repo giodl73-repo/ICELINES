@@ -70,6 +70,10 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
         FetchSubcommand::Realtime { season, dry_run } => do_realtime(&season, dry_run).await,
         FetchSubcommand::MoneyPuck { season, dry_run } => do_moneypuck(&season, dry_run).await,
         FetchSubcommand::Contracts { season, dry_run } => do_contracts(&season, dry_run).await,
+        FetchSubcommand::Career {
+            dry_run,
+            bundled_seasons,
+        } => do_career(dry_run, bundled_seasons).await,
         FetchSubcommand::Goalies {
             season,
             refresh: _,
@@ -723,6 +727,123 @@ async fn do_contracts(season: &str, dry_run: bool) -> anyhow::Result<()> {
     println!("Fetched contracts for {n} players ({found} found)");
     println!("Snapshot '{snap}' sealed and set as active.");
     Ok(())
+}
+
+/// Phase Calder.2 — `icelines fetch career`.
+///
+/// Walks the active stats snapshot's bios, calls
+/// `/v1/player/{id}/landing` for each, parses `seasonTotals` into
+/// `CareerHistory`, and writes the merged result to
+/// `~/.icelines/career_history.json` (single global blob — career
+/// history is per-player, not per-season).
+async fn do_career(dry_run: bool, bundled_seasons: u8) -> anyhow::Result<()> {
+    use icelines_fetch::career_landing::CareerHistoryStore;
+
+    let cfg = Config::load()?;
+    let store = SnapshotStore::new(cfg.snapshot_dir());
+    let path = cfg.career_history_path();
+
+    // Resolve the player set. Two paths:
+    // - bundled_seasons > 0: walk the last N bundled seasons' bios
+    //   (skaters + goalies), union the pids. Used to refresh the
+    //   shipped bundle.
+    // - bundled_seasons == 0: read the active stats snapshot's
+    //   bios.json. Used for the user's local refresh after pulling
+    //   new stats.
+    let player_ids_result: anyhow::Result<Vec<u32>> = if bundled_seasons > 0 {
+        Ok(union_pids_from_bundled(bundled_seasons))
+    } else {
+        store
+            .read_tier::<Vec<SkaterBio>>(&SnapshotTier::Stats, "bios.json")
+            .context("reading bios.json from active Stats snapshot")
+            .map(|bios| bios.iter().map(|b| b.player_id).collect())
+    };
+
+    if dry_run {
+        let n = player_ids_result.as_ref().map(|p| p.len()).unwrap_or(0);
+        let est_secs = (n.max(700) as f64 * 0.06).ceil() as u64;
+        println!("Would fetch career history for {n} players.");
+        if bundled_seasons > 0 {
+            println!("Source: union of last {bundled_seasons} bundled seasons (skaters + goalies)");
+        }
+        println!("Endpoint: /v1/player/{{id}}/landing.seasonTotals (50ms delay between calls)");
+        println!("Estimated time: ~{est_secs}s");
+        println!("Output: {}", path.display());
+        if player_ids_result.is_err() {
+            println!();
+            println!(
+                "Note: no active stats snapshot found — run `icelines fetch stats` first to \
+                populate the player list. Estimated time above assumes a typical ~700-player roster."
+            );
+        }
+        return Ok(());
+    }
+
+    let player_ids =
+        player_ids_result.context("could not resolve player set for `fetch career`")?;
+    let n = player_ids.len();
+
+    println!(
+        "Fetching career history for {n} players (~{}s)...",
+        (n as f64 * 0.06).ceil() as u64
+    );
+    let client = NhlApiClient::production();
+    let (histories, skipped) = client.fetch_all_career_histories(&player_ids).await;
+
+    // Merge into the existing on-disk store rather than replace it —
+    // a player who was on the active roster last fetch but not this
+    // one (traded out / retired) shouldn't lose their cached history.
+    let mut blob = CareerHistoryStore::load(&path).context("loading existing career_history")?;
+    for h in &histories {
+        blob.upsert(h.clone());
+    }
+    blob.stamp_now();
+    blob.save(&path).context("saving career_history.json")?;
+
+    println!(
+        "Fetched career history for {} players ({} skipped). Blob: {}",
+        histories.len(),
+        skipped.len(),
+        path.display()
+    );
+    if !skipped.is_empty() {
+        eprintln!("Skipped pids:");
+        for (pid, msg) in skipped.iter().take(20) {
+            eprintln!("  {pid}: {msg}");
+        }
+        if skipped.len() > 20 {
+            eprintln!("  ...and {} more", skipped.len() - 20);
+        }
+    }
+    Ok(())
+}
+
+/// Phase Calder.2 — collect the union of skater + goalie pids across
+/// the most recent N bundled seasons. Used by `fetch career
+/// --bundled-seasons N` to refresh the shipped career-history blob.
+fn union_pids_from_bundled(n: u8) -> Vec<u32> {
+    use icelines_fetch::bundled::{get_goalie_stats, BUNDLED_SEASONS};
+    use icelines_fetch::get_bundled_bios;
+    let take = (n as usize).min(BUNDLED_SEASONS.len());
+    let mut seen: std::collections::HashSet<u32> = std::collections::HashSet::new();
+    let mut out: Vec<u32> = Vec::new();
+    for season in &BUNDLED_SEASONS[..take] {
+        if let Some(bios) = get_bundled_bios(season) {
+            for b in bios {
+                if seen.insert(b.player_id) {
+                    out.push(b.player_id);
+                }
+            }
+        }
+        if let Some(goalies) = get_goalie_stats(season) {
+            for g in goalies {
+                if seen.insert(g.player_id) {
+                    out.push(g.player_id);
+                }
+            }
+        }
+    }
+    out
 }
 
 async fn do_positions(season: &str, dry_run: bool) -> anyhow::Result<()> {

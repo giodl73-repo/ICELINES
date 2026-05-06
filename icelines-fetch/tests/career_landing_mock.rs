@@ -67,6 +67,47 @@ async fn l1_fetch_player_career_history_routes_through_landing() {
 }
 
 #[tokio::test]
+async fn l1_fetch_all_career_histories_collects_and_skips() {
+    let server = MockServer::start();
+    let mcdavid_body = std::fs::read_to_string(fixture_path("mcdavid_8478402.json"))
+        .expect("McDavid fixture readable");
+    let bedard_body = std::fs::read_to_string(fixture_path("bedard_8484144.json"))
+        .expect("Bedard fixture readable");
+
+    server.mock(|when, then| {
+        when.method(GET).path("/player/8478402/landing");
+        then.status(200)
+            .header("content-type", "application/json")
+            .body(&mcdavid_body);
+    });
+    server.mock(|when, then| {
+        when.method(GET).path("/player/8484144/landing");
+        then.status(200)
+            .header("content-type", "application/json")
+            .body(&bedard_body);
+    });
+    // Player 9999999 is never registered — the client should skip it.
+    server.mock(|when, then| {
+        when.method(GET).path("/player/9999999/landing");
+        then.status(404).body("not found");
+    });
+
+    let client = NhlApiClient::new("http://unused", server.base_url()).with_retry_params(0, 1, 10);
+    let pids = [8478402u32, 8484144, 9999999];
+    let (histories, skipped) = client.fetch_all_career_histories(&pids).await;
+
+    assert_eq!(histories.len(), 2, "two of three should succeed");
+    assert_eq!(skipped.len(), 1, "404 must be skipped not panicked");
+    assert_eq!(skipped[0].0, 9999999);
+
+    // Both succeeding histories carry their proper player_id.
+    let pids_returned: std::collections::HashSet<u32> =
+        histories.iter().map(|h| h.player_id).collect();
+    assert!(pids_returned.contains(&8478402));
+    assert!(pids_returned.contains(&8484144));
+}
+
+#[tokio::test]
 async fn l1_fetch_player_career_history_surfaces_schema_error() {
     let server = MockServer::start();
     server.mock(|when, then| {

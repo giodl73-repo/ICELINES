@@ -337,6 +337,18 @@ pub const BUNDLED_SEASONS: &[&str] = &[
 pub const MODERN_BUNDLED_SEASONS: &[&str] =
     &["20252026", "20242025", "20232024", "20222023", "20212022"];
 
+// Phase Calder.2 — career history is intentionally NOT bundled.
+//
+// We considered embedding `data/career_history.json` (~30 MB
+// compact) into the binary, but evaluated against:
+//   * Lazy load via `/v1/player/{id}/landing` for the player-card
+//     use case (50 ms one-time per player, cached in
+//     `~/.icelines/career_history.json`)
+//   * `icelines fetch career` for the cohort-query use case (one-time
+//     ~100 s populate before Calder.4 cross-league leaderboards work)
+// the +30 MB binary cost wasn't earning its keep. See
+// design/notes/2026-05-06-Calder-2-bundle-vs-lazy.md for the call.
+
 /// Phase Lindsay L.1.4 — bundled fallback for the new Tier-1 reports
 /// (timeonice, goalsForAgainst, goalie-advanced, goalie-savesByStrength,
 /// goalie-bios). Returns `None` for every kind today; **L.7** populates

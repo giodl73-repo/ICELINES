@@ -828,6 +828,21 @@ pub enum FetchSubcommand {
         #[arg(long)]
         dry_run: bool,
     },
+    /// Phase Calder.2 — Fetch multi-league career history (AHL, OHL,
+    /// NCAA, KHL, junior, international) for every player in the
+    /// active stats snapshot. Writes to `~/.icelines/career_history.json`.
+    ///
+    /// `--bundled-seasons N` widens the source set: instead of the
+    /// active snapshot, walks the last N bundled seasons' bios and
+    /// unions the pids. Used to refresh the shipped bundle.
+    Career {
+        #[arg(long)]
+        dry_run: bool,
+        /// Walk the last N bundled seasons' bios (skaters + goalies)
+        /// and union the pids. 0 (default) = use active snapshot.
+        #[arg(long, default_value_t = 0, value_parser = clap::value_parser!(u8).range(0..=38))]
+        bundled_seasons: u8,
+    },
     /// Fetch goalie season stats (W/L/SV%/GAA/SO) — Phase G.2.
     /// Writes goalie-stats.json (or playoff-goalie-stats.json) into the
     /// active snapshot store.

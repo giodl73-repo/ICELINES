@@ -21,16 +21,15 @@
 
 use icelines_core::career_history::{CareerGameType, CareerHistory, CareerStint, LeagueAbbrev};
 use icelines_core::model::Season;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::HashMap;
+use std::path::Path;
 
 #[derive(Debug, thiserror::Error)]
 pub enum CareerParseError {
     #[error("missing or invalid `seasonTotals` array")]
     MissingSeasonTotals,
-    #[error("entry {index} missing required field `{field}`")]
-    MissingField { index: usize, field: &'static str },
-    #[error("entry {index} has unrecognized gameTypeId {value} (expected 2 or 3)")]
-    UnknownGameType { index: usize, value: u64 },
 }
 
 pub fn parse_career_history(
@@ -42,46 +41,34 @@ pub fn parse_career_history(
         .and_then(|v| v.as_array())
         .ok_or(CareerParseError::MissingSeasonTotals)?;
 
+    // Per-entry resilience: a tournament we don't know how to bucket
+    // (gameTypeId 6 / 7 / etc — preseason, exhibition) shouldn't
+    // sink the whole player. Skip the bad entry and keep going.
+    // Missing seasonTotals at the top level is still fatal.
     let mut stints = Vec::with_capacity(totals.len());
-    for (i, entry) in totals.iter().enumerate() {
-        // Required fields. Any missing one is a real schema error —
-        // surface, don't silently skip, so a caller's tests catch
-        // when the API changes shape.
-        let season =
-            entry
-                .get("season")
-                .and_then(|v| v.as_u64())
-                .ok_or(CareerParseError::MissingField {
-                    index: i,
-                    field: "season",
-                })? as u32;
+    for entry in totals.iter() {
+        let Some(season) = entry.get("season").and_then(|v| v.as_u64()) else {
+            continue;
+        };
+        let season = season as u32;
 
-        let game_type_id = entry.get("gameTypeId").and_then(|v| v.as_u64()).ok_or(
-            CareerParseError::MissingField {
-                index: i,
-                field: "gameTypeId",
-            },
-        )?;
-        let game_type = CareerGameType::from_api_id(game_type_id as u32).ok_or(
-            CareerParseError::UnknownGameType {
-                index: i,
-                value: game_type_id,
-            },
-        )?;
+        let Some(game_type_id) = entry.get("gameTypeId").and_then(|v| v.as_u64()) else {
+            continue;
+        };
+        let Some(game_type) = CareerGameType::from_api_id(game_type_id as u32) else {
+            // Unknown gameTypeId (preseason, exhibition, etc) —
+            // skip this entry, keep parsing the rest.
+            continue;
+        };
 
-        let league = entry.get("leagueAbbrev").and_then(|v| v.as_str()).ok_or(
-            CareerParseError::MissingField {
-                index: i,
-                field: "leagueAbbrev",
-            },
-        )?;
+        let Some(league) = entry.get("leagueAbbrev").and_then(|v| v.as_str()) else {
+            continue;
+        };
 
-        let gp = entry.get("gamesPlayed").and_then(|v| v.as_u64()).ok_or(
-            CareerParseError::MissingField {
-                index: i,
-                field: "gamesPlayed",
-            },
-        )? as u32;
+        let Some(gp) = entry.get("gamesPlayed").and_then(|v| v.as_u64()) else {
+            continue;
+        };
+        let gp = gp as u32;
 
         // Optional fields — best-effort. Team name resolves via the
         // localized `teamName.default`, falling back to common name
@@ -167,6 +154,99 @@ fn toi_field(v: &Value, key: &str) -> Option<u32> {
     let m: u32 = parts.next()?.parse().ok()?;
     let s: u32 = parts.next()?.parse().ok()?;
     Some(m * 60 + s)
+}
+
+// ── Phase Calder.2 — store ───────────────────────────────────────────
+
+/// On-disk format for the global career-history blob.
+///
+/// Lives at `~/.icelines/career_history.json`. Single global file
+/// (not per-season) because a player's pre-NHL career doesn't change
+/// with the active season — McDavid's OHL years are the same fact
+/// regardless of which NHL season the user is browsing.
+///
+/// Map shape rather than vec so the writer can do partial updates
+/// without rewriting unrelated entries, and so the loader can
+/// `O(1)`-lookup by pid.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct CareerHistoryStore {
+    pub schema_version: u32,
+    /// RFC-3339 — when this blob was last refreshed. The CLI uses
+    /// this to decide whether `fetch career` needs to re-run.
+    pub fetched_at: Option<String>,
+    /// Keyed by stringified pid so JSON object keys (which must be
+    /// strings) round-trip cleanly.
+    pub histories: HashMap<String, CareerHistory>,
+}
+
+impl CareerHistoryStore {
+    pub fn new() -> Self {
+        Self {
+            schema_version: 1,
+            fetched_at: None,
+            histories: HashMap::new(),
+        }
+    }
+
+    /// Read the blob from disk. Returns an empty store if the path
+    /// doesn't exist — first-run is not an error.
+    pub fn load(path: &Path) -> std::io::Result<Self> {
+        match std::fs::read(path) {
+            Ok(bytes) => {
+                let store: Self = serde_json::from_slice(&bytes).map_err(|e| {
+                    std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        format!("invalid career_history.json: {e}"),
+                    )
+                })?;
+                Ok(store)
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Self::new()),
+            Err(e) => Err(e),
+        }
+    }
+
+    /// Persist atomically: write to `<path>.tmp` then rename, so a
+    /// crash mid-write never leaves a corrupt blob in place.
+    pub fn save(&self, path: &Path) -> std::io::Result<()> {
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        let mut tmp = path.to_path_buf();
+        let mut name = tmp.file_name().map(|n| n.to_owned()).unwrap_or_default();
+        name.push(".tmp");
+        tmp.set_file_name(name);
+        // Compact (`to_vec` not `to_vec_pretty`): the blob is 30+ MB
+        // when populated for the active 5-season roster; pretty
+        // formatting wastes ~50% on indentation we never look at.
+        let bytes = serde_json::to_vec(self)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string()))?;
+        std::fs::write(&tmp, &bytes)?;
+        std::fs::rename(&tmp, path)?;
+        Ok(())
+    }
+
+    pub fn upsert(&mut self, history: CareerHistory) {
+        let key = history.player_id.to_string();
+        self.histories.insert(key, history);
+    }
+
+    pub fn get(&self, player_id: u32) -> Option<&CareerHistory> {
+        self.histories.get(&player_id.to_string())
+    }
+
+    pub fn len(&self) -> usize {
+        self.histories.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.histories.is_empty()
+    }
+
+    /// Stamp the fetched_at timestamp using the current UTC time.
+    pub fn stamp_now(&mut self) {
+        self.fetched_at = Some(chrono::Utc::now().to_rfc3339());
+    }
 }
 
 #[cfg(test)]
@@ -301,24 +381,62 @@ mod tests {
         assert!(matches!(err, CareerParseError::MissingSeasonTotals));
     }
 
-    /// Calder.1 / l0_parse_rejects_unknown_game_type
-    /// — gameTypeId 1 (preseason) is rare but possible. We refuse it
-    ///   rather than silently bucketing into Regular/Playoff.
+    /// Calder.2 / l0_parse_skips_unknown_game_type
+    /// — gameTypeId 6 (preseason) and 7 (exhibition) appear in real
+    ///   data. We skip the entry rather than fail the whole player
+    ///   so a single tournament row doesn't drop a 20-year career.
+    ///   Recovers the 3 players we lost in the first live fetch.
     #[test]
-    fn l0_parse_rejects_unknown_game_type() {
+    fn l0_parse_skips_unknown_game_type() {
         let raw = serde_json::json!({
-            "seasonTotals": [{
-                "season": 20152016,
-                "gameTypeId": 1,
-                "leagueAbbrev": "NHL",
-                "gamesPlayed": 1,
-            }]
+            "seasonTotals": [
+                {
+                    "season": 20152016,
+                    "gameTypeId": 6,
+                    "leagueAbbrev": "PRE",
+                    "gamesPlayed": 1,
+                },
+                {
+                    "season": 20162017,
+                    "gameTypeId": 2,
+                    "leagueAbbrev": "NHL",
+                    "gamesPlayed": 82,
+                    "teamName": {"default": "Edmonton"},
+                }
+            ]
         });
-        let err = parse_career_history(1, &raw).unwrap_err();
-        assert!(
-            matches!(err, CareerParseError::UnknownGameType { value: 1, .. }),
-            "got: {err:?}"
+        let h = parse_career_history(1, &raw).expect("parse must succeed");
+        assert_eq!(
+            h.stints.len(),
+            1,
+            "preseason entry should be skipped, NHL kept"
         );
+        assert_eq!(h.stints[0].league.0, "NHL");
+    }
+
+    /// Calder.2 / l0_parse_skips_entry_missing_required_field
+    /// — same resilience for missing `gamesPlayed` (saw 1 player
+    ///   skipped in live fetch for this exact case).
+    #[test]
+    fn l0_parse_skips_entry_missing_required_field() {
+        let raw = serde_json::json!({
+            "seasonTotals": [
+                {
+                    "season": 20152016,
+                    "gameTypeId": 2,
+                    "leagueAbbrev": "NHL",
+                    // gamesPlayed deliberately absent
+                },
+                {
+                    "season": 20162017,
+                    "gameTypeId": 2,
+                    "leagueAbbrev": "NHL",
+                    "gamesPlayed": 82,
+                }
+            ]
+        });
+        let h = parse_career_history(1, &raw).expect("parse must succeed");
+        assert_eq!(h.stints.len(), 1, "incomplete entry skipped, complete kept");
     }
 
     /// Calder.1 / l0_toi_parser_round_trips
@@ -332,6 +450,127 @@ mod tests {
         assert_eq!(toi_field(&v, "avgToi"), None);
         let v = serde_json::json!({});
         assert_eq!(toi_field(&v, "avgToi"), None);
+    }
+
+    /// Calder.2 / l0_store_round_trips_through_disk
+    /// — write a store, read it back, get-by-pid still works.
+    #[test]
+    fn l0_store_round_trips_through_disk() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let path = dir.path().join("career_history.json");
+        let mut store = CareerHistoryStore::new();
+        let mcdavid = parse_career_history(8478402, &load_fixture("mcdavid_8478402.json"))
+            .expect("mcdavid parses");
+        let original_count = mcdavid.stints.len();
+        store.upsert(mcdavid);
+        store.stamp_now();
+        store.save(&path).expect("save ok");
+
+        let loaded = CareerHistoryStore::load(&path).expect("load ok");
+        assert_eq!(loaded.schema_version, 1);
+        assert!(loaded.fetched_at.is_some(), "fetched_at must round-trip");
+        assert_eq!(loaded.len(), 1);
+        let h = loaded.get(8478402).expect("McDavid present");
+        assert_eq!(h.stints.len(), original_count);
+        // OHL stint still resolves after round-trip.
+        assert!(h.stints.iter().any(|s| s.league.0 == "OHL"));
+    }
+
+    /// Calder.2 / l0_store_load_missing_file_returns_empty
+    /// — first run: the blob doesn't exist yet, load() must NOT
+    ///   error — the caller proceeds with an empty store.
+    #[test]
+    fn l0_store_load_missing_file_returns_empty() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let path = dir.path().join("nope.json");
+        let store = CareerHistoryStore::load(&path).expect("missing file is not an error");
+        assert!(store.is_empty());
+        assert_eq!(store.schema_version, 1);
+    }
+
+    /// Calder.2 / l0_store_load_corrupt_file_errors_clearly
+    /// — a malformed JSON body must surface as InvalidData, not
+    ///   panic. Operator runs `fetch career` to regenerate.
+    #[test]
+    fn l0_store_load_corrupt_file_errors_clearly() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let path = dir.path().join("bad.json");
+        std::fs::write(&path, b"{not valid json").unwrap();
+        let err = CareerHistoryStore::load(&path).unwrap_err();
+        assert_eq!(err.kind(), std::io::ErrorKind::InvalidData);
+    }
+
+    /// Calder.2 / l0_store_atomic_write_does_not_leave_tmp
+    /// — after a successful save, no `.tmp` sidecar is left in the
+    ///   directory.
+    #[test]
+    fn l0_store_atomic_write_does_not_leave_tmp() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let path = dir.path().join("career_history.json");
+        let store = CareerHistoryStore::new();
+        store.save(&path).unwrap();
+        let entries: Vec<_> = std::fs::read_dir(dir.path())
+            .unwrap()
+            .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+            .collect();
+        assert!(
+            !entries.iter().any(|n| n.ends_with(".tmp")),
+            "tmp sidecar leaked: {entries:?}"
+        );
+        assert!(entries.iter().any(|n| n == "career_history.json"));
+    }
+
+    /// Calder.2 / l0_store_upsert_replaces_existing
+    #[test]
+    fn l0_store_upsert_replaces_existing() {
+        let mut store = CareerHistoryStore::new();
+        let h1 = CareerHistory {
+            player_id: 1,
+            stints: vec![],
+        };
+        store.upsert(h1);
+        assert_eq!(store.len(), 1);
+
+        let mut h2 = CareerHistory {
+            player_id: 1,
+            stints: vec![],
+        };
+        h2.stints.push(CareerStint {
+            season: Season(20242025),
+            league: LeagueAbbrev::new("NHL"),
+            team: "EDM".into(),
+            game_type: CareerGameType::Regular,
+            sequence: 1,
+            gp: 82,
+            goals: Some(48),
+            assists: None,
+            points: None,
+            pim: None,
+            plus_minus: None,
+            power_play_goals: None,
+            power_play_points: None,
+            shorthanded_goals: None,
+            shorthanded_points: None,
+            game_winning_goals: None,
+            ot_goals: None,
+            shots: None,
+            shooting_pct: None,
+            avg_toi_sec: None,
+            faceoff_win_pct: None,
+            games_started: None,
+            wins: None,
+            losses: None,
+            ot_losses: None,
+            goals_against: None,
+            goals_against_avg: None,
+            save_pct: None,
+            shots_against: None,
+            shutouts: None,
+            time_on_ice_sec: None,
+        });
+        store.upsert(h2);
+        assert_eq!(store.len(), 1, "upsert must REPLACE, not duplicate");
+        assert_eq!(store.get(1).unwrap().stints.len(), 1);
     }
 
     /// Calder.1 / l0_sort_for_display_keeps_seq_order

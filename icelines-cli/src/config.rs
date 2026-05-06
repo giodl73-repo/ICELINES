@@ -268,6 +268,16 @@ impl Config {
             .unwrap_or(&self.cache_dir)
             .join("snapshots")
     }
+
+    /// Phase Calder.2 — path to the multi-league career-history blob.
+    /// Single global file (not per-season) because a player's pre-NHL
+    /// career doesn't change with the active season.
+    pub fn career_history_path(&self) -> std::path::PathBuf {
+        self.cache_dir
+            .parent()
+            .unwrap_or(&self.cache_dir)
+            .join("career_history.json")
+    }
 }
 
 // ── Live-feeds toggle (Phase 8f.1) ────────────────────────────────────────────
