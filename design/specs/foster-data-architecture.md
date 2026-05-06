@@ -106,6 +106,32 @@ pub trait Clock: Send + Sync {
 `DataInstall` source enforces `Ttl::Static` at construction — user
 explicitly chose to install, doesn't get auto-refreshed (TAPE M3).
 
+### Persistence model — manifest is mutable + self-validating (Round 3 Impl B4)
+
+**Resolves the F.0.3 ↔ F.0.5 contradiction** the implementation-readiness
+review caught. The manifest is **persisted**, **mutable**, and on each
+process open performs a **fast self-validation pass**:
+
+1. Read each shard JSON (HashMap-indexed via OnceLock).
+2. For each entry, check `path` exists on disk.
+3. Drop entries whose backing file is missing (logged via
+   `tracing::warn!`, not user-visible).
+4. Walk `~/.icelines/snapshots/<active>/` + bundle for entries the
+   manifest doesn't know about; add them with `source: DataInstall`
+   (snapshots) or `source: Bundle` (embedded).
+
+The validation pass is **mtime-cached** (Round 3 Risk #1): if every
+source dir's mtime ≤ the manifest's `last_validated_at` field, skip
+the validation walk. Only re-validate when something on disk changed.
+Reduces CLI cold-start from ~200-500 ms to ~5 ms after first run.
+
+**Lazy-fetch path appends to the manifest**, persists immediately via
+the atomic-write pattern below. Mutations are not in tension with
+the rebuild story — rebuild is reconciliation, not replacement.
+
+**Recovery**: delete `~/.icelines/data/manifest/`. Next open
+re-validates from scratch.
+
 ### `Manifest` (icelines-fetch/src/manifest.rs — new)
 
 Sharded by kind so `query leaders` deserializes ~50 entries (bios+stats),
@@ -127,20 +153,58 @@ Loaded into `OnceLock<HashMap<(DataKind, DataKey), Freshness>>` per
 shard on first access. O(1) lookup after.
 
 ```rust
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[non_exhaustive]
 pub enum DataKind {
-    Bios, Stats, GoalieStats, Transactions,
-    Boxscore, CareerHistory, Schedule, Score,
+    Bios,
+    Stats,
+    GoalieStats,
+    Transactions,
+    Boxscore,
+    CareerHistory,
+    Schedule,
+    Score,
     PlayoffBracket,
-    // others added with #[non_exhaustive]
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum DataKey {
     Season(Season),
     SeasonType(Season, SeasonType),
     Game(GameId),
     Date(NaiveDate),
-    Player(PlayerId),       // career_history
-    Global,                 // career_history when stored as one blob
+    Player(PlayerId),       // career_history per-player
+    Global,                 // career_history single-blob form
+}
+
+#[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
+pub enum DataError {
+    #[error("data not installed for {kind:?} / {key:?} — \
+             run `icelines setup` or `icelines fetch …`")]
+    NotInstalled { kind: DataKind, key: DataKey },
+
+    #[error("manifest entry exists but file missing on disk: {path}")]
+    BackingFileMissing { path: PathBuf },
+
+    #[error("network error fetching {url}: {source}")]
+    Network { url: String, source: reqwest::Error },
+
+    #[error("HTTP {status} from {url}")]
+    Http5xx { url: String, status: u16 },
+
+    #[error("schema drift parsing {url}: {detail}")]
+    SchemaDrift { url: String, detail: String },
+
+    #[error("manifest version {found} requires reader v{min_supported} \
+             (we are v{our_version})")]
+    VersionTooNew { found: u32, min_supported: u32, our_version: u32 },
+
+    #[error("corrupt JSON in {path}: {source}")]
+    Corrupt { path: PathBuf, source: serde_json::Error },
+
+    #[error("io error: {source}")]
+    Io { #[from] source: std::io::Error },
 }
 ```
 
@@ -176,9 +240,9 @@ pub struct DataStore {
 
 impl DataStore {
     pub fn load_bios(&self, season: Season) -> Result<Vec<SkaterBio>, DataError>;
-    pub fn load_stats(&self, season: Season, type_: SeasonType) -> Result<…>;
+    pub fn load_stats(&self, season: Season, type_: SeasonType) -> Result<Vec<SkaterStats>, DataError>;
     pub fn load_career_history(&self, pid: PlayerId) -> Option<CareerHistory>;
-    pub fn load_boxscore(&self, game: GameId) -> Result<Boxscore, DataError>;
+    pub fn load_boxscore(&self, game: GameId) -> Result<BoxscoreData, DataError>;
     pub fn freshness(&self, kind: DataKind, key: DataKey) -> Option<Freshness>;
     pub fn list_seasons(&self, kind: DataKind) -> Vec<Season>;
 
@@ -200,6 +264,57 @@ impl DataStore {
 embedded bytes via the existing `BUNDLED_*` constants when manifest
 misses but bundle hits. No bundle reduction; no `BUNDLED_SEASONS`
 cull. The architecture is a wrapper, not a replacement.
+
+**Bundle freshness**: `freshness(kind, key)` for a bundle-served
+season synthesizes `Some(Freshness { source: Bundle, ttl: Static })`
+at query time. Sync engine's `enumerate_stale` skips Bundle-source
+entries (Static TTL never reports stale). No manifest entry written
+for bundle hits.
+
+**Tie-breaker for shim collisions** (Round 3 Impl H5): if both
+`~/.icelines/data/seasons/<S>/bios.json` and
+`~/.icelines/snapshots/<active>/bios.json` exist for season S, the
+**`data/seasons/` path wins**. Snapshots are legacy; modern path
+takes precedence.
+
+**`live_feeds` flag source**: read from `Config` (default `true`),
+overridden by `--no-live` CLI flag, overridden by
+`ICELINES_NO_LIVE=1` env var. Independent of `ICELINES_TEST_MODE=1`,
+which is test-runner-only and short-circuits both lazy-fetch and
+sync engine.
+
+### `BoxscoreData` type (avoids two-Boxscores collision — Round 3 Impl B2)
+
+The workspace already has two types named `Boxscore`:
+- `icelines-fetch/src/nhl_api.rs:696` — wire-shape from the API
+- `icelines-fetch/src/shift_profile.rs:40` — `BoxscoreData` (the
+  domain shape used by `aggregate_profiles`)
+
+Foster's `DataStore::load_boxscore` returns the existing
+**`BoxscoreData`** (the domain shape). `nhl_api::Boxscore` stays as
+the wire-only type used during `fetch_boxscore`. Foster.3's fetcher
+maps `nhl_api::Boxscore` → `BoxscoreData` + extracted events,
+persists both. No new type introduced.
+
+### `DatasetStore` trait — retrofit existing stores (Round 3 Coherence H2 / FORGE M2)
+
+```rust
+pub trait DatasetStore: Send + Sync {
+    type Key;
+    type Value;
+    type Error;
+
+    fn load(&self, key: &Self::Key) -> Result<Self::Value, Self::Error>;
+    fn save(&self, key: &Self::Key, value: &Self::Value) -> Result<(), Self::Error>;
+    fn freshness(&self, key: &Self::Key) -> Option<Freshness>;
+}
+```
+
+Foster.0 retrofits `CareerHistoryStore` (career_landing.rs) onto this
+trait in the same commit it's introduced. New stores (boxscore JSON,
+event stream sidecars) implement it. Atomic-write helper extracts to
+`icelines-fetch/src/atomic_write.rs` so `CareerHistoryStore` and
+`Manifest` share one implementation rather than two copies.
 
 ### Snapshot read-shim (Foster.0.7)
 
@@ -260,7 +375,59 @@ fetch. Setup wizard maps three user questions to the matrix:
 
 `shifts` capability is reserved in the matrix but enforced as
 `off`-only until per-shift parsing ships in a future phase. Setting
-to `favorites`/`league` returns a clear "not yet supported" error.
+to `favorites`/`league` returns this **literal error message**:
+
+```
+error: capability `shifts` cannot be set to `<chosen>` yet —
+       per-shift parsing isn't implemented. Reserved for a future
+       phase. Allowed values today: off
+```
+
+Capability matrix tests (24) assert this exact string for `shifts`
+mode-honored cases.
+
+### `icelines config` CLI surface (Round 3 Persona Blocker #1)
+
+Capability matrix is configurable post-setup without hand-editing
+TOML:
+
+```bash
+icelines config get sync.capabilities.transactions      # prints "favorites"
+icelines config set sync.capabilities.transactions league
+icelines config set sync.policy lazy
+icelines config list                                      # all keys
+icelines config reset sync.capabilities                  # reset to defaults
+```
+
+Implemented in `icelines-cli/src/commands/config.rs` (~120 lines).
+Validates against the typed config schema; rejects unknown keys
+with a "did you mean" suggestion (Levenshtein-1, mirrors LB.1
+pattern). 6 L0 tests for the parser, 4 L2 for the subprocess
+surface (in F.0.7's 24-test capability matrix file).
+
+### EntityRef as filter atom (Round 3 Coherence H1 / EDGE H2)
+
+`parse_filter_expr` (icelines-core/src/stats_catalog.rs) gains
+`team=ABBR` and `opponent=ABBR` as recognized bio_keys, routed
+through `extract_bio` in icelines-query. Ten lines of code; saves
+a breaking change later when users naturally type
+`--filter "team=EDM"`.
+
+### Capability mode bleed-through on filters (Round 3 Coherence H1 / EDGE H3)
+
+When `transactions = favorites`, an explicit query for a non-favorited
+player (e.g. `query transactions --player Ovechkin`) **proceeds with a
+warning**:
+
+```
+warning: 'Ovechkin' is not in your favorites; fetching ad-hoc.
+         Use --pin to install permanently, or
+         `icelines config set sync.capabilities.transactions league` to
+         widen the default scope.
+```
+
+Allow + warn (not reject + not silent auto-cache). User sees the
+result; the data isn't persisted unless `--pin` is set.
 
 ## Sync engine (Foster.4)
 

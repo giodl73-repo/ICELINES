@@ -7,9 +7,11 @@ pub mod career_history;
 pub mod contract;
 pub mod cross_team;
 pub mod depth_chart;
+pub mod entity;
 pub mod error;
 pub mod filter;
 pub mod fixtures;
+pub mod freshness;
 pub mod history;
 pub mod identity;
 pub mod model;
@@ -30,7 +32,9 @@ pub use cross_team::{
     compute_all_views as compute_cross_team_metrics_views, CrossTeamMetrics, WebFitClass,
 };
 pub use depth_chart::DepthChartBuilder;
+pub use entity::{EntityRef, EntityRefError};
 pub use error::IcelinesError;
+pub use freshness::{Clock, FetchSource, Freshness, MockClock, SystemClock, Ttl};
 pub use filter::PlayerFilter;
 pub use history::{CareerSummary, SeasonLine};
 pub use model::{

@@ -1546,6 +1546,7 @@ dependencies = [
 name = "icelines-core"
 version = "0.13.0"
 dependencies = [
+ "chrono",
  "once_cell",
  "proptest",
  "regex",

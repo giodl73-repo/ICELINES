@@ -119,7 +119,8 @@ See `foster-favorites-dashboard.md` for detail. Headline: separate
 attribution rule, DNP/scratched/absent classification, heterogeneous
 JSON envelope explicitly documented.
 
-**Test budget**: 18 tests + 6 personas.
+**Test budget**: 21 tests + 6 personas (8 L0 projection + 4 L1 web +
+3 L1 TUI render smoke + 6 L2 CLI).
 
 ### Foster.3 — Boxscores + EventStream (~3 days, +50%)
 
@@ -157,9 +158,13 @@ scenarios mirroring `persona_wave3.rs` density.
 
 ## Total budget
 
-**~16 working days** (4-week-aware), **~159 tests** (~3× the original
+**~22 working days** (4-week-aware), **~168 tests** (~3× the original
 ~59). Largest phase yet — also the data-model capstone, expected not
 to repeat for v1.
+
+Sum check (sub-phase days): 5 (F.0) + 3 (F.1) + 4 (F.2) + 3 (F.3) +
+3 (F.4) + 2 (F.5) + 2 (F.6) = **22 days**. Sum check (tests): 35 +
+24 + 12 + 21+6 + 12 + 15 + 9 + 4+30 = **168 tests**.
 
 ## Pre-flight checklist
 
@@ -177,7 +182,9 @@ sub-phase:
 
 1. **Time-travel URL convention** — locked: `?date=YYYY-MM-DD` for
    anchor, `?range=week|month` for span. Drop the existing `?start=`
-   on `/schedule` for consistency.
+   on `/schedule` for consistency. Breaking change to bookmarks;
+   document in CHANGELOG and keep `?start=` working as a deprecated
+   alias for at least one minor version.
 2. **`/api/v1/favorites` envelope shape** — `data` is heterogeneous
    (`{players: [], teams: [], events: []}`), explicitly breaking the
    homogeneous-array convention. Documented in
@@ -186,3 +193,7 @@ sub-phase:
    `Clock` trait; production uses `SystemClock`, tests use
    `MockClock`. `ICELINES_TEST_MODE=1` env var disables auto-sync
    regardless of policy. Documented in `foster-data-architecture.md`.
+4. **`icelines config` CLI surface** — capability matrix is
+   configurable post-setup via `icelines config get/set
+   sync.capabilities.<key>`. Defined in
+   `foster-data-architecture.md` §"Setup wizard + config CLI".

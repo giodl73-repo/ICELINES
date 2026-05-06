@@ -1,7 +1,7 @@
 # Phase Foster — Favorites + Boxscores plan (Foster.2 + Foster.3)
 
 **Spec**: `design/specs/foster-favorites-dashboard.md`
-**Test budget**: 18 + 6 personas (F.2) + 12 (F.3) = **36 tests + 6 personas**
+**Test budget**: 21 + 6 personas (F.2) + 12 (F.3) = **33 tests + 6 personas**
 
 ---
 
@@ -119,7 +119,7 @@ icelines-cli/tests/persona_foster.rs                 ~250 lines (6 scenarios)
 - `--range week` aggregates correctly, excludes DNPs from games_played
 - `/favorites` HTML + `/api/v1/favorites` JSON twin both render
 - TUI tab `Shift+F` works; admin moved to `Shift+A`; empty-state card displays
-- 18 tests + 6 personas pass
+- 21 tests + 6 personas pass (8 L0 + 4 L1 web + 3 L1 TUI smoke + 6 L2)
 
 ## Acceptance for Foster.3
 

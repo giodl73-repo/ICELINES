@@ -34,12 +34,12 @@ once F.3 lands. F.6 closes.
 |---|---|---|
 | Foster.0 | `2026-05-06-phaseFoster-data.md` | 35 + 24 capability matrix |
 | Foster.1 | `2026-05-06-phaseFoster-time.md` (shared with F.5) | 12 |
-| Foster.2 | `2026-05-06-phaseFoster-favorites.md` (shared with F.3) | 18 + 6 personas |
+| Foster.2 | `2026-05-06-phaseFoster-favorites.md` (shared with F.3) | 21 + 6 personas |
 | Foster.3 | `2026-05-06-phaseFoster-favorites.md` | 12 |
 | Foster.4 | `2026-05-06-phaseFoster-data.md` (shared with F.0 — sync engine) | 15 |
 | Foster.5 | `2026-05-06-phaseFoster-time.md` | 9 |
 | Foster.6 | `2026-05-06-phaseFoster-closeout.md` | 4 unit + 30 personas |
-| **Total** | — | **~165 tests** |
+| **Total** | — | **~168 tests** |
 
 ## Pre-flight (before Foster.0 starts)
 

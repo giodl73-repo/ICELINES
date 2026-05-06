@@ -1,4 +1,5 @@
 pub mod aggregate;
+pub mod atomic_write;
 pub mod boxscore_client;
 pub mod bundled;
 pub mod cache;
@@ -6,8 +7,10 @@ pub mod career;
 pub mod career_landing;
 pub mod chunkstore;
 pub mod csv_loader;
+pub mod datastore;
 pub mod error;
 pub mod fetch_lock;
+pub mod manifest;
 pub mod moneypuck;
 pub mod nhl_api;
 pub mod playoffs_bundle;

@@ -51,7 +51,7 @@ are most-used.
 ```rust
 pub struct FavoritesView {
     pub date: NaiveDate,
-    pub range: TimeRange,        // Day | Week | Month
+    pub range: Timeframe,        // Day | Week | Month | Season — see foster-time-and-timeframes.md
     pub players: Vec<PlayerNightRow>,
     pub teams: Vec<TeamNightRow>,
     pub events: Vec<EventRow>,
@@ -118,7 +118,39 @@ pub struct GoalieNightLine {
     pub shutout: bool,
     pub game_state: GameState,
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum HomeAway { Home, Away }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum GameResult { Win, Loss, OtLoss, InProgress }
+
+/// Mirrors NHL API `gameState` field. `Pre` is the warmup window
+/// (~30 min before puck drop). `Off` is "officially ended" (final
+/// posted, scratch list locked); `Final` is the same value the API
+/// emits during the very brief window between the last whistle and
+/// `Off`. Foster treats Off and Final as interchangeable for stat
+/// gating (see Hits/blocks gating).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum GameState { Fut, Pre, Live, Final, Off }
+
+/// Goalie decision per NHL boxscore. `None` means relief appearance
+/// without a decision attached (split decision rules in SCOUT H5).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub enum Decision {
+    #[serde(rename = "W")] Win,
+    #[serde(rename = "L")] Loss,
+    #[serde(rename = "OTL")] OtLoss,
+}
 ```
+
+`TeamAbbr` is the existing `icelines_core::team::TeamAbbr` newtype
+around a 3-letter ASCII string. `EntityRef` and `Timeframe` are
+defined in `foster-data-architecture.md` and
+`foster-time-and-timeframes.md` respectively.
 
 ### Hits/blocks gating (SCOUT B2)
 
@@ -179,6 +211,49 @@ history pending" footer.
 `icelines favorites --filter "p>=2"` filters **per-night stat lines**
 (2+ points tonight), NOT season totals. Season-total filtering stays
 on `query leaders`. Documented in COMMANDS.md.
+
+### Past-date capability semantics
+
+Capability matrix entries describe **default sync behavior going
+forward**. Past-date queries (`--date 2014-10-08`) bypass the policy
+gate: a user explicitly requesting an arbitrary past date implies
+intent. Resolution order for past dates:
+
+1. **Manifest hit** — boxscore for `(date, game_id)` already on disk
+   under `data/boxscores/<date>/<game>.json` → serve.
+2. **`live_feeds_enabled() && !test_mode`** → fetch on demand,
+   regardless of `boxscores=off|favorites|league`. Persist to disk +
+   manifest. Banner: `Fetched 8 boxscores for 2014-10-08 · 1.4 s`.
+3. **`live_feeds_enabled() == false`** (offline / `--no-live`) →
+   render the empty-state card with the date in the header and a
+   one-line "offline — past dates need live feeds" footer.
+
+This means `boxscores=off` does NOT block `favorites --date 2014-10-08`
+when the user is online; it only suppresses the eager background
+refresh on the current date. SCOUT-flagged: documented to prevent
+"why won't time-travel work" support tickets.
+
+### Schedule-before-boxscore flow
+
+Favorites for a date depend on knowing **which games to look up**
+before deciding which boxscores to fetch. The fetch order is:
+
+1. `DataStore::load_schedule(date)` — `/v1/schedule/{date}` → list of
+   `(game_id, home, away, status)` for the slate. ~5 KB, single GET.
+2. Filter games to those involving favorited teams OR favorited
+   players' team-on-that-date (resolved via career_history).
+3. Fan out N parallel `DataStore::load_boxscore(date, game_id)`
+   calls (typical 0-4 games on a 12-game night).
+4. Project into `FavoritesView`.
+
+The schedule call is what makes empty nights cheap: if the favorited
+teams aren't playing, step 3 is skipped entirely. Schedule fetches
+also populate the Scores/Schedule tabs (Foster.1) — single network
+call serves three surfaces.
+
+Schedule TTL: `Ttl::After(15min)` for in-progress dates;
+`Ttl::Static` once `game_state ∈ {OFF, FINAL}` for every game on the
+slate.
 
 ### Aggregate view ("Last 7 days for your favorites")
 
@@ -356,7 +431,7 @@ Mirrors UX.1 "Loading-career placeholder" pattern.
 
 ## Test plan (BENCH H1+H3)
 
-**Foster.2 = 18 tests + 6 personas**:
+**Foster.2 = 21 tests + 6 personas**:
 
 - L0 projection (8): SkaterNightLine vs GoalieNightLine routing,
   hits/blocks gating on game_state, DNP classification (scratched /
@@ -366,6 +441,8 @@ Mirrors UX.1 "Loading-career placeholder" pattern.
 - L1 web (4): `/favorites` 200 with empty group, with players, with
   teams, with both; `/api/v1/favorites` envelope shape with
   heterogeneous `data` documented
+- L1 TUI render smoke (3): with players, with teams, empty group
+  (insta golden snapshots of the favorites tab body)
 - L2 CLI (6): `favorites` exits 0 with empty store, with populated
   store, `--date 2014-10-08` past-date, `--week` aggregate,
   `--json` envelope, `--filter "p>=2"` per-night scoped
@@ -390,7 +467,8 @@ Mirrors UX.1 "Loading-career placeholder" pattern.
 - L2 CLI (2): `fetch boxscore --date YYYY-MM-DD` writes events,
   `--for-favorites` filters
 
-**Foster.2 + .3 total = 36 tests + 6 personas**.
+**Foster.2 + .3 total = 33 + 12 = 39 tests + 6 personas** (counted
+elsewhere as 21 + 12 + 6 personas).
 
 ## Files added
 

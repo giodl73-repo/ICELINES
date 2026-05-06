@@ -21,6 +21,18 @@ impl std::fmt::Display for PlayerId {
     }
 }
 
+/// NHL game id (e.g. 2025020001 = 2025-26 regular season game 1).
+/// Phase Foster — used by `EntityRef::Game` and `DataStore::load_boxscore`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct GameId(pub u64);
+
+impl std::fmt::Display for GameId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct PlayerBio {
     #[serde(default)]
