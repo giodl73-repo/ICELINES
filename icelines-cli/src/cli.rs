@@ -252,6 +252,36 @@ screen) to quit.
     /// Print the full command reference (embedded COMMANDS.md). No
     /// internet required — the doc ships inside the binary.
     Docs,
+
+    /// Friendly entry point — print a numbered menu and dispatch to
+    /// the chosen surface (web dashboard, TUI, docs). Loops back to
+    /// the menu after each surface quits; Q is the only way out.
+    /// Skip the menu by running `icelines tui <slug>` /
+    /// `icelines serve` / `icelines docs` directly.
+    #[command(long_about = r#"icelines menu — interactive looping launcher.
+
+Prints a numbered menu and reads a choice; dispatches to the matching
+surface; loops back to the menu when the surface quits. Q (or q) is
+the only way out — Ctrl-C will currently exit non-zero (130 on Unix).
+
+EXAMPLES
+    icelines menu                          # boot the launcher
+    echo 1 | icelines menu                 # NOT supported — see below
+
+NON-INTERACTIVE INVOCATION
+    `icelines menu` requires a real TTY on stdin. When stdin is piped
+    or redirected (e.g. `icelines menu < /dev/null`) it exits 0 with a
+    one-line redirect message; for scripted use call
+    `icelines tui --start <slug>` directly.
+
+ENTRY POINTS COVERED
+    1-8                Nav-tab surfaces (League, Stats, Goalies, ...).
+    P / T / G / C      Drill-downs (Player / Team / Goalie / Comps).
+    W                  Web dashboard (port 8000).
+    D                  Print COMMANDS.md.
+    Q                  Quit the menu.
+"#)]
+    Menu,
     /// Export analytical output as markdown tables (Phase 8d).
     /// Bridges to proof's DASHBOARD-SPEC compiler — see
     /// `design/specs/export-markdown.md`.

@@ -214,6 +214,9 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             // chance of drift between docs and behavior.
             print!("{}", include_str!("../../COMMANDS.md"));
         }
+        Commands::Menu => {
+            commands::menu::run(&cfg).await?;
+        }
         Commands::Export(sub) => {
             commands::export::run(sub).await?;
         }
