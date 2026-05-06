@@ -171,8 +171,46 @@ Source: IceLines · /player/{{ nhl_id }}
 </div>
 {% endif %}
 
+{# Phase Calder.3 — pre-NHL career stints (junior / NCAA / AHL /
+   European pro). Section is hidden when the local store is empty
+   (`icelines fetch career` not yet run). #}
+{% if !pre_nhl_career.is_empty() %}
+<h2 style="margin-top: 1.5rem;">Pre-NHL career — {{ pre_nhl_career.len() }} stint{% if pre_nhl_career.len() != 1 %}s{% endif %}</h2>
+<div class="table-scroll">
+<table>
+    <thead>
+        <tr>
+            <th>Season</th>
+            <th>League</th>
+            <th>Team</th>
+            <th style="text-align: right;">GP</th>
+            <th style="text-align: right;">G</th>
+            <th style="text-align: right;">A</th>
+            <th style="text-align: right;">P</th>
+            <th style="text-align: right;">P/GP</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in pre_nhl_career %}
+        <tr>
+            <td><strong>{{ row.season }}</strong></td>
+            <td><span class="league-badge tier-{{ row.league_tier }}">{{ row.league }}</span></td>
+            <td>{{ row.team }}</td>
+            <td style="text-align: right;">{{ row.gp }}</td>
+            <td style="text-align: right;">{{ row.goals_str }}</td>
+            <td style="text-align: right;">{{ row.assists_str }}</td>
+            <td style="text-align: right;"><strong>{{ row.points_str }}</strong></td>
+            <td style="text-align: right;">{{ row.ppg_str }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endif %}
+
 <p style="margin-top: 2rem; color: #616161; font-size: 0.9rem;">
     Career table sourced from the 38-season bundle (1987-88 → 2025-26).
+    {% if !pre_nhl_career.is_empty() %}Pre-NHL data via <code>icelines fetch career</code>.{% endif %}
     JSON twin: <a href="/api/v1/player/{{ nhl_id }}"><code>/api/v1/player/{{ nhl_id }}</code></a>.
 </p>
 {% endblock %}

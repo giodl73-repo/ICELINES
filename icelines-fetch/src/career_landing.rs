@@ -249,6 +249,30 @@ impl CareerHistoryStore {
     }
 }
 
+/// Phase Calder.3 — load the local store from `~/.icelines/career_history.json`.
+///
+/// Returns an empty store if the file doesn't exist (first-run case)
+/// or fails to parse. Available to both CLI and Web surfaces so they
+/// don't both have to reimplement the path-finding ceremony.
+pub fn load_local_store() -> CareerHistoryStore {
+    let Some(path) = local_store_path() else {
+        return CareerHistoryStore::new();
+    };
+    CareerHistoryStore::load(&path).unwrap_or_else(|_| CareerHistoryStore::new())
+}
+
+/// `$HOME/.icelines/career_history.json` (Unix) or
+/// `%USERPROFILE%\.icelines\career_history.json` (Windows). Returns
+/// None when neither env var is set.
+fn local_store_path() -> Option<std::path::PathBuf> {
+    let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))?;
+    Some(
+        std::path::PathBuf::from(home)
+            .join(".icelines")
+            .join("career_history.json"),
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

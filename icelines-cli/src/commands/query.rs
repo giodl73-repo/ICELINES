@@ -1106,6 +1106,7 @@ pub async fn run_player(
                 print_percentile(&peer_views, v, rank_metric);
             }
             print_career(v, seasons as usize).await;
+            print_pre_nhl_career(v.identity.id.0).await;
         }
         "situation" => {
             println!("  Situational breakdown (5v5/PP/PK) requires Phase 5C shift data.");
@@ -1235,6 +1236,93 @@ fn print_percentile(
         ordinal(pct),
     );
     println!();
+}
+
+/// Phase Calder.3 — pre-NHL career stints from the multi-league
+/// store. Renders only when the user has populated the store via
+/// `icelines fetch career`; silent no-op otherwise. Skips NHL stints
+/// (those are already covered by `print_career`'s NHL career arc) and
+/// any IIHF/Olympic tournaments — the focus here is the development
+/// path: junior, NCAA, AHL, European pro.
+async fn print_pre_nhl_career(player_id: u32) {
+    use icelines_core::career_history::LeagueTier;
+
+    let store = icelines_fetch::career_landing::load_local_store();
+    if store.is_empty() {
+        // Store hasn't been populated yet — skip silently. Users who
+        // want this section run `icelines fetch career` once.
+        return;
+    }
+    let Some(history) = store.get(player_id) else {
+        return;
+    };
+
+    // Pre-NHL development tiers: Junior + College + Pro (AHL/KHL/SHL/
+    // Liiga). Skip International (WJC/WC/OG — interesting but not the
+    // "road to the NHL" arc) and Other (youth/minor — too noisy).
+    // Only regular-season stints — playoff runs are an interesting
+    // detail but bloat the table for most callers.
+    let pre_nhl: Vec<_> = history
+        .stints
+        .iter()
+        .filter(|s| {
+            s.league.0 != "NHL"
+                && matches!(
+                    s.league.tier(),
+                    LeagueTier::Pro | LeagueTier::Junior | LeagueTier::College
+                )
+                && matches!(
+                    s.game_type,
+                    icelines_core::career_history::CareerGameType::Regular
+                )
+        })
+        .collect();
+
+    if pre_nhl.is_empty() {
+        return;
+    }
+
+    println!();
+    println!("PRE-NHL CAREER — {} stints", pre_nhl.len());
+    // Width 14 on the League column fits "J20 Nationell", "Champions HL",
+    // "Allsvenskan" cleanly. Team width 22 is enough for "U. Mass-Lowell"
+    // and similar; truncation falls back to a slice.
+    println!(
+        "{:<10} {:<14} {:<22} {:<4} {:<4} {:<4} {:<5} {:<6}",
+        "Season", "League", "Team", "GP", "G", "A", "P", "PPG"
+    );
+    println!("{}", "─".repeat(76));
+    for s in &pre_nhl {
+        let ppg = s
+            .points_per_game()
+            .map(|p| format!("{p:.2}"))
+            .unwrap_or_else(|| "—".into());
+        let team = if s.team.len() > 22 {
+            &s.team[..22]
+        } else {
+            &s.team[..]
+        };
+        let league = if s.league.0.len() > 14 {
+            &s.league.0[..14]
+        } else {
+            s.league.0.as_str()
+        };
+        println!(
+            "{:<10} {:<14} {:<22} {:<4} {:<4} {:<4} {:<5} {:<6}",
+            season_label(&s.season.0.to_string()),
+            league,
+            team,
+            s.gp,
+            s.goals.map(|n| n.to_string()).unwrap_or_else(|| "—".into()),
+            s.assists
+                .map(|n| n.to_string())
+                .unwrap_or_else(|| "—".into()),
+            s.points
+                .map(|n| n.to_string())
+                .unwrap_or_else(|| "—".into()),
+            ppg,
+        );
+    }
 }
 
 async fn print_career(v: &PlayerView<'_>, seasons: usize) {

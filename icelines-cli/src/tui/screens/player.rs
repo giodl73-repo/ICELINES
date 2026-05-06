@@ -532,6 +532,77 @@ fn render_stats_view(f: &mut Frame, app: &App, v: &PlayerView<'_>, area: Rect) {
         }
     }
 
+    // Phase Calder.3 — pre-NHL career stints (junior / NCAA / AHL /
+    // European pro). Loaded from the local store. Renders only when
+    // the user has populated the store via `icelines fetch career`;
+    // silent no-op otherwise so untouched installs don't see noise.
+    {
+        use icelines_core::career_history::{CareerGameType, LeagueTier};
+        let store = icelines_fetch::career_landing::load_local_store();
+        if !store.is_empty() {
+            if let Some(history) = store.get(v.identity.id.0) {
+                let pre_nhl: Vec<&icelines_core::career_history::CareerStint> = history
+                    .stints
+                    .iter()
+                    .filter(|s| {
+                        s.league.0 != "NHL"
+                            && matches!(
+                                s.league.tier(),
+                                LeagueTier::Pro | LeagueTier::Junior | LeagueTier::College
+                            )
+                            && matches!(s.game_type, CareerGameType::Regular)
+                    })
+                    .collect();
+                if !pre_nhl.is_empty() {
+                    lines.push(Line::from(""));
+                    lines.push(Line::styled(
+                        format!(" Pre-NHL career  ·  {} stints", pre_nhl.len()),
+                        dim,
+                    ));
+                    lines.push(Line::styled(
+                        format!(
+                            " {:<8} {:<10} {:<18} {:>4} {:>4} {:>4} {:>5} {:>5}",
+                            "Season", "League", "Team", "GP", "G", "A", "P", "PPG"
+                        ),
+                        dim,
+                    ));
+                    // Display newest first (matches the NHL career
+                    // table convention above).
+                    let mut sorted = pre_nhl.clone();
+                    sorted.sort_by_key(|s| std::cmp::Reverse(s.season.0));
+                    for s in sorted.into_iter().take(15) {
+                        let season_label = format!(
+                            "{}-{}",
+                            &s.season.0.to_string()[..4],
+                            &s.season.0.to_string()[6..]
+                        );
+                        let team: String = s.team.chars().take(18).collect();
+                        let league: String = s.league.0.chars().take(10).collect();
+                        let ppg = s
+                            .points_per_game()
+                            .map(|p| format!("{p:.2}"))
+                            .unwrap_or_else(|| "—".into());
+                        lines.push(Line::from(format!(
+                            " {:<8} {:<10} {:<18} {:>4} {:>4} {:>4} {:>5} {:>5}",
+                            season_label,
+                            league,
+                            team,
+                            s.gp,
+                            s.goals.map(|n| n.to_string()).unwrap_or_else(|| "—".into()),
+                            s.assists
+                                .map(|n| n.to_string())
+                                .unwrap_or_else(|| "—".into()),
+                            s.points
+                                .map(|n| n.to_string())
+                                .unwrap_or_else(|| "—".into()),
+                            ppg,
+                        )));
+                    }
+                }
+            }
+        }
+    }
+
     lines.push(Line::from(""));
     lines.push(Line::styled(" Bio", dim));
     lines.push(Line::from(format!(" Draft: {}", draft)));
