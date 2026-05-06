@@ -211,11 +211,17 @@ DEPRECATIONS
     /// Launch the interactive TUI.
     #[command(long_about = r#"Launch the interactive ratatui TUI.
 
-By default boots on the League tab. Use --start <slug> to jump
-directly to a specific surface — useful for demos, scripts, and
-muscle memory.
+By default boots on the League tab. Two ways to jump to a specific
+surface — sugar subcommand or --start flag.
 
-Recognized slugs (canonical):
+EXAMPLES
+    icelines tui                       Boots on League (default).
+    icelines tui goalies               Boot on the Goalies tab.
+    icelines tui scores                Boot on tonight's scores.
+    icelines tui --start goalies       Same as `icelines tui goalies`.
+    icelines tui --start tonight       Alias accepted (= scores).
+
+Recognized canonical slugs:
     league         32-team rankings (default)
     depth          Cross-team depth chart
     stats          Interactive query/filter builder
@@ -225,21 +231,20 @@ Recognized slugs (canonical):
     transactions   League-wide moves feed
     playoffs       Bracket + series detail
 
-Aliases also accepted: queries (= stats), tonight (= scores),
+Aliases also accepted on --start: queries (= stats), tonight (= scores),
 moves (= transactions). All slugs are case-insensitive.
-
-EXAMPLES
-    icelines tui                       Boots on League (default).
-    icelines tui --start goalies       Boot on the Goalies tab.
-    icelines tui --start scores        Boot on tonight's scores.
 
 Once the TUI is up, Tab cycles all 8 tabs regardless of how you
 entered. Press y for the season picker; q (or Esc on a non-tab
 screen) to quit.
 "#)]
     Tui {
-        /// Surface to start on. Optional — default is `league`. See the
-        /// command's --help for the slug table.
+        /// Optional sugar subcommand for one of the 8 nav surfaces.
+        /// `icelines tui goalies` is shorthand for `--start goalies`.
+        #[command(subcommand)]
+        surface: Option<TuiSurface>,
+        /// Surface to start on. Optional — default is `league`. Same
+        /// slug grammar as the sugar subcommands. See --help.
         #[arg(long, value_name = "SLUG")]
         start: Option<String>,
     },
@@ -442,6 +447,145 @@ screen) to quit.
     /// Fantasy league management — teams, scoring, trades, server.
     #[command(subcommand)]
     Fantasy(FantasySubcommand),
+}
+
+// ── Tui sub-commands (LB.2 sugar) ─────────────────────────────────────────────
+
+/// Phase Lady Byng (LB.2) — sugar subcommands for `icelines tui`.
+///
+/// Each variant boots the TUI directly on the matching nav surface.
+/// `icelines tui goalies` is shorthand for `icelines tui --start goalies`.
+/// LB.3 will extend this enum with parameterized drill-downs (Player,
+/// Team, Goalie, Comps).
+#[derive(Debug, Subcommand)]
+pub enum TuiSurface {
+    /// 32-team rankings (default).
+    League,
+    /// Cross-team depth chart.
+    Depth,
+    /// Interactive query/filter builder.
+    Stats,
+    /// Goalie leaderboard.
+    Goalies,
+    /// Tonight's games + boxscores.
+    Scores,
+    /// Weekly + season schedule.
+    Schedule,
+    /// League-wide moves feed.
+    Transactions,
+    /// Bracket + series detail.
+    Playoffs,
+}
+
+impl TuiSurface {
+    /// Map sugar variant → ScreenSpec. The slug grammar in
+    /// `start_slug.rs` is the source of truth for parsing strings;
+    /// this mapping is the source of truth for sugar dispatch.
+    pub fn into_screen_spec(self) -> crate::start_slug::ScreenSpec {
+        use crate::start_slug::ScreenSpec;
+        match self {
+            TuiSurface::League => ScreenSpec::Home,
+            TuiSurface::Depth => ScreenSpec::Depth,
+            TuiSurface::Stats => ScreenSpec::Queries,
+            TuiSurface::Goalies => ScreenSpec::Goalies,
+            TuiSurface::Scores => ScreenSpec::Tonight,
+            TuiSurface::Schedule => ScreenSpec::Schedule,
+            TuiSurface::Transactions => ScreenSpec::Transactions,
+            TuiSurface::Playoffs => ScreenSpec::Playoffs,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tui_surface_tests {
+    use super::*;
+    use crate::start_slug::{parse_start_slug, ScreenSpec};
+    use clap::Parser;
+
+    /// LB.2 / l0_sugar_each_nav_tab_parses
+    /// — Every TuiSurface variant parses cleanly via clap and resolves
+    ///   to the same ScreenSpec as the corresponding `--start <slug>`.
+    ///   This locks sugar↔flag parity: if a future rename breaks one
+    ///   path, this test fails before users hit it.
+    #[test]
+    fn l0_sugar_each_nav_tab_parses() {
+        let cases = [
+            ("league", ScreenSpec::Home),
+            ("depth", ScreenSpec::Depth),
+            ("stats", ScreenSpec::Queries),
+            ("goalies", ScreenSpec::Goalies),
+            ("scores", ScreenSpec::Tonight),
+            ("schedule", ScreenSpec::Schedule),
+            ("transactions", ScreenSpec::Transactions),
+            ("playoffs", ScreenSpec::Playoffs),
+        ];
+        for (slug, expected) in cases {
+            // Sugar form: `icelines tui <slug>`
+            let cli = Cli::try_parse_from(["icelines", "tui", slug]).expect("sugar should parse");
+            let sugar_spec = match cli.command {
+                Commands::Tui {
+                    surface: Some(s),
+                    start: None,
+                } => s.into_screen_spec(),
+                other => panic!("expected Tui {{ surface: Some(_), start: None }}, got {other:?}"),
+            };
+            assert_eq!(sugar_spec, expected, "sugar slug={slug}");
+
+            // Flag form: `icelines tui --start <slug>`
+            let cli = Cli::try_parse_from(["icelines", "tui", "--start", slug])
+                .expect("--start should parse");
+            let flag_spec = match cli.command {
+                Commands::Tui {
+                    surface: None,
+                    start: Some(s),
+                } => parse_start_slug(&s).expect("known slug"),
+                other => panic!("expected Tui {{ surface: None, start: Some(_) }}, got {other:?}"),
+            };
+            assert_eq!(flag_spec, expected, "flag slug={slug}");
+
+            // Parity: both produce the same ScreenSpec.
+            assert_eq!(sugar_spec, flag_spec, "sugar↔flag drift for {slug}");
+        }
+    }
+
+    /// LB.2 / l0_bare_tui_has_no_surface_or_start
+    /// — `icelines tui` with no args produces None/None — main.rs
+    ///   dispatches that to Screen::Home (default).
+    #[test]
+    fn l0_bare_tui_has_no_surface_or_start() {
+        let cli = Cli::try_parse_from(["icelines", "tui"]).unwrap();
+        match cli.command {
+            Commands::Tui { surface, start } => {
+                assert!(surface.is_none());
+                assert!(start.is_none());
+            }
+            other => panic!("expected Tui, got {other:?}"),
+        }
+    }
+
+    /// LB.2 / l0_sugar_with_alias_slug_rejected
+    /// — Alias slugs (`queries`, `tonight`, `moves`) are NOT sugar
+    ///   subcommands — they only exist on `--start`. clap rejects
+    ///   `icelines tui tonight` as an unknown subcommand. This is
+    ///   intentional: aliases shouldn't bloat the `--help` output.
+    #[test]
+    fn l0_sugar_with_alias_slug_rejected() {
+        for alias in ["queries", "tonight", "moves"] {
+            let result = Cli::try_parse_from(["icelines", "tui", alias]);
+            assert!(
+                result.is_err(),
+                "alias '{alias}' should not work as sugar subcommand"
+            );
+        }
+        // But the same aliases work on --start:
+        for alias in ["queries", "tonight", "moves"] {
+            let result = Cli::try_parse_from(["icelines", "tui", "--start", alias]);
+            assert!(
+                result.is_ok(),
+                "alias '{alias}' should work on --start flag"
+            );
+        }
+    }
 }
 
 // ── Fetch sub-commands ────────────────────────────────────────────────────────
