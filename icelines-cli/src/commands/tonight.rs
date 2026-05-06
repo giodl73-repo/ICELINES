@@ -70,7 +70,11 @@ fn format_time_et(utc_hhmm: &str, game_date: &str) -> String {
     format!("{utc_hhmm} UTC")
 }
 
-pub async fn run(team_filter: Option<String>, date: Option<String>) -> anyhow::Result<()> {
+pub async fn run(
+    team_filter: Option<String>,
+    date: Option<String>,
+    widen_to_week: bool,
+) -> anyhow::Result<()> {
     let client = NhlApiClient::production();
     // Phase Foster.1 — anchor on `--date` if supplied; otherwise the
     // existing today path.
@@ -89,16 +93,20 @@ pub async fn run(team_filter: Option<String>, date: Option<String>) -> anyhow::R
             .context("fetching today's schedule")?,
     };
 
-    // Filter to the anchor date (or today, if no anchor: first date in
-    // the gameWeek).
+    // Phase Foster +7 — `--week` / `--month` keeps the full 7-day
+    // gameWeek; default narrows to the anchor day.
     let day = anchor
         .as_deref()
         .or_else(|| all_games.first().map(|g| g.date.as_str()))
         .unwrap_or("");
-    let schedule: Vec<_> = all_games
-        .iter()
-        .filter(|g| g.date.is_empty() || g.date == day)
-        .collect();
+    let schedule: Vec<_> = if widen_to_week {
+        all_games.iter().collect()
+    } else {
+        all_games
+            .iter()
+            .filter(|g| g.date.is_empty() || g.date == day)
+            .collect()
+    };
     let today = day;
 
     if schedule.is_empty() {

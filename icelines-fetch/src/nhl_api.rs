@@ -717,6 +717,20 @@ impl NhlApiClient {
         let raw: serde_json::Value = self.get_json(&url).await?;
         Ok(parse_boxscore(&raw, game_id))
     }
+
+    /// Phase Foster +3 — return the raw JSON body alongside the
+    /// parsed `Boxscore` so callers can persist the source-of-truth
+    /// to disk (data/boxscores/&lt;date&gt;/&lt;game_id&gt;.json) and re-parse
+    /// later for favorited-line population (Foster +4).
+    pub async fn fetch_boxscore_with_raw(
+        &self,
+        game_id: u64,
+    ) -> Result<(Boxscore, serde_json::Value), FetchError> {
+        let url = format!("{}/gamecenter/{game_id}/boxscore", self.base_web);
+        let raw: serde_json::Value = self.get_json(&url).await?;
+        let parsed = parse_boxscore(&raw, game_id);
+        Ok((parsed, raw))
+    }
 }
 
 /// Defensive boxscore parser. NHL's boxscore endpoint shape varies — this

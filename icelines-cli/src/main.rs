@@ -220,8 +220,13 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         } => {
             commands::serve::run(port, bind, no_open, no_cache, cors_origin, &cfg).await?;
         }
-        Commands::Tonight { team, date } => {
-            commands::tonight::run(team, date).await?;
+        Commands::Tonight {
+            team,
+            date,
+            week,
+            month,
+        } => {
+            commands::tonight::run(team, date, week || month).await?;
         }
         Commands::Schedule {
             team,

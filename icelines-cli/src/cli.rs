@@ -178,6 +178,16 @@ DEPRECATIONS
         /// historical NHL schedule (verified ≥2014).
         #[arg(long, value_name = "YYYY-MM-DD")]
         date: Option<String>,
+        /// Phase Foster +7 — widen to 7 days from `--date` (or today).
+        /// Mutually exclusive with `--month` (last in wins).
+        #[arg(long)]
+        week: bool,
+        /// Phase Foster +7 — widen to ~30 days from `--date` (or today).
+        /// Note: NHL gameWeek API returns 7 days per call, so today
+        /// `--month` aliases to `--week` until multi-week aggregation
+        /// lands.
+        #[arg(long)]
+        month: bool,
     },
     /// Show a playoff bracket — round / series / winner (LP.2).
     ///

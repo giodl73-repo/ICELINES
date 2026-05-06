@@ -1123,19 +1123,79 @@ async fn do_boxscore(
         return Ok(());
     }
 
-    // Step 3: insert a score event per game. Without --for-favorites
-    // we still record every game on the date so the timeline view
-    // works league-wide. The boxscore JSON itself is fetched +
-    // persisted in a follow-up sub-step (F.3.x); for now the score
-    // event carries the slate-level summary the dashboard needs.
+    // Step 3: per game, fetch the raw boxscore JSON, persist it
+    // under data/boxscores/<date>/<game_id>.json (Foster +3), then
+    // upsert the score event. The manifest entry binds the JSON
+    // file to (Boxscore, Game(id)) so future favorites-view reads
+    // can find it deterministically. TAPE H4: write JSON first,
+    // then manifest, then event — manifest is the commit point.
     let event_stream = crate::event_stream::EventStream::open()
         .context("open events table")?;
+
+    let home_dir = std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(std::path::PathBuf::from)
+        .ok_or_else(|| anyhow!("cannot determine home directory"))?;
+    let data_root = home_dir.join(".icelines").join("data");
+    let store = icelines_fetch::datastore::DataStore::open(&data_root)
+        .context("open DataStore")?;
+
     let mut wrote = 0usize;
     let mut updated = 0usize;
+    let mut persisted = 0usize;
+    let mut persist_skipped = 0usize;
     for g in &to_fetch {
         let game = GameId(g.game_id);
         let away = TeamAbbr(g.away_abbrev.clone());
         let home = TeamAbbr(g.home_abbrev.clone());
+
+        // Foster +3 — fetch the raw boxscore body, persist atomically,
+        // register a manifest entry. Best-effort: if the body fetch
+        // fails (game not yet started, API hiccup), keep going with
+        // the slate-level score event so the user still sees the row.
+        match client.fetch_boxscore_with_raw(g.game_id).await {
+            Ok((_parsed, raw)) => {
+                let path = data_root
+                    .join("boxscores")
+                    .join(&anchor_str)
+                    .join(format!("{}.json", g.game_id));
+                let bytes = serde_json::to_vec(&raw).context("serialize boxscore body")?;
+                if let Err(e) =
+                    icelines_fetch::atomic_write::write_bytes_atomic(&path, &bytes)
+                {
+                    eprintln!(
+                        "  ! boxscore body write failed for game {}: {e}",
+                        g.game_id
+                    );
+                } else {
+                    let entry = icelines_fetch::manifest::ManifestEntry {
+                        key: icelines_fetch::manifest::DataKey::Game(game),
+                        path,
+                        freshness: icelines_core::Freshness {
+                            fetched_at: chrono::Utc::now(),
+                            source: icelines_core::FetchSource::Live,
+                            ttl: icelines_core::Ttl::Static, // boxscores immutable post-game
+                        },
+                    };
+                    if let Err(e) = store.manifest().upsert(
+                        icelines_fetch::manifest::DataKind::Boxscore,
+                        entry,
+                    ) {
+                        eprintln!(
+                            "  ! manifest upsert failed for game {}: {e}",
+                            g.game_id
+                        );
+                    } else {
+                        persisted += 1;
+                    }
+                }
+            }
+            Err(e) => {
+                persist_skipped += 1;
+                eprintln!("  · boxscore body skipped for game {} ({e})", g.game_id);
+            }
+        }
+
         let result = match g.game_state.as_deref() {
             Some(s @ ("FINAL" | "OFF")) => s.to_owned(),
             Some(s @ ("LIVE" | "CRIT")) => s.to_owned(),
@@ -1169,7 +1229,8 @@ async fn do_boxscore(
         }
     }
     println!(
-        "Done — {wrote} new event(s), {updated} updated event(s) on {anchor_str}."
+        "Done — {wrote} new event(s), {updated} updated event(s), \
+         {persisted} boxscore body(ies) persisted, {persist_skipped} skipped on {anchor_str}."
     );
     Ok(())
 }

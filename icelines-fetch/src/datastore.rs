@@ -430,6 +430,20 @@ impl DataStore {
         Err(DataError::NotInstalled { kind, key })
     }
 
+    /// Phase Foster +3 — load a persisted boxscore body. Looks up
+    /// the manifest entry keyed by `Game(id)`, reads the JSON file,
+    /// returns the parsed `serde_json::Value`. Returns `None` when
+    /// the boxscore hasn't been fetched yet (caller decides whether
+    /// to lazy-fetch via `NhlApiClient`).
+    pub fn load_boxscore_raw(
+        &self,
+        game: crate::manifest::DataKey,
+    ) -> Option<serde_json::Value> {
+        let entry = self.manifest.get(DataKind::Boxscore, &game)?;
+        let bytes = std::fs::read(&entry.path).ok()?;
+        serde_json::from_slice(&bytes).ok()
+    }
+
     /// Career history is per-player; returns `None` when the player
     /// isn't in the local store (newly-favorited rookies, etc.) and
     /// lazy-fetch is disabled or fails. Mirrors the spec's
