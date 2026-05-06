@@ -11,7 +11,7 @@ mod test_utils;
 mod tui;
 
 use anyhow::Context;
-use clap::{CommandFactory, Parser};
+use clap::Parser;
 use cli::{Cli, Commands, FantasySubcommand, QuerySubcommand};
 use config::Config;
 
@@ -35,6 +35,27 @@ fn reset_sigpipe_handler() {
     // No SIGPIPE on Windows.
 }
 
+/// Bare-invocation banner. ≤12 lines, pipe-friendly. The four bold
+/// doors first (menu / tui / serve / docs), then two example
+/// invocations that hint at the filter grammar (the killer feature
+/// most discoverers don't know about) and the drill-down launcher.
+/// `icelines --help` still routes through clap for the full surface.
+fn print_short_banner() {
+    let version = env!("CARGO_PKG_VERSION");
+    println!("icelines v{version} — NHL analytics + fantasy CLI (38 seasons bundled)");
+    println!();
+    println!("Pick a surface:");
+    println!("  icelines menu      Numbered launcher (P/T/G/C drill-downs, W web, Q quit)");
+    println!("  icelines tui       Full terminal dashboard, 8 tabs");
+    println!("  icelines serve     Web dashboard at http://localhost:8000");
+    println!("  icelines docs      Full command reference");
+    println!();
+    println!("Quick:");
+    println!("  icelines query leaders --filter \"age<=24 AND p>=80\"");
+    println!("  icelines tui player Bedard");
+    println!("  icelines --help    All commands and flags");
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     reset_sigpipe_handler();
@@ -42,16 +63,14 @@ async fn main() -> anyhow::Result<()> {
     // Load config early so any error surfaces before command dispatch.
     let cfg = Config::load()?;
 
-    // Bare `icelines` (no args) prints --help, then exits 0. Users
-    // explicitly opt in to a surface:
-    //   icelines tui      → launch the TUI
-    //   icelines serve    → launch the web dashboard
-    //   icelines query …  → CLI queries
-    // (Auto-launching TUI on no-args was surprising for users who
-    // hit Enter expecting to see what the binary does first.)
+    // Bare `icelines` (no args) prints a short banner pointing at
+    // the four primary entry points, then exits 0. Pipe-friendly
+    // (works under `icelines | less`); script-friendly (no surprise
+    // raw-mode TUI launch); discovery-friendly (one keystroke to
+    // each surface). For the full clap-rendered command list, users
+    // run `icelines --help`.
     if std::env::args().len() == 1 {
-        Cli::command().print_help()?;
-        println!();
+        print_short_banner();
         return Ok(());
     }
 
