@@ -348,17 +348,34 @@ pub async fn run_group(cmd: GroupSubcommand) -> anyhow::Result<()> {
             println!("Group '{name}' created.");
         }
         GroupSubcommand::Add { group, player } => {
-            let norm = normalize_name(&player);
-            let added = db.add_member(&group, &norm)?;
+            // Migration 005 / Calder follow-up — auto-detect teams.
+            // 3-char NHL abbrevs (or 2-char Yahoo aliases like LA/SJ)
+            // route to MemberKind::Team; everything else is a player.
+            // The user types `group add Favorites EDM` and it just
+            // works without a `--team` flag.
+            let (key, kind) = match icelines_core::TeamAbbr::parse(&player) {
+                Ok(abbr) => (abbr.0, crate::db::MemberKind::Team),
+                Err(_) => (normalize_name(&player), crate::db::MemberKind::Player),
+            };
+            let added = db.add_member_kind(&group, &key, kind)?;
+            let label = match kind {
+                crate::db::MemberKind::Team => "team",
+                crate::db::MemberKind::Player => "player",
+            };
             if added {
-                println!("Added '{player}' to '{group}'.");
+                println!("Added '{player}' ({label}) to '{group}'.");
             } else {
                 println!("'{player}' is already in '{group}' — no change.");
             }
         }
         GroupSubcommand::Remove { group, player } => {
-            let norm = normalize_name(&player);
-            db.remove_member(&group, &norm)?;
+            // Same auto-detect — strip whichever key shape the user
+            // typed (team abbrev or player name).
+            let key = match icelines_core::TeamAbbr::parse(&player) {
+                Ok(abbr) => abbr.0,
+                Err(_) => normalize_name(&player),
+            };
+            db.remove_member(&group, &key)?;
             println!("Removed '{player}' from '{group}'.");
         }
         GroupSubcommand::List => {
@@ -374,8 +391,8 @@ pub async fn run_group(cmd: GroupSubcommand) -> anyhow::Result<()> {
             }
         }
         GroupSubcommand::Show { name } => {
-            let members = db.list_members(&name)?;
-            println!("GROUP: {name}  ({} members)", members.len());
+            let kinded = db.list_members_with_kind(&name)?;
+            println!("GROUP: {name}  ({} members)", kinded.len());
 
             // Show description from list_groups.
             let all = db.list_groups()?;
@@ -386,34 +403,60 @@ pub async fn run_group(cmd: GroupSubcommand) -> anyhow::Result<()> {
             }
             println!("{}", "─".repeat(56usize));
 
-            if members.is_empty() {
+            if kinded.is_empty() {
                 println!("  (empty)");
                 return Ok(());
             }
 
-            let outcome = load_views()?;
-            let cfg = Config::load()?;
-            let season_u32: u32 = cfg.season_str().parse().unwrap();
-            let views: Vec<PlayerView<'_>> = outcome
-                .repo
-                .skaters(Season(season_u32), SeasonType::Regular)
+            // Split into Players + Teams. Migration 005 — both kinds
+            // can live in one group.
+            let player_keys: Vec<&str> = kinded
+                .iter()
+                .filter(|(_, k)| *k == crate::db::MemberKind::Player)
+                .map(|(k, _)| k.as_str())
                 .collect();
-            for norm in &members {
-                if let Some(v) = views
-                    .iter()
-                    .find(|v| v.name_normalized().contains(norm.as_str()))
-                {
-                    let (ppg, proj) = pace_strings_view(v);
-                    println!(
-                        "  {:<24} {:<5} {:<4} {} / {}",
-                        v.full_name(),
-                        v.team_display(),
-                        v.position().abbreviation(),
-                        ppg,
-                        proj
-                    );
-                } else {
-                    println!("  {norm}  (player not found — may have been traded or retired)");
+            let team_keys: Vec<&str> = kinded
+                .iter()
+                .filter(|(_, k)| *k == crate::db::MemberKind::Team)
+                .map(|(k, _)| k.as_str())
+                .collect();
+
+            if !player_keys.is_empty() {
+                let outcome = load_views()?;
+                let cfg = Config::load()?;
+                let season_u32: u32 = cfg.season_str().parse().unwrap();
+                let views: Vec<PlayerView<'_>> = outcome
+                    .repo
+                    .skaters(Season(season_u32), SeasonType::Regular)
+                    .collect();
+                println!("Players ({}):", player_keys.len());
+                for norm in &player_keys {
+                    if let Some(v) = views.iter().find(|v| v.name_normalized().contains(*norm)) {
+                        let (ppg, proj) = pace_strings_view(v);
+                        println!(
+                            "  {:<24} {:<5} {:<4} {} / {}",
+                            v.full_name(),
+                            v.team_display(),
+                            v.position().abbreviation(),
+                            ppg,
+                            proj
+                        );
+                    } else {
+                        println!("  {norm}  (player not found — may have been traded or retired)");
+                    }
+                }
+            }
+
+            if !team_keys.is_empty() {
+                if !player_keys.is_empty() {
+                    println!();
+                }
+                println!("Teams ({}):", team_keys.len());
+                for abbr in &team_keys {
+                    let full = icelines_core::TeamAbbr(abbr.to_string())
+                        .full_name()
+                        .unwrap_or("");
+                    println!("  {abbr:<5} {full}");
                 }
             }
         }

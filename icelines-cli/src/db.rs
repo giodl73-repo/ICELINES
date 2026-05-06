@@ -15,6 +15,34 @@ pub struct GroupRow {
     pub member_count: usize,
 }
 
+/// Migration 005 — discriminator on `group_members.kind`. A favorites
+/// group can carry both player normalized names AND team abbrevs;
+/// downstream code branches on this to load the right thing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MemberKind {
+    Player,
+    Team,
+}
+
+impl MemberKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Player => "player",
+            Self::Team => "team",
+        }
+    }
+
+    /// Lossy parse — anything we don't recognize buckets as Player so
+    /// pre-migration rows (which have NULL/no kind value, defaulted
+    /// to 'player' by migration 005) round-trip cleanly.
+    pub fn from_str_lossy(s: &str) -> Self {
+        match s {
+            "team" => Self::Team,
+            _ => Self::Player,
+        }
+    }
+}
+
 /// Opaque handle to the group database.
 pub struct GroupDb {
     conn: Connection,
@@ -78,6 +106,30 @@ fn run_migrations(conn: &Connection) -> anyhow::Result<()> {
     // Enable foreign-key enforcement (off by default in rusqlite).
     conn.execute_batch("PRAGMA foreign_keys = ON;")
         .context("enable foreign keys")?;
+
+    // Migration 005 — `kind` discriminator on group_members.
+    //
+    // Existing rows are players; new rows can be either 'player' (a
+    // normalized name) or 'team' (a 3-letter NHL abbrev). The
+    // discriminator decouples the namespace so adding "EDM" as a team
+    // doesn't shadow a future player whose normalized name happens to
+    // be "edm".
+    //
+    // sqlite ALTER TABLE only supports adding a column at the end with
+    // a default; we don't change the PK (collisions are vanishingly
+    // rare given player names are lowercase ASCII and team abbrevs
+    // are 3-uppercase, but stuck PK is the safe choice).
+    let cols: Vec<String> = conn
+        .prepare("PRAGMA table_info(group_members);")?
+        .query_map([], |row| row.get::<_, String>(1))?
+        .filter_map(Result::ok)
+        .collect();
+    if !cols.iter().any(|c| c == "kind") {
+        conn.execute_batch(
+            "ALTER TABLE group_members ADD COLUMN kind TEXT NOT NULL DEFAULT 'player';",
+        )
+        .context("migration 005: add kind column to group_members")?;
+    }
 
     Ok(())
 }
@@ -153,18 +205,28 @@ impl GroupDb {
     /// Add a player (normalized name) to a group.
     /// Returns `true` if added, `false` if already a member (no-op).
     pub fn add_member(&self, group: &str, player_normalized: &str) -> anyhow::Result<bool> {
-        // Verify the group exists first so we give a clear error.
-        self.require_group(group)?;
+        self.add_member_kind(group, player_normalized, MemberKind::Player)
+    }
 
+    /// Migration 005 — kind-aware member insert. Used by the CLI's
+    /// auto-detect path when the user types `group add Favorites EDM`
+    /// (3-letter NHL abbrev → kind=Team).
+    pub fn add_member_kind(
+        &self,
+        group: &str,
+        key: &str,
+        kind: MemberKind,
+    ) -> anyhow::Result<bool> {
+        self.require_group(group)?;
         let now = now_utc();
         let rows = self
             .conn
             .execute(
                 "INSERT OR IGNORE INTO group_members \
-                 (group_name, player_normalized, added_at) VALUES (?1, ?2, ?3)",
-                rusqlite::params![group, player_normalized, now],
+                 (group_name, player_normalized, added_at, kind) VALUES (?1, ?2, ?3, ?4)",
+                rusqlite::params![group, key, now, kind.as_str()],
             )
-            .with_context(|| format!("add member '{player_normalized}' to '{group}'"))?;
+            .with_context(|| format!("add member '{key}' ({}) to '{group}'", kind.as_str()))?;
         Ok(rows > 0)
     }
 
@@ -288,13 +350,16 @@ impl GroupDb {
         Ok(rows)
     }
 
-    /// List all members of a group (normalized names).
+    /// List all PLAYER members of a group (normalized names). Backward-
+    /// compat surface — kept narrow so existing callers don't surface
+    /// team rows as players. New code should prefer
+    /// `list_members_with_kind` which returns the discriminator.
     pub fn list_members(&self, group: &str) -> anyhow::Result<Vec<String>> {
         self.require_group(group)?;
 
         let mut stmt = self.conn.prepare(
             "SELECT player_normalized FROM group_members \
-             WHERE group_name = ?1 ORDER BY added_at",
+             WHERE group_name = ?1 AND kind = 'player' ORDER BY added_at",
         )?;
 
         let rows = stmt
@@ -303,6 +368,26 @@ impl GroupDb {
             .collect::<Result<Vec<String>, _>>()
             .context("list_members collect")?;
 
+        Ok(rows)
+    }
+
+    /// Migration 005 — list every member with its `kind`. Used by
+    /// `group show` to render Players + Teams sections.
+    pub fn list_members_with_kind(&self, group: &str) -> anyhow::Result<Vec<(String, MemberKind)>> {
+        self.require_group(group)?;
+        let mut stmt = self.conn.prepare(
+            "SELECT player_normalized, kind FROM group_members \
+             WHERE group_name = ?1 ORDER BY kind, added_at",
+        )?;
+        let rows = stmt
+            .query_map(rusqlite::params![group], |row| {
+                let key: String = row.get(0)?;
+                let kind_str: String = row.get(1)?;
+                Ok((key, MemberKind::from_str_lossy(&kind_str)))
+            })
+            .context("list_members_with_kind query")?
+            .collect::<Result<Vec<_>, _>>()
+            .context("list_members_with_kind collect")?;
         Ok(rows)
     }
 
@@ -515,6 +600,88 @@ fn days_to_ymd(days: u64) -> (u64, u64, u64) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Migration 005 / l1_db_member_kind_player_default
+    /// — old `add_member` keeps player kind; round-trips via
+    ///   list_members_with_kind.
+    #[test]
+    fn l1_db_member_kind_player_default() {
+        let db = GroupDb::open_in_memory().expect("open");
+        db.create_group("Favorites", "").expect("create");
+        db.add_member("Favorites", "connor_mcdavid")
+            .expect("add player");
+        let kinded = db.list_members_with_kind("Favorites").expect("list kinded");
+        assert_eq!(kinded.len(), 1);
+        assert_eq!(kinded[0].0, "connor_mcdavid");
+        assert_eq!(kinded[0].1, MemberKind::Player);
+    }
+
+    /// Migration 005 / l1_db_add_team_member_round_trips
+    /// — the new `add_member_kind` writes Team rows that surface
+    ///   only on the kinded reader, NOT on the legacy
+    ///   `list_members` (which is now player-scoped).
+    #[test]
+    fn l1_db_add_team_member_round_trips() {
+        let db = GroupDb::open_in_memory().expect("open");
+        db.create_group("Favorites", "").expect("create");
+        db.add_member("Favorites", "connor_mcdavid").expect("p");
+        db.add_member_kind("Favorites", "EDM", MemberKind::Team)
+            .expect("t");
+        // Legacy reader only sees the player.
+        let players_only = db.list_members("Favorites").expect("legacy");
+        assert_eq!(players_only.len(), 1);
+        assert_eq!(players_only[0], "connor_mcdavid");
+        // Kinded reader sees both.
+        let kinded = db.list_members_with_kind("Favorites").expect("kinded");
+        assert_eq!(kinded.len(), 2);
+        let teams: Vec<&str> = kinded
+            .iter()
+            .filter(|(_, k)| *k == MemberKind::Team)
+            .map(|(k, _)| k.as_str())
+            .collect();
+        assert_eq!(teams, vec!["EDM"]);
+    }
+
+    /// Migration 005 / l1_db_remove_team_member_works
+    /// — remove_member doesn't filter on kind; it deletes by key.
+    ///   Adding "EDM" as team and removing "EDM" should drop it.
+    #[test]
+    fn l1_db_remove_team_member_works() {
+        let db = GroupDb::open_in_memory().expect("open");
+        db.create_group("Favorites", "").expect("create");
+        db.add_member_kind("Favorites", "EDM", MemberKind::Team)
+            .expect("t");
+        db.remove_member("Favorites", "EDM").expect("rm");
+        let kinded = db.list_members_with_kind("Favorites").expect("k");
+        assert!(kinded.is_empty(), "team row should be gone, got {kinded:?}");
+    }
+
+    /// Migration 005 / l1_db_member_kind_idempotent_add
+    /// — adding the same (group, key, kind) twice is a no-op.
+    #[test]
+    fn l1_db_member_kind_idempotent_add() {
+        let db = GroupDb::open_in_memory().expect("open");
+        db.create_group("Favorites", "").expect("create");
+        let first = db
+            .add_member_kind("Favorites", "EDM", MemberKind::Team)
+            .expect("first");
+        let second = db
+            .add_member_kind("Favorites", "EDM", MemberKind::Team)
+            .expect("second");
+        assert!(first, "first add should report inserted");
+        assert!(!second, "second add should report no-op");
+    }
+
+    /// Migration 005 / l0_member_kind_from_str_lossy
+    /// — pre-migration NULLs default to player; unknown strings
+    ///   bucket as player (defensive).
+    #[test]
+    fn l0_member_kind_from_str_lossy() {
+        assert_eq!(MemberKind::from_str_lossy("player"), MemberKind::Player);
+        assert_eq!(MemberKind::from_str_lossy("team"), MemberKind::Team);
+        assert_eq!(MemberKind::from_str_lossy(""), MemberKind::Player);
+        assert_eq!(MemberKind::from_str_lossy("garbage"), MemberKind::Player);
+    }
 
     #[test]
     fn l1_db_create_and_list_group() {
