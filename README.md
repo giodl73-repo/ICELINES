@@ -20,7 +20,14 @@ NHL depth charts, pace-adjusted rankings, query engine, fantasy league managemen
 
 ```bash
 icelines fetch all        # download current NHL data (~5 seconds)
-icelines tui              # launch the interactive app
+icelines tui              # launch the full interactive app
+icelines menu             # don't know which surface you want? Pick from a menu.
+
+# Or boot directly on a specific surface:
+icelines tui scores               # tonight's games
+icelines tui goalies              # goalie leaderboard
+icelines tui player Bedard        # Bedard's card cold
+icelines tui team EDM             # Edmonton depth chart
 ```
 
 That's it. **38 seasons of NHL data** ship inside the binary — Gretzky's first LA year through this morning. No database setup, no accounts.

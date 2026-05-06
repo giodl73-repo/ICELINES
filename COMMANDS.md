@@ -324,6 +324,66 @@ Interactive dashboard. Six tabs (League, Depth, Stats, Goalies, Scores, Schedule
 
 The Reports overlay (`R`) persists toggles to `~/.icelines/config.toml`. Disabled reports drop their columns from career tables, sort pickers, and query results.
 
+### TUI surfaces — per-experience launchers (Phase Lady Byng)
+
+Boot directly on a specific surface instead of launching League and pressing a digit.
+
+```bash
+# Nav-tab launchers (8 surfaces)
+icelines tui league                  # default — 32-team rankings
+icelines tui depth                   # cross-team depth chart
+icelines tui stats                   # interactive query builder
+icelines tui goalies                 # goalie leaderboard
+icelines tui scores                  # tonight's games + boxscores
+icelines tui schedule                # weekly + season schedule
+icelines tui transactions            # league-wide moves feed
+icelines tui playoffs                # bracket + series detail
+
+# Drill-down launchers — open a specific card cold
+icelines tui player Bedard           # name (substring match)
+icelines tui player 8478402          # explicit pid (bypasses name lookup)
+icelines tui team EDM                # team depth chart
+icelines tui goalie "Connor Hellebuyck"
+icelines tui comps McDavid           # similarity comps screen
+
+# Equivalent flag form (for scripts)
+icelines tui --start goalies
+icelines tui --start "player:Bedard"
+icelines tui --start "team:EDM"
+```
+
+**Slug aliases** (case-insensitive, accepted on `--start` only — sugar subcommands stick to canonical names):
+
+| Canonical | Aliases |
+|-----------|---------|
+| `stats` | `queries` |
+| `scores` | `tonight` |
+| `transactions` | `moves` |
+
+**Drill-down ambiguity**: `tui player Smith` lists every Smith candidate (pid + team + season + role) so you can re-run with the unambiguous pid. No silent picks.
+
+**Resolution failures** (unknown slug, unknown player, ambiguous match, bad team abbrev) print to normal stderr and exit non-zero — the alt-screen never opens, so error messages don't get eaten.
+
+### `icelines menu` — looping launcher
+
+Friendly entry point for users who don't want to memorize subcommand names.
+
+```bash
+icelines menu
+```
+
+Prints a numbered menu, reads a choice, dispatches to the matching surface, then re-prints the menu when the surface quits. `Q` is the only way out.
+
+```
+  1-8   Nav-tab surfaces
+  P/T/G/C   Drill-downs (sub-prompts for name/abbrev)
+  W   Web dashboard (port 8000)
+  D   Print COMMANDS.md
+  Q   Quit
+```
+
+`icelines menu < /dev/null` (non-TTY) exits 0 with a redirect message — for scripted use, call `icelines tui --start <slug>` directly. Ctrl-C inside the prompt currently exits 130 (Unix) / 1 (Windows); a clean-exit `ctrlc` handler is a follow-up.
+
 ---
 
 ## Other commands

@@ -804,6 +804,55 @@ mod tests {
         assert_eq!(format_season_id(19992000), "1999-00");
     }
 
+    // ── LB.6 — Docs drift fence ───────────────────────────────────────
+
+    /// LB.6 / l0_commands_md_lists_every_canonical_slug
+    /// — Every canonical slug in SLUG_TABLE must appear in COMMANDS.md.
+    ///   Catches: a slug renamed in the SLUG_TABLE but not in the docs;
+    ///   a slug added to SLUG_TABLE but not yet documented. The drift
+    ///   fence is a string-grep — robust to formatting changes in the
+    ///   markdown.
+    #[test]
+    fn l0_commands_md_lists_every_canonical_slug() {
+        const COMMANDS_MD: &str = include_str!("../../COMMANDS.md");
+        for slug in canonical_slugs() {
+            // Match either `tui SLUG` (sugar form) or `--start SLUG`.
+            // Both are documented in the TUI surfaces section.
+            let sugar_pattern = format!("tui {slug}");
+            let start_pattern = format!("--start {slug}");
+            let start_quoted = format!("--start \"{slug}");
+            assert!(
+                COMMANDS_MD.contains(&sugar_pattern)
+                    || COMMANDS_MD.contains(&start_pattern)
+                    || COMMANDS_MD.contains(&start_quoted),
+                "canonical slug '{slug}' not found in COMMANDS.md — \
+                 add it to the TUI surfaces section or remove the canonical \
+                 declaration from SLUG_TABLE"
+            );
+        }
+    }
+
+    /// LB.6 / l0_commands_md_mentions_menu_and_drill_downs
+    /// — The TUI surfaces section must call out `icelines menu` and the
+    ///   drill-down sugar forms. Catches: section deleted or renamed
+    ///   without updating users.
+    #[test]
+    fn l0_commands_md_mentions_menu_and_drill_downs() {
+        const COMMANDS_MD: &str = include_str!("../../COMMANDS.md");
+        assert!(
+            COMMANDS_MD.contains("icelines menu"),
+            "COMMANDS.md must document `icelines menu`"
+        );
+        assert!(
+            COMMANDS_MD.contains("tui player"),
+            "COMMANDS.md must document `tui player <name|pid>`"
+        );
+        assert!(
+            COMMANDS_MD.contains("tui team"),
+            "COMMANDS.md must document `tui team <abbrev>`"
+        );
+    }
+
     // ── edit_distance_at_most_one helper ───────────────────────────
 
     /// LB.1 / l0_edit_distance_basics
