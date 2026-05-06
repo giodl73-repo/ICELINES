@@ -168,12 +168,44 @@ DEPRECATIONS
         #[arg(long)]
         team: Option<String>,
     },
-    /// Show upcoming schedule.
+    /// Show the upcoming NHL schedule (Phase Lester Patrick — LP.1).
+    ///
+    /// Mirrors `icelines tonight`'s pattern but covers a date range.
+    /// Defaults to the next 7 days; pass `--days N` (1-14) to widen
+    /// or narrow. `--team ABBR` filters to games involving one team.
+    /// `--json` / `--csv` emit machine-readable output for scripts.
+    #[command(long_about = r#"icelines schedule — upcoming NHL games.
+
+EXAMPLES
+    icelines schedule                  # next 7 days
+    icelines schedule --team EDM       # next 7 days for Edmonton
+    icelines schedule --days 14        # next 14 days, all teams
+    icelines schedule --team TOR --json # JSON for scripting
+    icelines schedule --csv > games.csv # Excel-friendly export
+
+Output columns (default text + CSV + JSON):
+    date         YYYY-MM-DD
+    away         3-letter abbrev
+    home         3-letter abbrev
+    time_et      "7:00 PM ET" (UTC offset by 4 hours, year-round
+                 approximation — daylight-saving precision is a
+                 future polish)
+    status       pre / live / final / off
+"#)]
     Schedule {
+        /// 3-letter team abbrev to filter games to (e.g. EDM, TOR).
+        /// Case-insensitive.
         #[arg(long)]
         team: Option<String>,
-        #[arg(long, default_value_t = 7)]
+        /// Number of days forward to include (1-14, default 7).
+        #[arg(long, default_value_t = 7, value_parser = clap::value_parser!(u32).range(1..=14))]
         days: u32,
+        /// Emit JSON (one envelope wrapping a `games` array).
+        #[arg(long)]
+        json: bool,
+        /// Emit CSV (one row per game, header line first).
+        #[arg(long)]
+        csv: bool,
     },
     /// Evaluate a trade — depth chart before/after.
     Trade {

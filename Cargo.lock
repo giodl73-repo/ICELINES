@@ -1516,6 +1516,7 @@ dependencies = [
  "clap",
  "comfy-table",
  "crossterm 0.28.1",
+ "csv",
  "flate2",
  "icelines-core",
  "icelines-fetch",

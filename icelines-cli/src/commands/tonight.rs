@@ -83,52 +83,239 @@ pub async fn run(team_filter: Option<String>) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub async fn run_schedule(team: Option<String>, days: u32) -> anyhow::Result<()> {
-    let client = NhlApiClient::production();
-    let all_games = client
-        .fetch_today_schedule()
-        .await
-        .context("fetching schedule")?;
+/// LP.1 — `ScheduleRow` is the projection used for table / JSON / CSV
+/// output. Mirrors the data the TUI Schedule tab + web /schedule
+/// surface already render. Pure data — no formatting decisions baked
+/// in beyond the time-zone conversion (UTC → ET).
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct ScheduleRow {
+    pub date: String,
+    pub away: String,
+    pub home: String,
+    pub time_et: String,
+    pub status: String,
+}
 
-    if all_games.is_empty() {
-        println!("No upcoming games found.");
-        return Ok(());
-    }
-
-    let team_up = team.as_deref().map(str::to_uppercase);
-
-    // Group by date, show up to `days` distinct dates
+/// Filter + project NHL API games into ScheduleRow values. Pure —
+/// unit-testable without a live network. The filter step also caps
+/// the date range so `--days 7` includes exactly 7 distinct calendar
+/// days regardless of how many games span them.
+pub(crate) fn project_schedule_rows(
+    games: &[icelines_fetch::nhl_api::ScheduledGame],
+    team_up: Option<&str>,
+    days: u32,
+) -> Vec<ScheduleRow> {
     let mut current_date = String::new();
     let mut days_shown = 0u32;
-
-    println!(
-        "SCHEDULE — next {days} day(s){}",
-        team_up
-            .as_deref()
-            .map(|t| format!(" · {t}"))
-            .unwrap_or_default()
-    );
-    println!("{}", "─".repeat(60usize));
-
-    for game in &all_games {
+    let mut out = Vec::new();
+    for game in games {
         if game.date != current_date {
             if days_shown >= days {
                 break;
             }
             current_date = game.date.clone();
             days_shown += 1;
-            println!("\n{}", current_date);
         }
-        if let Some(ref t) = team_up {
-            if &game.away_abbrev != t && &game.home_abbrev != t {
+        if let Some(t) = team_up {
+            if game.away_abbrev != t && game.home_abbrev != t {
                 continue;
             }
         }
         let utc = game.start_time_utc.get(11..16).unwrap_or("?");
-        let et = format_time_et(utc);
-        println!("  {} @ {}  {}", game.away_abbrev, game.home_abbrev, et);
+        out.push(ScheduleRow {
+            date: game.date.clone(),
+            away: game.away_abbrev.clone(),
+            home: game.home_abbrev.clone(),
+            time_et: format_time_et(utc),
+            // game_state is "FUT"/"PRE"/"LIVE"/"FINAL"/"OFF" — lowercase
+            // for the user-facing table.
+            status: game
+                .game_state
+                .as_deref()
+                .map(|s| s.to_ascii_lowercase())
+                .unwrap_or_else(|| "?".into()),
+        });
     }
+    out
+}
+
+pub async fn run_schedule(
+    team: Option<String>,
+    days: u32,
+    json: bool,
+    csv: bool,
+) -> anyhow::Result<()> {
+    let client = NhlApiClient::production();
+    let all_games = client
+        .fetch_today_schedule()
+        .await
+        .context("fetching schedule")?;
+
+    let team_up = team.as_deref().map(str::to_uppercase);
+    let rows = project_schedule_rows(&all_games, team_up.as_deref(), days);
+
+    if json {
+        return emit_schedule_json(&rows, team_up.as_deref(), days);
+    }
+    if csv {
+        return emit_schedule_csv(&rows);
+    }
+
+    // Default: comfy-table output.
+    if rows.is_empty() {
+        println!(
+            "No games found in next {days} day(s){}.",
+            team_up
+                .as_deref()
+                .map(|t| format!(" for {t}"))
+                .unwrap_or_default()
+        );
+        return Ok(());
+    }
+
+    println!(
+        "SCHEDULE — next {days} day(s){} ({} game(s))",
+        team_up
+            .as_deref()
+            .map(|t| format!(" · {t}"))
+            .unwrap_or_default(),
+        rows.len()
+    );
+
+    use comfy_table::{ContentArrangement, Table};
+    let mut table = Table::new();
+    table
+        .set_content_arrangement(ContentArrangement::Dynamic)
+        .set_header(vec!["Date", "Away", "Home", "Time", "Status"]);
+    for r in &rows {
+        table.add_row(vec![
+            r.date.as_str(),
+            r.away.as_str(),
+            r.home.as_str(),
+            r.time_et.as_str(),
+            r.status.as_str(),
+        ]);
+    }
+    println!("{table}");
     Ok(())
+}
+
+fn emit_schedule_json(rows: &[ScheduleRow], team: Option<&str>, days: u32) -> anyhow::Result<()> {
+    #[derive(serde::Serialize)]
+    struct Envelope<'a> {
+        schema_version: u32,
+        team: Option<&'a str>,
+        days: u32,
+        count: usize,
+        games: &'a [ScheduleRow],
+    }
+    let env = Envelope {
+        schema_version: 1,
+        team,
+        days,
+        count: rows.len(),
+        games: rows,
+    };
+    println!("{}", serde_json::to_string_pretty(&env)?);
+    Ok(())
+}
+
+fn emit_schedule_csv(rows: &[ScheduleRow]) -> anyhow::Result<()> {
+    let mut wtr = csv::Writer::from_writer(std::io::stdout());
+    wtr.write_record(["date", "away", "home", "time_et", "status"])?;
+    for r in rows {
+        wtr.write_record([&r.date, &r.away, &r.home, &r.time_et, &r.status])?;
+    }
+    wtr.flush()?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod schedule_tests {
+    use super::*;
+    use icelines_fetch::nhl_api::ScheduledGame;
+
+    fn mk_game(date: &str, away: &str, home: &str, utc: &str, state: &str) -> ScheduledGame {
+        ScheduledGame {
+            date: date.into(),
+            game_id: 0,
+            game_type: 2,
+            away_abbrev: away.into(),
+            away_name: away.into(),
+            home_abbrev: home.into(),
+            home_name: home.into(),
+            start_time_utc: format!("2026-05-05T{utc}:00Z"),
+            away_score: None,
+            home_score: None,
+            game_state: Some(state.into()),
+            last_period: None,
+            series_game: None,
+            away_wins: None,
+            home_wins: None,
+        }
+    }
+
+    /// LP.1 / l0_project_schedule_rows_team_filter
+    /// — Only games involving the filter team appear in the output.
+    #[test]
+    fn l0_project_schedule_rows_team_filter() {
+        let games = vec![
+            mk_game("2026-05-06", "EDM", "TOR", "23:00", "pre"),
+            mk_game("2026-05-06", "BOS", "NYR", "23:30", "pre"),
+        ];
+        let rows = project_schedule_rows(&games, Some("EDM"), 7);
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].away, "EDM");
+    }
+
+    /// LP.1 / l0_project_schedule_rows_days_cap
+    /// — The cap is per distinct calendar day, not per game count.
+    ///   3 games on day 1 + 2 on day 2 with `days=1` returns only the
+    ///   day-1 games.
+    #[test]
+    fn l0_project_schedule_rows_days_cap() {
+        let games = vec![
+            mk_game("2026-05-06", "EDM", "TOR", "23:00", "pre"),
+            mk_game("2026-05-06", "BOS", "NYR", "23:30", "pre"),
+            mk_game("2026-05-06", "VGK", "LAK", "01:00", "pre"),
+            mk_game("2026-05-07", "MTL", "OTT", "23:00", "pre"),
+        ];
+        let rows = project_schedule_rows(&games, None, 1);
+        assert_eq!(rows.len(), 3);
+        for r in &rows {
+            assert_eq!(r.date, "2026-05-06");
+        }
+    }
+
+    /// LP.1 / l0_project_schedule_rows_empty_no_team_match
+    #[test]
+    fn l0_project_schedule_rows_empty_no_team_match() {
+        let games = vec![mk_game("2026-05-06", "EDM", "TOR", "23:00", "pre")];
+        let rows = project_schedule_rows(&games, Some("BOS"), 7);
+        assert!(rows.is_empty());
+    }
+
+    /// LP.1 / l0_schedule_row_serialize_to_csv
+    /// — CSV emission produces the documented column order.
+    #[test]
+    fn l0_schedule_row_serialize_to_csv() {
+        let row = ScheduleRow {
+            date: "2026-05-06".into(),
+            away: "EDM".into(),
+            home: "TOR".into(),
+            time_et: "7:00 PM ET".into(),
+            status: "pre".into(),
+        };
+        let mut wtr = csv::Writer::from_writer(vec![]);
+        wtr.write_record(["date", "away", "home", "time_et", "status"])
+            .unwrap();
+        wtr.write_record([&row.date, &row.away, &row.home, &row.time_et, &row.status])
+            .unwrap();
+        let bytes = wtr.into_inner().unwrap();
+        let s = String::from_utf8(bytes).unwrap();
+        assert!(s.starts_with("date,away,home,time_et,status\n"));
+        assert!(s.contains("2026-05-06,EDM,TOR,7:00 PM ET,pre"));
+    }
 }
 
 pub async fn run_trade(
