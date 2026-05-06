@@ -30,6 +30,8 @@ use crossterm::{
     terminal::{Clear, ClearType},
 };
 use std::io::{self, IsTerminal, Write};
+use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::signal;
 
 /// Top-level entry point.
 pub async fn run(cfg: &Config) -> Result<()> {
@@ -41,32 +43,61 @@ pub async fn run(cfg: &Config) -> Result<()> {
         return Ok(());
     }
 
+    // Post-LB.4 review fix — async stdin so we can `tokio::select!` it
+    // against `signal::ctrl_c()`. Ctrl-C at the prompt now exits 0
+    // cleanly instead of dropping the user with exit 130 (Unix) or 1
+    // (Windows). The TUI surfaces have their own crossterm-level
+    // Ctrl-C handling, so this only covers the menu prompt.
+    let mut stdin = BufReader::new(tokio::io::stdin());
+
     loop {
         clear_screen();
         print_menu();
-        let line = match read_line()? {
-            Some(s) => s,
-            None => return Ok(()), // EOF — exit cleanly
+        let mut line = String::new();
+        let read_result = tokio::select! {
+            r = stdin.read_line(&mut line) => r,
+            _ = signal::ctrl_c() => {
+                println!();
+                println!("  ^C — exiting menu cleanly.");
+                return Ok(());
+            }
         };
+        if read_result? == 0 {
+            return Ok(()); // EOF — exit cleanly
+        }
         match parse_menu_choice(&line) {
             MenuAction::LaunchNav(nav) => {
-                run_tui_then_continue(nav.into_screen()).await;
+                if !run_tui_then_continue(&mut stdin, nav.into_screen()).await {
+                    return Ok(());
+                }
             }
             MenuAction::PromptDrillDown(kind) => {
-                if let Some(spec) = prompt_drill_down(kind) {
-                    match spec.into_screen() {
-                        Ok(screen) => run_tui_then_continue(screen).await,
-                        Err(e) => {
-                            print_error_and_pause(&format!("{e}"));
+                match prompt_drill_down(&mut stdin, kind).await {
+                    Ok(Some(spec)) => match spec.into_screen() {
+                        Ok(screen) => {
+                            if !run_tui_then_continue(&mut stdin, screen).await {
+                                return Ok(());
+                            }
                         }
-                    }
+                        Err(e) => {
+                            if !print_error_and_pause(&mut stdin, &format!("{e}")).await {
+                                return Ok(());
+                            }
+                        }
+                    },
+                    Ok(None) => {} // empty input or EOF — silent cancel
+                    Err(MenuInterrupt::CtrlC) => return Ok(()),
                 }
             }
             MenuAction::LaunchWeb => {
-                run_web_then_continue(cfg).await;
+                if !run_web_then_continue(&mut stdin, cfg).await {
+                    return Ok(());
+                }
             }
             MenuAction::PrintDocs => {
-                print_docs_then_pause();
+                if !print_docs_then_pause(&mut stdin).await {
+                    return Ok(());
+                }
             }
             MenuAction::Quit => return Ok(()),
             MenuAction::Invalid(s) => {
@@ -156,20 +187,14 @@ fn print_menu() {
     let _ = io::stdout().flush();
 }
 
-/// Read one line from stdin. Returns Ok(None) on EOF (Ctrl-D / piped
-/// input exhausted), Ok(Some(_)) on a normal line.
-fn read_line() -> Result<Option<String>> {
-    let mut line = String::new();
-    let bytes = io::stdin().read_line(&mut line)?;
-    if bytes == 0 {
-        return Ok(None); // EOF
-    }
-    Ok(Some(line))
-}
-
 /// Sub-prompt for a drill-down arg (player name, team abbrev, etc.).
-/// Empty / whitespace input cancels back to the main menu (returns None).
-fn prompt_drill_down(kind: DrillDownKind) -> Option<ScreenSpec> {
+/// Empty / whitespace input cancels back to the main menu (returns
+/// None). Ctrl-C cancels and propagates a clean exit signal — the
+/// caller checks the returned Option<Option<ScreenSpec>> wrapper.
+async fn prompt_drill_down(
+    stdin: &mut BufReader<tokio::io::Stdin>,
+    kind: DrillDownKind,
+) -> std::result::Result<Option<ScreenSpec>, MenuInterrupt> {
     let label = match kind {
         DrillDownKind::Player => "Player name (or pid)",
         DrillDownKind::Team => "Team abbreviation",
@@ -179,41 +204,68 @@ fn prompt_drill_down(kind: DrillDownKind) -> Option<ScreenSpec> {
     println!();
     print!("  {label}: ");
     let _ = io::stdout().flush();
-    let line = read_line().ok()??;
+
+    let mut line = String::new();
+    let read_result = tokio::select! {
+        r = stdin.read_line(&mut line) => r,
+        _ = signal::ctrl_c() => {
+            println!();
+            println!("  ^C — cancelled.");
+            return Err(MenuInterrupt::CtrlC);
+        }
+    };
+    match read_result {
+        Ok(0) => return Ok(None), // EOF — treat as cancel
+        Ok(_) => {}
+        Err(_) => return Ok(None),
+    }
     let arg = line.trim();
     if arg.is_empty() {
-        return None;
+        return Ok(None);
     }
-    Some(match kind {
+    Ok(Some(match kind {
         DrillDownKind::Player => ScreenSpec::Player(Needle::from_arg(arg)),
         DrillDownKind::Team => ScreenSpec::Team(arg.to_owned()),
         DrillDownKind::Goalie => ScreenSpec::Goalie(Needle::from_arg(arg)),
         DrillDownKind::Comps => ScreenSpec::Comps(Needle::from_arg(arg)),
-    })
+    }))
+}
+
+/// Sentinel for Ctrl-C in a sub-prompt. Bubbles up to the main loop
+/// which exits cleanly.
+enum MenuInterrupt {
+    CtrlC,
 }
 
 /// Launch the TUI on the given screen, swallow any error (display it
-/// and return — the menu loop continues regardless).
-async fn run_tui_then_continue(start_screen: crate::tui::app::Screen) {
+/// and return — the menu loop continues regardless). Returns true on
+/// happy-path quit, false if a Ctrl-C during the post-error pause
+/// signals a clean menu exit.
+async fn run_tui_then_continue(
+    stdin: &mut BufReader<tokio::io::Stdin>,
+    start_screen: crate::tui::app::Screen,
+) -> bool {
     let opts = RunTuiOpts {
         no_color: false,
         start_screen,
     };
     if let Err(e) = tui::run_tui(opts).await {
-        print_error_and_pause(&format!("TUI exited with error: {e}"));
+        return print_error_and_pause(stdin, &format!("TUI exited with error: {e}")).await;
     }
+    true
 }
 
 /// Launch the web dashboard with menu defaults. Catches `AddrInUse`
 /// explicitly and prints a hint instead of letting the menu loop die.
-async fn run_web_then_continue(cfg: &Config) {
+/// Returns true to continue the menu loop, false on Ctrl-C (clean exit).
+async fn run_web_then_continue(stdin: &mut BufReader<tokio::io::Stdin>, cfg: &Config) -> bool {
     println!();
     println!("  Starting web dashboard on http://127.0.0.1:8000 — Ctrl-C to stop and return.");
     println!();
     // Default port + bind. LB.5 follow-up: read from a [menu] config
     // section so users can override.
     match crate::commands::serve::run(8000, None, /*no_open=*/ false, false, None, cfg).await {
-        Ok(()) => {}
+        Ok(()) => true,
         Err(e) => {
             let msg = format!("{e}");
             // axum::Server::bind returns AddrInUse on a duplicate launch.
@@ -223,28 +275,30 @@ async fn run_web_then_continue(cfg: &Config) {
                 && msg.to_ascii_lowercase().contains("use")
             {
                 print_error_and_pause(
+                    stdin,
                     "port 8000 is already in use — \
                      visit http://localhost:8000 if it's already an icelines server, \
                      or stop the conflicting process and try again.",
-                );
+                )
+                .await
             } else {
-                print_error_and_pause(&format!("web server exited with error: {e}"));
+                print_error_and_pause(stdin, &format!("web server exited with error: {e}")).await
             }
         }
     }
 }
 
 /// Print COMMANDS.md to stdout, then pause for Enter so the user has
-/// time to read before the menu re-renders. v1: no pager — relies on
-/// terminal scrollback. Future: spawn `$PAGER` (less / more).
-fn print_docs_then_pause() {
+/// time to read before the menu re-renders. Ctrl-C during the pause
+/// exits cleanly (otherwise tokio's signal handler swallows SIGINT
+/// and the user is stuck).
+async fn print_docs_then_pause(stdin: &mut BufReader<tokio::io::Stdin>) -> bool {
     println!();
     print!("{}", include_str!("../../../COMMANDS.md"));
     println!();
-    print!("  Press Enter to return to the menu...");
+    print!("  Press Enter to return to the menu (Ctrl-C to exit)...");
     let _ = io::stdout().flush();
-    let mut buf = String::new();
-    let _ = io::stdin().read_line(&mut buf);
+    pause_for_enter(stdin).await
 }
 
 /// Show a "Choose 1-8..." reminder, then loop back to the menu
@@ -265,15 +319,29 @@ fn print_invalid_choice(input: &str) {
     let _ = io::stdout().flush();
 }
 
-/// Show an error then pause for Enter.
-fn print_error_and_pause(msg: &str) {
+/// Show an error, then pause for Enter (Ctrl-C exits cleanly).
+async fn print_error_and_pause(stdin: &mut BufReader<tokio::io::Stdin>, msg: &str) -> bool {
     println!();
     println!("  {msg}");
     println!();
-    print!("  Press Enter to return to the menu...");
+    print!("  Press Enter to return to the menu (Ctrl-C to exit)...");
     let _ = io::stdout().flush();
+    pause_for_enter(stdin).await
+}
+
+/// Wait for Enter (or EOF). Returns `true` if the menu should
+/// continue, `false` if Ctrl-C was caught and the caller should exit
+/// the loop.
+async fn pause_for_enter(stdin: &mut BufReader<tokio::io::Stdin>) -> bool {
     let mut buf = String::new();
-    let _ = io::stdin().read_line(&mut buf);
+    tokio::select! {
+        _ = stdin.read_line(&mut buf) => true,
+        _ = signal::ctrl_c() => {
+            println!();
+            println!("  ^C — exiting menu cleanly.");
+            false
+        }
+    }
 }
 
 /// Clear the screen + reset cursor to top. Prevents ConPTY artifact
