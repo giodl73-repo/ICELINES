@@ -198,6 +198,14 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         } => {
             commands::setup::run(accept_defaults, dry_run, reset).await?;
         }
+        Commands::Favorites {
+            date,
+            range,
+            group,
+            json,
+        } => {
+            commands::favorites::run(date, range, group, json).await?;
+        }
 
         Commands::Serve {
             port,

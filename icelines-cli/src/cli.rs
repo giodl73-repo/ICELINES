@@ -532,6 +532,27 @@ ENTRY POINTS COVERED
     /// Manage player watchlists and custom groups.
     #[command(subcommand)]
     Group(GroupSubcommand),
+    /// Favorites dashboard (Phase Foster.2).
+    ///
+    /// Renders today's (or `--date`'s) games + stat lines for the
+    /// players and teams in your `Favorites` group. Works offline
+    /// from cached boxscores when available; otherwise requires
+    /// `live_feeds` to be on.
+    Favorites {
+        /// Anchor date (`YYYY-MM-DD`). Default: today.
+        #[arg(long, value_name = "YYYY-MM-DD")]
+        date: Option<String>,
+        /// Aggregate over a window: `day` (default), `week`, `month`.
+        #[arg(long, value_name = "WINDOW")]
+        range: Option<String>,
+        /// Group name to read favorites from. Default: `Favorites`.
+        #[arg(long, default_value = "Favorites")]
+        group: String,
+        /// Emit JSON envelope instead of the default text table.
+        #[arg(long)]
+        json: bool,
+    },
+
     /// First-run setup wizard (Phase Foster.0.8).
     ///
     /// Three-question flow that writes capability matrix defaults to

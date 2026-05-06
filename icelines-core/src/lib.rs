@@ -9,6 +9,7 @@ pub mod cross_team;
 pub mod depth_chart;
 pub mod entity;
 pub mod error;
+pub mod favorites;
 pub mod filter;
 pub mod fixtures;
 pub mod freshness;
@@ -25,6 +26,7 @@ pub mod season_stats;
 pub mod stats_catalog;
 pub mod stats_repository;
 pub mod teams;
+pub mod timeframe;
 pub mod transactions;
 
 pub use career_history::{CareerGameType, CareerHistory, CareerStint, LeagueAbbrev, LeagueTier};

@@ -3464,6 +3464,85 @@ fn l2_foster1_schedule_invalid_date_clean_error() {
     );
 }
 
+// ── Phase Foster.2 — favorites dashboard L2 ──────────────────────────────────
+
+/// L2 / l2_foster2_favorites_empty_group_renders_empty_state
+/// — Fresh `~/.icelines` (no group members) → `icelines favorites`
+///   exits 0 and surfaces the empty-state instructional card with
+///   the canonical `group add` example commands.
+#[test]
+fn l2_foster2_favorites_empty_group_renders_empty_state() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let out = run_isolated(home.path(), &["favorites"]);
+    assert!(
+        out.status.success(),
+        "exit 0 expected even with empty group, stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("FAVORITES") && stdout.contains("empty"),
+        "empty-state header must surface, stdout: {stdout}"
+    );
+    assert!(
+        stdout.contains("icelines group add Favorites"),
+        "must teach the user how to add favorites, stdout: {stdout}"
+    );
+}
+
+/// L2 / l2_foster2_favorites_invalid_date_clean_error
+/// — Date validator runs before group lookup; garbage value surfaces
+///   the same error pattern as `tonight --date`.
+#[test]
+fn l2_foster2_favorites_invalid_date_clean_error() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let out = run_isolated(home.path(), &["favorites", "--date", "garbage"]);
+    assert!(!out.status.success());
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("invalid date"),
+        "must surface validator error, stderr: {stderr}"
+    );
+}
+
+/// L2 / l2_foster2_favorites_invalid_range_clean_error
+/// — Unknown --range value rejected with the allowed list.
+#[test]
+fn l2_foster2_favorites_invalid_range_clean_error() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let out = run_isolated(home.path(), &["favorites", "--range", "forever"]);
+    assert!(!out.status.success());
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("unknown --range") && stderr.contains("season"),
+        "error must list allowed values, stderr: {stderr}"
+    );
+}
+
+/// L2 / l2_foster2_favorites_json_envelope_shape
+/// — `--json` emits the K2.4-style envelope (heterogeneous data
+///   object) per WIRE B1. With an empty group the data fields are
+///   all empty arrays.
+#[test]
+fn l2_foster2_favorites_json_envelope_shape() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let out = run_isolated(home.path(), &["favorites", "--json"]);
+    assert!(
+        out.status.success(),
+        "exit 0 expected, stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let parsed: serde_json::Value =
+        serde_json::from_str(&stdout).expect("must emit valid JSON");
+    assert_eq!(parsed["schema_version"], 1);
+    assert_eq!(parsed["route"], "favorites");
+    assert!(parsed["data"]["players"].is_array());
+    assert!(parsed["data"]["teams"].is_array());
+    assert!(parsed["data"]["events"].is_array());
+    assert_eq!(parsed["meta"]["counts"]["players"], 0);
+}
+
 /// L2 / l2_foster1_schedule_deprecated_start_alias_still_accepted
 /// — `--start YYYY-MM-DD` is the deprecated alias for `--date`.
 ///   Hidden from --help but must still parse so existing scripts keep

@@ -2,6 +2,7 @@ pub mod analysis;
 pub mod config;
 pub mod data;
 pub mod export;
+pub mod favorites;
 pub mod fantasy;
 pub mod fetch;
 pub mod mates;
