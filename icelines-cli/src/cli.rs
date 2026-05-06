@@ -553,6 +553,22 @@ ENTRY POINTS COVERED
         json: bool,
     },
 
+    /// Inspect the on-disk data manifest (Phase Foster +2).
+    ///
+    /// Pretty-prints what's in `~/.icelines/data/manifest/`: the
+    /// per-kind shards, their backing files, freshness, and source
+    /// (Bundle / Setup / Live / DataInstall / Manual).
+    DataStatus {
+        /// Filter to one DataKind (case-insensitive). Recognized:
+        /// bios, stats, goalie_stats, transactions, boxscore,
+        /// career_history, schedule, score, playoff_bracket.
+        #[arg(long, value_name = "KIND")]
+        shard: Option<String>,
+        /// List only entries that `fetch sync` would refresh.
+        #[arg(long)]
+        stale_only: bool,
+    },
+
     /// First-run setup wizard (Phase Foster.0.8).
     ///
     /// Three-question flow that writes capability matrix defaults to

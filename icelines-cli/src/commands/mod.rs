@@ -1,6 +1,7 @@
 pub mod analysis;
 pub mod config;
 pub mod data;
+pub mod data_status;
 pub mod export;
 pub mod favorites;
 pub mod fantasy;

@@ -199,6 +199,9 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         } => {
             commands::setup::run(accept_defaults, dry_run, reset).await?;
         }
+        Commands::DataStatus { shard, stale_only } => {
+            commands::data_status::run(shard, stale_only).await?;
+        }
         Commands::Favorites {
             date,
             range,

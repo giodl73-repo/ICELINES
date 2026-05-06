@@ -1177,7 +1177,7 @@ async fn do_boxscore(
 // ── Phase Foster.4 — `icelines fetch sync` CLI surface ───────────────────────
 
 async fn do_sync(dry_run: bool, force: bool) -> anyhow::Result<()> {
-    use icelines_fetch::datastore::DataStore;
+    use icelines_fetch::datastore::{DataStore, Fetcher, NhlApiFetcher};
     use icelines_fetch::sync_engine::{
         enumerate_stale_for_dry_run, force_refresh_filter, run_sync_blocking,
     };
@@ -1188,7 +1188,9 @@ async fn do_sync(dry_run: bool, force: bool) -> anyhow::Result<()> {
         .map(std::path::PathBuf::from)
         .ok_or_else(|| anyhow!("cannot determine home directory"))?;
     let data_root = home.join(".icelines").join("data");
-    let store = DataStore::open(&data_root).context("open DataStore")?;
+    let store = DataStore::open(&data_root)
+        .context("open DataStore")?
+        .with_fetcher(Arc::new(NhlApiFetcher::default()) as Arc<dyn Fetcher>);
     let store = Arc::new(store);
 
     if dry_run {

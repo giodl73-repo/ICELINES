@@ -3464,6 +3464,43 @@ fn l2_foster1_schedule_invalid_date_clean_error() {
     );
 }
 
+// ── Phase Foster +2 — data status command L2 ─────────────────────────────────
+
+/// L2 / l2_foster_plus2_data_status_empty_manifest
+/// — `icelines data status` on a fresh `~/.icelines` exits 0 and
+///   surfaces the empty-state remediation pointer.
+#[test]
+fn l2_foster_plus2_data_status_empty_manifest() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let out = run_isolated(home.path(), &["data-status"]);
+    assert!(
+        out.status.success(),
+        "exit 0 expected, stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("Manifest is empty"),
+        "empty-state must surface, stdout: {stdout}"
+    );
+    assert!(
+        stdout.contains("icelines setup"),
+        "remediation pointer must surface, stdout: {stdout}"
+    );
+}
+
+#[test]
+fn l2_foster_plus2_data_status_unknown_shard_clean_error() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let out = run_isolated(home.path(), &["data-status", "--shard", "garbage"]);
+    assert!(!out.status.success());
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("unknown shard") && stderr.contains("bios"),
+        "must list valid shards, stderr: {stderr}"
+    );
+}
+
 // ── Phase Foster.5 — timeframe surface L2 ────────────────────────────────────
 
 /// L2 / l2_foster5_query_career_week_rejected_per_edge_b2

@@ -89,8 +89,7 @@ pub trait Fetcher: Send + Sync {
 }
 
 /// Default fetcher — always fails. Used when the caller hasn't wired
-/// a real `NhlApiFetcher` yet (Foster.0.4 ships the routing; the
-/// real NHL wiring is a follow-up). Returns `NotInstalled` so the
+/// a real `NhlApiFetcher` yet. Returns `NotInstalled` so the
 /// caller path matches the "live_feeds=false" branch.
 #[derive(Debug, Default)]
 pub struct NoopFetcher;
@@ -117,6 +116,85 @@ impl Fetcher for NoopFetcher {
             kind: DataKind::CareerHistory,
             key: DataKey::Player(pid),
         })
+    }
+}
+
+/// Phase Foster +1 — production `Fetcher` that delegates to
+/// `NhlApiClient`. The trait is sync but `NhlApiClient` methods are
+/// async, so each call bridges via `tokio::runtime::Handle::block_on`.
+/// This is safe because the sync engine invokes refresh methods
+/// inside `tokio::task::spawn_blocking`, where a runtime handle is
+/// always available; lazy-fetch calls from `load_*` are likewise
+/// invoked from inside async CLI dispatch.
+pub struct NhlApiFetcher {
+    client: crate::nhl_api::NhlApiClient,
+}
+
+impl Default for NhlApiFetcher {
+    fn default() -> Self {
+        Self {
+            client: crate::nhl_api::NhlApiClient::production(),
+        }
+    }
+}
+
+impl NhlApiFetcher {
+    /// Inject a custom client (e.g. one pointed at a httpmock server
+    /// in tests). Production callers should use `Default::default()`.
+    pub fn with_client(client: crate::nhl_api::NhlApiClient) -> Self {
+        Self { client }
+    }
+
+    fn block_on<F: std::future::Future>(&self, fut: F) -> F::Output {
+        tokio::runtime::Handle::current().block_on(fut)
+    }
+
+    fn map_err(err: crate::error::FetchError, url_hint: String) -> DataError {
+        use crate::error::FetchError::*;
+        match err {
+            Http { status, url } if status >= 500 => DataError::Http5xx { url, status },
+            ServiceUnavailable { url } => DataError::Http5xx { url, status: 503 },
+            SchemaChanged { detail } => DataError::SchemaDrift {
+                url: url_hint,
+                detail,
+            },
+            other => DataError::Network {
+                url: url_hint,
+                detail: other.to_string(),
+            },
+        }
+    }
+}
+
+impl Fetcher for NhlApiFetcher {
+    fn fetch_bios(&self, season: Season) -> Result<Vec<SkaterBio>, DataError> {
+        let season_str = season.as_str();
+        let url_hint = format!("nhl-api://skater/bios?seasonId={season_str}");
+        self.block_on(
+            self.client
+                .fetch_all_bios(&season_str, SeasonType::Regular),
+        )
+        .map_err(|e| Self::map_err(e, url_hint))
+    }
+
+    fn fetch_stats(
+        &self,
+        season: Season,
+        season_type: SeasonType,
+    ) -> Result<Vec<SkaterStats>, DataError> {
+        let season_str = season.as_str();
+        let url_hint = format!(
+            "nhl-api://skater/summary?seasonId={season_str}&type={}",
+            season_type.label()
+        );
+        self.block_on(self.client.fetch_all_stats(&season_str, season_type))
+            .map_err(|e| Self::map_err(e, url_hint))
+    }
+
+    fn fetch_career_history(&self, pid: PlayerId) -> Result<CareerHistory, DataError> {
+        let url_hint = format!("nhl-api://player/{}/landing", pid.0);
+        self.block_on(self.client.fetch_player_career_history(pid.0))
+            .map_err(|e| Self::map_err(e, url_hint))
     }
 }
 
