@@ -183,23 +183,28 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             commands::project::run(player, team, mode, games, json, csv, out).await?;
         }
         Commands::Tui { surface, start } => {
-            // LB.1+LB.2 — resolve start screen BEFORE entering raw mode,
-            // so resolution failures print to normal stderr (not the
-            // alt-screen) and exit non-zero cleanly.
+            // LB.1+LB.2+LB.3 — resolve start screen BEFORE entering raw
+            // mode, so resolution failures (unknown slug / unknown player
+            // name / ambiguous match / bad team abbrev) print to normal
+            // stderr (not the alt-screen) and exit non-zero cleanly.
             //
             // Precedence: sugar subcommand > --start flag > default (League).
             // If the user passes both, sugar wins (we could error, but
             // letting sugar win keeps `icelines tui goalies --start scores`
             // intuitive — the explicit subcommand reads first).
-            let spec = match (surface, start.as_deref()) {
+            let spec: start_slug::ScreenSpec = match (surface, start.as_deref()) {
                 (Some(s), _) => s.into_screen_spec(),
                 (None, Some(slug)) => start_slug::parse_start_slug(slug)
                     .with_context(|| format!("invalid --start {slug:?}"))?,
-                (None, None) => start_slug::ScreenSpec::Home,
+                (None, None) => start_slug::ScreenSpec::nav(start_slug::NavSpec::Home),
             };
+            // Resolution can fail for parameterized variants (player /
+            // team / goalie / comps). Errors carry the candidate listing
+            // for the Sebastian Aho ambiguity case.
+            let start_screen = spec.into_screen()?;
             tui::run_tui(tui::RunTuiOpts {
                 no_color: false,
-                start_screen: spec.into_screen(),
+                start_screen,
             })
             .await?;
         }

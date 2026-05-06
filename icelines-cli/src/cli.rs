@@ -475,23 +475,52 @@ pub enum TuiSurface {
     Transactions,
     /// Bracket + series detail.
     Playoffs,
+
+    // ── LB.3 — Drill-down sugar ────────────────────────────────────────
+    /// Open a player card directly. Accepts a name (substring match)
+    /// or an explicit pid.
+    Player {
+        /// Player name (e.g. "Bedard", "Connor McDavid") or pid (e.g. 8478402).
+        needle: String,
+    },
+    /// Open a team's depth chart directly. 3-letter abbrev (e.g. EDM, TOR).
+    Team {
+        /// 3-letter team abbreviation. Case-insensitive.
+        abbrev: String,
+    },
+    /// Open a goalie card directly. Accepts a name or pid.
+    Goalie {
+        /// Goalie name or pid.
+        needle: String,
+    },
+    /// Open the comps screen for a player. Accepts a name or pid.
+    Comps {
+        /// Player name or pid.
+        needle: String,
+    },
 }
 
 impl TuiSurface {
-    /// Map sugar variant → ScreenSpec. The slug grammar in
-    /// `start_slug.rs` is the source of truth for parsing strings;
-    /// this mapping is the source of truth for sugar dispatch.
+    /// Map sugar variant → ScreenSpec. Nav-tab variants wrap the
+    /// matching NavSpec; LB.3 drill-down variants build parameterized
+    /// ScreenSpec values that need resolution.
     pub fn into_screen_spec(self) -> crate::start_slug::ScreenSpec {
-        use crate::start_slug::ScreenSpec;
+        use crate::start_slug::{NavSpec, Needle, ScreenSpec};
         match self {
-            TuiSurface::League => ScreenSpec::Home,
-            TuiSurface::Depth => ScreenSpec::Depth,
-            TuiSurface::Stats => ScreenSpec::Queries,
-            TuiSurface::Goalies => ScreenSpec::Goalies,
-            TuiSurface::Scores => ScreenSpec::Tonight,
-            TuiSurface::Schedule => ScreenSpec::Schedule,
-            TuiSurface::Transactions => ScreenSpec::Transactions,
-            TuiSurface::Playoffs => ScreenSpec::Playoffs,
+            TuiSurface::League => ScreenSpec::Nav(NavSpec::Home),
+            TuiSurface::Depth => ScreenSpec::Nav(NavSpec::Depth),
+            TuiSurface::Stats => ScreenSpec::Nav(NavSpec::Queries),
+            TuiSurface::Goalies => ScreenSpec::Nav(NavSpec::Goalies),
+            TuiSurface::Scores => ScreenSpec::Nav(NavSpec::Tonight),
+            TuiSurface::Schedule => ScreenSpec::Nav(NavSpec::Schedule),
+            TuiSurface::Transactions => ScreenSpec::Nav(NavSpec::Transactions),
+            TuiSurface::Playoffs => ScreenSpec::Nav(NavSpec::Playoffs),
+            // LB.3 — drill-down sugar. The needle is parsed-but-not-
+            // resolved; main.rs calls into_screen() to resolve.
+            TuiSurface::Player { needle } => ScreenSpec::Player(Needle::from_arg(&needle)),
+            TuiSurface::Team { abbrev } => ScreenSpec::Team(abbrev),
+            TuiSurface::Goalie { needle } => ScreenSpec::Goalie(Needle::from_arg(&needle)),
+            TuiSurface::Comps { needle } => ScreenSpec::Comps(Needle::from_arg(&needle)),
         }
     }
 }
@@ -499,7 +528,7 @@ impl TuiSurface {
 #[cfg(test)]
 mod tui_surface_tests {
     use super::*;
-    use crate::start_slug::{parse_start_slug, ScreenSpec};
+    use crate::start_slug::{parse_start_slug, NavSpec, ScreenSpec};
     use clap::Parser;
 
     /// LB.2 / l0_sugar_each_nav_tab_parses
@@ -510,14 +539,14 @@ mod tui_surface_tests {
     #[test]
     fn l0_sugar_each_nav_tab_parses() {
         let cases = [
-            ("league", ScreenSpec::Home),
-            ("depth", ScreenSpec::Depth),
-            ("stats", ScreenSpec::Queries),
-            ("goalies", ScreenSpec::Goalies),
-            ("scores", ScreenSpec::Tonight),
-            ("schedule", ScreenSpec::Schedule),
-            ("transactions", ScreenSpec::Transactions),
-            ("playoffs", ScreenSpec::Playoffs),
+            ("league", ScreenSpec::Nav(NavSpec::Home)),
+            ("depth", ScreenSpec::Nav(NavSpec::Depth)),
+            ("stats", ScreenSpec::Nav(NavSpec::Queries)),
+            ("goalies", ScreenSpec::Nav(NavSpec::Goalies)),
+            ("scores", ScreenSpec::Nav(NavSpec::Tonight)),
+            ("schedule", ScreenSpec::Nav(NavSpec::Schedule)),
+            ("transactions", ScreenSpec::Nav(NavSpec::Transactions)),
+            ("playoffs", ScreenSpec::Nav(NavSpec::Playoffs)),
         ];
         for (slug, expected) in cases {
             // Sugar form: `icelines tui <slug>`

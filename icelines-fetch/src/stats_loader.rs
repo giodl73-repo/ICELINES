@@ -687,6 +687,9 @@ where
 /// Order: skater bios first across all bundled seasons, then goalie
 /// bios. Newest-first so a name collision (rare) prefers the most
 /// recent player.
+///
+/// For ambiguity-aware resolution (Sebastian Aho problem), use
+/// [`find_player_candidates`] which returns all matching pids.
 pub fn resolve_player_id_by_name(name: &str) -> Option<u32> {
     use crate::bundled;
     let needle = icelines_core::name::normalize_name(name);
@@ -712,6 +715,105 @@ pub fn resolve_player_id_by_name(name: &str) -> Option<u32> {
         }
     }
     None
+}
+
+/// Phase Lady Byng (LB.3) — one match candidate from a bundled-bio
+/// name search. Carries enough context for a disambiguation prompt
+/// when more than one match exists.
+#[derive(Debug, Clone)]
+pub struct PlayerCandidate {
+    pub pid: u32,
+    pub full_name: String,
+    /// Most recent team abbreviation seen for this pid in the bundle
+    /// scan. `None` if no team data was carried (rare; goalies' summary
+    /// rows always have it).
+    pub last_team: Option<String>,
+    /// Most recent season YYYYZZZZ id this pid was seen in.
+    pub last_season: Option<u32>,
+    /// True if the candidate came from goalie-summary rows (vs skater
+    /// bios). Both lookups run; this flag tells the caller whether
+    /// to dispatch GoalieDetailById vs PlayerById when resolving.
+    pub is_goalie: bool,
+}
+
+/// Walk bundled bios newest-first and return EVERY pid whose normalized
+/// name contains the normalized needle. Deduplicated by pid (a player
+/// in multiple seasons appears once, with `last_team`/`last_season`
+/// from the most recent hit).
+///
+/// Sebastian Aho problem: `find_player_candidates("Smith")` returns
+/// Reilly, Brendan, Craig, Ben, ... so the CLI can list candidates
+/// instead of silently picking the first.
+pub fn find_player_candidates(name: &str) -> Vec<PlayerCandidate> {
+    use crate::bundled;
+    use std::collections::HashMap;
+
+    let needle = icelines_core::name::normalize_name(name);
+    if needle.is_empty() {
+        return Vec::new();
+    }
+
+    let mut by_pid: HashMap<u32, PlayerCandidate> = HashMap::new();
+
+    // Skater bios — newest-first iteration. First-seen wins, since
+    // BUNDLED_SEASONS is newest-first; later (older) season hits don't
+    // overwrite the more-recent team/season.
+    for season_id in bundled::BUNDLED_SEASONS {
+        if let Some(bios) = bundled::get_bios(season_id) {
+            for bio in bios.iter() {
+                if !icelines_core::name::normalize_name(&bio.skater_full_name).contains(&needle) {
+                    continue;
+                }
+                by_pid
+                    .entry(bio.player_id)
+                    .or_insert_with(|| PlayerCandidate {
+                        pid: bio.player_id,
+                        full_name: bio.skater_full_name.clone(),
+                        last_team: bio.current_team_abbrev.clone(),
+                        last_season: season_id.parse::<u32>().ok(),
+                        is_goalie: false,
+                    });
+            }
+        }
+    }
+    // Goalie summary rows — same newest-first walk. `team_abbrevs` is
+    // comma-separated for mid-season trades ("BOS,OTT"); take the
+    // first as "current".
+    for season_id in bundled::BUNDLED_SEASONS {
+        if let Some(goalies) = bundled::get_goalie_stats(season_id) {
+            for g in goalies.iter() {
+                if !icelines_core::name::normalize_name(&g.goalie_full_name).contains(&needle) {
+                    continue;
+                }
+                let primary_team = g
+                    .team_abbrevs
+                    .split(',')
+                    .next()
+                    .map(|s| s.trim().to_owned())
+                    .filter(|s| !s.is_empty());
+                by_pid
+                    .entry(g.player_id)
+                    .or_insert_with(|| PlayerCandidate {
+                        pid: g.player_id,
+                        full_name: g.goalie_full_name.clone(),
+                        last_team: primary_team,
+                        last_season: season_id.parse::<u32>().ok(),
+                        is_goalie: true,
+                    });
+            }
+        }
+    }
+
+    // Stable order: most-recent-season descending, then full_name asc
+    // for the same season. That matches the "newest player first" UX
+    // on multi-match listings.
+    let mut out: Vec<PlayerCandidate> = by_pid.into_values().collect();
+    out.sort_by(|a, b| {
+        b.last_season
+            .cmp(&a.last_season)
+            .then_with(|| a.full_name.cmp(&b.full_name))
+    });
+    out
 }
 
 // ── Phase UX.1 — lazy per-player career loader ──────────────────────────────
