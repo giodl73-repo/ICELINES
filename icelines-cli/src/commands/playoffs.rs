@@ -72,7 +72,11 @@ fn default_season() -> Option<String> {
             }
         }
     }
-    newest_complete.or_else(|| seasons.last().map(|s| (*s).to_owned()))
+    // Post-LP review fix #2: bundled_playoff_seasons() is newest-first
+    // (matching BUNDLED_SEASONS convention). When no season has a
+    // completed Cup Final, fall back to the FIRST entry (newest) — not
+    // last(), which would jump back to the oldest in the list.
+    newest_complete.or_else(|| seasons.first().map(|s| (*s).to_owned()))
 }
 
 pub async fn run(season: Option<String>, round: Option<u8>, json: bool, csv: bool) -> Result<()> {
@@ -122,12 +126,12 @@ pub async fn run(season: Option<String>, round: Option<u8>, json: bool, csv: boo
     table
         .set_content_arrangement(ContentArrangement::Dynamic)
         .set_header(vec!["Round", "Series", "Top", "Bottom", "Result", "Winner"]);
-    let mut current_round = 0;
+    // Post-LP review fix #9 — drop the empty-row separator between
+    // rounds. comfy-table renders an all-empty row as cell borders
+    // around blank space (looks like missing data), not as a section
+    // divider. The Round column already changes value per round so
+    // the structure is visible without artificial gaps.
     for r in &rows {
-        if r.round != current_round {
-            table.add_row(vec!["", "", "", "", "", ""]);
-            current_round = r.round;
-        }
         let result = if r.winner.is_some() {
             format!("{}-{}", r.top_wins, r.bottom_wins)
         } else {
@@ -147,24 +151,35 @@ pub async fn run(season: Option<String>, round: Option<u8>, json: bool, csv: boo
 }
 
 fn emit_json(bundle: &PlayoffsBundle, rows: &[PlayoffRow], round_filter: Option<u8>) -> Result<()> {
+    // Post-LP review fix #5 — envelope shape matches King.2.4 web
+    // convention `{schema_version, route, data, meta}`. Bundle context
+    // (season, champion, Conn Smythe, round filter) lives under `meta`.
     #[derive(serde::Serialize)]
-    struct Envelope<'a> {
-        schema_version: u32,
+    struct Meta<'a> {
         season: &'a str,
         champion: Option<&'a str>,
         conn_smythe: Option<&'a str>,
         round_filter: Option<u8>,
         count: usize,
-        series: &'a [PlayoffRow],
+    }
+    #[derive(serde::Serialize)]
+    struct Envelope<'a> {
+        schema_version: u32,
+        route: &'static str,
+        data: &'a [PlayoffRow],
+        meta: Meta<'a>,
     }
     let env = Envelope {
         schema_version: 1,
-        season: &bundle.season,
-        champion: bundle.champion.as_deref(),
-        conn_smythe: bundle.conn_smythe.as_deref(),
-        round_filter,
-        count: rows.len(),
-        series: rows,
+        route: "playoffs",
+        data: rows,
+        meta: Meta {
+            season: &bundle.season,
+            champion: bundle.champion.as_deref(),
+            conn_smythe: bundle.conn_smythe.as_deref(),
+            round_filter,
+            count: rows.len(),
+        },
     };
     println!("{}", serde_json::to_string_pretty(&env)?);
     Ok(())

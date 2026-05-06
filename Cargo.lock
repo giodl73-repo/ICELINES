@@ -1523,6 +1523,7 @@ dependencies = [
  "icelines-query",
  "icelines-web",
  "image",
+ "libc",
  "open",
  "owo-colors",
  "proof",

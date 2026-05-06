@@ -186,6 +186,13 @@ fn resolve_pid(needle: Needle) -> Result<PlayerId, ResolveError> {
     }
 }
 
+/// Post-LP review fix #11 — maximum candidates listed in an Ambiguous
+/// error. A needle like "a" can match hundreds; flood the terminal
+/// and the user can't see the prompt to retry. 15 is enough rows to
+/// disambiguate any plausible last-name collision while staying inside
+/// a single screen on a typical 30-row terminal.
+const AMBIGUOUS_LIST_CAP: usize = 15;
+
 /// Errors that surface during ScreenSpec → Screen resolution. These
 /// are distinct from parse-time errors (`StartSlugError`) because
 /// they only fire after a syntactically-valid slug has been parsed.
@@ -195,15 +202,25 @@ pub enum ResolveError {
     NoMatch { input: String },
 
     /// Sebastian Aho problem — multiple players match. List candidates;
-    /// user re-runs with a more specific name or pid.
+    /// user re-runs with a more specific name or pid. Post-LP review
+    /// fix #11: cap the listing at 15 (most-recent first per the
+    /// `find_player_candidates` sort) so a needle like "a" doesn't
+    /// flood the terminal.
     #[error(
-        "ambiguous name '{input}' — pick one:\n{}",
-        candidates.iter().map(|c| {
+        "ambiguous name '{input}' — pick one (showing {} of {}):\n{}{}",
+        candidates.len().min(AMBIGUOUS_LIST_CAP),
+        candidates.len(),
+        candidates.iter().take(AMBIGUOUS_LIST_CAP).map(|c| {
             let team = c.last_team.as_deref().unwrap_or("?");
             let season = c.last_season.map(format_season_id).unwrap_or_else(|| "?".into());
             let role = if c.is_goalie { "goalie" } else { "skater" };
             format!("  player:{:<10} {} ({} · {} · {role})", c.pid, c.full_name, team, season)
-        }).collect::<Vec<_>>().join("\n")
+        }).collect::<Vec<_>>().join("\n"),
+        if candidates.len() > AMBIGUOUS_LIST_CAP {
+            format!("\n  ...and {} more (use a more specific name or `player:<pid>`)", candidates.len() - AMBIGUOUS_LIST_CAP)
+        } else {
+            String::new()
+        }
     )]
     Ambiguous {
         input: String,

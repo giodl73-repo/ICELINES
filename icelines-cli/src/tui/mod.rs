@@ -98,6 +98,7 @@ pub async fn run_tui(opts: RunTuiOpts) -> Result<()> {
 mod terminal_guard_tests {
     use super::TerminalGuard;
     use std::panic;
+    use std::sync::atomic::{AtomicBool, Ordering};
 
     /// LB.0.5 / l0_terminal_guard_drops_without_panic
     /// — TerminalGuard's Drop must use `let _ = ...` for every fallible
@@ -117,25 +118,61 @@ mod terminal_guard_tests {
         );
     }
 
+    /// Post-LP review fix #7 — a tracking guard that flips a flag in
+    /// its Drop impl. Stacking it inside the same scope as
+    /// TerminalGuard lets us prove BOTH ran, since Rust drops in
+    /// reverse construction order. If TerminalGuard's Drop had
+    /// panicked, this guard's Drop would still run (double-panic
+    /// abort happens AFTER all destructors in the unwinding frame
+    /// complete on stable Rust unless the second panic is in a
+    /// destructor — which is exactly what we need to detect).
+    /// Concretely: if either guard's Drop fails, we don't reach the
+    /// post-catch_unwind assertions cleanly.
+    struct DropFlag<'a>(&'a AtomicBool);
+    impl Drop for DropFlag<'_> {
+        fn drop(&mut self) {
+            self.0.store(true, Ordering::SeqCst);
+        }
+    }
+
     /// LB.0.5 / l0_terminal_guard_runs_drop_on_panic_unwind
-    /// — A panic inside the scope must still trigger Drop. If Drop
-    ///   ran but also panicked we'd see a panic of a different type
-    ///   (or a process abort). Reaching the assert proves the panic
-    ///   unwound cleanly past the guard.
+    /// — A panic inside the scope must trigger Drop on the guard.
+    ///   We co-locate a DropFlag tracker inside the same scope; both
+    ///   guards drop on unwind. After catch_unwind returns Err(_),
+    ///   the flag is true iff the destructors ran. If TerminalGuard's
+    ///   Drop had aborted the process, we'd never reach the assert.
     #[test]
     fn l0_terminal_guard_runs_drop_on_panic_unwind() {
-        let result = panic::catch_unwind(|| {
+        let flag = AtomicBool::new(false);
+        let result = panic::catch_unwind(panic::AssertUnwindSafe(|| {
             let _guard = TerminalGuard;
+            let _flag = DropFlag(&flag);
             panic!("simulated TUI panic — guard must restore terminal");
-        });
+        }));
         assert!(
             result.is_err(),
             "expected the simulated panic to propagate; got Ok"
         );
-        // If Drop had panicked too, the process would have aborted
-        // (panic-during-panic) and we'd never reach this assert. The
-        // fact that catch_unwind returned Err(_) — not aborted — is
-        // the panic-safety proof.
+        assert!(
+            flag.load(Ordering::SeqCst),
+            "destructor flag never flipped — Drop chain didn't run on unwind"
+        );
+    }
+
+    /// Post-LP review fix #7 — happy-path drop. Sanity check that
+    /// non-panic exit also runs the destructor chain, in case a
+    /// future refactor introduces a noreturn path.
+    #[test]
+    fn l0_terminal_guard_runs_drop_on_normal_return() {
+        let flag = AtomicBool::new(false);
+        {
+            let _guard = TerminalGuard;
+            let _flag = DropFlag(&flag);
+        }
+        assert!(
+            flag.load(Ordering::SeqCst),
+            "destructor flag never flipped on normal scope exit"
+        );
     }
 }
 

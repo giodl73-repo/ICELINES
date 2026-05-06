@@ -1,14 +1,54 @@
 use anyhow::Context;
 use icelines_fetch::nhl_api::NhlApiClient;
 
-/// Convert a UTC time string "HH:MM" to "H:MM AM/PM ET" (assumes EDT = UTC-4, April–Oct).
-/// Falls back to showing UTC if parsing fails.
-fn format_time_et(utc_hhmm: &str) -> String {
+/// LP review fix #1 — true US DST detection for ET conversion.
+///
+/// US DST since 2007: starts second Sunday of March, ends first Sunday
+/// of November. Returns true when the given UTC date is during DST in
+/// the America/New_York zone (i.e. EDT = UTC-4). Returns false for EST
+/// = UTC-5. This is a deliberate small implementation rather than
+/// adding `chrono-tz` (which compiles in a multi-MB IANA db) — we only
+/// need US/Eastern.
+///
+/// The boundary is approximate at the transition seconds (DST flips at
+/// 2 AM local), but for NHL game start-times printed to the minute,
+/// rounding to a whole-day boundary loses at most a handful of seconds
+/// of precision twice a year.
+fn is_us_eastern_dst(date: chrono::NaiveDate) -> bool {
+    use chrono::Datelike;
+    let year = date.year();
+    let dst_start = nth_sunday_of(year, 3, 2); // 2nd Sunday of March
+    let dst_end = nth_sunday_of(year, 11, 1); // 1st Sunday of November
+    date >= dst_start && date < dst_end
+}
+
+/// Returns the date of the Nth (1-indexed) Sunday of a given month.
+fn nth_sunday_of(year: i32, month: u32, n: u32) -> chrono::NaiveDate {
+    use chrono::{Datelike, Weekday};
+    let first = chrono::NaiveDate::from_ymd_opt(year, month, 1)
+        .expect("month/year combo should always produce day 1");
+    let first_dow_offset = (Weekday::Sun.num_days_from_monday() as i64
+        - first.weekday().num_days_from_monday() as i64)
+        .rem_euclid(7);
+    let first_sunday_day = 1 + first_dow_offset as u32;
+    let nth_sunday_day = first_sunday_day + (n - 1) * 7;
+    chrono::NaiveDate::from_ymd_opt(year, month, nth_sunday_day)
+        .expect("nth Sunday should land within the month for n=1..=2 in March/November")
+}
+
+/// Convert a UTC time on a given date to "H:MM AM/PM ET". Uses the
+/// game's date to pick EDT (UTC-4) vs EST (UTC-5). Falls back to UTC
+/// if either parse fails.
+fn format_time_et(utc_hhmm: &str, game_date: &str) -> String {
+    let date = chrono::NaiveDate::parse_from_str(game_date, "%Y-%m-%d").ok();
     let parts: Vec<&str> = utc_hhmm.splitn(2, ':').collect();
     if parts.len() == 2 {
         if let (Ok(h), Ok(m)) = (parts[0].parse::<u32>(), parts[1].parse::<u32>()) {
-            // EDT = UTC-4 (daylight saving, Oct–Mar use EST = UTC-5; we use -4 year-round as approximation)
-            let et_h = (h + 24 - 4) % 24;
+            let offset_hours = match date {
+                Some(d) if is_us_eastern_dst(d) => 4,
+                _ => 5,
+            };
+            let et_h = (h + 24 - offset_hours) % 24;
             let period = if et_h < 12 { "AM" } else { "PM" };
             let display_h = match et_h % 12 {
                 0 => 12,
@@ -74,7 +114,7 @@ pub async fn run(team_filter: Option<String>) -> anyhow::Result<()> {
 
     for game in &filtered {
         let utc = game.start_time_utc.get(11..16).unwrap_or("?");
-        let et = format_time_et(utc);
+        let et = format_time_et(utc, &game.date);
         println!(
             "{} {} @ {} {}  {}",
             game.away_abbrev, game.away_name, game.home_abbrev, game.home_name, et
@@ -126,7 +166,7 @@ pub(crate) fn project_schedule_rows(
             date: game.date.clone(),
             away: game.away_abbrev.clone(),
             home: game.home_abbrev.clone(),
-            time_et: format_time_et(utc),
+            time_et: format_time_et(utc, &game.date),
             // game_state is "FUT"/"PRE"/"LIVE"/"FINAL"/"OFF" — lowercase
             // for the user-facing table.
             status: game
@@ -201,20 +241,32 @@ pub async fn run_schedule(
 }
 
 fn emit_schedule_json(rows: &[ScheduleRow], team: Option<&str>, days: u32) -> anyhow::Result<()> {
+    // Post-LP review fix #5 — envelope shape matches the King.2.4 web
+    // convention `{schema_version, route, data, meta}`. Query echo
+    // (team / days / count) lives under `meta` so consumers can read
+    // `env.data` uniformly across all icelines JSON outputs.
     #[derive(serde::Serialize)]
-    struct Envelope<'a> {
-        schema_version: u32,
+    struct Meta<'a> {
         team: Option<&'a str>,
         days: u32,
         count: usize,
-        games: &'a [ScheduleRow],
+    }
+    #[derive(serde::Serialize)]
+    struct Envelope<'a> {
+        schema_version: u32,
+        route: &'static str,
+        data: &'a [ScheduleRow],
+        meta: Meta<'a>,
     }
     let env = Envelope {
         schema_version: 1,
-        team,
-        days,
-        count: rows.len(),
-        games: rows,
+        route: "schedule",
+        data: rows,
+        meta: Meta {
+            team,
+            days,
+            count: rows.len(),
+        },
     };
     println!("{}", serde_json::to_string_pretty(&env)?);
     Ok(())
@@ -293,6 +345,48 @@ mod schedule_tests {
         let games = vec![mk_game("2026-05-06", "EDM", "TOR", "23:00", "pre")];
         let rows = project_schedule_rows(&games, Some("BOS"), 7);
         assert!(rows.is_empty());
+    }
+
+    /// Post-LP review / l0_format_time_et_uses_dst_in_summer
+    /// — Mid-July: 23:30 UTC = 7:30 PM EDT (UTC-4).
+    #[test]
+    fn l0_format_time_et_uses_dst_in_summer() {
+        assert_eq!(format_time_et("23:30", "2026-07-15"), "7:30 PM ET");
+    }
+
+    /// Post-LP review / l0_format_time_et_uses_est_in_winter
+    /// — Mid-January: 23:30 UTC = 6:30 PM EST (UTC-5).
+    ///   Pre-fix this rendered as 7:30 PM (off by one hour).
+    #[test]
+    fn l0_format_time_et_uses_est_in_winter() {
+        assert_eq!(format_time_et("23:30", "2026-01-15"), "6:30 PM ET");
+    }
+
+    /// Post-LP review / l0_format_time_et_dst_boundary_march
+    /// — DST 2026 starts Sunday March 8 (2nd Sunday of March).
+    ///   March 7 is EST (UTC-5); March 8 is EDT (UTC-4).
+    #[test]
+    fn l0_format_time_et_dst_boundary_march() {
+        assert_eq!(format_time_et("18:00", "2026-03-07"), "1:00 PM ET");
+        assert_eq!(format_time_et("18:00", "2026-03-08"), "2:00 PM ET");
+    }
+
+    /// Post-LP review / l0_format_time_et_dst_boundary_november
+    /// — DST 2026 ends Sunday November 1 (1st Sunday).
+    ///   October 31 is EDT (UTC-4); November 1 is EST (UTC-5).
+    #[test]
+    fn l0_format_time_et_dst_boundary_november() {
+        assert_eq!(format_time_et("18:00", "2026-10-31"), "2:00 PM ET");
+        assert_eq!(format_time_et("18:00", "2026-11-01"), "1:00 PM ET");
+    }
+
+    /// Post-LP review / l0_format_time_et_garbage_date_falls_back_to_est
+    /// — Unparseable date defaults to EST (UTC-5), the more common offset
+    ///   during regular-season hockey (Nov–Mar).
+    #[test]
+    fn l0_format_time_et_garbage_date_falls_back_to_est() {
+        // Garbage date → EST = UTC-5; 23:30 → 6:30 PM.
+        assert_eq!(format_time_et("23:30", "not-a-date"), "6:30 PM ET");
     }
 
     /// LP.1 / l0_schedule_row_serialize_to_csv

@@ -247,20 +247,22 @@ fn print_docs_then_pause() {
     let _ = io::stdin().read_line(&mut buf);
 }
 
-/// Show a "Choose 1-8..." reminder and wait for Enter.
+/// Show a "Choose 1-8..." reminder, then loop back to the menu
+/// immediately. Post-LP review fix #3: don't pause on Enter — the
+/// loop would alternate between "main prompt" and "press Enter"
+/// prompts on hold-down-Enter input, which is GLASS-flagged
+/// surprising. Also avoids the infinite-prompt risk on a stuck stdin
+/// (the launcher's non-TTY guard already handles piped input at
+/// startup, but this is belt-and-suspenders).
 fn print_invalid_choice(input: &str) {
     println!();
     if input.is_empty() {
-        println!("  (empty choice)");
+        println!("  (empty choice — try again)");
     } else {
-        println!("  Unknown choice '{input}'.");
+        println!("  Unknown choice '{input}'. Choose 1-8, P, T, G, C, W, D, or Q.");
     }
-    println!("  Choose 1-8, P, T, G, C, W, D, or Q.");
     println!();
-    print!("  Press Enter to continue...");
     let _ = io::stdout().flush();
-    let mut buf = String::new();
-    let _ = io::stdin().read_line(&mut buf);
 }
 
 /// Show an error then pause for Enter.

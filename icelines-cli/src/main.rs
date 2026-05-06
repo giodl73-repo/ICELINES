@@ -15,8 +15,30 @@ use clap::{CommandFactory, Parser};
 use cli::{Cli, Commands, FantasySubcommand, QuerySubcommand};
 use config::Config;
 
+/// Post-LP review fix #4 — Reset SIGPIPE to SIG_DFL on Unix so a
+/// downstream `| head` (or any consumer that closes its end) ends our
+/// process with EPIPE → exit 141, instead of letting Rust's default
+/// SIGPIPE-ignored behavior turn the next `println!` into a panic.
+/// Windows has no SIGPIPE; this is a no-op there.
+#[cfg(unix)]
+fn reset_sigpipe_handler() {
+    // SAFETY: signal(2) on a valid signal number with SIG_DFL is the
+    // canonical way to opt out of Rust's libstd default. No
+    // multi-threaded races at startup — main is single-threaded here.
+    unsafe {
+        let _ = libc::signal(libc::SIGPIPE, libc::SIG_DFL);
+    }
+}
+
+#[cfg(not(unix))]
+fn reset_sigpipe_handler() {
+    // No SIGPIPE on Windows.
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    reset_sigpipe_handler();
+
     // Load config early so any error surfaces before command dispatch.
     let cfg = Config::load()?;
 

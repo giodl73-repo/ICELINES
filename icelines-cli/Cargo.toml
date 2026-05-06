@@ -39,6 +39,12 @@ uuid.workspace        = true
 chrono.workspace      = true
 open.workspace        = true
 
+# Post-LP review fix #4 — used only on Unix, only in main.rs to reset
+# SIGPIPE to SIG_DFL so `| head` doesn't turn into a Rust panic. Tiny
+# platform-shim crate; trivial to remove if we add a portable helper.
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
 [dev-dependencies]
 # proof_lib is parked as a dev-dep — the smoke test in
 # `tests/proof_lib_smoke.rs` keeps the integration code paved in case
