@@ -195,6 +195,30 @@ icelines query goalies --season 19981999 --top 10                    # Hasek era
 icelines query goalies --json
 ```
 
+### `query career` — cross-league leaderboard (Phase Calder)
+
+Walks the local career-history store (`~/.icelines/career_history.json`)
+populated by `icelines fetch career --bundled-seasons 5`, and lists the
+top scorers from a non-NHL league + season. Useful for "OHL leaders
+2014-15", "AHL goal-scorers 2024-25" — questions `query leaders`
+(NHL-only) can't answer.
+
+```bash
+icelines query career --league OHL --season 20142015           # McDavid era
+icelines query career --league AHL --season 20242025 --top 30
+icelines query career --league NCAA --season 20132014 --sort goals
+icelines query career --league WHL --json | jq '.data[0]'
+```
+
+Cohort scope: only players who appeared on an NHL roster in the last
+5 bundled seasons (the `fetch career` target). Career-only players
+who never reached the NHL aren't in scope. `--season` defaults to the
+most-recent season for the chosen league.
+
+Run `icelines fetch career --bundled-seasons 5` once (≈100 s, hits the
+NHL landing endpoint for ~1,650 players) before this command; the
+data isn't bundled into the binary.
+
 ---
 
 ## Top-level analytics commands
@@ -287,6 +311,10 @@ icelines fetch all                    # rosters + stats (~5 min)
 icelines fetch realtime               # hits, blocks, giveaways, takeaways
 icelines fetch money-puck             # xG, CF%, FF%, xGF% (free)
 icelines fetch contracts              # UFA/RFA/ELC
+icelines fetch career --bundled-seasons 5   # multi-league career history (Calder)
+                                            # ~100s; populates ~/.icelines/career_history.json
+                                            # for ~1,650 players. Lights up the pre-NHL section
+                                            # on player cards + `query career` leaderboards.
 
 # Historical data is bundled — every season since 1987-88. No install required.
 # `data install` is for keeping a local mirror up to date if you fetch fresh data.

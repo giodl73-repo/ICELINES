@@ -137,8 +137,9 @@ The mock NHL API fixture is at `src/icelines-fetch/tests/mock_nhl_api.rs` — us
 - **Reports overlay (R)** — toggles which Tier-1 reports populate columns (realtime, timeonice, goalsForAgainst, goalie-advanced, goalie-savesByStrength). Persists to `~/.icelines/config.toml`. Disabled reports drop their columns from career tables / sort picker / query output. See `design/specs/stat-catalog.md` and `Reports.1`-`Reports.7` in this codebase.
 - **Lazy career loader (UX.1)** — opening a player card fans out across all 38 bundled seasons, pulling that player's career into the repo. ~50 ms per first open, cached after.
 - **38-season bundle (L.7b)** — `BUNDLED_SEASONS` covers 1987-88 → 2025-26. Binary 56 MB. Adding a season: drop files into `data/seasons/YYYYZZZZ/` and add the row to each lookup table in `bundled.rs`.
+- **Phase Calder — multi-league career history**: `icelines fetch career --bundled-seasons 5` walks the NHL landing endpoint for ~1,650 active-roster pids and writes `~/.icelines/career_history.json` (~30 MB compact). Surfaced on player card (CLI + TUI + Web) as the "Pre-NHL career" section, on scouting reports as the "Development arc" line, and via `icelines query career --league OHL --season 20142015` cohort leaderboards (CLI + `/career` web route + `/api/v1/career` JSON twin). Data path: `icelines-core::career_history` (types) + `icelines-fetch::career_landing` (parser, batch fetcher, store). Intentionally NOT bundled — see commit `72c851bd` for the lazy-vs-bundle tradeoff.
 - `icelines build/serve/deploy` — mkdocs static site
-- ~1720 tests across L0/L1/L2 + 4 persona-scenario waves (`persona_scenarios.rs` + `persona_wave2.rs/wave3/wave4`) including mock NHL API fixture
+- ~1755 tests across L0/L1/L2 + 4 persona-scenario waves (`persona_scenarios.rs` + `persona_wave2.rs/wave3/wave4`) including mock NHL API fixture
 
 ## Pending (see design/plans/INDEX.md)
 - NHL Edge skating speed stats — blocked, no public JSON endpoint (memory `nhl_edge_data_blocked.md`)

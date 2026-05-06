@@ -51,8 +51,39 @@ pub async fn run(player_name: String, format: String) -> anyhow::Result<()> {
 
     let career = load_career(&view.identity.full_name, 5, &store);
 
+    // Phase Calder.5 — pre-NHL stints for the new "Development arc"
+    // line in section 3. Empty when the user hasn't run
+    // `icelines fetch career` yet; renderer prints nothing in that
+    // case so untouched installs see no change.
+    let career_history_store = icelines_fetch::career_landing::load_local_store();
+    let pre_nhl_stints: Vec<icelines_core::career_history::CareerStint> = career_history_store
+        .get(view.identity.id.0)
+        .map(|h| {
+            use icelines_core::career_history::{CareerGameType, LeagueTier};
+            h.stints
+                .iter()
+                .filter(|s| {
+                    s.league.0 != "NHL"
+                        && matches!(
+                            s.league.tier(),
+                            LeagueTier::Pro | LeagueTier::Junior | LeagueTier::College
+                        )
+                        && matches!(s.game_type, CareerGameType::Regular)
+                })
+                .cloned()
+                .collect()
+        })
+        .unwrap_or_default();
+
     let metrics = compute_all_views(&all_views);
-    let output = render_report(&view, &all_views, career.as_ref(), &metrics, fmt);
+    let output = render_report(
+        &view,
+        &all_views,
+        career.as_ref(),
+        &metrics,
+        &pre_nhl_stints,
+        fmt,
+    );
     print!("{output}");
     Ok(())
 }
@@ -65,6 +96,7 @@ pub(crate) fn render_report(
     all_views: &[PlayerView<'_>],
     career: Option<&CareerSummary>,
     metrics: &[CrossTeamMetrics],
+    pre_nhl_stints: &[icelines_core::career_history::CareerStint],
     format: &str,
 ) -> String {
     let mut out = String::new();
@@ -271,6 +303,44 @@ pub(crate) fn render_report(
     // ── Section 3: Career trajectory ─────────────────────────────────────────
     let _ = writeln!(out);
     let _ = writeln!(out, "## 3. Career Trajectory");
+
+    // Phase Calder.5 — Development arc, prepended to section 3 when
+    // the local career-history store has data for this player. Tells
+    // the "road to the NHL" story in one or two lines:
+    //   GTHL minor → OHL Erie 2012-15 (3 yrs, 285 pts) → NHL EDM
+    // Players without a populated store render no extra lines.
+    if !pre_nhl_stints.is_empty() {
+        let _ = writeln!(out, "  Development arc:");
+        // Group consecutive stints by league for the summary line.
+        // (A player's WHL years collapse into one entry.)
+        let mut groups: Vec<(String, Vec<&icelines_core::career_history::CareerStint>)> =
+            Vec::new();
+        for s in pre_nhl_stints {
+            match groups.last_mut() {
+                Some((lg, ss)) if *lg == s.league.0 => ss.push(s),
+                _ => groups.push((s.league.0.clone(), vec![s])),
+            }
+        }
+        for (league, ss) in &groups {
+            let years = ss.len();
+            let teams: std::collections::BTreeSet<&str> =
+                ss.iter().map(|s| s.team.as_str()).collect();
+            let total_p: u32 = ss.iter().filter_map(|s| s.points).sum();
+            let total_gp: u32 = ss.iter().map(|s| s.gp).sum();
+            let teams_str = teams.into_iter().collect::<Vec<_>>().join(", ");
+            let span = if years == 1 {
+                format!("{} season", years)
+            } else {
+                format!("{} seasons", years)
+            };
+            let _ = writeln!(
+                out,
+                "    {league:<12} {teams_str:<28} {span:<12} GP {total_gp:>4}  P {total_p:>4}"
+            );
+        }
+        let _ = writeln!(out);
+    }
+
     match career {
         Some(c) if !c.seasons.is_empty() => {
             let _ = writeln!(
@@ -562,7 +632,14 @@ mod tests {
     fn l0_format_terminal_includes_all_eight_sections() {
         let (repo, pid, s, t) = fixture_repo();
         let view = repo.view(pid, s, t).unwrap();
-        let out = render_report(&view, std::slice::from_ref(&view), None, &[], "terminal");
+        let out = render_report(
+            &view,
+            std::slice::from_ref(&view),
+            None,
+            &[],
+            &[],
+            "terminal",
+        );
         for n in 1..=8 {
             let header = format!("## {n}.");
             assert!(
@@ -581,7 +658,14 @@ mod tests {
     fn l0_format_markdown_uses_h2_headings() {
         let (repo, pid, s, t) = fixture_repo();
         let view = repo.view(pid, s, t).unwrap();
-        let out = render_report(&view, std::slice::from_ref(&view), None, &[], "markdown");
+        let out = render_report(
+            &view,
+            std::slice::from_ref(&view),
+            None,
+            &[],
+            &[],
+            "markdown",
+        );
         assert!(
             out.starts_with("# Scouting Report"),
             "markdown H1 missing, got start: {}",
@@ -601,7 +685,7 @@ mod tests {
     fn l0_format_json_has_section_keys() {
         let (repo, pid, s, t) = fixture_repo();
         let view = repo.view(pid, s, t).unwrap();
-        let out = render_report(&view, std::slice::from_ref(&view), None, &[], "json");
+        let out = render_report(&view, std::slice::from_ref(&view), None, &[], &[], "json");
         let v: serde_json::Value =
             serde_json::from_str(out.trim()).expect("render_report json output must parse as JSON");
         for k in &[
@@ -629,7 +713,14 @@ mod tests {
     fn l0_low_gp_skips_current_season_numerics() {
         let (repo, pid, s, t) = fixture_repo_low_gp();
         let view = repo.view(pid, s, t).unwrap();
-        let out = render_report(&view, std::slice::from_ref(&view), None, &[], "terminal");
+        let out = render_report(
+            &view,
+            std::slice::from_ref(&view),
+            None,
+            &[],
+            &[],
+            "terminal",
+        );
         assert!(out.contains("## 2. Current Season"));
         assert!(
             out.contains("not enough data"),
@@ -650,7 +741,7 @@ mod tests {
         let (repo, pid, s, t) = fixture_repo();
         let view = repo.view(pid, s, t).unwrap();
         for fmt in &["terminal", "markdown", "json"] {
-            let out = render_report(&view, std::slice::from_ref(&view), None, &[], fmt);
+            let out = render_report(&view, std::slice::from_ref(&view), None, &[], &[], fmt);
             assert!(
                 !out.trim().is_empty(),
                 "format '{fmt}' produced empty output"
