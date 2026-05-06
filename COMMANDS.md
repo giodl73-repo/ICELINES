@@ -386,14 +386,40 @@ Prints a numbered menu, reads a choice, dispatches to the matching surface, then
 
 ---
 
+## Live-data commands (Phase Lester Patrick — full CLI parity)
+
+```bash
+# Tonight's games
+icelines tonight
+icelines tonight --team EDM
+
+# Upcoming schedule (LP.1 — gained --json/--csv + comfy-table)
+icelines schedule                       # next 7 days
+icelines schedule --team EDM --days 14
+icelines schedule --json > games.json   # scripted export
+icelines schedule --csv > games.csv     # Excel-friendly
+
+# Playoff bracket (LP.2 — new)
+icelines playoffs                       # most recent completed bracket
+icelines playoffs --season 19931994     # 1993-94 — NYR ended 54-yr drought
+icelines playoffs --round 4             # only the Cup Final
+icelines playoffs --json                # JSON for scripting
+
+# League-wide transactions feed (Phase Selke; Lester Patrick verified parity)
+icelines transactions                   # current season, default 7-day window
+icelines transactions --team EDM
+icelines transactions --kind trade --since 2026-01-01
+icelines transactions --player McDavid
+icelines transactions --json > moves.json
+```
+
+The schedule, playoffs, and transactions commands all share the same data sources as the TUI tabs (Schedule / Playoffs / Transactions) and the web routes (`/schedule`, `/playoffs`, `/transactions`) — guaranteed-consistent across all three surfaces per the IceLines.md "Feature × surface portfolio" doctrine.
+
+---
+
 ## Other commands
 
 ```bash
-# Live data
-icelines tonight                       # tonight's NHL games
-icelines tonight --team EDM
-icelines schedule --days 7             # upcoming schedule
-icelines transactions --season 20242025
 
 # Player groups (SQLite-backed watchlists)
 icelines group create "Watchlist"

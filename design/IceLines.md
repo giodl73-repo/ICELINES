@@ -69,19 +69,20 @@ include: deliberate scope (fantasy is local-only today), data-source constraint
 | Compare | ✅ `query compare A B` | ✅ `tui comps <name>` *(LB)* | ✅ `/compare?a=…&b=…` |
 | League rankings | ✅ `rank` | ✅ `tui league` *(LB)* | ✅ home preview |
 | Tonight's scores | ✅ `tonight` | ✅ `tui scores` *(LB)* | ✅ `/scores` |
-| Schedule | ❌ *(Lester Patrick)* | ✅ `tui schedule` *(LB)* | ✅ `/schedule` |
-| Playoffs | ❌ *(Lester Patrick)* | ✅ `tui playoffs` *(LB)* | ✅ `/playoffs` |
-| Transactions | ❌ *(Lester Patrick)* | ✅ `tui transactions` *(LB)* | ✅ `/transactions` |
-| Docs reference | ✅ `docs` | ❌ *(Lester Patrick — overlay)* | ✅ `/docs` |
+| Schedule | ✅ `schedule` *(LP.1)* | ✅ `tui schedule` *(LB)* | ✅ `/schedule` |
+| Playoffs | ✅ `playoffs` *(LP.2)* | ✅ `tui playoffs` *(LB)* | ✅ `/playoffs` |
+| Transactions | ✅ `transactions` *(Selke + LP.3)* | ✅ `tui transactions` *(LB)* | ✅ `/transactions` |
+| Docs reference | ✅ `docs` | ❌ *(deferred — LP.4 follow-up)* | ✅ `/docs` |
 | Fantasy | ✅ `fantasy …` | (deep links via groups) | ❌ *(deferred — Phase Frank Selke when revisited)* |
 
 *(LB)* = ships in Phase Lady Byng (per `plans/2026-05-05-phaseLadyByng-tui-experiences.md`).
 
-The four ❌ rows in the planned-LB column are scheduled for **Phase Lester Patrick**
-(see `plans/2026-05-05-phaseLesterPatrick-cli-parity.md`) — `icelines schedule`,
-`icelines playoffs`, `icelines transactions`, plus an in-TUI docs overlay. The
-fantasy-on-web ❌ is intentionally deferred (single-user local-only fantasy is
-the v1 stance; the web surface stays read-only for analytical features).
+**Phase Lester Patrick (2026-05-05)**: closed three of the four CLI gaps.
+`icelines schedule` (LP.1) gained `--json`/`--csv`/comfy-table; `icelines
+playoffs` (LP.2) is brand-new; `icelines transactions` was discovered to be
+already complete from Phase Selke. The in-TUI docs overlay (LP.4) is
+deferred to a follow-up phase. The fantasy-on-web ❌ is intentionally
+deferred (single-user local-only fantasy is the v1 stance).
 
 ## What the v1.0 surface is
 
