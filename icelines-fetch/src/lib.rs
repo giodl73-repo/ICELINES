@@ -19,6 +19,7 @@ pub mod schema;
 pub mod shift_profile;
 pub mod snapshot;
 pub mod stats_loader;
+pub mod sync_engine;
 pub mod teams;
 pub mod transactions;
 

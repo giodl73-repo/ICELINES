@@ -3464,6 +3464,28 @@ fn l2_foster1_schedule_invalid_date_clean_error() {
     );
 }
 
+// ── Phase Foster.4 — sync engine L2 ──────────────────────────────────────────
+
+/// L2 / l2_foster4_fetch_sync_dry_run_empty_manifest
+/// — On a fresh `~/.icelines` (empty manifest), `fetch sync --dry-run`
+///   exits 0 and reports "Nothing stale." No network calls; the
+///   walk is purely over the in-memory manifest map.
+#[test]
+fn l2_foster4_fetch_sync_dry_run_empty_manifest() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let out = run_isolated(home.path(), &["fetch", "sync", "--dry-run"]);
+    assert!(
+        out.status.success(),
+        "exit 0 expected, stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("Nothing stale"),
+        "empty manifest must surface 'Nothing stale.', stdout: {stdout}"
+    );
+}
+
 // ── Phase Foster.3 — boxscore fetcher L2 ─────────────────────────────────────
 
 /// L2 / l2_foster3_fetch_boxscore_invalid_date_clean_error

@@ -419,6 +419,84 @@ impl DataStore {
         set.into_iter().collect()
     }
 
+    /// Phase Foster.4 — return every manifest entry whose
+    /// `Freshness::is_stale(clock)` says it's past TTL. `Static`
+    /// entries and `DataInstall`-sourced entries never appear here
+    /// (the engine respects user pins).
+    pub fn enumerate_stale(&self) -> Vec<(DataKind, ManifestEntry)> {
+        let mut out = Vec::new();
+        for &kind in DataKind::all() {
+            for entry in self.manifest.list(kind) {
+                if entry.freshness.is_stale(self.clock.as_ref()) {
+                    out.push((kind, entry));
+                }
+            }
+        }
+        out
+    }
+
+    /// Phase Foster.4 — re-fetch a single (kind, key) via the
+    /// configured `Fetcher` and persist the result. Returns the new
+    /// `Freshness` on success. Honors the `live_feeds` / `test_mode`
+    /// gates the same way `load_*` does.
+    pub fn refresh_entry(&self, kind: DataKind, key: &DataKey) -> Result<Freshness, DataError> {
+        if !self.live_feeds || self.test_mode {
+            return Err(DataError::NotInstalled {
+                kind,
+                key: key.clone(),
+            });
+        }
+        match (kind, key) {
+            (DataKind::Bios, DataKey::Season(s)) => {
+                let bios = self.fetcher.fetch_bios(*s)?;
+                self.persist_bios(*s, &bios)?;
+                Ok(self
+                    .manifest
+                    .get(kind, key)
+                    .map(|e| e.freshness)
+                    .unwrap_or(Freshness {
+                        fetched_at: self.clock.now(),
+                        source: FetchSource::Live,
+                        ttl: Ttl::After(std::time::Duration::from_secs(86400)),
+                    }))
+            }
+            (DataKind::Stats, DataKey::SeasonType(s, t)) => {
+                let stats = self.fetcher.fetch_stats(*s, *t)?;
+                self.persist_stats(*s, *t, &stats)?;
+                Ok(self
+                    .manifest
+                    .get(kind, key)
+                    .map(|e| e.freshness)
+                    .unwrap_or(Freshness {
+                        fetched_at: self.clock.now(),
+                        source: FetchSource::Live,
+                        ttl: Ttl::After(std::time::Duration::from_secs(86400)),
+                    }))
+            }
+            (DataKind::CareerHistory, DataKey::Player(pid)) => {
+                let ch = self.fetcher.fetch_career_history(*pid)?;
+                self.persist_career_history(*pid, &ch)?;
+                Ok(self
+                    .manifest
+                    .get(kind, key)
+                    .map(|e| e.freshness)
+                    .unwrap_or(Freshness {
+                        fetched_at: self.clock.now(),
+                        source: FetchSource::Live,
+                        ttl: Ttl::After(std::time::Duration::from_secs(7 * 86400)),
+                    }))
+            }
+            // Other (kind, key) combos don't have a Fetcher path
+            // wired yet (boxscores, transactions, etc. land in
+            // follow-up sub-steps). Surface as NotInstalled so the
+            // sync loop logs and moves on.
+            _ => Err(DataError::NotInstalled {
+                kind,
+                key: key.clone(),
+            }),
+        }
+    }
+
     fn lazy_fetch_banner(&self, kind: DataKind, key: &DataKey) {
         // One-line stderr nudge so the user knows a network call is
         // happening (TAPE H2). Suppressed under test_mode (gated

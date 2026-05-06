@@ -931,6 +931,20 @@ pub enum FetchSubcommand {
         #[arg(long)]
         dry_run: bool,
     },
+    /// Refresh every stale entry in the manifest (Phase Foster.4).
+    /// Walks the manifest, filters by `Freshness::is_stale`, and
+    /// re-fetches via the configured Fetcher. Non-blocking when
+    /// invoked from the TUI; blocking from this CLI surface.
+    Sync {
+        /// List entries that would be refreshed without fetching.
+        #[arg(long)]
+        dry_run: bool,
+        /// Override Static TTL — re-fetch even DataInstall-pinned
+        /// entries. Use sparingly; intended for "user explicitly
+        /// said refresh everything".
+        #[arg(long)]
+        force: bool,
+    },
     /// Fetch goalie season stats (W/L/SV%/GAA/SO) — Phase G.2.
     /// Writes goalie-stats.json (or playoff-goalie-stats.json) into the
     /// active snapshot store.

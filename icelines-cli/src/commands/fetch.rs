@@ -88,6 +88,7 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             for_favorites,
             dry_run,
         } => do_boxscore(date, for_favorites, dry_run).await,
+        FetchSubcommand::Sync { dry_run, force } => do_sync(dry_run, force).await,
         FetchSubcommand::Report {
             kind,
             season,
@@ -1170,6 +1171,61 @@ async fn do_boxscore(
     println!(
         "Done — {wrote} new event(s), {updated} updated event(s) on {anchor_str}."
     );
+    Ok(())
+}
+
+// ── Phase Foster.4 — `icelines fetch sync` CLI surface ───────────────────────
+
+async fn do_sync(dry_run: bool, force: bool) -> anyhow::Result<()> {
+    use icelines_fetch::datastore::DataStore;
+    use icelines_fetch::sync_engine::{
+        enumerate_stale_for_dry_run, force_refresh_filter, run_sync_blocking,
+    };
+    use std::sync::Arc;
+
+    let home = std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(std::path::PathBuf::from)
+        .ok_or_else(|| anyhow!("cannot determine home directory"))?;
+    let data_root = home.join(".icelines").join("data");
+    let store = DataStore::open(&data_root).context("open DataStore")?;
+    let store = Arc::new(store);
+
+    if dry_run {
+        let entries = if force {
+            force_refresh_filter(&store)
+        } else {
+            enumerate_stale_for_dry_run(&store)
+        };
+        if entries.is_empty() {
+            println!("Nothing stale.");
+            return Ok(());
+        }
+        println!(
+            "{} entry(ies) {}:",
+            entries.len(),
+            if force { "would be refreshed (--force)" } else { "would be refreshed" }
+        );
+        for (kind, key) in entries {
+            println!("  · {kind:?} / {key:?}");
+        }
+        println!("(dry run — no fetches issued)");
+        return Ok(());
+    }
+
+    let summary = run_sync_blocking(store).await;
+    println!(
+        "Sync complete — {} refreshed, {} failed in {:.1}s",
+        summary.refreshed,
+        summary.failed,
+        summary.elapsed.as_secs_f32(),
+    );
+    if !summary.errors.is_empty() {
+        println!("First few errors:");
+        for e in summary.errors.iter().take(5) {
+            println!("  ! {e}");
+        }
+    }
     Ok(())
 }
 
