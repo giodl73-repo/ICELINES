@@ -1,13 +1,13 @@
 Rank Player                   Team  Pos  GP   GP        
 ───────────────────────────────────────────────────────
-1    Cody Ceci                LAK   D    85   85        
-2    Will Borgen              NYR   D    84   84        
-3    Fabian Zetterlund        OTT   LW   84   84        
-4    Drew O'Connor            VAN   LW   84   84        
-5    Charlie Coyle            CBJ   C    83   83        
-6    Mikael Granlund          ANA   C    83   83        
-7    Brandon Carlo            TOR   D    83   83        
-8    Ryan Suter               RET   D    82   82        
+1    Cody Ceci                SJS/DAL D    85   85        
+2    Will Borgen              SEA/NYR D    84   84        
+3    Fabian Zetterlund        SJS/OTT LW   84   84        
+4    Drew O'Connor            PIT/VAN LW   84   84        
+5    Charlie Coyle            BOS/COL C    83   83        
+6    Mikael Granlund          SJS/DAL C    83   83        
+7    Brandon Carlo            BOS/TOR D    83   83        
+8    Ryan Suter               STL   D    82   82        
 9    Alex Killorn             ANA   LW   82   82        
 10   Ian Cole                 UTA   D    82   82        
 

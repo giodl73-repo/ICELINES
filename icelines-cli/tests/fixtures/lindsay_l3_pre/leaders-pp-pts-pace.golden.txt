@@ -3,7 +3,7 @@ Rank Player                   Team  Pos  GP   PP-Pts/82
 1    Taylor Ward              LAK   RW   1    82.0      
 2    Nikita Kucherov          TBL   RW   78   48.4      
 3    Nathan MacKinnon         COL   C    79   39.4      
-4    Martin Necas             COL   C    79   38.4      
+4    Martin Necas             CAR/COL C    79   38.4      
 5    Leon Draisaitl           EDM   C    71   38.1      
 6    Connor McDavid           EDM   C    67   37.9      
 7    Clayton Keller           UTA   RW   81   37.5      

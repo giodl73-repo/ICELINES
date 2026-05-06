@@ -1,14 +1,14 @@
 Rank Player                   Team  Pos  GP   Hits/82   
 ───────────────────────────────────────────────────────
-1    Nikita Kucherov          TBL   RW   78   0.0       
-2    Leon Draisaitl           EDM   C    71   0.0       
-3    Connor McDavid           EDM   C    67   0.0       
-4    Nathan MacKinnon         COL   C    79   0.0       
-5    Kirill Kaprizov          MIN   LW   41   0.0       
-6    David Pastrnak           BOS   RW   82   0.0       
-7    Mitch Marner             VGK   RW   81   0.0       
-8    Jack Eichel              VGK   C    77   0.0       
-9    Kyle Connor              WPG   LW   82   0.0       
-10   Auston Matthews          TOR   C    67   0.0       
+1    Kiefer Sherwood          VAN   LW   78   485.7     
+2    Robert Hagg              VGK   D    2    451.0     
+3    Grigori Denisenko        VGK   LW   1    410.0     
+4    Jeremy Lauzon            NSH   D    28   371.9     
+5    Lian Bichsel             DAL   D    38   334.5     
+6    Mason Morelli            VGK   LW   1    328.0     
+7    Nathan Légaré            NJD   RW   3    328.0     
+8    Jacob Melanson           SEA   RW   1    328.0     
+9    Sam Morton               CGY   C    1    328.0     
+10   Luke Schenn              NSH/WPG D    76   323.7     
 
 905 matched, showing 10.

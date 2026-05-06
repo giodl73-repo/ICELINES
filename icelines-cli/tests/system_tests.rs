@@ -2990,3 +2990,194 @@ fn l2_lindsay_query_leaders_filter_empty_input_errors_cleanly() {
         "error must label empty-input; got: {stderr}"
     );
 }
+
+// ── L2: `icelines playoffs` (LP.2) ───────────────────────────────────────────
+//
+// LP.2 shipped a brand-new top-level subcommand that consumes the same
+// bundled playoff data the TUI Playoffs tab + web /playoffs already
+// render. Six tests pin the contract: exits zero with a populated table
+// year-round, --json carries the King.2.4 envelope, --csv carries a
+// header, --round narrows, --season validates against the bundled set.
+
+/// LP.2 / l2_cmd_playoffs_exits_zero
+/// — bare invocation defaults to the most recent COMPLETED bracket and
+///   prints a populated table. Must work in the offseason too.
+#[test]
+fn l2_cmd_playoffs_exits_zero() {
+    let out = run(&["playoffs"]);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        out.status.success(),
+        "playoffs must exit 0, stderr: {stderr}"
+    );
+    assert!(
+        stdout.contains("PLAYOFFS"),
+        "header missing, stdout: {stdout}"
+    );
+    assert!(
+        stdout.contains("Champion:"),
+        "default season must be COMPLETED so the Champion line shows; stdout: {stdout}"
+    );
+}
+
+/// LP.2 / l2_cmd_playoffs_round_filter_narrows
+/// — `--round 4` against 1993-94 prints the single Cup-Final series and
+///   nothing from earlier rounds. NYR won the Cup that year, used as a
+///   stable string anchor.
+#[test]
+fn l2_cmd_playoffs_round_filter_narrows() {
+    let out = run(&["playoffs", "--season", "19931994", "--round", "4"]);
+    assert!(out.status.success(), "must exit 0");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("NYR"),
+        "1993-94 final winner NYR must appear, stdout: {stdout}"
+    );
+    // Round 1 had 8 series — none of those team pairings should leak
+    // through with --round 4. The Cup Final teams were NYR vs VAN; if
+    // we see other 1993-94 R1 abbrevs mixed in, the filter regressed.
+    assert!(
+        !stdout.contains("BUF") && !stdout.contains("NJD"),
+        "round filter leaked earlier-round series, stdout: {stdout}"
+    );
+}
+
+/// LP.2 / l2_cmd_playoffs_json_envelope_shape
+/// — Envelope follows King.2.4: schema_version + route + data + meta.
+///   Pinning the literal key set guards against silent schema drift.
+#[test]
+fn l2_cmd_playoffs_json_envelope_shape() {
+    let out = run(&["playoffs", "--season", "19931994", "--json"]);
+    assert!(out.status.success(), "must exit 0");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let v: serde_json::Value =
+        serde_json::from_str(&stdout).unwrap_or_else(|e| panic!("invalid JSON: {e}\n{stdout}"));
+    let obj = v.as_object().expect("envelope must be a JSON object");
+    let keys: std::collections::BTreeSet<_> = obj.keys().map(String::as_str).collect();
+    assert_eq!(
+        keys,
+        ["data", "meta", "route", "schema_version"]
+            .iter()
+            .copied()
+            .collect::<std::collections::BTreeSet<_>>(),
+        "envelope keys diverged: {keys:?}"
+    );
+    assert_eq!(obj["schema_version"], serde_json::json!(1));
+    assert_eq!(obj["route"], serde_json::json!("playoffs"));
+    assert!(obj["data"].is_array());
+    let meta_keys: std::collections::BTreeSet<_> = obj["meta"]
+        .as_object()
+        .expect("meta must be an object")
+        .keys()
+        .map(String::as_str)
+        .collect();
+    let want: std::collections::BTreeSet<_> =
+        ["champion", "conn_smythe", "count", "round_filter", "season"]
+            .iter()
+            .copied()
+            .collect();
+    assert_eq!(meta_keys, want, "meta keys diverged: {meta_keys:?}");
+    assert_eq!(obj["meta"]["season"], serde_json::json!("19931994"));
+}
+
+/// LP.2 / l2_cmd_playoffs_csv_has_header
+/// — CSV path emits the 8-column header up front so `csvkit`/Excel can
+///   parse without surprises.
+#[test]
+fn l2_cmd_playoffs_csv_has_header() {
+    let out = run(&["playoffs", "--season", "19931994", "--csv"]);
+    assert!(out.status.success(), "must exit 0");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let first = stdout.lines().next().unwrap_or("");
+    assert_eq!(
+        first, "round,round_label,top_seed,bottom_seed,top_wins,bottom_wins,winner,games_played",
+        "CSV header drifted"
+    );
+}
+
+/// LP.2 / l2_cmd_playoffs_unbundled_season_errors_helpfully
+/// — A season we don't carry should print the "try `icelines data
+///   list`" hint, not panic or print an empty bracket.
+#[test]
+fn l2_cmd_playoffs_unbundled_season_errors_helpfully() {
+    // 2099 is safely outside the 1987-88..2025-26 window.
+    let out = run(&["playoffs", "--season", "20992100"]);
+    assert!(!out.status.success(), "unbundled season must non-zero exit");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("no playoff bundle") && stderr.contains("data list"),
+        "error must guide user to `data list`, stderr: {stderr}"
+    );
+}
+
+/// LP.2 / l2_cmd_playoffs_invalid_round_rejected
+/// — clap's value_parser range enforces 1..=4. `--round 5` should be
+///   rejected at parse time, no panic.
+#[test]
+fn l2_cmd_playoffs_invalid_round_rejected() {
+    let out = run(&["playoffs", "--round", "5"]);
+    assert!(!out.status.success(), "round=5 must non-zero exit");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        !stderr.contains("panicked"),
+        "must not panic, stderr: {stderr}"
+    );
+}
+
+// ── L2: JSON envelope shape across LP commands (T2) ──────────────────────────
+//
+// King.2.4 established the envelope `{schema_version, route, data, meta}`
+// for the web JSON twins. LP.1+LP.2 brought this convention to the CLI
+// (schedule / playoffs / tonight). These tests pin the literal key set
+// so a schema bump can't slip in unannounced — change the test
+// alongside the change to record intent.
+
+/// T2 / l2_cmd_schedule_json_envelope_shape
+/// — Schedule `--json` envelope shape. Day-zero default is 7 days; we
+///   keep the call short to stay deterministic across reruns.
+#[test]
+fn l2_cmd_schedule_json_envelope_shape() {
+    let out = run(&["schedule", "--days", "1", "--json"]);
+    assert!(
+        out.status.success(),
+        "schedule --json must exit 0, stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let v: serde_json::Value =
+        serde_json::from_str(&stdout).unwrap_or_else(|e| panic!("invalid JSON: {e}\n{stdout}"));
+    let obj = v.as_object().expect("envelope must be a JSON object");
+    let keys: std::collections::BTreeSet<_> = obj.keys().map(String::as_str).collect();
+    assert_eq!(
+        keys,
+        ["data", "meta", "route", "schema_version"]
+            .iter()
+            .copied()
+            .collect::<std::collections::BTreeSet<_>>(),
+        "envelope keys diverged: {keys:?}"
+    );
+    assert_eq!(obj["route"], serde_json::json!("schedule"));
+    assert_eq!(obj["schema_version"], serde_json::json!(1));
+    assert!(obj["data"].is_array());
+}
+
+/// T2 / l2_cmd_tonight_no_json_flag_documented
+/// — `tonight` does not carry a `--json` flag today; document that
+///   here so a future addition has to re-read this test (and then the
+///   author can pivot it to a real envelope assertion).
+#[test]
+fn l2_cmd_tonight_no_json_flag_documented() {
+    let out = run(&["tonight", "--json"]);
+    // clap rejects unknown flag → non-zero exit, no panic.
+    assert!(!out.status.success(), "tonight --json must non-zero exit");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        !stderr.contains("panicked"),
+        "must not panic, stderr: {stderr}"
+    );
+    assert!(
+        stderr.contains("--json") || stderr.contains("unexpected"),
+        "should mention the unknown flag, stderr: {stderr}"
+    );
+}

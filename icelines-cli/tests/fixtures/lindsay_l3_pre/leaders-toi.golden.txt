@@ -1,7 +1,7 @@
 Rank Player                   Team  Pos  GP   TOI/g     
 ───────────────────────────────────────────────────────
 1    Zach Werenski            CBJ   D    81   26:44     
-2    Quinn Hughes             MIN   D    68   25:43     
+2    Quinn Hughes             VAN   D    68   25:43     
 3    Cale Makar               COL   D    80   25:42     
 4    Brock Faber              MIN   D    78   25:31     
 5    Miro Heiskanen           DAL   D    50   25:09     
@@ -9,6 +9,6 @@ Rank Player                   Team  Pos  GP   TOI/g
 7    Mike Matheson            MTL   D    80   25:04     
 8    Moritz Seider            DET   D    82   25:04     
 9    Roman Josi               NSH   D    53   25:01     
-10   Seth Jones               FLA   D    63   24:38     
+10   Seth Jones               CHI/FLA D    63   24:38     
 
 905 matched, showing 10.

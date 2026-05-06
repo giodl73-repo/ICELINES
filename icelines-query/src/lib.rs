@@ -382,6 +382,15 @@ pub fn extract_bio(raw_filters: &[String]) -> (Vec<BioAtom>, Vec<String>) {
     let mut bio: Vec<BioAtom> = Vec::new();
     let mut stat: Vec<String> = Vec::with_capacity(raw_filters.len());
     for raw in raw_filters {
+        // An empty/whitespace-only `--filter ""` must round-trip into
+        // the residue so the downstream parser surfaces EmptyInput
+        // instead of silently being treated as no filter. Without
+        // this, `split_top_level_and("")` produces zero pieces and
+        // the input vanishes — likely a user shell-quoting bug.
+        if raw.trim().is_empty() {
+            stat.push(raw.clone());
+            continue;
+        }
         match split_top_level_and(raw) {
             Some(pieces) => {
                 let mut stat_pieces: Vec<String> = Vec::new();

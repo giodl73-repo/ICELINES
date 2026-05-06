@@ -5,7 +5,7 @@ Rank Player                   Team  Pos  GP   Shots
 3    Zach Werenski            CBJ   D    81   298       
 4    Brady Tkachuk            OTT   LW   72   296       
 5    Filip Forsberg           NSH   LW   82   281       
-6    Nazem Kadri              COL   C    82   279       
+6    Nazem Kadri              CGY   C    82   279       
 7    Matt Boldy               MIN   LW   82   271       
 8    Kyle Connor              WPG   LW   82   267       
 9    Nikita Kucherov          TBL   RW   78   265       

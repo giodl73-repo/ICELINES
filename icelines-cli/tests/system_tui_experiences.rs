@@ -110,8 +110,12 @@ fn lb_l2_ambiguous_player_lists_candidates() {
     let out = run(&["tui", "player", "Smith"]);
     assert!(!out.status.success());
     let stderr = String::from_utf8_lossy(&out.stderr);
+    // Post-LB review fix #6 changed `pick one:` to `pick one (showing
+    // N of M):` so ambiguous-candidate output stays within ~15 lines
+    // even with 37 Smiths across 38 bundled seasons. Match the prefix
+    // both forms share.
     assert!(
-        stderr.contains("ambiguous name 'Smith'") && stderr.contains("pick one:"),
+        stderr.contains("ambiguous name 'Smith'") && stderr.contains("pick one"),
         "stderr missing ambiguity listing, got:\n{stderr}"
     );
     // At least 3 distinct pids should be listed for "Smith" across

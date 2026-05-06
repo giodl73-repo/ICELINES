@@ -1,14 +1,14 @@
 Rank Player                   Team  Pos  GP   Blk/82    
 ───────────────────────────────────────────────────────
-1    Nikita Kucherov          TBL   RW   78   0.0       
-2    Leon Draisaitl           EDM   C    71   0.0       
-3    Connor McDavid           EDM   C    67   0.0       
-4    Nathan MacKinnon         COL   C    79   0.0       
-5    Kirill Kaprizov          MIN   LW   41   0.0       
-6    David Pastrnak           BOS   RW   82   0.0       
-7    Mitch Marner             VGK   RW   81   0.0       
-8    Jack Eichel              VGK   C    77   0.0       
-9    Kyle Connor              WPG   LW   82   0.0       
-10   Auston Matthews          TOR   C    67   0.0       
+1    Frederic Brunet          BOS   D    1    410.0     
+2    Wyatt Aamodt             COL   D    2    369.0     
+3    Jacob Trouba             NYR/ANA D    77   221.5     
+4    Nick Seeler              PHI   D    77   213.0     
+5    Ian Cole                 UTA   D    82   211.0     
+6    Chris Tanev              TOR   D    75   206.6     
+7    Kirill Kudryavtsev       VAN   D    2    205.0     
+8    Rasmus Andersson         CGY   D    81   198.4     
+9    David Savard             MTL   D    75   196.8     
+10   MacKenzie Weegar         CGY   D    81   194.4     
 
 905 matched, showing 10.

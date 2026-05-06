@@ -180,6 +180,62 @@ async fn l1_depth_route_returns_200_html() {
     );
 }
 
+/// l1_depth_json_envelope_shape (T3)
+/// — `/api/v1/depth` is the JSON twin of `/depth`. Every list page on
+///   the web surface gets one (King.2.4 convention) so external scripts
+///   don't have to scrape HTML. This fence pins the literal envelope
+///   keys + types so a schema bump can't slip in unannounced.
+#[tokio::test]
+async fn l1_depth_json_envelope_shape() {
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/depth")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::OK);
+    let ct = response
+        .headers()
+        .get(axum::http::header::CONTENT_TYPE)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+    assert!(
+        ct.starts_with("application/json"),
+        "expected JSON content-type, got {ct:?}"
+    );
+
+    let bytes = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+        .await
+        .expect("body fits");
+    let v: serde_json::Value = serde_json::from_slice(&bytes).expect("valid json");
+    let obj = v.as_object().expect("envelope is an object");
+    let keys: std::collections::BTreeSet<_> = obj.keys().map(String::as_str).collect();
+    let want: std::collections::BTreeSet<_> = ["data", "meta", "route", "schema_version"]
+        .iter()
+        .copied()
+        .collect();
+    assert_eq!(keys, want, "envelope keys diverged: {keys:?}");
+    assert_eq!(obj["schema_version"], serde_json::json!(1));
+    assert_eq!(obj["route"], serde_json::json!("depth"));
+    assert!(obj["data"].is_array(), "data must be an array");
+    let meta_keys: std::collections::BTreeSet<_> = obj["meta"]
+        .as_object()
+        .expect("meta is an object")
+        .keys()
+        .map(String::as_str)
+        .collect();
+    let want_meta: std::collections::BTreeSet<_> =
+        ["count", "scoring_mode", "season", "season_type"]
+            .iter()
+            .copied()
+            .collect();
+    assert_eq!(meta_keys, want_meta, "meta keys diverged: {meta_keys:?}");
+}
+
 /// l1_unknown_route_returns_404
 /// — axum's default not-found handler. Once King.1.6 adds host-header
 ///   validation we'll add a 421 case for DNS rebinding, but the basic

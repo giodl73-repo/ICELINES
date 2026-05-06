@@ -4,7 +4,7 @@ Rank Player                   Team  Pos  GP   Pts
 2    Nathan MacKinnon         COL   C    79   116       
 3    Leon Draisaitl           EDM   C    71   106       
 4    David Pastrnak           BOS   RW   82   106       
-5    Mitch Marner             VGK   RW   81   102       
+5    Mitch Marner             TOR   RW   81   102       
 6    Connor McDavid           EDM   C    67   100       
 7    Kyle Connor              WPG   LW   82   97        
 8    Jack Eichel              VGK   C    77   94        

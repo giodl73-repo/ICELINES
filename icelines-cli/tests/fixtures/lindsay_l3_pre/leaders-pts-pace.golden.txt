@@ -6,7 +6,7 @@ Rank Player                   Team  Pos  GP   Pts/82
 4    Nathan MacKinnon         COL   C    79   120.4     
 5    Kirill Kaprizov          MIN   LW   41   112.0     
 6    David Pastrnak           BOS   RW   82   106.0     
-7    Mitch Marner             VGK   RW   81   103.3     
+7    Mitch Marner             TOR   RW   81   103.3     
 8    Jack Eichel              VGK   C    77   100.1     
 9    Kyle Connor              WPG   LW   82   97.0      
 10   Auston Matthews          TOR   C    67   95.5      

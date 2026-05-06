@@ -4,7 +4,7 @@ Rank Player                   Team  Pos  GP   +/-
 2    Brayden McNabb           VGK   D    82   +42       
 3    Aliaksei Protas          WSH   LW   76   +40       
 4    Artturi Lehkonen         COL   LW   69   +36       
-5    Warren Foegele           OTT   LW   82   +36       
+5    Warren Foegele           LAK   LW   82   +36       
 6    Esa Lindell              DAL   D    80   +34       
 7    Dylan Samberg            WPG   D    60   +34       
 8    Brandon Hagel            TBL   LW   82   +33       

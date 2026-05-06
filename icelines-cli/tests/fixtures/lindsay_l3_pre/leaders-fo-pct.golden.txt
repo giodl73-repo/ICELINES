@@ -2,13 +2,13 @@ Rank Player                   Team  Pos  GP   FO%
 ───────────────────────────────────────────────────────
 1    Dryden Hunt              CGY   LW   5    100.0%    
 2    Filip Hronek             VAN   D    61   100.0%    
-3    Drake Caggiula           RET   LW   7    100.0%    
-4    Jeffrey Viel             ANA   LW   5    100.0%    
+3    Drake Caggiula           EDM   LW   7    100.0%    
+4    Jeffrey Viel             BOS   LW   5    100.0%    
 5    Kailer Yamamoto          UTA   RW   12   100.0%    
-6    Shane Bowers             SJS   C    4    100.0%    
-7    Cole Reinhardt           FLA   LW   17   100.0%    
-8    Thomas Bordeleau         STL   C    1    100.0%    
-9    Callahan Burke           RET   C    7    100.0%    
+6    Shane Bowers             NJD   C    4    100.0%    
+7    Cole Reinhardt           OTT   LW   17   100.0%    
+8    Thomas Bordeleau         SJS   C    1    100.0%    
+9    Callahan Burke           VGK   C    7    100.0%    
 10   James Malatesta          CBJ   LW   2    100.0%    
 
 905 matched, showing 10.

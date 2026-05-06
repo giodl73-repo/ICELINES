@@ -1,14 +1,14 @@
 Rank Player                   Team  Pos  GP   GvA       
 ───────────────────────────────────────────────────────
-1    Nikita Kucherov          TBL   RW   78   0         
-2    Leon Draisaitl           EDM   C    71   0         
-3    Connor McDavid           EDM   C    67   0         
-4    Nathan MacKinnon         COL   C    79   0         
-5    Kirill Kaprizov          MIN   LW   41   0         
-6    David Pastrnak           BOS   RW   82   0         
-7    Mitch Marner             VGK   RW   81   0         
-8    Jack Eichel              VGK   C    77   0         
-9    Kyle Connor              WPG   LW   82   0         
-10   Auston Matthews          TOR   C    67   0         
+1    MacKenzie Weegar         CGY   D    81   159       
+2    Erik Karlsson            PIT   D    82   140       
+3    Evan Bouchard            EDM   D    82   128       
+4    Travis Sanheim           PHI   D    82   127       
+5    Mikhail Sergachev        UTA   D    77   126       
+6    Nikita Kucherov          TBL   RW   78   122       
+7    Nathan MacKinnon         COL   C    79   121       
+8    Zach Werenski            CBJ   D    81   120       
+9    Ivan Provorov            CBJ   D    82   120       
+10   Victor Hedman            TBL   D    79   119       
 
 905 matched, showing 10.

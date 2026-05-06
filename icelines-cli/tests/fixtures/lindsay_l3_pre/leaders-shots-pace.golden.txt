@@ -2,7 +2,7 @@ Rank Player                   Team  Pos  GP   Shots/82
 ───────────────────────────────────────────────────────
 1    Brady Tkachuk            OTT   LW   72   337.1     
 2    Nathan MacKinnon         COL   C    79   332.2     
-3    Nathan Clurman           MTL   D    1    328.0     
+3    Nathan Clurman           PIT   D    1    328.0     
 4    Taylor Ward              LAK   RW   1    328.0     
 5    Joakim Kemell            NSH   RW   2    328.0     
 6    Auston Matthews          TOR   C    67   319.4     

@@ -2,7 +2,7 @@ Rank Player                   Team  Pos  GP   Assists
 ───────────────────────────────────────────────────────
 1    Nikita Kucherov          TBL   RW   78   84        
 2    Nathan MacKinnon         COL   C    79   84        
-3    Mitch Marner             VGK   RW   81   75        
+3    Mitch Marner             TOR   RW   81   75        
 4    Connor McDavid           EDM   C    67   74        
 5    Jesper Bratt             NJD   LW   81   67        
 6    Jack Eichel              VGK   C    77   66        

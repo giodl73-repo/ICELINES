@@ -80,6 +80,9 @@ pub fn router(state: WebState) -> Router {
         // Depth rankings — Phase Lady Byng follow-up. Cross-team
         // line-value rankings; mirror of TUI Depth tab.
         .route("/depth", get(handlers::depth::get_depth))
+        // T3 (post-LP test gap): JSON twin for /depth so external
+        // scripts don't have to scrape the HTML table.
+        .route("/api/v1/depth", get(handlers::depth::get_depth_json))
         // Docs — King.8.1. Rendered COMMANDS.md.
         .route("/docs", get(handlers::docs::get_docs))
         // Season-type flip — UX.E. Click writes WebState.config and
@@ -1406,6 +1409,7 @@ mod handlers {
         use axum::response::{Html, IntoResponse, Response};
         use icelines_core::cross_team::{compute_team_strength_views, ScoringMode};
         use icelines_core::model::Season;
+        use icelines_core::season_stats::SeasonType;
 
         pub async fn get_depth(State(state): State<WebState>) -> Response {
             let (season_str, season_type, active_label) = {
@@ -1475,6 +1479,109 @@ mod handlers {
                 )
                     .into_response(),
             }
+        }
+
+        // ── JSON twin ────────────────────────────────────────────────
+        // T3 (post-LP test gap): every list page on the web surface
+        // gets a JSON twin so external scripts don't have to scrape
+        // HTML. Mirrors the King.2.4 envelope `{schema_version, route,
+        // data, meta}` already used by /api/v1/leaders + /api/v1/goalies.
+
+        #[derive(serde::Serialize)]
+        struct DepthJsonRow {
+            team: String,
+            c_score: f64,
+            lw_score: f64,
+            rw_score: f64,
+            d_score: f64,
+            total: f64,
+            c_top: String,
+            lw_top: String,
+            rw_top: String,
+            d_top: String,
+        }
+
+        #[derive(serde::Serialize)]
+        struct DepthMeta {
+            season: String,
+            season_type: String,
+            count: usize,
+            scoring_mode: &'static str,
+        }
+
+        #[derive(serde::Serialize)]
+        struct DepthEnvelope {
+            schema_version: u32,
+            route: &'static str,
+            data: Vec<DepthJsonRow>,
+            meta: DepthMeta,
+        }
+
+        pub async fn get_depth_json(State(state): State<WebState>) -> Response {
+            let (season_str, season_type) = {
+                let cfg = state.config.read().await;
+                (
+                    cfg.active_season.clone(),
+                    super::leaders::parse_season_type(&cfg.active_season_type),
+                )
+            };
+            let season_u32: u32 = match season_str.parse() {
+                Ok(n) => n,
+                Err(e) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        axum::Json(serde_json::json!({
+                            "error": format!("active season '{season_str}' is not a valid YYYYZZZZ id: {e}"),
+                        })),
+                    )
+                        .into_response();
+                }
+            };
+            let season = Season(season_u32);
+
+            let rows: Vec<DepthJsonRow> = {
+                let repo = state.repo.read().await;
+                let views: Vec<_> = repo.skaters(season, season_type).collect();
+                let strength = compute_team_strength_views(&views, ScoringMode::Pace);
+                let mut ranked: Vec<_> = strength.into_iter().collect();
+                ranked.sort_by(|a, b| {
+                    b.1.total
+                        .partial_cmp(&a.1.total)
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                        .then_with(|| a.0.cmp(&b.0))
+                });
+                ranked
+                    .into_iter()
+                    .map(|(team, s)| DepthJsonRow {
+                        team,
+                        c_score: s.c_score,
+                        lw_score: s.lw_score,
+                        rw_score: s.rw_score,
+                        d_score: s.d_score,
+                        total: s.total,
+                        c_top: s.c_top,
+                        lw_top: s.lw_top,
+                        rw_top: s.rw_top,
+                        d_top: s.d_top,
+                    })
+                    .collect()
+            };
+
+            let envelope = DepthEnvelope {
+                schema_version: 1,
+                route: "depth",
+                meta: DepthMeta {
+                    season: season_str,
+                    season_type: match season_type {
+                        SeasonType::Regular => "regular".to_owned(),
+                        SeasonType::Playoff => "playoff".to_owned(),
+                    },
+                    count: rows.len(),
+                    scoring_mode: "pace",
+                },
+                data: rows,
+            };
+            axum::Json(envelope).into_response()
         }
     }
 

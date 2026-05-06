@@ -1,6 +1,6 @@
 Rank Player                   Team  Pos  GP   GWG/82    
 ───────────────────────────────────────────────────────
-1    Justin Sourdif           WSH   C    1    82.0      
+1    Justin Sourdif           FLA   C    1    82.0      
 2    Sam Morton               CGY   C    1    82.0      
 3    Leon Draisaitl           EDM   C    71   12.7      
 4    Mark Scheifele           WPG   C    82   11.0      
