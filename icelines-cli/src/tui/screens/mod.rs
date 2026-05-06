@@ -107,6 +107,39 @@ pub fn render(f: &mut Frame, app: &App) {
     if app.show_reports_overlay {
         misc::render_reports_overlay(f, app, area);
     }
+
+    // LP.4 — in-TUI docs overlay. Painted last so it sits on top of
+    // everything else (League/Stats/Goalies/etc). `m` opens, Esc/m
+    // closes, Up/Down/Left/Right scroll. Same compile-time
+    // `COMMANDS.md` source as `icelines docs` and the web /docs route.
+    if app.show_docs {
+        render_docs_overlay(f, app, area);
+    }
+}
+
+/// LP.4 — paint the docs overlay. Centered popup, scrollable
+/// Paragraph widget. Title shows scroll position so user knows
+/// they're not at the top/bottom of a long document.
+fn render_docs_overlay(f: &mut Frame, app: &App, area: Rect) {
+    const COMMANDS_MD: &str = include_str!("../../../../COMMANDS.md");
+    let popup = centered_rect(82, 80, area);
+    f.render_widget(Clear, popup);
+    let total_lines = COMMANDS_MD.lines().count() as u16;
+    let title = format!(
+        " Docs (COMMANDS.md) — line {}/{}  ·  ↑↓ scroll · ←→ page · Esc/m close ",
+        app.docs_scroll.saturating_add(1).min(total_lines.max(1)),
+        total_lines.max(1),
+    );
+    let block = Block::default()
+        .title(title)
+        .borders(Borders::ALL)
+        .style(Style::default().fg(Color::Cyan));
+    let inner = block.inner(popup);
+    f.render_widget(block, popup);
+    f.render_widget(
+        Paragraph::new(COMMANDS_MD).scroll((app.docs_scroll, 0)),
+        inner,
+    );
 }
 
 fn tab_for_screen(screen: &Screen) -> usize {
@@ -463,6 +496,102 @@ mod app_snapshot_tests {
         let mut app = App::new(true);
         app.screen = Screen::CompsById(pid);
         let _ = render_app_to_text(&app, 120, 30);
+    }
+
+    // ── Phase Lester Patrick (LP.4) — in-TUI docs overlay ─────────────
+
+    /// LP.4 / lp_docs_overlay_renders_when_show_docs_is_true
+    /// — Pressing `m` toggles `show_docs`; the overlay renders the
+    ///   "Docs (COMMANDS.md)" title and content from COMMANDS.md.
+    #[test]
+    fn lp_docs_overlay_renders_when_show_docs_is_true() {
+        let mut app = App::new(true);
+        app.show_docs = true;
+        let text = render_app_to_text(&app, 120, 30);
+        assert!(
+            text.contains("Docs (COMMANDS.md)"),
+            "docs overlay title missing, got:\n{text}"
+        );
+        // COMMANDS.md starts with "# Icelines CLI Reference" or similar
+        // — the overlay should render at least one line of doc content.
+        assert!(
+            text.contains("icelines"),
+            "docs overlay content missing, got:\n{text}"
+        );
+    }
+
+    /// LP.4 / lp_docs_overlay_action_m_opens_overlay
+    /// — From any screen, Action::Char('m') sets show_docs=true and
+    ///   resets scroll. Renders without panicking on League screen.
+    #[test]
+    fn lp_docs_overlay_action_m_opens_overlay() {
+        use crate::tui::event::Action;
+        let mut app = App::new(true);
+        app.docs_scroll = 42; // pretend we'd been here before
+        let _quit = app.handle(Action::Char('m'));
+        assert!(app.show_docs);
+        assert_eq!(app.docs_scroll, 0, "opening should reset scroll");
+        let _ = render_app_to_text(&app, 120, 30);
+    }
+
+    /// LP.4 / lp_docs_overlay_esc_closes
+    /// — Esc closes the overlay; show_docs returns to false.
+    #[test]
+    fn lp_docs_overlay_esc_closes() {
+        use crate::tui::event::Action;
+        let mut app = App::new(true);
+        app.show_docs = true;
+        app.handle(Action::Escape);
+        assert!(!app.show_docs);
+    }
+
+    /// LP.4 / lp_docs_overlay_m_toggles_closed
+    /// — `m` while overlay is open closes it (toggle behavior).
+    #[test]
+    fn lp_docs_overlay_m_toggles_closed() {
+        use crate::tui::event::Action;
+        let mut app = App::new(true);
+        app.show_docs = true;
+        app.handle(Action::Char('m'));
+        assert!(!app.show_docs);
+    }
+
+    /// LP.4 / lp_docs_overlay_arrow_keys_scroll
+    /// — Down advances scroll by 1; Up retreats by 1; Right pages
+    ///   forward by 20; Left pages back by 20. Saturating arithmetic
+    ///   prevents underflow at 0.
+    #[test]
+    fn lp_docs_overlay_arrow_keys_scroll() {
+        use crate::tui::event::Action;
+        let mut app = App::new(true);
+        app.show_docs = true;
+        assert_eq!(app.docs_scroll, 0);
+        app.handle(Action::Down);
+        assert_eq!(app.docs_scroll, 1);
+        app.handle(Action::Down);
+        assert_eq!(app.docs_scroll, 2);
+        app.handle(Action::Up);
+        assert_eq!(app.docs_scroll, 1);
+        app.handle(Action::Up);
+        assert_eq!(app.docs_scroll, 0);
+        app.handle(Action::Up); // saturating — stays at 0
+        assert_eq!(app.docs_scroll, 0);
+        app.handle(Action::Right);
+        assert_eq!(app.docs_scroll, 20);
+        app.handle(Action::Left);
+        assert_eq!(app.docs_scroll, 0);
+    }
+
+    /// LP.4 / lp_docs_overlay_quit_still_quits
+    /// — `q` while overlay is open returns true (quit) — the overlay
+    ///   does NOT trap the user.
+    #[test]
+    fn lp_docs_overlay_quit_still_quits() {
+        use crate::tui::event::Action;
+        let mut app = App::new(true);
+        app.show_docs = true;
+        let quit = app.handle(Action::Quit);
+        assert!(quit, "Quit must propagate even with docs overlay open");
     }
 
     // ── User-flow tests ──────────────────────────────────────────────────────

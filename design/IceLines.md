@@ -72,7 +72,7 @@ include: deliberate scope (fantasy is local-only today), data-source constraint
 | Schedule | ✅ `schedule` *(LP.1)* | ✅ `tui schedule` *(LB)* | ✅ `/schedule` |
 | Playoffs | ✅ `playoffs` *(LP.2)* | ✅ `tui playoffs` *(LB)* | ✅ `/playoffs` |
 | Transactions | ✅ `transactions` *(Selke + LP.3)* | ✅ `tui transactions` *(LB)* | ✅ `/transactions` |
-| Docs reference | ✅ `docs` | ❌ *(deferred — LP.4 follow-up)* | ✅ `/docs` |
+| Docs reference | ✅ `docs` | ✅ `m` overlay *(LP.4)* | ✅ `/docs` |
 | Fantasy | ✅ `fantasy …` | (deep links via groups) | ❌ *(deferred — Phase Frank Selke when revisited)* |
 
 *(LB)* = ships in Phase Lady Byng (per `plans/2026-05-05-phaseLadyByng-tui-experiences.md`).

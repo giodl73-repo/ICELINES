@@ -128,6 +128,11 @@ pub struct App {
     pub search_query: String,
     pub status: String,
     pub show_help: bool,
+    /// LP.4 — in-TUI docs overlay. `m` opens; Up/Down/PgUp/PgDn scroll;
+    /// Esc/m closes. Source-of-truth is the same compile-time
+    /// COMMANDS.md as `icelines docs` and `/docs`.
+    pub show_docs: bool,
+    pub docs_scroll: u16,
     // Headshot ASCII cache
     pub headshot_cache: crate::tui::headshot::HeadshotCache,
     // Group picker (shown as overlay on player card or team roster)
@@ -278,6 +283,8 @@ impl App {
             search_query: String::new(),
             status: "Loading data… · Press ? for help · q to quit".to_owned(),
             show_help: false,
+            show_docs: false,
+            docs_scroll: 0,
             query_fields: crate::tui::screens::queries::default_fields(),
             query_field_idx: 0,
             query_sections: crate::tui::screens::queries::default_sections(),
@@ -404,6 +411,29 @@ impl App {
             return false;
         }
 
+        // LP.4 — docs overlay. Up/Down scroll one line; PgUp/PgDn (Left/
+        // Right repurposed since the overlay has no horizontal axis)
+        // scroll one page; Esc or `m` close. `q` still quits the app
+        // so the overlay doesn't trap a panicked user.
+        if self.show_docs {
+            match action {
+                Action::Quit => return true,
+                Action::Escape | Action::Char('m') => self.show_docs = false,
+                Action::Up => self.docs_scroll = self.docs_scroll.saturating_sub(1),
+                Action::Down => self.docs_scroll = self.docs_scroll.saturating_add(1),
+                // Page semantics: ←/→ jump 20 lines (a screenful on a
+                // typical 30-row terminal with the overlay border).
+                Action::Left | Action::TabPrev => {
+                    self.docs_scroll = self.docs_scroll.saturating_sub(20);
+                }
+                Action::Right | Action::Tab => {
+                    self.docs_scroll = self.docs_scroll.saturating_add(20);
+                }
+                _ => {}
+            }
+            return false;
+        }
+
         if self.show_admin {
             match action {
                 Action::Quit => return true,
@@ -448,6 +478,12 @@ impl App {
         match action {
             Action::Quit => return true,
             Action::Help => self.show_help = true,
+            // LP.4 — `m` opens the in-TUI docs overlay (Manual).
+            Action::Char('m') => {
+                self.show_docs = true;
+                self.docs_scroll = 0;
+                return false;
+            }
             Action::Back | Action::Escape => {
                 if self.group_picker_open {
                     self.group_picker_open = false;
