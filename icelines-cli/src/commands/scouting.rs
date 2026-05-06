@@ -628,6 +628,97 @@ mod tests {
 
     // ── render_report — section presence ─────────────────────────────────────
 
+    /// Phase Calder.5 / l0_dev_arc_renders_when_stints_present
+    /// — When the renderer receives non-empty pre-NHL stints, section
+    ///   3 carries a "Development arc:" line plus one row per
+    ///   league grouping. McDavid's 3 OHL Erie seasons collapse
+    ///   into one row showing GP=166 P=285.
+    #[test]
+    fn l0_dev_arc_renders_when_stints_present() {
+        use icelines_core::career_history::{CareerGameType, CareerStint, LeagueAbbrev};
+        let make = |season: u32, points: u32, gp: u32| CareerStint {
+            season: icelines_core::Season(season),
+            league: LeagueAbbrev::new("OHL"),
+            team: "Erie".into(),
+            game_type: CareerGameType::Regular,
+            sequence: 1,
+            gp,
+            goals: Some(points / 2),
+            assists: Some(points - points / 2),
+            points: Some(points),
+            pim: None,
+            plus_minus: None,
+            power_play_goals: None,
+            power_play_points: None,
+            shorthanded_goals: None,
+            shorthanded_points: None,
+            game_winning_goals: None,
+            ot_goals: None,
+            shots: None,
+            shooting_pct: None,
+            avg_toi_sec: None,
+            faceoff_win_pct: None,
+            games_started: None,
+            wins: None,
+            losses: None,
+            ot_losses: None,
+            goals_against: None,
+            goals_against_avg: None,
+            save_pct: None,
+            shots_against: None,
+            shutouts: None,
+            time_on_ice_sec: None,
+        };
+        let stints = vec![
+            make(20122013, 66, 63),
+            make(20132014, 99, 56),
+            make(20142015, 120, 47),
+        ];
+        let (repo, pid, s, t) = fixture_repo();
+        let view = repo.view(pid, s, t).unwrap();
+        let out = render_report(
+            &view,
+            std::slice::from_ref(&view),
+            None,
+            &[],
+            &stints,
+            "terminal",
+        );
+        assert!(
+            out.contains("Development arc:"),
+            "section 3 should carry 'Development arc:' header when stints present, got:\n{out}"
+        );
+        // The 3 OHL Erie seasons collapse into one row with totals.
+        assert!(
+            out.contains("OHL") && out.contains("Erie") && out.contains("3 seasons"),
+            "row missing OHL/Erie/3 seasons in:\n{out}"
+        );
+        // GP 63+56+47 = 166, P 66+99+120 = 285.
+        assert!(out.contains("166"), "GP total wrong, got:\n{out}");
+        assert!(out.contains("285"), "P total wrong, got:\n{out}");
+    }
+
+    /// Phase Calder.5 / l0_dev_arc_omitted_when_stints_empty
+    /// — Empty slice → no Development arc line. Mirrors the existing
+    ///   "no career history" path so untouched installs see no change.
+    #[test]
+    fn l0_dev_arc_omitted_when_stints_empty() {
+        let (repo, pid, s, t) = fixture_repo();
+        let view = repo.view(pid, s, t).unwrap();
+        let out = render_report(
+            &view,
+            std::slice::from_ref(&view),
+            None,
+            &[],
+            &[],
+            "terminal",
+        );
+        assert!(
+            !out.contains("Development arc:"),
+            "no stints → no Development arc line; got:\n{out}"
+        );
+    }
+
     #[test]
     fn l0_format_terminal_includes_all_eight_sections() {
         let (repo, pid, s, t) = fixture_repo();

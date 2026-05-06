@@ -1245,54 +1245,38 @@ fn print_percentile(
 /// any IIHF/Olympic tournaments — the focus here is the development
 /// path: junior, NCAA, AHL, European pro.
 async fn print_pre_nhl_career(player_id: u32) {
-    use icelines_core::career_history::LeagueTier;
-
     let store = icelines_fetch::career_landing::load_local_store();
     if store.is_empty() {
-        // Store hasn't been populated yet — skip silently. Users who
-        // want this section run `icelines fetch career` once.
         return;
     }
     let Some(history) = store.get(player_id) else {
         return;
     };
-
-    // Pre-NHL development tiers: Junior + College + Pro (AHL/KHL/SHL/
-    // Liiga). Skip International (WJC/WC/OG — interesting but not the
-    // "road to the NHL" arc) and Other (youth/minor — too noisy).
-    // Only regular-season stints — playoff runs are an interesting
-    // detail but bloat the table for most callers.
-    let pre_nhl: Vec<_> = history
-        .stints
-        .iter()
-        .filter(|s| {
-            s.league.0 != "NHL"
-                && matches!(
-                    s.league.tier(),
-                    LeagueTier::Pro | LeagueTier::Junior | LeagueTier::College
-                )
-                && matches!(
-                    s.game_type,
-                    icelines_core::career_history::CareerGameType::Regular
-                )
-        })
-        .collect();
-
+    let pre_nhl = icelines_fetch::career_landing::extract_pre_nhl_stints(history);
     if pre_nhl.is_empty() {
         return;
     }
-
     println!();
-    println!("PRE-NHL CAREER — {} stints", pre_nhl.len());
+    print!("{}", render_pre_nhl_career_table(&pre_nhl));
+}
+
+/// Phase Calder.3 — pure renderer. Returns the section as a String
+/// so tests can pin format without capturing stdout.
+pub(crate) fn render_pre_nhl_career_table(
+    pre_nhl: &[icelines_core::career_history::CareerStint],
+) -> String {
+    use std::fmt::Write as _;
+    let mut out = String::new();
+    let _ = writeln!(out, "PRE-NHL CAREER — {} stints", pre_nhl.len());
     // Width 14 on the League column fits "J20 Nationell", "Champions HL",
-    // "Allsvenskan" cleanly. Team width 22 is enough for "U. Mass-Lowell"
-    // and similar; truncation falls back to a slice.
-    println!(
+    // "Allsvenskan" cleanly. Team width 22 is enough for "U. Mass-Lowell".
+    let _ = writeln!(
+        out,
         "{:<10} {:<14} {:<22} {:<4} {:<4} {:<4} {:<5} {:<6}",
         "Season", "League", "Team", "GP", "G", "A", "P", "PPG"
     );
-    println!("{}", "─".repeat(76));
-    for s in &pre_nhl {
+    let _ = writeln!(out, "{}", "─".repeat(76));
+    for s in pre_nhl {
         let ppg = s
             .points_per_game()
             .map(|p| format!("{p:.2}"))
@@ -1307,7 +1291,8 @@ async fn print_pre_nhl_career(player_id: u32) {
         } else {
             s.league.0.as_str()
         };
-        println!(
+        let _ = writeln!(
+            out,
             "{:<10} {:<14} {:<22} {:<4} {:<4} {:<4} {:<5} {:<6}",
             season_label(&s.season.0.to_string()),
             league,
@@ -1323,6 +1308,7 @@ async fn print_pre_nhl_career(player_id: u32) {
             ppg,
         );
     }
+    out
 }
 
 async fn print_career(v: &PlayerView<'_>, seasons: usize) {
@@ -2188,6 +2174,103 @@ fn ordinal(n: u8) -> &'static str {
 mod tests {
     use super::*;
     use icelines_core::{fixtures, identity::PlayerId, model::Season};
+
+    // Phase Calder.3 — pre-NHL career table renderer tests.
+    use icelines_core::career_history::{CareerGameType, CareerStint, LeagueAbbrev};
+
+    fn pre_nhl_stint(
+        season: u32,
+        league: &str,
+        team: &str,
+        gp: u32,
+        g: u32,
+        a: u32,
+    ) -> CareerStint {
+        CareerStint {
+            season: Season(season),
+            league: LeagueAbbrev::new(league),
+            team: team.into(),
+            game_type: CareerGameType::Regular,
+            sequence: 1,
+            gp,
+            goals: Some(g),
+            assists: Some(a),
+            points: Some(g + a),
+            pim: None,
+            plus_minus: None,
+            power_play_goals: None,
+            power_play_points: None,
+            shorthanded_goals: None,
+            shorthanded_points: None,
+            game_winning_goals: None,
+            ot_goals: None,
+            shots: None,
+            shooting_pct: None,
+            avg_toi_sec: None,
+            faceoff_win_pct: None,
+            games_started: None,
+            wins: None,
+            losses: None,
+            ot_losses: None,
+            goals_against: None,
+            goals_against_avg: None,
+            save_pct: None,
+            shots_against: None,
+            shutouts: None,
+            time_on_ice_sec: None,
+        }
+    }
+
+    /// Calder.3 / l0_render_pre_nhl_career_table_emits_header
+    #[test]
+    fn l0_render_pre_nhl_career_table_emits_header() {
+        let stints = vec![pre_nhl_stint(20142015, "OHL", "Erie", 47, 44, 76)];
+        let out = render_pre_nhl_career_table(&stints);
+        assert!(
+            out.contains("PRE-NHL CAREER — 1 stints"),
+            "header missing in:\n{out}"
+        );
+        assert!(
+            out.contains("Season") && out.contains("League") && out.contains("PPG"),
+            "column header missing in:\n{out}"
+        );
+    }
+
+    /// Calder.3 / l0_render_pre_nhl_career_table_formats_row
+    /// — McDavid 2014-15 OHL Erie (44G, 76A, 120P, 2.55 PPG).
+    #[test]
+    fn l0_render_pre_nhl_career_table_formats_row() {
+        let stints = vec![pre_nhl_stint(20142015, "OHL", "Erie", 47, 44, 76)];
+        let out = render_pre_nhl_career_table(&stints);
+        assert!(out.contains("14-15"), "season label missing");
+        assert!(out.contains("OHL"), "league missing");
+        assert!(out.contains("Erie"), "team missing");
+        assert!(out.contains("47"), "GP missing");
+        assert!(out.contains("44"), "G missing");
+        assert!(out.contains("76"), "A missing");
+        assert!(out.contains("120"), "P missing");
+        assert!(out.contains("2.55"), "PPG missing");
+    }
+
+    /// Calder.3 / l0_render_pre_nhl_career_table_truncates_long_team
+    /// — `U. Mass-Lowell Riverhawks` exceeds the 22-char team column.
+    ///   The renderer truncates to a slice rather than overflow the
+    ///   table.
+    #[test]
+    fn l0_render_pre_nhl_career_table_truncates_long_team() {
+        let stints = vec![pre_nhl_stint(
+            20132014,
+            "H-East",
+            "Massachusetts-Lowell Riverhawks XYZ",
+            29,
+            0,
+            0,
+        )];
+        let out = render_pre_nhl_career_table(&stints);
+        // The full name is too long; only the prefix should appear.
+        assert!(out.contains("Massachusetts-Lowell R"));
+        assert!(!out.contains("Riverhawks XYZ"));
+    }
 
     #[test]
     fn l0_sort_metric_parse_valid() {

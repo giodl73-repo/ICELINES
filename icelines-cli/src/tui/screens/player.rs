@@ -180,6 +180,62 @@ pub fn render_career_cell(sid: StatId, view: &PlayerView<'_>) -> String {
     }
 }
 
+/// Phase Calder.3 — pure renderer for the player-screen pre-NHL
+/// career section. Returns 0 lines when stints is empty so the
+/// caller can splice unconditionally; tests pass a synthetic slice.
+pub(crate) fn pre_nhl_career_lines(
+    stints: &[icelines_core::career_history::CareerStint],
+    dim: ratatui::style::Style,
+) -> Vec<Line<'static>> {
+    if stints.is_empty() {
+        return Vec::new();
+    }
+    let mut out: Vec<Line<'static>> = Vec::new();
+    out.push(Line::from(""));
+    out.push(Line::styled(
+        format!(" Pre-NHL career  ·  {} stints", stints.len()),
+        dim,
+    ));
+    out.push(Line::styled(
+        format!(
+            " {:<8} {:<10} {:<18} {:>4} {:>4} {:>4} {:>5} {:>5}",
+            "Season", "League", "Team", "GP", "G", "A", "P", "PPG"
+        ),
+        dim,
+    ));
+    let mut sorted: Vec<_> = stints.iter().collect();
+    sorted.sort_by_key(|s| std::cmp::Reverse(s.season.0));
+    for s in sorted.into_iter().take(15) {
+        let season_label = format!(
+            "{}-{}",
+            &s.season.0.to_string()[..4],
+            &s.season.0.to_string()[6..]
+        );
+        let team: String = s.team.chars().take(18).collect();
+        let league: String = s.league.0.chars().take(10).collect();
+        let ppg = s
+            .points_per_game()
+            .map(|p| format!("{p:.2}"))
+            .unwrap_or_else(|| "—".into());
+        out.push(Line::from(format!(
+            " {:<8} {:<10} {:<18} {:>4} {:>4} {:>4} {:>5} {:>5}",
+            season_label,
+            league,
+            team,
+            s.gp,
+            s.goals.map(|n| n.to_string()).unwrap_or_else(|| "—".into()),
+            s.assists
+                .map(|n| n.to_string())
+                .unwrap_or_else(|| "—".into()),
+            s.points
+                .map(|n| n.to_string())
+                .unwrap_or_else(|| "—".into()),
+            ppg,
+        )));
+    }
+    out
+}
+
 /// Phase Lindsay L.4.5 — fit career-table columns to panel width.
 ///
 /// Each data column reserves 8 cells (1 leading space + 7-char right-aligned
@@ -532,73 +588,16 @@ fn render_stats_view(f: &mut Frame, app: &App, v: &PlayerView<'_>, area: Rect) {
         }
     }
 
-    // Phase Calder.3 — pre-NHL career stints (junior / NCAA / AHL /
-    // European pro). Loaded from the local store. Renders only when
-    // the user has populated the store via `icelines fetch career`;
-    // silent no-op otherwise so untouched installs don't see noise.
+    // Phase Calder.3 — pre-NHL career stints. Loaded via the shared
+    // `extract_pre_nhl_stints` helper; rendering deferred to
+    // `pre_nhl_career_lines` so tests can pin format with synthetic
+    // stints (no env-dependent local store).
     {
-        use icelines_core::career_history::{CareerGameType, LeagueTier};
         let store = icelines_fetch::career_landing::load_local_store();
-        if !store.is_empty() {
-            if let Some(history) = store.get(v.identity.id.0) {
-                let pre_nhl: Vec<&icelines_core::career_history::CareerStint> = history
-                    .stints
-                    .iter()
-                    .filter(|s| {
-                        s.league.0 != "NHL"
-                            && matches!(
-                                s.league.tier(),
-                                LeagueTier::Pro | LeagueTier::Junior | LeagueTier::College
-                            )
-                            && matches!(s.game_type, CareerGameType::Regular)
-                    })
-                    .collect();
-                if !pre_nhl.is_empty() {
-                    lines.push(Line::from(""));
-                    lines.push(Line::styled(
-                        format!(" Pre-NHL career  ·  {} stints", pre_nhl.len()),
-                        dim,
-                    ));
-                    lines.push(Line::styled(
-                        format!(
-                            " {:<8} {:<10} {:<18} {:>4} {:>4} {:>4} {:>5} {:>5}",
-                            "Season", "League", "Team", "GP", "G", "A", "P", "PPG"
-                        ),
-                        dim,
-                    ));
-                    // Display newest first (matches the NHL career
-                    // table convention above).
-                    let mut sorted = pre_nhl.clone();
-                    sorted.sort_by_key(|s| std::cmp::Reverse(s.season.0));
-                    for s in sorted.into_iter().take(15) {
-                        let season_label = format!(
-                            "{}-{}",
-                            &s.season.0.to_string()[..4],
-                            &s.season.0.to_string()[6..]
-                        );
-                        let team: String = s.team.chars().take(18).collect();
-                        let league: String = s.league.0.chars().take(10).collect();
-                        let ppg = s
-                            .points_per_game()
-                            .map(|p| format!("{p:.2}"))
-                            .unwrap_or_else(|| "—".into());
-                        lines.push(Line::from(format!(
-                            " {:<8} {:<10} {:<18} {:>4} {:>4} {:>4} {:>5} {:>5}",
-                            season_label,
-                            league,
-                            team,
-                            s.gp,
-                            s.goals.map(|n| n.to_string()).unwrap_or_else(|| "—".into()),
-                            s.assists
-                                .map(|n| n.to_string())
-                                .unwrap_or_else(|| "—".into()),
-                            s.points
-                                .map(|n| n.to_string())
-                                .unwrap_or_else(|| "—".into()),
-                            ppg,
-                        )));
-                    }
-                }
+        if let Some(history) = store.get(v.identity.id.0) {
+            let pre_nhl = icelines_fetch::career_landing::extract_pre_nhl_stints(history);
+            for line in pre_nhl_career_lines(&pre_nhl, dim) {
+                lines.push(line);
             }
         }
     }
@@ -1102,5 +1101,126 @@ mod l4_preset_tests {
         let games_pos = cols1.iter().position(|&s| s == StatId::Games);
         let goals_pos = cols1.iter().position(|&s| s == StatId::Goals);
         assert!(games_pos < goals_pos);
+    }
+}
+
+// ── Phase Calder.3 — Pre-NHL career section L0s ────────────────────────────
+
+#[cfg(test)]
+mod calder_pre_nhl_tests {
+    use super::pre_nhl_career_lines;
+    use icelines_core::career_history::{CareerGameType, CareerStint, LeagueAbbrev};
+    use icelines_core::model::Season;
+    use ratatui::style::Style;
+
+    fn stint(season: u32, league: &str, team: &str, gp: u32, p: u32) -> CareerStint {
+        CareerStint {
+            season: Season(season),
+            league: LeagueAbbrev::new(league),
+            team: team.into(),
+            game_type: CareerGameType::Regular,
+            sequence: 1,
+            gp,
+            goals: Some(p / 2),
+            assists: Some(p - p / 2),
+            points: Some(p),
+            pim: None,
+            plus_minus: None,
+            power_play_goals: None,
+            power_play_points: None,
+            shorthanded_goals: None,
+            shorthanded_points: None,
+            game_winning_goals: None,
+            ot_goals: None,
+            shots: None,
+            shooting_pct: None,
+            avg_toi_sec: None,
+            faceoff_win_pct: None,
+            games_started: None,
+            wins: None,
+            losses: None,
+            ot_losses: None,
+            goals_against: None,
+            goals_against_avg: None,
+            save_pct: None,
+            shots_against: None,
+            shutouts: None,
+            time_on_ice_sec: None,
+        }
+    }
+
+    fn render_to_text(stints: &[CareerStint]) -> String {
+        let lines = pre_nhl_career_lines(stints, Style::default());
+        lines
+            .iter()
+            .map(|l| {
+                l.spans
+                    .iter()
+                    .map(|s| s.content.as_ref())
+                    .collect::<String>()
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    /// Calder.3 / l0_tui_pre_nhl_empty_returns_zero_lines
+    /// — Empty slice → zero lines so the caller can splice
+    ///   unconditionally without printing a stray header.
+    #[test]
+    fn l0_tui_pre_nhl_empty_returns_zero_lines() {
+        let lines = pre_nhl_career_lines(&[], Style::default());
+        assert!(lines.is_empty());
+    }
+
+    /// Calder.3 / l0_tui_pre_nhl_renders_header_and_row
+    /// — One stint produces the section header + column header +
+    ///   one data row + a blank-line separator at the top.
+    #[test]
+    fn l0_tui_pre_nhl_renders_header_and_row() {
+        let stints = vec![stint(20142015, "OHL", "Erie", 47, 120)];
+        let text = render_to_text(&stints);
+        assert!(text.contains("Pre-NHL career"), "section header missing");
+        assert!(text.contains("1 stints"), "stint count missing");
+        assert!(text.contains("Season") && text.contains("League"));
+        assert!(text.contains("14-15") && text.contains("Erie") && text.contains("OHL"));
+        assert!(text.contains("47") && text.contains("120"));
+    }
+
+    /// Calder.3 / l0_tui_pre_nhl_caps_at_15
+    /// — More than 15 stints get truncated so the section doesn't
+    ///   blow up the player card vertically.
+    #[test]
+    fn l0_tui_pre_nhl_caps_at_15() {
+        let stints: Vec<_> = (0..20)
+            .map(|i| stint(20002001 + i * 10000, "OHL", "Erie", 60, 30))
+            .collect();
+        let lines = pre_nhl_career_lines(&stints, Style::default());
+        // 1 blank + 1 header + 1 column header + 15 rows = 18 lines.
+        assert_eq!(
+            lines.len(),
+            18,
+            "expected 18 rendered lines, got {}",
+            lines.len()
+        );
+    }
+
+    /// Calder.3 / l0_tui_pre_nhl_sorts_newest_first
+    /// — Output rows render newest season first (matches NHL career
+    ///   table convention above).
+    #[test]
+    fn l0_tui_pre_nhl_sorts_newest_first() {
+        let stints = vec![
+            stint(20122013, "OHL", "Erie", 63, 66),
+            stint(20142015, "OHL", "Erie", 47, 120),
+            stint(20132014, "OHL", "Erie", 56, 99),
+        ];
+        let text = render_to_text(&stints);
+        let pos_14 = text.find("14-15").expect("14-15 present");
+        let pos_13 = text.find("13-14").expect("13-14 present");
+        let pos_12 = text.find("12-13").expect("12-13 present");
+        assert!(
+            pos_14 < pos_13 && pos_13 < pos_12,
+            "newest-first order violated: 14-15@{pos_14} 13-14@{pos_13} 12-13@{pos_12}"
+        );
     }
 }

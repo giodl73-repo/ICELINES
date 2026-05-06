@@ -653,6 +653,51 @@ pub struct PreNhlRow {
     pub ppg_str: String,
 }
 
+/// Phase Calder.3 — pure projector: CareerStint slice → PreNhlRow
+/// slice with formatted strings (askama can't cast floats inline).
+/// Sorts newest-first to match the existing NHL career-table convention.
+pub fn project_pre_nhl_html_rows(
+    stints: &[icelines_core::career_history::CareerStint],
+) -> Vec<PreNhlRow> {
+    use icelines_core::career_history::LeagueTier;
+    let mut rows: Vec<PreNhlRow> = stints
+        .iter()
+        .map(|s| PreNhlRow {
+            season: format!(
+                "{}-{}",
+                &s.season.0.to_string()[..4],
+                &s.season.0.to_string()[6..]
+            ),
+            league: s.league.0.clone(),
+            league_tier: match s.league.tier() {
+                LeagueTier::Pro => "pro",
+                LeagueTier::Junior => "junior",
+                LeagueTier::College => "college",
+                LeagueTier::International => "international",
+                LeagueTier::Other => "other",
+            }
+            .to_owned(),
+            team: s.team.clone(),
+            gp: s.gp,
+            goals_str: s.goals.map(|n| n.to_string()).unwrap_or_else(|| "—".into()),
+            assists_str: s
+                .assists
+                .map(|n| n.to_string())
+                .unwrap_or_else(|| "—".into()),
+            points_str: s
+                .points
+                .map(|n| n.to_string())
+                .unwrap_or_else(|| "—".into()),
+            ppg_str: s
+                .points_per_game()
+                .map(|p| format!("{p:.2}"))
+                .unwrap_or_else(|| "—".into()),
+        })
+        .collect();
+    rows.sort_by(|a, b| b.season.cmp(&a.season));
+    rows
+}
+
 /// One row in the player-card career table.
 #[derive(Debug, Clone)]
 pub struct CareerRow {
@@ -678,6 +723,102 @@ pub struct CareerRow {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // ── Phase Calder.3 — project_pre_nhl_html_rows ──────────────────
+
+    fn cs_stint(
+        season: u32,
+        league: &str,
+        team: &str,
+        gp: u32,
+        p: u32,
+    ) -> icelines_core::career_history::CareerStint {
+        use icelines_core::career_history::{CareerGameType, CareerStint, LeagueAbbrev};
+        CareerStint {
+            season: icelines_core::Season(season),
+            league: LeagueAbbrev::new(league),
+            team: team.into(),
+            game_type: CareerGameType::Regular,
+            sequence: 1,
+            gp,
+            goals: Some(p / 2),
+            assists: Some(p - p / 2),
+            points: Some(p),
+            pim: None,
+            plus_minus: None,
+            power_play_goals: None,
+            power_play_points: None,
+            shorthanded_goals: None,
+            shorthanded_points: None,
+            game_winning_goals: None,
+            ot_goals: None,
+            shots: None,
+            shooting_pct: None,
+            avg_toi_sec: None,
+            faceoff_win_pct: None,
+            games_started: None,
+            wins: None,
+            losses: None,
+            ot_losses: None,
+            goals_against: None,
+            goals_against_avg: None,
+            save_pct: None,
+            shots_against: None,
+            shutouts: None,
+            time_on_ice_sec: None,
+        }
+    }
+
+    /// Calder.3 / l0_project_pre_nhl_html_rows_formats_strings
+    /// — Float-cast happens in this projector (askama can't), so
+    ///   ppg_str must be set; integer counts must round-trip.
+    #[test]
+    fn l0_project_pre_nhl_html_rows_formats_strings() {
+        let stints = vec![cs_stint(20142015, "OHL", "Erie", 47, 120)];
+        let rows = project_pre_nhl_html_rows(&stints);
+        assert_eq!(rows.len(), 1);
+        let r = &rows[0];
+        assert_eq!(r.season, "2014-15");
+        assert_eq!(r.league, "OHL");
+        assert_eq!(r.league_tier, "junior");
+        assert_eq!(r.team, "Erie");
+        assert_eq!(r.gp, 47);
+        assert_eq!(r.points_str, "120");
+        assert_eq!(r.ppg_str, "2.55");
+    }
+
+    /// Calder.3 / l0_project_pre_nhl_html_rows_sorts_newest_first
+    /// — Template renders rows in DOM order; newest-first matches
+    ///   the NHL career section's convention above it on the page.
+    #[test]
+    fn l0_project_pre_nhl_html_rows_sorts_newest_first() {
+        let stints = vec![
+            cs_stint(20122013, "OHL", "Erie", 63, 66),
+            cs_stint(20142015, "OHL", "Erie", 47, 120),
+            cs_stint(20132014, "OHL", "Erie", 56, 99),
+        ];
+        let rows = project_pre_nhl_html_rows(&stints);
+        assert_eq!(rows[0].season, "2014-15");
+        assert_eq!(rows[1].season, "2013-14");
+        assert_eq!(rows[2].season, "2012-13");
+    }
+
+    /// Calder.3 / l0_project_pre_nhl_html_rows_tier_classifications
+    /// — Tier strings expose the league bucket so the template can
+    ///   color-code without parsing — locks the contract.
+    #[test]
+    fn l0_project_pre_nhl_html_rows_tier_classifications() {
+        let stints = vec![
+            cs_stint(20132014, "AHL", "Bakersfield", 60, 50),
+            cs_stint(20132014, "NCAA", "Boston U.", 36, 30),
+            cs_stint(20132014, "OHL", "Erie", 60, 70),
+        ];
+        let rows = project_pre_nhl_html_rows(&stints);
+        let tiers: Vec<&str> = rows.iter().map(|r| r.league_tier.as_str()).collect();
+        assert!(tiers.contains(&"pro"));
+        assert!(tiers.contains(&"college"));
+        assert!(tiers.contains(&"junior"));
+    }
 
     /// l0_home_template_renders
     /// — askama parses templates at build time, so a render failure

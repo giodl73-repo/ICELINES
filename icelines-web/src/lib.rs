@@ -2882,64 +2882,12 @@ mod handlers {
                     // pre-formatted into PreNhlRow strings so askama
                     // doesn't have to do float-to-string casts.
                     pre_nhl_career: {
-                        use icelines_core::career_history::{CareerGameType, LeagueTier};
                         let store = icelines_fetch::career_landing::load_local_store();
-                        if store.is_empty() {
-                            Vec::new()
-                        } else {
-                            store
-                                .get(id)
-                                .map(|h| {
-                                    let mut rows: Vec<crate::templates::PreNhlRow> = h
-                                        .stints
-                                        .iter()
-                                        .filter(|s| {
-                                            s.league.0 != "NHL"
-                                                && matches!(
-                                                    s.league.tier(),
-                                                    LeagueTier::Pro
-                                                        | LeagueTier::Junior
-                                                        | LeagueTier::College
-                                                )
-                                                && matches!(s.game_type, CareerGameType::Regular)
-                                        })
-                                        .map(|s| crate::templates::PreNhlRow {
-                                            season: pretty_season(icelines_core::Season(
-                                                s.season.0,
-                                            )),
-                                            league: s.league.0.clone(),
-                                            league_tier: match s.league.tier() {
-                                                LeagueTier::Pro => "pro",
-                                                LeagueTier::Junior => "junior",
-                                                LeagueTier::College => "college",
-                                                _ => "other",
-                                            }
-                                            .to_owned(),
-                                            team: s.team.clone(),
-                                            gp: s.gp,
-                                            goals_str: s
-                                                .goals
-                                                .map(|n| n.to_string())
-                                                .unwrap_or_else(|| "—".into()),
-                                            assists_str: s
-                                                .assists
-                                                .map(|n| n.to_string())
-                                                .unwrap_or_else(|| "—".into()),
-                                            points_str: s
-                                                .points
-                                                .map(|n| n.to_string())
-                                                .unwrap_or_else(|| "—".into()),
-                                            ppg_str: s
-                                                .points_per_game()
-                                                .map(|p| format!("{p:.2}"))
-                                                .unwrap_or_else(|| "—".into()),
-                                        })
-                                        .collect();
-                                    rows.sort_by(|a, b| b.season.cmp(&a.season));
-                                    rows
-                                })
-                                .unwrap_or_default()
-                        }
+                        let stints = store
+                            .get(id)
+                            .map(icelines_fetch::career_landing::extract_pre_nhl_stints)
+                            .unwrap_or_default();
+                        crate::templates::project_pre_nhl_html_rows(&stints)
                     },
                     // UX.H — every active player + goalie name in
                     // the repo, sorted alphabetically. Renders as a
@@ -3064,26 +3012,12 @@ mod handlers {
         /// filtering as the CLI: drops NHL stints, drops international
         /// tournaments, drops youth/minor — keeps Pro/Junior/College
         /// development arc, regular season only.
-        pub(crate) fn load_pre_nhl_stints(player_id: u32) -> Vec<PreNhlStint> {
-            use icelines_core::career_history::{CareerGameType, LeagueTier};
-            let store = icelines_fetch::career_landing::load_local_store();
-            if store.is_empty() {
-                return Vec::new();
-            }
-            let Some(history) = store.get(player_id) else {
-                return Vec::new();
-            };
-            history
-                .stints
+        pub(crate) fn project_pre_nhl_rows(
+            stints: &[icelines_core::career_history::CareerStint],
+        ) -> Vec<PreNhlStint> {
+            use icelines_core::career_history::LeagueTier;
+            stints
                 .iter()
-                .filter(|s| {
-                    s.league.0 != "NHL"
-                        && matches!(
-                            s.league.tier(),
-                            LeagueTier::Pro | LeagueTier::Junior | LeagueTier::College
-                        )
-                        && matches!(s.game_type, CareerGameType::Regular)
-                })
                 .map(|s| PreNhlStint {
                     season: s.season.to_string(),
                     league: s.league.0.clone(),
@@ -3227,7 +3161,14 @@ mod handlers {
             });
             let career_rows_n = career.len();
 
-            let pre_nhl_career = load_pre_nhl_stints(id);
+            let pre_nhl_stints = {
+                let store = icelines_fetch::career_landing::load_local_store();
+                store
+                    .get(id)
+                    .map(icelines_fetch::career_landing::extract_pre_nhl_stints)
+                    .unwrap_or_default()
+            };
+            let pre_nhl_career = project_pre_nhl_rows(&pre_nhl_stints);
             let pre_nhl_career_rows = pre_nhl_career.len();
 
             let envelope = PlayerEnvelope {

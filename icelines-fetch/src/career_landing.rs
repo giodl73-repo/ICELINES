@@ -261,6 +261,37 @@ pub fn load_local_store() -> CareerHistoryStore {
     CareerHistoryStore::load(&path).unwrap_or_else(|_| CareerHistoryStore::new())
 }
 
+/// Phase Calder.3 — pure filter for "pre-NHL development tier"
+/// stints (Pro / Junior / College, regular season only). Used by
+/// every player-card surface (CLI scouting + query player, TUI
+/// player screen, Web /player/:id HTML + JSON twin) so they all
+/// agree on what "pre-NHL career" means.
+///
+/// Drops:
+/// - NHL stints (those land in the existing NHL career section)
+/// - International tournaments (WJC/WC/OG/4 Nations) — interesting
+///   but not part of the "road to the NHL" arc
+/// - Other / youth (GTHL/CSSHL/Brick — too noisy for the card)
+/// - Playoff stints (development arc focuses on regular-season pace)
+pub fn extract_pre_nhl_stints(
+    history: &icelines_core::career_history::CareerHistory,
+) -> Vec<icelines_core::career_history::CareerStint> {
+    use icelines_core::career_history::{CareerGameType, LeagueTier};
+    history
+        .stints
+        .iter()
+        .filter(|s| {
+            s.league.0 != "NHL"
+                && matches!(
+                    s.league.tier(),
+                    LeagueTier::Pro | LeagueTier::Junior | LeagueTier::College
+                )
+                && matches!(s.game_type, CareerGameType::Regular)
+        })
+        .cloned()
+        .collect()
+}
+
 /// `$HOME/.icelines/career_history.json` (Unix) or
 /// `%USERPROFILE%\.icelines\career_history.json` (Windows). Returns
 /// None when neither env var is set.
@@ -595,6 +626,95 @@ mod tests {
         store.upsert(h2);
         assert_eq!(store.len(), 1, "upsert must REPLACE, not duplicate");
         assert_eq!(store.get(1).unwrap().stints.len(), 1);
+    }
+
+    /// Build a minimal CareerStint with all stat-fields blank — local
+    /// helper for the extract_pre_nhl_stints L0s below.
+    fn stint(season: u32, league: &str, _seq: u8, gt: CareerGameType) -> CareerStint {
+        CareerStint {
+            season: Season(season),
+            league: LeagueAbbrev::new(league),
+            team: "T".into(),
+            game_type: gt,
+            sequence: 1,
+            gp: 1,
+            goals: None,
+            assists: None,
+            points: None,
+            pim: None,
+            plus_minus: None,
+            power_play_goals: None,
+            power_play_points: None,
+            shorthanded_goals: None,
+            shorthanded_points: None,
+            game_winning_goals: None,
+            ot_goals: None,
+            shots: None,
+            shooting_pct: None,
+            avg_toi_sec: None,
+            faceoff_win_pct: None,
+            games_started: None,
+            wins: None,
+            losses: None,
+            ot_losses: None,
+            goals_against: None,
+            goals_against_avg: None,
+            save_pct: None,
+            shots_against: None,
+            shutouts: None,
+            time_on_ice_sec: None,
+        }
+    }
+
+    /// Calder.3 / l0_extract_pre_nhl_stints_filters_correctly
+    /// — Junior + College + Pro kept (regular season). NHL, playoff,
+    ///   international, and youth (Other) all dropped.
+    #[test]
+    fn l0_extract_pre_nhl_stints_filters_correctly() {
+        let history = icelines_core::career_history::CareerHistory {
+            player_id: 8478402,
+            stints: vec![
+                stint(20122013, "OHL", 1, CareerGameType::Regular), // junior  — keep
+                stint(20132014, "OHL", 1, CareerGameType::Regular), // junior  — keep
+                stint(20132014, "OHL", 1, CareerGameType::Playoff), // junior  — drop (playoff)
+                stint(20142015, "WJC-A", 2, CareerGameType::Regular), // intl  — drop
+                stint(20142015, "GTHL", 1, CareerGameType::Regular), // youth — drop (Other tier)
+                stint(20132014, "NCAA", 1, CareerGameType::Regular), // college — keep
+                stint(20142015, "AHL", 1, CareerGameType::Regular), // pro    — keep
+                stint(20152016, "NHL", 1, CareerGameType::Regular), // NHL    — drop
+            ],
+        };
+        let pre = extract_pre_nhl_stints(&history);
+        assert_eq!(pre.len(), 4, "OHL×2 + NCAA + AHL — got {}", pre.len());
+        let leagues: Vec<&str> = pre.iter().map(|s| s.league.0.as_str()).collect();
+        assert!(leagues.contains(&"OHL") && leagues.contains(&"NCAA") && leagues.contains(&"AHL"));
+        assert!(!leagues.contains(&"NHL"));
+        assert!(!leagues.contains(&"WJC-A"));
+        assert!(!leagues.contains(&"GTHL"));
+    }
+
+    /// Calder.3 / l0_extract_pre_nhl_stints_empty_history
+    #[test]
+    fn l0_extract_pre_nhl_stints_empty_history() {
+        let h = icelines_core::career_history::CareerHistory {
+            player_id: 1,
+            stints: vec![],
+        };
+        assert!(extract_pre_nhl_stints(&h).is_empty());
+    }
+
+    /// Calder.3 / l0_extract_pre_nhl_stints_only_nhl_returns_empty
+    /// — A career-NHL'er yields empty; renderers skip the section.
+    #[test]
+    fn l0_extract_pre_nhl_stints_only_nhl_returns_empty() {
+        let h = icelines_core::career_history::CareerHistory {
+            player_id: 1,
+            stints: vec![
+                stint(20152016, "NHL", 1, CareerGameType::Regular),
+                stint(20162017, "NHL", 1, CareerGameType::Regular),
+            ],
+        };
+        assert!(extract_pre_nhl_stints(&h).is_empty());
     }
 
     /// Calder.1 / l0_sort_for_display_keeps_seq_order
