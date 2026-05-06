@@ -333,6 +333,138 @@ mod app_snapshot_tests {
         );
     }
 
+    // ── Phase Lady Byng (LB.5) — per-surface smoke tests ─────────────────
+    //
+    // Each smoke proves that a cold-launched surface (no in-app navigation)
+    // renders without panicking and emits a stable signature label. These
+    // are the contract behind `icelines tui --start <slug>` and are the
+    // first defense if an LB-era refactor breaks per-surface boot.
+    //
+    // Frozen fixtures (per BENCH roles review):
+    // - MCDAVID_PID = 8478402 — pid never changes.
+    // - "EDM" — Edmonton has existed since 1979.
+    // Bedard fine as a SECONDARY active-player smoke; not the only fixture.
+
+    const MCDAVID_PID: u32 = 8478402;
+    const STABLE_TEAM: &str = "EDM";
+
+    fn lb_smoke_screen(screen: Screen, expected: &str) {
+        let mut app = App::new(true);
+        app.screen = screen.clone();
+        let text = render_app_to_text(&app, 120, 30);
+        assert!(
+            text.contains(expected),
+            "LB smoke for {screen:?}: expected {expected:?} in render, got:\n{text}"
+        );
+    }
+
+    /// LB.5 / lb_smoke_league
+    #[test]
+    fn lb_smoke_league() {
+        lb_smoke_screen(Screen::Home, "League");
+    }
+
+    /// LB.5 / lb_smoke_depth
+    #[test]
+    fn lb_smoke_depth() {
+        lb_smoke_screen(Screen::Depth, "Depth");
+    }
+
+    /// LB.5 / lb_smoke_stats
+    #[test]
+    fn lb_smoke_stats() {
+        lb_smoke_screen(Screen::Queries, "Stats");
+    }
+
+    /// LB.5 / lb_smoke_goalies
+    #[test]
+    fn lb_smoke_goalies() {
+        lb_smoke_screen(Screen::Goalies, "Goalies");
+    }
+
+    /// LB.5 / lb_smoke_scores
+    /// — Network-touching surface; without live data the render still
+    ///   shows the "Scores" header. Full content render is gated on
+    ///   harness-level network mocking (deferred — see Lady Byng spec
+    ///   Future/parked).
+    #[test]
+    fn lb_smoke_scores() {
+        lb_smoke_screen(Screen::Tonight, "Scores");
+    }
+
+    /// LB.5 / lb_smoke_schedule
+    #[test]
+    fn lb_smoke_schedule() {
+        lb_smoke_screen(Screen::Schedule, "Schedule");
+    }
+
+    /// LB.5 / lb_smoke_transactions
+    #[test]
+    fn lb_smoke_transactions() {
+        lb_smoke_screen(Screen::Transactions, "Transactions");
+    }
+
+    /// LB.5 / lb_smoke_playoffs
+    #[test]
+    fn lb_smoke_playoffs() {
+        lb_smoke_screen(Screen::Playoffs, "Playoffs");
+    }
+
+    /// LB.5 / lb_smoke_player_card_by_pid
+    /// — Cold-launched player card with a pid not in the active repo
+    ///   renders the "not in roster" placeholder cleanly. Once UX.1
+    ///   lazy fan-out fires (in the live run loop), the real card
+    ///   paints; this test is the placeholder render only — stable
+    ///   regardless of bundle changes.
+    #[test]
+    fn lb_smoke_player_card_by_pid() {
+        let pid = icelines_core::identity::PlayerId(MCDAVID_PID);
+        let mut app = App::new(true);
+        app.screen = Screen::PlayerById(pid);
+        let text = render_app_to_text(&app, 120, 30);
+        // The Player Card title is rendered regardless of whether the
+        // pid resolves; that's the contract.
+        assert!(
+            text.contains("Player Card"),
+            "Player Card title missing, got:\n{text}"
+        );
+    }
+
+    /// LB.5 / lb_smoke_team_card_by_abbrev
+    #[test]
+    fn lb_smoke_team_card_by_abbrev() {
+        let mut app = App::new(true);
+        app.screen = Screen::Team(STABLE_TEAM.into());
+        let text = render_app_to_text(&app, 120, 30);
+        assert!(
+            text.contains(STABLE_TEAM),
+            "team abbrev {STABLE_TEAM} missing on cold-entered Team card, got:\n{text}"
+        );
+    }
+
+    /// LB.5 / lb_smoke_goalie_card_by_pid
+    /// — Cold-launched goalie card. Tests the Screen::GoalieDetailById
+    ///   render path (which LB.3 dispatches to via `tui goalie`).
+    #[test]
+    fn lb_smoke_goalie_card_by_pid() {
+        let pid = icelines_core::identity::PlayerId(MCDAVID_PID);
+        let mut app = App::new(true);
+        app.screen = Screen::GoalieDetailById(pid);
+        // Render must not panic. The goalie-card placeholder labels
+        // vary; the assertion is "rendered without crashing".
+        let _ = render_app_to_text(&app, 120, 30);
+    }
+
+    /// LB.5 / lb_smoke_comps_by_pid
+    /// — Cold-launched comps screen.
+    #[test]
+    fn lb_smoke_comps_by_pid() {
+        let pid = icelines_core::identity::PlayerId(MCDAVID_PID);
+        let mut app = App::new(true);
+        app.screen = Screen::CompsById(pid);
+        let _ = render_app_to_text(&app, 120, 30);
+    }
+
     // ── User-flow tests ──────────────────────────────────────────────────────
     //
     // These tests boot the App with bundled data (via boot_load_with_store
