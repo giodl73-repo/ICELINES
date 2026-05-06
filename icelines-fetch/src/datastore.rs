@@ -30,6 +30,7 @@ use crate::atomic_write::write_json_atomic;
 use crate::bundled;
 use crate::manifest::{DataKey, DataKind, ManifestEntry, ManifestError, ManifestSet};
 use crate::schema::{SkaterBio, SkaterStats};
+use crate::snapshot::{SnapshotManifest, SnapshotTier};
 
 /// Errors surfaced by `DataStore`. Distinct from `ManifestError`
 /// (which is the on-disk storage layer's error) — DataError is what
@@ -176,6 +177,118 @@ impl DataStore {
 
     pub fn manifest(&self) -> &ManifestSet {
         &self.manifest
+    }
+
+    /// Phase Foster.0.5 — read-shim over `~/.icelines/snapshots/`.
+    ///
+    /// Walks the snapshot index and registers manifest entries
+    /// pointing into the snapshot directory. Existing manifest
+    /// entries always win — the modern `data/seasons/` path takes
+    /// precedence (Round 3 Impl H5 tie-breaker). Snapshot dir is
+    /// treated as **immutable read-only input** (FORGE B1) — the
+    /// shim never writes to it, only registers paths.
+    ///
+    /// Translation table (TAPE B1):
+    /// - `Stats` snapshot → `Bios` + `Stats` (regular + playoff)
+    ///   manifest entries
+    /// - `Realtime` / `MoneyPuck` / `Contracts` → folded into the
+    ///   `Stats` entry; nothing extra registered (the bytes augment
+    ///   bios on load, not stand alone in the data layer)
+    /// - `Positions` / `Derived` / `Rosters` — out of scope
+    pub fn register_snapshot_shim(
+        &self,
+        snapshots_root: impl AsRef<Path>,
+    ) -> Result<usize, DataError> {
+        let root = snapshots_root.as_ref();
+        let index_path = root.join("index.json");
+        let bytes = match std::fs::read(&index_path) {
+            Ok(b) => b,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(0),
+            Err(e) => {
+                return Err(DataError::Io {
+                    path: index_path,
+                    source: e,
+                })
+            }
+        };
+        let manifest: SnapshotManifest =
+            serde_json::from_slice(&bytes).map_err(|e| DataError::Corrupt {
+                path: index_path.clone(),
+                source: e,
+            })?;
+
+        let mut registered = 0;
+        for entry in manifest.snapshots {
+            if !entry.sealed {
+                continue;
+            }
+            if !matches!(entry.tier, SnapshotTier::Stats) {
+                continue;
+            }
+            let Ok(season_id) = entry.season.parse::<u32>() else {
+                continue;
+            };
+            let season = Season(season_id);
+            let stats_dir = root.join(&entry.name).join(SnapshotTier::Stats.dir_name());
+
+            let bios = stats_dir.join("bios.json");
+            if bios.exists()
+                && self.manifest.get(DataKind::Bios, &DataKey::Season(season)).is_none()
+            {
+                self.manifest.upsert(
+                    DataKind::Bios,
+                    self.shim_entry(DataKey::Season(season), bios),
+                )?;
+                registered += 1;
+            }
+
+            let regular = stats_dir.join("stats.json");
+            if regular.exists()
+                && self
+                    .manifest
+                    .get(DataKind::Stats, &DataKey::SeasonType(season, SeasonType::Regular))
+                    .is_none()
+            {
+                self.manifest.upsert(
+                    DataKind::Stats,
+                    self.shim_entry(
+                        DataKey::SeasonType(season, SeasonType::Regular),
+                        regular,
+                    ),
+                )?;
+                registered += 1;
+            }
+
+            let playoff = stats_dir.join("playoff-stats.json");
+            if playoff.exists()
+                && self
+                    .manifest
+                    .get(DataKind::Stats, &DataKey::SeasonType(season, SeasonType::Playoff))
+                    .is_none()
+            {
+                self.manifest.upsert(
+                    DataKind::Stats,
+                    self.shim_entry(
+                        DataKey::SeasonType(season, SeasonType::Playoff),
+                        playoff,
+                    ),
+                )?;
+                registered += 1;
+            }
+        }
+        Ok(registered)
+    }
+
+    fn shim_entry(&self, key: DataKey, path: PathBuf) -> ManifestEntry {
+        ManifestEntry {
+            key,
+            path,
+            freshness: Freshness {
+                fetched_at: self.clock.now(),
+                source: FetchSource::DataInstall,
+                ttl: Ttl::Static,
+            },
+        }
     }
 
     /// Read order:
@@ -642,6 +755,114 @@ mod tests {
         let store = DataStore::open(dir.path()).unwrap();
         let s = Season(19801981);
         assert!(store.freshness(DataKind::Bios, &DataKey::Season(s)).is_none());
+    }
+
+    fn plant_stats_snapshot(
+        snapshots_root: &Path,
+        snap_name: &str,
+        season: &str,
+        bios: &[SkaterBio],
+    ) {
+        let stats_dir = snapshots_root.join(snap_name).join("stats");
+        std::fs::create_dir_all(&stats_dir).unwrap();
+        write_json_atomic(&stats_dir.join("bios.json"), &bios).unwrap();
+        let manifest = SnapshotManifest {
+            snapshots: vec![crate::snapshot::SnapshotEntry {
+                name: snap_name.into(),
+                season: season.into(),
+                tier: SnapshotTier::Stats,
+                date: "2026-01-01".into(),
+                created_at: "2026-01-01T00:00:00Z".into(),
+                parent_key: None,
+                file_count: 1,
+                sealed: true,
+            }],
+            active: Some(snap_name.into()),
+        };
+        write_json_atomic(&snapshots_root.join("index.json"), &manifest).unwrap();
+    }
+
+    #[test]
+    fn l1_foster05_snapshot_shim_registers_bios() {
+        let dir = tempfile::tempdir().unwrap();
+        let data_root = dir.path().join("data");
+        let snaps = dir.path().join("snapshots");
+        let store = DataStore::open(&data_root).unwrap().with_live_feeds(false);
+
+        plant_stats_snapshot(&snaps, "snap1", "19801981", &[dummy_bio(7)]);
+        let n = store.register_snapshot_shim(&snaps).unwrap();
+        assert_eq!(n, 1, "one bios entry registered");
+
+        // 1980-81 isn't bundled; without the shim load_bios would
+        // return NotInstalled. With the shim it loads the planted file.
+        let bios = store.load_bios(Season(19801981)).unwrap();
+        assert_eq!(bios.len(), 1);
+        assert_eq!(bios[0].player_id, 7);
+    }
+
+    #[test]
+    fn l1_foster05_data_seasons_wins_over_snapshot() {
+        let dir = tempfile::tempdir().unwrap();
+        let data_root = dir.path().join("data");
+        let snaps = dir.path().join("snapshots");
+        let store = DataStore::open(&data_root).unwrap().with_live_feeds(false);
+
+        // Pre-seed the manifest with a data/seasons/-style entry.
+        let modern_path = dir.path().join("modern-bios.json");
+        write_json_atomic(&modern_path, &vec![dummy_bio(11111)]).unwrap();
+        store
+            .manifest()
+            .upsert(
+                DataKind::Bios,
+                ManifestEntry {
+                    key: DataKey::Season(Season(19801981)),
+                    path: modern_path,
+                    freshness: Freshness {
+                        fetched_at: Utc::now(),
+                        source: FetchSource::Live,
+                        ttl: Ttl::Static,
+                    },
+                },
+            )
+            .unwrap();
+
+        // Plant a snapshot with a different player id; shim must
+        // skip the season because manifest already has it.
+        plant_stats_snapshot(&snaps, "snap1", "19801981", &[dummy_bio(99)]);
+        let n = store.register_snapshot_shim(&snaps).unwrap();
+        assert_eq!(n, 0, "shim skipped — manifest entry won");
+
+        let bios = store.load_bios(Season(19801981)).unwrap();
+        assert_eq!(bios[0].player_id, 11111, "modern path served");
+    }
+
+    #[test]
+    fn l1_foster05_unsealed_snapshot_skipped() {
+        let dir = tempfile::tempdir().unwrap();
+        let data_root = dir.path().join("data");
+        let snaps = dir.path().join("snapshots");
+        let store = DataStore::open(&data_root).unwrap();
+
+        let stats_dir = snaps.join("snap1").join("stats");
+        std::fs::create_dir_all(&stats_dir).unwrap();
+        write_json_atomic(&stats_dir.join("bios.json"), &vec![dummy_bio(1)]).unwrap();
+        let manifest = SnapshotManifest {
+            snapshots: vec![crate::snapshot::SnapshotEntry {
+                name: "snap1".into(),
+                season: "19801981".into(),
+                tier: SnapshotTier::Stats,
+                date: "2026-01-01".into(),
+                created_at: "2026-01-01T00:00:00Z".into(),
+                parent_key: None,
+                file_count: 1,
+                sealed: false, // <-- unsealed; shim must skip
+            }],
+            active: None,
+        };
+        write_json_atomic(&snaps.join("index.json"), &manifest).unwrap();
+
+        let n = store.register_snapshot_shim(&snaps).unwrap();
+        assert_eq!(n, 0, "unsealed snapshot ignored");
     }
 
     #[test]

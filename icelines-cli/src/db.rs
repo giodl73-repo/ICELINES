@@ -34,7 +34,11 @@ impl MemberKind {
 
     /// Lossy parse — anything we don't recognize buckets as Player so
     /// pre-migration rows (which have NULL/no kind value, defaulted
-    /// to 'player' by migration 005) round-trip cleanly.
+    /// to 'player' by migration 005) round-trip cleanly. Migration
+    /// 006 made the on-disk shape `entity_ref` (where the kind is
+    /// the prefix), so this is now used for hand-built kind strings
+    /// in tests and external callers — kept as a public helper.
+    #[allow(dead_code)]
     pub fn from_str_lossy(s: &str) -> Self {
         match s {
             "team" => Self::Team,
@@ -131,7 +135,67 @@ fn run_migrations(conn: &Connection) -> anyhow::Result<()> {
         .context("migration 005: add kind column to group_members")?;
     }
 
+    // Migration 006 — collapse (kind, player_normalized) into entity_ref.
+    //
+    // After 006: group_members has one stringly-typed column
+    // `entity_ref` matching the EntityRef Display form
+    // (`player:<key>` / `team:<ABBR>`). MemberKind is derived from
+    // the prefix; the legacy `kind` + `player_normalized` columns
+    // are dropped.
+    //
+    // Idempotent — `entity_ref` column presence is the gate. Rerun
+    // with the new schema is a no-op.
+    let cols: Vec<String> = conn
+        .prepare("PRAGMA table_info(group_members);")?
+        .query_map([], |row| row.get::<_, String>(1))?
+        .filter_map(Result::ok)
+        .collect();
+    if !cols.iter().any(|c| c == "entity_ref") {
+        let tx = conn.unchecked_transaction()?;
+        tx.execute_batch("PRAGMA defer_foreign_keys = ON;")?;
+        tx.execute_batch(
+            "ALTER TABLE group_members ADD COLUMN entity_ref TEXT;
+             UPDATE group_members
+                SET entity_ref = CASE kind
+                    WHEN 'team' THEN 'team:' || player_normalized
+                    ELSE 'player:' || player_normalized
+                END
+              WHERE entity_ref IS NULL;
+             CREATE TABLE group_members_new (
+                 group_name TEXT NOT NULL,
+                 entity_ref TEXT NOT NULL,
+                 added_at   TEXT NOT NULL,
+                 PRIMARY KEY (group_name, entity_ref),
+                 FOREIGN KEY (group_name) REFERENCES groups(name) ON DELETE CASCADE
+             );
+             INSERT INTO group_members_new (group_name, entity_ref, added_at)
+                 SELECT group_name, entity_ref, added_at FROM group_members;
+             DROP TABLE group_members;
+             ALTER TABLE group_members_new RENAME TO group_members;",
+        )
+        .context("migration 006: collapse kind into entity_ref")?;
+        tx.commit().context("migration 006: commit")?;
+    }
+
     Ok(())
+}
+
+/// Build a stringly-typed entity_ref for a (kind, key) pair. Mirrors
+/// the on-disk format produced by migration 006 backfill.
+fn entity_ref_for(kind: MemberKind, key: &str) -> String {
+    format!("{}:{}", kind.as_str(), key)
+}
+
+/// Inverse of `entity_ref_for` — split a stored `entity_ref` back
+/// into `(MemberKind, key)`. Lossy on unknown prefixes (default to
+/// Player, like `MemberKind::from_str_lossy`).
+fn entity_ref_split(entity_ref: &str) -> (MemberKind, String) {
+    match entity_ref.split_once(':') {
+        Some(("team", k)) => (MemberKind::Team, k.to_string()),
+        Some(("player", k)) => (MemberKind::Player, k.to_string()),
+        Some((_, k)) => (MemberKind::Player, k.to_string()),
+        None => (MemberKind::Player, entity_ref.to_string()),
+    }
 }
 
 // ── GroupDb impl ──────────────────────────────────────────────────────────────
@@ -208,9 +272,10 @@ impl GroupDb {
         self.add_member_kind(group, player_normalized, MemberKind::Player)
     }
 
-    /// Migration 005 — kind-aware member insert. Used by the CLI's
-    /// auto-detect path when the user types `group add Favorites EDM`
-    /// (3-letter NHL abbrev → kind=Team).
+    /// Migration 005 / 006 — kind-aware member insert. After
+    /// migration 006 the row stores a single `entity_ref` (e.g.
+    /// `player:connor mcdavid` / `team:EDM`); `MemberKind` is
+    /// derived from the prefix on read.
     pub fn add_member_kind(
         &self,
         group: &str,
@@ -219,12 +284,13 @@ impl GroupDb {
     ) -> anyhow::Result<bool> {
         self.require_group(group)?;
         let now = now_utc();
+        let entity_ref = entity_ref_for(kind, key);
         let rows = self
             .conn
             .execute(
                 "INSERT OR IGNORE INTO group_members \
-                 (group_name, player_normalized, added_at, kind) VALUES (?1, ?2, ?3, ?4)",
-                rusqlite::params![group, key, now, kind.as_str()],
+                 (group_name, entity_ref, added_at) VALUES (?1, ?2, ?3)",
+                rusqlite::params![group, entity_ref, now],
             )
             .with_context(|| format!("add member '{key}' ({}) to '{group}'", kind.as_str()))?;
         Ok(rows > 0)
@@ -285,10 +351,11 @@ impl GroupDb {
         {
             let mut stmt = tx.prepare(
                 "INSERT OR IGNORE INTO group_members \
-                 (group_name, player_normalized, added_at) VALUES (?1, ?2, ?3)",
+                 (group_name, entity_ref, added_at) VALUES (?1, ?2, ?3)",
             )?;
             for p in players_normalized {
-                let rows = stmt.execute(rusqlite::params![group, p, now])?;
+                let entity_ref = entity_ref_for(MemberKind::Player, p);
+                let rows = stmt.execute(rusqlite::params![group, entity_ref, now])?;
                 inserted += rows;
             }
         }
@@ -311,15 +378,29 @@ impl GroupDb {
     }
 
     /// Remove a player from a group.  No-op if the player is not a member.
+    /// Backward-compat: takes the bare key (e.g. normalized name) and
+    /// removes the corresponding `player:<key>` entity_ref.
     pub fn remove_member(&self, group: &str, player_normalized: &str) -> anyhow::Result<()> {
-        self.require_group(group)?;
+        self.remove_member_kind(group, player_normalized, MemberKind::Player)
+    }
 
+    /// Kind-aware remove. After migration 006 the row is keyed by
+    /// `(group_name, entity_ref)` so removing a team uses
+    /// `MemberKind::Team` to build the right entity_ref string.
+    pub fn remove_member_kind(
+        &self,
+        group: &str,
+        key: &str,
+        kind: MemberKind,
+    ) -> anyhow::Result<()> {
+        self.require_group(group)?;
+        let entity_ref = entity_ref_for(kind, key);
         self.conn
             .execute(
-                "DELETE FROM group_members WHERE group_name = ?1 AND player_normalized = ?2",
-                rusqlite::params![group, player_normalized],
+                "DELETE FROM group_members WHERE group_name = ?1 AND entity_ref = ?2",
+                rusqlite::params![group, entity_ref],
             )
-            .with_context(|| format!("remove member '{player_normalized}' from '{group}'"))?;
+            .with_context(|| format!("remove member '{key}' ({}) from '{group}'", kind.as_str()))?;
         Ok(())
     }
 
@@ -328,7 +409,7 @@ impl GroupDb {
     /// List all groups with their member counts.
     pub fn list_groups(&self) -> anyhow::Result<Vec<GroupRow>> {
         let mut stmt = self.conn.prepare(
-            "SELECT g.name, g.description, COUNT(m.player_normalized) AS member_count
+            "SELECT g.name, g.description, COUNT(m.entity_ref) AS member_count
              FROM groups g
              LEFT JOIN group_members m ON m.group_name = g.name
              GROUP BY g.name
@@ -351,44 +432,50 @@ impl GroupDb {
     }
 
     /// List all PLAYER members of a group (normalized names). Backward-
-    /// compat surface — kept narrow so existing callers don't surface
-    /// team rows as players. New code should prefer
-    /// `list_members_with_kind` which returns the discriminator.
+    /// compat surface — strips the `player:` prefix so existing callers
+    /// still see bare normalized names. New code should prefer
+    /// `list_members_with_kind`.
     pub fn list_members(&self, group: &str) -> anyhow::Result<Vec<String>> {
         self.require_group(group)?;
 
         let mut stmt = self.conn.prepare(
-            "SELECT player_normalized FROM group_members \
-             WHERE group_name = ?1 AND kind = 'player' ORDER BY added_at",
+            "SELECT entity_ref FROM group_members \
+             WHERE group_name = ?1 AND entity_ref LIKE 'player:%' ORDER BY added_at",
         )?;
 
         let rows = stmt
-            .query_map(rusqlite::params![group], |row| row.get(0))
+            .query_map(rusqlite::params![group], |row| row.get::<_, String>(0))
             .context("list_members query")?
-            .collect::<Result<Vec<String>, _>>()
-            .context("list_members collect")?;
+            .filter_map(Result::ok)
+            .map(|er| entity_ref_split(&er).1)
+            .collect::<Vec<String>>();
 
         Ok(rows)
     }
 
-    /// Migration 005 — list every member with its `kind`. Used by
-    /// `group show` to render Players + Teams sections.
+    /// Post-006 — list every member with its derived `MemberKind`.
+    /// `MemberKind::from(&entity_ref_prefix)` is the single source of
+    /// truth for the player/team discriminator. Used by `group show`
+    /// to render Players + Teams sections.
     pub fn list_members_with_kind(&self, group: &str) -> anyhow::Result<Vec<(String, MemberKind)>> {
         self.require_group(group)?;
         let mut stmt = self.conn.prepare(
-            "SELECT player_normalized, kind FROM group_members \
-             WHERE group_name = ?1 ORDER BY kind, added_at",
+            "SELECT entity_ref FROM group_members \
+             WHERE group_name = ?1 ORDER BY entity_ref, added_at",
         )?;
         let rows = stmt
-            .query_map(rusqlite::params![group], |row| {
-                let key: String = row.get(0)?;
-                let kind_str: String = row.get(1)?;
-                Ok((key, MemberKind::from_str_lossy(&kind_str)))
-            })
+            .query_map(rusqlite::params![group], |row| row.get::<_, String>(0))
             .context("list_members_with_kind query")?
             .collect::<Result<Vec<_>, _>>()
             .context("list_members_with_kind collect")?;
-        Ok(rows)
+        let mapped = rows
+            .into_iter()
+            .map(|er| {
+                let (kind, key) = entity_ref_split(&er);
+                (key, kind)
+            })
+            .collect();
+        Ok(mapped)
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
@@ -651,7 +738,11 @@ mod tests {
         db.create_group("Favorites", "").expect("create");
         db.add_member_kind("Favorites", "EDM", MemberKind::Team)
             .expect("t");
-        db.remove_member("Favorites", "EDM").expect("rm");
+        // Migration 006: removing a team needs the kind-aware variant
+        // because (group, key) alone is ambiguous when the same key
+        // could exist under both player: and team: prefixes.
+        db.remove_member_kind("Favorites", "EDM", MemberKind::Team)
+            .expect("rm");
         let kinded = db.list_members_with_kind("Favorites").expect("k");
         assert!(kinded.is_empty(), "team row should be gone, got {kinded:?}");
     }
@@ -948,5 +1039,175 @@ mod tests {
             vec!["2026-03-15", "2026-01-15", "2025-12-01"],
             "newest first by game_date, got: {dates:?}"
         );
+    }
+
+    // ── Migration 006 — kind→entity_ref backfill (Phase Foster.0.6) ──────────
+
+    /// Open a connection and run only migrations up through 005, so
+    /// the test can plant pre-006 fixture rows before letting 006
+    /// run on top.
+    fn open_pre_006() -> rusqlite::Connection {
+        let conn = rusqlite::Connection::open_in_memory().unwrap();
+        conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
+        conn.execute_batch(
+            "CREATE TABLE groups (
+                name        TEXT PRIMARY KEY,
+                description TEXT NOT NULL DEFAULT '',
+                created_at  TEXT NOT NULL
+             );
+             CREATE TABLE group_members (
+                group_name        TEXT NOT NULL,
+                player_normalized TEXT NOT NULL,
+                added_at          TEXT NOT NULL,
+                kind              TEXT NOT NULL DEFAULT 'player',
+                PRIMARY KEY (group_name, player_normalized),
+                FOREIGN KEY (group_name) REFERENCES groups(name) ON DELETE CASCADE
+             );",
+        )
+        .unwrap();
+        conn
+    }
+
+    /// 006.1 — round-trip with a pre-006 fixture: planted rows
+    /// (player + team) survive the migration and surface with the
+    /// correct kind under the new entity_ref column.
+    #[test]
+    fn l1_db_006_round_trip_with_pre_migration_fixture() {
+        let conn = open_pre_006();
+        conn.execute(
+            "INSERT INTO groups (name, description, created_at) VALUES (?1, ?2, ?3)",
+            rusqlite::params!["Favorites", "", "2026-01-01T00:00:00Z"],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO group_members (group_name, player_normalized, added_at, kind) \
+             VALUES (?1, ?2, ?3, ?4)",
+            rusqlite::params!["Favorites", "connor mcdavid", "2026-01-01T00:00:00Z", "player"],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO group_members (group_name, player_normalized, added_at, kind) \
+             VALUES (?1, ?2, ?3, ?4)",
+            rusqlite::params!["Favorites", "EDM", "2026-01-01T00:00:00Z", "team"],
+        )
+        .unwrap();
+
+        // Migration 006 applies via run_migrations.
+        super::run_migrations(&conn).expect("006 runs cleanly");
+
+        let mut stmt = conn
+            .prepare("SELECT entity_ref FROM group_members ORDER BY entity_ref")
+            .unwrap();
+        let refs: Vec<String> = stmt
+            .query_map([], |r| r.get::<_, String>(0))
+            .unwrap()
+            .filter_map(Result::ok)
+            .collect();
+        assert_eq!(
+            refs,
+            vec!["player:connor mcdavid", "team:EDM"],
+            "backfill produced canonical entity_ref strings"
+        );
+    }
+
+    /// 006.2 — re-running the migration on an already-migrated db is
+    /// a no-op (idempotent).
+    #[test]
+    fn l1_db_006_idempotent_re_run() {
+        let db = GroupDb::open_in_memory().expect("first migrate");
+        db.create_group("Favorites", "").unwrap();
+        db.add_member_kind("Favorites", "EDM", MemberKind::Team).unwrap();
+
+        // run_migrations again — entity_ref column already exists,
+        // so the rebuild branch must not fire.
+        super::run_migrations(&db.conn).expect("rerun ok");
+
+        let kinded = db.list_members_with_kind("Favorites").unwrap();
+        assert_eq!(kinded, vec![("EDM".to_string(), MemberKind::Team)]);
+    }
+
+    /// 006.3 — mixed kind fixture: 5 players + 3 teams across two
+    /// groups all backfill to the right entity_ref shape.
+    #[test]
+    fn l1_db_006_mixed_kind_backfill() {
+        let conn = open_pre_006();
+        for g in ["Favorites", "Watchlist"] {
+            conn.execute(
+                "INSERT INTO groups (name, description, created_at) VALUES (?1, ?2, ?3)",
+                rusqlite::params![g, "", "2026-01-01T00:00:00Z"],
+            )
+            .unwrap();
+        }
+        let rows: &[(&str, &str, &str)] = &[
+            ("Favorites", "connor mcdavid", "player"),
+            ("Favorites", "leon draisaitl", "player"),
+            ("Favorites", "EDM", "team"),
+            ("Favorites", "FLA", "team"),
+            ("Watchlist", "auston matthews", "player"),
+            ("Watchlist", "william nylander", "player"),
+            ("Watchlist", "mitch marner", "player"),
+            ("Watchlist", "TOR", "team"),
+        ];
+        for (g, k, kind) in rows {
+            conn.execute(
+                "INSERT INTO group_members (group_name, player_normalized, added_at, kind) \
+                 VALUES (?1, ?2, ?3, ?4)",
+                rusqlite::params![g, k, "2026-01-01T00:00:00Z", kind],
+            )
+            .unwrap();
+        }
+        super::run_migrations(&conn).expect("006 runs cleanly");
+
+        let count_players: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM group_members WHERE entity_ref LIKE 'player:%'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        let count_teams: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM group_members WHERE entity_ref LIKE 'team:%'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(count_players, 5, "5 player rows backfilled");
+        assert_eq!(count_teams, 3, "3 team rows backfilled");
+    }
+
+    /// 006.4 — FK cascade still fires after the table rebuild.
+    /// Deleting the group must cascade-delete its members.
+    #[test]
+    fn l1_db_006_fk_cascade_survives_rebuild() {
+        let db = GroupDb::open_in_memory().expect("open");
+        db.create_group("Favorites", "").unwrap();
+        db.add_member("Favorites", "connor mcdavid").unwrap();
+        db.add_member_kind("Favorites", "EDM", MemberKind::Team).unwrap();
+        assert_eq!(db.list_members_with_kind("Favorites").unwrap().len(), 2);
+
+        db.delete_group("Favorites").unwrap();
+
+        let count: i64 = db
+            .conn
+            .query_row("SELECT COUNT(*) FROM group_members", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(count, 0, "FK cascade emptied group_members");
+    }
+
+    /// 006.5 — new PK semantics: the same key under two different
+    /// kinds is now legal (player:EDM and team:EDM can coexist),
+    /// where pre-006 they collided on PK (group_name,
+    /// player_normalized).
+    #[test]
+    fn l1_db_006_same_key_different_kinds_coexist() {
+        let db = GroupDb::open_in_memory().expect("open");
+        db.create_group("Edge", "").unwrap();
+        // Hypothetical: a player whose normalized name is "EDM" (no
+        // such NHL player exists, but the schema must allow it now).
+        db.add_member_kind("Edge", "EDM", MemberKind::Player).unwrap();
+        db.add_member_kind("Edge", "EDM", MemberKind::Team).unwrap();
+        let kinded = db.list_members_with_kind("Edge").unwrap();
+        assert_eq!(kinded.len(), 2, "same-key different-kind both stored");
     }
 }

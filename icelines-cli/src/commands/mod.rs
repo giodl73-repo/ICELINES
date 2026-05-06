@@ -1,4 +1,5 @@
 pub mod analysis;
+pub mod config;
 pub mod data;
 pub mod export;
 pub mod fantasy;
@@ -16,6 +17,7 @@ pub mod scheme;
 pub mod scheme_dialects;
 pub mod scouting;
 pub mod serve;
+pub mod setup;
 pub mod snapshot;
 pub mod team;
 pub mod tonight;

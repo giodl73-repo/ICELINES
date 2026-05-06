@@ -188,6 +188,16 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         Commands::Games(sub) => {
             commands::analysis::run_games(sub).await?;
         }
+        Commands::Config(sub) => {
+            commands::config::run(sub).await?;
+        }
+        Commands::Setup {
+            accept_defaults,
+            dry_run,
+            reset,
+        } => {
+            commands::setup::run(accept_defaults, dry_run, reset).await?;
+        }
 
         Commands::Serve {
             port,

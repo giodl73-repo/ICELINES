@@ -26,6 +26,9 @@ struct RawConfig {
     /// where realtime was always loaded, the rest required `data install`).
     #[serde(default)]
     reports: Option<RawReportToggles>,
+    /// Phase Foster.0.7 — `[sync]` section.
+    #[serde(default)]
+    sync: Option<RawSync>,
 }
 
 /// `[reports]` TOML section — every field optional with a sensible default.
@@ -37,6 +40,29 @@ struct RawReportToggles {
     goals_for_against: Option<bool>,
     goalie_advanced: Option<bool>,
     goalie_saves_by_strength: Option<bool>,
+}
+
+// ── Phase Foster.0.7 — sync + capability matrix raw shape ────────────────────
+
+#[derive(Debug, Deserialize, Serialize, Default, Clone)]
+#[allow(dead_code)]
+struct RawSync {
+    policy: Option<String>,
+    banner: Option<String>,
+    season_transition: Option<String>,
+    #[serde(default)]
+    capabilities: Option<RawCapabilities>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Default, Clone)]
+#[allow(dead_code)]
+struct RawCapabilities {
+    stats: Option<String>,
+    scores_schedule: Option<String>,
+    transactions: Option<String>,
+    boxscores: Option<String>,
+    shifts: Option<String>,
+    career_history: Option<String>,
 }
 
 // ── Public Config ─────────────────────────────────────────────────────────────
@@ -60,6 +86,8 @@ pub struct Config {
     /// Defaults applied here so callers don't need to know about
     /// the absent-section case.
     pub reports: ReportToggles,
+    /// Phase Foster.0.7 — sync engine + capability matrix.
+    pub sync: SyncConfig,
 }
 
 /// Phase Reports — resolved per-Tier-1 report toggle set. Lives in
@@ -186,6 +214,381 @@ impl ReportToggles {
     }
 }
 
+// ── Phase Foster.0.7 — sync + capability matrix typed forms ──────────────────
+
+/// One of three modes per capability. `Off` skips the dataset entirely;
+/// `Favorites` fetches only for entities in the user's Favorites group;
+/// `League` fetches the entire NHL slate.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum CapabilityMode {
+    Off,
+    Favorites,
+    League,
+}
+
+impl CapabilityMode {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Off => "off",
+            Self::Favorites => "favorites",
+            Self::League => "league",
+        }
+    }
+
+    pub fn parse(s: &str) -> Result<Self, CapabilityError> {
+        match s {
+            "off" => Ok(Self::Off),
+            "favorites" => Ok(Self::Favorites),
+            "league" => Ok(Self::League),
+            other => Err(CapabilityError::UnknownMode(other.to_string())),
+        }
+    }
+}
+
+/// The 6 dataset capabilities the sync engine cares about. Ordered to
+/// match the matrix display in CLI / setup wizard output.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Capability {
+    Stats,
+    ScoresSchedule,
+    Transactions,
+    Boxscores,
+    Shifts,
+    CareerHistory,
+}
+
+impl Capability {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Stats => "stats",
+            Self::ScoresSchedule => "scores_schedule",
+            Self::Transactions => "transactions",
+            Self::Boxscores => "boxscores",
+            Self::Shifts => "shifts",
+            Self::CareerHistory => "career_history",
+        }
+    }
+
+    pub fn parse(s: &str) -> Result<Self, CapabilityError> {
+        match s {
+            "stats" => Ok(Self::Stats),
+            "scores_schedule" => Ok(Self::ScoresSchedule),
+            "transactions" => Ok(Self::Transactions),
+            "boxscores" => Ok(Self::Boxscores),
+            "shifts" => Ok(Self::Shifts),
+            "career_history" => Ok(Self::CareerHistory),
+            other => Err(CapabilityError::UnknownCapability(other.to_string())),
+        }
+    }
+
+    pub fn all() -> &'static [Capability] {
+        &[
+            Self::Stats,
+            Self::ScoresSchedule,
+            Self::Transactions,
+            Self::Boxscores,
+            Self::Shifts,
+            Self::CareerHistory,
+        ]
+    }
+}
+
+/// Resolved capability matrix. Defaults documented in the spec
+/// (`stats=league`, `scores_schedule=league`, `transactions=favorites`,
+/// `boxscores=favorites`, `shifts=off`, `career_history=favorites`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CapabilityMatrix {
+    pub stats: CapabilityMode,
+    pub scores_schedule: CapabilityMode,
+    pub transactions: CapabilityMode,
+    pub boxscores: CapabilityMode,
+    pub shifts: CapabilityMode,
+    pub career_history: CapabilityMode,
+}
+
+impl Default for CapabilityMatrix {
+    fn default() -> Self {
+        Self {
+            stats: CapabilityMode::League,
+            scores_schedule: CapabilityMode::League,
+            transactions: CapabilityMode::Favorites,
+            boxscores: CapabilityMode::Favorites,
+            shifts: CapabilityMode::Off,
+            career_history: CapabilityMode::Favorites,
+        }
+    }
+}
+
+impl CapabilityMatrix {
+    pub fn get(&self, cap: Capability) -> CapabilityMode {
+        match cap {
+            Capability::Stats => self.stats,
+            Capability::ScoresSchedule => self.scores_schedule,
+            Capability::Transactions => self.transactions,
+            Capability::Boxscores => self.boxscores,
+            Capability::Shifts => self.shifts,
+            Capability::CareerHistory => self.career_history,
+        }
+    }
+
+    /// Apply a new mode. `shifts` enforces off-only with the literal
+    /// error string the spec requires (BENCH H3 — capability-matrix
+    /// tests pin the wording).
+    pub fn set(&mut self, cap: Capability, mode: CapabilityMode) -> Result<(), CapabilityError> {
+        if matches!(cap, Capability::Shifts) && !matches!(mode, CapabilityMode::Off) {
+            return Err(CapabilityError::ShiftsLocked {
+                chosen: mode.as_str().to_string(),
+            });
+        }
+        match cap {
+            Capability::Stats => self.stats = mode,
+            Capability::ScoresSchedule => self.scores_schedule = mode,
+            Capability::Transactions => self.transactions = mode,
+            Capability::Boxscores => self.boxscores = mode,
+            Capability::Shifts => self.shifts = mode,
+            Capability::CareerHistory => self.career_history = mode,
+        }
+        Ok(())
+    }
+
+    /// True iff sync should fetch this dataset for `is_favorite` (the
+    /// caller-supplied predicate). `League` mode → always; `Favorites`
+    /// → only if the entity is favorited; `Off` → never.
+    /// Foster.4's sync engine consumes this; tests in
+    /// `foster_capability_matrix.rs` pin the truth table.
+    #[allow(dead_code)]
+    pub fn allowed(&self, cap: Capability, is_favorite: bool) -> bool {
+        match self.get(cap) {
+            CapabilityMode::Off => false,
+            CapabilityMode::Favorites => is_favorite,
+            CapabilityMode::League => true,
+        }
+    }
+
+    fn from_raw(raw: Option<RawCapabilities>) -> Self {
+        let d = Self::default();
+        let Some(r) = raw else { return d };
+        Self {
+            stats: r
+                .stats
+                .as_deref()
+                .and_then(|s| CapabilityMode::parse(s).ok())
+                .unwrap_or(d.stats),
+            scores_schedule: r
+                .scores_schedule
+                .as_deref()
+                .and_then(|s| CapabilityMode::parse(s).ok())
+                .unwrap_or(d.scores_schedule),
+            transactions: r
+                .transactions
+                .as_deref()
+                .and_then(|s| CapabilityMode::parse(s).ok())
+                .unwrap_or(d.transactions),
+            boxscores: r
+                .boxscores
+                .as_deref()
+                .and_then(|s| CapabilityMode::parse(s).ok())
+                .unwrap_or(d.boxscores),
+            // shifts: silently coerced to Off if a stray non-off value
+            // ends up on disk (e.g. hand-edited TOML from a future
+            // build). The CLI `set` path enforces; the loader is
+            // defensive.
+            shifts: CapabilityMode::Off,
+            career_history: r
+                .career_history
+                .as_deref()
+                .and_then(|s| CapabilityMode::parse(s).ok())
+                .unwrap_or(d.career_history),
+        }
+    }
+
+    fn to_raw(self) -> RawCapabilities {
+        RawCapabilities {
+            stats: Some(self.stats.as_str().to_string()),
+            scores_schedule: Some(self.scores_schedule.as_str().to_string()),
+            transactions: Some(self.transactions.as_str().to_string()),
+            boxscores: Some(self.boxscores.as_str().to_string()),
+            shifts: Some(self.shifts.as_str().to_string()),
+            career_history: Some(self.career_history.as_str().to_string()),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum SyncPolicy {
+    Eager,
+    Lazy,
+    Off,
+}
+
+impl SyncPolicy {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Eager => "eager",
+            Self::Lazy => "lazy",
+            Self::Off => "off",
+        }
+    }
+
+    pub fn parse(s: &str) -> Result<Self, CapabilityError> {
+        match s {
+            "eager" => Ok(Self::Eager),
+            "lazy" => Ok(Self::Lazy),
+            "off" => Ok(Self::Off),
+            other => Err(CapabilityError::UnknownSyncValue {
+                key: "policy",
+                value: other.to_string(),
+                allowed: "eager, lazy, off",
+            }),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum BannerMode {
+    Summary,
+    Silent,
+    Verbose,
+}
+
+impl BannerMode {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Summary => "summary",
+            Self::Silent => "silent",
+            Self::Verbose => "verbose",
+        }
+    }
+
+    pub fn parse(s: &str) -> Result<Self, CapabilityError> {
+        match s {
+            "summary" => Ok(Self::Summary),
+            "silent" => Ok(Self::Silent),
+            "verbose" => Ok(Self::Verbose),
+            other => Err(CapabilityError::UnknownSyncValue {
+                key: "banner",
+                value: other.to_string(),
+                allowed: "summary, silent, verbose",
+            }),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum SeasonTransition {
+    Prompt,
+    Auto,
+    Ignore,
+}
+
+impl SeasonTransition {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Prompt => "prompt",
+            Self::Auto => "auto",
+            Self::Ignore => "ignore",
+        }
+    }
+
+    pub fn parse(s: &str) -> Result<Self, CapabilityError> {
+        match s {
+            "prompt" => Ok(Self::Prompt),
+            "auto" => Ok(Self::Auto),
+            "ignore" => Ok(Self::Ignore),
+            other => Err(CapabilityError::UnknownSyncValue {
+                key: "season_transition",
+                value: other.to_string(),
+                allowed: "prompt, auto, ignore",
+            }),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SyncConfig {
+    pub policy: SyncPolicy,
+    pub banner: BannerMode,
+    pub season_transition: SeasonTransition,
+    pub capabilities: CapabilityMatrix,
+}
+
+impl Default for SyncConfig {
+    fn default() -> Self {
+        Self {
+            policy: SyncPolicy::Eager,
+            banner: BannerMode::Summary,
+            season_transition: SeasonTransition::Prompt,
+            capabilities: CapabilityMatrix::default(),
+        }
+    }
+}
+
+impl SyncConfig {
+    fn from_raw(raw: Option<RawSync>) -> Self {
+        let d = Self::default();
+        let Some(r) = raw else { return d };
+        Self {
+            policy: r
+                .policy
+                .as_deref()
+                .and_then(|s| SyncPolicy::parse(s).ok())
+                .unwrap_or(d.policy),
+            banner: r
+                .banner
+                .as_deref()
+                .and_then(|s| BannerMode::parse(s).ok())
+                .unwrap_or(d.banner),
+            season_transition: r
+                .season_transition
+                .as_deref()
+                .and_then(|s| SeasonTransition::parse(s).ok())
+                .unwrap_or(d.season_transition),
+            capabilities: CapabilityMatrix::from_raw(r.capabilities),
+        }
+    }
+
+    fn to_raw(self) -> RawSync {
+        RawSync {
+            policy: Some(self.policy.as_str().to_string()),
+            banner: Some(self.banner.as_str().to_string()),
+            season_transition: Some(self.season_transition.as_str().to_string()),
+            capabilities: Some(self.capabilities.to_raw()),
+        }
+    }
+}
+
+#[derive(Debug, thiserror::Error, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum CapabilityError {
+    #[error(
+        "capability `shifts` cannot be set to `{chosen}` yet —\n       per-shift parsing isn't implemented. Reserved for a future\n       phase. Allowed values today: off"
+    )]
+    ShiftsLocked { chosen: String },
+
+    #[error(
+        "unknown capability '{0}' — expected one of: stats, scores_schedule, transactions, boxscores, shifts, career_history"
+    )]
+    UnknownCapability(String),
+
+    #[error("unknown mode '{0}' — expected one of: off, favorites, league")]
+    UnknownMode(String),
+
+    #[error("unknown {key} value '{value}' — expected one of: {allowed}")]
+    UnknownSyncValue {
+        key: &'static str,
+        value: String,
+        allowed: &'static str,
+    },
+
+    #[error("unknown config key '{0}' — try `icelines config list`")]
+    UnknownKey(String),
+}
+
 impl Config {
     /// Load configuration from `~/.icelines/config.toml`.
     ///
@@ -215,6 +618,7 @@ impl Config {
             live: raw.live,
             dashboards: raw.dashboards,
             reports: ReportToggles::from_raw(raw.reports),
+            sync: SyncConfig::from_raw(raw.sync),
         })
     }
 
@@ -252,6 +656,114 @@ impl Config {
         std::fs::rename(&tmp, &config_path)
             .map_err(|e| anyhow::anyhow!("rename {}: {}", config_path.display(), e))?;
         Ok(())
+    }
+
+    /// Phase Foster.0.7 — persist the current `sync` block back to
+    /// `~/.icelines/config.toml`, preserving every other key. Mirror
+    /// of `save_reports`.
+    pub fn save_sync(&self) -> anyhow::Result<()> {
+        let home = home_dir()?;
+        let icelines_dir = home.join(".icelines");
+        std::fs::create_dir_all(&icelines_dir)
+            .map_err(|e| anyhow::anyhow!("cannot create {}: {}", icelines_dir.display(), e))?;
+        let config_path = icelines_dir.join("config.toml");
+        let mut raw: RawConfig = if config_path.exists() {
+            let text = std::fs::read_to_string(&config_path)
+                .map_err(|e| anyhow::anyhow!("cannot read {}: {}", config_path.display(), e))?;
+            toml::from_str(&text).unwrap_or_default()
+        } else {
+            RawConfig::default()
+        };
+        raw.sync = Some(self.sync.to_raw());
+        let serialized =
+            toml::to_string_pretty(&raw).map_err(|e| anyhow::anyhow!("serialize config: {e}"))?;
+        let tmp = config_path.with_extension("toml.tmp");
+        std::fs::write(&tmp, serialized)
+            .map_err(|e| anyhow::anyhow!("write {}: {}", tmp.display(), e))?;
+        std::fs::rename(&tmp, &config_path)
+            .map_err(|e| anyhow::anyhow!("rename {}: {}", config_path.display(), e))?;
+        Ok(())
+    }
+
+    /// Resolve a dotted config key to a string value. Used by
+    /// `icelines config get`. Returns `Err(UnknownKey)` for keys we
+    /// don't recognize so the CLI can surface a "did you mean"
+    /// suggestion.
+    pub fn get_key(&self, key: &str) -> Result<String, CapabilityError> {
+        match key {
+            "sync.policy" => Ok(self.sync.policy.as_str().to_string()),
+            "sync.banner" => Ok(self.sync.banner.as_str().to_string()),
+            "sync.season_transition" => Ok(self.sync.season_transition.as_str().to_string()),
+            other => {
+                if let Some(rest) = other.strip_prefix("sync.capabilities.") {
+                    let cap = Capability::parse(rest)?;
+                    return Ok(self.sync.capabilities.get(cap).as_str().to_string());
+                }
+                Err(CapabilityError::UnknownKey(other.to_string()))
+            }
+        }
+    }
+
+    /// Apply a dotted-key mutation in-memory. Persistence is the
+    /// caller's responsibility (call `save_sync` after).
+    pub fn set_key(&mut self, key: &str, value: &str) -> Result<(), CapabilityError> {
+        match key {
+            "sync.policy" => {
+                self.sync.policy = SyncPolicy::parse(value)?;
+                Ok(())
+            }
+            "sync.banner" => {
+                self.sync.banner = BannerMode::parse(value)?;
+                Ok(())
+            }
+            "sync.season_transition" => {
+                self.sync.season_transition = SeasonTransition::parse(value)?;
+                Ok(())
+            }
+            other => {
+                if let Some(rest) = other.strip_prefix("sync.capabilities.") {
+                    let cap = Capability::parse(rest)?;
+                    let mode = CapabilityMode::parse(value)?;
+                    return self.sync.capabilities.set(cap, mode);
+                }
+                Err(CapabilityError::UnknownKey(other.to_string()))
+            }
+        }
+    }
+
+    /// Reset a section to defaults. Recognized keys: `sync`,
+    /// `sync.capabilities`. Returns `Err(UnknownKey)` otherwise.
+    pub fn reset_key(&mut self, key: &str) -> Result<(), CapabilityError> {
+        match key {
+            "sync" => {
+                self.sync = SyncConfig::default();
+                Ok(())
+            }
+            "sync.capabilities" => {
+                self.sync.capabilities = CapabilityMatrix::default();
+                Ok(())
+            }
+            other => Err(CapabilityError::UnknownKey(other.to_string())),
+        }
+    }
+
+    /// Enumerate every settable config key for `icelines config list`.
+    pub fn list_keys(&self) -> Vec<(String, String)> {
+        let mut v = vec![
+            ("sync.policy".into(), self.sync.policy.as_str().to_string()),
+            ("sync.banner".into(), self.sync.banner.as_str().to_string()),
+            (
+                "sync.season_transition".into(),
+                self.sync.season_transition.as_str().to_string(),
+            ),
+        ];
+        for cap in Capability::all() {
+            v.push((
+                format!("sync.capabilities.{}", cap.as_str()),
+                self.sync.capabilities.get(*cap).as_str().to_string(),
+            ));
+        }
+        v
     }
 
     /// Return the season as an 8-digit string (e.g. "20252026").

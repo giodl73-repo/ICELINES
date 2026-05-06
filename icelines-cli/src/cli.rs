@@ -53,6 +53,12 @@ pub struct Cli {
     #[arg(long, global = true)]
     pub no_dashboards: bool,
 
+    /// Phase Foster.0.8 — skip the auto-setup wizard if no config
+    /// file exists. Headless / scripted callers want this so the
+    /// binary doesn't try to prompt.
+    #[arg(long, global = true)]
+    pub no_setup: bool,
+
     #[command(subcommand)]
     pub command: Commands,
 }
@@ -513,6 +519,40 @@ ENTRY POINTS COVERED
     /// Manage player watchlists and custom groups.
     #[command(subcommand)]
     Group(GroupSubcommand),
+    /// First-run setup wizard (Phase Foster.0.8).
+    ///
+    /// Three-question flow that writes capability matrix defaults to
+    /// `~/.icelines/config.toml`. Auto-runs on first invocation when
+    /// no config file exists; pass `--no-setup` (top-level) to skip.
+    /// In scripted contexts pass `--accept-defaults` to write the
+    /// defaults non-interactively.
+    Setup {
+        /// Skip the prompts; write the spec defaults and exit.
+        /// Useful for headless / CI / persona-test contexts.
+        #[arg(long)]
+        accept_defaults: bool,
+        /// Print what setup would do without writing config.toml.
+        #[arg(long)]
+        dry_run: bool,
+        /// Re-run the wizard even if config.toml already exists.
+        #[arg(long)]
+        reset: bool,
+    },
+
+    /// Read or update a configuration value (Phase Foster.0.7).
+    ///
+    /// Configurable keys live under `sync.*`:
+    ///   sync.policy                          eager | lazy | off
+    ///   sync.banner                          summary | silent | verbose
+    ///   sync.season_transition               prompt | auto | ignore
+    ///   sync.capabilities.stats              off | favorites | league
+    ///   sync.capabilities.scores_schedule    off | favorites | league
+    ///   sync.capabilities.transactions       off | favorites | league
+    ///   sync.capabilities.boxscores          off | favorites | league
+    ///   sync.capabilities.shifts             off (only — per-shift parsing not implemented)
+    ///   sync.capabilities.career_history     off | favorites | league
+    #[command(subcommand)]
+    Config(ConfigSubcommand),
     /// Track NHL games you attended in person.
     #[command(subcommand)]
     Games(GamesSubcommand),
@@ -1620,6 +1660,29 @@ pub enum FantasySubcommand {
         port: u16,
         #[arg(long)]
         league: Option<String>,
+    },
+}
+
+// ── Phase Foster.0.7: capability + sync config ───────────────────────────────
+
+#[derive(Debug, Subcommand)]
+pub enum ConfigSubcommand {
+    /// Print the value at `key`.
+    Get {
+        key: String,
+    },
+    /// Set `key` to `value`. Validates against the typed schema and
+    /// rejects unknown keys / invalid values with a clear error.
+    Set {
+        key: String,
+        value: String,
+    },
+    /// Print every settable key + its current value.
+    List,
+    /// Reset a section to defaults. Recognized: `sync`,
+    /// `sync.capabilities`.
+    Reset {
+        key: String,
     },
 }
 

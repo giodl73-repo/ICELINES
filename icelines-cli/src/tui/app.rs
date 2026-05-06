@@ -1650,6 +1650,7 @@ impl App {
                     live: None,
                     dashboards: None,
                     reports: self.reports,
+                    sync: crate::config::SyncConfig::default(),
                 };
                 if let Err(e) = cfg.save_reports() {
                     self.status = format!("Reports saved in-memory (config write failed: {e})");

@@ -3314,3 +3314,104 @@ fn l2_cmd_tonight_no_json_flag_documented() {
         "should mention the unknown flag, stderr: {stderr}"
     );
 }
+
+// ── Phase Foster.0.8 — setup wizard L2 ───────────────────────────────────────
+
+/// L2 / l2_foster08_setup_accept_defaults_dry_run
+/// — `icelines setup --accept-defaults --dry-run` exits 0, prints
+///   the resolved defaults, and does NOT write `~/.icelines/config.toml`.
+///   Spec test for the "F.0.8 dry-run branch".
+#[test]
+fn l2_foster08_setup_accept_defaults_dry_run() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let out = run_isolated(
+        home.path(),
+        &["setup", "--accept-defaults", "--dry-run"],
+    );
+    assert!(
+        out.status.success(),
+        "exit 0 expected, stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("accepting defaults"), "stdout: {stdout}");
+    assert!(
+        stdout.contains("transactions    = favorites"),
+        "default transactions=favorites must surface, stdout: {stdout}"
+    );
+    assert!(
+        stdout.contains("(dry run"),
+        "dry-run banner must surface, stdout: {stdout}"
+    );
+    // Critical: --dry-run must NOT have written the config file.
+    let config_path = home.path().join(".icelines").join("config.toml");
+    assert!(
+        !config_path.exists(),
+        "dry-run must not write {}",
+        config_path.display()
+    );
+}
+
+/// L2 / l2_foster08_setup_accept_defaults_persists
+/// — without `--dry-run`, setup writes the config and a follow-up
+///   `icelines config get sync.capabilities.transactions` reads back
+///   the persisted value.
+#[test]
+fn l2_foster08_setup_accept_defaults_persists() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let setup = run_isolated(home.path(), &["setup", "--accept-defaults"]);
+    assert!(
+        setup.status.success(),
+        "setup exit 0, stderr: {}",
+        String::from_utf8_lossy(&setup.stderr)
+    );
+    let config_path = home.path().join(".icelines").join("config.toml");
+    assert!(
+        config_path.exists(),
+        "config.toml should be written at {}",
+        config_path.display()
+    );
+    let body = std::fs::read_to_string(&config_path).unwrap();
+    assert!(
+        body.contains("transactions = \"favorites\""),
+        "config body must carry default transactions, got: {body}"
+    );
+
+    // Round-trip via `icelines config get`.
+    let get = run_isolated(
+        home.path(),
+        &["config", "get", "sync.capabilities.transactions"],
+    );
+    assert!(get.status.success());
+    let got = String::from_utf8_lossy(&get.stdout);
+    assert_eq!(
+        got.trim(),
+        "favorites",
+        "config get must round-trip the persisted value"
+    );
+}
+
+/// L2 / l2_foster08_config_set_shifts_rejects_with_literal_error
+/// — pinning the cross-process behavior of the BENCH-H3 literal
+///   error string. The same error surfaces from `icelines config set`
+///   as from in-process `Config::set_key`.
+#[test]
+fn l2_foster08_config_set_shifts_favorites_rejected() {
+    let home = tempfile::tempdir().expect("tempdir");
+    // Setup first so config exists.
+    let _ = run_isolated(home.path(), &["setup", "--accept-defaults"]);
+    let out = run_isolated(
+        home.path(),
+        &["config", "set", "sync.capabilities.shifts", "favorites"],
+    );
+    assert!(!out.status.success(), "must non-zero exit on shifts != off");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("capability `shifts` cannot be set to `favorites`"),
+        "literal error string must surface, stderr: {stderr}"
+    );
+    assert!(
+        stderr.contains("Allowed values today: off"),
+        "trailer must surface, stderr: {stderr}"
+    );
+}
