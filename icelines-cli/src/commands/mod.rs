@@ -7,6 +7,7 @@ pub mod mates;
 pub mod menu;
 pub mod output;
 pub mod players;
+pub mod playoffs;
 pub mod project;
 pub mod query;
 pub mod rank;

@@ -168,6 +168,14 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         } => {
             commands::tonight::run_schedule(team, days, json, csv).await?;
         }
+        Commands::Playoffs {
+            season,
+            round,
+            json,
+            csv,
+        } => {
+            commands::playoffs::run(season, round, json, csv).await?;
+        }
         Commands::Trade {
             player_out,
             _for: _,

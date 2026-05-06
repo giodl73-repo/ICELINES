@@ -168,6 +168,36 @@ DEPRECATIONS
         #[arg(long)]
         team: Option<String>,
     },
+    /// Show a playoff bracket — round / series / winner (LP.2).
+    ///
+    /// Defaults to the most recent COMPLETED playoff season in the
+    /// bundle (so the output isn't empty in the offseason). Override
+    /// with `--season YYYYZZZZ` for any of the 38 bundled seasons.
+    /// `--round N` (1-4) filters to one round; `--json` / `--csv` for
+    /// scripts.
+    #[command(long_about = r#"icelines playoffs — bracket as text.
+
+EXAMPLES
+    icelines playoffs                  # most recent completed bracket
+    icelines playoffs --season 19921993  # 1992-93 — Habs 23rd Cup
+    icelines playoffs --round 4        # only the Cup Final
+    icelines playoffs --json > bracket.json
+"#)]
+    Playoffs {
+        /// Season in YYYYZZZZ form (e.g. 19921993 for 1992-93).
+        /// Default: most recent completed playoff in the bundle.
+        #[arg(long, value_name = "YYYYZZZZ")]
+        season: Option<String>,
+        /// Filter to one round (1=First Round, 2=Second, 3=Conference
+        /// Finals, 4=Stanley Cup Final).
+        #[arg(long, value_parser = clap::value_parser!(u8).range(1..=4))]
+        round: Option<u8>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long)]
+        csv: bool,
+    },
+
     /// Show the upcoming NHL schedule (Phase Lester Patrick — LP.1).
     ///
     /// Mirrors `icelines tonight`'s pattern but covers a date range.
