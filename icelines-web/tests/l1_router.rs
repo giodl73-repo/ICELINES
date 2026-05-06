@@ -596,3 +596,76 @@ async fn l1_foster1_playoffs_accepts_season_query() {
         "/playoffs must accept ?season= and render 200"
     );
 }
+
+// ── Phase Foster +9 — `?range=` smokes ──────────────────────────────────────
+
+#[tokio::test]
+async fn l1_foster_plus9_scores_accepts_range_week() {
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/scores?date=2014-10-08&range=week")
+                .body(Body::empty())
+                .expect("build request"),
+        )
+        .await
+        .expect("oneshot");
+    assert_eq!(
+        response.status(),
+        StatusCode::OK,
+        "/scores must accept ?range=week"
+    );
+}
+
+#[tokio::test]
+async fn l1_foster_plus9_scores_accepts_range_month() {
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/scores?date=2014-10-08&range=month")
+                .body(Body::empty())
+                .expect("build request"),
+        )
+        .await
+        .expect("oneshot");
+    assert_eq!(response.status(), StatusCode::OK);
+}
+
+#[tokio::test]
+async fn l1_foster_plus9_scores_accepts_range_day_default() {
+    // Bare ?date= without ?range= should still 200 — `range=day` is
+    // the implicit default per the spec convention.
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/scores?date=2014-10-08")
+                .body(Body::empty())
+                .expect("build request"),
+        )
+        .await
+        .expect("oneshot");
+    assert_eq!(response.status(), StatusCode::OK);
+}
+
+#[tokio::test]
+async fn l1_foster_plus9_scores_unknown_range_defaults_to_day() {
+    // Unknown range value should fall back to Day rather than 400.
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/scores?date=2014-10-08&range=garbage")
+                .body(Body::empty())
+                .expect("build request"),
+        )
+        .await
+        .expect("oneshot");
+    assert_eq!(
+        response.status(),
+        StatusCode::OK,
+        "unknown range falls back to Day, must still 200"
+    );
+}

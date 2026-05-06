@@ -67,6 +67,29 @@ pub(crate) fn parse_picker_date(raw: &str) -> Result<String, String> {
     ))
 }
 
+/// Phase Foster +8 — short label for the status-bar timeframe
+/// indicator. Matches GLASS L8 wording (e.g. "Week (Mon-Sun)").
+pub fn timeframe_label(t: icelines_core::timeframe::Timeframe) -> &'static str {
+    use icelines_core::timeframe::Timeframe;
+    match t {
+        Timeframe::Day => "Day",
+        Timeframe::Week => "Week",
+        Timeframe::Month => "Month",
+        Timeframe::Season => "Season",
+    }
+}
+
+/// Phase Foster +8 — anchor-style hint shown alongside the label.
+pub fn timeframe_anchor_hint(t: icelines_core::timeframe::Timeframe) -> &'static str {
+    use icelines_core::timeframe::Timeframe;
+    match t {
+        Timeframe::Day => "today",
+        Timeframe::Week => "Mon-Sun",
+        Timeframe::Month => "1st-end",
+        Timeframe::Season => "Oct-Jun",
+    }
+}
+
 /// Phase Foster.1.4 — which date-anchored surface the shared picker
 /// overlay applies to. Default `Scores` matches the existing
 /// lowercase-`d` behavior on the Tonight tab.
@@ -177,6 +200,11 @@ pub struct App {
     /// Scores, Schedule, and Playoffs (per spec); on Enter we
     /// dispatch to the right `apply_*` based on this target.
     pub picker_target: PickerTarget,
+    /// Phase Foster +8 — active timeframe (`v` cycles Day → Week →
+    /// Month → Season → Day). Surfaces in chunks[2] status bar
+    /// (GLASS L8). Today's main consumer is the Favorites tab; future
+    /// surfaces cycle their date range against this.
+    pub active_timeframe: icelines_core::timeframe::Timeframe,
     /// When the most recent live-Scores auto-refresh was triggered. `None`
     /// means the auto-refresh timer is dormant (e.g. user has not opened the
     /// Scores tab on a live date yet). The polling loop sets this on every
@@ -321,6 +349,7 @@ impl App {
             scores_picker_input: String::new(),
             scores_picker_err: None,
             picker_target: PickerTarget::default(),
+            active_timeframe: icelines_core::timeframe::Timeframe::Day,
             last_auto_refresh: None,
             schedule_week_cache: crate::tui::schedule::new_week_cache(),
             schedule_team_cache: crate::tui::schedule::new_team_cache(),
@@ -1104,6 +1133,23 @@ impl App {
                             // available for future surfaces.
                         }
                     }
+                } else if c == 'v' && !is_text_input_active(self) {
+                    // Phase Foster +8 — cycle Day → Week → Month →
+                    // Season → Day. Renders in the status bar so
+                    // user sees the active window without opening a
+                    // menu (GLASS L8).
+                    use icelines_core::timeframe::Timeframe;
+                    self.active_timeframe = match self.active_timeframe {
+                        Timeframe::Day => Timeframe::Week,
+                        Timeframe::Week => Timeframe::Month,
+                        Timeframe::Month => Timeframe::Season,
+                        Timeframe::Season => Timeframe::Day,
+                    };
+                    self.status = format!(
+                        "Timeframe → {} ({})",
+                        timeframe_label(self.active_timeframe),
+                        timeframe_anchor_hint(self.active_timeframe),
+                    );
                 } else if c == 'M' && !is_text_input_active(self) {
                     // LP.4 — Shift+M opens the in-TUI docs overlay
                     // (Manual). Uppercase M to avoid the lowercase `m`
@@ -2458,6 +2504,44 @@ mod tests {
     fn l0_tui_app_initial_screen_is_home() {
         let app = App::new(false);
         assert_eq!(app.screen, Screen::Home);
+    }
+
+    // ── Phase Foster +8 — `v` keybind cycles timeframe ────────────────────
+
+    #[test]
+    fn l0_foster_plus8_v_cycles_timeframes_in_order() {
+        use icelines_core::timeframe::Timeframe;
+        let mut app = App::new(false);
+        // Default starts at Day so the status bar stays uncluttered.
+        assert_eq!(app.active_timeframe, Timeframe::Day);
+        app.handle(Action::Char('v'));
+        assert_eq!(app.active_timeframe, Timeframe::Week);
+        app.handle(Action::Char('v'));
+        assert_eq!(app.active_timeframe, Timeframe::Month);
+        app.handle(Action::Char('v'));
+        assert_eq!(app.active_timeframe, Timeframe::Season);
+        app.handle(Action::Char('v'));
+        assert_eq!(app.active_timeframe, Timeframe::Day, "wraps back to Day");
+    }
+
+    #[test]
+    fn l0_foster_plus8_v_status_announces_timeframe() {
+        let mut app = App::new(false);
+        app.handle(Action::Char('v'));
+        assert!(
+            app.status.contains("Week"),
+            "status must announce new timeframe, got: {}",
+            app.status
+        );
+    }
+
+    #[test]
+    fn l0_foster_plus8_timeframe_label_lookup() {
+        use icelines_core::timeframe::Timeframe;
+        assert_eq!(timeframe_label(Timeframe::Day), "Day");
+        assert_eq!(timeframe_label(Timeframe::Week), "Week");
+        assert_eq!(timeframe_label(Timeframe::Month), "Month");
+        assert_eq!(timeframe_label(Timeframe::Season), "Season");
     }
 
     #[test]

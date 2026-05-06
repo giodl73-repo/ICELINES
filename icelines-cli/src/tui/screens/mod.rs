@@ -59,8 +59,21 @@ pub fn render(f: &mut Frame, app: &App) {
         Screen::Transactions => transactions::render(f, app, chunks[1]),
     }
 
+    // Phase Foster +8 — append the active timeframe indicator
+    // (right-aligned visually via the suffix). Only renders when
+    // it's not the Day default so a fresh launch stays uncluttered.
+    let status_text = if app.active_timeframe == icelines_core::timeframe::Timeframe::Day {
+        app.status.clone()
+    } else {
+        format!(
+            "{}  ·  Timeframe: {} ({})",
+            app.status,
+            crate::tui::app::timeframe_label(app.active_timeframe),
+            crate::tui::app::timeframe_anchor_hint(app.active_timeframe),
+        )
+    };
     f.render_widget(
-        Paragraph::new(app.status.as_str()).style(Style::default().fg(Color::DarkGray)),
+        Paragraph::new(status_text).style(Style::default().fg(Color::DarkGray)),
         chunks[2],
     );
 

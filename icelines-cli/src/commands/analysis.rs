@@ -364,6 +364,14 @@ pub async fn run_group(cmd: GroupSubcommand) -> anyhow::Result<()> {
             };
             if added {
                 println!("Added '{player}' ({label}) to '{group}'.");
+                // Phase Foster +6 (SCOUT M7) — for newly-added
+                // players to the Favorites group, opportunistically
+                // augment the local career_history store so the
+                // dashboard has the player's pre-NHL arc on first
+                // render. Failure is non-fatal.
+                if matches!(kind, crate::db::MemberKind::Player) && group == "Favorites" {
+                    augment_career_history_for(&player, &key).await;
+                }
             } else {
                 println!("'{player}' is already in '{group}' — no change.");
             }
@@ -750,4 +758,56 @@ fn draft_str_view(v: &PlayerView<'_>) -> String {
         (Some(y), _, _) => format!("{y}"),
         _ => "Undrafted".to_owned(),
     }
+}
+
+// ── Phase Foster +6 (SCOUT M7) — career-history augment for newly-favorited ──
+
+/// Resolve `<player>` to a PlayerId via the bundled bios index, then
+/// — if the local career_history store doesn't already have that
+/// pid — fetch from the NHL landing endpoint and persist. All
+/// failure paths are silent except for a one-line stderr nudge so
+/// the `group add` UX stays clean.
+async fn augment_career_history_for(display_name: &str, normalized: &str) {
+    use icelines_fetch::career_landing::{load_local_store, CareerHistoryStore};
+    use icelines_fetch::nhl_api::NhlApiClient;
+    use icelines_fetch::stats_loader::resolve_player_id_by_name;
+
+    let Some(pid) = resolve_player_id_by_name(normalized) else {
+        // Brand-new rookie not in any bundled bios — skip; the
+        // dashboard will lazy-fetch on first render.
+        return;
+    };
+
+    let mut store = load_local_store();
+    if store.histories.contains_key(&pid.to_string()) {
+        return; // Already have it.
+    }
+
+    if !crate::config::live_feeds_enabled() {
+        return; // Honor offline mode.
+    }
+
+    let client = NhlApiClient::production();
+    match client.fetch_player_career_history(pid).await {
+        Ok(history) => {
+            store.upsert(history);
+            store.fetched_at = Some(chrono::Utc::now().to_rfc3339());
+            // Persist back to ~/.icelines/career_history.json
+            if let Some(home) = std::env::var_os("HOME")
+                .or_else(|| std::env::var_os("USERPROFILE"))
+                .map(std::path::PathBuf::from)
+            {
+                let path = home.join(".icelines").join("career_history.json");
+                if let Err(e) = store.save(&path) {
+                    eprintln!("note: career-history augment write failed: {e}");
+                } else {
+                    eprintln!("note: pre-NHL career added for {display_name}");
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("note: career-history augment skipped for {display_name}: {e}");
+        }
+    }
+    let _: CareerHistoryStore; // satisfy import linter
 }

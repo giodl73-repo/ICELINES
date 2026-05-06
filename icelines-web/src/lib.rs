@@ -3947,10 +3947,31 @@ mod handlers {
             /// from this date. Default: today.
             #[serde(default)]
             pub date: Option<String>,
+            /// Phase Foster +9 — `day` (default) | `week` | `month`.
+            /// Widens the rendered window around `date`. The default
+            /// `day` collapses to the existing single-date behavior;
+            /// `week` and `month` use Timeframe::range to bound the
+            /// `by_date` group. Spec §"Web URL convention".
+            #[serde(default)]
+            pub range: Option<String>,
         }
 
         fn parse_date(s: &str) -> Option<NaiveDate> {
             NaiveDate::parse_from_str(s, "%Y-%m-%d").ok()
+        }
+
+        /// Phase Foster +9 — parse `?range=` into a Timeframe.
+        /// Defaults to Day (matches the spec convention "range=day
+        /// is implicit"). Unknown values fall back to Day for safety.
+        pub(crate) fn parse_range_to_timeframe(s: Option<&str>) -> icelines_core::timeframe::Timeframe {
+            use icelines_core::timeframe::Timeframe;
+            match s.map(str::trim).filter(|s| !s.is_empty()) {
+                None | Some("day") => Timeframe::Day,
+                Some("week") => Timeframe::Week,
+                Some("month") => Timeframe::Month,
+                Some("season") => Timeframe::Season,
+                Some(_) => Timeframe::Day,
+            }
         }
 
         fn pretty_day(d: NaiveDate) -> String {
@@ -4021,6 +4042,13 @@ mod handlers {
 
             let today = Utc::now().date_naive();
             let active_date = q.date.as_deref().and_then(parse_date).unwrap_or(today);
+            // Phase Foster +9 — `?range=` resolves the timeframe.
+            // Day narrows the rendered grouping to the anchor date;
+            // Week / Month surface the natural 7-day gameWeek
+            // window the API already returns.
+            let timeframe =
+                parse_range_to_timeframe(q.range.as_deref());
+            let (range_start, range_end) = timeframe.range(active_date);
             let prev_date = active_date - Duration::days(7);
             let next_date = active_date + Duration::days(7);
 
@@ -4077,6 +4105,15 @@ mod handlers {
                         };
                         by_date.entry(g.date).or_default().push(row);
                     }
+                    // Phase Foster +9 — keep only days that fall
+                    // inside `(range_start, range_end)`. Day collapses
+                    // to a single date; Week/Month widen.
+                    by_date.retain(|date_str, _| {
+                        match parse_date(date_str) {
+                            Some(d) => d >= range_start && d <= range_end,
+                            None => true, // unparseable date stays — defensive
+                        }
+                    });
                     let days: Vec<ScoresDay> = by_date
                         .into_iter()
                         .map(|(date, rows)| {
