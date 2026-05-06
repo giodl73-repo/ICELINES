@@ -616,7 +616,15 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 sort,
                 json,
                 csv,
+                week,
+                month,
             } => {
+                if week || month {
+                    eprintln!(
+                        "error: --week / --month not supported on `query career` (junior seasons\n       aren't aligned with NHL week boundaries). Use --season instead."
+                    );
+                    std::process::exit(2);
+                }
                 commands::query_career::run(league, season, top, sort, json, csv).await?;
             }
         },

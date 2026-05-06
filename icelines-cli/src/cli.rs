@@ -1634,6 +1634,14 @@ NOTES
         /// Emit CSV (one row per player).
         #[arg(long)]
         csv: bool,
+        /// Phase Foster.5 EDGE B2 — `--week` / `--month` on `query
+        /// career` is intentionally rejected (junior seasons aren't
+        /// aligned with NHL week boundaries). Flag is hidden + present
+        /// only so the rejection error message is helpful.
+        #[arg(long, hide = true)]
+        week: bool,
+        #[arg(long, hide = true)]
+        month: bool,
     },
 }
 

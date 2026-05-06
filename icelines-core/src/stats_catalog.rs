@@ -2056,6 +2056,132 @@ pub fn parse_filter(input: &str) -> Result<StatFilter, FilterParseError> {
     StatFilter::new(stat, op, value)
 }
 
+// ── Phase Foster.5 — windowed filter atoms ──────────────────────────────────
+
+/// Phase Foster.5 — a stat filter scoped to a specific window
+/// (`g.week>=10`). When `window` is `None`, the caller binds it to
+/// the active CLI timeframe at apply time (defaulting to season).
+/// Mirrors `StatFilter` shape so the existing apply-views logic can
+/// AND it with the other buckets.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct WindowedAtom {
+    pub stat: StatId,
+    pub window: Option<crate::timeframe::Timeframe>,
+    pub op: FilterOp,
+    pub value: f64,
+}
+
+impl WindowedAtom {
+    /// Parse `<stat-key>[.<window>]<op><value>`. The optional
+    /// `.window` segment is one of `season` / `week` / `month` /
+    /// `day`; absent → `None` (caller resolves to the active CLI
+    /// timeframe at apply time).
+    pub fn parse(input: &str) -> Result<Self, FilterParseError> {
+        // Reuse `parse_filter` to handle op + value parsing; the
+        // window suffix attaches to the stat key.
+        let trimmed = input.trim();
+        if trimmed.is_empty() {
+            return Err(FilterParseError::EmptyInput);
+        }
+        // Find the op position via the same priority order as
+        // `parse_filter` so we can split off the key portion.
+        const OPS: &[(&str, FilterOp)] = &[
+            (">=", FilterOp::Min),
+            ("<=", FilterOp::Max),
+            ("==", FilterOp::Equals),
+            ("=", FilterOp::Equals),
+        ];
+        let (op, op_pos, op_len) = {
+            let mut best: Option<(FilterOp, usize, usize)> = None;
+            for (token, op) in OPS {
+                if let Some(pos) = trimmed.find(token) {
+                    match best {
+                        None => best = Some((*op, pos, token.len())),
+                        Some((_, prev_pos, prev_len)) => {
+                            if pos < prev_pos
+                                || (pos == prev_pos && token.len() > prev_len)
+                            {
+                                best = Some((*op, pos, token.len()));
+                            }
+                        }
+                    }
+                }
+            }
+            best.ok_or_else(|| FilterParseError::MissingOp {
+                input: trimmed.to_owned(),
+            })?
+        };
+        let key_part = trimmed[..op_pos].trim();
+        let value_part = trimmed[op_pos + op_len..].trim();
+        if value_part.is_empty() {
+            return Err(FilterParseError::BadNumber {
+                token: value_part.to_owned(),
+            });
+        }
+        if value_part.contains('=')
+            || value_part.contains('>')
+            || value_part.contains('<')
+        {
+            return Err(FilterParseError::MultipleOps {
+                input: trimmed.to_owned(),
+            });
+        }
+        let value: f64 =
+            value_part
+                .parse()
+                .map_err(|_| FilterParseError::BadNumber {
+                    token: value_part.to_owned(),
+                })?;
+        if !value.is_finite() {
+            return Err(FilterParseError::NotFinite {
+                token: value_part.to_owned(),
+            });
+        }
+
+        // Split key on the LAST `.` — `points-per-game.week` has the
+        // window after the final dot; `pp-pct.season` likewise. The
+        // suffix is a window keyword if it parses as one.
+        let (stat_key, window) = match key_part.rsplit_once('.') {
+            Some((stat, suffix)) => match parse_window_keyword(suffix) {
+                Some(w) => (stat.trim(), Some(w)),
+                None => (key_part, None),
+            },
+            None => (key_part, None),
+        };
+        if stat_key.is_empty() {
+            return Err(FilterParseError::EmptyStatKey);
+        }
+        let stat = StatId::from_cli_key(stat_key)
+            .ok_or_else(|| FilterParseError::UnknownStat {
+                key: stat_key.to_owned(),
+            })?;
+        Ok(Self {
+            stat,
+            window,
+            op,
+            value,
+        })
+    }
+
+    /// Resolve `window` against the active CLI timeframe. Returns
+    /// the explicit window if set; otherwise `default_window`
+    /// (typically Season).
+    pub fn resolved_window(&self, default_window: crate::timeframe::Timeframe) -> crate::timeframe::Timeframe {
+        self.window.unwrap_or(default_window)
+    }
+}
+
+fn parse_window_keyword(s: &str) -> Option<crate::timeframe::Timeframe> {
+    use crate::timeframe::Timeframe;
+    match s.trim() {
+        "day" => Some(Timeframe::Day),
+        "week" => Some(Timeframe::Week),
+        "month" => Some(Timeframe::Month),
+        "season" => Some(Timeframe::Season),
+        _ => None,
+    }
+}
+
 // ── Filter.OR — boolean filter expressions (AND / OR / NOT / parens) ──────────
 
 /// A boolean expression over `StatFilter` atoms. Built by
@@ -4252,5 +4378,95 @@ mod tests {
             }
             _ => panic!("expected nested Or"),
         }
+    }
+
+    // ── Phase Foster.5 — windowed atom grammar ──────────────────────────────
+
+    use crate::timeframe::Timeframe;
+
+    #[test]
+    fn l0_foster5_windowed_atom_no_window_is_none() {
+        let a = WindowedAtom::parse("g>=10").unwrap();
+        assert_eq!(a.stat, StatId::Goals);
+        assert!(a.window.is_none(), "no .window suffix → None");
+        assert_eq!(a.value, 10.0);
+    }
+
+    #[test]
+    fn l0_foster5_windowed_atom_with_week_suffix() {
+        let a = WindowedAtom::parse("g.week>=10").unwrap();
+        assert_eq!(a.stat, StatId::Goals);
+        assert_eq!(a.window, Some(Timeframe::Week));
+        assert_eq!(a.value, 10.0);
+    }
+
+    #[test]
+    fn l0_foster5_windowed_atom_all_window_keywords() {
+        for (key, want) in [
+            ("g.day>=1", Timeframe::Day),
+            ("g.week>=10", Timeframe::Week),
+            ("g.month>=20", Timeframe::Month),
+            ("g.season>=50", Timeframe::Season),
+        ] {
+            let a = WindowedAtom::parse(key).unwrap();
+            assert_eq!(a.window, Some(want), "input {key}");
+        }
+    }
+
+    #[test]
+    fn l0_foster5_windowed_atom_unknown_window_falls_back_to_full_key() {
+        // `pp-pct` is a real stat key; `pp-pct.unrecognized>=0.5` should
+        // try `pp-pct.unrecognized` as a stat key (unknown → error).
+        let err = WindowedAtom::parse("pp-pct.notawindow>=0.5").unwrap_err();
+        assert!(matches!(err, FilterParseError::UnknownStat { .. }));
+    }
+
+    #[test]
+    fn l0_foster5_windowed_atom_resolved_window_picks_default() {
+        let bare = WindowedAtom::parse("g>=10").unwrap();
+        assert_eq!(bare.resolved_window(Timeframe::Season), Timeframe::Season);
+        assert_eq!(bare.resolved_window(Timeframe::Week), Timeframe::Week);
+
+        let explicit = WindowedAtom::parse("g.month>=20").unwrap();
+        // Explicit window beats the default.
+        assert_eq!(
+            explicit.resolved_window(Timeframe::Week),
+            Timeframe::Month
+        );
+    }
+
+    #[test]
+    fn l0_foster5_windowed_atom_rejects_garbage() {
+        // Empty input
+        assert!(matches!(
+            WindowedAtom::parse("").unwrap_err(),
+            FilterParseError::EmptyInput
+        ));
+        // Missing op
+        assert!(matches!(
+            WindowedAtom::parse("g.week").unwrap_err(),
+            FilterParseError::MissingOp { .. }
+        ));
+        // Multiple ops in value
+        assert!(matches!(
+            WindowedAtom::parse("g.week>=>10").unwrap_err(),
+            FilterParseError::MultipleOps { .. }
+        ));
+        // Non-numeric value
+        assert!(matches!(
+            WindowedAtom::parse("g.week>=ten").unwrap_err(),
+            FilterParseError::BadNumber { .. }
+        ));
+    }
+
+    #[test]
+    fn l0_foster5_windowed_atom_round_trips_through_parse_filter() {
+        // Bare atom (no .window) should produce the same StatId+op+value
+        // as parse_filter — proves they share the op/value handling.
+        let windowed = WindowedAtom::parse("hits>=5").unwrap();
+        let plain = parse_filter("hits>=5").unwrap();
+        assert_eq!(windowed.stat, plain.stat);
+        assert_eq!(windowed.op, plain.op);
+        assert_eq!(windowed.value, plain.value);
     }
 }

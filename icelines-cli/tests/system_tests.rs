@@ -3464,6 +3464,50 @@ fn l2_foster1_schedule_invalid_date_clean_error() {
     );
 }
 
+// ── Phase Foster.5 — timeframe surface L2 ────────────────────────────────────
+
+/// L2 / l2_foster5_query_career_week_rejected_per_edge_b2
+/// — `query career --week` is intentionally rejected with the
+///   documented error message. Pins the literal wording per spec
+///   §"Timeframe rejection on query career" (EDGE B2).
+#[test]
+fn l2_foster5_query_career_week_rejected_per_edge_b2() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let out = run_isolated(
+        home.path(),
+        &["query", "career", "--league", "OHL", "--week"],
+    );
+    assert!(!out.status.success(), "must non-zero exit");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        !stderr.contains("panicked"),
+        "must not panic, stderr: {stderr}"
+    );
+    assert!(
+        stderr.contains("--week / --month not supported on `query career`"),
+        "literal error must surface, stderr: {stderr}"
+    );
+    assert!(
+        stderr.contains("Use --season instead"),
+        "remediation must appear, stderr: {stderr}"
+    );
+}
+
+#[test]
+fn l2_foster5_query_career_month_rejected_per_edge_b2() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let out = run_isolated(
+        home.path(),
+        &["query", "career", "--league", "OHL", "--month"],
+    );
+    assert!(!out.status.success(), "must non-zero exit");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("--week / --month not supported on `query career`"),
+        "same error covers both flags, stderr: {stderr}"
+    );
+}
+
 // ── Phase Foster.4 — sync engine L2 ──────────────────────────────────────────
 
 /// L2 / l2_foster4_fetch_sync_dry_run_empty_manifest
