@@ -7,6 +7,7 @@ pub mod playoffs;
 pub mod schedule;
 pub mod screens;
 pub mod sparkline;
+pub mod sync_banner;
 pub mod tonight;
 pub mod widgets;
 

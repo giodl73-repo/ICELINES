@@ -1076,21 +1076,34 @@ async fn do_boxscore(
         return Ok(());
     }
 
-    // Step 2: optional favorites filter — keep only games involving
-    // a favorited team. Player-favorites mid-day-trade resolution is
-    // a Foster.4 polish item (needs career_history lookup).
-    let favorited_teams: std::collections::HashSet<String> = if for_favorites {
+    // Step 2: read the Favorites group up-front so we can both
+    // (a) optionally filter the slate to favorited teams and
+    // (b) populate per-game favorited_*_lines in the score payload
+    // (Foster +4 / SCOUT-flagged in the spec).
+    let (favorited_teams, favorited_player_ids): (
+        std::collections::HashSet<String>,
+        std::collections::HashSet<u32>,
+    ) = {
         let db = crate::db::GroupDb::open().context("open group db")?;
         let members = db
             .list_members_with_kind("Favorites")
             .unwrap_or_default();
-        members
+        let teams: std::collections::HashSet<String> = members
             .iter()
             .filter(|(_, k)| matches!(k, crate::db::MemberKind::Team))
             .map(|(key, _)| key.to_uppercase())
-            .collect()
-    } else {
-        std::collections::HashSet::new()
+            .collect();
+        // Resolve each player member's normalized-name → PlayerId
+        // via the bundled bios index. Members the resolver can't
+        // place (rookies, retired pre-bundle, etc.) skip silently.
+        let player_ids: std::collections::HashSet<u32> = members
+            .iter()
+            .filter(|(_, k)| matches!(k, crate::db::MemberKind::Player))
+            .filter_map(|(key, _)| {
+                icelines_fetch::stats_loader::resolve_player_id_by_name(key)
+            })
+            .collect();
+        (teams, player_ids)
     };
 
     let to_fetch: Vec<_> = if for_favorites {
@@ -1202,7 +1215,7 @@ async fn do_boxscore(
             Some(other) => other.to_owned(),
             None => "FUT".to_owned(),
         };
-        let payload = proto::ScorePayloadV1::new(
+        let mut payload = proto::ScorePayloadV1::new(
             game,
             home,
             away,
@@ -1210,6 +1223,36 @@ async fn do_boxscore(
             g.away_score.unwrap_or(0) as u32,
             result,
         );
+
+        // Phase Foster +4 — fetch the parsed boxscore (we already
+        // have it from fetch_boxscore_with_raw above when the body
+        // persist path succeeded) and intersect skater + goalie
+        // PIDs with the Favorites group. Quiet on failure: a
+        // missing boxscore body just means the lines stay empty.
+        if !favorited_player_ids.is_empty() {
+            if let Ok((parsed_box, _)) = client.fetch_boxscore_with_raw(g.game_id).await {
+                use icelines_core::entity::EntityRef;
+                use icelines_core::identity::PlayerId;
+                for skater in parsed_box
+                    .away_skaters
+                    .iter()
+                    .chain(parsed_box.home_skaters.iter())
+                {
+                    if favorited_player_ids.contains(&skater.player_id) {
+                        payload
+                            .favorited_skater_lines
+                            .push(EntityRef::Player(PlayerId(skater.player_id)));
+                    }
+                }
+                // Goalie matching is name-based today —
+                // GoalieLine doesn't yet carry player_id from the
+                // boxscore parse path. A future fetch.rs refactor
+                // can switch to PID intersection mirroring skaters
+                // once nhl_api::parse_boxscore extracts the goalie
+                // player_id field.
+                let _ = &parsed_box.goalies; // surface field; not yet wired
+            }
+        }
         let payload_json = serde_json::to_string(&payload).context("serialize payload")?;
         let event_id = proto::score_final_event_id(game);
         let inserted = event_stream

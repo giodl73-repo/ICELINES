@@ -168,6 +168,40 @@ impl MilestonePayloadV1 {
     }
 }
 
+// ── Foster +5 — mid-day trade detection helper ──────────────────────────────
+
+/// Detect a same-day team change for a favorited skater.
+///
+/// Inputs: the player's current team in tonight's boxscore + the
+/// most-recent prior team observation. Returns `Some(TradePayloadV1)`
+/// when the abbreviations differ (case-insensitive); `None` when
+/// they match or `prev_team` is `None` (player's first observation).
+///
+/// Caller is responsible for sourcing `prev_team` — typically by
+/// reading the previous score event from the EventStream and
+/// looking up the player's team there. Pure helper so the truth
+/// table tests cover all the edge cases (no prior obs, same team
+/// in different case, real swap) without disk or network.
+pub fn detect_mid_day_trade(
+    player: PlayerId,
+    today_team: &TeamAbbr,
+    prev_team: Option<&TeamAbbr>,
+) -> Option<TradePayloadV1> {
+    let prev = prev_team?;
+    if prev.0.eq_ignore_ascii_case(&today_team.0) {
+        return None;
+    }
+    let mut payload = TradePayloadV1::new(prev.clone(), today_team.clone());
+    payload
+        .players_sent
+        .push(crate::entity::EntityRef::Player(player));
+    payload.description = format!(
+        "{} moved from {} to {}",
+        player.0, prev.0, today_team.0
+    );
+    Some(payload)
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StreakPayloadV1 {
     pub schema_version: u32,
@@ -284,5 +318,68 @@ mod tests {
         assert_eq!(SIGNING_PAYLOAD_VERSION, 1);
         assert_eq!(MILESTONE_PAYLOAD_VERSION, 1);
         assert_eq!(STREAK_PAYLOAD_VERSION, 1);
+    }
+
+    // ── Foster +5 — detect_mid_day_trade truth table ────────────────────
+
+    #[test]
+    fn l0_foster_plus5_detect_no_prior_obs_returns_none() {
+        let result = detect_mid_day_trade(PlayerId(8478402), &TeamAbbr("EDM".into()), None);
+        assert!(result.is_none(), "no prior team → no trade event");
+    }
+
+    #[test]
+    fn l0_foster_plus5_detect_same_team_returns_none() {
+        let prev = TeamAbbr("EDM".into());
+        let today = TeamAbbr("EDM".into());
+        let result = detect_mid_day_trade(PlayerId(8478402), &today, Some(&prev));
+        assert!(result.is_none(), "same team → no trade event");
+    }
+
+    #[test]
+    fn l0_foster_plus5_detect_case_insensitive_match() {
+        let prev = TeamAbbr("EDM".into());
+        let today = TeamAbbr("edm".into());
+        let result = detect_mid_day_trade(PlayerId(8478402), &today, Some(&prev));
+        assert!(
+            result.is_none(),
+            "case difference is not a real trade"
+        );
+    }
+
+    #[test]
+    fn l0_foster_plus5_detect_real_swap_fires() {
+        let prev = TeamAbbr("BOS".into());
+        let today = TeamAbbr("FLA".into());
+        let result =
+            detect_mid_day_trade(PlayerId(8470829), &today, Some(&prev)).expect("trade");
+        assert_eq!(result.from_team.0, "BOS");
+        assert_eq!(result.to_team.0, "FLA");
+        assert_eq!(result.players_sent.len(), 1);
+        assert!(
+            result.description.contains("8470829"),
+            "description should name the pid, got: {}",
+            result.description
+        );
+        assert!(result.description.contains("BOS"));
+        assert!(result.description.contains("FLA"));
+    }
+
+    #[test]
+    fn l0_foster_plus5_detect_round_trips_through_event_id() {
+        // The trade_event_id helper sorts teams alphabetically so
+        // the same trade detected from either side dedupes. Pair
+        // detect + event_id together.
+        use chrono::NaiveDate;
+        let prev = TeamAbbr("BOS".into());
+        let today = TeamAbbr("FLA".into());
+        let payload = detect_mid_day_trade(PlayerId(8470829), &today, Some(&prev)).unwrap();
+        let date = NaiveDate::from_ymd_opt(2026, 1, 15).unwrap();
+        let id = trade_event_id(date, &payload.from_team, &payload.to_team);
+        assert_eq!(id, "trade:2026-01-15:bos-fla");
+        // Same trade observed from FLA's perspective produces the
+        // same dedup key.
+        let id2 = trade_event_id(date, &payload.to_team, &payload.from_team);
+        assert_eq!(id, id2);
     }
 }
