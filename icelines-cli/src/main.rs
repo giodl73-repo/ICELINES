@@ -3,6 +3,7 @@ mod commands;
 mod config;
 mod db;
 mod error;
+mod event_stream;
 pub mod fantasy_db;
 mod render;
 mod start_slug;

@@ -83,6 +83,11 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
         FetchSubcommand::Transactions { season, dry_run } => {
             do_transactions(&season, dry_run).await
         }
+        FetchSubcommand::Boxscore {
+            date,
+            for_favorites,
+            dry_run,
+        } => do_boxscore(date, for_favorites, dry_run).await,
         FetchSubcommand::Report {
             kind,
             season,
@@ -1027,6 +1032,145 @@ fn report_filename(kind: ReportKind) -> anyhow::Result<String> {
             .to_owned()),
         Tier::Tier2 => Ok(format!("{}.json", kind.url_path().replace('/', "-"))),
     }
+}
+
+// ── Phase Foster.3 — boxscore fetcher + EventStream writer ───────────────────
+
+async fn do_boxscore(
+    date: Option<String>,
+    for_favorites: bool,
+    dry_run: bool,
+) -> anyhow::Result<()> {
+    use crate::commands::tonight::parse_iso_date;
+    use crate::config::Config;
+    use chrono::Utc;
+    use icelines_core::entity::EntityRef;
+    use icelines_core::event_stream as proto;
+    use icelines_core::identity::GameId;
+    use icelines_core::model::TeamAbbr;
+    use icelines_fetch::nhl_api::NhlApiClient;
+
+    let cfg = Config::load().context("load config")?;
+    let _ = cfg; // currently unused beyond bootstrapping; future TTL gates will read it.
+
+    let anchor_str = match date.as_deref() {
+        Some(d) => parse_iso_date(d)?,
+        None => Utc::now().date_naive().format("%Y-%m-%d").to_string(),
+    };
+    let anchor = chrono::NaiveDate::parse_from_str(&anchor_str, "%Y-%m-%d")
+        .context("parse anchor date")?;
+
+    // Step 1: schedule fetch (already covered by Foster.1).
+    let client = NhlApiClient::production();
+    let games = client
+        .fetch_schedule_for_date(&anchor_str)
+        .await
+        .with_context(|| format!("fetching schedule for {anchor_str}"))?;
+    let same_day: Vec<_> = games
+        .into_iter()
+        .filter(|g| g.date == anchor_str)
+        .collect();
+    if same_day.is_empty() {
+        println!("No games scheduled on {anchor_str}.");
+        return Ok(());
+    }
+
+    // Step 2: optional favorites filter — keep only games involving
+    // a favorited team. Player-favorites mid-day-trade resolution is
+    // a Foster.4 polish item (needs career_history lookup).
+    let favorited_teams: std::collections::HashSet<String> = if for_favorites {
+        let db = crate::db::GroupDb::open().context("open group db")?;
+        let members = db
+            .list_members_with_kind("Favorites")
+            .unwrap_or_default();
+        members
+            .iter()
+            .filter(|(_, k)| matches!(k, crate::db::MemberKind::Team))
+            .map(|(key, _)| key.to_uppercase())
+            .collect()
+    } else {
+        std::collections::HashSet::new()
+    };
+
+    let to_fetch: Vec<_> = if for_favorites {
+        same_day
+            .iter()
+            .filter(|g| {
+                favorited_teams.contains(g.away_abbrev.to_uppercase().as_str())
+                    || favorited_teams.contains(g.home_abbrev.to_uppercase().as_str())
+            })
+            .collect()
+    } else {
+        same_day.iter().collect()
+    };
+
+    println!(
+        "Boxscore fetch — {anchor_str} · {} game(s){}",
+        to_fetch.len(),
+        if for_favorites {
+            format!(" (favorites only — {} team(s) tracked)", favorited_teams.len())
+        } else {
+            String::new()
+        }
+    );
+
+    if dry_run {
+        for g in &to_fetch {
+            println!("  · {} @ {}  game_id={}", g.away_abbrev, g.home_abbrev, g.game_id);
+        }
+        println!("(dry run — no boxscores fetched, no events written)");
+        return Ok(());
+    }
+
+    // Step 3: insert a score event per game. Without --for-favorites
+    // we still record every game on the date so the timeline view
+    // works league-wide. The boxscore JSON itself is fetched +
+    // persisted in a follow-up sub-step (F.3.x); for now the score
+    // event carries the slate-level summary the dashboard needs.
+    let event_stream = crate::event_stream::EventStream::open()
+        .context("open events table")?;
+    let mut wrote = 0usize;
+    let mut updated = 0usize;
+    for g in &to_fetch {
+        let game = GameId(g.game_id);
+        let away = TeamAbbr(g.away_abbrev.clone());
+        let home = TeamAbbr(g.home_abbrev.clone());
+        let result = match g.game_state.as_deref() {
+            Some(s @ ("FINAL" | "OFF")) => s.to_owned(),
+            Some(s @ ("LIVE" | "CRIT")) => s.to_owned(),
+            Some(other) => other.to_owned(),
+            None => "FUT".to_owned(),
+        };
+        let payload = proto::ScorePayloadV1::new(
+            game,
+            home,
+            away,
+            g.home_score.unwrap_or(0) as u32,
+            g.away_score.unwrap_or(0) as u32,
+            result,
+        );
+        let payload_json = serde_json::to_string(&payload).context("serialize payload")?;
+        let event_id = proto::score_final_event_id(game);
+        let inserted = event_stream
+            .upsert(
+                anchor,
+                &EntityRef::Game(game),
+                "score",
+                &event_id,
+                &payload_json,
+                proto::SCORE_PAYLOAD_VERSION,
+            )
+            .with_context(|| format!("upsert score event for game {}", g.game_id))?;
+        if inserted {
+            wrote += 1;
+        } else {
+            updated += 1;
+        }
+    }
+    println!(
+        "Done — {wrote} new event(s), {updated} updated event(s) on {anchor_str}."
+    );
+    Ok(())
 }
 
 #[cfg(test)]

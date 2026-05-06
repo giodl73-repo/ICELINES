@@ -9,6 +9,7 @@ pub mod cross_team;
 pub mod depth_chart;
 pub mod entity;
 pub mod error;
+pub mod event_stream;
 pub mod favorites;
 pub mod filter;
 pub mod fixtures;

@@ -3464,6 +3464,27 @@ fn l2_foster1_schedule_invalid_date_clean_error() {
     );
 }
 
+// ── Phase Foster.3 — boxscore fetcher L2 ─────────────────────────────────────
+
+/// L2 / l2_foster3_fetch_boxscore_invalid_date_clean_error
+/// — `fetch boxscore --date garbage` must surface the date validator
+///   error without panicking. Pure offline test.
+#[test]
+fn l2_foster3_fetch_boxscore_invalid_date_clean_error() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let out = run_isolated(home.path(), &["fetch", "boxscore", "--date", "garbage"]);
+    assert!(!out.status.success(), "invalid date must non-zero exit");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        !stderr.contains("panicked"),
+        "must not panic, stderr: {stderr}"
+    );
+    assert!(
+        stderr.contains("invalid date") && stderr.contains("YYYY-MM-DD"),
+        "validator error must surface, stderr: {stderr}"
+    );
+}
+
 // ── Phase Foster.2 — favorites dashboard L2 ──────────────────────────────────
 
 /// L2 / l2_foster2_favorites_empty_group_renders_empty_state

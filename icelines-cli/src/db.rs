@@ -54,6 +54,13 @@ pub struct GroupDb {
 
 // ── Migrations ────────────────────────────────────────────────────────────────
 
+/// Phase Foster.3 — `pub(crate)` re-export so `event_stream.rs` can
+/// initialize the events table on first open without forking the
+/// migration list.
+pub(crate) fn run_migrations_for_test(conn: &Connection) -> anyhow::Result<()> {
+    run_migrations(conn)
+}
+
 fn run_migrations(conn: &Connection) -> anyhow::Result<()> {
     // Migration 001 — groups table
     conn.execute_batch(
@@ -176,6 +183,32 @@ fn run_migrations(conn: &Connection) -> anyhow::Result<()> {
         .context("migration 006: collapse kind into entity_ref")?;
         tx.commit().context("migration 006: commit")?;
     }
+
+    // Migration 007 — Phase Foster.3 EventStream table.
+    //
+    // Per `design/specs/foster-favorites-dashboard.md` §EventStream:
+    // the PK includes `event_id` (caller-supplied dedup key) so
+    // re-fetched events update via INSERT … ON CONFLICT instead of
+    // duplicating rows. Indexes match the two read paths Foster.2's
+    // favorites view and any future timeline surface care about:
+    // by date (newest first) and by entity (newest first).
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS events (
+            date            TEXT NOT NULL,
+            entity_kind     TEXT NOT NULL,
+            entity_key      TEXT NOT NULL,
+            event_kind      TEXT NOT NULL,
+            event_id        TEXT NOT NULL,
+            payload         TEXT NOT NULL,
+            payload_version INTEGER NOT NULL,
+            created_at      TEXT NOT NULL,
+            PRIMARY KEY (date, entity_kind, entity_key, event_kind, event_id)
+         );
+         CREATE INDEX IF NOT EXISTS events_by_date ON events(date DESC);
+         CREATE INDEX IF NOT EXISTS events_by_entity \
+            ON events(entity_kind, entity_key, date DESC);",
+    )
+    .context("migration 007: events table")?;
 
     Ok(())
 }

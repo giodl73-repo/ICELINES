@@ -917,6 +917,20 @@ pub enum FetchSubcommand {
         #[arg(long, default_value_t = 0, value_parser = clap::value_parser!(u8).range(0..=38))]
         bundled_seasons: u8,
     },
+    /// Fetch boxscores for one date and write score events to the
+    /// EventStream (Phase Foster.3). With --for-favorites, only
+    /// games involving favorited teams are persisted.
+    Boxscore {
+        /// Date in `YYYY-MM-DD` form. Defaults to today.
+        #[arg(long, value_name = "YYYY-MM-DD")]
+        date: Option<String>,
+        /// Restrict to games involving favorited teams (Foster.2 group).
+        #[arg(long)]
+        for_favorites: bool,
+        /// Print what would be fetched without writing to disk / db.
+        #[arg(long)]
+        dry_run: bool,
+    },
     /// Fetch goalie season stats (W/L/SV%/GAA/SO) — Phase G.2.
     /// Writes goalie-stats.json (or playoff-goalie-stats.json) into the
     /// active snapshot store.
