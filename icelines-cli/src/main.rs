@@ -208,16 +208,21 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         } => {
             commands::serve::run(port, bind, no_open, no_cache, cors_origin, &cfg).await?;
         }
-        Commands::Tonight { team } => {
-            commands::tonight::run(team).await?;
+        Commands::Tonight { team, date } => {
+            commands::tonight::run(team, date).await?;
         }
         Commands::Schedule {
             team,
             days,
             json,
             csv,
+            date,
+            start,
         } => {
-            commands::tonight::run_schedule(team, days, json, csv).await?;
+            // Phase Foster.1 — `--start` is a deprecated alias for `--date`.
+            // CLI flag explicit > deprecated alias > today.
+            let resolved_date = date.or(start);
+            commands::tonight::run_schedule(team, days, json, csv, resolved_date).await?;
         }
         Commands::Playoffs {
             season,

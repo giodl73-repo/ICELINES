@@ -15,8 +15,17 @@ use icelines_fetch::nhl_api::ScheduledGame;
 // ── Default week view ─────────────────────────────────────────────────────────
 
 pub fn render(f: &mut Frame, app: &App, area: Rect) {
-    // Split area: main list | search-bar (1 line, only when active)
-    let bottom_h: u16 = if app.schedule_search_mode || app.schedule_filter_err.is_some() {
+    // Split area: main list | bottom strip (search bar OR date picker)
+    // Phase Foster.1.4 — when the shared date picker is open with a
+    // Schedule target, render it in the same 3-line bottom strip the
+    // search bar uses. The two are mutually exclusive in practice
+    // (search and date-jump aren't both active at once).
+    let picker_active = app.scores_picker_open
+        && matches!(app.picker_target, crate::tui::app::PickerTarget::Schedule);
+    let bottom_h: u16 = if app.schedule_search_mode
+        || app.schedule_filter_err.is_some()
+        || picker_active
+    {
         3
     } else {
         0
@@ -29,7 +38,11 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
     render_week_block(f, app, chunks[0]);
 
     if bottom_h > 0 {
-        render_search_bar(f, app, chunks[1]);
+        if picker_active {
+            crate::tui::screens::misc::render_scores_date_picker(f, app, chunks[1]);
+        } else {
+            render_search_bar(f, app, chunks[1]);
+        }
     }
 }
 

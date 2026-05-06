@@ -1,6 +1,16 @@
 use anyhow::Context;
 use icelines_fetch::nhl_api::NhlApiClient;
 
+/// Phase Foster.1 — strict YYYY-MM-DD parser. Returns the canonical
+/// string back so callers can hand it straight to NHL API URLs (which
+/// also expect YYYY-MM-DD). Rejects any value chrono cannot resolve
+/// to a real calendar date — catches "2026-13-01" etc.
+pub(crate) fn parse_iso_date(s: &str) -> anyhow::Result<String> {
+    let parsed = chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d")
+        .map_err(|e| anyhow::anyhow!("invalid date '{s}' — expected YYYY-MM-DD ({e})"))?;
+    Ok(parsed.format("%Y-%m-%d").to_string())
+}
+
 /// LP review fix #1 — true US DST detection for ET conversion.
 ///
 /// US DST since 2007: starts second Sunday of March, ends first Sunday
@@ -60,19 +70,36 @@ fn format_time_et(utc_hhmm: &str, game_date: &str) -> String {
     format!("{utc_hhmm} UTC")
 }
 
-pub async fn run(team_filter: Option<String>) -> anyhow::Result<()> {
+pub async fn run(team_filter: Option<String>, date: Option<String>) -> anyhow::Result<()> {
     let client = NhlApiClient::production();
-    let all_games = client
-        .fetch_today_schedule()
-        .await
-        .context("fetching today's schedule")?;
+    // Phase Foster.1 — anchor on `--date` if supplied; otherwise the
+    // existing today path.
+    let anchor = match date.as_deref() {
+        Some(d) => Some(parse_iso_date(d)?),
+        None => None,
+    };
+    let all_games = match anchor.as_deref() {
+        Some(d) => client
+            .fetch_schedule_for_date(d)
+            .await
+            .with_context(|| format!("fetching schedule for {d}"))?,
+        None => client
+            .fetch_today_schedule()
+            .await
+            .context("fetching today's schedule")?,
+    };
 
-    // Filter to today only (first date in the gameWeek)
-    let today = all_games.first().map(|g| g.date.as_str()).unwrap_or("");
+    // Filter to the anchor date (or today, if no anchor: first date in
+    // the gameWeek).
+    let day = anchor
+        .as_deref()
+        .or_else(|| all_games.first().map(|g| g.date.as_str()))
+        .unwrap_or("");
     let schedule: Vec<_> = all_games
         .iter()
-        .filter(|g| g.date.is_empty() || g.date == today)
+        .filter(|g| g.date.is_empty() || g.date == day)
         .collect();
+    let today = day;
 
     if schedule.is_empty() {
         println!("No games scheduled today.");
@@ -184,12 +211,24 @@ pub async fn run_schedule(
     days: u32,
     json: bool,
     csv: bool,
+    date: Option<String>,
 ) -> anyhow::Result<()> {
     let client = NhlApiClient::production();
-    let all_games = client
-        .fetch_today_schedule()
-        .await
-        .context("fetching schedule")?;
+    // Phase Foster.1 — anchor on `--date` if supplied; otherwise today.
+    let anchor = match date.as_deref() {
+        Some(d) => Some(parse_iso_date(d)?),
+        None => None,
+    };
+    let all_games = match anchor.as_deref() {
+        Some(d) => client
+            .fetch_schedule_for_date(d)
+            .await
+            .with_context(|| format!("fetching schedule for {d}"))?,
+        None => client
+            .fetch_today_schedule()
+            .await
+            .context("fetching schedule")?,
+    };
 
     let team_up = team.as_deref().map(str::to_uppercase);
     let rows = project_schedule_rows(&all_games, team_up.as_deref(), days);
@@ -387,6 +426,28 @@ mod schedule_tests {
     fn l0_format_time_et_garbage_date_falls_back_to_est() {
         // Garbage date → EST = UTC-5; 23:30 → 6:30 PM.
         assert_eq!(format_time_et("23:30", "not-a-date"), "6:30 PM ET");
+    }
+
+    // ── Phase Foster.1 — date parser tests ───────────────────────────────
+
+    #[test]
+    fn l0_foster1_parse_iso_date_accepts_canonical() {
+        assert_eq!(parse_iso_date("2026-05-06").unwrap(), "2026-05-06");
+        assert_eq!(parse_iso_date("2014-10-08").unwrap(), "2014-10-08");
+    }
+
+    #[test]
+    fn l0_foster1_parse_iso_date_rejects_garbage() {
+        assert!(parse_iso_date("not-a-date").is_err());
+        assert!(parse_iso_date("2026/05/06").is_err());
+        assert!(parse_iso_date("2026-13-01").is_err(), "month 13 invalid");
+        assert!(parse_iso_date("2026-02-30").is_err(), "Feb 30 invalid");
+    }
+
+    #[test]
+    fn l0_foster1_parse_iso_date_far_past() {
+        // 2014-01-01 — verified the NHL API serves dates this far back.
+        assert_eq!(parse_iso_date("2014-01-01").unwrap(), "2014-01-01");
     }
 
     /// LP.1 / l0_schedule_row_serialize_to_csv

@@ -67,6 +67,16 @@ pub(crate) fn parse_picker_date(raw: &str) -> Result<String, String> {
     ))
 }
 
+/// Phase Foster.1.4 — which date-anchored surface the shared picker
+/// overlay applies to. Default `Scores` matches the existing
+/// lowercase-`d` behavior on the Tonight tab.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum PickerTarget {
+    #[default]
+    Scores,
+    Schedule,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum QueryMode {
     Build,    // normal — editing fields, viewing results
@@ -162,6 +172,11 @@ pub struct App {
     pub scores_picker_open: bool,          // d-key date picker visible
     pub scores_picker_input: String,       // text being typed in date picker
     pub scores_picker_err: Option<String>, // validation error to display
+    /// Phase Foster.1.4 — which surface the date picker overlay is
+    /// anchoring. The same overlay UI/state machine is shared across
+    /// Scores, Schedule, and Playoffs (per spec); on Enter we
+    /// dispatch to the right `apply_*` based on this target.
+    pub picker_target: PickerTarget,
     /// When the most recent live-Scores auto-refresh was triggered. `None`
     /// means the auto-refresh timer is dormant (e.g. user has not opened the
     /// Scores tab on a live date yet). The polling loop sets this on every
@@ -305,6 +320,7 @@ impl App {
             scores_picker_open: false,
             scores_picker_input: String::new(),
             scores_picker_err: None,
+            picker_target: PickerTarget::default(),
             last_auto_refresh: None,
             schedule_week_cache: crate::tui::schedule::new_week_cache(),
             schedule_team_cache: crate::tui::schedule::new_team_cache(),
@@ -463,7 +479,12 @@ impl App {
         }
 
         // Scores date picker consumes input similarly.
-        if self.screen == Screen::Tonight && self.scores_picker_open {
+        // Phase Foster.1.4 — the date picker overlay also opens on
+        // Schedule (Shift+D); keystrokes route through the same
+        // handler regardless of which surface owns the active target.
+        if (self.screen == Screen::Tonight || self.screen == Screen::Schedule)
+            && self.scores_picker_open
+        {
             return self.handle_scores_date_picker(action);
         }
 
@@ -1041,6 +1062,48 @@ impl App {
                         }
                         _ => "Home".to_owned(),
                     };
+                } else if c == 'D' && !is_text_input_active(self) {
+                    // Phase Foster.1.4 — Shift+D opens the shared
+                    // date picker overlay on Scores / Schedule /
+                    // Playoffs. Lowercase `d` keeps its existing
+                    // global Depth-jump behavior (handled above).
+                    match self.screen {
+                        Screen::Tonight => {
+                            self.picker_target = PickerTarget::Scores;
+                            self.scores_picker_open = true;
+                            self.scores_picker_input.clear();
+                            self.scores_picker_err = None;
+                            self.status =
+                                "Go to date — type YYYY-MM-DD or MM/DD, Enter applies, Esc cancels"
+                                    .to_owned();
+                        }
+                        Screen::Schedule => {
+                            self.picker_target = PickerTarget::Schedule;
+                            self.scores_picker_open = true;
+                            self.scores_picker_input.clear();
+                            self.scores_picker_err = None;
+                            self.status =
+                                "Schedule · pick a date — Enter snaps to that week, Esc cancels"
+                                    .to_owned();
+                        }
+                        Screen::Playoffs => {
+                            // Playoffs is season-anchored, not date-anchored.
+                            // Reuse the existing season picker (`y` key) so
+                            // Shift+D on Playoffs jumps to a season.
+                            self.show_season_picker = true;
+                            let season_list = crate::tui::screens::misc::PICKER_SEASONS;
+                            self.picker_selected = season_list
+                                .iter()
+                                .position(|(id, _, _)| *id == self.active_season.as_str())
+                                .unwrap_or(0);
+                            self.status = "Playoffs · pick a season — Enter applies, Esc cancels"
+                                .to_owned();
+                        }
+                        _ => {
+                            // Other screens: no-op. Keep the keystroke
+                            // available for future surfaces.
+                        }
+                    }
                 } else if c == 'M' && !is_text_input_active(self) {
                     // LP.4 — Shift+M opens the in-TUI docs overlay
                     // (Manual). Uppercase M to avoid the lowercase `m`
@@ -1263,30 +1326,74 @@ impl App {
 
     /// Apply the date typed into the d-key picker. Accepts `YYYY-MM-DD` and
     /// `MM/DD` (current year inferred). Empty input clears back to "today".
+    /// Phase Foster.1.4 — dispatches on `picker_target`: Scores anchors
+    /// the live-schedule fetch; Schedule snaps to the Monday-of-week
+    /// containing the picked date.
     fn apply_scores_date_picker(&mut self) {
         let raw = self.scores_picker_input.trim();
+        let target = self.picker_target;
         if raw.is_empty() {
-            self.scores_date.clear();
             self.scores_picker_open = false;
             self.scores_picker_err = None;
-            self.scores_selected = 0;
-            crate::tui::tonight::maybe_fetch(self.tonight_cache.clone(), String::new());
-            // Empty date = live → arm the timer
-            self.last_auto_refresh = Some(std::time::Instant::now());
-            self.status = "Scores · Today".to_owned();
+            self.scores_picker_input.clear();
+            match target {
+                PickerTarget::Scores => {
+                    self.scores_date.clear();
+                    self.scores_selected = 0;
+                    crate::tui::tonight::maybe_fetch(self.tonight_cache.clone(), String::new());
+                    // Empty date = live → arm the timer
+                    self.last_auto_refresh = Some(std::time::Instant::now());
+                    self.status = "Scores · Today".to_owned();
+                }
+                PickerTarget::Schedule => {
+                    let today = crate::tui::schedule::today_iso();
+                    if let Some(monday) = crate::tui::schedule::monday_of(&today) {
+                        self.schedule_week = monday.clone();
+                        crate::tui::schedule::maybe_fetch_week(
+                            self.schedule_week_cache.clone(),
+                            monday,
+                        );
+                    }
+                    self.status = "Schedule · This week".to_owned();
+                }
+            }
+            self.picker_target = PickerTarget::default();
             return;
         }
         match parse_picker_date(raw) {
             Ok(iso) => {
-                self.scores_date = iso.clone();
                 self.scores_picker_open = false;
                 self.scores_picker_err = None;
                 self.scores_picker_input.clear();
-                self.scores_selected = 0;
-                crate::tui::tonight::maybe_fetch(self.tonight_cache.clone(), iso.clone());
-                // Specific date → no auto-refresh (final scores don't change)
-                self.last_auto_refresh = None;
-                self.status = format!("Scores · {iso}");
+                match target {
+                    PickerTarget::Scores => {
+                        self.scores_date = iso.clone();
+                        self.scores_selected = 0;
+                        crate::tui::tonight::maybe_fetch(
+                            self.tonight_cache.clone(),
+                            iso.clone(),
+                        );
+                        // Specific date → no auto-refresh (final scores don't change)
+                        self.last_auto_refresh = None;
+                        self.status = format!("Scores · {iso}");
+                    }
+                    PickerTarget::Schedule => {
+                        if let Some(monday) = crate::tui::schedule::monday_of(&iso) {
+                            self.schedule_week = monday.clone();
+                            crate::tui::schedule::maybe_fetch_week(
+                                self.schedule_week_cache.clone(),
+                                monday.clone(),
+                            );
+                            self.status = format!(
+                                "Schedule · week of {}",
+                                crate::tui::schedule::week_label(&monday)
+                            );
+                        } else {
+                            self.status = format!("Schedule · {iso}");
+                        }
+                    }
+                }
+                self.picker_target = PickerTarget::default();
             }
             Err(msg) => {
                 self.scores_picker_err = Some(msg.clone());

@@ -82,7 +82,10 @@ pub fn render_tonight(f: &mut Frame, app: &App, area: Rect) {
     }
 }
 
-fn render_scores_date_picker(f: &mut Frame, app: &App, area: Rect) {
+/// Phase Foster.1.4 — `pub` so the Schedule screen can render the
+/// shared date picker overlay too. Same widget; the surface decides
+/// where to apply via `App::picker_target`.
+pub fn render_scores_date_picker(f: &mut Frame, app: &App, area: Rect) {
     let block = Block::default()
         .borders(Borders::ALL)
         .title(" Go to date — Enter applies, Esc cancels ");
@@ -1554,6 +1557,123 @@ mod tests {
         assert!(
             !text.contains("Final"),
             "future games should NOT render the Final tag, got:\n{text}"
+        );
+    }
+}
+
+// ── Phase Foster.1.4 — date picker overlay render tests ─────────────────────
+#[cfg(test)]
+mod foster14_picker_tests {
+    use crate::tui::app::{App, PickerTarget, Screen};
+    use ratatui::backend::TestBackend;
+    use ratatui::Terminal;
+
+    fn buffer_text(buf: &ratatui::buffer::Buffer) -> String {
+        let mut out = String::new();
+        for y in 0..buf.area.height {
+            for x in 0..buf.area.width {
+                out.push_str(buf[(x, y)].symbol());
+            }
+            out.push('\n');
+        }
+        out
+    }
+
+    /// Render the picker against a TestBackend in an 80x6 strip — matches
+    /// how the overlay sits in the bottom 3 lines of the Tonight screen.
+    fn render_picker(app: &App) -> String {
+        let backend = TestBackend::new(80, 6);
+        let mut term = Terminal::new(backend).unwrap();
+        term.draw(|f| {
+            let area = f.area();
+            super::render_scores_date_picker(f, app, area);
+        })
+        .unwrap();
+        buffer_text(term.backend().buffer())
+    }
+
+    /// L0 / l0_foster14_picker_renders_empty_prompt
+    /// — Picker with empty input shows the "Go to:" prompt + cursor.
+    #[test]
+    fn l0_foster14_picker_renders_empty_prompt() {
+        let mut app = App::new(false);
+        app.scores_picker_open = true;
+        app.scores_picker_input.clear();
+        let text = render_picker(&app);
+        assert!(text.contains("Go to:"), "prompt must render, got:\n{text}");
+        assert!(
+            text.contains("Go to date"),
+            "title bar must render, got:\n{text}"
+        );
+    }
+
+    /// L0 / l0_foster14_picker_renders_typed_input
+    /// — As the user types, the input echoes inside the prompt.
+    #[test]
+    fn l0_foster14_picker_renders_typed_input() {
+        let mut app = App::new(false);
+        app.scores_picker_open = true;
+        app.scores_picker_input = "2014-10-08".to_owned();
+        let text = render_picker(&app);
+        assert!(
+            text.contains("2014-10-08"),
+            "typed input must echo, got:\n{text}"
+        );
+    }
+
+    /// L0 / l0_foster14_picker_renders_validation_error
+    /// — When validation fails, the error replaces the prompt body.
+    #[test]
+    fn l0_foster14_picker_renders_validation_error() {
+        let mut app = App::new(false);
+        app.scores_picker_open = true;
+        app.scores_picker_err = Some("Could not parse 'garbage'".to_owned());
+        let text = render_picker(&app);
+        assert!(
+            text.contains("Could not parse"),
+            "error message must render, got:\n{text}"
+        );
+        // The "Go to:" prompt is suppressed when an error is being shown.
+        assert!(
+            !text.contains("Go to:"),
+            "error replaces the prompt, got:\n{text}"
+        );
+    }
+
+    /// L0 / l0_foster14_picker_target_default_is_scores
+    /// — New App starts with `picker_target = Scores` so lowercase `d`
+    ///   on Tonight keeps its existing behavior.
+    #[test]
+    fn l0_foster14_picker_target_default_is_scores() {
+        let app = App::new(false);
+        assert_eq!(app.picker_target, PickerTarget::Scores);
+    }
+
+    /// L0 / l0_foster14_picker_target_schedule_screen_round_trip
+    /// — Smoke for the integration path: setting Schedule target +
+    ///   navigating to the Schedule screen leaves the app in a state
+    ///   the renderer can handle without panicking.
+    #[test]
+    fn l0_foster14_picker_target_schedule_screen_round_trip() {
+        let mut app = App::new(false);
+        app.screen = Screen::Schedule;
+        app.picker_target = PickerTarget::Schedule;
+        app.scores_picker_open = true;
+        app.scores_picker_input = "2026-01-15".to_owned();
+
+        // Render the schedule screen — picker_active should swap the
+        // bottom strip from search-bar to date-picker without panicking.
+        let backend = TestBackend::new(120, 24);
+        let mut term = Terminal::new(backend).unwrap();
+        term.draw(|f| {
+            let area = f.area();
+            crate::tui::screens::schedule::render(f, &app, area);
+        })
+        .unwrap();
+        let text = buffer_text(term.backend().buffer());
+        assert!(
+            text.contains("2026-01-15"),
+            "Schedule screen with Schedule-target picker must echo input, got:\n{text}"
         );
     }
 }

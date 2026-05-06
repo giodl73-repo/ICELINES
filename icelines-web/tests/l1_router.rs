@@ -530,3 +530,69 @@ async fn l1_season_type_toggle_visible_in_global_nav() {
     // means than a visual scan.
     assert!(body.contains("season-type-toggle"));
 }
+
+// ── Phase Foster.1 — date-anchored route smokes ────────────────────────────
+//
+// Network-free smokes: the handlers may fail to reach the NHL API in
+// CI / offline test runs, but the page must still render (the
+// fetch_error path lands in the template, not as a 500). What we
+// pin here is "the route accepts ?date= / ?season= and returns
+// 200 HTML". Future work can layer on httpmock-backed L1 fetches
+// once we extract a NhlClient injection point.
+
+#[tokio::test]
+async fn l1_foster1_scores_accepts_past_date_query() {
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/scores?date=2014-10-08")
+                .body(Body::empty())
+                .expect("build request"),
+        )
+        .await
+        .expect("oneshot");
+    assert_eq!(
+        response.status(),
+        StatusCode::OK,
+        "/scores must accept ?date= and render 200"
+    );
+}
+
+#[tokio::test]
+async fn l1_foster1_schedule_accepts_past_date_query() {
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/schedule?date=2014-10-08")
+                .body(Body::empty())
+                .expect("build request"),
+        )
+        .await
+        .expect("oneshot");
+    assert_eq!(
+        response.status(),
+        StatusCode::OK,
+        "/schedule must accept ?date= (date-anchored slate path) and render 200"
+    );
+}
+
+#[tokio::test]
+async fn l1_foster1_playoffs_accepts_season_query() {
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/playoffs?season=19931994")
+                .body(Body::empty())
+                .expect("build request"),
+        )
+        .await
+        .expect("oneshot");
+    assert_eq!(
+        response.status(),
+        StatusCode::OK,
+        "/playoffs must accept ?season= and render 200"
+    );
+}

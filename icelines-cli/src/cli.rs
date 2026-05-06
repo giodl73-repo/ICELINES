@@ -173,6 +173,11 @@ DEPRECATIONS
         /// Filter to games involving this team.
         #[arg(long)]
         team: Option<String>,
+        /// Phase Foster.1 — anchor on a specific date (YYYY-MM-DD).
+        /// Defaults to today. Past dates work back through the
+        /// historical NHL schedule (verified ≥2014).
+        #[arg(long, value_name = "YYYY-MM-DD")]
+        date: Option<String>,
     },
     /// Show a playoff bracket — round / series / winner (LP.2).
     ///
@@ -242,6 +247,14 @@ Output columns (default text + CSV + JSON):
         /// Emit CSV (one row per game, header line first).
         #[arg(long)]
         csv: bool,
+        /// Phase Foster.1 — anchor date (YYYY-MM-DD). Defaults to today.
+        /// Replaces the older `--start`; `--start` is kept as an alias
+        /// for one minor version.
+        #[arg(long, value_name = "YYYY-MM-DD")]
+        date: Option<String>,
+        /// Deprecated alias for `--date`. Will be removed in v0.15.
+        #[arg(long, value_name = "YYYY-MM-DD", hide = true)]
+        start: Option<String>,
     },
     /// Evaluate a trade — depth chart before/after.
     Trade {

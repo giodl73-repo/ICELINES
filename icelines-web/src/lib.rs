@@ -4242,6 +4242,15 @@ mod handlers {
         pub struct ScheduleQuery {
             #[serde(default)]
             pub team: Option<String>,
+            /// Phase Foster.1 — anchor date `YYYY-MM-DD` for the
+            /// date-windowed slate. Mutually exclusive with `?team=`
+            /// in v1: when `team` is set, returns the team's full
+            /// season; when only `date` is set, returns that day's
+            /// slate via `fetch_schedule_for_date`. Drops the older
+            /// `?start=` (which never shipped on this route — the
+            /// CLI's `--start` is the deprecated surface).
+            #[serde(default)]
+            pub date: Option<String>,
         }
 
         fn pretty_season(s: &str) -> String {
@@ -4284,8 +4293,47 @@ mod handlers {
                 })
                 .collect();
 
+            // Phase Foster.1 — `?date=` anchors a single-day slate fetch
+            // when no team is set. Existing team-season path takes
+            // precedence so bookmarks like `/schedule?team=EDM` keep
+            // working.
             let (rows, total, fetch_error) = if team_upper.is_empty() {
-                (Vec::new(), 0, None)
+                if let Some(date) = q.date.as_deref().filter(|d| !d.is_empty()) {
+                    let client = super::nhl_client();
+                    match client.fetch_schedule_for_date(date).await {
+                        Ok(games) => {
+                            let mut rows: Vec<ScheduleRow> = games
+                                .into_iter()
+                                .map(|g| ScheduleRow {
+                                    date: g.date,
+                                    away_abbrev: g.away_abbrev.clone(),
+                                    home_abbrev: g.home_abbrev.clone(),
+                                    away_score_str: g
+                                        .away_score
+                                        .map(|s| s.to_string())
+                                        .unwrap_or_default(),
+                                    home_score_str: g
+                                        .home_score
+                                        .map(|s| s.to_string())
+                                        .unwrap_or_default(),
+                                    state_label: g
+                                        .game_state
+                                        .clone()
+                                        .unwrap_or_else(|| "Scheduled".into()),
+                                    home_or_away: "—".to_owned(),
+                                    opponent_abbrev: String::new(),
+                                    is_playoff: g.game_type == 3,
+                                })
+                                .collect();
+                            rows.sort_by(|a, b| a.date.cmp(&b.date));
+                            let total = rows.len();
+                            (rows, total, None)
+                        }
+                        Err(e) => (Vec::new(), 0, Some(e.to_string())),
+                    }
+                } else {
+                    (Vec::new(), 0, None)
+                }
             } else {
                 let client = super::nhl_client();
                 match client

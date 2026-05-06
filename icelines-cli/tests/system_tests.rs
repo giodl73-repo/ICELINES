@@ -3415,3 +3415,74 @@ fn l2_foster08_config_set_shifts_favorites_rejected() {
         "trailer must surface, stderr: {stderr}"
     );
 }
+
+// ── Phase Foster.1 — date-anchored CLI L2 ────────────────────────────────────
+
+/// L2 / l2_foster1_tonight_invalid_date_clean_error
+/// — `icelines tonight --date not-a-date` must surface a helpful
+///   parse error and non-zero exit, NOT panic. Pure offline test —
+///   the parser fires before any network call.
+#[test]
+fn l2_foster1_tonight_invalid_date_clean_error() {
+    let out = run(&["tonight", "--date", "not-a-date"]);
+    assert!(
+        !out.status.success(),
+        "invalid date must non-zero exit, status: {:?}",
+        out.status
+    );
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        !stderr.contains("panicked"),
+        "must not panic, stderr: {stderr}"
+    );
+    assert!(
+        stderr.contains("invalid date") && stderr.contains("YYYY-MM-DD"),
+        "error must point to YYYY-MM-DD format, stderr: {stderr}"
+    );
+}
+
+/// L2 / l2_foster1_schedule_accepts_date_flag
+/// — `--date` parses cleanly even with the deprecated `--start`
+///   alias also present. Smoke confirms clap accepts the new flag
+///   without erroring on the old one being hidden.
+#[test]
+fn l2_foster1_schedule_invalid_date_clean_error() {
+    let out = run(&["schedule", "--date", "2026-13-01"]);
+    assert!(
+        !out.status.success(),
+        "month 13 must non-zero exit, status: {:?}",
+        out.status
+    );
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        !stderr.contains("panicked"),
+        "must not panic, stderr: {stderr}"
+    );
+    assert!(
+        stderr.contains("invalid date"),
+        "error must mention 'invalid date', stderr: {stderr}"
+    );
+}
+
+/// L2 / l2_foster1_schedule_deprecated_start_alias_still_accepted
+/// — `--start YYYY-MM-DD` is the deprecated alias for `--date`.
+///   Hidden from --help but must still parse so existing scripts keep
+///   working through the transition window. Garbage value still
+///   surfaces a clean parse error rather than panicking.
+#[test]
+fn l2_foster1_schedule_deprecated_start_alias_still_accepted() {
+    let out = run(&["schedule", "--start", "still-bad"]);
+    assert!(
+        !out.status.success(),
+        "alias still validates the date format"
+    );
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        !stderr.contains("panicked"),
+        "must not panic, stderr: {stderr}"
+    );
+    assert!(
+        stderr.contains("invalid date"),
+        "alias-routed error must reach the validator, stderr: {stderr}"
+    );
+}
