@@ -3,6 +3,7 @@ pub mod boxscore_client;
 pub mod bundled;
 pub mod cache;
 pub mod career;
+pub mod career_landing;
 pub mod chunkstore;
 pub mod csv_loader;
 pub mod error;

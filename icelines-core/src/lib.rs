@@ -3,6 +3,7 @@
 pub const CURRENT_SEASON: u32 = 20_252_026;
 pub const CURRENT_SEASON_STR: &str = "20252026";
 
+pub mod career_history;
 pub mod contract;
 pub mod cross_team;
 pub mod depth_chart;
@@ -24,6 +25,7 @@ pub mod stats_repository;
 pub mod teams;
 pub mod transactions;
 
+pub use career_history::{CareerGameType, CareerHistory, CareerStint, LeagueAbbrev, LeagueTier};
 pub use cross_team::{
     compute_all_views as compute_cross_team_metrics_views, CrossTeamMetrics, WebFitClass,
 };

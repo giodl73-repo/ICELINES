@@ -313,6 +313,23 @@ impl NhlApiClient {
     /// NOTE: As of 2026-04-26, the NHL landing API does not return contract fields
     /// (expiry_year, expiry_type, salary). The returned `PlayerContract` will have
     /// `player_id` populated and all other fields as `None`.
+    /// Phase Calder.1 — fetch a player's full career history from
+    /// `/v1/player/{id}/landing.seasonTotals`. Returns every league
+    /// stint (NHL, AHL, OHL, NCAA, KHL, junior, international, …)
+    /// the API knows about.
+    pub async fn fetch_player_career_history(
+        &self,
+        player_id: u32,
+    ) -> Result<icelines_core::career_history::CareerHistory, FetchError> {
+        let url = format!("{}/player/{player_id}/landing", self.base_web);
+        let raw: serde_json::Value = self.get_json(&url).await?;
+        crate::career_landing::parse_career_history(player_id, &raw).map_err(|e| {
+            FetchError::SchemaChanged {
+                detail: format!("career history (pid {player_id}): {e}"),
+            }
+        })
+    }
+
     pub async fn fetch_player_landing_contract(
         &self,
         player_id: u32,
