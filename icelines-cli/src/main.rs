@@ -5,6 +5,7 @@ mod db;
 mod error;
 pub mod fantasy_db;
 mod render;
+mod start_slug;
 #[cfg(test)]
 mod test_utils;
 mod tui;
@@ -181,8 +182,21 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         } => {
             commands::project::run(player, team, mode, games, json, csv, out).await?;
         }
-        Commands::Tui => {
-            tui::run_tui(false).await?;
+        Commands::Tui { start } => {
+            // LB.1 — resolve --start <slug> to a Screen BEFORE entering
+            // raw mode, so resolution failures print to normal stderr
+            // (not the alt-screen) and exit non-zero cleanly.
+            let start_screen = match start.as_deref() {
+                None => tui::app::Screen::Home,
+                Some(s) => start_slug::parse_start_slug(s)
+                    .with_context(|| format!("invalid --start {s:?}"))?
+                    .into_screen(),
+            };
+            tui::run_tui(tui::RunTuiOpts {
+                no_color: false,
+                start_screen,
+            })
+            .await?;
         }
         Commands::Docs => {
             // Embed COMMANDS.md at compile time. Always in lockstep
@@ -361,7 +375,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         Commands::Scheme(sub) => {
             commands::scheme::run(sub).await?;
         }
-        Commands::Dashboard => tui::run_tui(false).await?,
+        Commands::Dashboard => tui::run_tui(tui::RunTuiOpts::home()).await?,
         Commands::Data(sub) => commands::data::run(sub).await?,
         Commands::Query(sub) => match sub {
             QuerySubcommand::Leaders {

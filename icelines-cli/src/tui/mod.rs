@@ -21,6 +21,28 @@ use crossterm::{
 use ratatui::{backend::CrosstermBackend, Terminal};
 use std::io::{self, Write};
 
+use self::app::Screen;
+
+/// LB.1 — options struct for `run_tui`. Forward-compatible: future
+/// fields (locked surface, custom start season) land here without
+/// changing every call site.
+#[derive(Debug, Clone)]
+pub struct RunTuiOpts {
+    pub no_color: bool,
+    pub start_screen: Screen,
+}
+
+impl RunTuiOpts {
+    /// Default: full color, boot on League. Matches the pre-LB.1
+    /// behavior so existing call sites switch over with one literal.
+    pub fn home() -> Self {
+        Self {
+            no_color: false,
+            start_screen: Screen::Home,
+        }
+    }
+}
+
 /// LB.0.5 — RAII terminal teardown.
 ///
 /// Constructed immediately after `enable_raw_mode()` succeeds. Drop
@@ -53,7 +75,10 @@ impl Drop for TerminalGuard {
 /// (Send-clean) — no `LocalSet` is required.
 ///
 /// Terminal teardown is RAII via `TerminalGuard` (LB.0.5) — panic-safe.
-pub async fn run_tui(no_color: bool) -> Result<()> {
+///
+/// `opts` carries the initial `Screen` (LB.1 — `--start <slug>`) plus
+/// `no_color`. `RunTuiOpts::home()` matches pre-LB.1 behavior.
+pub async fn run_tui(opts: RunTuiOpts) -> Result<()> {
     // Setup. Construct the guard immediately after `enable_raw_mode`
     // so any subsequent failure (EnterAlternateScreen, Terminal::new,
     // run_loop panic) triggers the guard's Drop and restores the
@@ -65,7 +90,7 @@ pub async fn run_tui(no_color: bool) -> Result<()> {
     let backend = CrosstermBackend::new(stdout);
     let mut term = Terminal::new(backend)?;
 
-    run_loop(&mut term, no_color).await
+    run_loop(&mut term, opts).await
     // _guard dropped here on happy path; restoration happens in Drop.
 }
 
@@ -114,8 +139,13 @@ mod terminal_guard_tests {
     }
 }
 
-async fn run_loop(term: &mut Terminal<CrosstermBackend<io::Stdout>>, no_color: bool) -> Result<()> {
-    let mut app = App::new(no_color);
+async fn run_loop(
+    term: &mut Terminal<CrosstermBackend<io::Stdout>>,
+    opts: RunTuiOpts,
+) -> Result<()> {
+    let mut app = App::new(opts.no_color);
+    // LB.1 — seed initial screen. Default is Home (today's behavior).
+    app.screen = opts.start_screen;
 
     // Synchronous boot load. ~50ms against bundled data — well below
     // the user's perceptible threshold. `crossterm::event::poll` (in

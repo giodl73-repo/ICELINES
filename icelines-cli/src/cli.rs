@@ -209,7 +209,40 @@ DEPRECATIONS
         out: Option<std::path::PathBuf>,
     },
     /// Launch the interactive TUI.
-    Tui,
+    #[command(long_about = r#"Launch the interactive ratatui TUI.
+
+By default boots on the League tab. Use --start <slug> to jump
+directly to a specific surface — useful for demos, scripts, and
+muscle memory.
+
+Recognized slugs (canonical):
+    league         32-team rankings (default)
+    depth          Cross-team depth chart
+    stats          Interactive query/filter builder
+    goalies        Goalie leaderboard
+    scores         Tonight's games + boxscores
+    schedule       Weekly + season schedule
+    transactions   League-wide moves feed
+    playoffs       Bracket + series detail
+
+Aliases also accepted: queries (= stats), tonight (= scores),
+moves (= transactions). All slugs are case-insensitive.
+
+EXAMPLES
+    icelines tui                       Boots on League (default).
+    icelines tui --start goalies       Boot on the Goalies tab.
+    icelines tui --start scores        Boot on tonight's scores.
+
+Once the TUI is up, Tab cycles all 8 tabs regardless of how you
+entered. Press y for the season picker; q (or Esc on a non-tab
+screen) to quit.
+"#)]
+    Tui {
+        /// Surface to start on. Optional — default is `league`. See the
+        /// command's --help for the slug table.
+        #[arg(long, value_name = "SLUG")]
+        start: Option<String>,
+    },
 
     /// Print the full command reference (embedded COMMANDS.md). No
     /// internet required — the doc ships inside the binary.

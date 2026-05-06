@@ -17,6 +17,7 @@ icelines-web   = { path = "../icelines-web" }
 # but icelines-cli no longer consumes its markdown-generation API.
 clap.workspace        = true
 anyhow.workspace      = true
+thiserror.workspace   = true
 tokio.workspace       = true
 comfy-table.workspace = true
 owo-colors.workspace  = true
