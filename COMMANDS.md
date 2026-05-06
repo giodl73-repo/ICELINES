@@ -481,6 +481,142 @@ icelines serve --bind 0.0.0.0          # LAN-accessible (warning prints)
 
 ---
 
+## Phase Foster — favorites, time-travel, sync
+
+### `icelines favorites` — your favorited players + teams
+
+```bash
+# Today's favorites view (text table)
+icelines favorites
+
+# Time-travel — past or future date
+icelines favorites --date 2014-10-08
+icelines favorites --date 2026-01-15 --range week
+icelines favorites --date 2026-01-15 --range month
+
+# Read from a different group
+icelines favorites --group "Watchlist"
+
+# JSON envelope (heterogeneous data per WIRE B1: players + teams + events)
+icelines favorites --json
+```
+
+The empty-state card surfaces the two `group add` examples for new
+users. Per-night stat lines + boxscore-driven content land
+incrementally as Foster.3+ wires the data orchestration; the surface
+itself is in place today.
+
+### `icelines setup` — first-run wizard
+
+```bash
+# Interactive — three questions (transactions / boxscores / sync policy)
+icelines setup
+
+# Headless / scripted: write the spec defaults non-interactively
+icelines setup --accept-defaults
+
+# Preview without touching ~/.icelines/config.toml
+icelines setup --accept-defaults --dry-run
+
+# Re-run even if config.toml exists
+icelines setup --reset
+```
+
+Top-level `--no-setup` flag skips the auto-prompt for callers that
+expect to run headless.
+
+### `icelines config` — sync + capability matrix
+
+```bash
+icelines config get sync.policy
+icelines config get sync.capabilities.transactions
+icelines config set sync.capabilities.transactions league
+icelines config list
+icelines config reset sync.capabilities
+```
+
+Capability matrix (6 capabilities × 3 modes = `off | favorites | league`):
+
+| Key                                  | Default     | Notes |
+|--------------------------------------|-------------|-------|
+| `sync.capabilities.stats`            | `league`    | Base — always on |
+| `sync.capabilities.scores_schedule`  | `league`    | Default ON for everyone |
+| `sync.capabilities.transactions`     | `favorites` | Opt-in to `league` |
+| `sync.capabilities.boxscores`        | `favorites` | Deeper stats for favorites |
+| `sync.capabilities.shifts`           | `off`       | **Locked** — only `off` valid (per-shift parsing not implemented) |
+| `sync.capabilities.career_history`   | `favorites` | Adds slowly |
+
+`sync.policy` ∈ `eager | lazy | off`; `sync.banner` ∈ `summary |
+silent | verbose`; `sync.season_transition` ∈ `prompt | auto |
+ignore`.
+
+### `icelines fetch boxscore` — score events for a date
+
+```bash
+# Today's slate — write a score event per game to the EventStream
+icelines fetch boxscore
+
+# Specific date
+icelines fetch boxscore --date 2026-01-15
+
+# Only games involving favorited teams
+icelines fetch boxscore --for-favorites
+
+# Preview
+icelines fetch boxscore --date 2026-01-15 --dry-run
+```
+
+### `icelines fetch sync` — refresh stale entries
+
+```bash
+# Walk the manifest, refresh anything past TTL
+icelines fetch sync
+
+# List what would be refreshed without fetching
+icelines fetch sync --dry-run
+
+# Override Static TTL (DataInstall pin) — re-fetch everything
+icelines fetch sync --force
+```
+
+Non-blocking variant runs automatically on TUI launch when
+`sync.policy = eager`. Set `ICELINES_TEST_MODE=1` to suppress the
+spawn entirely (intended for L3 golden tests / CI determinism).
+
+### Date axis on existing commands
+
+```bash
+# tonight + schedule accept --date YYYY-MM-DD (verified ≥2014)
+icelines tonight --date 2014-10-08
+icelines schedule --date 2014-10-08
+
+# Deprecated alias (will be removed in v0.15)
+icelines schedule --start 2014-10-08
+```
+
+### Windowed filter atoms
+
+```bash
+# Bare atom (no .window) — defaults to season totals (existing behavior)
+icelines query leaders --filter "g>=10"
+
+# Explicit window — always-week / always-month / always-season
+icelines query leaders --filter "g.week>=10"
+icelines query leaders --filter "p.month>=20"
+icelines query leaders --filter "g.season>=50"
+```
+
+`query career --week` / `--month` is intentionally rejected (junior
+seasons aren't aligned with NHL week boundaries) — use `--season`.
+
+### TUI keybinds added in Foster
+
+- `Shift+D` — open the date picker overlay on Tonight (jumps to a
+  past date) / Schedule (snaps to that week's Monday) / Playoffs
+  (opens the season picker since playoffs is season-anchored).
+
+---
+
 ## Global flags
 
 These work on every subcommand:
