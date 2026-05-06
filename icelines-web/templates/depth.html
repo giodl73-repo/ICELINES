@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Depth Rankings{% endblock %}
+
+{% block content %}
+<h1>Depth Rankings</h1>
+
+<p style="color: #616161; margin-bottom: 1rem;">
+    Cross-team line-value rankings · {{ active_label }} ·
+    aggregating top-line forwards (top-4 per slot) plus top-6 defense
+    by Pts/82 pace. Click any team to see its depth chart.
+</p>
+
+<div class="table-scroll">
+<table>
+    <thead>
+        <tr>
+            <th style="text-align: right;">#</th>
+            <th>Team</th>
+            <th style="text-align: right;">C</th>
+            <th style="text-align: right;">LW</th>
+            <th style="text-align: right;">RW</th>
+            <th style="text-align: right;">D</th>
+            <th style="text-align: right;">Total</th>
+            <th>Top C</th>
+            <th>Top LW</th>
+            <th>Top RW</th>
+            <th>Top D</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in rows %}
+        <tr>
+            <td style="text-align: right; color: #616161;">{{ loop.index }}</td>
+            <td><a class="team-link team-{{ row.team }}" href="/team/{{ row.team }}">{{ row.team }}</a></td>
+            <td style="text-align: right;">{{ row.c_score }}</td>
+            <td style="text-align: right;">{{ row.lw_score }}</td>
+            <td style="text-align: right;">{{ row.rw_score }}</td>
+            <td style="text-align: right;">{{ row.d_score }}</td>
+            <td style="text-align: right;"><strong>{{ row.total }}</strong></td>
+            <td style="color: #616161;">{{ row.c_top }}</td>
+            <td style="color: #616161;">{{ row.lw_top }}</td>
+            <td style="color: #616161;">{{ row.rw_top }}</td>
+            <td style="color: #616161;">{{ row.d_top }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+<p style="margin-top: 2rem; color: #616161; font-size: 0.9rem;">
+    Mirrors the TUI Depth tab. Same scoring (top-4 forwards per slot,
+    top-6 defense, summed Pts/82). Same data; different render.
+</p>
+{% endblock %}

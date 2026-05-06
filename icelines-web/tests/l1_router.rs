@@ -138,6 +138,48 @@ async fn l1_html_each_route_has_active_season_header() {
     }
 }
 
+/// l1_depth_route_returns_200_html
+/// — Phase Lady Byng follow-up. The /depth route mirrors the TUI Depth
+///   tab; this fence proves it boots and renders the askama template
+///   without panicking. Asserts the route resolves to 200, returns HTML
+///   with the expected charset, and contains the "Depth Rankings"
+///   heading from depth.html.
+#[tokio::test]
+async fn l1_depth_route_returns_200_html() {
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/depth")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(
+        response.status(),
+        StatusCode::OK,
+        "/depth should return 200"
+    );
+
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+    assert!(
+        body.contains("Depth Rankings"),
+        "/depth page must render its h1 heading, got start:\n{}",
+        &body[..body.len().min(120)]
+    );
+    // The nav bar should also include the new Depth link on every page.
+    assert!(
+        body.contains("href=\"/depth\""),
+        "/depth must be linked in the global nav"
+    );
+}
+
 /// l1_unknown_route_returns_404
 /// — axum's default not-found handler. Once King.1.6 adds host-header
 ///   validation we'll add a 421 case for DNS rebinding, but the basic

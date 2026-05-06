@@ -80,9 +80,15 @@ include: deliberate scope (fantasy is local-only today), data-source constraint
 **Phase Lester Patrick (2026-05-05)**: closed three of the four CLI gaps.
 `icelines schedule` (LP.1) gained `--json`/`--csv`/comfy-table; `icelines
 playoffs` (LP.2) is brand-new; `icelines transactions` was discovered to be
-already complete from Phase Selke. The in-TUI docs overlay (LP.4) is
-deferred to a follow-up phase. The fantasy-on-web ❌ is intentionally
-deferred (single-user local-only fantasy is the v1 stance).
+already complete from Phase Selke. The in-TUI docs overlay shipped post-
+phase as the `m` keybind (LP.4 in v0.14.2). And a v0.14.2 follow-up added
+the **/depth** web route mirroring the TUI Depth tab — the last top-level
+surface gap.
+
+**Surface portfolio after v0.14.2**: every analytical feature is reachable
+on every surface (CLI ✅ TUI ✅ Web ✅). The only ❌ remaining is fantasy-
+on-web, intentionally deferred (single-user local-only fantasy is the v1
+stance).
 
 ## What the v1.0 surface is
 

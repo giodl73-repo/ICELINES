@@ -413,12 +413,12 @@ impl App {
 
         // LP.4 — docs overlay. Up/Down scroll one line; PgUp/PgDn (Left/
         // Right repurposed since the overlay has no horizontal axis)
-        // scroll one page; Esc or `m` close. `q` still quits the app
+        // scroll one page; Esc or Shift+M close. `q` still quits the app
         // so the overlay doesn't trap a panicked user.
         if self.show_docs {
             match action {
                 Action::Quit => return true,
-                Action::Escape | Action::Char('m') => self.show_docs = false,
+                Action::Escape | Action::Char('M') => self.show_docs = false,
                 Action::Up => self.docs_scroll = self.docs_scroll.saturating_sub(1),
                 Action::Down => self.docs_scroll = self.docs_scroll.saturating_add(1),
                 // Page semantics: ←/→ jump 20 lines (a screenful on a
@@ -478,12 +478,6 @@ impl App {
         match action {
             Action::Quit => return true,
             Action::Help => self.show_help = true,
-            // LP.4 — `m` opens the in-TUI docs overlay (Manual).
-            Action::Char('m') => {
-                self.show_docs = true;
-                self.docs_scroll = 0;
-                return false;
-            }
             Action::Back | Action::Escape => {
                 if self.group_picker_open {
                     self.group_picker_open = false;
@@ -1047,6 +1041,15 @@ impl App {
                         }
                         _ => "Home".to_owned(),
                     };
+                } else if c == 'M' && !is_text_input_active(self) {
+                    // LP.4 — Shift+M opens the in-TUI docs overlay
+                    // (Manual). Uppercase M to avoid the lowercase `m`
+                    // collision with Goalies min-GP cycle. The
+                    // is_text_input_active guard keeps text-input
+                    // screens (Search, Tonight, Schedule, Queries
+                    // SaveName) from losing typed M characters.
+                    self.show_docs = true;
+                    self.docs_scroll = 0;
                 }
             }
             Action::Backspace => {

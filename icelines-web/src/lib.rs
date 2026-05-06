@@ -77,6 +77,9 @@ pub fn router(state: WebState) -> Router {
         .route("/team/:abbrev", get(handlers::team::get_team))
         // JSON twin — King.4.2.
         .route("/api/v1/team/:abbrev", get(handlers::team::get_team_json))
+        // Depth rankings — Phase Lady Byng follow-up. Cross-team
+        // line-value rankings; mirror of TUI Depth tab.
+        .route("/depth", get(handlers::depth::get_depth))
         // Docs — King.8.1. Rendered COMMANDS.md.
         .route("/docs", get(handlers::docs::get_docs))
         // Season-type flip — UX.E. Click writes WebState.config and
@@ -1268,7 +1271,7 @@ mod handlers {
             }
         }
 
-        fn parse_season_type(s: &str) -> SeasonType {
+        pub fn parse_season_type(s: &str) -> SeasonType {
             match s {
                 "playoff" | "playoffs" => SeasonType::Playoff,
                 _ => SeasonType::Regular,
@@ -1387,6 +1390,91 @@ mod handlers {
                 )),
             )
                 .into_response()
+        }
+    }
+
+    /// `/depth` — Phase Lady Byng follow-up. Cross-team line-value
+    /// rankings (same data the TUI Depth tab consumes). Mirrors the
+    /// goalies handler shape: load the active-season repo, compute
+    /// `compute_team_strength_views`, project to template rows, render.
+    pub mod depth {
+        use crate::state::WebState;
+        use crate::templates::{DepthRow, DepthTemplate};
+        use askama::Template;
+        use axum::extract::State;
+        use axum::http::StatusCode;
+        use axum::response::{Html, IntoResponse, Response};
+        use icelines_core::cross_team::{compute_team_strength_views, ScoringMode};
+        use icelines_core::model::Season;
+
+        pub async fn get_depth(State(state): State<WebState>) -> Response {
+            let (season_str, season_type, active_label) = {
+                let cfg = state.config.read().await;
+                (
+                    cfg.active_season.clone(),
+                    super::leaders::parse_season_type(&cfg.active_season_type),
+                    cfg.active_label.clone(),
+                )
+            };
+            let season_u32: u32 = match season_str.parse() {
+                Ok(n) => n,
+                Err(e) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Html(format!(
+                            "<!doctype html><body><h1>500</h1><p>active season \
+                             '{season_str}' is not a valid YYYYZZZZ id: {e}</p></body>"
+                        )),
+                    )
+                        .into_response();
+                }
+            };
+            let season = Season(season_u32);
+
+            // Brief read of the repo. Project inside the lock scope so
+            // PlayerView refs don't escape (same convention as
+            // `/leaders` and `/goalies`).
+            let rows: Vec<DepthRow> = {
+                let repo = state.repo.read().await;
+                let views: Vec<_> = repo.skaters(season, season_type).collect();
+                let strength = compute_team_strength_views(&views, ScoringMode::Pace);
+                let mut ranked: Vec<_> = strength.into_iter().collect();
+                // Newest team rank first; tie-break alphabetical for
+                // determinism.
+                ranked.sort_by(|a, b| {
+                    b.1.total
+                        .partial_cmp(&a.1.total)
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                        .then_with(|| a.0.cmp(&b.0))
+                });
+                ranked
+                    .into_iter()
+                    .map(|(team, s)| DepthRow {
+                        team,
+                        c_score: format!("{:.0}", s.c_score),
+                        lw_score: format!("{:.0}", s.lw_score),
+                        rw_score: format!("{:.0}", s.rw_score),
+                        d_score: format!("{:.0}", s.d_score),
+                        total: format!("{:.0}", s.total),
+                        c_top: s.c_top,
+                        lw_top: s.lw_top,
+                        rw_top: s.rw_top,
+                        d_top: s.d_top,
+                    })
+                    .collect()
+            };
+
+            let tmpl = DepthTemplate { active_label, rows };
+            match tmpl.render() {
+                Ok(html) => Html(html).into_response(),
+                Err(e) => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Html(format!(
+                        "<!doctype html><body><h1>500</h1><p>{e}</p></body>"
+                    )),
+                )
+                    .into_response(),
+            }
         }
     }
 

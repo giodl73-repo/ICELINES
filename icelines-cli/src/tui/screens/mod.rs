@@ -126,7 +126,7 @@ fn render_docs_overlay(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(Clear, popup);
     let total_lines = COMMANDS_MD.lines().count() as u16;
     let title = format!(
-        " Docs (COMMANDS.md) — line {}/{}  ·  ↑↓ scroll · ←→ page · Esc/m close ",
+        " Docs (COMMANDS.md) — line {}/{}  ·  ↑↓ scroll · ←→ page · Esc/M close ",
         app.docs_scroll.saturating_add(1).min(total_lines.max(1)),
         total_lines.max(1),
     );
@@ -521,14 +521,14 @@ mod app_snapshot_tests {
     }
 
     /// LP.4 / lp_docs_overlay_action_m_opens_overlay
-    /// — From any screen, Action::Char('m') sets show_docs=true and
+    /// — From any screen, Action::Char('M') sets show_docs=true and
     ///   resets scroll. Renders without panicking on League screen.
     #[test]
     fn lp_docs_overlay_action_m_opens_overlay() {
         use crate::tui::event::Action;
         let mut app = App::new(true);
         app.docs_scroll = 42; // pretend we'd been here before
-        let _quit = app.handle(Action::Char('m'));
+        let _quit = app.handle(Action::Char('M'));
         assert!(app.show_docs);
         assert_eq!(app.docs_scroll, 0, "opening should reset scroll");
         let _ = render_app_to_text(&app, 120, 30);
@@ -552,7 +552,7 @@ mod app_snapshot_tests {
         use crate::tui::event::Action;
         let mut app = App::new(true);
         app.show_docs = true;
-        app.handle(Action::Char('m'));
+        app.handle(Action::Char('M'));
         assert!(!app.show_docs);
     }
 

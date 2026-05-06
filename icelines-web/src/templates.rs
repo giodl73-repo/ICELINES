@@ -523,6 +523,32 @@ pub struct GoaliesTemplate {
     pub qualified_threshold: u32,
 }
 
+/// `depth.html` — Phase Lady Byng follow-up. Cross-team line-value
+/// rankings, mirroring the TUI Depth tab. Same data path
+/// (`icelines_core::cross_team::compute_team_strength_views`).
+#[derive(Template)]
+#[template(path = "depth.html")]
+pub struct DepthTemplate {
+    pub active_label: String,
+    pub rows: Vec<DepthRow>,
+}
+
+/// One row in the depth-rankings table. Pre-formatted strings so the
+/// askama template doesn't need to do float casts.
+#[derive(Debug, Clone)]
+pub struct DepthRow {
+    pub team: String,
+    pub c_score: String,
+    pub lw_score: String,
+    pub rw_score: String,
+    pub d_score: String,
+    pub total: String,
+    pub c_top: String,
+    pub lw_top: String,
+    pub rw_top: String,
+    pub d_top: String,
+}
+
 /// One row in the goalie leaderboard.
 #[derive(Debug, Clone)]
 pub struct GoalieRow {

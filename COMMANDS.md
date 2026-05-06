@@ -310,7 +310,7 @@ Interactive dashboard. Six tabs (League, Depth, Stats, Goalies, Scores, Schedule
 | `Enter` | Drill into selection (team / player / game) |
 | `Esc` / `q` | Back / quit |
 | `?` | Help overlay (keybind cheatsheet) |
-| `m` | **Manual / docs overlay** — full COMMANDS.md content scrollable inside the TUI (LP.4) |
+| `M` (Shift+m) | **Manual / docs overlay** — full COMMANDS.md content scrollable inside the TUI. Lowercase `m` is reserved for the Goalies min-GP cycle. (LP.4) |
 | `R` | **Reports overlay** — toggle Tier-1 reports loaded into columns |
 | `y` | **Season picker** — jump to any of the 38 bundled seasons |
 | `Shift+P` | Toggle Regular ↔ Playoff for the active season |
