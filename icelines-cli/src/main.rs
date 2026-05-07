@@ -247,8 +247,13 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             round,
             json,
             csv,
+            series,
         } => {
-            commands::playoffs::run(season, round, json, csv).await?;
+            if let Some(letter) = series {
+                commands::playoffs::run_series_momentum(season, letter, json).await?;
+            } else {
+                commands::playoffs::run(season, round, json, csv).await?;
+            }
         }
         Commands::Trade {
             player_out,

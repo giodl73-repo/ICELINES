@@ -17,6 +17,7 @@ pub mod nhl_api;
 pub mod playoffs_bundle;
 pub mod resolver;
 pub mod schema;
+pub mod series_momentum_builder;
 pub mod shift_profile;
 pub mod snapshot;
 pub mod stats_loader;

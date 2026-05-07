@@ -217,6 +217,12 @@ EXAMPLES
         json: bool,
         #[arg(long)]
         csv: bool,
+        /// Phase Conn Smythe C.1 — drill into one series's live
+        /// momentum view (leader, OT count, last result, next-game
+        /// home advantage). Series letter A–H matches the NHL's
+        /// bracket convention.
+        #[arg(long, value_name = "LETTER")]
+        series: Option<String>,
     },
 
     /// Show the upcoming NHL schedule (Phase Lester Patrick — LP.1).

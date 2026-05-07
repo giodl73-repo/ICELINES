@@ -24,6 +24,7 @@ pub mod projection;
 pub mod scheme;
 pub mod scoring;
 pub mod season_stats;
+pub mod series_momentum;
 pub mod stats_catalog;
 pub mod stats_repository;
 pub mod teams;

@@ -23,14 +23,16 @@ adding a new phase means picking a trophy that fits.
 | G — Goalies | **Vezina** | Goalie type, repository, fantasy goalie scoring, 5 bundled seasons | The goalie trophy. Obvious. |
 | T — Transactions | **Selke** | Trades/waivers/signings/IR feed, ESPN source, TUI tab | Best defensive forward — two-way work spanning data ingestion + UI + 5 seasons. |
 | E — Edge speed | **Maurice Richard** | Skating speed leaderboard (blocked: no public API) | Most goals — pure scoring ability — but the data isn't accessible. Parked. |
-| Hart — Normalization | **Hart** *(in progress)* | Full data model normalization — `PlayerIdentity` + `SeasonStats` keyed by (player_id, season, type) | League MVP — most valuable single piece of work; touches every consumer. Subsumes Phase Presidents (season-type). |
+| Hart — Normalization | **Hart** | Full data model normalization — `PlayerIdentity` + `SeasonStats` keyed by (player_id, season, type) | League MVP — most valuable single piece of work; touches every consumer. Subsumes Phase Presidents (season-type). |
+| Calder — Multi-league career | **Calder** *(reuse — third use)* | NHL landing-endpoint career history; pre-NHL development arc on player card; cohort leaderboards via `query career` | Reuse: same trophy as Phase 1. Same character — multi-league rookie + early-career data. |
+| Foster — Favorites + time travel + unified data layer | **Foster** | Favorites dashboard, time-travel on Scores/Schedule/Playoffs, unified DataStore + sharded manifest, EventStream, sync engine, capability matrix, windowed atoms, per-night stat lines | Foster Hewitt Memorial (broadcaster) — "keeping you informed". The personal-dashboard angle: favorites are about the user's particular informational lens. |
+| Conn Smythe — Live playoff tracking | **Conn Smythe** *(in progress 2026-05-06)* | Series momentum, Cup-run player narratives, live game tracking surface | Playoff MVP. Builds on Foster's rails to surface playoff-specific narratives. Spec: `conn-smythe-overview.md`. |
 
 ## Future / parked
 
 | Phase | Trophy | Status | What it would cover |
 |---|---|---|---|
 | Presidents — Season type | **Presidents'** | **Folded into Hart** | Regular vs playoff scoping. Naturally falls out of the (player_id, season, type) primary key after Hart. |
-| Cup — Live game tracking | **Conn Smythe** | Future | Real-time playoff game tracking, series momentum, Cup-run player narratives. |
 | LP — CLI parity (2026-05) | **Lester Patrick** | Stub | Closes CLI gaps in the surface portfolio: `icelines schedule` / `playoffs` / `transactions` (mirror the `tonight` pattern), plus an in-TUI docs overlay. Service-to-completion work. Plan: `plans/2026-05-05-phaseLesterPatrick-cli-parity.md`. |
 | (TBD) — Scoring scheme builder | **Frank Selke** | Future | Defensive-leaning fantasy scheme (penalty kills, shorthanded points, blocks-heavy) — a complement to the offense-tuned Yahoo/ESPN defaults. |
 

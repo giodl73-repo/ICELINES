@@ -150,6 +150,132 @@ pub async fn run(season: Option<String>, round: Option<u8>, json: bool, csv: boo
     Ok(())
 }
 
+// ── Phase Conn Smythe C.1 — series momentum drill-down ──────────────────────
+
+pub async fn run_series_momentum(
+    season: Option<String>,
+    series_letter: String,
+    json: bool,
+) -> Result<()> {
+    let season_id = match season {
+        Some(s) => s,
+        None => default_season().context(
+            "no playoff seasons available in the bundle — run `icelines fetch all` first",
+        )?,
+    };
+    let bundle = bundled::load_playoffs(&season_id).with_context(|| {
+        format!(
+            "no playoff bundle for season '{season_id}' — \
+             try `icelines data list` to see installed seasons"
+        )
+    })?;
+
+    let bracket = bundle.to_bracket();
+    // Find the round + series matching the requested letter.
+    let needle = series_letter.to_uppercase();
+    let found = bracket
+        .rounds
+        .iter()
+        .find_map(|r| {
+            r.series
+                .iter()
+                .find(|s| {
+                    s.letter
+                        .as_deref()
+                        .map(|l| l.eq_ignore_ascii_case(&needle))
+                        .unwrap_or(false)
+                })
+                .map(|s| (r, s))
+        })
+        .with_context(|| {
+            format!(
+                "no series '{}' in {season_id} playoffs — try `icelines playoffs --season {season_id}` to see series letters",
+                series_letter
+            )
+        })?;
+    let (round, series) = found;
+
+    let season_u32: u32 = season_id
+        .parse()
+        .context("season ID must be 8-digit YYYYZZZZ")?;
+    let momentum = icelines_fetch::series_momentum_builder::compute_series_momentum(
+        icelines_core::model::Season(season_u32),
+        round,
+        series,
+    );
+
+    if json {
+        return emit_momentum_json(&season_id, &momentum);
+    }
+    print_momentum_text(&season_id, &momentum);
+    Ok(())
+}
+
+fn print_momentum_text(season_id: &str, m: &icelines_core::series_momentum::SeriesMomentum) {
+    println!(
+        "SERIES {} — {}  ·  {} (top seed) vs {}",
+        m.series_letter, m.round_label, m.top_seed_abbrev.0, m.bottom_seed_abbrev.0,
+    );
+    println!(
+        "{}  ·  {} games played, {} remaining",
+        m.summary_line(),
+        m.games_played,
+        m.games_remaining,
+    );
+    if let Some(last) = &m.last_result {
+        println!(
+            "Last game ({}): {} {}-{} {}{}",
+            last.date,
+            last.winner.0,
+            last.winner_score,
+            last.loser_score,
+            other_team(&m.top_seed_abbrev, &m.bottom_seed_abbrev, &last.winner).0,
+            if last.ot { " (OT)" } else { "" }
+        );
+    }
+    if !m.series_complete {
+        let next_at = if m.home_advantage {
+            &m.top_seed_abbrev.0
+        } else {
+            &m.bottom_seed_abbrev.0
+        };
+        println!(
+            "Next game: G{} at {}",
+            m.games_played + 1,
+            next_at,
+        );
+    }
+    let _ = season_id; // available for future season-aware rendering
+}
+
+fn other_team<'a>(
+    top: &'a icelines_core::model::TeamAbbr,
+    bottom: &'a icelines_core::model::TeamAbbr,
+    winner: &icelines_core::model::TeamAbbr,
+) -> &'a icelines_core::model::TeamAbbr {
+    if winner.0 == top.0 {
+        bottom
+    } else {
+        top
+    }
+}
+
+fn emit_momentum_json(
+    season_id: &str,
+    m: &icelines_core::series_momentum::SeriesMomentum,
+) -> Result<()> {
+    let env = serde_json::json!({
+        "schema_version": 1,
+        "route": "playoffs.series",
+        "data": m,
+        "meta": {
+            "season_id": season_id,
+        },
+    });
+    println!("{}", serde_json::to_string_pretty(&env)?);
+    Ok(())
+}
+
 fn emit_json(bundle: &PlayoffsBundle, rows: &[PlayoffRow], round_filter: Option<u8>) -> Result<()> {
     // Post-LP review fix #5 — envelope shape matches King.2.4 web
     // convention `{schema_version, route, data, meta}`. Bundle context

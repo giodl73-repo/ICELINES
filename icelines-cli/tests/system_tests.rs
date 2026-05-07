@@ -3464,6 +3464,54 @@ fn l2_foster1_schedule_invalid_date_clean_error() {
     );
 }
 
+// ── Phase Conn Smythe C.1 — series momentum L2 ───────────────────────────────
+
+/// L2 / l2_conn_smythe_c1_playoffs_series_renders_momentum
+/// — `icelines playoffs --series A --season 19931994` exits 0 and
+///   surfaces the SERIES header + summary line.
+#[test]
+fn l2_conn_smythe_c1_playoffs_series_renders_momentum() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let out = run_isolated(
+        home.path(),
+        &["playoffs", "--season", "19931994", "--series", "A"],
+    );
+    assert!(
+        out.status.success(),
+        "exit 0 expected, stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("SERIES A"), "stdout: {stdout}");
+    assert!(
+        stdout.contains("(top seed)"),
+        "matchup line must appear, stdout: {stdout}"
+    );
+    assert!(
+        stdout.contains("games played"),
+        "summary line must appear, stdout: {stdout}"
+    );
+}
+
+#[test]
+fn l2_conn_smythe_c1_playoffs_series_unknown_letter_clean_error() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let out = run_isolated(
+        home.path(),
+        &["playoffs", "--season", "19931994", "--series", "Z"],
+    );
+    assert!(!out.status.success(), "unknown letter must non-zero exit");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        !stderr.contains("panicked"),
+        "must not panic, stderr: {stderr}"
+    );
+    assert!(
+        stderr.contains("no series 'Z'"),
+        "remediation must surface, stderr: {stderr}"
+    );
+}
+
 // ── Phase Foster +2 — data status command L2 ─────────────────────────────────
 
 /// L2 / l2_foster_plus2_data_status_empty_manifest
