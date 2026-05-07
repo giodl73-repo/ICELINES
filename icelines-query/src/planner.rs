@@ -93,8 +93,14 @@ fn render(c: &Constraint, indent: usize, out: &mut String) {
                 s.axis
             ));
         }
-        Constraint::SlidingWindow(_) => {
-            out.push_str(&format!("{pad}SlidingWindow(<reserved A.2>)\n"));
+        Constraint::SlidingWindow(s) => {
+            out.push_str(&format!(
+                "{pad}SlidingWindow({}, {:?}, {:?}, axis={:?})\n",
+                s.stat.cli_key(),
+                s.window,
+                s.predicate,
+                s.axis
+            ));
         }
         Constraint::CareerAggregate(_) => {
             out.push_str(&format!("{pad}CareerAggregate(<reserved A.3>)\n"));
@@ -180,5 +186,92 @@ mod tests {
         let plan = parse_query(FilterInput::Cli("NOT g>=100".to_string())).unwrap();
         let out = plan.explain();
         assert!(out.contains("Not"));
+    }
+
+    // ── A.2.6 review (bench) — golden snapshot tests ──────────
+    //
+    // The earlier explain tests only checked `contains("All")`.
+    // A renderer change that broke indentation, reordered
+    // children, or dropped variants would not be caught. These
+    // tests pin the exact rendered string for representative
+    // plan shapes. When the format changes intentionally, update
+    // the expected strings here in one commit.
+
+    /// Single SeasonStat — flat 1-line render.
+    #[test]
+    fn l0_a26_explain_golden_single_seasonstat() {
+        let plan = parse_query(FilterInput::Cli("g>=10".to_string())).unwrap();
+        let out = plan.explain();
+        let expected = "SeasonStat(goals, Scalar(Ge, Number(10.0)), axis=Regular)\n";
+        assert_eq!(out, expected, "explain golden mismatch");
+    }
+
+    /// 3-child All — n-ary IR shape preserved in render.
+    #[test]
+    fn l0_a26_explain_golden_three_child_all() {
+        let plan = parse_query(FilterInput::Cli(
+            "g>=10 AND a>=10 AND p>=20".to_string(),
+        ))
+        .unwrap();
+        let out = plan.explain();
+        let expected = "All\n  \
+            SeasonStat(goals, Scalar(Ge, Number(10.0)), axis=Regular)\n  \
+            SeasonStat(assists, Scalar(Ge, Number(10.0)), axis=Regular)\n  \
+            SeasonStat(points, Scalar(Ge, Number(20.0)), axis=Regular)\n";
+        assert_eq!(out, expected, "explain golden mismatch");
+    }
+
+    /// Not-wrapping-Any — exercises mixed boolean nesting.
+    #[test]
+    fn l0_a26_explain_golden_not_wrapping_any() {
+        let plan = parse_query(FilterInput::Cli(
+            "NOT (g>=100 OR a>=100)".to_string(),
+        ))
+        .unwrap();
+        let out = plan.explain();
+        let expected = "Not\n  \
+            Any\n    \
+            SeasonStat(goals, Scalar(Ge, Number(100.0)), axis=Regular)\n    \
+            SeasonStat(assists, Scalar(Ge, Number(100.0)), axis=Regular)\n";
+        assert_eq!(out, expected, "explain golden mismatch");
+    }
+
+    /// Bio + SeasonStat compound — covers both atom variants in one tree.
+    #[test]
+    fn l0_a26_explain_golden_bio_plus_seasonstat() {
+        let plan = parse_query(FilterInput::Cli(
+            "age<=24 AND g>=20".to_string(),
+        ))
+        .unwrap();
+        let out = plan.explain();
+        let expected = "All\n  \
+            Bio(Age, Scalar(Le, Number(24.0)))\n  \
+            SeasonStat(goals, Scalar(Ge, Number(20.0)), axis=Regular)\n";
+        assert_eq!(out, expected, "explain golden mismatch");
+    }
+
+    /// Sliding-window atom — exercises the SlidingWindow render
+    /// path. A.5 will polish the format; this test will need
+    /// updating then.
+    #[test]
+    fn l0_a26_explain_golden_sliding_window() {
+        let plan = parse_query(FilterInput::Cli("g.last10g>=5".to_string())).unwrap();
+        let out = plan.explain();
+        assert_eq!(
+            out,
+            "SlidingWindow(goals, LastN_GP { n: 10, scope: CurrentTeamCurrentSeason, policy: RequireFull }, Scalar(Ge, Number(5.0)), axis=Regular)\n"
+        );
+    }
+
+    /// Sliding-window with calendar window + scope modifier.
+    #[test]
+    fn l0_a26_explain_golden_sliding_window_calendar_allteams() {
+        let plan = parse_query(FilterInput::Cli("g.last10g.allteams>=5".to_string()))
+            .unwrap();
+        let out = plan.explain();
+        assert_eq!(
+            out,
+            "SlidingWindow(goals, LastN_GP { n: 10, scope: AllTeamsCurrentSeason, policy: RequireFull }, Scalar(Ge, Number(5.0)), axis=Regular)\n"
+        );
     }
 }

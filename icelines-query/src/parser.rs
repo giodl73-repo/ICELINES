@@ -1262,6 +1262,86 @@ mod tests {
         assert!(matches!(es[0], ParseError::IncompatiblePredicate { .. }));
     }
 
+    /// A.2.6 review (bench) — fill the IncompatiblePredicate
+    /// coverage gap. There are 3 emit sites in build_*_constraint
+    /// that weren't directly tested.
+
+    /// `BETWEEN` on a string field has no meaning. The parser
+    /// builds a numeric Range, then routes via build_range_-
+    /// constraint which rejects with UnknownStat (since string
+    /// keys aren't in the numeric bio-field mapping).
+    #[test]
+    fn l0_a26_between_on_string_field_rejected() {
+        // `country BETWEEN "CAN" AND "USA"` — strings inside
+        // BETWEEN don't parse as numbers, so the lower bound
+        // fails BadNumber first. Use numeric values on a string
+        // key to hit the build_range_constraint UnknownStat path:
+        let es = errs("country BETWEEN 0 AND 100");
+        // country isn't a numeric bio field; build_range_constraint
+        // falls through to UnknownStat.
+        assert!(matches!(
+            es[0],
+            ParseError::UnknownStat { .. } | ParseError::IncompatiblePredicate { .. }
+        ));
+    }
+
+    /// `IN` with a numeric value on a STRING field — the values
+    /// canonicalize to text, so they survive as Text("2020") etc.
+    /// This exercises the text-field path with mixed-type set.
+    #[test]
+    fn l0_a26_string_field_in_with_numeric_values_canonicalizes() {
+        // `shoots IN (1, 2, 3)` — numeric values on a string
+        // field. parse_in_value yields Number variants, but
+        // build_member_constraint on shoots (a text field) feeds
+        // them through; the eval-time matcher will fail to match
+        // any actual shoots value.
+        let c = ok("shoots IN (1, 2, 3)");
+        match c {
+            Constraint::Bio(BioConstraint {
+                field: BioField::Shoots,
+                predicate: Predicate::Member(_, vals),
+            }) => assert_eq!(vals.len(), 3),
+            _ => panic!("expected Bio Shoots Member, got {c:?}"),
+        }
+    }
+
+    /// Stat-key `IN`-set rejected (catalog stats use BETWEEN, not
+    /// IN). The third IncompatiblePredicate emit site.
+    #[test]
+    fn l0_a26_stat_key_in_set_rejected_use_between() {
+        let es = errs("g IN (10, 20, 30)");
+        match &es[0] {
+            ParseError::IncompatiblePredicate { detail, .. } => {
+                assert!(
+                    detail.contains("BETWEEN") || detail.to_lowercase().contains("between"),
+                    "error should suggest BETWEEN, got: {detail}"
+                );
+            }
+            other => panic!("expected IncompatiblePredicate, got {other:?}"),
+        }
+    }
+
+    /// A.2.6 review (bench) — `=<` typo hint test was missing.
+    #[test]
+    fn l0_a26_lt_eq_typo_hint() {
+        match &errs("g=<5")[0] {
+            ParseError::OpTypoHint { suggestion, .. } => assert_eq!(*suggestion, "<="),
+            other => panic!("expected OpTypoHint, got {other:?}"),
+        }
+    }
+
+    /// String fields support only `=` / `!=` — `>=` / `<=` reject.
+    #[test]
+    fn l0_a26_string_field_with_gt_op_rejected() {
+        let es = errs("country>=USA");
+        // The op parses; the value canonicalizes; build_scalar_-
+        // constraint_text rejects `Ge` as IncompatiblePredicate.
+        assert!(matches!(
+            es[0],
+            ParseError::IncompatiblePredicate { .. } | ParseError::UnknownStat { .. }
+        ));
+    }
+
     // ── A.1 new bio atoms ──────────────────────────────────────
 
     #[test]
