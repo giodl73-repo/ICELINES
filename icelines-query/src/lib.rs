@@ -378,6 +378,13 @@ impl BioConstraints {
 /// chain. Returns `(extracted_bio, stat_residue)`. Filter strings
 /// that contain OR/NOT or that fail to split go through entirely as
 /// stat residue (the catalog parser will handle or reject them).
+///
+/// Wave 11 #070 — when a piece is fully wrapped in a single pair of
+/// outer parens (e.g. user typed `(age<=24 AND p>=10)`), strip the
+/// parens and recurse into the inner expression. Without this, the
+/// catalog parser sees `age` as an unknown stat-key and the filter
+/// fails outright. World-class flexibility means the user shouldn't
+/// have to know that `(...)` wrapping inhibits bio extraction.
 pub fn extract_bio(raw_filters: &[String]) -> (Vec<BioAtom>, Vec<String>) {
     let mut bio: Vec<BioAtom> = Vec::new();
     let mut stat: Vec<String> = Vec::with_capacity(raw_filters.len());
@@ -391,23 +398,90 @@ pub fn extract_bio(raw_filters: &[String]) -> (Vec<BioAtom>, Vec<String>) {
             stat.push(raw.clone());
             continue;
         }
-        match split_top_level_and(raw) {
-            Some(pieces) => {
-                let mut stat_pieces: Vec<String> = Vec::new();
-                for p in pieces {
-                    match try_parse_bio_atom(&p) {
-                        Some(atoms) => bio.extend(atoms),
-                        None => stat_pieces.push(p),
-                    }
-                }
-                if !stat_pieces.is_empty() {
-                    stat.push(stat_pieces.join(" AND "));
-                }
-            }
-            None => stat.push(raw.clone()),
-        }
+        extract_bio_into(raw, &mut bio, &mut stat);
     }
     (bio, stat)
+}
+
+/// Recursive worker for `extract_bio`. Pulls bio atoms out of `raw`
+/// into `bio`; pushes any stat residue into `stat` (joined back with
+/// AND if multiple pieces survive).
+fn extract_bio_into(raw: &str, bio: &mut Vec<BioAtom>, stat: &mut Vec<String>) {
+    match split_top_level_and(raw) {
+        Some(pieces) => {
+            let mut stat_pieces: Vec<String> = Vec::new();
+            for p in pieces {
+                if let Some(atoms) = try_parse_bio_atom(&p) {
+                    bio.extend(atoms);
+                    continue;
+                }
+                // Wave 11 #070 — peel a single outer pair of parens
+                // and try again. Only one level so we don't strip
+                // semantic groups like `((A OR B) AND C)`.
+                if let Some(inner) = peel_outer_parens(&p) {
+                    let mut inner_bio: Vec<BioAtom> = Vec::new();
+                    let mut inner_stat: Vec<String> = Vec::new();
+                    extract_bio_into(inner, &mut inner_bio, &mut inner_stat);
+                    if !inner_bio.is_empty() {
+                        bio.extend(inner_bio);
+                        // If everything inside was bio, drop the
+                        // (now-empty) wrapper. If exactly one stat
+                        // piece survived, drop the parens (they're
+                        // semantically a no-op around a single atom).
+                        // For multiple residue pieces, preserve the
+                        // grouping in case they later participate in
+                        // an OR — though OR fallback already passes
+                        // the whole expr through verbatim, so this
+                        // only matters for AND-chain reconstruction.
+                        match inner_stat.len() {
+                            0 => {}
+                            1 => stat_pieces.push(inner_stat.into_iter().next().unwrap()),
+                            _ => stat_pieces.push(format!("({})", inner_stat.join(" AND "))),
+                        }
+                        continue;
+                    }
+                }
+                stat_pieces.push(p);
+            }
+            if !stat_pieces.is_empty() {
+                stat.push(stat_pieces.join(" AND "));
+            }
+        }
+        None => stat.push(raw.to_owned()),
+    }
+}
+
+/// If `s` is `(X)` where the parens are paren-balanced and form a
+/// single outer group, return `Some(X)`. Else `None`. Used by
+/// `extract_bio` to peel a single user-typed paren wrapper.
+fn peel_outer_parens(s: &str) -> Option<&str> {
+    let t = s.trim();
+    if !t.starts_with('(') || !t.ends_with(')') {
+        return None;
+    }
+    // Verify the opening paren matches the closing one (i.e. the
+    // outer parens form ONE group, not two). For `(A) AND (B)` the
+    // opening at index 0 closes before the end — depth hits 0 mid-
+    // string, so we must NOT peel.
+    let mut depth = 0i32;
+    let chars: Vec<char> = t.chars().collect();
+    for (i, &c) in chars.iter().enumerate() {
+        if c == '(' {
+            depth += 1;
+        } else if c == ')' {
+            depth -= 1;
+            if depth == 0 && i != chars.len() - 1 {
+                return None;
+            }
+            if depth < 0 {
+                return None;
+            }
+        }
+    }
+    if depth != 0 {
+        return None;
+    }
+    Some(&t[1..t.len() - 1])
 }
 
 #[cfg(test)]
@@ -596,6 +670,71 @@ mod tests {
         let (bio, stat) = extract_bio(&raw);
         assert!(bio.is_empty());
         assert_eq!(stat, vec!["g>=50 OR a>=50".to_owned()]);
+    }
+
+    /// Wave 11 #070 — bio atoms wrapped in `()` should still be
+    /// extracted. World-class flexibility: user shouldn't have to
+    /// know that wrapping in parens disables bio extraction.
+    #[test]
+    fn l0_extract_bio_peels_outer_parens() {
+        let raw = vec!["(age<=24 AND p>=10)".to_owned()];
+        let (bio, stat) = extract_bio(&raw);
+        assert_eq!(bio.len(), 1);
+        assert!(matches!(&bio[0], BioAtom::AgeMax(24)));
+        // Stat residue is the inner stat piece (parens dropped
+        // because nothing else needs to live with it).
+        assert_eq!(stat, vec!["p>=10".to_owned()]);
+    }
+
+    /// Wave 11 #070b — pure-bio chain inside parens should yield
+    /// empty stat residue.
+    #[test]
+    fn l0_extract_bio_peels_outer_parens_pure_bio_chain() {
+        let raw = vec!["(age>=22 AND age<=28)".to_owned()];
+        let (bio, stat) = extract_bio(&raw);
+        assert_eq!(bio.len(), 2);
+        assert!(stat.is_empty());
+    }
+
+    /// Wave 11 #070c — peel only one level. `((age<=24))` should
+    /// recurse twice. (We get this for free because the recursive
+    /// worker re-enters extract_bio_into.)
+    #[test]
+    fn l0_extract_bio_peels_nested_parens() {
+        let raw = vec!["((age<=24))".to_owned()];
+        let (bio, _stat) = extract_bio(&raw);
+        assert_eq!(bio.len(), 1);
+    }
+
+    // ── peel_outer_parens (the helper) ──────────────────────────
+
+    /// Wave 11 #070 — basic peel.
+    #[test]
+    fn l0_peel_outer_parens_basic() {
+        assert_eq!(peel_outer_parens("(g>=10)"), Some("g>=10"));
+    }
+
+    /// peel only when the outer parens form a single group.
+    /// `(A) AND (B)` must not peel — that would change semantics
+    /// (would fuse into `A) AND (B`, which is grammar garbage).
+    #[test]
+    fn l0_peel_outer_parens_two_groups_not_peeled() {
+        assert_eq!(peel_outer_parens("(A) AND (B)"), None);
+    }
+
+    /// `(((g>=10)))` peels one level → `((g>=10))`. The recursive
+    /// caller will keep peeling.
+    #[test]
+    fn l0_peel_outer_parens_nested_peel_one_level() {
+        assert_eq!(peel_outer_parens("(((g>=10)))"), Some("((g>=10))"));
+    }
+
+    /// No outer parens — return None.
+    #[test]
+    fn l0_peel_outer_parens_no_parens() {
+        assert_eq!(peel_outer_parens("g>=10"), None);
+        assert_eq!(peel_outer_parens("(g>=10"), None);
+        assert_eq!(peel_outer_parens("g>=10)"), None);
     }
 
     // ── BioConstraints ──────────────────────────────────────────

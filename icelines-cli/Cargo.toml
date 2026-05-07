@@ -58,3 +58,4 @@ libc = "0.2"
 # (see design/proof-bug-report.md).
 proof_lib = { package = "proof", git = "https://github.com/giodl73-repo/PROOF", rev = "9c5d456ef49cf8e1aeb516557d52ea0ddb79fd2c" }
 tempfile.workspace = true
+regex.workspace = true

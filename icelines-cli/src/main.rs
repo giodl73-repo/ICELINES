@@ -525,6 +525,19 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                     return Ok(());
                 }
                 if week || month {
+                    // Wave 11 — `run_windowed_leaders` doesn't yet
+                    // wire `--filter` through. Silently dropping
+                    // user input is the worst UX; reject loudly
+                    // until F.5b ships filter application on the
+                    // boxscore-aggregate path.
+                    if !filters.is_empty() {
+                        anyhow::bail!(
+                            "--filter is not yet supported on `query leaders --week`/`--month` \
+                             (filters drop on the boxscore-aggregate path). For windowed \
+                             filtering, run a fresh `icelines fetch boxscore` first and use \
+                             the per-game lines via `icelines favorites --range week`."
+                        );
+                    }
                     let timeframe = if week {
                         icelines_core::timeframe::Timeframe::Week
                     } else {

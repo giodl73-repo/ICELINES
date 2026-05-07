@@ -43,7 +43,7 @@ pub async fn run(
         if json {
             print_empty_json(&group, anchor, range);
         } else {
-            print_empty_text(&group);
+            print_empty_text(&group, anchor);
         }
         return Ok(());
     }
@@ -109,8 +109,11 @@ fn empty_aggregate(date: NaiveDate, range: Timeframe) -> AggregateView {
     }
 }
 
-fn print_empty_text(group: &str) {
-    println!("FAVORITES — group '{group}' is empty");
+fn print_empty_text(group: &str, date: NaiveDate) {
+    println!(
+        "FAVORITES — {} — group '{group}' is empty",
+        date.format("%Y-%m-%d (%a)"),
+    );
     println!();
     println!("  No favorites yet. Add players or teams via:");
     println!();

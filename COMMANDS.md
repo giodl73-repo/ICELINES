@@ -583,6 +583,24 @@ Non-blocking variant runs automatically on TUI launch when
 `sync.policy = eager`. Set `ICELINES_TEST_MODE=1` to suppress the
 spawn entirely (intended for L3 golden tests / CI determinism).
 
+### `icelines data-status` — inspect the on-disk manifest
+
+```bash
+# Pretty-print every shard, its files, and freshness
+icelines data-status
+
+# Filter to one DataKind (case-insensitive)
+icelines data-status --shard boxscore
+
+# Show only entries `fetch sync` would refresh
+icelines data-status --stale-only
+```
+
+Recognized `--shard` values: `bios`, `stats`, `goalie_stats`,
+`transactions`, `boxscore`, `career_history`, `schedule`, `score`,
+`playoff_bracket`. Source labels: Bundle / Setup / Live /
+DataInstall / Manual.
+
 ### Date axis on existing commands
 
 ```bash

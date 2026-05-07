@@ -8,6 +8,7 @@
 use chrono::NaiveDate;
 use icelines_core::identity::GameId;
 use icelines_core::model::{Season, TeamAbbr};
+#[cfg_attr(not(test), allow(unused_imports))]
 use icelines_core::series_momentum::{SeriesGameResult, SeriesLeader, SeriesMomentum};
 
 use crate::nhl_api::{PlayoffGameResult, PlayoffRound, PlayoffSeries};
@@ -36,7 +37,7 @@ pub fn compute_series_momentum(
         .filter(|g| series_after_indicates_ot(&g.series_after))
         .count() as u8;
 
-    let last_result = series.games.last().and_then(|g| build_last_result(g));
+    let last_result = series.games.last().and_then(build_last_result);
 
     let winner_abbrev = series
         .winner_abbrev

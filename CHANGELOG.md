@@ -1,5 +1,76 @@
 # IceLines Changelog
 
+## v0.19.1 — 2026-05-06
+
+Headline: **3 production filter bugs surfaced by Wave 11 (200
+adversarial scenarios) + Wave 10 UX polish. ~1 855 → 2 056 tests.**
+
+### Fixed
+- **Goalie compound filter rewrite ate boundary characters.**
+  `icelines query goalies --filter "gp>=10 AND sv%>=0.9"` was
+  silently corrupting the input to `goalie-games>=10 ANDAsv%>=0.9`
+  (later just `ANDsv%>=0.9` after a partial fix). Root cause:
+  `goalie_filter_rewrite_expr` had a bare `continue` inside an
+  inner `for kw in ["AND","OR","NOT"]` loop where `continue 'outer`
+  was needed; after matching a keyword and advancing `i`, the
+  outer while-loop kept executing with the stale `c` captured at
+  the top, then re-pushed it into the next atom. Compounded with
+  `flush_atom` only preserving trailing whitespace (not leading)
+  around the rewritten core. Both fixed; any compound goalie
+  filter now parses correctly.
+  ([icelines-cli/src/commands/query.rs](icelines-cli/src/commands/query.rs))
+- **Bio atoms broken when wrapped in outer parens.**
+  `--filter "(age<=24 AND p>=10)"` failed with
+  `unknown stat key "age"` because `extract_bio` didn't recurse
+  into a single-paren-wrapped expression — the catalog parser
+  then saw `age` (which isn't a catalog stat). Added
+  `peel_outer_parens` helper + recursive `extract_bio_into`.
+  ([icelines-query/src/lib.rs](icelines-query/src/lib.rs))
+- **`query leaders --week`/`--month` silently dropped `--filter`.**
+  The dispatcher routed to `run_windowed_leaders(top, sort, json)`
+  ignoring `filters`. Added a loud rejection at the dispatch
+  boundary pointing the user at `icelines favorites --range week`
+  for the populated path; full filter wiring will land in Phase
+  Art Ross. ([icelines-cli/src/main.rs](icelines-cli/src/main.rs))
+
+### Polished (from Wave 10)
+- `icelines favorites --date 2014-10-08` empty-state now echoes the
+  date back in the header (was: only populated state showed it).
+- `icelines data-status` documented in `COMMANDS.md` (shipped in
+  Foster +2, undocumented).
+- Three global-flag long_about strings (`--no-live`, `--no-dashboards`,
+  `--no-setup`) were 200-390 chars each on a single line in non-TTY
+  output; restructured into shorter paragraphs so `--help` lines stay
+  under 130 cols when piped.
+- Bare `icelines` (no args) intentionally prints a friendly landing
+  and exits 0 (deliberate UX, documented in Wave 10 #025).
+- One unused-import warning cleaned up in `favorites_view.rs`.
+
+### Tests
+- **Wave 11 — 201 filter-grammar adversarial scenarios** across 10
+  sections: boolean precedence + associativity, atom-op stress,
+  bio + stat interplay, windowed atom precedence, paren / whitespace
+  edges, conflicting / tautological predicates, goalies subcommand
+  rewrites, alias coverage, pathological inputs (deep nesting, long
+  chains, Unicode, scientific notation), output truthfulness
+  (commutativity, De Morgan's laws, inclusion-exclusion).
+  ([icelines-cli/tests/persona_wave11.rs](icelines-cli/tests/persona_wave11.rs))
+- **Wave 10 — 100 UX consistency + truthfulness scenarios** across
+  8 sections: K2.4 envelope shape, exit-code consistency, error
+  message format, date / team format consistency, output stream
+  discipline, COMMANDS.md ↔ binary parity, CLAUDE.md ↔ binary parity,
+  `--help` quality (no dev jargon, line-width caps, examples
+  present). ([icelines-cli/tests/persona_wave10.rs](icelines-cli/tests/persona_wave10.rs))
+- New L0 unit tests for `peel_outer_parens` + recursive `extract_bio`
+  paths in `icelines-query`.
+
+### Note
+The Wave 11 fixes set the stage for **Phase Art Ross** (next): a
+unified query architecture with sliding-window streak atoms, career
+aggregates across all 38 bundled seasons, cross-league career-history
+atoms, on-demand data fetch driven by the query plan, and a
+`--explain` view of the plan tree.
+
 ## v0.13.0 — 2026-05-03
 
 Headline: **38 seasons bundled in (1987-88 → 2025-26), Reports overlay,

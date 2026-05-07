@@ -29,7 +29,7 @@ use icelines_core::identity::PlayerId;
 use icelines_core::model::TeamAbbr;
 use icelines_core::timeframe::Timeframe;
 use icelines_fetch::boxscore_to_night_line;
-use icelines_fetch::manifest::{DataKey, DataKind};
+use icelines_fetch::manifest::DataKey;
 use icelines_fetch::nhl_api::ScheduledGame;
 
 use crate::db::{GroupDb, MemberKind};

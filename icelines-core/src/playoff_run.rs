@@ -59,6 +59,7 @@ impl PlayoffRunSummary {
     }
 
     /// Add one game's skater stat line to the running totals.
+    #[allow(clippy::too_many_arguments)] // mirrors the boxscore SkaterLine fields 1-to-1
     pub fn add_skater_game(
         &mut self,
         goals: u32,

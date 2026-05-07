@@ -2002,18 +2002,31 @@ fn goalie_filter_rewrite_expr(expr: &str) -> String {
     let mut i = 0;
     let flush_atom = |atom: &mut String, out: &mut String| {
         if !atom.is_empty() {
-            out.push_str(&goalie_filter_rewrite(atom.trim()));
-            // Preserve trailing whitespace before the next delimiter.
+            // Wave 11 #136 — preserve BOTH leading and trailing
+            // whitespace around the rewritten core. Without leading-
+            // preservation, a keyword followed by a stat-key (e.g.
+            // `AND sv%>=0.9`) loses the space when the rewriter only
+            // saved the trailing-side, producing `ANDsv%>=0.9` which
+            // then fails the `parse_filter` ops check.
+            let leading: String = atom
+                .chars()
+                .take_while(|c| c.is_whitespace())
+                .collect();
             let trailing: String = atom
                 .chars()
                 .rev()
                 .take_while(|c| c.is_whitespace())
+                .collect::<String>()
+                .chars()
+                .rev()
                 .collect();
-            out.push_str(&trailing.chars().rev().collect::<String>());
+            out.push_str(&leading);
+            out.push_str(&goalie_filter_rewrite(atom.trim()));
+            out.push_str(&trailing);
             atom.clear();
         }
     };
-    while i < chars.len() {
+    'outer: while i < chars.len() {
         let c = chars[i];
         if c == '(' || c == ')' {
             flush_atom(&mut atom, &mut out);
@@ -2039,7 +2052,13 @@ fn goalie_filter_rewrite_expr(expr: &str) -> String {
                         flush_atom(&mut atom, &mut out);
                         out.push_str(&chars[i..i + kw.len()].iter().collect::<String>());
                         i += kw.len();
-                        continue;
+                        // Wave 11 #136 — must continue the outer loop;
+                        // bare `continue` only re-enters the inner for,
+                        // and then the outer while pushes the stale `c`
+                        // captured at the top — eating the boundary
+                        // whitespace and corrupting the next atom
+                        // (`gp>=10 AND sv%>=0.9` → `… ANDAsv%>=0.9`).
+                        continue 'outer;
                     }
                 }
             }

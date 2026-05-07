@@ -36,26 +36,35 @@ FLAGS
     propagate_version = true
 )]
 pub struct Cli {
-    /// Disable all live NHL API fetches (Phase 8f.1). Suppresses the
-    /// Scores / Schedule / Playoffs / boxscore endpoints and the Scores
-    /// auto-refresh timer. Useful for airplane mode, demos, rate-limit
-    /// avoidance, and deterministic CI runs. Also settable via
-    /// `ICELINES_NO_LIVE=1` or `live = false` in `~/.icelines/config.toml`.
-    /// Precedence: CLI flag > env var > config file > default (live ON).
+    /// Disable all live NHL API fetches (Phase 8f.1).
+    ///
+    /// Suppresses Scores / Schedule / Playoffs / boxscore endpoints
+    /// and the Scores auto-refresh timer.
+    ///
+    /// Useful for airplane mode, demos, and CI runs.
+    ///
+    /// Also settable via `ICELINES_NO_LIVE=1` or `live = false`
+    /// in `~/.icelines/config.toml`.
+    ///
+    /// Precedence: CLI flag > env > config > default (live ON).
     #[arg(long, global = true)]
     pub no_live: bool,
 
-    /// Disable the dashboard side panel on the TUI player card. The panel
-    /// is on by default; pass this flag to suppress it. Also settable via
-    /// `ICELINES_DASHBOARDS=0` or `dashboards = false` in
-    /// `~/.icelines/config.toml`. Precedence: CLI flag > env > config >
-    /// default (on).
+    /// Disable the dashboard side panel on the TUI player card.
+    ///
+    /// The panel is on by default; pass this flag to suppress it.
+    ///
+    /// Also settable via `ICELINES_DASHBOARDS=0` or `dashboards =
+    /// false` in `~/.icelines/config.toml`.
+    ///
+    /// Precedence: CLI flag > env > config > default (on).
     #[arg(long, global = true)]
     pub no_dashboards: bool,
 
-    /// Phase Foster.0.8 — skip the auto-setup wizard if no config
-    /// file exists. Headless / scripted callers want this so the
-    /// binary doesn't try to prompt.
+    /// Phase Foster.0.8 — skip the auto-setup wizard.
+    ///
+    /// On first run with no config file, `icelines` opens the setup
+    /// wizard. Headless / scripted callers pass this to bypass it.
     #[arg(long, global = true)]
     pub no_setup: bool,
 
@@ -550,10 +559,11 @@ ENTRY POINTS COVERED
     Group(GroupSubcommand),
     /// Favorites dashboard (Phase Foster.2).
     ///
-    /// Renders today's (or `--date`'s) games + stat lines for the
-    /// players and teams in your `Favorites` group. Works offline
-    /// from cached boxscores when available; otherwise requires
-    /// `live_feeds` to be on.
+    /// Renders today's games + stat lines for your favorited
+    /// players and teams.
+    ///
+    /// Works offline from cached boxscores; falls back to the
+    /// live NHL API when `live_feeds = on`.
     Favorites {
         /// Anchor date (`YYYY-MM-DD`). Default: today.
         #[arg(long, value_name = "YYYY-MM-DD")]
