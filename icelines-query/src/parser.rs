@@ -826,6 +826,12 @@ fn bio_numeric_field_from_key(key: &str) -> Option<BioField> {
         "draft-overall" | "draft-pick" | "overall" => Some(BioField::DraftOverall),
         "height" | "ht" => Some(BioField::Height),
         "weight" | "wt" => Some(BioField::Weight),
+        // Wave 12 #124 — `rookie-season` was only in
+        // bio_text_field_from_key, but it's queried with a
+        // numeric value (the executor already parses
+        // `bio.rookie_season` as u32). The numeric path needs
+        // the field too so `rookie-season>=20212022` parses.
+        "rookie" | "rookie-season" => Some(BioField::RookieSeason),
         _ => None,
     }
 }
