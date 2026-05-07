@@ -37,6 +37,12 @@ pub enum Token {
     KwBetween,
     /// LIKE keyword
     KwLike,
+    /// A.3 — `EVER` modifier on `g.any10g>=5 EVER` queries.
+    /// Walks every bundled season for the constraint.
+    KwEver,
+    /// A.3 — `AT` modifier on `... AT age<=22` queries. Slices
+    /// the season set by player-age-at-time before aggregating.
+    KwAt,
     /// A quoted string value (`"Mc*"` or `'Mc*'`). Quotes are
     /// stripped; the raw inner content is preserved.
     QuotedString(String),
@@ -120,9 +126,11 @@ pub fn tokenize(input: &str) -> Vec<Token> {
             for (kw_str, tok) in [
                 ("BETWEEN", Token::KwBetween),
                 ("LIKE", Token::KwLike),
+                ("EVER", Token::KwEver),
                 ("AND", Token::KwAnd),
                 ("NOT", Token::KwNot),
                 ("OR", Token::KwOr),
+                ("AT", Token::KwAt),
                 ("IN", Token::KwIn),
             ] {
                 let kw_len = kw_str.len();
@@ -354,5 +362,61 @@ mod tests {
                 Token::QuotedString("Mc Donald".into()),
             ]
         );
+    }
+
+    /// A.3 — `EVER` is a global modifier suffix.
+    #[test]
+    fn l0_a3_tokenize_ever_keyword() {
+        let toks = tokenize("g.any10g>=5 EVER");
+        assert_eq!(
+            toks,
+            vec![Token::Bare("g.any10g>=5".into()), Token::KwEver]
+        );
+    }
+
+    /// A.3 — `AT` introduces a sub-clause.
+    #[test]
+    fn l0_a3_tokenize_at_keyword() {
+        let toks = tokenize("g.season>=50 AT age<=22");
+        assert_eq!(
+            toks,
+            vec![
+                Token::Bare("g.season>=50".into()),
+                Token::KwAt,
+                Token::Bare("age<=22".into()),
+            ]
+        );
+    }
+
+    /// A.3 — `EVER` and `AT` together.
+    #[test]
+    fn l0_a3_tokenize_ever_with_at() {
+        let toks = tokenize("g.any10g>=5 EVER AT age<=25");
+        assert_eq!(
+            toks,
+            vec![
+                Token::Bare("g.any10g>=5".into()),
+                Token::KwEver,
+                Token::KwAt,
+                Token::Bare("age<=25".into()),
+            ]
+        );
+    }
+
+    /// A.3 — case insensitive.
+    #[test]
+    fn l0_a3_tokenize_ever_lowercase() {
+        let toks = tokenize("g.any10g>=5 ever");
+        assert_eq!(
+            toks,
+            vec![Token::Bare("g.any10g>=5".into()), Token::KwEver]
+        );
+    }
+
+    /// Word boundary fence: `evergreen` stays bare.
+    #[test]
+    fn l0_a3_tokenize_ever_substring_not_keyword() {
+        let toks = tokenize("evergreen>=5");
+        assert_eq!(toks, vec![Token::Bare("evergreen>=5".into())]);
     }
 }

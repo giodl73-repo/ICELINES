@@ -24,9 +24,10 @@ use icelines_core::stats_catalog::StatId;
 use crate::errors::ParseError;
 use crate::input::FilterInput;
 use crate::plan::{
-    BioConstraint, BioField, Constraint, GlobPattern, MemberOp, NumericRange, PatternOp,
-    Predicate, QueryPlan, ScalarOp, ScalarValue, SeasonAxis, SeasonStatConstraint, SlidingWindow,
-    SlidingWindowConstraint, WindowPolicy, WindowScope,
+    AgeBound, BioConstraint, BioField, CareerAggrConstraint, CareerAggregator, Constraint,
+    GlobPattern, MemberOp, NumericRange, PatternOp, Predicate, QueryPlan, ScalarOp, ScalarValue,
+    SeasonAxis, SeasonStatConstraint, SlidingWindow, SlidingWindowConstraint, WindowPolicy,
+    WindowScope,
 };
 use crate::tokenizer::{tokenize, Token};
 use crate::{try_parse_bio_atom, BioAtom};
@@ -193,6 +194,14 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_atom(&mut self) -> Result<Constraint, ()> {
+        let constraint = self.parse_atom_inner()?;
+        // Phase Art Ross A.3 — EVER and AT modifiers attach
+        // post-atom. EVER promotes a SlidingWindow to a
+        // CareerAggregate::AnyWindow; AT attaches an age bound.
+        self.apply_ever_at_modifiers(constraint)
+    }
+
+    fn parse_atom_inner(&mut self) -> Result<Constraint, ()> {
         // Pull the leading Bare token. It's either a complete atom
         // (`g>=10`) or just a key (`country` followed by `IN (...)`).
         let bare = match self.bump() {
@@ -242,6 +251,96 @@ impl<'a> Parser<'a> {
             }
             _ => parse_scalar_atom(&bare).map_err(|e| {
                 self.errors.push(e);
+            }),
+        }
+    }
+
+    /// Apply trailing `EVER` and `AT` modifiers to an atom-level
+    /// constraint. Both are optional; EVER must come before AT.
+    fn apply_ever_at_modifiers(
+        &mut self,
+        mut constraint: Constraint,
+    ) -> Result<Constraint, ()> {
+        // EVER modifier
+        if matches!(self.peek(), Some(Token::KwEver)) {
+            self.bump();
+            constraint = match self.promote_to_career_ever(constraint) {
+                Ok(c) => c,
+                Err(e) => {
+                    self.errors.push(e);
+                    return Err(());
+                }
+            };
+        }
+        // AT modifier
+        if matches!(self.peek(), Some(Token::KwAt)) {
+            self.bump();
+            constraint = match self.parse_at_age_modifier(constraint) {
+                Ok(c) => c,
+                Err(e) => {
+                    self.errors.push(e);
+                    return Err(());
+                }
+            };
+        }
+        Ok(constraint)
+    }
+
+    /// Promote a constraint with the trailing `EVER` keyword into
+    /// a `CareerAggregate`. The atom must have come from
+    /// `try_parse_career_atom` (which produced an AnyWindow with no
+    /// at_age) or be one we explicitly support.
+    fn promote_to_career_ever(&self, c: Constraint) -> Result<Constraint, ParseError> {
+        match c {
+            Constraint::CareerAggregate(_) => Ok(c), // already career — EVER is implicit
+            other => Err(ParseError::IncompatiblePredicate {
+                field: format!("{:?}", other),
+                detail: "`EVER` only attaches to a career-aggregator atom \
+                         (`p.career`, `p.streak`, `g.any10g`, `g.seasons-with`)"
+                    .to_string(),
+            }),
+        }
+    }
+
+    /// Parse the `AT <age-clause>` sub-expression. `<age-clause>`
+    /// must be a single `age` predicate (`age<=22`, `age<25`,
+    /// `age BETWEEN 20 AND 25`). Attach as `at_age` on the
+    /// preceding constraint.
+    fn parse_at_age_modifier(&mut self, c: Constraint) -> Result<Constraint, ParseError> {
+        // Reuse parse_atom_inner so BETWEEN is recognized inside
+        // the AT clause. The inner parser handles bare atoms +
+        // BETWEEN + IN + LIKE — for AT we constrain to age
+        // predicate-shapes via age_bound_from_predicate.
+        let age_atom = match self.parse_atom_inner() {
+            Ok(c) => c,
+            Err(()) => {
+                // parse_atom_inner pushed a ParseError into self.errors;
+                // promote to the typed return.
+                return Err(ParseError::UnexpectedEnd);
+            }
+        };
+        let bound = match age_atom {
+            Constraint::Bio(BioConstraint {
+                field: BioField::Age,
+                predicate,
+            }) => age_bound_from_predicate(&predicate)?,
+            other => {
+                return Err(ParseError::IncompatiblePredicate {
+                    field: "AT clause".to_string(),
+                    detail: format!(
+                        "AT requires an `age` predicate; got {other:?}"
+                    ),
+                });
+            }
+        };
+        match c {
+            Constraint::CareerAggregate(mut ca) => {
+                ca.at_age = Some(bound);
+                Ok(Constraint::CareerAggregate(ca))
+            }
+            other => Err(ParseError::IncompatiblePredicate {
+                field: format!("{:?}", other),
+                detail: "AT clause only attaches to career-aggregator atoms".to_string(),
             }),
         }
     }
@@ -539,6 +638,13 @@ fn build_scalar_constraint_numeric(
         {
             return Ok(constraint);
         }
+        // Phase Art Ross A.3 — career aggregator dotted keys
+        // (`p.career>=500`, `p.streak>=15`, `g.any10g>=5`).
+        // AnyWindow requires the EVER suffix, attached at the
+        // parse_atom_with_modifiers layer.
+        if let Some(constraint) = try_parse_career_atom(key, op, value, atom_text)? {
+            return Ok(constraint);
+        }
     }
 
     // Else: catalog StatId.
@@ -686,6 +792,122 @@ fn try_parse_sliding_window_atom(
         window,
         predicate: Predicate::Scalar(op, ScalarValue::Number(value)),
         axis: SeasonAxis::Regular,
+    })))
+}
+
+/// A.3 — convert a Bio age `Predicate` to an `AgeBound`.
+/// Supports Scalar Lt/Le/Gt/Ge/Eq and Range; rejects Member
+/// (`age IN (...)`) and Pattern as an AT clause shape.
+fn age_bound_from_predicate(p: &Predicate) -> Result<AgeBound, ParseError> {
+    match p {
+        Predicate::Scalar(op, ScalarValue::Number(v)) => {
+            let n = *v as u32;
+            let bound = match op {
+                ScalarOp::Le => AgeBound {
+                    min: None,
+                    max: Some(n),
+                },
+                ScalarOp::Lt => AgeBound {
+                    min: None,
+                    max: Some(n.saturating_sub(1)),
+                },
+                ScalarOp::Ge => AgeBound {
+                    min: Some(n),
+                    max: None,
+                },
+                ScalarOp::Gt => AgeBound {
+                    min: Some(n.saturating_add(1)),
+                    max: None,
+                },
+                ScalarOp::Eq => AgeBound {
+                    min: Some(n),
+                    max: Some(n),
+                },
+                ScalarOp::Ne => {
+                    return Err(ParseError::IncompatiblePredicate {
+                        field: "AT age".to_string(),
+                        detail: "`age!=N` not supported in AT clause".to_string(),
+                    });
+                }
+            };
+            Ok(bound)
+        }
+        Predicate::Range(NumericRange { min, max }) => Ok(AgeBound {
+            min: Some(*min as u32),
+            max: Some(*max as u32),
+        }),
+        _ => Err(ParseError::IncompatiblePredicate {
+            field: "AT age".to_string(),
+            detail: format!("AT clause requires a scalar/range age predicate; got {p:?}"),
+        }),
+    }
+}
+
+/// A.3 — recognize career-aggregator dotted keys.
+///
+/// Syntax:
+///   `<stat-key>.career<op><value>`        — LifetimeSum
+///   `<stat-key>.streak<op><value>`        — LongestStreak
+///   `<stat-key>.any<N>g<op><value>`       — AnyWindow(N) — REQUIRES `EVER` suffix
+///                                            (verified at parse_atom_with_modifiers)
+///   `<stat-key>.seasons-with<op><value>`  — SeasonsWith
+///
+/// Returns `Ok(None)` when the second dot-segment doesn't match
+/// any career-aggregator shape (let the caller fall through to
+/// UnknownStat). Returns `Ok(Some(_))` on a clean parse.
+fn try_parse_career_atom(
+    key: &str,
+    op: ScalarOp,
+    value: f64,
+    atom_text: &str,
+) -> Result<Option<Constraint>, ParseError> {
+    let parts: Vec<&str> = key.split('.').collect();
+    if parts.len() != 2 {
+        return Ok(None);
+    }
+    let stat_key = parts[0];
+    let aggr_str = parts[1].to_ascii_lowercase();
+
+    let aggregator = if aggr_str == "career" {
+        CareerAggregator::LifetimeSum
+    } else if aggr_str == "streak" {
+        CareerAggregator::LongestStreak
+    } else if aggr_str == "seasons-with" || aggr_str == "seasons_with" {
+        CareerAggregator::SeasonsWith
+    } else if aggr_str.starts_with("any") && aggr_str.ends_with('g') && aggr_str.len() > 4 {
+        // anyNg → AnyWindow(N). Last char is 'g'; middle is N.
+        let n_str = &aggr_str[3..aggr_str.len() - 1];
+        let n: u32 = match n_str.parse() {
+            Ok(n) => n,
+            Err(_) => return Ok(None),
+        };
+        if n == 0 {
+            return Err(ParseError::ZeroWindowSize {
+                atom: atom_text.to_string(),
+            });
+        }
+        if n > u8::MAX as u32 {
+            return Err(ParseError::WindowSizeOutOfRange {
+                atom: atom_text.to_string(),
+                size: n,
+                max: u8::MAX,
+            });
+        }
+        CareerAggregator::AnyWindow(n as u8)
+    } else {
+        return Ok(None);
+    };
+
+    let stat = StatId::from_cli_key(stat_key).ok_or_else(|| ParseError::UnknownStat {
+        key: stat_key.to_string(),
+    })?;
+
+    Ok(Some(Constraint::CareerAggregate(CareerAggrConstraint {
+        stat,
+        aggregator,
+        predicate: Predicate::Scalar(op, ScalarValue::Number(value)),
+        axis: SeasonAxis::Regular,
+        at_age: None,
     })))
 }
 
@@ -877,6 +1099,8 @@ fn describe_token(t: &Token) -> String {
         Token::KwIn => "IN".to_string(),
         Token::KwBetween => "BETWEEN".to_string(),
         Token::KwLike => "LIKE".to_string(),
+        Token::KwEver => "EVER".to_string(),
+        Token::KwAt => "AT".to_string(),
         Token::Bare(s) => format!("`{s}`"),
         Token::QuotedString(s) => format!("\"{s}\""),
     }
@@ -1333,6 +1557,171 @@ mod tests {
         match &errs("g=<5")[0] {
             ParseError::OpTypoHint { suggestion, .. } => assert_eq!(*suggestion, "<="),
             other => panic!("expected OpTypoHint, got {other:?}"),
+        }
+    }
+
+    // ── A.3 career-aggregator atoms ─────────────────────────────
+
+    #[test]
+    fn l0_a3_parse_career_lifetime_sum() {
+        let c = ok("p.career>=500");
+        match c {
+            Constraint::CareerAggregate(ca) => {
+                assert!(matches!(ca.aggregator, CareerAggregator::LifetimeSum));
+            }
+            _ => panic!("expected CareerAggregate, got {c:?}"),
+        }
+    }
+
+    #[test]
+    fn l0_a3_parse_career_streak() {
+        let c = ok("p.streak>=15");
+        match c {
+            Constraint::CareerAggregate(ca) => {
+                assert!(matches!(ca.aggregator, CareerAggregator::LongestStreak));
+            }
+            _ => panic!(),
+        }
+    }
+
+    #[test]
+    fn l0_a3_parse_seasons_with() {
+        let c = ok("g.seasons-with>=5");
+        match c {
+            Constraint::CareerAggregate(ca) => {
+                assert!(matches!(ca.aggregator, CareerAggregator::SeasonsWith));
+            }
+            _ => panic!(),
+        }
+    }
+
+    /// `g.any10g>=5` without EVER — current grammar still parses
+    /// (CareerAggregate variant), but EVER is the user-facing form
+    /// per the spec.
+    #[test]
+    fn l0_a3_parse_any10g_basic() {
+        let c = ok("g.any10g>=5");
+        match c {
+            Constraint::CareerAggregate(ca) => {
+                assert!(matches!(ca.aggregator, CareerAggregator::AnyWindow(10)));
+            }
+            _ => panic!(),
+        }
+    }
+
+    /// EVER suffix — promotion is a no-op since the atom already
+    /// produces a CareerAggregate. Verifies the modifier accepts it
+    /// without erroring.
+    #[test]
+    fn l0_a3_parse_any10g_with_ever() {
+        let c = ok("g.any10g>=5 EVER");
+        match c {
+            Constraint::CareerAggregate(ca) => {
+                assert!(matches!(ca.aggregator, CareerAggregator::AnyWindow(10)));
+            }
+            _ => panic!(),
+        }
+    }
+
+    /// AT-age slicing on a career atom.
+    #[test]
+    fn l0_a3_parse_any10g_with_ever_and_at_age() {
+        let c = ok("g.any10g>=5 EVER AT age<=22");
+        match c {
+            Constraint::CareerAggregate(ca) => {
+                assert!(matches!(ca.aggregator, CareerAggregator::AnyWindow(10)));
+                let bound = ca.at_age.expect("AT age attached");
+                assert_eq!(bound.max, Some(22));
+            }
+            _ => panic!(),
+        }
+    }
+
+    #[test]
+    fn l0_a3_parse_career_with_at_age() {
+        let c = ok("p.career>=500 AT age<=30");
+        match c {
+            Constraint::CareerAggregate(ca) => {
+                assert_eq!(ca.at_age.unwrap().max, Some(30));
+            }
+            _ => panic!(),
+        }
+    }
+
+    #[test]
+    fn l0_a3_parse_at_age_strict_lt() {
+        // `age<25` → max = 24
+        let c = ok("p.career>=500 AT age<25");
+        match c {
+            Constraint::CareerAggregate(ca) => {
+                assert_eq!(ca.at_age.unwrap().max, Some(24));
+            }
+            _ => panic!(),
+        }
+    }
+
+    #[test]
+    fn l0_a3_parse_at_age_range() {
+        let c = ok("p.career>=500 AT age BETWEEN 20 AND 25");
+        match c {
+            Constraint::CareerAggregate(ca) => {
+                let bound = ca.at_age.unwrap();
+                assert_eq!(bound.min, Some(20));
+                assert_eq!(bound.max, Some(25));
+            }
+            _ => panic!(),
+        }
+    }
+
+    #[test]
+    fn l0_a3_ever_on_non_career_atom_rejected() {
+        // `g>=5 EVER` — `g>=5` is a SeasonStat, EVER doesn't promote
+        let es = errs("g>=5 EVER");
+        assert!(matches!(es[0], ParseError::IncompatiblePredicate { .. }));
+    }
+
+    #[test]
+    fn l0_a3_at_clause_rejects_non_age_field() {
+        let es = errs("p.career>=500 AT country=CAN");
+        assert!(matches!(es[0], ParseError::IncompatiblePredicate { .. }));
+    }
+
+    #[test]
+    fn l0_a3_at_age_zero_window_size_rejected() {
+        let es = errs("g.any0g>=5 EVER");
+        assert!(matches!(es[0], ParseError::ZeroWindowSize { .. }));
+    }
+
+    #[test]
+    fn l0_a3_at_age_window_too_large_rejected() {
+        let es = errs("g.any1000g>=5 EVER");
+        assert!(matches!(es[0], ParseError::WindowSizeOutOfRange { .. }));
+    }
+
+    #[test]
+    fn l0_a3_career_compound_with_bio() {
+        let c = ok("p.career>=500 AND country=CAN");
+        match c {
+            Constraint::All(children) => assert_eq!(children.len(), 2),
+            _ => panic!(),
+        }
+    }
+
+    #[test]
+    fn l0_a3_killer_query_with_ever() {
+        // The user's full vision query at the historical tier
+        let c = ok("g.any10g>=5 EVER AT age<=25 AND country IN (CAN, USA)");
+        match c {
+            Constraint::All(children) => {
+                assert_eq!(children.len(), 2);
+                if let Constraint::CareerAggregate(ca) = &children[0] {
+                    assert!(matches!(ca.aggregator, CareerAggregator::AnyWindow(10)));
+                    assert_eq!(ca.at_age.unwrap().max, Some(25));
+                } else {
+                    panic!("expected CareerAggregate");
+                }
+            }
+            _ => panic!(),
         }
     }
 

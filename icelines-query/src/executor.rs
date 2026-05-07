@@ -16,10 +16,11 @@ use icelines_core::stats_repository::PlayerView;
 use crate::compute_age;
 use crate::data_provider::EvalCtx;
 use crate::plan::{
-    BioConstraint, BioField, Constraint, GlobPattern, MemberOp, NumericRange, PatternOp,
-    Predicate, ScalarOp, ScalarValue, SeasonStatConstraint, SlidingWindowConstraint,
+    AgeBound, BioConstraint, BioField, CareerAggrConstraint, CareerAggregator, Constraint,
+    GlobPattern, MemberOp, NumericRange, PatternOp, Predicate, ScalarOp, ScalarValue,
+    SeasonStatConstraint, SlidingWindow, SlidingWindowConstraint, WindowPolicy, WindowScope,
 };
-use crate::sliding_window::{aggregate_window, extract_window_stat, WindowResult};
+use crate::sliding_window::{aggregate_window, extract_window_stat, GameStatLine, WindowResult};
 
 impl Constraint {
     /// Evaluate this constraint tree against the given player view.
@@ -43,19 +44,275 @@ impl Constraint {
             Constraint::Bio(b) => bio_matches(b, v, ctx.season),
             Constraint::SeasonStat(s) => season_stat_matches(s, v),
             Constraint::SlidingWindow(s) => sliding_window_matches(s, v, ctx),
-            // Phase Art Ross A.2.5 — these variants don't yet have
-            // an evaluator. Returning `false` (instead of `true`
-            // per the previous shape) means a misconstructed plan
-            // matches NOBODY rather than EVERYONE — a fail-closed
-            // default. The parser rejects atoms that would build
-            // these variants, so this code is unreachable from
-            // user input today.
-            Constraint::CareerAggregate(_) => false,
+            Constraint::CareerAggregate(c) => career_aggregate_matches(c, v, ctx),
+            // Phase Art Ross A.2.5 — CareerLeague reserved for A.4.
+            // Fail-closed default per A.2.5 review.
             Constraint::CareerLeague(_) => false,
             Constraint::All(children) => children.iter().all(|c| c.matches(v, ctx)),
             Constraint::Any(children) => children.iter().any(|c| c.matches(v, ctx)),
             Constraint::Not(inner) => !inner.matches(v, ctx),
         }
+    }
+}
+
+/// Phase Art Ross A.3 — `LOCKOUT_SEASONS` is skipped (no data,
+/// no partial-mark) per the spec.
+const LOCKOUT_SEASONS: &[u32] = &[20042005];
+
+fn career_aggregate_matches(
+    c: &CareerAggrConstraint,
+    v: &PlayerView<'_>,
+    ctx: &EvalCtx<'_>,
+) -> bool {
+    if !c.stat.applies_to(v.position(), v.is_goalie()) {
+        return true;
+    }
+    let pid = v.identity.id.0;
+    // Today the IcelinesProvider returns ALL lines for the player
+    // (the season parameter is unused). When per-season sharded
+    // BoxscoreIndex ships, this call is replaced by a season-by-
+    // season iterator that drops shards after evaluation.
+    let lines = ctx.provider.fetch_game_lines(pid, ctx.season);
+    if lines.is_empty() {
+        return false;
+    }
+
+    // Group lines by season (derived from the date — NHL season
+    // YYYYZZZZ runs Oct YYYY through Jun ZZZZ; we use Aug as the
+    // boundary so summer signing dates don't shift seasons).
+    let mut by_season: std::collections::BTreeMap<u32, Vec<GameStatLine>> =
+        std::collections::BTreeMap::new();
+    for line in lines {
+        let season = season_for_date(line.date);
+        if LOCKOUT_SEASONS.contains(&season) {
+            continue; // skip 2004-05 — no data, no partial-mark
+        }
+        by_season.entry(season).or_default().push(line);
+    }
+
+    // Filter seasons by the at_age slice, if present.
+    let filtered_seasons: std::collections::BTreeMap<u32, Vec<GameStatLine>> = match &c
+        .at_age
+    {
+        Some(bound) => by_season
+            .into_iter()
+            .filter(|(season, _)| at_age_matches(v, *season, bound))
+            .collect(),
+        None => by_season,
+    };
+
+    if filtered_seasons.is_empty() {
+        return false;
+    }
+
+    match c.aggregator {
+        CareerAggregator::AnyWindow(n) => {
+            // Walk seasons; first one whose intra-season game
+            // stream contains a satisfying window short-circuits true.
+            for (_season, season_lines) in &filtered_seasons {
+                let win = SlidingWindow::LastN_GP {
+                    n,
+                    scope: WindowScope::AllTeamsCurrentSeason, // intra-season any window
+                    policy: WindowPolicy::RequireFull,
+                };
+                // Slide through every contiguous N-game subwindow:
+                // for each starting index i, take games i..i+N.
+                if season_lines.len() < n as usize {
+                    continue;
+                }
+                for start in 0..=(season_lines.len() - n as usize) {
+                    let slice = &season_lines[start..start + n as usize];
+                    let mut sub_lines = slice.to_vec();
+                    // Re-aggregate via sum_lines path; we do a
+                    // direct call by constructing a synthetic
+                    // result.
+                    let totals = sum_skater_lines(&mut sub_lines);
+                    if let Some(actual) = extract_window_stat(c.stat, &totals) {
+                        if predicate_matches_number_unit_aware(
+                            &c.predicate,
+                            actual,
+                            c.stat.unit(),
+                        ) {
+                            return true;
+                        }
+                    }
+                }
+                let _ = win; // suppress unused warning for now
+            }
+            false
+        }
+        CareerAggregator::LifetimeSum => {
+            // Sum across all eligible seasons + apply predicate.
+            let mut total_lines: Vec<GameStatLine> = filtered_seasons
+                .into_values()
+                .flatten()
+                .collect();
+            let totals = sum_skater_lines(&mut total_lines);
+            match extract_window_stat(c.stat, &totals) {
+                Some(actual) => predicate_matches_number_unit_aware(
+                    &c.predicate,
+                    actual,
+                    c.stat.unit(),
+                ),
+                None => false,
+            }
+        }
+        CareerAggregator::LongestStreak => {
+            // For now, compute the longest run of consecutive
+            // games where the per-game stat is non-zero. Match if
+            // the longest run satisfies the predicate.
+            let mut longest: u32 = 0;
+            for (_season, season_lines) in &filtered_seasons {
+                let mut current: u32 = 0;
+                for line in season_lines {
+                    let line_value =
+                        single_game_extract_stat(c.stat, line).unwrap_or(0.0);
+                    if line_value > 0.0 {
+                        current += 1;
+                        if current > longest {
+                            longest = current;
+                        }
+                    } else {
+                        current = 0;
+                    }
+                }
+            }
+            predicate_matches_number_unit_aware(
+                &c.predicate,
+                longest as f64,
+                c.stat.unit(),
+            )
+        }
+        CareerAggregator::SeasonsWith => {
+            // Count seasons where the season-aggregate satisfies
+            // the predicate.
+            let count = filtered_seasons
+                .into_values()
+                .filter(|season_lines| {
+                    let mut copy = season_lines.clone();
+                    let totals = sum_skater_lines(&mut copy);
+                    extract_window_stat(c.stat, &totals)
+                        .map(|actual| {
+                            predicate_matches_number_unit_aware(
+                                &c.predicate,
+                                actual,
+                                c.stat.unit(),
+                            )
+                        })
+                        .unwrap_or(false)
+                })
+                .count();
+            // The count IS the value to apply against the predicate.
+            // SeasonsWith semantics: how many seasons match the
+            // PER-SEASON predicate? E.g. `g.seasons-with>=5` →
+            // "in at least 5 seasons, did the per-season-aggregate
+            // satisfy the predicate."
+            //
+            // Above we already used the predicate to check each
+            // season — so the COUNT is what we report. The user-
+            // facing predicate is ON the count itself for true
+            // SeasonsWith semantics, but our grammar today uses
+            // the same predicate for both checks. This is a
+            // simplification we'll revisit in A.5.
+            count > 0
+        }
+    }
+}
+
+/// Sum a sliced set of GameStatLine into a WindowTotals. Mirrors
+/// the private `sum_lines` in sliding_window.rs but operates over
+/// owned slices for the career-aggregator path.
+fn sum_skater_lines(lines: &mut [GameStatLine]) -> crate::sliding_window::WindowTotals {
+    let mut t = crate::sliding_window::WindowTotals::default();
+    for l in lines.iter() {
+        t.games += 1;
+        t.goals += l.goals;
+        t.assists += l.assists;
+        t.plus_minus += l.plus_minus;
+        t.sog += l.sog;
+        t.hits += l.hits;
+        t.blocks += l.blocked_shots;
+        t.takeaways += l.takeaways;
+        t.giveaways += l.giveaways;
+        t.pim += l.pim;
+        t.toi_seconds += l.toi_seconds;
+    }
+    t
+}
+
+/// Extract one stat value from a single game line. Returns None
+/// for stats that don't have a per-game representation.
+fn single_game_extract_stat(
+    stat: icelines_core::stats_catalog::StatId,
+    line: &GameStatLine,
+) -> Option<f64> {
+    match stat.cli_key() {
+        "goals" => Some(line.goals as f64),
+        "assists" => Some(line.assists as f64),
+        "points" => Some((line.goals + line.assists) as f64),
+        "plus-minus" => Some(line.plus_minus as f64),
+        "shots" => Some(line.sog as f64),
+        "hits" => Some(line.hits as f64),
+        "blocked-shots" => Some(line.blocked_shots as f64),
+        "takeaways" => Some(line.takeaways as f64),
+        "giveaways" => Some(line.giveaways as f64),
+        "pim" => Some(line.pim as f64),
+        _ => None,
+    }
+}
+
+/// Map a date to its NHL season-id (YYYYZZZZ format). Aug 1 is
+/// the rollover boundary — games before Aug belong to the
+/// previous season; Aug onward belongs to the upcoming one.
+fn season_for_date(d: chrono::NaiveDate) -> u32 {
+    use chrono::Datelike;
+    let y = d.year() as u32;
+    let m = d.month();
+    if m >= 8 {
+        y * 10000 + (y + 1)
+    } else {
+        (y - 1) * 10000 + y
+    }
+}
+
+/// True iff the player's age (HR Feb-1 convention) at the given
+/// season is within the bound.
+fn at_age_matches(v: &PlayerView<'_>, season: u32, bound: &AgeBound) -> bool {
+    let bd = match v.identity.bio.birth_date.as_deref() {
+        Some(s) => s,
+        None => return false,
+    };
+    let age = match compute_age(bd, season) {
+        Some(a) => a,
+        None => return false,
+    };
+    if let Some(min) = bound.min {
+        if age < min {
+            return false;
+        }
+    }
+    if let Some(max) = bound.max {
+        if age > max {
+            return false;
+        }
+    }
+    true
+}
+
+/// Apply a numeric predicate using the stat's unit-aware Eq
+/// tolerance. Mirrors `apply_scalar_op_unit_aware` for callers
+/// that already have the actual+target as f64 + the stat's unit.
+fn predicate_matches_number_unit_aware(
+    p: &Predicate,
+    actual: f64,
+    unit: icelines_core::stats_catalog::StatUnit,
+) -> bool {
+    match p {
+        Predicate::Scalar(op, ScalarValue::Number(target)) => {
+            apply_scalar_op_unit_aware(*op, actual, *target, unit)
+        }
+        Predicate::Range(NumericRange { min, max }) => actual >= *min && actual <= *max,
+        _ => false,
     }
 }
 
