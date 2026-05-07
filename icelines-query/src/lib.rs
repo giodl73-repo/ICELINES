@@ -1,36 +1,28 @@
 //! `icelines-query` — shared query/filter utilities.
 //!
-//! Phase QueryA. The web dashboard's `/leaders ?filter=` and the
-//! CLI's `query --filter` share this crate so the same expression
-//! works on both surfaces:
+//! Phase Art Ross A.0+ — the unified query architecture lives here.
+//! The legacy v0.19.x bridging API (`BioAtom`, `extract_bio`,
+//! `split_top_level_and`, `compute_age`) remains exported for
+//! backward compatibility while the new pipeline (`plan` /
+//! `parse_query` / `DataProvider` / `EvalCtx`) ships in parallel.
 //!
-//! ```text
-//!     g>=30 AND age<=24 AND country=CAN AND height>=72
-//! ```
+//! Both surfaces apply the bio atoms after the catalog parser has
+//! handled the stat residue today; over A.1-A.5 the new pipeline
+//! supersedes this routing while keeping the legacy API as a
+//! shim until v0.22.0.
 //!
-//! ## Why a separate crate
+//! ## Phase Art Ross modules (new)
 //!
-//! Per CLAUDE.md the StatId catalog (`icelines-core::stats_catalog`)
-//! deliberately excludes bio fields — age, height, weight, draft year,
-//! country, shoots — because those aren't *stats* (they're per-player
-//! immutable facts). The CLI surfaces some of them through positional
-//! flags (`--age-min`/`--age-max`); the web's filter form had its own
-//! discrete inputs.
+//! - [`plan`] — Constraint IR (n-ary `All`/`Any`/`Not`), Predicate
+//!   shape-by-construction, `StrictMode`.
+//! - [`input`] — `FilterInput` enum, decode boundary per surface.
+//! - [`errors`] — `ParseError` enum, multi-error reporting.
+//! - [`data_provider`] — `DataProvider` trait + `EvalCtx` (the
+//!   dependency-inversion seam).
+//! - [`parser`] — `parse_query(FilterInput) -> Result<QueryPlan, Vec<ParseError>>`.
+//! - [`planner`] — `QueryPlan::requirements()` walks the IR.
 //!
-//! When the user asked for `age<=24 AND p>=80` to work as one
-//! expression, we needed a place that knew about both bio atoms AND
-//! the StatId-driven `FilterExpr`. Putting the bio-atom logic in
-//! `icelines-core` would mean either (a) bending the "bio is not a
-//! stat" rule by adding bio StatIds, or (b) adding bio types to the
-//! catalog that aren't readable via `StatId::read(view)`. Neither is
-//! clean.
-//!
-//! This crate sits between `icelines-core` and consumers (web, CLI):
-//! it owns the bio-atom types, the top-level-AND splitter, and the
-//! Hockey-Reference age computation. Both surfaces apply the bio
-//! atoms after the catalog parser has handled the stat residue.
-//!
-//! ## What lives here today
+//! ## Legacy bridging API (v0.19.x — kept for backward compat)
 //!
 //! - [`BioAtom`] — sum type covering all bio constraints.
 //! - [`try_parse_bio_atom`] — single-atom parser; returns `None` for
@@ -39,10 +31,29 @@
 //!   AND. Bails on OR/NOT (caller falls back to the catalog parser
 //!   for the whole expression in those cases).
 //! - [`compute_age`] — Hockey-Reference's "age as of end of Jan 31 of
-//!   the season's second year" convention. Different from NHL's
-//!   Sep 15 contract/draft cutoff.
+//!   the season's second year" convention.
 //! - [`BioConstraints`] — a folded set of all bio atoms ready to
 //!   apply against a `PlayerView`.
+
+pub mod data_provider;
+pub mod errors;
+pub mod executor;
+pub mod input;
+pub mod parser;
+pub mod plan;
+pub mod planner;
+
+pub use data_provider::{DataProvider, DateRange, EvalCtx, FetchError, FetchEvent, PlanRequirement, StrictEligibility};
+pub use errors::ParseError;
+pub use input::{AtomFragment, FilterInput};
+pub use parser::parse_query;
+pub use plan::{
+    AgeBound, BioConstraint, BioField, CareerAggrConstraint, CareerAggregator,
+    CareerLeagueConstraint, Constraint, GlobPattern, LeagueAtom, LeagueTier, MemberOp,
+    NumericRange, PatternOp, Predicate, QueryPlan, ScalarOp, ScalarValue, SeasonAxis,
+    SeasonStatConstraint, SlidingWindow, SlidingWindowConstraint, StrictMode, WindowPolicy,
+    WindowScope,
+};
 
 use icelines_core::stats_repository::PlayerView;
 

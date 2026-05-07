@@ -10,3 +10,7 @@ path = "src/lib.rs"
 # `send-sync` matches what icelines-web takes so PlayerView refs
 # inside this crate cross the same Send/Sync boundary axum needs.
 icelines-core = { path = "../icelines-core", features = ["send-sync"] }
+thiserror.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
