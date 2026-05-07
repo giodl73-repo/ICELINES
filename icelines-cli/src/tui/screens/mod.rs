@@ -1,5 +1,6 @@
 pub mod comps;
 pub mod depth;
+pub mod favorites;
 pub mod game_detail;
 pub mod goalies;
 pub mod home;
@@ -57,6 +58,7 @@ pub fn render(f: &mut Frame, app: &App) {
         Screen::Goalies => goalies::render(f, app, chunks[1]),
         Screen::GoalieDetailById(pid) => goalies::render_detail_by_id(f, app, chunks[1], *pid),
         Screen::Transactions => transactions::render(f, app, chunks[1]),
+        Screen::Favorites => favorites::render(f, app, chunks[1]),
     }
 
     // Phase Foster +8 — append the active timeframe indicator
@@ -161,10 +163,11 @@ fn tab_for_screen(screen: &Screen) -> usize {
         Screen::Depth | Screen::DepthTeam(_) => 1,                                          // Depth
         Screen::Queries | Screen::Projections | Screen::Search => 2, // Stats (default: Queries)
         Screen::Goalies | Screen::GoalieDetailById(_) => 3,          // Goalies
-        Screen::Tonight | Screen::GameDetail(_) => 4,                // Scores
-        Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => 5, // Schedule
-        Screen::Transactions => 6,                                   // Transactions
-        Screen::Playoffs | Screen::SeriesDetail(_) => 7,             // Playoffs
+        Screen::Favorites => 4,                                       // Favorites (Foster.2)
+        Screen::Tonight | Screen::GameDetail(_) => 5,                // Scores
+        Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => 6, // Schedule
+        Screen::Transactions => 7,                                   // Transactions
+        Screen::Playoffs | Screen::SeriesDetail(_) => 8,             // Playoffs
         // Groups is not a tab (Phase T+1): reachable via `g` from anywhere.
         _ => 99, // no tab (Fetch, Help, Groups)
     }
@@ -176,6 +179,7 @@ fn render_nav(f: &mut Frame, app: &App, area: Rect) {
         "Depth",
         "Stats",
         "Goalies",
+        "Favorites",
         "Scores",
         "Schedule",
         "Transactions",
@@ -763,7 +767,8 @@ mod app_snapshot_tests {
 
     // ── Tab cycling ──────────────────────────────────────────────────────────
 
-    /// Tab from Home cycles forward through all 8 tabs and wraps back.
+    /// Tab from Home cycles forward through all 9 tabs and wraps back
+    /// (Phase Foster.2 inserts Favorites between Goalies and Scores).
     /// Catches tab table regressions (skipped tabs, missing screens).
     #[test]
     fn l1_userflow_tab_cycles_through_all_eight_tabs() {
@@ -776,6 +781,7 @@ mod app_snapshot_tests {
             Screen::Depth,
             Screen::Queries,
             Screen::Goalies,
+            Screen::Favorites,
             Screen::Tonight,
             Screen::Schedule,
             Screen::Transactions,

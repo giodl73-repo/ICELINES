@@ -1608,6 +1608,7 @@ dependencies = [
  "icelines-fetch",
  "icelines-query",
  "pulldown-cmark",
+ "rusqlite",
  "serde",
  "serde_json",
  "tempfile",

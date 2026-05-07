@@ -4,7 +4,7 @@ use crate::tui::app::App;
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
-    text::Line,
+    text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, Paragraph},
     Frame,
 };
@@ -1064,7 +1064,11 @@ pub fn render_admin(f: &mut Frame, app: &App, area: Rect) {
         ),
     };
 
-    let lines = vec![
+    // Phase Foster +17 — capability matrix readout. Read fresh on
+    // each render so mutations from a parallel `icelines config set`
+    // surface immediately. Cheap (single TOML parse).
+    let cfg = crate::config::Config::load().ok();
+    let mut lines = vec![
         Line::from(""),
         Line::styled("  Admin commands (run in terminal):", hi),
         Line::from(""),
@@ -1080,8 +1084,67 @@ pub fn render_admin(f: &mut Frame, app: &App, area: Rect) {
         Line::styled("  ─────────────────────────────", dim),
         phase_line,
         Line::from(""),
-        Line::styled("  Esc to close", dim),
     ];
+
+    // Capability matrix block (Foster +17).
+    lines.push(Line::styled("  Sync + capability matrix:", hi));
+    lines.push(Line::from(""));
+    if let Some(cfg) = &cfg {
+        let pairs: &[(&str, String)] = &[
+            ("policy           ", cfg.sync.policy.as_str().to_string()),
+            ("banner           ", cfg.sync.banner.as_str().to_string()),
+            (
+                "season_transition",
+                cfg.sync.season_transition.as_str().to_string(),
+            ),
+            (
+                "stats            ",
+                cfg.sync.capabilities.stats.as_str().to_string(),
+            ),
+            (
+                "scores_schedule  ",
+                cfg.sync.capabilities.scores_schedule.as_str().to_string(),
+            ),
+            (
+                "transactions     ",
+                cfg.sync.capabilities.transactions.as_str().to_string(),
+            ),
+            (
+                "boxscores        ",
+                cfg.sync.capabilities.boxscores.as_str().to_string(),
+            ),
+            (
+                "shifts           ",
+                format!("{} (locked)", cfg.sync.capabilities.shifts.as_str()),
+            ),
+            (
+                "career_history   ",
+                cfg.sync.capabilities.career_history.as_str().to_string(),
+            ),
+        ];
+        for (k, v) in pairs {
+            lines.push(Line::from(vec![
+                Span::styled(format!("  {k}  "), dim),
+                Span::styled(v.clone(), Style::default().fg(Color::Cyan)),
+            ]));
+        }
+        lines.push(Line::from(""));
+        lines.push(Line::styled(
+            "  Mutate: icelines config set <key> <value>",
+            cmd,
+        ));
+        lines.push(Line::styled(
+            "  Reset:  icelines config reset sync.capabilities",
+            dim,
+        ));
+    } else {
+        lines.push(Line::styled(
+            "  ~/.icelines/config.toml not found. Run `icelines setup`.",
+            Style::default().fg(Color::Yellow),
+        ));
+    }
+    lines.push(Line::from(""));
+    lines.push(Line::styled("  Esc to close", dim));
     f.render_widget(Paragraph::new(lines), area);
 }
 

@@ -99,6 +99,8 @@ pub fn router(state: WebState) -> Router {
         .route("/scores", get(handlers::scores::get_scores))
         .route("/schedule", get(handlers::schedule::get_schedule))
         .route("/playoffs", get(handlers::playoffs::get_playoffs))
+        // Phase Foster.2 — favorites dashboard
+        .route("/favorites", get(handlers::favorites::get_favorites))
         // Transactions feed — King.8.2.
         .route(
             "/transactions",
@@ -4446,6 +4448,159 @@ mod handlers {
                 )
                     .into_response(),
             }
+        }
+    }
+
+    /// Phase Foster.2 — `/favorites` HTML route.
+    pub mod favorites {
+        use axum::http::StatusCode;
+        use axum::response::{Html, IntoResponse, Response};
+
+        pub async fn get_favorites() -> Response {
+            // Read members from the local SQLite db. The web server
+            // runs on the same machine as the CLI / TUI so the same
+            // `~/.icelines/icelines.db` is reachable.
+            let members: Vec<(String, String)> = match std::env::var_os("HOME")
+                .or_else(|| std::env::var_os("USERPROFILE"))
+            {
+                Some(home) => {
+                    let dir = std::path::PathBuf::from(&home).join(".icelines");
+                    let db_path = dir.join("icelines.db");
+                    if !db_path.exists() {
+                        Vec::new()
+                    } else {
+                        match rusqlite::Connection::open(&db_path) {
+                            Ok(conn) => {
+                                // Match icelines-cli's GroupDb queries:
+                                // post-006 the column is entity_ref.
+                                let mut stmt = match conn.prepare(
+                                    "SELECT entity_ref FROM group_members \
+                                     WHERE group_name = 'Favorites' \
+                                     ORDER BY entity_ref",
+                                ) {
+                                    Ok(s) => s,
+                                    Err(_) => {
+                                        return error_response(
+                                            "Could not read favorites from local db.",
+                                        )
+                                    }
+                                };
+                                let rows: Vec<String> = stmt
+                                    .query_map([], |r| r.get::<_, String>(0))
+                                    .ok()
+                                    .map(|i| i.filter_map(Result::ok).collect())
+                                    .unwrap_or_default();
+                                rows.into_iter()
+                                    .map(|er| match er.split_once(':') {
+                                        Some(("team", k)) => ("team".into(), k.into()),
+                                        Some(("player", k)) => ("player".into(), k.into()),
+                                        _ => ("player".into(), er),
+                                    })
+                                    .collect()
+                            }
+                            Err(_) => Vec::new(),
+                        }
+                    }
+                }
+                None => Vec::new(),
+            };
+
+            let body = render_html(&members);
+            (
+                StatusCode::OK,
+                [(axum::http::header::CONTENT_TYPE, "text/html; charset=utf-8")],
+                Html(body),
+            )
+                .into_response()
+        }
+
+        fn error_response(msg: &str) -> Response {
+            let body = format!(
+                "<!DOCTYPE html><html><body><h1>Favorites</h1><p>Error: {}</p></body></html>",
+                html_escape(msg)
+            );
+            (
+                StatusCode::OK,
+                [(axum::http::header::CONTENT_TYPE, "text/html; charset=utf-8")],
+                Html(body),
+            )
+                .into_response()
+        }
+
+        fn render_html(members: &[(String, String)]) -> String {
+            let player_count = members.iter().filter(|(k, _)| k == "player").count();
+            let team_count = members.iter().filter(|(k, _)| k == "team").count();
+            let mut body = String::new();
+            body.push_str("<!DOCTYPE html><html><head>");
+            body.push_str("<meta charset=\"utf-8\">");
+            body.push_str("<title>Favorites — IceLines</title>");
+            body.push_str("<link rel=\"stylesheet\" href=\"/static/style.css\">");
+            body.push_str("</head><body>");
+            body.push_str(
+                "<nav><a href=\"/\">League</a> · <a href=\"/scores\">Scores</a> · \
+                 <a href=\"/schedule\">Schedule</a> · <a href=\"/playoffs\">Playoffs</a> · \
+                 <a href=\"/transactions\">Transactions</a> · \
+                 <strong>Favorites</strong></nav>",
+            );
+            body.push_str("<main>");
+            body.push_str("<h1>Favorites</h1>");
+            body.push_str(&format!(
+                "<p>{player_count} player(s), {team_count} team(s).</p>"
+            ));
+            if members.is_empty() {
+                body.push_str("<section class=\"empty-state\">");
+                body.push_str("<p><strong>No favorites yet.</strong></p>");
+                body.push_str("<p>Add players or teams via the CLI:</p>");
+                body.push_str(
+                    "<pre><code>icelines group add Favorites \"Connor McDavid\"\n\
+                     icelines group add Favorites EDM</code></pre>",
+                );
+                body.push_str(
+                    "<p>Then refresh this page to see them listed.</p></section>",
+                );
+            } else {
+                let players: Vec<&str> = members
+                    .iter()
+                    .filter(|(k, _)| k == "player")
+                    .map(|(_, v)| v.as_str())
+                    .collect();
+                let teams: Vec<&str> = members
+                    .iter()
+                    .filter(|(k, _)| k == "team")
+                    .map(|(_, v)| v.as_str())
+                    .collect();
+                if !players.is_empty() {
+                    body.push_str("<h2>Players</h2><ul>");
+                    for p in players {
+                        body.push_str(&format!("<li>{}</li>", html_escape(p)));
+                    }
+                    body.push_str("</ul>");
+                }
+                if !teams.is_empty() {
+                    body.push_str("<h2>Teams</h2><ul>");
+                    for t in teams {
+                        body.push_str(&format!(
+                            "<li><a href=\"/team/{}\">{}</a></li>",
+                            html_escape(t),
+                            html_escape(t)
+                        ));
+                    }
+                    body.push_str("</ul>");
+                }
+                body.push_str(
+                    "<p><em>Per-night stat lines + box scores wire in via \
+                     <code>icelines fetch boxscore</code> (Foster.3+ orchestration).</em></p>",
+                );
+            }
+            body.push_str("</main></body></html>");
+            body
+        }
+
+        fn html_escape(s: &str) -> String {
+            s.replace('&', "&amp;")
+                .replace('<', "&lt;")
+                .replace('>', "&gt;")
+                .replace('"', "&quot;")
         }
     }
 

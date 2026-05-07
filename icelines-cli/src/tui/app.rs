@@ -141,6 +141,7 @@ pub enum Screen {
     /// PlayerId-keyed goalie detail. D6 auto-pop UX on missing pid.
     GoalieDetailById(PlayerId),
     Transactions, // league-wide moves feed (Phase T.5)
+    Favorites,    // Phase Foster.2 — favorites dashboard
 }
 
 pub struct App {
@@ -2440,17 +2441,18 @@ impl App {
 
     pub(crate) fn cycle_screen(&mut self) {
         self.query_results_focused = false;
-        // Phase T+1: 8-tab cycle. Groups is removed from the strip and
-        // accessed via `g` from anywhere. Stats defaults to Queries.
-        //   League → Depth → Queries → Goalies → Scores → Schedule
-        //   → Transactions → Playoffs → League
+        // Phase Foster.2 — Favorites tab inserted between Goalies and
+        // Scores per spec §"Tab insertion" (GLASS H4). 9-tab cycle:
+        //   League → Depth → Queries → Goalies → Favorites → Scores
+        //   → Schedule → Transactions → Playoffs → League
         let next = match &self.screen {
             Screen::Home | Screen::Team(_) | Screen::PlayerById(_) | Screen::CompsById(_) => {
                 Screen::Depth
             }
             Screen::Depth | Screen::DepthTeam(_) => Screen::Queries,
             Screen::Queries | Screen::Projections | Screen::Search => Screen::Goalies,
-            Screen::Goalies | Screen::GoalieDetailById(_) => Screen::Tonight,
+            Screen::Goalies | Screen::GoalieDetailById(_) => Screen::Favorites,
+            Screen::Favorites => Screen::Tonight,
             Screen::Tonight | Screen::GameDetail(_) => Screen::Schedule,
             Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => {
                 Screen::Transactions
@@ -2478,7 +2480,8 @@ impl App {
             Screen::Depth | Screen::DepthTeam(_) => Screen::Home,
             Screen::Queries | Screen::Projections | Screen::Search => Screen::Depth,
             Screen::Goalies | Screen::GoalieDetailById(_) => Screen::Queries,
-            Screen::Tonight | Screen::GameDetail(_) => Screen::Goalies,
+            Screen::Favorites => Screen::Goalies,
+            Screen::Tonight | Screen::GameDetail(_) => Screen::Favorites,
             Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => {
                 Screen::Tonight
             }
@@ -2561,9 +2564,10 @@ mod tests {
 
     #[test]
     fn l0_tui_tab_cycles_screens() {
-        // 8 tabs (Phase T+1):
-        //   League → Depth → Stats(Queries) → Goalies → Scores → Schedule
-        //   → Transactions → Playoffs → wrap
+        // 9 tabs (Phase Foster.2 inserts Favorites between Goalies
+        // and Scores per GLASS H4):
+        //   League → Depth → Stats(Queries) → Goalies → Favorites
+        //   → Scores → Schedule → Transactions → Playoffs → wrap
         //
         // Phase Lindsay L.3.3 — Tab on Queries now toggles the
         // section expansion (per spec §"TUI integration"). To advance
@@ -2578,7 +2582,9 @@ mod tests {
         app.cycle_screen(); // bypass Lindsay Tab-on-Queries intercept
         assert_eq!(app.screen, Screen::Goalies, "Stats→Goalies");
         app.handle(Action::Tab);
-        assert_eq!(app.screen, Screen::Tonight, "Goalies→Scores");
+        assert_eq!(app.screen, Screen::Favorites, "Goalies→Favorites");
+        app.handle(Action::Tab);
+        assert_eq!(app.screen, Screen::Tonight, "Favorites→Scores");
         app.handle(Action::Tab);
         assert_eq!(app.screen, Screen::Schedule, "Scores→Schedule");
         app.handle(Action::Tab);
@@ -2661,7 +2667,8 @@ mod tests {
 
     #[test]
     fn l0_tui_shift_tab_cycles_screens_backwards() {
-        // Shift-Tab walks the same eight tabs in reverse.
+        // Shift-Tab walks the same nine tabs in reverse (Phase Foster.2
+        // adds Favorites between Goalies and Scores).
         let mut app = App::new(false);
         app.handle(Action::TabPrev);
         assert_eq!(
@@ -2676,7 +2683,9 @@ mod tests {
         app.handle(Action::TabPrev);
         assert_eq!(app.screen, Screen::Tonight, "Schedule→Scores");
         app.handle(Action::TabPrev);
-        assert_eq!(app.screen, Screen::Goalies, "Scores→Goalies");
+        assert_eq!(app.screen, Screen::Favorites, "Scores→Favorites");
+        app.handle(Action::TabPrev);
+        assert_eq!(app.screen, Screen::Goalies, "Favorites→Goalies");
         app.handle(Action::TabPrev);
         assert_eq!(app.screen, Screen::Queries, "Goalies→Stats");
         app.handle(Action::TabPrev);

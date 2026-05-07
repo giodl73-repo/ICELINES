@@ -24,6 +24,7 @@ anyhow = { workspace = true }
 askama = { workspace = true }
 pulldown-cmark = { workspace = true }
 chrono = { workspace = true }
+rusqlite = { workspace = true }
 
 [dev-dependencies]
 tower = { workspace = true }
