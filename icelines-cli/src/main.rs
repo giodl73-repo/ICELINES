@@ -4,6 +4,7 @@ mod config;
 mod db;
 mod error;
 mod event_stream;
+mod favorites_view;
 pub mod fantasy_db;
 mod render;
 mod start_slug;

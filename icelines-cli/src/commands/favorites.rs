@@ -1,16 +1,17 @@
-//! Phase Foster.2 — `icelines favorites` CLI command.
+//! Phase Foster.2 + Foster +21 — `icelines favorites` CLI command.
 //!
 //! Reads the user's Favorites group (entity_refs) from the SQLite
-//! db, resolves the day's slate via the schedule fetch path, and
-//! renders a per-night summary. Heavy data orchestration (boxscore
-//! reads, EventStream insertion) is deferred to Foster.3; this
-//! command ships the viewer + the empty-state UX so users can
-//! validate the surface end-to-end.
+//! db, fetches the day's slate, parses the per-game boxscore JSON
+//! that Foster +3 persisted, and renders a per-night summary with
+//! G/A/P/SOG/+/-/TOI on each row. Goalies render SV/SA/GAA. DNP
+//! rows surface the reason (TeamBye / Scratched / DataPending).
 
 use anyhow::{Context, Result};
 use chrono::{NaiveDate, Utc};
-use icelines_core::entity::EntityRef;
-use icelines_core::favorites::{AggregateView, FavoritesView};
+use icelines_core::favorites::{
+    AggregateView, FavoritesView, GameResult, GameState, GoalieNightLine, HomeAway,
+    PlayerNightRow, SkaterNightLine, TeamNightRow,
+};
 use icelines_core::timeframe::Timeframe;
 
 use crate::commands::tonight::parse_iso_date;
@@ -47,33 +48,39 @@ pub async fn run(
         return Ok(());
     }
 
-    // Map db members to entity_refs (the kind discriminator picks
-    // the prefix). Players whose key is a normalized name surface
-    // as `player:<name>` — Foster.3 swaps these for `player:<pid>`
-    // once the resolver is wired into the add path.
-    let entity_refs: Vec<EntityRef> = members
-        .iter()
-        .filter_map(|(key, kind)| {
-            let s = format!("{}:{}", kind.as_str(), key);
-            // Strict EntityRef parse will reject player:<name>
-            // (alphanumeric-only) — that's expected. Non-strict
-            // entries skip resolution but stay visible in the
-            // empty-state count below.
-            s.parse().ok()
-        })
-        .collect();
+    // Phase Foster +21 — fetch the slate + walk persisted boxscore
+    // bodies via the favorites_view builder so each row gets real
+    // G/A/P/+/- numbers. Slate fetch is best-effort: when offline,
+    // every favorited entity surfaces as DataPending.
+    let client = icelines_fetch::nhl_api::NhlApiClient::production();
+    let anchor_str = anchor.format("%Y-%m-%d").to_string();
+    let slate = client
+        .fetch_schedule_for_date(&anchor_str)
+        .await
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|g| g.date == anchor_str)
+        .collect::<Vec<_>>();
 
-    let view = FavoritesView {
+    let home = std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(std::path::PathBuf::from)
+        .ok_or_else(|| anyhow::anyhow!("cannot determine home directory"))?;
+    let data_root = home.join(".icelines").join("data");
+    let view = crate::favorites_view::compute_favorites_view(
+        &db, &group, anchor, range, &slate, &data_root,
+    )
+    .unwrap_or_else(|_| FavoritesView {
         date: anchor,
         range,
         players: Vec::new(),
         teams: Vec::new(),
         events: Vec::new(),
         aggregate: empty_aggregate(anchor, range),
-    };
+    });
 
     if json {
-        print_json(&view, &group, members.len(), entity_refs.len())?;
+        print_json(&view, &group, members.len(), view.players.len() + view.teams.len())?;
     } else {
         print_text(&view, &group, &members);
     }
@@ -147,30 +154,131 @@ fn print_text(view: &FavoritesView, _group: &str, members: &[(String, crate::db:
         player_count,
         team_count,
     );
-    println!("{}", "─".repeat(64));
-    if !members.is_empty() {
-        println!("Watching:");
-        for (key, kind) in members {
-            let label = match kind {
-                crate::db::MemberKind::Player => format!("  · player {key}"),
-                crate::db::MemberKind::Team => format!("  · team {key}"),
-            };
-            println!("{label}");
-        }
-        println!();
-    }
-    if view.players.is_empty() && view.teams.is_empty() {
-        println!("Per-night stat lines + team scores ship in Foster.3 (boxscore fetcher).");
-        println!("Use `icelines tonight --date {}` for the live slate today.", view.date);
-    } else {
-        // Future Foster.3 path: render rows.
+    println!("{}", "─".repeat(72));
+
+    if !view.players.is_empty() {
+        println!("Players");
         for row in &view.players {
-            println!("  {row:?}");
-        }
-        for row in &view.teams {
-            println!("  {row:?}");
+            println!("  {}", format_player_row(row));
         }
     }
+    if !view.teams.is_empty() {
+        if !view.players.is_empty() {
+            println!();
+        }
+        println!("Teams");
+        for row in &view.teams {
+            println!("  {}", format_team_row(row));
+        }
+    }
+
+    if view.players.is_empty() && view.teams.is_empty() {
+        println!();
+        println!("Tip: run `icelines fetch boxscore` to populate per-night stat lines.");
+    }
+}
+
+fn format_player_row(row: &PlayerNightRow) -> String {
+    match row {
+        PlayerNightRow::Skater(s) => format_skater_line(s),
+        PlayerNightRow::Goalie(g) => format_goalie_line(g),
+        PlayerNightRow::DidNotPlay { player, reason } => {
+            format!("{player}  — DNP ({reason:?})")
+        }
+    }
+}
+
+fn format_skater_line(s: &SkaterNightLine) -> String {
+    // Compact one-liner: PID + matchup + line + game state
+    let matchup = match s.home_or_away {
+        HomeAway::Home => format!("{} vs {}", s.team.0, s.opponent.0),
+        HomeAway::Away => format!("{} @ {}", s.team.0, s.opponent.0),
+    };
+    let result = match s.result {
+        GameResult::Win => "W",
+        GameResult::Loss => "L",
+        GameResult::OtLoss => "OTL",
+        GameResult::InProgress => "—",
+    };
+    let toi = s
+        .toi_seconds
+        .map(|sec| format!("{}:{:02}", sec / 60, sec % 60))
+        .unwrap_or_else(|| "—".to_string());
+    let hits = s.hits.map(|n| n.to_string()).unwrap_or_else(|| "—".into());
+    let blocks = s.blocks.map(|n| n.to_string()).unwrap_or_else(|| "—".into());
+    let sog = s.shots.map(|n| n.to_string()).unwrap_or_else(|| "—".into());
+    format!(
+        "{}  {} {}-{} {} · {}G {}A {}P · {:+} · TOI {}  · {} SOG · {} hits · {} blk{}",
+        s.player,
+        matchup,
+        s.team_score,
+        s.opponent_score,
+        result,
+        s.goals,
+        s.assists,
+        s.points,
+        s.plus_minus,
+        toi,
+        sog,
+        hits,
+        blocks,
+        if matches!(s.game_state, GameState::Live) {
+            " · LIVE"
+        } else {
+            ""
+        }
+    )
+}
+
+fn format_goalie_line(g: &GoalieNightLine) -> String {
+    let matchup = match g.home_or_away {
+        HomeAway::Home => format!("{} vs {}", g.team.0, g.opponent.0),
+        HomeAway::Away => format!("{} @ {}", g.team.0, g.opponent.0),
+    };
+    let dec = match g.decision {
+        Some(icelines_core::favorites::Decision::Win) => "W",
+        Some(icelines_core::favorites::Decision::Loss) => "L",
+        Some(icelines_core::favorites::Decision::OtLoss) => "OTL",
+        None => "—",
+    };
+    format!(
+        "{}  {} {}-{} {} · {}/{} SV · SV%.{:.0} · GAA {:.2}{}",
+        g.player,
+        matchup,
+        g.team_score,
+        g.opponent_score,
+        dec,
+        g.saves,
+        g.shots_against,
+        g.save_pct * 1000.0, // 0.971 → "971" → renders as ".971"
+        g.gaa,
+        if g.shutout { " · SHUTOUT" } else { "" },
+    )
+}
+
+fn format_team_row(t: &TeamNightRow) -> String {
+    if t.on_bye {
+        return format!("{}  — bye", t.team_abbr.0);
+    }
+    let opp = t
+        .opponent
+        .as_ref()
+        .map(|o| o.0.as_str())
+        .unwrap_or("—");
+    let result = match t.result {
+        Some(GameResult::Win) => "W",
+        Some(GameResult::Loss) => "L",
+        Some(GameResult::OtLoss) => "OTL",
+        Some(GameResult::InProgress) => "LIVE",
+        None => "—",
+    };
+    format!(
+        "{}  {} {} vs {}",
+        t.team_abbr.0,
+        if t.score.is_empty() { "—" } else { t.score.as_str() },
+        result,
+        opp,
+    )
 }
 
 fn print_json(

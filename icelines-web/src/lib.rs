@@ -4514,13 +4514,142 @@ mod handlers {
                 None => Vec::new(),
             };
 
-            let body = render_html(&members);
+            // Phase Foster +21 — for each favorited player resolve to
+            // a PlayerId and walk the persisted boxscore JSON to pull
+            // tonight's stat line. Best-effort: missing bundle bios
+            // → row drops to "no resolved pid"; missing boxscore →
+            // dash row.
+            let stat_lines = compute_player_stat_lines(&members).await;
+
+            let body = render_html(&members, &stat_lines);
             (
                 StatusCode::OK,
                 [(axum::http::header::CONTENT_TYPE, "text/html; charset=utf-8")],
                 Html(body),
             )
                 .into_response()
+        }
+
+        /// Per-favorited-player stat-line lookup. Returns a flat
+        /// vec of (display_name, formatted_line) pairs the renderer
+        /// drops in below the player's name. Empty when no boxscore
+        /// data is on disk yet — caller falls back to plain listing.
+        async fn compute_player_stat_lines(
+            members: &[(String, String)],
+        ) -> std::collections::HashMap<String, String> {
+            use std::collections::HashMap;
+            let mut out = HashMap::new();
+
+            // Today's slate fetch (best-effort).
+            let client = icelines_fetch::nhl_api::NhlApiClient::production();
+            let today = chrono::Utc::now().date_naive().format("%Y-%m-%d").to_string();
+            let slate = match client.fetch_schedule_for_date(&today).await {
+                Ok(g) => g
+                    .into_iter()
+                    .filter(|g| g.date == today)
+                    .collect::<Vec<_>>(),
+                Err(_) => Vec::new(),
+            };
+            if slate.is_empty() {
+                return out;
+            }
+
+            let home = match std::env::var_os("HOME")
+                .or_else(|| std::env::var_os("USERPROFILE"))
+            {
+                Some(h) => std::path::PathBuf::from(h),
+                None => return out,
+            };
+            let data_root = home.join(".icelines").join("data");
+            let store = match icelines_fetch::datastore::DataStore::open(&data_root) {
+                Ok(s) => s,
+                Err(_) => return out,
+            };
+
+            for (kind, name) in members {
+                if kind != "player" {
+                    continue;
+                }
+                let Some(pid) =
+                    icelines_fetch::stats_loader::resolve_player_id_by_name(name)
+                else {
+                    continue;
+                };
+                // Find the player's team, then the day's game.
+                let team = match player_team(pid) {
+                    Some(t) => t.to_uppercase(),
+                    None => continue,
+                };
+                let game = match slate
+                    .iter()
+                    .find(|g| g.away_abbrev.eq_ignore_ascii_case(&team)
+                        || g.home_abbrev.eq_ignore_ascii_case(&team))
+                {
+                    Some(g) => g,
+                    None => continue,
+                };
+                let raw = match store.load_boxscore_raw(
+                    icelines_fetch::manifest::DataKey::Game(
+                        icelines_core::identity::GameId(game.game_id),
+                    ),
+                ) {
+                    Some(r) => r,
+                    None => continue,
+                };
+                let parsed = icelines_fetch::nhl_api::parse_boxscore(&raw, game.game_id);
+                if let Some(line) =
+                    icelines_fetch::boxscore_to_night_line::extract_skater_line(&parsed, pid)
+                {
+                    out.insert(name.clone(), format_skater_line_html(&line));
+                }
+            }
+            out
+        }
+
+        fn player_team(pid: u32) -> Option<String> {
+            for season in icelines_fetch::bundled::BUNDLED_SEASONS {
+                if let Some(bios) = icelines_fetch::bundled::get_bios(season) {
+                    if let Some(b) = bios.iter().find(|b| b.player_id == pid) {
+                        if let Some(team) = &b.current_team_abbrev {
+                            return Some(team.clone());
+                        }
+                    }
+                }
+            }
+            None
+        }
+
+        fn format_skater_line_html(line: &icelines_core::favorites::SkaterNightLine) -> String {
+            use icelines_core::favorites::{GameResult, HomeAway};
+            let matchup = match line.home_or_away {
+                HomeAway::Home => format!("{} vs {}", line.team.0, line.opponent.0),
+                HomeAway::Away => format!("{} @ {}", line.team.0, line.opponent.0),
+            };
+            let result = match line.result {
+                GameResult::Win => "W",
+                GameResult::Loss => "L",
+                GameResult::OtLoss => "OTL",
+                GameResult::InProgress => "LIVE",
+            };
+            let toi = line
+                .toi_seconds
+                .map(|s| format!("{}:{:02}", s / 60, s % 60))
+                .unwrap_or_else(|| "—".to_string());
+            format!(
+                "{} {}-{} {} · {}G {}A {}P · {:+} · TOI {} · {} SOG",
+                matchup,
+                line.team_score,
+                line.opponent_score,
+                result,
+                line.goals,
+                line.assists,
+                line.points,
+                line.plus_minus,
+                toi,
+                line.shots
+                    .map(|n| n.to_string())
+                    .unwrap_or_else(|| "—".into()),
+            )
         }
 
         fn error_response(msg: &str) -> Response {
@@ -4536,7 +4665,10 @@ mod handlers {
                 .into_response()
         }
 
-        fn render_html(members: &[(String, String)]) -> String {
+        fn render_html(
+            members: &[(String, String)],
+            stat_lines: &std::collections::HashMap<String, String>,
+        ) -> String {
             let player_count = members.iter().filter(|(k, _)| k == "player").count();
             let team_count = members.iter().filter(|(k, _)| k == "team").count();
             let mut body = String::new();
@@ -4621,9 +4753,19 @@ mod handlers {
                 if !players.is_empty() {
                     body.push_str("<h2>Players</h2><ul class=\"fav-list\">");
                     for p in players {
+                        let stat_line = stat_lines
+                            .get(p)
+                            .map(|l| {
+                                format!(
+                                    "<br><span style=\"color:#444;font-size:0.92em;\">{}</span>",
+                                    html_escape(l)
+                                )
+                            })
+                            .unwrap_or_default();
                         body.push_str(&format!(
-                            "<li><span>{}</span>{}</li>",
+                            "<li><div><strong>{}</strong>{}</div>{}</li>",
                             html_escape(p),
+                            stat_line,
                             remove_form(p, "player"),
                         ));
                     }
