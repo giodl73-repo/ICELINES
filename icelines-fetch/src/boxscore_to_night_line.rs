@@ -113,24 +113,32 @@ pub fn extract_skater_line(
 }
 
 /// Extract the favorited goalie's per-night line. Returns `None`
-/// when the player isn't a goalie in this boxscore. NHL API's
-/// goalie line lacks `player_id` today (parse_boxscore extracts by
-/// name only), so the caller passes both `player_id` and a
-/// `display_name` and we name-match if the PID isn't found —
-/// best-effort until parse_boxscore grows goalie-pid extraction.
+/// when the player isn't a goalie in this boxscore. Phase Foster +24:
+/// prefers PID match when GoalieLine.player_id is non-zero, falls
+/// back to name-substring (case-insensitive) for legacy data.
 pub fn extract_goalie_line(
     boxscore: &Boxscore,
-    _player_id: u32,
+    player_id: u32,
     display_name: &str,
 ) -> Option<GoalieNightLine> {
-    let needle = display_name.trim().to_lowercase();
-    if needle.is_empty() {
-        return None;
-    }
+    // Foster +24 — PID match wins. Name match is the fallback for
+    // boxscores parsed before the playerId field landed in
+    // GoalieLine, or for newly-favorited goalies whose PID didn't
+    // resolve via the bundled bios.
     let g = boxscore
         .goalies
         .iter()
-        .find(|g| g.player_name.to_lowercase().contains(&needle))?;
+        .find(|g| g.player_id != 0 && g.player_id == player_id)
+        .or_else(|| {
+            let needle = display_name.trim().to_lowercase();
+            if needle.is_empty() {
+                return None;
+            }
+            boxscore
+                .goalies
+                .iter()
+                .find(|g| g.player_name.to_lowercase().contains(&needle))
+        })?;
 
     let game_state = parse_game_state(boxscore.game_state.as_deref());
     let is_home = g.team_abbrev == boxscore.home_abbrev;
@@ -168,12 +176,14 @@ pub fn extract_goalie_line(
     };
 
     Some(GoalieNightLine {
-        // Best-effort: we don't have the goalie's pid from the parse
-        // path. Use the name as the fallback key under the
-        // EntityRef::Player slot until parse_boxscore extracts it.
-        // Caller's responsibility to swap this once a real PID lookup
-        // is wired.
-        player: EntityRef::Player(PlayerId(0)),
+        // Foster +24 — use the parsed player_id. Falls back to the
+        // caller-supplied PID when the boxscore JSON didn't surface
+        // one (legacy format or future API drift).
+        player: EntityRef::Player(PlayerId(if g.player_id != 0 {
+            g.player_id
+        } else {
+            player_id
+        })),
         team: TeamAbbr(g.team_abbrev.clone()),
         opponent: TeamAbbr(opponent_abbr),
         home_or_away: if is_home {
@@ -237,6 +247,7 @@ mod tests {
 
     fn goalie(name: &str, team: &str, saves: u32, shots: u32, dec: Option<&str>) -> GoalieLine {
         GoalieLine {
+            player_id: 0,
             player_name: name.into(),
             team_abbrev: team.into(),
             saves,
@@ -376,6 +387,33 @@ mod tests {
         // Substring match — case-insensitive.
         let gl = extract_goalie_line(&bs, 0, "skinner").expect("partial match");
         assert_eq!(gl.saves, 30);
+    }
+
+    #[test]
+    fn l1_foster_plus24_goalie_pid_match_beats_name() {
+        // Two goalies with the same surname; PID match disambiguates.
+        let mut g1 = goalie("Stuart Skinner", "EDM", 30, 31, Some("W"));
+        g1.player_id = 8479973;
+        let mut g2 = goalie("J.T. Skinner", "CGY", 18, 22, Some("L"));
+        g2.player_id = 8475670;
+        let bs = Boxscore {
+            game_id: 1,
+            away_abbrev: "CGY".into(),
+            home_abbrev: "EDM".into(),
+            away_score: 1,
+            home_score: 3,
+            game_state: Some("FINAL".into()),
+            last_period: Some("REG".into()),
+            goals: vec![],
+            goalies: vec![g1, g2],
+            away_skaters: vec![],
+            home_skaters: vec![],
+        };
+        // Name "skinner" alone would hit Stuart first; ask for the
+        // Calgary one by PID.
+        let gl = extract_goalie_line(&bs, 8475670, "skinner").expect("found by PID");
+        assert_eq!(gl.team.0, "CGY", "PID match wins over name match");
+        assert_eq!(gl.saves, 18);
     }
 
     #[test]

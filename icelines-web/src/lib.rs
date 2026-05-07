@@ -4588,14 +4588,49 @@ mod handlers {
                     Some(g) => g,
                     None => continue,
                 };
-                let raw = match store.load_boxscore_raw(
-                    icelines_fetch::manifest::DataKey::Game(
-                        icelines_core::identity::GameId(game.game_id),
-                    ),
-                ) {
-                    Some(r) => r,
-                    None => continue,
+                let key = icelines_fetch::manifest::DataKey::Game(
+                    icelines_core::identity::GameId(game.game_id),
+                );
+                // Foster +23 — lazy-fetch the boxscore body when it's
+                // not on disk so users see real numbers without a
+                // separate `icelines fetch boxscore` step. Persists
+                // the body to the manifest as a side effect so the
+                // TUI / CLI / next page-load all benefit. Failures
+                // are non-fatal (drop to "no line").
+                let raw_opt = match store.load_boxscore_raw(key.clone()) {
+                    Some(r) => Some(r),
+                    None => match client.fetch_boxscore_with_raw(game.game_id).await {
+                        Ok((_, raw_body)) => {
+                            // Best-effort persist so subsequent renders
+                            // don't re-hit the network. Same write
+                            // pattern as `icelines fetch boxscore`.
+                            let path = data_root
+                                .join("boxscores")
+                                .join(&today)
+                                .join(format!("{}.json", game.game_id));
+                            if let Ok(bytes) = serde_json::to_vec(&raw_body) {
+                                let _ = icelines_fetch::atomic_write::write_bytes_atomic(
+                                    &path, &bytes,
+                                );
+                                let _ = store.manifest().upsert(
+                                    icelines_fetch::manifest::DataKind::Boxscore,
+                                    icelines_fetch::manifest::ManifestEntry {
+                                        key: key.clone(),
+                                        path,
+                                        freshness: icelines_core::Freshness {
+                                            fetched_at: chrono::Utc::now(),
+                                            source: icelines_core::FetchSource::Live,
+                                            ttl: icelines_core::Ttl::Static,
+                                        },
+                                    },
+                                );
+                            }
+                            Some(raw_body)
+                        }
+                        Err(_) => None,
+                    },
                 };
+                let Some(raw) = raw_opt else { continue };
                 let parsed = icelines_fetch::nhl_api::parse_boxscore(&raw, game.game_id);
                 if let Some(line) =
                     icelines_fetch::boxscore_to_night_line::extract_skater_line(&parsed, pid)

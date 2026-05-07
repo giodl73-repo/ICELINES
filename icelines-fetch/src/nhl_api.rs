@@ -661,6 +661,12 @@ pub struct Goal {
 /// Goalie line for one team's starting goalie in a game.
 #[derive(Debug, Clone)]
 pub struct GoalieLine {
+    /// NHL player_id from playerByGameStats.{home,away}Team.goalies[].playerId.
+    /// Phase Foster +24 — was missing pre-v0.18, forcing favorites
+    /// to do a name-substring match. Now PID-aware. Kept Optional
+    /// for resilience against API shape drift; consumers fall back
+    /// to name match when 0.
+    pub player_id: u32,
     pub player_name: String,
     pub team_abbrev: String,
     pub saves: u32,
@@ -848,6 +854,7 @@ pub fn parse_boxscore(raw: &serde_json::Value, game_id: u64) -> Boxscore {
     for (val, team) in goalie_paths {
         if let Some(arr) = val.as_array() {
             for g in arr {
+                let player_id = g["playerId"].as_u64().unwrap_or(0) as u32;
                 let player_name = g["name"]["default"]
                     .as_str()
                     .map(str::to_owned)
@@ -865,6 +872,7 @@ pub fn parse_boxscore(raw: &serde_json::Value, game_id: u64) -> Boxscore {
                 let decision = g["decision"].as_str().map(str::to_owned);
                 if !player_name.is_empty() {
                     goalies.push(GoalieLine {
+                        player_id,
                         player_name,
                         team_abbrev: team.to_owned(),
                         saves,

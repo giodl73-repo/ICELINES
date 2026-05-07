@@ -439,6 +439,7 @@ mod tests {
             ],
             goalies: vec![
                 GoalieLine {
+                    player_id: 0,
                     player_name: "Shesterkin".to_owned(),
                     team_abbrev: "NYR".to_owned(),
                     saves: 32,
@@ -446,6 +447,7 @@ mod tests {
                     decision: Some("L".to_owned()),
                 },
                 GoalieLine {
+                    player_id: 0,
                     player_name: "Lindgren".to_owned(),
                     team_abbrev: "WSH".to_owned(),
                     saves: 28,

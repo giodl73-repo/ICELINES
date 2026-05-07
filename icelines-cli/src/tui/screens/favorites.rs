@@ -19,7 +19,7 @@ use ratatui::{
     Frame,
 };
 
-pub fn render(f: &mut Frame, _app: &App, area: Rect) {
+pub fn render(f: &mut Frame, app: &App, area: Rect) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Length(3), Constraint::Min(0)])
@@ -36,31 +36,52 @@ pub fn render(f: &mut Frame, _app: &App, area: Rect) {
 
     if members.is_empty() {
         render_empty_state(f, chunks[1]);
-    } else if let Some(view) = build_view() {
+    } else if let Some(view) = build_view(app) {
         render_view(f, chunks[1], &view);
     } else {
         render_member_list(f, chunks[1], &members);
     }
 }
 
-/// Build a populated `FavoritesView` if we can — slate fetch fails
-/// silently (offline / network blip) and the renderer falls back to
-/// the simpler member-list view. The slate is intentionally
-/// best-effort; users can always fall back to the CLI for a real
-/// fetch round-trip.
-fn build_view() -> Option<FavoritesView> {
+/// Build a populated `FavoritesView` if we can. Phase Foster +22:
+/// reads today's slate from the TUI's existing `tonight_cache` so
+/// favorites auto-populate without requiring `icelines fetch boxscore`
+/// upfront. If the cache is cold (user hasn't opened the Scores tab
+/// yet), fires `maybe_fetch` in the background and renders with the
+/// empty slate — next render after the fetch lands will populate.
+fn build_view(app: &App) -> Option<FavoritesView> {
     let db = crate::db::GroupDb::open().ok()?;
     let date = chrono::Utc::now().date_naive();
     let home = std::env::var_os("HOME")
         .or_else(|| std::env::var_os("USERPROFILE"))
         .map(std::path::PathBuf::from)?;
     let data_root = home.join(".icelines").join("data");
-    // No async runtime in the render path — pull the slate from the
-    // shared cache state on App. For F+21 we hand the builder an
-    // empty slate; favorited entities surface as TeamBye until the
-    // CLI populates the cache. Future TUI work wires the
-    // tonight_cache into the render path.
-    let slate: Vec<icelines_fetch::nhl_api::ScheduledGame> = Vec::new();
+
+    // Pull today's slate from the existing tonight_cache. Favorites
+    // tab piggybacks on the Scores tab's fetch state — if the user
+    // visits Favorites first, we kick off the fetch here so by the
+    // next render the slate is populated.
+    use crate::tui::tonight::{lookup, maybe_fetch, TonightState, TODAY_KEY};
+    let slate: Vec<icelines_fetch::nhl_api::ScheduledGame> = {
+        match lookup(&app.tonight_cache, TODAY_KEY) {
+            TonightState::Loaded(games) => {
+                let today_str = date.format("%Y-%m-%d").to_string();
+                games
+                    .into_iter()
+                    .filter(|g| g.date == today_str)
+                    .collect()
+            }
+            TonightState::Idle => {
+                maybe_fetch(app.tonight_cache.clone(), TODAY_KEY.to_string());
+                Vec::new()
+            }
+            // Loading / Error → no slate this render; renderer
+            // shows DNP rows. Status bar (chunks[2]) already
+            // surfaces network errors.
+            _ => Vec::new(),
+        }
+    };
+
     crate::favorites_view::compute_favorites_view(
         &db,
         "Favorites",
