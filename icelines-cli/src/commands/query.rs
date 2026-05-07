@@ -515,6 +515,114 @@ pub struct LeadersArgs {
     pub filters: Vec<String>,
 }
 
+// ── Phase Art Ross A.5 — `--explain` ──────────────────────────────────────────
+
+/// Parse the user's `--filter` arguments + print the resulting
+/// `QueryPlan` tree, data requirements, and estimated cost. Exits
+/// without running the query (no player data loaded). When
+/// `--json` is also set, emits the `explain.v1` envelope shape
+/// per the spec (frozen v1; additive changes only).
+pub fn run_explain(filters: &[String], json: bool) -> anyhow::Result<()> {
+    use icelines_query::{parse_query, FilterInput};
+
+    let mut plans: Vec<icelines_query::QueryPlan> = Vec::new();
+    let mut errors: Vec<String> = Vec::new();
+    for raw in filters {
+        match parse_query(FilterInput::Cli(raw.clone())) {
+            Ok(plan) => plans.push(plan),
+            Err(es) => {
+                for e in es {
+                    errors.push(format!("--filter {raw:?}: {e}"));
+                }
+            }
+        }
+    }
+
+    if !errors.is_empty() {
+        anyhow::bail!("filter parse errors:\n{}", errors.join("\n"));
+    }
+
+    if filters.is_empty() {
+        if json {
+            println!(
+                r#"{{"schema_version":"explain.v1","route":"leaders.explain","data":{{"plans":[]}},"meta":{{"note":"no filters provided"}}}}"#
+            );
+        } else {
+            println!("(no --filter arguments to explain)");
+        }
+        return Ok(());
+    }
+
+    if json {
+        emit_explain_json(&plans, filters);
+    } else {
+        emit_explain_text(&plans, filters);
+    }
+    Ok(())
+}
+
+fn emit_explain_text(plans: &[icelines_query::QueryPlan], filters: &[String]) {
+    println!("QUERY PLAN  (explain.v1)");
+    println!("{}", "═".repeat(66));
+    for (idx, plan) in plans.iter().enumerate() {
+        let raw = &filters[idx];
+        println!("--filter {raw:?}");
+        for line in plan.explain().lines() {
+            println!("  {line}");
+        }
+        let req = plan.requirements();
+        let needs_provider = plan.root.needs_provider();
+        println!();
+        println!("  DATA REQUIREMENTS");
+        if req.reports_needed.is_empty() && !needs_provider {
+            println!("    (bio-only — no per-season report needed)");
+        } else {
+            for r in &req.reports_needed {
+                println!("    ✓ {r:<16} (active season)");
+            }
+            if needs_provider {
+                println!(
+                    "    ↓ provider           (sliding-window / career-aggregate / cross-league)"
+                );
+            }
+        }
+        println!();
+    }
+    println!("{}", "═".repeat(66));
+}
+
+fn emit_explain_json(plans: &[icelines_query::QueryPlan], filters: &[String]) {
+    let plans_arr: Vec<serde_json::Value> = plans
+        .iter()
+        .zip(filters.iter())
+        .map(|(plan, raw)| {
+            let req = plan.requirements();
+            serde_json::json!({
+                "filter_input": raw,
+                "plan_tree_text": plan.explain(),
+                "needs_provider": plan.root.needs_provider(),
+                "requirements": {
+                    "seasons_needed": req.seasons_needed,
+                    "reports_needed": req.reports_needed,
+                    "boxscore_seasons_needed": req.boxscore_seasons_needed,
+                    "career_pids_needed": req.career_pids_needed,
+                },
+            })
+        })
+        .collect();
+    let envelope = serde_json::json!({
+        "schema_version": "explain.v1",
+        "route": "leaders.explain",
+        "data": {
+            "plans": plans_arr,
+        },
+        "meta": {
+            "note": "explain.v1 is frozen — additive changes only; breaking changes ship as explain.v2",
+        },
+    });
+    println!("{}", serde_json::to_string_pretty(&envelope).unwrap());
+}
+
 // ── icelines query leaders ────────────────────────────────────────────────────
 
 pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {

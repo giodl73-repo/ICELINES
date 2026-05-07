@@ -1420,6 +1420,15 @@ OUTPUT
         /// Mutually exclusive with `--week` / `--month`.
         #[arg(long)]
         playoff: bool,
+        /// Phase Art Ross A.5 — print the parsed query plan
+        /// (constraint tree + data requirements) and exit
+        /// without running the query. Useful for debugging
+        /// complex filters and seeing how the planner routes
+        /// atoms across legacy / sliding-window / career-
+        /// aggregate / cross-league sub-evaluators. Pair with
+        /// `--json` for the `explain.v1` envelope shape.
+        #[arg(long)]
+        explain: bool,
         /// Query a specific historical season (e.g. 20242025). Conflicts with
         /// --seasons N. Must match a bundled season — see icelines-fetch::BUNDLED_SEASONS.
         #[arg(long)]

@@ -1,5 +1,162 @@
 # IceLines Changelog
 
+## v0.20.0 — 2026-05-07 — Phase Art Ross
+
+Headline: **The query system is the centerpiece of IceLines now.
+Unified parser → planner → executor lands. Sliding-window streak
+atoms, historical EVER queries across all 38 bundled seasons,
+cross-league career atoms, on-demand data fetch, `--explain`
+plan tree.** ~3 100 → 3 500 tests; +424 in the phase.
+
+### Vision queries that now parse + evaluate
+
+```bash
+# "5 goals over 10 games, age <= 25" — current-season streak
+icelines query leaders --filter "g.last10g>=5 AND age<=25"
+
+# Same question over the player's entire career, across all 38
+# bundled seasons (intra-season only, axis-typed, lockout skip)
+icelines query leaders --filter "g.any10g>=5 EVER AT age<=25"
+
+# "Junior elite cohorts" — cross-league career filter
+icelines query leaders --filter "league.tier=Junior AND p.career.junior>=200"
+
+# Inspect any plan tree without running the query
+icelines query leaders --filter "g.last10g>=5 AND age<=25" --explain
+```
+
+### Added — sub-phases A.0 through A.5
+
+- **A.0 IR + planner skeleton.** New `icelines-query::plan` module
+  with n-ary `Constraint::All(Vec)/Any(Vec)/Not(Box)` IR + typed
+  `Predicate { Scalar, Member, Pattern, Range }` (shape-by-
+  construction makes invalid combinations like `LIKE 5` fail at
+  parse, not at evaluate). `parse_query(FilterInput) -> Result<
+  QueryPlan, Vec<ParseError>>` is the single front door for CLI /
+  web / TUI. `DataProvider` trait owned by `icelines-query` (the
+  dependency-inversion seam — preserves the crate-layering rule).
+  `EvalCtx` is `!Send`-pinned via `compile_fail` doctest.
+- **A.1 grammar expansion.** Strict `<` / `>` / `!=` operators
+  (with `<>` typo hint suggesting `!=`); `IN (a,b,c)` / `NOT IN`
+  set membership (empty `IN ()` rejected at parse); `BETWEEN x
+  AND y` numeric range; `LIKE "Mc*"` with NFD-normalization so
+  ASCII patterns reach Slafkovský / Stützle / Kämpf / Björk;
+  `~` / `!~` substring sugar. Plus 7 new bio atoms: `pos=C`,
+  `team=EDM`, `team.any=EDM`, `draft-round<=2`,
+  `draft-overall<=10`, `birth-state=ON`, `nationality=USA`,
+  `rookie-season>=20212022`.
+- **A.2 sliding-window atoms.** New atom shape `<stat>.last<N><u>`
+  where `u` is `g` (games), `d` (days), `w` (weeks), or `m`
+  (months). Optional scope modifiers: `.allteams` (any stint
+  this season) / `.career` (cross-season tail). `WindowPolicy`
+  enum: `RequireFull` (default) / `AllowPartial` /
+  `AllowPartialAbove(N)`. Mid-season-trade aware — current-team
+  filter applies BEFORE the trailing-N cut.
+- **A.2.4 IcelinesProvider + CLI wiring.** `IcelinesProvider`
+  walks the boxscore manifest + builds `GameStatLine` records
+  for sliding-window evaluation. CLI's filter dispatch routes
+  needs-provider filters through the new pipeline; legacy
+  pipeline preserved for everything else.
+- **A.2.5 polish (12 review action items).** Killed silent
+  placeholders: legacy `Constraint::matches` deleted; `team.career=`
+  rejected at parse with `FeatureNotYet { ships_in: "A.4" }`;
+  `name LIKE` error message no longer claims a field that doesn't
+  exist; `current_team=None` returns Empty instead of falling
+  back to all-stints. `EvalCtx::new` no longer calls `Utc::now()` —
+  takes explicit `today` + `season`; `from_clock(&dyn Clock)`
+  integrates Foster F.0's `MockClock` for tests. Diagnostics:
+  `g.last10z>=5` → `UnknownWindowUnit { unit: 'z' }` with g/d/w/m
+  suggestions; `g.last0g>=5` → `ZeroWindowSize`; `g.last1000g>=5`
+  → `WindowSizeOutOfRange { size: 1000, max: 255 }` (no silent
+  truncation). `parse_or` / `parse_and` use clean accumulator
+  pattern (no sentinel-replacement smell).
+- **A.2.6 coverage close.** 11 end-to-end executor tests with
+  synthetic StatsRepository + canned MockProvider exercising
+  `sliding_window_matches` against a real `PlayerView`. 6
+  `--explain` golden snapshot tests pinning exact tree
+  rendering. 5 missing `IncompatiblePredicate` parser tests.
+- **Wave 12 — 200 adversarial filter scenarios** on the new
+  grammar. Surfaced 1 real bug (`rookie-season>=N` was only in
+  the text-field map; numeric path returned `UnknownStat`).
+- **A.3 historical EVER + AT-age slicing.** New atoms:
+  `p.career>=500` (LifetimeSum), `p.streak>=15` (LongestStreak),
+  `g.any10g>=5 EVER` (AnyWindow — short-circuits on first
+  satisfying season), `g.seasons-with>=5` (SeasonsWith). `AT
+  age<=22` modifier on any career atom — supports scalar
+  (`age<=22`, `age<25`) and range (`age BETWEEN 20 AND 25`)
+  predicate shapes. Lockout 2004-05 skipped (no data, no
+  partial-mark) per the spec. HR Feb-1 age convention via
+  existing `compute_age`.
+- **A.4 cross-league career atoms.** `league=OHL` /
+  `league NOT IN (NHL)` / `league.tier=Junior` (uses Phase
+  Calder's canonical `LeagueTier` classification — Pro /
+  Junior / College / International / Other). Stat-aggregate
+  3-dot keys: `p.career.junior>=200`, `p.career.nhl>=500`,
+  `p.career.ohl>=300`. `IcelinesProvider::fetch_career_history`
+  reads `~/.icelines/career_history.json` (Phase Calder cache).
+- **A.5 `--explain` flag.** `icelines query leaders --filter X
+  --explain` prints the parsed `QueryPlan` tree + data
+  requirements without running the query. Pair with `--json`
+  for the `explain.v1` envelope (frozen v1 — additive changes
+  only; breaking changes ship as `explain.v2`). Useful for
+  debugging complex filters and confirming how the planner
+  routes atoms across legacy / sliding-window / career-aggregate
+  / cross-league sub-evaluators.
+
+### Architecture
+
+- **One front door, four sub-evaluators.** `parse_query` consumes
+  any `FilterInput` ({Cli(String), Form(String), Tui(Vec<C>)})
+  and produces a typed `Constraint` tree. `Constraint::matches(
+  view, &EvalCtx)` walks the tree once; n-ary `All`/`Any` short-
+  circuit naturally. Routing: `Bio` and `SeasonStat` need only
+  the active-season repo; `SlidingWindow` calls
+  `provider.fetch_game_lines`; `CareerAggregate` walks per-
+  season game streams; `CareerLeague` reads career history.
+- **Layering preserved.** `icelines-query` does NOT import
+  `icelines-fetch`. The `DataProvider` trait owned by query is
+  implemented by `icelines-fetch::query_provider::IcelinesProvider`
+  and injected by the surface (CLI / web / TUI).
+- **Fail-closed defaults.** Missing data → atom returns false.
+  Wrapping in `NOT` flips the legacy missing-data semantic
+  through correctly. `--strict` mode (when wired in v0.21) gates
+  partial-data results.
+- **Backward compat.** Every filter expression that parsed in
+  v0.19.1 continues to parse and produce identical results,
+  including the FIXED behavior of the 3 Wave 11 production bugs
+  (goalie compound rewrite, paren-wrapped bio atoms,
+  `--filter`+`--week` loud rejection).
+
+### Test budget
+
+- v0.19.1 baseline: 3 081 workspace tests
+- v0.20.0: 3 505 (+424 across the phase)
+  - 45 A.0 + 64 A.1 + 34 A.2 + 8 A.2.4 + 4 A.2.5 + 22 A.2.6
+  - 30 A.3 + 23 A.4 + 12 A.5 explain
+  - +200 Wave 12 adversarial scenarios
+- All Phase Art Ross gates green: Wave 11 (201) + A.0 parity (4)
+  + A.2 executor (11) + A.3 career (10) + A.4 league (11) +
+  A.5 explain (12) + Wave 12 (200) + the 5-role checkpoint
+  review review-action items (12) all closed.
+
+### Real bugs surfaced + fixed during the phase
+
+- 5 silent-placeholder fixes from the 5-role A.2 checkpoint review
+- 1 from Wave 12: `rookie-season>=N` numeric routing
+- 1 from A.2.6: planner's SlidingWindow render was stale
+
+### Deferred to v0.20.1+
+
+- Cross-surface parity tests (CLI / web / TUI all parse identically)
+- `--strict` flag wired through to error before any fetch
+- Per-season sharded `BoxscoreIndex` with LRU cap (today's
+  `IcelinesProvider` walks the full manifest)
+- Criterion benchmark for `EVER` cold/warm budgets (≤8s / ≤2s)
+- Surface swap (replace `parse_filter_expr` with `parse_query`
+  on every `--filter` site, not just sliding-window)
+- `query career` integration with cross-league atoms
+- `SeasonAxis::Playoff` partition in the executor
+
 ## v0.19.1 — 2026-05-06
 
 Headline: **3 production filter bugs surfaced by Wave 11 (200

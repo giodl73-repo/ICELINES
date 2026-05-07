@@ -21,9 +21,11 @@ icelines tui                                          # interactive dashboard
 
 ---
 
-## Filter grammar
+## Filter grammar — Phase Art Ross (v0.20.0)
 
 Every catalog stat is filterable through `--filter`. Multiple `--filter` flags are ANDed at the top level. **A single `--filter` value can also use AND / OR / NOT / parens** for richer expressions.
+
+### Grammar
 
 ```
 --filter "<expr>"
@@ -32,15 +34,127 @@ Every catalog stat is filterable through `--filter`. Multiple `--filter` flags a
 <or-expr>  := <and-expr> ( OR <and-expr> )*
 <and-expr> := <unary>    ( AND <unary>   )*
 <unary>    := NOT <unary> | <primary>
-<primary>  := '(' <expr> ')' | <atom>
-<atom>     := <stat> <op> <value>
-
-<stat>   any cli_key from the catalog (108 stats) or a short alias
-<op>     >=  <=  >  <  ==
-<value>  number; locale-comma `,` rejected — use `.`
+<primary>  := '(' <expr> ')' | <atom> [EVER] [AT <age-clause>]
+<atom>     := <key> <op> <value>
+            | <key> [NOT] IN '(' <value> (',' <value>)* ')'
+            | <key> BETWEEN <number> AND <number>
+            | <key> [NOT] LIKE <pattern>
+            | <key> ('~' | '!~') <pattern>
 ```
 
-Precedence: `NOT > AND > OR`. Standard left-associativity. Keywords `AND`/`OR`/`NOT` are case-insensitive and must be at word boundaries (won't collide with stat keys).
+Precedence: `NOT > AND > OR`. Keywords (AND, OR, NOT, IN, BETWEEN, LIKE, EVER, AT) are case-insensitive at word boundaries.
+
+### Operators
+
+| Op | Meaning | Notes |
+|---|---|---|
+| `>=` `<=` `==` `=` | Standard comparators | `g>=10` |
+| `<` `>` | Strict comparators | `age<25` |
+| `!=` | Not equal | `g!=0` (`<>` typo hint suggests `!=`) |
+| `IN (a,b,c)` | Set membership | `country IN (CAN, USA, SWE)` |
+| `NOT IN (a,b,c)` | Negated set | `team NOT IN (BOS, NYR)` |
+| `BETWEEN x AND y` | Inclusive range | `age BETWEEN 22 AND 28` |
+| `LIKE "pat"` | Glob match | `country LIKE "CA*"` (NFD-normalized) |
+| `NOT LIKE "pat"` | Negated glob | |
+| `~ pat` / `!~ pat` | Substring sugar | |
+
+### Atom keys
+
+**Catalog stats** (108 cli_keys): `goals`, `assists`, `points`, `pim`, `shots`, `hits`, `blocked-shots`, `takeaways`, `giveaways`, plus aliases (`g`, `a`, `p`, `ppg`, `blk`, `tk`, `gv`, `pen`, `+/-`, `sv%`).
+
+**Bio fields:**
+- `age` (HR Feb-1 convention via `compute_age`)
+- `country` / `nationality` (distinct — country matches birth_country OR nationality_code; nationality matches only nationality_code)
+- `shoots` / `hand` / `catches`
+- `pos` / `position` (roster primary)
+- `team` (current stint), `team.any` (any stint this season)
+- `draft-year` / `draft`, `draft-round`, `draft-overall`
+- `height` / `ht`, `weight` / `wt`
+- `birth-state`, `birth-city`
+- `rookie-season`
+
+**Sliding-window atoms** (Phase Art Ross A.2): `<stat>.last<N><u>` where `u` is `g` (games-played), `d` (days), `w` (weeks), `m` (months). N is 1..=255 for g/w/m, 1..=65535 for d.
+- `g.last10g>=5` — last 10 games played, current team stint, contiguous (default scope)
+- `g.last10g.allteams>=5` — last 10 GP across all stints this season
+- `g.last10g.career>=5` — last 10 GP crossing season boundaries
+- `g.last30d>=10` — last 30 calendar days
+- `g.last3w>=8`, `g.last3m>=20`
+
+**Career aggregator atoms** (Phase Art Ross A.3): `<stat>.<aggregator>`
+- `p.career>=500` — lifetime sum across all eligible seasons
+- `p.streak>=15` — longest run of consecutive games with non-zero stat
+- `g.any10g>=5 EVER` — any 10-GP intra-season window across career (axis-typed; lockout 2004-05 skipped; short-circuits on first hit)
+- `g.seasons-with>=5` — count of seasons matching predicate
+
+**AT-age modifier** (Phase Art Ross A.3): slice the season set BEFORE aggregation
+- `g.any10g>=5 EVER AT age<=25`
+- `p.career>=500 AT age BETWEEN 20 AND 25`
+
+**Cross-league career atoms** (Phase Art Ross A.4):
+- `league=OHL` — ever played in this league
+- `league IN (OHL, WHL, QMJHL)` / `league NOT IN (NHL)`
+- `league.tier=Junior` (Pro / Junior / College / International / Other — Phase Calder canonical classification)
+- `p.career.junior>=200` — junior-tier career sum
+- `p.career.nhl>=500` — NHL-only career sum
+- `p.career.ohl>=300` — specific league career sum
+
+### `--explain` (Phase Art Ross A.5)
+
+Print the parsed query plan + data requirements without running the query:
+
+```bash
+icelines query leaders --filter "g.last10g>=5 AND age<=25" --explain
+icelines query leaders --filter "g.any10g>=5 EVER AT age<=25" --explain --json
+```
+
+The JSON envelope follows `explain.v1` shape (frozen v1; additive only; breaking changes ship as `explain.v2`):
+```json
+{
+  "schema_version": "explain.v1",
+  "route": "leaders.explain",
+  "data": { "plans": [{ "filter_input": "...", "plan_tree_text": "...",
+                         "needs_provider": true, "requirements": {...} }] },
+  "meta": { "note": "..." }
+}
+```
+
+### Vision queries
+
+```bash
+# "5 goals over 10 games, age <= 25" — current-season streak
+icelines query leaders --filter "g.last10g>=5 AND age<=25"
+
+# Same, historical — any 10-GP window across all 38 bundled seasons
+icelines query leaders --filter "g.any10g>=5 EVER AT age<=25"
+
+# Junior elite cohorts
+icelines query leaders --filter "league.tier=Junior AND p.career.junior>=200"
+
+# Mac* family with elite NHL careers, ever
+icelines query leaders --filter 'name LIKE "Mac*" AND p.career.nhl>=500'
+```
+
+(Some queries require `icelines fetch boxscore` and/or `icelines fetch career` to populate local caches before they return non-empty results.)
+
+### Errors
+
+The parser emits typed errors with span info. Multi-error reporting is preserved — a 5-atom filter with 3 errors surfaces all 3 in one round-trip.
+
+| Variant | Trigger |
+|---|---|
+| `EmptyInput` | `--filter ""` |
+| `MissingOp` | atom has no op |
+| `MultipleOps` | `g>=>=5`, `g===5` |
+| `OpTypoHint` | `g=>5` → suggests `>=`; `g=<5` → `<=`; `g<>5` → `!=` |
+| `UnknownStat` | unknown cli_key |
+| `BadNumber` / `NotFinite` | `g>=many`, `g>=NaN` |
+| `EmptySet` | `country IN ()` |
+| `IncompatiblePredicate` | `LIKE 5`, `g IN (10, 20, 30)` (use BETWEEN), string field with `>=` |
+| `UnknownWindowUnit` | `g.last10z>=5` (suggests g/d/w/m) |
+| `ZeroWindowSize` | `g.last0g>=5` |
+| `WindowSizeOutOfRange` | `g.last1000g>=5` (max 255 for g/w/m) |
+| `FeatureNotYet` | atom routes to a sub-phase that hasn't shipped (e.g. `team.career=` was here pre-A.4) |
+| `UnclosedParen` / `UnexpectedRParen` / `UnexpectedEnd` | grammar |
 
 ```bash
 # Plain atom — backward compatible

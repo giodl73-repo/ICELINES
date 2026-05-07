@@ -519,7 +519,14 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 week,
                 month,
                 playoff,
+                explain,
             } => {
+                if explain {
+                    // Phase Art Ross A.5 — print the parsed plan
+                    // and exit. Doesn't load player data.
+                    commands::query::run_explain(&filters, json)?;
+                    return Ok(());
+                }
                 if playoff {
                     commands::query_window::run_playoff_leaders(top, sort, json).await?;
                     return Ok(());
