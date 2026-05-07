@@ -22,7 +22,7 @@
 use icelines_core::stats_catalog::StatId;
 
 use crate::errors::ParseError;
-use crate::input::{AtomFragment, FilterInput};
+use crate::input::FilterInput;
 use crate::plan::{
     BioConstraint, BioField, Constraint, GlobPattern, MemberOp, NumericRange, PatternOp,
     Predicate, QueryPlan, ScalarOp, ScalarValue, SeasonAxis, SeasonStatConstraint, SlidingWindow,
@@ -66,21 +66,15 @@ fn parse_query_string(input: &str) -> Result<QueryPlan, Vec<ParseError>> {
     Ok(QueryPlan { root })
 }
 
-fn parse_query_tui(fragments: &[AtomFragment]) -> Result<QueryPlan, Vec<ParseError>> {
-    if fragments.is_empty() {
-        return Err(vec![ParseError::EmptyInput]);
-    }
-    let constraints: Vec<Constraint> = fragments
-        .iter()
-        .filter_map(|f| match f {
-            AtomFragment::Atom(c) => Some(c.clone()),
-            _ => None,
-        })
-        .collect();
+/// A.2.5 review (keel) — `FilterInput::Tui` is now `Vec<Constraint>`.
+/// All atoms AND-join; no implicit OR/grouping. When the TUI
+/// overlay grows boolean composition, expand this with a typed
+/// fragment shape + shunting-yard.
+fn parse_query_tui(constraints: &[Constraint]) -> Result<QueryPlan, Vec<ParseError>> {
     let root = match constraints.len() {
         0 => return Err(vec![ParseError::EmptyInput]),
-        1 => constraints.into_iter().next().unwrap(),
-        _ => Constraint::All(constraints),
+        1 => constraints[0].clone(),
+        _ => Constraint::All(constraints.to_vec()),
     };
     Ok(QueryPlan { root })
 }
@@ -110,49 +104,36 @@ impl<'a> Parser<'a> {
         t
     }
 
+    /// A.2.5 review (forge) — pure accumulator pattern, no sentinel
+    /// `left` value to refresh after each iteration. If the loop
+    /// runs zero times, return the single child unwrapped; else
+    /// build an n-ary node.
     fn parse_or(&mut self) -> Result<Constraint, ()> {
-        let mut left = self.parse_and()?;
-        let mut accumulated: Vec<Constraint> = Vec::new();
+        let first = self.parse_and()?;
+        let mut acc = vec![first];
         while matches!(self.peek(), Some(Token::KwOr)) {
             self.bump();
-            let right = self.parse_and()?;
-            if accumulated.is_empty() {
-                accumulated.push(left);
-            }
-            accumulated.push(right);
-            left = Constraint::Bio(BioConstraint {
-                // sentinel — replaced below
-                field: BioField::Age,
-                predicate: Predicate::Scalar(ScalarOp::Eq, ScalarValue::Number(0.0)),
-            });
+            acc.push(self.parse_and()?);
         }
-        if accumulated.is_empty() {
-            Ok(left)
+        Ok(if acc.len() == 1 {
+            acc.into_iter().next().unwrap()
         } else {
-            Ok(Constraint::Any(accumulated))
-        }
+            Constraint::Any(acc)
+        })
     }
 
     fn parse_and(&mut self) -> Result<Constraint, ()> {
-        let mut left = self.parse_unary()?;
-        let mut accumulated: Vec<Constraint> = Vec::new();
+        let first = self.parse_unary()?;
+        let mut acc = vec![first];
         while matches!(self.peek(), Some(Token::KwAnd)) {
             self.bump();
-            let right = self.parse_unary()?;
-            if accumulated.is_empty() {
-                accumulated.push(left);
-            }
-            accumulated.push(right);
-            left = Constraint::Bio(BioConstraint {
-                field: BioField::Age,
-                predicate: Predicate::Scalar(ScalarOp::Eq, ScalarValue::Number(0.0)),
-            });
+            acc.push(self.parse_unary()?);
         }
-        if accumulated.is_empty() {
-            Ok(left)
+        Ok(if acc.len() == 1 {
+            acc.into_iter().next().unwrap()
         } else {
-            Ok(Constraint::All(accumulated))
-        }
+            Constraint::All(acc)
+        })
     }
 
     fn parse_unary(&mut self) -> Result<Constraint, ()> {
@@ -584,7 +565,12 @@ fn build_scalar_constraint_numeric(
 /// the sliding-window shape (let the caller try other paths /
 /// surface UnknownStat). Returns `Ok(Some(_))` on a clean parse.
 /// Returns `Err(_)` when the syntax IS sliding-window-shaped but
-/// has a typo (e.g. unknown unit, malformed N).
+/// has a typo (zero size, unknown unit, oversized N, unknown scope).
+///
+/// A.2.5 review (edge) — emits focused error variants:
+/// `UnknownWindowUnit` for `last10z`, `ZeroWindowSize` for
+/// `last0g`, `WindowSizeOutOfRange` for `last1000g` (no silent
+/// truncation).
 fn try_parse_sliding_window_atom(
     key: &str,
     op: ScalarOp,
@@ -609,30 +595,54 @@ fn try_parse_sliding_window_atom(
         });
     }
 
-    // The unit char is the last character; N is everything before.
-    let unit_char = suffix.chars().last().unwrap();
+    // Unit char is the last character; N is everything before.
+    let unit_char = suffix.chars().last().expect("suffix non-empty above");
     let n_str = &suffix[..suffix.len() - unit_char.len_utf8()];
-    let n: u16 = match n_str.parse() {
-        Ok(n) if n > 0 => n,
-        _ => {
+    let n_raw: u32 = match n_str.parse() {
+        Ok(n) => n,
+        Err(_) => {
             return Err(ParseError::UnknownStat {
                 key: format!("{stat_key}.{window_str}"),
             })
         }
     };
+    if n_raw == 0 {
+        return Err(ParseError::ZeroWindowSize {
+            atom: atom_text.to_string(),
+        });
+    }
+
+    // Cap GP/Weeks/Months at u8::MAX (255). Days uses u16 so its
+    // ceiling is much higher (65535).
+    const MAX_GP_OR_W_OR_M: u8 = u8::MAX;
+    if matches!(unit_char, 'g' | 'w' | 'm') && n_raw > MAX_GP_OR_W_OR_M as u32 {
+        return Err(ParseError::WindowSizeOutOfRange {
+            atom: atom_text.to_string(),
+            size: n_raw,
+            max: MAX_GP_OR_W_OR_M,
+        });
+    }
+    if unit_char == 'd' && n_raw > u16::MAX as u32 {
+        return Err(ParseError::WindowSizeOutOfRange {
+            atom: atom_text.to_string(),
+            size: n_raw,
+            max: u8::MAX, // approximation — u16 max is too big to print sensibly
+        });
+    }
 
     let window = match unit_char {
         'g' => SlidingWindow::LastN_GP {
-            n: n.min(255) as u8,
+            n: n_raw as u8,
             scope: WindowScope::CurrentTeamCurrentSeason, // default
             policy: WindowPolicy::RequireFull,
         },
-        'd' => SlidingWindow::LastN_Days(n),
-        'w' => SlidingWindow::LastN_Weeks(n.min(255) as u8),
-        'm' => SlidingWindow::LastN_Months(n.min(255) as u8),
-        _ => {
-            return Err(ParseError::UnknownStat {
-                key: format!("{stat_key}.{window_str}"),
+        'd' => SlidingWindow::LastN_Days(n_raw as u16),
+        'w' => SlidingWindow::LastN_Weeks(n_raw as u8),
+        'm' => SlidingWindow::LastN_Months(n_raw as u8),
+        other => {
+            return Err(ParseError::UnknownWindowUnit {
+                atom: atom_text.to_string(),
+                unit: other,
             });
         }
     };
@@ -671,7 +681,6 @@ fn try_parse_sliding_window_atom(
         key: stat_key.to_string(),
     })?;
 
-    let _ = atom_text;
     Ok(Some(Constraint::SlidingWindow(SlidingWindowConstraint {
         stat,
         window,
@@ -687,6 +696,16 @@ fn build_scalar_constraint_text(
     atom_text: &str,
 ) -> Result<Constraint, ParseError> {
     if let Some(field) = bio_text_field_from_key(key) {
+        // A.2.5 review (scout + edge) — `team.career=` silently
+        // fell back to current-stint matching, producing wrong
+        // populations. Reject loudly until A.4 wires the full
+        // career walk.
+        if matches!(field, BioField::TeamCareer) {
+            return Err(ParseError::FeatureNotYet {
+                atom: atom_text.to_string(),
+                ships_in: "A.4 (career-history walk)",
+            });
+        }
         if !matches!(op, ScalarOp::Eq | ScalarOp::Ne) {
             return Err(ParseError::IncompatiblePredicate {
                 field: format!("{:?}", field),
@@ -712,6 +731,17 @@ fn build_member_constraint(
     values: Vec<ScalarValue>,
 ) -> Result<Constraint, ParseError> {
     if let Some(field) = bio_text_field_from_key(key) {
+        // A.2.5 review (scout) — gate team.career until A.4.
+        if matches!(field, BioField::TeamCareer) {
+            let op_word = match op {
+                MemberOp::In => "IN",
+                MemberOp::NotIn => "NOT IN",
+            };
+            return Err(ParseError::FeatureNotYet {
+                atom: format!("{key} {op_word} (...)"),
+                ships_in: "A.4 (career-history walk)",
+            });
+        }
         // All values must be text (canonicalize_text already
         // applied at parse_in_value for Bare; QuotedString path
         // canonicalized too).
@@ -774,9 +804,14 @@ fn build_pattern_constraint(
             predicate: Predicate::Pattern(op, glob),
         }));
     }
+    // A.2.5 review (scout) — `name` was listed but no `BioField::FullName`
+    // exists (yet). Strike it from the error message so the user
+    // doesn't try to query a field the system doesn't support.
+    // (When name-search ships, add `BioField::FullName` and update
+    // this message.)
     Err(ParseError::IncompatiblePredicate {
         field: key.to_string(),
-        detail: "LIKE only applies to string fields (country / team / shoots / position / name)"
+        detail: "LIKE only applies to string fields (country / team / shoots / position)"
             .to_string(),
     })
 }
@@ -1265,16 +1300,25 @@ mod tests {
         ));
     }
 
+    /// A.2.5 review (scout) — `team.career=` rejected at parse
+    /// with `FeatureNotYet { ships_in: "A.4..." }` until the
+    /// full career-history walk lands. Was previously a silent
+    /// fallback to current-stint, producing wrong populations.
     #[test]
-    fn l0_a1_team_career_modifier() {
-        let c = ok("team.career=EDM");
-        assert!(matches!(
-            c,
-            Constraint::Bio(BioConstraint {
-                field: BioField::TeamCareer,
-                ..
-            })
-        ));
+    fn l0_a25_team_career_rejected_until_a4() {
+        let es = errs("team.career=EDM");
+        match &es[0] {
+            ParseError::FeatureNotYet { ships_in, .. } => {
+                assert!(ships_in.contains("A.4"));
+            }
+            other => panic!("expected FeatureNotYet for team.career, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn l0_a25_team_career_in_set_rejected_until_a4() {
+        let es = errs("team.career IN (EDM, DAL)");
+        assert!(matches!(es[0], ParseError::FeatureNotYet { .. }));
     }
 
     #[test]
@@ -1463,13 +1507,30 @@ mod tests {
     #[test]
     fn l0_a2_parse_unknown_window_unit_rejected() {
         let es = errs("g.last10z>=5");
-        assert!(matches!(es[0], ParseError::UnknownStat { .. }));
+        match &es[0] {
+            ParseError::UnknownWindowUnit { unit, .. } => assert_eq!(*unit, 'z'),
+            other => panic!("expected UnknownWindowUnit, got {other:?}"),
+        }
     }
 
     #[test]
     fn l0_a2_parse_zero_window_size_rejected() {
         let es = errs("g.last0g>=5");
-        assert!(matches!(es[0], ParseError::UnknownStat { .. }));
+        assert!(matches!(es[0], ParseError::ZeroWindowSize { .. }));
+    }
+
+    /// A.2.5 review (forge + edge) — `g.last1000g` previously
+    /// silently truncated to `last255g`. Now rejected loudly.
+    #[test]
+    fn l0_a2_parse_window_size_out_of_range() {
+        let es = errs("g.last1000g>=5");
+        match &es[0] {
+            ParseError::WindowSizeOutOfRange { size, max, .. } => {
+                assert_eq!(*size, 1000);
+                assert_eq!(*max, 255);
+            }
+            other => panic!("expected WindowSizeOutOfRange, got {other:?}"),
+        }
     }
 
     #[test]

@@ -73,6 +73,27 @@ pub enum ParseError {
         atom: String,
         suggestion: &'static str,
     },
+
+    /// A.2.5 review (edge) — `g.last10z>=5` produces a focused
+    /// error rather than the generic "unknown stat key g.last10z".
+    /// `g/d/w/m` listed as suggestions.
+    #[error("unknown window unit {unit:?} in {atom:?} — expected one of `g` (games), `d` (days), `w` (weeks), `m` (months)")]
+    UnknownWindowUnit { atom: String, unit: char },
+
+    /// A.2.5 review (edge) — `g.last0g>=5` is meaningless; the
+    /// real problem isn't an unknown stat, it's a zero-sized window.
+    #[error("window size must be positive in {atom:?}")]
+    ZeroWindowSize { atom: String },
+
+    /// A.2.5 review (forge + edge) — `g.last1000g>=5` previously
+    /// silently truncated to `last255g` via `n.min(255) as u8`.
+    /// Reject loudly at the cap.
+    #[error("window size {size} in {atom:?} exceeds maximum {max}")]
+    WindowSizeOutOfRange {
+        atom: String,
+        size: u32,
+        max: u8,
+    },
 }
 
 impl ParseError {

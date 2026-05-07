@@ -23,42 +23,38 @@ use crate::sliding_window::{aggregate_window, extract_window_stat, WindowResult}
 
 impl Constraint {
     /// Evaluate this constraint tree against the given player view.
-    /// **Legacy entry point** — does NOT evaluate `SlidingWindow` /
-    /// `CareerAggregate` / `CareerLeague` (returns true as a
-    /// placeholder so the legacy parity test continues to work).
-    /// Callers wanting full evaluation should use
-    /// [`matches_with_ctx`](Self::matches_with_ctx).
-    pub fn matches(&self, v: &PlayerView<'_>, season: u32) -> bool {
-        match self {
-            Constraint::Bio(b) => bio_matches(b, v, season),
-            Constraint::SeasonStat(s) => season_stat_matches(s, v),
-            Constraint::SlidingWindow(_) => true,
-            Constraint::CareerAggregate(_) => true,
-            Constraint::CareerLeague(_) => true,
-            Constraint::All(children) => children.iter().all(|c| c.matches(v, season)),
-            Constraint::Any(children) => children.iter().any(|c| c.matches(v, season)),
-            Constraint::Not(inner) => !inner.matches(v, season),
-        }
-    }
-
-    /// Phase Art Ross A.2 — context-aware matcher. Forwards
-    /// non-window atoms to `matches`; evaluates `SlidingWindow` by
-    /// pulling per-game lines from `ctx.provider`.
-    /// `CareerAggregate` / `CareerLeague` reserved for A.3/A.4.
-    pub fn matches_with_ctx(&self, v: &PlayerView<'_>, ctx: &EvalCtx<'_>) -> bool {
+    ///
+    /// Phase Art Ross A.2.5 review (forge) — the legacy two-method
+    /// shape was a footgun (the placeholder `matches` returned
+    /// `true` for unwired variants, silently over-matching). Now
+    /// there's one entry point: `matches`. It takes an `EvalCtx`
+    /// because every variant needs season + today + provider for
+    /// correct evaluation. Bio/SeasonStat ignore most of the ctx
+    /// (only `season` is read for age computation); SlidingWindow
+    /// pulls per-game lines via `ctx.provider`; CareerAggregate /
+    /// CareerLeague will use the full ctx in A.3/A.4.
+    ///
+    /// For unwired variants (CareerAggregate, CareerLeague) the
+    /// parser today rejects the atom shapes that would construct
+    /// them — so these branches are unreachable from user input.
+    /// The match arms return false (silent over-match was the bug).
+    pub fn matches(&self, v: &PlayerView<'_>, ctx: &EvalCtx<'_>) -> bool {
         match self {
             Constraint::Bio(b) => bio_matches(b, v, ctx.season),
             Constraint::SeasonStat(s) => season_stat_matches(s, v),
             Constraint::SlidingWindow(s) => sliding_window_matches(s, v, ctx),
-            Constraint::CareerAggregate(_) => true, // A.3
-            Constraint::CareerLeague(_) => true,    // A.4
-            Constraint::All(children) => {
-                children.iter().all(|c| c.matches_with_ctx(v, ctx))
-            }
-            Constraint::Any(children) => {
-                children.iter().any(|c| c.matches_with_ctx(v, ctx))
-            }
-            Constraint::Not(inner) => !inner.matches_with_ctx(v, ctx),
+            // Phase Art Ross A.2.5 — these variants don't yet have
+            // an evaluator. Returning `false` (instead of `true`
+            // per the previous shape) means a misconstructed plan
+            // matches NOBODY rather than EVERYONE — a fail-closed
+            // default. The parser rejects atoms that would build
+            // these variants, so this code is unreachable from
+            // user input today.
+            Constraint::CareerAggregate(_) => false,
+            Constraint::CareerLeague(_) => false,
+            Constraint::All(children) => children.iter().all(|c| c.matches(v, ctx)),
+            Constraint::Any(children) => children.iter().any(|c| c.matches(v, ctx)),
+            Constraint::Not(inner) => !inner.matches(v, ctx),
         }
     }
 }
@@ -183,14 +179,12 @@ fn bio_matches(b: &BioConstraint, v: &PlayerView<'_>, season: u32) -> bool {
             text_predicate_matches_any(&b.predicate, &refs)
         }
         BioField::TeamCareer => {
-            // A.1 limitation: TeamCareer needs the full career
-            // walk which lands in A.4. For now, the in-season
-            // current-stint serves as a fallback so the atom
-            // doesn't silently pass.
-            let t = v
-                .team()
-                .map(|abbr| ScalarValue::canonicalize_text(&abbr.0));
-            text_predicate_matches(&b.predicate, t.as_deref())
+            // A.2.5 review (scout + edge) — parser now rejects
+            // `team.career=` atoms with FeatureNotYet, so this
+            // branch is unreachable from user input. If a future
+            // caller constructs one programmatically, fail closed
+            // (return false) — silent over-match was the bug.
+            false
         }
         BioField::BirthCity => {
             let s = v

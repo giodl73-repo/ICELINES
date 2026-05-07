@@ -125,7 +125,16 @@ pub fn aggregate_window(
                         .iter()
                         .filter(|l| l.team_abbrev.eq_ignore_ascii_case(team))
                         .collect(),
-                    None => lines.iter().collect(),
+                    None => {
+                        // A.2.5 review (edge) — IR-only player with
+                        // no team_stints. Don't silently fall back
+                        // to "all teams" when scope demands a team
+                        // — the user's `team=EDM AND g.last10g>=5`
+                        // would otherwise accept a bench-warmer's
+                        // whole-league total. Empty is the
+                        // honest answer.
+                        return WindowResult::Empty;
+                    }
                 },
                 WindowScope::AllTeamsCurrentSeason | WindowScope::Career => {
                     lines.iter().collect()
@@ -492,6 +501,25 @@ mod tests {
         };
         let today = NaiveDate::from_ymd_opt(2026, 5, 7).unwrap();
         let result = aggregate_window(&[], &win, today, Some("EDM"));
+        assert_eq!(result, WindowResult::Empty);
+    }
+
+    /// A.2.5 review (edge) — IR-only player without team_stints
+    /// and scope=CurrentTeam must NOT silently fall back to
+    /// all-stints (that would accept a bench-warmer's whole
+    /// league total when the user asked for current-team only).
+    #[test]
+    fn l0_aggregate_current_team_none_returns_empty_not_silent_fallback() {
+        let lines: Vec<GameStatLine> = (1..=10)
+            .map(|i| line(&format!("2026-01-{:02}", i), "EDM", 1, 0))
+            .collect();
+        let win = SlidingWindow::LastN_GP {
+            n: 10,
+            scope: WindowScope::CurrentTeamCurrentSeason,
+            policy: WindowPolicy::RequireFull,
+        };
+        let today = NaiveDate::from_ymd_opt(2026, 5, 7).unwrap();
+        let result = aggregate_window(&lines, &win, today, None);
         assert_eq!(result, WindowResult::Empty);
     }
 

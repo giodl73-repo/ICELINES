@@ -9,6 +9,14 @@ use crate::plan::Constraint;
 
 /// Pre-decoded filter input. Each variant is what the surface
 /// hands to `parse_query` after its own decode pass.
+///
+/// A.2.5 review (keel) — `Tui` was previously a `Vec<AtomFragment>`
+/// with `AndJoin`/`OrJoin`/`GroupOpen`/`GroupClose` variants that
+/// were silently flattened into `All(...)` regardless of their
+/// boolean intent. Reduced to `Vec<Constraint>` so the TUI overlay
+/// commits to building typed constraint trees directly. When
+/// boolean grouping ships in the overlay, expand back via a
+/// shunting-yard pass.
 #[derive(Debug, Clone, PartialEq)]
 pub enum FilterInput {
     /// CLI: clap has already shell-decoded the string. Multiple
@@ -20,29 +28,16 @@ pub enum FilterInput {
     /// URL decode automatically.)
     Form(String),
     /// TUI: the user builds atoms incrementally via the filter
-    /// overlay; the surface composes a `Vec<AtomFragment>` directly
-    /// without round-tripping through a string.
-    Tui(Vec<AtomFragment>),
+    /// overlay; the surface composes a `Vec<Constraint>` directly
+    /// (or a single root via the convenience `from_tui_atoms`
+    /// helper). All atoms in the vec are AND-joined.
+    Tui(Vec<Constraint>),
 }
 
-/// A typed atom fragment built directly by the TUI overlay. Each
-/// fragment encodes one user widget interaction (e.g. "selected
-/// position dropdown = C", "set age max to 24").
-#[derive(Debug, Clone, PartialEq)]
-pub enum AtomFragment {
-    /// A pre-built constraint atom — used when the TUI overlay
-    /// constructs a constraint directly without going through a
-    /// string form.
-    Atom(Constraint),
-    /// An implicit-AND boundary between adjacent atoms.
-    AndJoin,
-    /// An implicit-OR boundary.
-    OrJoin,
-    /// Group open (paren).
-    GroupOpen,
-    /// Group close.
-    GroupClose,
-}
+/// Re-export name reserved for the future shunting-yard fragment
+/// shape. Today it's an alias for `Constraint` so callers building
+/// to `FilterInput::Tui(vec![...])` have a stable name to import.
+pub type AtomFragment = Constraint;
 
 impl FilterInput {
     /// Convenience constructor: take a slice of CLI `--filter`

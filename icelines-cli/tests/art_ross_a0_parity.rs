@@ -24,7 +24,22 @@ use icelines_core::identity::PlayerId;
 use icelines_core::stats_catalog::parse_filter_expr;
 use icelines_core::stats_repository::StatsRepository;
 use icelines_fetch::stats_loader::load_player_career_into_repo;
-use icelines_query::{parse_query, FilterInput};
+use icelines_query::data_provider::{DataProvider, EvalCtx, FetchError, FetchEvent, PlanRequirement};
+use icelines_query::{parse_query, FilterInput, StrictMode};
+
+/// No-op DataProvider for the A.0 parity test corpus — the corpus
+/// has no SlidingWindow atoms, so the provider is never invoked.
+struct NoOpProvider;
+
+impl DataProvider for NoOpProvider {
+    fn ensure(
+        &self,
+        _req: &PlanRequirement,
+        _events: &mut dyn FnMut(FetchEvent),
+    ) -> Result<(), FetchError> {
+        Ok(())
+    }
+}
 
 /// A representative active player (Connor McDavid). Loading his
 /// career fans out across all bundled seasons; the current season
@@ -103,6 +118,13 @@ fn build_sample_repo() -> StatsRepository {
     repo
 }
 
+fn fixed_today() -> chrono::NaiveDate {
+    // Mid-season anchor — corpus has no calendar-window atoms, so
+    // the exact date doesn't affect results, but it must be stable
+    // across test runs.
+    chrono::NaiveDate::from_ymd_opt(2026, 5, 7).unwrap()
+}
+
 /// For each filter in the corpus, parse via BOTH pipelines and
 /// assert the per-player boolean agrees against every player view
 /// in the active-season set.
@@ -111,6 +133,15 @@ fn art_ross_a0_parity_corpus_agrees_on_every_player() {
     let repo = build_sample_repo();
     let season = icelines_core::model::Season(current_season_u32());
     let season_type = icelines_core::season_stats::SeasonType::Regular;
+
+    let provider = NoOpProvider;
+    let ctx = EvalCtx::new(
+        &provider,
+        StrictMode::Off,
+        false,
+        fixed_today(),
+        current_season_u32(),
+    );
 
     let mut diffs: Vec<String> = Vec::new();
 
@@ -123,7 +154,7 @@ fn art_ross_a0_parity_corpus_agrees_on_every_player() {
             ),
         };
 
-        // New pipeline: parse_query → Constraint::matches
+        // New pipeline: parse_query → Constraint::matches (unified)
         let plan = match parse_query(FilterInput::Cli(filter.to_string())) {
             Ok(p) => p,
             Err(es) => panic!(
@@ -140,7 +171,7 @@ fn art_ross_a0_parity_corpus_agrees_on_every_player() {
             };
 
             let legacy = legacy_expr.matches(&view);
-            let new = plan.root.matches(&view, current_season_u32());
+            let new = plan.root.matches(&view, &ctx);
 
             if legacy != new {
                 diffs.push(format!(
@@ -169,6 +200,14 @@ fn art_ross_a0_corpus_has_actual_diversity() {
     let repo = build_sample_repo();
     let season = icelines_core::model::Season(current_season_u32());
     let season_type = icelines_core::season_stats::SeasonType::Regular;
+    let provider = NoOpProvider;
+    let ctx = EvalCtx::new(
+        &provider,
+        StrictMode::Off,
+        false,
+        fixed_today(),
+        current_season_u32(),
+    );
 
     let mut found_true = false;
     let mut found_false = false;
@@ -177,7 +216,7 @@ fn art_ross_a0_corpus_has_actual_diversity() {
         let plan = parse_query(FilterInput::Cli(filter.to_string())).unwrap();
         for pid in SAMPLE_PIDS {
             if let Some(view) = repo.view(PlayerId(*pid), season, season_type) {
-                if plan.root.matches(&view, current_season_u32()) {
+                if plan.root.matches(&view, &ctx) {
                     found_true = true;
                 } else {
                     found_false = true;

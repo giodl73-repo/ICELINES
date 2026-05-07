@@ -117,7 +117,8 @@ fn l1_a2_provider_returns_canned_lines() {
         line("2026-01-05", "EDM", 2, 1),
     ];
     let provider = MockProvider::new(lines.clone());
-    let _ctx = EvalCtx::new(&provider, StrictMode::Off, false);
+    let today = NaiveDate::from_ymd_opt(2026, 5, 7).unwrap();
+    let _ctx = EvalCtx::new(&provider, StrictMode::Off, false, today, 20252026);
 
     let fetched = provider.fetch_game_lines(8478402, 20252026);
     assert_eq!(fetched.len(), 3);
@@ -128,9 +129,7 @@ fn l1_a2_provider_returns_canned_lines() {
 fn l1_a2_eval_ctx_carries_today_and_season() {
     let provider = MockProvider::new(vec![]);
     let today = NaiveDate::from_ymd_opt(2026, 3, 15).unwrap();
-    let ctx = EvalCtx::new(&provider, StrictMode::Off, false)
-        .with_today(today)
-        .with_season(20252026);
+    let ctx = EvalCtx::new(&provider, StrictMode::Off, false, today, 20252026);
     assert_eq!(ctx.today, today);
     assert_eq!(ctx.season, 20252026);
 }

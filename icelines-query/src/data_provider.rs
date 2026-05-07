@@ -135,13 +135,14 @@ pub struct EvalCtx<'a> {
     pub provider: &'a dyn DataProvider,
     pub strict: StrictMode,
     pub no_fetch: bool,
-    /// Active season-id for the query. Sliding-window calendar
-    /// atoms (`g.last30d`) measure from `today`; season-typed
-    /// atoms (`AT age<=22`) compute age relative to `season`.
+    /// Active season-id for the query.
     pub season: u32,
-    /// Anchor date for calendar windows. Set by the surface
-    /// (CLI uses `Utc::now().date_naive()`; tests inject via
-    /// `MockClock`). Defaults to today.
+    /// Anchor date for calendar windows. **Required parameter on
+    /// the constructor — Phase Art Ross A.2.5 review (forge + keel)
+    /// removed the implicit `Utc::now()` default that bypassed
+    /// Foster's `Clock` injection seam.** Surfaces inject either
+    /// `clock.now().date_naive()` (production) or a `MockClock`
+    /// fixed time (tests).
     pub today: chrono::NaiveDate,
     /// Marker forcing `!Send` so async accidents (`tokio::spawn`)
     /// fail at compile time, not at runtime.
@@ -149,26 +150,54 @@ pub struct EvalCtx<'a> {
 }
 
 impl<'a> EvalCtx<'a> {
-    pub fn new(provider: &'a dyn DataProvider, strict: StrictMode, no_fetch: bool) -> Self {
+    /// Construct an `EvalCtx`. `today` and `season` are explicit —
+    /// the surface owns the time-source choice (production wraps
+    /// a `Clock`, tests pass a fixed `NaiveDate`).
+    pub fn new(
+        provider: &'a dyn DataProvider,
+        strict: StrictMode,
+        no_fetch: bool,
+        today: chrono::NaiveDate,
+        season: u32,
+    ) -> Self {
         Self {
             provider,
             strict,
             no_fetch,
-            season: icelines_core::CURRENT_SEASON,
-            today: chrono::Utc::now().date_naive(),
+            season,
+            today,
             _not_send: PhantomData,
         }
     }
 
-    /// Override the anchor date. Used by tests with `MockClock` and
-    /// by `--date YYYY-MM-DD` (when wired in A.5).
+    /// Convenience: build an `EvalCtx` from a `Clock` reference.
+    /// CLI / web / TUI all hold a `&dyn Clock` (per Foster F.0)
+    /// and call this. The clock's `now()` is read once at
+    /// construction so the context is stable for the query.
+    pub fn from_clock(
+        provider: &'a dyn DataProvider,
+        strict: StrictMode,
+        no_fetch: bool,
+        clock: &dyn icelines_core::freshness::Clock,
+        season: u32,
+    ) -> Self {
+        Self::new(
+            provider,
+            strict,
+            no_fetch,
+            clock.now().date_naive(),
+            season,
+        )
+    }
+
+    /// Override the anchor date. Builder-style for tests that want
+    /// to perturb a base ctx.
     pub fn with_today(mut self, today: chrono::NaiveDate) -> Self {
         self.today = today;
         self
     }
 
-    /// Override the active season. Used when `--season YYYYZZZZ`
-    /// is set on a query subcommand.
+    /// Override the active season.
     pub fn with_season(mut self, season: u32) -> Self {
         self.season = season;
         self
@@ -243,10 +272,20 @@ mod tests {
         assert!(elig.satisfies(StrictMode::RejectAll));
     }
 
+    fn fixed_today() -> chrono::NaiveDate {
+        chrono::NaiveDate::from_ymd_opt(2026, 5, 7).unwrap()
+    }
+
     #[test]
     fn l0_eval_ctx_strict_check_errors_on_violation() {
         let provider = MockProvider;
-        let ctx = EvalCtx::new(&provider, StrictMode::RejectAll, false);
+        let ctx = EvalCtx::new(
+            &provider,
+            StrictMode::RejectAll,
+            false,
+            fixed_today(),
+            20252026,
+        );
         let elig = StrictEligibility {
             fallback_seasons: vec![19891990],
             ..Default::default()
@@ -258,8 +297,36 @@ mod tests {
     #[test]
     fn l0_eval_ctx_strict_check_passes_on_clean_plan() {
         let provider = MockProvider;
-        let ctx = EvalCtx::new(&provider, StrictMode::RejectAll, false);
+        let ctx = EvalCtx::new(
+            &provider,
+            StrictMode::RejectAll,
+            false,
+            fixed_today(),
+            20252026,
+        );
         let elig = StrictEligibility::default();
         assert!(ctx.strict_check(&elig).is_ok());
+    }
+
+    /// A.2.5 review (keel) — `from_clock` reads the clock once at
+    /// construction so the ctx is time-stable for the query.
+    #[test]
+    fn l0_eval_ctx_from_clock_reads_once() {
+        use icelines_core::freshness::MockClock;
+        let provider = MockProvider;
+        let clock = MockClock::new(
+            chrono::DateTime::parse_from_rfc3339("2026-05-07T12:00:00Z")
+                .unwrap()
+                .with_timezone(&chrono::Utc),
+        );
+        let ctx = EvalCtx::from_clock(
+            &provider,
+            StrictMode::Off,
+            false,
+            &clock,
+            20252026,
+        );
+        assert_eq!(ctx.today, fixed_today());
+        assert_eq!(ctx.season, 20252026);
     }
 }
