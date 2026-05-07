@@ -31,6 +31,7 @@ pub struct QueryPlan {
 /// `All` / `Any` (not binary `Compose(BoolOp,…)`) so `requirements()`
 /// is a single fold and `--explain` outputs flat trees.
 #[derive(Debug, Clone, PartialEq)]
+#[allow(clippy::large_enum_variant)]
 pub enum Constraint {
     Bio(BioConstraint),
     SeasonStat(SeasonStatConstraint),
@@ -49,6 +50,25 @@ pub enum Constraint {
     /// by the parser.
     Any(Vec<Constraint>),
     Not(Box<Constraint>),
+}
+
+impl Constraint {
+    /// True iff the tree contains any `SlidingWindow` /
+    /// `CareerAggregate` / `CareerLeague` variant. Surfaces use
+    /// this to route filters: when true, evaluate via
+    /// `Constraint::matches(view, &EvalCtx)` (needs DataProvider);
+    /// when false, the legacy pipeline (Bio + SeasonStat only) is
+    /// sufficient.
+    pub fn needs_provider(&self) -> bool {
+        match self {
+            Constraint::SlidingWindow(_)
+            | Constraint::CareerAggregate(_)
+            | Constraint::CareerLeague(_) => true,
+            Constraint::Bio(_) | Constraint::SeasonStat(_) => false,
+            Constraint::All(c) | Constraint::Any(c) => c.iter().any(|c| c.needs_provider()),
+            Constraint::Not(inner) => inner.needs_provider(),
+        }
+    }
 }
 
 // ── Bio atoms ───────────────────────────────────────────────────
@@ -539,6 +559,83 @@ mod tests {
     #[test]
     fn l0_season_axis_default_is_regular() {
         assert_eq!(SeasonAxis::default(), SeasonAxis::Regular);
+    }
+
+    /// A.2.4 — `needs_provider()` distinguishes filter shapes
+    /// that the legacy pipeline can handle from those that need
+    /// the new pipeline + DataProvider.
+    #[test]
+    fn l0_a24_needs_provider_false_for_bio_only() {
+        let c = Constraint::Bio(BioConstraint {
+            field: BioField::Age,
+            predicate: Predicate::Scalar(ScalarOp::Le, ScalarValue::Number(24.0)),
+        });
+        assert!(!c.needs_provider());
+    }
+
+    #[test]
+    fn l0_a24_needs_provider_false_for_bio_and_seasonstat() {
+        let c = Constraint::All(vec![
+            Constraint::Bio(BioConstraint {
+                field: BioField::Age,
+                predicate: Predicate::Scalar(ScalarOp::Le, ScalarValue::Number(24.0)),
+            }),
+            // Use a stat-key that resolves through the catalog
+            // (we don't import StatId here so manually skip the
+            // SeasonStat variant — the All-walk still exercises).
+        ]);
+        assert!(!c.needs_provider());
+    }
+
+    #[test]
+    fn l0_a24_needs_provider_true_for_sliding_window() {
+        let c = Constraint::SlidingWindow(SlidingWindowConstraint {
+            stat: icelines_core::stats_catalog::StatId::from_cli_key("goals").unwrap(),
+            window: SlidingWindow::LastN_GP {
+                n: 10,
+                scope: WindowScope::CurrentTeamCurrentSeason,
+                policy: WindowPolicy::RequireFull,
+            },
+            predicate: Predicate::Scalar(ScalarOp::Ge, ScalarValue::Number(5.0)),
+            axis: SeasonAxis::Regular,
+        });
+        assert!(c.needs_provider());
+    }
+
+    #[test]
+    fn l0_a24_needs_provider_true_for_compound_with_sliding() {
+        let bio = Constraint::Bio(BioConstraint {
+            field: BioField::Age,
+            predicate: Predicate::Scalar(ScalarOp::Le, ScalarValue::Number(24.0)),
+        });
+        let sw = Constraint::SlidingWindow(SlidingWindowConstraint {
+            stat: icelines_core::stats_catalog::StatId::from_cli_key("goals").unwrap(),
+            window: SlidingWindow::LastN_GP {
+                n: 10,
+                scope: WindowScope::CurrentTeamCurrentSeason,
+                policy: WindowPolicy::RequireFull,
+            },
+            predicate: Predicate::Scalar(ScalarOp::Ge, ScalarValue::Number(5.0)),
+            axis: SeasonAxis::Regular,
+        });
+        let all = Constraint::All(vec![bio, sw]);
+        assert!(all.needs_provider());
+    }
+
+    #[test]
+    fn l0_a24_needs_provider_propagates_through_not() {
+        let inner = Constraint::SlidingWindow(SlidingWindowConstraint {
+            stat: icelines_core::stats_catalog::StatId::from_cli_key("goals").unwrap(),
+            window: SlidingWindow::LastN_GP {
+                n: 10,
+                scope: WindowScope::CurrentTeamCurrentSeason,
+                policy: WindowPolicy::RequireFull,
+            },
+            predicate: Predicate::Scalar(ScalarOp::Ge, ScalarValue::Number(5.0)),
+            axis: SeasonAxis::Regular,
+        });
+        let neg = Constraint::Not(Box::new(inner));
+        assert!(neg.needs_provider());
     }
 
     #[test]

@@ -15,6 +15,7 @@ pub mod manifest;
 pub mod moneypuck;
 pub mod nhl_api;
 pub mod playoffs_bundle;
+pub mod query_provider;
 pub mod resolver;
 pub mod schema;
 pub mod series_momentum_builder;

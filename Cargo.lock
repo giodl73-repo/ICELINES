@@ -1567,6 +1567,7 @@ dependencies = [
  "encoding_rs",
  "httpmock",
  "icelines-core",
+ "icelines-query",
  "reqwest",
  "serde",
  "serde_json",
