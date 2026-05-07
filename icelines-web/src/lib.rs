@@ -4695,7 +4695,34 @@ mod handlers {
             headers: HeaderMap,
             Form(req): Form<FavoritesMutation>,
         ) -> Response {
-            mutate(&headers, req, MutateOp::Add)
+            // Snapshot the resolved key + display name BEFORE mutate
+            // so we can fire the career-history augment off in the
+            // background after the redirect is queued. Augment is
+            // best-effort + non-blocking from the user's POV — they
+            // get the redirect immediately; the network call
+            // completes off the request path.
+            let display = req.key.trim().to_string();
+            let kind_hint = req.kind.clone();
+            let response = mutate(&headers, req, MutateOp::Add);
+            // Foster +18 — opportunistic career-history augment for
+            // newly-favorited players. Mirrors the CLI `group add`
+            // behavior so favoriting from either surface populates
+            // the local store identically. Skip on team adds.
+            let is_player = match kind_hint.as_deref() {
+                Some("team") => false,
+                Some("player") => true,
+                _ => icelines_core::TeamAbbr::parse(&display).is_err(),
+            };
+            if is_player && !display.is_empty() {
+                let normalized = icelines_core::name::normalize_name(&display);
+                tokio::spawn(async move {
+                    icelines_fetch::career_landing::augment_career_history_for_player(
+                        &display, &normalized, true,
+                    )
+                    .await;
+                });
+            }
+            response
         }
 
         pub async fn post_remove(

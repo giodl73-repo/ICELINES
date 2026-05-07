@@ -261,6 +261,56 @@ pub fn load_local_store() -> CareerHistoryStore {
     CareerHistoryStore::load(&path).unwrap_or_else(|_| CareerHistoryStore::new())
 }
 
+/// Phase Foster +6 (SCOUT M7) — opportunistic career-history pull
+/// for a newly-favorited player. Resolves the normalized name to a
+/// PlayerId via the bundled bios index, fetches the landing endpoint
+/// (when `live_feeds=true`), and persists to the local store. All
+/// failure paths are silent except for a one-line stderr nudge so
+/// callers don't have to wrap in their own error swallowing.
+///
+/// Called from both CLI (`icelines group add Favorites <name>`) and
+/// the web `POST /favorites/add` so favoriting from either surface
+/// gets the same pre-NHL arc populated for the dashboard.
+pub async fn augment_career_history_for_player(
+    display_name: &str,
+    normalized: &str,
+    live_feeds: bool,
+) {
+    let Some(pid) = crate::stats_loader::resolve_player_id_by_name(normalized) else {
+        return; // Brand-new rookie not in bundled bios — defer to lazy fetch.
+    };
+
+    let mut store = load_local_store();
+    if store.histories.contains_key(&pid.to_string()) {
+        return; // Already cached.
+    }
+
+    if !live_feeds {
+        return; // Honor offline mode.
+    }
+
+    let client = crate::nhl_api::NhlApiClient::production();
+    match client.fetch_player_career_history(pid).await {
+        Ok(history) => {
+            store.upsert(history);
+            store.fetched_at = Some(chrono::Utc::now().to_rfc3339());
+            if let Some(path) = local_store_path() {
+                match store.save(&path) {
+                    Ok(()) => {
+                        eprintln!("note: pre-NHL career added for {display_name}");
+                    }
+                    Err(e) => {
+                        eprintln!("note: career-history augment write failed: {e}");
+                    }
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("note: career-history augment skipped for {display_name}: {e}");
+        }
+    }
+}
+
 /// Phase Calder.3 — pure filter for "pre-NHL development tier"
 /// stints (Pro / Junior / College, regular season only). Used by
 /// every player-card surface (CLI scouting + query player, TUI
