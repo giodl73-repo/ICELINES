@@ -11,7 +11,9 @@ use thiserror::Error;
 
 /// Stable NHL player ID. The natural primary key — unique across
 /// trades, retirements, name changes.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize,
+)]
 #[serde(transparent)]
 pub struct PlayerId(pub u32);
 

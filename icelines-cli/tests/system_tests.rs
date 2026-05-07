@@ -3464,6 +3464,49 @@ fn l2_foster1_schedule_invalid_date_clean_error() {
     );
 }
 
+// ── Phase Conn Smythe C.2 — Cup-run leaderboard L2 ──────────────────────────
+
+/// L2 / l2_conn_smythe_c2_query_leaders_playoff_empty_manifest
+/// — `icelines query leaders --playoff` exits 0 with the
+///   "no playoff boxscores on disk" empty-state when the manifest
+///   has no Boxscore entries.
+#[test]
+fn l2_conn_smythe_c2_query_leaders_playoff_empty_manifest() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let out = run_isolated(home.path(), &["query", "leaders", "--playoff"]);
+    assert!(
+        out.status.success(),
+        "exit 0 expected on empty manifest, stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("PLAYOFF LEADERS"),
+        "header must surface, stdout: {stdout}"
+    );
+    assert!(
+        stdout.contains("no playoff boxscores"),
+        "empty-state must surface, stdout: {stdout}"
+    );
+}
+
+#[test]
+fn l2_conn_smythe_c2_query_leaders_playoff_json_envelope() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let out = run_isolated(
+        home.path(),
+        &["query", "leaders", "--playoff", "--json"],
+    );
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let parsed: serde_json::Value =
+        serde_json::from_str(&stdout).expect("--json must emit valid JSON");
+    assert_eq!(parsed["schema_version"], 1);
+    assert_eq!(parsed["route"], "leaders.playoff");
+    assert_eq!(parsed["meta"]["kind"], "playoff_run");
+    assert!(parsed["data"].is_array());
+}
+
 // ── Phase Conn Smythe C.1 — series momentum L2 ───────────────────────────────
 
 /// L2 / l2_conn_smythe_c1_playoffs_series_renders_momentum

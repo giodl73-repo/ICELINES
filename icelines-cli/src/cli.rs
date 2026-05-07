@@ -1405,6 +1405,11 @@ OUTPUT
         /// today's date.
         #[arg(long)]
         month: bool,
+        /// Phase Conn Smythe C.2 — Cup-run leaderboard. Aggregates
+        /// every persisted boxscore with `gameType=3` (playoffs).
+        /// Mutually exclusive with `--week` / `--month`.
+        #[arg(long)]
+        playoff: bool,
         /// Query a specific historical season (e.g. 20242025). Conflicts with
         /// --seasons N. Must match a bundled season — see icelines-fetch::BUNDLED_SEASONS.
         #[arg(long)]

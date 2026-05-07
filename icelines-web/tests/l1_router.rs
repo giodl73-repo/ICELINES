@@ -650,6 +650,46 @@ async fn l1_foster_plus9_scores_accepts_range_day_default() {
     assert_eq!(response.status(), StatusCode::OK);
 }
 
+// ── Phase Conn Smythe C.3 — /game/:id smokes ────────────────────────────────
+
+#[tokio::test]
+async fn l1_conn_smythe_c3_game_route_accepts_id_and_returns_200() {
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/game/2025020342")
+                .body(Body::empty())
+                .expect("build request"),
+        )
+        .await
+        .expect("oneshot");
+    // Network is available or not — the handler renders an error
+    // page in either case so the route always 200s.
+    assert_eq!(response.status(), StatusCode::OK);
+}
+
+#[tokio::test]
+async fn l1_conn_smythe_c3_game_route_renders_html() {
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/game/2025020342")
+                .body(Body::empty())
+                .expect("build request"),
+        )
+        .await
+        .expect("oneshot");
+    let ct = response
+        .headers()
+        .get(axum::http::header::CONTENT_TYPE)
+        .expect("content-type")
+        .to_str()
+        .unwrap();
+    assert!(ct.starts_with("text/html"), "got: {ct}");
+}
+
 #[tokio::test]
 async fn l1_foster_plus9_scores_unknown_range_defaults_to_day() {
     // Unknown range value should fall back to Day rather than 400.

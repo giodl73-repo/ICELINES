@@ -200,6 +200,126 @@ fn emit_json(
     Ok(())
 }
 
+// ── Phase Conn Smythe C.2 — Cup-run leaderboard ──────────────────────────────
+
+pub async fn run_playoff_leaders(top: usize, sort: String, json: bool) -> Result<()> {
+    let home = std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(std::path::PathBuf::from)
+        .ok_or_else(|| anyhow::anyhow!("cannot determine home directory"))?;
+    let data_root = home.join(".icelines").join("data");
+    let store = icelines_fetch::datastore::DataStore::open(&data_root)
+        .context("open DataStore")?;
+
+    // Walk every persisted boxscore; filter to gameType=3 (playoffs).
+    // No date-window filter — the playoff round naturally bounds the
+    // games that exist in the manifest.
+    let mut totals: HashMap<u32, PlayerWindowTotals> = HashMap::new();
+    let mut games_seen = 0usize;
+    for entry in store.manifest().list(DataKind::Boxscore) {
+        let DataKey::Game(game_id) = entry.key else { continue };
+        let raw = match store.load_boxscore_raw(DataKey::Game(game_id)) {
+            Some(r) => r,
+            None => continue,
+        };
+        // Filter on gameType — playoff games carry 3.
+        if raw.get("gameType").and_then(|v| v.as_u64()) != Some(3) {
+            continue;
+        }
+        let parsed = icelines_fetch::nhl_api::parse_boxscore(&raw, game_id.0);
+        for skater in parsed.away_skaters.iter().chain(parsed.home_skaters.iter()) {
+            let t = totals.entry(skater.player_id).or_insert_with(|| {
+                PlayerWindowTotals {
+                    player_id: skater.player_id,
+                    ..Default::default()
+                }
+            });
+            t.games += 1;
+            t.goals += skater.goals;
+            t.assists += skater.assists;
+            t.points += skater.goals + skater.assists;
+            t.plus_minus += skater.plus_minus;
+            t.sog += skater.sog;
+            t.hits += skater.hits;
+            t.blocks += skater.blocked_shots;
+            t.pim += skater.pim;
+            t.toi_seconds += skater.toi_seconds;
+        }
+        games_seen += 1;
+    }
+
+    let mut rows: Vec<PlayerWindowTotals> = totals.into_values().collect();
+    sort_rows(&mut rows, &sort);
+    rows.truncate(top);
+
+    if json {
+        emit_playoff_json(&rows, &sort, games_seen)?;
+    } else {
+        emit_playoff_text(&rows, &sort, games_seen);
+    }
+    Ok(())
+}
+
+fn emit_playoff_text(rows: &[PlayerWindowTotals], sort: &str, games_seen: usize) {
+    println!(
+        "PLAYOFF LEADERS — {games_seen} game(s) on disk · sort: {sort}"
+    );
+    println!("{}", "─".repeat(86));
+    println!(
+        "{:>4} {:>10} {:>3} {:>3} {:>3} {:>4} {:>4} {:>5} {:>5} {:>5} {:>5}",
+        "Rank", "PID", "GP", "G", "A", "P", "+/-", "SOG", "Hits", "Blk", "PIM"
+    );
+    println!("{}", "─".repeat(86));
+    if rows.is_empty() {
+        println!("(no playoff boxscores on disk — try `icelines fetch boxscore`)");
+        return;
+    }
+    for (i, r) in rows.iter().enumerate() {
+        println!(
+            "{:>4} {:>10} {:>3} {:>3} {:>3} {:>4} {:>+4} {:>5} {:>5} {:>5} {:>5}",
+            i + 1,
+            r.player_id,
+            r.games,
+            r.goals,
+            r.assists,
+            r.points,
+            r.plus_minus,
+            r.sog,
+            r.hits,
+            r.blocks,
+            r.pim,
+        );
+    }
+}
+
+fn emit_playoff_json(rows: &[PlayerWindowTotals], sort: &str, games_seen: usize) -> Result<()> {
+    let env = serde_json::json!({
+        "schema_version": 1,
+        "route": "leaders.playoff",
+        "data": rows.iter().map(|r| serde_json::json!({
+            "player_id": r.player_id,
+            "games": r.games,
+            "goals": r.goals,
+            "assists": r.assists,
+            "points": r.points,
+            "plus_minus": r.plus_minus,
+            "sog": r.sog,
+            "hits": r.hits,
+            "blocks": r.blocks,
+            "pim": r.pim,
+            "toi_seconds": r.toi_seconds,
+        })).collect::<Vec<_>>(),
+        "meta": {
+            "kind": "playoff_run",
+            "games_aggregated": games_seen,
+            "sort": sort,
+            "rows": rows.len(),
+        },
+    });
+    println!("{}", serde_json::to_string_pretty(&env)?);
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

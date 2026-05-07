@@ -146,8 +146,12 @@ The mock NHL API fixture is at `src/icelines-fetch/tests/mock_nhl_api.rs` — us
    - **F.4 — Sync engine**: non-blocking `launch_eager_sync(Arc<DataStore>) → Option<mpsc::Receiver<SyncEvent>>` (returns `None` under `ICELINES_TEST_MODE=1`); each refresh runs in `spawn_blocking` so sync HTTP doesn't pin the executor; `icelines fetch sync [--dry-run] [--force]` CLI surface walks the manifest via `enumerate_stale`.
    - **F.5 — Windowed filter atom**: `WindowedAtom` extends the filter grammar to `<stat-key>[.<window>]<op><value>` (e.g. `g.week>=10`); `query career --week / --month` rejected with the literal EDGE B2 error.
    - Test budget: ~167 new tests across the five sub-phases.
+- **Phase Conn Smythe — live playoff tracking**: Three sub-phases on top of Foster's rails.
+   - **C.1 — Series momentum**: `icelines-core::series_momentum::SeriesMomentum` schema (leader, OT count, last_result, home_advantage in 2-2-1-1-1 format) + `icelines-fetch::series_momentum_builder::compute_series_momentum` projection from `PlayoffSeries`. CLI surface: `icelines playoffs --series A [--season YYYYZZZZ]`. Renders summary line + last-game result + next-game venue.
+   - **C.2 — Cup-run player narratives**: `icelines-core::playoff_run::PlayoffRunSummary` schema with skater + goalie aggregates (W-L-OTL, SV%, GAA, shutouts). `icelines query leaders --playoff` walks the Boxscore manifest filtering on `gameType=3` and aggregates by PID. JSON envelope mirrors `query leaders --week`.
+   - **C.3 — Live game tracking surface**: `icelines-core::live_game::LiveGameDetail` schema + new web `/game/:id` route. Live HTML page with scoreboard, goalie table (PID-linked to player cards), goal summary, top-5 skater rows per team, auto-refresh meta-tag every 30s when `state ∈ {LIVE, CRIT, PRE}`.
 - `icelines build/serve/deploy` — mkdocs static site
-- ~1900 tests across L0/L1/L2 + 4 persona-scenario waves (`persona_scenarios.rs` + `persona_wave2.rs/wave3/wave4`) including mock NHL API fixture
+- ~2050 tests across L0/L1/L2 + 4 persona-scenario waves (`persona_scenarios.rs` + `persona_wave2.rs/wave3/wave4`) plus `persona_foster.rs` (30 scenarios) including mock NHL API fixture
 
 ## Pending (see design/plans/INDEX.md)
 - NHL Edge skating speed stats — blocked, no public JSON endpoint (memory `nhl_edge_data_blocked.md`)

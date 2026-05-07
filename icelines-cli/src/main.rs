@@ -518,7 +518,12 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 filters,
                 week,
                 month,
+                playoff,
             } => {
+                if playoff {
+                    commands::query_window::run_playoff_leaders(top, sort, json).await?;
+                    return Ok(());
+                }
                 if week || month {
                     let timeframe = if week {
                         icelines_core::timeframe::Timeframe::Week
