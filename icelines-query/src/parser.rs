@@ -25,7 +25,8 @@ use crate::errors::ParseError;
 use crate::input::{AtomFragment, FilterInput};
 use crate::plan::{
     BioConstraint, BioField, Constraint, GlobPattern, MemberOp, NumericRange, PatternOp,
-    Predicate, QueryPlan, ScalarOp, ScalarValue, SeasonAxis, SeasonStatConstraint,
+    Predicate, QueryPlan, ScalarOp, ScalarValue, SeasonAxis, SeasonStatConstraint, SlidingWindow,
+    SlidingWindowConstraint, WindowPolicy, WindowScope,
 };
 use crate::tokenizer::{tokenize, Token};
 use crate::{try_parse_bio_atom, BioAtom};
@@ -545,6 +546,20 @@ fn build_scalar_constraint_numeric(
             predicate: Predicate::Scalar(op, ScalarValue::Number(value)),
         }));
     }
+
+    // Phase Art Ross A.2 — sliding-window dotted keys
+    // (`g.last10g`, `g.last30d`, `g.last3w`, `g.last3m`, with
+    // optional `.allteams` / `.career` scope modifier). The first
+    // dot-segment is the stat key; the second is the window
+    // descriptor; an optional third is the scope modifier.
+    if key.contains('.') {
+        if let Some(constraint) =
+            try_parse_sliding_window_atom(key, op, value, atom_text)?
+        {
+            return Ok(constraint);
+        }
+    }
+
     // Else: catalog StatId.
     let stat = StatId::from_cli_key(key).ok_or_else(|| ParseError::UnknownStat {
         key: key.to_string(),
@@ -555,6 +570,114 @@ fn build_scalar_constraint_numeric(
         predicate: Predicate::Scalar(op, ScalarValue::Number(value)),
         axis: SeasonAxis::Regular,
     }))
+}
+
+/// A.2 — recognize sliding-window dotted keys.
+///
+/// Syntax: `<stat-key>.<window>[.<scope>]`
+///   - window: `lastNg` (GP), `lastNd` (days), `lastNw` (weeks),
+///     `lastNm` (months) where N is a positive integer
+///   - scope: `allteams` | `career` (optional; default is current
+///     stint of current season)
+///
+/// Returns `Ok(None)` when the key contains `.` but doesn't match
+/// the sliding-window shape (let the caller try other paths /
+/// surface UnknownStat). Returns `Ok(Some(_))` on a clean parse.
+/// Returns `Err(_)` when the syntax IS sliding-window-shaped but
+/// has a typo (e.g. unknown unit, malformed N).
+fn try_parse_sliding_window_atom(
+    key: &str,
+    op: ScalarOp,
+    value: f64,
+    atom_text: &str,
+) -> Result<Option<Constraint>, ParseError> {
+    let parts: Vec<&str> = key.split('.').collect();
+    if parts.len() < 2 || parts.len() > 3 {
+        return Ok(None);
+    }
+    let stat_key = parts[0];
+    let window_str = parts[1].to_ascii_lowercase();
+
+    // Parse the window descriptor: "last" + N + unit.
+    if !window_str.starts_with("last") {
+        return Ok(None);
+    }
+    let suffix = &window_str["last".len()..];
+    if suffix.is_empty() {
+        return Err(ParseError::UnknownStat {
+            key: format!("{stat_key}.{window_str}"),
+        });
+    }
+
+    // The unit char is the last character; N is everything before.
+    let unit_char = suffix.chars().last().unwrap();
+    let n_str = &suffix[..suffix.len() - unit_char.len_utf8()];
+    let n: u16 = match n_str.parse() {
+        Ok(n) if n > 0 => n,
+        _ => {
+            return Err(ParseError::UnknownStat {
+                key: format!("{stat_key}.{window_str}"),
+            })
+        }
+    };
+
+    let window = match unit_char {
+        'g' => SlidingWindow::LastN_GP {
+            n: n.min(255) as u8,
+            scope: WindowScope::CurrentTeamCurrentSeason, // default
+            policy: WindowPolicy::RequireFull,
+        },
+        'd' => SlidingWindow::LastN_Days(n),
+        'w' => SlidingWindow::LastN_Weeks(n.min(255) as u8),
+        'm' => SlidingWindow::LastN_Months(n.min(255) as u8),
+        _ => {
+            return Err(ParseError::UnknownStat {
+                key: format!("{stat_key}.{window_str}"),
+            });
+        }
+    };
+
+    // Apply scope modifier if present (only valid on LastN_GP).
+    let window = if let Some(scope_str) = parts.get(2) {
+        let scope_lower = scope_str.to_ascii_lowercase();
+        match (window, scope_lower.as_str()) {
+            (
+                SlidingWindow::LastN_GP { n, policy, .. },
+                "allteams",
+            ) => SlidingWindow::LastN_GP {
+                n,
+                scope: WindowScope::AllTeamsCurrentSeason,
+                policy,
+            },
+            (
+                SlidingWindow::LastN_GP { n, policy, .. },
+                "career",
+            ) => SlidingWindow::LastN_GP {
+                n,
+                scope: WindowScope::Career,
+                policy,
+            },
+            _ => {
+                return Err(ParseError::UnknownStat {
+                    key: format!("{stat_key}.{}.{}", parts[1], scope_str),
+                });
+            }
+        }
+    } else {
+        window
+    };
+
+    let stat = StatId::from_cli_key(stat_key).ok_or_else(|| ParseError::UnknownStat {
+        key: stat_key.to_string(),
+    })?;
+
+    let _ = atom_text;
+    Ok(Some(Constraint::SlidingWindow(SlidingWindowConstraint {
+        stat,
+        window,
+        predicate: Predicate::Scalar(op, ScalarValue::Number(value)),
+        axis: SeasonAxis::Regular,
+    })))
 }
 
 fn build_scalar_constraint_text(
@@ -1256,6 +1379,147 @@ mod tests {
                 ));
             }
             _ => panic!(),
+        }
+    }
+
+    // ── A.2 sliding-window atoms ────────────────────────────────
+
+    #[test]
+    fn l0_a2_parse_last10g_default_scope() {
+        let c = ok("g.last10g>=5");
+        match c {
+            Constraint::SlidingWindow(SlidingWindowConstraint {
+                window: SlidingWindow::LastN_GP { n, scope, policy },
+                ..
+            }) => {
+                assert_eq!(n, 10);
+                assert_eq!(scope, WindowScope::CurrentTeamCurrentSeason);
+                assert_eq!(policy, WindowPolicy::RequireFull);
+            }
+            _ => panic!("expected SlidingWindow LastN_GP, got {c:?}"),
+        }
+    }
+
+    #[test]
+    fn l0_a2_parse_last30d() {
+        let c = ok("g.last30d>=10");
+        match c {
+            Constraint::SlidingWindow(SlidingWindowConstraint {
+                window: SlidingWindow::LastN_Days(n),
+                ..
+            }) => assert_eq!(n, 30),
+            _ => panic!(),
+        }
+    }
+
+    #[test]
+    fn l0_a2_parse_last3w() {
+        let c = ok("p.last3w>=8");
+        match c {
+            Constraint::SlidingWindow(SlidingWindowConstraint {
+                window: SlidingWindow::LastN_Weeks(n),
+                ..
+            }) => assert_eq!(n, 3),
+            _ => panic!(),
+        }
+    }
+
+    #[test]
+    fn l0_a2_parse_last3m() {
+        let c = ok("p.last3m>=20");
+        match c {
+            Constraint::SlidingWindow(SlidingWindowConstraint {
+                window: SlidingWindow::LastN_Months(n),
+                ..
+            }) => assert_eq!(n, 3),
+            _ => panic!(),
+        }
+    }
+
+    #[test]
+    fn l0_a2_parse_last10g_allteams_modifier() {
+        let c = ok("g.last10g.allteams>=5");
+        match c {
+            Constraint::SlidingWindow(SlidingWindowConstraint {
+                window: SlidingWindow::LastN_GP { scope, .. },
+                ..
+            }) => assert_eq!(scope, WindowScope::AllTeamsCurrentSeason),
+            _ => panic!(),
+        }
+    }
+
+    #[test]
+    fn l0_a2_parse_last10g_career_modifier() {
+        let c = ok("g.last10g.career>=5");
+        match c {
+            Constraint::SlidingWindow(SlidingWindowConstraint {
+                window: SlidingWindow::LastN_GP { scope, .. },
+                ..
+            }) => assert_eq!(scope, WindowScope::Career),
+            _ => panic!(),
+        }
+    }
+
+    #[test]
+    fn l0_a2_parse_unknown_window_unit_rejected() {
+        let es = errs("g.last10z>=5");
+        assert!(matches!(es[0], ParseError::UnknownStat { .. }));
+    }
+
+    #[test]
+    fn l0_a2_parse_zero_window_size_rejected() {
+        let es = errs("g.last0g>=5");
+        assert!(matches!(es[0], ParseError::UnknownStat { .. }));
+    }
+
+    #[test]
+    fn l0_a2_parse_unknown_scope_modifier_rejected() {
+        let es = errs("g.last10g.bogus>=5");
+        assert!(matches!(es[0], ParseError::UnknownStat { .. }));
+    }
+
+    #[test]
+    fn l0_a2_parse_bare_dot_after_stat_rejected() {
+        let es = errs("g.>=5");
+        // Empty window descriptor → UnknownStat
+        assert!(matches!(es[0], ParseError::UnknownStat { .. }));
+    }
+
+    #[test]
+    fn l0_a2_parse_compound_with_sliding_window() {
+        // The killer query the user asked for, in season-window form.
+        let c = ok("g.last10g>=5 AND age<=25");
+        match c {
+            Constraint::All(children) => {
+                assert_eq!(children.len(), 2);
+                assert!(matches!(&children[0], Constraint::SlidingWindow(_)));
+                assert!(matches!(
+                    &children[1],
+                    Constraint::Bio(BioConstraint {
+                        field: BioField::Age,
+                        ..
+                    })
+                ));
+            }
+            _ => panic!(),
+        }
+    }
+
+    #[test]
+    fn l0_a2_parse_unknown_stat_with_window() {
+        let es = errs("fakestat.last10g>=5");
+        assert!(matches!(es[0], ParseError::UnknownStat { .. }));
+    }
+
+    #[test]
+    fn l0_a2_parse_window_with_decimal_value() {
+        // ppg.last10g could be useful even though the per-game rate
+        // collapses inside the window. Just verify it parses; the
+        // executor's extract_window_stat handles per-game derivation.
+        let c = ok("ppg.last10g>=1.5");
+        match c {
+            Constraint::SlidingWindow(_) => {}
+            _ => panic!("expected SlidingWindow, got {c:?}"),
         }
     }
 }

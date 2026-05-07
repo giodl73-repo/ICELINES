@@ -14,22 +14,24 @@ use icelines_core::stats_catalog::StatUnit;
 use icelines_core::stats_repository::PlayerView;
 
 use crate::compute_age;
+use crate::data_provider::EvalCtx;
 use crate::plan::{
     BioConstraint, BioField, Constraint, GlobPattern, MemberOp, NumericRange, PatternOp,
-    Predicate, ScalarOp, ScalarValue, SeasonStatConstraint,
+    Predicate, ScalarOp, ScalarValue, SeasonStatConstraint, SlidingWindowConstraint,
 };
+use crate::sliding_window::{aggregate_window, extract_window_stat, WindowResult};
 
 impl Constraint {
     /// Evaluate this constraint tree against the given player view.
+    /// **Legacy entry point** — does NOT evaluate `SlidingWindow` /
+    /// `CareerAggregate` / `CareerLeague` (returns true as a
+    /// placeholder so the legacy parity test continues to work).
+    /// Callers wanting full evaluation should use
+    /// [`matches_with_ctx`](Self::matches_with_ctx).
     pub fn matches(&self, v: &PlayerView<'_>, season: u32) -> bool {
         match self {
             Constraint::Bio(b) => bio_matches(b, v, season),
             Constraint::SeasonStat(s) => season_stat_matches(s, v),
-            // Reserved for A.2/A.3/A.4 — parser rejects atoms that
-            // would construct these variants today, so this branch
-            // is unreachable from user input. Treat as no-op (true)
-            // to avoid crashing if a future caller constructs one
-            // programmatically before the relevant sub-phase ships.
             Constraint::SlidingWindow(_) => true,
             Constraint::CareerAggregate(_) => true,
             Constraint::CareerLeague(_) => true,
@@ -37,6 +39,57 @@ impl Constraint {
             Constraint::Any(children) => children.iter().any(|c| c.matches(v, season)),
             Constraint::Not(inner) => !inner.matches(v, season),
         }
+    }
+
+    /// Phase Art Ross A.2 — context-aware matcher. Forwards
+    /// non-window atoms to `matches`; evaluates `SlidingWindow` by
+    /// pulling per-game lines from `ctx.provider`.
+    /// `CareerAggregate` / `CareerLeague` reserved for A.3/A.4.
+    pub fn matches_with_ctx(&self, v: &PlayerView<'_>, ctx: &EvalCtx<'_>) -> bool {
+        match self {
+            Constraint::Bio(b) => bio_matches(b, v, ctx.season),
+            Constraint::SeasonStat(s) => season_stat_matches(s, v),
+            Constraint::SlidingWindow(s) => sliding_window_matches(s, v, ctx),
+            Constraint::CareerAggregate(_) => true, // A.3
+            Constraint::CareerLeague(_) => true,    // A.4
+            Constraint::All(children) => {
+                children.iter().all(|c| c.matches_with_ctx(v, ctx))
+            }
+            Constraint::Any(children) => {
+                children.iter().any(|c| c.matches_with_ctx(v, ctx))
+            }
+            Constraint::Not(inner) => !inner.matches_with_ctx(v, ctx),
+        }
+    }
+}
+
+fn sliding_window_matches(
+    s: &SlidingWindowConstraint,
+    v: &PlayerView<'_>,
+    ctx: &EvalCtx<'_>,
+) -> bool {
+    if !s.stat.applies_to(v.position(), v.is_goalie()) {
+        return true;
+    }
+    let pid = v.identity.id.0;
+    let lines = ctx.provider.fetch_game_lines(pid, ctx.season);
+    let current_team = v.team().map(|t| t.0.as_str());
+    let result = aggregate_window(&lines, &s.window, ctx.today, current_team);
+    let totals = match result {
+        WindowResult::Empty => return false,
+        WindowResult::Full(t) => t,
+        WindowResult::ShortWindow { totals, .. } => totals,
+    };
+    let actual = match extract_window_stat(s.stat, &totals) {
+        Some(x) => x,
+        None => return false,
+    };
+    match &s.predicate {
+        Predicate::Scalar(op, ScalarValue::Number(target)) => {
+            apply_scalar_op_unit_aware(*op, actual, *target, s.stat.unit())
+        }
+        Predicate::Range(NumericRange { min, max }) => actual >= *min && actual <= *max,
+        _ => false, // Member / Pattern on numeric stat: parser-rejected
     }
 }
 

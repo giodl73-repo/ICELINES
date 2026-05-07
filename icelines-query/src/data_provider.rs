@@ -25,6 +25,25 @@ pub trait DataProvider {
         req: &PlanRequirement,
         events: &mut dyn FnMut(FetchEvent),
     ) -> Result<(), FetchError>;
+
+    /// A.2 — fetch per-game stat lines for one player in one
+    /// season. Returns the lines sorted ascending by date.
+    /// Returns an empty Vec when the player has no boxscore data
+    /// in this season (or the season isn't eligible — pre-2021-22
+    /// where Foster +3 boxscore persistence doesn't cover).
+    ///
+    /// Implementations should consult the `BoxscoreIndex` first;
+    /// fall back to lazy boxscore parse if the index hasn't been
+    /// built yet for this season.
+    fn fetch_game_lines(
+        &self,
+        player_id: u32,
+        season: u32,
+    ) -> Vec<crate::sliding_window::GameStatLine> {
+        // Default: no data. Implementations override.
+        let _ = (player_id, season);
+        Vec::new()
+    }
 }
 
 /// What data the plan needs to run. Computed by
@@ -116,6 +135,14 @@ pub struct EvalCtx<'a> {
     pub provider: &'a dyn DataProvider,
     pub strict: StrictMode,
     pub no_fetch: bool,
+    /// Active season-id for the query. Sliding-window calendar
+    /// atoms (`g.last30d`) measure from `today`; season-typed
+    /// atoms (`AT age<=22`) compute age relative to `season`.
+    pub season: u32,
+    /// Anchor date for calendar windows. Set by the surface
+    /// (CLI uses `Utc::now().date_naive()`; tests inject via
+    /// `MockClock`). Defaults to today.
+    pub today: chrono::NaiveDate,
     /// Marker forcing `!Send` so async accidents (`tokio::spawn`)
     /// fail at compile time, not at runtime.
     _not_send: PhantomData<*const ()>,
@@ -127,8 +154,24 @@ impl<'a> EvalCtx<'a> {
             provider,
             strict,
             no_fetch,
+            season: icelines_core::CURRENT_SEASON,
+            today: chrono::Utc::now().date_naive(),
             _not_send: PhantomData,
         }
+    }
+
+    /// Override the anchor date. Used by tests with `MockClock` and
+    /// by `--date YYYY-MM-DD` (when wired in A.5).
+    pub fn with_today(mut self, today: chrono::NaiveDate) -> Self {
+        self.today = today;
+        self
+    }
+
+    /// Override the active season. Used when `--season YYYYZZZZ`
+    /// is set on a query subcommand.
+    pub fn with_season(mut self, season: u32) -> Self {
+        self.season = season;
+        self
     }
 
     /// Run the strict-eligibility gate against this context's

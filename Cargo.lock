@@ -1581,6 +1581,7 @@ dependencies = [
 name = "icelines-query"
 version = "0.19.1"
 dependencies = [
+ "chrono",
  "icelines-core",
  "proptest",
  "thiserror 2.0.18",
