@@ -1508,7 +1508,7 @@ dependencies = [
 
 [[package]]
 name = "icelines-cli"
-version = "0.17.0"
+version = "0.18.0"
 dependencies = [
  "anyhow",
  "axum",
@@ -1544,7 +1544,7 @@ dependencies = [
 
 [[package]]
 name = "icelines-core"
-version = "0.17.0"
+version = "0.18.0"
 dependencies = [
  "chrono",
  "once_cell",
@@ -1559,7 +1559,7 @@ dependencies = [
 
 [[package]]
 name = "icelines-fetch"
-version = "0.17.0"
+version = "0.18.0"
 dependencies = [
  "chrono",
  "csv",
@@ -1578,14 +1578,14 @@ dependencies = [
 
 [[package]]
 name = "icelines-query"
-version = "0.17.0"
+version = "0.18.0"
 dependencies = [
  "icelines-core",
 ]
 
 [[package]]
 name = "icelines-site"
-version = "0.17.0"
+version = "0.18.0"
 dependencies = [
  "icelines-core",
  "icelines-fetch",
@@ -1598,7 +1598,7 @@ dependencies = [
 
 [[package]]
 name = "icelines-web"
-version = "0.17.0"
+version = "0.18.0"
 dependencies = [
  "anyhow",
  "askama",

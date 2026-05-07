@@ -511,7 +511,19 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 elc,
                 expiry_year,
                 filters,
+                week,
+                month,
             } => {
+                if week || month {
+                    let timeframe = if week {
+                        icelines_core::timeframe::Timeframe::Week
+                    } else {
+                        icelines_core::timeframe::Timeframe::Month
+                    };
+                    commands::query_window::run_windowed_leaders(timeframe, top, sort, json)
+                        .await?;
+                    return Ok(());
+                }
                 commands::query::run_leaders(commands::query::LeadersArgs {
                     pos,
                     team,

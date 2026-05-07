@@ -1389,6 +1389,16 @@ OUTPUT
         /// Aggregate across N seasons (1–5, default 1 = current season only)
         #[arg(long, default_value_t = 1)]
         seasons: u8,
+        /// Phase Foster +26 — aggregate the last 7 days of game logs
+        /// instead of season totals. Reads per-game stats from the
+        /// boxscore manifest (Foster +3 persistence). Mutually
+        /// exclusive with `--month`; both override `--seasons`.
+        #[arg(long)]
+        week: bool,
+        /// Phase Foster +26 — aggregate the calendar month containing
+        /// today's date.
+        #[arg(long)]
+        month: bool,
         /// Query a specific historical season (e.g. 20242025). Conflicts with
         /// --seasons N. Must match a bundled season — see icelines-fetch::BUNDLED_SEASONS.
         #[arg(long)]

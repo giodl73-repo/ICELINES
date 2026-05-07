@@ -1270,12 +1270,83 @@ async fn do_boxscore(
         } else {
             updated += 1;
         }
+
+        // Phase Foster +25 — mid-day trade detection for any
+        // favorited skater whose team in tonight's boxscore differs
+        // from the bundled-bios "current team". detect_mid_day_trade
+        // returns None for matches; we silently no-op when there's
+        // no swap. Each detected trade gets a trade event upsert
+        // with the alphabetic-team-sort dedup key from
+        // event_stream::trade_event_id so re-fetching the same date
+        // doesn't double-record.
+        for skater_ref in &payload.favorited_skater_lines {
+            let icelines_core::entity::EntityRef::Player(pid) = skater_ref else {
+                continue;
+            };
+            // The "today" team: search both home_skaters / away_skaters
+            // for the pid; the team is whichever side they appear on.
+            let today_team = if let Ok((parsed, _)) =
+                client.fetch_boxscore_with_raw(g.game_id).await
+            {
+                if parsed.home_skaters.iter().any(|s| s.player_id == pid.0) {
+                    Some(icelines_core::TeamAbbr(parsed.home_abbrev.clone()))
+                } else if parsed.away_skaters.iter().any(|s| s.player_id == pid.0) {
+                    Some(icelines_core::TeamAbbr(parsed.away_abbrev.clone()))
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+            let Some(today_team) = today_team else { continue };
+            let prior_team = bundled_player_team(*pid)
+                .map(|s| icelines_core::TeamAbbr(s.to_uppercase()));
+            if let Some(trade) = proto::detect_mid_day_trade(*pid, &today_team, prior_team.as_ref()) {
+                let trade_json =
+                    serde_json::to_string(&trade).context("serialize trade payload")?;
+                let trade_id = proto::trade_event_id(anchor, &trade.from_team, &trade.to_team);
+                let inserted = event_stream.upsert(
+                    anchor,
+                    &EntityRef::Player(*pid),
+                    "trade",
+                    &trade_id,
+                    &trade_json,
+                    proto::TRADE_PAYLOAD_VERSION,
+                )?;
+                if inserted {
+                    wrote += 1;
+                    eprintln!(
+                        "  · trade detected: player:{} {} → {}",
+                        pid.0, trade.from_team.0, trade.to_team.0
+                    );
+                }
+            }
+        }
     }
     println!(
         "Done — {wrote} new event(s), {updated} updated event(s), \
          {persisted} boxscore body(ies) persisted, {persist_skipped} skipped on {anchor_str}."
     );
     Ok(())
+}
+
+/// Phase Foster +25 — duplicate of favorites_view::bundled_player_team
+/// scoped here so do_boxscore doesn't have to expose it through
+/// the cross-module API surface. Walks the bundled bios for the
+/// most recent season this PID appears in and returns their
+/// `current_team_abbrev`. Returns `None` for PIDs the bundle
+/// doesn't know about.
+fn bundled_player_team(pid: icelines_core::identity::PlayerId) -> Option<String> {
+    for season in icelines_fetch::bundled::BUNDLED_SEASONS {
+        if let Some(bios) = icelines_fetch::bundled::get_bios(season) {
+            if let Some(b) = bios.iter().find(|b| b.player_id == pid.0) {
+                if let Some(team) = &b.current_team_abbrev {
+                    return Some(team.clone());
+                }
+            }
+        }
+    }
+    None
 }
 
 // ── Phase Foster.4 — `icelines fetch sync` CLI surface ───────────────────────
