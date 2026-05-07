@@ -35,7 +35,10 @@ pub mod state;
 pub mod static_assets;
 pub mod templates;
 
-use axum::{routing::get, Router};
+use axum::{
+    routing::{get, post},
+    Router,
+};
 
 pub use config::WebConfig;
 pub use error::{Wants, WebError};
@@ -101,6 +104,10 @@ pub fn router(state: WebState) -> Router {
         .route("/playoffs", get(handlers::playoffs::get_playoffs))
         // Phase Foster.2 — favorites dashboard
         .route("/favorites", get(handlers::favorites::get_favorites))
+        // Foster +18 — POST mutators (kept as POST so they can't be
+        // CSRF'd via image tags / link prefetch).
+        .route("/favorites/add", post(handlers::favorites::post_add))
+        .route("/favorites/remove", post(handlers::favorites::post_remove))
         // Transactions feed — King.8.2.
         .route(
             "/transactions",
@@ -4453,8 +4460,10 @@ mod handlers {
 
     /// Phase Foster.2 — `/favorites` HTML route.
     pub mod favorites {
-        use axum::http::StatusCode;
-        use axum::response::{Html, IntoResponse, Response};
+        use axum::extract::Form;
+        use axum::http::{header, HeaderMap, StatusCode};
+        use axum::response::{Html, IntoResponse, Redirect, Response};
+        use serde::Deserialize;
 
         pub async fn get_favorites() -> Response {
             // Read members from the local SQLite db. The web server
@@ -4535,6 +4544,21 @@ mod handlers {
             body.push_str("<meta charset=\"utf-8\">");
             body.push_str("<title>Favorites — IceLines</title>");
             body.push_str("<link rel=\"stylesheet\" href=\"/static/style.css\">");
+            body.push_str("<style>");
+            body.push_str(
+                ".fav-form { margin: 1rem 0; padding: 1rem; \
+                 background: #f5f5f5; border-radius: 4px; } \
+                 .fav-form input[type=text] { padding: 0.4rem; min-width: 18rem; } \
+                 .fav-form button { padding: 0.4rem 0.9rem; cursor: pointer; } \
+                 .fav-form .row { display: flex; gap: 0.5rem; \
+                 align-items: center; margin: 0.4rem 0; flex-wrap: wrap; } \
+                 .fav-list li { display: flex; gap: 0.6rem; \
+                 align-items: center; margin: 0.2rem 0; } \
+                 .fav-list .remove-btn { background: none; border: 1px solid #c00; \
+                 color: #c00; padding: 0.1rem 0.5rem; border-radius: 3px; \
+                 cursor: pointer; font-size: 0.85em; }",
+            );
+            body.push_str("</style>");
             body.push_str("</head><body>");
             body.push_str(
                 "<nav><a href=\"/\">League</a> · <a href=\"/scores\">Scores</a> · \
@@ -4547,17 +4571,42 @@ mod handlers {
             body.push_str(&format!(
                 "<p>{player_count} player(s), {team_count} team(s).</p>"
             ));
+
+            // Add form — Foster +18. Auto-detects team-vs-player from
+            // the input string (3-char ASCII abbrev → team).
+            body.push_str(
+                r##"<section class="fav-form">
+  <h3 style="margin: 0 0 0.5rem 0;">Add to Favorites</h3>
+  <form method="POST" action="/favorites/add">
+    <div class="row">
+      <label for="key">Player name or team abbrev:</label>
+      <input type="text" id="key" name="key"
+        placeholder="e.g. Connor McDavid · EDM · TOR" autofocus>
+      <button type="submit">★ Add</button>
+    </div>
+    <p style="font-size: 0.85em; color: #666; margin: 0.4rem 0 0;">
+      Auto-detects: 3-letter uppercase abbrevs route to teams; everything else is a player.
+      Override with <code>kind=team</code> or <code>kind=player</code> below.
+    </p>
+    <div class="row">
+      <label><input type="radio" name="kind" value=""> auto-detect</label>
+      <label><input type="radio" name="kind" value="player"> player</label>
+      <label><input type="radio" name="kind" value="team"> team</label>
+    </div>
+    <input type="hidden" name="return_to" value="/favorites">
+  </form>
+</section>"##,
+            );
+
             if members.is_empty() {
                 body.push_str("<section class=\"empty-state\">");
-                body.push_str("<p><strong>No favorites yet.</strong></p>");
-                body.push_str("<p>Add players or teams via the CLI:</p>");
+                body.push_str("<p><strong>No favorites yet.</strong> ");
+                body.push_str("Use the form above, or run from the CLI:</p>");
                 body.push_str(
                     "<pre><code>icelines group add Favorites \"Connor McDavid\"\n\
                      icelines group add Favorites EDM</code></pre>",
                 );
-                body.push_str(
-                    "<p>Then refresh this page to see them listed.</p></section>",
-                );
+                body.push_str("</section>");
             } else {
                 let players: Vec<&str> = members
                     .iter()
@@ -4570,19 +4619,24 @@ mod handlers {
                     .map(|(_, v)| v.as_str())
                     .collect();
                 if !players.is_empty() {
-                    body.push_str("<h2>Players</h2><ul>");
+                    body.push_str("<h2>Players</h2><ul class=\"fav-list\">");
                     for p in players {
-                        body.push_str(&format!("<li>{}</li>", html_escape(p)));
+                        body.push_str(&format!(
+                            "<li><span>{}</span>{}</li>",
+                            html_escape(p),
+                            remove_form(p, "player"),
+                        ));
                     }
                     body.push_str("</ul>");
                 }
                 if !teams.is_empty() {
-                    body.push_str("<h2>Teams</h2><ul>");
+                    body.push_str("<h2>Teams</h2><ul class=\"fav-list\">");
                     for t in teams {
                         body.push_str(&format!(
-                            "<li><a href=\"/team/{}\">{}</a></li>",
+                            "<li><a href=\"/team/{}\">{}</a>{}</li>",
                             html_escape(t),
-                            html_escape(t)
+                            html_escape(t),
+                            remove_form(t, "team"),
                         ));
                     }
                     body.push_str("</ul>");
@@ -4596,11 +4650,173 @@ mod handlers {
             body
         }
 
+        fn remove_form(key: &str, kind: &str) -> String {
+            format!(
+                r##"<form method="POST" action="/favorites/remove" style="display:inline;">
+                    <input type="hidden" name="key" value="{}">
+                    <input type="hidden" name="kind" value="{}">
+                    <input type="hidden" name="return_to" value="/favorites">
+                    <button type="submit" class="remove-btn" title="Remove from Favorites">×</button>
+                </form>"##,
+                html_escape(key),
+                kind,
+            )
+        }
+
         fn html_escape(s: &str) -> String {
             s.replace('&', "&amp;")
                 .replace('<', "&lt;")
                 .replace('>', "&gt;")
                 .replace('"', "&quot;")
+        }
+
+        // ── Foster +18 — POST handlers for add/remove ────────────────────
+
+        #[derive(Debug, Deserialize)]
+        pub struct FavoritesMutation {
+            /// Free-text key — auto-detected as a team if it parses as
+            /// a TeamAbbr, otherwise treated as a player name and
+            /// normalized via `icelines_core::name::normalize_name`.
+            /// Same auto-detect as the CLI `group add` path.
+            pub key: String,
+            /// Optional explicit kind override (`player` / `team`). When
+            /// omitted, auto-detect runs.
+            #[serde(default)]
+            pub kind: Option<String>,
+            /// Where to send the user after the mutation. Defaults to
+            /// `/favorites`. Caller-supplied so each surface (team page,
+            /// player card, favorites page itself) can route back to
+            /// itself.
+            #[serde(default)]
+            pub return_to: Option<String>,
+        }
+
+        pub async fn post_add(
+            headers: HeaderMap,
+            Form(req): Form<FavoritesMutation>,
+        ) -> Response {
+            mutate(&headers, req, MutateOp::Add)
+        }
+
+        pub async fn post_remove(
+            headers: HeaderMap,
+            Form(req): Form<FavoritesMutation>,
+        ) -> Response {
+            mutate(&headers, req, MutateOp::Remove)
+        }
+
+        enum MutateOp {
+            Add,
+            Remove,
+        }
+
+        fn mutate(headers: &HeaderMap, req: FavoritesMutation, op: MutateOp) -> Response {
+            let trimmed = req.key.trim();
+            if trimmed.is_empty() {
+                return error_response("Empty key — pass a player name or team abbrev.");
+            }
+
+            // Same auto-detect as the CLI: try TeamAbbr first; fall
+            // back to normalized player name. Explicit `kind` wins.
+            let (kind, key) = match req.kind.as_deref() {
+                Some("team") => ("team", trimmed.to_uppercase()),
+                Some("player") => (
+                    "player",
+                    icelines_core::name::normalize_name(trimmed),
+                ),
+                _ => match icelines_core::TeamAbbr::parse(trimmed) {
+                    Ok(abbr) => ("team", abbr.0),
+                    Err(_) => (
+                        "player",
+                        icelines_core::name::normalize_name(trimmed),
+                    ),
+                },
+            };
+            let entity_ref = format!("{kind}:{key}");
+
+            // Open the local db. Same path the CLI uses.
+            let home = match std::env::var_os("HOME")
+                .or_else(|| std::env::var_os("USERPROFILE"))
+            {
+                Some(h) => std::path::PathBuf::from(h),
+                None => return error_response("HOME / USERPROFILE not set."),
+            };
+            let dir = home.join(".icelines");
+            if let Err(e) = std::fs::create_dir_all(&dir) {
+                return error_response(&format!("create {}: {e}", dir.display()));
+            }
+            let db_path = dir.join("icelines.db");
+            let conn = match rusqlite::Connection::open(&db_path) {
+                Ok(c) => c,
+                Err(e) => return error_response(&format!("open db: {e}")),
+            };
+            // Make sure the schema is present — the GroupDb opens
+            // first usually but the web server can be the first thing
+            // the user runs. Best-effort; ignore failures.
+            let _ = conn.execute_batch(
+                "CREATE TABLE IF NOT EXISTS groups (
+                    name        TEXT PRIMARY KEY,
+                    description TEXT NOT NULL DEFAULT '',
+                    created_at  TEXT NOT NULL
+                 );
+                 INSERT OR IGNORE INTO groups (name, description, created_at) \
+                    VALUES ('Favorites', '', datetime('now'));
+                 CREATE TABLE IF NOT EXISTS group_members (
+                    group_name TEXT NOT NULL,
+                    entity_ref TEXT NOT NULL,
+                    added_at   TEXT NOT NULL,
+                    PRIMARY KEY (group_name, entity_ref)
+                 );",
+            );
+
+            let result = match op {
+                MutateOp::Add => conn.execute(
+                    "INSERT OR IGNORE INTO group_members \
+                     (group_name, entity_ref, added_at) \
+                     VALUES ('Favorites', ?1, datetime('now'))",
+                    rusqlite::params![entity_ref],
+                ),
+                MutateOp::Remove => conn.execute(
+                    "DELETE FROM group_members \
+                     WHERE group_name = 'Favorites' AND entity_ref = ?1",
+                    rusqlite::params![entity_ref],
+                ),
+            };
+            if let Err(e) = result {
+                return error_response(&format!("db mutation: {e}"));
+            }
+
+            // 303 redirect to the caller-supplied return_to, defaulting
+            // to /favorites. Validate the target is a relative path so
+            // we don't act as an open-redirect.
+            let dest = req
+                .return_to
+                .as_deref()
+                .or_else(|| referer_path(headers))
+                .filter(|p| p.starts_with('/') && !p.starts_with("//"))
+                .unwrap_or("/favorites")
+                .to_string();
+            Redirect::to(&dest).into_response()
+        }
+
+        fn referer_path(headers: &HeaderMap) -> Option<&str> {
+            headers
+                .get(header::REFERER)
+                .and_then(|h| h.to_str().ok())
+                .and_then(|s| {
+                    // Strip the scheme+host so we only return a relative
+                    // path. Anything we can't parse falls through to
+                    // /favorites via the unwrap_or above.
+                    if let Some(rest) = s.strip_prefix("http://") {
+                        rest.find('/').map(|i| &rest[i..])
+                    } else if let Some(rest) = s.strip_prefix("https://") {
+                        rest.find('/').map(|i| &rest[i..])
+                    } else if s.starts_with('/') {
+                        Some(s)
+                    } else {
+                        None
+                    }
+                })
         }
     }
 

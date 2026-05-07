@@ -80,6 +80,20 @@ Source: IceLines · /player/{{ nhl_id }}
             {% endif %}
             · NHL #{{ nhl_id }} · {{ active_label }}
         </p>
+        {# Foster +18 — one-click favorite. The form posts the
+           player's full name; the server normalizes via
+           `icelines_core::name::normalize_name` before persisting,
+           matching the CLI auto-detect path. #}
+        <form method="POST" action="/favorites/add" style="margin-top: 0.4rem;">
+            <input type="hidden" name="key" value="{{ full_name }}">
+            <input type="hidden" name="kind" value="player">
+            <input type="hidden" name="return_to" value="/player/{{ nhl_id }}">
+            <button type="submit" style="padding: 0.25rem 0.6rem; cursor: pointer;
+                background: #fffbe6; color: #b8860b; border: 1px solid #b8860b;
+                border-radius: 3px; font-size: 0.9em;">
+                ★ Favorite player
+            </button>
+        </form>
     </div>
 </div>
 

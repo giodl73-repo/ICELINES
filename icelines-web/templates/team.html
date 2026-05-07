@@ -22,6 +22,17 @@
         {{ skaters.len() }} skater{% if skaters.len() != 1 %}s{% endif %}
         · {{ goalies.len() }} goalie{% if goalies.len() != 1 %}s{% endif %}
     </p>
+    {# Foster +18 — one-click favorite. POST so it's not CSRF'd via prefetch. #}
+    <form method="POST" action="/favorites/add" style="margin-top: 0.6rem;">
+        <input type="hidden" name="key" value="{{ team_abbrev }}">
+        <input type="hidden" name="kind" value="team">
+        <input type="hidden" name="return_to" value="/team/{{ team_abbrev }}">
+        <button type="submit" style="padding: 0.3rem 0.7rem; cursor: pointer;
+            background: rgba(255,255,255,0.18); color: white;
+            border: 1px solid rgba(255,255,255,0.4); border-radius: 3px;">
+            ★ Favorite team
+        </button>
+    </form>
 </header>
 
 <h2 style="margin-top: 1.5rem;">Skaters</h2>
