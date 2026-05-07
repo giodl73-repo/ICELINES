@@ -13,6 +13,7 @@
 
 use std::path::PathBuf;
 
+use icelines_core::career_history::CareerHistory;
 use icelines_query::data_provider::{
     DataProvider, FetchError, FetchEvent, PlanRequirement,
 };
@@ -122,6 +123,28 @@ impl DataProvider for IcelinesProvider {
         // Sort ascending by date — the aggregator depends on this.
         out.sort_by(|a, b| a.date.cmp(&b.date));
         out
+    }
+
+    /// A.4 — read the player's career history from the Phase
+    /// Calder cache file (`~/.icelines/career_history.json`).
+    /// The cache is keyed by player_id and stores `CareerHistory`
+    /// records as JSON. Returns None when the file doesn't
+    /// exist or doesn't contain this pid.
+    fn fetch_career_history(&self, player_id: u32) -> Option<CareerHistory> {
+        // The cache lives at <home>/.icelines/career_history.json,
+        // not under data_root (which points at .icelines/data/).
+        // Walk up one to find the .icelines directory.
+        let home_icelines = self.data_root.parent()?;
+        let cache_path = home_icelines.join("career_history.json");
+        let raw = std::fs::read(&cache_path).ok()?;
+
+        // The cache file shape from `icelines fetch career` is a
+        // JSON object keyed by pid:
+        //   { "8478402": { "player_id": 8478402, "stints": [...] }, ... }
+        let map: serde_json::Map<String, serde_json::Value> =
+            serde_json::from_slice(&raw).ok()?;
+        let entry = map.get(&player_id.to_string())?;
+        serde_json::from_value::<CareerHistory>(entry.clone()).ok()
     }
 }
 

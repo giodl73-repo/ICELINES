@@ -250,18 +250,15 @@ pub enum LeagueAtom {
     Code(String),
     /// `league IN (OHL, WHL, QMJHL)`. Empty set rejected at parse.
     InSet(Vec<String>),
-    /// `league.tier=Junior` — Phase Calder's tier classification.
+    /// `league.tier=Junior` — uses `icelines_core::career_history::
+    /// LeagueTier`'s canonical classification (Phase Calder).
     Tier(LeagueTier),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum LeagueTier {
-    Pro,
-    Junior,
-    College,
-    International,
-    Other,
-}
+/// Re-exported from `icelines_core::career_history` so callers
+/// don't have to import both crates. Same enum the canonical
+/// `LeagueAbbrev::tier()` returns.
+pub use icelines_core::career_history::LeagueTier;
 
 // ── Predicates: shape-by-construction ───────────────────────────
 

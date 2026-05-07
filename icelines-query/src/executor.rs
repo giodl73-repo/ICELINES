@@ -16,9 +16,10 @@ use icelines_core::stats_repository::PlayerView;
 use crate::compute_age;
 use crate::data_provider::EvalCtx;
 use crate::plan::{
-    AgeBound, BioConstraint, BioField, CareerAggrConstraint, CareerAggregator, Constraint,
-    GlobPattern, MemberOp, NumericRange, PatternOp, Predicate, ScalarOp, ScalarValue,
-    SeasonStatConstraint, SlidingWindow, SlidingWindowConstraint, WindowPolicy, WindowScope,
+    AgeBound, BioConstraint, BioField, CareerAggrConstraint, CareerAggregator,
+    CareerLeagueConstraint, Constraint, GlobPattern, LeagueAtom, MemberOp, NumericRange,
+    PatternOp, Predicate, ScalarOp, ScalarValue, SeasonStatConstraint, SlidingWindow,
+    SlidingWindowConstraint, WindowPolicy, WindowScope,
 };
 use crate::sliding_window::{aggregate_window, extract_window_stat, GameStatLine, WindowResult};
 
@@ -45,9 +46,7 @@ impl Constraint {
             Constraint::SeasonStat(s) => season_stat_matches(s, v),
             Constraint::SlidingWindow(s) => sliding_window_matches(s, v, ctx),
             Constraint::CareerAggregate(c) => career_aggregate_matches(c, v, ctx),
-            // Phase Art Ross A.2.5 — CareerLeague reserved for A.4.
-            // Fail-closed default per A.2.5 review.
-            Constraint::CareerLeague(_) => false,
+            Constraint::CareerLeague(c) => career_league_matches(c, v, ctx),
             Constraint::All(children) => children.iter().all(|c| c.matches(v, ctx)),
             Constraint::Any(children) => children.iter().any(|c| c.matches(v, ctx)),
             Constraint::Not(inner) => !inner.matches(v, ctx),
@@ -58,6 +57,119 @@ impl Constraint {
 /// Phase Art Ross A.3 — `LOCKOUT_SEASONS` is skipped (no data,
 /// no partial-mark) per the spec.
 const LOCKOUT_SEASONS: &[u32] = &[20042005];
+
+/// Phase Art Ross A.4 — evaluate a `CareerLeagueConstraint`.
+/// Three shapes:
+///   - `league=OHL` / `league IN (...)` / `league.tier=Junior`:
+///     no stat / aggregator. Match if the player has any career
+///     stint matching the league axis.
+///   - `p.career.junior>=200`: stat + aggregator + predicate.
+///     Sum the stat across stints matching the league axis;
+///     apply the predicate.
+fn career_league_matches(
+    c: &CareerLeagueConstraint,
+    v: &PlayerView<'_>,
+    ctx: &EvalCtx<'_>,
+) -> bool {
+    let pid = v.identity.id.0;
+    let history = match ctx.provider.fetch_career_history(pid) {
+        Some(h) => h,
+        None => return false, // no career-history record — fail closed
+    };
+
+    // Collect stints matching the league axis.
+    let matching_stints: Vec<&icelines_core::career_history::CareerStint> = history
+        .stints
+        .iter()
+        .filter(|s| league_atom_matches(&c.league, s))
+        .collect();
+
+    // Existence-only check (no stat predicate)?
+    if c.stat.is_none() {
+        return !matching_stints.is_empty();
+    }
+
+    // Stat + aggregator + predicate path.
+    let stat = c.stat.unwrap();
+    let aggregator = c.aggregator.unwrap_or(CareerAggregator::LifetimeSum);
+    let predicate = match c.predicate.as_ref() {
+        Some(p) => p,
+        None => return false,
+    };
+
+    match aggregator {
+        CareerAggregator::LifetimeSum => {
+            let actual = sum_stat_across_stints(stat, &matching_stints);
+            match actual {
+                Some(a) => predicate_matches_number_unit_aware(predicate, a, stat.unit()),
+                None => false,
+            }
+        }
+        // Other aggregators on a league-filtered stint set are
+        // less common; defer the polish to A.5 and conservatively
+        // return false.
+        _ => false,
+    }
+}
+
+fn league_atom_matches(
+    atom: &LeagueAtom,
+    stint: &icelines_core::career_history::CareerStint,
+) -> bool {
+    match atom {
+        LeagueAtom::Code(code) => stint.league.0.eq_ignore_ascii_case(code),
+        LeagueAtom::InSet(codes) => codes
+            .iter()
+            .any(|c| stint.league.0.eq_ignore_ascii_case(c)),
+        LeagueAtom::Tier(tier) => &stint.league.tier() == tier,
+    }
+}
+
+/// Sum a stat value across a slice of CareerStint refs. Returns
+/// None when the stat doesn't have a representation on
+/// CareerStint (e.g. on-ice xG — boxscore-only).
+fn sum_stat_across_stints(
+    stat: icelines_core::stats_catalog::StatId,
+    stints: &[&icelines_core::career_history::CareerStint],
+) -> Option<f64> {
+    // CareerStint fields are Option<u32>/Option<f32>; sum what's
+    // available + return as f64. Junior leagues may not have
+    // every field — sum_lines treats missing as 0.
+    let mut total: f64 = 0.0;
+    let mut found_any = false;
+    for s in stints {
+        let value: Option<f64> = match stat.cli_key() {
+            "games" => Some(s.gp as f64),
+            "goals" => s.goals.map(|x| x as f64),
+            "assists" => s.assists.map(|x| x as f64),
+            "points" => s.points.map(|x| x as f64),
+            "pim" => s.pim.map(|x| x as f64),
+            "plus-minus" => s.plus_minus.map(|x| x as f64),
+            "shots" => s.shots.map(|x| x as f64),
+            "wins" => s.wins.map(|x| x as f64),
+            "losses" => s.losses.map(|x| x as f64),
+            "ot-losses" => s.ot_losses.map(|x| x as f64),
+            "shutouts" => s.shutouts.map(|x| x as f64),
+            "saves" => {
+                // saves = shots_against - goals_against
+                match (s.shots_against, s.goals_against) {
+                    (Some(sa), Some(ga)) => Some((sa.saturating_sub(ga)) as f64),
+                    _ => None,
+                }
+            }
+            _ => None,
+        };
+        if let Some(v) = value {
+            total += v;
+            found_any = true;
+        }
+    }
+    if found_any {
+        Some(total)
+    } else {
+        None
+    }
+}
 
 fn career_aggregate_matches(
     c: &CareerAggrConstraint,

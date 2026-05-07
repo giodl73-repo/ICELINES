@@ -24,10 +24,10 @@ use icelines_core::stats_catalog::StatId;
 use crate::errors::ParseError;
 use crate::input::FilterInput;
 use crate::plan::{
-    AgeBound, BioConstraint, BioField, CareerAggrConstraint, CareerAggregator, Constraint,
-    GlobPattern, MemberOp, NumericRange, PatternOp, Predicate, QueryPlan, ScalarOp, ScalarValue,
-    SeasonAxis, SeasonStatConstraint, SlidingWindow, SlidingWindowConstraint, WindowPolicy,
-    WindowScope,
+    AgeBound, BioConstraint, BioField, CareerAggrConstraint, CareerAggregator,
+    CareerLeagueConstraint, Constraint, GlobPattern, LeagueAtom, LeagueTier, MemberOp,
+    NumericRange, PatternOp, Predicate, QueryPlan, ScalarOp, ScalarValue, SeasonAxis,
+    SeasonStatConstraint, SlidingWindow, SlidingWindowConstraint, WindowPolicy, WindowScope,
 };
 use crate::tokenizer::{tokenize, Token};
 use crate::{try_parse_bio_atom, BioAtom};
@@ -795,6 +795,111 @@ fn try_parse_sliding_window_atom(
     })))
 }
 
+/// A.4 — `p.career.junior>=200`, `p.career.nhl>=500`,
+/// `p.career.ohl>=300` (specific league) etc.
+fn parse_career_league_atom(
+    stat_key: &str,
+    league_token: &str,
+    op: ScalarOp,
+    value: f64,
+    atom_text: &str,
+) -> Result<Option<Constraint>, ParseError> {
+    let stat = StatId::from_cli_key(stat_key).ok_or_else(|| ParseError::UnknownStat {
+        key: stat_key.to_string(),
+    })?;
+
+    // The league token is one of: a tier name (junior/pro/college/
+    // international/other) or a literal league code (OHL/WHL/NHL/...).
+    let league = match league_token.to_ascii_lowercase().as_str() {
+        "pro" => LeagueAtom::Tier(LeagueTier::Pro),
+        "junior" => LeagueAtom::Tier(LeagueTier::Junior),
+        "college" | "ncaa" => LeagueAtom::Tier(LeagueTier::College),
+        "international" | "intl" => LeagueAtom::Tier(LeagueTier::International),
+        "other" => LeagueAtom::Tier(LeagueTier::Other),
+        // Any other token is treated as a literal league code
+        // (OHL, WHL, QMJHL, NHL, AHL, KHL, ...).
+        _ => LeagueAtom::Code(league_token.to_ascii_uppercase()),
+    };
+
+    let _ = atom_text;
+    Ok(Some(Constraint::CareerLeague(CareerLeagueConstraint {
+        league,
+        stat: Some(stat),
+        aggregator: Some(CareerAggregator::LifetimeSum),
+        predicate: Some(Predicate::Scalar(op, ScalarValue::Number(value))),
+    })))
+}
+
+/// A.4 — recognize `league=OHL` and `league.tier=Junior` shapes.
+/// Returns `Ok(None)` when the key isn't a league atom (let the
+/// caller fall through). Returns `Ok(Some(_))` on a clean parse.
+fn try_build_league_atom(
+    key: &str,
+    op: ScalarOp,
+    value: &str,
+    atom_text: &str,
+) -> Result<Option<Constraint>, ParseError> {
+    let lower = key.to_ascii_lowercase();
+    let (league, is_inverse) = if lower == "league" {
+        // `league=OHL` → Code(OHL); `league!=OHL` → Not(Code(OHL))
+        match op {
+            ScalarOp::Eq => (LeagueAtom::Code(value.to_ascii_uppercase()), false),
+            ScalarOp::Ne => (LeagueAtom::Code(value.to_ascii_uppercase()), true),
+            _ => {
+                return Err(ParseError::IncompatiblePredicate {
+                    field: "league".to_string(),
+                    detail: format!(
+                        "league only supports `=` / `!=`; got {op:?} in {atom_text:?}"
+                    ),
+                });
+            }
+        }
+    } else if lower == "league.tier" || lower == "league-tier" {
+        // `league.tier=Junior` → Tier(Junior)
+        let tier = match value.to_ascii_lowercase().as_str() {
+            "pro" => LeagueTier::Pro,
+            "junior" => LeagueTier::Junior,
+            "college" | "ncaa" => LeagueTier::College,
+            "international" | "intl" => LeagueTier::International,
+            "other" => LeagueTier::Other,
+            other => {
+                return Err(ParseError::IncompatiblePredicate {
+                    field: "league.tier".to_string(),
+                    detail: format!(
+                        "unknown tier {other:?} — expected pro / junior / college / international / other"
+                    ),
+                });
+            }
+        };
+        match op {
+            ScalarOp::Eq => (LeagueAtom::Tier(tier), false),
+            ScalarOp::Ne => (LeagueAtom::Tier(tier), true),
+            _ => {
+                return Err(ParseError::IncompatiblePredicate {
+                    field: "league.tier".to_string(),
+                    detail: format!(
+                        "league.tier only supports `=` / `!=`; got {op:?} in {atom_text:?}"
+                    ),
+                });
+            }
+        }
+    } else {
+        return Ok(None);
+    };
+
+    let inner = Constraint::CareerLeague(CareerLeagueConstraint {
+        league,
+        stat: None,
+        aggregator: None,
+        predicate: None,
+    });
+    Ok(Some(if is_inverse {
+        Constraint::Not(Box::new(inner))
+    } else {
+        inner
+    }))
+}
+
 /// A.3 — convert a Bio age `Predicate` to an `AgeBound`.
 /// Supports Scalar Lt/Le/Gt/Ge/Eq and Range; rejects Member
 /// (`age IN (...)`) and Pattern as an AT clause shape.
@@ -862,6 +967,13 @@ fn try_parse_career_atom(
     atom_text: &str,
 ) -> Result<Option<Constraint>, ParseError> {
     let parts: Vec<&str> = key.split('.').collect();
+
+    // 3-dot form: `<key>.career.<league-or-tier>` →
+    // CareerLeagueConstraint with LifetimeSum aggregator.
+    if parts.len() == 3 && parts[1].eq_ignore_ascii_case("career") {
+        return parse_career_league_atom(parts[0], parts[2], op, value, atom_text);
+    }
+
     if parts.len() != 2 {
         return Ok(None);
     }
@@ -917,6 +1029,12 @@ fn build_scalar_constraint_text(
     value: String,
     atom_text: &str,
 ) -> Result<Constraint, ParseError> {
+    // Phase Art Ross A.4 — `league=OHL` and `league.tier=Junior`
+    // build a CareerLeagueConstraint instead of a Bio one.
+    if let Some(constraint) = try_build_league_atom(key, op, &value, atom_text)? {
+        return Ok(constraint);
+    }
+
     if let Some(field) = bio_text_field_from_key(key) {
         // A.2.5 review (scout + edge) — `team.career=` silently
         // fell back to current-stint matching, producing wrong
@@ -952,6 +1070,47 @@ fn build_member_constraint(
     op: MemberOp,
     values: Vec<ScalarValue>,
 ) -> Result<Constraint, ParseError> {
+    // Phase Art Ross A.4 — `league IN (OHL, WHL, QMJHL)`.
+    // `league NOT IN (X, Y)` is wrapped in Constraint::Not so the
+    // CareerLeagueConstraint shape stays simple (one league axis,
+    // no negation flag to track).
+    if key.eq_ignore_ascii_case("league") {
+        if values.is_empty() {
+            return Err(ParseError::EmptySet {
+                atom: format!(
+                    "league {} (...)",
+                    match op {
+                        MemberOp::In => "IN",
+                        MemberOp::NotIn => "NOT IN",
+                    }
+                ),
+            });
+        }
+        let codes: Vec<String> = values
+            .iter()
+            .filter_map(|v| match v {
+                ScalarValue::Text(s) => Some(s.to_ascii_uppercase()),
+                ScalarValue::Number(_) => None,
+            })
+            .collect();
+        if codes.is_empty() {
+            return Err(ParseError::IncompatiblePredicate {
+                field: "league".to_string(),
+                detail: "league IN (...) requires text values".to_string(),
+            });
+        }
+        let inner = Constraint::CareerLeague(CareerLeagueConstraint {
+            league: LeagueAtom::InSet(codes),
+            stat: None,
+            aggregator: None,
+            predicate: None,
+        });
+        return Ok(match op {
+            MemberOp::In => inner,
+            MemberOp::NotIn => Constraint::Not(Box::new(inner)),
+        });
+    }
+
     if let Some(field) = bio_text_field_from_key(key) {
         // A.2.5 review (scout) — gate team.career until A.4.
         if matches!(field, BioField::TeamCareer) {
@@ -1723,6 +1882,127 @@ mod tests {
             }
             _ => panic!(),
         }
+    }
+
+    // ── A.4 cross-league career atoms ───────────────────────────
+
+    #[test]
+    fn l0_a4_parse_league_eq_code() {
+        let c = ok("league=OHL");
+        match c {
+            Constraint::CareerLeague(cl) => {
+                assert!(matches!(cl.league, LeagueAtom::Code(ref s) if s == "OHL"));
+            }
+            _ => panic!("expected CareerLeague, got {c:?}"),
+        }
+    }
+
+    #[test]
+    fn l0_a4_parse_league_in_set() {
+        let c = ok("league IN (OHL, WHL, QMJHL)");
+        match c {
+            Constraint::CareerLeague(cl) => match cl.league {
+                LeagueAtom::InSet(codes) => assert_eq!(codes, vec!["OHL", "WHL", "QMJHL"]),
+                _ => panic!(),
+            },
+            _ => panic!(),
+        }
+    }
+
+    #[test]
+    fn l0_a4_parse_league_not_in_wraps_in_not() {
+        let c = ok("league NOT IN (OHL, WHL)");
+        match c {
+            Constraint::Not(inner) => assert!(matches!(*inner, Constraint::CareerLeague(_))),
+            _ => panic!("expected Not(CareerLeague), got {c:?}"),
+        }
+    }
+
+    #[test]
+    fn l0_a4_parse_league_tier_junior() {
+        let c = ok("league.tier=Junior");
+        match c {
+            Constraint::CareerLeague(cl) => {
+                assert!(matches!(cl.league, LeagueAtom::Tier(LeagueTier::Junior)));
+            }
+            _ => panic!(),
+        }
+    }
+
+    #[test]
+    fn l0_a4_parse_league_tier_pro() {
+        let c = ok("league.tier=Pro");
+        match c {
+            Constraint::CareerLeague(cl) => {
+                assert!(matches!(cl.league, LeagueAtom::Tier(LeagueTier::Pro)));
+            }
+            _ => panic!(),
+        }
+    }
+
+    #[test]
+    fn l0_a4_parse_league_tier_unknown_rejected() {
+        let es = errs("league.tier=BogusTier");
+        assert!(matches!(es[0], ParseError::IncompatiblePredicate { .. }));
+    }
+
+    #[test]
+    fn l0_a4_parse_league_ne() {
+        let c = ok("league!=NHL");
+        assert!(matches!(c, Constraint::Not(_)));
+    }
+
+    #[test]
+    fn l0_a4_parse_career_junior() {
+        let c = ok("p.career.junior>=200");
+        match c {
+            Constraint::CareerLeague(cl) => {
+                assert!(matches!(cl.league, LeagueAtom::Tier(LeagueTier::Junior)));
+                assert_eq!(cl.aggregator, Some(CareerAggregator::LifetimeSum));
+                assert!(cl.predicate.is_some());
+            }
+            _ => panic!("expected CareerLeague, got {c:?}"),
+        }
+    }
+
+    #[test]
+    fn l0_a4_parse_career_nhl() {
+        let c = ok("p.career.nhl>=500");
+        match c {
+            Constraint::CareerLeague(cl) => {
+                assert!(matches!(cl.league, LeagueAtom::Code(ref s) if s == "NHL"));
+            }
+            _ => panic!(),
+        }
+    }
+
+    #[test]
+    fn l0_a4_parse_career_specific_league() {
+        let c = ok("p.career.ohl>=300");
+        match c {
+            Constraint::CareerLeague(cl) => {
+                assert!(matches!(cl.league, LeagueAtom::Code(ref s) if s == "OHL"));
+            }
+            _ => panic!(),
+        }
+    }
+
+    #[test]
+    fn l0_a4_compound_league_with_age() {
+        // `league=OHL AND age<=18 AND p>=80` — elite junior cohort.
+        // `.season` window aliasing is a polish item; today the
+        // bare `p>=80` carries the season-aggregate semantic.
+        let c = ok("league=OHL AND age<=18 AND p>=80");
+        match c {
+            Constraint::All(children) => assert_eq!(children.len(), 3),
+            _ => panic!(),
+        }
+    }
+
+    #[test]
+    fn l0_a4_empty_in_league_set_rejected() {
+        let es = errs("league IN ()");
+        assert!(matches!(es[0], ParseError::EmptySet { .. }));
     }
 
     /// String fields support only `=` / `!=` — `>=` / `<=` reject.

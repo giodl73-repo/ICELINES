@@ -44,6 +44,20 @@ pub trait DataProvider {
         let _ = (player_id, season);
         Vec::new()
     }
+
+    /// A.4 — fetch the player's cross-league career history
+    /// (`CareerHistory` from `icelines-core::career_history`).
+    /// Returns `None` when the player has no career-history
+    /// record locally (Phase Calder cache miss). Implementations
+    /// should serve from the `~/.icelines/career_history.json`
+    /// cache; on-demand landing fetch is a follow-on commit.
+    fn fetch_career_history(
+        &self,
+        player_id: u32,
+    ) -> Option<icelines_core::career_history::CareerHistory> {
+        let _ = player_id;
+        None
+    }
 }
 
 /// What data the plan needs to run. Computed by
