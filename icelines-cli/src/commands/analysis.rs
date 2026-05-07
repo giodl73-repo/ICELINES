@@ -377,13 +377,16 @@ pub async fn run_group(cmd: GroupSubcommand) -> anyhow::Result<()> {
             }
         }
         GroupSubcommand::Remove { group, player } => {
-            // Same auto-detect — strip whichever key shape the user
-            // typed (team abbrev or player name).
-            let key = match icelines_core::TeamAbbr::parse(&player) {
-                Ok(abbr) => abbr.0,
-                Err(_) => normalize_name(&player),
+            // Same auto-detect as `group add` — must route through
+            // remove_member_kind so the entity_ref prefix matches
+            // what was stored. (Wave 9 surfaced that
+            // `db.remove_member()` hardcoded MemberKind::Player so
+            // team removes silently no-op'd.)
+            let (key, kind) = match icelines_core::TeamAbbr::parse(&player) {
+                Ok(abbr) => (abbr.0, crate::db::MemberKind::Team),
+                Err(_) => (normalize_name(&player), crate::db::MemberKind::Player),
             };
-            db.remove_member(&group, &key)?;
+            db.remove_member_kind(&group, &key, kind)?;
             println!("Removed '{player}' from '{group}'.");
         }
         GroupSubcommand::List => {
