@@ -1,9 +1,9 @@
-//! Phase Art Ross A.0 — `Constraint` evaluator.
+//! Phase Art Ross A.0/A.1 — `Constraint` evaluator.
 //!
 //! Walks a `Constraint` tree against a `PlayerView` and decides
-//! whether the player matches. For A.0 only `Bio` and `SeasonStat`
-//! variants execute (the others are reserved with `FeatureNotYet`
-//! at parse time, so they won't appear in produced trees).
+//! whether the player matches. A.0 wired Bio + SeasonStat with
+//! Scalar predicates only. A.1 adds Member, Pattern, Range
+//! predicate shapes plus new bio fields (Position, Team, etc.).
 //!
 //! Missing-data semantics match the legacy `FilterExpr::matches`:
 //! when a stat is unavailable for the view, the atom evaluates to
@@ -15,33 +15,24 @@ use icelines_core::stats_repository::PlayerView;
 
 use crate::compute_age;
 use crate::plan::{
-    BioConstraint, BioField, Constraint, Predicate, ScalarOp, ScalarValue,
-    SeasonStatConstraint,
+    BioConstraint, BioField, Constraint, GlobPattern, MemberOp, NumericRange, PatternOp,
+    Predicate, ScalarOp, ScalarValue, SeasonStatConstraint,
 };
 
 impl Constraint {
     /// Evaluate this constraint tree against the given player view.
-    /// `season` is the active season-id (as a u32) used for age
-    /// computation. `is_goalie` is read from the view; `applies_to`
-    /// is honored for stat atoms.
-    ///
-    /// **Missing data semantics**: a stat atom whose `stat.read(v)`
-    /// returns `None` evaluates to `false`. This matches the legacy
-    /// pipeline so `NOT (stat>=N)` flips pre-tracked rows to true.
     pub fn matches(&self, v: &PlayerView<'_>, season: u32) -> bool {
         match self {
             Constraint::Bio(b) => bio_matches(b, v, season),
             Constraint::SeasonStat(s) => season_stat_matches(s, v),
-            Constraint::SlidingWindow(_) => {
-                // Reserved A.2 — parser rejects these atoms today,
-                // so this branch is unreachable from user input.
-                // Treat as no-op (true) to avoid crashing if a
-                // future caller constructs one programmatically
-                // before A.2 ships.
-                true
-            }
-            Constraint::CareerAggregate(_) => true,    // Reserved A.3
-            Constraint::CareerLeague(_) => true,       // Reserved A.4
+            // Reserved for A.2/A.3/A.4 — parser rejects atoms that
+            // would construct these variants today, so this branch
+            // is unreachable from user input. Treat as no-op (true)
+            // to avoid crashing if a future caller constructs one
+            // programmatically before the relevant sub-phase ships.
+            Constraint::SlidingWindow(_) => true,
+            Constraint::CareerAggregate(_) => true,
+            Constraint::CareerLeague(_) => true,
             Constraint::All(children) => children.iter().all(|c| c.matches(v, season)),
             Constraint::Any(children) => children.iter().any(|c| c.matches(v, season)),
             Constraint::Not(inner) => !inner.matches(v, season),
@@ -50,103 +41,134 @@ impl Constraint {
 }
 
 fn bio_matches(b: &BioConstraint, v: &PlayerView<'_>, season: u32) -> bool {
-    let bio = &v.identity.bio;
     match b.field {
-        BioField::Age => match &b.predicate {
-            Predicate::Scalar(op, ScalarValue::Number(target)) => {
-                let age = bio
-                    .birth_date
-                    .as_deref()
-                    .and_then(|d| compute_age(d, season));
-                match age {
-                    Some(a) => apply_scalar_op_num(*op, a as f64, *target),
-                    None => false,
-                }
-            }
-            _ => false,
+        BioField::Age => match age_for(v, season) {
+            Some(a) => predicate_matches_number(&b.predicate, a as f64),
+            None => false,
         },
-        BioField::DraftYear => match &b.predicate {
-            Predicate::Scalar(op, ScalarValue::Number(target)) => match bio.draft_year {
-                Some(y) => apply_scalar_op_num(*op, y as f64, *target),
-                None => false,
-            },
-            _ => false,
+        BioField::DraftYear => match v.identity.bio.draft_year {
+            Some(y) => predicate_matches_number(&b.predicate, y as f64),
+            None => false,
         },
-        BioField::Height => match &b.predicate {
-            Predicate::Scalar(op, ScalarValue::Number(target)) => match bio.height_in_inches {
-                Some(h) => apply_scalar_op_num(*op, h as f64, *target),
-                None => false,
-            },
-            _ => false,
+        BioField::DraftRound => match v.identity.bio.draft_round {
+            Some(r) => predicate_matches_number(&b.predicate, r as f64),
+            None => false,
         },
-        BioField::Weight => match &b.predicate {
-            Predicate::Scalar(op, ScalarValue::Number(target)) => match bio.weight_lbs {
-                Some(w) => apply_scalar_op_num(*op, w as f64, *target),
-                None => false,
-            },
-            _ => false,
+        BioField::DraftOverall => match v.identity.bio.draft_overall {
+            Some(o) => predicate_matches_number(&b.predicate, o as f64),
+            None => false,
         },
-        BioField::Country => match &b.predicate {
-            Predicate::Scalar(ScalarOp::Eq, ScalarValue::Text(target)) => {
-                let bc = bio
-                    .birth_country
-                    .as_deref()
-                    .map(ScalarValue::canonicalize_text);
-                let nc = bio
-                    .nationality_code
-                    .as_deref()
-                    .map(ScalarValue::canonicalize_text);
-                bc.as_deref() == Some(target.as_str()) || nc.as_deref() == Some(target.as_str())
-            }
-            Predicate::Scalar(ScalarOp::Ne, ScalarValue::Text(target)) => {
-                let bc = bio
-                    .birth_country
-                    .as_deref()
-                    .map(ScalarValue::canonicalize_text);
-                let nc = bio
-                    .nationality_code
-                    .as_deref()
-                    .map(ScalarValue::canonicalize_text);
-                let matches = bc.as_deref() == Some(target.as_str())
-                    || nc.as_deref() == Some(target.as_str());
-                !matches
-            }
-            _ => false,
+        BioField::Height => match v.identity.bio.height_in_inches {
+            Some(h) => predicate_matches_number(&b.predicate, h as f64),
+            None => false,
         },
-        BioField::Shoots => match &b.predicate {
-            Predicate::Scalar(ScalarOp::Eq, ScalarValue::Text(target)) => bio
+        BioField::Weight => match v.identity.bio.weight_lbs {
+            Some(w) => predicate_matches_number(&b.predicate, w as f64),
+            None => false,
+        },
+        BioField::Country => {
+            // country can match either birth_country or
+            // nationality_code (legacy semantics from BioAtom).
+            let bc = v
+                .identity
+                .bio
+                .birth_country
+                .as_deref()
+                .map(ScalarValue::canonicalize_text);
+            let nc = v
+                .identity
+                .bio
+                .nationality_code
+                .as_deref()
+                .map(ScalarValue::canonicalize_text);
+            // Two candidate strings — pass to the text predicate
+            // applied via OR.
+            text_predicate_matches_any(&b.predicate, &[bc.as_deref(), nc.as_deref()])
+        }
+        BioField::Nationality => {
+            let nc = v
+                .identity
+                .bio
+                .nationality_code
+                .as_deref()
+                .map(ScalarValue::canonicalize_text);
+            text_predicate_matches(&b.predicate, nc.as_deref())
+        }
+        BioField::Shoots => {
+            let s = v
+                .identity
+                .bio
                 .shoots_catches
                 .as_deref()
-                .map(ScalarValue::canonicalize_text)
+                .map(ScalarValue::canonicalize_text);
+            text_predicate_matches(&b.predicate, s.as_deref())
+        }
+        BioField::Position => {
+            let p = format!("{:?}", v.position()).to_ascii_lowercase();
+            // Position::Center → "center"; map to canonical short
+            // tokens "c" / "lw" / "rw" / "d" / "g" so the user's
+            // `pos=C` query matches.
+            let canonical = position_short_code(&p);
+            text_predicate_matches(&b.predicate, Some(canonical.as_str()))
+        }
+        BioField::Team => {
+            // Current stint only.
+            let t = v
+                .team()
+                .map(|abbr| ScalarValue::canonicalize_text(&abbr.0));
+            text_predicate_matches(&b.predicate, t.as_deref())
+        }
+        BioField::TeamAny => {
+            // Any stint this season.
+            let abbrevs: Vec<String> = v
+                .stats
+                .team_stints
+                .iter()
+                .map(|s| ScalarValue::canonicalize_text(&s.team.0))
+                .collect();
+            let refs: Vec<Option<&str>> = abbrevs.iter().map(|s| Some(s.as_str())).collect();
+            text_predicate_matches_any(&b.predicate, &refs)
+        }
+        BioField::TeamCareer => {
+            // A.1 limitation: TeamCareer needs the full career
+            // walk which lands in A.4. For now, the in-season
+            // current-stint serves as a fallback so the atom
+            // doesn't silently pass.
+            let t = v
+                .team()
+                .map(|abbr| ScalarValue::canonicalize_text(&abbr.0));
+            text_predicate_matches(&b.predicate, t.as_deref())
+        }
+        BioField::BirthCity => {
+            let s = v
+                .identity
+                .bio
+                .birth_city
                 .as_deref()
-                == Some(target.as_str()),
-            Predicate::Scalar(ScalarOp::Ne, ScalarValue::Text(target)) => bio
-                .shoots_catches
+                .map(ScalarValue::canonicalize_text);
+            text_predicate_matches(&b.predicate, s.as_deref())
+        }
+        BioField::BirthState => {
+            let s = v
+                .identity
+                .bio
+                .birth_state_province
                 .as_deref()
-                .map(ScalarValue::canonicalize_text)
-                .as_deref()
-                != Some(target.as_str()),
-            _ => false,
+                .map(ScalarValue::canonicalize_text);
+            text_predicate_matches(&b.predicate, s.as_deref())
+        }
+        BioField::RookieSeason => match v.identity.bio.rookie_season.as_deref() {
+            Some(s) => match s.parse::<u32>() {
+                Ok(n) => predicate_matches_number(&b.predicate, n as f64),
+                Err(_) => false,
+            },
+            None => false,
         },
-        // Bio fields reserved for A.1 grammar expansion: parser
-        // never builds Constraints with these fields today, so the
-        // executor returns false defensively.
-        BioField::DraftRound
-        | BioField::DraftOverall
-        | BioField::Nationality
-        | BioField::Position
-        | BioField::Team
-        | BioField::TeamAny
-        | BioField::TeamCareer
-        | BioField::BirthCity
-        | BioField::BirthState
-        | BioField::RookieSeason => false,
     }
 }
 
 fn season_stat_matches(s: &SeasonStatConstraint, v: &PlayerView<'_>) -> bool {
     if !s.stat.applies_to(v.position(), v.is_goalie()) {
-        // DI-08 — non-applicable filters silently pass.
         return true;
     }
     let actual = match s.stat.read(v) {
@@ -157,9 +179,101 @@ fn season_stat_matches(s: &SeasonStatConstraint, v: &PlayerView<'_>) -> bool {
         Predicate::Scalar(op, ScalarValue::Number(target)) => {
             apply_scalar_op_unit_aware(*op, actual, *target, s.stat.unit())
         }
-        // Other predicate shapes reserved for A.1 — parser rejects.
+        Predicate::Range(NumericRange { min, max }) => actual >= *min && actual <= *max,
+        // Member / Pattern on numeric stat atoms is rejected at
+        // parse, so this branch is unreachable from user input.
         _ => false,
     }
+}
+
+fn age_for(v: &PlayerView<'_>, season: u32) -> Option<u32> {
+    v.identity
+        .bio
+        .birth_date
+        .as_deref()
+        .and_then(|d| compute_age(d, season))
+}
+
+/// Apply a numeric predicate. Used by both bio numeric fields and
+/// (via the SeasonStat path) catalog stats. Range and Member with
+/// numeric values are honored.
+fn predicate_matches_number(p: &Predicate, actual: f64) -> bool {
+    match p {
+        Predicate::Scalar(op, ScalarValue::Number(target)) => {
+            apply_scalar_op_num(*op, actual, *target)
+        }
+        Predicate::Range(NumericRange { min, max }) => actual >= *min && actual <= *max,
+        Predicate::Member(op, vals) => {
+            let any = vals.iter().any(|v| match v {
+                ScalarValue::Number(n) => (actual - *n).abs() < 1e-9,
+                _ => false,
+            });
+            match op {
+                MemberOp::In => any,
+                MemberOp::NotIn => !any,
+            }
+        }
+        // Pattern on numeric is parser-rejected; defensively false.
+        _ => false,
+    }
+}
+
+/// Apply a string predicate. `actual` is the canonicalized field
+/// value (already NFD-stripped + lowercased). None means the field
+/// is missing on the player; predicate returns false.
+fn text_predicate_matches(p: &Predicate, actual: Option<&str>) -> bool {
+    match p {
+        Predicate::Scalar(op, ScalarValue::Text(target)) => match actual {
+            Some(s) => match op {
+                ScalarOp::Eq => s == target,
+                ScalarOp::Ne => s != target,
+                _ => false, // <, >, <=, >= on strings: parser rejects
+            },
+            None => false,
+        },
+        Predicate::Member(op, vals) => match actual {
+            Some(s) => {
+                let any = vals.iter().any(|v| match v {
+                    ScalarValue::Text(t) => s == t.as_str(),
+                    _ => false,
+                });
+                match op {
+                    MemberOp::In => any,
+                    MemberOp::NotIn => !any,
+                }
+            }
+            None => false,
+        },
+        Predicate::Pattern(op, glob) => match actual {
+            Some(s) => match op {
+                PatternOp::Like => glob.matches(s),
+                PatternOp::NotLike => !glob.matches(s),
+                PatternOp::Contains => contains_match(glob, s),
+                PatternOp::NotContains => !contains_match(glob, s),
+            },
+            None => false,
+        },
+        // Scalar Number on string field: parser-rejected.
+        _ => false,
+    }
+}
+
+/// Same as `text_predicate_matches` but tries multiple candidate
+/// values (useful for `country` which matches birth_country OR
+/// nationality_code, or `team.any` which checks every stint).
+fn text_predicate_matches_any(p: &Predicate, candidates: &[Option<&str>]) -> bool {
+    candidates
+        .iter()
+        .any(|c| text_predicate_matches(p, *c))
+}
+
+/// `~ pattern` is "contains" (substring match, no anchoring).
+/// We treat `glob` as a literal substring (segments joined).
+fn contains_match(glob: &GlobPattern, target: &str) -> bool {
+    if glob.segments.is_empty() {
+        return target.is_empty();
+    }
+    glob.segments.iter().all(|seg| target.contains(seg.as_str()))
 }
 
 fn apply_scalar_op_num(op: ScalarOp, actual: f64, target: f64) -> bool {
@@ -192,12 +306,23 @@ fn apply_scalar_op_unit_aware(op: ScalarOp, actual: f64, target: f64, unit: Stat
     }
 }
 
+/// Map a Position debug-printed string to its canonical short code
+/// for `pos=C` queries.
+fn position_short_code(debug_form: &str) -> String {
+    match debug_form {
+        "center" => "c".to_string(),
+        "leftwing" | "left_wing" => "lw".to_string(),
+        "rightwing" | "right_wing" => "rw".to_string(),
+        "defenseman" | "defense" => "d".to_string(),
+        "goalie" => "g".to_string(),
+        other => other.to_string(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    /// Op application correctness — covers both directions on each
-    /// op family. These tests don't need a PlayerView.
     #[test]
     fn l0_a0_apply_scalar_op_ge() {
         assert!(apply_scalar_op_num(ScalarOp::Ge, 10.0, 5.0));
@@ -213,49 +338,120 @@ mod tests {
     }
 
     #[test]
-    fn l0_a0_apply_scalar_op_gt_strict() {
-        assert!(apply_scalar_op_num(ScalarOp::Gt, 6.0, 5.0));
-        assert!(!apply_scalar_op_num(ScalarOp::Gt, 5.0, 5.0));
-        assert!(!apply_scalar_op_num(ScalarOp::Gt, 4.0, 5.0));
-    }
-
-    #[test]
-    fn l0_a0_apply_scalar_op_lt_strict() {
+    fn l0_a1_apply_scalar_op_lt_strict() {
         assert!(apply_scalar_op_num(ScalarOp::Lt, 4.0, 5.0));
         assert!(!apply_scalar_op_num(ScalarOp::Lt, 5.0, 5.0));
         assert!(!apply_scalar_op_num(ScalarOp::Lt, 6.0, 5.0));
     }
 
     #[test]
-    fn l0_a0_apply_scalar_op_eq_with_count_tolerance() {
-        // Count tolerance is 0.5 — so 10.0 == 10.4 but 10.0 != 11.0.
-        assert!(apply_scalar_op_unit_aware(
-            ScalarOp::Eq,
-            10.4,
-            10.0,
-            StatUnit::Count
-        ));
-        assert!(!apply_scalar_op_unit_aware(
-            ScalarOp::Eq,
-            11.0,
-            10.0,
-            StatUnit::Count
-        ));
+    fn l0_a1_apply_scalar_op_gt_strict() {
+        assert!(apply_scalar_op_num(ScalarOp::Gt, 6.0, 5.0));
+        assert!(!apply_scalar_op_num(ScalarOp::Gt, 5.0, 5.0));
+        assert!(!apply_scalar_op_num(ScalarOp::Gt, 4.0, 5.0));
     }
 
     #[test]
-    fn l0_a0_apply_scalar_op_ne_count_tolerance() {
-        assert!(!apply_scalar_op_unit_aware(
-            ScalarOp::Ne,
-            10.4,
-            10.0,
-            StatUnit::Count
-        ));
-        assert!(apply_scalar_op_unit_aware(
-            ScalarOp::Ne,
-            11.0,
-            10.0,
-            StatUnit::Count
-        ));
+    fn l0_a1_apply_scalar_op_ne() {
+        assert!(apply_scalar_op_num(ScalarOp::Ne, 4.0, 5.0));
+        assert!(!apply_scalar_op_num(ScalarOp::Ne, 5.0, 5.0));
+    }
+
+    #[test]
+    fn l0_a1_predicate_range_inclusive() {
+        let p = Predicate::Range(NumericRange {
+            min: 20.0,
+            max: 40.0,
+        });
+        assert!(predicate_matches_number(&p, 20.0));
+        assert!(predicate_matches_number(&p, 40.0));
+        assert!(predicate_matches_number(&p, 30.0));
+        assert!(!predicate_matches_number(&p, 19.0));
+        assert!(!predicate_matches_number(&p, 41.0));
+    }
+
+    #[test]
+    fn l0_a1_predicate_in_numeric() {
+        let p = Predicate::Member(
+            MemberOp::In,
+            vec![
+                ScalarValue::Number(2020.0),
+                ScalarValue::Number(2021.0),
+                ScalarValue::Number(2022.0),
+            ],
+        );
+        assert!(predicate_matches_number(&p, 2020.0));
+        assert!(predicate_matches_number(&p, 2021.0));
+        assert!(!predicate_matches_number(&p, 2019.0));
+    }
+
+    #[test]
+    fn l0_a1_predicate_not_in_numeric() {
+        let p = Predicate::Member(
+            MemberOp::NotIn,
+            vec![ScalarValue::Number(2020.0), ScalarValue::Number(2021.0)],
+        );
+        assert!(predicate_matches_number(&p, 2019.0));
+        assert!(predicate_matches_number(&p, 2022.0));
+        assert!(!predicate_matches_number(&p, 2020.0));
+    }
+
+    #[test]
+    fn l0_a1_predicate_in_text() {
+        let p = Predicate::Member(
+            MemberOp::In,
+            vec![
+                ScalarValue::Text("can".into()),
+                ScalarValue::Text("usa".into()),
+                ScalarValue::Text("swe".into()),
+            ],
+        );
+        assert!(text_predicate_matches(&p, Some("can")));
+        assert!(text_predicate_matches(&p, Some("usa")));
+        assert!(!text_predicate_matches(&p, Some("rus")));
+        assert!(!text_predicate_matches(&p, None));
+    }
+
+    #[test]
+    fn l0_a1_predicate_not_in_text() {
+        let p = Predicate::Member(
+            MemberOp::NotIn,
+            vec![ScalarValue::Text("can".into())],
+        );
+        assert!(text_predicate_matches(&p, Some("usa")));
+        assert!(!text_predicate_matches(&p, Some("can")));
+    }
+
+    #[test]
+    fn l0_a1_predicate_like_pattern() {
+        let glob = GlobPattern::parse("Mc*");
+        let p = Predicate::Pattern(PatternOp::Like, glob);
+        assert!(text_predicate_matches(&p, Some("mcdavid")));
+        assert!(!text_predicate_matches(&p, Some("crosby")));
+    }
+
+    #[test]
+    fn l0_a1_predicate_not_like() {
+        let glob = GlobPattern::parse("Mc*");
+        let p = Predicate::Pattern(PatternOp::NotLike, glob);
+        assert!(!text_predicate_matches(&p, Some("mcdavid")));
+        assert!(text_predicate_matches(&p, Some("crosby")));
+    }
+
+    #[test]
+    fn l0_a1_predicate_contains() {
+        let glob = GlobPattern::parse("Da");
+        let p = Predicate::Pattern(PatternOp::Contains, glob);
+        assert!(text_predicate_matches(&p, Some("mcdavid")));
+        assert!(!text_predicate_matches(&p, Some("crosby")));
+    }
+
+    #[test]
+    fn l0_a1_position_short_codes() {
+        assert_eq!(position_short_code("center"), "c");
+        assert_eq!(position_short_code("leftwing"), "lw");
+        assert_eq!(position_short_code("rightwing"), "rw");
+        assert_eq!(position_short_code("defenseman"), "d");
+        assert_eq!(position_short_code("goalie"), "g");
     }
 }

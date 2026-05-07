@@ -42,6 +42,7 @@ pub mod input;
 pub mod parser;
 pub mod plan;
 pub mod planner;
+pub mod tokenizer;
 
 pub use data_provider::{DataProvider, DateRange, EvalCtx, FetchError, FetchEvent, PlanRequirement, StrictEligibility};
 pub use errors::ParseError;
