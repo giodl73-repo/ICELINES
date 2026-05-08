@@ -361,6 +361,17 @@ screen) to quit.
         ///   icelines tui goalies --standalone
         #[arg(long)]
         standalone: bool,
+        /// Phase Jack Adams.1 — launch the TUI in MDI dashboard
+        /// mode. Espn-style "front door": Scores ribbon top,
+        /// Favorites left, swappable Workspace middle, Schedule
+        /// right, plus a chat-CLI command bar bottom.
+        ///
+        /// Mutually exclusive with --standalone.
+        ///
+        /// Example:
+        ///   icelines tui stats --mdi
+        #[arg(long, conflicts_with = "standalone")]
+        mdi: bool,
     },
 
     /// Print the full command reference (embedded COMMANDS.md). No
@@ -772,6 +783,7 @@ mod tui_surface_tests {
                     surface: Some(s),
                     start: None,
                     standalone: false,
+                    mdi: false,
                 } => s.into_screen_spec(),
                 other => panic!("expected Tui {{ surface: Some(_), start: None }}, got {other:?}"),
             };
@@ -785,6 +797,7 @@ mod tui_surface_tests {
                     surface: None,
                     start: Some(s),
                     standalone: false,
+                    mdi: false,
                 } => parse_start_slug(&s).expect("known slug"),
                 other => panic!("expected Tui {{ surface: None, start: Some(_) }}, got {other:?}"),
             };
@@ -802,10 +815,12 @@ mod tui_surface_tests {
     fn l0_bare_tui_has_no_surface_or_start() {
         let cli = Cli::try_parse_from(["icelines", "tui"]).unwrap();
         match cli.command {
-            Commands::Tui { surface, start, standalone } => {
+            Commands::Tui { surface, start, standalone, mdi } => {
                 assert!(surface.is_none());
                 assert!(!standalone, "bare tui must default standalone=false");
+                assert!(!mdi, "bare tui must default mdi=false");
                 let _ = standalone; // silence unused warning
+                let _ = mdi;
                 assert!(start.is_none());
             }
             other => panic!("expected Tui, got {other:?}"),

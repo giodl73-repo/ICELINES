@@ -301,6 +301,22 @@ pub struct App {
     /// experience without requiring per-screen Screen-trait
     /// migrations (the deeper Masterton.2 grind that's deferred).
     pub locked_screen: Option<Screen>,
+
+    /// Phase Jack Adams.1 — MDI dashboard state. Some when
+    /// launched with `--mdi`; None for SDI modes (today's
+    /// default and `--standalone`).
+    ///
+    /// When Some, the render path branches to `render_mdi`,
+    /// laying out Scores ribbon (top) + 3-col body (Favorites /
+    /// Workspace / Schedule) + footer/cmdbar (bottom). Per spec
+    /// forge-2: `app.screen` IS the workspace discriminator in
+    /// MDI mode — the workspace pane renders whichever screen
+    /// `app.screen` points to. Existing per-screen dispatch in
+    /// `App::handle` keeps working unchanged for input routing.
+    ///
+    /// Mutually exclusive with `locked_screen` (clap's
+    /// `conflicts_with` enforces at parse time).
+    pub mdi: Option<crate::tui::mdi::MdiLayout>,
 }
 
 /// True iff the current screen is a text-input surface where typed
@@ -380,6 +396,7 @@ impl App {
             active_type: SeasonType::Regular,
             league_context_window: (Season(icelines_core::CURRENT_SEASON), SeasonType::Regular),
             locked_screen: None,
+            mdi: None,
         }
     }
 
@@ -1252,12 +1269,16 @@ impl App {
                 // Phase Masterton.3 — when launched with --standalone,
                 // Tab is a no-op. The user gets a focused single-
                 // screen experience without cycling.
-                if self.locked_screen.is_none() {
+                //
+                // Phase Jack Adams.1 — when launched with --mdi, Tab
+                // is reserved for command-bar autocomplete (wired in
+                // Adams.2). For Adams.1 stub, Tab is a no-op in MDI.
+                if self.locked_screen.is_none() && self.mdi.is_none() {
                     self.cycle_screen();
                 }
             }
             Action::TabPrev => {
-                if self.locked_screen.is_none() {
+                if self.locked_screen.is_none() && self.mdi.is_none() {
                     self.cycle_screen_back();
                 }
             }

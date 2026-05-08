@@ -22,6 +22,29 @@ use ratatui::widgets::{Block, Borders, Clear, Paragraph};
 use ratatui::Frame;
 
 pub fn render(f: &mut Frame, app: &App) {
+    // Phase Jack Adams.1 — MDI ↔ SDI dispatch.
+    //
+    // Per spec glass-5: strict launch-time mode. `--mdi` set at
+    // launch sticks for the session — we only fall back to SDI
+    // for a frame when the terminal width is too narrow for any
+    // reasonable MDI render (<100 cols). Resize back ≥100
+    // returns to MDI rendering automatically.
+    if let Some(mdi) = &app.mdi {
+        if !crate::tui::mdi::MdiLayout::collapse_to_sdi(f.area().width) {
+            render_mdi(f, app, mdi);
+            return;
+        }
+        // Fall through to SDI for this frame; resize ≥100
+        // returns automatically.
+    }
+    render_sdi(f, app);
+}
+
+/// Phase Jack Adams.1 — single-document render path. Renamed
+/// from `render` pre-Adams.1; same behavior. Used by SDI
+/// multi-tab (today's default) and SDI standalone (Masterton.3)
+/// modes, plus the Adams.1 collapse fallback when MDI can't fit.
+fn render_sdi(f: &mut Frame, app: &App) {
     let area = f.area();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -119,6 +142,96 @@ pub fn render(f: &mut Frame, app: &App) {
     if app.show_docs {
         render_docs_overlay(f, app, area);
     }
+}
+
+/// Phase Jack Adams.1 — MDI dashboard render path. Layout:
+///
+///   ┌─ Scores ribbon (top, 1 row) ─────────────────────────┐
+///   │                                                      │
+///   ├──────────┬─────────────────────────┬─────────────────┤
+///   │ Favorites│ Workspace (swappable)   │ Schedule        │
+///   │  (left)  │   (middle)              │   (right)       │
+///   ├──────────┴─────────────────────────┴─────────────────┤
+///   │ Combined footer/cmdbar (bottom, 1 row) ──────────────│
+///   └──────────────────────────────────────────────────────┘
+///
+/// Adams.1 ships STUBS for each pane (placeholder text +
+/// border). Real renderers wire in Adams.3 — Favorites pane
+/// reuses `screens::favorites::render`, Workspace dispatches on
+/// `app.screen` to the right per-screen renderer, Schedule pane
+/// reuses `screens::schedule::render`, Scores ribbon gets a new
+/// compact renderer in `screens::misc`.
+///
+/// Pane visibility is determined by
+/// `MdiLayout::effective_panes(width)` per spec Adams.4 —
+/// adaptive auto-drop combined with manual `mdi.show_*` toggles.
+fn render_mdi(f: &mut Frame, _app: &App, mdi: &crate::tui::mdi::MdiLayout) {
+    // _app prefixed with underscore — Adams.1 stubs don't use
+    // it. Adams.3 wires real renderers that consume it.
+    let area = f.area();
+
+    // Vertical: Scores ribbon (1) + body (Min) + cmdbar (1).
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(1),
+            Constraint::Min(0),
+            Constraint::Length(1),
+        ])
+        .split(area);
+
+    // Scores ribbon — Adams.1 stub.
+    let dim = Style::default().fg(Color::DarkGray);
+    f.render_widget(
+        Paragraph::new(" MDI mode (Phase Jack Adams) — Adams.1 stub")
+            .style(dim),
+        chunks[0],
+    );
+
+    // Body 3-col split based on adaptive visibility.
+    let visible = mdi.effective_panes(area.width);
+    let mut constraints: Vec<Constraint> = Vec::new();
+    if visible.favorites {
+        constraints.push(Constraint::Length(28));
+    }
+    constraints.push(Constraint::Min(0));
+    if visible.schedule {
+        constraints.push(Constraint::Length(28));
+    }
+    let body_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(constraints)
+        .split(chunks[1]);
+
+    let mut idx = 0;
+    if visible.favorites {
+        render_mdi_pane_stub(f, body_chunks[idx], "FAVORITES");
+        idx += 1;
+    }
+    render_mdi_pane_stub(f, body_chunks[idx], "WORKSPACE");
+    idx += 1;
+    if visible.schedule {
+        render_mdi_pane_stub(f, body_chunks[idx], "SCHEDULE");
+    }
+    let _ = idx;
+
+    // Combined footer/cmdbar — Adams.1 stub: empty prompt.
+    // Adams.2 wires the chip-mode / prompt-mode / error-mode
+    // branching.
+    f.render_widget(
+        Paragraph::new(format!(" > {}_", mdi.command_input)).style(dim),
+        chunks[2],
+    );
+}
+
+/// Phase Adams.1 — placeholder renderer for each MDI pane.
+/// Replaced by real renderers in Adams.3.
+fn render_mdi_pane_stub(f: &mut Frame, area: Rect, label: &str) {
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .title(format!(" {label} (Adams.1 stub) "))
+        .border_style(Style::default().fg(Color::DarkGray));
+    f.render_widget(block, area);
 }
 
 /// LP.4 — paint the docs overlay. Centered popup, scrollable

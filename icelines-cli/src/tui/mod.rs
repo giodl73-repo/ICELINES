@@ -1,6 +1,7 @@
 pub mod app;
 pub mod chrome;
 pub mod dashboard_panel;
+pub mod mdi;
 pub mod event;
 pub mod screen;
 pub mod headshot;
@@ -38,6 +39,13 @@ pub struct RunTuiOpts {
     /// `start_screen`. Tab/Shift+Tab no-op; tab strip hidden.
     /// Sets `App::locked_screen = Some(start_screen)`.
     pub standalone: bool,
+    /// Phase Jack Adams.1 — when true, the TUI launches in MDI
+    /// dashboard mode. App gains `mdi: Some(MdiLayout::default())`
+    /// and the render path branches to `render_mdi` (Scores
+    /// ribbon + 3-col body + footer/cmdbar).
+    ///
+    /// Mutually exclusive with `standalone` (clap rejects both).
+    pub mdi: bool,
 }
 
 impl RunTuiOpts {
@@ -49,6 +57,7 @@ impl RunTuiOpts {
             no_color: false,
             start_screen: Screen::Home,
             standalone: false,
+            mdi: false,
         }
     }
 }
@@ -198,6 +207,11 @@ async fn run_loop(
     // strip is hidden.
     if opts.standalone {
         app.locked_screen = Some(opts.start_screen);
+    }
+    // Phase Jack Adams.1 — when --mdi is set, init the dashboard
+    // state so the render path branches to render_mdi.
+    if opts.mdi {
+        app.mdi = Some(crate::tui::mdi::MdiLayout::default());
     }
 
     // Synchronous boot load. ~50ms against bundled data — well below

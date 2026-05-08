@@ -99,3 +99,53 @@ fn p_masterton_003_tui_standalone_help_short_circuits_clean() {
         "tui --standalone --help must exit 0"
     );
 }
+
+// ── Phase Jack Adams.1 — `--mdi` flag smoke ───────────────────────────────
+
+#[test]
+fn p_adams_001_tui_help_documents_mdi() {
+    let h = fresh();
+    let out = run_in(h.path(), &["tui", "--help"]);
+    no_panic(&out);
+    assert!(out.status.success(), "tui --help must exit 0");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("--mdi"),
+        "tui --help must document --mdi; got:\n{stdout}"
+    );
+    // Sanity: also describes what the flag does.
+    assert!(
+        stdout.contains("MDI") || stdout.contains("dashboard"),
+        "tui --help should describe MDI/dashboard mode; got:\n{stdout}"
+    );
+}
+
+#[test]
+fn p_adams_002_tui_mdi_help_short_circuits_clean() {
+    let h = fresh();
+    // `--mdi --help` — clap's --help short-circuits before the
+    // TUI ever boots. Confirms --mdi is wired into the parser
+    // and doesn't conflict with --help.
+    let out = run_in(h.path(), &["tui", "--mdi", "--help"]);
+    no_panic(&out);
+    assert!(out.status.success(), "tui --mdi --help must exit 0");
+}
+
+#[test]
+fn p_adams_003_tui_mdi_conflicts_with_standalone() {
+    let h = fresh();
+    // Per spec wire-1: clap's `conflicts_with` rejects --mdi
+    // and --standalone together at parse time. Should exit
+    // non-zero with a helpful clap error.
+    let out = run_in(h.path(), &["tui", "--mdi", "--standalone"]);
+    no_panic(&out);
+    assert!(
+        !out.status.success(),
+        "tui --mdi --standalone must be rejected"
+    );
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("--mdi") && stderr.contains("--standalone"),
+        "clap error must name both flags; got:\n{stderr}"
+    );
+}
