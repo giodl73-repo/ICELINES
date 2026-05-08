@@ -1639,6 +1639,7 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
     // catalog parser; bio constraints are applied as a post-step.
     let (goalie_bio, goalie_stat_residue) = extract_bio_for_cli(&args.filters);
     let mut filter = PlayerFilter::new();
+    let mut goalie_new_plans: Vec<icelines_query::QueryPlan> = Vec::new();
     if !goalie_stat_residue.is_empty() {
         use icelines_core::stats_catalog::parse_filter_expr;
         for s in &goalie_stat_residue {
@@ -1648,6 +1649,45 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
             // the WHOLE expression text, so atoms inside AND/OR/NOT/
             // parens get rewritten too.
             let rewritten = goalie_filter_rewrite_expr(s);
+
+            // Wave 18 fix — try the new pipeline first on the
+            // rewritten string (so `gp>=15` becomes
+            // `goalie-games>=15` and parses through both pipelines).
+            // If parse_query succeeds, use the new pipeline; if it
+            // produces a helpful error, surface that; else fall
+            // through to the legacy parser.
+            match icelines_query::parse_query(icelines_query::FilterInput::Cli(
+                rewritten.clone(),
+            )) {
+                Ok(plan) => {
+                    goalie_new_plans.push(plan);
+                    continue;
+                }
+                Err(es) => {
+                    let prefer_new = es.iter().any(|e| {
+                        matches!(
+                            e,
+                            icelines_query::ParseError::IncompatiblePredicate { .. }
+                                | icelines_query::ParseError::EmptySet { .. }
+                                | icelines_query::ParseError::FeatureNotYet { .. }
+                                | icelines_query::ParseError::UnknownWindowUnit { .. }
+                                | icelines_query::ParseError::ZeroWindowSize { .. }
+                                | icelines_query::ParseError::WindowSizeOutOfRange { .. }
+                        )
+                    });
+                    if prefer_new {
+                        let msgs: Vec<String> = es.iter().map(|e| e.to_string()).collect();
+                        anyhow::bail!(
+                            "--filter {s:?}\n  {}\n  hint: goalies use \
+                             `goalie-games`, `goalie-starts`, `save-pct`, \
+                             `gaa`, `wins`, `losses`, `ot-losses`, `shutouts`",
+                            msgs.join("\n  ")
+                        );
+                    }
+                    // Else: fall through to legacy
+                }
+            }
+
             let expr = parse_filter_expr(&rewritten).map_err(|e| {
                 anyhow::anyhow!(
                     "--filter {s:?}\n  {e}\n  hint: goalies use `goalie-games`, `goalie-starts`, `save-pct`, `gaa`, `wins`, `losses`, `ot-losses`, `shutouts`"
@@ -1663,6 +1703,26 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
     }
     if goalie_bio.is_active() {
         views.retain(|v| goalie_bio.matches(v, season_u32));
+    }
+    // Wave 18 — apply new-pipeline goalie plans.
+    if !goalie_new_plans.is_empty() {
+        let home_dir = std::env::var_os("HOME")
+            .or_else(|| std::env::var_os("USERPROFILE"))
+            .map(std::path::PathBuf::from)
+            .ok_or_else(|| anyhow::anyhow!("cannot determine home directory"))?;
+        let data_root = home_dir.join(".icelines").join("data");
+        let provider = icelines_fetch::query_provider::IcelinesProvider::new(data_root);
+        let clock = icelines_core::freshness::SystemClock;
+        let ctx = icelines_query::EvalCtx::from_clock(
+            &provider,
+            icelines_query::StrictMode::Off,
+            false,
+            &clock,
+            season_u32,
+        );
+        for plan in &goalie_new_plans {
+            views.retain(|v| plan.root.matches(v, &ctx));
+        }
     }
 
     use std::cmp::Ordering;
