@@ -4068,4 +4068,76 @@ mod tests {
             "empty Enter must clear the active plan"
         );
     }
+
+    /// `f` while results pane is focused (Tab/Space-toggled into
+    /// it) must NOT enter FilterEdit — falls through to favorites
+    /// add. The filter overlay only opens from the field editor.
+    #[test]
+    fn l0_tui_filter_edit_f_with_results_focused_does_not_enter() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        app.query_results_focused = true;
+        app.handle(Action::AddToFavorites);
+        assert_eq!(
+            app.query_mode,
+            QueryMode::Build,
+            "results-focused 'f' must fall through (favorites flow), \
+             not enter FilterEdit"
+        );
+    }
+
+    /// Whitespace-only Enter clears any active plan (same as empty
+    /// Enter) — defensive against the user hitting Enter after
+    /// accidentally typing only spaces.
+    #[test]
+    fn l0_tui_filter_edit_whitespace_enter_clears_plan() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        app.query_filter_text = "country=CAN".to_owned();
+        app.query_mode = QueryMode::FilterEdit;
+        let _ = app.handle(Action::Enter);
+        assert!(app.query_filter_plan.is_some());
+
+        app.query_mode = QueryMode::FilterEdit;
+        app.query_filter_text = "   \t  ".to_owned();
+        app.handle(Action::Enter);
+        assert_eq!(app.query_mode, QueryMode::Build);
+        assert!(app.query_filter_plan.is_none());
+    }
+
+    /// Re-entering FilterEdit preserves the previously-typed text
+    /// (lets the user refine without retyping the whole filter).
+    /// Esc is the only way to fully clear.
+    #[test]
+    fn l0_tui_filter_edit_text_persists_across_reentry() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        app.query_mode = QueryMode::FilterEdit;
+        app.query_filter_text = "country=CAN".to_owned();
+        app.handle(Action::Enter);
+        assert_eq!(app.query_mode, QueryMode::Build);
+
+        // Re-open. Text must still be there.
+        app.handle(Action::AddToFavorites); // 'f' → FilterEdit
+        assert_eq!(app.query_mode, QueryMode::FilterEdit);
+        assert_eq!(
+            app.query_filter_text, "country=CAN",
+            "re-opening the editor must preserve last-applied text"
+        );
+    }
+
+    /// Quit (Action::Quit, ctrl-c equivalent) inside FilterEdit
+    /// returns true so the outer loop exits, mirroring the save-name
+    /// editor's behavior.
+    #[test]
+    fn l0_tui_filter_edit_quit_propagates() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        app.query_mode = QueryMode::FilterEdit;
+        let should_quit = app.handle(Action::Quit);
+        assert!(
+            should_quit,
+            "Quit inside FilterEdit must propagate (return true)"
+        );
+    }
 }

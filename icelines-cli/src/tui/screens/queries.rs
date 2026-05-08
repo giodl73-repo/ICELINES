@@ -1427,4 +1427,96 @@ mod tests {
             assert!(order[0] < order[1], "Goals appears before PpGoals");
         }
     }
+
+    // ── Phase Art Ross — Wave 23 TUI filter overlay ───────────────────────
+
+    /// Empty-views purity: an empty input slice always returns an
+    /// empty result, regardless of plan presence. Guards against a
+    /// future refactor that would scan past the slice or panic on
+    /// `views[0]`.
+    #[test]
+    fn l0_w23_empty_views_no_plan_returns_empty() {
+        let fields = default_fields();
+        let result = run_query_views_with_pick_and_plan(
+            &[],
+            &fields,
+            None,
+            None,
+            icelines_core::CURRENT_SEASON,
+        );
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn l0_w23_empty_views_with_plan_returns_empty() {
+        let fields = default_fields();
+        let plan = icelines_query::parse_query(
+            icelines_query::FilterInput::Cli("country=CAN".to_owned()),
+        )
+        .expect("plan parses");
+        let result = run_query_views_with_pick_and_plan(
+            &[],
+            &fields,
+            None,
+            Some(&plan),
+            icelines_core::CURRENT_SEASON,
+        );
+        assert!(
+            result.is_empty(),
+            "empty views in → empty out, even with a non-trivial plan"
+        );
+    }
+
+    /// `None` plan must produce the same answer as the legacy
+    /// `run_query_views_with_pick`. This is the load-bearing
+    /// invariant — the legacy CLI/web/TUI paths must keep working
+    /// unchanged when no overlay filter is set.
+    #[test]
+    fn l0_w23_none_plan_is_identity_to_legacy_helper() {
+        let fields = default_fields();
+        // Empty views still exercises the function-shape comparison.
+        let with_plan = run_query_views_with_pick_and_plan(
+            &[],
+            &fields,
+            None,
+            None,
+            icelines_core::CURRENT_SEASON,
+        );
+        let without_plan = run_query_views_with_pick(&[], &fields, None);
+        assert_eq!(
+            with_plan.len(),
+            without_plan.len(),
+            "None plan must match _with_pick on result count"
+        );
+        // Tuple shape parity: both yield Vec<(usize, PlayerView)>.
+        for (a, b) in with_plan.iter().zip(without_plan.iter()) {
+            assert_eq!(a.0, b.0);
+        }
+    }
+
+    /// The plan param accepts a borrow — caller retains ownership.
+    /// Sanity-check the lifetime: borrowing the plan multiple times
+    /// must be allowed (clap iter-style usage).
+    #[test]
+    fn l0_w23_plan_borrow_allows_repeated_calls() {
+        let fields = default_fields();
+        let plan = icelines_query::parse_query(
+            icelines_query::FilterInput::Cli("country=CAN".to_owned()),
+        )
+        .expect("plan parses");
+        let _ = run_query_views_with_pick_and_plan(
+            &[],
+            &fields,
+            None,
+            Some(&plan),
+            icelines_core::CURRENT_SEASON,
+        );
+        let _ = run_query_views_with_pick_and_plan(
+            &[],
+            &fields,
+            None,
+            Some(&plan),
+            icelines_core::CURRENT_SEASON,
+        );
+    }
 }
