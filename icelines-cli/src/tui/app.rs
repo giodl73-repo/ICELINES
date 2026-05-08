@@ -242,15 +242,11 @@ pub struct App {
     /// Scores tab on a live date yet). The polling loop sets this on every
     /// tick that fires; the renderer uses it to draw "Updated Xs ago".
     pub last_auto_refresh: Option<std::time::Instant>,
-    // Schedule tab — weekly view, search, team / matchup sub-views
-    pub schedule_week_cache: crate::tui::schedule::WeekCache,
-    pub schedule_team_cache: crate::tui::schedule::TeamSeasonCache,
-    pub schedule_week: String, // Monday "YYYY-MM-DD" of the week being viewed
-    pub schedule_query: String, // current text in the search bar
-    pub schedule_search_mode: bool, // true while the search bar is open
-    pub schedule_filter: crate::tui::schedule::SearchFilter, // applied filter
-    pub schedule_filter_err: Option<String>, // search validation error
-    pub schedule_selected: usize, // selected row on schedule
+    /// Phase Norris.2 — Schedule-tab state extracted into its own
+    /// struct. Replaces the 8 `schedule_*` fields scattered across
+    /// App pre-Norris (week_cache, team_cache, week, query,
+    /// search_mode, filter, filter_err, selected).
+    pub schedule: crate::tui::screens::schedule::ScheduleScreenState,
     // Playoffs tab — bracket + series detail
     pub playoffs_cache: crate::tui::playoffs::PlayoffsCache,
     pub playoffs_round: usize,  // round index (0-based)
@@ -316,7 +312,7 @@ pub struct App {
 /// inlining the matches!() chain trips `clippy::blocks_in_conditions`.
 fn is_text_input_active(app: &App) -> bool {
     matches!(app.screen, Screen::Search | Screen::Tonight)
-        || (app.screen == Screen::Schedule && app.schedule_search_mode)
+        || (app.screen == Screen::Schedule && app.schedule.search_mode)
         || (app.screen == Screen::Queries
             && matches!(app.queries.mode, QueryMode::SaveName | QueryMode::FilterEdit))
 }
@@ -363,15 +359,8 @@ impl App {
             picker_target: PickerTarget::default(),
             active_timeframe: icelines_core::timeframe::Timeframe::Day,
             last_auto_refresh: None,
-            schedule_week_cache: crate::tui::schedule::new_week_cache(),
-            schedule_team_cache: crate::tui::schedule::new_team_cache(),
-            schedule_week: crate::tui::schedule::monday_of(&crate::tui::schedule::today_iso())
-                .unwrap_or_else(crate::tui::schedule::today_iso),
-            schedule_query: String::new(),
-            schedule_search_mode: false,
-            schedule_filter: crate::tui::schedule::SearchFilter::None,
-            schedule_filter_err: None,
-            schedule_selected: 0,
+            // Phase Norris.2 — replaces 8 schedule_* init lines.
+            schedule: crate::tui::screens::schedule::ScheduleScreenState::default(),
             playoffs_cache: crate::tui::playoffs::new_cache(),
             playoffs_round: 0,
             playoffs_series: 0,
@@ -503,7 +492,7 @@ impl App {
         }
 
         // Schedule search bar consumes all character-bearing actions while open.
-        if self.screen == Screen::Schedule && self.schedule_search_mode {
+        if self.screen == Screen::Schedule && self.schedule.search_mode {
             return self.handle_schedule_search(action);
         }
 
@@ -571,7 +560,7 @@ impl App {
                     self.screen,
                     Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(_, _)
                 ) {
-                    self.schedule_selected = self.schedule_selected.saturating_add(1);
+                    self.schedule.selected = self.schedule.selected.saturating_add(1);
                 } else if self.screen == Screen::Goalies {
                     self.goalie_selected = self.goalie_selected.saturating_add(1);
                 } else if self.screen == Screen::Transactions {
@@ -678,7 +667,7 @@ impl App {
                     self.screen,
                     Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(_, _)
                 ) {
-                    self.schedule_selected = self.schedule_selected.saturating_sub(1);
+                    self.schedule.selected = self.schedule.selected.saturating_sub(1);
                 } else if self.screen == Screen::Goalies {
                     self.goalie_selected = self.goalie_selected.saturating_sub(1);
                 } else if self.screen == Screen::Transactions {
@@ -806,12 +795,12 @@ impl App {
                             -7
                         };
                         if let Some(new_week) =
-                            crate::tui::schedule::add_days(&self.schedule_week, delta)
+                            crate::tui::schedule::add_days(&self.schedule.week, delta)
                         {
-                            self.schedule_week = new_week.clone();
-                            self.schedule_selected = 0;
+                            self.schedule.week = new_week.clone();
+                            self.schedule.selected = 0;
                             crate::tui::schedule::maybe_fetch_week(
-                                self.schedule_week_cache.clone(),
+                                self.schedule.week_cache.clone(),
                                 new_week.clone(),
                             );
                             self.status =
@@ -853,9 +842,9 @@ impl App {
                 // On Schedule, '/' opens the in-tab search bar instead of the
                 // global player Search screen.
                 if self.screen == Screen::Schedule {
-                    self.schedule_search_mode = true;
-                    self.schedule_query.clear();
-                    self.schedule_filter_err = None;
+                    self.schedule.search_mode = true;
+                    self.schedule.query.clear();
+                    self.schedule.filter_err = None;
                     self.status =
                         "Search: type team (SEA) or matchup (NYR WSH) — Enter, Esc cancel"
                             .to_owned();
@@ -1007,10 +996,10 @@ impl App {
                     // Jump to today's week
                     let today = crate::tui::schedule::today_iso();
                     if let Some(monday) = crate::tui::schedule::monday_of(&today) {
-                        self.schedule_week = monday.clone();
-                        self.schedule_selected = 0;
+                        self.schedule.week = monday.clone();
+                        self.schedule.selected = 0;
                         crate::tui::schedule::maybe_fetch_week(
-                            self.schedule_week_cache.clone(),
+                            self.schedule.week_cache.clone(),
                             monday.clone(),
                         );
                         self.status = format!(
@@ -1216,12 +1205,12 @@ impl App {
                     self.status = "Refreshing scores…".to_owned();
                 } else if self.screen == Screen::Schedule {
                     crate::tui::schedule::force_fetch_week(
-                        self.schedule_week_cache.clone(),
-                        self.schedule_week.clone(),
+                        self.schedule.week_cache.clone(),
+                        self.schedule.week.clone(),
                     );
                     self.status = format!(
                         "Retrying {}…",
-                        crate::tui::schedule::week_label(&self.schedule_week)
+                        crate::tui::schedule::week_label(&self.schedule.week)
                     );
                 } else if matches!(self.screen, Screen::Playoffs | Screen::SeriesDetail(_)) {
                     if let Some(year) =
@@ -1321,7 +1310,7 @@ impl App {
                     self.queries.result_scroll = 0;
                     self.queries.results_focused = false;
                     self.group_picker_open = false;
-                    self.schedule_selected = 0;
+                    self.schedule.selected = 0;
                     self.maybe_fetch_scores();
                     self.maybe_fetch_schedule();
                     self.maybe_fetch_playoffs();
@@ -1426,9 +1415,9 @@ impl App {
                 PickerTarget::Schedule => {
                     let today = crate::tui::schedule::today_iso();
                     if let Some(monday) = crate::tui::schedule::monday_of(&today) {
-                        self.schedule_week = monday.clone();
+                        self.schedule.week = monday.clone();
                         crate::tui::schedule::maybe_fetch_week(
-                            self.schedule_week_cache.clone(),
+                            self.schedule.week_cache.clone(),
                             monday,
                         );
                     }
@@ -1457,9 +1446,9 @@ impl App {
                     }
                     PickerTarget::Schedule => {
                         if let Some(monday) = crate::tui::schedule::monday_of(&iso) {
-                            self.schedule_week = monday.clone();
+                            self.schedule.week = monday.clone();
                             crate::tui::schedule::maybe_fetch_week(
-                                self.schedule_week_cache.clone(),
+                                self.schedule.week_cache.clone(),
                                 monday.clone(),
                             );
                             self.status = format!(
@@ -1557,13 +1546,13 @@ impl App {
         match &self.screen {
             Screen::Schedule => {
                 crate::tui::schedule::prefetch_around(
-                    self.schedule_week_cache.clone(),
-                    &self.schedule_week,
+                    self.schedule.week_cache.clone(),
+                    &self.schedule.week,
                 );
             }
             Screen::ScheduleTeam(team) => {
                 crate::tui::schedule::maybe_fetch_team(
-                    self.schedule_team_cache.clone(),
+                    self.schedule.team_cache.clone(),
                     team.clone(),
                     self.active_season.clone(),
                 );
@@ -1571,7 +1560,7 @@ impl App {
             Screen::ScheduleMatchup(t1, _t2) => {
                 // Matchup view derives from one team's full season schedule
                 crate::tui::schedule::maybe_fetch_team(
-                    self.schedule_team_cache.clone(),
+                    self.schedule.team_cache.clone(),
                     t1.clone(),
                     self.active_season.clone(),
                 );
@@ -1582,13 +1571,13 @@ impl App {
 
     /// Apply current `schedule_query` text — validate teams, set filter, exit search mode.
     fn apply_schedule_query(&mut self) {
-        match crate::tui::schedule::parse_search(&self.schedule_query) {
+        match crate::tui::schedule::parse_search(&self.schedule.query) {
             Ok(filter) => {
-                self.schedule_filter = filter;
-                self.schedule_filter_err = None;
-                self.schedule_search_mode = false;
-                self.schedule_selected = 0;
-                self.status = match &self.schedule_filter {
+                self.schedule.filter = filter;
+                self.schedule.filter_err = None;
+                self.schedule.search_mode = false;
+                self.schedule.selected = 0;
+                self.status = match &self.schedule.filter {
                     crate::tui::schedule::SearchFilter::None => "Filter cleared.".to_owned(),
                     crate::tui::schedule::SearchFilter::Team(t) => {
                         format!("Filter: {t} — Enter to view full schedule")
@@ -1600,7 +1589,7 @@ impl App {
             }
             Err(msg) => {
                 // Keep search mode open so the user can correct the input
-                self.schedule_filter_err = Some(msg.clone());
+                self.schedule.filter_err = Some(msg.clone());
                 self.status = format!("⚠ {msg}");
             }
         }
@@ -1612,28 +1601,28 @@ impl App {
             Action::Quit => return true,
             Action::Back | Action::Escape => {
                 // Cancel — exit search mode, clear pending input + error
-                self.schedule_search_mode = false;
-                self.schedule_query.clear();
-                self.schedule_filter_err = None;
+                self.schedule.search_mode = false;
+                self.schedule.query.clear();
+                self.schedule.filter_err = None;
                 self.status = "Search cancelled.".to_owned();
             }
             Action::Enter => self.apply_schedule_query(),
             Action::Backspace => {
-                self.schedule_query.pop();
-                self.schedule_filter_err = None;
+                self.schedule.query.pop();
+                self.schedule.filter_err = None;
             }
-            Action::Char(c) => self.schedule_query.push(c),
-            Action::Space => self.schedule_query.push(' '),
+            Action::Char(c) => self.schedule.query.push(c),
+            Action::Space => self.schedule.query.push(' '),
             // While in search mode, hotkeys are treated as text input so
             // queries like "nyr" can be typed without firing Refresh/Install/etc.
-            Action::Refresh => self.schedule_query.push('r'),
-            Action::Install => self.schedule_query.push('i'),
-            Action::AddToGroup => self.schedule_query.push('g'),
-            Action::AddToFavorites => self.schedule_query.push('f'),
+            Action::Refresh => self.schedule.query.push('r'),
+            Action::Install => self.schedule.query.push('i'),
+            Action::AddToGroup => self.schedule.query.push('g'),
+            Action::AddToFavorites => self.schedule.query.push('f'),
             Action::GoToTab(n) => {
                 // Map digit-tabs back to their numeric character
                 let ch = char::from_digit((n + 1) as u32, 10).unwrap_or('?');
-                self.schedule_query.push(ch);
+                self.schedule.query.push(ch);
             }
             // '/' while already in search mode — ignore (don't reopen, don't insert)
             Action::Search => {}
@@ -2621,7 +2610,7 @@ impl App {
             // Schedule: Enter opens the team or matchup detail view if a filter is active.
             // With no filter, Enter is a no-op (the row-level player card has no analogue here).
             Screen::Schedule => {
-                let next = match &self.schedule_filter {
+                let next = match &self.schedule.filter {
                     crate::tui::schedule::SearchFilter::Team(t) => {
                         Some(Screen::ScheduleTeam(t.clone()))
                     }
@@ -2633,7 +2622,7 @@ impl App {
                 if let Some(target) = next {
                     self.prev_screen = Some(Screen::Schedule);
                     self.screen = target;
-                    self.schedule_selected = 0;
+                    self.schedule.selected = 0;
                     self.maybe_fetch_schedule();
                 }
             }
@@ -2705,7 +2694,7 @@ impl App {
         };
         self.screen = next;
         self.selected = 0;
-        self.schedule_selected = 0;
+        self.schedule.selected = 0;
         self.queries.result_scroll = 0;
         self.maybe_fetch_scores();
         self.maybe_fetch_schedule();
@@ -2733,7 +2722,7 @@ impl App {
         };
         self.screen = prev;
         self.selected = 0;
-        self.schedule_selected = 0;
+        self.schedule.selected = 0;
         self.queries.result_scroll = 0;
         self.maybe_fetch_scores();
         self.maybe_fetch_schedule();
@@ -3046,13 +3035,13 @@ mod tests {
         let mut app = App::new(false);
         app.screen = Screen::Schedule;
         app.handle(Action::Search);
-        assert!(app.schedule_search_mode, "search mode should be open");
+        assert!(app.schedule.search_mode, "search mode should be open");
         assert_eq!(
             app.screen,
             Screen::Schedule,
             "stays on Schedule, not the global Search screen"
         );
-        assert!(app.schedule_query.is_empty());
+        assert!(app.schedule.query.is_empty());
     }
 
     #[test]
@@ -3064,8 +3053,8 @@ mod tests {
             app.handle(Action::Char(c));
         }
         app.handle(Action::Enter);
-        assert!(!app.schedule_search_mode);
-        assert_eq!(app.schedule_filter, SearchFilter::Team("SEA".to_owned()));
+        assert!(!app.schedule.search_mode);
+        assert_eq!(app.schedule.filter, SearchFilter::Team("SEA".to_owned()));
     }
 
     #[test]
@@ -3082,7 +3071,7 @@ mod tests {
         }
         app.handle(Action::Enter);
         assert_eq!(
-            app.schedule_filter,
+            app.schedule.filter,
             SearchFilter::Matchup("NYR".to_owned(), "WSH".to_owned()),
         );
     }
@@ -3097,26 +3086,27 @@ mod tests {
         }
         app.handle(Action::Enter);
         // Search bar stays open on validation failure so user can correct
-        assert!(app.schedule_search_mode);
+        assert!(app.schedule.search_mode);
         assert!(app
-            .schedule_filter_err
+            .schedule
+            .filter_err
             .as_deref()
             .unwrap_or("")
             .contains("Unknown team"));
         // Filter unchanged from default
-        assert_eq!(app.schedule_filter, SearchFilter::None);
+        assert_eq!(app.schedule.filter, SearchFilter::None);
     }
 
     #[test]
     fn l0_tui_schedule_left_right_changes_week() {
         let mut app = App::new(false);
         app.screen = Screen::Schedule;
-        let initial = app.schedule_week.clone();
+        let initial = app.schedule.week.clone();
         app.handle(Action::Right);
-        let after_right = app.schedule_week.clone();
+        let after_right = app.schedule.week.clone();
         assert_ne!(initial, after_right, "week should advance");
         app.handle(Action::Left);
-        assert_eq!(app.schedule_week, initial, "left should restore");
+        assert_eq!(app.schedule.week, initial, "left should restore");
     }
 
     #[test]
@@ -3129,14 +3119,14 @@ mod tests {
         app.handle(Action::Char('N'));
         app.handle(Action::Char('Y'));
         app.handle(Action::Refresh); // mapped from lowercase 'r'
-        assert_eq!(app.schedule_query, "NYr");
+        assert_eq!(app.schedule.query, "NYr");
     }
 
     #[test]
     fn l0_tui_schedule_team_filter_enter_opens_team_view() {
         let mut app = App::new(false);
         app.screen = Screen::Schedule;
-        app.schedule_filter = SearchFilter::Team("SEA".to_owned());
+        app.schedule.filter = SearchFilter::Team("SEA".to_owned());
         app.handle(Action::Enter);
         assert_eq!(app.screen, Screen::ScheduleTeam("SEA".to_owned()));
     }
@@ -3145,7 +3135,7 @@ mod tests {
     fn l0_tui_schedule_matchup_filter_enter_opens_matchup_view() {
         let mut app = App::new(false);
         app.screen = Screen::Schedule;
-        app.schedule_filter = SearchFilter::Matchup("NYR".to_owned(), "WSH".to_owned());
+        app.schedule.filter = SearchFilter::Matchup("NYR".to_owned(), "WSH".to_owned());
         app.handle(Action::Enter);
         assert_eq!(
             app.screen,
@@ -3160,8 +3150,8 @@ mod tests {
         app.handle(Action::Search);
         app.handle(Action::Char('S'));
         app.handle(Action::Escape);
-        assert!(!app.schedule_search_mode);
-        assert!(app.schedule_query.is_empty());
+        assert!(!app.schedule.search_mode);
+        assert!(app.schedule.query.is_empty());
     }
 
     #[test]
@@ -3173,9 +3163,9 @@ mod tests {
             crate::tui::schedule::monday_of(&crate::tui::schedule::today_iso()).unwrap();
         app.handle(Action::Right);
         app.handle(Action::Right);
-        assert_ne!(app.schedule_week, today_monday);
+        assert_ne!(app.schedule.week, today_monday);
         app.handle(Action::Char('t'));
-        assert_eq!(app.schedule_week, today_monday);
+        assert_eq!(app.schedule.week, today_monday);
     }
 
     #[test]

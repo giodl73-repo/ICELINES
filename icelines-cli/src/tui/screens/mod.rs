@@ -1242,25 +1242,25 @@ mod app_snapshot_tests {
 
         // '/' opens search mode.
         app.handle(Action::Search);
-        assert!(app.schedule_search_mode, "/ must enter search mode");
-        assert!(app.schedule_query.is_empty());
+        assert!(app.schedule.search_mode, "/ must enter search mode");
+        assert!(app.schedule.query.is_empty());
 
         // Type "SEA"
         app.handle(Action::Char('s'));
         app.handle(Action::Char('e'));
         app.handle(Action::Char('a'));
-        assert_eq!(app.schedule_query, "sea");
+        assert_eq!(app.schedule.query, "sea");
 
         // Apply.
         app.handle(Action::Enter);
-        assert!(!app.schedule_search_mode, "Enter must exit search mode");
+        assert!(!app.schedule.search_mode, "Enter must exit search mode");
         assert!(
             matches!(
-                app.schedule_filter,
+                app.schedule.filter,
                 crate::tui::schedule::SearchFilter::Team(_)
             ),
             "Enter on 'sea' must produce a Team filter, got {:?}",
-            app.schedule_filter
+            app.schedule.filter
         );
     }
 
@@ -1282,7 +1282,7 @@ mod app_snapshot_tests {
         app.handle(Action::Enter);
         assert!(
             matches!(
-                app.schedule_filter,
+                app.schedule.filter,
                 crate::tui::schedule::SearchFilter::Matchup(_, _)
             ),
             "Enter on 'nyr wsh' must produce a Matchup filter"
@@ -1300,9 +1300,9 @@ mod app_snapshot_tests {
         for c in "edmm".chars() {
             app.handle(Action::Char(c));
         }
-        assert_eq!(app.schedule_query, "edmm");
+        assert_eq!(app.schedule.query, "edmm");
         app.handle(Action::Backspace);
-        assert_eq!(app.schedule_query, "edm");
+        assert_eq!(app.schedule.query, "edm");
     }
 
     /// Schedule search: invalid query (unknown team) sets the validation
@@ -1319,11 +1319,11 @@ mod app_snapshot_tests {
         }
         app.handle(Action::Enter);
         assert!(
-            app.schedule_search_mode,
+            app.schedule.search_mode,
             "Invalid team must keep search mode open so user can correct"
         );
         assert!(
-            app.schedule_filter_err.is_some(),
+            app.schedule.filter_err.is_some(),
             "Invalid team must populate schedule_filter_err"
         );
     }
@@ -1337,10 +1337,10 @@ mod app_snapshot_tests {
         app.handle(Action::GoToTab(5));
         app.handle(Action::Search);
         app.handle(Action::Char('s'));
-        assert_eq!(app.schedule_query, "s");
+        assert_eq!(app.schedule.query, "s");
         app.handle(Action::Escape);
-        assert!(!app.schedule_search_mode, "Esc must exit search mode");
-        assert!(app.schedule_query.is_empty(), "Esc must clear query");
+        assert!(!app.schedule.search_mode, "Esc must exit search mode");
+        assert!(app.schedule.query.is_empty(), "Esc must clear query");
     }
 
     // ── Transactions search input flow ──────────────────────────────────────

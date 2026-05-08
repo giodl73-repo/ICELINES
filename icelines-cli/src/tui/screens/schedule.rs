@@ -1,5 +1,12 @@
 //! Schedule tab renderer — week view, team-season view, head-to-head matchup view.
 
+// Phase Norris.2 — `ScheduleScreenState` repeats the module name
+// in the type identifier. Same canonical pattern as Norris.1's
+// QueriesState — file-level allow keeps the lint quiet without
+// renaming each per-screen struct to `State` (which would lose
+// cross-module readability when imported into app.rs).
+#![allow(clippy::module_name_repetitions)]
+
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -9,8 +16,59 @@ use ratatui::{
 };
 
 use crate::tui::app::App;
-use crate::tui::schedule::{week_label, ScheduleState, SearchFilter};
+use crate::tui::schedule::{
+    new_team_cache, new_week_cache, today_iso, week_label, monday_of, ScheduleState, SearchFilter,
+    TeamSeasonCache, WeekCache,
+};
 use icelines_fetch::nhl_api::ScheduledGame;
+
+// ── Phase Norris.2 — per-screen state struct ─────────────────────────────────
+
+/// Phase Norris.2 — owns every piece of state that belongs to the
+/// Schedule tab. Replaces the 8 `schedule_*` fields previously
+/// scattered across `App`. App now holds this as `app.schedule`.
+///
+/// **Naming asymmetry with Norris.1**: Norris.1 used the simpler
+/// name `QueriesState`. Here we use `ScheduleScreenState` because
+/// `tui::schedule::ScheduleState` already exists as a per-week
+/// load-state enum (Idle / Loading / Loaded / Error). Renaming
+/// that enum would be a wider churn for a cosmetic gain, so we
+/// suffix the new struct with `Screen` to disambiguate.
+#[derive(Debug)]
+pub struct ScheduleScreenState {
+    // Week + team caches (shared between renderer threads)
+    pub week_cache: WeekCache,
+    pub team_cache: TeamSeasonCache,
+
+    // Currently-viewed week (Monday "YYYY-MM-DD")
+    pub week: String,
+
+    // Search bar
+    pub query: String,
+    pub search_mode: bool,
+    pub filter: SearchFilter,
+    pub filter_err: Option<String>,
+
+    // Cursor on the schedule rows
+    pub selected: usize,
+}
+
+impl Default for ScheduleScreenState {
+    fn default() -> Self {
+        Self {
+            week_cache: new_week_cache(),
+            team_cache: new_team_cache(),
+            // Monday of today; falls back to today's ISO if Monday
+            // resolution fails (mirrors the legacy App::new init).
+            week: monday_of(&today_iso()).unwrap_or_else(today_iso),
+            query: String::new(),
+            search_mode: false,
+            filter: SearchFilter::None,
+            filter_err: None,
+            selected: 0,
+        }
+    }
+}
 
 // ── Default week view ─────────────────────────────────────────────────────────
 
@@ -22,8 +80,8 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
     // (search and date-jump aren't both active at once).
     let picker_active = app.scores_picker_open
         && matches!(app.picker_target, crate::tui::app::PickerTarget::Schedule);
-    let bottom_h: u16 = if app.schedule_search_mode
-        || app.schedule_filter_err.is_some()
+    let bottom_h: u16 = if app.schedule.search_mode
+        || app.schedule.filter_err.is_some()
         || picker_active
     {
         3
@@ -47,8 +105,8 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
 }
 
 fn render_week_block(f: &mut Frame, app: &App, area: Rect) {
-    let label = week_label(&app.schedule_week);
-    let title = match &app.schedule_filter {
+    let label = week_label(&app.schedule.week);
+    let title = match &app.schedule.filter {
         SearchFilter::None => {
             format!(" Schedule · Week of {label}  ·  /:search  ←→:week  t:today ")
         }
@@ -65,8 +123,8 @@ fn render_week_block(f: &mut Frame, app: &App, area: Rect) {
 
     // Look up cache state for this week
     let state = {
-        let map = app.schedule_week_cache.lock().unwrap();
-        map.get(&app.schedule_week)
+        let map = app.schedule.week_cache.lock().unwrap();
+        map.get(&app.schedule.week)
             .cloned()
             .unwrap_or(ScheduleState::Idle)
     };
@@ -107,7 +165,7 @@ fn render_week_block(f: &mut Frame, app: &App, area: Rect) {
         ScheduleState::Loaded(games) => {
             let filtered: Vec<&ScheduledGame> = games
                 .iter()
-                .filter(|g| app.schedule_filter.matches(g))
+                .filter(|g| app.schedule.filter.matches(g))
                 .collect();
             render_games_grouped(f, app, inner, &filtered);
         }
@@ -117,7 +175,7 @@ fn render_week_block(f: &mut Frame, app: &App, area: Rect) {
 fn render_games_grouped(f: &mut Frame, app: &App, area: Rect, games: &[&ScheduledGame]) {
     if games.is_empty() {
         let dim = Style::default().fg(Color::DarkGray);
-        let msg = match &app.schedule_filter {
+        let msg = match &app.schedule.filter {
             SearchFilter::None => "  No games scheduled this week.",
             SearchFilter::Team(_) => "  No games match this team filter for this week.",
             SearchFilter::Matchup(..) => "  No games match this matchup for this week.",
@@ -138,7 +196,7 @@ fn render_games_grouped(f: &mut Frame, app: &App, area: Rect, games: &[&Schedule
     let mut items: Vec<ListItem> = Vec::new();
     let mut current_date = String::new();
     let max_idx = games.len().saturating_sub(1);
-    let selected_idx = app.schedule_selected.min(max_idx);
+    let selected_idx = app.schedule.selected.min(max_idx);
 
     for (row_idx, g) in games.iter().enumerate() {
         if g.date != current_date {
@@ -224,11 +282,11 @@ fn render_search_bar(f: &mut Frame, app: &App, area: Rect) {
     let inner = block.inner(area);
     f.render_widget(block, area);
 
-    let cursor = if app.schedule_search_mode { "█" } else { "" };
-    let prompt = if let Some(err) = &app.schedule_filter_err {
+    let cursor = if app.schedule.search_mode { "█" } else { "" };
+    let prompt = if let Some(err) = &app.schedule.filter_err {
         Line::styled(format!("  ⚠ {err}"), Style::default().fg(Color::Red))
-    } else if app.schedule_search_mode {
-        Line::from(format!("  / {}{}", app.schedule_query, cursor))
+    } else if app.schedule.search_mode {
+        Line::from(format!("  / {}{}", app.schedule.query, cursor))
     } else {
         Line::styled(
             "  Press / to filter by team (SEA) or matchup (NYR WSH)",
@@ -247,7 +305,7 @@ pub fn render_team_schedule(f: &mut Frame, app: &App, area: Rect, team: &str) {
     f.render_widget(block, area);
 
     let state = {
-        let map = app.schedule_team_cache.lock().unwrap();
+        let map = app.schedule.team_cache.lock().unwrap();
         // Hart.5c.6 Phase C — D5 widened key.
         map.get(&(team.to_owned(), app.active_season.clone()))
             .cloned()
@@ -316,7 +374,7 @@ fn render_team_schedule_loaded(
 
     let max_idx = games.len().saturating_sub(1);
     let visible = (area.height as usize).saturating_sub(4);
-    let selected_idx = app.schedule_selected.min(max_idx);
+    let selected_idx = app.schedule.selected.min(max_idx);
     let offset = selected_idx
         .saturating_sub(visible / 2)
         .min(games.len().saturating_sub(visible));
@@ -395,7 +453,7 @@ pub fn render_matchup(f: &mut Frame, app: &App, area: Rect, t1: &str, t2: &str) 
     f.render_widget(block, area);
 
     let state = {
-        let map = app.schedule_team_cache.lock().unwrap();
+        let map = app.schedule.team_cache.lock().unwrap();
         // Hart.5c.6 Phase C — D5 widened key.
         map.get(&(t1.to_owned(), app.active_season.clone()))
             .cloned()
@@ -710,10 +768,10 @@ mod tests {
                 Some(("Game 5", 2, 2)),
             ),
         ];
-        app.schedule_week_cache
+        app.schedule.week_cache
             .lock()
             .unwrap()
-            .insert(app.schedule_week.clone(), ScheduleState::Loaded(games));
+            .insert(app.schedule.week.clone(), ScheduleState::Loaded(games));
 
         let text = render_to_text(&app);
         // Team abbrevs from both games must appear
@@ -731,7 +789,7 @@ mod tests {
     fn l0_render_schedule_with_team_filter_shows_filter_label() {
         let mut app = App::new(false);
         app.screen = crate::tui::app::Screen::Schedule;
-        app.schedule_filter = SearchFilter::Team("SEA".to_owned());
+        app.schedule.filter = SearchFilter::Team("SEA".to_owned());
         let games = vec![
             fixture_game(
                 "SEA",
@@ -754,10 +812,10 @@ mod tests {
                 None,
             ),
         ];
-        app.schedule_week_cache
+        app.schedule.week_cache
             .lock()
             .unwrap()
-            .insert(app.schedule_week.clone(), ScheduleState::Loaded(games));
+            .insert(app.schedule.week.clone(), ScheduleState::Loaded(games));
 
         let text = render_to_text(&app);
         // Title bar advertises the filter
@@ -775,8 +833,8 @@ mod tests {
     fn l0_render_schedule_search_bar_visible_when_active() {
         let mut app = App::new(false);
         app.screen = crate::tui::app::Screen::Schedule;
-        app.schedule_search_mode = true;
-        app.schedule_query = "NY".to_owned();
+        app.schedule.search_mode = true;
+        app.schedule.query = "NY".to_owned();
         // Don't seed the cache — we only care about the search bar
         let text = render_to_text(&app);
         // The search prompt prefix
@@ -790,7 +848,7 @@ mod tests {
     fn l0_render_schedule_search_bar_shows_validation_error() {
         let mut app = App::new(false);
         app.screen = crate::tui::app::Screen::Schedule;
-        app.schedule_filter_err = Some("Unknown team: 'XYZ'".to_owned());
+        app.schedule.filter_err = Some("Unknown team: 'XYZ'".to_owned());
         let text = render_to_text(&app);
         assert!(
             text.contains("Unknown team"),
@@ -802,10 +860,10 @@ mod tests {
     fn l0_render_schedule_loaded_empty_shows_no_games_message() {
         let mut app = App::new(false);
         app.screen = crate::tui::app::Screen::Schedule;
-        app.schedule_week_cache
+        app.schedule.week_cache
             .lock()
             .unwrap()
-            .insert(app.schedule_week.clone(), ScheduleState::Loaded(Vec::new()));
+            .insert(app.schedule.week.clone(), ScheduleState::Loaded(Vec::new()));
         let text = render_to_text(&app);
         assert!(
             text.contains("No games"),
@@ -817,8 +875,8 @@ mod tests {
     fn l0_render_schedule_error_state_shows_retry_hint() {
         let mut app = App::new(false);
         app.screen = crate::tui::app::Screen::Schedule;
-        app.schedule_week_cache.lock().unwrap().insert(
-            app.schedule_week.clone(),
+        app.schedule.week_cache.lock().unwrap().insert(
+            app.schedule.week.clone(),
             ScheduleState::Error("network down".to_owned()),
         );
         let text = render_to_text(&app);
@@ -885,7 +943,7 @@ mod tests {
                 None,
             ),
         ];
-        app.schedule_team_cache.lock().unwrap().insert(
+        app.schedule.team_cache.lock().unwrap().insert(
             ("SEA".to_owned(), app.active_season.clone()),
             ScheduleState::Loaded(games),
         );
@@ -977,7 +1035,7 @@ mod tests {
                 None,
             ),
         ];
-        app.schedule_team_cache.lock().unwrap().insert(
+        app.schedule.team_cache.lock().unwrap().insert(
             ("NYR".to_owned(), app.active_season.clone()),
             ScheduleState::Loaded(games),
         );
@@ -1025,7 +1083,7 @@ mod tests {
             false,
             None,
         )];
-        app.schedule_team_cache.lock().unwrap().insert(
+        app.schedule.team_cache.lock().unwrap().insert(
             ("NYR".to_owned(), app.active_season.clone()),
             ScheduleState::Loaded(games),
         );
