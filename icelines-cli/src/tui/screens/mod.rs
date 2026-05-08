@@ -1965,6 +1965,120 @@ mod app_snapshot_tests {
         });
     }
 
+    // ── Phase Art Ross — Wave 24 filter-preset DB round-trip ──────────────
+
+    /// End-to-end DB persistence: enter Queries, type a free-form
+    /// filter (`f` overlay), apply it, save the preset, re-load it,
+    /// and verify both halves (structured fields + filter text +
+    /// re-parsed plan) come back exactly.
+    #[test]
+    fn l1_w24_filter_preset_full_round_trip_through_db() {
+        with_temp_home(|_home| {
+            let (_snap, store) = empty_store_in_tempdir();
+            let mut app = App::new(true);
+            app.boot_load_with_store(&store);
+            app.handle(Action::GoToTab(2));
+            assert_eq!(app.screen, crate::tui::app::Screen::Queries);
+
+            // Open the filter overlay (`f`), type a filter, apply.
+            app.handle(Action::AddToFavorites); // 'f' → FilterEdit
+            for c in "country=CAN".chars() {
+                if c == ' ' {
+                    app.handle(Action::Space);
+                } else {
+                    app.handle(Action::Char(c));
+                }
+            }
+            app.handle(Action::Enter);
+            assert_eq!(app.query_mode, crate::tui::app::QueryMode::Build);
+            assert!(app.query_filter_plan.is_some(), "filter must be applied");
+
+            // Now save the preset.
+            app.handle(Action::Char('s'));
+            for c in "canadians".chars() {
+                app.handle(Action::Char(c));
+            }
+            app.handle(Action::Enter);
+            assert_eq!(app.query_mode, crate::tui::app::QueryMode::Build);
+
+            // Sanity: row landed in DB and the JSON is the v2 envelope.
+            let db = crate::db::GroupDb::open().expect("open DB");
+            let saved = db.list_saved_queries().expect("list");
+            let row = saved.iter().find(|(n, _)| n == "canadians");
+            let (_, json) = row.expect("preset saved");
+            assert!(
+                json.contains("\"filter_text\""),
+                "saved JSON must carry the v2 filter_text envelope; got: {json}"
+            );
+            assert!(
+                json.contains("country=CAN"),
+                "saved JSON must include the typed filter verbatim"
+            );
+
+            // Wipe runtime filter state so we can prove the load
+            // restores it (not just leftover state).
+            app.query_filter_text.clear();
+            app.query_filter_plan = None;
+
+            // Open LoadList and Enter on the preset.
+            app.query_saved_list = saved;
+            app.query_mode = crate::tui::app::QueryMode::LoadList;
+            // Position selector on the canadians row.
+            let idx = app
+                .query_saved_list
+                .iter()
+                .position(|(n, _)| n == "canadians")
+                .expect("preset listed");
+            app.selected = idx;
+            app.handle(Action::Enter);
+
+            assert_eq!(app.query_mode, crate::tui::app::QueryMode::Build);
+            assert_eq!(
+                app.query_filter_text, "country=CAN",
+                "load must restore the filter text"
+            );
+            assert!(
+                app.query_filter_plan.is_some(),
+                "load must re-install the active plan"
+            );
+        });
+    }
+
+    /// Older v1 (legacy array) saved queries continue to load even
+    /// after the schema bump to v2. Insert a hand-built v1 row and
+    /// drive the LoadList Enter flow.
+    #[test]
+    fn l1_w24_v1_legacy_saved_query_still_loads() {
+        with_temp_home(|_home| {
+            let (_snap, store) = empty_store_in_tempdir();
+            let mut app = App::new(true);
+            app.boot_load_with_store(&store);
+            app.handle(Action::GoToTab(2));
+
+            // Inject a v1 row directly via the DB API.
+            let v1_json =
+                r#"[{"label":"Sort by","selected":2},{"label":"Position","selected":1}]"#;
+            let db = crate::db::GroupDb::open().expect("open DB");
+            db.save_query("legacy-preset", v1_json).expect("save v1");
+
+            // Drive LoadList path.
+            let saved = db.list_saved_queries().expect("list");
+            app.query_saved_list = saved;
+            app.query_mode = crate::tui::app::QueryMode::LoadList;
+            app.selected = 0;
+            app.handle(Action::Enter);
+
+            assert_eq!(app.query_mode, crate::tui::app::QueryMode::Build);
+            assert_eq!(
+                app.query_filter_text, "",
+                "v1 legacy row must yield empty filter_text"
+            );
+            assert!(app.query_filter_plan.is_none());
+            assert_eq!(app.query_fields[0].selected, 2);
+            assert_eq!(app.query_fields[1].selected, 1);
+        });
+    }
+
     // ── Depth-team chart cutoff regression fence ─────────────────────────────
     //
     // Bug report: per-team depth chart score column ("Pts/82") gets cut

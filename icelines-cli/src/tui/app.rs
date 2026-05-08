@@ -1680,7 +1680,14 @@ impl App {
             Action::Enter => {
                 let name = self.query_save_name.trim().to_owned();
                 if !name.is_empty() {
-                    let json = crate::tui::screens::queries::fields_to_json(&self.query_fields);
+                    // Wave 24 — also persist the active free-form
+                    // filter text so the saved preset captures both
+                    // the structured fields AND the Phase Art Ross
+                    // overlay state.
+                    let json = crate::tui::screens::queries::fields_and_filter_to_json(
+                        &self.query_fields,
+                        &self.query_filter_text,
+                    );
                     if let Ok(db) = crate::db::GroupDb::open() {
                         let _ = db.save_query(&name, &json);
                         self.status = format!("Saved query '{name}'  ·  l=load  s=save  r=reset");
@@ -2351,8 +2358,12 @@ impl App {
                         // Save the current query with the typed name
                         let name = self.query_save_name.trim().to_owned();
                         if !name.is_empty() {
-                            let json =
-                                crate::tui::screens::queries::fields_to_json(&self.query_fields);
+                            // Wave 24 — same fields+filter envelope as the
+                            // dedicated handler in handle_query_save_name.
+                            let json = crate::tui::screens::queries::fields_and_filter_to_json(
+                                &self.query_fields,
+                                &self.query_filter_text,
+                            );
                             if let Ok(db) = crate::db::GroupDb::open() {
                                 let _ = db.save_query(&name, &json);
                                 self.status =
@@ -2362,14 +2373,51 @@ impl App {
                         self.query_mode = QueryMode::Build;
                     }
                     QueryMode::LoadList => {
-                        // Load the selected saved query
+                        // Load the selected saved query.
                         if let Some((name, json)) = self.query_saved_list.get(self.selected) {
-                            crate::tui::screens::queries::apply_saved_json(
+                            // Wave 24 — recover both structured fields
+                            // AND the free-form filter text. Re-parse
+                            // the text via parse_query so the active
+                            // plan matches what the saver had applied.
+                            // Parse failure on a saved (older-grammar)
+                            // filter is non-fatal: we still load the
+                            // fields and the filter text, but leave
+                            // the plan empty so subsequent renders
+                            // ignore the filter. The user can re-open
+                            // the editor (`f`), see the recovered text,
+                            // and fix it.
+                            let filter_text = crate::tui::screens::queries::apply_saved_json(
                                 &mut self.query_fields,
                                 json,
                             );
-                            self.status =
-                                format!("Loaded query '{name}'  ·  ←→ to adjust  s=save  r=reset");
+                            self.query_filter_text = filter_text.clone();
+                            self.query_filter_error = None;
+                            self.query_filter_plan = None;
+                            let mut status = format!(
+                                "Loaded query '{name}'  ·  ←→ to adjust  s=save  r=reset"
+                            );
+                            if !filter_text.is_empty() {
+                                match icelines_query::parse_query(
+                                    icelines_query::FilterInput::Cli(filter_text.clone()),
+                                ) {
+                                    Ok(plan) => {
+                                        self.query_filter_plan = Some(plan);
+                                        status = format!(
+                                            "Loaded '{name}' + filter applied  ·  f to edit"
+                                        );
+                                    }
+                                    Err(_) => {
+                                        // Don't surface the full error
+                                        // here — leave it for the user
+                                        // to discover when they open
+                                        // the editor with `f`.
+                                        status = format!(
+                                            "Loaded '{name}' (filter needs re-edit)  ·  f to fix"
+                                        );
+                                    }
+                                }
+                            }
+                            self.status = status;
                             self.query_mode = QueryMode::Build;
                             self.query_result_scroll = 0;
                         }
@@ -4138,6 +4186,122 @@ mod tests {
         assert!(
             should_quit,
             "Quit inside FilterEdit must propagate (return true)"
+        );
+    }
+
+    // ── Phase Art Ross — Wave 24 filter-preset round-trip (handler) ────────
+
+    /// Ensure `apply_saved_json` is wired into the LoadList Enter
+    /// handler so the recovered filter_text lands on `App` AND the
+    /// plan is re-parsed.
+    #[test]
+    fn l0_w24_load_restores_filter_text_and_plan() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        // Simulate a freshly-listed saved-queries DB row.
+        let json = crate::tui::screens::queries::fields_and_filter_to_json(
+            &app.query_fields,
+            "country=CAN",
+        );
+        app.query_saved_list = vec![("preset1".to_owned(), json)];
+        app.query_mode = QueryMode::LoadList;
+        app.selected = 0;
+
+        app.handle(Action::Enter);
+
+        assert_eq!(app.query_mode, QueryMode::Build);
+        assert_eq!(
+            app.query_filter_text, "country=CAN",
+            "load must restore the filter text onto App state"
+        );
+        assert!(
+            app.query_filter_plan.is_some(),
+            "load must re-parse the filter into an active plan"
+        );
+    }
+
+    /// Empty filter_text in the saved JSON loads as empty: no plan
+    /// reset, no error.
+    #[test]
+    fn l0_w24_load_empty_filter_clears_plan_state() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        // Pre-load a stale plan to ensure load actually clears it.
+        app.query_filter_text = "stale".to_owned();
+        app.query_filter_plan = icelines_query::parse_query(
+            icelines_query::FilterInput::Cli("country=CAN".to_owned()),
+        )
+        .ok();
+
+        let json = crate::tui::screens::queries::fields_and_filter_to_json(
+            &app.query_fields,
+            "",
+        );
+        app.query_saved_list = vec![("no-filter-preset".to_owned(), json)];
+        app.query_mode = QueryMode::LoadList;
+        app.selected = 0;
+
+        app.handle(Action::Enter);
+
+        assert_eq!(
+            app.query_filter_text, "",
+            "load with empty filter must reset filter text"
+        );
+        assert!(
+            app.query_filter_plan.is_none(),
+            "load with empty filter must clear the active plan"
+        );
+    }
+
+    /// Loading a v1 (legacy) array saved query: fields restore,
+    /// filter state stays empty (no plan, no text).
+    #[test]
+    fn l0_w24_load_v1_legacy_keeps_filter_empty() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        let v1 = r#"[{"label":"Sort by","selected":2}]"#.to_owned();
+        app.query_saved_list = vec![("legacy".to_owned(), v1)];
+        app.query_mode = QueryMode::LoadList;
+        app.selected = 0;
+
+        app.handle(Action::Enter);
+
+        assert_eq!(app.query_filter_text, "");
+        assert!(app.query_filter_plan.is_none());
+        assert_eq!(app.query_fields[0].selected, 2);
+    }
+
+    /// Loading a saved JSON with a filter that no longer parses
+    /// (older grammar removed in a future release): non-fatal —
+    /// fields restore, filter text restores, plan stays None,
+    /// status hints at re-edit. The user discovers the issue when
+    /// they press `f`.
+    #[test]
+    fn l0_w24_load_unparseable_filter_is_non_fatal() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        // Unbalanced parens — guaranteed parse failure today and
+        // forever.
+        let json = serde_json::json!({
+            "version": 2,
+            "fields": [],
+            "filter_text": "((((country=CAN",
+        })
+        .to_string();
+        app.query_saved_list = vec![("broken".to_owned(), json)];
+        app.query_mode = QueryMode::LoadList;
+        app.selected = 0;
+
+        app.handle(Action::Enter);
+
+        assert_eq!(app.query_mode, QueryMode::Build);
+        assert_eq!(
+            app.query_filter_text, "((((country=CAN",
+            "filter text must round-trip even when the grammar rejects it"
+        );
+        assert!(
+            app.query_filter_plan.is_none(),
+            "unparseable filter must NOT install a plan"
         );
     }
 }

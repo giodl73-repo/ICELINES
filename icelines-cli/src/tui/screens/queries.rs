@@ -1019,25 +1019,77 @@ fn render_results(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
 }
 
 // ── Saved query serialization ─────────────────────────────────────────────────
+//
+// v1 (pre-Wave 24) shape: top-level JSON array of field objects.
+//   `[{"label":"Sort by","selected":0}, …]`
+//
+// v2 (Wave 24+) shape: top-level JSON object that carries the same
+// fields array plus a free-form filter_text payload (the Phase Art
+// Ross overlay text). The version tag is explicit so future shape
+// changes can branch cleanly.
+//   `{"version":2, "fields":[…], "filter_text":"country IN (CAN, USA)"}`
+//
+// `apply_saved_json` accepts either shape — pre-Wave-24 saved queries
+// continue to load with `filter_text == ""`. New saves always write
+// v2.
 
-/// Serialize current field selections to JSON for storage.
-pub fn fields_to_json(fields: &[QueryField]) -> String {
-    let pairs: Vec<String> = fields
+const SAVED_QUERY_VERSION: u32 = 2;
+
+/// Wave 24 — serialize current field selections AND the active
+/// free-form filter text into the v2 object envelope. Use this for
+/// every new save; it round-trips cleanly through `apply_saved_json`.
+pub fn fields_and_filter_to_json(fields: &[QueryField], filter_text: &str) -> String {
+    let fields_arr: Vec<serde_json::Value> = fields
         .iter()
-        .map(|f| format!("{{\"label\":\"{}\",\"selected\":{}}}", f.label, f.selected))
+        .map(|f| {
+            serde_json::json!({
+                "label": f.label,
+                "selected": f.selected,
+            })
+        })
         .collect();
-    format!("[{}]", pairs.join(","))
+    let envelope = serde_json::json!({
+        "version": SAVED_QUERY_VERSION,
+        "fields": fields_arr,
+        "filter_text": filter_text,
+    });
+    envelope.to_string()
 }
 
-/// Restore field selections from stored JSON. Unknown labels are ignored.
-pub fn apply_saved_json(fields: &mut [QueryField], json: &str) {
-    if let Ok(arr) = serde_json::from_str::<Vec<serde_json::Value>>(json) {
-        for entry in &arr {
-            if let (Some(label), Some(sel)) = (entry["label"].as_str(), entry["selected"].as_u64())
-            {
-                if let Some(f) = fields.iter_mut().find(|f| f.label == label) {
-                    f.selected = (sel as usize).min(f.options.len().saturating_sub(1));
-                }
+/// Restore field selections from stored JSON. Returns the recovered
+/// filter text — empty string for v1 (legacy array) saves, the
+/// stored value for v2. Unknown labels are ignored. Out-of-range
+/// `selected` indices are clamped.
+pub fn apply_saved_json(fields: &mut [QueryField], json: &str) -> String {
+    let parsed: serde_json::Value = match serde_json::from_str(json) {
+        Ok(v) => v,
+        Err(_) => return String::new(),
+    };
+
+    // v2 object envelope.
+    if let Some(obj) = parsed.as_object() {
+        if let Some(arr) = obj.get("fields").and_then(|v| v.as_array()) {
+            apply_field_array(fields, arr);
+        }
+        return obj
+            .get("filter_text")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_owned();
+    }
+
+    // v1 legacy: top-level array of field objects.
+    if let Some(arr) = parsed.as_array() {
+        apply_field_array(fields, arr);
+    }
+    String::new()
+}
+
+fn apply_field_array(fields: &mut [QueryField], arr: &[serde_json::Value]) {
+    for entry in arr {
+        if let (Some(label), Some(sel)) = (entry["label"].as_str(), entry["selected"].as_u64()) {
+            if let Some(f) = fields.iter_mut().find(|f| f.label == label) {
+                f.selected = (sel as usize).min(f.options.len().saturating_sub(1));
             }
         }
     }
@@ -1518,5 +1570,112 @@ mod tests {
             Some(&plan),
             icelines_core::CURRENT_SEASON,
         );
+    }
+
+    // ── Phase Art Ross — Wave 24 saved-query filter round-trip ─────────────
+
+    /// v2 envelope round-trip: write a fields+filter pair, read it
+    /// back, both halves must be identical.
+    #[test]
+    fn l0_w24_v2_envelope_round_trip_preserves_filter() {
+        let mut fields = default_fields();
+        fields[0].selected = 3; // pick a non-default field selection
+        fields[1].selected = 1;
+        let filter = "country IN (CAN, USA) AND age<25";
+
+        let json = fields_and_filter_to_json(&fields, filter);
+        let mut restored = default_fields();
+        let recovered = apply_saved_json(&mut restored, &json);
+
+        assert_eq!(
+            recovered, filter,
+            "filter_text must round-trip verbatim"
+        );
+        assert_eq!(restored[0].selected, 3);
+        assert_eq!(restored[1].selected, 1);
+    }
+
+    /// Empty filter_text round-trips as empty (not `null`, not
+    /// `"null"`, not the field labels).
+    #[test]
+    fn l0_w24_empty_filter_round_trips_as_empty() {
+        let fields = default_fields();
+        let json = fields_and_filter_to_json(&fields, "");
+        let mut restored = default_fields();
+        let recovered = apply_saved_json(&mut restored, &json);
+        assert_eq!(recovered, "");
+    }
+
+    /// v1 legacy (top-level array) saved queries continue to load.
+    /// Recovered filter_text is empty for the legacy shape — the
+    /// user just sees the structured fields restored.
+    #[test]
+    fn l0_w24_v1_legacy_array_still_loads() {
+        // Hand-built v1 JSON — what fields_to_json wrote pre-Wave-24.
+        let v1 = r#"[{"label":"Sort by","selected":2},{"label":"Position","selected":1}]"#;
+        let mut fields = default_fields();
+        let recovered = apply_saved_json(&mut fields, v1);
+
+        assert_eq!(
+            recovered, "",
+            "v1 legacy load must report empty filter_text"
+        );
+        assert_eq!(fields[0].selected, 2);
+        assert_eq!(fields[1].selected, 1);
+    }
+
+    /// Filter text containing characters that need JSON escaping
+    /// (quotes, backslashes) round-trips cleanly. Guards the
+    /// switch from hand-rolled string formatting to serde_json.
+    #[test]
+    fn l0_w24_filter_with_quotes_round_trips() {
+        let fields = default_fields();
+        let filter = r#"country LIKE "CA*" AND draft-round<=2"#;
+        let json = fields_and_filter_to_json(&fields, filter);
+        let mut restored = default_fields();
+        let recovered = apply_saved_json(&mut restored, &json);
+        assert_eq!(recovered, filter);
+    }
+
+    /// Garbage / non-JSON input doesn't panic and doesn't mutate
+    /// the fields array. Matches the v1 behavior — legacy
+    /// `apply_saved_json` was tolerant of malformed input.
+    #[test]
+    fn l0_w24_malformed_json_is_no_op() {
+        let mut fields = default_fields();
+        let original_selections: Vec<usize> = fields.iter().map(|f| f.selected).collect();
+        let recovered = apply_saved_json(&mut fields, "{not valid json");
+        assert_eq!(recovered, "");
+        let after: Vec<usize> = fields.iter().map(|f| f.selected).collect();
+        assert_eq!(original_selections, after);
+    }
+
+    /// v2 envelope with a non-string filter_text (corrupted save)
+    /// is treated as empty — the load proceeds, the user just
+    /// loses the filter half.
+    #[test]
+    fn l0_w24_v2_filter_wrong_type_treated_as_empty() {
+        let mut fields = default_fields();
+        let json =
+            r#"{"version":2,"fields":[{"label":"Sort by","selected":1}],"filter_text":42}"#;
+        let recovered = apply_saved_json(&mut fields, json);
+        assert_eq!(recovered, "");
+        assert_eq!(fields[0].selected, 1);
+    }
+
+    /// Output of `fields_and_filter_to_json` is valid serde_json
+    /// (no broken escapes). Sanity check on the serializer choice.
+    #[test]
+    fn l0_w24_output_is_valid_serde_json() {
+        let fields = default_fields();
+        let json = fields_and_filter_to_json(
+            &fields,
+            r#"country LIKE "CA*" AND age<25"#,
+        );
+        let parsed: serde_json::Value =
+            serde_json::from_str(&json).expect("output must be valid JSON");
+        assert_eq!(parsed["version"].as_u64(), Some(2));
+        assert!(parsed["fields"].is_array());
+        assert!(parsed["filter_text"].is_string());
     }
 }
