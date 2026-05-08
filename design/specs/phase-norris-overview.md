@@ -43,6 +43,7 @@ no UX delta — pure internal refactor.
 | Visibility | `pub struct <Screen>State` with `pub` fields, matching `pub struct App`'s field visibility today. Restrict to `pub(crate)` only if a field needs to stay module-private; flag those individually. | Integration tests in `icelines-cli/tests/` go through subprocess, not direct field access, so external visibility doesn't widen the public API. — forge-2 |
 | Clippy lint policy | Add `#![allow(clippy::module_name_repetitions)]` at the top of each `tui/screens/<screen>.rs` that gains a `<Screen>State`. | `QueriesState` inside `queries` module trips this lint; renaming each state struct (e.g., to `State`) loses the cross-module readability. The lint is a style preference, not a correctness signal. — forge-4 |
 | Saved-query JSON contract | Unchanged. The serializer (`fields_and_filter_to_json`) keeps its signature; the v2 envelope shape (`{"version":2, "fields":[…], "filter_text":"…"}`) is preserved bit-for-bit. | Norris is a memory-layout refactor, not a persistence-format refactor. The on-disk SQLite schema and the JSON contract are off-limits. — wire-1 |
+| Per-sub-phase test pattern | **L0 contract tests** (~10) on `<Screen>State::default()` — pin the starting-state contract so a future refactor can't silently change it. **L1 sequencing tests** (~3) chaining handler calls through realistic multi-step sessions to prove state transitions land correctly across actions. **No L2** — the TUI is interactive; subprocess can't drive keystrokes, so L2 is reserved for the CLI / web surfaces (already covered). | Confirmed during Norris.1 — see `screens/queries.rs::tests::l0_norris_*` (10 contract tests) and `screens/mod.rs::app_snapshot_tests::l1_norris_*` (3 sequencing tests). Pattern is the canonical bar for Norris.2/3/4. |
 | No keybind / UX changes | Strictly an internal refactor. | The user's brief: "i want each screen to be separate but i guess i dont mind if its easy to go between them" — keep tab cycling, keep keybinds, just clean the layout. |
 
 ## Sub-phase ordering
@@ -113,8 +114,17 @@ Test sites to update: every test in `tui::app::tests`, `tui::screens::queries::t
 integration tests that touch `app.query_*` (none expected — no
 external test file uses these private fields directly).
 
-**Test budget**: 0 new tests; all existing tests must continue to
-pass post-rename. Diff-only coverage.
+**Test budget** (Norris.1 actual, 2026-05-08): 13 new tests
+across two tiers — 10 L0 contract tests on
+`QueriesState::default()` (mode is Build, no active filter,
+field editor populated, no saved state, overlays off, sort
+picker unset, career_table_preset = Default, App::new wires
+through ::default(), Debug derives) + 3 L1 sequencing tests
+(history accumulates across 3 successive Enters; refinement
+workflow re-applies extended filter; SaveName/FilterEdit/Build
+mode transitions don't leak state across editors). Bin suite:
+702/702 (was 692, +10 L0); L1 sequencing tests run inside the
+existing `app_snapshot_tests` module.
 
 ### Norris.2 — Schedule (~0.5 day)
 
@@ -123,7 +133,9 @@ Extract `ScheduleState` covering: `schedule_query`,
 `schedule_selected`, `schedule_week`, `schedule_week_cache`,
 `schedule_team_cache`, plus any `schedule_*` fields added since.
 
-**Test budget**: 0 new tests.
+**Test budget**: ~13 new tests per the Norris.1 pattern — 10 L0
+contract tests on `<Screen>State::default()` + 3 L1 sequencing
+tests covering multi-step handler sessions for this screen.
 
 ### Norris.3 — Transactions (~0.5 day)
 
@@ -131,7 +143,9 @@ Extract `TransactionsState` covering: `transactions`,
 `transactions_fetched_at`, `transactions_stale`, `tx_selected`,
 `tx_search_query`, `tx_search_active`, plus any `tx_*` fields.
 
-**Test budget**: 0 new tests.
+**Test budget**: ~13 new tests per the Norris.1 pattern — 10 L0
+contract tests on `<Screen>State::default()` + 3 L1 sequencing
+tests covering multi-step handler sessions for this screen.
 
 ### Norris.4 — Smaller screens batched (~0.5 day)
 
@@ -146,12 +160,19 @@ Extract:
 
 Each is small enough that bundling them into one commit is fine.
 
-**Test budget**: 0 new tests.
+**Test budget**: ~13 new tests per the Norris.1 pattern — 10 L0
+contract tests on `<Screen>State::default()` + 3 L1 sequencing
+tests covering multi-step handler sessions for this screen.
 
 ## Total budget
 
 - ~2.5 working days
-- 0 new tests (pure refactor; existing test coverage carries through)
+- **~52 new tests** across the four sub-phases (13 per screen
+  × 4 sub-phases ≈ 52). Pattern locked in Norris.1: 10 L0 contract
+  tests on `<Screen>State::default()` + 3 L1 sequencing tests on
+  multi-step handler sessions. No L2 — TUI is interactive, subprocess
+  can't drive keystrokes (the CLI/web L2 surfaces already cover
+  what's reachable that way).
 - App struct goes from ~3,800 lines / 80+ fields → ~1,000-1,500
   lines / ~20-30 cross-screen fields
 - Each sub-phase ships as its own commit; final commit cuts a

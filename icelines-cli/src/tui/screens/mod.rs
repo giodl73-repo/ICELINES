@@ -2080,6 +2080,180 @@ mod app_snapshot_tests {
         });
     }
 
+    // ── Phase Norris.1 — QueriesState sequencing tests ─────────────────────
+    //
+    // These tests chain handler calls to exercise QueriesState
+    // mutations across a multi-step session — different angle from
+    // the per-action L0 tests in tui::app::tests. The pattern is
+    // canonical for the rest of Phase Norris: every <Screen>State
+    // extraction gets a handful of L0 default-contract tests + 2-3
+    // L1 sequencing tests that prove state transitions land
+    // correctly across multiple handler calls.
+
+    /// History accumulates across multiple successful Enters in a
+    /// session — newest-first, no duplicates. Mirrors the workflow
+    /// of a user trying several filters and walking back through
+    /// them via the overlay's Up/Down history.
+    #[test]
+    fn l1_norris_filter_history_accumulates_across_session() {
+        with_temp_home(|_home| {
+            let (_snap, store) = empty_store_in_tempdir();
+            let mut app = App::new(true);
+            app.boot_load_with_store(&store);
+            app.handle(Action::GoToTab(2));
+            assert_eq!(app.screen, crate::tui::app::Screen::Queries);
+
+            // Helper — open editor, type a filter, Enter.
+            let apply = |app: &mut App, filter: &str| {
+                app.handle(Action::AddToFavorites); // 'f' → FilterEdit
+                assert_eq!(
+                    app.queries.mode,
+                    crate::tui::app::QueryMode::FilterEdit
+                );
+                // Reset any leftover text from the previous re-entry
+                // (Enter preserves text, so we wipe explicitly).
+                app.queries.filter_text.clear();
+                for c in filter.chars() {
+                    if c == ' ' {
+                        app.handle(Action::Space);
+                    } else {
+                        app.handle(Action::Char(c));
+                    }
+                }
+                app.handle(Action::Enter);
+                assert_eq!(
+                    app.queries.mode,
+                    crate::tui::app::QueryMode::Build
+                );
+            };
+
+            apply(&mut app, "country=CAN");
+            apply(&mut app, "age<25");
+            apply(&mut app, "pos=C");
+
+            // History is newest-first, three distinct entries.
+            assert_eq!(app.queries.filter_history.len(), 3);
+            assert_eq!(app.queries.filter_history[0], "pos=C");
+            assert_eq!(app.queries.filter_history[1], "age<25");
+            assert_eq!(app.queries.filter_history[2], "country=CAN");
+
+            // Latest plan is the last one Enter'd.
+            assert!(app.queries.filter_plan.is_some());
+        });
+    }
+
+    /// Refinement workflow: apply a filter, reopen the editor (text
+    /// persists), append more grammar, Enter again. Verify the
+    /// re-applied plan reflects the new text and history captures
+    /// both versions.
+    #[test]
+    fn l1_norris_refine_workflow_reapplies_extended_filter() {
+        with_temp_home(|_home| {
+            let (_snap, store) = empty_store_in_tempdir();
+            let mut app = App::new(true);
+            app.boot_load_with_store(&store);
+            app.handle(Action::GoToTab(2));
+
+            // First pass: apply "country=CAN".
+            app.handle(Action::AddToFavorites);
+            for c in "country=CAN".chars() {
+                app.handle(Action::Char(c));
+            }
+            app.handle(Action::Enter);
+            assert_eq!(app.queries.filter_text, "country=CAN");
+
+            // Re-open editor (Enter preserved text).
+            app.handle(Action::AddToFavorites);
+            assert_eq!(
+                app.queries.mode,
+                crate::tui::app::QueryMode::FilterEdit
+            );
+            assert_eq!(
+                app.queries.filter_text, "country=CAN",
+                "text persists across Enter→reopen"
+            );
+
+            // Append " AND age<25".
+            for c in " AND age<25".chars() {
+                if c == ' ' {
+                    app.handle(Action::Space);
+                } else {
+                    app.handle(Action::Char(c));
+                }
+            }
+            app.handle(Action::Enter);
+
+            assert_eq!(app.queries.filter_text, "country=CAN AND age<25");
+            assert!(app.queries.filter_plan.is_some());
+
+            // History captures both versions, newest first.
+            assert_eq!(app.queries.filter_history.len(), 2);
+            assert_eq!(
+                app.queries.filter_history[0],
+                "country=CAN AND age<25"
+            );
+            assert_eq!(app.queries.filter_history[1], "country=CAN");
+        });
+    }
+
+    /// Overlay-mode transitions don't leak state across editors.
+    /// SaveName editor's text and FilterEdit editor's text are
+    /// separate fields; switching between them must not mix them.
+    #[test]
+    fn l1_norris_overlay_modes_transition_without_leaking_state() {
+        with_temp_home(|_home| {
+            let (_snap, store) = empty_store_in_tempdir();
+            let mut app = App::new(true);
+            app.boot_load_with_store(&store);
+            app.handle(Action::GoToTab(2));
+
+            // Enter SaveName mode and type "myquery".
+            app.handle(Action::Char('s'));
+            assert_eq!(
+                app.queries.mode,
+                crate::tui::app::QueryMode::SaveName
+            );
+            for c in "myquery".chars() {
+                app.handle(Action::Char(c));
+            }
+            assert_eq!(app.queries.save_name, "myquery");
+            assert_eq!(
+                app.queries.filter_text, "",
+                "FilterEdit text MUST stay clean while typing in SaveName"
+            );
+
+            // Esc out of SaveName — back to Build, save_name cleared.
+            app.handle(Action::Escape);
+            assert_eq!(app.queries.mode, crate::tui::app::QueryMode::Build);
+            assert_eq!(app.queries.save_name, "");
+
+            // Now enter FilterEdit and type "country=CAN".
+            app.handle(Action::AddToFavorites); // 'f' → FilterEdit
+            assert_eq!(
+                app.queries.mode,
+                crate::tui::app::QueryMode::FilterEdit
+            );
+            for c in "country=CAN".chars() {
+                app.handle(Action::Char(c));
+            }
+            assert_eq!(app.queries.filter_text, "country=CAN");
+            assert_eq!(
+                app.queries.save_name, "",
+                "SaveName MUST stay clean while typing in FilterEdit"
+            );
+
+            // Esc out of FilterEdit — full reset.
+            app.handle(Action::Escape);
+            assert_eq!(app.queries.mode, crate::tui::app::QueryMode::Build);
+            assert_eq!(app.queries.filter_text, "");
+            assert!(app.queries.filter_plan.is_none());
+            assert_eq!(
+                app.queries.save_name, "",
+                "save_name still untouched by FilterEdit Esc"
+            );
+        });
+    }
+
     // ── Depth-team chart cutoff regression fence ─────────────────────────────
     //
     // Bug report: per-team depth chart score column ("Pts/82") gets cut

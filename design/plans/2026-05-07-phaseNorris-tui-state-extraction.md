@@ -238,21 +238,54 @@ with red tests or new clippy warnings.
 L1/L2 suites that touch the screen being extracted. If no L1/L2
 suite touches the extracted screen, just run the bin suite + clippy.
 
-### N.1.5 — Commit
+### N.1.5 — Add tests (canonical pattern for the rest of Norris)
+
+Locked in 2026-05-08 after the Norris.1 pilot:
+
+**L0 contract tests** (~10 per screen, in
+`tui/screens/<screen>.rs` `#[cfg(test)] mod tests`): pin
+`<Screen>State::default()` invariants. Each `<Screen>State`
+must have a test for:
+- starting mode (the discriminator default)
+- empty active state (input fields blank, plans/errors None,
+  histories empty)
+- populated structural state (field lists, sections — non-
+  empty when applicable)
+- consistency with helper-derived defaults (if the state pulls
+  from `default_fields()` etc., assert the count matches)
+- saved-state empty (save_name / saved_list)
+- overlays off (cheatsheet / picker flags default false)
+- unset selectors (sort_stat_pick / similar None)
+- App::new wires through `<Screen>State::default()` (spot-check
+  via `App::new(false)` and field comparisons)
+- Debug derive renders without panic (forge-1 sanity)
+
+**L1 sequencing tests** (~3 per screen, in
+`tui/screens/mod.rs` `#[cfg(test)] mod app_snapshot_tests`):
+chain handler calls through realistic multi-step sessions.
+Each screen gets:
+- A history/accumulation test (state grows correctly across
+  multiple successful actions)
+- A refinement-workflow test (state preserved across re-entry,
+  re-applied with new input)
+- An overlay-mode-transition test (state doesn't leak between
+  the screen's editor modes)
+
+**No L2** — the TUI is interactive; subprocess can't drive
+keystrokes. CLI/web L2 surfaces already cover what's reachable
+through subprocess.
+
+### N.1.6 — Commit
 
 ```
 Phase Norris.1 — extract QueriesState (TUI architecture refactor)
++ a separate commit for the L0/L1 contract & sequencing tests.
 
-App was a 3,800-line god-object holding state for every TUI screen.
-Norris.1 extracts the 17+ Queries-tab fields into a QueriesState
-struct living in tui/screens/queries.rs. App now reads
-`app.queries.filter_text` instead of `app.query_filter_text` etc.
-
-Pure internal refactor — no keybind change, no UX delta. ~200
-access-site renames across app.rs / screens/queries.rs / screens/mod.rs
-/ screens/player.rs. All existing tests pass unchanged.
-
-Bin suite: 692/692 green (same as v0.20.3).
+Two-commit shape:
+- Commit 1: the extraction itself (field move + ~200 access-
+  site renames). Bin suite must match the pre-extraction
+  baseline exactly.
+- Commit 2: 13 new tests (10 L0 + 3 L1). Bin suite grows by 13.
 ```
 
 ## Norris.2 — Schedule extraction
@@ -423,12 +456,19 @@ existing `tui/screens/<screen>.rs`.
 ## Acceptance for Phase Norris
 
 - All four sub-phases ship as their own commits
-- Bin suite size unchanged: 692 passing through the entire phase
-- L1/L2 integration suites unchanged: art_ross_w23_tui_filter (12),
-  persona_wave23 (14), persona_wave25 (10), and every other suite
-  pass at every commit
-- `cargo clippy -p icelines-cli -- -D warnings` clean at every
-  commit (no new lints introduced by the refactor)
+- **Bin suite grows by ~13 tests per sub-phase** (10 L0 default-
+  contract tests on `<Screen>State::default()` + 3 L1 sequencing
+  tests). Norris.1 baseline: 692 → 702 → 705 (10 L0 + 3 L1).
+  Norris.2 finish: 705 → 718 (≈+13). Norris.3 finish: 718 → 731.
+  Norris.4 finish: 731 → ~770 (5 small screens × ~8 tests each,
+  fewer L0 contract tests when the state struct has few fields).
+- L1/L2 integration suites unchanged from v0.20.3:
+  art_ross_w23_tui_filter (12), persona_wave23 (14),
+  persona_wave25 (10), every other suite passes at every commit
+- `cargo clippy -p icelines-cli --no-deps` introduces no new
+  lints in Norris-touched files (acceptance is "no NEW lints",
+  not "zero lints" — pre-existing lints in `db.rs`,
+  `sync_banner.rs`, `query_window.rs` etc. are out of scope)
 - Saved-query JSON contract unchanged: a v0.20.3 saved query
   (v2 envelope) loads cleanly post-Norris (wire-1)
 - App struct < 1,500 lines after Norris.4
