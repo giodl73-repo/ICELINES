@@ -498,6 +498,103 @@ pub fn truncate_with_ellipsis(s: &str, width: usize) -> String {
 }
 
 #[cfg(test)]
+mod norris_state_tests {
+    use super::*;
+
+    // ── Phase Norris.3 — TransactionsState contract ────────────────────────
+
+    /// Default search mode is OFF — the bottom strip stays hidden.
+    #[test]
+    fn l0_norris_txs_default_search_mode_off() {
+        let s = TransactionsState::default();
+        assert!(!s.search_mode);
+    }
+
+    /// Default rows list is empty — loader populates lazily.
+    #[test]
+    fn l0_norris_txs_default_rows_empty() {
+        let s = TransactionsState::default();
+        assert!(s.rows.is_empty());
+    }
+
+    /// Default search query is empty.
+    #[test]
+    fn l0_norris_txs_default_query_empty() {
+        let s = TransactionsState::default();
+        assert_eq!(s.search_query, "");
+    }
+
+    /// Default filters are unset — no team / kind narrowing on
+    /// first open.
+    #[test]
+    fn l0_norris_txs_default_filters_unset() {
+        let s = TransactionsState::default();
+        assert!(s.team_filter.is_none());
+        assert!(s.kind_filter.is_none());
+    }
+
+    /// Default fetched_at is empty — drives the "no fetch yet"
+    /// branch in the loader poll (see tui/mod.rs).
+    #[test]
+    fn l0_norris_txs_default_fetched_at_empty() {
+        let s = TransactionsState::default();
+        assert_eq!(s.fetched_at, "");
+    }
+
+    /// Default stale flag is false.
+    #[test]
+    fn l0_norris_txs_default_not_stale() {
+        let s = TransactionsState::default();
+        assert!(!s.stale);
+    }
+
+    /// Cursor starts at row 0.
+    #[test]
+    fn l0_norris_txs_default_selected_at_zero() {
+        let s = TransactionsState::default();
+        assert_eq!(s.selected, 0);
+    }
+
+    /// Empty rows + empty fetched_at is the "needs initial fetch"
+    /// state the loader poll keys off (see tui/mod.rs:211). Pin
+    /// the contract so a refactor can't accidentally pre-seed
+    /// fetched_at.
+    #[test]
+    fn l0_norris_txs_default_signals_needs_fetch() {
+        let s = TransactionsState::default();
+        assert!(
+            s.rows.is_empty() && s.fetched_at.is_empty(),
+            "default state must signal 'needs initial fetch' to the loader"
+        );
+    }
+
+    /// `App::new` wires `app.txs` through TransactionsState::default().
+    #[test]
+    fn l0_norris_txs_app_new_uses_default() {
+        let app = crate::tui::app::App::new(false);
+        assert!(app.txs.rows.is_empty());
+        assert_eq!(app.txs.fetched_at, "");
+        assert!(!app.txs.stale);
+        assert_eq!(app.txs.selected, 0);
+        assert!(app.txs.team_filter.is_none());
+        assert!(app.txs.kind_filter.is_none());
+        assert_eq!(app.txs.search_query, "");
+        assert!(!app.txs.search_mode);
+    }
+
+    /// Debug derive renders without panic (forge-1 sanity).
+    #[test]
+    fn l0_norris_txs_default_debug_renders() {
+        let s = TransactionsState::default();
+        let dbg = format!("{:?}", s);
+        assert!(
+            dbg.contains("TransactionsState"),
+            "Debug output must include the struct name; got: {dbg}"
+        );
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use icelines_core::model::TeamAbbr;

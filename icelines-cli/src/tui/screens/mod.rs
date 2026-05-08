@@ -2080,6 +2080,126 @@ mod app_snapshot_tests {
         });
     }
 
+    // ── Phase Norris.3 — TransactionsState sequencing tests ───────────────
+
+    /// Helper: build a fixture transaction with the given kind so
+    /// the team-list / kind-cycle helpers have something to chew on.
+    /// Mirrors the fixture in tui::screens::transactions::tests.
+    fn norris_fixture_tx(kind: icelines_core::TransactionKind) -> icelines_core::Transaction {
+        icelines_core::Transaction {
+            date: "2026-04-29".to_owned(),
+            team: Some(icelines_core::model::TeamAbbr("EDM".to_owned())),
+            kind,
+            description: "fixture".to_owned(),
+            id: "id".to_owned(),
+            trade_group_id: None,
+            classifier_version: 1,
+        }
+    }
+
+    /// Kind-filter cycle: pressing 'k' walks through every kind in
+    /// `TransactionKind::ALL` (9 variants) and wraps back to None.
+    /// 10 presses = full revolution.
+    #[test]
+    fn l1_norris_txs_kind_filter_cycles_through_all() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+        app.handle(Action::GoToTab(6)); // Transactions
+
+        // Seed at least one row so the cycle has data to act on.
+        app.txs.rows = vec![norris_fixture_tx(icelines_core::TransactionKind::Trade)];
+
+        assert!(
+            app.txs.kind_filter.is_none(),
+            "starts with no kind filter"
+        );
+
+        // 9 'k' presses walk through every kind. The 10th wraps
+        // back to None (the "all" sentinel).
+        for _ in 0..9 {
+            app.handle(Action::Char('k'));
+            assert!(app.txs.kind_filter.is_some(), "in-cycle");
+        }
+        app.handle(Action::Char('k'));
+        assert!(
+            app.txs.kind_filter.is_none(),
+            "10th press wraps back to None (all)"
+        );
+    }
+
+    /// Team filter persists across kind-filter cycle. Filters are
+    /// independent — changing one must not reset the other.
+    #[test]
+    fn l1_norris_txs_team_filter_survives_kind_cycle() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+        app.handle(Action::GoToTab(6));
+
+        // Seed two rows with distinct teams so transactions_teams
+        // returns a non-empty list to cycle.
+        let mut row_a = norris_fixture_tx(icelines_core::TransactionKind::Trade);
+        let mut row_b = norris_fixture_tx(icelines_core::TransactionKind::Signing);
+        row_a.team = Some(icelines_core::model::TeamAbbr("EDM".to_owned()));
+        row_b.team = Some(icelines_core::model::TeamAbbr("BOS".to_owned()));
+        app.txs.rows = vec![row_a, row_b];
+
+        // Set team filter to the first team.
+        app.handle(Action::Char('t'));
+        let team_after_t = app.txs.team_filter.clone();
+        assert!(team_after_t.is_some(), "t set a team filter");
+
+        // Cycle kind filter — team filter must NOT change.
+        app.handle(Action::Char('k'));
+        assert!(app.txs.kind_filter.is_some());
+        assert_eq!(
+            app.txs.team_filter, team_after_t,
+            "team filter must survive kind-filter cycle"
+        );
+    }
+
+    /// Search query applied → cycling team filter resets `selected`
+    /// (cursor returns to top of newly-filtered list) but preserves
+    /// `search_query`. The two filter axes don't clobber each other.
+    #[test]
+    fn l1_norris_txs_team_cycle_resets_cursor_keeps_search() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+        app.handle(Action::GoToTab(6));
+
+        // Seed rows.
+        app.txs.rows = vec![
+            norris_fixture_tx(icelines_core::TransactionKind::Trade),
+            norris_fixture_tx(icelines_core::TransactionKind::Signing),
+        ];
+
+        // Apply a search query.
+        app.handle(Action::Search);
+        for c in "trade".chars() {
+            app.handle(Action::Char(c));
+        }
+        app.handle(Action::Enter);
+        assert_eq!(app.txs.search_query, "trade");
+        assert!(!app.txs.search_mode);
+
+        // Pretend the user scrolled down to row 5.
+        app.txs.selected = 5;
+
+        // Cycle team filter — selected resets to 0, search_query
+        // intact.
+        app.handle(Action::Char('t'));
+        assert_eq!(
+            app.txs.selected, 0,
+            "team-filter cycle must reset cursor to top"
+        );
+        assert_eq!(
+            app.txs.search_query, "trade",
+            "team-filter cycle must NOT touch search_query"
+        );
+    }
+
     // ── Phase Norris.2 — ScheduleScreenState sequencing tests ─────────────
 
     /// Sequential filter replacement — applying a second filter
