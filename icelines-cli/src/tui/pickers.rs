@@ -68,3 +68,104 @@ pub struct GroupPickerState {
     /// added. None when the picker isn't bound to a target.
     pub player: Option<(String, String)>,
 }
+
+#[cfg(test)]
+mod norris_state_tests {
+    use super::*;
+
+    // ── Phase Norris.6 — DatePickerState contract ──────────────────────────
+
+    /// Default open is false — the overlay starts hidden.
+    #[test]
+    fn l0_norris_date_picker_default_closed() {
+        let s = DatePickerState::default();
+        assert!(!s.open);
+    }
+
+    /// Default input is empty.
+    #[test]
+    fn l0_norris_date_picker_default_input_empty() {
+        let s = DatePickerState::default();
+        assert_eq!(s.input, "");
+    }
+
+    /// Default has no validation error.
+    #[test]
+    fn l0_norris_date_picker_default_no_err() {
+        let s = DatePickerState::default();
+        assert!(s.err.is_none());
+    }
+
+    /// Default target is `PickerTarget::default()` (Scores —
+    /// matches the legacy pre-Norris.6 init).
+    #[test]
+    fn l0_norris_date_picker_default_target_matches_picker_target_default() {
+        let s = DatePickerState::default();
+        assert_eq!(s.target, PickerTarget::default());
+    }
+
+    /// `App::new` wires `app.date_picker` through default.
+    #[test]
+    fn l0_norris_date_picker_app_new_uses_default() {
+        let app = crate::tui::app::App::new(false);
+        assert!(!app.date_picker.open);
+        assert_eq!(app.date_picker.input, "");
+        assert!(app.date_picker.err.is_none());
+        assert_eq!(app.date_picker.target, PickerTarget::default());
+    }
+
+    /// Debug derive renders without panic (forge-1 sanity).
+    #[test]
+    fn l0_norris_date_picker_default_debug_renders() {
+        let s = DatePickerState::default();
+        let dbg = format!("{:?}", s);
+        assert!(
+            dbg.contains("DatePickerState"),
+            "Debug output must include the struct name; got: {dbg}"
+        );
+    }
+
+    // ── Phase Norris.6 — GroupPickerState contract ─────────────────────────
+
+    /// Default open is false.
+    #[test]
+    fn l0_norris_group_picker_default_closed() {
+        let s = GroupPickerState::default();
+        assert!(!s.open);
+    }
+
+    /// Default list is empty.
+    #[test]
+    fn l0_norris_group_picker_default_list_empty() {
+        let s = GroupPickerState::default();
+        assert!(s.list.is_empty());
+    }
+
+    /// Default player binding is None — overlay isn't bound to a
+    /// target yet.
+    #[test]
+    fn l0_norris_group_picker_default_player_none() {
+        let s = GroupPickerState::default();
+        assert!(s.player.is_none());
+    }
+
+    /// `App::new` wires `app.group_picker` through default.
+    #[test]
+    fn l0_norris_group_picker_app_new_uses_default() {
+        let app = crate::tui::app::App::new(false);
+        assert!(!app.group_picker.open);
+        assert!(app.group_picker.list.is_empty());
+        assert!(app.group_picker.player.is_none());
+    }
+
+    /// Debug derive renders without panic.
+    #[test]
+    fn l0_norris_group_picker_default_debug_renders() {
+        let s = GroupPickerState::default();
+        let dbg = format!("{:?}", s);
+        assert!(
+            dbg.contains("GroupPickerState"),
+            "Debug output must include the struct name; got: {dbg}"
+        );
+    }
+}
