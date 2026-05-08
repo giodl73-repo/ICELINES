@@ -933,7 +933,26 @@ mod handlers {
             // Bio Filters accordion.
             let (extracted_bio, stat_filters) = super::extract_bio(&raw_filters);
 
-            let filter_expr_result = combine_filters(&stat_filters);
+            // Wave 17 — partition stat filters into new-pipeline
+            // plans (handle the full Phase Art Ross grammar:
+            // `<` `>` `!=` `IN` `BETWEEN` `LIKE` + sliding/career/
+            // league atoms) vs legacy-residue (the leftover that
+            // the legacy parser still handles). Helpful errors
+            // surface as 400 BadFilter directly.
+            let (new_plans, legacy_residue, helpful_errs) =
+                partition_new_pipeline_filters(&stat_filters);
+            if !helpful_errs.is_empty() {
+                let body = format!(
+                    "<!doctype html><html><body>\
+                     <h1>Bad filter</h1><pre>{}</pre>\
+                     <p><a href=\"/leaders\">← back to leaders</a></p>\
+                     </body></html>",
+                    helpful_errs.join("\n").replace('<', "&lt;").replace('>', "&gt;"),
+                );
+                return (StatusCode::BAD_REQUEST, Html(body)).into_response();
+            }
+
+            let filter_expr_result = combine_filters(&legacy_residue);
             // Resolve active (season, season_type) from config.
             let (season_str, season_type, active_label) = {
                 let cfg = state.config.read().await;
@@ -1044,6 +1063,36 @@ mod handlers {
                     .filter(|v| match &filter_expr {
                         None => true,
                         Some(expr) => expr.matches(v),
+                    })
+                    // Wave 17 — new-pipeline plans (every filter
+                    // shape from Phase Art Ross: `<`/`>`/`!=`/IN/
+                    // BETWEEN/LIKE plus sliding-window/career/league
+                    // atoms). Each plan must hold for the player
+                    // to be included. Provider falls back to
+                    // empty when boxscore/career data isn't local
+                    // (fail-closed default).
+                    .filter(|v| {
+                        if new_plans.is_empty() {
+                            return true;
+                        }
+                        let provider =
+                            icelines_fetch::query_provider::IcelinesProvider::new(
+                                std::env::var_os("HOME")
+                                    .or_else(|| std::env::var_os("USERPROFILE"))
+                                    .map(std::path::PathBuf::from)
+                                    .unwrap_or_default()
+                                    .join(".icelines")
+                                    .join("data"),
+                            );
+                        let clock = icelines_core::freshness::SystemClock;
+                        let ctx = icelines_query::EvalCtx::from_clock(
+                            &provider,
+                            icelines_query::StrictMode::Off,
+                            false,
+                            &clock,
+                            season.0,
+                        );
+                        new_plans.iter().all(|plan| plan.root.matches(v, &ctx))
                     })
                     // QueryA — bio filters via shared icelines-query
                     // BioConstraints. No-op when nothing is set; when
@@ -1378,6 +1427,62 @@ mod handlers {
                 });
             }
             Ok(combined)
+        }
+
+        /// Wave 17 fix — partition raw filter strings into the
+        /// new-pipeline plans (handled by `parse_query`) vs
+        /// legacy-residue (handled by `combine_filters` →
+        /// `parse_filter_expr`). Mirrors the CLI's dispatch.
+        ///
+        /// Returns `(new_plans, legacy_residue, helpful_errors)`:
+        ///   - `new_plans`: parsed via the new pipeline; eval via
+        ///     `Constraint::matches`.
+        ///   - `legacy_residue`: filter strings the new parser
+        ///     rejected for non-helpful reasons; pass to legacy.
+        ///   - `helpful_errors`: parse errors with helpful
+        ///     diagnostics (IncompatiblePredicate / EmptySet /
+        ///     FeatureNotYet / UnknownWindowUnit / ZeroWindowSize
+        ///     / WindowSizeOutOfRange) — surface these instead
+        ///     of falling through to the legacy parser which
+        ///     would give a worse "no op" error.
+        pub fn partition_new_pipeline_filters(
+            raw: &[String],
+        ) -> (
+            Vec<icelines_query::QueryPlan>,
+            Vec<String>,
+            Vec<String>,
+        ) {
+            let mut plans: Vec<icelines_query::QueryPlan> = Vec::new();
+            let mut legacy: Vec<String> = Vec::new();
+            let mut helpful: Vec<String> = Vec::new();
+            for raw_str in raw {
+                match icelines_query::parse_query(
+                    icelines_query::FilterInput::Cli(raw_str.clone()),
+                ) {
+                    Ok(plan) => plans.push(plan),
+                    Err(es) => {
+                        let prefer_new = es.iter().any(|e| {
+                            matches!(
+                                e,
+                                icelines_query::ParseError::IncompatiblePredicate { .. }
+                                    | icelines_query::ParseError::EmptySet { .. }
+                                    | icelines_query::ParseError::FeatureNotYet { .. }
+                                    | icelines_query::ParseError::UnknownWindowUnit { .. }
+                                    | icelines_query::ParseError::ZeroWindowSize { .. }
+                                    | icelines_query::ParseError::WindowSizeOutOfRange { .. }
+                            )
+                        });
+                        if prefer_new {
+                            for e in es {
+                                helpful.push(format!("--filter {raw_str:?}: {e}"));
+                            }
+                        } else {
+                            legacy.push(raw_str.clone());
+                        }
+                    }
+                }
+            }
+            (plans, legacy, helpful)
         }
 
         /// What `?pos=X` means after parsing.
