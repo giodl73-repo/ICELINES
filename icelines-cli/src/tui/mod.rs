@@ -2,6 +2,7 @@ pub mod app;
 pub mod chrome;
 pub mod dashboard_panel;
 pub mod event;
+pub mod screen;
 pub mod headshot;
 pub mod loader;
 pub mod pickers;
