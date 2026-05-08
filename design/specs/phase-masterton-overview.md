@@ -39,6 +39,9 @@ ad-hoc imperative status strings.
 | Cross-screen overlays | **Owned by the orchestrator** — `date_picker`, `group_picker`, `show_help`, `show_admin`, `show_reports_overlay`, `show_season_picker`, `show_docs`. The orchestrator's `handle()` runs FIRST; if any overlay is open the orchestrator handles the action. Only when no overlay is active does the screen's `handle()` run. | Clean priority: overlays first, screen second. Avoids forcing every screen to know about every overlay. |
 | `AppContext` shape | A struct holding `&StatsRepository`, `&dyn Clock`, `Season`, `SeasonType`, `Timeframe`, `&ReportToggles`, `&mut Status`, plus mutable handles for things like favorites DB. | Screens read through this; screens never see `&mut App` directly. Forces a clean dependency boundary. |
 | Status flash channel | `AppContext::flash(msg: impl Into<String>)` writes to a transient status slot that the chrome footer renders below the keybind chips. Cleared on next screen action. | Replaces today's `self.status = "..."` pattern; transient messages still work but they don't compete with declarative keybinds. |
+| Trait-method receiver | `&self` on every method, even though screens are ZSTs (zero-sized marker structs). | Idiomatic Rust; preserves object-safety should we ever want `Box<dyn Screen>`; zero runtime cost on a ZST. Spec calls this out so future readers know `&self` is convention, not a hint that screens carry instance state. — forge-1 |
+| Screen stack depth | **One-deep** `prev_screen: Option<ScreenSpec>` on App, matching today's behavior. `ScreenAction::Push(spec)` replaces `prev_screen` with the current screen and switches to `spec`; `ScreenAction::Pop` walks back one level. | Adding a real `Vec<Screen>` stack would change Esc semantics (Esc walks all the way up vs. one level up), which is a UX change. Norris kept tabs cycling unchanged; Masterton should likewise preserve today's nav model. If a deeper stack is wanted later, it's an additive change. — forge-3 |
+| `ScreenSpec` shape | **Define separately** from `crate::cli::TuiSurface`. The clap-derived `TuiSurface` carries surface-launcher data (`Player { needle: String }`, etc.); the internal dispatch enum needs only the screen identity, not clap-driven sub-data. Provide `From<TuiSurface> for ScreenSpec` for surface-launcher wiring. | Decouples internal dispatch from clap. Lets `ScreenAction::Push(ScreenSpec::PlayerById(pid))` carry resolved data instead of a `String` needle. — forge-4 |
 
 ## Sub-phase ordering
 
@@ -161,10 +164,24 @@ Each migration is one commit:
 After all 6, `App::handle()` is mostly a thin dispatcher to the
 active screen + overlay handling.
 
-**Test budget**: 0 new tests for the migration itself (existing
-tests carry through), + ~6 L1 tests asserting `ScreenAction`
-return shapes for representative actions per screen (so future
-refactors can't accidentally break the dispatch contract).
+**Test budget** (post-review bench-1/2):
+
+- **Pre-migration regression fence per screen** (~6 tests, one
+  L1 dispatch-smoke per screen). Captures the current
+  key→state behavior across a representative action set
+  (~10 keys per screen). The same test runs post-migration to
+  confirm bit-for-bit equivalence. THESE LAND BEFORE ANY
+  MIGRATION COMMIT — they're the fence.
+- **ScreenAction return-shape coverage** (~10 tests):
+  `Quit` propagates from any screen; `OpenOverlay(kind)` routes
+  the right overlay flag; `Push/Replace/Pop` mutate `screen`
+  correctly; `Flash(msg)` sets status without other side
+  effects; `Continue` is the no-op default. Covers each
+  ScreenAction variant × representative screen pair.
+
+Total ~16 new tests across Masterton.2, with the regression
+fence shipped in M.2.1 (the trait scaffold commit) BEFORE any
+per-screen migration begins.
 
 ### Masterton.3 — Standalone runner (~1 day)
 
@@ -186,8 +203,11 @@ that route through this runner instead of the multi-tab App.
 Optional polish: when `--standalone` is omitted, today's
 multi-tab experience continues. The flag is purely additive.
 
-**Test budget**: ~5 L2 subprocess tests asserting `--standalone`
-boots cleanly for each surface that supports it.
+**Test budget** (post-review bench-3): ~5 L2 subprocess tests
+asserting `--standalone --help` output for each surface (no
+TTY needed; cheap to run in CI). A future polish item could
+add a `--render-once` debug flag for golden-snapshot frame
+testing, but it's out of scope for Masterton.3.
 
 ### Masterton.4 — Closeout
 
@@ -199,8 +219,15 @@ v0.22.0 + push.
 ## Total budget
 
 - ~5-7 working days
-- ~25 new tests across the phase (12 chrome + 6 trait L1 + 5 L2 standalone + 2 closeout sanity)
-- App struct stays at ~38 fields (Norris already won the field-count battle); the win here is **dispatch shrinkage**: `App::handle()` from ~2,000 lines → maybe ~600 (overlay handling + tab/escape/picker dispatch only).
+- ~33 new tests across the phase (post-review bench-1/2/3):
+  - 12 chrome tests (M.1)
+  - 6 pre-migration regression fence tests (M.2.1, before per-screen migrations)
+  - 10 ScreenAction return-shape tests (M.2)
+  - 5 L2 standalone `--help` smoke tests (M.3)
+- App struct stays at ~38 fields (Norris already won the
+  field-count battle); the win here is **dispatch shrinkage**:
+  `App::handle()` from ~2,000 lines → maybe ~600 (overlay
+  handling + tab/escape/picker dispatch only).
 - Each sub-phase ships as its own commit; final commit cuts v0.22.0
 
 ## Pre-flight checklist
@@ -214,12 +241,40 @@ v0.22.0 + push.
 
 ## Cross-cutting open items
 
-1. **AppContext mutability boundary** — what fields does the
-   screen need `&mut` on vs `&`? First cut: `&` everything except
-   `status`/flash and any DB handles. If a screen needs to mutate
-   the repo, it goes through a method on `AppContext` (e.g.,
-   `ctx.refresh_repo()`), not direct field access. Reviewer
-   should sanity-check the read/write split per screen.
+1. **AppContext mutability boundary + concrete construction** —
+   what fields does the screen need `&mut` on vs `&`? First cut:
+   `&` everything except `status`/flash and any DB handles. The
+   borrow choreography on `App::make_context` is load-bearing
+   (post-review forge-2). Concrete sketch:
+
+   ```rust
+   impl App {
+       /// Splits App's fields so screens can read repo + clock
+       /// while mutating only the flash slot. Other mut handles
+       /// (e.g., favorites DB) are method-mediated rather than
+       /// exposed through &mut field access.
+       fn make_context(&mut self) -> AppContext<'_> {
+           AppContext {
+               repo: &self.repo,
+               clock: &self.clock_for_screens,  // owned dyn Clock
+               season: self.active_season_typed,
+               season_type: self.active_type,
+               timeframe: self.active_timeframe,
+               reports: &self.reports,
+               status: &mut self.status,  // ← only mut field
+           }
+       }
+   }
+   ```
+
+   The trick: passing `&mut self` to `make_context` AND then
+   calling a screen's `handle(&mut state, &mut ctx, action)`
+   works because `state` (e.g., `self.queries`) is borrowed
+   separately from the AppContext fields. This requires
+   per-screen helpers like `App::queries_state_mut(&mut self)`
+   that return `&mut self.queries` independently of
+   `make_context()`. Where the borrow checker fights anyway,
+   lift cross-state reads into locals before the &mut.
 2. **Overlay precedence** — orchestrator runs `handle()` first;
    if any overlay is open it eats the action. Decision: which
    overlays count? The cross-screen ones (date_picker,
@@ -246,10 +301,80 @@ v0.22.0 + push.
    replaces transient feedback. Reviewer should sanity-check that
    no information is lost.
 6. **Test continuity** — existing L0/L1 tests poke `app.X` and
-   call `app.handle()`. Post-Masterton, the test pattern shifts
-   to `screen.handle(&mut state, &mut ctx, action)`. We can write
-   a thin `App::handle_for_test()` wrapper that preserves the
-   old shape so existing tests don't churn — but at the cost of
-   keeping the old API alive. Decision: rip the bandaid; tests
-   migrate alongside their screens. Each per-screen migration
-   commit updates its own tests.
+   call `app.handle()`. Post-Masterton, `app.handle()` STAYS as
+   a thin orchestrator that internally routes to
+   `screen.handle()`, so tests calling `app.handle(action)`
+   continue to work without modification. Per-screen tests that
+   poke `app.queries.X` also keep working (the state struct is
+   unchanged). The migration is observable-equivalence-preserving
+   by construction — but trust-but-verify (see bench-1 below).
+7. **Behavior-equivalence regression fence** (bench-1) — the
+   migration moves ~2,000 lines of dispatch logic. Bin suite
+   carrying through doesn't *prove* parity unless the existing
+   tests cover the dispatch sites being moved. Mitigation: BEFORE
+   each per-screen migration, write a "dispatch smoke" L1 test
+   that captures the screen's key→state behavior across a
+   representative action set (~10 keys). Run the same test
+   post-migration to confirm bit-for-bit equivalence. The
+   pre-migration baseline serves as the regression fence; the
+   post-migration green run is the equivalence proof.
+8. **ScreenAction return-shape coverage** (bench-2) — at a
+   minimum the L1 test budget should cover: `Quit` propagates
+   from any screen, `OpenOverlay(kind)` routes to the right
+   overlay flag, `Push/Replace/Pop` transition `screen` correctly,
+   `Flash(msg)` sets status without other side effects, and
+   `Continue` is the no-op default. ~10 tests covering each
+   ScreenAction variant × representative screen pair.
+9. **Standalone runner non-interactive trigger** (bench-3) — L2
+   subprocess tests for `--standalone` will hang waiting for TTY
+   input unless we add an exit trigger. Options: (a) add a
+   `--render-once` flag that draws one frame and exits, useful
+   for golden-snapshot testing; (b) stick to subprocess-with-
+   timeout assertions on `--help` output for each surface; (c)
+   spawn the binary, send a synthetic `q` to stdin, assert clean
+   exit. (a) is the most useful for ongoing test infrastructure;
+   (b) is the cheapest. Spec defers to (b) for Masterton.3 and
+   leaves (a) as a future polish item.
+10. **Header height + chrome budget** (glass-1) — target chrome
+    is 1 row header + 1 row footer (was 2 + 1 pre-Masterton).
+    Header carries the tab strip on the left and the screen title
+    right-aligned on the same row when terminal is ≥120 cols; at
+    narrower widths the title drops (tabs win). Footer renders
+    keybind chips on the row, with the transient flash overlaid
+    when present (replaces chips for the duration of the flash).
+    No 2-row chrome — every row matters.
+11. **Keybind chip overflow** (glass-2) — at narrow widths
+    (`<80` cols), the rendered chip row would overflow.
+    Strategy: chips render in declaration order; when the row
+    is full, drop trailing chips with a `…` indicator. Each
+    screen's `chrome.keybinds` should be ordered most-important
+    first so truncation drops the least-useful keybinds. The
+    `?` key (always-available help) is the explicit "see all
+    keybinds" escape hatch — and as a global key, it's appended
+    by the chrome renderer regardless of overflow.
+12. **Standalone-mode chrome** (glass-3) — `tui::standalone::run`
+    skips the tab strip entirely. Header carries only the screen
+    title (1 row, left-aligned with a "← back" hint right-aligned
+    on screens that support it). Footer is the screen's keybind
+    chips + global keybinds (no Tab since there's no other
+    screen to cycle to). Esc exits the standalone runner cleanly
+    (returns to shell).
+13. **AddToFavorites routing through the trait** (edge-1) — the
+    filter overlay's `f` keybind comes through
+    `Action::AddToFavorites` (intercepted in QueriesState::Build
+    mode pre-Masterton). Post-Masterton, that intercept lives in
+    `QueriesScreen::handle`. The orchestrator's first-pass
+    overlay handling does NOT swallow `AddToFavorites` because
+    AddToFavorites isn't an overlay-targeted action. So the flow
+    is: orchestrator sees AddToFavorites with no overlay open →
+    delegates to active screen → QueriesScreen.handle in Build
+    mode intercepts and returns
+    `ScreenAction::OpenOverlay(OverlayKind::FilterEditor)`...
+    wait, that's a per-screen overlay (filter editor lives in
+    QueriesState::mode), not a cross-screen one. So the screen
+    just mutates its own state directly (returns Continue). The
+    AddToFavorites-as-favorites-add action falls through to a
+    different orchestrator branch (the favorites flow). Spec
+    decision: filter-editor mode is per-screen (in QueriesState),
+    so it's NOT in OverlayKind; OpenOverlay is reserved for
+    cross-screen overlays only.

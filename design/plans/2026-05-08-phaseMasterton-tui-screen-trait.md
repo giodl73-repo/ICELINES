@@ -216,7 +216,14 @@ No keybind change. ~12 L0 tests. Foundation for Masterton.2.
 
 ## Masterton.2 — Screen trait + per-screen migrations
 
-### M.2.1 — Trait scaffold + AppContext + ScreenAction
+### M.2.1 — Trait scaffold + AppContext + ScreenAction + regression fence
+
+**Bench-1 fence**: this commit is also the home for the
+pre-migration regression-fence tests — one L1 "dispatch smoke"
+per screen capturing today's key→state behavior across a
+representative action set. The same tests run post-each-migration
+to confirm bit-for-bit equivalence. They land BEFORE any
+per-screen migration starts.
 
 New file `tui/screen.rs`:
 
@@ -467,7 +474,9 @@ Add v0.22.0 entry summarizing the trait migration. CLAUDE.md
 ## Acceptance for Phase Masterton
 
 - All sub-phases ship as their own commits
-- Bin suite grows by ~25 (12 chrome + 6 screen-trait L1 + 5 standalone L2 + 2 closeout sanity)
+- Bin suite grows by ~33 (post-review bench-1/2/3): 12 chrome
+  + 6 pre-migration regression fence + 10 ScreenAction
+  return-shape + 5 standalone L2
 - All Phase Norris suites unchanged (763 baseline preserved at every commit; final count ~788)
 - L1/L2 integration suites unchanged (art_ross_w23_tui_filter, persona_wave23, persona_wave25)
 - `cargo clippy -p icelines-cli --no-deps` introduces no new lints
