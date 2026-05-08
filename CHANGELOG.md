@@ -1,5 +1,71 @@
 # IceLines Changelog
 
+## v0.20.1 — 2026-05-07 — Phase Art Ross dispatch hardening
+
+Headline: **Seven persona waves (16-22) hardening the new-pipeline
+dispatch surfaces. 15 real bugs found and fixed; ~245 new tests.
+Cross-surface parity proven empirically.** No grammar changes,
+no schema changes — every fix is at the dispatch / wiring seam
+between the legacy and new pipelines.
+
+### Bugs surfaced + fixed
+
+- **Wave 16** — CLI `query leaders` only routed `needs_provider`
+  plans through the new pipeline, so plain new-grammar atoms
+  (`<`, `IN`, `BETWEEN`, `LIKE`) silently fell back to the
+  legacy parser, which rejected them with the obsolete "no op"
+  error. (2 bugs.)
+- **Wave 17** — web `/leaders` HTML route had the same dispatch
+  bug as Wave 16. Extracted shared `partition_new_pipeline_filters`
+  helper. (1 bug.)
+- **Wave 18** — `query goalies` had its own dispatch on top of the
+  goalie-filter rewrite (`gp` → `goalie-games`). (1 bug.)
+- **Wave 19** — JSON twin `/api/v1/leaders` shared
+  `build_leader_result` had its own legacy-only dispatch. (1 bug.)
+- **Wave 20** — `query player --peers` and `query compare --similar`
+  cohorts. Extracted `partition_filter_dispatch` and
+  `build_cli_eval_ctx` helpers across all four CLI sites. (2 bugs.)
+- **Wave 21** — cross-surface result parity proof: the same filter
+  against the same repo, run via library / web JSON / web HTML /
+  CLI, must match. (25/25 parity tests green.)
+- **Wave 22** — perf: provider/clock construction was inside the
+  per-player `.filter()` closure on both web routes. Hoisted to
+  one allocation per request.
+- **Wave 22b** — output-format correctness: 17 tests asserting the
+  `LeadersEnvelope` JSON shape stays identical across legacy and
+  new-pipeline filters. Closes the residual schema-drift risk.
+
+### Test budget
+
+- Wave 11 retro fixes: 4 obsolete tests updated for v0.20 acceptance
+  (`<`, `>`, `!=`, `country=CAN OR country=USA` are now legal).
+- Wave 16 (CLI `query leaders`): 100 binary-subprocess tests.
+- Wave 17 (web HTML): 25 tests.
+- Wave 18 (CLI `query goalies` + sibling shortcuts): 40 tests.
+- Wave 19 (web JSON API): 25 tests.
+- Wave 20 (`query player`, `query compare` cohorts): 20 tests.
+- Wave 21 (cross-surface parity): 25 tests.
+- Wave 22b (envelope shape): 17 tests.
+- **Total: ~252 new tests.** Combined Phase Art Ross test budget
+  now ~676.
+
+### Internals
+
+- `icelines-query::Constraint::needs_provider()` no longer gates
+  pipeline routing — every successfully-parsed plan goes through
+  the new pipeline. The legacy fallback only fires when
+  `parse_query` itself returns `Err`.
+- New helpers: `partition_filter_dispatch` (CLI),
+  `partition_new_pipeline_filters` (web). Single source of truth
+  for "is this filter new-grammar?".
+- `prefer_new_error` heuristic surfaces helpful new-pipeline error
+  messages (`IncompatiblePredicate`, `EmptySet`, `FeatureNotYet`)
+  instead of falling through to the legacy parser's generic
+  "has no op" diagnostic.
+- `bio_matches` (executor) falls back to `SeasonStats.goalie_bios`
+  when `PlayerIdentity.bio` is empty — fixes Country / Draft /
+  Age atoms on goalie views (Wave 14b).
+
 ## v0.20.0 — 2026-05-07 — Phase Art Ross
 
 Headline: **The query system is the centerpiece of IceLines now.
