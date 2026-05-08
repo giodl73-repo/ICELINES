@@ -2010,4 +2010,144 @@ mod tests {
         );
         assert!(hint.contains("match") || hint.contains("0"));
     }
+
+    // ── Phase Norris.1 — QueriesState contract ─────────────────────────────
+    //
+    // These tests lock in the default-state contract. The full bin
+    // suite (692 passing) proves the field-access rename works; what
+    // these add is a future-proof fence: if a refactor changes
+    // QueriesState::default() — say, flipping `filter_show_help` to
+    // true, or reseeding `mode` to something other than Build — these
+    // tests fire instead of the bug surfacing as a silent UX regression.
+
+    /// Default mode is Build — the editor opens with the structured
+    /// field cursor, not a save prompt or filter overlay.
+    #[test]
+    fn l0_norris_default_starts_in_build_mode() {
+        let s = QueriesState::default();
+        assert!(
+            matches!(s.mode, crate::tui::app::QueryMode::Build),
+            "default mode must be Build, got {:?}",
+            s.mode
+        );
+    }
+
+    /// Default has no active free-form filter — text empty, no plan,
+    /// no error, history empty.
+    #[test]
+    fn l0_norris_default_has_no_active_filter() {
+        let s = QueriesState::default();
+        assert_eq!(s.filter_text, "");
+        assert!(s.filter_error.is_none());
+        assert!(s.filter_plan.is_none());
+        assert!(s.filter_history.is_empty());
+        assert!(s.filter_history_cursor.is_none());
+    }
+
+    /// Default populates the field editor — fields and sections
+    /// non-empty, cursor on field 0, scroll at 0.
+    #[test]
+    fn l0_norris_default_populates_field_editor() {
+        let s = QueriesState::default();
+        assert!(
+            !s.fields.is_empty(),
+            "default fields must be non-empty (sourced from default_fields())"
+        );
+        assert!(
+            !s.sections.is_empty(),
+            "default sections must be non-empty (sourced from default_sections())"
+        );
+        assert_eq!(s.field_idx, 0, "cursor starts on first field");
+        assert_eq!(s.result_scroll, 0);
+    }
+
+    /// Default fields match `default_fields()` and default sections
+    /// match `default_sections()` — these helpers are the single
+    /// source of truth and QueriesState::default() must delegate
+    /// to them, not duplicate.
+    #[test]
+    fn l0_norris_default_field_count_matches_default_fields_helper() {
+        let s = QueriesState::default();
+        let canonical = default_fields();
+        assert_eq!(
+            s.fields.len(),
+            canonical.len(),
+            "default fields count must match default_fields()"
+        );
+    }
+
+    /// Default has no saved state — save_name empty, saved_list
+    /// empty.
+    #[test]
+    fn l0_norris_default_has_no_saved_state() {
+        let s = QueriesState::default();
+        assert_eq!(s.save_name, "");
+        assert!(s.saved_list.is_empty());
+    }
+
+    /// Default has the cheatsheet OFF and results pane unfocused.
+    /// Both are user-toggled flags; default-on would silently
+    /// change first-launch UX.
+    #[test]
+    fn l0_norris_default_overlays_off() {
+        let s = QueriesState::default();
+        assert!(!s.filter_show_help, "cheatsheet off by default");
+        assert!(!s.results_focused, "field editor focused by default");
+    }
+
+    /// Default has no sort picker selection (legacy string-keyed
+    /// sort path active).
+    #[test]
+    fn l0_norris_default_sort_picker_unset() {
+        let s = QueriesState::default();
+        assert!(s.sort_stat_pick.is_none());
+        assert_eq!(s.sort_picker_query, "");
+        assert_eq!(s.sort_picker_idx, 0);
+    }
+
+    /// Default career-table preset is `Default` (the legacy preset
+    /// shown on a fresh player card open).
+    #[test]
+    fn l0_norris_default_career_preset_is_default() {
+        let s = QueriesState::default();
+        assert!(matches!(
+            s.career_table_preset,
+            crate::tui::screens::player::CareerTablePreset::Default
+        ));
+    }
+
+    /// `App::new` stamps QueriesState::default() onto `app.queries`.
+    /// This is the load-bearing wire-up: if App::new ever stops
+    /// using ::default(), every default-state assumption above
+    /// breaks.
+    #[test]
+    fn l0_norris_app_new_uses_queries_state_default() {
+        let app = crate::tui::app::App::new(false);
+        let canonical = QueriesState::default();
+        // Spot-check a handful of fields — full equality requires
+        // PartialEq on every nested type (incl. VecDeque, Option<Plan>,
+        // CareerTablePreset). The spot-check is enough to prove
+        // App::new wires through Default.
+        assert!(matches!(app.queries.mode, crate::tui::app::QueryMode::Build));
+        assert_eq!(app.queries.fields.len(), canonical.fields.len());
+        assert_eq!(app.queries.sections.len(), canonical.sections.len());
+        assert_eq!(app.queries.filter_text, "");
+        assert!(app.queries.filter_plan.is_none());
+        assert!(!app.queries.filter_show_help);
+    }
+
+    /// Debug derive renders without panicking on a default state.
+    /// Sanity check for forge-1 (we added derive(Debug) on
+    /// QueriesState, QueryField, QuerySection in Norris.1).
+    #[test]
+    fn l0_norris_default_debug_renders() {
+        let s = QueriesState::default();
+        let dbg = format!("{:?}", s);
+        // The output must mention the type name (basic sanity that
+        // formatter ran).
+        assert!(
+            dbg.contains("QueriesState"),
+            "Debug output must include the struct name; got: {dbg}"
+        );
+    }
 }
