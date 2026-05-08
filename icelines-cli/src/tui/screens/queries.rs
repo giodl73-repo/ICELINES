@@ -362,6 +362,103 @@ pub fn run_query_views_with_pick<'a>(
         .collect()
 }
 
+/// Phase Art Ross — variant that ALSO applies a free-form filter
+/// plan (parsed via `icelines_query::parse_query` from the Filter
+/// overlay) on top of the structured field filters. The plan is
+/// evaluated AFTER the legacy filter — same logical AND as web's
+/// `partition_new_pipeline_filters` flow — so structured fields
+/// always run first (cheap) and the typed plan only sees survivors.
+///
+/// `season` is the active season (`YYYYZZZZ`); used by the
+/// `EvalCtx` to anchor age calculations and current-season window
+/// queries. `today` defaults to the system clock.
+///
+/// When `plan` is `None`, behaves identically to
+/// `run_query_views_with_pick`.
+pub fn run_query_views_with_pick_and_plan<'a>(
+    views: &'a [PlayerView<'a>],
+    fields: &[QueryField],
+    sort_pick: Option<icelines_core::stats_catalog::StatId>,
+    plan: Option<&icelines_query::QueryPlan>,
+    season: u32,
+) -> Vec<(usize, PlayerView<'a>)> {
+    let sort = fields[0].value();
+    let pos = fields[1].value();
+    let top: usize = fields[9].value().parse().unwrap_or(20);
+
+    let mut filter = PlayerFilter::new();
+
+    if pos != "all" {
+        if pos == "F" {
+            filter.positions = Some(vec![
+                Position::Center,
+                Position::LeftWing,
+                Position::RightWing,
+            ]);
+        } else if let Ok((primary, _)) = PositionResolver::parse(pos) {
+            filter.positions = Some(vec![primary]);
+        }
+    }
+    filter.age_max = parse_opt(fields[2].value());
+    filter.age_min = parse_opt(fields[3].value());
+    filter.gp_min = parse_opt(fields[4].value());
+    filter.nationalities = if fields[5].value() == "any" {
+        None
+    } else {
+        Some(vec![fields[5].value().to_uppercase()])
+    };
+    filter.draft_years = parse_opt::<u16>(fields[6].value()).map(|y| vec![y]);
+    filter.draft_rounds = parse_opt::<u8>(fields[7].value()).map(|r| vec![r]);
+
+    let mut matched: Vec<PlayerView<'a>> = views
+        .iter()
+        .cloned()
+        .filter(|v| filter.matches_view(v))
+        .collect();
+
+    // Phase Art Ross — overlay-filter pass. Construct the provider +
+    // clock once (Wave 22 perf pattern), then retain only views the
+    // plan accepts. EvalCtx is `!Send`-pinned so it's local to this
+    // synchronous block.
+    if let Some(plan) = plan {
+        let provider = icelines_fetch::query_provider::IcelinesProvider::new(
+            std::env::var_os("HOME")
+                .or_else(|| std::env::var_os("USERPROFILE"))
+                .map(std::path::PathBuf::from)
+                .unwrap_or_default()
+                .join(".icelines")
+                .join("data"),
+        );
+        let clock = icelines_core::freshness::SystemClock;
+        let ctx = icelines_query::EvalCtx::from_clock(
+            &provider,
+            icelines_query::StrictMode::Off,
+            false,
+            &clock,
+            season,
+        );
+        matched.retain(|v| plan.root.matches(v, &ctx));
+    }
+
+    if let Some(stat) = sort_pick {
+        matched.sort_by(|a, b| stat.sort_cmp(a, b));
+    } else {
+        matched.sort_by(|a, b| {
+            sort_val_view(b, sort)
+                .partial_cmp(&sort_val_view(a, sort))
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| a.identity.id.0.cmp(&b.identity.id.0))
+        });
+    }
+
+    matched
+        .into_iter()
+        .take(top)
+        .enumerate()
+        .map(|(i, v)| (i + 1, v))
+        .collect()
+}
+
 fn sort_val_view(v: &PlayerView<'_>, sort: &str) -> f64 {
     let totals = &v.stats.totals;
     match sort {
@@ -492,7 +589,8 @@ fn col_label(sort: &str) -> &'static str {
 pub fn render(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
     use crate::tui::app::QueryMode;
 
-    // Show save/load/picker overlay instead of results when in those modes
+    // Show save/load/picker/filter overlay instead of results when
+    // in those modes
     match app.query_mode {
         QueryMode::SaveName => {
             render_save_prompt(f, app, area);
@@ -506,6 +604,10 @@ pub fn render(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
             render_sort_picker(f, app, area);
             return;
         }
+        QueryMode::FilterEdit => {
+            render_filter_editor(f, app, area);
+            return;
+        }
         QueryMode::Build => {}
     }
 
@@ -516,6 +618,58 @@ pub fn render(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
 
     render_controls(f, app, chunks[0]);
     render_results(f, app, chunks[1]);
+}
+
+/// Phase Art Ross — free-form filter editor overlay. Mirrors
+/// `render_save_prompt` but with a parser-error line. Title carries
+/// the active filter / error indicator so the user knows what they
+/// last applied.
+fn render_filter_editor(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
+    let title_state = match (
+        app.query_filter_plan.is_some(),
+        app.query_filter_error.as_ref(),
+    ) {
+        (_, Some(_)) => " Filter — parse error · fix and Enter, Esc to cancel ",
+        (true, None) => " Filter — refine and Enter, Esc to cancel ",
+        (false, None) => " Filter — type filter, Enter accept, Esc cancel ",
+    };
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .title(title_state)
+        .border_style(Style::default().fg(Color::Cyan));
+    let inner = block.inner(area);
+    f.render_widget(block, area);
+
+    let dim = Style::default().fg(Color::DarkGray);
+    let err_style = Style::default()
+        .fg(Color::Red)
+        .add_modifier(Modifier::BOLD);
+
+    let mut lines: Vec<Line> = vec![
+        Line::from(""),
+        Line::from("  Phase Art Ross filter — examples:"),
+        Line::styled("    country IN (CAN, USA) AND age<25", dim),
+        Line::styled("    pos=C AND draft-round<=2", dim),
+        Line::styled("    g.last10g>=5 AND age BETWEEN 22 AND 28", dim),
+        Line::styled("    p.career>=500", dim),
+        Line::from(""),
+        Line::styled(
+            format!("  ▶ {}▌", app.query_filter_text),
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        ),
+    ];
+    if let Some(err) = &app.query_filter_error {
+        lines.push(Line::from(""));
+        lines.push(Line::styled(format!("  ✘ {err}"), err_style));
+    }
+    lines.push(Line::from(""));
+    lines.push(Line::styled(
+        "  Enter = parse + apply · Esc = cancel · empty Enter clears",
+        dim,
+    ));
+    f.render_widget(Paragraph::new(lines), inner);
 }
 
 fn render_save_prompt(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
@@ -792,7 +946,13 @@ fn render_results(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
         return;
     }
 
-    let results = run_query_views_with_pick(&views, &app.query_fields, app.sort_stat_pick);
+    let results = run_query_views_with_pick_and_plan(
+        &views,
+        &app.query_fields,
+        app.sort_stat_pick,
+        app.query_filter_plan.as_ref(),
+        app.active_season_typed.0,
+    );
     let top: usize = app.query_fields[9].value().parse().unwrap_or(20);
     // Phase Lindsay L.3.4 — when picker overrides legacy field, the
     // column label comes from the StatId; fall back to legacy.

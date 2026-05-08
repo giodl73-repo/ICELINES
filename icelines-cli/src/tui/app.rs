@@ -109,6 +109,13 @@ pub enum QueryMode {
     /// User types substring against `StatId::cli_key()`; up/down moves
     /// selection within filtered list; Enter selects, Esc cancels.
     SortPicker,
+    /// Phase Art Ross — free-form filter overlay. User types a Phase
+    /// Art Ross filter string (`country IN (CAN, USA) AND age<25` etc.);
+    /// Enter validates via `parse_query` (parse error displayed inline,
+    /// stays in mode); Esc cancels. On Enter-success the parsed plan is
+    /// stored on `App::query_filter_plan` and applied as an extra
+    /// constraint on top of the structured field filters.
+    FilterEdit,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -236,6 +243,20 @@ pub struct App {
     pub query_results_focused: bool, // Space toggles focus between field editor and result list
     pub query_save_name: String,     // name being typed for save
     pub query_saved_list: Vec<(String, String)>, // (name, json) loaded from DB
+    /// Phase Art Ross — free-form filter text being edited (active in
+    /// `QueryMode::FilterEdit`). Persisted across mode toggles so the
+    /// user can re-open the editor and continue refining.
+    pub query_filter_text: String,
+    /// Phase Art Ross — most recent parser error from the filter
+    /// overlay. `Some(msg)` keeps the user in FilterEdit with the
+    /// message rendered; `None` when the last parse succeeded or the
+    /// editor was just opened.
+    pub query_filter_error: Option<String>,
+    /// Phase Art Ross — last successfully-parsed plan. When `Some`,
+    /// `run_query_views_with_pick_and_plan` applies it on top of the
+    /// structured field filters (logical AND). Cleared on Esc-cancel
+    /// and on empty-text Enter.
+    pub query_filter_plan: Option<icelines_query::QueryPlan>,
     /// Phase Lindsay L.3.4 — search query for the sort picker overlay.
     /// Substring-matched (case-insensitive) against `StatId::cli_key()`.
     pub sort_picker_query: String,
@@ -308,7 +329,8 @@ pub struct App {
 fn is_text_input_active(app: &App) -> bool {
     matches!(app.screen, Screen::Search | Screen::Tonight)
         || (app.screen == Screen::Schedule && app.schedule_search_mode)
-        || (app.screen == Screen::Queries && matches!(app.query_mode, QueryMode::SaveName))
+        || (app.screen == Screen::Queries
+            && matches!(app.query_mode, QueryMode::SaveName | QueryMode::FilterEdit))
 }
 
 impl App {
@@ -372,6 +394,9 @@ impl App {
             query_results_focused: false,
             query_save_name: String::new(),
             query_saved_list: Vec::new(),
+            query_filter_text: String::new(),
+            query_filter_error: None,
+            query_filter_plan: None,
             sort_picker_query: String::new(),
             sort_picker_idx: 0,
             sort_stat_pick: None,
@@ -525,6 +550,9 @@ impl App {
         if self.screen == Screen::Queries && matches!(self.query_mode, QueryMode::SaveName) {
             return self.handle_query_save_name(action);
         }
+        if self.screen == Screen::Queries && matches!(self.query_mode, QueryMode::FilterEdit) {
+            return self.handle_query_filter_edit(action);
+        }
 
         match action {
             Action::Quit => return true,
@@ -583,11 +611,14 @@ impl App {
                         }
                     } else if self.query_results_focused {
                         let views = self.views();
-                        let results = crate::tui::screens::queries::run_query_views_with_pick(
-                            &views,
-                            &self.query_fields,
-                            self.sort_stat_pick,
-                        );
+                        let results =
+                            crate::tui::screens::queries::run_query_views_with_pick_and_plan(
+                                &views,
+                                &self.query_fields,
+                                self.sort_stat_pick,
+                                self.query_filter_plan.as_ref(),
+                                self.active_season_typed.0,
+                            );
                         let visible: usize = 20;
                         if self.selected + 1 < visible {
                             self.selected =
@@ -926,6 +957,9 @@ impl App {
                             self.sort_picker_idx = 0;
                             self.status = "Sort picker — type to filter · ↑↓ select · Enter accept · Esc cancel".to_owned();
                         }
+                        // Note: `f` arrives as `Action::AddToFavorites`,
+                        // not `Char('f')` — the Queries+Build branch is
+                        // intercepted up at that arm to enter FilterEdit.
                         QueryMode::Build if c == 'o' && !self.query_results_focused => {
                             // UX.3 — `o` toggles the section that owns
                             // the current field cursor. Replaces the
@@ -1254,6 +1288,22 @@ impl App {
                 }
             }
             Action::AddToFavorites => {
+                // Phase Art Ross — on the Queries screen in Build mode,
+                // 'f' opens the free-form filter overlay instead of
+                // adding to Favorites (Favorites is a player-card
+                // action and the Queries screen has no player selected
+                // at the field-editor level). When focused on the
+                // results panel, 'f' falls through to favorites add
+                // (the user has a row selected).
+                if self.screen == Screen::Queries
+                    && matches!(self.query_mode, QueryMode::Build)
+                    && !self.query_results_focused
+                {
+                    self.query_mode = QueryMode::FilterEdit;
+                    self.query_filter_error = None;
+                    self.status = "Filter — type Phase Art Ross filter (e.g. country IN (CAN, USA) AND age<25) · Enter accept · Esc cancel".to_owned();
+                    return false;
+                }
                 // Instant add to "Favorites" — no picker, one key
                 // Reuse the same player-detection logic as AddToGroup
                 let target = self.get_selected_player();
@@ -1659,6 +1709,78 @@ impl App {
             // Help opens the overlay only at end-of-name confusion; cleaner to
             // treat as no-op so the user can press ? to see hints without
             // losing their typed name.
+            _ => {}
+        }
+        false
+    }
+
+    /// Phase Art Ross — free-form filter editor. Same short-circuit
+    /// shape as `handle_query_save_name`: every char-bearing action
+    /// is text input. Enter validates via `parse_query`; on success
+    /// the plan is stored and we return to Build, on parse error
+    /// the message is shown inline and the editor stays open so the
+    /// user can fix the input.
+    fn handle_query_filter_edit(&mut self, action: Action) -> bool {
+        match action {
+            Action::Quit => return true,
+            Action::Back | Action::Escape => {
+                // Cancel — drop the in-progress text + clear any active
+                // plan. The user can press `f` again to start fresh.
+                self.query_filter_text.clear();
+                self.query_filter_error = None;
+                self.query_filter_plan = None;
+                self.query_mode = QueryMode::Build;
+                self.status = "Filter cleared.".to_owned();
+            }
+            Action::Enter => {
+                let text = self.query_filter_text.trim();
+                if text.is_empty() {
+                    // Empty Enter = clear the active plan and exit.
+                    self.query_filter_plan = None;
+                    self.query_filter_error = None;
+                    self.query_mode = QueryMode::Build;
+                    self.status = "Filter cleared.".to_owned();
+                } else {
+                    // Free-form text → CLI variant. `FilterInput::Tui`
+                    // is reserved for the future structured-overlay
+                    // path that builds `Vec<Constraint>` directly.
+                    match icelines_query::parse_query(
+                        icelines_query::FilterInput::Cli(text.to_owned()),
+                    ) {
+                        Ok(plan) => {
+                            self.query_filter_plan = Some(plan);
+                            self.query_filter_error = None;
+                            self.query_mode = QueryMode::Build;
+                            self.status =
+                                format!("Filter applied: {text}  ·  press f to edit");
+                        }
+                        Err(errs) => {
+                            // Keep editor open. Render shows the error.
+                            let msg = errs
+                                .iter()
+                                .map(|e| e.to_string())
+                                .collect::<Vec<_>>()
+                                .join("; ");
+                            self.query_filter_error = Some(msg);
+                        }
+                    }
+                }
+            }
+            Action::Backspace => {
+                self.query_filter_text.pop();
+            }
+            Action::Char(c) => self.query_filter_text.push(c),
+            Action::Space => self.query_filter_text.push(' '),
+            // Hotkeys → their associated character (mirrors save-name).
+            Action::Refresh => self.query_filter_text.push('r'),
+            Action::Install => self.query_filter_text.push('i'),
+            Action::AddToGroup => self.query_filter_text.push('g'),
+            Action::AddToFavorites => self.query_filter_text.push('f'),
+            Action::GoToTab(n) => {
+                let ch = char::from_digit((n + 1) as u32, 10).unwrap_or('?');
+                self.query_filter_text.push(ch);
+            }
+            Action::Search => {}
             _ => {}
         }
         false
@@ -2093,11 +2215,14 @@ impl App {
             Screen::Queries => {
                 // Hart.5c.6 Phase B-3.3: queries runs against views now.
                 let views = self.views();
-                let results = crate::tui::screens::queries::run_query_views_with_pick(
-                    &views,
-                    &self.query_fields,
-                    self.sort_stat_pick,
-                );
+                let results =
+                    crate::tui::screens::queries::run_query_views_with_pick_and_plan(
+                        &views,
+                        &self.query_fields,
+                        self.sort_stat_pick,
+                        self.query_filter_plan.as_ref(),
+                        self.active_season_typed.0,
+                    );
                 let row_idx =
                     self.query_result_scroll + self.selected.min(results.len().saturating_sub(1));
                 results
@@ -2286,11 +2411,14 @@ impl App {
                         // Enter on a result row → player card. Hart.5c.6
                         // Phase B-3.3: queries runs against views now.
                         let views = self.views();
-                        let results = crate::tui::screens::queries::run_query_views_with_pick(
-                            &views,
-                            &self.query_fields,
-                            self.sort_stat_pick,
-                        );
+                        let results =
+                            crate::tui::screens::queries::run_query_views_with_pick_and_plan(
+                                &views,
+                                &self.query_fields,
+                                self.sort_stat_pick,
+                                self.query_filter_plan.as_ref(),
+                                self.active_season_typed.0,
+                            );
                         let row_idx = self.query_result_scroll
                             + self.selected.min(results.len().saturating_sub(1));
                         if let Some((_, v)) = results.get(row_idx) {
@@ -2299,6 +2427,12 @@ impl App {
                             self.screen = Screen::PlayerById(pid);
                             self.selected = 0;
                         }
+                    }
+                    QueryMode::FilterEdit => {
+                        // Unreachable: the dispatcher short-circuits
+                        // every action through `handle_query_filter_edit`
+                        // when this mode is active (see line ~553).
+                        // Defensive arm so the match stays exhaustive.
                     }
                 }
             }
@@ -3781,5 +3915,157 @@ mod tests {
             Some(p) => std::env::set_var("HOME", p),
             None => std::env::remove_var("HOME"),
         }
+    }
+
+    // ── Phase Art Ross — TUI filter overlay (Wave 23) ──────────────────
+
+    /// `f` on the Queries screen enters FilterEdit mode and the
+    /// dispatcher routes subsequent actions through the editor.
+    #[test]
+    fn l0_tui_filter_edit_f_enters_mode() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        app.handle(Action::AddToFavorites); // 'f' hotkey
+        assert_eq!(
+            app.query_mode,
+            QueryMode::FilterEdit,
+            "f on Queries must enter FilterEdit"
+        );
+    }
+
+    /// Typed characters land in `query_filter_text`, not the global
+    /// hotkey targets (so `f` while typing is text input).
+    #[test]
+    fn l0_tui_filter_edit_typing_appends_to_text() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        app.query_mode = QueryMode::FilterEdit;
+        for c in "country=CAN".chars() {
+            if c == ' ' {
+                app.handle(Action::Space);
+            } else {
+                app.handle(Action::Char(c));
+            }
+        }
+        assert_eq!(app.query_filter_text, "country=CAN");
+    }
+
+    /// 'f' typed while in FilterEdit becomes a literal 'f', not a
+    /// favorites action — same short-circuit pattern as the save-name
+    /// editor.
+    #[test]
+    fn l0_tui_filter_edit_f_hotkey_is_text_input() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        app.query_mode = QueryMode::FilterEdit;
+        app.handle(Action::AddToFavorites); // 'f' becomes literal 'f'
+        assert_eq!(app.query_filter_text, "f");
+        assert_eq!(app.query_mode, QueryMode::FilterEdit);
+    }
+
+    /// Backspace pops one character.
+    #[test]
+    fn l0_tui_filter_edit_backspace_pops_char() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        app.query_mode = QueryMode::FilterEdit;
+        app.query_filter_text = "country=CA".to_owned();
+        app.handle(Action::Backspace);
+        assert_eq!(app.query_filter_text, "country=C");
+    }
+
+    /// Enter on a valid filter parses + stores the plan and returns
+    /// to Build mode.
+    #[test]
+    fn l0_tui_filter_edit_enter_valid_parses_and_exits() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        app.query_mode = QueryMode::FilterEdit;
+        app.query_filter_text = "country=CAN".to_owned();
+        app.handle(Action::Enter);
+        assert_eq!(
+            app.query_mode,
+            QueryMode::Build,
+            "valid Enter must exit FilterEdit"
+        );
+        assert!(
+            app.query_filter_plan.is_some(),
+            "valid Enter must store the parsed plan"
+        );
+        assert!(app.query_filter_error.is_none(), "no error on success");
+    }
+
+    /// Enter on an invalid filter keeps the editor open and stores
+    /// the parser error message for rendering.
+    #[test]
+    fn l0_tui_filter_edit_enter_invalid_stays_with_error() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        app.query_mode = QueryMode::FilterEdit;
+        // Garbage that the parser will reject.
+        app.query_filter_text = "((((".to_owned();
+        app.handle(Action::Enter);
+        assert_eq!(
+            app.query_mode,
+            QueryMode::FilterEdit,
+            "invalid filter must NOT exit the editor"
+        );
+        assert!(
+            app.query_filter_error.is_some(),
+            "invalid filter must surface a parser error"
+        );
+        assert!(
+            app.query_filter_plan.is_none(),
+            "invalid filter must NOT store a plan"
+        );
+    }
+
+    /// Esc cancels: clears text, clears any active plan, returns to
+    /// Build.
+    #[test]
+    fn l0_tui_filter_edit_esc_cancels_and_clears() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        // Pretend the user previously had a plan applied.
+        app.query_filter_text = "country=CAN".to_owned();
+        app.query_mode = QueryMode::FilterEdit;
+        let _ = app.handle(Action::Enter); // apply, exit
+        assert!(app.query_filter_plan.is_some());
+
+        // Re-enter editor, type more, Esc.
+        app.query_mode = QueryMode::FilterEdit;
+        app.query_filter_text.push_str(" AND age<30");
+        app.handle(Action::Escape);
+        assert_eq!(app.query_mode, QueryMode::Build);
+        assert!(
+            app.query_filter_text.is_empty(),
+            "Esc must clear the in-progress text"
+        );
+        assert!(
+            app.query_filter_plan.is_none(),
+            "Esc must clear the active plan"
+        );
+    }
+
+    /// Empty Enter clears any active plan and exits — gives the user
+    /// a fast "remove filter" gesture without retyping.
+    #[test]
+    fn l0_tui_filter_edit_empty_enter_clears_plan() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        app.query_filter_text = "country=CAN".to_owned();
+        app.query_mode = QueryMode::FilterEdit;
+        let _ = app.handle(Action::Enter);
+        assert!(app.query_filter_plan.is_some(), "precondition");
+
+        // Re-enter, leave empty, Enter.
+        app.query_mode = QueryMode::FilterEdit;
+        app.query_filter_text.clear();
+        app.handle(Action::Enter);
+        assert_eq!(app.query_mode, QueryMode::Build);
+        assert!(
+            app.query_filter_plan.is_none(),
+            "empty Enter must clear the active plan"
+        );
     }
 }
