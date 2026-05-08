@@ -692,7 +692,23 @@ mod handlers {
             let season = Season(season_u32);
 
             let raw_filters = parse_filters_from_query(raw_query);
-            let filter_expr = combine_filters(&raw_filters).map_err(|e| {
+
+            // Wave 19 — partition new-grammar filters from legacy
+            // residue, mirroring the /leaders HTML route fix.
+            let (new_plans, legacy_residue, helpful_errs) =
+                partition_new_pipeline_filters(&raw_filters);
+            if !helpful_errs.is_empty() {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    Html(format!(
+                        "<!doctype html><html><body><h1>Bad filter</h1><pre>{}</pre></body></html>",
+                        helpful_errs.join("\n").replace('<', "&lt;").replace('>', "&gt;"),
+                    )),
+                )
+                    .into_response());
+            }
+
+            let filter_expr = combine_filters(&legacy_residue).map_err(|e| {
                 let hint = e
                     .hint()
                     .unwrap_or("see `icelines docs` for the filter grammar");
@@ -748,6 +764,32 @@ mod handlers {
                     .filter(|v| match &filter_expr {
                         None => true,
                         Some(expr) => expr.matches(v),
+                    })
+                    .filter(|v| {
+                        // Wave 19 — apply new-pipeline plans
+                        // (Phase Art Ross grammar — `<`, `IN`,
+                        // `BETWEEN`, `LIKE`, sliding/career/league).
+                        if new_plans.is_empty() {
+                            return true;
+                        }
+                        let provider =
+                            icelines_fetch::query_provider::IcelinesProvider::new(
+                                std::env::var_os("HOME")
+                                    .or_else(|| std::env::var_os("USERPROFILE"))
+                                    .map(std::path::PathBuf::from)
+                                    .unwrap_or_default()
+                                    .join(".icelines")
+                                    .join("data"),
+                            );
+                        let clock = icelines_core::freshness::SystemClock;
+                        let ctx = icelines_query::EvalCtx::from_clock(
+                            &provider,
+                            icelines_query::StrictMode::Off,
+                            false,
+                            &clock,
+                            season.0,
+                        );
+                        new_plans.iter().all(|plan| plan.root.matches(v, &ctx))
                     })
                     .map(|v| {
                         let prev = prior_points.get(&v.id().0).copied();
