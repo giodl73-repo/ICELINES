@@ -41,6 +41,57 @@ impl Default for PlayoffsScreenState {
         }
     }
 }
+
+#[cfg(test)]
+mod norris_state_tests {
+    use super::*;
+
+    // ── Phase Norris.4 — PlayoffsScreenState contract ──────────────────────
+
+    /// Default round index is 0 — first round of the bracket.
+    #[test]
+    fn l0_norris_playoffs_default_round_zero() {
+        let s = PlayoffsScreenState::default();
+        assert_eq!(s.round, 0);
+    }
+
+    /// Default series index is 0 — first series of the round.
+    #[test]
+    fn l0_norris_playoffs_default_series_zero() {
+        let s = PlayoffsScreenState::default();
+        assert_eq!(s.series, 0);
+    }
+
+    /// Default cache is empty (no rounds loaded yet).
+    #[test]
+    fn l0_norris_playoffs_default_cache_empty() {
+        let s = PlayoffsScreenState::default();
+        assert!(
+            s.cache.lock().unwrap().is_empty(),
+            "playoffs cache must start empty"
+        );
+    }
+
+    /// `App::new` wires `app.playoffs` through default.
+    #[test]
+    fn l0_norris_playoffs_app_new_uses_default() {
+        let app = crate::tui::app::App::new(false);
+        assert_eq!(app.playoffs.round, 0);
+        assert_eq!(app.playoffs.series, 0);
+        assert!(app.playoffs.cache.lock().unwrap().is_empty());
+    }
+
+    /// Debug derive renders without panic.
+    #[test]
+    fn l0_norris_playoffs_default_debug_renders() {
+        let s = PlayoffsScreenState::default();
+        let dbg = format!("{:?}", s);
+        assert!(
+            dbg.contains("PlayoffsScreenState"),
+            "Debug output must include the struct name; got: {dbg}"
+        );
+    }
+}
 use crate::tui::playoffs::{playoff_year_for_season, PlayoffsState};
 use icelines_fetch::nhl_api::{PlayoffBracket, PlayoffGameResult, PlayoffSeries};
 

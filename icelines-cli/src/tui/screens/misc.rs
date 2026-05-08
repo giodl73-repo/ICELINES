@@ -50,6 +50,58 @@ impl Default for TonightScreenState {
     }
 }
 
+#[cfg(test)]
+mod norris_state_tests {
+    use super::*;
+
+    // ── Phase Norris.4 — TonightScreenState contract ───────────────────────
+
+    /// Default date is empty — convention for "today" in the
+    /// Tonight/Scores tab. The renderer treats empty as a sentinel
+    /// for `today_iso()` lookup.
+    #[test]
+    fn l0_norris_tonight_default_date_empty() {
+        let s = TonightScreenState::default();
+        assert_eq!(s.date, "", "empty date = today sentinel");
+    }
+
+    /// Cursor starts at row 0.
+    #[test]
+    fn l0_norris_tonight_default_selected_at_zero() {
+        let s = TonightScreenState::default();
+        assert_eq!(s.selected, 0);
+    }
+
+    /// Both caches start empty (no dates / boxscores loaded yet).
+    #[test]
+    fn l0_norris_tonight_default_caches_empty() {
+        let s = TonightScreenState::default();
+        assert!(s.cache.lock().unwrap().is_empty());
+        assert!(s.boxscore_cache.lock().unwrap().is_empty());
+    }
+
+    /// `App::new` wires `app.tonight` through default.
+    #[test]
+    fn l0_norris_tonight_app_new_uses_default() {
+        let app = crate::tui::app::App::new(false);
+        assert_eq!(app.tonight.date, "");
+        assert_eq!(app.tonight.selected, 0);
+        assert!(app.tonight.cache.lock().unwrap().is_empty());
+        assert!(app.tonight.boxscore_cache.lock().unwrap().is_empty());
+    }
+
+    /// Debug derive renders without panic.
+    #[test]
+    fn l0_norris_tonight_default_debug_renders() {
+        let s = TonightScreenState::default();
+        let dbg = format!("{:?}", s);
+        assert!(
+            dbg.contains("TonightScreenState"),
+            "Debug output must include the struct name; got: {dbg}"
+        );
+    }
+}
+
 // ── Scores / Tonight ─────────────────────────────────────────────────────────
 
 pub fn render_tonight(f: &mut Frame, app: &App, area: Rect) {

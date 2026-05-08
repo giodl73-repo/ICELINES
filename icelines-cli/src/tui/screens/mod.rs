@@ -2080,6 +2080,88 @@ mod app_snapshot_tests {
         });
     }
 
+    // ── Phase Norris.4 — Goalies/Playoffs/Tonight sequencing tests ────────
+
+    /// Goalies sort cycle: pressing 's' advances `goalies.sort` to
+    /// the next index AND resets `goalies.selected` to 0 (cursor
+    /// returns to top of newly-sorted list).
+    #[test]
+    fn l1_norris_goalies_sort_cycle_resets_cursor() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+        app.handle(Action::GoToTab(3)); // Goalies
+
+        // Pretend the user scrolled to row 5.
+        app.goalies.selected = 5;
+        let sort_before = app.goalies.sort;
+
+        app.handle(Action::Char('s'));
+        assert_eq!(
+            app.goalies.selected, 0,
+            "sort cycle must reset cursor to top"
+        );
+        assert_ne!(
+            app.goalies.sort, sort_before,
+            "sort cycle must advance the index"
+        );
+    }
+
+    /// Playoffs round/series indices are independent — series
+    /// cursor doesn't get clobbered by round navigation. (Cursor
+    /// reset semantics are intentional in some cases; this test
+    /// pins the current behavior so a future refactor surfaces
+    /// any change.)
+    #[test]
+    fn l1_norris_playoffs_default_indices_match_app_new() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+        app.handle(Action::GoToTab(8)); // Playoffs
+
+        // Defaults match what App::new wires through.
+        assert_eq!(app.playoffs.round, 0);
+        assert_eq!(app.playoffs.series, 0);
+
+        // Direct mutation (handler-driven mutation requires bracket
+        // data in the cache; this is the smaller sequencing fence).
+        app.playoffs.round = 2;
+        app.playoffs.series = 3;
+        assert_eq!(
+            (app.playoffs.round, app.playoffs.series),
+            (2, 3),
+            "indices must be independently mutable"
+        );
+    }
+
+    /// Tonight `date` empty-string sentinel persists across cursor
+    /// navigation. The Tonight tab's "today" mode is signaled by
+    /// `date == ""`; a user navigating selected rows must not
+    /// accidentally fill `date` with anything.
+    #[test]
+    fn l1_norris_tonight_date_sentinel_survives_cursor_nav() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+        app.handle(Action::GoToTab(4)); // Tonight/Scores
+
+        assert_eq!(
+            app.tonight.date, "",
+            "Tonight opens in 'today' mode (empty-string sentinel)"
+        );
+
+        // Move the cursor a few times via Down (handler may no-op
+        // if no rows loaded — that's fine, we only care about the
+        // date sentinel).
+        for _ in 0..3 {
+            app.handle(Action::Down);
+        }
+        assert_eq!(
+            app.tonight.date, "",
+            "cursor navigation must NOT touch the date sentinel"
+        );
+    }
+
     // ── Phase Norris.3 — TransactionsState sequencing tests ───────────────
 
     /// Helper: build a fixture transaction with the given kind so

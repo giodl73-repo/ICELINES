@@ -46,6 +46,57 @@ impl Default for GoaliesState {
     }
 }
 
+#[cfg(test)]
+mod norris_state_tests {
+    use super::*;
+
+    // ── Phase Norris.4 — GoaliesState contract ─────────────────────────────
+
+    /// Default sort cycle index is 0 — SV% descending (the
+    /// Vezina-eligibility default that opens the Goalies tab).
+    #[test]
+    fn l0_norris_goalies_default_sort_is_sv_pct() {
+        let s = GoaliesState::default();
+        assert_eq!(s.sort, 0);
+    }
+
+    /// Default min-GP threshold is 15 (NHL leaderboard convention).
+    /// Catches a regression where someone bumps the default and
+    /// hides marginal performers from the first-open view.
+    #[test]
+    fn l0_norris_goalies_default_min_gp_is_15() {
+        let s = GoaliesState::default();
+        assert_eq!(s.min_gp, 15);
+    }
+
+    /// Cursor starts at row 0.
+    #[test]
+    fn l0_norris_goalies_default_selected_at_zero() {
+        let s = GoaliesState::default();
+        assert_eq!(s.selected, 0);
+    }
+
+    /// `App::new` wires `app.goalies` through GoaliesState::default().
+    #[test]
+    fn l0_norris_goalies_app_new_uses_default() {
+        let app = crate::tui::app::App::new(false);
+        assert_eq!(app.goalies.selected, 0);
+        assert_eq!(app.goalies.sort, 0);
+        assert_eq!(app.goalies.min_gp, 15);
+    }
+
+    /// Debug derive renders without panic (forge-1 sanity).
+    #[test]
+    fn l0_norris_goalies_default_debug_renders() {
+        let s = GoaliesState::default();
+        let dbg = format!("{:?}", s);
+        assert!(
+            dbg.contains("GoaliesState"),
+            "Debug output must include the struct name; got: {dbg}"
+        );
+    }
+}
+
 /// Sort selectors. App stores the index; we map index → comparator here
 /// so the cycle order is centralised.
 pub const SORTS: &[GoalieSort] = &[
