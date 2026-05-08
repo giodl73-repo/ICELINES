@@ -459,48 +459,101 @@ fn sliding_window_matches(
 }
 
 fn bio_matches(b: &BioConstraint, v: &PlayerView<'_>, season: u32) -> bool {
+    // Wave 14b finding: goalies carry their country / nationality /
+    // shoots / draft / height in `SeasonStats.goalie_bios`, not in
+    // `PlayerIdentity.bio` (which is empty for goalies because the
+    // skater-bios endpoint doesn't return them). The executor must
+    // fall back to goalie_bios when the identity field is None.
+    let gb = v.stats.goalie_bios.as_ref();
+
     match b.field {
-        BioField::Age => match age_for(v, season) {
-            Some(a) => predicate_matches_number(&b.predicate, a as f64),
-            None => false,
-        },
-        BioField::DraftYear => match v.identity.bio.draft_year {
-            Some(y) => predicate_matches_number(&b.predicate, y as f64),
-            None => false,
-        },
-        BioField::DraftRound => match v.identity.bio.draft_round {
-            Some(r) => predicate_matches_number(&b.predicate, r as f64),
-            None => false,
-        },
-        BioField::DraftOverall => match v.identity.bio.draft_overall {
-            Some(o) => predicate_matches_number(&b.predicate, o as f64),
-            None => false,
-        },
-        BioField::Height => match v.identity.bio.height_in_inches {
-            Some(h) => predicate_matches_number(&b.predicate, h as f64),
-            None => false,
-        },
+        BioField::Age => {
+            // Try identity.bio.birth_date first; fall back to
+            // goalie_bios.birth_date for goalies.
+            let bd = v
+                .identity
+                .bio
+                .birth_date
+                .as_deref()
+                .or_else(|| gb.and_then(|g| g.birth_date.as_deref()));
+            match bd.and_then(|d| compute_age(d, season)) {
+                Some(a) => predicate_matches_number(&b.predicate, a as f64),
+                None => false,
+            }
+        }
+        BioField::DraftYear => {
+            let y: Option<u32> = v
+                .identity
+                .bio
+                .draft_year
+                .map(|y| y as u32)
+                .or_else(|| gb.and_then(|g| g.draft_year.as_deref()).and_then(|s| s.parse().ok()));
+            match y {
+                Some(y) => predicate_matches_number(&b.predicate, y as f64),
+                None => false,
+            }
+        }
+        BioField::DraftRound => {
+            let r: Option<u32> = v
+                .identity
+                .bio
+                .draft_round
+                .map(|r| r as u32)
+                .or_else(|| gb.and_then(|g| g.draft_round.as_deref()).and_then(|s| s.parse().ok()));
+            match r {
+                Some(r) => predicate_matches_number(&b.predicate, r as f64),
+                None => false,
+            }
+        }
+        BioField::DraftOverall => {
+            let o: Option<u32> = v
+                .identity
+                .bio
+                .draft_overall
+                .map(|o| o as u32)
+                .or_else(|| {
+                    gb.and_then(|g| g.draft_overall.as_deref())
+                        .and_then(|s| s.parse().ok())
+                });
+            match o {
+                Some(o) => predicate_matches_number(&b.predicate, o as f64),
+                None => false,
+            }
+        }
+        BioField::Height => {
+            let h = v
+                .identity
+                .bio
+                .height_in_inches
+                .or_else(|| gb.and_then(|g| g.height_in_inches));
+            match h {
+                Some(h) => predicate_matches_number(&b.predicate, h as f64),
+                None => false,
+            }
+        }
         BioField::Weight => match v.identity.bio.weight_lbs {
+            // GoalieBios doesn't carry weight today.
             Some(w) => predicate_matches_number(&b.predicate, w as f64),
             None => false,
         },
         BioField::Country => {
             // country can match either birth_country or
             // nationality_code (legacy semantics from BioAtom).
+            // For goalies, fall back to GoalieBios fields.
             let bc = v
                 .identity
                 .bio
                 .birth_country
                 .as_deref()
+                .or_else(|| gb.and_then(|g| g.birth_country_code.as_deref()))
                 .map(ScalarValue::canonicalize_text);
             let nc = v
                 .identity
                 .bio
                 .nationality_code
                 .as_deref()
+                .or_else(|| gb.and_then(|g| g.nationality_code.as_deref()))
                 .map(ScalarValue::canonicalize_text);
-            // Two candidate strings — pass to the text predicate
-            // applied via OR.
             text_predicate_matches_any(&b.predicate, &[bc.as_deref(), nc.as_deref()])
         }
         BioField::Nationality => {
@@ -509,6 +562,7 @@ fn bio_matches(b: &BioConstraint, v: &PlayerView<'_>, season: u32) -> bool {
                 .bio
                 .nationality_code
                 .as_deref()
+                .or_else(|| gb.and_then(|g| g.nationality_code.as_deref()))
                 .map(ScalarValue::canonicalize_text);
             text_predicate_matches(&b.predicate, nc.as_deref())
         }
@@ -518,6 +572,7 @@ fn bio_matches(b: &BioConstraint, v: &PlayerView<'_>, season: u32) -> bool {
                 .bio
                 .shoots_catches
                 .as_deref()
+                .or_else(|| gb.and_then(|g| g.shoots_catches.as_deref()))
                 .map(ScalarValue::canonicalize_text);
             text_predicate_matches(&b.predicate, s.as_deref())
         }
