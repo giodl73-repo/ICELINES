@@ -159,6 +159,16 @@ The mock NHL API fixture is at `src/icelines-fetch/tests/mock_nhl_api.rs` — us
    - **C.1 — Series momentum**: `icelines-core::series_momentum::SeriesMomentum` schema (leader, OT count, last_result, home_advantage in 2-2-1-1-1 format) + `icelines-fetch::series_momentum_builder::compute_series_momentum` projection from `PlayoffSeries`. CLI surface: `icelines playoffs --series A [--season YYYYZZZZ]`. Renders summary line + last-game result + next-game venue.
    - **C.2 — Cup-run player narratives**: `icelines-core::playoff_run::PlayoffRunSummary` schema with skater + goalie aggregates (W-L-OTL, SV%, GAA, shutouts). `icelines query leaders --playoff` walks the Boxscore manifest filtering on `gameType=3` and aggregates by PID. JSON envelope mirrors `query leaders --week`.
    - **C.3 — Live game tracking surface**: `icelines-core::live_game::LiveGameDetail` schema + new web `/game/:id` route. Live HTML page with scoreboard, goalie table (PID-linked to player cards), goal summary, top-5 skater rows per team, auto-refresh meta-tag every 30s when `state ∈ {LIVE, CRIT, PRE}`.
+- **Phase Norris — TUI architecture refactor (v0.21.0)**: Pure internal refactor extracting per-screen state structs out of the 3,800-line App god-object. No keybind change, no UX delta. Six state structs now live alongside their renderers:
+   - `tui::screens::queries::QueriesState` (Norris.1, 17 fields) — the centerpiece, holds all `query_*` / `sort_picker_*` / `career_table_preset` state.
+   - `tui::screens::schedule::ScheduleScreenState` (Norris.2, 8 fields) — week + caches + search filter. Suffixed `Screen` to disambiguate from the existing `tui::schedule::ScheduleState` load-state enum.
+   - `tui::screens::transactions::TransactionsState` (Norris.3, 8 fields) — rows + filters + cursor. App field is `app.txs` (not `app.transactions`) to avoid substring overlap with the legacy `transactions_*` field names.
+   - `tui::screens::goalies::GoaliesState` (Norris.4, 3 fields) — sort + min_gp + cursor.
+   - `tui::screens::playoffs::PlayoffsScreenState` (Norris.4, 3 fields) — cache + round + series.
+   - `tui::screens::misc::TonightScreenState` (Norris.4, 4 fields) — caches + date sentinel + cursor.
+   - **Cross-screen state stays on App**: screen discriminator, repo, active_season, status, overlays (show_help/show_admin/show_season_picker/show_reports_overlay/group_picker_*), reports config, picker scaffolding (`scores_picker_*` + `picker_target` are shared between Tonight and Schedule).
+   - **Test pattern**: each `<Screen>State` ships with ~10 L0 default-contract tests in its module's `norris_state_tests` + 3 L1 sequencing tests in `tui::screens::app_snapshot_tests`. No L2 (TUI is interactive; subprocess can't drive keystrokes). Test growth: 705 → 749 (+44 across the phase).
+   - **Trophy fit**: best defenseman, "foundational, structural, both-ends work" per the picking guide. Spec: `design/specs/phase-norris-overview.md`. Plan: `design/plans/2026-05-07-phaseNorris-tui-state-extraction.md`.
 - `icelines build/serve/deploy` — mkdocs static site
 - ~2050 tests across L0/L1/L2 + 4 persona-scenario waves (`persona_scenarios.rs` + `persona_wave2.rs/wave3/wave4`) plus `persona_foster.rs` (30 scenarios) including mock NHL API fixture
 

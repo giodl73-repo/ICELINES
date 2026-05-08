@@ -1,5 +1,99 @@
 # IceLines Changelog
 
+## v0.21.0 — 2026-05-08 — Phase Norris (TUI architecture refactor)
+
+Headline: **Internal refactor. No keybind change, no UX delta. The
+3,800-line App god-object is gone — every TUI screen now owns its
+state in a per-screen `<Screen>State` struct, accessed as
+`app.queries.filter_text` instead of `app.query_filter_text`.** 44
+new tests across the phase.
+
+### Why now
+
+Phase Art Ross (v0.20.x) added ~25 fields to App across the
+filter-experience push (Wave 23/24/24b/c/d, filter presets, history,
+live count, cheatsheet). Adding any new screen meant scrolling past
+80+ fields to find the right place. Reading the App definition was
+exhausting. Norris catches this BEFORE the next phase compounds it,
+while recent additions are still freshest in test coverage.
+
+### Five sub-phases, each shipped as its own commit pair (extraction
++ tests):
+
+- **Norris.1 (pilot, 3 commits)** — `QueriesState` (17 fields):
+  every `query_*`, `sort_picker_*`, `career_table_preset` field.
+  ~200 mechanical access-site renames across app.rs / screens/
+  queries.rs / screens/mod.rs / screens/player.rs. The pilot
+  proved the pattern: file-level
+  `#![allow(clippy::module_name_repetitions)]`, `#[derive(Debug)]`,
+  `pub` fields matching today's `pub struct App` visibility,
+  hand-written `Default` impl that mirrors the legacy `App::new`
+  init.
+- **Norris.2 (2 commits)** — `ScheduleScreenState` (8 fields):
+  week + caches + search filter. Suffixed `Screen` to disambiguate
+  from the existing `tui::schedule::ScheduleState` per-week
+  load-state enum (Idle / Loading / Loaded / Error).
+- **Norris.3 (2 commits)** — `TransactionsState` (8 fields): rows
+  + filters + cursor. App field is `app.txs` (not `app.transactions`)
+  to avoid substring overlap with the legacy `transactions_*` field
+  names — `app.transactions_fetched_at` and `app.transactions`
+  would both match a bare `app.transactions` regex.
+- **Norris.4 (2 commits)** — three small extractions batched:
+  `GoaliesState` (3 fields), `PlayoffsScreenState` (3 fields),
+  `TonightScreenState` (4 fields). Same `Screen` suffix where the
+  simpler name conflicts with an existing load-state enum.
+- **Norris.5** — closeout: this changelog entry + CLAUDE.md +
+  v0.21.0 tag.
+
+### What stays on App
+
+- Screen discriminator (`screen` / `prev_screen`).
+- Cross-screen UI state: `selected`, `status`, `tick`, `no_color`.
+- Overlays: `show_help`, `show_admin`, `show_season_picker`,
+  `show_reports_overlay`, `group_picker_*`.
+- Time/season axis: `active_season`, `active_season_typed`,
+  `active_type`, `active_timeframe`.
+- Cross-screen pickers: `scores_picker_*` + `picker_target` (shared
+  between Tonight and Schedule), `picker_selected`.
+- Data: `repo`, `dashboard_panel`, `league_context`,
+  `career_loaded_ids`.
+- Bootstrap: `load_state`, `install_state`.
+- Caches that aren't screen-specific: `headshot_cache`,
+  `last_auto_refresh`.
+- Config: `reports` (ReportToggles — read by every Tier-1 stat
+  visibility check, cross-screen).
+
+App went from 80+ fields to 43; the struct definition is now
+~116 lines (was ~250+).
+
+### Test pattern (canonical for the phase)
+
+Each `<Screen>State` ships with two tiers:
+
+1. **L0 contract tests** (~5-10 per state) in
+   `tui::screens::<screen>::norris_state_tests`: pin every
+   `<Screen>State::default()` invariant — mode, empty active
+   state, populated structural state, consistency with helper
+   defaults, App::new wiring, Debug derive.
+2. **L1 sequencing tests** (~3 per state) in
+   `tui::screens::app_snapshot_tests`: chain handler calls
+   through realistic multi-step sessions to prove state
+   transitions land correctly across actions.
+
+No L2 — the TUI is interactive; subprocess can't drive keystrokes,
+so L2 stays scoped to the CLI / web surfaces (already covered).
+
+### Footprint
+
+- 9 commits across the phase (4 extraction + 4 tests + this
+  closeout).
+- 6 new state structs.
+- 43 fields moved off App.
+- Bin suite: 692 (v0.20.3) → 749 (v0.21.0); +44 net new tests.
+- L1/L2 integration suites unchanged: every Phase Art Ross suite
+  (Wave 11/12/14/15/16/17/18/19/20/21/22/22b/23/24/25) passes
+  unchanged. Saved-query JSON contract preserved bit-for-bit.
+
 ## v0.20.3 — 2026-05-07 — Phase Art Ross polish + cohort filter
 
 Headline: **Filter presets, TUI editor polish, and `query career
