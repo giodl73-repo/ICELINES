@@ -63,7 +63,7 @@ fn build_view(app: &App) -> Option<FavoritesView> {
     // next render the slate is populated.
     use crate::tui::tonight::{lookup, maybe_fetch, TonightState, TODAY_KEY};
     let slate: Vec<icelines_fetch::nhl_api::ScheduledGame> = {
-        match lookup(&app.tonight_cache, TODAY_KEY) {
+        match lookup(&app.tonight.cache, TODAY_KEY) {
             TonightState::Loaded(games) => {
                 let today_str = date.format("%Y-%m-%d").to_string();
                 games
@@ -72,7 +72,7 @@ fn build_view(app: &App) -> Option<FavoritesView> {
                     .collect()
             }
             TonightState::Idle => {
-                maybe_fetch(app.tonight_cache.clone(), TODAY_KEY.to_string());
+                maybe_fetch(app.tonight.cache.clone(), TODAY_KEY.to_string());
                 Vec::new()
             }
             // Loading / Error → no slate this render; renderer

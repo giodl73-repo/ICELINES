@@ -1,3 +1,7 @@
+// Phase Norris.4 — `GoaliesState` repeats the module name in the
+// type identifier. Same canonical pattern as Norris.1/2/3.
+#![allow(clippy::module_name_repetitions)]
+
 //! Goalies tab — league-wide goalie leaderboard. Phase G.3.
 //!
 //! Sort cycle (`s` key):  SV% ↓ → GAA ↑ → Wins ↓ → GP ↓ → Saves ↓ → SO ↓
@@ -13,6 +17,34 @@ use ratatui::{
 };
 
 use crate::tui::app::App;
+
+// ── Phase Norris.4 — per-screen state struct ─────────────────────────────────
+
+/// Phase Norris.4 — Goalies tab state. Replaces the 3 `goalie_*`
+/// fields previously on App. Held as `app.goalies`.
+#[derive(Debug)]
+pub struct GoaliesState {
+    pub selected: usize,
+    /// Sort cycle index — SV% ↓ (0) → GAA ↑ (1) → Wins ↓ (2) →
+    /// GP ↓ (3) → Saves ↓ (4) → SO ↓ (5). Cycled by `s`.
+    pub sort: u8,
+    /// Min-GP threshold for the leaderboard. Default 15 matches the
+    /// NHL leaderboard convention; cycled by `m`.
+    pub min_gp: u32,
+}
+
+impl Default for GoaliesState {
+    fn default() -> Self {
+        Self {
+            selected: 0,
+            // SV% ↓ — Vezina-eligibility default (matches the legacy
+            // App::new init).
+            sort: 0,
+            // 15 GP — NHL leaderboard convention.
+            min_gp: 15,
+        }
+    }
+}
 
 /// Sort selectors. App stores the index; we map index → comparator here
 /// so the cycle order is centralised.
@@ -111,13 +143,13 @@ pub fn sort_goalie_views<'a>(
 
 pub fn render(f: &mut Frame, app: &App, area: Rect) {
     let sort = SORTS
-        .get(app.goalie_sort as usize)
+        .get(app.goalies.sort as usize)
         .copied()
         .unwrap_or(GoalieSort::SvPctDesc);
     let title = format!(
         " Goalies · sort: {} · min GP: {} · s:sort  m:min-gp  Enter:detail  Esc:back ",
         sort.label(),
-        app.goalie_min_gp,
+        app.goalies.min_gp,
     );
     let block = Block::default().borders(Borders::ALL).title(title);
     let inner = block.inner(area);
@@ -145,7 +177,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
         return;
     }
 
-    let qualified = sort_goalie_views(&views, sort, app.goalie_min_gp);
+    let qualified = sort_goalie_views(&views, sort, app.goalies.min_gp);
     if qualified.is_empty() {
         let dim = Style::default().fg(Color::DarkGray);
         f.render_widget(
@@ -154,7 +186,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
                 Line::styled(
                     format!(
                         "  No goalies have played at least {} games this season.",
-                        app.goalie_min_gp
+                        app.goalies.min_gp
                     ),
                     dim,
                 ),
@@ -186,7 +218,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
         dim,
     )));
 
-    let selected_idx = app.goalie_selected.min(qualified.len().saturating_sub(1));
+    let selected_idx = app.goalies.selected.min(qualified.len().saturating_sub(1));
     for (rank, v) in qualified.iter().enumerate() {
         let stats = match v.stats.goalie.as_ref() {
             Some(s) => s,

@@ -1783,12 +1783,12 @@ mod app_snapshot_tests {
         };
 
         // Inject into tonight_cache (keyed by date "" = today).
-        app.tonight_cache
+        app.tonight.cache
             .lock()
             .unwrap()
             .insert(String::new(), TonightState::Loaded(vec![scheduled]));
         // Inject into boxscore_cache (keyed by game_id).
-        app.boxscore_cache
+        app.tonight.boxscore_cache
             .lock()
             .unwrap()
             .insert(game_id, BoxscoreState::Loaded(boxscore));
@@ -1822,7 +1822,7 @@ mod app_snapshot_tests {
         app.boot_load_with_store(&store);
 
         let game_id: u64 = 9999999;
-        app.boxscore_cache
+        app.tonight.boxscore_cache
             .lock()
             .unwrap()
             .insert(game_id, BoxscoreState::Loading);
@@ -1849,7 +1849,7 @@ mod app_snapshot_tests {
         app.boot_load_with_store(&store);
 
         let game_id: u64 = 9999999;
-        app.boxscore_cache.lock().unwrap().insert(
+        app.tonight.boxscore_cache.lock().unwrap().insert(
             game_id,
             BoxscoreState::Error("503 Service Unavailable".to_owned()),
         );

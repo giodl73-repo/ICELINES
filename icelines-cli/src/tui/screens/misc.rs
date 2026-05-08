@@ -1,3 +1,7 @@
+// Phase Norris.4 — `TonightScreenState` repeats the module name in
+// the type identifier. Same canonical pattern as Norris.1/2/3.
+#![allow(clippy::module_name_repetitions)]
+
 //! TUI screens: Tonight/Scores, Projections, Groups, Fetch+Install, Schedule, Playoffs, Admin.
 
 use crate::tui::app::App;
@@ -8,6 +12,43 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, Paragraph},
     Frame,
 };
+
+// ── Phase Norris.4 — per-screen state struct ─────────────────────────────────
+
+/// Phase Norris.4 — Tonight/Scores tab state. Replaces 4 fields
+/// previously on App (`tonight_cache`, `boxscore_cache`,
+/// `scores_date`, `scores_selected`). Held as `app.tonight`.
+///
+/// **Naming asymmetry**: the existing `tui::tonight::TonightState`
+/// is a per-date load-state enum. To avoid renaming that, the new
+/// screen-state struct is `TonightScreenState` — same convention
+/// as Norris.2's `ScheduleScreenState`.
+///
+/// Note: the date-picker working state (`scores_picker_open`,
+/// `scores_picker_input`, `scores_picker_err`, `picker_target`)
+/// stays on App because the picker is shared with the Schedule
+/// screen. Extracting a shared `DatePickerState` is out of Norris
+/// scope.
+#[derive(Debug)]
+pub struct TonightScreenState {
+    pub cache: crate::tui::tonight::TonightCache,
+    pub boxscore_cache: crate::tui::tonight::BoxscoreCache,
+    /// Active date — "YYYY-MM-DD", empty string means "today".
+    pub date: String,
+    /// Selected game row.
+    pub selected: usize,
+}
+
+impl Default for TonightScreenState {
+    fn default() -> Self {
+        Self {
+            cache: crate::tui::tonight::new_cache(),
+            boxscore_cache: crate::tui::tonight::new_boxscore_cache(),
+            date: String::new(),
+            selected: 0,
+        }
+    }
+}
 
 // ── Scores / Tonight ─────────────────────────────────────────────────────────
 
@@ -22,8 +63,8 @@ pub fn render_tonight(f: &mut Frame, app: &App, area: Rect) {
         .split(area);
     let main_area = chunks[0];
 
-    let state = lookup(&app.tonight_cache, &app.scores_date);
-    let date_label = scores_date_label(&app.scores_date);
+    let state = lookup(&app.tonight.cache, &app.tonight.date);
+    let date_label = scores_date_label(&app.tonight.date);
     let updated = scores_updated_indicator(app);
 
     let title = match &state {
@@ -114,7 +155,7 @@ fn render_scores_list(
     area: Rect,
     games: &[icelines_fetch::nhl_api::ScheduledGame],
 ) {
-    let date_label = scores_date_label(&app.scores_date);
+    let date_label = scores_date_label(&app.tonight.date);
     let dim_style = Style::default().fg(Color::DarkGray);
 
     // The NHL `/v1/schedule/now` endpoint returns the whole "gameWeek"
@@ -124,7 +165,7 @@ fn render_scores_list(
     // 2026-04-29 locally but 2026-04-30 UTC, while the NHL day grouping
     // can use either depending on the game's time. Accept BOTH local
     // and UTC "today" so the user always sees tonight's games.
-    let target_dates: Vec<String> = if app.scores_date.is_empty() {
+    let target_dates: Vec<String> = if app.tonight.date.is_empty() {
         let local = chrono::Local::now()
             .date_naive()
             .format("%Y-%m-%d")
@@ -139,7 +180,7 @@ fn render_scores_list(
             vec![local, utc]
         }
     } else {
-        vec![app.scores_date.clone()]
+        vec![app.tonight.date.clone()]
     };
     let filtered: Vec<&icelines_fetch::nhl_api::ScheduledGame> = games
         .iter()
@@ -151,7 +192,7 @@ fn render_scores_list(
         // matched nothing, it's almost certainly a timezone or
         // navigation mismatch. Surface the first available date so the
         // user can hit ←/→ to find it instead of staring at "no games".
-        let hint = if !games.is_empty() && app.scores_date.is_empty() {
+        let hint = if !games.is_empty() && app.tonight.date.is_empty() {
             let earliest = games
                 .iter()
                 .map(|g| g.date.as_str())
@@ -163,7 +204,7 @@ fn render_scores_list(
                 games.len(),
                 earliest
             )
-        } else if app.scores_date.is_empty() {
+        } else if app.tonight.date.is_empty() {
             "  No games scheduled today.".to_owned()
         } else {
             format!("  No games scheduled for {date_label}.")
@@ -207,7 +248,7 @@ fn render_scores_list(
     for (i, game) in filtered.iter().enumerate() {
         let utc = game.start_time_utc.get(11..16).unwrap_or("?");
         let et = fmt_et(utc);
-        let selected = i == app.scores_selected;
+        let selected = i == app.tonight.selected;
 
         // The series tag is the game number ("Game 5") for playoff games.
         // For regular-season games it's empty.
@@ -333,10 +374,10 @@ fn render_scores_list(
 
     items.push(ratatui::widgets::ListItem::new(Line::from("")));
     // Date arrows + jump hint at the bottom — mirrors the spec's footer
-    let anchor = if app.scores_date.is_empty() {
+    let anchor = if app.tonight.date.is_empty() {
         crate::tui::schedule::today_iso()
     } else {
-        app.scores_date.clone()
+        app.tonight.date.clone()
     };
     let prev_d = crate::tui::schedule::add_days(&anchor, -1).unwrap_or_default();
     let next_d = crate::tui::schedule::add_days(&anchor, 1).unwrap_or_default();
@@ -1382,7 +1423,7 @@ mod tests {
     fn l0_render_scores_shows_updated_indicator_when_armed() {
         let mut app = App::new(false);
         app.screen = crate::tui::app::Screen::Tonight;
-        app.scores_date.clear();
+        app.tonight.date.clear();
         // Force the indicator to read ~14s by setting last_auto_refresh in the past.
         let past = std::time::Instant::now() - std::time::Duration::from_secs(14);
         app.last_auto_refresh = Some(past);
@@ -1398,7 +1439,7 @@ mod tests {
         let app = App::new(false);
         let mut app = app;
         app.screen = crate::tui::app::Screen::Tonight;
-        app.scores_date = "2026-01-15".to_owned();
+        app.tonight.date = "2026-01-15".to_owned();
         // Past dates leave last_auto_refresh as None — no indicator.
         app.last_auto_refresh = None;
         let text = render_tonight_to_text(&app);
@@ -1441,8 +1482,8 @@ mod tests {
     fn render_with_games(scores_date: &str, games: Vec<ScheduledGame>) -> String {
         let mut app = App::new(false);
         app.screen = crate::tui::app::Screen::Tonight;
-        app.scores_date = scores_date.to_owned();
-        app.tonight_cache
+        app.tonight.date = scores_date.to_owned();
+        app.tonight.cache
             .lock()
             .unwrap()
             .insert(scores_date.to_owned(), TonightState::Loaded(games));

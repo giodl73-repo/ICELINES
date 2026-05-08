@@ -21,7 +21,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, game_id: u64) {
     // Look up the schedule entry for this game (gives us series context).
     let game: Option<ScheduledGame> = {
         use crate::tui::tonight::{lookup, TonightState};
-        let state = lookup(&app.tonight_cache, &app.scores_date);
+        let state = lookup(&app.tonight.cache, &app.tonight.date);
         match state {
             TonightState::Loaded(games) => games.iter().find(|g| g.game_id == game_id).cloned(),
             _ => None,
@@ -52,7 +52,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, game_id: u64) {
     let inner = block.inner(area);
     f.render_widget(block, area);
 
-    let state = lookup_boxscore(&app.boxscore_cache, game_id);
+    let state = lookup_boxscore(&app.tonight.boxscore_cache, game_id);
     match state {
         BoxscoreState::Idle | BoxscoreState::Loading => {
             f.render_widget(
@@ -555,7 +555,7 @@ mod tests {
     #[test]
     fn l0_render_game_detail_loaded_shows_goals_and_goalies() {
         let app = App::new(false);
-        app.boxscore_cache
+        app.tonight.boxscore_cache
             .lock()
             .unwrap()
             .insert(12345, BoxscoreState::Loaded(fixture_boxscore(12345)));
@@ -589,7 +589,7 @@ mod tests {
         //   NYR:  TOI Fox 26:09     Hits Zibanejad 2     Blocks Fox 4
         //   WSH:  TOI Carlson 25:11 Hits Wilson 5         Blocks Carlson 5
         let app = App::new(false);
-        app.boxscore_cache
+        app.tonight.boxscore_cache
             .lock()
             .unwrap()
             .insert(12345, BoxscoreState::Loaded(fixture_boxscore(12345)));
@@ -628,12 +628,12 @@ mod tests {
     fn l0_render_game_detail_playoff_shows_series_context() {
         let app = App::new(false);
         // Seed schedule entry so series context is available
-        app.tonight_cache.lock().unwrap().insert(
+        app.tonight.cache.lock().unwrap().insert(
             String::new(),
             TonightState::Loaded(vec![fixture_playoff_game(12345)]),
         );
         // Seed boxscore
-        app.boxscore_cache
+        app.tonight.boxscore_cache
             .lock()
             .unwrap()
             .insert(12345, BoxscoreState::Loaded(fixture_boxscore(12345)));
@@ -653,7 +653,7 @@ mod tests {
     #[test]
     fn l0_render_game_detail_error_shows_retry_hint() {
         let app = App::new(false);
-        app.boxscore_cache
+        app.tonight.boxscore_cache
             .lock()
             .unwrap()
             .insert(12345, BoxscoreState::Error("network down".to_owned()));
@@ -671,7 +671,7 @@ mod tests {
         let mut bs = fixture_boxscore(12345);
         bs.goals.clear();
         bs.goalies.clear();
-        app.boxscore_cache
+        app.tonight.boxscore_cache
             .lock()
             .unwrap()
             .insert(12345, BoxscoreState::Loaded(bs));
@@ -685,11 +685,11 @@ mod tests {
     #[test]
     fn l0_render_game_detail_title_shows_score_and_ot() {
         let app = App::new(false);
-        app.tonight_cache.lock().unwrap().insert(
+        app.tonight.cache.lock().unwrap().insert(
             String::new(),
             TonightState::Loaded(vec![fixture_playoff_game(12345)]),
         );
-        app.boxscore_cache
+        app.tonight.boxscore_cache
             .lock()
             .unwrap()
             .insert(12345, BoxscoreState::Loaded(fixture_boxscore(12345)));

@@ -179,13 +179,10 @@ pub struct App {
     pub screen: Screen,
     pub prev_screen: Option<Screen>,
     pub no_color: bool,
-    /// Selected row on the Goalies tab.
-    pub goalie_selected: usize,
-    /// Sort cycle index on the Goalies tab.
-    /// 0=SV% desc, 1=GAA asc, 2=W desc, 3=GP desc, 4=Saves desc, 5=SO desc.
-    pub goalie_sort: u8,
-    /// Min-GP filter on the Goalies tab. Cycles 5 → 15 → 25 → 40 → 5.
-    pub goalie_min_gp: u32,
+    /// Phase Norris.4 — Goalies-tab state extracted into its own
+    /// struct. Replaces `goalie_selected` / `goalie_sort` /
+    /// `goalie_min_gp`.
+    pub goalies: crate::tui::screens::goalies::GoaliesState,
     pub load_state: crate::tui::loader::LoadState,
     pub install_state: InstallState,
     pub tick: u64,
@@ -219,11 +216,12 @@ pub struct App {
     // `repo` from the bundled-season fan-out. Idempotent guard so the
     // pre-render hook doesn't re-scan 38 seasons every frame.
     pub career_loaded_ids: std::collections::HashSet<icelines_core::identity::PlayerId>,
-    // Scores (live schedule)
-    pub tonight_cache: crate::tui::tonight::TonightCache,
-    pub boxscore_cache: crate::tui::tonight::BoxscoreCache,
-    pub scores_date: String,               // "YYYY-MM-DD", empty = today
-    pub scores_selected: usize,            // selected game row
+    /// Phase Norris.4 — Tonight/Scores tab state extracted into
+    /// its own struct. Replaces `tonight_cache`, `boxscore_cache`,
+    /// `scores_date`, `scores_selected`. (The picker working state
+    /// `scores_picker_*` stays on App because the picker is shared
+    /// with the Schedule screen.)
+    pub tonight: crate::tui::screens::misc::TonightScreenState,
     pub scores_picker_open: bool,          // d-key date picker visible
     pub scores_picker_input: String,       // text being typed in date picker
     pub scores_picker_err: Option<String>, // validation error to display
@@ -248,9 +246,10 @@ pub struct App {
     /// search_mode, filter, filter_err, selected).
     pub schedule: crate::tui::screens::schedule::ScheduleScreenState,
     // Playoffs tab — bracket + series detail
-    pub playoffs_cache: crate::tui::playoffs::PlayoffsCache,
-    pub playoffs_round: usize,  // round index (0-based)
-    pub playoffs_series: usize, // series index within the current round
+    /// Phase Norris.4 — Playoffs-tab state extracted into its own
+    /// struct. Replaces `playoffs_cache` / `playoffs_round` /
+    /// `playoffs_series`.
+    pub playoffs: crate::tui::screens::playoffs::PlayoffsScreenState,
     /// Phase Norris.1 — Queries-tab state extracted into its own
     /// struct. Replaces the 17+ `query_*`, `sort_picker_*`, and
     /// `career_table_preset` fields scattered across App pre-Norris.
@@ -310,9 +309,8 @@ impl App {
             screen: Screen::Home,
             prev_screen: None,
             no_color,
-            goalie_selected: 0,
-            goalie_sort: 0,    // SV% descending — Vezina-eligibility default
-            goalie_min_gp: 15, // NHL leaderboard convention
+            // Phase Norris.4 — replaces 3 goalie_* init lines.
+            goalies: crate::tui::screens::goalies::GoaliesState::default(),
             load_state: crate::tui::loader::LoadState::new(),
             install_state: InstallState::new(),
             tick: 0,
@@ -336,10 +334,8 @@ impl App {
             reports_selected: 0,
             reports: crate::config::ReportToggles::default(),
             career_loaded_ids: std::collections::HashSet::new(),
-            tonight_cache: crate::tui::tonight::new_cache(),
-            boxscore_cache: crate::tui::tonight::new_boxscore_cache(),
-            scores_date: String::new(),
-            scores_selected: 0,
+            // Phase Norris.4 — replaces 4 tonight_/boxscore_/scores_* init lines.
+            tonight: crate::tui::screens::misc::TonightScreenState::default(),
             scores_picker_open: false,
             scores_picker_input: String::new(),
             scores_picker_err: None,
@@ -348,9 +344,8 @@ impl App {
             last_auto_refresh: None,
             // Phase Norris.2 — replaces 8 schedule_* init lines.
             schedule: crate::tui::screens::schedule::ScheduleScreenState::default(),
-            playoffs_cache: crate::tui::playoffs::new_cache(),
-            playoffs_round: 0,
-            playoffs_series: 0,
+            // Phase Norris.4 — replaces 3 playoffs_* init lines.
+            playoffs: crate::tui::screens::playoffs::PlayoffsScreenState::default(),
             group_picker_open: false,
             group_picker_list: Vec::new(),
             group_picker_player: None,
@@ -536,18 +531,18 @@ impl App {
             }
             Action::Down => {
                 if self.screen == Screen::Tonight {
-                    self.scores_selected = self.scores_selected.saturating_add(1);
+                    self.tonight.selected = self.tonight.selected.saturating_add(1);
                 } else if matches!(
                     self.screen,
                     Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(_, _)
                 ) {
                     self.schedule.selected = self.schedule.selected.saturating_add(1);
                 } else if self.screen == Screen::Goalies {
-                    self.goalie_selected = self.goalie_selected.saturating_add(1);
+                    self.goalies.selected = self.goalies.selected.saturating_add(1);
                 } else if self.screen == Screen::Transactions {
                     self.txs.selected = self.txs.selected.saturating_add(1);
                 } else if self.screen == Screen::Playoffs {
-                    self.playoffs_series = self.playoffs_series.saturating_add(1);
+                    self.playoffs.series = self.playoffs.series.saturating_add(1);
                 } else if self.screen == Screen::Queries {
                     if self.queries.mode == QueryMode::SortPicker {
                         // Phase Lindsay L.3.4 — sort picker Down moves
@@ -643,18 +638,18 @@ impl App {
             }
             Action::Up => {
                 if self.screen == Screen::Tonight {
-                    self.scores_selected = self.scores_selected.saturating_sub(1);
+                    self.tonight.selected = self.tonight.selected.saturating_sub(1);
                 } else if matches!(
                     self.screen,
                     Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(_, _)
                 ) {
                     self.schedule.selected = self.schedule.selected.saturating_sub(1);
                 } else if self.screen == Screen::Goalies {
-                    self.goalie_selected = self.goalie_selected.saturating_sub(1);
+                    self.goalies.selected = self.goalies.selected.saturating_sub(1);
                 } else if self.screen == Screen::Transactions {
                     self.txs.selected = self.txs.selected.saturating_sub(1);
                 } else if self.screen == Screen::Playoffs {
-                    self.playoffs_series = self.playoffs_series.saturating_sub(1);
+                    self.playoffs.series = self.playoffs.series.saturating_sub(1);
                 } else if self.screen == Screen::Queries {
                     if self.queries.mode == QueryMode::SortPicker {
                         // Phase Lindsay L.3.4 — sort picker Up moves
@@ -746,10 +741,10 @@ impl App {
                     }
                     // Scores: ←/→ moves the date by one day
                     Screen::Tonight => {
-                        let from = if self.scores_date.is_empty() {
+                        let from = if self.tonight.date.is_empty() {
                             crate::tui::schedule::today_iso()
                         } else {
-                            self.scores_date.clone()
+                            self.tonight.date.clone()
                         };
                         let delta = if matches!(action, Action::Right) {
                             1
@@ -757,10 +752,10 @@ impl App {
                             -1
                         };
                         if let Some(new_date) = crate::tui::schedule::add_days(&from, delta) {
-                            self.scores_date = new_date.clone();
-                            self.scores_selected = 0;
+                            self.tonight.date = new_date.clone();
+                            self.tonight.selected = 0;
                             crate::tui::tonight::maybe_fetch(
-                                self.tonight_cache.clone(),
+                                self.tonight.cache.clone(),
                                 new_date.clone(),
                             );
                             // Past dates don't poll — clear the auto-refresh timer.
@@ -792,12 +787,12 @@ impl App {
                     Screen::Playoffs => {
                         let n_rounds = self.playoffs_round_count();
                         if n_rounds > 0 {
-                            self.playoffs_round = if matches!(action, Action::Right) {
-                                (self.playoffs_round + 1).min(n_rounds - 1)
+                            self.playoffs.round = if matches!(action, Action::Right) {
+                                (self.playoffs.round + 1).min(n_rounds - 1)
                             } else {
-                                self.playoffs_round.saturating_sub(1)
+                                self.playoffs.round.saturating_sub(1)
                             };
-                            self.playoffs_series = 0;
+                            self.playoffs.series = 0;
                         }
                     }
                     // Sub-view switching: Queries ↔ Projections.
@@ -958,21 +953,21 @@ impl App {
                 } else if self.screen == Screen::Goalies && c == 's' {
                     // Phase G.3: cycle sort SV% → GAA → W → GP → Saves → SO
                     let n = crate::tui::screens::goalies::SORTS.len() as u8;
-                    self.goalie_sort = (self.goalie_sort + 1) % n;
-                    self.goalie_selected = 0;
+                    self.goalies.sort = (self.goalies.sort + 1) % n;
+                    self.goalies.selected = 0;
                     let label =
-                        crate::tui::screens::goalies::SORTS[self.goalie_sort as usize].label();
+                        crate::tui::screens::goalies::SORTS[self.goalies.sort as usize].label();
                     self.status = format!("Goalies sort: {label}");
                 } else if self.screen == Screen::Goalies && c == 'm' {
                     // Cycle min-GP threshold 5 → 15 → 25 → 40
                     let cycle = crate::tui::screens::goalies::MIN_GP_CYCLE;
                     let cur = cycle
                         .iter()
-                        .position(|v| *v == self.goalie_min_gp)
+                        .position(|v| *v == self.goalies.min_gp)
                         .unwrap_or(0);
-                    self.goalie_min_gp = cycle[(cur + 1) % cycle.len()];
-                    self.goalie_selected = 0;
-                    self.status = format!("Goalies min GP: {}", self.goalie_min_gp);
+                    self.goalies.min_gp = cycle[(cur + 1) % cycle.len()];
+                    self.goalies.selected = 0;
+                    self.status = format!("Goalies min GP: {}", self.goalies.min_gp);
                 } else if self.screen == Screen::Schedule && c == 't' {
                     // Jump to today's week
                     let today = crate::tui::schedule::today_iso();
@@ -998,9 +993,9 @@ impl App {
                             .to_owned();
                 } else if self.screen == Screen::Tonight && c == 't' {
                     // 't' on Scores jumps back to today (live)
-                    self.scores_date.clear();
-                    self.scores_selected = 0;
-                    crate::tui::tonight::maybe_fetch(self.tonight_cache.clone(), String::new());
+                    self.tonight.date.clear();
+                    self.tonight.selected = 0;
+                    crate::tui::tonight::maybe_fetch(self.tonight.cache.clone(), String::new());
                     // Re-arm the auto-refresh timer for the live date.
                     self.last_auto_refresh = Some(std::time::Instant::now());
                     self.status = "Scores · Today".to_owned();
@@ -1180,8 +1175,8 @@ impl App {
                 } else if self.screen == Screen::Tonight {
                     // Force refresh scores for the active date
                     crate::tui::tonight::force_fetch(
-                        self.tonight_cache.clone(),
-                        self.scores_date.clone(),
+                        self.tonight.cache.clone(),
+                        self.tonight.date.clone(),
                     );
                     self.status = "Refreshing scores…".to_owned();
                 } else if self.screen == Screen::Schedule {
@@ -1198,7 +1193,7 @@ impl App {
                         crate::tui::playoffs::playoff_year_for_season(&self.active_season)
                     {
                         crate::tui::playoffs::force_fetch_bracket(
-                            self.playoffs_cache.clone(),
+                            self.playoffs.cache.clone(),
                             year,
                             &self.active_season,
                         );
@@ -1326,10 +1321,10 @@ impl App {
     /// Also (re)arms the auto-refresh timer so the next 30s tick starts from now.
     fn maybe_fetch_scores(&mut self) {
         if self.screen == Screen::Tonight {
-            crate::tui::tonight::maybe_fetch(self.tonight_cache.clone(), self.scores_date.clone());
+            crate::tui::tonight::maybe_fetch(self.tonight.cache.clone(), self.tonight.date.clone());
             // Arm the timer only when on a live date — past dates are
             // permanent (final scores don't change) and don't need polling.
-            self.last_auto_refresh = if self.scores_date.is_empty() {
+            self.last_auto_refresh = if self.tonight.date.is_empty() {
                 Some(std::time::Instant::now())
             } else {
                 None
@@ -1349,12 +1344,12 @@ impl App {
         let now = std::time::Instant::now();
         if should_auto_refresh(
             &self.screen,
-            &self.scores_date,
+            &self.tonight.date,
             self.last_auto_refresh,
             now,
             SCORES_AUTO_REFRESH_INTERVAL,
         ) {
-            crate::tui::tonight::force_fetch(self.tonight_cache.clone(), self.scores_date.clone());
+            crate::tui::tonight::force_fetch(self.tonight.cache.clone(), self.tonight.date.clone());
             self.last_auto_refresh = Some(now);
         }
     }
@@ -1362,10 +1357,10 @@ impl App {
     /// game_id of the currently-highlighted game on Scores, if any.
     pub fn selected_game_id(&self) -> Option<u64> {
         use crate::tui::tonight::{lookup, TonightState};
-        let state = lookup(&self.tonight_cache, &self.scores_date);
+        let state = lookup(&self.tonight.cache, &self.tonight.date);
         match state {
             TonightState::Loaded(games) => {
-                let idx = self.scores_selected.min(games.len().saturating_sub(1));
+                let idx = self.tonight.selected.min(games.len().saturating_sub(1));
                 games.get(idx).map(|g| g.game_id)
             }
             _ => None,
@@ -1386,9 +1381,9 @@ impl App {
             self.scores_picker_input.clear();
             match target {
                 PickerTarget::Scores => {
-                    self.scores_date.clear();
-                    self.scores_selected = 0;
-                    crate::tui::tonight::maybe_fetch(self.tonight_cache.clone(), String::new());
+                    self.tonight.date.clear();
+                    self.tonight.selected = 0;
+                    crate::tui::tonight::maybe_fetch(self.tonight.cache.clone(), String::new());
                     // Empty date = live → arm the timer
                     self.last_auto_refresh = Some(std::time::Instant::now());
                     self.status = "Scores · Today".to_owned();
@@ -1415,10 +1410,10 @@ impl App {
                 self.scores_picker_input.clear();
                 match target {
                     PickerTarget::Scores => {
-                        self.scores_date = iso.clone();
-                        self.scores_selected = 0;
+                        self.tonight.date = iso.clone();
+                        self.tonight.selected = 0;
                         crate::tui::tonight::maybe_fetch(
-                            self.tonight_cache.clone(),
+                            self.tonight.cache.clone(),
                             iso.clone(),
                         );
                         // Specific date → no auto-refresh (final scores don't change)
@@ -1487,7 +1482,7 @@ impl App {
             Some(y) => y,
             None => return 0,
         };
-        let map = self.playoffs_cache.lock().unwrap();
+        let map = self.playoffs.cache.lock().unwrap();
         match map.get(&year) {
             Some(crate::tui::playoffs::PlayoffsState::Loaded(b)) => b.rounds.len(),
             _ => 0,
@@ -1497,11 +1492,11 @@ impl App {
     /// Letter of the currently-selected series (used as SeriesDetail key).
     pub fn selected_series_letter(&self) -> Option<String> {
         let year = crate::tui::playoffs::playoff_year_for_season(&self.active_season)?;
-        let map = self.playoffs_cache.lock().unwrap();
+        let map = self.playoffs.cache.lock().unwrap();
         match map.get(&year) {
             Some(crate::tui::playoffs::PlayoffsState::Loaded(b)) => {
-                let round = b.rounds.get(self.playoffs_round)?;
-                let series = round.series.get(self.playoffs_series)?;
+                let round = b.rounds.get(self.playoffs.round)?;
+                let series = round.series.get(self.playoffs.series)?;
                 series.letter.clone()
             }
             _ => None,
@@ -1513,7 +1508,7 @@ impl App {
         if matches!(self.screen, Screen::Playoffs | Screen::SeriesDetail(_)) {
             if let Some(year) = crate::tui::playoffs::playoff_year_for_season(&self.active_season) {
                 crate::tui::playoffs::maybe_fetch_bracket(
-                    self.playoffs_cache.clone(),
+                    self.playoffs.cache.clone(),
                     year,
                     &self.active_season,
                 );
@@ -2624,16 +2619,16 @@ impl App {
                 // sort_goalie_views, picks the selected view, pushes
                 // GoalieDetailById from view.identity.id.
                 let sort = crate::tui::screens::goalies::SORTS
-                    .get(self.goalie_sort as usize)
+                    .get(self.goalies.sort as usize)
                     .copied()
                     .unwrap_or(crate::tui::screens::goalies::GoalieSort::SvPctDesc);
                 let views = self.goalie_views();
                 let qualified = crate::tui::screens::goalies::sort_goalie_views(
                     &views,
                     sort,
-                    self.goalie_min_gp,
+                    self.goalies.min_gp,
                 );
-                if let Some(v) = qualified.get(self.goalie_selected) {
+                if let Some(v) = qualified.get(self.goalies.selected) {
                     let pid = v.identity.id;
                     self.prev_screen = Some(Screen::Goalies);
                     self.screen = Screen::GoalieDetailById(pid);
@@ -2644,7 +2639,7 @@ impl App {
                 if let Some(game_id) = self.selected_game_id() {
                     self.prev_screen = Some(Screen::Tonight);
                     self.screen = Screen::GameDetail(game_id);
-                    crate::tui::tonight::maybe_fetch_boxscore(self.boxscore_cache.clone(), game_id);
+                    crate::tui::tonight::maybe_fetch_boxscore(self.tonight.boxscore_cache.clone(), game_id);
                 }
             }
             _ => {}
@@ -3191,7 +3186,7 @@ mod tests {
             current_round: None,
             rounds,
         };
-        app.playoffs_cache
+        app.playoffs.cache
             .lock()
             .unwrap()
             .insert(year, PlayoffsState::Loaded(bracket));
@@ -3236,18 +3231,18 @@ mod tests {
         };
         seed_bracket(&mut app, 2026, vec![r1, r2]);
 
-        assert_eq!(app.playoffs_round, 0);
+        assert_eq!(app.playoffs.round, 0);
         app.handle(Action::Right);
-        assert_eq!(app.playoffs_round, 1, "→ should advance to round 2");
+        assert_eq!(app.playoffs.round, 1, "→ should advance to round 2");
         // At the last round, → clamps (no wrap)
         app.handle(Action::Right);
-        assert_eq!(app.playoffs_round, 1);
+        assert_eq!(app.playoffs.round, 1);
         // ← walks back
         app.handle(Action::Left);
-        assert_eq!(app.playoffs_round, 0);
+        assert_eq!(app.playoffs.round, 0);
         // At round 0, ← clamps at 0
         app.handle(Action::Left);
-        assert_eq!(app.playoffs_round, 0);
+        assert_eq!(app.playoffs.round, 0);
     }
 
     #[test]
@@ -3271,11 +3266,11 @@ mod tests {
 
         // Move down to series 1, then change rounds — cursor resets to 0
         app.handle(Action::Down);
-        assert_eq!(app.playoffs_series, 1);
+        assert_eq!(app.playoffs.series, 1);
         app.handle(Action::Right);
-        assert_eq!(app.playoffs_round, 1);
+        assert_eq!(app.playoffs.round, 1);
         assert_eq!(
-            app.playoffs_series, 0,
+            app.playoffs.series, 0,
             "switching rounds resets the series cursor"
         );
     }
@@ -3320,10 +3315,10 @@ mod tests {
     fn l0_tui_playoffs_left_right_no_op_when_unloaded() {
         let mut app = App::new(false);
         app.screen = Screen::Playoffs;
-        let initial = app.playoffs_round;
+        let initial = app.playoffs.round;
         app.handle(Action::Right);
         assert_eq!(
-            app.playoffs_round, initial,
+            app.playoffs.round, initial,
             "no rounds loaded → no movement"
         );
     }
@@ -3363,7 +3358,7 @@ mod tests {
     }
 
     fn seed_scores(app: &mut App, date_key: &str, games: Vec<ScheduledGame>) {
-        app.tonight_cache
+        app.tonight.cache
             .lock()
             .unwrap()
             .insert(date_key.to_owned(), TonightState::Loaded(games));
@@ -3404,15 +3399,15 @@ mod tests {
         let mut app = App::new(false);
         app.screen = Screen::Tonight;
         // Start on today (empty)
-        assert!(app.scores_date.is_empty());
+        assert!(app.tonight.date.is_empty());
         app.handle(Action::Right);
         assert!(
-            !app.scores_date.is_empty(),
+            !app.tonight.date.is_empty(),
             "Right should set explicit date"
         );
-        let after_right = app.scores_date.clone();
+        let after_right = app.tonight.date.clone();
         app.handle(Action::Left);
-        let after_left = app.scores_date.clone();
+        let after_left = app.tonight.date.clone();
         assert_ne!(after_right, after_left, "Left should move backwards");
     }
 
@@ -3420,10 +3415,10 @@ mod tests {
     fn l0_tui_scores_t_jumps_to_today() {
         let mut app = App::new(false);
         app.screen = Screen::Tonight;
-        app.scores_date = "2026-01-01".to_owned();
+        app.tonight.date = "2026-01-01".to_owned();
         app.handle(Action::Char('t'));
         assert!(
-            app.scores_date.is_empty(),
+            app.tonight.date.is_empty(),
             "t must clear scores_date back to live"
         );
     }
@@ -3448,7 +3443,7 @@ mod tests {
         }
         app.handle(Action::Enter);
         assert!(!app.scores_picker_open, "picker should close on apply");
-        assert_eq!(app.scores_date, "2026-04-28");
+        assert_eq!(app.tonight.date, "2026-04-28");
     }
 
     #[test]
@@ -3671,11 +3666,11 @@ mod tests {
     fn l0_scores_auto_refresh_armed_on_t_jump_to_today() {
         let mut app = App::new(false);
         app.screen = Screen::Tonight;
-        app.scores_date = "2026-01-15".to_owned();
+        app.tonight.date = "2026-01-15".to_owned();
         // Past date → timer dormant
         app.last_auto_refresh = None;
         app.handle(Action::Char('t'));
-        assert!(app.scores_date.is_empty(), "t must clear the date");
+        assert!(app.tonight.date.is_empty(), "t must clear the date");
         assert!(
             app.last_auto_refresh.is_some(),
             "t back to today must arm the timer"
@@ -3689,7 +3684,7 @@ mod tests {
         app.last_auto_refresh = Some(std::time::Instant::now());
         // Move to a specific date — auto-refresh must disengage
         app.handle(Action::Left);
-        assert!(!app.scores_date.is_empty(), "Left must set a specific date");
+        assert!(!app.tonight.date.is_empty(), "Left must set a specific date");
         assert!(
             app.last_auto_refresh.is_none(),
             "moving to a specific date must disarm the auto-refresh timer"

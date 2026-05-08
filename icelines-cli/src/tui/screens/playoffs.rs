@@ -1,3 +1,7 @@
+// Phase Norris.4 — `PlayoffsScreenState` repeats the module name in the
+// type identifier. Same canonical pattern as Norris.1/2/3.
+#![allow(clippy::module_name_repetitions)]
+
 //! Playoffs tab — list-style bracket and per-series detail.
 //!
 //! v1 rendering: rounds as horizontal sections, series as rows. Each row shows
@@ -13,6 +17,30 @@ use ratatui::{
 };
 
 use crate::tui::app::App;
+use crate::tui::playoffs::{new_cache, PlayoffsCache};
+
+// ── Phase Norris.4 — per-screen state struct ─────────────────────────────────
+
+/// Phase Norris.4 — Playoffs tab state. Replaces the 3 `playoffs_*`
+/// fields previously on App. Held as `app.playoffs`.
+#[derive(Debug)]
+pub struct PlayoffsScreenState {
+    pub cache: PlayoffsCache,
+    /// Round index (0-based).
+    pub round: usize,
+    /// Series index within the current round.
+    pub series: usize,
+}
+
+impl Default for PlayoffsScreenState {
+    fn default() -> Self {
+        Self {
+            cache: new_cache(),
+            round: 0,
+            series: 0,
+        }
+    }
+}
 use crate::tui::playoffs::{playoff_year_for_season, PlayoffsState};
 use icelines_fetch::nhl_api::{PlayoffBracket, PlayoffGameResult, PlayoffSeries};
 
@@ -37,7 +65,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
     };
 
     let state = {
-        let map = app.playoffs_cache.lock().unwrap();
+        let map = app.playoffs.cache.lock().unwrap();
         map.get(&year).cloned().unwrap_or(PlayoffsState::Idle)
     };
 
@@ -119,7 +147,7 @@ fn render_bracket(f: &mut Frame, area: Rect, app: &App, b: &PlayoffBracket) {
         .add_modifier(Modifier::BOLD);
 
     let n_rounds = b.rounds.len();
-    let active_round = app.playoffs_round.min(n_rounds.saturating_sub(1));
+    let active_round = app.playoffs.round.min(n_rounds.saturating_sub(1));
 
     // Header strip showing all round labels with the active one highlighted.
     let mut header_spans: Vec<ratatui::text::Span> = Vec::new();
@@ -147,7 +175,8 @@ fn render_bracket(f: &mut Frame, area: Rect, app: &App, b: &PlayoffBracket) {
         ));
     } else {
         let active_series = app
-            .playoffs_series
+            .playoffs
+            .series
             .min(round.series.len().saturating_sub(1));
         let mut last_conf: Option<String> = None;
         for (i, s) in round.series.iter().enumerate() {
@@ -224,7 +253,7 @@ pub fn render_series_detail(f: &mut Frame, app: &App, area: Rect, letter: &str) 
     };
 
     let state = {
-        let map = app.playoffs_cache.lock().unwrap();
+        let map = app.playoffs.cache.lock().unwrap();
         map.get(&year).cloned().unwrap_or(PlayoffsState::Idle)
     };
 
@@ -397,7 +426,7 @@ mod tests {
             rounds,
         };
         let year = playoff_year_for_season(&app.active_season).unwrap();
-        app.playoffs_cache
+        app.playoffs.cache
             .lock()
             .unwrap()
             .insert(year, PlayoffsState::Loaded(bracket));
@@ -461,7 +490,7 @@ mod tests {
     fn l0_render_playoffs_error_shows_retry_hint() {
         let app = App::new(false);
         let year = playoff_year_for_season(&app.active_season).unwrap();
-        app.playoffs_cache
+        app.playoffs.cache
             .lock()
             .unwrap()
             .insert(year, PlayoffsState::Error("connection refused".to_owned()));
@@ -535,7 +564,7 @@ mod tests {
         );
 
         // Move to round 2
-        app.playoffs_round = 1;
+        app.playoffs.round = 1;
         let text1 = render_to_text(&app);
         assert!(
             text1.contains("Round 2 of 2"),
