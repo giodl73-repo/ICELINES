@@ -751,6 +751,24 @@ mod handlers {
                     .map(|v| (v.id().0, v.points()))
                     .collect();
 
+                // Wave 22 — hoist provider/clock construction out of
+                // the per-player .filter() closure. Was rebuilt N
+                // times (one per skater), each doing redundant Path
+                // resolution + DataStore::open work.
+                let new_plans_provider = if new_plans.is_empty() {
+                    None
+                } else {
+                    Some(icelines_fetch::query_provider::IcelinesProvider::new(
+                        std::env::var_os("HOME")
+                            .or_else(|| std::env::var_os("USERPROFILE"))
+                            .map(std::path::PathBuf::from)
+                            .unwrap_or_default()
+                            .join(".icelines")
+                            .join("data"),
+                    ))
+                };
+                let new_plans_clock = icelines_core::freshness::SystemClock;
+
                 let mut all: Vec<LeaderRow> = repo
                     .skaters(season, season_type)
                     .filter(|v| match pos_filter {
@@ -772,21 +790,11 @@ mod handlers {
                         if new_plans.is_empty() {
                             return true;
                         }
-                        let provider =
-                            icelines_fetch::query_provider::IcelinesProvider::new(
-                                std::env::var_os("HOME")
-                                    .or_else(|| std::env::var_os("USERPROFILE"))
-                                    .map(std::path::PathBuf::from)
-                                    .unwrap_or_default()
-                                    .join(".icelines")
-                                    .join("data"),
-                            );
-                        let clock = icelines_core::freshness::SystemClock;
                         let ctx = icelines_query::EvalCtx::from_clock(
-                            &provider,
+                            new_plans_provider.as_ref().unwrap(),
                             icelines_query::StrictMode::Off,
                             false,
-                            &clock,
+                            &new_plans_clock,
                             season.0,
                         );
                         new_plans.iter().all(|plan| plan.root.matches(v, &ctx))
@@ -1092,6 +1100,24 @@ mod handlers {
             // not escape the lock; we copy out scalar fields).
             let (rows, total) = {
                 let repo = state.repo.read().await;
+
+                // Wave 22 — hoist provider/clock construction out of
+                // the per-player .filter() closure (same fix pattern
+                // as build_leader_result).
+                let new_plans_provider = if new_plans.is_empty() {
+                    None
+                } else {
+                    Some(icelines_fetch::query_provider::IcelinesProvider::new(
+                        std::env::var_os("HOME")
+                            .or_else(|| std::env::var_os("USERPROFILE"))
+                            .map(std::path::PathBuf::from)
+                            .unwrap_or_default()
+                            .join(".icelines")
+                            .join("data"),
+                    ))
+                };
+                let new_plans_clock = icelines_core::freshness::SystemClock;
+
                 let mut all: Vec<LeaderRow> = repo
                     .skaters(season, season_type)
                     .filter(|v| match pos_filter {
@@ -1117,21 +1143,11 @@ mod handlers {
                         if new_plans.is_empty() {
                             return true;
                         }
-                        let provider =
-                            icelines_fetch::query_provider::IcelinesProvider::new(
-                                std::env::var_os("HOME")
-                                    .or_else(|| std::env::var_os("USERPROFILE"))
-                                    .map(std::path::PathBuf::from)
-                                    .unwrap_or_default()
-                                    .join(".icelines")
-                                    .join("data"),
-                            );
-                        let clock = icelines_core::freshness::SystemClock;
                         let ctx = icelines_query::EvalCtx::from_clock(
-                            &provider,
+                            new_plans_provider.as_ref().unwrap(),
                             icelines_query::StrictMode::Off,
                             false,
-                            &clock,
+                            &new_plans_clock,
                             season.0,
                         );
                         new_plans.iter().all(|plan| plan.root.matches(v, &ctx))
