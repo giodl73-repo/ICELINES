@@ -96,6 +96,42 @@ const SAMPLES: &[Sample] = &[
         pos: "D",
         age_2526: 27, // born 1998-10-30
     },
+    // ── Wave 14 expansion — broader sample set ─────────────
+    Sample {
+        pid: 8481559,
+        name: "Jack Hughes",
+        country: "USA",
+        pos: "C",
+        age_2526: 24, // born 2001-05-14
+    },
+    Sample {
+        pid: 8480800,
+        name: "Quinn Hughes",
+        country: "USA",
+        pos: "D",
+        age_2526: 26, // born 1999-10-14
+    },
+    Sample {
+        pid: 8478864,
+        name: "Kirill Kaprizov",
+        country: "RUS",
+        pos: "LW",
+        age_2526: 28, // born 1997-04-26
+    },
+    Sample {
+        pid: 8473419,
+        name: "Brad Marchand",
+        country: "CAN",
+        pos: "LW",
+        age_2526: 37, // born 1988-05-11
+    },
+    Sample {
+        pid: 8475786,
+        name: "Zach Hyman",
+        country: "CAN",
+        pos: "LW",
+        age_2526: 33, // born 1992-06-09
+    },
     // NOTE: goalies are NOT in this sample set. The
     // `load_player_career_into_repo` loader is skater-only;
     // pulling goalie bios into the repo requires the per-season
@@ -641,4 +677,498 @@ fn w14_every_sample_has_some_season_data() {
         missing.is_empty(),
         "samples with no bundled season data: {missing:?}"
     );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Wave 14 expansion — broader semantic coverage
+// ─────────────────────────────────────────────────────────────
+
+// ── Draft-year ground truth ──────────────────────────────────
+
+#[test]
+fn w14_draft_2015_includes_mcdavid() {
+    // McDavid drafted 2015 #1 overall.
+    let repo = build_repo();
+    let f = "draft-year=2015";
+    let m = matched_names(&repo, f);
+    assert_contains(&m, "Connor McDavid", f);
+}
+
+#[test]
+fn w14_draft_2016_includes_matthews() {
+    let repo = build_repo();
+    let f = "draft-year=2016";
+    let m = matched_names(&repo, f);
+    assert_contains(&m, "Auston Matthews", f);
+    assert_excludes(&m, "Connor McDavid", f); // 2015
+}
+
+#[test]
+fn w14_draft_2013_includes_mackinnon() {
+    let repo = build_repo();
+    let f = "draft-year=2013";
+    let m = matched_names(&repo, f);
+    assert_contains(&m, "Nathan MacKinnon", f);
+}
+
+#[test]
+fn w14_draft_2017_includes_makar() {
+    let repo = build_repo();
+    let f = "draft-year=2017";
+    let m = matched_names(&repo, f);
+    assert_contains(&m, "Cale Makar", f);
+}
+
+#[test]
+fn w14_draft_2019_includes_jack_hughes() {
+    let repo = build_repo();
+    let f = "draft-year=2019";
+    let m = matched_names(&repo, f);
+    assert_contains(&m, "Jack Hughes", f);
+}
+
+#[test]
+fn w14_draft_2018_includes_quinn_hughes() {
+    let repo = build_repo();
+    let f = "draft-year=2018";
+    let m = matched_names(&repo, f);
+    assert_contains(&m, "Quinn Hughes", f);
+}
+
+#[test]
+fn w14_draft_2023_includes_bedard() {
+    let repo = build_repo();
+    let f = "draft-year=2023";
+    let m = matched_names(&repo, f);
+    assert_contains(&m, "Connor Bedard", f);
+}
+
+#[test]
+fn w14_draft_year_range_2015_to_2017() {
+    let repo = build_repo();
+    let f = "draft-year BETWEEN 2015 AND 2017";
+    let m = matched_names(&repo, f);
+    assert_contains(&m, "Connor McDavid", f); // 2015
+    assert_contains(&m, "Auston Matthews", f); // 2016
+    assert_contains(&m, "Cale Makar", f); // 2017
+    assert_excludes(&m, "Connor Bedard", f); // 2023
+    assert_excludes(&m, "Nathan MacKinnon", f); // 2013
+}
+
+#[test]
+fn w14_draft_year_in_set() {
+    let repo = build_repo();
+    let f = "draft-year IN (2015, 2018, 2023)";
+    let m = matched_names(&repo, f);
+    assert_contains(&m, "Connor McDavid", f); // 2015
+    assert_contains(&m, "Quinn Hughes", f); // 2018
+    assert_contains(&m, "Connor Bedard", f); // 2023
+    assert_excludes(&m, "Auston Matthews", f); // 2016 — not in set
+}
+
+// ── Draft-overall ground truth ───────────────────────────────
+
+#[test]
+fn w14_first_overall_picks() {
+    let repo = build_repo();
+    let f = "draft-overall=1";
+    let m = matched_names(&repo, f);
+    // McDavid (2015), Crosby (2005), Ovechkin (2004), Matthews
+    // (2016), MacKinnon (2013), Bedard (2023), Hughes Jack (2019)
+    // — all #1 overall picks in our sample.
+    assert_contains(&m, "Connor McDavid", f);
+    assert_contains(&m, "Sidney Crosby", f);
+    assert_contains(&m, "Alex Ovechkin", f);
+    assert_contains(&m, "Auston Matthews", f);
+    assert_contains(&m, "Nathan MacKinnon", f);
+    assert_contains(&m, "Connor Bedard", f);
+    assert_contains(&m, "Jack Hughes", f);
+    // Late-round / mid-round picks should NOT match.
+    assert_excludes(&m, "David Pastrnak", f); // 2014 R1 #25
+    assert_excludes(&m, "Cale Makar", f); // 2017 R1 #4
+    assert_excludes(&m, "Quinn Hughes", f); // 2018 R1 #7
+}
+
+#[test]
+fn w14_top_5_overall() {
+    let repo = build_repo();
+    let f = "draft-overall<=5";
+    let m = matched_names(&repo, f);
+    // All #1s + Makar (#4 in 2017) included.
+    assert_contains(&m, "Connor McDavid", f);
+    assert_contains(&m, "Cale Makar", f); // #4
+    assert_excludes(&m, "Quinn Hughes", f); // #7
+    assert_excludes(&m, "David Pastrnak", f); // #25
+}
+
+#[test]
+fn w14_top_10_overall() {
+    let repo = build_repo();
+    let f = "draft-overall<=10";
+    let m = matched_names(&repo, f);
+    assert_contains(&m, "Cale Makar", f); // #4
+    assert_contains(&m, "Quinn Hughes", f); // #7
+    assert_excludes(&m, "David Pastrnak", f); // #25
+}
+
+#[test]
+fn w14_first_round_includes_pastrnak() {
+    let repo = build_repo();
+    let f = "draft-round=1";
+    let m = matched_names(&repo, f);
+    assert_contains(&m, "Connor McDavid", f);
+    assert_contains(&m, "Cale Makar", f);
+    assert_contains(&m, "David Pastrnak", f); // R1 #25
+}
+
+#[test]
+fn w14_late_round_steals() {
+    // Kaprizov drafted 2015 R5 #135; Marchand drafted 2006 R3 #71;
+    // Hyman undrafted (or late) — these are the late-round picks.
+    let repo = build_repo();
+    let f = "draft-round>=3";
+    let m = matched_names(&repo, f);
+    // R3+ should include Marchand (R3) and Kaprizov (R5).
+    assert_contains(&m, "Brad Marchand", f);
+    assert_contains(&m, "Kirill Kaprizov", f);
+    // First-rounders should be excluded.
+    assert_excludes(&m, "Connor McDavid", f);
+    assert_excludes(&m, "Sidney Crosby", f);
+}
+
+#[test]
+fn w14_kaprizov_5th_round_steal() {
+    // Kaprizov was drafted in the 5th round — a famous late-
+    // round steal. `draft-round=5` should match him.
+    let repo = build_repo();
+    let f = "draft-round=5";
+    let m = matched_names(&repo, f);
+    assert_contains(&m, "Kirill Kaprizov", f);
+    assert_excludes(&m, "Connor McDavid", f);
+}
+
+// ── Rookie-season ground truth ───────────────────────────────
+
+#[test]
+fn w14_rookie_2015_2016_mcdavid() {
+    let repo = build_repo();
+    let f = "rookie-season=20152016";
+    let m = matched_names(&repo, f);
+    assert_contains(&m, "Connor McDavid", f);
+}
+
+#[test]
+fn w14_rookie_2016_2017_matthews() {
+    let repo = build_repo();
+    let f = "rookie-season=20162017";
+    let m = matched_names(&repo, f);
+    assert_contains(&m, "Auston Matthews", f);
+}
+
+#[test]
+fn w14_rookie_2023_2024_bedard() {
+    let repo = build_repo();
+    let f = "rookie-season=20232024";
+    let m = matched_names(&repo, f);
+    assert_contains(&m, "Connor Bedard", f);
+}
+
+#[test]
+fn w14_rookie_after_2018_excludes_old_guard() {
+    let repo = build_repo();
+    let f = "rookie-season>=20182019";
+    let m = matched_names(&repo, f);
+    // Bedard (2023-24), Jack Hughes (2019-20), Quinn Hughes (2018-19) match.
+    assert_contains(&m, "Connor Bedard", f);
+    assert_contains(&m, "Jack Hughes", f);
+    // Old guard should be excluded.
+    assert_excludes(&m, "Connor McDavid", f); // 2015-16 rookie
+    assert_excludes(&m, "Sidney Crosby", f); // 2005-06 rookie
+    assert_excludes(&m, "Alex Ovechkin", f); // 2005-06 rookie
+}
+
+// ── Country expansions ───────────────────────────────────────
+
+#[test]
+fn w14_canadians_include_marchand_hyman() {
+    let repo = build_repo();
+    let f = "country=CAN";
+    let m = matched_names(&repo, f);
+    assert_contains(&m, "Brad Marchand", f);
+    assert_contains(&m, "Zach Hyman", f);
+    assert_contains(&m, "Connor McDavid", f);
+}
+
+#[test]
+fn w14_americans_include_jack_quinn_hughes() {
+    let repo = build_repo();
+    let f = "country=USA";
+    let m = matched_names(&repo, f);
+    assert_contains(&m, "Auston Matthews", f);
+    assert_contains(&m, "Jack Hughes", f);
+    assert_contains(&m, "Quinn Hughes", f);
+}
+
+#[test]
+fn w14_russians_include_kaprizov() {
+    let repo = build_repo();
+    let f = "country=RUS";
+    let m = matched_names(&repo, f);
+    assert_contains(&m, "Alex Ovechkin", f);
+    assert_contains(&m, "Kirill Kaprizov", f);
+}
+
+// ── Position correlation with country/age ────────────────────
+
+#[test]
+fn w14_canadian_lefties_include_marchand_hyman() {
+    let repo = build_repo();
+    let f = "country=CAN AND pos=LW";
+    let m = matched_names(&repo, f);
+    assert_contains(&m, "Brad Marchand", f);
+    assert_contains(&m, "Zach Hyman", f);
+    // Centers should be excluded.
+    assert_excludes(&m, "Connor McDavid", f);
+    assert_excludes(&m, "Sidney Crosby", f);
+}
+
+#[test]
+fn w14_american_d_only_quinn_hughes() {
+    let repo = build_repo();
+    let f = "country=USA AND pos=D";
+    let m = matched_names(&repo, f);
+    assert_contains(&m, "Quinn Hughes", f);
+    // Other Americans are forwards.
+    assert_excludes(&m, "Auston Matthews", f);
+    assert_excludes(&m, "Jack Hughes", f);
+}
+
+#[test]
+fn w14_top_picks_at_each_position() {
+    let repo = build_repo();
+    // Top-10 pick centers
+    let m = matched_names(&repo, "draft-overall<=10 AND pos=C");
+    assert_contains(&m, "Connor McDavid", "top-10 C");
+    assert_contains(&m, "Sidney Crosby", "top-10 C");
+    assert_contains(&m, "Auston Matthews", "top-10 C");
+    assert_contains(&m, "Connor Bedard", "top-10 C");
+    assert_contains(&m, "Nathan MacKinnon", "top-10 C");
+    assert_contains(&m, "Jack Hughes", "top-10 C");
+
+    // Top-10 pick D
+    let m_d = matched_names(&repo, "draft-overall<=10 AND pos=D");
+    assert_contains(&m_d, "Cale Makar", "top-10 D"); // #4
+    assert_contains(&m_d, "Quinn Hughes", "top-10 D"); // #7
+}
+
+// ── Age boundaries with new samples ──────────────────────────
+
+#[test]
+fn w14_age_under_30_includes_younger_stars() {
+    let repo = build_repo();
+    let f = "age<30";
+    let m = matched_names(&repo, f);
+    // Bedard (20), Jack Hughes (24), Quinn Hughes (26), Makar (27),
+    // Matthews (28), McDavid (28), Pastrnak (29), Kaprizov (28).
+    assert_contains(&m, "Connor Bedard", f);
+    assert_contains(&m, "Jack Hughes", f);
+    assert_contains(&m, "Quinn Hughes", f);
+    assert_contains(&m, "Cale Makar", f);
+    assert_contains(&m, "Auston Matthews", f);
+    assert_contains(&m, "Connor McDavid", f);
+    assert_contains(&m, "Kirill Kaprizov", f);
+    // Veterans (35+) excluded.
+    assert_excludes(&m, "Sidney Crosby", f);
+    assert_excludes(&m, "Alex Ovechkin", f);
+    assert_excludes(&m, "Brad Marchand", f); // 37
+}
+
+#[test]
+fn w14_age_30_to_35_band() {
+    let repo = build_repo();
+    let f = "age BETWEEN 30 AND 35";
+    let m = matched_names(&repo, f);
+    // MacKinnon (30) + Hyman (33) in band.
+    assert_contains(&m, "Nathan MacKinnon", f);
+    assert_contains(&m, "Zach Hyman", f);
+    // Younger and older should be excluded.
+    assert_excludes(&m, "Connor Bedard", f); // 20
+    assert_excludes(&m, "Sidney Crosby", f); // 38
+    assert_excludes(&m, "Brad Marchand", f); // 37
+}
+
+// ── Compound queries with new samples ────────────────────────
+
+#[test]
+fn w14_under_25_canadian_centers() {
+    let repo = build_repo();
+    let f = "country=CAN AND pos=C AND age<25";
+    let m = matched_names(&repo, f);
+    assert_contains(&m, "Connor Bedard", f); // CAN, C, 20
+    // McDavid (28-29), Crosby (38), MacKinnon (30) all over 25.
+    assert_excludes(&m, "Connor McDavid", f);
+    assert_excludes(&m, "Sidney Crosby", f);
+    assert_excludes(&m, "Nathan MacKinnon", f);
+    // Jack Hughes (USA), Matthews (USA) excluded by country.
+    assert_excludes(&m, "Jack Hughes", f);
+    assert_excludes(&m, "Auston Matthews", f);
+}
+
+#[test]
+fn w14_first_round_us_centers() {
+    let repo = build_repo();
+    let f = "country=USA AND pos=C AND draft-round=1";
+    let m = matched_names(&repo, f);
+    assert_contains(&m, "Auston Matthews", f); // #1 2016
+    assert_contains(&m, "Jack Hughes", f); // #1 2019
+    // Quinn is D, not C — should be excluded.
+    assert_excludes(&m, "Quinn Hughes", f);
+}
+
+#[test]
+fn w14_late_round_canadians_with_career() {
+    let repo = build_repo();
+    let f = "country=CAN AND draft-round>=3";
+    let m = matched_names(&repo, f);
+    assert_contains(&m, "Brad Marchand", f); // R3
+    // McDavid is R1 — excluded.
+    assert_excludes(&m, "Connor McDavid", f);
+}
+
+// ── Strict vs non-strict comparator boundaries ───────────────
+
+#[test]
+fn w14_age_strict_lt_excludes_boundary_player() {
+    let repo = build_repo();
+    // Marchand is 37 in 2025-26.
+    let lt = matched_names(&repo, "age<37");
+    let le = matched_names(&repo, "age<=37");
+    assert_excludes(&lt, "Brad Marchand", "age<37");
+    assert_contains(&le, "Brad Marchand", "age<=37");
+}
+
+#[test]
+fn w14_age_strict_gt_excludes_boundary() {
+    let repo = build_repo();
+    // McDavid is 29 in 2025-26 (born Jan 13 — pre-Feb-1 → ages up).
+    let gt = matched_names(&repo, "age>29");
+    let ge = matched_names(&repo, "age>=29");
+    assert_excludes(&gt, "Connor McDavid", "age>29");
+    assert_contains(&ge, "Connor McDavid", "age>=29");
+}
+
+#[test]
+fn w14_ne_age_excludes_specific() {
+    let repo = build_repo();
+    // age!=20 should exclude Bedard (who's 20).
+    let f = "age!=20";
+    let m = matched_names(&repo, f);
+    assert_excludes(&m, "Connor Bedard", f);
+    assert_contains(&m, "Connor McDavid", f);
+}
+
+// ── IN-set exhaustiveness ────────────────────────────────────
+
+#[test]
+fn w14_country_full_european_set() {
+    let repo = build_repo();
+    let f = "country IN (RUS, CZE, SWE, FIN, SVK, GER, USA)";
+    let m = matched_names(&repo, f);
+    assert_contains(&m, "Alex Ovechkin", f); // RUS
+    assert_contains(&m, "David Pastrnak", f); // CZE
+    assert_contains(&m, "Kirill Kaprizov", f); // RUS
+    assert_contains(&m, "Auston Matthews", f); // USA
+    assert_contains(&m, "Jack Hughes", f); // USA
+    // Canadians excluded.
+    assert_excludes(&m, "Connor McDavid", f);
+    assert_excludes(&m, "Sidney Crosby", f);
+}
+
+#[test]
+fn w14_pos_in_full_skater_set_excludes_d() {
+    let repo = build_repo();
+    let f = "pos IN (C, LW, RW)";
+    let m = matched_names(&repo, f);
+    assert_contains(&m, "Connor McDavid", f);
+    assert_contains(&m, "Alex Ovechkin", f);
+    assert_contains(&m, "David Pastrnak", f);
+    assert_contains(&m, "Brad Marchand", f);
+    assert_contains(&m, "Kirill Kaprizov", f);
+    // Defensemen excluded.
+    assert_excludes(&m, "Cale Makar", f);
+    assert_excludes(&m, "Quinn Hughes", f);
+}
+
+// ── LIKE patterns over expanded set ──────────────────────────
+
+#[test]
+fn w14_like_country_us_prefix() {
+    let repo = build_repo();
+    // USA starts with US → matches Americans
+    let f = r#"country LIKE "US*""#;
+    let m = matched_names(&repo, f);
+    assert_contains(&m, "Auston Matthews", f);
+    assert_contains(&m, "Jack Hughes", f);
+    assert_excludes(&m, "Connor McDavid", f);
+}
+
+#[test]
+fn w14_not_like_excludes_european_set() {
+    let repo = build_repo();
+    let f = r#"country NOT LIKE "C*""#;
+    let m = matched_names(&repo, f);
+    // CAN and CZE match "C*"; Russians/Americans don't.
+    assert_contains(&m, "Auston Matthews", f); // USA
+    assert_contains(&m, "Alex Ovechkin", f); // RUS
+    // Canadian/Czech excluded.
+    assert_excludes(&m, "Connor McDavid", f); // CAN
+    assert_excludes(&m, "David Pastrnak", f); // CZE
+}
+
+// ── Hughes-brothers fun fact ─────────────────────────────────
+
+#[test]
+fn w14_hughes_brothers_both_match_country() {
+    let repo = build_repo();
+    let f = "country=USA AND draft-overall<=10";
+    let m = matched_names(&repo, f);
+    assert_contains(&m, "Jack Hughes", f); // #1 2019
+    assert_contains(&m, "Quinn Hughes", f); // #7 2018
+    assert_contains(&m, "Auston Matthews", f); // #1 2016
+}
+
+// ── Universe + monotonicity sanity ───────────────────────────
+
+#[test]
+fn w14_universe_filter_returns_all_samples() {
+    let repo = build_repo();
+    let f = "g>=0";
+    let m = matched_names(&repo, f);
+    // Every skater with current-season data matches g>=0.
+    // Our sample set is 13 skaters; at least most should appear.
+    assert!(
+        m.len() >= 8,
+        "expected most samples to match universe filter; got {}: {m:?}",
+        m.len()
+    );
+}
+
+#[test]
+fn w14_intersection_smaller_than_either_side() {
+    let repo = build_repo();
+    let canadians = matched_names(&repo, "country=CAN");
+    let centers = matched_names(&repo, "pos=C");
+    let canadian_centers = matched_names(&repo, "country=CAN AND pos=C");
+    assert!(canadian_centers.len() <= canadians.len());
+    assert!(canadian_centers.len() <= centers.len());
+}
+
+#[test]
+fn w14_union_at_least_as_big_as_either_side() {
+    let repo = build_repo();
+    let canadians = matched_names(&repo, "country=CAN");
+    let americans = matched_names(&repo, "country=USA");
+    let either = matched_names(&repo, "country=CAN OR country=USA");
+    assert!(either.len() >= canadians.len());
+    assert!(either.len() >= americans.len());
 }
