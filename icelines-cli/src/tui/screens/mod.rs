@@ -1355,16 +1355,16 @@ mod app_snapshot_tests {
         app.handle(Action::GoToTab(6)); // Transactions
 
         app.handle(Action::Search);
-        assert!(app.tx_search_mode, "/ must open transactions search");
+        assert!(app.txs.search_mode, "/ must open transactions search");
         for c in "trade".chars() {
             app.handle(Action::Char(c));
         }
-        assert_eq!(app.tx_search_query, "trade");
+        assert_eq!(app.txs.search_query, "trade");
 
         app.handle(Action::Enter);
-        assert!(!app.tx_search_mode, "Enter must exit search mode");
+        assert!(!app.txs.search_mode, "Enter must exit search mode");
         assert_eq!(
-            app.tx_search_query, "trade",
+            app.txs.search_query, "trade",
             "Enter must keep query applied"
         );
     }
@@ -1382,10 +1382,10 @@ mod app_snapshot_tests {
         app.handle(Action::Char('i'));
         app.handle(Action::Char('v'));
         app.handle(Action::Char('e'));
-        assert_eq!(app.tx_search_query, "waive");
+        assert_eq!(app.txs.search_query, "waive");
         app.handle(Action::Escape);
-        assert!(!app.tx_search_mode);
-        assert!(app.tx_search_query.is_empty(), "Esc must clear query");
+        assert!(!app.txs.search_mode);
+        assert!(app.txs.search_query.is_empty(), "Esc must clear query");
     }
 
     /// Transactions search: backspace edits the query.
@@ -1400,7 +1400,7 @@ mod app_snapshot_tests {
             app.handle(Action::Char(c));
         }
         app.handle(Action::Backspace);
-        assert_eq!(app.tx_search_query, "clai");
+        assert_eq!(app.txs.search_query, "clai");
     }
 
     // ── Stats Search screen input flow ──────────────────────────────────────

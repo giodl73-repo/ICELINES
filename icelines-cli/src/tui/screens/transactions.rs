@@ -1,3 +1,7 @@
+// Phase Norris.3 — `TransactionsState` repeats the module name in
+// the type identifier. Same canonical pattern as Norris.1/2.
+#![allow(clippy::module_name_repetitions)]
+
 //! Transactions tab — Phase T.5.
 //!
 //! GLASS contract:
@@ -21,6 +25,61 @@ use icelines_core::transactions::description_matches_query;
 use icelines_core::{Transaction, TransactionKind};
 
 use crate::tui::app::App;
+
+// ── Phase Norris.3 — per-screen state struct ─────────────────────────────────
+
+/// Phase Norris.3 — owns every piece of state that belongs to the
+/// Transactions tab. Replaces the 8 fields previously scattered
+/// across `App` (`transactions`, `transactions_fetched_at`,
+/// `transactions_stale`, `tx_selected`, `tx_team_filter`,
+/// `tx_kind_filter`, `tx_search_query`, `tx_search_mode`).
+///
+/// **Naming asymmetry**: App holds this as `app.txs` (not
+/// `app.txs.rows`) because the previous Vec field was already
+/// named `transactions`, and naming the new struct field
+/// `transactions` would create substring overlap during the rename
+/// (`app.txs.fetched_at` and `app.txs.rows` would both
+/// match a bare `app.txs.rows` regex). `txs` matches the
+/// existing `tx_*` field-name heritage.
+#[derive(Debug)]
+pub struct TransactionsState {
+    /// Loaded transactions envelope. Empty until the loader picks
+    /// up the snapshot.
+    pub rows: Vec<Transaction>,
+    /// Wall-clock string ("YYYY-MM-DDThh:mm:ss-04:00") from the
+    /// snapshot envelope; surfaced in the title bar.
+    pub fetched_at: String,
+    /// True when the most recent fetch failed (read from
+    /// `SnapshotMetaFlags::transactions_stale`). Drives the red
+    /// `[STALE]` prefix in the title bar.
+    pub stale: bool,
+    /// Selected row index on the Transactions tab.
+    pub selected: usize,
+    /// Filter to a single team abbrev (None = all). Cycles via `T`.
+    pub team_filter: Option<String>,
+    /// Filter to a single kind (None = all). Cycles via `k`.
+    pub kind_filter: Option<TransactionKind>,
+    /// Substring filter against the description (case-insensitive).
+    /// Live-applied as the user types in search mode.
+    pub search_query: String,
+    /// True while the `/` search bar is open.
+    pub search_mode: bool,
+}
+
+impl Default for TransactionsState {
+    fn default() -> Self {
+        Self {
+            rows: Vec::new(),
+            fetched_at: String::new(),
+            stale: false,
+            selected: 0,
+            team_filter: None,
+            kind_filter: None,
+            search_query: String::new(),
+            search_mode: false,
+        }
+    }
+}
 
 // ── Public glyph + color tables ───────────────────────────────────────────────
 //
@@ -78,7 +137,7 @@ pub fn kind_display(k: TransactionKind) -> &'static str {
 
 pub fn render(f: &mut Frame, app: &App, area: Rect) {
     // ── Empty state: pre-coverage season OR no rows loaded ────────────
-    if app.transactions.is_empty() {
+    if app.txs.rows.is_empty() {
         render_empty_legend_card(f, app, area);
         return;
     }
@@ -90,7 +149,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
     let inner = block.inner(area);
     f.render_widget(block, area);
 
-    let show_search = app.tx_search_mode || !app.tx_search_query.is_empty();
+    let show_search = app.txs.search_mode || !app.txs.search_query.is_empty();
     let constraints: Vec<Constraint> = if show_search {
         vec![
             Constraint::Length(1),
@@ -120,56 +179,56 @@ fn render_search_bar(f: &mut Frame, app: &App, area: Rect) {
     let cyan = Style::default()
         .fg(Color::Cyan)
         .add_modifier(Modifier::BOLD);
-    let cursor = if app.tx_search_mode { "_" } else { "" };
+    let cursor = if app.txs.search_mode { "_" } else { "" };
     let line = Line::from(vec![
         Span::styled("  /", cyan),
         Span::styled("search: ", dim),
-        Span::styled(format!("{}{cursor}", app.tx_search_query), cyan),
+        Span::styled(format!("{}{cursor}", app.txs.search_query), cyan),
     ]);
     f.render_widget(Paragraph::new(line), area);
 }
 
 fn title_text(app: &App) -> Line<'static> {
     let mut spans: Vec<Span<'static>> = Vec::new();
-    if app.transactions_stale {
+    if app.txs.stale {
         spans.push(Span::styled(
             " [STALE] ",
             Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
         ));
     }
     spans.push(Span::raw(" Transactions · ESPN"));
-    if !app.transactions_fetched_at.is_empty() {
+    if !app.txs.fetched_at.is_empty() {
         spans.push(Span::styled(
-            format!(" · as of {} ", app.transactions_fetched_at),
+            format!(" · as of {} ", app.txs.fetched_at),
             Style::default().fg(Color::DarkGray),
         ));
     } else {
         spans.push(Span::raw(" "));
     }
     spans.push(Span::styled(
-        format!("· {} rows ", app.transactions.len()),
+        format!("· {} rows ", app.txs.rows.len()),
         Style::default().fg(Color::DarkGray),
     ));
     Line::from(spans)
 }
 
 pub fn filter_rows(app: &App) -> Vec<&Transaction> {
-    app.transactions
+    app.txs.rows
         .iter()
         .filter(|tx| {
-            if let Some(team) = app.tx_team_filter.as_deref() {
+            if let Some(team) = app.txs.team_filter.as_deref() {
                 let row_label = tx.team.as_ref().map(|t| t.0.as_str()).unwrap_or("LEAGUE");
                 if !row_label.eq_ignore_ascii_case(team) {
                     return false;
                 }
             }
-            if let Some(k) = app.tx_kind_filter {
+            if let Some(k) = app.txs.kind_filter {
                 if tx.kind != k {
                     return false;
                 }
             }
-            if !app.tx_search_query.trim().is_empty()
-                && !description_matches_query(&tx.description, &app.tx_search_query)
+            if !app.txs.search_query.trim().is_empty()
+                && !description_matches_query(&tx.description, &app.txs.search_query)
             {
                 return false;
             }
@@ -182,10 +241,10 @@ fn render_rows(f: &mut Frame, app: &App, area: Rect, rows: &[&Transaction]) {
     if rows.is_empty() {
         let dim = Style::default().fg(Color::DarkGray);
         let mut hint = String::from("  No rows match the current filters.");
-        if app.tx_team_filter.is_some() {
+        if app.txs.team_filter.is_some() {
             hint.push_str("  T to clear team.");
         }
-        if app.tx_kind_filter.is_some() {
+        if app.txs.kind_filter.is_some() {
             hint.push_str("  k to clear kind.");
         }
         f.render_widget(Paragraph::new(Line::styled(hint, dim)), area);
@@ -198,7 +257,7 @@ fn render_rows(f: &mut Frame, app: &App, area: Rect, rows: &[&Transaction]) {
     let fixed = 7 + 13 + 11 + 6;
     let desc_w = inner_w.saturating_sub(fixed).max(20);
 
-    let selected = app.tx_selected.min(rows.len().saturating_sub(1));
+    let selected = app.txs.selected.min(rows.len().saturating_sub(1));
     let items: Vec<ListItem> = rows
         .iter()
         .enumerate()
@@ -267,7 +326,7 @@ fn render_footer(f: &mut Frame, area: Rect) {
 // ── Empty / pre-coverage state ───────────────────────────────────────────────
 
 fn render_empty_legend_card(f: &mut Frame, app: &App, area: Rect) {
-    let title = if app.transactions_stale {
+    let title = if app.txs.stale {
         " [STALE] Transactions · ESPN "
     } else {
         " Transactions · ESPN "
@@ -527,7 +586,7 @@ mod tests {
     #[test]
     fn l0_filter_rows_no_filter_returns_all() {
         let mut app = App::new(false);
-        app.transactions = vec![
+        app.txs.rows = vec![
             fixture_tx(TransactionKind::Trade, "Trade row"),
             fixture_tx(TransactionKind::Signing, "Signing row"),
         ];
@@ -538,7 +597,7 @@ mod tests {
     #[test]
     fn l0_filter_rows_team_filter_drops_non_matching() {
         let mut app = App::new(false);
-        app.transactions = vec![
+        app.txs.rows = vec![
             fixture_tx(TransactionKind::Trade, "Trade row"), // EDM
             Transaction {
                 date: "2026-04-29".to_owned(),
@@ -550,7 +609,7 @@ mod tests {
                 classifier_version: 1,
             },
         ];
-        app.tx_team_filter = Some("EDM".to_owned());
+        app.txs.team_filter = Some("EDM".to_owned());
         let rows = filter_rows(&app);
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].team.as_ref().unwrap().0, "EDM");
@@ -559,12 +618,12 @@ mod tests {
     #[test]
     fn l0_filter_rows_kind_filter_drops_non_matching() {
         let mut app = App::new(false);
-        app.transactions = vec![
+        app.txs.rows = vec![
             fixture_tx(TransactionKind::Trade, "Trade row"),
             fixture_tx(TransactionKind::Signing, "Signing row"),
             fixture_tx(TransactionKind::Recall, "Recall row"),
         ];
-        app.tx_kind_filter = Some(TransactionKind::Trade);
+        app.txs.kind_filter = Some(TransactionKind::Trade);
         let rows = filter_rows(&app);
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].kind, TransactionKind::Trade);
@@ -620,8 +679,8 @@ mod tests {
         // assert each glyph appears at least once. This fails CI before
         // shipping a render that drops the colorblind carrier.
         let mut app = App::new(false);
-        app.transactions = one_row_per_kind();
-        app.transactions_fetched_at = "2026-04-30".to_owned();
+        app.txs.rows = one_row_per_kind();
+        app.txs.fetched_at = "2026-04-30".to_owned();
 
         let text = render_transactions_to_text(&app);
         for k in TransactionKind::ALL {
@@ -639,8 +698,8 @@ mod tests {
     #[test]
     fn l1_tui_kind_display_label_present_for_every_kind() {
         let mut app = App::new(false);
-        app.transactions = one_row_per_kind();
-        app.transactions_fetched_at = "2026-04-30".to_owned();
+        app.txs.rows = one_row_per_kind();
+        app.txs.fetched_at = "2026-04-30".to_owned();
 
         let text = render_transactions_to_text(&app);
         for k in TransactionKind::ALL {
@@ -656,9 +715,9 @@ mod tests {
     #[test]
     fn l1_tui_stale_marker_renders_in_title() {
         let mut app = App::new(false);
-        app.transactions = vec![fixture_tx(TransactionKind::Trade, "Some trade")];
-        app.transactions_fetched_at = "2026-04-30".to_owned();
-        app.transactions_stale = true;
+        app.txs.rows = vec![fixture_tx(TransactionKind::Trade, "Some trade")];
+        app.txs.fetched_at = "2026-04-30".to_owned();
+        app.txs.stale = true;
 
         let text = render_transactions_to_text(&app);
         assert!(
@@ -692,8 +751,8 @@ mod tests {
         let long =
             "Acquired D Ryan McDonagh from NSH for D Philippe Myers and a 2026 third-round pick \
                     plus future considerations and a conditional 2027 second";
-        app.transactions = vec![fixture_tx(TransactionKind::Trade, long)];
-        app.transactions_fetched_at = "2026-04-30".to_owned();
+        app.txs.rows = vec![fixture_tx(TransactionKind::Trade, long)];
+        app.txs.fetched_at = "2026-04-30".to_owned();
 
         let text = render_transactions_to_text(&app);
         assert!(
@@ -715,7 +774,7 @@ mod tests {
     #[test]
     fn l0_filter_rows_search_query_substring_match() {
         let mut app = App::new(false);
-        app.transactions = vec![
+        app.txs.rows = vec![
             fixture_tx(TransactionKind::Trade, "Acquired D Ryan McDonagh from NSH"),
             fixture_tx(
                 TransactionKind::Signing,
@@ -726,7 +785,7 @@ mod tests {
                 "Recalled F Vasily Podkolzin from Bakersfield",
             ),
         ];
-        app.tx_search_query = "bedard".to_owned();
+        app.txs.search_query = "bedard".to_owned();
         let rows = filter_rows(&app);
         assert_eq!(rows.len(), 1);
         assert!(rows[0].description.contains("Bedard"));
@@ -735,28 +794,28 @@ mod tests {
     #[test]
     fn l0_filter_rows_search_query_empty_matches_all() {
         let mut app = App::new(false);
-        app.transactions = vec![
+        app.txs.rows = vec![
             fixture_tx(TransactionKind::Trade, "row a"),
             fixture_tx(TransactionKind::Signing, "row b"),
         ];
-        app.tx_search_query = "".to_owned();
+        app.txs.search_query = "".to_owned();
         assert_eq!(filter_rows(&app).len(), 2);
-        app.tx_search_query = "   ".to_owned();
+        app.txs.search_query = "   ".to_owned();
         assert_eq!(filter_rows(&app).len(), 2);
     }
 
     #[test]
     fn l0_filter_rows_search_combines_with_other_filters() {
         let mut app = App::new(false);
-        app.transactions = vec![
+        app.txs.rows = vec![
             fixture_tx(TransactionKind::Trade, "Acquired D Ryan McDonagh from NSH"), // EDM
             fixture_tx(
                 TransactionKind::Signing,
                 "Signed F McDonagh to a 1-year deal",
             ), // EDM (hypothetical)
         ];
-        app.tx_search_query = "mcdonagh".to_owned();
-        app.tx_kind_filter = Some(TransactionKind::Trade);
+        app.txs.search_query = "mcdonagh".to_owned();
+        app.txs.kind_filter = Some(TransactionKind::Trade);
         let rows = filter_rows(&app);
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].kind, TransactionKind::Trade);
@@ -765,10 +824,10 @@ mod tests {
     #[test]
     fn l1_tui_search_bar_renders_when_search_mode_active() {
         let mut app = App::new(false);
-        app.transactions = vec![fixture_tx(TransactionKind::Trade, "Some trade")];
-        app.transactions_fetched_at = "2026-04-30".to_owned();
-        app.tx_search_mode = true;
-        app.tx_search_query = "mcd".to_owned();
+        app.txs.rows = vec![fixture_tx(TransactionKind::Trade, "Some trade")];
+        app.txs.fetched_at = "2026-04-30".to_owned();
+        app.txs.search_mode = true;
+        app.txs.search_query = "mcd".to_owned();
         let text = render_transactions_to_text(&app);
         assert!(
             text.contains("search:"),
@@ -929,7 +988,7 @@ mod tests {
     #[allow(non_snake_case)] // Test name encodes the literal "LEAGUE" sentinel value.
     fn l0_filter_rows_team_LEAGUE_returns_only_teamless() {
         let mut app = App::new(false);
-        app.transactions = vec![
+        app.txs.rows = vec![
             fixture_tx(TransactionKind::Trade, "EDM trade"),
             Transaction {
                 date: "2026-04-27".to_owned(),
@@ -941,7 +1000,7 @@ mod tests {
                 classifier_version: 1,
             },
         ];
-        app.tx_team_filter = Some("LEAGUE".to_owned());
+        app.txs.team_filter = Some("LEAGUE".to_owned());
         let rows = filter_rows(&app);
         assert_eq!(rows.len(), 1);
         assert!(rows[0].team.is_none());

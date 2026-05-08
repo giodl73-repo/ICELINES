@@ -208,11 +208,11 @@ async fn run_loop(
         // Phase T.5: poll for loaded transactions. Loaded-but-empty is a
         // valid state (renders the legend card), so we mark via fetched_at
         // rather than `is_empty()` to know if we've already pulled.
-        if app.transactions.is_empty() && app.transactions_fetched_at.is_empty() {
+        if app.txs.rows.is_empty() && app.txs.fetched_at.is_empty() {
             if let Some(bundle) = app.load_state.take_transactions() {
-                app.transactions = bundle.rows;
-                app.transactions_fetched_at = bundle.fetched_at;
-                app.transactions_stale = bundle.stale;
+                app.txs.rows = bundle.rows;
+                app.txs.fetched_at = bundle.fetched_at;
+                app.txs.stale = bundle.stale;
             }
         }
 

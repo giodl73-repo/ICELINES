@@ -614,7 +614,7 @@ fn render_stats_view(f: &mut Frame, app: &App, v: &PlayerView<'_>, area: Rect) {
 
     let team_for_disambig = v.team_display();
     let hits = icelines_core::transactions::transactions_for_player(
-        &app.transactions,
+        &app.txs.rows,
         v.full_name(),
         Some(team_for_disambig),
     );

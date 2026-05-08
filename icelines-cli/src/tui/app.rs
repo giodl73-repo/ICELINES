@@ -263,28 +263,15 @@ pub struct App {
     /// lookups in the dashboard panel. Built once after players load.
     pub league_context: crate::tui::dashboard_panel::LeagueContext,
 
-    // ── Phase T.5: Transactions tab ──────────────────────────────────────
-    /// Loaded transactions envelope (rows + provenance). Empty until the
-    /// loader picks up the snapshot.
-    pub transactions: Vec<icelines_core::Transaction>,
-    /// Wall-clock string ("YYYY-MM-DDThh:mm:ss-04:00") from the snapshot
-    /// envelope; surfaced in the title bar for staleness display.
-    pub transactions_fetched_at: String,
-    /// True when the most recent fetch failed (read from
-    /// `SnapshotMetaFlags::transactions_stale`). Drives the red [STALE]
-    /// prefix in the title bar.
-    pub transactions_stale: bool,
-    /// Selected row index on the Transactions tab.
-    pub tx_selected: usize,
-    /// Filter to a single team abbrev (None = all). Cycles via `T`.
-    pub tx_team_filter: Option<String>,
-    /// Filter to a single kind (None = all). Cycles via `k`.
-    pub tx_kind_filter: Option<icelines_core::TransactionKind>,
-    /// Substring filter against the description (case-insensitive).
-    /// Live-applied as the user types in search mode.
-    pub tx_search_query: String,
-    /// True while the `/` search bar is open and accepting characters.
-    pub tx_search_mode: bool,
+    /// Phase Norris.3 — Transactions-tab state extracted into its
+    /// own struct. Replaces 8 fields previously scattered across
+    /// App (`transactions`, `transactions_fetched_at`,
+    /// `transactions_stale`, `tx_selected`, `tx_team_filter`,
+    /// `tx_kind_filter`, `tx_search_query`, `tx_search_mode`).
+    /// Field name is `txs` (not `transactions`) to avoid substring
+    /// overlap with the legacy `transactions_*` field names — see
+    /// `TransactionsState` doc comment.
+    pub txs: crate::tui::screens::transactions::TransactionsState,
 
     // ── Repo-backed view state ─────────────────────────────────────────
     /// Post-Hart canonical store. `!Send + !Sync` by construction.
@@ -372,14 +359,8 @@ impl App {
             //  now part of QueriesState above.)
             dashboard_panel: crate::tui::dashboard_panel::CompiledPanel::new(),
             league_context: crate::tui::dashboard_panel::LeagueContext::empty(),
-            transactions: Vec::new(),
-            transactions_fetched_at: String::new(),
-            transactions_stale: false,
-            tx_selected: 0,
-            tx_team_filter: None,
-            tx_kind_filter: None,
-            tx_search_query: String::new(),
-            tx_search_mode: false,
+            // Phase Norris.3 — replaces 8 transactions_* / tx_* init lines.
+            txs: crate::tui::screens::transactions::TransactionsState::default(),
 
             // Empty repo + current season as the initial typed window.
             // `App::boot_load` populates the repo synchronously before
@@ -498,7 +479,7 @@ impl App {
 
         // Transactions search bar — same shape but applies live as the
         // user types (no validation step). Phase T+1.
-        if self.screen == Screen::Transactions && self.tx_search_mode {
+        if self.screen == Screen::Transactions && self.txs.search_mode {
             return self.handle_transactions_search(action);
         }
 
@@ -564,7 +545,7 @@ impl App {
                 } else if self.screen == Screen::Goalies {
                     self.goalie_selected = self.goalie_selected.saturating_add(1);
                 } else if self.screen == Screen::Transactions {
-                    self.tx_selected = self.tx_selected.saturating_add(1);
+                    self.txs.selected = self.txs.selected.saturating_add(1);
                 } else if self.screen == Screen::Playoffs {
                     self.playoffs_series = self.playoffs_series.saturating_add(1);
                 } else if self.screen == Screen::Queries {
@@ -671,7 +652,7 @@ impl App {
                 } else if self.screen == Screen::Goalies {
                     self.goalie_selected = self.goalie_selected.saturating_sub(1);
                 } else if self.screen == Screen::Transactions {
-                    self.tx_selected = self.tx_selected.saturating_sub(1);
+                    self.txs.selected = self.txs.selected.saturating_sub(1);
                 } else if self.screen == Screen::Playoffs {
                     self.playoffs_series = self.playoffs_series.saturating_sub(1);
                 } else if self.screen == Screen::Queries {
@@ -851,9 +832,9 @@ impl App {
                 } else if self.screen == Screen::Transactions {
                     // Transactions tab: '/' opens an in-tab description
                     // substring search. Live-applied as the user types.
-                    self.tx_search_mode = true;
-                    self.tx_search_query.clear();
-                    self.tx_selected = 0;
+                    self.txs.search_mode = true;
+                    self.txs.search_query.clear();
+                    self.txs.selected = 0;
                     self.status =
                         "Search transactions: type any substring — Enter applies, Esc clears"
                             .to_owned();
@@ -1029,14 +1010,14 @@ impl App {
                     //   t       → forward  (None → first → … → None)
                     //   Shift-T → backward (None → last  → … → None)
                     use crate::tui::screens::transactions as tx_screen;
-                    let teams = tx_screen::transactions_teams(&self.transactions);
+                    let teams = tx_screen::transactions_teams(&self.txs.rows);
                     let next = if c == 't' {
-                        tx_screen::cycle_team_forward(self.tx_team_filter.as_deref(), &teams)
+                        tx_screen::cycle_team_forward(self.txs.team_filter.as_deref(), &teams)
                     } else {
-                        tx_screen::cycle_team_backward(self.tx_team_filter.as_deref(), &teams)
+                        tx_screen::cycle_team_backward(self.txs.team_filter.as_deref(), &teams)
                     };
-                    self.tx_team_filter = next.clone();
-                    self.tx_selected = 0;
+                    self.txs.team_filter = next.clone();
+                    self.txs.selected = 0;
                     self.status = match next {
                         Some(t) => format!("Transactions team filter: {t}"),
                         None => "Transactions team filter: all".to_owned(),
@@ -1047,12 +1028,12 @@ impl App {
                     use icelines_core::TransactionKind as K;
                     let cycle = K::ALL;
                     let next = if c == 'k' {
-                        tx_screen::cycle_kind_forward(self.tx_kind_filter, cycle)
+                        tx_screen::cycle_kind_forward(self.txs.kind_filter, cycle)
                     } else {
-                        tx_screen::cycle_kind_backward(self.tx_kind_filter, cycle)
+                        tx_screen::cycle_kind_backward(self.txs.kind_filter, cycle)
                     };
-                    self.tx_kind_filter = next;
-                    self.tx_selected = 0;
+                    self.txs.kind_filter = next;
+                    self.txs.selected = 0;
                     self.status = match next {
                         Some(k) => format!("Transactions kind filter: {}", k.label()),
                         None => "Transactions kind filter: all".to_owned(),
@@ -1849,29 +1830,29 @@ impl App {
         match action {
             Action::Quit => return true,
             Action::Back | Action::Escape => {
-                self.tx_search_mode = false;
-                self.tx_search_query.clear();
-                self.tx_selected = 0;
+                self.txs.search_mode = false;
+                self.txs.search_query.clear();
+                self.txs.selected = 0;
                 self.status = "Search cleared.".to_owned();
             }
             Action::Enter => {
                 // Apply: keep the query, exit search mode.
-                self.tx_search_mode = false;
-                self.tx_selected = 0;
-                self.status = format!("Filter: '{}'", self.tx_search_query);
+                self.txs.search_mode = false;
+                self.txs.selected = 0;
+                self.status = format!("Filter: '{}'", self.txs.search_query);
             }
             Action::Backspace => {
-                self.tx_search_query.pop();
+                self.txs.search_query.pop();
             }
-            Action::Char(c) => self.tx_search_query.push(c),
-            Action::Space => self.tx_search_query.push(' '),
-            Action::Refresh => self.tx_search_query.push('r'),
-            Action::Install => self.tx_search_query.push('i'),
-            Action::AddToGroup => self.tx_search_query.push('g'),
-            Action::AddToFavorites => self.tx_search_query.push('f'),
+            Action::Char(c) => self.txs.search_query.push(c),
+            Action::Space => self.txs.search_query.push(' '),
+            Action::Refresh => self.txs.search_query.push('r'),
+            Action::Install => self.txs.search_query.push('i'),
+            Action::AddToGroup => self.txs.search_query.push('g'),
+            Action::AddToFavorites => self.txs.search_query.push('f'),
             Action::GoToTab(n) => {
                 let ch = char::from_digit((n + 1) as u32, 10).unwrap_or('?');
-                self.tx_search_query.push(ch);
+                self.txs.search_query.push(ch);
             }
             Action::Search => {}
             _ => {}
