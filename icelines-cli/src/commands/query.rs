@@ -25,6 +25,66 @@ use icelines_query::{extract_bio, BioConstraints};
 /// peeled off the top-level AND chain). Filter strings containing OR/NOT
 /// pass through unchanged in the residue — the catalog parser handles
 /// or rejects them.
+/// Wave 16-19 dispatch helper — partition raw filter strings
+/// into new-pipeline plans (handle full Phase Art Ross grammar)
+/// vs legacy-residue (handled by `parse_filter_expr`). Helpful
+/// errors short-circuit by returning Err on the first one.
+///
+/// Used by run_leaders, run_player (peers), run_goalies,
+/// run_compare. Each call site applies the new_plans via
+/// Constraint::matches with an IcelinesProvider after the
+/// legacy filter+bio passes.
+fn partition_filter_dispatch(
+    raw_residue: &[String],
+) -> anyhow::Result<(Vec<icelines_query::QueryPlan>, Vec<String>)> {
+    let mut plans: Vec<icelines_query::QueryPlan> = Vec::new();
+    let mut legacy: Vec<String> = Vec::new();
+    for s in raw_residue {
+        match icelines_query::parse_query(icelines_query::FilterInput::Cli(s.clone())) {
+            Ok(plan) => plans.push(plan),
+            Err(es) => {
+                let prefer_new = es.iter().any(|e| {
+                    matches!(
+                        e,
+                        icelines_query::ParseError::IncompatiblePredicate { .. }
+                            | icelines_query::ParseError::EmptySet { .. }
+                            | icelines_query::ParseError::FeatureNotYet { .. }
+                            | icelines_query::ParseError::UnknownWindowUnit { .. }
+                            | icelines_query::ParseError::ZeroWindowSize { .. }
+                            | icelines_query::ParseError::WindowSizeOutOfRange { .. }
+                    )
+                });
+                if prefer_new {
+                    let msgs: Vec<String> = es.iter().map(|e| e.to_string()).collect();
+                    anyhow::bail!("--filter {s:?}\n  {}", msgs.join("\n  "));
+                }
+                legacy.push(s.clone());
+            }
+        }
+    }
+    Ok((plans, legacy))
+}
+
+/// Build an EvalCtx for applying new-pipeline plans against
+/// `PlayerView` retained sets in CLI handlers. Reads HOME for
+/// the IcelinesProvider's data root, uses SystemClock.
+fn build_cli_eval_ctx(
+    season: u32,
+) -> anyhow::Result<(
+    icelines_fetch::query_provider::IcelinesProvider,
+    icelines_core::freshness::SystemClock,
+)> {
+    let home_dir = std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(std::path::PathBuf::from)
+        .ok_or_else(|| anyhow::anyhow!("cannot determine home directory"))?;
+    let _ = season; // ctx is built per-call by the caller
+    let data_root = home_dir.join(".icelines").join("data");
+    let provider = icelines_fetch::query_provider::IcelinesProvider::new(data_root);
+    let clock = icelines_core::freshness::SystemClock;
+    Ok((provider, clock))
+}
+
 fn extract_bio_for_cli(raw_filters: &[String]) -> (BioConstraints, Vec<String>) {
     let (atoms, residue) = extract_bio(raw_filters);
     let mut bc = BioConstraints::default();
@@ -1200,8 +1260,11 @@ pub async fn run_player(
     // pre-extracted from the top-level AND chain; stat residue
     // continues through the catalog parser as before.
     let (peer_bio, peer_stat_residue) = extract_bio_for_cli(&filters);
+    // Wave 18+ dispatch — partition new-grammar atoms from legacy
+    // residue. Same pattern as run_leaders / run_goalies.
+    let (peer_new_plans, peer_legacy_residue) = partition_filter_dispatch(&peer_stat_residue)?;
     let mut peer_filter = PlayerFilter::new();
-    for s in &peer_stat_residue {
+    for s in &peer_legacy_residue {
         // Filter.OR — boolean grammar accepted; bare atoms route to stat_filters.
         let expr = icelines_core::stats_catalog::parse_filter_expr(s)?;
         match expr.as_atom() {
@@ -1260,16 +1323,32 @@ pub async fn run_player(
     // D1b — apply the filter to compute the peer pool. The target
     // player itself stays available via `find_view(&all_views, ...)`
     // — only the percentile/rank cohort is narrowed.
-    let peer_views: Vec<PlayerView<'_>> =
-        if peer_filter.stat_filters.is_empty() && !peer_bio.is_active() {
-            all_views.clone()
-        } else {
-            let mut pool = peer_filter.apply_views(all_views.iter().copied());
-            if peer_bio.is_active() {
-                pool.retain(|v| peer_bio.matches(v, season_key.0));
+    let peer_views: Vec<PlayerView<'_>> = if peer_filter.stat_filters.is_empty()
+        && !peer_bio.is_active()
+        && peer_new_plans.is_empty()
+    {
+        all_views.clone()
+    } else {
+        let mut pool = peer_filter.apply_views(all_views.iter().copied());
+        if peer_bio.is_active() {
+            pool.retain(|v| peer_bio.matches(v, season_key.0));
+        }
+        // Wave 18+ — apply new-pipeline plans for cohort filtering.
+        if !peer_new_plans.is_empty() {
+            let (provider, clock) = build_cli_eval_ctx(season_key.0)?;
+            let ctx = icelines_query::EvalCtx::from_clock(
+                &provider,
+                icelines_query::StrictMode::Off,
+                false,
+                &clock,
+                season_key.0,
+            );
+            for plan in &peer_new_plans {
+                pool.retain(|v| plan.root.matches(v, &ctx));
             }
-            pool
-        };
+        }
+        pool
+    };
 
     let age = age_str(v);
     let draft = draft_str(v);
@@ -1892,8 +1971,11 @@ pub async fn run_compare(
     // QueryB — bio atoms (`age<=24`, `country=CAN`, `height>=72`)
     // pre-extracted from the top-level AND chain.
     let (cohort_bio, cohort_stat_residue) = extract_bio_for_cli(&filters);
+    // Wave 18+ — partition new-grammar from legacy residue.
+    let (cohort_new_plans, cohort_legacy_residue) =
+        partition_filter_dispatch(&cohort_stat_residue)?;
     let mut cohort_filter = PlayerFilter::new();
-    for s in &cohort_stat_residue {
+    for s in &cohort_legacy_residue {
         let expr = icelines_core::stats_catalog::parse_filter_expr(s)?;
         match expr.as_atom() {
             Some(atom) => cohort_filter.stat_filters.push(*atom),
@@ -1963,16 +2045,34 @@ pub async fn run_compare(
 
     if let Some(n) = similar {
         // D1b — narrow cohort. Empty filter passes through unchanged.
-        let cohort_views: Vec<PlayerView<'_>> =
-            if cohort_filter.stat_filters.is_empty() && !cohort_bio.is_active() {
-                all_views.clone()
-            } else {
-                let mut pool = cohort_filter.apply_views(all_views.iter().copied());
-                if cohort_bio.is_active() {
-                    pool.retain(|v| cohort_bio.matches(v, season_key.0));
+        let cohort_views: Vec<PlayerView<'_>> = if cohort_filter
+            .stat_filters
+            .is_empty()
+            && !cohort_bio.is_active()
+            && cohort_new_plans.is_empty()
+        {
+            all_views.clone()
+        } else {
+            let mut pool = cohort_filter.apply_views(all_views.iter().copied());
+            if cohort_bio.is_active() {
+                pool.retain(|v| cohort_bio.matches(v, season_key.0));
+            }
+            // Wave 18+ — apply new-pipeline plans to the cohort.
+            if !cohort_new_plans.is_empty() {
+                let (provider, clock) = build_cli_eval_ctx(season_key.0)?;
+                let ctx = icelines_query::EvalCtx::from_clock(
+                    &provider,
+                    icelines_query::StrictMode::Off,
+                    false,
+                    &clock,
+                    season_key.0,
+                );
+                for plan in &cohort_new_plans {
+                    pool.retain(|v| plan.root.matches(v, &ctx));
                 }
-                pool
-            };
+            }
+            pool
+        };
         run_similar(&cohort_views, &player1, n)
     } else if let Some(p2_name) = player2 {
         let v1 = find_view(&all_views, &player1)?;
