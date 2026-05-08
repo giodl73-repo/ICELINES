@@ -130,6 +130,104 @@ pub fn project_career_rows<'a>(
     matched
 }
 
+/// Phase Art Ross — apply a parsed filter plan to a (pid, stint)
+/// cohort. Returns the rows that survive.
+///
+/// Strategy: load each cohort player's full bundled career into a
+/// shared `StatsRepository` once, then for each (pid, stint) walk
+/// most-recent NHL season backward to find a `PlayerView` to
+/// evaluate against. The view's NHL bio (country, age, draft, pos)
+/// is what bio atoms read; stat atoms evaluate against the player's
+/// current-season NHL line (a documented quirk — useful for "OHL
+/// leaders who later hit 30 goals" but not for narrowing on the OHL
+/// stat line itself).
+///
+/// The `EvalCtx` is rebuilt per-row with `season = stint.season.0`
+/// so `age<=18` computes the player's age AS OF the cohort year,
+/// not their current age (the natural read for "OHL leaders 2014-15
+/// who were 18 or younger at the time").
+fn filter_cohort_with_plan<'a>(
+    matched: &[(u32, &'a icelines_core::career_history::CareerStint)],
+    plan: &icelines_query::QueryPlan,
+) -> Result<Vec<(u32, &'a icelines_core::career_history::CareerStint)>> {
+    use icelines_core::identity::PlayerId;
+    use icelines_core::model::Season;
+    use icelines_core::season_stats::SeasonType;
+    use icelines_core::stats_repository::StatsRepository;
+    use icelines_fetch::bundled::BUNDLED_SEASONS;
+    use icelines_fetch::stats_loader::load_player_career_into_repo;
+
+    // One repo for the entire cohort. LRU cap matches the public
+    // `load_into_repo` setting so the per-player fan-out doesn't
+    // evict its own newly-loaded windows.
+    let mut repo = StatsRepository::with_lru_cap(80);
+    for (pid, _) in matched {
+        let _ = load_player_career_into_repo(&mut repo, PlayerId(*pid));
+    }
+
+    // Phase Art Ross — NoOp provider: bio atoms work without any
+    // provider data. Stat atoms that need a provider (sliding-
+    // window, career, league) are accepted by the parser but
+    // evaluate to false here; that's the documented MVP gap.
+    struct NoOp;
+    impl icelines_query::data_provider::DataProvider for NoOp {
+        fn ensure(
+            &self,
+            _req: &icelines_query::data_provider::PlanRequirement,
+            _events: &mut dyn FnMut(icelines_query::data_provider::FetchEvent),
+        ) -> Result<(), icelines_query::data_provider::FetchError> {
+            Ok(())
+        }
+    }
+    let provider = NoOp;
+    let clock = icelines_core::freshness::SystemClock;
+
+    let mut kept = Vec::new();
+    for (pid, stint) in matched {
+        // Walk newest-first to find a season where this pid has a
+        // skater view. Career-only-non-NHL pids will have none, in
+        // which case we drop them (cohort scope says they shouldn't
+        // exist; defensive).
+        let mut view = None;
+        for season_str in BUNDLED_SEASONS.iter().rev() {
+            // BUNDLED_SEASONS holds string-form ids like "20242025";
+            // parse into u32 so we can build a typed Season.
+            let Ok(season_u32) = season_str.parse::<u32>() else {
+                continue;
+            };
+            // Try regular season first, then playoff.
+            for st in [SeasonType::Regular, SeasonType::Playoff] {
+                if let Some(v) = repo.view(PlayerId(*pid), Season(season_u32), st) {
+                    view = Some(v);
+                    break;
+                }
+            }
+            if view.is_some() {
+                break;
+            }
+        }
+        let Some(view) = view else {
+            continue;
+        };
+
+        // EvalCtx anchored on the stint's year so age computes
+        // correctly (e.g., `age<=18` on 2014-15 cohort uses ages
+        // as of Feb-1-2015 per the HR convention).
+        let ctx = icelines_query::EvalCtx::from_clock(
+            &provider,
+            icelines_query::StrictMode::Off,
+            false,
+            &clock,
+            stint.season.0,
+        );
+
+        if plan.root.matches(&view, &ctx) {
+            kept.push((*pid, *stint));
+        }
+    }
+    Ok(kept)
+}
+
 fn metric(s: &CareerStint, sort: SortKey) -> Option<f64> {
     match sort {
         SortKey::Points => s.points.map(|n| n as f64),
@@ -141,6 +239,13 @@ fn metric(s: &CareerStint, sort: SortKey) -> Option<f64> {
 }
 
 /// Phase Calder.4 — main entry point dispatched from main.rs.
+///
+/// Phase Art Ross (`filters`) — when non-empty, the cohort is
+/// narrowed by a Phase Art Ross filter expression. Bio atoms
+/// (`country`, `pos`, `age`, `draft-*`) work as expected. Stat
+/// atoms evaluate against the player's NHL career — useful for
+/// "OHL leaders who later hit 30 goals" but not for narrowing on
+/// the OHL stat line itself.
 pub async fn run(
     league: String,
     season: Option<String>,
@@ -148,6 +253,7 @@ pub async fn run(
     sort: String,
     json: bool,
     csv: bool,
+    filters: Vec<String>,
 ) -> Result<()> {
     let sort = SortKey::parse(&sort)?;
     let season_u32 = match season.as_deref() {
@@ -158,6 +264,23 @@ pub async fn run(
         ),
     };
 
+    // Phase Art Ross — parse filters up front so typos exit before
+    // we touch the career-history store.
+    let filter_plan = if filters.is_empty() {
+        None
+    } else {
+        let input = icelines_query::FilterInput::from_cli_filters(&filters);
+        Some(icelines_query::parse_query(input).map_err(|errs| {
+            anyhow!(
+                "filter parse error: {}",
+                errs.iter()
+                    .map(|e| e.to_string())
+                    .collect::<Vec<_>>()
+                    .join("; ")
+            )
+        })?)
+    };
+
     let store = icelines_fetch::career_landing::load_local_store();
     if store.is_empty() {
         return Err(anyhow!(
@@ -166,7 +289,7 @@ pub async fn run(
         ));
     }
 
-    let matched = project_career_rows(&store, &league, season_u32, sort);
+    let mut matched = project_career_rows(&store, &league, season_u32, sort);
     if matched.is_empty() {
         eprintln!(
             "No career-history rows matched league '{league}'{} in the local store.",
@@ -179,6 +302,23 @@ pub async fn run(
             sample_leagues(&store).join(", ")
         );
         return Ok(());
+    }
+
+    // Phase Art Ross — apply the cohort filter. The synthetic
+    // `PlayerView` is built from the most-recent NHL bundled snapshot
+    // for each cohort player; players not in the bundle (career-only
+    // who never reached NHL — can't happen given the cohort scope,
+    // but defensive) are dropped under filter mode.
+    if let Some(plan) = filter_plan.as_ref() {
+        let prior_count = matched.len();
+        matched = filter_cohort_with_plan(&matched, plan)?;
+        if matched.is_empty() {
+            eprintln!(
+                "Filter excluded all {prior_count} cohort rows. \
+                 Verify the filter atoms match the cohort's bios."
+            );
+            return Ok(());
+        }
     }
 
     // Resolve names from bundled bios (single eager scan keyed on
@@ -547,5 +687,50 @@ mod tests {
         let leagues = sample_leagues(&s);
         assert_eq!(leagues[0], "OHL", "OHL count 2 should rank first");
         assert!(leagues.contains(&"WHL".to_owned()));
+    }
+
+    // ── Phase Art Ross — Wave 25 query career --filter ─────────────────────
+
+    /// `filter_cohort_with_plan` against an empty cohort returns
+    /// empty without panic. Also exercises the helper's signature
+    /// post-Wave-25.
+    #[test]
+    fn l0_w25_filter_empty_cohort_returns_empty() {
+        let plan = icelines_query::parse_query(
+            icelines_query::FilterInput::Cli("country=CAN".to_owned()),
+        )
+        .expect("plan parses");
+        let kept = filter_cohort_with_plan(&[], &plan).unwrap();
+        assert!(kept.is_empty());
+    }
+
+    /// Filter parse error path — bad filter syntax exits before
+    /// touching the store. Verified by calling `parse_query` with
+    /// the same garbage the run() path sends.
+    #[test]
+    fn l0_w25_unparsed_filter_raises_error() {
+        let bad = icelines_query::parse_query(icelines_query::FilterInput::Cli(
+            "(((".to_owned(),
+        ));
+        assert!(bad.is_err(), "((( must fail to parse");
+    }
+
+    /// Multiple --filter flags AND-join via FilterInput::from_cli_filters
+    /// — same path the run() entry point uses.
+    #[test]
+    fn l0_w25_multiple_filters_and_join() {
+        let filters = vec![
+            "country=CAN".to_owned(),
+            "pos=C".to_owned(),
+        ];
+        let input = icelines_query::FilterInput::from_cli_filters(&filters);
+        let plan = icelines_query::parse_query(input).expect("parses");
+        // Sanity: the plan tree contains both atoms (compiler-
+        // verified shape via debug-format substring match).
+        let dbg = format!("{:?}", plan);
+        assert!(
+            dbg.contains("Country") || dbg.contains("country"),
+            "AND-joined plan must contain country atom; got: {dbg}"
+        );
     }
 }

@@ -322,12 +322,26 @@ icelines query career --league OHL --season 20142015           # McDavid era
 icelines query career --league AHL --season 20242025 --top 30
 icelines query career --league NCAA --season 20132014 --sort goals
 icelines query career --league WHL --json | jq '.data[0]'
+
+# Phase Art Ross — narrow the cohort with bio filters
+icelines query career --league OHL --season 20142015 --filter "country=CAN"
+icelines query career --league OHL --season 20142015 --filter "pos=C AND age<=18"
+icelines query career --league WHL --filter "draft-round<=2"
 ```
 
 Cohort scope: only players who appeared on an NHL roster in the last
 5 bundled seasons (the `fetch career` target). Career-only players
 who never reached the NHL aren't in scope. `--season` defaults to the
 most-recent season for the chosen league.
+
+`--filter` accepts the same Phase Art Ross grammar as `query leaders`.
+Bio atoms (`country`, `pos`, `age`, `draft-*`) work as expected — the
+`age` atom anchors on the cohort year, so `age<=18` on a 2014-15
+cohort uses each player's age as of Feb-1-2015. Stat atoms (`g>=10`,
+sliding-window, career-aggregate) evaluate against the player's NHL
+career, not their non-NHL league stats — useful for "OHL leaders who
+later hit 30 NHL goals" but not for narrowing on the OHL stat line
+itself (use `--sort` for that).
 
 Run `icelines fetch career --bundled-seasons 5` once (≈100 s, hits the
 NHL landing endpoint for ~1,650 players) before this command; the

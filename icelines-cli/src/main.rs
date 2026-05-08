@@ -669,6 +669,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 csv,
                 week,
                 month,
+                filters,
             } => {
                 if week || month {
                     eprintln!(
@@ -676,7 +677,10 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                     );
                     std::process::exit(2);
                 }
-                commands::query_career::run(league, season, top, sort, json, csv).await?;
+                commands::query_career::run(
+                    league, season, top, sort, json, csv, filters,
+                )
+                .await?;
             }
         },
         Commands::Fantasy(sub) => match sub {

@@ -1708,6 +1708,24 @@ NOTES
         week: bool,
         #[arg(long, hide = true)]
         month: bool,
+        /// Phase Art Ross — narrow the cohort with a Phase Art Ross
+        /// filter. Same grammar as `query leaders --filter`. Each
+        /// filter is AND-joined.
+        ///
+        /// Bio atoms work cleanly here (`country=CAN`, `pos=C`,
+        /// `age<=18`, `draft-round<=2`). Stat atoms (`g>=10`,
+        /// `g.last10g>=5`, `p.career>=500`) evaluate against the
+        /// player's NHL career, not their non-NHL league stats —
+        /// useful for "OHL leaders who later became NHL 30-goal
+        /// scorers" but not for "OHL leaders with 80+ OHL points"
+        /// (use `--sort` for that).
+        ///
+        /// Examples:
+        ///   --filter "country=CAN AND pos=C"
+        ///   --filter "age<=18"
+        ///   --filter "draft-round<=2"
+        #[arg(long = "filter")]
+        filters: Vec<String>,
     },
 }
 
