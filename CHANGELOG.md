@@ -1,5 +1,66 @@
 # IceLines Changelog
 
+## v0.20.2 — 2026-05-07 — Phase Art Ross TUI overlay (Wave 23)
+
+Headline: **The free-form filter grammar reaches the last surface.
+Press `f` on the TUI Queries screen to type any Phase Art Ross
+filter (`country IN (CAN, USA) AND age<25`, `g.last10g>=5`,
+`p.career>=500`, …); CLI / web / TUI now all parse through the
+same `parse_query → Constraint::matches` pipeline.** 42 new
+tests across L0/L1/L2.
+
+### TUI
+
+- New `QueryMode::FilterEdit` variant + free-form text editor.
+  `f` opens; Enter validates via `parse_query`; on success the
+  plan is stored on `App` and AND-joined with the structured
+  field filter on every subsequent results render. On parse
+  error the message renders inline and the editor stays open.
+- Esc clears text + plan + error; empty Enter clears the active
+  plan (fast "remove filter" gesture); editor preserves typed
+  text across re-entry so the user can refine without retyping.
+- `f` while typing is intercepted via the same short-circuit
+  pattern as the save-name editor, so it doesn't fire
+  AddToFavorites.
+
+### Internals
+
+- New `run_query_views_with_pick_and_plan` helper in
+  `tui::screens::queries` wraps the legacy field filter and
+  applies the parsed plan via `Constraint::matches` on top.
+  Provider/clock construction follows the Wave 22 hoist
+  pattern (built once per render, not per player).
+- Three call sites in `app.rs` and one in
+  `screens/queries.rs` switched from `_with_pick` to the new
+  `_with_pick_and_plan` variant.
+
+### Test pyramid (Wave 23)
+
+- **L0** — 16 tests: 12 handler tests
+  (`tui::app::tests::l0_tui_filter_edit_*`) covering f-key
+  entry, typing, backspace, valid/invalid Enter, Esc, empty
+  Enter, results-focused fall-through, whitespace Enter, text
+  persistence, Quit propagation. 4 helper tests
+  (`l0_w23_*`) covering empty-views purity, None-plan
+  identity to legacy helper, plan-borrow allows repeated
+  calls.
+- **L1** — 12 integration tests
+  (`art_ross_w23_tui_filter.rs`): real `StatsRepository`
+  populated from bundled data; runs `parse_query → legacy
+  filter → Constraint::matches` end-to-end and asserts
+  membership across 11 filter shapes plus plan ∩ legacy field
+  filter intersection.
+- **L2** — 14 subprocess tests (`persona_wave23.rs`):
+  `tui --help` + `tui stats --help` parse cleanly, COMMANDS.md
+  ships the `f` keybind doc (regression guard), 11
+  representative Phase Art Ross shapes accepted via
+  `query leaders --filter` (indirect parser-parity proof).
+
+### Docs
+
+- COMMANDS.md TUI keybind table now lists `f` for the
+  free-form filter overlay.
+
 ## v0.20.1 — 2026-05-07 — Phase Art Ross dispatch hardening
 
 Headline: **Seven persona waves (16-22) hardening the new-pipeline
