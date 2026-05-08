@@ -504,6 +504,14 @@ icelines tui team EDM                # team depth chart
 icelines tui goalie "Connor Hellebuyck"
 icelines tui comps McDavid           # similarity comps screen
 
+# Phase Masterton.3 — focused single-screen mode (standalone)
+icelines tui goalies --standalone        # locked to Goalies, no tab cycling
+icelines tui scores --standalone         # focused live-scores TUI
+icelines tui transactions --standalone   # focused transactions feed
+# When --standalone is set: Tab/Shift+Tab no-op, tab strip is hidden, the
+# screen's chrome (header title + footer keybinds) is the only navigation
+# UI. Overlays (?, F, y, R) and per-screen keybinds work as usual.
+
 # Equivalent flag form (for scripts)
 icelines tui --start goalies
 icelines tui --start "player:Bedard"

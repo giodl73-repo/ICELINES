@@ -34,15 +34,21 @@ use self::app::Screen;
 pub struct RunTuiOpts {
     pub no_color: bool,
     pub start_screen: Screen,
+    /// Phase Masterton.3 — when true, the TUI is locked to
+    /// `start_screen`. Tab/Shift+Tab no-op; tab strip hidden.
+    /// Sets `App::locked_screen = Some(start_screen)`.
+    pub standalone: bool,
 }
 
 impl RunTuiOpts {
-    /// Default: full color, boot on League. Matches the pre-LB.1
-    /// behavior so existing call sites switch over with one literal.
+    /// Default: full color, boot on League, multi-tab mode.
+    /// Matches the pre-LB.1 behavior so existing call sites
+    /// switch over with one literal.
     pub fn home() -> Self {
         Self {
             no_color: false,
             start_screen: Screen::Home,
+            standalone: false,
         }
     }
 }
@@ -186,7 +192,13 @@ async fn run_loop(
 ) -> Result<()> {
     let mut app = App::new(opts.no_color);
     // LB.1 — seed initial screen. Default is Home (today's behavior).
-    app.screen = opts.start_screen;
+    app.screen = opts.start_screen.clone();
+    // Phase Masterton.3 — when --standalone is set, lock the App
+    // to the start_screen so Tab/Shift+Tab no-op and the tab
+    // strip is hidden.
+    if opts.standalone {
+        app.locked_screen = Some(opts.start_screen);
+    }
 
     // Synchronous boot load. ~50ms against bundled data — well below
     // the user's perceptible threshold. `crossterm::event::poll` (in

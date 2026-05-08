@@ -353,6 +353,14 @@ screen) to quit.
         /// slug grammar as the sugar subcommands. See --help.
         #[arg(long, value_name = "SLUG")]
         start: Option<String>,
+        /// Phase Masterton.3 — lock the TUI to the chosen surface.
+        /// Tab/Shift+Tab become no-ops; the tab strip is hidden.
+        /// Useful for a focused single-screen experience.
+        ///
+        /// Example:
+        ///   icelines tui goalies --standalone
+        #[arg(long)]
+        standalone: bool,
     },
 
     /// Print the full command reference (embedded COMMANDS.md). No
@@ -763,6 +771,7 @@ mod tui_surface_tests {
                 Commands::Tui {
                     surface: Some(s),
                     start: None,
+                    standalone: false,
                 } => s.into_screen_spec(),
                 other => panic!("expected Tui {{ surface: Some(_), start: None }}, got {other:?}"),
             };
@@ -775,6 +784,7 @@ mod tui_surface_tests {
                 Commands::Tui {
                     surface: None,
                     start: Some(s),
+                    standalone: false,
                 } => parse_start_slug(&s).expect("known slug"),
                 other => panic!("expected Tui {{ surface: None, start: Some(_) }}, got {other:?}"),
             };
@@ -792,8 +802,10 @@ mod tui_surface_tests {
     fn l0_bare_tui_has_no_surface_or_start() {
         let cli = Cli::try_parse_from(["icelines", "tui"]).unwrap();
         match cli.command {
-            Commands::Tui { surface, start } => {
+            Commands::Tui { surface, start, standalone } => {
                 assert!(surface.is_none());
+                assert!(!standalone, "bare tui must default standalone=false");
+                let _ = standalone; // silence unused warning
                 assert!(start.is_none());
             }
             other => panic!("expected Tui, got {other:?}"),

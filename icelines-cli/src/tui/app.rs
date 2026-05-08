@@ -286,6 +286,21 @@ pub struct App {
     /// `dashboard_panel.compile` so cross-window construction is
     /// rejected at the boundary.
     pub league_context_window: (Season, SeasonType),
+
+    /// Phase Masterton.3 — when set, the TUI is locked to a
+    /// single screen. Tab/Shift+Tab become no-ops; the tab strip
+    /// is hidden in the header. Other behavior (overlays,
+    /// keybinds, dispatch) is unchanged.
+    ///
+    /// Set via `RunTuiOpts::standalone` in `tui::run_tui`. The
+    /// stored `Screen` is the screen the launcher locked to;
+    /// matches the screen the user sees on launch.
+    ///
+    /// Pragmatic interpretation of "host any of these with a
+    /// simple TUI" — gives users a focused single-screen
+    /// experience without requiring per-screen Screen-trait
+    /// migrations (the deeper Masterton.2 grind that's deferred).
+    pub locked_screen: Option<Screen>,
 }
 
 /// True iff the current screen is a text-input surface where typed
@@ -364,6 +379,7 @@ impl App {
             active_season_typed: Season(icelines_core::CURRENT_SEASON),
             active_type: SeasonType::Regular,
             league_context_window: (Season(icelines_core::CURRENT_SEASON), SeasonType::Regular),
+            locked_screen: None,
         }
     }
 
@@ -1232,9 +1248,19 @@ impl App {
                 // sections trapped users on the Stats tab. Section
                 // toggle moved to `o` below; auto-expand on Down/Up
                 // already covers most navigation needs.
-                self.cycle_screen();
+                //
+                // Phase Masterton.3 — when launched with --standalone,
+                // Tab is a no-op. The user gets a focused single-
+                // screen experience without cycling.
+                if self.locked_screen.is_none() {
+                    self.cycle_screen();
+                }
             }
-            Action::TabPrev => self.cycle_screen_back(),
+            Action::TabPrev => {
+                if self.locked_screen.is_none() {
+                    self.cycle_screen_back();
+                }
+            }
             Action::Refresh => {
                 if self.screen == Screen::Queries {
                     self.queries.fields = crate::tui::screens::queries::default_fields();
@@ -4842,5 +4868,94 @@ mod tests {
         // the orchestrator builds `ctx` first. The pattern works
         // when ctx is built BEFORE the screen-state borrow:
         let _ = queries.filter_text.len();
+    }
+
+    // ── Phase Masterton.3 — locked_screen (standalone mode) ──────────────
+
+    /// Default App is multi-tab — locked_screen is None,
+    /// Tab/Shift+Tab cycle through screens normally.
+    #[test]
+    fn l0_masterton_app_default_is_multi_tab() {
+        let app = App::new(false);
+        assert!(
+            app.locked_screen.is_none(),
+            "default App must be multi-tab (locked_screen = None)"
+        );
+    }
+
+    /// When locked_screen is Some(X), Tab is a no-op — screen
+    /// stays put.
+    #[test]
+    fn l0_masterton_locked_tab_is_noop() {
+        let mut app = App::new(false);
+        app.screen = Screen::Goalies;
+        app.locked_screen = Some(Screen::Goalies);
+        app.handle(Action::Tab);
+        assert_eq!(
+            app.screen,
+            Screen::Goalies,
+            "locked Tab must NOT cycle the screen"
+        );
+    }
+
+    /// When locked_screen is Some(X), Shift+Tab is a no-op too.
+    #[test]
+    fn l0_masterton_locked_tabprev_is_noop() {
+        let mut app = App::new(false);
+        app.screen = Screen::Goalies;
+        app.locked_screen = Some(Screen::Goalies);
+        app.handle(Action::TabPrev);
+        assert_eq!(
+            app.screen,
+            Screen::Goalies,
+            "locked Shift+Tab must NOT cycle the screen"
+        );
+    }
+
+    /// When locked_screen is None (default), Tab cycles normally.
+    /// Pin the contract so a refactor of the locked-screen check
+    /// can't accidentally break the multi-tab path.
+    #[test]
+    fn l0_masterton_unlocked_tab_still_cycles() {
+        let mut app = App::new(false);
+        app.screen = Screen::Home;
+        // Default — locked_screen is None.
+        assert!(app.locked_screen.is_none());
+        app.handle(Action::Tab);
+        assert_ne!(
+            app.screen,
+            Screen::Home,
+            "unlocked Tab must cycle the screen"
+        );
+    }
+
+    /// Locked mode doesn't break other handlers — opening an
+    /// overlay (`?` for help) still works in locked mode.
+    #[test]
+    fn l0_masterton_locked_overlays_still_work() {
+        let mut app = App::new(false);
+        app.screen = Screen::Goalies;
+        app.locked_screen = Some(Screen::Goalies);
+        assert!(!app.show_help);
+        app.handle(Action::Help);
+        assert!(
+            app.show_help,
+            "locked mode must not block the help overlay"
+        );
+    }
+
+    /// Locked mode doesn't break per-screen keybinds — `s` on
+    /// Goalies still cycles sort.
+    #[test]
+    fn l0_masterton_locked_per_screen_keybinds_still_work() {
+        let mut app = App::new(false);
+        app.screen = Screen::Goalies;
+        app.locked_screen = Some(Screen::Goalies);
+        let sort_before = app.goalies.sort;
+        app.handle(Action::Char('s'));
+        assert_ne!(
+            app.goalies.sort, sort_before,
+            "locked mode must not block per-screen keybinds"
+        );
     }
 }

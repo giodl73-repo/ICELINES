@@ -274,7 +274,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         } => {
             commands::project::run(player, team, mode, games, json, csv, out).await?;
         }
-        Commands::Tui { surface, start } => {
+        Commands::Tui { surface, start, standalone } => {
             // LB.1+LB.2+LB.3 — resolve start screen BEFORE entering raw
             // mode, so resolution failures (unknown slug / unknown player
             // name / ambiguous match / bad team abbrev) print to normal
@@ -297,6 +297,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             tui::run_tui(tui::RunTuiOpts {
                 no_color: false,
                 start_screen,
+                standalone,
             })
             .await?;
         }

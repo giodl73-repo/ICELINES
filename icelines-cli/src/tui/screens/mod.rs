@@ -295,18 +295,38 @@ fn render_nav(f: &mut Frame, app: &App, area: Rect) {
     let active_tab = tab_for_screen(&app.screen);
 
     let mut spans: Vec<Span> = Vec::new();
-    for (i, label) in tab_labels.iter().enumerate() {
-        let active = i == active_tab;
-        let style = if active {
-            Style::default()
-                .fg(Color::Black)
-                .bg(Color::Cyan)
-                .add_modifier(Modifier::BOLD)
-        } else {
-            Style::default().fg(Color::DarkGray)
-        };
-        spans.push(Span::styled(format!(" {label} "), style));
-        spans.push(Span::styled("│", Style::default().fg(Color::DarkGray)));
+
+    // Phase Masterton.3 — when launched with --standalone, hide
+    // the tab strip. Tab/Shift+Tab are no-ops; showing tabs that
+    // don't cycle would be misleading. The current screen's
+    // chrome title (rendered right-aligned by render_header)
+    // gives the user enough context.
+    if app.locked_screen.is_none() {
+        for (i, label) in tab_labels.iter().enumerate() {
+            let active = i == active_tab;
+            let style = if active {
+                Style::default()
+                    .fg(Color::Black)
+                    .bg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(Color::DarkGray)
+            };
+            spans.push(Span::styled(format!(" {label} "), style));
+            spans.push(Span::styled("│", Style::default().fg(Color::DarkGray)));
+        }
+    } else {
+        // In standalone mode, lead with the active tab name as a
+        // breadcrumb so the user sees what surface they're on.
+        if let Some(label) = tab_labels.get(active_tab) {
+            spans.push(Span::styled(
+                format!(" {label} "),
+                Style::default()
+                    .fg(Color::Black)
+                    .bg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ));
+        }
     }
 
     // Season indicator — shown when a historical season is active
