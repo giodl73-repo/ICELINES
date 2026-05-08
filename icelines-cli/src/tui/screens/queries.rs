@@ -620,18 +620,100 @@ pub fn render(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
     render_results(f, app, chunks[1]);
 }
 
+/// Phase Art Ross — Wave 24c live result count.
+///
+/// Returns a one-line hint to render under the editor input. Three
+/// shapes:
+///
+/// - empty input: `None` (no hint)
+/// - input parses, doesn't need a provider: `Some("→ 47 of 712 match")`
+/// - input parses, NEEDS a provider (sliding-window / career /
+///   league): `Some("→ press Enter to evaluate (data lookup)")`
+/// - input fails to parse: `Some("(unparsed — keep typing)")`
+///
+/// The provider-gating keeps the editor responsive: counting bio-
+/// only filters is microseconds against ~700 skaters, but a
+/// sliding-window filter would file-I/O per player on every
+/// keystroke. Heavyweight filters defer to Enter.
+pub fn live_filter_count_hint(
+    text: &str,
+    views: &[icelines_core::stats_repository::PlayerView<'_>],
+    season: u32,
+) -> Option<String> {
+    let trimmed = text.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    match icelines_query::parse_query(icelines_query::FilterInput::Cli(trimmed.to_owned()))
+    {
+        Err(_) => Some("(unparsed — keep typing)".to_owned()),
+        Ok(plan) if plan.root.needs_provider() => {
+            Some("→ press Enter to evaluate (data lookup)".to_owned())
+        }
+        Ok(plan) => {
+            // Bio + season-stat filters: count locally with a
+            // NoOp provider. The plan tree is asserted non-
+            // provider above, so `Constraint::matches` won't
+            // reach into the provider.
+            struct NoOp;
+            impl icelines_query::data_provider::DataProvider for NoOp {
+                fn ensure(
+                    &self,
+                    _req: &icelines_query::data_provider::PlanRequirement,
+                    _events: &mut dyn FnMut(icelines_query::data_provider::FetchEvent),
+                ) -> Result<(), icelines_query::data_provider::FetchError> {
+                    Ok(())
+                }
+            }
+            let provider = NoOp;
+            let clock = icelines_core::freshness::SystemClock;
+            let ctx = icelines_query::EvalCtx::from_clock(
+                &provider,
+                icelines_query::StrictMode::Off,
+                false,
+                &clock,
+                season,
+            );
+            let total = views.len();
+            let matched = views.iter().filter(|v| plan.root.matches(v, &ctx)).count();
+            Some(format!("→ {matched} of {total} match"))
+        }
+    }
+}
+
 /// Phase Art Ross — free-form filter editor overlay. Mirrors
 /// `render_save_prompt` but with a parser-error line. Title carries
-/// the active filter / error indicator so the user knows what they
-/// last applied.
+/// the active filter / error / history-cursor indicator so the user
+/// knows what they last applied.
+///
+/// Wave 24d — when `app.query_filter_show_help` is on, a grammar
+/// cheatsheet renders beside the editor (horizontal split).
 fn render_filter_editor(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
+    if app.query_filter_show_help {
+        // Side-by-side: 60% editor, 40% cheatsheet.
+        let chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(60), Constraint::Percentage(40)])
+            .split(area);
+        render_filter_editor_inner(f, app, chunks[0]);
+        render_filter_grammar_cheatsheet(f, chunks[1]);
+    } else {
+        render_filter_editor_inner(f, app, area);
+    }
+}
+
+/// Wave 24d — the body of the filter editor (title, examples,
+/// input cursor, hints, parser errors). Pulled out of
+/// `render_filter_editor` so the side-by-side layout can call it
+/// with a sub-region.
+fn render_filter_editor_inner(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
     let title_state = match (
         app.query_filter_plan.is_some(),
         app.query_filter_error.as_ref(),
     ) {
-        (_, Some(_)) => " Filter — parse error · fix and Enter, Esc to cancel ",
-        (true, None) => " Filter — refine and Enter, Esc to cancel ",
-        (false, None) => " Filter — type filter, Enter accept, Esc cancel ",
+        (_, Some(_)) => " Filter — parse error · fix and Enter, Esc to cancel ".to_owned(),
+        (true, None) => " Filter — refine and Enter, Esc to cancel ".to_owned(),
+        (false, None) => " Filter — type filter, Enter accept, Esc cancel ".to_owned(),
     };
     let block = Block::default()
         .borders(Borders::ALL)
@@ -644,6 +726,29 @@ fn render_filter_editor(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
     let err_style = Style::default()
         .fg(Color::Red)
         .add_modifier(Modifier::BOLD);
+
+    let history_hint = match app.query_filter_history_cursor {
+        Some(i) => format!(
+            "  history {}/{} — Up: older · Down: newer / live",
+            i + 1,
+            app.query_filter_history.len()
+        ),
+        None if !app.query_filter_history.is_empty() => format!(
+            "  Up to recall last {} filter(s) · Esc cancels",
+            app.query_filter_history.len(),
+        ),
+        None => String::new(),
+    };
+
+    // Wave 24c — speculative live count. Computed against the
+    // active-season views; provider-gated so heavyweight filters
+    // (sliding-window, career, league) defer to Enter.
+    let live_views = app.views();
+    let live_hint = live_filter_count_hint(
+        &app.query_filter_text,
+        &live_views,
+        app.active_season_typed.0,
+    );
 
     let mut lines: Vec<Line> = vec![
         Line::from(""),
@@ -660,15 +765,80 @@ fn render_filter_editor(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
                 .add_modifier(Modifier::BOLD),
         ),
     ];
+    if let Some(hint) = live_hint {
+        lines.push(Line::styled(format!("  {hint}"), dim));
+    }
+    if !history_hint.is_empty() {
+        lines.push(Line::styled(history_hint, dim));
+    }
     if let Some(err) = &app.query_filter_error {
         lines.push(Line::from(""));
         lines.push(Line::styled(format!("  ✘ {err}"), err_style));
     }
     lines.push(Line::from(""));
-    lines.push(Line::styled(
-        "  Enter = parse + apply · Esc = cancel · empty Enter clears",
-        dim,
-    ));
+    let help_hint = if app.query_filter_show_help {
+        "  Enter apply · Esc cancel · empty Enter clears · ? hide grammar"
+    } else {
+        "  Enter apply · Esc cancel · empty Enter clears · ? show grammar"
+    };
+    lines.push(Line::styled(help_hint, dim));
+    f.render_widget(Paragraph::new(lines), inner);
+}
+
+/// Wave 24d — grammar cheatsheet panel. Concise reference of the
+/// atom shapes the Phase Art Ross parser accepts. Rendered alongside
+/// the editor when the user toggles `?`.
+fn render_filter_grammar_cheatsheet(f: &mut Frame, area: Rect) {
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .title(" Grammar — Phase Art Ross atoms ")
+        .border_style(Style::default().fg(Color::DarkGray));
+    let inner = block.inner(area);
+    f.render_widget(block, area);
+
+    let hdr = Style::default()
+        .fg(Color::Cyan)
+        .add_modifier(Modifier::BOLD);
+    let dim = Style::default().fg(Color::DarkGray);
+    let lines: Vec<Line> = vec![
+        Line::from(""),
+        Line::styled("  Bio atoms", hdr),
+        Line::styled("    country=CAN", dim),
+        Line::styled("    country IN (CAN, USA)", dim),
+        Line::styled("    country NOT IN (RUS)", dim),
+        Line::styled("    country LIKE \"CA*\"", dim),
+        Line::styled("    pos=C  ·  pos IN (C, LW, RW)", dim),
+        Line::styled("    age<25  ·  age BETWEEN 22 AND 28", dim),
+        Line::styled("    draft-round<=2  ·  draft-overall<=10", dim),
+        Line::styled("    draft-year=2015  ·  birth-state=ON", dim),
+        Line::styled("    nationality=USA  ·  rookie-season>=20212022", dim),
+        Line::styled("    height>=72  ·  shoots=L", dim),
+        Line::from(""),
+        Line::styled("  Stat atoms (current season)", hdr),
+        Line::styled("    g>=10  ·  p>=20  ·  ppg>=0.8", dim),
+        Line::styled("    save-pct>=.910 (goalies)", dim),
+        Line::from(""),
+        Line::styled("  Sliding windows", hdr),
+        Line::styled("    g.last10g>=5  (last 10 games)", dim),
+        Line::styled("    p.last30d>=10 (last 30 days)", dim),
+        Line::styled("    Modifiers: .allteams .career", dim),
+        Line::from(""),
+        Line::styled("  Career history (cross-league)", hdr),
+        Line::styled("    p.career>=500  ·  g.career>=300", dim),
+        Line::styled("    p.career.junior>=200", dim),
+        Line::styled("    league=OHL  ·  league.tier=Junior", dim),
+        Line::from(""),
+        Line::styled("  EVER + AT modifiers", hdr),
+        Line::styled("    g.any10g>=5 EVER", dim),
+        Line::styled("    g.any10g>=5 EVER AT age<=25", dim),
+        Line::from(""),
+        Line::styled("  Booleans", hdr),
+        Line::styled("    AND  OR  NOT  ( )", dim),
+        Line::from(""),
+        Line::styled("  Operators", hdr),
+        Line::styled("    =  ==  !=  <  <=  >  >=", dim),
+        Line::styled("    IN  NOT IN  BETWEEN  LIKE  NOT LIKE", dim),
+    ];
     f.render_widget(Paragraph::new(lines), inner);
 }
 
@@ -1677,5 +1847,84 @@ mod tests {
         assert_eq!(parsed["version"].as_u64(), Some(2));
         assert!(parsed["fields"].is_array());
         assert!(parsed["filter_text"].is_string());
+    }
+
+    // ── Phase Art Ross — Wave 24c live result count hint ───────────────────
+
+    /// Empty input yields no hint.
+    #[test]
+    fn l0_w24c_live_count_empty_returns_none() {
+        let hint = live_filter_count_hint("", &[], 20252026);
+        assert!(hint.is_none());
+    }
+
+    /// Whitespace-only input yields no hint (same as empty).
+    #[test]
+    fn l0_w24c_live_count_whitespace_returns_none() {
+        let hint = live_filter_count_hint("   \t  ", &[], 20252026);
+        assert!(hint.is_none());
+    }
+
+    /// Unparsed input yields the "(unparsed — keep typing)" placeholder.
+    #[test]
+    fn l0_w24c_live_count_unparsed_returns_placeholder() {
+        let hint = live_filter_count_hint("(((", &[], 20252026)
+            .expect("unparsed must yield a hint");
+        assert!(
+            hint.contains("unparsed"),
+            "unparsed hint should mention 'unparsed'; got: {hint}"
+        );
+    }
+
+    /// Provider-needing plans (sliding-window, career, league)
+    /// defer to Enter rather than file-I/O on every keystroke.
+    #[test]
+    fn l0_w24c_live_count_sliding_window_defers_to_enter() {
+        let hint = live_filter_count_hint("g.last10g>=5", &[], 20252026)
+            .expect("provider-needing plan must still produce a hint");
+        assert!(
+            hint.contains("Enter") || hint.contains("data lookup"),
+            "provider-gated hint should mention Enter / data lookup; got: {hint}"
+        );
+    }
+
+    #[test]
+    fn l0_w24c_live_count_career_aggregate_defers_to_enter() {
+        let hint = live_filter_count_hint("p.career>=500", &[], 20252026)
+            .expect("career aggregate must produce a hint");
+        assert!(
+            hint.contains("Enter") || hint.contains("data lookup"),
+            "career-aggregate hint should defer to Enter; got: {hint}"
+        );
+    }
+
+    /// Bio-only plan with empty views: count is 0 of 0 — but the
+    /// hint MUST still report the count (not defer). This is the
+    /// contract that makes the editor feel responsive.
+    #[test]
+    fn l0_w24c_live_count_bio_filter_empty_views_yields_zero_of_zero() {
+        let hint = live_filter_count_hint("country=CAN", &[], 20252026)
+            .expect("bio filter must produce a count");
+        assert!(
+            hint.contains("0 of 0") || hint.contains("0/0"),
+            "empty-views bio filter should report 0 of 0; got: {hint}"
+        );
+    }
+
+    /// Compound bio filter doesn't trip the provider gate. Counts
+    /// against empty views as 0/0.
+    #[test]
+    fn l0_w24c_live_count_compound_bio_does_not_defer() {
+        let hint = live_filter_count_hint(
+            "country IN (CAN, USA) AND pos=C AND age<30",
+            &[],
+            20252026,
+        )
+        .expect("compound bio filter must produce a count");
+        assert!(
+            !hint.contains("Enter") && !hint.contains("data lookup"),
+            "compound bio filter must NOT defer; got: {hint}"
+        );
+        assert!(hint.contains("match") || hint.contains("0"));
     }
 }

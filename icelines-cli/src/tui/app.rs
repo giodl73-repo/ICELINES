@@ -100,6 +100,30 @@ pub enum PickerTarget {
     Schedule,
 }
 
+/// Phase Art Ross — Wave 24b. Max number of recent filters retained
+/// in `App::query_filter_history`. Bounded so the FilterEdit ring
+/// doesn't grow unboundedly across a long session.
+pub const FILTER_HISTORY_CAP: usize = 20;
+
+/// Push `entry` onto the front of the history ring (newest first).
+/// No-ops when `entry` already matches the existing front (so the
+/// user hammering Enter on the same filter doesn't fill the ring
+/// with duplicates). Trims the back when the ring is at cap.
+pub fn push_filter_history(
+    history: &mut std::collections::VecDeque<String>,
+    entry: String,
+) {
+    if let Some(front) = history.front() {
+        if front == &entry {
+            return;
+        }
+    }
+    history.push_front(entry);
+    while history.len() > FILTER_HISTORY_CAP {
+        history.pop_back();
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum QueryMode {
     Build,    // normal — editing fields, viewing results
@@ -257,6 +281,21 @@ pub struct App {
     /// structured field filters (logical AND). Cleared on Esc-cancel
     /// and on empty-text Enter.
     pub query_filter_plan: Option<icelines_query::QueryPlan>,
+    /// Phase Art Ross — Wave 24b filter history. Newest first;
+    /// `push_front` on every successful Enter, deduped against the
+    /// existing front entry. Capped at `FILTER_HISTORY_CAP`.
+    pub query_filter_history: std::collections::VecDeque<String>,
+    /// Phase Art Ross — Wave 24b history navigation cursor.
+    /// `None` = live edit; `Some(i)` = showing `query_filter_history[i]`.
+    /// Up/Down in `FilterEdit` mode walks the history; typing or
+    /// Backspace breaks navigation (cursor → None).
+    pub query_filter_history_cursor: Option<usize>,
+    /// Phase Art Ross — Wave 24d. When `true`, the FilterEdit
+    /// overlay renders a side-by-side grammar cheatsheet so the
+    /// user has the supported atom shapes in front of them while
+    /// typing. Toggled with `?` inside the editor; persists across
+    /// re-entries (so power users keep it on).
+    pub query_filter_show_help: bool,
     /// Phase Lindsay L.3.4 — search query for the sort picker overlay.
     /// Substring-matched (case-insensitive) against `StatId::cli_key()`.
     pub sort_picker_query: String,
@@ -397,6 +436,9 @@ impl App {
             query_filter_text: String::new(),
             query_filter_error: None,
             query_filter_plan: None,
+            query_filter_history: std::collections::VecDeque::new(),
+            query_filter_history_cursor: None,
+            query_filter_show_help: false,
             sort_picker_query: String::new(),
             sort_picker_idx: 0,
             sort_stat_pick: None,
@@ -1727,15 +1769,25 @@ impl App {
     /// the plan is stored and we return to Build, on parse error
     /// the message is shown inline and the editor stays open so the
     /// user can fix the input.
+    ///
+    /// Wave 24b — Up/Down walks `query_filter_history` (newest →
+    /// oldest); any text edit resets the cursor to live.
     fn handle_query_filter_edit(&mut self, action: Action) -> bool {
         match action {
             Action::Quit => return true,
+            Action::Help => {
+                // Wave 24d — `?` toggles the side cheatsheet.
+                // Doesn't open the global help overlay (that
+                // would close the editor); stays in FilterEdit.
+                self.query_filter_show_help = !self.query_filter_show_help;
+            }
             Action::Back | Action::Escape => {
                 // Cancel — drop the in-progress text + clear any active
                 // plan. The user can press `f` again to start fresh.
                 self.query_filter_text.clear();
                 self.query_filter_error = None;
                 self.query_filter_plan = None;
+                self.query_filter_history_cursor = None;
                 self.query_mode = QueryMode::Build;
                 self.status = "Filter cleared.".to_owned();
             }
@@ -1745,6 +1797,7 @@ impl App {
                     // Empty Enter = clear the active plan and exit.
                     self.query_filter_plan = None;
                     self.query_filter_error = None;
+                    self.query_filter_history_cursor = None;
                     self.query_mode = QueryMode::Build;
                     self.status = "Filter cleared.".to_owned();
                 } else {
@@ -1757,6 +1810,15 @@ impl App {
                         Ok(plan) => {
                             self.query_filter_plan = Some(plan);
                             self.query_filter_error = None;
+                            // Push onto history (newest first); dedupe
+                            // against an identical front entry so
+                            // hammering Enter doesn't fill the ring
+                            // with duplicates.
+                            push_filter_history(
+                                &mut self.query_filter_history,
+                                text.to_owned(),
+                            );
+                            self.query_filter_history_cursor = None;
                             self.query_mode = QueryMode::Build;
                             self.status =
                                 format!("Filter applied: {text}  ·  press f to edit");
@@ -1773,19 +1835,78 @@ impl App {
                     }
                 }
             }
+            Action::Up => {
+                // Navigate to an older history entry. From the live
+                // edit (cursor=None) Up jumps to the newest history
+                // entry; from a historical entry Up walks further
+                // back. Hits a wall at the oldest entry.
+                if self.query_filter_history.is_empty() {
+                    return false;
+                }
+                let next = match self.query_filter_history_cursor {
+                    None => 0,
+                    Some(i) if i + 1 < self.query_filter_history.len() => i + 1,
+                    Some(i) => i, // already at oldest, stay
+                };
+                if let Some(entry) = self.query_filter_history.get(next) {
+                    self.query_filter_text = entry.clone();
+                    self.query_filter_history_cursor = Some(next);
+                    self.query_filter_error = None;
+                }
+            }
+            Action::Down => {
+                // Navigate toward newer history; from cursor=0 step
+                // back to live edit (cursor=None, text cleared).
+                match self.query_filter_history_cursor {
+                    None => {} // already live, stay
+                    Some(0) => {
+                        self.query_filter_history_cursor = None;
+                        self.query_filter_text.clear();
+                        self.query_filter_error = None;
+                    }
+                    Some(i) => {
+                        let next = i - 1;
+                        if let Some(entry) = self.query_filter_history.get(next) {
+                            self.query_filter_text = entry.clone();
+                            self.query_filter_history_cursor = Some(next);
+                            self.query_filter_error = None;
+                        }
+                    }
+                }
+            }
             Action::Backspace => {
                 self.query_filter_text.pop();
+                self.query_filter_history_cursor = None;
             }
-            Action::Char(c) => self.query_filter_text.push(c),
-            Action::Space => self.query_filter_text.push(' '),
+            Action::Char(c) => {
+                self.query_filter_text.push(c);
+                self.query_filter_history_cursor = None;
+            }
+            Action::Space => {
+                self.query_filter_text.push(' ');
+                self.query_filter_history_cursor = None;
+            }
             // Hotkeys → their associated character (mirrors save-name).
-            Action::Refresh => self.query_filter_text.push('r'),
-            Action::Install => self.query_filter_text.push('i'),
-            Action::AddToGroup => self.query_filter_text.push('g'),
-            Action::AddToFavorites => self.query_filter_text.push('f'),
+            Action::Refresh => {
+                self.query_filter_text.push('r');
+                self.query_filter_history_cursor = None;
+            }
+            Action::Install => {
+                self.query_filter_text.push('i');
+                self.query_filter_history_cursor = None;
+            }
+            Action::AddToGroup => {
+                self.query_filter_text.push('g');
+                self.query_filter_history_cursor = None;
+            }
+            Action::AddToFavorites => {
+                self.query_filter_text.push('f');
+                self.query_filter_history_cursor = None;
+            }
             Action::GoToTab(n) => {
                 let ch = char::from_digit((n + 1) as u32, 10).unwrap_or('?');
                 self.query_filter_text.push(ch);
+                self.query_filter_history_cursor = None;
             }
             Action::Search => {}
             _ => {}
@@ -4303,5 +4424,268 @@ mod tests {
             app.query_filter_plan.is_none(),
             "unparseable filter must NOT install a plan"
         );
+    }
+
+    // ── Phase Art Ross — Wave 24b filter history (Up/Down) ─────────────────
+
+    /// `push_filter_history` adds new entries to the front and
+    /// dedupes against the existing front. Sanity for the helper.
+    #[test]
+    fn l0_w24b_push_filter_history_dedupes_consecutive() {
+        use std::collections::VecDeque;
+        let mut h: VecDeque<String> = VecDeque::new();
+        push_filter_history(&mut h, "country=CAN".into());
+        push_filter_history(&mut h, "country=CAN".into()); // dup
+        push_filter_history(&mut h, "age<25".into());
+        push_filter_history(&mut h, "country=CAN".into()); // not consecutive — kept
+        assert_eq!(h.len(), 3);
+        assert_eq!(h[0], "country=CAN");
+        assert_eq!(h[1], "age<25");
+        assert_eq!(h[2], "country=CAN");
+    }
+
+    /// History caps at FILTER_HISTORY_CAP — older entries fall off
+    /// the back when the ring is full.
+    #[test]
+    fn l0_w24b_push_filter_history_caps_at_max() {
+        use std::collections::VecDeque;
+        let mut h: VecDeque<String> = VecDeque::new();
+        for i in 0..(FILTER_HISTORY_CAP + 5) {
+            push_filter_history(&mut h, format!("filter-{i}"));
+        }
+        assert_eq!(h.len(), FILTER_HISTORY_CAP);
+        // Front is the newest push.
+        assert_eq!(h[0], format!("filter-{}", FILTER_HISTORY_CAP + 4));
+        // Back is the oldest entry that survived (oldest 5 fell off).
+        assert_eq!(h[FILTER_HISTORY_CAP - 1], "filter-5");
+    }
+
+    /// Successful Enter in the editor pushes the typed filter onto
+    /// history. Hammering Enter on the same filter doesn't add
+    /// duplicates.
+    #[test]
+    fn l0_w24b_enter_pushes_to_history() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        app.query_mode = QueryMode::FilterEdit;
+        app.query_filter_text = "country=CAN".to_owned();
+        app.handle(Action::Enter);
+        assert_eq!(app.query_filter_history.len(), 1);
+        assert_eq!(app.query_filter_history[0], "country=CAN");
+
+        // Re-enter and Enter again with same filter — no duplicate.
+        app.query_mode = QueryMode::FilterEdit;
+        app.handle(Action::Enter);
+        assert_eq!(app.query_filter_history.len(), 1);
+
+        // Enter a different filter — pushed.
+        app.query_mode = QueryMode::FilterEdit;
+        app.query_filter_text = "age<25".to_owned();
+        app.handle(Action::Enter);
+        assert_eq!(app.query_filter_history.len(), 2);
+        assert_eq!(app.query_filter_history[0], "age<25");
+        assert_eq!(app.query_filter_history[1], "country=CAN");
+    }
+
+    /// Parse-failure Enter does NOT push to history — only the
+    /// successful parses become recallable.
+    #[test]
+    fn l0_w24b_parse_error_does_not_push_history() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        app.query_mode = QueryMode::FilterEdit;
+        app.query_filter_text = "((((".to_owned();
+        app.handle(Action::Enter);
+        assert!(app.query_filter_error.is_some());
+        assert!(app.query_filter_history.is_empty());
+    }
+
+    /// Up navigates from live edit (cursor=None) into the newest
+    /// history entry. Walking past the oldest stays put.
+    #[test]
+    fn l0_w24b_up_walks_history_backward() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        // Seed the history.
+        app.query_filter_history = ["age<25", "country=CAN", "p>=20"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        app.query_mode = QueryMode::FilterEdit;
+        // Cursor=None initially.
+        assert!(app.query_filter_history_cursor.is_none());
+
+        app.handle(Action::Up);
+        assert_eq!(app.query_filter_history_cursor, Some(0));
+        assert_eq!(app.query_filter_text, "age<25");
+
+        app.handle(Action::Up);
+        assert_eq!(app.query_filter_history_cursor, Some(1));
+        assert_eq!(app.query_filter_text, "country=CAN");
+
+        app.handle(Action::Up);
+        assert_eq!(app.query_filter_history_cursor, Some(2));
+        assert_eq!(app.query_filter_text, "p>=20");
+
+        // Past the oldest — stay.
+        app.handle(Action::Up);
+        assert_eq!(app.query_filter_history_cursor, Some(2));
+        assert_eq!(app.query_filter_text, "p>=20");
+    }
+
+    /// Down walks toward newer entries; from cursor=0 returns to
+    /// live edit (cursor=None, text cleared).
+    #[test]
+    fn l0_w24b_down_walks_history_forward_to_live() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        app.query_filter_history = ["age<25", "country=CAN"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        app.query_mode = QueryMode::FilterEdit;
+
+        // Walk Up twice to reach cursor=1.
+        app.handle(Action::Up);
+        app.handle(Action::Up);
+        assert_eq!(app.query_filter_history_cursor, Some(1));
+        assert_eq!(app.query_filter_text, "country=CAN");
+
+        // Down → cursor=0, text=age<25.
+        app.handle(Action::Down);
+        assert_eq!(app.query_filter_history_cursor, Some(0));
+        assert_eq!(app.query_filter_text, "age<25");
+
+        // Down → cursor=None, text="".
+        app.handle(Action::Down);
+        assert!(app.query_filter_history_cursor.is_none());
+        assert_eq!(app.query_filter_text, "");
+
+        // Down at live — no-op.
+        app.handle(Action::Down);
+        assert!(app.query_filter_history_cursor.is_none());
+        assert_eq!(app.query_filter_text, "");
+    }
+
+    /// Up with empty history is a no-op (no panic, cursor stays
+    /// None).
+    #[test]
+    fn l0_w24b_up_empty_history_is_noop() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        app.query_mode = QueryMode::FilterEdit;
+        assert!(app.query_filter_history.is_empty());
+        app.handle(Action::Up);
+        assert!(app.query_filter_history_cursor.is_none());
+        assert_eq!(app.query_filter_text, "");
+    }
+
+    /// Typing while navigating history breaks navigation: cursor
+    /// resets to None so the typed character is treated as a free
+    /// edit, not an in-place mutation of the historical entry.
+    #[test]
+    fn l0_w24b_typing_while_navigating_resets_cursor() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        app.query_filter_history = vec!["age<25".to_owned()].into();
+        app.query_mode = QueryMode::FilterEdit;
+
+        app.handle(Action::Up);
+        assert_eq!(app.query_filter_history_cursor, Some(0));
+        assert_eq!(app.query_filter_text, "age<25");
+
+        app.handle(Action::Char('!'));
+        assert!(
+            app.query_filter_history_cursor.is_none(),
+            "typing while in history must drop cursor to live"
+        );
+        assert_eq!(app.query_filter_text, "age<25!");
+    }
+
+    /// Backspace also resets the cursor — the user is now editing
+    /// the historical text freely.
+    #[test]
+    fn l0_w24b_backspace_while_navigating_resets_cursor() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        app.query_filter_history = vec!["age<25".to_owned()].into();
+        app.query_mode = QueryMode::FilterEdit;
+
+        app.handle(Action::Up);
+        app.handle(Action::Backspace);
+        assert!(app.query_filter_history_cursor.is_none());
+        assert_eq!(app.query_filter_text, "age<2");
+    }
+
+    // ── Phase Art Ross — Wave 24d grammar cheatsheet toggle ────────────────
+
+    /// `?` inside FilterEdit toggles `query_filter_show_help` —
+    /// does NOT open the global help overlay (which would close
+    /// the editor).
+    #[test]
+    fn l0_w24d_help_toggles_filter_cheatsheet() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        app.query_mode = QueryMode::FilterEdit;
+        assert!(!app.query_filter_show_help);
+        assert!(!app.show_help, "global help must be off initially");
+
+        app.handle(Action::Help);
+        assert!(app.query_filter_show_help, "first ? turns cheatsheet on");
+        assert!(
+            !app.show_help,
+            "global help overlay must NOT open from inside FilterEdit"
+        );
+        assert_eq!(
+            app.query_mode,
+            QueryMode::FilterEdit,
+            "? must NOT exit FilterEdit"
+        );
+
+        app.handle(Action::Help);
+        assert!(!app.query_filter_show_help, "second ? turns cheatsheet off");
+        assert_eq!(app.query_mode, QueryMode::FilterEdit);
+    }
+
+    /// Outside FilterEdit, `?` keeps its standard meaning (opens
+    /// the global help overlay). Regression guard against
+    /// unintended global rebinding.
+    #[test]
+    fn l0_w24d_help_outside_filter_edit_opens_global() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        // query_mode defaults to Build — NOT FilterEdit.
+        assert!(matches!(app.query_mode, QueryMode::Build));
+        app.handle(Action::Help);
+        assert!(
+            app.show_help,
+            "? in Build mode must open the global help overlay"
+        );
+        assert!(!app.query_filter_show_help);
+    }
+
+    /// Cheatsheet flag persists across mode toggles within the
+    /// editor — power users keep it on while typing, parsing,
+    /// re-editing.
+    #[test]
+    fn l0_w24d_cheatsheet_flag_persists_across_enter_apply() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        app.query_mode = QueryMode::FilterEdit;
+        app.handle(Action::Help);
+        assert!(app.query_filter_show_help);
+
+        app.query_filter_text = "country=CAN".to_owned();
+        app.handle(Action::Enter); // apply, exit to Build
+        assert_eq!(app.query_mode, QueryMode::Build);
+        assert!(
+            app.query_filter_show_help,
+            "cheatsheet flag must survive Enter-apply"
+        );
+
+        // Re-enter editor — flag still on.
+        app.handle(Action::AddToFavorites); // 'f' → FilterEdit
+        assert_eq!(app.query_mode, QueryMode::FilterEdit);
+        assert!(app.query_filter_show_help);
     }
 }

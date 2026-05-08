@@ -464,7 +464,7 @@ Interactive dashboard. Six tabs (League, Depth, Stats, Goalies, Scores, Schedule
 | `F` | Toggle admin overlay |
 | `g` | Add to group from a player card / team roster |
 | `s` / `l` | Save / load query (Queries tab) |
-| `f` | **Free-form filter overlay** (Queries tab) — type any Phase Art Ross filter (`country IN (CAN, USA) AND age<25`, `g.last10g>=5`, `p.career>=500`, etc.); Enter to apply, Esc to cancel |
+| `f` | **Free-form filter overlay** (Queries tab) — type any Phase Art Ross filter (`country IN (CAN, USA) AND age<25`, `g.last10g>=5`, `p.career>=500`, etc.); Enter to apply, Esc to cancel. Inside the overlay: `↑/↓` walk recent-filter history, `?` toggle grammar cheatsheet, live "→ N of M match" count for bio + season-stat filters |
 
 The Reports overlay (`R`) persists toggles to `~/.icelines/config.toml`. Disabled reports drop their columns from career tables, sort pickers, and query results.
 
