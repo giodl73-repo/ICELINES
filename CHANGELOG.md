@@ -1,5 +1,72 @@
 # IceLines Changelog
 
+## v0.21.2 — 2026-05-08 — Phase Masterton.1 (declarative TUI chrome)
+
+Headline: **Each main TUI screen now declares its header title +
+keybind hints via a `ScreenChrome` accessor; the shell renders
+both consistently across screens.** Foundation for Masterton.2's
+Screen trait migration. Minimal behavior change.
+
+### What's new
+
+- **`tui/chrome.rs`** — new module with `ScreenChrome { title,
+  keybinds }`, `KeyHint` (const-constructible, Copy, PartialEq),
+  and a 6-key `GLOBAL_KEYBINDS` array (`Tab` / `y` / `Shift+P` /
+  `F` / `?` / `q`) extracted from the previously-hardcoded
+  hint string in `render_nav`.
+- **6 per-screen `chrome()` accessors** (Queries, Schedule,
+  Transactions, Tonight, Goalies, Playoffs). Each returns a
+  state-aware title (e.g., "Stats / Queries / Filter" when
+  FilterEdit mode is active, "Goalies — SV% ↓ · GP ≥ 15"
+  reflecting the active sort + threshold) and a keybind set
+  scoped to the screen's mode.
+- **`screens/mod.rs::render` refactored**:
+  - `active_chrome(app)` dispatcher.
+  - `render_header(f, app, &chrome, area)` — tabs left, title
+    right-aligned in cyan when terminal ≥120 cols (per spec
+    glass-1).
+  - `render_footer(f, app, &chrome, area)` — chrome chips
+    + GLOBAL_KEYBINDS with overflow drop (`…` indicator at
+    narrow widths per spec glass-2). When `app.status` is
+    non-empty, the transient flash takes priority over chips
+    so screens that haven't yet untangled "permanent state"
+    from "transient feedback" don't silently lose info.
+
+### What stays the same
+
+- Every keybind unchanged.
+- Every render output the same shape (one row header, one row
+  footer; body unchanged).
+- Saved-query JSON contract unchanged.
+- Screens that still write to `app.status` permanently (e.g.,
+  "Goalies sort: SV% — GP ≥ 15") keep their footer text intact;
+  the chrome chips kick in only once a screen migrates its
+  status writes to flash-only. That migration is per-screen and
+  ships incrementally in Masterton.2 alongside each Screen
+  trait conversion.
+
+### Tests
+
+19 new L0:
+- 7 in `tui::chrome::tests` (KeyHint const, Clone, Default,
+  PartialEq, Copy, GLOBAL_KEYBINDS head/tail invariants,
+  navigation-key presence)
+- 12 per-screen chrome contract tests (~2 per screen): default
+  state yields a sensible chrome; state changes (mode / search /
+  filter) reflect in title or keybinds.
+
+Bin suite: 763 → **782** (+19). All Phase Norris suites
+unchanged. L1/L2 integration suites unchanged
+(art_ross_w23_tui_filter, persona_wave23, persona_wave25).
+
+### What's next
+
+Masterton.2 — the real break-from-monolith. Each screen
+migrates to `impl Screen { fn handle(...); fn render(...);
+fn chrome(...) }`. App's giant `handle()` match collapses
+one branch at a time. ~3-5 days of incremental commits, one
+per screen.
+
 ## v0.21.1 — 2026-05-08 — Phase Norris.6 (overlay state extraction)
 
 Headline: **Continuation of Norris. Two cross-screen overlay
