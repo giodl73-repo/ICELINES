@@ -83,7 +83,7 @@ pub fn render(f: &mut Frame, app: &App) {
     // Rendered at top level so it floats over the current screen.
     // (player.rs and team.rs also call this, but those handle it locally.
     //  This catches Projections, Search, Queries, GroupDetail.)
-    if app.group_picker_open {
+    if app.group_picker.open {
         // Skip if player/team screen — they render the overlay themselves
         let handled_locally = matches!(app.screen, Screen::PlayerById(_) | Screen::Team(_));
         if !handled_locally {
@@ -1030,7 +1030,7 @@ mod app_snapshot_tests {
         // Now g should open the picker.
         app.handle(Action::AddToGroup);
         assert!(
-            app.group_picker_open,
+            app.group_picker.open,
             "g on a Player screen must open the group picker"
         );
     }
@@ -1694,10 +1694,10 @@ mod app_snapshot_tests {
             app.handle(Action::Enter);
             app.handle(Action::AddToGroup);
 
-            assert!(app.group_picker_open, "g must open the group picker");
+            assert!(app.group_picker.open, "g must open the group picker");
             // Picker list must include both Favorites (seeded by
             // migration 001) and the user-created Watchlist.
-            let names: Vec<&str> = app.group_picker_list.iter().map(|s| s.as_str()).collect();
+            let names: Vec<&str> = app.group_picker.list.iter().map(|s| s.as_str()).collect();
             assert!(
                 names.contains(&"Favorites"),
                 "picker must list Favorites, got: {:?}",

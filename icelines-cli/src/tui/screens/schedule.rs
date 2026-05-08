@@ -204,8 +204,8 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
     // Schedule target, render it in the same 3-line bottom strip the
     // search bar uses. The two are mutually exclusive in practice
     // (search and date-jump aren't both active at once).
-    let picker_active = app.scores_picker_open
-        && matches!(app.picker_target, crate::tui::app::PickerTarget::Schedule);
+    let picker_active = app.date_picker.open
+        && matches!(app.date_picker.target, crate::tui::app::PickerTarget::Schedule);
     let bottom_h: u16 = if app.schedule.search_mode
         || app.schedule.filter_err.is_some()
         || picker_active

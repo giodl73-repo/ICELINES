@@ -256,7 +256,7 @@ pub fn fit_career_columns(all_columns: &[StatId], panel_w: usize) -> (Vec<StatId
 
 pub fn render_group_picker(f: &mut Frame, app: &App, area: Rect) {
     // Center a small popup
-    let popup_h = (app.group_picker_list.len() as u16 + 4).min(area.height - 4);
+    let popup_h = (app.group_picker.list.len() as u16 + 4).min(area.height - 4);
     let popup_w = 36u16.min(area.width - 4);
     let popup = Rect::new(
         area.x + (area.width - popup_w) / 2,
@@ -273,7 +273,8 @@ pub fn render_group_picker(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(block, popup);
 
     let items: Vec<ListItem> = app
-        .group_picker_list
+        .group_picker
+        .list
         .iter()
         .enumerate()
         .map(|(i, name)| {
@@ -406,7 +407,7 @@ pub fn render_by_id(f: &mut Frame, app: &App, area: Rect, pid: PlayerId) {
         render_dashboard_panel_view(f, app, &view, chunks[2]);
     }
 
-    if app.group_picker_open {
+    if app.group_picker.open {
         render_group_picker(f, app, area);
     }
 }

@@ -3,6 +3,7 @@ pub mod dashboard_panel;
 pub mod event;
 pub mod headshot;
 pub mod loader;
+pub mod pickers;
 pub mod playoffs;
 pub mod schedule;
 pub mod screens;

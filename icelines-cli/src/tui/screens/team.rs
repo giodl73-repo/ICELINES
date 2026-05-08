@@ -131,7 +131,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
     f.render_widget(Paragraph::new(lines), inner);
 
     // Group picker overlay — shown when user presses g on a team roster row
-    if app.group_picker_open {
+    if app.group_picker.open {
         super::player::render_group_picker(f, app, area);
     }
 }

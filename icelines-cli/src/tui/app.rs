@@ -197,10 +197,10 @@ pub struct App {
     pub docs_scroll: u16,
     // Headshot ASCII cache
     pub headshot_cache: crate::tui::headshot::HeadshotCache,
-    // Group picker (shown as overlay on player card or team roster)
-    pub group_picker_open: bool,
-    pub group_picker_list: Vec<String>, // group names
-    pub group_picker_player: Option<(String, String)>, // (normalized, full_name)
+    /// Phase Norris.6 — group-picker overlay state extracted into
+    /// its own struct. Replaces `group_picker_open`,
+    /// `group_picker_list`, `group_picker_player`.
+    pub group_picker: crate::tui::pickers::GroupPickerState,
     // Depth chart tab
     pub depth_mode: icelines_core::cross_team::ScoringMode,
     pub show_admin: bool,
@@ -218,18 +218,14 @@ pub struct App {
     pub career_loaded_ids: std::collections::HashSet<icelines_core::identity::PlayerId>,
     /// Phase Norris.4 — Tonight/Scores tab state extracted into
     /// its own struct. Replaces `tonight_cache`, `boxscore_cache`,
-    /// `scores_date`, `scores_selected`. (The picker working state
-    /// `scores_picker_*` stays on App because the picker is shared
-    /// with the Schedule screen.)
+    /// `scores_date`, `scores_selected`.
     pub tonight: crate::tui::screens::misc::TonightScreenState,
-    pub scores_picker_open: bool,          // d-key date picker visible
-    pub scores_picker_input: String,       // text being typed in date picker
-    pub scores_picker_err: Option<String>, // validation error to display
-    /// Phase Foster.1.4 — which surface the date picker overlay is
-    /// anchoring. The same overlay UI/state machine is shared across
-    /// Scores, Schedule, and Playoffs (per spec); on Enter we
-    /// dispatch to the right `apply_*` based on this target.
-    pub picker_target: PickerTarget,
+    /// Phase Norris.6 — date-picker overlay state extracted into
+    /// its own struct. Replaces `scores_picker_open`,
+    /// `scores_picker_input`, `scores_picker_err`, `picker_target`.
+    /// Cross-screen — the same overlay is shared between Tonight
+    /// (Scores) and Schedule per Foster.1.4.
+    pub date_picker: crate::tui::pickers::DatePickerState,
     /// Phase Foster +8 — active timeframe (`v` cycles Day → Week →
     /// Month → Season → Day). Surfaces in chunks[2] status bar
     /// (GLASS L8). Today's main consumer is the Favorites tab; future
@@ -336,19 +332,16 @@ impl App {
             career_loaded_ids: std::collections::HashSet::new(),
             // Phase Norris.4 — replaces 4 tonight_/boxscore_/scores_* init lines.
             tonight: crate::tui::screens::misc::TonightScreenState::default(),
-            scores_picker_open: false,
-            scores_picker_input: String::new(),
-            scores_picker_err: None,
-            picker_target: PickerTarget::default(),
+            // Phase Norris.6 — replaces 4 scores_picker_* / picker_target init lines.
+            date_picker: crate::tui::pickers::DatePickerState::default(),
             active_timeframe: icelines_core::timeframe::Timeframe::Day,
             last_auto_refresh: None,
             // Phase Norris.2 — replaces 8 schedule_* init lines.
             schedule: crate::tui::screens::schedule::ScheduleScreenState::default(),
             // Phase Norris.4 — replaces 3 playoffs_* init lines.
             playoffs: crate::tui::screens::playoffs::PlayoffsScreenState::default(),
-            group_picker_open: false,
-            group_picker_list: Vec::new(),
-            group_picker_player: None,
+            // Phase Norris.6 — replaces 3 group_picker_* init lines.
+            group_picker: crate::tui::pickers::GroupPickerState::default(),
             headshot_cache: crate::tui::headshot::HeadshotCache::new(),
             // (Phase Norris.1 — these 14 fields previously here are
             //  now part of QueriesState above.)
@@ -483,7 +476,7 @@ impl App {
         // Schedule (Shift+D); keystrokes route through the same
         // handler regardless of which surface owns the active target.
         if (self.screen == Screen::Tonight || self.screen == Screen::Schedule)
-            && self.scores_picker_open
+            && self.date_picker.open
         {
             return self.handle_scores_date_picker(action);
         }
@@ -503,9 +496,9 @@ impl App {
             Action::Quit => return true,
             Action::Help => self.show_help = true,
             Action::Back | Action::Escape => {
-                if self.group_picker_open {
-                    self.group_picker_open = false;
-                    self.group_picker_player = None;
+                if self.group_picker.open {
+                    self.group_picker.open = false;
+                    self.group_picker.player = None;
                     self.selected = 0;
                     self.status =
                         "  g = add to group from any player card or team roster".to_owned();
@@ -985,9 +978,9 @@ impl App {
                     }
                 } else if self.screen == Screen::Tonight && c == 'd' {
                     // Open the scores date picker overlay
-                    self.scores_picker_open = true;
-                    self.scores_picker_input.clear();
-                    self.scores_picker_err = None;
+                    self.date_picker.open = true;
+                    self.date_picker.input.clear();
+                    self.date_picker.err = None;
                     self.status =
                         "Go to date — type YYYY-MM-DD or MM/DD, Enter applies, Esc cancels"
                             .to_owned();
@@ -1079,19 +1072,19 @@ impl App {
                     // global Depth-jump behavior (handled above).
                     match self.screen {
                         Screen::Tonight => {
-                            self.picker_target = PickerTarget::Scores;
-                            self.scores_picker_open = true;
-                            self.scores_picker_input.clear();
-                            self.scores_picker_err = None;
+                            self.date_picker.target = PickerTarget::Scores;
+                            self.date_picker.open = true;
+                            self.date_picker.input.clear();
+                            self.date_picker.err = None;
                             self.status =
                                 "Go to date — type YYYY-MM-DD or MM/DD, Enter applies, Esc cancels"
                                     .to_owned();
                         }
                         Screen::Schedule => {
-                            self.picker_target = PickerTarget::Schedule;
-                            self.scores_picker_open = true;
-                            self.scores_picker_input.clear();
-                            self.scores_picker_err = None;
+                            self.date_picker.target = PickerTarget::Schedule;
+                            self.date_picker.open = true;
+                            self.date_picker.input.clear();
+                            self.date_picker.err = None;
                             self.status =
                                 "Schedule · pick a date — Enter snaps to that week, Esc cancels"
                                     .to_owned();
@@ -1209,17 +1202,17 @@ impl App {
                 if let Some(player) = target_player {
                     // On a player card / team roster: open the picker so
                     // user can add this specific player to a group.
-                    self.group_picker_list = crate::db::GroupDb::open()
+                    self.group_picker.list = crate::db::GroupDb::open()
                         .ok()
                         .and_then(|db| db.list_groups().ok())
                         .map(|gs| gs.into_iter().map(|g| g.name).collect())
                         .unwrap_or_default();
-                    if self.group_picker_list.is_empty() {
+                    if self.group_picker.list.is_empty() {
                         self.status =
                             "No groups — create one with `icelines group create`".to_owned();
                     } else {
-                        self.group_picker_player = Some(player);
-                        self.group_picker_open = true;
+                        self.group_picker.player = Some(player);
+                        self.group_picker.open = true;
                         self.selected = 0;
                         self.status = "Add to group — ↑↓ select · Enter · Esc cancel".to_owned();
                     }
@@ -1285,7 +1278,7 @@ impl App {
                     self.selected = 0;
                     self.queries.result_scroll = 0;
                     self.queries.results_focused = false;
-                    self.group_picker_open = false;
+                    self.group_picker.open = false;
                     self.schedule.selected = 0;
                     self.maybe_fetch_scores();
                     self.maybe_fetch_schedule();
@@ -1373,12 +1366,12 @@ impl App {
     /// the live-schedule fetch; Schedule snaps to the Monday-of-week
     /// containing the picked date.
     fn apply_scores_date_picker(&mut self) {
-        let raw = self.scores_picker_input.trim();
-        let target = self.picker_target;
+        let raw = self.date_picker.input.trim();
+        let target = self.date_picker.target;
         if raw.is_empty() {
-            self.scores_picker_open = false;
-            self.scores_picker_err = None;
-            self.scores_picker_input.clear();
+            self.date_picker.open = false;
+            self.date_picker.err = None;
+            self.date_picker.input.clear();
             match target {
                 PickerTarget::Scores => {
                     self.tonight.date.clear();
@@ -1400,14 +1393,14 @@ impl App {
                     self.status = "Schedule · This week".to_owned();
                 }
             }
-            self.picker_target = PickerTarget::default();
+            self.date_picker.target = PickerTarget::default();
             return;
         }
         match parse_picker_date(raw) {
             Ok(iso) => {
-                self.scores_picker_open = false;
-                self.scores_picker_err = None;
-                self.scores_picker_input.clear();
+                self.date_picker.open = false;
+                self.date_picker.err = None;
+                self.date_picker.input.clear();
                 match target {
                     PickerTarget::Scores => {
                         self.tonight.date = iso.clone();
@@ -1436,10 +1429,10 @@ impl App {
                         }
                     }
                 }
-                self.picker_target = PickerTarget::default();
+                self.date_picker.target = PickerTarget::default();
             }
             Err(msg) => {
-                self.scores_picker_err = Some(msg.clone());
+                self.date_picker.err = Some(msg.clone());
                 self.status = format!("⚠ {msg}");
             }
         }
@@ -1450,26 +1443,26 @@ impl App {
         match action {
             Action::Quit => return true,
             Action::Back | Action::Escape => {
-                self.scores_picker_open = false;
-                self.scores_picker_input.clear();
-                self.scores_picker_err = None;
+                self.date_picker.open = false;
+                self.date_picker.input.clear();
+                self.date_picker.err = None;
                 self.status = "Date picker cancelled.".to_owned();
             }
             Action::Enter => self.apply_scores_date_picker(),
             Action::Backspace => {
-                self.scores_picker_input.pop();
-                self.scores_picker_err = None;
+                self.date_picker.input.pop();
+                self.date_picker.err = None;
             }
-            Action::Char(c) => self.scores_picker_input.push(c),
+            Action::Char(c) => self.date_picker.input.push(c),
             // Map non-text actions back to their characters so digits/letters
             // typed at the picker behave naturally.
-            Action::Refresh => self.scores_picker_input.push('r'),
-            Action::Install => self.scores_picker_input.push('i'),
-            Action::AddToGroup => self.scores_picker_input.push('g'),
-            Action::AddToFavorites => self.scores_picker_input.push('f'),
+            Action::Refresh => self.date_picker.input.push('r'),
+            Action::Install => self.date_picker.input.push('i'),
+            Action::AddToGroup => self.date_picker.input.push('g'),
+            Action::AddToFavorites => self.date_picker.input.push('f'),
             Action::GoToTab(n) => {
                 let ch = char::from_digit((n + 1) as u32, 10).unwrap_or('?');
-                self.scores_picker_input.push(ch);
+                self.date_picker.input.push(ch);
             }
             _ => {}
         }
@@ -2322,9 +2315,9 @@ impl App {
                 }
             }
             // Group picker overlay (shown on player card OR team roster)
-            _ if self.group_picker_open => {
-                if let Some(group_name) = self.group_picker_list.get(self.selected).cloned() {
-                    if let Some((norm, full)) = self.group_picker_player.take() {
+            _ if self.group_picker.open => {
+                if let Some(group_name) = self.group_picker.list.get(self.selected).cloned() {
+                    if let Some((norm, full)) = self.group_picker.player.take() {
                         if let Ok(db) = crate::db::GroupDb::open() {
                             match db.add_member(&group_name, &norm) {
                                 Ok(true) => {
@@ -2338,7 +2331,7 @@ impl App {
                             }
                         }
                     }
-                    self.group_picker_open = false;
+                    self.group_picker.open = false;
                     self.selected = 0;
                 }
             }
@@ -3427,10 +3420,10 @@ mod tests {
     fn l0_tui_scores_d_opens_picker() {
         let mut app = App::new(false);
         app.screen = Screen::Tonight;
-        assert!(!app.scores_picker_open);
+        assert!(!app.date_picker.open);
         app.handle(Action::Char('d'));
-        assert!(app.scores_picker_open);
-        assert!(app.scores_picker_input.is_empty());
+        assert!(app.date_picker.open);
+        assert!(app.date_picker.input.is_empty());
     }
 
     #[test]
@@ -3442,7 +3435,7 @@ mod tests {
             app.handle(Action::Char(c));
         }
         app.handle(Action::Enter);
-        assert!(!app.scores_picker_open, "picker should close on apply");
+        assert!(!app.date_picker.open, "picker should close on apply");
         assert_eq!(app.tonight.date, "2026-04-28");
     }
 
@@ -3456,10 +3449,10 @@ mod tests {
         }
         app.handle(Action::Enter);
         assert!(
-            app.scores_picker_open,
+            app.date_picker.open,
             "invalid input must keep picker open for correction"
         );
-        assert!(app.scores_picker_err.is_some());
+        assert!(app.date_picker.err.is_some());
     }
 
     #[test]
@@ -3471,8 +3464,8 @@ mod tests {
             app.handle(Action::Char(c));
         }
         app.handle(Action::Escape);
-        assert!(!app.scores_picker_open);
-        assert!(app.scores_picker_input.is_empty());
+        assert!(!app.date_picker.open);
+        assert!(app.date_picker.input.is_empty());
     }
 
     #[test]
@@ -3484,7 +3477,7 @@ mod tests {
         app.handle(Action::Char('2'));
         app.handle(Action::Refresh); // → 'r'
                                      // 'r' isn't a valid date character but should be in the buffer
-        assert_eq!(app.scores_picker_input, "2r");
+        assert_eq!(app.date_picker.input, "2r");
     }
 
     #[test]

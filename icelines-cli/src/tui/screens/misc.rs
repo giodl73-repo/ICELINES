@@ -108,7 +108,7 @@ pub fn render_tonight(f: &mut Frame, app: &App, area: Rect) {
     use crate::tui::tonight::{lookup, TonightState};
 
     // Reserve a 3-line strip at the bottom for the d-key date picker overlay.
-    let bottom_h: u16 = if app.scores_picker_open { 3 } else { 0 };
+    let bottom_h: u16 = if app.date_picker.open { 3 } else { 0 };
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Min(0), Constraint::Length(bottom_h)])
@@ -185,7 +185,7 @@ pub fn render_scores_date_picker(f: &mut Frame, app: &App, area: Rect) {
     let inner = block.inner(area);
     f.render_widget(block, area);
 
-    if let Some(err) = &app.scores_picker_err {
+    if let Some(err) = &app.date_picker.err {
         f.render_widget(
             Paragraph::new(Line::styled(
                 format!("  ⚠ {err}"),
@@ -197,7 +197,7 @@ pub fn render_scores_date_picker(f: &mut Frame, app: &App, area: Rect) {
     }
 
     let cursor = "█";
-    let prompt = format!("  Go to: {}{cursor}", app.scores_picker_input);
+    let prompt = format!("  Go to: {}{cursor}", app.date_picker.input);
     f.render_widget(Paragraph::new(prompt), inner);
 }
 
@@ -1753,8 +1753,8 @@ mod foster14_picker_tests {
     #[test]
     fn l0_foster14_picker_renders_empty_prompt() {
         let mut app = App::new(false);
-        app.scores_picker_open = true;
-        app.scores_picker_input.clear();
+        app.date_picker.open = true;
+        app.date_picker.input.clear();
         let text = render_picker(&app);
         assert!(text.contains("Go to:"), "prompt must render, got:\n{text}");
         assert!(
@@ -1768,8 +1768,8 @@ mod foster14_picker_tests {
     #[test]
     fn l0_foster14_picker_renders_typed_input() {
         let mut app = App::new(false);
-        app.scores_picker_open = true;
-        app.scores_picker_input = "2014-10-08".to_owned();
+        app.date_picker.open = true;
+        app.date_picker.input = "2014-10-08".to_owned();
         let text = render_picker(&app);
         assert!(
             text.contains("2014-10-08"),
@@ -1782,8 +1782,8 @@ mod foster14_picker_tests {
     #[test]
     fn l0_foster14_picker_renders_validation_error() {
         let mut app = App::new(false);
-        app.scores_picker_open = true;
-        app.scores_picker_err = Some("Could not parse 'garbage'".to_owned());
+        app.date_picker.open = true;
+        app.date_picker.err = Some("Could not parse 'garbage'".to_owned());
         let text = render_picker(&app);
         assert!(
             text.contains("Could not parse"),
@@ -1802,7 +1802,7 @@ mod foster14_picker_tests {
     #[test]
     fn l0_foster14_picker_target_default_is_scores() {
         let app = App::new(false);
-        assert_eq!(app.picker_target, PickerTarget::Scores);
+        assert_eq!(app.date_picker.target, PickerTarget::Scores);
     }
 
     /// L0 / l0_foster14_picker_target_schedule_screen_round_trip
@@ -1813,9 +1813,9 @@ mod foster14_picker_tests {
     fn l0_foster14_picker_target_schedule_screen_round_trip() {
         let mut app = App::new(false);
         app.screen = Screen::Schedule;
-        app.picker_target = PickerTarget::Schedule;
-        app.scores_picker_open = true;
-        app.scores_picker_input = "2026-01-15".to_owned();
+        app.date_picker.target = PickerTarget::Schedule;
+        app.date_picker.open = true;
+        app.date_picker.input = "2026-01-15".to_owned();
 
         // Render the schedule screen — picker_active should swap the
         // bottom strip from search-bar to date-picker without panicking.
