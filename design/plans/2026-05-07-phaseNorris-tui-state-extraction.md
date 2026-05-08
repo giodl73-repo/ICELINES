@@ -39,12 +39,18 @@ Each sub-phase is one git commit. Each commit must:
 ### N.1.1 — Define `QueriesState`
 
 In `tui/screens/queries.rs`, add at the top of the file (after the
-existing `QueryField` / `QuerySection` definitions):
+existing `QueryField` / `QuerySection` definitions). Per spec
+review: derive `Debug` (forge-1), use `pub` fields (forge-2),
+suppress `module_name_repetitions` at the file level (forge-4):
 
 ```rust
+// At the top of queries.rs:
+#![allow(clippy::module_name_repetitions)]
+
 /// Phase Norris.1 — per-screen state struct for the Queries tab.
 /// Replaces the 17+ `query_*` / `sort_picker_*` fields previously
 /// scattered across `App`. Owned by App as `app.queries`.
+#[derive(Debug)]
 pub struct QueriesState {
     pub fields: Vec<QueryField>,
     pub field_idx: usize,
@@ -203,15 +209,34 @@ Search-replace pass (NOT `replace_all` — review each hit):
 
 ### N.1.4 — Run the gauntlet
 
+Every sub-phase commit must pass this gauntlet. Post-8-role review
+(bench-1, bench-2): explicit L1/L2 integration suites + clippy.
+
 ```
-cargo build -p icelines-cli            # must compile clean
-cargo test -p icelines-cli --bin icelines  # 692 passing, 0 failed
+# 1. Build clean (no warnings beyond the pre-existing 5)
+cargo build -p icelines-cli
+
+# 2. Bin suite — 692 passing, 0 failed (matches v0.20.3 baseline)
+cargo test -p icelines-cli --bin icelines
+
+# 3. L1 integration — touched-screen suites
 cargo test --release -p icelines-cli --test art_ross_w23_tui_filter
 cargo test --release -p icelines-cli --test persona_wave23
+
+# 4. L2 — query career filter (touches CLI surface, not TUI, but
+#    sanity-check no Wave 25 regressions)
+cargo test --release -p icelines-cli --test persona_wave25
+
+# 5. Clippy — refactors expose new lints; treat as errors
+cargo clippy -p icelines-cli -- -D warnings
 ```
 
-If any test fails: investigate, fix, re-run. Don't ship a sub-phase
-with red tests.
+If any step fails: investigate, fix, re-run. Don't ship a sub-phase
+with red tests or new clippy warnings.
+
+**Per-sub-phase variation**: Norris.2/3/4 swap test #3-#4 for the
+L1/L2 suites that touch the screen being extracted. If no L1/L2
+suite touches the extracted screen, just run the bin suite + clippy.
 
 ### N.1.5 — Commit
 
@@ -402,6 +427,10 @@ existing `tui/screens/<screen>.rs`.
 - L1/L2 integration suites unchanged: art_ross_w23_tui_filter (12),
   persona_wave23 (14), persona_wave25 (10), and every other suite
   pass at every commit
+- `cargo clippy -p icelines-cli -- -D warnings` clean at every
+  commit (no new lints introduced by the refactor)
+- Saved-query JSON contract unchanged: a v0.20.3 saved query
+  (v2 envelope) loads cleanly post-Norris (wire-1)
 - App struct < 1,500 lines after Norris.4
 - No keybind change, no render change, no save-format change
 - v0.21.0 tag cut on the closeout commit

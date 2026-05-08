@@ -39,6 +39,10 @@ no UX delta — pure internal refactor.
 | Test access pattern | Tests update field access (`app.query_filter_text` → `app.queries.filter_text`) in the same commit as the extraction | One-shot churn; reviewer reads one diff. |
 | Cross-screen state stays on App | `screen`, `repo`, `status`, `prev_screen`, `selected`, `active_season`, `active_type`, overlays (`show_help`, `show_admin`, `show_season_picker`, `show_reports_overlay`, `group_picker_open`), `reports`, `clock`, sync state | These coordinate across screens; pulling them out forces dependency-injection complexity for marginal benefit. |
 | Constructor | Each `<Screen>State` exposes `default()` (when every field has a `Default`) or `new()` (when one doesn't, e.g., needs CURRENT_SEASON). | Same pattern App already uses for nested fields like `query_fields = default_fields()`. |
+| Derived traits | `#[derive(Debug)]` on every `<Screen>State`. No `Clone` or `PartialEq` (not needed by any consumer today; can add later if a use case appears). | `Debug` is required for panic-formatter consistency with today's `App` and for `dbg!()` debugging. — forge-1 |
+| Visibility | `pub struct <Screen>State` with `pub` fields, matching `pub struct App`'s field visibility today. Restrict to `pub(crate)` only if a field needs to stay module-private; flag those individually. | Integration tests in `icelines-cli/tests/` go through subprocess, not direct field access, so external visibility doesn't widen the public API. — forge-2 |
+| Clippy lint policy | Add `#![allow(clippy::module_name_repetitions)]` at the top of each `tui/screens/<screen>.rs` that gains a `<Screen>State`. | `QueriesState` inside `queries` module trips this lint; renaming each state struct (e.g., to `State`) loses the cross-module readability. The lint is a style preference, not a correctness signal. — forge-4 |
+| Saved-query JSON contract | Unchanged. The serializer (`fields_and_filter_to_json`) keeps its signature; the v2 envelope shape (`{"version":2, "fields":[…], "filter_text":"…"}`) is preserved bit-for-bit. | Norris is a memory-layout refactor, not a persistence-format refactor. The on-disk SQLite schema and the JSON contract are off-limits. — wire-1 |
 | No keybind / UX changes | Strictly an internal refactor. | The user's brief: "i want each screen to be separate but i guess i dont mind if its easy to go between them" — keep tab cycling, keep keybinds, just clean the layout. |
 
 ## Sub-phase ordering
@@ -170,8 +174,22 @@ Each is small enough that bundling them into one commit is fine.
    cases where one mutation site needs both `&mut self.queries` and
    `&self.repo` simultaneously: today they live on the same struct so
    it's fine; post-Norris, the borrow checker may need a split-borrow
-   helper. Mitigation: where it bites, lift the cross-state read into a
-   local before the mutation.
+   helper. **Concrete mitigation**: lift the cross-state read into a
+   local BEFORE the `&mut self.queries` mutation. Example pattern
+   (forge-3):
+
+   ```rust
+   // Bad — fights the borrow checker:
+   self.queries.filter_plan = Some(parse_query(/* needs */ &self.repo)?);
+
+   // Good — read first, mutate second:
+   let plan = parse_query(/* … */)?;
+   self.queries.filter_plan = Some(plan);
+   ```
+
+   For more complex cases where the borrow truly must straddle two
+   fields (rare), use a free function that takes both as separate
+   parameters; don't try to pass `&mut App`.
 2. **Tests using `App::new()` defaults** — some tests poke fields
    directly after `App::new(false)`. Post-Norris those become
    `app.queries.foo = …`. Mechanical search-replace, but high volume.
@@ -190,3 +208,22 @@ Each is small enough that bundling them into one commit is fine.
    **Decision**: stay on `App` if they read `App::repo`; move to
    `QueriesState` only if they're pure functions of state. The repo
    stays on App.
+6. **`career_table_preset` is a cross-screen dependency** — owned
+   by `QueriesState` per Norris.1 but READ by `tui/screens/player.rs`'s
+   render (the player card uses the preset to choose which career-
+   stat columns to show). After Norris.1 this becomes
+   `app.queries.career_table_preset` — awkward, since "the player
+   card reaches into queries state." A future phase could introduce
+   a `PlayerCardState` (or a shared `TableState` module) and migrate
+   the preset there. Norris itself doesn't try to fix this; just
+   flagging it. — glass-1
+7. **Nav strip stays untouched** — `screens/mod.rs::render_nav`
+   reads only `app.screen` (the discriminator) plus a couple of
+   shared overlay flags. Confirmed by reading the function: it
+   doesn't touch any screen-specific state. Norris extraction
+   doesn't change `render_nav`. — glass-2
+8. **Filter-plan eval site is a single rename** —
+   `run_query_views_with_pick_and_plan(…, app.queries.filter_plan.as_ref(), …)`
+   replaces the current `app.query_filter_plan.as_ref()`. There are
+   exactly four call sites (3 in `app.rs` + 1 in `screens/queries.rs`
+   per Wave 23 wiring). All mechanical; no semantic change. — edge-1
