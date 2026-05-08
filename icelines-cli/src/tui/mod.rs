@@ -1,5 +1,6 @@
 pub mod app;
 pub mod chrome;
+pub mod command;
 pub mod dashboard_panel;
 pub mod mdi;
 pub mod event;
