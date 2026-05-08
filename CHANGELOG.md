@@ -1,5 +1,96 @@
 # IceLines Changelog
 
+## v0.20.3 — 2026-05-07 — Phase Art Ross polish + cohort filter
+
+Headline: **Filter presets, TUI editor polish, and `query career
+--filter`. Saved queries persist the filter text across sessions;
+the TUI editor gets history (↑/↓), a live "47 of 712 match" count,
+and a `?`-toggleable grammar cheatsheet; the Phase Calder cross-
+league cohort cmd accepts the same Phase Art Ross filter grammar
+as `query leaders`.** 53 new tests.
+
+### Wave 24 — filter presets
+
+Saved queries now round-trip BOTH the structured field selections
+AND the active free-form filter text from the Phase Art Ross
+overlay. Loading a preset restores both halves and re-parses the
+filter into an active plan.
+
+- v2 envelope: `{"version":2, "fields":[…], "filter_text":"…"}`.
+  Switched from hand-rolled string format to `serde_json` so
+  quoted strings (`country LIKE "CA*"`) round-trip cleanly.
+- Pre-Wave-24 v1 (top-level array) saved queries continue to load
+  with `filter_text = ""` — no migration required.
+- Parse failure on a saved older-grammar filter is non-fatal: the
+  text is preserved, the plan is left empty, status hints at
+  re-edit.
+- 13 tests (7 L0 schema + 4 L0 handler + 2 L1 DB persistence).
+
+### Wave 24b/c/d — TUI overlay polish
+
+Three quality-of-life additions to the `f` filter editor:
+
+- **History (24b)**: `↑/↓` walks `App::query_filter_history`
+  (newest first, capped at 20). Successful Enter pushes the typed
+  filter onto the front, deduped against an identical existing
+  front. Typing or Backspace breaks navigation so edits don't
+  mutate a recalled historical entry. Render shows
+  `history N/M` while navigating.
+- **Live result count (24c)**: speculative `parse_query` on every
+  render. Bio + season-stat filters (no provider needed) report
+  `→ 47 of 712 match` against the active-season views in
+  microseconds. Sliding-window / career / league filters defer
+  to Enter (`→ press Enter to evaluate (data lookup)`) so the
+  editor stays responsive. Unparsed input shows
+  `(unparsed — keep typing)`.
+- **Grammar cheatsheet (24d)**: `?` inside FilterEdit toggles a
+  side-panel listing supported atom shapes (bio, stat, sliding-
+  window, career, league, EVER+AT, booleans, operators) without
+  opening the global help overlay. 60/40 horizontal split when
+  on; full-width editor when off. Flag persists across re-entry.
+- 19 tests (9 history + 7 live count + 3 cheatsheet).
+
+### Wave 25 — `query career --filter`
+
+The Phase Calder cross-league cohort cmd (`icelines query career
+--league OHL --season 20142015`) now accepts the same Phase Art
+Ross filter grammar as `query leaders`.
+
+```bash
+icelines query career --league OHL --season 20142015 \
+  --filter "country=CAN AND pos=C AND age<=18"
+icelines query career --league WHL --filter "draft-round<=2"
+```
+
+- Bio atoms (`country`, `pos`, `age`, `draft-*`) work as expected.
+- The `age` atom anchors on the COHORT year — `age<=18` on a
+  2014-15 cohort uses each player's age as of Feb-1-2015 (HR
+  convention).
+- Stat atoms evaluate against the player's NHL career, not their
+  non-NHL league stats — useful for "OHL leaders who later hit
+  30 NHL goals" but not for narrowing on the OHL stat line itself
+  (use `--sort` for that). Documented in the clap long_about.
+- 21 tests (3 L0 + 8 L1 + 10 L2). The L1 suite proves the
+  age-at-cohort-year anchor works (McDavid is age 17 on 2014-15,
+  age 27 on 2024-25 — the same filter `age<=18` includes/excludes
+  him correctly).
+
+### Conn Smythe audit (no code changes)
+
+Verified Phase Conn Smythe shipped completely in v0.19.0
+(C.1 series momentum + C.2 cup-run narratives + C.3 live game
+tracking). Deferred items (Cup-run probability/xWin% modeling,
+historical Cup-run backfill, pre-game previews) are honestly
+deferred — need new domains, not polish. No follow-on code
+required.
+
+### Test totals
+
+- Full bin suite: 692 passing (+22 since v0.20.2).
+- Phase Art Ross integration suite intact (Waves 11/12/14/15/16/
+  17/18/19/20/21/22b/23 unchanged).
+- v0.20.2 boundary preserved.
+
 ## v0.20.2 — 2026-05-07 — Phase Art Ross TUI overlay (Wave 23)
 
 Headline: **The free-form filter grammar reaches the last surface.
