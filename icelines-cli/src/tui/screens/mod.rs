@@ -2080,6 +2080,152 @@ mod app_snapshot_tests {
         });
     }
 
+    // ── Phase Norris.2 — ScheduleScreenState sequencing tests ─────────────
+
+    /// Sequential filter replacement — applying a second filter
+    /// REPLACES the first; filters don't accumulate. Single
+    /// SearchFilter slot, not a stack.
+    #[test]
+    fn l1_norris_schedule_filter_replaces_on_second_apply() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+        app.handle(Action::GoToTab(5)); // Schedule
+
+        // First search — Team filter on SEA.
+        app.handle(Action::Search);
+        for c in "sea".chars() {
+            app.handle(Action::Char(c));
+        }
+        app.handle(Action::Enter);
+        assert!(
+            matches!(
+                app.schedule.filter,
+                crate::tui::schedule::SearchFilter::Team(_)
+            ),
+            "first apply must produce a Team filter; got {:?}",
+            app.schedule.filter
+        );
+
+        // Second search — Matchup filter, replaces the Team filter.
+        app.handle(Action::Search);
+        for c in "nyr wsh".chars() {
+            if c == ' ' {
+                app.handle(Action::Space);
+            } else {
+                app.handle(Action::Char(c));
+            }
+        }
+        app.handle(Action::Enter);
+        assert!(
+            matches!(
+                app.schedule.filter,
+                crate::tui::schedule::SearchFilter::Matchup(_, _)
+            ),
+            "second apply must REPLACE Team with Matchup; got {:?}",
+            app.schedule.filter
+        );
+    }
+
+    /// Filter survives week navigation — applying a filter, then
+    /// pressing Right (next week), keeps the filter intact. Filter
+    /// is screen-wide state, not per-week.
+    #[test]
+    fn l1_norris_schedule_filter_survives_week_navigation() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+        app.handle(Action::GoToTab(5));
+        let week_before = app.schedule.week.clone();
+
+        // Apply a filter.
+        app.handle(Action::Search);
+        for c in "sea".chars() {
+            app.handle(Action::Char(c));
+        }
+        app.handle(Action::Enter);
+        let filter_after_apply = app.schedule.filter.clone();
+        assert!(matches!(
+            filter_after_apply,
+            crate::tui::schedule::SearchFilter::Team(_)
+        ));
+
+        // Navigate to the next week.
+        app.handle(Action::Right);
+        assert_ne!(
+            app.schedule.week, week_before,
+            "Right must advance the week"
+        );
+
+        // Filter unchanged.
+        match (&filter_after_apply, &app.schedule.filter) {
+            (
+                crate::tui::schedule::SearchFilter::Team(a),
+                crate::tui::schedule::SearchFilter::Team(b),
+            ) => assert_eq!(a, b, "filter must survive week navigation"),
+            (a, b) => panic!(
+                "filter shape changed across week nav; before={:?} after={:?}",
+                a, b
+            ),
+        }
+    }
+
+    /// State machine: invalid query sets filter_err and keeps
+    /// search_mode open. Backspace + valid retype clears the error
+    /// AND applies the filter on the next Enter. Verifies error
+    /// state doesn't sticky-stick after a successful retry.
+    #[test]
+    fn l1_norris_schedule_search_err_clears_on_successful_retry() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+        app.handle(Action::GoToTab(5));
+
+        // Type an invalid team.
+        app.handle(Action::Search);
+        for c in "zzz".chars() {
+            app.handle(Action::Char(c));
+        }
+        app.handle(Action::Enter);
+        assert!(
+            app.schedule.search_mode,
+            "invalid keeps search mode open"
+        );
+        assert!(
+            app.schedule.filter_err.is_some(),
+            "invalid sets filter_err"
+        );
+
+        // Backspace the bad query.
+        app.handle(Action::Backspace);
+        app.handle(Action::Backspace);
+        app.handle(Action::Backspace);
+        assert_eq!(app.schedule.query, "");
+
+        // Type a valid team.
+        for c in "sea".chars() {
+            app.handle(Action::Char(c));
+        }
+        app.handle(Action::Enter);
+
+        assert!(
+            !app.schedule.search_mode,
+            "valid retry must close search mode"
+        );
+        assert!(
+            app.schedule.filter_err.is_none(),
+            "valid retry must clear filter_err"
+        );
+        assert!(
+            matches!(
+                app.schedule.filter,
+                crate::tui::schedule::SearchFilter::Team(_)
+            ),
+            "valid retry must apply Team filter; got {:?}",
+            app.schedule.filter
+        );
+    }
+
     // ── Phase Norris.1 — QueriesState sequencing tests ─────────────────────
     //
     // These tests chain handler calls to exercise QueriesState

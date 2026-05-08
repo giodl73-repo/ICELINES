@@ -70,6 +70,132 @@ impl Default for ScheduleScreenState {
     }
 }
 
+#[cfg(test)]
+mod norris_state_tests {
+    use super::*;
+
+    // ── Phase Norris.2 — ScheduleScreenState contract ──────────────────────
+
+    /// Default search mode is OFF — the bottom strip stays hidden
+    /// on a fresh Schedule open. Catches a regression where a
+    /// future refactor flips the default to true.
+    #[test]
+    fn l0_norris_schedule_default_search_mode_off() {
+        let s = ScheduleScreenState::default();
+        assert!(!s.search_mode);
+    }
+
+    /// Default query string is empty.
+    #[test]
+    fn l0_norris_schedule_default_query_empty() {
+        let s = ScheduleScreenState::default();
+        assert_eq!(s.query, "");
+    }
+
+    /// Default filter is `SearchFilter::None` — no team / matchup
+    /// narrowing on first open.
+    #[test]
+    fn l0_norris_schedule_default_filter_unset() {
+        let s = ScheduleScreenState::default();
+        assert!(matches!(s.filter, SearchFilter::None));
+    }
+
+    /// No filter validation error on first open.
+    #[test]
+    fn l0_norris_schedule_default_no_filter_err() {
+        let s = ScheduleScreenState::default();
+        assert!(s.filter_err.is_none());
+    }
+
+    /// Cursor starts at row 0.
+    #[test]
+    fn l0_norris_schedule_default_selected_at_zero() {
+        let s = ScheduleScreenState::default();
+        assert_eq!(s.selected, 0);
+    }
+
+    /// Week defaults to a non-empty ISO date string. The
+    /// `monday_of(today)` fallback can yield today_iso() when
+    /// monday resolution fails, but the field should never be
+    /// empty.
+    #[test]
+    fn l0_norris_schedule_default_week_is_non_empty_iso() {
+        let s = ScheduleScreenState::default();
+        assert!(!s.week.is_empty(), "week must be a populated ISO date");
+        // Sanity: parse it as YYYY-MM-DD.
+        assert!(
+            chrono::NaiveDate::parse_from_str(&s.week, "%Y-%m-%d").is_ok(),
+            "week {:?} must parse as ISO date",
+            s.week
+        );
+    }
+
+    /// Default caches are empty (no week or team rows loaded
+    /// on init). The renderer fills them on demand.
+    #[test]
+    fn l0_norris_schedule_default_caches_empty() {
+        let s = ScheduleScreenState::default();
+        assert!(
+            s.week_cache.lock().unwrap().is_empty(),
+            "week cache must start empty"
+        );
+        assert!(
+            s.team_cache.lock().unwrap().is_empty(),
+            "team cache must start empty"
+        );
+    }
+
+    /// Week defaults to a Monday (or to today_iso() if monday_of
+    /// resolution failed, which would be a bug in monday_of itself).
+    /// This test fences against a future refactor that swaps the
+    /// fallback to a non-Monday default.
+    #[test]
+    fn l0_norris_schedule_default_week_is_a_monday() {
+        use chrono::Datelike;
+        let s = ScheduleScreenState::default();
+        let parsed = chrono::NaiveDate::parse_from_str(&s.week, "%Y-%m-%d")
+            .expect("week must be ISO");
+        // Either the resolved Monday OR today's date if monday_of
+        // failed (unlikely; monday_of works for any valid date).
+        let today = chrono::NaiveDate::parse_from_str(&today_iso(), "%Y-%m-%d")
+            .expect("today_iso parses");
+        let is_monday = parsed.weekday() == chrono::Weekday::Mon;
+        let is_today_fallback = parsed == today;
+        assert!(
+            is_monday || is_today_fallback,
+            "default week must be a Monday OR today (fallback); got {:?}",
+            parsed
+        );
+    }
+
+    /// `App::new` wires `app.schedule` through
+    /// ScheduleScreenState::default(). Spot-check the load-bearing
+    /// fields (full equality requires PartialEq on Arc<Mutex<...>>
+    /// which we don't derive).
+    #[test]
+    fn l0_norris_schedule_app_new_uses_default() {
+        let app = crate::tui::app::App::new(false);
+        assert!(!app.schedule.search_mode);
+        assert_eq!(app.schedule.query, "");
+        assert!(matches!(app.schedule.filter, SearchFilter::None));
+        assert!(app.schedule.filter_err.is_none());
+        assert_eq!(app.schedule.selected, 0);
+        assert!(!app.schedule.week.is_empty());
+    }
+
+    /// Debug derive renders without panicking on a default state.
+    /// Sanity check for forge-1.
+    #[test]
+    fn l0_norris_schedule_default_debug_renders() {
+        let s = ScheduleScreenState::default();
+        let dbg = format!("{:?}", s);
+        assert!(
+            dbg.contains("ScheduleScreenState"),
+            "Debug output must include the struct name; got: {dbg}"
+        );
+    }
+}
+
 // ── Default week view ─────────────────────────────────────────────────────────
 
 pub fn render(f: &mut Frame, app: &App, area: Rect) {
