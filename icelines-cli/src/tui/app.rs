@@ -4979,4 +4979,96 @@ mod tests {
             "locked mode must not block per-screen keybinds"
         );
     }
+
+    // ── Phase Jack Adams.1 — App-level MDI fence tests ───────────────────
+
+    /// `App::new` defaults `mdi` to None. SDI multi-tab is the
+    /// today's default; MDI mode is opt-in via `--mdi`.
+    #[test]
+    fn l0_adams_app_default_is_sdi() {
+        let app = App::new(false);
+        assert!(
+            app.mdi.is_none(),
+            "default App must be SDI (mdi = None)"
+        );
+    }
+
+    /// When `app.mdi` is Some, Tab is a no-op. The screen stays
+    /// put — Tab is reserved for cmd-bar autocomplete in
+    /// Adams.2; for Adams.1 it's just intercepted.
+    #[test]
+    fn l0_adams_mdi_tab_is_noop() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        app.mdi = Some(crate::tui::mdi::MdiLayout::default());
+        app.handle(Action::Tab);
+        assert_eq!(
+            app.screen,
+            Screen::Queries,
+            "MDI Tab must NOT cycle the screen"
+        );
+    }
+
+    /// When `app.mdi` is Some, Shift+Tab is a no-op too.
+    #[test]
+    fn l0_adams_mdi_tabprev_is_noop() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        app.mdi = Some(crate::tui::mdi::MdiLayout::default());
+        app.handle(Action::TabPrev);
+        assert_eq!(
+            app.screen,
+            Screen::Queries,
+            "MDI Shift+Tab must NOT cycle the screen"
+        );
+    }
+
+    /// When `app.mdi` is None (default) AND `locked_screen` is
+    /// None, Tab still cycles normally. Regression fence for the
+    /// SDI multi-tab path.
+    #[test]
+    fn l0_adams_sdi_tab_still_cycles() {
+        let mut app = App::new(false);
+        app.screen = Screen::Home;
+        assert!(app.mdi.is_none());
+        assert!(app.locked_screen.is_none());
+        app.handle(Action::Tab);
+        assert_ne!(
+            app.screen,
+            Screen::Home,
+            "SDI multi-tab Tab must cycle the screen"
+        );
+    }
+
+    /// Per-screen state mutations work in MDI mode — `s` on
+    /// Goalies still cycles sort even when `app.mdi` is Some.
+    /// MDI doesn't block per-screen keybinds; only Tab and
+    /// (later) the cmd-bar focus model gate input.
+    #[test]
+    fn l0_adams_mdi_per_screen_keybinds_still_work() {
+        let mut app = App::new(false);
+        app.screen = Screen::Goalies;
+        app.mdi = Some(crate::tui::mdi::MdiLayout::default());
+        let sort_before = app.goalies.sort;
+        app.handle(Action::Char('s'));
+        assert_ne!(
+            app.goalies.sort, sort_before,
+            "MDI mode must not block per-screen keybinds"
+        );
+    }
+
+    /// Cross-screen overlays still work in MDI mode — `?`
+    /// opens the help overlay regardless of MDI mode.
+    #[test]
+    fn l0_adams_mdi_help_overlay_still_works() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        app.mdi = Some(crate::tui::mdi::MdiLayout::default());
+        assert!(!app.show_help);
+        app.handle(Action::Help);
+        assert!(
+            app.show_help,
+            "MDI mode must not block the help overlay"
+        );
+    }
 }
