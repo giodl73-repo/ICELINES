@@ -1,5 +1,66 @@
 # IceLines Changelog
 
+## v0.21.1 — 2026-05-08 — Phase Norris.6 (overlay state extraction)
+
+Headline: **Continuation of Norris. Two cross-screen overlay
+clusters extracted into their own state structs in a new
+`tui/pickers.rs` module.** No keybind change, no UX delta.
+
+### Norris.6 — what's extracted
+
+**`DatePickerState`** (4 fields, shared between Tonight and Schedule
+per Foster.1.4):
+- `scores_picker_open` → `date_picker.open`
+- `scores_picker_input` → `date_picker.input`
+- `scores_picker_err` → `date_picker.err`
+- `picker_target` → `date_picker.target`
+
+**`GroupPickerState`** (3 fields, shared between player card and
+team roster):
+- `group_picker_open` → `group_picker.open`
+- `group_picker_list` → `group_picker.list`
+- `group_picker_player` → `group_picker.player`
+
+### New module
+
+`tui/pickers.rs` houses both. Distinct from the per-screen state
+pattern (Norris.1-4) because these overlays aren't tied to a
+single screen — the `d`/`g` key on any supporting screen opens
+the same overlay.
+
+### App footprint
+
+- 7 fields collapsed to 2 state structs.
+- App field count: 43 → 38.
+- Cumulative across Phase Norris: 80+ fields → 38, 50 fields
+  moved off App.
+
+### Tests
+
+14 new (705 → 763 cumulative across the phase):
+- 11 L0 default-contract tests in
+  `tui::pickers::norris_state_tests` (6 DatePicker + 5 GroupPicker).
+- 3 L1 sequencing tests in
+  `tui::screens::app_snapshot_tests`: open/cancel cycle clears
+  input + err; Shift+D target rebinds across Tonight ↔ Schedule;
+  group-picker close clears all three fields together.
+
+### What's still on App (intentionally)
+
+After Norris.6, the remaining cross-screen state on App is
+heterogeneous and doesn't form natural clusters:
+- Time/season axis (5 fields) — every screen reads these.
+- UI scaffolding (`status`, `tick`, `selected`, `no_color`,
+  `last_auto_refresh`).
+- Reports overlay (2 fields) — too small to extract.
+- Help/docs overlays (3 fields) — same.
+- Bootstrap (`load_state`, `install_state`).
+- Caches (`headshot_cache`, `dashboard_panel`, `league_context`).
+- Data (`repo`).
+
+Future Norris work (if any) would be marginal yield. The big wins
+are landed.
+
 ## v0.21.0 — 2026-05-08 — Phase Norris (TUI architecture refactor)
 
 Headline: **Internal refactor. No keybind change, no UX delta. The
