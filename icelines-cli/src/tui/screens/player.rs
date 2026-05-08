@@ -495,7 +495,7 @@ fn render_stats_view(f: &mut Frame, app: &App, v: &PlayerView<'_>, area: Rect) {
     // report is disabled (`app.reports.is_stat_visible`). Stats whose
     // `report_source()` is `None` (core / Tier-2 / derived) are always
     // visible.
-    let preset = app.career_table_preset;
+    let preset = app.queries.career_table_preset;
     let all_columns: Vec<icelines_core::stats_catalog::StatId> = preset
         .columns(v.position())
         .into_iter()

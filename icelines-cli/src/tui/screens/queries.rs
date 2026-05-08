@@ -1,3 +1,10 @@
+// Phase Norris.1 — `<ScreenName>State` repeats the module name in
+// the type identifier (queries::QueriesState). It's the canonical
+// pattern for the per-screen state extraction across the TUI;
+// renaming each to `State` would lose the cross-module readability
+// (`use queries::State` in app.rs is much more ambiguous).
+#![allow(clippy::module_name_repetitions)]
+
 use icelines_core::{
     filter::PlayerFilter, model::Position, position::PositionResolver, stats_repository::PlayerView,
 };
@@ -9,8 +16,82 @@ use ratatui::{
     Frame,
 };
 
+// ── Phase Norris.1 — per-screen state struct ─────────────────────────────────
+
+/// Phase Norris.1 — owns every piece of state that belongs to the
+/// Queries tab. Replaces the 17+ `query_*` / `sort_picker_*` /
+/// `career_table_preset` fields previously scattered across `App`.
+/// `App` now holds this as `app.queries`.
+#[derive(Debug)]
+pub struct QueriesState {
+    // Field editor (structured filters)
+    pub fields: Vec<QueryField>,
+    pub field_idx: usize,
+    pub sections: Vec<QuerySection>,
+    pub result_scroll: usize,
+
+    // Mode + focus
+    pub mode: crate::tui::app::QueryMode,
+    pub results_focused: bool,
+
+    // Save / load
+    pub save_name: String,
+    pub saved_list: Vec<(String, String)>,
+
+    // Phase Art Ross — free-form filter overlay (Wave 23/24/24b/c/d)
+    pub filter_text: String,
+    pub filter_error: Option<String>,
+    pub filter_plan: Option<icelines_query::QueryPlan>,
+    pub filter_history: std::collections::VecDeque<String>,
+    pub filter_history_cursor: Option<usize>,
+    pub filter_show_help: bool,
+
+    // Phase Lindsay L.3.4 — sort picker overlay
+    pub sort_picker_query: String,
+    pub sort_picker_idx: usize,
+    pub sort_stat_pick: Option<icelines_core::stats_catalog::StatId>,
+
+    // Phase Lindsay L.4 — career-table column preset on player card.
+    // (Cross-screen dep flagged in spec §open items #6: read by
+    // tui/screens/player.rs's render. A future PlayerCardState
+    // extraction can reclaim it; staying here for Norris.1.)
+    pub career_table_preset: crate::tui::screens::player::CareerTablePreset,
+}
+
+impl Default for QueriesState {
+    fn default() -> Self {
+        Self {
+            fields: default_fields(),
+            field_idx: 0,
+            sections: default_sections(),
+            result_scroll: 0,
+
+            mode: crate::tui::app::QueryMode::Build,
+            results_focused: false,
+
+            save_name: String::new(),
+            saved_list: Vec::new(),
+
+            filter_text: String::new(),
+            filter_error: None,
+            filter_plan: None,
+            filter_history: std::collections::VecDeque::new(),
+            filter_history_cursor: None,
+            filter_show_help: false,
+
+            sort_picker_query: String::new(),
+            sort_picker_idx: 0,
+            sort_stat_pick: None,
+
+            career_table_preset:
+                crate::tui::screens::player::CareerTablePreset::Default,
+        }
+    }
+}
+
 // ── Field definitions ─────────────────────────────────────────────────────────
 
+#[derive(Debug)]
 pub struct QueryField {
     pub label: &'static str,
     pub options: Vec<&'static str>,
@@ -130,6 +211,7 @@ pub fn default_fields() -> Vec<QueryField> {
 // L.3.3 v1 keeps the existing 10 fields and just groups them so the
 // section + Tab-toggle UI is in place ahead of the L.3.4 sort picker.
 
+#[derive(Debug)]
 pub struct QuerySection {
     /// User-visible header label.
     pub label: &'static str,
@@ -591,7 +673,7 @@ pub fn render(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
 
     // Show save/load/picker/filter overlay instead of results when
     // in those modes
-    match app.query_mode {
+    match app.queries.mode {
         QueryMode::SaveName => {
             render_save_prompt(f, app, area);
             return;
@@ -686,10 +768,10 @@ pub fn live_filter_count_hint(
 /// the active filter / error / history-cursor indicator so the user
 /// knows what they last applied.
 ///
-/// Wave 24d — when `app.query_filter_show_help` is on, a grammar
+/// Wave 24d — when `app.queries.filter_show_help` is on, a grammar
 /// cheatsheet renders beside the editor (horizontal split).
 fn render_filter_editor(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
-    if app.query_filter_show_help {
+    if app.queries.filter_show_help {
         // Side-by-side: 60% editor, 40% cheatsheet.
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
@@ -708,8 +790,8 @@ fn render_filter_editor(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
 /// with a sub-region.
 fn render_filter_editor_inner(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
     let title_state = match (
-        app.query_filter_plan.is_some(),
-        app.query_filter_error.as_ref(),
+        app.queries.filter_plan.is_some(),
+        app.queries.filter_error.as_ref(),
     ) {
         (_, Some(_)) => " Filter — parse error · fix and Enter, Esc to cancel ".to_owned(),
         (true, None) => " Filter — refine and Enter, Esc to cancel ".to_owned(),
@@ -727,15 +809,15 @@ fn render_filter_editor_inner(f: &mut Frame, app: &crate::tui::app::App, area: R
         .fg(Color::Red)
         .add_modifier(Modifier::BOLD);
 
-    let history_hint = match app.query_filter_history_cursor {
+    let history_hint = match app.queries.filter_history_cursor {
         Some(i) => format!(
             "  history {}/{} — Up: older · Down: newer / live",
             i + 1,
-            app.query_filter_history.len()
+            app.queries.filter_history.len()
         ),
-        None if !app.query_filter_history.is_empty() => format!(
+        None if !app.queries.filter_history.is_empty() => format!(
             "  Up to recall last {} filter(s) · Esc cancels",
-            app.query_filter_history.len(),
+            app.queries.filter_history.len(),
         ),
         None => String::new(),
     };
@@ -745,7 +827,7 @@ fn render_filter_editor_inner(f: &mut Frame, app: &crate::tui::app::App, area: R
     // (sliding-window, career, league) defer to Enter.
     let live_views = app.views();
     let live_hint = live_filter_count_hint(
-        &app.query_filter_text,
+        &app.queries.filter_text,
         &live_views,
         app.active_season_typed.0,
     );
@@ -759,7 +841,7 @@ fn render_filter_editor_inner(f: &mut Frame, app: &crate::tui::app::App, area: R
         Line::styled("    p.career>=500", dim),
         Line::from(""),
         Line::styled(
-            format!("  ▶ {}▌", app.query_filter_text),
+            format!("  ▶ {}▌", app.queries.filter_text),
             Style::default()
                 .fg(Color::Yellow)
                 .add_modifier(Modifier::BOLD),
@@ -771,12 +853,12 @@ fn render_filter_editor_inner(f: &mut Frame, app: &crate::tui::app::App, area: R
     if !history_hint.is_empty() {
         lines.push(Line::styled(history_hint, dim));
     }
-    if let Some(err) = &app.query_filter_error {
+    if let Some(err) = &app.queries.filter_error {
         lines.push(Line::from(""));
         lines.push(Line::styled(format!("  ✘ {err}"), err_style));
     }
     lines.push(Line::from(""));
-    let help_hint = if app.query_filter_show_help {
+    let help_hint = if app.queries.filter_show_help {
         "  Enter apply · Esc cancel · empty Enter clears · ? hide grammar"
     } else {
         "  Enter apply · Esc cancel · empty Enter clears · ? show grammar"
@@ -855,7 +937,7 @@ fn render_save_prompt(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
         Line::from("  Name your query:"),
         Line::from(""),
         Line::styled(
-            format!("  ▶ {}▌", app.query_save_name),
+            format!("  ▶ {}▌", app.queries.save_name),
             Style::default()
                 .fg(Color::Yellow)
                 .add_modifier(Modifier::BOLD),
@@ -875,7 +957,7 @@ fn render_load_list(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
 
     let dim = Style::default().fg(Color::DarkGray);
 
-    if app.query_saved_list.is_empty() {
+    if app.queries.saved_list.is_empty() {
         let lines = vec![
             Line::from(""),
             Line::from("  No saved queries yet."),
@@ -887,7 +969,8 @@ fn render_load_list(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
     }
 
     let items: Vec<ListItem> = app
-        .query_saved_list
+        .queries
+        .saved_list
         .iter()
         .enumerate()
         .map(|(i, (name, _))| {
@@ -923,7 +1006,7 @@ fn render_sort_picker(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
     // StatId whose backing report is disabled in the Reports overlay
     // (Phase Reports — visibility gating). Catalog ordering is preserved.
     let results: Vec<icelines_core::stats_catalog::StatId> =
-        sort_picker_filter(&app.sort_picker_query)
+        sort_picker_filter(&app.queries.sort_picker_query)
             .into_iter()
             .filter(|sid| app.reports.is_stat_visible(*sid))
             .collect();
@@ -931,7 +1014,7 @@ fn render_sort_picker(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
     // Cursor index, clamped to result length (the app handler also
     // clamps but defensively here so a stale index can't panic on
     // render).
-    let sel = app.sort_picker_idx.min(results.len().saturating_sub(1));
+    let sel = app.queries.sort_picker_idx.min(results.len().saturating_sub(1));
 
     let mut lines: Vec<Line> = Vec::new();
     lines.push(Line::from(""));
@@ -939,7 +1022,7 @@ fn render_sort_picker(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
     lines.push(Line::from(vec![
         Span::styled("  Search: ", Style::default().fg(Color::White)),
         Span::styled(
-            format!("{}▌", app.sort_picker_query),
+            format!("{}▌", app.queries.sort_picker_query),
             Style::default()
                 .fg(Color::Yellow)
                 .add_modifier(Modifier::BOLD),
@@ -997,7 +1080,7 @@ fn render_sort_picker(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
 }
 
 fn render_controls(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
-    let border_style = if !app.query_results_focused {
+    let border_style = if !app.queries.results_focused {
         Style::default().fg(Color::Cyan)
     } else {
         Style::default().fg(Color::DarkGray)
@@ -1012,7 +1095,7 @@ fn render_controls(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
     let inner = block.inner(area);
     f.render_widget(block, area);
 
-    let sel = app.query_field_idx;
+    let sel = app.queries.field_idx;
     let dim = Style::default().fg(Color::DarkGray);
 
     // Phase Lindsay L.3.3 — render by section. Each section gets a
@@ -1020,7 +1103,7 @@ fn render_controls(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
     // fields indented under the header. Collapsed sections show
     // header only — fields hidden + cursor-skipped.
     let mut all_items: Vec<ListItem> = Vec::new();
-    for section in &app.query_sections {
+    for section in &app.queries.sections {
         // Section header: ▶/▼ + label. Headers are not cursor-stoppable
         // in L.3.3 v1; Tab toggles the section that owns the current
         // field cursor. (Future revision: header-as-cursor-stop.)
@@ -1039,7 +1122,7 @@ fn render_controls(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
 
         // Render the section's fields (indented).
         for &i in &section.fields {
-            let field = match app.query_fields.get(i) {
+            let field = match app.queries.fields.get(i) {
                 Some(f) => f,
                 None => continue, // defensive — section refers to a missing field
             };
@@ -1095,9 +1178,9 @@ fn render_controls(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
 }
 
 fn render_results(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
-    let sort = app.query_fields[0].value();
+    let sort = app.queries.fields[0].value();
 
-    let border_style = if app.query_results_focused {
+    let border_style = if app.queries.results_focused {
         Style::default().fg(Color::Cyan)
     } else {
         Style::default().fg(Color::DarkGray)
@@ -1118,22 +1201,22 @@ fn render_results(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
 
     let results = run_query_views_with_pick_and_plan(
         &views,
-        &app.query_fields,
-        app.sort_stat_pick,
-        app.query_filter_plan.as_ref(),
+        &app.queries.fields,
+        app.queries.sort_stat_pick,
+        app.queries.filter_plan.as_ref(),
         app.active_season_typed.0,
     );
-    let top: usize = app.query_fields[9].value().parse().unwrap_or(20);
+    let top: usize = app.queries.fields[9].value().parse().unwrap_or(20);
     // Phase Lindsay L.3.4 — when picker overrides legacy field, the
     // column label comes from the StatId; fall back to legacy.
-    let clabel: String = match app.sort_stat_pick {
+    let clabel: String = match app.queries.sort_stat_pick {
         Some(stat) => stat.short_label().to_owned(),
         None => col_label(sort).to_owned(),
     };
     let dim = Style::default().fg(Color::DarkGray);
 
     let visible = inner.height.saturating_sub(4) as usize;
-    let offset = app.query_result_scroll;
+    let offset = app.queries.result_scroll;
 
     let mut lines = vec![
         Line::styled(
@@ -1150,7 +1233,7 @@ fn render_results(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
         let name = v.full_name().chars().take(22).collect::<String>();
         let value = display_val_view(v, sort);
         let is_selected = offset + (lines.len() - 2)
-            == app.query_result_scroll + app.selected.min(visible.saturating_sub(1));
+            == app.queries.result_scroll + app.selected.min(visible.saturating_sub(1));
         let style = if is_selected {
             Style::default()
                 .fg(Color::Black)

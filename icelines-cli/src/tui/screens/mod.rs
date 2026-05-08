@@ -1891,7 +1891,7 @@ mod app_snapshot_tests {
             assert_eq!(app.screen, crate::tui::app::Screen::Queries);
             app.handle(Action::Char('s'));
             assert!(matches!(
-                app.query_mode,
+                app.queries.mode,
                 crate::tui::app::QueryMode::SaveName
             ));
 
@@ -1901,7 +1901,7 @@ mod app_snapshot_tests {
             app.handle(Action::Char('e'));
             app.handle(Action::Char('d'));
             assert_eq!(
-                app.query_save_name, "fred",
+                app.queries.save_name, "fred",
                 "Hotkey 'f' must insert into query name, not fire AddToFavorites"
             );
 
@@ -1910,7 +1910,7 @@ mod app_snapshot_tests {
             app.handle(Action::Refresh); // 'r'
             app.handle(Action::Install); // 'i'
             app.handle(Action::GoToTab(2)); // pushes '3'
-            assert_eq!(app.query_save_name, "fredgri3");
+            assert_eq!(app.queries.save_name, "fredgri3");
         });
     }
 
@@ -1927,14 +1927,14 @@ mod app_snapshot_tests {
         for c in "myquery".chars() {
             app.handle(Action::Char(c));
         }
-        assert_eq!(app.query_save_name, "myquery");
+        assert_eq!(app.queries.save_name, "myquery");
 
         app.handle(Action::Backspace);
-        assert_eq!(app.query_save_name, "myquer");
+        assert_eq!(app.queries.save_name, "myquer");
 
         app.handle(Action::Escape);
-        assert!(matches!(app.query_mode, crate::tui::app::QueryMode::Build));
-        assert!(app.query_save_name.is_empty(), "Esc must clear typed name");
+        assert!(matches!(app.queries.mode, crate::tui::app::QueryMode::Build));
+        assert!(app.queries.save_name.is_empty(), "Esc must clear typed name");
     }
 
     /// SaveName Enter commits to the DB and exits SaveName mode. Picks
@@ -1952,7 +1952,7 @@ mod app_snapshot_tests {
                 app.handle(Action::Char(c));
             }
             app.handle(Action::Enter);
-            assert!(matches!(app.query_mode, crate::tui::app::QueryMode::Build));
+            assert!(matches!(app.queries.mode, crate::tui::app::QueryMode::Build));
 
             // Verify DB row exists.
             let db = crate::db::GroupDb::open().expect("open DB");
@@ -1990,8 +1990,8 @@ mod app_snapshot_tests {
                 }
             }
             app.handle(Action::Enter);
-            assert_eq!(app.query_mode, crate::tui::app::QueryMode::Build);
-            assert!(app.query_filter_plan.is_some(), "filter must be applied");
+            assert_eq!(app.queries.mode, crate::tui::app::QueryMode::Build);
+            assert!(app.queries.filter_plan.is_some(), "filter must be applied");
 
             // Now save the preset.
             app.handle(Action::Char('s'));
@@ -1999,7 +1999,7 @@ mod app_snapshot_tests {
                 app.handle(Action::Char(c));
             }
             app.handle(Action::Enter);
-            assert_eq!(app.query_mode, crate::tui::app::QueryMode::Build);
+            assert_eq!(app.queries.mode, crate::tui::app::QueryMode::Build);
 
             // Sanity: row landed in DB and the JSON is the v2 envelope.
             let db = crate::db::GroupDb::open().expect("open DB");
@@ -2017,28 +2017,29 @@ mod app_snapshot_tests {
 
             // Wipe runtime filter state so we can prove the load
             // restores it (not just leftover state).
-            app.query_filter_text.clear();
-            app.query_filter_plan = None;
+            app.queries.filter_text.clear();
+            app.queries.filter_plan = None;
 
             // Open LoadList and Enter on the preset.
-            app.query_saved_list = saved;
-            app.query_mode = crate::tui::app::QueryMode::LoadList;
+            app.queries.saved_list = saved;
+            app.queries.mode = crate::tui::app::QueryMode::LoadList;
             // Position selector on the canadians row.
             let idx = app
-                .query_saved_list
+                .queries
+                .saved_list
                 .iter()
                 .position(|(n, _)| n == "canadians")
                 .expect("preset listed");
             app.selected = idx;
             app.handle(Action::Enter);
 
-            assert_eq!(app.query_mode, crate::tui::app::QueryMode::Build);
+            assert_eq!(app.queries.mode, crate::tui::app::QueryMode::Build);
             assert_eq!(
-                app.query_filter_text, "country=CAN",
+                app.queries.filter_text, "country=CAN",
                 "load must restore the filter text"
             );
             assert!(
-                app.query_filter_plan.is_some(),
+                app.queries.filter_plan.is_some(),
                 "load must re-install the active plan"
             );
         });
@@ -2063,19 +2064,19 @@ mod app_snapshot_tests {
 
             // Drive LoadList path.
             let saved = db.list_saved_queries().expect("list");
-            app.query_saved_list = saved;
-            app.query_mode = crate::tui::app::QueryMode::LoadList;
+            app.queries.saved_list = saved;
+            app.queries.mode = crate::tui::app::QueryMode::LoadList;
             app.selected = 0;
             app.handle(Action::Enter);
 
-            assert_eq!(app.query_mode, crate::tui::app::QueryMode::Build);
+            assert_eq!(app.queries.mode, crate::tui::app::QueryMode::Build);
             assert_eq!(
-                app.query_filter_text, "",
+                app.queries.filter_text, "",
                 "v1 legacy row must yield empty filter_text"
             );
-            assert!(app.query_filter_plan.is_none());
-            assert_eq!(app.query_fields[0].selected, 2);
-            assert_eq!(app.query_fields[1].selected, 1);
+            assert!(app.queries.filter_plan.is_none());
+            assert_eq!(app.queries.fields[0].selected, 2);
+            assert_eq!(app.queries.fields[1].selected, 1);
         });
     }
 
@@ -2314,19 +2315,19 @@ mod app_snapshot_tests {
 
         // Boot state: sections 0 + 1 expanded, 2 + 3 collapsed.
         assert!(
-            app.query_sections[0].expanded,
+            app.queries.sections[0].expanded,
             "section 0 expanded by default"
         );
         assert!(
-            app.query_sections[1].expanded,
+            app.queries.sections[1].expanded,
             "section 1 expanded by default"
         );
         assert!(
-            !app.query_sections[2].expanded,
+            !app.queries.sections[2].expanded,
             "section 2 collapsed by default"
         );
         assert!(
-            !app.query_sections[3].expanded,
+            !app.queries.sections[3].expanded,
             "section 3 collapsed by default"
         );
 
@@ -2336,7 +2337,7 @@ mod app_snapshot_tests {
             app.handle(Action::Down);
         }
         assert_eq!(
-            app.query_field_idx, 3,
+            app.queries.field_idx, 3,
             "should reach field 3 after 5 Downs from field 0"
         );
         // Walking through fields 0,9,8,1,2,3 = 5 stops total means
@@ -2349,17 +2350,17 @@ mod app_snapshot_tests {
         // auto-expand AND cursor must land on section 2's first field.
         app.handle(Action::Down);
         assert!(
-            app.query_sections[2].expanded,
+            app.queries.sections[2].expanded,
             "Down past last visible must auto-expand the next collapsed section"
         );
         assert_eq!(
-            app.query_sections[2].fields.first().copied(),
-            Some(app.query_field_idx),
+            app.queries.sections[2].fields.first().copied(),
+            Some(app.queries.field_idx),
             "cursor must land on first field of newly-expanded section 2"
         );
         // Cursor must NOT have escaped to results pane.
         assert!(
-            !app.query_results_focused,
+            !app.queries.results_focused,
             "results pane should NOT take focus while collapsed sections remain"
         );
     }
@@ -2386,13 +2387,13 @@ mod app_snapshot_tests {
         // section 1 are expanded by default; sections 2 + 3 collapsed.
         // Walk Down 12 times — enough to visit every field if the
         // auto-expand path works.
-        let mut visited = vec![app.query_field_idx];
+        let mut visited = vec![app.queries.field_idx];
         for _ in 0..12 {
             app.handle(Action::Down);
-            if app.query_results_focused {
+            if app.queries.results_focused {
                 break;
             }
-            visited.push(app.query_field_idx);
+            visited.push(app.queries.field_idx);
         }
 
         // Section 0 ([0, 9, 8]) and section 1 ([1, 2, 3]) come first
@@ -2432,7 +2433,7 @@ mod app_snapshot_tests {
 
         // Trigger picker via `/`.
         app.handle(Action::Char('/'));
-        assert_eq!(app.query_mode, crate::tui::app::QueryMode::SortPicker);
+        assert_eq!(app.queries.mode, crate::tui::app::QueryMode::SortPicker);
 
         let text = render_app_to_text(&app, 140, 40);
         // Picker title + search prompt visible.
@@ -2467,7 +2468,7 @@ mod app_snapshot_tests {
         app.handle(Action::Char('i'));
         app.handle(Action::Char('t'));
         app.handle(Action::Char('s'));
-        assert_eq!(app.sort_picker_query, "hits");
+        assert_eq!(app.queries.sort_picker_query, "hits");
 
         let text = render_app_to_text(&app, 140, 40);
         // Filtered count is much smaller than 107.
@@ -2497,14 +2498,14 @@ mod app_snapshot_tests {
         app.handle(Action::Char('i'));
         app.handle(Action::Char('t'));
         app.handle(Action::Char('s'));
-        assert_eq!(app.sort_picker_query, "hits");
+        assert_eq!(app.queries.sort_picker_query, "hits");
 
         app.handle(Action::Backspace);
-        assert_eq!(app.sort_picker_query, "hit");
+        assert_eq!(app.queries.sort_picker_query, "hit");
         app.handle(Action::Backspace);
         app.handle(Action::Backspace);
         app.handle(Action::Backspace);
-        assert_eq!(app.sort_picker_query, "");
+        assert_eq!(app.queries.sort_picker_query, "");
     }
 
     /// Enter on the picker accepts the highlighted stat → exits to
@@ -2523,12 +2524,12 @@ mod app_snapshot_tests {
         app.handle(Action::Enter);
 
         assert_eq!(
-            app.query_mode,
+            app.queries.mode,
             crate::tui::app::QueryMode::Build,
             "Enter should exit picker back to Build mode"
         );
         assert_eq!(
-            app.sort_stat_pick,
+            app.queries.sort_stat_pick,
             Some(icelines_core::stats_catalog::StatId::Games),
             "first-result accept should set sort_stat_pick = Games (declaration order, L.4.1)"
         );
@@ -2550,20 +2551,20 @@ mod app_snapshot_tests {
         app.handle(Action::Char('/'));
         app.handle(Action::Enter);
         assert_eq!(
-            app.sort_stat_pick,
+            app.queries.sort_stat_pick,
             Some(icelines_core::stats_catalog::StatId::Games),
             "picker should set sort_stat_pick"
         );
-        assert_eq!(app.query_mode, crate::tui::app::QueryMode::Build);
+        assert_eq!(app.queries.mode, crate::tui::app::QueryMode::Build);
 
         // Esc on Build with active pick clears the pick.
         app.handle(Action::Escape);
         assert_eq!(
-            app.sort_stat_pick, None,
+            app.queries.sort_stat_pick, None,
             "Esc on Build with active pick must clear sort_stat_pick"
         );
         // Mode stays Build (Esc didn't drop us anywhere else).
-        assert_eq!(app.query_mode, crate::tui::app::QueryMode::Build);
+        assert_eq!(app.queries.mode, crate::tui::app::QueryMode::Build);
         // Status line surfaces the clear action.
         assert!(
             app.status.contains("cleared") || app.status.contains("Sort pick"),
@@ -2581,18 +2582,18 @@ mod app_snapshot_tests {
         app.handle(Action::Tab);
         app.handle(Action::Tab);
 
-        let pick_before = app.sort_stat_pick;
+        let pick_before = app.queries.sort_stat_pick;
         app.handle(Action::Char('/'));
         app.handle(Action::Char('h'));
         app.handle(Action::Escape);
 
         assert_eq!(
-            app.query_mode,
+            app.queries.mode,
             crate::tui::app::QueryMode::Build,
             "Esc should return to Build mode"
         );
         assert_eq!(
-            app.sort_stat_pick, pick_before,
+            app.queries.sort_stat_pick, pick_before,
             "Esc should NOT mutate sort_stat_pick"
         );
     }
@@ -2608,20 +2609,20 @@ mod app_snapshot_tests {
         app.handle(Action::Tab);
 
         app.handle(Action::Char('/'));
-        assert_eq!(app.sort_picker_idx, 0);
+        assert_eq!(app.queries.sort_picker_idx, 0);
 
         app.handle(Action::Down);
-        assert_eq!(app.sort_picker_idx, 1);
+        assert_eq!(app.queries.sort_picker_idx, 1);
         app.handle(Action::Down);
-        assert_eq!(app.sort_picker_idx, 2);
+        assert_eq!(app.queries.sort_picker_idx, 2);
 
         app.handle(Action::Up);
-        assert_eq!(app.sort_picker_idx, 1);
+        assert_eq!(app.queries.sort_picker_idx, 1);
         app.handle(Action::Up);
-        assert_eq!(app.sort_picker_idx, 0);
+        assert_eq!(app.queries.sort_picker_idx, 0);
         // Up at 0 saturates.
         app.handle(Action::Up);
-        assert_eq!(app.sort_picker_idx, 0);
+        assert_eq!(app.queries.sort_picker_idx, 0);
     }
 
     // ─── Phase Lindsay L.4.4 — career-table bracket cycle ───────────────
@@ -2644,12 +2645,12 @@ mod app_snapshot_tests {
         app.screen = crate::tui::app::Screen::PlayerById(pid);
 
         use crate::tui::screens::player::CareerTablePreset;
-        assert_eq!(app.career_table_preset, CareerTablePreset::Default);
+        assert_eq!(app.queries.career_table_preset, CareerTablePreset::Default);
 
         app.handle(Action::Char(']'));
-        assert_eq!(app.career_table_preset, CareerTablePreset::Scoring);
+        assert_eq!(app.queries.career_table_preset, CareerTablePreset::Scoring);
         app.handle(Action::Char(']'));
-        assert_eq!(app.career_table_preset, CareerTablePreset::TwoWay);
+        assert_eq!(app.queries.career_table_preset, CareerTablePreset::TwoWay);
 
         // Cycle forward through remaining; verify wrap.
         // Post-SCOUT-6 (L.5b): cycle has 6 entries, not 7. Started at
@@ -2658,7 +2659,7 @@ mod app_snapshot_tests {
             app.handle(Action::Char(']'));
         }
         assert_eq!(
-            app.career_table_preset,
+            app.queries.career_table_preset,
             CareerTablePreset::Default,
             "forward cycle wraps Goalie → Default (post-SCOUT-6)"
         );
@@ -2675,14 +2676,14 @@ mod app_snapshot_tests {
         app.screen = crate::tui::app::Screen::PlayerById(pid);
 
         use crate::tui::screens::player::CareerTablePreset;
-        assert_eq!(app.career_table_preset, CareerTablePreset::Default);
+        assert_eq!(app.queries.career_table_preset, CareerTablePreset::Default);
 
         app.handle(Action::Char('['));
         // Default.prev() = Goalie (wraps; post-SCOUT-6 L.5b).
-        assert_eq!(app.career_table_preset, CareerTablePreset::Goalie);
+        assert_eq!(app.queries.career_table_preset, CareerTablePreset::Goalie);
 
         app.handle(Action::Char('['));
-        assert_eq!(app.career_table_preset, CareerTablePreset::Time);
+        assert_eq!(app.queries.career_table_preset, CareerTablePreset::Time);
     }
 
     /// Status line surfaces the current preset name after cycle.
@@ -2788,7 +2789,7 @@ mod app_snapshot_tests {
                                        // Cursor moved to field 1 (section 1). Another `o` collapses section 1.
         app.handle(Action::Char('o'));
         // At least one of the originally-expanded sections is now collapsed.
-        let any_collapsed = !app.query_sections[0].expanded || !app.query_sections[1].expanded;
+        let any_collapsed = !app.queries.sections[0].expanded || !app.queries.sections[1].expanded;
         assert!(
             any_collapsed,
             "post-o×2 at least one section should be collapsed"
@@ -2799,22 +2800,22 @@ mod app_snapshot_tests {
 
         // Defaults restored: section 0 + 1 expanded, section 2 + 3 collapsed.
         assert!(
-            app.query_sections[0].expanded,
+            app.queries.sections[0].expanded,
             "Refresh must re-expand section 0"
         );
         assert!(
-            app.query_sections[1].expanded,
+            app.queries.sections[1].expanded,
             "Refresh must re-expand section 1"
         );
         assert!(
-            !app.query_sections[2].expanded,
+            !app.queries.sections[2].expanded,
             "Refresh must keep section 2 collapsed"
         );
         assert!(
-            !app.query_sections[3].expanded,
+            !app.queries.sections[3].expanded,
             "Refresh must keep section 3 collapsed"
         );
         // Cursor reset too.
-        assert_eq!(app.query_field_idx, 0);
+        assert_eq!(app.queries.field_idx, 0);
     }
 }

@@ -255,62 +255,11 @@ pub struct App {
     pub playoffs_cache: crate::tui::playoffs::PlayoffsCache,
     pub playoffs_round: usize,  // round index (0-based)
     pub playoffs_series: usize, // series index within the current round
-    // Query manager state
-    pub query_fields: Vec<crate::tui::screens::queries::QueryField>,
-    pub query_field_idx: usize, // which field row is active
-    /// Phase Lindsay L.3.3 — categorized sections grouping `query_fields`.
-    /// Tab toggles the section containing `query_field_idx`. Collapsed
-    /// sections hide their fields from cursor + render.
-    pub query_sections: Vec<crate::tui::screens::queries::QuerySection>,
-    pub query_result_scroll: usize,  // scroll offset in results panel
-    pub query_mode: QueryMode,       // build | save-name | load-list
-    pub query_results_focused: bool, // Space toggles focus between field editor and result list
-    pub query_save_name: String,     // name being typed for save
-    pub query_saved_list: Vec<(String, String)>, // (name, json) loaded from DB
-    /// Phase Art Ross — free-form filter text being edited (active in
-    /// `QueryMode::FilterEdit`). Persisted across mode toggles so the
-    /// user can re-open the editor and continue refining.
-    pub query_filter_text: String,
-    /// Phase Art Ross — most recent parser error from the filter
-    /// overlay. `Some(msg)` keeps the user in FilterEdit with the
-    /// message rendered; `None` when the last parse succeeded or the
-    /// editor was just opened.
-    pub query_filter_error: Option<String>,
-    /// Phase Art Ross — last successfully-parsed plan. When `Some`,
-    /// `run_query_views_with_pick_and_plan` applies it on top of the
-    /// structured field filters (logical AND). Cleared on Esc-cancel
-    /// and on empty-text Enter.
-    pub query_filter_plan: Option<icelines_query::QueryPlan>,
-    /// Phase Art Ross — Wave 24b filter history. Newest first;
-    /// `push_front` on every successful Enter, deduped against the
-    /// existing front entry. Capped at `FILTER_HISTORY_CAP`.
-    pub query_filter_history: std::collections::VecDeque<String>,
-    /// Phase Art Ross — Wave 24b history navigation cursor.
-    /// `None` = live edit; `Some(i)` = showing `query_filter_history[i]`.
-    /// Up/Down in `FilterEdit` mode walks the history; typing or
-    /// Backspace breaks navigation (cursor → None).
-    pub query_filter_history_cursor: Option<usize>,
-    /// Phase Art Ross — Wave 24d. When `true`, the FilterEdit
-    /// overlay renders a side-by-side grammar cheatsheet so the
-    /// user has the supported atom shapes in front of them while
-    /// typing. Toggled with `?` inside the editor; persists across
-    /// re-entries (so power users keep it on).
-    pub query_filter_show_help: bool,
-    /// Phase Lindsay L.3.4 — search query for the sort picker overlay.
-    /// Substring-matched (case-insensitive) against `StatId::cli_key()`.
-    pub sort_picker_query: String,
-    /// Phase Lindsay L.3.4 — selected index within the filtered StatId
-    /// list. Reset to 0 every time the search query changes.
-    pub sort_picker_idx: usize,
-    /// Phase Lindsay L.3.4 — the StatId chosen via the sort picker.
-    /// `Some(stat)` means subsequent sort uses `StatId::sort_cmp(stat, …)`
-    /// instead of the legacy QueryField[0] string. `None` means use the
-    /// legacy field (default behavior).
-    pub sort_stat_pick: Option<icelines_core::stats_catalog::StatId>,
-    /// Phase Lindsay L.4 — active career-table column preset on the
-    /// player card. `[`/`]` cycle through `CareerTablePreset::ALL`
-    /// (Default | Scoring | Two-way | Special Teams | Time | Goalie | All).
-    pub career_table_preset: crate::tui::screens::player::CareerTablePreset,
+    /// Phase Norris.1 — Queries-tab state extracted into its own
+    /// struct. Replaces the 17+ `query_*`, `sort_picker_*`, and
+    /// `career_table_preset` fields scattered across App pre-Norris.
+    /// Pure refactor — same layout in memory, just relocated.
+    pub queries: crate::tui::screens::queries::QueriesState,
     /// Phase 8j: lazy-compiled dashboard panel for the player card.
     /// Only consulted when `crate::config::dashboards_enabled()` is true.
     pub dashboard_panel: crate::tui::dashboard_panel::CompiledPanel,
@@ -369,7 +318,7 @@ fn is_text_input_active(app: &App) -> bool {
     matches!(app.screen, Screen::Search | Screen::Tonight)
         || (app.screen == Screen::Schedule && app.schedule_search_mode)
         || (app.screen == Screen::Queries
-            && matches!(app.query_mode, QueryMode::SaveName | QueryMode::FilterEdit))
+            && matches!(app.queries.mode, QueryMode::SaveName | QueryMode::FilterEdit))
 }
 
 impl App {
@@ -390,10 +339,11 @@ impl App {
             show_help: false,
             show_docs: false,
             docs_scroll: 0,
-            query_fields: crate::tui::screens::queries::default_fields(),
-            query_field_idx: 0,
-            query_sections: crate::tui::screens::queries::default_sections(),
-            query_result_scroll: 0,
+            // Phase Norris.1 — replaces 17 individual init lines
+            // (query_fields/idx/sections/result_scroll/mode/
+            // results_focused/save_name/saved_list/filter_*/
+            // sort_picker_*/career_table_preset).
+            queries: crate::tui::screens::queries::QueriesState::default(),
             depth_mode: icelines_core::cross_team::ScoringMode::Fantasy,
             show_admin: false,
             active_season: icelines_core::CURRENT_SEASON_STR.to_owned(),
@@ -429,20 +379,8 @@ impl App {
             group_picker_list: Vec::new(),
             group_picker_player: None,
             headshot_cache: crate::tui::headshot::HeadshotCache::new(),
-            query_mode: QueryMode::Build,
-            query_results_focused: false,
-            query_save_name: String::new(),
-            query_saved_list: Vec::new(),
-            query_filter_text: String::new(),
-            query_filter_error: None,
-            query_filter_plan: None,
-            query_filter_history: std::collections::VecDeque::new(),
-            query_filter_history_cursor: None,
-            query_filter_show_help: false,
-            sort_picker_query: String::new(),
-            sort_picker_idx: 0,
-            sort_stat_pick: None,
-            career_table_preset: Default::default(),
+            // (Phase Norris.1 — these 14 fields previously here are
+            //  now part of QueriesState above.)
             dashboard_panel: crate::tui::dashboard_panel::CompiledPanel::new(),
             league_context: crate::tui::dashboard_panel::LeagueContext::empty(),
             transactions: Vec::new(),
@@ -589,10 +527,10 @@ impl App {
         // ('f' = AddToFavorites, 'r' = Refresh, etc.) become text input
         // instead of firing the global hotkey. Without this, typing
         // "fred" as a query name dispatched AddToFavorites on the 'f'.
-        if self.screen == Screen::Queries && matches!(self.query_mode, QueryMode::SaveName) {
+        if self.screen == Screen::Queries && matches!(self.queries.mode, QueryMode::SaveName) {
             return self.handle_query_save_name(action);
         }
-        if self.screen == Screen::Queries && matches!(self.query_mode, QueryMode::FilterEdit) {
+        if self.screen == Screen::Queries && matches!(self.queries.mode, QueryMode::FilterEdit) {
             return self.handle_query_filter_edit(action);
         }
 
@@ -606,12 +544,12 @@ impl App {
                     self.selected = 0;
                     self.status =
                         "  g = add to group from any player card or team roster".to_owned();
-                } else if self.screen == Screen::Queries && self.query_mode != QueryMode::Build {
-                    self.query_mode = QueryMode::Build;
+                } else if self.screen == Screen::Queries && self.queries.mode != QueryMode::Build {
+                    self.queries.mode = QueryMode::Build;
                     self.status = "Cancelled  ·  s=save  l=load  r=reset".to_owned();
                 } else if self.screen == Screen::Queries
-                    && self.query_mode == QueryMode::Build
-                    && self.sort_stat_pick.is_some()
+                    && self.queries.mode == QueryMode::Build
+                    && self.queries.sort_stat_pick.is_some()
                 {
                     // Phase Lindsay L.3.4 (EDGE checkpoint fix): Esc on
                     // Queries Build mode with an active picker selection
@@ -619,7 +557,7 @@ impl App {
                     // QueryField path. Without this, Left/Right on the
                     // Sort by field is silently ignored once the picker
                     // has fired (sticky-pick UX wart).
-                    self.sort_stat_pick = None;
+                    self.queries.sort_stat_pick = None;
                     self.status =
                         "Sort pick cleared  ·  / picker  s=save  l=load  r=reset".to_owned();
                 } else {
@@ -641,24 +579,24 @@ impl App {
                 } else if self.screen == Screen::Playoffs {
                     self.playoffs_series = self.playoffs_series.saturating_add(1);
                 } else if self.screen == Screen::Queries {
-                    if self.query_mode == QueryMode::SortPicker {
+                    if self.queries.mode == QueryMode::SortPicker {
                         // Phase Lindsay L.3.4 — sort picker Down moves
                         // within filtered list, capped at len-1.
                         let n = crate::tui::screens::queries::sort_picker_filter(
-                            &self.sort_picker_query,
+                            &self.queries.sort_picker_query,
                         )
                         .len();
-                        if n > 0 && self.sort_picker_idx + 1 < n {
-                            self.sort_picker_idx += 1;
+                        if n > 0 && self.queries.sort_picker_idx + 1 < n {
+                            self.queries.sort_picker_idx += 1;
                         }
-                    } else if self.query_results_focused {
+                    } else if self.queries.results_focused {
                         let views = self.views();
                         let results =
                             crate::tui::screens::queries::run_query_views_with_pick_and_plan(
                                 &views,
-                                &self.query_fields,
-                                self.sort_stat_pick,
-                                self.query_filter_plan.as_ref(),
+                                &self.queries.fields,
+                                self.queries.sort_stat_pick,
+                                self.queries.filter_plan.as_ref(),
                                 self.active_season_typed.0,
                             );
                         let visible: usize = 20;
@@ -667,8 +605,8 @@ impl App {
                                 (self.selected + 1).min(results.len().saturating_sub(1));
                         } else {
                             let max_scroll = results.len().saturating_sub(visible);
-                            self.query_result_scroll =
-                                (self.query_result_scroll + 1).min(max_scroll);
+                            self.queries.result_scroll =
+                                (self.queries.result_scroll + 1).min(max_scroll);
                         }
                     } else {
                         // Phase Lindsay L.3.3 — cursor skips fields in
@@ -682,12 +620,12 @@ impl App {
                         // stranded in early sections with `▶` headers
                         // visible but unreachable.
                         let visible = crate::tui::screens::queries::visible_field_indices(
-                            &self.query_sections,
+                            &self.queries.sections,
                         );
-                        let cur_pos = visible.iter().position(|&i| i == self.query_field_idx);
+                        let cur_pos = visible.iter().position(|&i| i == self.queries.field_idx);
                         match cur_pos {
                             Some(pos) if pos + 1 < visible.len() => {
-                                self.query_field_idx = visible[pos + 1];
+                                self.queries.field_idx = visible[pos + 1];
                             }
                             _ => {
                                 // Past last visible — try to find a
@@ -696,27 +634,28 @@ impl App {
                                 // it and land on its first field.
                                 let cur_section =
                                     crate::tui::screens::queries::section_index_for_field(
-                                        &self.query_sections,
-                                        self.query_field_idx,
+                                        &self.queries.sections,
+                                        self.queries.field_idx,
                                     )
                                     .unwrap_or(0);
                                 let next_collapsed = self
-                                    .query_sections
+                                    .queries
+                                    .sections
                                     .iter()
                                     .enumerate()
                                     .skip(cur_section + 1)
                                     .find(|(_, s)| !s.expanded)
                                     .map(|(i, _)| i);
                                 if let Some(idx) = next_collapsed {
-                                    self.query_sections[idx].expanded = true;
-                                    if let Some(&first) = self.query_sections[idx].fields.first() {
-                                        self.query_field_idx = first;
+                                    self.queries.sections[idx].expanded = true;
+                                    if let Some(&first) = self.queries.sections[idx].fields.first() {
+                                        self.queries.field_idx = first;
                                     }
                                 } else {
                                     // No collapsed section ahead — focus results.
-                                    self.query_results_focused = true;
+                                    self.queries.results_focused = true;
                                     self.selected = 0;
-                                    self.query_result_scroll = 0;
+                                    self.queries.result_scroll = 0;
                                 }
                             }
                         }
@@ -747,22 +686,22 @@ impl App {
                 } else if self.screen == Screen::Playoffs {
                     self.playoffs_series = self.playoffs_series.saturating_sub(1);
                 } else if self.screen == Screen::Queries {
-                    if self.query_mode == QueryMode::SortPicker {
+                    if self.queries.mode == QueryMode::SortPicker {
                         // Phase Lindsay L.3.4 — sort picker Up moves
                         // within filtered list. Saturates at 0.
-                        self.sort_picker_idx = self.sort_picker_idx.saturating_sub(1);
-                    } else if self.query_results_focused {
+                        self.queries.sort_picker_idx = self.queries.sort_picker_idx.saturating_sub(1);
+                    } else if self.queries.results_focused {
                         if self.selected > 0 {
                             self.selected -= 1;
-                        } else if self.query_result_scroll > 0 {
-                            self.query_result_scroll -= 1;
+                        } else if self.queries.result_scroll > 0 {
+                            self.queries.result_scroll -= 1;
                         } else {
                             // Phase Lindsay L.3.3 — snap to LAST visible field.
-                            self.query_results_focused = false;
+                            self.queries.results_focused = false;
                             let visible = crate::tui::screens::queries::visible_field_indices(
-                                &self.query_sections,
+                                &self.queries.sections,
                             );
-                            self.query_field_idx = *visible.last().unwrap_or(&0);
+                            self.queries.field_idx = *visible.last().unwrap_or(&0);
                         }
                     } else {
                         // Phase Lindsay L.3.3 — cursor skips fields in
@@ -772,35 +711,35 @@ impl App {
                         // and land on its LAST field. Same intent as
                         // the Down auto-expand.
                         let visible = crate::tui::screens::queries::visible_field_indices(
-                            &self.query_sections,
+                            &self.queries.sections,
                         );
-                        let cur_pos = visible.iter().position(|&i| i == self.query_field_idx);
+                        let cur_pos = visible.iter().position(|&i| i == self.queries.field_idx);
                         if let Some(pos) = cur_pos {
                             if pos > 0 {
-                                self.query_field_idx = visible[pos - 1];
+                                self.queries.field_idx = visible[pos - 1];
                             } else {
                                 // pos == 0 → at first visible. Try
                                 // to expand a previous collapsed section.
                                 let cur_section =
                                     crate::tui::screens::queries::section_index_for_field(
-                                        &self.query_sections,
-                                        self.query_field_idx,
+                                        &self.queries.sections,
+                                        self.queries.field_idx,
                                     )
                                     .unwrap_or(0);
                                 let prev_collapsed = (0..cur_section)
                                     .rev()
-                                    .find(|&i| !self.query_sections[i].expanded);
+                                    .find(|&i| !self.queries.sections[i].expanded);
                                 if let Some(idx) = prev_collapsed {
-                                    self.query_sections[idx].expanded = true;
-                                    if let Some(&last) = self.query_sections[idx].fields.last() {
-                                        self.query_field_idx = last;
+                                    self.queries.sections[idx].expanded = true;
+                                    if let Some(&last) = self.queries.sections[idx].fields.last() {
+                                        self.queries.field_idx = last;
                                     }
                                 }
                                 // else: at top with no collapsed-prior, stay.
                             }
                         } else if let Some(&first) = visible.first() {
                             // Cursor was on a now-hidden field — snap to first visible.
-                            self.query_field_idx = first;
+                            self.queries.field_idx = first;
                         }
                     }
                 } else if self.screen == Screen::Home {
@@ -815,25 +754,25 @@ impl App {
                 }
             }
             Action::Space => {
-                if self.screen == Screen::Queries && self.query_mode == QueryMode::Build {
-                    self.query_results_focused = !self.query_results_focused;
+                if self.screen == Screen::Queries && self.queries.mode == QueryMode::Build {
+                    self.queries.results_focused = !self.queries.results_focused;
                     self.selected = 0;
-                    if !self.query_results_focused {
-                        self.query_field_idx = 0;
+                    if !self.queries.results_focused {
+                        self.queries.field_idx = 0;
                     }
                 }
             }
             Action::Right | Action::Left => {
                 match &self.screen {
-                    Screen::Queries if !self.query_results_focused => {
-                        if let Some(f) = self.query_fields.get_mut(self.query_field_idx) {
+                    Screen::Queries if !self.queries.results_focused => {
+                        if let Some(f) = self.queries.fields.get_mut(self.queries.field_idx) {
                             if matches!(action, Action::Right) {
                                 f.next();
                             } else {
                                 f.prev();
                             }
                         }
-                        self.query_result_scroll = 0;
+                        self.queries.result_scroll = 0;
                     }
                     // Scores: ←/→ moves the date by one day
                     Screen::Tonight => {
@@ -895,7 +834,7 @@ impl App {
                     // Both live under the Stats tab; ←/→ flips between them.
                     // (League / Depth used to do the same, but Depth is now
                     // its own tab — toggle removed.)
-                    Screen::Queries if !self.query_results_focused => {
+                    Screen::Queries if !self.queries.results_focused => {
                         self.prev_screen = Some(self.screen.clone());
                         self.screen = Screen::Projections;
                         self.selected = 0;
@@ -904,7 +843,7 @@ impl App {
                         self.prev_screen = Some(self.screen.clone());
                         self.screen = Screen::Queries;
                         self.selected = 0;
-                        self.query_results_focused = false;
+                        self.queries.results_focused = false;
                     }
                     _ => {}
                 }
@@ -942,7 +881,7 @@ impl App {
                     self.selected = 0;
                 } else if self.screen == Screen::Queries
                     && c == 'p'
-                    && !matches!(self.query_mode, QueryMode::SaveName)
+                    && !matches!(self.queries.mode, QueryMode::SaveName)
                 {
                     // `p` flips to the Projections sister-screen. ←/→ on
                     // Queries is consumed by field editing, so this is
@@ -950,7 +889,7 @@ impl App {
                     self.prev_screen = Some(self.screen.clone());
                     self.screen = Screen::Projections;
                     self.selected = 0;
-                    self.query_results_focused = false;
+                    self.queries.results_focused = false;
                     self.status =
                         "Projections · p:queries  ↑↓:scroll  Enter:player card".to_owned();
                 } else if self.screen == Screen::Projections && c == 'p' {
@@ -960,33 +899,33 @@ impl App {
                     self.selected = 0;
                     self.status = "Queries · p:projections  ←/→:edit  Tab:focus results".to_owned();
                 } else if self.screen == Screen::Queries {
-                    match &self.query_mode {
+                    match &self.queries.mode {
                         QueryMode::SaveName => {
                             // Typing the save name
-                            self.query_save_name.push(c);
+                            self.queries.save_name.push(c);
                         }
                         QueryMode::SortPicker => {
                             // Phase Lindsay L.3.4 — typing in the sort picker
                             // appends to the search query and resets selection
                             // index to 0 (top of newly-filtered list).
-                            self.sort_picker_query.push(c);
-                            self.sort_picker_idx = 0;
+                            self.queries.sort_picker_query.push(c);
+                            self.queries.sort_picker_idx = 0;
                         }
                         QueryMode::Build if c == 's' => {
                             // Start save-name mode
-                            self.query_mode = QueryMode::SaveName;
-                            self.query_save_name.clear();
+                            self.queries.mode = QueryMode::SaveName;
+                            self.queries.save_name.clear();
                             self.status =
                                 "Save query as: (type name, Enter to save, Esc to cancel)"
                                     .to_owned();
                         }
                         QueryMode::Build if c == 'l' => {
                             // Load saved queries list
-                            self.query_saved_list = crate::db::GroupDb::open()
+                            self.queries.saved_list = crate::db::GroupDb::open()
                                 .ok()
                                 .and_then(|db| db.list_saved_queries().ok())
                                 .unwrap_or_default();
-                            self.query_mode = QueryMode::LoadList;
+                            self.queries.mode = QueryMode::LoadList;
                             self.selected = 0;
                             self.status = "Saved queries — ↑↓ select · Enter to load · Del to delete · Esc to cancel".to_owned();
                         }
@@ -994,29 +933,29 @@ impl App {
                             // Phase Lindsay L.3.4 — `/` on Queries opens
                             // the sort picker overlay. Search-as-you-type
                             // against catalog cli_keys.
-                            self.query_mode = QueryMode::SortPicker;
-                            self.sort_picker_query.clear();
-                            self.sort_picker_idx = 0;
+                            self.queries.mode = QueryMode::SortPicker;
+                            self.queries.sort_picker_query.clear();
+                            self.queries.sort_picker_idx = 0;
                             self.status = "Sort picker — type to filter · ↑↓ select · Enter accept · Esc cancel".to_owned();
                         }
                         // Note: `f` arrives as `Action::AddToFavorites`,
                         // not `Char('f')` — the Queries+Build branch is
                         // intercepted up at that arm to enter FilterEdit.
-                        QueryMode::Build if c == 'o' && !self.query_results_focused => {
+                        QueryMode::Build if c == 'o' && !self.queries.results_focused => {
                             // UX.3 — `o` toggles the section that owns
                             // the current field cursor. Replaces the
                             // pre-UX.3 Tab→section binding (Tab now
                             // cycles screens unconditionally).
                             let _ = crate::tui::screens::queries::toggle_section_for_field(
-                                &mut self.query_sections,
-                                self.query_field_idx,
+                                &mut self.queries.sections,
+                                self.queries.field_idx,
                             );
                             let visible = crate::tui::screens::queries::visible_field_indices(
-                                &self.query_sections,
+                                &self.queries.sections,
                             );
-                            if !visible.contains(&self.query_field_idx) {
+                            if !visible.contains(&self.queries.field_idx) {
                                 if let Some(&first) = visible.first() {
-                                    self.query_field_idx = first;
+                                    self.queries.field_idx = first;
                                 }
                             }
                         }
@@ -1030,17 +969,17 @@ impl App {
                     } else if c == '[' {
                         // Phase Lindsay L.4.4 — `[` cycles career-table
                         // preset BACKWARD (vim-canonical bracket motion).
-                        self.career_table_preset = self.career_table_preset.prev();
+                        self.queries.career_table_preset = self.queries.career_table_preset.prev();
                         self.status = format!(
                             "Career preset: {}  ·  [/]: cycle  ·  c: comps",
-                            self.career_table_preset.label(),
+                            self.queries.career_table_preset.label(),
                         );
                     } else if c == ']' {
                         // Phase Lindsay L.4.4 — `]` cycles FORWARD.
-                        self.career_table_preset = self.career_table_preset.next();
+                        self.queries.career_table_preset = self.queries.career_table_preset.next();
                         self.status = format!(
                             "Career preset: {}  ·  [/]: cycle  ·  c: comps",
-                            self.career_table_preset.label(),
+                            self.queries.career_table_preset.label(),
                         );
                     }
                 } else if matches!(self.screen, Screen::Depth | Screen::DepthTeam(_)) && c == 's' {
@@ -1242,14 +1181,14 @@ impl App {
                 if self.screen == Screen::Search {
                     self.search_query.pop();
                     self.selected = 0;
-                } else if self.screen == Screen::Queries && self.query_mode == QueryMode::SaveName {
-                    self.query_save_name.pop();
-                } else if self.screen == Screen::Queries && self.query_mode == QueryMode::SortPicker
+                } else if self.screen == Screen::Queries && self.queries.mode == QueryMode::SaveName {
+                    self.queries.save_name.pop();
+                } else if self.screen == Screen::Queries && self.queries.mode == QueryMode::SortPicker
                 {
                     // Phase Lindsay L.3.4 — Backspace in sort picker
                     // pops the search query and resets selection.
-                    self.sort_picker_query.pop();
-                    self.sort_picker_idx = 0;
+                    self.queries.sort_picker_query.pop();
+                    self.queries.sort_picker_idx = 0;
                 }
             }
             Action::Tab => {
@@ -1263,10 +1202,10 @@ impl App {
             Action::TabPrev => self.cycle_screen_back(),
             Action::Refresh => {
                 if self.screen == Screen::Queries {
-                    self.query_fields = crate::tui::screens::queries::default_fields();
-                    self.query_sections = crate::tui::screens::queries::default_sections();
-                    self.query_field_idx = 0;
-                    self.query_result_scroll = 0;
+                    self.queries.fields = crate::tui::screens::queries::default_fields();
+                    self.queries.sections = crate::tui::screens::queries::default_sections();
+                    self.queries.field_idx = 0;
+                    self.queries.result_scroll = 0;
                     self.status = "Query fields reset.".to_owned();
                 } else if self.screen == Screen::Tonight {
                     // Force refresh scores for the active date
@@ -1338,11 +1277,11 @@ impl App {
                 // results panel, 'f' falls through to favorites add
                 // (the user has a row selected).
                 if self.screen == Screen::Queries
-                    && matches!(self.query_mode, QueryMode::Build)
-                    && !self.query_results_focused
+                    && matches!(self.queries.mode, QueryMode::Build)
+                    && !self.queries.results_focused
                 {
-                    self.query_mode = QueryMode::FilterEdit;
-                    self.query_filter_error = None;
+                    self.queries.mode = QueryMode::FilterEdit;
+                    self.queries.filter_error = None;
                     self.status = "Filter — type Phase Art Ross filter (e.g. country IN (CAN, USA) AND age<25) · Enter accept · Esc cancel".to_owned();
                     return false;
                 }
@@ -1379,8 +1318,8 @@ impl App {
                     self.prev_screen = Some(self.screen.clone());
                     self.screen = screen.clone();
                     self.selected = 0;
-                    self.query_result_scroll = 0;
-                    self.query_results_focused = false;
+                    self.queries.result_scroll = 0;
+                    self.queries.results_focused = false;
                     self.group_picker_open = false;
                     self.schedule_selected = 0;
                     self.maybe_fetch_scores();
@@ -1715,43 +1654,43 @@ impl App {
             Action::Quit => return true,
             Action::Back | Action::Escape => {
                 // Cancel save — drop the typed name, go back to Build.
-                self.query_save_name.clear();
-                self.query_mode = QueryMode::Build;
+                self.queries.save_name.clear();
+                self.queries.mode = QueryMode::Build;
                 self.status = "Save cancelled.".to_owned();
             }
             Action::Enter => {
-                let name = self.query_save_name.trim().to_owned();
+                let name = self.queries.save_name.trim().to_owned();
                 if !name.is_empty() {
                     // Wave 24 — also persist the active free-form
                     // filter text so the saved preset captures both
                     // the structured fields AND the Phase Art Ross
                     // overlay state.
                     let json = crate::tui::screens::queries::fields_and_filter_to_json(
-                        &self.query_fields,
-                        &self.query_filter_text,
+                        &self.queries.fields,
+                        &self.queries.filter_text,
                     );
                     if let Ok(db) = crate::db::GroupDb::open() {
                         let _ = db.save_query(&name, &json);
                         self.status = format!("Saved query '{name}'  ·  l=load  s=save  r=reset");
                     }
                 }
-                self.query_mode = QueryMode::Build;
+                self.queries.mode = QueryMode::Build;
             }
             Action::Backspace => {
-                self.query_save_name.pop();
+                self.queries.save_name.pop();
             }
-            Action::Char(c) => self.query_save_name.push(c),
-            Action::Space => self.query_save_name.push(' '),
+            Action::Char(c) => self.queries.save_name.push(c),
+            Action::Space => self.queries.save_name.push(' '),
             // Hotkey actions become their associated character. Without
             // this, 'f' would fire AddToFavorites and the user could
             // never type "fred", "fox", "ford" etc. as a query name.
-            Action::Refresh => self.query_save_name.push('r'),
-            Action::Install => self.query_save_name.push('i'),
-            Action::AddToGroup => self.query_save_name.push('g'),
-            Action::AddToFavorites => self.query_save_name.push('f'),
+            Action::Refresh => self.queries.save_name.push('r'),
+            Action::Install => self.queries.save_name.push('i'),
+            Action::AddToGroup => self.queries.save_name.push('g'),
+            Action::AddToFavorites => self.queries.save_name.push('f'),
             Action::GoToTab(n) => {
                 let ch = char::from_digit((n + 1) as u32, 10).unwrap_or('?');
-                self.query_save_name.push(ch);
+                self.queries.save_name.push(ch);
             }
             // '/' while typing — ignore (don't reopen, don't insert)
             Action::Search => {}
@@ -1779,26 +1718,26 @@ impl App {
                 // Wave 24d — `?` toggles the side cheatsheet.
                 // Doesn't open the global help overlay (that
                 // would close the editor); stays in FilterEdit.
-                self.query_filter_show_help = !self.query_filter_show_help;
+                self.queries.filter_show_help = !self.queries.filter_show_help;
             }
             Action::Back | Action::Escape => {
                 // Cancel — drop the in-progress text + clear any active
                 // plan. The user can press `f` again to start fresh.
-                self.query_filter_text.clear();
-                self.query_filter_error = None;
-                self.query_filter_plan = None;
-                self.query_filter_history_cursor = None;
-                self.query_mode = QueryMode::Build;
+                self.queries.filter_text.clear();
+                self.queries.filter_error = None;
+                self.queries.filter_plan = None;
+                self.queries.filter_history_cursor = None;
+                self.queries.mode = QueryMode::Build;
                 self.status = "Filter cleared.".to_owned();
             }
             Action::Enter => {
-                let text = self.query_filter_text.trim();
+                let text = self.queries.filter_text.trim();
                 if text.is_empty() {
                     // Empty Enter = clear the active plan and exit.
-                    self.query_filter_plan = None;
-                    self.query_filter_error = None;
-                    self.query_filter_history_cursor = None;
-                    self.query_mode = QueryMode::Build;
+                    self.queries.filter_plan = None;
+                    self.queries.filter_error = None;
+                    self.queries.filter_history_cursor = None;
+                    self.queries.mode = QueryMode::Build;
                     self.status = "Filter cleared.".to_owned();
                 } else {
                     // Free-form text → CLI variant. `FilterInput::Tui`
@@ -1808,18 +1747,18 @@ impl App {
                         icelines_query::FilterInput::Cli(text.to_owned()),
                     ) {
                         Ok(plan) => {
-                            self.query_filter_plan = Some(plan);
-                            self.query_filter_error = None;
+                            self.queries.filter_plan = Some(plan);
+                            self.queries.filter_error = None;
                             // Push onto history (newest first); dedupe
                             // against an identical front entry so
                             // hammering Enter doesn't fill the ring
                             // with duplicates.
                             push_filter_history(
-                                &mut self.query_filter_history,
+                                &mut self.queries.filter_history,
                                 text.to_owned(),
                             );
-                            self.query_filter_history_cursor = None;
-                            self.query_mode = QueryMode::Build;
+                            self.queries.filter_history_cursor = None;
+                            self.queries.mode = QueryMode::Build;
                             self.status =
                                 format!("Filter applied: {text}  ·  press f to edit");
                         }
@@ -1830,7 +1769,7 @@ impl App {
                                 .map(|e| e.to_string())
                                 .collect::<Vec<_>>()
                                 .join("; ");
-                            self.query_filter_error = Some(msg);
+                            self.queries.filter_error = Some(msg);
                         }
                     }
                 }
@@ -1840,73 +1779,73 @@ impl App {
                 // edit (cursor=None) Up jumps to the newest history
                 // entry; from a historical entry Up walks further
                 // back. Hits a wall at the oldest entry.
-                if self.query_filter_history.is_empty() {
+                if self.queries.filter_history.is_empty() {
                     return false;
                 }
-                let next = match self.query_filter_history_cursor {
+                let next = match self.queries.filter_history_cursor {
                     None => 0,
-                    Some(i) if i + 1 < self.query_filter_history.len() => i + 1,
+                    Some(i) if i + 1 < self.queries.filter_history.len() => i + 1,
                     Some(i) => i, // already at oldest, stay
                 };
-                if let Some(entry) = self.query_filter_history.get(next) {
-                    self.query_filter_text = entry.clone();
-                    self.query_filter_history_cursor = Some(next);
-                    self.query_filter_error = None;
+                if let Some(entry) = self.queries.filter_history.get(next) {
+                    self.queries.filter_text = entry.clone();
+                    self.queries.filter_history_cursor = Some(next);
+                    self.queries.filter_error = None;
                 }
             }
             Action::Down => {
                 // Navigate toward newer history; from cursor=0 step
                 // back to live edit (cursor=None, text cleared).
-                match self.query_filter_history_cursor {
+                match self.queries.filter_history_cursor {
                     None => {} // already live, stay
                     Some(0) => {
-                        self.query_filter_history_cursor = None;
-                        self.query_filter_text.clear();
-                        self.query_filter_error = None;
+                        self.queries.filter_history_cursor = None;
+                        self.queries.filter_text.clear();
+                        self.queries.filter_error = None;
                     }
                     Some(i) => {
                         let next = i - 1;
-                        if let Some(entry) = self.query_filter_history.get(next) {
-                            self.query_filter_text = entry.clone();
-                            self.query_filter_history_cursor = Some(next);
-                            self.query_filter_error = None;
+                        if let Some(entry) = self.queries.filter_history.get(next) {
+                            self.queries.filter_text = entry.clone();
+                            self.queries.filter_history_cursor = Some(next);
+                            self.queries.filter_error = None;
                         }
                     }
                 }
             }
             Action::Backspace => {
-                self.query_filter_text.pop();
-                self.query_filter_history_cursor = None;
+                self.queries.filter_text.pop();
+                self.queries.filter_history_cursor = None;
             }
             Action::Char(c) => {
-                self.query_filter_text.push(c);
-                self.query_filter_history_cursor = None;
+                self.queries.filter_text.push(c);
+                self.queries.filter_history_cursor = None;
             }
             Action::Space => {
-                self.query_filter_text.push(' ');
-                self.query_filter_history_cursor = None;
+                self.queries.filter_text.push(' ');
+                self.queries.filter_history_cursor = None;
             }
             // Hotkeys → their associated character (mirrors save-name).
             Action::Refresh => {
-                self.query_filter_text.push('r');
-                self.query_filter_history_cursor = None;
+                self.queries.filter_text.push('r');
+                self.queries.filter_history_cursor = None;
             }
             Action::Install => {
-                self.query_filter_text.push('i');
-                self.query_filter_history_cursor = None;
+                self.queries.filter_text.push('i');
+                self.queries.filter_history_cursor = None;
             }
             Action::AddToGroup => {
-                self.query_filter_text.push('g');
-                self.query_filter_history_cursor = None;
+                self.queries.filter_text.push('g');
+                self.queries.filter_history_cursor = None;
             }
             Action::AddToFavorites => {
-                self.query_filter_text.push('f');
-                self.query_filter_history_cursor = None;
+                self.queries.filter_text.push('f');
+                self.queries.filter_history_cursor = None;
             }
             Action::GoToTab(n) => {
                 let ch = char::from_digit((n + 1) as u32, 10).unwrap_or('?');
-                self.query_filter_text.push(ch);
-                self.query_filter_history_cursor = None;
+                self.queries.filter_text.push(ch);
+                self.queries.filter_history_cursor = None;
             }
             Action::Search => {}
             _ => {}
@@ -2290,7 +2229,7 @@ impl App {
             }
         };
         self.selected = 0;
-        self.query_results_focused = false;
+        self.queries.results_focused = false;
     }
 
     /// Return the (normalized_name, full_name) of the currently highlighted player
@@ -2346,13 +2285,13 @@ impl App {
                 let results =
                     crate::tui::screens::queries::run_query_views_with_pick_and_plan(
                         &views,
-                        &self.query_fields,
-                        self.sort_stat_pick,
-                        self.query_filter_plan.as_ref(),
+                        &self.queries.fields,
+                        self.queries.sort_stat_pick,
+                        self.queries.filter_plan.as_ref(),
                         self.active_season_typed.0,
                     );
                 let row_idx =
-                    self.query_result_scroll + self.selected.min(results.len().saturating_sub(1));
+                    self.queries.result_scroll + self.selected.min(results.len().saturating_sub(1));
                 results
                     .get(row_idx)
                     .map(|(_, v)| (v.identity.name_normalized.clone(), v.full_name().to_owned()))
@@ -2474,16 +2413,16 @@ impl App {
                 }
             }
             Screen::Queries => {
-                match self.query_mode {
+                match self.queries.mode {
                     QueryMode::SaveName => {
                         // Save the current query with the typed name
-                        let name = self.query_save_name.trim().to_owned();
+                        let name = self.queries.save_name.trim().to_owned();
                         if !name.is_empty() {
                             // Wave 24 — same fields+filter envelope as the
                             // dedicated handler in handle_query_save_name.
                             let json = crate::tui::screens::queries::fields_and_filter_to_json(
-                                &self.query_fields,
-                                &self.query_filter_text,
+                                &self.queries.fields,
+                                &self.queries.filter_text,
                             );
                             if let Ok(db) = crate::db::GroupDb::open() {
                                 let _ = db.save_query(&name, &json);
@@ -2491,11 +2430,11 @@ impl App {
                                     format!("Saved query '{name}'  ·  l=load  s=save  r=reset");
                             }
                         }
-                        self.query_mode = QueryMode::Build;
+                        self.queries.mode = QueryMode::Build;
                     }
                     QueryMode::LoadList => {
                         // Load the selected saved query.
-                        if let Some((name, json)) = self.query_saved_list.get(self.selected) {
+                        if let Some((name, json)) = self.queries.saved_list.get(self.selected) {
                             // Wave 24 — recover both structured fields
                             // AND the free-form filter text. Re-parse
                             // the text via parse_query so the active
@@ -2508,12 +2447,12 @@ impl App {
                             // the editor (`f`), see the recovered text,
                             // and fix it.
                             let filter_text = crate::tui::screens::queries::apply_saved_json(
-                                &mut self.query_fields,
+                                &mut self.queries.fields,
                                 json,
                             );
-                            self.query_filter_text = filter_text.clone();
-                            self.query_filter_error = None;
-                            self.query_filter_plan = None;
+                            self.queries.filter_text = filter_text.clone();
+                            self.queries.filter_error = None;
+                            self.queries.filter_plan = None;
                             let mut status = format!(
                                 "Loaded query '{name}'  ·  ←→ to adjust  s=save  r=reset"
                             );
@@ -2522,7 +2461,7 @@ impl App {
                                     icelines_query::FilterInput::Cli(filter_text.clone()),
                                 ) {
                                     Ok(plan) => {
-                                        self.query_filter_plan = Some(plan);
+                                        self.queries.filter_plan = Some(plan);
                                         status = format!(
                                             "Loaded '{name}' + filter applied  ·  f to edit"
                                         );
@@ -2539,8 +2478,8 @@ impl App {
                                 }
                             }
                             self.status = status;
-                            self.query_mode = QueryMode::Build;
-                            self.query_result_scroll = 0;
+                            self.queries.mode = QueryMode::Build;
+                            self.queries.result_scroll = 0;
                         }
                     }
                     QueryMode::SortPicker => {
@@ -2550,17 +2489,17 @@ impl App {
                         // the picker. The sort dispatch sees `Some(stat)`
                         // on next render and uses `StatId::sort_cmp`.
                         let results = crate::tui::screens::queries::sort_picker_filter(
-                            &self.sort_picker_query,
+                            &self.queries.sort_picker_query,
                         );
-                        if let Some(&stat) = results.get(self.sort_picker_idx) {
-                            self.sort_stat_pick = Some(stat);
+                        if let Some(&stat) = results.get(self.queries.sort_picker_idx) {
+                            self.queries.sort_stat_pick = Some(stat);
                             self.status = format!(
                                 "Sort: {} ({})  ·  / picker  s save  l load",
                                 stat.label(),
                                 stat.cli_key(),
                             );
-                            self.query_mode = QueryMode::Build;
-                            self.query_result_scroll = 0;
+                            self.queries.mode = QueryMode::Build;
+                            self.queries.result_scroll = 0;
                         } else {
                             // EDGE-7 (L.5b post-fix) — empty filter,
                             // Enter pressed. Don't silently drop the
@@ -2570,7 +2509,7 @@ impl App {
                             self.status = format!(
                                 "No matches for {:?} — type to refine \
                                  or Esc to cancel",
-                                self.sort_picker_query
+                                self.queries.sort_picker_query
                             );
                             // Picker stays open (do NOT switch back to
                             // Build mode). The user adjusts the query.
@@ -2583,12 +2522,12 @@ impl App {
                         let results =
                             crate::tui::screens::queries::run_query_views_with_pick_and_plan(
                                 &views,
-                                &self.query_fields,
-                                self.sort_stat_pick,
-                                self.query_filter_plan.as_ref(),
+                                &self.queries.fields,
+                                self.queries.sort_stat_pick,
+                                self.queries.filter_plan.as_ref(),
                                 self.active_season_typed.0,
                             );
-                        let row_idx = self.query_result_scroll
+                        let row_idx = self.queries.result_scroll
                             + self.selected.min(results.len().saturating_sub(1));
                         if let Some((_, v)) = results.get(row_idx) {
                             let pid = v.identity.id;
@@ -2743,7 +2682,7 @@ impl App {
     }
 
     pub(crate) fn cycle_screen(&mut self) {
-        self.query_results_focused = false;
+        self.queries.results_focused = false;
         // Phase Foster.2 — Favorites tab inserted between Goalies and
         // Scores per spec §"Tab insertion" (GLASS H4). 9-tab cycle:
         //   League → Depth → Queries → Goalies → Favorites → Scores
@@ -2767,7 +2706,7 @@ impl App {
         self.screen = next;
         self.selected = 0;
         self.schedule_selected = 0;
-        self.query_result_scroll = 0;
+        self.queries.result_scroll = 0;
         self.maybe_fetch_scores();
         self.maybe_fetch_schedule();
         self.maybe_fetch_playoffs();
@@ -2775,7 +2714,7 @@ impl App {
 
     /// Reverse of `cycle_screen` — Shift-Tab.
     pub(crate) fn cycle_screen_back(&mut self) {
-        self.query_results_focused = false;
+        self.queries.results_focused = false;
         let prev = match &self.screen {
             Screen::Home | Screen::Team(_) | Screen::PlayerById(_) | Screen::CompsById(_) => {
                 Screen::Playoffs
@@ -2795,7 +2734,7 @@ impl App {
         self.screen = prev;
         self.selected = 0;
         self.schedule_selected = 0;
-        self.query_result_scroll = 0;
+        self.queries.result_scroll = 0;
         self.maybe_fetch_scores();
         self.maybe_fetch_schedule();
         self.maybe_fetch_playoffs();
@@ -2911,7 +2850,7 @@ mod tests {
 
         // Default: cursor on field 0 (Sort by) which is in section 0.
         // Section 0 starts expanded.
-        let initial_s0 = app.query_sections[0].expanded;
+        let initial_s0 = app.queries.sections[0].expanded;
         assert!(initial_s0, "section 0 starts expanded by default");
 
         // `o` → toggles section 0 (cursor's section). Screen unchanged.
@@ -2922,7 +2861,7 @@ mod tests {
             "o on Queries toggles section, doesn't advance screen"
         );
         assert_eq!(
-            app.query_sections[0].expanded, !initial_s0,
+            app.queries.sections[0].expanded, !initial_s0,
             "section 0 expansion flipped by o"
         );
 
@@ -2930,19 +2869,19 @@ mod tests {
         // snapped to the next visible field — field 1 (Position),
         // which lives in section 1.
         assert_eq!(
-            app.query_field_idx, 1,
+            app.queries.field_idx, 1,
             "cursor snaps to next visible field after section collapse"
         );
 
         // Second `o` now targets section 1 (where the cursor lives).
-        let initial_s1 = app.query_sections[1].expanded;
+        let initial_s1 = app.queries.sections[1].expanded;
         app.handle(Action::Char('o'));
         assert_eq!(
-            app.query_sections[1].expanded, !initial_s1,
+            app.queries.sections[1].expanded, !initial_s1,
             "second o toggles section 1 (cursor's new home)"
         );
         // Section 0 still collapsed — wasn't touched by the second o.
-        assert_eq!(app.query_sections[0].expanded, !initial_s0);
+        assert_eq!(app.queries.sections[0].expanded, !initial_s0);
     }
 
     /// UX.3 — Tab on the Queries screen now cycles screens
@@ -2956,7 +2895,7 @@ mod tests {
         assert_eq!(app.screen, Screen::Queries);
 
         // Sections starts in default state — Tab must NOT touch them.
-        let s0_before = app.query_sections[0].expanded;
+        let s0_before = app.queries.sections[0].expanded;
 
         app.handle(Action::Tab);
         assert_ne!(
@@ -2965,7 +2904,7 @@ mod tests {
             "Tab on Queries must advance to the next screen"
         );
         // Sections untouched.
-        assert_eq!(app.query_sections[0].expanded, s0_before);
+        assert_eq!(app.queries.sections[0].expanded, s0_before);
     }
 
     #[test]
@@ -4096,7 +4035,7 @@ mod tests {
         app.screen = Screen::Queries;
         app.handle(Action::AddToFavorites); // 'f' hotkey
         assert_eq!(
-            app.query_mode,
+            app.queries.mode,
             QueryMode::FilterEdit,
             "f on Queries must enter FilterEdit"
         );
@@ -4108,7 +4047,7 @@ mod tests {
     fn l0_tui_filter_edit_typing_appends_to_text() {
         let mut app = App::new(false);
         app.screen = Screen::Queries;
-        app.query_mode = QueryMode::FilterEdit;
+        app.queries.mode = QueryMode::FilterEdit;
         for c in "country=CAN".chars() {
             if c == ' ' {
                 app.handle(Action::Space);
@@ -4116,7 +4055,7 @@ mod tests {
                 app.handle(Action::Char(c));
             }
         }
-        assert_eq!(app.query_filter_text, "country=CAN");
+        assert_eq!(app.queries.filter_text, "country=CAN");
     }
 
     /// 'f' typed while in FilterEdit becomes a literal 'f', not a
@@ -4126,10 +4065,10 @@ mod tests {
     fn l0_tui_filter_edit_f_hotkey_is_text_input() {
         let mut app = App::new(false);
         app.screen = Screen::Queries;
-        app.query_mode = QueryMode::FilterEdit;
+        app.queries.mode = QueryMode::FilterEdit;
         app.handle(Action::AddToFavorites); // 'f' becomes literal 'f'
-        assert_eq!(app.query_filter_text, "f");
-        assert_eq!(app.query_mode, QueryMode::FilterEdit);
+        assert_eq!(app.queries.filter_text, "f");
+        assert_eq!(app.queries.mode, QueryMode::FilterEdit);
     }
 
     /// Backspace pops one character.
@@ -4137,10 +4076,10 @@ mod tests {
     fn l0_tui_filter_edit_backspace_pops_char() {
         let mut app = App::new(false);
         app.screen = Screen::Queries;
-        app.query_mode = QueryMode::FilterEdit;
-        app.query_filter_text = "country=CA".to_owned();
+        app.queries.mode = QueryMode::FilterEdit;
+        app.queries.filter_text = "country=CA".to_owned();
         app.handle(Action::Backspace);
-        assert_eq!(app.query_filter_text, "country=C");
+        assert_eq!(app.queries.filter_text, "country=C");
     }
 
     /// Enter on a valid filter parses + stores the plan and returns
@@ -4149,19 +4088,19 @@ mod tests {
     fn l0_tui_filter_edit_enter_valid_parses_and_exits() {
         let mut app = App::new(false);
         app.screen = Screen::Queries;
-        app.query_mode = QueryMode::FilterEdit;
-        app.query_filter_text = "country=CAN".to_owned();
+        app.queries.mode = QueryMode::FilterEdit;
+        app.queries.filter_text = "country=CAN".to_owned();
         app.handle(Action::Enter);
         assert_eq!(
-            app.query_mode,
+            app.queries.mode,
             QueryMode::Build,
             "valid Enter must exit FilterEdit"
         );
         assert!(
-            app.query_filter_plan.is_some(),
+            app.queries.filter_plan.is_some(),
             "valid Enter must store the parsed plan"
         );
-        assert!(app.query_filter_error.is_none(), "no error on success");
+        assert!(app.queries.filter_error.is_none(), "no error on success");
     }
 
     /// Enter on an invalid filter keeps the editor open and stores
@@ -4170,21 +4109,21 @@ mod tests {
     fn l0_tui_filter_edit_enter_invalid_stays_with_error() {
         let mut app = App::new(false);
         app.screen = Screen::Queries;
-        app.query_mode = QueryMode::FilterEdit;
+        app.queries.mode = QueryMode::FilterEdit;
         // Garbage that the parser will reject.
-        app.query_filter_text = "((((".to_owned();
+        app.queries.filter_text = "((((".to_owned();
         app.handle(Action::Enter);
         assert_eq!(
-            app.query_mode,
+            app.queries.mode,
             QueryMode::FilterEdit,
             "invalid filter must NOT exit the editor"
         );
         assert!(
-            app.query_filter_error.is_some(),
+            app.queries.filter_error.is_some(),
             "invalid filter must surface a parser error"
         );
         assert!(
-            app.query_filter_plan.is_none(),
+            app.queries.filter_plan.is_none(),
             "invalid filter must NOT store a plan"
         );
     }
@@ -4196,22 +4135,22 @@ mod tests {
         let mut app = App::new(false);
         app.screen = Screen::Queries;
         // Pretend the user previously had a plan applied.
-        app.query_filter_text = "country=CAN".to_owned();
-        app.query_mode = QueryMode::FilterEdit;
+        app.queries.filter_text = "country=CAN".to_owned();
+        app.queries.mode = QueryMode::FilterEdit;
         let _ = app.handle(Action::Enter); // apply, exit
-        assert!(app.query_filter_plan.is_some());
+        assert!(app.queries.filter_plan.is_some());
 
         // Re-enter editor, type more, Esc.
-        app.query_mode = QueryMode::FilterEdit;
-        app.query_filter_text.push_str(" AND age<30");
+        app.queries.mode = QueryMode::FilterEdit;
+        app.queries.filter_text.push_str(" AND age<30");
         app.handle(Action::Escape);
-        assert_eq!(app.query_mode, QueryMode::Build);
+        assert_eq!(app.queries.mode, QueryMode::Build);
         assert!(
-            app.query_filter_text.is_empty(),
+            app.queries.filter_text.is_empty(),
             "Esc must clear the in-progress text"
         );
         assert!(
-            app.query_filter_plan.is_none(),
+            app.queries.filter_plan.is_none(),
             "Esc must clear the active plan"
         );
     }
@@ -4222,18 +4161,18 @@ mod tests {
     fn l0_tui_filter_edit_empty_enter_clears_plan() {
         let mut app = App::new(false);
         app.screen = Screen::Queries;
-        app.query_filter_text = "country=CAN".to_owned();
-        app.query_mode = QueryMode::FilterEdit;
+        app.queries.filter_text = "country=CAN".to_owned();
+        app.queries.mode = QueryMode::FilterEdit;
         let _ = app.handle(Action::Enter);
-        assert!(app.query_filter_plan.is_some(), "precondition");
+        assert!(app.queries.filter_plan.is_some(), "precondition");
 
         // Re-enter, leave empty, Enter.
-        app.query_mode = QueryMode::FilterEdit;
-        app.query_filter_text.clear();
+        app.queries.mode = QueryMode::FilterEdit;
+        app.queries.filter_text.clear();
         app.handle(Action::Enter);
-        assert_eq!(app.query_mode, QueryMode::Build);
+        assert_eq!(app.queries.mode, QueryMode::Build);
         assert!(
-            app.query_filter_plan.is_none(),
+            app.queries.filter_plan.is_none(),
             "empty Enter must clear the active plan"
         );
     }
@@ -4245,10 +4184,10 @@ mod tests {
     fn l0_tui_filter_edit_f_with_results_focused_does_not_enter() {
         let mut app = App::new(false);
         app.screen = Screen::Queries;
-        app.query_results_focused = true;
+        app.queries.results_focused = true;
         app.handle(Action::AddToFavorites);
         assert_eq!(
-            app.query_mode,
+            app.queries.mode,
             QueryMode::Build,
             "results-focused 'f' must fall through (favorites flow), \
              not enter FilterEdit"
@@ -4262,16 +4201,16 @@ mod tests {
     fn l0_tui_filter_edit_whitespace_enter_clears_plan() {
         let mut app = App::new(false);
         app.screen = Screen::Queries;
-        app.query_filter_text = "country=CAN".to_owned();
-        app.query_mode = QueryMode::FilterEdit;
+        app.queries.filter_text = "country=CAN".to_owned();
+        app.queries.mode = QueryMode::FilterEdit;
         let _ = app.handle(Action::Enter);
-        assert!(app.query_filter_plan.is_some());
+        assert!(app.queries.filter_plan.is_some());
 
-        app.query_mode = QueryMode::FilterEdit;
-        app.query_filter_text = "   \t  ".to_owned();
+        app.queries.mode = QueryMode::FilterEdit;
+        app.queries.filter_text = "   \t  ".to_owned();
         app.handle(Action::Enter);
-        assert_eq!(app.query_mode, QueryMode::Build);
-        assert!(app.query_filter_plan.is_none());
+        assert_eq!(app.queries.mode, QueryMode::Build);
+        assert!(app.queries.filter_plan.is_none());
     }
 
     /// Re-entering FilterEdit preserves the previously-typed text
@@ -4281,16 +4220,16 @@ mod tests {
     fn l0_tui_filter_edit_text_persists_across_reentry() {
         let mut app = App::new(false);
         app.screen = Screen::Queries;
-        app.query_mode = QueryMode::FilterEdit;
-        app.query_filter_text = "country=CAN".to_owned();
+        app.queries.mode = QueryMode::FilterEdit;
+        app.queries.filter_text = "country=CAN".to_owned();
         app.handle(Action::Enter);
-        assert_eq!(app.query_mode, QueryMode::Build);
+        assert_eq!(app.queries.mode, QueryMode::Build);
 
         // Re-open. Text must still be there.
         app.handle(Action::AddToFavorites); // 'f' → FilterEdit
-        assert_eq!(app.query_mode, QueryMode::FilterEdit);
+        assert_eq!(app.queries.mode, QueryMode::FilterEdit);
         assert_eq!(
-            app.query_filter_text, "country=CAN",
+            app.queries.filter_text, "country=CAN",
             "re-opening the editor must preserve last-applied text"
         );
     }
@@ -4302,7 +4241,7 @@ mod tests {
     fn l0_tui_filter_edit_quit_propagates() {
         let mut app = App::new(false);
         app.screen = Screen::Queries;
-        app.query_mode = QueryMode::FilterEdit;
+        app.queries.mode = QueryMode::FilterEdit;
         let should_quit = app.handle(Action::Quit);
         assert!(
             should_quit,
@@ -4321,22 +4260,22 @@ mod tests {
         app.screen = Screen::Queries;
         // Simulate a freshly-listed saved-queries DB row.
         let json = crate::tui::screens::queries::fields_and_filter_to_json(
-            &app.query_fields,
+            &app.queries.fields,
             "country=CAN",
         );
-        app.query_saved_list = vec![("preset1".to_owned(), json)];
-        app.query_mode = QueryMode::LoadList;
+        app.queries.saved_list = vec![("preset1".to_owned(), json)];
+        app.queries.mode = QueryMode::LoadList;
         app.selected = 0;
 
         app.handle(Action::Enter);
 
-        assert_eq!(app.query_mode, QueryMode::Build);
+        assert_eq!(app.queries.mode, QueryMode::Build);
         assert_eq!(
-            app.query_filter_text, "country=CAN",
+            app.queries.filter_text, "country=CAN",
             "load must restore the filter text onto App state"
         );
         assert!(
-            app.query_filter_plan.is_some(),
+            app.queries.filter_plan.is_some(),
             "load must re-parse the filter into an active plan"
         );
     }
@@ -4348,28 +4287,28 @@ mod tests {
         let mut app = App::new(false);
         app.screen = Screen::Queries;
         // Pre-load a stale plan to ensure load actually clears it.
-        app.query_filter_text = "stale".to_owned();
-        app.query_filter_plan = icelines_query::parse_query(
+        app.queries.filter_text = "stale".to_owned();
+        app.queries.filter_plan = icelines_query::parse_query(
             icelines_query::FilterInput::Cli("country=CAN".to_owned()),
         )
         .ok();
 
         let json = crate::tui::screens::queries::fields_and_filter_to_json(
-            &app.query_fields,
+            &app.queries.fields,
             "",
         );
-        app.query_saved_list = vec![("no-filter-preset".to_owned(), json)];
-        app.query_mode = QueryMode::LoadList;
+        app.queries.saved_list = vec![("no-filter-preset".to_owned(), json)];
+        app.queries.mode = QueryMode::LoadList;
         app.selected = 0;
 
         app.handle(Action::Enter);
 
         assert_eq!(
-            app.query_filter_text, "",
+            app.queries.filter_text, "",
             "load with empty filter must reset filter text"
         );
         assert!(
-            app.query_filter_plan.is_none(),
+            app.queries.filter_plan.is_none(),
             "load with empty filter must clear the active plan"
         );
     }
@@ -4381,15 +4320,15 @@ mod tests {
         let mut app = App::new(false);
         app.screen = Screen::Queries;
         let v1 = r#"[{"label":"Sort by","selected":2}]"#.to_owned();
-        app.query_saved_list = vec![("legacy".to_owned(), v1)];
-        app.query_mode = QueryMode::LoadList;
+        app.queries.saved_list = vec![("legacy".to_owned(), v1)];
+        app.queries.mode = QueryMode::LoadList;
         app.selected = 0;
 
         app.handle(Action::Enter);
 
-        assert_eq!(app.query_filter_text, "");
-        assert!(app.query_filter_plan.is_none());
-        assert_eq!(app.query_fields[0].selected, 2);
+        assert_eq!(app.queries.filter_text, "");
+        assert!(app.queries.filter_plan.is_none());
+        assert_eq!(app.queries.fields[0].selected, 2);
     }
 
     /// Loading a saved JSON with a filter that no longer parses
@@ -4409,19 +4348,19 @@ mod tests {
             "filter_text": "((((country=CAN",
         })
         .to_string();
-        app.query_saved_list = vec![("broken".to_owned(), json)];
-        app.query_mode = QueryMode::LoadList;
+        app.queries.saved_list = vec![("broken".to_owned(), json)];
+        app.queries.mode = QueryMode::LoadList;
         app.selected = 0;
 
         app.handle(Action::Enter);
 
-        assert_eq!(app.query_mode, QueryMode::Build);
+        assert_eq!(app.queries.mode, QueryMode::Build);
         assert_eq!(
-            app.query_filter_text, "((((country=CAN",
+            app.queries.filter_text, "((((country=CAN",
             "filter text must round-trip even when the grammar rejects it"
         );
         assert!(
-            app.query_filter_plan.is_none(),
+            app.queries.filter_plan.is_none(),
             "unparseable filter must NOT install a plan"
         );
     }
@@ -4467,24 +4406,24 @@ mod tests {
     fn l0_w24b_enter_pushes_to_history() {
         let mut app = App::new(false);
         app.screen = Screen::Queries;
-        app.query_mode = QueryMode::FilterEdit;
-        app.query_filter_text = "country=CAN".to_owned();
+        app.queries.mode = QueryMode::FilterEdit;
+        app.queries.filter_text = "country=CAN".to_owned();
         app.handle(Action::Enter);
-        assert_eq!(app.query_filter_history.len(), 1);
-        assert_eq!(app.query_filter_history[0], "country=CAN");
+        assert_eq!(app.queries.filter_history.len(), 1);
+        assert_eq!(app.queries.filter_history[0], "country=CAN");
 
         // Re-enter and Enter again with same filter — no duplicate.
-        app.query_mode = QueryMode::FilterEdit;
+        app.queries.mode = QueryMode::FilterEdit;
         app.handle(Action::Enter);
-        assert_eq!(app.query_filter_history.len(), 1);
+        assert_eq!(app.queries.filter_history.len(), 1);
 
         // Enter a different filter — pushed.
-        app.query_mode = QueryMode::FilterEdit;
-        app.query_filter_text = "age<25".to_owned();
+        app.queries.mode = QueryMode::FilterEdit;
+        app.queries.filter_text = "age<25".to_owned();
         app.handle(Action::Enter);
-        assert_eq!(app.query_filter_history.len(), 2);
-        assert_eq!(app.query_filter_history[0], "age<25");
-        assert_eq!(app.query_filter_history[1], "country=CAN");
+        assert_eq!(app.queries.filter_history.len(), 2);
+        assert_eq!(app.queries.filter_history[0], "age<25");
+        assert_eq!(app.queries.filter_history[1], "country=CAN");
     }
 
     /// Parse-failure Enter does NOT push to history — only the
@@ -4493,11 +4432,11 @@ mod tests {
     fn l0_w24b_parse_error_does_not_push_history() {
         let mut app = App::new(false);
         app.screen = Screen::Queries;
-        app.query_mode = QueryMode::FilterEdit;
-        app.query_filter_text = "((((".to_owned();
+        app.queries.mode = QueryMode::FilterEdit;
+        app.queries.filter_text = "((((".to_owned();
         app.handle(Action::Enter);
-        assert!(app.query_filter_error.is_some());
-        assert!(app.query_filter_history.is_empty());
+        assert!(app.queries.filter_error.is_some());
+        assert!(app.queries.filter_history.is_empty());
     }
 
     /// Up navigates from live edit (cursor=None) into the newest
@@ -4507,30 +4446,30 @@ mod tests {
         let mut app = App::new(false);
         app.screen = Screen::Queries;
         // Seed the history.
-        app.query_filter_history = ["age<25", "country=CAN", "p>=20"]
+        app.queries.filter_history = ["age<25", "country=CAN", "p>=20"]
             .iter()
             .map(|s| s.to_string())
             .collect();
-        app.query_mode = QueryMode::FilterEdit;
+        app.queries.mode = QueryMode::FilterEdit;
         // Cursor=None initially.
-        assert!(app.query_filter_history_cursor.is_none());
+        assert!(app.queries.filter_history_cursor.is_none());
 
         app.handle(Action::Up);
-        assert_eq!(app.query_filter_history_cursor, Some(0));
-        assert_eq!(app.query_filter_text, "age<25");
+        assert_eq!(app.queries.filter_history_cursor, Some(0));
+        assert_eq!(app.queries.filter_text, "age<25");
 
         app.handle(Action::Up);
-        assert_eq!(app.query_filter_history_cursor, Some(1));
-        assert_eq!(app.query_filter_text, "country=CAN");
+        assert_eq!(app.queries.filter_history_cursor, Some(1));
+        assert_eq!(app.queries.filter_text, "country=CAN");
 
         app.handle(Action::Up);
-        assert_eq!(app.query_filter_history_cursor, Some(2));
-        assert_eq!(app.query_filter_text, "p>=20");
+        assert_eq!(app.queries.filter_history_cursor, Some(2));
+        assert_eq!(app.queries.filter_text, "p>=20");
 
         // Past the oldest — stay.
         app.handle(Action::Up);
-        assert_eq!(app.query_filter_history_cursor, Some(2));
-        assert_eq!(app.query_filter_text, "p>=20");
+        assert_eq!(app.queries.filter_history_cursor, Some(2));
+        assert_eq!(app.queries.filter_text, "p>=20");
     }
 
     /// Down walks toward newer entries; from cursor=0 returns to
@@ -4539,32 +4478,32 @@ mod tests {
     fn l0_w24b_down_walks_history_forward_to_live() {
         let mut app = App::new(false);
         app.screen = Screen::Queries;
-        app.query_filter_history = ["age<25", "country=CAN"]
+        app.queries.filter_history = ["age<25", "country=CAN"]
             .iter()
             .map(|s| s.to_string())
             .collect();
-        app.query_mode = QueryMode::FilterEdit;
+        app.queries.mode = QueryMode::FilterEdit;
 
         // Walk Up twice to reach cursor=1.
         app.handle(Action::Up);
         app.handle(Action::Up);
-        assert_eq!(app.query_filter_history_cursor, Some(1));
-        assert_eq!(app.query_filter_text, "country=CAN");
+        assert_eq!(app.queries.filter_history_cursor, Some(1));
+        assert_eq!(app.queries.filter_text, "country=CAN");
 
         // Down → cursor=0, text=age<25.
         app.handle(Action::Down);
-        assert_eq!(app.query_filter_history_cursor, Some(0));
-        assert_eq!(app.query_filter_text, "age<25");
+        assert_eq!(app.queries.filter_history_cursor, Some(0));
+        assert_eq!(app.queries.filter_text, "age<25");
 
         // Down → cursor=None, text="".
         app.handle(Action::Down);
-        assert!(app.query_filter_history_cursor.is_none());
-        assert_eq!(app.query_filter_text, "");
+        assert!(app.queries.filter_history_cursor.is_none());
+        assert_eq!(app.queries.filter_text, "");
 
         // Down at live — no-op.
         app.handle(Action::Down);
-        assert!(app.query_filter_history_cursor.is_none());
-        assert_eq!(app.query_filter_text, "");
+        assert!(app.queries.filter_history_cursor.is_none());
+        assert_eq!(app.queries.filter_text, "");
     }
 
     /// Up with empty history is a no-op (no panic, cursor stays
@@ -4573,11 +4512,11 @@ mod tests {
     fn l0_w24b_up_empty_history_is_noop() {
         let mut app = App::new(false);
         app.screen = Screen::Queries;
-        app.query_mode = QueryMode::FilterEdit;
-        assert!(app.query_filter_history.is_empty());
+        app.queries.mode = QueryMode::FilterEdit;
+        assert!(app.queries.filter_history.is_empty());
         app.handle(Action::Up);
-        assert!(app.query_filter_history_cursor.is_none());
-        assert_eq!(app.query_filter_text, "");
+        assert!(app.queries.filter_history_cursor.is_none());
+        assert_eq!(app.queries.filter_text, "");
     }
 
     /// Typing while navigating history breaks navigation: cursor
@@ -4587,19 +4526,19 @@ mod tests {
     fn l0_w24b_typing_while_navigating_resets_cursor() {
         let mut app = App::new(false);
         app.screen = Screen::Queries;
-        app.query_filter_history = vec!["age<25".to_owned()].into();
-        app.query_mode = QueryMode::FilterEdit;
+        app.queries.filter_history = vec!["age<25".to_owned()].into();
+        app.queries.mode = QueryMode::FilterEdit;
 
         app.handle(Action::Up);
-        assert_eq!(app.query_filter_history_cursor, Some(0));
-        assert_eq!(app.query_filter_text, "age<25");
+        assert_eq!(app.queries.filter_history_cursor, Some(0));
+        assert_eq!(app.queries.filter_text, "age<25");
 
         app.handle(Action::Char('!'));
         assert!(
-            app.query_filter_history_cursor.is_none(),
+            app.queries.filter_history_cursor.is_none(),
             "typing while in history must drop cursor to live"
         );
-        assert_eq!(app.query_filter_text, "age<25!");
+        assert_eq!(app.queries.filter_text, "age<25!");
     }
 
     /// Backspace also resets the cursor — the user is now editing
@@ -4608,13 +4547,13 @@ mod tests {
     fn l0_w24b_backspace_while_navigating_resets_cursor() {
         let mut app = App::new(false);
         app.screen = Screen::Queries;
-        app.query_filter_history = vec!["age<25".to_owned()].into();
-        app.query_mode = QueryMode::FilterEdit;
+        app.queries.filter_history = vec!["age<25".to_owned()].into();
+        app.queries.mode = QueryMode::FilterEdit;
 
         app.handle(Action::Up);
         app.handle(Action::Backspace);
-        assert!(app.query_filter_history_cursor.is_none());
-        assert_eq!(app.query_filter_text, "age<2");
+        assert!(app.queries.filter_history_cursor.is_none());
+        assert_eq!(app.queries.filter_text, "age<2");
     }
 
     // ── Phase Art Ross — Wave 24d grammar cheatsheet toggle ────────────────
@@ -4626,25 +4565,25 @@ mod tests {
     fn l0_w24d_help_toggles_filter_cheatsheet() {
         let mut app = App::new(false);
         app.screen = Screen::Queries;
-        app.query_mode = QueryMode::FilterEdit;
-        assert!(!app.query_filter_show_help);
+        app.queries.mode = QueryMode::FilterEdit;
+        assert!(!app.queries.filter_show_help);
         assert!(!app.show_help, "global help must be off initially");
 
         app.handle(Action::Help);
-        assert!(app.query_filter_show_help, "first ? turns cheatsheet on");
+        assert!(app.queries.filter_show_help, "first ? turns cheatsheet on");
         assert!(
             !app.show_help,
             "global help overlay must NOT open from inside FilterEdit"
         );
         assert_eq!(
-            app.query_mode,
+            app.queries.mode,
             QueryMode::FilterEdit,
             "? must NOT exit FilterEdit"
         );
 
         app.handle(Action::Help);
-        assert!(!app.query_filter_show_help, "second ? turns cheatsheet off");
-        assert_eq!(app.query_mode, QueryMode::FilterEdit);
+        assert!(!app.queries.filter_show_help, "second ? turns cheatsheet off");
+        assert_eq!(app.queries.mode, QueryMode::FilterEdit);
     }
 
     /// Outside FilterEdit, `?` keeps its standard meaning (opens
@@ -4655,13 +4594,13 @@ mod tests {
         let mut app = App::new(false);
         app.screen = Screen::Queries;
         // query_mode defaults to Build — NOT FilterEdit.
-        assert!(matches!(app.query_mode, QueryMode::Build));
+        assert!(matches!(app.queries.mode, QueryMode::Build));
         app.handle(Action::Help);
         assert!(
             app.show_help,
             "? in Build mode must open the global help overlay"
         );
-        assert!(!app.query_filter_show_help);
+        assert!(!app.queries.filter_show_help);
     }
 
     /// Cheatsheet flag persists across mode toggles within the
@@ -4671,21 +4610,21 @@ mod tests {
     fn l0_w24d_cheatsheet_flag_persists_across_enter_apply() {
         let mut app = App::new(false);
         app.screen = Screen::Queries;
-        app.query_mode = QueryMode::FilterEdit;
+        app.queries.mode = QueryMode::FilterEdit;
         app.handle(Action::Help);
-        assert!(app.query_filter_show_help);
+        assert!(app.queries.filter_show_help);
 
-        app.query_filter_text = "country=CAN".to_owned();
+        app.queries.filter_text = "country=CAN".to_owned();
         app.handle(Action::Enter); // apply, exit to Build
-        assert_eq!(app.query_mode, QueryMode::Build);
+        assert_eq!(app.queries.mode, QueryMode::Build);
         assert!(
-            app.query_filter_show_help,
+            app.queries.filter_show_help,
             "cheatsheet flag must survive Enter-apply"
         );
 
         // Re-enter editor — flag still on.
         app.handle(Action::AddToFavorites); // 'f' → FilterEdit
-        assert_eq!(app.query_mode, QueryMode::FilterEdit);
-        assert!(app.query_filter_show_help);
+        assert_eq!(app.queries.mode, QueryMode::FilterEdit);
+        assert!(app.queries.filter_show_help);
     }
 }
