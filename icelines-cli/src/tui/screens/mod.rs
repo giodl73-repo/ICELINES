@@ -32,7 +32,9 @@ pub fn render(f: &mut Frame, app: &App) {
         ])
         .split(area);
 
-    render_nav(f, app, chunks[0]);
+    // Phase Masterton.1 — chrome-aware header + footer.
+    let chrome = active_chrome(app);
+    render_header(f, app, &chrome, chunks[0]);
 
     match &app.screen {
         Screen::Home => home::render(f, app, chunks[1]),
@@ -61,23 +63,10 @@ pub fn render(f: &mut Frame, app: &App) {
         Screen::Favorites => favorites::render(f, app, chunks[1]),
     }
 
-    // Phase Foster +8 — append the active timeframe indicator
-    // (right-aligned visually via the suffix). Only renders when
-    // it's not the Day default so a fresh launch stays uncluttered.
-    let status_text = if app.active_timeframe == icelines_core::timeframe::Timeframe::Day {
-        app.status.clone()
-    } else {
-        format!(
-            "{}  ·  Timeframe: {} ({})",
-            app.status,
-            crate::tui::app::timeframe_label(app.active_timeframe),
-            crate::tui::app::timeframe_anchor_hint(app.active_timeframe),
-        )
-    };
-    f.render_widget(
-        Paragraph::new(status_text).style(Style::default().fg(Color::DarkGray)),
-        chunks[2],
-    );
+    // Phase Masterton.1 — chrome-aware footer. When app.status
+    // is non-empty (transient flash), show it. Otherwise render
+    // the chrome's keybind chips followed by GLOBAL_KEYBINDS.
+    render_footer(f, app, &chrome, chunks[2]);
 
     // Group picker overlay — shown on any player-list screen when g is pressed.
     // Rendered at top level so it floats over the current screen.
@@ -173,6 +162,124 @@ fn tab_for_screen(screen: &Screen) -> usize {
     }
 }
 
+// ── Phase Masterton.1 — chrome dispatch + render helpers ─────────────────────
+
+/// Phase Masterton.1 — dispatch to the active screen's `chrome()`
+/// accessor. Falls back to `ScreenChrome::default()` (empty) for
+/// screens that don't yet have an accessor — those continue to
+/// render a tabs-only header and a global-keybinds-only footer.
+fn active_chrome(app: &App) -> crate::tui::chrome::ScreenChrome {
+    match &app.screen {
+        Screen::Queries => queries::chrome(&app.queries),
+        Screen::Schedule => schedule::chrome(&app.schedule),
+        Screen::Transactions => transactions::chrome(&app.txs),
+        Screen::Goalies => goalies::chrome(&app.goalies),
+        Screen::Playoffs => playoffs::chrome(&app.playoffs),
+        Screen::Tonight => misc::chrome(&app.tonight),
+        // Sub-screens and other screens use empty chrome for now.
+        // Masterton.2 will add accessors for the rest.
+        _ => crate::tui::chrome::ScreenChrome::default(),
+    }
+}
+
+/// Phase Masterton.1 — header row. Tabs on the left (existing
+/// `render_nav`), screen title right-aligned when terminal is
+/// ≥120 cols (per spec glass-1). At narrower widths the title
+/// drops and tabs win the row.
+fn render_header(
+    f: &mut Frame,
+    app: &App,
+    chrome: &crate::tui::chrome::ScreenChrome,
+    area: Rect,
+) {
+    if area.width >= 120 && !chrome.title.is_empty() {
+        // Reserve room on the right for the title (with a small
+        // gap). The right pane gets exactly title_width + 2 cols.
+        let title_w = chrome.title.chars().count() as u16 + 2;
+        let pane = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Min(0), Constraint::Length(title_w)])
+            .split(area);
+        render_nav(f, app, pane[0]);
+        f.render_widget(
+            Paragraph::new(chrome.title.as_str())
+                .alignment(ratatui::layout::Alignment::Right)
+                .style(Style::default().fg(Color::Cyan)),
+            pane[1],
+        );
+    } else {
+        render_nav(f, app, area);
+    }
+}
+
+/// Phase Masterton.1 — footer row. Renders chrome.keybinds chips
+/// followed by GLOBAL_KEYBINDS, with overflow drop at narrow
+/// widths (per spec glass-2). When `app.status` is non-empty it
+/// takes priority (transient flash replaces chips).
+///
+/// Today, status carries both transient flashes ("Saved query
+/// 'fred'") AND permanent state hints ("Goalies sort: SV%"). The
+/// permanent ones are duplicated by chrome.title now; the
+/// transient ones still need a place to land. Until each screen
+/// migrates its status writes from permanent → declarative
+/// keybinds, the footer prefers status when set so nothing is
+/// silently dropped.
+fn render_footer(
+    f: &mut Frame,
+    app: &App,
+    chrome: &crate::tui::chrome::ScreenChrome,
+    area: Rect,
+) {
+    let dim = Style::default().fg(Color::DarkGray);
+    if !app.status.is_empty() {
+        // Status takes priority — transient flash + legacy
+        // permanent hints both render here for now.
+        let status_text =
+            if app.active_timeframe == icelines_core::timeframe::Timeframe::Day {
+                app.status.clone()
+            } else {
+                format!(
+                    "{}  ·  Timeframe: {} ({})",
+                    app.status,
+                    crate::tui::app::timeframe_label(app.active_timeframe),
+                    crate::tui::app::timeframe_anchor_hint(app.active_timeframe),
+                )
+            };
+        f.render_widget(Paragraph::new(status_text).style(dim), area);
+        return;
+    }
+
+    // Chrome-driven chips. Combine screen keybinds + globals.
+    let mut chips: Vec<crate::tui::chrome::KeyHint> = chrome.keybinds.clone();
+    chips.extend_from_slice(crate::tui::chrome::GLOBAL_KEYBINDS);
+
+    // Build spans. Each chip is "  Key:action" with a separator.
+    // Drop trailing chips with `…` if we'd overflow (glass-2).
+    let mut spans: Vec<Span> = Vec::new();
+    let mut used: u16 = 0;
+    let avail = area.width;
+    let dim_key = Style::default()
+        .fg(Color::Cyan)
+        .add_modifier(Modifier::BOLD);
+    let sep = Span::styled("  ·  ", dim);
+    for (i, hint) in chips.iter().enumerate() {
+        let chip_w = (hint.key.chars().count() + 1 + hint.action.chars().count()) as u16
+            + if i == 0 { 0 } else { 5 }; // separator width
+        if used + chip_w > avail.saturating_sub(2) {
+            // Out of room — drop trailing chips with `…`.
+            spans.push(Span::styled(" …", dim));
+            break;
+        }
+        if i > 0 {
+            spans.push(sep.clone());
+        }
+        spans.push(Span::styled(hint.key, dim_key));
+        spans.push(Span::styled(format!(":{}", hint.action), dim));
+        used = used.saturating_add(chip_w);
+    }
+    f.render_widget(Paragraph::new(Line::from(spans)), area);
+}
+
 fn render_nav(f: &mut Frame, app: &App, area: Rect) {
     let tab_labels = [
         "League",
@@ -230,16 +337,11 @@ fn render_nav(f: &mut Frame, app: &App, area: Rect) {
         ));
     }
 
-    let hint = if app.show_admin {
-        "  Esc:close admin"
-    } else if app.show_season_picker {
-        "  Esc:cancel picker"
-    } else if app.active_type == icelines_core::season_stats::SeasonType::Playoff {
-        "  Shift+P:regular  y:season  F:admin  ?:help  q:quit"
-    } else {
-        "  g:groups  y:season  Shift+P:playoff  F:admin  ?:help  q:quit"
-    };
-    spans.push(Span::styled(hint, Style::default().fg(Color::DarkGray)));
+    // Phase Masterton.1 — global keybind hints moved out of the
+    // tab strip into the footer chips. The strip now only carries
+    // tabs + season indicator + playoff marker. Overlay-state
+    // hints (admin/season picker Esc) become flash messages set
+    // by the open handler.
     f.render_widget(Paragraph::new(Line::from(spans)), area);
 }
 

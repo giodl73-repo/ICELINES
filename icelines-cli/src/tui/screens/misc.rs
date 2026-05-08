@@ -39,6 +39,31 @@ pub struct TonightScreenState {
     pub selected: usize,
 }
 
+// ── Phase Masterton.1 — declarative chrome ───────────────────────────────────
+
+/// Phase Masterton.1 — chrome accessor for the Tonight/Scores
+/// tab. Title carries the active date (or "today" sentinel);
+/// keybinds describe date navigation.
+pub fn chrome(state: &TonightScreenState) -> crate::tui::chrome::ScreenChrome {
+    use crate::tui::chrome::{KeyHint, ScreenChrome};
+
+    let title = if state.date.is_empty() {
+        "Scores — today".to_owned()
+    } else {
+        format!("Scores — {}", state.date)
+    };
+
+    let keybinds = vec![
+        KeyHint::new("d", "date picker"),
+        KeyHint::new("t", "today"),
+        KeyHint::new("←/→", "prev/next day"),
+        KeyHint::new("↑↓", "select"),
+        KeyHint::new("Enter", "game detail"),
+    ];
+
+    ScreenChrome { title, keybinds }
+}
+
 impl Default for TonightScreenState {
     fn default() -> Self {
         Self {
@@ -99,6 +124,34 @@ mod norris_state_tests {
             dbg.contains("TonightScreenState"),
             "Debug output must include the struct name; got: {dbg}"
         );
+    }
+
+    // ── Phase Masterton.1 — chrome accessor contract ───────────────────────
+
+    /// Default chrome reads "Scores — today" (empty date
+    /// sentinel) and advertises date-navigation keybinds.
+    #[test]
+    fn l0_masterton_tonight_chrome_default_today() {
+        let s = TonightScreenState::default();
+        let c = chrome(&s);
+        assert_eq!(c.title, "Scores — today");
+        let keys: Vec<&str> = c.keybinds.iter().map(|k| k.key).collect();
+        for needed in ["d", "t", "←/→"] {
+            assert!(
+                keys.contains(&needed),
+                "default chrome must advertise {needed:?}; got: {keys:?}"
+            );
+        }
+    }
+
+    /// Non-empty date appears in the title.
+    #[test]
+    fn l0_masterton_tonight_chrome_specific_date_in_title() {
+        let mut s = TonightScreenState::default();
+        s.date = "2026-04-29".to_owned();
+        let c = chrome(&s);
+        assert!(c.title.contains("2026-04-29"));
+        assert!(!c.title.contains("today"));
     }
 }
 

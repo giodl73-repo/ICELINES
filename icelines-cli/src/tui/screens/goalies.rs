@@ -33,6 +33,33 @@ pub struct GoaliesState {
     pub min_gp: u32,
 }
 
+// ── Phase Masterton.1 — declarative chrome ───────────────────────────────────
+
+/// Phase Masterton.1 — chrome accessor for the Goalies tab.
+/// Title carries the active sort + min-GP filter; keybinds
+/// reflect the cycle keys.
+pub fn chrome(state: &GoaliesState) -> crate::tui::chrome::ScreenChrome {
+    use crate::tui::chrome::{KeyHint, ScreenChrome};
+
+    let sort_label = SORTS
+        .get(state.sort as usize)
+        .map(|s| s.label())
+        .unwrap_or("?");
+    let title = format!(
+        "Goalies — {sort_label} · GP ≥ {}",
+        state.min_gp
+    );
+
+    let keybinds = vec![
+        KeyHint::new("s", "sort"),
+        KeyHint::new("m", "min GP"),
+        KeyHint::new("↑↓", "select"),
+        KeyHint::new("Enter", "open card"),
+    ];
+
+    ScreenChrome { title, keybinds }
+}
+
 impl Default for GoaliesState {
     fn default() -> Self {
         Self {
@@ -94,6 +121,33 @@ mod norris_state_tests {
             dbg.contains("GoaliesState"),
             "Debug output must include the struct name; got: {dbg}"
         );
+    }
+
+    // ── Phase Masterton.1 — chrome accessor contract ───────────────────────
+
+    /// Default chrome includes the SV% sort label and the GP=15
+    /// filter in the title; keybinds advertise s/m cycle keys.
+    #[test]
+    fn l0_masterton_goalies_chrome_default() {
+        let s = GoaliesState::default();
+        let c = chrome(&s);
+        assert!(
+            c.title.contains("GP ≥ 15"),
+            "default chrome must show GP ≥ 15; got: {}",
+            c.title
+        );
+        let keys: Vec<&str> = c.keybinds.iter().map(|k| k.key).collect();
+        assert!(keys.contains(&"s"));
+        assert!(keys.contains(&"m"));
+    }
+
+    /// Min-GP changes surface in the title.
+    #[test]
+    fn l0_masterton_goalies_chrome_min_gp_in_title() {
+        let mut s = GoaliesState::default();
+        s.min_gp = 25;
+        let c = chrome(&s);
+        assert!(c.title.contains("GP ≥ 25"));
     }
 }
 

@@ -53,6 +53,39 @@ pub struct ScheduleScreenState {
     pub selected: usize,
 }
 
+// ── Phase Masterton.1 — declarative chrome ───────────────────────────────────
+
+/// Phase Masterton.1 — chrome accessor for the Schedule tab.
+/// Title carries the active week; keybinds depend on whether
+/// search mode is open.
+pub fn chrome(state: &ScheduleScreenState) -> crate::tui::chrome::ScreenChrome {
+    use crate::tui::chrome::{KeyHint, ScreenChrome};
+
+    let title = if state.week.is_empty() {
+        "Schedule".to_owned()
+    } else {
+        format!("Schedule — week of {}", state.week)
+    };
+
+    let keybinds = if state.search_mode {
+        vec![
+            KeyHint::new("Enter", "apply"),
+            KeyHint::new("Esc", "cancel"),
+            KeyHint::new("type", "team or matchup"),
+        ]
+    } else {
+        vec![
+            KeyHint::new("/", "search"),
+            KeyHint::new("←/→", "prev/next week"),
+            KeyHint::new("t", "today"),
+            KeyHint::new("D", "pick date"),
+            KeyHint::new("Enter", "open team / matchup"),
+        ]
+    };
+
+    ScreenChrome { title, keybinds }
+}
+
 impl Default for ScheduleScreenState {
     fn default() -> Self {
         Self {
@@ -192,6 +225,40 @@ mod norris_state_tests {
         assert!(
             dbg.contains("ScheduleScreenState"),
             "Debug output must include the struct name; got: {dbg}"
+        );
+    }
+
+    // ── Phase Masterton.1 — chrome accessor contract ───────────────────────
+
+    /// Default state yields chrome — title carries the active
+    /// week (non-empty), keybinds are the navigation set.
+    #[test]
+    fn l0_masterton_schedule_chrome_default_includes_week_in_title() {
+        let s = ScheduleScreenState::default();
+        let c = chrome(&s);
+        assert!(
+            c.title.starts_with("Schedule"),
+            "Schedule chrome title must start with 'Schedule'; got: {}",
+            c.title
+        );
+        let keys: Vec<&str> = c.keybinds.iter().map(|k| k.key).collect();
+        assert!(keys.contains(&"/"));
+        assert!(keys.contains(&"←/→"));
+    }
+
+    /// Search-mode state yields a different keybind set —
+    /// Enter/Esc/type instead of the navigation keys.
+    #[test]
+    fn l0_masterton_schedule_chrome_search_mode_swaps_keybinds() {
+        let mut s = ScheduleScreenState::default();
+        s.search_mode = true;
+        let c = chrome(&s);
+        let keys: Vec<&str> = c.keybinds.iter().map(|k| k.key).collect();
+        assert!(keys.contains(&"Enter"));
+        assert!(keys.contains(&"Esc"));
+        assert!(
+            !keys.contains(&"/"),
+            "search-mode chrome must NOT advertise / (already in search)"
         );
     }
 }

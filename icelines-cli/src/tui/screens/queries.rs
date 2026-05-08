@@ -58,6 +58,66 @@ pub struct QueriesState {
     pub career_table_preset: crate::tui::screens::player::CareerTablePreset,
 }
 
+// ── Phase Masterton.1 — declarative chrome ───────────────────────────────────
+
+/// Phase Masterton.1 — chrome accessor for the Queries tab.
+/// The shell (screens/mod.rs) consumes this to render the
+/// header title + footer keybind chips consistently across
+/// screens.
+///
+/// Mode-aware: the title carries a breadcrumb that reflects
+/// which sub-mode the editor is in (Build / FilterEdit / SaveName
+/// / LoadList / SortPicker), and the keybinds advertise the
+/// actions valid for that mode.
+pub fn chrome(state: &QueriesState) -> crate::tui::chrome::ScreenChrome {
+    use crate::tui::app::QueryMode;
+    use crate::tui::chrome::{KeyHint, ScreenChrome};
+
+    let title = match state.mode {
+        QueryMode::Build => "Stats / Queries".to_owned(),
+        QueryMode::FilterEdit => "Stats / Queries / Filter".to_owned(),
+        QueryMode::SaveName => "Stats / Queries / Save".to_owned(),
+        QueryMode::LoadList => "Stats / Queries / Load".to_owned(),
+        QueryMode::SortPicker => "Stats / Queries / Sort".to_owned(),
+    };
+
+    let keybinds = match state.mode {
+        QueryMode::Build => vec![
+            KeyHint::new("f", "filter"),
+            KeyHint::new("/", "sort"),
+            KeyHint::new("s", "save"),
+            KeyHint::new("l", "load"),
+            KeyHint::new("o", "toggle section"),
+            KeyHint::new("←/→", "edit field"),
+            KeyHint::new("Space", "focus results"),
+            KeyHint::new("Enter", "open card"),
+        ],
+        QueryMode::FilterEdit => vec![
+            KeyHint::new("Enter", "apply"),
+            KeyHint::new("Esc", "cancel"),
+            KeyHint::new("?", "grammar"),
+            KeyHint::new("↑↓", "history"),
+        ],
+        QueryMode::SaveName => vec![
+            KeyHint::new("Enter", "save"),
+            KeyHint::new("Esc", "cancel"),
+        ],
+        QueryMode::LoadList => vec![
+            KeyHint::new("Enter", "load"),
+            KeyHint::new("Esc", "cancel"),
+            KeyHint::new("↑↓", "select"),
+        ],
+        QueryMode::SortPicker => vec![
+            KeyHint::new("Enter", "pick"),
+            KeyHint::new("Esc", "cancel"),
+            KeyHint::new("↑↓", "select"),
+            KeyHint::new("type", "filter"),
+        ],
+    };
+
+    ScreenChrome { title, keybinds }
+}
+
 impl Default for QueriesState {
     fn default() -> Self {
         Self {
@@ -2149,5 +2209,42 @@ mod tests {
             dbg.contains("QueriesState"),
             "Debug output must include the struct name; got: {dbg}"
         );
+    }
+
+    // ── Phase Masterton.1 — chrome accessor contract ───────────────────────
+
+    /// Default state yields the Build-mode chrome — title
+    /// breadcrumb is "Stats / Queries", keybinds advertise the
+    /// editor entry points (`f`/`/`/`s`/`l`).
+    #[test]
+    fn l0_masterton_queries_chrome_default_is_build_mode() {
+        let s = QueriesState::default();
+        let c = chrome(&s);
+        assert_eq!(c.title, "Stats / Queries");
+        let keys: Vec<&str> = c.keybinds.iter().map(|k| k.key).collect();
+        for needed in ["f", "/", "s", "l"] {
+            assert!(
+                keys.contains(&needed),
+                "Build-mode chrome must advertise {needed:?}; got: {keys:?}"
+            );
+        }
+    }
+
+    /// FilterEdit mode yields a different chrome — title shifts
+    /// to ".../Filter", keybinds reflect the editor's actions.
+    #[test]
+    fn l0_masterton_queries_chrome_filter_edit_mode() {
+        use crate::tui::app::QueryMode;
+        let mut s = QueriesState::default();
+        s.mode = QueryMode::FilterEdit;
+        let c = chrome(&s);
+        assert!(
+            c.title.ends_with("/ Filter"),
+            "FilterEdit title must end with '/ Filter'; got: {}",
+            c.title
+        );
+        let keys: Vec<&str> = c.keybinds.iter().map(|k| k.key).collect();
+        assert!(keys.contains(&"Enter"));
+        assert!(keys.contains(&"Esc"));
     }
 }

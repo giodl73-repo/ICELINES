@@ -32,6 +32,30 @@ pub struct PlayoffsScreenState {
     pub series: usize,
 }
 
+// ── Phase Masterton.1 — declarative chrome ───────────────────────────────────
+
+/// Phase Masterton.1 — chrome accessor for the Playoffs tab.
+/// Title carries the active round + series indices; keybinds
+/// describe round/series navigation.
+pub fn chrome(state: &PlayoffsScreenState) -> crate::tui::chrome::ScreenChrome {
+    use crate::tui::chrome::{KeyHint, ScreenChrome};
+
+    let title = format!(
+        "Playoffs — round {} · series {}",
+        state.round + 1,
+        state.series + 1
+    );
+
+    let keybinds = vec![
+        KeyHint::new("←/→", "prev/next round"),
+        KeyHint::new("↑↓", "select series"),
+        KeyHint::new("Enter", "series detail"),
+        KeyHint::new("y", "season"),
+    ];
+
+    ScreenChrome { title, keybinds }
+}
+
 impl Default for PlayoffsScreenState {
     fn default() -> Self {
         Self {
@@ -90,6 +114,32 @@ mod norris_state_tests {
             dbg.contains("PlayoffsScreenState"),
             "Debug output must include the struct name; got: {dbg}"
         );
+    }
+
+    // ── Phase Masterton.1 — chrome accessor contract ───────────────────────
+
+    /// Default chrome shows round 1, series 1 (1-indexed in
+    /// the user-facing title); keybinds advertise navigation.
+    #[test]
+    fn l0_masterton_playoffs_chrome_default() {
+        let s = PlayoffsScreenState::default();
+        let c = chrome(&s);
+        assert!(c.title.contains("round 1"));
+        assert!(c.title.contains("series 1"));
+        let keys: Vec<&str> = c.keybinds.iter().map(|k| k.key).collect();
+        assert!(keys.contains(&"←/→"));
+        assert!(keys.contains(&"y"));
+    }
+
+    /// Round/series indices surface in the title (1-indexed).
+    #[test]
+    fn l0_masterton_playoffs_chrome_indices_one_indexed() {
+        let mut s = PlayoffsScreenState::default();
+        s.round = 2;
+        s.series = 4;
+        let c = chrome(&s);
+        assert!(c.title.contains("round 3"));
+        assert!(c.title.contains("series 5"));
     }
 }
 use crate::tui::playoffs::{playoff_year_for_season, PlayoffsState};

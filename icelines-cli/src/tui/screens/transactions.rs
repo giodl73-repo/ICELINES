@@ -66,6 +66,44 @@ pub struct TransactionsState {
     pub search_mode: bool,
 }
 
+// ── Phase Masterton.1 — declarative chrome ───────────────────────────────────
+
+/// Phase Masterton.1 — chrome accessor for the Transactions tab.
+/// Title reflects the active filters; keybinds depend on whether
+/// search mode is open.
+pub fn chrome(state: &TransactionsState) -> crate::tui::chrome::ScreenChrome {
+    use crate::tui::chrome::{KeyHint, ScreenChrome};
+
+    let title = match (
+        state.team_filter.as_deref(),
+        state.kind_filter,
+    ) {
+        (Some(t), Some(k)) => {
+            format!("Transactions — {t} · {}", k.label())
+        }
+        (Some(t), None) => format!("Transactions — {t}"),
+        (None, Some(k)) => format!("Transactions — {}", k.label()),
+        (None, None) => "Transactions".to_owned(),
+    };
+
+    let keybinds = if state.search_mode {
+        vec![
+            KeyHint::new("Enter", "apply"),
+            KeyHint::new("Esc", "cancel"),
+            KeyHint::new("type", "substring"),
+        ]
+    } else {
+        vec![
+            KeyHint::new("/", "search"),
+            KeyHint::new("T", "team filter"),
+            KeyHint::new("k", "kind filter"),
+            KeyHint::new("↑↓", "select"),
+        ]
+    };
+
+    ScreenChrome { title, keybinds }
+}
+
 impl Default for TransactionsState {
     fn default() -> Self {
         Self {
@@ -590,6 +628,38 @@ mod norris_state_tests {
         assert!(
             dbg.contains("TransactionsState"),
             "Debug output must include the struct name; got: {dbg}"
+        );
+    }
+
+    // ── Phase Masterton.1 — chrome accessor contract ───────────────────────
+
+    /// Default state yields a "Transactions" title (no filter
+    /// suffix) and the standard navigation keybinds.
+    #[test]
+    fn l0_masterton_txs_chrome_default() {
+        let s = TransactionsState::default();
+        let c = chrome(&s);
+        assert_eq!(c.title, "Transactions");
+        let keys: Vec<&str> = c.keybinds.iter().map(|k| k.key).collect();
+        for needed in ["/", "T", "k"] {
+            assert!(
+                keys.contains(&needed),
+                "default chrome must advertise {needed:?}; got: {keys:?}"
+            );
+        }
+    }
+
+    /// Active filters surface in the title — e.g., setting a
+    /// team filter to "EDM" appends to the title.
+    #[test]
+    fn l0_masterton_txs_chrome_title_reflects_filters() {
+        let mut s = TransactionsState::default();
+        s.team_filter = Some("EDM".to_owned());
+        let c = chrome(&s);
+        assert!(
+            c.title.contains("EDM"),
+            "team-filter title must include 'EDM'; got: {}",
+            c.title
         );
     }
 }
