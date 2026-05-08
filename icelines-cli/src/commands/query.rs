@@ -700,21 +700,54 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
     // splitter and pass whole-cloth to the catalog parser.
     let (bio_constraints, stat_residue) = extract_bio_for_cli(&args.filters);
 
-    // Phase Art Ross A.2.4 — partition stat residue into legacy
-    // and sliding-window filters. Filters containing dotted-window
-    // keys (`g.last10g>=5`) route through the new
-    // parse_query → Constraint::matches pipeline with the
-    // IcelinesProvider; the rest continue through the legacy
-    // parse_filter_expr path so bio + season-stat normalization
-    // (Min+Min → tightest etc.) keeps working unchanged.
-    let mut sliding_window_plans: Vec<icelines_query::QueryPlan> = Vec::new();
+    // Phase Art Ross A.2.4 / Wave 16 fix — route every
+    // successfully-parsed plan through the new pipeline. This
+    // covers BOTH:
+    //   - sliding-window / career / league atoms (need provider)
+    //   - new operators on existing atoms (`g<5`, `country IN (...)`,
+    //     `age BETWEEN 22 AND 28`, `country LIKE "CA*"`)
+    // The legacy `parse_filter_expr` only understands `>=`/`<=`/`==`/`=` —
+    // sending it `g<5` produces a BadNumber error. Wave 16 found
+    // this routing bug; the fix is to use the new parser as
+    // the primary path and only fall through to legacy when the
+    // new parser ITSELF rejects the input (which means the user
+    // typed something neither parser handles — surface that
+    // error from the legacy path which has the more battle-tested
+    // diagnostics).
+    let mut new_pipeline_plans: Vec<icelines_query::QueryPlan> = Vec::new();
     let mut legacy_residue: Vec<String> = Vec::new();
     for raw in &stat_residue {
         match icelines_query::parse_query(icelines_query::FilterInput::Cli(
             raw.to_string(),
         )) {
-            Ok(plan) if plan.root.needs_provider() => sliding_window_plans.push(plan),
-            _ => legacy_residue.push(raw.clone()),
+            Ok(plan) => new_pipeline_plans.push(plan),
+            Err(es) => {
+                // Wave 16 fix — when the new parser errors with
+                // a HELPFUL diagnostic (IncompatiblePredicate
+                // for `g IN (...)` suggests BETWEEN, etc.), don't
+                // fall through to the legacy parser which gives
+                // a less useful "no op" error. Surface the new
+                // parser's error directly.
+                let prefer_new_error = es.iter().any(|e| {
+                    matches!(
+                        e,
+                        icelines_query::ParseError::IncompatiblePredicate { .. }
+                            | icelines_query::ParseError::EmptySet { .. }
+                            | icelines_query::ParseError::FeatureNotYet { .. }
+                            | icelines_query::ParseError::UnknownWindowUnit { .. }
+                            | icelines_query::ParseError::ZeroWindowSize { .. }
+                            | icelines_query::ParseError::WindowSizeOutOfRange { .. }
+                    )
+                });
+                if prefer_new_error {
+                    let msgs: Vec<String> = es.iter().map(|e| e.to_string()).collect();
+                    anyhow::bail!(
+                        "--filter {raw:?}\n  {}",
+                        msgs.join("\n  ")
+                    );
+                }
+                legacy_residue.push(raw.clone());
+            }
         }
     }
 
@@ -760,7 +793,7 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
     // they contain `.last`). Result: bio constraints apply twice
     // for `age<=24 AND g.last10g>=5` — harmless (idempotent
     // intersection) but worth noting for the A.2.7 surface swap.
-    if !sliding_window_plans.is_empty() {
+    if !new_pipeline_plans.is_empty() {
         let home_dir = std::env::var_os("HOME")
             .or_else(|| std::env::var_os("USERPROFILE"))
             .map(std::path::PathBuf::from)
@@ -775,7 +808,7 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
             &clock,
             season_key.0,
         );
-        for plan in &sliding_window_plans {
+        for plan in &new_pipeline_plans {
             matched.retain(|v| plan.root.matches(v, &ctx));
         }
     }

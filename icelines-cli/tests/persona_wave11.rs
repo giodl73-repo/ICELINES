@@ -336,27 +336,23 @@ fn p_w11_029_op_eq_double_works() {
 }
 
 #[test]
-fn p_w11_030_op_strictly_gt_not_supported() {
-    // Grammar accepts >= and <=, not > or <. The parser sees `g>3`
-    // as MissingOp (no op) or routes through `g` minus `>3` →
-    // BadNumber. Either way: clean error, no panic.
+fn p_w11_030_op_strictly_gt_supported_in_v0_20() {
+    // Phase Art Ross A.1 added strict comparators. Was rejected
+    // in v0.19; supported in v0.20+.
     let h = fresh();
-    let out = leaders_fail(h.path(), "g>3");
-    no_panic(&out);
+    let _ = leaders(h.path(), "g>3");
 }
 
 #[test]
-fn p_w11_031_op_strictly_lt_not_supported() {
+fn p_w11_031_op_strictly_lt_supported_in_v0_20() {
     let h = fresh();
-    let out = leaders_fail(h.path(), "g<100");
-    no_panic(&out);
+    let _ = leaders(h.path(), "g<100");
 }
 
 #[test]
-fn p_w11_032_op_not_equals_not_supported() {
+fn p_w11_032_op_not_equals_supported_in_v0_20() {
     let h = fresh();
-    let out = leaders_fail(h.path(), "g!=5");
-    no_panic(&out);
+    let _ = leaders(h.path(), "g!=5");
 }
 
 #[test]
@@ -633,18 +629,13 @@ fn p_w11_070_bio_atom_inside_parens() {
 }
 
 #[test]
-fn p_w11_071_bio_in_or_falls_back_to_catalog() {
-    // OR forces extract_bio fallback; the whole expr lands in
-    // catalog stat residue. `country=CAN` is NOT a catalog stat
-    // key, so the parser SHOULD reject this with UnknownStat.
+fn p_w11_071_bio_in_or_supported_in_v0_20() {
+    // Phase Art Ross A.0 — the new pipeline handles bio atoms
+    // in OR-chains directly (country IN bio_text_field_from_key).
+    // Was an UnknownStat error in v0.19 (extract_bio bailed on
+    // OR, catalog parser rejected `country`); supported in v0.20+.
     let h = fresh();
-    let out = leaders_fail(h.path(), "country=CAN OR country=USA");
-    no_panic(&out);
-    let err = stderr_of(&out);
-    assert!(
-        err.to_lowercase().contains("country") || err.to_lowercase().contains("unknown"),
-        "should reject country in OR-fallback path, got: {err}"
-    );
+    let _ = leaders(h.path(), "country=CAN OR country=USA");
 }
 
 #[test]
