@@ -1,5 +1,95 @@
 # IceLines Changelog
 
+## v0.22.0 — 2026-05-08 — Phase Masterton (chrome + standalone mode + Screen trait scaffold)
+
+Headline: **Two user-facing features (declarative chrome,
+standalone single-screen mode) + scaffolding for the future
+deep-dispatch refactor. The TUI now has a consistent header +
+keybind footer across screens, and any surface can be hosted
+focused via `--standalone`.** Bin suite 763 → 803, +40 tests.
+
+### What shipped
+
+- **Masterton.1 (v0.21.2)** — declarative TUI chrome.
+  `ScreenChrome { title, keybinds }` accessor on each main
+  screen; shell renders both consistently. 19 tests.
+- **Masterton.2.1** — Screen trait + AppContext + ScreenAction
+  + dispatch hub. Foundation for future per-screen migrations
+  (deferred, see below). 14 tests.
+- **Masterton.3** — `--standalone` flag on `icelines tui`.
+  When set, the TUI is locked to one surface: Tab/Shift+Tab
+  no-op, tab strip is hidden, the screen's chrome title leads
+  the header as a breadcrumb. Per-screen keybinds + cross-
+  screen overlays (?, F, y, R, M) still work. 9 tests.
+
+### Examples (new in v0.22.0)
+
+```bash
+icelines tui goalies --standalone        # focused goalies leaderboard
+icelines tui scores --standalone         # focused live-scores TUI
+icelines tui transactions --standalone   # focused transactions feed
+```
+
+### What's deferred (honest framing)
+
+The original spec scoped a deep per-screen Screen-trait
+migration (Masterton.2.2-2.7). After auditing `App::handle`,
+the migration shape was wider than estimated:
+
+- Each screen's render fn takes `&App` (needs repo + dashboard
+  + league_context); a real migration would thread AppContext
+  through every render fn — 1-2 weeks of behavior-preserving
+  work for 6 screens.
+- The dispatch isn't structured as one match per screen; it's
+  one giant match per Action, with screen-specific branches
+  inside each Action arm. Extracting Goalies (the simplest
+  screen) requires touching ~5 distinct dispatch sites; full
+  migration would touch ~80+ sites across 6 screens.
+
+The Screen trait scaffold (M.2.1) is in place for when a
+specific screen needs the deeper isolation (e.g., for genuine
+in-process embedding by a third party, or for property-test
+infrastructure that needs to run a screen without a real App).
+Masterton.3's `--standalone` flag delivers the user-facing
+"focused single-screen TUI" feature without requiring the
+trait migration first.
+
+### Cumulative across Phases Norris + Norris.6 + Masterton
+
+- App field count: 80+ → 38
+- Per-screen state structs: 8 (Queries, Schedule, Transactions,
+  Goalies, Playoffs, Tonight, DatePicker, GroupPicker)
+- Trait scaffold types: Screen + ScreenAction + OverlayKind +
+  AppContext + dispatch hub
+- TUI chrome: declarative across 6 main screens
+- TUI launch modes: multi-tab (default) + standalone (--standalone)
+- Bin suite: 692 (v0.20.3) → 803 (v0.22.0), +111 net new tests
+
+### Internal architecture summary
+
+```
+App (orchestrator)
+├── State (per-screen, Norris)
+│   ├── QueriesState        (17 fields)
+│   ├── ScheduleScreenState (8 fields)
+│   ├── TransactionsState   (8 fields)
+│   ├── GoaliesState        (3 fields)
+│   ├── PlayoffsScreenState (3 fields)
+│   ├── TonightScreenState  (4 fields)
+│   ├── DatePickerState     (4 fields, Norris.6)
+│   └── GroupPickerState    (3 fields, Norris.6)
+├── Chrome (declarative, Masterton.1)
+│   └── tui::screens::<screen>::chrome(state) -> ScreenChrome
+├── Dispatch hub (Masterton.2.1)
+│   ├── ScreenAction enum
+│   ├── OverlayKind enum
+│   ├── AppContext (split-borrow)
+│   └── App::dispatch / App::make_context
+└── Launch modes (Masterton.3)
+    ├── Multi-tab (locked_screen = None) — default
+    └── Standalone (locked_screen = Some(X)) — Tab no-op
+```
+
 ## v0.21.2 — 2026-05-08 — Phase Masterton.1 (declarative TUI chrome)
 
 Headline: **Each main TUI screen now declares its header title +
