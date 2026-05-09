@@ -2239,9 +2239,11 @@ mod app_snapshot_tests {
                 db.create_group("Watchlist", "test").expect("create group");
             }
 
-            // Drill to a player and open picker.
-            app.handle(Action::Enter);
-            app.handle(Action::Enter);
+            // Pin a loaded player directly. Navigation into player cards is
+            // covered by `l1_userflow_group_picker_opens_on_player_screen`;
+            // this test owns the DB-backed group list contract.
+            let player_id = app.views().first().expect("fixture has players").id();
+            app.screen = crate::tui::app::Screen::PlayerById(player_id);
             app.handle(Action::AddToGroup);
 
             assert!(app.group_picker.open, "g must open the group picker");
