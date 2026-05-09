@@ -664,13 +664,10 @@ Implemented in the first Messier pass:
 - App handlers for `s`, `p`, `n`, and `f` update state and status.
 - Fallback member-list rendering now honors `sort=Recent`, `sort=Name`, and
   `sort=Kind`.
-
-Still open:
-
-- Favorites nationality/position filtering remains a follow-up for the live
-  slate/data resolver path. The rendered `FavoritesView` rows do not yet carry
-  enough resolved `PlayerView`/bio metadata to apply those filters without
-  guessing.
+- Live `FavoritesView` player rows and fallback member-list player rows now
+  apply position, nationality, and min-GP filters by resolving row player IDs
+  against active `PlayerView`s. Team favorites remain visible because roster
+  filters describe players, not teams.
 
 ---
 
@@ -846,11 +843,8 @@ Implemented in the first Messier pass:
   output without a leading colon.
 - Jack Adams persona scenarios now exercise `goalies`, `depth`, `favorites`,
   and `team EDM` KV flows.
-
-Still open:
-
-- Favorites live-stat nationality/position filtering still requires a resolver
-  or ViewModel shape that carries roster/bio identity alongside night rows.
+- Favorites live-stat rows now apply roster filters via `EntityRef::Player`
+  -> active `PlayerView` lookup instead of display-string inference.
 
 ---
 

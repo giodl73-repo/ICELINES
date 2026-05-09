@@ -7,10 +7,13 @@
 //! instructional card. Boxscore not on disk → DNP row with reason.
 
 use crate::tui::app::App;
+use icelines_core::entity::EntityRef;
 use icelines_core::favorites::{
     FavoritesView, GameResult, GoalieNightLine, HomeAway, PlayerNightRow, SkaterNightLine,
     TeamNightRow,
 };
+use icelines_core::identity::PlayerId;
+use icelines_core::stats_repository::PlayerView;
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -95,8 +98,12 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
     if members.is_empty() {
         render_empty_state(f, chunks[1]);
     } else if let Some(view) = build_view(app) {
+        let mut view = view;
+        apply_favorites_state(&mut view, app);
         render_view(f, chunks[1], &view);
     } else {
+        let views = active_player_views(app);
+        let members = filtered_member_rows(&members, &app.favorites.filters, &views);
         render_member_list(f, chunks[1], &members, app.favorites.sort);
     }
 }
@@ -146,6 +153,79 @@ fn build_view(app: &App) -> Option<FavoritesView> {
         &data_root,
     )
     .ok()
+}
+
+fn apply_favorites_state(view: &mut FavoritesView, app: &App) {
+    let views = active_player_views(app);
+    if filters_active(&app.favorites.filters) {
+        view.players
+            .retain(|row| player_row_matches_filters(row, &app.favorites.filters, &views));
+    }
+    sort_player_rows(&mut view.players, app.favorites.sort);
+}
+
+fn active_player_views(app: &App) -> Vec<PlayerView<'_>> {
+    let mut views = app.views();
+    views.extend(app.goalie_views());
+    views
+}
+
+fn filters_active(filters: &crate::tui::filter_state::RosterFilterState) -> bool {
+    filters.pos_filter != crate::tui::filter_state::PosFilter::All
+        || filters.country_filter.is_some()
+        || filters.min_gp > 0
+}
+
+fn player_row_matches_filters(
+    row: &PlayerNightRow,
+    filters: &crate::tui::filter_state::RosterFilterState,
+    views: &[PlayerView<'_>],
+) -> bool {
+    row_player_id(row)
+        .and_then(|pid| views.iter().find(|view| view.id() == pid))
+        .map(|view| filters.matches_view(view))
+        .unwrap_or(false)
+}
+
+fn row_player_id(row: &PlayerNightRow) -> Option<PlayerId> {
+    match row {
+        PlayerNightRow::Skater(line) => entity_player_id(&line.player),
+        PlayerNightRow::Goalie(line) => entity_player_id(&line.player),
+        PlayerNightRow::DidNotPlay { player, .. } => entity_player_id(player),
+    }
+}
+
+fn entity_player_id(entity: &EntityRef) -> Option<PlayerId> {
+    match entity {
+        EntityRef::Player(pid) => Some(*pid),
+        _ => None,
+    }
+}
+
+fn sort_player_rows(rows: &mut [PlayerNightRow], sort: FavoritesSort) {
+    match sort {
+        FavoritesSort::RecentlyAdded => {}
+        FavoritesSort::Name => rows.sort_by_key(|row| player_row_name(row)),
+        FavoritesSort::Kind => {
+            rows.sort_by_key(|row| (player_row_kind_rank(row), player_row_name(row)))
+        }
+    }
+}
+
+fn player_row_kind_rank(row: &PlayerNightRow) -> u8 {
+    match row {
+        PlayerNightRow::Skater(_) => 0,
+        PlayerNightRow::Goalie(_) => 1,
+        PlayerNightRow::DidNotPlay { .. } => 2,
+    }
+}
+
+fn player_row_name(row: &PlayerNightRow) -> String {
+    match row {
+        PlayerNightRow::Skater(line) => line.player.to_string(),
+        PlayerNightRow::Goalie(line) => line.player.to_string(),
+        PlayerNightRow::DidNotPlay { player, .. } => player.to_string(),
+    }
 }
 
 fn render_view(f: &mut Frame, area: Rect, view: &FavoritesView) {
@@ -458,6 +538,30 @@ fn sorted_member_rows(
     rows
 }
 
+fn filtered_member_rows(
+    members: &[(String, crate::db::MemberKind)],
+    filters: &crate::tui::filter_state::RosterFilterState,
+    views: &[PlayerView<'_>],
+) -> Vec<(String, crate::db::MemberKind)> {
+    if !filters_active(filters) {
+        return members.to_vec();
+    }
+    members
+        .iter()
+        .filter(|(key, kind)| match kind {
+            crate::db::MemberKind::Team => true,
+            crate::db::MemberKind::Player => {
+                icelines_fetch::stats_loader::resolve_player_id_by_name(key)
+                    .map(PlayerId)
+                    .and_then(|pid| views.iter().find(|view| view.id() == pid))
+                    .map(|view| filters.matches_view(view))
+                    .unwrap_or(false)
+            }
+        })
+        .cloned()
+        .collect()
+}
+
 fn kind_rank(kind: crate::db::MemberKind) -> u8 {
     match kind {
         crate::db::MemberKind::Player => 0,
@@ -523,5 +627,34 @@ mod tests {
         assert_eq!(sorted[0].0, "bedard.connor");
         assert_eq!(sorted[1].0, "mcdavid.connor");
         assert_eq!(sorted[2].0, "EDM");
+    }
+
+    #[test]
+    fn l0_messier_favorites_player_rows_filter_by_active_views() {
+        use icelines_core::fixtures;
+        use icelines_core::model::{Position, Season};
+        use icelines_core::season_stats::SeasonType;
+
+        let repo = fixtures::test_repo_with(
+            fixtures::identity(1).build(),
+            fixtures::stats(1, 20242025, "EDM")
+                .position(Position::LeftWing)
+                .build(),
+        );
+        let views: Vec<_> = repo
+            .skaters(Season(20242025), SeasonType::Regular)
+            .collect();
+        let mut filters = crate::tui::filter_state::RosterFilterState::default();
+        filters.pos_filter = crate::tui::filter_state::PosFilter::LW;
+        filters.country_filter = Some(crate::tui::filter_state::CountryCode::CAN);
+        let row = PlayerNightRow::DidNotPlay {
+            player: EntityRef::Player(PlayerId(1)),
+            reason: icelines_core::favorites::DnpReason::TeamBye,
+        };
+
+        assert!(player_row_matches_filters(&row, &filters, &views));
+
+        filters.pos_filter = crate::tui::filter_state::PosFilter::Defense;
+        assert!(!player_row_matches_filters(&row, &filters, &views));
     }
 }
