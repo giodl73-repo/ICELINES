@@ -115,6 +115,41 @@ pub enum Commands {
         out: Option<std::path::PathBuf>,
     },
 
+    /// Find fantasy add/stream/stash candidates from the poacher ViewModel.
+    Poach {
+        /// Season id, e.g. 20252026. Defaults to configured season.
+        #[arg(long)]
+        season: Option<String>,
+
+        /// Regular season or playoffs.
+        #[arg(long = "type", value_enum, default_value_t = QuerySeasonType::Regular)]
+        season_type: QuerySeasonType,
+
+        /// Fantasy scoring scheme name.
+        #[arg(long, default_value = "yahoo-standard")]
+        scheme: String,
+
+        /// Comma-separated categories to emphasize, e.g. hits,blocks,shots.
+        #[arg(long = "category", value_delimiter = ',')]
+        categories: Vec<String>,
+
+        /// Filter by team abbreviation.
+        #[arg(long)]
+        team: Vec<String>,
+
+        /// Filter by position abbreviation: C, LW, RW, D.
+        #[arg(long)]
+        pos: Vec<String>,
+
+        /// Number of candidates to show.
+        #[arg(long, default_value_t = 20)]
+        top: u16,
+
+        /// Emit the full PoachBoardView as JSON.
+        #[arg(long)]
+        json: bool,
+    },
+
     /// Manage named data snapshots.
     #[command(subcommand)]
     Snapshot(SnapshotSubcommand),

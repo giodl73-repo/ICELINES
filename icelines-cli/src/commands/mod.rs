@@ -11,6 +11,7 @@ pub mod menu;
 pub mod output;
 pub mod players;
 pub mod playoffs;
+pub mod poach;
 pub mod project;
 pub mod query;
 pub mod query_career;

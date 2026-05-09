@@ -267,6 +267,12 @@ Acceptance:
 - Markdown report uses the same `PoachReportView`.
 - Bad player/team/category errors use the shared error catalog.
 
+Initial implementation note:
+
+- `icelines poach` is wired as the first CLI surface over `PoachBoardView`.
+  It supports season/type, scheme, category, team, position, top, text output,
+  and full ViewModel JSON. `watch` and report commands remain pending.
+
 ---
 
 ## Selke.5 - TUI Poach board

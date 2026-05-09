@@ -219,6 +219,10 @@ icelines fantasy team-show "My Team"       # roster with per-player fantasy scor
 icelines fantasy standings                 # league standings
 icelines fantasy league-switch "My League" # switch active league
 
+# Poacher
+icelines poach --category hits,blocks --top 15
+icelines poach --team SEA --pos LW --json
+
 # Trades
 icelines fantasy trade "Bouchard" --to-team "Other" --for-player "Werenski"          # simulate
 icelines fantasy trade "Bouchard" --to-team "Other" --for-player "Werenski" --execute # commit

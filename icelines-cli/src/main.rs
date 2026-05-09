@@ -111,6 +111,28 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         } => {
             commands::rank::run(top, pos, scheme, json, csv, out).await?;
         }
+        Commands::Poach {
+            season,
+            season_type,
+            scheme,
+            categories,
+            team,
+            pos,
+            top,
+            json,
+        } => {
+            commands::poach::run(commands::poach::PoachArgs {
+                season,
+                season_type,
+                scheme,
+                categories,
+                teams: team,
+                positions: pos,
+                top,
+                json,
+            })
+            .await?;
+        }
         Commands::Snapshot(sub) => {
             commands::snapshot::run(sub).await?;
         }
