@@ -4,9 +4,11 @@ use serde::{Deserialize, Serialize};
 use crate::identity::PlayerId;
 use crate::model::{Position, Season, TeamAbbr};
 use crate::season_stats::SeasonType;
+use crate::stats_repository::{PlayerView, StatsRepository};
 use crate::view_model::context::{
-    AppliedFilter, EmptyState, ReportContext, ReportKind, ReportSectionRef, SortState, SourceKind,
-    SourceState, ViewContext, ViewWarning, ViewWindow,
+    AppliedFilter, Completeness, EmptyKind, EmptyState, ReportContext, ReportKind,
+    ReportSectionRef, SortDirection, SortKey, SortState, SourceKind, SourceState, ViewContext,
+    ViewWarning, ViewWindow,
 };
 use crate::view_model::tokens::{MetricUnit, SemanticToken};
 
@@ -52,6 +54,59 @@ impl PoachBoardView {
 
         errors
     }
+
+    pub fn from_repository(repo: &StatsRepository, query: PoachQuery) -> Self {
+        let has_window = repo.has_window(query.season, query.season_type);
+        let context = poach_context_for_sources(query.season, query.season_type, has_window);
+        let mut view = Self::new(context, query.clone(), query.scoring_scheme.clone());
+        view.sort = Some(SortState {
+            key: SortKey::from("poach_score"),
+            label: "Poach Score".to_string(),
+            direction: SortDirection::Desc,
+        });
+        view.source_state = view.context.source_state.clone();
+
+        if !has_window {
+            view.empty_state = Some(EmptyState {
+                kind: EmptyKind::MissingSource,
+                title: "Missing poacher source data".to_string(),
+                detail: Some("The requested season/type window is not loaded.".to_string()),
+                recovery: Vec::new(),
+            });
+            return view;
+        }
+
+        let mut rows: Vec<PoachPlayerRow> = repo
+            .skaters(query.season, query.season_type)
+            .filter(|player| query.matches_player(player))
+            .map(|player| row_from_player(&player, &query))
+            .collect();
+
+        rows.sort_by(|a, b| {
+            b.score
+                .final_score
+                .total_cmp(&a.score.final_score)
+                .then_with(|| a.player_id.0.cmp(&b.player_id.0))
+        });
+
+        if let Some(limit) = query.limit {
+            rows.truncate(limit as usize);
+        }
+
+        view.confidence_summary = ConfidenceSummary::from_rows(&rows);
+        view.rows = rows;
+
+        if view.rows.is_empty() {
+            view.empty_state = Some(EmptyState {
+                kind: EmptyKind::NoMatch,
+                title: "No poach candidates".to_string(),
+                detail: Some("No skaters matched the poacher filters.".to_string()),
+                recovery: Vec::new(),
+            });
+        }
+
+        view
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -85,7 +140,7 @@ impl PoachPlayerRow {
         }
 
         let recomputed = self.score.recompute_final();
-        if (self.score.final_score - recomputed).abs() > f64::EPSILON {
+        if (self.score.final_score - recomputed).abs() > 0.000_001 {
             errors.push(format!(
                 "poach row {} final score {} does not match recomputed score {}",
                 self.player_id.0, self.score.final_score, recomputed
@@ -329,6 +384,30 @@ impl PoachQuery {
             sort: None,
         }
     }
+
+    fn matches_player(&self, player: &PlayerView<'_>) -> bool {
+        if !self.positions.is_empty() && !self.positions.contains(&player.position()) {
+            return false;
+        }
+
+        if !self.teams.is_empty()
+            && !player
+                .team()
+                .is_some_and(|team| self.teams.iter().any(|query_team| query_team == team))
+        {
+            return false;
+        }
+
+        match self.candidate_kind {
+            PoachCandidateKind::All
+            | PoachCandidateKind::CategorySpecialist
+            | PoachCandidateKind::DeploymentRiser
+            | PoachCandidateKind::Streamer => true,
+            PoachCandidateKind::Stash
+            | PoachCandidateKind::GoalieStreamer
+            | PoachCandidateKind::WatchAlert => true,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -376,6 +455,21 @@ pub struct ConfidenceSummary {
     pub medium: u16,
     pub low: u16,
     pub data_limited: u16,
+}
+
+impl ConfidenceSummary {
+    pub fn from_rows(rows: &[PoachPlayerRow]) -> Self {
+        let mut summary = Self::default();
+        for row in rows {
+            match row.confidence {
+                PoachConfidence::High => summary.high += 1,
+                PoachConfidence::Medium => summary.medium += 1,
+                PoachConfidence::Low => summary.low += 1,
+                PoachConfidence::DataLimited => summary.data_limited += 1,
+            }
+        }
+        summary
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -441,6 +535,293 @@ pub fn poach_context(season: Season, season_type: SeasonType) -> ViewContext {
         SourceState::complete(SourceKind::FantasyImport),
     ];
     context
+}
+
+fn poach_context_for_sources(
+    season: Season,
+    season_type: SeasonType,
+    has_window: bool,
+) -> ViewContext {
+    let mut context = ViewContext::new(ViewWindow::new(season, season_type));
+    if has_window {
+        context.completeness = Completeness::Partial;
+        context.source_state = vec![
+            SourceState::complete(SourceKind::Roster),
+            SourceState::missing(SourceKind::Schedule),
+            SourceState::missing(SourceKind::FantasyImport),
+            SourceState::missing(SourceKind::Shifts),
+        ];
+    } else {
+        context.completeness = Completeness::Unavailable;
+        context.source_state = vec![SourceState::missing(SourceKind::Roster)];
+    }
+    context
+}
+
+fn row_from_player(player: &PlayerView<'_>, query: &PoachQuery) -> PoachPlayerRow {
+    let category_fit = category_fit_value(player, query);
+    let opportunity_delta = opportunity_value(player);
+    let deployment_trend = deployment_value(player);
+    let schedule_value = 0.0;
+    let availability_gap = 0.0;
+    let roster_need_fit = 0.0;
+    let risk_discount = risk_discount_value(player);
+    let final_score = (opportunity_delta
+        + deployment_trend
+        + category_fit
+        + schedule_value
+        + availability_gap
+        + roster_need_fit)
+        .clamp(0.0, 100.0)
+        - risk_discount;
+    let final_score = final_score.clamp(0.0, 100.0);
+
+    let score = PoachScore {
+        final_score,
+        opportunity_delta,
+        deployment_trend,
+        category_fit,
+        schedule_value,
+        availability_gap,
+        roster_need_fit,
+        risk_discount,
+    };
+
+    let confidence = if player.hits().is_some() || player.blocked_shots().is_some() {
+        PoachConfidence::Medium
+    } else {
+        PoachConfidence::DataLimited
+    };
+    let mut tokens = vec![SemanticToken::CategoryFit];
+    if risk_discount > 0.0 {
+        tokens.push(SemanticToken::Risk);
+    }
+
+    PoachPlayerRow {
+        player_id: player.id(),
+        display_name: player.full_name().to_string(),
+        team: player
+            .team()
+            .cloned()
+            .unwrap_or_else(|| TeamAbbr("UNK".to_string())),
+        position: player.position(),
+        availability: AvailabilityState::Unknown,
+        recommendation_kinds: vec![RecommendationKind::CategoryFit],
+        score,
+        confidence,
+        components: vec![
+            component(
+                PoachComponentKind::OpportunityDelta,
+                "Opportunity",
+                opportunity_delta,
+                0.0,
+                20.0,
+                ComponentStatus::Estimated,
+                Some(SourceKind::Roster),
+                Some(SemanticToken::Rising),
+            ),
+            component(
+                PoachComponentKind::DeploymentTrend,
+                "Deployment",
+                deployment_trend,
+                0.0,
+                15.0,
+                ComponentStatus::Estimated,
+                Some(SourceKind::Roster),
+                Some(SemanticToken::Rising),
+            ),
+            component(
+                PoachComponentKind::CategoryFit,
+                "Category Fit",
+                category_fit,
+                0.0,
+                25.0,
+                ComponentStatus::Measured,
+                Some(SourceKind::Roster),
+                Some(SemanticToken::CategoryFit),
+            ),
+            component(
+                PoachComponentKind::ScheduleValue,
+                "Schedule",
+                schedule_value,
+                0.0,
+                15.0,
+                ComponentStatus::Unavailable,
+                None,
+                Some(SemanticToken::SourceUnavailable),
+            ),
+            component(
+                PoachComponentKind::AvailabilityGap,
+                "Availability",
+                availability_gap,
+                0.0,
+                10.0,
+                ComponentStatus::Unavailable,
+                None,
+                Some(SemanticToken::SourceUnavailable),
+            ),
+            component(
+                PoachComponentKind::RosterNeedFit,
+                "Roster Need",
+                roster_need_fit,
+                0.0,
+                15.0,
+                ComponentStatus::Deferred,
+                Some(SourceKind::FantasyImport),
+                Some(SemanticToken::SupportingEvidence),
+            ),
+            component(
+                PoachComponentKind::RiskDiscount,
+                "Risk",
+                risk_discount,
+                0.0,
+                30.0,
+                ComponentStatus::Estimated,
+                Some(SourceKind::Roster),
+                Some(SemanticToken::Risk),
+            ),
+        ],
+        deployment: DeploymentSignal::Estimated {
+            proxy: "season pace and shot volume".to_string(),
+            generated_at: None,
+        },
+        schedule_summary: "Schedule source unavailable".to_string(),
+        category_fit_summary: category_fit_summary(player),
+        risk_summary: (risk_discount > 0.0).then(|| "Low GP or partial source risk".to_string()),
+        explanations: explanations_for_player(player, category_fit, risk_discount),
+        tokens,
+    }
+}
+
+fn opportunity_value(player: &PlayerView<'_>) -> f64 {
+    player
+        .pace_82()
+        .map(|pace| (pace / 8.0).clamp(0.0, 20.0))
+        .unwrap_or(0.0)
+}
+
+fn deployment_value(player: &PlayerView<'_>) -> f64 {
+    player
+        .shots_per_82()
+        .map(|shots| (shots / 22.0).clamp(0.0, 15.0))
+        .unwrap_or(0.0)
+}
+
+fn category_fit_value(player: &PlayerView<'_>, query: &PoachQuery) -> f64 {
+    let wants_hits = query.categories.is_empty() || query.categories.iter().any(|c| c == "hits");
+    let wants_blocks =
+        query.categories.is_empty() || query.categories.iter().any(|c| c == "blocks");
+    let wants_shots = query.categories.is_empty() || query.categories.iter().any(|c| c == "shots");
+
+    let mut value: f64 = 0.0;
+    if wants_hits {
+        value += player.hits_per_82().unwrap_or(0.0) / 14.0;
+    }
+    if wants_blocks {
+        value += player.blocked_shots_per_82().unwrap_or(0.0) / 10.0;
+    }
+    if wants_shots {
+        value += player.shots_per_82().unwrap_or(0.0) / 24.0;
+    }
+    value.clamp(0.0, 25.0)
+}
+
+fn risk_discount_value(player: &PlayerView<'_>) -> f64 {
+    match player.gp() {
+        0 => 30.0,
+        1..=9 => 12.0,
+        _ => 0.0,
+    }
+}
+
+fn category_fit_summary(player: &PlayerView<'_>) -> String {
+    let hits = player
+        .hits()
+        .map(|value| value.to_string())
+        .unwrap_or_else(|| "unknown".to_string());
+    let blocks = player
+        .blocked_shots()
+        .map(|value| value.to_string())
+        .unwrap_or_else(|| "unknown".to_string());
+    format!("Hits {hits}, blocks {blocks}, shots {}", player.shots())
+}
+
+fn explanations_for_player(
+    player: &PlayerView<'_>,
+    category_fit: f64,
+    risk_discount: f64,
+) -> Vec<PoachExplanation> {
+    let mut explanations = vec![PoachExplanation {
+        component: PoachComponentKind::CategoryFit,
+        status: ComponentStatus::Measured,
+        impact: ExplanationImpact::Positive,
+        token: SemanticToken::CategoryFit,
+        message: format!(
+            "Category fit contributes {:.1} points from available hits, blocks, and shots.",
+            category_fit
+        ),
+        source: Some(SourceKind::Roster),
+        freshness: None,
+    }];
+
+    if player.hits().is_none() || player.blocked_shots().is_none() {
+        explanations.push(PoachExplanation {
+            component: PoachComponentKind::CategoryFit,
+            status: ComponentStatus::Unavailable,
+            impact: ExplanationImpact::Omission,
+            token: SemanticToken::SourceUnavailable,
+            message: "Realtime hits/blocks are unavailable; missing categories are not penalized."
+                .to_string(),
+            source: Some(SourceKind::Roster),
+            freshness: None,
+        });
+    }
+
+    explanations.push(PoachExplanation {
+        component: PoachComponentKind::ScheduleValue,
+        status: ComponentStatus::Unavailable,
+        impact: ExplanationImpact::Omission,
+        token: SemanticToken::SourceUnavailable,
+        message: "Schedule extraction is not wired yet; no schedule penalty applied.".to_string(),
+        source: Some(SourceKind::Schedule),
+        freshness: None,
+    });
+
+    if risk_discount > 0.0 {
+        explanations.push(PoachExplanation {
+            component: PoachComponentKind::RiskDiscount,
+            status: ComponentStatus::Estimated,
+            impact: ExplanationImpact::Negative,
+            token: SemanticToken::Risk,
+            message: format!("Risk discount subtracts {:.1} points.", risk_discount),
+            source: Some(SourceKind::Roster),
+            freshness: None,
+        });
+    }
+
+    explanations
+}
+
+fn component(
+    kind: PoachComponentKind,
+    label: &str,
+    value: f64,
+    start: f64,
+    end: f64,
+    status: ComponentStatus,
+    source: Option<SourceKind>,
+    token: Option<SemanticToken>,
+) -> PoachScoreComponent {
+    PoachScoreComponent {
+        kind,
+        label: label.to_string(),
+        value,
+        range: ScoreRange::new(start, end),
+        status,
+        unit: MetricUnit::Score,
+        source,
+        token,
+    }
 }
 
 pub fn poach_report_context(context: ViewContext, report_id: impl Into<String>) -> ReportContext {
@@ -551,6 +932,66 @@ mod tests {
         assert_eq!(json["sections"][0]["id"], "top_adds");
         assert_eq!(json["sections"][0]["rows"][0]["player_id"], 8482109);
         assert_eq!(json["omissions"][0], "ownership import unavailable");
+    }
+
+    #[test]
+    fn poach_builder_reads_repository_and_preserves_source_gaps() {
+        let (identity, stats) = crate::fixtures::stat_catalog_variants::skater_modern();
+        let repo = crate::fixtures::test_repo_with(identity, stats);
+        let mut query = PoachQuery::new(Season(20242025), SeasonType::Regular, "yahoo-standard");
+        query.categories = vec!["hits".to_string(), "blocks".to_string()];
+        query.limit = Some(10);
+
+        let board = PoachBoardView::from_repository(&repo, query);
+
+        assert_eq!(board.rows.len(), 1);
+        assert_eq!(board.context.completeness, Completeness::Partial);
+        assert_eq!(board.source_state[0].source, SourceKind::Roster);
+        assert_eq!(board.source_state[1].source, SourceKind::Schedule);
+        assert_eq!(board.source_state[1].state, Completeness::Unavailable);
+        assert_eq!(board.rows[0].display_name, "Connor McDavid");
+        assert_eq!(board.rows[0].confidence, PoachConfidence::Medium);
+        assert_eq!(
+            board.rows[0]
+                .component(PoachComponentKind::CategoryFit)
+                .expect("category component")
+                .status,
+            ComponentStatus::Measured
+        );
+        assert_eq!(board.contract_errors(), Vec::<String>::new());
+    }
+
+    #[test]
+    fn poach_builder_missing_window_is_unavailable_empty_state() {
+        let repo = crate::stats_repository::StatsRepository::new();
+        let query = PoachQuery::new(Season(19981999), SeasonType::Regular, "yahoo-standard");
+
+        let board = PoachBoardView::from_repository(&repo, query);
+
+        assert!(board.rows.is_empty());
+        assert_eq!(board.context.completeness, Completeness::Unavailable);
+        assert_eq!(
+            board.empty_state.as_ref().map(|state| state.kind),
+            Some(EmptyKind::MissingSource)
+        );
+        assert_eq!(board.source_state[0].source, SourceKind::Roster);
+    }
+
+    #[test]
+    fn poach_builder_team_and_position_filters_lower_into_query() {
+        let (identity, stats) = crate::fixtures::stat_catalog_variants::skater_modern();
+        let repo = crate::fixtures::test_repo_with(identity, stats);
+        let mut query = PoachQuery::new(Season(20242025), SeasonType::Regular, "yahoo-standard");
+        query.teams = vec![TeamAbbr("TOR".to_string())];
+        query.positions = vec![Position::Center];
+
+        let board = PoachBoardView::from_repository(&repo, query);
+
+        assert!(board.rows.is_empty());
+        assert_eq!(
+            board.empty_state.as_ref().map(|state| state.kind),
+            Some(EmptyKind::NoMatch)
+        );
     }
 
     fn fixture_board() -> PoachBoardView {

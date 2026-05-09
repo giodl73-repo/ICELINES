@@ -243,6 +243,13 @@ Acceptance:
 - The board distinguishes "no line data" from "not promoted."
 - Score explanations identify actual vs estimated vs unknown deployment.
 
+Initial implementation note:
+
+- `PoachBoardView::from_repository` performs the first deterministic extraction
+  pass from current skater stats: category fit, estimated opportunity,
+  estimated deployment proxy, risk discount, typed source gaps, query filters,
+  and contract explanations.
+
 ---
 
 ## Selke.4 - CLI commands
