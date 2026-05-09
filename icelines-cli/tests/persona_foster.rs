@@ -9,12 +9,10 @@
 //! Build: `cargo build --release -p icelines-cli`
 //! Run: `cargo test -p icelines-cli --test persona_foster`
 //!
-//! Distribution: 10 scenarios across the 5 Foster sub-phases.
+//! Distribution: 30 scenarios across the 5 Foster sub-phases.
 //!
-//! Note: the spec called for 30 personas (BENCH H3); shipping 10
-//! here covers the critical paths today. The remaining 20 are
-//! placeholder material for follow-up sessions once F.3+ wires
-//! per-night stat lines + boxscore JSON persistence end-to-end.
+//! The original spec called for 30 personas (BENCH H3); this file now
+//! carries that full closeout set.
 
 use std::path::PathBuf;
 use std::process::Command;

@@ -1,4 +1,5 @@
-//! Persona-style scenario suite — 100 tests across CLI + TUI surface.
+//! Persona-style scenario suite - 85 executable tests plus 15 archived
+//! TUI checklist items covered by in-bin TUI harnesses.
 //!
 //! Goals
 //! - Surface real bugs in recently-shipped features (L.7b 38-season bundle,
@@ -8,8 +9,9 @@
 //! Test mix
 //! - L2 subprocess tests (CLI surface — 50-ish): exercise `icelines query
 //!   leaders/player/compare/goalies` and `icelines fantasy` as a real binary.
-//! - L1 in-process tests (~30): drive `App::handle()` and the lazy career
-//!   loader directly, no subprocess overhead.
+//! - L1 TUI checklist items (15): archived here and covered by
+//!   `src/tui/app.rs`, `src/tui/screens/misc.rs`, and the Jack Adams TUI
+//!   persona harness.
 //! - L0 catalog/data invariants (~20): pure-logic checks against bundled
 //!   data and the StatId catalog.
 //!

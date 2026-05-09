@@ -321,20 +321,22 @@ The bundled data refreshes weekly via GitHub Actions. `icelines rank` and `query
 ## Architecture
 
 ```
-icelines-core    pure domain types, filters, scheme scoring — no I/O
+icelines-core    pure domain types, filters, scheme scoring - no I/O
+icelines-query   Art Ross query parser, planner, executor
 icelines-fetch   NHL API client, snapshot store, bundled data, MoneyPuck
 icelines-site    mkdocs static site generation
-icelines-cli     thin UI layer — commands, TUI, HTTP server (axum)
+icelines-web     axum web/API surface
+icelines-cli     thin UI layer - commands, TUI, HTTP server (axum)
 ```
 
-4-crate Rust workspace. **~1720 tests** across L0 unit · L1 integration · L2 system · mock NHL API fixture · 4 persona-scenario waves (`persona_scenarios.rs` + `persona_wave2/3/4.rs`, 400 end-to-end CLI scenarios).
+6-crate Rust workspace. Scenario coverage now includes **2,000+ persona/harness tests** plus broad L0/L1/L2 integration, system, mock NHL API, TUI, query, and web gates. See `design/notes/2026-05-09-scenario-harness-inventory.md` for the current harness map.
 
 ---
 
 ## Tests
 
 ```bash
-cargo test                    # ~1720 tests — L0, L1, L2, mock API, persona waves
+cargo test                    # full workspace tests: L0, L1, L2, mock API, persona waves
 cargo clippy -- -D warnings   # must be clean
 cargo fmt --check             # must be clean
 ```
