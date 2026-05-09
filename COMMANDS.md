@@ -711,6 +711,7 @@ The schedule, playoffs, and transactions commands all share the same data source
 icelines group create "Watchlist"
 icelines group add "Watchlist" "McDavid"
 icelines group show "Watchlist"
+# Poach `w` also stores the current score/explanation as a watch reason.
 
 # Personal-attendance tracker
 icelines games add ...                 # log games attended

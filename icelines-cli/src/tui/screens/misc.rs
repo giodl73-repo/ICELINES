@@ -723,6 +723,24 @@ pub fn render_group_members(f: &mut Frame, app: &App, area: Rect, group_name: &s
         .ok()
         .and_then(|db| db.list_members(group_name).ok())
         .unwrap_or_default();
+    let watch_notes = if group_name == "Watchlist" {
+        crate::db::GroupDb::open()
+            .ok()
+            .map(|db| {
+                members
+                    .iter()
+                    .filter_map(|norm| {
+                        db.watch_note(crate::db::MemberKind::Player, norm)
+                            .ok()
+                            .flatten()
+                            .map(|note| (norm.clone(), note))
+                    })
+                    .collect::<std::collections::HashMap<_, _>>()
+            })
+            .unwrap_or_default()
+    } else {
+        std::collections::HashMap::new()
+    };
 
     if members.is_empty() {
         let lines = vec![
@@ -784,6 +802,10 @@ pub fn render_group_members(f: &mut Frame, app: &App, area: Rect, group_name: &s
             None => format!("  {}  (not in current data)", norm),
         };
         lines.push(Line::styled(row, style));
+        if let Some(note) = watch_notes.get(norm) {
+            let reason = note.reason.chars().take(80).collect::<String>();
+            lines.push(Line::styled(format!("    why: {reason}"), dim));
+        }
     }
     lines.push(Line::from(""));
     lines.push(Line::styled(format!("  {} member(s)", members.len()), dim));

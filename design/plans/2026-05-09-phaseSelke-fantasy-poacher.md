@@ -303,6 +303,9 @@ Initial implementation note:
   the selected player card.
 - `w` toggles the selected candidate in the local SQLite-backed `Watchlist`
   group and the board marks watched rows. Watch-rule editing remains pending.
+- Poach toggles also write a `watch_notes` reason (`Poach score`, confidence,
+  first explanation, and risk summary when present); removing the watch clears
+  the note.
 
 ---
 
@@ -324,6 +327,8 @@ Initial implementation note:
 - `/watchlist` renders the local SQLite-backed `Watchlist` group so TUI Poach
   toggles have a web-readable destination. Rich watch-rule metadata remains
   pending.
+- `/watchlist` also renders stored watch reasons from `watch_notes` when they
+  exist.
 
 ---
 

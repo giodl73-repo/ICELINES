@@ -119,11 +119,23 @@ pub fn selected_player_id(app: &App) -> Option<icelines_core::identity::PlayerId
 }
 
 pub fn selected_player(app: &App) -> Option<(String, String)> {
+    selected_watch_target(app).map(|target| (target.normalized, target.display_name))
+}
+
+#[derive(Debug, Clone)]
+pub struct WatchTarget {
+    pub normalized: String,
+    pub display_name: String,
+    pub reason: String,
+}
+
+pub fn selected_watch_target(app: &App) -> Option<WatchTarget> {
     let view = build_view(app);
     view.rows
         .get(app.selected.min(view.rows.len().saturating_sub(1)))
         .and_then(|row| {
-            app.repo
+            let (normalized, display_name) = app
+                .repo
                 .identity(row.player_id)
                 .map(|identity| (identity.name_normalized.clone(), identity.full_name.clone()))
                 .or_else(|| {
@@ -131,7 +143,25 @@ pub fn selected_player(app: &App) -> Option<(String, String)> {
                         row.display_name.to_ascii_lowercase(),
                         row.display_name.clone(),
                     ))
-                })
+                })?;
+            let explanation = row
+                .explanations
+                .first()
+                .map(|explanation| explanation.message.as_str())
+                .unwrap_or("Poach board candidate");
+            let mut reason = format!(
+                "Poach score {:.1}; confidence {:?}; {}",
+                row.score.final_score, row.confidence, explanation
+            );
+            if let Some(risk) = &row.risk_summary {
+                reason.push_str("; risk: ");
+                reason.push_str(risk);
+            }
+            Some(WatchTarget {
+                normalized,
+                display_name,
+                reason,
+            })
         })
 }
 

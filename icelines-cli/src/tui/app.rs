@@ -3020,10 +3020,12 @@ impl App {
     }
 
     fn toggle_selected_poach_watch(&mut self) {
-        let Some((norm, full)) = crate::tui::screens::poach::selected_player(self) else {
+        let Some(target) = crate::tui::screens::poach::selected_watch_target(self) else {
             self.status = "No poach candidate selected to watch.".to_owned();
             return;
         };
+        let norm = target.normalized;
+        let full = target.display_name;
 
         let Ok(db) = crate::db::GroupDb::open() else {
             self.status = "Could not open Watchlist DB.".to_owned();
@@ -3048,12 +3050,23 @@ impl App {
 
         if is_watched {
             match db.remove_member("Watchlist", &norm) {
-                Ok(()) => self.status = format!("Removed {full} from Watchlist"),
+                Ok(()) => {
+                    let _ = db.delete_watch_note(crate::db::MemberKind::Player, &norm);
+                    self.status = format!("Removed {full} from Watchlist");
+                }
                 Err(err) => self.status = format!("Could not remove {full} from Watchlist: {err}"),
             }
         } else {
             match db.add_member("Watchlist", &norm) {
-                Ok(true) => self.status = format!("Watching {full}"),
+                Ok(true) => {
+                    let _ = db.upsert_watch_note(
+                        crate::db::MemberKind::Player,
+                        &norm,
+                        &target.reason,
+                        "tui-poach",
+                    );
+                    self.status = format!("Watching {full}");
+                }
                 Ok(false) => self.status = format!("{full} is already watched"),
                 Err(err) => self.status = format!("Could not watch {full}: {err}"),
             }
@@ -3566,6 +3579,12 @@ mod tests {
             let db = crate::db::GroupDb::open().expect("open DB");
             let members = db.list_members("Watchlist").expect("Watchlist exists");
             assert_eq!(members, vec![normalized.clone()]);
+            let note = db
+                .watch_note(crate::db::MemberKind::Player, &normalized)
+                .expect("watch note query")
+                .expect("watch note exists");
+            assert!(note.reason.contains("Poach score"));
+            assert_eq!(note.source, "tui-poach");
 
             app.handle(Action::Char('w'));
 
@@ -3576,6 +3595,10 @@ mod tests {
             );
             let members = db.list_members("Watchlist").expect("Watchlist exists");
             assert!(members.is_empty(), "second toggle removes watched player");
+            assert!(db
+                .watch_note(crate::db::MemberKind::Player, &normalized)
+                .expect("watch note query after remove")
+                .is_none());
         });
     }
 

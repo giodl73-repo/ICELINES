@@ -15,6 +15,14 @@ pub struct GroupRow {
     pub member_count: usize,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WatchNote {
+    pub entity_ref: String,
+    pub reason: String,
+    pub source: String,
+    pub updated_at: String,
+}
+
 /// Migration 005 — discriminator on `group_members.kind`. A favorites
 /// group can carry both player normalized names AND team abbrevs;
 /// downstream code branches on this to load the right thing.
@@ -209,6 +217,21 @@ fn run_migrations(conn: &Connection) -> anyhow::Result<()> {
             ON events(entity_kind, entity_key, date DESC);",
     )
     .context("migration 007: events table")?;
+
+    // Migration 008 — Selke watch metadata.
+    //
+    // Membership remains in `group_members` so Watchlist still behaves
+    // like any other group. This table stores optional user/system
+    // context for why a player was watched.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS watch_notes (
+            entity_ref TEXT PRIMARY KEY,
+            reason     TEXT NOT NULL DEFAULT '',
+            source     TEXT NOT NULL DEFAULT '',
+            updated_at TEXT NOT NULL
+         );",
+    )
+    .context("migration 008: watch_notes table")?;
 
     Ok(())
 }
@@ -437,6 +460,40 @@ impl GroupDb {
         Ok(())
     }
 
+    pub fn upsert_watch_note(
+        &self,
+        kind: MemberKind,
+        key: &str,
+        reason: &str,
+        source: &str,
+    ) -> anyhow::Result<()> {
+        let now = now_utc();
+        let entity_ref = entity_ref_for(kind, key);
+        self.conn
+            .execute(
+                "INSERT INTO watch_notes (entity_ref, reason, source, updated_at)
+                 VALUES (?1, ?2, ?3, ?4)
+                 ON CONFLICT(entity_ref) DO UPDATE SET
+                    reason = excluded.reason,
+                    source = excluded.source,
+                    updated_at = excluded.updated_at",
+                rusqlite::params![entity_ref, reason, source, now],
+            )
+            .with_context(|| format!("upsert watch note for '{key}'"))?;
+        Ok(())
+    }
+
+    pub fn delete_watch_note(&self, kind: MemberKind, key: &str) -> anyhow::Result<()> {
+        let entity_ref = entity_ref_for(kind, key);
+        self.conn
+            .execute(
+                "DELETE FROM watch_notes WHERE entity_ref = ?1",
+                rusqlite::params![entity_ref],
+            )
+            .with_context(|| format!("delete watch note for '{key}'"))?;
+        Ok(())
+    }
+
     // ── Read operations ───────────────────────────────────────────────────────
 
     /// List all groups with their member counts.
@@ -509,6 +566,26 @@ impl GroupDb {
             })
             .collect();
         Ok(mapped)
+    }
+
+    pub fn watch_note(&self, kind: MemberKind, key: &str) -> anyhow::Result<Option<WatchNote>> {
+        let entity_ref = entity_ref_for(kind, key);
+        let mut stmt = self.conn.prepare(
+            "SELECT entity_ref, reason, source, updated_at
+             FROM watch_notes
+             WHERE entity_ref = ?1",
+        )?;
+        let mut rows = stmt.query(rusqlite::params![entity_ref])?;
+        if let Some(row) = rows.next()? {
+            Ok(Some(WatchNote {
+                entity_ref: row.get(0)?,
+                reason: row.get(1)?,
+                source: row.get(2)?,
+                updated_at: row.get(3)?,
+            }))
+        } else {
+            Ok(None)
+        }
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
@@ -837,6 +914,34 @@ mod tests {
         let members = db.list_members("g1").expect("list members after remove");
         assert_eq!(members.len(), 1);
         assert_eq!(members[0], "connor_mcdavid");
+    }
+
+    #[test]
+    fn l1_db_watch_note_round_trips_and_deletes() {
+        let db = GroupDb::open_in_memory().expect("open in-memory db");
+
+        db.upsert_watch_note(
+            MemberKind::Player,
+            "matthew knies",
+            "Poach score 72.0; confidence High; PP1 promotion",
+            "tui-poach",
+        )
+        .expect("upsert watch note");
+
+        let note = db
+            .watch_note(MemberKind::Player, "matthew knies")
+            .expect("read watch note")
+            .expect("note exists");
+        assert_eq!(note.entity_ref, "player:matthew knies");
+        assert!(note.reason.contains("Poach score"));
+        assert_eq!(note.source, "tui-poach");
+
+        db.delete_watch_note(MemberKind::Player, "matthew knies")
+            .expect("delete watch note");
+        assert!(db
+            .watch_note(MemberKind::Player, "matthew knies")
+            .expect("read after delete")
+            .is_none());
     }
 
     #[test]

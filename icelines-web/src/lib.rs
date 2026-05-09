@@ -5210,8 +5210,9 @@ mod handlers {
 
         pub async fn get_watchlist(State(state): State<crate::WebState>) -> Response {
             let members = read_group_members("Watchlist");
+            let notes = read_watch_notes();
             let active_label = state.config.read().await.active_label.clone();
-            let body = render_watchlist_html(&members, &active_label);
+            let body = render_watchlist_html(&members, &notes, &active_label);
             (
                 StatusCode::OK,
                 [(axum::http::header::CONTENT_TYPE, "text/html; charset=utf-8")],
@@ -5252,6 +5253,29 @@ mod handlers {
                         })
                         .collect()
                 })
+                .unwrap_or_default()
+        }
+
+        fn read_watch_notes() -> std::collections::HashMap<String, String> {
+            let Some(home) = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))
+            else {
+                return std::collections::HashMap::new();
+            };
+            let db_path = std::path::PathBuf::from(&home)
+                .join(".icelines")
+                .join("icelines.db");
+            if !db_path.exists() {
+                return std::collections::HashMap::new();
+            }
+            let Ok(conn) = rusqlite::Connection::open(&db_path) else {
+                return std::collections::HashMap::new();
+            };
+            let Ok(mut stmt) = conn.prepare("SELECT entity_ref, reason FROM watch_notes") else {
+                return std::collections::HashMap::new();
+            };
+            stmt.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
+                .ok()
+                .map(|rows| rows.filter_map(Result::ok).collect())
                 .unwrap_or_default()
         }
 
@@ -5550,7 +5574,11 @@ mod handlers {
             body
         }
 
-        fn render_watchlist_html(members: &[(String, String)], active_label: &str) -> String {
+        fn render_watchlist_html(
+            members: &[(String, String)],
+            notes: &std::collections::HashMap<String, String>,
+            active_label: &str,
+        ) -> String {
             let player_count = members.iter().filter(|(k, _)| k == "player").count();
             let team_count = members.iter().filter(|(k, _)| k == "team").count();
             let mut body = String::new();
@@ -5599,7 +5627,17 @@ mod handlers {
                 if !players.is_empty() {
                     body.push_str("<h2>Players</h2><ul>");
                     for player in players {
-                        body.push_str(&format!("<li>{}</li>", html_escape(player)));
+                        let entity_ref = format!("player:{player}");
+                        let note = notes
+                            .get(&entity_ref)
+                            .map(|reason| {
+                                format!(
+                                    "<br><span style=\"color:#555;font-size:0.92em;\">why: {}</span>",
+                                    html_escape(reason)
+                                )
+                            })
+                            .unwrap_or_default();
+                        body.push_str(&format!("<li>{}{}</li>", html_escape(player), note));
                     }
                     body.push_str("</ul>");
                 }
