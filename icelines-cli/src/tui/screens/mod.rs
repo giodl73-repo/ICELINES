@@ -1565,24 +1565,31 @@ mod app_snapshot_tests {
     /// Home (no player selected).
     #[test]
     fn l1_userflow_group_picker_opens_on_player_screen() {
-        let (_dir, store) = empty_store_in_tempdir();
-        let mut app = App::new(true);
-        app.boot_load_with_store(&store);
+        with_temp_home(|_home| {
+            let (_dir, store) = empty_store_in_tempdir();
+            let mut app = App::new(true);
+            app.boot_load_with_store(&store);
 
-        // Drill into a player first: Home → Team → Player.
-        app.handle(Action::Enter); // Home → Team(rank-1)
-        app.handle(Action::Enter); // Team → Player(selected=0)
-        assert!(
-            matches!(app.screen, crate::tui::app::Screen::PlayerById(_)),
-            "Two Enters from Home should land on PlayerById, got {:?}",
-            app.screen
-        );
-        // Now g should open the picker.
-        app.handle(Action::AddToGroup);
-        assert!(
-            app.group_picker.open,
-            "g on a Player screen must open the group picker"
-        );
+            {
+                let db = crate::db::GroupDb::open().expect("open DB");
+                db.create_group("Watchlist", "test").expect("create group");
+            }
+
+            // Drill into a player first: Home → Team → Player.
+            app.handle(Action::Enter); // Home → Team(rank-1)
+            app.handle(Action::Enter); // Team → Player(selected=0)
+            assert!(
+                matches!(app.screen, crate::tui::app::Screen::PlayerById(_)),
+                "Two Enters from Home should land on PlayerById, got {:?}",
+                app.screen
+            );
+            // Now g should open the picker.
+            app.handle(Action::AddToGroup);
+            assert!(
+                app.group_picker.open,
+                "g on a Player screen must open the group picker"
+            );
+        });
     }
 
     // ── Back navigation ──────────────────────────────────────────────────────
