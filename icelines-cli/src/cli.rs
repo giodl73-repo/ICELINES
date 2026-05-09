@@ -150,6 +150,10 @@ pub enum Commands {
         json: bool,
     },
 
+    /// Generate decision reports from shared ViewModels.
+    #[command(subcommand)]
+    Report(ReportSubcommand),
+
     /// Manage named data snapshots.
     #[command(subcommand)]
     Snapshot(SnapshotSubcommand),
@@ -924,6 +928,48 @@ pub enum QuerySeasonType {
     Regular,
     #[clap(name = "playoff")]
     Playoff,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ReportSubcommand {
+    /// Generate a fantasy poacher report from PoachReportView.
+    Poach {
+        /// Season id, e.g. 20252026. Defaults to configured season.
+        #[arg(long)]
+        season: Option<String>,
+
+        /// Regular season or playoffs.
+        #[arg(long = "type", value_enum, default_value_t = QuerySeasonType::Regular)]
+        season_type: QuerySeasonType,
+
+        /// Fantasy scoring scheme name.
+        #[arg(long, default_value = "yahoo-standard")]
+        scheme: String,
+
+        /// Comma-separated categories to emphasize, e.g. hits,blocks,shots.
+        #[arg(long = "category", value_delimiter = ',')]
+        categories: Vec<String>,
+
+        /// Filter by team abbreviation.
+        #[arg(long)]
+        team: Vec<String>,
+
+        /// Filter by position abbreviation: C, LW, RW, D.
+        #[arg(long)]
+        pos: Vec<String>,
+
+        /// Number of candidates to include.
+        #[arg(long, default_value_t = 20)]
+        top: u16,
+
+        /// Emit the PoachReportView as JSON instead of markdown.
+        #[arg(long)]
+        json: bool,
+
+        /// Write report to path. Pass '-' or omit for stdout.
+        #[arg(long, value_name = "PATH")]
+        out: Option<std::path::PathBuf>,
+    },
 }
 
 impl QuerySeasonType {

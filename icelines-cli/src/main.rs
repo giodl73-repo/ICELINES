@@ -15,7 +15,7 @@ mod tui;
 
 use anyhow::Context;
 use clap::Parser;
-use cli::{Cli, Commands, FantasySubcommand, QuerySubcommand};
+use cli::{Cli, Commands, FantasySubcommand, QuerySubcommand, ReportSubcommand};
 use config::Config;
 
 /// Post-LP review fix #4 — Reset SIGPIPE to SIG_DFL on Unix so a
@@ -133,6 +133,32 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             })
             .await?;
         }
+        Commands::Report(sub) => match sub {
+            ReportSubcommand::Poach {
+                season,
+                season_type,
+                scheme,
+                categories,
+                team,
+                pos,
+                top,
+                json,
+                out,
+            } => {
+                commands::poach::run_report_poach(commands::poach::PoachReportArgs {
+                    season,
+                    season_type,
+                    scheme,
+                    categories,
+                    teams: team,
+                    positions: pos,
+                    top,
+                    json,
+                    out,
+                })
+                .await?;
+            }
+        },
         Commands::Snapshot(sub) => {
             commands::snapshot::run(sub).await?;
         }

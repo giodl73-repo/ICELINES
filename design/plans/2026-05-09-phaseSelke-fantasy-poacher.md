@@ -272,6 +272,9 @@ Initial implementation note:
 - `icelines poach` is wired as the first CLI surface over `PoachBoardView`.
   It supports season/type, scheme, category, team, position, top, text output,
   and full ViewModel JSON. `watch` and report commands remain pending.
+- `icelines report poach` is wired as the first report surface over
+  `PoachReportView`, with markdown output by default and full report JSON via
+  `--json`. `watch` and weekly reports remain pending.
 
 ---
 

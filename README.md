@@ -222,6 +222,7 @@ icelines fantasy league-switch "My League" # switch active league
 # Poacher
 icelines poach --category hits,blocks --top 15
 icelines poach --team SEA --pos LW --json
+icelines report poach --category shots --top 10 --out poach.md
 
 # Trades
 icelines fantasy trade "Bouchard" --to-team "Other" --for-player "Werenski"          # simulate
