@@ -27,6 +27,7 @@ param(
         "scenarios-query",
         "scenarios-web",
         "scenarios-tui",
+        "selke",
         "workspace-check",
         "viewmodel",
         "core",
@@ -88,6 +89,7 @@ Fast daily slices:
   scenarios-query  query persona/storyline harnesses
   scenarios-web    web persona/parity harnesses
   scenarios-tui    in-bin TUI persona/user-flow harness
+  selke            fantasy poacher ViewModel + CLI poach/watch/report tests
 
 CI gates:
   ci               local CI sequence: all split gates, serial
@@ -219,6 +221,11 @@ switch ($Slice) {
     }
     "scenarios-tui" {
         Invoke-Test @("test", "-p", "icelines-cli", "--bin", "icelines", "persona_jack_adams")
+    }
+    "selke" {
+        Invoke-Test @("test", "-p", "icelines-core", "view_model::poach")
+        Invoke-Test @("test", "-p", "icelines-cli", "--bin", "icelines", "l0_poach")
+        Invoke-Test @("test", "-p", "icelines-cli", "--bin", "icelines", "l0_watch")
     }
     "quick" {
         Invoke-Cargo @("check", "--workspace")
