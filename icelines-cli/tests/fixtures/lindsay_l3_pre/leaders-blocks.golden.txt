@@ -1,14 +1,14 @@
 Rank Player                   Team  Pos  GP   Blocks    
 ───────────────────────────────────────────────────────
-1    Ian Cole                 UTA   D    82   211       
-2    Jacob Trouba             NYR/ANA D    77   208       
-3    Nick Seeler              PHI   D    77   200       
-4    Rasmus Andersson         CGY   D    81   196       
-5    MacKenzie Weegar         CGY   D    81   192       
-6    Chris Tanev              TOR   D    75   189       
-7    Moritz Seider            DET   D    82   181       
-8    David Savard             MTL   D    75   180       
-9    Radko Gudas              ANA   D    81   178       
-10   Esa Lindell              DAL   D    80   170       
+1    Nikita Kucherov          TBL   RW   78   0         
+2    Leon Draisaitl           EDM   C    71   0         
+3    Connor McDavid           EDM   C    67   0         
+4    Nathan MacKinnon         COL   C    79   0         
+5    Kirill Kaprizov          MIN   LW   41   0         
+6    David Pastrnak           BOS   RW   82   0         
+7    Mitch Marner             TOR   RW   81   0         
+8    Jack Eichel              VGK   C    77   0         
+9    Kyle Connor              WPG   LW   82   0         
+10   Auston Matthews          TOR   C    67   0         
 
 905 matched, showing 10.

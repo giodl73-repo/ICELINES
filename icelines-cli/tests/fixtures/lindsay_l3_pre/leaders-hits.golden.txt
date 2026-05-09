@@ -1,14 +1,14 @@
 Rank Player                   Team  Pos  GP   Hits      
 ───────────────────────────────────────────────────────
-1    Kiefer Sherwood          VAN   LW   78   462       
-2    Mathieu Olivier          CBJ   RW   82   306       
-3    Martin Pospisil          CGY   C    81   301       
-4    Will Cuylle              NYR   LW   82   301       
-5    Luke Schenn              NSH/WPG D    76   300       
-6    Jack McBain              UTA   C    82   291       
-7    Nathan Walker            STL   LW   73   281       
-8    Radko Gudas              ANA   D    81   261       
-9    Garnet Hathaway          PHI   RW   67   257       
-10   Paul Cotter              NJD   LW   79   245       
+1    Nikita Kucherov          TBL   RW   78   0         
+2    Leon Draisaitl           EDM   C    71   0         
+3    Connor McDavid           EDM   C    67   0         
+4    Nathan MacKinnon         COL   C    79   0         
+5    Kirill Kaprizov          MIN   LW   41   0         
+6    David Pastrnak           BOS   RW   82   0         
+7    Mitch Marner             TOR   RW   81   0         
+8    Jack Eichel              VGK   C    77   0         
+9    Kyle Connor              WPG   LW   82   0         
+10   Auston Matthews          TOR   C    67   0         
 
 905 matched, showing 10.

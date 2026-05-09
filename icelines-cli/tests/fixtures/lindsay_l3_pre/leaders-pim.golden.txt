@@ -1,14 +1,14 @@
 Rank Player                   Team  Pos  GP   PIM       
 ───────────────────────────────────────────────────────
-1    Ryan Suter               STL   D    82   0         
-2    Corey Perry              EDM   RW   81   0         
-3    Alex Ovechkin            WSH   LW   65   0         
-4    Evgeni Malkin            PIT   C    68   0         
-5    Sidney Crosby            PIT   C    80   0         
-6    Jack Johnson             CBJ   D    41   0         
-7    Anze Kopitar             LAK   C    81   0         
-8    Marc-Edouard Vlasic      SJS   D    27   0         
-9    Kris Letang              PIT   D    74   0         
-10   Ryan Reaves              TOR   RW   35   0         
+1    Nikita Kucherov          TBL   RW   78   0         
+2    Leon Draisaitl           EDM   C    71   0         
+3    Connor McDavid           EDM   C    67   0         
+4    Nathan MacKinnon         COL   C    79   0         
+5    Kirill Kaprizov          MIN   LW   41   0         
+6    David Pastrnak           BOS   RW   82   0         
+7    Mitch Marner             TOR   RW   81   0         
+8    Jack Eichel              VGK   C    77   0         
+9    Kyle Connor              WPG   LW   82   0         
+10   Auston Matthews          TOR   C    67   0         
 
 905 matched, showing 10.

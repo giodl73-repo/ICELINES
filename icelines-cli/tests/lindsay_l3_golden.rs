@@ -91,8 +91,10 @@ const LEGACY_SORTS: &[&str] = &[
 ];
 
 /// Run `query leaders --sort <metric>` and return stdout (utf-8).
-fn capture_leaders(sort: &str) -> String {
+fn capture_leaders(sort: &str, home: &std::path::Path) -> String {
     let out = Command::new(icelines_bin())
+        .env("HOME", home)
+        .env("USERPROFILE", home)
         .args([
             "query", "leaders", "--sort", sort, "--top", "10", "--season", "20242025",
         ])
@@ -136,13 +138,14 @@ fn capture_leaders(sort: &str) -> String {
 fn l2_lindsay_l3_golden_parity() {
     let regen = std::env::var("LINDSAY_L3_REGEN").is_ok();
     let dir = fixtures_dir();
+    let home = tempfile::tempdir().expect("temp home");
     if regen {
         std::fs::create_dir_all(&dir).unwrap();
     }
 
     let mut failures = Vec::new();
     for sort in LEGACY_SORTS {
-        let actual = capture_leaders(sort);
+        let actual = capture_leaders(sort, home.path());
         let golden_path = dir.join(format!("leaders-{sort}.golden.txt"));
 
         if regen {

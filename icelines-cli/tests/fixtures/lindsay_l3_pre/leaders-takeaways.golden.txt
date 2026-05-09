@@ -1,14 +1,14 @@
 Rank Player                   Team  Pos  GP   TkA       
 ───────────────────────────────────────────────────────
-1    Jaccob Slavin            CAR   D    80   61        
-2    Cale Makar               COL   D    80   60        
-3    Mitch Marner             TOR   RW   81   56        
-4    Lane Hutson              MTL   D    82   56        
-5    Evan Bouchard            EDM   D    82   55        
-6    Alex Vlasic              CHI   D    82   53        
-7    Jake Sanderson           OTT   D    80   53        
-8    MacKenzie Weegar         CGY   D    81   52        
-9    Travis Sanheim           PHI   D    82   51        
-10   Alex Tuch                BUF   RW   82   49        
+1    Nikita Kucherov          TBL   RW   78   0         
+2    Leon Draisaitl           EDM   C    71   0         
+3    Connor McDavid           EDM   C    67   0         
+4    Nathan MacKinnon         COL   C    79   0         
+5    Kirill Kaprizov          MIN   LW   41   0         
+6    David Pastrnak           BOS   RW   82   0         
+7    Mitch Marner             TOR   RW   81   0         
+8    Jack Eichel              VGK   C    77   0         
+9    Kyle Connor              WPG   LW   82   0         
+10   Auston Matthews          TOR   C    67   0         
 
 905 matched, showing 10.
