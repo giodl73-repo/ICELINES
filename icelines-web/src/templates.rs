@@ -533,6 +533,39 @@ pub struct DepthTemplate {
     pub rows: Vec<DepthRow>,
 }
 
+/// `poach.html` — Phase Selke.6. Fantasy add/stream/stash board
+/// rendered from the shared `PoachBoardView` contract.
+#[derive(Template)]
+#[template(path = "poach.html")]
+pub struct PoachTemplate {
+    pub active_label: String,
+    pub rows: Vec<PoachRow>,
+    pub total: usize,
+    pub scoring_scheme: String,
+    pub categories: String,
+    pub teams: String,
+    pub positions: String,
+    pub source_note: String,
+    pub empty_title: String,
+    pub empty_detail: String,
+}
+
+/// One pre-formatted row for the poach board template.
+#[derive(Debug, Clone)]
+pub struct PoachRow {
+    pub rank: usize,
+    pub player_id: u32,
+    pub name: String,
+    pub team: String,
+    pub position: String,
+    pub score: String,
+    pub confidence: String,
+    pub category_fit: String,
+    pub schedule: String,
+    pub risk: String,
+    pub why: String,
+}
+
 /// One row in the depth-rankings table. Pre-formatted strings so the
 /// askama template doesn't need to do float casts.
 #[derive(Debug, Clone)]

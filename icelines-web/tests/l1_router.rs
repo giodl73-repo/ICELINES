@@ -90,6 +90,7 @@ async fn l1_html_each_route_has_active_season_header() {
     // marker (the season-header CSS class) plus the label substring.
     let html_routes: &[&str] = &[
         "/",
+        "/poach",
         // King.2: "/leaders",
         // King.3: "/player/8478402",
         // King.4: "/team/SEA", "/depth", "/class/2022",
@@ -178,6 +179,57 @@ async fn l1_depth_route_returns_200_html() {
         body.contains("href=\"/depth\""),
         "/depth must be linked in the global nav"
     );
+}
+
+#[tokio::test]
+async fn l1_poach_route_returns_200_html() {
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/poach?category=hits,blocks&top=5")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+
+    assert!(body.contains("Fantasy Poacher"));
+    assert!(body.contains("href=\"/poach\""));
+    assert!(body.contains("Missing poacher source data"));
+}
+
+#[tokio::test]
+async fn l1_poach_json_returns_view_model_contract() {
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/poach?category=hits,blocks&pos=LW&top=5")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value = serde_json::from_slice(&bytes).expect("json body");
+
+    assert_eq!(json["scoring_scheme"], "yahoo-standard");
+    assert_eq!(json["query"]["categories"][0], "hits");
+    assert_eq!(json["query"]["positions"][0], "LeftWing");
+    assert_eq!(json["empty_state"]["kind"], "missing_source");
 }
 
 /// l1_career_route_missing_league_returns_400 (Calder.4)

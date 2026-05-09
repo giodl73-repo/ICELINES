@@ -86,6 +86,10 @@ pub fn router(state: WebState) -> Router {
         // T3 (post-LP test gap): JSON twin for /depth so external
         // scripts don't have to scrape the HTML table.
         .route("/api/v1/depth", get(handlers::depth::get_depth_json))
+        // Phase Selke.6 — fantasy poacher board. HTML and JSON share
+        // the core PoachBoardView contract.
+        .route("/poach", get(handlers::poach::get_poach))
+        .route("/api/v1/poach", get(handlers::poach::get_poach_json))
         // Phase Calder.4 — cross-league cohort leaderboard.
         // /career?league=OHL&season=20142015&sort=points
         .route("/career", get(handlers::career::get_career))
@@ -1954,6 +1958,231 @@ mod handlers {
                 data: rows,
             };
             axum::Json(envelope).into_response()
+        }
+    }
+
+    /// Phase Selke.6 — fantasy poacher web board.
+    pub mod poach {
+        use crate::state::WebState;
+        use crate::templates::{PoachRow, PoachTemplate};
+        use askama::Template;
+        use axum::extract::{Query, State};
+        use axum::http::StatusCode;
+        use axum::response::{Html, IntoResponse, Response};
+        use icelines_core::model::{Position, Season, TeamAbbr};
+        use icelines_core::{
+            view_model::{PoachBoardView, PoachQuery},
+            Completeness, EmptyKind, EmptyState, SourceKind, SourceState, ViewContext, ViewWindow,
+        };
+        use serde::Deserialize;
+
+        #[derive(Debug, Deserialize, Default)]
+        pub struct PoachWebQuery {
+            #[serde(default)]
+            pub scheme: Option<String>,
+            #[serde(default, rename = "category")]
+            pub categories: Option<String>,
+            #[serde(default)]
+            pub team: Option<String>,
+            #[serde(default)]
+            pub pos: Option<String>,
+            #[serde(default)]
+            pub top: Option<u16>,
+        }
+
+        pub async fn get_poach(
+            State(state): State<WebState>,
+            Query(q): Query<PoachWebQuery>,
+        ) -> Response {
+            let result = match build_poach_view(&state, &q).await {
+                Ok(result) => result,
+                Err(response) => return response,
+            };
+
+            let empty = result.view.empty_state.clone();
+            let rows = result
+                .view
+                .rows
+                .iter()
+                .enumerate()
+                .map(|(idx, row)| PoachRow {
+                    rank: idx + 1,
+                    player_id: row.player_id.0,
+                    name: row.display_name.clone(),
+                    team: row.team.as_str().to_string(),
+                    position: row.position.abbreviation().to_string(),
+                    score: format!("{:.1}", row.score.final_score),
+                    confidence: format!("{:?}", row.confidence).to_ascii_lowercase(),
+                    category_fit: row.category_fit_summary.clone(),
+                    schedule: row.schedule_summary.clone(),
+                    risk: row.risk_summary.clone().unwrap_or_else(|| "-".to_string()),
+                    why: row
+                        .explanations
+                        .first()
+                        .map(|explanation| explanation.message.clone())
+                        .unwrap_or_else(|| "No explanation".to_string()),
+                })
+                .collect::<Vec<_>>();
+            let total = result.view.rows.len();
+
+            let tmpl = PoachTemplate {
+                active_label: result.active_label,
+                rows,
+                total,
+                scoring_scheme: result.view.scoring_scheme,
+                categories: q.categories.unwrap_or_default(),
+                teams: q.team.unwrap_or_default(),
+                positions: q.pos.unwrap_or_default(),
+                source_note: source_note(&result.view.source_state),
+                empty_title: empty
+                    .as_ref()
+                    .map(|state| state.title.clone())
+                    .unwrap_or_default(),
+                empty_detail: empty
+                    .and_then(|state| state.detail.clone())
+                    .unwrap_or_default(),
+            };
+
+            match tmpl.render() {
+                Ok(html) => Html(html).into_response(),
+                Err(e) => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Html(format!(
+                        "<!doctype html><body><h1>500</h1><p>{e}</p></body>"
+                    )),
+                )
+                    .into_response(),
+            }
+        }
+
+        pub async fn get_poach_json(
+            State(state): State<WebState>,
+            Query(q): Query<PoachWebQuery>,
+        ) -> Response {
+            let result = match build_poach_view(&state, &q).await {
+                Ok(result) => result,
+                Err(response) => return response,
+            };
+            axum::Json(result.view).into_response()
+        }
+
+        struct PoachBuildResult {
+            view: PoachBoardView,
+            active_label: String,
+        }
+
+        async fn build_poach_view(
+            state: &WebState,
+            q: &PoachWebQuery,
+        ) -> Result<PoachBuildResult, Response> {
+            let (season_str, season_type, active_label) = {
+                let cfg = state.config.read().await;
+                (
+                    cfg.active_season.clone(),
+                    super::leaders::parse_season_type(&cfg.active_season_type),
+                    cfg.active_label.clone(),
+                )
+            };
+            let season_u32: u32 = match season_str.parse() {
+                Ok(n) => n,
+                Err(e) => {
+                    return Err((
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Html(format!(
+                            "<!doctype html><body><h1>500</h1><p>active season \
+                             '{season_str}' is not a valid YYYYZZZZ id: {e}</p></body>"
+                        )),
+                    )
+                        .into_response());
+                }
+            };
+            let season = Season(season_u32);
+            let scheme = q
+                .scheme
+                .clone()
+                .unwrap_or_else(|| "yahoo-standard".to_string());
+            let mut query = PoachQuery::new(season, season_type, scheme.clone());
+            query.categories = split_csv(q.categories.as_deref())
+                .into_iter()
+                .map(|category| category.to_ascii_lowercase())
+                .collect();
+            query.teams = split_csv(q.team.as_deref())
+                .into_iter()
+                .map(|team| TeamAbbr(team.to_ascii_uppercase()))
+                .collect();
+            query.positions = parse_positions(q.pos.as_deref())?;
+            query.limit = Some(q.top.unwrap_or(20).clamp(1, 100));
+            query.sort = Some("poach_score".to_string());
+
+            let view = {
+                let repo = state.repo.read().await;
+                if repo.has_window(season, season_type) {
+                    PoachBoardView::from_repository(&repo, query)
+                } else {
+                    let mut view = PoachBoardView::new(
+                        ViewContext::new(ViewWindow::new(season, season_type)),
+                        query,
+                        scheme,
+                    );
+                    view.context.completeness = Completeness::Unavailable;
+                    view.source_state = vec![SourceState::missing(SourceKind::Roster)];
+                    view.empty_state = Some(EmptyState {
+                        kind: EmptyKind::MissingSource,
+                        title: "Missing poacher source data".to_string(),
+                        detail: Some("The active season/type window is not loaded.".to_string()),
+                        recovery: Vec::new(),
+                    });
+                    view
+                }
+            };
+
+            Ok(PoachBuildResult { view, active_label })
+        }
+
+        fn split_csv(value: Option<&str>) -> Vec<String> {
+            value
+                .unwrap_or("")
+                .split(',')
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(ToOwned::to_owned)
+                .collect()
+        }
+
+        fn parse_positions(value: Option<&str>) -> Result<Vec<Position>, Response> {
+            split_csv(value)
+                .into_iter()
+                .map(|value| match value.to_ascii_uppercase().as_str() {
+                    "C" => Ok(Position::Center),
+                    "LW" | "L" => Ok(Position::LeftWing),
+                    "RW" | "R" => Ok(Position::RightWing),
+                    "D" => Ok(Position::Defense),
+                    "G" => Ok(Position::Goalie),
+                    other => Err((
+                        StatusCode::BAD_REQUEST,
+                        Html(format!(
+                            "<!doctype html><body><h1>400</h1><p>unknown position '{other}' - valid: C, LW, RW, D, G</p></body>"
+                        )),
+                    )
+                        .into_response()),
+                })
+                .collect()
+        }
+
+        fn source_note(source_state: &[SourceState]) -> String {
+            let missing = source_state
+                .iter()
+                .filter(|state| state.state != Completeness::Complete)
+                .map(|state| format!("{:?}", state.source).to_ascii_lowercase())
+                .collect::<Vec<_>>();
+            if missing.is_empty() {
+                String::new()
+            } else {
+                format!(
+                    "Missing source data is disclosed, not scored as negative evidence: {}.",
+                    missing.join(", ")
+                )
+            }
         }
     }
 

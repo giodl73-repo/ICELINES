@@ -304,6 +304,14 @@ Acceptance:
 - Filters are bookmarkable.
 - Empty states explain whether no candidates exist or source data is missing.
 
+Initial implementation note:
+
+- `/poach` renders the active-season poacher board from `PoachBoardView` with
+  bookmarkable `scheme`, `category`, `team`, `pos`, and `top` params.
+- `/api/v1/poach` returns the full shared `PoachBoardView` JSON contract.
+- Missing active-season data renders as a source-aware empty state instead of a
+  web-only fallback table.
+
 ---
 
 ## Selke.7 - Reports and weekly workflow

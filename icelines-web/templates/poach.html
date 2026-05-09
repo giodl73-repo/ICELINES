@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Fantasy Poacher{% endblock %}
+
+{% block content %}
+<h1>Fantasy Poacher</h1>
+
+<p style="color: #616161; margin-bottom: 0.75rem;">
+    Top {{ rows.len() }} candidates · {{ active_label }} · {{ scoring_scheme }}
+    {% if total > rows.len() %}
+        · {{ total }} total
+    {% endif %}
+</p>
+
+<form method="get" action="/poach" style="margin-bottom: 1.25rem; padding: 0.85rem 1rem; background: var(--ice-divider); border-radius: 5px;">
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:0.6rem 0.8rem;">
+        <label>Scheme
+            <input type="text" name="scheme" value="{{ scoring_scheme }}" style="width: 100%; margin-top: 0.15rem;">
+        </label>
+        <label>Categories
+            <input type="text" name="category" value="{{ categories }}" placeholder="hits,blocks,shots" style="width: 100%; margin-top: 0.15rem;">
+        </label>
+        <label>Teams
+            <input type="text" name="team" value="{{ teams }}" placeholder="SEA,TOR" style="width: 100%; margin-top: 0.15rem; text-transform: uppercase;">
+        </label>
+        <label>Positions
+            <input type="text" name="pos" value="{{ positions }}" placeholder="C,LW,RW,D" style="width: 100%; margin-top: 0.15rem; text-transform: uppercase;">
+        </label>
+    </div>
+    <div style="display:flex; gap:0.5rem; margin-top:0.75rem; align-items:center;">
+        <button type="submit">Apply</button>
+        <a href="/api/v1/poach"><code>/api/v1/poach</code></a>
+    </div>
+</form>
+
+{% if !source_note.is_empty() %}
+<p style="color: #616161; font-size: 0.9rem; margin-bottom: 1rem;">
+    {{ source_note }}
+</p>
+{% endif %}
+
+{% if rows.is_empty() %}
+<section style="padding: 1rem; border: 1px solid var(--ice-divider); border-radius: 5px;">
+    <h2 style="margin-top: 0;">{{ empty_title }}</h2>
+    {% if !empty_detail.is_empty() %}<p>{{ empty_detail }}</p>{% endif %}
+</section>
+{% else %}
+<div class="table-scroll">
+<table>
+    <thead>
+        <tr>
+            <th style="text-align: right;">#</th>
+            <th>Player</th>
+            <th>Team</th>
+            <th>Pos</th>
+            <th style="text-align: right;">Score</th>
+            <th>Confidence</th>
+            <th>Category Fit</th>
+            <th>Schedule</th>
+            <th>Risk</th>
+            <th>Why</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in rows %}
+        <tr>
+            <td style="text-align: right; color: #616161;">{{ row.rank }}</td>
+            <td><a class="player-name" href="/player/{{ row.player_id }}">{{ row.name }}</a></td>
+            <td><a class="team-link team-{{ row.team }}" href="/team/{{ row.team }}">{{ row.team }}</a></td>
+            <td><span class="pos-chip pos-{{ row.position }}">{{ row.position }}</span></td>
+            <td style="text-align: right;"><strong>{{ row.score }}</strong></td>
+            <td>{{ row.confidence }}</td>
+            <td>{{ row.category_fit }}</td>
+            <td>{{ row.schedule }}</td>
+            <td>{{ row.risk }}</td>
+            <td>{{ row.why }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

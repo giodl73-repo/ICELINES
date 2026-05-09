@@ -226,6 +226,7 @@ icelines report poach --category shots --top 10 --out poach.md
 icelines report weekly --league default --category hits,blocks
 icelines watch rules
 icelines watch player "Matthew Knies" --when pp1
+icelines serve                         # web dashboard includes /poach and /api/v1/poach
 
 # Trades
 icelines fantasy trade "Bouchard" --to-team "Other" --for-player "Werenski"          # simulate
