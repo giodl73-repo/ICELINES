@@ -7,6 +7,7 @@
 pub mod context;
 pub mod goalies;
 pub mod leaders;
+pub mod poach;
 pub mod team_depth;
 pub mod tokens;
 
@@ -17,6 +18,13 @@ pub use context::{
 };
 pub use goalies::{GoalieRoleFilter, GoalieRoleSignal, GoalieRow, GoaliesView};
 pub use leaders::{LeaderKind, LeaderRow, LeadersView};
+pub use poach::{
+    AvailabilityState, ComponentStatus, ConfidenceSummary, DeploymentSignal, ExplanationImpact,
+    PoachAvailabilityFilter, PoachBoardView, PoachCandidateKind, PoachComponentKind,
+    PoachConfidence, PoachExplanation, PoachPlayerRow, PoachQuery, PoachReportSection,
+    PoachReportView, PoachScheduleFilter, PoachScore, PoachScoreComponent, PoachWindow,
+    RecommendationKind, ScoreRange, WatchRule, WatchRuleTrigger, WatchRulesView,
+};
 pub use team_depth::{
     DeploymentEvidence, DepthGoalieSlot, DepthLine, DepthPair, DepthPlayerSlot, DepthSlotKind,
     DepthSummary, TeamDepthView,

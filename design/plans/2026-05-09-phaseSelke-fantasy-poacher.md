@@ -209,6 +209,11 @@ Acceptance:
   stash, streamer goalie, and risk-discounted player.
 - ViewModels include source state and explanation text.
 
+Initial implementation note:
+
+- Core ViewModel skeletons, typed score components, watch/report shapes, and
+  contract fixture tests started in `icelines-core::view_model::poach`.
+
 ---
 
 ## Selke.3 - Feature extraction
