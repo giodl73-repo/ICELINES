@@ -9,12 +9,14 @@ use crate::config::Config;
 use anyhow::{bail, Context};
 use icelines_core::{
     filter::PlayerFilter,
-    model::Position,
+    model::{Position, Season},
     name::normalize_name,
     position::PositionResolver,
     season_stats::SeasonType,
     stats_catalog::{StatId, StatUnit},
     stats_repository::PlayerView,
+    LeaderKind, LeadersView, MetricCell, MetricUnit, MetricValue, SemanticToken, SortDirection,
+    SortKey, SortState, StatKey, ValuePrecision, ViewContext, ViewWindow,
 };
 use icelines_fetch::{aggregate, career::load_career, snapshot::SnapshotStore};
 use icelines_query::{extract_bio, BioConstraints};
@@ -1034,32 +1036,64 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
         vec![None; results.len()]
     };
 
-    leaders_table(
+    let leaders_view = leaders_view_from_results(
         &results,
-        &percentiles,
         metric,
         args.rate,
-        args.top,
-        total_matched,
         args.seasons,
+        season_key,
+        season_type,
     );
+
+    leaders_table(&leaders_view, &percentiles, args.top, total_matched);
     Ok(())
 }
 
-fn leaders_table(
+fn leaders_view_from_results(
     views: &[PlayerView<'_>],
-    percentiles: &[Option<u8>],
     metric: SortDispatch,
     rate: bool,
-    top: usize,
-    total: usize,
     seasons: u8,
-) {
-    let col = if seasons > 1 {
+    season: Season,
+    season_type: SeasonType,
+) -> LeadersView {
+    let col = leader_column_label(metric, rate, seasons);
+    let mut view = LeadersView::from_player_views_with_primary(
+        ViewContext::new(ViewWindow::new(season, season_type)),
+        LeaderKind::Skaters,
+        views.iter().copied(),
+        |v| MetricCell {
+            key: StatKey::from("leader_metric"),
+            label: col.clone(),
+            value: MetricValue::Text(metric.display(v, rate)),
+            unit: MetricUnit::None,
+            precision: ValuePrecision::Raw,
+            token: Some(SemanticToken::DecisionHighlight),
+        },
+    );
+    view.sort = Some(SortState {
+        key: SortKey::from("leader_metric"),
+        label: col,
+        direction: SortDirection::Desc,
+    });
+    view
+}
+
+fn leader_column_label(metric: SortDispatch, rate: bool, seasons: u8) -> String {
+    if seasons > 1 {
         format!("{} ({}yr)", metric.header(rate), seasons)
     } else {
         metric.header(rate)
-    };
+    }
+}
+
+fn leaders_table(view: &LeadersView, percentiles: &[Option<u8>], top: usize, total: usize) {
+    let col = view
+        .sort
+        .as_ref()
+        .map(|sort| sort.label.as_str())
+        .or_else(|| view.rows.first().map(|row| row.primary.label.as_str()))
+        .unwrap_or("Value");
     let show_pct = percentiles.iter().any(|p| p.is_some());
 
     if show_pct {
@@ -1068,18 +1102,18 @@ fn leaders_table(
             "Rank", "Player", "Team", "Pos", "GP", col, "Pctl"
         );
         println!("{}", "─".repeat(61));
-        for (i, (v, pct)) in views.iter().zip(percentiles.iter()).enumerate() {
-            let val = metric.display(v, rate);
+        for (row, pct) in view.rows.iter().zip(percentiles.iter()) {
+            let val = leader_primary_text(row);
             let pct_s = pct
                 .map(|x| format!("{x}{}", ordinal(x)))
                 .unwrap_or_else(|| "—".to_owned());
             println!(
                 "{:<4} {:<24} {:<5} {:<4} {:<4} {:<10} {:<6}",
-                i + 1,
-                v.identity.full_name,
-                v.team_display(),
-                v.position().abbreviation(),
-                v.gp(),
+                row.rank,
+                row.display_name,
+                leader_team(row),
+                row.position.abbreviation(),
+                leader_gp(row),
                 val,
                 pct_s
             );
@@ -1090,20 +1124,48 @@ fn leaders_table(
             "Rank", "Player", "Team", "Pos", "GP", col
         );
         println!("{}", "─".repeat(55));
-        for (i, v) in views.iter().enumerate() {
-            let val = metric.display(v, rate);
+        for row in &view.rows {
+            let val = leader_primary_text(row);
             println!(
                 "{:<4} {:<24} {:<5} {:<4} {:<4} {:<10}",
-                i + 1,
-                v.identity.full_name,
-                v.team_display(),
-                v.position().abbreviation(),
-                v.gp(),
+                row.rank,
+                row.display_name,
+                leader_team(row),
+                row.position.abbreviation(),
+                leader_gp(row),
                 val
             );
         }
     }
-    println!("\n{total} matched, showing {}.", views.len().min(top));
+    println!("\n{total} matched, showing {}.", view.rows.len().min(top));
+}
+
+fn leader_primary_text(row: &icelines_core::LeaderRow) -> String {
+    match &row.primary.value {
+        MetricValue::Text(value) => value.clone(),
+        MetricValue::Integer(value) => value.to_string(),
+        MetricValue::Decimal(value) => format!("{value:.1}"),
+        MetricValue::Missing => "—".to_string(),
+    }
+}
+
+fn leader_gp(row: &icelines_core::LeaderRow) -> String {
+    row.secondary
+        .iter()
+        .find(|metric| metric.key.0 == "gp")
+        .and_then(|metric| match metric.value {
+            MetricValue::Integer(value) => Some(value.to_string()),
+            _ => None,
+        })
+        .unwrap_or_else(|| "—".to_string())
+}
+
+fn leader_team(row: &icelines_core::LeaderRow) -> &str {
+    if row.team.0 == "UNK" {
+        "—"
+    } else {
+        row.team.0.as_str()
+    }
 }
 
 fn print_improvement_table(

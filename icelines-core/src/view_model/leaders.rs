@@ -81,11 +81,20 @@ impl LeadersView {
         kind: LeaderKind,
         rows: impl IntoIterator<Item = PlayerView<'a>>,
     ) -> Self {
+        Self::from_player_views_with_primary(context, kind, rows, default_primary_metric)
+    }
+
+    pub fn from_player_views_with_primary<'a>(
+        context: ViewContext,
+        kind: LeaderKind,
+        rows: impl IntoIterator<Item = PlayerView<'a>>,
+        primary: impl Fn(&PlayerView<'a>) -> MetricCell,
+    ) -> Self {
         let mut view = Self::new(context, kind);
         view.rows = rows
             .into_iter()
             .enumerate()
-            .map(|(idx, player)| leader_row(idx as u32 + 1, &player))
+            .map(|(idx, player)| leader_row(idx as u32 + 1, &player, primary(&player)))
             .collect();
         if view.rows.is_empty() {
             view.empty_state = Some(EmptyState {
@@ -129,7 +138,7 @@ pub struct LeaderRow {
     pub tokens: Vec<SemanticToken>,
 }
 
-fn leader_row(rank: u32, player: &PlayerView<'_>) -> LeaderRow {
+fn leader_row(rank: u32, player: &PlayerView<'_>, primary: MetricCell) -> LeaderRow {
     LeaderRow {
         rank,
         player_id: player.id(),
@@ -139,14 +148,7 @@ fn leader_row(rank: u32, player: &PlayerView<'_>) -> LeaderRow {
             .cloned()
             .unwrap_or_else(|| TeamAbbr("UNK".to_string())),
         position: player.position(),
-        primary: metric_decimal(
-            "pace_82",
-            "Pace 82",
-            player.pace_82(),
-            MetricUnit::Per82,
-            ValuePrecision::OneDecimal,
-            Some(SemanticToken::DecisionHighlight),
-        ),
+        primary,
         secondary: vec![
             MetricCell {
                 key: StatKey::from("age"),
@@ -176,6 +178,17 @@ fn leader_row(rank: u32, player: &PlayerView<'_>) -> LeaderRow {
             vec![SemanticToken::SourcePartial]
         },
     }
+}
+
+fn default_primary_metric(player: &PlayerView<'_>) -> MetricCell {
+    metric_decimal(
+        "pace_82",
+        "Pace 82",
+        player.pace_82(),
+        MetricUnit::Per82,
+        ValuePrecision::OneDecimal,
+        Some(SemanticToken::DecisionHighlight),
+    )
 }
 
 fn metric_int(key: &str, label: &str, value: i64, unit: MetricUnit) -> MetricCell {

@@ -227,6 +227,11 @@ Closeout so far:
   all-skaters table.
 - Markdown `export md leaders` now renders its default Pts/82 table from
   `LeadersView`; custom `--columns` remains on the stat-catalog path.
+- `query leaders` text tables now build a `LeadersView` after the existing
+  load/filter/sort/top pipeline; JSON/CSV remain on the stable legacy output
+  contracts.
+- `LeadersView::from_player_views_with_primary` supports sort-specific primary
+  metrics without leaking renderer formatting into the default pace builder.
 - `GoaliesView::from_player_views` lets renderer adapters consume already
   prepared player rows without duplicating goalie metric semantics.
 - Verified the adapter with `cargo test -p icelines-cli --test system_tests
@@ -236,7 +241,11 @@ Closeout so far:
   --nocapture`, `cargo test -p icelines-cli team -- --nocapture`,
   `cargo test -p icelines-cli l0_export_team_card_lists_only_target_team --
   --nocapture`, `cargo test -p icelines-cli l0_export_leaders --
-  --nocapture`, and the `viewmodel` test slice.
+  --nocapture`, `cargo test -p icelines-cli l2_cmd_query_leaders_exits_zero
+  -- --nocapture`, `cargo test -p icelines-cli
+  l2_cmd_query_leaders_percentiles_flag -- --nocapture`, `cargo test -p
+  icelines-cli l2_cmd_query_leaders_json_export -- --nocapture`, and the
+  `viewmodel` test slice.
 
 ---
 
