@@ -108,6 +108,7 @@ pub fn router(state: WebState) -> Router {
         .route("/playoffs", get(handlers::playoffs::get_playoffs))
         // Phase Foster.2 — favorites dashboard
         .route("/favorites", get(handlers::favorites::get_favorites))
+        .route("/watchlist", get(handlers::favorites::get_watchlist))
         // Phase Conn Smythe C.3 — per-game live detail
         .route("/game/:id", get(handlers::game::get_game))
         // Foster +18 — POST mutators (kept as POST so they can't be
@@ -5138,7 +5139,7 @@ mod handlers {
 
     /// Phase Foster.2 — `/favorites` HTML route.
     pub mod favorites {
-        use axum::extract::Form;
+        use axum::extract::{Form, State};
         use axum::http::{header, HeaderMap, StatusCode};
         use axum::response::{Html, IntoResponse, Redirect, Response};
         use serde::Deserialize;
@@ -5205,6 +5206,53 @@ mod handlers {
                 Html(body),
             )
                 .into_response()
+        }
+
+        pub async fn get_watchlist(State(state): State<crate::WebState>) -> Response {
+            let members = read_group_members("Watchlist");
+            let active_label = state.config.read().await.active_label.clone();
+            let body = render_watchlist_html(&members, &active_label);
+            (
+                StatusCode::OK,
+                [(axum::http::header::CONTENT_TYPE, "text/html; charset=utf-8")],
+                Html(body),
+            )
+                .into_response()
+        }
+
+        fn read_group_members(group_name: &str) -> Vec<(String, String)> {
+            let Some(home) = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))
+            else {
+                return Vec::new();
+            };
+            let db_path = std::path::PathBuf::from(&home)
+                .join(".icelines")
+                .join("icelines.db");
+            if !db_path.exists() {
+                return Vec::new();
+            }
+            let Ok(conn) = rusqlite::Connection::open(&db_path) else {
+                return Vec::new();
+            };
+            let Ok(mut stmt) = conn.prepare(
+                "SELECT entity_ref FROM group_members \
+                 WHERE group_name = ?1 \
+                 ORDER BY entity_ref",
+            ) else {
+                return Vec::new();
+            };
+            stmt.query_map(rusqlite::params![group_name], |r| r.get::<_, String>(0))
+                .ok()
+                .map(|rows| {
+                    rows.filter_map(Result::ok)
+                        .map(|er| match er.split_once(':') {
+                            Some(("team", k)) => ("team".into(), k.into()),
+                            Some(("player", k)) => ("player".into(), k.into()),
+                            _ => ("player".into(), er),
+                        })
+                        .collect()
+                })
+                .unwrap_or_default()
         }
 
         /// Per-favorited-player stat-line lookup. Returns a flat
@@ -5498,6 +5546,76 @@ mod handlers {
                      <code>icelines fetch boxscore</code> (Foster.3+ orchestration).</em></p>",
                 );
             }
+            body.push_str("</main></body></html>");
+            body
+        }
+
+        fn render_watchlist_html(members: &[(String, String)], active_label: &str) -> String {
+            let player_count = members.iter().filter(|(k, _)| k == "player").count();
+            let team_count = members.iter().filter(|(k, _)| k == "team").count();
+            let mut body = String::new();
+            body.push_str("<!DOCTYPE html><html><head>");
+            body.push_str("<meta charset=\"utf-8\">");
+            body.push_str("<title>Watchlist - IceLines</title>");
+            body.push_str("<link rel=\"stylesheet\" href=\"/static/style.css\">");
+            body.push_str("</head><body>");
+            body.push_str(
+                "<nav><a href=\"/\">League</a> · <a href=\"/poach\">Poach</a> · \
+                 <a href=\"/favorites\">Favorites</a> · <strong>Watchlist</strong></nav>",
+            );
+            body.push_str("<main>");
+            body.push_str("<h1>Watchlist</h1>");
+            body.push_str(&format!(
+                "<p class=\"season-header\">{}</p>",
+                html_escape(active_label)
+            ));
+            body.push_str(&format!(
+                "<p>{player_count} player(s), {team_count} team(s).</p>"
+            ));
+            body.push_str(
+                "<p>Toggle candidates from the TUI Poach board with <code>w</code>, \
+                 or manage the group with <code>icelines group add Watchlist ...</code>.</p>",
+            );
+
+            if members.is_empty() {
+                body.push_str("<section class=\"empty-state\">");
+                body.push_str("<p><strong>No watched players yet.</strong></p>");
+                body.push_str(
+                    "<pre><code>icelines tui poach\n\
+                     icelines group add Watchlist \"Matthew Knies\"</code></pre>",
+                );
+                body.push_str("</section>");
+            } else {
+                let players: Vec<&str> = members
+                    .iter()
+                    .filter(|(k, _)| k == "player")
+                    .map(|(_, v)| v.as_str())
+                    .collect();
+                let teams: Vec<&str> = members
+                    .iter()
+                    .filter(|(k, _)| k == "team")
+                    .map(|(_, v)| v.as_str())
+                    .collect();
+                if !players.is_empty() {
+                    body.push_str("<h2>Players</h2><ul>");
+                    for player in players {
+                        body.push_str(&format!("<li>{}</li>", html_escape(player)));
+                    }
+                    body.push_str("</ul>");
+                }
+                if !teams.is_empty() {
+                    body.push_str("<h2>Teams</h2><ul>");
+                    for team in teams {
+                        body.push_str(&format!(
+                            "<li><a href=\"/team/{}\">{}</a></li>",
+                            html_escape(team),
+                            html_escape(team)
+                        ));
+                    }
+                    body.push_str("</ul>");
+                }
+            }
+
             body.push_str("</main></body></html>");
             body
         }

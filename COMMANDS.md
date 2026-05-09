@@ -523,6 +523,7 @@ icelines tui depth                   # cross-team depth chart
 icelines tui stats                   # interactive query builder
 icelines tui goalies                 # goalie leaderboard
 icelines tui poach                   # fantasy poacher board
+icelines tui watchlist               # local fantasy poacher watchlist group
 icelines tui scores                  # tonight's games + boxscores
 icelines tui schedule                # weekly + season schedule
 icelines tui transactions            # league-wide moves feed
@@ -557,6 +558,7 @@ icelines tui --mdi goalies               # MDI launching with goalies workspace
 # Equivalent flag form (for scripts)
 icelines tui --start goalies
 icelines tui --start poach
+icelines tui --start watchlist
 icelines tui --start "player:Bedard"
 icelines tui --start "team:EDM"
 ```
@@ -569,7 +571,7 @@ already typed (for slash commands). Enter submits; Esc cancels.
 
 | Verb | Effect | Example |
 |---|---|---|
-| `stats` / `goalies` / `poach` / `transactions` / `playoffs` / `depth` / `scores` / `schedule` / `favorites` | Swap workspace | `:poach` |
+| `stats` / `goalies` / `poach` / `watchlist` / `transactions` / `playoffs` / `depth` / `scores` / `schedule` / `favorites` | Swap workspace | `:poach` |
 | `player <name>` | Open player card | `:player Bedard` |
 | `team <ABBR>` | Team depth chart | `:team EDM` |
 | `team <ABBR> season` | Team's full schedule | `:team EDM season` |

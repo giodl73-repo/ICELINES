@@ -17,7 +17,7 @@
 //!
 //! LB.3 will extend this module with the parameterized `<slug>:<arg>`
 //! forms (player:NAME, team:ABBR, goalie:NAME, comps:NAME). For LB.1
-//! only the 8 nav-tab surfaces are wired.
+//! only the public no-argument surfaces are wired.
 
 use crate::tui::app::Screen;
 use icelines_core::identity::PlayerId;
@@ -30,8 +30,8 @@ pub enum Stability {
     Alias,
 }
 
-/// Nav-tab slug table. The 8 canonical names + their aliases. Drives
-/// `parse_start_slug` for nav surfaces. Parameterized slugs
+/// No-argument surface slug table. Canonical names + aliases. Drives
+/// `parse_start_slug` for launch surfaces. Parameterized slugs
 /// (`player:NAME`, `team:ABBR`, ...) are matched separately because
 /// they carry an opaque arg.
 pub const SLUG_TABLE: &[(&str, NavSpec, Stability)] = &[
@@ -47,9 +47,10 @@ pub const SLUG_TABLE: &[(&str, NavSpec, Stability)] = &[
     ("moves", NavSpec::Transactions, Stability::Alias),
     ("playoffs", NavSpec::Playoffs, Stability::Canonical),
     ("poach", NavSpec::Poach, Stability::Canonical),
+    ("watchlist", NavSpec::Watchlist, Stability::Canonical),
 ];
 
-/// Nav-tab variant — pure mapping, no parameter, no resolution needed.
+/// No-argument launch variant — pure mapping, no parameter, no resolution needed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NavSpec {
     Home,
@@ -61,6 +62,7 @@ pub enum NavSpec {
     Transactions,
     Playoffs,
     Poach,
+    Watchlist,
 }
 
 impl NavSpec {
@@ -75,6 +77,7 @@ impl NavSpec {
             NavSpec::Transactions => Screen::Transactions,
             NavSpec::Playoffs => Screen::Playoffs,
             NavSpec::Poach => Screen::Poach,
+            NavSpec::Watchlist => Screen::GroupDetail("Watchlist".to_string()),
         }
     }
 }
@@ -425,6 +428,7 @@ mod tests {
             ("stats", NavSpec::Queries),
             ("goalies", NavSpec::Goalies),
             ("poach", NavSpec::Poach),
+            ("watchlist", NavSpec::Watchlist),
             ("scores", NavSpec::Tonight),
             ("schedule", NavSpec::Schedule),
             ("transactions", NavSpec::Transactions),
@@ -570,11 +574,11 @@ mod tests {
     // ── canonical_slugs helper ──────────────────────────────────────
 
     /// LB.1 / l0_canonical_slugs_count
-    /// — 8 nav-tab surfaces; if this number changes, COMMANDS.md needs
+    /// — public canonical TUI surfaces; if this number changes, COMMANDS.md needs
     ///   to update too. Drift fence.
     #[test]
     fn l0_canonical_slugs_count() {
-        assert_eq!(canonical_slugs().len(), 8);
+        assert_eq!(canonical_slugs().len(), 10);
     }
 
     /// LB.1 / l0_canonical_slugs_in_declaration_order
@@ -590,6 +594,8 @@ mod tests {
             "schedule",
             "transactions",
             "playoffs",
+            "poach",
+            "watchlist",
         ];
         assert_eq!(canonical_slugs(), expected);
     }
@@ -611,6 +617,7 @@ mod tests {
         let _ = NavSpec::Transactions.into_screen();
         let _ = NavSpec::Playoffs.into_screen();
         let _ = NavSpec::Poach.into_screen();
+        let _ = NavSpec::Watchlist.into_screen();
     }
 
     // ── LB.3 — parameterized slugs ─────────────────────────────────────

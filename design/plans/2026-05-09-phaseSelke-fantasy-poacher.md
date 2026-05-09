@@ -321,6 +321,9 @@ Initial implementation note:
 - `/api/v1/poach` returns the full shared `PoachBoardView` JSON contract.
 - Missing active-season data renders as a source-aware empty state instead of a
   web-only fallback table.
+- `/watchlist` renders the local SQLite-backed `Watchlist` group so TUI Poach
+  toggles have a web-readable destination. Rich watch-rule metadata remains
+  pending.
 
 ---
 

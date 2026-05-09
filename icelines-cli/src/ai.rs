@@ -136,6 +136,7 @@ VERBS (no args):
   stats          → Stats / Queries screen
   goalies        → Goalies leaderboard
   poach          → Fantasy poacher board
+  watchlist      → Fantasy poacher watchlist
   transactions   → Transactions feed (alias: txs)
   playoffs       → Playoffs bracket
   depth          → Depth chart
@@ -155,6 +156,7 @@ ROSTER KV FORM:
   stats nationality=CAN pos=LW min-gp=20
   goalies sort=gaa min-gp=20 nationality=CAN saves=on
   poach
+  watchlist
   team EDM pos=LW nationality=CAN
   depth pos=LW nationality=CAN
   favorites sort=name nationality=CAN
@@ -689,6 +691,7 @@ mod tests {
             "stats",
             "goalies",
             "poach",
+            "watchlist",
             "team <ABBR>",
             "query <filter-expression>",
             "/fav add",

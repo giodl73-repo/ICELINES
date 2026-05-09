@@ -48,6 +48,8 @@ pub enum Command {
     Goalies,
     /// `poach` — workspace becomes Fantasy Poacher.
     Poach,
+    /// `watchlist` - workspace becomes local fantasy Watchlist.
+    Watchlist,
     GoaliesKv {
         args: crate::tui::filter_state::RosterKvArgs,
     },
@@ -272,6 +274,7 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
             })?,
         }),
         "poach" if args.trim().is_empty() => Ok(Command::Poach),
+        "watchlist" if args.trim().is_empty() => Ok(Command::Watchlist),
         "transactions" | "txs" | "tx" => Ok(Command::Transactions),
         "playoffs" => Ok(Command::Playoffs),
         "depth" if args.trim().is_empty() => Ok(Command::Depth),
@@ -547,6 +550,10 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
         Command::GoaliesKv { args } => exec_goalies_kv(app, args),
         Command::Poach => {
             app.screen = Screen::Poach;
+            ExecResult::Continue
+        }
+        Command::Watchlist => {
+            app.screen = Screen::GroupDetail("Watchlist".to_string());
             ExecResult::Continue
         }
         Command::Transactions => {
@@ -1048,6 +1055,7 @@ mod tests {
             ("stats", Command::Stats),
             ("goalies", Command::Goalies),
             ("poach", Command::Poach),
+            ("watchlist", Command::Watchlist),
             ("transactions", Command::Transactions),
             ("txs", Command::Transactions),
             ("playoffs", Command::Playoffs),
@@ -1517,6 +1525,10 @@ mod tests {
             (Command::Stats, Screen::Queries),
             (Command::Goalies, Screen::Goalies),
             (Command::Poach, Screen::Poach),
+            (
+                Command::Watchlist,
+                Screen::GroupDetail("Watchlist".to_string()),
+            ),
             (Command::Transactions, Screen::Transactions),
             (Command::Playoffs, Screen::Playoffs),
             (Command::Depth, Screen::Depth),

@@ -27,6 +27,7 @@ icelines menu             # don't know which surface you want? Pick from a menu.
 icelines tui scores               # tonight's games
 icelines tui goalies              # goalie leaderboard
 icelines tui poach                # fantasy poacher board
+icelines tui watchlist            # fantasy poacher watchlist
 icelines tui player Bedard        # Bedard's card cold
 icelines tui team EDM             # Edmonton depth chart
 ```
@@ -227,7 +228,7 @@ icelines report poach --category shots --top 10 --out poach.md
 icelines report weekly --league default --category hits,blocks
 icelines watch rules
 icelines watch player "Matthew Knies" --when pp1
-icelines serve                         # web dashboard includes /poach and /api/v1/poach
+icelines serve                         # web dashboard includes /poach, /watchlist, and /api/v1/poach
 
 # Trades
 icelines fantasy trade "Bouchard" --to-team "Other" --for-player "Werenski"          # simulate

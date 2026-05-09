@@ -91,6 +91,7 @@ async fn l1_html_each_route_has_active_season_header() {
     let html_routes: &[&str] = &[
         "/",
         "/poach",
+        "/watchlist",
         // King.2: "/leaders",
         // King.3: "/player/8478402",
         // King.4: "/team/SEA", "/depth", "/class/2022",
@@ -179,6 +180,31 @@ async fn l1_depth_route_returns_200_html() {
         body.contains("href=\"/depth\""),
         "/depth must be linked in the global nav"
     );
+}
+
+#[tokio::test]
+async fn l1_watchlist_route_returns_200_html() {
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/watchlist")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+
+    assert!(body.contains("Watchlist"));
+    assert!(body.contains("href=\"/poach\""));
+    assert!(body.contains("icelines tui poach"));
 }
 
 #[tokio::test]
