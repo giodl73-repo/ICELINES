@@ -232,6 +232,9 @@ Closeout so far:
   contracts.
 - Web `/api/v1/leaders` now projects its existing stable envelope rows from a
   `LeadersView`; HTML `/leaders` remains on the current template row path.
+- Web `/leaders` now builds the same `LeadersView` after its existing
+  filter/sort/top pipeline, then renders template rows from that ViewModel
+  boundary while preserving web-only fields such as headshots.
 - `LeadersView::from_player_views_with_primary` supports sort-specific primary
   metrics without leaking renderer formatting into the default pace builder.
 - `GoaliesView::from_player_views` lets renderer adapters consume already
@@ -250,7 +253,8 @@ Closeout so far:
   -p icelines-web`, `cargo test -p icelines-web --test persona_wave19 --
   --nocapture`, `cargo test -p icelines-web --test persona_wave22b_envelope
   -- --nocapture`, `cargo test -p icelines-web --test persona_wave21_parity
-  -- --nocapture`, and the `viewmodel` test slice.
+  -- --nocapture`, `cargo test -p icelines-web leaders -- --nocapture`, and
+  the `viewmodel` test slice.
 
 ---
 

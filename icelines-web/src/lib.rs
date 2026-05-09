@@ -844,6 +844,33 @@ mod handlers {
                 .collect()
         }
 
+        fn leader_template_rows_from_view(
+            view: &LeadersView,
+            rows: Vec<LeaderRow>,
+        ) -> Vec<LeaderRow> {
+            rows.into_iter()
+                .zip(view.rows.iter())
+                .map(|(mut row, view_row)| {
+                    row.nhl_id = view_row.player_id.0;
+                    row.name = view_row.display_name.clone();
+                    row.position = view_row.position.abbreviation().to_owned();
+                    row.team = view_row.team.0.clone();
+                    row.gp = leader_secondary_i64(view_row, "gp").unwrap_or_default() as u32;
+                    row.goals = leader_secondary_i64(view_row, "goals").unwrap_or_default() as u32;
+                    row.assists =
+                        leader_secondary_i64(view_row, "assists").unwrap_or_default() as u32;
+                    row.points =
+                        leader_secondary_i64(view_row, "points").unwrap_or_default() as u32;
+                    row.ppg_str = if row.gp > 0 {
+                        format!("{:.2}", row.points as f64 / row.gp as f64)
+                    } else {
+                        String::new()
+                    };
+                    row
+                })
+                .collect()
+        }
+
         async fn build_leader_result(
             state: &WebState,
             q: &LeadersQuery,
@@ -1407,6 +1434,9 @@ mod handlers {
                 all.truncate(top_n);
                 (all, total)
             };
+            let leaders_view =
+                leaders_view_from_template_rows(&rows, sort_key, season, season_type);
+            let rows = leader_template_rows_from_view(&leaders_view, rows);
 
             let active_sort_token = sort_key.url_token().to_owned();
             let active_pos = q
