@@ -190,15 +190,19 @@ fn render_sdi(f: &mut Frame, app: &App) {
 fn render_mdi(f: &mut Frame, app: &App, mdi: &crate::tui::mdi::MdiLayout) {
     let area = f.area();
 
-    // Phase Adams.8 — vertical layout: Scores ribbon (1) +
-    // body (Min) + cheat sheet (1) + cmdbar (1). The cheat
-    // sheet sits ABOVE the cmdbar and lists the top verbs the
-    // user can call — always visible, never gated on focus.
+    // Phase Adams.9 — vertical layout: Scores ribbon (1) +
+    // body (Min) + per-screen keybinds (1) + verb cheat sheet
+    // (1) + cmdbar (1). The per-screen row sits between the
+    // workspace and the cheat sheet, surfacing the active
+    // screen's chrome.keybinds so the user discovers
+    // sub-commands ('s sort · m min-gp · /sort picker') without
+    // hunting for them.
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(1),
             Constraint::Min(0),
+            Constraint::Length(1),
             Constraint::Length(1),
             Constraint::Length(1),
         ])
@@ -235,10 +239,17 @@ fn render_mdi(f: &mut Frame, app: &App, mdi: &crate::tui::mdi::MdiLayout) {
     }
     let _ = idx;
 
+    // Phase Adams.9 — per-screen sub-commands strip. Pulls
+    // keybinds from the active workspace screen's chrome
+    // accessor and renders them as ` k action · k action · … `.
+    // Switches automatically when the workspace swaps
+    // (`:goalies` swaps in goalies' chrome).
+    render_mdi_screen_keybinds(f, app, chunks[2]);
+
     // Phase Adams.8 — always-visible verb cheat sheet above
     // the prompt row. Lists the canonical commands the user
     // can call. No gating on focus.
-    render_mdi_cheat_sheet(f, chunks[2]);
+    render_mdi_cheat_sheet(f, chunks[3]);
 
     // Phase Adams.2 — combined footer/cmdbar. Three modes per
     // spec glass-1/glass-4:
@@ -247,7 +258,85 @@ fn render_mdi(f: &mut Frame, app: &App, mdi: &crate::tui::mdi::MdiLayout) {
     //   prompt-mode → input non-empty OR focused: `> {input}_`
     //   error-mode  → flash_error set: red `! {error}` (replaces
     //                 the prompt; cleared on next keypress)
-    render_mdi_cmdbar(f, chunks[3], mdi);
+    render_mdi_cmdbar(f, chunks[4], mdi);
+}
+
+/// Phase Adams.9 — per-screen sub-command hint row. Surfaces
+/// the active workspace screen's keybinds (declared via
+/// `chrome()` accessors per Masterton.1) so the user can
+/// discover screen-specific sort / filter / column options
+/// without leaving the dashboard.
+///
+/// Format: ` <key>=<action> · <key>=<action> · … ` truncated
+/// to fit the terminal width with a trailing `…` indicator.
+/// The cyan color distinguishes this row from the yellow
+/// global-verb cheat sheet directly below.
+///
+/// When the active screen has no chrome accessor yet (Team,
+/// Depth, Favorites — see Masterton.2 follow-up), shows a
+/// placeholder pointing to the cheat sheet below.
+fn render_mdi_screen_keybinds(f: &mut Frame, app: &App, area: Rect) {
+    let cyan = Style::default().fg(Color::Cyan);
+    let dim = Style::default().fg(Color::DarkGray);
+    let chrome = active_chrome(app);
+
+    if chrome.keybinds.is_empty() {
+        // Screen hasn't declared keybinds yet; advertise that
+        // workspace navigation is via the cmdbar verbs below.
+        let hint = format!(
+            " {}: no per-screen keys yet — use cmdbar verbs below ",
+            chrome_screen_label(&app.screen)
+        );
+        f.render_widget(Paragraph::new(hint).style(dim), area);
+        return;
+    }
+
+    // Build " key=action · key=action " up to the available
+    // width. Trailing chips drop with a `…` if they don't fit
+    // (matching the SDI footer's overflow rule).
+    let prefix = format!(" {}: ", chrome_screen_label(&app.screen));
+    let mut line = prefix.clone();
+    let max = area.width as usize;
+    let mut overflowed = false;
+    for (i, kh) in chrome.keybinds.iter().enumerate() {
+        let chip = if i == 0 {
+            format!("{}={}", kh.key, kh.action)
+        } else {
+            format!(" · {}={}", kh.key, kh.action)
+        };
+        if line.chars().count() + chip.chars().count() + 2 > max {
+            overflowed = true;
+            break;
+        }
+        line.push_str(&chip);
+    }
+    if overflowed {
+        line.push_str(" …");
+    }
+    line.push(' ');
+    f.render_widget(Paragraph::new(line).style(cyan), area);
+}
+
+/// Phase Adams.9 — short label for the active screen, used as
+/// a prefix on the per-screen keybind row. Mirrors
+/// `screen_label` but trims to the bare workspace name.
+fn chrome_screen_label(s: &Screen) -> &'static str {
+    match s {
+        Screen::Queries => "Stats",
+        Screen::Goalies => "Goalies",
+        Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(_, _) => "Schedule",
+        Screen::Transactions => "Transactions",
+        Screen::Playoffs | Screen::SeriesDetail(_) => "Playoffs",
+        Screen::Tonight => "Scores",
+        Screen::Team(_) => "Team",
+        Screen::Depth | Screen::DepthTeam(_) => "Depth",
+        Screen::Favorites => "Favorites",
+        Screen::PlayerById(_) => "Player",
+        Screen::CompsById(_) => "Comps",
+        Screen::GameDetail(_) => "Boxscore",
+        Screen::GoalieDetailById(_) => "Goalie",
+        _ => "Screen",
+    }
 }
 
 /// Phase Adams.8 — always-visible cheat sheet of the top cmdbar
@@ -4060,6 +4149,68 @@ mod adams_4_render_boundary_tests {
         assert!(
             text.contains("Schedule"),
             "Schedule still adaptive-visible at 200"
+        );
+    }
+
+    // ── Phase Adams.9 — per-screen sub-command hint row ─────────────────
+
+    /// Per-screen row pulls keybinds from `active_chrome` —
+    /// switches when the workspace screen swaps.
+    #[test]
+    fn l0_adams_per_screen_row_shows_goalies_keybinds() {
+        let mut app = App::new(true);
+        app.mdi = Some(MdiLayout::default());
+        app.screen = Screen::Goalies;
+        let backend = TestBackend::new(160, 30);
+        let mut term = Terminal::new(backend).unwrap();
+        term.draw(|f| render(f, &app)).unwrap();
+        let text = buf_text(term.backend().buffer());
+        // Goalies chrome advertises 's' (sort) and 'm' (min-gp).
+        assert!(
+            text.contains("s=") && text.contains("sort"),
+            "goalies per-screen row must include 's=sort'; got:\n{text}"
+        );
+        assert!(
+            text.contains("m="),
+            "goalies per-screen row must include 'm=' min-gp; got:\n{text}"
+        );
+    }
+
+    /// Stats screen row advertises filter / sort / save / load.
+    #[test]
+    fn l0_adams_per_screen_row_shows_stats_keybinds() {
+        let mut app = App::new(true);
+        app.mdi = Some(MdiLayout::default());
+        app.screen = Screen::Queries;
+        let backend = TestBackend::new(160, 30);
+        let mut term = Terminal::new(backend).unwrap();
+        term.draw(|f| render(f, &app)).unwrap();
+        let text = buf_text(term.backend().buffer());
+        assert!(
+            text.contains("f=filter"),
+            "stats per-screen row must include 'f=filter'; got:\n{text}"
+        );
+        assert!(
+            text.contains("save") && text.contains("load"),
+            "stats per-screen row must include save/load; got:\n{text}"
+        );
+    }
+
+    /// Screens without chrome accessors fall back to a
+    /// placeholder hint pointing to the cmdbar.
+    #[test]
+    fn l0_adams_per_screen_row_falls_back_for_team() {
+        let mut app = App::new(true);
+        app.mdi = Some(MdiLayout::default());
+        app.screen = Screen::Team("EDM".to_owned());
+        let backend = TestBackend::new(160, 30);
+        let mut term = Terminal::new(backend).unwrap();
+        term.draw(|f| render(f, &app)).unwrap();
+        let text = buf_text(term.backend().buffer());
+        // Team has no chrome keybinds today — placeholder fires.
+        assert!(
+            text.contains("Team:") && text.contains("cmdbar verbs below"),
+            "team must show placeholder pointing to cmdbar; got:\n{text}"
         );
     }
 

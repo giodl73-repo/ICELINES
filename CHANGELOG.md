@@ -1,5 +1,51 @@
 # IceLines Changelog
 
+## v0.23.3 — 2026-05-08 — Phase Jack Adams.9 (per-screen sub-command hints)
+
+Headline: **The MDI dashboard now shows a cyan per-screen sub-command
+strip directly above the global verb cheat sheet. When the workspace is
+on Stats, you see `f=filter · /=sort · s=save · l=load · …`; when it's
+on Goalies, `s=sort · m=min-gp · …`; when it's on Schedule, `/=search ·
+t=today · D=date picker · …`. Switches automatically as `:goalies` /
+`:stats` / `:schedule` swap the workspace.** Bin suite 1030 → 1033.
+
+### What shipped
+
+- New `render_mdi_screen_keybinds` row pulls keybinds from
+  `active_chrome(app)` (Masterton.1 contract). Each screen's
+  declarative `chrome.keybinds` list is the source of truth.
+- Adaptive truncation: chips drop with a trailing `…` when the row
+  doesn't fit at narrow widths.
+- Placeholder for screens without chrome accessors yet (Team / Depth /
+  Favorites): `Team: no per-screen keys yet — use cmdbar verbs below`.
+  These are tracked for follow-up — see Adams.10 / .11 below.
+- 3 new render-level tests confirming Goalies / Stats / Team-fallback
+  render the right hints.
+
+### Layout (now 5 rows of chrome instead of 4)
+
+```
+[ Scores ribbon                                                     ]  1 row, top
+[ Favorites │ Workspace                            │ Schedule        ]  body
+[  Stats: f=filter · /=sort · s=save · l=load · …                    ]  per-screen (NEW)
+[  stats · goalies · transactions · playoffs · depth · scores · …    ]  cheat sheet
+[  > _                                                               ]  cmdbar
+```
+
+### Test growth
+
+- Bin: 1030 → 1033 (+3)
+
+### What's deferred to v0.23.4 / .5
+
+Team / Depth / Favorites screens don't have chrome accessors yet, so
+their per-screen rows show the placeholder. Adding real sort/filter
+keybinds to those screens is tracked as Adams.10 (Team — sort by Pos,
+filter by position class, country filter, hits column) and Adams.11
+(Depth + Favorites chrome accessors).
+
+---
+
 ## v0.23.2 — 2026-05-08 — Phase Jack Adams.8 (cmdbar UX polish)
 
 Headline: **The cmdbar gains sticky focus, history navigation, an
