@@ -39,10 +39,7 @@ pub fn compute_series_momentum(
 
     let last_result = series.games.last().and_then(build_last_result);
 
-    let winner_abbrev = series
-        .winner_abbrev
-        .as_ref()
-        .map(|w| TeamAbbr(w.clone()));
+    let winner_abbrev = series.winner_abbrev.as_ref().map(|w| TeamAbbr(w.clone()));
 
     SeriesMomentum {
         series_letter: series.letter.clone().unwrap_or_else(|| "?".into()),
@@ -148,7 +145,14 @@ mod tests {
         }
     }
 
-    fn game(date: &str, home: &str, away: &str, hs: u8, as_: u8, suffix: &str) -> PlayoffGameResult {
+    fn game(
+        date: &str,
+        home: &str,
+        away: &str,
+        hs: u8,
+        as_: u8,
+        suffix: &str,
+    ) -> PlayoffGameResult {
         PlayoffGameResult {
             date: date.into(),
             home_abbrev: home.into(),

@@ -498,8 +498,5 @@ async fn p_w17_079_sql_ne_typo_rejected() {
 #[tokio::test]
 async fn p_w17_080_killer_query_full() {
     // The user's vision query end-to-end on the web.
-    assert_filter_accepted(
-        "g.any10g>=5 EVER AT age<=25 AND country IN (CAN, USA, SWE)",
-    )
-    .await;
+    assert_filter_accepted("g.any10g>=5 EVER AT age<=25 AND country IN (CAN, USA, SWE)").await;
 }

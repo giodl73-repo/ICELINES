@@ -195,13 +195,7 @@ impl<'a> EvalCtx<'a> {
         clock: &dyn icelines_core::freshness::Clock,
         season: u32,
     ) -> Self {
-        Self::new(
-            provider,
-            strict,
-            no_fetch,
-            clock.now().date_naive(),
-            season,
-        )
+        Self::new(provider, strict, no_fetch, clock.now().date_naive(), season)
     }
 
     /// Override the anchor date. Builder-style for tests that want
@@ -333,13 +327,7 @@ mod tests {
                 .unwrap()
                 .with_timezone(&chrono::Utc),
         );
-        let ctx = EvalCtx::from_clock(
-            &provider,
-            StrictMode::Off,
-            false,
-            &clock,
-            20252026,
-        );
+        let ctx = EvalCtx::from_clock(&provider, StrictMode::Off, false, &clock, 20252026);
         assert_eq!(ctx.today, fixed_today());
         assert_eq!(ctx.season, 20252026);
     }

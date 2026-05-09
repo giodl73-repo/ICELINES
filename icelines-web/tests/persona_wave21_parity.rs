@@ -72,11 +72,8 @@ fn library_match(repo: &StatsRepository, filter: &str) -> HashSet<String> {
     let mut out = HashSet::new();
     for (pid, name) in SAMPLE_PIDS {
         for s in SAMPLE_SEASONS {
-            if let Some(view) =
-                repo.view(PlayerId(*pid), Season(*s), SeasonType::Regular)
-            {
-                let ctx =
-                    EvalCtx::new(&provider, StrictMode::Off, false, fixed_today(), *s);
+            if let Some(view) = repo.view(PlayerId(*pid), Season(*s), SeasonType::Regular) {
+                let ctx = EvalCtx::new(&provider, StrictMode::Off, false, fixed_today(), *s);
                 if plan.root.matches(&view, &ctx) {
                     out.insert((*name).to_string());
                 }

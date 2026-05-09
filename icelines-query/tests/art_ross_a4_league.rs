@@ -8,9 +8,7 @@
 use std::sync::Mutex;
 
 use chrono::NaiveDate;
-use icelines_core::career_history::{
-    CareerGameType, CareerHistory, CareerStint, LeagueAbbrev,
-};
+use icelines_core::career_history::{CareerGameType, CareerHistory, CareerStint, LeagueAbbrev};
 use icelines_core::model::Season;
 use icelines_query::data_provider::{
     DataProvider, EvalCtx, FetchError, FetchEvent, PlanRequirement,
@@ -204,10 +202,7 @@ fn l1_a4_league_in_set_matches_any() {
     let provider = MockProvider::with_history(history);
     let ctx = EvalCtx::new(&provider, StrictMode::Off, false, fixed_today(), 20252026);
 
-    let plan = parse_query(FilterInput::Cli(
-        "league IN (OHL, WHL, QMJHL)".to_string(),
-    ))
-    .unwrap();
+    let plan = parse_query(FilterInput::Cli("league IN (OHL, WHL, QMJHL)".to_string())).unwrap();
     assert!(plan.root.matches(&view_for_repo(&repo), &ctx));
 }
 
@@ -256,10 +251,10 @@ fn l1_a4_career_junior_sum_matches() {
     let history = CareerHistory {
         player_id: 8478402,
         stints: vec![
-            skater_stint(20182019, "OHL", 60, 90), // junior
-            skater_stint(20192020, "OHL", 60, 95), // junior
+            skater_stint(20182019, "OHL", 60, 90),  // junior
+            skater_stint(20192020, "OHL", 60, 95),  // junior
             skater_stint(20202021, "WHL", 60, 100), // junior
-            skater_stint(20212022, "NHL", 82, 50), // pro — excluded
+            skater_stint(20212022, "NHL", 82, 50),  // pro — excluded
         ],
     };
     let provider = MockProvider::with_history(history);
@@ -292,8 +287,8 @@ fn l1_a4_career_nhl_only_excludes_other_leagues() {
         player_id: 8478402,
         stints: vec![
             skater_stint(20192020, "OHL", 60, 100), // not NHL
-            skater_stint(20212022, "NHL", 82, 60), // NHL
-            skater_stint(20222023, "NHL", 82, 70), // NHL
+            skater_stint(20212022, "NHL", 82, 60),  // NHL
+            skater_stint(20222023, "NHL", 82, 70),  // NHL
         ],
     };
     let provider = MockProvider::with_history(history);

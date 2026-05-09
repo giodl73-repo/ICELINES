@@ -243,7 +243,10 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
             "  {:<22} {:<4}  {:>6}  {:>7}{}",
             "Player", "Pos", "PPG", "Pts/82", header_extra
         )),
-        Line::from(format!("  {}", "─".repeat(46 + header_extra.chars().count()))),
+        Line::from(format!(
+            "  {}",
+            "─".repeat(46 + header_extra.chars().count())
+        )),
     ];
 
     for (i, v) in filtered.iter().enumerate() {
@@ -376,7 +379,7 @@ pub fn sort_team_views(
             });
         }
         TeamSort::Goals => {
-            views.sort_by(|a, b| b.goals().cmp(&a.goals()));
+            views.sort_by_key(|view| std::cmp::Reverse(view.goals()));
         }
         TeamSort::Hits => {
             // None hits last.

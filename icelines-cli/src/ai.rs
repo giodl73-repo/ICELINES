@@ -121,14 +121,14 @@ pub enum AiError {
 /// grammar. Hand-written, ~150 lines of grammar reference + 5
 /// canonical examples. Versioned: bump VERSION when you change
 /// the grammar so prompt-cache invalidation is obvious.
+#[allow(dead_code)]
 pub const SYSTEM_PROMPT_VERSION: &str = "v1";
 
 pub fn default_system_prompt() -> String {
     // Single source of truth for the prompt — keep it in sync
     // with the cmdbar grammar in `tui/command.rs::parse_command`
     // and the user-facing reference in `widgets::mdi_help_lines`.
-    format!(
-        r#"You translate natural-language hockey/NHL queries into IceLines TUI command-bar commands.
+    r#"You translate natural-language hockey/NHL queries into IceLines TUI command-bar commands.
 
 Output format: ONLY the canonical command string, no explanation, no markdown, no quotes.
 
@@ -206,7 +206,7 @@ You: /fav add Bedard
 
 If the user's request CANNOT be expressed in this grammar, respond with the single token UNSUPPORTED.
 "#
-    )
+    .to_string()
 }
 
 // ── Provider config ──────────────────────────────────────────────────────────
@@ -255,11 +255,13 @@ impl Default for AiConfig {
 /// because `AiError` isn't Clone (it carries `thiserror` source
 /// chains in some variants); `StubProvider::ok`/`err` factories
 /// keep test setup terse.
+#[cfg(test)]
 #[derive(Debug)]
 pub struct StubProvider {
     pub canned_response: Result<String, AiError>,
 }
 
+#[cfg(test)]
 impl StubProvider {
     pub fn ok(response: impl Into<String>) -> Self {
         Self {
@@ -274,6 +276,7 @@ impl StubProvider {
     }
 }
 
+#[cfg(test)]
 #[async_trait::async_trait]
 impl AiProvider for StubProvider {
     async fn interpret(

@@ -33,10 +33,7 @@ pub async fn run(
     let range = parse_range(range.as_deref())?;
 
     let db = GroupDb::open().context("open group db")?;
-    let members = match db.list_members_with_kind(&group) {
-        Ok(m) => m,
-        Err(_) => Vec::new(),
-    };
+    let members = db.list_members_with_kind(&group).unwrap_or_default();
 
     if members.is_empty() {
         if json {

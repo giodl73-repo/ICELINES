@@ -489,7 +489,10 @@ fn p_w13_083_pf_with_career_300_goals() {
 
 #[test]
 fn p_w13_084_two_way_power_forward() {
-    ok_with_n_atoms("height>=74 AND weight>=210 AND blocked-shots>=50 AND g>=20", 4);
+    ok_with_n_atoms(
+        "height>=74 AND weight>=210 AND blocked-shots>=50 AND g>=20",
+        4,
+    );
 }
 
 #[test]
@@ -1088,9 +1091,7 @@ fn p_w13_200_kitchen_sink_query() {
     // The reporter's everything-bagel query — exercise the
     // grammar at its widest. Sliding window + bio + IN +
     // BETWEEN + LIKE + EVER-AT-age all in one.
-    ok(
-        "g.last10g>=5 AND age BETWEEN 22 AND 28 AND \
+    ok("g.last10g>=5 AND age BETWEEN 22 AND 28 AND \
          country IN (CAN, USA, SWE) AND \
-         pos IN (C, LW, RW) AND draft-round<=2",
-    );
+         pos IN (C, LW, RW) AND draft-round<=2");
 }

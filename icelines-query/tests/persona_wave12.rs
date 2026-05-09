@@ -19,9 +19,7 @@
 //!   I — Edge cases (15)
 //!   J — Pathological inputs (15)
 
-use icelines_query::data_provider::{
-    DataProvider, FetchError, FetchEvent, PlanRequirement,
-};
+use icelines_query::data_provider::{DataProvider, FetchError, FetchEvent, PlanRequirement};
 use icelines_query::{
     parse_query, BioConstraint, BioField, Constraint, FilterInput, GlobPattern, MemberOp,
     NumericRange, ParseError, PatternOp, Predicate, ScalarOp, ScalarValue, SlidingWindow,
@@ -943,7 +941,10 @@ fn p_w12_090_last0g_rejected() {
 #[test]
 fn p_w12_091_last10z_rejected() {
     let es = errs("g.last10z>=5");
-    assert!(matches!(es[0], ParseError::UnknownWindowUnit { unit: 'z', .. }));
+    assert!(matches!(
+        es[0],
+        ParseError::UnknownWindowUnit { unit: 'z', .. }
+    ));
 }
 
 #[test]
@@ -1404,7 +1405,9 @@ fn p_w12_144_compound_window_under_not() {
 #[test]
 fn p_w12_145_compound_all_operators() {
     // Every new op + new atom + new variant — one query
-    let c = ok(r#"g.last10g>=5 AND age BETWEEN 22 AND 25 AND country IN (CAN, USA) AND pos LIKE "*W" AND draft-round<=2"#);
+    let c = ok(
+        r#"g.last10g>=5 AND age BETWEEN 22 AND 25 AND country IN (CAN, USA) AND pos LIKE "*W" AND draft-round<=2"#,
+    );
     match c {
         Constraint::All(children) => assert_eq!(children.len(), 5),
         _ => panic!(),
@@ -1922,11 +1925,9 @@ fn p_w12_199_redundant_atoms_preserved() {
 #[test]
 fn p_w12_200_killer_compound_with_nested_or() {
     // Real-world: "young first-rounders with hot streaks"
-    let c = ok(
-        "g.last10g>=5 AND \
+    let c = ok("g.last10g>=5 AND \
          (age<=24 OR (age BETWEEN 25 AND 27 AND draft-overall<=10)) AND \
-         country IN (CAN, USA, SWE)",
-    );
+         country IN (CAN, USA, SWE)");
     if let Constraint::All(children) = c {
         assert_eq!(children.len(), 3);
     } else {

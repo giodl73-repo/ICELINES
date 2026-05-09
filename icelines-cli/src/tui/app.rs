@@ -2353,7 +2353,7 @@ impl App {
     /// request. Called once per tick from the run_loop. If the
     /// receiver has a result ready, applies it: success → re-parse
     /// + execute the returned command; failure → flash the AI
-    /// error (with the original parse error behind it).
+    ///   error (with the original parse error behind it).
     pub fn mdi_poll_ai(&mut self) {
         let Some(mdi) = self.mdi.as_mut() else {
             return;

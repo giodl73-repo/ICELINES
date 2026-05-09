@@ -170,11 +170,8 @@ impl Fetcher for NhlApiFetcher {
     fn fetch_bios(&self, season: Season) -> Result<Vec<SkaterBio>, DataError> {
         let season_str = season.as_str();
         let url_hint = format!("nhl-api://skater/bios?seasonId={season_str}");
-        self.block_on(
-            self.client
-                .fetch_all_bios(&season_str, SeasonType::Regular),
-        )
-        .map_err(|e| Self::map_err(e, url_hint))
+        self.block_on(self.client.fetch_all_bios(&season_str, SeasonType::Regular))
+            .map_err(|e| Self::map_err(e, url_hint))
     }
 
     fn fetch_stats(
@@ -311,7 +308,10 @@ impl DataStore {
 
             let bios = stats_dir.join("bios.json");
             if bios.exists()
-                && self.manifest.get(DataKind::Bios, &DataKey::Season(season)).is_none()
+                && self
+                    .manifest
+                    .get(DataKind::Bios, &DataKey::Season(season))
+                    .is_none()
             {
                 self.manifest.upsert(
                     DataKind::Bios,
@@ -324,15 +324,15 @@ impl DataStore {
             if regular.exists()
                 && self
                     .manifest
-                    .get(DataKind::Stats, &DataKey::SeasonType(season, SeasonType::Regular))
+                    .get(
+                        DataKind::Stats,
+                        &DataKey::SeasonType(season, SeasonType::Regular),
+                    )
                     .is_none()
             {
                 self.manifest.upsert(
                     DataKind::Stats,
-                    self.shim_entry(
-                        DataKey::SeasonType(season, SeasonType::Regular),
-                        regular,
-                    ),
+                    self.shim_entry(DataKey::SeasonType(season, SeasonType::Regular), regular),
                 )?;
                 registered += 1;
             }
@@ -341,15 +341,15 @@ impl DataStore {
             if playoff.exists()
                 && self
                     .manifest
-                    .get(DataKind::Stats, &DataKey::SeasonType(season, SeasonType::Playoff))
+                    .get(
+                        DataKind::Stats,
+                        &DataKey::SeasonType(season, SeasonType::Playoff),
+                    )
                     .is_none()
             {
                 self.manifest.upsert(
                     DataKind::Stats,
-                    self.shim_entry(
-                        DataKey::SeasonType(season, SeasonType::Playoff),
-                        playoff,
-                    ),
+                    self.shim_entry(DataKey::SeasonType(season, SeasonType::Playoff), playoff),
                 )?;
                 registered += 1;
             }
@@ -435,10 +435,7 @@ impl DataStore {
     /// returns the parsed `serde_json::Value`. Returns `None` when
     /// the boxscore hasn't been fetched yet (caller decides whether
     /// to lazy-fetch via `NhlApiClient`).
-    pub fn load_boxscore_raw(
-        &self,
-        game: crate::manifest::DataKey,
-    ) -> Option<serde_json::Value> {
+    pub fn load_boxscore_raw(&self, game: crate::manifest::DataKey) -> Option<serde_json::Value> {
         let entry = self.manifest.get(DataKind::Boxscore, &game)?;
         let bytes = std::fs::read(&entry.path).ok()?;
         serde_json::from_slice(&bytes).ok()
@@ -594,9 +591,7 @@ impl DataStore {
         // happening (TAPE H2). Suppressed under test_mode (gated
         // higher up).
         let _ = self.clock.now();
-        eprintln!(
-            "icelines: fetching {kind:?} / {key:?} from NHL API…"
-        );
+        eprintln!("icelines: fetching {kind:?} / {key:?} from NHL API…");
     }
 
     fn persist_bios(&self, season: Season, bios: &[SkaterBio]) -> Result<(), DataError> {
@@ -642,11 +637,7 @@ impl DataStore {
         Ok(())
     }
 
-    fn persist_career_history(
-        &self,
-        pid: PlayerId,
-        ch: &CareerHistory,
-    ) -> Result<(), DataError> {
+    fn persist_career_history(&self, pid: PlayerId, ch: &CareerHistory) -> Result<(), DataError> {
         let path = self.career_history_path(pid);
         write_json_atomic(&path, ch).map_err(|e| DataError::Io {
             path: path.clone(),
@@ -696,16 +687,11 @@ impl DataStore {
             SeasonType::Regular => "stats.json",
             SeasonType::Playoff => "playoff-stats.json",
         };
-        self.root
-            .join("seasons")
-            .join(season.as_str())
-            .join(file)
+        self.root.join("seasons").join(season.as_str()).join(file)
     }
 
     fn career_history_path(&self, pid: PlayerId) -> PathBuf {
-        self.root
-            .join("career_history")
-            .join(format!("{pid}.json"))
+        self.root.join("career_history").join(format!("{pid}.json"))
     }
 }
 
@@ -735,12 +721,14 @@ mod tests {
     impl Fetcher for MockFetcher {
         fn fetch_bios(&self, season: Season) -> Result<Vec<SkaterBio>, DataError> {
             *self.bios_calls.lock().unwrap() += 1;
-            self.bios_response.lock().unwrap().take().unwrap_or(Err(
-                DataError::NotInstalled {
+            self.bios_response
+                .lock()
+                .unwrap()
+                .take()
+                .unwrap_or(Err(DataError::NotInstalled {
                     kind: DataKind::Bios,
                     key: DataKey::Season(season),
-                },
-            ))
+                }))
         }
         fn fetch_stats(
             &self,
@@ -788,7 +776,10 @@ mod tests {
         assert!(!bios.is_empty(), "bundle yields >0 bios");
         // Bundle hits do NOT write manifest entries.
         assert!(
-            store.manifest().get(DataKind::Bios, &DataKey::Season(s)).is_none(),
+            store
+                .manifest()
+                .get(DataKind::Bios, &DataKey::Season(s))
+                .is_none(),
             "bundle hit must not write manifest entry"
         );
     }
@@ -848,7 +839,10 @@ mod tests {
         assert_eq!(fetcher.bios_call_count(), 1, "fetcher hit once");
         // Disk + manifest entry persisted.
         assert!(
-            store.manifest().get(DataKind::Bios, &DataKey::Season(s)).is_some(),
+            store
+                .manifest()
+                .get(DataKind::Bios, &DataKey::Season(s))
+                .is_some(),
             "manifest entry written"
         );
         assert!(
@@ -924,7 +918,9 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let store = DataStore::open(dir.path()).unwrap();
         let s = Season(19801981);
-        assert!(store.freshness(DataKind::Bios, &DataKey::Season(s)).is_none());
+        assert!(store
+            .freshness(DataKind::Bios, &DataKey::Season(s))
+            .is_none());
     }
 
     fn plant_stats_snapshot(
@@ -1059,7 +1055,10 @@ mod tests {
             .unwrap();
 
         let seasons = store.list_seasons(DataKind::Bios);
-        assert!(seasons.contains(&Season(19801981)), "manifest season present");
+        assert!(
+            seasons.contains(&Season(19801981)),
+            "manifest season present"
+        );
         assert!(seasons.contains(&Season(20252026)), "bundle season present");
     }
 }

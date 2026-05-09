@@ -17,9 +17,9 @@ use crate::compute_age;
 use crate::data_provider::EvalCtx;
 use crate::plan::{
     AgeBound, BioConstraint, BioField, CareerAggrConstraint, CareerAggregator,
-    CareerLeagueConstraint, Constraint, GlobPattern, LeagueAtom, MemberOp, NumericRange,
-    PatternOp, Predicate, ScalarOp, ScalarValue, SeasonStatConstraint, SlidingWindow,
-    SlidingWindowConstraint, WindowPolicy, WindowScope,
+    CareerLeagueConstraint, Constraint, GlobPattern, LeagueAtom, MemberOp, NumericRange, PatternOp,
+    Predicate, ScalarOp, ScalarValue, SeasonStatConstraint, SlidingWindow, SlidingWindowConstraint,
+    WindowPolicy, WindowScope,
 };
 use crate::sliding_window::{aggregate_window, extract_window_stat, GameStatLine, WindowResult};
 
@@ -118,9 +118,7 @@ fn league_atom_matches(
 ) -> bool {
     match atom {
         LeagueAtom::Code(code) => stint.league.0.eq_ignore_ascii_case(code),
-        LeagueAtom::InSet(codes) => codes
-            .iter()
-            .any(|c| stint.league.0.eq_ignore_ascii_case(c)),
+        LeagueAtom::InSet(codes) => codes.iter().any(|c| stint.league.0.eq_ignore_ascii_case(c)),
         LeagueAtom::Tier(tier) => &stint.league.tier() == tier,
     }
 }
@@ -203,9 +201,7 @@ fn career_aggregate_matches(
     }
 
     // Filter seasons by the at_age slice, if present.
-    let filtered_seasons: std::collections::BTreeMap<u32, Vec<GameStatLine>> = match &c
-        .at_age
-    {
+    let filtered_seasons: std::collections::BTreeMap<u32, Vec<GameStatLine>> = match &c.at_age {
         Some(bound) => by_season
             .into_iter()
             .filter(|(season, _)| at_age_matches(v, *season, bound))
@@ -221,7 +217,7 @@ fn career_aggregate_matches(
         CareerAggregator::AnyWindow(n) => {
             // Walk seasons; first one whose intra-season game
             // stream contains a satisfying window short-circuits true.
-            for (_season, season_lines) in &filtered_seasons {
+            for season_lines in filtered_seasons.values() {
                 let win = SlidingWindow::LastN_GP {
                     n,
                     scope: WindowScope::AllTeamsCurrentSeason, // intra-season any window
@@ -240,11 +236,8 @@ fn career_aggregate_matches(
                     // result.
                     let totals = sum_skater_lines(&mut sub_lines);
                     if let Some(actual) = extract_window_stat(c.stat, &totals) {
-                        if predicate_matches_number_unit_aware(
-                            &c.predicate,
-                            actual,
-                            c.stat.unit(),
-                        ) {
+                        if predicate_matches_number_unit_aware(&c.predicate, actual, c.stat.unit())
+                        {
                             return true;
                         }
                     }
@@ -255,17 +248,13 @@ fn career_aggregate_matches(
         }
         CareerAggregator::LifetimeSum => {
             // Sum across all eligible seasons + apply predicate.
-            let mut total_lines: Vec<GameStatLine> = filtered_seasons
-                .into_values()
-                .flatten()
-                .collect();
+            let mut total_lines: Vec<GameStatLine> =
+                filtered_seasons.into_values().flatten().collect();
             let totals = sum_skater_lines(&mut total_lines);
             match extract_window_stat(c.stat, &totals) {
-                Some(actual) => predicate_matches_number_unit_aware(
-                    &c.predicate,
-                    actual,
-                    c.stat.unit(),
-                ),
+                Some(actual) => {
+                    predicate_matches_number_unit_aware(&c.predicate, actual, c.stat.unit())
+                }
                 None => false,
             }
         }
@@ -274,11 +263,10 @@ fn career_aggregate_matches(
             // games where the per-game stat is non-zero. Match if
             // the longest run satisfies the predicate.
             let mut longest: u32 = 0;
-            for (_season, season_lines) in &filtered_seasons {
+            for season_lines in filtered_seasons.values() {
                 let mut current: u32 = 0;
                 for line in season_lines {
-                    let line_value =
-                        single_game_extract_stat(c.stat, line).unwrap_or(0.0);
+                    let line_value = single_game_extract_stat(c.stat, line).unwrap_or(0.0);
                     if line_value > 0.0 {
                         current += 1;
                         if current > longest {
@@ -289,11 +277,7 @@ fn career_aggregate_matches(
                     }
                 }
             }
-            predicate_matches_number_unit_aware(
-                &c.predicate,
-                longest as f64,
-                c.stat.unit(),
-            )
+            predicate_matches_number_unit_aware(&c.predicate, longest as f64, c.stat.unit())
         }
         CareerAggregator::SeasonsWith => {
             // Count seasons where the season-aggregate satisfies
@@ -305,11 +289,7 @@ fn career_aggregate_matches(
                     let totals = sum_skater_lines(&mut copy);
                     extract_window_stat(c.stat, &totals)
                         .map(|actual| {
-                            predicate_matches_number_unit_aware(
-                                &c.predicate,
-                                actual,
-                                c.stat.unit(),
-                            )
+                            predicate_matches_number_unit_aware(&c.predicate, actual, c.stat.unit())
                         })
                         .unwrap_or(false)
                 })
@@ -482,39 +462,30 @@ fn bio_matches(b: &BioConstraint, v: &PlayerView<'_>, season: u32) -> bool {
             }
         }
         BioField::DraftYear => {
-            let y: Option<u32> = v
-                .identity
-                .bio
-                .draft_year
-                .map(|y| y as u32)
-                .or_else(|| gb.and_then(|g| g.draft_year.as_deref()).and_then(|s| s.parse().ok()));
+            let y: Option<u32> = v.identity.bio.draft_year.map(|y| y as u32).or_else(|| {
+                gb.and_then(|g| g.draft_year.as_deref())
+                    .and_then(|s| s.parse().ok())
+            });
             match y {
                 Some(y) => predicate_matches_number(&b.predicate, y as f64),
                 None => false,
             }
         }
         BioField::DraftRound => {
-            let r: Option<u32> = v
-                .identity
-                .bio
-                .draft_round
-                .map(|r| r as u32)
-                .or_else(|| gb.and_then(|g| g.draft_round.as_deref()).and_then(|s| s.parse().ok()));
+            let r: Option<u32> = v.identity.bio.draft_round.map(|r| r as u32).or_else(|| {
+                gb.and_then(|g| g.draft_round.as_deref())
+                    .and_then(|s| s.parse().ok())
+            });
             match r {
                 Some(r) => predicate_matches_number(&b.predicate, r as f64),
                 None => false,
             }
         }
         BioField::DraftOverall => {
-            let o: Option<u32> = v
-                .identity
-                .bio
-                .draft_overall
-                .map(|o| o as u32)
-                .or_else(|| {
-                    gb.and_then(|g| g.draft_overall.as_deref())
-                        .and_then(|s| s.parse().ok())
-                });
+            let o: Option<u32> = v.identity.bio.draft_overall.map(|o| o as u32).or_else(|| {
+                gb.and_then(|g| g.draft_overall.as_deref())
+                    .and_then(|s| s.parse().ok())
+            });
             match o {
                 Some(o) => predicate_matches_number(&b.predicate, o as f64),
                 None => false,
@@ -586,9 +557,7 @@ fn bio_matches(b: &BioConstraint, v: &PlayerView<'_>, season: u32) -> bool {
         }
         BioField::Team => {
             // Current stint only.
-            let t = v
-                .team()
-                .map(|abbr| ScalarValue::canonicalize_text(&abbr.0));
+            let t = v.team().map(|abbr| ScalarValue::canonicalize_text(&abbr.0));
             text_predicate_matches(&b.predicate, t.as_deref())
         }
         BioField::TeamAny => {
@@ -655,14 +624,6 @@ fn season_stat_matches(s: &SeasonStatConstraint, v: &PlayerView<'_>) -> bool {
         // parse, so this branch is unreachable from user input.
         _ => false,
     }
-}
-
-fn age_for(v: &PlayerView<'_>, season: u32) -> Option<u32> {
-    v.identity
-        .bio
-        .birth_date
-        .as_deref()
-        .and_then(|d| compute_age(d, season))
 }
 
 /// Apply a numeric predicate. Used by both bio numeric fields and
@@ -733,9 +694,7 @@ fn text_predicate_matches(p: &Predicate, actual: Option<&str>) -> bool {
 /// values (useful for `country` which matches birth_country OR
 /// nationality_code, or `team.any` which checks every stint).
 fn text_predicate_matches_any(p: &Predicate, candidates: &[Option<&str>]) -> bool {
-    candidates
-        .iter()
-        .any(|c| text_predicate_matches(p, *c))
+    candidates.iter().any(|c| text_predicate_matches(p, *c))
 }
 
 /// `~ pattern` is "contains" (substring match, no anchoring).
@@ -744,7 +703,9 @@ fn contains_match(glob: &GlobPattern, target: &str) -> bool {
     if glob.segments.is_empty() {
         return target.is_empty();
     }
-    glob.segments.iter().all(|seg| target.contains(seg.as_str()))
+    glob.segments
+        .iter()
+        .all(|seg| target.contains(seg.as_str()))
 }
 
 fn apply_scalar_op_num(op: ScalarOp, actual: f64, target: f64) -> bool {
@@ -885,10 +846,7 @@ mod tests {
 
     #[test]
     fn l0_a1_predicate_not_in_text() {
-        let p = Predicate::Member(
-            MemberOp::NotIn,
-            vec![ScalarValue::Text("can".into())],
-        );
+        let p = Predicate::Member(MemberOp::NotIn, vec![ScalarValue::Text("can".into())]);
         assert!(text_predicate_matches(&p, Some("usa")));
         assert!(!text_predicate_matches(&p, Some("can")));
     }

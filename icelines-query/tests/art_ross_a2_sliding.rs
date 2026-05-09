@@ -89,7 +89,14 @@ fn l1_a2_aggregator_finds_5_goals_in_10_games() {
 
     // 12 games, goals: [0,0,0,0,0,0,0,1,1,1,1,1] — last 10 has 5 goals.
     let mut lines: Vec<GameStatLine> = (1..=12)
-        .map(|i| line(&format!("2026-01-{:02}", i), "EDM", if i > 7 { 1 } else { 0 }, 0))
+        .map(|i| {
+            line(
+                &format!("2026-01-{:02}", i),
+                "EDM",
+                if i > 7 { 1 } else { 0 },
+                0,
+            )
+        })
         .collect();
     let _ = lines.last_mut().unwrap();
 

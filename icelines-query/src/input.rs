@@ -91,14 +91,8 @@ mod tests {
 
     #[test]
     fn l0_filter_input_multiple_filters_anded_with_parens() {
-        let input = FilterInput::from_cli_filters(&[
-            "g>=10".to_string(),
-            "a>=10".to_string(),
-        ]);
-        assert_eq!(
-            input,
-            FilterInput::Cli("(g>=10) AND (a>=10)".to_string())
-        );
+        let input = FilterInput::from_cli_filters(&["g>=10".to_string(), "a>=10".to_string()]);
+        assert_eq!(input, FilterInput::Cli("(g>=10) AND (a>=10)".to_string()));
     }
 
     #[test]
@@ -108,10 +102,7 @@ mod tests {
             "  ".to_string(),
             "a>=10".to_string(),
         ]);
-        assert_eq!(
-            input,
-            FilterInput::Cli("(g>=10) AND (a>=10)".to_string())
-        );
+        assert_eq!(input, FilterInput::Cli("(g>=10) AND (a>=10)".to_string()));
     }
 
     #[test]

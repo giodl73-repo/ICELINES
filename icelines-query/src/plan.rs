@@ -139,17 +139,12 @@ pub struct SeasonStatConstraint {
 /// Whether a constraint applies to regular-season totals, playoff
 /// totals, or both. Default is `Regular` for all atoms unless the
 /// user adds a `.playoff` modifier.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum SeasonAxis {
+    #[default]
     Regular,
     Playoff,
     All,
-}
-
-impl Default for SeasonAxis {
-    fn default() -> Self {
-        SeasonAxis::Regular
-    }
 }
 
 // ── Sliding-window atoms (A.2 placeholder) ──────────────────────

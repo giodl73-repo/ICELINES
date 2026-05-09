@@ -113,14 +113,14 @@ pub async fn run_windowed_leaders(
 
 fn sort_rows(rows: &mut [PlayerWindowTotals], sort: &str) {
     match sort {
-        "g" | "goals" => rows.sort_by(|a, b| b.goals.cmp(&a.goals)),
-        "a" | "assists" => rows.sort_by(|a, b| b.assists.cmp(&a.assists)),
-        "sog" | "shots" => rows.sort_by(|a, b| b.sog.cmp(&a.sog)),
-        "hits" => rows.sort_by(|a, b| b.hits.cmp(&a.hits)),
-        "blocks" => rows.sort_by(|a, b| b.blocks.cmp(&a.blocks)),
-        "plus-minus" | "+/-" => rows.sort_by(|a, b| b.plus_minus.cmp(&a.plus_minus)),
+        "g" | "goals" => rows.sort_by_key(|row| std::cmp::Reverse(row.goals)),
+        "a" | "assists" => rows.sort_by_key(|row| std::cmp::Reverse(row.assists)),
+        "sog" | "shots" => rows.sort_by_key(|row| std::cmp::Reverse(row.sog)),
+        "hits" => rows.sort_by_key(|row| std::cmp::Reverse(row.hits)),
+        "blocks" => rows.sort_by_key(|row| std::cmp::Reverse(row.blocks)),
+        "plus-minus" | "+/-" => rows.sort_by_key(|row| std::cmp::Reverse(row.plus_minus)),
         // Default: points (also matches "p" / "pts" / explicit "points").
-        _ => rows.sort_by(|a, b| b.points.cmp(&a.points)),
+        _ => rows.sort_by_key(|row| std::cmp::Reverse(row.points)),
     }
 }
 

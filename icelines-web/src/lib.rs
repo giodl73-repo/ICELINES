@@ -902,7 +902,10 @@ mod handlers {
                     StatusCode::BAD_REQUEST,
                     Html(format!(
                         "<!doctype html><html><body><h1>Bad filter</h1><pre>{}</pre></body></html>",
-                        helpful_errs.join("\n").replace('<', "&lt;").replace('>', "&gt;"),
+                        helpful_errs
+                            .join("\n")
+                            .replace('<', "&lt;")
+                            .replace('>', "&gt;"),
                     )),
                 )
                     .into_response());
@@ -1187,7 +1190,10 @@ mod handlers {
                      <h1>Bad filter</h1><pre>{}</pre>\
                      <p><a href=\"/leaders\">← back to leaders</a></p>\
                      </body></html>",
-                    helpful_errs.join("\n").replace('<', "&lt;").replace('>', "&gt;"),
+                    helpful_errs
+                        .join("\n")
+                        .replace('<', "&lt;")
+                        .replace('>', "&gt;"),
                 );
                 return (StatusCode::BAD_REQUEST, Html(body)).into_response();
             }
@@ -1698,18 +1704,13 @@ mod handlers {
         ///     would give a worse "no op" error.
         pub fn partition_new_pipeline_filters(
             raw: &[String],
-        ) -> (
-            Vec<icelines_query::QueryPlan>,
-            Vec<String>,
-            Vec<String>,
-        ) {
+        ) -> (Vec<icelines_query::QueryPlan>, Vec<String>, Vec<String>) {
             let mut plans: Vec<icelines_query::QueryPlan> = Vec::new();
             let mut legacy: Vec<String> = Vec::new();
             let mut helpful: Vec<String> = Vec::new();
             for raw_str in raw {
-                match icelines_query::parse_query(
-                    icelines_query::FilterInput::Cli(raw_str.clone()),
-                ) {
+                match icelines_query::parse_query(icelines_query::FilterInput::Cli(raw_str.clone()))
+                {
                     Ok(plan) => plans.push(plan),
                     Err(es) => {
                         let prefer_new = es.iter().any(|e| {
@@ -2668,11 +2669,9 @@ mod handlers {
             pub fn direction(self) -> SortDirection {
                 match self {
                     Self::GaaAsc => SortDirection::Asc,
-                    Self::SavePct
-                    | Self::Wins
-                    | Self::Losses
-                    | Self::Games
-                    | Self::Shutouts => SortDirection::Desc,
+                    Self::SavePct | Self::Wins | Self::Losses | Self::Games | Self::Shutouts => {
+                        SortDirection::Desc
+                    }
                 }
             }
         }
@@ -2731,7 +2730,7 @@ mod handlers {
 
                 let mut view = GoaliesView::from_player_views(
                     ViewContext::new(ViewWindow::new(season, season_type)),
-                    all.into_iter(),
+                    all,
                 );
                 view.sort = Some(SortState {
                     key: SortKey::from(sort.key()),
@@ -4421,7 +4420,9 @@ mod handlers {
         /// Phase Foster +9 — parse `?range=` into a Timeframe.
         /// Defaults to Day (matches the spec convention "range=day
         /// is implicit"). Unknown values fall back to Day for safety.
-        pub(crate) fn parse_range_to_timeframe(s: Option<&str>) -> icelines_core::timeframe::Timeframe {
+        pub(crate) fn parse_range_to_timeframe(
+            s: Option<&str>,
+        ) -> icelines_core::timeframe::Timeframe {
             use icelines_core::timeframe::Timeframe;
             match s.map(str::trim).filter(|s| !s.is_empty()) {
                 None | Some("day") => Timeframe::Day,
@@ -4504,8 +4505,7 @@ mod handlers {
             // Day narrows the rendered grouping to the anchor date;
             // Week / Month surface the natural 7-day gameWeek
             // window the API already returns.
-            let timeframe =
-                parse_range_to_timeframe(q.range.as_deref());
+            let timeframe = parse_range_to_timeframe(q.range.as_deref());
             let (range_start, range_end) = timeframe.range(active_date);
             let prev_date = active_date - Duration::days(7);
             let next_date = active_date + Duration::days(7);
@@ -4918,50 +4918,49 @@ mod handlers {
             // Read members from the local SQLite db. The web server
             // runs on the same machine as the CLI / TUI so the same
             // `~/.icelines/icelines.db` is reachable.
-            let members: Vec<(String, String)> = match std::env::var_os("HOME")
-                .or_else(|| std::env::var_os("USERPROFILE"))
-            {
-                Some(home) => {
-                    let dir = std::path::PathBuf::from(&home).join(".icelines");
-                    let db_path = dir.join("icelines.db");
-                    if !db_path.exists() {
-                        Vec::new()
-                    } else {
-                        match rusqlite::Connection::open(&db_path) {
-                            Ok(conn) => {
-                                // Match icelines-cli's GroupDb queries:
-                                // post-006 the column is entity_ref.
-                                let mut stmt = match conn.prepare(
-                                    "SELECT entity_ref FROM group_members \
+            let members: Vec<(String, String)> =
+                match std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")) {
+                    Some(home) => {
+                        let dir = std::path::PathBuf::from(&home).join(".icelines");
+                        let db_path = dir.join("icelines.db");
+                        if !db_path.exists() {
+                            Vec::new()
+                        } else {
+                            match rusqlite::Connection::open(&db_path) {
+                                Ok(conn) => {
+                                    // Match icelines-cli's GroupDb queries:
+                                    // post-006 the column is entity_ref.
+                                    let mut stmt = match conn.prepare(
+                                        "SELECT entity_ref FROM group_members \
                                      WHERE group_name = 'Favorites' \
                                      ORDER BY entity_ref",
-                                ) {
-                                    Ok(s) => s,
-                                    Err(_) => {
-                                        return error_response(
-                                            "Could not read favorites from local db.",
-                                        )
-                                    }
-                                };
-                                let rows: Vec<String> = stmt
-                                    .query_map([], |r| r.get::<_, String>(0))
-                                    .ok()
-                                    .map(|i| i.filter_map(Result::ok).collect())
-                                    .unwrap_or_default();
-                                rows.into_iter()
-                                    .map(|er| match er.split_once(':') {
-                                        Some(("team", k)) => ("team".into(), k.into()),
-                                        Some(("player", k)) => ("player".into(), k.into()),
-                                        _ => ("player".into(), er),
-                                    })
-                                    .collect()
+                                    ) {
+                                        Ok(s) => s,
+                                        Err(_) => {
+                                            return error_response(
+                                                "Could not read favorites from local db.",
+                                            )
+                                        }
+                                    };
+                                    let rows: Vec<String> = stmt
+                                        .query_map([], |r| r.get::<_, String>(0))
+                                        .ok()
+                                        .map(|i| i.filter_map(Result::ok).collect())
+                                        .unwrap_or_default();
+                                    rows.into_iter()
+                                        .map(|er| match er.split_once(':') {
+                                            Some(("team", k)) => ("team".into(), k.into()),
+                                            Some(("player", k)) => ("player".into(), k.into()),
+                                            _ => ("player".into(), er),
+                                        })
+                                        .collect()
+                                }
+                                Err(_) => Vec::new(),
                             }
-                            Err(_) => Vec::new(),
                         }
                     }
-                }
-                None => Vec::new(),
-            };
+                    None => Vec::new(),
+                };
 
             // Phase Foster +21 — for each favorited player resolve to
             // a PlayerId and walk the persisted boxscore JSON to pull
@@ -4991,7 +4990,10 @@ mod handlers {
 
             // Today's slate fetch (best-effort).
             let client = icelines_fetch::nhl_api::NhlApiClient::production();
-            let today = chrono::Utc::now().date_naive().format("%Y-%m-%d").to_string();
+            let today = chrono::Utc::now()
+                .date_naive()
+                .format("%Y-%m-%d")
+                .to_string();
             let slate = match client.fetch_schedule_for_date(&today).await {
                 Ok(g) => g
                     .into_iter()
@@ -5003,9 +5005,7 @@ mod handlers {
                 return out;
             }
 
-            let home = match std::env::var_os("HOME")
-                .or_else(|| std::env::var_os("USERPROFILE"))
-            {
+            let home = match std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")) {
                 Some(h) => std::path::PathBuf::from(h),
                 None => return out,
             };
@@ -5019,8 +5019,7 @@ mod handlers {
                 if kind != "player" {
                     continue;
                 }
-                let Some(pid) =
-                    icelines_fetch::stats_loader::resolve_player_id_by_name(name)
+                let Some(pid) = icelines_fetch::stats_loader::resolve_player_id_by_name(name)
                 else {
                     continue;
                 };
@@ -5029,17 +5028,16 @@ mod handlers {
                     Some(t) => t.to_uppercase(),
                     None => continue,
                 };
-                let game = match slate
-                    .iter()
-                    .find(|g| g.away_abbrev.eq_ignore_ascii_case(&team)
-                        || g.home_abbrev.eq_ignore_ascii_case(&team))
-                {
+                let game = match slate.iter().find(|g| {
+                    g.away_abbrev.eq_ignore_ascii_case(&team)
+                        || g.home_abbrev.eq_ignore_ascii_case(&team)
+                }) {
                     Some(g) => g,
                     None => continue,
                 };
-                let key = icelines_fetch::manifest::DataKey::Game(
-                    icelines_core::identity::GameId(game.game_id),
-                );
+                let key = icelines_fetch::manifest::DataKey::Game(icelines_core::identity::GameId(
+                    game.game_id,
+                ));
                 // Foster +23 — lazy-fetch the boxscore body when it's
                 // not on disk so users see real numbers without a
                 // separate `icelines fetch boxscore` step. Persists
@@ -5058,9 +5056,8 @@ mod handlers {
                                 .join(&today)
                                 .join(format!("{}.json", game.game_id));
                             if let Ok(bytes) = serde_json::to_vec(&raw_body) {
-                                let _ = icelines_fetch::atomic_write::write_bytes_atomic(
-                                    &path, &bytes,
-                                );
+                                let _ =
+                                    icelines_fetch::atomic_write::write_bytes_atomic(&path, &bytes);
                                 let _ = store.manifest().upsert(
                                     icelines_fetch::manifest::DataKind::Boxscore,
                                     icelines_fetch::manifest::ManifestEntry {
@@ -5317,10 +5314,7 @@ mod handlers {
             pub return_to: Option<String>,
         }
 
-        pub async fn post_add(
-            headers: HeaderMap,
-            Form(req): Form<FavoritesMutation>,
-        ) -> Response {
+        pub async fn post_add(headers: HeaderMap, Form(req): Form<FavoritesMutation>) -> Response {
             // Snapshot the resolved key + display name BEFORE mutate
             // so we can fire the career-history augment off in the
             // background after the redirect is queued. Augment is
@@ -5343,7 +5337,9 @@ mod handlers {
                 let normalized = icelines_core::name::normalize_name(&display);
                 tokio::spawn(async move {
                     icelines_fetch::career_landing::augment_career_history_for_player(
-                        &display, &normalized, true,
+                        &display,
+                        &normalized,
+                        true,
                     )
                     .await;
                 });
@@ -5373,24 +5369,16 @@ mod handlers {
             // back to normalized player name. Explicit `kind` wins.
             let (kind, key) = match req.kind.as_deref() {
                 Some("team") => ("team", trimmed.to_uppercase()),
-                Some("player") => (
-                    "player",
-                    icelines_core::name::normalize_name(trimmed),
-                ),
+                Some("player") => ("player", icelines_core::name::normalize_name(trimmed)),
                 _ => match icelines_core::TeamAbbr::parse(trimmed) {
                     Ok(abbr) => ("team", abbr.0),
-                    Err(_) => (
-                        "player",
-                        icelines_core::name::normalize_name(trimmed),
-                    ),
+                    Err(_) => ("player", icelines_core::name::normalize_name(trimmed)),
                 },
             };
             let entity_ref = format!("{kind}:{key}");
 
             // Open the local db. Same path the CLI uses.
-            let home = match std::env::var_os("HOME")
-                .or_else(|| std::env::var_os("USERPROFILE"))
-            {
+            let home = match std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")) {
                 Some(h) => std::path::PathBuf::from(h),
                 None => return error_response("HOME / USERPROFILE not set."),
             };
@@ -5583,10 +5571,7 @@ mod handlers {
                         g.shots,
                         dec,
                         if g.player_id != 0 {
-                            format!(
-                                " — <a href=\"/player/{}\">card</a>",
-                                g.player_id
-                            )
+                            format!(" — <a href=\"/player/{}\">card</a>", g.player_id)
                         } else {
                             String::new()
                         }

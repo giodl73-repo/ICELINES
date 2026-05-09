@@ -14,9 +14,7 @@
 use std::path::PathBuf;
 
 use icelines_core::career_history::CareerHistory;
-use icelines_query::data_provider::{
-    DataProvider, FetchError, FetchEvent, PlanRequirement,
-};
+use icelines_query::data_provider::{DataProvider, FetchError, FetchEvent, PlanRequirement};
 use icelines_query::sliding_window::GameStatLine;
 
 use crate::datastore::DataStore;
@@ -68,7 +66,9 @@ impl DataProvider for IcelinesProvider {
 
         let mut out: Vec<GameStatLine> = Vec::new();
         for entry in store.manifest().list(DataKind::Boxscore) {
-            let DataKey::Game(game_id) = entry.key else { continue };
+            let DataKey::Game(game_id) = entry.key else {
+                continue;
+            };
 
             // Boxscore manifest paths are
             // `data/boxscores/YYYY-MM-DD/<id>.json` — pull the
@@ -121,7 +121,7 @@ impl DataProvider for IcelinesProvider {
         }
 
         // Sort ascending by date — the aggregator depends on this.
-        out.sort_by(|a, b| a.date.cmp(&b.date));
+        out.sort_by_key(|a| a.date);
         out
     }
 
@@ -141,8 +141,7 @@ impl DataProvider for IcelinesProvider {
         // The cache file shape from `icelines fetch career` is a
         // JSON object keyed by pid:
         //   { "8478402": { "player_id": 8478402, "stints": [...] }, ... }
-        let map: serde_json::Map<String, serde_json::Value> =
-            serde_json::from_slice(&raw).ok()?;
+        let map: serde_json::Map<String, serde_json::Value> = serde_json::from_slice(&raw).ok()?;
         let entry = map.get(&player_id.to_string())?;
         serde_json::from_value::<CareerHistory>(entry.clone()).ok()
     }

@@ -18,13 +18,15 @@ impl QueryPlan {
     /// season stats need their respective reports for the active
     /// season.
     pub fn requirements(&self) -> PlanRequirement {
-        let mut req = PlanRequirement::default();
         // For A.0 the eligibility is always "satisfiable" — no
         // sliding-window or career-aggregate atoms exist yet.
-        req.eligible_for_strict = StrictEligibility {
-            all_seasons_have_boxscores: true,
-            all_pids_have_career_history: true,
-            fallback_seasons: Vec::new(),
+        let mut req = PlanRequirement {
+            eligible_for_strict: StrictEligibility {
+                all_seasons_have_boxscores: true,
+                all_pids_have_career_history: true,
+                fallback_seasons: Vec::new(),
+            },
+            ..Default::default()
         };
         walk(&self.root, &mut req);
         req
@@ -209,10 +211,7 @@ mod tests {
     /// 3-child All — n-ary IR shape preserved in render.
     #[test]
     fn l0_a26_explain_golden_three_child_all() {
-        let plan = parse_query(FilterInput::Cli(
-            "g>=10 AND a>=10 AND p>=20".to_string(),
-        ))
-        .unwrap();
+        let plan = parse_query(FilterInput::Cli("g>=10 AND a>=10 AND p>=20".to_string())).unwrap();
         let out = plan.explain();
         let expected = "All\n  \
             SeasonStat(goals, Scalar(Ge, Number(10.0)), axis=Regular)\n  \
@@ -224,10 +223,7 @@ mod tests {
     /// Not-wrapping-Any — exercises mixed boolean nesting.
     #[test]
     fn l0_a26_explain_golden_not_wrapping_any() {
-        let plan = parse_query(FilterInput::Cli(
-            "NOT (g>=100 OR a>=100)".to_string(),
-        ))
-        .unwrap();
+        let plan = parse_query(FilterInput::Cli("NOT (g>=100 OR a>=100)".to_string())).unwrap();
         let out = plan.explain();
         let expected = "Not\n  \
             Any\n    \
@@ -239,10 +235,7 @@ mod tests {
     /// Bio + SeasonStat compound — covers both atom variants in one tree.
     #[test]
     fn l0_a26_explain_golden_bio_plus_seasonstat() {
-        let plan = parse_query(FilterInput::Cli(
-            "age<=24 AND g>=20".to_string(),
-        ))
-        .unwrap();
+        let plan = parse_query(FilterInput::Cli("age<=24 AND g>=20".to_string())).unwrap();
         let out = plan.explain();
         let expected = "All\n  \
             Bio(Age, Scalar(Le, Number(24.0)))\n  \
@@ -266,8 +259,7 @@ mod tests {
     /// Sliding-window with calendar window + scope modifier.
     #[test]
     fn l0_a26_explain_golden_sliding_window_calendar_allteams() {
-        let plan = parse_query(FilterInput::Cli("g.last10g.allteams>=5".to_string()))
-            .unwrap();
+        let plan = parse_query(FilterInput::Cli("g.last10g.allteams>=5".to_string())).unwrap();
         let out = plan.explain();
         assert_eq!(
             out,

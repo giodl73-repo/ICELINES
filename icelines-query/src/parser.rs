@@ -59,7 +59,8 @@ fn parse_query_string(input: &str) -> Result<QueryPlan, Vec<ParseError>> {
     };
     if p.pos < p.tokens.len() {
         let leftover = describe_token(&p.tokens[p.pos]);
-        p.errors.push(ParseError::UnexpectedToken { token: leftover });
+        p.errors
+            .push(ParseError::UnexpectedToken { token: leftover });
     }
     if !p.errors.is_empty() {
         return Err(p.errors);
@@ -257,10 +258,7 @@ impl<'a> Parser<'a> {
 
     /// Apply trailing `EVER` and `AT` modifiers to an atom-level
     /// constraint. Both are optional; EVER must come before AT.
-    fn apply_ever_at_modifiers(
-        &mut self,
-        mut constraint: Constraint,
-    ) -> Result<Constraint, ()> {
+    fn apply_ever_at_modifiers(&mut self, mut constraint: Constraint) -> Result<Constraint, ()> {
         // EVER modifier
         if matches!(self.peek(), Some(Token::KwEver)) {
             self.bump();
@@ -327,9 +325,7 @@ impl<'a> Parser<'a> {
             other => {
                 return Err(ParseError::IncompatiblePredicate {
                     field: "AT clause".to_string(),
-                    detail: format!(
-                        "AT requires an `age` predicate; got {other:?}"
-                    ),
+                    detail: format!("AT requires an `age` predicate; got {other:?}"),
                 });
             }
         };
@@ -395,7 +391,11 @@ impl<'a> Parser<'a> {
             self.errors.push(ParseError::EmptySet {
                 atom: format!(
                     "{key} {} ()",
-                    if matches!(op, MemberOp::In) { "IN" } else { "NOT IN" }
+                    if matches!(op, MemberOp::In) {
+                        "IN"
+                    } else {
+                        "NOT IN"
+                    }
                 ),
             });
             return Err(());
@@ -633,9 +633,7 @@ fn build_scalar_constraint_numeric(
     // dot-segment is the stat key; the second is the window
     // descriptor; an optional third is the scope modifier.
     if key.contains('.') {
-        if let Some(constraint) =
-            try_parse_sliding_window_atom(key, op, value, atom_text)?
-        {
+        if let Some(constraint) = try_parse_sliding_window_atom(key, op, value, atom_text)? {
             return Ok(constraint);
         }
         // Phase Art Ross A.3 — career aggregator dotted keys
@@ -757,18 +755,12 @@ fn try_parse_sliding_window_atom(
     let window = if let Some(scope_str) = parts.get(2) {
         let scope_lower = scope_str.to_ascii_lowercase();
         match (window, scope_lower.as_str()) {
-            (
-                SlidingWindow::LastN_GP { n, policy, .. },
-                "allteams",
-            ) => SlidingWindow::LastN_GP {
+            (SlidingWindow::LastN_GP { n, policy, .. }, "allteams") => SlidingWindow::LastN_GP {
                 n,
                 scope: WindowScope::AllTeamsCurrentSeason,
                 policy,
             },
-            (
-                SlidingWindow::LastN_GP { n, policy, .. },
-                "career",
-            ) => SlidingWindow::LastN_GP {
+            (SlidingWindow::LastN_GP { n, policy, .. }, "career") => SlidingWindow::LastN_GP {
                 n,
                 scope: WindowScope::Career,
                 policy,
@@ -848,9 +840,7 @@ fn try_build_league_atom(
             _ => {
                 return Err(ParseError::IncompatiblePredicate {
                     field: "league".to_string(),
-                    detail: format!(
-                        "league only supports `=` / `!=`; got {op:?} in {atom_text:?}"
-                    ),
+                    detail: format!("league only supports `=` / `!=`; got {op:?} in {atom_text:?}"),
                 });
             }
         }
@@ -1137,9 +1127,7 @@ fn build_member_constraint(
             if v.as_number().is_none() {
                 return Err(ParseError::IncompatiblePredicate {
                     field: format!("{:?}", field),
-                    detail: format!(
-                        "numeric IN-set requires all values to be numbers; got {v:?}"
-                    ),
+                    detail: format!("numeric IN-set requires all values to be numbers; got {v:?}"),
                 });
             }
         }
@@ -1401,7 +1389,10 @@ mod tests {
 
     #[test]
     fn l0_a0_unknown_stat_propagates() {
-        assert!(matches!(errs("fake-stat>=1")[0], ParseError::UnknownStat { .. }));
+        assert!(matches!(
+            errs("fake-stat>=1")[0],
+            ParseError::UnknownStat { .. }
+        ));
     }
 
     #[test]

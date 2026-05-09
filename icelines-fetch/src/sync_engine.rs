@@ -127,10 +127,8 @@ async fn run_sync_loop(store: Arc<DataStore>, tx: mpsc::Sender<SyncEvent>) {
         // executor's worker thread.
         let store_for_call = store.clone();
         let key = entry.key.clone();
-        let result = tokio::task::spawn_blocking(move || {
-            store_for_call.refresh_entry(kind, &key)
-        })
-        .await;
+        let result =
+            tokio::task::spawn_blocking(move || store_for_call.refresh_entry(kind, &key)).await;
 
         match result {
             Ok(Ok(_freshness)) => {
@@ -236,11 +234,7 @@ mod tests {
             *self.bios_calls.lock().unwrap() += 1;
             Ok(vec![dummy_bio(1)])
         }
-        fn fetch_stats(
-            &self,
-            _s: Season,
-            _t: SeasonType,
-        ) -> Result<Vec<SkaterStats>, DataError> {
+        fn fetch_stats(&self, _s: Season, _t: SeasonType) -> Result<Vec<SkaterStats>, DataError> {
             Err(DataError::NotInstalled {
                 kind: DataKind::Stats,
                 key: DataKey::Season(Season(0)),
@@ -336,7 +330,10 @@ mod tests {
             )
             .unwrap();
         let stale = store.enumerate_stale();
-        assert!(stale.is_empty(), "DataInstall is pinned, even with After TTL");
+        assert!(
+            stale.is_empty(),
+            "DataInstall is pinned, even with After TTL"
+        );
     }
 
     #[test]

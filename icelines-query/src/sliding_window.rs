@@ -136,9 +136,7 @@ pub fn aggregate_window(
                         return WindowResult::Empty;
                     }
                 },
-                WindowScope::AllTeamsCurrentSeason | WindowScope::Career => {
-                    lines.iter().collect()
-                }
+                WindowScope::AllTeamsCurrentSeason | WindowScope::Career => lines.iter().collect(),
             };
 
             if filtered.is_empty() {
@@ -177,7 +175,9 @@ pub fn aggregate_window(
             }
         }
         SlidingWindow::LastN_Days(n) => {
-            let cutoff = today.checked_sub_days(Days::new(*n as u64)).unwrap_or(today);
+            let cutoff = today
+                .checked_sub_days(Days::new(*n as u64))
+                .unwrap_or(today);
             aggregate_calendar(lines, cutoff, today)
         }
         SlidingWindow::LastN_Weeks(n) => {
@@ -202,11 +202,7 @@ pub fn aggregate_window(
 /// and sums. Calendar windows always return `Full` (no short-window
 /// gating — calendar windows don't have a "size" the user expects
 /// to match).
-fn aggregate_calendar(
-    lines: &[GameStatLine],
-    cutoff: NaiveDate,
-    today: NaiveDate,
-) -> WindowResult {
+fn aggregate_calendar(lines: &[GameStatLine], cutoff: NaiveDate, today: NaiveDate) -> WindowResult {
     let in_window: Vec<&GameStatLine> = lines
         .iter()
         .filter(|l| l.date >= cutoff && l.date <= today)

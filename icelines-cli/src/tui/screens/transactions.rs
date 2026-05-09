@@ -41,7 +41,7 @@ use crate::tui::app::App;
 /// (`app.txs.fetched_at` and `app.txs.rows` would both
 /// match a bare `app.txs.rows` regex). `txs` matches the
 /// existing `tx_*` field-name heritage.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct TransactionsState {
     /// Loaded transactions envelope. Empty until the loader picks
     /// up the snapshot.
@@ -99,21 +99,6 @@ pub fn chrome(state: &TransactionsState) -> crate::tui::chrome::ScreenChrome {
     };
 
     ScreenChrome { title, keybinds }
-}
-
-impl Default for TransactionsState {
-    fn default() -> Self {
-        Self {
-            rows: Vec::new(),
-            fetched_at: String::new(),
-            stale: false,
-            selected: 0,
-            team_filter: None,
-            kind_filter: None,
-            search_query: String::new(),
-            search_mode: false,
-        }
-    }
 }
 
 // ── Public glyph + color tables ───────────────────────────────────────────────

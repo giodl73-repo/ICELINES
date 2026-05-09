@@ -193,8 +193,5 @@ async fn p_w19_024_response_returns_valid_json() {
 #[tokio::test]
 async fn p_w19_025_killer_query_via_api() {
     // The user's full vision query through the JSON API.
-    assert_api_filter_accepted(
-        "g.any10g>=5 EVER AT age<=25 AND country IN (CAN, USA, SWE)",
-    )
-    .await;
+    assert_api_filter_accepted("g.any10g>=5 EVER AT age<=25 AND country IN (CAN, USA, SWE)").await;
 }

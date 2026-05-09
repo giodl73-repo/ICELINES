@@ -14,6 +14,8 @@
 //!   then disappears so the status bar reverts to normal.
 //! - Hidden by default before any event arrives.
 
+#![allow(dead_code)]
+
 use std::time::{Duration, Instant};
 
 use icelines_fetch::sync_engine::SyncEvent;

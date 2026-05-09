@@ -17,9 +17,7 @@ pub enum ParseError {
     #[error("filter stat-key is empty in atom {atom:?}")]
     EmptyStatKey { atom: String },
 
-    #[error(
-        "filter {atom:?} has no op — expected one of `>=`, `<=`, `==`, `=`, `<`, `>`, `!=`"
-    )]
+    #[error("filter {atom:?} has no op — expected one of `>=`, `<=`, `==`, `=`, `<`, `>`, `!=`")]
     MissingOp { atom: String },
 
     #[error("filter {atom:?} has multiple ops — expected exactly one")]
@@ -89,11 +87,7 @@ pub enum ParseError {
     /// silently truncated to `last255g` via `n.min(255) as u8`.
     /// Reject loudly at the cap.
     #[error("window size {size} in {atom:?} exceeds maximum {max}")]
-    WindowSizeOutOfRange {
-        atom: String,
-        size: u32,
-        max: u8,
-    },
+    WindowSizeOutOfRange { atom: String, size: u32, max: u8 },
 }
 
 impl ParseError {
@@ -110,11 +104,7 @@ mod tests {
     #[test]
     fn l0_parse_error_display_messages() {
         assert!(format!("{}", ParseError::EmptyInput).contains("empty"));
-        assert!(format!(
-            "{}",
-            ParseError::UnknownStat { key: "fake".into() }
-        )
-        .contains("fake"));
+        assert!(format!("{}", ParseError::UnknownStat { key: "fake".into() }).contains("fake"));
         assert!(format!(
             "{}",
             ParseError::FeatureNotYet {

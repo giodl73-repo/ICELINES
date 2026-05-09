@@ -22,7 +22,7 @@ use ratatui::{
 // ── Phase Adams.11 — chrome accessor ─────────────────────────────────────────
 
 pub fn chrome() -> crate::tui::chrome::ScreenChrome {
-    use crate::tui::chrome::{KeyHint, ScreenChrome};
+    use crate::tui::chrome::KeyHint;
     crate::tui::chrome::ScreenChrome {
         title: "Favorites".to_owned(),
         keybinds: vec![

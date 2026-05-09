@@ -45,7 +45,9 @@ pub mod planner;
 pub mod sliding_window;
 pub mod tokenizer;
 
-pub use data_provider::{DataProvider, DateRange, EvalCtx, FetchError, FetchEvent, PlanRequirement, StrictEligibility};
+pub use data_provider::{
+    DataProvider, DateRange, EvalCtx, FetchError, FetchEvent, PlanRequirement, StrictEligibility,
+};
 pub use errors::ParseError;
 pub use input::{AtomFragment, FilterInput};
 pub use parser::parse_query;

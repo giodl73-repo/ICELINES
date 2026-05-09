@@ -40,8 +40,7 @@ async fn l1_foster_plus3_fetch_boxscore_with_raw_round_trips() {
             .body(&body);
     });
 
-    let client =
-        NhlApiClient::new("http://unused", server.base_url()).with_retry_params(0, 1, 10);
+    let client = NhlApiClient::new("http://unused", server.base_url()).with_retry_params(0, 1, 10);
     let (parsed, raw) = client
         .fetch_boxscore_with_raw(2025020342)
         .await
@@ -64,7 +63,11 @@ fn l1_foster_plus3_load_boxscore_raw_reads_persisted_file() {
 
     // Plant a boxscore JSON file + manifest entry (mirrors what
     // `icelines fetch boxscore` does in production).
-    let path = dir.path().join("boxscores").join("2026-01-15").join("2025020342.json");
+    let path = dir
+        .path()
+        .join("boxscores")
+        .join("2026-01-15")
+        .join("2025020342.json");
     let body = serde_json::json!({
         "id": 2025020342,
         "homeTeam": { "abbrev": "EDM", "score": 7 },
@@ -81,10 +84,7 @@ fn l1_foster_plus3_load_boxscore_raw_reads_persisted_file() {
             ttl: icelines_core::Ttl::Static,
         },
     };
-    store
-        .manifest()
-        .upsert(DataKind::Boxscore, entry)
-        .unwrap();
+    store.manifest().upsert(DataKind::Boxscore, entry).unwrap();
 
     // Read back — round-trip proves the persistence + manifest
     // lookup chain is intact.

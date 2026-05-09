@@ -29,7 +29,7 @@ use crate::tui::app::PickerTarget;
 ///
 /// Replaces the pre-Norris.6 `scores_picker_*` and `picker_target`
 /// fields on `App`. Held as `app.date_picker`.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct DatePickerState {
     /// True while the `d`-key date picker is visible.
     pub open: bool,
@@ -39,17 +39,6 @@ pub struct DatePickerState {
     pub err: Option<String>,
     /// Which screen the picker is bound to (Scores or Schedule).
     pub target: PickerTarget,
-}
-
-impl Default for DatePickerState {
-    fn default() -> Self {
-        Self {
-            open: false,
-            input: String::new(),
-            err: None,
-            target: PickerTarget::default(),
-        }
-    }
 }
 
 // ── Group picker (player → group membership) ────────────────────────────────

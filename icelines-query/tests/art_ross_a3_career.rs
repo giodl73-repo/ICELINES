@@ -63,7 +63,7 @@ fn fixed_today() -> NaiveDate {
 /// Build a synthetic StatsRepository with one Center for testing
 /// (mirrors the helper in art_ross_a2_executor.rs).
 fn synthetic_repo() -> icelines_core::stats_repository::StatsRepository {
-    use icelines_core::identity::{PlayerBio, PlayerIdentity, PlayerId};
+    use icelines_core::identity::{PlayerBio, PlayerId, PlayerIdentity};
     use icelines_core::model::{Position, Season, TeamAbbr};
     use icelines_core::season_stats::{SeasonStats, SeasonType, StatTotals, TeamStint};
     use icelines_core::stats_repository::StatsRepository;
@@ -136,7 +136,14 @@ fn l1_a3_any10g_ever_matches_when_streak_exists() {
     // 12 games in 2024-25 (Jan 2025 dates → 2024-25 season).
     // Last 5 games each have 1 goal — last 10 has 5 goals.
     let lines: Vec<GameStatLine> = (1..=12)
-        .map(|i| line(&format!("2025-01-{:02}", i), "EDM", if i > 7 { 1 } else { 0 }, 0))
+        .map(|i| {
+            line(
+                &format!("2025-01-{:02}", i),
+                "EDM",
+                if i > 7 { 1 } else { 0 },
+                0,
+            )
+        })
         .collect();
     let provider = MockProvider::new(lines);
     let ctx = EvalCtx::new(&provider, StrictMode::Off, false, fixed_today(), 20252026);
@@ -158,7 +165,14 @@ fn l1_a3_any10g_ever_misses_when_no_streak() {
 
     let repo = synthetic_repo();
     let lines: Vec<GameStatLine> = (1..=12)
-        .map(|i| line(&format!("2025-01-{:02}", i), "EDM", if i > 8 { 1 } else { 0 }, 0))
+        .map(|i| {
+            line(
+                &format!("2025-01-{:02}", i),
+                "EDM",
+                if i > 8 { 1 } else { 0 },
+                0,
+            )
+        })
         .collect();
     // Only 4 goals total across last 5 games; no 10-game window
     // hits 5+.
@@ -256,7 +270,14 @@ fn l1_a3_career_streak_misses_broken() {
     let repo = synthetic_repo();
     // 4 with point, 1 without, 4 with point — longest run = 4
     let lines: Vec<GameStatLine> = (1..=9)
-        .map(|i| line(&format!("2025-01-{:02}", i), "EDM", 0, if i == 5 { 0 } else { 1 }))
+        .map(|i| {
+            line(
+                &format!("2025-01-{:02}", i),
+                "EDM",
+                0,
+                if i == 5 { 0 } else { 1 },
+            )
+        })
         .collect();
     let provider = MockProvider::new(lines);
     let ctx = EvalCtx::new(&provider, StrictMode::Off, false, fixed_today(), 20252026);
@@ -344,15 +365,19 @@ fn l1_a3_killer_query_with_at_age() {
 
     let repo = synthetic_repo();
     let lines: Vec<GameStatLine> = (1..=12)
-        .map(|i| line(&format!("2025-01-{:02}", i), "EDM", if i > 7 { 1 } else { 0 }, 0))
+        .map(|i| {
+            line(
+                &format!("2025-01-{:02}", i),
+                "EDM",
+                if i > 7 { 1 } else { 0 },
+                0,
+            )
+        })
         .collect();
     let provider = MockProvider::new(lines);
     let ctx = EvalCtx::new(&provider, StrictMode::Off, false, fixed_today(), 20252026);
 
-    let plan = parse_query(FilterInput::Cli(
-        "g.any10g>=5 EVER AT age<=25".to_string(),
-    ))
-    .unwrap();
+    let plan = parse_query(FilterInput::Cli("g.any10g>=5 EVER AT age<=25".to_string())).unwrap();
     let view = repo
         .view(PlayerId(8478402), Season(20252026), SeasonType::Regular)
         .unwrap();

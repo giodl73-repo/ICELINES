@@ -211,10 +211,7 @@ mod tests {
     #[test]
     fn l0_tokenize_not_unary() {
         let toks = tokenize("NOT g>=10");
-        assert_eq!(
-            toks,
-            vec![Token::KwNot, Token::Bare("g>=10".into())]
-        );
+        assert_eq!(toks, vec![Token::KwNot, Token::Bare("g>=10".into())]);
     }
 
     #[test]
@@ -368,10 +365,7 @@ mod tests {
     #[test]
     fn l0_a3_tokenize_ever_keyword() {
         let toks = tokenize("g.any10g>=5 EVER");
-        assert_eq!(
-            toks,
-            vec![Token::Bare("g.any10g>=5".into()), Token::KwEver]
-        );
+        assert_eq!(toks, vec![Token::Bare("g.any10g>=5".into()), Token::KwEver]);
     }
 
     /// A.3 — `AT` introduces a sub-clause.
@@ -407,10 +401,7 @@ mod tests {
     #[test]
     fn l0_a3_tokenize_ever_lowercase() {
         let toks = tokenize("g.any10g>=5 ever");
-        assert_eq!(
-            toks,
-            vec![Token::Bare("g.any10g>=5".into()), Token::KwEver]
-        );
+        assert_eq!(toks, vec![Token::Bare("g.any10g>=5".into()), Token::KwEver]);
     }
 
     /// Word boundary fence: `evergreen` stays bare.

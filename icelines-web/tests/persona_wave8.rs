@@ -303,11 +303,7 @@ async fn p_w8_036_favorites_add_redirects_to_favorites_by_default() {
 
 #[tokio::test]
 async fn p_w8_037_favorites_add_honors_return_to_relative() {
-    let r = post_form(
-        "/favorites/add",
-        "key=EDM&return_to=%2Fteam%2FEDM",
-    )
-    .await;
+    let r = post_form("/favorites/add", "key=EDM&return_to=%2Fteam%2FEDM").await;
     let loc = r
         .headers()
         .get(axum::http::header::LOCATION)
@@ -378,11 +374,7 @@ async fn p_w8_042_favorites_remove_unknown_member_clean_no_op() {
 
 #[tokio::test]
 async fn p_w8_043_favorites_remove_honors_return_to() {
-    let r = post_form(
-        "/favorites/remove",
-        "key=EDM&kind=team&return_to=%2Fscores",
-    )
-    .await;
+    let r = post_form("/favorites/remove", "key=EDM&kind=team&return_to=%2Fscores").await;
     let loc = r.headers().get(axum::http::header::LOCATION).unwrap();
     assert_eq!(loc.to_str().unwrap(), "/scores");
 }
@@ -457,8 +449,7 @@ async fn p_w8_053_favorites_post_get_form_returns_405() {
     // GET on /favorites/add should be method-not-allowed.
     let r = get("/favorites/add").await;
     assert!(
-        r.status() == StatusCode::METHOD_NOT_ALLOWED
-            || r.status() == StatusCode::NOT_FOUND,
+        r.status() == StatusCode::METHOD_NOT_ALLOWED || r.status() == StatusCode::NOT_FOUND,
         "GET /favorites/add should not 200, got {}",
         r.status()
     );
@@ -468,8 +459,7 @@ async fn p_w8_053_favorites_post_get_form_returns_405() {
 async fn p_w8_054_favorites_remove_get_returns_405_or_404() {
     let r = get("/favorites/remove").await;
     assert!(
-        r.status() == StatusCode::METHOD_NOT_ALLOWED
-            || r.status() == StatusCode::NOT_FOUND,
+        r.status() == StatusCode::METHOD_NOT_ALLOWED || r.status() == StatusCode::NOT_FOUND,
         "GET /favorites/remove should not 200, got {}",
         r.status()
     );
@@ -510,7 +500,11 @@ async fn p_w8_058_favorites_add_xss_in_key_safe() {
 
 #[tokio::test]
 async fn p_w8_059_favorites_add_then_render_no_unescaped_script() {
-    post_form("/favorites/add", "key=%3Cscript%3Ealert(1)%3C%2Fscript%3E&kind=team").await;
+    post_form(
+        "/favorites/add",
+        "key=%3Cscript%3Ealert(1)%3C%2Fscript%3E&kind=team",
+    )
+    .await;
     let r = get("/favorites").await;
     let body = body_text(r).await;
     // The XSS payload survives as escaped text, never as live script.

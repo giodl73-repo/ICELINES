@@ -7,10 +7,10 @@
 //! bridge), or where FetchError → DataError mapping drops detail.
 
 use httpmock::prelude::*;
-use icelines_fetch::datastore::{DataError, Fetcher, NhlApiFetcher};
-use icelines_fetch::nhl_api::NhlApiClient;
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
+use icelines_fetch::datastore::{DataError, Fetcher, NhlApiFetcher};
+use icelines_fetch::nhl_api::NhlApiClient;
 
 fn fixture_path(rel: &str) -> std::path::PathBuf {
     std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -22,9 +22,8 @@ fn fixture_path(rel: &str) -> std::path::PathBuf {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn l1_foster_plus1_nhl_fetcher_career_history_round_trips() {
     // Reuse the existing McDavid landing fixture from Calder.1.
-    let body =
-        std::fs::read_to_string(fixture_path("landing/mcdavid_8478402.json"))
-            .expect("McDavid fixture readable");
+    let body = std::fs::read_to_string(fixture_path("landing/mcdavid_8478402.json"))
+        .expect("McDavid fixture readable");
     let server = MockServer::start();
     let mock = server.mock(|when, then| {
         when.method(GET).path("/player/8478402/landing");
@@ -33,8 +32,7 @@ async fn l1_foster_plus1_nhl_fetcher_career_history_round_trips() {
             .body(&body);
     });
 
-    let client =
-        NhlApiClient::new("http://unused", server.base_url()).with_retry_params(0, 1, 10);
+    let client = NhlApiClient::new("http://unused", server.base_url()).with_retry_params(0, 1, 10);
     let fetcher = NhlApiFetcher::with_client(client);
 
     // The sync trait method is invoked from inside spawn_blocking
@@ -97,8 +95,7 @@ async fn l1_foster_plus1_nhl_fetcher_stats_url_includes_season_and_type() {
             .body(r#"{"data": [], "total": 0}"#);
     });
 
-    let client =
-        NhlApiClient::new(server.base_url(), "http://unused").with_retry_params(0, 1, 10);
+    let client = NhlApiClient::new(server.base_url(), "http://unused").with_retry_params(0, 1, 10);
     let fetcher = NhlApiFetcher::with_client(client);
 
     let result = tokio::task::spawn_blocking(move || {

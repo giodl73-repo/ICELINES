@@ -15,9 +15,7 @@
 //! must not record "0 hits tonight" until the boxscore finalizes.
 
 use icelines_core::entity::EntityRef;
-use icelines_core::favorites::{
-    GameResult, GameState, GoalieNightLine, HomeAway, SkaterNightLine,
-};
+use icelines_core::favorites::{GameResult, GameState, GoalieNightLine, HomeAway, SkaterNightLine};
 use icelines_core::identity::PlayerId;
 use icelines_core::model::TeamAbbr;
 
@@ -26,10 +24,7 @@ use crate::nhl_api::Boxscore;
 /// Extract the favorited skater's per-night line from a parsed
 /// boxscore. Returns `None` when the player isn't on either team's
 /// roster for this game.
-pub fn extract_skater_line(
-    boxscore: &Boxscore,
-    player_id: u32,
-) -> Option<SkaterNightLine> {
+pub fn extract_skater_line(boxscore: &Boxscore, player_id: u32) -> Option<SkaterNightLine> {
     // Try home first, then away — the same loop body composes the
     // SkaterNightLine for either side.
     let (line, is_home) = boxscore
@@ -365,7 +360,10 @@ mod tests {
         assert_eq!(gl.goals_against, 0);
         assert!((gl.save_pct - 1.0).abs() < 1e-6);
         assert!(gl.shutout, "0 GA on >0 SA at FINAL = shutout");
-        assert!(matches!(gl.decision, Some(icelines_core::favorites::Decision::Win)));
+        assert!(matches!(
+            gl.decision,
+            Some(icelines_core::favorites::Decision::Win)
+        ));
         assert!(matches!(gl.home_or_away, HomeAway::Home));
     }
 

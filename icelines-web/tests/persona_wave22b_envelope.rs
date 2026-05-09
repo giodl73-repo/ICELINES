@@ -249,15 +249,12 @@ async fn p_w22b_014_active_filters_preserves_compound() {
 async fn p_w22b_015_legacy_vs_new_same_keys() {
     let legacy = fetch_envelope("g>=10").await;
     let new = fetch_envelope("g.career>=10").await;
-    let lk: std::collections::BTreeSet<_> = legacy
-        .as_object()
-        .unwrap()
-        .keys()
-        .cloned()
-        .collect();
-    let nk: std::collections::BTreeSet<_> =
-        new.as_object().unwrap().keys().cloned().collect();
-    assert_eq!(lk, nk, "top-level envelope keys must match across pipelines");
+    let lk: std::collections::BTreeSet<_> = legacy.as_object().unwrap().keys().cloned().collect();
+    let nk: std::collections::BTreeSet<_> = new.as_object().unwrap().keys().cloned().collect();
+    assert_eq!(
+        lk, nk,
+        "top-level envelope keys must match across pipelines"
+    );
 
     let lm: std::collections::BTreeSet<_> = legacy["meta"]
         .as_object()

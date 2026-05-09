@@ -231,12 +231,11 @@ impl ManifestSet {
             let path = root.join(kind.shard_filename());
             let shard = match std::fs::read(&path) {
                 Ok(bytes) => {
-                    let file: ShardFile = serde_json::from_slice(&bytes).map_err(|e| {
-                        ManifestError::Corrupt {
+                    let file: ShardFile =
+                        serde_json::from_slice(&bytes).map_err(|e| ManifestError::Corrupt {
                             path: path.clone(),
                             source: e,
-                        }
-                    })?;
+                        })?;
                     Shard::from_file(file)
                 }
                 Err(e) if e.kind() == std::io::ErrorKind::NotFound => Shard::empty(),
@@ -419,7 +418,10 @@ mod tests {
             m.upsert(DataKind::Bios, entry_for(key.clone())).unwrap();
         }
         let m2 = ManifestSet::open(dir.path()).unwrap();
-        assert!(m2.get(DataKind::Bios, &key).is_some(), "persisted across reopen");
+        assert!(
+            m2.get(DataKind::Bios, &key).is_some(),
+            "persisted across reopen"
+        );
     }
 
     #[test]

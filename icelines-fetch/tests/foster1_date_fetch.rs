@@ -45,8 +45,7 @@ async fn l1_foster1_fetch_schedule_for_date_2014_10_08() {
             .body(&body);
     });
 
-    let client =
-        NhlApiClient::new("http://unused", server.base_url()).with_retry_params(0, 1, 10);
+    let client = NhlApiClient::new("http://unused", server.base_url()).with_retry_params(0, 1, 10);
     let games = client
         .fetch_schedule_for_date("2014-10-08")
         .await
@@ -71,8 +70,7 @@ async fn l1_foster1_fetch_schedule_for_date_2024_12_01() {
             .body(&body);
     });
 
-    let client =
-        NhlApiClient::new("http://unused", server.base_url()).with_retry_params(0, 1, 10);
+    let client = NhlApiClient::new("http://unused", server.base_url()).with_retry_params(0, 1, 10);
     let games = client
         .fetch_schedule_for_date("2024-12-01")
         .await
@@ -94,8 +92,7 @@ async fn l1_foster1_fetch_schedule_url_includes_date_segment() {
         then.status(200).body(r#"{"gameWeek": []}"#);
     });
 
-    let client =
-        NhlApiClient::new("http://unused", server.base_url()).with_retry_params(0, 1, 10);
+    let client = NhlApiClient::new("http://unused", server.base_url()).with_retry_params(0, 1, 10);
     // If the URL formation is wrong, httpmock doesn't match and the
     // call hits the real network (or times out). The expectation
     // here is the request lands on the mounted path.

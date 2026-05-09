@@ -82,10 +82,7 @@ fn parse_kind(s: &str) -> Result<DataKind> {
 fn print_table(root: &std::path::Path, rows: &[(DataKind, ManifestEntry)]) {
     println!("DATA STATUS — {}", root.display());
     println!("{}", "─".repeat(76));
-    println!(
-        "{:<14} {:<16} {:<24} {}",
-        "Source", "Kind", "Key", "Freshness"
-    );
+    println!("{:<14} {:<16} {:<24} Freshness", "Source", "Kind", "Key");
     println!("{}", "─".repeat(76));
     for (kind, entry) in rows {
         println!(
