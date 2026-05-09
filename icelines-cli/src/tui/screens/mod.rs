@@ -613,8 +613,8 @@ fn active_chrome(app: &App) -> crate::tui::chrome::ScreenChrome {
         // sort + position filter keybinds.
         Screen::Team(_) => team::chrome(&app.team),
         // Phase Adams.11 — Depth + Favorites chrome.
-        Screen::Depth | Screen::DepthTeam(_) => depth::chrome(app.depth_mode),
-        Screen::Favorites => favorites::chrome(),
+        Screen::Depth | Screen::DepthTeam(_) => depth::chrome(app.depth_mode, &app.depth_filters),
+        Screen::Favorites => favorites::chrome(&app.favorites),
         // Sub-screens and other screens use empty chrome for now.
         // Masterton.2 will add accessors for the rest.
         _ => crate::tui::chrome::ScreenChrome::default(),

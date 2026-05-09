@@ -1,6 +1,6 @@
 # Phase Messier — execution plan v0.2
 
-**Status**: Active - Messier.1 type extraction started
+**Status**: Active - Messier.1-.6 first pass implemented
 **Spec**: `design/specs/phase-messier-overview.md` v0.2
 **Review note**: `design/notes/2026-05-08-phaseMessier-roles-review.md`
 **Target release**: v0.24.0
@@ -450,6 +450,18 @@ Backups → All. Press `n` cycles countries. Press `h` toggles Saves
 column. Press `f` opens free-form overlay. Per-screen hint row shows
 all six.
 
+### Closeout so far
+
+Implemented in the first Messier pass:
+
+- `GoaliesState` owns `RosterFilterState` and `GoalieRoleFilter`.
+- `p`, `n`, and `h` handlers cycle role, nationality, and forced saves
+  column state; chrome and footer expose the active state.
+- Goalie render, ViewModel construction, and Enter navigation use the same
+  filtered row set.
+- Starter/backup remains the documented GP-share heuristic, not a deployment
+  claim.
+
 ---
 
 ## Sub-phase Messier.3 — Stats `n` country shortcut + cmdbar parity
@@ -529,6 +541,16 @@ Total: 10
 `n=nationality`. Cmdbar `:stats country=CAN` produces identical
 plan IR. AI fallback can emit either form.
 
+### Closeout so far
+
+Implemented in the first Messier pass:
+
+- Stats `n` opens FilterEdit prefilled with `nationality=`.
+- Query screen chrome advertises `n=nation`.
+- `stats nationality=CAN pos=LW min-gp=20` lowers through the deterministic
+  command parser to the Art Ross filter expression
+  `nationality=CAN AND pos=LW AND gp>=20`.
+
 ---
 
 ## Sub-phase Messier.4 — Depth position + nationality + free-form
@@ -581,6 +603,17 @@ Total: 12
 8 → 12 tests. Per-screen hint row shows the new keybinds. Scoring
 toggle remains independent of filter chain.
 
+### Closeout so far
+
+Implemented in the first Messier pass:
+
+- `App` owns `depth_filters: RosterFilterState`.
+- Depth chrome exposes scoring, position, and nationality state.
+- `p` and `n` handlers mutate typed depth filters and reset selection.
+- League and team depth computations consume filtered player views before
+  computing team strength.
+- `f` is reserved in UI/status for the follow-up free-form/KV integration.
+
 ---
 
 ## Sub-phase Messier.5 — Favorites sort + nationality + free-form
@@ -620,6 +653,21 @@ Total: 12
 
 `s` cycles RecentlyAdded → Name → Pos → Team → wrap. `p` / `n` / `f`
 standard. Sort changes order deterministically.
+
+### Closeout so far
+
+Implemented in the first Messier pass:
+
+- `FavoritesScreenState` adds sort and `RosterFilterState`.
+- Favorites chrome advertises sort, position, nationality, and reserved
+  free-form controls.
+- App handlers for `s`, `p`, `n`, and `f` update state and status.
+
+Still open:
+
+- Favorites render-level sort/filter application remains a follow-up. The
+  state and controls are present, but ordering/filtering of the actual member
+  list has not been wired through the data resolver yet.
 
 ---
 
@@ -777,6 +825,27 @@ Power user drives every per-screen filter dimension from cmdbar.
 AI fallback gains kv form. SYSTEM_PROMPT_VERSION="v2" in single
 commit. Phase Jennings records the measured pre-Messier baseline; Messier
 adds the planned +95 tests on top of that measured count.
+
+### Closeout so far
+
+Implemented in the first Messier pass:
+
+- `RosterKvArgs` and `parse_roster_kv` parse typed `sort`, `pos`, `country` /
+  `nationality`, `min-gp`, `hits`, and `saves` keys with duplicate-key and
+  invalid-value errors.
+- `Command::GoaliesKv` applies sort, min-GP, nationality, position, and
+  explicit saves-column state to the Goalies screen.
+- `stats ...` KV input lowers to a validated Art Ross query expression.
+- `SYSTEM_PROMPT_VERSION` is now `v2`; the prompt includes roster KV examples
+  and `:goalies sort=gaa min-gp=20` landmarks while still requiring canonical
+  output without a leading colon.
+
+Still open:
+
+- `depth ...` and `favorites ...` KV execution are reserved for the next pass.
+- Team positional KV (`team EDM pos=LW nationality=CAN`) remains a follow-up.
+- Persona scenarios for the new KV forms still need to be expanded beyond the
+  unit-level command coverage.
 
 ---
 

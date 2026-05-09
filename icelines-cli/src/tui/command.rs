@@ -46,6 +46,9 @@ pub enum Command {
     Stats,
     /// `goalies` — workspace becomes Goalies leaderboard.
     Goalies,
+    GoaliesKv {
+        args: crate::tui::filter_state::RosterKvArgs,
+    },
     /// `transactions` (alias `txs`) — workspace becomes
     /// Transactions feed.
     Transactions,
@@ -246,8 +249,16 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
         "q" => Ok(Command::Quit),
 
         // Workspace-swap reads (no args)
-        "stats" => Ok(Command::Stats),
-        "goalies" | "g" => Ok(Command::Goalies),
+        "stats" if args.trim().is_empty() => Ok(Command::Stats),
+        "stats" => parse_stats_kv(args),
+        "goalies" | "g" if args.trim().is_empty() => Ok(Command::Goalies),
+        "goalies" | "g" => Ok(Command::GoaliesKv {
+            args: crate::tui::filter_state::parse_roster_kv(args).map_err(|err| {
+                ParseError::BadFilter {
+                    details: err.to_string(),
+                }
+            })?,
+        }),
         "transactions" | "txs" | "tx" => Ok(Command::Transactions),
         "playoffs" => Ok(Command::Playoffs),
         "depth" => Ok(Command::Depth),
@@ -373,6 +384,40 @@ fn parse_fantasy(args: &str) -> Result<Command, ParseError> {
     }
 }
 
+fn parse_stats_kv(args: &str) -> Result<Command, ParseError> {
+    let args =
+        crate::tui::filter_state::parse_roster_kv(args).map_err(|err| ParseError::BadFilter {
+            details: err.to_string(),
+        })?;
+    let mut atoms = Vec::new();
+    if let Some(country) = args.country {
+        atoms.push(format!("nationality={}", country.as_str()));
+    }
+    if let Some(pos) = args.pos {
+        if pos != crate::tui::filter_state::PosFilter::All {
+            atoms.push(format!("pos={}", pos.label()));
+        }
+    }
+    if let Some(min_gp) = args.min_gp {
+        atoms.push(format!("gp>={min_gp}"));
+    }
+    if atoms.is_empty() {
+        Ok(Command::Stats)
+    } else {
+        let filter = atoms.join(" AND ");
+        match icelines_query::parse_query(icelines_query::FilterInput::Cli(filter.clone())) {
+            Ok(_) => Ok(Command::Query { filter }),
+            Err(errs) => Err(ParseError::BadFilter {
+                details: errs
+                    .iter()
+                    .map(|e| e.to_string())
+                    .collect::<Vec<_>>()
+                    .join("; "),
+            }),
+        }
+    }
+}
+
 fn parse_query(args: &str) -> Result<Command, ParseError> {
     let filter = args.trim();
     if filter.is_empty() {
@@ -461,6 +506,7 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
             app.screen = Screen::Goalies;
             ExecResult::Continue
         }
+        Command::GoaliesKv { args } => exec_goalies_kv(app, args),
         Command::Transactions => {
             app.screen = Screen::Transactions;
             ExecResult::Continue
@@ -575,6 +621,73 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
                 )),
             }
         }
+    }
+}
+
+fn exec_goalies_kv(
+    app: &mut crate::tui::app::App,
+    args: crate::tui::filter_state::RosterKvArgs,
+) -> ExecResult {
+    use crate::tui::app::Screen;
+    use crate::tui::filter_state::ForcedColumns;
+
+    if let Some(sort) = args.sort.as_deref() {
+        let Some(sort_idx) = goalie_sort_index(sort) else {
+            return ExecResult::Flash(format!("unknown goalie sort: {sort}"));
+        };
+        app.goalies.sort = sort_idx;
+    }
+
+    if let Some(min_gp) = args.min_gp {
+        app.goalies.min_gp = min_gp;
+    }
+    if let Some(country) = args.country {
+        app.goalies.filters.country_filter = Some(country);
+    }
+    if let Some(pos) = args.pos {
+        app.goalies.filters.pos_filter = pos;
+    }
+    if args.forced_column_keys.contains(ForcedColumns::SAVES) {
+        if args.forced_columns.contains(ForcedColumns::SAVES) {
+            if !app
+                .goalies
+                .filters
+                .forced_columns
+                .contains(ForcedColumns::SAVES)
+            {
+                app.goalies
+                    .filters
+                    .forced_columns
+                    .toggle(ForcedColumns::SAVES);
+            }
+        } else if app
+            .goalies
+            .filters
+            .forced_columns
+            .contains(ForcedColumns::SAVES)
+        {
+            app.goalies
+                .filters
+                .forced_columns
+                .toggle(ForcedColumns::SAVES);
+        }
+    }
+
+    app.goalies.filters.invalidate();
+    app.goalies.selected = 0;
+    app.screen = Screen::Goalies;
+    ExecResult::Flash("goalies filters applied".to_string())
+}
+
+fn goalie_sort_index(raw: &str) -> Option<u8> {
+    match raw.to_ascii_lowercase().as_str() {
+        "save-pct" | "save_pct" | "sv%" | "svpct" | "sv-pct" => Some(0),
+        "gaa" => Some(1),
+        "wins" | "w" => Some(2),
+        "gp" => Some(3),
+        "saves" | "sv" => Some(4),
+        "so" | "shutouts" => Some(5),
+        _ => None,
     }
 }
 
@@ -1084,6 +1197,36 @@ mod tests {
         assert_eq!(parse_command("Help").unwrap(), Command::Help);
     }
 
+    #[test]
+    fn l0_messier_6_parse_stats_kv_lowers_to_query_filter() {
+        assert_eq!(
+            parse_command("stats nationality=CAN pos=LW min-gp=20").unwrap(),
+            Command::Query {
+                filter: "nationality=CAN AND pos=LW AND gp>=20".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn l0_messier_6_parse_goalies_kv_is_typed() {
+        let cmd = parse_command("goalies sort=gaa min-gp=20 nationality=CAN saves=on").unwrap();
+        let Command::GoaliesKv { args } = cmd else {
+            panic!("expected GoaliesKv");
+        };
+        assert_eq!(args.sort.as_deref(), Some("gaa"));
+        assert_eq!(args.min_gp, Some(20));
+        assert_eq!(
+            args.country,
+            Some(crate::tui::filter_state::CountryCode::CAN)
+        );
+        assert!(args
+            .forced_columns
+            .contains(crate::tui::filter_state::ForcedColumns::SAVES));
+        assert!(args
+            .forced_column_keys
+            .contains(crate::tui::filter_state::ForcedColumns::SAVES));
+    }
+
     // ── split_first_word helper ───────────────────────────────────────────
 
     #[test]
@@ -1194,6 +1337,45 @@ mod tests {
                 app.screen
             );
         }
+    }
+
+    #[test]
+    fn l0_messier_6_exec_goalies_kv_applies_filters() {
+        let mut app = fresh_app_with_mdi();
+        let cmd = parse_command("goalies sort=gaa min-gp=20 nationality=CAN saves=on").unwrap();
+        let r = execute_command(cmd, &mut app);
+
+        assert!(matches!(r, ExecResult::Flash(_)));
+        assert!(matches!(app.screen, Screen::Goalies));
+        assert_eq!(app.goalies.sort, 1);
+        assert_eq!(app.goalies.min_gp, 20);
+        assert_eq!(
+            app.goalies.filters.country_filter,
+            Some(crate::tui::filter_state::CountryCode::CAN)
+        );
+        assert!(app
+            .goalies
+            .filters
+            .forced_columns
+            .contains(crate::tui::filter_state::ForcedColumns::SAVES));
+    }
+
+    #[test]
+    fn l0_messier_6_exec_goalies_kv_unknown_sort_flashes_without_mutation() {
+        let mut app = fresh_app_with_mdi();
+        let r = execute_command(
+            Command::GoaliesKv {
+                args: crate::tui::filter_state::RosterKvArgs {
+                    sort: Some("weird".to_string()),
+                    min_gp: Some(20),
+                    ..Default::default()
+                },
+            },
+            &mut app,
+        );
+
+        assert!(matches!(r, ExecResult::Flash(_)));
+        assert_ne!(app.goalies.min_gp, 20);
     }
 
     #[test]

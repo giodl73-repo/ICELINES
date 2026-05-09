@@ -122,7 +122,7 @@ pub enum AiError {
 /// canonical examples. Versioned: bump VERSION when you change
 /// the grammar so prompt-cache invalidation is obvious.
 #[allow(dead_code)]
-pub const SYSTEM_PROMPT_VERSION: &str = "v1";
+pub const SYSTEM_PROMPT_VERSION: &str = "v2";
 
 pub fn default_system_prompt() -> String {
     // Single source of truth for the prompt — keep it in sync
@@ -149,6 +149,13 @@ VERBS (with args):
   compare <a>               similarity peers
   compare <a> <b>           head-to-head
   box <game-id>             boxscore detail (numeric NHL game id)
+
+ROSTER KV FORM:
+  stats nationality=CAN pos=LW min-gp=20
+  goalies sort=gaa min-gp=20 nationality=CAN saves=on
+  depth pos=LW nationality=CAN
+  favorites sort=name nationality=CAN
+  UI examples may show a leading colon, e.g. :goalies sort=gaa min-gp=20, but output should omit the colon.
 
 FREE-FORM QUERY (Phase Art Ross filter grammar):
   query <filter-expression>
@@ -686,6 +693,11 @@ mod tests {
             "UNSUPPORTED",
             "AT age",
             "league=OHL",
+            "ROSTER KV FORM",
+            "sort=gaa",
+            "min-gp=20",
+            "pos=LW",
+            ":goalies",
         ] {
             assert!(
                 s.contains(landmark),
@@ -697,7 +709,7 @@ mod tests {
     #[test]
     fn l0_adams_system_prompt_version_is_set() {
         // Version sentinel for prompt-cache invalidation.
-        assert!(!SYSTEM_PROMPT_VERSION.is_empty());
+        assert_eq!(SYSTEM_PROMPT_VERSION, "v2");
     }
 
     #[test]

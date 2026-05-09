@@ -19,13 +19,57 @@ use ratatui::{
     Frame,
 };
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum FavoritesSort {
+    #[default]
+    RecentlyAdded,
+    Name,
+    Kind,
+}
+
+impl FavoritesSort {
+    pub const ALL: &'static [FavoritesSort] = &[
+        FavoritesSort::RecentlyAdded,
+        FavoritesSort::Name,
+        FavoritesSort::Kind,
+    ];
+
+    pub fn label(self) -> &'static str {
+        match self {
+            FavoritesSort::RecentlyAdded => "Recent",
+            FavoritesSort::Name => "Name",
+            FavoritesSort::Kind => "Kind",
+        }
+    }
+
+    pub fn next(self) -> Self {
+        let idx = Self::ALL.iter().position(|s| *s == self).unwrap_or(0);
+        Self::ALL[(idx + 1) % Self::ALL.len()]
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct FavoritesScreenState {
+    pub sort: FavoritesSort,
+    pub filters: crate::tui::filter_state::RosterFilterState,
+}
+
 // ── Phase Adams.11 — chrome accessor ─────────────────────────────────────────
 
-pub fn chrome() -> crate::tui::chrome::ScreenChrome {
+pub fn chrome(state: &FavoritesScreenState) -> crate::tui::chrome::ScreenChrome {
     use crate::tui::chrome::KeyHint;
     crate::tui::chrome::ScreenChrome {
-        title: "Favorites".to_owned(),
+        title: format!(
+            "Favorites - sort={} - pos={} - country={}",
+            state.sort.label(),
+            state.filters.pos_filter.label(),
+            state.filters.country_label()
+        ),
         keybinds: vec![
+            KeyHint::new("s", "sort"),
+            KeyHint::new("p", "cycle pos"),
+            KeyHint::new("n", "cycle nation"),
+            KeyHint::new("f", "free filter"),
             KeyHint::new("g", "manage groups"),
             KeyHint::new("Enter", "open card"),
             KeyHint::new(":fav add", "from cmdbar"),
@@ -389,4 +433,35 @@ fn render_member_list(f: &mut Frame, area: Rect, members: &[(String, crate::db::
     )));
 
     f.render_widget(List::new(items), inner);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn l0_messier_favorites_sort_cycles() {
+        let mut sort = FavoritesSort::default();
+        assert_eq!(sort, FavoritesSort::RecentlyAdded);
+        sort = sort.next();
+        assert_eq!(sort, FavoritesSort::Name);
+        sort = sort.next();
+        assert_eq!(sort, FavoritesSort::Kind);
+        sort = sort.next();
+        assert_eq!(sort, FavoritesSort::RecentlyAdded);
+    }
+
+    #[test]
+    fn l0_messier_favorites_chrome_advertises_filters() {
+        let state = FavoritesScreenState::default();
+        let chrome = chrome(&state);
+        assert!(chrome.title.contains("sort=Recent"));
+        assert!(chrome.title.contains("pos=All"));
+        assert!(chrome.title.contains("country=All"));
+        let keys: Vec<&str> = chrome.keybinds.iter().map(|k| k.key).collect();
+        assert!(keys.contains(&"s"));
+        assert!(keys.contains(&"p"));
+        assert!(keys.contains(&"n"));
+        assert!(keys.contains(&"f"));
+    }
 }

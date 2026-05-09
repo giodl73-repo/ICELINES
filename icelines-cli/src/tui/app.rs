@@ -200,6 +200,7 @@ pub struct App {
     pub group_picker: crate::tui::pickers::GroupPickerState,
     // Depth chart tab
     pub depth_mode: icelines_core::cross_team::ScoringMode,
+    pub depth_filters: crate::tui::filter_state::RosterFilterState,
     pub show_admin: bool,
     // Season time-travel
     pub active_season: String,
@@ -268,6 +269,7 @@ pub struct App {
     /// Phase Adams.10 — per-screen state for Team rosters: sort
     /// key (`s` cycles), position filter (`p` cycles), cursor.
     pub team: crate::tui::screens::team::TeamScreenState,
+    pub favorites: crate::tui::screens::favorites::FavoritesScreenState,
 
     // ── Repo-backed view state ─────────────────────────────────────────
     /// Post-Hart canonical store. `!Send + !Sync` by construction.
@@ -386,8 +388,10 @@ impl App {
             txs: crate::tui::screens::transactions::TransactionsState::default(),
             // Phase Adams.10 — Team screen sort + filter state.
             team: crate::tui::screens::team::TeamScreenState::default(),
+            favorites: crate::tui::screens::favorites::FavoritesScreenState::default(),
 
             // Empty repo + current season as the initial typed window.
+            depth_filters: crate::tui::filter_state::RosterFilterState::default(),
             // `App::boot_load` populates the repo synchronously before
             // the event loop starts.
             // UX.1 — bump from default 8 windows to 80 so the lazy
@@ -1023,6 +1027,16 @@ impl App {
                     self.search_query.push(c);
                     self.selected = 0;
                 } else if self.screen == Screen::Queries
+                    && matches!(self.queries.mode, QueryMode::Build)
+                    && c == 'n'
+                {
+                    self.queries.mode = QueryMode::FilterEdit;
+                    self.queries.filter_text = "nationality=".to_owned();
+                    self.queries.filter_error = None;
+                    self.queries.filter_history_cursor = None;
+                    self.status =
+                        "Stats nationality filter: type a 3-letter code, Enter to apply".to_owned();
+                } else if self.screen == Screen::Queries
                     && c == 'p'
                     && !matches!(self.queries.mode, QueryMode::SaveName)
                 {
@@ -1128,6 +1142,44 @@ impl App {
                 } else if matches!(self.screen, Screen::Depth | Screen::DepthTeam(_)) && c == 's' {
                     self.depth_mode = self.depth_mode.toggle();
                     self.status = format!("Scoring: {}", self.depth_mode.label());
+                } else if matches!(self.screen, Screen::Depth | Screen::DepthTeam(_)) && c == 'p' {
+                    self.depth_filters.pos_filter = self.depth_filters.pos_filter.next();
+                    self.depth_filters.invalidate();
+                    self.selected = 0;
+                    self.status = format!(
+                        "Depth pos filter: {}",
+                        self.depth_filters.pos_filter.label()
+                    );
+                } else if matches!(self.screen, Screen::Depth | Screen::DepthTeam(_)) && c == 'n' {
+                    self.depth_filters.cycle_country();
+                    self.selected = 0;
+                    self.status =
+                        format!("Depth nationality: {}", self.depth_filters.country_label());
+                } else if matches!(self.screen, Screen::Depth | Screen::DepthTeam(_)) && c == 'f' {
+                    self.status =
+                        "Depth free-form filter is tracked for Messier.6 cmdbar KV".to_owned();
+                } else if self.screen == Screen::Favorites && c == 's' {
+                    self.favorites.sort = self.favorites.sort.next();
+                    self.selected = 0;
+                    self.status = format!("Favorites sort: {}", self.favorites.sort.label());
+                } else if self.screen == Screen::Favorites && c == 'p' {
+                    self.favorites.filters.pos_filter = self.favorites.filters.pos_filter.next();
+                    self.favorites.filters.invalidate();
+                    self.selected = 0;
+                    self.status = format!(
+                        "Favorites pos filter: {}",
+                        self.favorites.filters.pos_filter.label()
+                    );
+                } else if self.screen == Screen::Favorites && c == 'n' {
+                    self.favorites.filters.cycle_country();
+                    self.selected = 0;
+                    self.status = format!(
+                        "Favorites nationality: {}",
+                        self.favorites.filters.country_label()
+                    );
+                } else if self.screen == Screen::Favorites && c == 'f' {
+                    self.status =
+                        "Favorites free-form filter is tracked for Messier.6 cmdbar KV".to_owned();
                 } else if self.screen == Screen::Goalies && c == 's' {
                     // Phase G.3: cycle sort SV% → GAA → W → GP → Saves → SO
                     let n = crate::tui::screens::goalies::SORTS.len() as u8;
@@ -1146,6 +1198,37 @@ impl App {
                     self.goalies.min_gp = cycle[(cur + 1) % cycle.len()];
                     self.goalies.selected = 0;
                     self.status = format!("Goalies min GP: {}", self.goalies.min_gp);
+                } else if self.screen == Screen::Goalies && c == 'p' {
+                    self.goalies.role_filter = self.goalies.role_filter.next();
+                    self.goalies.filters.invalidate();
+                    self.goalies.selected = 0;
+                    self.status = format!("Goalies role: {}", self.goalies.role_filter.label());
+                } else if self.screen == Screen::Goalies && c == 'n' {
+                    self.goalies.filters.cycle_country();
+                    self.goalies.selected = 0;
+                    self.status = format!(
+                        "Goalies nationality: {}",
+                        self.goalies.filters.country_label()
+                    );
+                } else if self.screen == Screen::Goalies && c == 'h' {
+                    self.goalies
+                        .filters
+                        .forced_columns
+                        .toggle(crate::tui::filter_state::ForcedColumns::SAVES);
+                    self.goalies.filters.invalidate();
+                    self.status = format!(
+                        "Goalies Saves column: {}",
+                        if self
+                            .goalies
+                            .filters
+                            .forced_columns
+                            .contains(crate::tui::filter_state::ForcedColumns::SAVES)
+                        {
+                            "shown"
+                        } else {
+                            "hidden"
+                        }
+                    );
                 } else if matches!(self.screen, Screen::Team(_)) && c == 's' {
                     // Phase Adams.10 — cycle Team sort key.
                     self.team.sort = self.team.sort.next();
@@ -3180,8 +3263,15 @@ impl App {
             }
             Screen::Depth => {
                 let views = self.views();
-                let strength =
-                    icelines_core::cross_team::compute_team_strength_views(&views, self.depth_mode);
+                let filtered_views: Vec<_> = views
+                    .iter()
+                    .filter(|v| self.depth_filters.matches_view(v))
+                    .copied()
+                    .collect();
+                let strength = icelines_core::cross_team::compute_team_strength_views(
+                    &filtered_views,
+                    self.depth_mode,
+                );
                 let mut ranked: Vec<String> = strength.keys().cloned().collect();
                 ranked.sort_by(|a, b| {
                     strength[b]
@@ -3249,10 +3339,22 @@ impl App {
                     .copied()
                     .unwrap_or(crate::tui::screens::goalies::GoalieSort::SvPctDesc);
                 let views = self.goalie_views();
+                let starter_threshold = {
+                    let total_gp: u32 =
+                        views.iter().filter(|v| v.is_goalie()).map(|v| v.gp()).sum();
+                    if total_gp == 0 {
+                        None
+                    } else {
+                        Some((total_gp * 60).div_ceil(100))
+                    }
+                };
                 let qualified = crate::tui::screens::goalies::sort_goalie_views(
                     &views,
                     sort,
                     self.goalies.min_gp,
+                    &self.goalies.filters,
+                    self.goalies.role_filter,
+                    starter_threshold,
                 );
                 if let Some(v) = qualified.get(self.goalies.selected) {
                     let pid = v.identity.id;
@@ -4639,6 +4741,17 @@ mod tests {
             QueryMode::FilterEdit,
             "f on Queries must enter FilterEdit"
         );
+    }
+
+    #[test]
+    fn l0_messier_stats_n_prefills_nationality_filter() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+        app.handle(Action::Char('n'));
+        assert_eq!(app.queries.mode, QueryMode::FilterEdit);
+        assert_eq!(app.queries.filter_text, "nationality=");
+        assert!(app.queries.filter_error.is_none());
+        assert!(app.status.contains("nationality"));
     }
 
     /// Typed characters land in `query_filter_text`, not the global

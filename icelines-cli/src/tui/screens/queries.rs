@@ -84,6 +84,7 @@ pub fn chrome(state: &QueriesState) -> crate::tui::chrome::ScreenChrome {
     let keybinds = match state.mode {
         QueryMode::Build => vec![
             KeyHint::new("f", "filter"),
+            KeyHint::new("n", "nation"),
             KeyHint::new("/", "sort"),
             KeyHint::new("s", "save"),
             KeyHint::new("l", "load"),

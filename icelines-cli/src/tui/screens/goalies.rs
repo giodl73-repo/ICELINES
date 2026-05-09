@@ -22,6 +22,7 @@ use icelines_core::{
 };
 
 use crate::tui::app::App;
+use crate::tui::filter_state::{ForcedColumns, GoalieRoleFilter, RosterFilterState};
 
 // ── Phase Norris.4 — per-screen state struct ─────────────────────────────────
 
@@ -36,6 +37,8 @@ pub struct GoaliesState {
     /// Min-GP threshold for the leaderboard. Default 15 matches the
     /// NHL leaderboard convention; cycled by `m`.
     pub min_gp: u32,
+    pub filters: RosterFilterState,
+    pub role_filter: GoalieRoleFilter,
 }
 
 // ── Phase Masterton.1 — declarative chrome ───────────────────────────────────
@@ -50,11 +53,24 @@ pub fn chrome(state: &GoaliesState) -> crate::tui::chrome::ScreenChrome {
         .get(state.sort as usize)
         .map(|s| s.label())
         .unwrap_or("?");
-    let title = format!("Goalies — {sort_label} · GP ≥ {}", state.min_gp);
+    let title = format!(
+        "Goalies - {sort_label} - GP >= {} - role={} - country={} - saves={}",
+        state.min_gp,
+        state.role_filter.label(),
+        state.filters.country_label(),
+        if state.filters.forced_columns.contains(ForcedColumns::SAVES) {
+            "on"
+        } else {
+            "off"
+        }
+    );
 
     let keybinds = vec![
         KeyHint::new("s", "sort"),
         KeyHint::new("m", "min GP"),
+        KeyHint::new("p", "role"),
+        KeyHint::new("n", "nation"),
+        KeyHint::new("h", "saves col"),
         KeyHint::new("↑↓", "select"),
         KeyHint::new("Enter", "open card"),
     ];
@@ -71,6 +87,8 @@ impl Default for GoaliesState {
             sort: 0,
             // 15 GP — NHL leaderboard convention.
             min_gp: 15,
+            filters: RosterFilterState::default(),
+            role_filter: GoalieRoleFilter::All,
         }
     }
 }
@@ -134,8 +152,8 @@ mod norris_state_tests {
         let s = GoaliesState::default();
         let c = chrome(&s);
         assert!(
-            c.title.contains("GP ≥ 15"),
-            "default chrome must show GP ≥ 15; got: {}",
+            c.title.contains("GP >= 15"),
+            "default chrome must show GP >= 15; got: {}",
             c.title
         );
         let keys: Vec<&str> = c.keybinds.iter().map(|k| k.key).collect();
@@ -149,7 +167,7 @@ mod norris_state_tests {
         let mut s = GoaliesState::default();
         s.min_gp = 25;
         let c = chrome(&s);
-        assert!(c.title.contains("GP ≥ 25"));
+        assert!(c.title.contains("GP >= 25"));
     }
 }
 
@@ -222,11 +240,16 @@ pub fn sort_goalie_views<'a>(
     views: &'a [icelines_core::stats_repository::PlayerView<'a>],
     sort: GoalieSort,
     min_gp: u32,
+    filters: &RosterFilterState,
+    role_filter: GoalieRoleFilter,
+    starter_threshold: Option<u32>,
 ) -> Vec<&'a icelines_core::stats_repository::PlayerView<'a>> {
     use std::cmp::Ordering;
     let mut out: Vec<&icelines_core::stats_repository::PlayerView<'a>> = views
         .iter()
         .filter(|v| v.is_goalie() && v.gp() >= min_gp)
+        .filter(|v| filters.matches_view(v))
+        .filter(|v| role_filter.matches_gp(v.gp(), starter_threshold))
         .collect();
     out.sort_by(|a, b| {
         let sa = a.stats.goalie.as_ref();
@@ -274,10 +297,13 @@ fn goalies_view_from_tui_state<'a>(
     views: &'a [icelines_core::stats_repository::PlayerView<'a>],
     sort: GoalieSort,
     min_gp: u32,
+    filters: &RosterFilterState,
+    role_filter: GoalieRoleFilter,
+    starter_threshold: Option<u32>,
     season: icelines_core::model::Season,
     season_type: icelines_core::season_stats::SeasonType,
 ) -> GoaliesView {
-    let qualified = sort_goalie_views(views, sort, min_gp);
+    let qualified = sort_goalie_views(views, sort, min_gp, filters, role_filter, starter_threshold);
     let mut view = GoaliesView::from_player_views(
         ViewContext::new(ViewWindow::new(season, season_type)),
         qualified.into_iter().copied(),
@@ -293,7 +319,32 @@ fn goalies_view_from_tui_state<'a>(
         label: sort.label().to_string(),
         direction: sort.direction(),
     });
+    if role_filter != GoalieRoleFilter::All {
+        view.applied_filters.push(AppliedFilter {
+            key: FilterKey::from("role"),
+            op: Some(icelines_core::FilterOp::Eq),
+            value: role_filter.label().to_ascii_lowercase(),
+            label: format!("Role = {}", role_filter.label()),
+        });
+    }
+    if let Some(country) = filters.country_filter {
+        view.applied_filters.push(AppliedFilter {
+            key: FilterKey::from("nationality"),
+            op: Some(icelines_core::FilterOp::Eq),
+            value: country.as_str().to_string(),
+            label: format!("Nationality = {}", country.as_str()),
+        });
+    }
     view
+}
+
+fn starter_threshold(views: &[icelines_core::stats_repository::PlayerView<'_>]) -> Option<u32> {
+    let total_gp: u32 = views.iter().filter(|v| v.is_goalie()).map(|v| v.gp()).sum();
+    if total_gp == 0 {
+        None
+    } else {
+        Some((total_gp * 60).div_ceil(100))
+    }
 }
 
 fn goalie_metric_u32(row: &icelines_core::GoalieRow, key: &str) -> u32 {
@@ -332,9 +383,11 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
         .copied()
         .unwrap_or(GoalieSort::SvPctDesc);
     let title = format!(
-        " Goalies · sort: {} · min GP: {} · s:sort  m:min-gp  Enter:detail  Esc:back ",
+        " Goalies - sort: {} - min GP: {} - role: {} - nation: {} - s/m/p/n/h  Enter:detail  Esc:back ",
         sort.label(),
         app.goalies.min_gp,
+        app.goalies.role_filter.label(),
+        app.goalies.filters.country_label(),
     );
     let block = Block::default().borders(Borders::ALL).title(title);
     let inner = block.inner(area);
@@ -366,6 +419,9 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
         &views,
         sort,
         app.goalies.min_gp,
+        &app.goalies.filters,
+        app.goalies.role_filter,
+        starter_threshold(&views),
         app.active_season_typed,
         app.active_type,
     );
@@ -376,7 +432,9 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
                 Line::from(""),
                 Line::styled(
                     format!(
-                        "  No goalies have played at least {} games this season.",
+                        "  No goalies match role={}, nation={}, GP >= {}.",
+                        app.goalies.role_filter.label(),
+                        app.goalies.filters.country_label(),
                         app.goalies.min_gp
                     ),
                     dim,
@@ -458,6 +516,12 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
         Span::styled(":sort  ", dim),
         Span::styled("m", cyan),
         Span::styled(":min-gp  ", dim),
+        Span::styled("p", cyan),
+        Span::styled(":role  ", dim),
+        Span::styled("n", cyan),
+        Span::styled(":nation  ", dim),
+        Span::styled("h", cyan),
+        Span::styled(":saves  ", dim),
         Span::styled("Enter", cyan),
         Span::styled(":detail", dim),
     ])));
@@ -537,7 +601,14 @@ mod tests {
             (3, "Mid Tier", "BOS", 35, 18, 0.910, 2.50, 2),
         ]);
         let views = collect_goalie_views(&repo);
-        let sorted = sort_goalie_views(&views, GoalieSort::SvPctDesc, 15);
+        let sorted = sort_goalie_views(
+            &views,
+            GoalieSort::SvPctDesc,
+            15,
+            &RosterFilterState::default(),
+            GoalieRoleFilter::All,
+            None,
+        );
         assert_eq!(
             sorted[0].full_name(),
             "Connor Hellebuyck",
@@ -554,7 +625,14 @@ mod tests {
             (2, "Low GAA", "WPG", 30, 18, 0.920, 2.00, 5),
         ]);
         let views = collect_goalie_views(&repo);
-        let sorted = sort_goalie_views(&views, GoalieSort::GaaAsc, 15);
+        let sorted = sort_goalie_views(
+            &views,
+            GoalieSort::GaaAsc,
+            15,
+            &RosterFilterState::default(),
+            GoalieRoleFilter::All,
+            None,
+        );
         assert_eq!(
             sorted[0].full_name(),
             "Low GAA",
@@ -569,7 +647,14 @@ mod tests {
             (2, "Starter", "WPG", 50, 28, 0.910, 2.50, 5),
         ]);
         let views = collect_goalie_views(&repo);
-        let sorted = sort_goalie_views(&views, GoalieSort::SvPctDesc, 15);
+        let sorted = sort_goalie_views(
+            &views,
+            GoalieSort::SvPctDesc,
+            15,
+            &RosterFilterState::default(),
+            GoalieRoleFilter::All,
+            None,
+        );
         assert_eq!(sorted.len(), 1);
         assert_eq!(sorted[0].full_name(), "Starter");
     }
@@ -581,9 +666,23 @@ mod tests {
             (2, "Starter", "WPG", 50, 28, 0.910, 2.50, 5),
         ]);
         let views = collect_goalie_views(&repo);
-        let lo = sort_goalie_views(&views, GoalieSort::SvPctDesc, 5);
+        let lo = sort_goalie_views(
+            &views,
+            GoalieSort::SvPctDesc,
+            5,
+            &RosterFilterState::default(),
+            GoalieRoleFilter::All,
+            None,
+        );
         assert_eq!(lo.len(), 2, "min_gp=5 includes both");
-        let hi = sort_goalie_views(&views, GoalieSort::SvPctDesc, 15);
+        let hi = sort_goalie_views(
+            &views,
+            GoalieSort::SvPctDesc,
+            15,
+            &RosterFilterState::default(),
+            GoalieRoleFilter::All,
+            None,
+        );
         assert_eq!(hi.len(), 1, "min_gp=15 excludes the backup");
     }
 
@@ -598,6 +697,9 @@ mod tests {
             &views,
             GoalieSort::SvPctDesc,
             15,
+            &RosterFilterState::default(),
+            GoalieRoleFilter::All,
+            None,
             Season(20242025),
             SeasonType::Regular,
         );

@@ -14,11 +14,22 @@ use ratatui::{
 
 // ── Phase Adams.11 — chrome accessor ─────────────────────────────────────────
 
-pub fn chrome(mode: ScoringMode) -> crate::tui::chrome::ScreenChrome {
+pub fn chrome(
+    mode: ScoringMode,
+    filters: &crate::tui::filter_state::RosterFilterState,
+) -> crate::tui::chrome::ScreenChrome {
     use crate::tui::chrome::{KeyHint, ScreenChrome};
-    let title = format!("Depth · scoring={}", mode.label());
+    let title = format!(
+        "Depth - scoring={} - pos={} - country={}",
+        mode.label(),
+        filters.pos_filter.label(),
+        filters.country_label()
+    );
     let keybinds = vec![
         KeyHint::new("s", "toggle scoring"),
+        KeyHint::new("p", "cycle pos"),
+        KeyHint::new("n", "cycle nation"),
+        KeyHint::new("f", "free filter"),
         KeyHint::new("↑↓", "select"),
         KeyHint::new("Enter", "team chart"),
     ];
@@ -43,7 +54,12 @@ pub fn render_league(f: &mut Frame, app: &App, area: Rect) {
         return;
     }
 
-    let strength = compute_team_strength_views(&views, mode);
+    let filtered_views: Vec<PlayerView<'_>> = views
+        .iter()
+        .filter(|v| app.depth_filters.matches_view(v))
+        .copied()
+        .collect();
+    let strength = compute_team_strength_views(&filtered_views, mode);
     let mut ranked: Vec<(&str, &icelines_core::cross_team::TeamStrength)> =
         strength.iter().map(|(k, v)| (k.as_str(), v)).collect();
     // Sort total desc, then team abbrev asc for tie-break — without
@@ -150,7 +166,12 @@ pub fn render_team(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
     let strip_area = outer[1];
 
     // Compute cross-team metrics for all views — view-based path.
-    let metrics = compute_all_views_with_mode(&views, mode);
+    let filtered_views: Vec<PlayerView<'_>> = views
+        .iter()
+        .filter(|v| app.depth_filters.matches_view(v))
+        .copied()
+        .collect();
+    let metrics = compute_all_views_with_mode(&filtered_views, mode);
     let metrics_map: std::collections::HashMap<u32, &icelines_core::cross_team::CrossTeamMetrics> =
         metrics
             .iter()
@@ -183,7 +204,7 @@ pub fn render_team(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
     use icelines_core::model::Position;
     let mut fwd_buckets: std::collections::HashMap<Position, Vec<&PlayerView<'_>>> =
         std::collections::HashMap::new();
-    let mut all_fwds: Vec<&PlayerView<'_>> = views
+    let mut all_fwds: Vec<&PlayerView<'_>> = filtered_views
         .iter()
         .filter(|v| v.team_display() == abbrev && v.position().is_forward())
         .collect();
@@ -222,7 +243,7 @@ pub fn render_team(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
     }
 
     // Defense: split by handedness
-    let mut all_d: Vec<&PlayerView<'_>> = views
+    let mut all_d: Vec<&PlayerView<'_>> = filtered_views
         .iter()
         .filter(|v| v.team_display() == abbrev && v.position() == Position::Defense)
         .collect();
