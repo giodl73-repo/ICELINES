@@ -1642,7 +1642,7 @@ pub struct GoaliesArgs {
 /// JSON / CSV output row for `query goalies`. Hart.5c.7: stable shape
 /// for CLI consumers, decoupled from the icelines-core model. Mirrors
 /// the field set the legacy Goalie struct produced via serde.
-#[derive(serde::Serialize)]
+#[derive(Debug, serde::Serialize)]
 struct GoalieRow {
     nhl_id: u32,
     full_name: String,
@@ -1851,25 +1851,23 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
     });
     views.truncate(args.top);
 
-    let rows: Vec<GoalieRow> = views
-        .iter()
-        .map(|v| {
-            let s = v.stats.goalie.as_ref();
-            GoalieRow {
-                nhl_id: v.identity.id.0,
-                full_name: v.full_name().to_owned(),
-                team: v.team_display().to_owned(),
-                games_played: v.gp(),
-                wins: s.map(|s| s.wins).unwrap_or(0),
-                losses: s.map(|s| s.losses).unwrap_or(0),
-                ot_losses: s.and_then(|s| s.ot_losses),
-                save_pct: s.and_then(|s| s.save_pct),
-                goals_against_average: s.and_then(|s| s.goals_against_average),
-                shutouts: s.map(|s| s.shutouts).unwrap_or(0),
-                saves: s.map(|s| s.saves).unwrap_or(0),
-            }
-        })
-        .collect();
+    let mut goalies_view = icelines_core::GoaliesView::from_player_views(
+        icelines_core::ViewContext::new(icelines_core::ViewWindow::new(
+            icelines_core::model::Season(season_u32),
+            args.season_type,
+        )),
+        views.iter().copied(),
+    );
+    goalies_view.sort = Some(icelines_core::SortState {
+        key: icelines_core::SortKey(sort_key.clone()),
+        label: sort_key.clone(),
+        direction: if sort_key == "gaa" {
+            icelines_core::SortDirection::Asc
+        } else {
+            icelines_core::SortDirection::Desc
+        },
+    });
+    let rows = goalie_output_rows_from_view(&goalies_view);
 
     if args.json {
         println!(
@@ -1941,6 +1939,55 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
 }
 
 // ── icelines query compare ────────────────────────────────────────────────────
+
+fn goalie_output_rows_from_view(view: &icelines_core::GoaliesView) -> Vec<GoalieRow> {
+    view.rows
+        .iter()
+        .map(|row| GoalieRow {
+            nhl_id: row.player_id.0,
+            full_name: row.display_name.clone(),
+            team: row.team.0.clone(),
+            games_played: metric_u32(row, "gp"),
+            wins: metric_u32(row, "wins"),
+            losses: metric_u32(row, "losses"),
+            ot_losses: metric_optional_u32(row, "ot_losses"),
+            save_pct: metric_optional_f32(row, "save_pct"),
+            goals_against_average: metric_optional_f32(row, "gaa"),
+            shutouts: metric_u32(row, "shutouts"),
+            saves: metric_u32(row, "saves"),
+        })
+        .collect()
+}
+
+fn metric_u32(row: &icelines_core::GoalieRow, key: &str) -> u32 {
+    metric_optional_u32(row, key).unwrap_or(0)
+}
+
+fn metric_optional_u32(row: &icelines_core::GoalieRow, key: &str) -> Option<u32> {
+    row.metrics.iter().find_map(|metric| {
+        if metric.key.0 == key {
+            match metric.value {
+                icelines_core::MetricValue::Integer(value) => u32::try_from(value).ok(),
+                _ => None,
+            }
+        } else {
+            None
+        }
+    })
+}
+
+fn metric_optional_f32(row: &icelines_core::GoalieRow, key: &str) -> Option<f32> {
+    row.metrics.iter().find_map(|metric| {
+        if metric.key.0 == key {
+            match metric.value {
+                icelines_core::MetricValue::Decimal(value) => Some(value as f32),
+                _ => None,
+            }
+        } else {
+            None
+        }
+    })
+}
 
 #[allow(clippy::too_many_arguments)]
 pub async fn run_compare(

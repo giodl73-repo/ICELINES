@@ -91,6 +91,23 @@ impl GoaliesView {
 
         view
     }
+
+    pub fn from_player_views<'a>(
+        context: ViewContext,
+        rows: impl IntoIterator<Item = PlayerView<'a>>,
+    ) -> Self {
+        let mut view = Self::new(context);
+        view.rows = rows.into_iter().map(|goalie| goalie_row(&goalie)).collect();
+        if view.rows.is_empty() {
+            view.empty_state = Some(EmptyState {
+                kind: EmptyKind::NoRows,
+                title: "No goalies".to_string(),
+                detail: Some("No goalie rows matched the current filters.".to_string()),
+                recovery: Vec::new(),
+            });
+        }
+        view
+    }
 }
 
 fn view_context(season: Season, season_type: SeasonType, has_window: bool) -> ViewContext {
@@ -160,6 +177,29 @@ fn goalie_row(goalie: &PlayerView<'_>) -> GoalieRow {
         metrics: vec![
             metric_int("gp", "GP", goalie.gp() as i64, MetricUnit::Games),
             metric_int("starts", "GS", starts as i64, MetricUnit::Games),
+            metric_int(
+                "wins",
+                "W",
+                stats.map(|g| g.wins).unwrap_or(0) as i64,
+                MetricUnit::Count,
+            ),
+            metric_int(
+                "losses",
+                "L",
+                stats.map(|g| g.losses).unwrap_or(0) as i64,
+                MetricUnit::Count,
+            ),
+            MetricCell {
+                key: StatKey::from("ot_losses"),
+                label: "OT".to_string(),
+                value: stats
+                    .and_then(|g| g.ot_losses)
+                    .map(|v| MetricValue::Integer(v as i64))
+                    .unwrap_or(MetricValue::Missing),
+                unit: MetricUnit::Count,
+                precision: ValuePrecision::Integer,
+                token: None,
+            },
             metric_decimal(
                 "save_pct",
                 "SV%",
@@ -173,6 +213,18 @@ fn goalie_row(goalie: &PlayerView<'_>) -> GoalieRow {
                 stats.and_then(|g| g.goals_against_average.map(|v| v as f64)),
                 MetricUnit::Score,
                 ValuePrecision::TwoDecimals,
+            ),
+            metric_int(
+                "shutouts",
+                "SO",
+                stats.map(|g| g.shutouts).unwrap_or(0) as i64,
+                MetricUnit::Count,
+            ),
+            metric_int(
+                "saves",
+                "Saves",
+                stats.map(|g| g.saves).unwrap_or(0) as i64,
+                MetricUnit::Count,
             ),
         ],
         tokens: vec![SemanticToken::SupportingEvidence],

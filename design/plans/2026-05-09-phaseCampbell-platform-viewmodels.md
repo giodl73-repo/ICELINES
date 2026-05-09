@@ -209,6 +209,16 @@ Acceptance:
 - Renderers are allowed to format/truncate, but tests fail if they recompute
   classification/filtering differently.
 
+Closeout so far:
+
+- `query goalies` now builds a `GoaliesView` after its existing
+  load/filter/sort/top pipeline, then projects the ViewModel back to the
+  stable CLI JSON/CSV/table row shape.
+- `GoaliesView::from_player_views` lets renderer adapters consume already
+  prepared player rows without duplicating goalie metric semantics.
+- Verified the adapter with `cargo test -p icelines-cli --test system_tests
+  query_goalies -- --nocapture` and the `viewmodel` test slice.
+
 ---
 
 ## Campbell.5 - Handoff
