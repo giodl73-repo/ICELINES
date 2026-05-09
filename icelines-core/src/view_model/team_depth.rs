@@ -33,6 +33,25 @@ impl TeamDepthView {
     ) -> Self {
         let has_window = repo.has_window(season, season_type);
         let roster = repo.team_roster(&team, season, season_type);
+        Self::from_roster(team, season, season_type, has_window, &roster)
+    }
+
+    pub fn from_player_views(
+        team: TeamAbbr,
+        season: Season,
+        season_type: SeasonType,
+        roster: &[PlayerView<'_>],
+    ) -> Self {
+        Self::from_roster(team, season, season_type, true, roster)
+    }
+
+    fn from_roster(
+        team: TeamAbbr,
+        season: Season,
+        season_type: SeasonType,
+        has_window: bool,
+        roster: &[PlayerView<'_>],
+    ) -> Self {
         let skaters: Vec<PlayerView<'_>> = roster
             .iter()
             .filter(|player| !player.is_goalie())

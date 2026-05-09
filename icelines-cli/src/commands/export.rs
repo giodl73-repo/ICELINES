@@ -19,7 +19,7 @@ use std::path::PathBuf;
 
 use icelines_core::{
     cross_team::compute_all_views, filter::PlayerFilter, scoring::sort_views_by_pace,
-    stats_repository::PlayerView,
+    stats_repository::PlayerView, TeamAbbr, TeamDepthView,
 };
 
 use crate::cli::{ExportSubcommand, MdShape};
@@ -367,6 +367,14 @@ pub(crate) fn render_team_from_views(
         return Ok(out);
     }
 
+    let team_view = TeamDepthView::from_player_views(
+        TeamAbbr(team_up.clone()),
+        icelines_core::model::Season(icelines_core::CURRENT_SEASON),
+        icelines_core::season_stats::SeasonType::Regular,
+        &roster,
+    );
+    write_team_depth_view_markdown(&mut out, &team_view);
+
     let _ = writeln!(out, "## All skaters");
     let _ = writeln!(out);
     let _ = writeln!(out, "| Rank | Player | Pos | GP | G | A | Pts | Pts/82 |");
@@ -394,6 +402,82 @@ pub(crate) fn render_team_from_views(
 }
 
 // ── depth ────────────────────────────────────────────────────────────────────
+
+fn metric_display(metrics: &[icelines_core::MetricCell], key: &str) -> String {
+    metrics
+        .iter()
+        .find_map(|metric| {
+            if metric.key.0 == key {
+                match metric.value {
+                    icelines_core::MetricValue::Integer(value) => Some(value.to_string()),
+                    icelines_core::MetricValue::Decimal(value) => Some(format!("{value:.1}")),
+                    icelines_core::MetricValue::Text(ref value) => Some(value.clone()),
+                    icelines_core::MetricValue::Missing => None,
+                }
+            } else {
+                None
+            }
+        })
+        .unwrap_or_else(|| "â€”".to_owned())
+}
+
+fn depth_player_cell(slot: &icelines_core::view_model::DepthPlayerSlot) -> String {
+    format!(
+        "{} ({})",
+        truncate(&slot.display_name, 24),
+        metric_display(&slot.metrics, "pace_82")
+    )
+}
+
+fn write_team_depth_view_markdown(out: &mut String, view: &TeamDepthView) {
+    let _ = writeln!(out, "## Estimated lineup");
+    let _ = writeln!(out);
+    let _ = writeln!(out, "| Line | LW | C | RW |");
+    let _ = writeln!(out, "|-----:|----|---|----|");
+    for line in &view.forward_lines {
+        let left = line
+            .left
+            .as_ref()
+            .map(depth_player_cell)
+            .unwrap_or_else(|| "â€”".to_owned());
+        let center = line
+            .center
+            .as_ref()
+            .map(depth_player_cell)
+            .unwrap_or_else(|| "â€”".to_owned());
+        let right = line
+            .right
+            .as_ref()
+            .map(depth_player_cell)
+            .unwrap_or_else(|| "â€”".to_owned());
+        let _ = writeln!(
+            out,
+            "| {line_no:>4} | {left} | {center} | {right} |",
+            line_no = line.line
+        );
+    }
+    let _ = writeln!(out);
+    let _ = writeln!(out, "| Pair | D1 | D2 |");
+    let _ = writeln!(out, "|-----:|----|----|");
+    for pair in &view.defense_pairs {
+        let left = pair
+            .left
+            .as_ref()
+            .map(depth_player_cell)
+            .unwrap_or_else(|| "â€”".to_owned());
+        let right = pair
+            .right
+            .as_ref()
+            .map(depth_player_cell)
+            .unwrap_or_else(|| "â€”".to_owned());
+        let _ = writeln!(
+            out,
+            "| {pair_no:>4} | {left} | {right} |",
+            pair_no = pair.pair
+        );
+    }
+    let _ = writeln!(out);
+}
 
 pub(crate) struct DepthOpts {
     pub width: u16,
@@ -1096,6 +1180,7 @@ mod tests {
         assert!(out.contains("Edm Tre"));
         assert!(!out.contains("Col Two"));
         assert!(out.contains("type: lineup-card"));
+        assert!(out.contains("## Estimated lineup"));
         assert!(out.contains("EDM"));
     }
 

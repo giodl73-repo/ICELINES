@@ -222,14 +222,18 @@ Closeout so far:
 - CLI `team <ABBR>` now builds `TeamDepthView` and renders the terminal depth
   chart from that ViewModel while keeping the legacy `DepthChart` renderer
   available for existing callers.
+- Markdown `export md team` now builds `TeamDepthView` from its filtered roster
+  and emits a ViewModel-backed estimated-lineup section before the existing
+  all-skaters table.
 - `GoaliesView::from_player_views` lets renderer adapters consume already
   prepared player rows without duplicating goalie metric semantics.
 - Verified the adapter with `cargo test -p icelines-cli --test system_tests
   query_goalies -- --nocapture`, `cargo test -p icelines-cli
   tui::screens::goalies -- --nocapture`, `cargo check -p icelines-cli`,
   `cargo check -p icelines-web`, `cargo test -p icelines-web goalies --
-  --nocapture`, `cargo test -p icelines-cli team -- --nocapture`, and the
-  `viewmodel` test slice.
+  --nocapture`, `cargo test -p icelines-cli team -- --nocapture`,
+  `cargo test -p icelines-cli l0_export_team_card_lists_only_target_team --
+  --nocapture`, and the `viewmodel` test slice.
 
 ---
 
