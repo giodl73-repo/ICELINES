@@ -609,6 +609,12 @@ fn active_chrome(app: &App) -> crate::tui::chrome::ScreenChrome {
         Screen::Goalies => goalies::chrome(&app.goalies),
         Screen::Playoffs => playoffs::chrome(&app.playoffs),
         Screen::Tonight => misc::chrome(&app.tonight),
+        // Phase Adams.10 — Team screen now publishes chrome with
+        // sort + position filter keybinds.
+        Screen::Team(_) => team::chrome(&app.team),
+        // Phase Adams.11 — Depth + Favorites chrome.
+        Screen::Depth | Screen::DepthTeam(_) => depth::chrome(app.depth_mode),
+        Screen::Favorites => favorites::chrome(),
         // Sub-screens and other screens use empty chrome for now.
         // Masterton.2 will add accessors for the rest.
         _ => crate::tui::chrome::ScreenChrome::default(),
@@ -4196,10 +4202,60 @@ mod adams_4_render_boundary_tests {
         );
     }
 
-    /// Screens without chrome accessors fall back to a
-    /// placeholder hint pointing to the cmdbar.
+    /// Adams.10 — pressing `s` on Team cycles sort key.
     #[test]
-    fn l0_adams_per_screen_row_falls_back_for_team() {
+    fn l1_adams_team_s_cycles_sort() {
+        use crate::tui::event::Action;
+        use crate::tui::screens::team::TeamSort;
+        let mut app = App::new(true);
+        app.mdi = Some(MdiLayout::default());
+        app.screen = Screen::Team("EDM".to_owned());
+        assert_eq!(app.team.sort, TeamSort::Pace);
+        app.handle(Action::Char('s'));
+        assert_eq!(app.team.sort, TeamSort::Name);
+        app.handle(Action::Char('s'));
+        assert_eq!(app.team.sort, TeamSort::Position);
+    }
+
+    /// Adams.10 — pressing `p` on Team cycles position filter.
+    #[test]
+    fn l1_adams_team_p_cycles_pos_filter() {
+        use crate::tui::event::Action;
+        use crate::tui::screens::team::TeamPosFilter;
+        let mut app = App::new(true);
+        app.mdi = Some(MdiLayout::default());
+        app.screen = Screen::Team("EDM".to_owned());
+        assert_eq!(app.team.pos_filter, TeamPosFilter::All);
+        app.handle(Action::Char('p'));
+        assert_eq!(app.team.pos_filter, TeamPosFilter::Forwards);
+        app.handle(Action::Char('p'));
+        assert_eq!(app.team.pos_filter, TeamPosFilter::Defense);
+    }
+
+    /// Adams.10 — `s` on a non-Team screen does NOT touch
+    /// `app.team.sort` (e.g., Goalies' `s` cycles its own sort).
+    #[test]
+    fn l1_adams_team_s_is_screen_scoped() {
+        use crate::tui::event::Action;
+        use crate::tui::screens::team::TeamSort;
+        let mut app = App::new(true);
+        app.mdi = Some(MdiLayout::default());
+        app.screen = Screen::Goalies;
+        let team_sort_before = app.team.sort;
+        let goalies_sort_before = app.goalies.sort;
+        app.handle(Action::Char('s'));
+        assert_eq!(app.team.sort, team_sort_before, "team sort must not move");
+        assert_ne!(
+            app.goalies.sort, goalies_sort_before,
+            "goalies sort must move"
+        );
+        let _ = TeamSort::Pace; // imported for clarity
+    }
+
+    /// Adams.10 — Team screen now has chrome (sort + pos filter
+    /// keybinds). Verify the per-screen row advertises them.
+    #[test]
+    fn l0_adams_per_screen_row_shows_team_keybinds() {
         let mut app = App::new(true);
         app.mdi = Some(MdiLayout::default());
         app.screen = Screen::Team("EDM".to_owned());
@@ -4207,10 +4263,9 @@ mod adams_4_render_boundary_tests {
         let mut term = Terminal::new(backend).unwrap();
         term.draw(|f| render(f, &app)).unwrap();
         let text = buf_text(term.backend().buffer());
-        // Team has no chrome keybinds today — placeholder fires.
         assert!(
-            text.contains("Team:") && text.contains("cmdbar verbs below"),
-            "team must show placeholder pointing to cmdbar; got:\n{text}"
+            text.contains("s=cycle sort") && text.contains("p=cycle pos"),
+            "Team per-screen row must advertise s + p; got:\n{text}"
         );
     }
 

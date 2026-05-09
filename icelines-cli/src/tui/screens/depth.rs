@@ -12,6 +12,19 @@ use ratatui::{
     Frame,
 };
 
+// ── Phase Adams.11 — chrome accessor ─────────────────────────────────────────
+
+pub fn chrome(mode: ScoringMode) -> crate::tui::chrome::ScreenChrome {
+    use crate::tui::chrome::{KeyHint, ScreenChrome};
+    let title = format!("Depth · scoring={}", mode.label());
+    let keybinds = vec![
+        KeyHint::new("s", "toggle scoring"),
+        KeyHint::new("↑↓", "select"),
+        KeyHint::new("Enter", "team chart"),
+    ];
+    ScreenChrome { title, keybinds }
+}
+
 // ── League view ───────────────────────────────────────────────────────────────
 
 pub fn render_league(f: &mut Frame, app: &App, area: Rect) {

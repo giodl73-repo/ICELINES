@@ -265,6 +265,10 @@ pub struct App {
     /// `TransactionsState` doc comment.
     pub txs: crate::tui::screens::transactions::TransactionsState,
 
+    /// Phase Adams.10 — per-screen state for Team rosters: sort
+    /// key (`s` cycles), position filter (`p` cycles), cursor.
+    pub team: crate::tui::screens::team::TeamScreenState,
+
     // ── Repo-backed view state ─────────────────────────────────────────
     /// Post-Hart canonical store. `!Send + !Sync` by construction.
     /// Populated synchronously by `App::boot_load` and refreshed by
@@ -380,6 +384,8 @@ impl App {
             league_context: crate::tui::dashboard_panel::LeagueContext::empty(),
             // Phase Norris.3 — replaces 8 transactions_* / tx_* init lines.
             txs: crate::tui::screens::transactions::TransactionsState::default(),
+            // Phase Adams.10 — Team screen sort + filter state.
+            team: crate::tui::screens::team::TeamScreenState::default(),
 
             // Empty repo + current season as the initial typed window.
             // `App::boot_load` populates the repo synchronously before
@@ -1140,6 +1146,16 @@ impl App {
                     self.goalies.min_gp = cycle[(cur + 1) % cycle.len()];
                     self.goalies.selected = 0;
                     self.status = format!("Goalies min GP: {}", self.goalies.min_gp);
+                } else if matches!(self.screen, Screen::Team(_)) && c == 's' {
+                    // Phase Adams.10 — cycle Team sort key.
+                    self.team.sort = self.team.sort.next();
+                    self.selected = 0;
+                    self.status = format!("Team sort: {}", self.team.sort.label());
+                } else if matches!(self.screen, Screen::Team(_)) && c == 'p' {
+                    // Phase Adams.10 — cycle Team position filter.
+                    self.team.pos_filter = self.team.pos_filter.next();
+                    self.selected = 0;
+                    self.status = format!("Team pos filter: {}", self.team.pos_filter.label());
                 } else if self.screen == Screen::Schedule && c == 't' {
                     // Jump to today's week
                     let today = crate::tui::schedule::today_iso();

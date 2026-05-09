@@ -19,6 +19,20 @@ use ratatui::{
     Frame,
 };
 
+// ── Phase Adams.11 — chrome accessor ─────────────────────────────────────────
+
+pub fn chrome() -> crate::tui::chrome::ScreenChrome {
+    use crate::tui::chrome::{KeyHint, ScreenChrome};
+    crate::tui::chrome::ScreenChrome {
+        title: "Favorites".to_owned(),
+        keybinds: vec![
+            KeyHint::new("g", "manage groups"),
+            KeyHint::new("Enter", "open card"),
+            KeyHint::new(":fav add", "from cmdbar"),
+        ],
+    }
+}
+
 pub fn render(f: &mut Frame, app: &App, area: Rect) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)

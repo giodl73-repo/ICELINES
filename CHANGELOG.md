@@ -1,5 +1,48 @@
 # IceLines Changelog
 
+## v0.23.4 — 2026-05-08 — Phase Jack Adams.10 / .11 (Team sort+filter, Depth/Favorites chrome)
+
+Headline: **The Team screen gains real per-screen sort/filter capability,
+filling the audit gap from v0.23.3. Press `s` to cycle sort (Pace / Name /
+Pos / G / Hits) and `p` to cycle position filter (All / F / D / C / LW / RW
+/ LD / RD). Depth and Favorites screens get chrome accessors so their
+per-screen rows show real keybinds.** Bin suite 1033 → 1042.
+
+### Adams.10 — Team sort + filter
+
+- New `TeamSort` enum (Pace / Name / Position / Goals / Hits) with `next()`
+  cyclic stepper. `TeamPosFilter` enum (All / Forwards / Defense / C / LW
+  / RW / LD / RD) with `matches(pos_abbrev)` predicate.
+- `TeamScreenState { sort, pos_filter }` lives on `App::team`.
+- `s` and `p` keybinds on Team screen cycle sort and position filter.
+- `team::chrome(&state)` accessor advertises `s=cycle sort · p=cycle pos
+  · ↑↓=select · Enter=open card · g=add to group`. Title shows the
+  current state (`Team · sort=Hits · pos=F`).
+- Render dynamically adds a column when sort is on Hits or Goals (so the
+  user sees the value driving the order).
+- Country-code filter (`country=CAN` style) deferred to Adams.10b — needs
+  bio integration for arbitrary subsets; cmdbar `:query country=CAN` from
+  the Stats screen already covers this use case in the meantime.
+
+### Adams.11 — Depth + Favorites chrome
+
+- `depth::chrome(scoring_mode)` — advertises `s=toggle scoring · ↑↓=select
+  · Enter=team chart`. Title shows current mode (`Depth · scoring=Pace`).
+- `favorites::chrome()` — advertises `g=manage groups · Enter=open card ·
+  :fav add=from cmdbar`. Per-screen row no longer falls back to the
+  placeholder for these two screens.
+
+### Test growth
+
+- Bin: 1033 → 1042 (+9)
+- 9 Team L0 tests (sort cycling, pos-filter cycling, predicate matching,
+  default contract, chrome assertions)
+- 3 L1 tests in mod.rs (s cycles team sort, p cycles team pos, s on
+  Goalies doesn't touch team state — confirms screen-scoped dispatch)
+- 1 boundary test repurposed (Team fallback → Team real chrome)
+
+---
+
 ## v0.23.3 — 2026-05-08 — Phase Jack Adams.9 (per-screen sub-command hints)
 
 Headline: **The MDI dashboard now shows a cyan per-screen sub-command
