@@ -90,6 +90,10 @@ pub fn router(state: WebState) -> Router {
         // the core PoachBoardView contract.
         .route("/poach", get(handlers::poach::get_poach))
         .route("/api/v1/poach", get(handlers::poach::get_poach_json))
+        .route(
+            "/api/v1/watch-rules",
+            get(handlers::poach::get_watch_rules_json),
+        )
         // Phase Calder.4 — cross-league cohort leaderboard.
         // /career?league=OHL&season=20142015&sort=points
         .route("/career", get(handlers::career::get_career))
@@ -1976,7 +1980,7 @@ mod handlers {
         use axum::response::{Html, IntoResponse, Response};
         use icelines_core::model::{Position, Season, TeamAbbr};
         use icelines_core::{
-            view_model::{PoachBoardView, PoachQuery},
+            view_model::{default_watch_rules_view, PoachBoardView, PoachQuery},
             Completeness, EmptyKind, EmptyState, SourceKind, SourceState, ViewContext, ViewWindow,
         };
         use serde::Deserialize;
@@ -2069,6 +2073,38 @@ mod handlers {
                 Err(response) => return response,
             };
             axum::Json(result.view).into_response()
+        }
+
+        pub async fn get_watch_rules_json(State(state): State<WebState>) -> Response {
+            let (season_str, season_type) = {
+                let cfg = state.config.read().await;
+                (
+                    cfg.active_season.clone(),
+                    super::leaders::parse_season_type(&cfg.active_season_type),
+                )
+            };
+            let season_u32: u32 = match season_str.parse() {
+                Ok(n) => n,
+                Err(e) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        axum::Json(serde_json::json!({
+                            "error": format!("active season '{season_str}' is not a valid YYYYZZZZ id: {e}"),
+                        })),
+                    )
+                        .into_response();
+                }
+            };
+            let mut context = ViewContext::new(ViewWindow::new(Season(season_u32), season_type));
+            context.completeness = Completeness::Partial;
+            context.source_state = vec![
+                SourceState::complete(SourceKind::Roster),
+                SourceState::missing(SourceKind::Shifts),
+                SourceState::missing(SourceKind::Schedule),
+                SourceState::missing(SourceKind::FantasyImport),
+            ];
+
+            axum::Json(default_watch_rules_view(context)).into_response()
         }
 
         struct PoachBuildResult {

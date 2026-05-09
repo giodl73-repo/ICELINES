@@ -416,6 +416,33 @@ async fn l1_poach_json_returns_view_model_contract() {
     assert_eq!(json["empty_state"]["kind"], "missing_source");
 }
 
+#[tokio::test]
+async fn l1_watch_rules_json_returns_shared_contract() {
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/watch-rules")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value = serde_json::from_slice(&bytes).expect("json body");
+
+    assert_eq!(json["context"]["completeness"], "partial");
+    assert_eq!(json["rules"][0]["id"], "category-hits-pace");
+    assert_eq!(json["rules"][2]["id"], "deployment-promotion");
+    assert_eq!(json["rules"][2]["unsupported_sources"][0], "shifts");
+    assert_eq!(json["rules"][4]["unsupported_sources"][0], "fantasy_import");
+}
+
 /// l1_career_route_missing_league_returns_400 (Calder.4)
 /// — `/career` without `?league=…` rejects with 400 + helpful body.
 #[tokio::test]

@@ -7,10 +7,10 @@ use icelines_core::{
     model::{Position, Season, TeamAbbr},
     name::normalize_name,
     view_model::{
-        poach_report_context, AvailabilityState, DeploymentSignal, PoachBoardView, PoachPlayerRow,
-        PoachQuery, PoachReportSection, PoachReportView, RecommendationKind, ReportSectionRef,
-        SourceKind, SourceState, ViewContext, ViewWindow, WatchRule, WatchRuleTrigger,
-        WatchRulesView,
+        default_watch_rules_view, poach_report_context, AvailabilityState, DeploymentSignal,
+        PoachBoardView, PoachPlayerRow, PoachQuery, PoachReportSection, PoachReportView,
+        RecommendationKind, ReportSectionRef, SourceKind, SourceState, ViewContext, ViewWindow,
+        WatchRule, WatchRuleTrigger, WatchRulesView,
     },
 };
 
@@ -432,67 +432,6 @@ fn watch_context(
         SourceState::missing(SourceKind::FantasyImport),
     ];
     Ok(context)
-}
-
-fn default_watch_rules_view(context: ViewContext) -> WatchRulesView {
-    WatchRulesView {
-        context,
-        rules: vec![
-            WatchRule {
-                id: "category-hits-pace".to_string(),
-                label: "Category specialist crosses hits threshold".to_string(),
-                enabled: true,
-                trigger: WatchRuleTrigger::CategoryThreshold {
-                    category: "hits".to_string(),
-                    threshold: 200.0,
-                },
-                last_fired: None,
-                unsupported_sources: Vec::new(),
-            },
-            WatchRule {
-                id: "category-blocks-pace".to_string(),
-                label: "Category specialist crosses blocks threshold".to_string(),
-                enabled: true,
-                trigger: WatchRuleTrigger::CategoryThreshold {
-                    category: "blocks".to_string(),
-                    threshold: 120.0,
-                },
-                last_fired: None,
-                unsupported_sources: Vec::new(),
-            },
-            WatchRule {
-                id: "deployment-promotion".to_string(),
-                label: "Player promotion from deployment signal".to_string(),
-                enabled: true,
-                trigger: WatchRuleTrigger::PlayerPromoted {
-                    player_id: None,
-                    evidence: DeploymentSignal::Unknown,
-                },
-                last_fired: None,
-                unsupported_sources: vec![SourceKind::Shifts],
-            },
-            WatchRule {
-                id: "goalie-back-to-back".to_string(),
-                label: "Goalie back-to-back start candidate".to_string(),
-                enabled: true,
-                trigger: WatchRuleTrigger::GoalieBackToBackStart { team: None },
-                last_fired: None,
-                unsupported_sources: vec![SourceKind::Schedule],
-            },
-            WatchRule {
-                id: "availability-change".to_string(),
-                label: "Watched player becomes available".to_string(),
-                enabled: true,
-                trigger: WatchRuleTrigger::AvailabilityChanged {
-                    player_id: None,
-                    state: AvailabilityState::Unknown,
-                },
-                last_fired: None,
-                unsupported_sources: vec![SourceKind::FantasyImport],
-            },
-        ],
-        warnings: Vec::new(),
-    }
 }
 
 fn player_watch_rule(player: &str, trigger: &str) -> WatchRule {
