@@ -16,6 +16,11 @@ use ratatui::{
     Frame,
 };
 
+use icelines_core::{
+    AppliedFilter, FilterKey, GoaliesView, MetricValue, SortDirection, SortKey, SortState,
+    ViewContext, ViewWindow,
+};
+
 use crate::tui::app::App;
 
 // ── Phase Norris.4 — per-screen state struct ─────────────────────────────────
@@ -180,6 +185,28 @@ impl GoalieSort {
             Self::ShutoutsDesc => "SO",
         }
     }
+
+    fn key(self) -> &'static str {
+        match self {
+            Self::SvPctDesc => "save_pct",
+            Self::GaaAsc => "gaa",
+            Self::WinsDesc => "wins",
+            Self::GpDesc => "gp",
+            Self::SavesDesc => "saves",
+            Self::ShutoutsDesc => "shutouts",
+        }
+    }
+
+    fn direction(self) -> SortDirection {
+        match self {
+            Self::GaaAsc => SortDirection::Asc,
+            Self::SvPctDesc
+            | Self::WinsDesc
+            | Self::GpDesc
+            | Self::SavesDesc
+            | Self::ShutoutsDesc => SortDirection::Desc,
+        }
+    }
 }
 
 /// The min-GP cycle values exposed under the `m` key. Stops at sensible
@@ -243,6 +270,62 @@ pub fn sort_goalie_views<'a>(
     out
 }
 
+fn goalies_view_from_tui_state<'a>(
+    views: &'a [icelines_core::stats_repository::PlayerView<'a>],
+    sort: GoalieSort,
+    min_gp: u32,
+    season: icelines_core::model::Season,
+    season_type: icelines_core::season_stats::SeasonType,
+) -> GoaliesView {
+    let qualified = sort_goalie_views(views, sort, min_gp);
+    let mut view = GoaliesView::from_player_views(
+        ViewContext::new(ViewWindow::new(season, season_type)),
+        qualified.into_iter().copied(),
+    );
+    view.applied_filters.push(AppliedFilter {
+        key: FilterKey::from("min_gp"),
+        op: Some(icelines_core::FilterOp::Gte),
+        value: min_gp.to_string(),
+        label: format!("GP >= {min_gp}"),
+    });
+    view.sort = Some(SortState {
+        key: SortKey::from(sort.key()),
+        label: sort.label().to_string(),
+        direction: sort.direction(),
+    });
+    view
+}
+
+fn goalie_metric_u32(row: &icelines_core::GoalieRow, key: &str) -> u32 {
+    goalie_metric_optional_u32(row, key).unwrap_or(0)
+}
+
+fn goalie_metric_optional_u32(row: &icelines_core::GoalieRow, key: &str) -> Option<u32> {
+    row.metrics.iter().find_map(|metric| {
+        if metric.key.0 == key {
+            match metric.value {
+                MetricValue::Integer(value) => u32::try_from(value).ok(),
+                _ => None,
+            }
+        } else {
+            None
+        }
+    })
+}
+
+fn goalie_metric_f32(row: &icelines_core::GoalieRow, key: &str) -> Option<f32> {
+    row.metrics.iter().find_map(|metric| {
+        if metric.key.0 == key {
+            match metric.value {
+                MetricValue::Decimal(value) => Some(value as f32),
+                _ => None,
+            }
+        } else {
+            None
+        }
+    })
+}
+
 pub fn render(f: &mut Frame, app: &App, area: Rect) {
     let sort = SORTS
         .get(app.goalies.sort as usize)
@@ -279,8 +362,14 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
         return;
     }
 
-    let qualified = sort_goalie_views(&views, sort, app.goalies.min_gp);
-    if qualified.is_empty() {
+    let goalies_view = goalies_view_from_tui_state(
+        &views,
+        sort,
+        app.goalies.min_gp,
+        app.active_season_typed,
+        app.active_type,
+    );
+    if goalies_view.rows.is_empty() {
         let dim = Style::default().fg(Color::DarkGray);
         f.render_widget(
             Paragraph::new(vec![
@@ -320,35 +409,34 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
         dim,
     )));
 
-    let selected_idx = app.goalies.selected.min(qualified.len().saturating_sub(1));
-    for (rank, v) in qualified.iter().enumerate() {
-        let stats = match v.stats.goalie.as_ref() {
-            Some(s) => s,
-            None => continue,
+    let selected_idx = app
+        .goalies
+        .selected
+        .min(goalies_view.rows.len().saturating_sub(1));
+    for (rank, goalie) in goalies_view.rows.iter().enumerate() {
+        let wins = goalie_metric_u32(goalie, "wins");
+        let losses = goalie_metric_u32(goalie, "losses");
+        let record = match goalie_metric_optional_u32(goalie, "ot_losses") {
+            Some(ot_losses) => format!("{wins}-{losses}-{ot_losses}"),
+            None => format!("{wins}-{losses}"),
         };
-        let record = match stats.ot_losses {
-            Some(otl) => format!("{}-{}-{}", stats.wins, stats.losses, otl),
-            None => format!("{}-{}", stats.wins, stats.losses),
-        };
-        let sv_pct = stats
-            .save_pct
+        let sv_pct = goalie_metric_f32(goalie, "save_pct")
             .map(|v| format!("{:.3}", v))
             .unwrap_or_else(|| "—".to_owned());
-        let gaa = stats
-            .goals_against_average
+        let gaa = goalie_metric_f32(goalie, "gaa")
             .map(|v| format!("{:.2}", v))
             .unwrap_or_else(|| "—".to_owned());
         let row = format!(
             "  {:<3}  {:<22} {:<5} {:<4}  {:<10}  {:<6}  {:<6}  {:<3}  {:<6}",
             rank + 1,
-            short_name(v.full_name()),
-            v.team_display(),
-            v.gp(), // post-Hart canonical GP source
+            short_name(&goalie.display_name),
+            goalie.team.0.as_str(),
+            goalie_metric_u32(goalie, "gp"),
             record,
             sv_pct,
             gaa,
-            stats.shutouts,
-            stats.saves,
+            goalie_metric_u32(goalie, "shutouts"),
+            goalie_metric_u32(goalie, "saves"),
         );
         let style = if rank == selected_idx {
             Style::default()
@@ -365,7 +453,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
 
     items.push(ListItem::new(Line::from("")));
     items.push(ListItem::new(Line::from(vec![
-        Span::styled(format!("  {} qualified · ", qualified.len()), dim),
+        Span::styled(format!("  {} qualified · ", goalies_view.rows.len()), dim),
         Span::styled("s", cyan),
         Span::styled(":sort  ", dim),
         Span::styled("m", cyan),
@@ -497,6 +585,27 @@ mod tests {
         assert_eq!(lo.len(), 2, "min_gp=5 includes both");
         let hi = sort_goalie_views(&views, GoalieSort::SvPctDesc, 15);
         assert_eq!(hi.len(), 1, "min_gp=15 excludes the backup");
+    }
+
+    #[test]
+    fn l0_goalies_view_from_tui_state_carries_filter_and_sort() {
+        let repo = build_goalie_pool(&[
+            (1, "Backup", "WPG", 7, 3, 0.940, 2.00, 1),
+            (2, "Starter", "WPG", 50, 28, 0.910, 2.50, 5),
+        ]);
+        let views = collect_goalie_views(&repo);
+        let view = goalies_view_from_tui_state(
+            &views,
+            GoalieSort::SvPctDesc,
+            15,
+            Season(20242025),
+            SeasonType::Regular,
+        );
+
+        assert_eq!(view.rows.len(), 1, "min_gp should flow into the ViewModel");
+        assert_eq!(view.rows[0].display_name, "Starter");
+        assert_eq!(view.applied_filters[0].key.0, "min_gp");
+        assert_eq!(view.sort.as_ref().unwrap().key.0, "save_pct");
     }
 
     #[test]

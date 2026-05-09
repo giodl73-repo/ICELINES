@@ -214,10 +214,15 @@ Closeout so far:
 - `query goalies` now builds a `GoaliesView` after its existing
   load/filter/sort/top pipeline, then projects the ViewModel back to the
   stable CLI JSON/CSV/table row shape.
+- The TUI goalies screen now builds a `GoaliesView` from its active season,
+  season type, sort cycle, and min-GP filter before rendering the leaderboard
+  rows.
 - `GoaliesView::from_player_views` lets renderer adapters consume already
   prepared player rows without duplicating goalie metric semantics.
 - Verified the adapter with `cargo test -p icelines-cli --test system_tests
-  query_goalies -- --nocapture` and the `viewmodel` test slice.
+  query_goalies -- --nocapture`, `cargo test -p icelines-cli
+  tui::screens::goalies -- --nocapture`, `cargo check -p icelines-cli`, and
+  the `viewmodel` test slice.
 
 ---
 
