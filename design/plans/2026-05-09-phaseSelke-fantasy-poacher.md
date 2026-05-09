@@ -146,6 +146,7 @@ Routes:
 - `/poach`
 - `/watchlist`
 - `/reports/poach`
+- `/reports/weekly`
 - `/api/v1/poach`
 - `/api/v1/watchlist`
 - `/api/v1/watch-rules`
@@ -328,6 +329,9 @@ Initial implementation note:
 - `/api/v1/poach` returns the full shared `PoachBoardView` JSON contract.
 - `/reports/poach` renders the shared `PoachReportView` contract as HTML from
   the same board builder used by `/poach`.
+- `/reports/weekly` renders the shared weekly `PoachReportView` with top adds,
+  category specialists, deployment risers, risk discounts, and watched-player
+  alert sections.
 - Missing active-season data renders as a source-aware empty state instead of a
   web-only fallback table.
 - `/watchlist` renders the local SQLite-backed `Watchlist` group so TUI Poach

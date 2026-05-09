@@ -417,6 +417,33 @@ async fn l1_poach_report_route_returns_report_html() {
 }
 
 #[tokio::test]
+async fn l1_weekly_report_route_returns_prep_sections() {
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/reports/weekly?league=Main%20League&category=hits,blocks&top=5")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+
+    assert!(body.contains("Weekly Fantasy Prep Report"));
+    assert!(body.contains("Category Specialists"));
+    assert!(body.contains("Deployment Risers"));
+    assert!(body.contains("Risk Discounts"));
+    assert!(body.contains("Watched Player Alerts"));
+}
+
+#[tokio::test]
 async fn l1_poach_json_returns_view_model_contract() {
     let app = router(WebState::new());
 

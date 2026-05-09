@@ -231,7 +231,7 @@ icelines watch player "Matthew Knies" --when pp1
 icelines watch list
 icelines watch note "Matthew Knies" "PP1 promotion and strong hits fit"
 icelines tui poach                     # press w to watch with a score/reason note
-icelines serve                         # web includes /poach, /reports/poach, /watchlist, and Selke JSON APIs
+icelines serve                         # web includes /poach, /reports/poach, /reports/weekly, /watchlist, and Selke JSON APIs
 
 # Trades
 icelines fantasy trade "Bouchard" --to-team "Other" --for-player "Werenski"          # simulate

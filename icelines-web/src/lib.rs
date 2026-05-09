@@ -90,6 +90,7 @@ pub fn router(state: WebState) -> Router {
         // the core PoachBoardView contract.
         .route("/poach", get(handlers::poach::get_poach))
         .route("/reports/poach", get(handlers::poach::get_poach_report))
+        .route("/reports/weekly", get(handlers::poach::get_weekly_report))
         .route("/api/v1/poach", get(handlers::poach::get_poach_json))
         .route(
             "/api/v1/watch-rules",
@@ -1982,8 +1983,8 @@ mod handlers {
         use icelines_core::model::{Position, Season, TeamAbbr};
         use icelines_core::{
             view_model::{
-                default_watch_rules_view, poach_report_from_board, PoachBoardView, PoachQuery,
-                PoachReportView,
+                default_watch_rules_view, poach_report_from_board, weekly_poach_report_from_board,
+                PoachBoardView, PoachQuery, PoachReportView,
             },
             Completeness, EmptyKind, EmptyState, SourceKind, SourceState, ViewContext, ViewWindow,
         };
@@ -2001,6 +2002,8 @@ mod handlers {
             pub pos: Option<String>,
             #[serde(default)]
             pub top: Option<u16>,
+            #[serde(default)]
+            pub league: Option<String>,
         }
 
         pub async fn get_poach(
@@ -2080,6 +2083,20 @@ mod handlers {
             Html(render_poach_report_html(&report, &result.active_label)).into_response()
         }
 
+        pub async fn get_weekly_report(
+            State(state): State<WebState>,
+            Query(q): Query<PoachWebQuery>,
+        ) -> Response {
+            let result = match build_poach_view(&state, &q).await {
+                Ok(result) => result,
+                Err(response) => return response,
+            };
+            let league = q.league.as_deref().unwrap_or("default");
+            let top = q.top.unwrap_or(20).clamp(1, 100);
+            let report = weekly_poach_report_from_board(result.view, league, top);
+            Html(render_poach_report_html(&report, &result.active_label)).into_response()
+        }
+
         pub async fn get_poach_json(
             State(state): State<WebState>,
             Query(q): Query<PoachWebQuery>,
@@ -2135,7 +2152,10 @@ mod handlers {
                  <a href=\"/watchlist\">Watchlist</a> - <strong>Report</strong></nav>",
             );
             body.push_str("<main>");
-            body.push_str("<h1>Fantasy Poacher Report</h1>");
+            body.push_str(&format!(
+                "<h1>{} Report</h1>",
+                html_escape(&report.context.title)
+            ));
             body.push_str(&format!(
                 "<p class=\"season-header\">{}</p>",
                 html_escape(active_label)
