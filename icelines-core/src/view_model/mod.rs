@@ -196,6 +196,45 @@ mod tests {
     }
 
     #[test]
+    fn goalie_viewmodel_contract_fixture_serializes_role_and_metrics() {
+        let (identity, stats) = crate::fixtures::stat_catalog_variants::goalie();
+        let repo = crate::fixtures::test_repo_with_goalie(identity, stats);
+
+        let mut view = crate::view_model::GoaliesView::from_repository(
+            &repo,
+            Season(20242025),
+            SeasonType::Regular,
+        );
+        view.context.data_generation = Some("campbell-contract-fixture-v1".to_string());
+
+        let json = serde_json::to_value(&view).expect("serialize goalies contract fixture");
+        let row = &json["rows"][0];
+
+        assert_eq!(json["context"]["window"]["season"], 20242025);
+        assert_eq!(json["context"]["window"]["season_type"], "regular");
+        assert_eq!(json["context"]["completeness"], "complete");
+        assert_eq!(
+            json["context"]["data_generation"],
+            "campbell-contract-fixture-v1"
+        );
+        assert_eq!(json["sort"]["key"], "save_pct");
+        assert_eq!(json["sort"]["direction"], "desc");
+
+        assert_eq!(row["player_id"], 8476434);
+        assert_eq!(row["display_name"], "Connor McDavid");
+        assert_eq!(row["team"], "FLA");
+        assert_eq!(row["role_signal"]["label"], "starter");
+        assert_eq!(row["role_signal"]["evidence"], "actual");
+        assert_eq!(row["metrics"][0]["key"], "gp");
+        assert_eq!(row["metrics"][0]["unit"], "games");
+        assert_eq!(row["metrics"][0]["precision"], "integer");
+        assert_eq!(row["metrics"][5]["key"], "save_pct");
+        assert_eq!(row["metrics"][5]["unit"], "percentage");
+        assert_eq!(row["metrics"][5]["precision"], "three_decimals");
+        assert_eq!(row["tokens"][0], "supporting_evidence");
+    }
+
+    #[test]
     fn missing_windows_are_not_marked_complete() {
         let repo = crate::stats_repository::StatsRepository::new();
 
@@ -249,5 +288,46 @@ mod tests {
             depth.extras.is_empty(),
             "goalies must not be rendered as extras"
         );
+    }
+
+    #[test]
+    fn team_depth_contract_fixture_serializes_slots_and_goalie_section() {
+        let (identity, stats) = crate::fixtures::stat_catalog_variants::skater_modern();
+        let team = stats.team_stints[0].team.clone();
+        let repo = crate::fixtures::test_repo_with(identity, stats);
+
+        let mut depth = crate::view_model::TeamDepthView::from_repository(
+            &repo,
+            team,
+            Season(20242025),
+            SeasonType::Regular,
+        );
+        depth.context.data_generation = Some("campbell-contract-fixture-v1".to_string());
+
+        let json = serde_json::to_value(&depth).expect("serialize team depth contract fixture");
+        let center = &json["forward_lines"][0]["center"];
+
+        assert_eq!(json["context"]["window"]["season"], 20242025);
+        assert_eq!(json["context"]["window"]["season_type"], "regular");
+        assert_eq!(json["context"]["completeness"], "complete");
+        assert_eq!(
+            json["context"]["data_generation"],
+            "campbell-contract-fixture-v1"
+        );
+        assert_eq!(json["team"], "EDM");
+        assert_eq!(json["summary"]["metrics"][0]["key"], "rostered");
+        assert_eq!(json["summary"]["metrics"][0]["value"]["integer"], 1);
+        assert_eq!(json["summary"]["tokens"][0], "supporting_evidence");
+
+        assert_eq!(center["player_id"], 8478402);
+        assert_eq!(center["display_name"], "Connor McDavid");
+        assert_eq!(center["team"], "EDM");
+        assert_eq!(center["slot"]["forward"]["line"], 1);
+        assert_eq!(center["slot"]["forward"]["slot"], "center");
+        assert_eq!(center["position"], "Center");
+        assert_eq!(center["evidence"], "estimated");
+        assert_eq!(center["metrics"][0]["key"], "pace_82");
+        assert_eq!(center["metrics"][0]["unit"], "per82");
+        assert_eq!(center["metrics"][0]["precision"], "one_decimal");
     }
 }

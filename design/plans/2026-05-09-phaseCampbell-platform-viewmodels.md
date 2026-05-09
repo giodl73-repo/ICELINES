@@ -1,7 +1,7 @@
 # Phase Campbell - platform contracts and ViewModels
 
 **Date**: 2026-05-09
-**Status**: Draft - planned after Jennings, before Messier
+**Status**: Implementation closeout - ViewModel seed and first adapters landed
 **Trophy**: Clarence S. Campbell Bowl. Fit: conference architecture between the data engine and the presentation surfaces. Campbell creates the common ice every later surface plays on.
 **Spec**: `design/specs/platform-contracts.md`
 **Estimated**: 2-4 sub-phases
@@ -190,8 +190,8 @@ Closeout:
 - Team depth rows carry estimated deployment evidence and preserve line/pair
   slot identity.
 - Added fixture-backed tests for the three first builders.
-- Remaining Campbell.3 work: adapt CLI/TUI/web renderers to consume these
-  ViewModels instead of their existing local formatter shapes.
+- Campbell.4 owns the initial renderer adapters; full surface migration remains
+  tracked in the parity matrix and later phase plans.
 
 ---
 
@@ -238,6 +238,9 @@ Closeout so far:
 - Added a canonical `LeadersView` contract fixture test that asserts JSON
   carries context, sort, stable player identity, primary/secondary metrics,
   precision, units, and semantic tokens for downstream surfaces.
+- Added canonical `GoaliesView` and `TeamDepthView` contract fixture tests that
+  assert JSON carries context, stable player identity, role/deployment evidence,
+  metric units/precision, and semantic tokens.
 - `LeadersView::from_player_views_with_primary` supports sort-specific primary
   metrics without leaking renderer formatting into the default pace builder.
 - `GoaliesView::from_player_views` lets renderer adapters consume already
@@ -277,6 +280,21 @@ Acceptance:
 - Campbell can close before every surface is migrated, but the migration path
   is explicit and tracked.
 - Messier starts with ViewModel contracts available.
+
+Closeout:
+
+- Refreshed `design/specs/surface-parity.md` so Leaders, Goalies, Team Depth,
+  and Leaderboard export rows distinguish migrated ViewModel adapters from
+  remaining legacy projection paths.
+- Confirmed downstream handoff is explicit:
+  - Selke owns `PoachBoardView`, `WatchRulesView`, and `PoachReportView`.
+  - Messier consumes TeamDepth/Goalies filter intent through Campbell
+    ViewModels.
+  - Lester Patrick requires CLI commands to render ViewModels or tracked DTO
+    projections.
+  - Ted Lindsay owns web HTML/JSON parity from ViewModels.
+  - Prince of Wales consumes semantic ViewModel tokens for visual styling.
+  - Jim Gregory includes contract fixture checks in release gates.
 
 ---
 

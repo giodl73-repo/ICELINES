@@ -45,10 +45,10 @@ a feature fully shipped.
 
 | Feature | ViewModel | CLI | TUI | Web HTML | Web JSON | Status | Owner |
 |---|---|---|---|---|---|---|---|
-| Leaders/skater leaderboard | `LeadersView` | `query leaders` | `tui stats` | `/leaders` | `/api/v1/leaders` | partial - Campbell migrates ViewModel; Ted verifies web parity | Campbell/Ted Lindsay |
-| Goalie leaderboard | `GoaliesView` | `query goalies` | `tui goalies` | `/goalies` | `/api/v1/goalies` | partial - ViewModel pending | Campbell/Ted Lindsay |
+| Leaders/skater leaderboard | `LeadersView` | `query leaders` | `tui stats` | `/leaders` | `/api/v1/leaders` | partial - CLI text, web HTML, and web JSON build `LeadersView`; TUI stats and stable CLI JSON/CSV still need Ted/Lester verification | Campbell/Ted Lindsay |
+| Goalie leaderboard | `GoaliesView` | `query goalies` | `tui goalies` | `/goalies` | `/api/v1/goalies` | partial - CLI, TUI, web HTML, and web JSON build `GoaliesView`; Ted verifies parity | Campbell/Ted Lindsay |
 | Player card | `PlayerCardView` | `query player <name>` | `tui player <name>` | `/player/:id` | `/api/v1/player/:id` | partial - ViewModel pending | Campbell/Ted Lindsay |
-| Team depth | `TeamDepthView` | `team <ABBR>` | `tui team <ABBR>` | `/team/:abbrev` | `/api/v1/team/:abbrev` | partial - ViewModel pending | Campbell/Ted Lindsay |
+| Team depth | `TeamDepthView` | `team <ABBR>` | `tui team <ABBR>` | `/team/:abbrev` | `/api/v1/team/:abbrev` | partial - CLI team and markdown export build `TeamDepthView`; TUI/web depth routes remain local render paths pending Ted/Messier | Campbell/Ted Lindsay |
 | Cross-team depth | `TeamDepthView` / `DepthLeagueView` | `depth` or equivalent | `tui depth` | `/depth` | `/api/v1/depth` | verify - route exists, parity needs matrix tests | Ted Lindsay |
 | Compare/comps | `CompareView` | `query compare A B` | `tui comps <name>` | `/compare?...` | planned/verify | partial - JSON twin needs verification | Ted Lindsay |
 | Scouting report | `ReportView` | `scouting <name>` | player detail/report affordance | planned/verify | planned/verify | partial - report contract pending | Campbell/Ted Lindsay |
@@ -99,7 +99,7 @@ published reference, even if they are not interactive.
 | Artifact | ViewModel/source | Expected output | Status | Owner |
 |---|---|---|---|---|
 | Generated team pages | `TeamDepthView` / team summary projection | static HTML/markdown team page | verify - current claims need route/export check | Ted Lindsay/Jim Gregory |
-| Leaderboard exports | `LeadersView` | markdown/JSON/CSV where supported | partial - CLI export shape exists, ViewModel pending | Lester Patrick/Campbell |
+| Leaderboard exports | `LeadersView` | markdown/JSON/CSV where supported | partial - markdown default leaders uses `LeadersView`; custom columns and stable JSON/CSV remain on catalog projections | Lester Patrick/Campbell |
 | Scouting reports | `ReportView` / `PlayerCardView` | markdown report and optional HTML page | partial - contract pending | Campbell/Ted Lindsay |
 | Poacher reports | `PoachReportView` | markdown/JSON report, optional web report page | planned | Selke |
 | Docs/spec site | `DocsView` | generated docs reference | partial - source of truth exists, generated state needs verification | Jim Gregory |
