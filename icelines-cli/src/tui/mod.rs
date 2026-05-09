@@ -244,6 +244,11 @@ async fn run_loop(
         // by `Loading` state inside the cache.
         app.mdi_tick_fetch();
 
+        // Phase Adams.6 — poll any in-flight AI fallback. When
+        // the spawned provider task completes, the response is
+        // re-parsed + executed (or the failure is flashed).
+        app.mdi_poll_ai();
+
         // Phase T.5: poll for loaded transactions. Loaded-but-empty is a
         // valid state (renders the legend card), so we mark via fetched_at
         // rather than `is_empty()` to know if we've already pulled.

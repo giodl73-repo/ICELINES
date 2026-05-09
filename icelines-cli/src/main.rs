@@ -1,3 +1,4 @@
+mod ai;
 mod cli;
 mod commands;
 mod config;

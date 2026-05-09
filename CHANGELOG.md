@@ -1,5 +1,86 @@
 # IceLines Changelog
 
+## v0.23.1 — 2026-05-08 — Phase Jack Adams.6/.7 (AI fallback for cmdbar)
+
+Headline: **The MDI cmdbar gains an opt-in natural-language fallback.
+When the deterministic Phase Art Ross parser rejects an input, the
+cmdbar can delegate to a configured LLM provider for interpretation —
+"show me young scorers" → `query g >= 25 AND age <= 23`. Off by
+default; set `[ai] enabled = true` in `~/.icelines/config.toml` to
+opt in.** Bin suite 1005 → 1029.
+
+### What shipped (Adams.6 — Claude CLI provider)
+
+- `icelines-cli/src/ai.rs` — new module with the `AiProvider` trait,
+  `AiConfig`, `AiError` (thiserror), `default_system_prompt` (~150-line
+  grammar reference covering every cmdbar verb + Phase Art Ross filter
+  syntax), `StubProvider` for tests, and `ClaudeCliProvider` that
+  shells out to `claude -p`.
+- `[ai]` TOML section on `Config` — `enabled`/`provider`/`model`/
+  `timeout_secs` keys with sensible defaults (disabled / `claude-cli` /
+  `claude-haiku-4-5` / 15s).
+- `MdiLayout::ai_pending` holds an in-flight `AiPending` (tokio oneshot
+  receiver + original input + provider name + start time). Esc cancels.
+- `App::try_spawn_ai_fallback` — on parse error, spawns the provider
+  call as a tokio task. `App::mdi_poll_ai` polls each render tick;
+  responses are re-parsed through the standard `parse_command` path
+  (AI output is treated as untrusted). `App::dispatch_ai_response`
+  applies the response, tags history with `ai:<command>` prefix.
+- 17 tests (10 ai-module + 7 app-wiring) including AI-disabled
+  fallthrough, unparseable-response flash, channel-closed detection.
+
+### What shipped (Adams.7 — Anthropic API provider + closeout)
+
+- `AnthropicApiProvider` impl in `ai.rs` — direct reqwest POST to
+  `https://api.anthropic.com/v1/messages`. Reads `$ANTHROPIC_API_KEY`
+  at provider construction. Handles HTTP errors, timeouts, and the
+  Messages API response shape.
+- Provider selection via `[ai] provider = "anthropic-api"` in config.
+- 3 additional tests for Anthropic provider (build_provider success,
+  no-API-key error path, env-read at construction).
+- COMMANDS.md `[ai]` configuration section + example.
+
+### Examples (new in v0.23.1)
+
+```toml
+# ~/.icelines/config.toml — opt into AI cmdbar fallback
+[ai]
+enabled = true
+provider = "claude-cli"           # or "anthropic-api"
+model = "claude-haiku-4-5"
+timeout_secs = 15
+```
+
+```bash
+# Then in icelines tui --mdi:
+# Type :show me young canadian scorers under 23 + Enter
+# - Parser rejects (UnknownCommand)
+# - AI fallback fires; flash: "asking claude-cli… (Esc to cancel)"
+# - Provider returns: "query country = CAN AND age < 23 AND g >= 20"
+# - Re-parsed + executed; workspace swaps to Stats with the filter
+# - History entry: "ai:query country = CAN AND age < 23 AND g >= 20"
+```
+
+If the provider returns a string the parser STILL rejects, the cmdbar
+flashes the parser error with the model's response so the user can
+edit. Esc at any time aborts an in-flight request.
+
+### Determinism guarantee
+
+- Parser is canonical. AI is supplemental.
+- AI output goes through the same `parse_command` path as user input.
+- AI failures fall back to the deterministic `ParseError` flash.
+- `[ai] enabled = false` (default) is identical to pre-v0.23.0 behavior.
+
+### Test growth
+
+- Bin: 1005 (v0.23.0) → 1024 (v0.23.1), +19 net new
+- Adams.6 wiring: 17 (10 ai-module + 7 app-wiring)
+- Adams.7 anthropic provider: 2 additional ai-module
+- 4 build_provider tests now exercise both providers
+
+---
+
 ## v0.23.0 — 2026-05-08 — Phase Jack Adams (MDI dashboard, deterministic ship)
 
 Headline: **The TUI is no longer single-document. `icelines tui --mdi`

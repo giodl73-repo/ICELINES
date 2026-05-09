@@ -42,6 +42,11 @@ tower.workspace       = true
 uuid.workspace        = true
 chrono.workspace      = true
 open.workspace        = true
+# Phase Adams.6 — AI fallback trait uses async-trait for the
+# Send-clean dyn AiProvider type. async-trait is already a
+# transitive dep via axum/reqwest; pinning here keeps the
+# direct usage explicit.
+async-trait           = "0.1"
 
 # Post-LP review fix #4 — used only on Unix, only in main.rs to reset
 # SIGPIPE to SIG_DFL so `| head` doesn't turn into a Rust panic. Tiny

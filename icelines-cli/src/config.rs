@@ -29,6 +29,21 @@ struct RawConfig {
     /// Phase Foster.0.7 — `[sync]` section.
     #[serde(default)]
     sync: Option<RawSync>,
+    /// Phase Adams.6 — `[ai]` section. Optional and disabled by
+    /// default; absent section means "AI fallback is off".
+    #[serde(default)]
+    ai: Option<RawAi>,
+}
+
+/// `[ai]` TOML section for the cmdbar AI fallback. Each field
+/// optional with a sensible default in `AiConfig::from_raw`.
+#[derive(Debug, Deserialize, Serialize, Default, Clone)]
+#[allow(dead_code)]
+struct RawAi {
+    enabled: Option<bool>,
+    provider: Option<String>,
+    model: Option<String>,
+    timeout_secs: Option<u64>,
 }
 
 /// `[reports]` TOML section — every field optional with a sensible default.
@@ -65,6 +80,22 @@ struct RawCapabilities {
     career_history: Option<String>,
 }
 
+// ── Phase Adams.6 — AI config raw → typed conversion ─────────────────────────
+
+fn ai_from_raw(raw: Option<RawAi>) -> crate::ai::AiConfig {
+    let d = crate::ai::AiConfig::default();
+    let Some(r) = raw else { return d };
+    crate::ai::AiConfig {
+        enabled: r.enabled.unwrap_or(d.enabled),
+        provider: r.provider.unwrap_or(d.provider),
+        model: r.model.unwrap_or(d.model),
+        timeout: r
+            .timeout_secs
+            .map(std::time::Duration::from_secs)
+            .unwrap_or(d.timeout),
+    }
+}
+
 // ── Public Config ─────────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone)]
@@ -88,6 +119,9 @@ pub struct Config {
     pub reports: ReportToggles,
     /// Phase Foster.0.7 — sync engine + capability matrix.
     pub sync: SyncConfig,
+    /// Phase Adams.6 — AI fallback for the cmdbar. Default
+    /// off (deterministic grammar is the canonical UX).
+    pub ai: crate::ai::AiConfig,
 }
 
 /// Phase Reports — resolved per-Tier-1 report toggle set. Lives in
@@ -619,6 +653,7 @@ impl Config {
             dashboards: raw.dashboards,
             reports: ReportToggles::from_raw(raw.reports),
             sync: SyncConfig::from_raw(raw.sync),
+            ai: ai_from_raw(raw.ai),
         })
     }
 

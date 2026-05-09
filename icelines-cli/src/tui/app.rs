@@ -2058,6 +2058,12 @@ impl App {
                     m.command_bar_focused = false;
                     m.flash_error = None;
                     m.command_history_cursor = None;
+                    // Phase Adams.6 — Esc also cancels an
+                    // in-flight AI request. Dropping the receiver
+                    // signals the spawned task that nobody's
+                    // listening; the result (when it eventually
+                    // arrives) is dropped on the floor.
+                    m.ai_pending = None;
                 }
                 false
             }
@@ -2171,11 +2177,178 @@ impl App {
                 }
             }
             Err(parse_err) => {
+                // Phase Adams.6 — AI fallback. If `[ai] enabled
+                // = true` in config, spawn a provider call to
+                // interpret the natural-language input. The
+                // result lands in `mdi.ai_pending` and is polled
+                // each tick by `App::mdi_poll_ai`. On AI
+                // success, the returned command string is
+                // re-parsed + executed. On AI failure, the
+                // original parse error is surfaced.
+                if self.try_spawn_ai_fallback(&input, &parse_err) {
+                    return false;
+                }
                 if let Some(m) = self.mdi.as_mut() {
                     m.flash_error = Some(parse_err.to_string());
                     // Keep input + focus so user can edit.
                 }
                 false
+            }
+        }
+    }
+
+    /// Phase Adams.6 — kick off an AI fallback for an input
+    /// `parse_command` rejected. Returns true if a request was
+    /// successfully spawned (caller should NOT also write a
+    /// flash_error). Returns false when AI is disabled or the
+    /// provider couldn't be built.
+    fn try_spawn_ai_fallback(
+        &mut self,
+        input: &str,
+        parse_err: &crate::tui::command::ParseError,
+    ) -> bool {
+        let cfg = match crate::config::Config::load() {
+            Ok(c) => c,
+            Err(_) => return false,
+        };
+        if !cfg.ai.enabled {
+            return false;
+        }
+        let provider = match crate::ai::build_provider(&cfg.ai) {
+            Ok(p) => p,
+            Err(_) => return false,
+        };
+        // tokio runtime check — we need a current handle to
+        // spawn. In tests without `#[tokio::test]`, this returns
+        // None and we fall back to the deterministic path.
+        if tokio::runtime::Handle::try_current().is_err() {
+            return false;
+        }
+
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        let prompt = crate::ai::default_system_prompt();
+        let user_input = input.to_owned();
+        let provider_name = provider.name();
+
+        tokio::spawn(async move {
+            let result = provider.interpret(&prompt, &user_input).await;
+            // Best-effort send — receiver may have been dropped
+            // if the user pressed Esc. That's fine; ignore the
+            // error.
+            let _ = tx.send(result);
+        });
+
+        if let Some(m) = self.mdi.as_mut() {
+            m.ai_pending = Some(crate::tui::mdi::AiPending {
+                original_input: input.to_owned(),
+                rx,
+                provider_name,
+                started_at: std::time::Instant::now(),
+            });
+            m.flash_error = Some(format!(
+                "asking {provider_name}… (Esc to cancel) — {parse_err}"
+            ));
+            // Keep input + focus so user sees what AI is
+            // working on; the poll path clears them on success.
+        }
+        true
+    }
+
+    /// Phase Adams.6 — non-blocking poll of the in-flight AI
+    /// request. Called once per tick from the run_loop. If the
+    /// receiver has a result ready, applies it: success → re-parse
+    /// + execute the returned command; failure → flash the AI
+    /// error (with the original parse error behind it).
+    pub fn mdi_poll_ai(&mut self) {
+        let Some(mdi) = self.mdi.as_mut() else {
+            return;
+        };
+        // Take the pending request out so we can handle by
+        // value. If still in-flight, put it back.
+        let Some(mut pending) = mdi.ai_pending.take() else {
+            return;
+        };
+        match pending.rx.try_recv() {
+            Ok(Ok(response)) => {
+                // AI succeeded. Re-parse + execute.
+                let provider_name = pending.provider_name;
+                drop(pending);
+                self.dispatch_ai_response(provider_name, response);
+            }
+            Ok(Err(ai_err)) => {
+                // AI failed. Flash; restore the original input so
+                // user can edit manually.
+                if let Some(m) = self.mdi.as_mut() {
+                    m.flash_error = Some(format!("{} failed: {ai_err}", pending.provider_name));
+                    m.command_input = pending.original_input.clone();
+                    m.command_bar_focused = true;
+                }
+                drop(pending);
+            }
+            Err(tokio::sync::oneshot::error::TryRecvError::Empty) => {
+                // Still in flight — put it back.
+                mdi.ai_pending = Some(pending);
+            }
+            Err(tokio::sync::oneshot::error::TryRecvError::Closed) => {
+                // Sender dropped without sending (provider task
+                // panicked or was cancelled). Restore input.
+                if let Some(m) = self.mdi.as_mut() {
+                    m.flash_error =
+                        Some(format!("{} aborted (no response)", pending.provider_name));
+                    m.command_input = pending.original_input.clone();
+                    m.command_bar_focused = true;
+                }
+            }
+        }
+    }
+
+    /// Phase Adams.6 — apply an AI-returned command string.
+    /// Re-parses through the standard `parse_command` path so AI
+    /// output is treated as untrusted input.
+    fn dispatch_ai_response(&mut self, provider_name: &'static str, response: String) {
+        let trimmed = response.trim();
+        match crate::tui::command::parse_command(trimmed) {
+            Ok(cmd) => {
+                let result = crate::tui::command::execute_command(cmd, self);
+                if let Some(m) = self.mdi.as_mut() {
+                    m.command_input.clear();
+                    m.command_bar_focused = false;
+                    m.flash_error = None;
+                    crate::tui::mdi::push_command_history(
+                        &mut m.command_history,
+                        format!("ai:{trimmed}"),
+                    );
+                }
+                match result {
+                    crate::tui::command::ExecResult::Continue => {}
+                    crate::tui::command::ExecResult::Quit => {
+                        // Quit inside AI fallback — set a sentinel
+                        // status; main run_loop's quit-on-handle
+                        // path won't fire here. Treat as a
+                        // synthetic quit by logging.
+                        self.status =
+                            format!("{provider_name} chose to quit — :q yourself to confirm");
+                    }
+                    crate::tui::command::ExecResult::Flash(msg) => {
+                        self.status = format!("{provider_name} → {msg}");
+                    }
+                    crate::tui::command::ExecResult::NotImplemented(msg) => {
+                        if let Some(m) = self.mdi.as_mut() {
+                            m.flash_error = Some(format!("{provider_name}: {msg}"));
+                        }
+                    }
+                }
+            }
+            Err(parse_err) => {
+                // AI returned something we can't parse. Surface
+                // the failure clearly and restore the original
+                // user input.
+                if let Some(m) = self.mdi.as_mut() {
+                    m.flash_error = Some(format!(
+                        "{provider_name} returned unparseable: {parse_err} — got {trimmed:?}"
+                    ));
+                    m.command_bar_focused = true;
+                }
             }
         }
     }
@@ -2318,6 +2491,7 @@ impl App {
                     dashboards: None,
                     reports: self.reports,
                     sync: crate::config::SyncConfig::default(),
+                    ai: crate::ai::AiConfig::default(),
                 };
                 if let Err(e) = cfg.save_reports() {
                     self.status = format!("Reports saved in-memory (config write failed: {e})");
@@ -5676,5 +5850,116 @@ mod tests {
         }
         app.handle(Action::Enter);
         assert!(app.mdi.as_ref().unwrap().show_favorites);
+    }
+
+    // ── Phase Adams.6 — AI fallback wiring ────────────────────────────────
+
+    /// L0: When AI is disabled (default), parse-error path
+    /// behaves exactly as before — flash + preserve input. No
+    /// AI side-effects.
+    #[test]
+    fn l0_adams_ai_disabled_falls_back_to_parse_error() {
+        let mut app = fresh_mdi_app();
+        // Type something parse_command rejects.
+        app.handle(Action::Char(':'));
+        for c in "garbage".chars() {
+            app.handle(Action::Char(c));
+        }
+        app.handle(Action::Enter);
+        let m = app.mdi.as_ref().unwrap();
+        // Flash set, input preserved, focus retained.
+        assert!(m.flash_error.is_some());
+        assert_eq!(m.command_input, "garbage");
+        assert!(m.command_bar_focused);
+        // No AI request spawned.
+        assert!(m.ai_pending.is_none());
+    }
+
+    /// L0: Direct test of `dispatch_ai_response` — bypasses the
+    /// async spawn path. Verifies that a valid command string
+    /// from the "AI" gets re-parsed + executed.
+    #[test]
+    fn l0_adams_ai_response_executes_command() {
+        let mut app = fresh_mdi_app();
+        app.dispatch_ai_response("stub", "goalies".to_owned());
+        assert!(matches!(app.screen, Screen::Goalies));
+        let m = app.mdi.as_ref().unwrap();
+        assert_eq!(m.command_input, "");
+        assert!(!m.command_bar_focused);
+        assert!(m.flash_error.is_none());
+        // History entry should be tagged with "ai:" prefix.
+        assert_eq!(m.command_history[0], "ai:goalies");
+    }
+
+    /// L0: AI returns gibberish — dispatch flashes the parse
+    /// error and re-focuses the bar so user can edit.
+    #[test]
+    fn l0_adams_ai_response_unparseable_flashes() {
+        let mut app = fresh_mdi_app();
+        app.dispatch_ai_response("stub", "this is not a command".to_owned());
+        let m = app.mdi.as_ref().unwrap();
+        assert!(m.flash_error.is_some(), "AI unparseable → flash");
+        assert!(m.command_bar_focused);
+    }
+
+    /// L0: AI returns a query filter — workspace swaps to Stats
+    /// and the filter applies.
+    #[test]
+    fn l0_adams_ai_response_with_filter_applies() {
+        let mut app = fresh_mdi_app();
+        app.dispatch_ai_response("stub", "query g >= 30".to_owned());
+        assert!(matches!(app.screen, Screen::Queries));
+        assert_eq!(app.queries.filter_text, "g >= 30");
+    }
+
+    /// L0: Esc cancels an in-flight AI request — the receiver
+    /// is dropped; subsequent poll observes Closed and surfaces
+    /// the abort flash.
+    #[test]
+    fn l0_adams_ai_escape_cancels_pending() {
+        let mut app = fresh_mdi_app();
+        // Manually plant a pending request (no real spawn —
+        // sender dropped means receiver gets Closed).
+        let (_tx, rx) = tokio::sync::oneshot::channel::<Result<String, crate::ai::AiError>>();
+        app.mdi.as_mut().unwrap().ai_pending = Some(crate::tui::mdi::AiPending {
+            original_input: "young scorers".to_owned(),
+            rx,
+            provider_name: "stub",
+            started_at: std::time::Instant::now(),
+        });
+        // Focus + Esc.
+        app.mdi.as_mut().unwrap().command_bar_focused = true;
+        app.handle(Action::Escape);
+        assert!(app.mdi.as_ref().unwrap().ai_pending.is_none());
+    }
+
+    /// L0: Poll with no pending request is a no-op.
+    #[test]
+    fn l0_adams_ai_poll_with_no_pending_is_noop() {
+        let mut app = fresh_mdi_app();
+        app.mdi_poll_ai();
+        // No flash, no panic.
+        assert!(app.mdi.as_ref().unwrap().flash_error.is_none());
+    }
+
+    /// L0: Poll detects sender-dropped (closed) — flashes the
+    /// abort message and restores user input.
+    #[test]
+    fn l0_adams_ai_poll_detects_closed_channel() {
+        let mut app = fresh_mdi_app();
+        let (tx, rx) = tokio::sync::oneshot::channel::<Result<String, crate::ai::AiError>>();
+        drop(tx); // sender gone → rx.try_recv returns Closed
+        app.mdi.as_mut().unwrap().ai_pending = Some(crate::tui::mdi::AiPending {
+            original_input: "young guns".to_owned(),
+            rx,
+            provider_name: "stub",
+            started_at: std::time::Instant::now(),
+        });
+        app.mdi_poll_ai();
+        let m = app.mdi.as_ref().unwrap();
+        assert!(m.ai_pending.is_none());
+        assert!(m.flash_error.is_some());
+        assert_eq!(m.command_input, "young guns");
+        assert!(m.command_bar_focused);
     }
 }

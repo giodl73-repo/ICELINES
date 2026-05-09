@@ -560,6 +560,50 @@ terminals: ≥160 cols full / 120-159 drops Schedule / 100-119 drops
 Favorites too / <100 falls back to single-document SDI render for
 that frame.
 
+### MDI cmdbar AI fallback (Phase Jack Adams.6 / .7, v0.23.1+)
+
+Off by default. When enabled, an input that the deterministic parser
+rejects (`show me young scorers`) is delegated to a configured LLM
+provider for natural-language → command interpretation. The returned
+string is re-parsed through `parse_command` exactly like user input,
+so AI output is never trusted blindly.
+
+Configure in `~/.icelines/config.toml`:
+
+```toml
+[ai]
+enabled = true                      # default false
+provider = "claude-cli"             # or "anthropic-api"
+model = "claude-haiku-4-5"
+timeout_secs = 15
+```
+
+**Provider: `claude-cli`** — shells out to `claude -p "<prompt>"`.
+Requires Claude Code installed and authenticated locally. No API key
+in icelines config.
+
+**Provider: `anthropic-api`** — direct HTTP POST to the Anthropic
+Messages API. Reads `$ANTHROPIC_API_KEY` from the environment at
+launch time. Faster startup than the subprocess path.
+
+Behavior:
+
+- Parser rejects → bar shows ` ! asking claude-cli… (Esc to cancel) `
+- Provider succeeds → response goes through `parse_command`; cmdbar
+  applies it like any other input. History gets an `ai:` prefix.
+- Provider fails (timeout / parse error / unsupported) → flash carries
+  the original parser error PLUS the provider's diagnostic; input is
+  preserved so you can edit manually.
+- Esc at any time during the ask aborts the in-flight request.
+
+The system prompt that providers receive is hand-written and
+versioned (`crate::ai::SYSTEM_PROMPT_VERSION`). It documents the full
+cmdbar grammar plus the Phase Art Ross filter syntax (sliding-window
+atoms, EVER queries, cross-league career filters). Models that can't
+express a request in the grammar are told to return the literal token
+`UNSUPPORTED`, which surfaces as a clear flash rather than a fake
+command.
+
 **Slug aliases** (case-insensitive, accepted on `--start` only — sugar subcommands stick to canonical names):
 
 | Canonical | Aliases |

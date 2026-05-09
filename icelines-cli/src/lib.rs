@@ -6,4 +6,5 @@
 //! re-exported here. New modules can be added on demand without
 //! disturbing the existing CLI dispatch.
 
+pub mod ai;
 pub mod config;

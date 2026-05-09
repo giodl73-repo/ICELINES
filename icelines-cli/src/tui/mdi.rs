@@ -74,6 +74,39 @@ pub struct MdiLayout {
     /// route to `handle_command_bar` and bypass per-screen
     /// keybinds.
     pub command_bar_focused: bool,
+
+    /// Phase Adams.6 — AI fallback in flight. Holds the
+    /// oneshot receiver for the spawned provider call. None
+    /// means no AI request is pending. The render loop polls
+    /// this each tick via `App::mdi_poll_ai`. When ready, the
+    /// returned command string is re-parsed and executed.
+    ///
+    /// Holding the input alongside the receiver lets the poll
+    /// path surface a clear flash on parse-of-AI-response
+    /// errors (we keep the original user input around so the
+    /// user can edit it manually).
+    pub ai_pending: Option<AiPending>,
+}
+
+/// Phase Adams.6 — pending AI fallback request. Stored on
+/// `MdiLayout::ai_pending` until the spawned task either
+/// completes or the request is cancelled (Esc).
+pub struct AiPending {
+    pub original_input: String,
+    pub rx: tokio::sync::oneshot::Receiver<Result<String, crate::ai::AiError>>,
+    pub provider_name: &'static str,
+    pub started_at: std::time::Instant,
+}
+
+impl std::fmt::Debug for AiPending {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AiPending")
+            .field("original_input", &self.original_input)
+            .field("provider_name", &self.provider_name)
+            .field("rx", &"<oneshot::Receiver>")
+            .field("started_at", &self.started_at)
+            .finish()
+    }
 }
 
 /// Phase Adams.1 — max number of recent commands retained in
@@ -91,6 +124,7 @@ impl Default for MdiLayout {
             command_history_cursor: None,
             flash_error: None,
             command_bar_focused: false,
+            ai_pending: None,
         }
     }
 }

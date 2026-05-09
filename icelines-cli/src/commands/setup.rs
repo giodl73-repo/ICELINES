@@ -70,6 +70,7 @@ fn default_config() -> Config {
         dashboards: None,
         reports: Default::default(),
         sync: SyncConfig::default(),
+        ai: crate::ai::AiConfig::default(),
     }
 }
 

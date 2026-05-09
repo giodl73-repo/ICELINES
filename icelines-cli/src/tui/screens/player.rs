@@ -320,6 +320,7 @@ mod dashboard_tests {
             dashboards: Some(true),
             reports: crate::config::ReportToggles::default(),
             sync: crate::config::SyncConfig::default(),
+            ai: crate::ai::AiConfig::default(),
         };
         init_dashboards(true, &cfg); // idempotent — first call wins
                                      // Verifying `dashboards_enabled()` here would race with other tests

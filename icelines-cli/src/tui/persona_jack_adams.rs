@@ -809,7 +809,7 @@ mod tests {
         let mut app = fresh_mdi();
         app.handle(Action::Help);
         app.handle(Action::Char('a')); // dismisses help
-        // Bar not yet focused — `a` does nothing in main match.
+                                       // Bar not yet focused — `a` does nothing in main match.
         assert!(!app.show_help);
     }
 
@@ -903,7 +903,7 @@ mod tests {
         let mut app = fresh_mdi();
         type_cmd(&mut app, "team");
         submit(&mut app); // missing arg
-        // Input preserved with focus, so user can append.
+                          // Input preserved with focus, so user can append.
         assert!(app.mdi.as_ref().unwrap().command_bar_focused);
         assert_eq!(app.mdi.as_ref().unwrap().command_input, "team");
         // Append " EDM" and submit.
