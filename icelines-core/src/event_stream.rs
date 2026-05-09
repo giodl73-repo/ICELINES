@@ -195,10 +195,7 @@ pub fn detect_mid_day_trade(
     payload
         .players_sent
         .push(crate::entity::EntityRef::Player(player));
-    payload.description = format!(
-        "{} moved from {} to {}",
-        player.0, prev.0, today_team.0
-    );
+    payload.description = format!("{} moved from {} to {}", player.0, prev.0, today_team.0);
     Some(payload)
 }
 
@@ -206,7 +203,7 @@ pub fn detect_mid_day_trade(
 pub struct StreakPayloadV1 {
     pub schema_version: u32,
     pub entity: EntityRef,
-    pub kind: String,           // "point_streak" / "win_streak" / "shutout_streak"
+    pub kind: String, // "point_streak" / "win_streak" / "shutout_streak"
     pub length: u32,
     pub start_date: NaiveDate,
     #[serde(default)]
@@ -298,11 +295,7 @@ mod tests {
 
     #[test]
     fn l0_foster3_milestone_payload_v1_round_trip() {
-        let p = MilestonePayloadV1::new(
-            EntityRef::Player(PlayerId(8478402)),
-            "goals",
-            1000,
-        );
+        let p = MilestonePayloadV1::new(EntityRef::Player(PlayerId(8478402)), "goals", 1000);
         let s = serde_json::to_string(&p).unwrap();
         let back: MilestonePayloadV1 = serde_json::from_str(&s).unwrap();
         assert_eq!(back.value, 1000);
@@ -341,18 +334,14 @@ mod tests {
         let prev = TeamAbbr("EDM".into());
         let today = TeamAbbr("edm".into());
         let result = detect_mid_day_trade(PlayerId(8478402), &today, Some(&prev));
-        assert!(
-            result.is_none(),
-            "case difference is not a real trade"
-        );
+        assert!(result.is_none(), "case difference is not a real trade");
     }
 
     #[test]
     fn l0_foster_plus5_detect_real_swap_fires() {
         let prev = TeamAbbr("BOS".into());
         let today = TeamAbbr("FLA".into());
-        let result =
-            detect_mid_day_trade(PlayerId(8470829), &today, Some(&prev)).expect("trade");
+        let result = detect_mid_day_trade(PlayerId(8470829), &today, Some(&prev)).expect("trade");
         assert_eq!(result.from_team.0, "BOS");
         assert_eq!(result.to_team.0, "FLA");
         assert_eq!(result.players_sent.len(), 1);

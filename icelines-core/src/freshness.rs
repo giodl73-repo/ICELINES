@@ -151,20 +151,27 @@ mod tests {
     }
 
     fn t(year: i32, month: u32, day: u32, hour: u32) -> DateTime<Utc> {
-        chrono::TimeZone::with_ymd_and_hms(&Utc, year, month, day, hour, 0, 0)
-            .unwrap()
+        chrono::TimeZone::with_ymd_and_hms(&Utc, year, month, day, hour, 0, 0).unwrap()
     }
 
     #[test]
     fn l0_foster02_fresh_within_ttl() {
-        let f = freshness(FetchSource::Live, Ttl::After(Duration::from_secs(3600)), t(2026, 1, 15, 10));
+        let f = freshness(
+            FetchSource::Live,
+            Ttl::After(Duration::from_secs(3600)),
+            t(2026, 1, 15, 10),
+        );
         let clock = MockClock::new(t(2026, 1, 15, 10) + chrono::Duration::minutes(30));
         assert!(!f.is_stale(&clock), "30 min < 1 h TTL");
     }
 
     #[test]
     fn l0_foster02_stale_past_ttl() {
-        let f = freshness(FetchSource::Live, Ttl::After(Duration::from_secs(3600)), t(2026, 1, 15, 10));
+        let f = freshness(
+            FetchSource::Live,
+            Ttl::After(Duration::from_secs(3600)),
+            t(2026, 1, 15, 10),
+        );
         let clock = MockClock::new(t(2026, 1, 15, 12)); // 2 h later
         assert!(f.is_stale(&clock), "2 h > 1 h TTL");
     }
@@ -180,7 +187,11 @@ mod tests {
     #[test]
     fn l0_foster02_clock_skew_just_before_deadline() {
         // Off-by-one: if deadline is exactly equal to now, NOT stale yet.
-        let f = freshness(FetchSource::Live, Ttl::After(Duration::from_secs(60)), t(2026, 1, 15, 10));
+        let f = freshness(
+            FetchSource::Live,
+            Ttl::After(Duration::from_secs(60)),
+            t(2026, 1, 15, 10),
+        );
         let exact_deadline = MockClock::new(t(2026, 1, 15, 10) + chrono::Duration::seconds(60));
         assert!(!f.is_stale(&exact_deadline), "exact-deadline still fresh");
 
@@ -210,10 +221,17 @@ mod tests {
 
     #[test]
     fn l0_foster02_serde_round_trip_freshness() {
-        let f = freshness(FetchSource::Live, Ttl::After(Duration::from_secs(86400)), t(2026, 1, 15, 10));
+        let f = freshness(
+            FetchSource::Live,
+            Ttl::After(Duration::from_secs(86400)),
+            t(2026, 1, 15, 10),
+        );
         let s = serde_json::to_string(&f).unwrap();
         // Ttl::After serializes as a tagged variant with seconds.
-        assert!(s.contains("\"After\":86400"), "Ttl::After is integer seconds: {s}");
+        assert!(
+            s.contains("\"After\":86400"),
+            "Ttl::After is integer seconds: {s}"
+        );
         let back: Freshness = serde_json::from_str(&s).unwrap();
         assert_eq!(back.fetched_at, f.fetched_at);
         assert_eq!(back.source, f.source);

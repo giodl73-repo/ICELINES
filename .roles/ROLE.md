@@ -1,10 +1,11 @@
 # IceLines Review Roles
 
-Ten perspectives on the IceLines NHL analytics + fantasy app, named after hockey
-and rink concepts. Each role has a pointed view and pulls against at least one
-other.
+Eleven core perspectives on the IceLines NHL analytics + fantasy app, named
+after hockey and rink concepts. Each role has a pointed view and pulls against
+at least one other. Additional specialist roles may exist for one surface or
+delivery channel.
 
-## The Ten Roles
+## Core Roles
 
 ```
 HART     Domain Model Invariant Keeper ─── Post-Hart canonical shape, primary key axis
@@ -17,6 +18,18 @@ EDGE     Edge Case Specialist          ─── GP=0, mid-season trades, accent
 WIRE     API & Schema Pipeline         ─── Schema validation, version evolution, ESPN backup
 SCOUT    Hockey Domain Expert          ─── Line assignments, positional fit, hockey sense
 GLASS    Visualization & UX Critic     ─── Color semantics, terminal clarity, ratatui rendering
+```
+
+Additional core role added after the original ten:
+
+```
+CREST    Visual Design Aesthetic       --- Product taste, composition, polish, identity
+```
+
+## Specialist Roles
+
+```
+broadcast Web-view Perspective         --- Browser UX, HTMX, accessibility, sticky URLs
 ```
 
 ## Tiebreaker Ranking
@@ -34,6 +47,8 @@ When roles conflict, earlier roles govern:
 9. **SCOUT**  — hockey sense is the final reasonableness check, not the foundation
 10. **GLASS** — visualization quality matters, but only after correctness
 
+11. **CREST** --- visual taste matters after correctness, convergence, and readability
+
 ## Core Tensions
 
 | Pulls           | Against | Because |
@@ -47,6 +62,8 @@ When roles conflict, earlier roles govern:
 | PACE            | SCOUT   | statistical rigour vs. hockey intuition — a threshold derived from data can conflict with what scouts know |
 | SCOUT           | PACE    | raw hockey context (line chemistry, deployment) can make a pace-adjusted number misleading |
 | GLASS           | PACE    | methodology wants every assumption explicit; GLASS wants the card clean and readable |
+| CREST           | GLASS   | GLASS asks "is it readable and accessible"; CREST asks "does it look intentional and beautiful." |
+| CREST           | KEEL    | KEEL wants cross-surface convergence; CREST wants related surfaces that still honor their medium. |
 | EDGE            | WIRE    | EDGE finds failure modes; WIRE decides whether to degrade gracefully or error hard |
 | TAPE            | everyone | every role depends on the data being right |
 | BENCH           | FORGE   | BENCH wants test coverage; FORGE wants the test not to use `unwrap` |
@@ -69,6 +86,9 @@ orientation, lens questions, expertise domains, and tensions.
 - **WIRE** — any time an external API client or schema is touched. "What happens when the network is down? When the schema drifts?"
 - **SCOUT** — any time a line assignment, fit class, or hockey-domain claim is questioned. "Does it make hockey sense?"
 - **GLASS** — any time a screen, terminal table, or site page is designed. "Is the layout scannable, the color contract honored?"
+
+- **CREST** --- any time visual polish, product identity, screenshot quality, or aesthetic direction is at stake. "Does this feel intentionally designed and worth using?"
+- **broadcast** --- any time web HTML, HTMX fragments, browser behavior, or bookmarkable page state is touched. "Does this work for a user opening the browser cold?"
 
 ## Role System Notes
 

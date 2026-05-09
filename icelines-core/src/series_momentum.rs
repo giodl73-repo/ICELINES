@@ -146,10 +146,7 @@ impl SeriesMomentum {
             ),
             SeriesLeader::Bottom => format!(
                 "{} leads {}-{}{}",
-                self.bottom_seed_abbrev.0,
-                self.bottom_seed_wins,
-                self.top_seed_wins,
-                ot_suffix
+                self.bottom_seed_abbrev.0, self.bottom_seed_wins, self.top_seed_wins, ot_suffix
             ),
             SeriesLeader::Tied => {
                 if self.games_played == 0 {

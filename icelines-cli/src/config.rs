@@ -124,6 +124,30 @@ pub struct Config {
     pub ai: crate::ai::AiConfig,
 }
 
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            csv_path: None,
+            cache_dir: PathBuf::new(),
+            season: None,
+            live: None,
+            dashboards: None,
+            reports: ReportToggles::default(),
+            sync: SyncConfig::default(),
+            ai: crate::ai::AiConfig::default(),
+        }
+    }
+}
+
+impl Config {
+    /// Test and fallback constructor for callers that do not want to read
+    /// `~/.icelines/config.toml`. Keep this as the one struct-literal shield
+    /// so adding a config field does not break every test fixture.
+    pub fn test_default() -> Self {
+        Self::default()
+    }
+}
+
 /// Phase Reports — resolved per-Tier-1 report toggle set. Lives in
 /// `Config::reports`; persisted via `Config::save_reports`.
 ///

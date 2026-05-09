@@ -32,6 +32,7 @@ pub mod stats_repository;
 pub mod teams;
 pub mod timeframe;
 pub mod transactions;
+pub mod view_model;
 
 pub use career_history::{CareerGameType, CareerHistory, CareerStint, LeagueAbbrev, LeagueTier};
 pub use cross_team::{
@@ -40,8 +41,8 @@ pub use cross_team::{
 pub use depth_chart::DepthChartBuilder;
 pub use entity::{EntityRef, EntityRefError};
 pub use error::IcelinesError;
-pub use freshness::{Clock, FetchSource, Freshness, MockClock, SystemClock, Ttl};
 pub use filter::PlayerFilter;
+pub use freshness::{Clock, FetchSource, Freshness, MockClock, SystemClock, Ttl};
 pub use history::{CareerSummary, SeasonLine};
 pub use model::{
     DepthChart, DepthChartSlot, FitClass, GpStatus, LineAssignment, PaceScore, Position, Region,
@@ -59,4 +60,11 @@ pub use teams::CANONICAL_TEAMS;
 pub use transactions::{
     classify, other_rate, sanitize_description, trade_group_id, Transaction, TransactionKind,
     CURRENT_CLASSIFIER_VERSION, TRANSACTIONS_EARLIEST_SEASON,
+};
+pub use view_model::{
+    AppliedFilter, Completeness, EmptyKind, EmptyState, FilterKey, FilterOp, GoalieRoleFilter,
+    GoalieRoleSignal, GoalieRow, GoaliesView, LeaderKind, LeaderRow, LeadersView, MetricCell,
+    MetricUnit, MetricValue, RecoveryAction, ReportContext, ReportKind, ReportSectionRef,
+    SemanticToken, SortDirection, SortKey, SortState, SourceKind, SourceProvenance, SourceState,
+    StatKey, TeamDepthView, ValuePrecision, ViewContext, ViewWarning, ViewWindow, WarningKind,
 };

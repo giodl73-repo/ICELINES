@@ -25,6 +25,13 @@ fallback.
 After Messier, switching workspace screens never requires re-learning
 keys.
 
+## Precondition
+
+Phase Messier starts only after Phase Jennings restores a green workspace
+baseline and Phase Campbell establishes the platform contracts/ViewModel path.
+Any cumulative test numbers in this spec or the execution plan are estimates
+until Jennings closes.
+
 ---
 
 ## Locked decisions (post-review v0.2)

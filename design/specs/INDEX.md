@@ -37,6 +37,9 @@ For active work and backlog, see [`../plans/INDEX.md`](../plans/INDEX.md).
 | [goalies.md](goalies.md) | Implemented | Phase Vezina shipped. Schema, repository, TUI tab, 5 bundled seasons. Fantasy goalie scoring still requires wiring (see fantasy-leagues.md). |
 | [transactions.md](transactions.md) | Implemented | Phase Selke shipped. ESPN source, classifier, TUI tab, 5 bundled seasons. |
 | [test-strategy.md](test-strategy.md) | Implemented | L0/L1/L2 tiers, mock NHL API fixture, ~1020 tests |
+| [platform-contracts.md](platform-contracts.md) | Draft | Uniform data/query/ViewModel/surface/report/visual contracts for Campbell and later phases. |
+| [viewmodels.md](viewmodels.md) | Draft | Typed ViewModel boundary between core/query logic and CLI/TUI/web/report renderers. |
+| [surface-parity.md](surface-parity.md) | Draft | Feature-by-surface matrix; Campbell seeds it, Ted Lindsay verifies web parity. |
 
 ---
 

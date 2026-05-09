@@ -1166,7 +1166,11 @@ impl App {
                     self.team.force_hits_column = !self.team.force_hits_column;
                     self.status = format!(
                         "Team Hits column: {}",
-                        if self.team.force_hits_column { "shown" } else { "hidden" }
+                        if self.team.force_hits_column {
+                            "shown"
+                        } else {
+                            "hidden"
+                        }
                     );
                 } else if self.screen == Screen::Schedule && c == 't' {
                     // Jump to today's week
@@ -2575,14 +2579,8 @@ impl App {
                 // Persist on close. A failed save shouldn't break the
                 // session — surface it in the status line and continue.
                 let cfg = crate::config::Config {
-                    csv_path: None,
-                    cache_dir: std::path::PathBuf::new(),
-                    season: None,
-                    live: None,
-                    dashboards: None,
                     reports: self.reports,
-                    sync: crate::config::SyncConfig::default(),
-                    ai: crate::ai::AiConfig::default(),
+                    ..crate::config::Config::test_default()
                 };
                 if let Err(e) = cfg.save_reports() {
                     self.status = format!("Reports saved in-memory (config write failed: {e})");

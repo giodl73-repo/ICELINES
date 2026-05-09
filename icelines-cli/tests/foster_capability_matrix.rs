@@ -13,19 +13,11 @@
 
 use icelines_cli::config::{
     BannerMode, Capability, CapabilityError, CapabilityMatrix, CapabilityMode, Config,
-    SeasonTransition, SyncConfig, SyncPolicy,
+    SeasonTransition, SyncPolicy,
 };
 
 fn fresh() -> Config {
-    Config {
-        csv_path: None,
-        cache_dir: std::path::PathBuf::new(),
-        season: None,
-        live: None,
-        dashboards: None,
-        reports: Default::default(),
-        sync: SyncConfig::default(),
-    }
+    Config::test_default()
 }
 
 // ── Mode-honored (18) ───────────────────────────────────────────────────────

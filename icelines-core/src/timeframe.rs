@@ -48,10 +48,8 @@ impl Timeframe {
                     // Jan-June = current season started last October
                     (year - 1, year)
                 };
-                let start = NaiveDate::from_ymd_opt(start_year, 10, 1)
-                    .expect("Oct 1 always valid");
-                let end = NaiveDate::from_ymd_opt(end_year, 6, 30)
-                    .expect("Jun 30 always valid");
+                let start = NaiveDate::from_ymd_opt(start_year, 10, 1).expect("Oct 1 always valid");
+                let end = NaiveDate::from_ymd_opt(end_year, 6, 30).expect("Jun 30 always valid");
                 (start, end)
             }
         }

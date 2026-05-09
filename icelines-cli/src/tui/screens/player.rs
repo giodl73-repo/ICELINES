@@ -313,14 +313,9 @@ mod dashboard_tests {
         // test binary. Other tests in the same binary may already have
         // set the flag, so we test the resolver logic directly here.
         let cfg = Config {
-            csv_path: None,
-            cache_dir: PathBuf::from("/tmp"),
-            season: None,
-            live: None,
             dashboards: Some(true),
-            reports: crate::config::ReportToggles::default(),
-            sync: crate::config::SyncConfig::default(),
-            ai: crate::ai::AiConfig::default(),
+            cache_dir: PathBuf::from("/tmp"),
+            ..Config::test_default()
         };
         init_dashboards(true, &cfg); // idempotent — first call wins
                                      // Verifying `dashboards_enabled()` here would race with other tests

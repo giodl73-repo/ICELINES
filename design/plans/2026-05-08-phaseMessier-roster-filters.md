@@ -4,7 +4,64 @@
 **Review note**: `design/notes/2026-05-08-phaseMessier-roles-review.md`
 **Target release**: v0.24.0
 **Estimated**: 6 sub-phases × ~half-day–1 day each (Messier.1 + .6 are larger)
-**Test budget**: +95 (1051 → 1146)
+**Test budget**: +95 planned; baseline must be re-measured after Phase Jennings.
+
+---
+
+## Hard preflight
+
+Phase Messier MUST NOT begin until Phase Jennings and Phase Campbell close. The
+test budget above is the older v0.23.5 estimate; the baseline count must be
+re-measured after Jennings and refreshed here if it differs.
+
+Required Jennings exit state:
+
+- `cargo check --workspace` green.
+- `cargo test --workspace --no-fail-fast` compiles and runs.
+- The `Config` struct-literal drift class has a structural fix
+  (`Default`, `test_default`, or equivalent builder).
+- Phase Campbell has created `design/specs/platform-contracts.md` and the
+  initial ViewModel contract types for Leaders/TeamDepth/Goalies.
+- `design/plans/INDEX.md` records the measured post-Jennings baseline.
+- This plan's cumulative test counts are refreshed if the measured baseline
+  differs from the older estimate.
+
+Reason: Messier is a cross-screen refactor. KEEL/BENCH reject starting a
+multi-commit migration from a broken full-suite baseline.
+
+---
+
+## Platform contracts consumed
+
+Messier consumes `design/specs/platform-contracts.md` this way:
+
+- **Data context**: filter caches and ViewModels include active
+  `(season, season_type)` and source/completeness state.
+- **Query/filter intent**: TUI shortcuts and cmdbar kv grammar lower to one
+  typed filter/sort state.
+- **ViewModel**: TeamDepth and Goalies filter state eventually render through
+  Campbell ViewModels rather than screen-local row shapes.
+- **Surface parity**: CLI/web parity remains follow-up work for Lester Patrick
+  and Ted Lindsay, but the behavior is described in shared contract terms.
+- **Visual language**: chrome/hint rows expose semantic tokens and active
+  filters; renderer-specific styling stays out of core filter logic.
+
+---
+
+## Role review gates
+
+| Role | Messier gate |
+|---|---|
+| HART | `RosterFilterState` and `FilterCache` must invalidate on an explicit semantic key: `(season, season_type, repo_generation, filter_signature)`. Pointer identity is not a cache key. |
+| KEEL | Messier is TUI-first. Any CLI/web parity created by the new grammar is documented as a follow-up for Lester Patrick/Ted Lindsay, not silently promised here. |
+| TAPE | Nationality/country filters read identity/bio fields only; missing bio data excludes rows rather than defaulting to a country. |
+| FORGE | New filter types make invalid state unrepresentable; no `unwrap()` in production paths except documented impossible invariants. |
+| PACE | Filter cost claims are measured or marked estimates; render path must not call expensive query matching on every frame. |
+| BENCH | Every keybind added to a screen has L0/L1 coverage and a chrome/hint-row assertion. |
+| EDGE | Tests cover GP=0/BelowThreshold, no country, bad country, duplicate kv keys, and repo swap invalidation. |
+| WIRE | AI prompt v2 remains a translation hint only; deterministic parser validates any command before execution. |
+| SCOUT | Goalie Starter/Backup language documents the GP-share heuristic and does not imply true coaching deployment. |
+| GLASS | Per-screen chrome/hint rows are updated in the same sub-phase as behavior; no hidden keybinds. |
 
 ---
 
@@ -29,8 +86,8 @@
 - **MODIFY**: `icelines-cli/src/tui/screens/team.rs` — embed `filters: RosterFilterState`; rename `TeamPosFilter` → `PosFilter`; replace `country_filter: Option<&'static str>` → `Option<CountryCode>`; replace `force_hits_column: bool` → `forced_columns: ForcedColumns`
 - **MODIFY**: `icelines-cli/src/tui/app.rs` — `pub team: TeamScreenState` (no shape change)
 - **NEW**: `icelines-cli/tests/messier_1_parity_snapshot.rs` — insta golden harness
-- **NEW**: `icelines-cli/benches/filter_chain.rs` — criterion perf L0
-- **MODIFY**: `icelines-cli/Cargo.toml` — add `bitflags`, `enumset` (or just bitflags), `insta` (dev-dep), `criterion` (dev-dep)
+- **NEW**: `icelines-cli/benches/filter_chain.rs` — criterion perf check (advisory unless Jim Gregory makes benches blocking)
+- **MODIFY**: `icelines-cli/Cargo.toml` — add `bitflags`; add `insta` and `criterion` as dev-dependencies only. Do not add `enumset` unless implementation proves `bitflags` insufficient.
 
 ### Code sketch
 
@@ -126,8 +183,10 @@ pub struct RosterFilterState {
 
 #[derive(Debug, Clone)]
 struct FilterCache {
+    season: SeasonId,
+    season_type: SeasonType,
     repo_generation: u64,
-    plan_hash: u64,
+    filter_signature: u64,
     filtered_pids: Vec<icelines_core::identity::PlayerId>,
 }
 
@@ -139,17 +198,28 @@ impl RosterFilterState {
     }
 
     /// Phase Messier — compute (or reuse cached) filtered pid
-    /// list. Caller passes repo_generation to detect repo swap.
+    /// list. Caller passes active season/type and repo_generation to detect
+    /// repo swaps and time-travel. Pointer addresses are never used as cache
+    /// identity.
     pub fn filter<'a>(
         &mut self,
         views: &'a [PlayerView<'a>],
+        season: SeasonId,
+        season_type: SeasonType,
         repo_generation: u64,
     ) -> &[icelines_core::identity::PlayerId] {
-        let plan_hash = self.compute_plan_hash();
-        if !matches!(&self.cached, Some(c) if c.repo_generation == repo_generation && c.plan_hash == plan_hash) {
+        let filter_signature = self.compute_filter_signature();
+        if !matches!(&self.cached, Some(c)
+            if c.season == season
+                && c.season_type == season_type
+                && c.repo_generation == repo_generation
+                && c.filter_signature == filter_signature)
+        {
             self.cached = Some(FilterCache {
+                season,
+                season_type,
                 repo_generation,
-                plan_hash,
+                filter_signature,
                 filtered_pids: self.compute_filtered_pids(views),
             });
         }
@@ -177,14 +247,17 @@ impl RosterFilterState {
             .collect()
     }
 
-    fn compute_plan_hash(&self) -> u64 {
+    fn compute_filter_signature(&self) -> u64 {
         use std::hash::{Hash, Hasher};
         let mut h = std::collections::hash_map::DefaultHasher::new();
         self.pos_filter.hash(&mut h);
         self.country_filter.hash(&mut h);
         self.min_gp.hash(&mut h);
         self.forced_columns.bits().hash(&mut h);
-        self.free_filter.as_ref().map(|p| Arc::as_ptr(p) as usize).hash(&mut h);
+        self.free_filter
+            .as_ref()
+            .map(|p| p.stable_signature())
+            .hash(&mut h);
         h.finish()
     }
 }
@@ -268,14 +341,17 @@ fn bench_filter_chain(c: &mut Criterion) {
 }
 ```
 
-Acceptance: ≤ 1ms median.
+Acceptance: median time recorded against the canonical fixture. The old target
+is <= 1ms, but the gate is "measured and not accidentally render-path
+expensive" until Jim Gregory decides whether benches are blocking.
 
 ### Gauntlet
 
 - All Adams.10/.12 tests pass with the new struct shape (via shim).
 - `cargo build` clean; clippy clean for new module.
 - Insta snapshot diff = 0 bytes.
-- Criterion bench ≤ 1ms.
+- Criterion bench records median and fixture size; <= 1ms remains the target,
+  but CI blocking status is deferred to Jim Gregory.
 - No new warnings in icelines-cli.
 
 ### Acceptance
@@ -684,7 +760,8 @@ Total: 33
 
 Power user drives every per-screen filter dimension from cmdbar.
 AI fallback gains kv form. SYSTEM_PROMPT_VERSION="v2" in single
-commit. Existing 1051 tests + 95 new = 1146 green.
+commit. Phase Jennings records the measured pre-Messier baseline; Messier
+adds the planned +95 tests on top of that measured count.
 
 ---
 
@@ -724,6 +801,11 @@ commit. Existing 1051 tests + 95 new = 1146 green.
    degrades to `All`. Documented; surfaced in chrome title as
    `pos=Starters(early-season)`.
 
+8. **Dev dependency creep** — Messier uses `insta` and `criterion` as
+   dev-dependencies only. Snapshot tests are blocking; benches are advisory
+   until Jim Gregory sets CI policy. `bitflags` is the only planned runtime
+   dependency.
+
 ---
 
 ## Acceptance for v0.24.0 ship
@@ -742,13 +824,17 @@ Inherits from spec acceptance. Plus:
 
 ## Test budget v0.2 summary
 
+The original v0.23.5 estimate was 1051 pre-Messier tests and 1146 after
+the planned +95 additions. Phase Jennings now owns the measured baseline;
+refresh the cumulative column before Messier.1 starts.
+
 | Sub-phase | Tests added | Cumulative |
 |---|---|---|
-| Pre-Messier (v0.23.5) | — | 1051 |
-| Messier.1 | +12 | 1063 |
-| Messier.2 | +16 | 1079 |
-| Messier.3 | +10 | 1089 |
-| Messier.4 | +12 | 1101 |
-| Messier.5 | +12 | 1113 |
-| Messier.6 | +33 | 1146 |
-| **Total** | **+95** | **1146** |
+| Pre-Messier | — | TBD after Jennings |
+| Messier.1 | +12 | baseline + 12 |
+| Messier.2 | +16 | baseline + 28 |
+| Messier.3 | +10 | baseline + 38 |
+| Messier.4 | +12 | baseline + 50 |
+| Messier.5 | +12 | baseline + 62 |
+| Messier.6 | +33 | baseline + 95 |
+| **Total** | **+95** | **baseline + 95** |

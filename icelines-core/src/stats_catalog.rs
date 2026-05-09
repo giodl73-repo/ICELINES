@@ -2098,9 +2098,7 @@ impl WindowedAtom {
                     match best {
                         None => best = Some((*op, pos, token.len())),
                         Some((_, prev_pos, prev_len)) => {
-                            if pos < prev_pos
-                                || (pos == prev_pos && token.len() > prev_len)
-                            {
+                            if pos < prev_pos || (pos == prev_pos && token.len() > prev_len) {
                                 best = Some((*op, pos, token.len()));
                             }
                         }
@@ -2118,20 +2116,16 @@ impl WindowedAtom {
                 token: value_part.to_owned(),
             });
         }
-        if value_part.contains('=')
-            || value_part.contains('>')
-            || value_part.contains('<')
-        {
+        if value_part.contains('=') || value_part.contains('>') || value_part.contains('<') {
             return Err(FilterParseError::MultipleOps {
                 input: trimmed.to_owned(),
             });
         }
-        let value: f64 =
-            value_part
-                .parse()
-                .map_err(|_| FilterParseError::BadNumber {
-                    token: value_part.to_owned(),
-                })?;
+        let value: f64 = value_part
+            .parse()
+            .map_err(|_| FilterParseError::BadNumber {
+                token: value_part.to_owned(),
+            })?;
         if !value.is_finite() {
             return Err(FilterParseError::NotFinite {
                 token: value_part.to_owned(),
@@ -2151,10 +2145,9 @@ impl WindowedAtom {
         if stat_key.is_empty() {
             return Err(FilterParseError::EmptyStatKey);
         }
-        let stat = StatId::from_cli_key(stat_key)
-            .ok_or_else(|| FilterParseError::UnknownStat {
-                key: stat_key.to_owned(),
-            })?;
+        let stat = StatId::from_cli_key(stat_key).ok_or_else(|| FilterParseError::UnknownStat {
+            key: stat_key.to_owned(),
+        })?;
         Ok(Self {
             stat,
             window,
@@ -2166,7 +2159,10 @@ impl WindowedAtom {
     /// Resolve `window` against the active CLI timeframe. Returns
     /// the explicit window if set; otherwise `default_window`
     /// (typically Season).
-    pub fn resolved_window(&self, default_window: crate::timeframe::Timeframe) -> crate::timeframe::Timeframe {
+    pub fn resolved_window(
+        &self,
+        default_window: crate::timeframe::Timeframe,
+    ) -> crate::timeframe::Timeframe {
         self.window.unwrap_or(default_window)
     }
 }
@@ -4429,10 +4425,7 @@ mod tests {
 
         let explicit = WindowedAtom::parse("g.month>=20").unwrap();
         // Explicit window beats the default.
-        assert_eq!(
-            explicit.resolved_window(Timeframe::Week),
-            Timeframe::Month
-        );
+        assert_eq!(explicit.resolved_window(Timeframe::Week), Timeframe::Month);
     }
 
     #[test]

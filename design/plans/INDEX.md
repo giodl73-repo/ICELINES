@@ -5,20 +5,34 @@ Plans track work items from idea to completion.
 
 For the system architecture, see [`../ARCHITECTURE.md`](../ARCHITECTURE.md).
 For the app plan (mission, surfaces, non-goals), see [`../IceLines.md`](../IceLines.md).
+For the final forward-roadmap role review, see
+[`../notes/2026-05-09-forward-roadmap-roles-review.md`](../notes/2026-05-09-forward-roadmap-roles-review.md).
 
 ---
 
-## Active
+## Roadmap from Jennings
+
+Jennings is the immediate gate. Campbell follows with the platform contracts
+and ViewModel layer. Messier does not start until Jennings records a green
+measured baseline and Campbell has established the shared contract path.
 
 | Plan | Status | Summary |
 |------|--------|---------|
+| [Phase Jennings - Stabilization + Truth](2026-05-09-phaseJennings-stabilization-truth.md) | Draft - immediate | Restores build-green, fixes config test drift, records measured baseline, and reconciles roadmap/docs before Messier. |
+| Jennings measured baseline | Recorded | `cargo check --workspace` PASS; `cargo test --workspace --no-fail-fast` PASS; test inventory 4620 `: test` entries; `cargo fmt --check` still fails due broad pre-existing formatting drift. |
+| [Phase Campbell - Platform contracts and ViewModels](2026-05-09-phaseCampbell-platform-viewmodels.md) | Draft - after Jennings | Defines data/query/ViewModel/surface/visual contracts and creates the shared typed ViewModel layer for later surface work. Role review: [`../notes/2026-05-09-campbell-specs-roles-review.md`](../notes/2026-05-09-campbell-specs-roles-review.md). |
+| [Phase Selke - Fantasy poacher](2026-05-09-phaseSelke-fantasy-poacher.md) | Draft - after Campbell, product track | Builds the fantasy poacher: PoachScore, watch rules, reports, streamers/stashes/category specialists, and CLI/TUI/web/markdown/JSON surfaces. |
+| [Phase Messier - TUI filter/sort consistency](2026-05-08-phaseMessier-roster-filters.md) | Draft - after Campbell | Standardizes TUI player-list filter/sort keybinds and cmdbar kv grammar through the shared contract path. Jennings green baseline plus Campbell contracts are hard preflights. |
+| [Phase Lester Patrick - CLI parity](2026-05-05-phaseLesterPatrick-cli-parity.md) | Draft - after Messier | Closes CLI gaps for schedule/playoffs/transactions and in-TUI docs using the post-Messier command vocabulary. |
+| [Phase Ted Lindsay - Web parity](2026-05-09-phaseTedLindsay-web-parity.md) | Draft - after Lester Patrick | Splits the web handler monolith, builds a surface parity matrix, and brings web HTML/JSON routes into CLI/TUI parity. |
+| [Phase Prince of Wales - ASPECT visual system](2026-05-09-phasePrinceOfWales-visual-system.md) | Draft - after Ted Lindsay | Applies the DEGAS ASPECT rubric to TUI/web/CLI visual quality: shared tokens, scan rhythm, responsive polish, and screenshot/golden tests. |
+| [Phase Jim Gregory - Release hardening](2026-05-09-phaseJimGregory-release-hardening.md) | Draft - after Prince of Wales | CI, release checklist, current-season rollover, bundled-data freshness, and binary smoke discipline. |
 | [Phase Hart — Normalization](2026-04-30-phaseHart-normalization.md) | Implemented | (player_id, season, season_type) primary-key axis. Sub-phases 4.1/5b/5c/6 all shipped 2026-04-30 → 2026-05-02. |
 | [Hart.5c — Final Cleanup](2026-05-01-phaseHart-5c-final-cleanup.md) | Implemented (v0.4) | Consumer migration to PlayerView. 5c.0–5c.7.12 shipped 2026-05-01. One followup (F1: contract helpers on PlayerView) tracked in plan. |
 | [Hart.5c.6 — TUI Restructure](2026-05-01-phaseHart-5c-6-tui-restructure.md) | Implemented | App owns StatsRepository; TUI screens migrated; user-flow + boot-load tests landed 2026-05-01. |
 | [Hart.6 — Playoff Per-Player Data](2026-05-01-phaseHart-6-playoff-data.md) | Implemented (v0.2) | Schema + API client + snapshot tier paths + loader dispatch + fetch CLI + bundled data (current 5 + 33 historical) + cross-team guards. Shipped 2026-05-02. |
 | [Phase Lindsay — Stat Catalog](2026-05-02-phaseLindsay-stat-catalog.md) | **COMPLETE** (v0.4) | Centralized `StatId` dispatch + 108 selectable stats + `--filter` grammar + categorized TUI Queries + sort picker + career-table presets + catalog-keyed `--sort` / `--columns` / similarity / depth scoring / fantasy frozen-golden / axum roster JSON + site stat-name grep fence + Tier-2 fetch + cross-product bundle test + cross-ref docs. L.1–L.4 shipped 2026-05-02; L.5 / L.5b / L.6 / L.7 / L.8 shipped 2026-05-03. 200+ Lindsay-prefixed tests, 1275 workspace tests passing. L.3 stdout-golden fence GREEN through every commit since L.3.0 capture. |
 | [Phase Lady Byng — TUI experiences](2026-05-05-phaseLadyByng-tui-experiences.md) | Draft (v0.3, post-roles review) | Per-surface TUI launchers: `tui --start <slug>` (nav tabs + drill-down player/team/goalie/comps), `tui goalies` / `tui player Bedard` sugar, `icelines menu` looping picker, smoke tests. Spec: `../specs/tui-experiences.md`. Roles review note: `../notes/2026-05-05-phaseLadyByng-roles-review.md`. Trophy reuse — see `design/phases.md`. |
-| [Phase Lester Patrick — CLI parity](2026-05-05-phaseLesterPatrick-cli-parity.md) | Stub (post-Lady Byng) | Closes the CLI gaps in the surface portfolio: `icelines schedule` / `playoffs` / `transactions`, plus an in-TUI docs overlay. Mirrors the existing `tonight` pattern. See `design/IceLines.md` § "Feature × surface portfolio". |
 
 ---
 

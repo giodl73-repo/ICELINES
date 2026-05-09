@@ -62,16 +62,7 @@ pub fn run_with_io<R: BufRead, W: Write>(
 }
 
 fn default_config() -> Config {
-    Config {
-        csv_path: None,
-        cache_dir: std::path::PathBuf::new(),
-        season: None,
-        live: None,
-        dashboards: None,
-        reports: Default::default(),
-        sync: SyncConfig::default(),
-        ai: crate::ai::AiConfig::default(),
-    }
+    Config::test_default()
 }
 
 fn prompt_flow<R: BufRead, W: Write>(stdin: &mut R, stdout: &mut W) -> Result<SyncConfig> {

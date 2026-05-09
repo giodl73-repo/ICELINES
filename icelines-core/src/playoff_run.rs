@@ -93,7 +93,9 @@ impl PlayoffRunSummary {
         decision: Option<&str>,
         toi_seconds: u32,
     ) {
-        let record = self.goalie_record.get_or_insert_with(GoalieRunRecord::default);
+        let record = self
+            .goalie_record
+            .get_or_insert_with(GoalieRunRecord::default);
         record.starts += 1;
         record.saves += saves;
         record.shots_against += shots_against;
@@ -112,8 +114,7 @@ impl PlayoffRunSummary {
         // values stay consistent with the inputs.
         if record.shots_against > 0 {
             record.save_pct = Some(
-                (record.shots_against - record.goals_against) as f32
-                    / record.shots_against as f32,
+                (record.shots_against - record.goals_against) as f32 / record.shots_against as f32,
             );
         }
         let total_toi = self.toi_seconds + toi_seconds;

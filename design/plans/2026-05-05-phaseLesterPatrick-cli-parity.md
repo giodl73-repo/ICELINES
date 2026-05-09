@@ -1,12 +1,16 @@
 # Phase Lester Patrick — CLI parity for live-data surfaces
 
 **Date**: 2026-05-05
-**Status**: Stub — scheduled after Phase Lady Byng
+**Status**: Draft - planned after Phase Messier
 **Trophy**: Lester Patrick — for outstanding service to ice hockey. Fits: filling the surface gaps so every analytical feature is reachable from every surface (CLI / TUI / web). This is service work, not headline work — the user gets parity, not a new capability.
-**Predecessor**: Phase Lady Byng (`2026-05-05-phaseLadyByng-tui-experiences.md`).
-**Dependencies**: none — all data sources required already exist (NHL API for schedule + scores, ESPN for transactions, MoneyPuck/bundled for playoffs).
+**Predecessor**: Phase Messier (`2026-05-08-phaseMessier-roster-filters.md`).
+**Dependencies**: Phase Jennings baseline green; Phase Campbell ViewModel contracts; Phase Messier complete if command grammar or keybind docs are reused.
 
 ---
+
+> Roadmap note (2026-05-09): this plan is promoted from stub to draft and
+> should run after Phase Messier, because it will reuse the post-Messier command
+> and docs vocabulary.
 
 ## Why
 
@@ -14,9 +18,9 @@ Per `design/IceLines.md` § "Feature × surface portfolio", three surfaces have 
 
 | Feature | CLI today | TUI | Web |
 |---|---|---|---|
-| **Schedule** | ❌ | ✅ `tui schedule` | ✅ `/schedule` |
-| **Playoffs** | ❌ | ✅ `tui playoffs` | ✅ `/playoffs` |
-| **Transactions** | ❌ | ✅ `tui transactions` | ✅ `/transactions` |
+| **Schedule** | ❌ | ✅ `tui schedule` | Partial/verify in Ted Lindsay |
+| **Playoffs** | ❌ | ✅ `tui playoffs` | Partial/verify in Ted Lindsay |
+| **Transactions** | ❌ | ✅ `tui transactions` | Partial/verify in Ted Lindsay |
 | **Docs (in-TUI)** | ✅ `docs` | ❌ | ✅ `/docs` |
 
 This phase closes them. Each subcommand mirrors the existing `icelines tonight` pattern — simple printer driven by the same data the TUI/web already use.
@@ -26,8 +30,42 @@ Why this matters: scripting / cron / CI / external piping. A user who wants `ice
 ## Surface coverage declared
 
 ```
-Surface coverage:  CLI ✅ (this phase)   TUI ✅ (Lady Byng)   Web ✅ (King Clancy, shipped v0.13.0)
+Surface coverage after this phase: CLI done, TUI already present, web status verified later by Ted Lindsay's surface matrix.
 ```
+
+---
+
+## Role review gates
+
+| Role | Lester Patrick gate |
+|---|---|
+| HART | Any CLI output that reads season data accepts or derives active season/type explicitly. |
+| KEEL | Each new command names the TUI/web surface it mirrors and the shared engine path it uses. |
+| TAPE | Schedule, playoffs, and transactions commands surface data source and missing-source conditions clearly. |
+| FORGE | Commands use typed argument structs and `anyhow::Context`; no panic paths for user input. |
+| PACE | Any range/default like `--days 7` or `--top` has a documented clamp and test. |
+| BENCH | Every new command has L0 parser/formatter tests plus L2 subprocess smoke. |
+| EDGE | Tests cover bad team, empty date range, offseason/no playoffs, unknown transaction kind, and no HOME/USERPROFILE where relevant. |
+| WIRE | No live-network dependency in tests; ESPN/NHL failures render actionable errors. |
+| SCOUT | Playoff and schedule terminology matches hockey usage: series, round, home/away, final/OT/SO. |
+| GLASS | CLI tables fit normal terminal widths and JSON/CSV modes remain scriptable. |
+
+---
+
+## Platform contracts consumed
+
+Lester Patrick consumes `design/specs/platform-contracts.md` this way:
+
+- **Data context**: schedule/playoffs/transactions output carries season/type,
+  source state, stale/missing warnings, and cache provenance where relevant.
+- **Query/filter intent**: CLI flags lower into typed command/filter structs,
+  matching the same aliases and error behavior used by TUI/web where applicable.
+- **ViewModel**: each new command renders a ViewModel or tracked DTO projection,
+  not ad hoc rows assembled inside the formatter.
+- **Surface parity**: each command names the TUI/web route it mirrors and records
+  exceptions in the surface matrix.
+- **Visual language**: terminal tables use shared semantic status tokens while
+  keeping JSON/CSV clean.
 
 ---
 
@@ -67,6 +105,12 @@ Prints the league-wide moves feed. Same ESPN-sourced feed the TUI Transactions t
 - Output: comfy-table with date, type, team(s), player, summary.
 - `--json` / `--csv` flags for scripting.
 - Cache the ESPN feed in `~/.icelines/cache/transactions/` with a 30-minute TTL (matches the TUI's polling rate).
+- Cache acceptance:
+  - cache entries record source URL, fetched-at timestamp, TTL, and stale/fresh state;
+  - `--refresh` bypasses the cache;
+  - corrupted cache files are ignored with a warning and replaced by a fresh fetch when network is available;
+  - CLI, TUI, and web either share this cache path or the plan records why not;
+  - output states when transaction data is stale or missing instead of silently rendering an empty feed.
 
 **Tests**: L0 with the ESPN fixture in `icelines-fetch/tests/fixtures/`; L2 system smoke.
 
@@ -85,7 +129,7 @@ Adds a `?` (or other) keybind to open COMMANDS.md as a scrollable in-app overlay
 ### LP.5 — Docs refresh
 
 - `COMMANDS.md` — new sections for `icelines schedule` / `playoffs` / `transactions` with examples.
-- Update the "Surface coverage" matrix in `design/IceLines.md` — flip the four ❌ to ✅.
+- Update the "Surface coverage" matrix in `design/IceLines.md` — flip only the CLI/TUI-docs cells closed by this phase. Web cells remain `Partial` until Ted Lindsay verifies them.
 - README primer — show one example per new command.
 
 ### LP.6 — Hands-on persona pass

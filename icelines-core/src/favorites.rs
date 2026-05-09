@@ -34,7 +34,10 @@ pub enum PlayerNightRow {
     Skater(SkaterNightLine),
     Goalie(GoalieNightLine),
     #[serde(rename = "dnp")]
-    DidNotPlay { player: EntityRef, reason: DnpReason },
+    DidNotPlay {
+        player: EntityRef,
+        reason: DnpReason,
+    },
 }
 
 /// Why a favorited skater isn't in tonight's boxscore. The renderer
@@ -309,7 +312,10 @@ impl GoalieNightLine {
     /// - returns the index into the input slice
     ///
     /// Returns `None` when the slice is empty.
-    pub fn primary_goalie<F>(goalies: &[F], get: impl Fn(&F) -> (Option<Decision>, u32)) -> Option<usize> {
+    pub fn primary_goalie<F>(
+        goalies: &[F],
+        get: impl Fn(&F) -> (Option<Decision>, u32),
+    ) -> Option<usize> {
         if goalies.is_empty() {
             return None;
         }
@@ -391,10 +397,7 @@ mod tests {
     fn l0_foster2_gate_finalized_returns_none_mid_game() {
         // NHL API defaults these fields to 0 mid-game; we must NOT
         // record that as a real "0 hits tonight" value.
-        assert_eq!(
-            SkaterNightLine::gate_finalized(0, GameState::Live),
-            None
-        );
+        assert_eq!(SkaterNightLine::gate_finalized(0, GameState::Live), None);
         assert_eq!(SkaterNightLine::gate_finalized(0, GameState::Fut), None);
         assert_eq!(SkaterNightLine::gate_finalized(0, GameState::Pre), None);
     }
@@ -441,8 +444,8 @@ mod tests {
     fn l0_foster2_primary_goalie_picks_decision_holder() {
         // (decision, toi_seconds)
         let goalies = vec![
-            (None, 600),                        // relief, 10 min
-            (Some(Decision::Win), 2400),        // starter, 40 min
+            (None, 600),                 // relief, 10 min
+            (Some(Decision::Win), 2400), // starter, 40 min
         ];
         let idx = GoalieNightLine::primary_goalie(&goalies, |g| *g).unwrap();
         assert_eq!(idx, 1, "starter with decision picked");
