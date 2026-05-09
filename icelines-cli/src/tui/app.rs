@@ -1156,6 +1156,18 @@ impl App {
                     self.team.pos_filter = self.team.pos_filter.next();
                     self.selected = 0;
                     self.status = format!("Team pos filter: {}", self.team.pos_filter.label());
+                } else if matches!(self.screen, Screen::Team(_)) && c == 'c' {
+                    // Phase Adams.12 — cycle Team country filter.
+                    self.team.cycle_country();
+                    self.selected = 0;
+                    self.status = format!("Team country: {}", self.team.country_label());
+                } else if matches!(self.screen, Screen::Team(_)) && c == 'h' {
+                    // Phase Adams.12 — toggle Hits column independent of sort.
+                    self.team.force_hits_column = !self.team.force_hits_column;
+                    self.status = format!(
+                        "Team Hits column: {}",
+                        if self.team.force_hits_column { "shown" } else { "hidden" }
+                    );
                 } else if self.screen == Screen::Schedule && c == 't' {
                     // Jump to today's week
                     let today = crate::tui::schedule::today_iso();

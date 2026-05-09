@@ -1,5 +1,49 @@
 # IceLines Changelog
 
+## v0.23.5 — 2026-05-08 — Phase Jack Adams.12 (Team country filter + Hits column toggle)
+
+Headline: **Closes the original Team-screen wishlist from v0.23.0
+kickoff. Country filter via `c` (cycles None → CAN → USA → SWE → FIN
+→ RUS → CZE → SVK → None). Hits column toggle via `h` shows the Hits
+column independent of sort key (so you can sort by Pts/82 and still
+see Hits).** Bin suite 1042 → 1051.
+
+### What shipped
+
+- `TeamScreenState.country_filter: Option<&'static str>` — None means
+  "all"; Some(code) matches the bio's `nationality_code` (case-
+  insensitive).
+- `TeamScreenState.force_hits_column: bool` — toggle independent of
+  sort. Hits column now renders when `sort=Hits OR force_hits_column`.
+- `c` keybind cycles country, `h` keybind toggles Hits column. Chrome
+  accessor advertises both.
+- COUNTRY_CYCLE constant lists the canonical NHL nationalities. Wider
+  sets continue through `:query country=XYZ` from the Stats screen.
+- 7 new L0 team tests (country cycle wraps, country label, default
+  force_hits=false, COUNTRY_CYCLE includes the canonical codes).
+- 2 new L1 tests in mod.rs (`c` cycles country end-to-end, `h` toggles
+  hits column end-to-end).
+
+### Test growth
+
+- Bin: 1042 → 1051 (+9)
+
+### Adams arc complete
+
+- v0.23.0 — MDI dashboard, deterministic ship (Adams.1–5)
+- v0.23.1 — AI fallback (Adams.6–7)
+- v0.23.2 — Cmdbar UX polish: sticky focus, history, Tab leave (Adams.8)
+- v0.23.3 — Per-screen sub-command hint row (Adams.9)
+- v0.23.4 — Team sort+filter + Depth/Favorites chrome (Adams.10/.11)
+- v0.23.5 — Team country filter + Hits column toggle (Adams.12)
+
+The user's original wishlist from the v0.23.0 kickoff: **sort by Pos**,
+**show Hits**, **show F or hide D**, **show only LW**, **country=CAN**
+— all four addressed. Test growth: 803 → 1051 across the full Adams arc
+(+248 net new).
+
+---
+
 ## v0.23.4 — 2026-05-08 — Phase Jack Adams.10 / .11 (Team sort+filter, Depth/Favorites chrome)
 
 Headline: **The Team screen gains real per-screen sort/filter capability,

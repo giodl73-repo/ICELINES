@@ -106,13 +106,49 @@ impl TeamPosFilter {
     }
 }
 
-/// Country-code filter — deferred. Adams.10 ships sort +
-/// position filter; country (e.g. `country=CAN`) is Adams.10b.
-/// Cursor lives on `App::selected` like the legacy team flow.
+/// Phase Adams.12 — country-code filter cycle. `None` shows
+/// every country (default). Cycle order is the most common
+/// NHL nationalities: CAN → USA → SWE → FIN → RUS → CZE →
+/// SVK → back to None. Wider sets go through `:query
+/// country=XYZ` from the cmdbar.
+pub const COUNTRY_CYCLE: &[&str] = &["CAN", "USA", "SWE", "FIN", "RUS", "CZE", "SVK"];
+
+/// Phase Adams.12 — Team screen state. `country_filter` is
+/// `None` for "all countries"; `Some(code)` matches the bio's
+/// `nationality_code`. `force_hits_column` shows the Hits
+/// column regardless of sort key (so the user can sort by
+/// Points but still see Hits).
 #[derive(Debug, Clone, Default)]
 pub struct TeamScreenState {
     pub sort: TeamSort,
     pub pos_filter: TeamPosFilter,
+    pub country_filter: Option<&'static str>,
+    pub force_hits_column: bool,
+}
+
+impl TeamScreenState {
+    /// Phase Adams.12 — cycle the country filter through
+    /// COUNTRY_CYCLE plus the "all" position. Order: None →
+    /// CAN → USA → … → SVK → None.
+    pub fn cycle_country(&mut self) {
+        self.country_filter = match self.country_filter {
+            None => Some(COUNTRY_CYCLE[0]),
+            Some(cur) => {
+                let idx = COUNTRY_CYCLE.iter().position(|c| *c == cur).unwrap_or(0);
+                if idx + 1 >= COUNTRY_CYCLE.len() {
+                    None
+                } else {
+                    Some(COUNTRY_CYCLE[idx + 1])
+                }
+            }
+        };
+    }
+
+    /// Pretty label for the chrome title — `All` when no
+    /// filter, otherwise the 3-letter ISO code.
+    pub fn country_label(&self) -> &str {
+        self.country_filter.unwrap_or("All")
+    }
 }
 
 // ── Phase Masterton.1 / Adams.10 — chrome accessor ───────────────────────────
@@ -120,13 +156,17 @@ pub struct TeamScreenState {
 pub fn chrome(state: &TeamScreenState) -> crate::tui::chrome::ScreenChrome {
     use crate::tui::chrome::{KeyHint, ScreenChrome};
     let title = format!(
-        "Team · sort={} · pos={}",
+        "Team · sort={} · pos={} · country={} · hits={}",
         state.sort.label(),
-        state.pos_filter.label()
+        state.pos_filter.label(),
+        state.country_label(),
+        if state.force_hits_column { "on" } else { "off" }
     );
     let keybinds = vec![
         KeyHint::new("s", "cycle sort"),
         KeyHint::new("p", "cycle pos"),
+        KeyHint::new("c", "cycle country"),
+        KeyHint::new("h", "toggle hits col"),
         KeyHint::new("↑↓", "select"),
         KeyHint::new("Enter", "open card"),
         KeyHint::new("g", "add to group"),
@@ -138,10 +178,12 @@ pub fn chrome(state: &TeamScreenState) -> crate::tui::chrome::ScreenChrome {
 
 pub fn render(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
     let block = Block::default().borders(Borders::ALL).title(format!(
-        " {} — Roster  ·  s: sort ({})  ·  p: pos ({})  ·  Enter: open  ·  g: group ",
+        " {} — Roster  ·  s: sort ({})  ·  p: pos ({})  ·  c: country ({})  ·  h: hits ({})  ·  Enter: open ",
         abbrev,
         app.team.sort.label(),
         app.team.pos_filter.label(),
+        app.team.country_label(),
+        if app.team.force_hits_column { "on" } else { "off" },
     ));
     let inner = block.inner(area);
     f.render_widget(block, area);
@@ -159,30 +201,42 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
         return;
     }
 
-    // Apply filter then sort. Filter first so the sort doesn't
-    // waste cycles on dropped rows.
+    // Apply position + country filter, then sort. Filter first
+    // so the sort doesn't waste cycles on dropped rows.
     let mut filtered: Vec<&icelines_core::stats_repository::PlayerView<'_>> = team_views
         .iter()
-        .filter(|v| {
-            app.team
-                .pos_filter
-                .matches(v.position().abbreviation())
+        .filter(|v| app.team.pos_filter.matches(v.position().abbreviation()))
+        .filter(|v| match app.team.country_filter {
+            None => true,
+            Some(code) => v
+                .identity
+                .bio
+                .nationality_code
+                .as_deref()
+                .map(|c| c.eq_ignore_ascii_case(code))
+                .unwrap_or(false),
         })
         .collect();
     sort_team_views(&mut filtered, app.team.sort);
 
-    let header_extra = match app.team.sort {
-        TeamSort::Hits => "  Hits",
-        TeamSort::Goals => "    G",
-        _ => "",
-    };
+    // Hits column is shown when sort=Hits OR force_hits_column.
+    let show_hits = app.team.force_hits_column || matches!(app.team.sort, TeamSort::Hits);
+    let show_goals = matches!(app.team.sort, TeamSort::Goals);
+    let mut header_extra = String::new();
+    if show_goals {
+        header_extra.push_str("    G");
+    }
+    if show_hits {
+        header_extra.push_str("  Hits");
+    }
     let mut lines: Vec<Line> = vec![
         Line::from(format!(
-            "  {} of {} players  ·  sort: {}  ·  pos: {}  ·  s/p cycle  ·  ↑↓ select  ·  Enter open",
+            "  {} of {} players  ·  sort: {}  ·  pos: {}  ·  country: {}  ·  s/p/c/h cycle",
             filtered.len(),
             team_views.len(),
             app.team.sort.label(),
             app.team.pos_filter.label(),
+            app.team.country_label(),
         )),
         Line::from(""),
         Line::from(format!(
@@ -201,16 +255,18 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
             .map(|p| format!("{:.1}", p))
             .unwrap_or_else(|| "—".to_owned());
         let name = v.full_name().chars().take(22).collect::<String>();
-        let extra = match app.team.sort {
-            TeamSort::Hits => format!(
+        let mut extra = String::new();
+        if show_goals {
+            extra.push_str(&format!("  {:>4}", v.goals()));
+        }
+        if show_hits {
+            extra.push_str(&format!(
                 "  {:>4}",
                 v.hits()
                     .map(|h| h.to_string())
                     .unwrap_or_else(|| "—".to_owned())
-            ),
-            TeamSort::Goals => format!("  {:>4}", v.goals()),
-            _ => String::new(),
-        };
+            ));
+        }
 
         let text = format!(
             "  {:<22} {:<4}  {:>6}  {:>7}{}",
@@ -446,6 +502,8 @@ mod tests {
         let keys: Vec<&'static str> = c.keybinds.iter().map(|k| k.key).collect();
         assert!(keys.contains(&"s"));
         assert!(keys.contains(&"p"));
+        assert!(keys.contains(&"c"), "Adams.12: country keybind exposed");
+        assert!(keys.contains(&"h"), "Adams.12: hits-toggle keybind exposed");
     }
 
     #[test]
@@ -453,9 +511,68 @@ mod tests {
         let s = TeamScreenState {
             sort: TeamSort::Hits,
             pos_filter: TeamPosFilter::Forwards,
+            country_filter: Some("CAN"),
+            force_hits_column: true,
         };
         let c = chrome(&s);
         assert!(c.title.contains("sort=Hits"));
         assert!(c.title.contains("pos=F"));
+        assert!(c.title.contains("country=CAN"));
+        assert!(c.title.contains("hits=on"));
+    }
+
+    // ── Phase Adams.12 — country cycle + hits-column toggle ────────────────
+
+    #[test]
+    fn l0_team_country_cycles_through_all_codes() {
+        let mut s = TeamScreenState::default();
+        assert_eq!(s.country_filter, None);
+        s.cycle_country();
+        assert_eq!(s.country_filter, Some("CAN"));
+        s.cycle_country();
+        assert_eq!(s.country_filter, Some("USA"));
+        s.cycle_country();
+        assert_eq!(s.country_filter, Some("SWE"));
+        // Step through the rest.
+        for _ in 0..(COUNTRY_CYCLE.len() - 3) {
+            s.cycle_country();
+        }
+        // After cycling through all of COUNTRY_CYCLE, returns to None.
+        s.cycle_country();
+        assert_eq!(
+            s.country_filter, None,
+            "cycle_country must wrap None → CAN → … → SVK → None"
+        );
+    }
+
+    #[test]
+    fn l0_team_country_label_is_all_when_none() {
+        let s = TeamScreenState::default();
+        assert_eq!(s.country_label(), "All");
+    }
+
+    #[test]
+    fn l0_team_country_label_uses_iso_code_when_set() {
+        let mut s = TeamScreenState::default();
+        s.country_filter = Some("FIN");
+        assert_eq!(s.country_label(), "FIN");
+    }
+
+    #[test]
+    fn l0_team_default_force_hits_column_is_false() {
+        let s = TeamScreenState::default();
+        assert!(!s.force_hits_column);
+    }
+
+    #[test]
+    fn l0_team_country_cycle_includes_canonical_codes() {
+        // The cycle must include CAN, USA, SWE, FIN — the four
+        // countries that account for ~85% of NHL roster.
+        for code in &["CAN", "USA", "SWE", "FIN"] {
+            assert!(
+                COUNTRY_CYCLE.contains(code),
+                "COUNTRY_CYCLE must include {code:?}"
+            );
+        }
     }
 }

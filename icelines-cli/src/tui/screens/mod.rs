@@ -4232,6 +4232,35 @@ mod adams_4_render_boundary_tests {
         assert_eq!(app.team.pos_filter, TeamPosFilter::Defense);
     }
 
+    /// Adams.12 — pressing `c` on Team cycles country filter.
+    #[test]
+    fn l1_adams_team_c_cycles_country() {
+        use crate::tui::event::Action;
+        let mut app = App::new(true);
+        app.mdi = Some(MdiLayout::default());
+        app.screen = Screen::Team("EDM".to_owned());
+        assert_eq!(app.team.country_filter, None);
+        app.handle(Action::Char('c'));
+        assert_eq!(app.team.country_filter, Some("CAN"));
+        app.handle(Action::Char('c'));
+        assert_eq!(app.team.country_filter, Some("USA"));
+    }
+
+    /// Adams.12 — pressing `h` on Team toggles the Hits column
+    /// independent of sort.
+    #[test]
+    fn l1_adams_team_h_toggles_hits_column() {
+        use crate::tui::event::Action;
+        let mut app = App::new(true);
+        app.mdi = Some(MdiLayout::default());
+        app.screen = Screen::Team("EDM".to_owned());
+        assert!(!app.team.force_hits_column);
+        app.handle(Action::Char('h'));
+        assert!(app.team.force_hits_column);
+        app.handle(Action::Char('h'));
+        assert!(!app.team.force_hits_column);
+    }
+
     /// Adams.10 — `s` on a non-Team screen does NOT touch
     /// `app.team.sort` (e.g., Goalies' `s` cycles its own sort).
     #[test]
