@@ -170,6 +170,7 @@ pub enum Screen {
     GoalieDetailById(PlayerId),
     Transactions, // league-wide moves feed (Phase T.5)
     Favorites,    // Phase Foster.2 — favorites dashboard
+    Poach,        // Phase Selke.5 — fantasy poacher board
 }
 
 pub struct App {
@@ -334,6 +335,14 @@ fn is_text_input_active(app: &App) -> bool {
                 app.queries.mode,
                 QueryMode::SaveName | QueryMode::FilterEdit
             ))
+}
+
+fn digit_for_tab_index(n: usize) -> char {
+    if n == 9 {
+        '0'
+    } else {
+        char::from_digit((n + 1) as u32, 10).unwrap_or('?')
+    }
 }
 
 impl App {
@@ -1576,13 +1585,15 @@ impl App {
             }
 
             Action::GoToTab(n) => {
-                // 1–8: League, Depth, Stats(Queries), Goalies, Scores,
-                // Schedule, Transactions, Playoffs.
+                // 0-indexed tab jump: League, Depth, Stats, Goalies,
+                // Favorites, Poach, Scores, Schedule, Transactions, Playoffs.
                 let tabs = [
                     Screen::Home,
                     Screen::Depth,
                     Screen::Queries,
                     Screen::Goalies,
+                    Screen::Favorites,
+                    Screen::Poach,
                     Screen::Tonight,
                     Screen::Schedule,
                     Screen::Transactions,
@@ -1807,7 +1818,7 @@ impl App {
             Action::AddToGroup => self.date_picker.input.push('g'),
             Action::AddToFavorites => self.date_picker.input.push('f'),
             Action::GoToTab(n) => {
-                let ch = char::from_digit((n + 1) as u32, 10).unwrap_or('?');
+                let ch = digit_for_tab_index(n);
                 self.date_picker.input.push(ch);
             }
             _ => {}
@@ -1936,7 +1947,7 @@ impl App {
             Action::AddToFavorites => self.schedule.query.push('f'),
             Action::GoToTab(n) => {
                 // Map digit-tabs back to their numeric character
-                let ch = char::from_digit((n + 1) as u32, 10).unwrap_or('?');
+                let ch = digit_for_tab_index(n);
                 self.schedule.query.push(ch);
             }
             // '/' while already in search mode — ignore (don't reopen, don't insert)
@@ -1993,7 +2004,7 @@ impl App {
             Action::AddToGroup => self.queries.save_name.push('g'),
             Action::AddToFavorites => self.queries.save_name.push('f'),
             Action::GoToTab(n) => {
-                let ch = char::from_digit((n + 1) as u32, 10).unwrap_or('?');
+                let ch = digit_for_tab_index(n);
                 self.queries.save_name.push(ch);
             }
             // '/' while typing — ignore (don't reopen, don't insert)
@@ -2232,7 +2243,7 @@ impl App {
             Action::Help => self.cmdbar_push('?'),
             Action::Search => self.cmdbar_push('/'),
             Action::GoToTab(n) => {
-                let ch = char::from_digit((n + 1) as u32, 10).unwrap_or('?');
+                let ch = digit_for_tab_index(n);
                 self.cmdbar_push(ch)
             }
             // Phase Adams.8 — Up/Down walk command history.
@@ -2562,7 +2573,7 @@ impl App {
             Action::AddToGroup => self.txs.search_query.push('g'),
             Action::AddToFavorites => self.txs.search_query.push('f'),
             Action::GoToTab(n) => {
-                let ch = char::from_digit((n + 1) as u32, 10).unwrap_or('?');
+                let ch = digit_for_tab_index(n);
                 self.txs.search_query.push(ch);
             }
             Action::Search => {}
@@ -3362,6 +3373,13 @@ impl App {
                     self.screen = Screen::GoalieDetailById(pid);
                 }
             }
+            Screen::Poach => {
+                if let Some(pid) = crate::tui::screens::poach::selected_player_id(self) {
+                    self.prev_screen = Some(Screen::Poach);
+                    self.screen = Screen::PlayerById(pid);
+                    self.selected = 0;
+                }
+            }
             // Scores: Enter on a game row opens GameDetail keyed by game_id.
             Screen::Tonight => {
                 if let Some(game_id) = self.selected_game_id() {
@@ -3390,7 +3408,8 @@ impl App {
             Screen::Depth | Screen::DepthTeam(_) => Screen::Queries,
             Screen::Queries | Screen::Projections | Screen::Search => Screen::Goalies,
             Screen::Goalies | Screen::GoalieDetailById(_) => Screen::Favorites,
-            Screen::Favorites => Screen::Tonight,
+            Screen::Favorites => Screen::Poach,
+            Screen::Poach => Screen::Tonight,
             Screen::Tonight | Screen::GameDetail(_) => Screen::Schedule,
             Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => {
                 Screen::Transactions
@@ -3419,7 +3438,8 @@ impl App {
             Screen::Queries | Screen::Projections | Screen::Search => Screen::Depth,
             Screen::Goalies | Screen::GoalieDetailById(_) => Screen::Queries,
             Screen::Favorites => Screen::Goalies,
-            Screen::Tonight | Screen::GameDetail(_) => Screen::Favorites,
+            Screen::Poach => Screen::Favorites,
+            Screen::Tonight | Screen::GameDetail(_) => Screen::Poach,
             Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => {
                 Screen::Tonight
             }
@@ -5910,6 +5930,10 @@ mod tests {
                 '4' => Some(Action::GoToTab(3)),
                 '5' => Some(Action::GoToTab(4)),
                 '6' => Some(Action::GoToTab(5)),
+                '7' => Some(Action::GoToTab(6)),
+                '8' => Some(Action::GoToTab(7)),
+                '9' => Some(Action::GoToTab(8)),
+                '0' => Some(Action::GoToTab(9)),
                 ' ' => Some(Action::Space),
                 _ => Some(Action::Char(c)),
             }
@@ -5964,8 +5988,8 @@ mod tests {
         //   'g' → Action::AddToGroup
         //   '>' → Char('>')
         //   '=' → Char('=')
-        //   '3' → Action::GoToTab(2)  (event mapper rewrites 1-6)
-        //   '0' → Char('0')           (event mapper doesn't touch 0)
+        //   '3' → Action::GoToTab(2)  (event mapper rewrites digit tabs)
+        //   '0' → Action::GoToTab(9)
         app.handle(Action::Space);
         app.handle(Action::AddToGroup);
         app.handle(Action::Space);

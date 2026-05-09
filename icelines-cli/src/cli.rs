@@ -737,6 +737,8 @@ pub enum TuiSurface {
     Stats,
     /// Goalie leaderboard.
     Goalies,
+    /// Fantasy poacher board.
+    Poach,
     /// Tonight's games + boxscores.
     Scores,
     /// Weekly + season schedule.
@@ -781,6 +783,7 @@ impl TuiSurface {
             TuiSurface::Depth => ScreenSpec::Nav(NavSpec::Depth),
             TuiSurface::Stats => ScreenSpec::Nav(NavSpec::Queries),
             TuiSurface::Goalies => ScreenSpec::Nav(NavSpec::Goalies),
+            TuiSurface::Poach => ScreenSpec::Nav(NavSpec::Poach),
             TuiSurface::Scores => ScreenSpec::Nav(NavSpec::Tonight),
             TuiSurface::Schedule => ScreenSpec::Nav(NavSpec::Schedule),
             TuiSurface::Transactions => ScreenSpec::Nav(NavSpec::Transactions),
@@ -813,6 +816,7 @@ mod tui_surface_tests {
             ("depth", ScreenSpec::Nav(NavSpec::Depth)),
             ("stats", ScreenSpec::Nav(NavSpec::Queries)),
             ("goalies", ScreenSpec::Nav(NavSpec::Goalies)),
+            ("poach", ScreenSpec::Nav(NavSpec::Poach)),
             ("scores", ScreenSpec::Nav(NavSpec::Tonight)),
             ("schedule", ScreenSpec::Nav(NavSpec::Schedule)),
             ("transactions", ScreenSpec::Nav(NavSpec::Transactions)),

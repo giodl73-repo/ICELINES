@@ -46,6 +46,8 @@ pub enum Command {
     Stats,
     /// `goalies` — workspace becomes Goalies leaderboard.
     Goalies,
+    /// `poach` — workspace becomes Fantasy Poacher.
+    Poach,
     GoaliesKv {
         args: crate::tui::filter_state::RosterKvArgs,
     },
@@ -269,6 +271,7 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
                 }
             })?,
         }),
+        "poach" if args.trim().is_empty() => Ok(Command::Poach),
         "transactions" | "txs" | "tx" => Ok(Command::Transactions),
         "playoffs" => Ok(Command::Playoffs),
         "depth" if args.trim().is_empty() => Ok(Command::Depth),
@@ -542,6 +545,10 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
             ExecResult::Continue
         }
         Command::GoaliesKv { args } => exec_goalies_kv(app, args),
+        Command::Poach => {
+            app.screen = Screen::Poach;
+            ExecResult::Continue
+        }
         Command::Transactions => {
             app.screen = Screen::Transactions;
             ExecResult::Continue
@@ -1040,6 +1047,7 @@ mod tests {
         for (input, expected) in [
             ("stats", Command::Stats),
             ("goalies", Command::Goalies),
+            ("poach", Command::Poach),
             ("transactions", Command::Transactions),
             ("txs", Command::Transactions),
             ("playoffs", Command::Playoffs),
@@ -1508,6 +1516,7 @@ mod tests {
         let cases: Vec<(Command, Screen)> = vec![
             (Command::Stats, Screen::Queries),
             (Command::Goalies, Screen::Goalies),
+            (Command::Poach, Screen::Poach),
             (Command::Transactions, Screen::Transactions),
             (Command::Playoffs, Screen::Playoffs),
             (Command::Depth, Screen::Depth),

@@ -135,6 +135,7 @@ Output format: ONLY the canonical command string, no explanation, no markdown, n
 VERBS (no args):
   stats          → Stats / Queries screen
   goalies        → Goalies leaderboard
+  poach          → Fantasy poacher board
   transactions   → Transactions feed (alias: txs)
   playoffs       → Playoffs bracket
   depth          → Depth chart
@@ -153,6 +154,7 @@ VERBS (with args):
 ROSTER KV FORM:
   stats nationality=CAN pos=LW min-gp=20
   goalies sort=gaa min-gp=20 nationality=CAN saves=on
+  poach
   team EDM pos=LW nationality=CAN
   depth pos=LW nationality=CAN
   favorites sort=name nationality=CAN
@@ -686,6 +688,7 @@ mod tests {
         for landmark in &[
             "stats",
             "goalies",
+            "poach",
             "team <ABBR>",
             "query <filter-expression>",
             "/fav add",

@@ -225,6 +225,7 @@ switch ($Slice) {
     "selke" {
         Invoke-Test @("test", "-p", "icelines-core", "view_model::poach")
         Invoke-Test @("test", "-p", "icelines-cli", "--bin", "icelines", "l0_poach")
+        Invoke-Test @("test", "-p", "icelines-cli", "--bin", "icelines", "l0_poach_tui")
         Invoke-Test @("test", "-p", "icelines-cli", "--bin", "icelines", "l0_watch")
         Invoke-Test @("test", "-p", "icelines-web", "l1_poach")
     }

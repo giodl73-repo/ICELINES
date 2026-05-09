@@ -26,6 +26,7 @@ icelines menu             # don't know which surface you want? Pick from a menu.
 # Or boot directly on a specific surface:
 icelines tui scores               # tonight's games
 icelines tui goalies              # goalie leaderboard
+icelines tui poach                # fantasy poacher board
 icelines tui player Bedard        # Bedard's card cold
 icelines tui team EDM             # Edmonton depth chart
 ```

@@ -516,11 +516,12 @@ The Reports overlay (`R`) persists toggles to `~/.icelines/config.toml`. Disable
 Boot directly on a specific surface instead of launching League and pressing a digit.
 
 ```bash
-# Nav-tab launchers (8 surfaces)
+# Nav-tab launchers
 icelines tui league                  # default — 32-team rankings
 icelines tui depth                   # cross-team depth chart
 icelines tui stats                   # interactive query builder
 icelines tui goalies                 # goalie leaderboard
+icelines tui poach                   # fantasy poacher board
 icelines tui scores                  # tonight's games + boxscores
 icelines tui schedule                # weekly + season schedule
 icelines tui transactions            # league-wide moves feed
@@ -554,6 +555,7 @@ icelines tui --mdi goalies               # MDI launching with goalies workspace
 
 # Equivalent flag form (for scripts)
 icelines tui --start goalies
+icelines tui --start poach
 icelines tui --start "player:Bedard"
 icelines tui --start "team:EDM"
 ```
@@ -566,7 +568,7 @@ already typed (for slash commands). Enter submits; Esc cancels.
 
 | Verb | Effect | Example |
 |---|---|---|
-| `stats` / `goalies` / `transactions` / `playoffs` / `depth` / `scores` / `schedule` / `favorites` | Swap workspace | `:goalies` |
+| `stats` / `goalies` / `poach` / `transactions` / `playoffs` / `depth` / `scores` / `schedule` / `favorites` | Swap workspace | `:poach` |
 | `player <name>` | Open player card | `:player Bedard` |
 | `team <ABBR>` | Team depth chart | `:team EDM` |
 | `team <ABBR> season` | Team's full schedule | `:team EDM season` |

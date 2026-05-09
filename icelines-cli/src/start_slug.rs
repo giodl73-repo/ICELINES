@@ -46,6 +46,7 @@ pub const SLUG_TABLE: &[(&str, NavSpec, Stability)] = &[
     ("transactions", NavSpec::Transactions, Stability::Canonical),
     ("moves", NavSpec::Transactions, Stability::Alias),
     ("playoffs", NavSpec::Playoffs, Stability::Canonical),
+    ("poach", NavSpec::Poach, Stability::Canonical),
 ];
 
 /// Nav-tab variant — pure mapping, no parameter, no resolution needed.
@@ -59,6 +60,7 @@ pub enum NavSpec {
     Schedule,
     Transactions,
     Playoffs,
+    Poach,
 }
 
 impl NavSpec {
@@ -72,6 +74,7 @@ impl NavSpec {
             NavSpec::Schedule => Screen::Schedule,
             NavSpec::Transactions => Screen::Transactions,
             NavSpec::Playoffs => Screen::Playoffs,
+            NavSpec::Poach => Screen::Poach,
         }
     }
 }
@@ -421,6 +424,7 @@ mod tests {
             ("depth", NavSpec::Depth),
             ("stats", NavSpec::Queries),
             ("goalies", NavSpec::Goalies),
+            ("poach", NavSpec::Poach),
             ("scores", NavSpec::Tonight),
             ("schedule", NavSpec::Schedule),
             ("transactions", NavSpec::Transactions),
@@ -606,6 +610,7 @@ mod tests {
         let _ = NavSpec::Schedule.into_screen();
         let _ = NavSpec::Transactions.into_screen();
         let _ = NavSpec::Playoffs.into_screen();
+        let _ = NavSpec::Poach.into_screen();
     }
 
     // ── LB.3 — parameterized slugs ─────────────────────────────────────

@@ -7,6 +7,7 @@ pub mod home;
 pub mod misc;
 pub mod player;
 pub mod playoffs;
+pub mod poach;
 pub mod queries;
 pub mod schedule;
 pub mod search;
@@ -145,6 +146,7 @@ fn render_sdi(f: &mut Frame, app: &App) {
         Screen::CompsById(pid) => comps::render_by_id(f, app, chunks[1], *pid),
         Screen::Depth => depth::render_league(f, app, chunks[1]),
         Screen::DepthTeam(abbrev) => depth::render_team(f, app, chunks[1], abbrev),
+        Screen::Poach => poach::render(f, app, chunks[1]),
         Screen::Schedule => schedule::render(f, app, chunks[1]),
         Screen::ScheduleTeam(team) => schedule::render_team_schedule(f, app, chunks[1], team),
         Screen::ScheduleMatchup(t1, t2) => schedule::render_matchup(f, app, chunks[1], t1, t2),
@@ -330,6 +332,7 @@ fn chrome_screen_label(s: &Screen) -> &'static str {
         Screen::Tonight => "Scores",
         Screen::Team(_) => "Team",
         Screen::Depth | Screen::DepthTeam(_) => "Depth",
+        Screen::Poach => "Poach",
         Screen::Favorites => "Favorites",
         Screen::PlayerById(_) => "Player",
         Screen::CompsById(_) => "Comps",
@@ -417,6 +420,7 @@ fn render_mdi_workspace(f: &mut Frame, app: &App, area: Rect) {
         Screen::CompsById(pid) => comps::render_by_id(f, app, inner, *pid),
         Screen::Depth => depth::render_league(f, app, inner),
         Screen::DepthTeam(abbrev) => depth::render_team(f, app, inner, abbrev),
+        Screen::Poach => poach::render(f, app, inner),
         Screen::Schedule => schedule::render(f, app, inner),
         Screen::ScheduleTeam(team) => schedule::render_team_schedule(f, app, inner, team),
         Screen::ScheduleMatchup(t1, t2) => schedule::render_matchup(f, app, inner, t1, t2),
@@ -530,6 +534,7 @@ fn screen_label(s: &Screen) -> &'static str {
         Screen::CompsById(_) => "Comps",
         Screen::Depth => "Depth",
         Screen::DepthTeam(_) => "Depth (team)",
+        Screen::Poach => "Poach",
         Screen::Schedule => "Schedule",
         Screen::ScheduleTeam(_) => "Schedule (team)",
         Screen::ScheduleMatchup(_, _) => "Schedule (matchup)",
@@ -586,10 +591,11 @@ fn tab_for_screen(screen: &Screen) -> usize {
         Screen::Queries | Screen::Projections | Screen::Search => 2, // Stats (default: Queries)
         Screen::Goalies | Screen::GoalieDetailById(_) => 3,          // Goalies
         Screen::Favorites => 4,                                      // Favorites (Foster.2)
-        Screen::Tonight | Screen::GameDetail(_) => 5,                // Scores
-        Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => 6, // Schedule
-        Screen::Transactions => 7,                                   // Transactions
-        Screen::Playoffs | Screen::SeriesDetail(_) => 8,             // Playoffs
+        Screen::Poach => 5,                                          // Poach (Selke.5)
+        Screen::Tonight | Screen::GameDetail(_) => 6,                // Scores
+        Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => 7, // Schedule
+        Screen::Transactions => 8,                                   // Transactions
+        Screen::Playoffs | Screen::SeriesDetail(_) => 9,             // Playoffs
         // Groups is not a tab (Phase T+1): reachable via `g` from anywhere.
         _ => 99, // no tab (Fetch, Help, Groups)
     }
@@ -615,6 +621,7 @@ fn active_chrome(app: &App) -> crate::tui::chrome::ScreenChrome {
         // Phase Adams.11 — Depth + Favorites chrome.
         Screen::Depth | Screen::DepthTeam(_) => depth::chrome(app.depth_mode, &app.depth_filters),
         Screen::Favorites => favorites::chrome(&app.favorites),
+        Screen::Poach => poach::chrome(),
         // Sub-screens and other screens use empty chrome for now.
         // Masterton.2 will add accessors for the rest.
         _ => crate::tui::chrome::ScreenChrome::default(),
@@ -715,6 +722,7 @@ fn render_nav(f: &mut Frame, app: &App, area: Rect) {
         "Stats",
         "Goalies",
         "Favorites",
+        "Poach",
         "Scores",
         "Schedule",
         "Transactions",
@@ -840,11 +848,11 @@ mod app_snapshot_tests {
         buffer_text(term.backend().buffer())
     }
 
-    /// The 8 canonical tabs must appear in the nav bar on every screen.
+    /// The canonical tabs must appear in the nav bar on every screen.
     /// Catches: tab dropped from the array, label renamed, layout truncated
     /// at common widths.
     #[test]
-    fn l0_app_nav_bar_renders_all_eight_tabs_at_120_cols() {
+    fn l0_app_nav_bar_renders_all_tabs_at_120_cols() {
         let app = App::new(true);
         let text = render_app_to_text(&app, 120, 30);
         for label in [
@@ -852,6 +860,8 @@ mod app_snapshot_tests {
             "Depth",
             "Stats",
             "Goalies",
+            "Favorites",
+            "Poach",
             "Scores",
             "Schedule",
             "Transactions",
@@ -890,6 +900,7 @@ mod app_snapshot_tests {
             Screen::Tonight,
             Screen::Projections,
             Screen::Goalies,
+            Screen::Poach,
             Screen::Schedule,
             Screen::Playoffs,
             Screen::Transactions,
@@ -1317,11 +1328,11 @@ mod app_snapshot_tests {
 
     // ── Tab cycling ──────────────────────────────────────────────────────────
 
-    /// Tab from Home cycles forward through all 9 tabs and wraps back
-    /// (Phase Foster.2 inserts Favorites between Goalies and Scores).
+    /// Tab from Home cycles forward through all tabs and wraps back
+    /// (Phase Foster.2 inserts Favorites; Phase Selke inserts Poach).
     /// Catches tab table regressions (skipped tabs, missing screens).
     #[test]
-    fn l1_userflow_tab_cycles_through_all_eight_tabs() {
+    fn l1_userflow_tab_cycles_through_all_tabs() {
         let (_dir, store) = empty_store_in_tempdir();
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
@@ -1332,6 +1343,7 @@ mod app_snapshot_tests {
             Screen::Queries,
             Screen::Goalies,
             Screen::Favorites,
+            Screen::Poach,
             Screen::Tonight,
             Screen::Schedule,
             Screen::Transactions,
@@ -1365,11 +1377,12 @@ mod app_snapshot_tests {
         );
         app.handle(Action::TabPrev);
         assert_eq!(app.screen, Screen::Transactions);
+        app.handle(Action::TabPrev);
+        assert_eq!(app.screen, Screen::Schedule);
     }
 
     /// Numeric jump: GoToTab(n) lands on the right screen for each n.
-    /// Note: GoToTab is 0-indexed — the keymap (Char('1')→0, …, Char('8')→7)
-    /// translates user-visible 1–8 into this enum's 0–7.
+    /// Note: GoToTab is 0-indexed.
     #[test]
     fn l1_userflow_numeric_keys_jump_to_tab() {
         let (_dir, store) = empty_store_in_tempdir();
@@ -1382,10 +1395,12 @@ mod app_snapshot_tests {
             (1, Screen::Depth),
             (2, Screen::Queries),
             (3, Screen::Goalies),
-            (4, Screen::Tonight),
-            (5, Screen::Schedule),
-            (6, Screen::Transactions),
-            (7, Screen::Playoffs),
+            (4, Screen::Favorites),
+            (5, Screen::Poach),
+            (6, Screen::Tonight),
+            (7, Screen::Schedule),
+            (8, Screen::Transactions),
+            (9, Screen::Playoffs),
         ];
         for (n, want) in mapping {
             app.handle(Action::GoToTab(n));
@@ -4602,6 +4617,10 @@ mod adams_4_render_boundary_tests {
             '4' => Some(Action::GoToTab(3)),
             '5' => Some(Action::GoToTab(4)),
             '6' => Some(Action::GoToTab(5)),
+            '7' => Some(Action::GoToTab(6)),
+            '8' => Some(Action::GoToTab(7)),
+            '9' => Some(Action::GoToTab(8)),
+            '0' => Some(Action::GoToTab(9)),
             ' ' => Some(Action::Space),
             _ => Some(Action::Char(c)),
         }

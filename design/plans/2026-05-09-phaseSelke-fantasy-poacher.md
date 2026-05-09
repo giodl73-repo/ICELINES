@@ -294,6 +294,14 @@ Acceptance:
 - Detail pane explains score components.
 - Watch rules can be viewed and toggled.
 
+Initial implementation note:
+
+- `icelines tui poach` and `icelines tui --start poach` open a first TUI board
+  over `PoachBoardView`, including score, confidence, explanation, category
+  fit, schedule source state, and risk summary.
+- The Poach tab is in the normal tab ring and MDI command bar. `Enter` opens
+  the selected player card. Watch-rule editing/toggling remains pending.
+
 ---
 
 ## Selke.6 - Web poach board
