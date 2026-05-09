@@ -78,7 +78,12 @@ phase plan owns the canonical statements and the test references.
 | AI-07 | Algorithm | Any `ReportKind` read by ≥2 surfaces MUST be promoted to a typed sub-struct + a `StatCategory` before the second consumer ships. | OPEN (L.6 sets up the boundary; promotion happens case-by-case) |
 | AI-08 | Algorithm | Aggregations over `&[PlayerView]` that consume catalog reads MUST call `debug_assert_view_window_homogeneous`. | VERIFIED (Hart.6.6 + L.2.2) |
 | AI-09 | Algorithm | `aggregate_read(views)` is strict-propagation — Some only when every window has Some; any None propagates. | VERIFIED (L.2.2) |
+| AI-10 | Algorithm | Every `PoachPlayerRow` has at least one `PoachExplanation`; a score without reasons is invalid. | OPEN (Selke fixture pending) |
+| AI-11 | Algorithm | `PoachScore` is deterministic for a fixed fixture, clock, query, scoring scheme, source state, and watch/roster import generation. | OPEN (Selke fixture pending) |
+| AI-12 | Algorithm | Unknown deployment or ownership state never subtracts from `PoachScore` by itself; only measured or estimated negative evidence may discount a player. | OPEN (Selke fixture pending) |
+| AI-13 | Algorithm | Every `PoachScore` component exposes status, source/unit, clamp, and value before any renderer sees it. | OPEN (Selke fixture pending) |
 | II-04 | Interface | `--sort <stat-key>` accepts every `StatId::cli_key()`; unknown keys exit non-zero with the list of valid keys. | VERIFIED (L.5.1) |
 | II-05 | Interface | `--filter "<key><op><value>"` parses with op in `{>=, <=, ==, =}`; whitespace allowed; 7-variant `FilterParseError`; NaN/inf/locale-comma all parse-error. | VERIFIED (L.2.4 + L.3.1) |
 | II-06 | Interface | `--filter` and `--sort` accept identical grammars and StatId key sets across `query leaders / player / compare / goalies` + `export md`. Same-StatId multi-filter normalization rule applies uniformly. | PARTIAL (L.3.1 wired `query leaders`; rolling to player/compare carries forward) |
+| II-07 | Interface | CLI, TUI, web, markdown, and JSON poacher surfaces render from `PoachBoardView` or `PoachReportView`; renderers do not recompute ranking or recommendation logic. | OPEN (Selke implementation pending) |
 | SI-03 | Site | Every site page that surfaces a stat name uses `StatId::label()`; site templates never hard-code a stat name string. | VERIFIED (L.5b — grep fence + allowlist) |

@@ -216,6 +216,58 @@ is `if gp < MIN_GP_THRESHOLD { return None; }`.
 
 ---
 
+### AP-05 - PoachScore Magic Number Without Reasons
+
+**Description**: A fantasy-poacher board can look precise while hiding why a
+player was recommended. If a row exposes only `PoachScore`, users cannot tell
+whether the score came from measured category fit, estimated deployment,
+schedule edge, stale availability, or a deferred component.
+
+**Status**: OPEN
+
+**Structural solution required**: `PoachPlayerRow` must include explanation rows
+for component impact, status, source, freshness, and risk. Renderers may
+summarize these rows, but may not drop them from JSON/report output.
+
+**Test required**: Selke fixture test asserting every poach row has at least one
+explanation and that deferred/unavailable components are disclosed.
+
+---
+
+### AP-06 - Missing Deployment Data Treated As Negative Evidence
+
+**Description**: Line, PP, PK, and shift data may be unavailable even when a
+player is a valid add. Treating unknown deployment as "not promoted" creates
+false negatives and makes the poacher punish data gaps.
+
+**Status**: OPEN
+
+**Structural solution required**: `DeploymentSignal::Unknown` contributes no
+negative score by itself. Estimated deployment must name the proxy used, such as
+TOI trend, shot trend, goalie-start proxy, game-log usage, or manual watch note.
+
+**Test required**: Selke fixture test where a player with unknown line data and
+strong measured category fit is not penalized by the deployment component.
+
+---
+
+### AP-07 - Schedule Overfitting
+
+**Description**: A player with extra games can outrank a clearly better category
+fit if schedule value is overweighted or not clamped. This turns a useful weekly
+edge into noisy add/drop churn.
+
+**Status**: OPEN
+
+**Structural solution required**: `schedule_value` is clamped separately and
+cannot exceed the spec weight without a same-commit spec update and fixture
+change. Reports must show schedule edge beside category fit and risk.
+
+**Test required**: Known-value fixture where a weak player with many games does
+not outrank a stronger category-fit player solely due to schedule.
+
+---
+
 ## Pipeline Pitfalls
 
 ### PP-01 — Partial Fetch Producing Silent Gaps

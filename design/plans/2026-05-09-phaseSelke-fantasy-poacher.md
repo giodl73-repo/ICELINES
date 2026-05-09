@@ -3,7 +3,7 @@
 **Date**: 2026-05-09
 **Status**: Draft - planned after Campbell; can run after Messier or in parallel with surface parity if scoped carefully
 **Trophy**: Frank J. Selke Trophy *(reuse)*. Fit: defensive/two-way value. This phase finds players whose real fantasy usefulness is hidden by role, deployment, category mix, schedule, or market perception.
-**Spec seeds**: `design/specs/platform-contracts.md`, future `design/specs/fantasy-poacher.md`
+**Spec seeds**: `design/specs/platform-contracts.md`, `design/specs/fantasy-poacher.md`
 **Estimated**: 5-8 sub-phases
 
 ---
@@ -179,7 +179,7 @@ Selke.8  Docs, pitfalls, invariants, and closeout
 
 ## Selke.1 - Spec and scoring model
 
-Create `design/specs/fantasy-poacher.md`.
+Create and keep current `design/specs/fantasy-poacher.md`.
 
 Acceptance:
 
@@ -187,6 +187,8 @@ Acceptance:
 - Each component says whether it is measured, estimated, or deferred.
 - Missing ownership/availability data has a local fallback: groups/watchlists or
   fantasy roster imports.
+- Query, ViewModel, report, fixture, pitfall, and invariant contracts are named
+  before code lands.
 
 ---
 

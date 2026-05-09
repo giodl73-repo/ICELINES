@@ -26,6 +26,7 @@ For active work and backlog, see [`../plans/INDEX.md`](../plans/INDEX.md).
 | [fantasy-scheme.md](fantasy-scheme.md) | Implemented | Scheme engine, weights, compute_fantasy_score |
 | [scheme-customization.md](scheme-customization.md) | Implemented | `scheme list/show/fromcsv` CLI, user vs built-in |
 | [fantasy-leagues.md](fantasy-leagues.md) | Implemented (partial) | SQLite + scoring + trade eval + axum server. Goalie fantasy scoring deferred (data exists post-Vezina; needs wiring). H2H matchups deferred. |
+| [fantasy-poacher.md](fantasy-poacher.md) | Draft | Phase Selke player-poacher scoring, watch rules, reports, and CLI/TUI/web ViewModel contract. |
 | [group-management.md](group-management.md) | Implemented | Player watchlists: SQLite, CRUD, TUI g/f keys |
 | [player-analysis.md](player-analysis.md) | Implemented | PlayerFilter, similarity search, career arc |
 | [scouting-reports.md](scouting-reports.md) | Implemented | 8-section player report (terminal/markdown/json). Test coverage added in Hart.5c.2. |
@@ -69,7 +70,7 @@ For active work and backlog, see [`../plans/INDEX.md`](../plans/INDEX.md).
 
 **Player analytics**: `player-analysis.md` → `query-engine.md` → `projection-engine.md` → `scouting-reports.md`
 
-**Fantasy stack**: `fantasy-scheme.md` → `scheme-customization.md` → `fantasy-leagues.md`
+**Fantasy stack**: `fantasy-scheme.md` → `scheme-customization.md` → `fantasy-leagues.md` → `fantasy-poacher.md`
 
 **TUI**: `tui-v2.md` → `season-timetravel.md` → `scores.md` / `schedule.md` / `playoffs.md` → `tui-admin-overlay.md`
 
