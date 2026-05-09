@@ -1,201 +1,452 @@
-# Phase Messier — execution plan
+# Phase Messier — execution plan v0.2
 
-**Spec**: `design/specs/phase-messier-overview.md`
+**Spec**: `design/specs/phase-messier-overview.md` v0.2
+**Review note**: `design/notes/2026-05-08-phaseMessier-roles-review.md`
 **Target release**: v0.24.0
-**Estimated**: 6 sub-phases × ~half-day each
+**Estimated**: 6 sub-phases × ~half-day–1 day each (Messier.1 + .6 are larger)
+**Test budget**: +95 (1051 → 1146)
 
 ---
 
-## Sub-phase Messier.1 — RosterFilterState extraction
+## Decisions resolved (post user decision A-E)
+
+- **A**: rename `c` → `n` (nationality)
+- **B**: Goalies role-class via GP-share-of-team-minutes (≥60%)
+- **C**: invest in type modeling — `CountryCode([u8;3])`, typed
+  `RosterKvArgs`, `ForcedColumns: bitflags!`
+- **D**: 95-test realistic budget
+- **E**: filter-chain memoization in Messier.1
+
+---
+
+## Sub-phase Messier.1 — RosterFilterState extraction + types + memoization
 
 ### Files
-- **NEW**: `icelines-cli/src/tui/filter_state.rs` — the shared struct.
-- **MODIFY**: `icelines-cli/src/tui/mod.rs` — register module.
-- **MODIFY**: `icelines-cli/src/tui/screens/team.rs`,
-  `goalies.rs`, `depth.rs`, `favorites.rs` — embed `filters` field.
+
+- **NEW**: `icelines-cli/src/tui/filter_state.rs` — types module
+- **NEW**: `icelines-cli/src/tui/filter_state/cache.rs` (or inline) — `FilterCache`
+- **MODIFY**: `icelines-cli/src/tui/mod.rs` — register module
+- **MODIFY**: `icelines-cli/src/tui/screens/team.rs` — embed `filters: RosterFilterState`; rename `TeamPosFilter` → `PosFilter`; replace `country_filter: Option<&'static str>` → `Option<CountryCode>`; replace `force_hits_column: bool` → `forced_columns: ForcedColumns`
+- **MODIFY**: `icelines-cli/src/tui/app.rs` — `pub team: TeamScreenState` (no shape change)
+- **NEW**: `icelines-cli/tests/messier_1_parity_snapshot.rs` — insta golden harness
+- **NEW**: `icelines-cli/benches/filter_chain.rs` — criterion perf L0
+- **MODIFY**: `icelines-cli/Cargo.toml` — add `bitflags`, `enumset` (or just bitflags), `insta` (dev-dep), `criterion` (dev-dep)
 
 ### Code sketch
 
 ```rust
 // tui/filter_state.rs
+use std::sync::Arc;
+use icelines_core::stats_repository::PlayerView;
 use icelines_query::QueryPlan;
 
-#[derive(Debug, Clone, Default)]
-pub struct RosterFilterState {
-    /// Position-class filter. Shared across player-list screens
-    /// because positions are universal.
-    pub pos_filter: PosFilter,
-    /// 3-letter ISO country code; None = all.
-    pub country_filter: Option<&'static str>,
-    /// Minimum games played. Where applicable (Goalies has it
-    /// existing; Stats / Team gain it in Messier.6).
-    pub min_gp: Option<u32>,
-    /// Columns to show beyond the screen's defaults. Toggled
-    /// by `h` etc.
-    pub forced_columns: Vec<ColumnId>,
-    /// Optional free-form Phase Art Ross plan applied as an
-    /// additional filter pass.
-    pub free_filter: Option<QueryPlan>,
+// ── CountryCode newtype (FORGE #1) ───────────────────────────
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct CountryCode([u8; 3]);
+
+#[derive(Debug, Clone, thiserror::Error)]
+pub enum CountryCodeError {
+    #[error("country code must be 3 ASCII letters; got {0:?}")]
+    NotThreeAscii(String),
 }
 
+impl CountryCode {
+    pub fn parse(s: &str) -> Result<Self, CountryCodeError> {
+        let trimmed = s.trim();
+        if trimmed.len() != 3 || !trimmed.is_ascii() {
+            return Err(CountryCodeError::NotThreeAscii(s.to_owned()));
+        }
+        let mut bytes = [0u8; 3];
+        for (i, b) in trimmed.as_bytes().iter().enumerate() {
+            bytes[i] = b.to_ascii_uppercase();
+        }
+        Ok(Self(bytes))
+    }
+    pub fn as_str(&self) -> &str {
+        // Safe — constructor enforces ASCII.
+        std::str::from_utf8(&self.0).unwrap_or("???")
+    }
+    pub const CAN: CountryCode = CountryCode([b'C', b'A', b'N']);
+    pub const USA: CountryCode = CountryCode([b'U', b'S', b'A']);
+    pub const SWE: CountryCode = CountryCode([b'S', b'W', b'E']);
+    pub const FIN: CountryCode = CountryCode([b'F', b'I', b'N']);
+    pub const RUS: CountryCode = CountryCode([b'R', b'U', b'S']);
+    pub const CZE: CountryCode = CountryCode([b'C', b'Z', b'E']);
+    pub const SVK: CountryCode = CountryCode([b'S', b'V', b'K']);
+}
+
+pub const COUNTRY_CYCLE: &[CountryCode] = &[
+    CountryCode::CAN, CountryCode::USA, CountryCode::SWE,
+    CountryCode::FIN, CountryCode::RUS, CountryCode::CZE,
+    CountryCode::SVK,
+];
+
+// ── PosFilter / GoalieRoleFilter (FORGE #8) ──────────────────
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum PosFilter { #[default] All, Forwards, Defense, C, LW, RW, LD, RD, G }
+pub enum PosFilter {
+    #[default] All, Forwards, Defense, C, LW, RW, LD, RD,
+}
 
 impl PosFilter {
     pub fn next(self) -> Self { /* cycle */ }
     pub fn matches(self, abbrev: &str) -> bool { /* shared predicate */ }
-    pub fn label(self) -> &'static str { /* "All"/"F"/.../"G" */ }
+    pub fn label(self) -> &'static str { /* "All"/"F"/.../"RD" */ }
 }
 
-// Country cycle re-exported from team.rs's COUNTRY_CYCLE.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum GoalieRoleFilter {
+    #[default] All, Starters, Backups,
+}
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ColumnId { Hits, Blocks, Toi, Saves, /* … */ }
+// ── ForcedColumns (FORGE #9) ─────────────────────────────────
+
+bitflags::bitflags! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+    pub struct ForcedColumns: u8 {
+        const HITS   = 0b00000001;
+        const BLOCKS = 0b00000010;
+        const TOI    = 0b00000100;
+        const SAVES  = 0b00001000;
+    }
+}
+
+// ── RosterFilterState + memoization (PACE #1) ────────────────
+
+#[derive(Debug, Clone, Default)]
+pub struct RosterFilterState {
+    pub pos_filter: PosFilter,
+    pub country_filter: Option<CountryCode>,
+    pub min_gp: u32,
+    pub forced_columns: ForcedColumns,
+    pub free_filter: Option<Arc<QueryPlan>>,
+    cached: Option<FilterCache>,
+}
+
+#[derive(Debug, Clone)]
+struct FilterCache {
+    repo_generation: u64,
+    plan_hash: u64,
+    filtered_pids: Vec<icelines_core::identity::PlayerId>,
+}
+
+impl RosterFilterState {
+    /// Phase Messier — invalidate the memoized cache on input.
+    /// Called by the keybind handlers and cmdbar dispatcher.
+    pub fn invalidate(&mut self) {
+        self.cached = None;
+    }
+
+    /// Phase Messier — compute (or reuse cached) filtered pid
+    /// list. Caller passes repo_generation to detect repo swap.
+    pub fn filter<'a>(
+        &mut self,
+        views: &'a [PlayerView<'a>],
+        repo_generation: u64,
+    ) -> &[icelines_core::identity::PlayerId] {
+        let plan_hash = self.compute_plan_hash();
+        if !matches!(&self.cached, Some(c) if c.repo_generation == repo_generation && c.plan_hash == plan_hash) {
+            self.cached = Some(FilterCache {
+                repo_generation,
+                plan_hash,
+                filtered_pids: self.compute_filtered_pids(views),
+            });
+        }
+        &self.cached.as_ref().unwrap().filtered_pids
+    }
+
+    fn compute_filtered_pids(&self, views: &[PlayerView<'_>]) -> Vec<_> {
+        // Single-pass filter (PACE #2)
+        views.iter()
+            .filter(|v| self.pos_filter.matches(v.position().abbreviation()))
+            .filter(|v| match self.country_filter {
+                None => true,
+                Some(cc) => v.identity.bio.nationality_code
+                    .as_deref()
+                    .and_then(|s| CountryCode::parse(s).ok())
+                    .map(|got| got == cc)
+                    .unwrap_or(false),
+            })
+            .filter(|v| v.gp() >= self.min_gp)
+            .filter(|v| match &self.free_filter {
+                None => true,
+                Some(plan) => /* eval via Constraint::matches with EvalCtx */,
+            })
+            .map(|v| v.id())
+            .collect()
+    }
+
+    fn compute_plan_hash(&self) -> u64 {
+        use std::hash::{Hash, Hasher};
+        let mut h = std::collections::hash_map::DefaultHasher::new();
+        self.pos_filter.hash(&mut h);
+        self.country_filter.hash(&mut h);
+        self.min_gp.hash(&mut h);
+        self.forced_columns.bits().hash(&mut h);
+        self.free_filter.as_ref().map(|p| Arc::as_ptr(p) as usize).hash(&mut h);
+        h.finish()
+    }
+}
+
+// ── Typed RosterKvArgs (FORGE #2 / EDGE #6) ──────────────────
+
+#[derive(Debug, Clone, Default)]
+pub struct RosterKvArgs {
+    pub sort: Option<String>,           // resolved per verb
+    pub pos: Option<PosFilter>,
+    pub country: Option<CountryCode>,
+    pub min_gp: Option<u32>,
+    pub forced_columns: ForcedColumns,
+}
+
+#[derive(Debug, Clone, thiserror::Error)]
+pub enum KvParseError {
+    #[error("unknown key {key:?} — try sort, pos, country/nationality, min-gp, hits")]
+    UnknownKey { key: String },
+    #[error("duplicate key {0:?}")]
+    DuplicateKey(String),
+    #[error("kv pair after positional only — got {token:?}")]
+    PositionalAfterKv { token: String },
+    #[error("invalid {key} value {raw:?}: {reason}")]
+    InvalidValue { key: &'static str, raw: String, reason: String },
+}
+
+pub fn parse_roster_kv(tokens: &[Token]) -> Result<RosterKvArgs, KvParseError> {
+    /* per-key dispatch with duplicate detection */
+}
 ```
 
-### Migration
+### Migration shim (FORGE #39)
 
-The existing `TeamScreenState.pos_filter`, `country_filter`,
-`force_hits_column` fields move into a `filters: RosterFilterState`
-sub-field. Tests assert behavior is identical:
+In Messier.1's commit, `team.rs` keeps `pub use PosFilter as TeamPosFilter;`
+so all Adams.10/.12 tests pass without rename churn. The shim is removed
+in a Messier.1-followup commit before Messier.2 lands.
+
+### Insta parity harness (BENCH #5)
 
 ```rust
-// Before
-app.team.pos_filter == TeamPosFilter::Forwards
-// After
-app.team.filters.pos_filter == PosFilter::Forwards
+// icelines-cli/tests/messier_1_parity_snapshot.rs
+use insta::assert_snapshot;
+use ratatui::backend::TestBackend;
+use ratatui::Terminal;
+
+#[test]
+fn messier_1_team_screen_renders_unchanged() {
+    // Set up app with bundled fixture (frozen — Wayne Gretzky era,
+    // see CLAUDE.md fixture pattern).
+    let app = build_canonical_app();
+    let backend = TestBackend::new(160, 50);
+    let mut term = Terminal::new(backend).unwrap();
+    term.draw(|f| crate::tui::screens::render(f, &app)).unwrap();
+    let buf = buffer_to_string(term.backend().buffer());
+    assert_snapshot!("team_screen_default", buf);
+}
 ```
 
-The Adams.10 enums (`TeamPosFilter`, `TeamSort`) get unified —
-`TeamPosFilter` deletes; the shared `PosFilter` takes over.
-`TeamSort` stays per-screen (it's the only thing that varies).
+Snapshot file `messier_1_parity_snapshot__team_screen_default.snap`
+checked in. CI compares post-refactor output byte-for-byte.
+
+### Perf L0 (PACE acceptance)
+
+```rust
+// icelines-cli/benches/filter_chain.rs (criterion)
+fn bench_filter_chain(c: &mut Criterion) {
+    let views: Vec<PlayerView> = build_700_player_fixture();
+    let mut state = RosterFilterState {
+        pos_filter: PosFilter::Forwards,
+        country_filter: Some(CountryCode::CAN),
+        min_gp: 20,
+        ..Default::default()
+    };
+    c.bench_function("filter_chain_n700", |b| {
+        b.iter(|| {
+            state.invalidate();
+            black_box(state.filter(black_box(&views), 1));
+        })
+    });
+}
+```
+
+Acceptance: ≤ 1ms median.
 
 ### Gauntlet
 
-- All Adams.10/.12 tests pass with the new struct shape.
+- All Adams.10/.12 tests pass with the new struct shape (via shim).
 - `cargo build` clean; clippy clean for new module.
-- No new warnings.
+- Insta snapshot diff = 0 bytes.
+- Criterion bench ≤ 1ms.
+- No new warnings in icelines-cli.
 
 ### Acceptance
 
-Pure refactor, zero UX change. If the Team screen demos identically
-to v0.23.5, Messier.1 lands.
+Pure refactor + cache layer. Behavior identical to v0.23.5 by insta.
 
 ---
 
 ## Sub-phase Messier.2 — Goalies adopts standard matrix
 
 ### Files
-- **MODIFY**: `icelines-cli/src/tui/screens/goalies.rs` — add
-  filter cycle handlers; expand chrome.
-- **MODIFY**: `icelines-cli/src/tui/app.rs` — add `c`/`h` arms for
-  Goalies (`p` arm needs role-class semantic decision).
 
-### Decision required
+- **MODIFY**: `icelines-cli/src/tui/screens/goalies.rs` — embed
+  `filters: RosterFilterState`, add `role_filter: GoalieRoleFilter`,
+  add `role_threshold_for_team: HashMap<TeamAbbr, GpSharePoint>`.
+- **MODIFY**: `icelines-cli/src/tui/app.rs` — add `p`/`n`/`h`/`f` arms.
 
-**Goalies position semantic** — open item from spec. Three options:
+### Goalies role-class (decision B)
 
-(a) `p` cycles **All / Starters / Backups** using a GP threshold
-    (e.g., GP ≥ 30 = Starter for the active season; recompute
-    threshold from active season length). Most defensible —
-    actually filters meaningful subsets.
-
-(b) `p` is a no-op chip "n/a for goalies" — keeps the matrix
-    consistent visually but adds nothing functional.
-
-(c) Skip `p` on Goalies entirely.
-
-**Recommendation: (a)** — use a 33%-of-team-GP threshold (e.g.,
-27 GP for an 82-game season). Implement as
-`PosFilter::GoalieRole(Starter|Backup|All)` or split: keep
-`PosFilter` for skaters, add `GoalieRoleFilter` enum scoped to
-Goalies state.
-
-### Code sketch
+GP-share-of-team-minutes, ≥60% threshold:
 
 ```rust
-// goalies.rs
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum GoalieRoleFilter {
-    #[default] All,
-    Starters,  // GP >= season_length / 3
-    Backups,   // GP < season_length / 3
+fn compute_role_threshold(team_goalies: &[&PlayerView<'_>]) -> Option<GpSharePoint> {
+    let total_team_gp: u32 = team_goalies.iter().map(|v| v.gp()).sum();
+    if total_team_gp == 0 { return None; }
+    let threshold = (total_team_gp * 60) / 100;
+    Some(GpSharePoint { team_gp_threshold: threshold })
 }
 
-pub struct GoaliesState {
-    pub sort: u8,                  // existing
-    pub min_gp: u32,               // existing
-    pub selected: usize,           // existing
-    pub filters: RosterFilterState, // adds country + forced_columns + free_filter
-    pub role_filter: GoalieRoleFilter, // goalie-specific
+// Render-time predicate
+fn matches_role(role: GoalieRoleFilter, view: &PlayerView, threshold: u32) -> bool {
+    match role {
+        GoalieRoleFilter::All => true,
+        GoalieRoleFilter::Starters => view.gp() >= threshold,
+        GoalieRoleFilter::Backups => view.gp() < threshold,
+    }
 }
 ```
 
-### Gauntlet
+Threshold computed once on screen entry (or `repo_swap`); cached per
+team.
 
-- `s` cycles unchanged.
-- `m` cycles unchanged.
-- `p` cycles `GoalieRoleFilter` and applies via a render filter pass.
-- `c` cycles country.
-- `h` toggles a `Saves` extra column.
-- Chrome lists all five (`s p c h m`).
-- 10 tests: cycle wraps, predicate, chrome, L1 dispatch.
+Chrome title shows the threshold:
+`Goalies · pos=Starters(GP≥27) · nationality=CAN`.
+
+### Code sketch (handler)
+
+```rust
+} else if self.screen == Screen::Goalies && c == 'p' {
+    self.goalies.role_filter = self.goalies.role_filter.next();
+    self.goalies.filters.invalidate();
+    self.selected = 0;
+    self.status = format!("Goalies role: {}", self.goalies.role_filter.label());
+} else if self.screen == Screen::Goalies && c == 'n' {
+    cycle_country(&mut self.goalies.filters);
+    self.selected = 0;
+    self.status = format!("Goalies nationality: {}", country_label(&self.goalies.filters));
+} else if self.screen == Screen::Goalies && c == 'h' {
+    self.goalies.filters.forced_columns.toggle(ForcedColumns::SAVES);
+    self.status = format!("Goalies Saves col: {}", on_off(&self.goalies.filters.forced_columns, ForcedColumns::SAVES));
+} else if self.screen == Screen::Goalies && c == 'f' {
+    /* open free-form filter overlay — same as Stats's f */
+    self.show_free_filter_for(Screen::Goalies);
+}
+```
+
+### Test budget (BENCH #18 calibrated)
+
+- 6 L0 (cycles + chrome + threshold computation)
+- 6 L1 (each keybind dispatch end-to-end)
+- 2 L1 (insta golden Goalies-default + Goalies-with-filters)
+- 2 L0 (`forced_columns::SAVES` toggle invariants — idempotent
+  toggle, no dedup needed because bitflags)
+
+Total: 16
 
 ### Acceptance
 
 Press `:goalies` Enter, then `p` `p` `p` cycles All → Starters →
-Backups → All. Press `c` cycles countries. Per-screen hint row
-shows `s=cycle sort · p=cycle role · c=cycle country · h=toggle
-saves col · m=cycle min-gp · …`.
+Backups → All. Press `n` cycles countries. Press `h` toggles Saves
+column. Press `f` opens free-form overlay. Per-screen hint row shows
+all six.
 
 ---
 
-## Sub-phase Messier.3 — Stats `c` country shortcut
+## Sub-phase Messier.3 — Stats `n` country shortcut + cmdbar parity
 
 ### Files
+
 - **MODIFY**: `icelines-cli/src/tui/screens/queries.rs` — extend
-  chrome's keybind list with `c`.
-- **MODIFY**: `icelines-cli/src/tui/app.rs` — add Char('c') arm
-  for Stats screen that opens the filter editor pre-filled.
+  chrome with `n`.
+- **MODIFY**: `icelines-cli/src/tui/app.rs` — add Char('n') arm for
+  Stats screen.
+- **MODIFY**: `icelines-cli/src/tui/command.rs` — `:stats country=X`
+  and `:stats nationality=X` both lower to Art Ross atom.
 
 ### Code sketch
 
 ```rust
 // app.rs handler
-} else if self.screen == Screen::Queries && c == 'c' {
-    // Open the existing filter editor with `country=` pre-filled.
+} else if self.screen == Screen::Queries && c == 'n' {
     self.queries.mode = QueryMode::FilterEdit;
-    self.queries.filter_text = "country=".to_owned();
-    // Cursor positioned after the `=`. (Implementation note:
-    // queries.rs FilterEdit mode renders text_input; cursor
-    // tracking is implicit by string length.)
+    self.queries.filter_text = "nationality=".to_owned();
     self.status = "Type a 3-letter country code, Enter to apply".to_owned();
+}
+
+// command.rs (Messier.6 lands the full kv path; Messier.3 stubs it)
+fn lower_stats_kv_to_atom(args: &RosterKvArgs) -> String {
+    let mut atoms: Vec<String> = Vec::new();
+    if let Some(cc) = args.country {
+        atoms.push(format!("nationality={}", cc.as_str()));
+    }
+    if let Some(min_gp) = args.min_gp {
+        atoms.push(format!("gp >= {min_gp}"));
+    }
+    if let Some(pos) = args.pos {
+        if pos != PosFilter::All {
+            atoms.push(format!("pos={}", pos.label()));
+        }
+    }
+    atoms.join(" AND ")
 }
 ```
 
-### Gauntlet
+### Round-trip test (EDGE #4 acceptance)
 
-- Stats screen with `c` opens FilterEdit mode with input
-  `"country="`.
-- User types `CAN` and Enter — filter applies via the existing
-  Phase Art Ross path.
-- Esc cancels back to Build mode.
-- Cmdbar `:stats country=CAN` lands as the same flow (Messier.6
-  picks this up).
+```rust
+#[test]
+fn l1_messier_3_stats_kv_lowers_to_same_ir_as_typed() {
+    let mut app1 = fresh_mdi_app();
+    type_cmd(&mut app1, ":stats country=CAN");
+    submit(&mut app1);
+
+    let mut app2 = fresh_mdi_app();
+    app2.screen = Screen::Queries;
+    app2.handle(Action::Char('n'));   // opens FilterEdit with "nationality="
+    for c in "CAN".chars() {
+        app2.handle(Action::Char(c));
+    }
+    app2.handle(Action::Enter);
+
+    // Both produce an Art Ross plan with one Bio atom for nationality=CAN
+    assert_eq!(plan_signature(&app1.queries.filter_plan),
+               plan_signature(&app2.queries.filter_plan));
+}
+```
+
+### Test budget
+
+- 4 L0 (`lower_stats_kv_to_atom` for each kv combination)
+- 4 L1 (`n` shortcut behavior, `:stats country=` lowering, round-trip
+  IR equality, error path for bad country)
+- 2 L1 (insta golden Stats-with-nationality-filter)
+
+Total: 10
 
 ### Acceptance
 
-Discoverable: `c` on Stats opens the pre-filled overlay; the
-chrome row advertises it. 6 tests.
+`n` on Stats opens FilterEdit pre-filled. Chrome row advertises
+`n=nationality`. Cmdbar `:stats country=CAN` produces identical
+plan IR. AI fallback can emit either form.
 
 ---
 
-## Sub-phase Messier.4 — Depth position + country filter
+## Sub-phase Messier.4 — Depth position + nationality + free-form
 
 ### Files
-- **MODIFY**: `icelines-cli/src/tui/screens/depth.rs` — add filters
-  field (RosterFilterState), filter logic in render fn.
-- **MODIFY**: `icelines-cli/src/tui/app.rs` — add `p`/`c` arms.
+
+- **MODIFY**: `icelines-cli/src/tui/screens/depth.rs` — embed
+  `filters: RosterFilterState`, add `p`/`n`/`f` keybinds.
+- **MODIFY**: `icelines-cli/src/tui/app.rs` — handler arms.
 
 ### Code sketch
 
@@ -207,33 +458,44 @@ pub struct DepthScreenState {
 
 pub fn chrome(mode: ScoringMode, state: &DepthScreenState) -> ScreenChrome {
     let title = format!(
-        "Depth · scoring={} · pos={} · country={}",
-        mode.label(), state.filters.pos_filter.label(), state.filters.country_label()
+        "Depth · scoring={} · pos={} · {}",
+        mode.label(),
+        state.filters.pos_filter.label(),
+        country_chip(&state.filters)
     );
     let keybinds = vec![
         KeyHint::new("s", "toggle scoring"),
         KeyHint::new("p", "cycle pos"),
-        KeyHint::new("c", "cycle country"),
-        // …
+        KeyHint::new("n", "cycle nation"),
+        KeyHint::new("f", "free filter"),
+        KeyHint::new("↑↓", "select"),
+        KeyHint::new("Enter", "team chart"),
     ];
     ScreenChrome { title, keybinds }
 }
 ```
 
-### Gauntlet
+### Test budget
 
-- `p` cycles pos, `c` cycles country, `s` still toggles scoring.
-- Depth rankings list filtered live.
+- 4 L0 (cycles + chrome + filter state defaults)
+- 4 L1 (each keybind dispatch + filtered result count)
+- 2 L1 (insta golden default + with-filters)
+- 2 L0 (cache invalidation on `s` (scoring) — should NOT invalidate
+  filter cache; verify)
+
+Total: 12
 
 ### Acceptance
 
-8 tests. Per-screen hint row shows the new keybinds.
+8 → 12 tests. Per-screen hint row shows the new keybinds. Scoring
+toggle remains independent of filter chain.
 
 ---
 
-## Sub-phase Messier.5 — Favorites sort + filter
+## Sub-phase Messier.5 — Favorites sort + nationality + free-form
 
 ### Files
+
 - **MODIFY**: `icelines-cli/src/tui/screens/favorites.rs` — add
   state struct, sort/filter logic, expanded chrome.
 - **MODIFY**: `icelines-cli/src/tui/app.rs` — handler arms.
@@ -255,140 +517,238 @@ pub struct FavoritesScreenState {
 }
 ```
 
-### Gauntlet
+### Test budget
 
-- `s` cycles RecentlyAdded → Name → Pos → Team → wrap.
-- `p` / `c` standard.
-- Sort changes the order in the rendered list deterministically.
+- 4 L0 (sort cycle + chrome)
+- 6 L1 (each keybind dispatch + sort ordering correctness)
+- 2 L1 (insta golden empty-favs / with-favs)
+
+Total: 12
 
 ### Acceptance
 
-8 tests. The favorites list reorders + filters correctly under
-each cycle position.
+`s` cycles RecentlyAdded → Name → Pos → Team → wrap. `p` / `n` / `f`
+standard. Sort changes order deterministically.
 
 ---
 
-## Sub-phase Messier.6 — Cmdbar verb-kv grammar
+## Sub-phase Messier.6 — Cmdbar verb-kv grammar + AI prompt v2
 
 ### Files
-- **MODIFY**: `icelines-cli/src/tui/command.rs` — extend
-  `parse_command` to accept `<verb> <key>=<value>...`.
-- **MODIFY**: `icelines-cli/src/tui/command.rs` — extend
-  `Command` enum with carrying `kv: Vec<(String, String)>`.
-- **MODIFY**: `icelines-cli/src/tui/command.rs` — extend
-  `execute_command` to apply kv pairs to the matching screen
-  state after the verb's normal swap.
 
-### Code sketch
+- **MODIFY**: `icelines-cli/src/tui/command.rs` — extend
+  `parse_command` with positional + kv form.
+- **MODIFY**: `icelines-cli/src/tui/command.rs` — typed `RosterKvArgs`
+  in `Command` variants.
+- **MODIFY**: `icelines-cli/src/tui/command.rs` — `execute_command`
+  per-verb `apply_kv`.
+- **MODIFY**: `icelines-cli/src/ai.rs` — `SYSTEM_PROMPT_VERSION = "v2"`,
+  prompt landmarks updated, 4 new few-shot examples.
+- **MODIFY**: `icelines-cli/src/tui/persona_jack_adams.rs` — add
+  scenarios for `:goalies sort=gaa min-gp=20`, `:team EDM pos=LW
+  nationality=CAN`, error paths.
+
+### Grammar implementation
 
 ```rust
-pub enum Command {
-    Goalies { kv: Vec<(String, String)> },
-    Team { abbrev: String, kv: Vec<(String, String)> },
-    Stats { kv: Vec<(String, String)> },
-    Depth { kv: Vec<(String, String)> },
-    Favorites { kv: Vec<(String, String)> },
-    // … existing variants unchanged
-}
+// Quoted-string lexer reused from IN/LIKE path
+fn tokenize_with_quotes(s: &str) -> Vec<Token> { /* existing */ }
 
-fn parse_kv_pairs(rest: &str) -> Vec<(String, String)> {
-    rest.split_whitespace()
-        .filter_map(|tok| tok.split_once('='))
-        .map(|(k, v)| (k.to_owned(), v.to_owned()))
-        .collect()
-}
+// Generic kv parser used by all verbs
+fn parse_roster_kv_after_positional(
+    tokens: &[Token],
+) -> Result<RosterKvArgs, KvParseError> {
+    let mut args = RosterKvArgs::default();
+    let mut seen_kv = false;
+    let mut seen_keys: HashSet<&'static str> = HashSet::new();
 
-// In execute_command:
-Command::Goalies { kv } => {
-    app.screen = Screen::Goalies;
-    apply_goalies_kv(app, &kv);
-    ExecResult::Continue
-}
-
-fn apply_goalies_kv(app: &mut App, kv: &[(String, String)]) {
-    for (k, v) in kv {
-        match k.as_str() {
-            "sort" => app.goalies.set_sort_by_label(v),
-            "min-gp" => app.goalies.min_gp = v.parse().unwrap_or(app.goalies.min_gp),
-            "country" => app.goalies.filters.country_filter = canonicalize_country(v),
-            "pos" | "role" => app.goalies.role_filter = parse_goalie_role(v),
-            "hits" | "saves" => /* toggle column */,
-            _ => /* flash unknown key */,
+    for tok in tokens {
+        match tok {
+            Token::Bare(s) if !s.contains('=') => {
+                if seen_kv {
+                    return Err(KvParseError::PositionalAfterKv {
+                        token: s.to_owned(),
+                    });
+                }
+                // Caller has already consumed positional args;
+                // this is an unrecognized positional modifier.
+                return Err(KvParseError::UnknownKey { key: s.to_owned() });
+            }
+            Token::Bare(s) | Token::Quoted(s) => {
+                let (key, value) = s.split_once('=')
+                    .ok_or_else(|| KvParseError::InvalidValue {
+                        key: "(missing equals)",
+                        raw: s.to_owned(),
+                        reason: "expected key=value".to_owned(),
+                    })?;
+                seen_kv = true;
+                if !seen_keys.insert(canonical_key(key)) {
+                    return Err(KvParseError::DuplicateKey(key.to_owned()));
+                }
+                apply_kv_to_args(&mut args, key, value)?;
+            }
         }
+    }
+    Ok(args)
+}
+
+fn apply_kv_to_args(args: &mut RosterKvArgs, key: &str, raw: &str) -> Result<(), KvParseError> {
+    match canonical_key(key) {
+        "sort" => args.sort = Some(raw.to_owned()),
+        "pos" => args.pos = Some(PosFilter::parse_loose(raw)?),
+        "country" | "nationality" => {
+            args.country = Some(CountryCode::parse(raw)
+                .map_err(|e| KvParseError::InvalidValue {
+                    key: "country",
+                    raw: raw.to_owned(),
+                    reason: e.to_string(),
+                })?);
+        }
+        "min-gp" | "min_gp" => args.min_gp = Some(raw.parse().map_err(|_| KvParseError::InvalidValue {
+            key: "min-gp",
+            raw: raw.to_owned(),
+            reason: "expected non-negative integer".to_owned(),
+        })?),
+        "hits" => match raw {
+            "on" => args.forced_columns |= ForcedColumns::HITS,
+            "off" => args.forced_columns &= !ForcedColumns::HITS,
+            other => return Err(KvParseError::InvalidValue {
+                key: "hits", raw: other.to_owned(),
+                reason: "expected on or off".to_owned(),
+            }),
+        },
+        // … more keys
+        unknown => return Err(KvParseError::UnknownKey { key: unknown.to_owned() }),
+    }
+    Ok(())
+}
+
+fn canonical_key(k: &str) -> &str {
+    match k {
+        "country" => "country",  // alias for nationality on non-Stats
+        "nationality" => "country",
+        "min_gp" => "min-gp",
+        other => other,
     }
 }
 ```
 
-### Gauntlet
+### AI prompt v2 (WIRE)
 
-- `:goalies sort=gaa` parses + applies.
-- `:team EDM pos=LW country=CAN` parses + applies (verb takes
-  positional `<abbrev>` plus kv).
-- Unknown keys flash a clear error: `unknown key "foo" — try
-  sort/pos/country/min-gp`.
-- Existing bare `:goalies` (no kv) still works.
-- Test budget: 15 (parse + apply + dispatch + error paths).
+```rust
+// ai.rs
+pub const SYSTEM_PROMPT_VERSION: &str = "v2";
+
+// In default_system_prompt(), add:
+//   - kv form examples ("sort=gaa", "min-gp=20", "nationality=CAN")
+//   - Disambiguating few-shots for screen-targeted vs stat-query intent
+
+#[test]
+fn l0_messier_6_system_prompt_v2_landmarks() {
+    let s = default_system_prompt();
+    for landmark in &[
+        "sort=gaa",
+        ":goalies",
+        "min-gp=20",
+        "nationality",
+        "pos=LW",
+    ] {
+        assert!(
+            s.contains(landmark),
+            "v2 prompt missing landmark {landmark:?}"
+        );
+    }
+}
+
+#[test]
+fn l0_messier_6_system_prompt_version_is_v2() {
+    assert_eq!(SYSTEM_PROMPT_VERSION, "v2");
+}
+```
+
+### Test budget (BENCH #19 calibrated)
+
+- 12 L0 — `parse_roster_kv` (success + each error variant + quoted
+  values + canonical key aliases)
+- 10 L1 — per-verb dispatch: `:goalies`, `:team`, `:stats`,
+  `:depth`, `:favorites`, each happy + error path
+- 5 L0 — `apply_kv_to_args` per key
+- 2 L0 — AI prompt v2 landmarks + version
+- 4 L1 — persona harness deltas (existing scenarios that exercised
+  `s` on multiple screens get new assertions for the standardized
+  matrix)
+
+Total: 33
 
 ### Acceptance
 
-Power user can drive every per-screen filter dimension from the
-cmdbar. AI fallback (Adams.6) gains substantially more expressive
-power because the system prompt's grammar reference grows to
-include kv form.
+Power user drives every per-screen filter dimension from cmdbar.
+AI fallback gains kv form. SYSTEM_PROMPT_VERSION="v2" in single
+commit. Existing 1051 tests + 95 new = 1146 green.
 
 ---
 
-## Risks
+## Risks (post-review v0.2)
 
-1. **Migration churn** — `TeamPosFilter` → `PosFilter` rename
-   cascades across team.rs, app.rs, tests. Mitigation: do
-   Messier.1 as a *pure* refactor with bit-for-bit test parity
-   before any new keybinds land.
+1. **Bitflags vs EnumSet** — picked `bitflags` (zero new dep
+   beyond what already exists in icelines-core). EnumSet was
+   FORGE's first suggestion; bitflags is equivalent for our 8
+   columns max. Mitigation: documented inline.
 
-2. **Goalies role-filter UX** — the GP threshold for "starter" is
-   subjective. Mitigation: surface the threshold in the chrome
-   title so the user sees what's being applied.
+2. **CountryCode UTF-8 invariant** — `as_str()` does a runtime
+   `from_utf8`. Since `parse()` enforces ASCII, this is always
+   `Ok(_)`. Mitigation: `as_str()` uses `unwrap_or("???")`
+   defensive default, never panics.
 
-3. **Cmdbar grammar conflict** — adding kv pairs to existing
-   verbs could collide if a future verb gains a positional arg
-   that looks like `key=value`. Mitigation: every kv pair MUST
-   contain `=`; bare positional args must NOT (already true for
-   today's grammar).
+3. **`free_filter` Arc costs** — each filter clone increments
+   atomic refcount. At ~10fps, that's 10 atomics/sec per screen.
+   Negligible. Mitigation: documented; don't clone in render path
+   (use `as_ref()`).
 
-4. **`forced_columns` UX vagueness** — `Vec<ColumnId>` lets you
-   force multiple columns on, but the user has no list-of-toggles
-   UI. Mitigation: `h` toggles Hits; future `b` toggles Blocks;
-   etc. Each column gets one keybind.
+4. **Insta snapshot churn** — `messier_1_team_screen_renders_unchanged`
+   fails if anyone touches Team rendering. That's the *point* —
+   intentional changes update the snapshot via `cargo insta review`.
+   Mitigation: documented in CONTRIBUTING.md (need to add).
 
-5. **AI prompt grows** — the system prompt for AI fallback (Adams.6)
-   needs updating with the new kv grammar. Mitigation: bump
-   `SYSTEM_PROMPT_VERSION` so prompt cache invalidates cleanly.
+5. **`canonical_key` aliasing** — `country` ↔ `nationality` makes
+   error messages ambiguous (`unknown key "nationality"` vs
+   `unknown key "country"`). Mitigation: error preserves user's
+   original spelling; canonicalization is internal-only.
+
+6. **AI prompt cache invalidation** — bumping version mid-phase
+   would cause 6 cache misses across Messier.1-6. Locked: bump
+   only in Messier.6 commit (single miss).
+
+7. **Goalies threshold ambiguity at season start** — when total
+   team GP = 0, `compute_role_threshold` returns None; predicate
+   degrades to `All`. Documented; surfaced in chrome title as
+   `pos=Starters(early-season)`.
 
 ---
 
 ## Acceptance for v0.24.0 ship
 
-Inherits from spec acceptance criteria. Plus:
+Inherits from spec acceptance. Plus:
 
-- Plan file (this) walked through with the user before
-  implementation begins on Messier.2+.
-- Messier.1 lands as a separate commit with zero behavioral diff.
-- Each subsequent Messier.X lands as its own commit; the suite
-  ships as v0.24.0 once Messier.6 closes the cmdbar parity.
+- Plan v0.2 reviewed by user before Messier.1 commits.
+- Messier.1 lands as a separate commit with insta snapshot baseline
+  + criterion bench.
+- Each subsequent Messier.X lands as its own commit; v0.24.0
+  releases when Messier.6 closes.
 - COMMANDS.md gets a unified per-screen keybind table.
+- CHANGELOG.md gets the cumulative v0.24.0 entry.
 
 ---
 
-## Test budget summary
+## Test budget v0.2 summary
 
-| Sub-phase | Bin tests added | Cumulative |
+| Sub-phase | Tests added | Cumulative |
 |---|---|---|
 | Pre-Messier (v0.23.5) | — | 1051 |
-| Messier.1 | +5 | 1056 |
-| Messier.2 | +12 | 1068 |
-| Messier.3 | +6 | 1074 |
-| Messier.4 | +8 | 1082 |
-| Messier.5 | +8 | 1090 |
-| Messier.6 | +15 | 1105 |
-
-Target: ~1100, all green, no regressions in the existing 1051.
+| Messier.1 | +12 | 1063 |
+| Messier.2 | +16 | 1079 |
+| Messier.3 | +10 | 1089 |
+| Messier.4 | +12 | 1101 |
+| Messier.5 | +12 | 1113 |
+| Messier.6 | +33 | 1146 |
+| **Total** | **+95** | **1146** |
