@@ -3,6 +3,7 @@ pub mod chrome;
 pub mod command;
 pub mod dashboard_panel;
 pub mod event;
+pub mod filter_state;
 pub mod headshot;
 pub mod loader;
 pub mod mdi;

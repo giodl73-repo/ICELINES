@@ -1153,9 +1153,11 @@ impl App {
                     self.status = format!("Team sort: {}", self.team.sort.label());
                 } else if matches!(self.screen, Screen::Team(_)) && c == 'p' {
                     // Phase Adams.10 — cycle Team position filter.
-                    self.team.pos_filter = self.team.pos_filter.next();
+                    self.team.filters.pos_filter = self.team.filters.pos_filter.next();
+                    self.team.filters.invalidate();
                     self.selected = 0;
-                    self.status = format!("Team pos filter: {}", self.team.pos_filter.label());
+                    self.status =
+                        format!("Team pos filter: {}", self.team.filters.pos_filter.label());
                 } else if matches!(self.screen, Screen::Team(_)) && c == 'c' {
                     // Phase Adams.12 — cycle Team country filter.
                     self.team.cycle_country();
@@ -1163,10 +1165,14 @@ impl App {
                     self.status = format!("Team country: {}", self.team.country_label());
                 } else if matches!(self.screen, Screen::Team(_)) && c == 'h' {
                     // Phase Adams.12 — toggle Hits column independent of sort.
-                    self.team.force_hits_column = !self.team.force_hits_column;
+                    self.team
+                        .filters
+                        .forced_columns
+                        .toggle(crate::tui::filter_state::ForcedColumns::HITS);
+                    self.team.filters.invalidate();
                     self.status = format!(
                         "Team Hits column: {}",
-                        if self.team.force_hits_column {
+                        if self.team.hits_column_forced() {
                             "shown"
                         } else {
                             "hidden"

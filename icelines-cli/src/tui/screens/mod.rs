@@ -4234,11 +4234,11 @@ mod adams_4_render_boundary_tests {
         let mut app = App::new(true);
         app.mdi = Some(MdiLayout::default());
         app.screen = Screen::Team("EDM".to_owned());
-        assert_eq!(app.team.pos_filter, TeamPosFilter::All);
+        assert_eq!(app.team.filters.pos_filter, TeamPosFilter::All);
         app.handle(Action::Char('p'));
-        assert_eq!(app.team.pos_filter, TeamPosFilter::Forwards);
+        assert_eq!(app.team.filters.pos_filter, TeamPosFilter::Forwards);
         app.handle(Action::Char('p'));
-        assert_eq!(app.team.pos_filter, TeamPosFilter::Defense);
+        assert_eq!(app.team.filters.pos_filter, TeamPosFilter::Defense);
     }
 
     /// Adams.12 — pressing `c` on Team cycles country filter.
@@ -4248,11 +4248,17 @@ mod adams_4_render_boundary_tests {
         let mut app = App::new(true);
         app.mdi = Some(MdiLayout::default());
         app.screen = Screen::Team("EDM".to_owned());
-        assert_eq!(app.team.country_filter, None);
+        assert_eq!(app.team.filters.country_filter, None);
         app.handle(Action::Char('c'));
-        assert_eq!(app.team.country_filter, Some("CAN"));
+        assert_eq!(
+            app.team.filters.country_filter,
+            Some(crate::tui::filter_state::CountryCode::CAN)
+        );
         app.handle(Action::Char('c'));
-        assert_eq!(app.team.country_filter, Some("USA"));
+        assert_eq!(
+            app.team.filters.country_filter,
+            Some(crate::tui::filter_state::CountryCode::USA)
+        );
     }
 
     /// Adams.12 — pressing `h` on Team toggles the Hits column
@@ -4263,11 +4269,11 @@ mod adams_4_render_boundary_tests {
         let mut app = App::new(true);
         app.mdi = Some(MdiLayout::default());
         app.screen = Screen::Team("EDM".to_owned());
-        assert!(!app.team.force_hits_column);
+        assert!(!app.team.hits_column_forced());
         app.handle(Action::Char('h'));
-        assert!(app.team.force_hits_column);
+        assert!(app.team.hits_column_forced());
         app.handle(Action::Char('h'));
-        assert!(!app.team.force_hits_column);
+        assert!(!app.team.hits_column_forced());
     }
 
     /// Adams.10 — `s` on a non-Team screen does NOT touch

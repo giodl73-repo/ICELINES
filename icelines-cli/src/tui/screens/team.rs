@@ -1,4 +1,9 @@
 use crate::tui::app::App;
+#[cfg(test)]
+use crate::tui::filter_state::COUNTRY_CYCLE;
+use crate::tui::filter_state::{ForcedColumns, RosterFilterState};
+#[cfg(test)]
+pub type TeamPosFilter = crate::tui::filter_state::PosFilter;
 use ratatui::{
     layout::Rect,
     style::{Color, Modifier, Style},
@@ -48,71 +53,6 @@ impl TeamSort {
     }
 }
 
-/// Position-class filter for the Team screen. Cycled with `p`.
-/// `All` shows everyone (default). `F` = forwards (C/LW/RW/F).
-/// `D` = defensemen (LD/RD/D). `C/LW/RW/LD/RD` = single position.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum TeamPosFilter {
-    #[default]
-    All,
-    Forwards,
-    Defense,
-    C,
-    LW,
-    RW,
-    LD,
-    RD,
-}
-
-impl TeamPosFilter {
-    pub const ALL: &'static [TeamPosFilter] = &[
-        TeamPosFilter::All,
-        TeamPosFilter::Forwards,
-        TeamPosFilter::Defense,
-        TeamPosFilter::C,
-        TeamPosFilter::LW,
-        TeamPosFilter::RW,
-        TeamPosFilter::LD,
-        TeamPosFilter::RD,
-    ];
-    pub fn label(self) -> &'static str {
-        match self {
-            TeamPosFilter::All => "All",
-            TeamPosFilter::Forwards => "F",
-            TeamPosFilter::Defense => "D",
-            TeamPosFilter::C => "C",
-            TeamPosFilter::LW => "LW",
-            TeamPosFilter::RW => "RW",
-            TeamPosFilter::LD => "LD",
-            TeamPosFilter::RD => "RD",
-        }
-    }
-    pub fn next(self) -> Self {
-        let idx = Self::ALL.iter().position(|f| *f == self).unwrap_or(0);
-        Self::ALL[(idx + 1) % Self::ALL.len()]
-    }
-    /// Does `pos_abbrev` (e.g. "C", "LW", "LD", "G") satisfy this filter?
-    pub fn matches(self, pos_abbrev: &str) -> bool {
-        match self {
-            TeamPosFilter::All => true,
-            TeamPosFilter::Forwards => matches!(pos_abbrev, "C" | "LW" | "RW" | "F"),
-            TeamPosFilter::Defense => matches!(pos_abbrev, "LD" | "RD" | "D"),
-            TeamPosFilter::C => pos_abbrev == "C",
-            TeamPosFilter::LW => pos_abbrev == "LW",
-            TeamPosFilter::RW => pos_abbrev == "RW",
-            TeamPosFilter::LD => pos_abbrev == "LD",
-            TeamPosFilter::RD => pos_abbrev == "RD",
-        }
-    }
-}
-
-/// Phase Adams.12 — country-code filter cycle. `None` shows
-/// every country (default). Cycle order is the most common
-/// NHL nationalities: CAN → USA → SWE → FIN → RUS → CZE →
-/// SVK → back to None. Wider sets go through `:query
-/// country=XYZ` from the cmdbar.
-pub const COUNTRY_CYCLE: &[&str] = &["CAN", "USA", "SWE", "FIN", "RUS", "CZE", "SVK"];
-
 /// Phase Adams.12 — Team screen state. `country_filter` is
 /// `None` for "all countries"; `Some(code)` matches the bio's
 /// `nationality_code`. `force_hits_column` shows the Hits
@@ -121,9 +61,7 @@ pub const COUNTRY_CYCLE: &[&str] = &["CAN", "USA", "SWE", "FIN", "RUS", "CZE", "
 #[derive(Debug, Clone, Default)]
 pub struct TeamScreenState {
     pub sort: TeamSort,
-    pub pos_filter: TeamPosFilter,
-    pub country_filter: Option<&'static str>,
-    pub force_hits_column: bool,
+    pub filters: RosterFilterState,
 }
 
 impl TeamScreenState {
@@ -131,23 +69,17 @@ impl TeamScreenState {
     /// COUNTRY_CYCLE plus the "all" position. Order: None →
     /// CAN → USA → … → SVK → None.
     pub fn cycle_country(&mut self) {
-        self.country_filter = match self.country_filter {
-            None => Some(COUNTRY_CYCLE[0]),
-            Some(cur) => {
-                let idx = COUNTRY_CYCLE.iter().position(|c| *c == cur).unwrap_or(0);
-                if idx + 1 >= COUNTRY_CYCLE.len() {
-                    None
-                } else {
-                    Some(COUNTRY_CYCLE[idx + 1])
-                }
-            }
-        };
+        self.filters.cycle_country();
     }
 
     /// Pretty label for the chrome title — `All` when no
     /// filter, otherwise the 3-letter ISO code.
     pub fn country_label(&self) -> &str {
-        self.country_filter.unwrap_or("All")
+        self.filters.country_label()
+    }
+
+    pub fn hits_column_forced(&self) -> bool {
+        self.filters.forced_columns.contains(ForcedColumns::HITS)
     }
 }
 
@@ -158,9 +90,13 @@ pub fn chrome(state: &TeamScreenState) -> crate::tui::chrome::ScreenChrome {
     let title = format!(
         "Team · sort={} · pos={} · country={} · hits={}",
         state.sort.label(),
-        state.pos_filter.label(),
+        state.filters.pos_filter.label(),
         state.country_label(),
-        if state.force_hits_column { "on" } else { "off" }
+        if state.hits_column_forced() {
+            "on"
+        } else {
+            "off"
+        }
     );
     let keybinds = vec![
         KeyHint::new("s", "cycle sort"),
@@ -181,9 +117,13 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
         " {} — Roster  ·  s: sort ({})  ·  p: pos ({})  ·  c: country ({})  ·  h: hits ({})  ·  Enter: open ",
         abbrev,
         app.team.sort.label(),
-        app.team.pos_filter.label(),
+        app.team.filters.pos_filter.label(),
         app.team.country_label(),
-        if app.team.force_hits_column { "on" } else { "off" },
+        if app.team.hits_column_forced() {
+            "on"
+        } else {
+            "off"
+        },
     ));
     let inner = block.inner(area);
     f.render_widget(block, area);
@@ -205,22 +145,12 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
     // so the sort doesn't waste cycles on dropped rows.
     let mut filtered: Vec<&icelines_core::stats_repository::PlayerView<'_>> = team_views
         .iter()
-        .filter(|v| app.team.pos_filter.matches(v.position().abbreviation()))
-        .filter(|v| match app.team.country_filter {
-            None => true,
-            Some(code) => v
-                .identity
-                .bio
-                .nationality_code
-                .as_deref()
-                .map(|c| c.eq_ignore_ascii_case(code))
-                .unwrap_or(false),
-        })
+        .filter(|v| app.team.filters.matches_view(v))
         .collect();
     sort_team_views(&mut filtered, app.team.sort);
 
     // Hits column is shown when sort=Hits OR force_hits_column.
-    let show_hits = app.team.force_hits_column || matches!(app.team.sort, TeamSort::Hits);
+    let show_hits = app.team.hits_column_forced() || matches!(app.team.sort, TeamSort::Hits);
     let show_goals = matches!(app.team.sort, TeamSort::Goals);
     let mut header_extra = String::new();
     if show_goals {
@@ -235,7 +165,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
             filtered.len(),
             team_views.len(),
             app.team.sort.label(),
-            app.team.pos_filter.label(),
+            app.team.filters.pos_filter.label(),
             app.team.country_label(),
         )),
         Line::from(""),
@@ -493,7 +423,7 @@ mod tests {
     fn l0_team_state_default_is_pace_all() {
         let s = TeamScreenState::default();
         assert_eq!(s.sort, TeamSort::Pace);
-        assert_eq!(s.pos_filter, TeamPosFilter::All);
+        assert_eq!(s.filters.pos_filter, TeamPosFilter::All);
     }
 
     #[test]
@@ -511,12 +441,13 @@ mod tests {
 
     #[test]
     fn l0_team_chrome_title_reflects_state() {
-        let s = TeamScreenState {
+        let mut s = TeamScreenState {
             sort: TeamSort::Hits,
-            pos_filter: TeamPosFilter::Forwards,
-            country_filter: Some("CAN"),
-            force_hits_column: true,
+            filters: RosterFilterState::default(),
         };
+        s.filters.pos_filter = TeamPosFilter::Forwards;
+        s.filters.country_filter = Some(crate::tui::filter_state::CountryCode::CAN);
+        s.filters.forced_columns.toggle(ForcedColumns::HITS);
         let c = chrome(&s);
         assert!(c.title.contains("sort=Hits"));
         assert!(c.title.contains("pos=F"));
@@ -529,13 +460,22 @@ mod tests {
     #[test]
     fn l0_team_country_cycles_through_all_codes() {
         let mut s = TeamScreenState::default();
-        assert_eq!(s.country_filter, None);
+        assert_eq!(s.filters.country_filter, None);
         s.cycle_country();
-        assert_eq!(s.country_filter, Some("CAN"));
+        assert_eq!(
+            s.filters.country_filter,
+            Some(crate::tui::filter_state::CountryCode::CAN)
+        );
         s.cycle_country();
-        assert_eq!(s.country_filter, Some("USA"));
+        assert_eq!(
+            s.filters.country_filter,
+            Some(crate::tui::filter_state::CountryCode::USA)
+        );
         s.cycle_country();
-        assert_eq!(s.country_filter, Some("SWE"));
+        assert_eq!(
+            s.filters.country_filter,
+            Some(crate::tui::filter_state::CountryCode::SWE)
+        );
         // Step through the rest.
         for _ in 0..(COUNTRY_CYCLE.len() - 3) {
             s.cycle_country();
@@ -543,7 +483,7 @@ mod tests {
         // After cycling through all of COUNTRY_CYCLE, returns to None.
         s.cycle_country();
         assert_eq!(
-            s.country_filter, None,
+            s.filters.country_filter, None,
             "cycle_country must wrap None → CAN → … → SVK → None"
         );
     }
@@ -557,21 +497,26 @@ mod tests {
     #[test]
     fn l0_team_country_label_uses_iso_code_when_set() {
         let mut s = TeamScreenState::default();
-        s.country_filter = Some("FIN");
+        s.filters.country_filter = Some(crate::tui::filter_state::CountryCode::FIN);
         assert_eq!(s.country_label(), "FIN");
     }
 
     #[test]
     fn l0_team_default_force_hits_column_is_false() {
         let s = TeamScreenState::default();
-        assert!(!s.force_hits_column);
+        assert!(!s.hits_column_forced());
     }
 
     #[test]
     fn l0_team_country_cycle_includes_canonical_codes() {
         // The cycle must include CAN, USA, SWE, FIN — the four
         // countries that account for ~85% of NHL roster.
-        for code in &["CAN", "USA", "SWE", "FIN"] {
+        for code in &[
+            crate::tui::filter_state::CountryCode::CAN,
+            crate::tui::filter_state::CountryCode::USA,
+            crate::tui::filter_state::CountryCode::SWE,
+            crate::tui::filter_state::CountryCode::FIN,
+        ] {
             assert!(
                 COUNTRY_CYCLE.contains(code),
                 "COUNTRY_CYCLE must include {code:?}"

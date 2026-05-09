@@ -1,5 +1,6 @@
 # Phase Messier — execution plan v0.2
 
+**Status**: Active - Messier.1 type extraction started
 **Spec**: `design/specs/phase-messier-overview.md` v0.2
 **Review note**: `design/notes/2026-05-08-phaseMessier-roles-review.md`
 **Target release**: v0.24.0
@@ -357,6 +358,20 @@ expensive" until Jim Gregory decides whether benches are blocking.
 ### Acceptance
 
 Pure refactor + cache layer. Behavior identical to v0.23.5 by insta.
+
+### Closeout so far
+
+- Added `icelines-cli/src/tui/filter_state.rs` with `CountryCode`,
+  `PosFilter`, `ForcedColumns`, `RosterFilterState`, semantic filter
+  signatures, and a cache shell keyed by `(season, season_type,
+  repo_generation, filter_signature)`.
+- Migrated Team screen state to embed `RosterFilterState` while preserving the
+  existing `s`/`p`/`c`/`h` behavior and render output semantics.
+- Kept `TeamPosFilter` as a test-only compatibility alias while production code
+  uses the shared `PosFilter`.
+- Verified with focused bin tests for Messier filter-state, Team L0 behavior,
+  Team keybind L1 behavior, `cargo fmt --check`, and
+  `cargo check -p icelines-cli --bin icelines`.
 
 ---
 
