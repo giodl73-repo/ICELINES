@@ -2114,13 +2114,73 @@ impl App {
                 let ch = char::from_digit((n + 1) as u32, 10).unwrap_or('?');
                 self.cmdbar_push(ch)
             }
-            // Up/Down walk command history (Adams.2 leaves a stub
-            // — wire-up is one of the open polish items).
-            Action::Up | Action::Down => false,
-            // Tab and arrow keys: no-op in cmdbar (no horizontal
-            // cursor movement yet — that's an Adams.3 polish item).
+            // Phase Adams.8 — Up/Down walk command history.
+            // Up: oldest direction (cursor advances, showing
+            // older entries). Down: newer direction. Typing or
+            // Backspace breaks navigation (cursor=None).
+            Action::Up => {
+                self.cmdbar_history_up();
+                false
+            }
+            Action::Down => {
+                self.cmdbar_history_down();
+                false
+            }
+            // Phase Adams.8 — Tab leaves the bar (defocus +
+            // clear input). Mirrors vim's `:` cmdline cancel.
+            Action::Tab | Action::TabPrev => {
+                if let Some(m) = self.mdi.as_mut() {
+                    m.command_input.clear();
+                    m.command_bar_focused = false;
+                    m.command_history_cursor = None;
+                    m.flash_error = None;
+                }
+                false
+            }
             _ => false,
         }
+    }
+
+    /// Phase Adams.8 — walk the command history backward (older
+    /// entries). Up arrow.
+    fn cmdbar_history_up(&mut self) {
+        let Some(m) = self.mdi.as_mut() else {
+            return;
+        };
+        if m.command_history.is_empty() {
+            return;
+        }
+        let next_cursor = match m.command_history_cursor {
+            None => 0,
+            Some(i) if i + 1 < m.command_history.len() => i + 1,
+            // Already at oldest; clamp.
+            Some(i) => i,
+        };
+        m.command_history_cursor = Some(next_cursor);
+        m.command_input = m.command_history[next_cursor].clone();
+        m.flash_error = None;
+    }
+
+    /// Phase Adams.8 — walk the command history forward (newer
+    /// entries). Down arrow. Past the newest, returns to live
+    /// edit mode (cursor=None, input cleared).
+    fn cmdbar_history_down(&mut self) {
+        let Some(m) = self.mdi.as_mut() else {
+            return;
+        };
+        let Some(cursor) = m.command_history_cursor else {
+            return;
+        };
+        if cursor == 0 {
+            // Step past the newest → live edit, cleared input.
+            m.command_history_cursor = None;
+            m.command_input.clear();
+        } else {
+            let next = cursor - 1;
+            m.command_history_cursor = Some(next);
+            m.command_input = m.command_history[next].clone();
+        }
+        m.flash_error = None;
     }
 
     fn cmdbar_push(&mut self, c: char) -> bool {
@@ -2154,11 +2214,14 @@ impl App {
                 let result = crate::tui::command::execute_command(cmd, self);
                 // Push to history regardless of result (record of
                 // what was typed; failures live in `flash_error`).
+                // Phase Adams.8 — sticky focus: clear input but
+                // KEEP focus so the user can type the next command
+                // without re-pressing `:`. Tab leaves the bar.
                 if let Some(m) = self.mdi.as_mut() {
                     crate::tui::mdi::push_command_history(&mut m.command_history, input.clone());
                     m.command_input.clear();
-                    m.command_bar_focused = false;
                     m.command_history_cursor = None;
+                    // m.command_bar_focused stays true
                 }
                 match result {
                     crate::tui::command::ExecResult::Continue => false,
@@ -2312,7 +2375,7 @@ impl App {
                 let result = crate::tui::command::execute_command(cmd, self);
                 if let Some(m) = self.mdi.as_mut() {
                     m.command_input.clear();
-                    m.command_bar_focused = false;
+                    // Phase Adams.8 — sticky focus on AI success too.
                     m.flash_error = None;
                     crate::tui::mdi::push_command_history(
                         &mut m.command_history,
@@ -5588,8 +5651,10 @@ mod tests {
     }
 
     /// Enter executes a parsed command — `stats` swaps workspace
-    /// to `Screen::Queries`, clears input, defocuses, pushes to
-    /// history.
+    /// to `Screen::Queries`, clears input, pushes to history.
+    /// Phase Adams.8 — focus is STICKY: after submit, bar stays
+    /// focused and ready for next command; user presses Tab to
+    /// leave.
     #[test]
     fn l0_adams_cmdbar_enter_executes_stats() {
         let mut app = fresh_mdi_app();
@@ -5603,7 +5668,8 @@ mod tests {
         assert!(matches!(app.screen, Screen::Queries));
         let m = app.mdi.as_ref().unwrap();
         assert_eq!(m.command_input, "");
-        assert!(!m.command_bar_focused);
+        // Sticky focus — bar stays focused after submit.
+        assert!(m.command_bar_focused);
         assert_eq!(m.command_history.front().map(String::as_str), Some("stats"));
     }
 
@@ -5850,6 +5916,121 @@ mod tests {
         }
         app.handle(Action::Enter);
         assert!(app.mdi.as_ref().unwrap().show_favorites);
+    }
+
+    // ── Phase Adams.8 — sticky focus + Tab leave + history nav ────────────
+
+    /// Sticky focus: after Enter on a successful command, bar
+    /// stays focused for the next typed command.
+    #[test]
+    fn l0_adams_cmdbar_sticky_focus_after_submit() {
+        let mut app = fresh_mdi_app();
+        app.handle(Action::Char(':'));
+        for c in "stats".chars() {
+            app.handle(Action::Char(c));
+        }
+        app.handle(Action::Enter);
+        let m = app.mdi.as_ref().unwrap();
+        assert!(m.command_bar_focused, "focus stays after submit");
+        assert_eq!(m.command_input, "");
+    }
+
+    /// Tab while focused leaves the bar (defocus + clear).
+    #[test]
+    fn l0_adams_cmdbar_tab_leaves_bar() {
+        let mut app = fresh_mdi_app();
+        app.handle(Action::Char(':'));
+        app.handle(Action::Char('a'));
+        app.handle(Action::Char('b'));
+        app.handle(Action::Tab);
+        let m = app.mdi.as_ref().unwrap();
+        assert!(!m.command_bar_focused);
+        assert_eq!(m.command_input, "");
+    }
+
+    /// Up arrow walks history backward (older entries first).
+    #[test]
+    fn l0_adams_cmdbar_up_walks_history_backward() {
+        let mut app = fresh_mdi_app();
+        // Submit two commands.
+        app.handle(Action::Char(':'));
+        for c in "stats".chars() {
+            app.handle(Action::Char(c));
+        }
+        app.handle(Action::Enter);
+        for c in "goalies".chars() {
+            app.handle(Action::Char(c));
+        }
+        app.handle(Action::Enter);
+        // Bar still focused, input cleared.
+        assert_eq!(app.mdi.as_ref().unwrap().command_input, "");
+        // Up — should populate input with newest history (goalies).
+        app.handle(Action::Up);
+        assert_eq!(app.mdi.as_ref().unwrap().command_input, "goalies");
+        // Up again — older (stats).
+        app.handle(Action::Up);
+        assert_eq!(app.mdi.as_ref().unwrap().command_input, "stats");
+        // Up at oldest — clamps to oldest.
+        app.handle(Action::Up);
+        assert_eq!(app.mdi.as_ref().unwrap().command_input, "stats");
+    }
+
+    /// Down arrow walks history forward; past newest, returns
+    /// to live edit mode (input cleared, cursor=None).
+    #[test]
+    fn l0_adams_cmdbar_down_walks_history_forward() {
+        let mut app = fresh_mdi_app();
+        app.handle(Action::Char(':'));
+        for c in "stats".chars() {
+            app.handle(Action::Char(c));
+        }
+        app.handle(Action::Enter);
+        for c in "goalies".chars() {
+            app.handle(Action::Char(c));
+        }
+        app.handle(Action::Enter);
+        // Walk back to oldest, then walk forward.
+        app.handle(Action::Up); // goalies
+        app.handle(Action::Up); // stats
+        assert_eq!(app.mdi.as_ref().unwrap().command_input, "stats");
+        app.handle(Action::Down); // goalies
+        assert_eq!(app.mdi.as_ref().unwrap().command_input, "goalies");
+        // Step past newest — back to live empty.
+        app.handle(Action::Down);
+        assert_eq!(app.mdi.as_ref().unwrap().command_input, "");
+        assert!(app.mdi.as_ref().unwrap().command_history_cursor.is_none());
+    }
+
+    /// Typing while in history-walk mode breaks navigation —
+    /// cursor goes back to None.
+    #[test]
+    fn l0_adams_cmdbar_typing_breaks_history_nav() {
+        let mut app = fresh_mdi_app();
+        app.handle(Action::Char(':'));
+        for c in "stats".chars() {
+            app.handle(Action::Char(c));
+        }
+        app.handle(Action::Enter);
+        // Up → loads "stats", cursor=Some(0)
+        app.handle(Action::Up);
+        assert_eq!(app.mdi.as_ref().unwrap().command_input, "stats");
+        assert_eq!(app.mdi.as_ref().unwrap().command_history_cursor, Some(0));
+        // Type a char — cursor resets, input gets the char appended.
+        app.handle(Action::Char('!'));
+        assert_eq!(app.mdi.as_ref().unwrap().command_input, "stats!");
+        assert!(app.mdi.as_ref().unwrap().command_history_cursor.is_none());
+    }
+
+    /// Up with no history is a no-op (no panic).
+    #[test]
+    fn l0_adams_cmdbar_up_with_empty_history_is_noop() {
+        let mut app = fresh_mdi_app();
+        app.handle(Action::Char(':'));
+        app.handle(Action::Up);
+        // Input still empty, cursor still None.
+        let m = app.mdi.as_ref().unwrap();
+        assert_eq!(m.command_input, "");
+        assert!(m.command_history_cursor.is_none());
     }
 
     // ── Phase Adams.6 — AI fallback wiring ────────────────────────────────

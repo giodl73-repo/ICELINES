@@ -190,12 +190,16 @@ fn render_sdi(f: &mut Frame, app: &App) {
 fn render_mdi(f: &mut Frame, app: &App, mdi: &crate::tui::mdi::MdiLayout) {
     let area = f.area();
 
-    // Vertical: Scores ribbon (1) + body (Min) + cmdbar (1).
+    // Phase Adams.8 — vertical layout: Scores ribbon (1) +
+    // body (Min) + cheat sheet (1) + cmdbar (1). The cheat
+    // sheet sits ABOVE the cmdbar and lists the top verbs the
+    // user can call — always visible, never gated on focus.
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(1),
             Constraint::Min(0),
+            Constraint::Length(1),
             Constraint::Length(1),
         ])
         .split(area);
@@ -231,6 +235,11 @@ fn render_mdi(f: &mut Frame, app: &App, mdi: &crate::tui::mdi::MdiLayout) {
     }
     let _ = idx;
 
+    // Phase Adams.8 — always-visible verb cheat sheet above
+    // the prompt row. Lists the canonical commands the user
+    // can call. No gating on focus.
+    render_mdi_cheat_sheet(f, chunks[2]);
+
     // Phase Adams.2 — combined footer/cmdbar. Three modes per
     // spec glass-1/glass-4:
     //
@@ -238,7 +247,24 @@ fn render_mdi(f: &mut Frame, app: &App, mdi: &crate::tui::mdi::MdiLayout) {
     //   prompt-mode → input non-empty OR focused: `> {input}_`
     //   error-mode  → flash_error set: red `! {error}` (replaces
     //                 the prompt; cleared on next keypress)
-    render_mdi_cmdbar(f, chunks[2], mdi);
+    render_mdi_cmdbar(f, chunks[3], mdi);
+}
+
+/// Phase Adams.8 — always-visible cheat sheet of the top cmdbar
+/// verbs. Wide-screen gets the rich version; narrow gets the
+/// essentials. Always rendered regardless of focus / input
+/// state — answers the user's "I need the top commands I can
+/// call" feedback.
+fn render_mdi_cheat_sheet(f: &mut Frame, area: Rect) {
+    let yellow = Style::default().fg(Color::Yellow);
+    let line = if area.width >= 140 {
+        " stats · goalies · transactions · playoffs · depth · scores · schedule · favorites  |  team <ABBR> · player <name> · query <filter> · /fav add <name> · /help "
+    } else if area.width >= 100 {
+        " stats · goalies · txs · playoffs · scores · schedule  |  team <ABBR> · player <name> · query <filter> · /help "
+    } else {
+        " stats · goalies · scores · query <f> · /help "
+    };
+    f.render_widget(Paragraph::new(line).style(yellow), area);
 }
 
 fn render_mdi_cmdbar(f: &mut Frame, area: Rect, mdi: &crate::tui::mdi::MdiLayout) {
@@ -261,13 +287,14 @@ fn render_mdi_cmdbar(f: &mut Frame, area: Rect, mdi: &crate::tui::mdi::MdiLayout
             area,
         );
     } else {
-        // Chip mode: surface the most useful keybind hints.
-        // Compact 1-row hint strip per spec glass-1. Wide-screen
-        // gets the full reference; narrow gets the essentials.
-        let hint = if area.width >= 100 {
-            " : / cmd · ?=help · :stats · :goalies · :team EDM · ^H favs · ^L sched · q quit "
+        // Phase Adams.8 — chip-mode (idle) hint. The cheat
+        // sheet row above already lists verbs, so this row
+        // emphasizes the cmdbar mechanics: how to enter, how
+        // to leave, history navigation.
+        let hint = if area.width >= 110 {
+            " : / enter cmd · ↑↓ history · Tab leave bar · ^H favs · ^L sched · ? help · q quit "
         } else {
-            " : cmd · ? help · q quit "
+            " : cmd · ↑↓ hist · Tab leave · ? help · q quit "
         };
         f.render_widget(Paragraph::new(hint).style(dim), area);
     }

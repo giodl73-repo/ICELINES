@@ -1,5 +1,60 @@
 # IceLines Changelog
 
+## v0.23.2 — 2026-05-08 — Phase Jack Adams.8 (cmdbar UX polish)
+
+Headline: **The cmdbar gains sticky focus, history navigation, an
+explicit Tab-to-leave control, and an always-visible verb cheat sheet
+above the prompt row. User feedback after living with v0.23.0 for an
+afternoon: "I want to re-edit the query, up-arrow to cycle, stay in
+the edit bar, tab out to leave, and see the top commands I can call."**
+Bin suite 1024 → 1030.
+
+### What shipped
+
+- **Sticky focus** — submitting a successful command no longer
+  defocuses the bar. Input clears and the prompt stays in `> _` so
+  the user can type the next command immediately. Empty Enter still
+  defocuses (explicit "I'm done" signal); Esc and Tab also defocus.
+- **Up / Down history navigation** — Up walks backward (older) through
+  `command_history`, Down walks forward (newer). Past the newest,
+  Down returns to live edit (cleared input, cursor=None). Typing or
+  Backspace breaks navigation back to live edit. The 50-entry cap
+  from Adams.2 still applies.
+- **Tab to leave** — pressing Tab while the bar is focused defocuses
+  + clears input. Vim-style cmdline cancel.
+- **Always-visible cheat sheet** — new yellow row directly above the
+  cmdbar lists canonical verbs at all times (no longer gated on
+  focus): `stats · goalies · transactions · playoffs · depth · scores ·
+  schedule · favorites | team <ABBR> · player <name> · query <filter> ·
+  /fav add <name> · /help`. Adapts to width (compact at <100 cols).
+- **Updated chip-mode hint** — when bar is empty + unfocused, the
+  inline hint now mentions `↑↓ history · Tab leave bar` so the new
+  keys are discoverable.
+
+### Examples
+
+```
+# Sticky-focus power-user loop
+:stats         Enter        # workspace → Stats; bar stays focused
+:goalies       Enter        # workspace → Goalies
+↑              # bar shows "goalies"
+↑              # bar shows "stats"
+↓              # bar shows "goalies"
+↓              # bar empty (back to live edit)
+Tab            # leave bar → workspace gets keystrokes again
+```
+
+### Test growth
+
+- Bin: 1024 → 1030 (+6 net new)
+- 6 new app-level tests: sticky-focus, Tab-leaves-bar,
+  Up-walks-backward, Down-walks-forward, typing-breaks-history-nav,
+  Up-with-empty-history.
+- Existing tests updated to reflect sticky-focus contract: 1
+  app-level + 1 persona scenario (s096 cheat-sheet visibility).
+
+---
+
 ## v0.23.1 — 2026-05-08 — Phase Jack Adams.6/.7 (AI fallback for cmdbar)
 
 Headline: **The MDI cmdbar gains an opt-in natural-language fallback.

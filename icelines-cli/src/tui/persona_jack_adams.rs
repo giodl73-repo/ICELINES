@@ -51,22 +51,28 @@ mod tests {
         }
     }
 
-    /// Type a string into the cmdbar (already-focused or focuses
-    /// via the colon trigger). Each char goes through the event
-    /// mapper, which is the realistic path.
+    /// Type a string into the cmdbar. Phase Adams.8 — sticky
+    /// focus: if the bar is already focused with empty input,
+    /// skip the entry trigger; otherwise press `:` to enter.
     fn type_cmd(app: &mut App, s: &str) {
-        // Focus via `:` — colon is Char(':') (no event mapping).
-        app.handle(Action::Char(':'));
+        let already_focused = app
+            .mdi
+            .as_ref()
+            .map(|m| m.command_bar_focused && m.command_input.is_empty())
+            .unwrap_or(false);
+        if !already_focused {
+            app.handle(Action::Char(':'));
+        }
         for c in s.chars() {
             app.handle(ch(c));
         }
     }
 
-    /// Type a slash command — entry via `/` (Action::Search) which
-    /// pre-fills `/`.
+    /// Type a slash command — entry via `/` (Action::Search)
+    /// which pre-fills `/`. Phase Adams.8: when the bar is
+    /// already focused, Action::Search routes to handle_command_bar
+    /// and pushes `/` as a literal (which is what we want).
     fn type_slash(app: &mut App, s: &str) {
-        // `s` should NOT include the leading `/` (Search trigger
-        // already inserts it).
         app.handle(Action::Search);
         for c in s.chars() {
             app.handle(ch(c));
@@ -1087,13 +1093,18 @@ mod tests {
         assert!(text.contains("Stats"), "workspace title must be Stats");
     }
 
+    /// Phase Adams.8 — cheat sheet row is ALWAYS visible above
+    /// the cmdbar. After a submit (sticky focus), the prompt
+    /// row shows `> _`; the cheat sheet row above lists the
+    /// canonical verbs.
     #[test]
-    fn s096_chip_mode_after_submit_shows_hints() {
+    fn s096_cheat_sheet_always_visible() {
         let mut app = fresh_mdi();
         type_cmd(&mut app, "stats");
         submit(&mut app);
-        // Bar defocused — chip mode shows.
-        let backend = TestBackend::new(120, 30);
+        // Sticky focus — bar still focused, prompt mode shows.
+        // But the cheat sheet row above always renders.
+        let backend = TestBackend::new(140, 30);
         let mut term = Terminal::new(backend).unwrap();
         term.draw(|f| crate::tui::screens::render(f, &app)).unwrap();
         let mut text = String::new();
@@ -1104,10 +1115,10 @@ mod tests {
             }
             text.push('\n');
         }
-        // Chip-mode contains the hints we added.
+        // Cheat sheet row contains canonical verbs.
         assert!(
-            text.contains("?=help") || text.contains("? help"),
-            "chip mode should show help hint"
+            text.contains("stats") && text.contains("goalies"),
+            "cheat sheet must list verbs at width 140; got:\n{text}"
         );
     }
 
