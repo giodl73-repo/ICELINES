@@ -41,20 +41,16 @@ impl LeadersView {
         let mut rows: Vec<PlayerView<'_>> = repo.skaters(season, season_type).collect();
         rows.sort_by(|a, b| b.pace_sort_key().total_cmp(&a.pace_sort_key()));
 
-        let mut view = Self::new(
+        let mut view = Self::from_player_views(
             view_context(season, season_type, has_window),
             LeaderKind::Skaters,
+            rows,
         );
         view.sort = Some(SortState {
             key: SortKey::from("pace_82"),
             label: "Pace 82".to_string(),
             direction: SortDirection::Desc,
         });
-        view.rows = rows
-            .into_iter()
-            .enumerate()
-            .map(|(idx, player)| leader_row(idx as u32 + 1, &player))
-            .collect();
 
         if view.rows.is_empty() {
             view.empty_state = Some(EmptyState {
@@ -77,6 +73,28 @@ impl LeadersView {
             });
         }
 
+        view
+    }
+
+    pub fn from_player_views<'a>(
+        context: ViewContext,
+        kind: LeaderKind,
+        rows: impl IntoIterator<Item = PlayerView<'a>>,
+    ) -> Self {
+        let mut view = Self::new(context, kind);
+        view.rows = rows
+            .into_iter()
+            .enumerate()
+            .map(|(idx, player)| leader_row(idx as u32 + 1, &player))
+            .collect();
+        if view.rows.is_empty() {
+            view.empty_state = Some(EmptyState {
+                kind: EmptyKind::NoRows,
+                title: "No leaders".to_string(),
+                detail: Some("No leader rows matched the current filters.".to_string()),
+                recovery: Vec::new(),
+            });
+        }
         view
     }
 }
@@ -130,6 +148,23 @@ fn leader_row(rank: u32, player: &PlayerView<'_>) -> LeaderRow {
             Some(SemanticToken::DecisionHighlight),
         ),
         secondary: vec![
+            MetricCell {
+                key: StatKey::from("age"),
+                label: "Age".to_string(),
+                value: player
+                    .identity
+                    .bio
+                    .birth_date
+                    .as_deref()
+                    .and_then(|d| d.get(..4))
+                    .and_then(|y| y.parse::<u16>().ok())
+                    .map(|y| 2026u16.saturating_sub(y) as i64)
+                    .map(MetricValue::Integer)
+                    .unwrap_or(MetricValue::Missing),
+                unit: MetricUnit::Count,
+                precision: ValuePrecision::Integer,
+                token: None,
+            },
             metric_int("gp", "GP", player.gp() as i64, MetricUnit::Games),
             metric_int("goals", "G", player.goals() as i64, MetricUnit::Goals),
             metric_int("assists", "A", player.assists() as i64, MetricUnit::Assists),

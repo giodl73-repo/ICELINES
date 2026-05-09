@@ -225,6 +225,8 @@ Closeout so far:
 - Markdown `export md team` now builds `TeamDepthView` from its filtered roster
   and emits a ViewModel-backed estimated-lineup section before the existing
   all-skaters table.
+- Markdown `export md leaders` now renders its default Pts/82 table from
+  `LeadersView`; custom `--columns` remains on the stat-catalog path.
 - `GoaliesView::from_player_views` lets renderer adapters consume already
   prepared player rows without duplicating goalie metric semantics.
 - Verified the adapter with `cargo test -p icelines-cli --test system_tests
@@ -233,6 +235,7 @@ Closeout so far:
   `cargo check -p icelines-web`, `cargo test -p icelines-web goalies --
   --nocapture`, `cargo test -p icelines-cli team -- --nocapture`,
   `cargo test -p icelines-cli l0_export_team_card_lists_only_target_team --
+  --nocapture`, `cargo test -p icelines-cli l0_export_leaders --
   --nocapture`, and the `viewmodel` test slice.
 
 ---

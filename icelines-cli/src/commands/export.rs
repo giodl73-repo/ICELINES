@@ -19,7 +19,8 @@ use std::path::PathBuf;
 
 use icelines_core::{
     cross_team::compute_all_views, filter::PlayerFilter, scoring::sort_views_by_pace,
-    stats_repository::PlayerView, TeamAbbr, TeamDepthView,
+    stats_repository::PlayerView, LeaderKind, LeadersView, SortDirection, SortKey, SortState,
+    TeamAbbr, TeamDepthView, ViewContext, ViewWindow,
 };
 
 use crate::cli::{ExportSubcommand, MdShape};
@@ -183,6 +184,19 @@ pub(crate) fn render_leaders_from_views(
     }
 
     let top = filtered.into_iter().take(opts.top).collect::<Vec<_>>();
+    let mut leaders_view = LeadersView::from_player_views(
+        ViewContext::new(ViewWindow::new(
+            icelines_core::model::Season(icelines_core::CURRENT_SEASON),
+            icelines_core::season_stats::SeasonType::Regular,
+        )),
+        LeaderKind::Skaters,
+        top.iter().copied(),
+    );
+    leaders_view.sort = Some(SortState {
+        key: SortKey::from("pace_82"),
+        label: "Pts/82".to_string(),
+        direction: SortDirection::Desc,
+    });
 
     let title = match &opts.pos {
         Some(p) if !p.is_empty() => format!("Top {} {} (Pts/82)", opts.top, p.to_uppercase()),
@@ -214,49 +228,65 @@ pub(crate) fn render_leaders_from_views(
         let stat_cols = parse_columns_list(cols_spec)?;
         write_leaders_table_with_columns(&mut out, &top, &stat_cols);
     } else {
-        let _ = writeln!(
-            out,
-            "| Rank | Player | Team | Pos | Age | GP | G | A | Pts | PPG | Pts/82 |"
-        );
-        let _ = writeln!(
-            out,
-            "|-----:|--------|:----:|:---:|----:|---:|---:|---:|----:|----:|-------:|"
-        );
-        for (i, v) in top.iter().enumerate() {
-            let totals = &v.stats.totals;
-            let rank = i + 1;
-            let name = truncate(&v.identity.full_name, 24);
-            let pos = v.position().abbreviation();
-            let age = v
-                .identity
-                .bio
-                .birth_date
-                .as_deref()
-                .and_then(|d| d.get(..4))
-                .and_then(|y| y.parse::<u16>().ok())
-                .map(|y| 2026u16.saturating_sub(y).to_string())
-                .unwrap_or_else(|| "—".to_owned());
-            let gp = v.gp().to_string();
-            let goals = totals.goals;
-            let asts = totals.assists;
-            let pts = totals.points;
-            let ppg = v
-                .pace_82()
-                .map(|p| format!("{:.3}", p / 82.0))
-                .unwrap_or_else(|| "—".to_owned());
-            let pts82 = v
-                .pace_82()
-                .map(|p| format!("{p:.1}"))
-                .unwrap_or_else(|| "—".to_owned());
-            let _ = writeln!(
-                out,
-                "| {rank:>4} | {name} | {team} | {pos} | {age:>3} | {gp:>3} | {goals:>3} | {asts:>3} | {pts:>4} | {ppg:>5} | {pts82:>6} |",
-                team = v.team_display(),
-            );
-        }
+        write_leaders_view_table(&mut out, &leaders_view);
     }
 
     Ok(out)
+}
+
+fn leader_metric_i64(row: &icelines_core::LeaderRow, key: &str) -> Option<i64> {
+    row.secondary.iter().find_map(|metric| {
+        if metric.key.0 == key {
+            match metric.value {
+                icelines_core::MetricValue::Integer(value) => Some(value),
+                _ => None,
+            }
+        } else {
+            None
+        }
+    })
+}
+
+fn leader_primary_f64(row: &icelines_core::LeaderRow) -> Option<f64> {
+    match row.primary.value {
+        icelines_core::MetricValue::Decimal(value) => Some(value),
+        icelines_core::MetricValue::Integer(value) => Some(value as f64),
+        _ => None,
+    }
+}
+
+fn write_leaders_view_table(out: &mut String, view: &LeadersView) {
+    let _ = writeln!(
+        out,
+        "| Rank | Player | Team | Pos | Age | GP | G | A | Pts | PPG | Pts/82 |"
+    );
+    let _ = writeln!(
+        out,
+        "|-----:|--------|:----:|:---:|----:|---:|---:|---:|----:|----:|-------:|"
+    );
+    for row in &view.rows {
+        let rank = row.rank;
+        let name = truncate(&row.display_name, 24);
+        let pos = row.position.abbreviation();
+        let age = leader_metric_i64(row, "age")
+            .map(|value| value.to_string())
+            .unwrap_or_else(|| "—".to_owned());
+        let gp = leader_metric_i64(row, "gp").unwrap_or(0);
+        let goals = leader_metric_i64(row, "goals").unwrap_or(0);
+        let asts = leader_metric_i64(row, "assists").unwrap_or(0);
+        let pts = leader_metric_i64(row, "points").unwrap_or(0);
+        let ppg = leader_primary_f64(row)
+            .map(|p| format!("{:.3}", p / 82.0))
+            .unwrap_or_else(|| "—".to_owned());
+        let pts82 = leader_primary_f64(row)
+            .map(|p| format!("{p:.1}"))
+            .unwrap_or_else(|| "—".to_owned());
+        let _ = writeln!(
+            out,
+            "| {rank:>4} | {name} | {team} | {pos} | {age:>3} | {gp:>3} | {goals:>3} | {asts:>3} | {pts:>4} | {ppg:>5} | {pts82:>6} |",
+            team = row.team.0,
+        );
+    }
 }
 
 /// Phase Lindsay L.5.4 — render leaders table with custom StatId columns.
