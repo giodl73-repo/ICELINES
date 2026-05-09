@@ -10,14 +10,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 fn icelines_bin() -> PathBuf {
-    let workspace = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap();
-    #[cfg(windows)]
-    let bin = workspace.join("target/release/icelines.exe");
-    #[cfg(not(windows))]
-    let bin = workspace.join("target/release/icelines");
-    bin
+    PathBuf::from(env!("CARGO_BIN_EXE_icelines"))
 }
 
 fn run_in(home: &std::path::Path, args: &[&str]) -> std::process::Output {

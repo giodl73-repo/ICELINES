@@ -3,21 +3,11 @@
 ///
 /// Run with: cargo test -p icelines-cli --test system_tests
 ///
-/// The binary must be pre-built: `cargo build --release -p icelines-cli`
 use std::path::PathBuf;
 use std::process::Command;
 
 fn icelines_bin() -> PathBuf {
-    // CARGO_MANIFEST_DIR = …/icelines/icelines-cli
-    // One parent up is the workspace root: …/icelines/
-    let workspace = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap(); // …/icelines
-    #[cfg(windows)]
-    let bin = workspace.join("target/release/icelines.exe");
-    #[cfg(not(windows))]
-    let bin = workspace.join("target/release/icelines");
-    bin
+    PathBuf::from(env!("CARGO_BIN_EXE_icelines"))
 }
 
 fn run(args: &[&str]) -> std::process::Output {
