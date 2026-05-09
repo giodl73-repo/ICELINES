@@ -512,11 +512,53 @@ icelines tui transactions --standalone   # focused transactions feed
 # screen's chrome (header title + footer keybinds) is the only navigation
 # UI. Overlays (?, F, y, R) and per-screen keybinds work as usual.
 
+# Phase Jack Adams — multi-pane MDI dashboard
+icelines tui --mdi                       # Scores ribbon top + Favorites left
+                                          # + swappable Workspace middle +
+                                          # Schedule right + cmdbar bottom
+icelines tui --mdi goalies               # MDI launching with goalies workspace
+# In MDI mode: press `:` or `/` to focus the cmdbar; type a verb (e.g.
+# `stats`, `goalies`, `team EDM`, `query g >= 30`, `/fav add Bedard`,
+# `/hide schedule`); Enter to submit. `?` shows the full command
+# reference. Ctrl+H toggles Favorites pane, Ctrl+L toggles Schedule pane.
+# Mutually exclusive with --standalone.
+
 # Equivalent flag form (for scripts)
 icelines tui --start goalies
 icelines tui --start "player:Bedard"
 icelines tui --start "team:EDM"
 ```
+
+### MDI dashboard cmdbar reference (Phase Jack Adams)
+
+When `--mdi` is set, the TUI gains a chat-CLI command bar at the bottom.
+Press `:` to focus the bar with empty input, or `/` to focus with `/`
+already typed (for slash commands). Enter submits; Esc cancels.
+
+| Verb | Effect | Example |
+|---|---|---|
+| `stats` / `goalies` / `transactions` / `playoffs` / `depth` / `scores` / `schedule` / `favorites` | Swap workspace | `:goalies` |
+| `player <name>` | Open player card | `:player Bedard` |
+| `team <ABBR>` | Team depth chart | `:team EDM` |
+| `team <ABBR> season` | Team's full schedule | `:team EDM season` |
+| `compare <a>` / `compare <a> <b>` | Similarity peers / head-to-head | `:compare McDavid` |
+| `box <game-id>` | Boxscore detail | `:box 2025020001` |
+| `query <filter>` | Apply Phase Art Ross filter, swap to Stats | `:query g >= 30 AND age <= 25` |
+| `/fav add <name>` | Add to Favorites | `/fav add Bedard` |
+| `/fav remove <name>` | Remove from Favorites | `/fav remove Bedard` |
+| `/hide favorites` / `/hide schedule` | Hide a side pane | `/hide schedule` |
+| `/show favorites` / `/show schedule` | Restore a side pane | `/show schedule` |
+| `/help` (alias `/h`, `/?`) | Full command reference overlay | `/help` |
+| `/quit` (alias `q`, `quit`) | Exit | `:q` |
+
+Global hotkeys (work without entering the bar): `q` quits, `?` opens
+help overlay, `Ctrl+H` toggles Favorites pane, `Ctrl+L` toggles
+Schedule pane.
+
+Adaptive layout — the dashboard auto-drops side panes on narrow
+terminals: ≥160 cols full / 120-159 drops Schedule / 100-119 drops
+Favorites too / <100 falls back to single-document SDI render for
+that frame.
 
 **Slug aliases** (case-insensitive, accepted on `--start` only — sugar subcommands stick to canonical names):
 

@@ -113,10 +113,7 @@ fn evaluate<'a>(
 }
 
 fn names(views: &[PlayerView<'_>]) -> Vec<String> {
-    views
-        .iter()
-        .map(|v| v.identity.full_name.clone())
-        .collect()
+    views.iter().map(|v| v.identity.full_name.clone()).collect()
 }
 
 // ── Bio plan ────────────────────────────────────────────────────
@@ -152,7 +149,12 @@ fn l1_w23_country_in_set() {
     let repo = build_repo();
     let views = build_views(&repo);
     let plan = parse_plan("country IN (CAN, USA)");
-    let names = names(&evaluate(&views, &PlayerFilter::new(), Some(&plan), 20252026));
+    let names = names(&evaluate(
+        &views,
+        &PlayerFilter::new(),
+        Some(&plan),
+        20252026,
+    ));
 
     assert!(names.iter().any(|n| n == "Connor McDavid"), "{names:?}");
     assert!(names.iter().any(|n| n == "Auston Matthews"), "{names:?}");
@@ -167,7 +169,12 @@ fn l1_w23_country_not_in_excludes_russians() {
     let repo = build_repo();
     let views = build_views(&repo);
     let plan = parse_plan("country NOT IN (RUS)");
-    let names = names(&evaluate(&views, &PlayerFilter::new(), Some(&plan), 20252026));
+    let names = names(&evaluate(
+        &views,
+        &PlayerFilter::new(),
+        Some(&plan),
+        20252026,
+    ));
 
     assert!(
         names.iter().all(|n| n != "Alex Ovechkin"),
@@ -187,7 +194,12 @@ fn l1_w23_age_strict_lt_25() {
     let repo = build_repo();
     let views = build_views(&repo);
     let plan = parse_plan("age<25");
-    let names = names(&evaluate(&views, &PlayerFilter::new(), Some(&plan), 20252026));
+    let names = names(&evaluate(
+        &views,
+        &PlayerFilter::new(),
+        Some(&plan),
+        20252026,
+    ));
 
     assert!(
         names.iter().any(|n| n == "Connor Bedard"),
@@ -208,7 +220,12 @@ fn l1_w23_age_between_22_28() {
     let repo = build_repo();
     let views = build_views(&repo);
     let plan = parse_plan("age BETWEEN 22 AND 28");
-    let names = names(&evaluate(&views, &PlayerFilter::new(), Some(&plan), 20252026));
+    let names = names(&evaluate(
+        &views,
+        &PlayerFilter::new(),
+        Some(&plan),
+        20252026,
+    ));
 
     assert!(
         names.iter().all(|n| n != "Sidney Crosby"),
@@ -227,7 +244,12 @@ fn l1_w23_compound_canadian_under_25() {
     let repo = build_repo();
     let views = build_views(&repo);
     let plan = parse_plan("country=CAN AND age<25");
-    let names = names(&evaluate(&views, &PlayerFilter::new(), Some(&plan), 20252026));
+    let names = names(&evaluate(
+        &views,
+        &PlayerFilter::new(),
+        Some(&plan),
+        20252026,
+    ));
 
     assert!(
         names.iter().any(|n| n == "Connor Bedard"),
@@ -248,7 +270,12 @@ fn l1_w23_or_canadians_or_americans() {
     let repo = build_repo();
     let views = build_views(&repo);
     let plan = parse_plan("country=CAN OR country=USA");
-    let names = names(&evaluate(&views, &PlayerFilter::new(), Some(&plan), 20252026));
+    let names = names(&evaluate(
+        &views,
+        &PlayerFilter::new(),
+        Some(&plan),
+        20252026,
+    ));
 
     assert!(names.iter().any(|n| n == "Connor McDavid"));
     assert!(names.iter().any(|n| n == "Auston Matthews"));
@@ -317,7 +344,12 @@ fn l1_w23_pos_in_excludes_defensemen() {
     let repo = build_repo();
     let views = build_views(&repo);
     let plan = parse_plan("pos IN (C, LW, RW)");
-    let names = names(&evaluate(&views, &PlayerFilter::new(), Some(&plan), 20252026));
+    let names = names(&evaluate(
+        &views,
+        &PlayerFilter::new(),
+        Some(&plan),
+        20252026,
+    ));
 
     assert!(
         names.iter().all(|n| n != "Cale Makar"),

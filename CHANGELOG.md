@@ -1,5 +1,107 @@
 # IceLines Changelog
 
+## v0.23.0 — 2026-05-08 — Phase Jack Adams (MDI dashboard, deterministic ship)
+
+Headline: **The TUI is no longer single-document. `icelines tui --mdi`
+launches a multi-pane "front door" dashboard: live Scores ribbon on top,
+swappable Workspace in the middle, Favorites + Schedule side panes, plus
+a chat-CLI command bar at the bottom that drives every screen swap and
+filter from a single text prompt.** Bin suite 803 → 905+, +100 tests.
+
+### What shipped
+
+- **Adams.1** — MDI layout engine + workspace dispatcher.
+  `MdiLayout` runtime state, `--mdi` clap flag (mutually exclusive with
+  `--standalone`), adaptive `effective_panes(width)` matrix (≥160 full /
+  120-159 drop schedule / 100-119 drop favorites / <100 SDI fallback).
+  13 layout tests + 6 fence tests + 3 L2 surface checks.
+- **Adams.2** — chat-CLI command bar (parser + executor + UI).
+  Strict verb-or-slash grammar (`stats`, `goalies`, `query <filter>`,
+  `team EDM`, `box <game-id>`, `compare <a> <b>`, `/fav add Bedard`,
+  `/hide schedule`, `/help`, `/quit`). Three-mode footer: chip-mode hints
+  → `> {input}_` prompt-mode → red `! {error}` flash-mode. Focus on `:`
+  or `/`; defocus on Enter / Esc / Backspace-at-empty. 49 command tests
+  + 18 app-level tests including a property sweep that proves every
+  printable ASCII char (0x20-0x7E) types into the bar (catches the
+  event-mapper rewriting `q` → Action::Quit problem).
+- **Adams.3** — real pane content + side-pane toggles.
+  Workspace dispatches on `app.screen` to the existing per-screen
+  renderers (cyan border, dynamic title); Favorites pane (yellow,
+  28-col) reuses `favorites::render`; Schedule pane (magenta, 32-col)
+  reuses `schedule::render`; Scores ribbon reads the live Tonight
+  cache (Loading / Loaded / Error / Idle). New global keybinds: **Ctrl+H**
+  toggles Favorites pane, **Ctrl+L** toggles Schedule pane (work even
+  while cmdbar is focused). 4 toggle tests.
+- **Adams.4** — adaptive width + auto-drop polish.
+  Render-level boundary tests at every threshold (200, 160, 159, 120,
+  119, 100, 99, plus panic-free property sweep 80..=240); L1 resize
+  sequence 200→159→119→99→200 verifies state preservation; L2 surface
+  composition checks (`tui --mdi goalies --help`). 17 tests across L0/
+  L1/L2.
+- **Adams.5** — closeout fixes for the deterministic ship.
+   - `mdi_tick_fetch`: Scores ribbon and Schedule pane now auto-fetch
+     every render frame regardless of which workspace screen is active
+     — previously the data sources only populated when the user visited
+     the SDI Tonight or Schedule tabs first. Idempotent (Loading-state
+     guarded).
+   - **MDI help overlay** — pressing `?` (or typing `/help`) in MDI mode
+     now shows a comprehensive command reference: workspace verbs, args,
+     write actions, layout commands, global hotkeys. SDI keeps the
+     legacy keybind cheat sheet. 4 tests.
+   - Chip-mode hint expanded from generic key list to actionable command
+     examples (`:stats · :goalies · :team EDM · ^H favs · ^L sched`).
+   - Overlay painter extracted to `render_overlays` so MDI gets help /
+     admin / season picker / reports / docs / group picker just like
+     SDI.
+
+### Examples (new in v0.23.0)
+
+```bash
+icelines tui --mdi                         # multi-pane dashboard
+icelines tui --mdi goalies                 # MDI launching with goalies as workspace
+```
+
+In the dashboard, type:
+
+```
+:stats                                     # workspace → Stats
+:goalies                                   # workspace → Goalies
+:query g >= 30 AND age <= 25               # apply filter, swap to Stats
+:team EDM                                  # workspace → Oilers depth chart
+:box 2025020001                            # workspace → boxscore
+:compare Bedard McTavish                   # head-to-head
+/fav add Bedard                            # add to Favorites
+/hide schedule                             # hide schedule pane (or Ctrl+L)
+/show favorites                            # restore favorites pane
+?                                          # full command reference overlay
+:q                                         # quit
+```
+
+### Trophy fit
+
+Jack Adams — best NHL coach. The MDI dashboard is the "coach" surface:
+sees everything at once (Scores ribbon, Schedule, Favorites, Workspace),
+calls plays via the cmdbar, drives the team. Spec:
+`design/specs/phase-jack-adams-overview.md`. Plan:
+`design/plans/2026-05-08-phaseJackAdams-mdi-dashboard.md`.
+
+### What's deferred to v0.23.1
+
+Adams.6 — AI LLM fallback. When `parse_command` rejects an input,
+delegate to a configured LLM provider (Anthropic API or `claude -p`
+shell) for natural-language → command interpretation. Opt-in via
+`~/.icelines/config.toml`; defaults off.
+
+### Test growth
+
+- Bin (TUI + commands): 803 → 905+ (+100 net new across L0/L1/L2)
+- Adams.2 cmdbar: 49 command tests + 18 app-level focus/typing tests
+- Adams.3 panes/toggles: 4 toggle tests
+- Adams.4 boundary: 9 L0 render + 3 L1 resize + 5 L2 surface
+- Adams.5 closeout: 2 auto-fetch + 2 help overlay tests
+
+---
+
 ## v0.22.0 — 2026-05-08 — Phase Masterton (chrome + standalone mode + Screen trait scaffold)
 
 Headline: **Two user-facing features (declarative chrome,

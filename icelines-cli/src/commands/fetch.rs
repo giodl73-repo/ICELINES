@@ -1058,8 +1058,8 @@ async fn do_boxscore(
         Some(d) => parse_iso_date(d)?,
         None => Utc::now().date_naive().format("%Y-%m-%d").to_string(),
     };
-    let anchor = chrono::NaiveDate::parse_from_str(&anchor_str, "%Y-%m-%d")
-        .context("parse anchor date")?;
+    let anchor =
+        chrono::NaiveDate::parse_from_str(&anchor_str, "%Y-%m-%d").context("parse anchor date")?;
 
     // Step 1: schedule fetch (already covered by Foster.1).
     let client = NhlApiClient::production();
@@ -1067,10 +1067,7 @@ async fn do_boxscore(
         .fetch_schedule_for_date(&anchor_str)
         .await
         .with_context(|| format!("fetching schedule for {anchor_str}"))?;
-    let same_day: Vec<_> = games
-        .into_iter()
-        .filter(|g| g.date == anchor_str)
-        .collect();
+    let same_day: Vec<_> = games.into_iter().filter(|g| g.date == anchor_str).collect();
     if same_day.is_empty() {
         println!("No games scheduled on {anchor_str}.");
         return Ok(());
@@ -1085,9 +1082,7 @@ async fn do_boxscore(
         std::collections::HashSet<u32>,
     ) = {
         let db = crate::db::GroupDb::open().context("open group db")?;
-        let members = db
-            .list_members_with_kind("Favorites")
-            .unwrap_or_default();
+        let members = db.list_members_with_kind("Favorites").unwrap_or_default();
         let teams: std::collections::HashSet<String> = members
             .iter()
             .filter(|(_, k)| matches!(k, crate::db::MemberKind::Team))
@@ -1099,9 +1094,7 @@ async fn do_boxscore(
         let player_ids: std::collections::HashSet<u32> = members
             .iter()
             .filter(|(_, k)| matches!(k, crate::db::MemberKind::Player))
-            .filter_map(|(key, _)| {
-                icelines_fetch::stats_loader::resolve_player_id_by_name(key)
-            })
+            .filter_map(|(key, _)| icelines_fetch::stats_loader::resolve_player_id_by_name(key))
             .collect();
         (teams, player_ids)
     };
@@ -1122,7 +1115,10 @@ async fn do_boxscore(
         "Boxscore fetch — {anchor_str} · {} game(s){}",
         to_fetch.len(),
         if for_favorites {
-            format!(" (favorites only — {} team(s) tracked)", favorited_teams.len())
+            format!(
+                " (favorites only — {} team(s) tracked)",
+                favorited_teams.len()
+            )
         } else {
             String::new()
         }
@@ -1130,7 +1126,10 @@ async fn do_boxscore(
 
     if dry_run {
         for g in &to_fetch {
-            println!("  · {} @ {}  game_id={}", g.away_abbrev, g.home_abbrev, g.game_id);
+            println!(
+                "  · {} @ {}  game_id={}",
+                g.away_abbrev, g.home_abbrev, g.game_id
+            );
         }
         println!("(dry run — no boxscores fetched, no events written)");
         return Ok(());
@@ -1142,16 +1141,14 @@ async fn do_boxscore(
     // file to (Boxscore, Game(id)) so future favorites-view reads
     // can find it deterministically. TAPE H4: write JSON first,
     // then manifest, then event — manifest is the commit point.
-    let event_stream = crate::event_stream::EventStream::open()
-        .context("open events table")?;
+    let event_stream = crate::event_stream::EventStream::open().context("open events table")?;
 
     let home_dir = std::env::var_os("HOME")
         .or_else(|| std::env::var_os("USERPROFILE"))
         .map(std::path::PathBuf::from)
         .ok_or_else(|| anyhow!("cannot determine home directory"))?;
     let data_root = home_dir.join(".icelines").join("data");
-    let store = icelines_fetch::datastore::DataStore::open(&data_root)
-        .context("open DataStore")?;
+    let store = icelines_fetch::datastore::DataStore::open(&data_root).context("open DataStore")?;
 
     let mut wrote = 0usize;
     let mut updated = 0usize;
@@ -1173,13 +1170,8 @@ async fn do_boxscore(
                     .join(&anchor_str)
                     .join(format!("{}.json", g.game_id));
                 let bytes = serde_json::to_vec(&raw).context("serialize boxscore body")?;
-                if let Err(e) =
-                    icelines_fetch::atomic_write::write_bytes_atomic(&path, &bytes)
-                {
-                    eprintln!(
-                        "  ! boxscore body write failed for game {}: {e}",
-                        g.game_id
-                    );
+                if let Err(e) = icelines_fetch::atomic_write::write_bytes_atomic(&path, &bytes) {
+                    eprintln!("  ! boxscore body write failed for game {}: {e}", g.game_id);
                 } else {
                     let entry = icelines_fetch::manifest::ManifestEntry {
                         key: icelines_fetch::manifest::DataKey::Game(game),
@@ -1190,14 +1182,11 @@ async fn do_boxscore(
                             ttl: icelines_core::Ttl::Static, // boxscores immutable post-game
                         },
                     };
-                    if let Err(e) = store.manifest().upsert(
-                        icelines_fetch::manifest::DataKind::Boxscore,
-                        entry,
-                    ) {
-                        eprintln!(
-                            "  ! manifest upsert failed for game {}: {e}",
-                            g.game_id
-                        );
+                    if let Err(e) = store
+                        .manifest()
+                        .upsert(icelines_fetch::manifest::DataKind::Boxscore, entry)
+                    {
+                        eprintln!("  ! manifest upsert failed for game {}: {e}", g.game_id);
                     } else {
                         persisted += 1;
                     }
@@ -1285,23 +1274,25 @@ async fn do_boxscore(
             };
             // The "today" team: search both home_skaters / away_skaters
             // for the pid; the team is whichever side they appear on.
-            let today_team = if let Ok((parsed, _)) =
-                client.fetch_boxscore_with_raw(g.game_id).await
-            {
-                if parsed.home_skaters.iter().any(|s| s.player_id == pid.0) {
-                    Some(icelines_core::TeamAbbr(parsed.home_abbrev.clone()))
-                } else if parsed.away_skaters.iter().any(|s| s.player_id == pid.0) {
-                    Some(icelines_core::TeamAbbr(parsed.away_abbrev.clone()))
+            let today_team =
+                if let Ok((parsed, _)) = client.fetch_boxscore_with_raw(g.game_id).await {
+                    if parsed.home_skaters.iter().any(|s| s.player_id == pid.0) {
+                        Some(icelines_core::TeamAbbr(parsed.home_abbrev.clone()))
+                    } else if parsed.away_skaters.iter().any(|s| s.player_id == pid.0) {
+                        Some(icelines_core::TeamAbbr(parsed.away_abbrev.clone()))
+                    } else {
+                        None
+                    }
                 } else {
                     None
-                }
-            } else {
-                None
+                };
+            let Some(today_team) = today_team else {
+                continue;
             };
-            let Some(today_team) = today_team else { continue };
-            let prior_team = bundled_player_team(*pid)
-                .map(|s| icelines_core::TeamAbbr(s.to_uppercase()));
-            if let Some(trade) = proto::detect_mid_day_trade(*pid, &today_team, prior_team.as_ref()) {
+            let prior_team =
+                bundled_player_team(*pid).map(|s| icelines_core::TeamAbbr(s.to_uppercase()));
+            if let Some(trade) = proto::detect_mid_day_trade(*pid, &today_team, prior_team.as_ref())
+            {
                 let trade_json =
                     serde_json::to_string(&trade).context("serialize trade payload")?;
                 let trade_id = proto::trade_event_id(anchor, &trade.from_team, &trade.to_team);
@@ -1381,7 +1372,11 @@ async fn do_sync(dry_run: bool, force: bool) -> anyhow::Result<()> {
         println!(
             "{} entry(ies) {}:",
             entries.len(),
-            if force { "would be refreshed (--force)" } else { "would be refreshed" }
+            if force {
+                "would be refreshed (--force)"
+            } else {
+                "would be refreshed"
+            }
         );
         for (kind, key) in entries {
             println!("  · {kind:?} / {key:?}");

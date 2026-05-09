@@ -89,8 +89,12 @@ fn p_w18_002_goalies_country_in_set() {
     let _ = ok_in(
         h.path(),
         &[
-            "query", "goalies", "--top", "5",
-            "--filter", "country IN (USA, CAN, RUS)",
+            "query",
+            "goalies",
+            "--top",
+            "5",
+            "--filter",
+            "country IN (USA, CAN, RUS)",
         ],
     );
 }
@@ -101,8 +105,12 @@ fn p_w18_003_goalies_country_not_in() {
     let _ = ok_in(
         h.path(),
         &[
-            "query", "goalies", "--top", "5",
-            "--filter", "country NOT IN (RUS)",
+            "query",
+            "goalies",
+            "--top",
+            "5",
+            "--filter",
+            "country NOT IN (RUS)",
         ],
     );
 }
@@ -122,8 +130,12 @@ fn p_w18_005_goalies_age_between() {
     let _ = ok_in(
         h.path(),
         &[
-            "query", "goalies", "--top", "5",
-            "--filter", "age BETWEEN 25 AND 32",
+            "query",
+            "goalies",
+            "--top",
+            "5",
+            "--filter",
+            "age BETWEEN 25 AND 32",
         ],
     );
 }
@@ -134,8 +146,12 @@ fn p_w18_006_goalies_country_like() {
     let _ = ok_in(
         h.path(),
         &[
-            "query", "goalies", "--top", "5",
-            "--filter", r#"country LIKE "CA*""#,
+            "query",
+            "goalies",
+            "--top",
+            "5",
+            "--filter",
+            r#"country LIKE "CA*""#,
         ],
     );
 }
@@ -146,8 +162,12 @@ fn p_w18_007_goalies_compound_strict_and_in() {
     let _ = ok_in(
         h.path(),
         &[
-            "query", "goalies", "--top", "5",
-            "--filter", "age<30 AND country IN (USA, CAN, RUS)",
+            "query",
+            "goalies",
+            "--top",
+            "5",
+            "--filter",
+            "age<30 AND country IN (USA, CAN, RUS)",
         ],
     );
 }
@@ -187,7 +207,14 @@ fn p_w18_011_goalies_save_pct_threshold() {
     let h = fresh();
     let _ = ok_in(
         h.path(),
-        &["query", "goalies", "--top", "5", "--filter", "save-pct>=0.910"],
+        &[
+            "query",
+            "goalies",
+            "--top",
+            "5",
+            "--filter",
+            "save-pct>=0.910",
+        ],
     );
 }
 
@@ -197,8 +224,12 @@ fn p_w18_012_goalies_compound_save_pct_and_country() {
     let _ = ok_in(
         h.path(),
         &[
-            "query", "goalies", "--top", "5",
-            "--filter", "save-pct>=0.900 AND country=USA",
+            "query",
+            "goalies",
+            "--top",
+            "5",
+            "--filter",
+            "save-pct>=0.900 AND country=USA",
         ],
     );
 }
@@ -209,8 +240,12 @@ fn p_w18_013_goalies_empty_in_rejected() {
     let out = fail_in(
         h.path(),
         &[
-            "query", "goalies", "--top", "5",
-            "--filter", "country IN ()",
+            "query",
+            "goalies",
+            "--top",
+            "5",
+            "--filter",
+            "country IN ()",
         ],
     );
     no_panic(&out);
@@ -232,8 +267,12 @@ fn p_w18_015_goalies_paren_compound() {
     let _ = ok_in(
         h.path(),
         &[
-            "query", "goalies", "--top", "5",
-            "--filter", "(country=USA OR country=CAN) AND age<=30",
+            "query",
+            "goalies",
+            "--top",
+            "5",
+            "--filter",
+            "(country=USA OR country=CAN) AND age<=30",
         ],
     );
 }
@@ -250,11 +289,16 @@ fn p_w18_016_compare_cohort_country_in() {
     let out = run_in(
         h.path(),
         &[
-            "query", "compare",
-            "--cohort", "draft",
-            "--draft-class", "2015",
-            "--filter", "country IN (CAN, USA, SWE)",
-            "--top", "5",
+            "query",
+            "compare",
+            "--cohort",
+            "draft",
+            "--draft-class",
+            "2015",
+            "--filter",
+            "country IN (CAN, USA, SWE)",
+            "--top",
+            "5",
         ],
     );
     // May 'fail' if draft-class doesn't have data — but should NOT
@@ -269,11 +313,16 @@ fn p_w18_017_compare_cohort_strict_lt() {
     let out = run_in(
         h.path(),
         &[
-            "query", "compare",
-            "--cohort", "draft",
-            "--draft-class", "2015",
-            "--filter", "age<30",
-            "--top", "5",
+            "query",
+            "compare",
+            "--cohort",
+            "draft",
+            "--draft-class",
+            "2015",
+            "--filter",
+            "age<30",
+            "--top",
+            "5",
         ],
     );
     no_panic(&out);
@@ -285,11 +334,16 @@ fn p_w18_018_compare_cohort_between() {
     let out = run_in(
         h.path(),
         &[
-            "query", "compare",
-            "--cohort", "draft",
-            "--draft-class", "2015",
-            "--filter", "age BETWEEN 28 AND 32",
-            "--top", "5",
+            "query",
+            "compare",
+            "--cohort",
+            "draft",
+            "--draft-class",
+            "2015",
+            "--filter",
+            "age BETWEEN 28 AND 32",
+            "--top",
+            "5",
         ],
     );
     no_panic(&out);
@@ -301,11 +355,16 @@ fn p_w18_019_compare_cohort_like() {
     let out = run_in(
         h.path(),
         &[
-            "query", "compare",
-            "--cohort", "draft",
-            "--draft-class", "2015",
-            "--filter", r#"country LIKE "CA*""#,
-            "--top", "5",
+            "query",
+            "compare",
+            "--cohort",
+            "draft",
+            "--draft-class",
+            "2015",
+            "--filter",
+            r#"country LIKE "CA*""#,
+            "--top",
+            "5",
         ],
     );
     no_panic(&out);
@@ -317,11 +376,16 @@ fn p_w18_020_compare_cohort_compound_new_grammar() {
     let out = run_in(
         h.path(),
         &[
-            "query", "compare",
-            "--cohort", "draft",
-            "--draft-class", "2015",
-            "--filter", "country IN (CAN, USA) AND age<30",
-            "--top", "5",
+            "query",
+            "compare",
+            "--cohort",
+            "draft",
+            "--draft-class",
+            "2015",
+            "--filter",
+            "country IN (CAN, USA) AND age<30",
+            "--top",
+            "5",
         ],
     );
     no_panic(&out);
@@ -340,9 +404,15 @@ fn p_w18_021_export_md_country_in() {
     let out = run_in(
         h.path(),
         &[
-            "export", "md", "leaders",
-            "--pos", "C", "--top", "5",
-            "--filter", "country IN (CAN, USA)",
+            "export",
+            "md",
+            "leaders",
+            "--pos",
+            "C",
+            "--top",
+            "5",
+            "--filter",
+            "country IN (CAN, USA)",
         ],
     );
     no_panic(&out);
@@ -354,9 +424,7 @@ fn p_w18_022_export_md_strict_age() {
     let out = run_in(
         h.path(),
         &[
-            "export", "md", "leaders",
-            "--pos", "C", "--top", "5",
-            "--filter", "age<25",
+            "export", "md", "leaders", "--pos", "C", "--top", "5", "--filter", "age<25",
         ],
     );
     no_panic(&out);
@@ -368,9 +436,15 @@ fn p_w18_023_export_md_between() {
     let out = run_in(
         h.path(),
         &[
-            "export", "md", "leaders",
-            "--pos", "C", "--top", "5",
-            "--filter", "age BETWEEN 22 AND 28",
+            "export",
+            "md",
+            "leaders",
+            "--pos",
+            "C",
+            "--top",
+            "5",
+            "--filter",
+            "age BETWEEN 22 AND 28",
         ],
     );
     no_panic(&out);
@@ -382,9 +456,15 @@ fn p_w18_024_export_md_like() {
     let out = run_in(
         h.path(),
         &[
-            "export", "md", "leaders",
-            "--pos", "C", "--top", "5",
-            "--filter", r#"country LIKE "CA*""#,
+            "export",
+            "md",
+            "leaders",
+            "--pos",
+            "C",
+            "--top",
+            "5",
+            "--filter",
+            r#"country LIKE "CA*""#,
         ],
     );
     no_panic(&out);
@@ -396,9 +476,15 @@ fn p_w18_025_export_md_compound() {
     let out = run_in(
         h.path(),
         &[
-            "export", "md", "leaders",
-            "--pos", "C", "--top", "5",
-            "--filter", "country IN (CAN, USA) AND age<30",
+            "export",
+            "md",
+            "leaders",
+            "--pos",
+            "C",
+            "--top",
+            "5",
+            "--filter",
+            "country IN (CAN, USA) AND age<30",
         ],
     );
     no_panic(&out);
@@ -412,9 +498,14 @@ fn p_w18_026_x_leaders_country_in() {
     let out = run_in(
         h.path(),
         &[
-            "x", "leaders",
-            "--pos", "C", "--top", "5",
-            "--filter", "country IN (CAN, USA)",
+            "x",
+            "leaders",
+            "--pos",
+            "C",
+            "--top",
+            "5",
+            "--filter",
+            "country IN (CAN, USA)",
         ],
     );
     no_panic(&out);
@@ -426,9 +517,7 @@ fn p_w18_027_x_leaders_strict_age() {
     let out = run_in(
         h.path(),
         &[
-            "x", "leaders",
-            "--pos", "C", "--top", "5",
-            "--filter", "age<25",
+            "x", "leaders", "--pos", "C", "--top", "5", "--filter", "age<25",
         ],
     );
     no_panic(&out);
@@ -440,9 +529,14 @@ fn p_w18_028_x_leaders_like() {
     let out = run_in(
         h.path(),
         &[
-            "x", "leaders",
-            "--pos", "C", "--top", "5",
-            "--filter", r#"country LIKE "CA*""#,
+            "x",
+            "leaders",
+            "--pos",
+            "C",
+            "--top",
+            "5",
+            "--filter",
+            r#"country LIKE "CA*""#,
         ],
     );
     no_panic(&out);
@@ -454,9 +548,14 @@ fn p_w18_029_x_leaders_between() {
     let out = run_in(
         h.path(),
         &[
-            "x", "leaders",
-            "--pos", "C", "--top", "5",
-            "--filter", "age BETWEEN 22 AND 28",
+            "x",
+            "leaders",
+            "--pos",
+            "C",
+            "--top",
+            "5",
+            "--filter",
+            "age BETWEEN 22 AND 28",
         ],
     );
     no_panic(&out);
@@ -468,9 +567,14 @@ fn p_w18_030_x_leaders_compound() {
     let out = run_in(
         h.path(),
         &[
-            "x", "leaders",
-            "--pos", "C", "--top", "5",
-            "--filter", "country IN (CAN, USA) AND age<25",
+            "x",
+            "leaders",
+            "--pos",
+            "C",
+            "--top",
+            "5",
+            "--filter",
+            "country IN (CAN, USA) AND age<25",
         ],
     );
     no_panic(&out);
@@ -484,8 +588,12 @@ fn p_w18_031_goalies_unclosed_paren_clean() {
     let out = fail_in(
         h.path(),
         &[
-            "query", "goalies", "--top", "5",
-            "--filter", "(country=USA AND age<30",
+            "query",
+            "goalies",
+            "--top",
+            "5",
+            "--filter",
+            "(country=USA AND age<30",
         ],
     );
     no_panic(&out);
@@ -497,8 +605,12 @@ fn p_w18_032_goalies_unknown_country_no_match() {
     let out = ok_in(
         h.path(),
         &[
-            "query", "goalies", "--top", "5",
-            "--filter", "country=XYZ",
+            "query",
+            "goalies",
+            "--top",
+            "5",
+            "--filter",
+            "country=XYZ",
             "--json",
         ],
     );
@@ -519,8 +631,12 @@ fn p_w18_033_goalies_huge_threshold_empty() {
     let _ = ok_in(
         h.path(),
         &[
-            "query", "goalies", "--top", "5",
-            "--filter", "save-pct>=2.0",
+            "query",
+            "goalies",
+            "--top",
+            "5",
+            "--filter",
+            "save-pct>=2.0",
         ],
     );
 }
@@ -531,8 +647,12 @@ fn p_w18_034_goalies_demorgan() {
     let _ = ok_in(
         h.path(),
         &[
-            "query", "goalies", "--top", "5",
-            "--filter", "NOT (country=USA AND age<30)",
+            "query",
+            "goalies",
+            "--top",
+            "5",
+            "--filter",
+            "NOT (country=USA AND age<30)",
         ],
     );
 }
@@ -543,8 +663,12 @@ fn p_w18_035_goalies_strict_in_or() {
     let _ = ok_in(
         h.path(),
         &[
-            "query", "goalies", "--top", "5",
-            "--filter", "save-pct>=0.910 OR gp>=50",
+            "query",
+            "goalies",
+            "--top",
+            "5",
+            "--filter",
+            "save-pct>=0.910 OR gp>=50",
         ],
     );
 }
@@ -564,8 +688,12 @@ fn p_w18_037_goalies_age_in_set() {
     let _ = ok_in(
         h.path(),
         &[
-            "query", "goalies", "--top", "5",
-            "--filter", "age IN (28, 29, 30, 31, 32)",
+            "query",
+            "goalies",
+            "--top",
+            "5",
+            "--filter",
+            "age IN (28, 29, 30, 31, 32)",
         ],
     );
 }
@@ -576,7 +704,10 @@ fn p_w18_038_goalies_kitchen_sink() {
     let _ = ok_in(
         h.path(),
         &[
-            "query", "goalies", "--top", "5",
+            "query",
+            "goalies",
+            "--top",
+            "5",
             "--filter",
             "country IN (USA, CAN, RUS, FIN, SWE) AND age BETWEEN 25 AND 35 AND save-pct>=0.890",
         ],
@@ -589,8 +720,12 @@ fn p_w18_039_goalies_csv_with_new_grammar() {
     let out = ok_in(
         h.path(),
         &[
-            "query", "goalies", "--top", "5",
-            "--filter", "country IN (CAN, USA)",
+            "query",
+            "goalies",
+            "--top",
+            "5",
+            "--filter",
+            "country IN (CAN, USA)",
             "--csv",
         ],
     );
@@ -603,8 +738,12 @@ fn p_w18_040_goalies_json_with_new_grammar() {
     let out = ok_in(
         h.path(),
         &[
-            "query", "goalies", "--top", "5",
-            "--filter", "country IN (CAN, USA)",
+            "query",
+            "goalies",
+            "--top",
+            "5",
+            "--filter",
+            "country IN (CAN, USA)",
             "--json",
         ],
     );

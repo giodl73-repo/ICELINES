@@ -777,9 +777,7 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
     let mut new_pipeline_plans: Vec<icelines_query::QueryPlan> = Vec::new();
     let mut legacy_residue: Vec<String> = Vec::new();
     for raw in &stat_residue {
-        match icelines_query::parse_query(icelines_query::FilterInput::Cli(
-            raw.to_string(),
-        )) {
+        match icelines_query::parse_query(icelines_query::FilterInput::Cli(raw.to_string())) {
             Ok(plan) => new_pipeline_plans.push(plan),
             Err(es) => {
                 // Wave 16 fix — when the new parser errors with
@@ -801,10 +799,7 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
                 });
                 if prefer_new_error {
                     let msgs: Vec<String> = es.iter().map(|e| e.to_string()).collect();
-                    anyhow::bail!(
-                        "--filter {raw:?}\n  {}",
-                        msgs.join("\n  ")
-                    );
+                    anyhow::bail!("--filter {raw:?}\n  {}", msgs.join("\n  "));
                 }
                 legacy_residue.push(raw.clone());
             }
@@ -1735,9 +1730,7 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
             // If parse_query succeeds, use the new pipeline; if it
             // produces a helpful error, surface that; else fall
             // through to the legacy parser.
-            match icelines_query::parse_query(icelines_query::FilterInput::Cli(
-                rewritten.clone(),
-            )) {
+            match icelines_query::parse_query(icelines_query::FilterInput::Cli(rewritten.clone())) {
                 Ok(plan) => {
                     goalie_new_plans.push(plan);
                     continue;
@@ -2045,9 +2038,7 @@ pub async fn run_compare(
 
     if let Some(n) = similar {
         // D1b — narrow cohort. Empty filter passes through unchanged.
-        let cohort_views: Vec<PlayerView<'_>> = if cohort_filter
-            .stat_filters
-            .is_empty()
+        let cohort_views: Vec<PlayerView<'_>> = if cohort_filter.stat_filters.is_empty()
             && !cohort_bio.is_active()
             && cohort_new_plans.is_empty()
         {
@@ -2357,10 +2348,7 @@ fn goalie_filter_rewrite_expr(expr: &str) -> String {
             // `AND sv%>=0.9`) loses the space when the rewriter only
             // saved the trailing-side, producing `ANDsv%>=0.9` which
             // then fails the `parse_filter` ops check.
-            let leading: String = atom
-                .chars()
-                .take_while(|c| c.is_whitespace())
-                .collect();
+            let leading: String = atom.chars().take_while(|c| c.is_whitespace()).collect();
             let trailing: String = atom
                 .chars()
                 .rev()

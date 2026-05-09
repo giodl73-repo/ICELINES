@@ -64,13 +64,7 @@ pub trait Screen {
     /// Render this screen's body into `area`. Header + footer
     /// chrome is rendered by the shell (see `screens/mod.rs`)
     /// from `Screen::chrome`.
-    fn render(
-        &self,
-        frame: &mut Frame,
-        state: &Self::State,
-        ctx: &AppContext<'_>,
-        area: Rect,
-    );
+    fn render(&self, frame: &mut Frame, state: &Self::State, ctx: &AppContext<'_>, area: Rect);
 
     /// Declarative chrome — title + keybind hints. Consumed by
     /// the shell to render header (right-aligned title) + footer

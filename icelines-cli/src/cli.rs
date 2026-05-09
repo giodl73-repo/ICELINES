@@ -815,7 +815,12 @@ mod tui_surface_tests {
     fn l0_bare_tui_has_no_surface_or_start() {
         let cli = Cli::try_parse_from(["icelines", "tui"]).unwrap();
         match cli.command {
-            Commands::Tui { surface, start, standalone, mdi } => {
+            Commands::Tui {
+                surface,
+                start,
+                standalone,
+                mdi,
+            } => {
                 assert!(surface.is_none());
                 assert!(!standalone, "bare tui must default standalone=false");
                 assert!(!mdi, "bare tui must default mdi=false");
@@ -1849,22 +1854,15 @@ pub enum FantasySubcommand {
 #[derive(Debug, Subcommand)]
 pub enum ConfigSubcommand {
     /// Print the value at `key`.
-    Get {
-        key: String,
-    },
+    Get { key: String },
     /// Set `key` to `value`. Validates against the typed schema and
     /// rejects unknown keys / invalid values with a clear error.
-    Set {
-        key: String,
-        value: String,
-    },
+    Set { key: String, value: String },
     /// Print every settable key + its current value.
     List,
     /// Reset a section to defaults. Recognized: `sync`,
     /// `sync.capabilities`.
-    Reset {
-        key: String,
-    },
+    Reset { key: String },
 }
 
 // ── Phase 8d: markdown export ────────────────────────────────────────────────

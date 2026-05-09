@@ -3324,10 +3324,7 @@ fn l2_cmd_tonight_no_json_flag_documented() {
 #[test]
 fn l2_foster08_setup_accept_defaults_dry_run() {
     let home = tempfile::tempdir().expect("tempdir");
-    let out = run_isolated(
-        home.path(),
-        &["setup", "--accept-defaults", "--dry-run"],
-    );
+    let out = run_isolated(home.path(), &["setup", "--accept-defaults", "--dry-run"]);
     assert!(
         out.status.success(),
         "exit 0 expected, stderr: {}",
@@ -3493,10 +3490,7 @@ fn l2_conn_smythe_c2_query_leaders_playoff_empty_manifest() {
 #[test]
 fn l2_conn_smythe_c2_query_leaders_playoff_json_envelope() {
     let home = tempfile::tempdir().expect("tempdir");
-    let out = run_isolated(
-        home.path(),
-        &["query", "leaders", "--playoff", "--json"],
-    );
+    let out = run_isolated(home.path(), &["query", "leaders", "--playoff", "--json"]);
     assert!(out.status.success());
     let stdout = String::from_utf8_lossy(&out.stdout);
     let parsed: serde_json::Value =
@@ -3748,8 +3742,7 @@ fn l2_foster2_favorites_json_envelope_shape() {
         String::from_utf8_lossy(&out.stderr)
     );
     let stdout = String::from_utf8_lossy(&out.stdout);
-    let parsed: serde_json::Value =
-        serde_json::from_str(&stdout).expect("must emit valid JSON");
+    let parsed: serde_json::Value = serde_json::from_str(&stdout).expect("must emit valid JSON");
     assert_eq!(parsed["schema_version"], 1);
     assert_eq!(parsed["route"], "favorites");
     assert!(parsed["data"]["players"].is_array());

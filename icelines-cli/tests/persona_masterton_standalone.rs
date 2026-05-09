@@ -94,10 +94,7 @@ fn p_masterton_003_tui_standalone_help_short_circuits_clean() {
     // wired into the parser and doesn't conflict with --help.
     let out = run_in(h.path(), &["tui", "--standalone", "--help"]);
     no_panic(&out);
-    assert!(
-        out.status.success(),
-        "tui --standalone --help must exit 0"
-    );
+    assert!(out.status.success(), "tui --standalone --help must exit 0");
 }
 
 // ── Phase Jack Adams.1 — `--mdi` flag smoke ───────────────────────────────
@@ -147,5 +144,54 @@ fn p_adams_003_tui_mdi_conflicts_with_standalone() {
     assert!(
         stderr.contains("--mdi") && stderr.contains("--standalone"),
         "clap error must name both flags; got:\n{stderr}"
+    );
+}
+
+// ── Phase Jack Adams.4 — adaptive width L2 surface ────────────────────────
+
+/// Adams.4 doesn't add new CLI flags — it's all runtime layout
+/// behavior triggered by terminal-width changes. Real TUI launch
+/// requires a TTY; not feasible here. The L2 we CAN do:
+///
+/// 1. Confirm `tui --mdi` parses cleanly through clap with no
+///    extra surface flags (wired in Adams.1, but Adams.4 is the
+///    closeout that ships the layout). Re-run with `--help`
+///    short-circuit so subprocess doesn't try to attach to a TTY.
+/// 2. Confirm a sub-subcommand surface combo (`tui goalies
+///    --mdi --help`) parses — proves clap dispatch composes the
+///    new flag with the existing surface arg.
+///
+/// Layout-behavior testing happens in the L1 resize-sequence
+/// tests in `tui/screens/mod.rs::adams_4_render_boundary_tests`,
+/// where TestBackend can drive `term.resize(...)` and assert
+/// against the captured frame buffer.
+
+#[test]
+fn p_adams_004_tui_mdi_with_surface_help_runs_clean() {
+    // `--mdi` is a parent-level flag on `tui`, not a per-surface
+    // flag — so clap's invocation order is `tui --mdi <surface>`.
+    // This composes the MDI launcher with the surface dispatch
+    // and confirms the parser accepts the combination.
+    let h = fresh();
+    let out = run_in(h.path(), &["tui", "--mdi", "goalies", "--help"]);
+    no_panic(&out);
+    assert!(
+        out.status.success(),
+        "tui --mdi goalies --help must exit 0 (parent flag + surface composes)"
+    );
+}
+
+#[test]
+fn p_adams_005_tui_help_mentions_dashboard_or_mdi() {
+    // Doc-surface check: the user-facing help must call out the
+    // dashboard / MDI mode in the long_about so users discover it.
+    // Mirrors p_masterton_001 for --standalone discoverability.
+    let h = fresh();
+    let out = run_in(h.path(), &["tui", "--help"]);
+    no_panic(&out);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("dashboard") || stdout.contains("MDI"),
+        "tui --help must describe MDI/dashboard mode for discoverability; got:\n{stdout}"
     );
 }

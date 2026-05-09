@@ -66,10 +66,7 @@ fn build_view(app: &App) -> Option<FavoritesView> {
         match lookup(&app.tonight.cache, TODAY_KEY) {
             TonightState::Loaded(games) => {
                 let today_str = date.format("%Y-%m-%d").to_string();
-                games
-                    .into_iter()
-                    .filter(|g| g.date == today_str)
-                    .collect()
+                games.into_iter().filter(|g| g.date == today_str).collect()
             }
             TonightState::Idle => {
                 maybe_fetch(app.tonight.cache.clone(), TODAY_KEY.to_string());
@@ -107,7 +104,9 @@ fn render_view(f: &mut Frame, area: Rect, view: &FavoritesView) {
     if !view.players.is_empty() {
         items.push(ListItem::new(Span::styled(
             "PLAYERS",
-            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
         )));
         for row in &view.players {
             items.push(ListItem::new(format_player_row_line(row)));
@@ -119,7 +118,9 @@ fn render_view(f: &mut Frame, area: Rect, view: &FavoritesView) {
         }
         items.push(ListItem::new(Span::styled(
             "TEAMS",
-            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
         )));
         for row in &view.teams {
             items.push(ListItem::new(format_team_row_line(row)));
@@ -171,11 +172,11 @@ fn format_player_row_line(row: &PlayerNightRow) -> Line<'_> {
                 Span::styled(
                     format!(
                         "{} SOG · {} hits · {} blk",
-                        s.shots
+                        s.shots.map(|n| n.to_string()).unwrap_or_else(|| "—".into()),
+                        s.hits.map(|n| n.to_string()).unwrap_or_else(|| "—".into()),
+                        s.blocks
                             .map(|n| n.to_string())
                             .unwrap_or_else(|| "—".into()),
-                        s.hits.map(|n| n.to_string()).unwrap_or_else(|| "—".into()),
-                        s.blocks.map(|n| n.to_string()).unwrap_or_else(|| "—".into()),
                     ),
                     dim,
                 ),
@@ -260,17 +261,13 @@ fn format_team_row_line(t: &TeamNightRow) -> Line<'_> {
 }
 
 fn render_header(f: &mut Frame, area: Rect) {
-    let block = Block::default()
-        .borders(Borders::ALL)
-        .title(" Favorites ");
+    let block = Block::default().borders(Borders::ALL).title(" Favorites ");
     let inner = block.inner(area);
     f.render_widget(block, area);
-    let lines = vec![
-        Line::from(Span::styled(
-            "Your favorited players + teams.",
-            Style::default().fg(Color::Cyan),
-        )),
-    ];
+    let lines = vec![Line::from(Span::styled(
+        "Your favorited players + teams.",
+        Style::default().fg(Color::Cyan),
+    ))];
     f.render_widget(Paragraph::new(lines), inner);
 }
 
@@ -299,10 +296,7 @@ fn render_empty_state(f: &mut Frame, area: Rect) {
             "    icelines group add Favorites \"Connor McDavid\"",
             dim,
         )),
-        Line::from(Span::styled(
-            "    icelines group add Favorites EDM",
-            dim,
-        )),
+        Line::from(Span::styled("    icelines group add Favorites EDM", dim)),
         Line::from(""),
         Line::from(Span::styled(
             "  Per-night stat lines + box scores ship in a follow-up;",
@@ -316,11 +310,7 @@ fn render_empty_state(f: &mut Frame, area: Rect) {
     f.render_widget(Paragraph::new(lines), inner);
 }
 
-fn render_member_list(
-    f: &mut Frame,
-    area: Rect,
-    members: &[(String, crate::db::MemberKind)],
-) {
+fn render_member_list(f: &mut Frame, area: Rect, members: &[(String, crate::db::MemberKind)]) {
     let player_count = members
         .iter()
         .filter(|(_, k)| matches!(k, crate::db::MemberKind::Player))
@@ -329,9 +319,7 @@ fn render_member_list(
         .iter()
         .filter(|(_, k)| matches!(k, crate::db::MemberKind::Team))
         .count();
-    let title = format!(
-        " Favorites — {player_count} player(s), {team_count} team(s) "
-    );
+    let title = format!(" Favorites — {player_count} player(s), {team_count} team(s) ");
     let block = Block::default().borders(Borders::ALL).title(title);
     let inner = block.inner(area);
     f.render_widget(block, area);
@@ -354,7 +342,9 @@ fn render_member_list(
     if !players.is_empty() {
         items.push(ListItem::new(Span::styled(
             "PLAYERS",
-            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
         )));
         for p in players {
             items.push(ListItem::new(format!("  · {p}")));
@@ -366,7 +356,9 @@ fn render_member_list(
         }
         items.push(ListItem::new(Span::styled(
             "TEAMS",
-            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
         )));
         for t in teams {
             items.push(ListItem::new(format!("  · {t}")));

@@ -66,6 +66,14 @@ pub struct MdiLayout {
     /// the cmdbar row in red, replacing the `>` prompt for ~2s
     /// per spec glass-4.
     pub flash_error: Option<String>,
+
+    /// Phase Adams.2 — command bar has captured keyboard input.
+    /// Set true when user types `:` or `/` (entry triggers).
+    /// Reset to false on Enter (after submit), Escape, or
+    /// Backspace at empty input. While true, all key actions
+    /// route to `handle_command_bar` and bypass per-screen
+    /// keybinds.
+    pub command_bar_focused: bool,
 }
 
 /// Phase Adams.1 — max number of recent commands retained in
@@ -82,6 +90,7 @@ impl Default for MdiLayout {
             command_history: std::collections::VecDeque::new(),
             command_history_cursor: None,
             flash_error: None,
+            command_bar_focused: false,
         }
     }
 }
@@ -162,10 +171,7 @@ impl MdiLayout {
 /// existing front so hammering Enter on the same command doesn't
 /// fill the ring with duplicates. Trims the back when the ring
 /// is at cap.
-pub fn push_command_history(
-    history: &mut std::collections::VecDeque<String>,
-    entry: String,
-) {
+pub fn push_command_history(history: &mut std::collections::VecDeque<String>, entry: String) {
     if let Some(front) = history.front() {
         if front == &entry {
             return;
@@ -299,17 +305,9 @@ mod tests {
             assert!(v.scores, "scores must be true at width {width}");
             assert!(v.workspace, "workspace must be true at width {width}");
             // Favorites is visible iff width ≥ 120.
-            assert_eq!(
-                v.favorites,
-                width >= 120,
-                "favorites at width {width}"
-            );
+            assert_eq!(v.favorites, width >= 120, "favorites at width {width}");
             // Schedule is visible iff width ≥ 160.
-            assert_eq!(
-                v.schedule,
-                width >= 160,
-                "schedule at width {width}"
-            );
+            assert_eq!(v.schedule, width >= 160, "schedule at width {width}");
         }
     }
 

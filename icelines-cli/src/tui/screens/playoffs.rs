@@ -527,7 +527,8 @@ mod tests {
             rounds,
         };
         let year = playoff_year_for_season(&app.active_season).unwrap();
-        app.playoffs.cache
+        app.playoffs
+            .cache
             .lock()
             .unwrap()
             .insert(year, PlayoffsState::Loaded(bracket));
@@ -591,7 +592,8 @@ mod tests {
     fn l0_render_playoffs_error_shows_retry_hint() {
         let app = App::new(false);
         let year = playoff_year_for_season(&app.active_season).unwrap();
-        app.playoffs.cache
+        app.playoffs
+            .cache
             .lock()
             .unwrap()
             .insert(year, PlayoffsState::Error("connection refused".to_owned()));

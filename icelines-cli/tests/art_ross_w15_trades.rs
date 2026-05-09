@@ -232,12 +232,7 @@ fn w15_team_in_set_without_current_stint_excludes() {
 fn w15_team_any_in_set_with_old_stint_matches() {
     let repo = synthetic_traded_player_repo();
     assert!(
-        matches_filter(
-            &repo,
-            TRADED_PID,
-            TRADED_SEASON,
-            "team.any IN (EDM, BOS)"
-        ),
+        matches_filter(&repo, TRADED_PID, TRADED_SEASON, "team.any IN (EDM, BOS)"),
         "team.any IN (EDM, ...) should match the OLD stint"
     );
 }
@@ -325,8 +320,7 @@ fn matched_names_real(repo: &StatsRepository, filter: &str) -> HashSet<String> {
         for s in REAL_SAMPLE_SEASONS {
             let view = repo.view(PlayerId(*pid), Season(*s), SeasonType::Regular);
             if let Some(view) = view {
-                let ctx =
-                    EvalCtx::new(&provider, StrictMode::Off, false, fixed_today(), *s);
+                let ctx = EvalCtx::new(&provider, StrictMode::Off, false, fixed_today(), *s);
                 if plan.root.matches(&view, &ctx) {
                     out.insert((*name).to_string());
                 }

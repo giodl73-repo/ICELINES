@@ -1115,7 +1115,12 @@ mod tests {
         conn.execute(
             "INSERT INTO group_members (group_name, player_normalized, added_at, kind) \
              VALUES (?1, ?2, ?3, ?4)",
-            rusqlite::params!["Favorites", "connor mcdavid", "2026-01-01T00:00:00Z", "player"],
+            rusqlite::params![
+                "Favorites",
+                "connor mcdavid",
+                "2026-01-01T00:00:00Z",
+                "player"
+            ],
         )
         .unwrap();
         conn.execute(
@@ -1149,7 +1154,8 @@ mod tests {
     fn l1_db_006_idempotent_re_run() {
         let db = GroupDb::open_in_memory().expect("first migrate");
         db.create_group("Favorites", "").unwrap();
-        db.add_member_kind("Favorites", "EDM", MemberKind::Team).unwrap();
+        db.add_member_kind("Favorites", "EDM", MemberKind::Team)
+            .unwrap();
 
         // run_migrations again — entity_ref column already exists,
         // so the rebuild branch must not fire.
@@ -1216,7 +1222,8 @@ mod tests {
         let db = GroupDb::open_in_memory().expect("open");
         db.create_group("Favorites", "").unwrap();
         db.add_member("Favorites", "connor mcdavid").unwrap();
-        db.add_member_kind("Favorites", "EDM", MemberKind::Team).unwrap();
+        db.add_member_kind("Favorites", "EDM", MemberKind::Team)
+            .unwrap();
         assert_eq!(db.list_members_with_kind("Favorites").unwrap().len(), 2);
 
         db.delete_group("Favorites").unwrap();
@@ -1238,7 +1245,8 @@ mod tests {
         db.create_group("Edge", "").unwrap();
         // Hypothetical: a player whose normalized name is "EDM" (no
         // such NHL player exists, but the schema must allow it now).
-        db.add_member_kind("Edge", "EDM", MemberKind::Player).unwrap();
+        db.add_member_kind("Edge", "EDM", MemberKind::Player)
+            .unwrap();
         db.add_member_kind("Edge", "EDM", MemberKind::Team).unwrap();
         let kinded = db.list_members_with_kind("Edge").unwrap();
         assert_eq!(kinded.len(), 2, "same-key different-kind both stored");

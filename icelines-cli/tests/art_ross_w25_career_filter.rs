@@ -102,9 +102,8 @@ fn evaluate(repo: &StatsRepository, plan: &QueryPlan, stint_season: u32) -> Vec<
 }
 
 fn parse_plan(filter: &str) -> QueryPlan {
-    parse_query(FilterInput::Cli(filter.into())).unwrap_or_else(|errs| {
-        panic!("test filter {filter:?} failed to parse: {errs:?}")
-    })
+    parse_query(FilterInput::Cli(filter.into()))
+        .unwrap_or_else(|errs| panic!("test filter {filter:?} failed to parse: {errs:?}"))
 }
 
 // ── Bio atoms work on cohort views ──────────────────────────────
@@ -216,11 +215,7 @@ fn l1_w25_double_negation_equals_positive() {
 #[test]
 fn l1_w25_impossible_compound_empty() {
     let repo = build_repo();
-    let names = evaluate(
-        &repo,
-        &parse_plan("country=CAN AND country=RUS"),
-        20142015,
-    );
+    let names = evaluate(&repo, &parse_plan("country=CAN AND country=RUS"), 20142015);
     assert!(
         names.is_empty(),
         "country=CAN AND country=RUS must yield empty; got: {names:?}"
@@ -232,11 +227,7 @@ fn l1_w25_impossible_compound_empty() {
 #[test]
 fn l1_w25_or_canadians_or_americans() {
     let repo = build_repo();
-    let names = evaluate(
-        &repo,
-        &parse_plan("country=CAN OR country=USA"),
-        20142015,
-    );
+    let names = evaluate(&repo, &parse_plan("country=CAN OR country=USA"), 20142015);
     assert!(names.iter().any(|n| n == "Connor McDavid"));
     assert!(names.iter().any(|n| n == "Auston Matthews"));
     assert!(

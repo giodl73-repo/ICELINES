@@ -133,7 +133,9 @@ fn p_w10_005_envelope_playoffs_series() {
     let h = fresh();
     let out = ok_in(
         h.path(),
-        &["playoffs", "--season", "19931994", "--series", "A", "--json"],
+        &[
+            "playoffs", "--season", "19931994", "--series", "A", "--json",
+        ],
     );
     assert_k24_envelope(&out, "playoffs.series");
 }
@@ -184,7 +186,9 @@ fn p_w10_010_playoffs_series_meta_has_season_id() {
     let h = fresh();
     let out = ok_in(
         h.path(),
-        &["playoffs", "--season", "19931994", "--series", "A", "--json"],
+        &[
+            "playoffs", "--season", "19931994", "--series", "A", "--json",
+        ],
     );
     let v: serde_json::Value = serde_json::from_str(&out).unwrap();
     assert_eq!(v["meta"]["season_id"], "19931994");
@@ -205,7 +209,10 @@ fn p_w10_012_favorites_meta_counts_match_data_lengths() {
     let h = fresh();
     let out = ok_in(h.path(), &["favorites", "--json"]);
     let v: serde_json::Value = serde_json::from_str(&out).unwrap();
-    let players = v["data"]["players"].as_array().map(|a| a.len()).unwrap_or(0);
+    let players = v["data"]["players"]
+        .as_array()
+        .map(|a| a.len())
+        .unwrap_or(0);
     let teams = v["data"]["teams"].as_array().map(|a| a.len()).unwrap_or(0);
     let events = v["data"]["events"].as_array().map(|a| a.len()).unwrap_or(0);
     let m_players = v["meta"]["counts"]["players"].as_u64().unwrap_or(99) as usize;
@@ -458,7 +465,10 @@ fn p_w10_030_shifts_lock_mentions_shifts() {
         &["config", "set", "sync.capabilities.shifts", "favorites"],
     );
     let err = stderr_of(&out);
-    assert!(err.contains("shifts"), "error mentions the locked capability");
+    assert!(
+        err.contains("shifts"),
+        "error mentions the locked capability"
+    );
 }
 
 #[test]
@@ -491,10 +501,7 @@ fn p_w10_032_shifts_lock_says_allowed_off() {
 #[test]
 fn p_w10_033_query_career_week_remediation() {
     let h = fresh();
-    let out = fail_in(
-        h.path(),
-        &["query", "career", "--league", "OHL", "--week"],
-    );
+    let out = fail_in(h.path(), &["query", "career", "--league", "OHL", "--week"]);
     let err = stderr_of(&out);
     assert!(
         err.contains("Use --season instead"),
@@ -544,7 +551,10 @@ fn p_w10_037_no_panic_marker_in_any_error() {
     ] {
         let out = run_in(h.path(), &args.iter().copied().collect::<Vec<_>>());
         let combined = format!("{}{}", stdout_of(&out), stderr_of(&out));
-        assert!(!combined.contains("panicked"), "{args:?} surfaced panic text");
+        assert!(
+            !combined.contains("panicked"),
+            "{args:?} surfaced panic text"
+        );
     }
 }
 
@@ -596,7 +606,11 @@ fn p_w10_040_invalid_date_message_consistent_across_surfaces() {
             errors.push(line.to_owned());
         }
     }
-    assert_eq!(errors.len(), 4, "every date-accepting command surfaced the line");
+    assert_eq!(
+        errors.len(),
+        4,
+        "every date-accepting command surfaced the line"
+    );
     // All four should share the same prefix template (input may differ).
     let prefix = "invalid date 'garbage'";
     for e in &errors {
@@ -631,7 +645,9 @@ fn p_w10_043_playoffs_series_team_abbrevs_uppercase() {
     let h = fresh();
     let out = ok_in(
         h.path(),
-        &["playoffs", "--season", "19931994", "--series", "A", "--json"],
+        &[
+            "playoffs", "--season", "19931994", "--series", "A", "--json",
+        ],
     );
     let v: serde_json::Value = serde_json::from_str(&out).unwrap();
     let top = v["data"]["top_seed_abbrev"].as_str().unwrap();
@@ -732,7 +748,10 @@ fn p_w10_052_version_goes_to_stdout() {
     let h = fresh();
     let out = run_in(h.path(), &["--version"]);
     assert!(stdout_of(&out).contains("icelines"));
-    assert!(stderr_of(&out).is_empty(), "version must not write to stderr");
+    assert!(
+        stderr_of(&out).is_empty(),
+        "version must not write to stderr"
+    );
 }
 
 #[test]
@@ -748,8 +767,8 @@ fn p_w10_054_favorites_json_to_stdout_only() {
     let out = run_in(h.path(), &["favorites", "--json"]);
     let stdout = stdout_of(&out);
     let stderr = stderr_of(&out);
-    let _: serde_json::Value = serde_json::from_str(&stdout)
-        .expect("stdout must be valid JSON when --json is set");
+    let _: serde_json::Value =
+        serde_json::from_str(&stdout).expect("stdout must be valid JSON when --json is set");
     // Pure --json output: stderr should be empty so consumers can
     // pipe straight to jq.
     assert!(
@@ -762,8 +781,7 @@ fn p_w10_054_favorites_json_to_stdout_only() {
 fn p_w10_055_query_leaders_playoff_json_clean() {
     let h = fresh();
     let out = run_in(h.path(), &["query", "leaders", "--playoff", "--json"]);
-    let _: serde_json::Value =
-        serde_json::from_str(&stdout_of(&out)).expect("clean JSON");
+    let _: serde_json::Value = serde_json::from_str(&stdout_of(&out)).expect("clean JSON");
     assert!(stderr_of(&out).trim().is_empty());
 }
 
@@ -772,10 +790,11 @@ fn p_w10_056_playoffs_series_json_clean() {
     let h = fresh();
     let out = run_in(
         h.path(),
-        &["playoffs", "--season", "19931994", "--series", "A", "--json"],
+        &[
+            "playoffs", "--season", "19931994", "--series", "A", "--json",
+        ],
     );
-    let _: serde_json::Value =
-        serde_json::from_str(&stdout_of(&out)).expect("clean JSON");
+    let _: serde_json::Value = serde_json::from_str(&stdout_of(&out)).expect("clean JSON");
     assert!(stderr_of(&out).trim().is_empty());
 }
 
@@ -797,7 +816,10 @@ fn p_w10_058_clap_help_stderr_clean_on_success() {
     let h = fresh();
     let out = run_in(h.path(), &["favorites", "--help"]);
     assert!(out.status.success());
-    assert!(stderr_of(&out).trim().is_empty(), "--help must not noise stderr");
+    assert!(
+        stderr_of(&out).trim().is_empty(),
+        "--help must not noise stderr"
+    );
 }
 
 #[test]
@@ -1239,10 +1261,7 @@ fn p_w10_097_help_doesnt_use_developer_jargon() {
     let out = ok_in(h.path(), &["--help"]);
     // User-facing help shouldn't have raw struct names or Rust jargon
     for jargon in ["impl", "trait", "Result<", "Option<", "fn "] {
-        assert!(
-            !out.contains(jargon),
-            "--help leaked dev jargon: {jargon}"
-        );
+        assert!(!out.contains(jargon), "--help leaked dev jargon: {jargon}");
     }
 }
 

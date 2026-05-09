@@ -142,7 +142,10 @@ fn p_w16_006_arrow_eq_typo_hint() {
         &["query", "leaders", "--pos", "C", "--filter", "g=>5"],
     );
     let stderr = String::from_utf8_lossy(&out.stderr);
-    assert!(stderr.contains(">="), "stderr should hint at >=; got: {stderr}");
+    assert!(
+        stderr.contains(">="),
+        "stderr should hint at >=; got: {stderr}"
+    );
     no_panic(&out);
 }
 
@@ -167,14 +170,7 @@ fn p_w16_008_strict_gt_in_or() {
     let h = fresh();
     let _ = ok_in(
         h.path(),
-        &[
-            "query",
-            "leaders",
-            "--pos",
-            "C",
-            "--filter",
-            "g>50 OR a>50",
-        ],
+        &["query", "leaders", "--pos", "C", "--filter", "g>50 OR a>50"],
     );
 }
 
@@ -238,12 +234,7 @@ fn p_w16_013_pos_in_set() {
     let h = fresh();
     let _ = ok_in(
         h.path(),
-        &[
-            "query",
-            "leaders",
-            "--filter",
-            "pos IN (C, LW, RW)",
-        ],
+        &["query", "leaders", "--filter", "pos IN (C, LW, RW)"],
     );
 }
 
@@ -681,14 +672,7 @@ fn p_w16_040_substring_op() {
     let h = fresh();
     let out = run_in(
         h.path(),
-        &[
-            "query",
-            "leaders",
-            "--pos",
-            "C",
-            "--filter",
-            "country ~ AN",
-        ],
+        &["query", "leaders", "--pos", "C", "--filter", "country ~ AN"],
     );
     no_panic(&out);
 }
@@ -700,14 +684,7 @@ fn p_w16_041_last10g_basic() {
     let h = fresh();
     let _ = ok_in(
         h.path(),
-        &[
-            "query",
-            "leaders",
-            "--pos",
-            "C",
-            "--filter",
-            "g.last10g>=5",
-        ],
+        &["query", "leaders", "--pos", "C", "--filter", "g.last10g>=5"],
     );
 }
 
@@ -732,14 +709,7 @@ fn p_w16_043_last3w() {
     let h = fresh();
     let _ = ok_in(
         h.path(),
-        &[
-            "query",
-            "leaders",
-            "--pos",
-            "C",
-            "--filter",
-            "p.last3w>=5",
-        ],
+        &["query", "leaders", "--pos", "C", "--filter", "p.last3w>=5"],
     );
 }
 
@@ -748,14 +718,7 @@ fn p_w16_044_last3m() {
     let h = fresh();
     let _ = ok_in(
         h.path(),
-        &[
-            "query",
-            "leaders",
-            "--pos",
-            "C",
-            "--filter",
-            "p.last3m>=15",
-        ],
+        &["query", "leaders", "--pos", "C", "--filter", "p.last3m>=15"],
     );
 }
 
@@ -796,14 +759,7 @@ fn p_w16_047_last10z_unknown_unit_rejected() {
     let h = fresh();
     let out = fail_in(
         h.path(),
-        &[
-            "query",
-            "leaders",
-            "--pos",
-            "C",
-            "--filter",
-            "g.last10z>=5",
-        ],
+        &["query", "leaders", "--pos", "C", "--filter", "g.last10z>=5"],
     );
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(
@@ -818,14 +774,7 @@ fn p_w16_048_last0g_zero_size_rejected() {
     let h = fresh();
     let out = fail_in(
         h.path(),
-        &[
-            "query",
-            "leaders",
-            "--pos",
-            "C",
-            "--filter",
-            "g.last0g>=5",
-        ],
+        &["query", "leaders", "--pos", "C", "--filter", "g.last0g>=5"],
     );
     no_panic(&out);
 }
@@ -853,12 +802,7 @@ fn p_w16_050_killer_query_sliding_plus_age() {
     let h = fresh();
     let _ = ok_in(
         h.path(),
-        &[
-            "query",
-            "leaders",
-            "--filter",
-            "g.last10g>=5 AND age<=25",
-        ],
+        &["query", "leaders", "--filter", "g.last10g>=5 AND age<=25"],
     );
 }
 
@@ -964,14 +908,7 @@ fn p_w16_057_career_streak() {
     let h = fresh();
     let _ = ok_in(
         h.path(),
-        &[
-            "query",
-            "leaders",
-            "--pos",
-            "C",
-            "--filter",
-            "p.streak>=15",
-        ],
+        &["query", "leaders", "--pos", "C", "--filter", "p.streak>=15"],
     );
 }
 
@@ -1060,14 +997,7 @@ fn p_w16_063_ever_on_non_career_atom_rejected() {
     let h = fresh();
     let out = fail_in(
         h.path(),
-        &[
-            "query",
-            "leaders",
-            "--pos",
-            "C",
-            "--filter",
-            "g>=5 EVER",
-        ],
+        &["query", "leaders", "--pos", "C", "--filter", "g>=5 EVER"],
     );
     no_panic(&out);
 }
@@ -1110,14 +1040,7 @@ fn p_w16_066_league_eq() {
     let h = fresh();
     let _ = ok_in(
         h.path(),
-        &[
-            "query",
-            "leaders",
-            "--pos",
-            "C",
-            "--filter",
-            "league=OHL",
-        ],
+        &["query", "leaders", "--pos", "C", "--filter", "league=OHL"],
     );
 }
 
@@ -1239,12 +1162,7 @@ fn p_w16_074_league_compound_with_age() {
     let h = fresh();
     let _ = ok_in(
         h.path(),
-        &[
-            "query",
-            "leaders",
-            "--filter",
-            "league=OHL AND age<=24",
-        ],
+        &["query", "leaders", "--filter", "league=OHL AND age<=24"],
     );
 }
 
@@ -1273,13 +1191,7 @@ fn p_w16_076_explain_text() {
     let h = fresh();
     let out = ok_in(
         h.path(),
-        &[
-            "query",
-            "leaders",
-            "--filter",
-            "g>=10",
-            "--explain",
-        ],
+        &["query", "leaders", "--filter", "g>=10", "--explain"],
     );
     assert!(out.contains("QUERY PLAN"));
     assert!(out.contains("explain.v1"));
@@ -1299,8 +1211,7 @@ fn p_w16_077_explain_json_envelope() {
             "--json",
         ],
     );
-    let v: serde_json::Value =
-        serde_json::from_str(&out).expect("explain JSON must parse");
+    let v: serde_json::Value = serde_json::from_str(&out).expect("explain JSON must parse");
     assert_eq!(v["schema_version"], "explain.v1");
     assert_eq!(v["route"], "leaders.explain");
 }
@@ -1310,13 +1221,7 @@ fn p_w16_078_explain_career_atom() {
     let h = fresh();
     let out = ok_in(
         h.path(),
-        &[
-            "query",
-            "leaders",
-            "--filter",
-            "p.career>=500",
-            "--explain",
-        ],
+        &["query", "leaders", "--filter", "p.career>=500", "--explain"],
     );
     assert!(out.contains("CareerAggregate"));
 }
@@ -1500,14 +1405,7 @@ fn p_w16_089_deeply_nested_parens() {
     let h = fresh();
     let _ = ok_in(
         h.path(),
-        &[
-            "query",
-            "leaders",
-            "--pos",
-            "C",
-            "--filter",
-            "(((g>=10)))",
-        ],
+        &["query", "leaders", "--pos", "C", "--filter", "(((g>=10)))"],
     );
 }
 
@@ -1560,8 +1458,7 @@ fn p_w16_092_json_output_with_compound() {
         ],
     );
     // Should be valid JSON
-    let _: serde_json::Value =
-        serde_json::from_str(&out).expect("query --json output must parse");
+    let _: serde_json::Value = serde_json::from_str(&out).expect("query --json output must parse");
 }
 
 #[test]
@@ -1609,13 +1506,7 @@ fn p_w16_095_huge_threshold_no_match() {
     let out = ok_in(
         h.path(),
         &[
-            "query",
-            "leaders",
-            "--pos",
-            "C",
-            "--filter",
-            "g>=99999",
-            "--json",
+            "query", "leaders", "--pos", "C", "--filter", "g>=99999", "--json",
         ],
     );
     let v: serde_json::Value = serde_json::from_str(&out).expect("parse");
@@ -1630,15 +1521,7 @@ fn p_w16_096_negative_threshold_universal_for_unsigned() {
     let out = ok_in(
         h.path(),
         &[
-            "query",
-            "leaders",
-            "--pos",
-            "C",
-            "--top",
-            "5",
-            "--filter",
-            "g>=-5",
-            "--json",
+            "query", "leaders", "--pos", "C", "--top", "5", "--filter", "g>=-5", "--json",
         ],
     );
     let v: serde_json::Value = serde_json::from_str(&out).expect("parse");

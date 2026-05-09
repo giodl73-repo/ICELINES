@@ -155,7 +155,10 @@ fn p_w6_013_tonight_with_team_no_panic() {
 #[test]
 fn p_w6_014_tonight_with_team_and_date_no_panic() {
     let h = fresh();
-    no_panic_in(h.path(), &["tonight", "--team", "EDM", "--date", "2014-10-08"]);
+    no_panic_in(
+        h.path(),
+        &["tonight", "--team", "EDM", "--date", "2014-10-08"],
+    );
 }
 
 #[test]
@@ -412,7 +415,9 @@ fn p_w6_050_playoffs_series_json_envelope() {
     let h = fresh();
     let out = ok_in(
         h.path(),
-        &["playoffs", "--season", "19931994", "--series", "A", "--json"],
+        &[
+            "playoffs", "--season", "19931994", "--series", "A", "--json",
+        ],
     );
     let v: serde_json::Value = serde_json::from_str(&out).expect("valid JSON");
     assert_eq!(v["route"], "playoffs.series");
@@ -532,7 +537,14 @@ fn p_w6_063_fetch_boxscore_for_favorites_zero_teams_no_panic() {
     let h = fresh();
     no_panic_in(
         h.path(),
-        &["fetch", "boxscore", "--for-favorites", "--date", "2014-10-08", "--dry-run"],
+        &[
+            "fetch",
+            "boxscore",
+            "--for-favorites",
+            "--date",
+            "2014-10-08",
+            "--dry-run",
+        ],
     );
 }
 
@@ -797,10 +809,7 @@ fn p_w6_091_favorites_with_date_far_past_no_panic() {
 #[test]
 fn p_w6_092_query_career_week_rejected_literal() {
     let h = fresh();
-    let err = fail_in(
-        h.path(),
-        &["query", "career", "--league", "OHL", "--week"],
-    );
+    let err = fail_in(h.path(), &["query", "career", "--league", "OHL", "--week"]);
     assert!(err.contains("--week / --month not supported on `query career`"));
     assert!(err.contains("Use --season instead"));
 }
@@ -808,10 +817,7 @@ fn p_w6_092_query_career_week_rejected_literal() {
 #[test]
 fn p_w6_093_query_career_month_same_rejection() {
     let h = fresh();
-    let err = fail_in(
-        h.path(),
-        &["query", "career", "--league", "OHL", "--month"],
-    );
+    let err = fail_in(h.path(), &["query", "career", "--league", "OHL", "--month"]);
     assert!(err.contains("--week / --month"));
 }
 

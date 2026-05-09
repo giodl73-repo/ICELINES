@@ -129,15 +129,18 @@ fn p_w5_007_setup_writes_sync_section() {
     ok_in(h.path(), &["setup", "--accept-defaults"]);
     let body = std::fs::read_to_string(h.path().join(".icelines").join("config.toml"))
         .expect("read config");
-    assert!(body.contains("[sync"), "config must have [sync] block, got: {body}");
+    assert!(
+        body.contains("[sync"),
+        "config must have [sync] block, got: {body}"
+    );
 }
 
 #[test]
 fn p_w5_008_setup_writes_capabilities_subsection() {
     let h = fresh();
     ok_in(h.path(), &["setup", "--accept-defaults"]);
-    let body = std::fs::read_to_string(h.path().join(".icelines").join("config.toml"))
-        .expect("read");
+    let body =
+        std::fs::read_to_string(h.path().join(".icelines").join("config.toml")).expect("read");
     assert!(body.contains("[sync.capabilities]") || body.contains("capabilities"));
 }
 
@@ -181,7 +184,10 @@ fn p_w5_013_setup_reset_with_existing_config_overwrites() {
         &["config", "set", "sync.capabilities.transactions", "off"],
     );
     ok_in(h.path(), &["setup", "--accept-defaults", "--reset"]);
-    let got = ok_in(h.path(), &["config", "get", "sync.capabilities.transactions"]);
+    let got = ok_in(
+        h.path(),
+        &["config", "get", "sync.capabilities.transactions"],
+    );
     assert_eq!(got.trim(), "favorites", "reset restores spec default");
 }
 
@@ -318,7 +324,10 @@ fn p_w5_026_config_set_banner_invalid_errors() {
 fn p_w5_027_config_set_season_transition_auto() {
     let h = fresh();
     ok_in(h.path(), &["setup", "--accept-defaults"]);
-    ok_in(h.path(), &["config", "set", "sync.season_transition", "auto"]);
+    ok_in(
+        h.path(),
+        &["config", "set", "sync.season_transition", "auto"],
+    );
     assert_eq!(
         ok_in(h.path(), &["config", "get", "sync.season_transition"]).trim(),
         "auto"
@@ -343,7 +352,10 @@ fn p_w5_028_config_set_season_transition_ignore() {
 fn p_w5_029_config_set_capabilities_stats_off() {
     let h = fresh();
     ok_in(h.path(), &["setup", "--accept-defaults"]);
-    ok_in(h.path(), &["config", "set", "sync.capabilities.stats", "off"]);
+    ok_in(
+        h.path(),
+        &["config", "set", "sync.capabilities.stats", "off"],
+    );
     assert_eq!(
         ok_in(h.path(), &["config", "get", "sync.capabilities.stats"]).trim(),
         "off"
@@ -373,7 +385,11 @@ fn p_w5_031_config_set_capabilities_scores_schedule_off() {
         &["config", "set", "sync.capabilities.scores_schedule", "off"],
     );
     assert_eq!(
-        ok_in(h.path(), &["config", "get", "sync.capabilities.scores_schedule"]).trim(),
+        ok_in(
+            h.path(),
+            &["config", "get", "sync.capabilities.scores_schedule"]
+        )
+        .trim(),
         "off"
     );
 }
@@ -387,7 +403,11 @@ fn p_w5_032_config_set_capabilities_transactions_league() {
         &["config", "set", "sync.capabilities.transactions", "league"],
     );
     assert_eq!(
-        ok_in(h.path(), &["config", "get", "sync.capabilities.transactions"]).trim(),
+        ok_in(
+            h.path(),
+            &["config", "get", "sync.capabilities.transactions"]
+        )
+        .trim(),
         "league"
     );
 }
@@ -429,7 +449,11 @@ fn p_w5_035_config_set_capabilities_career_history_off() {
         &["config", "set", "sync.capabilities.career_history", "off"],
     );
     assert_eq!(
-        ok_in(h.path(), &["config", "get", "sync.capabilities.career_history"]).trim(),
+        ok_in(
+            h.path(),
+            &["config", "get", "sync.capabilities.career_history"]
+        )
+        .trim(),
         "off"
     );
 }
@@ -440,10 +464,19 @@ fn p_w5_036_config_set_capabilities_career_history_league() {
     ok_in(h.path(), &["setup", "--accept-defaults"]);
     ok_in(
         h.path(),
-        &["config", "set", "sync.capabilities.career_history", "league"],
+        &[
+            "config",
+            "set",
+            "sync.capabilities.career_history",
+            "league",
+        ],
     );
     assert_eq!(
-        ok_in(h.path(), &["config", "get", "sync.capabilities.career_history"]).trim(),
+        ok_in(
+            h.path(),
+            &["config", "get", "sync.capabilities.career_history"]
+        )
+        .trim(),
         "league"
     );
 }
@@ -452,7 +485,10 @@ fn p_w5_036_config_set_capabilities_career_history_league() {
 fn p_w5_037_config_shifts_off_succeeds() {
     let h = fresh();
     ok_in(h.path(), &["setup", "--accept-defaults"]);
-    ok_in(h.path(), &["config", "set", "sync.capabilities.shifts", "off"]);
+    ok_in(
+        h.path(),
+        &["config", "set", "sync.capabilities.shifts", "off"],
+    );
 }
 
 #[test]
@@ -484,7 +520,12 @@ fn p_w5_040_config_invalid_mode_errors() {
     ok_in(h.path(), &["setup", "--accept-defaults"]);
     fail_in(
         h.path(),
-        &["config", "set", "sync.capabilities.transactions", "everywhere"],
+        &[
+            "config",
+            "set",
+            "sync.capabilities.transactions",
+            "everywhere",
+        ],
     );
 }
 
@@ -527,11 +568,21 @@ fn p_w5_043_config_list_includes_sync_policy() {
 fn p_w5_044_config_reset_sync_capabilities_restores_defaults() {
     let h = fresh();
     ok_in(h.path(), &["setup", "--accept-defaults"]);
-    ok_in(h.path(), &["config", "set", "sync.capabilities.transactions", "off"]);
-    ok_in(h.path(), &["config", "set", "sync.capabilities.boxscores", "league"]);
+    ok_in(
+        h.path(),
+        &["config", "set", "sync.capabilities.transactions", "off"],
+    );
+    ok_in(
+        h.path(),
+        &["config", "set", "sync.capabilities.boxscores", "league"],
+    );
     ok_in(h.path(), &["config", "reset", "sync.capabilities"]);
     assert_eq!(
-        ok_in(h.path(), &["config", "get", "sync.capabilities.transactions"]).trim(),
+        ok_in(
+            h.path(),
+            &["config", "get", "sync.capabilities.transactions"]
+        )
+        .trim(),
         "favorites"
     );
     assert_eq!(
@@ -598,7 +649,10 @@ fn p_w5_051_group_help_smoke() {
 fn p_w5_052_group_list_default_includes_favorites() {
     let h = fresh();
     let out = ok_in(h.path(), &["group", "list"]);
-    assert!(out.contains("Favorites"), "default group exists, got: {out}");
+    assert!(
+        out.contains("Favorites"),
+        "default group exists, got: {out}"
+    );
 }
 
 #[test]
@@ -650,7 +704,10 @@ fn p_w5_058_group_add_to_unknown_group_errors() {
 fn p_w5_059_group_remove_player_works() {
     let h = fresh();
     ok_in(h.path(), &["group", "add", "Favorites", "Connor McDavid"]);
-    ok_in(h.path(), &["group", "remove", "Favorites", "Connor McDavid"]);
+    ok_in(
+        h.path(),
+        &["group", "remove", "Favorites", "Connor McDavid"],
+    );
 }
 
 #[test]
@@ -717,8 +774,7 @@ fn p_w5_067_favorites_empty_state_teaches() {
 fn p_w5_068_favorites_json_envelope_valid() {
     let h = fresh();
     let out = ok_in(h.path(), &["favorites", "--json"]);
-    let _: serde_json::Value =
-        serde_json::from_str(&out).expect("--json must emit valid JSON");
+    let _: serde_json::Value = serde_json::from_str(&out).expect("--json must emit valid JSON");
 }
 
 #[test]

@@ -9,8 +9,8 @@
 use anyhow::{Context, Result};
 use chrono::{NaiveDate, Utc};
 use icelines_core::favorites::{
-    AggregateView, FavoritesView, GameResult, GameState, GoalieNightLine, HomeAway,
-    PlayerNightRow, SkaterNightLine, TeamNightRow,
+    AggregateView, FavoritesView, GameResult, GameState, GoalieNightLine, HomeAway, PlayerNightRow,
+    SkaterNightLine, TeamNightRow,
 };
 use icelines_core::timeframe::Timeframe;
 
@@ -26,8 +26,7 @@ pub async fn run(
     let anchor = match date.as_deref() {
         Some(d) => {
             let iso = parse_iso_date(d)?;
-            NaiveDate::parse_from_str(&iso, "%Y-%m-%d")
-                .context("parse anchor date")?
+            NaiveDate::parse_from_str(&iso, "%Y-%m-%d").context("parse anchor date")?
         }
         None => Utc::now().date_naive(),
     };
@@ -80,7 +79,12 @@ pub async fn run(
     });
 
     if json {
-        print_json(&view, &group, members.len(), view.players.len() + view.teams.len())?;
+        print_json(
+            &view,
+            &group,
+            members.len(),
+            view.players.len() + view.teams.len(),
+        )?;
     } else {
         print_text(&view, &group, &members);
     }
@@ -93,9 +97,9 @@ fn parse_range(s: Option<&str>) -> Result<Timeframe> {
         Some("week") => Timeframe::Week,
         Some("month") => Timeframe::Month,
         Some("season") => Timeframe::Season,
-        Some(other) => anyhow::bail!(
-            "unknown --range '{other}' — expected one of: day, week, month, season"
-        ),
+        Some(other) => {
+            anyhow::bail!("unknown --range '{other}' — expected one of: day, week, month, season")
+        }
     })
 }
 
@@ -208,7 +212,10 @@ fn format_skater_line(s: &SkaterNightLine) -> String {
         .map(|sec| format!("{}:{:02}", sec / 60, sec % 60))
         .unwrap_or_else(|| "—".to_string());
     let hits = s.hits.map(|n| n.to_string()).unwrap_or_else(|| "—".into());
-    let blocks = s.blocks.map(|n| n.to_string()).unwrap_or_else(|| "—".into());
+    let blocks = s
+        .blocks
+        .map(|n| n.to_string())
+        .unwrap_or_else(|| "—".into());
     let sog = s.shots.map(|n| n.to_string()).unwrap_or_else(|| "—".into());
     format!(
         "{}  {} {}-{} {} · {}G {}A {}P · {:+} · TOI {}  · {} SOG · {} hits · {} blk{}",
@@ -263,11 +270,7 @@ fn format_team_row(t: &TeamNightRow) -> String {
     if t.on_bye {
         return format!("{}  — bye", t.team_abbr.0);
     }
-    let opp = t
-        .opponent
-        .as_ref()
-        .map(|o| o.0.as_str())
-        .unwrap_or("—");
+    let opp = t.opponent.as_ref().map(|o| o.0.as_str()).unwrap_or("—");
     let result = match t.result {
         Some(GameResult::Win) => "W",
         Some(GameResult::Loss) => "L",
@@ -278,7 +281,11 @@ fn format_team_row(t: &TeamNightRow) -> String {
     format!(
         "{}  {} {} vs {}",
         t.team_abbr.0,
-        if t.score.is_empty() { "—" } else { t.score.as_str() },
+        if t.score.is_empty() {
+            "—"
+        } else {
+            t.score.as_str()
+        },
         result,
         opp,
     )
@@ -343,7 +350,10 @@ mod tests {
         let date = NaiveDate::from_ymd_opt(2026, 1, 15).unwrap();
         let agg = empty_aggregate(date, Timeframe::Week);
         // Week of Thu Jan 15 → Mon Jan 12 ..= Sun Jan 18
-        assert_eq!(agg.range_start, NaiveDate::from_ymd_opt(2026, 1, 12).unwrap());
+        assert_eq!(
+            agg.range_start,
+            NaiveDate::from_ymd_opt(2026, 1, 12).unwrap()
+        );
         assert_eq!(agg.range_end, NaiveDate::from_ymd_opt(2026, 1, 18).unwrap());
         assert!(agg.player_rollups.is_empty());
         assert!(agg.team_rollups.is_empty());

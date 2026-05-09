@@ -8,7 +8,7 @@
 use anyhow::{Context, Result};
 use icelines_core::freshness::{FetchSource, Freshness, SystemClock, Ttl};
 use icelines_fetch::datastore::DataStore;
-use icelines_fetch::manifest::{DataKind, DataKey, ManifestEntry};
+use icelines_fetch::manifest::{DataKey, DataKind, ManifestEntry};
 
 pub async fn run(shard: Option<String>, stale_only: bool) -> Result<()> {
     let home = std::env::var_os("HOME")
@@ -24,8 +24,10 @@ pub async fn run(shard: Option<String>, stale_only: bool) -> Result<()> {
 
     if rows.is_empty() {
         if let Some(k) = kind_filter {
-            println!("No manifest entries for {k:?}{}.",
-                if stale_only { " (stale-only)" } else { "" });
+            println!(
+                "No manifest entries for {k:?}{}.",
+                if stale_only { " (stale-only)" } else { "" }
+            );
         } else {
             println!("Manifest is empty.");
             println!("Run `icelines setup --accept-defaults` then `icelines fetch sync`");
@@ -146,8 +148,14 @@ mod tests {
     fn l0_data_status_parse_kind_known_values() {
         assert!(matches!(parse_kind("bios").unwrap(), DataKind::Bios));
         assert!(matches!(parse_kind("BIOS").unwrap(), DataKind::Bios));
-        assert!(matches!(parse_kind("goalies").unwrap(), DataKind::GoalieStats));
-        assert!(matches!(parse_kind("boxscore").unwrap(), DataKind::Boxscore));
+        assert!(matches!(
+            parse_kind("goalies").unwrap(),
+            DataKind::GoalieStats
+        ));
+        assert!(matches!(
+            parse_kind("boxscore").unwrap(),
+            DataKind::Boxscore
+        ));
         assert!(matches!(parse_kind("scores").unwrap(), DataKind::Score));
     }
 
@@ -169,9 +177,18 @@ mod tests {
             ttl,
         };
         assert_eq!(freshness_label(&mk(Ttl::Static)), "static");
-        assert_eq!(freshness_label(&mk(Ttl::After(Duration::from_secs(60)))), "ttl 1m");
-        assert_eq!(freshness_label(&mk(Ttl::After(Duration::from_secs(3600)))), "ttl 1h");
-        assert_eq!(freshness_label(&mk(Ttl::After(Duration::from_secs(86400)))), "ttl 1d");
+        assert_eq!(
+            freshness_label(&mk(Ttl::After(Duration::from_secs(60)))),
+            "ttl 1m"
+        );
+        assert_eq!(
+            freshness_label(&mk(Ttl::After(Duration::from_secs(3600)))),
+            "ttl 1h"
+        );
+        assert_eq!(
+            freshness_label(&mk(Ttl::After(Duration::from_secs(86400)))),
+            "ttl 1d"
+        );
         assert_eq!(
             freshness_label(&mk(Ttl::After(Duration::from_secs(7 * 86400)))),
             "ttl 7d"
@@ -188,8 +205,14 @@ mod tests {
             short_key(&DataKey::SeasonType(Season(20252026), SeasonType::Playoff)),
             "20252026/playoff"
         );
-        assert_eq!(short_key(&DataKey::Game(GameId(2025020001))), "game:2025020001");
-        assert_eq!(short_key(&DataKey::Player(PlayerId(8478402))), "player:8478402");
+        assert_eq!(
+            short_key(&DataKey::Game(GameId(2025020001))),
+            "game:2025020001"
+        );
+        assert_eq!(
+            short_key(&DataKey::Player(PlayerId(8478402))),
+            "player:8478402"
+        );
         assert_eq!(short_key(&DataKey::Date("2026-01-15".into())), "2026-01-15");
         assert_eq!(short_key(&DataKey::Global), "<global>");
     }

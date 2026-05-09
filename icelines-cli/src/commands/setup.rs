@@ -83,7 +83,11 @@ fn prompt_flow<R: BufRead, W: Write>(stdin: &mut R, stdout: &mut W) -> Result<Sy
         stdin,
         stdout,
         "1. Track all NHL transactions, or just your favorites?",
-        &[("favorites", "Favorites only"), ("league", "Whole league"), ("off", "Skip")],
+        &[
+            ("favorites", "Favorites only"),
+            ("league", "Whole league"),
+            ("off", "Skip"),
+        ],
         0,
     )?;
     let mode = parse_mode(&q1)?;
@@ -95,7 +99,10 @@ fn prompt_flow<R: BufRead, W: Write>(stdin: &mut R, stdout: &mut W) -> Result<Sy
         stdin,
         stdout,
         "2. Pull deeper stats (boxscores) for your favorites?",
-        &[("favorites", "Yes (favorites only, ~5 MB/wk)"), ("off", "No")],
+        &[
+            ("favorites", "Yes (favorites only, ~5 MB/wk)"),
+            ("off", "No"),
+        ],
         0,
     )?;
     let mode = parse_mode(&q2)?;
@@ -139,10 +146,19 @@ fn ask_choice<R: BufRead, W: Write>(
 ) -> Result<String> {
     writeln!(stdout, "{question}").ok();
     for (i, (key, label)) in choices.iter().enumerate() {
-        let marker = if i == default_idx { "[default]" } else { "         " };
+        let marker = if i == default_idx {
+            "[default]"
+        } else {
+            "         "
+        };
         writeln!(stdout, "  {i}. {key:<10} {marker} — {label}").ok();
     }
-    write!(stdout, "Choose [0-{}] (Enter = default): ", choices.len() - 1).ok();
+    write!(
+        stdout,
+        "Choose [0-{}] (Enter = default): ",
+        choices.len() - 1
+    )
+    .ok();
     stdout.flush().ok();
 
     let mut line = String::new();
@@ -162,8 +178,18 @@ fn ask_choice<R: BufRead, W: Write>(
 
 fn print_summary<W: Write>(stdout: &mut W, sync: &SyncConfig) -> Result<()> {
     writeln!(stdout, "\n── Resolved configuration ──").ok();
-    writeln!(stdout, "  sync.policy             = {}", sync.policy.as_str()).ok();
-    writeln!(stdout, "  sync.banner             = {}", sync.banner.as_str()).ok();
+    writeln!(
+        stdout,
+        "  sync.policy             = {}",
+        sync.policy.as_str()
+    )
+    .ok();
+    writeln!(
+        stdout,
+        "  sync.banner             = {}",
+        sync.banner.as_str()
+    )
+    .ok();
     writeln!(
         stdout,
         "  sync.season_transition  = {}",

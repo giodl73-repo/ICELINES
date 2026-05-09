@@ -124,10 +124,7 @@ pub enum ParseError {
     /// filter parser error.
     BadFilter { details: String },
     /// e.g., `class abc` — non-integer year.
-    BadInteger {
-        command: &'static str,
-        raw: String,
-    },
+    BadInteger { command: &'static str, raw: String },
     /// e.g., `/hide foo` — `foo` isn't a known SidePane.
     BadSidePane(String),
 }
@@ -151,10 +148,7 @@ impl std::fmt::Display for ParseError {
                 write!(f, "{command}: {raw:?} is not a valid integer")
             }
             ParseError::BadSidePane(s) => {
-                write!(
-                    f,
-                    "unknown pane {s:?}; expected `favorites` or `schedule`"
-                )
+                write!(f, "unknown pane {s:?}; expected `favorites` or `schedule`")
             }
         }
     }
@@ -362,12 +356,10 @@ fn parse_class(args: &str) -> Result<Command, ParseError> {
             arg: "year",
         });
     }
-    let year: u16 = trimmed
-        .parse()
-        .map_err(|_| ParseError::BadInteger {
-            command: "class",
-            raw: trimmed.to_owned(),
-        })?;
+    let year: u16 = trimmed.parse().map_err(|_| ParseError::BadInteger {
+        command: "class",
+        raw: trimmed.to_owned(),
+    })?;
     Ok(Command::Class { year })
 }
 
@@ -405,6 +397,260 @@ fn parse_query(args: &str) -> Result<Command, ParseError> {
                 .join("; "),
         }),
     }
+}
+
+// ── Executor ────────────────────────────────────────────────────────────────
+
+/// Phase Adams.2 — outcome of running an executed Command.
+/// Matches the spec's "what does the orchestrator do next" model:
+/// Continue is the no-op default; Quit propagates; Flash sets a
+/// transient success message in the cmdbar; NotImplemented
+/// surfaces a "this command is recognized but not yet wired"
+/// error inline (used by Roster / Class etc. that don't have a
+/// TUI screen yet).
+#[derive(Debug, Clone)]
+pub enum ExecResult {
+    Continue,
+    Quit,
+    Flash(String),
+    NotImplemented(&'static str),
+}
+
+/// Phase Adams.2 — run a parsed Command against `App`. Mutates
+/// `app.screen` (workspace swap), `app.mdi.show_*` (pane
+/// toggles), `app.queries.filter_text` + filter_plan (Query),
+/// favorites DB (FavAdd/FavRemove), or returns Quit/Flash for
+/// the orchestrator to handle.
+///
+/// Per spec edge-2: command-bar Query mutates Stats screen
+/// state directly — single source of truth for filter text.
+pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResult {
+    use crate::tui::app::Screen;
+    match cmd {
+        // ── Meta ─────────────────────────────────────────────
+        Command::Help => {
+            app.show_help = true;
+            ExecResult::Continue
+        }
+        Command::Quit => ExecResult::Quit,
+        Command::Hide(pane) => {
+            if let Some(mdi) = &mut app.mdi {
+                match pane {
+                    SidePane::Favorites => mdi.show_favorites = false,
+                    SidePane::Schedule => mdi.show_schedule = false,
+                }
+            }
+            ExecResult::Continue
+        }
+        Command::Show(pane) => {
+            if let Some(mdi) = &mut app.mdi {
+                match pane {
+                    SidePane::Favorites => mdi.show_favorites = true,
+                    SidePane::Schedule => mdi.show_schedule = true,
+                }
+            }
+            ExecResult::Continue
+        }
+
+        // ── Workspace swap (no args) ─────────────────────────
+        Command::Stats => {
+            app.screen = Screen::Queries;
+            ExecResult::Continue
+        }
+        Command::Goalies => {
+            app.screen = Screen::Goalies;
+            ExecResult::Continue
+        }
+        Command::Transactions => {
+            app.screen = Screen::Transactions;
+            ExecResult::Continue
+        }
+        Command::Playoffs => {
+            app.screen = Screen::Playoffs;
+            ExecResult::Continue
+        }
+        Command::Depth => {
+            app.screen = Screen::Depth;
+            ExecResult::Continue
+        }
+        Command::Scores => {
+            app.screen = Screen::Tonight;
+            ExecResult::Continue
+        }
+        Command::Schedule => {
+            app.screen = Screen::Schedule;
+            ExecResult::Continue
+        }
+        Command::Favorites => {
+            app.screen = Screen::Favorites;
+            ExecResult::Continue
+        }
+
+        // ── Workspace swap (with args) ───────────────────────
+        Command::PlayerCard { needle } => {
+            // Resolve via the cross-bundled name lookup the CLI
+            // uses for `query player <name>`. On miss, surface a
+            // flash with candidates (or just a "not found" hint).
+            match icelines_fetch::stats_loader::resolve_player_id_by_name(&needle) {
+                Some(pid) => {
+                    app.screen = Screen::PlayerById(icelines_core::identity::PlayerId(pid));
+                    ExecResult::Continue
+                }
+                None => ExecResult::Flash(format!(
+                    "player not found: {needle:?}"
+                )),
+            }
+        }
+        Command::Team { abbrev } => {
+            app.screen = Screen::Team(abbrev);
+            ExecResult::Continue
+        }
+        Command::TeamSeason { abbrev } => {
+            app.screen = Screen::ScheduleTeam(abbrev);
+            ExecResult::Continue
+        }
+        Command::Compare { left, .. } => {
+            // v1: compare drives the comps screen via the left
+            // player; the right arg is parsed but not yet wired
+            // through (the existing TUI Comps screen is
+            // similarity-only). Future polish: head-to-head.
+            match icelines_fetch::stats_loader::resolve_player_id_by_name(&left) {
+                Some(pid) => {
+                    app.screen = Screen::CompsById(icelines_core::identity::PlayerId(pid));
+                    ExecResult::Continue
+                }
+                None => ExecResult::Flash(format!(
+                    "player not found: {left:?}"
+                )),
+            }
+        }
+        Command::Box { game } => {
+            // For now, only numeric game-ids are wired. "edm@bos"
+            // requires today's slate lookup (Adams.3 polish).
+            match game.parse::<u64>() {
+                Ok(game_id) => {
+                    app.screen = Screen::GameDetail(game_id);
+                    ExecResult::Continue
+                }
+                Err(_) => ExecResult::Flash(format!(
+                    "box: only numeric game-id wired in v1; got {game:?}"
+                )),
+            }
+        }
+        Command::Class { year: _ } => ExecResult::NotImplemented(
+            "class — TUI draft-class screen not wired yet (use `icelines class <year>` from CLI)",
+        ),
+
+        // ── Roster / fantasy ─────────────────────────────────
+        Command::Roster => ExecResult::NotImplemented(
+            "roster — TUI fantasy-roster screen not wired yet (use `icelines fantasy ...` from CLI)",
+        ),
+
+        // ── Write actions: favorites mutation ────────────────
+        Command::FavAdd { needle } => exec_fav_add(app, &needle),
+        Command::FavRemove { needle } => exec_fav_remove(app, &needle),
+
+        // ── Free-form filter ─────────────────────────────────
+        Command::Query { filter } => {
+            // Per spec edge-2: shared state with Stats filter
+            // editor. Mutate app.queries.filter_text directly;
+            // re-parse to populate filter_plan; swap workspace
+            // to Stats.
+            match icelines_query::parse_query(
+                icelines_query::FilterInput::Cli(filter.clone()),
+            ) {
+                Ok(plan) => {
+                    app.queries.filter_text = filter.clone();
+                    app.queries.filter_plan = Some(plan);
+                    app.queries.filter_error = None;
+                    app.screen = Screen::Queries;
+                    ExecResult::Flash(format!("filter applied: {filter}"))
+                }
+                Err(errs) => ExecResult::Flash(format!(
+                    "filter parse error: {}",
+                    errs.iter()
+                        .map(|e| e.to_string())
+                        .collect::<Vec<_>>()
+                        .join("; ")
+                )),
+            }
+        }
+    }
+}
+
+/// Resolve a player needle (name substring or "pid:1234567")
+/// then upsert into the Favorites group via GroupDb.
+fn exec_fav_add(app: &mut crate::tui::app::App, needle: &str) -> ExecResult {
+    let _ = app; // App not needed for the DB call (open-by-path)
+    let pid = match icelines_fetch::stats_loader::resolve_player_id_by_name(needle) {
+        Some(pid) => pid,
+        None => return ExecResult::Flash(format!("player not found: {needle:?}")),
+    };
+    // Resolve the canonical name + normalized form.
+    let (full_name, normalized) = match resolve_pid_to_names(pid) {
+        Some(p) => p,
+        None => {
+            return ExecResult::Flash(format!(
+                "couldn't resolve canonical name for pid {pid} — refusing to add stub"
+            ))
+        }
+    };
+    let _ = full_name;
+    match crate::db::GroupDb::open() {
+        Ok(db) => match db.add_member("Favorites", &normalized) {
+            Ok(true) => ExecResult::Flash(format!("★ added {needle} to Favorites")),
+            Ok(false) => ExecResult::Flash(format!("★ {needle} is already in Favorites")),
+            Err(e) => ExecResult::Flash(format!("DB error: {e}")),
+        },
+        Err(e) => ExecResult::Flash(format!("couldn't open Favorites DB: {e}")),
+    }
+}
+
+fn exec_fav_remove(app: &mut crate::tui::app::App, needle: &str) -> ExecResult {
+    let _ = app;
+    let pid = match icelines_fetch::stats_loader::resolve_player_id_by_name(needle) {
+        Some(pid) => pid,
+        None => return ExecResult::Flash(format!("player not found: {needle:?}")),
+    };
+    let (_full_name, normalized) = match resolve_pid_to_names(pid) {
+        Some(p) => p,
+        None => return ExecResult::Flash(format!("couldn't resolve canonical name for pid {pid}")),
+    };
+    match crate::db::GroupDb::open() {
+        Ok(db) => match db.remove_member("Favorites", &normalized) {
+            Ok(()) => ExecResult::Flash(format!("removed {needle} from Favorites")),
+            Err(e) => ExecResult::Flash(format!("DB error: {e}")),
+        },
+        Err(e) => ExecResult::Flash(format!("couldn't open Favorites DB: {e}")),
+    }
+}
+
+/// Walk bundled bios for a pid; return (full_name, normalized)
+/// for the GroupDb upsert. Mirrors the resolution path used by
+/// the existing player-card group-add flow.
+fn resolve_pid_to_names(pid: u32) -> Option<(String, String)> {
+    use icelines_fetch::bundled;
+    for season_id in bundled::BUNDLED_SEASONS {
+        if let Some(bios) = bundled::get_bios(season_id) {
+            for b in bios {
+                if b.player_id == pid {
+                    let full = b.skater_full_name.clone();
+                    let normalized = full.to_ascii_lowercase().replace(' ', ".");
+                    return Some((full, normalized));
+                }
+            }
+        }
+        if let Some(goalies) = bundled::get_goalie_stats(season_id) {
+            for g in goalies {
+                if g.player_id == pid {
+                    let full = g.goalie_full_name.clone();
+                    let normalized = full.to_ascii_lowercase().replace(' ', ".");
+                    return Some((full, normalized));
+                }
+            }
+        }
+    }
+    None
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -524,11 +770,7 @@ mod tests {
             ("schedule", Command::Schedule),
             ("favorites", Command::Favorites),
         ] {
-            assert_eq!(
-                parse_command(input).unwrap(),
-                expected,
-                "verb {input:?}"
-            );
+            assert_eq!(parse_command(input).unwrap(), expected, "verb {input:?}");
         }
     }
 
@@ -559,7 +801,13 @@ mod tests {
     #[test]
     fn l0_adams_parse_player_missing_arg() {
         let e = parse_command("player").unwrap_err();
-        matches!(e, ParseError::MissingArg { command: "player", .. });
+        matches!(
+            e,
+            ParseError::MissingArg {
+                command: "player",
+                ..
+            }
+        );
     }
 
     #[test]
@@ -591,7 +839,13 @@ mod tests {
     #[test]
     fn l0_adams_parse_team_missing_arg() {
         let e = parse_command("team").unwrap_err();
-        matches!(e, ParseError::MissingArg { command: "team", .. });
+        matches!(
+            e,
+            ParseError::MissingArg {
+                command: "team",
+                ..
+            }
+        );
     }
 
     #[test]
@@ -721,13 +975,25 @@ mod tests {
     #[test]
     fn l0_adams_parse_fav_add_missing_player() {
         let e = parse_command("fav add").unwrap_err();
-        matches!(e, ParseError::MissingArg { command: "/fav add", .. });
+        matches!(
+            e,
+            ParseError::MissingArg {
+                command: "/fav add",
+                ..
+            }
+        );
     }
 
     #[test]
     fn l0_adams_parse_fav_missing_subcommand() {
         let e = parse_command("fav").unwrap_err();
-        matches!(e, ParseError::MissingArg { command: "/fav", .. });
+        matches!(
+            e,
+            ParseError::MissingArg {
+                command: "/fav",
+                ..
+            }
+        );
     }
 
     // ── Query (Phase Art Ross delegation) ─────────────────────────────────
@@ -762,7 +1028,13 @@ mod tests {
     #[test]
     fn l0_adams_parse_query_missing_arg() {
         let e = parse_command("query").unwrap_err();
-        matches!(e, ParseError::MissingArg { command: "query", .. });
+        matches!(
+            e,
+            ParseError::MissingArg {
+                command: "query",
+                ..
+            }
+        );
     }
 
     // ── Display impl ──────────────────────────────────────────────────────
@@ -770,14 +1042,8 @@ mod tests {
     #[test]
     fn l0_adams_parse_error_display_is_user_friendly() {
         let cases = vec![
-            (
-                ParseError::UnknownCommand("xyz".into()),
-                "unknown command",
-            ),
-            (
-                ParseError::UnknownCommand(String::new()),
-                "(empty input)",
-            ),
+            (ParseError::UnknownCommand("xyz".into()), "unknown command"),
+            (ParseError::UnknownCommand(String::new()), "(empty input)"),
             (
                 ParseError::MissingArg {
                     command: "team",
@@ -798,10 +1064,7 @@ mod tests {
                 },
                 "not a valid integer",
             ),
-            (
-                ParseError::BadSidePane("foo".into()),
-                "unknown pane",
-            ),
+            (ParseError::BadSidePane("foo".into()), "unknown pane"),
         ];
         for (err, expected_substr) in cases {
             let msg = err.to_string();
@@ -827,7 +1090,231 @@ mod tests {
     fn l0_adams_split_first_word_basic() {
         assert_eq!(split_first_word("foo bar baz"), ("foo", "bar baz"));
         assert_eq!(split_first_word("solo"), ("solo", ""));
-        assert_eq!(split_first_word("  leading  trailing  "), ("leading", "trailing  "));
+        assert_eq!(
+            split_first_word("  leading  trailing  "),
+            ("leading", "trailing  ")
+        );
         assert_eq!(split_first_word(""), ("", ""));
+    }
+
+    // ── Executor tests (Adams.2) ──────────────────────────────────────────
+    //
+    // The executor mutates an `App` directly. These tests exercise the
+    // pure decisions: which `Screen` variant gets selected, which
+    // `mdi.show_*` flag toggles, which `ExecResult` flavor returns.
+    //
+    // We avoid hitting the GroupDb in tests (it would require a temp
+    // SQLite file). Fav add/remove are smoke-tested for "produces a
+    // Flash" only; deeper coverage is in the L1 group tests.
+
+    use crate::tui::app::{App, Screen};
+    use crate::tui::mdi::MdiLayout;
+
+    fn fresh_app_with_mdi() -> App {
+        let mut app = App::new(true);
+        app.mdi = Some(MdiLayout::default());
+        app
+    }
+
+    #[test]
+    fn l0_adams_exec_help_sets_show_help() {
+        let mut app = fresh_app_with_mdi();
+        assert!(!app.show_help);
+        let r = execute_command(Command::Help, &mut app);
+        assert!(matches!(r, ExecResult::Continue));
+        assert!(app.show_help);
+    }
+
+    #[test]
+    fn l0_adams_exec_quit_returns_quit() {
+        let mut app = fresh_app_with_mdi();
+        let r = execute_command(Command::Quit, &mut app);
+        assert!(matches!(r, ExecResult::Quit));
+    }
+
+    #[test]
+    fn l0_adams_exec_hide_favorites_clears_flag() {
+        let mut app = fresh_app_with_mdi();
+        assert!(app.mdi.as_ref().unwrap().show_favorites);
+        let r = execute_command(Command::Hide(SidePane::Favorites), &mut app);
+        assert!(matches!(r, ExecResult::Continue));
+        assert!(!app.mdi.as_ref().unwrap().show_favorites);
+    }
+
+    #[test]
+    fn l0_adams_exec_hide_schedule_clears_flag() {
+        let mut app = fresh_app_with_mdi();
+        let r = execute_command(Command::Hide(SidePane::Schedule), &mut app);
+        assert!(matches!(r, ExecResult::Continue));
+        assert!(!app.mdi.as_ref().unwrap().show_schedule);
+    }
+
+    #[test]
+    fn l0_adams_exec_show_favorites_after_hide_restores() {
+        let mut app = fresh_app_with_mdi();
+        app.mdi.as_mut().unwrap().show_favorites = false;
+        let r = execute_command(Command::Show(SidePane::Favorites), &mut app);
+        assert!(matches!(r, ExecResult::Continue));
+        assert!(app.mdi.as_ref().unwrap().show_favorites);
+    }
+
+    #[test]
+    fn l0_adams_exec_hide_in_sdi_is_noop_continue() {
+        // No mdi attached — Hide should still parse & "continue"
+        // without panicking. The mutation just vanishes.
+        let mut app = App::new(true);
+        let r = execute_command(Command::Hide(SidePane::Favorites), &mut app);
+        assert!(matches!(r, ExecResult::Continue));
+        assert!(app.mdi.is_none());
+    }
+
+    #[test]
+    fn l0_adams_exec_screen_swaps() {
+        let cases: Vec<(Command, Screen)> = vec![
+            (Command::Stats, Screen::Queries),
+            (Command::Goalies, Screen::Goalies),
+            (Command::Transactions, Screen::Transactions),
+            (Command::Playoffs, Screen::Playoffs),
+            (Command::Depth, Screen::Depth),
+            (Command::Scores, Screen::Tonight),
+            (Command::Schedule, Screen::Schedule),
+            (Command::Favorites, Screen::Favorites),
+        ];
+        for (cmd, expected) in cases {
+            let mut app = fresh_app_with_mdi();
+            let r = execute_command(cmd.clone(), &mut app);
+            assert!(
+                matches!(r, ExecResult::Continue),
+                "expected Continue for {cmd:?}"
+            );
+            assert_eq!(
+                std::mem::discriminant(&app.screen),
+                std::mem::discriminant(&expected),
+                "{cmd:?} should land on {expected:?}, got {:?}",
+                app.screen
+            );
+        }
+    }
+
+    #[test]
+    fn l0_adams_exec_team_lands_on_team_screen() {
+        let mut app = fresh_app_with_mdi();
+        let r = execute_command(
+            Command::Team {
+                abbrev: "EDM".to_string(),
+            },
+            &mut app,
+        );
+        assert!(matches!(r, ExecResult::Continue));
+        match &app.screen {
+            Screen::Team(abbr) => assert_eq!(abbr, "EDM"),
+            other => panic!("expected Team screen, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn l0_adams_exec_team_season_lands_on_schedule_team() {
+        let mut app = fresh_app_with_mdi();
+        let r = execute_command(
+            Command::TeamSeason {
+                abbrev: "BOS".to_string(),
+            },
+            &mut app,
+        );
+        assert!(matches!(r, ExecResult::Continue));
+        match &app.screen {
+            Screen::ScheduleTeam(abbr) => assert_eq!(abbr, "BOS"),
+            other => panic!("expected ScheduleTeam screen, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn l0_adams_exec_box_numeric_lands_on_game_detail() {
+        let mut app = fresh_app_with_mdi();
+        let r = execute_command(
+            Command::Box {
+                game: "2025020001".to_string(),
+            },
+            &mut app,
+        );
+        assert!(matches!(r, ExecResult::Continue));
+        match &app.screen {
+            Screen::GameDetail(id) => assert_eq!(*id, 2_025_020_001),
+            other => panic!("expected GameDetail screen, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn l0_adams_exec_box_non_numeric_flashes() {
+        let mut app = fresh_app_with_mdi();
+        let r = execute_command(
+            Command::Box {
+                game: "edm@bos".to_string(),
+            },
+            &mut app,
+        );
+        assert!(matches!(r, ExecResult::Flash(_)));
+        // Screen should not have moved.
+        assert!(!matches!(app.screen, Screen::GameDetail(_)));
+    }
+
+    #[test]
+    fn l0_adams_exec_class_returns_not_implemented() {
+        let mut app = fresh_app_with_mdi();
+        let r = execute_command(Command::Class { year: 2024 }, &mut app);
+        assert!(matches!(r, ExecResult::NotImplemented(_)));
+    }
+
+    #[test]
+    fn l0_adams_exec_roster_returns_not_implemented() {
+        let mut app = fresh_app_with_mdi();
+        let r = execute_command(Command::Roster, &mut app);
+        assert!(matches!(r, ExecResult::NotImplemented(_)));
+    }
+
+    #[test]
+    fn l0_adams_exec_query_valid_filter_applies_to_queries() {
+        // edge-2: query verb mutates app.queries.filter_text and
+        // swaps to Stats. Flash carries the applied filter.
+        let mut app = fresh_app_with_mdi();
+        let r = execute_command(
+            Command::Query {
+                filter: "g >= 30".to_string(),
+            },
+            &mut app,
+        );
+        match r {
+            ExecResult::Flash(s) => assert!(
+                s.contains("filter applied"),
+                "expected 'filter applied' flash, got {s:?}"
+            ),
+            other => panic!("expected Flash, got {other:?}"),
+        }
+        assert!(matches!(app.screen, Screen::Queries));
+        assert_eq!(app.queries.filter_text, "g >= 30");
+        assert!(app.queries.filter_plan.is_some());
+        assert!(app.queries.filter_error.is_none());
+    }
+
+    #[test]
+    fn l0_adams_exec_query_invalid_filter_flashes_error() {
+        // Invalid filter — flash carries parse error; no screen swap.
+        let mut app = fresh_app_with_mdi();
+        let original_screen = std::mem::discriminant(&app.screen);
+        let r = execute_command(
+            Command::Query {
+                filter: "((".to_string(),
+            },
+            &mut app,
+        );
+        match r {
+            ExecResult::Flash(s) => assert!(
+                s.contains("parse error") || s.contains("error"),
+                "expected error-shaped flash, got {s:?}"
+            ),
+            other => panic!("expected Flash, got {other:?}"),
+        }
+        // Screen unchanged.
+        assert_eq!(std::mem::discriminant(&app.screen), original_screen);
     }
 }

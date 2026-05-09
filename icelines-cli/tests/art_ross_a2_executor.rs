@@ -71,9 +71,7 @@ fn line(date: &str, team: &str, goals: u32, assists: u32) -> GameStatLine {
 fn synthetic_repo_with_player() -> StatsRepository {
     use icelines_core::identity::{PlayerBio, PlayerIdentity};
     use icelines_core::model::{Season, TeamAbbr};
-    use icelines_core::season_stats::{
-        SeasonStats, SeasonType, StatTotals, TeamStint,
-    };
+    use icelines_core::season_stats::{SeasonStats, SeasonType, StatTotals, TeamStint};
 
     let mut repo = StatsRepository::with_lru_cap(8);
     let pid = PlayerId(8478402);
@@ -156,10 +154,7 @@ fn l1_a26_killer_query_matches_when_streak_and_age_qualify() {
     let provider = CannedProvider::new(lines);
     let ctx = EvalCtx::new(&provider, StrictMode::Off, false, fixed_today(), 20252026);
 
-    let plan = parse_query(FilterInput::Cli(
-        "g.last10g>=5 AND age<=25".to_string(),
-    ))
-    .unwrap();
+    let plan = parse_query(FilterInput::Cli("g.last10g>=5 AND age<=25".to_string())).unwrap();
 
     let view = repo
         .view(
@@ -180,15 +175,19 @@ fn l1_a26_killer_query_matches_when_streak_and_age_qualify() {
 fn l1_a26_killer_query_misses_when_streak_falls_short() {
     let repo = synthetic_repo_with_player();
     let lines: Vec<GameStatLine> = (1..=12)
-        .map(|i| line(&format!("2026-01-{:02}", i), "EDM", if i > 7 { 1 } else { 0 }, 0))
+        .map(|i| {
+            line(
+                &format!("2026-01-{:02}", i),
+                "EDM",
+                if i > 7 { 1 } else { 0 },
+                0,
+            )
+        })
         .collect();
     let provider = CannedProvider::new(lines);
     let ctx = EvalCtx::new(&provider, StrictMode::Off, false, fixed_today(), 20252026);
 
-    let plan = parse_query(FilterInput::Cli(
-        "g.last10g>=6 AND age<=25".to_string(),
-    ))
-    .unwrap();
+    let plan = parse_query(FilterInput::Cli("g.last10g>=6 AND age<=25".to_string())).unwrap();
 
     let view = repo
         .view(
@@ -209,15 +208,19 @@ fn l1_a26_killer_query_misses_when_streak_falls_short() {
 fn l1_a26_killer_query_misses_when_age_disqualifies() {
     let repo = synthetic_repo_with_player();
     let lines: Vec<GameStatLine> = (1..=12)
-        .map(|i| line(&format!("2026-01-{:02}", i), "EDM", if i > 7 { 1 } else { 0 }, 0))
+        .map(|i| {
+            line(
+                &format!("2026-01-{:02}", i),
+                "EDM",
+                if i > 7 { 1 } else { 0 },
+                0,
+            )
+        })
         .collect();
     let provider = CannedProvider::new(lines);
     let ctx = EvalCtx::new(&provider, StrictMode::Off, false, fixed_today(), 20252026);
 
-    let plan = parse_query(FilterInput::Cli(
-        "g.last10g>=5 AND age<=20".to_string(),
-    ))
-    .unwrap();
+    let plan = parse_query(FilterInput::Cli("g.last10g>=5 AND age<=20".to_string())).unwrap();
 
     let view = repo
         .view(
@@ -243,10 +246,7 @@ fn l1_a26_no_boxscores_returns_false_not_panic() {
     let provider = CannedProvider::new(vec![]); // no game lines
     let ctx = EvalCtx::new(&provider, StrictMode::Off, false, fixed_today(), 20252026);
 
-    let plan = parse_query(FilterInput::Cli(
-        "g.last10g>=5".to_string(),
-    ))
-    .unwrap();
+    let plan = parse_query(FilterInput::Cli("g.last10g>=5".to_string())).unwrap();
 
     let view = repo
         .view(
@@ -271,10 +271,7 @@ fn l1_a26_bio_only_query_doesnt_touch_provider() {
     let provider = CannedProvider::new(vec![]);
     let ctx = EvalCtx::new(&provider, StrictMode::Off, false, fixed_today(), 20252026);
 
-    let plan = parse_query(FilterInput::Cli(
-        "age<=25 AND country=CAN".to_string(),
-    ))
-    .unwrap();
+    let plan = parse_query(FilterInput::Cli("age<=25 AND country=CAN".to_string())).unwrap();
 
     let view = repo
         .view(
@@ -334,10 +331,7 @@ fn l1_a26_country_in_set_matches() {
     let provider = CannedProvider::new(vec![]);
     let ctx = EvalCtx::new(&provider, StrictMode::Off, false, fixed_today(), 20252026);
 
-    let plan = parse_query(FilterInput::Cli(
-        "country IN (CAN, USA, SWE)".to_string(),
-    ))
-    .unwrap();
+    let plan = parse_query(FilterInput::Cli("country IN (CAN, USA, SWE)".to_string())).unwrap();
     let view = repo
         .view(
             PlayerId(8478402),
@@ -384,10 +378,7 @@ fn l1_a26_between_age_inclusive() {
     let provider = CannedProvider::new(vec![]);
     let ctx = EvalCtx::new(&provider, StrictMode::Off, false, fixed_today(), 20252026);
 
-    let plan = parse_query(FilterInput::Cli(
-        "age BETWEEN 22 AND 28".to_string(),
-    ))
-    .unwrap();
+    let plan = parse_query(FilterInput::Cli("age BETWEEN 22 AND 28".to_string())).unwrap();
     let view = repo
         .view(
             PlayerId(8478402),
@@ -398,10 +389,7 @@ fn l1_a26_between_age_inclusive() {
     assert!(plan.root.matches(&view, &ctx));
 
     // Outside range
-    let plan_out = parse_query(FilterInput::Cli(
-        "age BETWEEN 18 AND 21".to_string(),
-    ))
-    .unwrap();
+    let plan_out = parse_query(FilterInput::Cli("age BETWEEN 18 AND 21".to_string())).unwrap();
     assert!(!plan_out.root.matches(&view, &ctx));
 }
 
@@ -412,8 +400,7 @@ fn l1_a26_country_like_pattern() {
     let provider = CannedProvider::new(vec![]);
     let ctx = EvalCtx::new(&provider, StrictMode::Off, false, fixed_today(), 20252026);
 
-    let plan = parse_query(FilterInput::Cli(r#"country LIKE "CA*""#.to_string()))
-        .unwrap();
+    let plan = parse_query(FilterInput::Cli(r#"country LIKE "CA*""#.to_string())).unwrap();
     let view = repo
         .view(
             PlayerId(8478402),

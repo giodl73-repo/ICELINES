@@ -190,7 +190,15 @@ fn p_w7_012_series_with_round_filter_combined_no_panic() {
     let h = fresh();
     no_panic_in(
         h.path(),
-        &["playoffs", "--season", PLAYOFF_SEASON, "--series", "A", "--round", "1"],
+        &[
+            "playoffs",
+            "--season",
+            PLAYOFF_SEASON,
+            "--series",
+            "A",
+            "--round",
+            "1",
+        ],
     );
 }
 
@@ -227,9 +235,7 @@ fn p_w7_015_series_a_renders_round_label() {
     // 1993-94 round 1 was "Conference Quarterfinals" in the era's
     // labeling. Match either modern or era-appropriate.
     assert!(
-        out.contains("Quarterfinals")
-            || out.contains("First Round")
-            || out.contains("Round 1"),
+        out.contains("Quarterfinals") || out.contains("First Round") || out.contains("Round 1"),
         "round label should appear, got: {out}"
     );
 }
@@ -239,7 +245,14 @@ fn p_w7_016_series_json_envelope_shape() {
     let h = fresh();
     let out = ok_in(
         h.path(),
-        &["playoffs", "--season", PLAYOFF_SEASON, "--series", "A", "--json"],
+        &[
+            "playoffs",
+            "--season",
+            PLAYOFF_SEASON,
+            "--series",
+            "A",
+            "--json",
+        ],
     );
     let v: serde_json::Value = serde_json::from_str(&out).expect("valid JSON");
     assert_eq!(v["schema_version"], 1);
@@ -251,7 +264,14 @@ fn p_w7_017_series_json_data_has_top_seed_wins() {
     let h = fresh();
     let out = ok_in(
         h.path(),
-        &["playoffs", "--season", PLAYOFF_SEASON, "--series", "A", "--json"],
+        &[
+            "playoffs",
+            "--season",
+            PLAYOFF_SEASON,
+            "--series",
+            "A",
+            "--json",
+        ],
     );
     let v: serde_json::Value = serde_json::from_str(&out).unwrap();
     assert!(v["data"]["top_seed_wins"].is_number());
@@ -262,7 +282,14 @@ fn p_w7_018_series_json_data_has_bottom_seed_wins() {
     let h = fresh();
     let out = ok_in(
         h.path(),
-        &["playoffs", "--season", PLAYOFF_SEASON, "--series", "A", "--json"],
+        &[
+            "playoffs",
+            "--season",
+            PLAYOFF_SEASON,
+            "--series",
+            "A",
+            "--json",
+        ],
     );
     let v: serde_json::Value = serde_json::from_str(&out).unwrap();
     assert!(v["data"]["bottom_seed_wins"].is_number());
@@ -273,7 +300,14 @@ fn p_w7_019_series_json_data_has_leader() {
     let h = fresh();
     let out = ok_in(
         h.path(),
-        &["playoffs", "--season", PLAYOFF_SEASON, "--series", "A", "--json"],
+        &[
+            "playoffs",
+            "--season",
+            PLAYOFF_SEASON,
+            "--series",
+            "A",
+            "--json",
+        ],
     );
     let v: serde_json::Value = serde_json::from_str(&out).unwrap();
     let leader = v["data"]["leader"].as_str().unwrap_or("");
@@ -285,11 +319,21 @@ fn p_w7_020_series_json_data_has_games_played() {
     let h = fresh();
     let out = ok_in(
         h.path(),
-        &["playoffs", "--season", PLAYOFF_SEASON, "--series", "A", "--json"],
+        &[
+            "playoffs",
+            "--season",
+            PLAYOFF_SEASON,
+            "--series",
+            "A",
+            "--json",
+        ],
     );
     let v: serde_json::Value = serde_json::from_str(&out).unwrap();
     let played = v["data"]["games_played"].as_u64().unwrap_or(0);
-    assert!(played <= 7, "games_played must be ≤ 7 for best-of-7, got {played}");
+    assert!(
+        played <= 7,
+        "games_played must be ≤ 7 for best-of-7, got {played}"
+    );
 }
 
 #[test]
@@ -297,7 +341,14 @@ fn p_w7_021_series_json_data_has_games_remaining() {
     let h = fresh();
     let out = ok_in(
         h.path(),
-        &["playoffs", "--season", PLAYOFF_SEASON, "--series", "A", "--json"],
+        &[
+            "playoffs",
+            "--season",
+            PLAYOFF_SEASON,
+            "--series",
+            "A",
+            "--json",
+        ],
     );
     let v: serde_json::Value = serde_json::from_str(&out).unwrap();
     let remaining = v["data"]["games_remaining"].as_u64().unwrap_or(99);
@@ -309,7 +360,14 @@ fn p_w7_022_series_json_data_has_top_seed_abbrev() {
     let h = fresh();
     let out = ok_in(
         h.path(),
-        &["playoffs", "--season", PLAYOFF_SEASON, "--series", "A", "--json"],
+        &[
+            "playoffs",
+            "--season",
+            PLAYOFF_SEASON,
+            "--series",
+            "A",
+            "--json",
+        ],
     );
     let v: serde_json::Value = serde_json::from_str(&out).unwrap();
     let abbr = v["data"]["top_seed_abbrev"].as_str().unwrap_or("");
@@ -322,7 +380,14 @@ fn p_w7_023_series_json_data_has_bottom_seed_abbrev() {
     let h = fresh();
     let out = ok_in(
         h.path(),
-        &["playoffs", "--season", PLAYOFF_SEASON, "--series", "A", "--json"],
+        &[
+            "playoffs",
+            "--season",
+            PLAYOFF_SEASON,
+            "--series",
+            "A",
+            "--json",
+        ],
     );
     let v: serde_json::Value = serde_json::from_str(&out).unwrap();
     let abbr = v["data"]["bottom_seed_abbrev"].as_str().unwrap_or("");
@@ -334,7 +399,14 @@ fn p_w7_024_series_json_data_has_round() {
     let h = fresh();
     let out = ok_in(
         h.path(),
-        &["playoffs", "--season", PLAYOFF_SEASON, "--series", "A", "--json"],
+        &[
+            "playoffs",
+            "--season",
+            PLAYOFF_SEASON,
+            "--series",
+            "A",
+            "--json",
+        ],
     );
     let v: serde_json::Value = serde_json::from_str(&out).unwrap();
     let round = v["data"]["round"].as_u64().unwrap_or(0);
@@ -346,7 +418,14 @@ fn p_w7_025_series_json_data_has_series_complete_bool() {
     let h = fresh();
     let out = ok_in(
         h.path(),
-        &["playoffs", "--season", PLAYOFF_SEASON, "--series", "A", "--json"],
+        &[
+            "playoffs",
+            "--season",
+            PLAYOFF_SEASON,
+            "--series",
+            "A",
+            "--json",
+        ],
     );
     let v: serde_json::Value = serde_json::from_str(&out).unwrap();
     assert!(v["data"]["series_complete"].is_boolean());
@@ -357,7 +436,14 @@ fn p_w7_026_series_json_data_has_ot_games() {
     let h = fresh();
     let out = ok_in(
         h.path(),
-        &["playoffs", "--season", PLAYOFF_SEASON, "--series", "A", "--json"],
+        &[
+            "playoffs",
+            "--season",
+            PLAYOFF_SEASON,
+            "--series",
+            "A",
+            "--json",
+        ],
     );
     let v: serde_json::Value = serde_json::from_str(&out).unwrap();
     let ot = v["data"]["ot_games"].as_u64().unwrap_or(99);
@@ -369,7 +455,14 @@ fn p_w7_027_series_json_data_has_home_advantage_bool() {
     let h = fresh();
     let out = ok_in(
         h.path(),
-        &["playoffs", "--season", PLAYOFF_SEASON, "--series", "A", "--json"],
+        &[
+            "playoffs",
+            "--season",
+            PLAYOFF_SEASON,
+            "--series",
+            "A",
+            "--json",
+        ],
     );
     let v: serde_json::Value = serde_json::from_str(&out).unwrap();
     assert!(v["data"]["home_advantage"].is_boolean());
@@ -380,7 +473,14 @@ fn p_w7_028_series_meta_has_season_id() {
     let h = fresh();
     let out = ok_in(
         h.path(),
-        &["playoffs", "--season", PLAYOFF_SEASON, "--series", "A", "--json"],
+        &[
+            "playoffs",
+            "--season",
+            PLAYOFF_SEASON,
+            "--series",
+            "A",
+            "--json",
+        ],
     );
     let v: serde_json::Value = serde_json::from_str(&out).unwrap();
     assert_eq!(v["meta"]["season_id"], PLAYOFF_SEASON);
@@ -393,7 +493,14 @@ fn p_w7_029_series_complete_for_finished_bracket_has_winner() {
     let h = fresh();
     let out = ok_in(
         h.path(),
-        &["playoffs", "--season", PLAYOFF_SEASON, "--series", "A", "--json"],
+        &[
+            "playoffs",
+            "--season",
+            PLAYOFF_SEASON,
+            "--series",
+            "A",
+            "--json",
+        ],
     );
     let v: serde_json::Value = serde_json::from_str(&out).unwrap();
     let complete = v["data"]["series_complete"].as_bool().unwrap_or(false);
@@ -456,7 +563,14 @@ fn p_w7_034_series_with_csv_no_panic() {
     // really for the bracket view; --series takes precedence.
     no_panic_in(
         h.path(),
-        &["playoffs", "--season", PLAYOFF_SEASON, "--series", "A", "--csv"],
+        &[
+            "playoffs",
+            "--season",
+            PLAYOFF_SEASON,
+            "--series",
+            "A",
+            "--csv",
+        ],
     );
 }
 
@@ -475,18 +589,38 @@ fn p_w7_036_series_a_through_h_distinct_data() {
     for letter in ["A", "B", "C", "D", "E", "F", "G", "H"] {
         let out = ok_in(
             h.path(),
-            &["playoffs", "--season", PLAYOFF_SEASON, "--series", letter, "--json"],
+            &[
+                "playoffs",
+                "--season",
+                PLAYOFF_SEASON,
+                "--series",
+                letter,
+                "--json",
+            ],
         );
         let v: serde_json::Value = serde_json::from_str(&out).unwrap();
-        let top = v["data"]["top_seed_abbrev"].as_str().unwrap_or("").to_owned();
-        let bot = v["data"]["bottom_seed_abbrev"].as_str().unwrap_or("").to_owned();
+        let top = v["data"]["top_seed_abbrev"]
+            .as_str()
+            .unwrap_or("")
+            .to_owned();
+        let bot = v["data"]["bottom_seed_abbrev"]
+            .as_str()
+            .unwrap_or("")
+            .to_owned();
         seen_pairs.push((top, bot));
     }
     // 8 round-1 series → 16 unique team appearances.
-    let mut teams: Vec<String> = seen_pairs.iter().flat_map(|(a, b)| [a.clone(), b.clone()]).collect();
+    let mut teams: Vec<String> = seen_pairs
+        .iter()
+        .flat_map(|(a, b)| [a.clone(), b.clone()])
+        .collect();
     teams.sort();
     teams.dedup();
-    assert_eq!(teams.len(), 16, "round 1 has 16 unique teams, got {teams:?}");
+    assert_eq!(
+        teams.len(),
+        16,
+        "round 1 has 16 unique teams, got {teams:?}"
+    );
 }
 
 #[test]
@@ -495,11 +629,25 @@ fn p_w7_037_series_round_label_consistent_per_letter() {
     let h = fresh();
     let out1 = ok_in(
         h.path(),
-        &["playoffs", "--season", PLAYOFF_SEASON, "--series", "A", "--json"],
+        &[
+            "playoffs",
+            "--season",
+            PLAYOFF_SEASON,
+            "--series",
+            "A",
+            "--json",
+        ],
     );
     let out2 = ok_in(
         h.path(),
-        &["playoffs", "--season", PLAYOFF_SEASON, "--series", "A", "--json"],
+        &[
+            "playoffs",
+            "--season",
+            PLAYOFF_SEASON,
+            "--series",
+            "A",
+            "--json",
+        ],
     );
     let v1: serde_json::Value = serde_json::from_str(&out1).unwrap();
     let v2: serde_json::Value = serde_json::from_str(&out2).unwrap();
@@ -513,7 +661,14 @@ fn p_w7_038_series_a_through_h_all_round_1() {
     for letter in ["A", "B", "C", "D", "E", "F", "G", "H"] {
         let out = ok_in(
             h.path(),
-            &["playoffs", "--season", PLAYOFF_SEASON, "--series", letter, "--json"],
+            &[
+                "playoffs",
+                "--season",
+                PLAYOFF_SEASON,
+                "--series",
+                letter,
+                "--json",
+            ],
         );
         let v: serde_json::Value = serde_json::from_str(&out).unwrap();
         assert_eq!(
@@ -631,13 +786,19 @@ fn p_w7_051_playoff_sort_p() {
 #[test]
 fn p_w7_052_playoff_sort_sog() {
     let h = fresh();
-    ok_in(h.path(), &["query", "leaders", "--playoff", "--sort", "sog"]);
+    ok_in(
+        h.path(),
+        &["query", "leaders", "--playoff", "--sort", "sog"],
+    );
 }
 
 #[test]
 fn p_w7_053_playoff_sort_hits() {
     let h = fresh();
-    ok_in(h.path(), &["query", "leaders", "--playoff", "--sort", "hits"]);
+    ok_in(
+        h.path(),
+        &["query", "leaders", "--playoff", "--sort", "hits"],
+    );
 }
 
 #[test]
@@ -671,19 +832,13 @@ fn p_w7_056_playoff_sort_unknown_falls_back_to_points() {
 #[test]
 fn p_w7_057_playoff_top_5() {
     let h = fresh();
-    ok_in(
-        h.path(),
-        &["query", "leaders", "--playoff", "--top", "5"],
-    );
+    ok_in(h.path(), &["query", "leaders", "--playoff", "--top", "5"]);
 }
 
 #[test]
 fn p_w7_058_playoff_top_100() {
     let h = fresh();
-    ok_in(
-        h.path(),
-        &["query", "leaders", "--playoff", "--top", "100"],
-    );
+    ok_in(h.path(), &["query", "leaders", "--playoff", "--top", "100"]);
 }
 
 #[test]
@@ -702,10 +857,7 @@ fn p_w7_060_playoff_combined_with_setup() {
 #[test]
 fn p_w7_061_playoff_with_filters_no_panic() {
     let h = fresh();
-    no_panic_in(
-        h.path(),
-        &["query", "leaders", "--playoff", "--pos", "C"],
-    );
+    no_panic_in(h.path(), &["query", "leaders", "--playoff", "--pos", "C"]);
 }
 
 #[test]
@@ -848,10 +1000,7 @@ fn p_w7_076_series_q_through_z_all_clean_errors() {
             String::from_utf8_lossy(&out.stdout),
             String::from_utf8_lossy(&out.stderr)
         );
-        assert!(
-            !combined.contains("panicked"),
-            "letter {letter} panicked"
-        );
+        assert!(!combined.contains("panicked"), "letter {letter} panicked");
     }
 }
 
@@ -942,7 +1091,9 @@ fn p_w7_082_playoff_leaders_doesnt_add_manifest_entries() {
 #[test]
 fn p_w7_083_series_letters_a_through_o_all_no_panic() {
     let h = fresh();
-    for letter in ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O"] {
+    for letter in [
+        "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O",
+    ] {
         let out = run_in(
             h.path(),
             &["playoffs", "--season", PLAYOFF_SEASON, "--series", letter],
@@ -982,19 +1133,13 @@ fn p_w7_085_series_letter_unicode_no_panic() {
 #[test]
 fn p_w7_086_playoff_leaders_with_explicit_pos_g() {
     let h = fresh();
-    no_panic_in(
-        h.path(),
-        &["query", "leaders", "--playoff", "--pos", "G"],
-    );
+    no_panic_in(h.path(), &["query", "leaders", "--playoff", "--pos", "G"]);
 }
 
 #[test]
 fn p_w7_087_playoff_leaders_top_negative_rejected() {
     let h = fresh();
-    fail_in(
-        h.path(),
-        &["query", "leaders", "--playoff", "--top", "-1"],
-    );
+    fail_in(h.path(), &["query", "leaders", "--playoff", "--top", "-1"]);
 }
 
 #[test]
@@ -1027,10 +1172,7 @@ fn p_w7_090_series_invalid_season_format() {
 #[test]
 fn p_w7_091_series_too_short_season_format() {
     let h = fresh();
-    fail_in(
-        h.path(),
-        &["playoffs", "--season", "1993", "--series", "A"],
-    );
+    fail_in(h.path(), &["playoffs", "--season", "1993", "--series", "A"]);
 }
 
 #[test]
@@ -1134,7 +1276,15 @@ fn p_w7_100_series_with_round_filter_doesnt_crash_or_swallow_series() {
     let h = fresh();
     let out = ok_in(
         h.path(),
-        &["playoffs", "--season", PLAYOFF_SEASON, "--series", "A", "--round", "4"],
+        &[
+            "playoffs",
+            "--season",
+            PLAYOFF_SEASON,
+            "--series",
+            "A",
+            "--round",
+            "4",
+        ],
     );
     // --series wins, output is the SERIES A momentum view.
     assert!(out.contains("SERIES A"));

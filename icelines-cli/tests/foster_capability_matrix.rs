@@ -58,7 +58,8 @@ fn l1_foster07_stats_league() {
 #[test]
 fn l1_foster07_scores_schedule_off() {
     let mut c = fresh();
-    c.set_key("sync.capabilities.scores_schedule", "off").unwrap();
+    c.set_key("sync.capabilities.scores_schedule", "off")
+        .unwrap();
     assert_eq!(
         c.get_key("sync.capabilities.scores_schedule").unwrap(),
         "off"
@@ -144,7 +145,8 @@ fn l1_foster07_boxscores_league() {
 #[test]
 fn l1_foster07_career_history_off() {
     let mut c = fresh();
-    c.set_key("sync.capabilities.career_history", "off").unwrap();
+    c.set_key("sync.capabilities.career_history", "off")
+        .unwrap();
     assert_eq!(
         c.get_key("sync.capabilities.career_history").unwrap(),
         "off"
@@ -258,7 +260,10 @@ fn l1_foster07_interaction_shifts_off_blocks_all() {
 fn l1_foster07_interaction_career_history_favorites_filters_lazy_fanout() {
     let m = CapabilityMatrix::default(); // career_history defaults to favorites
     assert_eq!(m.career_history, CapabilityMode::Favorites);
-    assert!(m.allowed(Capability::CareerHistory, true), "fav PID allowed");
+    assert!(
+        m.allowed(Capability::CareerHistory, true),
+        "fav PID allowed"
+    );
     assert!(
         !m.allowed(Capability::CareerHistory, false),
         "non-fav PID skipped under favorites mode"

@@ -144,10 +144,7 @@ fn p_foster_p05_config_reset_returns_to_defaults() {
 fn p_foster_p06_invalid_date_clean_error_no_panic() {
     let home = tempfile::tempdir().unwrap();
     let err = fail_in(home.path(), &["tonight", "--date", "not-a-date"]);
-    assert!(
-        !err.contains("panicked"),
-        "must not panic, stderr: {err}"
-    );
+    assert!(!err.contains("panicked"), "must not panic, stderr: {err}");
     assert!(
         err.contains("invalid date") && err.contains("YYYY-MM-DD"),
         "validator hint must surface, stderr: {err}"

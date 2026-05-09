@@ -98,10 +98,7 @@ pub fn chrome(state: &QueriesState) -> crate::tui::chrome::ScreenChrome {
             KeyHint::new("?", "grammar"),
             KeyHint::new("↑↓", "history"),
         ],
-        QueryMode::SaveName => vec![
-            KeyHint::new("Enter", "save"),
-            KeyHint::new("Esc", "cancel"),
-        ],
+        QueryMode::SaveName => vec![KeyHint::new("Enter", "save"), KeyHint::new("Esc", "cancel")],
         QueryMode::LoadList => vec![
             KeyHint::new("Enter", "load"),
             KeyHint::new("Esc", "cancel"),
@@ -143,8 +140,7 @@ impl Default for QueriesState {
             sort_picker_idx: 0,
             sort_stat_pick: None,
 
-            career_table_preset:
-                crate::tui::screens::player::CareerTablePreset::Default,
+            career_table_preset: crate::tui::screens::player::CareerTablePreset::Default,
         }
     }
 }
@@ -786,8 +782,7 @@ pub fn live_filter_count_hint(
     if trimmed.is_empty() {
         return None;
     }
-    match icelines_query::parse_query(icelines_query::FilterInput::Cli(trimmed.to_owned()))
-    {
+    match icelines_query::parse_query(icelines_query::FilterInput::Cli(trimmed.to_owned())) {
         Err(_) => Some("(unparsed — keep typing)".to_owned()),
         Ok(plan) if plan.root.needs_provider() => {
             Some("→ press Enter to evaluate (data lookup)".to_owned())
@@ -865,9 +860,7 @@ fn render_filter_editor_inner(f: &mut Frame, app: &crate::tui::app::App, area: R
     f.render_widget(block, area);
 
     let dim = Style::default().fg(Color::DarkGray);
-    let err_style = Style::default()
-        .fg(Color::Red)
-        .add_modifier(Modifier::BOLD);
+    let err_style = Style::default().fg(Color::Red).add_modifier(Modifier::BOLD);
 
     let history_hint = match app.queries.filter_history_cursor {
         Some(i) => format!(
@@ -1074,7 +1067,10 @@ fn render_sort_picker(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
     // Cursor index, clamped to result length (the app handler also
     // clamps but defensively here so a stale index can't panic on
     // render).
-    let sel = app.queries.sort_picker_idx.min(results.len().saturating_sub(1));
+    let sel = app
+        .queries
+        .sort_picker_idx
+        .min(results.len().saturating_sub(1));
 
     let mut lines: Vec<Line> = Vec::new();
     lines.push(Line::from(""));
@@ -1815,10 +1811,9 @@ mod tests {
     #[test]
     fn l0_w23_empty_views_with_plan_returns_empty() {
         let fields = default_fields();
-        let plan = icelines_query::parse_query(
-            icelines_query::FilterInput::Cli("country=CAN".to_owned()),
-        )
-        .expect("plan parses");
+        let plan =
+            icelines_query::parse_query(icelines_query::FilterInput::Cli("country=CAN".to_owned()))
+                .expect("plan parses");
         let result = run_query_views_with_pick_and_plan(
             &[],
             &fields,
@@ -1865,10 +1860,9 @@ mod tests {
     #[test]
     fn l0_w23_plan_borrow_allows_repeated_calls() {
         let fields = default_fields();
-        let plan = icelines_query::parse_query(
-            icelines_query::FilterInput::Cli("country=CAN".to_owned()),
-        )
-        .expect("plan parses");
+        let plan =
+            icelines_query::parse_query(icelines_query::FilterInput::Cli("country=CAN".to_owned()))
+                .expect("plan parses");
         let _ = run_query_views_with_pick_and_plan(
             &[],
             &fields,
@@ -1900,10 +1894,7 @@ mod tests {
         let mut restored = default_fields();
         let recovered = apply_saved_json(&mut restored, &json);
 
-        assert_eq!(
-            recovered, filter,
-            "filter_text must round-trip verbatim"
-        );
+        assert_eq!(recovered, filter, "filter_text must round-trip verbatim");
         assert_eq!(restored[0].selected, 3);
         assert_eq!(restored[1].selected, 1);
     }
@@ -1969,8 +1960,7 @@ mod tests {
     #[test]
     fn l0_w24_v2_filter_wrong_type_treated_as_empty() {
         let mut fields = default_fields();
-        let json =
-            r#"{"version":2,"fields":[{"label":"Sort by","selected":1}],"filter_text":42}"#;
+        let json = r#"{"version":2,"fields":[{"label":"Sort by","selected":1}],"filter_text":42}"#;
         let recovered = apply_saved_json(&mut fields, json);
         assert_eq!(recovered, "");
         assert_eq!(fields[0].selected, 1);
@@ -1981,10 +1971,7 @@ mod tests {
     #[test]
     fn l0_w24_output_is_valid_serde_json() {
         let fields = default_fields();
-        let json = fields_and_filter_to_json(
-            &fields,
-            r#"country LIKE "CA*" AND age<25"#,
-        );
+        let json = fields_and_filter_to_json(&fields, r#"country LIKE "CA*" AND age<25"#);
         let parsed: serde_json::Value =
             serde_json::from_str(&json).expect("output must be valid JSON");
         assert_eq!(parsed["version"].as_u64(), Some(2));
@@ -2011,8 +1998,8 @@ mod tests {
     /// Unparsed input yields the "(unparsed — keep typing)" placeholder.
     #[test]
     fn l0_w24c_live_count_unparsed_returns_placeholder() {
-        let hint = live_filter_count_hint("(((", &[], 20252026)
-            .expect("unparsed must yield a hint");
+        let hint =
+            live_filter_count_hint("(((", &[], 20252026).expect("unparsed must yield a hint");
         assert!(
             hint.contains("unparsed"),
             "unparsed hint should mention 'unparsed'; got: {hint}"
@@ -2058,12 +2045,9 @@ mod tests {
     /// against empty views as 0/0.
     #[test]
     fn l0_w24c_live_count_compound_bio_does_not_defer() {
-        let hint = live_filter_count_hint(
-            "country IN (CAN, USA) AND pos=C AND age<30",
-            &[],
-            20252026,
-        )
-        .expect("compound bio filter must produce a count");
+        let hint =
+            live_filter_count_hint("country IN (CAN, USA) AND pos=C AND age<30", &[], 20252026)
+                .expect("compound bio filter must produce a count");
         assert!(
             !hint.contains("Enter") && !hint.contains("data lookup"),
             "compound bio filter must NOT defer; got: {hint}"
@@ -2188,7 +2172,10 @@ mod tests {
         // PartialEq on every nested type (incl. VecDeque, Option<Plan>,
         // CareerTablePreset). The spot-check is enough to prove
         // App::new wires through Default.
-        assert!(matches!(app.queries.mode, crate::tui::app::QueryMode::Build));
+        assert!(matches!(
+            app.queries.mode,
+            crate::tui::app::QueryMode::Build
+        ));
         assert_eq!(app.queries.fields.len(), canonical.fields.len());
         assert_eq!(app.queries.sections.len(), canonical.sections.len());
         assert_eq!(app.queries.filter_text, "");

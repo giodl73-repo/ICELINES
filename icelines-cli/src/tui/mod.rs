@@ -2,14 +2,16 @@ pub mod app;
 pub mod chrome;
 pub mod command;
 pub mod dashboard_panel;
-pub mod mdi;
 pub mod event;
-pub mod screen;
 pub mod headshot;
 pub mod loader;
+pub mod mdi;
+#[cfg(test)]
+mod persona_jack_adams;
 pub mod pickers;
 pub mod playoffs;
 pub mod schedule;
+pub mod screen;
 pub mod screens;
 pub mod sparkline;
 pub mod sync_banner;
@@ -234,6 +236,13 @@ async fn run_loop(
         // Auto-refresh live Scores every 30s while the tab is active.
         // Pure decision in App; this loop just calls it once per frame.
         app.tick_auto_refresh();
+
+        // Phase Adams.5 — MDI-mode pre-fetch. The Scores ribbon
+        // and Schedule side pane are always visible in MDI, so
+        // their data sources need to populate regardless of
+        // which screen owns the workspace. Idempotent — guarded
+        // by `Loading` state inside the cache.
+        app.mdi_tick_fetch();
 
         // Phase T.5: poll for loaded transactions. Loaded-but-empty is a
         // valid state (renders the legend card), so we mark via fetched_at

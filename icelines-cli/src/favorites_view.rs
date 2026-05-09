@@ -161,10 +161,7 @@ fn resolve_player_row(
     }
 }
 
-fn resolve_team_row(
-    abbr: &str,
-    games_by_team: &HashMap<String, &ScheduledGame>,
-) -> TeamNightRow {
+fn resolve_team_row(abbr: &str, games_by_team: &HashMap<String, &ScheduledGame>) -> TeamNightRow {
     let entity = EntityRef::Team(TeamAbbr(abbr.to_string()));
     let team_abbr = TeamAbbr(abbr.to_string());
     match games_by_team.get(abbr) {
@@ -180,10 +177,8 @@ fn resolve_team_row(
         },
         Some(g) => {
             let is_home = g.home_abbrev.eq_ignore_ascii_case(abbr);
-            let team_score = if is_home { g.home_score } else { g.away_score }
-                .map(|s| s as u32);
-            let opp_score = if is_home { g.away_score } else { g.home_score }
-                .map(|s| s as u32);
+            let team_score = if is_home { g.home_score } else { g.away_score }.map(|s| s as u32);
+            let opp_score = if is_home { g.away_score } else { g.home_score }.map(|s| s as u32);
             let opponent = TeamAbbr(if is_home {
                 g.away_abbrev.clone()
             } else {

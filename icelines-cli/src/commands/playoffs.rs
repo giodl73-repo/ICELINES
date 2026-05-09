@@ -239,11 +239,7 @@ fn print_momentum_text(season_id: &str, m: &icelines_core::series_momentum::Seri
         } else {
             &m.bottom_seed_abbrev.0
         };
-        println!(
-            "Next game: G{} at {}",
-            m.games_played + 1,
-            next_at,
-        );
+        println!("Next game: G{} at {}", m.games_played + 1, next_at,);
     }
     let _ = season_id; // available for future season-aware rendering
 }

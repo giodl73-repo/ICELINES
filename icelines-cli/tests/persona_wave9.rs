@@ -504,11 +504,15 @@ fn p_w9_049_playoffs_series_json_deterministic() {
     let h = fresh();
     let a = ok_in(
         h.path(),
-        &["playoffs", "--season", "19931994", "--series", "A", "--json"],
+        &[
+            "playoffs", "--season", "19931994", "--series", "A", "--json",
+        ],
     );
     let b = ok_in(
         h.path(),
-        &["playoffs", "--season", "19931994", "--series", "A", "--json"],
+        &[
+            "playoffs", "--season", "19931994", "--series", "A", "--json",
+        ],
     );
     assert_eq!(a, b);
 }
@@ -581,7 +585,9 @@ fn p_w9_056_series_momentum_json_envelope_consistent() {
     let h = fresh();
     let out = ok_in(
         h.path(),
-        &["playoffs", "--season", "19931994", "--series", "A", "--json"],
+        &[
+            "playoffs", "--season", "19931994", "--series", "A", "--json",
+        ],
     );
     let v: serde_json::Value = serde_json::from_str(&out).unwrap();
     assert!(v["schema_version"].is_number());
@@ -619,7 +625,10 @@ fn p_w9_060_favorites_json_envelope_matches_spec() {
     let out = ok_in(h.path(), &["favorites", "--json"]);
     let v: serde_json::Value = serde_json::from_str(&out).unwrap();
     // K2.4 envelope shape
-    assert!(v["data"]["players"].is_array(), "data.players must be array");
+    assert!(
+        v["data"]["players"].is_array(),
+        "data.players must be array"
+    );
     assert!(v["data"]["teams"].is_array(), "data.teams must be array");
     assert!(v["data"]["events"].is_array(), "data.events must be array");
 }
@@ -792,10 +801,7 @@ fn p_w9_077_favorites_default_group_is_favorites() {
     let h = fresh();
     ok_in(h.path(), &["group", "add", "Favorites", "EDM"]);
     let out_default = ok_in(h.path(), &["favorites", "--json"]);
-    let out_explicit = ok_in(
-        h.path(),
-        &["favorites", "--group", "Favorites", "--json"],
-    );
+    let out_explicit = ok_in(h.path(), &["favorites", "--group", "Favorites", "--json"]);
     // Default group is "Favorites" — output should match.
     let v1: serde_json::Value = serde_json::from_str(&out_default).unwrap();
     let v2: serde_json::Value = serde_json::from_str(&out_explicit).unwrap();
@@ -830,7 +836,10 @@ fn p_w9_079_setup_then_reset_then_setup_again() {
         &["config", "set", "sync.capabilities.transactions", "league"],
     );
     ok_in(h.path(), &["setup", "--accept-defaults", "--reset"]);
-    let got = ok_in(h.path(), &["config", "get", "sync.capabilities.transactions"]);
+    let got = ok_in(
+        h.path(),
+        &["config", "get", "sync.capabilities.transactions"],
+    );
     assert_eq!(got.trim(), "favorites");
 }
 
@@ -872,7 +881,11 @@ fn p_w9_083_config_set_invalid_doesnt_affect_other_values() {
     ok_in(h.path(), &["config", "set", "sync.policy", "lazy"]);
     fail_in(h.path(), &["config", "set", "sync.policy", "garbage"]);
     let got = ok_in(h.path(), &["config", "get", "sync.policy"]);
-    assert_eq!(got.trim(), "lazy", "failed set must not corrupt prior value");
+    assert_eq!(
+        got.trim(),
+        "lazy",
+        "failed set must not corrupt prior value"
+    );
 }
 
 #[test]
@@ -906,7 +919,10 @@ fn p_w9_085_full_user_journey() {
         h.path(),
         &["config", "set", "sync.capabilities.transactions", "league"],
     );
-    let cap = ok_in(h.path(), &["config", "get", "sync.capabilities.transactions"]);
+    let cap = ok_in(
+        h.path(),
+        &["config", "get", "sync.capabilities.transactions"],
+    );
     assert_eq!(cap.trim(), "league");
     // 7. Try to set forbidden capability
     let err = fail_in(

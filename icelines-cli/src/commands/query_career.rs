@@ -696,10 +696,9 @@ mod tests {
     /// post-Wave-25.
     #[test]
     fn l0_w25_filter_empty_cohort_returns_empty() {
-        let plan = icelines_query::parse_query(
-            icelines_query::FilterInput::Cli("country=CAN".to_owned()),
-        )
-        .expect("plan parses");
+        let plan =
+            icelines_query::parse_query(icelines_query::FilterInput::Cli("country=CAN".to_owned()))
+                .expect("plan parses");
         let kept = filter_cohort_with_plan(&[], &plan).unwrap();
         assert!(kept.is_empty());
     }
@@ -709,9 +708,7 @@ mod tests {
     /// the same garbage the run() path sends.
     #[test]
     fn l0_w25_unparsed_filter_raises_error() {
-        let bad = icelines_query::parse_query(icelines_query::FilterInput::Cli(
-            "(((".to_owned(),
-        ));
+        let bad = icelines_query::parse_query(icelines_query::FilterInput::Cli("(((".to_owned()));
         assert!(bad.is_err(), "((( must fail to parse");
     }
 
@@ -719,10 +716,7 @@ mod tests {
     /// — same path the run() entry point uses.
     #[test]
     fn l0_w25_multiple_filters_and_join() {
-        let filters = vec![
-            "country=CAN".to_owned(),
-            "pos=C".to_owned(),
-        ];
+        let filters = vec!["country=CAN".to_owned(), "pos=C".to_owned()];
         let input = icelines_query::FilterInput::from_cli_filters(&filters);
         let plan = icelines_query::parse_query(input).expect("parses");
         // Sanity: the plan tree contains both atoms (compiler-

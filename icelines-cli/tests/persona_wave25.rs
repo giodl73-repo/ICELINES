@@ -86,10 +86,7 @@ fn assert_filter_accepted(home: &std::path::Path, filter: &str) {
     let out = run_in(
         home,
         &[
-            "query", "career",
-            "--league", "OHL",
-            "--filter", filter,
-            "--json",
+            "query", "career", "--league", "OHL", "--filter", filter, "--json",
         ],
     );
     no_panic(&out);
@@ -153,11 +150,7 @@ fn p_w25_009_unparsed_filter_fails_with_parse_error() {
     let h = fresh();
     let out = run_in(
         h.path(),
-        &[
-            "query", "career",
-            "--league", "OHL",
-            "--filter", "(((",
-        ],
+        &["query", "career", "--league", "OHL", "--filter", "((("],
     );
     no_panic(&out);
     let stderr = String::from_utf8_lossy(&out.stderr);
@@ -177,11 +170,16 @@ fn p_w25_010_multiple_filters_and_join_accepted() {
     let out = run_in(
         h.path(),
         &[
-            "query", "career",
-            "--league", "OHL",
-            "--filter", "country=CAN",
-            "--filter", "pos=C",
-            "--filter", "age<=18",
+            "query",
+            "career",
+            "--league",
+            "OHL",
+            "--filter",
+            "country=CAN",
+            "--filter",
+            "pos=C",
+            "--filter",
+            "age<=18",
         ],
     );
     no_panic(&out);

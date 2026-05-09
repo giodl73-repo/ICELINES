@@ -147,8 +147,7 @@ fn l2_a5_explain_json_envelope_shape() {
             "--json",
         ],
     );
-    let v: serde_json::Value =
-        serde_json::from_str(&out).expect("JSON envelope must parse");
+    let v: serde_json::Value = serde_json::from_str(&out).expect("JSON envelope must parse");
     assert_eq!(v["schema_version"], "explain.v1");
     assert_eq!(v["route"], "leaders.explain");
     assert!(v["data"].is_object());
@@ -212,8 +211,7 @@ fn l2_a5_explain_invalid_filter_errors_loudly() {
     );
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(
-        stderr.to_lowercase().contains("filter")
-            || stderr.to_lowercase().contains("unknown"),
+        stderr.to_lowercase().contains("filter") || stderr.to_lowercase().contains("unknown"),
         "stderr should mention the filter parse problem; got: {stderr}"
     );
 }

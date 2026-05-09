@@ -1588,7 +1588,8 @@ mod tests {
         let mut app = App::new(false);
         app.screen = crate::tui::app::Screen::Tonight;
         app.tonight.date = scores_date.to_owned();
-        app.tonight.cache
+        app.tonight
+            .cache
             .lock()
             .unwrap()
             .insert(scores_date.to_owned(), TonightState::Loaded(games));

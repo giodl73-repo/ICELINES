@@ -74,10 +74,7 @@ pub struct TransactionsState {
 pub fn chrome(state: &TransactionsState) -> crate::tui::chrome::ScreenChrome {
     use crate::tui::chrome::{KeyHint, ScreenChrome};
 
-    let title = match (
-        state.team_filter.as_deref(),
-        state.kind_filter,
-    ) {
+    let title = match (state.team_filter.as_deref(), state.kind_filter) {
         (Some(t), Some(k)) => {
             format!("Transactions — {t} · {}", k.label())
         }
@@ -251,7 +248,8 @@ fn title_text(app: &App) -> Line<'static> {
 }
 
 pub fn filter_rows(app: &App) -> Vec<&Transaction> {
-    app.txs.rows
+    app.txs
+        .rows
         .iter()
         .filter(|tx| {
             if let Some(team) = app.txs.team_filter.as_deref() {

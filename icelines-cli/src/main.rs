@@ -4,8 +4,8 @@ mod config;
 mod db;
 mod error;
 mod event_stream;
-mod favorites_view;
 pub mod fantasy_db;
+mod favorites_view;
 mod render;
 mod start_slug;
 #[cfg(test)]
@@ -274,7 +274,12 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         } => {
             commands::project::run(player, team, mode, games, json, csv, out).await?;
         }
-        Commands::Tui { surface, start, standalone, mdi } => {
+        Commands::Tui {
+            surface,
+            start,
+            standalone,
+            mdi,
+        } => {
             // LB.1+LB.2+LB.3 — resolve start screen BEFORE entering raw
             // mode, so resolution failures (unknown slug / unknown player
             // name / ambiguous match / bad team abbrev) print to normal
@@ -679,10 +684,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                     );
                     std::process::exit(2);
                 }
-                commands::query_career::run(
-                    league, season, top, sort, json, csv, filters,
-                )
-                .await?;
+                commands::query_career::run(league, season, top, sort, json, csv, filters).await?;
             }
         },
         Commands::Fantasy(sub) => match sub {

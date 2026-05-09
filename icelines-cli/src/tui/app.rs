@@ -109,10 +109,7 @@ pub const FILTER_HISTORY_CAP: usize = 20;
 /// No-ops when `entry` already matches the existing front (so the
 /// user hammering Enter on the same filter doesn't fill the ring
 /// with duplicates). Trims the back when the ring is at cap.
-pub fn push_filter_history(
-    history: &mut std::collections::VecDeque<String>,
-    entry: String,
-) {
+pub fn push_filter_history(history: &mut std::collections::VecDeque<String>, entry: String) {
     if let Some(front) = history.front() {
         if front == &entry {
             return;
@@ -327,7 +324,10 @@ fn is_text_input_active(app: &App) -> bool {
     matches!(app.screen, Screen::Search | Screen::Tonight)
         || (app.screen == Screen::Schedule && app.schedule.search_mode)
         || (app.screen == Screen::Queries
-            && matches!(app.queries.mode, QueryMode::SaveName | QueryMode::FilterEdit))
+            && matches!(
+                app.queries.mode,
+                QueryMode::SaveName | QueryMode::FilterEdit
+            ))
 }
 
 impl App {
@@ -525,6 +525,33 @@ impl App {
 
     /// Handle an action. Returns true if the app should quit.
     pub fn handle(&mut self, action: Action) -> bool {
+        // Phase Adams.3 — MDI side-pane toggles fire from any
+        // focus state (cmdbar OR workspace). Crossterm-mapped
+        // Ctrl+H / Ctrl+L; no-op in SDI.
+        match action {
+            Action::ToggleFavoritesPane => {
+                if let Some(m) = self.mdi.as_mut() {
+                    m.show_favorites = !m.show_favorites;
+                    self.status = format!(
+                        "Favorites pane {}",
+                        if m.show_favorites { "shown" } else { "hidden" }
+                    );
+                }
+                return false;
+            }
+            Action::ToggleSchedulePane => {
+                if let Some(m) = self.mdi.as_mut() {
+                    m.show_schedule = !m.show_schedule;
+                    self.status = format!(
+                        "Schedule pane {}",
+                        if m.show_schedule { "shown" } else { "hidden" }
+                    );
+                }
+                return false;
+            }
+            _ => {}
+        }
+
         if self.show_help {
             self.show_help = false;
             return false;
@@ -600,6 +627,46 @@ impl App {
         }
         if self.screen == Screen::Queries && matches!(self.queries.mode, QueryMode::FilterEdit) {
             return self.handle_query_filter_edit(action);
+        }
+
+        // Phase Adams.2 — MDI command bar capture. When focused (or
+        // when input is non-empty — e.g., after the cursor walked
+        // history), all key actions route to the command bar
+        // handler. Triggers `:` and `/` are intercepted in the main
+        // match below to flip focus on.
+        if self.mdi_command_bar_active() {
+            return self.handle_command_bar(action);
+        }
+
+        // Phase Adams.2 — MDI command bar entry triggers. `:` and
+        // `/` focus the omnibox; the next keystroke (or future
+        // keystrokes) routes through the bar handler via the
+        // `mdi_command_bar_active()` check above. We intercept here
+        // (before the main match arms consume Search / Char) so per-
+        // screen `/` search overlays don't pre-empt the dashboard
+        // omnibox. Only fires in MDI mode.
+        if self.mdi.is_some() {
+            match action {
+                Action::Search => {
+                    if let Some(m) = self.mdi.as_mut() {
+                        m.command_bar_focused = true;
+                        // Slash commands like /help — pre-fill the
+                        // `/` so the user can keep typing.
+                        m.command_input.push('/');
+                        m.flash_error = None;
+                    }
+                    return false;
+                }
+                Action::Char(':') => {
+                    if let Some(m) = self.mdi.as_mut() {
+                        m.command_bar_focused = true;
+                        m.command_input.clear();
+                        m.flash_error = None;
+                    }
+                    return false;
+                }
+                _ => {}
+            }
         }
 
         match action {
@@ -716,7 +783,8 @@ impl App {
                                     .map(|(i, _)| i);
                                 if let Some(idx) = next_collapsed {
                                     self.queries.sections[idx].expanded = true;
-                                    if let Some(&first) = self.queries.sections[idx].fields.first() {
+                                    if let Some(&first) = self.queries.sections[idx].fields.first()
+                                    {
                                         self.queries.field_idx = first;
                                     }
                                 } else {
@@ -757,7 +825,8 @@ impl App {
                     if self.queries.mode == QueryMode::SortPicker {
                         // Phase Lindsay L.3.4 — sort picker Up moves
                         // within filtered list. Saturates at 0.
-                        self.queries.sort_picker_idx = self.queries.sort_picker_idx.saturating_sub(1);
+                        self.queries.sort_picker_idx =
+                            self.queries.sort_picker_idx.saturating_sub(1);
                     } else if self.queries.results_focused {
                         if self.selected > 0 {
                             self.selected -= 1;
@@ -1209,8 +1278,8 @@ impl App {
                                 .iter()
                                 .position(|(id, _, _)| *id == self.active_season.as_str())
                                 .unwrap_or(0);
-                            self.status = "Playoffs · pick a season — Enter applies, Esc cancels"
-                                .to_owned();
+                            self.status =
+                                "Playoffs · pick a season — Enter applies, Esc cancels".to_owned();
                         }
                         _ => {
                             // Other screens: no-op. Keep the keystroke
@@ -1249,9 +1318,11 @@ impl App {
                 if self.screen == Screen::Search {
                     self.search_query.pop();
                     self.selected = 0;
-                } else if self.screen == Screen::Queries && self.queries.mode == QueryMode::SaveName {
+                } else if self.screen == Screen::Queries && self.queries.mode == QueryMode::SaveName
+                {
                     self.queries.save_name.pop();
-                } else if self.screen == Screen::Queries && self.queries.mode == QueryMode::SortPicker
+                } else if self.screen == Screen::Queries
+                    && self.queries.mode == QueryMode::SortPicker
                 {
                     // Phase Lindsay L.3.4 — Backspace in sort picker
                     // pops the search query and resets selection.
@@ -1430,6 +1501,11 @@ impl App {
                     }
                 }
             }
+
+            // Phase Adams.3 — already short-circuited at the top
+            // of `handle`. Listing the variants here keeps the
+            // match exhaustive without a wildcard.
+            Action::ToggleFavoritesPane | Action::ToggleSchedulePane => {}
         }
         false
     }
@@ -1446,6 +1522,34 @@ impl App {
             } else {
                 None
             };
+        }
+    }
+
+    /// Phase Adams.5 — MDI-mode auto-fetch. The Scores ribbon
+    /// (top) and Schedule side pane (right) are always visible
+    /// in MDI regardless of which screen owns the workspace.
+    /// The legacy `maybe_fetch_*` methods gate on
+    /// `self.screen == Tonight/Schedule`; in MDI, that gate
+    /// would never open. This method fires both fetches
+    /// unconditionally — `tonight::maybe_fetch` and
+    /// `schedule::prefetch_around` are idempotent (Loading
+    /// state guards against repeats).
+    ///
+    /// Called once per render-loop tick when `self.mdi.is_some()`.
+    pub fn mdi_tick_fetch(&mut self) {
+        if self.mdi.is_none() {
+            return;
+        }
+        crate::tui::tonight::maybe_fetch(self.tonight.cache.clone(), self.tonight.date.clone());
+        crate::tui::schedule::prefetch_around(
+            self.schedule.week_cache.clone(),
+            &self.schedule.week,
+        );
+        // Arm the auto-refresh timer for live (today's) scores
+        // so they stay current — same logic as the SDI Tonight
+        // tab path.
+        if self.tonight.date.is_empty() && self.last_auto_refresh.is_none() {
+            self.last_auto_refresh = Some(std::time::Instant::now());
         }
     }
 
@@ -1529,10 +1633,7 @@ impl App {
                     PickerTarget::Scores => {
                         self.tonight.date = iso.clone();
                         self.tonight.selected = 0;
-                        crate::tui::tonight::maybe_fetch(
-                            self.tonight.cache.clone(),
-                            iso.clone(),
-                        );
+                        crate::tui::tonight::maybe_fetch(self.tonight.cache.clone(), iso.clone());
                         // Specific date → no auto-refresh (final scores don't change)
                         self.last_auto_refresh = None;
                         self.status = format!("Scores · {iso}");
@@ -1825,9 +1926,9 @@ impl App {
                     // Free-form text → CLI variant. `FilterInput::Tui`
                     // is reserved for the future structured-overlay
                     // path that builds `Vec<Constraint>` directly.
-                    match icelines_query::parse_query(
-                        icelines_query::FilterInput::Cli(text.to_owned()),
-                    ) {
+                    match icelines_query::parse_query(icelines_query::FilterInput::Cli(
+                        text.to_owned(),
+                    )) {
                         Ok(plan) => {
                             self.queries.filter_plan = Some(plan);
                             self.queries.filter_error = None;
@@ -1835,14 +1936,10 @@ impl App {
                             // against an identical front entry so
                             // hammering Enter doesn't fill the ring
                             // with duplicates.
-                            push_filter_history(
-                                &mut self.queries.filter_history,
-                                text.to_owned(),
-                            );
+                            push_filter_history(&mut self.queries.filter_history, text.to_owned());
                             self.queries.filter_history_cursor = None;
                             self.queries.mode = QueryMode::Build;
-                            self.status =
-                                format!("Filter applied: {text}  ·  press f to edit");
+                            self.status = format!("Filter applied: {text}  ·  press f to edit");
                         }
                         Err(errs) => {
                             // Keep editor open. Render shows the error.
@@ -1938,6 +2035,151 @@ impl App {
     /// Transactions tab `/` search — live substring match against the
     /// description. Enter freezes the filter and exits search mode (the
     /// query stays applied). Esc clears + exits.
+    /// Phase Adams.2 — MDI command bar is "active" (capturing keys)
+    /// when MDI mode is on AND (focus flag is set OR input is
+    /// non-empty). Per spec forge-3 focus model.
+    fn mdi_command_bar_active(&self) -> bool {
+        self.mdi
+            .as_ref()
+            .is_some_and(|m| m.command_bar_focused || !m.command_input.is_empty())
+    }
+
+    /// Phase Adams.2 — handle one key while the MDI command bar
+    /// has focus. Backspace at empty input releases focus; Enter
+    /// parses + executes; Escape cancels.
+    ///
+    /// Returns `true` to quit the app (forwarded from
+    /// `ExecResult::Quit` on `quit` / `q` commands).
+    fn handle_command_bar(&mut self, action: Action) -> bool {
+        match action {
+            Action::Escape => {
+                if let Some(m) = self.mdi.as_mut() {
+                    m.command_input.clear();
+                    m.command_bar_focused = false;
+                    m.flash_error = None;
+                    m.command_history_cursor = None;
+                }
+                false
+            }
+            Action::Backspace => {
+                if let Some(m) = self.mdi.as_mut() {
+                    if m.command_input.pop().is_none() {
+                        // Backspace on empty input releases focus.
+                        m.command_bar_focused = false;
+                    }
+                    m.flash_error = None;
+                    m.command_history_cursor = None;
+                }
+                false
+            }
+            Action::Enter => self.submit_command_bar(),
+            Action::Char(c) => {
+                if let Some(m) = self.mdi.as_mut() {
+                    m.command_input.push(c);
+                    m.flash_error = None;
+                    m.command_history_cursor = None;
+                }
+                false
+            }
+            Action::Space => {
+                if let Some(m) = self.mdi.as_mut() {
+                    m.command_input.push(' ');
+                    m.flash_error = None;
+                    m.command_history_cursor = None;
+                }
+                false
+            }
+            // Non-text actions that get re-mapped from letter keys
+            // need to round-trip back into the input buffer.
+            // The event mapper at tui/event.rs:55+ turns
+            // q/?/?/r/i/g/f/1–6 into structured actions BEFORE
+            // reaching App — so without this round-trip, those
+            // letters can never be typed into the cmdbar (the
+            // user's first symptom: "I can't type `query`, the
+            // q quits").
+            Action::Quit => self.cmdbar_push('q'),
+            Action::Refresh => self.cmdbar_push('r'),
+            Action::Install => self.cmdbar_push('i'),
+            Action::AddToGroup => self.cmdbar_push('g'),
+            Action::AddToFavorites => self.cmdbar_push('f'),
+            Action::Help => self.cmdbar_push('?'),
+            Action::Search => self.cmdbar_push('/'),
+            Action::GoToTab(n) => {
+                let ch = char::from_digit((n + 1) as u32, 10).unwrap_or('?');
+                self.cmdbar_push(ch)
+            }
+            // Up/Down walk command history (Adams.2 leaves a stub
+            // — wire-up is one of the open polish items).
+            Action::Up | Action::Down => false,
+            // Tab and arrow keys: no-op in cmdbar (no horizontal
+            // cursor movement yet — that's an Adams.3 polish item).
+            _ => false,
+        }
+    }
+
+    fn cmdbar_push(&mut self, c: char) -> bool {
+        if let Some(m) = self.mdi.as_mut() {
+            m.command_input.push(c);
+            m.flash_error = None;
+            m.command_history_cursor = None;
+        }
+        false
+    }
+
+    /// Phase Adams.2 — Enter pressed in the command bar: parse the
+    /// input, execute on success, surface flash on error. Always
+    /// clears focus + input on success; preserves input on parse
+    /// error so the user can fix it.
+    fn submit_command_bar(&mut self) -> bool {
+        let input = match self.mdi.as_ref() {
+            Some(m) => m.command_input.clone(),
+            None => return false,
+        };
+        if input.trim().is_empty() {
+            // Empty submit — just defocus, no execution.
+            if let Some(m) = self.mdi.as_mut() {
+                m.command_bar_focused = false;
+                m.command_input.clear();
+            }
+            return false;
+        }
+        match crate::tui::command::parse_command(&input) {
+            Ok(cmd) => {
+                let result = crate::tui::command::execute_command(cmd, self);
+                // Push to history regardless of result (record of
+                // what was typed; failures live in `flash_error`).
+                if let Some(m) = self.mdi.as_mut() {
+                    crate::tui::mdi::push_command_history(&mut m.command_history, input.clone());
+                    m.command_input.clear();
+                    m.command_bar_focused = false;
+                    m.command_history_cursor = None;
+                }
+                match result {
+                    crate::tui::command::ExecResult::Continue => false,
+                    crate::tui::command::ExecResult::Quit => true,
+                    crate::tui::command::ExecResult::Flash(msg) => {
+                        self.status = msg;
+                        false
+                    }
+                    crate::tui::command::ExecResult::NotImplemented(msg) => {
+                        if let Some(m) = self.mdi.as_mut() {
+                            m.flash_error = Some(msg.to_owned());
+                        }
+                        self.status = msg.to_owned();
+                        false
+                    }
+                }
+            }
+            Err(parse_err) => {
+                if let Some(m) = self.mdi.as_mut() {
+                    m.flash_error = Some(parse_err.to_string());
+                    // Keep input + focus so user can edit.
+                }
+                false
+            }
+        }
+    }
+
     fn handle_transactions_search(&mut self, action: Action) -> bool {
         match action {
             Action::Quit => return true,
@@ -2364,14 +2606,13 @@ impl App {
             Screen::Queries => {
                 // Hart.5c.6 Phase B-3.3: queries runs against views now.
                 let views = self.views();
-                let results =
-                    crate::tui::screens::queries::run_query_views_with_pick_and_plan(
-                        &views,
-                        &self.queries.fields,
-                        self.queries.sort_stat_pick,
-                        self.queries.filter_plan.as_ref(),
-                        self.active_season_typed.0,
-                    );
+                let results = crate::tui::screens::queries::run_query_views_with_pick_and_plan(
+                    &views,
+                    &self.queries.fields,
+                    self.queries.sort_stat_pick,
+                    self.queries.filter_plan.as_ref(),
+                    self.active_season_typed.0,
+                );
                 let row_idx =
                     self.queries.result_scroll + self.selected.min(results.len().saturating_sub(1));
                 results
@@ -2535,13 +2776,12 @@ impl App {
                             self.queries.filter_text = filter_text.clone();
                             self.queries.filter_error = None;
                             self.queries.filter_plan = None;
-                            let mut status = format!(
-                                "Loaded query '{name}'  ·  ←→ to adjust  s=save  r=reset"
-                            );
+                            let mut status =
+                                format!("Loaded query '{name}'  ·  ←→ to adjust  s=save  r=reset");
                             if !filter_text.is_empty() {
-                                match icelines_query::parse_query(
-                                    icelines_query::FilterInput::Cli(filter_text.clone()),
-                                ) {
+                                match icelines_query::parse_query(icelines_query::FilterInput::Cli(
+                                    filter_text.clone(),
+                                )) {
                                     Ok(plan) => {
                                         self.queries.filter_plan = Some(plan);
                                         status = format!(
@@ -2756,7 +2996,10 @@ impl App {
                 if let Some(game_id) = self.selected_game_id() {
                     self.prev_screen = Some(Screen::Tonight);
                     self.screen = Screen::GameDetail(game_id);
-                    crate::tui::tonight::maybe_fetch_boxscore(self.tonight.boxscore_cache.clone(), game_id);
+                    crate::tui::tonight::maybe_fetch_boxscore(
+                        self.tonight.boxscore_cache.clone(),
+                        game_id,
+                    );
                 }
             }
             _ => {}
@@ -3303,7 +3546,8 @@ mod tests {
             current_round: None,
             rounds,
         };
-        app.playoffs.cache
+        app.playoffs
+            .cache
             .lock()
             .unwrap()
             .insert(year, PlayoffsState::Loaded(bracket));
@@ -3475,7 +3719,8 @@ mod tests {
     }
 
     fn seed_scores(app: &mut App, date_key: &str, games: Vec<ScheduledGame>) {
-        app.tonight.cache
+        app.tonight
+            .cache
             .lock()
             .unwrap()
             .insert(date_key.to_owned(), TonightState::Loaded(games));
@@ -3801,7 +4046,10 @@ mod tests {
         app.last_auto_refresh = Some(std::time::Instant::now());
         // Move to a specific date — auto-refresh must disengage
         app.handle(Action::Left);
-        assert!(!app.tonight.date.is_empty(), "Left must set a specific date");
+        assert!(
+            !app.tonight.date.is_empty(),
+            "Left must set a specific date"
+        );
         assert!(
             app.last_auto_refresh.is_none(),
             "moving to a specific date must disarm the auto-refresh timer"
@@ -4371,15 +4619,11 @@ mod tests {
         app.screen = Screen::Queries;
         // Pre-load a stale plan to ensure load actually clears it.
         app.queries.filter_text = "stale".to_owned();
-        app.queries.filter_plan = icelines_query::parse_query(
-            icelines_query::FilterInput::Cli("country=CAN".to_owned()),
-        )
-        .ok();
+        app.queries.filter_plan =
+            icelines_query::parse_query(icelines_query::FilterInput::Cli("country=CAN".to_owned()))
+                .ok();
 
-        let json = crate::tui::screens::queries::fields_and_filter_to_json(
-            &app.queries.fields,
-            "",
-        );
+        let json = crate::tui::screens::queries::fields_and_filter_to_json(&app.queries.fields, "");
         app.queries.saved_list = vec![("no-filter-preset".to_owned(), json)];
         app.queries.mode = QueryMode::LoadList;
         app.selected = 0;
@@ -4665,7 +4909,10 @@ mod tests {
         );
 
         app.handle(Action::Help);
-        assert!(!app.queries.filter_show_help, "second ? turns cheatsheet off");
+        assert!(
+            !app.queries.filter_show_help,
+            "second ? turns cheatsheet off"
+        );
         assert_eq!(app.queries.mode, QueryMode::FilterEdit);
     }
 
@@ -4959,10 +5206,7 @@ mod tests {
         app.locked_screen = Some(Screen::Goalies);
         assert!(!app.show_help);
         app.handle(Action::Help);
-        assert!(
-            app.show_help,
-            "locked mode must not block the help overlay"
-        );
+        assert!(app.show_help, "locked mode must not block the help overlay");
     }
 
     /// Locked mode doesn't break per-screen keybinds — `s` on
@@ -4987,10 +5231,7 @@ mod tests {
     #[test]
     fn l0_adams_app_default_is_sdi() {
         let app = App::new(false);
-        assert!(
-            app.mdi.is_none(),
-            "default App must be SDI (mdi = None)"
-        );
+        assert!(app.mdi.is_none(), "default App must be SDI (mdi = None)");
     }
 
     /// When `app.mdi` is Some, Tab is a no-op. The screen stays
@@ -5066,9 +5307,374 @@ mod tests {
         app.mdi = Some(crate::tui::mdi::MdiLayout::default());
         assert!(!app.show_help);
         app.handle(Action::Help);
+        assert!(app.show_help, "MDI mode must not block the help overlay");
+    }
+
+    // ── Phase Adams.2 — command bar wiring ─────────────────────────────────
+
+    fn fresh_mdi_app() -> App {
+        let mut app = App::new(true);
+        app.mdi = Some(crate::tui::mdi::MdiLayout::default());
+        app
+    }
+
+    /// `:` focuses the command bar with empty input.
+    #[test]
+    fn l0_adams_cmdbar_colon_focuses_empty() {
+        let mut app = fresh_mdi_app();
+        app.handle(Action::Char(':'));
+        let m = app.mdi.as_ref().unwrap();
+        assert!(m.command_bar_focused);
+        assert_eq!(m.command_input, "");
+    }
+
+    /// `/` focuses the command bar with `/` pre-filled (slash-cmd
+    /// kickoff: `/help`, `/quit`).
+    #[test]
+    fn l0_adams_cmdbar_slash_focuses_with_slash_prefilled() {
+        let mut app = fresh_mdi_app();
+        app.handle(Action::Search);
+        let m = app.mdi.as_ref().unwrap();
+        assert!(m.command_bar_focused);
+        assert_eq!(m.command_input, "/");
+    }
+
+    /// In SDI mode, `:` and `/` do NOT focus a non-existent
+    /// command bar — they fall through to the normal main-match
+    /// handling.
+    #[test]
+    fn l0_adams_cmdbar_triggers_noop_in_sdi() {
+        let mut app = App::new(true);
+        // No `app.mdi`. In legacy code `Action::Search` opens the
+        // global player Search screen, so verify by side-effect.
+        let before_screen = std::mem::discriminant(&app.screen);
+        app.handle(Action::Char(':'));
+        // `:` falls through to the catch-all char arm — no panic.
+        // Screen may or may not change depending on per-screen
+        // logic; the important contract is "no MDI side-effect".
+        assert!(app.mdi.is_none(), "SDI app must not gain mdi state");
+        // We don't assert the precise screen; we just confirm we
+        // didn't crash. The key invariant: no MDI state appeared.
+        let _ = before_screen;
+    }
+
+    /// While focused, typed characters accumulate in
+    /// `command_input` and per-screen keybinds do NOT fire.
+    #[test]
+    fn l0_adams_cmdbar_captures_typed_text() {
+        let mut app = fresh_mdi_app();
+        app.screen = Screen::Goalies;
+        let goalies_sort_before = app.goalies.sort;
+        // Focus + type "stats"
+        app.handle(Action::Char(':'));
+        for c in "stats".chars() {
+            app.handle(Action::Char(c));
+        }
+        let m = app.mdi.as_ref().unwrap();
+        assert!(m.command_bar_focused);
+        assert_eq!(m.command_input, "stats");
+        // 's' would normally cycle the goalies sort — but cmdbar
+        // captured it, so the sort must NOT have moved.
+        assert_eq!(app.goalies.sort, goalies_sort_before);
+    }
+
+    /// Backspace removes the last char; on empty input, releases
+    /// focus.
+    #[test]
+    fn l0_adams_cmdbar_backspace_pops_then_defocuses() {
+        let mut app = fresh_mdi_app();
+        app.handle(Action::Char(':'));
+        app.handle(Action::Char('a'));
+        app.handle(Action::Char('b'));
+        assert_eq!(app.mdi.as_ref().unwrap().command_input, "ab");
+        app.handle(Action::Backspace);
+        assert_eq!(app.mdi.as_ref().unwrap().command_input, "a");
+        app.handle(Action::Backspace);
+        assert_eq!(app.mdi.as_ref().unwrap().command_input, "");
+        // Still focused (caret is at the prompt; user hasn't
+        // bailed yet).
+        assert!(app.mdi.as_ref().unwrap().command_bar_focused);
+        // One more backspace on empty input releases focus.
+        app.handle(Action::Backspace);
+        assert!(!app.mdi.as_ref().unwrap().command_bar_focused);
+    }
+
+    /// Escape clears input and releases focus.
+    #[test]
+    fn l0_adams_cmdbar_escape_cancels() {
+        let mut app = fresh_mdi_app();
+        app.handle(Action::Char(':'));
+        for c in "goalies".chars() {
+            app.handle(Action::Char(c));
+        }
+        app.handle(Action::Escape);
+        let m = app.mdi.as_ref().unwrap();
+        assert!(!m.command_bar_focused);
+        assert_eq!(m.command_input, "");
+    }
+
+    /// Enter executes a parsed command — `stats` swaps workspace
+    /// to `Screen::Queries`, clears input, defocuses, pushes to
+    /// history.
+    #[test]
+    fn l0_adams_cmdbar_enter_executes_stats() {
+        let mut app = fresh_mdi_app();
+        app.screen = Screen::Home;
+        app.handle(Action::Char(':'));
+        for c in "stats".chars() {
+            app.handle(Action::Char(c));
+        }
+        let quit = app.handle(Action::Enter);
+        assert!(!quit);
+        assert!(matches!(app.screen, Screen::Queries));
+        let m = app.mdi.as_ref().unwrap();
+        assert_eq!(m.command_input, "");
+        assert!(!m.command_bar_focused);
+        assert_eq!(m.command_history.front().map(String::as_str), Some("stats"));
+    }
+
+    /// Enter on `quit` returns true to break the event loop.
+    #[test]
+    fn l0_adams_cmdbar_enter_on_quit_returns_true() {
+        let mut app = fresh_mdi_app();
+        app.handle(Action::Char(':'));
+        for c in "quit".chars() {
+            app.handle(Action::Char(c));
+        }
+        let quit = app.handle(Action::Enter);
+        assert!(quit, "submitting 'quit' must return true to exit");
+    }
+
+    /// Enter on a parse error preserves input + focus, surfaces
+    /// flash_error.
+    #[test]
+    fn l0_adams_cmdbar_enter_on_parse_error_keeps_input() {
+        let mut app = fresh_mdi_app();
+        app.handle(Action::Char(':'));
+        for c in "garbage".chars() {
+            app.handle(Action::Char(c));
+        }
+        app.handle(Action::Enter);
+        let m = app.mdi.as_ref().unwrap();
+        assert_eq!(m.command_input, "garbage");
+        assert!(m.command_bar_focused);
+        assert!(m.flash_error.is_some());
+    }
+
+    /// Enter on empty input defocuses without executing anything.
+    #[test]
+    fn l0_adams_cmdbar_enter_on_empty_input_defocuses() {
+        let mut app = fresh_mdi_app();
+        app.handle(Action::Char(':'));
+        // Now input is "" (we entered focus with empty buffer).
+        let quit = app.handle(Action::Enter);
+        assert!(!quit);
+        assert!(!app.mdi.as_ref().unwrap().command_bar_focused);
+        assert_eq!(app.mdi.as_ref().unwrap().command_input, "");
+        // No history push for empty submit.
+        assert!(app.mdi.as_ref().unwrap().command_history.is_empty());
+    }
+
+    /// While bar is active, Action::Quit gets pushed as the
+    /// literal char `q` — otherwise the user couldn't type
+    /// `query`, `quit`, etc. (event mapper rewrites bare `q` to
+    /// Action::Quit before App sees it).
+    #[test]
+    fn l0_adams_cmdbar_quit_action_pushes_q_while_focused() {
+        let mut app = fresh_mdi_app();
+        app.handle(Action::Char(':'));
+        let quit = app.handle(Action::Quit);
         assert!(
-            app.show_help,
-            "MDI mode must not block the help overlay"
+            !quit,
+            "Action::Quit must NOT exit the app while bar is focused"
         );
+        let m = app.mdi.as_ref().unwrap();
+        assert!(m.command_bar_focused);
+        assert_eq!(
+            m.command_input, "q",
+            "Action::Quit must round-trip as the literal char 'q'"
+        );
+    }
+
+    /// Property test: every printable ASCII char (0x20-0x7E)
+    /// must round-trip through the cmdbar exactly once. This
+    /// catches future event-mapper additions that re-route a
+    /// letter without a matching cmdbar fallback. See the
+    /// `Action::Quit → push 'q'` round-trip — without that,
+    /// users couldn't type any word starting with `q`.
+    ///
+    /// Test strategy: simulate the event mapper by checking each
+    /// printable char and dispatching the same Action the real
+    /// event mapper would produce; verify the resulting input
+    /// buffer equals the typed sequence.
+    #[test]
+    fn l0_adams_cmdbar_every_printable_ascii_chars_through() {
+        // Mirrors map_key in tui/event.rs:48+ for printable ASCII.
+        fn action_for(c: char) -> Option<Action> {
+            match c {
+                'q' => Some(Action::Quit),
+                '?' => Some(Action::Help),
+                '/' => Some(Action::Search),
+                'r' => Some(Action::Refresh),
+                'i' => Some(Action::Install),
+                'g' => Some(Action::AddToGroup),
+                'f' => Some(Action::AddToFavorites),
+                '1' => Some(Action::GoToTab(0)),
+                '2' => Some(Action::GoToTab(1)),
+                '3' => Some(Action::GoToTab(2)),
+                '4' => Some(Action::GoToTab(3)),
+                '5' => Some(Action::GoToTab(4)),
+                '6' => Some(Action::GoToTab(5)),
+                ' ' => Some(Action::Space),
+                _ => Some(Action::Char(c)),
+            }
+        }
+
+        let mut app = fresh_mdi_app();
+        // Enter cmdbar focus first (otherwise `:` triggers entry
+        // and clears the buffer; we want to test typing).
+        app.handle(Action::Char(':'));
+
+        let mut expected = String::new();
+        for ch in (0x20u8..=0x7Eu8).map(char::from) {
+            // `:` is the entry trigger when bar isn't focused.
+            // Once focused, Char(':') routes to handle_command_bar
+            // and pushes ':' normally — so this is fine.
+            if let Some(action) = action_for(ch) {
+                app.handle(action);
+                expected.push(ch);
+            }
+        }
+
+        assert_eq!(
+            app.mdi.as_ref().unwrap().command_input,
+            expected,
+            "every printable ASCII char must type into the cmdbar"
+        );
+    }
+
+    /// Regression: typing `query g >= 30` works end-to-end. The
+    /// event mapper rewrites bare `q` to Action::Quit, `g` to
+    /// Action::AddToGroup, `?` to Action::Help, `/` to
+    /// Action::Search, etc. — handle_command_bar must round-trip
+    /// each one as the literal char.
+    #[test]
+    fn l0_adams_cmdbar_can_type_word_starting_with_q() {
+        let mut app = fresh_mdi_app();
+        app.handle(Action::Char(':'));
+        // Simulate the event mapper's rewrites for "query":
+        //   q → Action::Quit
+        //   u → Action::Char('u')
+        //   e → Action::Char('e')
+        //   r → Action::Refresh
+        //   y → Action::Char('y')
+        app.handle(Action::Quit);
+        app.handle(Action::Char('u'));
+        app.handle(Action::Char('e'));
+        app.handle(Action::Refresh);
+        app.handle(Action::Char('y'));
+        assert_eq!(app.mdi.as_ref().unwrap().command_input, "query");
+        // And the rest: " g >= 30"
+        //   ' ' → Action::Space
+        //   'g' → Action::AddToGroup
+        //   '>' → Char('>')
+        //   '=' → Char('=')
+        //   '3' → Action::GoToTab(2)  (event mapper rewrites 1-6)
+        //   '0' → Char('0')           (event mapper doesn't touch 0)
+        app.handle(Action::Space);
+        app.handle(Action::AddToGroup);
+        app.handle(Action::Space);
+        app.handle(Action::Char('>'));
+        app.handle(Action::Char('='));
+        app.handle(Action::Space);
+        app.handle(Action::GoToTab(2));
+        app.handle(Action::Char('0'));
+        assert_eq!(app.mdi.as_ref().unwrap().command_input, "query g >= 30");
+    }
+
+    // ── Phase Adams.3 — Ctrl+H / Ctrl+L pane toggles ─────────────────────
+
+    #[test]
+    fn l0_adams_ctrl_h_toggles_favorites_pane() {
+        let mut app = fresh_mdi_app();
+        assert!(app.mdi.as_ref().unwrap().show_favorites);
+        app.handle(Action::ToggleFavoritesPane);
+        assert!(!app.mdi.as_ref().unwrap().show_favorites);
+        app.handle(Action::ToggleFavoritesPane);
+        assert!(app.mdi.as_ref().unwrap().show_favorites);
+    }
+
+    #[test]
+    fn l0_adams_ctrl_l_toggles_schedule_pane() {
+        let mut app = fresh_mdi_app();
+        assert!(app.mdi.as_ref().unwrap().show_schedule);
+        app.handle(Action::ToggleSchedulePane);
+        assert!(!app.mdi.as_ref().unwrap().show_schedule);
+        app.handle(Action::ToggleSchedulePane);
+        assert!(app.mdi.as_ref().unwrap().show_schedule);
+    }
+
+    #[test]
+    fn l0_adams_pane_toggles_noop_in_sdi() {
+        // SDI app has no `mdi` — toggles must not panic and
+        // must not flip any phantom state.
+        let mut app = App::new(true);
+        assert!(app.mdi.is_none());
+        app.handle(Action::ToggleFavoritesPane);
+        app.handle(Action::ToggleSchedulePane);
+        assert!(app.mdi.is_none());
+    }
+
+    #[test]
+    fn l0_adams_pane_toggles_fire_through_cmdbar_focus() {
+        // While cmdbar is focused, Ctrl+H / Ctrl+L still toggle
+        // panes — they're routed before the cmdbar capture gate.
+        // This lets the user reshape the layout without leaving
+        // the bar.
+        let mut app = fresh_mdi_app();
+        app.handle(Action::Char(':'));
+        app.handle(Action::Char('a'));
+        assert!(app.mdi.as_ref().unwrap().command_bar_focused);
+        let before = app.mdi.as_ref().unwrap().show_schedule;
+        app.handle(Action::ToggleSchedulePane);
+        assert_eq!(
+            app.mdi.as_ref().unwrap().show_schedule,
+            !before,
+            "Ctrl+L must toggle even while cmdbar is focused"
+        );
+        // Bar focus + input preserved.
+        assert!(app.mdi.as_ref().unwrap().command_bar_focused);
+        assert_eq!(app.mdi.as_ref().unwrap().command_input, "a");
+    }
+
+    /// `/show favorites` after a `/hide` flips the flag back on.
+    /// `hide` / `show` are slash-only (the `/` enters bar with `/`
+    /// pre-filled via Action::Search).
+    #[test]
+    fn l0_adams_cmdbar_hide_show_favorites_via_bar() {
+        let mut app = fresh_mdi_app();
+        // Action::Search puts `/` in input, then type "hide favorites".
+        app.handle(Action::Search);
+        for c in "hide favorites".chars() {
+            if c == ' ' {
+                app.handle(Action::Space);
+            } else {
+                app.handle(Action::Char(c));
+            }
+        }
+        app.handle(Action::Enter);
+        assert!(!app.mdi.as_ref().unwrap().show_favorites);
+
+        // Repeat for `/show favorites`.
+        app.handle(Action::Search);
+        for c in "show favorites".chars() {
+            if c == ' ' {
+                app.handle(Action::Space);
+            } else {
+                app.handle(Action::Char(c));
+            }
+        }
+        app.handle(Action::Enter);
+        assert!(app.mdi.as_ref().unwrap().show_favorites);
     }
 }

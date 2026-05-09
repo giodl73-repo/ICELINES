@@ -45,10 +45,7 @@ pub fn chrome(state: &GoaliesState) -> crate::tui::chrome::ScreenChrome {
         .get(state.sort as usize)
         .map(|s| s.label())
         .unwrap_or("?");
-    let title = format!(
-        "Goalies — {sort_label} · GP ≥ {}",
-        state.min_gp
-    );
+    let title = format!("Goalies — {sort_label} · GP ≥ {}", state.min_gp);
 
     let keybinds = vec![
         KeyHint::new("s", "sort"),

@@ -24,7 +24,9 @@ use icelines_core::identity::PlayerId;
 use icelines_core::stats_catalog::parse_filter_expr;
 use icelines_core::stats_repository::StatsRepository;
 use icelines_fetch::stats_loader::load_player_career_into_repo;
-use icelines_query::data_provider::{DataProvider, EvalCtx, FetchError, FetchEvent, PlanRequirement};
+use icelines_query::data_provider::{
+    DataProvider, EvalCtx, FetchError, FetchEvent, PlanRequirement,
+};
 use icelines_query::{parse_query, FilterInput, StrictMode};
 
 /// No-op DataProvider for the A.0 parity test corpus — the corpus
@@ -149,17 +151,15 @@ fn art_ross_a0_parity_corpus_agrees_on_every_player() {
         // Legacy pipeline: parse_filter_expr → FilterExpr::matches
         let legacy_expr = match parse_filter_expr(filter) {
             Ok(e) => e,
-            Err(e) => panic!(
-                "legacy parser failed on filter {filter:?} (curated corpus must parse): {e}"
-            ),
+            Err(e) => {
+                panic!("legacy parser failed on filter {filter:?} (curated corpus must parse): {e}")
+            }
         };
 
         // New pipeline: parse_query → Constraint::matches (unified)
         let plan = match parse_query(FilterInput::Cli(filter.to_string())) {
             Ok(p) => p,
-            Err(es) => panic!(
-                "new parser failed on filter {filter:?} (parity blocker): {es:?}"
-            ),
+            Err(es) => panic!("new parser failed on filter {filter:?} (parity blocker): {es:?}"),
         };
 
         // Walk every player's active-season view. Compare match
@@ -283,9 +283,7 @@ fn art_ross_a0_ir_roundtrip_for_corpus() {
         let plan = parse_query(FilterInput::Cli(filter.to_string())).unwrap();
         let serialized = serialize_to_canonical(&plan.root);
         let plan2 = parse_query(FilterInput::Cli(serialized.clone())).unwrap_or_else(|es| {
-            panic!(
-                "round-trip {filter:?} → {serialized:?} re-parse failed: {es:?}"
-            )
+            panic!("round-trip {filter:?} → {serialized:?} re-parse failed: {es:?}")
         });
         assert_eq!(
             plan.root, plan2.root,

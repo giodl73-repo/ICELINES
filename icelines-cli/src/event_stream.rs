@@ -325,7 +325,11 @@ mod tests {
 
         // Three milestone-style events for one player across three
         // distinct dates.
-        for (date, value) in [(d(2026, 1, 10), 100), (d(2026, 1, 15), 200), (d(2026, 1, 20), 300)] {
+        for (date, value) in [
+            (d(2026, 1, 10), 100),
+            (d(2026, 1, 15), 200),
+            (d(2026, 1, 20), 300),
+        ] {
             let payload = format!("{{\"schema_version\":1,\"value\":{value}}}");
             let event_id = proto::milestone_event_id(PlayerId(8478402), "goals", value);
             es.upsert(date, &player, "milestone", &event_id, &payload, 1)

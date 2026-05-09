@@ -555,7 +555,8 @@ mod tests {
     #[test]
     fn l0_render_game_detail_loaded_shows_goals_and_goalies() {
         let app = App::new(false);
-        app.tonight.boxscore_cache
+        app.tonight
+            .boxscore_cache
             .lock()
             .unwrap()
             .insert(12345, BoxscoreState::Loaded(fixture_boxscore(12345)));
@@ -589,7 +590,8 @@ mod tests {
         //   NYR:  TOI Fox 26:09     Hits Zibanejad 2     Blocks Fox 4
         //   WSH:  TOI Carlson 25:11 Hits Wilson 5         Blocks Carlson 5
         let app = App::new(false);
-        app.tonight.boxscore_cache
+        app.tonight
+            .boxscore_cache
             .lock()
             .unwrap()
             .insert(12345, BoxscoreState::Loaded(fixture_boxscore(12345)));
@@ -633,7 +635,8 @@ mod tests {
             TonightState::Loaded(vec![fixture_playoff_game(12345)]),
         );
         // Seed boxscore
-        app.tonight.boxscore_cache
+        app.tonight
+            .boxscore_cache
             .lock()
             .unwrap()
             .insert(12345, BoxscoreState::Loaded(fixture_boxscore(12345)));
@@ -653,7 +656,8 @@ mod tests {
     #[test]
     fn l0_render_game_detail_error_shows_retry_hint() {
         let app = App::new(false);
-        app.tonight.boxscore_cache
+        app.tonight
+            .boxscore_cache
             .lock()
             .unwrap()
             .insert(12345, BoxscoreState::Error("network down".to_owned()));
@@ -671,7 +675,8 @@ mod tests {
         let mut bs = fixture_boxscore(12345);
         bs.goals.clear();
         bs.goalies.clear();
-        app.tonight.boxscore_cache
+        app.tonight
+            .boxscore_cache
             .lock()
             .unwrap()
             .insert(12345, BoxscoreState::Loaded(bs));
@@ -689,7 +694,8 @@ mod tests {
             String::new(),
             TonightState::Loaded(vec![fixture_playoff_game(12345)]),
         );
-        app.tonight.boxscore_cache
+        app.tonight
+            .boxscore_cache
             .lock()
             .unwrap()
             .insert(12345, BoxscoreState::Loaded(fixture_boxscore(12345)));

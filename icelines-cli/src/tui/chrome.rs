@@ -130,10 +130,7 @@ mod tests {
     fn l0_chrome_global_keybinds_head_is_tab_tail_is_quit() {
         assert!(!GLOBAL_KEYBINDS.is_empty());
         assert_eq!(GLOBAL_KEYBINDS[0].key, "Tab");
-        assert_eq!(
-            GLOBAL_KEYBINDS[GLOBAL_KEYBINDS.len() - 1].key,
-            "q"
-        );
+        assert_eq!(GLOBAL_KEYBINDS[GLOBAL_KEYBINDS.len() - 1].key, "q");
     }
 
     /// `KeyHint` derives `PartialEq` so tests can compare hints

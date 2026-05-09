@@ -200,7 +200,10 @@ mod tests {
         let done_at = banner.completed_at.unwrap();
         // Just before timeout — visible.
         let near = done_at + IDLE_HIDE - Duration::from_millis(100);
-        assert!(banner.text_at(near).is_some(), "visible just before timeout");
+        assert!(
+            banner.text_at(near).is_some(),
+            "visible just before timeout"
+        );
         // Just after — hidden.
         let past = done_at + IDLE_HIDE + Duration::from_millis(100);
         assert!(banner.text_at(past).is_none(), "hidden after IDLE_HIDE");

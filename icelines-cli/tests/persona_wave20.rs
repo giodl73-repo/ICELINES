@@ -68,9 +68,13 @@ fn p_w20_001_player_peers_country_in() {
     assert_runs_clean(
         h.path(),
         &[
-            "query", "player", "Connor McDavid",
-            "--peers", "10",
-            "--filter", "country IN (CAN, USA)",
+            "query",
+            "player",
+            "Connor McDavid",
+            "--peers",
+            "10",
+            "--filter",
+            "country IN (CAN, USA)",
         ],
     );
 }
@@ -81,9 +85,13 @@ fn p_w20_002_player_peers_strict_age() {
     assert_runs_clean(
         h.path(),
         &[
-            "query", "player", "Connor McDavid",
-            "--peers", "10",
-            "--filter", "age<30",
+            "query",
+            "player",
+            "Connor McDavid",
+            "--peers",
+            "10",
+            "--filter",
+            "age<30",
         ],
     );
 }
@@ -94,9 +102,13 @@ fn p_w20_003_player_peers_age_between() {
     assert_runs_clean(
         h.path(),
         &[
-            "query", "player", "Connor McDavid",
-            "--peers", "10",
-            "--filter", "age BETWEEN 25 AND 32",
+            "query",
+            "player",
+            "Connor McDavid",
+            "--peers",
+            "10",
+            "--filter",
+            "age BETWEEN 25 AND 32",
         ],
     );
 }
@@ -107,9 +119,13 @@ fn p_w20_004_player_peers_country_like() {
     assert_runs_clean(
         h.path(),
         &[
-            "query", "player", "Connor McDavid",
-            "--peers", "10",
-            "--filter", r#"country LIKE "CA*""#,
+            "query",
+            "player",
+            "Connor McDavid",
+            "--peers",
+            "10",
+            "--filter",
+            r#"country LIKE "CA*""#,
         ],
     );
 }
@@ -120,9 +136,13 @@ fn p_w20_005_player_peers_pos_in() {
     assert_runs_clean(
         h.path(),
         &[
-            "query", "player", "Connor McDavid",
-            "--peers", "10",
-            "--filter", "pos IN (C, LW, RW)",
+            "query",
+            "player",
+            "Connor McDavid",
+            "--peers",
+            "10",
+            "--filter",
+            "pos IN (C, LW, RW)",
         ],
     );
 }
@@ -133,9 +153,13 @@ fn p_w20_006_player_peers_country_ne() {
     assert_runs_clean(
         h.path(),
         &[
-            "query", "player", "Connor McDavid",
-            "--peers", "10",
-            "--filter", "country!=RUS",
+            "query",
+            "player",
+            "Connor McDavid",
+            "--peers",
+            "10",
+            "--filter",
+            "country!=RUS",
         ],
     );
 }
@@ -146,9 +170,13 @@ fn p_w20_007_player_peers_compound_new_grammar() {
     assert_runs_clean(
         h.path(),
         &[
-            "query", "player", "Connor McDavid",
-            "--peers", "10",
-            "--filter", "country IN (CAN, USA) AND age<30",
+            "query",
+            "player",
+            "Connor McDavid",
+            "--peers",
+            "10",
+            "--filter",
+            "country IN (CAN, USA) AND age<30",
         ],
     );
 }
@@ -159,8 +187,11 @@ fn p_w20_008_player_peers_kitchen_sink() {
     assert_runs_clean(
         h.path(),
         &[
-            "query", "player", "Connor McDavid",
-            "--peers", "10",
+            "query",
+            "player",
+            "Connor McDavid",
+            "--peers",
+            "10",
             "--filter",
             "country IN (CAN, USA) AND age BETWEEN 22 AND 32 AND pos=C AND draft-round<=2",
         ],
@@ -174,9 +205,13 @@ fn p_w20_009_player_peers_legacy_still_works() {
     assert_runs_clean(
         h.path(),
         &[
-            "query", "player", "Connor McDavid",
-            "--peers", "10",
-            "--filter", "g>=10",
+            "query",
+            "player",
+            "Connor McDavid",
+            "--peers",
+            "10",
+            "--filter",
+            "g>=10",
         ],
     );
 }
@@ -187,9 +222,13 @@ fn p_w20_010_player_peers_strict_lt_compound() {
     assert_runs_clean(
         h.path(),
         &[
-            "query", "player", "Connor McDavid",
-            "--peers", "10",
-            "--filter", "age<30 AND p>=20",
+            "query",
+            "player",
+            "Connor McDavid",
+            "--peers",
+            "10",
+            "--filter",
+            "age<30 AND p>=20",
         ],
     );
 }
@@ -202,9 +241,13 @@ fn p_w20_011_compare_similar_country_in() {
     assert_runs_clean(
         h.path(),
         &[
-            "query", "compare", "Connor McDavid",
-            "--similar", "5",
-            "--filter", "country IN (CAN, USA)",
+            "query",
+            "compare",
+            "Connor McDavid",
+            "--similar",
+            "5",
+            "--filter",
+            "country IN (CAN, USA)",
         ],
     );
 }
@@ -215,9 +258,13 @@ fn p_w20_012_compare_similar_strict_age() {
     assert_runs_clean(
         h.path(),
         &[
-            "query", "compare", "Connor McDavid",
-            "--similar", "5",
-            "--filter", "age<30",
+            "query",
+            "compare",
+            "Connor McDavid",
+            "--similar",
+            "5",
+            "--filter",
+            "age<30",
         ],
     );
 }
@@ -228,9 +275,13 @@ fn p_w20_013_compare_similar_between() {
     assert_runs_clean(
         h.path(),
         &[
-            "query", "compare", "Connor McDavid",
-            "--similar", "5",
-            "--filter", "age BETWEEN 25 AND 32",
+            "query",
+            "compare",
+            "Connor McDavid",
+            "--similar",
+            "5",
+            "--filter",
+            "age BETWEEN 25 AND 32",
         ],
     );
 }
@@ -241,9 +292,13 @@ fn p_w20_014_compare_similar_like() {
     assert_runs_clean(
         h.path(),
         &[
-            "query", "compare", "Connor McDavid",
-            "--similar", "5",
-            "--filter", r#"country LIKE "CA*""#,
+            "query",
+            "compare",
+            "Connor McDavid",
+            "--similar",
+            "5",
+            "--filter",
+            r#"country LIKE "CA*""#,
         ],
     );
 }
@@ -254,9 +309,13 @@ fn p_w20_015_compare_similar_pos_in() {
     assert_runs_clean(
         h.path(),
         &[
-            "query", "compare", "Connor McDavid",
-            "--similar", "5",
-            "--filter", "pos IN (C, LW, RW)",
+            "query",
+            "compare",
+            "Connor McDavid",
+            "--similar",
+            "5",
+            "--filter",
+            "pos IN (C, LW, RW)",
         ],
     );
 }
@@ -267,9 +326,13 @@ fn p_w20_016_compare_similar_compound() {
     assert_runs_clean(
         h.path(),
         &[
-            "query", "compare", "Connor McDavid",
-            "--similar", "5",
-            "--filter", "country IN (CAN, USA) AND age<30",
+            "query",
+            "compare",
+            "Connor McDavid",
+            "--similar",
+            "5",
+            "--filter",
+            "country IN (CAN, USA) AND age<30",
         ],
     );
 }
@@ -280,8 +343,11 @@ fn p_w20_017_compare_similar_kitchen_sink() {
     assert_runs_clean(
         h.path(),
         &[
-            "query", "compare", "Connor McDavid",
-            "--similar", "5",
+            "query",
+            "compare",
+            "Connor McDavid",
+            "--similar",
+            "5",
             "--filter",
             "country IN (CAN, USA) AND age BETWEEN 22 AND 32 AND pos=C",
         ],
@@ -294,9 +360,13 @@ fn p_w20_018_compare_similar_legacy_still_works() {
     assert_runs_clean(
         h.path(),
         &[
-            "query", "compare", "Connor McDavid",
-            "--similar", "5",
-            "--filter", "g>=10",
+            "query",
+            "compare",
+            "Connor McDavid",
+            "--similar",
+            "5",
+            "--filter",
+            "g>=10",
         ],
     );
 }
@@ -307,9 +377,13 @@ fn p_w20_019_compare_similar_country_ne() {
     assert_runs_clean(
         h.path(),
         &[
-            "query", "compare", "Connor McDavid",
-            "--similar", "5",
-            "--filter", "country!=RUS",
+            "query",
+            "compare",
+            "Connor McDavid",
+            "--similar",
+            "5",
+            "--filter",
+            "country!=RUS",
         ],
     );
 }
@@ -320,9 +394,13 @@ fn p_w20_020_compare_similar_paren_compound() {
     assert_runs_clean(
         h.path(),
         &[
-            "query", "compare", "Connor McDavid",
-            "--similar", "5",
-            "--filter", "(country=CAN OR country=USA) AND age<=30",
+            "query",
+            "compare",
+            "Connor McDavid",
+            "--similar",
+            "5",
+            "--filter",
+            "(country=CAN OR country=USA) AND age<=30",
         ],
     );
 }

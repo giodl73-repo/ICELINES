@@ -208,15 +208,8 @@ fn matched_names(repo: &StatsRepository, filter: &str) -> HashSet<String> {
             Some(x) => x,
             None => continue,
         };
-        let ctx = EvalCtx::new(
-            &provider,
-            StrictMode::Off,
-            false,
-            fixed_today(),
-            season,
-        );
-        if let Some(view) = repo.view(PlayerId(s.pid), Season(season), SeasonType::Regular)
-        {
+        let ctx = EvalCtx::new(&provider, StrictMode::Off, false, fixed_today(), season);
+        if let Some(view) = repo.view(PlayerId(s.pid), Season(season), SeasonType::Regular) {
             if plan.root.matches(&view, &ctx) {
                 out.insert(s.name.to_string());
             }
@@ -1005,7 +998,7 @@ fn w14_under_25_canadian_centers() {
     let f = "country=CAN AND pos=C AND age<25";
     let m = matched_names(&repo, f);
     assert_contains(&m, "Connor Bedard", f); // CAN, C, 20
-    // McDavid (28-29), Crosby (38), MacKinnon (30) all over 25.
+                                             // McDavid (28-29), Crosby (38), MacKinnon (30) all over 25.
     assert_excludes(&m, "Connor McDavid", f);
     assert_excludes(&m, "Sidney Crosby", f);
     assert_excludes(&m, "Nathan MacKinnon", f);
@@ -1021,7 +1014,7 @@ fn w14_first_round_us_centers() {
     let m = matched_names(&repo, f);
     assert_contains(&m, "Auston Matthews", f); // #1 2016
     assert_contains(&m, "Jack Hughes", f); // #1 2019
-    // Quinn is D, not C — should be excluded.
+                                           // Quinn is D, not C — should be excluded.
     assert_excludes(&m, "Quinn Hughes", f);
 }
 
@@ -1031,7 +1024,7 @@ fn w14_late_round_canadians_with_career() {
     let f = "country=CAN AND draft-round>=3";
     let m = matched_names(&repo, f);
     assert_contains(&m, "Brad Marchand", f); // R3
-    // McDavid is R1 — excluded.
+                                             // McDavid is R1 — excluded.
     assert_excludes(&m, "Connor McDavid", f);
 }
 
@@ -1079,7 +1072,7 @@ fn w14_country_full_european_set() {
     assert_contains(&m, "Kirill Kaprizov", f); // RUS
     assert_contains(&m, "Auston Matthews", f); // USA
     assert_contains(&m, "Jack Hughes", f); // USA
-    // Canadians excluded.
+                                           // Canadians excluded.
     assert_excludes(&m, "Connor McDavid", f);
     assert_excludes(&m, "Sidney Crosby", f);
 }
@@ -1120,7 +1113,7 @@ fn w14_not_like_excludes_european_set() {
     // CAN and CZE match "C*"; Russians/Americans don't.
     assert_contains(&m, "Auston Matthews", f); // USA
     assert_contains(&m, "Alex Ovechkin", f); // RUS
-    // Canadian/Czech excluded.
+                                             // Canadian/Czech excluded.
     assert_excludes(&m, "Connor McDavid", f); // CAN
     assert_excludes(&m, "David Pastrnak", f); // CZE
 }

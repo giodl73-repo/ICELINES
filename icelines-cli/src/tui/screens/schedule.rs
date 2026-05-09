@@ -17,7 +17,7 @@ use ratatui::{
 
 use crate::tui::app::App;
 use crate::tui::schedule::{
-    new_team_cache, new_week_cache, today_iso, week_label, monday_of, ScheduleState, SearchFilter,
+    monday_of, new_team_cache, new_week_cache, today_iso, week_label, ScheduleState, SearchFilter,
     TeamSeasonCache, WeekCache,
 };
 use icelines_fetch::nhl_api::ScheduledGame;
@@ -186,12 +186,12 @@ mod norris_state_tests {
     fn l0_norris_schedule_default_week_is_a_monday() {
         use chrono::Datelike;
         let s = ScheduleScreenState::default();
-        let parsed = chrono::NaiveDate::parse_from_str(&s.week, "%Y-%m-%d")
-            .expect("week must be ISO");
+        let parsed =
+            chrono::NaiveDate::parse_from_str(&s.week, "%Y-%m-%d").expect("week must be ISO");
         // Either the resolved Monday OR today's date if monday_of
         // failed (unlikely; monday_of works for any valid date).
-        let today = chrono::NaiveDate::parse_from_str(&today_iso(), "%Y-%m-%d")
-            .expect("today_iso parses");
+        let today =
+            chrono::NaiveDate::parse_from_str(&today_iso(), "%Y-%m-%d").expect("today_iso parses");
         let is_monday = parsed.weekday() == chrono::Weekday::Mon;
         let is_today_fallback = parsed == today;
         assert!(
@@ -272,15 +272,16 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
     // search bar uses. The two are mutually exclusive in practice
     // (search and date-jump aren't both active at once).
     let picker_active = app.date_picker.open
-        && matches!(app.date_picker.target, crate::tui::app::PickerTarget::Schedule);
-    let bottom_h: u16 = if app.schedule.search_mode
-        || app.schedule.filter_err.is_some()
-        || picker_active
-    {
-        3
-    } else {
-        0
-    };
+        && matches!(
+            app.date_picker.target,
+            crate::tui::app::PickerTarget::Schedule
+        );
+    let bottom_h: u16 =
+        if app.schedule.search_mode || app.schedule.filter_err.is_some() || picker_active {
+            3
+        } else {
+            0
+        };
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Min(0), Constraint::Length(bottom_h)])
@@ -961,7 +962,8 @@ mod tests {
                 Some(("Game 5", 2, 2)),
             ),
         ];
-        app.schedule.week_cache
+        app.schedule
+            .week_cache
             .lock()
             .unwrap()
             .insert(app.schedule.week.clone(), ScheduleState::Loaded(games));
@@ -1005,7 +1007,8 @@ mod tests {
                 None,
             ),
         ];
-        app.schedule.week_cache
+        app.schedule
+            .week_cache
             .lock()
             .unwrap()
             .insert(app.schedule.week.clone(), ScheduleState::Loaded(games));
@@ -1053,7 +1056,8 @@ mod tests {
     fn l0_render_schedule_loaded_empty_shows_no_games_message() {
         let mut app = App::new(false);
         app.screen = crate::tui::app::Screen::Schedule;
-        app.schedule.week_cache
+        app.schedule
+            .week_cache
             .lock()
             .unwrap()
             .insert(app.schedule.week.clone(), ScheduleState::Loaded(Vec::new()));

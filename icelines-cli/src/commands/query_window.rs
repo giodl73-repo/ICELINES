@@ -46,8 +46,7 @@ pub async fn run_windowed_leaders(
         .map(std::path::PathBuf::from)
         .ok_or_else(|| anyhow::anyhow!("cannot determine home directory"))?;
     let data_root = home.join(".icelines").join("data");
-    let store = icelines_fetch::datastore::DataStore::open(&data_root)
-        .context("open DataStore")?;
+    let store = icelines_fetch::datastore::DataStore::open(&data_root).context("open DataStore")?;
 
     // Walk every persisted boxscore. The manifest entry's path
     // includes the date (e.g. data/boxscores/2026-05-06/<id>.json);
@@ -55,7 +54,9 @@ pub async fn run_windowed_leaders(
     let mut totals: HashMap<u32, PlayerWindowTotals> = HashMap::new();
     let mut games_seen = 0usize;
     for entry in store.manifest().list(DataKind::Boxscore) {
-        let DataKey::Game(game_id) = entry.key else { continue };
+        let DataKey::Game(game_id) = entry.key else {
+            continue;
+        };
         let date_str = match entry
             .path
             .parent()
@@ -78,12 +79,12 @@ pub async fn run_windowed_leaders(
         };
         let parsed = icelines_fetch::nhl_api::parse_boxscore(&raw, game_id.0);
         for skater in parsed.away_skaters.iter().chain(parsed.home_skaters.iter()) {
-            let t = totals.entry(skater.player_id).or_insert_with(|| {
-                PlayerWindowTotals {
+            let t = totals
+                .entry(skater.player_id)
+                .or_insert_with(|| PlayerWindowTotals {
                     player_id: skater.player_id,
                     ..Default::default()
-                }
-            });
+                });
             t.games += 1;
             t.goals += skater.goals;
             t.assists += skater.assists;
@@ -208,8 +209,7 @@ pub async fn run_playoff_leaders(top: usize, sort: String, json: bool) -> Result
         .map(std::path::PathBuf::from)
         .ok_or_else(|| anyhow::anyhow!("cannot determine home directory"))?;
     let data_root = home.join(".icelines").join("data");
-    let store = icelines_fetch::datastore::DataStore::open(&data_root)
-        .context("open DataStore")?;
+    let store = icelines_fetch::datastore::DataStore::open(&data_root).context("open DataStore")?;
 
     // Walk every persisted boxscore; filter to gameType=3 (playoffs).
     // No date-window filter — the playoff round naturally bounds the
@@ -217,7 +217,9 @@ pub async fn run_playoff_leaders(top: usize, sort: String, json: bool) -> Result
     let mut totals: HashMap<u32, PlayerWindowTotals> = HashMap::new();
     let mut games_seen = 0usize;
     for entry in store.manifest().list(DataKind::Boxscore) {
-        let DataKey::Game(game_id) = entry.key else { continue };
+        let DataKey::Game(game_id) = entry.key else {
+            continue;
+        };
         let raw = match store.load_boxscore_raw(DataKey::Game(game_id)) {
             Some(r) => r,
             None => continue,
@@ -228,12 +230,12 @@ pub async fn run_playoff_leaders(top: usize, sort: String, json: bool) -> Result
         }
         let parsed = icelines_fetch::nhl_api::parse_boxscore(&raw, game_id.0);
         for skater in parsed.away_skaters.iter().chain(parsed.home_skaters.iter()) {
-            let t = totals.entry(skater.player_id).or_insert_with(|| {
-                PlayerWindowTotals {
+            let t = totals
+                .entry(skater.player_id)
+                .or_insert_with(|| PlayerWindowTotals {
                     player_id: skater.player_id,
                     ..Default::default()
-                }
-            });
+                });
             t.games += 1;
             t.goals += skater.goals;
             t.assists += skater.assists;
@@ -261,9 +263,7 @@ pub async fn run_playoff_leaders(top: usize, sort: String, json: bool) -> Result
 }
 
 fn emit_playoff_text(rows: &[PlayerWindowTotals], sort: &str, games_seen: usize) {
-    println!(
-        "PLAYOFF LEADERS — {games_seen} game(s) on disk · sort: {sort}"
-    );
+    println!("PLAYOFF LEADERS — {games_seen} game(s) on disk · sort: {sort}");
     println!("{}", "─".repeat(86));
     println!(
         "{:>4} {:>10} {:>3} {:>3} {:>3} {:>4} {:>4} {:>5} {:>5} {:>5} {:>5}",

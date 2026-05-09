@@ -60,10 +60,7 @@ const GOALIES: &[(u32, &str)] = &[
     (8475883, "Frederik Andersen"),
 ];
 
-const NON_GOALIE_PIDS: &[(u32, &str)] = &[
-    (8478402, "Connor McDavid"),
-    (8480069, "Cale Makar"),
-];
+const NON_GOALIE_PIDS: &[(u32, &str)] = &[(8478402, "Connor McDavid"), (8480069, "Cale Makar")];
 
 const SAMPLE_SEASONS: &[u32] = &[20252026, 20242025, 20232024];
 
@@ -81,8 +78,7 @@ impl DataProvider for NoOpProvider {
 fn build_repo() -> (StatsRepository, u32) {
     let store = SnapshotStore::new(SnapshotStore::default_root());
     for season_id in SAMPLE_SEASONS {
-        let outcome = match load_into_repo(Season(*season_id), SeasonType::Regular, &store)
-        {
+        let outcome = match load_into_repo(Season(*season_id), SeasonType::Regular, &store) {
             Ok(o) => o,
             Err(_) => continue,
         };
@@ -115,8 +111,7 @@ fn matched_names(
     let ctx = EvalCtx::new(&provider, StrictMode::Off, false, fixed_today(), season);
     let mut out = HashSet::new();
     for (pid, name) in pids {
-        if let Some(view) = repo.view(PlayerId(*pid), Season(season), SeasonType::Regular)
-        {
+        if let Some(view) = repo.view(PlayerId(*pid), Season(season), SeasonType::Regular) {
             if plan.root.matches(&view, &ctx) {
                 out.insert((*name).to_string());
             }
@@ -269,10 +264,7 @@ fn w14b_compound_pos_g_with_huge_save_pct_threshold() {
     let pids = all_pids();
     let f = "pos=G AND save-pct>=2.0";
     let m = matched_names(&repo, season, &pids, f);
-    assert!(
-        m.is_empty(),
-        "no goalie should have SV% ≥ 2.0; got: {m:?}"
-    );
+    assert!(m.is_empty(), "no goalie should have SV% ≥ 2.0; got: {m:?}");
 }
 
 // ── pos negation across boolean composition ──────────────────
@@ -367,5 +359,8 @@ fn w14b_at_least_three_goalies_load_from_bundle() {
 #[test]
 fn w14b_chosen_season_is_recent() {
     let (_repo, season) = build_repo();
-    assert!(season >= 20232024, "should pick recent season; got {season}");
+    assert!(
+        season >= 20232024,
+        "should pick recent season; got {season}"
+    );
 }

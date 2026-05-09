@@ -76,7 +76,10 @@ fn no_panic(out: &Output) {
         String::from_utf8_lossy(&out.stdout),
         String::from_utf8_lossy(&out.stderr)
     );
-    assert!(!combined.contains("panicked"), "panic in output:\n{combined}");
+    assert!(
+        !combined.contains("panicked"),
+        "panic in output:\n{combined}"
+    );
     assert_ne!(out.status.code(), Some(101), "exit code 101 = panic");
 }
 
@@ -89,17 +92,29 @@ fn fresh() -> tempfile::TempDir {
 /// otherwise. Used by tests that need a known-loadable shape to
 /// verify the filter parses + applies cleanly.
 fn leaders(home: &std::path::Path, expr: &str) -> String {
-    ok_in(home, &["query", "leaders", "--pos", "C", "--top", "5", "--filter", expr])
+    ok_in(
+        home,
+        &[
+            "query", "leaders", "--pos", "C", "--top", "5", "--filter", expr,
+        ],
+    )
 }
 
 fn leaders_fail(home: &std::path::Path, expr: &str) -> Output {
-    fail_in(home, &["query", "leaders", "--pos", "C", "--top", "5", "--filter", expr])
+    fail_in(
+        home,
+        &[
+            "query", "leaders", "--pos", "C", "--top", "5", "--filter", expr,
+        ],
+    )
 }
 
 fn leaders_json(home: &std::path::Path, expr: &str) -> String {
     ok_in(
         home,
-        &["query", "leaders", "--pos", "C", "--top", "100", "--filter", expr, "--json"],
+        &[
+            "query", "leaders", "--pos", "C", "--top", "100", "--filter", expr, "--json",
+        ],
     )
 }
 
@@ -385,7 +400,10 @@ fn p_w11_035_multiple_ops_rejected() {
     let out = leaders_fail(h.path(), "g>=>=5");
     no_panic(&out);
     let err = stderr_of(&out);
-    assert!(err.to_lowercase().contains("op"), "should mention op problem: {err}");
+    assert!(
+        err.to_lowercase().contains("op"),
+        "should mention op problem: {err}"
+    );
 }
 
 #[test]
@@ -696,8 +714,15 @@ fn windowed_with_filter(
     run_in(
         home,
         &[
-            "query", "leaders", "--pos", "C", "--top", "5",
-            window_flag, "--filter", expr,
+            "query",
+            "leaders",
+            "--pos",
+            "C",
+            "--top",
+            "5",
+            window_flag,
+            "--filter",
+            expr,
         ],
     )
 }
@@ -830,7 +855,10 @@ fn p_w11_091_empty_filter_rejected() {
     let out = leaders_fail(h.path(), "");
     no_panic(&out);
     let err = stderr_of(&out);
-    assert!(err.to_lowercase().contains("empty"), "should mention empty: {err}");
+    assert!(
+        err.to_lowercase().contains("empty"),
+        "should mention empty: {err}"
+    );
 }
 
 #[test]
@@ -1093,7 +1121,10 @@ fn p_w11_122_redundant_chain_dedup() {
     let h = fresh();
     // g>=1 AND g>=1 AND g>=1 AND g>=1 AND g>=1 == g>=1
     let single = json_player_count(&leaders_json(h.path(), "g>=1"));
-    let many = json_player_count(&leaders_json(h.path(), "g>=1 AND g>=1 AND g>=1 AND g>=1 AND g>=1"));
+    let many = json_player_count(&leaders_json(
+        h.path(),
+        "g>=1 AND g>=1 AND g>=1 AND g>=1 AND g>=1",
+    ));
     assert_eq!(single, many);
 }
 
@@ -1122,8 +1153,10 @@ fn p_w11_124_empty_intersection_returns_zero() {
 fn p_w11_125_universal_filter_matches_unfiltered() {
     let h = fresh();
     // No filter at all should equal `g>=0` (universal).
-    let no_filter =
-        ok_in(h.path(), &["query", "leaders", "--pos", "C", "--top", "100", "--json"]);
+    let no_filter = ok_in(
+        h.path(),
+        &["query", "leaders", "--pos", "C", "--top", "100", "--json"],
+    );
     let universal = leaders_json(h.path(), "g>=0");
     assert_eq!(json_player_count(&no_filter), json_player_count(&universal));
 }
@@ -1210,7 +1243,10 @@ fn p_w11_135_goalies_skater_stat_rejected() {
     // `hits` is a skater realtime stat, not a goalie stat. Should
     // either reject as UnknownStat or quietly match nobody — but
     // never panic.
-    let out = run_in(h.path(), &["query", "goalies", "--top", "5", "--filter", "hits>=100"]);
+    let out = run_in(
+        h.path(),
+        &["query", "goalies", "--top", "5", "--filter", "hits>=100"],
+    );
     no_panic(&out);
 }
 
@@ -1275,10 +1311,19 @@ fn p_w11_145_goalies_self_contradiction_returns_zero() {
     // gp>=100 AND gp<=10 — impossible
     let out = ok_in(
         h.path(),
-        &["query", "goalies", "--top", "100", "--json", "--filter", "gp>=100 AND gp<=10"],
+        &[
+            "query",
+            "goalies",
+            "--top",
+            "100",
+            "--json",
+            "--filter",
+            "gp>=100 AND gp<=10",
+        ],
     );
     let v: serde_json::Value = serde_json::from_str(&out).expect("parse");
-    let n = v.get("data")
+    let n = v
+        .get("data")
         .and_then(|d| d.get("goalies"))
         .and_then(|p| p.as_array())
         .map(|a| a.len())
@@ -1500,11 +1545,8 @@ fn p_w11_174_many_repeated_filters() {
     let out = run_in(
         h.path(),
         &[
-            "query", "leaders", "--pos", "C", "--top", "5",
-            "--filter", "g>=1",
-            "--filter", "a>=1",
-            "--filter", "p>=1",
-            "--filter", "pim>=0",
+            "query", "leaders", "--pos", "C", "--top", "5", "--filter", "g>=1", "--filter", "a>=1",
+            "--filter", "p>=1", "--filter", "pim>=0",
         ],
     );
     no_panic(&out);
@@ -1631,15 +1673,29 @@ fn p_w11_186_negation_complements_universe() {
     // Use --top 9999 so the cap is non-binding for the universe.
     let universe_out = ok_in(
         h.path(),
-        &["query", "leaders", "--pos", "C", "--top", "9999", "--filter", "g>=0", "--json"],
+        &[
+            "query", "leaders", "--pos", "C", "--top", "9999", "--filter", "g>=0", "--json",
+        ],
     );
     let a_out = ok_in(
         h.path(),
-        &["query", "leaders", "--pos", "C", "--top", "9999", "--filter", "g>=20", "--json"],
+        &[
+            "query", "leaders", "--pos", "C", "--top", "9999", "--filter", "g>=20", "--json",
+        ],
     );
     let neg_out = ok_in(
         h.path(),
-        &["query", "leaders", "--pos", "C", "--top", "9999", "--filter", "NOT g>=20", "--json"],
+        &[
+            "query",
+            "leaders",
+            "--pos",
+            "C",
+            "--top",
+            "9999",
+            "--filter",
+            "NOT g>=20",
+            "--json",
+        ],
     );
     let universe = json_player_count(&universe_out);
     let a = json_player_count(&a_out);
@@ -1712,7 +1768,9 @@ fn p_w11_193_text_and_json_row_count_align() {
 
     let text = ok_in(
         h.path(),
-        &["query", "leaders", "--pos", "C", "--top", "100", "--filter", "g>=10"],
+        &[
+            "query", "leaders", "--pos", "C", "--top", "100", "--filter", "g>=10",
+        ],
     );
     // Crude: count player rows by counting lines that contain a
     // tab-separated row pattern. Use the simpler metric: number of
@@ -1755,7 +1813,9 @@ fn p_w11_195_top_n_caps_output() {
     let h = fresh();
     let json = ok_in(
         h.path(),
-        &["query", "leaders", "--pos", "C", "--top", "3", "--filter", "g>=0", "--json"],
+        &[
+            "query", "leaders", "--pos", "C", "--top", "3", "--filter", "g>=0", "--json",
+        ],
     );
     let n = json_player_count(&json);
     assert!(n <= 3, "--top 3 must cap output, got {n}");
@@ -1768,7 +1828,9 @@ fn p_w11_196_top_n_independent_of_filter() {
     let many = json_player_count(&leaders_json(h.path(), "g>=0"));
     let capped_json = ok_in(
         h.path(),
-        &["query", "leaders", "--pos", "C", "--top", "5", "--filter", "g>=0", "--json"],
+        &[
+            "query", "leaders", "--pos", "C", "--top", "5", "--filter", "g>=0", "--json",
+        ],
     );
     let capped = json_player_count(&capped_json);
     assert!(capped <= 5);
@@ -1781,11 +1843,16 @@ fn p_w11_197_filter_passes_via_csv_export() {
     // Quick sanity: --csv path also respects the filter.
     let csv = ok_in(
         h.path(),
-        &["query", "leaders", "--pos", "C", "--top", "5", "--filter", "g>=10000", "--csv"],
+        &[
+            "query", "leaders", "--pos", "C", "--top", "5", "--filter", "g>=10000", "--csv",
+        ],
     );
     // No data rows — only header.
     let lines: Vec<&str> = csv.lines().filter(|l| !l.is_empty()).collect();
-    assert!(lines.len() <= 1, "g>=10000 should yield 0 data rows, got: {csv}");
+    assert!(
+        lines.len() <= 1,
+        "g>=10000 should yield 0 data rows, got: {csv}"
+    );
 }
 
 #[test]
@@ -1807,10 +1874,8 @@ fn p_w11_199_repeated_filter_flags_intersect() {
     let multi_json = ok_in(
         h.path(),
         &[
-            "query", "leaders", "--pos", "C", "--top", "100",
-            "--filter", "g>=10",
-            "--filter", "a>=10",
-            "--json",
+            "query", "leaders", "--pos", "C", "--top", "100", "--filter", "g>=10", "--filter",
+            "a>=10", "--json",
         ],
     );
     let single_json = leaders_json(h.path(), "g>=10 AND a>=10");
@@ -1829,15 +1894,15 @@ fn p_w11_200_filter_independent_of_sort_metric() {
     let by_g = ok_in(
         h.path(),
         &[
-            "query", "leaders", "--pos", "C", "--top", "100",
-            "--sort", "goals", "--filter", "g>=20", "--json",
+            "query", "leaders", "--pos", "C", "--top", "100", "--sort", "goals", "--filter",
+            "g>=20", "--json",
         ],
     );
     let by_a = ok_in(
         h.path(),
         &[
-            "query", "leaders", "--pos", "C", "--top", "100",
-            "--sort", "assists", "--filter", "g>=20", "--json",
+            "query", "leaders", "--pos", "C", "--top", "100", "--sort", "assists", "--filter",
+            "g>=20", "--json",
         ],
     );
     assert_eq!(

@@ -27,6 +27,12 @@ pub enum Action {
     Space,          // Space — toggle focus in split-pane screens
     Char(char),
     Backspace,
+    /// Phase Adams.3 — Ctrl+H toggles the Favorites side pane in
+    /// MDI mode. No-op in SDI.
+    ToggleFavoritesPane,
+    /// Phase Adams.3 — Ctrl+L toggles the Schedule side pane in
+    /// MDI mode. No-op in SDI.
+    ToggleSchedulePane,
 }
 
 /// Poll for the next terminal event, returning None on timeout.
@@ -54,6 +60,13 @@ fn map_key(k: crossterm::event::KeyEvent) -> Option<Action> {
     match k.code {
         Char('q') if k.modifiers == KeyModifiers::NONE => Some(Action::Quit),
         Char('c') if k.modifiers == KeyModifiers::CONTROL => Some(Action::Quit),
+        // Phase Adams.3 — MDI side-pane toggles. Many terminals
+        // legacy-map Ctrl+H to Backspace (CSI ^H) — crossterm
+        // surfaces them as Char('h') + CONTROL, so we filter on
+        // the modifier match. The Backspace key (with no CONTROL)
+        // still goes to KeyCode::Backspace below.
+        Char('h') if k.modifiers == KeyModifiers::CONTROL => Some(Action::ToggleFavoritesPane),
+        Char('l') if k.modifiers == KeyModifiers::CONTROL => Some(Action::ToggleSchedulePane),
         Char('?') => Some(Action::Help),
         Char('/') => Some(Action::Search),
         Char('r') => Some(Action::Refresh),
