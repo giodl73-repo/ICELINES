@@ -1079,10 +1079,10 @@ mod app_snapshot_tests {
             text.contains("Docs (COMMANDS.md)"),
             "docs overlay title missing, got:\n{text}"
         );
-        // COMMANDS.md starts with "# Icelines CLI Reference" or similar
+        // COMMANDS.md starts with an IceLines heading; match case-insensitively
         // — the overlay should render at least one line of doc content.
         assert!(
-            text.contains("icelines"),
+            text.to_ascii_lowercase().contains("icelines"),
             "docs overlay content missing, got:\n{text}"
         );
     }
