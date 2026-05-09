@@ -300,7 +300,9 @@ Initial implementation note:
   over `PoachBoardView`, including score, confidence, explanation, category
   fit, schedule source state, and risk summary.
 - The Poach tab is in the normal tab ring and MDI command bar. `Enter` opens
-  the selected player card. Watch-rule editing/toggling remains pending.
+  the selected player card.
+- `w` toggles the selected candidate in the local SQLite-backed `Watchlist`
+  group and the board marks watched rows. Watch-rule editing remains pending.
 
 ---
 

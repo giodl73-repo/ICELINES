@@ -506,6 +506,7 @@ Interactive dashboard. Six tabs (League, Depth, Stats, Goalies, Scores, Schedule
 | `d` | Jump to depth chart (or jump-to-date on Scores) |
 | `F` | Toggle admin overlay |
 | `g` | Add to group from a player card / team roster |
+| `w` | Toggle selected Poach candidate in the local `Watchlist` group |
 | `s` / `l` | Save / load query (Queries tab) |
 | `f` | **Free-form filter overlay** (Queries tab) — type any Phase Art Ross filter (`country IN (CAN, USA) AND age<25`, `g.last10g>=5`, `p.career>=500`, etc.); Enter to apply, Esc to cancel. Inside the overlay: `↑/↓` walk recent-filter history, `?` toggle grammar cheatsheet, live "→ N of M match" count for bio + season-stat filters |
 

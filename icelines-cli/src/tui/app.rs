@@ -1189,6 +1189,8 @@ impl App {
                 } else if self.screen == Screen::Favorites && c == 'f' {
                     self.status =
                         "Favorites free-form filter is tracked for Messier.6 cmdbar KV".to_owned();
+                } else if self.screen == Screen::Poach && c == 'w' {
+                    self.toggle_selected_poach_watch();
                 } else if self.screen == Screen::Goalies && c == 's' {
                     // Phase G.3: cycle sort SV% → GAA → W → GP → Saves → SO
                     let n = crate::tui::screens::goalies::SORTS.len() as u8;
@@ -3011,7 +3013,50 @@ impl App {
                 })
             }
 
+            Screen::Poach => crate::tui::screens::poach::selected_player(self),
+
             _ => None,
+        }
+    }
+
+    fn toggle_selected_poach_watch(&mut self) {
+        let Some((norm, full)) = crate::tui::screens::poach::selected_player(self) else {
+            self.status = "No poach candidate selected to watch.".to_owned();
+            return;
+        };
+
+        let Ok(db) = crate::db::GroupDb::open() else {
+            self.status = "Could not open Watchlist DB.".to_owned();
+            return;
+        };
+
+        let has_watchlist = db
+            .list_groups()
+            .map(|groups| groups.iter().any(|group| group.name == "Watchlist"))
+            .unwrap_or(false);
+        if !has_watchlist {
+            if let Err(err) = db.create_group("Watchlist", "Fantasy poacher watchlist") {
+                self.status = format!("Could not create Watchlist: {err}");
+                return;
+            }
+        }
+
+        let is_watched = db
+            .list_members("Watchlist")
+            .map(|members| members.iter().any(|member| member == &norm))
+            .unwrap_or(false);
+
+        if is_watched {
+            match db.remove_member("Watchlist", &norm) {
+                Ok(()) => self.status = format!("Removed {full} from Watchlist"),
+                Err(err) => self.status = format!("Could not remove {full} from Watchlist: {err}"),
+            }
+        } else {
+            match db.add_member("Watchlist", &norm) {
+                Ok(true) => self.status = format!("Watching {full}"),
+                Ok(false) => self.status = format!("{full} is already watched"),
+                Err(err) => self.status = format!("Could not watch {full}: {err}"),
+            }
         }
     }
 
@@ -3461,6 +3506,34 @@ impl App {
 mod tests {
     use super::*;
 
+    fn empty_store_in_tempdir() -> (tempfile::TempDir, icelines_fetch::snapshot::SnapshotStore) {
+        let dir = tempfile::TempDir::new().unwrap();
+        let store = icelines_fetch::snapshot::SnapshotStore::new(dir.path());
+        (dir, store)
+    }
+
+    fn with_temp_home<F, R>(f: F) -> R
+    where
+        F: FnOnce(&std::path::Path) -> R,
+    {
+        let _guard = crate::test_utils::home_env_lock();
+        let dir = tempfile::TempDir::new().unwrap();
+        let prev_userprofile = std::env::var_os("USERPROFILE");
+        let prev_home = std::env::var_os("HOME");
+        std::env::set_var("USERPROFILE", dir.path());
+        std::env::set_var("HOME", dir.path());
+        let result = f(dir.path());
+        match prev_userprofile {
+            Some(p) => std::env::set_var("USERPROFILE", p),
+            None => std::env::remove_var("USERPROFILE"),
+        }
+        match prev_home {
+            Some(p) => std::env::set_var("HOME", p),
+            None => std::env::remove_var("HOME"),
+        }
+        result
+    }
+
     #[test]
     fn l0_tui_app_initial_screen_is_home() {
         let app = App::new(false);
@@ -3468,6 +3541,43 @@ mod tests {
     }
 
     // ── Phase Foster +8 — `v` keybind cycles timeframe ────────────────────
+
+    #[test]
+    fn l1_selke_poach_w_toggles_selected_player_watchlist() {
+        with_temp_home(|home| {
+            let (_snap, store) = empty_store_in_tempdir();
+            let mut app = App::new(true);
+            app.boot_load_with_store(&store);
+            app.screen = Screen::Poach;
+            app.selected = 0;
+
+            let (normalized, full_name) = crate::tui::screens::poach::selected_player(&app)
+                .expect("bundled fixture should produce poach candidates");
+
+            app.handle(Action::Char('w'));
+
+            assert!(
+                app.status.contains("Watching"),
+                "watch add should update status, got: {}",
+                app.status
+            );
+            let db_path = home.join(".icelines").join("icelines.db");
+            assert!(db_path.exists(), "DB file must exist at {:?}", db_path);
+            let db = crate::db::GroupDb::open().expect("open DB");
+            let members = db.list_members("Watchlist").expect("Watchlist exists");
+            assert_eq!(members, vec![normalized.clone()]);
+
+            app.handle(Action::Char('w'));
+
+            assert!(
+                app.status.contains(&format!("Removed {full_name}")),
+                "watch remove should update status, got: {}",
+                app.status
+            );
+            let members = db.list_members("Watchlist").expect("Watchlist exists");
+            assert!(members.is_empty(), "second toggle removes watched player");
+        });
+    }
 
     #[test]
     fn l0_foster_plus8_v_cycles_timeframes_in_order() {

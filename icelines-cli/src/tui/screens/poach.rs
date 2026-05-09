@@ -8,6 +8,7 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, Paragraph},
     Frame,
 };
+use std::collections::HashSet;
 
 use crate::tui::app::App;
 
@@ -18,7 +19,7 @@ pub fn chrome() -> crate::tui::chrome::ScreenChrome {
         keybinds: vec![
             KeyHint::new("up/down", "select"),
             KeyHint::new("Enter", "player card"),
-            KeyHint::new("w", "watch rules"),
+            KeyHint::new("w", "toggle watch"),
         ],
     }
 }
@@ -41,11 +42,12 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
         return;
     }
 
+    let watched = watchlist_members();
     let mut items = Vec::new();
     items.push(ListItem::new(Line::styled(
         format!(
-            "  {:<3} {:<24} {:<4} {:<3} {:>5} {:<11} {:<26} {}",
-            "Rk", "Player", "Team", "Pos", "Score", "Conf", "Why", "Risk"
+            "  {:<3} {:<2} {:<24} {:<4} {:<3} {:>5} {:<11} {:<24} {}",
+            "Rk", "W", "Player", "Team", "Pos", "Score", "Conf", "Why", "Risk"
         ),
         Style::default().fg(Color::DarkGray),
     )));
@@ -62,6 +64,16 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
             .map(|explanation| explanation.message.as_str())
             .unwrap_or("No explanation");
         let risk = row.risk_summary.as_deref().unwrap_or("-");
+        let watch_mark = if app
+            .repo
+            .identity(row.player_id)
+            .map(|identity| watched.contains(&identity.name_normalized))
+            .unwrap_or(false)
+        {
+            "W"
+        } else {
+            "-"
+        };
         let style = if selected {
             Style::default()
                 .fg(Color::Black)
@@ -74,14 +86,15 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
         };
         items.push(ListItem::new(Line::from(vec![Span::styled(
             format!(
-                "  {:<3} {:<24} {:<4} {:<3} {:>5.1} {:<11} {:<26} {}",
+                "  {:<3} {:<2} {:<24} {:<4} {:<3} {:>5.1} {:<11} {:<24} {}",
                 idx + 1,
+                watch_mark,
                 truncate(&row.display_name, 24),
                 row.team.as_str(),
                 row.position.abbreviation(),
                 row.score.final_score,
                 format!("{:?}", row.confidence).to_ascii_lowercase(),
-                truncate(why, 26),
+                truncate(why, 24),
                 truncate(risk, 24),
             ),
             style,
@@ -105,11 +118,37 @@ pub fn selected_player_id(app: &App) -> Option<icelines_core::identity::PlayerId
         .map(|row| row.player_id)
 }
 
+pub fn selected_player(app: &App) -> Option<(String, String)> {
+    let view = build_view(app);
+    view.rows
+        .get(app.selected.min(view.rows.len().saturating_sub(1)))
+        .and_then(|row| {
+            app.repo
+                .identity(row.player_id)
+                .map(|identity| (identity.name_normalized.clone(), identity.full_name.clone()))
+                .or_else(|| {
+                    Some((
+                        row.display_name.to_ascii_lowercase(),
+                        row.display_name.clone(),
+                    ))
+                })
+        })
+}
+
 fn build_view(app: &App) -> PoachBoardView {
     let mut query = PoachQuery::new(app.active_season_typed, app.active_type, "yahoo-standard");
     query.limit = Some(30);
     query.sort = Some("poach_score".to_string());
     PoachBoardView::from_repository(&app.repo, query)
+}
+
+fn watchlist_members() -> HashSet<String> {
+    crate::db::GroupDb::open()
+        .ok()
+        .and_then(|db| db.list_members("Watchlist").ok())
+        .unwrap_or_default()
+        .into_iter()
+        .collect()
 }
 
 fn truncate(value: &str, max_chars: usize) -> String {
