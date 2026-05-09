@@ -235,6 +235,9 @@ Closeout so far:
 - Web `/leaders` now builds the same `LeadersView` after its existing
   filter/sort/top pipeline, then renders template rows from that ViewModel
   boundary while preserving web-only fields such as headshots.
+- Added a canonical `LeadersView` contract fixture test that asserts JSON
+  carries context, sort, stable player identity, primary/secondary metrics,
+  precision, units, and semantic tokens for downstream surfaces.
 - `LeadersView::from_player_views_with_primary` supports sort-specific primary
   metrics without leaking renderer formatting into the default pace builder.
 - `GoaliesView::from_player_views` lets renderer adapters consume already
@@ -254,7 +257,7 @@ Closeout so far:
   --nocapture`, `cargo test -p icelines-web --test persona_wave22b_envelope
   -- --nocapture`, `cargo test -p icelines-web --test persona_wave21_parity
   -- --nocapture`, `cargo test -p icelines-web leaders -- --nocapture`, and
-  the `viewmodel` test slice.
+  `cargo test -p icelines-core view_model -- --nocapture`.
 
 ---
 

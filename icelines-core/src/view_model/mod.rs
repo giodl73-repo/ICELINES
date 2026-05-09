@@ -131,6 +131,52 @@ mod tests {
     }
 
     #[test]
+    fn leaders_viewmodel_contract_fixture_serializes_surface_fields() {
+        let (identity, stats) = crate::fixtures::stat_catalog_variants::skater_modern();
+        let repo = crate::fixtures::test_repo_with(identity, stats);
+
+        let mut view = crate::view_model::LeadersView::skater_pace(
+            &repo,
+            Season(20242025),
+            SeasonType::Regular,
+        );
+        view.context.data_generation = Some("campbell-contract-fixture-v1".to_string());
+
+        let json = serde_json::to_value(&view).expect("serialize leaders contract fixture");
+        let row = &json["rows"][0];
+
+        assert_eq!(json["context"]["window"]["season"], 20242025);
+        assert_eq!(json["context"]["window"]["season_type"], "regular");
+        assert_eq!(json["context"]["completeness"], "complete");
+        assert_eq!(
+            json["context"]["data_generation"],
+            "campbell-contract-fixture-v1"
+        );
+        assert_eq!(json["kind"], "skaters");
+        assert_eq!(json["sort"]["key"], "pace_82");
+        assert_eq!(json["sort"]["direction"], "desc");
+
+        assert_eq!(row["rank"], 1);
+        assert_eq!(row["player_id"], 8478402);
+        assert_eq!(row["display_name"], "Connor McDavid");
+        assert_eq!(row["team"], "EDM");
+        assert_eq!(row["position"], "Center");
+        assert_eq!(row["primary"]["key"], "pace_82");
+        assert_eq!(row["primary"]["value"]["decimal"], 130.0);
+        assert_eq!(row["primary"]["unit"], "per82");
+        assert_eq!(row["primary"]["precision"], "one_decimal");
+        assert_eq!(row["primary"]["token"], "decision_highlight");
+
+        assert_eq!(row["secondary"][0]["key"], "age");
+        assert_eq!(row["secondary"][0]["value"]["integer"], 29);
+        assert_eq!(row["secondary"][1]["key"], "gp");
+        assert_eq!(row["secondary"][1]["value"]["integer"], 82);
+        assert_eq!(row["secondary"][4]["key"], "points");
+        assert_eq!(row["secondary"][4]["value"]["integer"], 130);
+        assert_eq!(row["tokens"][0], "supporting_evidence");
+    }
+
+    #[test]
     fn goalie_viewmodel_builder_preserves_role_evidence() {
         let (identity, stats) = crate::fixtures::stat_catalog_variants::goalie();
         let repo = crate::fixtures::test_repo_with_goalie(identity, stats);
