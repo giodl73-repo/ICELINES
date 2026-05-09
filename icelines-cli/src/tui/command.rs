@@ -56,6 +56,9 @@ pub enum Command {
     Playoffs,
     /// `depth` — workspace becomes Depth chart.
     Depth,
+    DepthKv {
+        args: crate::tui::filter_state::RosterKvArgs,
+    },
     /// `roster` (alias `fantasy roster`) — workspace becomes
     /// the user's active fantasy roster.
     Roster,
@@ -69,6 +72,9 @@ pub enum Command {
     /// `favorites` — workspace becomes the favorites screen
     /// (NOT the side pane; the full screen view).
     Favorites,
+    FavoritesKv {
+        args: crate::tui::filter_state::RosterKvArgs,
+    },
 
     // ── Workspace-swap reads (with args) ──────────────────────
     /// `player <name-or-pid>` — workspace becomes that player's
@@ -77,6 +83,10 @@ pub enum Command {
     /// `team <abbrev>` — workspace becomes the team's depth
     /// chart.
     Team { abbrev: String },
+    TeamKv {
+        abbrev: String,
+        args: crate::tui::filter_state::RosterKvArgs,
+    },
     /// `team <abbrev> season` — workspace becomes the team's
     /// full-season schedule.
     TeamSeason { abbrev: String },
@@ -261,12 +271,26 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
         }),
         "transactions" | "txs" | "tx" => Ok(Command::Transactions),
         "playoffs" => Ok(Command::Playoffs),
-        "depth" => Ok(Command::Depth),
+        "depth" if args.trim().is_empty() => Ok(Command::Depth),
+        "depth" => Ok(Command::DepthKv {
+            args: crate::tui::filter_state::parse_roster_kv(args).map_err(|err| {
+                ParseError::BadFilter {
+                    details: err.to_string(),
+                }
+            })?,
+        }),
         "roster" => Ok(Command::Roster),
         "fantasy" => parse_fantasy(args),
         "scores" => Ok(Command::Scores),
         "schedule" => Ok(Command::Schedule),
-        "favorites" | "favs" => Ok(Command::Favorites),
+        "favorites" | "favs" if args.trim().is_empty() => Ok(Command::Favorites),
+        "favorites" | "favs" => Ok(Command::FavoritesKv {
+            args: crate::tui::filter_state::parse_roster_kv(args).map_err(|err| {
+                ParseError::BadFilter {
+                    details: err.to_string(),
+                }
+            })?,
+        }),
 
         // Workspace-swap reads (with args)
         "player" | "p" => parse_player(args),
@@ -307,9 +331,20 @@ fn parse_team(args: &str) -> Result<Command, ParseError> {
         });
     }
     let (abbrev, rest) = split_first_word(trimmed);
-    if rest.trim().eq_ignore_ascii_case("season") {
+    let rest = rest.trim();
+    if rest.eq_ignore_ascii_case("season") {
         return Ok(Command::TeamSeason {
             abbrev: abbrev.to_uppercase(),
+        });
+    }
+    if !rest.is_empty() {
+        return Ok(Command::TeamKv {
+            abbrev: abbrev.to_uppercase(),
+            args: crate::tui::filter_state::parse_roster_kv(rest).map_err(|err| {
+                ParseError::BadFilter {
+                    details: err.to_string(),
+                }
+            })?,
         });
     }
     Ok(Command::Team {
@@ -519,6 +554,7 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
             app.screen = Screen::Depth;
             ExecResult::Continue
         }
+        Command::DepthKv { args } => exec_depth_kv(app, args),
         Command::Scores => {
             app.screen = Screen::Tonight;
             ExecResult::Continue
@@ -531,6 +567,7 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
             app.screen = Screen::Favorites;
             ExecResult::Continue
         }
+        Command::FavoritesKv { args } => exec_favorites_kv(app, args),
 
         // ── Workspace swap (with args) ───────────────────────
         Command::PlayerCard { needle } => {
@@ -551,6 +588,7 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
             app.screen = Screen::Team(abbrev);
             ExecResult::Continue
         }
+        Command::TeamKv { abbrev, args } => exec_team_kv(app, abbrev, args),
         Command::TeamSeason { abbrev } => {
             app.screen = Screen::ScheduleTeam(abbrev);
             ExecResult::Continue
@@ -679,6 +717,92 @@ fn exec_goalies_kv(
     ExecResult::Flash("goalies filters applied".to_string())
 }
 
+fn exec_depth_kv(
+    app: &mut crate::tui::app::App,
+    args: crate::tui::filter_state::RosterKvArgs,
+) -> ExecResult {
+    use crate::tui::app::Screen;
+
+    if let Some(sort) = args.sort.as_deref() {
+        return ExecResult::Flash(format!("depth: sort is not a supported kv yet: {sort}"));
+    }
+    if let Some(country) = args.country {
+        app.depth_filters.country_filter = Some(country);
+    }
+    if let Some(pos) = args.pos {
+        app.depth_filters.pos_filter = pos;
+    }
+    if let Some(min_gp) = args.min_gp {
+        app.depth_filters.min_gp = min_gp;
+    }
+    app.depth_filters.invalidate();
+    app.selected = 0;
+    app.screen = Screen::Depth;
+    ExecResult::Flash("depth filters applied".to_string())
+}
+
+fn exec_favorites_kv(
+    app: &mut crate::tui::app::App,
+    args: crate::tui::filter_state::RosterKvArgs,
+) -> ExecResult {
+    use crate::tui::app::Screen;
+
+    if let Some(sort) = args.sort.as_deref() {
+        let Some(sort) = favorites_sort(sort) else {
+            return ExecResult::Flash(format!("unknown favorites sort: {sort}"));
+        };
+        app.favorites.sort = sort;
+    }
+    if let Some(country) = args.country {
+        app.favorites.filters.country_filter = Some(country);
+    }
+    if let Some(pos) = args.pos {
+        app.favorites.filters.pos_filter = pos;
+    }
+    if let Some(min_gp) = args.min_gp {
+        app.favorites.filters.min_gp = min_gp;
+    }
+    app.favorites.filters.invalidate();
+    app.selected = 0;
+    app.screen = Screen::Favorites;
+    ExecResult::Flash("favorites filters applied".to_string())
+}
+
+fn exec_team_kv(
+    app: &mut crate::tui::app::App,
+    abbrev: String,
+    args: crate::tui::filter_state::RosterKvArgs,
+) -> ExecResult {
+    use crate::tui::app::Screen;
+    use crate::tui::filter_state::ForcedColumns;
+
+    if let Some(sort) = args.sort.as_deref() {
+        let Some(sort) = team_sort(sort) else {
+            return ExecResult::Flash(format!("unknown team sort: {sort}"));
+        };
+        app.team.sort = sort;
+    }
+    if let Some(country) = args.country {
+        app.team.filters.country_filter = Some(country);
+    }
+    if let Some(pos) = args.pos {
+        app.team.filters.pos_filter = pos;
+    }
+    if let Some(min_gp) = args.min_gp {
+        app.team.filters.min_gp = min_gp;
+    }
+    apply_forced_column(
+        &mut app.team.filters.forced_columns,
+        args.forced_columns,
+        args.forced_column_keys,
+        ForcedColumns::HITS,
+    );
+    app.team.filters.invalidate();
+    app.selected = 0;
+    app.screen = Screen::Team(abbrev);
+    ExecResult::Flash("team filters applied".to_string())
+}
+
 fn goalie_sort_index(raw: &str) -> Option<u8> {
     match raw.to_ascii_lowercase().as_str() {
         "save-pct" | "save_pct" | "sv%" | "svpct" | "sv-pct" => Some(0),
@@ -688,6 +812,48 @@ fn goalie_sort_index(raw: &str) -> Option<u8> {
         "saves" | "sv" => Some(4),
         "so" | "shutouts" => Some(5),
         _ => None,
+    }
+}
+
+fn favorites_sort(raw: &str) -> Option<crate::tui::screens::favorites::FavoritesSort> {
+    use crate::tui::screens::favorites::FavoritesSort;
+    match raw.to_ascii_lowercase().as_str() {
+        "recent" | "recently-added" | "recently_added" | "added" => {
+            Some(FavoritesSort::RecentlyAdded)
+        }
+        "name" | "player" => Some(FavoritesSort::Name),
+        "kind" | "type" => Some(FavoritesSort::Kind),
+        _ => None,
+    }
+}
+
+fn team_sort(raw: &str) -> Option<crate::tui::screens::team::TeamSort> {
+    use crate::tui::screens::team::TeamSort;
+    match raw.to_ascii_lowercase().as_str() {
+        "pace" | "pts82" | "pts-82" | "pts/82" | "points" | "p" => Some(TeamSort::Pace),
+        "name" => Some(TeamSort::Name),
+        "pos" | "position" => Some(TeamSort::Position),
+        "goals" | "g" => Some(TeamSort::Goals),
+        "hits" | "h" => Some(TeamSort::Hits),
+        _ => None,
+    }
+}
+
+fn apply_forced_column(
+    target: &mut crate::tui::filter_state::ForcedColumns,
+    values: crate::tui::filter_state::ForcedColumns,
+    keys: crate::tui::filter_state::ForcedColumns,
+    flag: crate::tui::filter_state::ForcedColumns,
+) {
+    if !keys.contains(flag) {
+        return;
+    }
+    if values.contains(flag) {
+        if !target.contains(flag) {
+            target.toggle(flag);
+        }
+    } else if target.contains(flag) {
+        target.toggle(flag);
     }
 }
 
@@ -1227,6 +1393,32 @@ mod tests {
             .contains(crate::tui::filter_state::ForcedColumns::SAVES));
     }
 
+    #[test]
+    fn l0_messier_6_parse_depth_favorites_and_team_kv_are_typed() {
+        assert!(matches!(
+            parse_command("depth pos=LW nationality=CAN min-gp=10").unwrap(),
+            Command::DepthKv { .. }
+        ));
+        assert!(matches!(
+            parse_command("favorites sort=name nationality=CAN").unwrap(),
+            Command::FavoritesKv { .. }
+        ));
+        match parse_command("team EDM pos=LW nationality=CAN hits=on").unwrap() {
+            Command::TeamKv { abbrev, args } => {
+                assert_eq!(abbrev, "EDM");
+                assert_eq!(args.pos, Some(crate::tui::filter_state::PosFilter::LW));
+                assert_eq!(
+                    args.country,
+                    Some(crate::tui::filter_state::CountryCode::CAN)
+                );
+                assert!(args
+                    .forced_columns
+                    .contains(crate::tui::filter_state::ForcedColumns::HITS));
+            }
+            other => panic!("expected TeamKv, got {other:?}"),
+        }
+    }
+
     // ── split_first_word helper ───────────────────────────────────────────
 
     #[test]
@@ -1376,6 +1568,80 @@ mod tests {
 
         assert!(matches!(r, ExecResult::Flash(_)));
         assert_ne!(app.goalies.min_gp, 20);
+    }
+
+    #[test]
+    fn l0_messier_6_exec_depth_kv_applies_filters() {
+        let mut app = fresh_app_with_mdi();
+        let r = execute_command(
+            parse_command("depth pos=LW nationality=CAN min-gp=10").unwrap(),
+            &mut app,
+        );
+
+        assert!(matches!(r, ExecResult::Flash(_)));
+        assert!(matches!(app.screen, Screen::Depth));
+        assert_eq!(
+            app.depth_filters.pos_filter,
+            crate::tui::filter_state::PosFilter::LW
+        );
+        assert_eq!(
+            app.depth_filters.country_filter,
+            Some(crate::tui::filter_state::CountryCode::CAN)
+        );
+        assert_eq!(app.depth_filters.min_gp, 10);
+    }
+
+    #[test]
+    fn l0_messier_6_exec_favorites_kv_applies_filters() {
+        let mut app = fresh_app_with_mdi();
+        let r = execute_command(
+            parse_command("favorites sort=name pos=F nationality=CAN").unwrap(),
+            &mut app,
+        );
+
+        assert!(matches!(r, ExecResult::Flash(_)));
+        assert!(matches!(app.screen, Screen::Favorites));
+        assert_eq!(
+            app.favorites.sort,
+            crate::tui::screens::favorites::FavoritesSort::Name
+        );
+        assert_eq!(
+            app.favorites.filters.pos_filter,
+            crate::tui::filter_state::PosFilter::Forwards
+        );
+        assert_eq!(
+            app.favorites.filters.country_filter,
+            Some(crate::tui::filter_state::CountryCode::CAN)
+        );
+    }
+
+    #[test]
+    fn l0_messier_6_exec_team_kv_applies_filters() {
+        let mut app = fresh_app_with_mdi();
+        let r = execute_command(
+            parse_command("team EDM sort=hits pos=D nationality=CAN hits=on").unwrap(),
+            &mut app,
+        );
+
+        assert!(matches!(r, ExecResult::Flash(_)));
+        match &app.screen {
+            Screen::Team(abbrev) => assert_eq!(abbrev, "EDM"),
+            other => panic!("expected Team screen, got {other:?}"),
+        }
+        assert_eq!(app.team.sort, crate::tui::screens::team::TeamSort::Hits);
+        assert_eq!(
+            app.team.filters.pos_filter,
+            crate::tui::filter_state::PosFilter::Defense
+        );
+        assert_eq!(
+            app.team.filters.country_filter,
+            Some(crate::tui::filter_state::CountryCode::CAN)
+        );
+        assert!(app
+            .team
+            .filters
+            .forced_columns
+            .contains(crate::tui::filter_state::ForcedColumns::HITS));
     }
 
     #[test]

@@ -153,6 +153,7 @@ VERBS (with args):
 ROSTER KV FORM:
   stats nationality=CAN pos=LW min-gp=20
   goalies sort=gaa min-gp=20 nationality=CAN saves=on
+  team EDM pos=LW nationality=CAN
   depth pos=LW nationality=CAN
   favorites sort=name nationality=CAN
   UI examples may show a leading colon, e.g. :goalies sort=gaa min-gp=20, but output should omit the colon.

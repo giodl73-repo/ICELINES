@@ -126,9 +126,18 @@ mod tests {
     #[test]
     fn s002_cmdbar_goalies() {
         let mut app = fresh_mdi();
-        type_cmd(&mut app, "goalies");
+        type_cmd(
+            &mut app,
+            "goalies sort=gaa min-gp=20 nationality=CAN saves=on",
+        );
         submit(&mut app);
         assert!(matches!(app.screen, Screen::Goalies));
+        assert_eq!(app.goalies.sort, 1);
+        assert_eq!(app.goalies.min_gp, 20);
+        assert_eq!(
+            app.goalies.filters.country_filter,
+            Some(crate::tui::filter_state::CountryCode::CAN)
+        );
         assert_coherent(&app, "s002");
     }
 
@@ -153,9 +162,17 @@ mod tests {
     #[test]
     fn s005_cmdbar_depth() {
         let mut app = fresh_mdi();
-        type_cmd(&mut app, "depth");
+        type_cmd(&mut app, "depth pos=LW nationality=CAN");
         submit(&mut app);
         assert!(matches!(app.screen, Screen::Depth));
+        assert_eq!(
+            app.depth_filters.pos_filter,
+            crate::tui::filter_state::PosFilter::LW
+        );
+        assert_eq!(
+            app.depth_filters.country_filter,
+            Some(crate::tui::filter_state::CountryCode::CAN)
+        );
         assert_coherent(&app, "s005");
     }
 
@@ -180,9 +197,17 @@ mod tests {
     #[test]
     fn s008_cmdbar_favorites() {
         let mut app = fresh_mdi();
-        type_cmd(&mut app, "favorites");
+        type_cmd(&mut app, "favorites sort=name nationality=CAN");
         submit(&mut app);
         assert!(matches!(app.screen, Screen::Favorites));
+        assert_eq!(
+            app.favorites.sort,
+            crate::tui::screens::favorites::FavoritesSort::Name
+        );
+        assert_eq!(
+            app.favorites.filters.country_filter,
+            Some(crate::tui::filter_state::CountryCode::CAN)
+        );
         assert_coherent(&app, "s008");
     }
 
@@ -314,12 +339,20 @@ mod tests {
     #[test]
     fn s021_cmdbar_team_edm() {
         let mut app = fresh_mdi();
-        type_cmd(&mut app, "team EDM");
+        type_cmd(&mut app, "team EDM pos=LW nationality=CAN");
         submit(&mut app);
         match &app.screen {
             Screen::Team(abbr) => assert_eq!(abbr, "EDM"),
             other => panic!("expected Team, got {other:?}"),
         }
+        assert_eq!(
+            app.team.filters.pos_filter,
+            crate::tui::filter_state::PosFilter::LW
+        );
+        assert_eq!(
+            app.team.filters.country_filter,
+            Some(crate::tui::filter_state::CountryCode::CAN)
+        );
     }
 
     #[test]

@@ -97,7 +97,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
     } else if let Some(view) = build_view(app) {
         render_view(f, chunks[1], &view);
     } else {
-        render_member_list(f, chunks[1], &members);
+        render_member_list(f, chunks[1], &members, app.favorites.sort);
     }
 }
 
@@ -368,7 +368,12 @@ fn render_empty_state(f: &mut Frame, area: Rect) {
     f.render_widget(Paragraph::new(lines), inner);
 }
 
-fn render_member_list(f: &mut Frame, area: Rect, members: &[(String, crate::db::MemberKind)]) {
+fn render_member_list(
+    f: &mut Frame,
+    area: Rect,
+    members: &[(String, crate::db::MemberKind)],
+    sort: FavoritesSort,
+) {
     let player_count = members
         .iter()
         .filter(|(_, k)| matches!(k, crate::db::MemberKind::Player))
@@ -382,19 +387,17 @@ fn render_member_list(f: &mut Frame, area: Rect, members: &[(String, crate::db::
     let inner = block.inner(area);
     f.render_widget(block, area);
 
-    // Players first, then teams, alphabetical within each.
-    let mut players: Vec<&str> = members
+    let rows = sorted_member_rows(members, sort);
+    let players: Vec<&str> = rows
         .iter()
         .filter(|(_, k)| matches!(k, crate::db::MemberKind::Player))
         .map(|(k, _)| k.as_str())
         .collect();
-    players.sort_unstable();
-    let mut teams: Vec<&str> = members
+    let teams: Vec<&str> = rows
         .iter()
         .filter(|(_, k)| matches!(k, crate::db::MemberKind::Team))
         .map(|(k, _)| k.as_str())
         .collect();
-    teams.sort_unstable();
 
     let mut items: Vec<ListItem> = Vec::with_capacity(members.len() + 4);
     if !players.is_empty() {
@@ -435,6 +438,33 @@ fn render_member_list(f: &mut Frame, area: Rect, members: &[(String, crate::db::
     f.render_widget(List::new(items), inner);
 }
 
+fn sorted_member_rows(
+    members: &[(String, crate::db::MemberKind)],
+    sort: FavoritesSort,
+) -> Vec<(String, crate::db::MemberKind)> {
+    let mut rows = members.to_vec();
+    match sort {
+        FavoritesSort::RecentlyAdded => {}
+        FavoritesSort::Name => rows.sort_by(|a, b| {
+            a.0.cmp(&b.0)
+                .then_with(|| kind_rank(a.1).cmp(&kind_rank(b.1)))
+        }),
+        FavoritesSort::Kind => rows.sort_by(|a, b| {
+            kind_rank(a.1)
+                .cmp(&kind_rank(b.1))
+                .then_with(|| a.0.cmp(&b.0))
+        }),
+    }
+    rows
+}
+
+fn kind_rank(kind: crate::db::MemberKind) -> u8 {
+    match kind {
+        crate::db::MemberKind::Player => 0,
+        crate::db::MemberKind::Team => 1,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -463,5 +493,35 @@ mod tests {
         assert!(keys.contains(&"p"));
         assert!(keys.contains(&"n"));
         assert!(keys.contains(&"f"));
+    }
+
+    #[test]
+    fn l0_messier_favorites_member_rows_sort_by_name() {
+        let rows = vec![
+            ("EDM".to_string(), crate::db::MemberKind::Team),
+            ("mcdavid.connor".to_string(), crate::db::MemberKind::Player),
+            ("bedard.connor".to_string(), crate::db::MemberKind::Player),
+        ];
+
+        let sorted = sorted_member_rows(&rows, FavoritesSort::Name);
+
+        assert_eq!(sorted[0].0, "EDM");
+        assert_eq!(sorted[1].0, "bedard.connor");
+        assert_eq!(sorted[2].0, "mcdavid.connor");
+    }
+
+    #[test]
+    fn l0_messier_favorites_member_rows_sort_by_kind_then_name() {
+        let rows = vec![
+            ("EDM".to_string(), crate::db::MemberKind::Team),
+            ("mcdavid.connor".to_string(), crate::db::MemberKind::Player),
+            ("bedard.connor".to_string(), crate::db::MemberKind::Player),
+        ];
+
+        let sorted = sorted_member_rows(&rows, FavoritesSort::Kind);
+
+        assert_eq!(sorted[0].0, "bedard.connor");
+        assert_eq!(sorted[1].0, "mcdavid.connor");
+        assert_eq!(sorted[2].0, "EDM");
     }
 }

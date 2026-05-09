@@ -662,12 +662,15 @@ Implemented in the first Messier pass:
 - Favorites chrome advertises sort, position, nationality, and reserved
   free-form controls.
 - App handlers for `s`, `p`, `n`, and `f` update state and status.
+- Fallback member-list rendering now honors `sort=Recent`, `sort=Name`, and
+  `sort=Kind`.
 
 Still open:
 
-- Favorites render-level sort/filter application remains a follow-up. The
-  state and controls are present, but ordering/filtering of the actual member
-  list has not been wired through the data resolver yet.
+- Favorites nationality/position filtering remains a follow-up for the live
+  slate/data resolver path. The rendered `FavoritesView` rows do not yet carry
+  enough resolved `PlayerView`/bio metadata to apply those filters without
+  guessing.
 
 ---
 
@@ -835,17 +838,19 @@ Implemented in the first Messier pass:
   invalid-value errors.
 - `Command::GoaliesKv` applies sort, min-GP, nationality, position, and
   explicit saves-column state to the Goalies screen.
+- `Command::DepthKv`, `Command::FavoritesKv`, and `Command::TeamKv` apply the
+  same typed KV state to the existing screen states.
 - `stats ...` KV input lowers to a validated Art Ross query expression.
 - `SYSTEM_PROMPT_VERSION` is now `v2`; the prompt includes roster KV examples
   and `:goalies sort=gaa min-gp=20` landmarks while still requiring canonical
   output without a leading colon.
+- Jack Adams persona scenarios now exercise `goalies`, `depth`, `favorites`,
+  and `team EDM` KV flows.
 
 Still open:
 
-- `depth ...` and `favorites ...` KV execution are reserved for the next pass.
-- Team positional KV (`team EDM pos=LW nationality=CAN`) remains a follow-up.
-- Persona scenarios for the new KV forms still need to be expanded beyond the
-  unit-level command coverage.
+- Favorites live-stat nationality/position filtering still requires a resolver
+  or ViewModel shape that carries roster/bio identity alongside night rows.
 
 ---
 
