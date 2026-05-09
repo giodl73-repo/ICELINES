@@ -272,10 +272,10 @@ Initial implementation note:
 
 - `icelines poach` is wired as the first CLI surface over `PoachBoardView`.
   It supports season/type, scheme, category, team, position, top, text output,
-  and full ViewModel JSON. `watch` and report commands remain pending.
+  and full ViewModel JSON.
 - `icelines report poach` is wired as the first report surface over
   `PoachReportView`, with markdown output by default and full report JSON via
-  `--json`. `watch` and weekly reports remain pending.
+  `--json`.
 - `icelines watch rules`, `icelines watch player`, and
   `icelines watch deployment` are wired as preview surfaces over
   `WatchRulesView`. Persistence and fired-alert history remain pending.
@@ -326,6 +326,8 @@ Initial implementation note:
 - `/poach` renders the active-season poacher board from `PoachBoardView` with
   bookmarkable `scheme`, `category`, `team`, `pos`, and `top` params.
 - `/api/v1/poach` returns the full shared `PoachBoardView` JSON contract.
+- `/reports/poach` renders the shared `PoachReportView` contract as HTML from
+  the same board builder used by `/poach`.
 - Missing active-season data renders as a source-aware empty state instead of a
   web-only fallback table.
 - `/watchlist` renders the local SQLite-backed `Watchlist` group so TUI Poach

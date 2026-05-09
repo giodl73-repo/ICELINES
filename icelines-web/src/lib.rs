@@ -89,6 +89,7 @@ pub fn router(state: WebState) -> Router {
         // Phase Selke.6 — fantasy poacher board. HTML and JSON share
         // the core PoachBoardView contract.
         .route("/poach", get(handlers::poach::get_poach))
+        .route("/reports/poach", get(handlers::poach::get_poach_report))
         .route("/api/v1/poach", get(handlers::poach::get_poach_json))
         .route(
             "/api/v1/watch-rules",
@@ -1980,7 +1981,10 @@ mod handlers {
         use axum::response::{Html, IntoResponse, Response};
         use icelines_core::model::{Position, Season, TeamAbbr};
         use icelines_core::{
-            view_model::{default_watch_rules_view, PoachBoardView, PoachQuery},
+            view_model::{
+                default_watch_rules_view, poach_report_from_board, PoachBoardView, PoachQuery,
+                PoachReportView,
+            },
             Completeness, EmptyKind, EmptyState, SourceKind, SourceState, ViewContext, ViewWindow,
         };
         use serde::Deserialize;
@@ -2064,6 +2068,18 @@ mod handlers {
             }
         }
 
+        pub async fn get_poach_report(
+            State(state): State<WebState>,
+            Query(q): Query<PoachWebQuery>,
+        ) -> Response {
+            let result = match build_poach_view(&state, &q).await {
+                Ok(result) => result,
+                Err(response) => return response,
+            };
+            let report = poach_report_from_board(result.view);
+            Html(render_poach_report_html(&report, &result.active_label)).into_response()
+        }
+
         pub async fn get_poach_json(
             State(state): State<WebState>,
             Query(q): Query<PoachWebQuery>,
@@ -2105,6 +2121,76 @@ mod handlers {
             ];
 
             axum::Json(default_watch_rules_view(context)).into_response()
+        }
+
+        fn render_poach_report_html(report: &PoachReportView, active_label: &str) -> String {
+            let mut body = String::new();
+            body.push_str("<!DOCTYPE html><html><head>");
+            body.push_str("<meta charset=\"utf-8\">");
+            body.push_str("<title>Poach Report - IceLines</title>");
+            body.push_str("<link rel=\"stylesheet\" href=\"/static/style.css\">");
+            body.push_str("</head><body>");
+            body.push_str(
+                "<nav><a href=\"/\">League</a> - <a href=\"/poach\">Poach</a> - \
+                 <a href=\"/watchlist\">Watchlist</a> - <strong>Report</strong></nav>",
+            );
+            body.push_str("<main>");
+            body.push_str("<h1>Fantasy Poacher Report</h1>");
+            body.push_str(&format!(
+                "<p class=\"season-header\">{}</p>",
+                html_escape(active_label)
+            ));
+            body.push_str(&format!(
+                "<p>Scheme: <strong>{}</strong></p>",
+                html_escape(&report.scoring_scheme)
+            ));
+
+            if !report.omissions.is_empty() {
+                body.push_str("<section><h2>Source Omissions</h2><ul>");
+                for omission in &report.omissions {
+                    body.push_str(&format!("<li>{}</li>", html_escape(omission)));
+                }
+                body.push_str("</ul></section>");
+            }
+
+            for section in &report.sections {
+                body.push_str(&format!(
+                    "<section><h2>{}</h2>",
+                    html_escape(&section.title)
+                ));
+                if section.rows.is_empty() {
+                    body.push_str("<p>No candidates matched this report.</p></section>");
+                    continue;
+                }
+                body.push_str("<table><thead><tr><th>#</th><th>Player</th><th>Team</th><th>Pos</th><th>Score</th><th>Confidence</th><th>Why</th></tr></thead><tbody>");
+                for (idx, row) in section.rows.iter().enumerate() {
+                    let why = row
+                        .explanations
+                        .first()
+                        .map(|explanation| explanation.message.as_str())
+                        .unwrap_or("No explanation");
+                    body.push_str(&format!(
+                        "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{:.1}</td><td>{:?}</td><td>{}</td></tr>",
+                        idx + 1,
+                        html_escape(&row.display_name),
+                        html_escape(row.team.as_str()),
+                        html_escape(row.position.abbreviation()),
+                        row.score.final_score,
+                        row.confidence,
+                        html_escape(why)
+                    ));
+                }
+                body.push_str("</tbody></table></section>");
+            }
+            body.push_str("</main></body></html>");
+            body
+        }
+
+        fn html_escape(s: &str) -> String {
+            s.replace('&', "&amp;")
+                .replace('<', "&lt;")
+                .replace('>', "&gt;")
+                .replace('"', "&quot;")
         }
 
         struct PoachBuildResult {

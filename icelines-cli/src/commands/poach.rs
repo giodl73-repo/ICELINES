@@ -7,10 +7,10 @@ use icelines_core::{
     model::{Position, Season, TeamAbbr},
     name::normalize_name,
     view_model::{
-        default_watch_rules_view, poach_report_context, AvailabilityState, DeploymentSignal,
-        PoachBoardView, PoachPlayerRow, PoachQuery, PoachReportSection, PoachReportView,
-        RecommendationKind, ReportSectionRef, SourceKind, SourceState, ViewContext, ViewWindow,
-        WatchRule, WatchRuleTrigger, WatchRulesView,
+        default_watch_rules_view, poach_report_from_board, weekly_poach_report_from_board,
+        AvailabilityState, DeploymentSignal, PoachBoardView, PoachQuery, PoachReportView,
+        SourceKind, SourceState, ViewContext, ViewWindow, WatchRule, WatchRuleTrigger,
+        WatchRulesView,
     },
 };
 
@@ -104,7 +104,7 @@ pub async fn run_report_poach(args: PoachReportArgs) -> anyhow::Result<()> {
         top: args.top,
         json: false,
     })?;
-    let report = report_from_board(board);
+    let report = poach_report_from_board(board);
     let body = if args.json {
         serde_json::to_string_pretty(&report).context("serializing poach report")?
     } else {
@@ -124,7 +124,7 @@ pub async fn run_report_weekly(args: WeeklyReportArgs) -> anyhow::Result<()> {
         top: args.top,
         json: false,
     })?;
-    let report = weekly_report_from_board(board, &args.league, args.top);
+    let report = weekly_poach_report_from_board(board, &args.league, args.top);
     let body = if args.json {
         serde_json::to_string_pretty(&report).context("serializing weekly poach report")?
     } else {
@@ -233,114 +233,6 @@ fn emit_board(view: &PoachBoardView, json: bool) -> anyhow::Result<()> {
         print_table(view);
     }
     Ok(())
-}
-
-fn report_from_board(board: PoachBoardView) -> PoachReportView {
-    let omissions = board
-        .source_state
-        .iter()
-        .filter(|state| state.state != icelines_core::Completeness::Complete)
-        .map(|state| format!("{:?}: {:?}", state.source, state.state).to_ascii_lowercase())
-        .collect();
-
-    PoachReportView {
-        context: poach_report_context(board.context.clone(), "poach-report"),
-        scoring_scheme: board.scoring_scheme,
-        window: board.window,
-        source_state: board.source_state,
-        warnings: board.warnings,
-        omissions,
-        sections: vec![PoachReportSection {
-            id: "top_adds".to_string(),
-            title: "Top Adds".to_string(),
-            rows: board.rows,
-        }],
-    }
-}
-
-fn weekly_report_from_board(
-    board: PoachBoardView,
-    league: &str,
-    section_limit: u16,
-) -> PoachReportView {
-    let omissions = board
-        .source_state
-        .iter()
-        .filter(|state| state.state != icelines_core::Completeness::Complete)
-        .map(|state| format!("{:?}: {:?}", state.source, state.state).to_ascii_lowercase())
-        .collect();
-    let rows = board.rows;
-    let limit = section_limit as usize;
-    let sections = vec![
-        PoachReportSection {
-            id: "top_adds".to_string(),
-            title: "Top Adds".to_string(),
-            rows: take_rows(&rows, limit),
-        },
-        PoachReportSection {
-            id: "category_specialists".to_string(),
-            title: "Category Specialists".to_string(),
-            rows: rows_matching_kind(&rows, RecommendationKind::CategoryFit, limit),
-        },
-        PoachReportSection {
-            id: "deployment_risers".to_string(),
-            title: "Deployment Risers".to_string(),
-            rows: rows_matching_kind(&rows, RecommendationKind::DeploymentRiser, limit),
-        },
-        PoachReportSection {
-            id: "risk_discounts".to_string(),
-            title: "Risk Discounts".to_string(),
-            rows: rows
-                .iter()
-                .filter(|row| row.risk_summary.is_some())
-                .take(limit)
-                .cloned()
-                .collect(),
-        },
-        PoachReportSection {
-            id: "watched_player_alerts".to_string(),
-            title: "Watched Player Alerts".to_string(),
-            rows: Vec::new(),
-        },
-    ];
-    let mut context = poach_report_context(
-        board.context.clone(),
-        format!("weekly-{}", slug_or_default(league, "default")),
-    );
-    context.title = "Weekly Fantasy Prep".to_string();
-    context.sections = sections
-        .iter()
-        .map(|section| ReportSectionRef {
-            id: section.id.clone(),
-            title: section.title.clone(),
-        })
-        .collect();
-
-    PoachReportView {
-        context,
-        scoring_scheme: board.scoring_scheme,
-        window: board.window,
-        source_state: board.source_state,
-        warnings: board.warnings,
-        omissions,
-        sections,
-    }
-}
-
-fn take_rows(rows: &[PoachPlayerRow], limit: usize) -> Vec<PoachPlayerRow> {
-    rows.iter().take(limit).cloned().collect()
-}
-
-fn rows_matching_kind(
-    rows: &[PoachPlayerRow],
-    kind: RecommendationKind,
-    limit: usize,
-) -> Vec<PoachPlayerRow> {
-    rows.iter()
-        .filter(|row| row.recommendation_kinds.contains(&kind))
-        .take(limit)
-        .cloned()
-        .collect()
 }
 
 fn render_report_markdown(report: &PoachReportView) -> String {
@@ -585,15 +477,6 @@ fn slug(value: &str) -> String {
         .to_string()
 }
 
-fn slug_or_default(value: &str, default: &str) -> String {
-    let slugged = slug(value);
-    if slugged.is_empty() {
-        default.to_string()
-    } else {
-        slugged
-    }
-}
-
 fn normalize_categories(categories: Vec<String>) -> Vec<String> {
     categories
         .into_iter()
@@ -727,13 +610,13 @@ mod tests {
             icelines_core::season_stats::SeasonType::Regular,
         ));
         let report = PoachReportView {
-            context: poach_report_context(context, "test-report"),
+            context: icelines_core::view_model::poach_report_context(context, "test-report"),
             scoring_scheme: "yahoo-standard".to_string(),
             window: icelines_core::view_model::PoachWindow::Days14,
             source_state: Vec::new(),
             warnings: Vec::new(),
             omissions: vec!["schedule: unavailable".to_string()],
-            sections: vec![PoachReportSection {
+            sections: vec![icelines_core::view_model::PoachReportSection {
                 id: "top_adds".to_string(),
                 title: "Top Adds".to_string(),
                 rows: Vec::new(),
@@ -758,7 +641,7 @@ mod tests {
             "yahoo-standard",
         );
 
-        let report = weekly_report_from_board(board, "Main League", 20);
+        let report = weekly_poach_report_from_board(board, "Main League", 20);
         let section_ids: Vec<_> = report
             .sections
             .iter()

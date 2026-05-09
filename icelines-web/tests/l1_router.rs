@@ -391,6 +391,32 @@ async fn l1_poach_route_returns_200_html() {
 }
 
 #[tokio::test]
+async fn l1_poach_report_route_returns_report_html() {
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/reports/poach?category=hits&top=5")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+
+    assert!(body.contains("Fantasy Poacher Report"));
+    assert!(body.contains("Top Adds"));
+    assert!(body.contains("Source Omissions"));
+    assert!(body.contains("href=\"/poach\""));
+}
+
+#[tokio::test]
 async fn l1_poach_json_returns_view_model_contract() {
     let app = router(WebState::new());
 

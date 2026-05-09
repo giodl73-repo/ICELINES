@@ -896,6 +896,136 @@ pub fn poach_report_context(context: ViewContext, report_id: impl Into<String>) 
     }
 }
 
+pub fn poach_report_from_board(board: PoachBoardView) -> PoachReportView {
+    let omissions = report_omissions(&board.source_state);
+
+    PoachReportView {
+        context: poach_report_context(board.context.clone(), "poach-report"),
+        scoring_scheme: board.scoring_scheme,
+        window: board.window,
+        source_state: board.source_state,
+        warnings: board.warnings,
+        omissions,
+        sections: vec![PoachReportSection {
+            id: "top_adds".to_string(),
+            title: "Top Adds".to_string(),
+            rows: board.rows,
+        }],
+    }
+}
+
+pub fn weekly_poach_report_from_board(
+    board: PoachBoardView,
+    league: &str,
+    section_limit: u16,
+) -> PoachReportView {
+    let omissions = report_omissions(&board.source_state);
+    let rows = board.rows;
+    let limit = section_limit as usize;
+    let sections = vec![
+        PoachReportSection {
+            id: "top_adds".to_string(),
+            title: "Top Adds".to_string(),
+            rows: take_rows(&rows, limit),
+        },
+        PoachReportSection {
+            id: "category_specialists".to_string(),
+            title: "Category Specialists".to_string(),
+            rows: rows_matching_kind(&rows, RecommendationKind::CategoryFit, limit),
+        },
+        PoachReportSection {
+            id: "deployment_risers".to_string(),
+            title: "Deployment Risers".to_string(),
+            rows: rows_matching_kind(&rows, RecommendationKind::DeploymentRiser, limit),
+        },
+        PoachReportSection {
+            id: "risk_discounts".to_string(),
+            title: "Risk Discounts".to_string(),
+            rows: rows
+                .iter()
+                .filter(|row| row.risk_summary.is_some())
+                .take(limit)
+                .cloned()
+                .collect(),
+        },
+        PoachReportSection {
+            id: "watched_player_alerts".to_string(),
+            title: "Watched Player Alerts".to_string(),
+            rows: Vec::new(),
+        },
+    ];
+    let mut context = poach_report_context(
+        board.context.clone(),
+        format!("weekly-{}", slug_or_default(league, "default")),
+    );
+    context.title = "Weekly Fantasy Prep".to_string();
+    context.sections = sections
+        .iter()
+        .map(|section| ReportSectionRef {
+            id: section.id.clone(),
+            title: section.title.clone(),
+        })
+        .collect();
+
+    PoachReportView {
+        context,
+        scoring_scheme: board.scoring_scheme,
+        window: board.window,
+        source_state: board.source_state,
+        warnings: board.warnings,
+        omissions,
+        sections,
+    }
+}
+
+fn report_omissions(source_state: &[SourceState]) -> Vec<String> {
+    source_state
+        .iter()
+        .filter(|state| state.state != Completeness::Complete)
+        .map(|state| format!("{:?}: {:?}", state.source, state.state).to_ascii_lowercase())
+        .collect()
+}
+
+fn take_rows(rows: &[PoachPlayerRow], limit: usize) -> Vec<PoachPlayerRow> {
+    rows.iter().take(limit).cloned().collect()
+}
+
+fn rows_matching_kind(
+    rows: &[PoachPlayerRow],
+    kind: RecommendationKind,
+    limit: usize,
+) -> Vec<PoachPlayerRow> {
+    rows.iter()
+        .filter(|row| row.recommendation_kinds.contains(&kind))
+        .take(limit)
+        .cloned()
+        .collect()
+}
+
+fn slug_or_default(value: &str, default: &str) -> String {
+    let slug = value
+        .chars()
+        .filter_map(|ch| {
+            if ch.is_ascii_alphanumeric() {
+                Some(ch.to_ascii_lowercase())
+            } else if ch.is_whitespace() || ch == '-' || ch == '_' {
+                Some('-')
+            } else {
+                None
+            }
+        })
+        .collect::<String>()
+        .split('-')
+        .filter(|part| !part.is_empty())
+        .collect::<Vec<_>>()
+        .join("-");
+    if slug.is_empty() {
+        default.to_string()
+    } else {
+        slug
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
