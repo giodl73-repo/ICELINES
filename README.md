@@ -339,6 +339,15 @@ cargo clippy -- -D warnings   # must be clean
 cargo fmt --check             # must be clean
 ```
 
+Windows-friendly slices:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 list
+powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-all        # same as CI "All tests"
+powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-clippy     # same as CI clippy gate
+powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 tui-snapshots # app snapshot module only
+```
+
 ---
 
 ## License
