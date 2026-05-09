@@ -2402,6 +2402,9 @@ mod handlers {
         use axum::response::{Html, IntoResponse, Response};
         use icelines_core::model::Season;
         use icelines_core::season_stats::SeasonType;
+        use icelines_core::{
+            GoaliesView, MetricValue, SortDirection, SortKey, SortState, ViewContext, ViewWindow,
+        };
         use serde::Deserialize;
 
         /// Spec's rate-stat floor for goalie save-pct: 5+ GP qualifies
@@ -2457,6 +2460,28 @@ mod handlers {
                     Self::GaaAsc => "GAA",
                 }
             }
+
+            pub fn key(self) -> &'static str {
+                match self {
+                    Self::SavePct => "save_pct",
+                    Self::Wins => "wins",
+                    Self::Losses => "losses",
+                    Self::Games => "gp",
+                    Self::Shutouts => "shutouts",
+                    Self::GaaAsc => "gaa",
+                }
+            }
+
+            pub fn direction(self) -> SortDirection {
+                match self {
+                    Self::GaaAsc => SortDirection::Asc,
+                    Self::SavePct
+                    | Self::Wins
+                    | Self::Losses
+                    | Self::Games
+                    | Self::Shutouts => SortDirection::Desc,
+                }
+            }
         }
 
         /// Shared data path so HTML + JSON can't drift.
@@ -2503,68 +2528,30 @@ mod handlers {
 
             let (rows, total) = {
                 let repo = state.repo.read().await;
-                let mut all: Vec<GoalieRow> = repo
+                let mut all: Vec<_> = repo
                     .goalies(season, season_type)
                     .filter(|v| v.gp() >= effective_floor)
-                    .filter_map(|v| {
-                        let g = v.stats.goalie.as_ref()?;
-                        let save_pct_str = match g.save_pct {
-                            Some(p) => format!("{:.3}", p),
-                            None => "—".to_owned(),
-                        };
-                        let gaa_str = match g.goals_against_average {
-                            Some(a) => format!("{:.2}", a),
-                            None => "—".to_owned(),
-                        };
-                        let team_display = v.team_display().to_owned();
-                        let headshot_url = super::build_headshot_url_for_display(
-                            v.season().0,
-                            &team_display,
-                            v.id().0,
-                        );
-                        Some(GoalieRow {
-                            nhl_id: v.id().0,
-                            name: v.full_name().to_owned(),
-                            team: team_display,
-                            gp: v.gp(),
-                            wins: g.wins,
-                            losses: g.losses,
-                            shutouts: g.shutouts,
-                            save_pct_str,
-                            gaa_str,
-                            headshot_url,
-                            headshot_fallback_url: format!(
-                                "https://assets.nhle.com/mugs/nhl/default/{}.png",
-                                v.id().0
-                            ),
-                        })
-                    })
                     .collect();
+                all.sort_by(|a, b| compare_goalie_views(a, b, sort));
                 let total = all.len();
-
-                all.sort_by(|a, b| {
-                    let primary = match sort {
-                        GoalieSort::SavePct => {
-                            let ap = a.save_pct_str.parse::<f64>().unwrap_or(0.0);
-                            let bp = b.save_pct_str.parse::<f64>().unwrap_or(0.0);
-                            bp.partial_cmp(&ap).unwrap_or(std::cmp::Ordering::Equal)
-                        }
-                        GoalieSort::Wins => b.wins.cmp(&a.wins),
-                        GoalieSort::Losses => b.losses.cmp(&a.losses),
-                        GoalieSort::Games => b.gp.cmp(&a.gp),
-                        GoalieSort::Shutouts => b.shutouts.cmp(&a.shutouts),
-                        GoalieSort::GaaAsc => {
-                            // Lower GAA is better; sort ascending.
-                            // Treat "—" as worst.
-                            let av = a.gaa_str.parse::<f64>().unwrap_or(f64::INFINITY);
-                            let bv = b.gaa_str.parse::<f64>().unwrap_or(f64::INFINITY);
-                            av.partial_cmp(&bv).unwrap_or(std::cmp::Ordering::Equal)
-                        }
-                    };
-                    primary.then(b.wins.cmp(&a.wins)).then(a.name.cmp(&b.name))
-                });
                 all.truncate(top_n);
-                (all, total)
+
+                let mut view = GoaliesView::from_player_views(
+                    ViewContext::new(ViewWindow::new(season, season_type)),
+                    all.into_iter(),
+                );
+                view.sort = Some(SortState {
+                    key: SortKey::from(sort.key()),
+                    label: sort.label().to_string(),
+                    direction: sort.direction(),
+                });
+
+                let rows = view
+                    .rows
+                    .iter()
+                    .map(|row| goalie_template_row_from_view(row, season))
+                    .collect();
+                (rows, total)
             };
 
             Ok(GoalieResult {
@@ -2577,6 +2564,110 @@ mod handlers {
                 active_season: season_str,
                 active_season_type: season_type,
                 top_n,
+            })
+        }
+
+        fn compare_goalie_views(
+            a: &icelines_core::stats_repository::PlayerView<'_>,
+            b: &icelines_core::stats_repository::PlayerView<'_>,
+            sort: GoalieSort,
+        ) -> std::cmp::Ordering {
+            let ga = a.stats.goalie.as_ref();
+            let gb = b.stats.goalie.as_ref();
+            let primary = match sort {
+                GoalieSort::SavePct => gb
+                    .and_then(|g| g.save_pct)
+                    .unwrap_or(0.0)
+                    .partial_cmp(&ga.and_then(|g| g.save_pct).unwrap_or(0.0))
+                    .unwrap_or(std::cmp::Ordering::Equal),
+                GoalieSort::Wins => gb
+                    .map(|g| g.wins)
+                    .unwrap_or(0)
+                    .cmp(&ga.map(|g| g.wins).unwrap_or(0)),
+                GoalieSort::Losses => gb
+                    .map(|g| g.losses)
+                    .unwrap_or(0)
+                    .cmp(&ga.map(|g| g.losses).unwrap_or(0)),
+                GoalieSort::Games => b.gp().cmp(&a.gp()),
+                GoalieSort::Shutouts => gb
+                    .map(|g| g.shutouts)
+                    .unwrap_or(0)
+                    .cmp(&ga.map(|g| g.shutouts).unwrap_or(0)),
+                GoalieSort::GaaAsc => ga
+                    .and_then(|g| g.goals_against_average)
+                    .unwrap_or(f32::INFINITY)
+                    .partial_cmp(
+                        &gb.and_then(|g| g.goals_against_average)
+                            .unwrap_or(f32::INFINITY),
+                    )
+                    .unwrap_or(std::cmp::Ordering::Equal),
+            };
+            primary
+                .then(
+                    gb.map(|g| g.wins)
+                        .unwrap_or(0)
+                        .cmp(&ga.map(|g| g.wins).unwrap_or(0)),
+                )
+                .then(a.full_name().cmp(b.full_name()))
+        }
+
+        fn goalie_template_row_from_view(
+            row: &icelines_core::GoalieRow,
+            season: Season,
+        ) -> GoalieRow {
+            let team = row.team.0.clone();
+            GoalieRow {
+                nhl_id: row.player_id.0,
+                name: row.display_name.clone(),
+                team: team.clone(),
+                gp: goalie_metric_u32(row, "gp"),
+                wins: goalie_metric_u32(row, "wins"),
+                losses: goalie_metric_u32(row, "losses"),
+                shutouts: goalie_metric_u32(row, "shutouts"),
+                save_pct_str: goalie_metric_f64(row, "save_pct")
+                    .map(|v| format!("{v:.3}"))
+                    .unwrap_or_else(|| "—".to_owned()),
+                gaa_str: goalie_metric_f64(row, "gaa")
+                    .map(|v| format!("{v:.2}"))
+                    .unwrap_or_else(|| "—".to_owned()),
+                headshot_url: super::build_headshot_url_for_display(
+                    season.0,
+                    &team,
+                    row.player_id.0,
+                ),
+                headshot_fallback_url: format!(
+                    "https://assets.nhle.com/mugs/nhl/default/{}.png",
+                    row.player_id.0
+                ),
+            }
+        }
+
+        fn goalie_metric_u32(row: &icelines_core::GoalieRow, key: &str) -> u32 {
+            row.metrics
+                .iter()
+                .find_map(|metric| {
+                    if metric.key.0 == key {
+                        match metric.value {
+                            MetricValue::Integer(value) => u32::try_from(value).ok(),
+                            _ => None,
+                        }
+                    } else {
+                        None
+                    }
+                })
+                .unwrap_or(0)
+        }
+
+        fn goalie_metric_f64(row: &icelines_core::GoalieRow, key: &str) -> Option<f64> {
+            row.metrics.iter().find_map(|metric| {
+                if metric.key.0 == key {
+                    match metric.value {
+                        MetricValue::Decimal(value) => Some(value),
+                        _ => None,
+                    }
+                } else {
+                    None
+                }
             })
         }
 
