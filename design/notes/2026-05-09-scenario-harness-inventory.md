@@ -12,6 +12,12 @@ budgets. "Scenario" in this repo currently means three different things:
 Counted Rust files under `*/tests/*.rs` plus the in-bin TUI harness
 `icelines-cli/src/tui/persona_jack_adams.rs`.
 
+Run active scenario harnesses locally with:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 scenarios
+```
+
 | Group | Files | Executable tests | Notes |
 |---|---:|---:|---|
 | Persona/harness | 25 | 2,055 | Product/user-flow/storyline/adversarial harnesses. |

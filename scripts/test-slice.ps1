@@ -22,6 +22,11 @@ param(
         "ci-system",
         "ci-docs",
         "tui-snapshots",
+        "scenarios",
+        "scenarios-cli",
+        "scenarios-query",
+        "scenarios-web",
+        "scenarios-tui",
         "workspace-check",
         "viewmodel",
         "core",
@@ -78,6 +83,11 @@ Fast daily slices:
   viewmodel        Campbell ViewModel contract/builder tests
   cli-matrix       Foster capability matrix regression tests
   tui-snapshots    app snapshot tests from the icelines binary target
+  scenarios        active scenario harnesses by surface: TUI, CLI, query, web
+  scenarios-cli    CLI persona/scenario harnesses
+  scenarios-query  query persona/storyline harnesses
+  scenarios-web    web persona/parity harnesses
+  scenarios-tui    in-bin TUI persona/user-flow harness
 
 CI gates:
   ci               local CI sequence: all split gates, serial
@@ -191,6 +201,24 @@ switch ($Slice) {
     }
     "tui-snapshots" {
         Invoke-Test @("test", "-p", "icelines-cli", "--bin", "icelines", "tui::screens::app_snapshot_tests")
+    }
+    "scenarios" {
+        Invoke-Test @("test", "-p", "icelines-cli", "--bin", "icelines", "persona_jack_adams")
+        Invoke-Test @("test", "-p", "icelines-cli", "--test", "persona_foster", "--test", "persona_masterton_standalone", "--test", "persona_scenarios", "--test", "persona_wave2", "--test", "persona_wave3", "--test", "persona_wave4", "--test", "persona_wave5", "--test", "persona_wave6", "--test", "persona_wave7", "--test", "persona_wave9", "--test", "persona_wave10", "--test", "persona_wave11", "--test", "persona_wave16", "--test", "persona_wave18", "--test", "persona_wave20", "--test", "persona_wave23", "--test", "persona_wave25")
+        Invoke-Test @("test", "-p", "icelines-query", "--test", "persona_wave12", "--test", "persona_wave13")
+        Invoke-Test @("test", "-p", "icelines-web", "--test", "persona_wave8", "--test", "persona_wave17", "--test", "persona_wave19", "--test", "persona_wave21_parity", "--test", "persona_wave22b_envelope")
+    }
+    "scenarios-cli" {
+        Invoke-Test @("test", "-p", "icelines-cli", "--test", "persona_foster", "--test", "persona_masterton_standalone", "--test", "persona_scenarios", "--test", "persona_wave2", "--test", "persona_wave3", "--test", "persona_wave4", "--test", "persona_wave5", "--test", "persona_wave6", "--test", "persona_wave7", "--test", "persona_wave9", "--test", "persona_wave10", "--test", "persona_wave11", "--test", "persona_wave16", "--test", "persona_wave18", "--test", "persona_wave20", "--test", "persona_wave23", "--test", "persona_wave25")
+    }
+    "scenarios-query" {
+        Invoke-Test @("test", "-p", "icelines-query", "--test", "persona_wave12", "--test", "persona_wave13")
+    }
+    "scenarios-web" {
+        Invoke-Test @("test", "-p", "icelines-web", "--test", "persona_wave8", "--test", "persona_wave17", "--test", "persona_wave19", "--test", "persona_wave21_parity", "--test", "persona_wave22b_envelope")
+    }
+    "scenarios-tui" {
+        Invoke-Test @("test", "-p", "icelines-cli", "--bin", "icelines", "persona_jack_adams")
     }
     "quick" {
         Invoke-Cargo @("check", "--workspace")

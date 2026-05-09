@@ -347,6 +347,7 @@ Windows-friendly slices:
 powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 list
 powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-query        # Tests / query
 powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-cli-tui      # Tests / cli-tui-bin
+powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 scenarios       # TUI + CLI + query + web scenario harnesses
 powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-clippy       # Quality / clippy
 powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 tui-snapshots   # app snapshot module only
 ```
