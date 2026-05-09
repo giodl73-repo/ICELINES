@@ -5,9 +5,10 @@ use anyhow::{bail, Context};
 use icelines_core::{
     model::{Position, Season, TeamAbbr},
     view_model::{
-        poach_report_context, AvailabilityState, DeploymentSignal, PoachBoardView, PoachQuery,
-        PoachReportSection, PoachReportView, SourceKind, SourceState, ViewContext, ViewWindow,
-        WatchRule, WatchRuleTrigger, WatchRulesView,
+        poach_report_context, AvailabilityState, DeploymentSignal, PoachBoardView, PoachPlayerRow,
+        PoachQuery, PoachReportSection, PoachReportView, RecommendationKind, ReportSectionRef,
+        SourceKind, SourceState, ViewContext, ViewWindow, WatchRule, WatchRuleTrigger,
+        WatchRulesView,
     },
 };
 
@@ -30,6 +31,19 @@ pub struct PoachReportArgs {
     pub season: Option<String>,
     pub season_type: QuerySeasonType,
     pub scheme: String,
+    pub categories: Vec<String>,
+    pub teams: Vec<String>,
+    pub positions: Vec<String>,
+    pub top: u16,
+    pub json: bool,
+    pub out: Option<PathBuf>,
+}
+
+pub struct WeeklyReportArgs {
+    pub season: Option<String>,
+    pub season_type: QuerySeasonType,
+    pub scheme: String,
+    pub league: String,
     pub categories: Vec<String>,
     pub teams: Vec<String>,
     pub positions: Vec<String>,
@@ -80,6 +94,26 @@ pub async fn run_report_poach(args: PoachReportArgs) -> anyhow::Result<()> {
     let report = report_from_board(board);
     let body = if args.json {
         serde_json::to_string_pretty(&report).context("serializing poach report")?
+    } else {
+        render_report_markdown(&report)
+    };
+    write_or_print(args.out.as_ref(), &body)
+}
+
+pub async fn run_report_weekly(args: WeeklyReportArgs) -> anyhow::Result<()> {
+    let board = build_board(PoachArgs {
+        season: args.season,
+        season_type: args.season_type,
+        scheme: args.scheme,
+        categories: args.categories,
+        teams: args.teams,
+        positions: args.positions,
+        top: args.top,
+        json: false,
+    })?;
+    let report = weekly_report_from_board(board, &args.league, args.top);
+    let body = if args.json {
+        serde_json::to_string_pretty(&report).context("serializing weekly poach report")?
     } else {
         render_report_markdown(&report)
     };
@@ -181,6 +215,91 @@ fn report_from_board(board: PoachBoardView) -> PoachReportView {
             rows: board.rows,
         }],
     }
+}
+
+fn weekly_report_from_board(
+    board: PoachBoardView,
+    league: &str,
+    section_limit: u16,
+) -> PoachReportView {
+    let omissions = board
+        .source_state
+        .iter()
+        .filter(|state| state.state != icelines_core::Completeness::Complete)
+        .map(|state| format!("{:?}: {:?}", state.source, state.state).to_ascii_lowercase())
+        .collect();
+    let rows = board.rows;
+    let limit = section_limit as usize;
+    let sections = vec![
+        PoachReportSection {
+            id: "top_adds".to_string(),
+            title: "Top Adds".to_string(),
+            rows: take_rows(&rows, limit),
+        },
+        PoachReportSection {
+            id: "category_specialists".to_string(),
+            title: "Category Specialists".to_string(),
+            rows: rows_matching_kind(&rows, RecommendationKind::CategoryFit, limit),
+        },
+        PoachReportSection {
+            id: "deployment_risers".to_string(),
+            title: "Deployment Risers".to_string(),
+            rows: rows_matching_kind(&rows, RecommendationKind::DeploymentRiser, limit),
+        },
+        PoachReportSection {
+            id: "risk_discounts".to_string(),
+            title: "Risk Discounts".to_string(),
+            rows: rows
+                .iter()
+                .filter(|row| row.risk_summary.is_some())
+                .take(limit)
+                .cloned()
+                .collect(),
+        },
+        PoachReportSection {
+            id: "watched_player_alerts".to_string(),
+            title: "Watched Player Alerts".to_string(),
+            rows: Vec::new(),
+        },
+    ];
+    let mut context = poach_report_context(
+        board.context.clone(),
+        format!("weekly-{}", slug_or_default(league, "default")),
+    );
+    context.title = "Weekly Fantasy Prep".to_string();
+    context.sections = sections
+        .iter()
+        .map(|section| ReportSectionRef {
+            id: section.id.clone(),
+            title: section.title.clone(),
+        })
+        .collect();
+
+    PoachReportView {
+        context,
+        scoring_scheme: board.scoring_scheme,
+        window: board.window,
+        source_state: board.source_state,
+        warnings: board.warnings,
+        omissions,
+        sections,
+    }
+}
+
+fn take_rows(rows: &[PoachPlayerRow], limit: usize) -> Vec<PoachPlayerRow> {
+    rows.iter().take(limit).cloned().collect()
+}
+
+fn rows_matching_kind(
+    rows: &[PoachPlayerRow],
+    kind: RecommendationKind,
+    limit: usize,
+) -> Vec<PoachPlayerRow> {
+    rows.iter()
+        .filter(|row| row.recommendation_kinds.contains(&kind))
+        .take(limit)
+        .cloned()
+        .collect()
 }
 
 fn render_report_markdown(report: &PoachReportView) -> String {
@@ -418,6 +537,15 @@ fn slug(value: &str) -> String {
         .to_string()
 }
 
+fn slug_or_default(value: &str, default: &str) -> String {
+    let slugged = slug(value);
+    if slugged.is_empty() {
+        default.to_string()
+    } else {
+        slugged
+    }
+}
+
 fn normalize_categories(categories: Vec<String>) -> Vec<String> {
     categories
         .into_iter()
@@ -569,6 +697,39 @@ mod tests {
         assert!(md.contains("# Fantasy Poacher"));
         assert!(md.contains("schedule: unavailable"));
         assert!(md.contains("No candidates matched this report."));
+    }
+
+    #[test]
+    fn l0_poach_weekly_report_names_expected_sections() {
+        let season = icelines_core::Season(20252026);
+        let season_type = icelines_core::season_stats::SeasonType::Regular;
+        let query = PoachQuery::new(season, season_type, "yahoo-standard");
+        let board = PoachBoardView::new(
+            icelines_core::ViewContext::new(icelines_core::ViewWindow::new(season, season_type)),
+            query,
+            "yahoo-standard",
+        );
+
+        let report = weekly_report_from_board(board, "Main League", 20);
+        let section_ids: Vec<_> = report
+            .sections
+            .iter()
+            .map(|section| section.id.as_str())
+            .collect();
+
+        assert_eq!(report.context.report_id, "weekly-main-league");
+        assert_eq!(report.context.title, "Weekly Fantasy Prep");
+        assert_eq!(report.context.sections.len(), report.sections.len());
+        assert_eq!(
+            section_ids,
+            vec![
+                "top_adds",
+                "category_specialists",
+                "deployment_risers",
+                "risk_discounts",
+                "watched_player_alerts"
+            ]
+        );
     }
 
     #[test]

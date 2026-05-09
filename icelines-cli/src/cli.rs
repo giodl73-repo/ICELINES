@@ -974,6 +974,49 @@ pub enum ReportSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<std::path::PathBuf>,
     },
+
+    /// Generate a weekly fantasy prep report from PoachReportView.
+    Weekly {
+        /// Season id, e.g. 20252026. Defaults to configured season.
+        #[arg(long)]
+        season: Option<String>,
+
+        /// Regular season or playoffs.
+        #[arg(long = "type", value_enum, default_value_t = QuerySeasonType::Regular)]
+        season_type: QuerySeasonType,
+
+        /// Fantasy scoring scheme name.
+        #[arg(long, default_value = "yahoo-standard")]
+        scheme: String,
+
+        /// League/profile label to include in the report id.
+        #[arg(long, default_value = "default")]
+        league: String,
+
+        /// Comma-separated categories to emphasize, e.g. hits,blocks,shots.
+        #[arg(long = "category", value_delimiter = ',')]
+        categories: Vec<String>,
+
+        /// Filter by team abbreviation.
+        #[arg(long)]
+        team: Vec<String>,
+
+        /// Filter by position abbreviation: C, LW, RW, D.
+        #[arg(long)]
+        pos: Vec<String>,
+
+        /// Number of candidates to include per populated section.
+        #[arg(long, default_value_t = 20)]
+        top: u16,
+
+        /// Emit the PoachReportView as JSON instead of markdown.
+        #[arg(long)]
+        json: bool,
+
+        /// Write report to path. Pass '-' or omit for stdout.
+        #[arg(long, value_name = "PATH")]
+        out: Option<std::path::PathBuf>,
+    },
 }
 
 #[derive(Debug, Subcommand)]

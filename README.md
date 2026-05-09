@@ -223,6 +223,7 @@ icelines fantasy league-switch "My League" # switch active league
 icelines poach --category hits,blocks --top 15
 icelines poach --team SEA --pos LW --json
 icelines report poach --category shots --top 10 --out poach.md
+icelines report weekly --league default --category hits,blocks
 icelines watch rules
 icelines watch player "Matthew Knies" --when pp1
 

@@ -158,6 +158,32 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 })
                 .await?;
             }
+            ReportSubcommand::Weekly {
+                season,
+                season_type,
+                scheme,
+                league,
+                categories,
+                team,
+                pos,
+                top,
+                json,
+                out,
+            } => {
+                commands::poach::run_report_weekly(commands::poach::WeeklyReportArgs {
+                    season,
+                    season_type,
+                    scheme,
+                    league,
+                    categories,
+                    teams: team,
+                    positions: pos,
+                    top,
+                    json,
+                    out,
+                })
+                .await?;
+            }
         },
         Commands::Watch(sub) => match sub {
             WatchSubcommand::Rules {
