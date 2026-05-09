@@ -147,6 +147,7 @@ Routes:
 - `/watchlist`
 - `/reports/poach`
 - `/api/v1/poach`
+- `/api/v1/watchlist`
 - `/api/v1/watch-rules`
 
 ### Reports
@@ -332,6 +333,8 @@ Initial implementation note:
   pending.
 - `/watchlist` also renders stored watch reasons from `watch_notes` when they
   exist.
+- `/api/v1/watchlist` returns the same SQLite-backed watchlist rows with reason,
+  source, updated timestamp, and player/team counts for web automation.
 
 ---
 

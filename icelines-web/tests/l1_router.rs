@@ -285,6 +285,87 @@ async fn l1_watchlist_route_renders_watch_reason_metadata() {
 }
 
 #[tokio::test]
+async fn l1_watchlist_json_returns_watch_reason_metadata() {
+    let _guard = home_env_lock();
+    let dir = tempfile::TempDir::new().expect("temp home");
+    let prev_userprofile = std::env::var_os("USERPROFILE");
+    let prev_home = std::env::var_os("HOME");
+    std::env::set_var("USERPROFILE", dir.path());
+    std::env::set_var("HOME", dir.path());
+
+    let db_dir = dir.path().join(".icelines");
+    std::fs::create_dir_all(&db_dir).expect("create db dir");
+    let conn = rusqlite::Connection::open(db_dir.join("icelines.db")).expect("open db");
+    conn.execute_batch(
+        "CREATE TABLE groups (
+            name TEXT PRIMARY KEY,
+            description TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL
+         );
+         CREATE TABLE group_members (
+            group_name TEXT NOT NULL,
+            entity_ref TEXT NOT NULL,
+            added_at TEXT NOT NULL,
+            PRIMARY KEY (group_name, entity_ref)
+         );
+         CREATE TABLE watch_notes (
+            entity_ref TEXT PRIMARY KEY,
+            reason TEXT NOT NULL DEFAULT '',
+            source TEXT NOT NULL DEFAULT '',
+            updated_at TEXT NOT NULL
+         );
+         INSERT INTO groups VALUES ('Watchlist', '', datetime('now'));
+         INSERT INTO group_members VALUES ('Watchlist', 'player:matthew knies', datetime('now'));
+         INSERT INTO watch_notes VALUES (
+            'player:matthew knies',
+            'Poach score 72.0; confidence High; PP1 promotion',
+            'tui-poach',
+            '2026-05-09T12:00:00Z'
+         );",
+    )
+    .expect("seed watchlist db");
+
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/watchlist")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    match prev_userprofile {
+        Some(p) => std::env::set_var("USERPROFILE", p),
+        None => std::env::remove_var("USERPROFILE"),
+    }
+    match prev_home {
+        Some(p) => std::env::set_var("HOME", p),
+        None => std::env::remove_var("HOME"),
+    }
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let body: serde_json::Value = serde_json::from_slice(&bytes).expect("json body");
+
+    assert_eq!(body["schema_version"], "watchlist.v1");
+    assert_eq!(body["route"], "watchlist");
+    assert_eq!(body["meta"]["group"], "Watchlist");
+    assert_eq!(body["meta"]["player_count"], 1);
+    assert_eq!(body["data"][0]["kind"], "player");
+    assert_eq!(body["data"][0]["key"], "matthew knies");
+    assert_eq!(
+        body["data"][0]["reason"],
+        "Poach score 72.0; confidence High; PP1 promotion"
+    );
+    assert_eq!(body["data"][0]["source"], "tui-poach");
+    assert_eq!(body["data"][0]["updated_at"], "2026-05-09T12:00:00Z");
+}
+
+#[tokio::test]
 async fn l1_poach_route_returns_200_html() {
     let app = router(WebState::new());
 

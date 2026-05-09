@@ -109,6 +109,10 @@ pub fn router(state: WebState) -> Router {
         // Phase Foster.2 — favorites dashboard
         .route("/favorites", get(handlers::favorites::get_favorites))
         .route("/watchlist", get(handlers::favorites::get_watchlist))
+        .route(
+            "/api/v1/watchlist",
+            get(handlers::favorites::get_watchlist_json),
+        )
         // Phase Conn Smythe C.3 — per-game live detail
         .route("/game/:id", get(handlers::game::get_game))
         // Foster +18 — POST mutators (kept as POST so they can't be
@@ -5221,6 +5225,77 @@ mod handlers {
                 .into_response()
         }
 
+        pub async fn get_watchlist_json() -> Response {
+            let members = read_group_members("Watchlist");
+            let notes = read_watch_notes();
+            let rows = watchlist_api_rows(&members, &notes);
+            let meta = WatchlistApiMeta {
+                group: "Watchlist",
+                count: rows.len(),
+                player_count: rows.iter().filter(|r| r.kind == "player").count(),
+                team_count: rows.iter().filter(|r| r.kind == "team").count(),
+            };
+            axum::Json(WatchlistApiResponse {
+                schema_version: "watchlist.v1",
+                route: "watchlist",
+                data: rows,
+                meta,
+            })
+            .into_response()
+        }
+
+        #[derive(Debug, Clone)]
+        struct WatchNote {
+            reason: String,
+            source: String,
+            updated_at: String,
+        }
+
+        #[derive(Debug, serde::Serialize)]
+        struct WatchlistApiResponse {
+            schema_version: &'static str,
+            route: &'static str,
+            data: Vec<WatchlistApiRow>,
+            meta: WatchlistApiMeta,
+        }
+
+        #[derive(Debug, serde::Serialize)]
+        struct WatchlistApiMeta {
+            group: &'static str,
+            count: usize,
+            player_count: usize,
+            team_count: usize,
+        }
+
+        #[derive(Debug, serde::Serialize)]
+        struct WatchlistApiRow {
+            kind: String,
+            key: String,
+            reason: Option<String>,
+            source: Option<String>,
+            updated_at: Option<String>,
+        }
+
+        fn watchlist_api_rows(
+            members: &[(String, String)],
+            notes: &std::collections::HashMap<String, WatchNote>,
+        ) -> Vec<WatchlistApiRow> {
+            members
+                .iter()
+                .map(|(kind, key)| {
+                    let entity_ref = format!("{kind}:{key}");
+                    let note = notes.get(&entity_ref);
+                    WatchlistApiRow {
+                        kind: kind.clone(),
+                        key: key.clone(),
+                        reason: note.map(|n| n.reason.clone()),
+                        source: note.map(|n| n.source.clone()),
+                        updated_at: note.map(|n| n.updated_at.clone()),
+                    }
+                })
+                .collect()
+        }
+
         fn read_group_members(group_name: &str) -> Vec<(String, String)> {
             let Some(home) = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))
             else {
@@ -5256,7 +5331,7 @@ mod handlers {
                 .unwrap_or_default()
         }
 
-        fn read_watch_notes() -> std::collections::HashMap<String, String> {
+        fn read_watch_notes() -> std::collections::HashMap<String, WatchNote> {
             let Some(home) = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))
             else {
                 return std::collections::HashMap::new();
@@ -5270,13 +5345,24 @@ mod handlers {
             let Ok(conn) = rusqlite::Connection::open(&db_path) else {
                 return std::collections::HashMap::new();
             };
-            let Ok(mut stmt) = conn.prepare("SELECT entity_ref, reason FROM watch_notes") else {
+            let Ok(mut stmt) =
+                conn.prepare("SELECT entity_ref, reason, source, updated_at FROM watch_notes")
+            else {
                 return std::collections::HashMap::new();
             };
-            stmt.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
-                .ok()
-                .map(|rows| rows.filter_map(Result::ok).collect())
-                .unwrap_or_default()
+            stmt.query_map([], |r| {
+                Ok((
+                    r.get::<_, String>(0)?,
+                    WatchNote {
+                        reason: r.get::<_, String>(1)?,
+                        source: r.get::<_, String>(2)?,
+                        updated_at: r.get::<_, String>(3)?,
+                    },
+                ))
+            })
+            .ok()
+            .map(|rows| rows.filter_map(Result::ok).collect())
+            .unwrap_or_default()
         }
 
         /// Per-favorited-player stat-line lookup. Returns a flat
@@ -5576,7 +5662,7 @@ mod handlers {
 
         fn render_watchlist_html(
             members: &[(String, String)],
-            notes: &std::collections::HashMap<String, String>,
+            notes: &std::collections::HashMap<String, WatchNote>,
             active_label: &str,
         ) -> String {
             let player_count = members.iter().filter(|(k, _)| k == "player").count();
@@ -5630,10 +5716,10 @@ mod handlers {
                         let entity_ref = format!("player:{player}");
                         let note = notes
                             .get(&entity_ref)
-                            .map(|reason| {
+                            .map(|note| {
                                 format!(
                                     "<br><span style=\"color:#555;font-size:0.92em;\">why: {}</span>",
-                                    html_escape(reason)
+                                    html_escape(&note.reason)
                                 )
                             })
                             .unwrap_or_default();
