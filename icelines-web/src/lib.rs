@@ -422,8 +422,14 @@ mod handlers {
         use axum::extract::{Query, State};
         use axum::http::StatusCode;
         use axum::response::{Html, IntoResponse, Response};
+        use icelines_core::identity::PlayerId;
         use icelines_core::model::{Position, Season};
         use icelines_core::season_stats::SeasonType;
+        use icelines_core::{
+            LeaderKind, LeadersView, MetricCell, MetricUnit, MetricValue, SemanticToken,
+            SortDirection, SortKey as VmSortKey, SortState, StatKey, TeamAbbr, ValuePrecision,
+            ViewContext, ViewWindow,
+        };
         use serde::Deserialize;
 
         /// Query params accepted by `/leaders`. King.2.2 added
@@ -667,8 +673,175 @@ mod handlers {
             top_n: usize,
             raw_filters: Vec<String>,
             active_label: String,
+            active_season_id: Season,
             active_season: String,
             active_season_type: SeasonType,
+        }
+
+        fn leaders_view_from_template_rows(
+            rows: &[LeaderRow],
+            sort_key: SortKey,
+            season: Season,
+            season_type: SeasonType,
+        ) -> LeadersView {
+            let mut view = LeadersView::new(
+                ViewContext::new(ViewWindow::new(season, season_type)),
+                LeaderKind::Skaters,
+            );
+            view.sort = Some(SortState {
+                key: VmSortKey::from(sort_key.url_token()),
+                label: sort_key.label().to_owned(),
+                direction: SortDirection::Desc,
+            });
+            view.rows = rows
+                .iter()
+                .enumerate()
+                .map(|(idx, row)| icelines_core::LeaderRow {
+                    rank: idx as u32 + 1,
+                    player_id: PlayerId(row.nhl_id),
+                    display_name: row.name.clone(),
+                    team: TeamAbbr(row.team.clone()),
+                    position: position_from_template_row(row.position.as_str()),
+                    primary: leader_primary_metric(row, sort_key),
+                    secondary: vec![
+                        web_metric_int("gp", "GP", row.gp as i64, MetricUnit::Games),
+                        web_metric_int("goals", "G", row.goals as i64, MetricUnit::Goals),
+                        web_metric_int("assists", "A", row.assists as i64, MetricUnit::Assists),
+                        web_metric_int("points", "P", row.points as i64, MetricUnit::Points),
+                    ],
+                    tokens: vec![SemanticToken::SupportingEvidence],
+                })
+                .collect();
+            view
+        }
+
+        fn position_from_template_row(position: &str) -> Position {
+            match position {
+                "C" => Position::Center,
+                "LW" => Position::LeftWing,
+                "RW" => Position::RightWing,
+                "D" => Position::Defense,
+                "G" => Position::Goalie,
+                _ => Position::Defense,
+            }
+        }
+
+        fn web_metric_int(key: &str, label: &str, value: i64, unit: MetricUnit) -> MetricCell {
+            MetricCell {
+                key: StatKey::from(key),
+                label: label.to_owned(),
+                value: MetricValue::Integer(value),
+                unit,
+                precision: ValuePrecision::Integer,
+                token: None,
+            }
+        }
+
+        fn web_metric_text(key: &str, label: &str, value: String) -> MetricCell {
+            MetricCell {
+                key: StatKey::from(key),
+                label: label.to_owned(),
+                value: MetricValue::Text(value),
+                unit: MetricUnit::None,
+                precision: ValuePrecision::Raw,
+                token: Some(SemanticToken::DecisionHighlight),
+            }
+        }
+
+        fn leader_primary_metric(row: &LeaderRow, sort_key: SortKey) -> MetricCell {
+            match sort_key {
+                SortKey::Points => {
+                    web_metric_int("points", "Points", row.points as i64, MetricUnit::Points)
+                }
+                SortKey::Goals => {
+                    web_metric_int("goals", "Goals", row.goals as i64, MetricUnit::Goals)
+                }
+                SortKey::Assists => web_metric_int(
+                    "assists",
+                    "Assists",
+                    row.assists as i64,
+                    MetricUnit::Assists,
+                ),
+                SortKey::Games => web_metric_int("gp", "Games", row.gp as i64, MetricUnit::Games),
+                SortKey::PointsPerGame => {
+                    web_metric_text("points_per_game", "Points/Game", row.ppg_str.clone())
+                }
+                SortKey::PlusMinus => {
+                    web_metric_text("plus_minus", "+/-", row.plus_minus_str.clone())
+                }
+                SortKey::Pim => web_metric_int("pim", "PIM", row.pim as i64, MetricUnit::Count),
+                SortKey::Shots => {
+                    web_metric_int("shots", "Shots", row.shots as i64, MetricUnit::Count)
+                }
+                SortKey::ShootingPct => {
+                    web_metric_text("shooting_pct", "SH%", row.shooting_pct_str.clone())
+                }
+                SortKey::Hits => web_metric_text("hits", "Hits", row.hits_str.clone()),
+                SortKey::Blocks => web_metric_text("blocks", "Blocks", row.blocks_str.clone()),
+                SortKey::FaceoffPct => {
+                    web_metric_text("faceoff_pct", "FOW%", row.faceoff_pct_str.clone())
+                }
+                SortKey::PowerPlayPoints => web_metric_int(
+                    "pp_points",
+                    "PP P",
+                    row.pp_points as i64,
+                    MetricUnit::Points,
+                ),
+                SortKey::PointsPer60 => {
+                    web_metric_text("points_per_60", "P/60", row.points_per_60_str.clone())
+                }
+                SortKey::GoalsPer60 => {
+                    web_metric_text("goals_per_60", "G/60", row.goals_per_60_str.clone())
+                }
+                SortKey::AssistsPer60 => {
+                    web_metric_text("assists_per_60", "A/60", row.assists_per_60_str.clone())
+                }
+                SortKey::HitsPer60 => {
+                    web_metric_text("hits_per_60", "Hits/60", row.hits_per_60_str.clone())
+                }
+                SortKey::BlocksPer60 => {
+                    web_metric_text("blocks_per_60", "Blocks/60", row.blocks_per_60_str.clone())
+                }
+                SortKey::Breakout | SortKey::Decline => web_metric_text(
+                    "points_delta",
+                    sort_key.label(),
+                    row.points_delta_str.clone(),
+                ),
+            }
+        }
+
+        fn leader_secondary_i64(row: &icelines_core::LeaderRow, key: &str) -> Option<i64> {
+            row.secondary
+                .iter()
+                .find(|metric| metric.key.0 == key)
+                .and_then(|metric| match metric.value {
+                    MetricValue::Integer(value) => Some(value),
+                    _ => None,
+                })
+        }
+
+        fn leader_json_rows_from_view(view: &LeadersView) -> Vec<LeaderJsonRow> {
+            view.rows
+                .iter()
+                .map(|row| {
+                    let games = leader_secondary_i64(row, "gp").unwrap_or_default() as u32;
+                    let points = leader_secondary_i64(row, "points").unwrap_or_default() as u32;
+                    LeaderJsonRow {
+                        name: row.display_name.clone(),
+                        position: row.position.abbreviation().to_owned(),
+                        team: row.team.0.clone(),
+                        games,
+                        goals: leader_secondary_i64(row, "goals").unwrap_or_default() as u32,
+                        assists: leader_secondary_i64(row, "assists").unwrap_or_default() as u32,
+                        points,
+                        points_per_game: if games > 0 {
+                            Some(points as f64 / games as f64)
+                        } else {
+                            None
+                        },
+                    }
+                })
+                .collect()
         }
 
         async fn build_leader_result(
@@ -893,6 +1066,7 @@ mod handlers {
                 top_n,
                 raw_filters,
                 active_label,
+                active_season_id: season,
                 active_season: season_str,
                 active_season_type: season_type,
             })
@@ -910,25 +1084,14 @@ mod handlers {
                 Err(resp) => return resp,
             };
 
-            let returned = result.rows.len();
-            let data: Vec<LeaderJsonRow> = result
-                .rows
-                .iter()
-                .map(|r| LeaderJsonRow {
-                    name: r.name.clone(),
-                    position: r.position.clone(),
-                    team: r.team.clone(),
-                    games: r.gp,
-                    goals: r.goals,
-                    assists: r.assists,
-                    points: r.points,
-                    points_per_game: if r.gp > 0 {
-                        Some(r.points as f64 / r.gp as f64)
-                    } else {
-                        None
-                    },
-                })
-                .collect();
+            let leaders_view = leaders_view_from_template_rows(
+                &result.rows,
+                result.sort_key,
+                result.active_season_id,
+                result.active_season_type,
+            );
+            let returned = leaders_view.rows.len();
+            let data = leader_json_rows_from_view(&leaders_view);
 
             let envelope = LeadersEnvelope {
                 schema_version: 1,

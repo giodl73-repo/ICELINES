@@ -230,6 +230,8 @@ Closeout so far:
 - `query leaders` text tables now build a `LeadersView` after the existing
   load/filter/sort/top pipeline; JSON/CSV remain on the stable legacy output
   contracts.
+- Web `/api/v1/leaders` now projects its existing stable envelope rows from a
+  `LeadersView`; HTML `/leaders` remains on the current template row path.
 - `LeadersView::from_player_views_with_primary` supports sort-specific primary
   metrics without leaking renderer formatting into the default pace builder.
 - `GoaliesView::from_player_views` lets renderer adapters consume already
@@ -244,8 +246,11 @@ Closeout so far:
   --nocapture`, `cargo test -p icelines-cli l2_cmd_query_leaders_exits_zero
   -- --nocapture`, `cargo test -p icelines-cli
   l2_cmd_query_leaders_percentiles_flag -- --nocapture`, `cargo test -p
-  icelines-cli l2_cmd_query_leaders_json_export -- --nocapture`, and the
-  `viewmodel` test slice.
+  icelines-cli l2_cmd_query_leaders_json_export -- --nocapture`, `cargo check
+  -p icelines-web`, `cargo test -p icelines-web --test persona_wave19 --
+  --nocapture`, `cargo test -p icelines-web --test persona_wave22b_envelope
+  -- --nocapture`, `cargo test -p icelines-web --test persona_wave21_parity
+  -- --nocapture`, and the `viewmodel` test slice.
 
 ---
 
