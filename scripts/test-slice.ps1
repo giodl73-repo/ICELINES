@@ -4,12 +4,23 @@ param(
         "quick",
         "ci",
         "ci-core",
+        "ci-core-integration",
+        "ci-query",
         "ci-fetch",
+        "ci-web",
+        "ci-site",
         "ci-all",
+        "ci-cli-lib",
+        "ci-cli-tui",
+        "ci-cli-art-ross",
+        "ci-cli-lindsay",
+        "ci-cli-persona",
+        "ci-cli-smoke",
         "ci-clippy",
         "ci-fmt",
         "ci-release",
         "ci-system",
+        "ci-docs",
         "tui-snapshots",
         "workspace-check",
         "viewmodel",
@@ -69,14 +80,25 @@ Fast daily slices:
   tui-snapshots    app snapshot tests from the icelines binary target
 
 CI gates:
-  ci               local CI sequence: core, fetch, all, clippy, fmt, release, system
-  ci-core          CI step "L0 - Unit tests (icelines-core)"
-  ci-fetch         CI step "L1 - Integration tests (icelines-fetch)"
-  ci-all           CI step "All tests"
-  ci-clippy        CI step "Clippy (zero warnings)"
-  ci-fmt           CI step "Format check"
-  ci-release       CI step "Build release binary"
-  ci-system        CI step "L2 - System tests"
+  ci               local CI sequence: all split gates, serial
+  ci-core          Tests / core-lib
+  ci-core-integration Tests / core-integration
+  ci-query         Tests / query
+  ci-fetch         Tests / fetch
+  ci-web           Tests / web
+  ci-site          Tests / site
+  ci-cli-lib       Tests / cli-lib
+  ci-cli-tui       Tests / cli-tui-bin
+  ci-cli-art-ross  Tests / cli-art-ross
+  ci-cli-lindsay   Tests / cli-lindsay
+  ci-cli-persona   Tests / cli-persona
+  ci-cli-smoke     Tests / cli-smoke
+  ci-system        Tests / cli-system
+  ci-docs          Tests / doc-tests
+  ci-clippy        Quality / clippy
+  ci-fmt           Quality / fmt
+  ci-release       Build / release CLI
+  ci-all           legacy monolithic cargo test
 
 Crate slices:
   core             icelines-core tests
@@ -96,21 +118,61 @@ Long gates:
 switch ($Slice) {
     "ci" {
         Invoke-Test @("test", "-p", "icelines-core", "--lib")
+        Invoke-Test @("test", "-p", "icelines-core", "--tests")
+        Invoke-Test @("test", "-p", "icelines-query")
         Invoke-Test @("test", "-p", "icelines-fetch")
-        Invoke-Test @("test")
+        Invoke-Test @("test", "-p", "icelines-web")
+        Invoke-Test @("test", "-p", "icelines-site")
+        Invoke-Test @("test", "-p", "icelines-cli", "--lib")
+        Invoke-Test @("test", "-p", "icelines-cli", "--bin", "icelines")
+        Invoke-Test @("test", "-p", "icelines-cli", "--test", "art_ross_a0_parity", "--test", "art_ross_a2_executor", "--test", "art_ross_a5_explain", "--test", "art_ross_w14_semantic", "--test", "art_ross_w14b_goalies", "--test", "art_ross_w15_trades", "--test", "art_ross_w23_tui_filter", "--test", "art_ross_w25_career_filter")
+        Invoke-Test @("test", "-p", "icelines-cli", "--test", "lindsay_l3_golden", "--test", "lindsay_l5_subprocess")
+        Invoke-Test @("test", "-p", "icelines-cli", "--test", "persona_foster", "--test", "persona_masterton_standalone", "--test", "persona_scenarios", "--test", "persona_wave2", "--test", "persona_wave3", "--test", "persona_wave4", "--test", "persona_wave5", "--test", "persona_wave6", "--test", "persona_wave7", "--test", "persona_wave9", "--test", "persona_wave10", "--test", "persona_wave11", "--test", "persona_wave16", "--test", "persona_wave18", "--test", "persona_wave20", "--test", "persona_wave23", "--test", "persona_wave25")
+        Invoke-Test @("test", "-p", "icelines-cli", "--test", "system_tests", "--test", "system_tui_experiences")
+        Invoke-Test @("test", "-p", "icelines-cli", "--test", "foster_capability_matrix", "--test", "proof_lib_smoke")
+        Invoke-Test @("test", "--workspace", "--doc")
         Invoke-Cargo @("clippy", "--", "-D", "warnings")
         Invoke-Cargo @("fmt", "--check")
         Invoke-Cargo @("build", "--release", "-p", "icelines-cli")
-        Invoke-Test @("test", "-p", "icelines-cli", "--test", "system_tests")
     }
     "ci-core" {
         Invoke-Test @("test", "-p", "icelines-core", "--lib")
     }
+    "ci-core-integration" {
+        Invoke-Test @("test", "-p", "icelines-core", "--tests")
+    }
+    "ci-query" {
+        Invoke-Test @("test", "-p", "icelines-query")
+    }
     "ci-fetch" {
         Invoke-Test @("test", "-p", "icelines-fetch")
     }
+    "ci-web" {
+        Invoke-Test @("test", "-p", "icelines-web")
+    }
+    "ci-site" {
+        Invoke-Test @("test", "-p", "icelines-site")
+    }
     "ci-all" {
         Invoke-Test @("test")
+    }
+    "ci-cli-lib" {
+        Invoke-Test @("test", "-p", "icelines-cli", "--lib")
+    }
+    "ci-cli-tui" {
+        Invoke-Test @("test", "-p", "icelines-cli", "--bin", "icelines")
+    }
+    "ci-cli-art-ross" {
+        Invoke-Test @("test", "-p", "icelines-cli", "--test", "art_ross_a0_parity", "--test", "art_ross_a2_executor", "--test", "art_ross_a5_explain", "--test", "art_ross_w14_semantic", "--test", "art_ross_w14b_goalies", "--test", "art_ross_w15_trades", "--test", "art_ross_w23_tui_filter", "--test", "art_ross_w25_career_filter")
+    }
+    "ci-cli-lindsay" {
+        Invoke-Test @("test", "-p", "icelines-cli", "--test", "lindsay_l3_golden", "--test", "lindsay_l5_subprocess")
+    }
+    "ci-cli-persona" {
+        Invoke-Test @("test", "-p", "icelines-cli", "--test", "persona_foster", "--test", "persona_masterton_standalone", "--test", "persona_scenarios", "--test", "persona_wave2", "--test", "persona_wave3", "--test", "persona_wave4", "--test", "persona_wave5", "--test", "persona_wave6", "--test", "persona_wave7", "--test", "persona_wave9", "--test", "persona_wave10", "--test", "persona_wave11", "--test", "persona_wave16", "--test", "persona_wave18", "--test", "persona_wave20", "--test", "persona_wave23", "--test", "persona_wave25")
+    }
+    "ci-cli-smoke" {
+        Invoke-Test @("test", "-p", "icelines-cli", "--test", "foster_capability_matrix", "--test", "proof_lib_smoke")
     }
     "ci-clippy" {
         Invoke-Cargo @("clippy", "--", "-D", "warnings")
@@ -122,7 +184,10 @@ switch ($Slice) {
         Invoke-Cargo @("build", "--release", "-p", "icelines-cli")
     }
     "ci-system" {
-        Invoke-Test @("test", "-p", "icelines-cli", "--test", "system_tests")
+        Invoke-Test @("test", "-p", "icelines-cli", "--test", "system_tests", "--test", "system_tui_experiences")
+    }
+    "ci-docs" {
+        Invoke-Test @("test", "--workspace", "--doc")
     }
     "tui-snapshots" {
         Invoke-Test @("test", "-p", "icelines-cli", "--bin", "icelines", "tui::screens::app_snapshot_tests")

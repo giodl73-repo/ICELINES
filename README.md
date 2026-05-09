@@ -343,9 +343,10 @@ Windows-friendly slices:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 list
-powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-all        # same as CI "All tests"
-powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-clippy     # same as CI clippy gate
-powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 tui-snapshots # app snapshot module only
+powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-query        # Tests / query
+powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-cli-tui      # Tests / cli-tui-bin
+powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-clippy       # Quality / clippy
+powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 tui-snapshots   # app snapshot module only
 ```
 
 ---

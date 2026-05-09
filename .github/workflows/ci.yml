@@ -9,6 +9,7 @@ on:
       - 'Cargo.toml'
       - 'Cargo.lock'
       - '.github/workflows/ci.yml'
+      - 'scripts/test-slice.ps1'
   pull_request:
     branches: [master]
     paths:
@@ -16,15 +17,25 @@ on:
       - 'tests/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
+      - '.github/workflows/ci.yml'
+      - 'scripts/test-slice.ps1'
 
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
 
 jobs:
-  test:
-    name: Test Suite
+  quality:
+    name: Quality / ${{ matrix.area }}
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - area: fmt
+            command: cargo fmt --check
+          - area: clippy
+            command: cargo clippy -- -D warnings
 
     steps:
       - uses: actions/checkout@v4
@@ -46,32 +57,96 @@ jobs:
             ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}-
             ${{ runner.os }}-cargo-
 
-      - name: L0 — Unit tests (icelines-core)
-        run: cargo test -p icelines-core --lib
+      - name: Run ${{ matrix.area }}
+        run: ${{ matrix.command }}
 
-      - name: L1 — Integration tests (icelines-fetch)
-        run: cargo test -p icelines-fetch
+  tests:
+    name: Tests / ${{ matrix.area }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - area: core-lib
+            command: cargo test -p icelines-core --lib
+          - area: core-integration
+            command: cargo test -p icelines-core --tests
+          - area: query
+            command: cargo test -p icelines-query
+          - area: fetch
+            command: cargo test -p icelines-fetch
+          - area: web
+            command: cargo test -p icelines-web
+          - area: site
+            command: cargo test -p icelines-site
+          - area: cli-lib
+            command: cargo test -p icelines-cli --lib
+          - area: cli-tui-bin
+            command: cargo test -p icelines-cli --bin icelines
+          - area: cli-art-ross
+            command: cargo test -p icelines-cli --test art_ross_a0_parity --test art_ross_a2_executor --test art_ross_a5_explain --test art_ross_w14_semantic --test art_ross_w14b_goalies --test art_ross_w15_trades --test art_ross_w23_tui_filter --test art_ross_w25_career_filter
+          - area: cli-lindsay
+            command: cargo test -p icelines-cli --test lindsay_l3_golden --test lindsay_l5_subprocess
+          - area: cli-persona
+            command: cargo test -p icelines-cli --test persona_foster --test persona_masterton_standalone --test persona_scenarios --test persona_wave2 --test persona_wave3 --test persona_wave4 --test persona_wave5 --test persona_wave6 --test persona_wave7 --test persona_wave9 --test persona_wave10 --test persona_wave11 --test persona_wave16 --test persona_wave18 --test persona_wave20 --test persona_wave23 --test persona_wave25
+          - area: cli-system
+            command: cargo test -p icelines-cli --test system_tests --test system_tui_experiences
+          - area: cli-smoke
+            command: cargo test -p icelines-cli --test foster_capability_matrix --test proof_lib_smoke
+          - area: doc-tests
+            command: cargo test --workspace --doc
 
-      - name: All tests
-        run: cargo test
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Clippy (zero warnings)
-        run: cargo clippy -- -D warnings
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
 
-      - name: Format check
-        run: cargo fmt --check
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}-${{ hashFiles('icelines-*/**/*.rs') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}-
+            ${{ runner.os }}-cargo-
+
+      - name: Run ${{ matrix.area }}
+        run: ${{ matrix.command }}
+
+  release:
+    name: Build / release CLI
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}-${{ hashFiles('icelines-*/**/*.rs') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}-
+            ${{ runner.os }}-cargo-
 
       - name: Build release binary
         run: cargo build --release -p icelines-cli
 
-      - name: L2 — System tests
-        run: cargo test -p icelines-cli --test system_tests
-
   coverage:
-    name: Coverage Gate (icelines-core ≥ 80%)
+    name: Coverage Gate (icelines-core >= 80%)
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: llvm-tools
@@ -88,5 +163,5 @@ jobs:
             target
           key: ${{ runner.os }}-cov-${{ hashFiles('Cargo.lock') }}
 
-      - name: Check icelines-core coverage ≥ 80%
+      - name: Check icelines-core coverage >= 80%
         run: cargo llvm-cov -p icelines-core --lib --fail-under-lines 80
