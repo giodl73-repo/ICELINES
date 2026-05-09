@@ -154,6 +154,10 @@ pub enum Commands {
     #[command(subcommand)]
     Report(ReportSubcommand),
 
+    /// Preview fantasy poacher watch rules.
+    #[command(subcommand)]
+    Watch(WatchSubcommand),
+
     /// Manage named data snapshots.
     #[command(subcommand)]
     Snapshot(SnapshotSubcommand),
@@ -969,6 +973,69 @@ pub enum ReportSubcommand {
         /// Write report to path. Pass '-' or omit for stdout.
         #[arg(long, value_name = "PATH")]
         out: Option<std::path::PathBuf>,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum WatchSubcommand {
+    /// Show default poacher watch rules.
+    Rules {
+        /// Season id, e.g. 20252026. Defaults to configured season.
+        #[arg(long)]
+        season: Option<String>,
+
+        /// Regular season or playoffs.
+        #[arg(long = "type", value_enum, default_value_t = QuerySeasonType::Regular)]
+        season_type: QuerySeasonType,
+
+        /// Emit WatchRulesView as JSON.
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Preview a player-specific watch rule.
+    Player {
+        /// Player name to watch.
+        player: String,
+
+        /// Trigger label, e.g. pp1, top-six, available.
+        #[arg(long = "when", default_value = "promotion")]
+        when: String,
+
+        /// Season id, e.g. 20252026. Defaults to configured season.
+        #[arg(long)]
+        season: Option<String>,
+
+        /// Regular season or playoffs.
+        #[arg(long = "type", value_enum, default_value_t = QuerySeasonType::Regular)]
+        season_type: QuerySeasonType,
+
+        /// Emit WatchRulesView as JSON.
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Preview a team deployment watch rule.
+    Deployment {
+        /// Team abbreviation to watch.
+        #[arg(long)]
+        team: Option<String>,
+
+        /// Watch for line-change events.
+        #[arg(long = "line-change")]
+        line_change: bool,
+
+        /// Season id, e.g. 20252026. Defaults to configured season.
+        #[arg(long)]
+        season: Option<String>,
+
+        /// Regular season or playoffs.
+        #[arg(long = "type", value_enum, default_value_t = QuerySeasonType::Regular)]
+        season_type: QuerySeasonType,
+
+        /// Emit WatchRulesView as JSON.
+        #[arg(long)]
+        json: bool,
     },
 }
 

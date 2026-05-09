@@ -275,6 +275,9 @@ Initial implementation note:
 - `icelines report poach` is wired as the first report surface over
   `PoachReportView`, with markdown output by default and full report JSON via
   `--json`. `watch` and weekly reports remain pending.
+- `icelines watch rules`, `icelines watch player`, and
+  `icelines watch deployment` are wired as preview surfaces over
+  `WatchRulesView`. Persistence and fired-alert history remain pending.
 
 ---
 

@@ -15,7 +15,7 @@ mod tui;
 
 use anyhow::Context;
 use clap::Parser;
-use cli::{Cli, Commands, FantasySubcommand, QuerySubcommand, ReportSubcommand};
+use cli::{Cli, Commands, FantasySubcommand, QuerySubcommand, ReportSubcommand, WatchSubcommand};
 use config::Config;
 
 /// Post-LP review fix #4 — Reset SIGPIPE to SIG_DFL on Unix so a
@@ -155,6 +155,52 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                     top,
                     json,
                     out,
+                })
+                .await?;
+            }
+        },
+        Commands::Watch(sub) => match sub {
+            WatchSubcommand::Rules {
+                season,
+                season_type,
+                json,
+            } => {
+                commands::poach::run_watch_rules(commands::poach::WatchRulesArgs {
+                    season,
+                    season_type,
+                    json,
+                })
+                .await?;
+            }
+            WatchSubcommand::Player {
+                player,
+                when,
+                season,
+                season_type,
+                json,
+            } => {
+                commands::poach::run_watch_player(commands::poach::WatchPlayerArgs {
+                    player,
+                    when,
+                    season,
+                    season_type,
+                    json,
+                })
+                .await?;
+            }
+            WatchSubcommand::Deployment {
+                team,
+                line_change,
+                season,
+                season_type,
+                json,
+            } => {
+                commands::poach::run_watch_deployment(commands::poach::WatchDeploymentArgs {
+                    team,
+                    line_change,
+                    season,
+                    season_type,
+                    json,
                 })
                 .await?;
             }

@@ -3,14 +3,17 @@ use std::path::PathBuf;
 use anyhow::{bail, Context};
 
 use icelines_core::{
-    model::{Position, TeamAbbr},
+    model::{Position, Season, TeamAbbr},
     view_model::{
-        poach_report_context, PoachBoardView, PoachQuery, PoachReportSection, PoachReportView,
+        poach_report_context, AvailabilityState, DeploymentSignal, PoachBoardView, PoachQuery,
+        PoachReportSection, PoachReportView, SourceKind, SourceState, ViewContext, ViewWindow,
+        WatchRule, WatchRuleTrigger, WatchRulesView,
     },
 };
 
 use crate::cli::QuerySeasonType;
-use crate::commands::players::load_repo_for_season;
+use crate::commands::players::{load_repo_for_season, validate_bundled_season};
+use crate::config::Config;
 
 pub struct PoachArgs {
     pub season: Option<String>,
@@ -33,6 +36,28 @@ pub struct PoachReportArgs {
     pub top: u16,
     pub json: bool,
     pub out: Option<PathBuf>,
+}
+
+pub struct WatchRulesArgs {
+    pub season: Option<String>,
+    pub season_type: QuerySeasonType,
+    pub json: bool,
+}
+
+pub struct WatchPlayerArgs {
+    pub player: String,
+    pub when: String,
+    pub season: Option<String>,
+    pub season_type: QuerySeasonType,
+    pub json: bool,
+}
+
+pub struct WatchDeploymentArgs {
+    pub team: Option<String>,
+    pub line_change: bool,
+    pub season: Option<String>,
+    pub season_type: QuerySeasonType,
+    pub json: bool,
 }
 
 pub async fn run(args: PoachArgs) -> anyhow::Result<()> {
@@ -59,6 +84,50 @@ pub async fn run_report_poach(args: PoachReportArgs) -> anyhow::Result<()> {
         render_report_markdown(&report)
     };
     write_or_print(args.out.as_ref(), &body)
+}
+
+pub async fn run_watch_rules(args: WatchRulesArgs) -> anyhow::Result<()> {
+    let context = watch_context(args.season.as_deref(), args.season_type)?;
+    emit_watch_view(&default_watch_rules_view(context), args.json)
+}
+
+pub async fn run_watch_player(args: WatchPlayerArgs) -> anyhow::Result<()> {
+    let context = watch_context(args.season.as_deref(), args.season_type)?;
+    let view = WatchRulesView {
+        context,
+        rules: vec![player_watch_rule(&args.player, &args.when)],
+        warnings: Vec::new(),
+    };
+    emit_watch_view(&view, args.json)
+}
+
+pub async fn run_watch_deployment(args: WatchDeploymentArgs) -> anyhow::Result<()> {
+    let context = watch_context(args.season.as_deref(), args.season_type)?;
+    let team = args.team.map(|team| TeamAbbr(team.trim().to_uppercase()));
+    let label = if args.line_change {
+        "Deployment line-change watch"
+    } else {
+        "Deployment promotion watch"
+    };
+    let view = WatchRulesView {
+        context,
+        rules: vec![WatchRule {
+            id: "deployment-preview".to_string(),
+            label: match &team {
+                Some(team) => format!("{label} for {}", team.as_str()),
+                None => label.to_string(),
+            },
+            enabled: true,
+            trigger: WatchRuleTrigger::PlayerPromoted {
+                player_id: None,
+                evidence: DeploymentSignal::Unknown,
+            },
+            last_fired: None,
+            unsupported_sources: vec![SourceKind::Shifts],
+        }],
+        warnings: Vec::new(),
+    };
+    emit_watch_view(&view, args.json)
 }
 
 fn build_board(args: PoachArgs) -> anyhow::Result<PoachBoardView> {
@@ -177,6 +246,176 @@ fn write_or_print(out: Option<&PathBuf>, body: &str) -> anyhow::Result<()> {
         }
     }
     Ok(())
+}
+
+fn watch_context(
+    season: Option<&str>,
+    season_type: QuerySeasonType,
+) -> anyhow::Result<ViewContext> {
+    let cfg = Config::load()?;
+    let season_str = match season {
+        Some(season) => {
+            validate_bundled_season(season)?;
+            season.to_string()
+        }
+        None => cfg.season_str(),
+    };
+    let season_u32 = season_str
+        .parse()
+        .map_err(|_| anyhow::anyhow!("season '{season_str}' is not a YYYYZZZZ id"))?;
+    let mut context = ViewContext::new(ViewWindow::new(Season(season_u32), season_type.to_core()));
+    context.completeness = icelines_core::Completeness::Partial;
+    context.source_state = vec![
+        SourceState::complete(SourceKind::Roster),
+        SourceState::missing(SourceKind::Shifts),
+        SourceState::missing(SourceKind::Schedule),
+        SourceState::missing(SourceKind::FantasyImport),
+    ];
+    Ok(context)
+}
+
+fn default_watch_rules_view(context: ViewContext) -> WatchRulesView {
+    WatchRulesView {
+        context,
+        rules: vec![
+            WatchRule {
+                id: "category-hits-pace".to_string(),
+                label: "Category specialist crosses hits threshold".to_string(),
+                enabled: true,
+                trigger: WatchRuleTrigger::CategoryThreshold {
+                    category: "hits".to_string(),
+                    threshold: 200.0,
+                },
+                last_fired: None,
+                unsupported_sources: Vec::new(),
+            },
+            WatchRule {
+                id: "category-blocks-pace".to_string(),
+                label: "Category specialist crosses blocks threshold".to_string(),
+                enabled: true,
+                trigger: WatchRuleTrigger::CategoryThreshold {
+                    category: "blocks".to_string(),
+                    threshold: 120.0,
+                },
+                last_fired: None,
+                unsupported_sources: Vec::new(),
+            },
+            WatchRule {
+                id: "deployment-promotion".to_string(),
+                label: "Player promotion from deployment signal".to_string(),
+                enabled: true,
+                trigger: WatchRuleTrigger::PlayerPromoted {
+                    player_id: None,
+                    evidence: DeploymentSignal::Unknown,
+                },
+                last_fired: None,
+                unsupported_sources: vec![SourceKind::Shifts],
+            },
+            WatchRule {
+                id: "goalie-back-to-back".to_string(),
+                label: "Goalie back-to-back start candidate".to_string(),
+                enabled: true,
+                trigger: WatchRuleTrigger::GoalieBackToBackStart { team: None },
+                last_fired: None,
+                unsupported_sources: vec![SourceKind::Schedule],
+            },
+            WatchRule {
+                id: "availability-change".to_string(),
+                label: "Watched player becomes available".to_string(),
+                enabled: true,
+                trigger: WatchRuleTrigger::AvailabilityChanged {
+                    player_id: None,
+                    state: AvailabilityState::Unknown,
+                },
+                last_fired: None,
+                unsupported_sources: vec![SourceKind::FantasyImport],
+            },
+        ],
+        warnings: Vec::new(),
+    }
+}
+
+fn player_watch_rule(player: &str, trigger: &str) -> WatchRule {
+    let normalized_trigger = trigger.trim().to_ascii_lowercase();
+    let (rule_trigger, unsupported_sources) = match normalized_trigger.as_str() {
+        "available" | "availability" => (
+            WatchRuleTrigger::AvailabilityChanged {
+                player_id: None,
+                state: AvailabilityState::Unknown,
+            },
+            vec![SourceKind::FantasyImport],
+        ),
+        "pp1" | "pp2" | "top-six" | "promotion" | "line-change" => (
+            WatchRuleTrigger::PlayerPromoted {
+                player_id: None,
+                evidence: DeploymentSignal::Unknown,
+            },
+            vec![SourceKind::Shifts],
+        ),
+        _ => (
+            WatchRuleTrigger::PlayerPromoted {
+                player_id: None,
+                evidence: DeploymentSignal::Unknown,
+            },
+            vec![SourceKind::Shifts],
+        ),
+    };
+
+    WatchRule {
+        id: format!("player-{}", slug(player)),
+        label: format!("Watch {player} when {normalized_trigger}"),
+        enabled: true,
+        trigger: rule_trigger,
+        last_fired: None,
+        unsupported_sources,
+    }
+}
+
+fn emit_watch_view(view: &WatchRulesView, json: bool) -> anyhow::Result<()> {
+    if json {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(view).context("serializing watch rules")?
+        );
+        return Ok(());
+    }
+
+    println!("{:<28} {:<7} Unsupported", "Rule", "Enabled");
+    for rule in &view.rules {
+        let unsupported = if rule.unsupported_sources.is_empty() {
+            "-".to_string()
+        } else {
+            rule.unsupported_sources
+                .iter()
+                .map(|source| format!("{source:?}").to_ascii_lowercase())
+                .collect::<Vec<_>>()
+                .join(",")
+        };
+        println!(
+            "{:<28} {:<7} {}",
+            truncate(&rule.label, 28),
+            if rule.enabled { "yes" } else { "no" },
+            unsupported
+        );
+    }
+    Ok(())
+}
+
+fn slug(value: &str) -> String {
+    value
+        .chars()
+        .filter_map(|ch| {
+            if ch.is_ascii_alphanumeric() {
+                Some(ch.to_ascii_lowercase())
+            } else if ch.is_whitespace() || ch == '-' || ch == '_' {
+                Some('-')
+            } else {
+                None
+            }
+        })
+        .collect::<String>()
+        .trim_matches('-')
+        .to_string()
 }
 
 fn normalize_categories(categories: Vec<String>) -> Vec<String> {
@@ -330,5 +569,37 @@ mod tests {
         assert!(md.contains("# Fantasy Poacher"));
         assert!(md.contains("schedule: unavailable"));
         assert!(md.contains("No candidates matched this report."));
+    }
+
+    #[test]
+    fn l0_watch_default_rules_disclose_unsupported_sources() {
+        let context = icelines_core::ViewContext::new(icelines_core::ViewWindow::new(
+            icelines_core::Season(20252026),
+            icelines_core::season_stats::SeasonType::Regular,
+        ));
+        let view = default_watch_rules_view(context);
+
+        assert_eq!(view.rules.len(), 5);
+        assert!(view
+            .rules
+            .iter()
+            .any(|rule| rule.unsupported_sources.contains(&SourceKind::Shifts)));
+        assert!(view.rules.iter().any(|rule| rule
+            .unsupported_sources
+            .contains(&SourceKind::FantasyImport)));
+    }
+
+    #[test]
+    fn l0_watch_player_rule_names_player_and_trigger() {
+        let rule = player_watch_rule("Matthew Knies", "pp1");
+
+        assert_eq!(rule.id, "player-matthew-knies");
+        assert!(rule.label.contains("Matthew Knies"));
+        assert!(rule.unsupported_sources.contains(&SourceKind::Shifts));
+    }
+
+    #[test]
+    fn l0_watch_slug_strips_punctuation() {
+        assert_eq!(slug("A. Player Jr."), "a-player-jr");
     }
 }

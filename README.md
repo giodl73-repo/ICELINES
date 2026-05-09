@@ -223,6 +223,8 @@ icelines fantasy league-switch "My League" # switch active league
 icelines poach --category hits,blocks --top 15
 icelines poach --team SEA --pos LW --json
 icelines report poach --category shots --top 10 --out poach.md
+icelines watch rules
+icelines watch player "Matthew Knies" --when pp1
 
 # Trades
 icelines fantasy trade "Bouchard" --to-team "Other" --for-player "Werenski"          # simulate
