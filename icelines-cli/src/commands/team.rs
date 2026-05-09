@@ -1,7 +1,7 @@
 use crate::config::Config;
-use crate::render::terminal::render_team_card;
+use crate::render::terminal::render_team_depth_view;
 use anyhow::bail;
-use icelines_core::{model::Season, season_stats::SeasonType, DepthChartBuilder, TeamAbbr};
+use icelines_core::{model::Season, season_stats::SeasonType, TeamAbbr, TeamDepthView};
 use icelines_fetch::{snapshot::SnapshotStore, stats_loader::load_into_repo};
 
 pub async fn run(team: String, _scheme: Option<String>, no_color: bool) -> anyhow::Result<()> {
@@ -28,7 +28,8 @@ pub async fn run(team: String, _scheme: Option<String>, no_color: bool) -> anyho
         bail!("no skaters found for {} in data", team_abbr);
     }
 
-    let chart = DepthChartBuilder::build_views(team_abbr, season, &views);
-    render_team_card(&chart, no_color);
+    let view =
+        TeamDepthView::from_repository(&outcome.repo, team_abbr, season, SeasonType::Regular);
+    render_team_depth_view(&view, no_color);
     Ok(())
 }

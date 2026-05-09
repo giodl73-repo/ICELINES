@@ -2,7 +2,10 @@
 
 use comfy_table::{Cell, Color, Table};
 use icelines_core::stats_repository::PlayerView;
-use icelines_core::{classify_fit, DepthChart, DepthChartSlot, FitClass};
+use icelines_core::view_model::{DepthGoalieSlot, DepthPlayerSlot};
+use icelines_core::{
+    classify_fit, DepthChart, DepthChartSlot, FitClass, MetricValue, TeamDepthView,
+};
 use owo_colors::OwoColorize;
 
 // ── Color helpers ─────────────────────────────────────────────────────────────
@@ -46,6 +49,66 @@ fn empty_cell() -> Cell {
 ///
 /// Forwards are shown in a 4×3 grid (lines × [LW, C, RW]).
 /// Defense is shown in a 3×2 grid (pairs × [D, D]).
+fn metric_f64(metrics: &[icelines_core::MetricCell], key: &str) -> Option<f64> {
+    metrics.iter().find_map(|metric| {
+        if metric.key.0 == key {
+            match metric.value {
+                MetricValue::Decimal(value) => Some(value),
+                MetricValue::Integer(value) => Some(value as f64),
+                MetricValue::Missing | MetricValue::Text(_) => None,
+            }
+        } else {
+            None
+        }
+    })
+}
+
+fn metric_u32(metrics: &[icelines_core::MetricCell], key: &str) -> Option<u32> {
+    metrics.iter().find_map(|metric| {
+        if metric.key.0 == key {
+            match metric.value {
+                MetricValue::Integer(value) => u32::try_from(value).ok(),
+                _ => None,
+            }
+        } else {
+            None
+        }
+    })
+}
+
+fn view_slot_cell(slot: &DepthPlayerSlot, no_color: bool) -> Cell {
+    let pace = metric_f64(&slot.metrics, "pace_82");
+    let pace_str = pace.map(|p| format!(" {p:.1}")).unwrap_or_default();
+
+    if no_color {
+        let prefix = pace
+            .map(|p| format!("[{}] ", classify_fit(p, slot.position).label()))
+            .unwrap_or_default();
+        Cell::new(format!("{}{}{}", prefix, slot.display_name, pace_str))
+    } else {
+        let color = pace
+            .map(|p| fit_color(classify_fit(p, slot.position)))
+            .unwrap_or(Color::Reset);
+        Cell::new(format!("{}{}", slot.display_name, pace_str)).fg(color)
+    }
+}
+
+fn goalie_line(slot: &DepthGoalieSlot) -> String {
+    let gp = metric_u32(&slot.metrics, "gp")
+        .map(|v| v.to_string())
+        .unwrap_or_else(|| "â€”".to_owned());
+    let starts = metric_u32(&slot.metrics, "starts")
+        .map(|v| v.to_string())
+        .unwrap_or_else(|| "â€”".to_owned());
+    let save_pct = metric_f64(&slot.metrics, "save_pct")
+        .map(|v| format!("{v:.3}"))
+        .unwrap_or_else(|| "â€”".to_owned());
+    format!(
+        "  {:<24} {:<8} GP {}  GS {}  SV% {}",
+        slot.display_name, slot.role, gp, starts, save_pct
+    )
+}
+
 pub fn render_team_card(chart: &DepthChart, no_color: bool) {
     println!("\n=== {} — {} ===\n", chart.team.as_str(), chart.season);
 
@@ -137,6 +200,85 @@ pub fn render_team_card(chart: &DepthChart, no_color: bool) {
 /// PlayerView<'_> directly. Caller is responsible for filtering /
 /// sorting / position-filtering before passing the slice in (pace
 /// score is read via `view.pace_82()`).
+pub fn render_team_depth_view(view: &TeamDepthView, no_color: bool) {
+    println!(
+        "\n=== {} â€” {} ===\n",
+        view.team.as_str(),
+        view.context.window.season
+    );
+
+    println!("FORWARDS");
+    let mut fwd_table = Table::new();
+    fwd_table.set_header(vec!["Line", "LW", "C", "RW"]);
+
+    for line in &view.forward_lines {
+        let line_label = format!("L{}", line.line);
+        let lw = line
+            .left
+            .as_ref()
+            .map(|s| view_slot_cell(s, no_color))
+            .unwrap_or_else(empty_cell);
+        let c = line
+            .center
+            .as_ref()
+            .map(|s| view_slot_cell(s, no_color))
+            .unwrap_or_else(empty_cell);
+        let rw = line
+            .right
+            .as_ref()
+            .map(|s| view_slot_cell(s, no_color))
+            .unwrap_or_else(empty_cell);
+        fwd_table.add_row(vec![Cell::new(line_label), lw, c, rw]);
+    }
+    println!("{fwd_table}");
+
+    println!("\nDEFENSE");
+    let mut def_table = Table::new();
+    def_table.set_header(vec!["Pair", "D1", "D2"]);
+
+    for pair in &view.defense_pairs {
+        let pair_label = format!("P{}", pair.pair);
+        let left = pair
+            .left
+            .as_ref()
+            .map(|s| view_slot_cell(s, no_color))
+            .unwrap_or_else(empty_cell);
+        let right = pair
+            .right
+            .as_ref()
+            .map(|s| view_slot_cell(s, no_color))
+            .unwrap_or_else(empty_cell);
+        def_table.add_row(vec![Cell::new(pair_label), left, right]);
+    }
+    println!("{def_table}");
+
+    if !view.goalies.is_empty() {
+        println!("\nGOALIES");
+        for goalie in &view.goalies {
+            println!("{}", goalie_line(goalie));
+        }
+    }
+
+    if !view.extras.is_empty() {
+        println!("\nAdditional ({}):", view.extras.len());
+        for slot in &view.extras {
+            let ppg = metric_f64(&slot.metrics, "pace_82")
+                .map(|p| format!("{:.2}", p / 82.0))
+                .unwrap_or_else(|| "â€”".to_owned());
+            let gp = metric_u32(&slot.metrics, "gp")
+                .map(|g| g.to_string())
+                .unwrap_or_else(|| "â€”".to_owned());
+            println!(
+                "  {:<24} {}  {}gp  {}",
+                slot.display_name,
+                slot.position.abbreviation(),
+                gp,
+                ppg
+            );
+        }
+    }
+}
+
 pub fn render_rank_table(views: &[&PlayerView<'_>], top: usize, no_color: bool) {
     if views.is_empty() {
         println!("No rankable players found.");

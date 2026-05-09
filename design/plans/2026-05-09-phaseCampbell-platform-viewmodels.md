@@ -219,13 +219,17 @@ Closeout so far:
   rows.
 - Web `/goalies` and `/api/v1/goalies` now build a `GoaliesView` before
   projecting the existing HTML and JSON DTO rows.
+- CLI `team <ABBR>` now builds `TeamDepthView` and renders the terminal depth
+  chart from that ViewModel while keeping the legacy `DepthChart` renderer
+  available for existing callers.
 - `GoaliesView::from_player_views` lets renderer adapters consume already
   prepared player rows without duplicating goalie metric semantics.
 - Verified the adapter with `cargo test -p icelines-cli --test system_tests
   query_goalies -- --nocapture`, `cargo test -p icelines-cli
   tui::screens::goalies -- --nocapture`, `cargo check -p icelines-cli`,
   `cargo check -p icelines-web`, `cargo test -p icelines-web goalies --
-  --nocapture`, and the `viewmodel` test slice.
+  --nocapture`, `cargo test -p icelines-cli team -- --nocapture`, and the
+  `viewmodel` test slice.
 
 ---
 
