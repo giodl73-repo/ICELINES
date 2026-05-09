@@ -1,9 +1,11 @@
 use std::path::PathBuf;
 
 use anyhow::{bail, Context};
+use serde::Serialize;
 
 use icelines_core::{
     model::{Position, Season, TeamAbbr},
+    name::normalize_name,
     view_model::{
         poach_report_context, AvailabilityState, DeploymentSignal, PoachBoardView, PoachPlayerRow,
         PoachQuery, PoachReportSection, PoachReportView, RecommendationKind, ReportSectionRef,
@@ -15,6 +17,7 @@ use icelines_core::{
 use crate::cli::QuerySeasonType;
 use crate::commands::players::{load_repo_for_season, validate_bundled_season};
 use crate::config::Config;
+use crate::db::{GroupDb, MemberKind};
 
 pub struct PoachArgs {
     pub season: Option<String>,
@@ -55,6 +58,16 @@ pub struct WeeklyReportArgs {
 pub struct WatchRulesArgs {
     pub season: Option<String>,
     pub season_type: QuerySeasonType,
+    pub json: bool,
+}
+
+pub struct WatchListArgs {
+    pub json: bool,
+}
+
+pub struct WatchNoteArgs {
+    pub player: String,
+    pub reason: String,
     pub json: bool,
 }
 
@@ -123,6 +136,34 @@ pub async fn run_report_weekly(args: WeeklyReportArgs) -> anyhow::Result<()> {
 pub async fn run_watch_rules(args: WatchRulesArgs) -> anyhow::Result<()> {
     let context = watch_context(args.season.as_deref(), args.season_type)?;
     emit_watch_view(&default_watch_rules_view(context), args.json)
+}
+
+pub async fn run_watch_list(args: WatchListArgs) -> anyhow::Result<()> {
+    let db = GroupDb::open()?;
+    let rows = watchlist_rows(&db)?;
+    emit_watchlist_rows(&rows, args.json)
+}
+
+pub async fn run_watch_note(args: WatchNoteArgs) -> anyhow::Result<()> {
+    let db = GroupDb::open()?;
+    ensure_watchlist(&db)?;
+    let key = normalize_name(&args.player);
+    db.add_member_kind("Watchlist", &key, MemberKind::Player)?;
+    db.upsert_watch_note(MemberKind::Player, &key, &args.reason, "manual")?;
+    let row = watchlist_row_for(&db, MemberKind::Player, key)?;
+    if args.json {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&row).context("serializing watch note")?
+        );
+    } else {
+        println!(
+            "Watching '{}': {}",
+            args.player,
+            row.reason.as_deref().unwrap_or("-")
+        );
+    }
+    Ok(())
 }
 
 pub async fn run_watch_player(args: WatchPlayerArgs) -> anyhow::Result<()> {
@@ -520,6 +561,74 @@ fn emit_watch_view(view: &WatchRulesView, json: bool) -> anyhow::Result<()> {
     Ok(())
 }
 
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+struct WatchlistRow {
+    kind: String,
+    key: String,
+    reason: Option<String>,
+    source: Option<String>,
+    updated_at: Option<String>,
+}
+
+fn ensure_watchlist(db: &GroupDb) -> anyhow::Result<()> {
+    let exists = db
+        .list_groups()?
+        .iter()
+        .any(|group| group.name == "Watchlist");
+    if !exists {
+        db.create_group("Watchlist", "Fantasy poacher watchlist")?;
+    }
+    Ok(())
+}
+
+fn watchlist_rows(db: &GroupDb) -> anyhow::Result<Vec<WatchlistRow>> {
+    match db.list_members_with_kind("Watchlist") {
+        Ok(members) => members
+            .into_iter()
+            .map(|(key, kind)| watchlist_row_for(db, kind, key))
+            .collect(),
+        Err(err) if err.to_string().contains("group 'Watchlist' not found") => Ok(Vec::new()),
+        Err(err) => Err(err),
+    }
+}
+
+fn watchlist_row_for(db: &GroupDb, kind: MemberKind, key: String) -> anyhow::Result<WatchlistRow> {
+    let note = db.watch_note(kind, &key)?;
+    Ok(WatchlistRow {
+        kind: kind.as_str().to_string(),
+        key,
+        reason: note.as_ref().map(|note| note.reason.clone()),
+        source: note.as_ref().map(|note| note.source.clone()),
+        updated_at: note.map(|note| note.updated_at),
+    })
+}
+
+fn emit_watchlist_rows(rows: &[WatchlistRow], json: bool) -> anyhow::Result<()> {
+    if json {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(rows).context("serializing watchlist")?
+        );
+        return Ok(());
+    }
+
+    if rows.is_empty() {
+        println!("Watchlist is empty. Add from TUI Poach with `w` or run `icelines watch note <player> <reason>`.");
+        return Ok(());
+    }
+
+    println!("{:<8} {:<28} Reason", "Kind", "Key");
+    for row in rows {
+        println!(
+            "{:<8} {:<28} {}",
+            row.kind,
+            truncate(&row.key, 28),
+            truncate(row.reason.as_deref().unwrap_or("-"), 80)
+        );
+    }
+    Ok(())
+}
+
 fn slug(value: &str) -> String {
     value
         .chars()
@@ -762,5 +871,40 @@ mod tests {
     #[test]
     fn l0_watch_slug_strips_punctuation() {
         assert_eq!(slug("A. Player Jr."), "a-player-jr");
+    }
+
+    #[test]
+    fn l0_watchlist_rows_include_notes() {
+        let db = GroupDb::open_in_memory().expect("open db");
+        db.create_group("Watchlist", "").expect("create watchlist");
+        db.add_member_kind("Watchlist", "matthew knies", MemberKind::Player)
+            .expect("add player");
+        db.upsert_watch_note(
+            MemberKind::Player,
+            "matthew knies",
+            "Poach score 72.0; PP1 promotion",
+            "manual",
+        )
+        .expect("note");
+
+        let rows = watchlist_rows(&db).expect("watchlist rows");
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].kind, "player");
+        assert_eq!(rows[0].key, "matthew knies");
+        assert_eq!(
+            rows[0].reason.as_deref(),
+            Some("Poach score 72.0; PP1 promotion")
+        );
+        assert_eq!(rows[0].source.as_deref(), Some("manual"));
+    }
+
+    #[test]
+    fn l0_watchlist_rows_missing_group_is_empty() {
+        let db = GroupDb::open_in_memory().expect("open db");
+
+        let rows = watchlist_rows(&db).expect("watchlist rows");
+
+        assert!(rows.is_empty());
     }
 }

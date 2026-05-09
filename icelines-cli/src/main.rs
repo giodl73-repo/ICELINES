@@ -186,6 +186,21 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             }
         },
         Commands::Watch(sub) => match sub {
+            WatchSubcommand::List { json } => {
+                commands::poach::run_watch_list(commands::poach::WatchListArgs { json }).await?;
+            }
+            WatchSubcommand::Note {
+                player,
+                reason,
+                json,
+            } => {
+                commands::poach::run_watch_note(commands::poach::WatchNoteArgs {
+                    player,
+                    reason: reason.join(" "),
+                    json,
+                })
+                .await?;
+            }
             WatchSubcommand::Rules {
                 season,
                 season_type,

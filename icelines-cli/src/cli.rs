@@ -1029,6 +1029,27 @@ pub enum ReportSubcommand {
 
 #[derive(Debug, Subcommand)]
 pub enum WatchSubcommand {
+    /// List the local fantasy poacher watchlist with stored reasons.
+    List {
+        /// Emit watchlist rows as JSON.
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Add/update a manual reason for a watched player.
+    Note {
+        /// Player name to watch.
+        player: String,
+
+        /// Freeform reason. Multiple words do not need quotes.
+        #[arg(required = true, num_args = 1..)]
+        reason: Vec<String>,
+
+        /// Emit the updated watch row as JSON.
+        #[arg(long)]
+        json: bool,
+    },
+
     /// Show default poacher watch rules.
     Rules {
         /// Season id, e.g. 20252026. Defaults to configured season.

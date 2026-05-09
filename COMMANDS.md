@@ -712,6 +712,8 @@ icelines group create "Watchlist"
 icelines group add "Watchlist" "McDavid"
 icelines group show "Watchlist"
 # Poach `w` also stores the current score/explanation as a watch reason.
+icelines watch list
+icelines watch note "Matthew Knies" "PP1 promotion and strong hits fit"
 
 # Personal-attendance tracker
 icelines games add ...                 # log games attended

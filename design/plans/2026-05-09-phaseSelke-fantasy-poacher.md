@@ -278,6 +278,9 @@ Initial implementation note:
 - `icelines watch rules`, `icelines watch player`, and
   `icelines watch deployment` are wired as preview surfaces over
   `WatchRulesView`. Persistence and fired-alert history remain pending.
+- `icelines watch list` reads the local `Watchlist` group with stored reasons,
+  and `icelines watch note <player> <reason>` creates/updates a manual watch
+  reason while keeping membership in the existing group model.
 - `icelines report weekly` is wired as a deterministic weekly prep report over
   `PoachReportView`, with top adds, category specialists, deployment risers,
   risk discounts, and watched-player-alert sections. Schedule/import/watch

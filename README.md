@@ -228,6 +228,8 @@ icelines report poach --category shots --top 10 --out poach.md
 icelines report weekly --league default --category hits,blocks
 icelines watch rules
 icelines watch player "Matthew Knies" --when pp1
+icelines watch list
+icelines watch note "Matthew Knies" "PP1 promotion and strong hits fit"
 icelines tui poach                     # press w to watch with a score/reason note
 icelines serve                         # web dashboard includes /poach, /watchlist, and /api/v1/poach
 
