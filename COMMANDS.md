@@ -1,5 +1,34 @@
 # IceLines — Command Reference
 
+## Test slices
+
+Use the slice runner while developing so you do not have to run the full
+workspace suite after every small change.
+
+```powershell
+pwsh scripts/test-slice.ps1 list             # show available slices
+pwsh scripts/test-slice.ps1 quick            # workspace compile + ViewModel tests
+pwsh scripts/test-slice.ps1 viewmodel        # Campbell ViewModel tests
+pwsh scripts/test-slice.ps1 cli-matrix       # Foster capability matrix
+pwsh scripts/test-slice.ps1 workspace-check  # compile all crates
+pwsh scripts/test-slice.ps1 full             # long gate: workspace --no-fail-fast
+```
+
+Add `-NoCapture` when you need test stdout:
+
+```powershell
+pwsh scripts/test-slice.ps1 viewmodel -NoCapture
+```
+
+Recommended rhythm:
+
+- focused code change: run the nearest slice;
+- cross-crate type changes: run `quick` or `workspace-check`;
+- before commit/push: run `full` when the change affects shared contracts or
+  multiple surfaces.
+
+---
+
 Single-page reference for the `icelines` CLI. Every subcommand is listed with a one-line description and 2-3 real examples. Designed so you can read it once and be productive.
 
 If you only have the binary, run `icelines docs` to print this content from inside the binary itself — no internet required.
