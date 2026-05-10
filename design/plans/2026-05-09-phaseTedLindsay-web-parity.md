@@ -1,7 +1,7 @@
 # Phase Ted Lindsay - web parity and web architecture
 
 **Date**: 2026-05-09
-**Status**: Draft - planned after Lester Patrick
+**Status**: In progress - TedLindsay.2 handler split landed
 **Trophy**: Ted Lindsay Award. Fit: the players' choice. This phase makes the browser surface something a regular hockey user would actually choose, while keeping it aligned with CLI and TUI.
 **Target release**: post-Campbell, post-Messier, and post-Lester Patrick
 **Estimated**: 4-7 sub-phases
@@ -129,22 +129,30 @@ starting point, not a mandate:
 - Shared row-projection and headshot helpers already moved into
   `icelines-web/src/handlers/shared.rs` so `lib.rs` no longer owns the
   cross-route projection seam.
+- 2026-05-09 wave: inline web handlers moved out of `lib.rs` into
+  `icelines-web/src/handlers/*.rs`. `lib.rs` now keeps the router, shared
+  module declarations, and the thin `handlers` facade.
 
 ```text
-icelines-web/src/handlers/mod.rs
+icelines-web/src/handlers/coming_soon.rs
+icelines-web/src/handlers/compare.rs
+icelines-web/src/handlers/depth.rs
+icelines-web/src/handlers/docs.rs
+icelines-web/src/handlers/favorites.rs
+icelines-web/src/handlers/game.rs
+icelines-web/src/handlers/goalies.rs
 icelines-web/src/handlers/home.rs
 icelines-web/src/handlers/leaders.rs
 icelines-web/src/handlers/player.rs
-icelines-web/src/handlers/team.rs
-icelines-web/src/handlers/goalies.rs
-icelines-web/src/handlers/depth.rs
-icelines-web/src/handlers/scores.rs
-icelines-web/src/handlers/schedule.rs
 icelines-web/src/handlers/playoffs.rs
+icelines-web/src/handlers/poach.rs
+icelines-web/src/handlers/schedule.rs
+icelines-web/src/handlers/scores.rs
+icelines-web/src/handlers/season_type.rs
+icelines-web/src/handlers/team.rs
 icelines-web/src/handlers/transactions.rs
-icelines-web/src/handlers/favorites.rs
-icelines-web/src/handlers/docs.rs
 icelines-web/src/handlers/not_found.rs
+icelines-web/src/handlers/shared.rs
 ```
 
 Keep `lib.rs` focused on:
@@ -158,6 +166,10 @@ Acceptance:
 - No route behavior changes.
 - Existing web tests pass.
 - `icelines-web/src/lib.rs` is reduced to a router/facade, not a handler monolith.
+
+Verification:
+
+- `cargo test -p icelines-web`
 
 ---
 
