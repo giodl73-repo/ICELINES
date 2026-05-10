@@ -51,17 +51,18 @@ surface still differs from CLI/TUI.
      `l2_query_goalies_cli_and_web_row_identity_match`.
    - Team depth: web JSON row identity is now fenced against
      `TeamDepthView` by `l1_team_json_rows_match_team_depth_view`;
+     CLI team output and empty checks build from `TeamDepthView`, including
+     the `TeamDepthView::is_empty` accessor;
      scoring-mode TUI chart now renders from `TeamDepthChartView` and is
      fenced by `l0_team_depth_chart_view_projects_tui_columns` plus
-     `l1_tui_depth_team_render_matches_team_depth_chart_view_first_player`;
-     CLI adapter alignment remains before marking the row `done`.
+     `l1_tui_depth_team_render_matches_team_depth_chart_view_first_player`.
    - Cross-team depth: web JSON row identity is now fenced against
      `DepthLeagueView` by `l1_depth_json_rows_match_depth_league_view`;
      TUI first-row projection is fenced by
      `l1_tui_depth_league_render_matches_depth_league_view_first_row`; TUI
      Enter navigation and league ranking render now use `DepthLeagueView`
-     ordering through `league_view_from_app`; CLI adapter and TUI team chart
-     alignment remain before marking the row `done`.
+     ordering through `league_view_from_app`; CLI adapter alignment remains
+     before marking the row `done`.
    - Player card: web JSON row identity is now fenced against
      `PlayerCardView` by `l1_player_json_rows_match_player_card_view`;
      TUI header/headshot projection now uses `PlayerCardView` and is fenced by

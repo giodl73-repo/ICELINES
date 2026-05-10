@@ -423,11 +423,24 @@ mod tests {
             Season(20242025),
             SeasonType::Regular,
         );
+        assert!(!depth.is_empty());
         assert_eq!(depth.forward_lines.len(), 4);
         assert!(depth.forward_lines.iter().any(|line| line
             .center
             .as_ref()
             .is_some_and(|slot| slot.display_name == "Connor McDavid")));
+    }
+
+    #[test]
+    fn team_depth_view_empty_accessor_reports_no_projected_players() {
+        let view = crate::view_model::TeamDepthView::from_player_views(
+            crate::model::TeamAbbr("EDM".to_string()),
+            Season(20242025),
+            SeasonType::Regular,
+            &[],
+        );
+
+        assert!(view.is_empty());
     }
 
     #[test]

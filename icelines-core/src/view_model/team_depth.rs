@@ -133,6 +133,18 @@ pub struct DepthTeamStrengthRow {
 }
 
 impl TeamDepthView {
+    pub fn is_empty(&self) -> bool {
+        self.forward_lines
+            .iter()
+            .all(|line| line.left.is_none() && line.center.is_none() && line.right.is_none())
+            && self
+                .defense_pairs
+                .iter()
+                .all(|pair| pair.left.is_none() && pair.right.is_none())
+            && self.goalies.is_empty()
+            && self.extras.is_empty()
+    }
+
     pub fn from_repository(
         repo: &StatsRepository,
         team: TeamAbbr,

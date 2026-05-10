@@ -20,16 +20,16 @@ pub async fn run(team: String, _scheme: Option<String>, no_color: bool) -> anyho
     let store = SnapshotStore::new(cfg.snapshot_dir());
     let outcome = load_into_repo(season, SeasonType::Regular, &store)
         .map_err(|e| anyhow::anyhow!("loading repo: {e}"))?;
-    let views = outcome
-        .repo
-        .team_roster(&team_abbr, season, SeasonType::Regular);
-
-    if views.is_empty() {
+    let view = TeamDepthView::from_repository(
+        &outcome.repo,
+        team_abbr.clone(),
+        season,
+        SeasonType::Regular,
+    );
+    if view.is_empty() {
         bail!("no skaters found for {} in data", team_abbr);
     }
 
-    let view =
-        TeamDepthView::from_repository(&outcome.repo, team_abbr, season, SeasonType::Regular);
     render_team_depth_view(&view, no_color);
     Ok(())
 }
