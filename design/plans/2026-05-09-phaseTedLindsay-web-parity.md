@@ -233,6 +233,9 @@ Progress:
   test and updated the surface matrix with the concrete test reference.
 - 2026-05-10: Replaced generic favorites/watchlist JSON test claims in the
   surface matrix with concrete route-test names.
+- 2026-05-10: Replaced remaining vague `planned/verify` web route claims for
+  scouting, fantasy, admin snapshots, and report toggles with explicit
+  not-mounted/deferred statuses.
 
 ---
 

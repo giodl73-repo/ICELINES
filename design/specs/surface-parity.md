@@ -53,7 +53,7 @@ a feature fully shipped.
 | Cross-team depth | `DepthLeagueView` | `depth` or equivalent | `tui depth` | `/depth` | `/api/v1/depth` | partial - web HTML and web JSON build `DepthLeagueView`; CLI/TUI adapter alignment remains | Ted Lindsay |
 | Compare/comps | `CompareView` | `query compare A B` | `tui comps <name>` | `/compare?...` | `/api/v1/compare?...` | partial - web HTML and web JSON build `CompareView`; CLI/TUI adapter alignment remains | Ted Lindsay |
 | Career/cohort leaders | `CareerView` | `query career --league ...` | player/favorites affordances | `/career` | `/api/v1/career` | partial - web HTML and web JSON build `CareerView`; CLI adapter alignment remains | Calder/Ted Lindsay |
-| Scouting report | `ReportView` | `scouting <name>` | player detail/report affordance | planned/verify | planned/verify | partial - report contract pending | Campbell/Ted Lindsay |
+| Scouting report | `ReportView` | `scouting <name>` | player detail/report affordance | not mounted | not mounted | partial - report contract pending; web route deferred | Campbell/Ted Lindsay |
 | Markdown export | `ReportView` | `export md <shape>` | n/a | n/a | n/a | partial - 5/7 shapes shipped | Campbell/Jim Gregory |
 
 ---
@@ -75,7 +75,7 @@ a feature fully shipped.
 | Feature | ViewModel | CLI | TUI | Web HTML | Web JSON | Status | Owner |
 |---|---|---|---|---|---|---|---|
 | Favorites/groups | `FavoritesView` | `group ...` | favorites/group affordances | `/favorites` | `/api/v1/favorites` | partial - web HTML/read JSON project membership through `FavoritesView`; web mutation normalization uses shared intent; richer nightly dashboard alignment remains | Ted Lindsay |
-| Fantasy league management | `FantasyLeagueView` | `fantasy ...` | groups/deep links | `/fantasy...` | planned/verify | deferred/partial - local-only stance remains | Ted Lindsay |
+| Fantasy league management | `FantasyLeagueView` | `fantasy ...` | groups/deep links | `/fantasy` stub only | not mounted | deferred - local CLI remains primary; web `/fantasy/*` fold-in is not shipped | Ted Lindsay |
 | Poacher board | `PoachBoardView` | `poach` | Poach screen | `/poach` | `/api/v1/poach` | implemented - shared board ViewModel across CLI/TUI/web/JSON | Selke |
 | Watch rules | `WatchRulesView` / `WatchlistView` | `watch ...` | watchlist workspace shows notes/rules/recent alerts; rule editor deferred | `/watchlist` | `/api/v1/watch-rules`; `/api/v1/watchlist` | partial - web watchlist HTML/JSON project notes through `WatchlistView`; web watch-rules JSON builds defaults plus persisted rules through `WatchRulesView`; editor/toggle UX remains deferred | Selke |
 | Poach/weekly reports | `PoachReportView` | `report poach`, `report weekly` | report viewer deferred | `/reports/poach`, `/reports/weekly` | CLI `--json`; board JSON at `/api/v1/poach` | implemented - markdown/JSON/HTML render from shared report ViewModel | Selke |
@@ -86,9 +86,9 @@ a feature fully shipped.
 
 | Feature | ViewModel | CLI | TUI | Web HTML | Web JSON | Status | Owner |
 |---|---|---|---|---|---|---|---|
-| Data install/list/remove | `DataStatusView` | `data ...` | admin overlay | admin/snapshots planned/verify | planned/verify | partial | Jim Gregory/Ted Lindsay |
-| Snapshot operations | `SnapshotView` | `snapshot ...` | admin overlay | `/admin/snapshots` planned/verify | `/api/v1/admin/snapshots` planned/verify | partial | Jim Gregory/Ted Lindsay |
-| Config/report toggles | `ConfigView` | `config ...` | reports overlay | reports/settings planned/verify | `/api/v1/reports` planned/verify | partial - web season-type mutation and read-side parsing use shared core support; report toggles remain planned | Jim Gregory/Ted Lindsay |
+| Data install/list/remove | `DataStatusView` | `data ...` | admin overlay | not mounted | not mounted | partial - CLI/TUI exist; web admin deferred to Jim Gregory | Jim Gregory/Ted Lindsay |
+| Snapshot operations | `SnapshotView` | `snapshot ...` | admin overlay | not mounted | not mounted | partial - CLI/TUI exist; web snapshot admin deferred to Jim Gregory | Jim Gregory/Ted Lindsay |
+| Config/report toggles | `ConfigView` | `config ...` | reports overlay | not mounted | not mounted | partial - web season-type mutation and read-side parsing use shared core support; report toggles remain planned | Jim Gregory/Ted Lindsay |
 | Docs reference | `DocsView` | `docs` | in-TUI docs overlay planned | `/docs` | n/a | partial - web docs render from `DocsView`; TUI overlay alignment remains | Lester Patrick/Ted Lindsay |
 
 ---
