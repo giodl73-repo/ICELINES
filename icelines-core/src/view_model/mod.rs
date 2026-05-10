@@ -32,8 +32,8 @@ pub use poach::{
     RecommendationKind, ScoreRange, WatchRule, WatchRuleTrigger, WatchRulesView,
 };
 pub use team_depth::{
-    DeploymentEvidence, DepthGoalieSlot, DepthLine, DepthPair, DepthPlayerSlot, DepthSlotKind,
-    DepthSummary, TeamDepthView,
+    DeploymentEvidence, DepthGoalieSlot, DepthLeagueView, DepthLine, DepthPair, DepthPlayerSlot,
+    DepthSlotKind, DepthSummary, DepthTeamStrengthRow, TeamDepthView,
 };
 pub use tokens::{MetricCell, MetricUnit, MetricValue, SemanticToken, StatKey, ValuePrecision};
 
@@ -42,9 +42,9 @@ mod tests {
     use crate::model::Season;
     use crate::season_stats::SeasonType;
     use crate::view_model::{
-        CompareView, Completeness, EmptyKind, LeaderKind, LeadersView, MetricCell, MetricUnit,
-        MetricValue, PlayerCardView, SemanticToken, SourceKind, SourceProvenance, SourceState,
-        StatKey, ValuePrecision, ViewContext, ViewWindow,
+        CompareView, Completeness, DepthLeagueView, EmptyKind, LeaderKind, LeadersView, MetricCell,
+        MetricUnit, MetricValue, PlayerCardView, SemanticToken, SourceKind, SourceProvenance,
+        SourceState, StatKey, ValuePrecision, ViewContext, ViewWindow,
     };
 
     #[test]
@@ -438,5 +438,45 @@ mod tests {
         assert_eq!(json["a"]["active"]["team_display"], "EDM");
         assert_eq!(json["a"]["active"]["metrics"][5]["key"], "plus_minus");
         assert!(json["b"].is_null());
+    }
+
+    #[test]
+    fn depth_league_viewmodel_contract_fixture_serializes_ranked_rows() {
+        use crate::fixtures;
+        use crate::model::Position;
+        use crate::stats_repository::StatsRepository;
+
+        let mut repo = StatsRepository::new();
+        for (id, name, team, pos, pace) in [
+            (1, "Edmonton Center", "EDM", Position::Center, 120.0),
+            (2, "Edmonton Left", "EDM", Position::LeftWing, 90.0),
+            (3, "Seattle Center", "SEA", Position::Center, 60.0),
+        ] {
+            let normalized = crate::name::normalize_name(name);
+            repo.upsert_identity(fixtures::identity(id).name(name, &normalized).build())
+                .unwrap();
+            let mut stats = fixtures::stats(id, 20242025, team).position(pos).build();
+            if let Some(ref mut pace_score) = stats.totals.pace_score {
+                pace_score.pace_82 = pace;
+            }
+            repo.upsert_stats(stats).unwrap();
+        }
+
+        let mut view =
+            DepthLeagueView::pace_from_repository(&repo, Season(20242025), SeasonType::Regular);
+        view.context.data_generation = Some("ted-depth-league-fixture-v1".to_string());
+
+        let json = serde_json::to_value(&view).expect("serialize depth league view");
+
+        assert_eq!(json["context"]["window"]["season"], 20242025);
+        assert_eq!(
+            json["context"]["data_generation"],
+            "ted-depth-league-fixture-v1"
+        );
+        assert_eq!(json["scoring_mode"], "Pts/82");
+        assert_eq!(json["rows"][0]["team"], "EDM");
+        assert_eq!(json["rows"][0]["c_top"], "Edmonton Center");
+        assert_eq!(json["rows"][0]["total"], 210.0);
+        assert_eq!(json["rows"][1]["team"], "SEA");
     }
 }

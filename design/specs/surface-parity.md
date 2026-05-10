@@ -49,7 +49,7 @@ a feature fully shipped.
 | Goalie leaderboard | `GoaliesView` | `query goalies` | `tui goalies` | `/goalies` | `/api/v1/goalies` | partial - CLI, TUI, web HTML, and web JSON build `GoaliesView`; Ted verifies parity | Campbell/Ted Lindsay |
 | Player card | `PlayerCardView` | `query player <name>` | `tui player <name>` | `/player/:id` | `/api/v1/player/:id` | partial - web HTML and web JSON project from `PlayerCardView`; CLI/TUI adapter alignment remains | Campbell/Ted Lindsay |
 | Team depth | `TeamDepthView` | `team <ABBR>` | `tui team <ABBR>` | `/team/:abbrev` | `/api/v1/team/:abbrev` | partial - CLI team, markdown export, web HTML, and web JSON build `TeamDepthView`; TUI team/depth alignment remains pending Ted/Messier | Campbell/Ted Lindsay |
-| Cross-team depth | `TeamDepthView` / `DepthLeagueView` | `depth` or equivalent | `tui depth` | `/depth` | `/api/v1/depth` | verify - route exists, parity needs matrix tests | Ted Lindsay |
+| Cross-team depth | `DepthLeagueView` | `depth` or equivalent | `tui depth` | `/depth` | `/api/v1/depth` | partial - web HTML and web JSON build `DepthLeagueView`; CLI/TUI adapter alignment remains | Ted Lindsay |
 | Compare/comps | `CompareView` | `query compare A B` | `tui comps <name>` | `/compare?...` | `/api/v1/compare?...` | partial - web HTML and web JSON build `CompareView`; CLI/TUI adapter alignment remains | Ted Lindsay |
 | Scouting report | `ReportView` | `scouting <name>` | player detail/report affordance | planned/verify | planned/verify | partial - report contract pending | Campbell/Ted Lindsay |
 | Markdown export | `ReportView` | `export md <shape>` | n/a | n/a | n/a | partial - 5/7 shapes shipped | Campbell/Jim Gregory |
@@ -151,8 +151,8 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /api/v1/goalies` | `handlers/goalies.rs` | JSON | Goalie leaderboard | partial - envelope tests exist |
 | `GET /team/:abbrev` | `handlers/team.rs` | HTML | Team depth | partial - renders from `TeamDepthView`, HTML projection shape preserved |
 | `GET /api/v1/team/:abbrev` | `handlers/team.rs` | JSON | Team depth | partial - projects existing stable JSON envelope from `TeamDepthView` |
-| `GET /depth` | `handlers/depth.rs` | HTML | Cross-team depth | verify |
-| `GET /api/v1/depth` | `handlers/depth.rs` | JSON | Cross-team depth | verify |
+| `GET /depth` | `handlers/depth.rs` | HTML | Cross-team depth | partial - projects depth rankings from `DepthLeagueView`; CLI/TUI alignment remains |
+| `GET /api/v1/depth` | `handlers/depth.rs` | JSON | Cross-team depth | partial - projects stable envelope from `DepthLeagueView`; covered by `l1_depth_json_envelope_shape` |
 | `GET /poach` | `handlers/poach.rs` | HTML | Poacher board | done |
 | `GET /reports/poach` | `handlers/poach.rs` | HTML report | Poach/weekly reports | done |
 | `GET /reports/weekly` | `handlers/poach.rs` | HTML report | Poach/weekly reports | done |

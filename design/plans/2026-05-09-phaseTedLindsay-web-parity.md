@@ -138,6 +138,9 @@ Progress:
 - 2026-05-10: Added core `CompareView` and migrated `/compare` plus
   `/api/v1/compare` to project existing HTML/JSON cards from the shared
   compare contract.
+- 2026-05-10: Added core `DepthLeagueView` and migrated `/depth` plus
+  `/api/v1/depth` to project existing cross-team depth rankings from the
+  shared league-depth contract.
 
 ---
 

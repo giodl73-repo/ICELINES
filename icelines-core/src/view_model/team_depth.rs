@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+use crate::cross_team::{compute_team_strength_views, ScoringMode};
 use crate::depth_chart::DepthChartBuilder;
 use crate::identity::PlayerId;
 use crate::model::{DepthChartSlot, Position, Season, TeamAbbr};
@@ -22,6 +23,78 @@ pub struct TeamDepthView {
     pub goalies: Vec<DepthGoalieSlot>,
     pub extras: Vec<DepthPlayerSlot>,
     pub warnings: Vec<ViewWarning>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DepthLeagueView {
+    pub context: ViewContext,
+    pub scoring_mode: String,
+    pub rows: Vec<DepthTeamStrengthRow>,
+    pub warnings: Vec<ViewWarning>,
+}
+
+impl DepthLeagueView {
+    pub fn pace_from_repository(
+        repo: &StatsRepository,
+        season: Season,
+        season_type: SeasonType,
+    ) -> Self {
+        let has_window = repo.has_window(season, season_type);
+        let skaters: Vec<_> = repo.skaters(season, season_type).collect();
+        Self::from_player_views(season, season_type, has_window, &skaters, ScoringMode::Pace)
+    }
+
+    pub fn from_player_views(
+        season: Season,
+        season_type: SeasonType,
+        has_window: bool,
+        skaters: &[PlayerView<'_>],
+        scoring_mode: ScoringMode,
+    ) -> Self {
+        let strength = compute_team_strength_views(skaters, scoring_mode);
+        let mut ranked: Vec<_> = strength.into_iter().collect();
+        ranked.sort_by(|a, b| {
+            b.1.total
+                .partial_cmp(&a.1.total)
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| a.0.cmp(&b.0))
+        });
+
+        Self {
+            context: view_context(season, season_type, has_window),
+            scoring_mode: scoring_mode.label().to_string(),
+            rows: ranked
+                .into_iter()
+                .map(|(team, strength)| DepthTeamStrengthRow {
+                    team: TeamAbbr(team),
+                    c_score: strength.c_score,
+                    lw_score: strength.lw_score,
+                    rw_score: strength.rw_score,
+                    d_score: strength.d_score,
+                    total: strength.total,
+                    c_top: strength.c_top,
+                    lw_top: strength.lw_top,
+                    rw_top: strength.rw_top,
+                    d_top: strength.d_top,
+                })
+                .collect(),
+            warnings: Vec::new(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DepthTeamStrengthRow {
+    pub team: TeamAbbr,
+    pub c_score: f64,
+    pub lw_score: f64,
+    pub rw_score: f64,
+    pub d_score: f64,
+    pub total: f64,
+    pub c_top: String,
+    pub lw_top: String,
+    pub rw_top: String,
+    pub d_top: String,
 }
 
 impl TeamDepthView {

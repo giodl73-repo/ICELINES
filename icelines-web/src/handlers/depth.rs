@@ -4,9 +4,9 @@ use askama::Template;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
-use icelines_core::cross_team::{compute_team_strength_views, ScoringMode};
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
+use icelines_core::{DepthLeagueView, DepthTeamStrengthRow};
 
 pub async fn get_depth(State(state): State<WebState>) -> Response {
     let (season_str, season_type, active_label) = {
@@ -32,38 +32,11 @@ pub async fn get_depth(State(state): State<WebState>) -> Response {
     };
     let season = Season(season_u32);
 
-    // Brief read of the repo. Project inside the lock scope so
-    // PlayerView refs don't escape (same convention as
-    // `/leaders` and `/goalies`).
-    let rows: Vec<DepthRow> = {
+    let view = {
         let repo = state.repo.read().await;
-        let views: Vec<_> = repo.skaters(season, season_type).collect();
-        let strength = compute_team_strength_views(&views, ScoringMode::Pace);
-        let mut ranked: Vec<_> = strength.into_iter().collect();
-        // Newest team rank first; tie-break alphabetical for
-        // determinism.
-        ranked.sort_by(|a, b| {
-            b.1.total
-                .partial_cmp(&a.1.total)
-                .unwrap_or(std::cmp::Ordering::Equal)
-                .then_with(|| a.0.cmp(&b.0))
-        });
-        ranked
-            .into_iter()
-            .map(|(team, s)| DepthRow {
-                team,
-                c_score: format!("{:.0}", s.c_score),
-                lw_score: format!("{:.0}", s.lw_score),
-                rw_score: format!("{:.0}", s.rw_score),
-                d_score: format!("{:.0}", s.d_score),
-                total: format!("{:.0}", s.total),
-                c_top: s.c_top,
-                lw_top: s.lw_top,
-                rw_top: s.rw_top,
-                d_top: s.d_top,
-            })
-            .collect()
+        DepthLeagueView::pace_from_repository(&repo, season, season_type)
     };
+    let rows = view.rows.iter().map(depth_row_from_view).collect();
 
     let tmpl = DepthTemplate { active_label, rows };
     match tmpl.render() {
@@ -128,33 +101,11 @@ pub async fn get_depth_json(State(state): State<WebState>) -> Response {
     };
     let season = Season(season_u32);
 
-    let rows: Vec<DepthJsonRow> = {
+    let view = {
         let repo = state.repo.read().await;
-        let views: Vec<_> = repo.skaters(season, season_type).collect();
-        let strength = compute_team_strength_views(&views, ScoringMode::Pace);
-        let mut ranked: Vec<_> = strength.into_iter().collect();
-        ranked.sort_by(|a, b| {
-            b.1.total
-                .partial_cmp(&a.1.total)
-                .unwrap_or(std::cmp::Ordering::Equal)
-                .then_with(|| a.0.cmp(&b.0))
-        });
-        ranked
-            .into_iter()
-            .map(|(team, s)| DepthJsonRow {
-                team,
-                c_score: s.c_score,
-                lw_score: s.lw_score,
-                rw_score: s.rw_score,
-                d_score: s.d_score,
-                total: s.total,
-                c_top: s.c_top,
-                lw_top: s.lw_top,
-                rw_top: s.rw_top,
-                d_top: s.d_top,
-            })
-            .collect()
+        DepthLeagueView::pace_from_repository(&repo, season, season_type)
     };
+    let rows: Vec<DepthJsonRow> = view.rows.iter().map(depth_json_row_from_view).collect();
 
     let count = rows.len();
     crate::api::json_data_meta(
@@ -170,4 +121,34 @@ pub async fn get_depth_json(State(state): State<WebState>) -> Response {
             scoring_mode: "pace",
         },
     )
+}
+
+fn depth_row_from_view(row: &DepthTeamStrengthRow) -> DepthRow {
+    DepthRow {
+        team: row.team.0.clone(),
+        c_score: format!("{:.0}", row.c_score),
+        lw_score: format!("{:.0}", row.lw_score),
+        rw_score: format!("{:.0}", row.rw_score),
+        d_score: format!("{:.0}", row.d_score),
+        total: format!("{:.0}", row.total),
+        c_top: row.c_top.clone(),
+        lw_top: row.lw_top.clone(),
+        rw_top: row.rw_top.clone(),
+        d_top: row.d_top.clone(),
+    }
+}
+
+fn depth_json_row_from_view(row: &DepthTeamStrengthRow) -> DepthJsonRow {
+    DepthJsonRow {
+        team: row.team.0.clone(),
+        c_score: row.c_score,
+        lw_score: row.lw_score,
+        rw_score: row.rw_score,
+        d_score: row.d_score,
+        total: row.total,
+        c_top: row.c_top.clone(),
+        lw_top: row.lw_top.clone(),
+        rw_top: row.rw_top.clone(),
+        d_top: row.d_top.clone(),
+    }
 }

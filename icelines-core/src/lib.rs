@@ -66,10 +66,11 @@ pub use transactions::{
     CURRENT_CLASSIFIER_VERSION, TRANSACTIONS_EARLIEST_SEASON,
 };
 pub use view_model::{
-    AppliedFilter, CompareView, Completeness, EmptyKind, EmptyState, FilterKey, FilterOp,
-    GoalieRoleFilter, GoalieRoleSignal, GoalieRow, GoaliesView, LeaderKind, LeaderRow, LeadersView,
-    MetricCell, MetricUnit, MetricValue, PlayerCardView, PlayerCareerSummary, PlayerSeasonSummary,
-    RecoveryAction, ReportContext, ReportKind, ReportSectionRef, SemanticToken, SortDirection,
-    SortKey, SortState, SourceKind, SourceProvenance, SourceState, StatKey, TeamDepthView,
-    ValuePrecision, ViewContext, ViewWarning, ViewWindow, WarningKind,
+    AppliedFilter, CompareView, Completeness, DepthLeagueView, DepthTeamStrengthRow, EmptyKind,
+    EmptyState, FilterKey, FilterOp, GoalieRoleFilter, GoalieRoleSignal, GoalieRow, GoaliesView,
+    LeaderKind, LeaderRow, LeadersView, MetricCell, MetricUnit, MetricValue, PlayerCardView,
+    PlayerCareerSummary, PlayerSeasonSummary, RecoveryAction, ReportContext, ReportKind,
+    ReportSectionRef, SemanticToken, SortDirection, SortKey, SortState, SourceKind,
+    SourceProvenance, SourceState, StatKey, TeamDepthView, ValuePrecision, ViewContext,
+    ViewWarning, ViewWindow, WarningKind,
 };
