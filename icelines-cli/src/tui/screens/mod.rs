@@ -1251,6 +1251,37 @@ mod app_snapshot_tests {
         );
     }
 
+    #[test]
+    fn l1_tui_depth_league_render_matches_depth_league_view_first_row() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        app.handle(Action::Tab);
+        let view = crate::tui::screens::depth::league_view_from_app(&app)
+            .expect("booted depth screen should produce a league view");
+        let first = view
+            .rows
+            .first()
+            .expect("depth league view should have rows");
+        let text = render_app_to_text(&app, 140, 40);
+        let expected = format!(
+            "{:<4} {:<5} {:>8.0} {:>8.0} {:>8.0} {:>8.0} {:>9.0}",
+            1,
+            first.team.0,
+            first.c_score,
+            first.lw_score,
+            first.rw_score,
+            first.d_score,
+            first.total,
+        );
+
+        assert!(
+            text.contains(&expected),
+            "Depth TUI first row must match DepthLeagueView row projection.\nExpected fragment: {expected}\nGot:\n{text}"
+        );
+    }
+
     /// User flow: boot → press 's' to land on Stats(Queries) → real
     /// query UI renders, not the loading placeholder.
     #[test]
