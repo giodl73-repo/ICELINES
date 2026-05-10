@@ -724,6 +724,31 @@ mod tests {
     }
 
     #[test]
+    fn l0_goalies_view_from_tui_state_carries_saves_sort_and_metric() {
+        let repo = build_goalie_pool(&[
+            (1, "Spot Starter", "WPG", 20, 9, 0.920, 2.20, 1),
+            (2, "Workhorse", "WPG", 60, 35, 0.910, 2.40, 5),
+        ]);
+        let views = collect_goalie_views(&repo);
+        let filters = RosterFilterState::default();
+        let view = goalies_view_from_tui_state(GoaliesViewInput {
+            views: &views,
+            sort: GoalieSort::SavesDesc,
+            min_gp: 5,
+            filters: &filters,
+            role_filter: GoalieRoleFilter::All,
+            starter_threshold: None,
+            season: Season(20242025),
+            season_type: SeasonType::Regular,
+        });
+
+        assert_eq!(view.sort.as_ref().unwrap().key.0, "saves");
+        assert_eq!(view.rows[0].display_name, "Workhorse");
+        assert_eq!(goalie_metric_u32(&view.rows[0], "saves"), 1_680);
+        assert_eq!(goalie_metric_u32(&view.rows[1], "saves"), 560);
+    }
+
+    #[test]
     fn l0_short_name_uses_initial() {
         assert_eq!(short_name("Connor Hellebuyck"), "C. Hellebuyck");
         assert_eq!(short_name("Igor"), "Igor");
