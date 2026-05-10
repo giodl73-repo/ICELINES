@@ -131,6 +131,7 @@ pub fn router(state: WebState) -> Router {
         )
         // Phase Conn Smythe C.3 — per-game live detail
         .route("/game/:id", get(handlers::game::get_game))
+        .route("/api/v1/game/:id", get(handlers::game::get_game_json))
         // Foster +18 — POST mutators (kept as POST so they can't be
         // CSRF'd via image tags / link prefetch).
         .route("/favorites/add", post(handlers::favorites::post_add))

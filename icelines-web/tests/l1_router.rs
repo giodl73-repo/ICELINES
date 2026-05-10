@@ -1207,6 +1207,32 @@ async fn l1_conn_smythe_c3_game_route_renders_html() {
 }
 
 #[tokio::test]
+async fn l1_conn_smythe_c3_game_json_envelope_shape() {
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/game/2025020342")
+                .body(Body::empty())
+                .expect("build request"),
+        )
+        .await
+        .expect("oneshot");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value =
+        serde_json::from_slice(&bytes).expect("game response should be valid json");
+
+    assert_eq!(json["schema_version"], 1);
+    assert_eq!(json["route"], "game");
+    assert_eq!(json["meta"]["game_id"], 2025020342_u64);
+    assert!(json["data"].is_object() || json["data"].is_null());
+}
+
+#[tokio::test]
 async fn l1_foster_plus9_scores_unknown_range_defaults_to_day() {
     // Unknown range value should fall back to Day rather than 400.
     let app = router(WebState::new());

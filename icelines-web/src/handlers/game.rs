@@ -2,10 +2,68 @@ use axum::extract::Path;
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
 
+#[derive(Debug, Clone, serde::Serialize)]
+struct GameDetailView {
+    game_id: u64,
+    away_abbrev: String,
+    home_abbrev: String,
+    away_score: u8,
+    home_score: u8,
+    state_label: String,
+    is_live: bool,
+    auto_refresh: bool,
+    goalies: Vec<GameGoalieView>,
+    goals: Vec<GameGoalView>,
+    away_top_skaters: Vec<GameSkaterView>,
+    home_top_skaters: Vec<GameSkaterView>,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct GameGoalieView {
+    player_id: u32,
+    player_name: String,
+    saves: u32,
+    shots: u32,
+    decision: Option<String>,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct GameGoalView {
+    period: u8,
+    time_in_period: String,
+    scorer_team: String,
+    scorer_name: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct GameSkaterView {
+    player_id: u32,
+    player_name: String,
+    position: String,
+    goals: u32,
+    assists: u32,
+    points: u32,
+    plus_minus: i32,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct GameEnvelope {
+    schema_version: u32,
+    route: &'static str,
+    data: Option<GameDetailView>,
+    meta: GameMeta,
+    error: Option<String>,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct GameMeta {
+    game_id: u64,
+}
+
 pub async fn get_game(Path(id): Path<u64>) -> Response {
     let client = icelines_fetch::nhl_api::NhlApiClient::production();
     let body_html = match client.fetch_boxscore(id).await {
-        Ok(boxscore) => render_game_html(&boxscore),
+        Ok(boxscore) => render_game_html(&project_game_detail(boxscore)),
         Err(e) => render_error_html(id, &e.to_string()),
     };
     (
@@ -16,20 +74,103 @@ pub async fn get_game(Path(id): Path<u64>) -> Response {
         .into_response()
 }
 
-fn render_game_html(b: &icelines_fetch::nhl_api::Boxscore) -> String {
+pub async fn get_game_json(Path(id): Path<u64>) -> Response {
+    let client = icelines_fetch::nhl_api::NhlApiClient::production();
+    let (data, error) = match client.fetch_boxscore(id).await {
+        Ok(boxscore) => (Some(project_game_detail(boxscore)), None),
+        Err(e) => (None, Some(e.to_string())),
+    };
+    axum::Json(GameEnvelope {
+        schema_version: 1,
+        route: "game",
+        data,
+        meta: GameMeta { game_id: id },
+        error,
+    })
+    .into_response()
+}
+
+fn project_game_detail(b: icelines_fetch::nhl_api::Boxscore) -> GameDetailView {
     let state = b.game_state.as_deref().unwrap_or("");
     let last = b.last_period.as_deref().unwrap_or("");
-    let suffix = match (state, last) {
-        ("FINAL" | "OFF", "OT") => " · Final/OT",
-        ("FINAL" | "OFF", "SO") => " · Final/SO",
-        ("FINAL" | "OFF", _) => " · Final",
-        ("LIVE" | "CRIT", _) => " · LIVE",
-        ("PRE", _) => " · Pre-game",
+    let state_label = match (state, last) {
+        ("FINAL" | "OFF", "OT") => "Final/OT",
+        ("FINAL" | "OFF", "SO") => "Final/SO",
+        ("FINAL" | "OFF", _) => "Final",
+        ("LIVE" | "CRIT", _) => "LIVE",
+        ("PRE", _) => "Pre-game",
         _ => "",
-    };
-    // Auto-refresh every 30s when live.
+    }
+    .to_owned();
+    let is_live = matches!(state, "LIVE" | "CRIT");
     let auto_refresh = matches!(state, "LIVE" | "CRIT" | "PRE");
-    let meta_refresh = if auto_refresh {
+
+    let mut away_skaters = b.away_skaters;
+    away_skaters.sort_by_key(|s| std::cmp::Reverse(s.goals + s.assists));
+    let mut home_skaters = b.home_skaters;
+    home_skaters.sort_by_key(|s| std::cmp::Reverse(s.goals + s.assists));
+
+    GameDetailView {
+        game_id: b.game_id,
+        away_abbrev: b.away_abbrev,
+        home_abbrev: b.home_abbrev,
+        away_score: b.away_score,
+        home_score: b.home_score,
+        state_label,
+        is_live,
+        auto_refresh,
+        goalies: b
+            .goalies
+            .into_iter()
+            .map(|g| GameGoalieView {
+                player_id: g.player_id,
+                player_name: g.player_name,
+                saves: g.saves,
+                shots: g.shots,
+                decision: g.decision,
+            })
+            .collect(),
+        goals: b
+            .goals
+            .into_iter()
+            .map(|g| GameGoalView {
+                period: g.period,
+                time_in_period: g.time_in_period,
+                scorer_team: g.scorer_team,
+                scorer_name: g.scorer_name,
+            })
+            .collect(),
+        away_top_skaters: project_top_skaters(away_skaters),
+        home_top_skaters: project_top_skaters(home_skaters),
+    }
+}
+
+fn project_top_skaters(skaters: Vec<icelines_fetch::nhl_api::SkaterLine>) -> Vec<GameSkaterView> {
+    skaters
+        .into_iter()
+        .take(5)
+        .map(|s| {
+            let points = s.goals + s.assists;
+            GameSkaterView {
+                player_id: s.player_id,
+                player_name: s.player_name,
+                position: s.position,
+                goals: s.goals,
+                assists: s.assists,
+                points,
+                plus_minus: s.plus_minus,
+            }
+        })
+        .collect()
+}
+
+fn render_game_html(b: &GameDetailView) -> String {
+    let suffix = if b.state_label.is_empty() {
+        String::new()
+    } else {
+        format!(" - {}", b.state_label)
+    };
+    let meta_refresh = if b.auto_refresh {
         "<meta http-equiv=\"refresh\" content=\"30\">"
     } else {
         ""
@@ -39,7 +180,7 @@ fn render_game_html(b: &icelines_fetch::nhl_api::Boxscore) -> String {
     body.push_str("<meta charset=\"utf-8\">");
     body.push_str(meta_refresh);
     body.push_str(&format!(
-        "<title>{} @ {} — game {}</title>",
+        "<title>{} @ {} - game {}</title>",
         html_escape(&b.away_abbrev),
         html_escape(&b.home_abbrev),
         b.game_id
@@ -59,10 +200,10 @@ fn render_game_html(b: &icelines_fetch::nhl_api::Boxscore) -> String {
     );
     body.push_str("</style></head><body>");
     body.push_str(
-        "<nav><a href=\"/\">League</a> · <a href=\"/scores\">Scores</a> · \
-                 <a href=\"/schedule\">Schedule</a> · <a href=\"/playoffs\">Playoffs</a> · \
-                 <a href=\"/transactions\">Transactions</a> · \
-                 <a href=\"/favorites\">Favorites</a> · \
+        "<nav><a href=\"/\">League</a> - <a href=\"/scores\">Scores</a> - \
+                 <a href=\"/schedule\">Schedule</a> - <a href=\"/playoffs\">Playoffs</a> - \
+                 <a href=\"/transactions\">Transactions</a> - \
+                 <a href=\"/favorites\">Favorites</a> - \
                  <strong>Game</strong></nav>",
     );
     body.push_str("<main>");
@@ -82,15 +223,14 @@ fn render_game_html(b: &icelines_fetch::nhl_api::Boxscore) -> String {
         b.away_score,
         b.home_score,
         html_escape(&b.home_abbrev),
-        if matches!(state, "LIVE" | "CRIT") {
+        if b.is_live {
             "<span class=\"live-badge\">LIVE</span>"
         } else {
             ""
         },
-        suffix,
+        html_escape(&suffix),
     ));
 
-    // Goalies
     if !b.goalies.is_empty() {
         body.push_str("<section class=\"goalies\"><h3>Goalies</h3><ul>");
         for g in &b.goalies {
@@ -104,9 +244,9 @@ fn render_game_html(b: &icelines_fetch::nhl_api::Boxscore) -> String {
                 html_escape(&g.player_name),
                 g.saves,
                 g.shots,
-                dec,
+                html_escape(&dec),
                 if g.player_id != 0 {
-                    format!(" — <a href=\"/player/{}\">card</a>", g.player_id)
+                    format!(" - <a href=\"/player/{}\">card</a>", g.player_id)
                 } else {
                     String::new()
                 }
@@ -115,12 +255,11 @@ fn render_game_html(b: &icelines_fetch::nhl_api::Boxscore) -> String {
         body.push_str("</ul></section>");
     }
 
-    // Goal summary
     if !b.goals.is_empty() {
         body.push_str("<section><h3>Goals</h3><ul class=\"goal-list\">");
         for g in &b.goals {
             body.push_str(&format!(
-                "<li>P{} · {} · <strong>{}</strong> {}</li>",
+                "<li>P{} - {} - <strong>{}</strong> {}</li>",
                 g.period,
                 html_escape(&g.time_in_period),
                 html_escape(&g.scorer_team),
@@ -130,37 +269,10 @@ fn render_game_html(b: &icelines_fetch::nhl_api::Boxscore) -> String {
         body.push_str("</ul></section>");
     }
 
-    // Per-team skater rows (top scorers)
-    for (label, skaters) in [
-        ("Away skaters", &b.away_skaters),
-        ("Home skaters", &b.home_skaters),
-    ] {
-        if skaters.is_empty() {
-            continue;
-        }
-        let mut sorted = skaters.clone();
-        sorted.sort_by_key(|s| std::cmp::Reverse(s.goals + s.assists));
-        let top: Vec<_> = sorted.iter().take(5).collect();
-        if top.is_empty() {
-            continue;
-        }
-        body.push_str(&format!("<section><h3>{label} — top 5 by points</h3><ul>"));
-        for s in top {
-            body.push_str(&format!(
-                "<li><a href=\"/player/{}\">{}</a> ({}) — {}G {}A {}P · {:+}</li>",
-                s.player_id,
-                html_escape(&s.player_name),
-                html_escape(&s.position),
-                s.goals,
-                s.assists,
-                s.goals + s.assists,
-                s.plus_minus,
-            ));
-        }
-        body.push_str("</ul></section>");
-    }
+    render_skaters(&mut body, "Away skaters", &b.away_top_skaters);
+    render_skaters(&mut body, "Home skaters", &b.home_top_skaters);
 
-    if auto_refresh {
+    if b.auto_refresh {
         body.push_str(
             "<p style=\"color:#888;font-size:0.85em;\">\
                      Auto-refreshes every 30 seconds while live.</p>",
@@ -170,14 +282,34 @@ fn render_game_html(b: &icelines_fetch::nhl_api::Boxscore) -> String {
     body
 }
 
+fn render_skaters(body: &mut String, label: &str, skaters: &[GameSkaterView]) {
+    if skaters.is_empty() {
+        return;
+    }
+    body.push_str(&format!("<section><h3>{label} - top 5 by points</h3><ul>"));
+    for s in skaters {
+        body.push_str(&format!(
+            "<li><a href=\"/player/{}\">{}</a> ({}) - {}G {}A {}P - {:+}</li>",
+            s.player_id,
+            html_escape(&s.player_name),
+            html_escape(&s.position),
+            s.goals,
+            s.assists,
+            s.points,
+            s.plus_minus,
+        ));
+    }
+    body.push_str("</ul></section>");
+}
+
 fn render_error_html(game_id: u64, err: &str) -> String {
     format!(
         "<!DOCTYPE html><html><head><meta charset=\"utf-8\">\
-                 <title>Game {game_id} — error</title>\
+                 <title>Game {game_id} - error</title>\
                  <link rel=\"stylesheet\" href=\"/static/style.css\"></head><body>\
                  <main><h1>Game {game_id}</h1>\
                  <p>Could not fetch boxscore: {err}</p>\
-                 <p><a href=\"/scores\">← back to scores</a></p>\
+                 <p><a href=\"/scores\">back to scores</a></p>\
                  </main></body></html>",
         err = html_escape(err),
     )
