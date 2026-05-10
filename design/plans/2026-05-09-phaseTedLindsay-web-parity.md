@@ -135,6 +135,9 @@ Progress:
 - 2026-05-10: Migrated `/player/:id` HTML rendering to project from
   `PlayerCardView` while preserving the existing template fields, career-table
   filtering, compare suggestions, and headshot fallback behavior.
+- 2026-05-10: Added core `CompareView` and migrated `/compare` plus
+  `/api/v1/compare` to project existing HTML/JSON cards from the shared
+  compare contract.
 
 ---
 

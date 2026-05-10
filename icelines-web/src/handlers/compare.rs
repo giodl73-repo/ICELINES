@@ -7,6 +7,7 @@ use axum::response::{Html, IntoResponse, Response};
 use icelines_core::identity::PlayerId;
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
+use icelines_core::{CompareView, MetricCell, MetricValue, PlayerCardView};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize, Default)]
@@ -69,168 +70,132 @@ async fn resolve_id(state: &WebState, raw: &str) -> Option<u32> {
     None
 }
 
-fn opt_u(o: Option<u32>) -> String {
-    match o {
-        Some(n) => n.to_string(),
-        None => "—".to_owned(),
-    }
-}
-fn opt_pct(o: Option<f32>) -> String {
-    match o {
-        Some(p) => {
-            if p.abs() <= 1.5 {
-                format!("{:.1}%", p * 100.0)
-            } else {
-                format!("{:.1}%", p)
-            }
-        }
-        None => "—".to_owned(),
-    }
-}
-fn toi_mmss(o: Option<u32>) -> String {
-    match o {
-        Some(secs) => {
-            let m = secs / 60;
-            let s = secs % 60;
-            format!("{m}:{s:02}")
-        }
-        None => "—".to_owned(),
-    }
-}
-
-async fn build_card(
-    state: &WebState,
-    id: u32,
-    season: Season,
-    season_type: SeasonType,
-) -> Option<ComparePlayerCard> {
-    // Lazy career fan-out so a freshly-opened player has full
-    // career loaded — same pattern as the player handler.
-    let pid = PlayerId(id);
-    {
-        let mut repo = state.repo.write().await;
-        let _ = icelines_fetch::stats_loader::load_player_career_into_repo(&mut repo, pid);
-    }
-    let repo = state.repo.read().await;
-    let identity = repo.identity(pid)?;
-    let view = repo.view(pid, season, season_type);
-    let (
-        gp,
-        goals,
-        assists,
-        points,
-        position,
-        team,
-        team_link,
-        plus_minus_str,
-        pim_str,
-        shots_str,
-        shooting_pct_str,
-        hits_str,
-        blocks_str,
-        takeaways_str,
-        giveaways_str,
-        faceoff_pct_str,
-        pp_goals_str,
-        pp_points_str,
-        sh_goals_str,
-        gwg_str,
-        toi_per_game_str,
-    ) = match view {
-        Some(v) => {
-            let totals = &v.stats.totals;
-            let team_display = v.team_display().to_owned();
-            let team_link = if team_display.chars().all(|c| c.is_ascii_alphabetic())
-                && team_display.len() <= 3
-            {
-                team_display.clone()
-            } else {
-                String::new()
-            };
+fn compare_card_from_view(view: &PlayerCardView, season: Season) -> ComparePlayerCard {
+    let active = view.active.as_ref();
+    let active_metrics = active
+        .map(|active| active.metrics.as_slice())
+        .unwrap_or(&[]);
+    let (gp, goals, assists, points, position, team, team_link) = match active {
+        Some(active) => {
+            let team_link = team_link_for_display(&active.team_display);
             (
-                v.gp(),
-                v.goals(),
-                v.assists(),
-                v.points(),
-                v.position().abbreviation().to_owned(),
-                team_display,
+                metric_u32(active_metrics, "gp").unwrap_or(0),
+                metric_u32(active_metrics, "goals").unwrap_or(0),
+                metric_u32(active_metrics, "assists").unwrap_or(0),
+                metric_u32(active_metrics, "points").unwrap_or(0),
+                active.position.abbreviation().to_owned(),
+                active.team_display.clone(),
                 team_link,
-                format!("{:+}", v.plus_minus()),
-                totals.pim.to_string(),
-                totals.shots.to_string(),
-                opt_pct(totals.shooting_pct),
-                opt_u(v.hits()),
-                opt_u(v.blocked_shots()),
-                opt_u(v.takeaways()),
-                opt_u(v.giveaways()),
-                opt_pct(totals.faceoff_win_pct),
-                totals.pp_goals.to_string(),
-                totals.pp_points.to_string(),
-                totals.sh_goals.to_string(),
-                totals.gwg.to_string(),
-                toi_mmss(totals.toi_per_game_sec),
             )
         }
-        None => (
-            0,
-            0,
-            0,
-            0,
-            "—".to_owned(),
-            "—".to_owned(),
-            String::new(),
-            "—".to_owned(),
-            "—".to_owned(),
-            "—".to_owned(),
-            "—".to_owned(),
-            "—".to_owned(),
-            "—".to_owned(),
-            "—".to_owned(),
-            "—".to_owned(),
-            "—".to_owned(),
-            "—".to_owned(),
-            "—".to_owned(),
-            "—".to_owned(),
-            "—".to_owned(),
-            "—".to_owned(),
-        ),
+        None => (0, 0, 0, 0, dash(), dash(), String::new()),
     };
-    let ppg_str = if gp > 0 {
-        format!("{:.2}", points as f64 / gp as f64)
-    } else {
-        String::new()
-    };
-    Some(ComparePlayerCard {
-        nhl_id: id,
-        full_name: identity.full_name.clone(),
+
+    ComparePlayerCard {
+        nhl_id: view.player_id.0,
+        full_name: view.display_name.clone(),
         position,
         team,
         team_link: team_link.clone(),
         headshot_url: if !team_link.is_empty() {
-            Some(super::shared::build_headshot_url(season.0, &team_link, id))
+            Some(super::shared::build_headshot_url(
+                season.0,
+                &team_link,
+                view.player_id.0,
+            ))
         } else {
-            identity.headshot_canonical_url.clone()
+            view.headshot_url.clone()
         },
         gp,
         goals,
         assists,
         points,
-        ppg_str,
-        plus_minus_str,
-        pim_str,
-        shots_str,
-        shooting_pct_str,
-        hits_str,
-        blocks_str,
-        takeaways_str,
-        giveaways_str,
-        faceoff_pct_str,
-        pp_goals_str,
-        pp_points_str,
-        sh_goals_str,
-        gwg_str,
-        toi_per_game_str,
-    })
+        ppg_str: metric_f64(active_metrics, "points_per_game")
+            .map(|ppg| format!("{ppg:.2}"))
+            .unwrap_or_default(),
+        plus_minus_str: metric_i32(active_metrics, "plus_minus")
+            .map(|value| format!("{value:+}"))
+            .unwrap_or_else(dash),
+        pim_str: metric_string_u32_or_dash(active_metrics, "pim"),
+        shots_str: metric_string_u32_or_dash(active_metrics, "shots"),
+        shooting_pct_str: metric_percent_string(active_metrics, "shooting_pct"),
+        hits_str: metric_string_u32_or_dash(active_metrics, "hits"),
+        blocks_str: metric_string_u32_or_dash(active_metrics, "blocks"),
+        takeaways_str: metric_string_u32_or_dash(active_metrics, "takeaways"),
+        giveaways_str: metric_string_u32_or_dash(active_metrics, "giveaways"),
+        faceoff_pct_str: metric_percent_string(active_metrics, "faceoff_win_pct"),
+        pp_goals_str: metric_string_u32_or_dash(active_metrics, "pp_goals"),
+        pp_points_str: metric_string_u32_or_dash(active_metrics, "pp_points"),
+        sh_goals_str: metric_string_u32_or_dash(active_metrics, "sh_goals"),
+        gwg_str: metric_string_u32_or_dash(active_metrics, "gwg"),
+        toi_per_game_str: metric_toi_mmss(active_metrics, "toi_per_game_sec"),
+    }
+}
+
+fn team_link_for_display(team: &str) -> String {
+    if team.chars().all(|c| c.is_ascii_alphabetic()) && (2..=3).contains(&team.len()) {
+        team.to_owned()
+    } else {
+        String::new()
+    }
+}
+
+fn metric_u32(metrics: &[MetricCell], key: &str) -> Option<u32> {
+    metrics
+        .iter()
+        .find(|metric| metric.key.0 == key)
+        .and_then(|metric| match metric.value {
+            MetricValue::Integer(value) => u32::try_from(value).ok(),
+            _ => None,
+        })
+}
+
+fn metric_i32(metrics: &[MetricCell], key: &str) -> Option<i32> {
+    metrics
+        .iter()
+        .find(|metric| metric.key.0 == key)
+        .and_then(|metric| match metric.value {
+            MetricValue::Integer(value) => i32::try_from(value).ok(),
+            _ => None,
+        })
+}
+
+fn metric_f64(metrics: &[MetricCell], key: &str) -> Option<f64> {
+    metrics
+        .iter()
+        .find(|metric| metric.key.0 == key)
+        .and_then(|metric| match metric.value {
+            MetricValue::Decimal(value) => Some(value),
+            _ => None,
+        })
+}
+
+fn metric_string_u32_or_dash(metrics: &[MetricCell], key: &str) -> String {
+    metric_u32(metrics, key)
+        .map(|value| value.to_string())
+        .unwrap_or_else(dash)
+}
+
+fn metric_percent_string(metrics: &[MetricCell], key: &str) -> String {
+    metric_f64(metrics, key)
+        .map(|value| {
+            if value.abs() <= 1.5 {
+                format!("{:.1}%", value * 100.0)
+            } else {
+                format!("{value:.1}%")
+            }
+        })
+        .unwrap_or_else(dash)
+}
+
+fn metric_toi_mmss(metrics: &[MetricCell], key: &str) -> String {
+    metric_u32(metrics, key)
+        .map(|secs| format!("{}:{:02}", secs / 60, secs % 60))
+        .unwrap_or_else(dash)
+}
+
+fn dash() -> String {
+    "\u{2014}".to_owned()
 }
 
 async fn build_compare_result(state: &WebState, q: &CompareQuery) -> CompareResult {
@@ -270,30 +235,42 @@ async fn build_compare_result(state: &WebState, q: &CompareQuery) -> CompareResu
     let a_raw = q.a.as_deref().map(str::trim).filter(|s| !s.is_empty());
     let b_raw = q.b.as_deref().map(str::trim).filter(|s| !s.is_empty());
     let a_id = match a_raw {
-        Some(raw) => resolve_id(&state, raw).await,
+        Some(raw) => resolve_id(state, raw).await,
         None => None,
     };
     let b_id = match b_raw {
-        Some(raw) => resolve_id(&state, raw).await,
+        Some(raw) => resolve_id(state, raw).await,
         None => None,
     };
 
-    let (a_card, a_missing) = match a_id {
-        Some(id) => {
-            let card = build_card(&state, id, season, season_type).await;
-            let missing = card.is_none();
-            (card, missing.then_some(id))
+    {
+        let mut repo = state.repo.write().await;
+        for id in [a_id, b_id].into_iter().flatten() {
+            let _ =
+                icelines_fetch::stats_loader::load_player_career_into_repo(&mut repo, PlayerId(id));
         }
-        None => (None, None),
+    }
+
+    let compare_view = {
+        let repo = state.repo.read().await;
+        CompareView::from_repository(
+            &repo,
+            a_id.map(PlayerId),
+            b_id.map(PlayerId),
+            season,
+            season_type,
+        )
     };
-    let (b_card, b_missing) = match b_id {
-        Some(id) => {
-            let card = build_card(&state, id, season, season_type).await;
-            let missing = card.is_none();
-            (card, missing.then_some(id))
-        }
-        None => (None, None),
-    };
+    let a_card = compare_view
+        .a
+        .as_ref()
+        .map(|card| compare_card_from_view(card, season));
+    let b_card = compare_view
+        .b
+        .as_ref()
+        .map(|card| compare_card_from_view(card, season));
+    let a_missing = a_id.filter(|_| a_card.is_none());
+    let b_missing = b_id.filter(|_| b_card.is_none());
 
     // Distinguish "no input given" vs "input given but didn't
     // resolve to a known player". The latter is more useful to

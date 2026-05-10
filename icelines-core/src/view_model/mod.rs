@@ -4,6 +4,7 @@
 //! display policy. CLI, TUI, web, JSON, and reports render these shapes without
 //! recomputing hockey logic.
 
+pub mod compare;
 pub mod context;
 pub mod goalies;
 pub mod leaders;
@@ -12,6 +13,7 @@ pub mod poach;
 pub mod team_depth;
 pub mod tokens;
 
+pub use compare::CompareView;
 pub use context::{
     AppliedFilter, Completeness, EmptyKind, EmptyState, FilterKey, FilterOp, RecoveryAction,
     ReportContext, ReportKind, ReportSectionRef, SortDirection, SortKey, SortState, SourceKind,
@@ -40,9 +42,9 @@ mod tests {
     use crate::model::Season;
     use crate::season_stats::SeasonType;
     use crate::view_model::{
-        Completeness, EmptyKind, LeaderKind, LeadersView, MetricCell, MetricUnit, MetricValue,
-        PlayerCardView, SemanticToken, SourceKind, SourceProvenance, SourceState, StatKey,
-        ValuePrecision, ViewContext, ViewWindow,
+        CompareView, Completeness, EmptyKind, LeaderKind, LeadersView, MetricCell, MetricUnit,
+        MetricValue, PlayerCardView, SemanticToken, SourceKind, SourceProvenance, SourceState,
+        StatKey, ValuePrecision, ViewContext, ViewWindow,
     };
 
     #[test]
@@ -410,5 +412,31 @@ mod tests {
         assert_eq!(json["active"]["metrics"][18]["key"], "toi_per_game_sec");
         assert_eq!(json["career"][0]["season"], 20242025);
         assert_eq!(json["career"][0]["metrics"][3]["value"]["integer"], 130);
+    }
+
+    #[test]
+    fn compare_viewmodel_contract_fixture_serializes_player_cards() {
+        let (identity, stats) = crate::fixtures::stat_catalog_variants::skater_modern();
+        let player_id = identity.id;
+        let repo = crate::fixtures::test_repo_with(identity, stats);
+
+        let mut view = CompareView::from_repository(
+            &repo,
+            Some(player_id),
+            None,
+            Season(20242025),
+            SeasonType::Regular,
+        );
+        view.context.data_generation = Some("ted-compare-fixture-v1".to_string());
+
+        let json = serde_json::to_value(&view).expect("serialize compare view");
+
+        assert_eq!(json["context"]["window"]["season"], 20242025);
+        assert_eq!(json["context"]["data_generation"], "ted-compare-fixture-v1");
+        assert_eq!(json["a"]["player_id"], 8478402);
+        assert_eq!(json["a"]["display_name"], "Connor McDavid");
+        assert_eq!(json["a"]["active"]["team_display"], "EDM");
+        assert_eq!(json["a"]["active"]["metrics"][5]["key"], "plus_minus");
+        assert!(json["b"].is_null());
     }
 }

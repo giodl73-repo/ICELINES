@@ -50,7 +50,7 @@ a feature fully shipped.
 | Player card | `PlayerCardView` | `query player <name>` | `tui player <name>` | `/player/:id` | `/api/v1/player/:id` | partial - web HTML and web JSON project from `PlayerCardView`; CLI/TUI adapter alignment remains | Campbell/Ted Lindsay |
 | Team depth | `TeamDepthView` | `team <ABBR>` | `tui team <ABBR>` | `/team/:abbrev` | `/api/v1/team/:abbrev` | partial - CLI team, markdown export, web HTML, and web JSON build `TeamDepthView`; TUI team/depth alignment remains pending Ted/Messier | Campbell/Ted Lindsay |
 | Cross-team depth | `TeamDepthView` / `DepthLeagueView` | `depth` or equivalent | `tui depth` | `/depth` | `/api/v1/depth` | verify - route exists, parity needs matrix tests | Ted Lindsay |
-| Compare/comps | `CompareView` | `query compare A B` | `tui comps <name>` | `/compare?...` | `/api/v1/compare?...` | partial - HTML and JSON share the web card builder; core ViewModel alignment still pending | Ted Lindsay |
+| Compare/comps | `CompareView` | `query compare A B` | `tui comps <name>` | `/compare?...` | `/api/v1/compare?...` | partial - web HTML and web JSON build `CompareView`; CLI/TUI adapter alignment remains | Ted Lindsay |
 | Scouting report | `ReportView` | `scouting <name>` | player detail/report affordance | planned/verify | planned/verify | partial - report contract pending | Campbell/Ted Lindsay |
 | Markdown export | `ReportView` | `export md <shape>` | n/a | n/a | n/a | partial - 5/7 shapes shipped | Campbell/Jim Gregory |
 
@@ -145,8 +145,8 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /api/v1/leaders` | `handlers/leaders.rs` | JSON | Leaders/skater leaderboard | partial - envelope tests exist |
 | `GET /player/:id` | `handlers/player.rs` | HTML | Player card | partial - projects player page from `PlayerCardView`; CLI/TUI alignment remains |
 | `GET /api/v1/player/:id` | `handlers/player.rs` | JSON | Player card | partial - projects stable envelope from `PlayerCardView`; covered by `l1_player_json_envelope_shape` |
-| `GET /compare` | `handlers/compare.rs` | HTML | Compare/comps | partial |
-| `GET /api/v1/compare` | `handlers/compare.rs` | JSON | Compare/comps | partial - envelope test exists |
+| `GET /compare` | `handlers/compare.rs` | HTML | Compare/comps | partial - projects compare page from `CompareView`; CLI/TUI alignment remains |
+| `GET /api/v1/compare` | `handlers/compare.rs` | JSON | Compare/comps | partial - projects stable envelope from `CompareView`; covered by `l1_compare_json_envelope_shape` |
 | `GET /goalies` | `handlers/goalies.rs` | HTML | Goalie leaderboard | partial - parity checks continue in TedLindsay.3 |
 | `GET /api/v1/goalies` | `handlers/goalies.rs` | JSON | Goalie leaderboard | partial - envelope tests exist |
 | `GET /team/:abbrev` | `handlers/team.rs` | HTML | Team depth | partial - renders from `TeamDepthView`, HTML projection shape preserved |
