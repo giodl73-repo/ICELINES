@@ -4,12 +4,25 @@
 //! ?date= ?range=, /schedule ?date=, /playoffs ?series=, security
 //! (open-redirect attempts, XSS escaping).
 
+use std::sync::OnceLock;
+
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use icelines_web::{router, WebState};
 use tower::util::ServiceExt;
 
+fn isolated_home() -> &'static tempfile::TempDir {
+    static HOME: OnceLock<tempfile::TempDir> = OnceLock::new();
+    HOME.get_or_init(|| {
+        let dir = tempfile::TempDir::new().expect("temp home");
+        std::env::set_var("HOME", dir.path());
+        std::env::set_var("USERPROFILE", dir.path());
+        dir
+    })
+}
+
 async fn get(uri: &str) -> axum::http::Response<Body> {
+    let _home = isolated_home();
     let app = router(WebState::new());
     app.oneshot(
         Request::builder()
@@ -22,6 +35,7 @@ async fn get(uri: &str) -> axum::http::Response<Body> {
 }
 
 async fn post_form(uri: &str, body: &str) -> axum::http::Response<Body> {
+    let _home = isolated_home();
     let app = router(WebState::new());
     app.oneshot(
         Request::builder()
