@@ -3446,6 +3446,40 @@ mod app_snapshot_tests {
         );
     }
 
+    #[test]
+    fn l1_tui_comps_target_matches_compare_view_anchor() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        let pid = app
+            .views()
+            .first()
+            .expect("booted app should have skater views")
+            .id();
+        app.screen = crate::tui::app::Screen::CompsById(pid);
+        let compare = crate::tui::screens::comps::compare_view_from_app(&app, pid, None);
+        let anchor = compare.a.expect("compare view should resolve target card");
+        let active = anchor
+            .active
+            .as_ref()
+            .expect("target should have active row");
+        let text = render_app_to_text(&app, 140, 40);
+
+        assert!(
+            text.contains(&anchor.display_name),
+            "Comps target card must include CompareView anchor display name, got:\n{text}"
+        );
+        assert!(
+            text.contains(&format!(
+                "{} · {}",
+                active.team_display,
+                active.position.abbreviation()
+            )),
+            "Comps target card must include CompareView anchor team/position, got:\n{text}"
+        );
+    }
+
     /// Groups screen renders rows for each DB group with their member
     /// counts. Catches a regression where Groups screen reads a stale
     /// in-memory cache instead of querying the DB on entry.

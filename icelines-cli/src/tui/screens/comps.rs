@@ -1,6 +1,7 @@
 use crate::tui::app::App;
 use icelines_core::identity::PlayerId;
 use icelines_core::stats_repository::PlayerView;
+use icelines_core::{CompareView, MetricCell, MetricValue, PlayerCardView};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -54,14 +55,34 @@ pub fn render_by_id(f: &mut Frame, app: &App, area: Rect, target_pid: PlayerId) 
     };
 
     let comps = find_comps_views(&views, &target);
+    let selected_comp = comps.get(app.selected).map(|view| view.id());
+    let compare = compare_view_from_app(app, target_pid, selected_comp);
 
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Length(28), Constraint::Min(0)])
         .split(area);
 
-    render_target_view(f, &target, chunks[0]);
+    if let Some(card) = compare.a.as_ref() {
+        render_target_view(f, card, &target, chunks[0]);
+    } else {
+        render_target_view_from_player(f, &target, chunks[0]);
+    }
     render_list_view(f, app, &target, &comps, chunks[1]);
+}
+
+pub(crate) fn compare_view_from_app(
+    app: &App,
+    target_pid: PlayerId,
+    selected_comp_pid: Option<PlayerId>,
+) -> CompareView {
+    CompareView::from_repository(
+        &app.repo,
+        Some(target_pid),
+        selected_comp_pid,
+        app.active_season_typed,
+        app.active_type,
+    )
 }
 
 fn render_player_not_in_window(f: &mut Frame, area: Rect, pid: PlayerId, app: &App) {
@@ -90,7 +111,73 @@ fn render_player_not_in_window(f: &mut Frame, area: Rect, pid: PlayerId, app: &A
     );
 }
 
-fn render_target_view(f: &mut Frame, v: &PlayerView<'_>, area: Rect) {
+fn render_target_view(f: &mut Frame, card: &PlayerCardView, fallback: &PlayerView<'_>, area: Rect) {
+    let block = Block::default().borders(Borders::ALL).title(" Target ");
+    let inner = block.inner(area);
+    f.render_widget(block, area);
+
+    let active = card.active.as_ref();
+    let ppg_value = active.and_then(|active| metric_decimal(&active.metrics, "points_per_game"));
+    let ppg = ppg_value
+        .map(|p| format!("{p:.3}"))
+        .unwrap_or_else(|| "—".to_owned());
+    let proj = ppg_value
+        .map(|p| format!("{:.1}", p * 82.0))
+        .unwrap_or_else(|| "—".to_owned());
+    let age = fallback
+        .identity
+        .bio
+        .birth_date
+        .as_deref()
+        .and_then(|d| d.get(..4))
+        .and_then(|y| y.parse::<u16>().ok())
+        .map(|y| (2026u16.saturating_sub(y)).to_string())
+        .unwrap_or_else(|| "—".to_owned());
+
+    let hi = Style::default()
+        .fg(Color::Cyan)
+        .add_modifier(Modifier::BOLD);
+    let dim = Style::default().fg(Color::DarkGray);
+    let team = active
+        .map(|active| active.team_display.as_str())
+        .unwrap_or_else(|| fallback.team_display());
+    let position = active
+        .map(|active| active.position.abbreviation())
+        .unwrap_or_else(|| fallback.position().abbreviation());
+    let gp = active
+        .and_then(|active| metric_int(&active.metrics, "gp"))
+        .map(|value| value.to_string())
+        .unwrap_or_else(|| "—".to_owned());
+    let goals = active
+        .and_then(|active| metric_int(&active.metrics, "goals"))
+        .unwrap_or(0);
+    let assists = active
+        .and_then(|active| metric_int(&active.metrics, "assists"))
+        .unwrap_or(0);
+    let points = active
+        .and_then(|active| metric_int(&active.metrics, "points"))
+        .unwrap_or(0);
+
+    let lines = vec![
+        Line::styled(format!(" {}", card.display_name), hi),
+        Line::from(format!(" {} · {} · Age {}", team, position, age)),
+        Line::from(""),
+        Line::styled(" PPG", dim),
+        Line::from(format!(" {}", ppg)),
+        Line::from(""),
+        Line::styled(" Pts/82", dim),
+        Line::from(format!(" {}", proj)),
+        Line::from(""),
+        Line::styled(" GP", dim),
+        Line::from(format!(" {}", gp)),
+        Line::from(""),
+        Line::styled(" G / A / Pts", dim),
+        Line::from(format!(" {} / {} / {}", goals, assists, points)),
+    ];
+    f.render_widget(Paragraph::new(lines), inner);
+}
+
+fn render_target_view_from_player(f: &mut Frame, v: &PlayerView<'_>, area: Rect) {
     let block = Block::default().borders(Borders::ALL).title(" Target ");
     let inner = block.inner(area);
     f.render_widget(block, area);
@@ -150,6 +237,32 @@ fn render_target_view(f: &mut Frame, v: &PlayerView<'_>, area: Rect) {
         )),
     ];
     f.render_widget(Paragraph::new(lines), inner);
+}
+
+fn metric_int(metrics: &[MetricCell], key: &str) -> Option<i64> {
+    metrics.iter().find_map(|metric| {
+        if metric.key.0 == key {
+            match metric.value {
+                MetricValue::Integer(value) => Some(value),
+                _ => None,
+            }
+        } else {
+            None
+        }
+    })
+}
+
+fn metric_decimal(metrics: &[MetricCell], key: &str) -> Option<f64> {
+    metrics.iter().find_map(|metric| {
+        if metric.key.0 == key {
+            match metric.value {
+                MetricValue::Decimal(value) => Some(value),
+                _ => None,
+            }
+        } else {
+            None
+        }
+    })
 }
 
 fn render_list_view(

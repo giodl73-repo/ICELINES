@@ -68,8 +68,10 @@ surface still differs from CLI/TUI.
      `l1_tui_player_header_matches_player_card_view`; CLI and richer TUI
      stats/career adapter alignment remain before marking the row `done`.
    - Compare: web JSON card identity is now fenced against `CompareView` by
-     `l1_compare_json_cards_match_compare_view`; CLI/TUI adapter alignment
-     remains before marking the row `done`.
+     `l1_compare_json_cards_match_compare_view`; TUI comps target card now
+     uses `CompareView` anchor projection and is fenced by
+     `l1_tui_comps_target_matches_compare_view_anchor`; CLI and
+     similarity-list adapter alignment remain before marking the row `done`.
    - Career: web JSON row identity is now fenced against `CareerView` by
      `l1_api_career_rows_match_career_view`; CLI rows now project through
      `CareerView` and are fenced by `l0_cli_career_rows_project_from_career_view`;
