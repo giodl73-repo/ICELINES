@@ -243,6 +243,9 @@ Progress:
   `design/notes/2026-05-10-leaders-adapter-alignment.md` to pin the remaining
   leaders uniformity gap: CLI text is ViewModel-backed, while CLI JSON/CSV and
   TUI Stats still need row-contract migration.
+- 2026-05-10: Migrated CLI leaders JSON/CSV serialization to read from
+  `LeadersView` compatibility metrics while preserving the existing wire field
+  names and numeric precision.
 
 ---
 

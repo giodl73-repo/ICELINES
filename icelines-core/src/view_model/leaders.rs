@@ -171,6 +171,30 @@ fn leader_row(
             metric_int("goals", "G", player.goals() as i64, MetricUnit::Goals),
             metric_int("assists", "A", player.assists() as i64, MetricUnit::Assists),
             metric_int("points", "PTS", player.points() as i64, MetricUnit::Points),
+            metric_decimal(
+                "ppg",
+                "PPG",
+                player.pace_82().map(|pace| pace / 82.0),
+                MetricUnit::PerGame,
+                ValuePrecision::ThreeDecimals,
+                None,
+            ),
+            metric_decimal(
+                "pts_per_82",
+                "Pts/82",
+                player.pace_82(),
+                MetricUnit::Per82,
+                ValuePrecision::OneDecimal,
+                None,
+            ),
+            metric_decimal(
+                "goals_per_82",
+                "G/82",
+                player.goals_per_82(),
+                MetricUnit::Per82,
+                ValuePrecision::OneDecimal,
+                None,
+            ),
         ],
         tokens: if player.is_rankable() {
             vec![SemanticToken::SupportingEvidence]

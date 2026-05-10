@@ -966,9 +966,17 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
         });
         let total_matched = matched.len();
         let results: Vec<PlayerView<'_>> = matched.iter().copied().take(args.top).collect();
+        let leaders_view = leaders_view_from_results(
+            &results,
+            metric,
+            args.rate,
+            args.seasons,
+            season_key,
+            season_type,
+        );
 
         if args.json {
-            println!("{}", leaders_json(&results));
+            println!("{}", leaders_json(&leaders_view));
             return Ok(());
         }
         print_improvement_table(&results, &imp_map, args.top, total_matched, args.seasons);
@@ -1017,13 +1025,21 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
     }
     let total_matched = matched.len();
     let results: Vec<PlayerView<'_>> = matched.into_iter().take(args.top).collect();
+    let leaders_view = leaders_view_from_results(
+        &results,
+        metric,
+        args.rate,
+        args.seasons,
+        season_key,
+        season_type,
+    );
 
     if args.json {
-        println!("{}", leaders_json(&results));
+        println!("{}", leaders_json(&leaders_view));
         return Ok(());
     }
     if args.csv {
-        leaders_csv(&results);
+        leaders_csv(&leaders_view);
         return Ok(());
     }
 
@@ -1035,15 +1051,6 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
     } else {
         vec![None; results.len()]
     };
-
-    let leaders_view = leaders_view_from_results(
-        &results,
-        metric,
-        args.rate,
-        args.seasons,
-        season_key,
-        season_type,
-    );
 
     leaders_table(&leaders_view, &percentiles, args.top, total_matched);
     Ok(())
@@ -1168,6 +1175,27 @@ fn leader_team(row: &icelines_core::LeaderRow) -> &str {
     }
 }
 
+fn leader_metric_i64(row: &icelines_core::LeaderRow, key: &str) -> Option<i64> {
+    row.secondary
+        .iter()
+        .find(|metric| metric.key.0 == key)
+        .and_then(|metric| match metric.value {
+            MetricValue::Integer(value) => Some(value),
+            _ => None,
+        })
+}
+
+fn leader_metric_f64(row: &icelines_core::LeaderRow, key: &str) -> Option<f64> {
+    row.secondary
+        .iter()
+        .find(|metric| metric.key.0 == key)
+        .and_then(|metric| match metric.value {
+            MetricValue::Decimal(value) => Some(value),
+            MetricValue::Integer(value) => Some(value as f64),
+            _ => None,
+        })
+}
+
 fn print_improvement_table(
     views: &[PlayerView<'_>],
     imp_map: &std::collections::HashMap<u32, f64>,
@@ -1219,47 +1247,45 @@ fn print_improvement_table(
     println!("\n{total} matched, showing {}.", views.len().min(top));
 }
 
-fn leaders_json(views: &[PlayerView<'_>]) -> String {
-    let rows: Vec<serde_json::Value> = views
+fn leaders_json(view: &LeadersView) -> String {
+    let rows: Vec<serde_json::Value> = view
+        .rows
         .iter()
-        .enumerate()
-        .map(|(i, v)| {
-            let totals = &v.stats.totals;
+        .map(|row| {
             serde_json::json!({
-                "rank": i + 1,
-                "name": v.identity.full_name,
-                "team": v.team_display(),
-                "pos": v.position().abbreviation(),
-                "gp": v.gp(),
-                "ppg": v.pace_82().map(|p| round2(p / 82.0)),
-                "pts_per_82": v.pace_82().map(round1),
-                "goals_per_82": v.goals_per_82().map(round1),
-                "season_pts": totals.points,
-                "season_goals": totals.goals,
-                "season_assists": totals.assists,
+                "rank": row.rank,
+                "name": row.display_name,
+                "team": leader_team(row),
+                "pos": row.position.abbreviation(),
+                "gp": leader_metric_i64(row, "gp").unwrap_or_default(),
+                "ppg": leader_metric_f64(row, "ppg").map(round2),
+                "pts_per_82": leader_metric_f64(row, "pts_per_82").map(round1),
+                "goals_per_82": leader_metric_f64(row, "goals_per_82").map(round1),
+                "season_pts": leader_metric_i64(row, "points").unwrap_or_default(),
+                "season_goals": leader_metric_i64(row, "goals").unwrap_or_default(),
+                "season_assists": leader_metric_i64(row, "assists").unwrap_or_default(),
             })
         })
         .collect();
     serde_json::to_string_pretty(&rows).unwrap_or_default()
 }
 
-fn leaders_csv(views: &[PlayerView<'_>]) {
+fn leaders_csv(view: &LeadersView) {
     println!("rank,name,team,pos,gp,ppg,pts_per_82,goals_per_82,pts,goals,assists");
-    for (i, v) in views.iter().enumerate() {
-        let totals = &v.stats.totals;
+    for row in &view.rows {
         println!(
             "{},{},{},{},{},{:.3},{:.1},{:.1},{},{},{}",
-            i + 1,
-            v.identity.full_name,
-            v.team_display(),
-            v.position().abbreviation(),
-            v.gp(),
-            v.pace_82().map(|p| p / 82.0).unwrap_or(0.0),
-            v.pace_82().unwrap_or(0.0),
-            v.goals_per_82().unwrap_or(0.0),
-            totals.points,
-            totals.goals,
-            totals.assists,
+            row.rank,
+            row.display_name,
+            leader_team(row),
+            row.position.abbreviation(),
+            leader_metric_i64(row, "gp").unwrap_or_default(),
+            leader_metric_f64(row, "ppg").unwrap_or_default(),
+            leader_metric_f64(row, "pts_per_82").unwrap_or_default(),
+            leader_metric_f64(row, "goals_per_82").unwrap_or_default(),
+            leader_metric_i64(row, "points").unwrap_or_default(),
+            leader_metric_i64(row, "goals").unwrap_or_default(),
+            leader_metric_i64(row, "assists").unwrap_or_default(),
         );
     }
 }

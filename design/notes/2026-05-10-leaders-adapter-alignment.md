@@ -9,7 +9,8 @@ Leaders now has three different projection levels:
 
 - Web HTML and web JSON build `LeadersView` in `icelines-web`.
 - CLI text output builds `LeadersView` through `leaders_view_from_results`.
-- CLI JSON and CSV still serialize directly from `PlayerView`.
+- CLI JSON and CSV now serialize from `LeadersView` while preserving the
+  existing field names and precision.
 - TUI Stats/Queries still sorts and displays directly from `PlayerView`.
 
 That means the feature is behaviorally useful, but not yet fully uniform.
@@ -28,9 +29,9 @@ All leaders-capable surfaces should eventually consume the same row contract:
 ## Ordered Migration
 
 1. Extend `LeadersView` construction to carry the compatibility metrics needed
-   by existing CLI JSON/CSV without changing those wire shapes.
+   by existing CLI JSON/CSV without changing those wire shapes. Complete.
 2. Move CLI JSON/CSV serialization to read from `LeadersView`, preserving
-   existing field names and numeric precision.
+   existing field names and numeric precision. Complete.
 3. Add a fixture test that compares CLI text, JSON, and CSV row identity for the
    same query arguments.
 4. Move TUI Stats/Queries row rendering behind a `LeadersView` adapter while
