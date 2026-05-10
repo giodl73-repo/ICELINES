@@ -217,6 +217,8 @@ Progress:
   consistently across routes.
 - 2026-05-10: Normalized bad `/api/v1/leaders?filter=...` responses onto the
   JSON API envelope instead of leaking HTML error pages through the API surface.
+- 2026-05-10: Added the ordered closeout tasklist:
+  `design/notes/2026-05-10-ted-lindsay-closeout-tasklist.md`.
 
 ---
 
