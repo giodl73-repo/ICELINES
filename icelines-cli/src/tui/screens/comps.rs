@@ -1,7 +1,7 @@
 use crate::tui::app::App;
 use icelines_core::identity::PlayerId;
 use icelines_core::stats_repository::PlayerView;
-use icelines_core::{CompareView, MetricCell, MetricValue, PlayerCardView};
+use icelines_core::{CompareView, MetricCell, MetricValue, PlayerCardView, SimilarPlayersView};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -10,37 +10,24 @@ use ratatui::{
     Frame,
 };
 
-/// Return players similar to `target` — same broad position, sorted by
-/// closeness in PPG pace. Excludes the target themselves.
+/// Return players similar to `target` using the shared compare/comps
+/// ViewModel. Excludes the target themselves.
 pub fn find_comps_views<'a>(
     views: &'a [PlayerView<'a>],
     target: &PlayerView<'_>,
 ) -> Vec<&'a PlayerView<'a>> {
-    let target_pace = target.pace_82().map(|p| p / 82.0).unwrap_or(0.0);
-    let target_is_fwd = target.position().is_forward();
-    let target_id = target.identity.id;
-
-    let mut pool: Vec<(&PlayerView<'a>, f64)> = views
+    let view = SimilarPlayersView::from_player_views(
+        views,
+        target,
+        20,
+        target.season(),
+        target.season_type(),
+        true,
+    );
+    view.rows
         .iter()
-        .filter(|v| {
-            v.identity.id != target_id
-                && v.pace_82().is_some()
-                && v.position().is_forward() == target_is_fwd
-        })
-        .map(|v| {
-            let ppg = v.pace_82().map(|p| p / 82.0).unwrap_or(0.0);
-            (v, (ppg - target_pace).abs())
-        })
-        .collect();
-
-    // PlayerId tiebreak — equal-distance comps would otherwise shuffle
-    // each frame because `views` came from a HashMap iterator.
-    pool.sort_by(|a, b| {
-        a.1.partial_cmp(&b.1)
-            .unwrap_or(std::cmp::Ordering::Equal)
-            .then_with(|| a.0.id().0.cmp(&b.0.id().0))
-    });
-    pool.into_iter().take(20).map(|(v, _)| v).collect()
+        .filter_map(|row| views.iter().find(|view| view.identity.id == row.player_id))
+        .collect()
 }
 
 /// Hart.5c.6 Phase B-2.1 — PlayerId-keyed render path. Looks up the
@@ -350,8 +337,14 @@ mod tests {
             let normalized = icelines_core::name::normalize_name(name);
             let identity = fixtures::identity(id).name(name, &normalized).build();
             let mut stats = fixtures::stats(id, 20242025, team).position(pos).build();
+            let points = (pace / 82.0 * stats.totals.gp as f64).round() as u32;
+            stats.totals.points = points;
+            stats.totals.goals = points / 2;
+            stats.totals.assists = points.saturating_sub(stats.totals.goals);
             if let Some(ref mut ps) = stats.totals.pace_score {
                 ps.pace_82 = pace;
+                ps.goals_per_82 = stats.totals.goals as f64 / stats.totals.gp as f64 * 82.0;
+                ps.raw_points = points;
             }
             r.upsert_identity(identity).unwrap();
             r.upsert_stats(stats).unwrap();

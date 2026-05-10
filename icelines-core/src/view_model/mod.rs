@@ -24,7 +24,7 @@ pub mod tokens;
 pub mod transactions;
 
 pub use career::{CareerRow, CareerSortKey, CareerView};
-pub use compare::CompareView;
+pub use compare::{CompareView, SimilarPlayerRow, SimilarPlayerTarget, SimilarPlayersView};
 pub use config::SeasonTypeMutationIntent;
 pub use context::{
     AppliedFilter, Completeness, EmptyKind, EmptyState, FilterKey, FilterOp, RecoveryAction,

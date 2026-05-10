@@ -67,6 +67,7 @@ Initial ViewModel families:
 
 - `LeadersView`
 - `PlayerCardView`
+- `SimilarPlayersView`
 - `TeamDepthView`
 - `GoaliesView`
 - `ScheduleView`

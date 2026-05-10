@@ -16,8 +16,8 @@ use icelines_core::{
     stats_catalog::{StatId, StatUnit},
     stats_repository::PlayerView,
     CompareView, LeaderKind, LeadersView, MetricCell, MetricUnit, MetricValue, PlayerCardView,
-    SemanticToken, SortDirection, SortKey, SortState, StatKey, ValuePrecision, ViewContext,
-    ViewWindow,
+    SemanticToken, SimilarPlayersView, SortDirection, SortKey, SortState, StatKey, ValuePrecision,
+    ViewContext, ViewWindow,
 };
 use icelines_fetch::{aggregate, career::load_career, snapshot::SnapshotStore};
 use icelines_query::{extract_bio, BioConstraints};
@@ -2513,98 +2513,33 @@ fn format_seconds_mmss(value: i64) -> String {
 
 fn run_similar(views: &[PlayerView<'_>], target_name: &str, n: usize) -> anyhow::Result<()> {
     let target = find_view(views, target_name)?;
-    let target_age = view_age(target);
-
-    let cohort: Vec<&PlayerView<'_>> = views
-        .iter()
-        .filter(|v| {
-            v.position() == target.position()
-                && v.is_rankable()
-                && view_age(v)
-                    .zip(target_age)
-                    .map(|(a, ta)| (a as i32 - ta as i32).abs() <= 2)
-                    .unwrap_or(false)
-        })
-        .collect();
-
-    if cohort.len() < 3 {
+    let view = SimilarPlayersView::from_player_views(
+        views,
+        target,
+        n,
+        target.season(),
+        target.season_type(),
+        true,
+    );
+    if let Some(empty) = &view.empty_state {
         bail!(
-            "cohort too small ({} players) for similarity search — need at least 3",
-            cohort.len()
+            "{}",
+            empty.detail.clone().unwrap_or_else(|| empty.title.clone())
         );
     }
 
-    // Phase Lindsay L.5.2 — similarity dimensions read via StatId
-    // catalog. PPG (StatId::PointsPerGame) and GPG (StatId::GoalsPerGame)
-    // gate at MIN_GP=10 same as the legacy pace_82 / goals_per_82
-    // helpers; the catalog `None → 0.0` fallback below preserves the
-    // legacy "missing / under-MIN_GP players cluster at zero" behavior
-    // that the cohort filter assumed.
-    let ppgs: Vec<f64> = cohort
-        .iter()
-        .map(|v| StatId::PointsPerGame.read(v).unwrap_or(0.0))
-        .collect();
-    let gpgs: Vec<f64> = cohort
-        .iter()
-        .map(|v| StatId::GoalsPerGame.read(v).unwrap_or(0.0))
-        .collect();
-    let picks: Vec<f64> = cohort
-        .iter()
-        .map(|v| {
-            v.identity
-                .bio
-                .draft_overall
-                .map(|pk| 1.0 - (pk as f64 - 1.0) / 399.0)
-                .unwrap_or(0.0)
-        })
-        .collect();
-
-    let (ppg_mu, ppg_sd) = mean_std(&ppgs);
-    let (gpg_mu, gpg_sd) = mean_std(&gpgs);
-    let (pick_mu, pick_sd) = mean_std(&picks);
-
-    let target_norm = &target.identity.name_normalized;
-    let ti = cohort
-        .iter()
-        .position(|v| &v.identity.name_normalized == target_norm)
-        .unwrap_or(0);
-    let tz_ppg = zscore(ppgs[ti], ppg_mu, ppg_sd);
-    let tz_gpg = zscore(gpgs[ti], gpg_mu, gpg_sd);
-    let tz_pick = zscore(picks[ti], pick_mu, pick_sd);
-
-    let mut scored: Vec<(&PlayerView<'_>, f64)> = cohort
-        .iter()
-        .zip(ppgs.iter())
-        .zip(gpgs.iter())
-        .zip(picks.iter())
-        .map(|(((v, &ppg), &gpg), &pick)| {
-            let dz_ppg = zscore(ppg, ppg_mu, ppg_sd) - tz_ppg;
-            let dz_gpg = zscore(gpg, gpg_mu, gpg_sd) - tz_gpg;
-            let dz_pick = zscore(pick, pick_mu, pick_sd) - tz_pick;
-            let dist = (dz_ppg * dz_ppg + dz_gpg * dz_gpg + dz_pick * dz_pick).sqrt();
-            (*v, dist)
-        })
-        .collect();
-
-    // Phase Lindsay L.3.2 / AI-06 universal tiebreak.
-    scored.sort_by(|a, b| {
-        a.1.partial_cmp(&b.1)
-            .unwrap_or(std::cmp::Ordering::Equal)
-            .then_with(|| a.0.identity.id.0.cmp(&b.0.identity.id.0))
-    });
-    scored.retain(|(v, _)| &v.identity.name_normalized != target_norm);
-
-    let age_s = target_age
+    let age_s = view
+        .target
+        .age
         .map(|a| a.to_string())
         .unwrap_or_else(|| "?".to_owned());
-    let draft_s = draft_str(target);
     println!(
         "SIMILAR PLAYERS TO {} ({} · {} · Age {} · {})",
-        target.identity.full_name,
-        target.team_display(),
-        target.position().abbreviation(),
+        view.target.display_name,
+        view.target.team_display,
+        view.target.position.abbreviation(),
         age_s,
-        draft_s
+        view.target.draft_label
     );
     println!("{}", "─".repeat(72));
     println!(
@@ -2613,30 +2548,29 @@ fn run_similar(views: &[PlayerView<'_>], target_name: &str, n: usize) -> anyhow:
     );
     println!("{}", "─".repeat(72));
 
-    for (i, (v, dist)) in scored.iter().take(n).enumerate() {
-        let age = view_age(v)
+    for row in &view.rows {
+        let age = row
+            .age
             .map(|a| a.to_string())
             .unwrap_or_else(|| "?".to_owned());
-        let draft = draft_str(v);
-        let ppg = v
-            .pace_82()
-            .map(|p| format!("{:.3}", p / 82.0))
+        let ppg = card_metric_f64(&row.metrics, "points_per_game")
+            .map(|value| format!("{value:.3}"))
             .unwrap_or_else(|| "—".to_owned());
-        let sim = (100.0 / (1.0 + dist)) as u32;
         println!(
-            "{:<6} {:<24} {:<5} {:<4} {:<10} {:<8} {sim}%",
-            i + 1,
-            v.identity.full_name,
-            v.team_display(),
+            "{:<6} {:<24} {:<5} {:<4} {:<10} {:<8} {}%",
+            row.rank,
+            row.display_name,
+            row.team_display,
             age,
-            draft,
-            ppg
+            row.draft_label,
+            ppg,
+            row.similarity_pct
         );
     }
     println!(
         "\nCohort: {} {} players aged {}±2.",
-        cohort.len(),
-        target.position().abbreviation(),
+        view.cohort_count,
+        view.target.position.abbreviation(),
         age_s
     );
     Ok(())
@@ -2812,6 +2746,7 @@ fn season_label(season: &str) -> String {
     }
 }
 
+#[cfg(test)]
 fn mean_std(vals: &[f64]) -> (f64, f64) {
     let n = vals.len() as f64;
     if n == 0.0 {
@@ -2823,6 +2758,7 @@ fn mean_std(vals: &[f64]) -> (f64, f64) {
     (mean, if std < 1e-10 { 1.0 } else { std })
 }
 
+#[cfg(test)]
 fn zscore(val: f64, mean: f64, std: f64) -> f64 {
     (val - mean) / std
 }

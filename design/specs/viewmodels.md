@@ -188,6 +188,32 @@ Required:
 - warnings
 - source state
 
+### `SimilarPlayersView`
+
+Purpose: shared compare/comps similarity cohort for CLI `query compare --similar`
+and TUI comps list.
+
+Required:
+
+- `context`
+- `target`
+- `cohort_count`
+- `rows: Vec<SimilarPlayerRow>`
+- `empty_state`
+- `warnings`
+
+`SimilarPlayerRow` includes:
+
+- `rank`
+- `player_id`
+- display name
+- team
+- position
+- age
+- draft label
+- similarity percent and raw distance
+- typed metric cells, starting with `points_per_game`
+
 Rows/slots must preserve:
 
 - player ID

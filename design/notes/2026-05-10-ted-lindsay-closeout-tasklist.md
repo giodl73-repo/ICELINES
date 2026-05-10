@@ -73,8 +73,9 @@ surface still differs from CLI/TUI.
      uses `CompareView` anchor projection and is fenced by
      `l1_tui_comps_target_matches_compare_view_anchor`; CLI head-to-head now
      prints `CompareView` card projection with legacy fallbacks for fields not
-     yet in the `PlayerCardView` contract; similarity-list adapter alignment
-     remains before marking the row `done`.
+     yet in the `PlayerCardView` contract; CLI similarity and TUI comps list
+     now project from `SimilarPlayersView`; web similarity route remains before
+     marking the row `done`.
    - Career: web JSON row identity is now fenced against `CareerView` by
      `l1_api_career_rows_match_career_view`; CLI rows now project through
      `CareerView` and are fenced by `l0_cli_career_rows_project_from_career_view`;
