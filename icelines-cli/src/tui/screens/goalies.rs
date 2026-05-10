@@ -205,24 +205,21 @@ impl GoalieSort {
     }
 
     fn key(self) -> &'static str {
-        match self {
-            Self::SvPctDesc => "save_pct",
-            Self::GaaAsc => "gaa",
-            Self::WinsDesc => "wins",
-            Self::GpDesc => "gp",
-            Self::SavesDesc => "saves",
-            Self::ShutoutsDesc => "shutouts",
-        }
+        self.leaderboard_sort().key()
     }
 
     fn direction(self) -> SortDirection {
+        self.leaderboard_sort().direction()
+    }
+
+    fn leaderboard_sort(self) -> icelines_core::GoalieLeaderboardSort {
         match self {
-            Self::GaaAsc => SortDirection::Asc,
-            Self::SvPctDesc
-            | Self::WinsDesc
-            | Self::GpDesc
-            | Self::SavesDesc
-            | Self::ShutoutsDesc => SortDirection::Desc,
+            Self::SvPctDesc => icelines_core::GoalieLeaderboardSort::SavePct,
+            Self::GaaAsc => icelines_core::GoalieLeaderboardSort::Gaa,
+            Self::WinsDesc => icelines_core::GoalieLeaderboardSort::Wins,
+            Self::GpDesc => icelines_core::GoalieLeaderboardSort::Games,
+            Self::SavesDesc => icelines_core::GoalieLeaderboardSort::Saves,
+            Self::ShutoutsDesc => icelines_core::GoalieLeaderboardSort::Shutouts,
         }
     }
 }
@@ -244,52 +241,13 @@ pub fn sort_goalie_views<'a>(
     role_filter: GoalieRoleFilter,
     starter_threshold: Option<u32>,
 ) -> Vec<&'a icelines_core::stats_repository::PlayerView<'a>> {
-    use std::cmp::Ordering;
     let mut out: Vec<&icelines_core::stats_repository::PlayerView<'a>> = views
         .iter()
         .filter(|v| v.is_goalie() && v.gp() >= min_gp)
         .filter(|v| filters.matches_view(v))
         .filter(|v| role_filter.matches_gp(v.gp(), starter_threshold))
         .collect();
-    out.sort_by(|a, b| {
-        let sa = a.stats.goalie.as_ref();
-        let sb = b.stats.goalie.as_ref();
-        let ord = match sort {
-            GoalieSort::SvPctDesc => {
-                let av = sa.and_then(|s| s.save_pct).unwrap_or(0.0);
-                let bv = sb.and_then(|s| s.save_pct).unwrap_or(0.0);
-                bv.partial_cmp(&av).unwrap_or(Ordering::Equal)
-            }
-            GoalieSort::GaaAsc => {
-                let av = sa
-                    .and_then(|s| s.goals_against_average)
-                    .unwrap_or(f32::INFINITY);
-                let bv = sb
-                    .and_then(|s| s.goals_against_average)
-                    .unwrap_or(f32::INFINITY);
-                av.partial_cmp(&bv).unwrap_or(Ordering::Equal)
-            }
-            GoalieSort::WinsDesc => sb
-                .map(|s| s.wins)
-                .unwrap_or(0)
-                .cmp(&sa.map(|s| s.wins).unwrap_or(0)),
-            GoalieSort::GpDesc => b.gp().cmp(&a.gp()),
-            GoalieSort::SavesDesc => sb
-                .map(|s| s.saves)
-                .unwrap_or(0)
-                .cmp(&sa.map(|s| s.saves).unwrap_or(0)),
-            GoalieSort::ShutoutsDesc => sb
-                .map(|s| s.shutouts)
-                .unwrap_or(0)
-                .cmp(&sa.map(|s| s.shutouts).unwrap_or(0)),
-        };
-        // Tiebreaker: SV% desc, same as sort_goalies.
-        ord.then_with(|| {
-            let av = sa.and_then(|s| s.save_pct).unwrap_or(0.0);
-            let bv = sb.and_then(|s| s.save_pct).unwrap_or(0.0);
-            bv.partial_cmp(&av).unwrap_or(Ordering::Equal)
-        })
-    });
+    out.sort_by(|a, b| sort.leaderboard_sort().compare_player_views(a, b));
     out
 }
 

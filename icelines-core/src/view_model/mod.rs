@@ -40,7 +40,9 @@ pub use game::{
     GameBoxscoreInput, GameGoalInput, GameGoalRow, GameGoalieInput, GameGoalieRow, GameSkaterInput,
     GameSkaterRow, GameView,
 };
-pub use goalies::{GoalieRoleFilter, GoalieRoleSignal, GoalieRow, GoaliesView};
+pub use goalies::{
+    GoalieLeaderboardSort, GoalieRoleFilter, GoalieRoleSignal, GoalieRow, GoaliesView,
+};
 pub use home::{HomeGoalieRow, HomeSkaterRow, HomeView};
 pub use leaders::{LeaderKind, LeaderRow, LeadersView};
 pub use player_card::{PlayerCardView, PlayerCareerSummary, PlayerSeasonSummary};

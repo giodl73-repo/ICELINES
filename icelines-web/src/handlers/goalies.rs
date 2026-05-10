@@ -84,14 +84,18 @@ impl GoalieSort {
     }
 
     pub fn direction(self) -> SortDirection {
+        self.leaderboard_sort().direction()
+    }
+
+    pub fn leaderboard_sort(self) -> icelines_core::GoalieLeaderboardSort {
         match self {
-            Self::GaaAsc => SortDirection::Asc,
-            Self::SavePct
-            | Self::Wins
-            | Self::Losses
-            | Self::Games
-            | Self::Saves
-            | Self::Shutouts => SortDirection::Desc,
+            Self::SavePct => icelines_core::GoalieLeaderboardSort::SavePct,
+            Self::Wins => icelines_core::GoalieLeaderboardSort::Wins,
+            Self::Losses => icelines_core::GoalieLeaderboardSort::Losses,
+            Self::Games => icelines_core::GoalieLeaderboardSort::Games,
+            Self::Saves => icelines_core::GoalieLeaderboardSort::Saves,
+            Self::Shutouts => icelines_core::GoalieLeaderboardSort::Shutouts,
+            Self::GaaAsc => icelines_core::GoalieLeaderboardSort::Gaa,
         }
     }
 }
@@ -179,47 +183,7 @@ fn compare_goalie_views(
     b: &icelines_core::stats_repository::PlayerView<'_>,
     sort: GoalieSort,
 ) -> std::cmp::Ordering {
-    let ga = a.stats.goalie.as_ref();
-    let gb = b.stats.goalie.as_ref();
-    let primary = match sort {
-        GoalieSort::SavePct => gb
-            .and_then(|g| g.save_pct)
-            .unwrap_or(0.0)
-            .partial_cmp(&ga.and_then(|g| g.save_pct).unwrap_or(0.0))
-            .unwrap_or(std::cmp::Ordering::Equal),
-        GoalieSort::Wins => gb
-            .map(|g| g.wins)
-            .unwrap_or(0)
-            .cmp(&ga.map(|g| g.wins).unwrap_or(0)),
-        GoalieSort::Losses => gb
-            .map(|g| g.losses)
-            .unwrap_or(0)
-            .cmp(&ga.map(|g| g.losses).unwrap_or(0)),
-        GoalieSort::Games => b.gp().cmp(&a.gp()),
-        GoalieSort::Saves => gb
-            .map(|g| g.saves)
-            .unwrap_or(0)
-            .cmp(&ga.map(|g| g.saves).unwrap_or(0)),
-        GoalieSort::Shutouts => gb
-            .map(|g| g.shutouts)
-            .unwrap_or(0)
-            .cmp(&ga.map(|g| g.shutouts).unwrap_or(0)),
-        GoalieSort::GaaAsc => ga
-            .and_then(|g| g.goals_against_average)
-            .unwrap_or(f32::INFINITY)
-            .partial_cmp(
-                &gb.and_then(|g| g.goals_against_average)
-                    .unwrap_or(f32::INFINITY),
-            )
-            .unwrap_or(std::cmp::Ordering::Equal),
-    };
-    primary
-        .then(
-            gb.map(|g| g.wins)
-                .unwrap_or(0)
-                .cmp(&ga.map(|g| g.wins).unwrap_or(0)),
-        )
-        .then(a.full_name().cmp(b.full_name()))
+    sort.leaderboard_sort().compare_player_views(a, b)
 }
 
 fn goalie_template_row_from_view(row: &icelines_core::GoalieRow, season: Season) -> GoalieRow {

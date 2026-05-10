@@ -45,7 +45,9 @@ surface still differs from CLI/TUI.
      `l2_cmd_query_goalies_json_csv_row_identity_match`; web JSON now accepts
      the CLI-parity `saves` sort and explicit `gp_min` floor; TUI/web parity
      checks include `l0_goalies_view_from_tui_state_carries_saves_sort_and_metric`;
-     cross-surface row-order parity still remains before marking done.
+     CLI/TUI/web row ordering now uses shared `GoalieLeaderboardSort` with
+     player-id tie-break; fixture coverage includes
+     `goalie_leaderboard_sort_uses_uniform_id_tiebreak`.
    - Team/depth/player/compare/career: verify adapter parity before marking
      any row `done`.
 

@@ -1885,57 +1885,16 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
         }
     }
 
-    use std::cmp::Ordering;
     let sort_key = args.sort.to_ascii_lowercase();
     views.sort_by(|a, b| {
-        let sa = a.stats.goalie.as_ref();
-        let sb = b.stats.goalie.as_ref();
-        let primary = match sort_key.as_str() {
-            "sv-pct" | "svpct" | "sv%" => {
-                let av = sa.and_then(|s| s.save_pct).unwrap_or(0.0);
-                let bv = sb.and_then(|s| s.save_pct).unwrap_or(0.0);
-                bv.partial_cmp(&av).unwrap_or(Ordering::Equal)
-            }
-            "gaa" => {
-                let av = sa
-                    .and_then(|s| s.goals_against_average)
-                    .unwrap_or(f32::INFINITY);
-                let bv = sb
-                    .and_then(|s| s.goals_against_average)
-                    .unwrap_or(f32::INFINITY);
-                av.partial_cmp(&bv).unwrap_or(Ordering::Equal)
-            }
-            "wins" | "w" => sb
-                .map(|s| s.wins)
-                .unwrap_or(0)
-                .cmp(&sa.map(|s| s.wins).unwrap_or(0)),
-            "gp" => b.gp().cmp(&a.gp()),
-            "saves" => sb
-                .map(|s| s.saves)
-                .unwrap_or(0)
-                .cmp(&sa.map(|s| s.saves).unwrap_or(0)),
-            "so" | "shutouts" => sb
-                .map(|s| s.shutouts)
-                .unwrap_or(0)
-                .cmp(&sa.map(|s| s.shutouts).unwrap_or(0)),
-            other => {
-                // Phase Lindsay L.5.1 — catalog fallback for goalies.
-                // If the legacy alias doesn't match, try StatId::cli_key
-                // before warning. Routes through StatId::sort_cmp (AI-06
-                // tiebreak preserved). New goalie keys (e.g. ev-save-pct,
-                // sh-save-pct, regulation-wins) become available
-                // additively.
-                if let Some(sid) = StatId::from_cli_key(other) {
-                    return sid.sort_cmp(a, b);
-                }
-                eprintln!("  Hint: unknown sort '{other}' — falling back to sv-pct.");
-                let av = sa.and_then(|s| s.save_pct).unwrap_or(0.0);
-                let bv = sb.and_then(|s| s.save_pct).unwrap_or(0.0);
-                bv.partial_cmp(&av).unwrap_or(Ordering::Equal)
-            }
-        };
-        // Phase Lindsay L.3.2 / AI-06 universal tiebreak.
-        primary.then_with(|| a.identity.id.0.cmp(&b.identity.id.0))
+        if let Some(sort) = icelines_core::GoalieLeaderboardSort::from_key(&sort_key) {
+            return sort.compare_player_views(a, b);
+        }
+        if let Some(sid) = StatId::from_cli_key(&sort_key) {
+            return sid.sort_cmp(a, b);
+        }
+        eprintln!("  Hint: unknown sort '{sort_key}' - falling back to sv-pct.");
+        icelines_core::GoalieLeaderboardSort::SavePct.compare_player_views(a, b)
     });
     views.truncate(args.top);
 
