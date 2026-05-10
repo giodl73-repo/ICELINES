@@ -41,33 +41,31 @@ important gaps, and make parity measurable.
 
 ---
 
-## API contract seed
-
-TedLindsay.1 must either confirm this envelope or replace it before any new
-JSON route is considered complete:
+## API contract
 
 ```json
 {
-  "schema_version": "v1",
+  "schema_version": 1,
+  "route": "leaders",
   "data": {},
   "meta": {
     "season": 20252026,
-    "season_type": "regular",
-    "source_state": []
-  },
-  "error": null
+    "season_type": "regular"
+  }
 }
 ```
 
 Rules:
 
-- success responses carry `data`, `meta`, and `error: null`;
-- error responses carry `data: null`, `meta` where known, and a typed `error`
-  with `kind`, `message`, and optional `details`;
+- success responses carry numeric `schema_version`, `route`, `data`, and
+  `meta`;
+- error responses carry numeric `schema_version`, `route`, route-appropriate
+  empty `data`, best-known `meta`, and an `error` string;
 - paginated responses put `limit`, `offset` or cursor, and total/has_more in
   `meta`;
 - HTML and JSON routes expose the same active context and filter state;
-- route-specific exceptions must be recorded in `design/specs/surface-parity.md`.
+- route-specific contracts that intentionally do not use the shared envelope
+  must be recorded in `design/specs/surface-parity.md`.
 
 ## Platform contracts consumed
 
@@ -208,6 +206,9 @@ Progress:
   environment mutation.
 - 2026-05-10: Added a shared `json_error_meta` API helper and migrated current
   route/data/meta/error callers off repeated handler-local envelope tuples.
+- 2026-05-10: Updated the Ted Lindsay API contract text and surface matrix
+  notes to match the implemented numeric schema-version, route, success
+  envelope, error envelope, and intentional ViewModel-contract exceptions.
 
 ---
 

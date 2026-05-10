@@ -146,22 +146,22 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /leaders` | `handlers/leaders.rs` | HTML | Leaders/skater leaderboard | partial - parity checks continue in TedLindsay.3 |
 | `GET /api/v1/leaders` | `handlers/leaders.rs` | JSON | Leaders/skater leaderboard | partial - envelope tests exist |
 | `GET /player/:id` | `handlers/player.rs` | HTML | Player card | partial - projects player page from `PlayerCardView`; CLI/TUI alignment remains |
-| `GET /api/v1/player/:id` | `handlers/player.rs` | JSON | Player card | partial - projects stable envelope from `PlayerCardView`; covered by `l1_player_json_envelope_shape` |
+| `GET /api/v1/player/:id` | `handlers/player.rs` | JSON | Player card | partial - projects stable success and error envelopes from `PlayerCardView`; covered by `l1_player_json_*` |
 | `GET /compare` | `handlers/compare.rs` | HTML | Compare/comps | partial - projects compare page from `CompareView`; CLI/TUI alignment remains |
 | `GET /api/v1/compare` | `handlers/compare.rs` | JSON | Compare/comps | partial - projects stable envelope from `CompareView`; covered by `l1_compare_json_envelope_shape` |
 | `GET /goalies` | `handlers/goalies.rs` | HTML | Goalie leaderboard | partial - parity checks continue in TedLindsay.3 |
 | `GET /api/v1/goalies` | `handlers/goalies.rs` | JSON | Goalie leaderboard | partial - envelope tests exist |
 | `GET /team/:abbrev` | `handlers/team.rs` | HTML | Team depth | partial - renders from `TeamDepthView`, HTML projection shape preserved |
-| `GET /api/v1/team/:abbrev` | `handlers/team.rs` | JSON | Team depth | partial - projects existing stable JSON envelope from `TeamDepthView` |
+| `GET /api/v1/team/:abbrev` | `handlers/team.rs` | JSON | Team depth | partial - projects stable success and error envelopes from `TeamDepthView`; covered by `l1_team_json_*` |
 | `GET /depth` | `handlers/depth.rs` | HTML | Cross-team depth | partial - projects depth rankings from `DepthLeagueView`; CLI/TUI alignment remains |
-| `GET /api/v1/depth` | `handlers/depth.rs` | JSON | Cross-team depth | partial - projects stable envelope from `DepthLeagueView`; covered by `l1_depth_json_envelope_shape` |
+| `GET /api/v1/depth` | `handlers/depth.rs` | JSON | Cross-team depth | partial - projects stable success and error envelopes from `DepthLeagueView`; covered by `l1_depth_json_*` |
 | `GET /poach` | `handlers/poach.rs` | HTML | Poacher board | done |
 | `GET /reports/poach` | `handlers/poach.rs` | HTML report | Poach/weekly reports | done |
 | `GET /reports/weekly` | `handlers/poach.rs` | HTML report | Poach/weekly reports | done |
-| `GET /api/v1/poach` | `handlers/poach.rs` | JSON | Poacher board | done |
-| `GET /api/v1/watch-rules` | `handlers/poach.rs` | JSON | Watch rules | partial - projects default and persisted rules through `WatchRulesView` |
+| `GET /api/v1/poach` | `handlers/poach.rs` | JSON | Poacher board | done - intentionally returns the board ViewModel contract, not the shared API envelope |
+| `GET /api/v1/watch-rules` | `handlers/poach.rs` | JSON | Watch rules | partial - projects default and persisted rules through `WatchRulesView`; intentionally returns the rules ViewModel contract |
 | `GET /career` | `handlers/career.rs` | HTML | Career/cross-league cohorts | partial - projects cohort rows from `CareerView` |
-| `GET /api/v1/career` | `handlers/career.rs` | JSON | Career/cross-league cohorts | partial - projects stable envelope from `CareerView`; empty-store 400 remains accepted |
+| `GET /api/v1/career` | `handlers/career.rs` | JSON | Career/cross-league cohorts | partial - projects stable success and bad-request envelopes from `CareerView`; covered by `l1_api_career_envelope_shape` |
 | `GET /docs` | `handlers/docs.rs` | HTML | Docs reference | partial - renders `COMMANDS.md` through `DocsView` |
 | `GET /season-type/:kind` | `handlers/season_type.rs` | mutating redirect | Config/report toggles | partial - normalizes season-type mutation intent through shared config support |
 | `GET /scores` | `handlers/scores.rs` | HTML | Scores/tonight | partial - projects score days from `ScoresView`; CLI/TUI alignment remains |
