@@ -22,6 +22,35 @@ pub struct ScoresQuery {
     pub range: Option<String>,
 }
 
+struct ScoresResult {
+    active_label: String,
+    active_date: String,
+    prev_date: String,
+    next_date: String,
+    today_date: String,
+    range: String,
+    days: Vec<ScoresDay>,
+    total_games: usize,
+    fetch_error: Option<String>,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct ScoresEnvelope {
+    schema_version: u32,
+    route: &'static str,
+    data: Vec<ScoresDay>,
+    meta: ScoresMeta,
+    error: Option<String>,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct ScoresMeta {
+    active_date: String,
+    today_date: String,
+    range: String,
+    total_games: usize,
+}
+
 fn parse_date(s: &str) -> Option<NaiveDate> {
     NaiveDate::parse_from_str(s, "%Y-%m-%d").ok()
 }
@@ -97,7 +126,7 @@ fn pretty_time_utc(ts: &str) -> String {
     String::new()
 }
 
-pub async fn get_scores(State(state): State<WebState>, Query(q): Query<ScoresQuery>) -> Response {
+async fn build_scores_result(state: &WebState, q: &ScoresQuery) -> ScoresResult {
     let active_label = state.config.read().await.active_label.clone();
 
     let today = Utc::now().date_naive();
@@ -191,15 +220,36 @@ pub async fn get_scores(State(state): State<WebState>, Query(q): Query<ScoresQue
         Err(e) => (Vec::new(), 0, Some(e.to_string())),
     };
 
-    let tmpl = ScoresTemplate {
+    ScoresResult {
         active_label,
         active_date: active_date.format("%Y-%m-%d").to_string(),
         prev_date: prev_date.format("%Y-%m-%d").to_string(),
         next_date: next_date.format("%Y-%m-%d").to_string(),
         today_date: today.format("%Y-%m-%d").to_string(),
+        range: match timeframe {
+            icelines_core::timeframe::Timeframe::Day => "day",
+            icelines_core::timeframe::Timeframe::Week => "week",
+            icelines_core::timeframe::Timeframe::Month => "month",
+            icelines_core::timeframe::Timeframe::Season => "season",
+        }
+        .to_owned(),
         days,
         total_games,
         fetch_error,
+    }
+}
+
+pub async fn get_scores(State(state): State<WebState>, Query(q): Query<ScoresQuery>) -> Response {
+    let result = build_scores_result(&state, &q).await;
+    let tmpl = ScoresTemplate {
+        active_label: result.active_label,
+        active_date: result.active_date,
+        prev_date: result.prev_date,
+        next_date: result.next_date,
+        today_date: result.today_date,
+        days: result.days,
+        total_games: result.total_games,
+        fetch_error: result.fetch_error,
     };
     match tmpl.render() {
         Ok(html) => Html(html).into_response(),
@@ -209,4 +259,24 @@ pub async fn get_scores(State(state): State<WebState>, Query(q): Query<ScoresQue
         )
             .into_response(),
     }
+}
+
+pub async fn get_scores_json(
+    State(state): State<WebState>,
+    Query(q): Query<ScoresQuery>,
+) -> Response {
+    let result = build_scores_result(&state, &q).await;
+    let envelope = ScoresEnvelope {
+        schema_version: 1,
+        route: "scores",
+        data: result.days,
+        meta: ScoresMeta {
+            active_date: result.active_date,
+            today_date: result.today_date,
+            range: result.range,
+            total_games: result.total_games,
+        },
+        error: result.fetch_error,
+    };
+    axum::Json(envelope).into_response()
 }

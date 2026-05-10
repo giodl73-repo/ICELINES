@@ -256,7 +256,7 @@ pub struct ScoresTemplate {
     pub fetch_error: Option<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct ScoresDay {
     pub date: String,
     /// Pretty label like "Mon, May 4". Computed in the handler.
@@ -264,7 +264,7 @@ pub struct ScoresDay {
     pub rows: Vec<ScoreRow>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct ScoreRow {
     pub away_abbrev: String,
     pub away_name: String,
@@ -422,7 +422,7 @@ pub struct CompareTemplate {
 /// when player A wins (strictly), `_b` is true when player B wins.
 /// Both false on equality. For lower-is-better stats (PIM,
 /// giveaways) the comparator is flipped before storing.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, serde::Serialize)]
 pub struct CompareWinners {
     pub gp_a: bool,
     pub gp_b: bool,
@@ -464,7 +464,7 @@ pub struct CompareWinners {
     pub toi_per_game_b: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct ComparePlayerCard {
     pub nhl_id: u32,
     pub full_name: String,

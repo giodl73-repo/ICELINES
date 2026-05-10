@@ -702,6 +702,63 @@ async fn l1_depth_json_envelope_shape() {
     assert_eq!(meta_keys, want_meta, "meta keys diverged: {meta_keys:?}");
 }
 
+#[tokio::test]
+async fn l1_compare_json_envelope_shape() {
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/compare")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value =
+        serde_json::from_slice(&bytes).expect("compare response should be valid json");
+
+    assert_eq!(json["schema_version"], 1);
+    assert_eq!(json["route"], "compare");
+    assert_eq!(json["meta"]["season_type"], "regular");
+    assert!(json["data"]["a"].is_null());
+    assert!(json["data"]["b"].is_null());
+    assert!(json["data"]["winners"].is_object());
+}
+
+#[tokio::test]
+async fn l1_scores_json_envelope_shape() {
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/scores?date=2014-10-08&range=day")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value =
+        serde_json::from_slice(&bytes).expect("scores response should be valid json");
+
+    assert_eq!(json["schema_version"], 1);
+    assert_eq!(json["route"], "scores");
+    assert_eq!(json["meta"]["active_date"], "2014-10-08");
+    assert_eq!(json["meta"]["range"], "day");
+    assert!(json["data"].is_array());
+}
+
 /// l1_unknown_route_returns_404
 /// — axum's default not-found handler. Once King.1.6 adds host-header
 ///   validation we'll add a 421 case for DNS rebinding, but the basic

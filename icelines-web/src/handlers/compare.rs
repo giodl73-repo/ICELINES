@@ -21,6 +21,39 @@ pub struct CompareQuery {
     pub b: Option<String>,
 }
 
+#[derive(Debug)]
+struct CompareResult {
+    active_label: String,
+    season: String,
+    season_type: SeasonType,
+    a: Option<ComparePlayerCard>,
+    b: Option<ComparePlayerCard>,
+    error: Option<String>,
+    winners: crate::templates::CompareWinners,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct CompareEnvelope {
+    schema_version: u32,
+    route: &'static str,
+    data: CompareData,
+    meta: CompareMeta,
+    error: Option<String>,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct CompareData {
+    a: Option<ComparePlayerCard>,
+    b: Option<ComparePlayerCard>,
+    winners: crate::templates::CompareWinners,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct CompareMeta {
+    season: String,
+    season_type: String,
+}
+
 /// Resolve a `?a=` / `?b=` query value (id or name) into a
 /// numeric NHL id. Pure u32 short-circuits; otherwise the
 /// first repo identity whose `full_name` matches
@@ -209,7 +242,7 @@ async fn build_card(
     })
 }
 
-pub async fn get_compare(State(state): State<WebState>, Query(q): Query<CompareQuery>) -> Response {
+async fn build_compare_result(state: &WebState, q: &CompareQuery) -> CompareResult {
     let (season_str, season_type, active_label) = {
         let cfg = state.config.read().await;
         let st = match cfg.active_season_type.as_str() {
@@ -221,22 +254,16 @@ pub async fn get_compare(State(state): State<WebState>, Query(q): Query<CompareQ
     let season_u32: u32 = match season_str.parse() {
         Ok(n) => n,
         Err(_) => {
-            let tmpl = CompareTemplate {
+            return CompareResult {
                 active_label,
+                season: season_str.clone(),
+                season_type,
                 a: None,
                 b: None,
                 error: Some(format!(
                     "Active season '{season_str}' is not a valid YYYYZZZZ id"
                 )),
                 winners: crate::templates::CompareWinners::default(),
-            };
-            return match tmpl.render() {
-                Ok(html) => Html(html).into_response(),
-                Err(e) => (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Html(format!("template render failed: {e}")),
-                )
-                    .into_response(),
             };
         }
     };
@@ -318,12 +345,25 @@ pub async fn get_compare(State(state): State<WebState>, Query(q): Query<CompareQ
         _ => crate::templates::CompareWinners::default(),
     };
 
-    let tmpl = CompareTemplate {
+    CompareResult {
         active_label,
+        season: season_str,
+        season_type,
         a: a_card,
         b: b_card,
         error,
         winners,
+    }
+}
+
+pub async fn get_compare(State(state): State<WebState>, Query(q): Query<CompareQuery>) -> Response {
+    let result = build_compare_result(&state, &q).await;
+    let tmpl = CompareTemplate {
+        active_label: result.active_label,
+        a: result.a,
+        b: result.b,
+        error: result.error,
+        winners: result.winners,
     };
     match tmpl.render() {
         Ok(html) => Html(html).into_response(),
@@ -333,6 +373,31 @@ pub async fn get_compare(State(state): State<WebState>, Query(q): Query<CompareQ
         )
             .into_response(),
     }
+}
+
+pub async fn get_compare_json(
+    State(state): State<WebState>,
+    Query(q): Query<CompareQuery>,
+) -> Response {
+    let result = build_compare_result(&state, &q).await;
+    let envelope = CompareEnvelope {
+        schema_version: 1,
+        route: "compare",
+        data: CompareData {
+            a: result.a,
+            b: result.b,
+            winners: result.winners,
+        },
+        meta: CompareMeta {
+            season: result.season,
+            season_type: match result.season_type {
+                SeasonType::Regular => "regular".to_owned(),
+                SeasonType::Playoff => "playoff".to_owned(),
+            },
+        },
+        error: result.error,
+    };
+    axum::Json(envelope).into_response()
 }
 
 /// Compute per-stat winner flags for two ComparePlayerCards.

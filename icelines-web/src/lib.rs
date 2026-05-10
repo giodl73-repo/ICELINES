@@ -73,6 +73,7 @@ pub fn router(state: WebState) -> Router {
         .route("/api/v1/player/:id", get(handlers::player::get_player_json))
         // Compare — UX.D. Side-by-side stats for two players.
         .route("/compare", get(handlers::compare::get_compare))
+        .route("/api/v1/compare", get(handlers::compare::get_compare_json))
         // Goalie leaderboard — King.5.1 / .5.2.
         .route("/goalies", get(handlers::goalies::get_goalies))
         .route("/api/v1/goalies", get(handlers::goalies::get_goalies_json))
@@ -110,6 +111,7 @@ pub fn router(state: WebState) -> Router {
         )
         // Live NHL data — King.7.
         .route("/scores", get(handlers::scores::get_scores))
+        .route("/api/v1/scores", get(handlers::scores::get_scores_json))
         .route("/schedule", get(handlers::schedule::get_schedule))
         .route("/playoffs", get(handlers::playoffs::get_playoffs))
         // Phase Foster.2 — favorites dashboard

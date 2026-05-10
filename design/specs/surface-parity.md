@@ -50,7 +50,7 @@ a feature fully shipped.
 | Player card | `PlayerCardView` | `query player <name>` | `tui player <name>` | `/player/:id` | `/api/v1/player/:id` | partial - ViewModel pending | Campbell/Ted Lindsay |
 | Team depth | `TeamDepthView` | `team <ABBR>` | `tui team <ABBR>` | `/team/:abbrev` | `/api/v1/team/:abbrev` | partial - CLI team and markdown export build `TeamDepthView`; TUI/web depth routes remain local render paths pending Ted/Messier | Campbell/Ted Lindsay |
 | Cross-team depth | `TeamDepthView` / `DepthLeagueView` | `depth` or equivalent | `tui depth` | `/depth` | `/api/v1/depth` | verify - route exists, parity needs matrix tests | Ted Lindsay |
-| Compare/comps | `CompareView` | `query compare A B` | `tui comps <name>` | `/compare?...` | planned/verify | partial - JSON twin needs verification | Ted Lindsay |
+| Compare/comps | `CompareView` | `query compare A B` | `tui comps <name>` | `/compare?...` | `/api/v1/compare?...` | partial - HTML and JSON share the web card builder; core ViewModel alignment still pending | Ted Lindsay |
 | Scouting report | `ReportView` | `scouting <name>` | player detail/report affordance | planned/verify | planned/verify | partial - report contract pending | Campbell/Ted Lindsay |
 | Markdown export | `ReportView` | `export md <shape>` | n/a | n/a | n/a | partial - 5/7 shapes shipped | Campbell/Jim Gregory |
 
@@ -60,7 +60,7 @@ a feature fully shipped.
 
 | Feature | ViewModel | CLI | TUI | Web HTML | Web JSON | Status | Owner |
 |---|---|---|---|---|---|---|---|
-| Scores/tonight | `ScoresView` | `tonight` | `tui scores` | `/scores` | planned/verify | partial - JSON status needs Ted verification | Ted Lindsay |
+| Scores/tonight | `ScoresView` | `tonight` | `tui scores` | `/scores` | `/api/v1/scores` | partial - HTML and JSON share the web fetch/projection path; core ViewModel alignment remains | Ted Lindsay |
 | Schedule | `ScheduleView` | `schedule` | `tui schedule` | `/schedule` | planned/verify | partial - CLI exists, web JSON needs verification | Lester Patrick/Ted Lindsay |
 | Playoffs | `PlayoffsView` | `playoffs` | `tui playoffs` | `/playoffs` | planned/verify | partial - historical bundle gaps remain | Lester Patrick/Ted Lindsay |
 | Transactions | `TransactionsView` | `transactions` | `tui transactions` | `/transactions` | planned/verify | partial - cache/source-state contract pending | Lester Patrick/Ted Lindsay |
@@ -145,7 +145,8 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /api/v1/leaders` | `handlers/leaders.rs` | JSON | Leaders/skater leaderboard | partial - envelope tests exist |
 | `GET /player/:id` | `handlers/player.rs` | HTML | Player card | partial - ViewModel gap remains |
 | `GET /api/v1/player/:id` | `handlers/player.rs` | JSON | Player card | partial - ViewModel gap remains |
-| `GET /compare` | `handlers/compare.rs` | HTML | Compare/comps | partial - JSON twin deferred |
+| `GET /compare` | `handlers/compare.rs` | HTML | Compare/comps | partial |
+| `GET /api/v1/compare` | `handlers/compare.rs` | JSON | Compare/comps | partial - envelope test exists |
 | `GET /goalies` | `handlers/goalies.rs` | HTML | Goalie leaderboard | partial - parity checks continue in TedLindsay.3 |
 | `GET /api/v1/goalies` | `handlers/goalies.rs` | JSON | Goalie leaderboard | partial - envelope tests exist |
 | `GET /team/:abbrev` | `handlers/team.rs` | HTML | Team depth | partial - ViewModel alignment remains |
@@ -161,7 +162,8 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /api/v1/career` | `handlers/career.rs` | JSON | Career/cross-league cohorts | partial |
 | `GET /docs` | `handlers/docs.rs` | HTML | Docs reference | partial |
 | `GET /season-type/:kind` | `handlers/season_type.rs` | mutating redirect | Config/report toggles | partial |
-| `GET /scores` | `handlers/scores.rs` | HTML | Scores/tonight | partial - JSON twin deferred |
+| `GET /scores` | `handlers/scores.rs` | HTML | Scores/tonight | partial |
+| `GET /api/v1/scores` | `handlers/scores.rs` | JSON | Scores/tonight | partial - envelope test exists |
 | `GET /schedule` | `handlers/schedule.rs` | HTML | Schedule | partial - JSON twin deferred |
 | `GET /playoffs` | `handlers/playoffs.rs` | HTML | Playoffs | partial - JSON twin deferred |
 | `GET /favorites` | `handlers/favorites.rs` | HTML | Favorites/groups | partial |
