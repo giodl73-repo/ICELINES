@@ -2,9 +2,9 @@
 //!
 //! Wave 16 caught the CLI dispatch bug where everything except
 //! `needs_provider` plans fell through to the legacy parser.
-//! Web has the same code shape (uses `combine_filters` →
-//! `parse_filter_expr` directly). Wave 17 verifies the web
-//! surface accepts the new grammar via `/leaders?filter=`.
+//! Web lowers repeated `filter=` params through the shared query URL boundary.
+//! Wave 17 verifies the web surface accepts the new grammar via
+//! `/leaders?filter=`.
 //!
 //! Pre-fix: many of these tests should fail with HTTP 400
 //! "Bad filter" because the legacy parser doesn't understand

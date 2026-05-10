@@ -66,9 +66,9 @@ fn line(date: &str, team: &str, goals: u32, assists: u32) -> GameStatLine {
 /// Build a synthetic `PlayerView` is tricky (requires a populated
 /// `StatsRepository`). For these tests we only need the parser
 /// + evaluator; the SlidingWindow path doesn't actually touch the
-/// PlayerView except for the team/applies_to checks. So we use a
-/// stripped-down evaluator that bypasses PlayerView for the
-/// sliding-window-only path.
+///   PlayerView except for the team/applies_to checks. So we use a
+///   stripped-down evaluator that bypasses PlayerView for the
+///   sliding-window-only path.
 ///
 /// (When we have committed boxscore fixtures + a fresh_repo
 /// helper, A.2 follow-on tests will exercise the full pipeline.)

@@ -483,7 +483,7 @@ mod tests {
     fn l0_glob_unanchored_substring() {
         let p = GlobPattern::parse("*Mac*");
         assert!(p.matches(&ScalarValue::canonicalize_text("MacDonald")));
-        assert!(p.matches(&ScalarValue::canonicalize_text("Bemstrom")) == false);
+        assert!(!p.matches(&ScalarValue::canonicalize_text("Bemstrom")));
         assert!(p.matches(&ScalarValue::canonicalize_text("MacKinnon")));
     }
 

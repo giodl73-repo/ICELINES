@@ -187,6 +187,9 @@ Progress:
 - 2026-05-10: Removed the temporary web `parse_season_type` wrapper and moved
   the remaining route handlers plus JSON season-type labels onto direct core
   `SeasonType` helpers.
+- 2026-05-10: Moved repeated `filter=` URL extraction and top-level AND
+  composition into `icelines-query` so `/leaders` consumes a shared query
+  boundary instead of handler-local parsing helpers.
 
 ---
 

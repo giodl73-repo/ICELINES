@@ -1645,7 +1645,7 @@ mod tests {
     /// A.2.6 review (bench) — fill the IncompatiblePredicate
     /// coverage gap. There are 3 emit sites in build_*_constraint
     /// that weren't directly tested.
-
+    ///
     /// `BETWEEN` on a string field has no meaning. The parser
     /// builds a numeric Range, then routes via build_range_-
     /// constraint which rejects with UnknownStat (since string

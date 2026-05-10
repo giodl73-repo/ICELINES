@@ -16,8 +16,7 @@ use serde::Deserialize;
 /// Query params accepted by `/leaders`. King.2.2 added
 /// `sort`/`pos`/`top`; King.2.3 adds `filter` (repeatable).
 ///
-/// `filter` uses a custom Vec-preserving extractor (see
-/// `parse_filters_from_query` below) because the default
+/// `filter` uses the shared Vec-preserving URL extractor because the default
 /// `Query<HashMap>` collapses repeated `?filter=` keys into
 /// one — silent data loss per the spec's wire-contract
 /// review.
@@ -451,7 +450,7 @@ async fn build_leader_result(
     })?;
     let season = Season(season_u32);
 
-    let raw_filters = parse_filters_from_query(raw_query);
+    let raw_filters = icelines_query::parse_filters_from_query(raw_query);
 
     // Wave 19 — partition new-grammar filters from legacy
     // residue, mirroring the /leaders HTML route fix.
@@ -470,7 +469,7 @@ async fn build_leader_result(
             .into_response());
     }
 
-    let filter_expr = combine_filters(&legacy_residue).map_err(|e| {
+    let filter_expr = icelines_query::combine_filter_exprs(&legacy_residue).map_err(|e| {
         let hint = e
             .hint()
             .unwrap_or("see `icelines docs` for the filter grammar");
@@ -716,7 +715,7 @@ pub async fn get_leaders(
     // typed `Query<LeadersQuery>` above only captures
     // sort/pos/top because Option<String> overwrites on
     // re-parse. For filter, we need ALL occurrences ANDed.
-    let raw_filters = parse_filters_from_query(uri.query().unwrap_or(""));
+    let raw_filters = icelines_query::parse_filters_from_query(uri.query().unwrap_or(""));
 
     // QueryA — pre-extract bio atoms from each filter's
     // top-level AND chain via the shared icelines-query crate.
@@ -748,7 +747,7 @@ pub async fn get_leaders(
         return (StatusCode::BAD_REQUEST, Html(body)).into_response();
     }
 
-    let filter_expr_result = combine_filters(&legacy_residue);
+    let filter_expr_result = icelines_query::combine_filter_exprs(&legacy_residue);
     // Resolve active (season, season_type) from config.
     let (season_str, season_type, active_label) = {
         let cfg = state.config.read().await;
@@ -1144,93 +1143,9 @@ pub async fn get_leaders(
     }
 }
 
-/// Pull every `filter=...` occurrence out of a raw query
-/// string, in order. URL-decodes each value. Empty-string
-/// values (`?filter=`) are dropped (per spec).
-///
-/// We do this by hand instead of using `serde_urlencoded` /
-/// `serde_qs` because axum's stock `Query<T>` extractor
-/// silently collapses repeated keys when T deserializes as
-/// `Option<String>` — the spec's wire-review flagged this as
-/// a silent-data-loss bug.
-pub fn parse_filters_from_query(qs: &str) -> Vec<String> {
-    qs.split('&')
-        .filter_map(|pair| {
-            let (k, v) = pair.split_once('=')?;
-            if k != "filter" {
-                return None;
-            }
-            let decoded = urldecode(v);
-            if decoded.is_empty() {
-                None
-            } else {
-                Some(decoded)
-            }
-        })
-        .collect()
-}
-
-/// Tiny URL-decoder for the filter parameter. Handles `%XX`
-/// escapes and `+` → space (form-encoding convention). We
-/// don't pull `percent-encoding` as a workspace dep just for
-/// this — the filter character set is small and bounded.
-fn urldecode(s: &str) -> String {
-    let bytes = s.as_bytes();
-    let mut out = Vec::with_capacity(bytes.len());
-    let mut i = 0;
-    while i < bytes.len() {
-        match bytes[i] {
-            b'+' => {
-                out.push(b' ');
-                i += 1;
-            }
-            b'%' if i + 2 < bytes.len() => {
-                let hex = std::str::from_utf8(&bytes[i + 1..i + 3]).unwrap_or("");
-                match u8::from_str_radix(hex, 16) {
-                    Ok(b) => {
-                        out.push(b);
-                        i += 3;
-                    }
-                    Err(_) => {
-                        out.push(bytes[i]);
-                        i += 1;
-                    }
-                }
-            }
-            other => {
-                out.push(other);
-                i += 1;
-            }
-        }
-    }
-    String::from_utf8(out).unwrap_or_default()
-}
-
-/// Combine multiple `?filter=` strings into one `FilterExpr`.
-/// Each is parsed independently; results are ANDed at the
-/// top level (spec rule: repeated keys = AND, mirroring the
-/// CLI's repeated `--filter` semantics).
-pub fn combine_filters(
-    raw: &[String],
-) -> Result<
-    Option<icelines_core::stats_catalog::FilterExpr>,
-    icelines_core::stats_catalog::FilterParseError,
-> {
-    use icelines_core::stats_catalog::{parse_filter_expr, FilterExpr};
-    let mut combined: Option<FilterExpr> = None;
-    for raw_str in raw {
-        let parsed = parse_filter_expr(raw_str)?;
-        combined = Some(match combined {
-            None => parsed,
-            Some(existing) => FilterExpr::And(Box::new(existing), Box::new(parsed)),
-        });
-    }
-    Ok(combined)
-}
-
 /// Wave 17 fix — partition raw filter strings into the
 /// new-pipeline plans (handled by `parse_query`) vs
-/// legacy-residue (handled by `combine_filters` →
+/// legacy-residue (handled by `icelines_query::combine_filter_exprs` →
 /// `parse_filter_expr`). Mirrors the CLI's dispatch.
 ///
 /// Returns `(new_plans, legacy_residue, helpful_errors)`:

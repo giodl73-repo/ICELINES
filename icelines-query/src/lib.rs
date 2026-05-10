@@ -46,6 +46,7 @@ pub mod plan;
 pub mod planner;
 pub mod sliding_window;
 pub mod tokenizer;
+pub mod url;
 
 pub use data_provider::{
     DataProvider, DateRange, EvalCtx, FetchError, FetchEvent, PlanRequirement, StrictEligibility,
@@ -60,6 +61,7 @@ pub use plan::{
     SeasonStatConstraint, SlidingWindow, SlidingWindowConstraint, StrictMode, WindowPolicy,
     WindowScope,
 };
+pub use url::{combine_filter_exprs, parse_filters_from_query};
 
 use icelines_core::stats_repository::PlayerView;
 
