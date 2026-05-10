@@ -1038,10 +1038,16 @@ async fn l1_scores_json_envelope_shape() {
     let json: serde_json::Value =
         serde_json::from_slice(&bytes).expect("scores response should be valid json");
 
-    assert_eq!(json["schema_version"], 1);
-    assert_eq!(json["route"], "scores");
+    let obj = assert_data_meta_envelope(&json, "scores");
+    assert!(
+        !obj.contains_key("error"),
+        "successful scores envelope should not carry error"
+    );
     assert_eq!(json["meta"]["active_date"], "2014-10-08");
     assert_eq!(json["meta"]["range"], "day");
+    assert!(json["meta"]
+        .as_object()
+        .is_some_and(|meta| meta.contains_key("source_error")));
     assert!(json["data"].is_array());
 }
 
@@ -1066,11 +1072,17 @@ async fn l1_schedule_json_envelope_shape() {
     let json: serde_json::Value =
         serde_json::from_slice(&bytes).expect("schedule response should be valid json");
 
-    assert_eq!(json["schema_version"], 1);
-    assert_eq!(json["route"], "schedule");
+    let obj = assert_data_meta_envelope(&json, "schedule");
+    assert!(
+        !obj.contains_key("error"),
+        "successful schedule envelope should not carry error"
+    );
     assert_eq!(json["meta"]["active_date"], "2014-10-08");
     assert_eq!(json["meta"]["active_team"], "");
     assert!(json["meta"]["team_chips"].is_array());
+    assert!(json["meta"]
+        .as_object()
+        .is_some_and(|meta| meta.contains_key("source_error")));
     assert!(json["data"].is_array());
 }
 
@@ -1095,11 +1107,17 @@ async fn l1_playoffs_json_envelope_shape() {
     let json: serde_json::Value =
         serde_json::from_slice(&bytes).expect("playoffs response should be valid json");
 
-    assert_eq!(json["schema_version"], 1);
-    assert_eq!(json["route"], "playoffs");
+    let obj = assert_data_meta_envelope(&json, "playoffs");
+    assert!(
+        !obj.contains_key("error"),
+        "successful playoffs envelope should not carry error"
+    );
     assert!(json["meta"]["season"].is_string());
     assert!(json["meta"]["round_count"].is_number());
     assert!(json["meta"]["series_count"].is_number());
+    assert!(json["meta"]
+        .as_object()
+        .is_some_and(|meta| meta.contains_key("source_error")));
     assert!(json["data"].is_array());
 }
 

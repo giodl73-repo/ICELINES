@@ -39,6 +39,7 @@ struct ScheduleMeta {
     active_date: Option<String>,
     total: usize,
     team_chips: Vec<TeamChip>,
+    source_error: Option<String>,
 }
 
 /// 32 active NHL franchises. Used to populate the team picker chip strip.
@@ -77,7 +78,7 @@ pub async fn get_schedule_json(
     Query(q): Query<ScheduleQuery>,
 ) -> Response {
     let result = build_schedule_result(&state, &q).await;
-    crate::api::json_envelope(
+    crate::api::json_data_meta(
         "schedule",
         result.rows,
         ScheduleMeta {
@@ -86,8 +87,8 @@ pub async fn get_schedule_json(
             active_date: result.active_date,
             total: result.total,
             team_chips: result.team_chips,
+            source_error: result.fetch_error,
         },
-        result.fetch_error,
     )
 }
 

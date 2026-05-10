@@ -43,6 +43,7 @@ struct ScoresMeta {
     today_date: String,
     range: String,
     total_games: usize,
+    source_error: Option<String>,
 }
 
 fn parse_date(s: &str) -> Option<NaiveDate> {
@@ -196,7 +197,7 @@ pub async fn get_scores_json(
     Query(q): Query<ScoresQuery>,
 ) -> Response {
     let result = build_scores_result(&state, &q).await;
-    crate::api::json_envelope(
+    crate::api::json_data_meta(
         "scores",
         result.days,
         ScoresMeta {
@@ -204,7 +205,7 @@ pub async fn get_scores_json(
             today_date: result.today_date,
             range: result.range,
             total_games: result.total_games,
+            source_error: result.fetch_error,
         },
-        result.fetch_error,
     )
 }

@@ -27,6 +27,7 @@ struct PlayoffsMeta {
     empty: bool,
     round_count: usize,
     series_count: usize,
+    source_error: Option<String>,
 }
 
 pub async fn get_playoffs(State(state): State<WebState>) -> Response {
@@ -53,7 +54,7 @@ pub async fn get_playoffs_json(State(state): State<WebState>) -> Response {
     let result = build_playoffs_result(&state).await;
     let round_count = result.rounds.len();
     let series_count = result.rounds.iter().map(|r| r.series.len()).sum();
-    crate::api::json_envelope(
+    crate::api::json_data_meta(
         "playoffs",
         result.rounds,
         PlayoffsMeta {
@@ -62,8 +63,8 @@ pub async fn get_playoffs_json(State(state): State<WebState>) -> Response {
             empty: result.empty,
             round_count,
             series_count,
+            source_error: result.fetch_error,
         },
-        result.fetch_error,
     )
 }
 
