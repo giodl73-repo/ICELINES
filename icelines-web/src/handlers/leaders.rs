@@ -212,14 +212,6 @@ impl SortKey {
 /// projection (`build_leader_rows`) so KEEL-B1 round-trip is
 /// straightforward.
 #[derive(Debug, serde::Serialize)]
-pub struct LeadersEnvelope {
-    pub schema_version: u32,
-    pub route: &'static str,
-    pub data: Vec<LeaderJsonRow>,
-    pub meta: LeadersMeta,
-}
-
-#[derive(Debug, serde::Serialize)]
 pub struct LeaderJsonRow {
     pub name: String,
     pub position: String,
@@ -690,27 +682,22 @@ pub async fn get_leaders_json(
     let returned = leaders_view.rows.len();
     let data = leader_json_rows_from_view(&leaders_view);
 
-    let envelope = LeadersEnvelope {
-        schema_version: 1,
-        route: "leaders",
-        data,
-        meta: LeadersMeta {
-            season: result.active_season,
-            season_type: match result.active_season_type {
-                SeasonType::Regular => "regular".to_owned(),
-                SeasonType::Playoff => "playoff".to_owned(),
-            },
-            sort: result.sort_key.url_token().to_owned(),
-            position_filter: if result.pos_active_upper.is_empty() {
-                None
-            } else {
-                Some(result.pos_active_upper)
-            },
-            active_filters: result.raw_filters,
-            total: result.total,
-            returned,
-            top: result.top_n,
+    let meta = LeadersMeta {
+        season: result.active_season,
+        season_type: match result.active_season_type {
+            SeasonType::Regular => "regular".to_owned(),
+            SeasonType::Playoff => "playoff".to_owned(),
         },
+        sort: result.sort_key.url_token().to_owned(),
+        position_filter: if result.pos_active_upper.is_empty() {
+            None
+        } else {
+            Some(result.pos_active_upper)
+        },
+        active_filters: result.raw_filters,
+        total: result.total,
+        returned,
+        top: result.top_n,
     };
 
     // Suppress unused warning on active_label — the JSON
@@ -719,7 +706,7 @@ pub async fn get_leaders_json(
     let _ = result.active_label;
     let _ = uri;
 
-    axum::Json(envelope).into_response()
+    crate::api::json_data_meta("leaders", data, meta)
 }
 
 pub async fn get_leaders(

@@ -126,14 +126,6 @@ pub async fn get_team(State(state): State<WebState>, Path(abbrev_raw): Path<Stri
 // ── King.4.2 — JSON twin ──────────────────────────────────────
 
 #[derive(Debug, serde::Serialize)]
-pub struct TeamEnvelope {
-    pub schema_version: u32,
-    pub route: &'static str,
-    pub data: TeamData,
-    pub meta: TeamMeta,
-}
-
-#[derive(Debug, serde::Serialize)]
 pub struct TeamData {
     pub team_abbrev: String,
     pub skaters: Vec<TeamSkaterRow>,
@@ -275,24 +267,20 @@ pub async fn get_team_json(
         (skaters, goalies)
     };
 
-    let envelope = TeamEnvelope {
-        schema_version: 1,
-        route: "team",
-        meta: TeamMeta {
-            team_abbrev: team.0.to_string(),
-            season: season_str,
-            season_type: match season_type {
-                SeasonType::Regular => "regular".to_owned(),
-                SeasonType::Playoff => "playoff".to_owned(),
-            },
-            skater_count: skaters.len(),
-            goalie_count: goalies.len(),
+    let meta = TeamMeta {
+        team_abbrev: team.0.to_string(),
+        season: season_str,
+        season_type: match season_type {
+            SeasonType::Regular => "regular".to_owned(),
+            SeasonType::Playoff => "playoff".to_owned(),
         },
-        data: TeamData {
-            team_abbrev: team.0.to_string(),
-            skaters,
-            goalies,
-        },
+        skater_count: skaters.len(),
+        goalie_count: goalies.len(),
     };
-    axum::Json(envelope).into_response()
+    let data = TeamData {
+        team_abbrev: team.0.to_string(),
+        skaters,
+        goalies,
+    };
+    crate::api::json_data_meta("team", data, meta)
 }

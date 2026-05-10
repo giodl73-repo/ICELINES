@@ -288,14 +288,6 @@ pub async fn get_goalies(State(state): State<WebState>, Query(q): Query<GoaliesQ
 // ── King.5.2 — JSON envelope ─────────────────────────────────
 
 #[derive(Debug, serde::Serialize)]
-pub struct GoaliesEnvelope {
-    pub schema_version: u32,
-    pub route: &'static str,
-    pub data: Vec<GoalieJsonRow>,
-    pub meta: GoaliesMeta,
-}
-
-#[derive(Debug, serde::Serialize)]
 pub struct GoalieJsonRow {
     pub nhl_id: u32,
     pub name: String,
@@ -345,33 +337,28 @@ pub async fn get_goalies_json(
         })
         .collect();
 
-    let envelope = GoaliesEnvelope {
-        schema_version: 1,
-        route: "goalies",
-        data,
-        meta: GoaliesMeta {
-            season: r.active_season,
-            season_type: match r.active_season_type {
-                SeasonType::Regular => "regular".to_owned(),
-                SeasonType::Playoff => "playoff".to_owned(),
-            },
-            sort: match r.sort {
-                GoalieSort::SavePct => "save_pct".to_owned(),
-                GoalieSort::Wins => "wins".to_owned(),
-                GoalieSort::Losses => "losses".to_owned(),
-                GoalieSort::Games => "gp".to_owned(),
-                GoalieSort::Shutouts => "shutouts".to_owned(),
-                GoalieSort::GaaAsc => "gaa".to_owned(),
-            },
-            qualified_gp_min: r.qualified_threshold,
-            include_below_threshold: r.include_below_threshold,
-            total: r.total,
-            returned,
-            top: r.top_n,
+    let meta = GoaliesMeta {
+        season: r.active_season,
+        season_type: match r.active_season_type {
+            SeasonType::Regular => "regular".to_owned(),
+            SeasonType::Playoff => "playoff".to_owned(),
         },
+        sort: match r.sort {
+            GoalieSort::SavePct => "save_pct".to_owned(),
+            GoalieSort::Wins => "wins".to_owned(),
+            GoalieSort::Losses => "losses".to_owned(),
+            GoalieSort::Games => "gp".to_owned(),
+            GoalieSort::Shutouts => "shutouts".to_owned(),
+            GoalieSort::GaaAsc => "gaa".to_owned(),
+        },
+        qualified_gp_min: r.qualified_threshold,
+        include_below_threshold: r.include_below_threshold,
+        total: r.total,
+        returned,
+        top: r.top_n,
     };
     let _ = r.active_label;
-    axum::Json(envelope).into_response()
+    crate::api::json_data_meta("goalies", data, meta)
 }
 
 fn error_500(msg: String) -> Response {
