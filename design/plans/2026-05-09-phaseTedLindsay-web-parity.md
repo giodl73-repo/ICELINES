@@ -203,6 +203,9 @@ Progress:
 - 2026-05-10: Reduced `/poach` position parsing coupling by returning a
   small validation error from the parser and constructing HTTP responses at
   the handler boundary.
+- 2026-05-10: Switched web router environment-lock tests to an async mutex so
+  clippy no longer reports `await_holding_lock` for intentional serialized
+  environment mutation.
 
 ---
 

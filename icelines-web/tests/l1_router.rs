@@ -11,12 +11,13 @@
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use icelines_web::{router, WebState};
-use std::sync::{Mutex, OnceLock};
+use std::sync::OnceLock;
+use tokio::sync::Mutex;
 use tower::util::ServiceExt;
 
-fn home_env_lock() -> std::sync::MutexGuard<'static, ()> {
+async fn home_env_lock() -> tokio::sync::MutexGuard<'static, ()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-    LOCK.get_or_init(|| Mutex::new(())).lock().unwrap()
+    LOCK.get_or_init(|| Mutex::new(())).lock().await
 }
 
 /// l1_get_root_returns_200_html
@@ -284,7 +285,7 @@ async fn l1_player_json_missing_player_uses_shared_envelope_shape() {
 
 #[tokio::test]
 async fn l1_watchlist_route_returns_200_html() {
-    let _guard = home_env_lock();
+    let _guard = home_env_lock().await;
     let app = router(WebState::new());
 
     let response = app
@@ -310,7 +311,7 @@ async fn l1_watchlist_route_returns_200_html() {
 
 #[tokio::test]
 async fn l1_watchlist_route_renders_watch_reason_metadata() {
-    let _guard = home_env_lock();
+    let _guard = home_env_lock().await;
     let dir = tempfile::TempDir::new().expect("temp home");
     let prev_userprofile = std::env::var_os("USERPROFILE");
     let prev_home = std::env::var_os("HOME");
@@ -381,7 +382,7 @@ async fn l1_watchlist_route_renders_watch_reason_metadata() {
 
 #[tokio::test]
 async fn l1_favorites_json_returns_group_members() {
-    let _guard = home_env_lock();
+    let _guard = home_env_lock().await;
     let dir = tempfile::TempDir::new().expect("temp home");
     let prev_userprofile = std::env::var_os("USERPROFILE");
     let prev_home = std::env::var_os("HOME");
@@ -455,7 +456,7 @@ async fn l1_favorites_json_returns_group_members() {
 
 #[tokio::test]
 async fn l1_watchlist_json_returns_watch_reason_metadata() {
-    let _guard = home_env_lock();
+    let _guard = home_env_lock().await;
     let dir = tempfile::TempDir::new().expect("temp home");
     let prev_userprofile = std::env::var_os("USERPROFILE");
     let prev_home = std::env::var_os("HOME");
@@ -667,7 +668,7 @@ async fn l1_watch_rules_json_returns_shared_contract() {
 
 #[tokio::test]
 async fn l1_watch_rules_json_includes_persisted_rules() {
-    let _guard = home_env_lock();
+    let _guard = home_env_lock().await;
     let dir = tempfile::TempDir::new().expect("temp home");
     let prev_userprofile = std::env::var_os("USERPROFILE");
     let prev_home = std::env::var_os("HOME");
