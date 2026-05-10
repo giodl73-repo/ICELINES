@@ -11,7 +11,12 @@
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use axum::response::Response;
-use icelines_web::{router, WebState};
+use icelines_core::season_stats::SeasonType;
+use icelines_core::view_model::{DepthGoalieSlot, DepthLine, DepthPair, DepthPlayerSlot};
+use icelines_core::{MetricCell, MetricValue, Season, TeamAbbr, TeamDepthView};
+use icelines_fetch::snapshot::SnapshotStore;
+use icelines_fetch::stats_loader::load_into_repo;
+use icelines_web::{router, WebConfig, WebState};
 use serde_json::{Map, Value};
 use std::collections::BTreeSet;
 use std::sync::OnceLock;
@@ -60,6 +65,155 @@ fn assert_shared_error_envelope<'a>(json: &'a Value, route: &str) -> &'a Map<Str
     assert_eq!(obj["route"], serde_json::json!(route));
     assert!(obj["error"].is_string());
     obj
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct TeamDepthSkaterSnapshot {
+    nhl_id: u32,
+    name: String,
+    position: String,
+    games: u32,
+    goals: u32,
+    assists: u32,
+    points: u32,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct TeamDepthGoalieSnapshot {
+    nhl_id: u32,
+    name: String,
+    games: u32,
+    wins: u32,
+    losses: u32,
+    shutouts: u32,
+}
+
+fn team_depth_skater_snapshots(view: &TeamDepthView) -> Vec<TeamDepthSkaterSnapshot> {
+    let mut rows: Vec<_> = team_depth_skater_slots(view)
+        .into_iter()
+        .map(|slot| TeamDepthSkaterSnapshot {
+            nhl_id: slot.player_id.0,
+            name: slot.display_name.clone(),
+            position: slot.position.abbreviation().to_owned(),
+            games: metric_u32(&slot.metrics, "gp"),
+            goals: metric_u32(&slot.metrics, "goals"),
+            assists: metric_u32(&slot.metrics, "assists"),
+            points: metric_u32(&slot.metrics, "points"),
+        })
+        .collect();
+    rows.sort_by(|a, b| {
+        b.points
+            .cmp(&a.points)
+            .then(b.goals.cmp(&a.goals))
+            .then(a.name.cmp(&b.name))
+    });
+    rows
+}
+
+fn team_depth_skater_slots(view: &TeamDepthView) -> Vec<&DepthPlayerSlot> {
+    let mut slots = Vec::new();
+    for line in &view.forward_lines {
+        push_depth_line_slots(&mut slots, line);
+    }
+    for pair in &view.defense_pairs {
+        push_depth_pair_slots(&mut slots, pair);
+    }
+    slots.extend(view.extras.iter());
+    slots
+}
+
+fn push_depth_line_slots<'a>(out: &mut Vec<&'a DepthPlayerSlot>, line: &'a DepthLine) {
+    out.extend(
+        [
+            line.left.as_ref(),
+            line.center.as_ref(),
+            line.right.as_ref(),
+        ]
+        .into_iter()
+        .flatten(),
+    );
+}
+
+fn push_depth_pair_slots<'a>(out: &mut Vec<&'a DepthPlayerSlot>, pair: &'a DepthPair) {
+    out.extend(
+        [pair.left.as_ref(), pair.right.as_ref()]
+            .into_iter()
+            .flatten(),
+    );
+}
+
+fn team_depth_goalie_snapshots(goalies: &[DepthGoalieSlot]) -> Vec<TeamDepthGoalieSnapshot> {
+    let mut rows: Vec<_> = goalies
+        .iter()
+        .map(|slot| TeamDepthGoalieSnapshot {
+            nhl_id: slot.player_id.0,
+            name: slot.display_name.clone(),
+            games: metric_u32(&slot.metrics, "gp"),
+            wins: metric_u32(&slot.metrics, "wins"),
+            losses: metric_u32(&slot.metrics, "losses"),
+            shutouts: metric_u32(&slot.metrics, "shutouts"),
+        })
+        .collect();
+    rows.sort_by(|a, b| b.wins.cmp(&a.wins).then(a.name.cmp(&b.name)));
+    rows
+}
+
+fn metric_u32(metrics: &[MetricCell], key: &str) -> u32 {
+    metrics
+        .iter()
+        .find(|metric| metric.key.0 == key)
+        .and_then(|metric| match metric.value {
+            MetricValue::Integer(value) => u32::try_from(value).ok(),
+            _ => None,
+        })
+        .unwrap_or(0)
+}
+
+fn json_team_skater_snapshots(json: &Value) -> Vec<TeamDepthSkaterSnapshot> {
+    json["data"]["skaters"]
+        .as_array()
+        .expect("team skaters data array")
+        .iter()
+        .map(|row| TeamDepthSkaterSnapshot {
+            nhl_id: json_u32(row, "nhl_id"),
+            name: json_str(row, "name"),
+            position: json_str(row, "position"),
+            games: json_u32(row, "games"),
+            goals: json_u32(row, "goals"),
+            assists: json_u32(row, "assists"),
+            points: json_u32(row, "points"),
+        })
+        .collect()
+}
+
+fn json_team_goalie_snapshots(json: &Value) -> Vec<TeamDepthGoalieSnapshot> {
+    json["data"]["goalies"]
+        .as_array()
+        .expect("team goalies data array")
+        .iter()
+        .map(|row| TeamDepthGoalieSnapshot {
+            nhl_id: json_u32(row, "nhl_id"),
+            name: json_str(row, "name"),
+            games: json_u32(row, "games"),
+            wins: json_u32(row, "wins"),
+            losses: json_u32(row, "losses"),
+            shutouts: json_u32(row, "shutouts"),
+        })
+        .collect()
+}
+
+fn json_u32(row: &Value, key: &str) -> u32 {
+    row[key]
+        .as_u64()
+        .and_then(|value| u32::try_from(value).ok())
+        .unwrap_or_else(|| panic!("{key} should be a u32 JSON number in row {row}"))
+}
+
+fn json_str(row: &Value, key: &str) -> String {
+    row[key]
+        .as_str()
+        .unwrap_or_else(|| panic!("{key} should be a string in row {row}"))
+        .to_owned()
 }
 
 /// l1_get_root_returns_200_html
@@ -1097,6 +1251,50 @@ async fn l1_team_json_bad_active_season_uses_shared_envelope_shape() {
     assert_eq!(v["meta"]["goalie_count"], serde_json::json!(0));
     assert!(v["data"]["skaters"].as_array().is_some_and(Vec::is_empty));
     assert!(v["error"].is_string());
+}
+
+#[tokio::test]
+async fn l1_team_json_rows_match_team_depth_view() {
+    let season = Season(20242025);
+    let season_type = SeasonType::Regular;
+    let team = TeamAbbr::parse("EDM").expect("known team abbrev");
+    let store = SnapshotStore::new(SnapshotStore::default_root());
+    let load = load_into_repo(season, season_type, &store)
+        .expect("bundled regular-season repo should load");
+    let expected_view =
+        TeamDepthView::from_repository(&load.repo, team.clone(), season, season_type);
+    let expected_skaters = team_depth_skater_snapshots(&expected_view);
+    let expected_goalies = team_depth_goalie_snapshots(&expected_view.goalies);
+    assert!(
+        !expected_skaters.is_empty(),
+        "fixture should include EDM skaters for {season:?}"
+    );
+    assert!(
+        !expected_goalies.is_empty(),
+        "fixture should include EDM goalies for {season:?}"
+    );
+
+    let state = WebState::with_repo_and_config(load.repo, WebConfig::new("20242025", "regular"));
+    let app = router(state);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/team/EDM")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let json = response_json(response, 1024 * 1024).await;
+    assert_data_meta_envelope(&json, "team");
+    assert_eq!(json["meta"]["team_abbrev"], serde_json::json!("EDM"));
+    assert_eq!(json["meta"]["season"], serde_json::json!("20242025"));
+    assert_eq!(json["meta"]["season_type"], serde_json::json!("regular"));
+    assert_eq!(json_team_skater_snapshots(&json), expected_skaters);
+    assert_eq!(json_team_goalie_snapshots(&json), expected_goalies);
 }
 
 #[tokio::test]
