@@ -1,5 +1,35 @@
 # IceLines Changelog
 
+## v0.24.0 - 2026-05-09 - Phase Messier (TUI filter/sort consistency)
+
+Headline: **TUI player-list screens now share one filter/sort vocabulary.
+Team, Goalies, Depth, Favorites, and Stats expose consistent keybinds where
+the screen supports them, and MDI cmdbar verbs accept typed roster
+`key=value` filters through the same parser.**
+
+### What shipped
+
+- Shared `RosterFilterState`, typed roster KV parsing, duplicate-key
+  validation, and deterministic command execution for roster filters.
+- Goalies, Depth, Favorites, and Team now accept MDI KV commands such as
+  `:goalies sort=gaa min-gp=20`, `:depth pos=F`, `:favorites sort=name`, and
+  `:team EDM pos=LW country=CAN`.
+- `f` on Goalies, Depth, and Favorites pre-fills the MDI command bar with the
+  appropriate verb so free-form filters use the same grammar as typed
+  commands.
+- Stats keeps the Art Ross filter overlay while adding nationality shortcut
+  parity and `stats ...` KV lowering through the deterministic parser.
+- `COMMANDS.md` now documents the unified TUI keybind matrix and roster KV
+  command examples.
+
+### Carry-forward
+
+- CLI parity remains Phase Lester Patrick.
+- Web parity remains Phase Ted Lindsay.
+- Visual polish remains Phase Prince of Wales.
+
+---
+
 ## v0.23.5 — 2026-05-08 — Phase Jack Adams.12 (Team country filter + Hits column toggle)
 
 Headline: **Closes the original Team-screen wishlist from v0.23.0

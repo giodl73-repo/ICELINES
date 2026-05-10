@@ -1,6 +1,6 @@
 # Phase Messier — execution plan v0.2
 
-**Status**: Active - Messier.1-.6 first pass implemented
+**Status**: Implemented - Messier.1-.6 closed
 **Spec**: `design/specs/phase-messier-overview.md` v0.2
 **Review note**: `design/notes/2026-05-08-phaseMessier-roles-review.md`
 **Target release**: v0.24.0
@@ -901,12 +901,14 @@ Implemented in the first Messier pass:
 Inherits from spec acceptance. Plus:
 
 - Plan v0.2 reviewed by user before Messier.1 commits.
-- Messier.1 lands as a separate commit with insta snapshot baseline
-  + criterion bench.
-- Each subsequent Messier.X lands as its own commit; v0.24.0
-  releases when Messier.6 closes.
-- COMMANDS.md gets a unified per-screen keybind table.
-- CHANGELOG.md gets the cumulative v0.24.0 entry.
+- Messier.1 landed with shared roster filter state and the first test
+  baseline.
+- Messier.2-.6 landed as incremental TUI/cmdbar slices.
+- COMMANDS.md now includes the unified per-screen keybind table and MDI KV
+  command examples.
+- CHANGELOG.md now includes the cumulative v0.24.0 entry.
+- Remaining parity work belongs to Lester Patrick (CLI), Ted Lindsay (web), and
+  Prince of Wales (visual polish), not Messier.
 
 ---
 

@@ -510,6 +510,26 @@ Interactive dashboard. Six tabs (League, Depth, Stats, Goalies, Scores, Schedule
 | `s` / `l` | Save / load query (Queries tab) |
 | `f` | **Free-form filter overlay** (Queries tab) — type any Phase Art Ross filter (`country IN (CAN, USA) AND age<25`, `g.last10g>=5`, `p.career>=500`, etc.); Enter to apply, Esc to cancel. Inside the overlay: `↑/↓` walk recent-filter history, `?` toggle grammar cheatsheet, live "→ N of M match" count for bio + season-stat filters |
 
+### TUI filter/sort matrix (Phase Messier)
+
+Player-list screens use the same filter vocabulary. Keybinds mutate the
+current screen state; in MDI mode, `f` pre-fills the command bar with the
+matching verb so wider filters can be entered as `key=value` pairs.
+
+| Screen | `s` | `p` | `n` | `h` | `m` | `f` / cmdbar |
+|---|---|---|---|---|---|---|
+| Team | Sort | Position | Nationality | Hits column | Min GP | `:team EDM sort=hits pos=F nationality=CAN` |
+| Goalies | Sort | Role class | Nationality | Saves column | Min GP | `:goalies sort=gaa min-gp=20 nationality=CAN saves=on` |
+| Stats | Save query | Query builder | `nationality=` shortcut | — | — | Free-form Art Ross filter overlay |
+| Depth | Scoring mode | Position | Nationality | — | — | `:depth pos=F nationality=SWE` |
+| Favorites | Sort | Position | Nationality | — | — | `:favorites sort=name min-gp=20` |
+
+Supported roster KV keys are `sort`, `pos`/`position`,
+`country`/`nationality`, `min-gp`, `hits`, and `saves`. Duplicate keys and
+unknown values are rejected before any screen state is mutated.
+Goalie starter/backup role is cycled with `p`; the current KV grammar does not
+accept `pos=Starters`.
+
 The Reports overlay (`R`) persists toggles to `~/.icelines/config.toml`. Disabled reports drop their columns from career tables, sort pickers, and query results.
 
 ### TUI surfaces — per-experience launchers (Phase Lady Byng)
@@ -572,8 +592,11 @@ already typed (for slash commands). Enter submits; Esc cancels.
 | Verb | Effect | Example |
 |---|---|---|
 | `stats` / `goalies` / `poach` / `watchlist` / `transactions` / `playoffs` / `depth` / `scores` / `schedule` / `favorites` | Swap workspace | `:poach` |
+| `goalies <kv...>` | Goalies filters/sort | `:goalies sort=gaa min-gp=20 nationality=CAN` |
+| `depth <kv...>` | Depth filters | `:depth pos=F country=SWE` |
+| `favorites <kv...>` | Favorites filters/sort | `:favorites sort=name min-gp=20` |
 | `player <name>` | Open player card | `:player Bedard` |
-| `team <ABBR>` | Team depth chart | `:team EDM` |
+| `team <ABBR> <kv...>` | Team depth chart with optional filters | `:team EDM pos=LW country=CAN` |
 | `team <ABBR> season` | Team's full schedule | `:team EDM season` |
 | `compare <a>` / `compare <a> <b>` | Similarity peers / head-to-head | `:compare McDavid` |
 | `box <game-id>` | Boxscore detail | `:box 2025020001` |
