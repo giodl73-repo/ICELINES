@@ -231,6 +231,8 @@ Progress:
   source of truth remains `design/specs/surface-parity.md`.
 - 2026-05-10: Added the missing `/api/v1/goalies` JSON envelope regression
   test and updated the surface matrix with the concrete test reference.
+- 2026-05-10: Replaced generic favorites/watchlist JSON test claims in the
+  surface matrix with concrete route-test names.
 
 ---
 
