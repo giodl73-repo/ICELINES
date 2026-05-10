@@ -200,6 +200,9 @@ Progress:
   active-season JSON errors onto the shared envelope shape.
 - 2026-05-10: Normalized `/api/v1/player/:id` missing-player and invalid
   active-season JSON errors onto the shared envelope shape.
+- 2026-05-10: Reduced `/poach` position parsing coupling by returning a
+  small validation error from the parser and constructing HTTP responses at
+  the handler boundary.
 
 ---
 

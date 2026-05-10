@@ -381,7 +381,7 @@ async fn build_poach_view(
         .into_iter()
         .map(|team| TeamAbbr(team.to_ascii_uppercase()))
         .collect();
-    query.positions = parse_positions(q.pos.as_deref())?;
+    query.positions = parse_positions(q.pos.as_deref()).map_err(bad_request_html)?;
     query.limit = Some(q.top.unwrap_or(20).clamp(1, 100));
     query.sort = Some("poach_score".to_string());
 
@@ -420,24 +420,30 @@ fn split_csv(value: Option<&str>) -> Vec<String> {
         .collect()
 }
 
-fn parse_positions(value: Option<&str>) -> Result<Vec<Position>, Response> {
+fn parse_positions(value: Option<&str>) -> Result<Vec<Position>, String> {
     split_csv(value)
-                .into_iter()
-                .map(|value| match value.to_ascii_uppercase().as_str() {
-                    "C" => Ok(Position::Center),
-                    "LW" | "L" => Ok(Position::LeftWing),
-                    "RW" | "R" => Ok(Position::RightWing),
-                    "D" => Ok(Position::Defense),
-                    "G" => Ok(Position::Goalie),
-                    other => Err((
-                        StatusCode::BAD_REQUEST,
-                        Html(format!(
-                            "<!doctype html><body><h1>400</h1><p>unknown position '{other}' - valid: C, LW, RW, D, G</p></body>"
-                        )),
-                    )
-                        .into_response()),
-                })
-                .collect()
+        .into_iter()
+        .map(|value| match value.to_ascii_uppercase().as_str() {
+            "C" => Ok(Position::Center),
+            "LW" | "L" => Ok(Position::LeftWing),
+            "RW" | "R" => Ok(Position::RightWing),
+            "D" => Ok(Position::Defense),
+            "G" => Ok(Position::Goalie),
+            other => Err(format!(
+                "unknown position '{other}' - valid: C, LW, RW, D, G"
+            )),
+        })
+        .collect()
+}
+
+fn bad_request_html(message: String) -> Response {
+    (
+        StatusCode::BAD_REQUEST,
+        Html(format!(
+            "<!doctype html><body><h1>400</h1><p>{message}</p></body>"
+        )),
+    )
+        .into_response()
 }
 
 fn source_note(source_state: &[SourceState]) -> String {
