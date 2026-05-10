@@ -147,6 +147,9 @@ Progress:
 - 2026-05-10: Added core `ScheduleView` and migrated `/schedule` plus
   `/api/v1/schedule` to project date/team schedule rows, team chips, and
   active-team home/away perspective from the shared schedule contract.
+- 2026-05-10: Added core `TransactionsView` and migrated `/transactions` plus
+  `/api/v1/transactions` to project filtering, pretty labels, coverage flags,
+  and row truncation from the shared transactions contract.
 
 ---
 

@@ -4,7 +4,9 @@ use askama::Template;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
+use icelines_core::model::{Season, TeamAbbr};
 use icelines_core::transactions::{TransactionKind, TRANSACTIONS_EARLIEST_SEASON};
+use icelines_core::{TransactionViewRow, TransactionsView, ViewContext, ViewWindow};
 use serde::Deserialize;
 
 /// Query params accepted by `/transactions`.
@@ -48,22 +50,6 @@ fn pretty_season(s: &str) -> String {
         format!("{}-{}", &s[0..4], &s[6..8])
     } else {
         s.to_owned()
-    }
-}
-
-/// Pretty-cased label per kind, for the chip column. Matches the
-/// CLI's display style ("Waiver claim" not "waiver_claim").
-fn pretty_kind(k: TransactionKind) -> &'static str {
-    match k {
-        TransactionKind::Trade => "Trade",
-        TransactionKind::WaiverPlacement => "Waivers",
-        TransactionKind::WaiverClear => "Waivers",
-        TransactionKind::WaiverClaim => "Waiver claim",
-        TransactionKind::Signing => "Signing",
-        TransactionKind::Recall => "Recall",
-        TransactionKind::Reassignment => "Reassignment",
-        TransactionKind::InjuryReserve => "IR",
-        TransactionKind::Other => "Other",
     }
 }
 
@@ -169,7 +155,6 @@ async fn build_transactions_result(
         .map(|t| t.trim().to_ascii_uppercase())
         .filter(|t| !t.is_empty());
     let active_kind = q.kind.clone().unwrap_or_default();
-    let active_team = team_filter.clone().unwrap_or_default();
     let out_of_coverage = season_str.as_str() < TRANSACTIONS_EARLIEST_SEASON;
 
     let snapshots_root = match state.snapshots_root.as_ref() {
@@ -185,47 +170,39 @@ async fn build_transactions_result(
             .map_err(|_| ())
     };
 
-    let mut rows: Vec<TransactionRow> = match envelope_result {
-        Ok(env) => env
-            .rows
-            .into_iter()
-            .filter(|t| match &kind_filter {
-                None => true,
-                Some(kinds) => kinds.contains(&t.kind),
-            })
-            .filter(|t| match &team_filter {
-                None => true,
-                Some(team) => t
-                    .team
-                    .as_ref()
-                    .map(|a| a.as_str().eq_ignore_ascii_case(team))
-                    .unwrap_or(false),
-            })
-            .map(|t| TransactionRow {
-                date: t.date,
-                team: t.team.map(|a| a.as_str().to_owned()).unwrap_or_default(),
-                kind_label: t.kind.label().to_owned(),
-                kind_pretty: pretty_kind(t.kind).to_owned(),
-                description: t.description,
-            })
-            .collect(),
-        Err(()) => Vec::new(),
-    };
-
-    rows.sort_by(|a, b| b.date.cmp(&a.date));
-    rows.truncate(1000);
-    let total = rows.len();
-    let empty_unfiltered = rows.is_empty() && kind_filter.is_none() && team_filter.is_none();
+    let rows = envelope_result.map(|env| env.rows).unwrap_or_default();
+    let view = TransactionsView::from_rows(
+        ViewContext::new(ViewWindow::new(
+            season_str.parse::<u32>().map(Season).unwrap_or(Season(0)),
+            super::leaders::parse_season_type(&state.config.read().await.active_season_type),
+        )),
+        season_str,
+        rows,
+        kind_filter.as_deref(),
+        active_kind,
+        team_filter.map(TeamAbbr),
+        out_of_coverage,
+    );
 
     Ok(TransactionsResult {
         active_label,
-        season_pretty: pretty_season(&season_str),
-        rows,
-        total,
-        empty_unfiltered,
-        active_kind,
-        active_team,
-        out_of_coverage,
-        earliest_season_pretty: pretty_season(TRANSACTIONS_EARLIEST_SEASON),
+        season_pretty: view.season_pretty,
+        rows: view.rows.iter().map(transaction_row_from_view).collect(),
+        total: view.total,
+        empty_unfiltered: view.empty_unfiltered,
+        active_kind: view.active_kind,
+        active_team: view.active_team,
+        out_of_coverage: view.out_of_coverage,
+        earliest_season_pretty: view.earliest_season_pretty,
     })
+}
+
+fn transaction_row_from_view(row: &TransactionViewRow) -> TransactionRow {
+    TransactionRow {
+        date: row.date.clone(),
+        team: row.team.clone(),
+        kind_label: row.kind_label.clone(),
+        kind_pretty: row.kind_pretty.clone(),
+        description: row.description.clone(),
+    }
 }

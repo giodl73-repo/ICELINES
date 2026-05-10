@@ -63,7 +63,7 @@ a feature fully shipped.
 | Scores/tonight | `ScoresView` | `tonight` | `tui scores` | `/scores` | `/api/v1/scores` | partial - web HTML and web JSON build `ScoresView`; CLI/TUI adapter alignment remains | Ted Lindsay |
 | Schedule | `ScheduleView` | `schedule` | `tui schedule` | `/schedule` | `/api/v1/schedule` | partial - web HTML and web JSON build `ScheduleView`; CLI/TUI adapter alignment remains | Lester Patrick/Ted Lindsay |
 | Playoffs | `PlayoffsView` | `playoffs` | `tui playoffs` | `/playoffs` | `/api/v1/playoffs` | partial - HTML and JSON share the web bundled/live projection path; historical bundle gaps and core ViewModel alignment remain | Lester Patrick/Ted Lindsay |
-| Transactions | `TransactionsView` | `transactions` | `tui transactions` | `/transactions` | `/api/v1/transactions` | partial - HTML and JSON share the web snapshot/fallback projection; cache/source-state contract and core ViewModel alignment remain | Lester Patrick/Ted Lindsay |
+| Transactions | `TransactionsView` | `transactions` | `tui transactions` | `/transactions` | `/api/v1/transactions` | partial - web HTML and web JSON build `TransactionsView`; CLI/TUI adapter alignment remains | Lester Patrick/Ted Lindsay |
 | Game detail | `GameView` | n/a | `tui scores` drilldown | `/game/:id` | `/api/v1/game/:id` | partial - HTML and JSON share a web detail projection; core ViewModel alignment remains | Ted Lindsay |
 
 ---
@@ -176,8 +176,8 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /api/v1/game/:id` | `handlers/game.rs` | JSON | Game detail | partial - envelope test exists |
 | `POST /favorites/add` | `handlers/favorites.rs` | mutation | Favorites/groups | partial |
 | `POST /favorites/remove` | `handlers/favorites.rs` | mutation | Favorites/groups | partial |
-| `GET /transactions` | `handlers/transactions.rs` | HTML | Transactions | partial |
-| `GET /api/v1/transactions` | `handlers/transactions.rs` | JSON | Transactions | partial - envelope test exists |
+| `GET /transactions` | `handlers/transactions.rs` | HTML | Transactions | partial - projects transaction feed from `TransactionsView`; CLI/TUI alignment remains |
+| `GET /api/v1/transactions` | `handlers/transactions.rs` | JSON | Transactions | partial - projects stable envelope from `TransactionsView`; covered by `l1_transactions_json_envelope_shape` |
 | `GET /fantasy` | `handlers/coming_soon.rs` | HTML stub | Fantasy league management | deferred |
 
 TedLindsay.3 should use this table as the route-by-route checklist for parity,

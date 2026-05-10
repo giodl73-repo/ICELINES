@@ -14,6 +14,7 @@ pub mod schedule;
 pub mod scores;
 pub mod team_depth;
 pub mod tokens;
+pub mod transactions;
 
 pub use compare::CompareView;
 pub use context::{
@@ -40,6 +41,7 @@ pub use team_depth::{
     DepthSlotKind, DepthSummary, DepthTeamStrengthRow, TeamDepthView,
 };
 pub use tokens::{MetricCell, MetricUnit, MetricValue, SemanticToken, StatKey, ValuePrecision};
+pub use transactions::{TransactionViewRow, TransactionsView};
 
 #[cfg(test)]
 mod tests {
@@ -48,8 +50,8 @@ mod tests {
     use crate::view_model::{
         CompareView, Completeness, DepthLeagueView, EmptyKind, LeaderKind, LeadersView, MetricCell,
         MetricUnit, MetricValue, PlayerCardView, ScheduleView, ScheduledGameInput, ScoresView,
-        SemanticToken, SourceKind, SourceProvenance, SourceState, StatKey, ValuePrecision,
-        ViewContext, ViewWindow,
+        SemanticToken, SourceKind, SourceProvenance, SourceState, StatKey, TransactionsView,
+        ValuePrecision, ViewContext, ViewWindow,
     };
 
     #[test]
@@ -560,5 +562,51 @@ mod tests {
         assert_eq!(json["rows"][0]["home_or_away"], "Home");
         assert_eq!(json["rows"][0]["opponent_abbrev"], "SEA");
         assert_eq!(json["rows"][0]["state_label"], "FINAL/SO");
+    }
+
+    #[test]
+    fn transactions_viewmodel_contract_fixture_filters_and_formats_rows() {
+        use crate::model::TeamAbbr;
+        use crate::transactions::{Transaction, TransactionKind};
+
+        let context = ViewContext::new(ViewWindow::new(Season(20242025), SeasonType::Regular));
+        let view = TransactionsView::from_rows(
+            context,
+            "20242025".to_string(),
+            vec![
+                Transaction {
+                    date: "2024-10-09".to_string(),
+                    team: Some(TeamAbbr("EDM".to_string())),
+                    description: "Edmonton Oilers acquired a player".to_string(),
+                    kind: TransactionKind::Trade,
+                    id: "tx-edm-trade".to_string(),
+                    trade_group_id: None,
+                    classifier_version: crate::transactions::CURRENT_CLASSIFIER_VERSION,
+                },
+                Transaction {
+                    date: "2024-10-08".to_string(),
+                    team: Some(TeamAbbr("SEA".to_string())),
+                    description: "Seattle Kraken recalled a player".to_string(),
+                    kind: TransactionKind::Recall,
+                    id: "tx-sea-recall".to_string(),
+                    trade_group_id: None,
+                    classifier_version: crate::transactions::CURRENT_CLASSIFIER_VERSION,
+                },
+            ],
+            Some(&[TransactionKind::Trade]),
+            "trade".to_string(),
+            Some(TeamAbbr("EDM".to_string())),
+            false,
+        );
+
+        let json = serde_json::to_value(&view).expect("serialize transactions view");
+
+        assert_eq!(json["season_pretty"], "2024-25");
+        assert_eq!(json["active_kind"], "trade");
+        assert_eq!(json["active_team"], "EDM");
+        assert_eq!(json["total"], 1);
+        assert_eq!(json["rows"][0]["kind_label"], "trade");
+        assert_eq!(json["rows"][0]["kind_pretty"], "Trade");
+        assert_eq!(json["rows"][0]["team"], "EDM");
     }
 }
