@@ -144,228 +144,7 @@ mod handlers {
     // `super::extract_bio` / `super::BioConstraints`; the CLI's
     // `query --filter` will share these in a follow-up wiring.
     pub(crate) use icelines_query::{extract_bio, BioConstraints};
-
-    /// Build the NHL CDN headshot URL for a player. UX.G2 — the
-    /// `mugs/nhl/default/{id}.png` path serves silhouettes for many
-    /// players; the seasonal `mugs/nhl/{season}/{team}/{id}.png` path
-    /// serves real mug shots for current rosters. For multi-team rows
-    /// pick the primary (first) team. For empty/sentinel teams fall
-    /// through to `default` since we have nothing better.
-    pub(crate) fn build_headshot_url(season: u32, team: &str, nhl_id: u32) -> String {
-        let team = team.trim();
-        // Validate against the NHL team-abbrev shape: 2-3 uppercase
-        // ASCII letters only. Anything else (sentinels like "RET" or
-        // "—", multi-team rows like "SEA/NYR", or lowercase/numeric
-        // garbage from a malformed bundle) hits the silhouette
-        // fallback rather than building a 404-prone URL.
-        let valid_shape =
-            (2..=3).contains(&team.len()) && team.chars().all(|c| c.is_ascii_uppercase());
-        let valid_team = valid_shape && team != "RET";
-        if !valid_team {
-            return format!("https://assets.nhle.com/mugs/nhl/default/{nhl_id}.png");
-        }
-        format!("https://assets.nhle.com/mugs/nhl/{season}/{team}/{nhl_id}.png")
-    }
-
-    /// Same as `build_headshot_url` but takes a multi-team display
-    /// string ("EDM" or "EDM/CGY") and uses the primary (first) team.
-    pub(crate) fn build_headshot_url_for_display(
-        season: u32,
-        team_display: &str,
-        nhl_id: u32,
-    ) -> String {
-        let primary = team_display.split('/').next().unwrap_or("").trim();
-        build_headshot_url(season, primary, nhl_id)
-    }
-
-    #[cfg(test)]
-    mod headshot_url_tests {
-        use super::*;
-
-        /// l0_headshot_seasonal_team_path
-        /// — single-team rows must hit the seasonal CDN path that
-        ///   serves real mug shots, not the silhouette fallback.
-        #[test]
-        fn l0_headshot_seasonal_team_path() {
-            let url = build_headshot_url(20252026, "EDM", 8478402);
-            assert_eq!(
-                url,
-                "https://assets.nhle.com/mugs/nhl/20252026/EDM/8478402.png"
-            );
-        }
-
-        /// l0_headshot_falls_back_to_default_for_sentinel_team
-        /// — RET / "—" / empty string land on the default silhouette.
-        ///   Anything else where we'd otherwise build a broken URL
-        ///   (numeric chars, lowercase, slashes) also falls back.
-        #[test]
-        fn l0_headshot_falls_back_to_default_for_sentinel_team() {
-            for sentinel in ["", "—", "RET", "EDM/CGY", "edm", "abc123"] {
-                let url = build_headshot_url(20252026, sentinel, 1);
-                assert_eq!(
-                    url, "https://assets.nhle.com/mugs/nhl/default/1.png",
-                    "sentinel team {sentinel:?} should fall back to default"
-                );
-            }
-        }
-
-        /// l0_headshot_for_display_picks_primary_team_in_trade
-        /// — a "SEA/NYR" mid-season trade row should key the URL by
-        ///   the primary (first) team listed.
-        #[test]
-        fn l0_headshot_for_display_picks_primary_team_in_trade() {
-            let url = build_headshot_url_for_display(20252026, "SEA/NYR", 8481789);
-            assert_eq!(
-                url,
-                "https://assets.nhle.com/mugs/nhl/20252026/SEA/8481789.png"
-            );
-        }
-
-        /// l0_headshot_for_display_passthrough_for_single_team
-        /// — single-team display strings build the same URL as the
-        ///   bare-abbrev variant.
-        #[test]
-        fn l0_headshot_for_display_passthrough_for_single_team() {
-            assert_eq!(
-                build_headshot_url_for_display(20252026, "EDM", 8478402),
-                build_headshot_url(20252026, "EDM", 8478402),
-            );
-        }
-    }
-
-    /// Project a `PlayerView` into the `LeaderRow` shape that the
-    /// /leaders, /team, and home-preview templates all consume. Centralized
-    /// so the new realtime + special-teams columns (UX.C) get the same
-    /// formatting everywhere.
-    fn project_leader_row(
-        v: &icelines_core::stats_repository::PlayerView,
-    ) -> crate::templates::LeaderRow {
-        project_leader_row_with_prior(v, None)
-    }
-
-    /// Same as `project_leader_row` but takes an optional
-    /// `prior_points` (the player's points from the prior season,
-    /// same season-type) so the row can carry a YoY delta. Used by
-    /// /leaders for breakout/decline sorting; the team page and home
-    /// preview pass None.
-    fn project_leader_row_with_prior(
-        v: &icelines_core::stats_repository::PlayerView,
-        prior_points: Option<u32>,
-    ) -> crate::templates::LeaderRow {
-        let gp = v.gp();
-        let points = v.points();
-        let ppg_str = if gp > 0 {
-            format!("{:.2}", points as f64 / gp as f64)
-        } else {
-            String::new()
-        };
-        let totals = &v.stats.totals;
-        let plus_minus = v.plus_minus();
-        let hits = v.hits();
-        let blocks = v.blocked_shots();
-        let shooting_pct = totals.shooting_pct;
-        let faceoff_pct = totals.faceoff_win_pct;
-        let opt_u = |o: Option<u32>| -> String {
-            match o {
-                Some(n) => n.to_string(),
-                None => "—".to_owned(),
-            }
-        };
-        let opt_pct = |o: Option<f32>| -> String {
-            match o {
-                Some(p) => {
-                    if p.abs() <= 1.5 {
-                        format!("{:.1}%", p * 100.0)
-                    } else {
-                        format!("{:.1}%", p)
-                    }
-                }
-                None => "—".to_owned(),
-            }
-        };
-        let team_display = v.team_display().to_owned();
-        let primary_team = team_display
-            .split('/')
-            .next()
-            .unwrap_or("")
-            .trim()
-            .to_owned();
-        let headshot_url = build_headshot_url(v.season().0, &primary_team, v.id().0);
-        let headshot_fallback_url =
-            format!("https://assets.nhle.com/mugs/nhl/default/{}.png", v.id().0);
-
-        // Sasq.5 — per-60 rates: stat × 3600 / total_toi_seconds.
-        // total_toi_seconds = toi_per_game (sec) × gp. None when toi
-        // data is missing so we don't emit "0.00" for half the league.
-        let total_toi_secs: Option<u64> = totals
-            .toi_per_game_sec
-            .map(|tpg| u64::from(tpg) * u64::from(gp))
-            .filter(|s| *s > 0);
-        let per_60 =
-            |stat: f64| -> Option<f64> { total_toi_secs.map(|toi| stat * 3600.0 / toi as f64) };
-        let opt_p60 = |o: Option<f64>| -> String {
-            match o {
-                Some(v) => format!("{:.2}", v),
-                None => "—".to_owned(),
-            }
-        };
-        let goals_per_60 = per_60(v.goals() as f64);
-        let assists_per_60 = per_60(v.assists() as f64);
-        let points_per_60 = per_60(v.points() as f64);
-        let hits_per_60 = hits.and_then(|h| per_60(h as f64));
-        let blocks_per_60 = blocks.and_then(|b| per_60(b as f64));
-
-        // Sasq.4 — point delta vs prior season. None when no prior
-        // row exists. Pre-format the chip string + class so the
-        // template doesn't have to branch.
-        let points_delta = prior_points.map(|prev| v.points() as i32 - prev as i32);
-        let (points_delta_str, points_delta_class) = match points_delta {
-            Some(d) if d > 0 => (format!("{:+}", d), "delta-up".to_owned()),
-            Some(d) if d < 0 => (format!("{:+}", d), "delta-down".to_owned()),
-            Some(_) => ("0".to_owned(), "delta-flat".to_owned()),
-            None => (String::new(), String::new()),
-        };
-
-        crate::templates::LeaderRow {
-            nhl_id: v.id().0,
-            name: v.full_name().to_owned(),
-            position: v.position().abbreviation().to_owned(),
-            team: team_display,
-            gp,
-            goals: v.goals(),
-            assists: v.assists(),
-            points,
-            ppg_str,
-            plus_minus_str: format!("{:+}", plus_minus),
-            pim: totals.pim,
-            shots: totals.shots,
-            shooting_pct_str: opt_pct(shooting_pct),
-            hits_str: opt_u(hits),
-            blocks_str: opt_u(blocks),
-            faceoff_pct_str: opt_pct(faceoff_pct),
-            pp_points: totals.pp_points,
-            plus_minus,
-            shooting_pct,
-            hits,
-            blocks,
-            faceoff_pct,
-            headshot_url,
-            headshot_fallback_url,
-            points_per_60_str: opt_p60(points_per_60),
-            goals_per_60_str: opt_p60(goals_per_60),
-            assists_per_60_str: opt_p60(assists_per_60),
-            hits_per_60_str: opt_p60(hits_per_60),
-            blocks_per_60_str: opt_p60(blocks_per_60),
-            points_per_60,
-            goals_per_60,
-            assists_per_60,
-            hits_per_60,
-            blocks_per_60,
-            points_delta,
-            points_delta_str,
-            points_delta_class,
-        }
-    }
+    pub mod shared;
 
     /// Coming-soon stub handlers for routes whose real implementation
     /// hasn't shipped yet. Each fn renders the same template with a
@@ -1019,7 +798,7 @@ mod handlers {
                     })
                     .map(|v| {
                         let prev = prior_points.get(&v.id().0).copied();
-                        super::project_leader_row_with_prior(&v, prev)
+                        super::shared::project_leader_row_with_prior(&v, prev)
                     })
                     .collect();
                 let total = all.len();
@@ -1369,7 +1148,7 @@ mod handlers {
                     // field (e.g. no birth_date for an age filter) are
                     // excluded.
                     .filter(|v| bio.matches(v, season.0))
-                    .map(|v| super::project_leader_row(&v))
+                    .map(|v| super::shared::project_leader_row(&v))
                     .collect();
                 let total = all.len();
 
@@ -2834,7 +2613,7 @@ mod handlers {
                 let mut skaters: Vec<LeaderRow> = roster
                     .iter()
                     .filter(|v| !v.is_goalie())
-                    .map(|v| super::project_leader_row(v))
+                    .map(|v| super::shared::project_leader_row(v))
                     .collect();
                 skaters.sort_by(|a, b| {
                     b.points
@@ -2857,7 +2636,7 @@ mod handlers {
                             None => "—".to_owned(),
                         };
                         let team_display = v.team_display().to_owned();
-                        let headshot_url = super::build_headshot_url_for_display(
+                        let headshot_url = super::shared::build_headshot_url_for_display(
                             v.season().0,
                             &team_display,
                             v.id().0,
@@ -3312,7 +3091,7 @@ mod handlers {
                 gaa_str: goalie_metric_f64(row, "gaa")
                     .map(|v| format!("{v:.2}"))
                     .unwrap_or_else(|| "—".to_owned()),
-                headshot_url: super::build_headshot_url_for_display(
+                headshot_url: super::shared::build_headshot_url_for_display(
                     season.0,
                     &team,
                     row.player_id.0,
@@ -3791,7 +3570,7 @@ mod handlers {
                     // players) only when we don't have a team to key
                     // by.
                     headshot_url: if !team_link.is_empty() {
-                        Some(super::build_headshot_url(season.0, &team_link, id))
+                        Some(super::shared::build_headshot_url(season.0, &team_link, id))
                     } else {
                         identity.headshot_canonical_url.clone()
                     },
@@ -4343,7 +4122,7 @@ mod handlers {
                 team,
                 team_link: team_link.clone(),
                 headshot_url: if !team_link.is_empty() {
-                    Some(super::build_headshot_url(season.0, &team_link, id))
+                    Some(super::shared::build_headshot_url(season.0, &team_link, id))
                 } else {
                     identity.headshot_canonical_url.clone()
                 },
@@ -4618,7 +4397,7 @@ mod handlers {
 
                     let mut skaters: Vec<LeaderRow> = repo
                         .skaters(season, season_type)
-                        .map(|v| super::project_leader_row(&v))
+                        .map(|v| super::shared::project_leader_row(&v))
                         .collect();
                     skaters.sort_by(|a, b| {
                         b.points
@@ -4642,7 +4421,7 @@ mod handlers {
                                 None => "—".to_owned(),
                             };
                             let team_display = v.team_display().to_owned();
-                            let headshot_url = super::build_headshot_url_for_display(
+                            let headshot_url = super::shared::build_headshot_url_for_display(
                                 v.season().0,
                                 &team_display,
                                 v.id().0,

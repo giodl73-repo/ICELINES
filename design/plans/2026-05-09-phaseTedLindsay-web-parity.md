@@ -126,6 +126,10 @@ Move inline handler modules out of `icelines-web/src/lib.rs`. The route
 inventory decides the final module boundaries; this default split is the
 starting point, not a mandate:
 
+- Shared row-projection and headshot helpers already moved into
+  `icelines-web/src/handlers/shared.rs` so `lib.rs` no longer owns the
+  cross-route projection seam.
+
 ```text
 icelines-web/src/handlers/mod.rs
 icelines-web/src/handlers/home.rs
