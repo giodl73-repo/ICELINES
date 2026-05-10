@@ -144,7 +144,7 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /` | `handlers/home.rs` | HTML | League/home | done - preview skaters/goalies project from `HomeView`; covered by `cargo test -p icelines-web` |
 | `GET /static/:asset` | `static_assets` | asset | Static assets | done |
 | `GET /leaders` | `handlers/leaders.rs` | HTML | Leaders/skater leaderboard | partial - parity checks continue in TedLindsay.3 |
-| `GET /api/v1/leaders` | `handlers/leaders.rs` | JSON | Leaders/skater leaderboard | partial - envelope tests exist |
+| `GET /api/v1/leaders` | `handlers/leaders.rs` | JSON | Leaders/skater leaderboard | partial - success and bad-filter JSON envelopes are tested; parity checks continue in TedLindsay.3 |
 | `GET /player/:id` | `handlers/player.rs` | HTML | Player card | partial - projects player page from `PlayerCardView`; CLI/TUI alignment remains |
 | `GET /api/v1/player/:id` | `handlers/player.rs` | JSON | Player card | partial - projects stable success and error envelopes from `PlayerCardView`; covered by `l1_player_json_*` |
 | `GET /compare` | `handlers/compare.rs` | HTML | Compare/comps | partial - projects compare page from `CompareView`; CLI/TUI alignment remains |
