@@ -219,6 +219,10 @@ Progress:
   JSON API envelope instead of leaking HTML error pages through the API surface.
 - 2026-05-10: Added the ordered closeout tasklist:
   `design/notes/2026-05-10-ted-lindsay-closeout-tasklist.md`.
+- 2026-05-10: Tightened API success envelopes for transactions, scores,
+  schedule, and playoffs. Transactions now uses the strict data/meta success
+  envelope; live-route fetch failures now survive as `meta.source_error`
+  instead of a top-level success `error` field.
 
 ---
 

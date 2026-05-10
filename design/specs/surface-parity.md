@@ -165,11 +165,11 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /docs` | `handlers/docs.rs` | HTML | Docs reference | partial - renders `COMMANDS.md` through `DocsView` |
 | `GET /season-type/:kind` | `handlers/season_type.rs` | mutating redirect | Config/report toggles | partial - normalizes season-type mutation intent through shared config support |
 | `GET /scores` | `handlers/scores.rs` | HTML | Scores/tonight | partial - projects score days from `ScoresView`; CLI/TUI alignment remains |
-| `GET /api/v1/scores` | `handlers/scores.rs` | JSON | Scores/tonight | partial - projects stable envelope from `ScoresView`; covered by `l1_scores_json_envelope_shape` |
+| `GET /api/v1/scores` | `handlers/scores.rs` | JSON | Scores/tonight | partial - projects stable data/meta envelope from `ScoresView`; live source failures are `meta.source_error`; covered by `l1_scores_json_envelope_shape` |
 | `GET /schedule` | `handlers/schedule.rs` | HTML | Schedule | partial - projects schedule rows from `ScheduleView`; CLI/TUI alignment remains |
-| `GET /api/v1/schedule` | `handlers/schedule.rs` | JSON | Schedule | partial - projects stable envelope from `ScheduleView`; covered by `l1_schedule_json_envelope_shape` |
+| `GET /api/v1/schedule` | `handlers/schedule.rs` | JSON | Schedule | partial - projects stable data/meta envelope from `ScheduleView`; live source failures are `meta.source_error`; covered by `l1_schedule_json_envelope_shape` |
 | `GET /playoffs` | `handlers/playoffs.rs` | HTML | Playoffs | projects bundled/live bracket through `PlayoffsView` |
-| `GET /api/v1/playoffs` | `handlers/playoffs.rs` | JSON | Playoffs | projects bundled/live bracket through `PlayoffsView`; covered by `l1_playoffs_json_envelope_shape` |
+| `GET /api/v1/playoffs` | `handlers/playoffs.rs` | JSON | Playoffs | projects bundled/live bracket through `PlayoffsView`; live source failures are `meta.source_error`; covered by `l1_playoffs_json_envelope_shape` |
 | `GET /favorites` | `handlers/favorites.rs` | HTML | Favorites/groups | partial - projects group membership through `FavoritesView` |
 | `GET /api/v1/favorites` | `handlers/favorites.rs` | JSON | Favorites/groups | partial - projects stable `favorites.v1` read payload from `FavoritesView`; envelope test exists |
 | `GET /watchlist` | `handlers/favorites.rs` | HTML | Watch rules | partial - projects watchlist notes through `WatchlistView` |
@@ -179,7 +179,7 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `POST /favorites/add` | `handlers/favorites.rs` | mutation | Favorites/groups | partial - normalizes favorite mutation intent through `FavoritesView` support |
 | `POST /favorites/remove` | `handlers/favorites.rs` | mutation | Favorites/groups | partial - normalizes favorite mutation intent through `FavoritesView` support |
 | `GET /transactions` | `handlers/transactions.rs` | HTML | Transactions | partial - projects transaction feed from `TransactionsView`; CLI/TUI alignment remains |
-| `GET /api/v1/transactions` | `handlers/transactions.rs` | JSON | Transactions | partial - projects stable envelope from `TransactionsView`; covered by `l1_transactions_json_envelope_shape` |
+| `GET /api/v1/transactions` | `handlers/transactions.rs` | JSON | Transactions | partial - projects stable data/meta success envelope and shared bad-filter error envelope from `TransactionsView`; covered by `l1_transactions_json_envelope_shape` |
 | `GET /fantasy` | `handlers/coming_soon.rs` | HTML stub | Fantasy league management | deferred |
 
 TedLindsay.3 should use this table as the route-by-route checklist for parity,
