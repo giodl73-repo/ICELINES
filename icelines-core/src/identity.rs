@@ -17,6 +17,23 @@ use thiserror::Error;
 #[serde(transparent)]
 pub struct PlayerId(pub u32);
 
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
+#[non_exhaustive]
+pub enum PlayerIdError {
+    #[error("player id must be non-zero")]
+    Zero,
+}
+
+impl PlayerId {
+    pub fn try_new(value: u32) -> Result<Self, PlayerIdError> {
+        if value == 0 {
+            Err(PlayerIdError::Zero)
+        } else {
+            Ok(Self(value))
+        }
+    }
+}
+
 impl std::fmt::Display for PlayerId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
@@ -28,6 +45,23 @@ impl std::fmt::Display for PlayerId {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct GameId(pub u64);
+
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
+#[non_exhaustive]
+pub enum GameIdError {
+    #[error("game id must be non-zero")]
+    Zero,
+}
+
+impl GameId {
+    pub fn try_new(value: u64) -> Result<Self, GameIdError> {
+        if value == 0 {
+            Err(GameIdError::Zero)
+        } else {
+            Ok(Self(value))
+        }
+    }
+}
 
 impl std::fmt::Display for GameId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -269,6 +303,18 @@ mod tests {
         assert_eq!(s, "8478402", "PlayerId emits bare integer");
         let back: PlayerId = serde_json::from_str(&s).unwrap();
         assert_eq!(back, id);
+    }
+
+    #[test]
+    fn l0_player_id_try_new_rejects_zero() {
+        assert_eq!(PlayerId::try_new(0), Err(PlayerIdError::Zero));
+        assert_eq!(PlayerId::try_new(8478402), Ok(PlayerId(8478402)));
+    }
+
+    #[test]
+    fn l0_game_id_try_new_rejects_zero() {
+        assert_eq!(GameId::try_new(0), Err(GameIdError::Zero));
+        assert_eq!(GameId::try_new(2025020001), Ok(GameId(2025020001)));
     }
 
     #[test]

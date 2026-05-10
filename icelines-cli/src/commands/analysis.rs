@@ -17,13 +17,16 @@ use icelines_fetch::stats_loader::load_into_repo;
 /// Caller holds the LoadOutcome alive so the views' borrows remain valid.
 fn load_views() -> anyhow::Result<icelines_fetch::stats_loader::LoadOutcome> {
     let cfg = Config::load()?;
-    let season_u32: u32 = cfg
-        .season_str()
-        .parse()
-        .map_err(|_| anyhow::anyhow!("season '{}' is not a YYYYZZZZ id", cfg.season_str()))?;
+    let season = active_season_from_config(&cfg)?;
     let store = SnapshotStore::new(cfg.snapshot_dir());
-    load_into_repo(Season(season_u32), SeasonType::Regular, &store)
+    load_into_repo(season, SeasonType::Regular, &store)
         .map_err(|e| anyhow::anyhow!("{e}\n  Try: icelines fetch all"))
+}
+
+fn active_season_from_config(cfg: &Config) -> anyhow::Result<Season> {
+    cfg.season_str()
+        .parse::<Season>()
+        .with_context(|| format!("season '{}' is not a valid YYYYZZZZ id", cfg.season_str()))
 }
 
 // ── icelines class ────────────────────────────────────────────────────────────
@@ -40,7 +43,7 @@ pub async fn run_class(
 
     let outcome = load_views()?;
     let cfg = Config::load()?;
-    let season_u32: u32 = cfg.season_str().parse().unwrap();
+    let season = active_season_from_config(&cfg)?;
 
     let mut filter = PlayerFilter::new();
     filter.draft_years = Some(vec![year]);
@@ -50,11 +53,7 @@ pub async fn run_class(
         }
     }
 
-    let matched = filter.apply_views(
-        outcome
-            .repo
-            .skaters(Season(season_u32), SeasonType::Regular),
-    );
+    let matched = filter.apply_views(outcome.repo.skaters(season, SeasonType::Regular));
     let limit = top.unwrap_or(matched.len());
 
     if matched.is_empty() {
@@ -115,13 +114,13 @@ pub async fn run_peers(
 
     let outcome = load_views()?;
     let cfg = Config::load()?;
-    let season_u32: u32 = cfg.season_str().parse().unwrap();
+    let season = active_season_from_config(&cfg)?;
 
     // Find target by partial name match across all skaters.
     let target_norm = normalize_name(&player_name);
     let target = outcome
         .repo
-        .skaters(Season(season_u32), SeasonType::Regular)
+        .skaters(season, SeasonType::Regular)
         .find(|v| v.name_normalized().contains(&target_norm))
         .with_context(|| {
             format!("player '{player_name}' not found in snapshot — try a partial name")
@@ -143,11 +142,7 @@ pub async fn run_peers(
             .collect(),
     );
 
-    let mut peers = filter.apply_views(
-        outcome
-            .repo
-            .skaters(Season(season_u32), SeasonType::Regular),
-    );
+    let mut peers = filter.apply_views(outcome.repo.skaters(season, SeasonType::Regular));
     peers.sort_by(|a, b| {
         let sa = a.pace_82().unwrap_or(0.0);
         let sb = b.pace_82().unwrap_or(0.0);
@@ -215,11 +210,8 @@ pub async fn run_compare(
 
     let outcome = load_views()?;
     let cfg = Config::load()?;
-    let season_u32: u32 = cfg.season_str().parse().unwrap();
-    let views: Vec<PlayerView<'_>> = outcome
-        .repo
-        .skaters(Season(season_u32), SeasonType::Regular)
-        .collect();
+    let season = active_season_from_config(&cfg)?;
+    let views: Vec<PlayerView<'_>> = outcome.repo.skaters(season, SeasonType::Regular).collect();
 
     let v1 = find_view(&views, &name1)?;
     let v2 = find_view(&views, &name2)?;
@@ -435,11 +427,9 @@ pub async fn run_group(cmd: GroupSubcommand) -> anyhow::Result<()> {
             if !player_keys.is_empty() {
                 let outcome = load_views()?;
                 let cfg = Config::load()?;
-                let season_u32: u32 = cfg.season_str().parse().unwrap();
-                let views: Vec<PlayerView<'_>> = outcome
-                    .repo
-                    .skaters(Season(season_u32), SeasonType::Regular)
-                    .collect();
+                let season = active_season_from_config(&cfg)?;
+                let views: Vec<PlayerView<'_>> =
+                    outcome.repo.skaters(season, SeasonType::Regular).collect();
                 println!("Players ({}):", player_keys.len());
                 for norm in &player_keys {
                     if let Some(v) = views.iter().find(|v| v.name_normalized().contains(*norm)) {

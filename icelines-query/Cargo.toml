@@ -7,9 +7,7 @@ edition.workspace = true
 path = "src/lib.rs"
 
 [dependencies]
-# `send-sync` matches what icelines-web takes so PlayerView refs
-# inside this crate cross the same Send/Sync boundary axum needs.
-icelines-core = { path = "../icelines-core", features = ["send-sync"] }
+icelines-core = { path = "../icelines-core" }
 thiserror.workspace = true
 chrono.workspace = true
 

@@ -12,6 +12,7 @@
 //! concern, not a type-system one.
 
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 use crate::identity::PlayerId;
 use crate::model::{PaceScore, Position, Season, TeamAbbr};
@@ -515,6 +516,13 @@ pub struct SeasonStatsBuilder {
     goalie_bios: Option<GoalieBios>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
+#[non_exhaustive]
+pub enum SeasonStatsBuildError {
+    #[error("SeasonStats requires at least one TeamStint")]
+    MissingTeamStint,
+}
+
 impl SeasonStatsBuilder {
     pub fn new(
         player_id: PlayerId,
@@ -603,16 +611,14 @@ impl SeasonStatsBuilder {
         self
     }
 
-    /// Finalize. Panics if `team_stints` is empty — a SeasonStats row
-    /// without a team violates the documented `len() >= 1` invariant
-    /// that downstream `team_stints.last()` accessors rely on. Sorts
-    /// stints into canonical order so consumers can rely on
-    /// `team_stints.last()` for the most-recent team.
-    pub fn build(mut self) -> SeasonStats {
-        assert!(
-            !self.team_stints.is_empty(),
-            "SeasonStats requires at least one TeamStint (player must have played for someone)"
-        );
+    /// Fallible finalize. Returns an error when the row violates
+    /// construction invariants. Sorts stints into canonical order so
+    /// consumers can rely on `team_stints.last()` for the most-recent
+    /// team.
+    pub fn try_build(mut self) -> Result<SeasonStats, SeasonStatsBuildError> {
+        if self.team_stints.is_empty() {
+            return Err(SeasonStatsBuildError::MissingTeamStint);
+        }
         self.team_stints
             .sort_by(|a, b| match (a.started.as_ref(), b.started.as_ref()) {
                 (Some(x), Some(y)) => x.cmp(y),
@@ -620,7 +626,7 @@ impl SeasonStatsBuilder {
                 (None, Some(_)) => std::cmp::Ordering::Greater,
                 (None, None) => a.team.as_str().cmp(b.team.as_str()),
             });
-        SeasonStats {
+        Ok(SeasonStats {
             player_id: self.player_id,
             season: self.season,
             season_type: self.season_type,
@@ -636,7 +642,14 @@ impl SeasonStatsBuilder {
             goalie_advanced: self.goalie_advanced,
             goalie_saves_by_strength: self.goalie_saves_by_strength,
             goalie_bios: self.goalie_bios,
-        }
+        })
+    }
+
+    /// Finalize for legacy/test call sites that already guarantee a
+    /// stint. New production loader paths should prefer `try_build`.
+    pub fn build(self) -> SeasonStats {
+        self.try_build()
+            .expect("SeasonStats requires at least one TeamStint")
     }
 }
 
@@ -679,6 +692,19 @@ mod tests {
             points: g + a,
             ..Default::default()
         }
+    }
+
+    #[test]
+    fn l0_builder_try_build_rejects_missing_stint() {
+        let err = SeasonStatsBuilder::new(
+            PlayerId(8478402),
+            Season(20252026),
+            SeasonType::Regular,
+            Position::Center,
+        )
+        .try_build()
+        .unwrap_err();
+        assert_eq!(err, SeasonStatsBuildError::MissingTeamStint);
     }
 
     #[test]

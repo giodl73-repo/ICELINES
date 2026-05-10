@@ -44,9 +44,10 @@ pub use error::IcelinesError;
 pub use filter::PlayerFilter;
 pub use freshness::{Clock, FetchSource, Freshness, MockClock, SystemClock, Ttl};
 pub use history::{CareerSummary, SeasonLine};
+pub use identity::{GameIdError, PlayerIdError};
 pub use model::{
     DepthChart, DepthChartSlot, FitClass, GpStatus, LineAssignment, PaceScore, Position, Region,
-    Season, Slot, TeamAbbr,
+    Season, SeasonParseError, Slot, TeamAbbr,
 };
 pub use name::normalize_name;
 pub use position::PositionResolver;
@@ -56,6 +57,7 @@ pub use projection::{
 };
 pub use scheme::{compute_fantasy_score, FantasyScore, Scheme, SkaterStats as SchemeSkaterStats};
 pub use scoring::{classify_fit, compute_pace_score, sort_views_by_pace};
+pub use season_stats::SeasonStatsBuildError;
 pub use teams::CANONICAL_TEAMS;
 pub use transactions::{
     classify, other_rate, sanitize_description, trade_group_id, Transaction, TransactionKind,

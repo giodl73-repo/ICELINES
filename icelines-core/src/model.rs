@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 pub const MIN_GP: u32 = 10;
 
@@ -10,9 +11,43 @@ pub const MIN_GP: u32 = 10;
 #[serde(transparent)]
 pub struct Season(pub u32);
 
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
+#[non_exhaustive]
+pub enum SeasonParseError {
+    #[error("season id must be numeric YYYYZZZZ text, got {0:?}")]
+    InvalidText(String),
+    #[error("season id must be an 8-digit YYYYZZZZ value, got {0}")]
+    InvalidShape(u32),
+    #[error("season id must span consecutive years, got {0}")]
+    NonConsecutiveYears(u32),
+}
+
 impl Season {
+    pub fn try_new(value: u32) -> Result<Self, SeasonParseError> {
+        let start = value / 10_000;
+        let end = value % 10_000;
+        if !(1900..=2999).contains(&start) || !(1901..=3000).contains(&end) {
+            return Err(SeasonParseError::InvalidShape(value));
+        }
+        if end != start + 1 {
+            return Err(SeasonParseError::NonConsecutiveYears(value));
+        }
+        Ok(Self(value))
+    }
+
     pub fn as_str(self) -> String {
         self.0.to_string()
+    }
+}
+
+impl std::str::FromStr for Season {
+    type Err = SeasonParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let value = s
+            .parse::<u32>()
+            .map_err(|_| SeasonParseError::InvalidText(s.to_string()))?;
+        Self::try_new(value)
     }
 }
 
@@ -378,6 +413,35 @@ mod tests {
     fn l0_season_as_str() {
         let s = Season(20252026);
         assert_eq!(s.as_str(), "20252026");
+    }
+
+    #[test]
+    fn l0_season_try_new_accepts_consecutive_years() {
+        assert_eq!(Season::try_new(20252026), Ok(Season(20252026)));
+    }
+
+    #[test]
+    fn l0_season_try_new_rejects_short_year() {
+        assert!(matches!(
+            Season::try_new(2025),
+            Err(SeasonParseError::InvalidShape(2025))
+        ));
+    }
+
+    #[test]
+    fn l0_season_try_new_rejects_non_consecutive_years() {
+        assert!(matches!(
+            Season::try_new(20252027),
+            Err(SeasonParseError::NonConsecutiveYears(20252027))
+        ));
+    }
+
+    #[test]
+    fn l0_season_from_str_rejects_text() {
+        assert!(matches!(
+            "not-a-season".parse::<Season>(),
+            Err(SeasonParseError::InvalidText(_))
+        ));
     }
 
     /// Phase Hart.0 verification: serde derives on a one-field tuple
