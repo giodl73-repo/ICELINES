@@ -717,6 +717,8 @@ icelines watch note "Matthew Knies" "PP1 promotion and strong hits fit"
 icelines watch rules
 icelines watch player "Matthew Knies" --when pp1 --save
 icelines watch deployment --team TOR --line-change --save
+icelines watch disable player-matthew-knies
+icelines watch enable player-matthew-knies
 
 # Personal-attendance tracker
 icelines games add ...                 # log games attended

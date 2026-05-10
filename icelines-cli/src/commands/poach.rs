@@ -7,7 +7,7 @@ use icelines_core::{
     model::{Position, Season, TeamAbbr},
     name::normalize_name,
     view_model::{
-        default_watch_rules_view, poach_report_from_board, weekly_poach_report_from_board,
+        default_watch_rules_view, poach_report_from_board,
         weekly_poach_report_from_board_with_watched, AvailabilityState, DeploymentSignal,
         PoachBoardView, PoachQuery, PoachReportView, SourceKind, SourceState, ViewContext,
         ViewWindow, WatchRule, WatchRuleTrigger, WatchRulesView,
@@ -58,6 +58,12 @@ pub struct WeeklyReportArgs {
 pub struct WatchRulesArgs {
     pub season: Option<String>,
     pub season_type: QuerySeasonType,
+    pub json: bool,
+}
+
+pub struct WatchSetEnabledArgs {
+    pub id: String,
+    pub enabled: bool,
     pub json: bool,
 }
 
@@ -144,6 +150,33 @@ pub async fn run_watch_rules(args: WatchRulesArgs) -> anyhow::Result<()> {
     let db = GroupDb::open()?;
     view.rules.extend(persisted_watch_rules(&db)?);
     emit_watch_view(&view, args.json)
+}
+
+pub async fn run_watch_set_enabled(args: WatchSetEnabledArgs) -> anyhow::Result<()> {
+    let db = GroupDb::open()?;
+    let changed = db.set_watch_rule_enabled(&args.id, args.enabled)?;
+    if !changed {
+        bail!("unknown persisted watch rule '{}'", args.id);
+    }
+    let rule = db
+        .list_watch_rules()?
+        .into_iter()
+        .find(|rule| rule.id == args.id)
+        .context("watch rule disappeared after update")?;
+    let rule = watch_rule_from_row(rule)?;
+    if args.json {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&rule).context("serializing watch rule")?
+        );
+    } else {
+        println!(
+            "{} watch rule '{}'",
+            if args.enabled { "Enabled" } else { "Disabled" },
+            rule.id
+        );
+    }
+    Ok(())
 }
 
 pub async fn run_watch_list(args: WatchListArgs) -> anyhow::Result<()> {
@@ -709,7 +742,8 @@ mod tests {
             "yahoo-standard",
         );
 
-        let report = weekly_poach_report_from_board(board, "Main League", 20);
+        let report =
+            icelines_core::view_model::weekly_poach_report_from_board(board, "Main League", 20);
         let section_ids: Vec<_> = report
             .sections
             .iter()
@@ -771,6 +805,21 @@ mod tests {
         assert_eq!(rules[0].label, rule.label);
         assert_eq!(rules[0].trigger, rule.trigger);
         assert_eq!(rules[0].unsupported_sources, rule.unsupported_sources);
+    }
+
+    #[test]
+    fn l0_watch_set_enabled_updates_persisted_rule() {
+        let db = GroupDb::open_in_memory().expect("open db");
+        let rule = player_watch_rule("Matthew Knies", "pp1");
+        persist_watch_rules(&db, std::slice::from_ref(&rule)).expect("persist rule");
+
+        assert!(db
+            .set_watch_rule_enabled("player-matthew-knies", false)
+            .expect("disable rule"));
+        let rules = persisted_watch_rules(&db).expect("read persisted rules");
+
+        assert_eq!(rules.len(), 1);
+        assert!(!rules[0].enabled);
     }
 
     #[test]

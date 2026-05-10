@@ -280,7 +280,8 @@ Initial implementation note:
 - `icelines watch rules`, `icelines watch player`, and
   `icelines watch deployment` are wired as preview surfaces over
   `WatchRulesView`. `watch player --save` and `watch deployment --save` persist
-  local watch rules; fired-alert history remains pending.
+  local watch rules; `watch enable <id>` and `watch disable <id>` toggle
+  persisted rules. Fired-alert history remains pending.
 - `icelines watch list` reads the local `Watchlist` group with stored reasons,
   and `icelines watch note <player> <reason>` creates/updates a manual watch
   reason while keeping membership in the existing group model.

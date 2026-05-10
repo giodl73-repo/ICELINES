@@ -213,6 +213,22 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 })
                 .await?;
             }
+            WatchSubcommand::Enable { id, json } => {
+                commands::poach::run_watch_set_enabled(commands::poach::WatchSetEnabledArgs {
+                    id,
+                    enabled: true,
+                    json,
+                })
+                .await?;
+            }
+            WatchSubcommand::Disable { id, json } => {
+                commands::poach::run_watch_set_enabled(commands::poach::WatchSetEnabledArgs {
+                    id,
+                    enabled: false,
+                    json,
+                })
+                .await?;
+            }
             WatchSubcommand::Player {
                 player,
                 when,

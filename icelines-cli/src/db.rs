@@ -553,6 +553,19 @@ impl GroupDb {
         Ok(())
     }
 
+    pub fn set_watch_rule_enabled(&self, id: &str, enabled: bool) -> anyhow::Result<bool> {
+        let updated = self
+            .conn
+            .execute(
+                "UPDATE watch_rules
+                 SET enabled = ?2, updated_at = ?3
+                 WHERE id = ?1",
+                rusqlite::params![id, if enabled { 1_i64 } else { 0_i64 }, now_utc()],
+            )
+            .with_context(|| format!("set watch rule '{id}' enabled={enabled}"))?;
+        Ok(updated > 0)
+    }
+
     // ── Read operations ───────────────────────────────────────────────────────
 
     /// List all groups with their member counts.
@@ -1054,6 +1067,29 @@ mod tests {
         assert_eq!(rules[0].label, "Watch Matthew Knies when top-six");
         assert!(!rules[0].enabled);
         assert!(rules[0].created_at <= rules[0].updated_at);
+    }
+
+    #[test]
+    fn l1_db_watch_rule_enabled_update_reports_missing_ids() {
+        let db = GroupDb::open_in_memory().expect("open in-memory db");
+        db.upsert_watch_rule(
+            "player-matthew-knies",
+            "Watch Matthew Knies when pp1",
+            true,
+            r#"{"kind":"player_promoted","player_id":null,"evidence":{"kind":"unknown"}}"#,
+            r#"["shifts"]"#,
+        )
+        .expect("insert watch rule");
+
+        assert!(db
+            .set_watch_rule_enabled("player-matthew-knies", false)
+            .expect("disable watch rule"));
+        assert!(!db
+            .set_watch_rule_enabled("missing-rule", true)
+            .expect("missing rule"));
+
+        let rules = db.list_watch_rules().expect("list watch rules");
+        assert!(!rules[0].enabled);
     }
 
     #[test]

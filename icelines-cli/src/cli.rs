@@ -1065,6 +1065,26 @@ pub enum WatchSubcommand {
         json: bool,
     },
 
+    /// Enable a persisted poacher watch rule by id.
+    Enable {
+        /// Persisted watch rule id, e.g. player-matthew-knies.
+        id: String,
+
+        /// Emit the updated rule as JSON.
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Disable a persisted poacher watch rule by id.
+    Disable {
+        /// Persisted watch rule id, e.g. player-matthew-knies.
+        id: String,
+
+        /// Emit the updated rule as JSON.
+        #[arg(long)]
+        json: bool,
+    },
+
     /// Preview a player-specific watch rule.
     Player {
         /// Player name to watch.
