@@ -1165,8 +1165,7 @@ impl App {
                     self.status =
                         format!("Depth nationality: {}", self.depth_filters.country_label());
                 } else if matches!(self.screen, Screen::Depth | Screen::DepthTeam(_)) && c == 'f' {
-                    self.status =
-                        "Depth free-form filter is tracked for Messier.6 cmdbar KV".to_owned();
+                    self.open_roster_kv_cmdbar("depth");
                 } else if self.screen == Screen::Favorites && c == 's' {
                     self.favorites.sort = self.favorites.sort.next();
                     self.selected = 0;
@@ -1187,8 +1186,7 @@ impl App {
                         self.favorites.filters.country_label()
                     );
                 } else if self.screen == Screen::Favorites && c == 'f' {
-                    self.status =
-                        "Favorites free-form filter is tracked for Messier.6 cmdbar KV".to_owned();
+                    self.open_roster_kv_cmdbar("favorites");
                 } else if self.screen == Screen::Poach && c == 'w' {
                     self.toggle_selected_poach_watch();
                 } else if self.screen == Screen::Goalies && c == 's' {
@@ -1240,6 +1238,8 @@ impl App {
                             "hidden"
                         }
                     );
+                } else if self.screen == Screen::Goalies && c == 'f' {
+                    self.open_roster_kv_cmdbar("goalies");
                 } else if matches!(self.screen, Screen::Team(_)) && c == 's' {
                     // Phase Adams.10 — cycle Team sort key.
                     self.team.sort = self.team.sort.next();
@@ -1554,6 +1554,18 @@ impl App {
                 }
             }
             Action::AddToFavorites => {
+                if matches!(self.screen, Screen::Depth | Screen::DepthTeam(_)) {
+                    self.open_roster_kv_cmdbar("depth");
+                    return false;
+                }
+                if self.screen == Screen::Favorites {
+                    self.open_roster_kv_cmdbar("favorites");
+                    return false;
+                }
+                if self.screen == Screen::Goalies {
+                    self.open_roster_kv_cmdbar("goalies");
+                    return false;
+                }
                 // Phase Art Ross — on the Queries screen in Build mode,
                 // 'f' opens the free-form filter overlay instead of
                 // adding to Favorites (Favorites is a player-card
@@ -2272,6 +2284,18 @@ impl App {
                 false
             }
             _ => false,
+        }
+    }
+
+    fn open_roster_kv_cmdbar(&mut self, verb: &str) {
+        if let Some(m) = self.mdi.as_mut() {
+            m.command_input = format!("{verb} ");
+            m.command_bar_focused = true;
+            m.command_history_cursor = None;
+            m.flash_error = None;
+            self.status = format!("Type {verb} filters as key=value, then Enter");
+        } else {
+            self.status = format!("Use :{verb} key=value filters in MDI command bar");
         }
     }
 
@@ -4905,6 +4929,46 @@ mod tests {
         assert_eq!(app.queries.filter_text, "nationality=");
         assert!(app.queries.filter_error.is_none());
         assert!(app.status.contains("nationality"));
+    }
+
+    #[test]
+    fn l0_messier_depth_f_prefills_mdi_kv_command() {
+        let mut app = App::new(true);
+        app.mdi = Some(crate::tui::mdi::MdiLayout::default());
+        app.screen = Screen::Depth;
+
+        app.handle(Action::AddToFavorites);
+
+        let mdi = app.mdi.as_ref().expect("mdi");
+        assert!(mdi.command_bar_focused);
+        assert_eq!(mdi.command_input, "depth ");
+        assert!(app.status.contains("key=value"));
+    }
+
+    #[test]
+    fn l0_messier_favorites_f_prefills_mdi_kv_command() {
+        let mut app = App::new(true);
+        app.mdi = Some(crate::tui::mdi::MdiLayout::default());
+        app.screen = Screen::Favorites;
+
+        app.handle(Action::AddToFavorites);
+
+        let mdi = app.mdi.as_ref().expect("mdi");
+        assert!(mdi.command_bar_focused);
+        assert_eq!(mdi.command_input, "favorites ");
+    }
+
+    #[test]
+    fn l0_messier_goalies_f_prefills_mdi_kv_command() {
+        let mut app = App::new(true);
+        app.mdi = Some(crate::tui::mdi::MdiLayout::default());
+        app.screen = Screen::Goalies;
+
+        app.handle(Action::AddToFavorites);
+
+        let mdi = app.mdi.as_ref().expect("mdi");
+        assert!(mdi.command_bar_focused);
+        assert_eq!(mdi.command_input, "goalies ");
     }
 
     /// Typed characters land in `query_filter_text`, not the global

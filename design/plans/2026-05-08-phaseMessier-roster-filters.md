@@ -461,6 +461,8 @@ Implemented in the first Messier pass:
   filtered row set.
 - Starter/backup remains the documented GP-share heuristic, not a deployment
   claim.
+- `f` pre-fills the MDI command bar with `goalies ` so the shared KV grammar
+  is the free-form path for goalie filters.
 
 ---
 
@@ -612,7 +614,8 @@ Implemented in the first Messier pass:
 - `p` and `n` handlers mutate typed depth filters and reset selection.
 - League and team depth computations consume filtered player views before
   computing team strength.
-- `f` is reserved in UI/status for the follow-up free-form/KV integration.
+- `f` pre-fills the MDI command bar with `depth ` so the shared KV grammar is
+  the free-form path for Depth filters.
 
 ---
 
@@ -659,8 +662,8 @@ standard. Sort changes order deterministically.
 Implemented in the first Messier pass:
 
 - `FavoritesScreenState` adds sort and `RosterFilterState`.
-- Favorites chrome advertises sort, position, nationality, and reserved
-  free-form controls.
+- Favorites chrome advertises sort, position, nationality, and free-form
+  controls.
 - App handlers for `s`, `p`, `n`, and `f` update state and status.
 - Fallback member-list rendering now honors `sort=Recent`, `sort=Name`, and
   `sort=Kind`.
@@ -668,6 +671,8 @@ Implemented in the first Messier pass:
   apply position, nationality, and min-GP filters by resolving row player IDs
   against active `PlayerView`s. Team favorites remain visible because roster
   filters describe players, not teams.
+- `f` pre-fills the MDI command bar with `favorites ` so the shared KV grammar
+  is the free-form path for Favorites filters.
 
 ---
 
