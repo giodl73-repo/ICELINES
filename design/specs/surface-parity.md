@@ -75,7 +75,7 @@ a feature fully shipped.
 | Favorites/groups | `FavoritesView` | `group ...` | favorites/group affordances | `/favorites` | planned/verify | partial - mutation/query parity needs Ted verification | Ted Lindsay |
 | Fantasy league management | `FantasyLeagueView` | `fantasy ...` | groups/deep links | `/fantasy...` | planned/verify | deferred/partial - local-only stance remains | Ted Lindsay |
 | Poacher board | `PoachBoardView` | `poach` | Poach screen | `/poach` | `/api/v1/poach` | implemented - shared board ViewModel across CLI/TUI/web/JSON | Selke |
-| Watch rules | `WatchRulesView` | `watch ...` | watchlist workspace; rule editor deferred | `/watchlist` | `/api/v1/watch-rules`; `/api/v1/watchlist` | partial - rule preview/list/watch-note wired; persistent rule editor/history deferred | Selke |
+| Watch rules | `WatchRulesView` | `watch ...` | watchlist workspace; rule editor deferred | `/watchlist` | `/api/v1/watch-rules`; `/api/v1/watchlist` | partial - rule preview/list/watch-note and persisted rules wired; TUI editor/fired history deferred | Selke |
 | Poach/weekly reports | `PoachReportView` | `report poach`, `report weekly` | report viewer deferred | `/reports/poach`, `/reports/weekly` | CLI `--json`; board JSON at `/api/v1/poach` | implemented - markdown/JSON/HTML render from shared report ViewModel | Selke |
 
 ---

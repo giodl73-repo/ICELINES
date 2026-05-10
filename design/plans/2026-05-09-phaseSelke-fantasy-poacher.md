@@ -347,11 +347,8 @@ Initial implementation note:
 - `/api/v1/watchlist` returns the same SQLite-backed watchlist rows with reason,
   source, updated timestamp, and player/team counts for web automation.
 - `/api/v1/watch-rules` returns the shared default `WatchRulesView` contract from
-  core with unsupported source disclosure for shifts, schedule, and fantasy
-  import.
-- Local persisted watch rules are currently a CLI/local DB surface; exposing
-  them through `/api/v1/watch-rules` remains a follow-up with the web settings
-  work.
+  core plus locally persisted rules, with unsupported source disclosure for
+  shifts, schedule, and fantasy import.
 
 ---
 

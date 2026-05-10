@@ -1985,7 +1985,7 @@ mod handlers {
             view_model::{
                 default_watch_rules_view, poach_report_from_board,
                 weekly_poach_report_from_board_with_watched, PoachBoardView, PoachQuery,
-                PoachReportView,
+                PoachReportView, WatchRule,
             },
             Completeness, EmptyKind, EmptyState, SourceKind, SourceState, ViewContext, ViewWindow,
         };
@@ -2140,7 +2140,9 @@ mod handlers {
                 SourceState::missing(SourceKind::FantasyImport),
             ];
 
-            axum::Json(default_watch_rules_view(context)).into_response()
+            let mut view = default_watch_rules_view(context);
+            view.rules.extend(read_persisted_watch_rules());
+            axum::Json(view).into_response()
         }
 
         fn render_poach_report_html(report: &PoachReportView, active_label: &str) -> String {
@@ -2214,6 +2216,51 @@ mod handlers {
                 .replace('<', "&lt;")
                 .replace('>', "&gt;")
                 .replace('"', "&quot;")
+        }
+
+        fn read_persisted_watch_rules() -> Vec<WatchRule> {
+            let Some(home) = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))
+            else {
+                return Vec::new();
+            };
+            let db_path = std::path::PathBuf::from(&home)
+                .join(".icelines")
+                .join("icelines.db");
+            if !db_path.exists() {
+                return Vec::new();
+            }
+            let Ok(conn) = rusqlite::Connection::open(&db_path) else {
+                return Vec::new();
+            };
+            let Ok(mut stmt) = conn.prepare(
+                "SELECT id, label, enabled, trigger_json, unsupported_sources_json \
+                 FROM watch_rules \
+                 ORDER BY id",
+            ) else {
+                return Vec::new();
+            };
+            stmt.query_map([], |r| {
+                let id: String = r.get(0)?;
+                let label: String = r.get(1)?;
+                let enabled: i64 = r.get(2)?;
+                let trigger_json: String = r.get(3)?;
+                let unsupported_sources_json: String = r.get(4)?;
+                let trigger = serde_json::from_str(&trigger_json)
+                    .map_err(|err| rusqlite::Error::ToSqlConversionFailure(Box::new(err)))?;
+                let unsupported_sources = serde_json::from_str(&unsupported_sources_json)
+                    .map_err(|err| rusqlite::Error::ToSqlConversionFailure(Box::new(err)))?;
+                Ok(WatchRule {
+                    id,
+                    label,
+                    enabled: enabled != 0,
+                    trigger,
+                    last_fired: None,
+                    unsupported_sources,
+                })
+            })
+            .ok()
+            .map(|rows| rows.filter_map(Result::ok).collect())
+            .unwrap_or_default()
         }
 
         fn read_watchlist_player_keys() -> Vec<String> {

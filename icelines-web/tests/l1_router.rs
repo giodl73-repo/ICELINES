@@ -496,6 +496,75 @@ async fn l1_watch_rules_json_returns_shared_contract() {
     assert_eq!(json["rules"][4]["unsupported_sources"][0], "fantasy_import");
 }
 
+#[tokio::test]
+async fn l1_watch_rules_json_includes_persisted_rules() {
+    let _guard = home_env_lock();
+    let dir = tempfile::TempDir::new().expect("temp home");
+    let prev_userprofile = std::env::var_os("USERPROFILE");
+    let prev_home = std::env::var_os("HOME");
+    std::env::set_var("USERPROFILE", dir.path());
+    std::env::set_var("HOME", dir.path());
+
+    let db_dir = dir.path().join(".icelines");
+    std::fs::create_dir_all(&db_dir).expect("create db dir");
+    let conn = rusqlite::Connection::open(db_dir.join("icelines.db")).expect("open db");
+    conn.execute_batch(
+        "CREATE TABLE watch_rules (
+            id TEXT PRIMARY KEY,
+            label TEXT NOT NULL,
+            enabled INTEGER NOT NULL DEFAULT 1,
+            trigger_json TEXT NOT NULL,
+            unsupported_sources_json TEXT NOT NULL DEFAULT '[]',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+         );
+         INSERT INTO watch_rules VALUES (
+            'player-matthew-knies',
+            'Watch Matthew Knies when pp1',
+            1,
+            '{\"kind\":\"player_promoted\",\"player_id\":null,\"evidence\":{\"kind\":\"unknown\"}}',
+            '[\"shifts\"]',
+            '2026-05-09T12:00:00Z',
+            '2026-05-09T12:00:00Z'
+         );",
+    )
+    .expect("seed watch rules db");
+
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/watch-rules")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    match prev_userprofile {
+        Some(p) => std::env::set_var("USERPROFILE", p),
+        None => std::env::remove_var("USERPROFILE"),
+    }
+    match prev_home {
+        Some(p) => std::env::set_var("HOME", p),
+        None => std::env::remove_var("HOME"),
+    }
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value = serde_json::from_slice(&bytes).expect("json body");
+
+    let rules = json["rules"].as_array().expect("rules array");
+    let persisted = rules
+        .iter()
+        .find(|rule| rule["id"] == "player-matthew-knies")
+        .expect("persisted rule present");
+    assert_eq!(persisted["label"], "Watch Matthew Knies when pp1");
+    assert_eq!(persisted["unsupported_sources"][0], "shifts");
+}
+
 /// l1_career_route_missing_league_returns_400 (Calder.4)
 /// — `/career` without `?league=…` rejects with 400 + helpful body.
 #[tokio::test]
