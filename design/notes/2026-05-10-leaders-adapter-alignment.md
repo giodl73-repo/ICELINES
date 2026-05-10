@@ -11,7 +11,9 @@ Leaders now has three different projection levels:
 - CLI text output builds `LeadersView` through `leaders_view_from_results`.
 - CLI JSON and CSV now serialize from `LeadersView` while preserving the
   existing field names and precision.
-- TUI Stats/Queries still sorts and displays directly from `PlayerView`.
+- TUI Stats/Queries still executes selection/search over `PlayerView`, but the
+  results table now renders identity and primary metric cells from
+  `LeadersView`.
 
 That means the feature is behaviorally useful, but not yet fully uniform.
 
@@ -35,7 +37,8 @@ All leaders-capable surfaces should eventually consume the same row contract:
 3. Add a fixture test that compares CLI JSON and CSV row identity for the same
    query arguments. Complete.
 4. Move TUI Stats/Queries row rendering behind a `LeadersView` adapter while
-   keeping the interactive filter/sort controls in TUI state.
+   keeping the interactive filter/sort controls in TUI state. Complete for
+   rendering; execution/selection still uses `PlayerView`.
 5. Promote the leaders row in `surface-parity.md` from partial only after CLI
    JSON/CSV and TUI Stats no longer project their own row identity.
 

@@ -6,7 +6,10 @@
 #![allow(clippy::module_name_repetitions)]
 
 use icelines_core::{
-    filter::PlayerFilter, model::Position, position::PositionResolver, stats_repository::PlayerView,
+    filter::PlayerFilter, model::Position, position::PositionResolver,
+    stats_repository::PlayerView, LeaderKind, LeadersView, MetricCell, MetricUnit, MetricValue,
+    SemanticToken, SortDirection, SortKey, SortState, StatKey, ValuePrecision, ViewContext,
+    ViewWindow,
 };
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -723,6 +726,54 @@ fn col_label(sort: &str) -> &'static str {
     }
 }
 
+fn leaders_view_from_query_results(
+    results: &[(usize, PlayerView<'_>)],
+    sort: &str,
+    label: &str,
+    season: icelines_core::model::Season,
+    season_type: icelines_core::season_stats::SeasonType,
+) -> LeadersView {
+    let mut view = LeadersView::from_player_views_with_primary(
+        ViewContext::new(ViewWindow::new(season, season_type)),
+        LeaderKind::Skaters,
+        results.iter().map(|(_, view)| *view),
+        |v| MetricCell {
+            key: StatKey::from(sort),
+            label: label.to_owned(),
+            value: MetricValue::Text(display_val_view(v, sort)),
+            unit: MetricUnit::None,
+            precision: ValuePrecision::Raw,
+            token: Some(SemanticToken::DecisionHighlight),
+        },
+    );
+    view.sort = Some(SortState {
+        key: SortKey::from(sort),
+        label: label.to_owned(),
+        direction: SortDirection::Desc,
+    });
+    for (row, (rank, _)) in view.rows.iter_mut().zip(results.iter()) {
+        row.rank = *rank as u32;
+    }
+    view
+}
+
+fn leader_primary_text(row: &icelines_core::LeaderRow) -> String {
+    match &row.primary.value {
+        MetricValue::Text(value) => value.clone(),
+        MetricValue::Integer(value) => value.to_string(),
+        MetricValue::Decimal(value) => format!("{value:.1}"),
+        MetricValue::Missing => "â€”".to_owned(),
+    }
+}
+
+fn leader_team_text(row: &icelines_core::LeaderRow) -> &str {
+    if row.team.0 == "UNK" {
+        "â€”"
+    } else {
+        row.team.0.as_str()
+    }
+}
+
 // ── Render ────────────────────────────────────────────────────────────────────
 
 pub fn render(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
@@ -1270,6 +1321,13 @@ fn render_results(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
         Some(stat) => stat.short_label().to_owned(),
         None => col_label(sort).to_owned(),
     };
+    let leaders_view = leaders_view_from_query_results(
+        &results,
+        sort,
+        &clabel,
+        app.active_season_typed,
+        app.active_type,
+    );
     let dim = Style::default().fg(Color::DarkGray);
 
     let visible = inner.height.saturating_sub(4) as usize;
@@ -1286,9 +1344,9 @@ fn render_results(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
         Line::styled(format!("  {}", "─".repeat(48)), dim),
     ];
 
-    for (rank, v) in results.iter().skip(offset).take(visible) {
-        let name = v.full_name().chars().take(22).collect::<String>();
-        let value = display_val_view(v, sort);
+    for row in leaders_view.rows.iter().skip(offset).take(visible) {
+        let name = row.display_name.chars().take(22).collect::<String>();
+        let value = leader_primary_text(row);
         let is_selected = offset + (lines.len() - 2)
             == app.queries.result_scroll + app.selected.min(visible.saturating_sub(1));
         let style = if is_selected {
@@ -1296,7 +1354,7 @@ fn render_results(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
                 .fg(Color::Black)
                 .bg(Color::Cyan)
                 .add_modifier(Modifier::BOLD)
-        } else if *rank <= 3 {
+        } else if row.rank <= 3 {
             Style::default().fg(Color::Green)
         } else {
             Style::default()
@@ -1304,10 +1362,10 @@ fn render_results(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
         lines.push(Line::styled(
             format!(
                 "  {:<4} {:<22} {:<5} {:<4} {:>8}",
-                rank,
+                row.rank,
                 name,
-                v.team_display(),
-                v.position().abbreviation(),
+                leader_team_text(row),
+                row.position.abbreviation(),
                 value,
             ),
             style,

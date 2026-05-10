@@ -246,6 +246,9 @@ Progress:
 - 2026-05-10: Migrated CLI leaders JSON/CSV serialization to read from
   `LeadersView` compatibility metrics while preserving the existing wire field
   names and numeric precision.
+- 2026-05-10: Migrated TUI Stats result-table rendering to build a
+  `LeadersView` adapter from the existing interactive query results. TUI
+  selection/navigation still uses `PlayerView` for now.
 
 ---
 

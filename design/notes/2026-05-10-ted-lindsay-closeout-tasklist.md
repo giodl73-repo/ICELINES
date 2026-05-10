@@ -36,8 +36,8 @@ surface still differs from CLI/TUI.
      creating another broad web test binary.
 
 4. **Verify CLI/TUI adapter alignment for partial rows**
-   - Leaders: TUI stats projection remains the named gap; CLI JSON/CSV now
-     serialize from `LeadersView`.
+   - Leaders: TUI stats execution/selection remains the named gap; CLI
+     JSON/CSV and TUI result rendering now serialize/render from `LeadersView`.
      See `design/notes/2026-05-10-leaders-adapter-alignment.md` for the
      row-contract migration boundary.
    - Goalies: CLI, TUI, web HTML, and web JSON already build `GoaliesView`;
