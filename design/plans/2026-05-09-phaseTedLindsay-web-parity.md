@@ -236,6 +236,9 @@ Progress:
 - 2026-05-10: Replaced remaining vague `planned/verify` web route claims for
   scouting, fantasy, admin snapshots, and report toggles with explicit
   not-mounted/deferred statuses.
+- 2026-05-10: Fixed `/api/v1/leaders` discrete bio query parity so API
+  `country`, `age-*`, draft, size, and shoots filters are applied like the
+  HTML `/leaders` surface.
 
 ---
 

@@ -539,6 +539,26 @@ async fn build_leader_result(
         .as_deref()
         .map(str::to_ascii_uppercase)
         .unwrap_or_default();
+    let bio = super::BioConstraints {
+        age_min: q.age_min,
+        age_max: q.age_max,
+        draft_min: q.draft_year_min,
+        draft_max: q.draft_year_max,
+        height_min: q.height_min,
+        height_max: q.height_max,
+        weight_min: q.weight_min,
+        weight_max: q.weight_max,
+        country: q
+            .country
+            .as_deref()
+            .map(|s| s.trim().to_ascii_uppercase())
+            .filter(|s| !s.is_empty()),
+        shoots: q
+            .shoots
+            .as_deref()
+            .map(|s| s.trim().to_ascii_uppercase())
+            .filter(|s| !s.is_empty()),
+    };
 
     let (rows, total) = {
         let repo = state.repo.read().await;
@@ -605,6 +625,7 @@ async fn build_leader_result(
                 );
                 new_plans.iter().all(|plan| plan.root.matches(v, &ctx))
             })
+            .filter(|v| bio.matches(v, season.0))
             .map(|v| {
                 let prev = prior_points.get(&v.id().0).copied();
                 super::shared::project_leader_row_with_prior(&v, prev)

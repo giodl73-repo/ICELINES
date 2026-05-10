@@ -79,6 +79,15 @@ async fn assert_api_filter_rejected(filter: &str) {
     assert!(json["error"].is_string());
 }
 
+async fn api_json(uri: &str) -> serde_json::Value {
+    let r = get(uri).await;
+    assert_eq!(r.status(), StatusCode::OK, "{uri} should return 200");
+    let body = axum::body::to_bytes(r.into_body(), 64 * 1024 * 1024)
+        .await
+        .expect("body fits");
+    serde_json::from_slice(&body).expect("API response should be valid JSON")
+}
+
 #[tokio::test]
 async fn p_w19_001_strict_lt_via_api() {
     assert_api_filter_accepted("g<5").await;
@@ -214,4 +223,22 @@ async fn p_w19_024_response_returns_valid_json() {
 async fn p_w19_025_killer_query_via_api() {
     // The user's full vision query through the JSON API.
     assert_api_filter_accepted("g.any10g>=5 EVER AT age<=25 AND country IN (CAN, USA, SWE)").await;
+}
+
+#[tokio::test]
+async fn p_w19_026_discrete_country_filter_via_api() {
+    let json = api_json("/api/v1/leaders?country=ZZZ&top=500").await;
+    assert_eq!(json["route"], "leaders");
+    assert_eq!(json["meta"]["total"], 0);
+    assert_eq!(json["meta"]["returned"], 0);
+    assert!(json["data"].as_array().is_some_and(Vec::is_empty));
+}
+
+#[tokio::test]
+async fn p_w19_027_discrete_age_filter_via_api() {
+    let json = api_json("/api/v1/leaders?age-max=1&top=500").await;
+    assert_eq!(json["route"], "leaders");
+    assert_eq!(json["meta"]["total"], 0);
+    assert_eq!(json["meta"]["returned"], 0);
+    assert!(json["data"].as_array().is_some_and(Vec::is_empty));
 }

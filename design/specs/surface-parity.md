@@ -45,7 +45,7 @@ a feature fully shipped.
 
 | Feature | ViewModel | CLI | TUI | Web HTML | Web JSON | Status | Owner |
 |---|---|---|---|---|---|---|---|
-| Leaders/skater leaderboard | `LeadersView` | `query leaders` | `tui stats` | `/leaders` | `/api/v1/leaders` | partial - CLI text, web HTML, and web JSON build `LeadersView`; TUI stats and stable CLI JSON/CSV still need Ted/Lester verification | Campbell/Ted Lindsay |
+| Leaders/skater leaderboard | `LeadersView` | `query leaders` | `tui stats` | `/leaders` | `/api/v1/leaders` | partial - CLI text, web HTML, and web JSON build `LeadersView`; web JSON now applies repeated filters and discrete bio query filters; TUI stats and stable CLI JSON/CSV still need Ted/Lester verification | Campbell/Ted Lindsay |
 | League/home preview | `HomeView` | n/a | dashboard shell | `/` | n/a | done - web home preview skaters/goalies build from `HomeView` | Ted Lindsay |
 | Goalie leaderboard | `GoaliesView` | `query goalies` | `tui goalies` | `/goalies` | `/api/v1/goalies` | partial - CLI, TUI, web HTML, and web JSON build `GoaliesView`; Ted verifies parity | Campbell/Ted Lindsay |
 | Player card | `PlayerCardView` | `query player <name>` | `tui player <name>` | `/player/:id` | `/api/v1/player/:id` | partial - web HTML and web JSON project from `PlayerCardView`; CLI/TUI adapter alignment remains | Campbell/Ted Lindsay |
