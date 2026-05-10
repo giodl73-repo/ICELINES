@@ -62,8 +62,9 @@ surface still differs from CLI/TUI.
      `l1_compare_json_cards_match_compare_view`; CLI/TUI adapter alignment
      remains before marking the row `done`.
    - Career: web JSON row identity is now fenced against `CareerView` by
-     `l1_api_career_rows_match_career_view`; CLI adapter alignment remains
-     before marking the row `done`.
+     `l1_api_career_rows_match_career_view`; CLI rows now project through
+     `CareerView` and are fenced by `l0_cli_career_rows_project_from_career_view`;
+     richer TUI affordance remains before marking the row `done`.
 
 5. **Resolve live-route envelope policy** - complete for Ted Lindsay
    - Scores, schedule, playoffs, and game carry live-fetch failures in

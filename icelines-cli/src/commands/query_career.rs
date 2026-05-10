@@ -16,6 +16,10 @@
 
 use anyhow::{anyhow, Context, Result};
 use icelines_core::career_history::{CareerGameType, CareerHistory, CareerStint};
+use icelines_core::season_stats::SeasonType;
+use icelines_core::{
+    CareerRow as CoreCareerRow, CareerSortKey, CareerView, Season, ViewContext, ViewWindow,
+};
 use icelines_fetch::career_landing::CareerHistoryStore;
 use std::collections::HashMap;
 
@@ -52,6 +56,20 @@ impl SortKey {
             Self::Ppg => "PPG (sort)",
         }
     }
+
+    fn as_core(self) -> CareerSortKey {
+        match self {
+            Self::Points => CareerSortKey::Points,
+            Self::Goals => CareerSortKey::Goals,
+            Self::Assists => CareerSortKey::Assists,
+            Self::Gp => CareerSortKey::Gp,
+            Self::Ppg => CareerSortKey::Ppg,
+        }
+    }
+
+    fn as_str(self) -> &'static str {
+        self.as_core().as_str()
+    }
 }
 
 /// One leaderboard row. Pure projection — formatting decisions live
@@ -66,6 +84,21 @@ pub struct CareerRow {
     pub assists: Option<u32>,
     pub points: Option<u32>,
     pub points_per_game: Option<f32>,
+}
+
+impl From<&CoreCareerRow> for CareerRow {
+    fn from(row: &CoreCareerRow) -> Self {
+        Self {
+            player_id: row.player_id,
+            name: row.name.clone(),
+            team: row.team.clone(),
+            gp: row.gp,
+            goals: row.goals,
+            assists: row.assists,
+            points: row.points,
+            points_per_game: row.points_per_game.map(|value| value as f32),
+        }
+    }
 }
 
 /// Resolve the league/season window into a sorted Vec<CareerRow>.
@@ -238,6 +271,34 @@ fn metric(s: &CareerStint, sort: SortKey) -> Option<f64> {
     }
 }
 
+fn career_view_from_matches(
+    matched: &[(u32, &CareerStint)],
+    league: &str,
+    season: Option<u32>,
+    sort: SortKey,
+    top: usize,
+    names: HashMap<u32, String>,
+) -> CareerView {
+    let mut by_pid: HashMap<u32, Vec<CareerStint>> = HashMap::new();
+    for (pid, stint) in matched {
+        by_pid.entry(*pid).or_default().push((*stint).clone());
+    }
+    let histories = by_pid
+        .into_iter()
+        .map(|(player_id, stints)| (player_id, CareerHistory { player_id, stints }))
+        .collect();
+
+    CareerView::from_histories(
+        ViewContext::new(ViewWindow::new(Season(0), SeasonType::Regular)),
+        league.to_owned(),
+        season,
+        sort.as_core(),
+        top,
+        histories,
+        names,
+    )
+}
+
 /// Phase Calder.4 — main entry point dispatched from main.rs.
 ///
 /// Phase Art Ross (`filters`) — when non-empty, the cohort is
@@ -326,32 +387,18 @@ pub async fn run(
     let pids: Vec<u32> = matched.iter().map(|(pid, _)| *pid).collect();
     let names = resolve_names(&pids);
 
-    let resolved_season = matched[0].1.season.0;
-    let rows: Vec<CareerRow> = matched
-        .iter()
-        .take(top)
-        .map(|(pid, s)| CareerRow {
-            player_id: *pid,
-            name: names
-                .get(pid)
-                .cloned()
-                .unwrap_or_else(|| format!("player:{pid}")),
-            team: s.team.clone(),
-            gp: s.gp,
-            goals: s.goals,
-            assists: s.assists,
-            points: s.points,
-            points_per_game: s.points_per_game(),
-        })
-        .collect();
+    let view = career_view_from_matches(&matched, &league, season_u32, sort, top, names);
+    let resolved_season = view.season;
+    let total = view.total;
+    let rows: Vec<CareerRow> = view.rows.iter().map(CareerRow::from).collect();
 
     if json {
-        return emit_json(&league, resolved_season, sort, &rows, matched.len());
+        return emit_json(&league, resolved_season, sort, &rows, total);
     }
     if csv {
         return emit_csv(&rows);
     }
-    print_table(&league, resolved_season, sort, &rows, matched.len());
+    print_table(&league, resolved_season, sort, &rows, total);
     Ok(())
 }
 
@@ -444,13 +491,7 @@ fn emit_json(
         meta: Meta {
             league,
             season,
-            sort: match sort {
-                SortKey::Points => "points",
-                SortKey::Goals => "goals",
-                SortKey::Assists => "assists",
-                SortKey::Gp => "gp",
-                SortKey::Ppg => "ppg",
-            },
+            sort: sort.as_str(),
             count: rows.len(),
             total,
         },
@@ -652,6 +693,33 @@ mod tests {
         let rows = project_career_rows(&s, "OHL", Some(20142015), SortKey::Ppg);
         let pids: Vec<u32> = rows.iter().map(|(p, _)| *p).collect();
         assert_eq!(pids, vec![2, 3, 1], "highest ppg first");
+    }
+
+    #[test]
+    fn l0_cli_career_rows_project_from_career_view() {
+        let s = store_with(vec![
+            (1, stint(20142015, "OHL", 80, 60, 0)),
+            (2, stint(20142015, "OHL", 120, 60, 0)),
+            (3, stint(20142015, "OHL", 100, 60, 0)),
+        ]);
+        let matched = project_career_rows(&s, "OHL", Some(20142015), SortKey::Points);
+        let names = HashMap::from([
+            (1, "One Player".to_owned()),
+            (2, "Two Player".to_owned()),
+            (3, "Three Player".to_owned()),
+        ]);
+        let view =
+            career_view_from_matches(&matched, "OHL", Some(20142015), SortKey::Points, 2, names);
+        let rows: Vec<CareerRow> = view.rows.iter().map(CareerRow::from).collect();
+
+        assert_eq!(view.season, 20142015);
+        assert_eq!(view.total, 3);
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].player_id, 2);
+        assert_eq!(rows[0].name, "Two Player");
+        assert_eq!(rows[0].points, Some(120));
+        assert_eq!(rows[1].player_id, 3);
+        assert_eq!(rows[1].points, Some(100));
     }
 
     /// Calder.4 / l0_skips_playoff_stints
