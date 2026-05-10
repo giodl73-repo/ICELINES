@@ -94,6 +94,7 @@ pub enum SourceKind {
     Watchlist,
     Career,
     Home,
+    Docs,
     GameLog,
     Boxscore,
     Shifts,

@@ -67,7 +67,7 @@ pub use transactions::{
 };
 pub use view_model::{
     AppliedFilter, CareerRow, CareerSortKey, CareerView, CompareView, Completeness,
-    DepthLeagueView, DepthTeamStrengthRow, EmptyKind, EmptyState, FavoriteMemberInput,
+    DepthLeagueView, DepthTeamStrengthRow, DocsView, EmptyKind, EmptyState, FavoriteMemberInput,
     FavoriteMemberRow, FavoritesView, FilterKey, FilterOp, GameBoxscoreInput, GameGoalInput,
     GameGoalRow, GameGoalieInput, GameGoalieRow, GameSkaterInput, GameSkaterRow, GameView,
     GoalieRoleFilter, GoalieRoleSignal, GoalieRow, GoaliesView, HomeGoalieRow, HomeSkaterRow,

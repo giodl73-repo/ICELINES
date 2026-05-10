@@ -170,6 +170,8 @@ Progress:
 - 2026-05-10: Added core `HomeView` and migrated `/` to select top skater and
   goalie preview rows through the shared home contract while preserving the
   existing template and headshot projection.
+- 2026-05-10: Added core `DocsView` and migrated `/docs` to carry rendered
+  `COMMANDS.md` plus source metadata through the shared docs contract.
 
 ---
 

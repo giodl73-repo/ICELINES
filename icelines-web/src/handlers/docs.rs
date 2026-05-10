@@ -4,6 +4,8 @@ use askama::Template;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
+use icelines_core::model::Season;
+use icelines_core::{DocsView, ViewContext, ViewWindow};
 use std::sync::OnceLock;
 
 /// COMMANDS.md is embedded at compile time. Same source the
@@ -31,10 +33,31 @@ fn rendered() -> &'static str {
 }
 
 pub async fn get_docs(State(state): State<WebState>) -> Response {
-    let active_label = state.config.read().await.active_label.clone();
+    let (active_label, context) = {
+        let cfg = state.config.read().await;
+        let season = cfg
+            .active_season
+            .parse::<u32>()
+            .map(Season)
+            .unwrap_or(Season(0));
+        (
+            cfg.active_label.clone(),
+            ViewContext::new(ViewWindow::new(
+                season,
+                super::leaders::parse_season_type(&cfg.active_season_type),
+            )),
+        )
+    };
+    let view = DocsView::rendered(
+        context,
+        "COMMANDS.md",
+        "IceLines Commands",
+        COMMANDS_MD,
+        rendered(),
+    );
     let tmpl = DocsTemplate {
         active_label,
-        rendered_html: rendered().to_owned(),
+        rendered_html: view.rendered_html,
     };
     match tmpl.render() {
         Ok(html) => Html(html).into_response(),

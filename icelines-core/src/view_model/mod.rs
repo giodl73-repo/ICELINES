@@ -7,6 +7,7 @@
 pub mod career;
 pub mod compare;
 pub mod context;
+pub mod docs;
 pub mod favorites;
 pub mod game;
 pub mod goalies;
@@ -28,6 +29,7 @@ pub use context::{
     ReportContext, ReportKind, ReportSectionRef, SortDirection, SortKey, SortState, SourceKind,
     SourceProvenance, SourceState, ViewContext, ViewWarning, ViewWindow, WarningKind,
 };
+pub use docs::DocsView;
 pub use favorites::{
     FavoriteMemberInput, FavoriteMemberRow, FavoritesView, WatchNoteInput, WatchlistMemberRow,
     WatchlistView,
@@ -67,7 +69,7 @@ mod tests {
     use crate::model::Season;
     use crate::season_stats::SeasonType;
     use crate::view_model::{
-        CareerSortKey, CareerView, CompareView, Completeness, DepthLeagueView, EmptyKind,
+        CareerSortKey, CareerView, CompareView, Completeness, DepthLeagueView, DocsView, EmptyKind,
         FavoriteMemberInput, FavoritesView, GameBoxscoreInput, GameGoalInput, GameGoalieInput,
         GameSkaterInput, GameView, HomeView, LeaderKind, LeadersView, MetricCell, MetricUnit,
         MetricValue, PlayerCardView, PlayoffsBracketInput, PlayoffsRoundInput, PlayoffsSeriesInput,
@@ -100,6 +102,23 @@ mod tests {
         assert!(json.contains("\"completeness\":\"partial\""));
         assert!(json.contains("\"source\":\"roster\""));
         assert!(json.contains("\"data_generation\":\"fixture-generation-1\""));
+    }
+
+    #[test]
+    fn docs_viewmodel_carries_source_metadata_and_rendered_body() {
+        let context = ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular));
+        let view = DocsView::rendered(
+            context,
+            "COMMANDS.md",
+            "IceLines Commands",
+            "# IceLines\n",
+            "<h1>IceLines</h1>",
+        );
+
+        assert_eq!(view.context.source_state[0].source, SourceKind::Docs);
+        assert_eq!(view.source_path, "COMMANDS.md");
+        assert_eq!(view.markdown_bytes, "# IceLines\n".len());
+        assert!(view.rendered_html.contains("<h1>IceLines</h1>"));
     }
 
     #[test]
