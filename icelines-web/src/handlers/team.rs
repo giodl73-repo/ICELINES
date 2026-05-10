@@ -144,16 +144,7 @@ pub async fn get_team_json(
         Err((abbrev_upper, message)) => {
             let data = empty_team_data(abbrev_upper.clone());
             let meta = empty_team_meta(&abbrev_upper, &season_str, season_type);
-            return (
-                StatusCode::NOT_FOUND,
-                axum::Json(crate::api::ApiEnvelope::new(
-                    "team",
-                    data,
-                    meta,
-                    Some(message),
-                )),
-            )
-                .into_response();
+            return crate::api::json_error_meta(StatusCode::NOT_FOUND, "team", data, meta, message);
         }
     };
 
@@ -163,16 +154,13 @@ pub async fn get_team_json(
             let team_abbrev = team.0.to_string();
             let data = empty_team_data(team_abbrev.clone());
             let meta = empty_team_meta(&team_abbrev, &season_str, season_type);
-            return (
+            return crate::api::json_error_meta(
                 StatusCode::BAD_REQUEST,
-                axum::Json(crate::api::ApiEnvelope::new(
-                    "team",
-                    data,
-                    meta,
-                    Some(format!("Season '{season_str}' is not a valid YYYYZZZZ id")),
-                )),
-            )
-                .into_response();
+                "team",
+                data,
+                meta,
+                format!("Season '{season_str}' is not a valid YYYYZZZZ id"),
+            );
         }
     };
 

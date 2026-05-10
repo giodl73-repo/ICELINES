@@ -133,16 +133,13 @@ pub async fn get_career_json(Query(q): Query<CareerQuery>) -> Response {
             let meta = meta_from_view(&view);
             crate::api::json_data_meta("career", view.rows, meta)
         }
-        Err(msg) => (
+        Err(msg) => crate::api::json_error_meta(
             StatusCode::BAD_REQUEST,
-            axum::Json(crate::api::ApiEnvelope::new(
-                "career",
-                Vec::<CareerRow>::new(),
-                error_meta_from_query(&q),
-                Some(msg),
-            )),
-        )
-            .into_response(),
+            "career",
+            Vec::<CareerRow>::new(),
+            error_meta_from_query(&q),
+            msg,
+        ),
     }
 }
 

@@ -117,23 +117,21 @@ pub async fn get_transactions_json(
             },
             None,
         ),
-        Err(msg) => {
-            let response = crate::api::ApiEnvelope::new(
-                "transactions",
-                Vec::<TransactionRow>::new(),
-                TransactionsMeta {
-                    season: String::new(),
-                    total: 0,
-                    active_kind: q.kind.unwrap_or_default(),
-                    active_team: q.team.unwrap_or_default(),
-                    empty_unfiltered: true,
-                    out_of_coverage: false,
-                    earliest_season: pretty_season(TRANSACTIONS_EARLIEST_SEASON),
-                },
-                Some(msg),
-            );
-            (StatusCode::BAD_REQUEST, axum::Json(response)).into_response()
-        }
+        Err(msg) => crate::api::json_error_meta(
+            StatusCode::BAD_REQUEST,
+            "transactions",
+            Vec::<TransactionRow>::new(),
+            TransactionsMeta {
+                season: String::new(),
+                total: 0,
+                active_kind: q.kind.unwrap_or_default(),
+                active_team: q.team.unwrap_or_default(),
+                empty_unfiltered: true,
+                out_of_coverage: false,
+                earliest_season: pretty_season(TRANSACTIONS_EARLIEST_SEASON),
+            },
+            msg,
+        ),
     }
 }
 

@@ -1,5 +1,6 @@
 //! Shared JSON response envelope for `/api/v1/*` handlers.
 
+use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use serde::Serialize;
 
@@ -59,4 +60,22 @@ where
     M: Serialize,
 {
     axum::Json(DataMetaEnvelope::new(route, data, meta)).into_response()
+}
+
+pub fn json_error_meta<T, M>(
+    status: StatusCode,
+    route: &'static str,
+    data: T,
+    meta: M,
+    error: impl Into<String>,
+) -> Response
+where
+    T: Serialize,
+    M: Serialize,
+{
+    (
+        status,
+        axum::Json(ApiEnvelope::new(route, data, meta, Some(error.into()))),
+    )
+        .into_response()
 }

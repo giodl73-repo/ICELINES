@@ -206,6 +206,8 @@ Progress:
 - 2026-05-10: Switched web router environment-lock tests to an async mutex so
   clippy no longer reports `await_holding_lock` for intentional serialized
   environment mutation.
+- 2026-05-10: Added a shared `json_error_meta` API helper and migrated current
+  route/data/meta/error callers off repeated handler-local envelope tuples.
 
 ---
 

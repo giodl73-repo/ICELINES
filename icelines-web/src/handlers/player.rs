@@ -424,16 +424,13 @@ pub async fn get_player_json(State(state): State<WebState>, Path(id): Path<u32>)
     let season_u32: u32 = match season_str.parse() {
         Ok(n) => n,
         Err(_) => {
-            return (
+            return crate::api::json_error_meta(
                 StatusCode::BAD_REQUEST,
-                axum::Json(crate::api::ApiEnvelope::new(
-                    "player",
-                    PlayerErrorData { nhl_id: id },
-                    player_error_meta(&season_str, season_type),
-                    Some(format!("Season '{season_str}' is not a valid YYYYZZZZ id")),
-                )),
-            )
-                .into_response();
+                "player",
+                PlayerErrorData { nhl_id: id },
+                player_error_meta(&season_str, season_type),
+                format!("Season '{season_str}' is not a valid YYYYZZZZ id"),
+            );
         }
     };
     let season = Season(season_u32);
@@ -455,18 +452,13 @@ pub async fn get_player_json(State(state): State<WebState>, Path(id): Path<u32>)
         match PlayerCardView::from_repository(&repo, pid, season, season_type) {
             Some(view) => view,
             None => {
-                return (
+                return crate::api::json_error_meta(
                     StatusCode::NOT_FOUND,
-                    axum::Json(crate::api::ApiEnvelope::new(
-                        "player",
-                        PlayerErrorData { nhl_id: id },
-                        player_error_meta(&season_str, season_type),
-                        Some(format!(
-                            "No player with NHL id {id} in the active repository."
-                        )),
-                    )),
-                )
-                    .into_response();
+                    "player",
+                    PlayerErrorData { nhl_id: id },
+                    player_error_meta(&season_str, season_type),
+                    format!("No player with NHL id {id} in the active repository."),
+                );
             }
         }
     };
