@@ -72,6 +72,7 @@ struct GameSkaterView {
 #[derive(Debug, serde::Serialize)]
 struct GameMeta {
     game_id: u64,
+    source_error: Option<String>,
 }
 
 pub async fn get_game(State(state): State<WebState>, Path(id): Path<u64>) -> Response {
@@ -125,7 +126,7 @@ pub async fn get_game_json(State(state): State<WebState>, Path(id): Path<u64>) -
         )
     };
     let client = icelines_fetch::nhl_api::NhlApiClient::production();
-    let (data, error) = match client.fetch_boxscore(id).await {
+    let (data, source_error) = match client.fetch_boxscore(id).await {
         Ok(boxscore) => {
             let view = GameView::from_boxscore(
                 ViewContext::new(ViewWindow::new(season, season_type)),
@@ -135,7 +136,14 @@ pub async fn get_game_json(State(state): State<WebState>, Path(id): Path<u64>) -
         }
         Err(e) => (None, Some(e.to_string())),
     };
-    crate::api::json_envelope("game", data, GameMeta { game_id: id }, error)
+    crate::api::json_data_meta(
+        "game",
+        data,
+        GameMeta {
+            game_id: id,
+            source_error,
+        },
+    )
 }
 
 fn boxscore_input(boxscore: icelines_fetch::nhl_api::Boxscore) -> GameBoxscoreInput {

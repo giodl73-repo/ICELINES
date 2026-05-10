@@ -345,19 +345,21 @@ pub async fn get_compare_json(
     Query(q): Query<CompareQuery>,
 ) -> Response {
     let result = build_compare_result(&state, &q).await;
-    crate::api::json_envelope(
-        "compare",
-        CompareData {
-            a: result.a,
-            b: result.b,
-            winners: result.winners,
-        },
-        CompareMeta {
-            season: result.season,
-            season_type: result.season_type.label().to_owned(),
-        },
-        result.error,
-    )
+    let data = CompareData {
+        a: result.a,
+        b: result.b,
+        winners: result.winners,
+    };
+    let meta = CompareMeta {
+        season: result.season,
+        season_type: result.season_type.label().to_owned(),
+    };
+    match result.error {
+        Some(error) => {
+            crate::api::json_error_meta(StatusCode::BAD_REQUEST, "compare", data, meta, error)
+        }
+        None => crate::api::json_data_meta("compare", data, meta),
+    }
 }
 
 /// Compute per-stat winner flags for two ComparePlayerCards.

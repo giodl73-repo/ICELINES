@@ -955,12 +955,36 @@ async fn l1_compare_json_envelope_shape() {
     let json: serde_json::Value =
         serde_json::from_slice(&bytes).expect("compare response should be valid json");
 
-    assert_eq!(json["schema_version"], 1);
-    assert_eq!(json["route"], "compare");
+    let obj = assert_data_meta_envelope(&json, "compare");
+    assert!(
+        !obj.contains_key("error"),
+        "successful compare envelope should not carry error"
+    );
     assert_eq!(json["meta"]["season_type"], "regular");
     assert!(json["data"]["a"].is_null());
     assert!(json["data"]["b"].is_null());
     assert!(json["data"]["winners"].is_object());
+}
+
+#[tokio::test]
+async fn l1_compare_json_bad_input_uses_shared_error_envelope() {
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/compare?a=Connor%20McDavid")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    let json = response_json(response, 256 * 1024).await;
+    let obj = assert_shared_error_envelope(&json, "compare");
+    assert!(obj["data"]["a"].is_object() || obj["data"]["a"].is_null());
+    assert!(obj["data"]["b"].is_null());
 }
 
 #[tokio::test]
@@ -1561,9 +1585,15 @@ async fn l1_conn_smythe_c3_game_json_envelope_shape() {
     let json: serde_json::Value =
         serde_json::from_slice(&bytes).expect("game response should be valid json");
 
-    assert_eq!(json["schema_version"], 1);
-    assert_eq!(json["route"], "game");
+    let obj = assert_data_meta_envelope(&json, "game");
+    assert!(
+        !obj.contains_key("error"),
+        "game JSON envelope should carry fetch failures in meta.source_error"
+    );
     assert_eq!(json["meta"]["game_id"], 2025020342_u64);
+    assert!(json["meta"]
+        .as_object()
+        .is_some_and(|meta| meta.contains_key("source_error")));
     assert!(json["data"].is_object() || json["data"].is_null());
 }
 
