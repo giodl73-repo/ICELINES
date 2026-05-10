@@ -144,6 +144,9 @@ Progress:
 - 2026-05-10: Added core `ScoresView` and migrated `/scores` plus
   `/api/v1/scores` to project date grouping, game status labels, start times,
   and playoff series context from the shared scores contract.
+- 2026-05-10: Added core `ScheduleView` and migrated `/schedule` plus
+  `/api/v1/schedule` to project date/team schedule rows, team chips, and
+  active-team home/away perspective from the shared schedule contract.
 
 ---
 

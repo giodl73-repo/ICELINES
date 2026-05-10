@@ -61,7 +61,7 @@ a feature fully shipped.
 | Feature | ViewModel | CLI | TUI | Web HTML | Web JSON | Status | Owner |
 |---|---|---|---|---|---|---|---|
 | Scores/tonight | `ScoresView` | `tonight` | `tui scores` | `/scores` | `/api/v1/scores` | partial - web HTML and web JSON build `ScoresView`; CLI/TUI adapter alignment remains | Ted Lindsay |
-| Schedule | `ScheduleView` | `schedule` | `tui schedule` | `/schedule` | `/api/v1/schedule` | partial - HTML and JSON share the web fetch/projection path; core ViewModel alignment remains | Lester Patrick/Ted Lindsay |
+| Schedule | `ScheduleView` | `schedule` | `tui schedule` | `/schedule` | `/api/v1/schedule` | partial - web HTML and web JSON build `ScheduleView`; CLI/TUI adapter alignment remains | Lester Patrick/Ted Lindsay |
 | Playoffs | `PlayoffsView` | `playoffs` | `tui playoffs` | `/playoffs` | `/api/v1/playoffs` | partial - HTML and JSON share the web bundled/live projection path; historical bundle gaps and core ViewModel alignment remain | Lester Patrick/Ted Lindsay |
 | Transactions | `TransactionsView` | `transactions` | `tui transactions` | `/transactions` | `/api/v1/transactions` | partial - HTML and JSON share the web snapshot/fallback projection; cache/source-state contract and core ViewModel alignment remain | Lester Patrick/Ted Lindsay |
 | Game detail | `GameView` | n/a | `tui scores` drilldown | `/game/:id` | `/api/v1/game/:id` | partial - HTML and JSON share a web detail projection; core ViewModel alignment remains | Ted Lindsay |
@@ -164,8 +164,8 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /season-type/:kind` | `handlers/season_type.rs` | mutating redirect | Config/report toggles | partial |
 | `GET /scores` | `handlers/scores.rs` | HTML | Scores/tonight | partial - projects score days from `ScoresView`; CLI/TUI alignment remains |
 | `GET /api/v1/scores` | `handlers/scores.rs` | JSON | Scores/tonight | partial - projects stable envelope from `ScoresView`; covered by `l1_scores_json_envelope_shape` |
-| `GET /schedule` | `handlers/schedule.rs` | HTML | Schedule | partial |
-| `GET /api/v1/schedule` | `handlers/schedule.rs` | JSON | Schedule | partial - envelope test exists |
+| `GET /schedule` | `handlers/schedule.rs` | HTML | Schedule | partial - projects schedule rows from `ScheduleView`; CLI/TUI alignment remains |
+| `GET /api/v1/schedule` | `handlers/schedule.rs` | JSON | Schedule | partial - projects stable envelope from `ScheduleView`; covered by `l1_schedule_json_envelope_shape` |
 | `GET /playoffs` | `handlers/playoffs.rs` | HTML | Playoffs | partial |
 | `GET /api/v1/playoffs` | `handlers/playoffs.rs` | JSON | Playoffs | partial - envelope test exists |
 | `GET /favorites` | `handlers/favorites.rs` | HTML | Favorites/groups | partial |

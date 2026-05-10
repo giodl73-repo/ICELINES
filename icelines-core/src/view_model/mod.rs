@@ -10,6 +10,7 @@ pub mod goalies;
 pub mod leaders;
 pub mod player_card;
 pub mod poach;
+pub mod schedule;
 pub mod scores;
 pub mod team_depth;
 pub mod tokens;
@@ -32,6 +33,7 @@ pub use poach::{
     PoachReportView, PoachScheduleFilter, PoachScore, PoachScoreComponent, PoachWindow,
     RecommendationKind, ScoreRange, WatchRule, WatchRuleTrigger, WatchRulesView,
 };
+pub use schedule::{ScheduleGameRow, ScheduleView, TeamChipView};
 pub use scores::{scores_context, ScheduledGameInput, ScoreGameRow, ScoresDayView, ScoresView};
 pub use team_depth::{
     DeploymentEvidence, DepthGoalieSlot, DepthLeagueView, DepthLine, DepthPair, DepthPlayerSlot,
@@ -45,9 +47,9 @@ mod tests {
     use crate::season_stats::SeasonType;
     use crate::view_model::{
         CompareView, Completeness, DepthLeagueView, EmptyKind, LeaderKind, LeadersView, MetricCell,
-        MetricUnit, MetricValue, PlayerCardView, ScheduledGameInput, ScoresView, SemanticToken,
-        SourceKind, SourceProvenance, SourceState, StatKey, ValuePrecision, ViewContext,
-        ViewWindow,
+        MetricUnit, MetricValue, PlayerCardView, ScheduleView, ScheduledGameInput, ScoresView,
+        SemanticToken, SourceKind, SourceProvenance, SourceState, StatKey, ValuePrecision,
+        ViewContext, ViewWindow,
     };
 
     #[test]
@@ -521,5 +523,42 @@ mod tests {
             json["days"][0]["rows"][0]["series_context"],
             "Game 4 · FLA leads 2-1"
         );
+    }
+
+    #[test]
+    fn schedule_viewmodel_contract_fixture_projects_team_perspective() {
+        let context = ViewContext::new(ViewWindow::new(Season(20242025), SeasonType::Regular));
+        let view = ScheduleView::from_games(
+            context,
+            "20242025".to_string(),
+            "EDM".to_string(),
+            None,
+            &["EDM", "SEA"],
+            vec![ScheduledGameInput {
+                date: "2024-10-08".to_string(),
+                game_type: 2,
+                away_abbrev: "SEA".to_string(),
+                away_name: "Kraken".to_string(),
+                home_abbrev: "EDM".to_string(),
+                home_name: "Oilers".to_string(),
+                start_time_utc: "2024-10-08T23:00:00Z".to_string(),
+                away_score: Some(2),
+                home_score: Some(3),
+                game_state: Some("FINAL".to_string()),
+                last_period: Some("SO".to_string()),
+                series_game: None,
+                away_wins: None,
+                home_wins: None,
+            }],
+        );
+
+        let json = serde_json::to_value(&view).expect("serialize schedule view");
+
+        assert_eq!(json["season_pretty"], "2024-25");
+        assert_eq!(json["active_team"], "EDM");
+        assert_eq!(json["team_chips"][0]["is_active"], true);
+        assert_eq!(json["rows"][0]["home_or_away"], "Home");
+        assert_eq!(json["rows"][0]["opponent_abbrev"], "SEA");
+        assert_eq!(json["rows"][0]["state_label"], "FINAL/SO");
     }
 }

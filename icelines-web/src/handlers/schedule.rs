@@ -4,19 +4,18 @@ use askama::Template;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
+use icelines_core::model::Season;
+use icelines_core::{
+    ScheduleGameRow, ScheduleView, ScheduledGameInput, TeamChipView, ViewContext, ViewWindow,
+};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize, Default)]
 pub struct ScheduleQuery {
     #[serde(default)]
     pub team: Option<String>,
-    /// Phase Foster.1 — anchor date `YYYY-MM-DD` for the
-    /// date-windowed slate. Mutually exclusive with `?team=`
-    /// in v1: when `team` is set, returns the team's full
-    /// season; when only `date` is set, returns that day's
-    /// slate via `fetch_schedule_for_date`. Drops the older
-    /// `?start=` (which never shipped on this route — the
-    /// CLI's `--start` is the deprecated surface).
+    /// Phase Foster.1 - anchor date `YYYY-MM-DD` for the date-windowed slate.
+    /// Team-season mode takes precedence when `?team=` is present.
     #[serde(default)]
     pub date: Option<String>,
 }
@@ -41,16 +40,7 @@ struct ScheduleMeta {
     team_chips: Vec<TeamChip>,
 }
 
-fn pretty_season(s: &str) -> String {
-    if s.len() == 8 {
-        format!("{}-{}", &s[0..4], &s[6..8])
-    } else {
-        s.to_owned()
-    }
-}
-
-/// 32 active NHL franchises. Used to populate the team
-/// picker chip strip. Uppercase, alphabetical.
+/// 32 active NHL franchises. Used to populate the team picker chip strip.
 const ALL_TEAM_ABBREVS: &[&str] = &[
     "ANA", "BOS", "BUF", "CAR", "CBJ", "CGY", "CHI", "COL", "DAL", "DET", "EDM", "FLA", "LAK",
     "MIN", "MTL", "NJD", "NSH", "NYI", "NYR", "OTT", "PHI", "PIT", "SEA", "SJS", "STL", "TBL",
@@ -101,128 +91,110 @@ pub async fn get_schedule_json(
 }
 
 async fn build_schedule_result(state: &WebState, q: &ScheduleQuery) -> ScheduleResult {
-    let (active_label, season_str) = {
+    let (active_label, season_str, season, season_type) = {
         let cfg = state.config.read().await;
-        (cfg.active_label.clone(), cfg.active_season.clone())
+        (
+            cfg.active_label.clone(),
+            cfg.active_season.clone(),
+            cfg.active_season
+                .parse::<u32>()
+                .map(Season)
+                .unwrap_or(Season(0)),
+            super::leaders::parse_season_type(&cfg.active_season_type),
+        )
     };
 
     let team_upper = q
         .team
         .as_deref()
-        .map(|t| t.trim().to_ascii_uppercase())
-        .filter(|t| !t.is_empty())
+        .map(|team| team.trim().to_ascii_uppercase())
+        .filter(|team| !team.is_empty())
         .unwrap_or_default();
-
-    let team_chips: Vec<TeamChip> = ALL_TEAM_ABBREVS
-        .iter()
-        .map(|a| TeamChip {
-            abbrev: (*a).to_owned(),
-            is_active: a.eq_ignore_ascii_case(&team_upper),
-        })
-        .collect();
-
-    // Phase Foster.1 — `?date=` anchors a single-day slate fetch
-    // when no team is set. Existing team-season path takes
-    // precedence so bookmarks like `/schedule?team=EDM` keep
-    // working.
-    let (rows, total, fetch_error) = if team_upper.is_empty() {
-        if let Some(date) = q.date.as_deref().filter(|d| !d.is_empty()) {
-            let client = super::nhl_client();
-            match client.fetch_schedule_for_date(date).await {
-                Ok(games) => {
-                    let mut rows: Vec<ScheduleRow> = games
-                        .into_iter()
-                        .map(|g| ScheduleRow {
-                            date: g.date,
-                            away_abbrev: g.away_abbrev.clone(),
-                            home_abbrev: g.home_abbrev.clone(),
-                            away_score_str: g.away_score.map(|s| s.to_string()).unwrap_or_default(),
-                            home_score_str: g.home_score.map(|s| s.to_string()).unwrap_or_default(),
-                            state_label: g.game_state.clone().unwrap_or_else(|| "Scheduled".into()),
-                            home_or_away: "—".to_owned(),
-                            opponent_abbrev: String::new(),
-                            is_playoff: g.game_type == 3,
-                        })
-                        .collect();
-                    rows.sort_by(|a, b| a.date.cmp(&b.date));
-                    let total = rows.len();
-                    (rows, total, None)
-                }
-                Err(e) => (Vec::new(), 0, Some(e.to_string())),
-            }
-        } else {
-            (Vec::new(), 0, None)
-        }
-    } else {
-        let client = super::nhl_client();
-        match client
-            .fetch_team_season_schedule(&team_upper, &season_str)
-            .await
-        {
-            Ok(games) => {
-                let mut rows: Vec<ScheduleRow> = games
-                    .into_iter()
-                    .map(|g| {
-                        let is_home = g.home_abbrev.eq_ignore_ascii_case(&team_upper);
-                        let opponent = if is_home {
-                            g.away_abbrev.clone()
-                        } else {
-                            g.home_abbrev.clone()
-                        };
-                        let state_label = match g.game_state.as_deref() {
-                            Some("FINAL") | Some("OFF") => match g.last_period.as_deref() {
-                                Some("OT") => "FINAL/OT".to_owned(),
-                                Some("SO") => "FINAL/SO".to_owned(),
-                                _ => "FINAL".to_owned(),
-                            },
-                            Some("LIVE") | Some("CRIT") => "LIVE".to_owned(),
-                            Some("PRE") => "Pre-game".to_owned(),
-                            Some("FUT") | None => "Scheduled".to_owned(),
-                            Some(s) => s.to_owned(),
-                        };
-                        ScheduleRow {
-                            date: g.date,
-                            away_abbrev: g.away_abbrev.clone(),
-                            home_abbrev: g.home_abbrev.clone(),
-                            away_score_str: g.away_score.map(|s| s.to_string()).unwrap_or_default(),
-                            home_score_str: g.home_score.map(|s| s.to_string()).unwrap_or_default(),
-                            state_label,
-                            home_or_away: if is_home {
-                                "Home".to_owned()
-                            } else {
-                                "Away".to_owned()
-                            },
-                            opponent_abbrev: opponent,
-                            is_playoff: g.game_type == 3,
-                        }
-                    })
-                    .collect();
-                rows.sort_by(|a, b| a.date.cmp(&b.date));
-                let total = rows.len();
-                (rows, total, None)
-            }
-            Err(e) => (Vec::new(), 0, Some(e.to_string())),
-        }
-    };
-
     let active_date = if team_upper.is_empty() {
         q.date
             .as_deref()
             .map(str::trim)
-            .filter(|d| !d.is_empty())
+            .filter(|date| !date.is_empty())
             .map(str::to_owned)
     } else {
         None
     };
 
+    let (games, fetch_error) = if team_upper.is_empty() {
+        match active_date.as_deref() {
+            Some(date) => match super::nhl_client().fetch_schedule_for_date(date).await {
+                Ok(games) => (games.into_iter().map(scheduled_game_input).collect(), None),
+                Err(e) => (Vec::new(), Some(e.to_string())),
+            },
+            None => (Vec::new(), None),
+        }
+    } else {
+        match super::nhl_client()
+            .fetch_team_season_schedule(&team_upper, &season_str)
+            .await
+        {
+            Ok(games) => (games.into_iter().map(scheduled_game_input).collect(), None),
+            Err(e) => (Vec::new(), Some(e.to_string())),
+        }
+    };
+
+    let view = ScheduleView::from_games(
+        ViewContext::new(ViewWindow::new(season, season_type)),
+        season_str,
+        team_upper,
+        active_date,
+        ALL_TEAM_ABBREVS,
+        games,
+    );
+
     ScheduleResult {
         active_label,
-        season_pretty: pretty_season(&season_str),
-        active_team: team_upper,
-        active_date,
-        team_chips,
-        rows,
-        total,
+        season_pretty: view.season_pretty,
+        active_team: view.active_team,
+        active_date: view.active_date,
+        team_chips: view.team_chips.iter().map(team_chip_from_view).collect(),
+        rows: view.rows.iter().map(schedule_row_from_view).collect(),
+        total: view.total,
         fetch_error,
+    }
+}
+
+fn scheduled_game_input(game: icelines_fetch::nhl_api::ScheduledGame) -> ScheduledGameInput {
+    ScheduledGameInput {
+        date: game.date,
+        game_type: game.game_type,
+        away_abbrev: game.away_abbrev,
+        away_name: game.away_name,
+        home_abbrev: game.home_abbrev,
+        home_name: game.home_name,
+        start_time_utc: game.start_time_utc,
+        away_score: game.away_score,
+        home_score: game.home_score,
+        game_state: game.game_state,
+        last_period: game.last_period,
+        series_game: game.series_game,
+        away_wins: game.away_wins,
+        home_wins: game.home_wins,
+    }
+}
+
+fn team_chip_from_view(chip: &TeamChipView) -> TeamChip {
+    TeamChip {
+        abbrev: chip.abbrev.clone(),
+        is_active: chip.is_active,
+    }
+}
+
+fn schedule_row_from_view(row: &ScheduleGameRow) -> ScheduleRow {
+    ScheduleRow {
+        date: row.date.clone(),
+        away_abbrev: row.away_abbrev.clone(),
+        home_abbrev: row.home_abbrev.clone(),
+        away_score_str: row.away_score_str.clone(),
+        home_score_str: row.home_score_str.clone(),
+        state_label: row.state_label.clone(),
+        home_or_away: row.home_or_away.clone(),
+        opponent_abbrev: row.opponent_abbrev.clone(),
+        is_playoff: row.is_playoff,
     }
 }
