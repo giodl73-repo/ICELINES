@@ -82,7 +82,7 @@ pub fn acquire(home_dir: &Path, timeout: Duration) -> Result<FetchLockGuard, Fet
                 // FetchLockGuard::drop.
                 return Ok(FetchLockGuard { path: lock_path });
             }
-            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
+            Err(e) if is_lock_contention(&e, &lock_path) => {
                 // Stale-lock GC: if the existing file is older than
                 // STALE_AGE, the previous holder almost certainly died.
                 if let Ok(meta) = std::fs::metadata(&lock_path) {
@@ -113,6 +113,18 @@ pub fn acquire(home_dir: &Path, timeout: Duration) -> Result<FetchLockGuard, Fet
             }
         }
     }
+}
+
+fn is_lock_contention(error: &std::io::Error, lock_path: &Path) -> bool {
+    if error.kind() == std::io::ErrorKind::AlreadyExists {
+        return true;
+    }
+
+    // Windows can briefly report PermissionDenied while another thread or
+    // process is holding or deleting the marker file. Treat that as normal
+    // contention only when the lock file is visible; otherwise preserve the
+    // permission error for genuinely inaccessible directories.
+    error.kind() == std::io::ErrorKind::PermissionDenied && std::fs::metadata(lock_path).is_ok()
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -159,6 +171,17 @@ mod tests {
             matches!(err, FetchLockError::Timeout { .. }),
             "got: {err:?}"
         );
+    }
+
+    #[test]
+    fn l0_lindsay_fetch_lock_permission_denied_visible_file_is_contention() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let lock_path = dir.path().join(".fetch.lock");
+        std::fs::write(&lock_path, b"held").expect("write visible lock marker");
+
+        let err = std::io::Error::from(std::io::ErrorKind::PermissionDenied);
+
+        assert!(is_lock_contention(&err, &lock_path));
     }
 
     /// Stale lock GC: if a `.fetch.lock` file is older than STALE_AGE,
