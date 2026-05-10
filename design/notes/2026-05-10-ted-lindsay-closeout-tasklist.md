@@ -47,7 +47,8 @@ surface still differs from CLI/TUI.
      checks include `l0_goalies_view_from_tui_state_carries_saves_sort_and_metric`;
      CLI/TUI/web row ordering now uses shared `GoalieLeaderboardSort` with
      player-id tie-break; fixture coverage includes
-     `goalie_leaderboard_sort_uses_uniform_id_tiebreak`.
+     `goalie_leaderboard_sort_uses_uniform_id_tiebreak` and
+     `l2_query_goalies_cli_and_web_row_identity_match`.
    - Team/depth/player/compare/career: verify adapter parity before marking
      any row `done`.
 
