@@ -72,7 +72,7 @@ a feature fully shipped.
 
 | Feature | ViewModel | CLI | TUI | Web HTML | Web JSON | Status | Owner |
 |---|---|---|---|---|---|---|---|
-| Favorites/groups | `FavoritesView` | `group ...` | favorites/group affordances | `/favorites` | planned/verify | partial - mutation/query parity needs Ted verification | Ted Lindsay |
+| Favorites/groups | `FavoritesView` | `group ...` | favorites/group affordances | `/favorites` | `/api/v1/favorites` | partial - Favorites read JSON exists; mutation parity and shared ViewModel alignment remain | Ted Lindsay |
 | Fantasy league management | `FantasyLeagueView` | `fantasy ...` | groups/deep links | `/fantasy...` | planned/verify | deferred/partial - local-only stance remains | Ted Lindsay |
 | Poacher board | `PoachBoardView` | `poach` | Poach screen | `/poach` | `/api/v1/poach` | implemented - shared board ViewModel across CLI/TUI/web/JSON | Selke |
 | Watch rules | `WatchRulesView` | `watch ...` | watchlist workspace shows notes/rules/recent alerts; rule editor deferred | `/watchlist` | `/api/v1/watch-rules`; `/api/v1/watchlist` | partial - rule preview/list/watch-note, persisted rules, toggles, fired history, and TUI read surface wired; TUI editor deferred | Selke |
@@ -169,6 +169,7 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /playoffs` | `handlers/playoffs.rs` | HTML | Playoffs | partial |
 | `GET /api/v1/playoffs` | `handlers/playoffs.rs` | JSON | Playoffs | partial - envelope test exists |
 | `GET /favorites` | `handlers/favorites.rs` | HTML | Favorites/groups | partial |
+| `GET /api/v1/favorites` | `handlers/favorites.rs` | JSON | Favorites/groups | partial - envelope test exists |
 | `GET /watchlist` | `handlers/favorites.rs` | HTML | Watch rules | partial |
 | `GET /api/v1/watchlist` | `handlers/favorites.rs` | JSON | Watch rules | partial |
 | `GET /game/:id` | `handlers/game.rs` | HTML | Game detail | partial |

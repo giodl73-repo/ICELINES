@@ -286,6 +286,80 @@ async fn l1_watchlist_route_renders_watch_reason_metadata() {
 }
 
 #[tokio::test]
+async fn l1_favorites_json_returns_group_members() {
+    let _guard = home_env_lock();
+    let dir = tempfile::TempDir::new().expect("temp home");
+    let prev_userprofile = std::env::var_os("USERPROFILE");
+    let prev_home = std::env::var_os("HOME");
+    std::env::set_var("USERPROFILE", dir.path());
+    std::env::set_var("HOME", dir.path());
+
+    let db_dir = dir.path().join(".icelines");
+    std::fs::create_dir_all(&db_dir).expect("create db dir");
+    let conn = rusqlite::Connection::open(db_dir.join("icelines.db")).expect("open db");
+    conn.execute_batch(
+        "CREATE TABLE groups (
+            name TEXT PRIMARY KEY,
+            description TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL
+         );
+         CREATE TABLE group_members (
+            group_name TEXT NOT NULL,
+            entity_ref TEXT NOT NULL,
+            added_at TEXT NOT NULL,
+            PRIMARY KEY (group_name, entity_ref)
+         );
+         INSERT INTO groups VALUES ('Favorites', '', datetime('now'));
+         INSERT INTO group_members VALUES ('Favorites', 'player:connor mcdavid', datetime('now'));
+         INSERT INTO group_members VALUES ('Favorites', 'team:EDM', datetime('now'));",
+    )
+    .expect("seed favorites db");
+
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/favorites")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    match prev_userprofile {
+        Some(p) => std::env::set_var("USERPROFILE", p),
+        None => std::env::remove_var("USERPROFILE"),
+    }
+    match prev_home {
+        Some(p) => std::env::set_var("HOME", p),
+        None => std::env::remove_var("HOME"),
+    }
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value = serde_json::from_slice(&bytes).expect("json body");
+
+    assert_eq!(json["schema_version"], "favorites.v1");
+    assert_eq!(json["route"], "favorites");
+    assert_eq!(json["meta"]["group"], "Favorites");
+    assert_eq!(json["meta"]["count"], 2);
+    assert_eq!(json["meta"]["player_count"], 1);
+    assert_eq!(json["meta"]["team_count"], 1);
+    assert!(json["data"]
+        .as_array()
+        .expect("data array")
+        .iter()
+        .any(|row| row["kind"] == "player" && row["key"] == "connor mcdavid"));
+    assert!(json["data"]
+        .as_array()
+        .expect("data array")
+        .iter()
+        .any(|row| row["kind"] == "team" && row["key"] == "EDM"));
+}
+
+#[tokio::test]
 async fn l1_watchlist_json_returns_watch_reason_metadata() {
     let _guard = home_env_lock();
     let dir = tempfile::TempDir::new().expect("temp home");

@@ -124,6 +124,10 @@ pub fn router(state: WebState) -> Router {
         )
         // Phase Foster.2 — favorites dashboard
         .route("/favorites", get(handlers::favorites::get_favorites))
+        .route(
+            "/api/v1/favorites",
+            get(handlers::favorites::get_favorites_json),
+        )
         .route("/watchlist", get(handlers::favorites::get_watchlist))
         .route(
             "/api/v1/watchlist",

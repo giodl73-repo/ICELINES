@@ -79,6 +79,24 @@ pub async fn get_watchlist(State(state): State<crate::WebState>) -> Response {
         .into_response()
 }
 
+pub async fn get_favorites_json() -> Response {
+    let members = read_group_members("Favorites");
+    let rows = group_api_rows(&members);
+    let meta = GroupApiMeta {
+        group: "Favorites",
+        count: rows.len(),
+        player_count: rows.iter().filter(|r| r.kind == "player").count(),
+        team_count: rows.iter().filter(|r| r.kind == "team").count(),
+    };
+    axum::Json(GroupApiResponse {
+        schema_version: "favorites.v1",
+        route: "favorites",
+        data: rows,
+        meta,
+    })
+    .into_response()
+}
+
 pub async fn get_watchlist_json() -> Response {
     let members = read_group_members("Watchlist");
     let notes = read_watch_notes();
@@ -106,6 +124,28 @@ struct WatchNote {
 }
 
 #[derive(Debug, serde::Serialize)]
+struct GroupApiResponse {
+    schema_version: &'static str,
+    route: &'static str,
+    data: Vec<GroupApiRow>,
+    meta: GroupApiMeta,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct GroupApiMeta {
+    group: &'static str,
+    count: usize,
+    player_count: usize,
+    team_count: usize,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct GroupApiRow {
+    kind: String,
+    key: String,
+}
+
+#[derive(Debug, serde::Serialize)]
 struct WatchlistApiResponse {
     schema_version: &'static str,
     route: &'static str,
@@ -128,6 +168,16 @@ struct WatchlistApiRow {
     reason: Option<String>,
     source: Option<String>,
     updated_at: Option<String>,
+}
+
+fn group_api_rows(members: &[(String, String)]) -> Vec<GroupApiRow> {
+    members
+        .iter()
+        .map(|(kind, key)| GroupApiRow {
+            kind: kind.clone(),
+            key: key.clone(),
+        })
+        .collect()
 }
 
 fn watchlist_api_rows(
