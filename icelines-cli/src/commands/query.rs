@@ -1404,6 +1404,7 @@ pub async fn run_player(
         }
     }
     let v = find_view(&all_views, &name)?;
+    let card = PlayerCardView::from_repository(repo, v.identity.id, v.season(), v.season_type());
     // D1b — apply the filter to compute the peer pool. The target
     // player itself stays available via `find_view(&all_views, ...)`
     // — only the percentile/rank cohort is narrowed.
@@ -1438,9 +1439,17 @@ pub async fn run_player(
     let draft = draft_str(v);
     println!(
         "PLAYER PROFILE — {} ({} · {} · Age {} · {})",
-        v.identity.full_name,
-        v.team_display(),
-        v.position().abbreviation(),
+        card.as_ref()
+            .map(|card| card.display_name.as_str())
+            .unwrap_or(v.identity.full_name.as_str()),
+        card.as_ref()
+            .and_then(|card| card.active.as_ref())
+            .map(|active| active.team_display.as_str())
+            .unwrap_or_else(|| v.team_display()),
+        card.as_ref()
+            .and_then(|card| card.active.as_ref())
+            .map(|active| active.position.abbreviation())
+            .unwrap_or_else(|| v.position().abbreviation()),
         age,
         draft
     );
@@ -1453,7 +1462,7 @@ pub async fn run_player(
 
     match breakdown.to_lowercase().as_str() {
         "career" | "career-arc" => {
-            print_current_stats(v);
+            print_current_stats(card.as_ref(), v);
             if percentiles {
                 print_percentile(&peer_views, v, rank_metric);
             }
@@ -1464,7 +1473,7 @@ pub async fn run_player(
             println!("  Situational breakdown (5v5/PP/PK) requires Phase 5C shift data.");
             println!("  Currently available: all-situations stats only.");
             println!();
-            print_current_stats(v);
+            print_current_stats(card.as_ref(), v);
             if percentiles {
                 print_percentile(&peer_views, v, rank_metric);
             }
@@ -1474,37 +1483,50 @@ pub async fn run_player(
     Ok(())
 }
 
-fn print_current_stats(v: &PlayerView<'_>) {
+fn print_current_stats(card: Option<&PlayerCardView>, v: &PlayerView<'_>) {
     let totals = &v.stats.totals;
-    let (ppg, proj) = pace_strings(v);
-    let toi = v.toi_mmss().unwrap_or_else(|| "—".to_owned());
-    let sh_pct = totals
-        .shooting_pct
+    let metrics = card
+        .and_then(|card| card.active.as_ref())
+        .map(|active| active.metrics.as_slice())
+        .unwrap_or(&[]);
+    let ppg_value = card_metric_f64(metrics, "points_per_game");
+    let ppg = ppg_value
+        .map(|value| format!("{value:.3}"))
+        .unwrap_or_else(|| pace_strings(v).0);
+    let proj = ppg_value
+        .map(|value| format!("{:.1}", value * 82.0))
+        .unwrap_or_else(|| pace_strings(v).1);
+    let toi = card_metric_i64(metrics, "toi_per_game_sec")
+        .map(format_seconds_mmss)
+        .unwrap_or_else(|| v.toi_mmss().unwrap_or_else(|| "—".to_owned()));
+    let sh_pct = card_metric_f64(metrics, "shooting_pct")
         .map(|val| format!("{:.1}%", val * 100.0))
-        .unwrap_or_else(|| "—".to_owned());
-    let pm_val = v.plus_minus();
-    let pm = if pm_val >= 0 {
-        format!("+{pm_val}")
-    } else {
-        pm_val.to_string()
-    };
+        .unwrap_or_else(|| {
+            totals
+                .shooting_pct
+                .map(|val| format!("{:.1}%", val * 100.0))
+                .unwrap_or_else(|| "—".to_owned())
+        });
+    let pm = card_metric_i64(metrics, "plus_minus")
+        .map(format_signed)
+        .unwrap_or_else(|| format_signed(v.plus_minus() as i64));
     println!("CURRENT SEASON");
     println!(
         "  GP {:<4}  G {:<4}  A {:<4}  Pts {:<4}  PPG {}  Pts/82 {}",
-        v.gp(),
-        totals.goals,
-        totals.assists,
-        totals.points,
+        card_metric_i64(metrics, "gp").unwrap_or_else(|| v.gp() as i64),
+        card_metric_i64(metrics, "goals").unwrap_or(totals.goals as i64),
+        card_metric_i64(metrics, "assists").unwrap_or(totals.assists as i64),
+        card_metric_i64(metrics, "points").unwrap_or(totals.points as i64),
         ppg,
         proj
     );
     println!(
         "  PP: {:<3}G / {:<3}Pts   SH: {}G   GWG: {}   Shots: {}   SH%: {}",
-        totals.pp_goals,
-        totals.pp_points,
-        totals.sh_goals,
-        totals.gwg,
-        v.shots(),
+        card_metric_i64(metrics, "pp_goals").unwrap_or(totals.pp_goals as i64),
+        card_metric_i64(metrics, "pp_points").unwrap_or(totals.pp_points as i64),
+        card_metric_i64(metrics, "sh_goals").unwrap_or(totals.sh_goals as i64),
+        card_metric_i64(metrics, "gwg").unwrap_or(totals.gwg as i64),
+        card_metric_i64(metrics, "shots").unwrap_or_else(|| v.shots() as i64),
         sh_pct
     );
     println!(
