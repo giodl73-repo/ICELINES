@@ -38,6 +38,14 @@ impl Season {
     pub fn as_str(self) -> String {
         self.0.to_string()
     }
+
+    pub fn start_year(self) -> u16 {
+        (self.0 / 10_000) as u16
+    }
+
+    pub fn end_year(self) -> u16 {
+        (self.0 % 10_000) as u16
+    }
 }
 
 impl std::str::FromStr for Season {
@@ -418,6 +426,13 @@ mod tests {
     #[test]
     fn l0_season_try_new_accepts_consecutive_years() {
         assert_eq!(Season::try_new(20252026), Ok(Season(20252026)));
+    }
+
+    #[test]
+    fn l0_season_exposes_start_and_end_year() {
+        let season = Season::try_new(20252026).unwrap();
+        assert_eq!(season.start_year(), 2025);
+        assert_eq!(season.end_year(), 2026);
     }
 
     #[test]

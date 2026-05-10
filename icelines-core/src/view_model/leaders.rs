@@ -1,3 +1,4 @@
+use chrono::{Datelike, NaiveDate};
 use serde::{Deserialize, Serialize};
 
 use crate::identity::PlayerId;
@@ -90,11 +91,12 @@ impl LeadersView {
         rows: impl IntoIterator<Item = PlayerView<'a>>,
         primary: impl Fn(&PlayerView<'a>) -> MetricCell,
     ) -> Self {
+        let season = context.window.season;
         let mut view = Self::new(context, kind);
         view.rows = rows
             .into_iter()
             .enumerate()
-            .map(|(idx, player)| leader_row(idx as u32 + 1, &player, primary(&player)))
+            .map(|(idx, player)| leader_row(season, idx as u32 + 1, &player, primary(&player)))
             .collect();
         if view.rows.is_empty() {
             view.empty_state = Some(EmptyState {
@@ -138,7 +140,12 @@ pub struct LeaderRow {
     pub tokens: Vec<SemanticToken>,
 }
 
-fn leader_row(rank: u32, player: &PlayerView<'_>, primary: MetricCell) -> LeaderRow {
+fn leader_row(
+    season: Season,
+    rank: u32,
+    player: &PlayerView<'_>,
+    primary: MetricCell,
+) -> LeaderRow {
     LeaderRow {
         rank,
         player_id: player.id(),
@@ -153,15 +160,8 @@ fn leader_row(rank: u32, player: &PlayerView<'_>, primary: MetricCell) -> Leader
             MetricCell {
                 key: StatKey::from("age"),
                 label: "Age".to_string(),
-                value: player
-                    .identity
-                    .bio
-                    .birth_date
-                    .as_deref()
-                    .and_then(|d| d.get(..4))
-                    .and_then(|y| y.parse::<u16>().ok())
-                    .map(|y| 2026u16.saturating_sub(y) as i64)
-                    .map(MetricValue::Integer)
+                value: player_age_for_season(player, season)
+                    .map(|age| MetricValue::Integer(age as i64))
                     .unwrap_or(MetricValue::Missing),
                 unit: MetricUnit::Count,
                 precision: ValuePrecision::Integer,
@@ -178,6 +178,17 @@ fn leader_row(rank: u32, player: &PlayerView<'_>, primary: MetricCell) -> Leader
             vec![SemanticToken::SourcePartial]
         },
     }
+}
+
+fn player_age_for_season(player: &PlayerView<'_>, season: Season) -> Option<u8> {
+    let birth_date = player.identity.bio.birth_date.as_deref()?;
+    let birth_date = NaiveDate::parse_from_str(birth_date, "%Y-%m-%d").ok()?;
+    let as_of = NaiveDate::from_ymd_opt(season.end_year() as i32, 1, 31)?;
+    let mut age = as_of.year() - birth_date.year();
+    if (as_of.month(), as_of.day()) < (birth_date.month(), birth_date.day()) {
+        age -= 1;
+    }
+    u8::try_from(age).ok()
 }
 
 fn default_primary_metric(player: &PlayerView<'_>) -> MetricCell {

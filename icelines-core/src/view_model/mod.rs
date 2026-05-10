@@ -178,12 +178,28 @@ mod tests {
         assert_eq!(row["primary"]["token"], "decision_highlight");
 
         assert_eq!(row["secondary"][0]["key"], "age");
-        assert_eq!(row["secondary"][0]["value"]["integer"], 29);
+        assert_eq!(row["secondary"][0]["value"]["integer"], 28);
         assert_eq!(row["secondary"][1]["key"], "gp");
         assert_eq!(row["secondary"][1]["value"]["integer"], 82);
         assert_eq!(row["secondary"][4]["key"], "points");
         assert_eq!(row["secondary"][4]["value"]["integer"], 130);
         assert_eq!(row["tokens"][0], "supporting_evidence");
+    }
+
+    #[test]
+    fn leaders_age_metric_uses_view_window_not_current_calendar() {
+        let (identity, mut stats) = crate::fixtures::stat_catalog_variants::skater_modern();
+        stats.season = Season(20222023);
+        let repo = crate::fixtures::test_repo_with(identity, stats);
+
+        let view = crate::view_model::LeadersView::skater_pace(
+            &repo,
+            Season(20222023),
+            SeasonType::Regular,
+        );
+        let age = &view.rows[0].secondary[0].value;
+
+        assert_eq!(age, &MetricValue::Integer(26));
     }
 
     #[test]

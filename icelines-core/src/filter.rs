@@ -10,9 +10,11 @@ pub struct PlayerFilter {
     pub teams: Option<Vec<String>>,
     /// Filter to players with any of these positions
     pub positions: Option<Vec<Position>>,
-    /// Maximum age (inclusive), calculated from birth_date year vs 2026
+    /// Maximum age (inclusive), calculated from birth_date year vs the active
+    /// season's end year.
     pub age_max: Option<u8>,
-    /// Minimum age (inclusive), calculated from birth_date year vs 2026
+    /// Minimum age (inclusive), calculated from birth_date year vs the active
+    /// season's end year.
     pub age_min: Option<u8>,
     /// Filter to players with these ISO alpha-3 nationality codes
     pub nationalities: Option<Vec<String>>,
@@ -107,7 +109,9 @@ impl PlayerFilter {
                 .as_deref()
                 .and_then(|bd| bd.split('-').next())
                 .and_then(|yr| yr.parse::<u32>().ok())
-                .map(|birth_year| 2026u32.saturating_sub(birth_year) as u8);
+                .map(|birth_year| {
+                    v.stats.season.end_year().saturating_sub(birth_year as u16) as u8
+                });
             match age_opt {
                 None => return false,
                 Some(age) => {

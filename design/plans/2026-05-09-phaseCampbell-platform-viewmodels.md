@@ -241,6 +241,10 @@ Closeout so far:
 - Added canonical `GoaliesView` and `TeamDepthView` contract fixture tests that
   assert JSON carries context, stable player identity, role/deployment evidence,
   metric units/precision, and semantic tokens.
+- Hardened age as a ViewModel/query contract: `Season` now exposes
+  `start_year()`/`end_year()`, `LeadersView` computes age from the active view
+  window instead of the current calendar, and `PlayerFilter` uses the row's
+  season end year instead of a hard-coded year.
 - `LeadersView::from_player_views_with_primary` supports sort-specific primary
   metrics without leaking renderer formatting into the default pace builder.
 - `GoaliesView::from_player_views` lets renderer adapters consume already
