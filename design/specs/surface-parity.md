@@ -62,7 +62,7 @@ a feature fully shipped.
 |---|---|---|---|---|---|---|---|
 | Scores/tonight | `ScoresView` | `tonight` | `tui scores` | `/scores` | `/api/v1/scores` | partial - web HTML and web JSON build `ScoresView`; CLI/TUI adapter alignment remains | Ted Lindsay |
 | Schedule | `ScheduleView` | `schedule` | `tui schedule` | `/schedule` | `/api/v1/schedule` | partial - web HTML and web JSON build `ScheduleView`; CLI/TUI adapter alignment remains | Lester Patrick/Ted Lindsay |
-| Playoffs | `PlayoffsView` | `playoffs` | `tui playoffs` | `/playoffs` | `/api/v1/playoffs` | partial - HTML and JSON share the web bundled/live projection path; historical bundle gaps and core ViewModel alignment remain | Lester Patrick/Ted Lindsay |
+| Playoffs | `PlayoffsView` | `playoffs` | `tui playoffs` | `/playoffs` | `/api/v1/playoffs` | partial - web HTML and JSON now project through `PlayoffsView`; historical bundle gaps and CLI/TUI adapter alignment remain | Lester Patrick/Ted Lindsay |
 | Transactions | `TransactionsView` | `transactions` | `tui transactions` | `/transactions` | `/api/v1/transactions` | partial - web HTML and web JSON build `TransactionsView`; CLI/TUI adapter alignment remains | Lester Patrick/Ted Lindsay |
 | Game detail | `GameView` | n/a | `tui scores` drilldown | `/game/:id` | `/api/v1/game/:id` | partial - web HTML and web JSON build `GameView`; TUI drilldown alignment remains | Ted Lindsay |
 
@@ -166,8 +166,8 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /api/v1/scores` | `handlers/scores.rs` | JSON | Scores/tonight | partial - projects stable envelope from `ScoresView`; covered by `l1_scores_json_envelope_shape` |
 | `GET /schedule` | `handlers/schedule.rs` | HTML | Schedule | partial - projects schedule rows from `ScheduleView`; CLI/TUI alignment remains |
 | `GET /api/v1/schedule` | `handlers/schedule.rs` | JSON | Schedule | partial - projects stable envelope from `ScheduleView`; covered by `l1_schedule_json_envelope_shape` |
-| `GET /playoffs` | `handlers/playoffs.rs` | HTML | Playoffs | partial |
-| `GET /api/v1/playoffs` | `handlers/playoffs.rs` | JSON | Playoffs | partial - envelope test exists |
+| `GET /playoffs` | `handlers/playoffs.rs` | HTML | Playoffs | projects bundled/live bracket through `PlayoffsView` |
+| `GET /api/v1/playoffs` | `handlers/playoffs.rs` | JSON | Playoffs | projects bundled/live bracket through `PlayoffsView`; covered by `l1_playoffs_json_envelope_shape` |
 | `GET /favorites` | `handlers/favorites.rs` | HTML | Favorites/groups | partial |
 | `GET /api/v1/favorites` | `handlers/favorites.rs` | JSON | Favorites/groups | partial - envelope test exists |
 | `GET /watchlist` | `handlers/favorites.rs` | HTML | Watch rules | partial |

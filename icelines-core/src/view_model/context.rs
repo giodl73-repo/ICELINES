@@ -89,6 +89,7 @@ pub enum SourceKind {
     Roster,
     Schedule,
     Scores,
+    Playoffs,
     GameLog,
     Boxscore,
     Shifts,

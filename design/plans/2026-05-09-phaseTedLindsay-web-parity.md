@@ -153,6 +153,9 @@ Progress:
 - 2026-05-10: Added core `GameView` and migrated `/game/:id` plus
   `/api/v1/game/:id` to project boxscore score state, goalie lines, goal log,
   and top skaters from the shared game-detail contract.
+- 2026-05-10: Added core `PlayoffsView` and migrated `/playoffs` plus
+  `/api/v1/playoffs` to project bundled/live bracket rounds and series from
+  the shared playoffs contract.
 
 ---
 

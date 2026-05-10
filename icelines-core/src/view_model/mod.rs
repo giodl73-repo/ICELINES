@@ -10,6 +10,7 @@ pub mod game;
 pub mod goalies;
 pub mod leaders;
 pub mod player_card;
+pub mod playoffs;
 pub mod poach;
 pub mod schedule;
 pub mod scores;
@@ -30,6 +31,10 @@ pub use game::{
 pub use goalies::{GoalieRoleFilter, GoalieRoleSignal, GoalieRow, GoaliesView};
 pub use leaders::{LeaderKind, LeaderRow, LeadersView};
 pub use player_card::{PlayerCardView, PlayerCareerSummary, PlayerSeasonSummary};
+pub use playoffs::{
+    PlayoffsBracketInput, PlayoffsRoundInput, PlayoffsRoundRow, PlayoffsSeriesInput,
+    PlayoffsSeriesRow, PlayoffsView,
+};
 pub use poach::{
     default_watch_rules_view, poach_report_context, poach_report_from_board,
     weekly_poach_report_from_board, weekly_poach_report_from_board_with_watched, AvailabilityState,
@@ -55,7 +60,8 @@ mod tests {
     use crate::view_model::{
         CompareView, Completeness, DepthLeagueView, EmptyKind, GameBoxscoreInput, GameGoalInput,
         GameGoalieInput, GameSkaterInput, GameView, LeaderKind, LeadersView, MetricCell,
-        MetricUnit, MetricValue, PlayerCardView, ScheduleView, ScheduledGameInput, ScoresView,
+        MetricUnit, MetricValue, PlayerCardView, PlayoffsBracketInput, PlayoffsRoundInput,
+        PlayoffsSeriesInput, PlayoffsView, ScheduleView, ScheduledGameInput, ScoresView,
         SemanticToken, SourceKind, SourceProvenance, SourceState, StatKey, TransactionsView,
         ValuePrecision, ViewContext, ViewWindow,
     };
@@ -124,6 +130,38 @@ mod tests {
         assert_eq!(json["kind"], "scouting");
         assert_eq!(json["view_context"]["window"]["season"], 20252026);
         assert_eq!(json["sections"][0]["id"], "summary");
+    }
+
+    #[test]
+    fn playoffs_viewmodel_projects_bracket_series() {
+        let context = ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Playoff));
+        let view = PlayoffsView::from_bracket(
+            context,
+            "20252026".to_string(),
+            "historical bundle".to_string(),
+            PlayoffsBracketInput {
+                rounds: vec![PlayoffsRoundInput {
+                    round_number: 1,
+                    label: "First Round".to_string(),
+                    series: vec![PlayoffsSeriesInput {
+                        top_abbrev: "EDM".to_string(),
+                        top_name: "Edmonton Oilers".to_string(),
+                        top_wins: 4,
+                        bottom_abbrev: "LAK".to_string(),
+                        bottom_name: "Los Angeles Kings".to_string(),
+                        bottom_wins: 2,
+                        winner_abbrev: Some("EDM".to_string()),
+                        conference: Some("Western".to_string()),
+                    }],
+                }],
+            },
+        );
+
+        assert_eq!(view.season_pretty, "2025-26");
+        assert_eq!(view.context.source_state[0].source, SourceKind::Playoffs);
+        assert!(!view.empty);
+        assert_eq!(view.rounds[0].series[0].summary, "EDM 4-2 LAK · EDM wins");
+        assert!(view.rounds[0].series[0].is_complete);
     }
 
     #[test]

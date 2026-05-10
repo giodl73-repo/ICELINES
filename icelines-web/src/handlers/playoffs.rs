@@ -4,6 +4,11 @@ use askama::Template;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
+use icelines_core::model::Season;
+use icelines_core::{
+    PlayoffsBracketInput, PlayoffsRoundInput, PlayoffsRoundRow, PlayoffsSeriesInput,
+    PlayoffsSeriesRow, PlayoffsView, ViewContext, ViewWindow,
+};
 
 struct PlayoffsResult {
     active_label: String,
@@ -21,44 +26,6 @@ struct PlayoffsMeta {
     empty: bool,
     round_count: usize,
     series_count: usize,
-}
-
-fn pretty_season(s: &str) -> String {
-    if s.len() == 8 {
-        format!("{}-{}", &s[0..4], &s[6..8])
-    } else {
-        s.to_owned()
-    }
-}
-
-/// Convert a `PlayoffBracket` (live or bundled-derived) into
-/// the template's view shape.
-fn project_bracket(b: icelines_fetch::nhl_api::PlayoffBracket) -> Vec<PlayoffsRoundView> {
-    b.rounds
-        .into_iter()
-        .map(|r| {
-            let series = r
-                .series
-                .iter()
-                .map(|s| PlayoffsSeriesView {
-                    top_abbrev: s.top_seed_abbrev.clone(),
-                    top_name: s.top_seed_name.clone(),
-                    top_wins: s.top_seed_wins,
-                    bottom_abbrev: s.bottom_seed_abbrev.clone(),
-                    bottom_name: s.bottom_seed_name.clone(),
-                    bottom_wins: s.bottom_seed_wins,
-                    summary: s.summary(),
-                    is_complete: s.is_complete(),
-                    conference: s.conference.clone().unwrap_or_default(),
-                })
-                .collect();
-            PlayoffsRoundView {
-                round_number: r.round_number,
-                label: r.label,
-                series,
-            }
-        })
-        .collect()
 }
 
 pub async fn get_playoffs(State(state): State<WebState>) -> Response {
@@ -100,17 +67,25 @@ pub async fn get_playoffs_json(State(state): State<WebState>) -> Response {
 }
 
 async fn build_playoffs_result(state: &WebState) -> PlayoffsResult {
-    let (active_label, season_str) = {
+    let (active_label, season_str, season, season_type) = {
         let cfg = state.config.read().await;
-        (cfg.active_label.clone(), cfg.active_season.clone())
+        (
+            cfg.active_label.clone(),
+            cfg.active_season.clone(),
+            cfg.active_season
+                .parse::<u32>()
+                .map(Season)
+                .unwrap_or(Season(0)),
+            super::leaders::parse_season_type(&cfg.active_season_type),
+        )
     };
 
     // 1. Try bundled (instant, historical seasons).
     let bundled = icelines_fetch::bundled::load_playoffs(&season_str).map(|b| b.to_bracket());
 
-    let (rounds, source_label, fetch_error) = if let Some(bracket) = bundled {
+    let (bracket, source_label, fetch_error) = if let Some(bracket) = bundled {
         (
-            project_bracket(bracket),
+            playoff_bracket_input(bracket),
             "historical bundle".to_owned(),
             None,
         )
@@ -123,7 +98,7 @@ async fn build_playoffs_result(state: &WebState) -> PlayoffsResult {
             .unwrap_or(0);
         if year == 0 {
             (
-                Vec::new(),
+                PlayoffsBracketInput { rounds: Vec::new() },
                 "—".to_owned(),
                 Some(format!(
                     "Cannot derive playoff year from season '{season_str}'"
@@ -132,24 +107,82 @@ async fn build_playoffs_result(state: &WebState) -> PlayoffsResult {
         } else {
             let client = super::nhl_client();
             match client.fetch_playoff_bracket(year).await {
-                Ok(b) => (
-                    project_bracket(b),
+                Ok(bracket) => (
+                    playoff_bracket_input(bracket),
                     format!("live · /v1/playoff-bracket/{year}"),
                     None,
                 ),
-                Err(e) => (Vec::new(), "—".to_owned(), Some(e.to_string())),
+                Err(e) => (
+                    PlayoffsBracketInput { rounds: Vec::new() },
+                    "—".to_owned(),
+                    Some(e.to_string()),
+                ),
             }
         }
     };
 
-    let empty = rounds.iter().all(|r| r.series.is_empty());
+    let view = PlayoffsView::from_bracket(
+        ViewContext::new(ViewWindow::new(season, season_type)),
+        season_str,
+        source_label,
+        bracket,
+    );
 
     PlayoffsResult {
         active_label,
-        season_pretty: pretty_season(&season_str),
-        source_label,
-        rounds,
-        empty,
+        season_pretty: view.season_pretty,
+        source_label: view.source_label,
+        rounds: view.rounds.iter().map(playoffs_round_from_view).collect(),
+        empty: view.empty,
         fetch_error,
+    }
+}
+
+fn playoff_bracket_input(bracket: icelines_fetch::nhl_api::PlayoffBracket) -> PlayoffsBracketInput {
+    PlayoffsBracketInput {
+        rounds: bracket
+            .rounds
+            .into_iter()
+            .map(|round| PlayoffsRoundInput {
+                round_number: round.round_number,
+                label: round.label,
+                series: round
+                    .series
+                    .into_iter()
+                    .map(|series| PlayoffsSeriesInput {
+                        top_abbrev: series.top_seed_abbrev,
+                        top_name: series.top_seed_name,
+                        top_wins: series.top_seed_wins,
+                        bottom_abbrev: series.bottom_seed_abbrev,
+                        bottom_name: series.bottom_seed_name,
+                        bottom_wins: series.bottom_seed_wins,
+                        winner_abbrev: series.winner_abbrev,
+                        conference: series.conference,
+                    })
+                    .collect(),
+            })
+            .collect(),
+    }
+}
+
+fn playoffs_round_from_view(round: &PlayoffsRoundRow) -> PlayoffsRoundView {
+    PlayoffsRoundView {
+        round_number: round.round_number,
+        label: round.label.clone(),
+        series: round.series.iter().map(playoffs_series_from_view).collect(),
+    }
+}
+
+fn playoffs_series_from_view(series: &PlayoffsSeriesRow) -> PlayoffsSeriesView {
+    PlayoffsSeriesView {
+        top_abbrev: series.top_abbrev.clone(),
+        top_name: series.top_name.clone(),
+        top_wins: series.top_wins,
+        bottom_abbrev: series.bottom_abbrev.clone(),
+        bottom_name: series.bottom_name.clone(),
+        bottom_wins: series.bottom_wins,
+        summary: series.summary.clone(),
+        is_complete: series.is_complete,
+        conference: series.conference.clone(),
     }
 }
