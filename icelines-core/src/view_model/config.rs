@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::season_stats::SeasonType;
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SeasonTypeMutationIntent {
     pub active_season_type: String,
@@ -8,11 +10,7 @@ pub struct SeasonTypeMutationIntent {
 
 impl SeasonTypeMutationIntent {
     pub fn resolve(kind: &str, referer: Option<&str>) -> Self {
-        let active_season_type = match kind.to_ascii_lowercase().as_str() {
-            "playoff" | "playoffs" => "playoff",
-            _ => "regular",
-        }
-        .to_string();
+        let active_season_type = SeasonType::parse_lossy(kind).label().to_string();
         let redirect_to = safe_redirect_from_referer(referer).unwrap_or_else(|| "/".to_string());
 
         Self {

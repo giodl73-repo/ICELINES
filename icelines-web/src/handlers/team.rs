@@ -30,10 +30,7 @@ pub async fn get_team(State(state): State<WebState>, Path(abbrev_raw): Path<Stri
 
     let (season_str, season_type, active_label) = {
         let cfg = state.config.read().await;
-        let st = match cfg.active_season_type.as_str() {
-            "playoff" | "playoffs" => SeasonType::Playoff,
-            _ => SeasonType::Regular,
-        };
+        let st = SeasonType::parse_lossy(&cfg.active_season_type);
         (cfg.active_season.clone(), st, cfg.active_label.clone())
     };
     let season = match parse_season(&season_str) {
@@ -153,10 +150,7 @@ pub async fn get_team_json(
 
     let (season_str, season_type) = {
         let cfg = state.config.read().await;
-        let st = match cfg.active_season_type.as_str() {
-            "playoff" | "playoffs" => SeasonType::Playoff,
-            _ => SeasonType::Regular,
-        };
+        let st = SeasonType::parse_lossy(&cfg.active_season_type);
         (cfg.active_season.clone(), st)
     };
     let season = match parse_season(&season_str) {

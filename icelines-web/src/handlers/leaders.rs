@@ -1148,10 +1148,7 @@ pub async fn get_leaders(
 }
 
 pub fn parse_season_type(s: &str) -> SeasonType {
-    match s {
-        "playoff" | "playoffs" => SeasonType::Playoff,
-        _ => SeasonType::Regular,
-    }
+    SeasonType::parse_lossy(s)
 }
 
 /// Pull every `filter=...` occurrence out of a raw query

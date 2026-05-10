@@ -25,10 +25,7 @@ const HOME_PREVIEW_N: usize = 3;
 pub async fn get_home(State(state): State<WebState>) -> Response {
     let (season_str, season_type, active_label) = {
         let cfg = state.config.read().await;
-        let st = match cfg.active_season_type.as_str() {
-            "playoff" | "playoffs" => SeasonType::Playoff,
-            _ => SeasonType::Regular,
-        };
+        let st = SeasonType::parse_lossy(&cfg.active_season_type);
         (cfg.active_season.clone(), st, cfg.active_label.clone())
     };
 

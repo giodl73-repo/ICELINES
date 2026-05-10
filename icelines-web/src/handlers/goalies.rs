@@ -102,10 +102,7 @@ struct GoalieResult {
 async fn build_goalie_result(state: &WebState, q: &GoaliesQuery) -> Result<GoalieResult, Response> {
     let (season_str, season_type, active_label) = {
         let cfg = state.config.read().await;
-        let st = match cfg.active_season_type.as_str() {
-            "playoff" | "playoffs" => SeasonType::Playoff,
-            _ => SeasonType::Regular,
-        };
+        let st = SeasonType::parse_lossy(&cfg.active_season_type);
         (cfg.active_season.clone(), st, cfg.active_label.clone())
     };
     let season_u32: u32 = season_str
@@ -339,10 +336,7 @@ pub async fn get_goalies_json(
 
     let meta = GoaliesMeta {
         season: r.active_season,
-        season_type: match r.active_season_type {
-            SeasonType::Regular => "regular".to_owned(),
-            SeasonType::Playoff => "playoff".to_owned(),
-        },
+        season_type: r.active_season_type.label().to_owned(),
         sort: match r.sort {
             GoalieSort::SavePct => "save_pct".to_owned(),
             GoalieSort::Wins => "wins".to_owned(),

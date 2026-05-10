@@ -181,6 +181,9 @@ Progress:
 - 2026-05-10: Added shared season-type mutation intent normalization so
   `/season-type/:kind` uses one core contract for season-type whitelisting and
   safe same-origin redirect selection while the web layer only mutates state.
+- 2026-05-10: Consolidated web read-side season-type parsing on
+  `SeasonType::parse_lossy`, replacing route-local playoff/default matches
+  while preserving the existing tolerant wire behavior.
 
 ---
 

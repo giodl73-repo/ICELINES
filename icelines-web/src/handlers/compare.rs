@@ -201,10 +201,7 @@ fn dash() -> String {
 async fn build_compare_result(state: &WebState, q: &CompareQuery) -> CompareResult {
     let (season_str, season_type, active_label) = {
         let cfg = state.config.read().await;
-        let st = match cfg.active_season_type.as_str() {
-            "playoff" | "playoffs" => SeasonType::Playoff,
-            _ => SeasonType::Regular,
-        };
+        let st = SeasonType::parse_lossy(&cfg.active_season_type);
         (cfg.active_season.clone(), st, cfg.active_label.clone())
     };
     let season_u32: u32 = match season_str.parse() {
@@ -357,10 +354,7 @@ pub async fn get_compare_json(
         },
         CompareMeta {
             season: result.season,
-            season_type: match result.season_type {
-                SeasonType::Regular => "regular".to_owned(),
-                SeasonType::Playoff => "playoff".to_owned(),
-            },
+            season_type: result.season_type.label().to_owned(),
         },
         result.error,
     )

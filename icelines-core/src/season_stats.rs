@@ -38,6 +38,13 @@ pub enum SeasonType {
 }
 
 impl SeasonType {
+    pub fn parse_lossy(value: &str) -> Self {
+        match value.to_ascii_lowercase().as_str() {
+            "playoff" | "playoffs" => Self::Playoff,
+            _ => Self::Regular,
+        }
+    }
+
     pub fn label(self) -> &'static str {
         match self {
             Self::Regular => "regular",
@@ -992,6 +999,16 @@ mod tests {
         let p: SeasonType = serde_json::from_str("\"playoff\"").unwrap();
         assert_eq!(r, SeasonType::Regular);
         assert_eq!(p, SeasonType::Playoff);
+    }
+
+    #[test]
+    fn season_type_parse_lossy_accepts_playoff_aliases_and_defaults_regular() {
+        assert_eq!(SeasonType::parse_lossy("playoff"), SeasonType::Playoff);
+        assert_eq!(SeasonType::parse_lossy("playoffs"), SeasonType::Playoff);
+        assert_eq!(SeasonType::parse_lossy("PLAYOFFS"), SeasonType::Playoff);
+        assert_eq!(SeasonType::parse_lossy("regular"), SeasonType::Regular);
+        assert_eq!(SeasonType::parse_lossy("garbage"), SeasonType::Regular);
+        assert_eq!(SeasonType::parse_lossy(""), SeasonType::Regular);
     }
 
     /// B7: Projection JSON shape is `{"scale": ..., "value": ...}` per
