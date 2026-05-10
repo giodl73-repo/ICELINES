@@ -65,7 +65,7 @@ a feature fully shipped.
 | Scores/tonight | `ScoresView` | `tonight` | `tui scores` | `/scores` | `/api/v1/scores` | partial - web HTML and web JSON build `ScoresView`; CLI/TUI adapter alignment remains | Ted Lindsay |
 | Schedule | `ScheduleView` | `schedule` | `tui schedule` | `/schedule` | `/api/v1/schedule` | partial - web HTML and web JSON build `ScheduleView`; CLI/TUI adapter alignment remains | Lester Patrick/Ted Lindsay |
 | Playoffs | `PlayoffsView` | `playoffs` | `tui playoffs` | `/playoffs` | `/api/v1/playoffs` | partial - web HTML and JSON now project through `PlayoffsView`; historical bundle gaps and CLI/TUI adapter alignment remain | Lester Patrick/Ted Lindsay |
-| Transactions | `TransactionsView` | `transactions` | `tui transactions` | `/transactions` | `/api/v1/transactions` | partial - web HTML and web JSON build `TransactionsView`; CLI/TUI adapter alignment remains | Lester Patrick/Ted Lindsay |
+| Transactions | `TransactionsView` | `transactions` | `tui transactions` | `/transactions` | `/api/v1/transactions` | partial - web HTML, web JSON, and TUI row projection build from `TransactionsView`; shared contract handles the `LEAGUE` teamless bucket; CLI adapter alignment remains | Lester Patrick/Ted Lindsay |
 | Game detail | `GameView` | n/a | `tui scores` drilldown | `/game/:id` | `/api/v1/game/:id` | partial - web HTML and web JSON build `GameView`; TUI drilldown alignment remains | Ted Lindsay |
 
 ---

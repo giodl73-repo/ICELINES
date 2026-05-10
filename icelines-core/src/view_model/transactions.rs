@@ -54,6 +54,7 @@ impl TransactionsView {
             })
             .filter(|transaction| match &team_filter {
                 None => true,
+                Some(team) if team.0.eq_ignore_ascii_case("LEAGUE") => transaction.team.is_none(),
                 Some(team) => transaction
                     .team
                     .as_ref()
@@ -101,19 +102,25 @@ impl TransactionsView {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TransactionViewRow {
+    pub id: String,
     pub date: String,
     pub team: String,
+    #[serde(skip, default = "default_transaction_kind")]
+    pub kind: TransactionKind,
     pub kind_label: String,
     pub kind_pretty: String,
     pub description: String,
 }
 
 fn transaction_row(transaction: Transaction) -> TransactionViewRow {
+    let kind = transaction.kind;
     TransactionViewRow {
+        id: transaction.id,
         date: transaction.date,
         team: transaction.team.map(|team| team.0).unwrap_or_default(),
-        kind_label: transaction.kind.label().to_string(),
-        kind_pretty: pretty_kind(transaction.kind).to_string(),
+        kind,
+        kind_label: kind.label().to_string(),
+        kind_pretty: pretty_kind(kind).to_string(),
         description: transaction.description,
     }
 }
@@ -138,4 +145,8 @@ fn pretty_kind(kind: TransactionKind) -> &'static str {
         TransactionKind::InjuryReserve => "IR",
         TransactionKind::Other => "Other",
     }
+}
+
+fn default_transaction_kind() -> TransactionKind {
+    TransactionKind::Other
 }

@@ -21,8 +21,11 @@ use ratatui::{
     Frame,
 };
 
+use icelines_core::model::TeamAbbr;
 use icelines_core::transactions::description_matches_query;
-use icelines_core::{Transaction, TransactionKind};
+use icelines_core::{
+    Transaction, TransactionKind, TransactionViewRow, TransactionsView, ViewContext, ViewWindow,
+};
 
 use crate::tui::app::App;
 
@@ -232,22 +235,27 @@ fn title_text(app: &App) -> Line<'static> {
     Line::from(spans)
 }
 
-pub fn filter_rows(app: &App) -> Vec<&Transaction> {
-    app.txs
+pub fn filter_rows(app: &App) -> Vec<TransactionViewRow> {
+    transactions_view(app).rows
+}
+
+fn transactions_view(app: &App) -> TransactionsView {
+    let kind_filter = app.txs.kind_filter.map(|kind| vec![kind]);
+    let team_filter = app
+        .txs
+        .team_filter
+        .as_ref()
+        .map(|team| TeamAbbr(team.clone()));
+    let active_kind = app
+        .txs
+        .kind_filter
+        .map(|kind| kind.label().to_string())
+        .unwrap_or_default();
+    let searched_rows: Vec<Transaction> = app
+        .txs
         .rows
         .iter()
         .filter(|tx| {
-            if let Some(team) = app.txs.team_filter.as_deref() {
-                let row_label = tx.team.as_ref().map(|t| t.0.as_str()).unwrap_or("LEAGUE");
-                if !row_label.eq_ignore_ascii_case(team) {
-                    return false;
-                }
-            }
-            if let Some(k) = app.txs.kind_filter {
-                if tx.kind != k {
-                    return false;
-                }
-            }
             if !app.txs.search_query.trim().is_empty()
                 && !description_matches_query(&tx.description, &app.txs.search_query)
             {
@@ -255,10 +263,21 @@ pub fn filter_rows(app: &App) -> Vec<&Transaction> {
             }
             true
         })
-        .collect()
+        .cloned()
+        .collect();
+
+    TransactionsView::from_rows(
+        ViewContext::new(ViewWindow::new(app.active_season_typed, app.active_type)),
+        app.active_season.clone(),
+        searched_rows,
+        kind_filter.as_deref(),
+        active_kind,
+        team_filter,
+        app.active_season.as_str() < icelines_core::TRANSACTIONS_EARLIEST_SEASON,
+    )
 }
 
-fn render_rows(f: &mut Frame, app: &App, area: Rect, rows: &[&Transaction]) {
+fn render_rows(f: &mut Frame, app: &App, area: Rect, rows: &[TransactionViewRow]) {
     if rows.is_empty() {
         let dim = Style::default().fg(Color::DarkGray);
         let mut hint = String::from("  No rows match the current filters.");
@@ -283,7 +302,11 @@ fn render_rows(f: &mut Frame, app: &App, area: Rect, rows: &[&Transaction]) {
         .iter()
         .enumerate()
         .map(|(i, tx)| {
-            let team_label = tx.team.as_ref().map(|t| t.0.as_str()).unwrap_or("LEAGUE");
+            let team_label = if tx.team.is_empty() {
+                "LEAGUE"
+            } else {
+                tx.team.as_str()
+            };
             let glyph = glyph_for(tx.kind);
             let kind_label = kind_display(tx.kind);
             let kind_color = color_for(tx.kind);
@@ -762,7 +785,7 @@ mod tests {
         app.txs.team_filter = Some("EDM".to_owned());
         let rows = filter_rows(&app);
         assert_eq!(rows.len(), 1);
-        assert_eq!(rows[0].team.as_ref().unwrap().0, "EDM");
+        assert_eq!(rows[0].team, "EDM");
     }
 
     #[test]
@@ -1153,6 +1176,6 @@ mod tests {
         app.txs.team_filter = Some("LEAGUE".to_owned());
         let rows = filter_rows(&app);
         assert_eq!(rows.len(), 1);
-        assert!(rows[0].team.is_none());
+        assert_eq!(rows[0].team, "");
     }
 }

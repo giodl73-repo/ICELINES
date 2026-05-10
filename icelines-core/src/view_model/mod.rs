@@ -919,6 +919,48 @@ mod tests {
         assert_eq!(json["rows"][0]["kind_label"], "trade");
         assert_eq!(json["rows"][0]["kind_pretty"], "Trade");
         assert_eq!(json["rows"][0]["team"], "EDM");
+        assert_eq!(json["rows"][0]["id"], "tx-edm-trade");
+    }
+
+    #[test]
+    fn transactions_viewmodel_contract_fixture_filters_league_bucket() {
+        use crate::model::TeamAbbr;
+        use crate::transactions::{Transaction, TransactionKind};
+
+        let context = ViewContext::new(ViewWindow::new(Season(20242025), SeasonType::Regular));
+        let view = TransactionsView::from_rows(
+            context,
+            "20242025".to_string(),
+            vec![
+                Transaction {
+                    date: "2024-10-09".to_string(),
+                    team: Some(TeamAbbr("EDM".to_string())),
+                    description: "Edmonton Oilers acquired a player".to_string(),
+                    kind: TransactionKind::Trade,
+                    id: "tx-edm-trade".to_string(),
+                    trade_group_id: None,
+                    classifier_version: crate::transactions::CURRENT_CLASSIFIER_VERSION,
+                },
+                Transaction {
+                    date: "2024-10-08".to_string(),
+                    team: None,
+                    description: "League-wide transaction".to_string(),
+                    kind: TransactionKind::Other,
+                    id: "tx-league".to_string(),
+                    trade_group_id: None,
+                    classifier_version: crate::transactions::CURRENT_CLASSIFIER_VERSION,
+                },
+            ],
+            None,
+            String::new(),
+            Some(TeamAbbr("LEAGUE".to_string())),
+            false,
+        );
+
+        assert_eq!(view.active_team, "LEAGUE");
+        assert_eq!(view.total, 1);
+        assert_eq!(view.rows[0].id, "tx-league");
+        assert_eq!(view.rows[0].team, "");
     }
 
     #[test]
