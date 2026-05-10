@@ -18,9 +18,12 @@ use std::fmt::Write as _;
 use std::path::PathBuf;
 
 use icelines_core::{
-    cross_team::compute_all_views, filter::PlayerFilter, scoring::sort_views_by_pace,
-    stats_repository::PlayerView, LeaderKind, LeadersView, SortDirection, SortKey, SortState,
-    TeamAbbr, TeamDepthView, ViewContext, ViewWindow,
+    cross_team::{compute_all_views, ScoringMode},
+    filter::PlayerFilter,
+    scoring::sort_views_by_pace,
+    stats_repository::PlayerView,
+    DepthLeagueView, LeaderKind, LeadersView, SortDirection, SortKey, SortState, TeamAbbr,
+    TeamDepthView, ViewContext, ViewWindow,
 };
 
 use crate::cli::{ExportSubcommand, MdShape};
@@ -531,6 +534,16 @@ pub(crate) fn render_depth_from_views(
     opts: &DepthOpts,
 ) -> anyhow::Result<String> {
     let metrics = compute_all_views(views);
+    let season = views
+        .first()
+        .map(|view| view.season())
+        .unwrap_or(icelines_core::model::Season(icelines_core::CURRENT_SEASON));
+    let season_type = views
+        .first()
+        .map(|view| view.season_type())
+        .unwrap_or(icelines_core::season_stats::SeasonType::Regular);
+    let league_view =
+        DepthLeagueView::from_player_views(season, season_type, true, views, ScoringMode::Pace);
 
     // Index views by player_id so we can render names + teams alongside metrics.
     let by_id: std::collections::HashMap<u32, &PlayerView<'_>> =
@@ -554,10 +567,12 @@ pub(crate) fn render_depth_from_views(
         opts.width,
         opts.height,
     );
+    write_depth_league_view_markdown(&mut out, &league_view);
+    let _ = writeln!(out);
 
     let _ = writeln!(
         out,
-        "| Rank | Player | Team | Pos | Own line | Avg other | Delta | Fit |"
+        "## Line-value players\n\n| Rank | Player | Team | Pos | Own line | Avg other | Delta | Fit |"
     );
     let _ = writeln!(
         out,
@@ -586,6 +601,34 @@ pub(crate) fn render_depth_from_views(
         );
     }
     Ok(out)
+}
+
+fn write_depth_league_view_markdown(out: &mut String, view: &DepthLeagueView) {
+    let _ = writeln!(
+        out,
+        "## Team strength\n\n| Rank | Team | C | LW | RW | D | Total | C top | LW top | RW top | D top |"
+    );
+    let _ = writeln!(
+        out,
+        "|-----:|:----:|--:|---:|---:|--:|------:|-------|--------|--------|-------|"
+    );
+    for (idx, row) in view.rows.iter().enumerate() {
+        let _ = writeln!(
+            out,
+            "| {rank:>4} | {team} | {c:>3.0} | {lw:>3.0} | {rw:>3.0} | {d:>3.0} | {total:>5.0} | {c_top} | {lw_top} | {rw_top} | {d_top} |",
+            rank = idx + 1,
+            team = row.team.0,
+            c = row.c_score,
+            lw = row.lw_score,
+            rw = row.rw_score,
+            d = row.d_score,
+            total = row.total,
+            c_top = truncate(&row.c_top, 18),
+            lw_top = truncate(&row.lw_top, 18),
+            rw_top = truncate(&row.rw_top, 18),
+            d_top = truncate(&row.d_top, 18),
+        );
+    }
 }
 
 // ── compare ──────────────────────────────────────────────────────────────────
@@ -1234,6 +1277,9 @@ mod tests {
         .unwrap();
         assert!(out.contains("type: depth-rankings"));
         assert!(out.contains("Cross-team line value rankings"));
+        assert!(out.contains("## Team strength"));
+        assert!(out.contains("| Rank | Team | C | LW | RW | D | Total |"));
+        assert!(out.contains("## Line-value players"));
         assert!(out.contains("| Rank | Player | Team | Pos | Own line | Avg other | Delta | Fit |"));
         assert!(out.matches("| EDM ").count() + out.matches("| COL ").count() >= 1);
     }

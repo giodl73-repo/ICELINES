@@ -61,8 +61,9 @@ surface still differs from CLI/TUI.
      TUI first-row projection is fenced by
      `l1_tui_depth_league_render_matches_depth_league_view_first_row`; TUI
      Enter navigation and league ranking render now use `DepthLeagueView`
-     ordering through `league_view_from_app`; CLI adapter alignment remains
-     before marking the row `done`.
+     ordering through `league_view_from_app`; markdown `export md depth` now
+     includes a `DepthLeagueView` team-strength table while preserving the
+     existing player line-value table.
    - Player card: web JSON row identity is now fenced against
      `PlayerCardView` by `l1_player_json_rows_match_player_card_view`;
      TUI header/headshot projection now uses `PlayerCardView` and is fenced by
