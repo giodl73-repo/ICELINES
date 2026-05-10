@@ -64,7 +64,8 @@ pub use schedule::{ScheduleGameRow, ScheduleView, TeamChipView};
 pub use scores::{scores_context, ScheduledGameInput, ScoreGameRow, ScoresDayView, ScoresView};
 pub use team_depth::{
     DeploymentEvidence, DepthGoalieSlot, DepthLeagueView, DepthLine, DepthPair, DepthPlayerSlot,
-    DepthSlotKind, DepthSummary, DepthTeamStrengthRow, TeamDepthView,
+    DepthSlotKind, DepthSummary, DepthTeamStrengthRow, TeamDepthChartColumn, TeamDepthChartPlayer,
+    TeamDepthChartView, TeamDepthView,
 };
 pub use tokens::{MetricCell, MetricUnit, MetricValue, SemanticToken, StatKey, ValuePrecision};
 pub use transactions::{TransactionViewRow, TransactionsView};

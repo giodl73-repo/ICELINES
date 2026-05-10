@@ -78,7 +78,7 @@ pub use view_model::{
     RecoveryAction, ReportContext, ReportKind, ReportSectionRef, ScheduleGameRow, ScheduleView,
     ScheduledGameInput, ScoreGameRow, ScoresDayView, ScoresView, SeasonTypeMutationIntent,
     SemanticToken, SortDirection, SortKey, SortState, SourceKind, SourceProvenance, SourceState,
-    StatKey, TeamChipView, TeamDepthView, TransactionViewRow, TransactionsView, ValuePrecision,
-    ViewContext, ViewWarning, ViewWindow, WarningKind, WatchNoteInput, WatchlistMemberRow,
-    WatchlistView,
+    StatKey, TeamChipView, TeamDepthChartColumn, TeamDepthChartPlayer, TeamDepthChartView,
+    TeamDepthView, TransactionViewRow, TransactionsView, ValuePrecision, ViewContext, ViewWarning,
+    ViewWindow, WarningKind, WatchNoteInput, WatchlistMemberRow, WatchlistView,
 };

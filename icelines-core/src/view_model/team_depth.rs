@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-use crate::cross_team::{compute_team_strength_views, ScoringMode};
+use crate::cross_team::{
+    compute_all_views_with_mode, compute_team_strength_views, fantasy_score_view, ScoringMode,
+    WebFitClass,
+};
 use crate::depth_chart::DepthChartBuilder;
 use crate::identity::PlayerId;
 use crate::model::{DepthChartSlot, Position, Season, TeamAbbr};
@@ -12,6 +15,7 @@ use crate::view_model::context::{
 use crate::view_model::tokens::{
     MetricCell, MetricUnit, MetricValue, SemanticToken, StatKey, ValuePrecision,
 };
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TeamDepthView {
@@ -23,6 +27,37 @@ pub struct TeamDepthView {
     pub goalies: Vec<DepthGoalieSlot>,
     pub extras: Vec<DepthPlayerSlot>,
     pub warnings: Vec<ViewWarning>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TeamDepthChartView {
+    pub context: ViewContext,
+    pub team: TeamAbbr,
+    pub scoring_mode: String,
+    pub columns: Vec<TeamDepthChartColumn>,
+    pub goalies: Vec<DepthGoalieSlot>,
+    pub warnings: Vec<ViewWarning>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TeamDepthChartColumn {
+    pub key: String,
+    pub label: String,
+    pub depth: usize,
+    pub players: Vec<TeamDepthChartPlayer>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TeamDepthChartPlayer {
+    pub player_id: PlayerId,
+    pub display_name: String,
+    pub team: TeamAbbr,
+    pub position: Position,
+    pub line: usize,
+    pub score: f64,
+    pub fit: Option<WebFitClass>,
+    pub metrics: Vec<MetricCell>,
+    pub tokens: Vec<SemanticToken>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -199,7 +234,7 @@ impl TeamDepthView {
 
         Self {
             context: view_context(season, season_type, has_window),
-            team,
+            team: team.clone(),
             summary: DepthSummary {
                 title: "Estimated depth".to_string(),
                 metrics: vec![metric_int("rostered", "Rostered", roster.len() as i64)],
@@ -211,6 +246,188 @@ impl TeamDepthView {
             extras,
             warnings: Vec::new(),
         }
+    }
+}
+
+impl TeamDepthChartView {
+    pub fn from_player_views(
+        team: TeamAbbr,
+        season: Season,
+        season_type: SeasonType,
+        has_window: bool,
+        skaters: &[PlayerView<'_>],
+        goalies: &[PlayerView<'_>],
+        scoring_mode: ScoringMode,
+    ) -> Self {
+        let metrics = compute_all_views_with_mode(skaters, scoring_mode);
+        let metrics_map: HashMap<u32, WebFitClass> = metrics
+            .iter()
+            .filter_map(|metric| metric.player_nhl_id.map(|id| (id, metric.web_fit_class())))
+            .collect();
+        let score_of = |view: &PlayerView<'_>| -> f64 { scoring_mode_score(view, scoring_mode) };
+
+        let mut forwards: Vec<&PlayerView<'_>> = skaters
+            .iter()
+            .filter(|view| view.team_display() == team.0.as_str() && view.position().is_forward())
+            .collect();
+        sort_depth_players(&mut forwards, &score_of);
+
+        let mut forward_buckets: HashMap<Position, Vec<&PlayerView<'_>>> = HashMap::new();
+        for view in forwards {
+            let bucket = forward_buckets.entry(view.position()).or_default();
+            if bucket.len() < 4 {
+                bucket.push(view);
+            } else {
+                let natural = match view.identity.bio.shoots_catches.as_deref() {
+                    Some("R") => Position::RightWing,
+                    _ => Position::LeftWing,
+                };
+                let spill = if forward_buckets
+                    .get(&natural)
+                    .map_or(0, |bucket| bucket.len())
+                    < 4
+                {
+                    natural
+                } else {
+                    [Position::LeftWing, Position::Center, Position::RightWing]
+                        .into_iter()
+                        .min_by_key(|pos| forward_buckets.get(pos).map_or(0, |bucket| bucket.len()))
+                        .unwrap_or(view.position())
+                };
+                forward_buckets.entry(spill).or_default().push(view);
+            }
+        }
+
+        let mut defense: Vec<&PlayerView<'_>> = skaters
+            .iter()
+            .filter(|view| {
+                view.team_display() == team.0.as_str() && view.position() == Position::Defense
+            })
+            .collect();
+        sort_depth_players(&mut defense, &score_of);
+        let left_defense: Vec<&PlayerView<'_>> = defense
+            .iter()
+            .filter(|view| view.identity.bio.shoots_catches.as_deref() != Some("R"))
+            .copied()
+            .collect();
+        let right_defense: Vec<&PlayerView<'_>> = defense
+            .iter()
+            .filter(|view| view.identity.bio.shoots_catches.as_deref() == Some("R"))
+            .copied()
+            .collect();
+
+        let empty: Vec<&PlayerView<'_>> = Vec::new();
+        let columns = vec![
+            team_depth_chart_column(
+                "lw",
+                "LEFT WING",
+                4,
+                forward_buckets.get(&Position::LeftWing).unwrap_or(&empty),
+                &score_of,
+                &metrics_map,
+            ),
+            team_depth_chart_column(
+                "c",
+                "CENTER",
+                4,
+                forward_buckets.get(&Position::Center).unwrap_or(&empty),
+                &score_of,
+                &metrics_map,
+            ),
+            team_depth_chart_column(
+                "rw",
+                "RIGHT WING",
+                4,
+                forward_buckets.get(&Position::RightWing).unwrap_or(&empty),
+                &score_of,
+                &metrics_map,
+            ),
+            team_depth_chart_column("ld", "LD", 3, &left_defense, &score_of, &metrics_map),
+            team_depth_chart_column("rd", "RD", 3, &right_defense, &score_of, &metrics_map),
+        ];
+
+        Self {
+            context: view_context(season, season_type, has_window),
+            team: team.clone(),
+            scoring_mode: scoring_mode.label().to_string(),
+            columns,
+            goalies: goalies
+                .iter()
+                .filter(|goalie| goalie.team_display() == team.0.as_str())
+                .map(goalie_slot)
+                .collect(),
+            warnings: Vec::new(),
+        }
+    }
+}
+
+fn scoring_mode_score(view: &PlayerView<'_>, scoring_mode: ScoringMode) -> f64 {
+    match scoring_mode {
+        ScoringMode::Fantasy => fantasy_score_view(view),
+        ScoringMode::Pace => view.pace_82().unwrap_or(0.0),
+        ScoringMode::Custom(stat) => stat.read(view).unwrap_or(0.0),
+    }
+}
+
+fn sort_depth_players(
+    players: &mut Vec<&PlayerView<'_>>,
+    score_of: &impl Fn(&PlayerView<'_>) -> f64,
+) {
+    players.sort_by(|a, b| {
+        score_of(b)
+            .partial_cmp(&score_of(a))
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| a.id().0.cmp(&b.id().0))
+    });
+}
+
+fn team_depth_chart_column(
+    key: &str,
+    label: &str,
+    depth: usize,
+    players: &[&PlayerView<'_>],
+    score_of: &impl Fn(&PlayerView<'_>) -> f64,
+    metrics_map: &HashMap<u32, WebFitClass>,
+) -> TeamDepthChartColumn {
+    TeamDepthChartColumn {
+        key: key.to_string(),
+        label: label.to_string(),
+        depth,
+        players: players
+            .iter()
+            .enumerate()
+            .map(|(idx, player)| team_depth_chart_player(idx + 1, player, score_of, metrics_map))
+            .collect(),
+    }
+}
+
+fn team_depth_chart_player(
+    line: usize,
+    player: &PlayerView<'_>,
+    score_of: &impl Fn(&PlayerView<'_>) -> f64,
+    metrics_map: &HashMap<u32, WebFitClass>,
+) -> TeamDepthChartPlayer {
+    let score = score_of(player);
+    TeamDepthChartPlayer {
+        player_id: player.id(),
+        display_name: player.full_name().to_string(),
+        team: player
+            .team()
+            .cloned()
+            .unwrap_or_else(|| TeamAbbr("UNK".to_string())),
+        position: player.position(),
+        line,
+        score,
+        fit: metrics_map.get(&player.id().0).copied(),
+        metrics: vec![MetricCell {
+            key: StatKey::from("score"),
+            label: "Score".to_string(),
+            value: MetricValue::Decimal(score),
+            unit: MetricUnit::Score,
+            precision: ValuePrecision::OneDecimal,
+            token: None,
+        }],
+        tokens: vec![SemanticToken::SupportingEvidence],
     }
 }
 
@@ -455,5 +672,73 @@ fn metric_decimal(key: &str, label: &str, value: Option<f64>) -> MetricCell {
         unit: MetricUnit::Per82,
         precision: ValuePrecision::OneDecimal,
         token: None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::fixtures;
+    use crate::model::{Position, Season, TeamAbbr};
+    use crate::season_stats::SeasonType;
+    use crate::stats_repository::StatsRepository;
+
+    fn repo_with_depth_players() -> StatsRepository {
+        let mut repo = StatsRepository::new();
+        for (id, name, position, hand, team) in [
+            (1, "Left Wing One", Position::LeftWing, "L", "SEA"),
+            (2, "Center One", Position::Center, "L", "SEA"),
+            (3, "Right Wing One", Position::RightWing, "R", "SEA"),
+            (4, "Left Defense", Position::Defense, "L", "SEA"),
+            (5, "Right Defense", Position::Defense, "R", "SEA"),
+            (6, "Other Team Center", Position::Center, "L", "EDM"),
+        ] {
+            repo.upsert_identity(
+                fixtures::identity(id)
+                    .name(name, &name.to_ascii_lowercase())
+                    .shoots(hand)
+                    .build(),
+            )
+            .unwrap();
+            repo.upsert_stats(
+                fixtures::stats(id, 20252026, team)
+                    .position(position)
+                    .build(),
+            )
+            .unwrap();
+        }
+        repo
+    }
+
+    #[test]
+    fn l0_team_depth_chart_view_projects_tui_columns() {
+        let repo = repo_with_depth_players();
+        let skaters: Vec<PlayerView<'_>> = repo
+            .skaters(Season(20252026), SeasonType::Regular)
+            .collect();
+        let view = TeamDepthChartView::from_player_views(
+            TeamAbbr("SEA".to_string()),
+            Season(20252026),
+            SeasonType::Regular,
+            true,
+            &skaters,
+            &[],
+            ScoringMode::Pace,
+        );
+
+        assert_eq!(view.scoring_mode, "Pts/82");
+        assert_eq!(
+            view.columns
+                .iter()
+                .map(|column| column.key.as_str())
+                .collect::<Vec<_>>(),
+            vec!["lw", "c", "rw", "ld", "rd"]
+        );
+        assert_eq!(view.columns[0].players[0].display_name, "Left Wing One");
+        assert_eq!(view.columns[1].players[0].display_name, "Center One");
+        assert_eq!(view.columns[2].players[0].display_name, "Right Wing One");
+        assert_eq!(view.columns[3].players[0].display_name, "Left Defense");
+        assert_eq!(view.columns[4].players[0].display_name, "Right Defense");
+        assert_eq!(view.columns[0].players[0].score, 93.7);
     }
 }

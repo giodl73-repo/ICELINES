@@ -9,6 +9,7 @@
 //! thresholds.
 
 use crate::model::Position;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Hart.6.6 / Tape B3 — debug-only homogeneity guard for cross-team
@@ -134,7 +135,7 @@ impl CrossTeamMetrics {
 
 /// Web site fit classification (relative, cross-team).
 /// Different from terminal FitClass which uses absolute pace thresholds.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum WebFitClass {
     Elite,   // green  — avg ≤ own + 0.5
     Solid,   // yellow — avg ≤ own + 1.25
