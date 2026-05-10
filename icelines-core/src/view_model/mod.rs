@@ -48,12 +48,13 @@ pub use playoffs::{
 };
 pub use poach::{
     default_watch_rules_view, poach_report_context, poach_report_from_board,
-    weekly_poach_report_from_board, weekly_poach_report_from_board_with_watched, AvailabilityState,
-    ComponentStatus, ConfidenceSummary, DeploymentSignal, ExplanationImpact,
-    PoachAvailabilityFilter, PoachBoardView, PoachCandidateKind, PoachComponentKind,
-    PoachConfidence, PoachExplanation, PoachPlayerRow, PoachQuery, PoachReportSection,
-    PoachReportView, PoachScheduleFilter, PoachScore, PoachScoreComponent, PoachWindow,
-    RecommendationKind, ScoreRange, WatchRule, WatchRuleTrigger, WatchRulesView,
+    watch_rules_view_with_persisted, weekly_poach_report_from_board,
+    weekly_poach_report_from_board_with_watched, AvailabilityState, ComponentStatus,
+    ConfidenceSummary, DeploymentSignal, ExplanationImpact, PoachAvailabilityFilter,
+    PoachBoardView, PoachCandidateKind, PoachComponentKind, PoachConfidence, PoachExplanation,
+    PoachPlayerRow, PoachQuery, PoachReportSection, PoachReportView, PoachScheduleFilter,
+    PoachScore, PoachScoreComponent, PoachWindow, RecommendationKind, ScoreRange, WatchRule,
+    WatchRuleTrigger, WatchRulesView,
 };
 pub use schedule::{ScheduleGameRow, ScheduleView, TeamChipView};
 pub use scores::{scores_context, ScheduledGameInput, ScoreGameRow, ScoresDayView, ScoresView};

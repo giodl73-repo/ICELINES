@@ -172,6 +172,8 @@ Progress:
   existing template and headshot projection.
 - 2026-05-10: Added core `DocsView` and migrated `/docs` to carry rendered
   `COMMANDS.md` plus source metadata through the shared docs contract.
+- 2026-05-10: Moved watch-rule source-state assembly and persisted-rule merge
+  into the shared `WatchRulesView` builder used by `/api/v1/watch-rules`.
 
 ---
 

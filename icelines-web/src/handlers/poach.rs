@@ -7,7 +7,7 @@ use axum::response::{Html, IntoResponse, Response};
 use icelines_core::model::{Position, Season, TeamAbbr};
 use icelines_core::{
     view_model::{
-        default_watch_rules_view, poach_report_from_board,
+        poach_report_from_board, watch_rules_view_with_persisted,
         weekly_poach_report_from_board_with_watched, PoachBoardView, PoachQuery, PoachReportView,
         WatchRule,
     },
@@ -151,17 +151,8 @@ pub async fn get_watch_rules_json(State(state): State<WebState>) -> Response {
                         .into_response();
         }
     };
-    let mut context = ViewContext::new(ViewWindow::new(Season(season_u32), season_type));
-    context.completeness = Completeness::Partial;
-    context.source_state = vec![
-        SourceState::complete(SourceKind::Roster),
-        SourceState::missing(SourceKind::Shifts),
-        SourceState::missing(SourceKind::Schedule),
-        SourceState::missing(SourceKind::FantasyImport),
-    ];
-
-    let mut view = default_watch_rules_view(context);
-    view.rules.extend(read_persisted_watch_rules());
+    let context = ViewContext::new(ViewWindow::new(Season(season_u32), season_type));
+    let view = watch_rules_view_with_persisted(context, read_persisted_watch_rules());
     axum::Json(view).into_response()
 }
 

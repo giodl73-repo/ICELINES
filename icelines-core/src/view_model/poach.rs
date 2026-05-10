@@ -480,6 +480,23 @@ pub struct WatchRulesView {
     pub warnings: Vec<ViewWarning>,
 }
 
+pub fn watch_rules_view_with_persisted(
+    mut context: ViewContext,
+    persisted_rules: Vec<WatchRule>,
+) -> WatchRulesView {
+    context.completeness = Completeness::Partial;
+    context.source_state = vec![
+        SourceState::complete(SourceKind::Roster),
+        SourceState::missing(SourceKind::Shifts),
+        SourceState::missing(SourceKind::Schedule),
+        SourceState::missing(SourceKind::FantasyImport),
+    ];
+
+    let mut view = default_watch_rules_view(context);
+    view.rules.extend(persisted_rules);
+    view
+}
+
 pub fn default_watch_rules_view(context: ViewContext) -> WatchRulesView {
     WatchRulesView {
         context,
@@ -1159,6 +1176,30 @@ mod tests {
 
         assert_eq!(section.rows.len(), 1);
         assert_eq!(section.rows[0].display_name, "Hidden Category Fit");
+    }
+
+    #[test]
+    fn watch_rules_builder_merges_persisted_rules_and_source_state() {
+        let context = ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular));
+        let persisted = WatchRule {
+            id: "custom-rule".to_string(),
+            label: "Custom rule".to_string(),
+            enabled: true,
+            trigger: WatchRuleTrigger::CategoryThreshold {
+                category: "shots".to_string(),
+                threshold: 250.0,
+            },
+            last_fired: None,
+            unsupported_sources: Vec::new(),
+        };
+
+        let view = watch_rules_view_with_persisted(context, vec![persisted]);
+
+        assert_eq!(view.context.completeness, Completeness::Partial);
+        assert!(view.context.source_state.iter().any(|state| {
+            state.source == SourceKind::FantasyImport && state.state == Completeness::Unavailable
+        }));
+        assert!(view.rules.iter().any(|rule| rule.id == "custom-rule"));
     }
 
     #[test]

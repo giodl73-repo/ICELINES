@@ -77,7 +77,7 @@ a feature fully shipped.
 | Favorites/groups | `FavoritesView` | `group ...` | favorites/group affordances | `/favorites` | `/api/v1/favorites` | partial - web HTML and read JSON project membership through `FavoritesView`; mutation parity and richer nightly dashboard alignment remain | Ted Lindsay |
 | Fantasy league management | `FantasyLeagueView` | `fantasy ...` | groups/deep links | `/fantasy...` | planned/verify | deferred/partial - local-only stance remains | Ted Lindsay |
 | Poacher board | `PoachBoardView` | `poach` | Poach screen | `/poach` | `/api/v1/poach` | implemented - shared board ViewModel across CLI/TUI/web/JSON | Selke |
-| Watch rules | `WatchRulesView` / `WatchlistView` | `watch ...` | watchlist workspace shows notes/rules/recent alerts; rule editor deferred | `/watchlist` | `/api/v1/watch-rules`; `/api/v1/watchlist` | partial - web watchlist HTML/JSON project notes through `WatchlistView`; persisted rule preview/list/toggles/fired history remain under `WatchRulesView` | Selke |
+| Watch rules | `WatchRulesView` / `WatchlistView` | `watch ...` | watchlist workspace shows notes/rules/recent alerts; rule editor deferred | `/watchlist` | `/api/v1/watch-rules`; `/api/v1/watchlist` | partial - web watchlist HTML/JSON project notes through `WatchlistView`; web watch-rules JSON builds defaults plus persisted rules through `WatchRulesView`; editor/toggle UX remains deferred | Selke |
 | Poach/weekly reports | `PoachReportView` | `report poach`, `report weekly` | report viewer deferred | `/reports/poach`, `/reports/weekly` | CLI `--json`; board JSON at `/api/v1/poach` | implemented - markdown/JSON/HTML render from shared report ViewModel | Selke |
 
 ---
@@ -159,7 +159,7 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /reports/poach` | `handlers/poach.rs` | HTML report | Poach/weekly reports | done |
 | `GET /reports/weekly` | `handlers/poach.rs` | HTML report | Poach/weekly reports | done |
 | `GET /api/v1/poach` | `handlers/poach.rs` | JSON | Poacher board | done |
-| `GET /api/v1/watch-rules` | `handlers/poach.rs` | JSON | Watch rules | partial |
+| `GET /api/v1/watch-rules` | `handlers/poach.rs` | JSON | Watch rules | partial - projects default and persisted rules through `WatchRulesView` |
 | `GET /career` | `handlers/career.rs` | HTML | Career/cross-league cohorts | partial - projects cohort rows from `CareerView` |
 | `GET /api/v1/career` | `handlers/career.rs` | JSON | Career/cross-league cohorts | partial - projects stable envelope from `CareerView`; empty-store 400 remains accepted |
 | `GET /docs` | `handlers/docs.rs` | HTML | Docs reference | partial - renders `COMMANDS.md` through `DocsView` |
