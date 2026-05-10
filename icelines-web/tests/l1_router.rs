@@ -13,7 +13,9 @@ use axum::http::{Request, StatusCode};
 use axum::response::Response;
 use icelines_core::season_stats::SeasonType;
 use icelines_core::view_model::{DepthGoalieSlot, DepthLine, DepthPair, DepthPlayerSlot};
-use icelines_core::{MetricCell, MetricValue, Season, TeamAbbr, TeamDepthView};
+use icelines_core::{
+    DepthLeagueView, DepthTeamStrengthRow, MetricCell, MetricValue, Season, TeamAbbr, TeamDepthView,
+};
 use icelines_fetch::snapshot::SnapshotStore;
 use icelines_fetch::stats_loader::load_into_repo;
 use icelines_web::{router, WebConfig, WebState};
@@ -86,6 +88,66 @@ struct TeamDepthGoalieSnapshot {
     wins: u32,
     losses: u32,
     shutouts: u32,
+}
+
+#[derive(Debug, PartialEq)]
+struct DepthLeagueRowSnapshot {
+    team: String,
+    c_score: String,
+    lw_score: String,
+    rw_score: String,
+    d_score: String,
+    total: String,
+    c_top: String,
+    lw_top: String,
+    rw_top: String,
+    d_top: String,
+}
+
+fn depth_league_row_snapshots(rows: &[DepthTeamStrengthRow]) -> Vec<DepthLeagueRowSnapshot> {
+    rows.iter()
+        .map(|row| DepthLeagueRowSnapshot {
+            team: row.team.0.clone(),
+            c_score: normalized_score(row.c_score),
+            lw_score: normalized_score(row.lw_score),
+            rw_score: normalized_score(row.rw_score),
+            d_score: normalized_score(row.d_score),
+            total: normalized_score(row.total),
+            c_top: row.c_top.clone(),
+            lw_top: row.lw_top.clone(),
+            rw_top: row.rw_top.clone(),
+            d_top: row.d_top.clone(),
+        })
+        .collect()
+}
+
+fn json_depth_league_row_snapshots(json: &Value) -> Vec<DepthLeagueRowSnapshot> {
+    json["data"]
+        .as_array()
+        .expect("depth data array")
+        .iter()
+        .map(|row| DepthLeagueRowSnapshot {
+            team: json_str(row, "team"),
+            c_score: normalized_score(json_f64(row, "c_score")),
+            lw_score: normalized_score(json_f64(row, "lw_score")),
+            rw_score: normalized_score(json_f64(row, "rw_score")),
+            d_score: normalized_score(json_f64(row, "d_score")),
+            total: normalized_score(json_f64(row, "total")),
+            c_top: json_str(row, "c_top"),
+            lw_top: json_str(row, "lw_top"),
+            rw_top: json_str(row, "rw_top"),
+            d_top: json_str(row, "d_top"),
+        })
+        .collect()
+}
+
+fn normalized_score(value: f64) -> String {
+    let value = if value.abs() < 0.000_000_5 {
+        0.0
+    } else {
+        value
+    };
+    format!("{value:.6}")
 }
 
 fn team_depth_skater_snapshots(view: &TeamDepthView) -> Vec<TeamDepthSkaterSnapshot> {
@@ -207,6 +269,12 @@ fn json_u32(row: &Value, key: &str) -> u32 {
         .as_u64()
         .and_then(|value| u32::try_from(value).ok())
         .unwrap_or_else(|| panic!("{key} should be a u32 JSON number in row {row}"))
+}
+
+fn json_f64(row: &Value, key: &str) -> f64 {
+    row[key]
+        .as_f64()
+        .unwrap_or_else(|| panic!("{key} should be a JSON number in row {row}"))
 }
 
 fn json_str(row: &Value, key: &str) -> String {
@@ -1061,6 +1129,47 @@ async fn l1_depth_json_envelope_shape() {
         .copied()
         .collect();
     assert_eq!(meta_keys, want_meta, "meta keys diverged: {meta_keys:?}");
+}
+
+#[tokio::test]
+async fn l1_depth_json_rows_match_depth_league_view() {
+    let season = Season(20242025);
+    let season_type = SeasonType::Regular;
+    let store = SnapshotStore::new(SnapshotStore::default_root());
+    let load = load_into_repo(season, season_type, &store)
+        .expect("bundled regular-season repo should load");
+    let expected_view = DepthLeagueView::pace_from_repository(&load.repo, season, season_type);
+    let expected_rows = depth_league_row_snapshots(&expected_view.rows);
+    assert!(
+        !expected_rows.is_empty(),
+        "fixture should include depth rows for {season:?}"
+    );
+
+    let state = WebState::with_repo_and_config(load.repo, WebConfig::new("20242025", "regular"));
+    let app = router(state);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/depth")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let json = response_json(response, 1024 * 1024).await;
+    assert_data_meta_envelope(&json, "depth");
+    assert_eq!(json["meta"]["season"], serde_json::json!("20242025"));
+    assert_eq!(json["meta"]["season_type"], serde_json::json!("regular"));
+    assert_eq!(json["meta"]["scoring_mode"], serde_json::json!("pace"));
+    assert_eq!(
+        json["meta"]["count"],
+        serde_json::json!(expected_rows.len()),
+        "depth meta count should match row count"
+    );
+    assert_eq!(json_depth_league_row_snapshots(&json), expected_rows);
 }
 
 #[tokio::test]

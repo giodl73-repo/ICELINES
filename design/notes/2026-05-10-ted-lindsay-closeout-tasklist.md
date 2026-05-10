@@ -52,8 +52,11 @@ surface still differs from CLI/TUI.
    - Team depth: web JSON row identity is now fenced against
      `TeamDepthView` by `l1_team_json_rows_match_team_depth_view`; CLI/TUI
      adapter alignment remains before marking the row `done`.
-   - Cross-team depth/player/compare/career: verify adapter parity before
-     marking any row `done`.
+   - Cross-team depth: web JSON row identity is now fenced against
+     `DepthLeagueView` by `l1_depth_json_rows_match_depth_league_view`;
+     CLI/TUI adapter alignment remains before marking the row `done`.
+   - Player/compare/career: verify adapter parity before marking any row
+     `done`.
 
 5. **Resolve live-route envelope policy** - complete for Ted Lindsay
    - Scores, schedule, playoffs, and game carry live-fetch failures in
