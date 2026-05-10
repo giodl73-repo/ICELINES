@@ -1,54 +1,14 @@
+use super::favorites_data::{
+    group_api_rows, mutate_favorites, read_group_members, read_watch_notes, watchlist_api_rows,
+    GroupApiMeta, GroupApiResponse, MutateOp, WatchNote, WatchlistApiMeta, WatchlistApiResponse,
+};
 use axum::extract::{Form, State};
-use axum::http::{header, HeaderMap, StatusCode};
+use axum::http::{HeaderMap, StatusCode};
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use serde::Deserialize;
 
 pub async fn get_favorites() -> Response {
-    // Read members from the local SQLite db. The web server
-    // runs on the same machine as the CLI / TUI so the same
-    // `~/.icelines/icelines.db` is reachable.
-    let members: Vec<(String, String)> = match std::env::var_os("HOME")
-        .or_else(|| std::env::var_os("USERPROFILE"))
-    {
-        Some(home) => {
-            let dir = std::path::PathBuf::from(&home).join(".icelines");
-            let db_path = dir.join("icelines.db");
-            if !db_path.exists() {
-                Vec::new()
-            } else {
-                match rusqlite::Connection::open(&db_path) {
-                    Ok(conn) => {
-                        // Match icelines-cli's GroupDb queries:
-                        // post-006 the column is entity_ref.
-                        let mut stmt = match conn.prepare(
-                            "SELECT entity_ref FROM group_members \
-                                     WHERE group_name = 'Favorites' \
-                                     ORDER BY entity_ref",
-                        ) {
-                            Ok(s) => s,
-                            Err(_) => {
-                                return error_response("Could not read favorites from local db.")
-                            }
-                        };
-                        let rows: Vec<String> = stmt
-                            .query_map([], |r| r.get::<_, String>(0))
-                            .ok()
-                            .map(|i| i.filter_map(Result::ok).collect())
-                            .unwrap_or_default();
-                        rows.into_iter()
-                            .map(|er| match er.split_once(':') {
-                                Some(("team", k)) => ("team".into(), k.into()),
-                                Some(("player", k)) => ("player".into(), k.into()),
-                                _ => ("player".into(), er),
-                            })
-                            .collect()
-                    }
-                    Err(_) => Vec::new(),
-                }
-            }
-        }
-        None => Vec::new(),
-    };
+    let members = read_group_members("Favorites");
 
     // Phase Foster +21 — for each favorited player resolve to
     // a PlayerId and walk the persisted boxscore JSON to pull
@@ -114,157 +74,6 @@ pub async fn get_watchlist_json() -> Response {
         meta,
     })
     .into_response()
-}
-
-#[derive(Debug, Clone)]
-struct WatchNote {
-    reason: String,
-    source: String,
-    updated_at: String,
-}
-
-#[derive(Debug, serde::Serialize)]
-struct GroupApiResponse {
-    schema_version: &'static str,
-    route: &'static str,
-    data: Vec<GroupApiRow>,
-    meta: GroupApiMeta,
-}
-
-#[derive(Debug, serde::Serialize)]
-struct GroupApiMeta {
-    group: &'static str,
-    count: usize,
-    player_count: usize,
-    team_count: usize,
-}
-
-#[derive(Debug, serde::Serialize)]
-struct GroupApiRow {
-    kind: String,
-    key: String,
-}
-
-#[derive(Debug, serde::Serialize)]
-struct WatchlistApiResponse {
-    schema_version: &'static str,
-    route: &'static str,
-    data: Vec<WatchlistApiRow>,
-    meta: WatchlistApiMeta,
-}
-
-#[derive(Debug, serde::Serialize)]
-struct WatchlistApiMeta {
-    group: &'static str,
-    count: usize,
-    player_count: usize,
-    team_count: usize,
-}
-
-#[derive(Debug, serde::Serialize)]
-struct WatchlistApiRow {
-    kind: String,
-    key: String,
-    reason: Option<String>,
-    source: Option<String>,
-    updated_at: Option<String>,
-}
-
-fn group_api_rows(members: &[(String, String)]) -> Vec<GroupApiRow> {
-    members
-        .iter()
-        .map(|(kind, key)| GroupApiRow {
-            kind: kind.clone(),
-            key: key.clone(),
-        })
-        .collect()
-}
-
-fn watchlist_api_rows(
-    members: &[(String, String)],
-    notes: &std::collections::HashMap<String, WatchNote>,
-) -> Vec<WatchlistApiRow> {
-    members
-        .iter()
-        .map(|(kind, key)| {
-            let entity_ref = format!("{kind}:{key}");
-            let note = notes.get(&entity_ref);
-            WatchlistApiRow {
-                kind: kind.clone(),
-                key: key.clone(),
-                reason: note.map(|n| n.reason.clone()),
-                source: note.map(|n| n.source.clone()),
-                updated_at: note.map(|n| n.updated_at.clone()),
-            }
-        })
-        .collect()
-}
-
-fn read_group_members(group_name: &str) -> Vec<(String, String)> {
-    let Some(home) = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")) else {
-        return Vec::new();
-    };
-    let db_path = std::path::PathBuf::from(&home)
-        .join(".icelines")
-        .join("icelines.db");
-    if !db_path.exists() {
-        return Vec::new();
-    }
-    let Ok(conn) = rusqlite::Connection::open(&db_path) else {
-        return Vec::new();
-    };
-    let Ok(mut stmt) = conn.prepare(
-        "SELECT entity_ref FROM group_members \
-                 WHERE group_name = ?1 \
-                 ORDER BY entity_ref",
-    ) else {
-        return Vec::new();
-    };
-    stmt.query_map(rusqlite::params![group_name], |r| r.get::<_, String>(0))
-        .ok()
-        .map(|rows| {
-            rows.filter_map(Result::ok)
-                .map(|er| match er.split_once(':') {
-                    Some(("team", k)) => ("team".into(), k.into()),
-                    Some(("player", k)) => ("player".into(), k.into()),
-                    _ => ("player".into(), er),
-                })
-                .collect()
-        })
-        .unwrap_or_default()
-}
-
-fn read_watch_notes() -> std::collections::HashMap<String, WatchNote> {
-    let Some(home) = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")) else {
-        return std::collections::HashMap::new();
-    };
-    let db_path = std::path::PathBuf::from(&home)
-        .join(".icelines")
-        .join("icelines.db");
-    if !db_path.exists() {
-        return std::collections::HashMap::new();
-    }
-    let Ok(conn) = rusqlite::Connection::open(&db_path) else {
-        return std::collections::HashMap::new();
-    };
-    let Ok(mut stmt) =
-        conn.prepare("SELECT entity_ref, reason, source, updated_at FROM watch_notes")
-    else {
-        return std::collections::HashMap::new();
-    };
-    stmt.query_map([], |r| {
-        Ok((
-            r.get::<_, String>(0)?,
-            WatchNote {
-                reason: r.get::<_, String>(1)?,
-                source: r.get::<_, String>(2)?,
-                updated_at: r.get::<_, String>(3)?,
-            },
-        ))
-    })
-    .ok()
-    .map(|rows| rows.filter_map(Result::ok).collect())
-    .unwrap_or_default()
 }
 
 /// Per-favorited-player stat-line lookup. Returns a flat
@@ -692,7 +501,16 @@ pub async fn post_add(headers: HeaderMap, Form(req): Form<FavoritesMutation>) ->
     // completes off the request path.
     let display = req.key.trim().to_string();
     let kind_hint = req.kind.clone();
-    let response = mutate(&headers, req, MutateOp::Add);
+    let response = match mutate_favorites(
+        &headers,
+        &req.key,
+        req.kind.as_deref(),
+        req.return_to.as_deref(),
+        MutateOp::Add,
+    ) {
+        Ok(dest) => Redirect::to(&dest).into_response(),
+        Err(msg) => error_response(&msg),
+    };
     // Foster +18 — opportunistic career-history augment for
     // newly-favorited players. Mirrors the CLI `group add`
     // behavior so favoriting from either surface populates
@@ -717,111 +535,14 @@ pub async fn post_add(headers: HeaderMap, Form(req): Form<FavoritesMutation>) ->
 }
 
 pub async fn post_remove(headers: HeaderMap, Form(req): Form<FavoritesMutation>) -> Response {
-    mutate(&headers, req, MutateOp::Remove)
-}
-
-enum MutateOp {
-    Add,
-    Remove,
-}
-
-fn mutate(headers: &HeaderMap, req: FavoritesMutation, op: MutateOp) -> Response {
-    let trimmed = req.key.trim();
-    if trimmed.is_empty() {
-        return error_response("Empty key — pass a player name or team abbrev.");
+    match mutate_favorites(
+        &headers,
+        &req.key,
+        req.kind.as_deref(),
+        req.return_to.as_deref(),
+        MutateOp::Remove,
+    ) {
+        Ok(dest) => Redirect::to(&dest).into_response(),
+        Err(msg) => error_response(&msg),
     }
-
-    // Same auto-detect as the CLI: try TeamAbbr first; fall
-    // back to normalized player name. Explicit `kind` wins.
-    let (kind, key) = match req.kind.as_deref() {
-        Some("team") => ("team", trimmed.to_uppercase()),
-        Some("player") => ("player", icelines_core::name::normalize_name(trimmed)),
-        _ => match icelines_core::TeamAbbr::parse(trimmed) {
-            Ok(abbr) => ("team", abbr.0),
-            Err(_) => ("player", icelines_core::name::normalize_name(trimmed)),
-        },
-    };
-    let entity_ref = format!("{kind}:{key}");
-
-    // Open the local db. Same path the CLI uses.
-    let home = match std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")) {
-        Some(h) => std::path::PathBuf::from(h),
-        None => return error_response("HOME / USERPROFILE not set."),
-    };
-    let dir = home.join(".icelines");
-    if let Err(e) = std::fs::create_dir_all(&dir) {
-        return error_response(&format!("create {}: {e}", dir.display()));
-    }
-    let db_path = dir.join("icelines.db");
-    let conn = match rusqlite::Connection::open(&db_path) {
-        Ok(c) => c,
-        Err(e) => return error_response(&format!("open db: {e}")),
-    };
-    // Make sure the schema is present — the GroupDb opens
-    // first usually but the web server can be the first thing
-    // the user runs. Best-effort; ignore failures.
-    let _ = conn.execute_batch(
-        "CREATE TABLE IF NOT EXISTS groups (
-                    name        TEXT PRIMARY KEY,
-                    description TEXT NOT NULL DEFAULT '',
-                    created_at  TEXT NOT NULL
-                 );
-                 INSERT OR IGNORE INTO groups (name, description, created_at) \
-                    VALUES ('Favorites', '', datetime('now'));
-                 CREATE TABLE IF NOT EXISTS group_members (
-                    group_name TEXT NOT NULL,
-                    entity_ref TEXT NOT NULL,
-                    added_at   TEXT NOT NULL,
-                    PRIMARY KEY (group_name, entity_ref)
-                 );",
-    );
-
-    let result = match op {
-        MutateOp::Add => conn.execute(
-            "INSERT OR IGNORE INTO group_members \
-                     (group_name, entity_ref, added_at) \
-                     VALUES ('Favorites', ?1, datetime('now'))",
-            rusqlite::params![entity_ref],
-        ),
-        MutateOp::Remove => conn.execute(
-            "DELETE FROM group_members \
-                     WHERE group_name = 'Favorites' AND entity_ref = ?1",
-            rusqlite::params![entity_ref],
-        ),
-    };
-    if let Err(e) = result {
-        return error_response(&format!("db mutation: {e}"));
-    }
-
-    // 303 redirect to the caller-supplied return_to, defaulting
-    // to /favorites. Validate the target is a relative path so
-    // we don't act as an open-redirect.
-    let dest = req
-        .return_to
-        .as_deref()
-        .or_else(|| referer_path(headers))
-        .filter(|p| p.starts_with('/') && !p.starts_with("//"))
-        .unwrap_or("/favorites")
-        .to_string();
-    Redirect::to(&dest).into_response()
-}
-
-fn referer_path(headers: &HeaderMap) -> Option<&str> {
-    headers
-        .get(header::REFERER)
-        .and_then(|h| h.to_str().ok())
-        .and_then(|s| {
-            // Strip the scheme+host so we only return a relative
-            // path. Anything we can't parse falls through to
-            // /favorites via the unwrap_or above.
-            if let Some(rest) = s.strip_prefix("http://") {
-                rest.find('/').map(|i| &rest[i..])
-            } else if let Some(rest) = s.strip_prefix("https://") {
-                rest.find('/').map(|i| &rest[i..])
-            } else if s.starts_with('/') {
-                Some(s)
-            } else {
-                None
-            }
-        })
 }

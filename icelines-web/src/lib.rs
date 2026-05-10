@@ -243,6 +243,7 @@ mod handlers {
 
     /// Phase Foster.2 — `/favorites` HTML route.
     pub mod favorites;
+    pub mod favorites_data;
 
     /// Phase Conn Smythe C.3 — `/game/:id` per-game live detail.
     pub mod game;

@@ -1,0 +1,243 @@
+use std::collections::HashMap;
+
+use axum::http::{header, HeaderMap};
+
+pub(crate) enum MutateOp {
+    Add,
+    Remove,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct WatchNote {
+    pub(crate) reason: String,
+    pub(crate) source: String,
+    pub(crate) updated_at: String,
+}
+
+#[derive(Debug, serde::Serialize)]
+pub(crate) struct GroupApiResponse {
+    pub(crate) schema_version: &'static str,
+    pub(crate) route: &'static str,
+    pub(crate) data: Vec<GroupApiRow>,
+    pub(crate) meta: GroupApiMeta,
+}
+
+#[derive(Debug, serde::Serialize)]
+pub(crate) struct GroupApiMeta {
+    pub(crate) group: &'static str,
+    pub(crate) count: usize,
+    pub(crate) player_count: usize,
+    pub(crate) team_count: usize,
+}
+
+#[derive(Debug, serde::Serialize)]
+pub(crate) struct GroupApiRow {
+    pub(crate) kind: String,
+    pub(crate) key: String,
+}
+
+#[derive(Debug, serde::Serialize)]
+pub(crate) struct WatchlistApiResponse {
+    pub(crate) schema_version: &'static str,
+    pub(crate) route: &'static str,
+    pub(crate) data: Vec<WatchlistApiRow>,
+    pub(crate) meta: WatchlistApiMeta,
+}
+
+#[derive(Debug, serde::Serialize)]
+pub(crate) struct WatchlistApiMeta {
+    pub(crate) group: &'static str,
+    pub(crate) count: usize,
+    pub(crate) player_count: usize,
+    pub(crate) team_count: usize,
+}
+
+#[derive(Debug, serde::Serialize)]
+pub(crate) struct WatchlistApiRow {
+    pub(crate) kind: String,
+    pub(crate) key: String,
+    pub(crate) reason: Option<String>,
+    pub(crate) source: Option<String>,
+    pub(crate) updated_at: Option<String>,
+}
+
+pub(crate) fn group_api_rows(members: &[(String, String)]) -> Vec<GroupApiRow> {
+    members
+        .iter()
+        .map(|(kind, key)| GroupApiRow {
+            kind: kind.clone(),
+            key: key.clone(),
+        })
+        .collect()
+}
+
+pub(crate) fn watchlist_api_rows(
+    members: &[(String, String)],
+    notes: &HashMap<String, WatchNote>,
+) -> Vec<WatchlistApiRow> {
+    members
+        .iter()
+        .map(|(kind, key)| {
+            let entity_ref = format!("{kind}:{key}");
+            let note = notes.get(&entity_ref);
+            WatchlistApiRow {
+                kind: kind.clone(),
+                key: key.clone(),
+                reason: note.map(|n| n.reason.clone()),
+                source: note.map(|n| n.source.clone()),
+                updated_at: note.map(|n| n.updated_at.clone()),
+            }
+        })
+        .collect()
+}
+
+pub(crate) fn read_group_members(group_name: &str) -> Vec<(String, String)> {
+    let Some(home) = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")) else {
+        return Vec::new();
+    };
+    let db_path = std::path::PathBuf::from(&home)
+        .join(".icelines")
+        .join("icelines.db");
+    if !db_path.exists() {
+        return Vec::new();
+    }
+    let Ok(conn) = rusqlite::Connection::open(&db_path) else {
+        return Vec::new();
+    };
+    let Ok(mut stmt) = conn.prepare(
+        "SELECT entity_ref FROM group_members \
+                 WHERE group_name = ?1 \
+                 ORDER BY entity_ref",
+    ) else {
+        return Vec::new();
+    };
+    stmt.query_map(rusqlite::params![group_name], |r| r.get::<_, String>(0))
+        .ok()
+        .map(|rows| {
+            rows.filter_map(Result::ok)
+                .map(|er| match er.split_once(':') {
+                    Some(("team", k)) => ("team".into(), k.into()),
+                    Some(("player", k)) => ("player".into(), k.into()),
+                    _ => ("player".into(), er),
+                })
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+pub(crate) fn read_watch_notes() -> HashMap<String, WatchNote> {
+    let Some(home) = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")) else {
+        return HashMap::new();
+    };
+    let db_path = std::path::PathBuf::from(&home)
+        .join(".icelines")
+        .join("icelines.db");
+    if !db_path.exists() {
+        return HashMap::new();
+    }
+    let Ok(conn) = rusqlite::Connection::open(&db_path) else {
+        return HashMap::new();
+    };
+    let Ok(mut stmt) =
+        conn.prepare("SELECT entity_ref, reason, source, updated_at FROM watch_notes")
+    else {
+        return HashMap::new();
+    };
+    stmt.query_map([], |r| {
+        Ok((
+            r.get::<_, String>(0)?,
+            WatchNote {
+                reason: r.get::<_, String>(1)?,
+                source: r.get::<_, String>(2)?,
+                updated_at: r.get::<_, String>(3)?,
+            },
+        ))
+    })
+    .ok()
+    .map(|rows| rows.filter_map(Result::ok).collect())
+    .unwrap_or_default()
+}
+
+pub(crate) fn mutate_favorites(
+    headers: &HeaderMap,
+    key: &str,
+    kind_hint: Option<&str>,
+    return_to: Option<&str>,
+    op: MutateOp,
+) -> Result<String, String> {
+    let trimmed = key.trim();
+    if trimmed.is_empty() {
+        return Err("Empty key - pass a player name or team abbrev.".to_owned());
+    }
+
+    let (kind, key) = match kind_hint {
+        Some("team") => ("team", trimmed.to_uppercase()),
+        Some("player") => ("player", icelines_core::name::normalize_name(trimmed)),
+        _ => match icelines_core::TeamAbbr::parse(trimmed) {
+            Ok(abbr) => ("team", abbr.0),
+            Err(_) => ("player", icelines_core::name::normalize_name(trimmed)),
+        },
+    };
+    let entity_ref = format!("{kind}:{key}");
+
+    let home = std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .ok_or_else(|| "HOME / USERPROFILE not set.".to_owned())?;
+    let dir = std::path::PathBuf::from(home).join(".icelines");
+    std::fs::create_dir_all(&dir).map_err(|e| format!("create {}: {e}", dir.display()))?;
+    let db_path = dir.join("icelines.db");
+    let conn = rusqlite::Connection::open(&db_path).map_err(|e| format!("open db: {e}"))?;
+    let _ = conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS groups (
+                    name        TEXT PRIMARY KEY,
+                    description TEXT NOT NULL DEFAULT '',
+                    created_at  TEXT NOT NULL
+                 );
+                 INSERT OR IGNORE INTO groups (name, description, created_at) \
+                    VALUES ('Favorites', '', datetime('now'));
+                 CREATE TABLE IF NOT EXISTS group_members (
+                    group_name TEXT NOT NULL,
+                    entity_ref TEXT NOT NULL,
+                    added_at   TEXT NOT NULL,
+                    PRIMARY KEY (group_name, entity_ref)
+                 );",
+    );
+
+    let result = match op {
+        MutateOp::Add => conn.execute(
+            "INSERT OR IGNORE INTO group_members \
+                     (group_name, entity_ref, added_at) \
+                     VALUES ('Favorites', ?1, datetime('now'))",
+            rusqlite::params![entity_ref],
+        ),
+        MutateOp::Remove => conn.execute(
+            "DELETE FROM group_members \
+                     WHERE group_name = 'Favorites' AND entity_ref = ?1",
+            rusqlite::params![entity_ref],
+        ),
+    };
+    result.map_err(|e| format!("db mutation: {e}"))?;
+
+    Ok(return_to
+        .or_else(|| referer_path(headers))
+        .filter(|p| p.starts_with('/') && !p.starts_with("//"))
+        .unwrap_or("/favorites")
+        .to_string())
+}
+
+fn referer_path(headers: &HeaderMap) -> Option<&str> {
+    headers
+        .get(header::REFERER)
+        .and_then(|h| h.to_str().ok())
+        .and_then(|s| {
+            if let Some(rest) = s.strip_prefix("http://") {
+                rest.find('/').map(|i| &rest[i..])
+            } else if let Some(rest) = s.strip_prefix("https://") {
+                rest.find('/').map(|i| &rest[i..])
+            } else if s.starts_with('/') {
+                Some(s)
+            } else {
+                None
+            }
+        })
+}
