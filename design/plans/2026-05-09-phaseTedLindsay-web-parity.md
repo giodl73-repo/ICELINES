@@ -194,6 +194,8 @@ Progress:
   major web pages, reports, stubs, and live-fetch error-rendering routes.
 - 2026-05-10: Normalized `/api/v1/career` bad-request responses onto the
   shared schema/route/data/meta/error envelope shape.
+- 2026-05-10: Normalized `/api/v1/depth` invalid active-season JSON errors
+  onto the shared schema/route/data/meta/error envelope shape.
 
 ---
 

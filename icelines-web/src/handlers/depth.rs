@@ -90,13 +90,24 @@ pub async fn get_depth_json(State(state): State<WebState>) -> Response {
     let season_u32: u32 = match season_str.parse() {
         Ok(n) => n,
         Err(e) => {
+            let meta = DepthMeta {
+                season: season_str.clone(),
+                season_type: season_type.label().to_owned(),
+                count: 0,
+                scoring_mode: "pace",
+            };
             return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        axum::Json(serde_json::json!({
-                            "error": format!("active season '{season_str}' is not a valid YYYYZZZZ id: {e}"),
-                        })),
-                    )
-                        .into_response();
+                StatusCode::INTERNAL_SERVER_ERROR,
+                axum::Json(crate::api::ApiEnvelope::new(
+                    "depth",
+                    Vec::<DepthJsonRow>::new(),
+                    meta,
+                    Some(format!(
+                        "active season '{season_str}' is not a valid YYYYZZZZ id: {e}"
+                    )),
+                )),
+            )
+                .into_response();
         }
     };
     let season = Season(season_u32);
