@@ -129,6 +129,9 @@ Progress:
 - 2026-05-10: Migrated `/team/:abbrev` and `/api/v1/team/:abbrev` to build
   from `TeamDepthView` while preserving the existing HTML template rows and
   stable JSON envelope projection.
+- 2026-05-10: Added core `PlayerCardView` and migrated
+  `/api/v1/player/:id` to project its existing stable JSON envelope from that
+  ViewModel. HTML player-card rendering remains a follow-up adapter.
 
 ---
 

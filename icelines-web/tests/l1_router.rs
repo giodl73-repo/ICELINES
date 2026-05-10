@@ -189,6 +189,35 @@ async fn l1_depth_route_returns_200_html() {
 }
 
 #[tokio::test]
+async fn l1_player_json_envelope_shape() {
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/player/8478402")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let bytes = axum::body::to_bytes(response.into_body(), 512 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value = serde_json::from_slice(&bytes).expect("valid json envelope");
+
+    assert_eq!(json["schema_version"], 1);
+    assert_eq!(json["route"], "player");
+    assert_eq!(json["meta"]["season_type"], "regular");
+    assert_eq!(json["data"]["nhl_id"], 8478402);
+    assert_eq!(json["data"]["active_season_stats"]["season"], "20252026");
+    assert!(json["data"]["career"].is_array());
+}
+
+#[tokio::test]
 async fn l1_watchlist_route_returns_200_html() {
     let _guard = home_env_lock();
     let app = router(WebState::new());

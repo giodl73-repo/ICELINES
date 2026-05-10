@@ -68,7 +68,8 @@ pub use transactions::{
 pub use view_model::{
     AppliedFilter, Completeness, EmptyKind, EmptyState, FilterKey, FilterOp, GoalieRoleFilter,
     GoalieRoleSignal, GoalieRow, GoaliesView, LeaderKind, LeaderRow, LeadersView, MetricCell,
-    MetricUnit, MetricValue, RecoveryAction, ReportContext, ReportKind, ReportSectionRef,
-    SemanticToken, SortDirection, SortKey, SortState, SourceKind, SourceProvenance, SourceState,
-    StatKey, TeamDepthView, ValuePrecision, ViewContext, ViewWarning, ViewWindow, WarningKind,
+    MetricUnit, MetricValue, PlayerCardView, PlayerCareerSummary, PlayerSeasonSummary,
+    RecoveryAction, ReportContext, ReportKind, ReportSectionRef, SemanticToken, SortDirection,
+    SortKey, SortState, SourceKind, SourceProvenance, SourceState, StatKey, TeamDepthView,
+    ValuePrecision, ViewContext, ViewWarning, ViewWindow, WarningKind,
 };

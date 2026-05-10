@@ -7,6 +7,7 @@ use axum::response::{Html, IntoResponse, Response};
 use icelines_core::identity::PlayerId;
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
+use icelines_core::{MetricCell, MetricValue, PlayerCardView, PlayerCareerSummary};
 
 /// Format a YYYYZZZZ season as "YYYY-YY" (e.g. 20242025 → "2024-25").
 fn pretty_season(s: Season) -> String {
@@ -535,80 +536,49 @@ pub async fn get_player_json(State(state): State<WebState>, Path(id): Path<u32>)
         }
     }
 
-    let repo = state.repo.read().await;
-    let identity = match repo.identity(pid) {
-        Some(i) => i,
-        None => {
-            return (
-                StatusCode::NOT_FOUND,
-                axum::Json(serde_json::json!({
-                    "error": "player_not_found",
-                    "message": format!(
-                        "No player with NHL id {id} in the active repository."
-                    ),
-                    "nhl_id": id,
-                })),
-            )
-                .into_response();
+    let view = {
+        let repo = state.repo.read().await;
+        match PlayerCardView::from_repository(&repo, pid, season, season_type) {
+            Some(view) => view,
+            None => {
+                return (
+                    StatusCode::NOT_FOUND,
+                    axum::Json(serde_json::json!({
+                        "error": "player_not_found",
+                        "message": format!(
+                            "No player with NHL id {id} in the active repository."
+                        ),
+                        "nhl_id": id,
+                    })),
+                )
+                    .into_response();
+            }
         }
     };
 
-    let (gp, goals, assists, points, position, team) = match repo.view(pid, season, season_type) {
-        Some(v) => (
-            v.gp(),
-            v.goals(),
-            v.assists(),
-            v.points(),
-            v.position().abbreviation().to_owned(),
-            v.team_display().to_owned(),
+    let active = view.active.as_ref();
+    let (gp, goals, assists, points, position, team) = match active {
+        Some(active) => (
+            metric_u32(&active.metrics, "gp").unwrap_or(0),
+            metric_u32(&active.metrics, "goals").unwrap_or(0),
+            metric_u32(&active.metrics, "assists").unwrap_or(0),
+            metric_u32(&active.metrics, "points").unwrap_or(0),
+            active.position.abbreviation().to_owned(),
+            active.team.0.clone(),
         ),
         None => (0, 0, 0, 0, String::new(), String::new()),
     };
-    let ppg = if gp > 0 {
-        Some((points as f64) / (gp as f64))
-    } else {
-        None
-    };
-
-    let mut career: Vec<PlayerCareerRow> = match repo.career_all(pid) {
-        Some(iter) => iter
-            .filter_map(|s| {
-                let totals = &s.totals;
-                if totals.gp == 0 {
-                    return None;
-                }
-                let last_team = s
-                    .team_stints
-                    .last()
-                    .map(|st| st.team.0.as_str().to_owned())
-                    .unwrap_or_default();
-                let ppg = if totals.gp > 0 {
-                    Some((totals.points as f64) / (totals.gp as f64))
-                } else {
-                    None
-                };
-                Some(PlayerCareerRow {
-                    season: pretty_season(s.season),
-                    season_type: match s.season_type {
-                        SeasonType::Regular => "regular".to_owned(),
-                        SeasonType::Playoff => "playoff".to_owned(),
-                    },
-                    team: last_team,
-                    games: totals.gp,
-                    goals: totals.goals,
-                    assists: totals.assists,
-                    points: totals.points,
-                    points_per_game: ppg,
-                })
-            })
-            .collect(),
-        None => Vec::new(),
-    };
-    career.sort_by(|a, b| {
-        b.season
-            .cmp(&a.season)
-            .then(a.season_type.cmp(&b.season_type))
-    });
+    let ppg = metric_f64(
+        active
+            .map(|active| active.metrics.as_slice())
+            .unwrap_or(&[]),
+        "points_per_game",
+    );
+    let career: Vec<PlayerCareerRow> = view
+        .career
+        .iter()
+        .map(player_career_row_from_view)
+        .collect();
     let career_rows_n = career.len();
 
     let pre_nhl_stints = {
@@ -623,10 +593,10 @@ pub async fn get_player_json(State(state): State<WebState>, Path(id): Path<u32>)
 
     let data = PlayerData {
         nhl_id: id,
-        full_name: identity.full_name.clone(),
+        full_name: view.display_name.clone(),
         position,
         team,
-        headshot_url: identity.headshot_canonical_url.clone(),
+        headshot_url: view.headshot_url.clone(),
         active_season_stats: PlayerActiveStats {
             season: season_str.clone(),
             season_type: match season_type {
@@ -652,4 +622,40 @@ pub async fn get_player_json(State(state): State<WebState>, Path(id): Path<u32>)
         pre_nhl_career_rows,
     };
     crate::api::json_data_meta("player", data, meta)
+}
+
+fn player_career_row_from_view(row: &PlayerCareerSummary) -> PlayerCareerRow {
+    PlayerCareerRow {
+        season: pretty_season(row.season),
+        season_type: match row.season_type {
+            SeasonType::Regular => "regular".to_owned(),
+            SeasonType::Playoff => "playoff".to_owned(),
+        },
+        team: row.team.0.clone(),
+        games: metric_u32(&row.metrics, "gp").unwrap_or(0),
+        goals: metric_u32(&row.metrics, "goals").unwrap_or(0),
+        assists: metric_u32(&row.metrics, "assists").unwrap_or(0),
+        points: metric_u32(&row.metrics, "points").unwrap_or(0),
+        points_per_game: metric_f64(&row.metrics, "points_per_game"),
+    }
+}
+
+fn metric_u32(metrics: &[MetricCell], key: &str) -> Option<u32> {
+    metrics
+        .iter()
+        .find(|metric| metric.key.0 == key)
+        .and_then(|metric| match metric.value {
+            MetricValue::Integer(value) => u32::try_from(value).ok(),
+            _ => None,
+        })
+}
+
+fn metric_f64(metrics: &[MetricCell], key: &str) -> Option<f64> {
+    metrics
+        .iter()
+        .find(|metric| metric.key.0 == key)
+        .and_then(|metric| match metric.value {
+            MetricValue::Decimal(value) => Some(value),
+            _ => None,
+        })
 }

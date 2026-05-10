@@ -7,6 +7,7 @@
 pub mod context;
 pub mod goalies;
 pub mod leaders;
+pub mod player_card;
 pub mod poach;
 pub mod team_depth;
 pub mod tokens;
@@ -18,6 +19,7 @@ pub use context::{
 };
 pub use goalies::{GoalieRoleFilter, GoalieRoleSignal, GoalieRow, GoaliesView};
 pub use leaders::{LeaderKind, LeaderRow, LeadersView};
+pub use player_card::{PlayerCardView, PlayerCareerSummary, PlayerSeasonSummary};
 pub use poach::{
     default_watch_rules_view, poach_report_context, poach_report_from_board,
     weekly_poach_report_from_board, weekly_poach_report_from_board_with_watched, AvailabilityState,
@@ -39,8 +41,8 @@ mod tests {
     use crate::season_stats::SeasonType;
     use crate::view_model::{
         Completeness, EmptyKind, LeaderKind, LeadersView, MetricCell, MetricUnit, MetricValue,
-        SemanticToken, SourceKind, SourceProvenance, SourceState, StatKey, ValuePrecision,
-        ViewContext, ViewWindow,
+        PlayerCardView, SemanticToken, SourceKind, SourceProvenance, SourceState, StatKey,
+        ValuePrecision, ViewContext, ViewWindow,
     };
 
     #[test]
@@ -363,5 +365,44 @@ mod tests {
         assert_eq!(center["metrics"][3]["key"], "assists");
         assert_eq!(center["metrics"][4]["key"], "points");
         assert_eq!(center["metrics"][5]["key"], "gp");
+    }
+
+    #[test]
+    fn player_card_viewmodel_contract_fixture_serializes_context_active_and_career() {
+        let (identity, stats) = crate::fixtures::stat_catalog_variants::skater_modern();
+        let player_id = identity.id;
+        let repo = crate::fixtures::test_repo_with(identity, stats);
+
+        let mut view = PlayerCardView::from_repository(
+            &repo,
+            player_id,
+            Season(20242025),
+            SeasonType::Regular,
+        )
+        .expect("player exists");
+        view.context.data_generation = Some("campbell-player-card-fixture-v1".to_string());
+
+        let json = serde_json::to_value(&view).expect("serialize player card view");
+
+        assert_eq!(json["context"]["window"]["season"], 20242025);
+        assert_eq!(json["context"]["window"]["season_type"], "regular");
+        assert_eq!(
+            json["context"]["data_generation"],
+            "campbell-player-card-fixture-v1"
+        );
+        assert_eq!(json["player_id"], 8478402);
+        assert_eq!(json["display_name"], "Connor McDavid");
+        assert_eq!(
+            json["headshot_url"],
+            "https://assets.nhle.com/mugs/nhl/default/8478402.png"
+        );
+        assert_eq!(json["active"]["position"], "Center");
+        assert_eq!(json["active"]["team"], "EDM");
+        assert_eq!(json["active"]["metrics"][0]["key"], "gp");
+        assert_eq!(json["active"]["metrics"][3]["key"], "points");
+        assert_eq!(json["active"]["metrics"][4]["key"], "points_per_game");
+        assert_eq!(json["active"]["metrics"][4]["unit"], "per_game");
+        assert_eq!(json["career"][0]["season"], 20242025);
+        assert_eq!(json["career"][0]["metrics"][3]["value"]["integer"], 130);
     }
 }
