@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
+use crate::model::TeamAbbr;
+use crate::name::normalize_name;
 use crate::view_model::context::{
     EmptyKind, EmptyState, SourceKind, SourceState, ViewContext, ViewWarning,
 };
@@ -72,6 +74,50 @@ pub struct FavoriteMemberRow {
     pub kind: String,
     pub key: String,
     pub stat_line: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FavoriteMutationIntent {
+    pub kind: String,
+    pub key: String,
+    pub entity_ref: String,
+    pub redirect_to: String,
+}
+
+impl FavoriteMutationIntent {
+    pub fn resolve(
+        key: &str,
+        kind_hint: Option<&str>,
+        return_to: Option<&str>,
+        referer_path: Option<&str>,
+    ) -> Result<Self, String> {
+        let trimmed = key.trim();
+        if trimmed.is_empty() {
+            return Err("Empty key - pass a player name or team abbrev.".to_string());
+        }
+
+        let (kind, key) = match kind_hint {
+            Some("team") => ("team".to_string(), trimmed.to_uppercase()),
+            Some("player") => ("player".to_string(), normalize_name(trimmed)),
+            _ => match TeamAbbr::parse(trimmed) {
+                Ok(abbr) => ("team".to_string(), abbr.0),
+                Err(_) => ("player".to_string(), normalize_name(trimmed)),
+            },
+        };
+        let entity_ref = format!("{kind}:{key}");
+        let redirect_to = return_to
+            .or(referer_path)
+            .filter(|path| path.starts_with('/') && !path.starts_with("//"))
+            .unwrap_or("/favorites")
+            .to_string();
+
+        Ok(Self {
+            kind,
+            key,
+            entity_ref,
+            redirect_to,
+        })
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

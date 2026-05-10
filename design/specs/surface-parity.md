@@ -74,7 +74,7 @@ a feature fully shipped.
 
 | Feature | ViewModel | CLI | TUI | Web HTML | Web JSON | Status | Owner |
 |---|---|---|---|---|---|---|---|
-| Favorites/groups | `FavoritesView` | `group ...` | favorites/group affordances | `/favorites` | `/api/v1/favorites` | partial - web HTML and read JSON project membership through `FavoritesView`; mutation parity and richer nightly dashboard alignment remain | Ted Lindsay |
+| Favorites/groups | `FavoritesView` | `group ...` | favorites/group affordances | `/favorites` | `/api/v1/favorites` | partial - web HTML/read JSON project membership through `FavoritesView`; web mutation normalization uses shared intent; richer nightly dashboard alignment remains | Ted Lindsay |
 | Fantasy league management | `FantasyLeagueView` | `fantasy ...` | groups/deep links | `/fantasy...` | planned/verify | deferred/partial - local-only stance remains | Ted Lindsay |
 | Poacher board | `PoachBoardView` | `poach` | Poach screen | `/poach` | `/api/v1/poach` | implemented - shared board ViewModel across CLI/TUI/web/JSON | Selke |
 | Watch rules | `WatchRulesView` / `WatchlistView` | `watch ...` | watchlist workspace shows notes/rules/recent alerts; rule editor deferred | `/watchlist` | `/api/v1/watch-rules`; `/api/v1/watchlist` | partial - web watchlist HTML/JSON project notes through `WatchlistView`; web watch-rules JSON builds defaults plus persisted rules through `WatchRulesView`; editor/toggle UX remains deferred | Selke |
@@ -176,8 +176,8 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /api/v1/watchlist` | `handlers/favorites.rs` | JSON | Watch rules | partial - projects stable `watchlist.v1` payload from `WatchlistView` |
 | `GET /game/:id` | `handlers/game.rs` | HTML | Game detail | partial - projects boxscore detail from `GameView`; TUI alignment remains |
 | `GET /api/v1/game/:id` | `handlers/game.rs` | JSON | Game detail | partial - projects stable envelope from `GameView`; covered by `l1_conn_smythe_c3_game_json_envelope_shape` |
-| `POST /favorites/add` | `handlers/favorites.rs` | mutation | Favorites/groups | partial |
-| `POST /favorites/remove` | `handlers/favorites.rs` | mutation | Favorites/groups | partial |
+| `POST /favorites/add` | `handlers/favorites.rs` | mutation | Favorites/groups | partial - normalizes favorite mutation intent through `FavoritesView` support |
+| `POST /favorites/remove` | `handlers/favorites.rs` | mutation | Favorites/groups | partial - normalizes favorite mutation intent through `FavoritesView` support |
 | `GET /transactions` | `handlers/transactions.rs` | HTML | Transactions | partial - projects transaction feed from `TransactionsView`; CLI/TUI alignment remains |
 | `GET /api/v1/transactions` | `handlers/transactions.rs` | JSON | Transactions | partial - projects stable envelope from `TransactionsView`; covered by `l1_transactions_json_envelope_shape` |
 | `GET /fantasy` | `handlers/coming_soon.rs` | HTML stub | Fantasy league management | deferred |

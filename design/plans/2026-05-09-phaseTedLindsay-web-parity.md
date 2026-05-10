@@ -174,6 +174,10 @@ Progress:
   `COMMANDS.md` plus source metadata through the shared docs contract.
 - 2026-05-10: Moved watch-rule source-state assembly and persisted-rule merge
   into the shared `WatchRulesView` builder used by `/api/v1/watch-rules`.
+- 2026-05-10: Added shared favorite mutation intent normalization so
+  `/favorites/add` and `/favorites/remove` use the same team/player detection,
+  player-name normalization, entity-ref construction, and safe redirect logic
+  as the platform contract instead of duplicating it in the web helper.
 
 ---
 

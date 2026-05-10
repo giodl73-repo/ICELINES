@@ -31,8 +31,8 @@ pub use context::{
 };
 pub use docs::DocsView;
 pub use favorites::{
-    FavoriteMemberInput, FavoriteMemberRow, FavoritesView, WatchNoteInput, WatchlistMemberRow,
-    WatchlistView,
+    FavoriteMemberInput, FavoriteMemberRow, FavoriteMutationIntent, FavoritesView, WatchNoteInput,
+    WatchlistMemberRow, WatchlistView,
 };
 pub use game::{
     GameBoxscoreInput, GameGoalInput, GameGoalRow, GameGoalieInput, GameGoalieRow, GameSkaterInput,
@@ -71,12 +71,12 @@ mod tests {
     use crate::season_stats::SeasonType;
     use crate::view_model::{
         CareerSortKey, CareerView, CompareView, Completeness, DepthLeagueView, DocsView, EmptyKind,
-        FavoriteMemberInput, FavoritesView, GameBoxscoreInput, GameGoalInput, GameGoalieInput,
-        GameSkaterInput, GameView, HomeView, LeaderKind, LeadersView, MetricCell, MetricUnit,
-        MetricValue, PlayerCardView, PlayoffsBracketInput, PlayoffsRoundInput, PlayoffsSeriesInput,
-        PlayoffsView, ScheduleView, ScheduledGameInput, ScoresView, SemanticToken, SourceKind,
-        SourceProvenance, SourceState, StatKey, TransactionsView, ValuePrecision, ViewContext,
-        ViewWindow, WatchNoteInput, WatchlistView,
+        FavoriteMemberInput, FavoriteMutationIntent, FavoritesView, GameBoxscoreInput,
+        GameGoalInput, GameGoalieInput, GameSkaterInput, GameView, HomeView, LeaderKind,
+        LeadersView, MetricCell, MetricUnit, MetricValue, PlayerCardView, PlayoffsBracketInput,
+        PlayoffsRoundInput, PlayoffsSeriesInput, PlayoffsView, ScheduleView, ScheduledGameInput,
+        ScoresView, SemanticToken, SourceKind, SourceProvenance, SourceState, StatKey,
+        TransactionsView, ValuePrecision, ViewContext, ViewWindow, WatchNoteInput, WatchlistView,
     };
 
     #[test]
@@ -308,6 +308,27 @@ mod tests {
             Some("EDM 4-2 W · 1G 2A 3P")
         );
         assert!(view.empty_state.is_none());
+    }
+
+    #[test]
+    fn favorite_mutation_intent_resolves_kind_key_and_safe_redirect() {
+        let team = FavoriteMutationIntent::resolve("edm", None, Some("/team/EDM"), None)
+            .expect("team intent");
+        assert_eq!(team.kind, "team");
+        assert_eq!(team.key, "EDM");
+        assert_eq!(team.entity_ref, "team:EDM");
+        assert_eq!(team.redirect_to, "/team/EDM");
+
+        let player = FavoriteMutationIntent::resolve(
+            "Connor McDavid",
+            Some("player"),
+            Some("//evil.example/path"),
+            Some("/favorites"),
+        )
+        .expect("player intent");
+        assert_eq!(player.kind, "player");
+        assert_eq!(player.key, "connor mcdavid");
+        assert_eq!(player.redirect_to, "/favorites");
     }
 
     #[test]

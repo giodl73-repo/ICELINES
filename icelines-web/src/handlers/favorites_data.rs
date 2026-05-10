@@ -158,20 +158,12 @@ pub(crate) fn mutate_favorites(
     return_to: Option<&str>,
     op: MutateOp,
 ) -> Result<String, String> {
-    let trimmed = key.trim();
-    if trimmed.is_empty() {
-        return Err("Empty key - pass a player name or team abbrev.".to_owned());
-    }
-
-    let (kind, key) = match kind_hint {
-        Some("team") => ("team", trimmed.to_uppercase()),
-        Some("player") => ("player", icelines_core::name::normalize_name(trimmed)),
-        _ => match icelines_core::TeamAbbr::parse(trimmed) {
-            Ok(abbr) => ("team", abbr.0),
-            Err(_) => ("player", icelines_core::name::normalize_name(trimmed)),
-        },
-    };
-    let entity_ref = format!("{kind}:{key}");
+    let intent = icelines_core::FavoriteMutationIntent::resolve(
+        key,
+        kind_hint,
+        return_to,
+        referer_path(headers),
+    )?;
 
     let home = std::env::var_os("HOME")
         .or_else(|| std::env::var_os("USERPROFILE"))
@@ -201,21 +193,17 @@ pub(crate) fn mutate_favorites(
             "INSERT OR IGNORE INTO group_members \
                      (group_name, entity_ref, added_at) \
                      VALUES ('Favorites', ?1, datetime('now'))",
-            rusqlite::params![entity_ref],
+            rusqlite::params![intent.entity_ref],
         ),
         MutateOp::Remove => conn.execute(
             "DELETE FROM group_members \
                      WHERE group_name = 'Favorites' AND entity_ref = ?1",
-            rusqlite::params![entity_ref],
+            rusqlite::params![intent.entity_ref],
         ),
     };
     result.map_err(|e| format!("db mutation: {e}"))?;
 
-    Ok(return_to
-        .or_else(|| referer_path(headers))
-        .filter(|p| p.starts_with('/') && !p.starts_with("//"))
-        .unwrap_or("/favorites")
-        .to_string())
+    Ok(intent.redirect_to)
 }
 
 fn referer_path(headers: &HeaderMap) -> Option<&str> {
