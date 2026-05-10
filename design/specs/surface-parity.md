@@ -88,7 +88,7 @@ a feature fully shipped.
 |---|---|---|---|---|---|---|---|
 | Data install/list/remove | `DataStatusView` | `data ...` | admin overlay | admin/snapshots planned/verify | planned/verify | partial | Jim Gregory/Ted Lindsay |
 | Snapshot operations | `SnapshotView` | `snapshot ...` | admin overlay | `/admin/snapshots` planned/verify | `/api/v1/admin/snapshots` planned/verify | partial | Jim Gregory/Ted Lindsay |
-| Config/report toggles | `ConfigView` | `config ...` | reports overlay | reports/settings planned/verify | `/api/v1/reports` planned/verify | partial | Jim Gregory/Ted Lindsay |
+| Config/report toggles | `ConfigView` | `config ...` | reports overlay | reports/settings planned/verify | `/api/v1/reports` planned/verify | partial - web season-type mutation normalization uses shared intent; report toggles remain planned | Jim Gregory/Ted Lindsay |
 | Docs reference | `DocsView` | `docs` | in-TUI docs overlay planned | `/docs` | n/a | partial - web docs render from `DocsView`; TUI overlay alignment remains | Lester Patrick/Ted Lindsay |
 
 ---
@@ -163,7 +163,7 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /career` | `handlers/career.rs` | HTML | Career/cross-league cohorts | partial - projects cohort rows from `CareerView` |
 | `GET /api/v1/career` | `handlers/career.rs` | JSON | Career/cross-league cohorts | partial - projects stable envelope from `CareerView`; empty-store 400 remains accepted |
 | `GET /docs` | `handlers/docs.rs` | HTML | Docs reference | partial - renders `COMMANDS.md` through `DocsView` |
-| `GET /season-type/:kind` | `handlers/season_type.rs` | mutating redirect | Config/report toggles | partial |
+| `GET /season-type/:kind` | `handlers/season_type.rs` | mutating redirect | Config/report toggles | partial - normalizes season-type mutation intent through shared config support |
 | `GET /scores` | `handlers/scores.rs` | HTML | Scores/tonight | partial - projects score days from `ScoresView`; CLI/TUI alignment remains |
 | `GET /api/v1/scores` | `handlers/scores.rs` | JSON | Scores/tonight | partial - projects stable envelope from `ScoresView`; covered by `l1_scores_json_envelope_shape` |
 | `GET /schedule` | `handlers/schedule.rs` | HTML | Schedule | partial - projects schedule rows from `ScheduleView`; CLI/TUI alignment remains |

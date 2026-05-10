@@ -178,6 +178,9 @@ Progress:
   `/favorites/add` and `/favorites/remove` use the same team/player detection,
   player-name normalization, entity-ref construction, and safe redirect logic
   as the platform contract instead of duplicating it in the web helper.
+- 2026-05-10: Added shared season-type mutation intent normalization so
+  `/season-type/:kind` uses one core contract for season-type whitelisting and
+  safe same-origin redirect selection while the web layer only mutates state.
 
 ---
 

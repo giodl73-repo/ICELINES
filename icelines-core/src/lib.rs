@@ -76,8 +76,8 @@ pub use view_model::{
     PlayerSeasonSummary, PlayoffsBracketInput, PlayoffsRoundInput, PlayoffsRoundRow,
     PlayoffsSeriesInput, PlayoffsSeriesRow, PlayoffsView, RecoveryAction, ReportContext,
     ReportKind, ReportSectionRef, ScheduleGameRow, ScheduleView, ScheduledGameInput, ScoreGameRow,
-    ScoresDayView, ScoresView, SemanticToken, SortDirection, SortKey, SortState, SourceKind,
-    SourceProvenance, SourceState, StatKey, TeamChipView, TeamDepthView, TransactionViewRow,
-    TransactionsView, ValuePrecision, ViewContext, ViewWarning, ViewWindow, WarningKind,
-    WatchNoteInput, WatchlistMemberRow, WatchlistView,
+    ScoresDayView, ScoresView, SeasonTypeMutationIntent, SemanticToken, SortDirection, SortKey,
+    SortState, SourceKind, SourceProvenance, SourceState, StatKey, TeamChipView, TeamDepthView,
+    TransactionViewRow, TransactionsView, ValuePrecision, ViewContext, ViewWarning, ViewWindow,
+    WarningKind, WatchNoteInput, WatchlistMemberRow, WatchlistView,
 };

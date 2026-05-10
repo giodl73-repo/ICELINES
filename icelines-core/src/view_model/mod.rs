@@ -6,6 +6,7 @@
 
 pub mod career;
 pub mod compare;
+pub mod config;
 pub mod context;
 pub mod docs;
 pub mod favorites;
@@ -24,6 +25,7 @@ pub mod transactions;
 
 pub use career::{CareerRow, CareerSortKey, CareerView};
 pub use compare::CompareView;
+pub use config::SeasonTypeMutationIntent;
 pub use context::{
     AppliedFilter, Completeness, EmptyKind, EmptyState, FilterKey, FilterOp, RecoveryAction,
     ReportContext, ReportKind, ReportSectionRef, SortDirection, SortKey, SortState, SourceKind,
@@ -75,8 +77,9 @@ mod tests {
         GameGoalInput, GameGoalieInput, GameSkaterInput, GameView, HomeView, LeaderKind,
         LeadersView, MetricCell, MetricUnit, MetricValue, PlayerCardView, PlayoffsBracketInput,
         PlayoffsRoundInput, PlayoffsSeriesInput, PlayoffsView, ScheduleView, ScheduledGameInput,
-        ScoresView, SemanticToken, SourceKind, SourceProvenance, SourceState, StatKey,
-        TransactionsView, ValuePrecision, ViewContext, ViewWindow, WatchNoteInput, WatchlistView,
+        ScoresView, SeasonTypeMutationIntent, SemanticToken, SourceKind, SourceProvenance,
+        SourceState, StatKey, TransactionsView, ValuePrecision, ViewContext, ViewWindow,
+        WatchNoteInput, WatchlistView,
     };
 
     #[test]
@@ -329,6 +332,28 @@ mod tests {
         assert_eq!(player.kind, "player");
         assert_eq!(player.key, "connor mcdavid");
         assert_eq!(player.redirect_to, "/favorites");
+    }
+
+    #[test]
+    fn season_type_mutation_intent_normalizes_kind_and_safe_redirect() {
+        let playoff = SeasonTypeMutationIntent::resolve(
+            "playoffs",
+            Some("http://127.0.0.1:8000/player/8478402"),
+        );
+        assert_eq!(playoff.active_season_type, "playoff");
+        assert_eq!(playoff.redirect_to, "/player/8478402");
+
+        let regular = SeasonTypeMutationIntent::resolve("garbage", Some("https://evil.example/x"));
+        assert_eq!(regular.active_season_type, "regular");
+        assert_eq!(regular.redirect_to, "/");
+
+        let scheme_relative =
+            SeasonTypeMutationIntent::resolve("playoff", Some("http://localhost:8000//evil"));
+        assert_eq!(scheme_relative.redirect_to, "/");
+
+        let fake_local =
+            SeasonTypeMutationIntent::resolve("playoff", Some("http://localhost.evil/path"));
+        assert_eq!(fake_local.redirect_to, "/");
     }
 
     #[test]
