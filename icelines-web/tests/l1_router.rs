@@ -11,18 +11,21 @@
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use axum::response::Response;
+use icelines_core::career_history::{CareerGameType, CareerHistory, CareerStint, LeagueAbbrev};
 use icelines_core::identity::PlayerId;
 use icelines_core::season_stats::SeasonType;
 use icelines_core::view_model::{DepthGoalieSlot, DepthLine, DepthPair, DepthPlayerSlot};
 use icelines_core::{
-    CompareView, DepthLeagueView, DepthTeamStrengthRow, MetricCell, MetricValue, PlayerCardView,
-    Season, TeamAbbr, TeamDepthView,
+    CareerSortKey, CareerView, CompareView, DepthLeagueView, DepthTeamStrengthRow, MetricCell,
+    MetricValue, PlayerCardView, Season, TeamAbbr, TeamDepthView, ViewContext, ViewWindow,
 };
+use icelines_fetch::career_landing::CareerHistoryStore;
 use icelines_fetch::snapshot::SnapshotStore;
 use icelines_fetch::stats_loader::{load_into_repo, load_player_career_into_repo};
 use icelines_web::{router, WebConfig, WebState};
 use serde_json::{Map, Value};
 use std::collections::BTreeSet;
+use std::collections::HashMap;
 use std::sync::OnceLock;
 use tokio::sync::Mutex;
 use tower::util::ServiceExt;
@@ -150,6 +153,19 @@ struct CompareCardSnapshot {
     assists: u32,
     points: u32,
     points_per_game: String,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct CareerRowSnapshot {
+    rank: u64,
+    player_id: u32,
+    name: String,
+    team: String,
+    games: u32,
+    goals: Option<u32>,
+    assists: Option<u32>,
+    points: Option<u32>,
+    points_per_game: Option<String>,
 }
 
 fn depth_league_row_snapshots(rows: &[DepthTeamStrengthRow]) -> Vec<DepthLeagueRowSnapshot> {
@@ -337,6 +353,90 @@ fn json_compare_card_snapshot(row: &Value) -> CompareCardSnapshot {
     }
 }
 
+fn career_row_snapshots(rows: &[icelines_core::CareerRow]) -> Vec<CareerRowSnapshot> {
+    rows.iter()
+        .map(|row| CareerRowSnapshot {
+            rank: row.rank as u64,
+            player_id: row.player_id,
+            name: row.name.clone(),
+            team: row.team.clone(),
+            games: row.gp,
+            goals: row.goals,
+            assists: row.assists,
+            points: row.points,
+            points_per_game: row.points_per_game.map(normalized_score),
+        })
+        .collect()
+}
+
+fn json_career_row_snapshots(json: &Value) -> Vec<CareerRowSnapshot> {
+    json["data"]
+        .as_array()
+        .expect("career data array")
+        .iter()
+        .map(|row| CareerRowSnapshot {
+            rank: row["rank"]
+                .as_u64()
+                .unwrap_or_else(|| panic!("rank should be a JSON number in row {row}")),
+            player_id: json_u32(row, "player_id"),
+            name: json_str(row, "name"),
+            team: json_str(row, "team"),
+            games: json_u32(row, "gp"),
+            goals: optional_json_u32(row, "goals"),
+            assists: optional_json_u32(row, "assists"),
+            points: optional_json_u32(row, "points"),
+            points_per_game: optional_json_f64(row, "points_per_game").map(normalized_score),
+        })
+        .collect()
+}
+
+fn career_history(player_id: u32, stints: Vec<CareerStint>) -> CareerHistory {
+    CareerHistory { player_id, stints }
+}
+
+fn career_stint(
+    season: u32,
+    league: &str,
+    team: &str,
+    gp: u32,
+    goals: u32,
+    assists: u32,
+) -> CareerStint {
+    CareerStint {
+        season: Season(season),
+        league: LeagueAbbrev::new(league),
+        team: team.to_owned(),
+        game_type: CareerGameType::Regular,
+        sequence: 0,
+        gp,
+        goals: Some(goals),
+        assists: Some(assists),
+        points: Some(goals + assists),
+        pim: None,
+        plus_minus: None,
+        power_play_goals: None,
+        power_play_points: None,
+        shorthanded_goals: None,
+        shorthanded_points: None,
+        game_winning_goals: None,
+        ot_goals: None,
+        shots: None,
+        shooting_pct: None,
+        avg_toi_sec: None,
+        faceoff_win_pct: None,
+        games_started: None,
+        wins: None,
+        losses: None,
+        ot_losses: None,
+        goals_against: None,
+        goals_against_avg: None,
+        save_pct: None,
+        shots_against: None,
+        shutouts: None,
+        time_on_ice_sec: None,
+    }
+}
+
 fn team_depth_skater_snapshots(view: &TeamDepthView) -> Vec<TeamDepthSkaterSnapshot> {
     let mut rows: Vec<_> = team_depth_skater_slots(view)
         .into_iter()
@@ -466,6 +566,14 @@ fn json_u32(row: &Value, key: &str) -> u32 {
         .as_u64()
         .and_then(|value| u32::try_from(value).ok())
         .unwrap_or_else(|| panic!("{key} should be a u32 JSON number in row {row}"))
+}
+
+fn optional_json_u32(row: &Value, key: &str) -> Option<u32> {
+    if row[key].is_null() {
+        None
+    } else {
+        Some(json_u32(row, key))
+    }
 }
 
 fn json_f64(row: &Value, key: &str) -> f64 {
@@ -1332,6 +1440,77 @@ async fn l1_api_career_envelope_shape() {
         let obj = assert_shared_error_envelope(&v, "career");
         assert!(obj["data"].as_array().is_some_and(Vec::is_empty));
     }
+}
+
+#[tokio::test]
+async fn l1_api_career_rows_match_career_view() {
+    let _guard = home_env_lock().await;
+    let dir = tempfile::tempdir().expect("temp home");
+    let prev_userprofile = std::env::var_os("USERPROFILE");
+    let prev_home = std::env::var_os("HOME");
+    std::env::set_var("USERPROFILE", dir.path());
+    std::env::set_var("HOME", dir.path());
+
+    let mut store = CareerHistoryStore::new();
+    store.upsert(career_history(
+        990001,
+        vec![career_stint(20142015, "OHL", "ER", 60, 40, 50)],
+    ));
+    store.upsert(career_history(
+        990002,
+        vec![career_stint(20142015, "OHL", "LDN", 62, 30, 45)],
+    ));
+    store.upsert(career_history(
+        990003,
+        vec![career_stint(20142015, "OHL", "OSH", 55, 28, 30)],
+    ));
+    let histories: Vec<_> = store
+        .histories
+        .iter()
+        .filter_map(|(pid, history)| pid.parse::<u32>().ok().map(|pid| (pid, history.clone())))
+        .collect();
+    let expected_view = CareerView::from_histories(
+        ViewContext::new(ViewWindow::new(Season(0), SeasonType::Regular)),
+        "OHL".to_owned(),
+        Some(20142015),
+        CareerSortKey::Points,
+        2,
+        histories,
+        HashMap::new(),
+    );
+    let expected_rows = career_row_snapshots(&expected_view.rows);
+    let path = dir.path().join(".icelines").join("career_history.json");
+    store.save(&path).expect("save career store");
+
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/career?league=OHL&season=20142015&sort=points&top=2")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    match prev_userprofile {
+        Some(value) => std::env::set_var("USERPROFILE", value),
+        None => std::env::remove_var("USERPROFILE"),
+    }
+    match prev_home {
+        Some(value) => std::env::set_var("HOME", value),
+        None => std::env::remove_var("HOME"),
+    }
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json = response_json(response, 1024 * 1024).await;
+    assert_data_meta_envelope(&json, "career");
+    assert_eq!(json["meta"]["league"], serde_json::json!("OHL"));
+    assert_eq!(json["meta"]["season"], serde_json::json!(20142015));
+    assert_eq!(json["meta"]["sort"], serde_json::json!("points"));
+    assert_eq!(json["meta"]["count"], serde_json::json!(2));
+    assert_eq!(json["meta"]["total"], serde_json::json!(3));
+    assert_eq!(json_career_row_snapshots(&json), expected_rows);
 }
 
 /// l1_depth_json_envelope_shape (T3)
