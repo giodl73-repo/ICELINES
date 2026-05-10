@@ -123,6 +123,9 @@ Progress:
 - 2026-05-09: `design/specs/surface-parity.md` now includes the mounted web
   route inventory from `icelines_web::router`, including HTML, JSON, mutation,
   asset, report, and stub routes.
+- 2026-05-10: Added `icelines-web/tests/ted_lindsay_route_inventory.rs`,
+  which fails if a mounted router route is missing from
+  `design/specs/surface-parity.md`.
 
 ---
 

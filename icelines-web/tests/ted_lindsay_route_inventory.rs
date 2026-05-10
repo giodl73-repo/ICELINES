@@ -1,0 +1,76 @@
+//! Ted Lindsay route inventory gate.
+//!
+//! Every mounted web route must be represented in the surface parity matrix.
+//! This keeps `icelines_web::router` and `design/specs/surface-parity.md` from
+//! drifting as HTML/API routes are added.
+
+const ROUTER_ROUTES: &[&str] = &[
+    "GET /",
+    "GET /static/:asset",
+    "GET /leaders",
+    "GET /api/v1/leaders",
+    "GET /player/:id",
+    "GET /api/v1/player/:id",
+    "GET /compare",
+    "GET /api/v1/compare",
+    "GET /goalies",
+    "GET /api/v1/goalies",
+    "GET /team/:abbrev",
+    "GET /api/v1/team/:abbrev",
+    "GET /depth",
+    "GET /api/v1/depth",
+    "GET /poach",
+    "GET /reports/poach",
+    "GET /reports/weekly",
+    "GET /api/v1/poach",
+    "GET /api/v1/watch-rules",
+    "GET /career",
+    "GET /api/v1/career",
+    "GET /docs",
+    "GET /season-type/:kind",
+    "GET /scores",
+    "GET /api/v1/scores",
+    "GET /schedule",
+    "GET /api/v1/schedule",
+    "GET /playoffs",
+    "GET /api/v1/playoffs",
+    "GET /favorites",
+    "GET /api/v1/favorites",
+    "GET /watchlist",
+    "GET /api/v1/watchlist",
+    "GET /game/:id",
+    "GET /api/v1/game/:id",
+    "POST /favorites/add",
+    "POST /favorites/remove",
+    "GET /transactions",
+    "GET /api/v1/transactions",
+    "GET /fantasy",
+];
+
+#[test]
+fn every_router_route_is_in_surface_parity_matrix() {
+    let matrix = include_str!("../../design/specs/surface-parity.md");
+    let missing: Vec<&str> = ROUTER_ROUTES
+        .iter()
+        .copied()
+        .filter(|route| !matrix.contains(&format!("`{route}`")))
+        .collect();
+
+    assert!(
+        missing.is_empty(),
+        "surface-parity.md is missing mounted route(s): {missing:?}"
+    );
+}
+
+#[test]
+fn route_inventory_has_no_duplicate_entries() {
+    let mut sorted = ROUTER_ROUTES.to_vec();
+    sorted.sort_unstable();
+    sorted.dedup();
+
+    assert_eq!(
+        sorted.len(),
+        ROUTER_ROUTES.len(),
+        "Ted Lindsay route inventory contains duplicate route entries"
+    );
+}
