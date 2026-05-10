@@ -1124,8 +1124,11 @@ async fn l1_transactions_json_envelope_shape() {
     let json: serde_json::Value =
         serde_json::from_slice(&bytes).expect("transactions response should be valid json");
 
-    assert_eq!(json["schema_version"], 1);
-    assert_eq!(json["route"], "transactions");
+    let obj = assert_data_meta_envelope(&json, "transactions");
+    assert!(
+        !obj.contains_key("error"),
+        "successful transactions envelope should not carry error"
+    );
     assert_eq!(json["meta"]["active_kind"], "trade");
     assert_eq!(json["meta"]["active_team"], "TOR");
     assert!(json["meta"]["total"].is_number());

@@ -103,7 +103,7 @@ pub async fn get_transactions_json(
     Query(q): Query<TransactionsQuery>,
 ) -> Response {
     match build_transactions_result(&state, &q).await {
-        Ok(result) => crate::api::json_envelope(
+        Ok(result) => crate::api::json_data_meta(
             "transactions",
             result.rows,
             TransactionsMeta {
@@ -115,7 +115,6 @@ pub async fn get_transactions_json(
                 out_of_coverage: result.out_of_coverage,
                 earliest_season: result.earliest_season_pretty,
             },
-            None,
         ),
         Err(msg) => crate::api::json_error_meta(
             StatusCode::BAD_REQUEST,
