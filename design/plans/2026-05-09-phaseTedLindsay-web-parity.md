@@ -164,6 +164,9 @@ Progress:
   membership plus notes and migrated `/watchlist` plus `/api/v1/watchlist` to
   project through that shared read contract while keeping richer
   `WatchRulesView` rule/history work separate.
+- 2026-05-10: Added core `CareerView` and migrated `/career` plus
+  `/api/v1/career` to project cross-league cohort rows, resolved season, sort,
+  counts, and empty state through the shared career contract.
 
 ---
 

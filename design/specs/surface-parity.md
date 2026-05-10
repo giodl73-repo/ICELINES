@@ -51,6 +51,7 @@ a feature fully shipped.
 | Team depth | `TeamDepthView` | `team <ABBR>` | `tui team <ABBR>` | `/team/:abbrev` | `/api/v1/team/:abbrev` | partial - CLI team, markdown export, web HTML, and web JSON build `TeamDepthView`; TUI team/depth alignment remains pending Ted/Messier | Campbell/Ted Lindsay |
 | Cross-team depth | `DepthLeagueView` | `depth` or equivalent | `tui depth` | `/depth` | `/api/v1/depth` | partial - web HTML and web JSON build `DepthLeagueView`; CLI/TUI adapter alignment remains | Ted Lindsay |
 | Compare/comps | `CompareView` | `query compare A B` | `tui comps <name>` | `/compare?...` | `/api/v1/compare?...` | partial - web HTML and web JSON build `CompareView`; CLI/TUI adapter alignment remains | Ted Lindsay |
+| Career/cohort leaders | `CareerView` | `query career --league ...` | player/favorites affordances | `/career` | `/api/v1/career` | partial - web HTML and web JSON build `CareerView`; CLI adapter alignment remains | Calder/Ted Lindsay |
 | Scouting report | `ReportView` | `scouting <name>` | player detail/report affordance | planned/verify | planned/verify | partial - report contract pending | Campbell/Ted Lindsay |
 | Markdown export | `ReportView` | `export md <shape>` | n/a | n/a | n/a | partial - 5/7 shapes shipped | Campbell/Jim Gregory |
 
@@ -158,8 +159,8 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /reports/weekly` | `handlers/poach.rs` | HTML report | Poach/weekly reports | done |
 | `GET /api/v1/poach` | `handlers/poach.rs` | JSON | Poacher board | done |
 | `GET /api/v1/watch-rules` | `handlers/poach.rs` | JSON | Watch rules | partial |
-| `GET /career` | `handlers/career.rs` | HTML | Career/cross-league cohorts | partial |
-| `GET /api/v1/career` | `handlers/career.rs` | JSON | Career/cross-league cohorts | partial |
+| `GET /career` | `handlers/career.rs` | HTML | Career/cross-league cohorts | partial - projects cohort rows from `CareerView` |
+| `GET /api/v1/career` | `handlers/career.rs` | JSON | Career/cross-league cohorts | partial - projects stable envelope from `CareerView`; empty-store 400 remains accepted |
 | `GET /docs` | `handlers/docs.rs` | HTML | Docs reference | partial |
 | `GET /season-type/:kind` | `handlers/season_type.rs` | mutating redirect | Config/report toggles | partial |
 | `GET /scores` | `handlers/scores.rs` | HTML | Scores/tonight | partial - projects score days from `ScoresView`; CLI/TUI alignment remains |

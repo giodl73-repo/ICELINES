@@ -4,6 +4,7 @@
 //! display policy. CLI, TUI, web, JSON, and reports render these shapes without
 //! recomputing hockey logic.
 
+pub mod career;
 pub mod compare;
 pub mod context;
 pub mod favorites;
@@ -19,6 +20,7 @@ pub mod team_depth;
 pub mod tokens;
 pub mod transactions;
 
+pub use career::{CareerRow, CareerSortKey, CareerView};
 pub use compare::CompareView;
 pub use context::{
     AppliedFilter, Completeness, EmptyKind, EmptyState, FilterKey, FilterOp, RecoveryAction,
@@ -63,12 +65,13 @@ mod tests {
     use crate::model::Season;
     use crate::season_stats::SeasonType;
     use crate::view_model::{
-        CompareView, Completeness, DepthLeagueView, EmptyKind, FavoriteMemberInput, FavoritesView,
-        GameBoxscoreInput, GameGoalInput, GameGoalieInput, GameSkaterInput, GameView, LeaderKind,
-        LeadersView, MetricCell, MetricUnit, MetricValue, PlayerCardView, PlayoffsBracketInput,
-        PlayoffsRoundInput, PlayoffsSeriesInput, PlayoffsView, ScheduleView, ScheduledGameInput,
-        ScoresView, SemanticToken, SourceKind, SourceProvenance, SourceState, StatKey,
-        TransactionsView, ValuePrecision, ViewContext, ViewWindow, WatchNoteInput, WatchlistView,
+        CareerSortKey, CareerView, CompareView, Completeness, DepthLeagueView, EmptyKind,
+        FavoriteMemberInput, FavoritesView, GameBoxscoreInput, GameGoalInput, GameGoalieInput,
+        GameSkaterInput, GameView, LeaderKind, LeadersView, MetricCell, MetricUnit, MetricValue,
+        PlayerCardView, PlayoffsBracketInput, PlayoffsRoundInput, PlayoffsSeriesInput,
+        PlayoffsView, ScheduleView, ScheduledGameInput, ScoresView, SemanticToken, SourceKind,
+        SourceProvenance, SourceState, StatKey, TransactionsView, ValuePrecision, ViewContext,
+        ViewWindow, WatchNoteInput, WatchlistView,
     };
 
     #[test]
@@ -135,6 +138,87 @@ mod tests {
         assert_eq!(json["kind"], "scouting");
         assert_eq!(json["view_context"]["window"]["season"], 20252026);
         assert_eq!(json["sections"][0]["id"], "summary");
+    }
+
+    #[test]
+    fn career_viewmodel_filters_latest_league_season_and_sorts() {
+        use crate::career_history::{CareerGameType, CareerHistory, CareerStint, LeagueAbbrev};
+
+        fn stint(season: u32, points: u32, gp: u32, team: &str) -> CareerStint {
+            CareerStint {
+                season: Season(season),
+                league: LeagueAbbrev::new("OHL"),
+                team: team.to_string(),
+                game_type: CareerGameType::Regular,
+                sequence: 0,
+                gp,
+                goals: Some(points / 2),
+                assists: Some(points - (points / 2)),
+                points: Some(points),
+                pim: None,
+                plus_minus: None,
+                power_play_goals: None,
+                power_play_points: None,
+                shorthanded_goals: None,
+                shorthanded_points: None,
+                game_winning_goals: None,
+                ot_goals: None,
+                shots: None,
+                shooting_pct: None,
+                avg_toi_sec: None,
+                faceoff_win_pct: None,
+                games_started: None,
+                wins: None,
+                losses: None,
+                ot_losses: None,
+                goals_against: None,
+                goals_against_avg: None,
+                save_pct: None,
+                shots_against: None,
+                shutouts: None,
+                time_on_ice_sec: None,
+            }
+        }
+
+        let context = ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular));
+        let histories = vec![
+            (
+                1,
+                CareerHistory {
+                    player_id: 1,
+                    stints: vec![stint(20142015, 100, 50, "ERI")],
+                },
+            ),
+            (
+                2,
+                CareerHistory {
+                    player_id: 2,
+                    stints: vec![
+                        stint(20142015, 80, 40, "LDN"),
+                        stint(20132014, 120, 60, "LDN"),
+                    ],
+                },
+            ),
+        ];
+        let mut names = std::collections::HashMap::new();
+        names.insert(1, "Connor McDavid".to_string());
+        names.insert(2, "Mitch Marner".to_string());
+
+        let view = CareerView::from_histories(
+            context,
+            "ohl".to_string(),
+            None,
+            CareerSortKey::Ppg,
+            10,
+            histories,
+            names,
+        );
+
+        assert_eq!(view.league, "ohl");
+        assert_eq!(view.season, 20142015);
+        assert_eq!(view.rows.len(), 2);
+        assert_eq!(view.rows[0].name, "Connor McDavid");
+        assert_eq!(view.rows[0].points_per_game, Some(2.0));
     }
 
     #[test]

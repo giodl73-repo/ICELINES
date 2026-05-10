@@ -92,6 +92,7 @@ pub enum SourceKind {
     Playoffs,
     Favorites,
     Watchlist,
+    Career,
     GameLog,
     Boxscore,
     Shifts,
