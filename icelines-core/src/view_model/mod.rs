@@ -398,10 +398,16 @@ mod tests {
         );
         assert_eq!(json["active"]["position"], "Center");
         assert_eq!(json["active"]["team"], "EDM");
+        assert_eq!(json["active"]["team_display"], "EDM");
         assert_eq!(json["active"]["metrics"][0]["key"], "gp");
         assert_eq!(json["active"]["metrics"][3]["key"], "points");
         assert_eq!(json["active"]["metrics"][4]["key"], "points_per_game");
         assert_eq!(json["active"]["metrics"][4]["unit"], "per_game");
+        assert_eq!(json["active"]["metrics"][5]["key"], "plus_minus");
+        assert_eq!(json["active"]["metrics"][6]["key"], "pim");
+        assert_eq!(json["active"]["metrics"][7]["key"], "shots");
+        assert_eq!(json["active"]["metrics"][8]["key"], "shooting_pct");
+        assert_eq!(json["active"]["metrics"][18]["key"], "toi_per_game_sec");
         assert_eq!(json["career"][0]["season"], 20242025);
         assert_eq!(json["career"][0]["metrics"][3]["value"]["integer"], 130);
     }

@@ -91,6 +91,7 @@ pub struct PlayerSeasonSummary {
     pub season_type: SeasonType,
     pub position: Position,
     pub team: TeamAbbr,
+    pub team_display: String,
     pub metrics: Vec<MetricCell>,
     pub tokens: Vec<SemanticToken>,
 }
@@ -113,6 +114,7 @@ fn player_season_summary(view: &PlayerView<'_>) -> PlayerSeasonSummary {
             .team()
             .cloned()
             .unwrap_or_else(|| TeamAbbr("UNK".to_string())),
+        team_display: view.team_display().to_string(),
         metrics: skater_metrics(
             view.gp(),
             view.goals(),
@@ -123,7 +125,10 @@ fn player_season_summary(view: &PlayerView<'_>) -> PlayerSeasonSummary {
             } else {
                 None
             },
-        ),
+        )
+        .into_iter()
+        .chain(active_detail_metrics(view))
+        .collect(),
         tokens: vec![SemanticToken::SupportingEvidence],
     }
 }
@@ -185,6 +190,96 @@ fn metric_int(key: &str, label: &str, value: u32, unit: MetricUnit) -> MetricCel
         value: MetricValue::Integer(value as i64),
         unit,
         precision: ValuePrecision::Integer,
+        token: None,
+    }
+}
+
+fn active_detail_metrics(view: &PlayerView<'_>) -> Vec<MetricCell> {
+    let totals = &view.stats.totals;
+    vec![
+        metric_signed_int("plus_minus", "+/-", view.plus_minus(), MetricUnit::Count),
+        metric_int("pim", "PIM", totals.pim, MetricUnit::Minutes),
+        metric_int("shots", "SOG", totals.shots, MetricUnit::Count),
+        metric_optional_decimal(
+            "shooting_pct",
+            "S%",
+            totals.shooting_pct.map(f64::from),
+            MetricUnit::Percentage,
+            ValuePrecision::PercentOneDecimal,
+        ),
+        metric_optional_int("hits", "Hits", view.hits(), MetricUnit::Count),
+        metric_optional_int("blocks", "Blocks", view.blocked_shots(), MetricUnit::Count),
+        metric_optional_int(
+            "takeaways",
+            "Takeaways",
+            view.takeaways(),
+            MetricUnit::Count,
+        ),
+        metric_optional_int(
+            "giveaways",
+            "Giveaways",
+            view.giveaways(),
+            MetricUnit::Count,
+        ),
+        metric_optional_decimal(
+            "faceoff_win_pct",
+            "FO%",
+            totals.faceoff_win_pct.map(f64::from),
+            MetricUnit::Percentage,
+            ValuePrecision::PercentOneDecimal,
+        ),
+        metric_int("pp_goals", "PPG", totals.pp_goals, MetricUnit::Goals),
+        metric_int("pp_points", "PPP", totals.pp_points, MetricUnit::Points),
+        metric_int("sh_goals", "SHG", totals.sh_goals, MetricUnit::Goals),
+        metric_int("gwg", "GWG", totals.gwg, MetricUnit::Goals),
+        metric_optional_int(
+            "toi_per_game_sec",
+            "TOI/GP",
+            totals.toi_per_game_sec,
+            MetricUnit::Seconds,
+        ),
+    ]
+}
+
+fn metric_signed_int(key: &str, label: &str, value: i32, unit: MetricUnit) -> MetricCell {
+    MetricCell {
+        key: StatKey::from(key),
+        label: label.to_string(),
+        value: MetricValue::Integer(value as i64),
+        unit,
+        precision: ValuePrecision::Integer,
+        token: None,
+    }
+}
+
+fn metric_optional_int(key: &str, label: &str, value: Option<u32>, unit: MetricUnit) -> MetricCell {
+    MetricCell {
+        key: StatKey::from(key),
+        label: label.to_string(),
+        value: value
+            .map(|value| MetricValue::Integer(value as i64))
+            .unwrap_or(MetricValue::Missing),
+        unit,
+        precision: ValuePrecision::Integer,
+        token: None,
+    }
+}
+
+fn metric_optional_decimal(
+    key: &str,
+    label: &str,
+    value: Option<f64>,
+    unit: MetricUnit,
+    precision: ValuePrecision,
+) -> MetricCell {
+    MetricCell {
+        key: StatKey::from(key),
+        label: label.to_string(),
+        value: value
+            .map(MetricValue::Decimal)
+            .unwrap_or(MetricValue::Missing),
+        unit,
+        precision,
         token: None,
     }
 }

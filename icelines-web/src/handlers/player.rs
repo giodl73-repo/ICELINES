@@ -7,7 +7,9 @@ use axum::response::{Html, IntoResponse, Response};
 use icelines_core::identity::PlayerId;
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
-use icelines_core::{MetricCell, MetricValue, PlayerCardView, PlayerCareerSummary};
+use icelines_core::{
+    MetricCell, MetricValue, PlayerCardView, PlayerCareerSummary, PlayerSeasonSummary,
+};
 
 /// Format a YYYYZZZZ season as "YYYY-YY" (e.g. 20242025 → "2024-25").
 fn pretty_season(s: Season) -> String {
@@ -53,10 +55,10 @@ pub async fn get_player(State(state): State<WebState>, Path(id): Path<u32>) -> R
         }
     }
 
-    let projection = {
+    let (view, compare_suggestions) = {
         let repo = state.repo.read().await;
-        let identity = match repo.identity(pid) {
-            Some(i) => i,
+        let view = match PlayerCardView::from_repository(&repo, pid, season, season_type) {
+            Some(view) => view,
             None => {
                 return not_found_page(format!(
                     "No player with NHL id {id} in the active repository. \
@@ -65,313 +67,23 @@ pub async fn get_player(State(state): State<WebState>, Path(id): Path<u32>) -> R
                 ));
             }
         };
-        // Try the active season's view; fall back to None if
-        // the player has no row that season (e.g. injured all
-        // year, traded mid-season, retired).
-        let view = repo.view(pid, season, season_type);
 
-        // UX.B — pull the expanded stat slice. Each
-        // pre-formatted to a String so the template renders
-        // without inline casts and Option<> shows "—".
-        let opt_u = |o: Option<u32>| -> String {
-            match o {
-                Some(n) => n.to_string(),
-                None => "—".to_owned(),
-            }
-        };
-        let opt_pct = |o: Option<f32>| -> String {
-            match o {
-                Some(p) => {
-                    // NHL APIs report shooting/faceoff% as
-                    // 0.105 (10.5%) — surface as percentage
-                    // with one decimal so users see "10.5".
-                    if p.abs() <= 1.5 {
-                        format!("{:.1}%", p * 100.0)
-                    } else {
-                        format!("{:.1}%", p)
-                    }
-                }
-                None => "—".to_owned(),
-            }
-        };
-        let toi_mmss = |o: Option<u32>| -> String {
-            match o {
-                Some(secs) => {
-                    let m = secs / 60;
-                    let s = secs % 60;
-                    format!("{m}:{s:02}")
-                }
-                None => "—".to_owned(),
-            }
-        };
-
-        let (
-            gp,
-            goals,
-            assists,
-            points,
-            position,
-            team,
-            team_link,
-            plus_minus_str,
-            pim_str,
-            shots_str,
-            shooting_pct_str,
-            hits_str,
-            blocks_str,
-            takeaways_str,
-            giveaways_str,
-            faceoff_pct_str,
-            pp_goals_str,
-            pp_points_str,
-            sh_goals_str,
-            gwg_str,
-            toi_per_game_str,
-        ) = match view {
-            Some(v) => {
-                let totals = &v.stats.totals;
-                let team_display = v.team_display().to_owned();
-                // Only build a /team/ link when the display is
-                // a single uppercase abbrev (skip the "TBL/CGY"
-                // mid-season-trade format).
-                let team_link = if team_display.chars().all(|c| c.is_ascii_alphabetic())
-                    && team_display.len() <= 3
-                {
-                    team_display.clone()
-                } else {
-                    String::new()
-                };
-                (
-                    v.gp(),
-                    v.goals(),
-                    v.assists(),
-                    v.points(),
-                    v.position().abbreviation().to_owned(),
-                    team_display,
-                    team_link,
-                    format!("{:+}", v.plus_minus()),
-                    totals.pim.to_string(),
-                    totals.shots.to_string(),
-                    opt_pct(totals.shooting_pct),
-                    opt_u(v.hits()),
-                    opt_u(v.blocked_shots()),
-                    opt_u(v.takeaways()),
-                    opt_u(v.giveaways()),
-                    opt_pct(totals.faceoff_win_pct),
-                    totals.pp_goals.to_string(),
-                    totals.pp_points.to_string(),
-                    totals.sh_goals.to_string(),
-                    totals.gwg.to_string(),
-                    toi_mmss(totals.toi_per_game_sec),
-                )
-            }
-            None => (
-                0,
-                0,
-                0,
-                0,
-                "—".to_owned(),
-                "—".to_owned(),
-                String::new(),
-                "—".to_owned(),
-                "—".to_owned(),
-                "—".to_owned(),
-                "—".to_owned(),
-                "—".to_owned(),
-                "—".to_owned(),
-                "—".to_owned(),
-                "—".to_owned(),
-                "—".to_owned(),
-                "—".to_owned(),
-                "—".to_owned(),
-                "—".to_owned(),
-                "—".to_owned(),
-                "—".to_owned(),
-            ),
-        };
-        let ppg_str = if gp > 0 {
-            format!("{:.2}", points as f64 / gp as f64)
-        } else {
-            String::new()
-        };
-
-        // King.3.2 — collect every (season, type) row this
-        // player has stats for. Newest first. Skips empty
-        // (gp=0) rows so a player who was rostered but never
-        // played a regular-season game in a given (year,type)
-        // doesn't add noise.
-        //
-        // UX.G — filter to the active season_type so the
-        // career table matches what the global toggle says.
-        // Mixing Regular + Playoff rows under a "Regular"
-        // toggle was confusing.
-        let mut career_rows: Vec<CareerRow> = match repo.career_all(pid) {
-            Some(iter) => iter
-                .filter(|s| s.season_type == season_type)
-                .filter_map(|s| {
-                    let totals = &s.totals;
-                    if totals.gp == 0 {
-                        return None;
-                    }
-                    let last_team = s
-                        .team_stints
-                        .last()
-                        .map(|st| st.team.0.as_str().to_owned())
-                        .unwrap_or_else(|| "—".to_owned());
-                    // Link only when the team is a single
-                    // 2-3 char alpha abbrev — multi-team
-                    // values like "SEA/NYR" or sentinels
-                    // like "—"/"RET" don't get a /team/ URL.
-                    let team_link = if last_team.chars().all(|c| c.is_ascii_alphabetic())
-                        && (2..=3).contains(&last_team.len())
-                    {
-                        last_team.clone()
-                    } else {
-                        String::new()
-                    };
-                    let ppg_str = if totals.gp > 0 {
-                        format!("{:.2}", totals.points as f64 / totals.gp as f64)
-                    } else {
-                        String::new()
-                    };
-                    Some(CareerRow {
-                        season: pretty_season(s.season),
-                        season_type: match s.season_type {
-                            SeasonType::Regular => "Regular".to_owned(),
-                            SeasonType::Playoff => "Playoff".to_owned(),
-                        },
-                        team: last_team,
-                        team_link,
-                        gp: totals.gp,
-                        goals: totals.goals,
-                        assists: totals.assists,
-                        points: totals.points,
-                        ppg_str,
-                    })
-                })
-                .collect(),
-            None => Vec::new(),
-        };
-        // Newest season first; within a season, regular before playoff.
-        career_rows.sort_by(|a, b| {
-            b.season
-                .cmp(&a.season)
-                .then(a.season_type.cmp(&b.season_type))
-        });
-
-        // Sasq.3 — compute YoY delta against the prior season
-        // of the SAME season-type (Regular vs Playoff).
-        // career_rows is already filtered to active type and
-        // sorted newest-first, so the prior season's row is
-        // index 1 (index 0 is the active season we're showing).
-        let prior_row = career_rows.get(1);
-        let prior_season_label = prior_row
-            .map(|r| format!("vs {}", r.season))
-            .unwrap_or_default();
-
-        fn delta_int(now: i64, prior: i64, prior_exists: bool) -> (String, String) {
-            if !prior_exists {
-                return (String::new(), String::new());
-            }
-            let d = now - prior;
-            let class = if d > 0 {
-                "delta-up"
-            } else if d < 0 {
-                "delta-down"
-            } else {
-                "delta-flat"
-            };
-            (format!("{:+}", d), class.to_owned())
-        }
-
-        let prior_exists = prior_row.is_some();
-        let prior_gp = prior_row.map(|r| r.gp as i64).unwrap_or(0);
-        let prior_goals = prior_row.map(|r| r.goals as i64).unwrap_or(0);
-        let prior_assists = prior_row.map(|r| r.assists as i64).unwrap_or(0);
-        let prior_points = prior_row.map(|r| r.points as i64).unwrap_or(0);
-        let (gp_delta, gp_delta_class) = delta_int(gp as i64, prior_gp, prior_exists);
-        let (goals_delta, goals_delta_class) = delta_int(goals as i64, prior_goals, prior_exists);
-        let (assists_delta, assists_delta_class) =
-            delta_int(assists as i64, prior_assists, prior_exists);
-        let (points_delta, points_delta_class) =
-            delta_int(points as i64, prior_points, prior_exists);
-
-        PlayerTemplate {
-            active_label: active_label.clone(),
-            nhl_id: id,
-            full_name: identity.full_name.clone(),
-            position,
-            team,
-            team_link: team_link.clone(),
-            // Prefer the seasonal team-keyed CDN path (real
-            // mug shot for current rosters); fall back to the
-            // legacy `default/{id}.png` (silhouette for many
-            // players) only when we don't have a team to key
-            // by.
-            headshot_url: if !team_link.is_empty() {
-                Some(super::shared::build_headshot_url(season.0, &team_link, id))
-            } else {
-                identity.headshot_canonical_url.clone()
-            },
-            gp,
-            goals,
-            assists,
-            points,
-            ppg_str,
-            plus_minus_str,
-            pim_str,
-            shots_str,
-            shooting_pct_str,
-            hits_str,
-            blocks_str,
-            takeaways_str,
-            giveaways_str,
-            faceoff_pct_str,
-            pp_goals_str,
-            pp_points_str,
-            sh_goals_str,
-            gwg_str,
-            toi_per_game_str,
-            goals_delta,
-            goals_delta_class,
-            assists_delta,
-            assists_delta_class,
-            points_delta,
-            points_delta_class,
-            gp_delta,
-            gp_delta_class,
-            prior_season_label,
-            career_rows,
-            // Phase Calder.3 — pre-NHL career rows for the
-            // template. Loaded from the local store and
-            // pre-formatted into PreNhlRow strings so askama
-            // doesn't have to do float-to-string casts.
-            pre_nhl_career: {
-                let store = icelines_fetch::career_landing::load_local_store();
-                let stints = store
-                    .get(id)
-                    .map(icelines_fetch::career_landing::extract_pre_nhl_stints)
-                    .unwrap_or_default();
-                crate::templates::project_pre_nhl_html_rows(&stints)
-            },
-            // UX.H — every active player + goalie name in
-            // the repo, sorted alphabetically. Renders as a
-            // <datalist> on the page so the Compare-with
-            // input gets native browser autocomplete with
-            // zero JS. Skips the player you're already
-            // viewing — comparing someone with themselves is
-            // never useful.
-            compare_suggestions: {
-                let mut pairs: Vec<(String, u32)> = repo
-                    .iter_identities()
-                    .filter(|i| i.id.0 != pid.0)
-                    .map(|i| (i.full_name.clone(), i.id.0))
-                    .collect();
-                pairs.sort_by(|a, b| a.0.cmp(&b.0));
-                pairs
-            },
-        }
+        let mut compare_suggestions: Vec<(String, u32)> = repo
+            .iter_identities()
+            .filter(|i| i.id.0 != pid.0)
+            .map(|i| (i.full_name.clone(), i.id.0))
+            .collect();
+        compare_suggestions.sort_by(|a, b| a.0.cmp(&b.0));
+        (view, compare_suggestions)
     };
+    let projection = player_template_from_view(
+        view,
+        active_label,
+        id,
+        season,
+        season_type,
+        compare_suggestions,
+    );
 
     match projection.render() {
         Ok(html) => Html(html).into_response(),
@@ -397,8 +109,203 @@ fn not_found_page(msg: String) -> Response {
         .into_response()
 }
 
-// ── King.3.3 — JSON twin ──────────────────────────────────────
+// Shared player page projectors.
 
+fn player_template_from_view(
+    view: PlayerCardView,
+    active_label: String,
+    id: u32,
+    season: Season,
+    season_type: SeasonType,
+    compare_suggestions: Vec<(String, u32)>,
+) -> PlayerTemplate {
+    let active = view.active.as_ref();
+    let (gp, goals, assists, points, position, team, team_link) = active_summary(active);
+    let active_metrics = active
+        .map(|active| active.metrics.as_slice())
+        .unwrap_or(&[]);
+    let ppg_str = metric_f64(active_metrics, "points_per_game")
+        .map(|ppg| format!("{ppg:.2}"))
+        .unwrap_or_default();
+
+    let career_rows: Vec<CareerRow> = view
+        .career
+        .iter()
+        .filter(|row| row.season_type == season_type)
+        .map(career_row_from_view_for_html)
+        .collect();
+
+    let prior_row = career_rows.get(1);
+    let prior_season_label = prior_row
+        .map(|row| format!("vs {}", row.season))
+        .unwrap_or_default();
+    let prior_exists = prior_row.is_some();
+    let prior_gp = prior_row.map(|row| row.gp as i64).unwrap_or(0);
+    let prior_goals = prior_row.map(|row| row.goals as i64).unwrap_or(0);
+    let prior_assists = prior_row.map(|row| row.assists as i64).unwrap_or(0);
+    let prior_points = prior_row.map(|row| row.points as i64).unwrap_or(0);
+    let (gp_delta, gp_delta_class) = delta_int(gp as i64, prior_gp, prior_exists);
+    let (goals_delta, goals_delta_class) = delta_int(goals as i64, prior_goals, prior_exists);
+    let (assists_delta, assists_delta_class) =
+        delta_int(assists as i64, prior_assists, prior_exists);
+    let (points_delta, points_delta_class) = delta_int(points as i64, prior_points, prior_exists);
+
+    let pre_nhl_career = {
+        let store = icelines_fetch::career_landing::load_local_store();
+        let stints = store
+            .get(id)
+            .map(icelines_fetch::career_landing::extract_pre_nhl_stints)
+            .unwrap_or_default();
+        crate::templates::project_pre_nhl_html_rows(&stints)
+    };
+
+    PlayerTemplate {
+        active_label,
+        nhl_id: id,
+        full_name: view.display_name,
+        position,
+        team,
+        team_link: team_link.clone(),
+        headshot_url: if !team_link.is_empty() {
+            Some(super::shared::build_headshot_url(season.0, &team_link, id))
+        } else {
+            view.headshot_url
+        },
+        gp,
+        goals,
+        assists,
+        points,
+        ppg_str,
+        plus_minus_str: metric_i32(active_metrics, "plus_minus")
+            .map(|value| format!("{value:+}"))
+            .unwrap_or_else(dash),
+        pim_str: metric_string_u32_or_dash(active_metrics, "pim"),
+        shots_str: metric_string_u32_or_dash(active_metrics, "shots"),
+        shooting_pct_str: metric_percent_string(active_metrics, "shooting_pct"),
+        hits_str: metric_string_u32_or_dash(active_metrics, "hits"),
+        blocks_str: metric_string_u32_or_dash(active_metrics, "blocks"),
+        takeaways_str: metric_string_u32_or_dash(active_metrics, "takeaways"),
+        giveaways_str: metric_string_u32_or_dash(active_metrics, "giveaways"),
+        faceoff_pct_str: metric_percent_string(active_metrics, "faceoff_win_pct"),
+        pp_goals_str: metric_string_u32_or_dash(active_metrics, "pp_goals"),
+        pp_points_str: metric_string_u32_or_dash(active_metrics, "pp_points"),
+        sh_goals_str: metric_string_u32_or_dash(active_metrics, "sh_goals"),
+        gwg_str: metric_string_u32_or_dash(active_metrics, "gwg"),
+        toi_per_game_str: metric_toi_mmss(active_metrics, "toi_per_game_sec"),
+        goals_delta,
+        goals_delta_class,
+        assists_delta,
+        assists_delta_class,
+        points_delta,
+        points_delta_class,
+        gp_delta,
+        gp_delta_class,
+        prior_season_label,
+        career_rows,
+        pre_nhl_career,
+        compare_suggestions,
+    }
+}
+
+fn active_summary(
+    active: Option<&PlayerSeasonSummary>,
+) -> (u32, u32, u32, u32, String, String, String) {
+    match active {
+        Some(active) => {
+            let gp = metric_u32(&active.metrics, "gp").unwrap_or(0);
+            let goals = metric_u32(&active.metrics, "goals").unwrap_or(0);
+            let assists = metric_u32(&active.metrics, "assists").unwrap_or(0);
+            let points = metric_u32(&active.metrics, "points").unwrap_or(0);
+            let team_link = team_link_for_display(&active.team_display);
+            (
+                gp,
+                goals,
+                assists,
+                points,
+                active.position.abbreviation().to_owned(),
+                active.team_display.clone(),
+                team_link,
+            )
+        }
+        None => (0, 0, 0, 0, dash(), dash(), String::new()),
+    }
+}
+
+fn career_row_from_view_for_html(row: &PlayerCareerSummary) -> CareerRow {
+    let gp = metric_u32(&row.metrics, "gp").unwrap_or(0);
+    let points = metric_u32(&row.metrics, "points").unwrap_or(0);
+    CareerRow {
+        season: pretty_season(row.season),
+        season_type: match row.season_type {
+            SeasonType::Regular => "Regular".to_owned(),
+            SeasonType::Playoff => "Playoff".to_owned(),
+        },
+        team: row.team.0.clone(),
+        team_link: team_link_for_display(&row.team.0),
+        gp,
+        goals: metric_u32(&row.metrics, "goals").unwrap_or(0),
+        assists: metric_u32(&row.metrics, "assists").unwrap_or(0),
+        points,
+        ppg_str: if gp > 0 {
+            format!("{:.2}", points as f64 / gp as f64)
+        } else {
+            String::new()
+        },
+    }
+}
+
+fn team_link_for_display(team: &str) -> String {
+    if team.chars().all(|c| c.is_ascii_alphabetic()) && (2..=3).contains(&team.len()) {
+        team.to_owned()
+    } else {
+        String::new()
+    }
+}
+
+fn delta_int(now: i64, prior: i64, prior_exists: bool) -> (String, String) {
+    if !prior_exists {
+        return (String::new(), String::new());
+    }
+    let delta = now - prior;
+    let class = if delta > 0 {
+        "delta-up"
+    } else if delta < 0 {
+        "delta-down"
+    } else {
+        "delta-flat"
+    };
+    (format!("{delta:+}"), class.to_owned())
+}
+
+fn metric_string_u32_or_dash(metrics: &[MetricCell], key: &str) -> String {
+    metric_u32(metrics, key)
+        .map(|value| value.to_string())
+        .unwrap_or_else(dash)
+}
+
+fn metric_percent_string(metrics: &[MetricCell], key: &str) -> String {
+    metric_f64(metrics, key)
+        .map(|value| {
+            if value.abs() <= 1.5 {
+                format!("{:.1}%", value * 100.0)
+            } else {
+                format!("{value:.1}%")
+            }
+        })
+        .unwrap_or_else(dash)
+}
+
+fn metric_toi_mmss(metrics: &[MetricCell], key: &str) -> String {
+    metric_u32(metrics, key)
+        .map(|secs| format!("{}:{:02}", secs / 60, secs % 60))
+        .unwrap_or_else(dash)
+}
+
+fn dash() -> String {
+    "\u{2014}".to_owned()
+}
+
+// JSON twin types.
 #[derive(Debug, serde::Serialize)]
 pub struct PlayerData {
     pub nhl_id: u32,
@@ -564,7 +471,7 @@ pub async fn get_player_json(State(state): State<WebState>, Path(id): Path<u32>)
             metric_u32(&active.metrics, "assists").unwrap_or(0),
             metric_u32(&active.metrics, "points").unwrap_or(0),
             active.position.abbreviation().to_owned(),
-            active.team.0.clone(),
+            active.team_display.clone(),
         ),
         None => (0, 0, 0, 0, String::new(), String::new()),
     };
@@ -646,6 +553,16 @@ fn metric_u32(metrics: &[MetricCell], key: &str) -> Option<u32> {
         .find(|metric| metric.key.0 == key)
         .and_then(|metric| match metric.value {
             MetricValue::Integer(value) => u32::try_from(value).ok(),
+            _ => None,
+        })
+}
+
+fn metric_i32(metrics: &[MetricCell], key: &str) -> Option<i32> {
+    metrics
+        .iter()
+        .find(|metric| metric.key.0 == key)
+        .and_then(|metric| match metric.value {
+            MetricValue::Integer(value) => i32::try_from(value).ok(),
             _ => None,
         })
 }

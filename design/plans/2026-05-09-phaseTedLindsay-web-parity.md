@@ -132,6 +132,9 @@ Progress:
 - 2026-05-10: Added core `PlayerCardView` and migrated
   `/api/v1/player/:id` to project its existing stable JSON envelope from that
   ViewModel. HTML player-card rendering remains a follow-up adapter.
+- 2026-05-10: Migrated `/player/:id` HTML rendering to project from
+  `PlayerCardView` while preserving the existing template fields, career-table
+  filtering, compare suggestions, and headshot fallback behavior.
 
 ---
 
