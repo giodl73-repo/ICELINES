@@ -15,8 +15,9 @@ use icelines_core::{
     season_stats::SeasonType,
     stats_catalog::{StatId, StatUnit},
     stats_repository::PlayerView,
-    LeaderKind, LeadersView, MetricCell, MetricUnit, MetricValue, SemanticToken, SortDirection,
-    SortKey, SortState, StatKey, ValuePrecision, ViewContext, ViewWindow,
+    CompareView, LeaderKind, LeadersView, MetricCell, MetricUnit, MetricValue, PlayerCardView,
+    SemanticToken, SortDirection, SortKey, SortState, StatKey, ValuePrecision, ViewContext,
+    ViewWindow,
 };
 use icelines_fetch::{aggregate, career::load_career, snapshot::SnapshotStore};
 use icelines_query::{extract_bio, BioConstraints};
@@ -2168,7 +2169,14 @@ pub async fn run_compare(
                 v1.identity.full_name
             );
         }
-        print_head_to_head(v1, v2);
+        let compare = CompareView::from_repository(
+            repo,
+            Some(v1.identity.id),
+            Some(v2.identity.id),
+            season_key,
+            season_type,
+        );
+        print_head_to_head_from_compare_view(&compare, v1, v2);
 
         // Gaps.3 — multi-season career arcs for context. Reuses the
         // print_career helper used by run_player; runs sequentially
@@ -2280,6 +2288,227 @@ fn print_head_to_head(v1: &PlayerView<'_>, v2: &PlayerView<'_>) {
             .map(|y| y.to_string())
             .unwrap_or_else(|| "—".to_owned()),
     );
+}
+
+fn print_head_to_head_from_compare_view(
+    compare: &CompareView,
+    fallback1: &PlayerView<'_>,
+    fallback2: &PlayerView<'_>,
+) {
+    match (compare.a.as_ref(), compare.b.as_ref()) {
+        (Some(card1), Some(card2)) => print_head_to_head_cards(card1, card2, fallback1, fallback2),
+        _ => print_head_to_head(fallback1, fallback2),
+    }
+}
+
+fn print_head_to_head_cards(
+    card1: &PlayerCardView,
+    card2: &PlayerCardView,
+    fallback1: &PlayerView<'_>,
+    fallback2: &PlayerView<'_>,
+) {
+    let col = 28usize;
+    let active1 = card1.active.as_ref();
+    let active2 = card2.active.as_ref();
+    let metrics1 = active1
+        .map(|active| active.metrics.as_slice())
+        .unwrap_or(&[]);
+    let metrics2 = active2
+        .map(|active| active.metrics.as_slice())
+        .unwrap_or(&[]);
+
+    println!("{:<col$} {:<col$}", card1.display_name, card2.display_name);
+    println!(
+        "{:<col$} {:<col$}",
+        active1
+            .map(|active| active.team_display.as_str())
+            .unwrap_or_else(|| fallback1.team_display()),
+        active2
+            .map(|active| active.team_display.as_str())
+            .unwrap_or_else(|| fallback2.team_display())
+    );
+    println!("{}", "─".repeat(col * 2 + 2));
+
+    let row = |label: &str, c1: &str, c2: &str| {
+        println!("  {:<18} {:<col$} {:<col$}", label, c1, c2, col = col - 2);
+    };
+
+    row(
+        "Position",
+        active1
+            .map(|active| active.position.abbreviation())
+            .unwrap_or_else(|| fallback1.position().abbreviation()),
+        active2
+            .map(|active| active.position.abbreviation())
+            .unwrap_or_else(|| fallback2.position().abbreviation()),
+    );
+    row("Age", &age_str(fallback1), &age_str(fallback2));
+    row("Draft", &draft_str(fallback1), &draft_str(fallback2));
+    row(
+        "GP",
+        &card_metric_i64(metrics1, "gp")
+            .map(|value| value.to_string())
+            .unwrap_or_else(|| fallback1.gp().to_string()),
+        &card_metric_i64(metrics2, "gp")
+            .map(|value| value.to_string())
+            .unwrap_or_else(|| fallback2.gp().to_string()),
+    );
+    row(
+        "PPG",
+        &card_metric_f64(metrics1, "points_per_game")
+            .map(|value| format!("{value:.3}"))
+            .unwrap_or_else(|| pace_strings(fallback1).0),
+        &card_metric_f64(metrics2, "points_per_game")
+            .map(|value| format!("{value:.3}"))
+            .unwrap_or_else(|| pace_strings(fallback2).0),
+    );
+    row(
+        "Pts/82",
+        &points_82_from_metrics(metrics1, fallback1),
+        &points_82_from_metrics(metrics2, fallback2),
+    );
+    row(
+        "Goals/82",
+        &fallback1
+            .goals_per_82()
+            .map(|g| format!("{g:.1}"))
+            .unwrap_or_else(|| "—".to_owned()),
+        &fallback2
+            .goals_per_82()
+            .map(|g| format!("{g:.1}"))
+            .unwrap_or_else(|| "—".to_owned()),
+    );
+    row(
+        "PP Points",
+        &card_metric_i64(metrics1, "pp_points")
+            .map(|value| value.to_string())
+            .unwrap_or_else(|| fallback1.stats.totals.pp_points.to_string()),
+        &card_metric_i64(metrics2, "pp_points")
+            .map(|value| value.to_string())
+            .unwrap_or_else(|| fallback2.stats.totals.pp_points.to_string()),
+    );
+    row(
+        "PP Goals",
+        &card_metric_i64(metrics1, "pp_goals")
+            .map(|value| value.to_string())
+            .unwrap_or_else(|| fallback1.stats.totals.pp_goals.to_string()),
+        &card_metric_i64(metrics2, "pp_goals")
+            .map(|value| value.to_string())
+            .unwrap_or_else(|| fallback2.stats.totals.pp_goals.to_string()),
+    );
+    row(
+        "GWG",
+        &card_metric_i64(metrics1, "gwg")
+            .map(|value| value.to_string())
+            .unwrap_or_else(|| fallback1.stats.totals.gwg.to_string()),
+        &card_metric_i64(metrics2, "gwg")
+            .map(|value| value.to_string())
+            .unwrap_or_else(|| fallback2.stats.totals.gwg.to_string()),
+    );
+    row(
+        "Shots",
+        &card_metric_i64(metrics1, "shots")
+            .map(|value| value.to_string())
+            .unwrap_or_else(|| fallback1.shots().to_string()),
+        &card_metric_i64(metrics2, "shots")
+            .map(|value| value.to_string())
+            .unwrap_or_else(|| fallback2.shots().to_string()),
+    );
+    row(
+        "SH%",
+        &card_metric_f64(metrics1, "shooting_pct")
+            .map(|val| format!("{:.1}%", val * 100.0))
+            .unwrap_or_else(|| "—".to_owned()),
+        &card_metric_f64(metrics2, "shooting_pct")
+            .map(|val| format!("{:.1}%", val * 100.0))
+            .unwrap_or_else(|| "—".to_owned()),
+    );
+    row(
+        "+/-",
+        &card_metric_i64(metrics1, "plus_minus")
+            .map(format_signed)
+            .unwrap_or_else(|| format_signed(fallback1.plus_minus() as i64)),
+        &card_metric_i64(metrics2, "plus_minus")
+            .map(format_signed)
+            .unwrap_or_else(|| format_signed(fallback2.plus_minus() as i64)),
+    );
+    row(
+        "TOI/g",
+        &card_metric_i64(metrics1, "toi_per_game_sec")
+            .map(format_seconds_mmss)
+            .unwrap_or_else(|| fallback1.toi_mmss().unwrap_or_else(|| "—".to_owned())),
+        &card_metric_i64(metrics2, "toi_per_game_sec")
+            .map(format_seconds_mmss)
+            .unwrap_or_else(|| fallback2.toi_mmss().unwrap_or_else(|| "—".to_owned())),
+    );
+    row(
+        "Contract",
+        &fallback1
+            .contract_expiry_type()
+            .map(|t| t.to_uppercase())
+            .unwrap_or_else(|| "—".to_owned()),
+        &fallback2
+            .contract_expiry_type()
+            .map(|t| t.to_uppercase())
+            .unwrap_or_else(|| "—".to_owned()),
+    );
+    row(
+        "Expires",
+        &fallback1
+            .contract_expiry_year()
+            .map(|y| y.to_string())
+            .unwrap_or_else(|| "—".to_owned()),
+        &fallback2
+            .contract_expiry_year()
+            .map(|y| y.to_string())
+            .unwrap_or_else(|| "—".to_owned()),
+    );
+}
+
+fn card_metric_i64(metrics: &[MetricCell], key: &str) -> Option<i64> {
+    metrics.iter().find_map(|metric| {
+        if metric.key.0 == key {
+            match metric.value {
+                MetricValue::Integer(value) => Some(value),
+                _ => None,
+            }
+        } else {
+            None
+        }
+    })
+}
+
+fn card_metric_f64(metrics: &[MetricCell], key: &str) -> Option<f64> {
+    metrics.iter().find_map(|metric| {
+        if metric.key.0 == key {
+            match metric.value {
+                MetricValue::Decimal(value) => Some(value),
+                MetricValue::Integer(value) => Some(value as f64),
+                _ => None,
+            }
+        } else {
+            None
+        }
+    })
+}
+
+fn points_82_from_metrics(metrics: &[MetricCell], fallback: &PlayerView<'_>) -> String {
+    card_metric_f64(metrics, "points_per_game")
+        .map(|value| format!("{:.1}", value * 82.0))
+        .unwrap_or_else(|| pace_strings(fallback).1)
+}
+
+fn format_signed(value: i64) -> String {
+    if value >= 0 {
+        format!("+{value}")
+    } else {
+        value.to_string()
+    }
+}
+
+fn format_seconds_mmss(value: i64) -> String {
+    let value = value.max(0);
+    format!("{}:{:02}", value / 60, value % 60)
 }
 
 fn run_similar(views: &[PlayerView<'_>], target_name: &str, n: usize) -> anyhow::Result<()> {
