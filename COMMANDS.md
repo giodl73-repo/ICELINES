@@ -719,6 +719,8 @@ icelines watch player "Matthew Knies" --when pp1 --save
 icelines watch deployment --team TOR --line-change --save
 icelines watch disable player-matthew-knies
 icelines watch enable player-matthew-knies
+icelines watch fire player-matthew-knies --player "Matthew Knies" "PP1 usage crossed threshold"
+icelines watch history
 
 # Personal-attendance tracker
 icelines games add ...                 # log games attended

@@ -2232,6 +2232,7 @@ mod handlers {
             let Ok(conn) = rusqlite::Connection::open(&db_path) else {
                 return Vec::new();
             };
+            let latest_fired = read_watch_rule_last_fired(&conn);
             let Ok(mut stmt) = conn.prepare(
                 "SELECT id, label, enabled, trigger_json, unsupported_sources_json \
                  FROM watch_rules \
@@ -2250,16 +2251,44 @@ mod handlers {
                 let unsupported_sources = serde_json::from_str(&unsupported_sources_json)
                     .map_err(|err| rusqlite::Error::ToSqlConversionFailure(Box::new(err)))?;
                 Ok(WatchRule {
+                    last_fired: latest_fired.get(&id).copied(),
                     id,
                     label,
                     enabled: enabled != 0,
                     trigger,
-                    last_fired: None,
                     unsupported_sources,
                 })
             })
             .ok()
             .map(|rows| rows.filter_map(Result::ok).collect())
+            .unwrap_or_default()
+        }
+
+        fn read_watch_rule_last_fired(
+            conn: &rusqlite::Connection,
+        ) -> std::collections::HashMap<String, chrono::DateTime<chrono::Utc>> {
+            let Ok(mut stmt) = conn.prepare(
+                "SELECT rule_id, MAX(fired_at)
+                 FROM watch_rule_events
+                 GROUP BY rule_id",
+            ) else {
+                return std::collections::HashMap::new();
+            };
+            stmt.query_map([], |r| {
+                let rule_id: String = r.get(0)?;
+                let fired_at: String = r.get(1)?;
+                Ok((rule_id, fired_at))
+            })
+            .ok()
+            .map(|rows| {
+                rows.filter_map(Result::ok)
+                    .filter_map(|(rule_id, fired_at)| {
+                        chrono::DateTime::parse_from_rfc3339(&fired_at)
+                            .ok()
+                            .map(|dt| (rule_id, dt.with_timezone(&chrono::Utc)))
+                    })
+                    .collect()
+            })
             .unwrap_or_default()
         }
 

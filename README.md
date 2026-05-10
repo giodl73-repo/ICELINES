@@ -229,6 +229,8 @@ icelines report weekly --league default --category hits,blocks
 icelines watch rules
 icelines watch player "Matthew Knies" --when pp1 --save
 icelines watch disable player-matthew-knies
+icelines watch fire player-matthew-knies --player "Matthew Knies" "PP1 usage crossed threshold"
+icelines watch history
 icelines watch list
 icelines watch note "Matthew Knies" "PP1 promotion and strong hits fit"
 icelines tui poach                     # press w to watch with a score/reason note

@@ -34,6 +34,15 @@ pub struct WatchRuleRow {
     pub updated_at: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WatchRuleEventRow {
+    pub id: i64,
+    pub rule_id: String,
+    pub entity_ref: Option<String>,
+    pub message: String,
+    pub fired_at: String,
+}
+
 /// Migration 005 — discriminator on `group_members.kind`. A favorites
 /// group can carry both player normalized names AND team abbrevs;
 /// downstream code branches on this to load the right thing.
@@ -257,6 +266,23 @@ fn run_migrations(conn: &Connection) -> anyhow::Result<()> {
          );",
     )
     .context("migration 009: watch_rules table")?;
+
+    // Migration 010 - local fired-alert history for persisted Selke rules.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS watch_rule_events (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            rule_id    TEXT NOT NULL,
+            entity_ref TEXT,
+            message    TEXT NOT NULL DEFAULT '',
+            fired_at   TEXT NOT NULL,
+            FOREIGN KEY (rule_id) REFERENCES watch_rules(id) ON DELETE CASCADE
+         );
+         CREATE INDEX IF NOT EXISTS watch_rule_events_by_rule
+            ON watch_rule_events(rule_id, fired_at DESC);
+         CREATE INDEX IF NOT EXISTS watch_rule_events_by_time
+            ON watch_rule_events(fired_at DESC);",
+    )
+    .context("migration 010: watch_rule_events table")?;
 
     Ok(())
 }
@@ -566,6 +592,25 @@ impl GroupDb {
         Ok(updated > 0)
     }
 
+    pub fn record_watch_rule_event(
+        &self,
+        rule_id: &str,
+        entity_ref: Option<&str>,
+        message: &str,
+    ) -> anyhow::Result<WatchRuleEventRow> {
+        let fired_at = now_utc();
+        self.conn
+            .execute(
+                "INSERT INTO watch_rule_events (rule_id, entity_ref, message, fired_at)
+                 VALUES (?1, ?2, ?3, ?4)",
+                rusqlite::params![rule_id, entity_ref, message, fired_at],
+            )
+            .with_context(|| format!("record watch rule event '{rule_id}'"))?;
+        let id = self.conn.last_insert_rowid();
+        self.watch_rule_event(id)?
+            .context("watch rule event disappeared after insert")
+    }
+
     // ── Read operations ───────────────────────────────────────────────────────
 
     /// List all groups with their member counts.
@@ -681,6 +726,48 @@ impl GroupDb {
             .context("list_watch_rules query")?
             .collect::<Result<Vec<_>, _>>()
             .context("list_watch_rules collect")?;
+        Ok(rows)
+    }
+
+    pub fn watch_rule_event(&self, id: i64) -> anyhow::Result<Option<WatchRuleEventRow>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, rule_id, entity_ref, message, fired_at
+             FROM watch_rule_events
+             WHERE id = ?1",
+        )?;
+        let mut rows = stmt.query(rusqlite::params![id])?;
+        if let Some(row) = rows.next()? {
+            Ok(Some(WatchRuleEventRow {
+                id: row.get(0)?,
+                rule_id: row.get(1)?,
+                entity_ref: row.get(2)?,
+                message: row.get(3)?,
+                fired_at: row.get(4)?,
+            }))
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub fn list_watch_rule_events(&self, limit: usize) -> anyhow::Result<Vec<WatchRuleEventRow>> {
+        let limit = limit.max(1);
+        let mut stmt = self.conn.prepare(
+            "SELECT id, rule_id, entity_ref, message, fired_at
+             FROM watch_rule_events
+             ORDER BY fired_at DESC, id DESC
+             LIMIT ?1",
+        )?;
+        let rows = stmt
+            .query_map(rusqlite::params![limit as i64], |row| {
+                Ok(WatchRuleEventRow {
+                    id: row.get(0)?,
+                    rule_id: row.get(1)?,
+                    entity_ref: row.get(2)?,
+                    message: row.get(3)?,
+                    fired_at: row.get(4)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(rows)
     }
 
@@ -1090,6 +1177,45 @@ mod tests {
 
         let rules = db.list_watch_rules().expect("list watch rules");
         assert!(!rules[0].enabled);
+    }
+
+    #[test]
+    fn l1_db_watch_rule_event_history_round_trips() {
+        let db = GroupDb::open_in_memory().expect("open in-memory db");
+        db.upsert_watch_rule(
+            "player-matthew-knies",
+            "Watch Matthew Knies when pp1",
+            true,
+            r#"{"kind":"player_promoted","player_id":null,"evidence":{"kind":"unknown"}}"#,
+            r#"["shifts"]"#,
+        )
+        .expect("insert watch rule");
+
+        let event = db
+            .record_watch_rule_event(
+                "player-matthew-knies",
+                Some("player:matthew knies"),
+                "PP1 usage crossed threshold",
+            )
+            .expect("record watch event");
+        let events = db.list_watch_rule_events(20).expect("list watch events");
+
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0], event);
+        assert_eq!(events[0].rule_id, "player-matthew-knies");
+        assert_eq!(
+            events[0].entity_ref.as_deref(),
+            Some("player:matthew knies")
+        );
+    }
+
+    #[test]
+    fn l1_db_watch_rule_event_requires_known_rule() {
+        let db = GroupDb::open_in_memory().expect("open in-memory db");
+
+        assert!(db
+            .record_watch_rule_event("missing-rule", None, "should fail")
+            .is_err());
     }
 
     #[test]

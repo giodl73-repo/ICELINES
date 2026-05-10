@@ -17,7 +17,7 @@ use icelines_core::{
 use crate::cli::QuerySeasonType;
 use crate::commands::players::{load_repo_for_season, validate_bundled_season};
 use crate::config::Config;
-use crate::db::{GroupDb, MemberKind, WatchRuleRow};
+use crate::db::{GroupDb, MemberKind, WatchRuleEventRow, WatchRuleRow};
 
 pub struct PoachArgs {
     pub season: Option<String>,
@@ -64,6 +64,18 @@ pub struct WatchRulesArgs {
 pub struct WatchSetEnabledArgs {
     pub id: String,
     pub enabled: bool,
+    pub json: bool,
+}
+
+pub struct WatchFireArgs {
+    pub id: String,
+    pub player: Option<String>,
+    pub message: String,
+    pub json: bool,
+}
+
+pub struct WatchHistoryArgs {
+    pub limit: u16,
     pub json: bool,
 }
 
@@ -163,7 +175,8 @@ pub async fn run_watch_set_enabled(args: WatchSetEnabledArgs) -> anyhow::Result<
         .into_iter()
         .find(|rule| rule.id == args.id)
         .context("watch rule disappeared after update")?;
-    let rule = watch_rule_from_row(rule)?;
+    let latest_fired = latest_watch_rule_fire_times(&db)?;
+    let rule = watch_rule_from_row(rule, &latest_fired)?;
     if args.json {
         println!(
             "{}",
@@ -177,6 +190,26 @@ pub async fn run_watch_set_enabled(args: WatchSetEnabledArgs) -> anyhow::Result<
         );
     }
     Ok(())
+}
+
+pub async fn run_watch_fire(args: WatchFireArgs) -> anyhow::Result<()> {
+    let db = GroupDb::open()?;
+    if !db.list_watch_rules()?.iter().any(|rule| rule.id == args.id) {
+        bail!("unknown persisted watch rule '{}'", args.id);
+    }
+    let entity_ref = args
+        .player
+        .as_deref()
+        .map(normalize_name)
+        .map(|key| format!("player:{key}"));
+    let event = db.record_watch_rule_event(&args.id, entity_ref.as_deref(), &args.message)?;
+    emit_watch_rule_event(&event, args.json)
+}
+
+pub async fn run_watch_history(args: WatchHistoryArgs) -> anyhow::Result<()> {
+    let db = GroupDb::open()?;
+    let events = db.list_watch_rule_events(args.limit as usize)?;
+    emit_watch_rule_events(&events, args.json)
 }
 
 pub async fn run_watch_list(args: WatchListArgs) -> anyhow::Result<()> {
@@ -479,13 +512,32 @@ fn persist_watch_rules(db: &GroupDb, rules: &[WatchRule]) -> anyhow::Result<()> 
 }
 
 fn persisted_watch_rules(db: &GroupDb) -> anyhow::Result<Vec<WatchRule>> {
+    let latest_fired = latest_watch_rule_fire_times(db)?;
     db.list_watch_rules()?
         .into_iter()
-        .map(watch_rule_from_row)
+        .map(|row| watch_rule_from_row(row, &latest_fired))
         .collect()
 }
 
-fn watch_rule_from_row(row: WatchRuleRow) -> anyhow::Result<WatchRule> {
+fn latest_watch_rule_fire_times(
+    db: &GroupDb,
+) -> anyhow::Result<std::collections::HashMap<String, chrono::DateTime<chrono::Utc>>> {
+    let mut latest = std::collections::HashMap::new();
+    for event in db.list_watch_rule_events(10_000)? {
+        if latest.contains_key(&event.rule_id) {
+            continue;
+        }
+        if let Ok(fired_at) = chrono::DateTime::parse_from_rfc3339(&event.fired_at) {
+            latest.insert(event.rule_id, fired_at.with_timezone(&chrono::Utc));
+        }
+    }
+    Ok(latest)
+}
+
+fn watch_rule_from_row(
+    row: WatchRuleRow,
+    latest_fired: &std::collections::HashMap<String, chrono::DateTime<chrono::Utc>>,
+) -> anyhow::Result<WatchRule> {
     let trigger = serde_json::from_str(&row.trigger_json)
         .with_context(|| format!("parsing persisted watch rule trigger '{}'", row.id))?;
     let unsupported_sources =
@@ -496,13 +548,68 @@ fn watch_rule_from_row(row: WatchRuleRow) -> anyhow::Result<WatchRule> {
             )
         })?;
     Ok(WatchRule {
+        last_fired: latest_fired.get(&row.id).copied(),
         id: row.id,
         label: row.label,
         enabled: row.enabled,
         trigger,
-        last_fired: None,
         unsupported_sources,
     })
+}
+
+fn emit_watch_rule_event(event: &WatchRuleEventRow, json: bool) -> anyhow::Result<()> {
+    if json {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&WatchRuleEventView::from(event))
+                .context("serializing watch rule event")?
+        );
+    } else {
+        let entity = event.entity_ref.as_deref().unwrap_or("-");
+        println!(
+            "{}  {}  {}  {}",
+            event.fired_at, event.rule_id, entity, event.message
+        );
+    }
+    Ok(())
+}
+
+fn emit_watch_rule_events(events: &[WatchRuleEventRow], json: bool) -> anyhow::Result<()> {
+    if json {
+        let views: Vec<_> = events.iter().map(WatchRuleEventView::from).collect();
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&views).context("serializing watch rule events")?
+        );
+    } else if events.is_empty() {
+        println!("No watch rule alerts recorded.");
+    } else {
+        for event in events {
+            emit_watch_rule_event(event, false)?;
+        }
+    }
+    Ok(())
+}
+
+#[derive(Debug, Serialize)]
+struct WatchRuleEventView<'a> {
+    id: i64,
+    rule_id: &'a str,
+    entity_ref: Option<&'a str>,
+    message: &'a str,
+    fired_at: &'a str,
+}
+
+impl<'a> From<&'a WatchRuleEventRow> for WatchRuleEventView<'a> {
+    fn from(row: &'a WatchRuleEventRow) -> Self {
+        Self {
+            id: row.id,
+            rule_id: &row.rule_id,
+            entity_ref: row.entity_ref.as_deref(),
+            message: &row.message,
+            fired_at: &row.fired_at,
+        }
+    }
 }
 
 fn watchlist_rows(db: &GroupDb) -> anyhow::Result<Vec<WatchlistRow>> {
@@ -820,6 +927,44 @@ mod tests {
 
         assert_eq!(rules.len(), 1);
         assert!(!rules[0].enabled);
+    }
+
+    #[test]
+    fn l0_watch_persisted_rules_include_last_fired_history() {
+        let db = GroupDb::open_in_memory().expect("open db");
+        let rule = player_watch_rule("Matthew Knies", "pp1");
+        persist_watch_rules(&db, std::slice::from_ref(&rule)).expect("persist rule");
+        db.record_watch_rule_event(
+            "player-matthew-knies",
+            Some("player:matthew knies"),
+            "PP1 usage crossed threshold",
+        )
+        .expect("record event");
+
+        let rules = persisted_watch_rules(&db).expect("read persisted rules");
+
+        assert_eq!(rules.len(), 1);
+        assert!(rules[0].last_fired.is_some());
+    }
+
+    #[test]
+    fn l0_watch_history_event_view_serializes() {
+        let db = GroupDb::open_in_memory().expect("open db");
+        let rule = player_watch_rule("Matthew Knies", "pp1");
+        persist_watch_rules(&db, std::slice::from_ref(&rule)).expect("persist rule");
+        let event = db
+            .record_watch_rule_event(
+                "player-matthew-knies",
+                Some("player:matthew knies"),
+                "PP1 usage crossed threshold",
+            )
+            .expect("record event");
+
+        let json = serde_json::to_value(WatchRuleEventView::from(&event)).expect("event json");
+
+        assert_eq!(json["rule_id"], "player-matthew-knies");
+        assert_eq!(json["entity_ref"], "player:matthew knies");
+        assert_eq!(json["message"], "PP1 usage crossed threshold");
     }
 
     #[test]

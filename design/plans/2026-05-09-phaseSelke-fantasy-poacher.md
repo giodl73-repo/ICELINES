@@ -281,7 +281,8 @@ Initial implementation note:
   `icelines watch deployment` are wired as preview surfaces over
   `WatchRulesView`. `watch player --save` and `watch deployment --save` persist
   local watch rules; `watch enable <id>` and `watch disable <id>` toggle
-  persisted rules. Fired-alert history remains pending.
+  persisted rules; `watch fire <id>` and `watch history` record/read local
+  fired-alert history and populate `last_fired`.
 - `icelines watch list` reads the local `Watchlist` group with stored reasons,
   and `icelines watch note <player> <reason>` creates/updates a manual watch
   reason while keeping membership in the existing group model.
@@ -314,7 +315,8 @@ Initial implementation note:
   first explanation, and risk summary when present); removing the watch clears
   the note.
 - Persistent watch rules can be created from the CLI and are included in
-  `icelines watch rules`; TUI rule editing remains a follow-up.
+  `icelines watch rules`; fired-alert history is CLI-visible. TUI rule editing
+  remains a follow-up.
 
 ---
 
@@ -392,8 +394,8 @@ Initial implementation note:
   core fixture tests and shared ViewModel slices.
 - `design/PITFALLS.md`, `design/specs/surface-parity.md`, and
   `design/specs/viewmodels.md` have been reconciled with the implemented
-  CLI/TUI/web/markdown/JSON Selke surfaces. Persistent watch-rule editing and
-  fired-alert history remain a follow-up, not a board/report parity blocker.
+  CLI/TUI/web/markdown/JSON Selke surfaces. Persistent watch-rule editing
+  remains a follow-up, not a board/report parity blocker.
 
 ---
 

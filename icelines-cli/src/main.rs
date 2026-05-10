@@ -229,6 +229,27 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 })
                 .await?;
             }
+            WatchSubcommand::Fire {
+                id,
+                player,
+                message,
+                json,
+            } => {
+                commands::poach::run_watch_fire(commands::poach::WatchFireArgs {
+                    id,
+                    player,
+                    message: message.join(" "),
+                    json,
+                })
+                .await?;
+            }
+            WatchSubcommand::History { limit, json } => {
+                commands::poach::run_watch_history(commands::poach::WatchHistoryArgs {
+                    limit,
+                    json,
+                })
+                .await?;
+            }
             WatchSubcommand::Player {
                 player,
                 when,

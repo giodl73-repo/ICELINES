@@ -526,6 +526,20 @@ async fn l1_watch_rules_json_includes_persisted_rules() {
             '[\"shifts\"]',
             '2026-05-09T12:00:00Z',
             '2026-05-09T12:00:00Z'
+         );
+         CREATE TABLE watch_rule_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            rule_id TEXT NOT NULL,
+            entity_ref TEXT,
+            message TEXT NOT NULL DEFAULT '',
+            fired_at TEXT NOT NULL
+         );
+         INSERT INTO watch_rule_events (rule_id, entity_ref, message, fired_at)
+         VALUES (
+            'player-matthew-knies',
+            'player:matthew knies',
+            'PP1 usage crossed threshold',
+            '2026-05-09T13:00:00Z'
          );",
     )
     .expect("seed watch rules db");
@@ -563,6 +577,7 @@ async fn l1_watch_rules_json_includes_persisted_rules() {
         .expect("persisted rule present");
     assert_eq!(persisted["label"], "Watch Matthew Knies when pp1");
     assert_eq!(persisted["unsupported_sources"][0], "shifts");
+    assert_eq!(persisted["last_fired"], "2026-05-09T13:00:00Z");
 }
 
 /// l1_career_route_missing_league_returns_400 (Calder.4)

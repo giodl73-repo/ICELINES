@@ -1085,6 +1085,35 @@ pub enum WatchSubcommand {
         json: bool,
     },
 
+    /// Record that a persisted watch rule fired.
+    Fire {
+        /// Persisted watch rule id, e.g. player-matthew-knies.
+        id: String,
+
+        /// Optional player name connected to the alert.
+        #[arg(long)]
+        player: Option<String>,
+
+        /// Human-readable alert message.
+        #[arg(required = true, num_args = 1..)]
+        message: Vec<String>,
+
+        /// Emit the recorded event as JSON.
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// List local fired-alert history for persisted watch rules.
+    History {
+        /// Maximum events to show.
+        #[arg(long, default_value_t = 20)]
+        limit: u16,
+
+        /// Emit watch rule events as JSON.
+        #[arg(long)]
+        json: bool,
+    },
+
     /// Preview a player-specific watch rule.
     Player {
         /// Player name to watch.
