@@ -4,6 +4,7 @@ use icelines_core::identity::PlayerId;
 use icelines_core::model::Position;
 use icelines_core::stats_catalog::{StatCategory, StatId, StatUnit};
 use icelines_core::stats_repository::PlayerView;
+use icelines_core::PlayerCardView;
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -335,6 +336,10 @@ mod dashboard_tests {
 // Phase C deletes the legacy render paths once enter handlers all
 // migrate to `Screen::PlayerById`.
 
+pub(crate) fn player_card_view_from_app(app: &App, pid: PlayerId) -> Option<PlayerCardView> {
+    PlayerCardView::from_repository(&app.repo, pid, app.active_season_typed, app.active_type)
+}
+
 pub fn render_by_id(f: &mut Frame, app: &App, area: Rect, pid: PlayerId) {
     let block = Block::default().borders(Borders::ALL).title(
         " Player Card  ·  [/]: preset  ·  c: comps  ·  g: group  ·  f: favorites  ·  Esc: back ",
@@ -363,22 +368,21 @@ pub fn render_by_id(f: &mut Frame, app: &App, area: Rect, pid: PlayerId) {
         );
         return;
     };
+    let Some(card) = player_card_view_from_app(app, pid) else {
+        return;
+    };
 
     // Headshot fetch — same NHL CDN URL pattern as the legacy path.
     let nhl_id = view.identity.id.0;
     if app.headshot_cache.get(nhl_id).is_none() {
-        let url = view
-            .identity
-            .headshot_canonical_url
-            .clone()
-            .unwrap_or_else(|| {
-                format!(
-                    "https://assets.nhle.com/mugs/nhl/{}/{}/{}.png",
-                    app.active_season,
-                    view.team_display(),
-                    nhl_id,
-                )
-            });
+        let url = card.headshot_url.clone().unwrap_or_else(|| {
+            format!(
+                "https://assets.nhle.com/mugs/nhl/{}/{}/{}.png",
+                app.active_season,
+                view.team_display(),
+                nhl_id,
+            )
+        });
         headshot::spawn_fetch(nhl_id, url, app.headshot_cache.clone(), 22, 15);
     }
 
@@ -398,7 +402,7 @@ pub fn render_by_id(f: &mut Frame, app: &App, area: Rect, pid: PlayerId) {
         .split(inner);
 
     render_headshot_view(f, app, &view, chunks[0]);
-    render_stats_view(f, app, &view, chunks[1]);
+    render_stats_view(f, app, &view, &card, chunks[1]);
     if dashboards_on {
         render_dashboard_panel_view(f, app, &view, chunks[2]);
     }
@@ -439,7 +443,13 @@ fn render_headshot_view(f: &mut Frame, app: &App, v: &PlayerView<'_>, area: Rect
     f.render_widget(Paragraph::new(lines), area);
 }
 
-fn render_stats_view(f: &mut Frame, app: &App, v: &PlayerView<'_>, area: Rect) {
+fn render_stats_view(
+    f: &mut Frame,
+    app: &App,
+    v: &PlayerView<'_>,
+    card: &PlayerCardView,
+    area: Rect,
+) {
     let age = v
         .identity
         .bio
@@ -470,15 +480,18 @@ fn render_stats_view(f: &mut Frame, app: &App, v: &PlayerView<'_>, area: Rect) {
         .map(|n| format!(" · #{n}"))
         .unwrap_or_default();
     let hand = v.identity.bio.shoots_catches.as_deref().unwrap_or("—");
+    let active = card.active.as_ref();
+    let team_display = active
+        .map(|active| active.team_display.as_str())
+        .unwrap_or_else(|| v.team_display());
+    let position = active
+        .map(|active| active.position.abbreviation())
+        .unwrap_or_else(|| v.position().abbreviation());
     let mut lines = vec![
-        Line::styled(format!(" {}", v.full_name()), hi),
+        Line::styled(format!(" {}", card.display_name), hi),
         Line::from(format!(
             " {} · {} · Age {}{} · {}",
-            v.team_display(),
-            v.position().abbreviation(),
-            age,
-            sweater,
-            hand,
+            team_display, position, age, sweater, hand,
         )),
         Line::from(""),
     ];

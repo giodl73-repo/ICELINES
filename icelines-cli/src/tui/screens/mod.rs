@@ -3411,6 +3411,41 @@ mod app_snapshot_tests {
         );
     }
 
+    #[test]
+    fn l1_tui_player_header_matches_player_card_view() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        let pid = app
+            .views()
+            .first()
+            .expect("booted app should have skater views")
+            .id();
+        app.headshot_cache.set(pid.0, vec!["".to_string()]);
+        app.screen = crate::tui::app::Screen::PlayerById(pid);
+        let view = crate::tui::screens::player::player_card_view_from_app(&app, pid)
+            .expect("player card view should resolve for active skater");
+        let active = view
+            .active
+            .as_ref()
+            .expect("active skater should have a row");
+        let text = render_app_to_text(&app, 140, 40);
+
+        assert!(
+            text.contains(&view.display_name),
+            "Player TUI header must include PlayerCardView display name, got:\n{text}"
+        );
+        assert!(
+            text.contains(&format!(
+                "{} · {}",
+                active.team_display,
+                active.position.abbreviation()
+            )),
+            "Player TUI header must include PlayerCardView active team/position, got:\n{text}"
+        );
+    }
+
     /// Groups screen renders rows for each DB group with their member
     /// counts. Catches a regression where Groups screen reads a stale
     /// in-memory cache instead of querying the DB on entry.

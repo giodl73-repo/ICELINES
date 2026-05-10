@@ -64,7 +64,9 @@ surface still differs from CLI/TUI.
      alignment remain before marking the row `done`.
    - Player card: web JSON row identity is now fenced against
      `PlayerCardView` by `l1_player_json_rows_match_player_card_view`;
-     CLI/TUI adapter alignment remains before marking the row `done`.
+     TUI header/headshot projection now uses `PlayerCardView` and is fenced by
+     `l1_tui_player_header_matches_player_card_view`; CLI and richer TUI
+     stats/career adapter alignment remain before marking the row `done`.
    - Compare: web JSON card identity is now fenced against `CompareView` by
      `l1_compare_json_cards_match_compare_view`; CLI/TUI adapter alignment
      remains before marking the row `done`.
