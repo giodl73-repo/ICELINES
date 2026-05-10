@@ -339,13 +339,13 @@ pub struct ScheduleTemplate {
     pub fetch_error: Option<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct TeamChip {
     pub abbrev: String,
     pub is_active: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct ScheduleRow {
     pub date: String,
     pub away_abbrev: String,

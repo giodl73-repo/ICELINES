@@ -21,6 +21,35 @@ pub struct ScheduleQuery {
     pub date: Option<String>,
 }
 
+struct ScheduleResult {
+    active_label: String,
+    season_pretty: String,
+    active_team: String,
+    active_date: Option<String>,
+    team_chips: Vec<TeamChip>,
+    rows: Vec<ScheduleRow>,
+    total: usize,
+    fetch_error: Option<String>,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct ScheduleEnvelope {
+    schema_version: u32,
+    route: &'static str,
+    data: Vec<ScheduleRow>,
+    meta: ScheduleMeta,
+    error: Option<String>,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct ScheduleMeta {
+    season: String,
+    active_team: String,
+    active_date: Option<String>,
+    total: usize,
+    team_chips: Vec<TeamChip>,
+}
+
 fn pretty_season(s: &str) -> String {
     if s.len() == 8 {
         format!("{}-{}", &s[0..4], &s[6..8])
@@ -41,6 +70,48 @@ pub async fn get_schedule(
     State(state): State<WebState>,
     Query(q): Query<ScheduleQuery>,
 ) -> Response {
+    let result = build_schedule_result(&state, &q).await;
+    let tmpl = ScheduleTemplate {
+        active_label: result.active_label,
+        season_pretty: result.season_pretty,
+        active_team: result.active_team,
+        team_chips: result.team_chips,
+        rows: result.rows,
+        total: result.total,
+        fetch_error: result.fetch_error,
+    };
+    match tmpl.render() {
+        Ok(html) => Html(html).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html(format!("template render failed: {e}")),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn get_schedule_json(
+    State(state): State<WebState>,
+    Query(q): Query<ScheduleQuery>,
+) -> Response {
+    let result = build_schedule_result(&state, &q).await;
+    let envelope = ScheduleEnvelope {
+        schema_version: 1,
+        route: "schedule",
+        data: result.rows,
+        meta: ScheduleMeta {
+            season: result.season_pretty,
+            active_team: result.active_team,
+            active_date: result.active_date,
+            total: result.total,
+            team_chips: result.team_chips,
+        },
+        error: result.fetch_error,
+    };
+    axum::Json(envelope).into_response()
+}
+
+async fn build_schedule_result(state: &WebState, q: &ScheduleQuery) -> ScheduleResult {
     let (active_label, season_str) = {
         let cfg = state.config.read().await;
         (cfg.active_label.clone(), cfg.active_season.clone())
@@ -145,21 +216,24 @@ pub async fn get_schedule(
         }
     };
 
-    let tmpl = ScheduleTemplate {
+    let active_date = if team_upper.is_empty() {
+        q.date
+            .as_deref()
+            .map(str::trim)
+            .filter(|d| !d.is_empty())
+            .map(str::to_owned)
+    } else {
+        None
+    };
+
+    ScheduleResult {
         active_label,
         season_pretty: pretty_season(&season_str),
         active_team: team_upper,
+        active_date,
         team_chips,
         rows,
         total,
         fetch_error,
-    };
-    match tmpl.render() {
-        Ok(html) => Html(html).into_response(),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Html(format!("template render failed: {e}")),
-        )
-            .into_response(),
     }
 }

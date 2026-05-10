@@ -61,7 +61,7 @@ a feature fully shipped.
 | Feature | ViewModel | CLI | TUI | Web HTML | Web JSON | Status | Owner |
 |---|---|---|---|---|---|---|---|
 | Scores/tonight | `ScoresView` | `tonight` | `tui scores` | `/scores` | `/api/v1/scores` | partial - HTML and JSON share the web fetch/projection path; core ViewModel alignment remains | Ted Lindsay |
-| Schedule | `ScheduleView` | `schedule` | `tui schedule` | `/schedule` | planned/verify | partial - CLI exists, web JSON needs verification | Lester Patrick/Ted Lindsay |
+| Schedule | `ScheduleView` | `schedule` | `tui schedule` | `/schedule` | `/api/v1/schedule` | partial - HTML and JSON share the web fetch/projection path; core ViewModel alignment remains | Lester Patrick/Ted Lindsay |
 | Playoffs | `PlayoffsView` | `playoffs` | `tui playoffs` | `/playoffs` | planned/verify | partial - historical bundle gaps remain | Lester Patrick/Ted Lindsay |
 | Transactions | `TransactionsView` | `transactions` | `tui transactions` | `/transactions` | planned/verify | partial - cache/source-state contract pending | Lester Patrick/Ted Lindsay |
 | Game detail | `GameView` | n/a | `tui scores` drilldown | `/game/:id` | planned/verify | partial | Ted Lindsay |
@@ -164,7 +164,8 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /season-type/:kind` | `handlers/season_type.rs` | mutating redirect | Config/report toggles | partial |
 | `GET /scores` | `handlers/scores.rs` | HTML | Scores/tonight | partial |
 | `GET /api/v1/scores` | `handlers/scores.rs` | JSON | Scores/tonight | partial - envelope test exists |
-| `GET /schedule` | `handlers/schedule.rs` | HTML | Schedule | partial - JSON twin deferred |
+| `GET /schedule` | `handlers/schedule.rs` | HTML | Schedule | partial |
+| `GET /api/v1/schedule` | `handlers/schedule.rs` | JSON | Schedule | partial - envelope test exists |
 | `GET /playoffs` | `handlers/playoffs.rs` | HTML | Playoffs | partial - JSON twin deferred |
 | `GET /favorites` | `handlers/favorites.rs` | HTML | Favorites/groups | partial |
 | `GET /watchlist` | `handlers/favorites.rs` | HTML | Watch rules | partial |
