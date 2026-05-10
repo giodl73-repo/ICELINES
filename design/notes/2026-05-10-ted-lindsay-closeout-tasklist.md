@@ -41,7 +41,9 @@ surface still differs from CLI/TUI.
      See `design/notes/2026-05-10-leaders-adapter-alignment.md` for the
      row-contract migration boundary.
    - Goalies: CLI, TUI, web HTML, and web JSON already build `GoaliesView`;
-     verify row identity and metric precision across surfaces.
+     CLI JSON/CSV row identity is now fenced by
+     `l2_cmd_query_goalies_json_csv_row_identity_match`; TUI/web parity checks
+     remain before marking done.
    - Team/depth/player/compare/career: verify adapter parity before marking
      any row `done`.
 

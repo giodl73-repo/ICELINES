@@ -2185,6 +2185,58 @@ fn l2_cmd_query_goalies_json_parses() {
 }
 
 #[test]
+fn l2_cmd_query_goalies_json_csv_row_identity_match() {
+    let args = ["query", "goalies", "--sort", "wins", "--top", "5"];
+    let json_out = run(&[&args[..], &["--json"][..]].concat());
+    assert!(
+        json_out.status.success(),
+        "query goalies --json must exit 0, stderr: {}",
+        String::from_utf8_lossy(&json_out.stderr)
+    );
+    let csv_out = run(&[&args[..], &["--csv"][..]].concat());
+    assert!(
+        csv_out.status.success(),
+        "query goalies --csv must exit 0, stderr: {}",
+        String::from_utf8_lossy(&csv_out.stderr)
+    );
+
+    let json_stdout = String::from_utf8_lossy(&json_out.stdout);
+    let json: serde_json::Value =
+        serde_json::from_str(&json_stdout).expect("query goalies --json must emit valid JSON");
+    let json_rows = json
+        .as_array()
+        .expect("query goalies --json should emit a JSON array");
+
+    let csv_stdout = String::from_utf8_lossy(&csv_out.stdout);
+    let csv_rows: Vec<Vec<String>> = csv_stdout
+        .lines()
+        .skip(1)
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| {
+            line.split(',')
+                .map(|cell| cell.trim_matches('"').to_string())
+                .collect()
+        })
+        .collect();
+
+    assert_eq!(
+        json_rows.len(),
+        csv_rows.len(),
+        "JSON and CSV should return the same row count"
+    );
+    for (json_row, csv_row) in json_rows.iter().zip(csv_rows.iter()) {
+        assert!(
+            csv_row.len() >= 5,
+            "CSV row should carry rank,goalie,team,gp,wins: {csv_row:?}"
+        );
+        assert_eq!(json_row["full_name"].as_str(), Some(csv_row[1].as_str()));
+        assert_eq!(json_row["team"].as_str(), Some(csv_row[2].as_str()));
+        assert_eq!(json_row["games_played"].to_string(), csv_row[3]);
+        assert_eq!(json_row["wins"].to_string(), csv_row[4]);
+    }
+}
+
+#[test]
 fn l2_cmd_query_goalies_sort_gaa_low_first() {
     let out = run(&["query", "goalies", "--top", "5", "--sort", "gaa"]);
     assert!(out.status.success());
