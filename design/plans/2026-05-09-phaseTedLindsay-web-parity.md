@@ -226,6 +226,9 @@ Progress:
 - 2026-05-10: Normalized the remaining compare and game JSON endpoints off the
   older optional-error envelope helper. Compare bad input now returns the shared
   JSON error envelope; game fetch failures survive as `meta.source_error`.
+- 2026-05-10: Recorded stale King Clancy web-dashboard route claims in
+  `design/notes/2026-05-10-web-dashboard-spec-drift.md`; the current route
+  source of truth remains `design/specs/surface-parity.md`.
 
 ---
 
