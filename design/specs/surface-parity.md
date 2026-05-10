@@ -148,7 +148,7 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /player/:id` | `handlers/player.rs` | HTML | Player card | partial - projects player page from `PlayerCardView`; CLI/TUI alignment remains |
 | `GET /api/v1/player/:id` | `handlers/player.rs` | JSON | Player card | partial - projects stable success and error envelopes from `PlayerCardView`; covered by `l1_player_json_*` |
 | `GET /compare` | `handlers/compare.rs` | HTML | Compare/comps | partial - projects compare page from `CompareView`; CLI/TUI alignment remains |
-| `GET /api/v1/compare` | `handlers/compare.rs` | JSON | Compare/comps | partial - projects stable envelope from `CompareView`; covered by `l1_compare_json_envelope_shape` |
+| `GET /api/v1/compare` | `handlers/compare.rs` | JSON | Compare/comps | partial - projects stable data/meta success and shared bad-input error envelopes from `CompareView`; covered by `l1_compare_json_*` |
 | `GET /goalies` | `handlers/goalies.rs` | HTML | Goalie leaderboard | partial - parity checks continue in TedLindsay.3 |
 | `GET /api/v1/goalies` | `handlers/goalies.rs` | JSON | Goalie leaderboard | partial - envelope tests exist |
 | `GET /team/:abbrev` | `handlers/team.rs` | HTML | Team depth | partial - renders from `TeamDepthView`, HTML projection shape preserved |
@@ -175,7 +175,7 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /watchlist` | `handlers/favorites.rs` | HTML | Watch rules | partial - projects watchlist notes through `WatchlistView` |
 | `GET /api/v1/watchlist` | `handlers/favorites.rs` | JSON | Watch rules | partial - projects stable `watchlist.v1` payload from `WatchlistView` |
 | `GET /game/:id` | `handlers/game.rs` | HTML | Game detail | partial - projects boxscore detail from `GameView`; TUI alignment remains |
-| `GET /api/v1/game/:id` | `handlers/game.rs` | JSON | Game detail | partial - projects stable envelope from `GameView`; covered by `l1_conn_smythe_c3_game_json_envelope_shape` |
+| `GET /api/v1/game/:id` | `handlers/game.rs` | JSON | Game detail | partial - projects stable data/meta envelope from `GameView`; live fetch failures are `meta.source_error`; covered by `l1_conn_smythe_c3_game_json_envelope_shape` |
 | `POST /favorites/add` | `handlers/favorites.rs` | mutation | Favorites/groups | partial - normalizes favorite mutation intent through `FavoritesView` support |
 | `POST /favorites/remove` | `handlers/favorites.rs` | mutation | Favorites/groups | partial - normalizes favorite mutation intent through `FavoritesView` support |
 | `GET /transactions` | `handlers/transactions.rs` | HTML | Transactions | partial - projects transaction feed from `TransactionsView`; CLI/TUI alignment remains |

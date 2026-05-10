@@ -223,6 +223,9 @@ Progress:
   schedule, and playoffs. Transactions now uses the strict data/meta success
   envelope; live-route fetch failures now survive as `meta.source_error`
   instead of a top-level success `error` field.
+- 2026-05-10: Normalized the remaining compare and game JSON endpoints off the
+  older optional-error envelope helper. Compare bad input now returns the shared
+  JSON error envelope; game fetch failures survive as `meta.source_error`.
 
 ---
 
