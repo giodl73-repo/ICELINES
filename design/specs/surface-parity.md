@@ -60,7 +60,7 @@ a feature fully shipped.
 
 | Feature | ViewModel | CLI | TUI | Web HTML | Web JSON | Status | Owner |
 |---|---|---|---|---|---|---|---|
-| Scores/tonight | `ScoresView` | `tonight` | `tui scores` | `/scores` | `/api/v1/scores` | partial - HTML and JSON share the web fetch/projection path; core ViewModel alignment remains | Ted Lindsay |
+| Scores/tonight | `ScoresView` | `tonight` | `tui scores` | `/scores` | `/api/v1/scores` | partial - web HTML and web JSON build `ScoresView`; CLI/TUI adapter alignment remains | Ted Lindsay |
 | Schedule | `ScheduleView` | `schedule` | `tui schedule` | `/schedule` | `/api/v1/schedule` | partial - HTML and JSON share the web fetch/projection path; core ViewModel alignment remains | Lester Patrick/Ted Lindsay |
 | Playoffs | `PlayoffsView` | `playoffs` | `tui playoffs` | `/playoffs` | `/api/v1/playoffs` | partial - HTML and JSON share the web bundled/live projection path; historical bundle gaps and core ViewModel alignment remain | Lester Patrick/Ted Lindsay |
 | Transactions | `TransactionsView` | `transactions` | `tui transactions` | `/transactions` | `/api/v1/transactions` | partial - HTML and JSON share the web snapshot/fallback projection; cache/source-state contract and core ViewModel alignment remain | Lester Patrick/Ted Lindsay |
@@ -162,8 +162,8 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /api/v1/career` | `handlers/career.rs` | JSON | Career/cross-league cohorts | partial |
 | `GET /docs` | `handlers/docs.rs` | HTML | Docs reference | partial |
 | `GET /season-type/:kind` | `handlers/season_type.rs` | mutating redirect | Config/report toggles | partial |
-| `GET /scores` | `handlers/scores.rs` | HTML | Scores/tonight | partial |
-| `GET /api/v1/scores` | `handlers/scores.rs` | JSON | Scores/tonight | partial - envelope test exists |
+| `GET /scores` | `handlers/scores.rs` | HTML | Scores/tonight | partial - projects score days from `ScoresView`; CLI/TUI alignment remains |
+| `GET /api/v1/scores` | `handlers/scores.rs` | JSON | Scores/tonight | partial - projects stable envelope from `ScoresView`; covered by `l1_scores_json_envelope_shape` |
 | `GET /schedule` | `handlers/schedule.rs` | HTML | Schedule | partial |
 | `GET /api/v1/schedule` | `handlers/schedule.rs` | JSON | Schedule | partial - envelope test exists |
 | `GET /playoffs` | `handlers/playoffs.rs` | HTML | Playoffs | partial |

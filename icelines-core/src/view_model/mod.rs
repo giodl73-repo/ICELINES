@@ -10,6 +10,7 @@ pub mod goalies;
 pub mod leaders;
 pub mod player_card;
 pub mod poach;
+pub mod scores;
 pub mod team_depth;
 pub mod tokens;
 
@@ -31,6 +32,7 @@ pub use poach::{
     PoachReportView, PoachScheduleFilter, PoachScore, PoachScoreComponent, PoachWindow,
     RecommendationKind, ScoreRange, WatchRule, WatchRuleTrigger, WatchRulesView,
 };
+pub use scores::{scores_context, ScheduledGameInput, ScoreGameRow, ScoresDayView, ScoresView};
 pub use team_depth::{
     DeploymentEvidence, DepthGoalieSlot, DepthLeagueView, DepthLine, DepthPair, DepthPlayerSlot,
     DepthSlotKind, DepthSummary, DepthTeamStrengthRow, TeamDepthView,
@@ -43,8 +45,9 @@ mod tests {
     use crate::season_stats::SeasonType;
     use crate::view_model::{
         CompareView, Completeness, DepthLeagueView, EmptyKind, LeaderKind, LeadersView, MetricCell,
-        MetricUnit, MetricValue, PlayerCardView, SemanticToken, SourceKind, SourceProvenance,
-        SourceState, StatKey, ValuePrecision, ViewContext, ViewWindow,
+        MetricUnit, MetricValue, PlayerCardView, ScheduledGameInput, ScoresView, SemanticToken,
+        SourceKind, SourceProvenance, SourceState, StatKey, ValuePrecision, ViewContext,
+        ViewWindow,
     };
 
     #[test]
@@ -478,5 +481,45 @@ mod tests {
         assert_eq!(json["rows"][0]["c_top"], "Edmonton Center");
         assert_eq!(json["rows"][0]["total"], 210.0);
         assert_eq!(json["rows"][1]["team"], "SEA");
+    }
+
+    #[test]
+    fn scores_viewmodel_contract_fixture_groups_dates_and_status() {
+        let context = ViewContext::new(ViewWindow::new(Season(20242025), SeasonType::Regular));
+        let view = ScoresView::from_games(
+            context,
+            chrono::NaiveDate::from_ymd_opt(2024, 10, 8).unwrap(),
+            chrono::NaiveDate::from_ymd_opt(2024, 10, 8).unwrap(),
+            crate::timeframe::Timeframe::Day,
+            vec![ScheduledGameInput {
+                date: "2024-10-08".to_string(),
+                game_type: 3,
+                away_abbrev: "EDM".to_string(),
+                away_name: "Oilers".to_string(),
+                home_abbrev: "FLA".to_string(),
+                home_name: "Panthers".to_string(),
+                start_time_utc: "2024-10-08T23:00:00Z".to_string(),
+                away_score: Some(3),
+                home_score: Some(2),
+                game_state: Some("FINAL".to_string()),
+                last_period: Some("OT".to_string()),
+                series_game: Some("Game 4".to_string()),
+                away_wins: Some(1),
+                home_wins: Some(2),
+            }],
+        );
+
+        let json = serde_json::to_value(&view).expect("serialize scores view");
+
+        assert_eq!(json["context"]["window"]["season"], 20242025);
+        assert_eq!(json["range"], "day");
+        assert_eq!(json["total_games"], 1);
+        assert_eq!(json["days"][0]["date"], "2024-10-08");
+        assert_eq!(json["days"][0]["rows"][0]["state_label"], "FINAL/OT");
+        assert_eq!(json["days"][0]["rows"][0]["state_class"], "final");
+        assert_eq!(
+            json["days"][0]["rows"][0]["series_context"],
+            "Game 4 · FLA leads 2-1"
+        );
     }
 }

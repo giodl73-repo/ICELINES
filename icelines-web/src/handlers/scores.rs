@@ -4,7 +4,9 @@ use askama::Template;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
-use chrono::{Datelike, Duration, NaiveDate, Utc, Weekday};
+use chrono::{Duration, NaiveDate, Utc};
+use icelines_core::model::Season;
+use icelines_core::{ScheduledGameInput, ScoresDayView, ScoresView, ViewContext, ViewWindow};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize, Default)]
@@ -60,65 +62,18 @@ pub(crate) fn parse_range_to_timeframe(s: Option<&str>) -> icelines_core::timefr
     }
 }
 
-fn pretty_day(d: NaiveDate) -> String {
-    let weekday = match d.weekday() {
-        Weekday::Mon => "Mon",
-        Weekday::Tue => "Tue",
-        Weekday::Wed => "Wed",
-        Weekday::Thu => "Thu",
-        Weekday::Fri => "Fri",
-        Weekday::Sat => "Sat",
-        Weekday::Sun => "Sun",
-    };
-    let month = match d.month() {
-        1 => "Jan",
-        2 => "Feb",
-        3 => "Mar",
-        4 => "Apr",
-        5 => "May",
-        6 => "Jun",
-        7 => "Jul",
-        8 => "Aug",
-        9 => "Sep",
-        10 => "Oct",
-        11 => "Nov",
-        12 => "Dec",
-        _ => "?",
-    };
-    format!("{}, {} {}, {}", weekday, month, d.day(), d.year())
-}
-
-fn state_to_class_label(state: Option<&str>, last_period: Option<&str>) -> (String, String) {
-    match state.unwrap_or("") {
-        "FINAL" | "OFF" => {
-            let label = match last_period.unwrap_or("REG") {
-                "OT" => "FINAL/OT".to_owned(),
-                "SO" => "FINAL/SO".to_owned(),
-                _ => "FINAL".to_owned(),
-            };
-            ("final".to_owned(), label)
-        }
-        "LIVE" | "CRIT" => ("live".to_owned(), "LIVE".to_owned()),
-        "PRE" => ("future".to_owned(), "Pre-game".to_owned()),
-        "FUT" | "" => ("future".to_owned(), "Scheduled".to_owned()),
-        other => ("future".to_owned(), other.to_owned()),
-    }
-}
-
-/// Drop the date portion of an ISO-8601 timestamp and emit
-/// just `HH:MM UTC`. Inputs look like `2026-05-04T19:00:00Z`.
-fn pretty_time_utc(ts: &str) -> String {
-    if let Some(t) = ts.split('T').nth(1) {
-        let hhmm: String = t.chars().take(5).collect();
-        if hhmm.len() == 5 {
-            return format!("{hhmm} UTC");
-        }
-    }
-    String::new()
-}
-
 async fn build_scores_result(state: &WebState, q: &ScoresQuery) -> ScoresResult {
-    let active_label = state.config.read().await.active_label.clone();
+    let (active_label, active_season, active_season_type) = {
+        let cfg = state.config.read().await;
+        (
+            cfg.active_label.clone(),
+            cfg.active_season
+                .parse::<u32>()
+                .map(Season)
+                .unwrap_or(Season(0)),
+            super::leaders::parse_season_type(&cfg.active_season_type),
+        )
+    };
 
     let today = Utc::now().date_naive();
     let active_date = q.date.as_deref().and_then(parse_date).unwrap_or(today);
@@ -127,7 +82,6 @@ async fn build_scores_result(state: &WebState, q: &ScoresQuery) -> ScoresResult 
     // Week / Month surface the natural 7-day gameWeek
     // window the API already returns.
     let timeframe = parse_range_to_timeframe(q.range.as_deref());
-    let (range_start, range_end) = timeframe.range(active_date);
     let prev_date = active_date - Duration::days(7);
     let next_date = active_date + Duration::days(7);
 
@@ -140,93 +94,77 @@ async fn build_scores_result(state: &WebState, q: &ScoresQuery) -> ScoresResult 
         client.fetch_today_schedule().await
     };
 
-    let (days, total_games, fetch_error) = match fetch_result {
-        Ok(games) => {
-            use std::collections::BTreeMap;
-            let mut by_date: BTreeMap<String, Vec<ScoreRow>> = BTreeMap::new();
-            let total = games.len();
-            for g in games {
-                let (state_class, state_label) =
-                    state_to_class_label(g.game_state.as_deref(), g.last_period.as_deref());
-                let series_context = if g.is_playoff() {
-                    let series_game = g.series_game.unwrap_or_default();
-                    let aw = g.away_wins.unwrap_or(0);
-                    let hw = g.home_wins.unwrap_or(0);
-                    let series_state = if aw > hw {
-                        format!("{} leads {}-{}", g.away_abbrev, aw, hw)
-                    } else if hw > aw {
-                        format!("{} leads {}-{}", g.home_abbrev, hw, aw)
-                    } else if aw == 0 {
-                        "series begins".to_owned()
-                    } else {
-                        format!("tied {}-{}", aw, hw)
-                    };
-                    if series_game.is_empty() {
-                        series_state
-                    } else {
-                        format!("{series_game} · {series_state}")
-                    }
-                } else {
-                    String::new()
-                };
-                let row = ScoreRow {
-                    away_abbrev: g.away_abbrev,
-                    away_name: g.away_name,
-                    home_abbrev: g.home_abbrev,
-                    home_name: g.home_name,
-                    away_score_str: g.away_score.map(|s| s.to_string()).unwrap_or_default(),
-                    home_score_str: g.home_score.map(|s| s.to_string()).unwrap_or_default(),
-                    state_label,
-                    state_class,
-                    start_time_label: pretty_time_utc(&g.start_time_utc),
-                    is_playoff: g.game_type == 3,
-                    series_context,
-                };
-                by_date.entry(g.date).or_default().push(row);
-            }
-            // Phase Foster +9 — keep only days that fall
-            // inside `(range_start, range_end)`. Day collapses
-            // to a single date; Week/Month widen.
-            by_date.retain(|date_str, _| {
-                match parse_date(date_str) {
-                    Some(d) => d >= range_start && d <= range_end,
-                    None => true, // unparseable date stays — defensive
-                }
-            });
-            let days: Vec<ScoresDay> = by_date
-                .into_iter()
-                .map(|(date, rows)| {
-                    let date_pretty = parse_date(&date)
-                        .map(pretty_day)
-                        .unwrap_or_else(|| date.clone());
-                    ScoresDay {
-                        date,
-                        date_pretty,
-                        rows,
-                    }
-                })
-                .collect();
-            (days, total, None)
-        }
-        Err(e) => (Vec::new(), 0, Some(e.to_string())),
+    let context = ViewContext::new(ViewWindow::new(active_season, active_season_type));
+    let (view, fetch_error) = match fetch_result {
+        Ok(games) => (
+            ScoresView::from_games(
+                context,
+                active_date,
+                today,
+                timeframe,
+                games.into_iter().map(scheduled_game_input).collect(),
+            ),
+            None,
+        ),
+        Err(e) => (
+            ScoresView::from_games(context, active_date, today, timeframe, Vec::new()),
+            Some(e.to_string()),
+        ),
     };
 
     ScoresResult {
         active_label,
-        active_date: active_date.format("%Y-%m-%d").to_string(),
+        active_date: view.active_date,
         prev_date: prev_date.format("%Y-%m-%d").to_string(),
         next_date: next_date.format("%Y-%m-%d").to_string(),
-        today_date: today.format("%Y-%m-%d").to_string(),
-        range: match timeframe {
-            icelines_core::timeframe::Timeframe::Day => "day",
-            icelines_core::timeframe::Timeframe::Week => "week",
-            icelines_core::timeframe::Timeframe::Month => "month",
-            icelines_core::timeframe::Timeframe::Season => "season",
-        }
-        .to_owned(),
-        days,
-        total_games,
+        today_date: view.today_date,
+        range: view.range,
+        days: view.days.iter().map(scores_day_from_view).collect(),
+        total_games: view.total_games,
         fetch_error,
+    }
+}
+
+fn scheduled_game_input(game: icelines_fetch::nhl_api::ScheduledGame) -> ScheduledGameInput {
+    ScheduledGameInput {
+        date: game.date,
+        game_type: game.game_type,
+        away_abbrev: game.away_abbrev,
+        away_name: game.away_name,
+        home_abbrev: game.home_abbrev,
+        home_name: game.home_name,
+        start_time_utc: game.start_time_utc,
+        away_score: game.away_score,
+        home_score: game.home_score,
+        game_state: game.game_state,
+        last_period: game.last_period,
+        series_game: game.series_game,
+        away_wins: game.away_wins,
+        home_wins: game.home_wins,
+    }
+}
+
+fn scores_day_from_view(day: &ScoresDayView) -> ScoresDay {
+    ScoresDay {
+        date: day.date.clone(),
+        date_pretty: day.date_pretty.clone(),
+        rows: day
+            .rows
+            .iter()
+            .map(|row| ScoreRow {
+                away_abbrev: row.away_abbrev.clone(),
+                away_name: row.away_name.clone(),
+                home_abbrev: row.home_abbrev.clone(),
+                home_name: row.home_name.clone(),
+                away_score_str: row.away_score_str.clone(),
+                home_score_str: row.home_score_str.clone(),
+                state_label: row.state_label.clone(),
+                state_class: row.state_class.clone(),
+                start_time_label: row.start_time_label.clone(),
+                is_playoff: row.is_playoff,
+                series_context: row.series_context.clone(),
+            })
+            .collect(),
     }
 }
 

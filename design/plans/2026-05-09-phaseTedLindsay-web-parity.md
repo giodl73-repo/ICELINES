@@ -141,6 +141,9 @@ Progress:
 - 2026-05-10: Added core `DepthLeagueView` and migrated `/depth` plus
   `/api/v1/depth` to project existing cross-team depth rankings from the
   shared league-depth contract.
+- 2026-05-10: Added core `ScoresView` and migrated `/scores` plus
+  `/api/v1/scores` to project date grouping, game status labels, start times,
+  and playoff series context from the shared scores contract.
 
 ---
 

@@ -70,7 +70,7 @@ pub use view_model::{
     EmptyState, FilterKey, FilterOp, GoalieRoleFilter, GoalieRoleSignal, GoalieRow, GoaliesView,
     LeaderKind, LeaderRow, LeadersView, MetricCell, MetricUnit, MetricValue, PlayerCardView,
     PlayerCareerSummary, PlayerSeasonSummary, RecoveryAction, ReportContext, ReportKind,
-    ReportSectionRef, SemanticToken, SortDirection, SortKey, SortState, SourceKind,
-    SourceProvenance, SourceState, StatKey, TeamDepthView, ValuePrecision, ViewContext,
-    ViewWarning, ViewWindow, WarningKind,
+    ReportSectionRef, ScheduledGameInput, ScoreGameRow, ScoresDayView, ScoresView, SemanticToken,
+    SortDirection, SortKey, SortState, SourceKind, SourceProvenance, SourceState, StatKey,
+    TeamDepthView, ValuePrecision, ViewContext, ViewWarning, ViewWindow, WarningKind,
 };
