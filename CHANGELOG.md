@@ -1,5 +1,19 @@
 # IceLines Changelog
 
+## v0.24.1 - 2026-05-09 - Phase Lester Patrick closeout
+
+Headline: **Lester Patrick is closed as the CLI parity pass: schedule,
+playoffs, transactions, and the in-TUI manual/docs overlay are implemented and
+covered by focused tests.**
+
+### What changed
+
+- Repaired stale TUI userflow tests that used pre-Favorites/pre-Poach tab
+  indices for Scores, Schedule, Transactions, and Playoffs.
+- Marked the Lester Patrick plan and roadmap entries implemented.
+
+---
+
 ## v0.24.0 - 2026-05-09 - Phase Messier (TUI filter/sort consistency)
 
 Headline: **TUI player-list screens now share one filter/sort vocabulary.

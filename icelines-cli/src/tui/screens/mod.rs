@@ -1493,7 +1493,7 @@ mod app_snapshot_tests {
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
 
-        app.handle(Action::GoToTab(4));
+        app.handle(Action::GoToTab(6));
         assert_eq!(app.screen, crate::tui::app::Screen::Tonight);
         let text = render_app_to_text(&app, 140, 40);
         // Nav bar must still show all tabs (Scores tab must not have hidden them).
@@ -1507,7 +1507,7 @@ mod app_snapshot_tests {
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
 
-        app.handle(Action::GoToTab(5));
+        app.handle(Action::GoToTab(7));
         assert_eq!(app.screen, crate::tui::app::Screen::Schedule);
         let _text = render_app_to_text(&app, 140, 40);
     }
@@ -1520,7 +1520,7 @@ mod app_snapshot_tests {
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
 
-        app.handle(Action::GoToTab(6));
+        app.handle(Action::GoToTab(8));
         assert_eq!(app.screen, crate::tui::app::Screen::Transactions);
         let _text = render_app_to_text(&app, 140, 40);
     }
@@ -1533,7 +1533,7 @@ mod app_snapshot_tests {
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
 
-        app.handle(Action::GoToTab(7));
+        app.handle(Action::GoToTab(9));
         assert_eq!(app.screen, crate::tui::app::Screen::Playoffs);
         let _text = render_app_to_text(&app, 140, 40);
     }
@@ -1809,7 +1809,7 @@ mod app_snapshot_tests {
         let (_dir, store) = empty_store_in_tempdir();
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
-        app.handle(Action::GoToTab(5)); // Schedule
+        app.handle(Action::GoToTab(7)); // Schedule
         assert_eq!(app.screen, crate::tui::app::Screen::Schedule);
 
         // '/' opens search mode.
@@ -1842,7 +1842,7 @@ mod app_snapshot_tests {
         let (_dir, store) = empty_store_in_tempdir();
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
-        app.handle(Action::GoToTab(5));
+        app.handle(Action::GoToTab(7));
         app.handle(Action::Search);
         for c in "nyr wsh".chars() {
             if c == ' ' {
@@ -1867,7 +1867,7 @@ mod app_snapshot_tests {
         let (_dir, store) = empty_store_in_tempdir();
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
-        app.handle(Action::GoToTab(5));
+        app.handle(Action::GoToTab(7));
         app.handle(Action::Search);
         for c in "edmm".chars() {
             app.handle(Action::Char(c));
@@ -1884,7 +1884,7 @@ mod app_snapshot_tests {
         let (_dir, store) = empty_store_in_tempdir();
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
-        app.handle(Action::GoToTab(5));
+        app.handle(Action::GoToTab(7));
         app.handle(Action::Search);
         for c in "zzz".chars() {
             app.handle(Action::Char(c));
@@ -1906,7 +1906,7 @@ mod app_snapshot_tests {
         let (_dir, store) = empty_store_in_tempdir();
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
-        app.handle(Action::GoToTab(5));
+        app.handle(Action::GoToTab(7));
         app.handle(Action::Search);
         app.handle(Action::Char('s'));
         assert_eq!(app.schedule.query, "s");
@@ -1924,7 +1924,7 @@ mod app_snapshot_tests {
         let (_dir, store) = empty_store_in_tempdir();
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
-        app.handle(Action::GoToTab(6)); // Transactions
+        app.handle(Action::GoToTab(8)); // Transactions
 
         app.handle(Action::Search);
         assert!(app.txs.search_mode, "/ must open transactions search");
@@ -1947,7 +1947,7 @@ mod app_snapshot_tests {
         let (_dir, store) = empty_store_in_tempdir();
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
-        app.handle(Action::GoToTab(6));
+        app.handle(Action::GoToTab(8));
         app.handle(Action::Search);
         app.handle(Action::Char('w'));
         app.handle(Action::Char('a'));
@@ -1966,7 +1966,7 @@ mod app_snapshot_tests {
         let (_dir, store) = empty_store_in_tempdir();
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
-        app.handle(Action::GoToTab(6));
+        app.handle(Action::GoToTab(8));
         app.handle(Action::Search);
         for c in "claim".chars() {
             app.handle(Action::Char(c));
@@ -2674,7 +2674,7 @@ mod app_snapshot_tests {
         let (_dir, store) = empty_store_in_tempdir();
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
-        app.handle(Action::GoToTab(4)); // Tonight/Scores
+        app.handle(Action::GoToTab(6)); // Tonight/Scores
 
         // 'd' opens the picker.
         app.handle(Action::Char('d'));
@@ -2710,7 +2710,7 @@ mod app_snapshot_tests {
         app.boot_load_with_store(&store);
 
         // Open on Tonight first via Shift+D.
-        app.handle(Action::GoToTab(4)); // Tonight
+        app.handle(Action::GoToTab(6)); // Tonight
         app.handle(Action::Char('D'));
         assert_eq!(
             app.date_picker.target,
@@ -2719,7 +2719,7 @@ mod app_snapshot_tests {
         app.handle(Action::Escape);
 
         // Now open on Schedule via Shift+D — target rebinds.
-        app.handle(Action::GoToTab(5)); // Schedule
+        app.handle(Action::GoToTab(7)); // Schedule
         app.handle(Action::Char('D'));
         assert_eq!(
             app.date_picker.target,
@@ -2800,7 +2800,7 @@ mod app_snapshot_tests {
         let (_dir, store) = empty_store_in_tempdir();
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
-        app.handle(Action::GoToTab(8)); // Playoffs
+        app.handle(Action::GoToTab(9)); // Playoffs
 
         // Defaults match what App::new wires through.
         assert_eq!(app.playoffs.round, 0);
@@ -2826,7 +2826,7 @@ mod app_snapshot_tests {
         let (_dir, store) = empty_store_in_tempdir();
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
-        app.handle(Action::GoToTab(4)); // Tonight/Scores
+        app.handle(Action::GoToTab(6)); // Tonight/Scores
 
         assert_eq!(
             app.tonight.date, "",
@@ -2870,7 +2870,7 @@ mod app_snapshot_tests {
         let (_dir, store) = empty_store_in_tempdir();
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
-        app.handle(Action::GoToTab(6)); // Transactions
+        app.handle(Action::GoToTab(8)); // Transactions
 
         // Seed at least one row so the cycle has data to act on.
         app.txs.rows = vec![norris_fixture_tx(icelines_core::TransactionKind::Trade)];
@@ -2897,7 +2897,7 @@ mod app_snapshot_tests {
         let (_dir, store) = empty_store_in_tempdir();
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
-        app.handle(Action::GoToTab(6));
+        app.handle(Action::GoToTab(8));
 
         // Seed two rows with distinct teams so transactions_teams
         // returns a non-empty list to cycle.
@@ -2929,7 +2929,7 @@ mod app_snapshot_tests {
         let (_dir, store) = empty_store_in_tempdir();
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
-        app.handle(Action::GoToTab(6));
+        app.handle(Action::GoToTab(8));
 
         // Seed rows.
         app.txs.rows = vec![
@@ -2972,7 +2972,7 @@ mod app_snapshot_tests {
         let (_dir, store) = empty_store_in_tempdir();
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
-        app.handle(Action::GoToTab(5)); // Schedule
+        app.handle(Action::GoToTab(7)); // Schedule
 
         // First search — Team filter on SEA.
         app.handle(Action::Search);
@@ -3017,7 +3017,7 @@ mod app_snapshot_tests {
         let (_dir, store) = empty_store_in_tempdir();
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
-        app.handle(Action::GoToTab(5));
+        app.handle(Action::GoToTab(7));
         let week_before = app.schedule.week.clone();
 
         // Apply a filter.
@@ -3061,7 +3061,7 @@ mod app_snapshot_tests {
         let (_dir, store) = empty_store_in_tempdir();
         let mut app = App::new(true);
         app.boot_load_with_store(&store);
-        app.handle(Action::GoToTab(5));
+        app.handle(Action::GoToTab(7));
 
         // Type an invalid team.
         app.handle(Action::Search);

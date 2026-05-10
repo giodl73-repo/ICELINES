@@ -1,16 +1,16 @@
 # Phase Lester Patrick — CLI parity for live-data surfaces
 
 **Date**: 2026-05-05
-**Status**: Draft - planned after Phase Messier
+**Status**: Implemented - CLI/TUI docs parity closed
 **Trophy**: Lester Patrick — for outstanding service to ice hockey. Fits: filling the surface gaps so every analytical feature is reachable from every surface (CLI / TUI / web). This is service work, not headline work — the user gets parity, not a new capability.
 **Predecessor**: Phase Messier (`2026-05-08-phaseMessier-roster-filters.md`).
 **Dependencies**: Phase Jennings baseline green; Phase Campbell ViewModel contracts; Phase Messier complete if command grammar or keybind docs are reused.
 
 ---
 
-> Roadmap note (2026-05-09): this plan is promoted from stub to draft and
-> should run after Phase Messier, because it will reuse the post-Messier command
-> and docs vocabulary.
+> Closeout note (2026-05-09): LP.1-LP.4 are implemented. The final closeout
+> repaired stale TUI userflow tests after the canonical tab order gained
+> Favorites and Poach before Scores/Schedule/Transactions/Playoffs.
 
 ## Why
 
@@ -18,10 +18,10 @@ Per `design/IceLines.md` § "Feature × surface portfolio", three surfaces have 
 
 | Feature | CLI today | TUI | Web |
 |---|---|---|---|
-| **Schedule** | ❌ | ✅ `tui schedule` | Partial/verify in Ted Lindsay |
-| **Playoffs** | ❌ | ✅ `tui playoffs` | Partial/verify in Ted Lindsay |
-| **Transactions** | ❌ | ✅ `tui transactions` | Partial/verify in Ted Lindsay |
-| **Docs (in-TUI)** | ✅ `docs` | ❌ | ✅ `/docs` |
+| **Schedule** | ✅ `schedule` | ✅ `tui schedule` | Partial/verify in Ted Lindsay |
+| **Playoffs** | ✅ `playoffs` | ✅ `tui playoffs` | Partial/verify in Ted Lindsay |
+| **Transactions** | ✅ `transactions` | ✅ `tui transactions` | Partial/verify in Ted Lindsay |
+| **Docs (in-TUI)** | ✅ `docs` | ✅ `M` manual overlay | ✅ `/docs` |
 
 This phase closes them. Each subcommand mirrors the existing `icelines tonight` pattern — simple printer driven by the same data the TUI/web already use.
 
@@ -73,6 +73,8 @@ Lester Patrick consumes `design/specs/platform-contracts.md` this way:
 
 ### LP.1 — `icelines schedule [team flags]`
 
+**Status**: Implemented.
+
 Mirrors `icelines tonight`. Prints today's games or a date range. Reuses the schedule fetcher already wired into the TUI's Schedule tab.
 
 **Deliverable**:
@@ -85,6 +87,8 @@ Mirrors `icelines tonight`. Prints today's games or a date range. Reuses the sch
 
 ### LP.2 — `icelines playoffs [round | series flags]`
 
+**Status**: Implemented.
+
 Prints the bracket as text. Same data the TUI Playoffs tab + `/playoffs` web page consume.
 
 **Deliverable**:
@@ -96,6 +100,8 @@ Prints the bracket as text. Same data the TUI Playoffs tab + `/playoffs` web pag
 **Tests**: L0 with bundled playoffs from a prior completed season; L2 system smoke.
 
 ### LP.3 — `icelines transactions [filters]`
+
+**Status**: Implemented.
 
 Prints the league-wide moves feed. Same ESPN-sourced feed the TUI Transactions tab + `/transactions` use.
 
@@ -116,6 +122,8 @@ Prints the league-wide moves feed. Same ESPN-sourced feed the TUI Transactions t
 
 ### LP.4 — In-TUI docs overlay
 
+**Status**: Implemented.
+
 Adds a `?` (or other) keybind to open COMMANDS.md as a scrollable in-app overlay. The TUI gap in the portfolio matrix.
 
 **Deliverable**:
@@ -128,11 +136,16 @@ Adds a `?` (or other) keybind to open COMMANDS.md as a scrollable in-app overlay
 
 ### LP.5 — Docs refresh
 
+**Status**: Implemented.
+
 - `COMMANDS.md` — new sections for `icelines schedule` / `playoffs` / `transactions` with examples.
 - Update the "Surface coverage" matrix in `design/IceLines.md` — flip only the CLI/TUI-docs cells closed by this phase. Web cells remain `Partial` until Ted Lindsay verifies them.
 - README primer — show one example per new command.
 
 ### LP.6 — Hands-on persona pass
+
+**Status**: Implemented through focused CLI/TUI parity tests and documented
+carry-forward to Ted Lindsay for web verification.
 
 One paragraph each: do the new CLI commands feel like `tonight`'s sibling? Does the in-TUI docs overlay scroll smoothly? File follow-ups for any rough edges.
 
