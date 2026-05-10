@@ -35,6 +35,8 @@
 //! - [`BioConstraints`] — a folded set of all bio atoms ready to
 //!   apply against a `PlayerView`.
 
+#![deny(unsafe_code)]
+
 pub mod data_provider;
 pub mod errors;
 pub mod executor;

@@ -1,3 +1,5 @@
+#![deny(unsafe_code)]
+
 /// Current NHL season identifier — update each October.
 /// Format: YYYYZZZZ where YYYY = start year, ZZZZ = end year.
 pub const CURRENT_SEASON: u32 = 20_252_026;

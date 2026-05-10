@@ -1,3 +1,5 @@
+#![deny(unsafe_code)]
+
 pub mod builder;
 pub mod error;
 pub mod html;

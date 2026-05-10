@@ -6,5 +6,7 @@
 //! re-exported here. New modules can be added on demand without
 //! disturbing the existing CLI dispatch.
 
+#![deny(unsafe_code)]
+
 pub mod ai;
 pub mod config;

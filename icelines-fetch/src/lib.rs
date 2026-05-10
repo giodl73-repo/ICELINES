@@ -1,3 +1,5 @@
+#![deny(unsafe_code)]
+
 pub mod aggregate;
 pub mod atomic_write;
 pub mod boxscore_client;

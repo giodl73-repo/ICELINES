@@ -29,6 +29,8 @@
 //! [`WebError`] which implements [`axum::response::IntoResponse`] so the
 //! handler bodies stay free of HTTP boilerplate.
 
+#![deny(unsafe_code)]
+
 pub mod api;
 pub mod config;
 pub mod error;

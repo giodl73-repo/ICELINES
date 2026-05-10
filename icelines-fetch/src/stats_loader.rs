@@ -17,8 +17,8 @@ use icelines_core::model::{Position, Season, TeamAbbr};
 use icelines_core::name::normalize_name;
 use icelines_core::scoring::compute_pace_score;
 use icelines_core::season_stats::{
-    AdvancedStats, GoalieSeasonStats, RealtimeStats, SeasonStatsBuilder, SeasonType, StatTotals,
-    TeamStint, SYNTHETIC_DATE_PREFIX,
+    AdvancedStats, GoalieSeasonStats, RealtimeStats, SeasonStatsBuildError, SeasonStatsBuilder,
+    SeasonType, StatTotals, TeamStint, SYNTHETIC_DATE_PREFIX,
 };
 use icelines_core::stats_catalog::{Tier1ReportFile, Tier1Row};
 use icelines_core::stats_repository::{RepoError, StatsRepository};
@@ -82,6 +82,12 @@ pub enum LoadError {
     /// as a magic `#[source]` field expecting `std::error::Error`.)
     #[error("Tier-1 report load failed for {kind}: {cause}")]
     ReportLoad { kind: String, cause: String },
+    #[error("season stats build failed for player {player_id}: {source}")]
+    SeasonStatsBuild {
+        player_id: PlayerId,
+        #[source]
+        source: SeasonStatsBuildError,
+    },
     // Hart.4.1 v0.2 (Gap H): LoadError::Bundle and the BundleError enum
     // were dropped. They were dead code (no path produced one — bundle
     // reads went through .map_err(|_| SeasonNotBundled)). Reintroduce
@@ -532,7 +538,7 @@ pub fn load_into_repo(
             stats_row,
             realtime_row,
             mp_row,
-        );
+        )?;
         repo.upsert_stats(stats)?;
 
         if let Some(c) = contracts_idx.get(&bio.player_id) {
@@ -548,7 +554,7 @@ pub fn load_into_repo(
         if repo.identity(pid).is_none() {
             repo.upsert_identity(build_goalie_identity(g))?;
         }
-        let stats = build_goalie_season_stats(pid, season, season_type, g);
+        let stats = build_goalie_season_stats(pid, season, season_type, g)?;
         repo.upsert_stats(stats)?;
         if let Some(c) = contracts_idx.get(&g.player_id) {
             repo.upsert_contract(pid, build_contract(c));
@@ -843,7 +849,7 @@ pub fn find_player_candidates(name: &str) -> Vec<PlayerCandidate> {
 pub fn load_player_career_into_repo(
     repo: &mut StatsRepository,
     pid: PlayerId,
-) -> Result<usize, RepoError> {
+) -> Result<usize, LoadError> {
     use crate::bundled;
     use crate::snapshot::{SnapshotStore, SnapshotTier};
     use icelines_core::season_stats::SeasonType;
@@ -912,7 +918,7 @@ pub fn load_player_career_into_repo(
                     stats_row,
                     realtime_row,
                     None,
-                );
+                )?;
                 repo.upsert_stats(stats)?;
                 inserted += 1;
             }
@@ -963,7 +969,7 @@ pub fn load_player_career_into_repo(
                     stats_row_owned.as_ref(),
                     None,
                     None,
-                );
+                )?;
                 repo.upsert_stats(stats)?;
                 inserted += 1;
             }
@@ -1121,7 +1127,7 @@ fn build_skater_stats(
     stats: Option<&SkaterStats>,
     realtime: Option<&SkaterRealtime>,
     mp: Option<&MoneyPuckStats>,
-) -> icelines_core::season_stats::SeasonStats {
+) -> Result<icelines_core::season_stats::SeasonStats, LoadError> {
     // Field-for-field parity with the OLD `make_player` path so the
     // parallel-run field-parity test holds.
     let goals = stats.map(|s| s.goals).unwrap_or(bio.goals);
@@ -1221,7 +1227,12 @@ fn build_skater_stats(
         });
     }
 
-    builder.build()
+    builder
+        .try_build()
+        .map_err(|source| LoadError::SeasonStatsBuild {
+            player_id: pid,
+            source,
+        })
 }
 
 fn build_goalie_season_stats(
@@ -1229,7 +1240,7 @@ fn build_goalie_season_stats(
     season: Season,
     season_type: SeasonType,
     g: &GoalieStats,
-) -> icelines_core::season_stats::SeasonStats {
+) -> Result<icelines_core::season_stats::SeasonStats, LoadError> {
     // The legacy goalie row carries `team_abbrevs` as a comma-separated
     // string for traded goalies (e.g. "BOS,OTT"). For Hart.3 we synthesize
     // one TeamStint per token; per-stint goalie counts (W/L/GS split by
@@ -1332,7 +1343,11 @@ fn build_goalie_season_stats(
         .with_totals(totals)
         .replace_team_stints(stints)
         .with_goalie(goalie)
-        .build()
+        .try_build()
+        .map_err(|source| LoadError::SeasonStatsBuild {
+            player_id: pid,
+            source,
+        })
 }
 
 fn build_contract(c: &LegacyContract) -> PlayerContract {
@@ -1470,7 +1485,8 @@ mod tests {
             Some(&stats),
             None,
             None,
-        );
+        )
+        .expect("build skater stats");
         let team = result
             .team_stints
             .last()
@@ -1500,7 +1516,8 @@ mod tests {
             Some(&stats),
             None,
             None,
-        );
+        )
+        .expect("build skater stats");
         let team = result
             .team_stints
             .last()
@@ -1528,7 +1545,8 @@ mod tests {
             Some(&stats),
             None,
             None,
-        );
+        )
+        .expect("build skater stats");
         let team = result
             .team_stints
             .last()
@@ -1553,7 +1571,8 @@ mod tests {
             Some(&stats),
             None,
             None,
-        );
+        )
+        .expect("build skater stats");
         let team = result
             .team_stints
             .last()
@@ -1579,7 +1598,8 @@ mod tests {
             Some(&stats),
             None,
             None,
-        );
+        )
+        .expect("build skater stats");
         let team = result
             .team_stints
             .last()
@@ -1645,7 +1665,8 @@ mod tests {
             penalty_minutes: 4,
         };
         let stats =
-            build_goalie_season_stats(PlayerId(9000001), Season(20232024), SeasonType::Playoff, &g);
+            build_goalie_season_stats(PlayerId(9000001), Season(20232024), SeasonType::Playoff, &g)
+                .expect("build goalie stats");
 
         // Insertion order preserved through the builder sort because of
         // the SYNTHETIC_DATE_PREFIX-prefixed `started` strings (Hart.3.1
