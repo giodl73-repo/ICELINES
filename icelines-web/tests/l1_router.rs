@@ -96,16 +96,22 @@ async fn l1_html_each_route_has_active_season_header() {
     // marker (the season-header CSS class) plus the label substring.
     let html_routes: &[&str] = &[
         "/",
+        "/leaders",
+        "/compare",
+        "/goalies",
+        "/depth",
         "/poach",
+        "/reports/poach",
+        "/reports/weekly",
+        "/favorites",
         "/watchlist",
-        // King.2: "/leaders",
-        // King.3: "/player/8478402",
-        // King.4: "/team/SEA", "/depth", "/class/2022",
-        // King.5: "/goalies",
-        // King.6: "/reports", "/seasons",
-        // King.7: "/scores", "/schedule", "/playoffs",
-        // King.8: "/transactions", "/groups", "/games", "/search", "/docs",
-        // King.9: "/fantasy",
+        "/scores?date=2014-10-08",
+        "/schedule?date=2014-10-08",
+        "/playoffs?season=19931994",
+        "/game/2025020342",
+        "/transactions",
+        "/docs",
+        "/fantasy",
     ];
 
     for route in html_routes {
@@ -126,7 +132,7 @@ async fn l1_html_each_route_has_active_season_header() {
             "{route} should return 200"
         );
 
-        let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        let bytes = axum::body::to_bytes(response.into_body(), 2 * 1024 * 1024)
             .await
             .expect("body fits");
         let body = std::str::from_utf8(&bytes).expect("html is utf-8");

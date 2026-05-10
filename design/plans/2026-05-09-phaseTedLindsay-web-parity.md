@@ -190,6 +190,8 @@ Progress:
 - 2026-05-10: Moved repeated `filter=` URL extraction and top-level AND
   composition into `icelines-query` so `/leaders` consumes a shared query
   boundary instead of handler-local parsing helpers.
+- 2026-05-10: Expanded the HTML active-season header fence across the shipped
+  major web pages, reports, stubs, and live-fetch error-rendering routes.
 
 ---
 
