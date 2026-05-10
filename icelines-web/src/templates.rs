@@ -389,7 +389,7 @@ pub struct TransactionsTemplate {
 
 /// One row in the transactions feed, projected for the template so
 /// askama doesn't reach into icelines-core types directly.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct TransactionRow {
     pub date: String,
     /// Empty string for league-wide rows.

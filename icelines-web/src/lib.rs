@@ -141,6 +141,10 @@ pub fn router(state: WebState) -> Router {
             "/transactions",
             get(handlers::transactions::get_transactions),
         )
+        .route(
+            "/api/v1/transactions",
+            get(handlers::transactions::get_transactions_json),
+        )
         .route("/fantasy", get(cs::fantasy))
         // Sasq.7 — friendly 404 with a player-search input replaces
         // axum's bare default. Wired as router fallback so any

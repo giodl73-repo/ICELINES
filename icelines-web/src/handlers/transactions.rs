@@ -12,12 +12,44 @@ use serde::Deserialize;
 pub struct TransactionsQuery {
     /// Filter by kind: `trade`, `signing`, `recall`,
     /// `reassignment`, `waiver` (expands to all 3 waiver kinds),
-    /// `ir`, `other`. Unknown → 400.
+    /// `ir`, `other`. Unknown input returns 400.
     #[serde(default)]
     pub kind: Option<String>,
     /// Filter by team abbreviation (case-insensitive).
     #[serde(default)]
     pub team: Option<String>,
+}
+
+struct TransactionsResult {
+    active_label: String,
+    season_pretty: String,
+    rows: Vec<TransactionRow>,
+    total: usize,
+    empty_unfiltered: bool,
+    active_kind: String,
+    active_team: String,
+    out_of_coverage: bool,
+    earliest_season_pretty: String,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct TransactionsEnvelope {
+    schema_version: u32,
+    route: &'static str,
+    data: Vec<TransactionRow>,
+    meta: TransactionsMeta,
+    error: Option<String>,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct TransactionsMeta {
+    season: String,
+    total: usize,
+    active_kind: String,
+    active_team: String,
+    empty_unfiltered: bool,
+    out_of_coverage: bool,
+    earliest_season: String,
 }
 
 fn pretty_season(s: &str) -> String {
@@ -48,29 +80,101 @@ pub async fn get_transactions(
     State(state): State<WebState>,
     Query(q): Query<TransactionsQuery>,
 ) -> Response {
+    let result = match build_transactions_result(&state, &q).await {
+        Ok(result) => result,
+        Err(msg) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Html(format!(
+                    "<!doctype html><html><body>\
+                             <h1>Bad filter</h1><p>{msg}</p>\
+                             <p><a href=\"/transactions\">back to transactions</a></p>\
+                             </body></html>",
+                )),
+            )
+                .into_response();
+        }
+    };
+
+    let tmpl = TransactionsTemplate {
+        active_label: result.active_label,
+        season_pretty: result.season_pretty,
+        rows: result.rows,
+        total: result.total,
+        empty_unfiltered: result.empty_unfiltered,
+        active_kind: result.active_kind,
+        active_team: result.active_team,
+        out_of_coverage: result.out_of_coverage,
+        earliest_season_pretty: result.earliest_season_pretty,
+    };
+    match tmpl.render() {
+        Ok(html) => Html(html).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html(format!(
+                "<!doctype html><html><body><h1>500</h1>\
+                         <p>template render failed: {e}</p></body></html>"
+            )),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn get_transactions_json(
+    State(state): State<WebState>,
+    Query(q): Query<TransactionsQuery>,
+) -> Response {
+    match build_transactions_result(&state, &q).await {
+        Ok(result) => axum::Json(TransactionsEnvelope {
+            schema_version: 1,
+            route: "transactions",
+            meta: TransactionsMeta {
+                season: result.season_pretty,
+                total: result.total,
+                active_kind: result.active_kind,
+                active_team: result.active_team,
+                empty_unfiltered: result.empty_unfiltered,
+                out_of_coverage: result.out_of_coverage,
+                earliest_season: result.earliest_season_pretty,
+            },
+            data: result.rows,
+            error: None,
+        })
+        .into_response(),
+        Err(msg) => (
+            StatusCode::BAD_REQUEST,
+            axum::Json(TransactionsEnvelope {
+                schema_version: 1,
+                route: "transactions",
+                data: Vec::new(),
+                meta: TransactionsMeta {
+                    season: String::new(),
+                    total: 0,
+                    active_kind: q.kind.unwrap_or_default(),
+                    active_team: q.team.unwrap_or_default(),
+                    empty_unfiltered: true,
+                    out_of_coverage: false,
+                    earliest_season: pretty_season(TRANSACTIONS_EARLIEST_SEASON),
+                },
+                error: Some(msg),
+            }),
+        )
+            .into_response(),
+    }
+}
+
+async fn build_transactions_result(
+    state: &WebState,
+    q: &TransactionsQuery,
+) -> Result<TransactionsResult, String> {
     let (season_str, active_label) = {
         let cfg = state.config.read().await;
         (cfg.active_season.clone(), cfg.active_label.clone())
     };
 
-    // Validate the kind filter early. Bad input → 400, not 500.
     let kind_filter: Option<Vec<TransactionKind>> = match q.kind.as_deref() {
         None | Some("") => None,
-        Some(k) => match TransactionKind::parse_filter(k) {
-            Ok(v) => Some(v),
-            Err(msg) => {
-                return (
-                    StatusCode::BAD_REQUEST,
-                    Html(format!(
-                        "<!doctype html><html><body>\
-                                 <h1>Bad filter</h1><p>{msg}</p>\
-                                 <p><a href=\"/transactions\">← back to transactions</a></p>\
-                                 </body></html>",
-                    )),
-                )
-                    .into_response();
-            }
-        },
+        Some(k) => Some(TransactionKind::parse_filter(k)?),
     };
     let team_filter = q
         .team
@@ -79,13 +183,8 @@ pub async fn get_transactions(
         .filter(|t| !t.is_empty());
     let active_kind = q.kind.clone().unwrap_or_default();
     let active_team = team_filter.clone().unwrap_or_default();
-
-    // Out-of-coverage check matches the CLI behavior.
     let out_of_coverage = season_str.as_str() < TRANSACTIONS_EARLIEST_SEASON;
 
-    // Build the SnapshotStore for this request. Cheap — just a
-    // PathBuf wrap. If `snapshots_root` is None (test setup),
-    // fall back to the default (~/.icelines/snapshots).
     let snapshots_root = match state.snapshots_root.as_ref() {
         Some(p) => p.clone(),
         None => icelines_fetch::snapshot::SnapshotStore::default_root(),
@@ -126,14 +225,12 @@ pub async fn get_transactions(
         Err(()) => Vec::new(),
     };
 
-    // Newest first. Date is YYYY-MM-DD so string sort works.
     rows.sort_by(|a, b| b.date.cmp(&a.date));
-    // Cap to 1000 to keep the page render bounded.
     rows.truncate(1000);
     let total = rows.len();
     let empty_unfiltered = rows.is_empty() && kind_filter.is_none() && team_filter.is_none();
 
-    let tmpl = TransactionsTemplate {
+    Ok(TransactionsResult {
         active_label,
         season_pretty: pretty_season(&season_str),
         rows,
@@ -143,16 +240,5 @@ pub async fn get_transactions(
         active_team,
         out_of_coverage,
         earliest_season_pretty: pretty_season(TRANSACTIONS_EARLIEST_SEASON),
-    };
-    match tmpl.render() {
-        Ok(html) => Html(html).into_response(),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Html(format!(
-                "<!doctype html><html><body><h1>500</h1>\
-                         <p>template render failed: {e}</p></body></html>"
-            )),
-        )
-            .into_response(),
-    }
+    })
 }

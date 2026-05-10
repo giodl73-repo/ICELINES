@@ -818,6 +818,35 @@ async fn l1_playoffs_json_envelope_shape() {
     assert!(json["data"].is_array());
 }
 
+#[tokio::test]
+async fn l1_transactions_json_envelope_shape() {
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/transactions?kind=trade&team=TOR")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value =
+        serde_json::from_slice(&bytes).expect("transactions response should be valid json");
+
+    assert_eq!(json["schema_version"], 1);
+    assert_eq!(json["route"], "transactions");
+    assert_eq!(json["meta"]["active_kind"], "trade");
+    assert_eq!(json["meta"]["active_team"], "TOR");
+    assert!(json["meta"]["total"].is_number());
+    assert!(json["data"].is_array());
+}
+
 /// l1_unknown_route_returns_404
 /// — axum's default not-found handler. Once King.1.6 adds host-header
 ///   validation we'll add a 421 case for DNS rebinding, but the basic
