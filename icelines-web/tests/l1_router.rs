@@ -190,6 +190,7 @@ async fn l1_depth_route_returns_200_html() {
 
 #[tokio::test]
 async fn l1_watchlist_route_returns_200_html() {
+    let _guard = home_env_lock();
     let app = router(WebState::new());
 
     let response = app
@@ -785,6 +786,35 @@ async fn l1_schedule_json_envelope_shape() {
     assert_eq!(json["meta"]["active_date"], "2014-10-08");
     assert_eq!(json["meta"]["active_team"], "");
     assert!(json["meta"]["team_chips"].is_array());
+    assert!(json["data"].is_array());
+}
+
+#[tokio::test]
+async fn l1_playoffs_json_envelope_shape() {
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/playoffs")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value =
+        serde_json::from_slice(&bytes).expect("playoffs response should be valid json");
+
+    assert_eq!(json["schema_version"], 1);
+    assert_eq!(json["route"], "playoffs");
+    assert!(json["meta"]["season"].is_string());
+    assert!(json["meta"]["round_count"].is_number());
+    assert!(json["meta"]["series_count"].is_number());
     assert!(json["data"].is_array());
 }
 

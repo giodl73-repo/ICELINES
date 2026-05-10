@@ -302,14 +302,14 @@ pub struct PlayoffsTemplate {
     pub fetch_error: Option<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct PlayoffsRoundView {
     pub round_number: u8,
     pub label: String,
     pub series: Vec<PlayoffsSeriesView>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct PlayoffsSeriesView {
     pub top_abbrev: String,
     pub top_name: String,

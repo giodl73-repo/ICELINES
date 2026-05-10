@@ -62,7 +62,7 @@ a feature fully shipped.
 |---|---|---|---|---|---|---|---|
 | Scores/tonight | `ScoresView` | `tonight` | `tui scores` | `/scores` | `/api/v1/scores` | partial - HTML and JSON share the web fetch/projection path; core ViewModel alignment remains | Ted Lindsay |
 | Schedule | `ScheduleView` | `schedule` | `tui schedule` | `/schedule` | `/api/v1/schedule` | partial - HTML and JSON share the web fetch/projection path; core ViewModel alignment remains | Lester Patrick/Ted Lindsay |
-| Playoffs | `PlayoffsView` | `playoffs` | `tui playoffs` | `/playoffs` | planned/verify | partial - historical bundle gaps remain | Lester Patrick/Ted Lindsay |
+| Playoffs | `PlayoffsView` | `playoffs` | `tui playoffs` | `/playoffs` | `/api/v1/playoffs` | partial - HTML and JSON share the web bundled/live projection path; historical bundle gaps and core ViewModel alignment remain | Lester Patrick/Ted Lindsay |
 | Transactions | `TransactionsView` | `transactions` | `tui transactions` | `/transactions` | planned/verify | partial - cache/source-state contract pending | Lester Patrick/Ted Lindsay |
 | Game detail | `GameView` | n/a | `tui scores` drilldown | `/game/:id` | planned/verify | partial | Ted Lindsay |
 
@@ -166,7 +166,8 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /api/v1/scores` | `handlers/scores.rs` | JSON | Scores/tonight | partial - envelope test exists |
 | `GET /schedule` | `handlers/schedule.rs` | HTML | Schedule | partial |
 | `GET /api/v1/schedule` | `handlers/schedule.rs` | JSON | Schedule | partial - envelope test exists |
-| `GET /playoffs` | `handlers/playoffs.rs` | HTML | Playoffs | partial - JSON twin deferred |
+| `GET /playoffs` | `handlers/playoffs.rs` | HTML | Playoffs | partial |
+| `GET /api/v1/playoffs` | `handlers/playoffs.rs` | JSON | Playoffs | partial - envelope test exists |
 | `GET /favorites` | `handlers/favorites.rs` | HTML | Favorites/groups | partial |
 | `GET /watchlist` | `handlers/favorites.rs` | HTML | Watch rules | partial |
 | `GET /api/v1/watchlist` | `handlers/favorites.rs` | JSON | Watch rules | partial |

@@ -118,6 +118,10 @@ pub fn router(state: WebState) -> Router {
             get(handlers::schedule::get_schedule_json),
         )
         .route("/playoffs", get(handlers::playoffs::get_playoffs))
+        .route(
+            "/api/v1/playoffs",
+            get(handlers::playoffs::get_playoffs_json),
+        )
         // Phase Foster.2 — favorites dashboard
         .route("/favorites", get(handlers::favorites::get_favorites))
         .route("/watchlist", get(handlers::favorites::get_watchlist))

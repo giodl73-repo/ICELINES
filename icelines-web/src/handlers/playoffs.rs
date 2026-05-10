@@ -5,6 +5,33 @@ use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
 
+struct PlayoffsResult {
+    active_label: String,
+    season_pretty: String,
+    source_label: String,
+    rounds: Vec<PlayoffsRoundView>,
+    empty: bool,
+    fetch_error: Option<String>,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct PlayoffsEnvelope {
+    schema_version: u32,
+    route: &'static str,
+    data: Vec<PlayoffsRoundView>,
+    meta: PlayoffsMeta,
+    error: Option<String>,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct PlayoffsMeta {
+    season: String,
+    source: String,
+    empty: bool,
+    round_count: usize,
+    series_count: usize,
+}
+
 fn pretty_season(s: &str) -> String {
     if s.len() == 8 {
         format!("{}-{}", &s[0..4], &s[6..8])
@@ -44,6 +71,45 @@ fn project_bracket(b: icelines_fetch::nhl_api::PlayoffBracket) -> Vec<PlayoffsRo
 }
 
 pub async fn get_playoffs(State(state): State<WebState>) -> Response {
+    let result = build_playoffs_result(&state).await;
+    let tmpl = PlayoffsTemplate {
+        active_label: result.active_label,
+        season_pretty: result.season_pretty,
+        source_label: result.source_label,
+        rounds: result.rounds,
+        empty: result.empty,
+        fetch_error: result.fetch_error,
+    };
+    match tmpl.render() {
+        Ok(html) => Html(html).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html(format!("template render failed: {e}")),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn get_playoffs_json(State(state): State<WebState>) -> Response {
+    let result = build_playoffs_result(&state).await;
+    let series_count = result.rounds.iter().map(|r| r.series.len()).sum();
+    let envelope = PlayoffsEnvelope {
+        schema_version: 1,
+        route: "playoffs",
+        meta: PlayoffsMeta {
+            season: result.season_pretty,
+            source: result.source_label,
+            empty: result.empty,
+            round_count: result.rounds.len(),
+            series_count,
+        },
+        data: result.rounds,
+        error: result.fetch_error,
+    };
+    axum::Json(envelope).into_response()
+}
+
+async fn build_playoffs_result(state: &WebState) -> PlayoffsResult {
     let (active_label, season_str) = {
         let cfg = state.config.read().await;
         (cfg.active_label.clone(), cfg.active_season.clone())
@@ -88,20 +154,12 @@ pub async fn get_playoffs(State(state): State<WebState>) -> Response {
 
     let empty = rounds.iter().all(|r| r.series.is_empty());
 
-    let tmpl = PlayoffsTemplate {
+    PlayoffsResult {
         active_label,
         season_pretty: pretty_season(&season_str),
         source_label,
         rounds,
         empty,
         fetch_error,
-    };
-    match tmpl.render() {
-        Ok(html) => Html(html).into_response(),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Html(format!("template render failed: {e}")),
-        )
-            .into_response(),
     }
 }
