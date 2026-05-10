@@ -1,6 +1,7 @@
 use super::favorites_data::{
-    group_api_rows, mutate_favorites, read_group_members, read_watch_notes, watchlist_api_rows,
-    GroupApiMeta, GroupApiResponse, MutateOp, WatchlistApiMeta, WatchlistApiResponse,
+    group_api_rows_from_view, mutate_favorites, read_group_members, read_watch_notes,
+    watchlist_api_rows, GroupApiMeta, GroupApiResponse, MutateOp, WatchlistApiMeta,
+    WatchlistApiResponse,
 };
 use crate::templates::{
     FavoritePlayerRow, FavoriteTeamRow, FavoritesTemplate, WatchlistPlayerRow, WatchlistTeamRow,
@@ -10,6 +11,10 @@ use askama::Template;
 use axum::extract::{Form, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{Html, IntoResponse, Redirect, Response};
+use icelines_core::model::Season;
+use icelines_core::{
+    FavoriteMemberInput, FavoriteMemberRow, FavoritesView, ViewContext, ViewWindow,
+};
 use serde::Deserialize;
 
 pub async fn get_favorites(State(state): State<crate::WebState>) -> Response {
@@ -21,24 +26,31 @@ pub async fn get_favorites(State(state): State<crate::WebState>) -> Response {
     // → row drops to "no resolved pid"; missing boxscore →
     // dash row.
     let stat_lines = compute_player_stat_lines(&members).await;
-    let active_label = state.config.read().await.active_label.clone();
+    let (active_label, context) = favorites_context(&state).await;
+    let view = FavoritesView::from_members(
+        context,
+        "Favorites".to_string(),
+        favorite_member_inputs(&members),
+        stat_lines,
+    );
 
     let tmpl = FavoritesTemplate {
         active_label,
-        player_count: members.iter().filter(|(k, _)| k == "player").count(),
-        team_count: members.iter().filter(|(k, _)| k == "team").count(),
-        players: members
+        player_count: view.player_count,
+        team_count: view.team_count,
+        players: view
+            .rows
             .iter()
-            .filter(|(kind, _)| kind == "player")
-            .map(|(_, key)| FavoritePlayerRow {
-                key: key.clone(),
-                stat_line: stat_lines.get(key).cloned().unwrap_or_default(),
-            })
+            .filter(|row| row.kind == "player")
+            .map(favorite_player_row)
             .collect(),
-        teams: members
+        teams: view
+            .rows
             .iter()
-            .filter(|(kind, _)| kind == "team")
-            .map(|(_, key)| FavoriteTeamRow { key: key.clone() })
+            .filter(|row| row.kind == "team")
+            .map(|row| FavoriteTeamRow {
+                key: row.key.clone(),
+            })
             .collect(),
     };
 
@@ -79,12 +91,21 @@ pub async fn get_watchlist(State(state): State<crate::WebState>) -> Response {
 
 pub async fn get_favorites_json() -> Response {
     let members = read_group_members("Favorites");
-    let rows = group_api_rows(&members);
+    let view = FavoritesView::from_members(
+        ViewContext::new(ViewWindow::new(
+            Season(icelines_core::CURRENT_SEASON),
+            icelines_core::season_stats::SeasonType::Regular,
+        )),
+        "Favorites".to_string(),
+        favorite_member_inputs(&members),
+        std::collections::HashMap::new(),
+    );
+    let rows = group_api_rows_from_view(&view);
     let meta = GroupApiMeta {
         group: "Favorites",
-        count: rows.len(),
-        player_count: rows.iter().filter(|r| r.kind == "player").count(),
-        team_count: rows.iter().filter(|r| r.kind == "team").count(),
+        count: view.rows.len(),
+        player_count: view.player_count,
+        team_count: view.team_count,
     };
     axum::Json(GroupApiResponse {
         schema_version: "favorites.v1",
@@ -93,6 +114,37 @@ pub async fn get_favorites_json() -> Response {
         meta,
     })
     .into_response()
+}
+
+async fn favorites_context(state: &crate::WebState) -> (String, ViewContext) {
+    let cfg = state.config.read().await;
+    let season = cfg
+        .active_season
+        .parse::<u32>()
+        .map(Season)
+        .unwrap_or(Season(0));
+    let season_type = super::leaders::parse_season_type(&cfg.active_season_type);
+    (
+        cfg.active_label.clone(),
+        ViewContext::new(ViewWindow::new(season, season_type)),
+    )
+}
+
+fn favorite_member_inputs(members: &[(String, String)]) -> Vec<FavoriteMemberInput> {
+    members
+        .iter()
+        .map(|(kind, key)| FavoriteMemberInput {
+            kind: kind.clone(),
+            key: key.clone(),
+        })
+        .collect()
+}
+
+fn favorite_player_row(row: &FavoriteMemberRow) -> FavoritePlayerRow {
+    FavoritePlayerRow {
+        key: row.key.clone(),
+        stat_line: row.stat_line.clone().unwrap_or_default(),
+    }
 }
 
 pub async fn get_watchlist_json() -> Response {

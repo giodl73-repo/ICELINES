@@ -6,6 +6,7 @@
 
 pub mod compare;
 pub mod context;
+pub mod favorites;
 pub mod game;
 pub mod goalies;
 pub mod leaders;
@@ -24,6 +25,7 @@ pub use context::{
     ReportContext, ReportKind, ReportSectionRef, SortDirection, SortKey, SortState, SourceKind,
     SourceProvenance, SourceState, ViewContext, ViewWarning, ViewWindow, WarningKind,
 };
+pub use favorites::{FavoriteMemberInput, FavoriteMemberRow, FavoritesView};
 pub use game::{
     GameBoxscoreInput, GameGoalInput, GameGoalRow, GameGoalieInput, GameGoalieRow, GameSkaterInput,
     GameSkaterRow, GameView,
@@ -58,12 +60,12 @@ mod tests {
     use crate::model::Season;
     use crate::season_stats::SeasonType;
     use crate::view_model::{
-        CompareView, Completeness, DepthLeagueView, EmptyKind, GameBoxscoreInput, GameGoalInput,
-        GameGoalieInput, GameSkaterInput, GameView, LeaderKind, LeadersView, MetricCell,
-        MetricUnit, MetricValue, PlayerCardView, PlayoffsBracketInput, PlayoffsRoundInput,
-        PlayoffsSeriesInput, PlayoffsView, ScheduleView, ScheduledGameInput, ScoresView,
-        SemanticToken, SourceKind, SourceProvenance, SourceState, StatKey, TransactionsView,
-        ValuePrecision, ViewContext, ViewWindow,
+        CompareView, Completeness, DepthLeagueView, EmptyKind, FavoriteMemberInput, FavoritesView,
+        GameBoxscoreInput, GameGoalInput, GameGoalieInput, GameSkaterInput, GameView, LeaderKind,
+        LeadersView, MetricCell, MetricUnit, MetricValue, PlayerCardView, PlayoffsBracketInput,
+        PlayoffsRoundInput, PlayoffsSeriesInput, PlayoffsView, ScheduleView, ScheduledGameInput,
+        ScoresView, SemanticToken, SourceKind, SourceProvenance, SourceState, StatKey,
+        TransactionsView, ValuePrecision, ViewContext, ViewWindow,
     };
 
     #[test]
@@ -162,6 +164,41 @@ mod tests {
         assert!(!view.empty);
         assert_eq!(view.rounds[0].series[0].summary, "EDM 4-2 LAK · EDM wins");
         assert!(view.rounds[0].series[0].is_complete);
+    }
+
+    #[test]
+    fn favorites_viewmodel_counts_members_and_attaches_stat_lines() {
+        let context = ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular));
+        let mut stat_lines = std::collections::HashMap::new();
+        stat_lines.insert(
+            "connor mcdavid".to_string(),
+            "EDM 4-2 W · 1G 2A 3P".to_string(),
+        );
+
+        let view = FavoritesView::from_members(
+            context,
+            "Favorites".to_string(),
+            vec![
+                FavoriteMemberInput {
+                    kind: "player".to_string(),
+                    key: "connor mcdavid".to_string(),
+                },
+                FavoriteMemberInput {
+                    kind: "team".to_string(),
+                    key: "EDM".to_string(),
+                },
+            ],
+            stat_lines,
+        );
+
+        assert_eq!(view.context.source_state[0].source, SourceKind::Favorites);
+        assert_eq!(view.player_count, 1);
+        assert_eq!(view.team_count, 1);
+        assert_eq!(
+            view.rows[0].stat_line.as_deref(),
+            Some("EDM 4-2 W · 1G 2A 3P")
+        );
+        assert!(view.empty_state.is_none());
     }
 
     #[test]

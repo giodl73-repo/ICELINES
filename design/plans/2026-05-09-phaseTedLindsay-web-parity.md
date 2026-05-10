@@ -156,6 +156,10 @@ Progress:
 - 2026-05-10: Added core `PlayoffsView` and migrated `/playoffs` plus
   `/api/v1/playoffs` to project bundled/live bracket rounds and series from
   the shared playoffs contract.
+- 2026-05-10: Added ViewModel-level `FavoritesView` for local group
+  membership and migrated `/favorites` plus `/api/v1/favorites` to project
+  membership rows/counts through that shared contract while preserving the
+  existing `favorites.v1` JSON payload.
 
 ---
 

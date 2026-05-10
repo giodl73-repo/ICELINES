@@ -72,7 +72,7 @@ a feature fully shipped.
 
 | Feature | ViewModel | CLI | TUI | Web HTML | Web JSON | Status | Owner |
 |---|---|---|---|---|---|---|---|
-| Favorites/groups | `FavoritesView` | `group ...` | favorites/group affordances | `/favorites` | `/api/v1/favorites` | partial - Favorites read JSON exists; mutation parity and shared ViewModel alignment remain | Ted Lindsay |
+| Favorites/groups | `FavoritesView` | `group ...` | favorites/group affordances | `/favorites` | `/api/v1/favorites` | partial - web HTML and read JSON project membership through `FavoritesView`; mutation parity and richer nightly dashboard alignment remain | Ted Lindsay |
 | Fantasy league management | `FantasyLeagueView` | `fantasy ...` | groups/deep links | `/fantasy...` | planned/verify | deferred/partial - local-only stance remains | Ted Lindsay |
 | Poacher board | `PoachBoardView` | `poach` | Poach screen | `/poach` | `/api/v1/poach` | implemented - shared board ViewModel across CLI/TUI/web/JSON | Selke |
 | Watch rules | `WatchRulesView` | `watch ...` | watchlist workspace shows notes/rules/recent alerts; rule editor deferred | `/watchlist` | `/api/v1/watch-rules`; `/api/v1/watchlist` | partial - rule preview/list/watch-note, persisted rules, toggles, fired history, and TUI read surface wired; TUI editor deferred | Selke |
@@ -168,8 +168,8 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /api/v1/schedule` | `handlers/schedule.rs` | JSON | Schedule | partial - projects stable envelope from `ScheduleView`; covered by `l1_schedule_json_envelope_shape` |
 | `GET /playoffs` | `handlers/playoffs.rs` | HTML | Playoffs | projects bundled/live bracket through `PlayoffsView` |
 | `GET /api/v1/playoffs` | `handlers/playoffs.rs` | JSON | Playoffs | projects bundled/live bracket through `PlayoffsView`; covered by `l1_playoffs_json_envelope_shape` |
-| `GET /favorites` | `handlers/favorites.rs` | HTML | Favorites/groups | partial |
-| `GET /api/v1/favorites` | `handlers/favorites.rs` | JSON | Favorites/groups | partial - envelope test exists |
+| `GET /favorites` | `handlers/favorites.rs` | HTML | Favorites/groups | partial - projects group membership through `FavoritesView` |
+| `GET /api/v1/favorites` | `handlers/favorites.rs` | JSON | Favorites/groups | partial - projects stable `favorites.v1` read payload from `FavoritesView`; envelope test exists |
 | `GET /watchlist` | `handlers/favorites.rs` | HTML | Watch rules | partial |
 | `GET /api/v1/watchlist` | `handlers/favorites.rs` | JSON | Watch rules | partial |
 | `GET /game/:id` | `handlers/game.rs` | HTML | Game detail | partial - projects boxscore detail from `GameView`; TUI alignment remains |

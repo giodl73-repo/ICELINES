@@ -61,12 +61,12 @@ pub(crate) struct WatchlistApiRow {
     pub(crate) updated_at: Option<String>,
 }
 
-pub(crate) fn group_api_rows(members: &[(String, String)]) -> Vec<GroupApiRow> {
-    members
+pub(crate) fn group_api_rows_from_view(view: &icelines_core::FavoritesView) -> Vec<GroupApiRow> {
+    view.rows
         .iter()
-        .map(|(kind, key)| GroupApiRow {
-            kind: kind.clone(),
-            key: key.clone(),
+        .map(|row| GroupApiRow {
+            kind: row.kind.clone(),
+            key: row.key.clone(),
         })
         .collect()
 }
