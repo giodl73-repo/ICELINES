@@ -279,7 +279,8 @@ Initial implementation note:
   `--json`.
 - `icelines watch rules`, `icelines watch player`, and
   `icelines watch deployment` are wired as preview surfaces over
-  `WatchRulesView`. Persistence and fired-alert history remain pending.
+  `WatchRulesView`. `watch player --save` and `watch deployment --save` persist
+  local watch rules; fired-alert history remains pending.
 - `icelines watch list` reads the local `Watchlist` group with stored reasons,
   and `icelines watch note <player> <reason>` creates/updates a manual watch
   reason while keeping membership in the existing group model.
@@ -311,6 +312,8 @@ Initial implementation note:
 - Poach toggles also write a `watch_notes` reason (`Poach score`, confidence,
   first explanation, and risk summary when present); removing the watch clears
   the note.
+- Persistent watch rules can be created from the CLI and are included in
+  `icelines watch rules`; TUI rule editing remains a follow-up.
 
 ---
 
@@ -346,6 +349,9 @@ Initial implementation note:
 - `/api/v1/watch-rules` returns the shared default `WatchRulesView` contract from
   core with unsupported source disclosure for shifts, schedule, and fantasy
   import.
+- Local persisted watch rules are currently a CLI/local DB surface; exposing
+  them through `/api/v1/watch-rules` remains a follow-up with the web settings
+  work.
 
 ---
 

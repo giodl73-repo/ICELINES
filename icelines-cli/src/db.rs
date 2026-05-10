@@ -23,6 +23,17 @@ pub struct WatchNote {
     pub updated_at: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WatchRuleRow {
+    pub id: String,
+    pub label: String,
+    pub enabled: bool,
+    pub trigger_json: String,
+    pub unsupported_sources_json: String,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
 /// Migration 005 — discriminator on `group_members.kind`. A favorites
 /// group can carry both player normalized names AND team abbrevs;
 /// downstream code branches on this to load the right thing.
@@ -232,6 +243,20 @@ fn run_migrations(conn: &Connection) -> anyhow::Result<()> {
          );",
     )
     .context("migration 008: watch_notes table")?;
+
+    // Migration 009 - persisted Selke watch-rule previews.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS watch_rules (
+            id                       TEXT PRIMARY KEY,
+            label                    TEXT NOT NULL,
+            enabled                  INTEGER NOT NULL DEFAULT 1,
+            trigger_json             TEXT NOT NULL,
+            unsupported_sources_json TEXT NOT NULL DEFAULT '[]',
+            created_at               TEXT NOT NULL,
+            updated_at               TEXT NOT NULL
+         );",
+    )
+    .context("migration 009: watch_rules table")?;
 
     Ok(())
 }
@@ -494,6 +519,40 @@ impl GroupDb {
         Ok(())
     }
 
+    pub fn upsert_watch_rule(
+        &self,
+        id: &str,
+        label: &str,
+        enabled: bool,
+        trigger_json: &str,
+        unsupported_sources_json: &str,
+    ) -> anyhow::Result<()> {
+        let now = now_utc();
+        self.conn
+            .execute(
+                "INSERT INTO watch_rules (
+                    id, label, enabled, trigger_json, unsupported_sources_json, created_at, updated_at
+                 )
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6)
+                 ON CONFLICT(id) DO UPDATE SET
+                    label = excluded.label,
+                    enabled = excluded.enabled,
+                    trigger_json = excluded.trigger_json,
+                    unsupported_sources_json = excluded.unsupported_sources_json,
+                    updated_at = excluded.updated_at",
+                rusqlite::params![
+                    id,
+                    label,
+                    if enabled { 1_i64 } else { 0_i64 },
+                    trigger_json,
+                    unsupported_sources_json,
+                    now
+                ],
+            )
+            .with_context(|| format!("upsert watch rule '{id}'"))?;
+        Ok(())
+    }
+
     // ── Read operations ───────────────────────────────────────────────────────
 
     /// List all groups with their member counts.
@@ -586,6 +645,30 @@ impl GroupDb {
         } else {
             Ok(None)
         }
+    }
+
+    pub fn list_watch_rules(&self) -> anyhow::Result<Vec<WatchRuleRow>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, label, enabled, trigger_json, unsupported_sources_json, created_at, updated_at
+             FROM watch_rules
+             ORDER BY id",
+        )?;
+        let rows = stmt
+            .query_map([], |row| {
+                Ok(WatchRuleRow {
+                    id: row.get(0)?,
+                    label: row.get(1)?,
+                    enabled: row.get::<_, i64>(2)? != 0,
+                    trigger_json: row.get(3)?,
+                    unsupported_sources_json: row.get(4)?,
+                    created_at: row.get(5)?,
+                    updated_at: row.get(6)?,
+                })
+            })
+            .context("list_watch_rules query")?
+            .collect::<Result<Vec<_>, _>>()
+            .context("list_watch_rules collect")?;
+        Ok(rows)
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
@@ -942,6 +1025,35 @@ mod tests {
             .watch_note(MemberKind::Player, "matthew knies")
             .expect("read after delete")
             .is_none());
+    }
+
+    #[test]
+    fn l1_db_watch_rule_round_trips_and_updates() {
+        let db = GroupDb::open_in_memory().expect("open in-memory db");
+
+        db.upsert_watch_rule(
+            "player-matthew-knies",
+            "Watch Matthew Knies when pp1",
+            true,
+            r#"{"kind":"player_promoted","player_id":null,"evidence":{"kind":"unknown"}}"#,
+            r#"["shifts"]"#,
+        )
+        .expect("insert watch rule");
+        db.upsert_watch_rule(
+            "player-matthew-knies",
+            "Watch Matthew Knies when top-six",
+            false,
+            r#"{"kind":"player_promoted","player_id":null,"evidence":{"kind":"unknown"}}"#,
+            r#"["shifts"]"#,
+        )
+        .expect("update watch rule");
+
+        let rules = db.list_watch_rules().expect("list watch rules");
+        assert_eq!(rules.len(), 1);
+        assert_eq!(rules[0].id, "player-matthew-knies");
+        assert_eq!(rules[0].label, "Watch Matthew Knies when top-six");
+        assert!(!rules[0].enabled);
+        assert!(rules[0].created_at <= rules[0].updated_at);
     }
 
     #[test]

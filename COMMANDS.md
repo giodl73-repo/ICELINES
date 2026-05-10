@@ -714,6 +714,9 @@ icelines group show "Watchlist"
 # Poach `w` also stores the current score/explanation as a watch reason.
 icelines watch list
 icelines watch note "Matthew Knies" "PP1 promotion and strong hits fit"
+icelines watch rules
+icelines watch player "Matthew Knies" --when pp1 --save
+icelines watch deployment --team TOR --line-change --save
 
 # Personal-attendance tracker
 icelines games add ...                 # log games attended

@@ -219,6 +219,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 season,
                 season_type,
                 json,
+                save,
             } => {
                 commands::poach::run_watch_player(commands::poach::WatchPlayerArgs {
                     player,
@@ -226,6 +227,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                     season,
                     season_type,
                     json,
+                    save,
                 })
                 .await?;
             }
@@ -235,6 +237,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 season,
                 season_type,
                 json,
+                save,
             } => {
                 commands::poach::run_watch_deployment(commands::poach::WatchDeploymentArgs {
                     team,
@@ -242,6 +245,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                     season,
                     season_type,
                     json,
+                    save,
                 })
                 .await?;
             }

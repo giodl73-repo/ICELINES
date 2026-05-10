@@ -1085,6 +1085,10 @@ pub enum WatchSubcommand {
         /// Emit WatchRulesView as JSON.
         #[arg(long)]
         json: bool,
+
+        /// Persist this rule locally after previewing it.
+        #[arg(long)]
+        save: bool,
     },
 
     /// Preview a team deployment watch rule.
@@ -1108,6 +1112,10 @@ pub enum WatchSubcommand {
         /// Emit WatchRulesView as JSON.
         #[arg(long)]
         json: bool,
+
+        /// Persist this rule locally after previewing it.
+        #[arg(long)]
+        save: bool,
     },
 }
 

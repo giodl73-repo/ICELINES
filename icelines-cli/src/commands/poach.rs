@@ -17,7 +17,7 @@ use icelines_core::{
 use crate::cli::QuerySeasonType;
 use crate::commands::players::{load_repo_for_season, validate_bundled_season};
 use crate::config::Config;
-use crate::db::{GroupDb, MemberKind};
+use crate::db::{GroupDb, MemberKind, WatchRuleRow};
 
 pub struct PoachArgs {
     pub season: Option<String>,
@@ -77,6 +77,7 @@ pub struct WatchPlayerArgs {
     pub season: Option<String>,
     pub season_type: QuerySeasonType,
     pub json: bool,
+    pub save: bool,
 }
 
 pub struct WatchDeploymentArgs {
@@ -85,6 +86,7 @@ pub struct WatchDeploymentArgs {
     pub season: Option<String>,
     pub season_type: QuerySeasonType,
     pub json: bool,
+    pub save: bool,
 }
 
 pub async fn run(args: PoachArgs) -> anyhow::Result<()> {
@@ -138,7 +140,10 @@ pub async fn run_report_weekly(args: WeeklyReportArgs) -> anyhow::Result<()> {
 
 pub async fn run_watch_rules(args: WatchRulesArgs) -> anyhow::Result<()> {
     let context = watch_context(args.season.as_deref(), args.season_type)?;
-    emit_watch_view(&default_watch_rules_view(context), args.json)
+    let mut view = default_watch_rules_view(context);
+    let db = GroupDb::open()?;
+    view.rules.extend(persisted_watch_rules(&db)?);
+    emit_watch_view(&view, args.json)
 }
 
 pub async fn run_watch_list(args: WatchListArgs) -> anyhow::Result<()> {
@@ -176,6 +181,10 @@ pub async fn run_watch_player(args: WatchPlayerArgs) -> anyhow::Result<()> {
         rules: vec![player_watch_rule(&args.player, &args.when)],
         warnings: Vec::new(),
     };
+    if args.save {
+        let db = GroupDb::open()?;
+        persist_watch_rules(&db, &view.rules)?;
+    }
     emit_watch_view(&view, args.json)
 }
 
@@ -205,6 +214,10 @@ pub async fn run_watch_deployment(args: WatchDeploymentArgs) -> anyhow::Result<(
         }],
         warnings: Vec::new(),
     };
+    if args.save {
+        let db = GroupDb::open()?;
+        persist_watch_rules(&db, &view.rules)?;
+    }
     emit_watch_view(&view, args.json)
 }
 
@@ -413,6 +426,50 @@ fn ensure_watchlist(db: &GroupDb) -> anyhow::Result<()> {
         db.create_group("Watchlist", "Fantasy poacher watchlist")?;
     }
     Ok(())
+}
+
+fn persist_watch_rules(db: &GroupDb, rules: &[WatchRule]) -> anyhow::Result<()> {
+    for rule in rules {
+        let trigger_json =
+            serde_json::to_string(&rule.trigger).context("serializing watch rule trigger")?;
+        let unsupported_sources_json = serde_json::to_string(&rule.unsupported_sources)
+            .context("serializing watch rule unsupported sources")?;
+        db.upsert_watch_rule(
+            &rule.id,
+            &rule.label,
+            rule.enabled,
+            &trigger_json,
+            &unsupported_sources_json,
+        )?;
+    }
+    Ok(())
+}
+
+fn persisted_watch_rules(db: &GroupDb) -> anyhow::Result<Vec<WatchRule>> {
+    db.list_watch_rules()?
+        .into_iter()
+        .map(watch_rule_from_row)
+        .collect()
+}
+
+fn watch_rule_from_row(row: WatchRuleRow) -> anyhow::Result<WatchRule> {
+    let trigger = serde_json::from_str(&row.trigger_json)
+        .with_context(|| format!("parsing persisted watch rule trigger '{}'", row.id))?;
+    let unsupported_sources =
+        serde_json::from_str(&row.unsupported_sources_json).with_context(|| {
+            format!(
+                "parsing persisted watch rule unsupported sources '{}'",
+                row.id
+            )
+        })?;
+    Ok(WatchRule {
+        id: row.id,
+        label: row.label,
+        enabled: row.enabled,
+        trigger,
+        last_fired: None,
+        unsupported_sources,
+    })
 }
 
 fn watchlist_rows(db: &GroupDb) -> anyhow::Result<Vec<WatchlistRow>> {
@@ -699,6 +756,21 @@ mod tests {
         assert_eq!(rule.id, "player-matthew-knies");
         assert!(rule.label.contains("Matthew Knies"));
         assert!(rule.unsupported_sources.contains(&SourceKind::Shifts));
+    }
+
+    #[test]
+    fn l0_watch_persisted_rules_round_trip_into_view_rules() {
+        let db = GroupDb::open_in_memory().expect("open db");
+        let rule = player_watch_rule("Matthew Knies", "pp1");
+
+        persist_watch_rules(&db, std::slice::from_ref(&rule)).expect("persist rule");
+        let rules = persisted_watch_rules(&db).expect("read persisted rules");
+
+        assert_eq!(rules.len(), 1);
+        assert_eq!(rules[0].id, rule.id);
+        assert_eq!(rules[0].label, rule.label);
+        assert_eq!(rules[0].trigger, rule.trigger);
+        assert_eq!(rules[0].unsupported_sources, rule.unsupported_sources);
     }
 
     #[test]
