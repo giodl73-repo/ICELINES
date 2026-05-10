@@ -32,6 +32,11 @@ pub struct PoachWebQuery {
     pub league: Option<String>,
 }
 
+#[derive(Debug, serde::Serialize)]
+struct WatchRulesErrorResponse {
+    error: String,
+}
+
 pub async fn get_poach(State(state): State<WebState>, Query(q): Query<PoachWebQuery>) -> Response {
     let result = match build_poach_view(&state, &q).await {
         Ok(result) => result,
@@ -144,12 +149,12 @@ pub async fn get_watch_rules_json(State(state): State<WebState>) -> Response {
         Ok(n) => n,
         Err(e) => {
             return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        axum::Json(serde_json::json!({
-                            "error": format!("active season '{season_str}' is not a valid YYYYZZZZ id: {e}"),
-                        })),
-                    )
-                        .into_response();
+                StatusCode::INTERNAL_SERVER_ERROR,
+                axum::Json(WatchRulesErrorResponse {
+                    error: format!("active season '{season_str}' is not a valid YYYYZZZZ id: {e}"),
+                }),
+            )
+                .into_response();
         }
     };
     let context = ViewContext::new(ViewWindow::new(Season(season_u32), season_type));

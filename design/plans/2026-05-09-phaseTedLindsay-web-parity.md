@@ -209,6 +209,9 @@ Progress:
 - 2026-05-10: Updated the Ted Lindsay API contract text and surface matrix
   notes to match the implemented numeric schema-version, route, success
   envelope, error envelope, and intentional ViewModel-contract exceptions.
+- 2026-05-10: Replaced the remaining watch-rules ad hoc JSON error body with a
+  typed response struct and regression test while preserving the endpoint's
+  intentional raw ViewModel success contract.
 
 ---
 

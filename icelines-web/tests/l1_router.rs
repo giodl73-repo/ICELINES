@@ -667,6 +667,37 @@ async fn l1_watch_rules_json_returns_shared_contract() {
 }
 
 #[tokio::test]
+async fn l1_watch_rules_json_bad_active_season_returns_typed_error() {
+    let state = WebState::new();
+    {
+        let mut cfg = state.config.write().await;
+        *cfg = icelines_web::WebConfig::new("not-a-season", "regular");
+    }
+    let app = router(state);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/watch-rules")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value = serde_json::from_slice(&bytes).expect("json body");
+    let obj = json.as_object().expect("error response is object");
+    let keys: std::collections::BTreeSet<_> = obj.keys().map(String::as_str).collect();
+    let want: std::collections::BTreeSet<_> = ["error"].iter().copied().collect();
+    assert_eq!(keys, want);
+    assert!(json["error"].is_string());
+}
+
+#[tokio::test]
 async fn l1_watch_rules_json_includes_persisted_rules() {
     let _guard = home_env_lock().await;
     let dir = tempfile::TempDir::new().expect("temp home");
