@@ -11,13 +11,15 @@
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use axum::response::Response;
+use icelines_core::identity::PlayerId;
 use icelines_core::season_stats::SeasonType;
 use icelines_core::view_model::{DepthGoalieSlot, DepthLine, DepthPair, DepthPlayerSlot};
 use icelines_core::{
-    DepthLeagueView, DepthTeamStrengthRow, MetricCell, MetricValue, Season, TeamAbbr, TeamDepthView,
+    DepthLeagueView, DepthTeamStrengthRow, MetricCell, MetricValue, PlayerCardView, Season,
+    TeamAbbr, TeamDepthView,
 };
 use icelines_fetch::snapshot::SnapshotStore;
-use icelines_fetch::stats_loader::load_into_repo;
+use icelines_fetch::stats_loader::{load_into_repo, load_player_career_into_repo};
 use icelines_web::{router, WebConfig, WebState};
 use serde_json::{Map, Value};
 use std::collections::BTreeSet;
@@ -104,6 +106,39 @@ struct DepthLeagueRowSnapshot {
     d_top: String,
 }
 
+#[derive(Debug, PartialEq, Eq)]
+struct PlayerJsonSnapshot {
+    nhl_id: u32,
+    full_name: String,
+    position: String,
+    team: String,
+    active: PlayerActiveSnapshot,
+    career: Vec<PlayerCareerSnapshot>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct PlayerActiveSnapshot {
+    season: String,
+    season_type: String,
+    games: u32,
+    goals: u32,
+    assists: u32,
+    points: u32,
+    points_per_game: Option<String>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct PlayerCareerSnapshot {
+    season: String,
+    season_type: String,
+    team: String,
+    games: u32,
+    goals: u32,
+    assists: u32,
+    points: u32,
+    points_per_game: Option<String>,
+}
+
 fn depth_league_row_snapshots(rows: &[DepthTeamStrengthRow]) -> Vec<DepthLeagueRowSnapshot> {
     rows.iter()
         .map(|row| DepthLeagueRowSnapshot {
@@ -148,6 +183,99 @@ fn normalized_score(value: f64) -> String {
         value
     };
     format!("{value:.6}")
+}
+
+fn player_view_snapshot(view: &PlayerCardView, season: Season) -> PlayerJsonSnapshot {
+    let active_metrics = view
+        .active
+        .as_ref()
+        .map(|active| active.metrics.as_slice())
+        .unwrap_or(&[]);
+    let (position, team) = view
+        .active
+        .as_ref()
+        .map(|active| {
+            (
+                active.position.abbreviation().to_owned(),
+                active.team_display.clone(),
+            )
+        })
+        .unwrap_or_else(|| (String::new(), String::new()));
+
+    PlayerJsonSnapshot {
+        nhl_id: view.player_id.0,
+        full_name: view.display_name.clone(),
+        position,
+        team,
+        active: PlayerActiveSnapshot {
+            season: season.0.to_string(),
+            season_type: "regular".to_owned(),
+            games: metric_u32(active_metrics, "gp"),
+            goals: metric_u32(active_metrics, "goals"),
+            assists: metric_u32(active_metrics, "assists"),
+            points: metric_u32(active_metrics, "points"),
+            points_per_game: metric_f64(active_metrics, "points_per_game").map(normalized_score),
+        },
+        career: view
+            .career
+            .iter()
+            .map(|row| PlayerCareerSnapshot {
+                season: pretty_season(row.season),
+                season_type: row.season_type.label().to_owned(),
+                team: row.team.0.clone(),
+                games: metric_u32(&row.metrics, "gp"),
+                goals: metric_u32(&row.metrics, "goals"),
+                assists: metric_u32(&row.metrics, "assists"),
+                points: metric_u32(&row.metrics, "points"),
+                points_per_game: metric_f64(&row.metrics, "points_per_game").map(normalized_score),
+            })
+            .collect(),
+    }
+}
+
+fn json_player_snapshot(json: &Value) -> PlayerJsonSnapshot {
+    let data = &json["data"];
+    let active = &data["active_season_stats"];
+    PlayerJsonSnapshot {
+        nhl_id: json_u32(data, "nhl_id"),
+        full_name: json_str(data, "full_name"),
+        position: json_str(data, "position"),
+        team: json_str(data, "team"),
+        active: PlayerActiveSnapshot {
+            season: json_str(active, "season"),
+            season_type: json_str(active, "season_type"),
+            games: json_u32(active, "games"),
+            goals: json_u32(active, "goals"),
+            assists: json_u32(active, "assists"),
+            points: json_u32(active, "points"),
+            points_per_game: optional_json_f64(active, "points_per_game").map(normalized_score),
+        },
+        career: data["career"]
+            .as_array()
+            .expect("player career data array")
+            .iter()
+            .map(|row| PlayerCareerSnapshot {
+                season: json_str(row, "season"),
+                season_type: json_str(row, "season_type"),
+                team: json_str(row, "team"),
+                games: json_u32(row, "games"),
+                goals: json_u32(row, "goals"),
+                assists: json_u32(row, "assists"),
+                points: json_u32(row, "points"),
+                points_per_game: optional_json_f64(row, "points_per_game").map(normalized_score),
+            })
+            .collect(),
+    }
+}
+
+fn pretty_season(season: Season) -> String {
+    let raw = season.0;
+    if raw < 10_000_000 {
+        return raw.to_string();
+    }
+    let yyyy_start = raw / 10_000;
+    let yy_end = raw % 100;
+    format!("{yyyy_start:04}-{yy_end:02}")
 }
 
 fn team_depth_skater_snapshots(view: &TeamDepthView) -> Vec<TeamDepthSkaterSnapshot> {
@@ -231,6 +359,16 @@ fn metric_u32(metrics: &[MetricCell], key: &str) -> u32 {
         .unwrap_or(0)
 }
 
+fn metric_f64(metrics: &[MetricCell], key: &str) -> Option<f64> {
+    metrics
+        .iter()
+        .find(|metric| metric.key.0 == key)
+        .and_then(|metric| match metric.value {
+            MetricValue::Decimal(value) => Some(value),
+            _ => None,
+        })
+}
+
 fn json_team_skater_snapshots(json: &Value) -> Vec<TeamDepthSkaterSnapshot> {
     json["data"]["skaters"]
         .as_array()
@@ -275,6 +413,14 @@ fn json_f64(row: &Value, key: &str) -> f64 {
     row[key]
         .as_f64()
         .unwrap_or_else(|| panic!("{key} should be a JSON number in row {row}"))
+}
+
+fn optional_json_f64(row: &Value, key: &str) -> Option<f64> {
+    if row[key].is_null() {
+        None
+    } else {
+        Some(json_f64(row, key))
+    }
 }
 
 fn json_str(row: &Value, key: &str) -> String {
@@ -481,6 +627,48 @@ async fn l1_player_json_envelope_shape() {
     assert_eq!(obj["data"]["nhl_id"], 8478402);
     assert_eq!(json["data"]["active_season_stats"]["season"], "20252026");
     assert!(json["data"]["career"].is_array());
+}
+
+#[tokio::test]
+async fn l1_player_json_rows_match_player_card_view() {
+    let season = Season(20242025);
+    let season_type = SeasonType::Regular;
+    let pid = PlayerId(8478402);
+    let store = SnapshotStore::new(SnapshotStore::default_root());
+    let mut load = load_into_repo(season, season_type, &store)
+        .expect("bundled regular-season repo should load");
+    load_player_career_into_repo(&mut load.repo, pid).expect("bundled career should load");
+    let expected_view = PlayerCardView::from_repository(&load.repo, pid, season, season_type)
+        .expect("player should exist in fixture repo");
+    let expected = player_view_snapshot(&expected_view, season);
+    assert!(
+        !expected.career.is_empty(),
+        "fixture should include player career rows for {pid:?}"
+    );
+
+    let state = WebState::with_repo_and_config(load.repo, WebConfig::new("20242025", "regular"));
+    let app = router(state);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/player/8478402")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let json = response_json(response, 1024 * 1024).await;
+    assert_data_meta_envelope(&json, "player");
+    assert_eq!(json["meta"]["season"], serde_json::json!("20242025"));
+    assert_eq!(json["meta"]["season_type"], serde_json::json!("regular"));
+    assert_eq!(
+        json["meta"]["career_rows"],
+        serde_json::json!(expected.career.len())
+    );
+    assert_eq!(json_player_snapshot(&json), expected);
 }
 
 #[tokio::test]
