@@ -315,8 +315,9 @@ Initial implementation note:
   first explanation, and risk summary when present); removing the watch clears
   the note.
 - Persistent watch rules can be created from the CLI and are included in
-  `icelines watch rules`; fired-alert history is CLI-visible. TUI rule editing
-  remains a follow-up.
+  `icelines watch rules`; fired-alert history is CLI-visible and the TUI
+  Watchlist workspace renders persisted rule summaries plus recent alerts.
+  TUI rule editing remains a follow-up.
 
 ---
 
@@ -343,8 +344,7 @@ Initial implementation note:
 - Missing active-season data renders as a source-aware empty state instead of a
   web-only fallback table.
 - `/watchlist` renders the local SQLite-backed `Watchlist` group so TUI Poach
-  toggles have a web-readable destination. Rich watch-rule metadata remains
-  pending.
+  toggles have a web-readable destination.
 - `/watchlist` also renders stored watch reasons from `watch_notes` when they
   exist.
 - `/api/v1/watchlist` returns the same SQLite-backed watchlist rows with reason,

@@ -719,15 +719,15 @@ pub fn render_group_members(f: &mut Frame, app: &App, area: Rect, group_name: &s
     let inner = block.inner(area);
     f.render_widget(block, area);
 
-    let members = crate::db::GroupDb::open()
-        .ok()
+    let db = crate::db::GroupDb::open().ok();
+    let members = db
+        .as_ref()
         .and_then(|db| db.list_members(group_name).ok())
         .unwrap_or_default();
-    let watch_notes = if group_name == "Watchlist" {
-        crate::db::GroupDb::open()
-            .ok()
+    let (watch_notes, watch_rules, watch_events) = if group_name == "Watchlist" {
+        db.as_ref()
             .map(|db| {
-                members
+                let notes = members
                     .iter()
                     .filter_map(|norm| {
                         db.watch_note(crate::db::MemberKind::Player, norm)
@@ -735,14 +735,17 @@ pub fn render_group_members(f: &mut Frame, app: &App, area: Rect, group_name: &s
                             .flatten()
                             .map(|note| (norm.clone(), note))
                     })
-                    .collect::<std::collections::HashMap<_, _>>()
+                    .collect::<std::collections::HashMap<_, _>>();
+                let rules = db.list_watch_rules().unwrap_or_default();
+                let events = db.list_watch_rule_events(5).unwrap_or_default();
+                (notes, rules, events)
             })
             .unwrap_or_default()
     } else {
-        std::collections::HashMap::new()
+        Default::default()
     };
 
-    if members.is_empty() {
+    if members.is_empty() && watch_rules.is_empty() {
         let lines = vec![
             Line::from(""),
             Line::from("  This group is empty."),
@@ -809,8 +812,71 @@ pub fn render_group_members(f: &mut Frame, app: &App, area: Rect, group_name: &s
     }
     lines.push(Line::from(""));
     lines.push(Line::styled(format!("  {} member(s)", members.len()), dim));
+    if group_name == "Watchlist" {
+        if !watch_rules.is_empty() {
+            lines.push(Line::from(""));
+            lines.push(Line::styled(
+                "  Watch rules",
+                Style::default().fg(Color::Cyan),
+            ));
+            lines.push(Line::styled(
+                format!("  {:<32} {:<7} {}", "Rule", "Enabled", "Last fired"),
+                dim,
+            ));
+            for rule in watch_rules.iter().take(8) {
+                let latest = watch_events
+                    .iter()
+                    .find(|event| event.rule_id == rule.id)
+                    .map(|event| event.fired_at.as_str())
+                    .unwrap_or("-");
+                lines.push(Line::styled(
+                    format!(
+                        "  {:<32} {:<7} {}",
+                        truncate_for_tui(&rule.id, 32),
+                        if rule.enabled { "yes" } else { "no" },
+                        latest
+                    ),
+                    dim,
+                ));
+                lines.push(Line::styled(
+                    format!("    {}", truncate_for_tui(&rule.label, 76)),
+                    dim,
+                ));
+            }
+        }
+        if !watch_events.is_empty() {
+            lines.push(Line::from(""));
+            lines.push(Line::styled(
+                "  Recent alerts",
+                Style::default().fg(Color::Cyan),
+            ));
+            for event in watch_events.iter().take(5) {
+                lines.push(Line::styled(
+                    format!(
+                        "  {}  {}  {}",
+                        event.fired_at,
+                        truncate_for_tui(&event.rule_id, 28),
+                        truncate_for_tui(&event.message, 48)
+                    ),
+                    dim,
+                ));
+            }
+        }
+    }
 
     f.render_widget(Paragraph::new(lines), inner);
+}
+
+fn truncate_for_tui(value: &str, max_chars: usize) -> String {
+    if value.chars().count() <= max_chars {
+        return value.to_string();
+    }
+    if max_chars <= 3 {
+        return ".".repeat(max_chars);
+    }
+    let mut out = value.chars().take(max_chars - 3).collect::<String>();
+    out.push_str("...");
+    out
 }
 
 // ── Fetch + Install ───────────────────────────────────────────────────────────
@@ -1346,6 +1412,17 @@ mod tests {
         buffer_text(term.backend().buffer())
     }
 
+    fn render_group_to_text(app: &App, group_name: &str) -> String {
+        let backend = TestBackend::new(120, 32);
+        let mut term = Terminal::new(backend).unwrap();
+        term.draw(|f| {
+            let area = f.area();
+            super::render_group_members(f, app, area, group_name);
+        })
+        .unwrap();
+        buffer_text(term.backend().buffer())
+    }
+
     #[test]
     fn l0_render_admin_idle_phase_shows_no_install() {
         let app = App::new(false);
@@ -1370,6 +1447,51 @@ mod tests {
             text.contains("Installing 19931994"),
             "Downloading phase must show season being installed, got:\n{text}"
         );
+    }
+
+    #[test]
+    fn l0_watchlist_group_renders_watch_rules_and_alert_history() {
+        let _guard = crate::test_utils::home_env_lock();
+        let dir = tempfile::TempDir::new().unwrap();
+        let prev_userprofile = std::env::var_os("USERPROFILE");
+        let prev_home = std::env::var_os("HOME");
+        std::env::set_var("USERPROFILE", dir.path());
+        std::env::set_var("HOME", dir.path());
+
+        let db = crate::db::GroupDb::open().expect("open isolated db");
+        db.create_group("Watchlist", "Fantasy poacher watchlist")
+            .expect("create watchlist");
+        db.upsert_watch_rule(
+            "player-matthew-knies",
+            "Watch Matthew Knies when pp1",
+            true,
+            r#"{"kind":"player_promoted","player_id":null,"evidence":{"kind":"unknown"}}"#,
+            r#"["shifts"]"#,
+        )
+        .expect("insert rule");
+        db.record_watch_rule_event(
+            "player-matthew-knies",
+            Some("player:matthew knies"),
+            "PP1 usage crossed threshold",
+        )
+        .expect("record event");
+        drop(db);
+
+        let text = render_group_to_text(&App::new(false), "Watchlist");
+
+        match prev_userprofile {
+            Some(p) => std::env::set_var("USERPROFILE", p),
+            None => std::env::remove_var("USERPROFILE"),
+        }
+        match prev_home {
+            Some(p) => std::env::set_var("HOME", p),
+            None => std::env::remove_var("HOME"),
+        }
+
+        assert!(text.contains("Watch rules"), "{text}");
+        assert!(text.contains("player-matthew-knies"), "{text}");
+        assert!(text.contains("Recent alerts"), "{text}");
+        assert!(text.contains("PP1 usage crossed threshold"), "{text}");
     }
 
     #[test]
