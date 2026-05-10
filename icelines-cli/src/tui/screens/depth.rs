@@ -1,7 +1,6 @@
 use crate::tui::app::App;
 use icelines_core::cross_team::{
-    compute_all_views_with_mode, compute_team_strength_views, fantasy_score_view, ScoringMode,
-    WebFitClass,
+    compute_all_views_with_mode, fantasy_score_view, ScoringMode, WebFitClass,
 };
 use icelines_core::stats_repository::PlayerView;
 use icelines_core::DepthLeagueView;
@@ -69,33 +68,12 @@ pub fn render_league(f: &mut Frame, app: &App, area: Rect) {
     let inner = block.inner(area);
     f.render_widget(block, area);
 
-    // Hart.5c.6 Phase B-3.2: collect views, then compute team strength.
-    let views = app.views();
-    if views.is_empty() {
+    let Some(view) = league_view_from_app(app) else {
         f.render_widget(Paragraph::new("  Loading…"), inner);
         return;
-    }
+    };
 
-    let filtered_views: Vec<PlayerView<'_>> = views
-        .iter()
-        .filter(|v| app.depth_filters.matches_view(v))
-        .copied()
-        .collect();
-    let strength = compute_team_strength_views(&filtered_views, mode);
-    let mut ranked: Vec<(&str, &icelines_core::cross_team::TeamStrength)> =
-        strength.iter().map(|(k, v)| (k.as_str(), v)).collect();
-    // Sort total desc, then team abbrev asc for tie-break — without
-    // the secondary key, teams that tie (especially common in playoff
-    // mode where non-qualifying teams all score 0) shuffle every
-    // frame because the input came from HashMap iteration. That's the
-    // visible flicker.
-    ranked.sort_by(|a, b| {
-        b.1.total
-            .partial_cmp(&a.1.total)
-            .unwrap_or(std::cmp::Ordering::Equal)
-            .then_with(|| a.0.cmp(b.0))
-    });
-
+    let ranked = &view.rows;
     let dim = Style::default().fg(Color::DarkGray);
     let col_label = if mode == ScoringMode::Fantasy {
         "FPts"
@@ -114,10 +92,14 @@ pub fn render_league(f: &mut Frame, app: &App, area: Rect) {
         ListItem::new(Line::styled(format!("  {}", "─".repeat(62)), dim)),
     ];
 
-    let max_total = ranked.first().map(|(_, s)| s.total).unwrap_or(1.0);
+    let max_total = ranked
+        .first()
+        .map(|row| row.total)
+        .filter(|total| *total > 0.0)
+        .unwrap_or(1.0);
 
-    for (i, (team, s)) in ranked.iter().enumerate() {
-        let bar_len = ((s.total / max_total) * 16.0).round() as usize;
+    for (i, row) in ranked.iter().enumerate() {
+        let bar_len = ((row.total / max_total) * 16.0).round() as usize;
         let bar: String = "█".repeat(bar_len) + &"░".repeat(16 - bar_len);
 
         let (tier_color, tier_prefix) = match i {
@@ -139,12 +121,12 @@ pub fn render_league(f: &mut Frame, app: &App, area: Rect) {
             format!(
                 "  {:<4} {:<5} {:>8.0} {:>8.0} {:>8.0} {:>8.0} {:>9.0}  {}{}",
                 i + 1,
-                team,
-                s.c_score,
-                s.lw_score,
-                s.rw_score,
-                s.d_score,
-                s.total,
+                row.team.0,
+                row.c_score,
+                row.lw_score,
+                row.rw_score,
+                row.d_score,
+                row.total,
                 tier_prefix,
                 bar
             ),

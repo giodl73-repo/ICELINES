@@ -54,9 +54,9 @@ surface still differs from CLI/TUI.
      adapter alignment remains before marking the row `done`.
    - Cross-team depth: web JSON row identity is now fenced against
      `DepthLeagueView` by `l1_depth_json_rows_match_depth_league_view`;
-     TUI Enter navigation now uses `DepthLeagueView` ordering through
-     `league_view_from_app`; full TUI render adapter alignment remains before
-     marking the row `done`.
+     TUI Enter navigation and league ranking render now use `DepthLeagueView`
+     ordering through `league_view_from_app`; CLI adapter and TUI team chart
+     alignment remain before marking the row `done`.
    - Player card: web JSON row identity is now fenced against
      `PlayerCardView` by `l1_player_json_rows_match_player_card_view`;
      CLI/TUI adapter alignment remains before marking the row `done`.
