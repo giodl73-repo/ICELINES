@@ -342,6 +342,7 @@ fn goalie_row_from_depth_slot(slot: &DepthGoalieSlot, season: Season) -> GoalieR
         gp: metric_u32(&slot.metrics, "gp").unwrap_or(0),
         wins: metric_u32(&slot.metrics, "wins").unwrap_or(0),
         losses: metric_u32(&slot.metrics, "losses").unwrap_or(0),
+        saves: metric_u32(&slot.metrics, "saves").unwrap_or(0),
         shutouts: metric_u32(&slot.metrics, "shutouts").unwrap_or(0),
         save_pct_str,
         gaa_str,

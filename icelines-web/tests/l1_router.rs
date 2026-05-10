@@ -1015,6 +1015,37 @@ async fn l1_goalies_json_envelope_shape() {
 }
 
 #[tokio::test]
+async fn l1_goalies_json_accepts_cli_parity_saves_sort_and_gp_min() {
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/goalies?sort=saves&gp_min=15&top=5")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json = response_json(response, 256 * 1024).await;
+    assert_data_meta_envelope(&json, "goalies");
+    assert_eq!(json["meta"]["sort"], "saves");
+    assert_eq!(json["meta"]["qualified_gp_min"], 15);
+    assert_eq!(json["meta"]["top"], 5);
+    let rows = json["data"].as_array().expect("goalies data array");
+    assert!(
+        rows.iter()
+            .all(|row| row["games"].as_u64().is_some_and(|gp| gp >= 15)),
+        "gp_min should apply to every returned goalie row"
+    );
+    if let Some(first) = rows.first() {
+        assert!(first["saves"].is_number());
+    }
+}
+
+#[tokio::test]
 async fn l1_team_json_unknown_team_uses_shared_envelope_shape() {
     let app = router(WebState::new());
 

@@ -130,6 +130,7 @@ fn goalie_preview_from_view(row: &HomeGoalieRow, season: u32) -> GoalieRow {
         gp: row.gp,
         wins: row.wins,
         losses: row.losses,
+        saves: 0,
         shutouts: row.shutouts,
         save_pct_str: row
             .save_pct

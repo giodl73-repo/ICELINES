@@ -26,6 +26,9 @@ pub struct GoaliesQuery {
     /// Top-N rows. Default 20, clamped 1..=200.
     #[serde(default)]
     pub top: Option<usize>,
+    /// Minimum games-played floor. Defaults to the route's qualified threshold.
+    #[serde(default, alias = "min_gp", alias = "gp-min", alias = "min-gp")]
+    pub gp_min: Option<u32>,
     /// Skip the gp_min floor (e.g. show all goalies, not
     /// just those with 5+ GP). Spec'd flag.
     #[serde(default)]
@@ -38,6 +41,7 @@ pub enum GoalieSort {
     Wins,
     Losses,
     Games,
+    Saves,
     Shutouts,
     GaaAsc, // GAA: lower is better, sort ascending
 }
@@ -48,6 +52,7 @@ impl GoalieSort {
             "wins" | "w" => Self::Wins,
             "losses" | "l" => Self::Losses,
             "gp" | "games" => Self::Games,
+            "saves" => Self::Saves,
             "shutouts" | "so" => Self::Shutouts,
             "gaa" | "goals-against-avg" => Self::GaaAsc,
             _ => Self::SavePct,
@@ -60,6 +65,7 @@ impl GoalieSort {
             Self::Wins => "Wins",
             Self::Losses => "Losses",
             Self::Games => "Games",
+            Self::Saves => "Saves",
             Self::Shutouts => "Shutouts",
             Self::GaaAsc => "GAA",
         }
@@ -71,6 +77,7 @@ impl GoalieSort {
             Self::Wins => "wins",
             Self::Losses => "losses",
             Self::Games => "gp",
+            Self::Saves => "saves",
             Self::Shutouts => "shutouts",
             Self::GaaAsc => "gaa",
         }
@@ -79,9 +86,12 @@ impl GoalieSort {
     pub fn direction(self) -> SortDirection {
         match self {
             Self::GaaAsc => SortDirection::Asc,
-            Self::SavePct | Self::Wins | Self::Losses | Self::Games | Self::Shutouts => {
-                SortDirection::Desc
-            }
+            Self::SavePct
+            | Self::Wins
+            | Self::Losses
+            | Self::Games
+            | Self::Saves
+            | Self::Shutouts => SortDirection::Desc,
         }
     }
 }
@@ -114,10 +124,11 @@ async fn build_goalie_result(state: &WebState, q: &GoaliesQuery) -> Result<Goali
         SeasonType::Playoff => QUALIFIED_GP_PLAYOFF,
     };
     let include_below_threshold = q.include_below_threshold.unwrap_or(false);
+    let requested_floor = q.gp_min.unwrap_or(qualified_threshold);
     let effective_floor = if include_below_threshold {
         0
     } else {
-        qualified_threshold
+        requested_floor
     };
     let sort = GoalieSort::from_query(q.sort.as_deref());
     let top_n = q.top.unwrap_or(20).clamp(1, 200);
@@ -154,7 +165,7 @@ async fn build_goalie_result(state: &WebState, q: &GoaliesQuery) -> Result<Goali
         rows,
         total,
         sort,
-        qualified_threshold,
+        qualified_threshold: effective_floor,
         include_below_threshold,
         active_label,
         active_season: season_str,
@@ -185,6 +196,10 @@ fn compare_goalie_views(
             .unwrap_or(0)
             .cmp(&ga.map(|g| g.losses).unwrap_or(0)),
         GoalieSort::Games => b.gp().cmp(&a.gp()),
+        GoalieSort::Saves => gb
+            .map(|g| g.saves)
+            .unwrap_or(0)
+            .cmp(&ga.map(|g| g.saves).unwrap_or(0)),
         GoalieSort::Shutouts => gb
             .map(|g| g.shutouts)
             .unwrap_or(0)
@@ -216,6 +231,7 @@ fn goalie_template_row_from_view(row: &icelines_core::GoalieRow, season: Season)
         gp: goalie_metric_u32(row, "gp"),
         wins: goalie_metric_u32(row, "wins"),
         losses: goalie_metric_u32(row, "losses"),
+        saves: goalie_metric_u32(row, "saves"),
         shutouts: goalie_metric_u32(row, "shutouts"),
         save_pct_str: goalie_metric_f64(row, "save_pct")
             .map(|v| format!("{v:.3}"))
@@ -292,6 +308,7 @@ pub struct GoalieJsonRow {
     pub games: u32,
     pub wins: u32,
     pub losses: u32,
+    pub saves: u32,
     pub shutouts: u32,
     pub save_pct: Option<f64>,
     pub goals_against_average: Option<f64>,
@@ -328,6 +345,7 @@ pub async fn get_goalies_json(
             games: row.gp,
             wins: row.wins,
             losses: row.losses,
+            saves: row.saves,
             shutouts: row.shutouts,
             save_pct: row.save_pct_str.parse().ok(),
             goals_against_average: row.gaa_str.parse().ok(),
@@ -342,6 +360,7 @@ pub async fn get_goalies_json(
             GoalieSort::Wins => "wins".to_owned(),
             GoalieSort::Losses => "losses".to_owned(),
             GoalieSort::Games => "gp".to_owned(),
+            GoalieSort::Saves => "saves".to_owned(),
             GoalieSort::Shutouts => "shutouts".to_owned(),
             GoalieSort::GaaAsc => "gaa".to_owned(),
         },

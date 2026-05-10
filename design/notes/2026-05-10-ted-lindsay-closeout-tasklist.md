@@ -42,8 +42,9 @@ surface still differs from CLI/TUI.
      row-contract migration boundary.
    - Goalies: CLI, TUI, web HTML, and web JSON already build `GoaliesView`;
      CLI JSON/CSV row identity is now fenced by
-     `l2_cmd_query_goalies_json_csv_row_identity_match`; TUI/web parity checks
-     remain before marking done.
+     `l2_cmd_query_goalies_json_csv_row_identity_match`; web JSON now accepts
+     the CLI-parity `saves` sort and explicit `gp_min` floor; TUI/web parity
+     checks remain before marking done.
    - Team/depth/player/compare/career: verify adapter parity before marking
      any row `done`.
 
