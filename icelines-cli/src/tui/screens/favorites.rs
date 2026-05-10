@@ -205,7 +205,7 @@ fn entity_player_id(entity: &EntityRef) -> Option<PlayerId> {
 fn sort_player_rows(rows: &mut [PlayerNightRow], sort: FavoritesSort) {
     match sort {
         FavoritesSort::RecentlyAdded => {}
-        FavoritesSort::Name => rows.sort_by_key(|row| player_row_name(row)),
+        FavoritesSort::Name => rows.sort_by_key(player_row_name),
         FavoritesSort::Kind => {
             rows.sort_by_key(|row| (player_row_kind_rank(row), player_row_name(row)))
         }

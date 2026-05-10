@@ -3479,9 +3479,8 @@ impl App {
 
     pub(crate) fn cycle_screen(&mut self) {
         self.queries.results_focused = false;
-        // Phase Foster.2 — Favorites tab inserted between Goalies and
-        // Scores per spec §"Tab insertion" (GLASS H4). 9-tab cycle:
-        //   League → Depth → Queries → Goalies → Favorites → Scores
+        // Phase Selke adds Poach between Favorites and Scores. 10-tab cycle:
+        //   League → Depth → Queries → Goalies → Favorites → Poach → Scores
         //   → Schedule → Transactions → Playoffs → League
         let next = match &self.screen {
             Screen::Home | Screen::Team(_) | Screen::PlayerById(_) | Screen::CompsById(_) => {
@@ -3679,10 +3678,10 @@ mod tests {
 
     #[test]
     fn l0_tui_tab_cycles_screens() {
-        // 9 tabs (Phase Foster.2 inserts Favorites between Goalies
-        // and Scores per GLASS H4):
+        // 10 tabs (Phase Selke inserts Poach between Favorites
+        // and Scores):
         //   League → Depth → Stats(Queries) → Goalies → Favorites
-        //   → Scores → Schedule → Transactions → Playoffs → wrap
+        //   → Poach → Scores → Schedule → Transactions → Playoffs → wrap
         //
         // Phase Lindsay L.3.3 — Tab on Queries now toggles the
         // section expansion (per spec §"TUI integration"). To advance
@@ -3699,7 +3698,9 @@ mod tests {
         app.handle(Action::Tab);
         assert_eq!(app.screen, Screen::Favorites, "Goalies→Favorites");
         app.handle(Action::Tab);
-        assert_eq!(app.screen, Screen::Tonight, "Favorites→Scores");
+        assert_eq!(app.screen, Screen::Poach, "Favorites→Poach");
+        app.handle(Action::Tab);
+        assert_eq!(app.screen, Screen::Tonight, "Poach→Scores");
         app.handle(Action::Tab);
         assert_eq!(app.screen, Screen::Schedule, "Scores→Schedule");
         app.handle(Action::Tab);
@@ -3782,8 +3783,7 @@ mod tests {
 
     #[test]
     fn l0_tui_shift_tab_cycles_screens_backwards() {
-        // Shift-Tab walks the same nine tabs in reverse (Phase Foster.2
-        // adds Favorites between Goalies and Scores).
+        // Shift-Tab walks the same 10 tabs in reverse.
         let mut app = App::new(false);
         app.handle(Action::TabPrev);
         assert_eq!(
@@ -3798,7 +3798,9 @@ mod tests {
         app.handle(Action::TabPrev);
         assert_eq!(app.screen, Screen::Tonight, "Schedule→Scores");
         app.handle(Action::TabPrev);
-        assert_eq!(app.screen, Screen::Favorites, "Scores→Favorites");
+        assert_eq!(app.screen, Screen::Poach, "Scores→Poach");
+        app.handle(Action::TabPrev);
+        assert_eq!(app.screen, Screen::Favorites, "Poach→Favorites");
         app.handle(Action::TabPrev);
         assert_eq!(app.screen, Screen::Goalies, "Favorites→Goalies");
         app.handle(Action::TabPrev);
@@ -3811,15 +3813,15 @@ mod tests {
 
     #[test]
     fn l0_tui_tab_and_shift_tab_are_inverses() {
-        // Eight forward + eight backward should land on the original screen.
+        // Ten forward + ten backward should land on the original screen.
         // Phase Lindsay L.3.3 — Tab on Queries no longer cycles screens
         // (it toggles a section). Use `cycle_screen` / `cycle_screen_back`
         // directly so the inverse test still exercises the full ring.
         let mut app = App::new(false);
-        for _ in 0..8 {
+        for _ in 0..10 {
             app.cycle_screen();
         }
-        for _ in 0..8 {
+        for _ in 0..10 {
             app.cycle_screen_back();
         }
         assert_eq!(app.screen, Screen::Home);

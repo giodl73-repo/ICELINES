@@ -293,16 +293,28 @@ pub fn sort_goalie_views<'a>(
     out
 }
 
-fn goalies_view_from_tui_state<'a>(
-    views: &'a [icelines_core::stats_repository::PlayerView<'a>],
+struct GoaliesViewInput<'a, 'view> {
+    views: &'view [icelines_core::stats_repository::PlayerView<'a>],
     sort: GoalieSort,
     min_gp: u32,
-    filters: &RosterFilterState,
+    filters: &'view RosterFilterState,
     role_filter: GoalieRoleFilter,
     starter_threshold: Option<u32>,
     season: icelines_core::model::Season,
     season_type: icelines_core::season_stats::SeasonType,
-) -> GoaliesView {
+}
+
+fn goalies_view_from_tui_state(input: GoaliesViewInput<'_, '_>) -> GoaliesView {
+    let GoaliesViewInput {
+        views,
+        sort,
+        min_gp,
+        filters,
+        role_filter,
+        starter_threshold,
+        season,
+        season_type,
+    } = input;
     let qualified = sort_goalie_views(views, sort, min_gp, filters, role_filter, starter_threshold);
     let mut view = GoaliesView::from_player_views(
         ViewContext::new(ViewWindow::new(season, season_type)),
@@ -415,16 +427,16 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
         return;
     }
 
-    let goalies_view = goalies_view_from_tui_state(
-        &views,
+    let goalies_view = goalies_view_from_tui_state(GoaliesViewInput {
+        views: &views,
         sort,
-        app.goalies.min_gp,
-        &app.goalies.filters,
-        app.goalies.role_filter,
-        starter_threshold(&views),
-        app.active_season_typed,
-        app.active_type,
-    );
+        min_gp: app.goalies.min_gp,
+        filters: &app.goalies.filters,
+        role_filter: app.goalies.role_filter,
+        starter_threshold: starter_threshold(&views),
+        season: app.active_season_typed,
+        season_type: app.active_type,
+    });
     if goalies_view.rows.is_empty() {
         let dim = Style::default().fg(Color::DarkGray);
         f.render_widget(
@@ -693,16 +705,17 @@ mod tests {
             (2, "Starter", "WPG", 50, 28, 0.910, 2.50, 5),
         ]);
         let views = collect_goalie_views(&repo);
-        let view = goalies_view_from_tui_state(
-            &views,
-            GoalieSort::SvPctDesc,
-            15,
-            &RosterFilterState::default(),
-            GoalieRoleFilter::All,
-            None,
-            Season(20242025),
-            SeasonType::Regular,
-        );
+        let filters = RosterFilterState::default();
+        let view = goalies_view_from_tui_state(GoaliesViewInput {
+            views: &views,
+            sort: GoalieSort::SvPctDesc,
+            min_gp: 15,
+            filters: &filters,
+            role_filter: GoalieRoleFilter::All,
+            starter_threshold: None,
+            season: Season(20242025),
+            season_type: SeasonType::Regular,
+        });
 
         assert_eq!(view.rows.len(), 1, "min_gp should flow into the ViewModel");
         assert_eq!(view.rows[0].display_name, "Starter");

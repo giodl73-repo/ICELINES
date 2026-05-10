@@ -95,6 +95,9 @@ mod tests {
             pace_82: pace,
             goals_per_82: pace.map(|p| p * 0.4),
             gp,
+            goals: pace.map(|p| (p * 0.4).round() as u32),
+            assists: pace.map(|p| (p * 0.6).round() as u32),
+            points: pace.map(|p| p.round() as u32),
             headshot_canonical_url: None,
         }
     }
