@@ -10,7 +10,10 @@
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
+use axum::response::Response;
 use icelines_web::{router, WebState};
+use serde_json::{Map, Value};
+use std::collections::BTreeSet;
 use std::sync::OnceLock;
 use tokio::sync::Mutex;
 use tower::util::ServiceExt;
@@ -18,6 +21,45 @@ use tower::util::ServiceExt;
 async fn home_env_lock() -> tokio::sync::MutexGuard<'static, ()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
     LOCK.get_or_init(|| Mutex::new(())).lock().await
+}
+
+async fn response_json(response: Response, limit: usize) -> Value {
+    let bytes = axum::body::to_bytes(response.into_body(), limit)
+        .await
+        .expect("body fits");
+    serde_json::from_slice(&bytes).expect("response should be valid json")
+}
+
+fn assert_json_object<'a>(json: &'a Value, ctx: &str) -> &'a Map<String, Value> {
+    json.as_object()
+        .unwrap_or_else(|| panic!("{ctx} should be a JSON object"))
+}
+
+fn assert_data_meta_envelope<'a>(json: &'a Value, route: &str) -> &'a Map<String, Value> {
+    let obj = assert_json_object(json, "data/meta envelope");
+    let keys: BTreeSet<_> = obj.keys().map(String::as_str).collect();
+    let want: BTreeSet<_> = ["data", "meta", "route", "schema_version"]
+        .iter()
+        .copied()
+        .collect();
+    assert_eq!(keys, want, "envelope diverged: {keys:?}");
+    assert_eq!(obj["schema_version"], serde_json::json!(1));
+    assert_eq!(obj["route"], serde_json::json!(route));
+    obj
+}
+
+fn assert_shared_error_envelope<'a>(json: &'a Value, route: &str) -> &'a Map<String, Value> {
+    let obj = assert_json_object(json, "shared error envelope");
+    let keys: BTreeSet<_> = obj.keys().map(String::as_str).collect();
+    let want: BTreeSet<_> = ["data", "error", "meta", "route", "schema_version"]
+        .iter()
+        .copied()
+        .collect();
+    assert_eq!(keys, want, "error envelope diverged: {keys:?}");
+    assert_eq!(obj["schema_version"], serde_json::json!(1));
+    assert_eq!(obj["route"], serde_json::json!(route));
+    assert!(obj["error"].is_string());
+    obj
 }
 
 /// l1_get_root_returns_200_html
@@ -211,15 +253,10 @@ async fn l1_player_json_envelope_shape() {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let bytes = axum::body::to_bytes(response.into_body(), 512 * 1024)
-        .await
-        .expect("body fits");
-    let json: serde_json::Value = serde_json::from_slice(&bytes).expect("valid json envelope");
-
-    assert_eq!(json["schema_version"], 1);
-    assert_eq!(json["route"], "player");
+    let json = response_json(response, 512 * 1024).await;
+    let obj = assert_data_meta_envelope(&json, "player");
     assert_eq!(json["meta"]["season_type"], "regular");
-    assert_eq!(json["data"]["nhl_id"], 8478402);
+    assert_eq!(obj["data"]["nhl_id"], 8478402);
     assert_eq!(json["data"]["active_season_stats"]["season"], "20252026");
     assert!(json["data"]["career"].is_array());
 }
@@ -244,16 +281,11 @@ async fn l1_player_json_bad_active_season_uses_shared_envelope_shape() {
         .expect("oneshot dispatch ok");
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 
-    let bytes = axum::body::to_bytes(response.into_body(), 512 * 1024)
-        .await
-        .expect("body fits");
-    let json: serde_json::Value = serde_json::from_slice(&bytes).expect("valid json envelope");
-    assert_eq!(json["schema_version"], 1);
-    assert_eq!(json["route"], "player");
-    assert_eq!(json["data"]["nhl_id"], 8478402);
-    assert_eq!(json["meta"]["career_rows"], 0);
-    assert_eq!(json["meta"]["pre_nhl_career_rows"], 0);
-    assert!(json["error"].is_string());
+    let json = response_json(response, 512 * 1024).await;
+    let obj = assert_shared_error_envelope(&json, "player");
+    assert_eq!(obj["data"]["nhl_id"], 8478402);
+    assert_eq!(obj["meta"]["career_rows"], 0);
+    assert_eq!(obj["meta"]["pre_nhl_career_rows"], 0);
 }
 
 #[tokio::test]
@@ -271,16 +303,11 @@ async fn l1_player_json_missing_player_uses_shared_envelope_shape() {
         .expect("oneshot dispatch ok");
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
 
-    let bytes = axum::body::to_bytes(response.into_body(), 512 * 1024)
-        .await
-        .expect("body fits");
-    let json: serde_json::Value = serde_json::from_slice(&bytes).expect("valid json envelope");
-    assert_eq!(json["schema_version"], 1);
-    assert_eq!(json["route"], "player");
-    assert_eq!(json["data"]["nhl_id"], 999999999);
-    assert_eq!(json["meta"]["career_rows"], 0);
-    assert_eq!(json["meta"]["pre_nhl_career_rows"], 0);
-    assert!(json["error"].is_string());
+    let json = response_json(response, 512 * 1024).await;
+    let obj = assert_shared_error_envelope(&json, "player");
+    assert_eq!(obj["data"]["nhl_id"], 999999999);
+    assert_eq!(obj["meta"]["career_rows"], 0);
+    assert_eq!(obj["meta"]["pre_nhl_career_rows"], 0);
 }
 
 #[tokio::test]
@@ -827,29 +854,14 @@ async fn l1_api_career_envelope_shape() {
         .await
         .expect("body");
     let v: serde_json::Value = serde_json::from_slice(&bytes).expect("valid json");
-    let obj = v.as_object().expect("object");
     if status == StatusCode::OK {
         // Store populated — assert envelope shape.
-        let keys: std::collections::BTreeSet<_> = obj.keys().map(String::as_str).collect();
-        let want: std::collections::BTreeSet<_> = ["data", "meta", "route", "schema_version"]
-            .iter()
-            .copied()
-            .collect();
-        assert_eq!(keys, want, "envelope diverged: {keys:?}");
-        assert_eq!(obj["route"], serde_json::json!("career"));
+        let obj = assert_data_meta_envelope(&v, "career");
         assert!(obj["data"].is_array());
     } else {
         assert_eq!(status, StatusCode::BAD_REQUEST);
-        let keys: std::collections::BTreeSet<_> = obj.keys().map(String::as_str).collect();
-        let want: std::collections::BTreeSet<_> =
-            ["data", "error", "meta", "route", "schema_version"]
-                .iter()
-                .copied()
-                .collect();
-        assert_eq!(keys, want, "error envelope diverged: {keys:?}");
-        assert_eq!(obj["route"], serde_json::json!("career"));
+        let obj = assert_shared_error_envelope(&v, "career");
         assert!(obj["data"].as_array().is_some_and(Vec::is_empty));
-        assert!(obj["error"].is_string());
     }
 }
 
@@ -881,31 +893,19 @@ async fn l1_depth_json_envelope_shape() {
         "expected JSON content-type, got {ct:?}"
     );
 
-    let bytes = axum::body::to_bytes(response.into_body(), 1024 * 1024)
-        .await
-        .expect("body fits");
-    let v: serde_json::Value = serde_json::from_slice(&bytes).expect("valid json");
-    let obj = v.as_object().expect("envelope is an object");
-    let keys: std::collections::BTreeSet<_> = obj.keys().map(String::as_str).collect();
-    let want: std::collections::BTreeSet<_> = ["data", "meta", "route", "schema_version"]
-        .iter()
-        .copied()
-        .collect();
-    assert_eq!(keys, want, "envelope keys diverged: {keys:?}");
-    assert_eq!(obj["schema_version"], serde_json::json!(1));
-    assert_eq!(obj["route"], serde_json::json!("depth"));
+    let v = response_json(response, 1024 * 1024).await;
+    let obj = assert_data_meta_envelope(&v, "depth");
     assert!(obj["data"].is_array(), "data must be an array");
-    let meta_keys: std::collections::BTreeSet<_> = obj["meta"]
+    let meta_keys: BTreeSet<_> = obj["meta"]
         .as_object()
         .expect("meta is an object")
         .keys()
         .map(String::as_str)
         .collect();
-    let want_meta: std::collections::BTreeSet<_> =
-        ["count", "scoring_mode", "season", "season_type"]
-            .iter()
-            .copied()
-            .collect();
+    let want_meta: BTreeSet<_> = ["count", "scoring_mode", "season", "season_type"]
+        .iter()
+        .copied()
+        .collect();
     assert_eq!(meta_keys, want_meta, "meta keys diverged: {meta_keys:?}");
 }
 
@@ -929,20 +929,9 @@ async fn l1_depth_json_error_uses_shared_envelope_shape() {
         .expect("oneshot dispatch ok");
     assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 
-    let bytes = axum::body::to_bytes(response.into_body(), 1024 * 1024)
-        .await
-        .expect("body fits");
-    let v: serde_json::Value = serde_json::from_slice(&bytes).expect("valid json");
-    let obj = v.as_object().expect("envelope is an object");
-    let keys: std::collections::BTreeSet<_> = obj.keys().map(String::as_str).collect();
-    let want: std::collections::BTreeSet<_> = ["data", "error", "meta", "route", "schema_version"]
-        .iter()
-        .copied()
-        .collect();
-    assert_eq!(keys, want, "error envelope diverged: {keys:?}");
-    assert_eq!(obj["route"], serde_json::json!("depth"));
+    let v = response_json(response, 1024 * 1024).await;
+    let obj = assert_shared_error_envelope(&v, "depth");
     assert!(obj["data"].as_array().is_some_and(Vec::is_empty));
-    assert!(obj["error"].is_string());
 }
 
 #[tokio::test]
@@ -989,22 +978,11 @@ async fn l1_team_json_unknown_team_uses_shared_envelope_shape() {
         .expect("oneshot dispatch ok");
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
 
-    let bytes = axum::body::to_bytes(response.into_body(), 1024 * 1024)
-        .await
-        .expect("body fits");
-    let v: serde_json::Value = serde_json::from_slice(&bytes).expect("valid json");
-    let obj = v.as_object().expect("envelope is an object");
-    let keys: std::collections::BTreeSet<_> = obj.keys().map(String::as_str).collect();
-    let want: std::collections::BTreeSet<_> = ["data", "error", "meta", "route", "schema_version"]
-        .iter()
-        .copied()
-        .collect();
-    assert_eq!(keys, want, "error envelope diverged: {keys:?}");
-    assert_eq!(obj["route"], serde_json::json!("team"));
+    let v = response_json(response, 1024 * 1024).await;
+    let obj = assert_shared_error_envelope(&v, "team");
     assert_eq!(obj["data"]["team_abbrev"], serde_json::json!("ZZZ"));
     assert!(obj["data"]["skaters"].as_array().is_some_and(Vec::is_empty));
     assert!(obj["data"]["goalies"].as_array().is_some_and(Vec::is_empty));
-    assert!(obj["error"].is_string());
 }
 
 #[tokio::test]
