@@ -229,6 +229,8 @@ Progress:
 - 2026-05-10: Recorded stale King Clancy web-dashboard route claims in
   `design/notes/2026-05-10-web-dashboard-spec-drift.md`; the current route
   source of truth remains `design/specs/surface-parity.md`.
+- 2026-05-10: Added the missing `/api/v1/goalies` JSON envelope regression
+  test and updated the surface matrix with the concrete test reference.
 
 ---
 

@@ -988,6 +988,33 @@ async fn l1_compare_json_bad_input_uses_shared_error_envelope() {
 }
 
 #[tokio::test]
+async fn l1_goalies_json_envelope_shape() {
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/goalies?sort=wins&top=5")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json = response_json(response, 256 * 1024).await;
+    let obj = assert_data_meta_envelope(&json, "goalies");
+    assert!(
+        !obj.contains_key("error"),
+        "successful goalies envelope should not carry error"
+    );
+    assert_eq!(json["meta"]["sort"], "wins");
+    assert_eq!(json["meta"]["top"], 5);
+    assert!(json["meta"]["returned"].is_number());
+    assert!(json["data"].is_array());
+}
+
+#[tokio::test]
 async fn l1_team_json_unknown_team_uses_shared_envelope_shape() {
     let app = router(WebState::new());
 

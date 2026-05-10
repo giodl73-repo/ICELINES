@@ -150,7 +150,7 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /compare` | `handlers/compare.rs` | HTML | Compare/comps | partial - projects compare page from `CompareView`; CLI/TUI alignment remains |
 | `GET /api/v1/compare` | `handlers/compare.rs` | JSON | Compare/comps | partial - projects stable data/meta success and shared bad-input error envelopes from `CompareView`; covered by `l1_compare_json_*` |
 | `GET /goalies` | `handlers/goalies.rs` | HTML | Goalie leaderboard | partial - parity checks continue in TedLindsay.3 |
-| `GET /api/v1/goalies` | `handlers/goalies.rs` | JSON | Goalie leaderboard | partial - envelope tests exist |
+| `GET /api/v1/goalies` | `handlers/goalies.rs` | JSON | Goalie leaderboard | partial - projects stable data/meta success envelope from `GoaliesView`; covered by `l1_goalies_json_envelope_shape` |
 | `GET /team/:abbrev` | `handlers/team.rs` | HTML | Team depth | partial - renders from `TeamDepthView`, HTML projection shape preserved |
 | `GET /api/v1/team/:abbrev` | `handlers/team.rs` | JSON | Team depth | partial - projects stable success and error envelopes from `TeamDepthView`; covered by `l1_team_json_*` |
 | `GET /depth` | `handlers/depth.rs` | HTML | Cross-team depth | partial - projects depth rankings from `DepthLeagueView`; CLI/TUI alignment remains |
