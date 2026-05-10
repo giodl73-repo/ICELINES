@@ -32,8 +32,8 @@ All leaders-capable surfaces should eventually consume the same row contract:
    by existing CLI JSON/CSV without changing those wire shapes. Complete.
 2. Move CLI JSON/CSV serialization to read from `LeadersView`, preserving
    existing field names and numeric precision. Complete.
-3. Add a fixture test that compares CLI text, JSON, and CSV row identity for the
-   same query arguments.
+3. Add a fixture test that compares CLI JSON and CSV row identity for the same
+   query arguments. Complete.
 4. Move TUI Stats/Queries row rendering behind a `LeadersView` adapter while
    keeping the interactive filter/sort controls in TUI state.
 5. Promote the leaders row in `surface-parity.md` from partial only after CLI

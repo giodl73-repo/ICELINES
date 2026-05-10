@@ -952,6 +952,55 @@ fn l2_cmd_query_leaders_csv_export() {
 }
 
 #[test]
+fn l2_cmd_query_leaders_json_csv_row_identity_match() {
+    let args = ["query", "leaders", "--sort", "goals", "--top", "5"];
+    let json_out = run(&[&args[..], &["--json"][..]].concat());
+    assert!(
+        json_out.status.success(),
+        "query leaders --json must exit 0, stderr: {}",
+        String::from_utf8_lossy(&json_out.stderr)
+    );
+    let csv_out = run(&[&args[..], &["--csv"][..]].concat());
+    assert!(
+        csv_out.status.success(),
+        "query leaders --csv must exit 0, stderr: {}",
+        String::from_utf8_lossy(&csv_out.stderr)
+    );
+
+    let json_stdout = String::from_utf8_lossy(&json_out.stdout);
+    let json: serde_json::Value =
+        serde_json::from_str(&json_stdout).expect("query leaders --json must emit valid JSON");
+    let json_rows = json
+        .as_array()
+        .expect("query leaders --json should emit a JSON array");
+
+    let csv_stdout = String::from_utf8_lossy(&csv_out.stdout);
+    let csv_rows: Vec<Vec<&str>> = csv_stdout
+        .lines()
+        .skip(1)
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| line.split(',').collect())
+        .collect();
+
+    assert_eq!(
+        json_rows.len(),
+        csv_rows.len(),
+        "JSON and CSV should return the same row count"
+    );
+    for (json_row, csv_row) in json_rows.iter().zip(csv_rows.iter()) {
+        assert!(
+            csv_row.len() >= 5,
+            "CSV row should carry rank,name,team,pos,gp: {csv_row:?}"
+        );
+        assert_eq!(json_row["rank"].to_string(), csv_row[0]);
+        assert_eq!(json_row["name"].as_str(), Some(csv_row[1]));
+        assert_eq!(json_row["team"].as_str(), Some(csv_row[2]));
+        assert_eq!(json_row["pos"].as_str(), Some(csv_row[3]));
+        assert_eq!(json_row["gp"].to_string(), csv_row[4]);
+    }
+}
+
+#[test]
 fn l2_cmd_query_leaders_invalid_sort_exits_nonzero() {
     let out = run(&["query", "leaders", "--sort", "rapm"]);
     assert!(
