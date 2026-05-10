@@ -3355,23 +3355,14 @@ impl App {
                 }
             }
             Screen::Depth => {
-                let views = self.views();
-                let filtered_views: Vec<_> = views
-                    .iter()
-                    .filter(|v| self.depth_filters.matches_view(v))
-                    .copied()
-                    .collect();
-                let strength = icelines_core::cross_team::compute_team_strength_views(
-                    &filtered_views,
-                    self.depth_mode,
-                );
-                let mut ranked: Vec<String> = strength.keys().cloned().collect();
-                ranked.sort_by(|a, b| {
-                    strength[b]
-                        .total
-                        .partial_cmp(&strength[a].total)
-                        .unwrap_or(std::cmp::Ordering::Equal)
-                });
+                let ranked = crate::tui::screens::depth::league_view_from_app(self)
+                    .map(|view| {
+                        view.rows
+                            .into_iter()
+                            .map(|row| row.team.0)
+                            .collect::<Vec<_>>()
+                    })
+                    .unwrap_or_default();
                 if let Some(team) = ranked.get(self.selected) {
                     self.prev_screen = Some(Screen::Depth);
                     self.screen = Screen::DepthTeam(team.clone());

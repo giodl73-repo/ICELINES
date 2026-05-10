@@ -4,6 +4,7 @@ use icelines_core::cross_team::{
     WebFitClass,
 };
 use icelines_core::stats_repository::PlayerView;
+use icelines_core::DepthLeagueView;
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -37,6 +38,27 @@ pub fn chrome(
 }
 
 // ── League view ───────────────────────────────────────────────────────────────
+
+pub(crate) fn league_view_from_app(app: &App) -> Option<DepthLeagueView> {
+    let views = app.views();
+    if views.is_empty() {
+        return None;
+    }
+
+    let filtered_views: Vec<PlayerView<'_>> = views
+        .iter()
+        .filter(|v| app.depth_filters.matches_view(v))
+        .copied()
+        .collect();
+    Some(DepthLeagueView::from_player_views(
+        app.active_season_typed,
+        app.active_type,
+        app.repo
+            .has_window(app.active_season_typed, app.active_type),
+        &filtered_views,
+        app.depth_mode,
+    ))
+}
 
 pub fn render_league(f: &mut Frame, app: &App, area: Rect) {
     let mode = app.depth_mode;
