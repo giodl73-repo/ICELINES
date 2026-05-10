@@ -3375,6 +3375,42 @@ mod app_snapshot_tests {
         );
     }
 
+    #[test]
+    fn l1_tui_depth_team_render_matches_team_depth_chart_view_first_player() {
+        let (_dir, store) = empty_store_in_tempdir();
+        let mut app = App::new(true);
+        app.boot_load_with_store(&store);
+
+        app.handle(Action::Tab);
+        app.handle(Action::Enter);
+        let abbrev = match &app.screen {
+            crate::tui::app::Screen::DepthTeam(abbrev) => abbrev.clone(),
+            other => panic!("expected DepthTeam screen, got {other:?}"),
+        };
+        let view = crate::tui::screens::depth::team_chart_view_from_app(&app, &abbrev)
+            .expect("booted depth team screen should produce a chart view");
+        let first_player = view
+            .columns
+            .iter()
+            .find_map(|column| column.players.first())
+            .expect("depth chart view should have at least one player");
+        let name = first_player
+            .display_name
+            .chars()
+            .take(12)
+            .collect::<String>();
+        let expected = format!(
+            "L{} {:<12} {:>4.0}",
+            first_player.line, name, first_player.score
+        );
+        let text = render_app_to_text(&app, 120, 30);
+
+        assert!(
+            text.contains(&expected),
+            "Depth team TUI first player must match TeamDepthChartView projection.\nExpected fragment: {expected}\nGot:\n{text}"
+        );
+    }
+
     /// Groups screen renders rows for each DB group with their member
     /// counts. Catches a regression where Groups screen reads a stale
     /// in-memory cache instead of querying the DB on entry.

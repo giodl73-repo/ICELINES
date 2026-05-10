@@ -1,9 +1,10 @@
 use crate::tui::app::App;
-use icelines_core::cross_team::{
-    compute_all_views_with_mode, fantasy_score_view, ScoringMode, WebFitClass,
-};
+use icelines_core::cross_team::{ScoringMode, WebFitClass};
 use icelines_core::stats_repository::PlayerView;
-use icelines_core::DepthLeagueView;
+use icelines_core::{
+    DepthGoalieSlot, DepthLeagueView, MetricValue, TeamAbbr, TeamDepthChartPlayer,
+    TeamDepthChartView,
+};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -55,6 +56,30 @@ pub(crate) fn league_view_from_app(app: &App) -> Option<DepthLeagueView> {
         app.repo
             .has_window(app.active_season_typed, app.active_type),
         &filtered_views,
+        app.depth_mode,
+    ))
+}
+
+pub(crate) fn team_chart_view_from_app(app: &App, abbrev: &str) -> Option<TeamDepthChartView> {
+    let views = app.views();
+    if views.is_empty() {
+        return None;
+    }
+
+    let filtered_views: Vec<PlayerView<'_>> = views
+        .iter()
+        .filter(|v| app.depth_filters.matches_view(v))
+        .copied()
+        .collect();
+    let goalie_views = app.goalie_views();
+    Some(TeamDepthChartView::from_player_views(
+        TeamAbbr(abbrev.to_string()),
+        app.active_season_typed,
+        app.active_type,
+        app.repo
+            .has_window(app.active_season_typed, app.active_type),
+        &filtered_views,
+        &goalie_views,
         app.depth_mode,
     ))
 }
@@ -149,47 +174,21 @@ pub fn render_team(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
     let inner = block.inner(area);
     f.render_widget(block, area);
 
-    // Hart.5c.6 Phase B-3.2: collect views, then compute metrics.
-    let views = app.views();
-    if views.is_empty() {
+    let Some(view) = team_chart_view_from_app(app, abbrev) else {
         f.render_widget(Paragraph::new("  Loading…"), inner);
         return;
-    }
+    };
 
     // Phase G.4: split inner vertically — grid on top, goalie strip
     // below. Strip takes 5 lines (header + 1 separator + up to 3 goalies);
     // suppressed when the team has no goalies in the active window.
-    let goalie_views = app.goalie_views();
-    let team_goalies = super::team::collect_team_goalie_views(&goalie_views, abbrev);
-    let strip_height: u16 = if team_goalies.is_empty() { 0 } else { 5 };
+    let strip_height: u16 = if view.goalies.is_empty() { 0 } else { 5 };
     let outer = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Min(0), Constraint::Length(strip_height)])
         .split(inner);
     let grid_area = outer[0];
     let strip_area = outer[1];
-
-    // Compute cross-team metrics for all views — view-based path.
-    let filtered_views: Vec<PlayerView<'_>> = views
-        .iter()
-        .filter(|v| app.depth_filters.matches_view(v))
-        .copied()
-        .collect();
-    let metrics = compute_all_views_with_mode(&filtered_views, mode);
-    let metrics_map: std::collections::HashMap<u32, &icelines_core::cross_team::CrossTeamMetrics> =
-        metrics
-            .iter()
-            .filter_map(|m| m.player_nhl_id.map(|id| (id, m)))
-            .collect();
-
-    let score_of = |v: &PlayerView<'_>| -> f64 {
-        match mode {
-            ScoringMode::Fantasy => fantasy_score_view(v),
-            ScoringMode::Pace => v.pace_82().unwrap_or(0.0),
-            // Phase Lindsay L.5.3 — None → 0.0 (parity with Pace).
-            ScoringMode::Custom(sid) => sid.read(v).unwrap_or(0.0),
-        }
-    };
 
     // 5 columns: LW | C | RW | LD | RD
     let chunks = Layout::default()
@@ -203,138 +202,27 @@ pub fn render_team(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
         ])
         .split(grid_area);
 
-    // Greedy forward assignment: sort all forwards by score, assign to primary pos.
-    // Overflow (>4 at any pos) spills into the thinnest other forward slot.
-    use icelines_core::model::Position;
-    let mut fwd_buckets: std::collections::HashMap<Position, Vec<&PlayerView<'_>>> =
-        std::collections::HashMap::new();
-    let mut all_fwds: Vec<&PlayerView<'_>> = filtered_views
-        .iter()
-        .filter(|v| v.team_display() == abbrev && v.position().is_forward())
-        .collect();
-    // PlayerId tiebreak — input from app.views() iterates a HashMap
-    // (non-deterministic order); without a tiebreak, equal-scored
-    // players swap each frame and cause depth-slot flicker.
-    all_fwds.sort_by(|a, b| {
-        score_of(b)
-            .partial_cmp(&score_of(a))
-            .unwrap_or(std::cmp::Ordering::Equal)
-            .then_with(|| a.id().0.cmp(&b.id().0))
-    });
-
-    for v in &all_fwds {
-        let bucket = fwd_buckets.entry(v.position()).or_default();
-        if bucket.len() < 4 {
-            bucket.push(v);
-        } else {
-            // Primary slot full — spill to natural wing based on shooting hand,
-            // fall back to least-populated if natural wing is also full.
-            let natural = match v.identity.bio.shoots_catches.as_deref() {
-                Some("R") => Position::RightWing,
-                _ => Position::LeftWing, // lefty or unknown → LW
-            };
-            let spill = if fwd_buckets.get(&natural).map_or(0, |b| b.len()) < 4 {
-                natural
-            } else {
-                [Position::LeftWing, Position::Center, Position::RightWing]
-                    .iter()
-                    .min_by_key(|&&pos| fwd_buckets.get(&pos).map_or(0, |b| b.len()))
-                    .copied()
-                    .unwrap_or(v.position())
-            };
-            fwd_buckets.entry(spill).or_default().push(v);
-        }
-    }
-
-    // Defense: split by handedness
-    let mut all_d: Vec<&PlayerView<'_>> = filtered_views
-        .iter()
-        .filter(|v| v.team_display() == abbrev && v.position() == Position::Defense)
-        .collect();
-    all_d.sort_by(|a, b| {
-        score_of(b)
-            .partial_cmp(&score_of(a))
-            .unwrap_or(std::cmp::Ordering::Equal)
-            .then_with(|| a.id().0.cmp(&b.id().0))
-    });
-    let ld_players: Vec<_> = all_d
-        .iter()
-        .filter(|v| v.identity.bio.shoots_catches.as_deref() != Some("R"))
-        .copied()
-        .collect();
-    let rd_players: Vec<_> = all_d
-        .iter()
-        .filter(|v| v.identity.bio.shoots_catches.as_deref() == Some("R"))
-        .copied()
-        .collect();
-
-    let empty = vec![];
-    let fwd_cols = [
-        (
-            Position::LeftWing,
-            "LEFT WING",
-            fwd_buckets.get(&Position::LeftWing).unwrap_or(&empty),
-        ),
-        (
-            Position::Center,
-            "CENTER",
-            fwd_buckets.get(&Position::Center).unwrap_or(&empty),
-        ),
-        (
-            Position::RightWing,
-            "RIGHT WING",
-            fwd_buckets.get(&Position::RightWing).unwrap_or(&empty),
-        ),
-    ];
-
-    for (col, (_pos, label, players)) in fwd_cols.iter().enumerate() {
+    for (col, column) in view.columns.iter().enumerate() {
         render_pos_col(
             f,
             chunks[col],
-            label,
-            players,
-            4,
-            &score_of,
-            &metrics_map,
-            mode,
+            &column.label,
+            &column.players,
+            column.depth,
+            &view.scoring_mode,
         );
     }
 
-    render_pos_col(
-        f,
-        chunks[3],
-        "LD",
-        &ld_players,
-        3,
-        &score_of,
-        &metrics_map,
-        mode,
-    );
-    render_pos_col(
-        f,
-        chunks[4],
-        "RD",
-        &rd_players,
-        3,
-        &score_of,
-        &metrics_map,
-        mode,
-    );
-
     // Phase G.4: goalie strip rendered below the grid when present.
-    if !team_goalies.is_empty() {
-        render_goalie_strip(f, strip_area, &team_goalies);
+    if !view.goalies.is_empty() {
+        render_goalie_strip(f, strip_area, &view.goalies);
     }
 }
 
 /// Render the per-team goalie strip — single header row plus one row
 /// per goalie sorted by GP descending. Designed to fit in a 5-line
 /// vertical band at the bottom of the depth chart.
-fn render_goalie_strip(
-    f: &mut Frame,
-    area: Rect,
-    goalies: &[&icelines_core::stats_repository::PlayerView<'_>],
-) {
+fn render_goalie_strip(f: &mut Frame, area: Rect, goalies: &[DepthGoalieSlot]) {
     let dim = Style::default().fg(Color::DarkGray);
     let gold = Style::default()
         .fg(Color::Yellow)
@@ -348,32 +236,25 @@ fn render_goalie_strip(
         ),
         dim,
     ));
-    for v in goalies {
-        let stats = match v.stats.goalie.as_ref() {
-            Some(s) => s,
-            None => {
-                lines.push(Line::from(format!(
-                    "  {:<22} {:<4}  {:>6}  {:>9}",
-                    v.full_name().chars().take(22).collect::<String>(),
-                    "—",
-                    "—",
-                    "—",
-                )));
-                continue;
-            }
-        };
-        let sv_pct = stats
-            .save_pct
-            .map(|x| format!("{:.3}", x))
+    for goalie in goalies {
+        let sv_pct = metric_decimal_value(goalie, "save_pct")
+            .map(|x| format!("{x:.3}"))
             .unwrap_or_else(|| "—".to_owned());
-        let record = match stats.ot_losses {
-            Some(otl) => format!("{}-{}-{}", stats.wins, stats.losses, otl),
-            None => format!("{}-{}", stats.wins, stats.losses),
+        let record = match (
+            metric_int_value(goalie, "wins"),
+            metric_int_value(goalie, "losses"),
+            metric_int_value(goalie, "ot_losses"),
+        ) {
+            (Some(wins), Some(losses), Some(otl)) => format!("{wins}-{losses}-{otl}"),
+            (Some(wins), Some(losses), None) => format!("{wins}-{losses}"),
+            _ => "—".to_owned(),
         };
         lines.push(Line::from(format!(
             "  {:<22} {:<4}  {:>6}  {:>9}",
-            v.full_name().chars().take(22).collect::<String>(),
-            v.gp(),
+            goalie.display_name.chars().take(22).collect::<String>(),
+            metric_int_value(goalie, "gp")
+                .map(|gp| gp.to_string())
+                .unwrap_or_else(|| "—".to_owned()),
             sv_pct,
             record,
         )));
@@ -381,16 +262,39 @@ fn render_goalie_strip(
     f.render_widget(Paragraph::new(lines), area);
 }
 
-#[allow(clippy::too_many_arguments)] // Render fn signature: 4 layout + 2 data + 2 mode params.
+fn metric_int_value(goalie: &DepthGoalieSlot, key: &str) -> Option<i64> {
+    goalie.metrics.iter().find_map(|metric| {
+        if metric.key.0 == key {
+            match metric.value {
+                MetricValue::Integer(value) => Some(value),
+                _ => None,
+            }
+        } else {
+            None
+        }
+    })
+}
+
+fn metric_decimal_value(goalie: &DepthGoalieSlot, key: &str) -> Option<f64> {
+    goalie.metrics.iter().find_map(|metric| {
+        if metric.key.0 == key {
+            match metric.value {
+                MetricValue::Decimal(value) => Some(value),
+                _ => None,
+            }
+        } else {
+            None
+        }
+    })
+}
+
 fn render_pos_col(
     f: &mut Frame,
     area: Rect,
     label: &str,
-    players: &[&PlayerView<'_>],
+    players: &[TeamDepthChartPlayer],
     depth: usize,
-    score_of: &impl Fn(&PlayerView<'_>) -> f64,
-    metrics_map: &std::collections::HashMap<u32, &icelines_core::cross_team::CrossTeamMetrics>,
-    mode: ScoringMode,
+    mode_label: &str,
 ) {
     let block = Block::default()
         .borders(Borders::ALL)
@@ -404,17 +308,14 @@ fn render_pos_col(
     // encoded as the player-name color (Green=Elite, Yellow=Solid,
     // Cyan=Buried, Red=Stretch) so the score column never truncates.
     let mut lines: Vec<Line> = vec![
-        Line::styled(format!(" {:<12} {:>4}", "Player", mode.label()), dim),
+        Line::styled(format!(" {:<12} {:>4}", "Player", mode_label), dim),
         Line::styled(format!(" {}", "─".repeat(18)), dim),
     ];
 
-    for (i, v) in players.iter().enumerate() {
-        let score = score_of(v);
-        // PlayerId.0 is the canonical nhl_id (post-Hart unified shape).
-        let nhl_id = v.identity.id.0;
-        let fit_color = metrics_map
-            .get(&nhl_id)
-            .map(|m| match m.web_fit_class() {
+    for (i, player) in players.iter().enumerate() {
+        let fit_color = player
+            .fit
+            .map(|fit| match fit {
                 WebFitClass::Elite => Color::Green,
                 WebFitClass::Solid => Color::Yellow,
                 WebFitClass::Buried => Color::Cyan,
@@ -422,7 +323,7 @@ fn render_pos_col(
             })
             .unwrap_or(Color::DarkGray);
 
-        let name = v.full_name().chars().take(12).collect::<String>();
+        let name = player.display_name.chars().take(12).collect::<String>();
         let line_style = if i < depth {
             Style::default().fg(fit_color)
         } else {
@@ -437,7 +338,7 @@ fn render_pos_col(
         };
 
         lines.push(Line::styled(
-            format!(" L{} {:<12} {:>4.0}", i + 1, name, score),
+            format!(" L{} {:<12} {:>4.0}", player.line, name, player.score),
             line_style,
         ));
         if i + 1 == depth {

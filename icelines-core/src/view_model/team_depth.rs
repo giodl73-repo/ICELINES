@@ -628,6 +628,12 @@ fn goalie_slot(goalie: &PlayerView<'_>) -> DepthGoalieSlot {
             metric_optional_int("wins", "W", stats.map(|g| g.wins), MetricUnit::Count),
             metric_optional_int("losses", "L", stats.map(|g| g.losses), MetricUnit::Count),
             metric_optional_int(
+                "ot_losses",
+                "OTL",
+                stats.and_then(|g| g.ot_losses),
+                MetricUnit::Count,
+            ),
+            metric_optional_int(
                 "shutouts",
                 "SO",
                 stats.map(|g| g.shutouts),
