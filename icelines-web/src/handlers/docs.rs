@@ -5,6 +5,7 @@ use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
 use icelines_core::model::Season;
+use icelines_core::season_stats::SeasonType;
 use icelines_core::{DocsView, ViewContext, ViewWindow};
 use std::sync::OnceLock;
 
@@ -44,7 +45,7 @@ pub async fn get_docs(State(state): State<WebState>) -> Response {
             cfg.active_label.clone(),
             ViewContext::new(ViewWindow::new(
                 season,
-                super::leaders::parse_season_type(&cfg.active_season_type),
+                SeasonType::parse_lossy(&cfg.active_season_type),
             )),
         )
     };

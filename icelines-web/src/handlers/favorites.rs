@@ -12,6 +12,7 @@ use axum::extract::{Form, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use icelines_core::model::Season;
+use icelines_core::season_stats::SeasonType;
 use icelines_core::{
     FavoriteMemberInput, FavoriteMemberRow, FavoritesView, ViewContext, ViewWindow, WatchNoteInput,
     WatchlistMemberRow, WatchlistView,
@@ -125,7 +126,7 @@ async fn favorites_context(state: &crate::WebState) -> (String, ViewContext) {
         .parse::<u32>()
         .map(Season)
         .unwrap_or(Season(0));
-    let season_type = super::leaders::parse_season_type(&cfg.active_season_type);
+    let season_type = SeasonType::parse_lossy(&cfg.active_season_type);
     (
         cfg.active_label.clone(),
         ViewContext::new(ViewWindow::new(season, season_type)),

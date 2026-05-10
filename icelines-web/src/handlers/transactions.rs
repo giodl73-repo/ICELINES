@@ -5,6 +5,7 @@ use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
 use icelines_core::model::{Season, TeamAbbr};
+use icelines_core::season_stats::SeasonType;
 use icelines_core::transactions::{TransactionKind, TRANSACTIONS_EARLIEST_SEASON};
 use icelines_core::{TransactionViewRow, TransactionsView, ViewContext, ViewWindow};
 use serde::Deserialize;
@@ -174,7 +175,7 @@ async fn build_transactions_result(
     let view = TransactionsView::from_rows(
         ViewContext::new(ViewWindow::new(
             season_str.parse::<u32>().map(Season).unwrap_or(Season(0)),
-            super::leaders::parse_season_type(&state.config.read().await.active_season_type),
+            SeasonType::parse_lossy(&state.config.read().await.active_season_type),
         )),
         season_str,
         rows,

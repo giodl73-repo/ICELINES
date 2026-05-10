@@ -5,6 +5,7 @@ use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
 use icelines_core::model::Season;
+use icelines_core::season_stats::SeasonType;
 use icelines_core::{
     ScheduleGameRow, ScheduleView, ScheduledGameInput, TeamChipView, ViewContext, ViewWindow,
 };
@@ -100,7 +101,7 @@ async fn build_schedule_result(state: &WebState, q: &ScheduleQuery) -> ScheduleR
                 .parse::<u32>()
                 .map(Season)
                 .unwrap_or(Season(0)),
-            super::leaders::parse_season_type(&cfg.active_season_type),
+            SeasonType::parse_lossy(&cfg.active_season_type),
         )
     };
 

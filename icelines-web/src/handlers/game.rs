@@ -4,6 +4,7 @@ use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
 use icelines_core::model::Season;
+use icelines_core::season_stats::SeasonType;
 use icelines_core::{
     GameBoxscoreInput, GameGoalInput, GameGoalRow, GameGoalieInput, GameGoalieRow, GameSkaterInput,
     GameSkaterRow, GameView, ViewContext, ViewWindow,
@@ -82,7 +83,7 @@ pub async fn get_game(State(state): State<WebState>, Path(id): Path<u64>) -> Res
                 .parse::<u32>()
                 .map(Season)
                 .unwrap_or(Season(0)),
-            super::leaders::parse_season_type(&cfg.active_season_type),
+            SeasonType::parse_lossy(&cfg.active_season_type),
         )
     };
     let client = icelines_fetch::nhl_api::NhlApiClient::production();
@@ -120,7 +121,7 @@ pub async fn get_game_json(State(state): State<WebState>, Path(id): Path<u64>) -
                 .parse::<u32>()
                 .map(Season)
                 .unwrap_or(Season(0)),
-            super::leaders::parse_season_type(&cfg.active_season_type),
+            SeasonType::parse_lossy(&cfg.active_season_type),
         )
     };
     let client = icelines_fetch::nhl_api::NhlApiClient::production();

@@ -5,6 +5,7 @@ use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
 use icelines_core::model::{Position, Season, TeamAbbr};
+use icelines_core::season_stats::SeasonType;
 use icelines_core::{
     view_model::{
         poach_report_from_board, watch_rules_view_with_persisted,
@@ -136,7 +137,7 @@ pub async fn get_watch_rules_json(State(state): State<WebState>) -> Response {
         let cfg = state.config.read().await;
         (
             cfg.active_season.clone(),
-            super::leaders::parse_season_type(&cfg.active_season_type),
+            SeasonType::parse_lossy(&cfg.active_season_type),
         )
     };
     let season_u32: u32 = match season_str.parse() {
@@ -349,7 +350,7 @@ async fn build_poach_view(
         let cfg = state.config.read().await;
         (
             cfg.active_season.clone(),
-            super::leaders::parse_season_type(&cfg.active_season_type),
+            SeasonType::parse_lossy(&cfg.active_season_type),
             cfg.active_label.clone(),
         )
     };

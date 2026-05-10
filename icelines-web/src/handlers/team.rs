@@ -195,10 +195,7 @@ pub async fn get_team_json(
     let meta = TeamMeta {
         team_abbrev: team.0.to_string(),
         season: season_str,
-        season_type: match season_type {
-            SeasonType::Regular => "regular".to_owned(),
-            SeasonType::Playoff => "playoff".to_owned(),
-        },
+        season_type: season_type.label().to_owned(),
         skater_count: skaters.len(),
         goalie_count: goalies.len(),
     };

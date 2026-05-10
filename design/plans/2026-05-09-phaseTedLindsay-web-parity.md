@@ -184,6 +184,9 @@ Progress:
 - 2026-05-10: Consolidated web read-side season-type parsing on
   `SeasonType::parse_lossy`, replacing route-local playoff/default matches
   while preserving the existing tolerant wire behavior.
+- 2026-05-10: Removed the temporary web `parse_season_type` wrapper and moved
+  the remaining route handlers plus JSON season-type labels onto direct core
+  `SeasonType` helpers.
 
 ---
 

@@ -13,7 +13,7 @@ pub async fn get_depth(State(state): State<WebState>) -> Response {
         let cfg = state.config.read().await;
         (
             cfg.active_season.clone(),
-            super::leaders::parse_season_type(&cfg.active_season_type),
+            SeasonType::parse_lossy(&cfg.active_season_type),
             cfg.active_label.clone(),
         )
     };
@@ -84,7 +84,7 @@ pub async fn get_depth_json(State(state): State<WebState>) -> Response {
         let cfg = state.config.read().await;
         (
             cfg.active_season.clone(),
-            super::leaders::parse_season_type(&cfg.active_season_type),
+            SeasonType::parse_lossy(&cfg.active_season_type),
         )
     };
     let season_u32: u32 = match season_str.parse() {
@@ -113,10 +113,7 @@ pub async fn get_depth_json(State(state): State<WebState>) -> Response {
         rows,
         DepthMeta {
             season: season_str,
-            season_type: match season_type {
-                SeasonType::Regular => "regular".to_owned(),
-                SeasonType::Playoff => "playoff".to_owned(),
-            },
+            season_type: season_type.label().to_owned(),
             count,
             scoring_mode: "pace",
         },

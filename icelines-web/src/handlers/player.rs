@@ -233,10 +233,7 @@ fn career_row_from_view_for_html(row: &PlayerCareerSummary) -> CareerRow {
     let points = metric_u32(&row.metrics, "points").unwrap_or(0);
     CareerRow {
         season: pretty_season(row.season),
-        season_type: match row.season_type {
-            SeasonType::Regular => "Regular".to_owned(),
-            SeasonType::Playoff => "Playoff".to_owned(),
-        },
+        season_type: season_type_title(row.season_type).to_owned(),
         team: row.team.0.clone(),
         team_link: team_link_for_display(&row.team.0),
         gp,
@@ -500,10 +497,7 @@ pub async fn get_player_json(State(state): State<WebState>, Path(id): Path<u32>)
         headshot_url: view.headshot_url.clone(),
         active_season_stats: PlayerActiveStats {
             season: season_str.clone(),
-            season_type: match season_type {
-                SeasonType::Regular => "regular".to_owned(),
-                SeasonType::Playoff => "playoff".to_owned(),
-            },
+            season_type: season_type.label().to_owned(),
             games: gp,
             goals,
             assists,
@@ -515,10 +509,7 @@ pub async fn get_player_json(State(state): State<WebState>, Path(id): Path<u32>)
     };
     let meta = PlayerMeta {
         season: season_str,
-        season_type: match season_type {
-            SeasonType::Regular => "regular".to_owned(),
-            SeasonType::Playoff => "playoff".to_owned(),
-        },
+        season_type: season_type.label().to_owned(),
         career_rows: career_rows_n,
         pre_nhl_career_rows,
     };
@@ -528,16 +519,20 @@ pub async fn get_player_json(State(state): State<WebState>, Path(id): Path<u32>)
 fn player_career_row_from_view(row: &PlayerCareerSummary) -> PlayerCareerRow {
     PlayerCareerRow {
         season: pretty_season(row.season),
-        season_type: match row.season_type {
-            SeasonType::Regular => "regular".to_owned(),
-            SeasonType::Playoff => "playoff".to_owned(),
-        },
+        season_type: row.season_type.label().to_owned(),
         team: row.team.0.clone(),
         games: metric_u32(&row.metrics, "gp").unwrap_or(0),
         goals: metric_u32(&row.metrics, "goals").unwrap_or(0),
         assists: metric_u32(&row.metrics, "assists").unwrap_or(0),
         points: metric_u32(&row.metrics, "points").unwrap_or(0),
         points_per_game: metric_f64(&row.metrics, "points_per_game"),
+    }
+}
+
+fn season_type_title(season_type: SeasonType) -> &'static str {
+    match season_type {
+        SeasonType::Regular => "Regular",
+        SeasonType::Playoff => "Playoff",
     }
 }
 

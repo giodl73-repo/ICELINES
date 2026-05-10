@@ -6,6 +6,7 @@ use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
 use chrono::{Duration, NaiveDate, Utc};
 use icelines_core::model::Season;
+use icelines_core::season_stats::SeasonType;
 use icelines_core::{ScheduledGameInput, ScoresDayView, ScoresView, ViewContext, ViewWindow};
 use serde::Deserialize;
 
@@ -71,7 +72,7 @@ async fn build_scores_result(state: &WebState, q: &ScoresQuery) -> ScoresResult 
                 .parse::<u32>()
                 .map(Season)
                 .unwrap_or(Season(0)),
-            super::leaders::parse_season_type(&cfg.active_season_type),
+            SeasonType::parse_lossy(&cfg.active_season_type),
         )
     };
 

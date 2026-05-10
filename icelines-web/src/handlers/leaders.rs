@@ -440,7 +440,7 @@ async fn build_leader_result(
         let cfg = state.config.read().await;
         (
             cfg.active_season.clone(),
-            parse_season_type(&cfg.active_season_type),
+            SeasonType::parse_lossy(&cfg.active_season_type),
             cfg.active_label.clone(),
         )
     };
@@ -684,10 +684,7 @@ pub async fn get_leaders_json(
 
     let meta = LeadersMeta {
         season: result.active_season,
-        season_type: match result.active_season_type {
-            SeasonType::Regular => "regular".to_owned(),
-            SeasonType::Playoff => "playoff".to_owned(),
-        },
+        season_type: result.active_season_type.label().to_owned(),
         sort: result.sort_key.url_token().to_owned(),
         position_filter: if result.pos_active_upper.is_empty() {
             None
@@ -757,7 +754,7 @@ pub async fn get_leaders(
         let cfg = state.config.read().await;
         (
             cfg.active_season.clone(),
-            parse_season_type(&cfg.active_season_type),
+            SeasonType::parse_lossy(&cfg.active_season_type),
             cfg.active_label.clone(),
         )
     };
@@ -1145,10 +1142,6 @@ pub async fn get_leaders(
         Ok(html) => Html(html).into_response(),
         Err(e) => error_page(format!("template render failed: {e}")),
     }
-}
-
-pub fn parse_season_type(s: &str) -> SeasonType {
-    SeasonType::parse_lossy(s)
 }
 
 /// Pull every `filter=...` occurrence out of a raw query
