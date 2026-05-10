@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::identity::PlayerId;
 use crate::model::{Position, Season, TeamAbbr};
+use crate::name::normalize_name;
 use crate::season_stats::SeasonType;
 use crate::stats_repository::{PlayerView, StatsRepository};
 use crate::view_model::context::{
@@ -919,6 +920,15 @@ pub fn weekly_poach_report_from_board(
     league: &str,
     section_limit: u16,
 ) -> PoachReportView {
+    weekly_poach_report_from_board_with_watched(board, league, section_limit, &[])
+}
+
+pub fn weekly_poach_report_from_board_with_watched(
+    board: PoachBoardView,
+    league: &str,
+    section_limit: u16,
+    watched_player_keys: &[String],
+) -> PoachReportView {
     let omissions = report_omissions(&board.source_state);
     let rows = board.rows;
     let limit = section_limit as usize;
@@ -951,7 +961,7 @@ pub fn weekly_poach_report_from_board(
         PoachReportSection {
             id: "watched_player_alerts".to_string(),
             title: "Watched Player Alerts".to_string(),
-            rows: Vec::new(),
+            rows: rows_matching_watchlist(&rows, watched_player_keys, limit),
         },
     ];
     let mut context = poach_report_context(
@@ -976,6 +986,23 @@ pub fn weekly_poach_report_from_board(
         omissions,
         sections,
     }
+}
+
+fn rows_matching_watchlist(
+    rows: &[PoachPlayerRow],
+    watched_player_keys: &[String],
+    limit: usize,
+) -> Vec<PoachPlayerRow> {
+    if watched_player_keys.is_empty() {
+        return Vec::new();
+    }
+    let watched: std::collections::HashSet<&str> =
+        watched_player_keys.iter().map(String::as_str).collect();
+    rows.iter()
+        .filter(|row| watched.contains(normalize_name(&row.display_name).as_str()))
+        .take(limit)
+        .cloned()
+        .collect()
 }
 
 fn report_omissions(source_state: &[SourceState]) -> Vec<String> {
@@ -1115,6 +1142,23 @@ mod tests {
         assert_eq!(json["sections"][0]["id"], "top_adds");
         assert_eq!(json["sections"][0]["rows"][0]["player_id"], 8482109);
         assert_eq!(json["omissions"][0], "ownership import unavailable");
+    }
+
+    #[test]
+    fn weekly_report_populates_watched_player_alerts_from_keys() {
+        let board = fixture_board();
+        let watched = vec!["hidden category fit".to_string()];
+
+        let report =
+            weekly_poach_report_from_board_with_watched(board, "Main League", 20, &watched);
+        let section = report
+            .sections
+            .iter()
+            .find(|section| section.id == "watched_player_alerts")
+            .expect("watched section exists");
+
+        assert_eq!(section.rows.len(), 1);
+        assert_eq!(section.rows[0].display_name, "Hidden Category Fit");
     }
 
     #[test]

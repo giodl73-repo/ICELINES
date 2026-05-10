@@ -332,6 +332,8 @@ Initial implementation note:
 - `/reports/weekly` renders the shared weekly `PoachReportView` with top adds,
   category specialists, deployment risers, risk discounts, and watched-player
   alert sections.
+- Weekly report watched-player alerts are populated from the local SQLite-backed
+  `Watchlist` when watched players also appear on the current poach board.
 - Missing active-season data renders as a source-aware empty state instead of a
   web-only fallback table.
 - `/watchlist` renders the local SQLite-backed `Watchlist` group so TUI Poach

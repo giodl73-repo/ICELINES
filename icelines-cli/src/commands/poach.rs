@@ -8,9 +8,9 @@ use icelines_core::{
     name::normalize_name,
     view_model::{
         default_watch_rules_view, poach_report_from_board, weekly_poach_report_from_board,
-        AvailabilityState, DeploymentSignal, PoachBoardView, PoachQuery, PoachReportView,
-        SourceKind, SourceState, ViewContext, ViewWindow, WatchRule, WatchRuleTrigger,
-        WatchRulesView,
+        weekly_poach_report_from_board_with_watched, AvailabilityState, DeploymentSignal,
+        PoachBoardView, PoachQuery, PoachReportView, SourceKind, SourceState, ViewContext,
+        ViewWindow, WatchRule, WatchRuleTrigger, WatchRulesView,
     },
 };
 
@@ -124,7 +124,10 @@ pub async fn run_report_weekly(args: WeeklyReportArgs) -> anyhow::Result<()> {
         top: args.top,
         json: false,
     })?;
-    let report = weekly_poach_report_from_board(board, &args.league, args.top);
+    let db = GroupDb::open()?;
+    let watched = watched_player_keys(&db)?;
+    let report =
+        weekly_poach_report_from_board_with_watched(board, &args.league, args.top, &watched);
     let body = if args.json {
         serde_json::to_string_pretty(&report).context("serializing weekly poach report")?
     } else {
@@ -421,6 +424,14 @@ fn watchlist_rows(db: &GroupDb) -> anyhow::Result<Vec<WatchlistRow>> {
         Err(err) if err.to_string().contains("group 'Watchlist' not found") => Ok(Vec::new()),
         Err(err) => Err(err),
     }
+}
+
+fn watched_player_keys(db: &GroupDb) -> anyhow::Result<Vec<String>> {
+    Ok(watchlist_rows(db)?
+        .into_iter()
+        .filter(|row| row.kind == "player")
+        .map(|row| row.key)
+        .collect())
 }
 
 fn watchlist_row_for(db: &GroupDb, kind: MemberKind, key: String) -> anyhow::Result<WatchlistRow> {

@@ -1983,8 +1983,9 @@ mod handlers {
         use icelines_core::model::{Position, Season, TeamAbbr};
         use icelines_core::{
             view_model::{
-                default_watch_rules_view, poach_report_from_board, weekly_poach_report_from_board,
-                PoachBoardView, PoachQuery, PoachReportView,
+                default_watch_rules_view, poach_report_from_board,
+                weekly_poach_report_from_board_with_watched, PoachBoardView, PoachQuery,
+                PoachReportView,
             },
             Completeness, EmptyKind, EmptyState, SourceKind, SourceState, ViewContext, ViewWindow,
         };
@@ -2093,7 +2094,9 @@ mod handlers {
             };
             let league = q.league.as_deref().unwrap_or("default");
             let top = q.top.unwrap_or(20).clamp(1, 100);
-            let report = weekly_poach_report_from_board(result.view, league, top);
+            let watched = read_watchlist_player_keys();
+            let report =
+                weekly_poach_report_from_board_with_watched(result.view, league, top, &watched);
             Html(render_poach_report_html(&report, &result.active_label)).into_response()
         }
 
@@ -2211,6 +2214,41 @@ mod handlers {
                 .replace('<', "&lt;")
                 .replace('>', "&gt;")
                 .replace('"', "&quot;")
+        }
+
+        fn read_watchlist_player_keys() -> Vec<String> {
+            let Some(home) = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))
+            else {
+                return Vec::new();
+            };
+            let db_path = std::path::PathBuf::from(&home)
+                .join(".icelines")
+                .join("icelines.db");
+            if !db_path.exists() {
+                return Vec::new();
+            }
+            let Ok(conn) = rusqlite::Connection::open(&db_path) else {
+                return Vec::new();
+            };
+            let Ok(mut stmt) = conn.prepare(
+                "SELECT entity_ref FROM group_members \
+                 WHERE group_name = 'Watchlist' \
+                 ORDER BY entity_ref",
+            ) else {
+                return Vec::new();
+            };
+            stmt.query_map([], |r| r.get::<_, String>(0))
+                .ok()
+                .map(|rows| {
+                    rows.filter_map(Result::ok)
+                        .filter_map(|entity_ref| match entity_ref.split_once(':') {
+                            Some(("player", key)) => Some(key.to_string()),
+                            Some(("team", _)) => None,
+                            _ => Some(entity_ref),
+                        })
+                        .collect()
+                })
+                .unwrap_or_default()
         }
 
         struct PoachBuildResult {

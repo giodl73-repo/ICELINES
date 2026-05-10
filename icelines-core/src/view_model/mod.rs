@@ -20,12 +20,12 @@ pub use goalies::{GoalieRoleFilter, GoalieRoleSignal, GoalieRow, GoaliesView};
 pub use leaders::{LeaderKind, LeaderRow, LeadersView};
 pub use poach::{
     default_watch_rules_view, poach_report_context, poach_report_from_board,
-    weekly_poach_report_from_board, AvailabilityState, ComponentStatus, ConfidenceSummary,
-    DeploymentSignal, ExplanationImpact, PoachAvailabilityFilter, PoachBoardView,
-    PoachCandidateKind, PoachComponentKind, PoachConfidence, PoachExplanation, PoachPlayerRow,
-    PoachQuery, PoachReportSection, PoachReportView, PoachScheduleFilter, PoachScore,
-    PoachScoreComponent, PoachWindow, RecommendationKind, ScoreRange, WatchRule, WatchRuleTrigger,
-    WatchRulesView,
+    weekly_poach_report_from_board, weekly_poach_report_from_board_with_watched, AvailabilityState,
+    ComponentStatus, ConfidenceSummary, DeploymentSignal, ExplanationImpact,
+    PoachAvailabilityFilter, PoachBoardView, PoachCandidateKind, PoachComponentKind,
+    PoachConfidence, PoachExplanation, PoachPlayerRow, PoachQuery, PoachReportSection,
+    PoachReportView, PoachScheduleFilter, PoachScore, PoachScoreComponent, PoachWindow,
+    RecommendationKind, ScoreRange, WatchRule, WatchRuleTrigger, WatchRulesView,
 };
 pub use team_depth::{
     DeploymentEvidence, DepthGoalieSlot, DepthLine, DepthPair, DepthPlayerSlot, DepthSlotKind,
