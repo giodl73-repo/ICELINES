@@ -67,11 +67,13 @@ pub use transactions::{
 };
 pub use view_model::{
     AppliedFilter, CompareView, Completeness, DepthLeagueView, DepthTeamStrengthRow, EmptyKind,
-    EmptyState, FilterKey, FilterOp, GoalieRoleFilter, GoalieRoleSignal, GoalieRow, GoaliesView,
-    LeaderKind, LeaderRow, LeadersView, MetricCell, MetricUnit, MetricValue, PlayerCardView,
-    PlayerCareerSummary, PlayerSeasonSummary, RecoveryAction, ReportContext, ReportKind,
-    ReportSectionRef, ScheduleGameRow, ScheduleView, ScheduledGameInput, ScoreGameRow,
-    ScoresDayView, ScoresView, SemanticToken, SortDirection, SortKey, SortState, SourceKind,
-    SourceProvenance, SourceState, StatKey, TeamChipView, TeamDepthView, TransactionViewRow,
-    TransactionsView, ValuePrecision, ViewContext, ViewWarning, ViewWindow, WarningKind,
+    EmptyState, FilterKey, FilterOp, GameBoxscoreInput, GameGoalInput, GameGoalRow,
+    GameGoalieInput, GameGoalieRow, GameSkaterInput, GameSkaterRow, GameView, GoalieRoleFilter,
+    GoalieRoleSignal, GoalieRow, GoaliesView, LeaderKind, LeaderRow, LeadersView, MetricCell,
+    MetricUnit, MetricValue, PlayerCardView, PlayerCareerSummary, PlayerSeasonSummary,
+    RecoveryAction, ReportContext, ReportKind, ReportSectionRef, ScheduleGameRow, ScheduleView,
+    ScheduledGameInput, ScoreGameRow, ScoresDayView, ScoresView, SemanticToken, SortDirection,
+    SortKey, SortState, SourceKind, SourceProvenance, SourceState, StatKey, TeamChipView,
+    TeamDepthView, TransactionViewRow, TransactionsView, ValuePrecision, ViewContext, ViewWarning,
+    ViewWindow, WarningKind,
 };

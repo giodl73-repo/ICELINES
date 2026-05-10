@@ -3,6 +3,11 @@ use askama::Template;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
+use icelines_core::model::Season;
+use icelines_core::{
+    GameBoxscoreInput, GameGoalInput, GameGoalRow, GameGoalieInput, GameGoalieRow, GameSkaterInput,
+    GameSkaterRow, GameView, ViewContext, ViewWindow,
+};
 
 #[derive(Template)]
 #[template(path = "game.html")]
@@ -69,12 +74,25 @@ struct GameMeta {
 }
 
 pub async fn get_game(State(state): State<WebState>, Path(id): Path<u64>) -> Response {
-    let active_label = state.config.read().await.active_label.clone();
+    let (active_label, season, season_type) = {
+        let cfg = state.config.read().await;
+        (
+            cfg.active_label.clone(),
+            cfg.active_season
+                .parse::<u32>()
+                .map(Season)
+                .unwrap_or(Season(0)),
+            super::leaders::parse_season_type(&cfg.active_season_type),
+        )
+    };
     let client = icelines_fetch::nhl_api::NhlApiClient::production();
     let rendered = match client.fetch_boxscore(id).await {
         Ok(boxscore) => GameTemplate {
             active_label,
-            view: project_game_detail(boxscore),
+            view: game_detail_from_view(&GameView::from_boxscore(
+                ViewContext::new(ViewWindow::new(season, season_type)),
+                boxscore_input(boxscore),
+            )),
         }
         .render(),
         Err(e) => GameErrorTemplate {
@@ -94,85 +112,129 @@ pub async fn get_game(State(state): State<WebState>, Path(id): Path<u64>) -> Res
     }
 }
 
-pub async fn get_game_json(Path(id): Path<u64>) -> Response {
+pub async fn get_game_json(State(state): State<WebState>, Path(id): Path<u64>) -> Response {
+    let (season, season_type) = {
+        let cfg = state.config.read().await;
+        (
+            cfg.active_season
+                .parse::<u32>()
+                .map(Season)
+                .unwrap_or(Season(0)),
+            super::leaders::parse_season_type(&cfg.active_season_type),
+        )
+    };
     let client = icelines_fetch::nhl_api::NhlApiClient::production();
     let (data, error) = match client.fetch_boxscore(id).await {
-        Ok(boxscore) => (Some(project_game_detail(boxscore)), None),
+        Ok(boxscore) => {
+            let view = GameView::from_boxscore(
+                ViewContext::new(ViewWindow::new(season, season_type)),
+                boxscore_input(boxscore),
+            );
+            (Some(game_detail_from_view(&view)), None)
+        }
         Err(e) => (None, Some(e.to_string())),
     };
     crate::api::json_envelope("game", data, GameMeta { game_id: id }, error)
 }
 
-fn project_game_detail(b: icelines_fetch::nhl_api::Boxscore) -> GameDetailView {
-    let state = b.game_state.as_deref().unwrap_or("");
-    let last = b.last_period.as_deref().unwrap_or("");
-    let state_label = match (state, last) {
-        ("FINAL" | "OFF", "OT") => "Final/OT",
-        ("FINAL" | "OFF", "SO") => "Final/SO",
-        ("FINAL" | "OFF", _) => "Final",
-        ("LIVE" | "CRIT", _) => "LIVE",
-        ("PRE", _) => "Pre-game",
-        _ => "",
-    }
-    .to_owned();
-    let is_live = matches!(state, "LIVE" | "CRIT");
-    let auto_refresh = matches!(state, "LIVE" | "CRIT" | "PRE");
-
-    let mut away_skaters = b.away_skaters;
-    away_skaters.sort_by_key(|s| std::cmp::Reverse(s.goals + s.assists));
-    let mut home_skaters = b.home_skaters;
-    home_skaters.sort_by_key(|s| std::cmp::Reverse(s.goals + s.assists));
-
-    GameDetailView {
-        game_id: b.game_id,
-        away_abbrev: b.away_abbrev,
-        home_abbrev: b.home_abbrev,
-        away_score: b.away_score,
-        home_score: b.home_score,
-        state_label,
-        is_live,
-        auto_refresh,
-        goalies: b
-            .goalies
-            .into_iter()
-            .map(|g| GameGoalieView {
-                player_id: g.player_id,
-                player_name: g.player_name,
-                saves: g.saves,
-                shots: g.shots,
-                decision: g.decision,
-            })
-            .collect(),
-        goals: b
+fn boxscore_input(boxscore: icelines_fetch::nhl_api::Boxscore) -> GameBoxscoreInput {
+    GameBoxscoreInput {
+        game_id: boxscore.game_id,
+        away_abbrev: boxscore.away_abbrev,
+        home_abbrev: boxscore.home_abbrev,
+        away_score: boxscore.away_score,
+        home_score: boxscore.home_score,
+        game_state: boxscore.game_state,
+        last_period: boxscore.last_period,
+        goals: boxscore
             .goals
             .into_iter()
-            .map(|g| GameGoalView {
-                period: g.period,
-                time_in_period: g.time_in_period,
-                scorer_team: g.scorer_team,
-                scorer_name: g.scorer_name,
+            .map(|goal| GameGoalInput {
+                period: goal.period,
+                time_in_period: goal.time_in_period,
+                scorer_team: goal.scorer_team,
+                scorer_name: goal.scorer_name,
             })
             .collect(),
-        away_top_skaters: project_top_skaters(away_skaters),
-        home_top_skaters: project_top_skaters(home_skaters),
+        goalies: boxscore
+            .goalies
+            .into_iter()
+            .map(|goalie| GameGoalieInput {
+                player_id: goalie.player_id,
+                player_name: goalie.player_name,
+                saves: goalie.saves,
+                shots: goalie.shots,
+                decision: goalie.decision,
+            })
+            .collect(),
+        away_skaters: boxscore
+            .away_skaters
+            .into_iter()
+            .map(skater_input)
+            .collect(),
+        home_skaters: boxscore
+            .home_skaters
+            .into_iter()
+            .map(skater_input)
+            .collect(),
     }
 }
 
-fn project_top_skaters(skaters: Vec<icelines_fetch::nhl_api::SkaterLine>) -> Vec<GameSkaterView> {
-    skaters
-        .into_iter()
-        .take(5)
-        .map(|s| {
-            let points = s.goals + s.assists;
-            GameSkaterView {
-                player_id: s.player_id,
-                player_name: s.player_name,
-                position: s.position,
-                goals: s.goals,
-                assists: s.assists,
-                points,
-                plus_minus: s.plus_minus,
-            }
-        })
-        .collect()
+fn skater_input(skater: icelines_fetch::nhl_api::SkaterLine) -> GameSkaterInput {
+    GameSkaterInput {
+        player_id: skater.player_id,
+        player_name: skater.player_name,
+        position: skater.position,
+        goals: skater.goals,
+        assists: skater.assists,
+        plus_minus: skater.plus_minus,
+    }
+}
+
+fn game_detail_from_view(view: &GameView) -> GameDetailView {
+    GameDetailView {
+        game_id: view.game_id.0,
+        away_abbrev: view.away_abbrev.clone(),
+        home_abbrev: view.home_abbrev.clone(),
+        away_score: view.away_score,
+        home_score: view.home_score,
+        state_label: view.state_label.clone(),
+        is_live: view.is_live,
+        auto_refresh: view.auto_refresh,
+        goalies: view.goalies.iter().map(goalie_from_view).collect(),
+        goals: view.goals.iter().map(goal_from_view).collect(),
+        away_top_skaters: view.away_top_skaters.iter().map(skater_from_view).collect(),
+        home_top_skaters: view.home_top_skaters.iter().map(skater_from_view).collect(),
+    }
+}
+
+fn goalie_from_view(goalie: &GameGoalieRow) -> GameGoalieView {
+    GameGoalieView {
+        player_id: goalie.player_id,
+        player_name: goalie.player_name.clone(),
+        saves: goalie.saves,
+        shots: goalie.shots,
+        decision: goalie.decision.clone(),
+    }
+}
+
+fn goal_from_view(goal: &GameGoalRow) -> GameGoalView {
+    GameGoalView {
+        period: goal.period,
+        time_in_period: goal.time_in_period.clone(),
+        scorer_team: goal.scorer_team.clone(),
+        scorer_name: goal.scorer_name.clone(),
+    }
+}
+
+fn skater_from_view(skater: &GameSkaterRow) -> GameSkaterView {
+    GameSkaterView {
+        player_id: skater.player_id,
+        player_name: skater.player_name.clone(),
+        position: skater.position.clone(),
+        goals: skater.goals,
+        assists: skater.assists,
+        points: skater.points,
+        plus_minus: skater.plus_minus,
+    }
 }

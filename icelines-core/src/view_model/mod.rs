@@ -6,6 +6,7 @@
 
 pub mod compare;
 pub mod context;
+pub mod game;
 pub mod goalies;
 pub mod leaders;
 pub mod player_card;
@@ -21,6 +22,10 @@ pub use context::{
     AppliedFilter, Completeness, EmptyKind, EmptyState, FilterKey, FilterOp, RecoveryAction,
     ReportContext, ReportKind, ReportSectionRef, SortDirection, SortKey, SortState, SourceKind,
     SourceProvenance, SourceState, ViewContext, ViewWarning, ViewWindow, WarningKind,
+};
+pub use game::{
+    GameBoxscoreInput, GameGoalInput, GameGoalRow, GameGoalieInput, GameGoalieRow, GameSkaterInput,
+    GameSkaterRow, GameView,
 };
 pub use goalies::{GoalieRoleFilter, GoalieRoleSignal, GoalieRow, GoaliesView};
 pub use leaders::{LeaderKind, LeaderRow, LeadersView};
@@ -48,7 +53,8 @@ mod tests {
     use crate::model::Season;
     use crate::season_stats::SeasonType;
     use crate::view_model::{
-        CompareView, Completeness, DepthLeagueView, EmptyKind, LeaderKind, LeadersView, MetricCell,
+        CompareView, Completeness, DepthLeagueView, EmptyKind, GameBoxscoreInput, GameGoalInput,
+        GameGoalieInput, GameSkaterInput, GameView, LeaderKind, LeadersView, MetricCell,
         MetricUnit, MetricValue, PlayerCardView, ScheduleView, ScheduledGameInput, ScoresView,
         SemanticToken, SourceKind, SourceProvenance, SourceState, StatKey, TransactionsView,
         ValuePrecision, ViewContext, ViewWindow,
@@ -608,5 +614,71 @@ mod tests {
         assert_eq!(json["rows"][0]["kind_label"], "trade");
         assert_eq!(json["rows"][0]["kind_pretty"], "Trade");
         assert_eq!(json["rows"][0]["team"], "EDM");
+    }
+
+    #[test]
+    fn game_viewmodel_contract_fixture_projects_status_and_top_skaters() {
+        let context = ViewContext::new(ViewWindow::new(Season(20242025), SeasonType::Regular));
+        let view = GameView::from_boxscore(
+            context,
+            GameBoxscoreInput {
+                game_id: 2024020001,
+                away_abbrev: "SEA".to_string(),
+                home_abbrev: "EDM".to_string(),
+                away_score: 2,
+                home_score: 3,
+                game_state: Some("FINAL".to_string()),
+                last_period: Some("OT".to_string()),
+                goals: vec![GameGoalInput {
+                    period: 4,
+                    time_in_period: "01:10".to_string(),
+                    scorer_team: "EDM".to_string(),
+                    scorer_name: "Connor McDavid".to_string(),
+                }],
+                goalies: vec![GameGoalieInput {
+                    player_id: 1,
+                    player_name: "Goalie".to_string(),
+                    saves: 30,
+                    shots: 32,
+                    decision: Some("W".to_string()),
+                }],
+                away_skaters: vec![GameSkaterInput {
+                    player_id: 2,
+                    player_name: "Away Skater".to_string(),
+                    position: "C".to_string(),
+                    goals: 1,
+                    assists: 0,
+                    plus_minus: 1,
+                }],
+                home_skaters: vec![
+                    GameSkaterInput {
+                        player_id: 3,
+                        player_name: "Depth Skater".to_string(),
+                        position: "R".to_string(),
+                        goals: 0,
+                        assists: 1,
+                        plus_minus: 0,
+                    },
+                    GameSkaterInput {
+                        player_id: 4,
+                        player_name: "Top Skater".to_string(),
+                        position: "C".to_string(),
+                        goals: 1,
+                        assists: 2,
+                        plus_minus: 2,
+                    },
+                ],
+            },
+        );
+
+        let json = serde_json::to_value(&view).expect("serialize game view");
+
+        assert_eq!(json["game_id"], 2024020001);
+        assert_eq!(json["state_label"], "Final/OT");
+        assert_eq!(json["is_live"], false);
+        assert_eq!(json["auto_refresh"], false);
+        assert_eq!(json["goals"][0]["scorer_name"], "Connor McDavid");
+        assert_eq!(json["home_top_skaters"][0]["player_name"], "Top Skater");
+        assert_eq!(json["home_top_skaters"][0]["points"], 3);
     }
 }
