@@ -13,7 +13,8 @@ use axum::http::{HeaderMap, StatusCode};
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use icelines_core::model::Season;
 use icelines_core::{
-    FavoriteMemberInput, FavoriteMemberRow, FavoritesView, ViewContext, ViewWindow,
+    FavoriteMemberInput, FavoriteMemberRow, FavoritesView, ViewContext, ViewWindow, WatchNoteInput,
+    WatchlistMemberRow, WatchlistView,
 };
 use serde::Deserialize;
 
@@ -60,29 +61,30 @@ pub async fn get_favorites(State(state): State<crate::WebState>) -> Response {
 pub async fn get_watchlist(State(state): State<crate::WebState>) -> Response {
     let members = read_group_members("Watchlist");
     let notes = read_watch_notes();
-    let active_label = state.config.read().await.active_label.clone();
+    let (active_label, context) = favorites_context(&state).await;
+    let view = WatchlistView::from_members(
+        context,
+        "Watchlist".to_string(),
+        favorite_member_inputs(&members),
+        watch_note_inputs(notes),
+    );
     let tmpl = WatchlistTemplate {
         active_label,
-        player_count: members.iter().filter(|(k, _)| k == "player").count(),
-        team_count: members.iter().filter(|(k, _)| k == "team").count(),
-        players: members
+        player_count: view.player_count,
+        team_count: view.team_count,
+        players: view
+            .rows
             .iter()
-            .filter(|(kind, _)| kind == "player")
-            .map(|(_, key)| {
-                let reason = notes
-                    .get(&format!("player:{key}"))
-                    .map(|note| note.reason.clone())
-                    .unwrap_or_default();
-                WatchlistPlayerRow {
-                    key: key.clone(),
-                    reason,
-                }
-            })
+            .filter(|row| row.kind == "player")
+            .map(watchlist_player_row)
             .collect(),
-        teams: members
+        teams: view
+            .rows
             .iter()
-            .filter(|(kind, _)| kind == "team")
-            .map(|(_, key)| WatchlistTeamRow { key: key.clone() })
+            .filter(|row| row.kind == "team")
+            .map(|row| WatchlistTeamRow {
+                key: row.key.clone(),
+            })
             .collect(),
     };
 
@@ -150,12 +152,21 @@ fn favorite_player_row(row: &FavoriteMemberRow) -> FavoritePlayerRow {
 pub async fn get_watchlist_json() -> Response {
     let members = read_group_members("Watchlist");
     let notes = read_watch_notes();
-    let rows = watchlist_api_rows(&members, &notes);
+    let view = WatchlistView::from_members(
+        ViewContext::new(ViewWindow::new(
+            Season(icelines_core::CURRENT_SEASON),
+            icelines_core::season_stats::SeasonType::Regular,
+        )),
+        "Watchlist".to_string(),
+        favorite_member_inputs(&members),
+        watch_note_inputs(notes),
+    );
+    let rows = watchlist_api_rows(&view);
     let meta = WatchlistApiMeta {
         group: "Watchlist",
-        count: rows.len(),
-        player_count: rows.iter().filter(|r| r.kind == "player").count(),
-        team_count: rows.iter().filter(|r| r.kind == "team").count(),
+        count: view.rows.len(),
+        player_count: view.player_count,
+        team_count: view.team_count,
     };
     axum::Json(WatchlistApiResponse {
         schema_version: "watchlist.v1",
@@ -164,6 +175,31 @@ pub async fn get_watchlist_json() -> Response {
         meta,
     })
     .into_response()
+}
+
+fn watch_note_inputs(
+    notes: std::collections::HashMap<String, super::favorites_data::WatchNote>,
+) -> std::collections::HashMap<String, WatchNoteInput> {
+    notes
+        .into_iter()
+        .map(|(key, note)| {
+            (
+                key,
+                WatchNoteInput {
+                    reason: note.reason,
+                    source: note.source,
+                    updated_at: note.updated_at,
+                },
+            )
+        })
+        .collect()
+}
+
+fn watchlist_player_row(row: &WatchlistMemberRow) -> WatchlistPlayerRow {
+    WatchlistPlayerRow {
+        key: row.key.clone(),
+        reason: row.reason.clone().unwrap_or_default(),
+    }
 }
 
 /// Per-favorited-player stat-line lookup. Returns a flat

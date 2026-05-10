@@ -77,5 +77,5 @@ pub use view_model::{
     ScoreGameRow, ScoresDayView, ScoresView, SemanticToken, SortDirection, SortKey, SortState,
     SourceKind, SourceProvenance, SourceState, StatKey, TeamChipView, TeamDepthView,
     TransactionViewRow, TransactionsView, ValuePrecision, ViewContext, ViewWarning, ViewWindow,
-    WarningKind,
+    WarningKind, WatchNoteInput, WatchlistMemberRow, WatchlistView,
 };

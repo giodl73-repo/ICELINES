@@ -25,7 +25,10 @@ pub use context::{
     ReportContext, ReportKind, ReportSectionRef, SortDirection, SortKey, SortState, SourceKind,
     SourceProvenance, SourceState, ViewContext, ViewWarning, ViewWindow, WarningKind,
 };
-pub use favorites::{FavoriteMemberInput, FavoriteMemberRow, FavoritesView};
+pub use favorites::{
+    FavoriteMemberInput, FavoriteMemberRow, FavoritesView, WatchNoteInput, WatchlistMemberRow,
+    WatchlistView,
+};
 pub use game::{
     GameBoxscoreInput, GameGoalInput, GameGoalRow, GameGoalieInput, GameGoalieRow, GameSkaterInput,
     GameSkaterRow, GameView,
@@ -65,7 +68,7 @@ mod tests {
         LeadersView, MetricCell, MetricUnit, MetricValue, PlayerCardView, PlayoffsBracketInput,
         PlayoffsRoundInput, PlayoffsSeriesInput, PlayoffsView, ScheduleView, ScheduledGameInput,
         ScoresView, SemanticToken, SourceKind, SourceProvenance, SourceState, StatKey,
-        TransactionsView, ValuePrecision, ViewContext, ViewWindow,
+        TransactionsView, ValuePrecision, ViewContext, ViewWindow, WatchNoteInput, WatchlistView,
     };
 
     #[test]
@@ -198,6 +201,46 @@ mod tests {
             view.rows[0].stat_line.as_deref(),
             Some("EDM 4-2 W · 1G 2A 3P")
         );
+        assert!(view.empty_state.is_none());
+    }
+
+    #[test]
+    fn watchlist_viewmodel_attaches_notes_and_counts_members() {
+        let context = ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular));
+        let mut notes = std::collections::HashMap::new();
+        notes.insert(
+            "player:matthew knies".to_string(),
+            WatchNoteInput {
+                reason: "Poach score 72.0; confidence High".to_string(),
+                source: "tui-poach".to_string(),
+                updated_at: "2026-05-09T12:00:00Z".to_string(),
+            },
+        );
+
+        let view = WatchlistView::from_members(
+            context,
+            "Watchlist".to_string(),
+            vec![
+                FavoriteMemberInput {
+                    kind: "player".to_string(),
+                    key: "matthew knies".to_string(),
+                },
+                FavoriteMemberInput {
+                    kind: "team".to_string(),
+                    key: "TOR".to_string(),
+                },
+            ],
+            notes,
+        );
+
+        assert_eq!(view.context.source_state[0].source, SourceKind::Watchlist);
+        assert_eq!(view.player_count, 1);
+        assert_eq!(view.team_count, 1);
+        assert_eq!(
+            view.rows[0].reason.as_deref(),
+            Some("Poach score 72.0; confidence High")
+        );
+        assert_eq!(view.rows[0].source.as_deref(), Some("tui-poach"));
         assert!(view.empty_state.is_none());
     }
 

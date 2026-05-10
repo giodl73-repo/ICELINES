@@ -71,22 +71,15 @@ pub(crate) fn group_api_rows_from_view(view: &icelines_core::FavoritesView) -> V
         .collect()
 }
 
-pub(crate) fn watchlist_api_rows(
-    members: &[(String, String)],
-    notes: &HashMap<String, WatchNote>,
-) -> Vec<WatchlistApiRow> {
-    members
+pub(crate) fn watchlist_api_rows(view: &icelines_core::WatchlistView) -> Vec<WatchlistApiRow> {
+    view.rows
         .iter()
-        .map(|(kind, key)| {
-            let entity_ref = format!("{kind}:{key}");
-            let note = notes.get(&entity_ref);
-            WatchlistApiRow {
-                kind: kind.clone(),
-                key: key.clone(),
-                reason: note.map(|n| n.reason.clone()),
-                source: note.map(|n| n.source.clone()),
-                updated_at: note.map(|n| n.updated_at.clone()),
-            }
+        .map(|row| WatchlistApiRow {
+            kind: row.kind.clone(),
+            key: row.key.clone(),
+            reason: row.reason.clone(),
+            source: row.source.clone(),
+            updated_at: row.updated_at.clone(),
         })
         .collect()
 }

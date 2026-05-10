@@ -160,6 +160,10 @@ Progress:
   membership and migrated `/favorites` plus `/api/v1/favorites` to project
   membership rows/counts through that shared contract while preserving the
   existing `favorites.v1` JSON payload.
+- 2026-05-10: Added ViewModel-level `WatchlistView` for persisted watchlist
+  membership plus notes and migrated `/watchlist` plus `/api/v1/watchlist` to
+  project through that shared read contract while keeping richer
+  `WatchRulesView` rule/history work separate.
 
 ---
 
