@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}{{ view.away_abbrev }} @ {{ view.home_abbrev }}{% endblock %}
+
+{% block head_extra %}
+{% if view.auto_refresh %}
+<meta http-equiv="refresh" content="30">
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<p style="margin-bottom: 0.5rem;">
+    <a href="/scores">back to scores</a>
+</p>
+
+<h1>{{ view.away_abbrev }} @ {{ view.home_abbrev }}</h1>
+
+<div class="scoreboard">
+    <span class="away">{{ view.away_abbrev }} {{ view.away_score }}</span>
+    <span style="color:#888;">vs</span>
+    <span class="home">{{ view.home_score }} {{ view.home_abbrev }}</span>
+    {% if view.is_live %}
+    <span class="live-badge">LIVE</span>
+    {% endif %}
+    {% if !view.state_label.is_empty() %}
+    <span class="state"> - {{ view.state_label }}</span>
+    {% endif %}
+</div>
+
+{% if !view.goalies.is_empty() %}
+<section class="goalies">
+    <h2>Goalies</h2>
+    <ul>
+        {% for goalie in view.goalies %}
+        <li>
+            <strong>{{ goalie.player_name }}</strong>: {{ goalie.saves }}/{{ goalie.shots }} SV
+            {% match goalie.decision %}
+                {% when Some with (decision) %} ({{ decision }})
+                {% when None %}
+            {% endmatch %}
+            {% if goalie.player_id != 0 %}
+            - <a href="/player/{{ goalie.player_id }}">card</a>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+
+{% if !view.goals.is_empty() %}
+<section>
+    <h2>Goals</h2>
+    <ul class="goal-list">
+        {% for goal in view.goals %}
+        <li>P{{ goal.period }} - {{ goal.time_in_period }} - <strong>{{ goal.scorer_team }}</strong> {{ goal.scorer_name }}</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+
+{% if !view.away_top_skaters.is_empty() %}
+<section>
+    <h2>Away skaters - top 5 by points</h2>
+    <ul>
+        {% for skater in view.away_top_skaters %}
+        <li><a href="/player/{{ skater.player_id }}">{{ skater.player_name }}</a> ({{ skater.position }}) - {{ skater.goals }}G {{ skater.assists }}A {{ skater.points }}P - {{ skater.plus_minus }}</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+
+{% if !view.home_top_skaters.is_empty() %}
+<section>
+    <h2>Home skaters - top 5 by points</h2>
+    <ul>
+        {% for skater in view.home_top_skaters %}
+        <li><a href="/player/{{ skater.player_id }}">{{ skater.player_name }}</a> ({{ skater.position }}) - {{ skater.goals }}G {{ skater.assists }}A {{ skater.points }}P - {{ skater.plus_minus }}</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+
+{% if view.auto_refresh %}
+<p style="color:#888;font-size:0.85em;">Auto-refreshes every 30 seconds while live.</p>
+{% endif %}
+
+<style>
+    .scoreboard { font-size: 2.4em; font-weight: bold; margin: 1rem 0; }
+    .scoreboard .away, .scoreboard .home { display: inline-block; min-width: 6rem; text-align: center; }
+    .state { color: #b8860b; font-size: 0.95em; margin-left: 0.6rem; }
+    .goalies { background: #f5f5f5; padding: 0.6rem 1rem; border-radius: 4px; margin: 0.6rem 0; }
+    .goal-list li { margin: 0.2rem 0; }
+    .live-badge { background: #c00; color: white; padding: 0.2rem 0.6rem; border-radius: 3px; font-size: 0.85em; margin-left: 0.4rem; }
+</style>
+{% endblock %}

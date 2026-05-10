@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Game {{ game_id }}{% endblock %}
+
+{% block content %}
+<p style="margin-bottom: 0.5rem;">
+    <a href="/scores">back to scores</a>
+</p>
+
+<h1>Game {{ game_id }}</h1>
+<p>Could not fetch boxscore: {{ error }}</p>
+{% endblock %}

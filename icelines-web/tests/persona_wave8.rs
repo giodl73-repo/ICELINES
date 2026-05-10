@@ -783,7 +783,7 @@ async fn p_w8_089_game_includes_scoreboard_class() {
 async fn p_w8_090_game_renders_html_doctype() {
     let r = get("/game/2025020342").await;
     let body = body_text(r).await;
-    assert!(body.contains("<!DOCTYPE html"));
+    assert!(body.contains("<!DOCTYPE html") || body.contains("<!doctype html"));
 }
 
 #[tokio::test]
