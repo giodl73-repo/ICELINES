@@ -212,6 +212,11 @@ Progress:
 - 2026-05-10: Replaced the remaining watch-rules ad hoc JSON error body with a
   typed response struct and regression test while preserving the endpoint's
   intentional raw ViewModel success contract.
+- 2026-05-10: Reduced repeated web router envelope assertions into shared test
+  helpers so schema/route/data/meta/error checks are easier to apply
+  consistently across routes.
+- 2026-05-10: Normalized bad `/api/v1/leaders?filter=...` responses onto the
+  JSON API envelope instead of leaking HTML error pages through the API surface.
 
 ---
 
