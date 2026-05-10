@@ -1,7 +1,7 @@
 # Phase Selke - fantasy poacher
 
 **Date**: 2026-05-09
-**Status**: Draft - planned after Campbell; can run after Messier or in parallel with surface parity if scoped carefully
+**Status**: Implemented - shipped with TUI rule editing as an explicit carry-forward
 **Trophy**: Frank J. Selke Trophy *(reuse)*. Fit: defensive/two-way value. This phase finds players whose real fantasy usefulness is hidden by role, deployment, category mix, schedule, or market perception.
 **Spec seeds**: `design/specs/platform-contracts.md`, `design/specs/fantasy-poacher.md`
 **Estimated**: 5-8 sub-phases
@@ -310,14 +310,15 @@ Initial implementation note:
 - The Poach tab is in the normal tab ring and MDI command bar. `Enter` opens
   the selected player card.
 - `w` toggles the selected candidate in the local SQLite-backed `Watchlist`
-  group and the board marks watched rows. Watch-rule editing remains pending.
+  group and the board marks watched rows. Watch-rule editing remains a
+  carry-forward.
 - Poach toggles also write a `watch_notes` reason (`Poach score`, confidence,
   first explanation, and risk summary when present); removing the watch clears
   the note.
 - Persistent watch rules can be created from the CLI and are included in
   `icelines watch rules`; fired-alert history is CLI-visible and the TUI
   Watchlist workspace renders persisted rule summaries plus recent alerts.
-  TUI rule editing remains a follow-up.
+  TUI rule editing remains a carry-forward.
 
 ---
 
@@ -395,7 +396,16 @@ Initial implementation note:
 - `design/PITFALLS.md`, `design/specs/surface-parity.md`, and
   `design/specs/viewmodels.md` have been reconciled with the implemented
   CLI/TUI/web/markdown/JSON Selke surfaces. Persistent watch-rule editing
-  remains a follow-up, not a board/report parity blocker.
+  remains a carry-forward, not a board/report parity blocker.
+
+Closeout status:
+
+- Core poacher scoring, fixtures, reports, and invariants are implemented.
+- CLI/TUI/web/markdown/JSON surfaces are wired through shared ViewModels.
+- Local watchlist notes, persisted watch rules, toggles, fired-alert history,
+  and `last_fired` JSON are implemented.
+- Carry-forward: full TUI rule editing. Users can create/toggle/history rules
+  via CLI and view rule/history state in the TUI Watchlist workspace.
 
 ---
 

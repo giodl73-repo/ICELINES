@@ -264,6 +264,14 @@ Required:
 - last fired state where known
 - unsupported source warnings
 
+Current Selke surfaces:
+
+- CLI `icelines watch rules`
+- CLI `icelines watch player|deployment --save`
+- CLI `icelines watch enable|disable|fire|history`
+- TUI Watchlist workspace rule/history summary
+- JSON `/api/v1/watch-rules`
+
 ### `PoachReportView`
 
 Owned by Phase Selke, uses the report contract from `platform-contracts.md`.

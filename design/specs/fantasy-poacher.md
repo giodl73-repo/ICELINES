@@ -1,6 +1,6 @@
 # Fantasy Poacher
 
-**Status**: Draft - Phase Selke owns implementation
+**Status**: Implemented (partial) - Phase Selke shipped; imported roster-need fit and full TUI rule editing are carry-forwards
 **Owner**: Phase Selke - fantasy poacher
 **Primary contracts**: `platform-contracts.md`, `viewmodels.md`,
 `surface-parity.md`, `fantasy-scheme.md`, `group-management.md`
@@ -157,14 +157,14 @@ The initial public score is clamped to `0..100`.
 | `category_fit` | positive | `0..25` | `25%` | measured | scoring scheme weights and category z/percentile fit |
 | `schedule_value` | positive | `0..15` | `15%` | measured when schedule exists | next 7/14 games, off-nights, back-to-backs |
 | `availability_gap` | positive | `0..10` | `10%` | estimated/local | groups/watchlists/imported roster state |
-| `roster_need_fit` | positive | `0..15` | `15%` | deferred initially | user's category/position needs when imported |
+| `roster_need_fit` | positive | `0..15` | `15%` | carry-forward | user's category/position needs when imported |
 | `risk_discount` | negative | `0..30` | subtractive | estimated | scratch/injury/stale/small-sample/unstable-role risk |
 
 Clamp rules:
 
 - Sum positives first, clamp to `0..100`, then subtract `risk_discount`, then
   clamp final score to `0..100`.
-- Deferred components contribute `0` and must be listed in unavailable or
+- Carry-forward components contribute `0` and must be listed in unavailable or
   deferred explanations.
 - Unavailable components contribute `0` and cannot silently lower confidence
   without an explanation.
