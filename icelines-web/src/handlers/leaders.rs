@@ -234,6 +234,35 @@ pub struct LeadersMeta {
     pub top: usize,
 }
 
+fn leaders_json_error(
+    status: StatusCode,
+    q: &LeadersQuery,
+    season: String,
+    season_type: SeasonType,
+    raw_filters: Vec<String>,
+    error: impl Into<String>,
+) -> Response {
+    let position_filter = q
+        .pos
+        .as_deref()
+        .map(str::to_ascii_uppercase)
+        .filter(|s| !s.is_empty());
+    let top = q.top.unwrap_or(20).clamp(1, 500);
+    let meta = LeadersMeta {
+        season,
+        season_type: season_type.label().to_owned(),
+        sort: SortKey::from_query(q.sort.as_deref())
+            .url_token()
+            .to_owned(),
+        position_filter,
+        active_filters: raw_filters,
+        total: 0,
+        returned: 0,
+        top,
+    };
+    crate::api::json_error_meta(status, "leaders", Vec::<LeaderJsonRow>::new(), meta, error)
+}
+
 /// Shared data-path: resolves query params, applies filters,
 /// sorts, returns rows + total. Both the HTML and JSON
 /// handlers call this so they can't drift.
@@ -444,9 +473,14 @@ async fn build_leader_result(
         )
     };
     let season_u32: u32 = season_str.parse().map_err(|e| {
-        error_page(format!(
-            "active season '{season_str}' is not a valid YYYYZZZZ id: {e}"
-        ))
+        leaders_json_error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            q,
+            season_str.clone(),
+            season_type,
+            icelines_query::parse_filters_from_query(raw_query),
+            format!("active season '{season_str}' is not a valid YYYYZZZZ id: {e}"),
+        )
     })?;
     let season = Season(season_u32);
 
@@ -456,17 +490,28 @@ async fn build_leader_result(
     // residue, mirroring the /leaders HTML route fix.
     let (new_plans, legacy_residue, helpful_errs) = partition_new_pipeline_filters(&raw_filters);
     if !helpful_errs.is_empty() {
-        return Err((
+        return Err(leaders_json_error(
             StatusCode::BAD_REQUEST,
-            Html(format!(
-                "<!doctype html><html><body><h1>Bad filter</h1><pre>{}</pre></body></html>",
-                helpful_errs
-                    .join("\n")
-                    .replace('<', "&lt;")
-                    .replace('>', "&gt;"),
-            )),
-        )
-            .into_response());
+            q,
+            season_str,
+            season_type,
+            raw_filters,
+            helpful_errs.join("\n"),
+        ));
+    }
+
+    if let Err(e) = icelines_query::combine_filter_exprs(&legacy_residue) {
+        let hint = e
+            .hint()
+            .unwrap_or("see `icelines docs` for the filter grammar");
+        return Err(leaders_json_error(
+            StatusCode::BAD_REQUEST,
+            q,
+            season_str.clone(),
+            season_type,
+            raw_filters.clone(),
+            format!("{e}. Hint: {hint}"),
+        ));
     }
 
     let filter_expr = icelines_query::combine_filter_exprs(&legacy_residue).map_err(|e| {

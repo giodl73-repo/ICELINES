@@ -52,11 +52,31 @@ async fn assert_api_filter_accepted(filter: &str) {
 async fn assert_api_filter_rejected(filter: &str) {
     let url = format!("/api/v1/leaders?filter={}", enc(filter));
     let r = get(&url).await;
+    let status = r.status();
     assert_eq!(
-        r.status(),
+        status,
         StatusCode::BAD_REQUEST,
         "filter {filter:?} should be rejected"
     );
+    let content_type = r
+        .headers()
+        .get(axum::http::header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or("");
+    assert!(
+        content_type.starts_with("application/json"),
+        "rejected API filter should return JSON, got {content_type:?}"
+    );
+    let body = axum::body::to_bytes(r.into_body(), 64 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value =
+        serde_json::from_slice(&body).expect("rejected API filter should be valid JSON");
+    assert_eq!(json["schema_version"], 1);
+    assert_eq!(json["route"], "leaders");
+    assert!(json["data"].as_array().is_some_and(Vec::is_empty));
+    assert_eq!(json["meta"]["returned"], 0);
+    assert!(json["error"].is_string());
 }
 
 #[tokio::test]
