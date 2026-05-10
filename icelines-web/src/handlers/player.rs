@@ -363,6 +363,20 @@ pub struct PlayerMeta {
     pub pre_nhl_career_rows: usize,
 }
 
+#[derive(Debug, serde::Serialize)]
+struct PlayerErrorData {
+    nhl_id: u32,
+}
+
+fn player_error_meta(season: &str, season_type: SeasonType) -> PlayerMeta {
+    PlayerMeta {
+        season: season.to_owned(),
+        season_type: season_type.label().to_owned(),
+        career_rows: 0,
+        pre_nhl_career_rows: 0,
+    }
+}
+
 /// Phase Calder.3 — load pre-NHL career stints for one player
 /// from the local store at `~/.icelines/career_history.json`.
 /// Returns an empty Vec if the store doesn't exist yet (the
@@ -412,10 +426,12 @@ pub async fn get_player_json(State(state): State<WebState>, Path(id): Path<u32>)
         Err(_) => {
             return (
                 StatusCode::BAD_REQUEST,
-                axum::Json(serde_json::json!({
-                    "error": "bad_active_season",
-                    "message": format!("Season '{season_str}' is not a valid YYYYZZZZ id"),
-                })),
+                axum::Json(crate::api::ApiEnvelope::new(
+                    "player",
+                    PlayerErrorData { nhl_id: id },
+                    player_error_meta(&season_str, season_type),
+                    Some(format!("Season '{season_str}' is not a valid YYYYZZZZ id")),
+                )),
             )
                 .into_response();
         }
@@ -441,13 +457,14 @@ pub async fn get_player_json(State(state): State<WebState>, Path(id): Path<u32>)
             None => {
                 return (
                     StatusCode::NOT_FOUND,
-                    axum::Json(serde_json::json!({
-                        "error": "player_not_found",
-                        "message": format!(
+                    axum::Json(crate::api::ApiEnvelope::new(
+                        "player",
+                        PlayerErrorData { nhl_id: id },
+                        player_error_meta(&season_str, season_type),
+                        Some(format!(
                             "No player with NHL id {id} in the active repository."
-                        ),
-                        "nhl_id": id,
-                    })),
+                        )),
+                    )),
                 )
                     .into_response();
             }

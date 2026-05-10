@@ -224,6 +224,65 @@ async fn l1_player_json_envelope_shape() {
 }
 
 #[tokio::test]
+async fn l1_player_json_bad_active_season_uses_shared_envelope_shape() {
+    let state = WebState::new();
+    {
+        let mut cfg = state.config.write().await;
+        *cfg = icelines_web::WebConfig::new("not-a-season", "regular");
+    }
+    let app = router(state);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/player/8478402")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+
+    let bytes = axum::body::to_bytes(response.into_body(), 512 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value = serde_json::from_slice(&bytes).expect("valid json envelope");
+    assert_eq!(json["schema_version"], 1);
+    assert_eq!(json["route"], "player");
+    assert_eq!(json["data"]["nhl_id"], 8478402);
+    assert_eq!(json["meta"]["career_rows"], 0);
+    assert_eq!(json["meta"]["pre_nhl_career_rows"], 0);
+    assert!(json["error"].is_string());
+}
+
+#[tokio::test]
+async fn l1_player_json_missing_player_uses_shared_envelope_shape() {
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/player/999999999")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+
+    let bytes = axum::body::to_bytes(response.into_body(), 512 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value = serde_json::from_slice(&bytes).expect("valid json envelope");
+    assert_eq!(json["schema_version"], 1);
+    assert_eq!(json["route"], "player");
+    assert_eq!(json["data"]["nhl_id"], 999999999);
+    assert_eq!(json["meta"]["career_rows"], 0);
+    assert_eq!(json["meta"]["pre_nhl_career_rows"], 0);
+    assert!(json["error"].is_string());
+}
+
+#[tokio::test]
 async fn l1_watchlist_route_returns_200_html() {
     let _guard = home_env_lock();
     let app = router(WebState::new());
