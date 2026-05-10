@@ -717,8 +717,8 @@ async fn l1_career_route_missing_league_returns_400() {
 
 /// l1_api_career_envelope_shape (Calder.4)
 /// — `/api/v1/career` envelope. When the local store is empty the
-///   handler returns 400 with a helpful message; we accept either
-///   shape and assert the right keys for whichever side fires.
+///   handler returns 400 with the same envelope shape and a helpful
+///   error string.
 #[tokio::test]
 async fn l1_api_career_envelope_shape() {
     let app = router(WebState::new());
@@ -749,10 +749,16 @@ async fn l1_api_career_envelope_shape() {
         assert!(obj["data"].is_array());
     } else {
         assert_eq!(status, StatusCode::BAD_REQUEST);
-        assert!(
-            obj.contains_key("error"),
-            "BAD_REQUEST must carry error field"
-        );
+        let keys: std::collections::BTreeSet<_> = obj.keys().map(String::as_str).collect();
+        let want: std::collections::BTreeSet<_> =
+            ["data", "error", "meta", "route", "schema_version"]
+                .iter()
+                .copied()
+                .collect();
+        assert_eq!(keys, want, "error envelope diverged: {keys:?}");
+        assert_eq!(obj["route"], serde_json::json!("career"));
+        assert!(obj["data"].as_array().is_some_and(Vec::is_empty));
+        assert!(obj["error"].is_string());
     }
 }
 

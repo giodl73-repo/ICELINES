@@ -1,4 +1,5 @@
 use axum::extract::Query;
+use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
@@ -17,9 +18,33 @@ pub struct CareerQuery {
 struct Meta {
     league: String,
     season: u32,
-    sort: &'static str,
+    sort: String,
     count: usize,
     total: usize,
+}
+
+fn meta_from_view(view: &CareerView) -> Meta {
+    Meta {
+        league: view.league.clone(),
+        season: view.season,
+        sort: view.sort.as_str().to_owned(),
+        count: view.count,
+        total: view.total,
+    }
+}
+
+fn error_meta_from_query(q: &CareerQuery) -> Meta {
+    Meta {
+        league: q.league.clone().unwrap_or_default(),
+        season: q
+            .season
+            .as_deref()
+            .and_then(|season| season.parse::<u32>().ok())
+            .unwrap_or_default(),
+        sort: q.sort.clone().unwrap_or_else(|| "points".to_owned()),
+        count: 0,
+        total: 0,
+    }
 }
 
 /// Resolve league + season + sort + top from query params,
@@ -104,20 +129,18 @@ fn resolve_names(wanted: &[u32]) -> std::collections::HashMap<u32, String> {
 /// `GET /api/v1/career` — JSON twin. King.2.4 envelope shape.
 pub async fn get_career_json(Query(q): Query<CareerQuery>) -> Response {
     match build_view(&q) {
-        Ok(view) => crate::api::json_data_meta(
-            "career",
-            view.rows,
-            Meta {
-                league: view.league,
-                season: view.season,
-                sort: view.sort.as_str(),
-                count: view.count,
-                total: view.total,
-            },
-        ),
+        Ok(view) => {
+            let meta = meta_from_view(&view);
+            crate::api::json_data_meta("career", view.rows, meta)
+        }
         Err(msg) => (
-            axum::http::StatusCode::BAD_REQUEST,
-            axum::Json(serde_json::json!({"error": msg})),
+            StatusCode::BAD_REQUEST,
+            axum::Json(crate::api::ApiEnvelope::new(
+                "career",
+                Vec::<CareerRow>::new(),
+                error_meta_from_query(&q),
+                Some(msg),
+            )),
         )
             .into_response(),
     }
