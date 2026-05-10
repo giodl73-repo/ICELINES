@@ -521,6 +521,12 @@ pub struct DepthChartSlot {
     pub pace_82: Option<f64>,
     pub goals_per_82: Option<f64>,
     pub gp: Option<u32>,
+    #[serde(default)]
+    pub goals: Option<u32>,
+    #[serde(default)]
+    pub assists: Option<u32>,
+    #[serde(default)]
+    pub points: Option<u32>,
     pub headshot_canonical_url: Option<String>,
 }
 

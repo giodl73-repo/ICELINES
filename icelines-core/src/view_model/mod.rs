@@ -257,6 +257,10 @@ mod tests {
         assert_eq!(row["metrics"][5]["key"], "save_pct");
         assert_eq!(row["metrics"][5]["unit"], "percentage");
         assert_eq!(row["metrics"][5]["precision"], "three_decimals");
+        assert_eq!(row["metrics"][6]["key"], "gaa");
+        assert_eq!(row["metrics"][2]["key"], "wins");
+        assert_eq!(row["metrics"][3]["key"], "losses");
+        assert_eq!(row["metrics"][7]["key"], "shutouts");
         assert_eq!(row["tokens"][0], "supporting_evidence");
     }
 
@@ -355,5 +359,9 @@ mod tests {
         assert_eq!(center["metrics"][0]["key"], "pace_82");
         assert_eq!(center["metrics"][0]["unit"], "per82");
         assert_eq!(center["metrics"][0]["precision"], "one_decimal");
+        assert_eq!(center["metrics"][2]["key"], "goals");
+        assert_eq!(center["metrics"][3]["key"], "assists");
+        assert_eq!(center["metrics"][4]["key"], "points");
+        assert_eq!(center["metrics"][5]["key"], "gp");
     }
 }

@@ -251,6 +251,9 @@ fn depth_slot(slot: &DepthChartSlot, kind: DepthSlotKind) -> DepthPlayerSlot {
         metrics: vec![
             metric_decimal("pace_82", "Pace 82", slot.pace_82),
             metric_decimal("goals_per_82", "G/82", slot.goals_per_82),
+            metric_optional_int("goals", "G", slot.goals, MetricUnit::Goals),
+            metric_optional_int("assists", "A", slot.assists, MetricUnit::Assists),
+            metric_optional_int("points", "PTS", slot.points, MetricUnit::Points),
             MetricCell {
                 key: StatKey::from("gp"),
                 label: "GP".to_string(),
@@ -321,6 +324,25 @@ fn goalie_slot(goalie: &PlayerView<'_>) -> DepthGoalieSlot {
                 precision: ValuePrecision::ThreeDecimals,
                 token: None,
             },
+            MetricCell {
+                key: StatKey::from("gaa"),
+                label: "GAA".to_string(),
+                value: stats
+                    .and_then(|g| g.goals_against_average.map(|v| v as f64))
+                    .map(MetricValue::Decimal)
+                    .unwrap_or(MetricValue::Missing),
+                unit: MetricUnit::Score,
+                precision: ValuePrecision::TwoDecimals,
+                token: None,
+            },
+            metric_optional_int("wins", "W", stats.map(|g| g.wins), MetricUnit::Count),
+            metric_optional_int("losses", "L", stats.map(|g| g.losses), MetricUnit::Count),
+            metric_optional_int(
+                "shutouts",
+                "SO",
+                stats.map(|g| g.shutouts),
+                MetricUnit::Count,
+            ),
         ],
         tokens: vec![SemanticToken::SupportingEvidence],
     }
@@ -332,6 +354,19 @@ fn metric_int(key: &str, label: &str, value: i64) -> MetricCell {
         label: label.to_string(),
         value: MetricValue::Integer(value),
         unit: MetricUnit::Count,
+        precision: ValuePrecision::Integer,
+        token: None,
+    }
+}
+
+fn metric_optional_int(key: &str, label: &str, value: Option<u32>, unit: MetricUnit) -> MetricCell {
+    MetricCell {
+        key: StatKey::from(key),
+        label: label.to_string(),
+        value: value
+            .map(|value| MetricValue::Integer(value as i64))
+            .unwrap_or(MetricValue::Missing),
+        unit,
         precision: ValuePrecision::Integer,
         token: None,
     }

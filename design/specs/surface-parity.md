@@ -48,7 +48,7 @@ a feature fully shipped.
 | Leaders/skater leaderboard | `LeadersView` | `query leaders` | `tui stats` | `/leaders` | `/api/v1/leaders` | partial - CLI text, web HTML, and web JSON build `LeadersView`; TUI stats and stable CLI JSON/CSV still need Ted/Lester verification | Campbell/Ted Lindsay |
 | Goalie leaderboard | `GoaliesView` | `query goalies` | `tui goalies` | `/goalies` | `/api/v1/goalies` | partial - CLI, TUI, web HTML, and web JSON build `GoaliesView`; Ted verifies parity | Campbell/Ted Lindsay |
 | Player card | `PlayerCardView` | `query player <name>` | `tui player <name>` | `/player/:id` | `/api/v1/player/:id` | partial - ViewModel pending | Campbell/Ted Lindsay |
-| Team depth | `TeamDepthView` | `team <ABBR>` | `tui team <ABBR>` | `/team/:abbrev` | `/api/v1/team/:abbrev` | partial - CLI team and markdown export build `TeamDepthView`; TUI/web depth routes remain local render paths pending Ted/Messier | Campbell/Ted Lindsay |
+| Team depth | `TeamDepthView` | `team <ABBR>` | `tui team <ABBR>` | `/team/:abbrev` | `/api/v1/team/:abbrev` | partial - CLI team, markdown export, web HTML, and web JSON build `TeamDepthView`; TUI team/depth alignment remains pending Ted/Messier | Campbell/Ted Lindsay |
 | Cross-team depth | `TeamDepthView` / `DepthLeagueView` | `depth` or equivalent | `tui depth` | `/depth` | `/api/v1/depth` | verify - route exists, parity needs matrix tests | Ted Lindsay |
 | Compare/comps | `CompareView` | `query compare A B` | `tui comps <name>` | `/compare?...` | `/api/v1/compare?...` | partial - HTML and JSON share the web card builder; core ViewModel alignment still pending | Ted Lindsay |
 | Scouting report | `ReportView` | `scouting <name>` | player detail/report affordance | planned/verify | planned/verify | partial - report contract pending | Campbell/Ted Lindsay |
@@ -149,8 +149,8 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /api/v1/compare` | `handlers/compare.rs` | JSON | Compare/comps | partial - envelope test exists |
 | `GET /goalies` | `handlers/goalies.rs` | HTML | Goalie leaderboard | partial - parity checks continue in TedLindsay.3 |
 | `GET /api/v1/goalies` | `handlers/goalies.rs` | JSON | Goalie leaderboard | partial - envelope tests exist |
-| `GET /team/:abbrev` | `handlers/team.rs` | HTML | Team depth | partial - ViewModel alignment remains |
-| `GET /api/v1/team/:abbrev` | `handlers/team.rs` | JSON | Team depth | partial - ViewModel alignment remains |
+| `GET /team/:abbrev` | `handlers/team.rs` | HTML | Team depth | partial - renders from `TeamDepthView`, HTML projection shape preserved |
+| `GET /api/v1/team/:abbrev` | `handlers/team.rs` | JSON | Team depth | partial - projects existing stable JSON envelope from `TeamDepthView` |
 | `GET /depth` | `handlers/depth.rs` | HTML | Cross-team depth | verify |
 | `GET /api/v1/depth` | `handlers/depth.rs` | JSON | Cross-team depth | verify |
 | `GET /poach` | `handlers/poach.rs` | HTML | Poacher board | done |

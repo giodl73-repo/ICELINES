@@ -126,6 +126,9 @@ Progress:
 - 2026-05-10: Added `icelines-web/tests/ted_lindsay_route_inventory.rs`,
   which fails if a mounted router route is missing from
   `design/specs/surface-parity.md`.
+- 2026-05-10: Migrated `/team/:abbrev` and `/api/v1/team/:abbrev` to build
+  from `TeamDepthView` while preserving the existing HTML template rows and
+  stable JSON envelope projection.
 
 ---
 

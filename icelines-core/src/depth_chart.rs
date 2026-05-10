@@ -19,6 +19,9 @@ fn slot_from_view(view: &PlayerView<'_>, team: TeamAbbr) -> DepthChartSlot {
         pace_82: view.pace_82(),
         goals_per_82: view.goals_per_82(),
         gp: Some(view.gp()),
+        goals: Some(view.goals()),
+        assists: Some(view.assists()),
+        points: Some(view.points()),
         headshot_canonical_url: view.identity.headshot_canonical_url.clone(),
     }
 }
