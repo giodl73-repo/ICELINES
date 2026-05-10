@@ -58,7 +58,10 @@ surface still differs from CLI/TUI.
    - Player card: web JSON row identity is now fenced against
      `PlayerCardView` by `l1_player_json_rows_match_player_card_view`;
      CLI/TUI adapter alignment remains before marking the row `done`.
-   - Compare/career: verify adapter parity before marking any row `done`.
+   - Compare: web JSON card identity is now fenced against `CompareView` by
+     `l1_compare_json_cards_match_compare_view`; CLI/TUI adapter alignment
+     remains before marking the row `done`.
+   - Career: verify adapter parity before marking the row `done`.
 
 5. **Resolve live-route envelope policy** - complete for Ted Lindsay
    - Scores, schedule, playoffs, and game carry live-fetch failures in

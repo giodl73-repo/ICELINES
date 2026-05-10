@@ -15,8 +15,8 @@ use icelines_core::identity::PlayerId;
 use icelines_core::season_stats::SeasonType;
 use icelines_core::view_model::{DepthGoalieSlot, DepthLine, DepthPair, DepthPlayerSlot};
 use icelines_core::{
-    DepthLeagueView, DepthTeamStrengthRow, MetricCell, MetricValue, PlayerCardView, Season,
-    TeamAbbr, TeamDepthView,
+    CompareView, DepthLeagueView, DepthTeamStrengthRow, MetricCell, MetricValue, PlayerCardView,
+    Season, TeamAbbr, TeamDepthView,
 };
 use icelines_fetch::snapshot::SnapshotStore;
 use icelines_fetch::stats_loader::{load_into_repo, load_player_career_into_repo};
@@ -137,6 +137,19 @@ struct PlayerCareerSnapshot {
     assists: u32,
     points: u32,
     points_per_game: Option<String>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct CompareCardSnapshot {
+    nhl_id: u32,
+    full_name: String,
+    position: String,
+    team: String,
+    games: u32,
+    goals: u32,
+    assists: u32,
+    points: u32,
+    points_per_game: String,
 }
 
 fn depth_league_row_snapshots(rows: &[DepthTeamStrengthRow]) -> Vec<DepthLeagueRowSnapshot> {
@@ -276,6 +289,52 @@ fn pretty_season(season: Season) -> String {
     let yyyy_start = raw / 10_000;
     let yy_end = raw % 100;
     format!("{yyyy_start:04}-{yy_end:02}")
+}
+
+fn compare_card_snapshot_from_view(view: &PlayerCardView) -> CompareCardSnapshot {
+    let active_metrics = view
+        .active
+        .as_ref()
+        .map(|active| active.metrics.as_slice())
+        .unwrap_or(&[]);
+    let (position, team) = view
+        .active
+        .as_ref()
+        .map(|active| {
+            (
+                active.position.abbreviation().to_owned(),
+                active.team_display.clone(),
+            )
+        })
+        .unwrap_or_else(|| (String::new(), String::new()));
+
+    CompareCardSnapshot {
+        nhl_id: view.player_id.0,
+        full_name: view.display_name.clone(),
+        position,
+        team,
+        games: metric_u32(active_metrics, "gp"),
+        goals: metric_u32(active_metrics, "goals"),
+        assists: metric_u32(active_metrics, "assists"),
+        points: metric_u32(active_metrics, "points"),
+        points_per_game: metric_f64(active_metrics, "points_per_game")
+            .map(|ppg| format!("{ppg:.2}"))
+            .unwrap_or_default(),
+    }
+}
+
+fn json_compare_card_snapshot(row: &Value) -> CompareCardSnapshot {
+    CompareCardSnapshot {
+        nhl_id: json_u32(row, "nhl_id"),
+        full_name: json_str(row, "full_name"),
+        position: json_str(row, "position"),
+        team: json_str(row, "team"),
+        games: json_u32(row, "gp"),
+        goals: json_u32(row, "goals"),
+        assists: json_u32(row, "assists"),
+        points: json_u32(row, "points"),
+        points_per_game: json_str(row, "ppg_str"),
+    }
 }
 
 fn team_depth_skater_snapshots(view: &TeamDepthView) -> Vec<TeamDepthSkaterSnapshot> {
@@ -1415,6 +1474,52 @@ async fn l1_compare_json_envelope_shape() {
     assert!(json["data"]["a"].is_null());
     assert!(json["data"]["b"].is_null());
     assert!(json["data"]["winners"].is_object());
+}
+
+#[tokio::test]
+async fn l1_compare_json_cards_match_compare_view() {
+    let season = Season(20242025);
+    let season_type = SeasonType::Regular;
+    let a_id = PlayerId(8478402);
+    let b_id = PlayerId(8477934);
+    let store = SnapshotStore::new(SnapshotStore::default_root());
+    let mut load = load_into_repo(season, season_type, &store)
+        .expect("bundled regular-season repo should load");
+    load_player_career_into_repo(&mut load.repo, a_id).expect("player a career should load");
+    load_player_career_into_repo(&mut load.repo, b_id).expect("player b career should load");
+    let expected_view =
+        CompareView::from_repository(&load.repo, Some(a_id), Some(b_id), season, season_type);
+    let expected_a = expected_view
+        .a
+        .as_ref()
+        .map(compare_card_snapshot_from_view)
+        .expect("player a compare card should exist");
+    let expected_b = expected_view
+        .b
+        .as_ref()
+        .map(compare_card_snapshot_from_view)
+        .expect("player b compare card should exist");
+
+    let state = WebState::with_repo_and_config(load.repo, WebConfig::new("20242025", "regular"));
+    let app = router(state);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/compare?a=8478402&b=8477934")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let json = response_json(response, 1024 * 1024).await;
+    assert_data_meta_envelope(&json, "compare");
+    assert_eq!(json["meta"]["season"], serde_json::json!("20242025"));
+    assert_eq!(json["meta"]["season_type"], serde_json::json!("regular"));
+    assert_eq!(json_compare_card_snapshot(&json["data"]["a"]), expected_a);
+    assert_eq!(json_compare_card_snapshot(&json["data"]["b"]), expected_b);
 }
 
 #[tokio::test]
