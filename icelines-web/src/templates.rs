@@ -550,6 +550,51 @@ pub struct PoachTemplate {
     pub empty_detail: String,
 }
 
+/// `favorites.html` — user-maintained players and teams rendered
+/// from the shared local group store.
+#[derive(Template)]
+#[template(path = "favorites.html")]
+pub struct FavoritesTemplate {
+    pub active_label: String,
+    pub player_count: usize,
+    pub team_count: usize,
+    pub players: Vec<FavoritePlayerRow>,
+    pub teams: Vec<FavoriteTeamRow>,
+}
+
+#[derive(Debug, Clone)]
+pub struct FavoritePlayerRow {
+    pub key: String,
+    pub stat_line: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct FavoriteTeamRow {
+    pub key: String,
+}
+
+/// `watchlist.html` — poach/watch candidates persisted by the CLI/TUI.
+#[derive(Template)]
+#[template(path = "watchlist.html")]
+pub struct WatchlistTemplate {
+    pub active_label: String,
+    pub player_count: usize,
+    pub team_count: usize,
+    pub players: Vec<WatchlistPlayerRow>,
+    pub teams: Vec<WatchlistTeamRow>,
+}
+
+#[derive(Debug, Clone)]
+pub struct WatchlistPlayerRow {
+    pub key: String,
+    pub reason: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct WatchlistTeamRow {
+    pub key: String,
+}
+
 /// One pre-formatted row for the poach board template.
 #[derive(Debug, Clone)]
 pub struct PoachRow {

@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Favorites{% endblock %}
+
+{% block head_extra %}
+<style>
+    .fav-form {
+        margin: 1rem 0;
+        padding: 1rem;
+        background: var(--ice-divider);
+        border-radius: 5px;
+    }
+    .fav-form input[type="text"] {
+        min-width: min(18rem, 100%);
+    }
+    .fav-form .row {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        margin: 0.4rem 0;
+        flex-wrap: wrap;
+    }
+    .fav-list {
+        padding-left: 1.2rem;
+    }
+    .fav-list li {
+        display: flex;
+        gap: 0.6rem;
+        align-items: center;
+        margin: 0.25rem 0;
+    }
+    .fav-list .remove-btn {
+        background: transparent;
+        border: 1px solid #b00020;
+        color: #b00020;
+        padding: 0.1rem 0.5rem;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 0.85em;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Favorites</h1>
+
+<p>{{ player_count }} player(s), {{ team_count }} team(s).</p>
+
+<section class="fav-form">
+    <h3 style="margin: 0 0 0.5rem 0;">Add to Favorites</h3>
+    <form method="POST" action="/favorites/add">
+        <div class="row">
+            <label for="key">Player name or team abbrev:</label>
+            <input type="text" id="key" name="key" placeholder="e.g. Connor McDavid · EDM · TOR" autofocus>
+            <button type="submit">Add</button>
+        </div>
+        <p style="font-size: 0.85em; color: #616161; margin: 0.4rem 0 0;">
+            Auto-detects: 3-letter uppercase abbrevs route to teams; everything else is a player.
+            Override with <code>kind=team</code> or <code>kind=player</code> below.
+        </p>
+        <div class="row">
+            <label><input type="radio" name="kind" value=""> auto-detect</label>
+            <label><input type="radio" name="kind" value="player"> player</label>
+            <label><input type="radio" name="kind" value="team"> team</label>
+        </div>
+        <input type="hidden" name="return_to" value="/favorites">
+    </form>
+</section>
+
+{% if players.is_empty() && teams.is_empty() %}
+<section class="empty-state">
+    <p><strong>No favorites yet.</strong> Use the form above, or run from the CLI:</p>
+    <pre><code>icelines group add Favorites "Connor McDavid"
+icelines group add Favorites EDM</code></pre>
+</section>
+{% else %}
+    {% if !players.is_empty() %}
+    <h2>Players</h2>
+    <ul class="fav-list">
+        {% for player in players %}
+        <li>
+            <div>
+                <strong>{{ player.key }}</strong>
+                {% if !player.stat_line.is_empty() %}
+                <br><span style="color:#444;font-size:0.92em;">{{ player.stat_line }}</span>
+                {% endif %}
+            </div>
+            <form method="POST" action="/favorites/remove" style="display:inline;">
+                <input type="hidden" name="key" value="{{ player.key }}">
+                <input type="hidden" name="kind" value="player">
+                <input type="hidden" name="return_to" value="/favorites">
+                <button type="submit" class="remove-btn" title="Remove from Favorites">x</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if !teams.is_empty() %}
+    <h2>Teams</h2>
+    <ul class="fav-list">
+        {% for team in teams %}
+        <li>
+            <a href="/team/{{ team.key }}">{{ team.key }}</a>
+            <form method="POST" action="/favorites/remove" style="display:inline;">
+                <input type="hidden" name="key" value="{{ team.key }}">
+                <input type="hidden" name="kind" value="team">
+                <input type="hidden" name="return_to" value="/favorites">
+                <button type="submit" class="remove-btn" title="Remove from Favorites">x</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <p><em>Per-night stat lines plus box scores wire in via <code>icelines fetch boxscore</code> orchestration.</em></p>
+{% endif %}
+{% endblock %}

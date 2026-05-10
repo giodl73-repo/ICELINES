@@ -1,13 +1,18 @@
 use super::favorites_data::{
     group_api_rows, mutate_favorites, read_group_members, read_watch_notes, watchlist_api_rows,
-    GroupApiMeta, GroupApiResponse, MutateOp, WatchNote, WatchlistApiMeta, WatchlistApiResponse,
+    GroupApiMeta, GroupApiResponse, MutateOp, WatchlistApiMeta, WatchlistApiResponse,
 };
+use crate::templates::{
+    FavoritePlayerRow, FavoriteTeamRow, FavoritesTemplate, WatchlistPlayerRow, WatchlistTeamRow,
+    WatchlistTemplate,
+};
+use askama::Template;
 use axum::extract::{Form, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use serde::Deserialize;
 
-pub async fn get_favorites() -> Response {
+pub async fn get_favorites(State(state): State<crate::WebState>) -> Response {
     let members = read_group_members("Favorites");
 
     // Phase Foster +21 — for each favorited player resolve to
@@ -16,27 +21,60 @@ pub async fn get_favorites() -> Response {
     // → row drops to "no resolved pid"; missing boxscore →
     // dash row.
     let stat_lines = compute_player_stat_lines(&members).await;
+    let active_label = state.config.read().await.active_label.clone();
 
-    let body = render_html(&members, &stat_lines);
-    (
-        StatusCode::OK,
-        [(axum::http::header::CONTENT_TYPE, "text/html; charset=utf-8")],
-        Html(body),
-    )
-        .into_response()
+    let tmpl = FavoritesTemplate {
+        active_label,
+        player_count: members.iter().filter(|(k, _)| k == "player").count(),
+        team_count: members.iter().filter(|(k, _)| k == "team").count(),
+        players: members
+            .iter()
+            .filter(|(kind, _)| kind == "player")
+            .map(|(_, key)| FavoritePlayerRow {
+                key: key.clone(),
+                stat_line: stat_lines.get(key).cloned().unwrap_or_default(),
+            })
+            .collect(),
+        teams: members
+            .iter()
+            .filter(|(kind, _)| kind == "team")
+            .map(|(_, key)| FavoriteTeamRow { key: key.clone() })
+            .collect(),
+    };
+
+    render_template(tmpl)
 }
 
 pub async fn get_watchlist(State(state): State<crate::WebState>) -> Response {
     let members = read_group_members("Watchlist");
     let notes = read_watch_notes();
     let active_label = state.config.read().await.active_label.clone();
-    let body = render_watchlist_html(&members, &notes, &active_label);
-    (
-        StatusCode::OK,
-        [(axum::http::header::CONTENT_TYPE, "text/html; charset=utf-8")],
-        Html(body),
-    )
-        .into_response()
+    let tmpl = WatchlistTemplate {
+        active_label,
+        player_count: members.iter().filter(|(k, _)| k == "player").count(),
+        team_count: members.iter().filter(|(k, _)| k == "team").count(),
+        players: members
+            .iter()
+            .filter(|(kind, _)| kind == "player")
+            .map(|(_, key)| {
+                let reason = notes
+                    .get(&format!("player:{key}"))
+                    .map(|note| note.reason.clone())
+                    .unwrap_or_default();
+                WatchlistPlayerRow {
+                    key: key.clone(),
+                    reason,
+                }
+            })
+            .collect(),
+        teams: members
+            .iter()
+            .filter(|(kind, _)| kind == "team")
+            .map(|(_, key)| WatchlistTeamRow { key: key.clone() })
+            .collect(),
+    };
+
+    render_template(tmpl)
 }
 
 pub async fn get_favorites_json() -> Response {
@@ -240,228 +278,18 @@ fn error_response(msg: &str) -> Response {
         .into_response()
 }
 
-fn render_html(
-    members: &[(String, String)],
-    stat_lines: &std::collections::HashMap<String, String>,
-) -> String {
-    let player_count = members.iter().filter(|(k, _)| k == "player").count();
-    let team_count = members.iter().filter(|(k, _)| k == "team").count();
-    let mut body = String::new();
-    body.push_str("<!DOCTYPE html><html><head>");
-    body.push_str("<meta charset=\"utf-8\">");
-    body.push_str("<title>Favorites — IceLines</title>");
-    body.push_str("<link rel=\"stylesheet\" href=\"/static/style.css\">");
-    body.push_str("<style>");
-    body.push_str(
-        ".fav-form { margin: 1rem 0; padding: 1rem; \
-                 background: #f5f5f5; border-radius: 4px; } \
-                 .fav-form input[type=text] { padding: 0.4rem; min-width: 18rem; } \
-                 .fav-form button { padding: 0.4rem 0.9rem; cursor: pointer; } \
-                 .fav-form .row { display: flex; gap: 0.5rem; \
-                 align-items: center; margin: 0.4rem 0; flex-wrap: wrap; } \
-                 .fav-list li { display: flex; gap: 0.6rem; \
-                 align-items: center; margin: 0.2rem 0; } \
-                 .fav-list .remove-btn { background: none; border: 1px solid #c00; \
-                 color: #c00; padding: 0.1rem 0.5rem; border-radius: 3px; \
-                 cursor: pointer; font-size: 0.85em; }",
-    );
-    body.push_str("</style>");
-    body.push_str("</head><body>");
-    body.push_str(
-        "<nav><a href=\"/\">League</a> · <a href=\"/scores\">Scores</a> · \
-                 <a href=\"/schedule\">Schedule</a> · <a href=\"/playoffs\">Playoffs</a> · \
-                 <a href=\"/transactions\">Transactions</a> · \
-                 <strong>Favorites</strong></nav>",
-    );
-    body.push_str("<main>");
-    body.push_str("<h1>Favorites</h1>");
-    body.push_str(&format!(
-        "<p>{player_count} player(s), {team_count} team(s).</p>"
-    ));
-
-    // Add form — Foster +18. Auto-detects team-vs-player from
-    // the input string (3-char ASCII abbrev → team).
-    body.push_str(
-        r##"<section class="fav-form">
-  <h3 style="margin: 0 0 0.5rem 0;">Add to Favorites</h3>
-  <form method="POST" action="/favorites/add">
-    <div class="row">
-      <label for="key">Player name or team abbrev:</label>
-      <input type="text" id="key" name="key"
-        placeholder="e.g. Connor McDavid · EDM · TOR" autofocus>
-      <button type="submit">★ Add</button>
-    </div>
-    <p style="font-size: 0.85em; color: #666; margin: 0.4rem 0 0;">
-      Auto-detects: 3-letter uppercase abbrevs route to teams; everything else is a player.
-      Override with <code>kind=team</code> or <code>kind=player</code> below.
-    </p>
-    <div class="row">
-      <label><input type="radio" name="kind" value=""> auto-detect</label>
-      <label><input type="radio" name="kind" value="player"> player</label>
-      <label><input type="radio" name="kind" value="team"> team</label>
-    </div>
-    <input type="hidden" name="return_to" value="/favorites">
-  </form>
-</section>"##,
-    );
-
-    if members.is_empty() {
-        body.push_str("<section class=\"empty-state\">");
-        body.push_str("<p><strong>No favorites yet.</strong> ");
-        body.push_str("Use the form above, or run from the CLI:</p>");
-        body.push_str(
-            "<pre><code>icelines group add Favorites \"Connor McDavid\"\n\
-                     icelines group add Favorites EDM</code></pre>",
-        );
-        body.push_str("</section>");
-    } else {
-        let players: Vec<&str> = members
-            .iter()
-            .filter(|(k, _)| k == "player")
-            .map(|(_, v)| v.as_str())
-            .collect();
-        let teams: Vec<&str> = members
-            .iter()
-            .filter(|(k, _)| k == "team")
-            .map(|(_, v)| v.as_str())
-            .collect();
-        if !players.is_empty() {
-            body.push_str("<h2>Players</h2><ul class=\"fav-list\">");
-            for p in players {
-                let stat_line = stat_lines
-                    .get(p)
-                    .map(|l| {
-                        format!(
-                            "<br><span style=\"color:#444;font-size:0.92em;\">{}</span>",
-                            html_escape(l)
-                        )
-                    })
-                    .unwrap_or_default();
-                body.push_str(&format!(
-                    "<li><div><strong>{}</strong>{}</div>{}</li>",
-                    html_escape(p),
-                    stat_line,
-                    remove_form(p, "player"),
-                ));
-            }
-            body.push_str("</ul>");
-        }
-        if !teams.is_empty() {
-            body.push_str("<h2>Teams</h2><ul class=\"fav-list\">");
-            for t in teams {
-                body.push_str(&format!(
-                    "<li><a href=\"/team/{}\">{}</a>{}</li>",
-                    html_escape(t),
-                    html_escape(t),
-                    remove_form(t, "team"),
-                ));
-            }
-            body.push_str("</ul>");
-        }
-        body.push_str(
-            "<p><em>Per-night stat lines + box scores wire in via \
-                     <code>icelines fetch boxscore</code> (Foster.3+ orchestration).</em></p>",
-        );
+fn render_template<T: Template>(tmpl: T) -> Response {
+    match tmpl.render() {
+        Ok(html) => Html(html).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html(format!(
+                "<!doctype html><body><h1>500</h1><p>{}</p></body>",
+                html_escape(&e.to_string())
+            )),
+        )
+            .into_response(),
     }
-    body.push_str("</main></body></html>");
-    body
-}
-
-fn render_watchlist_html(
-    members: &[(String, String)],
-    notes: &std::collections::HashMap<String, WatchNote>,
-    active_label: &str,
-) -> String {
-    let player_count = members.iter().filter(|(k, _)| k == "player").count();
-    let team_count = members.iter().filter(|(k, _)| k == "team").count();
-    let mut body = String::new();
-    body.push_str("<!DOCTYPE html><html><head>");
-    body.push_str("<meta charset=\"utf-8\">");
-    body.push_str("<title>Watchlist - IceLines</title>");
-    body.push_str("<link rel=\"stylesheet\" href=\"/static/style.css\">");
-    body.push_str("</head><body>");
-    body.push_str(
-        "<nav><a href=\"/\">League</a> · <a href=\"/poach\">Poach</a> · \
-                 <a href=\"/favorites\">Favorites</a> · <strong>Watchlist</strong></nav>",
-    );
-    body.push_str("<main>");
-    body.push_str("<h1>Watchlist</h1>");
-    body.push_str(&format!(
-        "<p class=\"season-header\">{}</p>",
-        html_escape(active_label)
-    ));
-    body.push_str(&format!(
-        "<p>{player_count} player(s), {team_count} team(s).</p>"
-    ));
-    body.push_str(
-        "<p>Toggle candidates from the TUI Poach board with <code>w</code>, \
-                 or manage the group with <code>icelines group add Watchlist ...</code>.</p>",
-    );
-
-    if members.is_empty() {
-        body.push_str("<section class=\"empty-state\">");
-        body.push_str("<p><strong>No watched players yet.</strong></p>");
-        body.push_str(
-            "<pre><code>icelines tui poach\n\
-                     icelines group add Watchlist \"Matthew Knies\"</code></pre>",
-        );
-        body.push_str("</section>");
-    } else {
-        let players: Vec<&str> = members
-            .iter()
-            .filter(|(k, _)| k == "player")
-            .map(|(_, v)| v.as_str())
-            .collect();
-        let teams: Vec<&str> = members
-            .iter()
-            .filter(|(k, _)| k == "team")
-            .map(|(_, v)| v.as_str())
-            .collect();
-        if !players.is_empty() {
-            body.push_str("<h2>Players</h2><ul>");
-            for player in players {
-                let entity_ref = format!("player:{player}");
-                let note = notes
-                    .get(&entity_ref)
-                    .map(|note| {
-                        format!(
-                            "<br><span style=\"color:#555;font-size:0.92em;\">why: {}</span>",
-                            html_escape(&note.reason)
-                        )
-                    })
-                    .unwrap_or_default();
-                body.push_str(&format!("<li>{}{}</li>", html_escape(player), note));
-            }
-            body.push_str("</ul>");
-        }
-        if !teams.is_empty() {
-            body.push_str("<h2>Teams</h2><ul>");
-            for team in teams {
-                body.push_str(&format!(
-                    "<li><a href=\"/team/{}\">{}</a></li>",
-                    html_escape(team),
-                    html_escape(team)
-                ));
-            }
-            body.push_str("</ul>");
-        }
-    }
-
-    body.push_str("</main></body></html>");
-    body
-}
-
-fn remove_form(key: &str, kind: &str) -> String {
-    format!(
-        r##"<form method="POST" action="/favorites/remove" style="display:inline;">
-                    <input type="hidden" name="key" value="{}">
-                    <input type="hidden" name="kind" value="{}">
-                    <input type="hidden" name="return_to" value="/favorites">
-                    <button type="submit" class="remove-btn" title="Remove from Favorites">×</button>
-                </form>"##,
-        html_escape(key),
-        kind,
-    )
 }
 
 fn html_escape(s: &str) -> String {
