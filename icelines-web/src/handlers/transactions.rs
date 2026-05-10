@@ -33,15 +33,6 @@ struct TransactionsResult {
 }
 
 #[derive(Debug, serde::Serialize)]
-struct TransactionsEnvelope {
-    schema_version: u32,
-    route: &'static str,
-    data: Vec<TransactionRow>,
-    meta: TransactionsMeta,
-    error: Option<String>,
-}
-
-#[derive(Debug, serde::Serialize)]
 struct TransactionsMeta {
     season: String,
     total: usize,
@@ -125,10 +116,10 @@ pub async fn get_transactions_json(
     Query(q): Query<TransactionsQuery>,
 ) -> Response {
     match build_transactions_result(&state, &q).await {
-        Ok(result) => axum::Json(TransactionsEnvelope {
-            schema_version: 1,
-            route: "transactions",
-            meta: TransactionsMeta {
+        Ok(result) => crate::api::json_envelope(
+            "transactions",
+            result.rows,
+            TransactionsMeta {
                 season: result.season_pretty,
                 total: result.total,
                 active_kind: result.active_kind,
@@ -137,17 +128,13 @@ pub async fn get_transactions_json(
                 out_of_coverage: result.out_of_coverage,
                 earliest_season: result.earliest_season_pretty,
             },
-            data: result.rows,
-            error: None,
-        })
-        .into_response(),
-        Err(msg) => (
-            StatusCode::BAD_REQUEST,
-            axum::Json(TransactionsEnvelope {
-                schema_version: 1,
-                route: "transactions",
-                data: Vec::new(),
-                meta: TransactionsMeta {
+            None,
+        ),
+        Err(msg) => {
+            let response = crate::api::ApiEnvelope::new(
+                "transactions",
+                Vec::<TransactionRow>::new(),
+                TransactionsMeta {
                     season: String::new(),
                     total: 0,
                     active_kind: q.kind.unwrap_or_default(),
@@ -156,10 +143,10 @@ pub async fn get_transactions_json(
                     out_of_coverage: false,
                     earliest_season: pretty_season(TRANSACTIONS_EARLIEST_SEASON),
                 },
-                error: Some(msg),
-            }),
-        )
-            .into_response(),
+                Some(msg),
+            );
+            (StatusCode::BAD_REQUEST, axum::Json(response)).into_response()
+        }
     }
 }
 

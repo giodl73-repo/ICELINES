@@ -29,6 +29,7 @@
 //! [`WebError`] which implements [`axum::response::IntoResponse`] so the
 //! handler bodies stay free of HTTP boilerplate.
 
+pub mod api;
 pub mod config;
 pub mod error;
 pub mod state;

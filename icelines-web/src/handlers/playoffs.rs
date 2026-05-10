@@ -15,15 +15,6 @@ struct PlayoffsResult {
 }
 
 #[derive(Debug, serde::Serialize)]
-struct PlayoffsEnvelope {
-    schema_version: u32,
-    route: &'static str,
-    data: Vec<PlayoffsRoundView>,
-    meta: PlayoffsMeta,
-    error: Option<String>,
-}
-
-#[derive(Debug, serde::Serialize)]
 struct PlayoffsMeta {
     season: String,
     source: String,
@@ -92,21 +83,20 @@ pub async fn get_playoffs(State(state): State<WebState>) -> Response {
 
 pub async fn get_playoffs_json(State(state): State<WebState>) -> Response {
     let result = build_playoffs_result(&state).await;
+    let round_count = result.rounds.len();
     let series_count = result.rounds.iter().map(|r| r.series.len()).sum();
-    let envelope = PlayoffsEnvelope {
-        schema_version: 1,
-        route: "playoffs",
-        meta: PlayoffsMeta {
+    crate::api::json_envelope(
+        "playoffs",
+        result.rounds,
+        PlayoffsMeta {
             season: result.season_pretty,
             source: result.source_label,
             empty: result.empty,
-            round_count: result.rounds.len(),
+            round_count,
             series_count,
         },
-        data: result.rounds,
-        error: result.fetch_error,
-    };
-    axum::Json(envelope).into_response()
+        result.fetch_error,
+    )
 }
 
 async fn build_playoffs_result(state: &WebState) -> PlayoffsResult {

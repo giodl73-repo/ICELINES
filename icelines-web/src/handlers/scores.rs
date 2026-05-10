@@ -35,15 +35,6 @@ struct ScoresResult {
 }
 
 #[derive(Debug, serde::Serialize)]
-struct ScoresEnvelope {
-    schema_version: u32,
-    route: &'static str,
-    data: Vec<ScoresDay>,
-    meta: ScoresMeta,
-    error: Option<String>,
-}
-
-#[derive(Debug, serde::Serialize)]
 struct ScoresMeta {
     active_date: String,
     today_date: String,
@@ -266,17 +257,15 @@ pub async fn get_scores_json(
     Query(q): Query<ScoresQuery>,
 ) -> Response {
     let result = build_scores_result(&state, &q).await;
-    let envelope = ScoresEnvelope {
-        schema_version: 1,
-        route: "scores",
-        data: result.days,
-        meta: ScoresMeta {
+    crate::api::json_envelope(
+        "scores",
+        result.days,
+        ScoresMeta {
             active_date: result.active_date,
             today_date: result.today_date,
             range: result.range,
             total_games: result.total_games,
         },
-        error: result.fetch_error,
-    };
-    axum::Json(envelope).into_response()
+        result.fetch_error,
+    )
 }

@@ -33,15 +33,6 @@ struct ScheduleResult {
 }
 
 #[derive(Debug, serde::Serialize)]
-struct ScheduleEnvelope {
-    schema_version: u32,
-    route: &'static str,
-    data: Vec<ScheduleRow>,
-    meta: ScheduleMeta,
-    error: Option<String>,
-}
-
-#[derive(Debug, serde::Serialize)]
 struct ScheduleMeta {
     season: String,
     active_team: String,
@@ -95,20 +86,18 @@ pub async fn get_schedule_json(
     Query(q): Query<ScheduleQuery>,
 ) -> Response {
     let result = build_schedule_result(&state, &q).await;
-    let envelope = ScheduleEnvelope {
-        schema_version: 1,
-        route: "schedule",
-        data: result.rows,
-        meta: ScheduleMeta {
+    crate::api::json_envelope(
+        "schedule",
+        result.rows,
+        ScheduleMeta {
             season: result.season_pretty,
             active_team: result.active_team,
             active_date: result.active_date,
             total: result.total,
             team_chips: result.team_chips,
         },
-        error: result.fetch_error,
-    };
-    axum::Json(envelope).into_response()
+        result.fetch_error,
+    )
 }
 
 async fn build_schedule_result(state: &WebState, q: &ScheduleQuery) -> ScheduleResult {

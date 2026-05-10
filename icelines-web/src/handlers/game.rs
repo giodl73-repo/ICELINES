@@ -47,15 +47,6 @@ struct GameSkaterView {
 }
 
 #[derive(Debug, serde::Serialize)]
-struct GameEnvelope {
-    schema_version: u32,
-    route: &'static str,
-    data: Option<GameDetailView>,
-    meta: GameMeta,
-    error: Option<String>,
-}
-
-#[derive(Debug, serde::Serialize)]
 struct GameMeta {
     game_id: u64,
 }
@@ -80,14 +71,7 @@ pub async fn get_game_json(Path(id): Path<u64>) -> Response {
         Ok(boxscore) => (Some(project_game_detail(boxscore)), None),
         Err(e) => (None, Some(e.to_string())),
     };
-    axum::Json(GameEnvelope {
-        schema_version: 1,
-        route: "game",
-        data,
-        meta: GameMeta { game_id: id },
-        error,
-    })
-    .into_response()
+    crate::api::json_envelope("game", data, GameMeta { game_id: id }, error)
 }
 
 fn project_game_detail(b: icelines_fetch::nhl_api::Boxscore) -> GameDetailView {
