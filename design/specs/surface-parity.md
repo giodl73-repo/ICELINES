@@ -46,6 +46,7 @@ a feature fully shipped.
 | Feature | ViewModel | CLI | TUI | Web HTML | Web JSON | Status | Owner |
 |---|---|---|---|---|---|---|---|
 | Leaders/skater leaderboard | `LeadersView` | `query leaders` | `tui stats` | `/leaders` | `/api/v1/leaders` | partial - CLI text, web HTML, and web JSON build `LeadersView`; TUI stats and stable CLI JSON/CSV still need Ted/Lester verification | Campbell/Ted Lindsay |
+| League/home preview | `HomeView` | n/a | dashboard shell | `/` | n/a | done - web home preview skaters/goalies build from `HomeView` | Ted Lindsay |
 | Goalie leaderboard | `GoaliesView` | `query goalies` | `tui goalies` | `/goalies` | `/api/v1/goalies` | partial - CLI, TUI, web HTML, and web JSON build `GoaliesView`; Ted verifies parity | Campbell/Ted Lindsay |
 | Player card | `PlayerCardView` | `query player <name>` | `tui player <name>` | `/player/:id` | `/api/v1/player/:id` | partial - web HTML and web JSON project from `PlayerCardView`; CLI/TUI adapter alignment remains | Campbell/Ted Lindsay |
 | Team depth | `TeamDepthView` | `team <ABBR>` | `tui team <ABBR>` | `/team/:abbrev` | `/api/v1/team/:abbrev` | partial - CLI team, markdown export, web HTML, and web JSON build `TeamDepthView`; TUI team/depth alignment remains pending Ted/Messier | Campbell/Ted Lindsay |
@@ -140,7 +141,7 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 
 | Route | Handler module | Surface | Matrix row | Status |
 |---|---|---|---|---|
-| `GET /` | `handlers/home.rs` | HTML | League/home | done - covered by `cargo test -p icelines-web` |
+| `GET /` | `handlers/home.rs` | HTML | League/home | done - preview skaters/goalies project from `HomeView`; covered by `cargo test -p icelines-web` |
 | `GET /static/:asset` | `static_assets` | asset | Static assets | done |
 | `GET /leaders` | `handlers/leaders.rs` | HTML | Leaders/skater leaderboard | partial - parity checks continue in TedLindsay.3 |
 | `GET /api/v1/leaders` | `handlers/leaders.rs` | JSON | Leaders/skater leaderboard | partial - envelope tests exist |

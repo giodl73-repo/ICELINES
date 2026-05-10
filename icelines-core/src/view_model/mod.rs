@@ -10,6 +10,7 @@ pub mod context;
 pub mod favorites;
 pub mod game;
 pub mod goalies;
+pub mod home;
 pub mod leaders;
 pub mod player_card;
 pub mod playoffs;
@@ -36,6 +37,7 @@ pub use game::{
     GameSkaterRow, GameView,
 };
 pub use goalies::{GoalieRoleFilter, GoalieRoleSignal, GoalieRow, GoaliesView};
+pub use home::{HomeGoalieRow, HomeSkaterRow, HomeView};
 pub use leaders::{LeaderKind, LeaderRow, LeadersView};
 pub use player_card::{PlayerCardView, PlayerCareerSummary, PlayerSeasonSummary};
 pub use playoffs::{
@@ -67,8 +69,8 @@ mod tests {
     use crate::view_model::{
         CareerSortKey, CareerView, CompareView, Completeness, DepthLeagueView, EmptyKind,
         FavoriteMemberInput, FavoritesView, GameBoxscoreInput, GameGoalInput, GameGoalieInput,
-        GameSkaterInput, GameView, LeaderKind, LeadersView, MetricCell, MetricUnit, MetricValue,
-        PlayerCardView, PlayoffsBracketInput, PlayoffsRoundInput, PlayoffsSeriesInput,
+        GameSkaterInput, GameView, HomeView, LeaderKind, LeadersView, MetricCell, MetricUnit,
+        MetricValue, PlayerCardView, PlayoffsBracketInput, PlayoffsRoundInput, PlayoffsSeriesInput,
         PlayoffsView, ScheduleView, ScheduledGameInput, ScoresView, SemanticToken, SourceKind,
         SourceProvenance, SourceState, StatKey, TransactionsView, ValuePrecision, ViewContext,
         ViewWindow, WatchNoteInput, WatchlistView,
@@ -357,6 +359,25 @@ mod tests {
             .center
             .as_ref()
             .is_some_and(|slot| slot.display_name == "Connor McDavid")));
+    }
+
+    #[test]
+    fn home_viewmodel_picks_preview_skaters_and_goalies() {
+        let (skater_identity, skater_stats) =
+            crate::fixtures::stat_catalog_variants::skater_modern();
+        let (goalie_identity, goalie_stats) = crate::fixtures::stat_catalog_variants::goalie();
+        let mut repo = crate::fixtures::test_repo_with(skater_identity, skater_stats);
+        repo.upsert_identity(goalie_identity)
+            .expect("goalie identity upsert");
+        repo.upsert_stats(goalie_stats)
+            .expect("goalie stats upsert");
+
+        let view = HomeView::from_repository(&repo, Season(20242025), SeasonType::Regular, 5, 3);
+
+        assert_eq!(view.context.source_state[0].source, SourceKind::Home);
+        assert_eq!(view.top_skaters.len(), 1);
+        assert_eq!(view.top_goalies.len(), 1);
+        assert_eq!(view.top_goalies[0].save_pct, Some(0.915));
     }
 
     #[test]

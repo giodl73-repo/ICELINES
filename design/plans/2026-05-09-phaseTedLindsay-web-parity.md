@@ -167,6 +167,9 @@ Progress:
 - 2026-05-10: Added core `CareerView` and migrated `/career` plus
   `/api/v1/career` to project cross-league cohort rows, resolved season, sort,
   counts, and empty state through the shared career contract.
+- 2026-05-10: Added core `HomeView` and migrated `/` to select top skater and
+  goalie preview rows through the shared home contract while preserving the
+  existing template and headshot projection.
 
 ---
 

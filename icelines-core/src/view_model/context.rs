@@ -93,6 +93,7 @@ pub enum SourceKind {
     Favorites,
     Watchlist,
     Career,
+    Home,
     GameLog,
     Boxscore,
     Shifts,
