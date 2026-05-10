@@ -130,3 +130,47 @@ For every mounted web route:
 - confirm HTMX/partial fragments do not drop active context, applied filters, or
   accessible status labels;
 - add test reference.
+
+---
+
+## Ted Lindsay web route inventory
+
+Verified from `icelines-web/src/lib.rs` after the handler-module split.
+
+| Route | Handler module | Surface | Matrix row | Status |
+|---|---|---|---|---|
+| `GET /` | `handlers/home.rs` | HTML | League/home | done - covered by `cargo test -p icelines-web` |
+| `GET /static/:asset` | `static_assets` | asset | Static assets | done |
+| `GET /leaders` | `handlers/leaders.rs` | HTML | Leaders/skater leaderboard | partial - parity checks continue in TedLindsay.3 |
+| `GET /api/v1/leaders` | `handlers/leaders.rs` | JSON | Leaders/skater leaderboard | partial - envelope tests exist |
+| `GET /player/:id` | `handlers/player.rs` | HTML | Player card | partial - ViewModel gap remains |
+| `GET /api/v1/player/:id` | `handlers/player.rs` | JSON | Player card | partial - ViewModel gap remains |
+| `GET /compare` | `handlers/compare.rs` | HTML | Compare/comps | partial - JSON twin deferred |
+| `GET /goalies` | `handlers/goalies.rs` | HTML | Goalie leaderboard | partial - parity checks continue in TedLindsay.3 |
+| `GET /api/v1/goalies` | `handlers/goalies.rs` | JSON | Goalie leaderboard | partial - envelope tests exist |
+| `GET /team/:abbrev` | `handlers/team.rs` | HTML | Team depth | partial - ViewModel alignment remains |
+| `GET /api/v1/team/:abbrev` | `handlers/team.rs` | JSON | Team depth | partial - ViewModel alignment remains |
+| `GET /depth` | `handlers/depth.rs` | HTML | Cross-team depth | verify |
+| `GET /api/v1/depth` | `handlers/depth.rs` | JSON | Cross-team depth | verify |
+| `GET /poach` | `handlers/poach.rs` | HTML | Poacher board | done |
+| `GET /reports/poach` | `handlers/poach.rs` | HTML report | Poach/weekly reports | done |
+| `GET /reports/weekly` | `handlers/poach.rs` | HTML report | Poach/weekly reports | done |
+| `GET /api/v1/poach` | `handlers/poach.rs` | JSON | Poacher board | done |
+| `GET /api/v1/watch-rules` | `handlers/poach.rs` | JSON | Watch rules | partial |
+| `GET /career` | `handlers/career.rs` | HTML | Career/cross-league cohorts | partial |
+| `GET /api/v1/career` | `handlers/career.rs` | JSON | Career/cross-league cohorts | partial |
+| `GET /docs` | `handlers/docs.rs` | HTML | Docs reference | partial |
+| `GET /season-type/:kind` | `handlers/season_type.rs` | mutating redirect | Config/report toggles | partial |
+| `GET /scores` | `handlers/scores.rs` | HTML | Scores/tonight | partial - JSON twin deferred |
+| `GET /schedule` | `handlers/schedule.rs` | HTML | Schedule | partial - JSON twin deferred |
+| `GET /playoffs` | `handlers/playoffs.rs` | HTML | Playoffs | partial - JSON twin deferred |
+| `GET /favorites` | `handlers/favorites.rs` | HTML | Favorites/groups | partial |
+| `GET /watchlist` | `handlers/favorites.rs` | HTML | Watch rules | partial |
+| `GET /api/v1/watchlist` | `handlers/favorites.rs` | JSON | Watch rules | partial |
+| `GET /game/:id` | `handlers/game.rs` | HTML | Game detail | partial - JSON twin deferred |
+| `POST /favorites/add` | `handlers/favorites.rs` | mutation | Favorites/groups | partial |
+| `POST /favorites/remove` | `handlers/favorites.rs` | mutation | Favorites/groups | partial |
+| `GET /fantasy` | `handlers/coming_soon.rs` | HTML stub | Fantasy league management | deferred |
+
+TedLindsay.3 should use this table as the route-by-route checklist for parity,
+not `design/specs/web-dashboard.md` claims.

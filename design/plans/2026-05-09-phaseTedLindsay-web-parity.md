@@ -118,6 +118,12 @@ Acceptance:
 - Every README/COMMANDS web claim maps to a matrix row.
 - Coming-soon routes are visible as such.
 
+Progress:
+
+- 2026-05-09: `design/specs/surface-parity.md` now includes the mounted web
+  route inventory from `icelines_web::router`, including HTML, JSON, mutation,
+  asset, report, and stub routes.
+
 ---
 
 ## TedLindsay.2 - Split `icelines-web` handler modules
