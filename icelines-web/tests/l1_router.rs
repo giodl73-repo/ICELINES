@@ -884,6 +884,71 @@ async fn l1_compare_json_envelope_shape() {
 }
 
 #[tokio::test]
+async fn l1_team_json_unknown_team_uses_shared_envelope_shape() {
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/team/ZZZ")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+
+    let bytes = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+        .await
+        .expect("body fits");
+    let v: serde_json::Value = serde_json::from_slice(&bytes).expect("valid json");
+    let obj = v.as_object().expect("envelope is an object");
+    let keys: std::collections::BTreeSet<_> = obj.keys().map(String::as_str).collect();
+    let want: std::collections::BTreeSet<_> = ["data", "error", "meta", "route", "schema_version"]
+        .iter()
+        .copied()
+        .collect();
+    assert_eq!(keys, want, "error envelope diverged: {keys:?}");
+    assert_eq!(obj["route"], serde_json::json!("team"));
+    assert_eq!(obj["data"]["team_abbrev"], serde_json::json!("ZZZ"));
+    assert!(obj["data"]["skaters"].as_array().is_some_and(Vec::is_empty));
+    assert!(obj["data"]["goalies"].as_array().is_some_and(Vec::is_empty));
+    assert!(obj["error"].is_string());
+}
+
+#[tokio::test]
+async fn l1_team_json_bad_active_season_uses_shared_envelope_shape() {
+    let state = WebState::new();
+    {
+        let mut cfg = state.config.write().await;
+        *cfg = icelines_web::WebConfig::new("not-a-season", "regular");
+    }
+    let app = router(state);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/team/EDM")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+
+    let bytes = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+        .await
+        .expect("body fits");
+    let v: serde_json::Value = serde_json::from_slice(&bytes).expect("valid json");
+    assert_eq!(v["route"], serde_json::json!("team"));
+    assert_eq!(v["meta"]["team_abbrev"], serde_json::json!("EDM"));
+    assert_eq!(v["meta"]["skater_count"], serde_json::json!(0));
+    assert_eq!(v["meta"]["goalie_count"], serde_json::json!(0));
+    assert!(v["data"]["skaters"].as_array().is_some_and(Vec::is_empty));
+    assert!(v["error"].is_string());
+}
+
+#[tokio::test]
 async fn l1_scores_json_envelope_shape() {
     let app = router(WebState::new());
 

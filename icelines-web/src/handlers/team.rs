@@ -133,35 +133,44 @@ pub async fn get_team_json(
     State(state): State<WebState>,
     Path(abbrev_raw): Path<String>,
 ) -> Response {
-    let team = match parse_team(&abbrev_raw) {
-        Ok(team) => team,
-        Err((abbrev_upper, message)) => {
-            return (
-                StatusCode::NOT_FOUND,
-                axum::Json(serde_json::json!({
-                    "error": "unknown_team",
-                    "message": message,
-                    "team_abbrev": abbrev_upper,
-                })),
-            )
-                .into_response();
-        }
-    };
-
     let (season_str, season_type) = {
         let cfg = state.config.read().await;
         let st = SeasonType::parse_lossy(&cfg.active_season_type);
         (cfg.active_season.clone(), st)
     };
+
+    let team = match parse_team(&abbrev_raw) {
+        Ok(team) => team,
+        Err((abbrev_upper, message)) => {
+            let data = empty_team_data(abbrev_upper.clone());
+            let meta = empty_team_meta(&abbrev_upper, &season_str, season_type);
+            return (
+                StatusCode::NOT_FOUND,
+                axum::Json(crate::api::ApiEnvelope::new(
+                    "team",
+                    data,
+                    meta,
+                    Some(message),
+                )),
+            )
+                .into_response();
+        }
+    };
+
     let season = match parse_season(&season_str) {
         Ok(season) => season,
         Err(_) => {
+            let team_abbrev = team.0.to_string();
+            let data = empty_team_data(team_abbrev.clone());
+            let meta = empty_team_meta(&team_abbrev, &season_str, season_type);
             return (
                 StatusCode::BAD_REQUEST,
-                axum::Json(serde_json::json!({
-                    "error": "bad_active_season",
-                    "message": format!("Season '{season_str}' is not a valid YYYYZZZZ id"),
-                })),
+                axum::Json(crate::api::ApiEnvelope::new(
+                    "team",
+                    data,
+                    meta,
+                    Some(format!("Season '{season_str}' is not a valid YYYYZZZZ id")),
+                )),
             )
                 .into_response();
         }
@@ -205,6 +214,24 @@ pub async fn get_team_json(
         goalies,
     };
     crate::api::json_data_meta("team", data, meta)
+}
+
+fn empty_team_data(team_abbrev: String) -> TeamData {
+    TeamData {
+        team_abbrev,
+        skaters: Vec::new(),
+        goalies: Vec::new(),
+    }
+}
+
+fn empty_team_meta(team_abbrev: &str, season: &str, season_type: SeasonType) -> TeamMeta {
+    TeamMeta {
+        team_abbrev: team_abbrev.to_owned(),
+        season: season.to_owned(),
+        season_type: season_type.label().to_owned(),
+        skater_count: 0,
+        goalie_count: 0,
+    }
 }
 
 fn parse_team(abbrev_raw: &str) -> Result<TeamAbbr, (String, String)> {

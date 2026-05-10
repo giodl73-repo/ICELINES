@@ -196,6 +196,8 @@ Progress:
   shared schema/route/data/meta/error envelope shape.
 - 2026-05-10: Normalized `/api/v1/depth` invalid active-season JSON errors
   onto the shared schema/route/data/meta/error envelope shape.
+- 2026-05-10: Normalized `/api/v1/team/:abbrev` unknown-team and invalid
+  active-season JSON errors onto the shared envelope shape.
 
 ---
 
