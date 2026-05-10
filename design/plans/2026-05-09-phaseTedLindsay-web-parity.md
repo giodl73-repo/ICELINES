@@ -239,6 +239,10 @@ Progress:
 - 2026-05-10: Fixed `/api/v1/leaders` discrete bio query parity so API
   `country`, `age-*`, draft, size, and shoots filters are applied like the
   HTML `/leaders` surface.
+- 2026-05-10: Added
+  `design/notes/2026-05-10-leaders-adapter-alignment.md` to pin the remaining
+  leaders uniformity gap: CLI text is ViewModel-backed, while CLI JSON/CSV and
+  TUI Stats still need row-contract migration.
 
 ---
 

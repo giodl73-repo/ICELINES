@@ -37,6 +37,8 @@ surface still differs from CLI/TUI.
 
 4. **Verify CLI/TUI adapter alignment for partial rows**
    - Leaders: TUI stats and CLI JSON/CSV projection remain the named gap.
+     See `design/notes/2026-05-10-leaders-adapter-alignment.md` for the
+     row-contract migration boundary.
    - Goalies: CLI, TUI, web HTML, and web JSON already build `GoaliesView`;
      verify row identity and metric precision across surfaces.
    - Team/depth/player/compare/career: verify adapter parity before marking
