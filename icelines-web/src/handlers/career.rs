@@ -33,14 +33,6 @@ struct Meta<'a> {
     total: usize,
 }
 
-#[derive(Debug, serde::Serialize)]
-struct Envelope<'a> {
-    schema_version: u32,
-    route: &'static str,
-    data: &'a [CareerRow],
-    meta: Meta<'a>,
-}
-
 /// Resolve league + season + sort + top from query params,
 /// load the local store, project into rows. Shared by HTML
 /// and JSON handlers so they can't drift.
@@ -186,19 +178,18 @@ fn resolve_names(wanted: &[u32]) -> std::collections::HashMap<u32, String> {
 pub async fn get_career_json(Query(q): Query<CareerQuery>) -> Response {
     match build_rows(&q) {
         Ok((rows, league, season, sort, total)) => {
-            let env = Envelope {
-                schema_version: 1,
-                route: "career",
-                data: &rows,
-                meta: Meta {
+            let count = rows.len();
+            crate::api::json_data_meta(
+                "career",
+                rows,
+                Meta {
                     league: &league,
                     season,
                     sort,
-                    count: rows.len(),
+                    count,
                     total,
                 },
-            };
-            axum::Json(env).into_response()
+            )
         }
         Err(msg) => (
             axum::http::StatusCode::BAD_REQUEST,

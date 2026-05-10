@@ -106,14 +106,6 @@ struct DepthMeta {
     scoring_mode: &'static str,
 }
 
-#[derive(serde::Serialize)]
-struct DepthEnvelope {
-    schema_version: u32,
-    route: &'static str,
-    data: Vec<DepthJsonRow>,
-    meta: DepthMeta,
-}
-
 pub async fn get_depth_json(State(state): State<WebState>) -> Response {
     let (season_str, season_type) = {
         let cfg = state.config.read().await;
@@ -164,19 +156,18 @@ pub async fn get_depth_json(State(state): State<WebState>) -> Response {
             .collect()
     };
 
-    let envelope = DepthEnvelope {
-        schema_version: 1,
-        route: "depth",
-        meta: DepthMeta {
+    let count = rows.len();
+    crate::api::json_data_meta(
+        "depth",
+        rows,
+        DepthMeta {
             season: season_str,
             season_type: match season_type {
                 SeasonType::Regular => "regular".to_owned(),
                 SeasonType::Playoff => "playoff".to_owned(),
             },
-            count: rows.len(),
+            count,
             scoring_mode: "pace",
         },
-        data: rows,
-    };
-    axum::Json(envelope).into_response()
+    )
 }

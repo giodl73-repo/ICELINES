@@ -33,15 +33,6 @@ struct CompareResult {
 }
 
 #[derive(Debug, serde::Serialize)]
-struct CompareEnvelope {
-    schema_version: u32,
-    route: &'static str,
-    data: CompareData,
-    meta: CompareMeta,
-    error: Option<String>,
-}
-
-#[derive(Debug, serde::Serialize)]
 struct CompareData {
     a: Option<ComparePlayerCard>,
     b: Option<ComparePlayerCard>,
@@ -380,24 +371,22 @@ pub async fn get_compare_json(
     Query(q): Query<CompareQuery>,
 ) -> Response {
     let result = build_compare_result(&state, &q).await;
-    let envelope = CompareEnvelope {
-        schema_version: 1,
-        route: "compare",
-        data: CompareData {
+    crate::api::json_envelope(
+        "compare",
+        CompareData {
             a: result.a,
             b: result.b,
             winners: result.winners,
         },
-        meta: CompareMeta {
+        CompareMeta {
             season: result.season,
             season_type: match result.season_type {
                 SeasonType::Regular => "regular".to_owned(),
                 SeasonType::Playoff => "playoff".to_owned(),
             },
         },
-        error: result.error,
-    };
-    axum::Json(envelope).into_response()
+        result.error,
+    )
 }
 
 /// Compute per-stat winner flags for two ComparePlayerCards.

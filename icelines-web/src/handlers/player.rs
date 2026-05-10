@@ -399,14 +399,6 @@ fn not_found_page(msg: String) -> Response {
 // ── King.3.3 — JSON twin ──────────────────────────────────────
 
 #[derive(Debug, serde::Serialize)]
-pub struct PlayerEnvelope {
-    pub schema_version: u32,
-    pub route: &'static str,
-    pub data: PlayerData,
-    pub meta: PlayerMeta,
-}
-
-#[derive(Debug, serde::Serialize)]
 pub struct PlayerData {
     pub nhl_id: u32,
     pub full_name: String,
@@ -629,39 +621,35 @@ pub async fn get_player_json(State(state): State<WebState>, Path(id): Path<u32>)
     let pre_nhl_career = project_pre_nhl_rows(&pre_nhl_stints);
     let pre_nhl_career_rows = pre_nhl_career.len();
 
-    let envelope = PlayerEnvelope {
-        schema_version: 1,
-        route: "player",
-        data: PlayerData {
-            nhl_id: id,
-            full_name: identity.full_name.clone(),
-            position,
-            team,
-            headshot_url: identity.headshot_canonical_url.clone(),
-            active_season_stats: PlayerActiveStats {
-                season: season_str.clone(),
-                season_type: match season_type {
-                    SeasonType::Regular => "regular".to_owned(),
-                    SeasonType::Playoff => "playoff".to_owned(),
-                },
-                games: gp,
-                goals,
-                assists,
-                points,
-                points_per_game: ppg,
-            },
-            career,
-            pre_nhl_career,
-        },
-        meta: PlayerMeta {
-            season: season_str,
+    let data = PlayerData {
+        nhl_id: id,
+        full_name: identity.full_name.clone(),
+        position,
+        team,
+        headshot_url: identity.headshot_canonical_url.clone(),
+        active_season_stats: PlayerActiveStats {
+            season: season_str.clone(),
             season_type: match season_type {
                 SeasonType::Regular => "regular".to_owned(),
                 SeasonType::Playoff => "playoff".to_owned(),
             },
-            career_rows: career_rows_n,
-            pre_nhl_career_rows,
+            games: gp,
+            goals,
+            assists,
+            points,
+            points_per_game: ppg,
         },
+        career,
+        pre_nhl_career,
     };
-    axum::Json(envelope).into_response()
+    let meta = PlayerMeta {
+        season: season_str,
+        season_type: match season_type {
+            SeasonType::Regular => "regular".to_owned(),
+            SeasonType::Playoff => "playoff".to_owned(),
+        },
+        career_rows: career_rows_n,
+        pre_nhl_career_rows,
+    };
+    crate::api::json_data_meta("player", data, meta)
 }
