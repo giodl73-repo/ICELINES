@@ -381,6 +381,16 @@ Acceptance:
 - New invariants cover explanation presence, context keys, deterministic scores,
   and missing-source behavior.
 
+Initial implementation note:
+
+- `design/INVARIANTS.md` marks Selke poach explanation, deterministic score,
+  missing-source, component-contract, and shared-surface invariants verified by
+  core fixture tests and shared ViewModel slices.
+- `design/PITFALLS.md`, `design/specs/surface-parity.md`, and
+  `design/specs/viewmodels.md` have been reconciled with the implemented
+  CLI/TUI/web/markdown/JSON Selke surfaces. Persistent watch-rule editing and
+  fired-alert history remain a follow-up, not a board/report parity blocker.
+
 ---
 
 ## Out of scope

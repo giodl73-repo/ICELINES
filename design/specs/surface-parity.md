@@ -74,9 +74,9 @@ a feature fully shipped.
 |---|---|---|---|---|---|---|---|
 | Favorites/groups | `FavoritesView` | `group ...` | favorites/group affordances | `/favorites` | planned/verify | partial - mutation/query parity needs Ted verification | Ted Lindsay |
 | Fantasy league management | `FantasyLeagueView` | `fantasy ...` | groups/deep links | `/fantasy...` | planned/verify | deferred/partial - local-only stance remains | Ted Lindsay |
-| Poacher board | `PoachBoardView` | `poach` | Poach screen | `/poach` | `/api/v1/poach` | planned | Selke |
-| Watch rules | `WatchRulesView` | `watch ...` | watch-rule editor | `/watchlist` | `/api/v1/watch-rules` | planned | Selke |
-| Poach/weekly reports | `PoachReportView` | `report poach`, `report weekly` | report viewer | `/reports/poach` | planned/JSON export | planned | Selke |
+| Poacher board | `PoachBoardView` | `poach` | Poach screen | `/poach` | `/api/v1/poach` | implemented - shared board ViewModel across CLI/TUI/web/JSON | Selke |
+| Watch rules | `WatchRulesView` | `watch ...` | watchlist workspace; rule editor deferred | `/watchlist` | `/api/v1/watch-rules`; `/api/v1/watchlist` | partial - rule preview/list/watch-note wired; persistent rule editor/history deferred | Selke |
+| Poach/weekly reports | `PoachReportView` | `report poach`, `report weekly` | report viewer deferred | `/reports/poach`, `/reports/weekly` | CLI `--json`; board JSON at `/api/v1/poach` | implemented - markdown/JSON/HTML render from shared report ViewModel | Selke |
 
 ---
 
@@ -101,7 +101,7 @@ published reference, even if they are not interactive.
 | Generated team pages | `TeamDepthView` / team summary projection | static HTML/markdown team page | verify - current claims need route/export check | Ted Lindsay/Jim Gregory |
 | Leaderboard exports | `LeadersView` | markdown/JSON/CSV where supported | partial - markdown default leaders uses `LeadersView`; custom columns and stable JSON/CSV remain on catalog projections | Lester Patrick/Campbell |
 | Scouting reports | `ReportView` / `PlayerCardView` | markdown report and optional HTML page | partial - contract pending | Campbell/Ted Lindsay |
-| Poacher reports | `PoachReportView` | markdown/JSON report, optional web report page | planned | Selke |
+| Poacher reports | `PoachReportView` | markdown/JSON report plus `/reports/poach` and `/reports/weekly` web pages | implemented | Selke |
 | Docs/spec site | `DocsView` | generated docs reference | partial - source of truth exists, generated state needs verification | Jim Gregory |
 
 ---

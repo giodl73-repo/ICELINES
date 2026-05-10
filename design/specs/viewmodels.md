@@ -246,6 +246,13 @@ Required:
 Every row includes score components and explanation. A row with only a magic
 number is invalid.
 
+Current Selke surfaces:
+
+- CLI `icelines poach`
+- TUI Poach screen
+- web `/poach`
+- JSON `/api/v1/poach`
+
 ### `WatchRulesView`
 
 Owned by Phase Selke.
@@ -268,6 +275,15 @@ Required:
 - source state
 - warnings/omissions
 - rows/structured recommendations
+
+Current Selke surfaces:
+
+- CLI `icelines report poach`
+- CLI `icelines report weekly`
+- markdown report rendering
+- JSON report output via CLI `--json`
+- web `/reports/poach`
+- web `/reports/weekly`
 
 ---
 

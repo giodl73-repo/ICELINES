@@ -223,14 +223,16 @@ player was recommended. If a row exposes only `PoachScore`, users cannot tell
 whether the score came from measured category fit, estimated deployment,
 schedule edge, stale availability, or a deferred component.
 
-**Status**: OPEN
+**Status**: VERIFIED (Selke core fixture tests)
 
 **Structural solution required**: `PoachPlayerRow` must include explanation rows
 for component impact, status, source, freshness, and risk. Renderers may
 summarize these rows, but may not drop them from JSON/report output.
 
-**Test required**: Selke fixture test asserting every poach row has at least one
-explanation and that deferred/unavailable components are disclosed.
+**Test coverage**: `poach_fixture_satisfies_contract_invariants` asserts every
+fixture row has explanations, and
+`poach_contract_fixture_serializes_context_score_and_explanations` asserts
+component status/source/explanation fields survive JSON projection.
 
 ---
 
@@ -240,14 +242,15 @@ explanation and that deferred/unavailable components are disclosed.
 player is a valid add. Treating unknown deployment as "not promoted" creates
 false negatives and makes the poacher punish data gaps.
 
-**Status**: OPEN
+**Status**: VERIFIED (Selke core fixture tests)
 
 **Structural solution required**: `DeploymentSignal::Unknown` contributes no
 negative score by itself. Estimated deployment must name the proxy used, such as
 TOI trend, shot trend, goalie-start proxy, game-log usage, or manual watch note.
 
-**Test required**: Selke fixture test where a player with unknown line data and
-strong measured category fit is not penalized by the deployment component.
+**Test coverage**: `unknown_deployment_and_availability_are_not_negative_evidence`
+asserts unknown deployment and availability contribute zero negative score by
+themselves.
 
 ---
 
