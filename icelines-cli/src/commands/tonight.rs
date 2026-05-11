@@ -187,6 +187,7 @@ pub async fn run(
 
 fn scheduled_game_input(game: icelines_fetch::nhl_api::ScheduledGame) -> ScheduledGameInput {
     ScheduledGameInput {
+        game_id: game.game_id,
         date: game.date,
         game_type: game.game_type,
         away_abbrev: game.away_abbrev,

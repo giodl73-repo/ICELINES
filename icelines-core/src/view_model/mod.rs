@@ -807,6 +807,7 @@ mod tests {
             chrono::NaiveDate::from_ymd_opt(2024, 10, 8).unwrap(),
             crate::timeframe::Timeframe::Day,
             vec![ScheduledGameInput {
+                game_id: 2024030411,
                 date: "2024-10-08".to_string(),
                 game_type: 3,
                 away_abbrev: "EDM".to_string(),
@@ -830,6 +831,7 @@ mod tests {
         assert_eq!(json["range"], "day");
         assert_eq!(json["total_games"], 1);
         assert_eq!(json["days"][0]["date"], "2024-10-08");
+        assert_eq!(json["days"][0]["rows"][0]["game_id"], 2024030411);
         assert_eq!(json["days"][0]["rows"][0]["state_label"], "FINAL/OT");
         assert_eq!(json["days"][0]["rows"][0]["state_class"], "final");
         assert_eq!(
@@ -852,6 +854,7 @@ mod tests {
             None,
             &["EDM", "SEA"],
             vec![ScheduledGameInput {
+                game_id: 2024020001,
                 date: "2024-10-08".to_string(),
                 game_type: 2,
                 away_abbrev: "SEA".to_string(),

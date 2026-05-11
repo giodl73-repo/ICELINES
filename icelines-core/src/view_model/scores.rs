@@ -44,6 +44,7 @@ impl ScoresView {
                 String::new()
             };
             let row = ScoreGameRow {
+                game_id: game.game_id,
                 away_abbrev: game.away_abbrev,
                 away_name: game.away_name,
                 home_abbrev: game.home_abbrev,
@@ -109,6 +110,7 @@ impl ScoresView {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ScheduledGameInput {
+    pub game_id: u64,
     pub date: String,
     pub game_type: u8,
     pub away_abbrev: String,
@@ -134,6 +136,7 @@ pub struct ScoresDayView {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ScoreGameRow {
+    pub game_id: u64,
     pub away_abbrev: String,
     pub away_name: String,
     pub home_abbrev: String,

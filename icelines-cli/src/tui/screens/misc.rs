@@ -5,6 +5,10 @@
 //! TUI screens: Tonight/Scores, Projections, Groups, Fetch+Install, Schedule, Playoffs, Admin.
 
 use crate::tui::app::App;
+use icelines_core::model::Season;
+use icelines_core::season_stats::SeasonType;
+use icelines_core::timeframe::Timeframe;
+use icelines_core::{ScheduledGameInput, ScoreGameRow, ScoresView, ViewContext, ViewWindow};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -329,9 +333,16 @@ fn render_scores_list(
         return;
     }
 
+    let scores_view = scores_view_from_games(app, filtered.iter().map(|game| (**game).clone()));
+    let rows: Vec<&ScoreGameRow> = scores_view
+        .days
+        .iter()
+        .flat_map(|day| day.rows.iter())
+        .collect();
+
     // Detect if any game is a playoff game
-    let has_playoffs = filtered.iter().any(|g| g.is_playoff());
-    let has_regular = filtered.iter().any(|g| !g.is_playoff());
+    let has_playoffs = rows.iter().any(|g| g.is_playoff);
+    let has_regular = rows.iter().any(|g| !g.is_playoff);
 
     let section_label = match (has_playoffs, has_regular) {
         (true, false) => "  PLAYOFFS",
@@ -350,17 +361,17 @@ fn render_scores_list(
     ];
 
     use ratatui::text::Span;
-    for (i, game) in filtered.iter().enumerate() {
+    for (i, game) in rows.iter().enumerate() {
         let utc = game.start_time_utc.get(11..16).unwrap_or("?");
         let et = fmt_et(utc);
         let selected = i == app.tonight.selected;
 
         // The series tag is the game number ("Game 5") for playoff games.
         // For regular-season games it's empty.
-        let series_tag = if game.is_playoff() {
-            game.series_game
-                .clone()
-                .unwrap_or_else(|| "Playoffs".to_owned())
+        let series_tag = if game.is_playoff {
+            playoff_game_tag(&game.series_context)
+                .unwrap_or("Playoffs")
+                .to_owned()
         } else {
             String::new()
         };
@@ -375,7 +386,7 @@ fn render_scores_list(
                 .fg(Color::Black)
                 .bg(Color::Cyan)
                 .add_modifier(Modifier::BOLD)
-        } else if game.is_playoff() {
+        } else if game.is_playoff {
             Style::default().fg(Color::White)
         } else {
             Style::default().fg(Color::DarkGray)
@@ -419,9 +430,9 @@ fn render_scores_list(
         }
 
         // Score / time block.
-        if game.is_final() || game.is_live() {
-            let aw = game.away_score.unwrap_or(0);
-            let hw = game.home_score.unwrap_or(0);
+        if game.state_class == "final" || game.state_class == "live" {
+            let aw = game.away_score_str.parse::<u8>().unwrap_or(0);
+            let hw = game.home_score_str.parse::<u8>().unwrap_or(0);
             let (away_style, home_style) = match aw.cmp(&hw) {
                 std::cmp::Ordering::Greater => (accent, label_dim),
                 std::cmp::Ordering::Less => (label_dim, accent),
@@ -434,16 +445,12 @@ fn render_scores_list(
             ));
             spans.push(Span::styled(format!("{hw}"), home_style));
             // Final / LIVE tag at the far right.
-            let tag = if game.is_live() {
+            let tag = if game.state_class == "live" {
                 "LIVE"
             } else {
-                match game.last_period.as_deref() {
-                    Some("OT") => "Final/OT",
-                    Some("SO") => "Final/SO",
-                    _ => "Final",
-                }
+                tui_final_state_label(&game.state_label)
             };
-            let tag_style = if game.is_live() {
+            let tag_style = if game.state_class == "live" {
                 Style::default()
                     .fg(Color::Green)
                     .add_modifier(Modifier::BOLD)
@@ -458,22 +465,12 @@ fn render_scores_list(
         items.push(ratatui::widgets::ListItem::new(Line::from(spans)));
 
         // Series context line for playoff games
-        if game.is_playoff() {
-            if let (Some(aw), Some(hw)) = (game.away_wins, game.home_wins) {
-                let ctx = match aw.cmp(&hw) {
-                    std::cmp::Ordering::Greater => {
-                        format!("         {} leads series {}-{}", game.away_abbrev, aw, hw)
-                    }
-                    std::cmp::Ordering::Less => {
-                        format!("         {} leads series {}-{}", game.home_abbrev, hw, aw)
-                    }
-                    std::cmp::Ordering::Equal => format!("         Series tied {}-{}", aw, hw),
-                };
-                let ctx_style = if selected { row_base } else { dim };
-                items.push(ratatui::widgets::ListItem::new(Line::styled(
-                    ctx, ctx_style,
-                )));
-            }
+        if game.is_playoff && !game.series_context.is_empty() {
+            let ctx = format!("         {}", game.series_context);
+            let ctx_style = if selected { row_base } else { dim };
+            items.push(ratatui::widgets::ListItem::new(Line::styled(
+                ctx, ctx_style,
+            )));
         }
     }
 
@@ -542,6 +539,71 @@ fn fmt_et(utc_hhmm: &str) -> String {
 }
 
 // ── Projections ───────────────────────────────────────────────────────────────
+
+fn playoff_game_tag(series_context: &str) -> Option<&str> {
+    let rest = series_context.strip_prefix("Game ")?;
+    let digits_len = rest
+        .chars()
+        .take_while(|ch| ch.is_ascii_digit())
+        .map(char::len_utf8)
+        .sum::<usize>();
+    if digits_len == 0 {
+        return None;
+    }
+    Some(&series_context[.."Game ".len() + digits_len])
+}
+
+fn tui_final_state_label(state_label: &str) -> &str {
+    match state_label {
+        "FINAL" => "Final",
+        "FINAL/OT" => "Final/OT",
+        "FINAL/SO" => "Final/SO",
+        _ => state_label,
+    }
+}
+
+fn scores_view_from_games(
+    app: &App,
+    games: impl IntoIterator<Item = icelines_fetch::nhl_api::ScheduledGame>,
+) -> ScoresView {
+    let active_date = if app.tonight.date.is_empty() {
+        chrono::Local::now().date_naive()
+    } else {
+        chrono::NaiveDate::parse_from_str(&app.tonight.date, "%Y-%m-%d")
+            .unwrap_or_else(|_| chrono::Local::now().date_naive())
+    };
+
+    ScoresView::from_games(
+        ViewContext::new(ViewWindow::new(
+            Season(icelines_core::CURRENT_SEASON),
+            SeasonType::Regular,
+        )),
+        active_date,
+        chrono::Local::now().date_naive(),
+        Timeframe::Season,
+        games.into_iter().map(scheduled_game_input).collect(),
+    )
+}
+
+fn scheduled_game_input(game: icelines_fetch::nhl_api::ScheduledGame) -> ScheduledGameInput {
+    ScheduledGameInput {
+        game_id: game.game_id,
+        date: game.date,
+        game_type: game.game_type,
+        away_abbrev: game.away_abbrev,
+        away_name: game.away_name,
+        home_abbrev: game.home_abbrev,
+        home_name: game.home_name,
+        start_time_utc: game.start_time_utc,
+        away_score: game.away_score,
+        home_score: game.home_score,
+        game_state: game.game_state,
+        last_period: game.last_period,
+        series_game: game.series_game,
+        away_wins: game.away_wins,
+        home_wins: game.home_wins,
+    }
+}
 
 pub fn render_projections(f: &mut Frame, app: &App, area: Rect) {
     let block = Block::default()
