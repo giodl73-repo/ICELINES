@@ -4,7 +4,7 @@ use icelines_core::identity::PlayerId;
 use icelines_core::model::Position;
 use icelines_core::stats_catalog::{StatCategory, StatId, StatUnit};
 use icelines_core::stats_repository::PlayerView;
-use icelines_core::PlayerCardView;
+use icelines_core::{MetricCell, MetricValue, PlayerCardView, PlayerSeasonSummary};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -178,6 +178,73 @@ pub fn render_career_cell(sid: StatId, view: &PlayerView<'_>) -> String {
             // Inverted (GAA): 2 decimals.
             StatUnit::Inverted => format!("{:.2}", v),
         },
+    }
+}
+
+pub(crate) fn active_season_summary_lines(
+    active: Option<&PlayerSeasonSummary>,
+    dim: ratatui::style::Style,
+) -> Vec<Line<'static>> {
+    let Some(active) = active else {
+        return Vec::new();
+    };
+
+    let metric = |key: &str| active.metrics.iter().find(|metric| metric.key.0 == key);
+    let gp = format_metric(metric("gp"));
+    let goals = format_metric(metric("goals"));
+    let assists = format_metric(metric("assists"));
+    let points = format_metric(metric("points"));
+    let ppg = format_metric(metric("points_per_game"));
+    let plus_minus = format_signed_metric(metric("plus_minus"));
+    let shooting_pct = format_metric(metric("shooting_pct"));
+    let toi = format_seconds_metric(metric("toi_per_game_sec"));
+    let season_label = format!(
+        "{}-{}",
+        &active.season.as_str()[..4],
+        &active.season.as_str()[6..],
+    );
+
+    vec![
+        Line::styled(
+            format!(" Current  ·  {season_label} {}", active.season_type.label()),
+            dim,
+        ),
+        Line::from(format!(
+            " GP {gp:>3}   G {goals:>3}   A {assists:>3}   P {points:>3}   PPG {ppg:>5}   +/- {plus_minus:>4}   S% {shooting_pct:>5}   TOI/G {toi:>5}",
+        )),
+        Line::from(""),
+    ]
+}
+
+fn format_metric(metric: Option<&MetricCell>) -> String {
+    match metric.map(|metric| &metric.value) {
+        Some(MetricValue::Integer(value)) => value.to_string(),
+        Some(MetricValue::Decimal(value)) => format!("{value:.2}"),
+        Some(MetricValue::Text(value)) => value.clone(),
+        Some(MetricValue::Missing) | None => "—".to_owned(),
+    }
+}
+
+fn format_signed_metric(metric: Option<&MetricCell>) -> String {
+    match metric.map(|metric| &metric.value) {
+        Some(MetricValue::Integer(value)) => format!("{value:+}"),
+        Some(MetricValue::Decimal(value)) => format!("{value:+.2}"),
+        Some(MetricValue::Text(value)) => value.clone(),
+        Some(MetricValue::Missing) | None => "—".to_owned(),
+    }
+}
+
+fn format_seconds_metric(metric: Option<&MetricCell>) -> String {
+    match metric.map(|metric| &metric.value) {
+        Some(MetricValue::Integer(value)) if *value >= 0 => {
+            let secs = *value as u64;
+            format!("{}:{:02}", secs / 60, secs % 60)
+        }
+        Some(MetricValue::Decimal(value)) if *value >= 0.0 => {
+            let secs = value.round() as u64;
+            format!("{}:{:02}", secs / 60, secs % 60)
+        }
+        _ => "—".to_owned(),
     }
 }
 
@@ -505,6 +572,8 @@ fn render_stats_view(
     // report is disabled (`app.reports.is_stat_visible`). Stats whose
     // `report_source()` is `None` (core / Tier-2 / derived) are always
     // visible.
+    lines.extend(active_season_summary_lines(card.active.as_ref(), dim));
+
     let preset = app.queries.career_table_preset;
     let all_columns: Vec<icelines_core::stats_catalog::StatId> = preset
         .columns(v.position())
@@ -688,7 +757,73 @@ fn render_dashboard_panel_view(f: &mut Frame, app: &App, v: &PlayerView<'_>, are
 #[cfg(test)]
 mod l4_preset_tests {
     use super::*;
-    use icelines_core::model::Position::*;
+    use icelines_core::model::{Position::*, Season, TeamAbbr};
+    use icelines_core::season_stats::SeasonType;
+    use icelines_core::{MetricUnit, StatKey, ValuePrecision};
+
+    fn lines_to_text(lines: &[Line<'static>]) -> String {
+        lines
+            .iter()
+            .map(|line| line.to_string())
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    fn metric_int(key: &str, label: &str, value: i64, unit: MetricUnit) -> MetricCell {
+        MetricCell {
+            key: StatKey::from(key),
+            label: label.to_owned(),
+            value: MetricValue::Integer(value),
+            unit,
+            precision: ValuePrecision::Integer,
+            token: None,
+        }
+    }
+
+    fn metric_decimal(key: &str, label: &str, value: f64, unit: MetricUnit) -> MetricCell {
+        MetricCell {
+            key: StatKey::from(key),
+            label: label.to_owned(),
+            value: MetricValue::Decimal(value),
+            unit,
+            precision: ValuePrecision::TwoDecimals,
+            token: None,
+        }
+    }
+
+    #[test]
+    fn l0_tui_player_active_summary_projects_player_card_metrics() {
+        let active = PlayerSeasonSummary {
+            season: Season(20242025),
+            season_type: SeasonType::Regular,
+            position: Center,
+            team: TeamAbbr("EDM".to_owned()),
+            team_display: "EDM".to_owned(),
+            metrics: vec![
+                metric_int("gp", "GP", 82, MetricUnit::Games),
+                metric_int("goals", "G", 44, MetricUnit::Goals),
+                metric_int("assists", "A", 88, MetricUnit::Assists),
+                metric_int("points", "PTS", 132, MetricUnit::Points),
+                metric_decimal("points_per_game", "PPG", 1.61, MetricUnit::PerGame),
+                metric_int("plus_minus", "+/-", 35, MetricUnit::Count),
+                metric_decimal("shooting_pct", "S%", 12.5, MetricUnit::Percentage),
+                metric_int("toi_per_game_sec", "TOI/G", 1276, MetricUnit::Seconds),
+            ],
+            tokens: Vec::new(),
+        };
+
+        let text = lines_to_text(&active_season_summary_lines(
+            Some(&active),
+            Style::default(),
+        ));
+
+        assert!(text.contains("Current"));
+        assert!(text.contains("2024-25 regular"));
+        assert!(text.contains("GP  82"));
+        assert!(text.contains("PPG  1.61"));
+        assert!(text.contains("+35"));
+        assert!(text.contains("21:16"));
+    }
 
     /// Cycle order ALL contains 6 distinct presets (SCOUT-6 L.5b
     /// post-fix removed `All` from the cycle — still reachable
@@ -939,8 +1074,8 @@ mod l4_preset_tests {
 
     use icelines_core::fixtures;
     use icelines_core::identity::PlayerId;
-    use icelines_core::model::{Position, Season, TeamAbbr};
-    use icelines_core::season_stats::{SeasonStatsBuilder, SeasonType, StatTotals, TeamStint};
+    use icelines_core::model::Position;
+    use icelines_core::season_stats::{SeasonStatsBuilder, StatTotals, TeamStint};
 
     fn build_skater_view() -> (
         icelines_core::identity::PlayerIdentity,

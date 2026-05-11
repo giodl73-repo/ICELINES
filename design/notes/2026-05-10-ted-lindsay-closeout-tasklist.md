@@ -66,11 +66,12 @@ surface still differs from CLI/TUI.
      existing player line-value table.
    - Player card: web JSON row identity is now fenced against
      `PlayerCardView` by `l1_player_json_rows_match_player_card_view`;
-     CLI profile header/current-season block now uses `PlayerCardView` with
-     legacy fallback for fields not yet in the contract;
-     TUI header/headshot projection now uses `PlayerCardView` and is fenced by
-     `l1_tui_player_header_matches_player_card_view`; richer TUI stats/career
-     adapter alignment remains before marking the row `done`.
+      CLI profile header/current-season block now uses `PlayerCardView` with
+      legacy fallback for fields not yet in the contract;
+      TUI header/headshot/current-season stat strip now uses `PlayerCardView`
+      and is fenced by `l1_tui_player_header_matches_player_card_view` plus
+      `l0_tui_player_active_summary_projects_player_card_metrics`; dynamic TUI
+      career-table adapter alignment remains before marking the row `done`.
    - Compare: web JSON card identity is now fenced against `CompareView` by
      `l1_compare_json_cards_match_compare_view`; TUI comps target card now
      uses `CompareView` anchor projection and is fenced by
