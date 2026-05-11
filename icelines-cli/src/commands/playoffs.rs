@@ -83,9 +83,11 @@ fn playoff_bracket_input(bracket: icelines_fetch::nhl_api::PlayoffBracket) -> Pl
                         top_abbrev: series.top_seed_abbrev,
                         top_name: series.top_seed_name,
                         top_wins: series.top_seed_wins,
+                        top_seed_rank: series.top_seed_rank,
                         bottom_abbrev: series.bottom_seed_abbrev,
                         bottom_name: series.bottom_seed_name,
                         bottom_wins: series.bottom_seed_wins,
+                        bottom_seed_rank: series.bottom_seed_rank,
                         winner_abbrev: series.winner_abbrev,
                         conference: series.conference,
                     })

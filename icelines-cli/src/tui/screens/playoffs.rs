@@ -18,6 +18,12 @@ use ratatui::{
 
 use crate::tui::app::App;
 use crate::tui::playoffs::{new_cache, PlayoffsCache};
+use icelines_core::model::Season;
+use icelines_core::season_stats::SeasonType;
+use icelines_core::{
+    PlayoffsBracketInput, PlayoffsRoundInput, PlayoffsSeriesInput, PlayoffsSeriesRow, PlayoffsView,
+    ViewContext, ViewWindow,
+};
 
 // ── Phase Norris.4 — per-screen state struct ─────────────────────────────────
 
@@ -239,6 +245,7 @@ fn render_off_season(f: &mut Frame, area: Rect, b: &PlayoffBracket, active_seaso
 }
 
 fn render_bracket(f: &mut Frame, area: Rect, app: &App, b: &PlayoffBracket) {
+    let view = playoffs_view_from_bracket(app, b.clone());
     let dim = Style::default().fg(Color::DarkGray);
     let gold = Style::default()
         .fg(Color::Yellow)
@@ -247,12 +254,12 @@ fn render_bracket(f: &mut Frame, area: Rect, app: &App, b: &PlayoffBracket) {
         .fg(Color::Cyan)
         .add_modifier(Modifier::BOLD);
 
-    let n_rounds = b.rounds.len();
+    let n_rounds = view.rounds.len();
     let active_round = app.playoffs.round.min(n_rounds.saturating_sub(1));
 
     // Header strip showing all round labels with the active one highlighted.
     let mut header_spans: Vec<ratatui::text::Span> = Vec::new();
-    for (i, r) in b.rounds.iter().enumerate() {
+    for (i, r) in view.rounds.iter().enumerate() {
         let active = i == active_round;
         let label = format!(" {} ", r.label);
         let style = if active { cyan } else { dim };
@@ -268,7 +275,7 @@ fn render_bracket(f: &mut Frame, area: Rect, app: &App, b: &PlayoffBracket) {
     lines.push(header);
     lines.push(Line::styled(format!("  {}", "─".repeat(70)), dim));
 
-    let round = &b.rounds[active_round];
+    let round = &view.rounds[active_round];
     if round.series.is_empty() {
         lines.push(Line::styled(
             format!("  No series in {} yet.", round.label),
@@ -282,29 +289,29 @@ fn render_bracket(f: &mut Frame, area: Rect, app: &App, b: &PlayoffBracket) {
         let mut last_conf: Option<String> = None;
         for (i, s) in round.series.iter().enumerate() {
             // Conference section header when it changes
-            if s.conference != last_conf {
-                if let Some(conf) = &s.conference {
+            if Some(s.conference.clone()) != last_conf {
+                if !s.conference.is_empty() {
                     if !lines.is_empty() {
                         lines.push(Line::from(""));
                     }
                     lines.push(Line::styled(
-                        format!("  {} CONFERENCE", conf.to_uppercase()),
+                        format!("  {} CONFERENCE", s.conference.to_uppercase()),
                         gold,
                     ));
                 }
-                last_conf = s.conference.clone();
+                last_conf = Some(s.conference.clone());
             }
 
             let selected = i == active_series;
-            let row = format_series_row(s);
+            let row = format_series_view_row(s);
             let style = if selected {
                 Style::default()
                     .fg(Color::Black)
                     .bg(Color::Cyan)
                     .add_modifier(Modifier::BOLD)
-            } else if s.is_complete() {
+            } else if s.is_complete {
                 Style::default().fg(Color::Green)
-            } else if s.games_played() > 0 {
+            } else if s.games_played > 0 {
                 Style::default().fg(Color::White)
             } else {
                 dim
@@ -327,6 +334,7 @@ fn render_bracket(f: &mut Frame, area: Rect, app: &App, b: &PlayoffBracket) {
     f.render_widget(Paragraph::new(lines), area);
 }
 
+#[allow(dead_code)]
 fn format_series_row(s: &PlayoffSeries) -> String {
     let top_rank = s.top_seed_rank.as_deref().unwrap_or("—");
     let bot_rank = s.bottom_seed_rank.as_deref().unwrap_or("—");
@@ -338,6 +346,54 @@ fn format_series_row(s: &PlayoffSeries) -> String {
 }
 
 // ── Series detail view ───────────────────────────────────────────────────────
+
+fn format_series_view_row(s: &PlayoffsSeriesRow) -> String {
+    format!(
+        "    ({:<3}) {:<3}  vs  ({:<3}) {:<3}    {}",
+        s.top_seed_rank, s.top_abbrev, s.bottom_seed_rank, s.bottom_abbrev, s.summary,
+    )
+}
+
+fn playoffs_view_from_bracket(app: &App, bracket: PlayoffBracket) -> PlayoffsView {
+    PlayoffsView::from_bracket(
+        ViewContext::new(ViewWindow::new(
+            Season(app.active_season_typed.0),
+            SeasonType::Playoff,
+        )),
+        app.active_season.clone(),
+        "tui cache".to_string(),
+        playoff_bracket_input(bracket),
+    )
+}
+
+fn playoff_bracket_input(bracket: PlayoffBracket) -> PlayoffsBracketInput {
+    PlayoffsBracketInput {
+        rounds: bracket
+            .rounds
+            .into_iter()
+            .map(|round| PlayoffsRoundInput {
+                round_number: round.round_number,
+                label: round.label,
+                series: round
+                    .series
+                    .into_iter()
+                    .map(|series| PlayoffsSeriesInput {
+                        top_abbrev: series.top_seed_abbrev,
+                        top_name: series.top_seed_name,
+                        top_wins: series.top_seed_wins,
+                        top_seed_rank: series.top_seed_rank,
+                        bottom_abbrev: series.bottom_seed_abbrev,
+                        bottom_name: series.bottom_seed_name,
+                        bottom_wins: series.bottom_seed_wins,
+                        bottom_seed_rank: series.bottom_seed_rank,
+                        winner_abbrev: series.winner_abbrev,
+                        conference: series.conference,
+                    })
+                    .collect(),
+            })
+            .collect(),
+    }
+}
 
 pub fn render_series_detail(f: &mut Frame, app: &App, area: Rect, letter: &str) {
     let title = format!(" Series {letter} · Esc back ");

@@ -264,9 +264,11 @@ mod tests {
                         top_abbrev: "EDM".to_string(),
                         top_name: "Edmonton Oilers".to_string(),
                         top_wins: 4,
+                        top_seed_rank: Some("P2".to_string()),
                         bottom_abbrev: "LAK".to_string(),
                         bottom_name: "Los Angeles Kings".to_string(),
                         bottom_wins: 2,
+                        bottom_seed_rank: Some("P3".to_string()),
                         winner_abbrev: Some("EDM".to_string()),
                         conference: Some("Western".to_string()),
                     }],
@@ -284,6 +286,8 @@ mod tests {
             Some("EDM")
         );
         assert_eq!(view.rounds[0].series[0].games_played, 6);
+        assert_eq!(view.rounds[0].series[0].top_seed_rank, "P2");
+        assert_eq!(view.rounds[0].series[0].bottom_seed_rank, "P3");
     }
 
     #[test]
