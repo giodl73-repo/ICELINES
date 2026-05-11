@@ -89,6 +89,9 @@ surface still differs from CLI/TUI.
      `TransactionsView`; the shared contract treats `team=LEAGUE` as the
      teamless transaction bucket; CLI uses the unlimited constructor after
      applying explicit filters/top, so existing output counts are preserved.
+   - Scores/tonight: CLI `tonight` now projects filtered slate rows through
+     `ScoresView`; `ScoreGameRow` carries raw UTC start time so the CLI keeps
+     its existing ET display while sharing the web/API score row contract.
 
 5. **Resolve live-route envelope policy** - complete for Ted Lindsay
    - Scores, schedule, playoffs, and game carry live-fetch failures in

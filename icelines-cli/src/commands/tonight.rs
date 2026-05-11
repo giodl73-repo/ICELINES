@@ -1,4 +1,8 @@
 use anyhow::Context;
+use icelines_core::model::Season;
+use icelines_core::season_stats::SeasonType;
+use icelines_core::timeframe::Timeframe;
+use icelines_core::{ScheduledGameInput, ScoresView, ViewContext, ViewWindow};
 use icelines_fetch::nhl_api::NhlApiClient;
 
 /// Phase Foster.1 — strict YYYY-MM-DD parser. Returns the canonical
@@ -129,6 +133,27 @@ pub async fn run(
             None => true,
         })
         .collect();
+    let scores_view = ScoresView::from_games(
+        ViewContext::new(ViewWindow::new(
+            Season(icelines_core::CURRENT_SEASON),
+            SeasonType::Regular,
+        )),
+        chrono::NaiveDate::parse_from_str(today, "%Y-%m-%d")
+            .unwrap_or_else(|_| chrono::Local::now().date_naive()),
+        chrono::Local::now().date_naive(),
+        if widen_to_week {
+            // The NHL API `gameWeek` payload is a rolling date window,
+            // not necessarily an ISO Monday-Sunday week. Preserve the
+            // existing CLI behavior by keeping every pre-filtered row.
+            Timeframe::Season
+        } else {
+            Timeframe::Day
+        },
+        filtered
+            .iter()
+            .map(|game| scheduled_game_input((**game).clone()))
+            .collect(),
+    );
 
     let team_label = team_up
         .as_deref()
@@ -147,15 +172,36 @@ pub async fn run(
         return Ok(());
     }
 
-    for game in &filtered {
-        let utc = game.start_time_utc.get(11..16).unwrap_or("?");
-        let et = format_time_et(utc, &game.date);
-        println!(
-            "{} {} @ {} {}  {}",
-            game.away_abbrev, game.away_name, game.home_abbrev, game.home_name, et
-        );
+    for day in &scores_view.days {
+        for game in &day.rows {
+            let utc = game.start_time_utc.get(11..16).unwrap_or("?");
+            let et = format_time_et(utc, &day.date);
+            println!(
+                "{} {} @ {} {}  {}",
+                game.away_abbrev, game.away_name, game.home_abbrev, game.home_name, et
+            );
+        }
     }
     Ok(())
+}
+
+fn scheduled_game_input(game: icelines_fetch::nhl_api::ScheduledGame) -> ScheduledGameInput {
+    ScheduledGameInput {
+        date: game.date,
+        game_type: game.game_type,
+        away_abbrev: game.away_abbrev,
+        away_name: game.away_name,
+        home_abbrev: game.home_abbrev,
+        home_name: game.home_name,
+        start_time_utc: game.start_time_utc,
+        away_score: game.away_score,
+        home_score: game.home_score,
+        game_state: game.game_state,
+        last_period: game.last_period,
+        series_game: game.series_game,
+        away_wins: game.away_wins,
+        home_wins: game.home_wins,
+    }
 }
 
 /// LP.1 — `ScheduleRow` is the projection used for table / JSON / CSV

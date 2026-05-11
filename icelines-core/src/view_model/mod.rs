@@ -833,6 +833,10 @@ mod tests {
         assert_eq!(json["days"][0]["rows"][0]["state_label"], "FINAL/OT");
         assert_eq!(json["days"][0]["rows"][0]["state_class"], "final");
         assert_eq!(
+            json["days"][0]["rows"][0]["start_time_utc"],
+            "2024-10-08T23:00:00Z"
+        );
+        assert_eq!(
             json["days"][0]["rows"][0]["series_context"],
             "Game 4 · FLA leads 2-1"
         );
