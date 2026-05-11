@@ -279,6 +279,11 @@ mod tests {
         assert!(!view.empty);
         assert_eq!(view.rounds[0].series[0].summary, "EDM 4-2 LAK · EDM wins");
         assert!(view.rounds[0].series[0].is_complete);
+        assert_eq!(
+            view.rounds[0].series[0].winner_abbrev.as_deref(),
+            Some("EDM")
+        );
+        assert_eq!(view.rounds[0].series[0].games_played, 6);
     }
 
     #[test]

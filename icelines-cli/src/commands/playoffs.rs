@@ -6,6 +6,12 @@
 //! a populated bracket year-round, not an empty frame in the offseason.
 
 use anyhow::{Context, Result};
+use icelines_core::model::Season;
+use icelines_core::season_stats::SeasonType;
+use icelines_core::{
+    PlayoffsBracketInput, PlayoffsRoundInput, PlayoffsSeriesInput, PlayoffsView, ViewContext,
+    ViewWindow,
+};
 use icelines_fetch::bundled;
 use icelines_fetch::playoffs_bundle::PlayoffsBundle;
 
@@ -26,28 +32,67 @@ pub struct PlayoffRow {
 /// Project a `PlayoffsBundle` into table rows, optionally filtered to
 /// one round. Pure — unit-testable from a JSON fixture.
 pub fn project_playoff_rows(bundle: &PlayoffsBundle, round_filter: Option<u8>) -> Vec<PlayoffRow> {
-    let bracket = bundle.to_bracket();
-    let mut out = Vec::new();
-    for round in &bracket.rounds {
-        if let Some(want) = round_filter {
-            if round.round_number != want {
-                continue;
-            }
-        }
-        for series in &round.series {
-            out.push(PlayoffRow {
+    let view = playoffs_view_from_bundle(bundle);
+    view.rounds
+        .iter()
+        .filter(|round| {
+            round_filter
+                .map(|want| round.round_number == want)
+                .unwrap_or(true)
+        })
+        .flat_map(|round| {
+            round.series.iter().map(|series| PlayoffRow {
                 round: round.round_number,
                 round_label: round.label.clone(),
-                top_seed: series.top_seed_abbrev.clone(),
-                bottom_seed: series.bottom_seed_abbrev.clone(),
-                top_wins: series.top_seed_wins,
-                bottom_wins: series.bottom_seed_wins,
+                top_seed: series.top_abbrev.clone(),
+                bottom_seed: series.bottom_abbrev.clone(),
+                top_wins: series.top_wins,
+                bottom_wins: series.bottom_wins,
                 winner: series.winner_abbrev.clone(),
-                games_played: series.top_seed_wins + series.bottom_seed_wins,
-            });
-        }
+                games_played: series.games_played,
+            })
+        })
+        .collect()
+}
+
+fn playoffs_view_from_bundle(bundle: &PlayoffsBundle) -> PlayoffsView {
+    let season = bundle
+        .season
+        .parse::<u32>()
+        .unwrap_or(icelines_core::CURRENT_SEASON);
+    PlayoffsView::from_bracket(
+        ViewContext::new(ViewWindow::new(Season(season), SeasonType::Playoff)),
+        bundle.season.clone(),
+        "historical bundle".to_string(),
+        playoff_bracket_input(bundle.to_bracket()),
+    )
+}
+
+fn playoff_bracket_input(bracket: icelines_fetch::nhl_api::PlayoffBracket) -> PlayoffsBracketInput {
+    PlayoffsBracketInput {
+        rounds: bracket
+            .rounds
+            .into_iter()
+            .map(|round| PlayoffsRoundInput {
+                round_number: round.round_number,
+                label: round.label,
+                series: round
+                    .series
+                    .into_iter()
+                    .map(|series| PlayoffsSeriesInput {
+                        top_abbrev: series.top_seed_abbrev,
+                        top_name: series.top_seed_name,
+                        top_wins: series.top_seed_wins,
+                        bottom_abbrev: series.bottom_seed_abbrev,
+                        bottom_name: series.bottom_seed_name,
+                        bottom_wins: series.bottom_seed_wins,
+                        winner_abbrev: series.winner_abbrev,
+                        conference: series.conference,
+                    })
+                    .collect(),
+            })
+            .collect(),
     }
-    out
 }
 
 /// Pick a default season — most recent COMPLETED playoff. We walk

@@ -99,6 +99,10 @@ surface still differs from CLI/TUI.
      context so existing display stays a presentation concern while sharing the
      web/API schedule row contract. Richer TUI team-season and matchup subviews
      remain outside the shared contract.
+   - Playoffs: CLI playoffs now projects bundled brackets through
+     `PlayoffsView`; `PlayoffsSeriesRow` carries winner and games-played fields
+     so existing table/JSON/CSV output remains intact while sharing the web/API
+     bracket row contract. TUI adapter alignment remains.
 
 5. **Resolve live-route envelope policy** - complete for Ted Lindsay
    - Scores, schedule, playoffs, and game carry live-fetch failures in
