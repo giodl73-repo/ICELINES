@@ -378,6 +378,7 @@ fn playoff_bracket_input(bracket: PlayoffBracket) -> PlayoffsBracketInput {
                     .series
                     .into_iter()
                     .map(|series| PlayoffsSeriesInput {
+                        letter: series.letter,
                         top_abbrev: series.top_seed_abbrev,
                         top_name: series.top_seed_name,
                         top_wins: series.top_seed_wins,
@@ -393,6 +394,18 @@ fn playoff_bracket_input(bracket: PlayoffBracket) -> PlayoffsBracketInput {
             })
             .collect(),
     }
+}
+
+fn playoffs_series_view_from_bracket(
+    app: &App,
+    bracket: &PlayoffBracket,
+    letter: &str,
+) -> Option<PlayoffsSeriesRow> {
+    let view = playoffs_view_from_bracket(app, bracket.clone());
+    view.rounds
+        .into_iter()
+        .flat_map(|round| round.series.into_iter())
+        .find(|series| series.letter.eq_ignore_ascii_case(letter))
 }
 
 pub fn render_series_detail(f: &mut Frame, app: &App, area: Rect, letter: &str) {
@@ -414,8 +427,14 @@ pub fn render_series_detail(f: &mut Frame, app: &App, area: Rect, letter: &str) 
         map.get(&year).cloned().unwrap_or(PlayoffsState::Idle)
     };
 
-    let series = match state {
-        PlayoffsState::Loaded(b) => b.find_series(letter).cloned(),
+    let (series, series_view) = match state {
+        PlayoffsState::Loaded(b) => {
+            let series = b.find_series(letter).cloned();
+            let series_view = series
+                .as_ref()
+                .and_then(|_| playoffs_series_view_from_bracket(app, &b, letter));
+            (series, series_view)
+        }
         PlayoffsState::Error(e) => {
             render_error(f, inner, &e);
             return;
@@ -431,10 +450,15 @@ pub fn render_series_detail(f: &mut Frame, app: &App, area: Rect, letter: &str) 
         return;
     };
 
-    render_series_body(f, inner, &series);
+    render_series_body(f, inner, &series, series_view.as_ref());
 }
 
-fn render_series_body(f: &mut Frame, area: Rect, s: &PlayoffSeries) {
+fn render_series_body(
+    f: &mut Frame,
+    area: Rect,
+    s: &PlayoffSeries,
+    view: Option<&PlayoffsSeriesRow>,
+) {
     let dim = Style::default().fg(Color::DarkGray);
     let gold = Style::default()
         .fg(Color::Yellow)
@@ -449,19 +473,28 @@ fn render_series_body(f: &mut Frame, area: Rect, s: &PlayoffSeries) {
     // Header: full team names + summary
     let header = format!(
         "  {} ({})  vs  {} ({})",
-        s.top_seed_name,
+        view.map(|row| row.top_name.as_str())
+            .unwrap_or(s.top_seed_name.as_str()),
         s.top_seed_rank.as_deref().unwrap_or("—"),
-        s.bottom_seed_name,
+        view.map(|row| row.bottom_name.as_str())
+            .unwrap_or(s.bottom_seed_name.as_str()),
         s.bottom_seed_rank.as_deref().unwrap_or("—"),
     );
     lines.push(Line::styled(header, gold));
-    if let Some(conf) = &s.conference {
+    let conference = view
+        .map(|row| row.conference.as_str())
+        .filter(|conf| !conf.is_empty())
+        .or(s.conference.as_deref());
+    if let Some(conf) = conference {
         lines.push(Line::styled(format!("  {} Conference", conf), dim));
     }
     lines.push(Line::from(""));
 
     let summary_style = if s.is_complete() { green } else { gold };
-    lines.push(Line::styled(format!("  {}", s.summary()), summary_style));
+    let summary = view
+        .map(|row| row.summary.clone())
+        .unwrap_or_else(|| s.summary());
+    lines.push(Line::styled(format!("  {}", summary), summary_style));
     lines.push(Line::styled(format!("  {}", "─".repeat(60)), dim));
     lines.push(Line::from(""));
 

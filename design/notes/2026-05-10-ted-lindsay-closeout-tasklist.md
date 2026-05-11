@@ -99,11 +99,12 @@ surface still differs from CLI/TUI.
      context so existing display stays a presentation concern while sharing the
      web/API schedule row contract. Richer TUI team-season and matchup subviews
      remain outside the shared contract.
-   - Playoffs: CLI playoffs and the TUI bracket list now project brackets
-     through `PlayoffsView`; `PlayoffsSeriesRow` carries seed-rank, winner, and
+   - Playoffs: CLI playoffs, the TUI bracket list, and the TUI series-detail
+     header/summary now project brackets through `PlayoffsView`;
+     `PlayoffsSeriesRow` carries stable letter, seed-rank, winner, and
      games-played fields so existing table/JSON/CSV/TUI output remains intact
-     while sharing the web/API bracket row contract. TUI series-detail remains
-     on richer per-game bracket data.
+     while sharing the web/API bracket row contract. TUI series-detail game log
+     remains on richer per-game bracket data.
    - Game detail: TUI drilldown goals and goalies now project through
      `GameView`; `GameGoalRow` carries scoring context and `GameGoalieRow`
      carries team abbreviations so existing TUI rows remain intact while

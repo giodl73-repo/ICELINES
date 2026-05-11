@@ -80,6 +80,7 @@ fn playoff_bracket_input(bracket: icelines_fetch::nhl_api::PlayoffBracket) -> Pl
                     .series
                     .into_iter()
                     .map(|series| PlayoffsSeriesInput {
+                        letter: series.letter,
                         top_abbrev: series.top_seed_abbrev,
                         top_name: series.top_seed_name,
                         top_wins: series.top_seed_wins,

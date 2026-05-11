@@ -75,6 +75,7 @@ pub struct PlayoffsRoundInput {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PlayoffsSeriesInput {
+    pub letter: Option<String>,
     pub top_abbrev: String,
     pub top_name: String,
     pub top_wins: u8,
@@ -96,6 +97,7 @@ pub struct PlayoffsRoundRow {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PlayoffsSeriesRow {
+    pub letter: String,
     pub top_abbrev: String,
     pub top_name: String,
     pub top_wins: u8,
@@ -122,6 +124,7 @@ fn playoffs_series_row(series: PlayoffsSeriesInput) -> PlayoffsSeriesRow {
     let is_complete = series.top_wins == 4 || series.bottom_wins == 4;
 
     PlayoffsSeriesRow {
+        letter: series.letter.unwrap_or_default(),
         top_abbrev: series.top_abbrev,
         top_name: series.top_name,
         top_wins: series.top_wins,

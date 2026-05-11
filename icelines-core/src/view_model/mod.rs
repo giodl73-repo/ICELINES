@@ -261,6 +261,7 @@ mod tests {
                     round_number: 1,
                     label: "First Round".to_string(),
                     series: vec![PlayoffsSeriesInput {
+                        letter: Some("A".to_string()),
                         top_abbrev: "EDM".to_string(),
                         top_name: "Edmonton Oilers".to_string(),
                         top_wins: 4,
@@ -288,6 +289,7 @@ mod tests {
         assert_eq!(view.rounds[0].series[0].games_played, 6);
         assert_eq!(view.rounds[0].series[0].top_seed_rank, "P2");
         assert_eq!(view.rounds[0].series[0].bottom_seed_rank, "P3");
+        assert_eq!(view.rounds[0].series[0].letter, "A");
     }
 
     #[test]
