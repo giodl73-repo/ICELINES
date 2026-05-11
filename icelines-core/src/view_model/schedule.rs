@@ -81,9 +81,11 @@ pub struct TeamChipView {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ScheduleGameRow {
+    pub game_id: u64,
     pub date: String,
     pub away_abbrev: String,
     pub home_abbrev: String,
+    pub start_time_utc: String,
     pub away_score_str: String,
     pub home_score_str: String,
     pub state_label: String,
@@ -118,9 +120,11 @@ fn schedule_row(game: ScheduledGameInput, active_team: &str) -> ScheduleGameRow 
     };
 
     ScheduleGameRow {
+        game_id: game.game_id,
         date: game.date,
         away_abbrev: game.away_abbrev,
         home_abbrev: game.home_abbrev,
+        start_time_utc: game.start_time_utc,
         away_score_str: game
             .away_score
             .map(|score| score.to_string())

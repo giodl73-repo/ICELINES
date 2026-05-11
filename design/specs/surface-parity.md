@@ -63,7 +63,7 @@ a feature fully shipped.
 | Feature | ViewModel | CLI | TUI | Web HTML | Web JSON | Status | Owner |
 |---|---|---|---|---|---|---|---|
 | Scores/tonight | `ScoresView` | `tonight` | `tui scores` | `/scores` | `/api/v1/scores` | done - CLI `tonight`, TUI scores, web HTML, and web JSON build `ScoresView`; `ScoreGameRow` carries stable `game_id` and raw UTC start time so CLI/TUI navigation and ET display are preserved | Ted Lindsay |
-| Schedule | `ScheduleView` | `schedule` | `tui schedule` | `/schedule` | `/api/v1/schedule` | partial - web HTML and web JSON build `ScheduleView`; CLI/TUI adapter alignment remains | Lester Patrick/Ted Lindsay |
+| Schedule | `ScheduleView` | `schedule` | `tui schedule` | `/schedule` | `/api/v1/schedule` | partial - CLI schedule, web HTML, and web JSON build `ScheduleView`; `ScheduleGameRow` carries stable `game_id` and raw UTC start time so CLI output can preserve ET display; TUI adapter alignment remains | Lester Patrick/Ted Lindsay |
 | Playoffs | `PlayoffsView` | `playoffs` | `tui playoffs` | `/playoffs` | `/api/v1/playoffs` | partial - web HTML and JSON now project through `PlayoffsView`; historical bundle gaps and CLI/TUI adapter alignment remain | Lester Patrick/Ted Lindsay |
 | Transactions | `TransactionsView` | `transactions` | `tui transactions` | `/transactions` | `/api/v1/transactions` | done - CLI, TUI, web HTML, and web JSON row projection build from `TransactionsView`; shared contract handles the `LEAGUE` teamless bucket; CLI uses the unlimited constructor after applying explicit filters/top | Lester Patrick/Ted Lindsay |
 | Game detail | `GameView` | n/a | `tui scores` drilldown | `/game/:id` | `/api/v1/game/:id` | partial - web HTML and web JSON build `GameView`; TUI drilldown alignment remains | Ted Lindsay |
@@ -166,7 +166,7 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /season-type/:kind` | `handlers/season_type.rs` | mutating redirect | Config/report toggles | partial - normalizes season-type mutation intent through shared config support |
 | `GET /scores` | `handlers/scores.rs` | HTML | Scores/tonight | projects score days from `ScoresView`; CLI `tonight` and TUI scores alignment landed |
 | `GET /api/v1/scores` | `handlers/scores.rs` | JSON | Scores/tonight | partial - projects stable data/meta envelope from `ScoresView`; live source failures are `meta.source_error`; covered by `l1_scores_json_envelope_shape` |
-| `GET /schedule` | `handlers/schedule.rs` | HTML | Schedule | partial - projects schedule rows from `ScheduleView`; CLI/TUI alignment remains |
+| `GET /schedule` | `handlers/schedule.rs` | HTML | Schedule | partial - projects schedule rows from `ScheduleView`; CLI schedule alignment landed; TUI alignment remains |
 | `GET /api/v1/schedule` | `handlers/schedule.rs` | JSON | Schedule | partial - projects stable data/meta envelope from `ScheduleView`; live source failures are `meta.source_error`; covered by `l1_schedule_json_envelope_shape` |
 | `GET /playoffs` | `handlers/playoffs.rs` | HTML | Playoffs | projects bundled/live bracket through `PlayoffsView` |
 | `GET /api/v1/playoffs` | `handlers/playoffs.rs` | JSON | Playoffs | projects bundled/live bracket through `PlayoffsView`; live source failures are `meta.source_error`; covered by `l1_playoffs_json_envelope_shape` |

@@ -2,7 +2,7 @@ use anyhow::Context;
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
 use icelines_core::timeframe::Timeframe;
-use icelines_core::{ScheduledGameInput, ScoresView, ViewContext, ViewWindow};
+use icelines_core::{ScheduleView, ScheduledGameInput, ScoresView, ViewContext, ViewWindow};
 use icelines_fetch::nhl_api::NhlApiClient;
 
 /// Phase Foster.1 — strict YYYY-MM-DD parser. Returns the canonical
@@ -229,7 +229,7 @@ pub(crate) fn project_schedule_rows(
 ) -> Vec<ScheduleRow> {
     let mut current_date = String::new();
     let mut days_shown = 0u32;
-    let mut out = Vec::new();
+    let mut selected_games = Vec::new();
     for game in games {
         if game.date != current_date {
             if days_shown >= days {
@@ -243,22 +243,39 @@ pub(crate) fn project_schedule_rows(
                 continue;
             }
         }
-        let utc = game.start_time_utc.get(11..16).unwrap_or("?");
-        out.push(ScheduleRow {
-            date: game.date.clone(),
-            away: game.away_abbrev.clone(),
-            home: game.home_abbrev.clone(),
-            time_et: format_time_et(utc, &game.date),
-            // game_state is "FUT"/"PRE"/"LIVE"/"FINAL"/"OFF" — lowercase
-            // for the user-facing table.
-            status: game
-                .game_state
-                .as_deref()
-                .map(|s| s.to_ascii_lowercase())
-                .unwrap_or_else(|| "?".into()),
-        });
+        selected_games.push(game.clone());
     }
-    out
+
+    let active_date = selected_games.first().map(|game| game.date.clone());
+    let view = ScheduleView::from_games(
+        ViewContext::new(ViewWindow::new(
+            Season(icelines_core::CURRENT_SEASON),
+            SeasonType::Regular,
+        )),
+        icelines_core::CURRENT_SEASON.to_string(),
+        team_up.unwrap_or_default().to_string(),
+        active_date,
+        &[],
+        selected_games
+            .into_iter()
+            .map(scheduled_game_input)
+            .collect(),
+    );
+
+    view.rows
+        .into_iter()
+        .map(|row| {
+            let utc = row.start_time_utc.get(11..16).unwrap_or("?");
+            let time_et = format_time_et(utc, &row.date);
+            ScheduleRow {
+                date: row.date,
+                away: row.away_abbrev,
+                home: row.home_abbrev,
+                time_et,
+                status: row.state_label.to_ascii_lowercase(),
+            }
+        })
+        .collect()
 }
 
 pub async fn run_schedule(

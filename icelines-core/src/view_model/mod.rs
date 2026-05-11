@@ -877,6 +877,8 @@ mod tests {
         assert_eq!(json["season_pretty"], "2024-25");
         assert_eq!(json["active_team"], "EDM");
         assert_eq!(json["team_chips"][0]["is_active"], true);
+        assert_eq!(json["rows"][0]["game_id"], 2024020001);
+        assert_eq!(json["rows"][0]["start_time_utc"], "2024-10-08T23:00:00Z");
         assert_eq!(json["rows"][0]["home_or_away"], "Home");
         assert_eq!(json["rows"][0]["opponent_abbrev"], "SEA");
         assert_eq!(json["rows"][0]["state_label"], "FINAL/SO");
