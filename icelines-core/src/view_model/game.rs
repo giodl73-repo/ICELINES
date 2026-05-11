@@ -62,6 +62,7 @@ impl GameView {
                 .map(|goalie| GameGoalieRow {
                     player_id: goalie.player_id,
                     player_name: goalie.player_name,
+                    team_abbrev: goalie.team_abbrev,
                     saves: goalie.saves,
                     shots: goalie.shots,
                     decision: goalie.decision,
@@ -72,9 +73,14 @@ impl GameView {
                 .into_iter()
                 .map(|goal| GameGoalRow {
                     period: goal.period,
+                    period_type: goal.period_type,
                     time_in_period: goal.time_in_period,
                     scorer_team: goal.scorer_team,
                     scorer_name: goal.scorer_name,
+                    assist1_name: goal.assist1_name,
+                    assist2_name: goal.assist2_name,
+                    away_score: goal.away_score,
+                    home_score: goal.home_score,
                 })
                 .collect(),
             away_top_skaters: top_skaters(away_skaters),
@@ -103,6 +109,7 @@ pub struct GameBoxscoreInput {
 pub struct GameGoalieInput {
     pub player_id: u32,
     pub player_name: String,
+    pub team_abbrev: String,
     pub saves: u32,
     pub shots: u32,
     pub decision: Option<String>,
@@ -111,9 +118,14 @@ pub struct GameGoalieInput {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GameGoalInput {
     pub period: u8,
+    pub period_type: String,
     pub time_in_period: String,
     pub scorer_team: String,
     pub scorer_name: String,
+    pub assist1_name: Option<String>,
+    pub assist2_name: Option<String>,
+    pub away_score: u8,
+    pub home_score: u8,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -130,6 +142,7 @@ pub struct GameSkaterInput {
 pub struct GameGoalieRow {
     pub player_id: u32,
     pub player_name: String,
+    pub team_abbrev: String,
     pub saves: u32,
     pub shots: u32,
     pub decision: Option<String>,
@@ -138,9 +151,14 @@ pub struct GameGoalieRow {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GameGoalRow {
     pub period: u8,
+    pub period_type: String,
     pub time_in_period: String,
     pub scorer_team: String,
     pub scorer_name: String,
+    pub assist1_name: Option<String>,
+    pub assist2_name: Option<String>,
+    pub away_score: u8,
+    pub home_score: u8,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

@@ -997,13 +997,19 @@ mod tests {
                 last_period: Some("OT".to_string()),
                 goals: vec![GameGoalInput {
                     period: 4,
+                    period_type: "OT".to_string(),
                     time_in_period: "01:10".to_string(),
                     scorer_team: "EDM".to_string(),
                     scorer_name: "Connor McDavid".to_string(),
+                    assist1_name: Some("Leon Draisaitl".to_string()),
+                    assist2_name: None,
+                    away_score: 2,
+                    home_score: 3,
                 }],
                 goalies: vec![GameGoalieInput {
                     player_id: 1,
                     player_name: "Goalie".to_string(),
+                    team_abbrev: "EDM".to_string(),
                     saves: 30,
                     shots: 32,
                     decision: Some("W".to_string()),
@@ -1044,6 +1050,9 @@ mod tests {
         assert_eq!(json["is_live"], false);
         assert_eq!(json["auto_refresh"], false);
         assert_eq!(json["goals"][0]["scorer_name"], "Connor McDavid");
+        assert_eq!(json["goals"][0]["period_type"], "OT");
+        assert_eq!(json["goals"][0]["assist1_name"], "Leon Draisaitl");
+        assert_eq!(json["goalies"][0]["team_abbrev"], "EDM");
         assert_eq!(json["home_top_skaters"][0]["player_name"], "Top Skater");
         assert_eq!(json["home_top_skaters"][0]["points"], 3);
     }

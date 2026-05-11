@@ -15,7 +15,13 @@ use ratatui::{
 
 use crate::tui::app::App;
 use crate::tui::tonight::{lookup_boxscore, BoxscoreState};
-use icelines_fetch::nhl_api::{Boxscore, Goal, ScheduledGame, SkaterLine};
+use icelines_core::model::Season;
+use icelines_core::season_stats::SeasonType;
+use icelines_core::{
+    GameBoxscoreInput, GameGoalInput, GameGoalRow, GameGoalieInput, GameGoalieRow, GameSkaterInput,
+    GameView, ViewContext, ViewWindow,
+};
+use icelines_fetch::nhl_api::{Boxscore, ScheduledGame, SkaterLine};
 
 pub fn render(f: &mut Frame, app: &App, area: Rect, game_id: u64) {
     // Look up the schedule entry for this game (gives us series context).
@@ -84,6 +90,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, game_id: u64) {
 }
 
 fn render_loaded(f: &mut Frame, area: Rect, b: &Boxscore, sched: Option<&ScheduledGame>) {
+    let game_view = game_view_from_boxscore(b.clone());
     let dim = Style::default().fg(Color::DarkGray);
     let gold = Style::default()
         .fg(Color::Yellow)
@@ -116,28 +123,20 @@ fn render_loaded(f: &mut Frame, area: Rect, b: &Boxscore, sched: Option<&Schedul
 
     // Goals
     lines.push(Line::styled("  GOALS", gold));
-    if b.goals.is_empty() {
+    if game_view.goals.is_empty() {
         lines.push(Line::styled("    (none recorded)", dim));
     } else {
-        for goal in &b.goals {
+        for goal in &game_view.goals {
             lines.push(Line::from(format_goal_row(goal)));
         }
     }
     lines.push(Line::from(""));
 
     // Goalies
-    if !b.goalies.is_empty() {
+    if !game_view.goalies.is_empty() {
         lines.push(Line::styled("  GOALTENDERS", gold));
-        for gl in &b.goalies {
-            let decision = gl
-                .decision
-                .as_deref()
-                .map(|d| format!(" ({d})"))
-                .unwrap_or_default();
-            lines.push(Line::from(format!(
-                "    {:<22} ({})  {} saves / {} shots{}",
-                gl.player_name, gl.team_abbrev, gl.saves, gl.shots, decision,
-            )));
+        for gl in &game_view.goalies {
+            lines.push(Line::from(format_goalie_row(gl)));
         }
         lines.push(Line::from(""));
     }
@@ -307,7 +306,7 @@ fn short_name(full: &str) -> String {
     }
 }
 
-fn format_goal_row(goal: &Goal) -> String {
+fn format_goal_row(goal: &GameGoalRow) -> String {
     let period_label = match (goal.period, goal.period_type.as_str()) {
         (_, "OT") => "OT".to_owned(),
         (_, "SO") => "SO".to_owned(),
@@ -327,6 +326,88 @@ fn format_goal_row(goal: &Goal) -> String {
         goal.away_score,
         goal.home_score,
     )
+}
+
+fn format_goalie_row(goalie: &GameGoalieRow) -> String {
+    let decision = goalie
+        .decision
+        .as_deref()
+        .map(|d| format!(" ({d})"))
+        .unwrap_or_default();
+    format!(
+        "    {:<22} ({})  {} saves / {} shots{}",
+        goalie.player_name, goalie.team_abbrev, goalie.saves, goalie.shots, decision,
+    )
+}
+
+fn game_view_from_boxscore(boxscore: Boxscore) -> GameView {
+    GameView::from_boxscore(
+        ViewContext::new(ViewWindow::new(
+            Season(icelines_core::CURRENT_SEASON),
+            SeasonType::Regular,
+        )),
+        boxscore_input(boxscore),
+    )
+}
+
+fn boxscore_input(boxscore: Boxscore) -> GameBoxscoreInput {
+    GameBoxscoreInput {
+        game_id: boxscore.game_id,
+        away_abbrev: boxscore.away_abbrev,
+        home_abbrev: boxscore.home_abbrev,
+        away_score: boxscore.away_score,
+        home_score: boxscore.home_score,
+        game_state: boxscore.game_state,
+        last_period: boxscore.last_period,
+        goals: boxscore
+            .goals
+            .into_iter()
+            .map(|goal| GameGoalInput {
+                period: goal.period,
+                period_type: goal.period_type,
+                time_in_period: goal.time_in_period,
+                scorer_team: goal.scorer_team,
+                scorer_name: goal.scorer_name,
+                assist1_name: goal.assist1_name,
+                assist2_name: goal.assist2_name,
+                away_score: goal.away_score,
+                home_score: goal.home_score,
+            })
+            .collect(),
+        goalies: boxscore
+            .goalies
+            .into_iter()
+            .map(|goalie| GameGoalieInput {
+                player_id: goalie.player_id,
+                player_name: goalie.player_name,
+                team_abbrev: goalie.team_abbrev,
+                saves: goalie.saves,
+                shots: goalie.shots,
+                decision: goalie.decision,
+            })
+            .collect(),
+        away_skaters: boxscore
+            .away_skaters
+            .into_iter()
+            .map(skater_input)
+            .collect(),
+        home_skaters: boxscore
+            .home_skaters
+            .into_iter()
+            .map(skater_input)
+            .collect(),
+    }
+}
+
+fn skater_input(skater: SkaterLine) -> GameSkaterInput {
+    GameSkaterInput {
+        player_id: skater.player_id,
+        player_name: skater.player_name,
+        position: skater.position,
+        goals: skater.goals,
+        assists: skater.assists,
+        plus_minus: skater.plus_minus,
+    }
 }
 
 fn ordinal(n: u8) -> String {

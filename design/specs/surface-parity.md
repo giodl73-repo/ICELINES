@@ -66,7 +66,7 @@ a feature fully shipped.
 | Schedule | `ScheduleView` | `schedule` | `tui schedule` | `/schedule` | `/api/v1/schedule` | partial - CLI schedule, TUI week list, web HTML, and web JSON build `ScheduleView`; `ScheduleGameRow` carries stable `game_id`, raw UTC start time, score/status fields, and playoff context so adapters preserve existing display; richer TUI team-season and matchup subviews remain outside the shared contract | Lester Patrick/Ted Lindsay |
 | Playoffs | `PlayoffsView` | `playoffs` | `tui playoffs` | `/playoffs` | `/api/v1/playoffs` | partial - CLI playoffs, TUI bracket list, web HTML, and web JSON project through `PlayoffsView`; `PlayoffsSeriesRow` carries seed-rank, winner, and games-played fields for adapter output; TUI series-detail remains on richer per-game bracket data | Lester Patrick/Ted Lindsay |
 | Transactions | `TransactionsView` | `transactions` | `tui transactions` | `/transactions` | `/api/v1/transactions` | done - CLI, TUI, web HTML, and web JSON row projection build from `TransactionsView`; shared contract handles the `LEAGUE` teamless bucket; CLI uses the unlimited constructor after applying explicit filters/top | Lester Patrick/Ted Lindsay |
-| Game detail | `GameView` | n/a | `tui scores` drilldown | `/game/:id` | `/api/v1/game/:id` | partial - web HTML and web JSON build `GameView`; TUI drilldown alignment remains | Ted Lindsay |
+| Game detail | `GameView` | n/a | `tui scores` drilldown | `/game/:id` | `/api/v1/game/:id` | partial - web HTML, web JSON, and TUI drilldown goals/goalies build `GameView`; `GameGoalRow` carries scoring context and `GameGoalieRow` carries team abbreviations for adapter output; richer TUI stat-leader panel remains on raw boxscore skater lines | Ted Lindsay |
 
 ---
 
@@ -174,7 +174,7 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /api/v1/favorites` | `handlers/favorites.rs` | JSON | Favorites/groups | partial - projects stable `favorites.v1` read payload from `FavoritesView`; covered by `l1_favorites_json_returns_group_members` |
 | `GET /watchlist` | `handlers/favorites.rs` | HTML | Watch rules | partial - projects watchlist notes through `WatchlistView` |
 | `GET /api/v1/watchlist` | `handlers/favorites.rs` | JSON | Watch rules | partial - projects stable `watchlist.v1` payload from `WatchlistView`; covered by `l1_watchlist_json_returns_watch_reason_metadata` |
-| `GET /game/:id` | `handlers/game.rs` | HTML | Game detail | partial - projects boxscore detail from `GameView`; TUI alignment remains |
+| `GET /game/:id` | `handlers/game.rs` | HTML | Game detail | partial - projects boxscore detail from `GameView`; TUI drilldown goals/goalies alignment landed; richer TUI stat-leader panel remains raw |
 | `GET /api/v1/game/:id` | `handlers/game.rs` | JSON | Game detail | partial - projects stable data/meta envelope from `GameView`; live fetch failures are `meta.source_error`; covered by `l1_conn_smythe_c3_game_json_envelope_shape` |
 | `POST /favorites/add` | `handlers/favorites.rs` | mutation | Favorites/groups | partial - normalizes favorite mutation intent through `FavoritesView` support |
 | `POST /favorites/remove` | `handlers/favorites.rs` | mutation | Favorites/groups | partial - normalizes favorite mutation intent through `FavoritesView` support |

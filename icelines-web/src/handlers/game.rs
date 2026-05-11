@@ -45,6 +45,7 @@ struct GameDetailView {
 struct GameGoalieView {
     player_id: u32,
     player_name: String,
+    team_abbrev: String,
     saves: u32,
     shots: u32,
     decision: Option<String>,
@@ -53,9 +54,14 @@ struct GameGoalieView {
 #[derive(Debug, Clone, serde::Serialize)]
 struct GameGoalView {
     period: u8,
+    period_type: String,
     time_in_period: String,
     scorer_team: String,
     scorer_name: String,
+    assist1_name: Option<String>,
+    assist2_name: Option<String>,
+    away_score: u8,
+    home_score: u8,
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -160,9 +166,14 @@ fn boxscore_input(boxscore: icelines_fetch::nhl_api::Boxscore) -> GameBoxscoreIn
             .into_iter()
             .map(|goal| GameGoalInput {
                 period: goal.period,
+                period_type: goal.period_type,
                 time_in_period: goal.time_in_period,
                 scorer_team: goal.scorer_team,
                 scorer_name: goal.scorer_name,
+                assist1_name: goal.assist1_name,
+                assist2_name: goal.assist2_name,
+                away_score: goal.away_score,
+                home_score: goal.home_score,
             })
             .collect(),
         goalies: boxscore
@@ -171,6 +182,7 @@ fn boxscore_input(boxscore: icelines_fetch::nhl_api::Boxscore) -> GameBoxscoreIn
             .map(|goalie| GameGoalieInput {
                 player_id: goalie.player_id,
                 player_name: goalie.player_name,
+                team_abbrev: goalie.team_abbrev,
                 saves: goalie.saves,
                 shots: goalie.shots,
                 decision: goalie.decision,
@@ -221,6 +233,7 @@ fn goalie_from_view(goalie: &GameGoalieRow) -> GameGoalieView {
     GameGoalieView {
         player_id: goalie.player_id,
         player_name: goalie.player_name.clone(),
+        team_abbrev: goalie.team_abbrev.clone(),
         saves: goalie.saves,
         shots: goalie.shots,
         decision: goalie.decision.clone(),
@@ -230,9 +243,14 @@ fn goalie_from_view(goalie: &GameGoalieRow) -> GameGoalieView {
 fn goal_from_view(goal: &GameGoalRow) -> GameGoalView {
     GameGoalView {
         period: goal.period,
+        period_type: goal.period_type.clone(),
         time_in_period: goal.time_in_period.clone(),
         scorer_team: goal.scorer_team.clone(),
         scorer_name: goal.scorer_name.clone(),
+        assist1_name: goal.assist1_name.clone(),
+        assist2_name: goal.assist2_name.clone(),
+        away_score: goal.away_score,
+        home_score: goal.home_score,
     }
 }
 

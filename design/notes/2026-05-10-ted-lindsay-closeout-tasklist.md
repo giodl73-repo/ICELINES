@@ -104,6 +104,11 @@ surface still differs from CLI/TUI.
      games-played fields so existing table/JSON/CSV/TUI output remains intact
      while sharing the web/API bracket row contract. TUI series-detail remains
      on richer per-game bracket data.
+   - Game detail: TUI drilldown goals and goalies now project through
+     `GameView`; `GameGoalRow` carries scoring context and `GameGoalieRow`
+     carries team abbreviations so existing TUI rows remain intact while
+     sharing the web/API boxscore row contract. The richer TUI stat-leader
+     panel remains on raw boxscore skater lines.
 
 5. **Resolve live-route envelope policy** - complete for Ted Lindsay
    - Scores, schedule, playoffs, and game carry live-fetch failures in
