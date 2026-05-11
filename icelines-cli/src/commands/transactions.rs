@@ -9,10 +9,13 @@ use std::path::PathBuf;
 
 use anyhow::{bail, Context};
 
+use icelines_core::model::{Season, TeamAbbr};
+use icelines_core::season_stats::SeasonType;
 use icelines_core::transactions::{
     description_matches_query, transactions_for_player, Transaction, TransactionKind,
     TRANSACTIONS_EARLIEST_SEASON,
 };
+use icelines_core::{TransactionsView, ViewContext, ViewWindow};
 use icelines_fetch::{
     bundled::load_transactions_with_fallback,
     snapshot::{SnapshotMetaFlags, SnapshotStore},
@@ -149,22 +152,40 @@ pub async fn run(
         rows.truncate(n);
     }
 
+    let view_rows = {
+        let season_context = season
+            .parse::<u32>()
+            .map(Season)
+            .unwrap_or(Season(icelines_core::CURRENT_SEASON));
+        let team_filter = team_norm.as_ref().map(|team| TeamAbbr(team.clone()));
+        let view = TransactionsView::from_rows_unlimited(
+            ViewContext::new(ViewWindow::new(season_context, SeasonType::Regular)),
+            season.clone(),
+            rows.iter().map(|tx| (*tx).clone()).collect(),
+            kind_filter.as_deref(),
+            kind.clone().unwrap_or_default(),
+            team_filter,
+            false,
+        );
+        view.rows
+    };
+
     // ── Emit ─────────────────────────────────────────────────────────
     let headers = &["date", "team", "kind", "description", "id"];
-    let body: Vec<Vec<String>> = rows
+    let body: Vec<Vec<String>> = view_rows
         .iter()
-        .map(|tx| {
-            let team_label = tx
-                .team
-                .as_ref()
-                .map(|t| t.0.clone())
-                .unwrap_or_else(|| "LEAGUE".to_owned());
+        .map(|row| {
+            let team_label = if row.team.is_empty() {
+                "LEAGUE".to_owned()
+            } else {
+                row.team.clone()
+            };
             vec![
-                tx.date.clone(),
+                row.date.clone(),
                 team_label,
-                tx.kind.label().to_owned(),
-                tx.description.clone(),
-                tx.id.clone(),
+                row.kind_label.clone(),
+                row.description.clone(),
+                row.id.clone(),
             ]
         })
         .collect();

@@ -24,6 +24,49 @@ pub struct TransactionsView {
 
 impl TransactionsView {
     pub fn from_rows(
+        context: ViewContext,
+        season: String,
+        rows: Vec<Transaction>,
+        kind_filter: Option<&[TransactionKind]>,
+        active_kind: String,
+        team_filter: Option<TeamAbbr>,
+        out_of_coverage: bool,
+    ) -> Self {
+        Self::from_rows_limited(
+            context,
+            season,
+            rows,
+            kind_filter,
+            active_kind,
+            team_filter,
+            out_of_coverage,
+            Some(1000),
+        )
+    }
+
+    pub fn from_rows_unlimited(
+        context: ViewContext,
+        season: String,
+        rows: Vec<Transaction>,
+        kind_filter: Option<&[TransactionKind]>,
+        active_kind: String,
+        team_filter: Option<TeamAbbr>,
+        out_of_coverage: bool,
+    ) -> Self {
+        Self::from_rows_limited(
+            context,
+            season,
+            rows,
+            kind_filter,
+            active_kind,
+            team_filter,
+            out_of_coverage,
+            None,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn from_rows_limited(
         mut context: ViewContext,
         season: String,
         rows: Vec<Transaction>,
@@ -31,6 +74,7 @@ impl TransactionsView {
         active_kind: String,
         team_filter: Option<TeamAbbr>,
         out_of_coverage: bool,
+        row_limit: Option<usize>,
     ) -> Self {
         if out_of_coverage {
             context
@@ -65,7 +109,9 @@ impl TransactionsView {
             .collect();
 
         rows.sort_by(|a, b| b.date.cmp(&a.date));
-        rows.truncate(1000);
+        if let Some(row_limit) = row_limit {
+            rows.truncate(row_limit);
+        }
         let total = rows.len();
         let empty_unfiltered = total == 0 && kind_filter.is_none() && team_filter.is_none();
         let empty_state = if total == 0 {

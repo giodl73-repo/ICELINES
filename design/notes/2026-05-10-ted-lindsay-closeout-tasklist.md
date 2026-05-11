@@ -83,10 +83,10 @@ surface still differs from CLI/TUI.
      `l1_api_career_rows_match_career_view`; CLI rows now project through
      `CareerView` and are fenced by `l0_cli_career_rows_project_from_career_view`;
      richer TUI affordance remains before marking the row `done`.
-   - Transactions: web HTML, web JSON, and TUI filtered row projection now
-     use `TransactionsView`; the shared contract now treats `team=LEAGUE` as
-     the teamless transaction bucket; CLI adapter alignment remains before
-     marking the row `done`.
+   - Transactions: CLI, TUI, web HTML, and web JSON row projection now use
+     `TransactionsView`; the shared contract treats `team=LEAGUE` as the
+     teamless transaction bucket; CLI uses the unlimited constructor after
+     applying explicit filters/top, so existing output counts are preserved.
 
 5. **Resolve live-route envelope policy** - complete for Ted Lindsay
    - Scores, schedule, playoffs, and game carry live-fetch failures in

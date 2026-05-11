@@ -65,7 +65,7 @@ a feature fully shipped.
 | Scores/tonight | `ScoresView` | `tonight` | `tui scores` | `/scores` | `/api/v1/scores` | partial - web HTML and web JSON build `ScoresView`; CLI/TUI adapter alignment remains | Ted Lindsay |
 | Schedule | `ScheduleView` | `schedule` | `tui schedule` | `/schedule` | `/api/v1/schedule` | partial - web HTML and web JSON build `ScheduleView`; CLI/TUI adapter alignment remains | Lester Patrick/Ted Lindsay |
 | Playoffs | `PlayoffsView` | `playoffs` | `tui playoffs` | `/playoffs` | `/api/v1/playoffs` | partial - web HTML and JSON now project through `PlayoffsView`; historical bundle gaps and CLI/TUI adapter alignment remain | Lester Patrick/Ted Lindsay |
-| Transactions | `TransactionsView` | `transactions` | `tui transactions` | `/transactions` | `/api/v1/transactions` | partial - web HTML, web JSON, and TUI row projection build from `TransactionsView`; shared contract handles the `LEAGUE` teamless bucket; CLI adapter alignment remains | Lester Patrick/Ted Lindsay |
+| Transactions | `TransactionsView` | `transactions` | `tui transactions` | `/transactions` | `/api/v1/transactions` | done - CLI, TUI, web HTML, and web JSON row projection build from `TransactionsView`; shared contract handles the `LEAGUE` teamless bucket; CLI uses the unlimited constructor after applying explicit filters/top | Lester Patrick/Ted Lindsay |
 | Game detail | `GameView` | n/a | `tui scores` drilldown | `/game/:id` | `/api/v1/game/:id` | partial - web HTML and web JSON build `GameView`; TUI drilldown alignment remains | Ted Lindsay |
 
 ---
@@ -178,7 +178,7 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /api/v1/game/:id` | `handlers/game.rs` | JSON | Game detail | partial - projects stable data/meta envelope from `GameView`; live fetch failures are `meta.source_error`; covered by `l1_conn_smythe_c3_game_json_envelope_shape` |
 | `POST /favorites/add` | `handlers/favorites.rs` | mutation | Favorites/groups | partial - normalizes favorite mutation intent through `FavoritesView` support |
 | `POST /favorites/remove` | `handlers/favorites.rs` | mutation | Favorites/groups | partial - normalizes favorite mutation intent through `FavoritesView` support |
-| `GET /transactions` | `handlers/transactions.rs` | HTML | Transactions | partial - projects transaction feed from `TransactionsView`; CLI/TUI alignment remains |
+| `GET /transactions` | `handlers/transactions.rs` | HTML | Transactions | projects transaction feed from `TransactionsView`; CLI/TUI row projection is aligned |
 | `GET /api/v1/transactions` | `handlers/transactions.rs` | JSON | Transactions | partial - projects stable data/meta success envelope and shared bad-filter error envelope from `TransactionsView`; covered by `l1_transactions_json_envelope_shape` |
 | `GET /fantasy` | `handlers/coming_soon.rs` | HTML stub | Fantasy league management | deferred |
 
