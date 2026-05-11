@@ -17,7 +17,8 @@ use icelines_core::season_stats::SeasonType;
 use icelines_core::view_model::{DepthGoalieSlot, DepthLine, DepthPair, DepthPlayerSlot};
 use icelines_core::{
     CareerSortKey, CareerView, CompareView, DepthLeagueView, DepthTeamStrengthRow, MetricCell,
-    MetricValue, PlayerCardView, Season, TeamAbbr, TeamDepthView, ViewContext, ViewWindow,
+    MetricValue, PlayerCardView, Season, SimilarPlayersView, TeamAbbr, TeamDepthView, ViewContext,
+    ViewWindow,
 };
 use icelines_fetch::career_landing::CareerHistoryStore;
 use icelines_fetch::snapshot::SnapshotStore;
@@ -1699,6 +1700,63 @@ async fn l1_compare_json_cards_match_compare_view() {
     assert_eq!(json["meta"]["season_type"], serde_json::json!("regular"));
     assert_eq!(json_compare_card_snapshot(&json["data"]["a"]), expected_a);
     assert_eq!(json_compare_card_snapshot(&json["data"]["b"]), expected_b);
+}
+
+#[tokio::test]
+async fn l1_compare_json_similarity_matches_similar_players_view() {
+    let season = Season(20242025);
+    let season_type = SeasonType::Regular;
+    let target_id = PlayerId(8478402);
+    let store = SnapshotStore::new(SnapshotStore::default_root());
+    let load = load_into_repo(season, season_type, &store)
+        .expect("bundled regular-season repo should load");
+    let views: Vec<_> = load.repo.skaters(season, season_type).collect();
+    let target = views
+        .iter()
+        .find(|view| view.identity.id == target_id)
+        .expect("target skater should exist");
+    let expected = SimilarPlayersView::from_player_views(
+        &views,
+        target,
+        3,
+        season,
+        season_type,
+        load.repo.has_window(season, season_type),
+    );
+    let expected_ids: Vec<u32> = expected.rows.iter().map(|row| row.player_id.0).collect();
+
+    let state = WebState::with_repo_and_config(load.repo, WebConfig::new("20242025", "regular"));
+    let app = router(state);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/compare?a=8478402&similar=3")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let json = response_json(response, 1024 * 1024).await;
+    assert_data_meta_envelope(&json, "compare");
+    assert!(json["data"]["b"].is_null());
+    assert_eq!(
+        json["data"]["similar"]["target"]["player_id"],
+        serde_json::json!(8478402)
+    );
+    let actual_ids: Vec<u32> = json["data"]["similar"]["rows"]
+        .as_array()
+        .expect("similar rows should be an array")
+        .iter()
+        .map(|row| {
+            row["player_id"]
+                .as_u64()
+                .expect("row player_id should be numeric") as u32
+        })
+        .collect();
+    assert_eq!(actual_ids, expected_ids);
 }
 
 #[tokio::test]

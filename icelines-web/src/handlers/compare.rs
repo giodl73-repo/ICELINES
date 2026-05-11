@@ -7,7 +7,7 @@ use axum::response::{Html, IntoResponse, Response};
 use icelines_core::identity::PlayerId;
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
-use icelines_core::{CompareView, MetricCell, MetricValue, PlayerCardView};
+use icelines_core::{CompareView, MetricCell, MetricValue, PlayerCardView, SimilarPlayersView};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize, Default)]
@@ -20,6 +20,8 @@ pub struct CompareQuery {
     pub a: Option<String>,
     #[serde(default)]
     pub b: Option<String>,
+    #[serde(default)]
+    pub similar: Option<usize>,
 }
 
 #[derive(Debug)]
@@ -29,6 +31,7 @@ struct CompareResult {
     season_type: SeasonType,
     a: Option<ComparePlayerCard>,
     b: Option<ComparePlayerCard>,
+    similar: Option<SimilarPlayersView>,
     error: Option<String>,
     winners: crate::templates::CompareWinners,
 }
@@ -37,6 +40,7 @@ struct CompareResult {
 struct CompareData {
     a: Option<ComparePlayerCard>,
     b: Option<ComparePlayerCard>,
+    similar: Option<SimilarPlayersView>,
     winners: crate::templates::CompareWinners,
 }
 
@@ -213,6 +217,7 @@ async fn build_compare_result(state: &WebState, q: &CompareQuery) -> CompareResu
                 season_type,
                 a: None,
                 b: None,
+                similar: None,
                 error: Some(format!(
                     "Active season '{season_str}' is not a valid YYYYZZZZ id"
                 )),
@@ -266,6 +271,26 @@ async fn build_compare_result(state: &WebState, q: &CompareQuery) -> CompareResu
         .b
         .as_ref()
         .map(|card| compare_card_from_view(card, season));
+    let similar = if let (Some(limit), Some(target_id)) = (q.similar, a_id) {
+        let limit = limit.clamp(1, 50);
+        let repo = state.repo.read().await;
+        let views: Vec<_> = repo.skaters(season, season_type).collect();
+        views
+            .iter()
+            .find(|view| view.identity.id == PlayerId(target_id))
+            .map(|target| {
+                SimilarPlayersView::from_player_views(
+                    &views,
+                    target,
+                    limit,
+                    season,
+                    season_type,
+                    repo.has_window(season, season_type),
+                )
+            })
+    } else {
+        None
+    };
     let a_missing = a_id.filter(|_| a_card.is_none());
     let b_missing = b_id.filter(|_| b_card.is_none());
 
@@ -275,7 +300,8 @@ async fn build_compare_result(state: &WebState, q: &CompareQuery) -> CompareResu
     let a_unresolved = a_raw.filter(|_| a_id.is_none());
     let b_unresolved = b_raw.filter(|_| b_id.is_none());
 
-    let error = if a_raw.is_none() && b_raw.is_none() {
+    let valid_similarity_request = q.similar.is_some() && a_raw.is_some() && a_unresolved.is_none();
+    let error = if valid_similarity_request || (a_raw.is_none() && b_raw.is_none()) {
         None
     } else if a_raw.is_none() {
         Some("Missing first player (?a=).".to_owned())
@@ -316,6 +342,7 @@ async fn build_compare_result(state: &WebState, q: &CompareQuery) -> CompareResu
         season_type,
         a: a_card,
         b: b_card,
+        similar,
         error,
         winners,
     }
@@ -348,6 +375,7 @@ pub async fn get_compare_json(
     let data = CompareData {
         a: result.a,
         b: result.b,
+        similar: result.similar,
         winners: result.winners,
     };
     let meta = CompareMeta {
