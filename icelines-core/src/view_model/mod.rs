@@ -882,6 +882,7 @@ mod tests {
         assert_eq!(json["rows"][0]["home_or_away"], "Home");
         assert_eq!(json["rows"][0]["opponent_abbrev"], "SEA");
         assert_eq!(json["rows"][0]["state_label"], "FINAL/SO");
+        assert_eq!(json["rows"][0]["series_context"], "");
     }
 
     #[test]

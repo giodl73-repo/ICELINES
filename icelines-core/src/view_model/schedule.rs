@@ -86,12 +86,39 @@ pub struct ScheduleGameRow {
     pub away_abbrev: String,
     pub home_abbrev: String,
     pub start_time_utc: String,
+    pub away_score: Option<u8>,
+    pub home_score: Option<u8>,
     pub away_score_str: String,
     pub home_score_str: String,
     pub state_label: String,
+    pub last_period: Option<String>,
     pub home_or_away: String,
     pub opponent_abbrev: String,
     pub is_playoff: bool,
+    pub series_game: Option<String>,
+    pub series_context: String,
+}
+
+impl ScheduleGameRow {
+    pub fn is_playoff(&self) -> bool {
+        self.is_playoff
+    }
+
+    pub fn is_final(&self) -> bool {
+        self.state_label.starts_with("FINAL")
+    }
+
+    pub fn is_live(&self) -> bool {
+        self.state_label == "LIVE"
+    }
+
+    pub fn series_label(&self) -> Option<String> {
+        if self.series_context.is_empty() {
+            None
+        } else {
+            Some(self.series_context.clone())
+        }
+    }
 }
 
 fn pretty_season(season: &str) -> String {
@@ -118,6 +145,10 @@ fn schedule_row(game: ScheduledGameInput, active_team: &str) -> ScheduleGameRow 
     } else {
         "Away".to_string()
     };
+    let state_label = state_label(game.game_state.as_deref(), game.last_period.as_deref());
+    let last_period = game.last_period.clone();
+    let series_game = game.series_game.clone();
+    let series_context = series_context(&game);
 
     ScheduleGameRow {
         game_id: game.game_id,
@@ -125,6 +156,8 @@ fn schedule_row(game: ScheduledGameInput, active_team: &str) -> ScheduleGameRow 
         away_abbrev: game.away_abbrev,
         home_abbrev: game.home_abbrev,
         start_time_utc: game.start_time_utc,
+        away_score: game.away_score,
+        home_score: game.home_score,
         away_score_str: game
             .away_score
             .map(|score| score.to_string())
@@ -133,11 +166,31 @@ fn schedule_row(game: ScheduledGameInput, active_team: &str) -> ScheduleGameRow 
             .home_score
             .map(|score| score.to_string())
             .unwrap_or_default(),
-        state_label: state_label(game.game_state.as_deref(), game.last_period.as_deref()),
+        state_label,
+        last_period,
         home_or_away,
         opponent_abbrev: opponent,
         is_playoff: game.game_type == 3,
+        series_game,
+        series_context,
     }
+}
+
+fn series_context(game: &ScheduledGameInput) -> String {
+    if game.game_type != 3 {
+        return String::new();
+    }
+
+    let Some(series_game) = game.series_game.as_deref() else {
+        return "Playoffs · Game ?".to_string();
+    };
+    let (Some(away_wins), Some(home_wins)) = (game.away_wins, game.home_wins) else {
+        return format!("Playoffs · {series_game}");
+    };
+    format!(
+        "{} {away_wins}–{home_wins} {} · {series_game}",
+        game.away_abbrev, game.home_abbrev
+    )
 }
 
 fn state_label(state: Option<&str>, last_period: Option<&str>) -> String {

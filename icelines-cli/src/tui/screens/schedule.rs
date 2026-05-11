@@ -20,6 +20,8 @@ use crate::tui::schedule::{
     monday_of, new_team_cache, new_week_cache, today_iso, week_label, ScheduleState, SearchFilter,
     TeamSeasonCache, WeekCache,
 };
+use icelines_core::model::Season;
+use icelines_core::{ScheduleGameRow, ScheduleView, ScheduledGameInput, ViewContext, ViewWindow};
 use icelines_fetch::nhl_api::ScheduledGame;
 
 // ── Phase Norris.2 — per-screen state struct ─────────────────────────────────
@@ -381,6 +383,9 @@ fn render_games_grouped(f: &mut Frame, app: &App, area: Rect, games: &[&Schedule
         return;
     }
 
+    let schedule_view = schedule_view_from_games(app, games.iter().map(|game| (**game).clone()));
+    let rows: Vec<&ScheduleGameRow> = schedule_view.rows.iter().collect();
+
     let dim = Style::default().fg(Color::DarkGray);
     let gold = Style::default()
         .fg(Color::Yellow)
@@ -389,10 +394,10 @@ fn render_games_grouped(f: &mut Frame, app: &App, area: Rect, games: &[&Schedule
     // Group by date (preserves API ordering)
     let mut items: Vec<ListItem> = Vec::new();
     let mut current_date = String::new();
-    let max_idx = games.len().saturating_sub(1);
+    let max_idx = rows.len().saturating_sub(1);
     let selected_idx = app.schedule.selected.min(max_idx);
 
-    for (row_idx, g) in games.iter().enumerate() {
+    for (row_idx, g) in rows.iter().enumerate() {
         if g.date != current_date {
             current_date = g.date.clone();
             if !items.is_empty() {
@@ -464,11 +469,52 @@ fn render_games_grouped(f: &mut Frame, app: &App, area: Rect, games: &[&Schedule
 
     items.push(ListItem::new(Line::from("")));
     items.push(ListItem::new(Line::styled(
-        format!("  {} game(s) shown · times in ET", games.len()),
+        format!("  {} game(s) shown · times in ET", rows.len()),
         dim,
     )));
 
     f.render_widget(List::new(items), area);
+}
+
+fn schedule_view_from_games(
+    app: &App,
+    games: impl IntoIterator<Item = ScheduledGame>,
+) -> ScheduleView {
+    let active_team = match &app.schedule.filter {
+        SearchFilter::Team(team) => team.clone(),
+        SearchFilter::None | SearchFilter::Matchup(..) => String::new(),
+    };
+    ScheduleView::from_games(
+        ViewContext::new(ViewWindow::new(
+            Season(app.active_season_typed.0),
+            app.active_type,
+        )),
+        app.active_season.clone(),
+        active_team,
+        Some(app.schedule.week.clone()),
+        &[],
+        games.into_iter().map(scheduled_game_input).collect(),
+    )
+}
+
+fn scheduled_game_input(game: ScheduledGame) -> ScheduledGameInput {
+    ScheduledGameInput {
+        game_id: game.game_id,
+        date: game.date,
+        game_type: game.game_type,
+        away_abbrev: game.away_abbrev,
+        away_name: game.away_name,
+        home_abbrev: game.home_abbrev,
+        home_name: game.home_name,
+        start_time_utc: game.start_time_utc,
+        away_score: game.away_score,
+        home_score: game.home_score,
+        game_state: game.game_state,
+        last_period: game.last_period,
+        series_game: game.series_game,
+        away_wins: game.away_wins,
+        home_wins: game.home_wins,
+    }
 }
 
 fn render_search_bar(f: &mut Frame, app: &App, area: Rect) {

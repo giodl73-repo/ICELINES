@@ -93,11 +93,12 @@ surface still differs from CLI/TUI.
      rows through `ScoresView`; `ScoreGameRow` carries stable `game_id` and raw
      UTC start time so navigation and existing ET display stay intact while
      sharing the web/API score row contract.
-   - Schedule: CLI schedule now projects its already filtered/capped rows
-     through `ScheduleView`; `ScheduleGameRow` carries stable `game_id` and raw
-     UTC start time so the existing ET display remains a presentation concern
-     while sharing the web/API schedule row contract. TUI schedule alignment
-     remains.
+   - Schedule: CLI schedule and the TUI week list now project their already
+     filtered/capped rows through `ScheduleView`; `ScheduleGameRow` carries
+     stable `game_id`, raw UTC start time, score/status fields, and playoff
+     context so existing display stays a presentation concern while sharing the
+     web/API schedule row contract. Richer TUI team-season and matchup subviews
+     remain outside the shared contract.
 
 5. **Resolve live-route envelope policy** - complete for Ted Lindsay
    - Scores, schedule, playoffs, and game carry live-fetch failures in
