@@ -1760,6 +1760,43 @@ async fn l1_compare_json_similarity_matches_similar_players_view() {
 }
 
 #[tokio::test]
+async fn l1_compare_html_similarity_renders_similar_players_section() {
+    let season = Season(20242025);
+    let season_type = SeasonType::Regular;
+    let store = SnapshotStore::new(SnapshotStore::default_root());
+    let load = load_into_repo(season, season_type, &store)
+        .expect("bundled regular-season repo should load");
+    let state = WebState::with_repo_and_config(load.repo, WebConfig::new("20242025", "regular"));
+    let app = router(state);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/compare?a=8478402&similar=3")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let bytes = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+        .await
+        .expect("body fits");
+    let html = String::from_utf8(bytes.to_vec()).expect("html should be utf8");
+
+    assert!(html.contains("Similar players"), "html: {html}");
+    assert!(
+        html.contains("Connor McDavid") || html.contains("player cohort"),
+        "html should render the similarity target context: {html}"
+    );
+    assert!(
+        !html.contains("Pick two players to compare"),
+        "similarity mode should not render the empty compare hint: {html}"
+    );
+}
+
+#[tokio::test]
 async fn l1_compare_json_bad_input_uses_shared_error_envelope() {
     let app = router(WebState::new());
 

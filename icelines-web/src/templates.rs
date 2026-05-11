@@ -409,6 +409,7 @@ pub struct CompareTemplate {
     pub active_label: String,
     pub a: Option<ComparePlayerCard>,
     pub b: Option<ComparePlayerCard>,
+    pub similar: Option<icelines_core::SimilarPlayersView>,
     /// Set when `?a=` or `?b=` is missing or malformed. Renders an
     /// error block + a hint to use the player-card "Compare" form.
     pub error: Option<String>,

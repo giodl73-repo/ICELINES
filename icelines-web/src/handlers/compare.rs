@@ -354,6 +354,7 @@ pub async fn get_compare(State(state): State<WebState>, Query(q): Query<CompareQ
         active_label: result.active_label,
         a: result.a,
         b: result.b,
+        similar: result.similar,
         error: result.error,
         winners: result.winners,
     };

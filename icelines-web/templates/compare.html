@@ -80,6 +80,47 @@ Source: IceLines · /compare?a={{ pa.nhl_id }}&b={{ pb.nhl_id }}
     {% when None %}
 {% endmatch %}
 
+{% match similar %}
+    {% when Some with (sim) %}
+        <section style="margin-top:1rem;">
+            <h2 style="margin-bottom:0.25rem;">Similar players</h2>
+            <p style="color:#616161; margin-top:0;">
+                {{ sim.target.display_name }} Â· {{ sim.target.position.abbreviation() }} Â· {{ sim.cohort_count }} player cohort
+            </p>
+            {% if sim.rows.is_empty() %}
+                <p style="color:#616161;">No similar-player rows available for this target.</p>
+            {% else %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="text-align:right;">#</th>
+                            <th>Player</th>
+                            <th>Team</th>
+                            <th>Pos</th>
+                            <th style="text-align:right;">Age</th>
+                            <th>Draft</th>
+                            <th style="text-align:right;">Similarity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in sim.rows %}
+                        <tr>
+                            <td style="text-align:right;">{{ row.rank }}</td>
+                            <td><a href="/player/{{ row.player_id.0 }}">{{ row.display_name }}</a></td>
+                            <td>{{ row.team_display }}</td>
+                            <td>{{ row.position.abbreviation() }}</td>
+                            <td style="text-align:right;">{% match row.age %}{% when Some with (age) %}{{ age }}{% when None %}â€”{% endmatch %}</td>
+                            <td>{{ row.draft_label }}</td>
+                            <td style="text-align:right;">{{ row.similarity_pct }}%</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </section>
+    {% when None %}
+{% endmatch %}
+
 {% if !a.is_none() && !b.is_none() %}
 {# Side-by-side stat comparison. Both cards exist; render two columns. #}
 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:2rem;">
@@ -209,10 +250,12 @@ Source: IceLines · /compare?a={{ pa.nhl_id }}&b={{ pb.nhl_id }}
     </tbody>
 </table>
 {% else %}
+{% if similar.is_none() %}
 <p style="color:#616161;">
     Pick two players to compare. Open any
     <a href="/leaders">leaderboard row</a>, then use the "Compare with…" form on
     the player card to land here. URL: <code>/compare?a=NHL_ID&amp;b=NHL_ID</code>.
 </p>
+{% endif %}
 {% endif %}
 {% endblock %}
