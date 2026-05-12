@@ -223,6 +223,9 @@ Progress:
 - 2026-05-12: Applied the same helper layer to Team/Depth roster, Goalies
   leaderboard/detail, and Schedule/Scores week/team/matchup flows. Focused
   Team, Goalies, and Schedule TUI tests pass after the migration.
+- 2026-05-12: Added Prince.3 80x24 and 120x32 TUI render-contract tests for
+  Team, Goalies, Schedule, and Poach so representative screens keep identity
+  and command context at both required evidence sizes.
 
 ---
 

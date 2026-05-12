@@ -421,6 +421,16 @@ requires `PASS` for TUI, web, CLI, and markdown/report representative artifacts.
 - Avoid one-note palettes. Hockey identity should be contextual, not a wash of
   one color.
 
+Current Prince.3 evidence:
+
+- `cargo test -p icelines-cli prince_tui` renders Team, Goalies, Schedule, and
+  Poach at 80x24 and 120x32 and asserts each surface keeps its identity and
+  command/key context.
+- `cargo test -p icelines-cli "tui::screens::team"`,
+  `cargo test -p icelines-cli "tui::screens::goalies"`, and
+  `cargo test -p icelines-cli "tui::screens::schedule"` cover the focused
+  representative screen behavior after the shared helper migration.
+
 ---
 
 ## Prince Exit Gates

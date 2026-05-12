@@ -1042,6 +1042,50 @@ mod app_snapshot_tests {
         lb_smoke_screen(Screen::Playoffs, "Playoffs");
     }
 
+    fn prince_tui_surface_at_size(screen: Screen, expected: &[&str], w: u16, h: u16) {
+        let mut app = App::new(true);
+        app.screen = screen.clone();
+        let text = render_app_to_text(&app, w, h);
+        for label in expected {
+            assert!(
+                text.contains(label),
+                "Prince TUI {w}x{h} render for {screen:?} missing {label:?}; got:\n{text}"
+            );
+        }
+        assert!(
+            text.contains("Tab") || text.contains("Press") || text.contains(":"),
+            "Prince TUI {w}x{h} render for {screen:?} must preserve command/key context; got:\n{text}"
+        );
+    }
+
+    /// Prince.3: representative TUI surfaces must stay identifiable and
+    /// navigable at the 80x24 terminal size called out in the visual contract.
+    #[test]
+    fn l1_prince_tui_representative_surfaces_render_at_80x24() {
+        for (screen, expected) in [
+            (Screen::Team("EDM".to_owned()), &["EDM", "Roster"][..]),
+            (Screen::Goalies, &["Goalies", "GP"][..]),
+            (Screen::Schedule, &["Schedule"][..]),
+            (Screen::Poach, &["Poach"][..]),
+        ] {
+            prince_tui_surface_at_size(screen, expected, 80, 24);
+        }
+    }
+
+    /// Prince.3: the same surfaces must retain scan context at the roomier
+    /// 120x32 size used by the phase evidence ledger.
+    #[test]
+    fn l1_prince_tui_representative_surfaces_render_at_120x32() {
+        for (screen, expected) in [
+            (Screen::Team("EDM".to_owned()), &["EDM", "Roster"][..]),
+            (Screen::Goalies, &["Goalies", "GP"][..]),
+            (Screen::Schedule, &["Schedule"][..]),
+            (Screen::Poach, &["Poach"][..]),
+        ] {
+            prince_tui_surface_at_size(screen, expected, 120, 32);
+        }
+    }
+
     /// LB.5 / lb_smoke_player_card_by_pid
     /// — Cold-launched player card with a pid not in the active repo
     ///   renders the "not in roster" placeholder cleanly. Once UX.1
