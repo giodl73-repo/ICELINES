@@ -2299,6 +2299,65 @@ async fn l1_admin_snapshot_activate_json_returns_mutation_result_view() {
 }
 
 #[tokio::test]
+async fn l1_admin_snapshot_delete_json_returns_mutation_result_view() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    let store = SnapshotStore::new(SnapshotStore::default_root());
+    store
+        .create(
+            "stats-a",
+            "20252026",
+            SnapshotTier::Stats,
+            None,
+            "2026-05-10",
+        )
+        .expect("create snapshot a");
+    store.seal("stats-a").expect("seal snapshot a");
+    store
+        .create(
+            "stats-b",
+            "20252026",
+            SnapshotTier::Stats,
+            None,
+            "2026-05-11",
+        )
+        .expect("create snapshot b");
+    store.seal("stats-b").expect("seal snapshot b");
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/admin/snapshots/delete")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"name":"stats-a"}"#))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value = serde_json::from_slice(&bytes).expect("json body");
+
+    assert_eq!(json["operation"], "snapshot_remove");
+    assert_eq!(json["target"], "stats-a");
+    assert_eq!(json["status"], "applied");
+    let names: BTreeSet<String> = store
+        .load_manifest()
+        .expect("manifest")
+        .snapshots
+        .into_iter()
+        .map(|entry| entry.name)
+        .collect();
+    assert!(!names.contains("stats-a"));
+    assert!(names.contains("stats-b"));
+}
+
+#[tokio::test]
 async fn l1_admin_data_verify_json_returns_mutation_result_view() {
     let _guard = home_env_lock().await;
     let _home = HomeEnvFixture::new();
@@ -2346,6 +2405,35 @@ async fn l1_admin_data_verify_json_returns_mutation_result_view() {
     assert_eq!(json["operation"], "data_verify");
     assert_eq!(json["target"], "20252026");
     assert_eq!(json["status"], "noop");
+}
+
+#[tokio::test]
+async fn l1_admin_data_verify_json_rejects_unknown_target() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/admin/data/verify")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"target":"19001901"}"#))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value = serde_json::from_slice(&bytes).expect("json body");
+    assert!(json["error"]
+        .as_str()
+        .expect("error string")
+        .contains("was not found"));
 }
 
 #[tokio::test]
