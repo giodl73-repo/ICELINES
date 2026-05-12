@@ -176,6 +176,8 @@ Progress:
 - 2026-05-12: Reconciled web/site fit styling to the Prince token names:
   `fit-elite`, `fit-solid`, `fit-buried`, and `fit-stretch`. Removed the active
   `.fit-fringe` contract from CSS/tests and added mapping fences.
+- 2026-05-12: Added a shared CLI renderer visual mapping for fit colors,
+  TUI depth fit styling, markdown-safe fit labels, and scouting descriptions.
 
 ---
 

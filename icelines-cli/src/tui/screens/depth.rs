@@ -1,5 +1,6 @@
 use crate::tui::app::App;
-use icelines_core::cross_team::{ScoringMode, WebFitClass};
+use crate::visual::tui_web_fit_color;
+use icelines_core::cross_team::ScoringMode;
 use icelines_core::stats_repository::PlayerView;
 use icelines_core::{
     DepthGoalieSlot, DepthLeagueView, MetricValue, TeamAbbr, TeamDepthChartPlayer,
@@ -305,23 +306,15 @@ fn render_pos_col(
     let dim = Style::default().fg(Color::DarkGray);
     // Header: Line / Name (12) / Score (4). Total visible = 19 chars,
     // fits inside ~21-char column at 100-cols+ terminals. Fit class is
-    // encoded as the player-name color (Green=Elite, Yellow=Solid,
-    // Cyan=Buried, Red=Stretch) so the score column never truncates.
+    // encoded as the player-name color through the Prince visual token
+    // mapping so the score column never truncates.
     let mut lines: Vec<Line> = vec![
         Line::styled(format!(" {:<12} {:>4}", "Player", mode_label), dim),
         Line::styled(format!(" {}", "─".repeat(18)), dim),
     ];
 
     for (i, player) in players.iter().enumerate() {
-        let fit_color = player
-            .fit
-            .map(|fit| match fit {
-                WebFitClass::Elite => Color::Green,
-                WebFitClass::Solid => Color::Yellow,
-                WebFitClass::Buried => Color::Cyan,
-                WebFitClass::Stretch => Color::Red,
-            })
-            .unwrap_or(Color::DarkGray);
+        let fit_color = player.fit.map(tui_web_fit_color).unwrap_or(Color::DarkGray);
 
         let name = player.display_name.chars().take(12).collect::<String>();
         let line_style = if i < depth {

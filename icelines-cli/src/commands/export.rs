@@ -661,7 +661,7 @@ pub(crate) fn render_depth_from_views(
             own  = m.own_line,
             avg  = m.avg_other_line,
             delta= m.delta,
-            fit  = m.web_fit_class().label(),
+            fit  = crate::visual::web_fit_ascii_label(m.web_fit_class()),
         );
     }
     Ok(out)

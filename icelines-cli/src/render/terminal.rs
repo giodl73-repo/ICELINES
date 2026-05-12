@@ -3,22 +3,8 @@
 use comfy_table::{Cell, Color, Table};
 use icelines_core::stats_repository::PlayerView;
 use icelines_core::view_model::{DepthGoalieSlot, DepthPlayerSlot};
-use icelines_core::{
-    classify_fit, DepthChart, DepthChartSlot, FitClass, MetricValue, TeamDepthView,
-};
+use icelines_core::{classify_fit, DepthChart, DepthChartSlot, MetricValue, TeamDepthView};
 use owo_colors::OwoColorize;
-
-// ── Color helpers ─────────────────────────────────────────────────────────────
-
-/// Map a `FitClass` to a comfy-table `Color` for table cells.
-fn fit_color(fc: FitClass) -> Color {
-    match fc {
-        FitClass::Elite => Color::Green,
-        FitClass::Solid => Color::Yellow,
-        FitClass::Buried => Color::Blue,
-        FitClass::Stretch => Color::Red,
-    }
-}
 
 /// Format a depth-chart slot cell value.
 ///
@@ -34,7 +20,9 @@ fn slot_cell(slot: &DepthChartSlot, no_color: bool) -> Cell {
         Cell::new(format!("{}{}{}", prefix, slot.full_name, pace_str))
     } else {
         let fc = slot.pace_82.map(|p| classify_fit(p, slot.position));
-        let color = fc.map(fit_color).unwrap_or(Color::Reset);
+        let color = fc
+            .map(crate::visual::table_fit_color)
+            .unwrap_or(Color::Reset);
         Cell::new(format!("{}{}", slot.full_name, pace_str)).fg(color)
     }
 }
@@ -87,7 +75,7 @@ fn view_slot_cell(slot: &DepthPlayerSlot, no_color: bool) -> Cell {
         Cell::new(format!("{}{}{}", prefix, slot.display_name, pace_str))
     } else {
         let color = pace
-            .map(|p| fit_color(classify_fit(p, slot.position)))
+            .map(|p| crate::visual::table_fit_color(classify_fit(p, slot.position)))
             .unwrap_or(Color::Reset);
         Cell::new(format!("{}{}", slot.display_name, pace_str)).fg(color)
     }
@@ -306,7 +294,7 @@ pub fn render_rank_table(views: &[&PlayerView<'_>], top: usize, no_color: bool) 
         let proj_cell = if no_color {
             Cell::new(format!("[{}] {}", fc.label(), proj_str))
         } else {
-            Cell::new(proj_str).fg(fit_color(fc))
+            Cell::new(proj_str).fg(crate::visual::table_fit_color(fc))
         };
 
         table.add_row(vec![

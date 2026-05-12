@@ -516,13 +516,8 @@ pub(crate) fn render_report(
         let _ = writeln!(
             out,
             "  Fit class:     {} {}",
-            cls.label(),
-            match cls {
-                icelines_core::WebFitClass::Elite => "elite — plays above their line on most teams",
-                icelines_core::WebFitClass::Solid => "solid — fits their role well",
-                icelines_core::WebFitClass::Buried => "buried — underused, worth more elsewhere",
-                icelines_core::WebFitClass::Stretch => "stretch — overextended in current role",
-            }
+            crate::visual::web_fit_ascii_label(cls),
+            crate::visual::web_fit_report_description(cls)
         );
     } else {
         let _ = writeln!(out, "  Cross-team metrics unavailable (GP < {MIN_GP})");

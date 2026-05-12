@@ -177,10 +177,12 @@ Current drift inventory:
 1. Web fit CSS and `WebFitClass::css_class()` now use semantic `fit_*` names.
    Remaining web work should migrate any future compatibility aliases back to
    these tokens instead of reviving `.fit-fringe`.
-2. TUI color use is still scattered across screens. Centralize token-to-style
-   mapping before aesthetic work on individual panes.
-3. CLI fit color is centralized for terminal output, but source, game, action,
-   and fantasy/poach tokens need the same treatment.
+2. TUI color use is still scattered across screens, but depth fit styling now
+   uses the shared CLI renderer mapping. Continue centralizing source, game,
+   action, and fantasy/poach token styles before pane-level redesign.
+3. CLI fit color and cross-team fit labels now use the shared CLI renderer
+   mapping. Source, game, action, and fantasy/poach tokens need the same
+   treatment.
 4. Several web templates still carry inline hex colors. Move those through
    named CSS variables or token classes before claiming web visual consistency.
 5. Markdown/report output needs explicit token labels because color and CSS are

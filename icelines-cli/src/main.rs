@@ -12,6 +12,7 @@ mod start_slug;
 #[cfg(test)]
 mod test_utils;
 mod tui;
+mod visual;
 
 use anyhow::Context;
 use clap::Parser;
