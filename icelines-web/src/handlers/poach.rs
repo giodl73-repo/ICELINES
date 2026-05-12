@@ -1,16 +1,18 @@
 use crate::state::WebState;
 use crate::templates::{PoachRow, PoachTemplate};
 use askama::Template;
-use axum::extract::{Query, State};
+use axum::extract::{Form, Query, State};
 use axum::http::StatusCode;
-use axum::response::{Html, IntoResponse, Response};
+use axum::response::{Html, IntoResponse, Redirect, Response};
 use icelines_core::model::{Position, Season, TeamAbbr};
 use icelines_core::season_stats::SeasonType;
+use icelines_core::view_model::DeploymentSignal;
 use icelines_core::{
     view_model::{
         poach_report_from_board, watch_rules_view_with_persisted,
         weekly_poach_report_from_board_with_watched, AvailabilityState, PoachAvailabilityFilter,
-        PoachBoardView, PoachQuery, PoachReportView, WatchRule,
+        PoachBoardView, PoachQuery, PoachReportView, WatchRule, WatchRuleMutationIntent,
+        WatchRuleTrigger,
     },
     Completeness, EmptyKind, EmptyState, SourceKind, SourceState, ViewContext, ViewWindow,
 };
@@ -37,6 +39,29 @@ pub struct PoachWebQuery {
 #[derive(Debug, serde::Serialize)]
 struct WatchRulesErrorResponse {
     error: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct WatchRuleMutationRequest {
+    pub rule_id: String,
+    pub enabled: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct WatchRuleMutationForm {
+    pub rule_id: String,
+    pub enabled: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct WatchRuleCreateForm {
+    pub player: String,
+    pub trigger: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct WatchRuleDeleteForm {
+    pub rule_id: String,
 }
 
 pub async fn get_poach(State(state): State<WebState>, Query(q): Query<PoachWebQuery>) -> Response {
@@ -142,6 +167,82 @@ pub async fn get_poach_json(
 }
 
 pub async fn get_watch_rules_json(State(state): State<WebState>) -> Response {
+    let context = match watch_context_from_state(&state).await {
+        Ok(context) => context,
+        Err(response) => return response,
+    };
+    let view = watch_rules_view_with_persisted(context, read_persisted_watch_rules());
+    axum::Json(view).into_response()
+}
+
+pub async fn post_watch_rule_enabled_json(
+    State(state): State<WebState>,
+    axum::Json(req): axum::Json<WatchRuleMutationRequest>,
+) -> Response {
+    let intent = match WatchRuleMutationIntent::resolve(&req.rule_id, req.enabled) {
+        Ok(intent) => intent,
+        Err(message) => return watch_rules_error(StatusCode::BAD_REQUEST, message),
+    };
+    let context = match watch_context_from_state(&state).await {
+        Ok(context) => context,
+        Err(response) => return response,
+    };
+    match set_persisted_watch_rule_enabled(&intent.rule_id, intent.enabled) {
+        Ok(true) => axum::Json(intent.result_view(context, true)).into_response(),
+        Ok(false) => watch_rules_error(
+            StatusCode::NOT_FOUND,
+            format!("unknown persisted watch rule '{}'", intent.rule_id),
+        ),
+        Err(message) => watch_rules_error(StatusCode::INTERNAL_SERVER_ERROR, message),
+    }
+}
+
+pub async fn post_watch_rule_enabled_form(
+    State(state): State<WebState>,
+    Form(req): Form<WatchRuleMutationForm>,
+) -> Response {
+    let intent = match WatchRuleMutationIntent::resolve(&req.rule_id, req.enabled) {
+        Ok(intent) => intent,
+        Err(message) => return bad_request_html(message),
+    };
+    let context = match watch_context_from_state(&state).await {
+        Ok(context) => context,
+        Err(response) => return response,
+    };
+    match set_persisted_watch_rule_enabled(&intent.rule_id, intent.enabled) {
+        Ok(true) => {
+            let _result = intent.result_view(context, true);
+            Redirect::to("/watchlist").into_response()
+        }
+        Ok(false) => bad_request_html(format!("unknown persisted watch rule '{}'", intent.rule_id)),
+        Err(message) => watch_rules_error(StatusCode::INTERNAL_SERVER_ERROR, message),
+    }
+}
+
+pub async fn post_watch_rule_create_form(Form(req): Form<WatchRuleCreateForm>) -> Response {
+    let rule = match player_watch_rule(&req.player, &req.trigger) {
+        Ok(rule) => rule,
+        Err(message) => return bad_request_html(message),
+    };
+    match persist_watch_rule(&rule) {
+        Ok(()) => Redirect::to("/watchlist").into_response(),
+        Err(message) => watch_rules_error(StatusCode::INTERNAL_SERVER_ERROR, message),
+    }
+}
+
+pub async fn post_watch_rule_delete_form(Form(req): Form<WatchRuleDeleteForm>) -> Response {
+    let rule_id = req.rule_id.trim();
+    if rule_id.is_empty() {
+        return bad_request_html("watch rule id is required".to_string());
+    }
+    match delete_persisted_watch_rule(rule_id) {
+        Ok(true) => Redirect::to("/watchlist").into_response(),
+        Ok(false) => bad_request_html(format!("unknown persisted watch rule '{rule_id}'")),
+        Err(message) => watch_rules_error(StatusCode::INTERNAL_SERVER_ERROR, message),
+    }
+}
+
+async fn watch_context_from_state(state: &WebState) -> Result<ViewContext, Response> {
     let (season_str, season_type) = {
         let cfg = state.config.read().await;
         (
@@ -152,18 +253,19 @@ pub async fn get_watch_rules_json(State(state): State<WebState>) -> Response {
     let season_u32: u32 = match season_str.parse() {
         Ok(n) => n,
         Err(e) => {
-            return (
+            return Err((
                 StatusCode::INTERNAL_SERVER_ERROR,
                 axum::Json(WatchRulesErrorResponse {
                     error: format!("active season '{season_str}' is not a valid YYYYZZZZ id: {e}"),
                 }),
             )
-                .into_response();
+                .into_response());
         }
     };
-    let context = ViewContext::new(ViewWindow::new(Season(season_u32), season_type));
-    let view = watch_rules_view_with_persisted(context, read_persisted_watch_rules());
-    axum::Json(view).into_response()
+    Ok(ViewContext::new(ViewWindow::new(
+        Season(season_u32),
+        season_type,
+    )))
 }
 
 fn render_poach_report_html(report: &PoachReportView, active_label: &str) -> String {
@@ -246,12 +348,9 @@ fn html_escape(s: &str) -> String {
 }
 
 fn read_persisted_watch_rules() -> Vec<WatchRule> {
-    let Some(home) = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")) else {
+    let Some(db_path) = watch_db_path() else {
         return Vec::new();
     };
-    let db_path = std::path::PathBuf::from(&home)
-        .join(".icelines")
-        .join("icelines.db");
     if !db_path.exists() {
         return Vec::new();
     }
@@ -350,6 +449,163 @@ fn read_watchlist_player_keys() -> Vec<String> {
                 .collect()
         })
         .unwrap_or_default()
+}
+
+fn set_persisted_watch_rule_enabled(id: &str, enabled: bool) -> Result<bool, String> {
+    let db_path = watch_db_path().ok_or_else(|| "HOME / USERPROFILE not set.".to_string())?;
+    if !db_path.exists() {
+        return Ok(false);
+    }
+    let conn = rusqlite::Connection::open(&db_path).map_err(|err| format!("open db: {err}"))?;
+    let changed = conn
+        .execute(
+            "UPDATE watch_rules
+             SET enabled = ?2, updated_at = datetime('now')
+             WHERE id = ?1",
+            rusqlite::params![id, if enabled { 1 } else { 0 }],
+        )
+        .map_err(|err| format!("update watch rule: {err}"))?;
+    Ok(changed > 0)
+}
+
+fn delete_persisted_watch_rule(id: &str) -> Result<bool, String> {
+    let db_path = watch_db_path().ok_or_else(|| "HOME / USERPROFILE not set.".to_string())?;
+    if !db_path.exists() {
+        return Ok(false);
+    }
+    let conn = rusqlite::Connection::open(&db_path).map_err(|err| format!("open db: {err}"))?;
+    let changed = conn
+        .execute(
+            "DELETE FROM watch_rules WHERE id = ?1",
+            rusqlite::params![id],
+        )
+        .map_err(|err| format!("delete watch rule: {err}"))?;
+    Ok(changed > 0)
+}
+
+fn persist_watch_rule(rule: &WatchRule) -> Result<(), String> {
+    let db_path = watch_db_path().ok_or_else(|| "HOME / USERPROFILE not set.".to_string())?;
+    if let Some(parent) = db_path.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|err| format!("create {}: {err}", parent.display()))?;
+    }
+    let conn = rusqlite::Connection::open(&db_path).map_err(|err| format!("open db: {err}"))?;
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS watch_rules (
+            id TEXT PRIMARY KEY,
+            label TEXT NOT NULL,
+            enabled INTEGER NOT NULL DEFAULT 1,
+            trigger_json TEXT NOT NULL,
+            unsupported_sources_json TEXT NOT NULL DEFAULT '[]',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+         );",
+    )
+    .map_err(|err| format!("create watch_rules table: {err}"))?;
+    let trigger_json =
+        serde_json::to_string(&rule.trigger).map_err(|err| format!("encode trigger: {err}"))?;
+    let unsupported_sources_json = serde_json::to_string(&rule.unsupported_sources)
+        .map_err(|err| format!("encode unsupported sources: {err}"))?;
+    conn.execute(
+        "INSERT INTO watch_rules (
+            id, label, enabled, trigger_json, unsupported_sources_json, created_at, updated_at
+         )
+         VALUES (?1, ?2, ?3, ?4, ?5, datetime('now'), datetime('now'))
+         ON CONFLICT(id) DO UPDATE SET
+            label = excluded.label,
+            enabled = excluded.enabled,
+            trigger_json = excluded.trigger_json,
+            unsupported_sources_json = excluded.unsupported_sources_json,
+            updated_at = excluded.updated_at",
+        rusqlite::params![
+            rule.id,
+            rule.label,
+            if rule.enabled { 1_i64 } else { 0_i64 },
+            trigger_json,
+            unsupported_sources_json,
+        ],
+    )
+    .map_err(|err| format!("upsert watch rule '{}': {err}", rule.id))?;
+    Ok(())
+}
+
+fn player_watch_rule(player: &str, trigger: &str) -> Result<WatchRule, String> {
+    let player = player.trim();
+    if player.is_empty() {
+        return Err("watch rule player is required".to_string());
+    }
+    let normalized_trigger = trigger.trim().to_ascii_lowercase();
+    let (rule_trigger, unsupported_sources) = match normalized_trigger.as_str() {
+        "available" | "availability" => (
+            WatchRuleTrigger::AvailabilityChanged {
+                player_id: None,
+                state: AvailabilityState::Unknown,
+            },
+            vec![SourceKind::FantasyImport],
+        ),
+        "" | "pp1" | "pp2" | "top-six" | "promotion" | "line-change" => (
+            WatchRuleTrigger::PlayerPromoted {
+                player_id: None,
+                evidence: DeploymentSignal::Unknown,
+            },
+            vec![SourceKind::Shifts],
+        ),
+        other => {
+            return Err(format!(
+                "unknown watch trigger '{other}' - valid: pp1, pp2, top-six, promotion, line-change, available"
+            ));
+        }
+    };
+    let trigger_label = if normalized_trigger.is_empty() {
+        "promotion".to_string()
+    } else {
+        normalized_trigger
+    };
+    Ok(WatchRule {
+        id: format!("player-{}", slug(player)),
+        label: format!("Watch {player} when {trigger_label}"),
+        enabled: true,
+        trigger: rule_trigger,
+        last_fired: None,
+        unsupported_sources,
+    })
+}
+
+fn slug(value: &str) -> String {
+    value
+        .chars()
+        .filter_map(|ch| {
+            if ch.is_ascii_alphanumeric() {
+                Some(ch.to_ascii_lowercase())
+            } else if ch.is_whitespace() || ch == '-' || ch == '_' {
+                Some('-')
+            } else {
+                None
+            }
+        })
+        .collect::<String>()
+        .trim_matches('-')
+        .to_string()
+}
+
+fn watch_db_path() -> Option<std::path::PathBuf> {
+    std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(|home| {
+            std::path::PathBuf::from(&home)
+                .join(".icelines")
+                .join("icelines.db")
+        })
+}
+
+fn watch_rules_error(status: StatusCode, message: impl Into<String>) -> Response {
+    (
+        status,
+        axum::Json(WatchRulesErrorResponse {
+            error: message.into(),
+        }),
+    )
+        .into_response()
 }
 
 struct PoachBuildResult {

@@ -2,6 +2,9 @@
 
 use crate::cli::DataSubcommand;
 use anyhow::Context;
+use icelines_core::{
+    DataMutationIntent, DataMutationOperation, ViewContext, ViewWindow, CURRENT_SEASON,
+};
 
 /// All seasons with published GitHub Releases, newest first.
 /// The first 5 are also bundled in the binary; the rest require `data install`.
@@ -67,7 +70,10 @@ async fn run_install(seasons: u8, season: Option<String>, force: bool) -> anyhow
     };
 
     for s in to_install {
+        let intent = DataMutationIntent::resolve(DataMutationOperation::Install, s, force)
+            .map_err(|message| anyhow::anyhow!(message))?;
         install_season(&seasons_dir, s, force).await?;
+        let _result = intent.result_view(default_data_context(), true);
     }
 
     Ok(())
@@ -249,6 +255,8 @@ fn run_list() -> anyhow::Result<()> {
 // ── remove ────────────────────────────────────────────────────────────────────
 
 fn run_remove(season: &str) -> anyhow::Result<()> {
+    let intent = DataMutationIntent::resolve(DataMutationOperation::Remove, season, false)
+        .map_err(|message| anyhow::anyhow!(message))?;
     let target = seasons_base_dir()?.join(season);
 
     if !target.exists() {
@@ -256,6 +264,7 @@ fn run_remove(season: &str) -> anyhow::Result<()> {
     }
 
     std::fs::remove_dir_all(&target).with_context(|| format!("remove {}", target.display()))?;
+    let _result = intent.result_view(default_data_context(), true);
 
     println!("Removed season {season}.");
     Ok(())
@@ -446,8 +455,11 @@ fn run_verify(season: Option<&str>, all: bool) -> anyhow::Result<()> {
 
     let mut had_error = false;
     for s in &to_verify {
+        let intent = DataMutationIntent::resolve(DataMutationOperation::Verify, s, false)
+            .map_err(|message| anyhow::anyhow!(message))?;
         match verify_one(&seasons_dir, s) {
             Ok(VerifyOutcome::Ok { count }) => {
+                let _result = intent.result_view(default_data_context(), false);
                 println!("✓ {s}: {count} file(s) verified");
             }
             Ok(VerifyOutcome::Missing) => {
@@ -468,6 +480,13 @@ fn run_verify(season: Option<&str>, all: bool) -> anyhow::Result<()> {
         anyhow::bail!("verification failed");
     }
     Ok(())
+}
+
+fn default_data_context() -> ViewContext {
+    ViewContext::new(ViewWindow::new(
+        icelines_core::model::Season(CURRENT_SEASON),
+        icelines_core::season_stats::SeasonType::Regular,
+    ))
 }
 
 enum VerifyOutcome {

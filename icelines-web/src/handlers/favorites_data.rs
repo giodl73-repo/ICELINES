@@ -1,6 +1,10 @@
 use std::{collections::HashMap, time::Duration};
 
 use axum::http::{header, HeaderMap};
+use icelines_core::{
+    model::Season, season_stats::SeasonType, MutationResultView, ViewContext, ViewWindow,
+    CURRENT_SEASON,
+};
 
 pub(crate) enum MutateOp {
     Add,
@@ -201,7 +205,7 @@ pub(crate) fn mutate_favorites(
     kind_hint: Option<&str>,
     return_to: Option<&str>,
     op: MutateOp,
-) -> Result<String, String> {
+) -> Result<MutationResultView, String> {
     let intent = icelines_core::FavoriteMutationIntent::resolve(
         key,
         kind_hint,
@@ -235,21 +239,26 @@ pub(crate) fn mutate_favorites(
     );
 
     let result = match op {
-        MutateOp::Add => conn.execute(
-            "INSERT OR IGNORE INTO group_members \
+        MutateOp::Add => conn
+            .execute(
+                "INSERT OR IGNORE INTO group_members \
                      (group_name, entity_ref, added_at) \
                      VALUES ('Favorites', ?1, datetime('now'))",
-            rusqlite::params![intent.entity_ref],
-        ),
-        MutateOp::Remove => conn.execute(
-            "DELETE FROM group_members \
+                rusqlite::params![intent.entity_ref],
+            )
+            .map(|rows| ("add".to_string(), rows)),
+        MutateOp::Remove => conn
+            .execute(
+                "DELETE FROM group_members \
                      WHERE group_name = 'Favorites' AND entity_ref = ?1",
-            rusqlite::params![intent.entity_ref],
-        ),
+                rusqlite::params![intent.entity_ref],
+            )
+            .map(|rows| ("remove".to_string(), rows)),
     };
-    result.map_err(|e| format!("db mutation: {e}"))?;
+    let (operation, changed_rows) = result.map_err(|e| format!("db mutation: {e}"))?;
+    let context = ViewContext::new(ViewWindow::new(Season(CURRENT_SEASON), SeasonType::Regular));
 
-    Ok(intent.redirect_to)
+    Ok(intent.result_view(context, operation, changed_rows > 0))
 }
 
 fn referer_path(headers: &HeaderMap) -> Option<&str> {

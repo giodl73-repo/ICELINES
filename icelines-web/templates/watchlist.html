@@ -12,6 +12,27 @@
     or manage the group with <code>icelines group add Watchlist ...</code>.
 </p>
 
+<section>
+    <h2>Add Rule</h2>
+    <form method="post" action="/watch-rules/create">
+        <label>
+            Player
+            <input name="player" type="text" autocomplete="off">
+        </label>
+        <label>
+            Trigger
+            <select name="trigger">
+                <option value="promotion">Promotion</option>
+                <option value="pp1">PP1</option>
+                <option value="pp2">PP2</option>
+                <option value="top-six">Top six</option>
+                <option value="available">Available</option>
+            </select>
+        </label>
+        <button type="submit">Add rule</button>
+    </form>
+</section>
+
 {% if players.is_empty() && teams.is_empty() %}
 <section class="empty-state">
     <p><strong>No watched players yet.</strong></p>
@@ -41,6 +62,46 @@ icelines group add Watchlist "Matthew Knies"</code></pre>
         {% endfor %}
     </ul>
     {% endif %}
+{% endif %}
+
+{% if !rules.is_empty() %}
+<h2>Rules</h2>
+<div class="table-scroll">
+<table>
+    <thead>
+        <tr>
+            <th>Rule</th>
+            <th>Status</th>
+            <th>Action</th>
+            <th>Remove</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for rule in rules %}
+        <tr>
+            <td>
+                <strong>{{ rule.id }}</strong><br>
+                <span style="color:#555;font-size:0.92em;">{{ rule.label }}</span>
+            </td>
+            <td>{{ rule.enabled_label }}</td>
+            <td>
+                <form method="post" action="/watch-rules/set-enabled">
+                    <input type="hidden" name="rule_id" value="{{ rule.id }}">
+                    <input type="hidden" name="enabled" value="{{ rule.next_enabled }}">
+                    <button type="submit">{{ rule.action_label }}</button>
+                </form>
+            </td>
+            <td>
+                <form method="post" action="/watch-rules/delete">
+                    <input type="hidden" name="rule_id" value="{{ rule.id }}">
+                    <button type="submit">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
 {% endif %}
 
 {% if !alerts.is_empty() %}

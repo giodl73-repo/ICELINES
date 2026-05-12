@@ -10,8 +10,8 @@ use icelines_core::{
         default_watch_rules_view, evaluate_watch_alerts, poach_report_from_board,
         weekly_poach_report_from_board_with_watched, AvailabilityState, DeploymentSignal,
         PoachAvailabilityFilter, PoachBoardView, PoachQuery, PoachReportView, SourceKind,
-        SourceState, ViewContext, ViewWindow, WatchAlertRow, WatchRule, WatchRuleTrigger,
-        WatchRulesView,
+        SourceState, ViewContext, ViewWindow, WatchAlertRow, WatchRule, WatchRuleMutationIntent,
+        WatchRuleTrigger, WatchRulesView,
     },
 };
 
@@ -181,26 +181,33 @@ pub async fn run_watch_rules(args: WatchRulesArgs) -> anyhow::Result<()> {
 
 pub async fn run_watch_set_enabled(args: WatchSetEnabledArgs) -> anyhow::Result<()> {
     let db = GroupDb::open()?;
-    let changed = db.set_watch_rule_enabled(&args.id, args.enabled)?;
+    let intent = WatchRuleMutationIntent::resolve(&args.id, args.enabled)
+        .map_err(|message| anyhow::anyhow!(message))?;
+    let changed = db.set_watch_rule_enabled(&intent.rule_id, intent.enabled)?;
     if !changed {
-        bail!("unknown persisted watch rule '{}'", args.id);
+        bail!("unknown persisted watch rule '{}'", intent.rule_id);
     }
     let rule = db
         .list_watch_rules()?
         .into_iter()
-        .find(|rule| rule.id == args.id)
+        .find(|rule| rule.id == intent.rule_id)
         .context("watch rule disappeared after update")?;
     let latest_fired = latest_watch_rule_fire_times(&db)?;
     let rule = watch_rule_from_row(rule, &latest_fired)?;
+    let mutation = intent.result_view(default_watch_context(), changed);
     if args.json {
         println!(
             "{}",
-            serde_json::to_string_pretty(&rule).context("serializing watch rule")?
+            serde_json::to_string_pretty(&mutation).context("serializing watch rule mutation")?
         );
     } else {
         println!(
             "{} watch rule '{}'",
-            if args.enabled { "Enabled" } else { "Disabled" },
+            if intent.enabled {
+                "Enabled"
+            } else {
+                "Disabled"
+            },
             rule.id
         );
     }
@@ -496,6 +503,15 @@ fn watch_context(
         SourceState::missing(SourceKind::FantasyImport),
     ];
     Ok(context)
+}
+
+fn default_watch_context() -> ViewContext {
+    watch_context(None, QuerySeasonType::Regular).unwrap_or_else(|_| {
+        ViewContext::new(ViewWindow::new(
+            Season(icelines_core::CURRENT_SEASON),
+            icelines_core::season_stats::SeasonType::Regular,
+        ))
+    })
 }
 
 fn player_watch_rule(player: &str, trigger: &str) -> WatchRule {

@@ -1,7 +1,10 @@
 use crate::cli::SnapshotSubcommand;
 use crate::config::Config;
 use anyhow::Context;
-use icelines_core::{SnapshotEntryInput, SnapshotView, ViewContext, ViewWindow, CURRENT_SEASON};
+use icelines_core::{
+    SnapshotEntryInput, SnapshotMutationIntent, SnapshotMutationOperation, SnapshotView,
+    ViewContext, ViewWindow, CURRENT_SEASON,
+};
 use icelines_fetch::snapshot::{SnapshotEntry, SnapshotStore};
 
 pub async fn run(cmd: SnapshotSubcommand) -> anyhow::Result<()> {
@@ -29,10 +32,14 @@ pub async fn run(cmd: SnapshotSubcommand) -> anyhow::Result<()> {
         }
 
         SnapshotSubcommand::Use { name } => {
+            let intent =
+                SnapshotMutationIntent::resolve(SnapshotMutationOperation::Activate, &name)
+                    .map_err(|message| anyhow::anyhow!(message))?;
             store
-                .set_active(&name)
-                .with_context(|| format!("setting active snapshot to '{name}'"))?;
-            println!("Active snapshot set to '{name}'.");
+                .set_active(&intent.name)
+                .with_context(|| format!("setting active snapshot to '{}'", intent.name))?;
+            let _result = intent.result_view(default_snapshot_context(), true);
+            println!("Active snapshot set to '{}'.", intent.name);
         }
 
         SnapshotSubcommand::Verify { name } => {
@@ -61,10 +68,13 @@ pub async fn run(cmd: SnapshotSubcommand) -> anyhow::Result<()> {
         }
 
         SnapshotSubcommand::Delete { name } => {
+            let intent = SnapshotMutationIntent::resolve(SnapshotMutationOperation::Remove, &name)
+                .map_err(|message| anyhow::anyhow!(message))?;
             store
-                .delete(&name)
-                .with_context(|| format!("deleting snapshot '{name}'"))?;
-            println!("Deleted snapshot '{name}'.");
+                .delete(&intent.name)
+                .with_context(|| format!("deleting snapshot '{}'", intent.name))?;
+            let _result = intent.result_view(default_snapshot_context(), true);
+            println!("Deleted snapshot '{}'.", intent.name);
         }
 
         SnapshotSubcommand::Rebuild { name, chunked } => {
@@ -221,6 +231,13 @@ fn snapshot_view(
             .collect(),
         selected_name,
     )
+}
+
+fn default_snapshot_context() -> ViewContext {
+    ViewContext::new(ViewWindow::new(
+        icelines_core::model::Season(CURRENT_SEASON),
+        icelines_core::season_stats::SeasonType::Regular,
+    ))
 }
 
 fn print_snapshot_list(view: &SnapshotView) {

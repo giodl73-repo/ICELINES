@@ -19,9 +19,11 @@ use icelines_core::{
     score_fantasy_roster,
     season_stats::SeasonType,
     stats_repository::{PlayerView, StatsRepository},
-    FantasyRosterGapInput, FantasyRosterGapView, FantasySimulationBuildInput,
-    FantasySimulationConfidence, FantasySimulationHorizon, FantasySimulationRosterTeamInput,
-    FantasySimulationScenarioRosterInput, FantasySimulationView,
+    FantasyLeagueInput, FantasyLeagueTeamInput, FantasyLeagueView, FantasyRosterGapInput,
+    FantasyRosterGapView, FantasySimulationBuildInput, FantasySimulationConfidence,
+    FantasySimulationHorizon, FantasySimulationRosterTeamInput,
+    FantasySimulationScenarioRosterInput, FantasySimulationView, ViewContext, ViewWindow,
+    CURRENT_SEASON,
 };
 use icelines_fetch::nhl_api::NhlApiClient;
 use icelines_fetch::schedule_remaining::remaining_games_by_team_from_cache;
@@ -109,6 +111,36 @@ fn score_team(
         .collect()
 }
 
+fn fantasy_league_view(
+    leagues: Vec<LeagueRow>,
+    active_league: Option<&LeagueRow>,
+    teams: Vec<TeamRow>,
+) -> FantasyLeagueView {
+    let context = ViewContext::new(ViewWindow::new(Season(CURRENT_SEASON), SeasonType::Regular));
+    FantasyLeagueView::from_rows(
+        context,
+        active_league.map(|league| league.name.clone()),
+        leagues
+            .into_iter()
+            .map(|league| FantasyLeagueInput {
+                name: league.name,
+                scoring_scheme: league.scheme,
+                is_active: league.is_active,
+                team_count: league.team_count,
+            })
+            .collect(),
+        teams
+            .into_iter()
+            .map(|team| FantasyLeagueTeamInput {
+                name: team.name,
+                owner: team.owner,
+                is_user_team: team.is_user_team,
+                player_count: team.player_count,
+            })
+            .collect(),
+    )
+}
+
 /// Require an active league, or use the given override.
 fn require_league(db: &FantasyDb, league_override: &Option<String>) -> anyhow::Result<LeagueRow> {
     if let Some(name) = league_override {
@@ -154,19 +186,20 @@ pub async fn run_league_create(name: String, scheme_name: String) -> anyhow::Res
 pub async fn run_league_list() -> anyhow::Result<()> {
     let db = FantasyDb::open()?;
     let leagues = db.list_leagues()?;
+    let view = fantasy_league_view(leagues, None, Vec::new());
 
-    if leagues.is_empty() {
+    if view.leagues.is_empty() {
         println!("No leagues yet. Create one with `icelines fantasy league-create <name>`.");
         return Ok(());
     }
 
     println!("{:<28} {:<18} {:<7} Active", "Name", "Scheme", "Teams");
     println!("{}", "─".repeat(60));
-    for l in &leagues {
+    for l in &view.leagues {
         let active_marker = if l.is_active { "<—" } else { "" };
         println!(
             "{:<28} {:<18} {:<7} {}",
-            l.name, l.scheme, l.team_count, active_marker
+            l.name, l.scoring_scheme, l.team_count, active_marker
         );
     }
     Ok(())
@@ -215,8 +248,9 @@ pub async fn run_team_list(league_override: Option<String>) -> anyhow::Result<()
     let db = FantasyDb::open()?;
     let league = require_league(&db, &league_override)?;
     let teams = db.list_teams(&league.id)?;
+    let view = fantasy_league_view(vec![league.clone()], Some(&league), teams);
 
-    if teams.is_empty() {
+    if view.teams.is_empty() {
         println!(
             "No teams in '{}'. Add one with `icelines fantasy team-create <name>`.",
             league.name
@@ -230,7 +264,7 @@ pub async fn run_team_list(league_override: Option<String>) -> anyhow::Result<()
         "Team", "Owner", "Mine", "Players"
     );
     println!("{}", "─".repeat(58));
-    for t in &teams {
+    for t in &view.teams {
         println!(
             "{:<28} {:<20} {:<6} {:<8}",
             t.name,

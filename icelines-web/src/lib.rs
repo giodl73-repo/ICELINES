@@ -104,6 +104,22 @@ pub fn router(state: WebState) -> Router {
             "/api/v1/watch-rules",
             get(handlers::poach::get_watch_rules_json),
         )
+        .route(
+            "/api/v1/watch-rules/set-enabled",
+            post(handlers::poach::post_watch_rule_enabled_json),
+        )
+        .route(
+            "/watch-rules/set-enabled",
+            post(handlers::poach::post_watch_rule_enabled_form),
+        )
+        .route(
+            "/watch-rules/create",
+            post(handlers::poach::post_watch_rule_create_form),
+        )
+        .route(
+            "/watch-rules/delete",
+            post(handlers::poach::post_watch_rule_delete_form),
+        )
         // Phase Calder.4 — cross-league cohort leaderboard.
         // /career?league=OHL&season=20142015&sort=points
         .route("/career", get(handlers::career::get_career))
@@ -147,6 +163,14 @@ pub fn router(state: WebState) -> Router {
         // CSRF'd via image tags / link prefetch).
         .route("/favorites/add", post(handlers::favorites::post_add))
         .route("/favorites/remove", post(handlers::favorites::post_remove))
+        .route(
+            "/api/v1/favorites/add",
+            post(handlers::favorites::post_add_json),
+        )
+        .route(
+            "/api/v1/favorites/remove",
+            post(handlers::favorites::post_remove_json),
+        )
         // Transactions feed — King.8.2.
         .route(
             "/transactions",
@@ -164,6 +188,19 @@ pub fn router(state: WebState) -> Router {
         .route(
             "/api/v1/fantasy/simulate",
             get(handlers::fantasy::get_fantasy_simulation_json),
+        )
+        .route("/admin", get(handlers::admin::get_admin))
+        .route(
+            "/api/v1/admin/data-status",
+            get(handlers::admin::get_data_status_json),
+        )
+        .route(
+            "/api/v1/admin/snapshots",
+            get(handlers::admin::get_snapshots_json),
+        )
+        .route(
+            "/api/v1/admin/config",
+            get(handlers::admin::get_config_json),
         )
         // Sasq.7 — friendly 404 with a player-search input replaces
         // axum's bare default. Wired as router fallback so any
@@ -200,6 +237,7 @@ mod handlers {
     /// `compute_team_strength_views`, project to template rows, render.
     pub mod depth;
 
+    pub mod admin;
     pub mod fantasy;
     /// Phase Selke.6 — fantasy poacher web board.
     pub mod poach;

@@ -13,8 +13,10 @@ the current route source of truth. Current shipped route truth lives in
   `/api/v1/fantasy/simulate` are now folded into the main dashboard for
   read/product views. Legacy fantasy-server mutation routes remain separate.
 - `/admin/snapshots` is not mounted.
+- Current: `/admin`, `/api/v1/admin/data-status`, `/api/v1/admin/snapshots`,
+  and `/api/v1/admin/config` are mounted as read-only operational ViewModel
+  surfaces.
 - `/api/v1/reports` is not mounted.
-- `/api/v1/admin/snapshots` is not mounted.
 - The broad King route list includes several aspirational routes that should not
   be treated as shipped until the surface matrix says so.
 

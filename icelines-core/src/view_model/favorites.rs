@@ -7,6 +7,7 @@ use crate::name::normalize_name;
 use crate::view_model::context::{
     EmptyKind, EmptyState, SourceKind, SourceState, ViewContext, ViewWarning,
 };
+use crate::view_model::mutation::MutationResultView;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FavoritesView {
@@ -117,6 +118,37 @@ impl FavoriteMutationIntent {
             entity_ref,
             redirect_to,
         })
+    }
+
+    pub fn result_view(
+        &self,
+        context: ViewContext,
+        operation: impl Into<String>,
+        applied: bool,
+    ) -> MutationResultView {
+        let operation = operation.into();
+        let message = if applied {
+            format!("{operation} favorite {}", self.entity_ref)
+        } else {
+            format!("No favorite change needed for {}", self.entity_ref)
+        };
+        if applied {
+            MutationResultView::applied(
+                context,
+                operation,
+                self.entity_ref.clone(),
+                message,
+                Some(self.redirect_to.clone()),
+            )
+        } else {
+            MutationResultView::noop(
+                context,
+                operation,
+                self.entity_ref.clone(),
+                message,
+                Some(self.redirect_to.clone()),
+            )
+        }
     }
 }
 

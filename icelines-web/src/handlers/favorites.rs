@@ -4,8 +4,8 @@ use super::favorites_data::{
     WatchAlertEvent, WatchlistApiMeta, WatchlistApiResponse,
 };
 use crate::templates::{
-    FavoritePlayerRow, FavoriteTeamRow, FavoritesTemplate, WatchlistAlertRow, WatchlistPlayerRow,
-    WatchlistTeamRow, WatchlistTemplate,
+    FavoritePlayerRow, FavoriteTeamRow, FavoritesTemplate, WatchRuleTemplateRow, WatchlistAlertRow,
+    WatchlistPlayerRow, WatchlistTeamRow, WatchlistTemplate,
 };
 use askama::Template;
 use axum::extract::{Form, State};
@@ -88,6 +88,7 @@ pub async fn get_watchlist(State(state): State<crate::WebState>) -> Response {
                 key: row.key.clone(),
             })
             .collect(),
+        rules: read_watch_rule_rows(),
         alerts: alerts.iter().map(watchlist_alert_row).collect(),
     };
 
@@ -214,6 +215,42 @@ fn watchlist_alert_row(row: &WatchAlertEvent) -> WatchlistAlertRow {
         entity: row.entity_ref.clone().unwrap_or_else(|| "-".to_string()),
         message: row.message.clone(),
     }
+}
+
+fn read_watch_rule_rows() -> Vec<WatchRuleTemplateRow> {
+    let Some(home) = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")) else {
+        return Vec::new();
+    };
+    let db_path = std::path::PathBuf::from(&home)
+        .join(".icelines")
+        .join("icelines.db");
+    if !db_path.exists() {
+        return Vec::new();
+    }
+    let Ok(conn) = rusqlite::Connection::open(&db_path) else {
+        return Vec::new();
+    };
+    let Ok(mut stmt) = conn.prepare("SELECT id, label, enabled FROM watch_rules ORDER BY id")
+    else {
+        return Vec::new();
+    };
+    stmt.query_map([], |row| {
+        let id: String = row.get(0)?;
+        let label: String = row.get(1)?;
+        let enabled: i64 = row.get(2)?;
+        let enabled = enabled != 0;
+        Ok(WatchRuleTemplateRow {
+            id,
+            label,
+            enabled,
+            enabled_label: if enabled { "enabled" } else { "disabled" }.to_string(),
+            next_enabled: !enabled,
+            action_label: if enabled { "Disable" } else { "Enable" }.to_string(),
+        })
+    })
+    .ok()
+    .map(|rows| rows.filter_map(Result::ok).collect())
+    .unwrap_or_default()
 }
 
 /// Per-favorited-player stat-line lookup. Returns a flat
@@ -438,14 +475,73 @@ pub async fn post_add(headers: HeaderMap, Form(req): Form<FavoritesMutation>) ->
         req.return_to.as_deref(),
         MutateOp::Add,
     ) {
-        Ok(dest) => Redirect::to(&dest).into_response(),
+        Ok(view) => {
+            Redirect::to(view.redirect_to.as_deref().unwrap_or("/favorites")).into_response()
+        }
         Err(msg) => error_response(&msg),
     };
     // Foster +18 — opportunistic career-history augment for
     // newly-favorited players. Mirrors the CLI `group add`
     // behavior so favoriting from either surface populates
     // the local store identically. Skip on team adds.
-    let is_player = match kind_hint.as_deref() {
+    spawn_career_augment_if_player(display, kind_hint.as_deref());
+    response
+}
+
+pub async fn post_remove(headers: HeaderMap, Form(req): Form<FavoritesMutation>) -> Response {
+    match mutate_favorites(
+        &headers,
+        &req.key,
+        req.kind.as_deref(),
+        req.return_to.as_deref(),
+        MutateOp::Remove,
+    ) {
+        Ok(view) => {
+            Redirect::to(view.redirect_to.as_deref().unwrap_or("/favorites")).into_response()
+        }
+        Err(msg) => error_response(&msg),
+    }
+}
+
+pub async fn post_add_json(
+    headers: HeaderMap,
+    axum::Json(req): axum::Json<FavoritesMutation>,
+) -> Response {
+    let display = req.key.trim().to_string();
+    let kind_hint = req.kind.clone();
+    match mutate_favorites(
+        &headers,
+        &req.key,
+        req.kind.as_deref(),
+        req.return_to.as_deref(),
+        MutateOp::Add,
+    ) {
+        Ok(view) => {
+            spawn_career_augment_if_player(display, kind_hint.as_deref());
+            axum::Json(view).into_response()
+        }
+        Err(msg) => json_error_response(&msg),
+    }
+}
+
+pub async fn post_remove_json(
+    headers: HeaderMap,
+    axum::Json(req): axum::Json<FavoritesMutation>,
+) -> Response {
+    match mutate_favorites(
+        &headers,
+        &req.key,
+        req.kind.as_deref(),
+        req.return_to.as_deref(),
+        MutateOp::Remove,
+    ) {
+        Ok(view) => axum::Json(view).into_response(),
+        Err(msg) => json_error_response(&msg),
+    }
+}
+
+fn spawn_career_augment_if_player(display: String, kind_hint: Option<&str>) {
+    let is_player = match kind_hint {
         Some("team") => false,
         Some("player") => true,
         _ => icelines_core::TeamAbbr::parse(&display).is_err(),
@@ -461,18 +557,12 @@ pub async fn post_add(headers: HeaderMap, Form(req): Form<FavoritesMutation>) ->
             .await;
         });
     }
-    response
 }
 
-pub async fn post_remove(headers: HeaderMap, Form(req): Form<FavoritesMutation>) -> Response {
-    match mutate_favorites(
-        &headers,
-        &req.key,
-        req.kind.as_deref(),
-        req.return_to.as_deref(),
-        MutateOp::Remove,
-    ) {
-        Ok(dest) => Redirect::to(&dest).into_response(),
-        Err(msg) => error_response(&msg),
-    }
+fn json_error_response(message: &str) -> Response {
+    (
+        StatusCode::BAD_REQUEST,
+        axum::Json(serde_json::json!({ "error": message })),
+    )
+        .into_response()
 }

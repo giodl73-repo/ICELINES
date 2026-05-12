@@ -90,6 +90,67 @@ impl SeasonTypeMutationIntent {
             redirect_to,
         }
     }
+
+    pub fn result_view(&self, context: ViewContext) -> crate::MutationResultView {
+        crate::MutationResultView::applied(
+            context,
+            "set_season_type",
+            self.active_season_type.clone(),
+            format!("Active season type set to {}", self.active_season_type),
+            Some(self.redirect_to.clone()),
+        )
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ConfigMutationIntent {
+    pub key: String,
+    pub value: Option<String>,
+    pub reset: bool,
+}
+
+impl ConfigMutationIntent {
+    pub fn set(key: &str, value: &str) -> Result<Self, String> {
+        let key = key.trim();
+        if key.is_empty() {
+            return Err("config key is required".to_string());
+        }
+        Ok(Self {
+            key: key.to_string(),
+            value: Some(value.to_string()),
+            reset: false,
+        })
+    }
+
+    pub fn reset(key: &str) -> Result<Self, String> {
+        let key = key.trim();
+        if key.is_empty() {
+            return Err("config key is required".to_string());
+        }
+        Ok(Self {
+            key: key.to_string(),
+            value: None,
+            reset: true,
+        })
+    }
+
+    pub fn result_view(&self, context: ViewContext, changed: bool) -> crate::MutationResultView {
+        let operation = if self.reset {
+            "config_reset"
+        } else {
+            "config_set"
+        };
+        let message = if changed {
+            format!("{operation} {}", self.key)
+        } else {
+            format!("No config change needed for {}", self.key)
+        };
+        if changed {
+            crate::MutationResultView::applied(context, operation, self.key.clone(), message, None)
+        } else {
+            crate::MutationResultView::noop(context, operation, self.key.clone(), message, None)
+        }
+    }
 }
 
 fn safe_redirect_from_referer(referer: Option<&str>) -> Option<String> {
@@ -153,5 +214,16 @@ mod tests {
         assert!(view.rows[1].selected);
         assert_eq!(view.context.source_state[0].source, SourceKind::Cache);
         assert!(view.empty_state.is_none());
+    }
+
+    #[test]
+    fn config_mutation_intent_projects_result_view() {
+        let context = ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular));
+        let intent = ConfigMutationIntent::set("theme", "ascii").expect("valid config mutation");
+        let view = intent.result_view(context, true);
+
+        assert_eq!(view.operation, "config_set");
+        assert_eq!(view.target, "theme");
+        assert_eq!(view.status, crate::MutationStatus::Applied);
     }
 }

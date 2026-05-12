@@ -686,6 +686,55 @@ pub struct WatchRule {
     pub unsupported_sources: Vec<SourceKind>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct WatchRuleMutationIntent {
+    pub rule_id: String,
+    pub enabled: bool,
+}
+
+impl WatchRuleMutationIntent {
+    pub fn resolve(rule_id: &str, enabled: bool) -> Result<Self, String> {
+        let rule_id = rule_id.trim();
+        if rule_id.is_empty() {
+            return Err("watch rule id is required".to_string());
+        }
+        Ok(Self {
+            rule_id: rule_id.to_string(),
+            enabled,
+        })
+    }
+
+    pub fn result_view(
+        &self,
+        context: ViewContext,
+        changed: bool,
+    ) -> crate::view_model::mutation::MutationResultView {
+        let operation = if self.enabled { "enable" } else { "disable" };
+        let message = if changed {
+            format!("{operation} watch rule '{}'", self.rule_id)
+        } else {
+            format!("No watch rule change needed for '{}'", self.rule_id)
+        };
+        if changed {
+            crate::view_model::mutation::MutationResultView::applied(
+                context,
+                operation,
+                self.rule_id.clone(),
+                message,
+                None,
+            )
+        } else {
+            crate::view_model::mutation::MutationResultView::noop(
+                context,
+                operation,
+                self.rule_id.clone(),
+                message,
+                None,
+            )
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case", tag = "kind")]
 pub enum WatchRuleTrigger {
@@ -1459,6 +1508,19 @@ mod tests {
             state.source == SourceKind::FantasyImport && state.state == Completeness::Unavailable
         }));
         assert!(view.rules.iter().any(|rule| rule.id == "custom-rule"));
+    }
+
+    #[test]
+    fn watch_rule_mutation_intent_projects_result_view() {
+        let context = poach_context(Season(20252026), SeasonType::Regular);
+        let intent = WatchRuleMutationIntent::resolve("player-matthew-knies", false)
+            .expect("valid watch rule mutation intent");
+        let view = intent.result_view(context, true);
+
+        assert_eq!(view.operation, "disable");
+        assert_eq!(view.target, "player-matthew-knies");
+        assert_eq!(view.status, crate::MutationStatus::Applied);
+        assert!(view.message.contains("player-matthew-knies"));
     }
 
     #[test]

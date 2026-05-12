@@ -10,7 +10,9 @@ use anyhow::{Context, Result};
 
 use crate::cli::ConfigSubcommand;
 use crate::config::Config;
-use icelines_core::{ConfigEntryInput, ConfigView, ViewContext, ViewWindow, CURRENT_SEASON};
+use icelines_core::{
+    ConfigEntryInput, ConfigMutationIntent, ConfigView, ViewContext, ViewWindow, CURRENT_SEASON,
+};
 
 pub async fn run(cmd: ConfigSubcommand) -> Result<()> {
     match cmd {
@@ -43,13 +45,16 @@ fn run_get(key: &str) -> Result<()> {
 }
 
 fn run_set(key: &str, value: &str) -> Result<()> {
+    let intent =
+        ConfigMutationIntent::set(key, value).map_err(|message| anyhow::anyhow!(message))?;
     let mut cfg = Config::load().context("load config")?;
-    if let Err(e) = cfg.set_key(key, value) {
+    if let Err(e) = cfg.set_key(&intent.key, intent.value.as_deref().unwrap_or_default()) {
         eprintln!("error: {e}");
         std::process::exit(2);
     }
     cfg.save_sync().context("persist config")?;
-    println!("set {key} = {value}");
+    let _result = intent.result_view(default_config_context(), true);
+    println!("set {} = {}", intent.key, value);
     Ok(())
 }
 
@@ -63,26 +68,32 @@ fn run_list() -> Result<()> {
 }
 
 fn run_reset(key: &str) -> Result<()> {
+    let intent = ConfigMutationIntent::reset(key).map_err(|message| anyhow::anyhow!(message))?;
     let mut cfg = Config::load().context("load config")?;
-    if let Err(e) = cfg.reset_key(key) {
+    if let Err(e) = cfg.reset_key(&intent.key) {
         eprintln!("error: {e}");
         std::process::exit(2);
     }
     cfg.save_sync().context("persist config")?;
-    println!("reset {key}");
+    let _result = intent.result_view(default_config_context(), true);
+    println!("reset {}", intent.key);
     Ok(())
 }
 
 fn config_view(cfg: &Config, selected_key: Option<String>) -> ConfigView {
     ConfigView::from_entries(
-        ViewContext::new(ViewWindow::new(
-            icelines_core::model::Season(CURRENT_SEASON),
-            icelines_core::season_stats::SeasonType::Regular,
-        )),
+        default_config_context(),
         cfg.list_keys()
             .into_iter()
             .map(|(key, value)| ConfigEntryInput { key, value })
             .collect(),
         selected_key,
     )
+}
+
+fn default_config_context() -> ViewContext {
+    ViewContext::new(ViewWindow::new(
+        icelines_core::model::Season(CURRENT_SEASON),
+        icelines_core::season_stats::SeasonType::Regular,
+    ))
 }

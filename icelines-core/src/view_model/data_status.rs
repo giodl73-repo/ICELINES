@@ -91,6 +91,63 @@ pub struct DataStatusRow {
     pub stale: bool,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DataMutationOperation {
+    Install,
+    Remove,
+    Verify,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DataMutationIntent {
+    pub operation: DataMutationOperation,
+    pub target: String,
+    pub force: bool,
+}
+
+impl DataMutationIntent {
+    pub fn resolve(
+        operation: DataMutationOperation,
+        target: impl Into<String>,
+        force: bool,
+    ) -> Result<Self, String> {
+        let target = target.into();
+        if target.trim().is_empty() {
+            return Err("data mutation target is required".to_string());
+        }
+        Ok(Self {
+            operation,
+            target,
+            force,
+        })
+    }
+
+    pub fn result_view(&self, context: ViewContext, changed: bool) -> crate::MutationResultView {
+        let operation = match self.operation {
+            DataMutationOperation::Install => "data_install",
+            DataMutationOperation::Remove => "data_remove",
+            DataMutationOperation::Verify => "data_verify",
+        };
+        let message = if changed {
+            format!("{operation} {}", self.target)
+        } else {
+            format!("No data change needed for {}", self.target)
+        };
+        if changed {
+            crate::MutationResultView::applied(
+                context,
+                operation,
+                self.target.clone(),
+                message,
+                None,
+            )
+        } else {
+            crate::MutationResultView::noop(context, operation, self.target.clone(), message, None)
+        }
+    }
+}
+
 fn data_status_row(input: DataStatusEntryInput) -> DataStatusRow {
     DataStatusRow {
         source: source_label(input.source).to_string(),
@@ -199,5 +256,17 @@ mod tests {
             freshness_label(&mk(Ttl::After(Duration::from_secs(86400)))),
             "ttl 1d"
         );
+    }
+
+    #[test]
+    fn data_mutation_intent_projects_result_view() {
+        let context = ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular));
+        let intent = DataMutationIntent::resolve(DataMutationOperation::Install, "20252026", false)
+            .expect("valid data mutation");
+        let view = intent.result_view(context, true);
+
+        assert_eq!(view.operation, "data_install");
+        assert_eq!(view.target, "20252026");
+        assert_eq!(view.status, crate::MutationStatus::Applied);
     }
 }

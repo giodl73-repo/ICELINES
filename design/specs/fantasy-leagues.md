@@ -10,8 +10,8 @@
 
 Manage one or more **fantasy hockey leagues** locally: create leagues,
 add teams, set rosters, evaluate trades, and serve a web dashboard. The
-fantasy engine combines the canonical NHL stats from
-`icelines-fetch::PlayerRepository` with a user-selected scoring scheme
+fantasy engine combines canonical NHL stats loaded into
+`icelines_core::stats_repository::StatsRepository` with a user-selected scoring scheme
 (Yahoo standard, ESPN, or custom; see `fantasy-scheme.md`) to produce
 team standings.
 
@@ -150,10 +150,11 @@ Standings sort descending by total; ties broken alphabetically by team
 name. See `fantasy-scheme.md` for the full weight types and `SkaterWeights`
 shape.
 
-**Pace adjustment** (default in standings): per-player score is
-normalized to pts/82 using `Player::pace_score`, not raw season totals.
-This avoids penalizing late-acquired players or rewarding players with
-extra games. Pass `--scheme raw` (planned) for un-normalized totals.
+**Pace adjustment** (default in standings): per-player score is projected through
+the shared fantasy scoring/ViewModel helpers from the loaded stats window, not
+from a renderer-local `Player::pace_score` field. This avoids penalizing
+late-acquired players or rewarding players with extra games. Pass `--scheme raw`
+(planned) for un-normalized totals.
 
 **Players not in the loaded snapshot** contribute 0 to the team total
 and render as `(not in current data)`. They are kept on the roster
@@ -188,9 +189,9 @@ icelines fantasy serve [--port 8080] [--league NAME]
 ```
 
 Spawns the local fantasy-only axum server bound to `127.0.0.1:<port>`. These
-routes are the legacy standalone fantasy-server contract. The main dashboard
-parity surface now lives under `/fantasy` and `/api/v1/fantasy/*`; see
-`surface-parity.md`.
+routes are the legacy standalone fantasy-server mutation/read contract. The main
+dashboard parity surface now lives under `/fantasy`, `/api/v1/fantasy/gaps`, and
+`/api/v1/fantasy/simulate`; see `surface-parity.md`.
 
 Routes:
 
@@ -208,6 +209,13 @@ The server reads from the same `~/.icelines/icelines.db` as the CLI.
 WAL mode lets the CLI read/write while the server is running.
 The server is **not** a long-running daemon — it stops when the
 spawning process exits.
+
+Main-dashboard write policy: `/fantasy` and `/api/v1/fantasy/*` are
+ViewModel-backed read/product surfaces for roster gaps, standings simulation,
+and add/drop/drop-only scenario projection. League/team roster mutation remains
+in the CLI and this legacy local fantasy server until a dedicated web write-flow
+phase defines CSRF, confirmation, validation, and `MutationResultView` contracts
+for those routes.
 
 **Security**: localhost-only, no auth, no TLS. Designed for single-user
 dashboards. Do not expose the port to the network without a reverse proxy.

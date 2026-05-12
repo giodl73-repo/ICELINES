@@ -662,6 +662,7 @@ pub struct WatchlistTemplate {
     pub team_count: usize,
     pub players: Vec<WatchlistPlayerRow>,
     pub teams: Vec<WatchlistTeamRow>,
+    pub rules: Vec<WatchRuleTemplateRow>,
     pub alerts: Vec<WatchlistAlertRow>,
 }
 
@@ -674,6 +675,16 @@ pub struct WatchlistPlayerRow {
 #[derive(Debug, Clone)]
 pub struct WatchlistTeamRow {
     pub key: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct WatchRuleTemplateRow {
+    pub id: String,
+    pub label: String,
+    pub enabled: bool,
+    pub enabled_label: String,
+    pub next_enabled: bool,
+    pub action_label: String,
 }
 
 #[derive(Debug, Clone)]

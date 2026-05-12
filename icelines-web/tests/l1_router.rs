@@ -1776,6 +1776,487 @@ async fn l1_watch_rules_json_includes_persisted_rules() {
     assert_eq!(persisted["last_fired"], "2026-05-09T13:00:00Z");
 }
 
+#[tokio::test]
+async fn l1_watch_rule_toggle_json_returns_mutation_result_view() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+
+    let home = std::env::var_os("USERPROFILE").expect("temp userprofile");
+    let db_dir = std::path::PathBuf::from(home).join(".icelines");
+    std::fs::create_dir_all(&db_dir).expect("create db dir");
+    let conn = rusqlite::Connection::open(db_dir.join("icelines.db")).expect("open db");
+    conn.execute_batch(
+        "CREATE TABLE watch_rules (
+            id TEXT PRIMARY KEY,
+            label TEXT NOT NULL,
+            enabled INTEGER NOT NULL DEFAULT 1,
+            trigger_json TEXT NOT NULL,
+            unsupported_sources_json TEXT NOT NULL DEFAULT '[]',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+         );
+         INSERT INTO watch_rules VALUES (
+            'player-matthew-knies',
+            'Watch Matthew Knies when pp1',
+            1,
+            '{\"kind\":\"player_promoted\",\"player_id\":null,\"evidence\":{\"kind\":\"unknown\"}}',
+            '[\"shifts\"]',
+            '2026-05-09T12:00:00Z',
+            '2026-05-09T12:00:00Z'
+         );",
+    )
+    .expect("seed watch rules db");
+
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/watch-rules/set-enabled")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"rule_id":"player-matthew-knies","enabled":false}"#,
+                ))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value = serde_json::from_slice(&bytes).expect("json body");
+
+    assert_eq!(json["operation"], "disable");
+    assert_eq!(json["target"], "player-matthew-knies");
+    assert_eq!(json["status"], "applied");
+
+    let enabled: i64 = conn
+        .query_row(
+            "SELECT enabled FROM watch_rules WHERE id = 'player-matthew-knies'",
+            [],
+            |row| row.get(0),
+        )
+        .expect("enabled flag");
+    assert_eq!(enabled, 0);
+}
+
+#[tokio::test]
+async fn l1_watchlist_html_renders_watch_rule_toggle_form() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+
+    let home = std::env::var_os("USERPROFILE").expect("temp userprofile");
+    let db_dir = std::path::PathBuf::from(home).join(".icelines");
+    std::fs::create_dir_all(&db_dir).expect("create db dir");
+    let conn = rusqlite::Connection::open(db_dir.join("icelines.db")).expect("open db");
+    conn.execute_batch(
+        "CREATE TABLE watch_rules (
+            id TEXT PRIMARY KEY,
+            label TEXT NOT NULL,
+            enabled INTEGER NOT NULL DEFAULT 1,
+            trigger_json TEXT NOT NULL,
+            unsupported_sources_json TEXT NOT NULL DEFAULT '[]',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+         );
+         INSERT INTO watch_rules VALUES (
+            'player-matthew-knies',
+            'Watch Matthew Knies when pp1',
+            1,
+            '{\"kind\":\"player_promoted\",\"player_id\":null,\"evidence\":{\"kind\":\"unknown\"}}',
+            '[\"shifts\"]',
+            '2026-05-09T12:00:00Z',
+            '2026-05-09T12:00:00Z'
+         );",
+    )
+    .expect("seed watch rules db");
+
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/watchlist")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let html = String::from_utf8(bytes.to_vec()).expect("utf8 html");
+
+    assert!(html.contains("<h2>Rules</h2>"));
+    assert!(html.contains("action=\"/watch-rules/create\""));
+    assert!(html.contains(">Add rule</button>"));
+    assert!(html.contains("player-matthew-knies"));
+    assert!(html.contains("Watch Matthew Knies when pp1"));
+    assert!(html.contains("action=\"/watch-rules/set-enabled\""));
+    assert!(html.contains("action=\"/watch-rules/delete\""));
+    assert!(html.contains(">Disable</button>"));
+    assert!(html.contains(">Delete</button>"));
+}
+
+#[tokio::test]
+async fn l1_watch_rule_toggle_form_redirects_and_updates_rule() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+
+    let home = std::env::var_os("USERPROFILE").expect("temp userprofile");
+    let db_dir = std::path::PathBuf::from(home).join(".icelines");
+    std::fs::create_dir_all(&db_dir).expect("create db dir");
+    let conn = rusqlite::Connection::open(db_dir.join("icelines.db")).expect("open db");
+    conn.execute_batch(
+        "CREATE TABLE watch_rules (
+            id TEXT PRIMARY KEY,
+            label TEXT NOT NULL,
+            enabled INTEGER NOT NULL DEFAULT 1,
+            trigger_json TEXT NOT NULL,
+            unsupported_sources_json TEXT NOT NULL DEFAULT '[]',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+         );
+         INSERT INTO watch_rules VALUES (
+            'player-matthew-knies',
+            'Watch Matthew Knies when pp1',
+            1,
+            '{\"kind\":\"player_promoted\",\"player_id\":null,\"evidence\":{\"kind\":\"unknown\"}}',
+            '[\"shifts\"]',
+            '2026-05-09T12:00:00Z',
+            '2026-05-09T12:00:00Z'
+         );",
+    )
+    .expect("seed watch rules db");
+
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/watch-rules/set-enabled")
+                .header("content-type", "application/x-www-form-urlencoded")
+                .body(Body::from("rule_id=player-matthew-knies&enabled=false"))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        response
+            .headers()
+            .get("location")
+            .and_then(|h| h.to_str().ok()),
+        Some("/watchlist")
+    );
+    let enabled: i64 = conn
+        .query_row(
+            "SELECT enabled FROM watch_rules WHERE id = 'player-matthew-knies'",
+            [],
+            |row| row.get(0),
+        )
+        .expect("enabled flag");
+    assert_eq!(enabled, 0);
+}
+
+#[tokio::test]
+async fn l1_watch_rule_create_form_redirects_and_persists_rule() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/watch-rules/create")
+                .header("content-type", "application/x-www-form-urlencoded")
+                .body(Body::from("player=Matthew+Knies&trigger=available"))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        response
+            .headers()
+            .get("location")
+            .and_then(|h| h.to_str().ok()),
+        Some("/watchlist")
+    );
+
+    let home = std::env::var_os("USERPROFILE").expect("temp userprofile");
+    let db_path = std::path::PathBuf::from(home)
+        .join(".icelines")
+        .join("icelines.db");
+    let conn = rusqlite::Connection::open(db_path).expect("open db");
+    let (label, enabled, trigger_json): (String, i64, String) = conn
+        .query_row(
+            "SELECT label, enabled, trigger_json FROM watch_rules WHERE id = 'player-matthew-knies'",
+            [],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+        )
+        .expect("persisted watch rule");
+    assert_eq!(label, "Watch Matthew Knies when available");
+    assert_eq!(enabled, 1);
+    assert!(trigger_json.contains("availability_changed"));
+}
+
+#[tokio::test]
+async fn l1_watch_rule_delete_form_redirects_and_removes_rule() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+
+    let home = std::env::var_os("USERPROFILE").expect("temp userprofile");
+    let db_dir = std::path::PathBuf::from(home).join(".icelines");
+    std::fs::create_dir_all(&db_dir).expect("create db dir");
+    let conn = rusqlite::Connection::open(db_dir.join("icelines.db")).expect("open db");
+    conn.execute_batch(
+        "CREATE TABLE watch_rules (
+            id TEXT PRIMARY KEY,
+            label TEXT NOT NULL,
+            enabled INTEGER NOT NULL DEFAULT 1,
+            trigger_json TEXT NOT NULL,
+            unsupported_sources_json TEXT NOT NULL DEFAULT '[]',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+         );
+         INSERT INTO watch_rules VALUES (
+            'player-matthew-knies',
+            'Watch Matthew Knies when pp1',
+            1,
+            '{\"kind\":\"player_promoted\",\"player_id\":null,\"evidence\":{\"kind\":\"unknown\"}}',
+            '[\"shifts\"]',
+            '2026-05-09T12:00:00Z',
+            '2026-05-09T12:00:00Z'
+         );",
+    )
+    .expect("seed watch rules db");
+
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/watch-rules/delete")
+                .header("content-type", "application/x-www-form-urlencoded")
+                .body(Body::from("rule_id=player-matthew-knies"))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        response
+            .headers()
+            .get("location")
+            .and_then(|h| h.to_str().ok()),
+        Some("/watchlist")
+    );
+    let count: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM watch_rules WHERE id = 'player-matthew-knies'",
+            [],
+            |row| row.get(0),
+        )
+        .expect("rule count");
+    assert_eq!(count, 0);
+}
+
+#[tokio::test]
+async fn l1_admin_data_status_json_returns_viewmodel_contract() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/admin/data-status")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value = serde_json::from_slice(&bytes).expect("json body");
+
+    assert_eq!(json["root"].as_str().is_some(), true);
+    assert_eq!(json["total"], 0);
+    assert_eq!(json["empty_state"]["kind"], "missing_source");
+}
+
+#[tokio::test]
+async fn l1_admin_html_renders_operational_viewmodels() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/admin")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let html = String::from_utf8(bytes.to_vec()).expect("utf8 html");
+
+    assert!(html.contains("<h1>Admin</h1>"));
+    assert!(html.contains("Data Status"));
+    assert!(html.contains("Snapshots"));
+    assert!(html.contains("Runtime Config"));
+    assert!(html.contains("web.active_season"));
+}
+
+#[tokio::test]
+async fn l1_admin_snapshots_json_returns_viewmodel_contract() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/admin/snapshots")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value = serde_json::from_slice(&bytes).expect("json body");
+
+    assert_eq!(json["total"], 0);
+    assert_eq!(json["empty_state"]["kind"], "missing_source");
+}
+
+#[tokio::test]
+async fn l1_admin_config_json_returns_runtime_config_viewmodel() {
+    let state = WebState::new();
+    {
+        let mut cfg = state.config.write().await;
+        *cfg = WebConfig::new("20242025", "playoff");
+    }
+    let app = router(state);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/admin/config?selected=web.active_season_type")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value = serde_json::from_slice(&bytes).expect("json body");
+
+    assert_eq!(json["rows"].as_array().map(Vec::len), Some(3));
+    assert_eq!(json["rows"][1]["key"], "web.active_season_type");
+    assert_eq!(json["rows"][1]["value"], "playoff");
+    assert_eq!(json["rows"][1]["selected"], true);
+}
+
+#[tokio::test]
+async fn l1_favorites_add_json_returns_mutation_result_view() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/favorites/add")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"key":"EDM","kind":"team","return_to":"/favorites"}"#,
+                ))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value = serde_json::from_slice(&bytes).expect("json body");
+
+    assert_eq!(json["operation"], "add");
+    assert_eq!(json["target"], "team:EDM");
+    assert_eq!(json["status"], "applied");
+    assert_eq!(json["redirect_to"], "/favorites");
+}
+
+#[tokio::test]
+async fn l1_favorites_remove_json_returns_mutation_result_view() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    let app = router(WebState::new());
+
+    let add_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/favorites/add")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"key":"EDM","kind":"team"}"#))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(add_response.status(), StatusCode::OK);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/favorites/remove")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"key":"EDM","kind":"team"}"#))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value = serde_json::from_slice(&bytes).expect("json body");
+
+    assert_eq!(json["operation"], "remove");
+    assert_eq!(json["target"], "team:EDM");
+    assert_eq!(json["status"], "applied");
+}
+
 /// l1_career_route_missing_league_returns_400 (Calder.4)
 /// — `/career` without `?league=…` rejects with 400 + helpful body.
 #[tokio::test]

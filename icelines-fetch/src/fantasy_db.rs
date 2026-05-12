@@ -9,6 +9,7 @@ use rusqlite::Connection;
 // ── Public types ──────────────────────────────────────────────────────────────
 
 /// A row returned by `list_leagues`.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LeagueRow {
     pub id: String,
     pub name: String,
@@ -18,6 +19,7 @@ pub struct LeagueRow {
 }
 
 /// A row returned by `list_teams` / `get_team_by_name`.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TeamRow {
     pub id: String,
     pub name: String,
@@ -27,6 +29,7 @@ pub struct TeamRow {
 }
 
 /// A full fantasy league snapshot: league metadata, user team, teams, and rosters.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FantasyLeagueSnapshot {
     pub league: String,
     pub user_team: String,
@@ -35,6 +38,7 @@ pub struct FantasyLeagueSnapshot {
 }
 
 /// One team plus its normalized roster names.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FantasyTeamSnapshot {
     pub name: String,
     pub owner: String,

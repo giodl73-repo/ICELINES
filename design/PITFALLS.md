@@ -18,6 +18,16 @@ Pitfall domains:
 - **OPEN** — known failure mode, no structural solution yet
 - **MITIGATED** — we are careful about it, but a code change could reintroduce it
 - **SOLVED** — structural solution exists AND a test proves it cannot happen
+- **SUPERSEDED** — historical failure mode from an older architecture; keep for
+  memory, but translate to current `StatsRepository`/ViewModel terms before
+  opening new work.
+
+## Legacy Note
+
+Early DP/AP/SP entries use the retired CSV-era `Player`, `FitClass`, and
+generated-team-site vocabulary. Current implementation work should treat those
+as historical examples, then restate any live risk against `StatsRepository`,
+`PlayerView`, typed stat catalog reads, and ViewModels.
 
 ---
 

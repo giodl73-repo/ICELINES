@@ -7,7 +7,7 @@ Invariants are grouped by domain:
 - **DI** — Data Invariants: properties of player and team data at any point in the pipeline
 - **AI** — Algorithm Invariants: properties of the scoring and classification engine
 - **II** — Interface Invariants: properties of the CLI commands and their inputs/outputs
-- **SI** — Site Invariants: properties of the generated mkdocs site
+- **SI** — Site Invariants: properties of generated docs/site/export artifacts
 
 ---
 
@@ -15,21 +15,21 @@ Invariants are grouped by domain:
 
 | ID    | Domain    | Invariant | Status | Notes |
 |-------|-----------|-----------|--------|-------|
-| DI-01 | Data | Every `Player` in the pipeline has a non-empty `name` and a `team` that is in the canonical 32-team abbreviation list. Players that fail this check are rejected at CSV load time, not silently passed through. | OPEN | `TeamAbbr::parse()` will enforce this; not yet implemented |
-| DI-02 | Data | A `Player` with `season_gp = Some(0)` must have `pace_score = None` and `fit_class = None`. A zero-GP player is never assigned a pace projection, even if they have nonzero points in the CSV. | OPEN | Scoring engine not yet implemented |
-| DI-03 | Data | A `Player` with `season_gp = Some(n)` where `n < MIN_GP` must have `pace_score = None` and `fit_class = None`. The MIN_GP gate is enforced in the scoring engine, not at the caller. | OPEN | |
-| DI-04 | Data | A `Player` with `nhl_id = None` (name resolution failed) must never appear on a lineup card or in a ranked output. Unresolved players are collected into a separate error report at the end of the pipeline. | OPEN | |
-| DI-05 | Data | The `name_normalized` field of every `Player` is the result of applying `normalize_name()` to `name`. These two fields are always in sync — `name_normalized` is never set independently. | OPEN | |
-| DI-06 | Data | Two `Player` records in the same pipeline run must not share the same (`nhl_id`, `season`) pair. A mid-season trade that produces two CSV rows for the same player must be detected and merged before the scoring engine runs. | OPEN | EDGE DI-06 / Sebastian Aho pattern |
-| AI-01 | Algorithm | For any `Player` with `fit_class = Some(FitClass::Elite)`, `pace_score.pace_82` is ≥ the Elite threshold for that player's position group. The fit classification and pace score are always consistent — they are produced by the same function call and stored together. | OPEN | |
-| AI-02 | Algorithm | The `sort_by_rank()` output is deterministic: given the same input `Vec<Player>`, the output is always the same ordering. The tiebreaker chain (pace_82 desc → goals_per_game desc → name asc) must be total — no two players can be considered equal by all three criteria simultaneously (names are unique in a pool). | OPEN | |
-| AI-03 | Algorithm | A `DepthChart` for any team has at most 4 forward lines (12 forward slots) and at most 3 defense pairs (6 defense slots). A roster with more than 12 forwards in the CSV will have the excess players in `unplaced`, not in an overlong `forward_lines` array. | OPEN | |
-| AI-04 | Algorithm | The fit thresholds used in `classify_fit()` are the same values documented in `docs/specs/rust-cli.md`. If the spec changes the threshold values, the implementation must change in the same commit. These cannot diverge. | OPEN | |
-| II-01 | Interface | `icelines team <TEAM>` exits with code 0 if and only if the team was found, GP data was available (cached or freshly fetched) for at least one player on the team, and the lineup card was rendered without error. All other cases exit non-zero. | OPEN | |
-| II-02 | Interface | `icelines rank` with no `--position` filter includes all positions except goalies. A goalie in the CSV is parsed but never included in ranking output and never placed on a lineup card. | OPEN | |
-| II-03 | Interface | `--no-color` is always respected. Any terminal output path that produces ANSI color codes must check the `--no-color` flag first. If stdout is not a TTY, `--no-color` is implied automatically. | OPEN | |
-| SI-01 | Site | Every generated team markdown file contains exactly one forward grid section and one defense grid section. A team file with no skaters in the CSV generates a page with empty grid sections and an explicit "No skaters in fantasy pool" message — not a missing section. | OPEN | |
-| SI-02 | Site | The CSS fit class applied to a player cell in the site (`fit-elite`, `fit-solid`, `fit-buried`, `fit-stretch`) matches the `FitClass` computed by the scoring engine for that player. The mapping from `FitClass` variant to CSS class name is a constant, not a runtime string construction. | OPEN | |
+| DI-01 | Data | Every skater/goalie row admitted to `StatsRepository` has a canonical `PlayerId`, non-empty display name, canonical team abbreviation when team context is present, and a window key `(season, season_type)`. Rows that cannot satisfy those fields are rejected at load/fetch boundaries, not silently ranked. | VERIFIED | Hart/Lindsay repository fixture and loader tests; current domain type is `PlayerView`, not the retired CSV-era `Player` |
+| DI-02 | Data | A stat row with zero games played or insufficient sample remains readable as raw data, but derived pace/projection metrics return `None` through `StatId::read` or the relevant ViewModel field. Callers do not manufacture zero-valued projections. | VERIFIED | `StatId::read` totality and fantasy/ViewModel fixture tests |
+| DI-03 | Data | Minimum-game and applicability gates live in the stat catalog/ViewModel builder, not in renderers. CLI, TUI, web, and markdown surfaces may filter or format rows but must not reimplement sample-size eligibility. | VERIFIED | Lindsay stat catalog tests and Campbell ViewModel adapter tests |
+| DI-04 | Data | Name-based user input resolves to canonical IDs or normalized roster keys before it enters ranked/product output. Ambiguous or invalid names surface as typed errors/warnings instead of producing anonymous rows. | VERIFIED | CLI/web player resolution, fantasy scenario canonicalization, and invalid-drop tests |
+| DI-05 | Data | Normalized player keys are produced with `normalize_name()` at mutation/import boundaries; persisted fantasy/group/watch records store canonical normalized keys or typed `entity_ref` values. | VERIFIED | Group/fantasy DB round-trip tests and fantasy add/drop scenario tests |
+| DI-06 | Data | Duplicate player identity within one repository window must collapse to one canonical row or be represented as explicit per-window/team context; rankings and ViewModels use `PlayerId` tie-breaks and never rank the same `(player_id, window)` twice as an accidental duplicate. | PARTIAL | Current `StatsRepository`/sort paths are ID-keyed; transaction/player-link edge cases remain tracked in PITFALLS |
+| AI-01 | Algorithm | Ranking/classification outputs are produced by shared query/catalog/ViewModel builders. Renderers must not compute independent fit, pace, poach, fantasy, or depth scores. | VERIFIED | Campbell/Selke ViewModel gates across CLI/TUI/web |
+| AI-02 | Algorithm | Any ordered leaderboard or board is deterministic for fixed repository, query, scoring scheme, and source state. Stable tie-breaks include canonical player/team IDs where available. | VERIFIED | `GoalieLeaderboardSort`, `StatId::sort_cmp`, poach/fantasy ViewModel fixture tests |
+| AI-03 | Algorithm | Team-depth and depth-chart ViewModels expose bounded line/pair/slot rows plus explicit empty/unplaced state; renderers do not infer roster structure from raw arrays. | VERIFIED | `TeamDepthView`, `TeamDepthChartView`, and TUI/web/markdown adapter tests |
+| AI-04 | Algorithm | Public thresholds, weights, and scoring schemes are catalog/scheme data. If a renderer needs a label or explanation, it reads it from the ViewModel or scheme metadata rather than hard-coding algorithm constants. | VERIFIED | Lindsay stat catalog, fantasy scheme, and poach explanation tests |
+| II-01 | Interface | Core product commands and routes render from shared ViewModels or documented DTO projections from ViewModels; route/command claims must appear in `surface-parity.md`. | VERIFIED | Ted Lindsay route inventory and Campbell surface parity matrix |
+| II-02 | Interface | Skater and goalie surfaces remain separated by typed ViewModels where their stat semantics differ; all-position queries may combine them only through explicit mixed-surface contracts. | VERIFIED | `LeadersView`, `GoaliesView`, team-depth goalie sections, and query goalies tests |
+| II-03 | Interface | Terminal color/style is presentation-only. Data contracts, JSON, markdown, and ViewModels never encode ANSI or renderer-specific class/style strings. | ENFORCED | ViewModel spec bans renderer-specific styles; terminal output remains guarded by surface adapters |
+| SI-01 | Site | Static/generated docs and exports are not shipped-route truth. Route truth is `surface-parity.md` plus `ted_lindsay_route_inventory.rs`; generated docs may summarize only rows marked done or clearly partial. | VERIFIED | Route inventory gate |
+| SI-02 | Site | Static/export pages that surface stats, players, teams, or reports render from the same ViewModel/report contracts as CLI/TUI/web, or carry an explicit matrix exception. | PARTIAL | Markdown exports are ViewModel-backed; generated team-page verification remains tracked in surface parity |
 
 ---
 
@@ -50,8 +50,18 @@ An invariant with no test is a promise. An invariant with a passing test is a gu
 - **OPEN** — invariant is stated, no enforcement mechanism or test yet
 - **ENFORCED** — structural enforcement exists (type system, validation at boundary) but no test
 - **VERIFIED** — a test would fail if the invariant were violated, and the test passes
+- **PARTIAL** — enforced for current high-value surfaces, with a named carry-forward
 
 ---
+
+## Legacy invariant cleanup
+
+The original DI-01..DI-06, AI-01..AI-04, II-01..II-03, and SI-01..SI-02
+statements described the pre-Hart CSV `Player` / `FitClass` / generated-team-site
+architecture. They are superseded by the `StatsRepository + PlayerView + typed
+ViewModel` architecture above. The failure modes were not deleted; they remain
+as historical pitfalls in `design/PITFALLS.md` and should be reintroduced only
+as current invariants with current type names and test references.
 
 ## Phase Lindsay invariants (DI-07 through DI-29 / AI-05 through AI-09 / II-04 through II-06 / SI-03)
 
@@ -88,4 +98,5 @@ phase plan owns the canonical statements and the test references.
 | II-06 | Interface | `--filter` and `--sort` accept identical grammars and StatId key sets across `query leaders / player / compare / goalies` + `export md`. Same-StatId multi-filter normalization rule applies uniformly. | PARTIAL (L.3.1 wired `query leaders`; rolling to player/compare carries forward) |
 | II-07 | Interface | CLI, TUI, web, markdown, and JSON poacher surfaces render from `PoachBoardView` or `PoachReportView`; renderers do not recompute ranking or recommendation logic. | VERIFIED (Selke CLI/TUI/web/report slices through shared ViewModels) |
 | II-08 | Interface | Fantasy read/product surfaces render from `FantasyRosterGapView`, `FantasySimulationView`, or `PoachBoardView`/`PoachReportView`; scenario errors must preserve canonical player-name resolution and invalid-drop messages across CLI, TUI, web HTML, and web JSON. | VERIFIED (Selke fantasy parity gates) |
+| II-09 | Interface | Cross-surface mutations resolve through typed intent/result contracts before rendering or redirecting; ad hoc mutation responses must not become public JSON/admin contracts. | PARTIAL (Campbell follow-up: favorites, watch rules, season type, config, data, and snapshot intents now project `MutationResultView`; remaining work is full admin/web wiring) |
 | SI-03 | Site | Every site page that surfaces a stat name uses `StatId::label()`; site templates never hard-code a stat name string. | VERIFIED (L.5b — grep fence + allowlist) |

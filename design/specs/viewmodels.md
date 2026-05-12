@@ -298,6 +298,9 @@ Current Selke surfaces:
 - TUI Watchlist workspace rule/history summary
 - JSON `/api/v1/watch-rules`
 
+Watch rule enable/disable operations resolve through `WatchRuleMutationIntent`
+and return `MutationResultView` when a surface needs structured mutation output.
+
 ### `PoachReportView`
 
 Owned by Phase Selke, uses the report contract from `platform-contracts.md`.
@@ -340,6 +343,26 @@ Current surfaces:
 - web `/fantasy`
 - JSON `/api/v1/fantasy/gaps`
 
+### `FantasyLeagueView`
+
+Owned by Phase Selke/Ted Lindsay.
+
+Required:
+
+- context/source state and warnings;
+- active league;
+- league rows with scoring scheme, active marker, and team count;
+- team rows with owner, user-team marker, and player count;
+- empty state for no imported/created leagues.
+
+Current surfaces:
+
+- CLI `icelines fantasy league-list`
+- CLI `icelines fantasy team-list`
+
+Mutation operations remain storage-backed in CLI/legacy server paths, but shared
+mutation outputs use `MutationResultView`.
+
 ### `FantasySimulationView`
 
 Owned by Phase Selke/Ted Lindsay.
@@ -368,6 +391,33 @@ Fantasy renderers may choose density, truncation, styling, and JSON envelope
 shape. They must not recompute fantasy score, projection, scenario
 classification, or add/drop validation outside the shared core ViewModel
 builders.
+
+### `MutationResultView`
+
+Owned by Campbell follow-up.
+
+Required:
+
+- context;
+- operation;
+- target;
+- status: `applied` or `noop`;
+- message;
+- optional redirect target;
+- warnings.
+
+Current mutation intent helpers:
+
+- `FavoriteMutationIntent`;
+- `WatchRuleMutationIntent`;
+- `SeasonTypeMutationIntent`;
+- `ConfigMutationIntent`;
+- `DataMutationIntent`;
+- `SnapshotMutationIntent`.
+
+Surfaces may still perform persistence in their local storage layer, but the
+resolved intent/result shape is shared so CLI, TUI, web, and future JSON/admin
+routes do not invent incompatible mutation responses.
 
 ---
 

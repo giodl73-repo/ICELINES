@@ -11,12 +11,14 @@ pub mod context;
 pub mod data_status;
 pub mod docs;
 pub mod fantasy_gap;
+pub mod fantasy_league;
 pub mod fantasy_sim;
 pub mod favorites;
 pub mod game;
 pub mod goalies;
 pub mod home;
 pub mod leaders;
+pub mod mutation;
 pub mod player_card;
 pub mod playoffs;
 pub mod poach;
@@ -30,17 +32,25 @@ pub mod transactions;
 
 pub use career::{CareerRow, CareerSortKey, CareerView};
 pub use compare::{CompareView, SimilarPlayerRow, SimilarPlayerTarget, SimilarPlayersView};
-pub use config::{ConfigEntryInput, ConfigEntryRow, ConfigView, SeasonTypeMutationIntent};
+pub use config::{
+    ConfigEntryInput, ConfigEntryRow, ConfigMutationIntent, ConfigView, SeasonTypeMutationIntent,
+};
 pub use context::{
     AppliedFilter, Completeness, EmptyKind, EmptyState, FilterKey, FilterOp, RecoveryAction,
     ReportContext, ReportKind, ReportSectionRef, SortDirection, SortKey, SortState, SourceKind,
     SourceProvenance, SourceState, ViewContext, ViewWarning, ViewWindow, WarningKind,
 };
-pub use data_status::{DataStatusEntryInput, DataStatusRow, DataStatusView};
+pub use data_status::{
+    DataMutationIntent, DataMutationOperation, DataStatusEntryInput, DataStatusRow, DataStatusView,
+};
 pub use docs::DocsView;
 pub use fantasy_gap::{
     FantasyRosterGapAction, FantasyRosterGapCandidate, FantasyRosterGapInput,
     FantasyRosterGapReplacement, FantasyRosterGapRow, FantasyRosterGapView,
+};
+pub use fantasy_league::{
+    FantasyLeagueInput, FantasyLeagueRow, FantasyLeagueTeamInput, FantasyLeagueTeamRow,
+    FantasyLeagueView,
 };
 pub use fantasy_sim::{
     build_fantasy_simulation_view, fantasy_roster_games_played, fantasy_roster_games_remaining,
@@ -66,6 +76,7 @@ pub use goalies::{
 };
 pub use home::{HomeGoalieRow, HomeSkaterRow, HomeView};
 pub use leaders::{LeaderKind, LeaderRow, LeadersView};
+pub use mutation::{MutationResultView, MutationStatus};
 pub use player_card::{
     PlayerCardView, PlayerCareerSummary, PlayerPreNhlCareerRow, PlayerSeasonSummary,
 };
@@ -81,8 +92,8 @@ pub use poach::{
     PoachBoardView, PoachCandidateKind, PoachComponentKind, PoachConfidence, PoachExplanation,
     PoachPlayerRow, PoachQuery, PoachReportSection, PoachReportView, PoachScheduleFilter,
     PoachScore, PoachScoreComponent, PoachWindow, RecommendationKind, ScoreRange, WatchAlertRow,
-    WatchAlertSeverity, WatchAlertTrigger, WatchAlertsView, WatchRule, WatchRuleTrigger,
-    WatchRulesView,
+    WatchAlertSeverity, WatchAlertTrigger, WatchAlertsView, WatchRule, WatchRuleMutationIntent,
+    WatchRuleTrigger, WatchRulesView,
 };
 pub use report::{scouting_report_sections, ReportFormat, ReportView};
 pub use schedule::{
@@ -90,7 +101,10 @@ pub use schedule::{
     ScheduleView, TeamChipView,
 };
 pub use scores::{scores_context, ScheduledGameInput, ScoreGameRow, ScoresDayView, ScoresView};
-pub use snapshot::{SnapshotEntryInput, SnapshotRow, SnapshotView};
+pub use snapshot::{
+    SnapshotEntryInput, SnapshotMutationIntent, SnapshotMutationOperation, SnapshotRow,
+    SnapshotView,
+};
 pub use team_depth::{
     DeploymentEvidence, DepthGoalieSlot, DepthLeagueView, DepthLine, DepthPair, DepthPlayerSlot,
     DepthSlotKind, DepthSummary, DepthTeamStrengthRow, TeamDepthChartColumn, TeamDepthChartPlayer,

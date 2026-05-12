@@ -26,6 +26,10 @@ const ROUTER_ROUTES: &[&str] = &[
     "GET /reports/weekly",
     "GET /api/v1/poach",
     "GET /api/v1/watch-rules",
+    "POST /api/v1/watch-rules/set-enabled",
+    "POST /watch-rules/set-enabled",
+    "POST /watch-rules/create",
+    "POST /watch-rules/delete",
     "GET /career",
     "GET /api/v1/career",
     "GET /docs",
@@ -44,11 +48,17 @@ const ROUTER_ROUTES: &[&str] = &[
     "GET /api/v1/game/:id",
     "POST /favorites/add",
     "POST /favorites/remove",
+    "POST /api/v1/favorites/add",
+    "POST /api/v1/favorites/remove",
     "GET /transactions",
     "GET /api/v1/transactions",
     "GET /fantasy",
     "GET /api/v1/fantasy/gaps",
     "GET /api/v1/fantasy/simulate",
+    "GET /admin",
+    "GET /api/v1/admin/data-status",
+    "GET /api/v1/admin/snapshots",
+    "GET /api/v1/admin/config",
 ];
 
 #[test]

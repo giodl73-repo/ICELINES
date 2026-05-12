@@ -94,6 +94,51 @@ pub struct SnapshotRow {
     pub is_active: bool,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SnapshotMutationOperation {
+    Create,
+    Activate,
+    Remove,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SnapshotMutationIntent {
+    pub operation: SnapshotMutationOperation,
+    pub name: String,
+}
+
+impl SnapshotMutationIntent {
+    pub fn resolve(
+        operation: SnapshotMutationOperation,
+        name: impl Into<String>,
+    ) -> Result<Self, String> {
+        let name = name.into();
+        if name.trim().is_empty() {
+            return Err("snapshot name is required".to_string());
+        }
+        Ok(Self { operation, name })
+    }
+
+    pub fn result_view(&self, context: ViewContext, changed: bool) -> crate::MutationResultView {
+        let operation = match self.operation {
+            SnapshotMutationOperation::Create => "snapshot_create",
+            SnapshotMutationOperation::Activate => "snapshot_activate",
+            SnapshotMutationOperation::Remove => "snapshot_remove",
+        };
+        let message = if changed {
+            format!("{operation} {}", self.name)
+        } else {
+            format!("No snapshot change needed for {}", self.name)
+        };
+        if changed {
+            crate::MutationResultView::applied(context, operation, self.name.clone(), message, None)
+        } else {
+            crate::MutationResultView::noop(context, operation, self.name.clone(), message, None)
+        }
+    }
+}
+
 fn snapshot_row(input: SnapshotEntryInput, active: Option<&str>) -> SnapshotRow {
     let is_active = active == Some(input.name.as_str());
     SnapshotRow {
@@ -156,5 +201,18 @@ mod tests {
             view.empty_state.as_ref().map(|state| state.kind),
             Some(EmptyKind::MissingSource)
         );
+    }
+
+    #[test]
+    fn snapshot_mutation_intent_projects_result_view() {
+        let context = ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular));
+        let intent =
+            SnapshotMutationIntent::resolve(SnapshotMutationOperation::Activate, "stats-latest")
+                .expect("valid snapshot mutation");
+        let view = intent.result_view(context, true);
+
+        assert_eq!(view.operation, "snapshot_activate");
+        assert_eq!(view.target, "stats-latest");
+        assert_eq!(view.status, crate::MutationStatus::Applied);
     }
 }
