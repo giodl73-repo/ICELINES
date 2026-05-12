@@ -42,9 +42,9 @@
 <section style="margin-bottom: 1.25rem;">
     <h2>League Simulation</h2>
     {% if !simulation_warnings.is_empty() %}
-    <div style="padding: 0.7rem 0.85rem; border: 1px solid var(--ice-divider); border-radius: 5px; margin-bottom: 0.8rem;">
+    <div class="state-warning">
         {% for warning in simulation_warnings %}
-        <div style="color: #8a5a00;">{{ warning }}</div>
+        <div class="state-warning-line">{{ warning }}</div>
         {% endfor %}
     </div>
     {% endif %}

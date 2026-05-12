@@ -25,7 +25,7 @@ fn fantasy_template_renders_simulation_scenarios_and_preserves_inputs() {
                 .to_string(),
         }],
         simulation_assumptions: Vec::new(),
-        simulation_warnings: Vec::new(),
+        simulation_warnings: vec!["schedule unavailable".to_string()],
         warnings: Vec::new(),
         empty_title: "No roster gaps found".to_string(),
         empty_detail: String::new(),
@@ -37,4 +37,7 @@ fn fantasy_template_renders_simulation_scenarios_and_preserves_inputs() {
     assert!(html.contains("+12.5"));
     assert!(html.contains("value=\"Connor McDavid\""));
     assert!(html.contains("value=\"Bench Forward\""));
+    assert!(html.contains("class=\"state-warning\""));
+    assert!(html.contains("class=\"state-warning-line\""));
+    assert!(!html.contains("color: #8a5a00"));
 }

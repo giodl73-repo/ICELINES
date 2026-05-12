@@ -226,6 +226,19 @@ code {
 .score-trailing { color: var(--accent-bad); font-weight: 700; }
 .score-tied     { color: var(--ice-muted); font-weight: 600; }
 
+.state-warning {
+    padding: 0.7rem 0.85rem;
+    border: 1px solid var(--accent-warn);
+    border-left-width: 4px;
+    border-radius: 5px;
+    margin-bottom: 0.8rem;
+    background: #fff8e1;
+}
+
+.state-warning-line {
+    color: #8a5a00;
+}
+
 /* ── Tables ─────────────────────────────────────────────────────── */
 table {
     width: 100%;

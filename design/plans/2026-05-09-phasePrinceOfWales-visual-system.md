@@ -178,6 +178,8 @@ Progress:
   `.fit-fringe` contract from CSS/tests and added mapping fences.
 - 2026-05-12: Added a shared CLI renderer visual mapping for fit colors,
   TUI depth fit styling, markdown-safe fit labels, and scouting descriptions.
+- 2026-05-12: Moved fantasy simulation warning rendering from inline hex styles
+  to shared web state classes, with template/static-asset fences.
 
 ---
 

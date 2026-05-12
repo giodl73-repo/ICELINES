@@ -180,6 +180,21 @@ mod tests {
         }
     }
 
+    #[test]
+    fn l0_style_css_carries_warning_state_contract() {
+        let css = std::str::from_utf8(STYLE_CSS).expect("style.css is utf-8");
+        for class in &[".state-warning", ".state-warning-line"] {
+            assert!(
+                css.contains(class),
+                "style.css must define {class} for warning token rendering"
+            );
+        }
+        assert!(
+            css.contains("var(--accent-warn)"),
+            "warning state must use the shared warning accent token"
+        );
+    }
+
     /// l0_htmx_stub_carries_explicit_placeholder_warning
     /// — King.1.3 ships a stub htmx.min.js. The warning text is the
     ///   contract that tells future contributors to vendor the real

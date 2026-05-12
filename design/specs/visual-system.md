@@ -183,8 +183,10 @@ Current drift inventory:
 3. CLI fit color and cross-team fit labels now use the shared CLI renderer
    mapping. Source, game, action, and fantasy/poach tokens need the same
    treatment.
-4. Several web templates still carry inline hex colors. Move those through
-   named CSS variables or token classes before claiming web visual consistency.
+4. Several web templates still carry inline layout and color styles. Fantasy
+   simulation warnings now use `.state-warning` / `.state-warning-line`; keep
+   moving repeated warning/error/source/meta states through shared token
+   classes before claiming web visual consistency.
 5. Markdown/report output needs explicit token labels because color and CSS are
    not portable across GitHub/MkDocs/static HTML.
 
