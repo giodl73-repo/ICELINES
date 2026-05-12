@@ -182,6 +182,8 @@ Progress:
   to shared web state classes, with template/static-asset fences.
 - 2026-05-12: Moved repeated web route fetch/error blocks for compare,
   playoffs, schedule, and scores to the shared `.state-error` class.
+- 2026-05-12: Added shared web context/source/meta classes and migrated
+  representative scores, schedule, playoffs, and poach state text.
 
 ---
 

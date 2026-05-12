@@ -185,9 +185,10 @@ Current drift inventory:
    treatment.
 4. Several web templates still carry inline layout and color styles. Fantasy
    simulation warnings now use `.state-warning` / `.state-warning-line`, and
-   repeated route fetch/error blocks now use `.state-error`; keep moving
-   source/meta/empty states through shared token classes before claiming web
-   visual consistency.
+   repeated route fetch/error blocks now use `.state-error`; route context,
+   source notes, and supporting metadata have started moving to `.context-line`,
+   `.source-note`, and `.meta-line`. Keep moving empty states through shared
+   token classes before claiming web visual consistency.
 5. Markdown/report output needs explicit token labels because color and CSS are
    not portable across GitHub/MkDocs/static HTML.
 

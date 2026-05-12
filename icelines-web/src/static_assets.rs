@@ -183,7 +183,14 @@ mod tests {
     #[test]
     fn l0_style_css_carries_warning_state_contract() {
         let css = std::str::from_utf8(STYLE_CSS).expect("style.css is utf-8");
-        for class in &[".state-warning", ".state-warning-line", ".state-error"] {
+        for class in &[
+            ".state-warning",
+            ".state-warning-line",
+            ".state-error",
+            ".context-line",
+            ".source-note",
+            ".meta-line",
+        ] {
             assert!(
                 css.contains(class),
                 "style.css must define {class} for state token rendering"

@@ -8,7 +8,7 @@
 </p>
 
 <h1>Scores</h1>
-<p style="color:#616161; margin-top:-0.25rem;">
+<p class="context-line">
     Live NHL schedule — source: <code>api-web.nhle.com/v1/schedule</code>
 </p>
 
@@ -53,7 +53,7 @@
                 <td>
                     {{ r.state_label }}
                     {% if r.is_playoff %}
-                        <br><small style="color:#616161;">{{ r.series_context }}</small>
+                        <br><small class="meta-line">{{ r.series_context }}</small>
                     {% endif %}
                 </td>
             </tr>
@@ -64,7 +64,7 @@
 {% endfor %}
 
 {% if total_games > 0 %}
-<p style="color:#616161; font-size:0.85rem; margin-top:1rem;">
+<p class="meta-line" style="margin-top:1rem;">
     Total: {{ total_games }} games.
 </p>
 {% endif %}

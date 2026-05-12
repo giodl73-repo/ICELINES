@@ -5,6 +5,7 @@
 
 use anyhow::{bail, Context};
 use rusqlite::Connection;
+use std::time::Duration;
 
 // ── Public types ──────────────────────────────────────────────────────────────
 
@@ -321,6 +322,8 @@ impl GroupDb {
         let db_path = dir.join("icelines.db");
         let conn =
             Connection::open(&db_path).with_context(|| format!("open {}", db_path.display()))?;
+        conn.busy_timeout(Duration::from_secs(5))
+            .context("set SQLite busy timeout")?;
 
         // Enable WAL for better concurrent write performance.
         conn.execute_batch("PRAGMA journal_mode = WAL;")

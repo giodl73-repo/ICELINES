@@ -246,6 +246,22 @@ code {
     margin: 0.75rem 0;
 }
 
+.context-line {
+    color: var(--ice-muted);
+    margin-top: -0.25rem;
+}
+
+.source-note {
+    color: var(--ice-muted);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.meta-line {
+    color: var(--ice-muted);
+    font-size: 0.85rem;
+}
+
 /* ── Tables ─────────────────────────────────────────────────────── */
 table {
     width: 100%;
