@@ -1,7 +1,7 @@
 # Phase Jim Gregory - release and operations hardening
 
 **Date**: 2026-05-09
-**Status**: Draft - planned after Prince of Wales
+**Status**: Active - binary smoke started
 **Trophy**: Jim Gregory General Manager of the Year Award. Fit: this phase manages the whole organization: CI, release discipline, data freshness, packaging, and operational trust.
 **Estimated**: 2-4 days
 
@@ -166,6 +166,17 @@ Acceptance:
 - A smoke script exists or a manual checklist is documented.
 - Smoke does not require a live fetch.
 - Web serve smoke verifies URL printing before browser open behavior.
+
+Progress:
+
+- 2026-05-12: Added `scripts/release-smoke.ps1`. The script builds the
+  optimized CLI by default, then smokes `--version`, `--help`,
+  `query leaders`, `query goalies`, `tui --help`, `serve --help`, `docs`,
+  `export md leaders`, `poach`, and a short-lived `serve --no-open` URL check.
+  It also supports `-SkipBuild` for validating an already-built
+  `target/release/icelines.exe`.
+- 2026-05-12: Updated the local `ci-release` test slice to run the release
+  smoke script instead of only compiling the release binary.
 
 ---
 

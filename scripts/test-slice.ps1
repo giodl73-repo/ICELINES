@@ -109,7 +109,7 @@ CI gates:
   ci-docs          Tests / doc-tests
   ci-clippy        Quality / clippy
   ci-fmt           Quality / fmt
-  ci-release       Build / release CLI
+  ci-release       Build / release CLI + release smoke
   ci-all           legacy monolithic cargo test
 
 Crate slices:
@@ -193,7 +193,12 @@ switch ($Slice) {
         Invoke-Cargo @("fmt", "--check")
     }
     "ci-release" {
-        Invoke-Cargo @("build", "--release", "-p", "icelines-cli")
+        Write-Host ""
+        Write-Host "powershell -ExecutionPolicy Bypass -File scripts/release-smoke.ps1" -ForegroundColor Cyan
+        & powershell -ExecutionPolicy Bypass -File scripts/release-smoke.ps1
+        if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+        }
     }
     "ci-system" {
         Invoke-Test @("test", "-p", "icelines-cli", "--test", "system_tests", "--test", "system_tui_experiences")

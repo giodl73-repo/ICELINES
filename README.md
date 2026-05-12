@@ -60,6 +60,12 @@ icelines query player "Connor McDavid" --percentiles
 icelines tui
 ```
 
+Release smoke for maintainers:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/release-smoke.ps1
+```
+
 ---
 
 ## Commands

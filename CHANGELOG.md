@@ -18,6 +18,12 @@ closeout review.**
 - Recorded the final CREST/roles verdict as PASS WITH NOTES, with screenshot
   automation and secondary-route polish carried forward to Jim Gregory.
 
+### Jim Gregory release hardening
+
+- Added `scripts/release-smoke.ps1`, a reusable optimized-binary smoke gate for
+  version/help, leaders, goalies, TUI help, web serve help, docs, markdown
+  export, poach, and URL printing from `serve --no-open`.
+
 ---
 
 ## v0.24.1 - 2026-05-09 - Phase Lester Patrick closeout

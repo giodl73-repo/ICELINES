@@ -35,6 +35,13 @@ cargo test -p icelines-cli --test prince_cli_visual
 cargo test -p icelines-web l1_static_css_contains_prince_route_layout_classes
 ```
 
+Release smoke:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/release-smoke.ps1
+powershell -ExecutionPolicy Bypass -File scripts/release-smoke.ps1 -SkipBuild
+```
+
 ---
 
 Single-page reference for the `icelines` CLI. Every subcommand is listed with a one-line description and 2-3 real examples. Designed so you can read it once and be productive.
