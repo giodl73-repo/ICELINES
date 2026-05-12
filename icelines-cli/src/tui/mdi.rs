@@ -314,8 +314,10 @@ mod tests {
     /// keep it visible, but the manual toggle wins.
     #[test]
     fn l0_adams_manual_toggle_overrides_adaptive() {
-        let mut m = MdiLayout::default();
-        m.show_favorites = false;
+        let m = MdiLayout {
+            show_favorites: false,
+            ..Default::default()
+        };
         let v = m.effective_panes(200);
         assert!(!v.favorites, "manual hide must override adaptive 'show'");
         // Schedule is still visible (manual toggle on, adaptive on).

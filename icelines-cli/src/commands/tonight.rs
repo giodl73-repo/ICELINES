@@ -394,6 +394,7 @@ fn emit_schedule_csv(rows: &[ScheduleRow]) -> anyhow::Result<()> {
 }
 
 #[cfg(test)]
+#[allow(clippy::items_after_test_module)]
 mod schedule_tests {
     use super::*;
     use icelines_fetch::nhl_api::ScheduledGame;

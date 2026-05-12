@@ -140,9 +140,11 @@ mod norris_state_tests {
     /// Round/series indices surface in the title (1-indexed).
     #[test]
     fn l0_masterton_playoffs_chrome_indices_one_indexed() {
-        let mut s = PlayoffsScreenState::default();
-        s.round = 2;
-        s.series = 4;
+        let s = PlayoffsScreenState {
+            round: 2,
+            series: 4,
+            ..Default::default()
+        };
         let c = chrome(&s);
         assert!(c.title.contains("round 3"));
         assert!(c.title.contains("series 5"));

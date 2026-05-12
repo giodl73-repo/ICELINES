@@ -315,7 +315,7 @@ mod tests {
     }
 
     #[test]
-    fn s019_cmdbar_parse_error_does_NOT_record_history() {
+    fn s019_cmdbar_parse_error_does_not_record_history() {
         // Parse-error path keeps input + focus, no history push.
         let mut app = fresh_mdi();
         type_cmd(&mut app, "garbage");
@@ -1157,7 +1157,7 @@ mod tests {
 
     #[test]
     fn s097_resize_burst_no_panic() {
-        let mut app = fresh_mdi();
+        let app = fresh_mdi();
         let widths = [80u16, 99, 100, 119, 120, 159, 160, 200, 240];
         for &w in &widths {
             render_at(&app, w, 30);

@@ -25,6 +25,7 @@ use icelines_query::{parse_query, FilterInput, StrictMode};
 /// Well-known active players whose bios + current-season presence
 /// are stable. Each is hand-tagged with the ground-truth attributes
 /// the assertions below rely on.
+#[allow(dead_code)]
 struct Sample {
     pid: u32,
     name: &'static str,

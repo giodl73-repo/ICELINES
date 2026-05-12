@@ -2091,7 +2091,7 @@ async fn l1_admin_data_status_json_returns_viewmodel_contract() {
         .expect("body fits");
     let json: serde_json::Value = serde_json::from_slice(&bytes).expect("json body");
 
-    assert_eq!(json["root"].as_str().is_some(), true);
+    assert!(json["root"].as_str().is_some());
     assert_eq!(json["total"], 0);
     assert_eq!(json["empty_state"]["kind"], "missing_source");
 }

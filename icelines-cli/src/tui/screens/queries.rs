@@ -2337,8 +2337,10 @@ mod tests {
     #[test]
     fn l0_masterton_queries_chrome_filter_edit_mode() {
         use crate::tui::app::QueryMode;
-        let mut s = QueriesState::default();
-        s.mode = QueryMode::FilterEdit;
+        let s = QueriesState {
+            mode: QueryMode::FilterEdit,
+            ..Default::default()
+        };
         let c = chrome(&s);
         assert!(
             c.title.ends_with("/ Filter"),

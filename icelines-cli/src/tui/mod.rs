@@ -118,6 +118,7 @@ pub async fn run_tui(opts: RunTuiOpts) -> Result<()> {
 }
 
 #[cfg(test)]
+#[allow(clippy::items_after_test_module)]
 mod terminal_guard_tests {
     use super::TerminalGuard;
     use std::panic;

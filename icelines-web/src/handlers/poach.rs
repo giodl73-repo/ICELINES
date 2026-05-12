@@ -15,6 +15,7 @@ use icelines_core::{
         WatchRuleTrigger,
     },
     Completeness, EmptyKind, EmptyState, SourceKind, SourceState, ViewContext, ViewWindow,
+    CURRENT_SEASON,
 };
 use serde::Deserialize;
 
@@ -224,20 +225,30 @@ pub async fn post_watch_rule_create_form(Form(req): Form<WatchRuleCreateForm>) -
         Ok(rule) => rule,
         Err(message) => return bad_request_html(message),
     };
+    let intent = match WatchRuleMutationIntent::create(&rule.id) {
+        Ok(intent) => intent,
+        Err(message) => return bad_request_html(message),
+    };
     match persist_watch_rule(&rule) {
-        Ok(()) => Redirect::to("/watchlist").into_response(),
+        Ok(()) => {
+            let _result = intent.result_view(default_watch_context(), true);
+            Redirect::to("/watchlist").into_response()
+        }
         Err(message) => watch_rules_error(StatusCode::INTERNAL_SERVER_ERROR, message),
     }
 }
 
 pub async fn post_watch_rule_delete_form(Form(req): Form<WatchRuleDeleteForm>) -> Response {
-    let rule_id = req.rule_id.trim();
-    if rule_id.is_empty() {
-        return bad_request_html("watch rule id is required".to_string());
-    }
-    match delete_persisted_watch_rule(rule_id) {
-        Ok(true) => Redirect::to("/watchlist").into_response(),
-        Ok(false) => bad_request_html(format!("unknown persisted watch rule '{rule_id}'")),
+    let intent = match WatchRuleMutationIntent::delete(&req.rule_id) {
+        Ok(intent) => intent,
+        Err(message) => return bad_request_html(message),
+    };
+    match delete_persisted_watch_rule(&intent.rule_id) {
+        Ok(true) => {
+            let _result = intent.result_view(default_watch_context(), true);
+            Redirect::to("/watchlist").into_response()
+        }
+        Ok(false) => bad_request_html(format!("unknown persisted watch rule '{}'", intent.rule_id)),
         Err(message) => watch_rules_error(StatusCode::INTERNAL_SERVER_ERROR, message),
     }
 }
@@ -266,6 +277,10 @@ async fn watch_context_from_state(state: &WebState) -> Result<ViewContext, Respo
         Season(season_u32),
         season_type,
     )))
+}
+
+fn default_watch_context() -> ViewContext {
+    ViewContext::new(ViewWindow::new(Season(CURRENT_SEASON), SeasonType::Regular))
 }
 
 fn render_poach_report_html(report: &PoachReportView, active_label: &str) -> String {

@@ -659,8 +659,10 @@ mod norris_state_tests {
     /// team filter to "EDM" appends to the title.
     #[test]
     fn l0_masterton_txs_chrome_title_reflects_filters() {
-        let mut s = TransactionsState::default();
-        s.team_filter = Some("EDM".to_owned());
+        let s = TransactionsState {
+            team_filter: Some("EDM".to_owned()),
+            ..Default::default()
+        };
         let c = chrome(&s);
         assert!(
             c.title.contains("EDM"),

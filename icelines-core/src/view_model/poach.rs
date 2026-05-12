@@ -687,7 +687,17 @@ pub struct WatchRule {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum WatchRuleMutationOperation {
+    Create,
+    Enable,
+    Disable,
+    Delete,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct WatchRuleMutationIntent {
+    pub operation: WatchRuleMutationOperation,
     pub rule_id: String,
     pub enabled: bool,
 }
@@ -699,8 +709,37 @@ impl WatchRuleMutationIntent {
             return Err("watch rule id is required".to_string());
         }
         Ok(Self {
+            operation: if enabled {
+                WatchRuleMutationOperation::Enable
+            } else {
+                WatchRuleMutationOperation::Disable
+            },
             rule_id: rule_id.to_string(),
             enabled,
+        })
+    }
+
+    pub fn create(rule_id: &str) -> Result<Self, String> {
+        let rule_id = rule_id.trim();
+        if rule_id.is_empty() {
+            return Err("watch rule id is required".to_string());
+        }
+        Ok(Self {
+            operation: WatchRuleMutationOperation::Create,
+            rule_id: rule_id.to_string(),
+            enabled: true,
+        })
+    }
+
+    pub fn delete(rule_id: &str) -> Result<Self, String> {
+        let rule_id = rule_id.trim();
+        if rule_id.is_empty() {
+            return Err("watch rule id is required".to_string());
+        }
+        Ok(Self {
+            operation: WatchRuleMutationOperation::Delete,
+            rule_id: rule_id.to_string(),
+            enabled: false,
         })
     }
 
@@ -709,7 +748,12 @@ impl WatchRuleMutationIntent {
         context: ViewContext,
         changed: bool,
     ) -> crate::view_model::mutation::MutationResultView {
-        let operation = if self.enabled { "enable" } else { "disable" };
+        let operation = match self.operation {
+            WatchRuleMutationOperation::Create => "create",
+            WatchRuleMutationOperation::Enable => "enable",
+            WatchRuleMutationOperation::Disable => "disable",
+            WatchRuleMutationOperation::Delete => "delete",
+        };
         let message = if changed {
             format!("{operation} watch rule '{}'", self.rule_id)
         } else {
@@ -1521,6 +1565,22 @@ mod tests {
         assert_eq!(view.target, "player-matthew-knies");
         assert_eq!(view.status, crate::MutationStatus::Applied);
         assert!(view.message.contains("player-matthew-knies"));
+    }
+
+    #[test]
+    fn watch_rule_create_delete_intents_project_result_views() {
+        let context = poach_context(Season(20252026), SeasonType::Regular);
+        let create =
+            WatchRuleMutationIntent::create("player-matthew-knies").expect("valid create intent");
+        let view = create.result_view(context.clone(), true);
+        assert_eq!(view.operation, "create");
+        assert_eq!(view.target, "player-matthew-knies");
+
+        let delete =
+            WatchRuleMutationIntent::delete("player-matthew-knies").expect("valid delete intent");
+        let view = delete.result_view(context, true);
+        assert_eq!(view.operation, "delete");
+        assert_eq!(view.target, "player-matthew-knies");
     }
 
     #[test]

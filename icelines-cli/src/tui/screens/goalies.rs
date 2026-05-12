@@ -164,8 +164,10 @@ mod norris_state_tests {
     /// Min-GP changes surface in the title.
     #[test]
     fn l0_masterton_goalies_chrome_min_gp_in_title() {
-        let mut s = GoaliesState::default();
-        s.min_gp = 25;
+        let s = GoaliesState {
+            min_gp: 25,
+            ..Default::default()
+        };
         let c = chrome(&s);
         assert!(c.title.contains("GP >= 25"));
     }

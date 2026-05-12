@@ -227,7 +227,7 @@ fn p_w10_013_envelope_schema_version_is_one_everywhere() {
             "playoffs", "--season", "19931994", "--series", "A", "--json",
         ],
     ] {
-        let out = ok_in(h.path(), &cmd.iter().copied().collect::<Vec<_>>());
+        let out = ok_in(h.path(), &cmd);
         let v: serde_json::Value = serde_json::from_str(&out).unwrap();
         let sv = v["schema_version"].as_u64().unwrap();
         assert_eq!(sv, 1, "schema_version drift on {cmd:?}");
@@ -242,7 +242,7 @@ fn p_w10_014_envelope_data_is_array_or_object_never_primitive() {
         vec!["query", "leaders", "--playoff", "--json"],
         vec!["query", "leaders", "--week", "--json"],
     ] {
-        let out = ok_in(h.path(), &cmd.iter().copied().collect::<Vec<_>>());
+        let out = ok_in(h.path(), &cmd);
         let v: serde_json::Value = serde_json::from_str(&out).unwrap();
         assert!(
             v["data"].is_array() || v["data"].is_object(),
@@ -268,7 +268,7 @@ fn p_w10_015_envelope_routes_use_dot_separator() {
             "leaders.windowed",
         ),
     ] {
-        let out = ok_in(h.path(), &cmd.iter().copied().collect::<Vec<_>>());
+        let out = ok_in(h.path(), &cmd);
         let v: serde_json::Value = serde_json::from_str(&out).unwrap();
         let route = v["route"].as_str().unwrap();
         assert_eq!(route, expected);
@@ -355,7 +355,7 @@ fn p_w10_022_exit_no_panic_code_anywhere() {
         vec!["data-status", "--shard", "wickets"],
         vec!["playoffs", "--season", "20502051", "--series", "A"],
     ] {
-        let out = run_in(h.path(), &args.iter().copied().collect::<Vec<_>>());
+        let out = run_in(h.path(), &args);
         assert_ne!(exit_code(&out), 101, "panic exit on {args:?}");
     }
 }
@@ -542,7 +542,7 @@ fn p_w10_037_no_panic_marker_in_any_error() {
         vec!["tonight", "--date", "x"],
         vec!["config", "get", "sync.unknown"],
     ] {
-        let out = run_in(h.path(), &args.iter().copied().collect::<Vec<_>>());
+        let out = run_in(h.path(), &args);
         let combined = format!("{}{}", stdout_of(&out), stderr_of(&out));
         assert!(
             !combined.contains("panicked"),
@@ -592,7 +592,7 @@ fn p_w10_040_invalid_date_message_consistent_across_surfaces() {
         vec!["favorites", "--date", "garbage"],
         vec!["fetch", "boxscore", "--date", "garbage"],
     ] {
-        let out = fail_in(h.path(), &cmd.iter().copied().collect::<Vec<_>>());
+        let out = fail_in(h.path(), &cmd);
         let err = stderr_of(&out);
         // Pull out the literal "invalid date '..'" line.
         if let Some(line) = err.lines().find(|l| l.contains("invalid date")) {

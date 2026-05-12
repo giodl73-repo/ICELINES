@@ -4320,8 +4320,10 @@ mod adams_4_render_boundary_tests {
     #[test]
     fn l0_adams_render_manual_hide_overrides_adaptive() {
         let mut app = App::new(true);
-        let mut layout = MdiLayout::default();
-        layout.show_favorites = false;
+        let layout = MdiLayout {
+            show_favorites: false,
+            ..Default::default()
+        };
         app.mdi = Some(layout);
         app.screen = Screen::Goalies;
         let backend = TestBackend::new(200, 30);

@@ -205,7 +205,7 @@ pub fn force_refresh_filter(store: &DataStore) -> Vec<(DataKind, DataKey)> {
 mod tests {
     use super::*;
     use crate::datastore::{DataError, Fetcher};
-    use crate::manifest::{ManifestEntry, ManifestSet};
+    use crate::manifest::ManifestEntry;
     use crate::schema::{SkaterBio, SkaterStats};
     use chrono::{DateTime, Utc};
     use icelines_core::career_history::CareerHistory;
@@ -264,7 +264,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         // Leak the tempdir so the store outlives this fn; tests
         // discard it at process exit.
-        let path = dir.into_path();
+        let path = dir.keep();
         let store = DataStore::open(path)
             .unwrap()
             .with_clock(clock)
@@ -407,14 +407,14 @@ mod tests {
 
     // ── ICELINES_TEST_MODE gate ───────────────────────────────────────────
 
-    /// Static mutex serializes the two env-var tests so parallel
+    /// Static mutex serializes the env-var tests so parallel
     /// runners don't race on `ICELINES_TEST_MODE`. The lock is held
     /// for the duration of each test's env mutations.
-    static ENV_MUTEX: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    static ENV_MUTEX: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn l1_foster4_test_mode_env_short_circuits_launch() {
-        let _guard = ENV_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+        let _guard = ENV_MUTEX.lock().await;
         let saved = std::env::var_os("ICELINES_TEST_MODE");
         std::env::set_var("ICELINES_TEST_MODE", "1");
         let clock: Arc<dyn Clock> = Arc::new(MockClock::new(t(2026, 1, 15, 12)));
@@ -427,9 +427,9 @@ mod tests {
         }
     }
 
-    #[test]
-    fn l1_foster4_test_mode_helper_reads_env() {
-        let _guard = ENV_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn l1_foster4_test_mode_helper_reads_env() {
+        let _guard = ENV_MUTEX.lock().await;
         let saved = std::env::var_os("ICELINES_TEST_MODE");
         std::env::remove_var("ICELINES_TEST_MODE");
         assert!(!test_mode_enabled(), "no env var → false");
@@ -445,7 +445,7 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn l1_foster4_sync_loop_emits_done_on_empty_manifest() {
-        let _guard = ENV_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+        let _guard = ENV_MUTEX.lock().await;
         let saved = std::env::var_os("ICELINES_TEST_MODE");
         std::env::remove_var("ICELINES_TEST_MODE");
         let clock: Arc<dyn Clock> = Arc::new(MockClock::new(t(2026, 1, 15, 12)));
@@ -460,7 +460,7 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn l1_foster4_sync_loop_refreshes_one_stale_bios() {
-        let _guard = ENV_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+        let _guard = ENV_MUTEX.lock().await;
         let saved = std::env::var_os("ICELINES_TEST_MODE");
         std::env::remove_var("ICELINES_TEST_MODE");
         let clock: Arc<dyn Clock> = Arc::new(MockClock::new(t(2026, 1, 15, 12)));

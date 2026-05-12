@@ -151,8 +151,10 @@ mod norris_state_tests {
     /// Non-empty date appears in the title.
     #[test]
     fn l0_masterton_tonight_chrome_specific_date_in_title() {
-        let mut s = TonightScreenState::default();
-        s.date = "2026-04-29".to_owned();
+        let s = TonightScreenState {
+            date: "2026-04-29".to_owned(),
+            ..Default::default()
+        };
         let c = chrome(&s);
         assert!(c.title.contains("2026-04-29"));
         assert!(!c.title.contains("today"));

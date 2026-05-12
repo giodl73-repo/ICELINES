@@ -99,5 +99,5 @@ pub use view_model::{
     SourceKind, SourceProvenance, SourceState, StatKey, TeamChipView, TeamDepthChartColumn,
     TeamDepthChartPlayer, TeamDepthChartView, TeamDepthView, TransactionViewRow, TransactionsView,
     ValuePrecision, ViewContext, ViewWarning, ViewWindow, WarningKind, WatchNoteInput,
-    WatchRuleMutationIntent, WatchlistMemberRow, WatchlistView,
+    WatchRuleMutationIntent, WatchRuleMutationOperation, WatchlistMemberRow, WatchlistView,
 };

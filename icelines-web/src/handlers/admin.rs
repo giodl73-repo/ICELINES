@@ -92,10 +92,7 @@ fn build_data_status_view(q: AdminDataStatusQuery) -> Result<DataStatusView, Str
         Ok(store) => store,
         Err(err) => return Err(format!("open DataStore: {err}")),
     };
-    let kind_filter = match q.shard.as_deref().map(parse_kind).transpose() {
-        Ok(kind) => kind,
-        Err(message) => return Err(message),
-    };
+    let kind_filter = q.shard.as_deref().map(parse_kind).transpose()?;
     let rows = collect_data_status_rows(&store, kind_filter, q.stale_only);
     Ok(DataStatusView::from_entries(
         default_context(),

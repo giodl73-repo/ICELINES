@@ -297,9 +297,11 @@ Current Selke surfaces:
 - CLI `icelines watch enable|disable|fire|history`
 - TUI Watchlist workspace rule/history summary
 - JSON `/api/v1/watch-rules`
+- Web `/watchlist` rule creation, enable/disable, and deletion forms
 
-Watch rule enable/disable operations resolve through `WatchRuleMutationIntent`
-and return `MutationResultView` when a surface needs structured mutation output.
+Watch rule create, enable/disable, and delete operations resolve through
+`WatchRuleMutationIntent` and return `MutationResultView` when a surface needs
+structured mutation output.
 
 ### `PoachReportView`
 

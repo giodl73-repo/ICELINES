@@ -244,15 +244,11 @@ fn art_ross_a0_corpus_exercises_n_ary_ir() {
     for &filter in FILTER_CORPUS {
         let plan = parse_query(FilterInput::Cli(filter.to_string())).unwrap();
         match &plan.root {
-            icelines_query::Constraint::All(children) => {
-                if children.len() > max_all {
-                    max_all = children.len();
-                }
+            icelines_query::Constraint::All(children) if children.len() > max_all => {
+                max_all = children.len();
             }
-            icelines_query::Constraint::Any(children) => {
-                if children.len() > max_any {
-                    max_any = children.len();
-                }
+            icelines_query::Constraint::Any(children) if children.len() > max_any => {
+                max_any = children.len();
             }
             _ => {}
         }

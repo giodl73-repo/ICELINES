@@ -255,8 +255,10 @@ mod norris_state_tests {
     /// Enter/Esc/type instead of the navigation keys.
     #[test]
     fn l0_masterton_schedule_chrome_search_mode_swaps_keybinds() {
-        let mut s = ScheduleScreenState::default();
-        s.search_mode = true;
+        let s = ScheduleScreenState {
+            search_mode: true,
+            ..Default::default()
+        };
         let c = chrome(&s);
         let keys: Vec<&str> = c.keybinds.iter().map(|k| k.key).collect();
         assert!(keys.contains(&"Enter"));

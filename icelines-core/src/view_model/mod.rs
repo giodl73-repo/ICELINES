@@ -93,7 +93,7 @@ pub use poach::{
     PoachPlayerRow, PoachQuery, PoachReportSection, PoachReportView, PoachScheduleFilter,
     PoachScore, PoachScoreComponent, PoachWindow, RecommendationKind, ScoreRange, WatchAlertRow,
     WatchAlertSeverity, WatchAlertTrigger, WatchAlertsView, WatchRule, WatchRuleMutationIntent,
-    WatchRuleTrigger, WatchRulesView,
+    WatchRuleMutationOperation, WatchRuleTrigger, WatchRulesView,
 };
 pub use report::{scouting_report_sections, ReportFormat, ReportView};
 pub use schedule::{

@@ -1104,7 +1104,6 @@ fn p_w9_100_grand_finale_workspace_smoke() {
         vec!["group", "remove", "Mine", "EDM"],
         vec!["group", "delete", "Mine"],
     ] {
-        let args: Vec<&str> = cmd.iter().copied().collect();
-        no_panic_in(h.path(), &args);
+        no_panic_in(h.path(), &cmd);
     }
 }
