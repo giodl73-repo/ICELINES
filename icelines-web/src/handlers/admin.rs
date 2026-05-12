@@ -1,11 +1,12 @@
 use std::path::PathBuf;
 
-use axum::extract::{Query, State};
+use axum::extract::{Json, Query, State};
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
 use icelines_core::{
-    ConfigEntryInput, ConfigView, DataStatusEntryInput, DataStatusView, Season, SnapshotEntryInput,
-    SnapshotView, ViewContext, ViewWindow, CURRENT_SEASON,
+    ConfigEntryInput, ConfigMutationIntent, ConfigView, DataMutationIntent, DataMutationOperation,
+    DataStatusEntryInput, DataStatusView, Season, SnapshotEntryInput, SnapshotMutationIntent,
+    SnapshotMutationOperation, SnapshotView, ViewContext, ViewWindow, CURRENT_SEASON,
 };
 use icelines_fetch::datastore::DataStore;
 use icelines_fetch::manifest::{DataKey, DataKind};
@@ -32,6 +33,23 @@ pub struct AdminSnapshotQuery {
 pub struct AdminConfigQuery {
     #[serde(default)]
     pub selected: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AdminConfigMutationRequest {
+    pub key: String,
+    #[serde(default)]
+    pub value: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AdminSnapshotMutationRequest {
+    pub name: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AdminDataVerifyRequest {
+    pub target: String,
 }
 
 #[derive(Debug, serde::Serialize)]
@@ -82,6 +100,90 @@ pub async fn get_admin(State(state): State<WebState>) -> Response {
     .into_response()
 }
 
+pub async fn post_config_set_json(
+    State(state): State<WebState>,
+    Json(req): Json<AdminConfigMutationRequest>,
+) -> Response {
+    let Some(value) = req.value.as_deref() else {
+        return admin_bad_request("config value is required");
+    };
+    let intent = match ConfigMutationIntent::set(&req.key, value) {
+        Ok(intent) => intent,
+        Err(message) => return admin_bad_request(message),
+    };
+    let mut config = state.config.write().await;
+    match apply_web_config_set(&mut config, &intent.key, value) {
+        Ok(changed) => axum::Json(intent.result_view(default_context(), changed)).into_response(),
+        Err(message) => admin_bad_request(message),
+    }
+}
+
+pub async fn post_config_reset_json(
+    State(state): State<WebState>,
+    Json(req): Json<AdminConfigMutationRequest>,
+) -> Response {
+    let intent = match ConfigMutationIntent::reset(&req.key) {
+        Ok(intent) => intent,
+        Err(message) => return admin_bad_request(message),
+    };
+    let mut config = state.config.write().await;
+    match apply_web_config_reset(&mut config, &intent.key) {
+        Ok(changed) => axum::Json(intent.result_view(default_context(), changed)).into_response(),
+        Err(message) => admin_bad_request(message),
+    }
+}
+
+pub async fn post_snapshot_activate_json(
+    Json(req): Json<AdminSnapshotMutationRequest>,
+) -> Response {
+    let intent =
+        match SnapshotMutationIntent::resolve(SnapshotMutationOperation::Activate, req.name) {
+            Ok(intent) => intent,
+            Err(message) => return admin_bad_request(message),
+        };
+    let store = SnapshotStore::new(SnapshotStore::default_root());
+    let before = match store.load_manifest() {
+        Ok(manifest) => manifest.active,
+        Err(err) => return admin_error(format!("loading snapshot manifest: {err}")),
+    };
+    match store.set_active(&intent.name) {
+        Ok(()) => {
+            let changed = before.as_deref() != Some(intent.name.as_str());
+            axum::Json(intent.result_view(default_context(), changed)).into_response()
+        }
+        Err(err) => admin_bad_request(format!("activating snapshot '{}': {err}", intent.name)),
+    }
+}
+
+pub async fn post_snapshot_delete_json(Json(req): Json<AdminSnapshotMutationRequest>) -> Response {
+    let intent = match SnapshotMutationIntent::resolve(SnapshotMutationOperation::Remove, req.name)
+    {
+        Ok(intent) => intent,
+        Err(message) => return admin_bad_request(message),
+    };
+    let store = SnapshotStore::new(SnapshotStore::default_root());
+    match store.delete(&intent.name) {
+        Ok(()) => axum::Json(intent.result_view(default_context(), true)).into_response(),
+        Err(err) => admin_bad_request(format!("deleting snapshot '{}': {err}", intent.name)),
+    }
+}
+
+pub async fn post_data_verify_json(Json(req): Json<AdminDataVerifyRequest>) -> Response {
+    let intent = match DataMutationIntent::resolve(DataMutationOperation::Verify, req.target, false)
+    {
+        Ok(intent) => intent,
+        Err(message) => return admin_bad_request(message),
+    };
+    match data_target_exists(&intent.target) {
+        Ok(true) => {}
+        Ok(false) => {
+            return admin_bad_request(format!("data target '{}' was not found", intent.target))
+        }
+        Err(message) => return admin_error(message),
+    }
+    axum::Json(intent.result_view(default_context(), false)).into_response()
+}
+
 fn build_data_status_view(q: AdminDataStatusQuery) -> Result<DataStatusView, String> {
     let home = match home_dir() {
         Some(path) => path,
@@ -101,6 +203,22 @@ fn build_data_status_view(q: AdminDataStatusQuery) -> Result<DataStatusView, Str
         q.stale_only,
         rows,
     ))
+}
+
+fn data_target_exists(target: &str) -> Result<bool, String> {
+    let home = match home_dir() {
+        Some(path) => path,
+        None => return Err("cannot determine home directory".to_string()),
+    };
+    let store = DataStore::open(home.join(".icelines").join("data"))
+        .map_err(|err| format!("open DataStore: {err}"))?;
+    Ok(DataKind::all().iter().any(|kind| {
+        store
+            .manifest()
+            .list(*kind)
+            .iter()
+            .any(|entry| short_key(&entry.key) == target)
+    }))
 }
 
 fn build_snapshot_view(q: AdminSnapshotQuery) -> Result<SnapshotView, String> {
@@ -149,6 +267,81 @@ fn build_config_view(config: &crate::WebConfig, q: AdminConfigQuery) -> ConfigVi
         ],
         q.selected,
     )
+}
+
+fn apply_web_config_set(
+    config: &mut crate::WebConfig,
+    key: &str,
+    value: &str,
+) -> Result<bool, String> {
+    match key {
+        "web.active_season" => {
+            validate_season(value)?;
+            let changed = config.active_season != value
+                || config.active_label != expected_label(value, &config.active_season_type);
+            *config = crate::WebConfig::new(value, config.active_season_type.clone());
+            Ok(changed)
+        }
+        "web.active_season_type" => {
+            let value = normalize_season_type(value)?;
+            let changed = config.active_season_type != value
+                || config.active_label != expected_label(&config.active_season, &value);
+            *config = crate::WebConfig::new(config.active_season.clone(), value);
+            Ok(changed)
+        }
+        "web.active_label" => {
+            Err("web.active_label is derived from season and season type".to_string())
+        }
+        other => Err(format!(
+            "unknown web config key '{other}' - valid: web.active_season, web.active_season_type"
+        )),
+    }
+}
+
+fn apply_web_config_reset(config: &mut crate::WebConfig, key: &str) -> Result<bool, String> {
+    let default = crate::WebConfig::default();
+    match key {
+        "web.active_season" => {
+            let changed = config.active_season != default.active_season;
+            *config =
+                crate::WebConfig::new(default.active_season, config.active_season_type.clone());
+            Ok(changed)
+        }
+        "web.active_season_type" => {
+            let changed = config.active_season_type != default.active_season_type;
+            *config =
+                crate::WebConfig::new(config.active_season.clone(), default.active_season_type);
+            Ok(changed)
+        }
+        "web.active_label" => {
+            Err("web.active_label is derived from season and season type".to_string())
+        }
+        other => Err(format!(
+            "unknown web config key '{other}' - valid: web.active_season, web.active_season_type"
+        )),
+    }
+}
+
+fn validate_season(value: &str) -> Result<(), String> {
+    if value.len() == 8 && value.chars().all(|ch| ch.is_ascii_digit()) {
+        Ok(())
+    } else {
+        Err("web.active_season must use YYYYZZZZ form, for example 20252026".to_string())
+    }
+}
+
+fn normalize_season_type(value: &str) -> Result<String, String> {
+    match value.trim().to_ascii_lowercase().as_str() {
+        "regular" => Ok("regular".to_string()),
+        "playoff" | "playoffs" => Ok("playoff".to_string()),
+        other => Err(format!(
+            "unknown season type '{other}' - valid: regular, playoff"
+        )),
+    }
+}
+
+fn expected_label(season: &str, season_type: &str) -> String {
+    crate::WebConfig::new(season, season_type).active_label
 }
 
 fn collect_data_status_rows(
@@ -226,6 +419,16 @@ fn home_dir() -> Option<PathBuf> {
 fn admin_error(message: impl Into<String>) -> Response {
     (
         StatusCode::INTERNAL_SERVER_ERROR,
+        axum::Json(AdminErrorResponse {
+            error: message.into(),
+        }),
+    )
+        .into_response()
+}
+
+fn admin_bad_request(message: impl Into<String>) -> Response {
+    (
+        StatusCode::BAD_REQUEST,
         axum::Json(AdminErrorResponse {
             error: message.into(),
         }),

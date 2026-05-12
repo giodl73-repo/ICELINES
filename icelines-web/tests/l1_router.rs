@@ -12,6 +12,7 @@ use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use axum::response::Response;
 use icelines_core::career_history::{CareerGameType, CareerHistory, CareerStint, LeagueAbbrev};
+use icelines_core::freshness::{FetchSource, Freshness, Ttl};
 use icelines_core::identity::PlayerId;
 use icelines_core::season_stats::SeasonType;
 use icelines_core::view_model::{DepthGoalieSlot, DepthLine, DepthPair, DepthPlayerSlot};
@@ -21,14 +22,17 @@ use icelines_core::{
     ViewContext, ViewWindow,
 };
 use icelines_fetch::career_landing::CareerHistoryStore;
+use icelines_fetch::datastore::DataStore;
 use icelines_fetch::fantasy_db::FantasyDb;
-use icelines_fetch::snapshot::SnapshotStore;
+use icelines_fetch::manifest::{DataKey, DataKind, ManifestEntry};
+use icelines_fetch::snapshot::{SnapshotStore, SnapshotTier};
 use icelines_fetch::stats_loader::{load_into_repo, load_player_career_into_repo};
 use icelines_web::{router, WebConfig, WebState};
 use serde_json::{Map, Value};
 use std::collections::BTreeSet;
 use std::collections::HashMap;
 use std::sync::OnceLock;
+use std::time::Duration;
 use tokio::sync::Mutex;
 use tower::util::ServiceExt;
 
@@ -2180,6 +2184,168 @@ async fn l1_admin_config_json_returns_runtime_config_viewmodel() {
     assert_eq!(json["rows"][1]["key"], "web.active_season_type");
     assert_eq!(json["rows"][1]["value"], "playoff");
     assert_eq!(json["rows"][1]["selected"], true);
+}
+
+#[tokio::test]
+async fn l1_admin_config_set_json_returns_mutation_result_view() {
+    let state = WebState::new();
+    let app = router(state.clone());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/admin/config/set")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"key":"web.active_season_type","value":"playoff"}"#,
+                ))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value = serde_json::from_slice(&bytes).expect("json body");
+
+    assert_eq!(json["operation"], "config_set");
+    assert_eq!(json["target"], "web.active_season_type");
+    assert_eq!(json["status"], "applied");
+    assert_eq!(state.config.read().await.active_season_type, "playoff");
+}
+
+#[tokio::test]
+async fn l1_admin_config_reset_json_returns_noop_when_already_default() {
+    let state = WebState::new();
+    let app = router(state);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/admin/config/reset")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"key":"web.active_season_type"}"#))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value = serde_json::from_slice(&bytes).expect("json body");
+
+    assert_eq!(json["operation"], "config_reset");
+    assert_eq!(json["status"], "noop");
+}
+
+#[tokio::test]
+async fn l1_admin_snapshot_activate_json_returns_mutation_result_view() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    let store = SnapshotStore::new(SnapshotStore::default_root());
+    store
+        .create(
+            "stats-a",
+            "20252026",
+            SnapshotTier::Stats,
+            None,
+            "2026-05-10",
+        )
+        .expect("create snapshot a");
+    store.seal("stats-a").expect("seal snapshot a");
+    store
+        .create(
+            "stats-b",
+            "20252026",
+            SnapshotTier::Stats,
+            None,
+            "2026-05-11",
+        )
+        .expect("create snapshot b");
+    store.seal("stats-b").expect("seal snapshot b");
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/admin/snapshots/activate")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"name":"stats-a"}"#))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value = serde_json::from_slice(&bytes).expect("json body");
+
+    assert_eq!(json["operation"], "snapshot_activate");
+    assert_eq!(json["target"], "stats-a");
+    assert_eq!(json["status"], "applied");
+    assert_eq!(
+        store.load_manifest().expect("manifest").active.as_deref(),
+        Some("stats-a")
+    );
+}
+
+#[tokio::test]
+async fn l1_admin_data_verify_json_returns_mutation_result_view() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    let data_root = std::env::var("USERPROFILE")
+        .map(std::path::PathBuf::from)
+        .expect("temp home")
+        .join(".icelines")
+        .join("data");
+    let store = DataStore::open(&data_root).expect("open data store");
+    store
+        .manifest()
+        .upsert(
+            DataKind::Bios,
+            ManifestEntry {
+                key: DataKey::Season(Season(20252026)),
+                path: data_root.join("bios.json"),
+                freshness: Freshness {
+                    fetched_at: chrono::Utc::now(),
+                    source: FetchSource::Manual,
+                    ttl: Ttl::After(Duration::from_secs(3600)),
+                },
+            },
+        )
+        .expect("seed manifest");
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/admin/data/verify")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"target":"20252026"}"#))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value = serde_json::from_slice(&bytes).expect("json body");
+
+    assert_eq!(json["operation"], "data_verify");
+    assert_eq!(json["target"], "20252026");
+    assert_eq!(json["status"], "noop");
 }
 
 #[tokio::test]

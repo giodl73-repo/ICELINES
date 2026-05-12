@@ -26,6 +26,12 @@ Date: 2026-05-11
   - runtime `ConfigView` at `/api/v1/admin/config`
 - Mounted `/admin` as a read-only operational HTML shell consuming the same
   admin ViewModels.
+- Added web JSON admin mutation endpoints returning `MutationResultView`:
+  - `POST /api/v1/admin/config/set`
+  - `POST /api/v1/admin/config/reset`
+  - `POST /api/v1/admin/snapshots/activate`
+  - `POST /api/v1/admin/snapshots/delete`
+  - `POST /api/v1/admin/data/verify`
 - Added web JSON mutation twins for favorites:
   - `POST /api/v1/favorites/add`
   - `POST /api/v1/favorites/remove`
@@ -61,6 +67,9 @@ Date: 2026-05-11
 - Full web mutation parity:
   - richer arbitrary watch-rule edit UI;
   - fantasy league/team mutation UI is explicitly deferred out of this closeout.
+- Admin HTML write controls:
+  - web JSON mutation twins now exist for safe/runtime admin operations;
+  - destructive install/remove and richer HTML controls remain deferred.
 - TUI admin polish:
   - data/snapshot/config overlays should render directly from the new intent/result contracts when they expose mutations.
 ## Suggested next order

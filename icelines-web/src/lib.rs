@@ -202,6 +202,26 @@ pub fn router(state: WebState) -> Router {
             "/api/v1/admin/config",
             get(handlers::admin::get_config_json),
         )
+        .route(
+            "/api/v1/admin/config/set",
+            post(handlers::admin::post_config_set_json),
+        )
+        .route(
+            "/api/v1/admin/config/reset",
+            post(handlers::admin::post_config_reset_json),
+        )
+        .route(
+            "/api/v1/admin/snapshots/activate",
+            post(handlers::admin::post_snapshot_activate_json),
+        )
+        .route(
+            "/api/v1/admin/snapshots/delete",
+            post(handlers::admin::post_snapshot_delete_json),
+        )
+        .route(
+            "/api/v1/admin/data/verify",
+            post(handlers::admin::post_data_verify_json),
+        )
         // Sasq.7 — friendly 404 with a player-search input replaces
         // axum's bare default. Wired as router fallback so any
         // unmatched path lands here.
