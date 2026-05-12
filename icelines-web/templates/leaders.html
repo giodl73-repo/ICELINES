@@ -5,7 +5,7 @@
 {% block content %}
 <h1>Leaderboards</h1>
 
-<p style="color: #616161; margin-bottom: 0.5rem;">
+<p class="meta-line">
     Top {{ rows.len() }} skaters by {{ active_sort_label }} · {{ active_label }}
     {% if total > rows.len() %}
         · {{ total }} total
@@ -14,12 +14,11 @@
 
 {# Position filter strip — King.2.2. Each link preserves the active
    sort + top via query string. Active chip highlighted via .fit-solid. #}
-<nav aria-label="Position filter" style="margin-bottom: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
-    <span style="color: #616161; font-size: 0.9rem; align-self: center;">Position:</span>
+<nav aria-label="Position filter" class="chip-strip">
+    <span class="chip-strip-label">Position:</span>
     {% for chip in pos_chips %}
         <a href="?sort={{ active_sort }}&pos={{ chip.value }}&top={{ active_top }}{{ bio_query_suffix }}"
-           {% if chip.is_active %}class="fit-solid"{% endif %}
-           style="text-decoration: {% if chip.is_active %}none{% else %}underline{% endif %}; padding: 0.2rem 0.6rem; border-radius: 3px;">
+           class="filter-chip{% if chip.is_active %} fit-solid{% endif %}">
             {{ chip.label }}
         </a>
     {% endfor %}
@@ -29,32 +28,31 @@
    bookmarkable. Each row in the form becomes one ?filter= param.
    Per spec: repeated ?filter= keys ARE preserved (Vec extractor) and
    ANDed at the top level. The hidden inputs preserve sort/pos/top. #}
-<form method="get" action="" style="margin-bottom: 1.5rem; padding: 1rem; background: #f0f0f0; border-radius: 4px;">
+<form method="get" action="" class="filter-panel">
     <input type="hidden" name="sort" value="{{ active_sort }}">
     <input type="hidden" name="pos" value="{{ active_pos }}">
     <input type="hidden" name="top" value="{{ active_top }}">
-    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-        <label for="filter-1" style="font-weight: 600;">Filter:</label>
+    <div class="inline-form-row">
+        <label for="filter-1" class="filter-label">Filter:</label>
         <input id="filter-1" type="text" name="filter"
                placeholder="g&gt;=50 OR a&gt;=50"
                value="{% if active_filters.len() > 0 %}{{ active_filters[0] }}{% endif %}"
-               style="flex: 1; min-width: 200px; font-family: ui-monospace, Consolas, monospace;">
+               class="filter-input-wide">
         {% if active_filters.len() > 1 %}
             {# Render extra filter inputs for each additional ?filter= #}
             {% for extra in active_filters %}
                 {% if loop.index0 > 0 %}
-                <input type="text" name="filter" value="{{ extra }}"
-                       style="flex: 1; min-width: 200px; font-family: ui-monospace, Consolas, monospace;">
+                <input type="text" name="filter" value="{{ extra }}" class="filter-input-wide">
                 {% endif %}
             {% endfor %}
         {% endif %}
         <button type="submit">Apply</button>
         {% if active_filters.len() > 0 %}
             <a href="?sort={{ active_sort }}&pos={{ active_pos }}&top={{ active_top }}{{ bio_query_suffix }}"
-               style="padding: 0.4rem 0.6rem;">Clear</a>
+               class="link-button-secondary">Clear</a>
         {% endif %}
     </div>
-    <p style="margin: 0.5rem 0 0 0; color: #616161; font-size: 0.85rem;">
+    <p class="filter-help">
         Grammar: <code>&lt;stat&gt;&lt;op&gt;&lt;value&gt;</code> with <code>AND / OR / NOT</code> and parens.
         Examples: <code>g&gt;=50</code>, <code>g&gt;=30 AND a&gt;=30</code>, <code>(g&gt;=40 OR a&gt;=60) AND gp&gt;=70</code>.
         Stat keys: <code>g/a/p/gp/hits/blocks/ppg/...</code> (run <code>icelines docs</code> for the full catalog).
@@ -62,9 +60,9 @@
 </form>
 
 {% if active_filters.len() > 0 %}
-<p style="color: #2e7d32; font-size: 0.9rem; margin-bottom: 1rem;">
+<p class="active-filter-line">
     Active filters (AND'd):
-    {% for f in active_filters %}<code style="background: #fff; padding: 0.1rem 0.3rem; border-radius: 2px; margin: 0 0.25rem;">{{ f }}</code>{% endfor %}
+    {% for f in active_filters %}<code class="active-filter-token">{{ f }}</code>{% endfor %}
 </p>
 {% endif %}
 
@@ -72,60 +70,60 @@
    filter is currently active so the user sees what's narrowing
    the table. Plain GET form so the URL stays bookmarkable. #}
 <details class="bio-filter" {% if bio_active %}open{% endif %}>
-    <summary style="cursor:pointer; font-weight:600; color:var(--nhl-navy); padding:0.5rem 0; user-select:none;">
+    <summary class="accordion-summary">
         Bio filters
-        {% if bio_active %}<span style="color:var(--nhl-red); font-weight:700;">●</span>{% endif %}
+        {% if bio_active %}<span class="active-dot">●</span>{% endif %}
     </summary>
-    <form method="get" action="" style="margin: 0.5rem 0 1.25rem 0; padding: 0.85rem 1rem; background: var(--ice-divider); border-radius: 5px;">
+    <form method="get" action="" class="filter-panel">
         <input type="hidden" name="sort" value="{{ active_sort }}">
         <input type="hidden" name="pos" value="{{ active_pos }}">
         <input type="hidden" name="top" value="{{ active_top }}">
         {% for f in active_filters %}<input type="hidden" name="filter" value="{{ f }}">{% endfor %}
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:0.6rem 1rem;">
-            <label style="font-size:0.85rem;">Age
-                <span style="display:flex; gap:0.25rem; margin-top:0.15rem;">
-                    <input type="number" name="age-min" min="16" max="50" placeholder="min" value="{{ bio_age_min_str }}" style="width: 5rem;">
-                    <input type="number" name="age-max" min="16" max="50" placeholder="max" value="{{ bio_age_max_str }}" style="width: 5rem;">
+        <div class="bio-filter-grid">
+            <label class="compact-label">Age
+                <span class="range-inputs">
+                    <input type="number" name="age-min" min="16" max="50" placeholder="min" value="{{ bio_age_min_str }}" class="range-input">
+                    <input type="number" name="age-max" min="16" max="50" placeholder="max" value="{{ bio_age_max_str }}" class="range-input">
                 </span>
             </label>
-            <label style="font-size:0.85rem;">Draft year
-                <span style="display:flex; gap:0.25rem; margin-top:0.15rem;">
-                    <input type="number" name="draft-min" min="1960" max="2030" placeholder="min" value="{{ bio_draft_min_str }}" style="width: 5.5rem;">
-                    <input type="number" name="draft-max" min="1960" max="2030" placeholder="max" value="{{ bio_draft_max_str }}" style="width: 5.5rem;">
+            <label class="compact-label">Draft year
+                <span class="range-inputs">
+                    <input type="number" name="draft-min" min="1960" max="2030" placeholder="min" value="{{ bio_draft_min_str }}" class="range-input-wide">
+                    <input type="number" name="draft-max" min="1960" max="2030" placeholder="max" value="{{ bio_draft_max_str }}" class="range-input-wide">
                 </span>
             </label>
-            <label style="font-size:0.85rem;">Height (in)
-                <span style="display:flex; gap:0.25rem; margin-top:0.15rem;">
-                    <input type="number" name="height-min" min="60" max="84" placeholder="min" value="{{ bio_height_min_str }}" style="width: 5rem;">
-                    <input type="number" name="height-max" min="60" max="84" placeholder="max" value="{{ bio_height_max_str }}" style="width: 5rem;">
+            <label class="compact-label">Height (in)
+                <span class="range-inputs">
+                    <input type="number" name="height-min" min="60" max="84" placeholder="min" value="{{ bio_height_min_str }}" class="range-input">
+                    <input type="number" name="height-max" min="60" max="84" placeholder="max" value="{{ bio_height_max_str }}" class="range-input">
                 </span>
             </label>
-            <label style="font-size:0.85rem;">Weight (lb)
-                <span style="display:flex; gap:0.25rem; margin-top:0.15rem;">
-                    <input type="number" name="weight-min" min="120" max="290" placeholder="min" value="{{ bio_weight_min_str }}" style="width: 5rem;">
-                    <input type="number" name="weight-max" min="120" max="290" placeholder="max" value="{{ bio_weight_max_str }}" style="width: 5rem;">
+            <label class="compact-label">Weight (lb)
+                <span class="range-inputs">
+                    <input type="number" name="weight-min" min="120" max="290" placeholder="min" value="{{ bio_weight_min_str }}" class="range-input">
+                    <input type="number" name="weight-max" min="120" max="290" placeholder="max" value="{{ bio_weight_max_str }}" class="range-input">
                 </span>
             </label>
-            <label style="font-size:0.85rem;">Country
+            <label class="compact-label">Country
                 <input type="text" name="country" placeholder="CAN" maxlength="3" value="{{ bio_country }}"
-                       style="width: 6rem; text-transform:uppercase; margin-top:0.15rem;">
+                       class="short-code-input">
             </label>
-            <label style="font-size:0.85rem;">Shoots
-                <select name="shoots" style="margin-top:0.15rem;">
+            <label class="compact-label">Shoots
+                <select name="shoots" class="compact-select">
                     <option value="" {% if bio_shoots == "" %}selected{% endif %}>—</option>
                     <option value="L" {% if bio_shoots == "L" %}selected{% endif %}>Left</option>
                     <option value="R" {% if bio_shoots == "R" %}selected{% endif %}>Right</option>
                 </select>
             </label>
         </div>
-        <div style="display:flex; gap:0.5rem; margin-top: 0.75rem;">
+        <div class="form-actions">
             <button type="submit">Apply bio filters</button>
             {% if bio_active %}
                 <a href="?sort={{ active_sort }}&pos={{ active_pos }}&top={{ active_top }}{% for f in active_filters %}&filter={{ f }}{% endfor %}"
-                   style="padding: 0.4rem 0.6rem; align-self:center;">Clear bio filters</a>
+                   class="link-button-secondary">Clear bio filters</a>
             {% endif %}
         </div>
-        <p style="margin: 0.55rem 0 0 0; color: #616161; font-size: 0.78rem;">
+        <p class="filter-help">
             Age cutoff is hockey-standard Sept 15. Country accepts ISO 3-letter codes (CAN, USA, SWE, FIN, RUS, …).
             Players missing the relevant bio field are excluded from filtered results.
         </p>
@@ -136,15 +134,15 @@
 <table>
     <thead>
         <tr>
-            <th style="text-align: right;">#</th>
+            <th class="numeric">#</th>
             <th>Player</th>
             <th>Pos</th>
             <th>Team</th>
             {% for col in col_headers %}
-                <th style="text-align: right;"
+                <th class="numeric"
                     {% if col.is_active %}aria-sort="descending"{% endif %}>
                     <a href="?sort={{ col.url_token }}&pos={{ active_pos }}&top={{ active_top }}{{ bio_query_suffix }}{% for f in active_filters %}&filter={{ f }}{% endfor %}"
-                       style="text-decoration: none; color: inherit; {% if col.is_active %}font-weight: 700;{% else %}font-weight: 400;{% endif %}"
+                       class="sort-link{% if col.is_active %} sort-link-active{% endif %}"
                        title="Sort by {{ col.label }}">
                         {{ col.label }}{% if col.is_active %} ↓{% endif %}
                     </a>
@@ -155,7 +153,7 @@
     <tbody>
         {% for row in rows %}
         <tr>
-            <td style="text-align: right; color: #616161;">{{ loop.index }}</td>
+            <td class="rank-cell">{{ loop.index }}</td>
             <td>
                 <div class="player-cell">
                     <img class="avatar" src="{{ row.headshot_url }}" alt="" loading="lazy"
@@ -166,28 +164,28 @@
             </td>
             <td><span class="pos-chip pos-{{ row.position }}">{{ row.position }}</span></td>
             <td><a class="team-link team-{{ row.team }}" href="/team/{{ row.team }}">{{ row.team }}</a></td>
-            <td style="text-align: right;">{{ row.gp }}</td>
-            <td style="text-align: right;">{{ row.goals }}</td>
-            <td style="text-align: right;">{{ row.assists }}</td>
-            <td style="text-align: right;"><strong>{{ row.points }}</strong></td>
-            <td style="text-align: right;">{% if row.ppg_str.is_empty() %}—{% else %}{{ row.ppg_str }}{% endif %}</td>
-            <td style="text-align: right;">{{ row.plus_minus_str }}</td>
-            <td style="text-align: right;">{{ row.pim }}</td>
-            <td style="text-align: right;">{{ row.shots }}</td>
-            <td style="text-align: right;">{{ row.shooting_pct_str }}</td>
-            <td style="text-align: right;">{{ row.hits_str }}</td>
-            <td style="text-align: right;">{{ row.blocks_str }}</td>
-            <td style="text-align: right;">{{ row.faceoff_pct_str }}</td>
-            <td style="text-align: right;">{{ row.pp_points }}</td>
-            <td style="text-align: right;">{{ row.points_per_60_str }}</td>
-            <td style="text-align: right;">{{ row.goals_per_60_str }}</td>
-            <td style="text-align: right;">{{ row.assists_per_60_str }}</td>
-            <td style="text-align: right;">{{ row.hits_per_60_str }}</td>
-            <td style="text-align: right;">{{ row.blocks_per_60_str }}</td>
-            <td style="text-align: right;">
+            <td class="numeric">{{ row.gp }}</td>
+            <td class="numeric">{{ row.goals }}</td>
+            <td class="numeric">{{ row.assists }}</td>
+            <td class="numeric"><strong>{{ row.points }}</strong></td>
+            <td class="numeric">{% if row.ppg_str.is_empty() %}—{% else %}{{ row.ppg_str }}{% endif %}</td>
+            <td class="numeric">{{ row.plus_minus_str }}</td>
+            <td class="numeric">{{ row.pim }}</td>
+            <td class="numeric">{{ row.shots }}</td>
+            <td class="numeric">{{ row.shooting_pct_str }}</td>
+            <td class="numeric">{{ row.hits_str }}</td>
+            <td class="numeric">{{ row.blocks_str }}</td>
+            <td class="numeric">{{ row.faceoff_pct_str }}</td>
+            <td class="numeric">{{ row.pp_points }}</td>
+            <td class="numeric">{{ row.points_per_60_str }}</td>
+            <td class="numeric">{{ row.goals_per_60_str }}</td>
+            <td class="numeric">{{ row.assists_per_60_str }}</td>
+            <td class="numeric">{{ row.hits_per_60_str }}</td>
+            <td class="numeric">{{ row.blocks_per_60_str }}</td>
+            <td class="numeric">
                 {% if row.points_delta_str.is_empty() %}—{% else %}<span class="stat-delta {{ row.points_delta_class }}">{{ row.points_delta_str }}</span>{% endif %}
             </td>
-            <td style="text-align: right;">
+            <td class="numeric">
                 {% if row.points_delta_str.is_empty() %}—{% else %}<span class="stat-delta {{ row.points_delta_class }}">{{ row.points_delta_str }}</span>{% endif %}
             </td>
         </tr>
@@ -196,7 +194,7 @@
 </table>
 </div>
 
-<p style="margin-top: 2rem; color: #616161; font-size: 0.9rem;">
+<p class="page-section meta-line">
     Click any column header to sort by that stat. Click a position chip to filter.
     Default: top 20, sorted by points.
     Filter grammar examples: <code>g&gt;=50 AND hits&gt;=200</code>,

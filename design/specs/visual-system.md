@@ -436,10 +436,14 @@ Current Prince.4 evidence:
 - `cargo test -p icelines-web l1_static_css_contains_prince_route_layout_classes`
   fences the shared web route layout primitives: `.page-section`,
   `.section-heading`, `.section-link-row`, `.filter-panel`, `.filter-grid`,
-  `.form-actions`, `.numeric`, `.rank-cell`, `.brand-link`, `.lede`,
-  `.not-found-panel`, `.centered-form`, `.back-link-row`, `.picker-nav`,
-  `.inline-separator`, `.table-score`, `.kind-chip`, `.game-live`,
-  `.team-banner-meta`, and `.team-banner-button`.
+  `.form-actions`, `.inline-form-row`, `.filter-label`, `.filter-help`,
+  `.filter-input-wide`, `.chip-strip`, `.filter-chip`,
+  `.active-filter-line`, `.accordion-summary`, `.bio-filter-grid`,
+  `.range-input`, `.link-button-secondary`, `.sort-link`, `.numeric`,
+  `.rank-cell`, `.brand-link`, `.lede`, `.not-found-panel`,
+  `.centered-form`, `.back-link-row`, `.picker-nav`, `.inline-separator`,
+  `.table-score`, `.kind-chip`, `.game-live`, `.team-banner-meta`, and
+  `.team-banner-button`.
 
 ---
 
