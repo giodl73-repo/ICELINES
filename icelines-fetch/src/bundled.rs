@@ -828,6 +828,7 @@ fn read_chunked_active_playoff_for_season(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use icelines_core::CURRENT_SEASON_STR;
 
     #[test]
     fn l0_bundled_current_season_bios_parse() {
@@ -867,6 +868,31 @@ mod tests {
         // Pre-1987 seasons have no data files in the repo.
         assert!(get_bios("19861987").is_none());
         assert!(get_stats("19861987").is_none());
+    }
+
+    #[test]
+    fn l0_release_current_season_is_head_of_bundles() {
+        assert_eq!(
+            BUNDLED_SEASONS.first().copied(),
+            Some(CURRENT_SEASON_STR),
+            "release rollover requires CURRENT_SEASON_STR to match the newest bundled season"
+        );
+        assert!(
+            get_bios(CURRENT_SEASON_STR).is_some(),
+            "current season must carry bundled bios for cold-start release smoke"
+        );
+        assert!(
+            get_stats(CURRENT_SEASON_STR).is_some(),
+            "current season must carry bundled stats for cold-start release smoke"
+        );
+        assert!(
+            get_goalie_stats(CURRENT_SEASON_STR).is_some(),
+            "current season must carry bundled goalie stats for cold-start release smoke"
+        );
+        assert!(
+            !BUNDLED_SEASONS.contains(&"20042005"),
+            "2004-05 lockout must remain excluded from release bundles"
+        );
     }
 
     /// L.7b — every season in `BUNDLED_SEASONS` has bios + stats +

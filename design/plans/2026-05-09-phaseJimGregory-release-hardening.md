@@ -153,6 +153,20 @@ Acceptance:
 - A test or script verifies bundled season IDs include the expected current season.
 - Data freshness expectations in README match the actual automation.
 
+Progress:
+
+- 2026-05-12: Added `design/current-season-rollover.md` with the October
+  rollover procedure, bundled-data invariants, required gates, and the exact
+  data freshness contract: GitHub data tarballs refresh weekly, while embedded
+  binary data changes only when refreshed `data/seasons/` files are committed
+  before a release build.
+- 2026-05-12: Added a release rollover fence in
+  `icelines-fetch/src/bundled.rs` asserting `CURRENT_SEASON_STR` is the newest
+  bundled season, current-season regular/goalie data is embedded, and the
+  2004-05 lockout remains excluded.
+- 2026-05-12: Updated README, data guide, data-bundle spec, and the data
+  bundle workflow wording so freshness claims match the actual automation.
+
 ---
 
 ## JimGregory.4 - Binary smoke and packaging checks

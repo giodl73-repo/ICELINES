@@ -4,11 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       seasons:
-        description: 'Seasons to bundle (space-separated YYYYZZZZ) — leave blank for all 25'
+        description: 'Reserved for future use; this workflow currently builds all 38 matrix seasons'
         required: false
         default: ''
   schedule:
-    # Refresh current season weekly on Monday mornings
+    # Refresh the current-season GitHub data tarball weekly on Monday mornings.
+    # Embedded binary data changes only after data/seasons updates are committed.
     - cron: '0 6 * * 1'
 
 permissions:
@@ -23,13 +24,13 @@ jobs:
       max-parallel: 8
       matrix:
         season:
-          # ── Current 5 seasons (bundled in binary) ──────────────────────────
+          # ── Recent seasons (also embedded in the binary) ──────────────────
           - '20252026'
           - '20242025'
           - '20232024'
           - '20222023'
           - '20212022'
-          # ── Historical seasons 2000-01 → 2020-21 ──────────────────────────
+          # ── Historical seasons 2000-01 -> 2020-21 ────────────────────────
           - '20202021'
           - '20192020'
           - '20182019'
@@ -50,7 +51,7 @@ jobs:
           - '20022003'
           - '20012002'
           - '20002001'
-          # ── Gretzky-trade era 1987-88 → 1999-2000 ─────────────────────────
+          # ── Gretzky-trade era 1987-88 -> 1999-2000 ───────────────────────
           - '19992000'
           - '19981999'
           - '19971998'
@@ -172,8 +173,8 @@ jobs:
             ## Bulk install (last N seasons)
 
             ```bash
-            icelines data install --seasons 25   # all historical
-            icelines data install --seasons 5    # recent only
+            icelines data install --seasons 38   # all supported seasons
+            icelines data install --seasons 5    # newest five
             ```
 
             ## Contents

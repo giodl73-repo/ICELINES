@@ -40,7 +40,8 @@ commit being tagged.
   - GitHub release data bundles;
   - live fetch commands.
 - For October rollover, follow the current-season procedure before tagging.
-  Do not silently roll only the README or only the constant.
+  Do not silently roll only the README or only the constant. Full procedure:
+  `design/current-season-rollover.md`.
 
 ## 4. Required local gates
 
@@ -49,6 +50,7 @@ Run the normal focused gates before creating a tag:
 ```powershell
 cargo fmt --check
 cargo check --workspace
+cargo test -p icelines-fetch bundled
 powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-release
 ```
 

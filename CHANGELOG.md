@@ -25,6 +25,9 @@ closeout review.**
   export, poach, and URL printing from `serve --no-open`.
 - Added `design/release-checklist.md` with versioning rules, release gates,
   artifact names, tag flow, rollback notes, and data/current-season sanity.
+- Added `design/current-season-rollover.md`, release bundle tests, and updated
+  data freshness docs so embedded-data claims match the actual release
+  automation.
 
 ---
 

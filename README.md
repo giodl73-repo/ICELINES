@@ -276,14 +276,14 @@ icelines fetch realtime         # hits, blocks, giveaways, takeaways, PIM
 icelines fetch money-puck       # xG, CF%, FF%, xGF% from MoneyPuck (free)
 icelines fetch contracts        # UFA/RFA/ELC contract status
 
-# Historical seasons (1987-88 through 2024-25)
+# Historical seasons (1987-88 through 2025-26, excluding 2004-05)
 icelines data install --season 19881989    # Gretzky's first LA season
-icelines data install --seasons 5          # last 5 seasons
+icelines data install --seasons 5          # newest 5 (already bundled)
 icelines data install --seasons 38         # full history 1987–2025
 icelines data list                          # show installed seasons + player counts
 icelines data remove 19921993              # uninstall a season
 
-# Multi-season queries (requires seasons installed)
+# Multi-season queries (bundled; installs are only needed for fresher overrides)
 icelines query leaders --seasons 10 --pos C --sort pts-pace --top 10
 icelines query leaders --seasons 5  --sort pts-pace --top 10
 ```
@@ -345,10 +345,10 @@ icelines deploy                     # deploy to GitHub Pages
 |--------|------|---------|
 | NHL API (free, public, no key) | Stats, rosters, bios, realtime, schedule | `icelines fetch all` |
 | MoneyPuck (free CSV) | xG, CF%, FF%, xGF% at 5v5 | `icelines fetch money-puck` |
-| Bundled (in binary) | 5 seasons 20212022–20252026 | — (zero config) |
-| GitHub Releases | 38 seasons 19871988–20252026 | `icelines data install` |
+| Bundled (in binary) | 38 seasons 19871988–20252026, excluding 20042005 | — (zero config) |
+| GitHub Releases | Optional season refresh/install tarballs | `icelines data install` |
 
-The bundled data refreshes weekly via GitHub Actions. `icelines rank` and `query leaders` work immediately after install with no fetch required.
+Bundled data is refreshed during release/data-prep work and ships with each release. `icelines rank` and `query leaders` work immediately after install with no fetch required.
 
 ---
 

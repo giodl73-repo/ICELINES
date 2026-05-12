@@ -73,7 +73,7 @@ These are silo'd — stored separately, optional, gracefully absent when not fet
 
 ## Bundled data
 
-Five seasons are compiled into the `icelines` binary using Rust's `include_bytes!()`.
+All 38 supported seasons are compiled into the `icelines` binary using Rust's `include_bytes!()`.
 Zero network access required:
 
 ```
@@ -83,10 +83,10 @@ data/seasons/20252026/goalie-stats.json          ~22 KB
 data/seasons/20252026/playoff-bios.json          (Hart.6.3 — 2026-05-02)
 data/seasons/20252026/playoff-stats.json
 data/seasons/20252026/playoff-goalie-stats.json
-(× 5 seasons = ~5.2 MB total embedded in binary)
+(× 38 seasons, excluding the 2004-05 lockout)
 ```
 
-The bundled data is refreshed weekly in CI and published with each release.
+Bundled data is refreshed during release/data-prep work and published with each release.
 
 The 2025-26 playoff files ship as `[]` until the Stanley Cup is contested;
 the loader surfaces a clean `MissingBundle{Playoff}` error in that state.
@@ -95,7 +95,7 @@ the loader surfaces a clean `MissingBundle{Playoff}` error in that state.
 
 ## Historical seasons
 
-38 seasons are available as GitHub Releases, back to 1987-88:
+The same 38 seasons can be refreshed from GitHub Releases, back to 1987-88:
 
 ```bash
 icelines data install --seasons 38      # full history
@@ -177,13 +177,13 @@ If a snapshot exists, it takes precedence over bundled data automatically.
 `````proof:tree kind=org indent-width=2
 root: Data freshness
 - Current season (bundled)
-  - refreshed: weekly via GitHub Actions CI
+  - refreshed: release/data-prep workflow before publishing
   - use case: cold start, no fetch required
 - Current season (snapshot)
   - refreshed: whenever you run icelines fetch stats
   - use case: latest stats mid-week
-- Historical seasons (installed bundles)
-  - refreshed: never (historical data is immutable)
+- Historical seasons (bundled or installed)
+  - refreshed: only when a corrected bundle is intentionally published
   - use case: multi-season queries, comps research
 ```
 ```

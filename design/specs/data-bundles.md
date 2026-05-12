@@ -13,9 +13,9 @@ self-contained bundles so users can analyze any of 38 seasons
 (1987-88 through 2025-26, excluding the 2004-05 lockout) without
 hitting the live API.
 
-The five most recent seasons (2021-22 through 2025-26) are **embedded
-in the binary** via `include_bytes!()`. The rest are fetched on demand
-from GitHub Releases via `icelines data install`.
+All 38 supported seasons are **embedded in the binary** via
+`include_bytes!()`. GitHub Releases remain the refresh/install path for
+corrected or manually refreshed bundles via `icelines data install`.
 
 This spec covers: bundle format, install/list/remove operations,
 storage layout, and the install lifecycle.
@@ -26,8 +26,8 @@ storage layout, and the install lifecycle.
 
 | Tier | Source | Location | Lifecycle |
 |------|--------|----------|-----------|
-| **Bundled** | `include_bytes!()` in `icelines-fetch::bundled` | Binary (~4.3 MB total for 5 seasons) | Refreshed by CI weekly; ships with each release |
-| **Installed** | GitHub Releases tarballs | `~/.icelines/seasons/{SEASON}/bundle-{SEASON}/` | User-controlled; `data install` adds, `data remove` deletes |
+| **Bundled** | `include_bytes!()` in `icelines-fetch::bundled` | Binary (38 seasons, excluding 2004-05) | Refreshed during release/data-prep work; ships with each release |
+| **Installed** | GitHub Releases tarballs | `~/.icelines/seasons/{SEASON}/bundle-{SEASON}/` | User-controlled refresh/override; `data install` adds, `data remove` deletes |
 
 Loaders prefer in this order:
 1. Live snapshot store (post-`icelines fetch`)
@@ -51,7 +51,7 @@ season IDs, newest first:
                                                           ← 2004-05 lockout, OMITTED
 19992000 19981999 19971998 19961997 19951996
 19941995 19931994 19921993 19911992 19901991
-19891990 19881989 19871988                              ← Gretzky-to-LA era
+19891990 19881989 19871988                              ← bundled in binary
 ```
 
 The lockout year `20042005` is not in the list. Attempting to install
@@ -73,7 +73,7 @@ Without flags: refresh the current season (`--seasons 1`).
 
 ```
 icelines data install                          # current season only
-icelines data install --seasons 5              # last 5 (already bundled — no-op unless --force)
+icelines data install --seasons 5              # newest 5 (already bundled — no-op unless --force)
 icelines data install --seasons 38             # full history
 icelines data install --season 19931994        # specific season
 icelines data install --season 19931994 --force  # re-download
@@ -84,8 +84,8 @@ status line. Installs are sequential (one at a time) so a slow
 connection doesn't fan out 38 parallel requests against GitHub.
 
 The `--seasons N` flag picks the **newest N** from `AVAILABLE_SEASONS`,
-which means `--seasons 5` is a no-op (those are already bundled) but
-`--seasons 6` installs `20202021`, etc.
+which means any season already present in the binary is a no-op unless
+`--force` is provided to install a fresher override from GitHub Releases.
 
 ### list
 
@@ -212,11 +212,11 @@ Concurrent installs are rejected with "install already in progress".
    places (`AVAILABLE_SEASONS` omits it; `run_install` rejects with
    friendly text) for defense-in-depth.
 
-6. **Refresh cadence for bundled seasons**: CI re-fetches and embeds
-   the latest 5 seasons weekly. Users on stable releases get whatever
-   was current at release time; running `data install --force` pulls
-   the freshest data even for bundled seasons (it lands in `seasons/`,
-   which has higher lookup priority than the binary's `include_bytes`).
+6. **Refresh cadence for bundled seasons**: release/data-prep work
+   refreshes the embedded season files before publishing. Users on
+   stable releases get whatever was current at release time; running
+   `data install --force` can install a corrected or fresher override
+   from GitHub Releases where one exists.
 
 7. **CDN / mirror fallback**: Not in v1. If GitHub Releases is down,
    `data install` errors. Tracked in backlog; punted because GitHub's
