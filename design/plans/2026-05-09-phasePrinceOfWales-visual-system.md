@@ -173,6 +173,9 @@ Progress:
 - 2026-05-12: Expanded `design/specs/visual-system.md` with the complete
   semantic token table, renderer mapping seed for TUI/CLI/web/markdown, and a
   drift inventory for the next cleanup passes.
+- 2026-05-12: Reconciled web/site fit styling to the Prince token names:
+  `fit-elite`, `fit-solid`, `fit-buried`, and `fit-stretch`. Removed the active
+  `.fit-fringe` contract from CSS/tests and added mapping fences.
 
 ---
 

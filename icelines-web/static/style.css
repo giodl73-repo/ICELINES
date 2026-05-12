@@ -13,8 +13,9 @@
  *     element scoped under a team class can theme itself.
  *   - Tabular numerals everywhere stats render so columns align.
  *
- * The CSS class contract (`.fit-elite` / `.fit-solid` / `.fit-fringe`
- * / `.fit-buried` and the `.score-*` set) matches `glass.md`. The
+ * The CSS class contract (`.fit-elite` / `.fit-solid` / `.fit-buried`
+ * / `.fit-stretch` and the `.score-*` set) matches the Prince visual
+ * token contract. The
  * `l1_html_no_color_only_encoding` fence (King.2) checks every color
  * class is paired with text/icon, not used as the sole signal.
  */
@@ -209,11 +210,11 @@ code {
 
 /* ── Fit classes — spec CSS class contract ──────────────────────── */
 .fit-elite   { background-color: var(--accent-good); color: #fff; }
-.fit-solid   { background-color: var(--link); color: #fff; }
-.fit-fringe  { background-color: var(--accent-warn); color: #000; }
-.fit-buried  { background-color: var(--accent-bad); color: #fff; }
+.fit-solid   { background-color: var(--accent-warn); color: #000; }
+.fit-buried  { background-color: var(--link); color: #fff; }
+.fit-stretch { background-color: var(--accent-bad); color: #fff; }
 
-.fit-elite, .fit-solid, .fit-fringe, .fit-buried {
+.fit-elite, .fit-solid, .fit-buried, .fit-stretch {
     padding: 0.125rem 0.375rem;
     border-radius: 3px;
     font-weight: 600;

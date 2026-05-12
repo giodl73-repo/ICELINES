@@ -174,9 +174,9 @@ Renderer mapping seed:
 
 Current drift inventory:
 
-1. Web fit CSS still has older class names and meanings in places, including
-   `.fit-fringe`; Prince.2 must migrate active HTML/CSS/tests to semantic
-   `fit_*` names or document exact compatibility aliases.
+1. Web fit CSS and `WebFitClass::css_class()` now use semantic `fit_*` names.
+   Remaining web work should migrate any future compatibility aliases back to
+   these tokens instead of reviving `.fit-fringe`.
 2. TUI color use is still scattered across screens. Centralize token-to-style
    mapping before aesthetic work on individual panes.
 3. CLI fit color is centralized for terminal output, but source, game, action,

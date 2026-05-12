@@ -266,13 +266,22 @@ mod tests {
         let s = slot("Connor McDavid", Some(140.0), Some(82));
 
         let elite = player_cell(Some(&s), Some(&metrics_for(WebFitClass::Elite)));
+        assert!(elite.contains("fit-elite"), "Elite must use fit-elite");
         assert!(elite.contains('★'), "Elite must use ★");
 
+        let solid = player_cell(Some(&s), Some(&metrics_for(WebFitClass::Solid)));
+        assert!(solid.contains("fit-solid"), "Solid must use fit-solid");
+
         let buried = player_cell(Some(&s), Some(&metrics_for(WebFitClass::Buried)));
+        assert!(buried.contains("fit-buried"), "Buried must use fit-buried");
         assert!(buried.contains('↑'), "Buried must use ↑");
         assert!(buried.contains("underused"));
 
         let stretch = player_cell(Some(&s), Some(&metrics_for(WebFitClass::Stretch)));
+        assert!(
+            stretch.contains("fit-stretch"),
+            "Stretch must use fit-stretch"
+        );
         assert!(stretch.contains('↓'), "Stretch must use ↓");
         assert!(stretch.contains("overextended"));
     }

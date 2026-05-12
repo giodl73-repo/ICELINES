@@ -348,7 +348,7 @@ must map to CSS class names in the template (`fit-elite`, `fit-solid`, `fit-buri
 If the Rust-to-CSS mapping is a runtime string construction (e.g., `format!("fit-{}", name.to_lowercase())`),
 a renamed enum variant will produce a wrong CSS class that applies no styling — silently.
 
-**Status**: OPEN
+**Status**: CLOSED 2026-05-12
 
 **Structural solution required**: The CSS class name for each `FitClass` variant is a `const &str`
 in a match expression in `icelines-site`. Adding a new `FitClass` variant causes a compile error
@@ -356,6 +356,10 @@ if the match is not updated. The CSS class name is never constructed from the va
 
 **Test required**: `test_fit_class_css_mapping()` — assert each `FitClass` variant maps to the
 expected CSS class string (4 assertions, one per variant).
+
+**Implemented as**: `WebFitClass::css_class()` returns explicit semantic
+classes (`fit-elite`, `fit-solid`, `fit-buried`, `fit-stretch`), with focused
+core/site/static-asset tests covering the mapping and stylesheet contract.
 
 ---
 

@@ -146,10 +146,10 @@ pub enum WebFitClass {
 impl WebFitClass {
     pub fn css_class(self) -> &'static str {
         match self {
-            Self::Elite => "fit",
-            Self::Solid => "solid",
-            Self::Buried => "buried",
-            Self::Stretch => "stretch",
+            Self::Elite => "fit-elite",
+            Self::Solid => "fit-solid",
+            Self::Buried => "fit-buried",
+            Self::Stretch => "fit-stretch",
         }
     }
 
@@ -389,6 +389,14 @@ mod tests {
     use crate::model::Season;
     use crate::season_stats::SeasonType;
     use crate::stats_repository::StatsRepository;
+
+    #[test]
+    fn l0_web_fit_class_css_mapping_uses_semantic_fit_tokens() {
+        assert_eq!(WebFitClass::Elite.css_class(), "fit-elite");
+        assert_eq!(WebFitClass::Solid.css_class(), "fit-solid");
+        assert_eq!(WebFitClass::Buried.css_class(), "fit-buried");
+        assert_eq!(WebFitClass::Stretch.css_class(), "fit-stretch");
+    }
 
     fn build_pool(seeds: &[(u32, &str, &str, Position, f64)]) -> StatsRepository {
         let mut r = StatsRepository::new();

@@ -155,19 +155,23 @@ mod tests {
     }
 
     /// l0_style_css_carries_fit_class_contract
-    /// — Spec's CSS class contract (`.fit-elite/.fit-solid/.fit-fringe
-    ///   /.fit-buried` with hex values from glass.md). Catches a
-    ///   future stylesheet refactor that loses the lockstep.
+    /// — Prince visual-token contract (`.fit-elite/.fit-solid/.fit-buried
+    ///   /.fit-stretch` with the shared fit palette). Catches a future
+    ///   stylesheet refactor that loses the lockstep.
     #[test]
     fn l0_style_css_carries_fit_class_contract() {
         let css = std::str::from_utf8(STYLE_CSS).expect("style.css is utf-8");
-        for class in &[".fit-elite", ".fit-solid", ".fit-fringe", ".fit-buried"] {
+        for class in &[".fit-elite", ".fit-solid", ".fit-buried", ".fit-stretch"] {
             assert!(
                 css.contains(class),
                 "style.css must define {class} (CSS class contract)"
             );
         }
-        // Glass.md palette hex values — Green / Blue / Yellow / Red.
+        assert!(
+            !css.contains(".fit-fringe"),
+            "style.css must use semantic fit-stretch instead of legacy fit-fringe"
+        );
+        // Prince fit palette hex values — Green / Blue / Yellow / Red.
         for hex in &["#2e7d32", "#1565c0", "#f9a825", "#b71c1c"] {
             assert!(
                 css.contains(hex),

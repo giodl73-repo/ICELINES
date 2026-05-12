@@ -398,14 +398,14 @@ Color contract from glass.md propagates as fixed classes:
 | Class | Hex | Usage |
 |---|---|---|
 | `.fit-elite` | `#2e7d32` (green) | Top-tier player fit |
-| `.fit-solid` | `#1565c0` (blue) | Solid contributor |
-| `.fit-fringe` | `#f9a825` (yellow) | Roster bubble |
-| `.fit-buried` | `#b71c1c` (red) | Below replacement |
+| `.fit-solid` | `#f9a825` (yellow) | Solid role fit |
+| `.fit-buried` | `#1565c0` (blue) | Underused player who could play higher elsewhere |
+| `.fit-stretch` | `#b71c1c` (red) | Overextended in current role |
 | `.score-leading` | `#2e7d32` | Game-state leading |
 | `.score-trailing` | `#b71c1c` | Game-state trailing |
 | `.score-tied` | `#616161` | Tied |
 
-Every color-encoded fit class also carries text or icon ("Elite" / "Solid" / "Fringe" / "Buried"). No information conveyed by color alone (a11y). L1 fence `l1_html_no_color_only_encoding`.
+Every color-encoded fit class also carries text or icon ("Elite" / "Solid" / "Underused" / "Overextended"). No information conveyed by color alone (a11y). L1 fence `l1_html_no_color_only_encoding`.
 
 ### Active (season, season_type) header
 Every page renders a sticky header showing `2025-26 · Regular` with a clickable link to `/seasons`. Without this, time-traveling via PATCH is silent. L1 fence `l1_html_each_route_has_active_season_header`.
