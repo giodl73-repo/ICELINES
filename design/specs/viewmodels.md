@@ -217,6 +217,7 @@ Required:
 Rows/slots must preserve:
 
 - player ID
+- optional canonical headshot URL for visual surfaces
 - line/pair/slot
 - position
 - fit/classification token

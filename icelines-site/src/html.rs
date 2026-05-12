@@ -3,10 +3,10 @@
 
 use icelines_core::{
     cross_team::{CrossTeamMetrics, WebFitClass},
-    model::DepthChartSlot,
+    view_model::{DepthPlayerSlot, MetricValue},
 };
 
-pub fn player_cell(slot: Option<&DepthChartSlot>, metrics: Option<&CrossTeamMetrics>) -> String {
+pub fn player_cell(slot: Option<&DepthPlayerSlot>, metrics: Option<&CrossTeamMetrics>) -> String {
     let Some(s) = slot else {
         return r#"<td class="player-cell empty"><span class="player-name">—</span></td>"#
             .to_owned();
@@ -27,17 +27,11 @@ pub fn player_cell(slot: Option<&DepthChartSlot>, metrics: Option<&CrossTeamMetr
         None => ("fit", "no metrics".to_owned()),
     };
 
-    let photo = s.headshot_canonical_url.as_deref().unwrap_or("");
-    let photo_tag = if photo.is_empty() {
-        String::new()
-    } else {
-        format!(
-            r#"<img class="player-photo" src="{photo}" alt="{name}" onerror="this.style.display='none'">"#,
-            name = s.full_name
-        )
-    };
-
-    let stat_str = match (s.pace_82, s.goals_per_82, s.gp) {
+    let stat_str = match (
+        decimal_metric(s, "pace_82"),
+        decimal_metric(s, "goals_per_82"),
+        integer_metric(s, "gp"),
+    ) {
         (Some(pace), Some(gpz), Some(gp)) => {
             let ppg = pace / 82.0;
             let gpg = gpz / 82.0;
@@ -48,14 +42,46 @@ pub fn player_cell(slot: Option<&DepthChartSlot>, metrics: Option<&CrossTeamMetr
         _ => r#"<span class="player-gp">no pace data</span>"#.to_owned(),
     };
 
+    let photo = s.headshot_canonical_url.as_deref().unwrap_or("");
+    let photo_tag = if photo.is_empty() {
+        String::new()
+    } else {
+        format!(
+            r#"<img class="player-photo" src="{photo}" alt="{name}" onerror="this.style.display='none'">"#,
+            name = s.display_name
+        )
+    };
+
     format!(
         r#"<td class="player-cell {css}">{photo}<span class="player-name">{name}</span>{stat}<span class="player-fit-label">{label}</span></td>"#,
         css = css,
         photo = photo_tag,
-        name = s.full_name,
+        name = s.display_name,
         stat = stat_str,
         label = label,
     )
+}
+
+fn decimal_metric(slot: &DepthPlayerSlot, key: &str) -> Option<f64> {
+    slot.metrics
+        .iter()
+        .find(|metric| metric.key.0 == key)
+        .and_then(|metric| match metric.value {
+            MetricValue::Decimal(value) => Some(value),
+            MetricValue::Integer(value) => Some(value as f64),
+            MetricValue::Text(_) | MetricValue::Missing => None,
+        })
+}
+
+fn integer_metric(slot: &DepthPlayerSlot, key: &str) -> Option<i64> {
+    slot.metrics
+        .iter()
+        .find(|metric| metric.key.0 == key)
+        .and_then(|metric| match metric.value {
+            MetricValue::Integer(value) => Some(value),
+            MetricValue::Decimal(value) => Some(value.round() as i64),
+            MetricValue::Text(_) | MetricValue::Missing => None,
+        })
 }
 
 pub fn team_logo_url(team: &str) -> String {
@@ -82,23 +108,48 @@ mod tests {
     use icelines_core::{
         cross_team::{CrossTeamMetrics, WebFitClass},
         identity::PlayerId,
-        model::{DepthChartSlot, Position, TeamAbbr},
+        model::{Position, TeamAbbr},
+        view_model::{
+            DeploymentEvidence, DepthPlayerSlot, DepthSlotKind, MetricCell, MetricUnit,
+            MetricValue, SemanticToken, StatKey, ValuePrecision,
+        },
     };
 
-    fn slot(name: &str, pace: Option<f64>, gp: Option<u32>) -> DepthChartSlot {
-        DepthChartSlot {
+    fn slot(name: &str, pace: Option<f64>, gp: Option<i64>) -> DepthPlayerSlot {
+        DepthPlayerSlot {
             player_id: PlayerId(8478402),
-            full_name: name.to_owned(),
-            name_normalized: name.to_lowercase(),
+            display_name: name.to_owned(),
             team: TeamAbbr("EDM".into()),
-            position: Position::Center,
-            pace_82: pace,
-            goals_per_82: pace.map(|p| p * 0.4),
-            gp,
-            goals: pace.map(|p| (p * 0.4).round() as u32),
-            assists: pace.map(|p| (p * 0.6).round() as u32),
-            points: pace.map(|p| p.round() as u32),
             headshot_canonical_url: None,
+            slot: DepthSlotKind::Extra,
+            position: Position::Center,
+            evidence: DeploymentEvidence::Estimated,
+            metrics: vec![
+                decimal_metric_cell("pace_82", pace),
+                decimal_metric_cell("goals_per_82", pace.map(|p| p * 0.4)),
+                MetricCell {
+                    key: StatKey::from("gp"),
+                    label: "GP".to_owned(),
+                    value: gp.map(MetricValue::Integer).unwrap_or(MetricValue::Missing),
+                    unit: MetricUnit::Games,
+                    precision: ValuePrecision::Integer,
+                    token: None,
+                },
+            ],
+            tokens: vec![SemanticToken::SupportingEvidence],
+        }
+    }
+
+    fn decimal_metric_cell(key: &str, value: Option<f64>) -> MetricCell {
+        MetricCell {
+            key: StatKey::from(key),
+            label: key.to_owned(),
+            value: value
+                .map(MetricValue::Decimal)
+                .unwrap_or(MetricValue::Missing),
+            unit: MetricUnit::Per82,
+            precision: ValuePrecision::OneDecimal,
+            token: None,
         }
     }
 

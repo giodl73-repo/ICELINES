@@ -60,11 +60,11 @@ impl SiteBuilder {
 }
 ```
 
-`SiteBuilder::build()` reads snapshots via `PlayerRepository`, sorts by
-pace, builds depth charts via `DepthChartBuilder`, computes
-cross-team metrics via `compute_cross_team_metrics`, and writes
-markdown files. It also rewrites `mkdocs.yml`'s nav to reflect the
-current pace-ranked team order (see `nav.rs`).
+`SiteBuilder::build()` reads snapshots into the stats repository, sorts player
+views by pace, builds generated team pages via `TeamDepthView`, computes
+cross-team metrics via `compute_cross_team_metrics`, and writes markdown files.
+It also rewrites `mkdocs.yml`'s nav to reflect the current pace-ranked team
+order (see `nav.rs`).
 
 ---
 
@@ -131,6 +131,7 @@ season has goalie data.
 ```
 
 **Player cell formatting** (`html.rs::player_cell`):
+- consumes `DepthPlayerSlot` metrics from `TeamDepthView`
 - `<span class="fit-elite">` for top 25% of cross-team peers
 - `fit-solid` for next 25%
 - `fit-buried` for second-quartile

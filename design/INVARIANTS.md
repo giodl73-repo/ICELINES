@@ -29,7 +29,7 @@ Invariants are grouped by domain:
 | II-02 | Interface | Skater and goalie surfaces remain separated by typed ViewModels where their stat semantics differ; all-position queries may combine them only through explicit mixed-surface contracts. | VERIFIED | `LeadersView`, `GoaliesView`, team-depth goalie sections, and query goalies tests |
 | II-03 | Interface | Terminal color/style is presentation-only. Data contracts, JSON, markdown, and ViewModels never encode ANSI or renderer-specific class/style strings. | ENFORCED | ViewModel spec bans renderer-specific styles; terminal output remains guarded by surface adapters |
 | SI-01 | Site | Static/generated docs and exports are not shipped-route truth. Route truth is `surface-parity.md` plus `ted_lindsay_route_inventory.rs`; generated docs may summarize only rows marked done or clearly partial. | VERIFIED | Route inventory gate |
-| SI-02 | Site | Static/export pages that surface stats, players, teams, or reports render from the same ViewModel/report contracts as CLI/TUI/web, or carry an explicit matrix exception. | PARTIAL | Markdown exports are ViewModel-backed; generated team-page verification remains tracked in surface parity |
+| SI-02 | Site | Static/export pages that surface stats, players, teams, or reports render from the same ViewModel/report contracts as CLI/TUI/web, or carry an explicit matrix exception. | VERIFIED | Markdown exports and generated team pages are ViewModel-backed; generated team pages are fenced by `l1_render_team_page_uses_team_depth_view_slots` |
 
 ---
 

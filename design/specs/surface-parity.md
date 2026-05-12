@@ -100,7 +100,7 @@ published reference, even if they are not interactive.
 
 | Artifact | ViewModel/source | Expected output | Status | Owner |
 |---|---|---|---|---|
-| Generated team pages | `TeamDepthView` / team summary projection | static HTML/markdown team page | verify - current claims need route/export check | Ted Lindsay/Jim Gregory |
+| Generated team pages | `TeamDepthView` / team summary projection | static HTML/markdown team page | done - `icelines-site` builds each generated team page from `TeamDepthView`; fenced by `l1_render_team_page_uses_team_depth_view_slots` | Ted Lindsay/Jim Gregory |
 | Leaderboard exports | `LeadersView` | markdown/JSON/CSV where supported | done - markdown default leaders and custom `--columns` render from `LeadersView` rows; custom columns are backed by `LeaderRow.catalog_metrics`; CLI JSON/CSV use the same row contract | Lester Patrick/Campbell |
 | Scouting reports | `ReportView` / `PlayerCardView` | markdown report and optional HTML page | done - CLI scouting plus `/scouting/:id` and `/api/v1/scouting/:id` use `ReportView` around the player-card projection | Campbell/Ted Lindsay |
 | Poacher reports | `PoachReportView` | markdown/JSON report plus `/reports/poach` and `/reports/weekly` web pages | implemented | Selke |

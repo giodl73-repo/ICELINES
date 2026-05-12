@@ -18,7 +18,7 @@ The architectural invariant: **for the canonical view path (depth chart, query,
 scouting, fantasy scoring, `export md`, HTTP `/api/team/<abbr>/roster`), every
 surface produces the same output for the same data state.** The TUI's depth chart, the CLI's `team EDM`, the site's team page,
 and the HTTP server's `/api/team/EDM/roster` all call the same `StatsRepository`
-and the same `DepthChartBuilder::build_views`. Surface-specific behaviors
+and shared team depth ViewModels. Surface-specific behaviors
 (TUI admin overlay, fantasy SQLite, transactions feed UI affordances) are
 explicitly per-surface; only the data + computation path converges.
 
@@ -226,7 +226,7 @@ cross-season leakage is a documented gap, not a present-tense invariant.
 │    sort_views_by_pace                  │  └─────────────────────────────────┘
 │    compute_all_views (cross-team)      │
 │    for each team:                      │  ┌─ export md (markdown table) ────┐
-│      DepthChartBuilder::build_views    │  │                                 │
+│      TeamDepthView::from_player_views  │  │                                 │
 │      render_team_page → docs/teams/X.md│  │  same load + view path; renders │
 │    rewrite mkdocs.yml nav              │  │  GitHub-flavored markdown +     │
 │    write index.md                      │  │  YAML front-matter to           │

@@ -11,7 +11,7 @@ use icelines_core::{
     scoring::sort_views_by_pace,
     season_stats::SeasonType,
     stats_repository::PlayerView,
-    CrossTeamMetrics, DepthChartBuilder, TeamAbbr,
+    CrossTeamMetrics, TeamAbbr, TeamDepthView,
 };
 use icelines_fetch::{snapshot::SnapshotStore, stats_loader::load_into_repo};
 
@@ -132,12 +132,17 @@ impl SiteBuilder {
                 continue;
             }
 
-            let chart = DepthChartBuilder::build_views(team.clone(), season, &team_views);
+            let view = TeamDepthView::from_player_views(
+                team.clone(),
+                season,
+                SeasonType::Regular,
+                &team_views,
+            );
 
             let page = self.render_team_page(
                 abbrev,
                 rank,
-                &chart,
+                &view,
                 &metrics_map,
                 team_strength.get(abbrev).copied().unwrap_or(0.0),
             );
@@ -163,7 +168,7 @@ impl SiteBuilder {
         &self,
         abbrev: &str,
         rank: usize,
-        chart: &icelines_core::model::DepthChart,
+        view: &TeamDepthView,
         metrics: &HashMap<Option<u32>, CrossTeamMetrics>,
         total_pts: f32,
     ) -> String {
@@ -183,10 +188,10 @@ impl SiteBuilder {
         out.push_str("<thead><tr><th class=\"line-col\"></th><th class=\"pos-lw\">LW</th><th class=\"pos-c\">C</th><th class=\"pos-rw\">RW</th></tr></thead>\n<tbody>\n");
 
         for line_idx in 0..FWD_LINES {
-            let row = chart.forward_lines.get(line_idx);
-            let lw = row.and_then(|r| r[0].as_ref());
-            let c = row.and_then(|r| r[1].as_ref());
-            let rw = row.and_then(|r| r[2].as_ref());
+            let row = view.forward_lines.get(line_idx);
+            let lw = row.and_then(|r| r.left.as_ref());
+            let c = row.and_then(|r| r.center.as_ref());
+            let rw = row.and_then(|r| r.right.as_ref());
 
             let lw_m = lw.and_then(|s| metrics.get(&Some(s.player_id.0)));
             let c_m = c.and_then(|s| metrics.get(&Some(s.player_id.0)));
@@ -213,9 +218,9 @@ impl SiteBuilder {
         out.push_str("<thead><tr><th class=\"line-col\"></th><th class=\"pos-d\">D</th><th class=\"pos-d\">D</th></tr></thead>\n<tbody>\n");
 
         for pair_idx in 0..DEF_PAIRS {
-            let row = chart.defense_pairs.get(pair_idx);
-            let d1 = row.and_then(|r| r[0].as_ref());
-            let d2 = row.and_then(|r| r[1].as_ref());
+            let row = view.defense_pairs.get(pair_idx);
+            let d1 = row.and_then(|r| r.left.as_ref());
+            let d2 = row.and_then(|r| r.right.as_ref());
             let d1_m = d1.and_then(|s| metrics.get(&Some(s.player_id.0)));
             let d2_m = d2.and_then(|s| metrics.get(&Some(s.player_id.0)));
 
@@ -362,6 +367,63 @@ mod tests {
             repo.upsert_stats(stats).unwrap();
         }
         repo
+    }
+
+    #[test]
+    fn l1_render_team_page_uses_team_depth_view_slots() {
+        let mut repo = StatsRepository::new();
+        for (id, name, position) in [
+            (1, "Static Left Wing", Position::LeftWing),
+            (2, "Static Center", Position::Center),
+            (3, "Static Right Wing", Position::RightWing),
+            (4, "Static Defense", Position::Defense),
+        ] {
+            repo.upsert_identity(
+                icelines_core::fixtures::identity(id)
+                    .name(name, &name.to_ascii_lowercase())
+                    .build(),
+            )
+            .unwrap();
+            repo.upsert_stats(
+                icelines_core::fixtures::stats(id, 20252026, "SEA")
+                    .position(position)
+                    .build(),
+            )
+            .unwrap();
+        }
+
+        let season = Season(20252026);
+        let roster: Vec<PlayerView<'_>> = repo.skaters(season, SeasonType::Regular).collect();
+        let view = TeamDepthView::from_player_views(
+            TeamAbbr("SEA".to_owned()),
+            season,
+            SeasonType::Regular,
+            &roster,
+        );
+        let first_line = view.forward_lines.first().expect("line one");
+        assert_eq!(
+            first_line
+                .left
+                .as_ref()
+                .map(|slot| slot.display_name.as_str()),
+            Some("Static Left Wing")
+        );
+
+        let builder = SiteBuilder::new(SiteConfig {
+            docs_dir: PathBuf::new(),
+            mkdocs_yml: PathBuf::new(),
+            snapshot_dir: PathBuf::new(),
+            season: 20252026,
+        });
+        let html = builder.render_team_page("SEA", 1, &view, &HashMap::new(), 100.0);
+
+        assert!(html.contains("Seattle Kraken"));
+        assert!(html.contains("Static Left Wing"));
+        assert!(html.contains("Static Center"));
+        assert!(html.contains("Static Defense"));
+        assert!(html.contains("Forward Lines"));
+        assert!(html.contains("Defense Pairs"));
+        assert!(html.contains("pts/gp"));
     }
 
     /// Team strength = (top-N forwards per position group, summed over LW/C/RW)
