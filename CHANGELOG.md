@@ -23,6 +23,8 @@ closeout review.**
 - Added `scripts/release-smoke.ps1`, a reusable optimized-binary smoke gate for
   version/help, leaders, goalies, TUI help, web serve help, docs, markdown
   export, poach, and URL printing from `serve --no-open`.
+- Added `design/release-checklist.md` with versioning rules, release gates,
+  artifact names, tag flow, rollback notes, and data/current-season sanity.
 
 ---
 

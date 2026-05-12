@@ -1,0 +1,140 @@
+# IceLines release checklist
+
+**Owner phase**: Jim Gregory - release and operations hardening
+**Applies to**: tagged GitHub releases and local release candidate builds
+
+This checklist is the release gate for IceLines. It assumes releases are cut
+from `master` after CI is green.
+
+## 1. Decide release type
+
+| Type | Use when | Version example |
+|---|---|---|
+| Patch | bug fix, docs, visual polish, test gate, no incompatible output shape | `0.24.1` -> `0.24.2` |
+| Minor | new user-facing surface, command, route, ViewModel, or output field | `0.24.1` -> `0.25.0` |
+| Data-only | bundled data refresh with no code behavior change | keep code version unless a release artifact must be replaced; record data provenance |
+| Pre-release | release candidate or risky packaging check | `0.25.0-rc.1` |
+
+Do not tag a release without a changelog entry and a green CI run for the
+commit being tagged.
+
+## 2. Version and docs
+
+- Update workspace version in `Cargo.toml`.
+- Confirm `cargo metadata --no-deps` reports the expected workspace/package
+  version.
+- Update `CHANGELOG.md` with the release heading and date.
+- Confirm `README.md` quick start still matches the binary.
+- Confirm `COMMANDS.md` is current or intentionally unchanged.
+- Confirm `design/plans/INDEX.md` and `design/phases.md` reflect any phase
+  status changes.
+
+## 3. Data and season sanity
+
+- Confirm `icelines-core/src/lib.rs` has the intended `CURRENT_SEASON` and
+  `CURRENT_SEASON_STR`.
+- Confirm the bundled season list includes the current season and excludes the
+  2004-05 lockout.
+- Confirm README data-source claims match reality:
+  - bundled binary data;
+  - GitHub release data bundles;
+  - live fetch commands.
+- For October rollover, follow the current-season procedure before tagging.
+  Do not silently roll only the README or only the constant.
+
+## 4. Required local gates
+
+Run the normal focused gates before creating a tag:
+
+```powershell
+cargo fmt --check
+cargo check --workspace
+powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-release
+```
+
+For code changes touching shared contracts or multiple surfaces, also run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci
+```
+
+For visual-system changes, run:
+
+```powershell
+cargo test -p icelines-cli prince_tui
+cargo test -p icelines-cli --test prince_cli_visual
+cargo test -p icelines-web l1_static_css_contains_prince_route_layout_classes
+```
+
+`scripts/release-smoke.ps1` must pass on the optimized binary. It verifies
+version/help, representative CLI outputs, docs, markdown export, poach, and
+`serve --no-open` URL printing without requiring live network fetches.
+
+## 5. Manual release smoke
+
+After `cargo build --release -p icelines-cli`, run:
+
+```powershell
+target\release\icelines.exe --version
+target\release\icelines.exe query leaders --top 3 --season 20242025
+target\release\icelines.exe query goalies --top 3 --season 20242025
+target\release\icelines.exe tui --help
+target\release\icelines.exe serve --help
+target\release\icelines.exe export md leaders --out - --top 3
+powershell -ExecutionPolicy Bypass -File scripts\release-smoke.ps1 -SkipBuild
+```
+
+Expected: all commands exit 0 and `serve --no-open` prints the localhost URL
+before any browser-open behavior.
+
+## 6. Artifact names
+
+GitHub release workflow artifacts:
+
+| Platform | Artifact |
+|---|---|
+| Windows x64 | `icelines-windows-x86_64.zip` |
+| macOS Apple Silicon | `icelines-macos-arm64.tar.gz` |
+| macOS Intel | `icelines-macos-x86_64.tar.gz` |
+| Linux x64 | `icelines-linux-x86_64.tar.gz` |
+
+Each archive should contain the single `icelines` binary (`icelines.exe` on
+Windows).
+
+## 7. Tag and release
+
+```powershell
+git status --short
+git log --oneline -5
+git tag vX.Y.Z
+git push origin vX.Y.Z
+```
+
+The release workflow builds matrix artifacts and creates the GitHub Release.
+After it finishes, download at least the Windows artifact and run:
+
+```powershell
+icelines.exe --version
+icelines.exe query leaders --top 3
+```
+
+## 8. Rollback
+
+If a tag was pushed but artifacts are wrong:
+
+- Delete the GitHub Release draft/release.
+- Delete the local and remote tag only if the release should not exist:
+  `git tag -d vX.Y.Z` and `git push origin :refs/tags/vX.Y.Z`.
+- Fix on `master`, rerun the gates, and retag.
+
+If a release is public and users may have downloaded it, prefer a patch release
+over replacing artifacts in place.
+
+## 9. Known advisory gates
+
+- Browser screenshots are currently manual/advisory. Prince of Wales recorded
+  the visual contract; Jim Gregory should add automated screenshots when the
+  harness is stable.
+- `cargo audit` is not yet a blocking release gate. Add it only with documented
+  ignored advisories and expiry dates.
+- Performance benchmarks are advisory until a specific budget is documented.

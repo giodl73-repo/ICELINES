@@ -66,6 +66,8 @@ Release smoke for maintainers:
 powershell -ExecutionPolicy Bypass -File scripts/release-smoke.ps1
 ```
 
+Full release checklist: [design/release-checklist.md](design/release-checklist.md).
+
 ---
 
 ## Commands

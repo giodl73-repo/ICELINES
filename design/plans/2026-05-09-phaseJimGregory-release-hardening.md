@@ -125,6 +125,15 @@ Acceptance:
 - One release checklist exists and is linked from `CLAUDE.md` or `README.md`.
 - Versioning guidance distinguishes patch, minor, and data-only updates.
 
+Progress:
+
+- 2026-05-12: Added `design/release-checklist.md` with release type/version
+  rules, version/doc touchpoints, current-season/data sanity, required gates,
+  binary smoke commands, artifact names, tag flow, rollback notes, and advisory
+  gate status.
+- 2026-05-12: Linked the checklist from `CLAUDE.md`, `README.md`, and
+  `COMMANDS.md`.
+
 ---
 
 ## JimGregory.3 - Data freshness and season rollover

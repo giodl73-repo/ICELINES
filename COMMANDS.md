@@ -42,6 +42,8 @@ powershell -ExecutionPolicy Bypass -File scripts/release-smoke.ps1
 powershell -ExecutionPolicy Bypass -File scripts/release-smoke.ps1 -SkipBuild
 ```
 
+Full release checklist: `design/release-checklist.md`.
+
 ---
 
 Single-page reference for the `icelines` CLI. Every subcommand is listed with a one-line description and 2-3 real examples. Designed so you can read it once and be productive.

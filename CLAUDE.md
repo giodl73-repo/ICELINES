@@ -69,6 +69,10 @@ cargo fmt --check                    # must be clean
 target/release/icelines.exe query leaders --pos C --top 10
 target/release/icelines.exe fantasy league-create "My League"
 
+# Release gate
+powershell -ExecutionPolicy Bypass -File scripts/release-smoke.ps1
+# Full checklist: design/release-checklist.md
+
 # proof — documentation linting and guide compilation
 # proof is a sibling repo at C:/src/proof/. Build it from there:
 #   cd C:/src/proof && cargo build
