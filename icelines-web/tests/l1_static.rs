@@ -113,6 +113,12 @@ async fn l1_static_css_contains_prince_route_layout_classes() {
         ".lede",
         ".not-found-panel",
         ".centered-form",
+        ".back-link-row",
+        ".picker-nav",
+        ".inline-separator",
+        ".table-score",
+        ".kind-chip",
+        ".game-live",
     ] {
         assert!(css.contains(class), "style.css missing {class}");
     }

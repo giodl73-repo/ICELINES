@@ -261,6 +261,9 @@ Progress:
   attributes.
 - 2026-05-12: Moved base brand link, coming-soon copy, and not-found/search
   layout styling onto shared CSS classes with the same static CSS fence.
+- 2026-05-12: Moved Scores and Schedule route picker, back-link, score cell,
+  playoff chip, empty marker, and live/final game row styling onto shared CSS.
+  Both templates are free of inline `style=` and template-local `<style>` blocks.
 
 ---
 

@@ -437,7 +437,8 @@ Current Prince.4 evidence:
   fences the shared web route layout primitives: `.page-section`,
   `.section-heading`, `.section-link-row`, `.filter-panel`, `.filter-grid`,
   `.form-actions`, `.numeric`, `.rank-cell`, `.brand-link`, `.lede`,
-  `.not-found-panel`, and `.centered-form`.
+  `.not-found-panel`, `.centered-form`, `.back-link-row`, `.picker-nav`,
+  `.inline-separator`, `.table-score`, `.kind-chip`, and `.game-live`.
 
 ---
 

@@ -372,6 +372,59 @@ code {
     flex-wrap: wrap;
 }
 
+.back-link-row {
+    margin-bottom: 0.5rem;
+}
+
+.picker-nav {
+    margin: 0.5rem 0 1rem 0;
+}
+
+.inline-separator {
+    margin: 0 0.5rem;
+}
+
+.inline-spacer {
+    margin-left: 1rem;
+}
+
+.chip-row-item {
+    margin-right: 0.4rem;
+}
+
+.table-score {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.tabular {
+    font-variant-numeric: tabular-nums;
+}
+
+.muted-mark {
+    color: #9e9e9e;
+}
+
+.kind-chip {
+    display: inline-block;
+    padding: 0.05rem 0.3rem;
+    border-radius: 3px;
+    font-size: 0.75em;
+}
+
+.kind-playoff {
+    background: #ffe0b2;
+    color: #bf360c;
+}
+
+tr.game-live td {
+    background: #fff3e0;
+}
+
+tr.game-final td {
+    color: #424242;
+}
+
 /* ── Tables ─────────────────────────────────────────────────────── */
 table {
     width: 100%;

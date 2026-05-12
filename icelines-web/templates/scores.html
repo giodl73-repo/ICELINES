@@ -3,7 +3,7 @@
 {% block title %}Scores{% endblock %}
 
 {% block content %}
-<p style="margin-bottom: 0.5rem;">
+<p class="back-link-row">
     <a href="/">← back to dashboard</a>
 </p>
 
@@ -12,13 +12,13 @@
     Live NHL schedule — source: <code>api-web.nhle.com/v1/schedule</code>
 </p>
 
-<nav aria-label="Date picker" style="margin: 0.5rem 0 1rem 0;">
+<nav aria-label="Date picker" class="picker-nav">
     <a href="/scores?date={{ prev_date }}">← prev week</a>
-    <span style="margin:0 0.5rem;">|</span>
+    <span class="inline-separator">|</span>
     <a href="/scores">today</a>
-    <span style="margin:0 0.5rem;">|</span>
+    <span class="inline-separator">|</span>
     <a href="/scores?date={{ next_date }}">next week →</a>
-    <span style="margin-left:1rem; color:#616161;">
+    <span class="inline-spacer meta-line">
         showing week starting <strong>{{ active_date }}</strong>
     </span>
 </nav>
@@ -36,8 +36,8 @@
 {% endif %}
 
 {% for d in days %}
-<section style="margin: 1rem 0;">
-    <h2 style="margin-bottom:0.25rem; font-size:1.1rem;">{{ d.date_pretty }}</h2>
+<section class="page-section">
+    <h2 class="compact-heading">{{ d.date_pretty }}</h2>
     <table>
         <thead>
             <tr><th>Time</th><th>Away</th><th></th><th>Home</th><th></th><th>State</th></tr>
@@ -47,9 +47,9 @@
             <tr class="game-{{ r.state_class }}">
                 <td><code>{{ r.start_time_label }}</code></td>
                 <td><a class="team-link team-{{ r.away_abbrev }}" href="/team/{{ r.away_abbrev }}">{{ r.away_name }}</a></td>
-                <td style="text-align:right; font-variant-numeric:tabular-nums;">{{ r.away_score_str }}</td>
+                <td class="table-score">{{ r.away_score_str }}</td>
                 <td><a class="team-link team-{{ r.home_abbrev }}" href="/team/{{ r.home_abbrev }}">{{ r.home_name }}</a></td>
-                <td style="text-align:right; font-variant-numeric:tabular-nums;">{{ r.home_score_str }}</td>
+                <td class="table-score">{{ r.home_score_str }}</td>
                 <td>
                     {{ r.state_label }}
                     {% if r.is_playoff %}
@@ -64,13 +64,9 @@
 {% endfor %}
 
 {% if total_games > 0 %}
-<p class="meta-line" style="margin-top:1rem;">
+<p class="page-section meta-line">
     Total: {{ total_games }} games.
 </p>
 {% endif %}
 
-<style>
-    tr.game-live td { background: #fff3e0; }
-    tr.game-final td { color: #424242; }
-</style>
 {% endblock %}
