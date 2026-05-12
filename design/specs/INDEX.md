@@ -35,8 +35,8 @@ For active work and backlog, see [`../plans/INDEX.md`](../plans/INDEX.md).
 | [query-engine.md](query-engine.md) | Implemented (partial) | leaders/player/compare/similar, 30+ sort metrics. **Phase 5C strength-state and Phase 5D Tier 4 metrics never started.** |
 | [site-generation.md](site-generation.md) | Implemented | mkdocs build/serve/deploy, deterministic markdown |
 | [export-markdown.md](export-markdown.md) | Implemented | 7 of 7 shapes shipped; `fantasy` renders `PoachReportView` and `series` renders `PlayoffsView`. |
-| [goalies.md](goalies.md) | Implemented | Phase Vezina shipped. Schema, repository, TUI tab, 5 bundled seasons, and fantasy goalie scoring. |
-| [transactions.md](transactions.md) | Implemented | Phase Selke shipped. ESPN source, classifier, TUI tab, 5 bundled seasons. |
+| [goalies.md](goalies.md) | Implemented | Phase Vezina shipped. Schema, repository, TUI tab, 38-season bundled goalie data, and fantasy goalie scoring. |
+| [transactions.md](transactions.md) | Implemented | Phase Selke shipped. ESPN source, classifier, TUI tab, modern-era bundled transactions. |
 | [test-strategy.md](test-strategy.md) | Implemented | L0/L1/L2 tiers, mock NHL API fixture, ~1020 tests |
 | [platform-contracts.md](platform-contracts.md) | Draft | Uniform data/query/ViewModel/surface/report/visual contracts for Campbell and later phases. |
 | [viewmodels.md](viewmodels.md) | Draft | Typed ViewModel boundary between core/query logic and CLI/TUI/web/report renderers. |

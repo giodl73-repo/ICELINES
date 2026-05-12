@@ -371,13 +371,13 @@ data for `data install`.
 | Phase | Commit theme | LOC / artifacts | Outcome |
 |-------|--------------|-----------------|---------|
 | **G.0** | Data backfill — 38 seasons | 38 × `goalie-stats.json` files | Run `scripts/fetch_history.py --goalies --all` (extended in G.0) to populate `data/seasons/{S}/goalie-stats.json` for every season the NHL API supports. Older seasons may have sparse fields; document gaps. ~30MB of new data committed. |
-| **G.1** | Schema + repo + bundled loader | ~400 LOC | `GoalieStats`, `Goalie`, `GoalieRepository`, `bundled::get_goalie_stats`, snapshot tier. The 5 current seasons embed via `include_bytes!()`. No UI yet — verify via L1 tests. |
+| **G.1** | Schema + repo + bundled loader | ~400 LOC | `GoalieStats`, `Goalie`, `GoalieRepository`, `bundled::get_goalie_stats`, snapshot tier. Supported seasons embed via `include_bytes!()`. No UI yet — verify via L1 tests. |
 | **G.2** | `fetch goalies` command | ~250 LOC | New CLI subcommand; populates `~/.icelines/snapshots/.../goalie-stats.json`. |
 | **G.3** | TUI Goalies tab | ~600 LOC | New screen + leaderboard render; sort + min-gp + team filter; tab nav wires; goalie detail card. |
 | **G.4** | Team-card integration | ~200 LOC | Goalies appear on `DepthTeam` and `Team` screens. |
 | **G.5** | `query goalies` + `rank --pos G` | ~350 LOC | CLI parity with skater leaders. |
 | **G.6** | Fantasy goalie scoring | ~400 LOC | Wire `RosterEntry` enum, scheme weights, standings. Update fantasy spec. |
-| **G.7** | Bundled-history sparklines | ~300 LOC | Goalie panel SV%/GAA/W trends across the 5 bundled seasons; mirrors skater scout card. GAA colors inverted (lower=better). |
+| **G.7** | Bundled-history sparklines | ~300 LOC | Goalie panel SV%/GAA/W trends across the bundled history window; mirrors skater scout card. GAA colors inverted (lower=better). |
 | **G.8** | Re-publish 38 GitHub Releases | workflow change + 38 release runs | Update `.github/workflows/data-bundle.yml` to include `goalie-stats.json` in each tarball; trigger `workflow_dispatch` for all seasons; the action overwrites the existing `data-{SEASON}` release artifact. |
 
 ### G.0 — Data backfill detail

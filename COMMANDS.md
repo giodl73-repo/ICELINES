@@ -375,9 +375,9 @@ icelines query career --league OHL --season 20142015 --filter "pos=C AND age<=18
 icelines query career --league WHL --filter "draft-round<=2"
 ```
 
-Cohort scope: only players who appeared on an NHL roster in the last
-5 bundled seasons (the `fetch career` target). Career-only players
-who never reached the NHL aren't in scope. `--season` defaults to the
+Cohort scope: only players fetched by the career loader, usually the newest
+5-season NHL roster cohort (`fetch career --bundled-seasons 5`). Career-only
+players who never reached the NHL aren't in scope. `--season` defaults to the
 most-recent season for the chosen league.
 
 `--filter` accepts the same Phase Art Ross grammar as `query leaders`.

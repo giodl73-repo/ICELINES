@@ -80,6 +80,18 @@ jobs:
             tar czf ../${{ matrix.artifact }}.tar.gz .
           fi
 
+      - name: Verify packaged artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            test -f "${{ matrix.artifact }}.zip"
+            7z l "${{ matrix.artifact }}.zip" | grep -F "${{ matrix.binary }}"
+          else
+            test -f "${{ matrix.artifact }}.tar.gz"
+            tar tzf "${{ matrix.artifact }}.tar.gz" | grep -F "${{ matrix.binary }}"
+          fi
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:

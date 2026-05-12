@@ -200,6 +200,9 @@ Progress:
   `target/release/icelines.exe`.
 - 2026-05-12: Updated the local `ci-release` test slice to run the release
   smoke script instead of only compiling the release binary.
+- 2026-05-12: Added release-workflow archive verification before artifact
+  upload, asserting each zip/tarball exists and contains the expected
+  platform binary name.
 
 ---
 

@@ -101,7 +101,8 @@ GitHub release workflow artifacts:
 | Linux x64 | `icelines-linux-x86_64.tar.gz` |
 
 Each archive should contain the single `icelines` binary (`icelines.exe` on
-Windows).
+Windows). The release workflow verifies archive existence and expected binary
+membership before upload.
 
 ## 7. Tag and release
 

@@ -20,8 +20,8 @@ adding a new phase means picking a trophy that fits.
 | 6 — Export & dashboards | **Mark Messier** | `export md`, dashboard panel, scout cards | Leadership Award — multi-surface vision, leading data into other tools. |
 | 7 — TUI v2 redesign | **Jack Adams** | 7-tab layout, admin overlay, season time-travel | Coach of the Year — strategic restructuring of the whole system. |
 | 8 — Spec delta + chunks | **Norris** | Spec catch-up, chunked snapshots, data integrity | Best defenseman — defensive, structural, plays both ends, foundational. |
-| G — Goalies | **Vezina** | Goalie type, repository, fantasy goalie scoring, 5 bundled seasons | The goalie trophy. Obvious. |
-| T — Transactions | **Selke** | Trades/waivers/signings/IR feed, ESPN source, TUI tab | Best defensive forward — two-way work spanning data ingestion + UI + 5 seasons. |
+| G — Goalies | **Vezina** | Goalie type, repository, fantasy goalie scoring, 38-season bundled goalie data | The goalie trophy. Obvious. |
+| T — Transactions | **Selke** | Trades/waivers/signings/IR feed, ESPN source, TUI tab | Best defensive forward — two-way work spanning data ingestion + UI. |
 | E — Edge speed | **Maurice Richard** | Skating speed leaderboard (blocked: no public API) | Most goals — pure scoring ability — but the data isn't accessible. Parked. |
 | Hart — Normalization | **Hart** | Full data model normalization — `PlayerIdentity` + `SeasonStats` keyed by (player_id, season, type) | League MVP — most valuable single piece of work; touches every consumer. Subsumes Phase Presidents (season-type). |
 | Calder — Multi-league career | **Calder** *(reuse — third use)* | NHL landing-endpoint career history; pre-NHL development arc on player card; cohort leaderboards via `query career` | Reuse: same trophy as Phase 1. Same character — multi-league rookie + early-career data. |
@@ -55,7 +55,7 @@ adding a new phase means picking a trophy that fits.
 - **Tag names**: continue using semver (`v0.12.0`), but reference the
   phase trophy in the tag annotation message.
 - **Commit subjects**: `Phase {Trophy}: short description` — e.g.
-  `Phase Vezina: goalie repository + 5 bundled seasons`. (Existing
+  `Phase Vezina: goalie repository + bundled goalie data`. (Existing
   commits used letter codes like `G.4`; future commits switch to
   trophy names.)
 - **Memory entries**: refer to phases by trophy when documenting

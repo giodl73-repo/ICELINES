@@ -28,6 +28,8 @@ closeout review.**
 - Added `design/current-season-rollover.md`, release bundle tests, and updated
   data freshness docs so embedded-data claims match the actual release
   automation.
+- Added release-workflow artifact verification so packaged zip/tarball outputs
+  are checked for the expected binary before upload.
 
 ---
 

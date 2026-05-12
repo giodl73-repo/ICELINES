@@ -443,13 +443,13 @@ Current data scale (per loaded season):
   ~70   goalies
   ~30   contracts per fantasy league
 
-Aggregate (5 bundled seasons in memory):
+Aggregate (newest 5 bundled seasons in memory):
   ~4,800 skater records
   ~350   goalie records
   ~5 MB  total memory footprint when fully loaded
 
-Historical (38 seasons via data install):
-  ~38,000 skater records max if all installed
+Full history (38 seasons bundled; optional installed overrides):
+  ~38,000 skater records available
   Loaded one-at-a-time on season switch — never all in memory
 ```
 
@@ -721,7 +721,7 @@ they don't compute.
 
 ```
 1. cargo install icelines  (or download pre-built binary)
-   Binary contains 5 bundled seasons (~4.3 MB).
+   Binary contains 38 bundled seasons (1987-88 through current, no 2004-05).
 
 2. icelines query leaders --top 10
    - Config::load() finds no config → defaults
