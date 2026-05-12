@@ -9,7 +9,14 @@ on:
       - 'Cargo.toml'
       - 'Cargo.lock'
       - '.github/workflows/ci.yml'
+      - '.github/workflows/release.yml'
+      - '.github/workflows/data-bundle.yml'
       - 'scripts/test-slice.ps1'
+      - 'scripts/release-smoke.ps1'
+      - 'design/release-checklist.md'
+      - 'design/current-season-rollover.md'
+      - 'README.md'
+      - 'COMMANDS.md'
   pull_request:
     branches: [master]
     paths:
@@ -18,7 +25,14 @@ on:
       - 'Cargo.toml'
       - 'Cargo.lock'
       - '.github/workflows/ci.yml'
+      - '.github/workflows/release.yml'
+      - '.github/workflows/data-bundle.yml'
       - 'scripts/test-slice.ps1'
+      - 'scripts/release-smoke.ps1'
+      - 'design/release-checklist.md'
+      - 'design/current-season-rollover.md'
+      - 'README.md'
+      - 'COMMANDS.md'
 
 env:
   CARGO_TERM_COLOR: always
@@ -138,8 +152,8 @@ jobs:
             ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}-
             ${{ runner.os }}-cargo-
 
-      - name: Build release binary
-        run: cargo build --release -p icelines-cli
+      - name: Run release smoke
+        run: powershell -ExecutionPolicy Bypass -File scripts/release-smoke.ps1
 
   coverage:
     name: Coverage Gate (icelines-core >= 80%)

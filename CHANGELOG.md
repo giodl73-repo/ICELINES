@@ -32,6 +32,9 @@ closeout review.**
   are checked for the expected binary before upload.
 - Updated Jim Gregory roadmap/index docs to record release hardening as
   implemented locally with latest remote CI pending.
+- Updated CI path filters so release workflow/checklist/rollover docs and
+  release-smoke changes run CI; the CI release job now runs the optimized
+  release smoke gate.
 
 ---
 

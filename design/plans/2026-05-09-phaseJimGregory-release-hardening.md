@@ -102,6 +102,13 @@ Acceptance:
   is documented.
 - No default CI job depends on live NHL/ESPN/MoneyPuck network access.
 
+Progress:
+
+- 2026-05-12: Updated `.github/workflows/ci.yml` so release workflow,
+  release-smoke script, release checklist, rollover doc, README, and command
+  doc changes trigger CI. The CI release job now runs
+  `scripts/release-smoke.ps1` instead of only compiling the optimized binary.
+
 ---
 
 ## JimGregory.2 - Release checklist and versioning rules
