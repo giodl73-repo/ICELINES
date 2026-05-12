@@ -259,6 +259,8 @@ Progress:
   responsive filter grids, form actions, uppercase inputs, numeric cells, and
   rank cells. The fantasy/poach templates now have no inline `style=`
   attributes.
+- 2026-05-12: Moved base brand link, coming-soon copy, and not-found/search
+  layout styling onto shared CSS classes with the same static CSS fence.
 
 ---
 

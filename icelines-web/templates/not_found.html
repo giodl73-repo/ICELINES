@@ -3,17 +3,17 @@
 {% block title %}Not found{% endblock %}
 
 {% block content %}
-<section style="max-width: 640px; margin: 2rem auto; text-align: center;">
-    <h1 style="font-size: 3rem; margin-bottom: 0.25rem; color: var(--nhl-navy);">404</h1>
-    <p style="color: var(--ice-muted); font-size: 1.05rem; margin-bottom: 2rem;">
+<section class="not-found-panel">
+    <h1 class="not-found-code">404</h1>
+    <p class="lede meta-line">
         Couldn't find <code>{{ requested_path }}</code> on IceLines.
     </p>
 
-    <h2 style="font-size: 1.1rem; margin-bottom: 0.5rem;">Search for a player</h2>
-    <form method="get" action="/compare" style="display:flex; gap:0.4rem; justify-content:center; flex-wrap:wrap;">
+    <h2 class="compact-heading">Search for a player</h2>
+    <form method="get" action="/compare" class="centered-form">
         <input type="text" name="b" placeholder="type a player name…"
                list="not-found-suggestions" autocomplete="off" autofocus
-               style="width: 16rem;">
+               class="short-input">
         <datalist id="not-found-suggestions">
             {% for s in compare_suggestions %}
             <option value="{{ s.0 }}"></option>
@@ -21,12 +21,12 @@
         </datalist>
         <button type="submit">Find</button>
     </form>
-    <p style="color: var(--ice-muted); font-size: 0.85rem; margin-top: 0.5rem;">
+    <p class="meta-line">
         Hint: typing a name and pressing Find lands on the compare page —
         from there click the player to open their full card.
     </p>
 
-    <nav style="margin-top: 2.5rem; display:flex; gap:0.75rem; justify-content:center; flex-wrap:wrap;">
+    <nav class="page-section centered-link-row">
         <a href="/leaders">Leaders</a> ·
         <a href="/goalies">Goalies</a> ·
         <a href="/scores">Scores</a> ·

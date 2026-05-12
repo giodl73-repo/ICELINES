@@ -109,6 +109,10 @@ async fn l1_static_css_contains_prince_route_layout_classes() {
         ".form-actions",
         ".numeric",
         ".rank-cell",
+        ".brand-link",
+        ".lede",
+        ".not-found-panel",
+        ".centered-form",
     ] {
         assert!(css.contains(class), "style.css missing {class}");
     }
