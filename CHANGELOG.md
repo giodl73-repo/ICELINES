@@ -30,6 +30,8 @@ closeout review.**
   automation.
 - Added release-workflow artifact verification so packaged zip/tarball outputs
   are checked for the expected binary before upload.
+- Updated Jim Gregory roadmap/index docs to record release hardening as
+  implemented locally with latest remote CI pending.
 
 ---
 

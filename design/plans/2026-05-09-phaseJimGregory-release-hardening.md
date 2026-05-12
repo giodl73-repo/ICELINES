@@ -1,7 +1,7 @@
 # Phase Jim Gregory - release and operations hardening
 
 **Date**: 2026-05-09
-**Status**: Active - binary smoke started
+**Status**: Implemented - latest CI pending
 **Trophy**: Jim Gregory General Manager of the Year Award. Fit: this phase manages the whole organization: CI, release discipline, data freshness, packaging, and operational trust.
 **Estimated**: 2-4 days
 
@@ -220,6 +220,18 @@ Acceptance:
 
 - Release gates are documented.
 - CI status and release process are no longer tribal knowledge.
+
+Progress:
+
+- 2026-05-12: Updated `README.md`, `COMMANDS.md`, `CHANGELOG.md`,
+  `design/plans/INDEX.md`, `design/phases.md`, `design/ARCHITECTURE.md`, and
+  data specs so release gates, data freshness, bundled season scope, and
+  artifact expectations are explicit.
+- 2026-05-12: Local closeout gates passed:
+  `cargo test -p icelines-fetch bundled`, `cargo fmt --check`,
+  `scripts/test-slice.ps1 ci-release`, and `git diff --check`.
+- 2026-05-12: Remote CI for the latest Jim Gregory commits is still pending;
+  close the phase after GitHub Actions reports success for the head commit.
 
 ---
 
