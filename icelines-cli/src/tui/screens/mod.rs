@@ -1,5 +1,6 @@
 pub mod comps;
 pub mod depth;
+pub mod fantasy;
 pub mod favorites;
 pub mod game_detail;
 pub mod goalies;
@@ -157,6 +158,8 @@ fn render_sdi(f: &mut Frame, app: &App) {
         Screen::GoalieDetailById(pid) => goalies::render_detail_by_id(f, app, chunks[1], *pid),
         Screen::Transactions => transactions::render(f, app, chunks[1]),
         Screen::Favorites => favorites::render(f, app, chunks[1]),
+        Screen::FantasyGaps => fantasy::render(f, app, chunks[1]),
+        Screen::FantasySim => fantasy::render_simulation(f, app, chunks[1]),
     }
 
     // Phase Masterton.1 — chrome-aware footer. When app.status
@@ -333,6 +336,7 @@ fn chrome_screen_label(s: &Screen) -> &'static str {
         Screen::Team(_) => "Team",
         Screen::Depth | Screen::DepthTeam(_) => "Depth",
         Screen::Poach => "Poach",
+        Screen::FantasyGaps => "Fantasy",
         Screen::Favorites => "Favorites",
         Screen::PlayerById(_) => "Player",
         Screen::CompsById(_) => "Comps",
@@ -431,6 +435,8 @@ fn render_mdi_workspace(f: &mut Frame, app: &App, area: Rect) {
         Screen::GoalieDetailById(pid) => goalies::render_detail_by_id(f, app, inner, *pid),
         Screen::Transactions => transactions::render(f, app, inner),
         Screen::Favorites => favorites::render(f, app, inner),
+        Screen::FantasyGaps => fantasy::render(f, app, inner),
+        Screen::FantasySim => fantasy::render_simulation(f, app, inner),
     }
 }
 
@@ -545,6 +551,8 @@ fn screen_label(s: &Screen) -> &'static str {
         Screen::GoalieDetailById(_) => "Goalie",
         Screen::Transactions => "Transactions",
         Screen::Favorites => "Favorites",
+        Screen::FantasyGaps => "Fantasy Gaps",
+        Screen::FantasySim => "Fantasy Sim",
     }
 }
 
@@ -564,11 +572,22 @@ fn render_mdi_pane_stub(f: &mut Frame, area: Rect, label: &str) {
 /// they're not at the top/bottom of a long document.
 fn render_docs_overlay(f: &mut Frame, app: &App, area: Rect) {
     const COMMANDS_MD: &str = include_str!("../../../../COMMANDS.md");
+    let view = icelines_core::DocsView::rendered(
+        icelines_core::ViewContext::new(icelines_core::ViewWindow::new(
+            app.active_season_typed,
+            app.active_type,
+        )),
+        "COMMANDS.md",
+        "IceLines Commands",
+        COMMANDS_MD,
+        "",
+    );
     let popup = centered_rect(82, 80, area);
     f.render_widget(Clear, popup);
-    let total_lines = COMMANDS_MD.lines().count() as u16;
+    let total_lines = view.markdown.lines().count() as u16;
     let title = format!(
-        " Docs (COMMANDS.md) — line {}/{}  ·  ↑↓ scroll · ←→ page · Esc/M close ",
+        " Docs ({}) — line {}/{}  ·  ↑↓ scroll · ←→ page · Esc/M close ",
+        view.source_path,
         app.docs_scroll.saturating_add(1).min(total_lines.max(1)),
         total_lines.max(1),
     );
@@ -579,7 +598,7 @@ fn render_docs_overlay(f: &mut Frame, app: &App, area: Rect) {
     let inner = block.inner(popup);
     f.render_widget(block, popup);
     f.render_widget(
-        Paragraph::new(COMMANDS_MD).scroll((app.docs_scroll, 0)),
+        Paragraph::new(view.markdown).scroll((app.docs_scroll, 0)),
         inner,
     );
 }
@@ -591,7 +610,7 @@ fn tab_for_screen(screen: &Screen) -> usize {
         Screen::Queries | Screen::Projections | Screen::Search => 2, // Stats (default: Queries)
         Screen::Goalies | Screen::GoalieDetailById(_) => 3,          // Goalies
         Screen::Favorites => 4,                                      // Favorites (Foster.2)
-        Screen::Poach => 5,                                          // Poach (Selke.5)
+        Screen::Poach | Screen::FantasyGaps | Screen::FantasySim => 5, // Poach/Fantasy (Selke)
         Screen::Tonight | Screen::GameDetail(_) => 6,                // Scores
         Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => 7, // Schedule
         Screen::Transactions => 8,                                   // Transactions
@@ -622,6 +641,8 @@ fn active_chrome(app: &App) -> crate::tui::chrome::ScreenChrome {
         Screen::Depth | Screen::DepthTeam(_) => depth::chrome(app.depth_mode, &app.depth_filters),
         Screen::Favorites => favorites::chrome(&app.favorites),
         Screen::Poach => poach::chrome(),
+        Screen::FantasyGaps => fantasy::chrome(),
+        Screen::FantasySim => fantasy::simulation_chrome(),
         // Sub-screens and other screens use empty chrome for now.
         // Masterton.2 will add accessors for the rest.
         _ => crate::tui::chrome::ScreenChrome::default(),

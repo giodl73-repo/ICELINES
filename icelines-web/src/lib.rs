@@ -61,7 +61,6 @@ pub use state::WebState;
 /// mkdocs-frontend cut. If a future sub-phase wants optional disk
 /// directory mounts, reintroduce a `RouterConfig` then.
 pub fn router(state: WebState) -> Router {
-    use handlers::coming_soon as cs;
     Router::new()
         .route("/", get(handlers::home::get_home))
         .route("/static/:asset", get(static_assets::serve_static))
@@ -74,6 +73,11 @@ pub fn router(state: WebState) -> Router {
         .route("/player/:id", get(handlers::player::get_player))
         // JSON twin — King.3.3.
         .route("/api/v1/player/:id", get(handlers::player::get_player_json))
+        .route("/scouting/:id", get(handlers::scouting::get_scouting))
+        .route(
+            "/api/v1/scouting/:id",
+            get(handlers::scouting::get_scouting_json),
+        )
         // Compare — UX.D. Side-by-side stats for two players.
         .route("/compare", get(handlers::compare::get_compare))
         .route("/api/v1/compare", get(handlers::compare::get_compare_json))
@@ -152,7 +156,15 @@ pub fn router(state: WebState) -> Router {
             "/api/v1/transactions",
             get(handlers::transactions::get_transactions_json),
         )
-        .route("/fantasy", get(cs::fantasy))
+        .route("/fantasy", get(handlers::fantasy::get_fantasy))
+        .route(
+            "/api/v1/fantasy/gaps",
+            get(handlers::fantasy::get_fantasy_gaps_json),
+        )
+        .route(
+            "/api/v1/fantasy/simulate",
+            get(handlers::fantasy::get_fantasy_simulation_json),
+        )
         // Sasq.7 — friendly 404 with a player-search input replaces
         // axum's bare default. Wired as router fallback so any
         // unmatched path lands here.
@@ -167,11 +179,6 @@ mod handlers {
     // `query --filter` will share these in a follow-up wiring.
     pub(crate) use icelines_query::{extract_bio, BioConstraints};
     pub mod shared;
-
-    /// Coming-soon stub handlers for routes whose real implementation
-    /// hasn't shipped yet. Each fn renders the same template with a
-    /// title + King.X label + one-sentence description.
-    pub mod coming_soon;
 
     /// `/leaders` — King.2.1 minimum viable real-data leaderboard.
     ///
@@ -193,6 +200,7 @@ mod handlers {
     /// `compute_team_strength_views`, project to template rows, render.
     pub mod depth;
 
+    pub mod fantasy;
     /// Phase Selke.6 — fantasy poacher web board.
     pub mod poach;
 
@@ -210,6 +218,7 @@ mod handlers {
 
     /// `/player/:id` — King.3.1 + King.3.2. Player card + career table.
     pub mod player;
+    pub mod scouting;
 
     /// `/compare` — UX.D. Side-by-side stat comparison of two players.
     pub mod compare;

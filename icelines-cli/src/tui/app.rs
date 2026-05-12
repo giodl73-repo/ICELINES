@@ -171,6 +171,8 @@ pub enum Screen {
     Transactions, // league-wide moves feed (Phase T.5)
     Favorites,    // Phase Foster.2 — favorites dashboard
     Poach,        // Phase Selke.5 — fantasy poacher board
+    FantasyGaps,  // Phase Selke — active fantasy roster gap board
+    FantasySim,   // Phase Selke — league simulation board
 }
 
 pub struct App {
@@ -3038,6 +3040,13 @@ impl App {
             }
 
             Screen::Poach => crate::tui::screens::poach::selected_player(self),
+            Screen::FantasyGaps => {
+                crate::tui::screens::fantasy::selected_player_id(self).and_then(|pid| {
+                    self.repo.identity(pid).map(|identity| {
+                        (identity.name_normalized.clone(), identity.full_name.clone())
+                    })
+                })
+            }
 
             _ => None,
         }
@@ -3449,6 +3458,13 @@ impl App {
             Screen::Poach => {
                 if let Some(pid) = crate::tui::screens::poach::selected_player_id(self) {
                     self.prev_screen = Some(Screen::Poach);
+                    self.screen = Screen::PlayerById(pid);
+                    self.selected = 0;
+                }
+            }
+            Screen::FantasyGaps => {
+                if let Some(pid) = crate::tui::screens::fantasy::selected_player_id(self) {
+                    self.prev_screen = Some(Screen::FantasyGaps);
                     self.screen = Screen::PlayerById(pid);
                     self.selected = 0;
                 }

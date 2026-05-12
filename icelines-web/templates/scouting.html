@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<p style="margin-bottom: 0.5rem;">
+    <a href="{{ player_href }}">back to player card</a>
+</p>
+
+<style>
+    .report-toolbar {
+        align-items: center;
+        display: flex;
+        gap: 0.75rem;
+        justify-content: space-between;
+        margin: 0 0 1rem;
+        max-width: 920px;
+    }
+    .report-toolbar h1 { margin: 0; }
+    .report-body { max-width: 920px; }
+    .report-body h1 { margin-top: 0; }
+    .report-body h2 {
+        border-bottom: 1px solid #e0e0e0;
+        margin-top: 1.75rem;
+        padding-bottom: 0.25rem;
+    }
+    .report-body ul { padding-left: 1.5rem; }
+    .report-body li { margin: 0.25rem 0; }
+</style>
+
+<div class="report-toolbar">
+    <h1>{{ title }}</h1>
+    <button id="copy-md-btn" type="button" data-target="scouting-md">Copy as Markdown</button>
+</div>
+
+<div class="report-body">
+    {{ rendered_html|safe }}
+</div>
+
+<script id="scouting-md" type="text/plain">{{ markdown_body }}</script>
+{% endblock %}

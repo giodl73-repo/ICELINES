@@ -2,7 +2,7 @@
 
 **Version**: 0.1
 **Date**: 2026-04-29
-**Status**: Draft — not yet implemented
+**Status**: Implemented
 **Replaces**: implicit "skater-only" assumption baked into `repository.rs`,
 `schema::SkaterStats`, and `Player`.
 
@@ -10,11 +10,8 @@
 
 ## Purpose
 
-Restore goalies as first-class players in IceLines. Today
-`PlayerRepository::load_all()` drops `RosterResponse.goalies` on the floor
-(`repository.rs:109-110`), `SkaterStats` is the only stats schema, and
-`commands/fantasy.rs` literally tells users "goalies are not supported".
-This spec brings goalies back across the entire stack:
+Restore goalies as first-class players in IceLines. This spec brought goalies
+back across the entire stack:
 
 - their own data type (separate from skaters — no muddied `Player` fields);
 - a dedicated TUI tab for league-wide goalie comparison;
@@ -310,8 +307,8 @@ because no goalies live in `app.players`. With this spec wired:
 
 ### Extended: `icelines fantasy`
 
-Scoring already supports goalies — `scheme.goalie` weights have been there
-since Phase 1. Wire `compute_fantasy_score` to detect goalies:
+Scoring supports goalies through `scheme.goalie` weights and the shared
+fantasy roster scoring path:
 
 ```rust
 // icelines-core::scheme
@@ -323,7 +320,7 @@ pub fn compute_goalie_fantasy_score(
 ) -> Option<FantasyScore> { ... }
 ```
 
-Fantasy team rosters become `Vec<RosterEntry>` where:
+Fantasy team rosters support skaters and goalies:
 
 ```rust
 enum RosterEntry {
@@ -332,11 +329,9 @@ enum RosterEntry {
 }
 ```
 
-`fantasy team-add` looks up the player by name across both pools and stores
-the right discriminator. `fantasy standings` totals a team's score by
-summing skater + goalie contributions.
-
-Fantasy-leagues spec gets a follow-up amendment.
+`fantasy team-add` looks up the player by name across both pools.
+`fantasy standings`, roster gaps, and simulation totals score skater + goalie
+contributions through the shared core fantasy scoring/ViewModel layer.
 
 ### Extended: `icelines fetch`
 

@@ -181,13 +181,18 @@ Edge cases:
 
 ---
 
-## HTTP server (axum)
+## Local fantasy HTTP server (legacy axum)
 
 ```
 icelines fantasy serve [--port 8080] [--league NAME]
 ```
 
-Spawns an axum server bound to `127.0.0.1:<port>`. Routes:
+Spawns the local fantasy-only axum server bound to `127.0.0.1:<port>`. These
+routes are the legacy standalone fantasy-server contract. The main dashboard
+parity surface now lives under `/fantasy` and `/api/v1/fantasy/*`; see
+`surface-parity.md`.
+
+Routes:
 
 | Method + Path | Returns | Notes |
 |---|---|---|

@@ -133,6 +133,12 @@ pub struct GameSkaterInput {
     pub player_id: u32,
     pub player_name: String,
     pub position: String,
+    pub toi_seconds: u32,
+    pub sog: u32,
+    pub hits: u32,
+    pub blocked_shots: u32,
+    pub takeaways: u32,
+    pub giveaways: u32,
     pub goals: u32,
     pub assists: u32,
     pub plus_minus: i32,
@@ -170,6 +176,12 @@ pub struct GameSkaterRow {
     pub assists: u32,
     pub points: u32,
     pub plus_minus: i32,
+    pub toi_seconds: u32,
+    pub sog: u32,
+    pub hits: u32,
+    pub blocked_shots: u32,
+    pub takeaways: u32,
+    pub giveaways: u32,
 }
 
 fn top_skaters(skaters: Vec<GameSkaterInput>) -> Vec<GameSkaterRow> {
@@ -186,6 +198,12 @@ fn top_skaters(skaters: Vec<GameSkaterInput>) -> Vec<GameSkaterRow> {
                 assists: skater.assists,
                 points,
                 plus_minus: skater.plus_minus,
+                toi_seconds: skater.toi_seconds,
+                sog: skater.sog,
+                hits: skater.hits,
+                blocked_shots: skater.blocked_shots,
+                takeaways: skater.takeaways,
+                giveaways: skater.giveaways,
             }
         })
         .collect()

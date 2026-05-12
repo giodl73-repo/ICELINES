@@ -7,8 +7,8 @@ use axum::response::{Html, IntoResponse, Response};
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
 use icelines_core::{
-    PlayoffsBracketInput, PlayoffsRoundInput, PlayoffsRoundRow, PlayoffsSeriesInput,
-    PlayoffsSeriesRow, PlayoffsView, ViewContext, ViewWindow,
+    PlayoffsBracketInput, PlayoffsGameInput, PlayoffsRoundInput, PlayoffsRoundRow,
+    PlayoffsSeriesInput, PlayoffsSeriesRow, PlayoffsView, ViewContext, ViewWindow,
 };
 
 struct PlayoffsResult {
@@ -163,6 +163,18 @@ fn playoff_bracket_input(bracket: icelines_fetch::nhl_api::PlayoffBracket) -> Pl
                         bottom_seed_rank: series.bottom_seed_rank,
                         winner_abbrev: series.winner_abbrev,
                         conference: series.conference,
+                        games: series
+                            .games
+                            .into_iter()
+                            .map(|game| PlayoffsGameInput {
+                                date: game.date,
+                                home_abbrev: game.home_abbrev,
+                                away_abbrev: game.away_abbrev,
+                                home_score: game.home_score,
+                                away_score: game.away_score,
+                                series_after: game.series_after,
+                            })
+                            .collect(),
                     })
                     .collect(),
             })

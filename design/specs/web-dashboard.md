@@ -13,10 +13,10 @@ Draft — pre-implementation. **Reviews requested before any code lands.**
 | Question | Decision | Notes |
 |----------|----------|-------|
 | `serve` rename | Plain `icelines serve` = web dashboard. mkdocs path → `icelines site serve` (under `icelines site {build,serve,deploy}`). | Staged migration in Migration mechanics. Old aliases removed in v0.14. |
-| Default port | **8000** | Fantasy server folded in, so the `fantasy serve --port 8080` collision is moot. |
+| Default port | **8000** | As-built dashboard parity routes live here; the legacy `fantasy serve --port 8080` mutation server remains separate. |
 | Auto-open browser | **Default on**. `--no-open` opt-out. | URL printed BEFORE open attempt. Open errors swallowed. |
 | HTMX + CSS + logo | **Vendored** (`include_bytes!`) — ~30 KB total. | No CDN. No internet at runtime. |
-| Fantasy server | **Folded** as `/fantasy/*` (King.9). | Standalone `fantasy serve` aliased one release, spawns full dashboard. |
+| Fantasy read/product routes | **Folded** as `/fantasy` and `/api/v1/fantasy/*` for gaps/simulation. | Legacy standalone `fantasy serve` mutation routes remain documented in `fantasy-leagues.md`. |
 | `schema_version` | **Per-envelope integer**, additive-only within a version. | Renames/removals → that route bumps to `/api/v2/...`. Replaces the original "global v1 additive-only" plan. |
 | API prefix | **`/api/v1/`** from day 1. | Cheap now, painful to retrofit. |
 | Pagination | `?limit=N&offset=N` with `meta.total` and `meta.next_offset`. Default 50, max 500. | All list routes. |
@@ -75,7 +75,7 @@ icelines site serve                  # was: icelines serve  (old behavior preser
 icelines site deploy                 # was: icelines deploy
 ```
 
-The bare `icelines serve` now means the King Clancy web dashboard. Old `icelines build/serve/deploy` aliases stay for one release with a deprecation warning, then drop. Existing `fantasy serve` standalone command also folded under `/fantasy/*` routes of `icelines serve` (King.9); standalone aliased for one release.
+The bare `icelines serve` now means the King Clancy web dashboard. Old `icelines build/serve/deploy` aliases stay for one release with a deprecation warning, then drop. Fantasy read/product views are folded into the dashboard as `/fantasy`, `/api/v1/fantasy/gaps`, and `/api/v1/fantasy/simulate`; legacy `fantasy serve` mutation routes remain a separate local server boundary.
 
 ## URL structure
 
@@ -146,11 +146,9 @@ POST /games                      Add a game by id
 DELETE /games/:id                 Remove a game
 
 # ── Fantasy (folded in — King.9) ───────────────────────────────────────────
-GET  /fantasy                    Fantasy league dashboard
-GET  /fantasy/standings
-GET  /fantasy/team/:name
-GET  /fantasy/scheme/:name       Scheme detail (CLI `scheme show`)
-GET  /fantasy/scheme             List schemes
+GET  /fantasy                    Roster gaps and simulation scenarios
+GET  /api/v1/fantasy/gaps        FantasyRosterGapView JSON
+GET  /api/v1/fantasy/simulate    FantasySimulationView JSON
 
 # ── Season picker + admin ──────────────────────────────────────────────────
 GET  /seasons                       Season picker (TUI `y` parity)
@@ -191,7 +189,8 @@ DELETE /api/v1/group/:name
 GET  /api/v1/games
 POST /api/v1/games
 DELETE /api/v1/games/:id
-GET  /api/v1/fantasy/...             Mirrors HTML routes
+GET  /api/v1/fantasy/gaps            FantasyRosterGapView JSON
+GET  /api/v1/fantasy/simulate        FantasySimulationView JSON
 GET  /api/v1/reports
 PATCH /api/v1/reports                 Persists via Config::save_reports
 GET  /api/v1/seasons                  { bundled, installed, active, active_type }
@@ -236,8 +235,8 @@ Every shippable surface accounted for. ✓ = covered in v1; D = deferred to a fo
 | `transactions` | `/transactions` | ✓ King.8 |
 | `group` (list/show/add/remove/create) | `/groups`, `/group/:name`, POST/PATCH/DELETE | ✓ King.8 |
 | `games` (show/add/remove) | `/games`, POST/DELETE | ✓ King.8 |
-| `scheme` (list/show) | `/fantasy/scheme`, `/fantasy/scheme/:name` | ✓ King.9 |
-| `fantasy serve` | folded under `/fantasy/*` | ✓ King.9 |
+| `scheme` (list/show) | CLI only in current dashboard parity matrix | partial |
+| `fantasy gaps` / `fantasy simulate` | `/fantasy`, `/api/v1/fantasy/gaps`, `/api/v1/fantasy/simulate` | ✓ Selke/Ted Lindsay follow-up |
 | `tui` / `dashboard` | (web is the alternative — not a route) | N/A |
 | `docs` | `/docs` | ✓ King.8 |
 | `export md`, `x` | `/api/*` covers JSON/CSV; markdown export per route via `?format=md` | ✓ King.8 |
@@ -448,9 +447,9 @@ HTMX `hx-indicator=".spinner"` on every interactive form. Skeleton row pattern f
 | `/scores`, `/schedule`, `/playoffs` | Existing `tonight`, `schedule`, `playoffs` data layers |
 | `/reports` | `Config::reports` + `ReportToggles::set` + `Config::save_reports` (Reports.1) |
 | `/docs` | `include_str!("../../COMMANDS.md")` rendered through a markdown crate |
-| `/fantasy/*` | Existing `fantasy serve` axum routes folded under same root |
+| `/fantasy`, `/api/v1/fantasy/gaps`, `/api/v1/fantasy/simulate` | Fantasy read/product ViewModels in the main dashboard; legacy `fantasy serve` mutation routes stay separate |
 
-The data-loading code stays in `icelines-fetch`; the projection logic stays in `icelines-core`; the web surface is a thin handler layer in `icelines-cli/src/web/`.
+The data-loading code stays in `icelines-fetch`; the projection logic stays in `icelines-core`; the web surface is a thin handler layer in `icelines-web/src/`.
 
 ## Concurrency & state
 
@@ -519,13 +518,16 @@ Three steps, ordered for compileability:
    Then dispatch to the new path. stderr (not stdout) so pipeline consumers of `icelines build` aren't broken.
 3. **v0.14**: deprecated aliases removed.
 
-### `fantasy serve` alias semantics
-After King.9 fold-in, bare `icelines fantasy serve --port N` stays for one release. Behavior: print deprecation to stderr, then spawn the **full web dashboard** on the requested port (so users land on `/fantasy/standings`). Least surprising.
+### `fantasy serve` boundary
+As-built after the Selke/Ted Lindsay follow-up, `icelines serve` owns the parity
+read/product views (`/fantasy`, `/api/v1/fantasy/gaps`,
+`/api/v1/fantasy/simulate`). `icelines fantasy serve --port N` remains the
+legacy local fantasy-server workflow for older standings/team/trade mutation
+routes documented in `fantasy-leagues.md`.
 
 ```
-WARNING: 'fantasy serve' has been folded into 'icelines serve' (Phase King Clancy).
-         Opening the full dashboard at http://localhost:8080 — your fantasy
-         routes are at /fantasy/. The 'fantasy serve' alias is removed in v0.14.
+INFO: fantasy read/product views are available from `icelines serve`.
+      Legacy fantasy mutation routes remain on `icelines fantasy serve`.
 ```
 
 ### Browser auto-open
@@ -686,7 +688,7 @@ The full implementation is broken into sub-phases. Each is shippable independent
 - **King.6** — Reports overlay + season picker. `/reports` form + PATCH `/api/reports`. `/seasons` + PATCH `/api/active-season`. Persists to `~/.icelines/config.toml`.
 - **King.7** — Live-data pages. `/scores`, `/scores/:date`, `/schedule`, `/schedule/:team`, `/schedule/:a/:b`. `/playoffs`, `/playoffs/series/:letter`, `/game/:id` boxscore.
 - **King.8** — Transactions + search + docs + groups + games. `/transactions` (with kind/player/team/since filters). `/search`. `/docs` (markdown→HTML). `/groups` + `/group/:name` (CRUD). `/games` attended-tracker (CRUD).
-- **King.9** — Fantasy routes folded in under same root. `/fantasy/*` mirrors existing `fantasy serve` axum surface. Standalone `fantasy serve` aliased for one release.
+- **King.9 / Selke-Ted follow-up** — Fantasy read/product routes folded in under the main dashboard: `/fantasy`, `/api/v1/fantasy/gaps`, and `/api/v1/fantasy/simulate`. Legacy `fantasy serve` mutation routes remain separate.
 - **King.10** — Hardening + closeout. `--bind 0.0.0.0` LAN mode + warning banner. `/admin/snapshots` (read-only list). Persona Wave 5 (50+ web scenarios). Performance review. Old `serve`/`build`/`deploy` deprecation warnings.
 
 Each sub-phase has its own plan file (`design/plans/2026-05-XX-phaseKingClancy-N-<topic>.md`).

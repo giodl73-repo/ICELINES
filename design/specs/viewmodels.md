@@ -319,6 +319,56 @@ Current Selke surfaces:
 - web `/reports/poach`
 - web `/reports/weekly`
 
+### `FantasyRosterGapView`
+
+Owned by Phase Selke/Ted Lindsay.
+
+Required:
+
+- context/source state and warnings;
+- user roster baseline;
+- selected scoring scheme and categories;
+- per-category gap rows;
+- best available candidate and same-position replacement target when present;
+- action classification: `add_now`, `watch`, or `no_action`;
+- raw value, scoring weight, weighted value, and weighted delta.
+
+Current surfaces:
+
+- CLI `icelines fantasy gaps`
+- TUI fantasy gaps screen
+- web `/fantasy`
+- JSON `/api/v1/fantasy/gaps`
+
+### `FantasySimulationView`
+
+Owned by Phase Selke/Ted Lindsay.
+
+Required:
+
+- context/source state and warnings;
+- scoring scheme and simulation horizon;
+- projected fantasy team rows with current score, games remaining, projected
+  score, and rank;
+- scenario rows for add-only, add/drop, and drop-only decisions;
+- canonical add/drop labels after name resolution;
+- scenario action, confidence, projected score delta, projected games delta,
+  and explanation.
+
+Current surfaces:
+
+- CLI `icelines fantasy simulate`
+- TUI fantasy simulation screen
+- web `/fantasy`
+- JSON `/api/v1/fantasy/simulate`
+
+Renderer rule:
+
+Fantasy renderers may choose density, truncation, styling, and JSON envelope
+shape. They must not recompute fantasy score, projection, scenario
+classification, or add/drop validation outside the shared core ViewModel
+builders.
+
 ---
 
 ## Renderer responsibilities

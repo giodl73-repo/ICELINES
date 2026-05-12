@@ -7,10 +7,11 @@ use icelines_core::{
     model::{Position, Season, TeamAbbr},
     name::normalize_name,
     view_model::{
-        default_watch_rules_view, poach_report_from_board,
+        default_watch_rules_view, evaluate_watch_alerts, poach_report_from_board,
         weekly_poach_report_from_board_with_watched, AvailabilityState, DeploymentSignal,
-        PoachBoardView, PoachQuery, PoachReportView, SourceKind, SourceState, ViewContext,
-        ViewWindow, WatchRule, WatchRuleTrigger, WatchRulesView,
+        PoachAvailabilityFilter, PoachBoardView, PoachQuery, PoachReportView, SourceKind,
+        SourceState, ViewContext, ViewWindow, WatchAlertRow, WatchRule, WatchRuleTrigger,
+        WatchRulesView,
     },
 };
 
@@ -18,6 +19,7 @@ use crate::cli::QuerySeasonType;
 use crate::commands::players::{load_repo_for_season, validate_bundled_season};
 use crate::config::Config;
 use crate::db::{GroupDb, MemberKind, WatchRuleEventRow, WatchRuleRow};
+use crate::fantasy_db::FantasyDb;
 
 pub struct PoachArgs {
     pub season: Option<String>,
@@ -26,6 +28,7 @@ pub struct PoachArgs {
     pub categories: Vec<String>,
     pub teams: Vec<String>,
     pub positions: Vec<String>,
+    pub availability: Option<String>,
     pub top: u16,
     pub json: bool,
 }
@@ -37,6 +40,7 @@ pub struct PoachReportArgs {
     pub categories: Vec<String>,
     pub teams: Vec<String>,
     pub positions: Vec<String>,
+    pub availability: Option<String>,
     pub top: u16,
     pub json: bool,
     pub out: Option<PathBuf>,
@@ -50,6 +54,7 @@ pub struct WeeklyReportArgs {
     pub categories: Vec<String>,
     pub teams: Vec<String>,
     pub positions: Vec<String>,
+    pub availability: Option<String>,
     pub top: u16,
     pub json: bool,
     pub out: Option<PathBuf>,
@@ -76,6 +81,14 @@ pub struct WatchFireArgs {
 
 pub struct WatchHistoryArgs {
     pub limit: u16,
+    pub json: bool,
+}
+
+pub struct WatchAlertsArgs {
+    pub season: Option<String>,
+    pub season_type: QuerySeasonType,
+    pub top: u16,
+    pub save: bool,
     pub json: bool,
 }
 
@@ -121,6 +134,7 @@ pub async fn run_report_poach(args: PoachReportArgs) -> anyhow::Result<()> {
         categories: args.categories,
         teams: args.teams,
         positions: args.positions,
+        availability: args.availability,
         top: args.top,
         json: false,
     })?;
@@ -141,6 +155,7 @@ pub async fn run_report_weekly(args: WeeklyReportArgs) -> anyhow::Result<()> {
         categories: args.categories,
         teams: args.teams,
         positions: args.positions,
+        availability: args.availability,
         top: args.top,
         json: false,
     })?;
@@ -210,6 +225,44 @@ pub async fn run_watch_history(args: WatchHistoryArgs) -> anyhow::Result<()> {
     let db = GroupDb::open()?;
     let events = db.list_watch_rule_events(args.limit as usize)?;
     emit_watch_rule_events(&events, args.json)
+}
+
+pub async fn run_watch_alerts(args: WatchAlertsArgs) -> anyhow::Result<()> {
+    let board = build_board(PoachArgs {
+        season: args.season,
+        season_type: args.season_type,
+        scheme: "yahoo-standard".to_string(),
+        categories: Vec::new(),
+        teams: Vec::new(),
+        positions: Vec::new(),
+        availability: None,
+        top: args.top,
+        json: false,
+    })?;
+    let db = GroupDb::open()?;
+    let watched = watched_player_keys(&db)?;
+    let view = evaluate_watch_alerts(&board, &watched);
+    let saved = if args.save {
+        persist_watch_alerts(&db, &view.alerts)?
+    } else {
+        Vec::new()
+    };
+    if args.json {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&WatchAlertsCliView {
+                view: &view,
+                saved_events: saved.iter().map(WatchRuleEventView::from).collect(),
+            })
+            .context("serializing watch alerts")?
+        );
+    } else {
+        emit_watch_alerts(&view.alerts);
+        if args.save {
+            println!("Saved {} new alert event(s).", saved.len());
+        }
+    }
+    Ok(())
 }
 
 pub async fn run_watch_list(args: WatchListArgs) -> anyhow::Result<()> {
@@ -299,10 +352,41 @@ fn build_board(args: PoachArgs) -> anyhow::Result<PoachBoardView> {
         .map(|team| TeamAbbr(team.trim().to_uppercase()))
         .collect();
     query.positions = parse_positions(args.positions)?;
+    query.availability_filter = parse_availability_filter(args.availability.as_deref())?;
     query.limit = Some(args.top);
     query.sort = Some("poach_score".to_string());
+    if let Ok(Some(rosters)) = active_fantasy_rostered_player_keys() {
+        query =
+            query.with_imported_league_availability(rosters.all_rostered, rosters.user_rostered);
+    }
 
     Ok(PoachBoardView::from_repository(&outcome.repo, query))
+}
+
+struct ActiveFantasyRosters {
+    all_rostered: Vec<String>,
+    user_rostered: Vec<String>,
+}
+
+fn active_fantasy_rostered_player_keys() -> anyhow::Result<Option<ActiveFantasyRosters>> {
+    let db = FantasyDb::open()?;
+    let Some(league) = db.get_active_league()? else {
+        return Ok(None);
+    };
+    let user_team_id = db.get_user_team(&league.id)?.map(|team| team.id);
+    let mut all_rostered = Vec::new();
+    let mut user_rostered = Vec::new();
+    for team in db.list_teams(&league.id)? {
+        let roster = db.list_roster(&team.id)?;
+        if Some(team.id.as_str()) == user_team_id.as_deref() {
+            user_rostered.extend(roster.iter().cloned());
+        }
+        all_rostered.extend(roster);
+    }
+    Ok(Some(ActiveFantasyRosters {
+        all_rostered,
+        user_rostered,
+    }))
 }
 
 fn emit_board(view: &PoachBoardView, json: bool) -> anyhow::Result<()> {
@@ -317,7 +401,7 @@ fn emit_board(view: &PoachBoardView, json: bool) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn render_report_markdown(report: &PoachReportView) -> String {
+pub(crate) fn render_report_markdown(report: &PoachReportView) -> String {
     let mut out = String::new();
     out.push_str("# Fantasy Poacher\n\n");
     out.push_str(&format!(
@@ -327,6 +411,12 @@ fn render_report_markdown(report: &PoachReportView) -> String {
         report.scoring_scheme,
         report.window
     ));
+    if !report.scoring_categories.is_empty() {
+        out.push_str(&format!(
+            "- Categories: {}\n\n",
+            report.scoring_categories.join(", ")
+        ));
+    }
 
     if !report.omissions.is_empty() {
         out.push_str("## Source Omissions\n\n");
@@ -472,6 +562,108 @@ fn emit_watch_view(view: &WatchRulesView, json: bool) -> anyhow::Result<()> {
         );
     }
     Ok(())
+}
+
+fn emit_watch_alerts(alerts: &[icelines_core::view_model::WatchAlertRow]) {
+    if alerts.is_empty() {
+        println!("No fantasy watch alerts.");
+        return;
+    }
+    println!(
+        "{:<11} {:<24} {:<24} Reason",
+        "Severity", "Player", "Trigger"
+    );
+    for alert in alerts {
+        println!(
+            "{:<11} {:<24} {:<24} {}",
+            format!("{:?}", alert.severity).to_ascii_lowercase(),
+            truncate(&alert.display_name, 24),
+            format!("{:?}", alert.trigger).to_ascii_lowercase(),
+            truncate(&alert.reason, 80)
+        );
+    }
+}
+
+#[derive(Debug, Serialize)]
+struct WatchAlertsCliView<'a> {
+    #[serde(flatten)]
+    view: &'a icelines_core::view_model::WatchAlertsView,
+    saved_events: Vec<WatchRuleEventView<'a>>,
+}
+
+fn persist_watch_alerts(
+    db: &GroupDb,
+    alerts: &[WatchAlertRow],
+) -> anyhow::Result<Vec<WatchRuleEventRow>> {
+    let existing = db.list_watch_rule_events(10_000)?;
+    let mut saved = Vec::new();
+    for alert in alerts {
+        let rule_id = watch_alert_rule_id(alert);
+        ensure_watch_alert_rule(db, alert, &rule_id)?;
+        let entity_ref = format!("player:{}", normalize_name(&alert.display_name));
+        let is_duplicate = existing.iter().any(|event| {
+            event.rule_id == rule_id
+                && event.entity_ref.as_deref() == Some(entity_ref.as_str())
+                && event.message == alert.reason
+        }) || saved.iter().any(|event: &WatchRuleEventRow| {
+            event.rule_id == rule_id
+                && event.entity_ref.as_deref() == Some(entity_ref.as_str())
+                && event.message == alert.reason
+        });
+        if is_duplicate {
+            continue;
+        }
+        saved.push(db.record_watch_rule_event(&rule_id, Some(&entity_ref), &alert.reason)?);
+    }
+    Ok(saved)
+}
+
+fn ensure_watch_alert_rule(
+    db: &GroupDb,
+    alert: &WatchAlertRow,
+    rule_id: &str,
+) -> anyhow::Result<()> {
+    let trigger = match alert.trigger {
+        icelines_core::view_model::WatchAlertTrigger::WatchedAvailable => {
+            WatchRuleTrigger::AvailabilityChanged {
+                player_id: Some(alert.player_id),
+                state: AvailabilityState::ImportedAvailable,
+            }
+        }
+        icelines_core::view_model::WatchAlertTrigger::WatchedDeploymentSignal => {
+            WatchRuleTrigger::PlayerPromoted {
+                player_id: Some(alert.player_id),
+                evidence: DeploymentSignal::Unknown,
+            }
+        }
+        icelines_core::view_model::WatchAlertTrigger::UserRosterDropRisk => {
+            WatchRuleTrigger::CategoryThreshold {
+                category: "drop_risk".to_string(),
+                threshold: 1.0,
+            }
+        }
+    };
+    db.upsert_watch_rule(
+        rule_id,
+        &format!("Fantasy alert: {:?}", alert.trigger),
+        true,
+        &serde_json::to_string(&trigger).context("serializing alert rule trigger")?,
+        &serde_json::to_string(&alert.unsupported_sources)
+            .context("serializing alert unsupported sources")?,
+    )
+}
+
+fn watch_alert_rule_id(alert: &WatchAlertRow) -> String {
+    match alert.trigger {
+        icelines_core::view_model::WatchAlertTrigger::WatchedAvailable => "alert-watched-available",
+        icelines_core::view_model::WatchAlertTrigger::WatchedDeploymentSignal => {
+            "alert-watched-deployment"
+        }
+        icelines_core::view_model::WatchAlertTrigger::UserRosterDropRisk => {
+            "alert-user-roster-drop-risk"
+        }
+    }
+    .to_string()
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -711,6 +903,40 @@ fn parse_position(value: &str) -> anyhow::Result<Position> {
     }
 }
 
+fn parse_availability_filter(value: Option<&str>) -> anyhow::Result<PoachAvailabilityFilter> {
+    let Some(value) = value else {
+        return Ok(PoachAvailabilityFilter::Any);
+    };
+    match value.trim().to_ascii_lowercase().replace('-', "_").as_str() {
+        "" | "any" | "all" => Ok(PoachAvailabilityFilter::Any),
+        "available" | "free" | "free_agent" | "free_agents" => {
+            Ok(PoachAvailabilityFilter::Available)
+        }
+        "not_on_user_roster" | "not_user_roster" | "not_mine" => {
+            Ok(PoachAvailabilityFilter::NotOnUserRoster)
+        }
+        "watched" | "watchlist" => Ok(PoachAvailabilityFilter::Watched),
+        "imported_available" | "imported_free" | "league_available" => {
+            Ok(PoachAvailabilityFilter::ImportedAvailable)
+        }
+        "unknown" => Ok(PoachAvailabilityFilter::Unknown),
+        other => bail!(
+            "unknown availability filter '{other}' - valid: any, available, imported_available, not_on_user_roster, watched, unknown"
+        ),
+    }
+}
+
+fn availability_label(state: AvailabilityState) -> &'static str {
+    match state {
+        AvailabilityState::Unknown => "unknown",
+        AvailabilityState::Available => "available",
+        AvailabilityState::RosteredByUser => "my-roster",
+        AvailabilityState::ImportedAvailable => "free",
+        AvailabilityState::ImportedRostered => "rostered",
+        AvailabilityState::Watched => "watched",
+    }
+}
+
 fn print_table(view: &PoachBoardView) {
     if let Some(empty) = &view.empty_state {
         println!("{}", empty.title);
@@ -721,8 +947,8 @@ fn print_table(view: &PoachBoardView) {
     }
 
     println!(
-        "{:<4} {:<26} {:<4} {:<3} {:>6} {:<12} {:<28} Risk",
-        "Rank", "Player", "Team", "Pos", "Score", "Confidence", "Why"
+        "{:<4} {:<26} {:<4} {:<3} {:>6} {:<10} {:<12} {:<28} Risk",
+        "Rank", "Player", "Team", "Pos", "Score", "Avail", "Confidence", "Why"
     );
     for (idx, row) in view.rows.iter().enumerate() {
         let why = row
@@ -732,12 +958,13 @@ fn print_table(view: &PoachBoardView) {
             .unwrap_or("No explanation");
         let risk = row.risk_summary.as_deref().unwrap_or("-");
         println!(
-            "{:<4} {:<26} {:<4} {:<3} {:>6.1} {:<12} {:<28} {}",
+            "{:<4} {:<26} {:<4} {:<3} {:>6.1} {:<10} {:<12} {:<28} {}",
             idx + 1,
             truncate(&row.display_name, 26),
             row.team.as_str(),
             row.position.abbreviation(),
             row.score.final_score,
+            availability_label(row.availability),
             format!("{:?}", row.confidence).to_ascii_lowercase(),
             truncate(why, 28),
             truncate(risk, 24)
@@ -800,6 +1027,22 @@ mod tests {
     }
 
     #[test]
+    fn l0_poach_parses_availability_filter_aliases() {
+        assert_eq!(
+            parse_availability_filter(None).unwrap(),
+            PoachAvailabilityFilter::Any
+        );
+        assert_eq!(
+            parse_availability_filter(Some("imported-available")).unwrap(),
+            PoachAvailabilityFilter::ImportedAvailable
+        );
+        assert_eq!(
+            parse_availability_filter(Some("free-agent")).unwrap(),
+            PoachAvailabilityFilter::Available
+        );
+    }
+
+    #[test]
     fn l0_poach_truncates_long_text() {
         assert_eq!(truncate("abcdef", 4), "a...");
         assert_eq!(truncate("abc", 4), "abc");
@@ -820,6 +1063,7 @@ mod tests {
         let report = PoachReportView {
             context: icelines_core::view_model::poach_report_context(context, "test-report"),
             scoring_scheme: "yahoo-standard".to_string(),
+            scoring_categories: vec!["hits".to_string(), "blocks".to_string()],
             window: icelines_core::view_model::PoachWindow::Days14,
             source_state: Vec::new(),
             warnings: Vec::new(),
@@ -834,6 +1078,7 @@ mod tests {
         let md = render_report_markdown(&report);
 
         assert!(md.contains("# Fantasy Poacher"));
+        assert!(md.contains("Categories: hits, blocks"));
         assert!(md.contains("schedule: unavailable"));
         assert!(md.contains("No candidates matched this report."));
     }
@@ -965,6 +1210,32 @@ mod tests {
         assert_eq!(json["rule_id"], "player-matthew-knies");
         assert_eq!(json["entity_ref"], "player:matthew knies");
         assert_eq!(json["message"], "PP1 usage crossed threshold");
+    }
+
+    #[test]
+    fn l0_watch_alert_persistence_dedupes_same_alert() {
+        let db = GroupDb::open_in_memory().expect("open db");
+        let alert = WatchAlertRow {
+            player_id: icelines_core::identity::PlayerId(8478402),
+            display_name: "Connor McDavid".to_string(),
+            trigger: icelines_core::view_model::WatchAlertTrigger::WatchedAvailable,
+            severity: icelines_core::view_model::WatchAlertSeverity::Opportunity,
+            reason: "Connor McDavid is available and has poach score 90.0.".to_string(),
+            unsupported_sources: Vec::new(),
+        };
+
+        let first = persist_watch_alerts(&db, std::slice::from_ref(&alert)).expect("first persist");
+        let second = persist_watch_alerts(&db, &[alert]).expect("second persist");
+        let history = db.list_watch_rule_events(20).expect("history");
+
+        assert_eq!(first.len(), 1);
+        assert!(second.is_empty());
+        assert_eq!(history.len(), 1);
+        assert_eq!(history[0].rule_id, "alert-watched-available");
+        assert_eq!(
+            history[0].entity_ref.as_deref(),
+            Some("player:connor mcdavid")
+        );
     }
 
     #[test]

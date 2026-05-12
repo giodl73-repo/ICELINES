@@ -176,6 +176,37 @@ impl Scheme {
             Self::simple_pts(),
         ]
     }
+
+    pub fn builtin_named(name: &str) -> Option<Self> {
+        let needle = name.trim().to_ascii_lowercase();
+        Self::all_builtins()
+            .into_iter()
+            .find(|scheme| scheme.name.eq_ignore_ascii_case(&needle))
+    }
+
+    pub fn skater_category_keys(&self) -> Vec<&'static str> {
+        let weights = &self.skater;
+        [
+            (weights.goals, "goals"),
+            (weights.assists, "assists"),
+            (weights.pp_goals, "pp_goals"),
+            (weights.pp_assists, "pp_assists"),
+            (weights.sh_goals, "sh_goals"),
+            (weights.sh_assists, "sh_assists"),
+            (weights.gwg, "gwg"),
+            (weights.ot_goals, "ot_goals"),
+            (weights.hits, "hits"),
+            (weights.blocks, "blocks"),
+            (weights.shots_on_goal, "shots"),
+            (weights.plus_minus, "plus_minus"),
+            (weights.takeaways, "takeaways"),
+            (weights.giveaways, "giveaways"),
+            (weights.faceoff_wins, "faceoff_wins"),
+        ]
+        .into_iter()
+        .filter_map(|(weight, key)| (weight.abs() > f32::EPSILON).then_some(key))
+        .collect()
+    }
 }
 
 // ── Fantasy score ─────────────────────────────────────────────────────────────

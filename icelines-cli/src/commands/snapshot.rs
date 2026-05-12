@@ -1,7 +1,8 @@
 use crate::cli::SnapshotSubcommand;
 use crate::config::Config;
 use anyhow::Context;
-use icelines_fetch::snapshot::SnapshotStore;
+use icelines_core::{SnapshotEntryInput, SnapshotView, ViewContext, ViewWindow, CURRENT_SEASON};
+use icelines_fetch::snapshot::{SnapshotEntry, SnapshotStore};
 
 pub async fn run(cmd: SnapshotSubcommand) -> anyhow::Result<()> {
     let cfg = Config::load()?;
@@ -10,61 +11,20 @@ pub async fn run(cmd: SnapshotSubcommand) -> anyhow::Result<()> {
     match cmd {
         SnapshotSubcommand::List => {
             let manifest = store.load_manifest().context("loading snapshot manifest")?;
-            let entries = manifest.snapshots;
-            if entries.is_empty() {
-                println!("No snapshots — run `icelines fetch all` to create one.");
+            let view = snapshot_view(manifest.active, manifest.snapshots, None);
+            if view.rows.is_empty() {
+                println!("No snapshots - run `icelines fetch all` to create one.");
                 return Ok(());
             }
-            println!(
-                "{:<40} {:<10} {:<12} {:<8} {:<6}",
-                "Name", "Season", "Date", "Sealed", "Files"
-            );
-            println!("{}", "─".repeat(80usize));
-            for e in &entries {
-                let active = if manifest.active.as_deref() == Some(&e.name) {
-                    " ←"
-                } else {
-                    ""
-                };
-                println!(
-                    "{:<40} {:<10} {:<12} {:<8} {}{}",
-                    e.name,
-                    e.season,
-                    e.date,
-                    if e.sealed { "✓" } else { "…" },
-                    e.file_count,
-                    active
-                );
-            }
+            print_snapshot_list(&view);
         }
 
         SnapshotSubcommand::Show { name } => {
             let manifest = store.load_manifest()?;
-            let meta = store
-                .load_manifest()
-                .ok()
-                .and_then(|_| store.list().ok())
-                .and_then(|entries| entries.into_iter().find(|e| e.name == name));
-
-            match meta {
+            let view = snapshot_view(manifest.active, manifest.snapshots, Some(&name));
+            match view.selected {
                 None => println!("Snapshot '{name}' not found."),
-                Some(e) => {
-                    let is_active = manifest.active.as_deref() == Some(&name);
-                    println!(
-                        "Snapshot:  {}{}",
-                        e.name,
-                        if is_active { " (ACTIVE)" } else { "" }
-                    );
-                    println!("Season:    {}", e.season);
-                    println!("Tier:      {:?}", e.tier);
-                    println!("Date:      {}", e.date);
-                    println!("Created:   {}", e.created_at);
-                    println!("Sealed:    {}", e.sealed);
-                    println!("Files:     {}", e.file_count);
-                    if let Some(ref p) = e.parent_key {
-                        println!("Parent:    {p}");
-                    }
-                }
+                Some(e) => print_snapshot_detail(&e),
             }
         }
 
@@ -82,7 +42,7 @@ pub async fn run(cmd: SnapshotSubcommand) -> anyhow::Result<()> {
                     let manifest = store.load_manifest()?;
                     manifest
                         .active
-                        .context("no active snapshot — specify a name")?
+                        .context("no active snapshot - specify a name")?
                 }
             };
             print!("Verifying '{target}'... ");
@@ -90,9 +50,9 @@ pub async fn run(cmd: SnapshotSubcommand) -> anyhow::Result<()> {
                 .verify(&target)
                 .with_context(|| format!("verifying '{target}'"))?;
             if failures.is_empty() {
-                println!("OK — all integrity checks passed.");
+                println!("OK - all integrity checks passed.");
             } else {
-                println!("FAILED — {} file(s) corrupt or missing:", failures.len());
+                println!("FAILED - {} file(s) corrupt or missing:", failures.len());
                 for f in &failures {
                     println!("  {f}");
                 }
@@ -114,18 +74,18 @@ pub async fn run(cmd: SnapshotSubcommand) -> anyhow::Result<()> {
                 );
             }
             if store.is_chunked(&name) {
-                println!("Snapshot '{name}' is already chunked — nothing to do.");
+                println!("Snapshot '{name}' is already chunked - nothing to do.");
                 return Ok(());
             }
             let cm = store
                 .rebuild_chunked(&name)
                 .with_context(|| format!("rebuilding snapshot '{name}' as chunked"))?;
             println!(
-                "✓ Migrated '{name}' to chunked layout ({} bios + {} stats chunks).",
+                "Migrated '{name}' to chunked layout ({} bios + {} stats chunks).",
                 cm.bios().len(),
                 cm.stats().len(),
             );
-            println!("  Run `icelines snapshot gc` to sweep any chunks now unreferenced.");
+            println!("Run `icelines snapshot gc` to sweep any chunks now unreferenced.");
         }
 
         SnapshotSubcommand::Gc { dry_run } => {
@@ -133,13 +93,13 @@ pub async fn run(cmd: SnapshotSubcommand) -> anyhow::Result<()> {
             let kb = report.bytes_freed / 1024;
             if report.dry_run {
                 println!(
-                    "Dry run — would remove {} chunk(s), freeing ~{} KB.",
+                    "Dry run - would remove {} chunk(s), freeing ~{} KB.",
                     report.removed, kb,
                 );
             } else if report.removed == 0 {
-                println!("Nothing to sweep — all chunks are still referenced.");
+                println!("Nothing to sweep - all chunks are still referenced.");
             } else {
-                println!("✓ Swept {} chunk(s), freed ~{} KB.", report.removed, kb,);
+                println!("Swept {} chunk(s), freed ~{} KB.", report.removed, kb);
             }
         }
 
@@ -147,10 +107,10 @@ pub async fn run(cmd: SnapshotSubcommand) -> anyhow::Result<()> {
             let report = store.prune(keep, dry_run).context("prune failed")?;
             if report.dry_run {
                 if report.planned == 0 {
-                    println!("Dry run — nothing to prune (kept {keep} per tier).");
+                    println!("Dry run - nothing to prune (kept {keep} per tier).");
                 } else {
                     println!(
-                        "Dry run — would delete {} snapshot(s) (keeping newest {keep} per tier):",
+                        "Dry run - would delete {} snapshot(s) (keeping newest {keep} per tier):",
                         report.planned,
                     );
                     for n in &report.names {
@@ -161,7 +121,7 @@ pub async fn run(cmd: SnapshotSubcommand) -> anyhow::Result<()> {
             } else if report.deleted == 0 {
                 println!("Nothing to prune (kept {keep} per tier).");
             } else {
-                println!("✓ Pruned {} snapshot(s):", report.deleted);
+                println!("Pruned {} snapshot(s):", report.deleted);
                 for n in &report.names {
                     println!("  {n}");
                 }
@@ -176,7 +136,7 @@ pub async fn run(cmd: SnapshotSubcommand) -> anyhow::Result<()> {
             if report.is_empty() {
                 println!("No differences between '{a}' and '{b}'.");
             } else {
-                println!("Diff: '{a}' → '{b}'");
+                println!("Diff: '{a}' -> '{b}'");
                 if !report.removed.is_empty() {
                     println!(
                         "  Removed players ({}): {}",
@@ -233,4 +193,64 @@ pub async fn run(cmd: SnapshotSubcommand) -> anyhow::Result<()> {
         }
     }
     Ok(())
+}
+
+fn snapshot_view(
+    active: Option<String>,
+    entries: Vec<SnapshotEntry>,
+    selected_name: Option<&str>,
+) -> SnapshotView {
+    SnapshotView::from_entries(
+        ViewContext::new(ViewWindow::new(
+            icelines_core::model::Season(CURRENT_SEASON),
+            icelines_core::season_stats::SeasonType::Regular,
+        )),
+        active,
+        entries
+            .into_iter()
+            .map(|entry| SnapshotEntryInput {
+                name: entry.name,
+                season: entry.season,
+                tier: format!("{:?}", entry.tier),
+                date: entry.date,
+                created_at: entry.created_at,
+                parent_key: entry.parent_key,
+                file_count: entry.file_count,
+                sealed: entry.sealed,
+            })
+            .collect(),
+        selected_name,
+    )
+}
+
+fn print_snapshot_list(view: &SnapshotView) {
+    println!(
+        "{:<40} {:<10} {:<12} {:<8} {:<6}",
+        "Name", "Season", "Date", "Sealed", "Files"
+    );
+    println!("{}", "-".repeat(80usize));
+    for e in &view.rows {
+        let active = if e.is_active { " <-" } else { "" };
+        println!(
+            "{:<40} {:<10} {:<12} {:<8} {}{}",
+            e.name, e.season, e.date, e.sealed_label, e.file_count, active
+        );
+    }
+}
+
+fn print_snapshot_detail(e: &icelines_core::SnapshotRow) {
+    println!(
+        "Snapshot:  {}{}",
+        e.name,
+        if e.is_active { " (ACTIVE)" } else { "" }
+    );
+    println!("Season:    {}", e.season);
+    println!("Tier:      {}", e.tier);
+    println!("Date:      {}", e.date);
+    println!("Created:   {}", e.created_at);
+    println!("Sealed:    {}", e.sealed);
+    println!("Files:     {}", e.file_count);
+    if let Some(ref p) = e.parent_key {
+        println!("Parent:    {p}");
+    }
 }

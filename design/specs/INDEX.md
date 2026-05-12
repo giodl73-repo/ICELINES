@@ -25,8 +25,8 @@ For active work and backlog, see [`../plans/INDEX.md`](../plans/INDEX.md).
 | [snapshot-operations.md](snapshot-operations.md) | Implemented | `snapshot list/show/use/verify/delete` CLI |
 | [fantasy-scheme.md](fantasy-scheme.md) | Implemented | Scheme engine, weights, compute_fantasy_score |
 | [scheme-customization.md](scheme-customization.md) | Implemented | `scheme list/show/fromcsv` CLI, user vs built-in |
-| [fantasy-leagues.md](fantasy-leagues.md) | Implemented (partial) | SQLite + scoring + trade eval + axum server. Goalie fantasy scoring deferred (data exists post-Vezina; needs wiring). H2H matchups deferred. |
-| [fantasy-poacher.md](fantasy-poacher.md) | Implemented (partial) | Phase Selke player-poacher scoring, watch rules, reports, and CLI/TUI/web ViewModel contract. Carry-forward: full TUI rule editor and imported roster-need fit. |
+| [fantasy-leagues.md](fantasy-leagues.md) | Implemented (partial) | SQLite + skater/goalie scoring + trade eval + local fantasy server. H2H matchups and full web mutation parity deferred. |
+| [fantasy-poacher.md](fantasy-poacher.md) | Implemented (partial) | Phase Selke player-poacher scoring, roster gaps, simulation scenarios, watch rules, reports, and CLI/TUI/web ViewModel contracts. Carry-forward: full TUI rule editor and imported roster-need fit. |
 | [group-management.md](group-management.md) | Implemented | Player watchlists: SQLite, CRUD, TUI g/f keys |
 | [player-analysis.md](player-analysis.md) | Implemented | PlayerFilter, similarity search, career arc |
 | [scouting-reports.md](scouting-reports.md) | Implemented | 8-section player report (terminal/markdown/json). Test coverage added in Hart.5c.2. |
@@ -34,8 +34,8 @@ For active work and backlog, see [`../plans/INDEX.md`](../plans/INDEX.md).
 | [position-engine.md](position-engine.md) | Implemented | PositionResolver, boxscore eligibility |
 | [query-engine.md](query-engine.md) | Implemented (partial) | leaders/player/compare/similar, 30+ sort metrics. **Phase 5C strength-state and Phase 5D Tier 4 metrics never started.** |
 | [site-generation.md](site-generation.md) | Implemented | mkdocs build/serve/deploy, deterministic markdown |
-| [export-markdown.md](export-markdown.md) | Implemented (partial) | 5 of 7 shapes shipped (leaders/team/depth/compare/roster). `fantasy` and `series` deferred. proof references stale. |
-| [goalies.md](goalies.md) | Implemented | Phase Vezina shipped. Schema, repository, TUI tab, 5 bundled seasons. Fantasy goalie scoring still requires wiring (see fantasy-leagues.md). |
+| [export-markdown.md](export-markdown.md) | Implemented | 7 of 7 shapes shipped; `fantasy` renders `PoachReportView` and `series` renders `PlayoffsView`. |
+| [goalies.md](goalies.md) | Implemented | Phase Vezina shipped. Schema, repository, TUI tab, 5 bundled seasons, and fantasy goalie scoring. |
 | [transactions.md](transactions.md) | Implemented | Phase Selke shipped. ESPN source, classifier, TUI tab, 5 bundled seasons. |
 | [test-strategy.md](test-strategy.md) | Implemented | L0/L1/L2 tiers, mock NHL API fixture, ~1020 tests |
 | [platform-contracts.md](platform-contracts.md) | Draft | Uniform data/query/ViewModel/surface/report/visual contracts for Campbell and later phases. |

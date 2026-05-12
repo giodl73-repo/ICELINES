@@ -1,14 +1,15 @@
-//! Phase Foster +2 — `icelines data status` command.
+//! `icelines data status` command.
 //!
-//! Pretty-prints the on-disk data manifest. Reads `~/.icelines/data/`
-//! through `DataStore::open` so the snapshot read-shim populates
-//! Bundle entries automatically. Output mirrors the closeout-spec
-//! example layout (Source / Kind / Items / Freshness columns).
+//! Reads the on-disk data manifest and projects it through `DataStatusView`
+//! before printing a compact terminal table.
 
 use anyhow::{Context, Result};
-use icelines_core::freshness::{FetchSource, Freshness, SystemClock, Ttl};
+use icelines_core::{
+    freshness::SystemClock, DataStatusEntryInput, DataStatusView, ViewContext, ViewWindow,
+    CURRENT_SEASON,
+};
 use icelines_fetch::datastore::DataStore;
-use icelines_fetch::manifest::{DataKey, DataKind, ManifestEntry};
+use icelines_fetch::manifest::{DataKey, DataKind};
 
 pub async fn run(shard: Option<String>, stale_only: bool) -> Result<()> {
     let home = std::env::var_os("HOME")
@@ -19,10 +20,19 @@ pub async fn run(shard: Option<String>, stale_only: bool) -> Result<()> {
     let store = DataStore::open(&data_root).context("open DataStore")?;
 
     let kind_filter = shard.as_deref().map(parse_kind).transpose()?;
-
     let rows = collect_rows(&store, kind_filter, stale_only);
+    let view = DataStatusView::from_entries(
+        ViewContext::new(ViewWindow::new(
+            icelines_core::model::Season(CURRENT_SEASON),
+            icelines_core::season_stats::SeasonType::Regular,
+        )),
+        data_root.display().to_string(),
+        shard,
+        stale_only,
+        rows,
+    );
 
-    if rows.is_empty() {
+    if view.rows.is_empty() {
         if let Some(k) = kind_filter {
             println!(
                 "No manifest entries for {k:?}{}.",
@@ -36,7 +46,7 @@ pub async fn run(shard: Option<String>, stale_only: bool) -> Result<()> {
         return Ok(());
     }
 
-    print_table(&data_root, &rows);
+    print_table(&view);
     Ok(())
 }
 
@@ -44,19 +54,24 @@ fn collect_rows(
     store: &DataStore,
     kind_filter: Option<DataKind>,
     stale_only: bool,
-) -> Vec<(DataKind, ManifestEntry)> {
+) -> Vec<DataStatusEntryInput> {
     let clock = SystemClock;
     let kinds: Vec<DataKind> = match kind_filter {
         Some(k) => vec![k],
         None => DataKind::all().to_vec(),
     };
-    let mut rows: Vec<(DataKind, ManifestEntry)> = Vec::new();
+    let mut rows: Vec<DataStatusEntryInput> = Vec::new();
     for k in kinds {
         for entry in store.manifest().list(k) {
             if stale_only && !entry.freshness.is_stale(&clock) {
                 continue;
             }
-            rows.push((k, entry));
+            rows.push(DataStatusEntryInput {
+                source: entry.freshness.source,
+                kind: format!("{k:?}"),
+                key: short_key(&entry.key),
+                freshness: entry.freshness,
+            });
         }
     }
     rows
@@ -74,40 +89,24 @@ fn parse_kind(s: &str) -> Result<DataKind> {
         "score" | "scores" => DataKind::Score,
         "playoff_bracket" | "playoffs" => DataKind::PlayoffBracket,
         other => anyhow::bail!(
-            "unknown shard '{other}' — try one of: bios, stats, goalie_stats, transactions, boxscore, career_history, schedule, score, playoff_bracket"
+            "unknown shard '{other}' - try one of: bios, stats, goalie_stats, transactions, boxscore, career_history, schedule, score, playoff_bracket"
         ),
     })
 }
 
-fn print_table(root: &std::path::Path, rows: &[(DataKind, ManifestEntry)]) {
-    println!("DATA STATUS — {}", root.display());
-    println!("{}", "─".repeat(76));
+fn print_table(view: &DataStatusView) {
+    println!("DATA STATUS - {}", view.root);
+    println!("{}", "-".repeat(76));
     println!("{:<14} {:<16} {:<24} Freshness", "Source", "Kind", "Key");
-    println!("{}", "─".repeat(76));
-    for (kind, entry) in rows {
+    println!("{}", "-".repeat(76));
+    for row in &view.rows {
         println!(
             "{:<14} {:<16} {:<24} {}",
-            source_label(entry.freshness.source),
-            format!("{kind:?}"),
-            short_key(&entry.key),
-            freshness_label(&entry.freshness),
+            row.source, row.kind, row.key, row.freshness,
         );
     }
-    println!("{}", "─".repeat(76));
-    println!("{} entry(ies).", rows.len());
-}
-
-fn source_label(s: FetchSource) -> &'static str {
-    match s {
-        FetchSource::Bundle => "Bundle",
-        FetchSource::Setup => "Setup",
-        FetchSource::Live => "Live",
-        FetchSource::DataInstall => "DataInstall",
-        FetchSource::Manual => "Manual",
-        // FetchSource is #[non_exhaustive] (FORGE H2). Future
-        // additions surface as "Other" until this match learns them.
-        _ => "Other",
-    }
+    println!("{}", "-".repeat(76));
+    println!("{} entry(ies).", view.total);
 }
 
 fn short_key(key: &DataKey) -> String {
@@ -118,22 +117,6 @@ fn short_key(key: &DataKey) -> String {
         DataKey::Date(d) => d.clone(),
         DataKey::Player(p) => format!("player:{}", p.0),
         DataKey::Global => "<global>".to_string(),
-    }
-}
-
-fn freshness_label(f: &Freshness) -> String {
-    match f.ttl {
-        Ttl::Static => "static".to_string(),
-        Ttl::After(d) => {
-            let secs = d.as_secs();
-            if secs < 3600 {
-                format!("ttl {}m", secs / 60)
-            } else if secs < 86400 {
-                format!("ttl {}h", secs / 3600)
-            } else {
-                format!("ttl {}d", secs / 86400)
-            }
-        }
     }
 }
 
@@ -167,12 +150,16 @@ mod tests {
 
     #[test]
     fn l0_data_status_freshness_label_buckets_by_unit() {
+        use icelines_core::freshness::{FetchSource, Freshness, Ttl};
+        use icelines_core::view_model::data_status::freshness_label;
         use std::time::Duration;
+
         let mk = |ttl| Freshness {
             fetched_at: chrono::Utc::now(),
             source: FetchSource::Live,
             ttl,
         };
+
         assert_eq!(freshness_label(&mk(Ttl::Static)), "static");
         assert_eq!(
             freshness_label(&mk(Ttl::After(Duration::from_secs(60)))),
@@ -197,6 +184,7 @@ mod tests {
         use icelines_core::identity::{GameId, PlayerId};
         use icelines_core::model::Season;
         use icelines_core::season_stats::SeasonType;
+
         assert_eq!(short_key(&DataKey::Season(Season(20252026))), "20252026");
         assert_eq!(
             short_key(&DataKey::SeasonType(Season(20252026), SeasonType::Playoff)),

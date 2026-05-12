@@ -1468,6 +1468,7 @@ fn apply_field_array(fields: &mut [QueryField], arr: &[serde_json::Value]) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use icelines_core::{fixtures, model::Season, season_stats::SeasonType};
 
     // ── Phase Reports — sort picker visibility gating ───────────────────────
 
@@ -1581,6 +1582,61 @@ mod tests {
             covered, expected,
             "default_sections must cover every default field exactly once"
         );
+    }
+
+    #[test]
+    fn l0_tui_leaders_view_preserves_query_result_rank_and_primary_metric() {
+        let mut repo = icelines_core::stats_repository::StatsRepository::new();
+        repo.upsert_identity(
+            fixtures::identity(1)
+                .name("Alpha Center", "alpha center")
+                .build(),
+        )
+        .unwrap();
+        repo.upsert_stats(fixtures::stats(1, 20242025, "EDM").build())
+            .unwrap();
+        repo.upsert_identity(
+            fixtures::identity(2)
+                .name("Bravo Wing", "bravo wing")
+                .build(),
+        )
+        .unwrap();
+        repo.upsert_stats(
+            fixtures::stats(2, 20242025, "SEA")
+                .position(icelines_core::model::Position::RightWing)
+                .build(),
+        )
+        .unwrap();
+
+        let views: Vec<_> = repo
+            .skaters(Season(20242025), SeasonType::Regular)
+            .collect();
+        let bravo = views
+            .iter()
+            .copied()
+            .find(|view| view.id().0 == 2)
+            .expect("bravo fixture view");
+        let alpha = views
+            .iter()
+            .copied()
+            .find(|view| view.id().0 == 1)
+            .expect("alpha fixture view");
+        let results = vec![(7, bravo), (9, alpha)];
+        let view = leaders_view_from_query_results(
+            &results,
+            "pts",
+            "Pts",
+            Season(20242025),
+            SeasonType::Regular,
+        );
+
+        assert_eq!(view.sort.as_ref().unwrap().key.0, "pts");
+        assert_eq!(view.rows[0].rank, 7);
+        assert_eq!(view.rows[1].rank, 9);
+        assert_eq!(view.rows[0].primary.label, "Pts");
+        assert_eq!(leader_primary_text(&view.rows[0]), "80");
+        assert_eq!(leader_team_text(&view.rows[0]), "SEA");
+        assert_eq!(view.rows[0].position.abbreviation(), "RW");
     }
 
     /// `visible_field_indices` returns only fields in expanded sections,

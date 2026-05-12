@@ -9,8 +9,9 @@ the current route source of truth. Current shipped route truth lives in
 
 ## Current Drift
 
-- `/fantasy` is currently a coming-soon stub.
-- `/fantasy/*` is not folded into the main dashboard.
+- Superseded: `/fantasy`, `/api/v1/fantasy/gaps`, and
+  `/api/v1/fantasy/simulate` are now folded into the main dashboard for
+  read/product views. Legacy fantasy-server mutation routes remain separate.
 - `/admin/snapshots` is not mounted.
 - `/api/v1/reports` is not mounted.
 - `/api/v1/admin/snapshots` is not mounted.

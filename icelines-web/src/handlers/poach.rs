@@ -9,8 +9,8 @@ use icelines_core::season_stats::SeasonType;
 use icelines_core::{
     view_model::{
         poach_report_from_board, watch_rules_view_with_persisted,
-        weekly_poach_report_from_board_with_watched, PoachBoardView, PoachQuery, PoachReportView,
-        WatchRule,
+        weekly_poach_report_from_board_with_watched, AvailabilityState, PoachAvailabilityFilter,
+        PoachBoardView, PoachQuery, PoachReportView, WatchRule,
     },
     Completeness, EmptyKind, EmptyState, SourceKind, SourceState, ViewContext, ViewWindow,
 };
@@ -30,6 +30,8 @@ pub struct PoachWebQuery {
     pub top: Option<u16>,
     #[serde(default)]
     pub league: Option<String>,
+    #[serde(default)]
+    pub availability: Option<String>,
 }
 
 #[derive(Debug, serde::Serialize)]
@@ -60,6 +62,7 @@ pub async fn get_poach(State(state): State<WebState>, Query(q): Query<PoachWebQu
             category_fit: row.category_fit_summary.clone(),
             schedule: row.schedule_summary.clone(),
             risk: row.risk_summary.clone().unwrap_or_else(|| "-".to_string()),
+            availability: availability_label(row.availability).to_string(),
             why: row
                 .explanations
                 .first()
@@ -77,6 +80,7 @@ pub async fn get_poach(State(state): State<WebState>, Query(q): Query<PoachWebQu
         categories: q.categories.unwrap_or_default(),
         teams: q.team.unwrap_or_default(),
         positions: q.pos.unwrap_or_default(),
+        availability: q.availability.unwrap_or_else(|| "any".to_string()),
         source_note: source_note(&result.view.source_state),
         empty_title: empty
             .as_ref()
@@ -186,6 +190,12 @@ fn render_poach_report_html(report: &PoachReportView, active_label: &str) -> Str
         "<p>Scheme: <strong>{}</strong></p>",
         html_escape(&report.scoring_scheme)
     ));
+    if !report.scoring_categories.is_empty() {
+        body.push_str(&format!(
+            "<p>Categories: <strong>{}</strong></p>",
+            html_escape(&report.scoring_categories.join(", "))
+        ));
+    }
 
     if !report.omissions.is_empty() {
         body.push_str("<section><h2>Source Omissions</h2><ul>");
@@ -387,8 +397,14 @@ async fn build_poach_view(
         .map(|team| TeamAbbr(team.to_ascii_uppercase()))
         .collect();
     query.positions = parse_positions(q.pos.as_deref()).map_err(bad_request_html)?;
+    query.availability_filter =
+        parse_availability_filter(q.availability.as_deref()).map_err(bad_request_html)?;
     query.limit = Some(q.top.unwrap_or(20).clamp(1, 100));
     query.sort = Some("poach_score".to_string());
+    if let Some(rosters) = read_fantasy_rostered_player_keys(q.league.as_deref()) {
+        query =
+            query.with_imported_league_availability(rosters.all_rostered, rosters.user_rostered);
+    }
 
     let view = {
         let repo = state.repo.read().await;
@@ -413,6 +429,106 @@ async fn build_poach_view(
     };
 
     Ok(PoachBuildResult { view, active_label })
+}
+
+struct FantasyRosterKeys {
+    all_rostered: Vec<String>,
+    user_rostered: Vec<String>,
+}
+
+fn read_fantasy_rostered_player_keys(league_name: Option<&str>) -> Option<FantasyRosterKeys> {
+    let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))?;
+    let db_path = std::path::PathBuf::from(&home)
+        .join(".icelines")
+        .join("icelines.db");
+    if !db_path.exists() {
+        return None;
+    }
+    let conn = rusqlite::Connection::open(&db_path).ok()?;
+    let league_id: String = if let Some(name) = league_name {
+        conn.query_row(
+            "SELECT id FROM fl_leagues WHERE name = ?1",
+            rusqlite::params![name],
+            |row| row.get(0),
+        )
+        .ok()?
+    } else {
+        conn.query_row(
+            "SELECT id FROM fl_leagues WHERE is_active = 1 LIMIT 1",
+            [],
+            |row| row.get(0),
+        )
+        .ok()?
+    };
+    let mut stmt = conn
+        .prepare(
+            "SELECT r.player_normalized, t.is_user_team
+             FROM fl_roster r
+             JOIN fl_teams t ON t.id = r.team_id
+             WHERE t.league_id = ?1
+             ORDER BY r.player_normalized",
+        )
+        .ok()?;
+    stmt.query_map(rusqlite::params![league_id], |row| row.get::<_, String>(0))
+        .ok()
+        .map(|rows| {
+            let mut all_rostered = Vec::new();
+            let mut user_rostered = Vec::new();
+            for row in rows.filter_map(Result::ok) {
+                all_rostered.push(row.clone());
+            }
+            if let Ok(mut user_stmt) = conn.prepare(
+                "SELECT r.player_normalized
+                 FROM fl_roster r
+                 JOIN fl_teams t ON t.id = r.team_id
+                 WHERE t.league_id = ?1 AND t.is_user_team = 1
+                 ORDER BY r.player_normalized",
+            ) {
+                user_rostered = user_stmt
+                    .query_map(rusqlite::params![league_id], |row| row.get::<_, String>(0))
+                    .ok()
+                    .map(|rows| rows.filter_map(Result::ok).collect())
+                    .unwrap_or_default();
+            }
+            FantasyRosterKeys {
+                all_rostered,
+                user_rostered,
+            }
+        })
+}
+
+fn parse_availability_filter(value: Option<&str>) -> Result<PoachAvailabilityFilter, String> {
+    let Some(value) = value else {
+        return Ok(PoachAvailabilityFilter::Any);
+    };
+    match value.trim().to_ascii_lowercase().replace('-', "_").as_str() {
+        "" | "any" | "all" => Ok(PoachAvailabilityFilter::Any),
+        "available" | "free" | "free_agent" | "free_agents" => {
+            Ok(PoachAvailabilityFilter::Available)
+        }
+        "not_on_user_roster" | "not_user_roster" | "not_mine" => {
+            Ok(PoachAvailabilityFilter::NotOnUserRoster)
+        }
+        "watched" | "watchlist" => Ok(PoachAvailabilityFilter::Watched),
+        "imported_available" | "imported_free" | "league_available" => {
+            Ok(PoachAvailabilityFilter::ImportedAvailable)
+        }
+        "unknown" => Ok(PoachAvailabilityFilter::Unknown),
+        other => Err(format!(
+            "unknown availability filter '{other}' - valid: any, available, imported_available, not_on_user_roster, watched, unknown"
+        )),
+    }
+}
+
+fn availability_label(state: AvailabilityState) -> &'static str {
+    match state {
+        AvailabilityState::Unknown => "unknown",
+        AvailabilityState::Available => "available",
+        AvailabilityState::RosteredByUser => "my roster",
+        AvailabilityState::ImportedAvailable => "free",
+        AvailabilityState::ImportedRostered => "rostered",
+        AvailabilityState::Watched => "watched",
+    }
 }
 
 fn split_csv(value: Option<&str>) -> Vec<String> {

@@ -1,5 +1,6 @@
 //! Fantasy league commands — leagues, teams, scoring, trades, HTTP server.
 
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use anyhow::{bail, Context};
@@ -10,61 +11,24 @@ use axum::{
     Json,
 };
 use icelines_core::{
+    build_fantasy_simulation_view,
     model::Season,
     name::normalize_name,
-    scheme::{self, compute_fantasy_score, compute_goalie_fantasy_score, GoalieScoreStats, Scheme},
+    resolve_fantasy_scenario_roster_details,
+    scheme::Scheme,
+    score_fantasy_roster,
     season_stats::SeasonType,
     stats_repository::{PlayerView, StatsRepository},
+    FantasyRosterGapInput, FantasyRosterGapView, FantasySimulationBuildInput,
+    FantasySimulationConfidence, FantasySimulationHorizon, FantasySimulationRosterTeamInput,
+    FantasySimulationScenarioRosterInput, FantasySimulationView,
 };
+use icelines_fetch::nhl_api::NhlApiClient;
+use icelines_fetch::schedule_remaining::remaining_games_by_team_from_cache;
 use icelines_fetch::stats_loader::LoadOutcome;
 use serde_json::{json, Value};
 
 use crate::fantasy_db::{FantasyDb, LeagueRow, TeamRow};
-
-// ── PlayerView → SkaterStats bridge ───────────────────────────────────────────
-//
-// Hart.5c.4: cold-start mapping (per spec D5). Realtime fields
-// (hits / blocked_shots / takeaways / giveaways) are Option<u32> in the
-// new model — `unwrap_or(0)` preserves legacy behavior where the cold-
-// start case scored those categories as zero. The cold-start parity
-// test pins this so a future Option-aware fantasy rewrite knows what
-// it's changing.
-
-fn to_scheme_stats_view(v: &PlayerView<'_>) -> scheme::SkaterStats {
-    let totals = &v.stats.totals;
-    scheme::SkaterStats {
-        goals: totals.goals,
-        assists: totals.assists,
-        pp_goals: totals.pp_goals,
-        pp_assists: totals.pp_points.saturating_sub(totals.pp_goals),
-        sh_goals: totals.sh_goals,
-        sh_assists: totals.sh_points.saturating_sub(totals.sh_goals),
-        gwg: totals.gwg,
-        ot_goals: totals.ot_goals,
-        hits: v.hits().unwrap_or(0),
-        blocks: v.blocked_shots().unwrap_or(0),
-        shots_on_goal: v.shots(),
-        plus_minus: v.plus_minus(),
-        takeaways: v.takeaways().unwrap_or(0),
-        giveaways: v.giveaways().unwrap_or(0),
-        faceoff_wins: 0,
-    }
-}
-
-/// Bridge a goalie `PlayerView` → fantasy `GoalieScoreStats`.
-/// Returns None when `stats.goalie` is unset (call-ups not yet on ice).
-fn to_goalie_scheme_stats_view(v: &PlayerView<'_>) -> Option<GoalieScoreStats> {
-    let g = v.stats.goalie.as_ref()?;
-    Some(GoalieScoreStats {
-        games_played: g.games_started,
-        wins: g.wins,
-        losses: g.losses,
-        saves: g.saves,
-        goals_against: g.goals_against,
-        shutouts: g.shutouts,
-        save_pct: g.save_pct.unwrap_or(0.0),
-    })
-}
 
 /// Find a view by partial normalized name in the given slice.
 fn fuzzy_find_view_in<'a, 'r>(
@@ -117,67 +81,32 @@ fn pools_views<'r>(
 
 /// Resolve a scheme name to a `Scheme` struct.
 fn resolve_scheme(name: &str) -> anyhow::Result<Scheme> {
-    match name {
-        "yahoo-standard" => Ok(Scheme::yahoo_standard()),
-        "espn-standard" => Ok(Scheme::espn_standard()),
-        "simple-pts" => Ok(Scheme::simple_pts()),
-        other => bail!("unknown scheme '{other}'. Try: yahoo-standard, espn-standard, simple-pts"),
-    }
+    Scheme::builtin_named(name).with_context(|| {
+        let names = Scheme::all_builtins()
+            .into_iter()
+            .map(|scheme| scheme.name)
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!("unknown scheme '{name}'. Try: {names}")
+    })
 }
 
-/// Score every name in a roster, returning `(full_name, score)` sorted
-/// desc. Skater pool searched first; goalie pool as fallback.
+/// Legacy CLI/server adapter over the shared core scoring contract.
+///
+/// League-management text and the legacy `fantasy serve` routes still consume
+/// `(full_name, score)` pairs, but scoring itself must stay in
+/// `score_fantasy_roster` so CLI/TUI/web/report surfaces do not fork fantasy
+/// math or skater-vs-goalie lookup behavior.
 fn score_team(
     roster_norms: &[String],
     skaters: &[PlayerView<'_>],
     goalies: &[PlayerView<'_>],
     scheme: &Scheme,
 ) -> Vec<(String, f32)> {
-    let mut results: Vec<(String, f32)> = Vec::new();
-
-    for norm in roster_norms {
-        // Skater first.
-        if let Some(v) = skaters
-            .iter()
-            .find(|v| v.identity.name_normalized.contains(norm.as_str()))
-        {
-            let gp = v.gp();
-            let score = compute_fantasy_score(&to_scheme_stats_view(v), &scheme.skater, gp)
-                .map(|fs| fs.total)
-                .unwrap_or(0.0);
-            results.push((v.identity.full_name.clone(), score));
-            continue;
-        }
-        // Then goalie.
-        if let Some(v) = goalies
-            .iter()
-            .find(|v| v.identity.name_normalized.contains(norm.as_str()))
-        {
-            let stats = match to_goalie_scheme_stats_view(v) {
-                Some(s) => s,
-                None => {
-                    // Goalie has no stats yet — counts as 0 score, still listed.
-                    results.push((v.identity.full_name.clone(), 0.0));
-                    continue;
-                }
-            };
-            let gp = v
-                .stats
-                .goalie
-                .as_ref()
-                .map(|g| g.games_started)
-                .unwrap_or(0);
-            let score = compute_goalie_fantasy_score(&stats, &scheme.goalie, gp)
-                .map(|fs| fs.total)
-                .unwrap_or(0.0);
-            results.push((v.identity.full_name.clone(), score));
-            continue;
-        }
-        eprintln!("  [warn] roster entry '{norm}' not found in current player or goalie pool");
-    }
-
-    results.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
-    results
+    score_fantasy_roster(roster_norms, skaters, goalies, scheme)
+        .into_iter()
+        .map(|row| (row.player.identity.full_name.clone(), row.score))
+        .collect()
 }
 
 /// Require an active league, or use the given override.
@@ -296,11 +225,31 @@ pub async fn run_team_list(league_override: Option<String>) -> anyhow::Result<()
     }
 
     println!("League: {} ({})", league.name, league.scheme);
-    println!("{:<28} {:<20} {:<8}", "Team", "Owner", "Players");
+    println!(
+        "{:<28} {:<20} {:<6} {:<8}",
+        "Team", "Owner", "Mine", "Players"
+    );
     println!("{}", "─".repeat(58));
     for t in &teams {
-        println!("{:<28} {:<20} {:<8}", t.name, t.owner, t.player_count);
+        println!(
+            "{:<28} {:<20} {:<6} {:<8}",
+            t.name,
+            t.owner,
+            if t.is_user_team { "yes" } else { "-" },
+            t.player_count
+        );
     }
+    Ok(())
+}
+
+/// `icelines fantasy team-use <name> [--league <league>]`
+pub async fn run_team_use(name: String, league_override: Option<String>) -> anyhow::Result<()> {
+    let db = FantasyDb::open()?;
+    let league = require_league(&db, &league_override)?;
+    if !db.set_user_team(&league.id, &name)? {
+        bail!("team '{name}' not found in league '{}'", league.name);
+    }
+    println!("User team set to '{name}' in league '{}'.", league.name);
     Ok(())
 }
 
@@ -315,8 +264,11 @@ pub async fn run_team_show(name: String, league_override: Option<String>) -> any
     let roster_norms = db.list_roster(&team.id)?;
 
     println!(
-        "\nRoster: {} | League: {} | Scheme: {}",
-        team.name, league.name, league.scheme
+        "\nRoster: {}{} | League: {} | Scheme: {}",
+        team.name,
+        if team.is_user_team { " (mine)" } else { "" },
+        league.name,
+        league.scheme
     );
     println!("{}", "─".repeat(72));
     println!(
@@ -507,6 +459,290 @@ pub async fn run_standings(
 }
 
 // ── Trade ─────────────────────────────────────────────────────────────────────
+
+/// `icelines fantasy gaps [--league <league>] [--scheme <scheme>]`
+pub async fn run_gaps(
+    league_override: Option<String>,
+    scheme_override: Option<String>,
+    categories: Vec<String>,
+    top: usize,
+    json: bool,
+) -> anyhow::Result<()> {
+    let db = FantasyDb::open()?;
+    let snapshot = db.league_snapshot(league_override.as_deref())?;
+    let scheme_name = scheme_override
+        .as_deref()
+        .unwrap_or(&snapshot.scoring_scheme);
+    resolve_scheme(scheme_name)?;
+    let (outcome, season) = load_pools()?;
+    let all_rostered = snapshot.all_rostered();
+    let user_roster = snapshot.user_rostered();
+    let view = FantasyRosterGapView::from_repository(
+        &outcome.repo,
+        FantasyRosterGapInput {
+            season,
+            season_type: SeasonType::Regular,
+            league: &snapshot.league,
+            team: &snapshot.user_team,
+            scoring_scheme: scheme_name,
+            categories,
+            user_roster_keys: user_roster,
+            all_rostered_keys: all_rostered,
+            limit: top,
+        },
+    );
+
+    if json {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&view).context("serializing fantasy gaps")?
+        );
+        return Ok(());
+    }
+
+    print_gaps(&view);
+    Ok(())
+}
+
+fn print_gaps(view: &FantasyRosterGapView) {
+    println!(
+        "Fantasy gaps - {} / {} ({})",
+        view.league, view.team, view.scoring_scheme
+    );
+    for warning in &view.warnings {
+        println!("warning: {warning}");
+    }
+    println!(
+        "{:<10} {:<16} {:>10} {:>6} {:<24} {:<4} {:>8} {:>8} {:<24} Recommendation",
+        "Action",
+        "Category",
+        "Roster",
+        "Weight",
+        "Best Available",
+        "Pos",
+        "Value",
+        "WDelta",
+        "Drop"
+    );
+    for row in &view.rows {
+        let candidate = row.best_available.as_ref();
+        let target = row.replacement_target.as_ref();
+        println!(
+            "{:<10} {:<16} {:>10.1} {:>6.2} {:<24} {:<4} {:>8.1} {:>8.1} {:<24} {}",
+            format!("{:?}", row.action).to_ascii_lowercase(),
+            row.category,
+            row.user_total,
+            row.weight,
+            candidate
+                .map(|candidate| candidate.display_name.as_str())
+                .unwrap_or("-"),
+            candidate
+                .map(|candidate| candidate.position.as_str())
+                .unwrap_or("-"),
+            candidate.map(|candidate| candidate.value).unwrap_or(0.0),
+            target
+                .map(|target| target.weighted_delta)
+                .unwrap_or(row.weighted_gap_score),
+            target
+                .map(|target| target.display_name.as_str())
+                .unwrap_or("-"),
+            row.recommendation
+        );
+    }
+}
+
+/// `icelines fantasy simulate [--league <league>] [--weeks N] [--add P --drop P]`
+pub async fn run_simulate(
+    league_override: Option<String>,
+    scheme_override: Option<String>,
+    weeks: u8,
+    add_player: Option<String>,
+    drop_player: Option<String>,
+    json: bool,
+) -> anyhow::Result<()> {
+    let db = FantasyDb::open()?;
+    let snapshot = db.league_snapshot(league_override.as_deref())?;
+    let scheme_name = scheme_override
+        .as_deref()
+        .unwrap_or(&snapshot.scoring_scheme);
+    let scheme = resolve_scheme(scheme_name)?;
+    let (outcome, season) = load_pools()?;
+    let (all_skaters, all_goalies) = pools_views(&outcome.repo, season);
+    let (remaining_by_team, schedule_warning) = remaining_games_by_team(season).await;
+    let schedule_available = !remaining_by_team.is_empty();
+
+    let mut scenario_rosters = Vec::new();
+    if add_player.is_some() || drop_player.is_some() {
+        let baseline = snapshot
+            .teams
+            .iter()
+            .find(|team| team.name == snapshot.user_team)
+            .map(|team| team.roster.clone())
+            .unwrap_or_default();
+        let scenario = resolve_fantasy_scenario_roster_details(
+            &baseline,
+            add_player.as_deref(),
+            drop_player.as_deref(),
+            &all_skaters,
+            &all_goalies,
+        )
+        .map_err(|message| anyhow::anyhow!(message))?;
+        scenario_rosters.push(FantasySimulationScenarioRosterInput {
+            id: "cli-add-drop".to_string(),
+            label: "CLI add/drop scenario".to_string(),
+            add_player: scenario.resolved_add_player.or(add_player),
+            drop_player: scenario.resolved_drop_player.or(drop_player),
+            baseline_roster: baseline,
+            scenario_roster: scenario.roster,
+            confidence: FantasySimulationConfidence::Low,
+        });
+    }
+
+    let mut assumptions = vec![
+        "projects each roster from season-to-date fantasy points per played game".to_string(),
+        "games remaining are summed from each resolved player's NHL team schedule".to_string(),
+    ];
+    let mut warnings = Vec::new();
+    if let Some(warning) = schedule_warning {
+        warnings.push(warning);
+        assumptions.push(
+            "schedule unavailable; projection falls back to current fantasy score".to_string(),
+        );
+    }
+
+    let view = build_fantasy_simulation_view(
+        FantasySimulationBuildInput {
+            season,
+            season_type: SeasonType::Regular,
+            league: snapshot.league,
+            scoring_scheme: scheme_name.to_string(),
+            horizon: FantasySimulationHorizon::Weeks(weeks.max(1)),
+            user_team: snapshot.user_team,
+            teams: snapshot
+                .teams
+                .into_iter()
+                .map(|team| FantasySimulationRosterTeamInput {
+                    team: team.name,
+                    owner: team.owner,
+                    roster: team.roster,
+                })
+                .collect(),
+            remaining_by_team,
+            scenarios: Vec::new(),
+            scenario_rosters,
+            assumptions,
+            warnings,
+            schedule_available,
+        },
+        &all_skaters,
+        &all_goalies,
+        &scheme,
+    );
+
+    if json {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&view).context("serializing fantasy simulation")?
+        );
+        return Ok(());
+    }
+
+    print_simulation(&view);
+    Ok(())
+}
+
+async fn remaining_games_by_team(season: Season) -> (HashMap<String, u32>, Option<String>) {
+    let cache = remaining_games_by_team_from_cache(season);
+    let mut remaining = cache.remaining_by_team;
+    let complete_cache_teams = cache.complete_teams;
+    let client = NhlApiClient::production();
+    let season_string = season.0.to_string();
+    let mut failures = 0usize;
+
+    for (team, _) in icelines_core::CANONICAL_TEAMS {
+        if complete_cache_teams.contains(*team) {
+            continue;
+        }
+        match client
+            .fetch_team_season_schedule(team, &season_string)
+            .await
+        {
+            Ok(games) => {
+                let count = games
+                    .into_iter()
+                    .filter(|game| game.game_type == 2 && !game.is_final())
+                    .count() as u32;
+                remaining.insert((*team).to_string(), count);
+            }
+            Err(_) => failures += 1,
+        }
+    }
+
+    if remaining.is_empty() {
+        (
+            remaining,
+            Some("could not fetch NHL team schedules; games remaining set to 0".to_string()),
+        )
+    } else if failures > 0 {
+        (
+            remaining,
+            Some(format!(
+                "could not fetch schedules for {failures} teams; affected roster games may be undercounted"
+            )),
+        )
+    } else {
+        (remaining, None)
+    }
+}
+
+fn print_simulation(view: &FantasySimulationView) {
+    println!(
+        "Fantasy simulation - {} / {} ({:?})",
+        view.league, view.scoring_scheme, view.horizon
+    );
+    for warning in &view.warnings {
+        println!("warning: {warning}");
+    }
+    for assumption in &view.assumptions {
+        println!("assumption: {assumption}");
+    }
+    println!(
+        "{:<5} {:<24} {:<18} {:>10} {:>8} {:>8}",
+        "Rank", "Team", "Owner", "Score", "Gap", "Players"
+    );
+    for row in &view.rows {
+        println!(
+            "{:<5} {:<24} {:<18} {:>10.1} {:>8.1} {:>8}",
+            row.rank,
+            if row.is_user_team {
+                format!("{} (mine)", row.team)
+            } else {
+                row.team.clone()
+            },
+            row.owner,
+            row.projected_score,
+            row.score_gap_to_leader,
+            row.rostered_players
+        );
+    }
+    if !view.scenarios.is_empty() {
+        println!();
+        println!(
+            "{:<10} {:<24} {:>10} {:<18} Explanation",
+            "Action", "Scenario", "Delta", "Confidence"
+        );
+        for scenario in &view.scenarios {
+            println!(
+                "{:<10} {:<24} {:>10.1} {:<18} {}",
+                format!("{:?}", scenario.action).to_ascii_lowercase(),
+                scenario.label,
+                scenario.projected_score_delta,
+                format!("{:?}", scenario.confidence).to_ascii_lowercase(),
+                scenario.explanation
+            );
+        }
+    }
+}
 
 /// `icelines fantasy trade <player1> --to-team <team2> --for-player <player2> [--execute] [--league <league>]`
 pub async fn run_trade(
@@ -781,6 +1017,7 @@ async fn handle_api_standings(
         result.push(json!({
             "team": team.name,
             "owner": team.owner,
+            "is_user_team": team.is_user_team,
             "score": total,
             "players": players_json,
         }));
@@ -814,6 +1051,7 @@ async fn handle_api_teams(
                 "id": t.id,
                 "name": t.name,
                 "owner": t.owner,
+                "is_user_team": t.is_user_team,
                 "player_count": t.player_count,
             })
         })
@@ -1150,8 +1388,11 @@ pub async fn run_serve(port: u16, league_override: Option<String>) -> anyhow::Re
         let db = FantasyDb::open_path(db_path.clone())?;
         let league = require_league(&db, &league_override)?;
         let league_display = league.name.clone();
-        println!("Fantasy server running at http://0.0.0.0:{port}");
+        println!("Legacy fantasy server running at http://0.0.0.0:{port}");
         println!("League: {league_display} | Press Ctrl-C to stop");
+        println!(
+            "Note: use `icelines serve` for /fantasy roster gaps and simulation parity views."
+        );
     }
 
     let state = Arc::new(AppState {
@@ -1204,7 +1445,7 @@ mod tests {
             .view(PlayerId(8478402), Season(20242025), SeasonType::Regular)
             .unwrap();
 
-        let s = to_scheme_stats_view(&v);
+        let s = icelines_core::skater_scheme_stats_from_view(&v);
         assert_eq!(s.hits, 0, "cold-start hits must map to 0");
         assert_eq!(s.blocks, 0, "cold-start blocks must map to 0");
         assert_eq!(s.takeaways, 0, "cold-start takeaways must map to 0");
@@ -1226,11 +1467,35 @@ mod tests {
             .view(PlayerId(8478402), Season(20242025), SeasonType::Regular)
             .unwrap();
 
-        let s = to_scheme_stats_view(&v);
+        let s = icelines_core::skater_scheme_stats_from_view(&v);
         assert_eq!(s.hits, 48);
         assert_eq!(s.blocks, 22);
         assert_eq!(s.takeaways, 65);
         assert_eq!(s.giveaways, 41);
+    }
+
+    #[test]
+    fn l0_fantasy_sim_projection_uses_resolved_remaining_games() {
+        let id = fixtures::identity(8478402).build();
+        let stats = fixtures::stats(8478402, 20242025, "EDM").build();
+        let repo = fixtures::test_repo_with(id, stats);
+        let skaters: Vec<PlayerView<'_>> = repo
+            .skaters(Season(20242025), SeasonType::Regular)
+            .collect();
+        let goalies: Vec<PlayerView<'_>> = Vec::new();
+        let roster = vec!["connor mcdavid".to_string()];
+        let mut remaining = HashMap::new();
+        remaining.insert("EDM".to_string(), 10);
+
+        assert_eq!(
+            icelines_core::fantasy_roster_games_remaining(&roster, &skaters, &goalies, &remaining),
+            10
+        );
+        assert!(
+            icelines_core::project_fantasy_roster_score(
+                100.0, &roster, &skaters, &goalies, &remaining
+            ) > 100.0
+        );
     }
 
     /// Hart.5c.4: `score_team` end-to-end on a mixed roster.
@@ -1335,7 +1600,7 @@ mod tests {
         let v = repo
             .view(PlayerId(8478402), Season(20242025), SeasonType::Regular)
             .unwrap();
-        let s = to_scheme_stats_view(&v);
+        let s = icelines_core::skater_scheme_stats_from_view(&v);
         assert_eq!(s.goals, 30);
         assert_eq!(s.assists, 50);
         assert_eq!(s.hits, 48);

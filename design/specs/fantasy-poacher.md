@@ -60,6 +60,20 @@ Required behavior:
   `deployment_riser`, `goalie_streamer`, or `watch_alert`.
 - `availability_filter` is one of `any`, `available`, `not_on_user_roster`,
   `watched`, `imported_available`, or `unknown`.
+- If `categories` is empty, the board derives `scoring_categories` from the
+  selected built-in scheme (`yahoo-standard`, `espn-standard`, `simple-pts`).
+  Explicit categories always override scheme-derived categories.
+- When an active fantasy league exists locally, its roster rows feed
+  `availability_imported`: rostered players are `imported_rostered`, unrostered
+  players are `imported_available`, and `FantasyImport` source state becomes
+  complete. Without an active league, availability stays `unknown`.
+- A fantasy league may mark one team as the user's roster via
+  `icelines fantasy team-use <name>`. Players on that team are
+  `rostered_by_user`; players on other imported teams remain
+  `imported_rostered`.
+- CLI and web board/report entry points accept an availability filter. The
+  most useful waiver-wire mode is `imported_available`, which means "players
+  absent from the imported active-league rosters."
 - Bad categories, positions, teams, schemes, and sort keys fail through typed
   parser errors shared by CLI, TUI command bar, web params, and reports.
 - The cache/query signature includes season, season type, scoring scheme,
@@ -212,6 +226,9 @@ Required fields:
 - `context`
 - `query`
 - `scoring_scheme`
+- `scoring_categories`
+- `availability_imported`
+- `availability_by_player_key`
 - `window`
 - `rows: Vec<PoachPlayerRow>`
 - `source_state`
@@ -261,7 +278,7 @@ Initial watch rules:
 Required fields:
 
 - report context and generated timestamp;
-- scoring scheme/window;
+- scoring scheme/window and resolved scoring categories;
 - source state and omissions;
 - sections with stable IDs;
 - structured rows/recommendations;
@@ -287,6 +304,8 @@ CLI:
 ```bash
 icelines poach --days 14
 icelines poach --category hits,blocks
+icelines poach --availability imported-available
+icelines fantasy team-use "My Team"
 icelines poach --streamers --off-nights
 icelines poach --stash
 icelines poach --team EDM
@@ -294,7 +313,7 @@ icelines poach --json
 icelines watch player "Matthew Knies" --when pp1
 icelines watch deployment --team TOR --line-change
 icelines report poach --markdown
-icelines report weekly --league default
+icelines report weekly --league default --availability imported-available
 ```
 
 TUI:
@@ -312,14 +331,193 @@ Web:
 - `/api/v1/poach`
 - `/api/v1/watch-rules`
 
+The `/poach`, `/reports/poach`, `/reports/weekly`, and `/api/v1/poach`
+surfaces accept `availability=any|available|imported-available|not-on-user-roster|watched|unknown`.
+
 Reports:
 
 - waiver poach board;
 - weekly add/drop prep;
 - category specialist report;
 - goalie streaming report;
+- roster gap report;
 - deployment risers/fallers;
 - watched-player alerts.
+
+---
+
+## Watch Alerts
+
+Watch alerts are evaluated from the shared poach board plus local watchlist and
+user-team state. The first implementation is dry-run only: it does not persist
+new events, so the alert contract can stabilize before dedupe/history rules are
+added.
+
+Initial CLI:
+
+```bash
+icelines watch alerts
+icelines watch alerts --json
+icelines watch alerts --save
+```
+
+Initial triggers:
+
+- watched player is available;
+- watched player has deployment evidence on the poach board;
+- user-rostered player has a drop-risk signal.
+
+Required behavior:
+
+- Alert evaluation is deterministic for a fixed `PoachBoardView`.
+- Missing shift/schedule/fantasy-import data is exposed in `source_state` or
+  `unsupported_sources`; it is not scored as negative evidence.
+- The default evaluator must not write `watch_rule_events`.
+- `--save` records new alerts to `watch_rule_events` using synthetic
+  `alert-*` watch rules.
+- Alert persistence dedupes repeated `(rule_id, player, reason)` events.
+- Saved alert history appears in the TUI Watchlist group, `/watchlist`, and
+  `/api/v1/watchlist`.
+
+---
+
+## Roster Gap Mode
+
+Roster gap is the next layer after availability. It compares the user's marked
+team (`fantasy team-use`) against the league's imported free-agent pool and
+turns category fit into a team-specific recommendation.
+
+Required behavior:
+
+- If no user team is marked, the mode must degrade to the regular poach board
+  with a warning that roster gaps are unavailable.
+- User roster players are the baseline; `imported_available` players are the
+  replacement/add candidates.
+- The first implementation should aggregate the selected scoring categories for
+  the user roster and compute a simple rank/percentile gap per category.
+- Candidate rows should explain the category they improve, not only their raw
+  poach score.
+- The mode must not recommend players already on the user's roster.
+- Gap rows must expose the scoring weight used for the category, the best
+  available player's raw and weighted contribution, and a same-position
+  replacement target when the user's roster has one.
+- Replacement recommendations should rank by weighted delta first, then raw
+  category contribution, so the result matches the active league scheme instead
+  of only the largest counting total.
+
+Initial surfaces:
+
+```bash
+icelines poach --availability imported-available --category hits,blocks
+icelines report weekly --availability imported-available
+```
+
+Follow-up surface:
+
+```bash
+icelines fantasy gaps
+```
+
+Current CLI:
+
+```bash
+icelines fantasy gaps --category hits,blocks,shots
+icelines fantasy gaps --json
+```
+
+JSON contract:
+
+- `rows[*].weight` is the active scheme's skater weight for the category.
+- `rows[*].action` is `add_now`, `watch`, or `no_action`.
+- `rows[*].action_reason` explains the guardrail that produced the action.
+- `rows[*].best_available.weighted_value` is `value * weight`.
+- `rows[*].replacement_target` is the weakest resolved user-roster player at the
+  same position as `best_available`, including raw and weighted deltas.
+- `rows[*].weighted_gap_score` is the replacement weighted delta when available,
+  otherwise the best available player's weighted value.
+
+Action policy:
+
+- `add_now`: same-position replacement has a meaningful positive weighted delta.
+- `watch`: the candidate is useful, but the delta is small or no same-position
+  replacement was resolved.
+- `no_action`: no candidate exists, or the same-position replacement delta is
+  zero/negative.
+
+## Season Simulation
+
+Season simulation is the next decision layer after roster gaps. Given imported
+fantasy teams, scoring scheme, NHL schedule, and active rosters, the simulator
+should estimate how the user's team performs over the remaining season under
+different add/drop strategies.
+
+Shared contract:
+
+- `FantasySimulationView` is the presentation boundary for simulation surfaces.
+- `rows` rank fantasy teams by projected score for the chosen horizon.
+- `scenarios` compare add/drop or stream decisions against the baseline roster.
+- `source_state` must distinguish imported fantasy roster coverage from schedule
+  coverage; missing schedule data keeps the view partial rather than silently
+  pretending a true season sim ran.
+
+Required model:
+
+- input fantasy league, user team, scoring scheme, and scenario roster;
+- project each roster's score by schedule window and category/points scheme;
+- compare baseline roster against candidate add/drop scenarios;
+- emit per-team standings projection, category weaknesses, and sensitivity to
+  games remaining/off-night fit;
+- never mutate the fantasy league unless a future explicit execute command is
+  added.
+
+Initial surface:
+
+```bash
+icelines fantasy simulate --weeks 4
+icelines fantasy simulate --add "Player A" --drop "Player B" --json
+```
+
+Current scaffold behavior:
+
+- ranks imported fantasy teams using current season-to-date fantasy score per
+  played game plus resolved NHL games remaining;
+- accepts add/drop, add-only, and drop-only scenarios and reports score and
+  game deltas;
+- resolves scenario players against canonical skater/goalie names before
+  projection, so output labels are stable across CLI, web JSON, web HTML, and
+  TUI renderers;
+- rejects invalid drops that are not present on the user's active roster and
+  renders the error explicitly rather than projecting a misleading roster;
+- degrades to current-score projection if NHL team schedule fetch is unavailable;
+- still does not model head-to-head weekly matchups, roster slots, starts/benches,
+  or category-vs-points standings.
+
+Current surfaces:
+
+- CLI `fantasy simulate` text/JSON renders the shared
+  `FantasySimulationView`.
+- TUI fantasy simulation renders team projection rows and scenario rows from
+  `FantasySimulationView`.
+- Web `/fantasy` renders roster gaps, simulation rows, scenario rows, and
+  scenario-resolution warnings from the same ViewModels.
+- Web `/api/v1/fantasy/gaps` returns `FantasyRosterGapView`.
+- Web `/api/v1/fantasy/simulate` returns `FantasySimulationView`.
+
+Renderer rule:
+
+Surfaces may format, truncate, color, or wrap fantasy rows. They must not
+recompute fantasy scores, roster projection deltas, scenario classification, or
+canonical add/drop resolution. Legacy CLI league-management text may adapt
+`score_fantasy_roster` into `(name, score)` pairs, but the scoring itself stays
+in the core ViewModel layer.
+
+Future game engine:
+
+The same simulation core can support games: draft-room games, fantasy manager
+challenges, roster-optimization puzzles, or "beat the league" season replays.
+Those game surfaces should still render through ViewModels. Game-specific
+state, scoring, levels, and achievements should wrap `FantasySimulationView`
+instead of forking roster scoring logic.
 
 ---
 

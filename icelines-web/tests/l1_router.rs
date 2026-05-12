@@ -16,11 +16,12 @@ use icelines_core::identity::PlayerId;
 use icelines_core::season_stats::SeasonType;
 use icelines_core::view_model::{DepthGoalieSlot, DepthLine, DepthPair, DepthPlayerSlot};
 use icelines_core::{
-    CareerSortKey, CareerView, CompareView, DepthLeagueView, DepthTeamStrengthRow, MetricCell,
-    MetricValue, PlayerCardView, Season, SimilarPlayersView, TeamAbbr, TeamDepthView, ViewContext,
-    ViewWindow,
+    fixtures, CareerSortKey, CareerView, CompareView, DepthLeagueView, DepthTeamStrengthRow,
+    MetricCell, MetricValue, PlayerCardView, Season, SimilarPlayersView, TeamAbbr, TeamDepthView,
+    ViewContext, ViewWindow,
 };
 use icelines_fetch::career_landing::CareerHistoryStore;
+use icelines_fetch::fantasy_db::FantasyDb;
 use icelines_fetch::snapshot::SnapshotStore;
 use icelines_fetch::stats_loader::{load_into_repo, load_player_career_into_repo};
 use icelines_web::{router, WebConfig, WebState};
@@ -34,6 +35,94 @@ use tower::util::ServiceExt;
 async fn home_env_lock() -> tokio::sync::MutexGuard<'static, ()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
     LOCK.get_or_init(|| Mutex::new(())).lock().await
+}
+
+struct HomeEnvFixture {
+    _dir: tempfile::TempDir,
+    prev_userprofile: Option<std::ffi::OsString>,
+    prev_home: Option<std::ffi::OsString>,
+}
+
+impl HomeEnvFixture {
+    fn new() -> Self {
+        let dir = tempfile::TempDir::new().expect("temp home");
+        let prev_userprofile = std::env::var_os("USERPROFILE");
+        let prev_home = std::env::var_os("HOME");
+        std::env::set_var("USERPROFILE", dir.path());
+        std::env::set_var("HOME", dir.path());
+        Self {
+            _dir: dir,
+            prev_userprofile,
+            prev_home,
+        }
+    }
+}
+
+impl Drop for HomeEnvFixture {
+    fn drop(&mut self) {
+        match &self.prev_userprofile {
+            Some(p) => std::env::set_var("USERPROFILE", p),
+            None => std::env::remove_var("USERPROFILE"),
+        }
+        match &self.prev_home {
+            Some(p) => std::env::set_var("HOME", p),
+            None => std::env::remove_var("HOME"),
+        }
+    }
+}
+
+fn seed_fantasy_league(name: &str, user_roster: &[&str], rival_roster: &[&str]) {
+    let db = FantasyDb::open().expect("open fantasy db");
+    let league_id = db
+        .create_league(name, "yahoo-standard")
+        .expect("create fantasy league");
+    db.set_active_league(name).expect("set active league");
+    let mine = db
+        .create_team(&league_id, "My Team", "Me")
+        .expect("create user team");
+    let rival = if rival_roster.is_empty() {
+        None
+    } else {
+        Some(
+            db.create_team(&league_id, "Rival Team", "Them")
+                .expect("create rival team"),
+        )
+    };
+    db.set_user_team(&league_id, "My Team")
+        .expect("set user team");
+    for player in user_roster {
+        db.add_player(&mine, player).expect("add user player");
+    }
+    if let Some(rival) = rival {
+        for player in rival_roster {
+            db.add_player(&rival, player).expect("add rival player");
+        }
+    }
+}
+
+fn repo_with_mcdavid() -> icelines_core::stats_repository::StatsRepository {
+    let identity = fixtures::identity(8478402)
+        .name("Connor McDavid", "connor_mcdavid")
+        .build();
+    let stats = fixtures::stats(8478402, 20252026, "EDM").build();
+    fixtures::test_repo_with(identity, stats)
+}
+
+fn repo_with_mcdavid_and_bench_forward() -> icelines_core::stats_repository::StatsRepository {
+    let mut repo = repo_with_mcdavid();
+    repo.upsert_identity(
+        fixtures::identity(1)
+            .name("Bench Forward", "bench_forward")
+            .build(),
+    )
+    .expect("upsert bench identity");
+    repo.upsert_stats(
+        fixtures::stats(1, 20252026, "SEA")
+            .position(icelines_core::model::Position::Goalie)
+            .build(),
+    )
+    .expect("upsert bench stats");
+    repo
 }
 
 async fn response_json(response: Response, limit: usize) -> Value {
@@ -655,6 +744,14 @@ async fn l1_get_root_returns_200_html() {
         body.contains("IceLines") && body.contains("Top scorers"),
         "home page should render the askama template content"
     );
+    assert!(
+        body.contains("/fantasy") && body.contains("roster gaps and league simulation"),
+        "home page should advertise the live fantasy read/product surface"
+    );
+    assert!(
+        !body.contains("Fantasy</a> <small>(soon"),
+        "home page must not describe the mounted fantasy surface as soon/deferred"
+    );
 }
 
 /// l1_html_each_route_has_active_season_header
@@ -729,6 +826,263 @@ async fn l1_html_each_route_has_active_season_header() {
              base.html and the handler passes active_label)"
         );
     }
+}
+
+#[tokio::test]
+async fn l1_fantasy_simulation_json_projects_seeded_league() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+
+    seed_fantasy_league(
+        "Route Test League",
+        &["connor_mcdavid"],
+        &["nathan_mackinnon"],
+    );
+
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/fantasy/simulate")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json = response_json(response, 256 * 1024).await;
+    assert_eq!(json["league"], "Route Test League");
+    assert_eq!(json["user_team"], "My Team");
+    assert_eq!(json["scoring_scheme"], "yahoo-standard");
+    assert_eq!(json["rows"].as_array().expect("rows array").len(), 2);
+    assert!(json["warnings"]
+        .as_array()
+        .expect("warnings array")
+        .iter()
+        .any(|warning| warning
+            .as_str()
+            .is_some_and(|text| text.contains("schedule unavailable"))));
+}
+
+#[tokio::test]
+async fn l1_fantasy_gaps_json_projects_seeded_league() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+
+    seed_fantasy_league("Gap Route League", &[], &[]);
+
+    let app = router(WebState::with_repo(repo_with_mcdavid()));
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/fantasy/gaps?category=points&top=1")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json = response_json(response, 256 * 1024).await;
+    assert_eq!(json["league"], "Gap Route League");
+    assert_eq!(json["team"], "My Team");
+    assert_eq!(json["scoring_scheme"], "yahoo-standard");
+    assert_eq!(json["categories"], serde_json::json!(["points"]));
+
+    let rows = json["rows"].as_array().expect("rows array");
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0]["category"], "points");
+    assert_eq!(rows[0]["best_available"]["display_name"], "Connor McDavid");
+    assert!(
+        rows[0]["weighted_gap_score"]
+            .as_f64()
+            .expect("weighted gap score number")
+            > 0.0
+    );
+}
+
+#[tokio::test]
+async fn l1_fantasy_simulation_json_projects_add_scenario() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+
+    seed_fantasy_league("Scenario League", &[], &[]);
+    let app = router(WebState::with_repo(repo_with_mcdavid()));
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/fantasy/simulate?add_player=Connor%20McDavid")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json = response_json(response, 256 * 1024).await;
+    let scenarios = json["scenarios"].as_array().expect("scenarios array");
+    assert_eq!(scenarios.len(), 1);
+    assert_eq!(scenarios[0]["add_player"], "Connor McDavid");
+    assert_eq!(scenarios[0]["action"], "improve");
+    assert!(
+        scenarios[0]["projected_score_delta"]
+            .as_f64()
+            .expect("scenario delta number")
+            > 0.0
+    );
+}
+
+#[tokio::test]
+async fn l1_fantasy_simulation_json_projects_swap_scenario() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+
+    seed_fantasy_league("Swap Scenario League", &["bench_forward"], &[]);
+    let app = router(WebState::with_repo(repo_with_mcdavid_and_bench_forward()));
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri(
+                    "/api/v1/fantasy/simulate?add_player=Connor%20McDavid&drop_player=Bench%20Forward",
+                )
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json = response_json(response, 256 * 1024).await;
+    let scenarios = json["scenarios"].as_array().expect("scenarios array");
+    assert_eq!(scenarios.len(), 1);
+    assert_eq!(scenarios[0]["add_player"], "Connor McDavid");
+    assert_eq!(scenarios[0]["drop_player"], "Bench Forward");
+    assert_eq!(scenarios[0]["action"], "improve");
+    assert!(scenarios[0]["explanation"]
+        .as_str()
+        .expect("scenario explanation")
+        .contains("Connor McDavid for Bench Forward"));
+    assert!(
+        scenarios[0]["projected_score_delta"]
+            .as_f64()
+            .expect("scenario delta number")
+            > 0.0
+    );
+}
+
+#[tokio::test]
+async fn l1_fantasy_simulation_json_projects_drop_only_scenario() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+
+    seed_fantasy_league("Drop Only Scenario League", &["bench_forward"], &[]);
+    let app = router(WebState::with_repo(repo_with_mcdavid_and_bench_forward()));
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/fantasy/simulate?drop_player=Bench%20Forward")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json = response_json(response, 256 * 1024).await;
+    let scenarios = json["scenarios"].as_array().expect("scenarios array");
+    assert_eq!(scenarios.len(), 1);
+    assert_eq!(scenarios[0]["add_player"], serde_json::Value::Null);
+    assert_eq!(scenarios[0]["drop_player"], "Bench Forward");
+    assert_eq!(scenarios[0]["action"], "avoid");
+    assert!(
+        scenarios[0]["projected_score_delta"]
+            .as_f64()
+            .expect("scenario delta number")
+            <= 0.0
+    );
+}
+
+#[tokio::test]
+async fn l1_fantasy_simulation_json_rejects_unknown_drop_player() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+
+    seed_fantasy_league("Bad Drop League", &["bench_forward"], &[]);
+
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/fantasy/simulate?drop_player=Ghost%20Player")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    let json = response_json(response, 256 * 1024).await;
+    assert!(json["error"]
+        .as_str()
+        .expect("error message")
+        .contains("was not found on the active fantasy roster"));
+}
+
+#[tokio::test]
+async fn l1_fantasy_html_shows_unknown_drop_warning() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+
+    seed_fantasy_league("Bad Drop Html League", &["bench_forward"], &[]);
+
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/fantasy?drop_player=Ghost%20Player")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+    assert!(body.contains("Fantasy simulation unavailable"));
+    assert!(body.contains("was not found on the active fantasy roster"));
+    assert!(body.contains("value=\"Ghost Player\""));
+}
+
+#[tokio::test]
+async fn l1_fantasy_html_renders_add_scenario() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+
+    seed_fantasy_league("Fantasy Html League", &[], &[]);
+    let app = router(WebState::with_repo(repo_with_mcdavid()));
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/fantasy?add_player=Connor%20McDavid")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+    assert!(body.contains("League Simulation"));
+    assert!(body.contains("Web add/drop scenario"));
+    assert!(body.contains("value=\"Connor McDavid\""));
+    assert!(body.contains("improve"));
 }
 
 /// l1_depth_route_returns_200_html
@@ -944,6 +1298,13 @@ async fn l1_watchlist_route_renders_watch_reason_metadata() {
             source TEXT NOT NULL DEFAULT '',
             updated_at TEXT NOT NULL
          );
+         CREATE TABLE watch_rule_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            rule_id TEXT NOT NULL,
+            entity_ref TEXT,
+            message TEXT NOT NULL,
+            fired_at TEXT NOT NULL
+         );
          INSERT INTO groups VALUES ('Watchlist', '', datetime('now'));
          INSERT INTO group_members VALUES ('Watchlist', 'player:matthew knies', datetime('now'));
          INSERT INTO watch_notes VALUES (
@@ -951,7 +1312,14 @@ async fn l1_watchlist_route_renders_watch_reason_metadata() {
             'Poach score 72.0; confidence High; PP1 promotion',
             'tui-poach',
             datetime('now')
-         );",
+         );
+         INSERT INTO watch_rule_events (rule_id, entity_ref, message, fired_at)
+            VALUES (
+                'alert-watched-available',
+                'player:matthew knies',
+                'Matthew Knies is available.',
+                '2026-05-09T13:00:00Z'
+            );",
     )
     .expect("seed watchlist db");
 
@@ -983,6 +1351,9 @@ async fn l1_watchlist_route_renders_watch_reason_metadata() {
 
     assert!(body.contains("matthew knies"));
     assert!(body.contains("Poach score 72.0"));
+    assert!(body.contains("Recent Alerts"));
+    assert!(body.contains("alert-watched-available"));
+    assert!(body.contains("Matthew Knies is available."));
 }
 
 #[tokio::test]
@@ -1089,6 +1460,13 @@ async fn l1_watchlist_json_returns_watch_reason_metadata() {
             source TEXT NOT NULL DEFAULT '',
             updated_at TEXT NOT NULL
          );
+         CREATE TABLE watch_rule_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            rule_id TEXT NOT NULL,
+            entity_ref TEXT,
+            message TEXT NOT NULL,
+            fired_at TEXT NOT NULL
+         );
          INSERT INTO groups VALUES ('Watchlist', '', datetime('now'));
          INSERT INTO group_members VALUES ('Watchlist', 'player:matthew knies', datetime('now'));
          INSERT INTO watch_notes VALUES (
@@ -1096,7 +1474,14 @@ async fn l1_watchlist_json_returns_watch_reason_metadata() {
             'Poach score 72.0; confidence High; PP1 promotion',
             'tui-poach',
             '2026-05-09T12:00:00Z'
-         );",
+         );
+         INSERT INTO watch_rule_events (rule_id, entity_ref, message, fired_at)
+            VALUES (
+                'alert-watched-available',
+                'player:matthew knies',
+                'Matthew Knies is available.',
+                '2026-05-09T13:00:00Z'
+            );",
     )
     .expect("seed watchlist db");
 
@@ -1138,6 +1523,9 @@ async fn l1_watchlist_json_returns_watch_reason_metadata() {
     );
     assert_eq!(body["data"][0]["source"], "tui-poach");
     assert_eq!(body["data"][0]["updated_at"], "2026-05-09T12:00:00Z");
+    assert_eq!(body["alerts"][0]["rule_id"], "alert-watched-available");
+    assert_eq!(body["alerts"][0]["entity_ref"], "player:matthew knies");
+    assert_eq!(body["alerts"][0]["message"], "Matthew Knies is available.");
 }
 
 #[tokio::test]
@@ -1147,7 +1535,7 @@ async fn l1_poach_route_returns_200_html() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/poach?category=hits,blocks&top=5")
+                .uri("/poach?category=hits,blocks&availability=imported-available&top=5")
                 .body(Body::empty())
                 .expect("request builder ok"),
         )
@@ -1162,6 +1550,7 @@ async fn l1_poach_route_returns_200_html() {
 
     assert!(body.contains("Fantasy Poacher"));
     assert!(body.contains("href=\"/poach\""));
+    assert!(body.contains("imported-available"));
     assert!(body.contains("Missing poacher source data"));
 }
 
@@ -1225,7 +1614,7 @@ async fn l1_poach_json_returns_view_model_contract() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/api/v1/poach?category=hits,blocks&pos=LW&top=5")
+                .uri("/api/v1/poach?category=hits,blocks&pos=LW&availability=imported-available&top=5")
                 .body(Body::empty())
                 .expect("request builder ok"),
         )
@@ -1241,6 +1630,7 @@ async fn l1_poach_json_returns_view_model_contract() {
     assert_eq!(json["scoring_scheme"], "yahoo-standard");
     assert_eq!(json["query"]["categories"][0], "hits");
     assert_eq!(json["query"]["positions"][0], "LeftWing");
+    assert_eq!(json["query"]["availability_filter"], "imported_available");
     assert_eq!(json["empty_state"]["kind"], "missing_source");
 }
 

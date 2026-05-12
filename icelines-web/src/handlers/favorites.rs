@@ -1,11 +1,11 @@
 use super::favorites_data::{
-    group_api_rows_from_view, mutate_favorites, read_group_members, read_watch_notes,
-    watchlist_api_rows, GroupApiMeta, GroupApiResponse, MutateOp, WatchlistApiMeta,
-    WatchlistApiResponse,
+    group_api_rows_from_view, mutate_favorites, read_group_members, read_watch_alert_events,
+    read_watch_notes, watchlist_api_rows, GroupApiMeta, GroupApiResponse, MutateOp,
+    WatchAlertEvent, WatchlistApiMeta, WatchlistApiResponse,
 };
 use crate::templates::{
-    FavoritePlayerRow, FavoriteTeamRow, FavoritesTemplate, WatchlistPlayerRow, WatchlistTeamRow,
-    WatchlistTemplate,
+    FavoritePlayerRow, FavoriteTeamRow, FavoritesTemplate, WatchlistAlertRow, WatchlistPlayerRow,
+    WatchlistTeamRow, WatchlistTemplate,
 };
 use askama::Template;
 use axum::extract::{Form, State};
@@ -62,6 +62,7 @@ pub async fn get_favorites(State(state): State<crate::WebState>) -> Response {
 pub async fn get_watchlist(State(state): State<crate::WebState>) -> Response {
     let members = read_group_members("Watchlist");
     let notes = read_watch_notes();
+    let alerts = read_watch_alert_events(5);
     let (active_label, context) = favorites_context(&state).await;
     let view = WatchlistView::from_members(
         context,
@@ -87,6 +88,7 @@ pub async fn get_watchlist(State(state): State<crate::WebState>) -> Response {
                 key: row.key.clone(),
             })
             .collect(),
+        alerts: alerts.iter().map(watchlist_alert_row).collect(),
     };
 
     render_template(tmpl)
@@ -153,6 +155,7 @@ fn favorite_player_row(row: &FavoriteMemberRow) -> FavoritePlayerRow {
 pub async fn get_watchlist_json() -> Response {
     let members = read_group_members("Watchlist");
     let notes = read_watch_notes();
+    let alerts = read_watch_alert_events(10);
     let view = WatchlistView::from_members(
         ViewContext::new(ViewWindow::new(
             Season(icelines_core::CURRENT_SEASON),
@@ -173,6 +176,7 @@ pub async fn get_watchlist_json() -> Response {
         schema_version: "watchlist.v1",
         route: "watchlist",
         data: rows,
+        alerts,
         meta,
     })
     .into_response()
@@ -200,6 +204,15 @@ fn watchlist_player_row(row: &WatchlistMemberRow) -> WatchlistPlayerRow {
     WatchlistPlayerRow {
         key: row.key.clone(),
         reason: row.reason.clone().unwrap_or_default(),
+    }
+}
+
+fn watchlist_alert_row(row: &WatchAlertEvent) -> WatchlistAlertRow {
+    WatchlistAlertRow {
+        fired_at: row.fired_at.clone(),
+        rule_id: row.rule_id.clone(),
+        entity: row.entity_ref.clone().unwrap_or_else(|| "-".to_string()),
+        message: row.message.clone(),
     }
 }
 

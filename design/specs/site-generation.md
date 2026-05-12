@@ -120,7 +120,8 @@ Pace rank: **1**
 
 ## Goaltenders
 
-(deferred — goalie data not bundled)
+Goalie rows are available from the bundled goalie repository when the selected
+season has goalie data.
 
 ## All skaters (ranked)
 

@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::identity::PlayerId;
 use crate::model::{Position, Season, TeamAbbr};
 use crate::name::normalize_name;
+use crate::scheme::Scheme;
 use crate::season_stats::SeasonType;
 use crate::stats_repository::{PlayerView, StatsRepository};
 use crate::view_model::context::{
@@ -12,12 +13,14 @@ use crate::view_model::context::{
     ViewWarning, ViewWindow,
 };
 use crate::view_model::tokens::{MetricUnit, SemanticToken};
+use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PoachBoardView {
     pub context: ViewContext,
     pub query: PoachQuery,
     pub scoring_scheme: String,
+    pub scoring_categories: Vec<String>,
     pub window: PoachWindow,
     pub applied_filters: Vec<AppliedFilter>,
     pub sort: Option<SortState>,
@@ -33,6 +36,7 @@ impl PoachBoardView {
         let window = query.window;
         Self {
             context,
+            scoring_categories: query.effective_categories(),
             query,
             scoring_scheme: scoring_scheme.into(),
             window,
@@ -58,7 +62,10 @@ impl PoachBoardView {
 
     pub fn from_repository(repo: &StatsRepository, query: PoachQuery) -> Self {
         let has_window = repo.has_window(query.season, query.season_type);
-        let context = poach_context_for_sources(query.season, query.season_type, has_window);
+        let mut context = poach_context_for_sources(query.season, query.season_type, has_window);
+        if has_window && query.availability_imported {
+            mark_source_complete(&mut context.source_state, SourceKind::FantasyImport);
+        }
         let mut view = Self::new(context, query.clone(), query.scoring_scheme.clone());
         view.sort = Some(SortState {
             key: SortKey::from("poach_score"),
@@ -360,6 +367,8 @@ pub struct PoachQuery {
     pub positions: Vec<Position>,
     pub teams: Vec<TeamAbbr>,
     pub availability_filter: PoachAvailabilityFilter,
+    pub availability_imported: bool,
+    pub availability_by_player_key: BTreeMap<String, AvailabilityState>,
     pub candidate_kind: PoachCandidateKind,
     pub schedule_filter: Option<PoachScheduleFilter>,
     pub min_confidence: Option<PoachConfidence>,
@@ -378,6 +387,8 @@ impl PoachQuery {
             positions: Vec::new(),
             teams: Vec::new(),
             availability_filter: PoachAvailabilityFilter::Any,
+            availability_imported: false,
+            availability_by_player_key: BTreeMap::new(),
             candidate_kind: PoachCandidateKind::All,
             schedule_filter: None,
             min_confidence: None,
@@ -399,6 +410,10 @@ impl PoachQuery {
             return false;
         }
 
+        if !self.matches_availability(self.availability_for_player(player)) {
+            return false;
+        }
+
         match self.candidate_kind {
             PoachCandidateKind::All
             | PoachCandidateKind::CategorySpecialist
@@ -407,6 +422,109 @@ impl PoachQuery {
             PoachCandidateKind::Stash
             | PoachCandidateKind::GoalieStreamer
             | PoachCandidateKind::WatchAlert => true,
+        }
+    }
+
+    pub fn effective_categories(&self) -> Vec<String> {
+        if !self.categories.is_empty() {
+            return self
+                .categories
+                .iter()
+                .map(|c| normalize_category(c))
+                .collect();
+        }
+        Scheme::builtin_named(&self.scoring_scheme)
+            .map(|scheme| {
+                scheme
+                    .skater_category_keys()
+                    .into_iter()
+                    .map(ToOwned::to_owned)
+                    .collect()
+            })
+            .unwrap_or_else(|| {
+                vec![
+                    "hits".to_string(),
+                    "blocks".to_string(),
+                    "shots".to_string(),
+                ]
+            })
+    }
+
+    pub fn with_imported_availability<I, S>(mut self, rostered_player_keys: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<str>,
+    {
+        self.availability_imported = true;
+        self.availability_by_player_key = rostered_player_keys
+            .into_iter()
+            .map(|key| {
+                (
+                    normalize_name(key.as_ref()),
+                    AvailabilityState::ImportedRostered,
+                )
+            })
+            .collect();
+        self
+    }
+
+    pub fn with_imported_league_availability<I, S, U, T>(
+        mut self,
+        rostered_player_keys: I,
+        user_rostered_player_keys: U,
+    ) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<str>,
+        U: IntoIterator<Item = T>,
+        T: AsRef<str>,
+    {
+        self.availability_imported = true;
+        self.availability_by_player_key = rostered_player_keys
+            .into_iter()
+            .map(|key| {
+                (
+                    normalize_name(key.as_ref()),
+                    AvailabilityState::ImportedRostered,
+                )
+            })
+            .collect();
+        for key in user_rostered_player_keys {
+            self.availability_by_player_key.insert(
+                normalize_name(key.as_ref()),
+                AvailabilityState::RosteredByUser,
+            );
+        }
+        self
+    }
+
+    pub fn availability_for_player(&self, player: &PlayerView<'_>) -> AvailabilityState {
+        if !self.availability_imported {
+            return AvailabilityState::Unknown;
+        }
+        self.availability_by_player_key
+            .get(&player.identity.name_normalized)
+            .copied()
+            .unwrap_or(AvailabilityState::ImportedAvailable)
+    }
+
+    fn matches_availability(&self, state: AvailabilityState) -> bool {
+        match self.availability_filter {
+            PoachAvailabilityFilter::Any => true,
+            PoachAvailabilityFilter::Available => {
+                matches!(
+                    state,
+                    AvailabilityState::Available | AvailabilityState::ImportedAvailable
+                )
+            }
+            PoachAvailabilityFilter::NotOnUserRoster => {
+                !matches!(state, AvailabilityState::RosteredByUser)
+            }
+            PoachAvailabilityFilter::Watched => matches!(state, AvailabilityState::Watched),
+            PoachAvailabilityFilter::ImportedAvailable => {
+                matches!(state, AvailabilityState::ImportedAvailable)
+            }
+            PoachAvailabilityFilter::Unknown => matches!(state, AvailabilityState::Unknown),
         }
     }
 }
@@ -589,9 +707,130 @@ pub enum WatchRuleTrigger {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct WatchAlertsView {
+    pub context: ViewContext,
+    pub alerts: Vec<WatchAlertRow>,
+    pub source_state: Vec<SourceState>,
+    pub warnings: Vec<ViewWarning>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct WatchAlertRow {
+    pub player_id: PlayerId,
+    pub display_name: String,
+    pub trigger: WatchAlertTrigger,
+    pub severity: WatchAlertSeverity,
+    pub reason: String,
+    pub unsupported_sources: Vec<SourceKind>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum WatchAlertTrigger {
+    WatchedAvailable,
+    WatchedDeploymentSignal,
+    UserRosterDropRisk,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum WatchAlertSeverity {
+    Info,
+    Opportunity,
+    Warning,
+}
+
+pub fn evaluate_watch_alerts(
+    board: &PoachBoardView,
+    watched_player_keys: &[String],
+) -> WatchAlertsView {
+    let watched: std::collections::BTreeSet<String> = watched_player_keys
+        .iter()
+        .map(|key| normalize_name(key))
+        .collect();
+    let mut alerts = Vec::new();
+
+    for row in &board.rows {
+        let key = normalize_name(&row.display_name);
+        let is_watched = watched.contains(&key);
+
+        if is_watched
+            && matches!(
+                row.availability,
+                AvailabilityState::Available | AvailabilityState::ImportedAvailable
+            )
+        {
+            alerts.push(WatchAlertRow {
+                player_id: row.player_id,
+                display_name: row.display_name.clone(),
+                trigger: WatchAlertTrigger::WatchedAvailable,
+                severity: WatchAlertSeverity::Opportunity,
+                reason: format!(
+                    "{} is available and has poach score {:.1}.",
+                    row.display_name, row.score.final_score
+                ),
+                unsupported_sources: Vec::new(),
+            });
+        }
+
+        if is_watched && !matches!(row.deployment, DeploymentSignal::Unknown) {
+            alerts.push(WatchAlertRow {
+                player_id: row.player_id,
+                display_name: row.display_name.clone(),
+                trigger: WatchAlertTrigger::WatchedDeploymentSignal,
+                severity: WatchAlertSeverity::Info,
+                reason: format!(
+                    "{} has deployment evidence on the poach board.",
+                    row.display_name
+                ),
+                unsupported_sources: vec![SourceKind::Shifts],
+            });
+        }
+
+        if row.availability == AvailabilityState::RosteredByUser && row.risk_summary.is_some() {
+            alerts.push(WatchAlertRow {
+                player_id: row.player_id,
+                display_name: row.display_name.clone(),
+                trigger: WatchAlertTrigger::UserRosterDropRisk,
+                severity: WatchAlertSeverity::Warning,
+                reason: format!(
+                    "{} is on your roster and carries risk: {}.",
+                    row.display_name,
+                    row.risk_summary.as_deref().unwrap_or("risk signal")
+                ),
+                unsupported_sources: Vec::new(),
+            });
+        }
+    }
+
+    alerts.sort_by(|a, b| {
+        severity_rank(b.severity)
+            .cmp(&severity_rank(a.severity))
+            .then_with(|| a.display_name.cmp(&b.display_name))
+            .then_with(|| format!("{:?}", a.trigger).cmp(&format!("{:?}", b.trigger)))
+    });
+
+    WatchAlertsView {
+        context: board.context.clone(),
+        alerts,
+        source_state: board.source_state.clone(),
+        warnings: board.warnings.clone(),
+    }
+}
+
+fn severity_rank(severity: WatchAlertSeverity) -> u8 {
+    match severity {
+        WatchAlertSeverity::Warning => 3,
+        WatchAlertSeverity::Opportunity => 2,
+        WatchAlertSeverity::Info => 1,
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PoachReportView {
     pub context: ReportContext,
     pub scoring_scheme: String,
+    pub scoring_categories: Vec<String>,
     pub window: PoachWindow,
     pub source_state: Vec<SourceState>,
     pub warnings: Vec<ViewWarning>,
@@ -635,6 +874,12 @@ fn poach_context_for_sources(
         context.source_state = vec![SourceState::missing(SourceKind::Roster)];
     }
     context
+}
+
+fn mark_source_complete(source_state: &mut [SourceState], source: SourceKind) {
+    if let Some(state) = source_state.iter_mut().find(|state| state.source == source) {
+        state.state = Completeness::Complete;
+    }
 }
 
 fn row_from_player(player: &PlayerView<'_>, query: &PoachQuery) -> PoachPlayerRow {
@@ -684,7 +929,7 @@ fn row_from_player(player: &PlayerView<'_>, query: &PoachQuery) -> PoachPlayerRo
             .cloned()
             .unwrap_or_else(|| TeamAbbr("UNK".to_string())),
         position: player.position(),
-        availability: AvailabilityState::Unknown,
+        availability: query.availability_for_player(player),
         recommendation_kinds: vec![RecommendationKind::CategoryFit],
         score,
         confidence,
@@ -780,10 +1025,10 @@ fn deployment_value(player: &PlayerView<'_>) -> f64 {
 }
 
 fn category_fit_value(player: &PlayerView<'_>, query: &PoachQuery) -> f64 {
-    let wants_hits = query.categories.is_empty() || query.categories.iter().any(|c| c == "hits");
-    let wants_blocks =
-        query.categories.is_empty() || query.categories.iter().any(|c| c == "blocks");
-    let wants_shots = query.categories.is_empty() || query.categories.iter().any(|c| c == "shots");
+    let categories = query.effective_categories();
+    let wants_hits = categories.iter().any(|c| c == "hits");
+    let wants_blocks = categories.iter().any(|c| c == "blocks");
+    let wants_shots = categories.iter().any(|c| c == "shots");
 
     let mut value: f64 = 0.0;
     if wants_hits {
@@ -796,6 +1041,15 @@ fn category_fit_value(player: &PlayerView<'_>, query: &PoachQuery) -> f64 {
         value += player.shots_per_82().unwrap_or(0.0) / 24.0;
     }
     value.clamp(0.0, 25.0)
+}
+
+fn normalize_category(value: &str) -> String {
+    match value.trim().to_ascii_lowercase().replace('-', "_").as_str() {
+        "shot" | "sog" | "shots_on_goal" => "shots".to_string(),
+        "blocked_shots" | "blk" => "blocks".to_string(),
+        "hit" => "hits".to_string(),
+        other => other.to_string(),
+    }
 }
 
 fn risk_discount_value(player: &PlayerView<'_>) -> f64 {
@@ -920,6 +1174,7 @@ pub fn poach_report_from_board(board: PoachBoardView) -> PoachReportView {
     PoachReportView {
         context: poach_report_context(board.context.clone(), "poach-report"),
         scoring_scheme: board.scoring_scheme,
+        scoring_categories: board.scoring_categories,
         window: board.window,
         source_state: board.source_state,
         warnings: board.warnings,
@@ -997,6 +1252,7 @@ pub fn weekly_poach_report_from_board_with_watched(
     PoachReportView {
         context,
         scoring_scheme: board.scoring_scheme,
+        scoring_categories: board.scoring_categories,
         window: board.window,
         source_state: board.source_state,
         warnings: board.warnings,
@@ -1085,6 +1341,7 @@ mod tests {
         assert_eq!(json["context"]["window"]["season_type"], "regular");
         assert_eq!(json["query"]["window"], "days14");
         assert_eq!(json["scoring_scheme"], "yahoo-standard");
+        assert_eq!(json["scoring_categories"][0], "hits");
         assert_eq!(json["sort"]["key"], "poach_score");
         assert_eq!(json["sort"]["direction"], "desc");
 
@@ -1141,6 +1398,7 @@ mod tests {
         let report = PoachReportView {
             context: poach_report_context(board.context.clone(), "poach-weekly-fixture"),
             scoring_scheme: board.scoring_scheme.clone(),
+            scoring_categories: board.scoring_categories.clone(),
             window: board.window,
             source_state: board.source_state.clone(),
             warnings: Vec::new(),
@@ -1157,6 +1415,7 @@ mod tests {
         assert_eq!(json["context"]["kind"], "poach");
         assert_eq!(json["context"]["report_id"], "poach-weekly-fixture");
         assert_eq!(json["sections"][0]["id"], "top_adds");
+        assert_eq!(json["scoring_categories"][0], "hits");
         assert_eq!(json["sections"][0]["rows"][0]["player_id"], 8482109);
         assert_eq!(json["omissions"][0], "ownership import unavailable");
     }
@@ -1213,6 +1472,10 @@ mod tests {
         let board = PoachBoardView::from_repository(&repo, query);
 
         assert_eq!(board.rows.len(), 1);
+        assert_eq!(
+            board.scoring_categories,
+            vec!["hits".to_string(), "blocks".to_string()]
+        );
         assert_eq!(board.context.completeness, Completeness::Partial);
         assert_eq!(board.source_state[0].source, SourceKind::Roster);
         assert_eq!(board.source_state[1].source, SourceKind::Schedule);
@@ -1227,6 +1490,148 @@ mod tests {
             ComponentStatus::Measured
         );
         assert_eq!(board.contract_errors(), Vec::<String>::new());
+    }
+
+    #[test]
+    fn poach_query_uses_builtin_scheme_categories_when_no_override() {
+        let yahoo = PoachQuery::new(Season(20242025), SeasonType::Regular, "yahoo-standard");
+        let simple = PoachQuery::new(Season(20242025), SeasonType::Regular, "simple-pts");
+
+        assert!(yahoo.effective_categories().contains(&"hits".to_string()));
+        assert!(yahoo.effective_categories().contains(&"blocks".to_string()));
+        assert_eq!(simple.effective_categories(), vec!["goals", "assists"]);
+    }
+
+    #[test]
+    fn poach_builder_marks_imported_rostered_and_available_players() {
+        let (identity, stats) = crate::fixtures::stat_catalog_variants::skater_modern();
+        let repo = crate::fixtures::test_repo_with(identity, stats);
+        let query = PoachQuery::new(Season(20242025), SeasonType::Regular, "yahoo-standard")
+            .with_imported_availability(["connor mcdavid"]);
+
+        let board = PoachBoardView::from_repository(&repo, query);
+
+        assert_eq!(board.rows.len(), 1);
+        assert_eq!(
+            board.rows[0].availability,
+            AvailabilityState::ImportedRostered
+        );
+        assert!(board.source_state.iter().any(|state| {
+            state.source == SourceKind::FantasyImport && state.state == Completeness::Complete
+        }));
+    }
+
+    #[test]
+    fn poach_builder_filters_to_imported_available_players() {
+        let (identity_a, stats_a) = crate::fixtures::stat_catalog_variants::skater_modern();
+        let identity_b = crate::fixtures::identity(8479999)
+            .name("Free Agent Fit", "free agent fit")
+            .build();
+        let stats_b = crate::fixtures::stats(8479999, 20242025, "SEA")
+            .realtime(40, 30, 10, 5)
+            .build();
+        let mut repo = crate::fixtures::test_repo_with(identity_a, stats_a);
+        repo.upsert_identity(identity_b).unwrap();
+        repo.upsert_stats(stats_b).unwrap();
+        let mut query = PoachQuery::new(Season(20242025), SeasonType::Regular, "yahoo-standard")
+            .with_imported_availability(["connor mcdavid"]);
+        query.availability_filter = PoachAvailabilityFilter::ImportedAvailable;
+
+        let board = PoachBoardView::from_repository(&repo, query);
+
+        assert_eq!(board.rows.len(), 1);
+        assert_eq!(board.rows[0].display_name, "Free Agent Fit");
+        assert_eq!(
+            board.rows[0].availability,
+            AvailabilityState::ImportedAvailable
+        );
+    }
+
+    #[test]
+    fn poach_builder_marks_user_roster_separately_from_imported_rostered() {
+        let (identity_a, stats_a) = crate::fixtures::stat_catalog_variants::skater_modern();
+        let identity_b = crate::fixtures::identity(8479999)
+            .name("Leon Draisaitl", "leon draisaitl")
+            .build();
+        let stats_b = crate::fixtures::stats(8479999, 20242025, "EDM")
+            .realtime(25, 20, 210, 40)
+            .build();
+        let mut repo = crate::fixtures::test_repo_with(identity_a, stats_a);
+        repo.upsert_identity(identity_b).unwrap();
+        repo.upsert_stats(stats_b).unwrap();
+        let query = PoachQuery::new(Season(20242025), SeasonType::Regular, "yahoo-standard")
+            .with_imported_league_availability(
+                ["connor mcdavid", "leon draisaitl"],
+                ["connor mcdavid"],
+            );
+
+        let board = PoachBoardView::from_repository(&repo, query);
+        let mcdavid = board
+            .rows
+            .iter()
+            .find(|row| row.display_name == "Connor McDavid")
+            .expect("mcdavid row");
+        let draisaitl = board
+            .rows
+            .iter()
+            .find(|row| row.display_name == "Leon Draisaitl")
+            .expect("draisaitl row");
+
+        assert_eq!(mcdavid.availability, AvailabilityState::RosteredByUser);
+        assert_eq!(draisaitl.availability, AvailabilityState::ImportedRostered);
+    }
+
+    #[test]
+    fn poach_builder_not_on_user_roster_keeps_other_rostered_players() {
+        let (identity_a, stats_a) = crate::fixtures::stat_catalog_variants::skater_modern();
+        let identity_b = crate::fixtures::identity(8479999)
+            .name("Leon Draisaitl", "leon draisaitl")
+            .build();
+        let stats_b = crate::fixtures::stats(8479999, 20242025, "EDM")
+            .realtime(25, 20, 210, 40)
+            .build();
+        let mut repo = crate::fixtures::test_repo_with(identity_a, stats_a);
+        repo.upsert_identity(identity_b).unwrap();
+        repo.upsert_stats(stats_b).unwrap();
+        let mut query = PoachQuery::new(Season(20242025), SeasonType::Regular, "yahoo-standard")
+            .with_imported_league_availability(
+                ["connor mcdavid", "leon draisaitl"],
+                ["connor mcdavid"],
+            );
+        query.availability_filter = PoachAvailabilityFilter::NotOnUserRoster;
+
+        let board = PoachBoardView::from_repository(&repo, query);
+        let names: Vec<_> = board
+            .rows
+            .iter()
+            .map(|row| row.display_name.as_str())
+            .collect();
+
+        assert!(!names.contains(&"Connor McDavid"));
+        assert!(names.contains(&"Leon Draisaitl"));
+    }
+
+    #[test]
+    fn watch_alerts_flag_watched_available_and_user_roster_risk() {
+        let (identity_a, stats_a) = crate::fixtures::stat_catalog_variants::skater_modern();
+        let watched_key = identity_a.full_name.clone();
+        let (mut identity_b, stats_b) = crate::fixtures::stat_catalog_variants::low_gp();
+        identity_b.full_name = "Risky Roster".to_string();
+        identity_b.name_normalized = "risky roster".to_string();
+        let risk_key = identity_b.name_normalized.clone();
+        let mut repo = crate::fixtures::test_repo_with(identity_a, stats_a);
+        repo.upsert_identity(identity_b).unwrap();
+        repo.upsert_stats(stats_b).unwrap();
+
+        let query = PoachQuery::new(Season(20242025), SeasonType::Regular, "yahoo-standard")
+            .with_imported_league_availability([risk_key.as_str()], [risk_key.as_str()]);
+        let board = PoachBoardView::from_repository(&repo, query);
+        let alerts = evaluate_watch_alerts(&board, &[watched_key]);
+        let triggers: Vec<_> = alerts.alerts.iter().map(|alert| alert.trigger).collect();
+
+        assert!(triggers.contains(&WatchAlertTrigger::WatchedAvailable));
+        assert!(triggers.contains(&WatchAlertTrigger::WatchedDeploymentSignal));
+        assert!(triggers.contains(&WatchAlertTrigger::UserRosterDropRisk));
     }
 
     #[test]

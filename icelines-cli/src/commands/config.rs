@@ -10,6 +10,7 @@ use anyhow::{Context, Result};
 
 use crate::cli::ConfigSubcommand;
 use crate::config::Config;
+use icelines_core::{ConfigEntryInput, ConfigView, ViewContext, ViewWindow, CURRENT_SEASON};
 
 pub async fn run(cmd: ConfigSubcommand) -> Result<()> {
     match cmd {
@@ -24,6 +25,13 @@ fn run_get(key: &str) -> Result<()> {
     let cfg = Config::load().context("load config")?;
     match cfg.get_key(key) {
         Ok(value) => {
+            let view = config_view(&cfg, Some(key.to_string()));
+            let value = view
+                .rows
+                .iter()
+                .find(|row| row.selected)
+                .map(|row| row.value.as_str())
+                .unwrap_or(value.as_str());
             println!("{value}");
             Ok(())
         }
@@ -47,8 +55,9 @@ fn run_set(key: &str, value: &str) -> Result<()> {
 
 fn run_list() -> Result<()> {
     let cfg = Config::load().context("load config")?;
-    for (k, v) in cfg.list_keys() {
-        println!("{k} = {v}");
+    let view = config_view(&cfg, None);
+    for row in &view.rows {
+        println!("{} = {}", row.key, row.value);
     }
     Ok(())
 }
@@ -62,4 +71,18 @@ fn run_reset(key: &str) -> Result<()> {
     cfg.save_sync().context("persist config")?;
     println!("reset {key}");
     Ok(())
+}
+
+fn config_view(cfg: &Config, selected_key: Option<String>) -> ConfigView {
+    ConfigView::from_entries(
+        ViewContext::new(ViewWindow::new(
+            icelines_core::model::Season(CURRENT_SEASON),
+            icelines_core::season_stats::SeasonType::Regular,
+        )),
+        cfg.list_keys()
+            .into_iter()
+            .map(|(key, value)| ConfigEntryInput { key, value })
+            .collect(),
+        selected_key,
+    )
 }

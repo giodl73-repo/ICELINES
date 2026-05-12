@@ -208,7 +208,8 @@ cross-season leakage is a documented gap, not a present-tense invariant.
 │  per render frame:                     │  └──────────────────────────────────┘
 │    let views = app.repo.skaters(...);  │
 │    screen.render(&views, ...);         │  ┌─ axum HTTP server ──────────────┐
-│                                        │  │  (icelines fantasy serve)       │
+│                                        │  │  (`icelines serve`; legacy     │
+│                                        │  │   `fantasy serve` separate)    │
 │  season switch (`y` key):              │  │                                 │
 │    new_repo = load_into_repo(...);     │  │  per request handler:           │
 │    let _old = self.repo.repo_swap(new);│  │    let (outcome, s) = load();   │
@@ -333,7 +334,8 @@ to them; they remain snapshot-only with `MissingSource` flagging when absent.
   may see an unreferenced chunk on disk — harmless, since the only mutable
   entry points (`chunked.json` manifest and `chunkrefs.json` refcount table)
   are written via tmp+rename. Garbage chunks survive until the next GC pass.
-- Cross-process readers (`icelines tui` + `icelines fantasy serve`) tolerate
+- Cross-process readers (`icelines tui` + `icelines serve` or legacy
+  `icelines fantasy serve`) tolerate
   each other; writers serialize via rename. No file-lock protocol beyond
   filesystem-atomic rename.
 

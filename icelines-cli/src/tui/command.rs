@@ -48,6 +48,10 @@ pub enum Command {
     Goalies,
     /// `poach` — workspace becomes Fantasy Poacher.
     Poach,
+    /// `fantasy gaps` — workspace becomes active roster-gap board.
+    FantasyGaps,
+    /// `fantasy simulate` — workspace becomes league simulation board.
+    FantasySim,
     /// `watchlist` - workspace becomes local fantasy Watchlist.
     Watchlist,
     GoaliesKv {
@@ -274,6 +278,8 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
             })?,
         }),
         "poach" if args.trim().is_empty() => Ok(Command::Poach),
+        "gaps" | "fantasy-gaps" if args.trim().is_empty() => Ok(Command::FantasyGaps),
+        "simulate" | "sim" | "fantasy-sim" if args.trim().is_empty() => Ok(Command::FantasySim),
         "watchlist" if args.trim().is_empty() => Ok(Command::Watchlist),
         "transactions" | "txs" | "tx" => Ok(Command::Transactions),
         "playoffs" => Ok(Command::Playoffs),
@@ -415,12 +421,13 @@ fn parse_class(args: &str) -> Result<Command, ParseError> {
     Ok(Command::Class { year })
 }
 
-/// `fantasy roster` → Roster. Other `fantasy <sub>` is currently
-/// unsupported (could expand later).
+/// `fantasy roster` → Roster; `fantasy gaps` → roster-gap board.
 fn parse_fantasy(args: &str) -> Result<Command, ParseError> {
     let sub = args.trim().to_ascii_lowercase();
     match sub.as_str() {
         "" | "roster" => Ok(Command::Roster),
+        "gaps" | "gap" => Ok(Command::FantasyGaps),
+        "simulate" | "sim" => Ok(Command::FantasySim),
         unknown => Err(ParseError::UnknownCommand(format!("fantasy {unknown}"))),
     }
 }
@@ -550,6 +557,14 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
         Command::GoaliesKv { args } => exec_goalies_kv(app, args),
         Command::Poach => {
             app.screen = Screen::Poach;
+            ExecResult::Continue
+        }
+        Command::FantasyGaps => {
+            app.screen = Screen::FantasyGaps;
+            ExecResult::Continue
+        }
+        Command::FantasySim => {
+            app.screen = Screen::FantasySim;
             ExecResult::Continue
         }
         Command::Watchlist => {
@@ -1076,6 +1091,17 @@ mod tests {
     }
 
     // ── Workspace reads (with args) ────────────────────────────────────────
+
+    #[test]
+    fn l0_parse_fantasy_gap_and_sim_workspaces() {
+        assert_eq!(parse_command("gaps").unwrap(), Command::FantasyGaps);
+        assert_eq!(parse_command("fantasy gaps").unwrap(), Command::FantasyGaps);
+        assert_eq!(parse_command("simulate").unwrap(), Command::FantasySim);
+        assert_eq!(
+            parse_command("fantasy simulate").unwrap(),
+            Command::FantasySim
+        );
+    }
 
     #[test]
     fn l0_adams_parse_player() {

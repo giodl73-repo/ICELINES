@@ -113,6 +113,9 @@ icelines fantasy team-add "My Team" "McDavid"
 icelines fantasy team-add "My Team" "Kucherov"
 icelines fantasy team-add "My Team" "Bouchard"
 icelines fantasy team-show "My Team"
+icelines fantasy team-use "My Team"
+icelines fantasy gaps --category hits,blocks,shots
+icelines fantasy simulate --weeks 4 --add "McDavid" --drop "Bouchard"
 ```
 
 ---

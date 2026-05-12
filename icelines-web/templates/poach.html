@@ -26,6 +26,17 @@
         <label>Positions
             <input type="text" name="pos" value="{{ positions }}" placeholder="C,LW,RW,D" style="width: 100%; margin-top: 0.15rem; text-transform: uppercase;">
         </label>
+        <label>Availability
+            <select name="availability" style="width: 100%; margin-top: 0.15rem;">
+                <option value="{{ availability }}">{{ availability }}</option>
+                <option value="any">any</option>
+                <option value="available">available</option>
+                <option value="imported-available">imported available</option>
+                <option value="not-on-user-roster">not on user roster</option>
+                <option value="watched">watched</option>
+                <option value="unknown">unknown</option>
+            </select>
+        </label>
     </div>
     <div style="display:flex; gap:0.5rem; margin-top:0.75rem; align-items:center;">
         <button type="submit">Apply</button>
@@ -54,6 +65,7 @@
             <th>Team</th>
             <th>Pos</th>
             <th style="text-align: right;">Score</th>
+            <th>Avail</th>
             <th>Confidence</th>
             <th>Category Fit</th>
             <th>Schedule</th>
@@ -69,6 +81,7 @@
             <td><a class="team-link team-{{ row.team }}" href="/team/{{ row.team }}">{{ row.team }}</a></td>
             <td><span class="pos-chip pos-{{ row.position }}">{{ row.position }}</span></td>
             <td style="text-align: right;"><strong>{{ row.score }}</strong></td>
+            <td>{{ row.availability }}</td>
             <td>{{ row.confidence }}</td>
             <td>{{ row.category_fit }}</td>
             <td>{{ row.schedule }}</td>

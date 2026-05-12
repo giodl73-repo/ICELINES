@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Fantasy Gaps{% endblock %}
+
+{% block content %}
+<h1>Fantasy Gaps</h1>
+
+<p style="color: #616161; margin-bottom: 0.75rem;">
+    {{ active_label }} · {{ league }} · {{ team }} · {{ scoring_scheme }}
+</p>
+
+<form method="get" action="/fantasy" style="margin-bottom: 1.25rem; padding: 0.85rem 1rem; background: var(--ice-divider); border-radius: 5px;">
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:0.6rem 0.8rem;">
+        <label>Scheme
+            <input type="text" name="scheme" value="{{ scoring_scheme }}" style="width: 100%; margin-top: 0.15rem;">
+        </label>
+        <label>Categories
+            <input type="text" name="category" value="{{ categories }}" placeholder="hits,blocks,shots" style="width: 100%; margin-top: 0.15rem;">
+        </label>
+        <label>League
+            <input type="text" name="league" value="{{ league }}" style="width: 100%; margin-top: 0.15rem;">
+        </label>
+        <label>Top
+            <input type="number" name="top" min="1" max="40" value="{{ rows.len() }}" style="width: 100%; margin-top: 0.15rem;">
+        </label>
+        <label>Add
+            <input type="text" name="add_player" value="{{ add_player }}" placeholder="player to test" style="width: 100%; margin-top: 0.15rem;">
+        </label>
+        <label>Drop
+            <input type="text" name="drop_player" value="{{ drop_player }}" placeholder="player to drop" style="width: 100%; margin-top: 0.15rem;">
+        </label>
+    </div>
+    <div style="display:flex; gap:0.5rem; margin-top:0.75rem; align-items:center;">
+        <button type="submit">Apply</button>
+        <a href="/api/v1/fantasy/gaps"><code>/api/v1/fantasy/gaps</code></a>
+        <a href="/api/v1/fantasy/simulate"><code>/api/v1/fantasy/simulate</code></a>
+        <a href="/poach?availability=imported-available">Poach free agents</a>
+    </div>
+</form>
+
+{% if !simulation_rows.is_empty() || !simulation_scenarios.is_empty() %}
+<section style="margin-bottom: 1.25rem;">
+    <h2>League Simulation</h2>
+    {% if !simulation_warnings.is_empty() %}
+    <div style="padding: 0.7rem 0.85rem; border: 1px solid var(--ice-divider); border-radius: 5px; margin-bottom: 0.8rem;">
+        {% for warning in simulation_warnings %}
+        <div style="color: #8a5a00;">{{ warning }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% if !simulation_rows.is_empty() %}
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th style="text-align: right;">#</th>
+                    <th>Team</th>
+                    <th>Owner</th>
+                    <th style="text-align: right;">Projected</th>
+                    <th style="text-align: right;">Gap</th>
+                    <th style="text-align: right;">Games</th>
+                    <th style="text-align: right;">Players</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in simulation_rows %}
+                <tr>
+                    <td style="text-align: right; color: #616161;">{{ row.rank }}</td>
+                    <td>
+                        {% if row.is_user_team %}<strong>{{ row.team }} (mine)</strong>{% else %}{{ row.team }}{% endif %}
+                    </td>
+                    <td>{{ row.owner }}</td>
+                    <td style="text-align: right;"><strong>{{ row.projected_score }}</strong></td>
+                    <td style="text-align: right;">{{ row.score_gap }}</td>
+                    <td style="text-align: right;">{{ row.games_remaining }}</td>
+                    <td style="text-align: right;">{{ row.rostered_players }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    {% endif %}
+    {% if !simulation_scenarios.is_empty() %}
+    <h3 style="margin: 1rem 0 0.45rem;">Scenario</h3>
+    <div class="table-scroll">
+    <table>
+        <thead>
+            <tr>
+                <th>Action</th>
+                <th>Scenario</th>
+                <th>Add</th>
+                <th>Drop</th>
+                <th style="text-align: right;">Score Delta</th>
+                <th style="text-align: right;">Games</th>
+                <th>Confidence</th>
+                <th>Explanation</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in simulation_scenarios %}
+            <tr>
+                <td><strong>{{ row.action }}</strong></td>
+                <td>{{ row.label }}</td>
+                <td>{{ row.add_player }}</td>
+                <td>{{ row.drop_player }}</td>
+                <td style="text-align: right;"><strong>{{ row.projected_score_delta }}</strong></td>
+                <td style="text-align: right;">{{ row.projected_games_delta }}</td>
+                <td>{{ row.confidence }}</td>
+                <td>{{ row.explanation }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% endif %}
+    {% if !simulation_assumptions.is_empty() %}
+    <p style="color: #616161; margin-top: 0.6rem;">
+        {% for assumption in simulation_assumptions %}
+        {{ assumption }}{% if !loop.last %} · {% endif %}
+        {% endfor %}
+    </p>
+    {% endif %}
+</section>
+{% endif %}
+
+{% if !warnings.is_empty() %}
+<section style="padding: 0.85rem 1rem; border: 1px solid var(--ice-divider); border-radius: 5px; margin-bottom: 1rem;">
+    <strong>Warnings</strong>
+    <ul>
+        {% for warning in warnings %}
+        <li>{{ warning }}</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+
+{% if rows.is_empty() %}
+<section style="padding: 1rem; border: 1px solid var(--ice-divider); border-radius: 5px;">
+    <h2 style="margin-top: 0;">{{ empty_title }}</h2>
+    {% if !empty_detail.is_empty() %}<p>{{ empty_detail }}</p>{% endif %}
+</section>
+{% else %}
+<div class="table-scroll">
+<table>
+    <thead>
+        <tr>
+            <th style="text-align: right;">#</th>
+            <th>Action</th>
+            <th>Category</th>
+            <th style="text-align: right;">Roster</th>
+            <th style="text-align: right;">Weight</th>
+            <th>Best Available</th>
+            <th>Team</th>
+            <th>Pos</th>
+            <th style="text-align: right;">Raw</th>
+            <th style="text-align: right;">Weighted</th>
+            <th style="text-align: right;">Delta</th>
+            <th>Drop</th>
+            <th>Recommendation</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in rows %}
+        <tr>
+            <td style="text-align: right; color: #616161;">{{ row.rank }}</td>
+            <td title="{{ row.action_reason }}"><strong>{{ row.action }}</strong></td>
+            <td>{{ row.category }}</td>
+            <td style="text-align: right;">{{ row.roster_total }}</td>
+            <td style="text-align: right;">{{ row.weight }}</td>
+            <td><a class="player-name" href="/player/{{ row.player_id }}">{{ row.best_available }}</a></td>
+            <td><a class="team-link team-{{ row.team }}" href="/team/{{ row.team }}">{{ row.team }}</a></td>
+            <td><span class="pos-chip pos-{{ row.position }}">{{ row.position }}</span></td>
+            <td style="text-align: right;">{{ row.value }}</td>
+            <td style="text-align: right;"><strong>{{ row.weighted_value }}</strong></td>
+            <td style="text-align: right;"><strong>{{ row.weighted_delta }}</strong></td>
+            <td>{{ row.replacement }}</td>
+            <td>{{ row.recommendation }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

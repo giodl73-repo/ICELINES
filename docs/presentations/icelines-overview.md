@@ -88,7 +88,10 @@ icelines fantasy team-create "My Team" --owner "Gio"
 icelines fantasy team-add "My Team" "McDavid"
 icelines fantasy standings
 icelines fantasy trade "Bouchard" --to-team "Other" --for-player "Hughes"
-icelines fantasy serve --port 8080
+icelines fantasy team-use "My Team"
+icelines fantasy gaps --category hits,blocks
+icelines fantasy simulate --add "McDavid" --drop "Bouchard"
+icelines serve --port 8000
 ```
 
 ---

@@ -7,6 +7,7 @@ edition.workspace = true
 icelines-core = { path = "../icelines-core" }
 icelines-query = { path = "../icelines-query" }
 thiserror.workspace   = true
+anyhow.workspace      = true
 serde.workspace       = true
 serde_json.workspace  = true
 tokio.workspace       = true
@@ -15,6 +16,8 @@ csv.workspace         = true
 encoding_rs.workspace = true
 sha2.workspace       = true
 chrono.workspace     = true
+rusqlite.workspace   = true
+uuid.workspace       = true
 
 [dev-dependencies]
 httpmock.workspace = true

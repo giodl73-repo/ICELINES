@@ -42,4 +42,30 @@ icelines group add Watchlist "Matthew Knies"</code></pre>
     </ul>
     {% endif %}
 {% endif %}
+
+{% if !alerts.is_empty() %}
+<h2>Recent Alerts</h2>
+<div class="table-scroll">
+<table>
+    <thead>
+        <tr>
+            <th>Time</th>
+            <th>Rule</th>
+            <th>Entity</th>
+            <th>Message</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for alert in alerts %}
+        <tr>
+            <td>{{ alert.fired_at }}</td>
+            <td>{{ alert.rule_id }}</td>
+            <td>{{ alert.entity }}</td>
+            <td>{{ alert.message }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endif %}
 {% endblock %}

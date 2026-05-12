@@ -224,5 +224,5 @@ Remaining 33 seasons available via `icelines data install`.
    plan for current-season bundles) works; confirm CDN strategy for 33 historical seasons.
 3. **Per-season bundle size** — estimated 2-10 MB per season. Total if all installed: ~100 MB.
    Acceptable on disk; confirm size before bundling.
-4. **Goalie data** — should historical season bundles include goalie stats? Currently
-   goalies are not in the skater data model. Deferred to separate goalie spec.
+4. **Goalie data** — historical season bundles now include goalie stats for
+   shipped bundled seasons; see `goalies.md` for the separate goalie model.

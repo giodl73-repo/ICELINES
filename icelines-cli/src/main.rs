@@ -118,6 +118,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             categories,
             team,
             pos,
+            availability,
             top,
             json,
         } => {
@@ -128,6 +129,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 categories,
                 teams: team,
                 positions: pos,
+                availability,
                 top,
                 json,
             })
@@ -141,6 +143,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 categories,
                 team,
                 pos,
+                availability,
                 top,
                 json,
                 out,
@@ -152,6 +155,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                     categories,
                     teams: team,
                     positions: pos,
+                    availability,
                     top,
                     json,
                     out,
@@ -166,6 +170,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 categories,
                 team,
                 pos,
+                availability,
                 top,
                 json,
                 out,
@@ -178,6 +183,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                     categories,
                     teams: team,
                     positions: pos,
+                    availability,
                     top,
                     json,
                     out,
@@ -246,6 +252,22 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             WatchSubcommand::History { limit, json } => {
                 commands::poach::run_watch_history(commands::poach::WatchHistoryArgs {
                     limit,
+                    json,
+                })
+                .await?;
+            }
+            WatchSubcommand::Alerts {
+                season,
+                season_type,
+                top,
+                save,
+                json,
+            } => {
+                commands::poach::run_watch_alerts(commands::poach::WatchAlertsArgs {
+                    season,
+                    season_type,
+                    top,
+                    save,
                     json,
                 })
                 .await?;
@@ -883,6 +905,9 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             FantasySubcommand::TeamList { league } => {
                 commands::fantasy::run_team_list(league).await?
             }
+            FantasySubcommand::TeamUse { name, league } => {
+                commands::fantasy::run_team_use(name, league).await?
+            }
             FantasySubcommand::TeamShow { name, league } => {
                 commands::fantasy::run_team_show(name, league).await?
             }
@@ -898,6 +923,31 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             } => commands::fantasy::run_team_drop(team, player, league).await?,
             FantasySubcommand::Standings { league, scheme } => {
                 commands::fantasy::run_standings(league, scheme).await?
+            }
+            FantasySubcommand::Gaps {
+                league,
+                scheme,
+                categories,
+                top,
+                json,
+            } => commands::fantasy::run_gaps(league, scheme, categories, top, json).await?,
+            FantasySubcommand::Simulate {
+                league,
+                scheme,
+                weeks,
+                add_player,
+                drop_player,
+                json,
+            } => {
+                commands::fantasy::run_simulate(
+                    league,
+                    scheme,
+                    weeks,
+                    add_player,
+                    drop_player,
+                    json,
+                )
+                .await?
             }
             FantasySubcommand::Trade {
                 player1,

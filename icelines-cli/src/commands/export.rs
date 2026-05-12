@@ -22,8 +22,9 @@ use icelines_core::{
     filter::PlayerFilter,
     scoring::sort_views_by_pace,
     stats_repository::PlayerView,
-    DepthLeagueView, LeaderKind, LeadersView, SortDirection, SortKey, SortState, TeamAbbr,
-    TeamDepthView, ViewContext, ViewWindow,
+    view_model::{poach_report_from_board, PoachBoardView, PoachQuery, PoachReportView},
+    DepthLeagueView, LeaderKind, LeadersView, PlayoffsSeriesRow, PlayoffsView, SortDirection,
+    SortKey, SortState, TeamAbbr, TeamDepthView, ViewContext, ViewWindow,
 };
 
 use crate::cli::{ExportSubcommand, MdShape};
@@ -42,7 +43,7 @@ pub async fn run(cmd: ExportSubcommand) -> anyhow::Result<()> {
             columns,
             p1,
             p2,
-            series: _,
+            series,
             width,
             height,
         } => {
@@ -79,14 +80,12 @@ pub async fn run(cmd: ExportSubcommand) -> anyhow::Result<()> {
                     width,
                     height,
                 })?,
-                MdShape::Fantasy | MdShape::Series => {
-                    bail!(
-                        "shape `{}` is deferred — `fantasy` needs FantasyDb + scheme \
-                         integration, `series` needs the historical playoffs.json bundle \
-                         (Phase 8c). Tracked in design/plans/2026-04-28-spec-delta-catchup.md.",
-                        shape.label(),
-                    )
-                }
+                MdShape::Series => render_series(SeriesOpts {
+                    series: series.clone(),
+                    width,
+                    height,
+                })?,
+                MdShape::Fantasy => render_fantasy(FantasyOpts { top, width, height })?,
             };
             write_or_print(&out, &shape, &body)?;
         }
@@ -229,7 +228,7 @@ pub(crate) fn render_leaders_from_views(
     // Age GP G A Pts PPG Pts/82) byte-identically.
     if let Some(cols_spec) = opts.columns.as_deref() {
         let stat_cols = parse_columns_list(cols_spec)?;
-        write_leaders_table_with_columns(&mut out, &top, &stat_cols);
+        write_leaders_view_table_with_columns(&mut out, &leaders_view, &stat_cols);
     } else {
         write_leaders_view_table(&mut out, &leaders_view);
     }
@@ -296,6 +295,7 @@ fn write_leaders_view_table(out: &mut String, view: &LeadersView) {
 /// Headers come from `StatId::short_label()`; cells route through the
 /// same per-StatUnit formatting (Count → integer, Pct → `XX.X%`,
 /// Per60/Rate → `X.XX`, Seconds → `M:SS`, Inverted → `X.XX`).
+#[allow(dead_code)]
 fn write_leaders_table_with_columns(
     out: &mut String,
     top: &[PlayerView<'_>],
@@ -353,6 +353,70 @@ fn write_leaders_table_with_columns(
 }
 
 // ── team ─────────────────────────────────────────────────────────────────────
+
+fn write_leaders_view_table_with_columns(
+    out: &mut String,
+    view: &LeadersView,
+    stat_cols: &[icelines_core::stats_catalog::StatId],
+) {
+    out.push_str("| Rank | Player | Team | Pos");
+    for sid in stat_cols {
+        let _ = write!(out, " | {}", sid.short_label());
+    }
+    out.push_str(" |\n");
+
+    out.push_str("|-----:|--------|:----:|:---:");
+    for _ in stat_cols {
+        out.push_str("|----:");
+    }
+    out.push_str("|\n");
+
+    for row in &view.rows {
+        let rank = row.rank;
+        let name = truncate(&row.display_name, 24);
+        let pos = row.position.abbreviation();
+        let _ = write!(
+            out,
+            "| {rank:>4} | {name} | {team} | {pos}",
+            team = row.team.0,
+        );
+        for sid in stat_cols {
+            let cell = row
+                .catalog_metrics
+                .iter()
+                .find(|metric| metric.key.0 == sid.cli_key())
+                .map(render_metric_cell)
+                .unwrap_or_else(|| "—".to_owned());
+            let _ = write!(out, " | {cell}");
+        }
+        out.push_str(" |\n");
+    }
+}
+
+fn render_metric_cell(cell: &icelines_core::MetricCell) -> String {
+    match &cell.value {
+        icelines_core::MetricValue::Missing => "—".to_owned(),
+        icelines_core::MetricValue::Text(value) => value.clone(),
+        icelines_core::MetricValue::Integer(value) => {
+            if cell.unit == icelines_core::MetricUnit::Seconds {
+                let seconds = (*value).max(0) as u64;
+                if seconds < 3600 {
+                    format!("{}:{:02}", seconds / 60, seconds % 60)
+                } else {
+                    format!("{}m", seconds / 60)
+                }
+            } else {
+                value.to_string()
+            }
+        }
+        icelines_core::MetricValue::Decimal(value) => match cell.precision {
+            icelines_core::ValuePrecision::PercentOneDecimal => format!("{:.1}%", value * 100.0),
+            icelines_core::ValuePrecision::OneDecimal => format!("{value:.1}"),
+            icelines_core::ValuePrecision::ThreeDecimals => format!("{value:.3}"),
+            _ => format!("{value:.2}"),
+        },
+    }
+}
 
 pub(crate) struct TeamOpts {
     pub team: String,
@@ -811,6 +875,137 @@ pub(crate) fn render_roster_from_views(
 }
 
 // ── shared helpers ───────────────────────────────────────────────────────────
+
+pub(crate) struct FantasyOpts {
+    pub top: usize,
+    pub width: u16,
+    pub height: u16,
+}
+
+pub(crate) fn render_fantasy(opts: FantasyOpts) -> anyhow::Result<String> {
+    let (outcome, season, season_type) = load_repo_for_season(None, None)?;
+    let mut query = PoachQuery::new(season, season_type, "yahoo-standard");
+    query.limit = Some(opts.top.clamp(1, u16::MAX as usize) as u16);
+    query.sort = Some("poach_score".to_owned());
+    let board = PoachBoardView::from_repository(&outcome.repo, query);
+    let report = poach_report_from_board(board);
+    render_fantasy_from_report(&report, &opts)
+}
+
+pub(crate) fn render_fantasy_from_report(
+    report: &PoachReportView,
+    opts: &FantasyOpts,
+) -> anyhow::Result<String> {
+    let mut out = String::new();
+    write_front_matter(
+        &mut out,
+        "fantasy-poacher",
+        &report.context.title,
+        &[
+            ("scheme", report.scoring_scheme.clone()),
+            ("window", format!("{:?}", report.window)),
+        ],
+        opts.width,
+        opts.height,
+    );
+    out.push_str(&crate::commands::poach::render_report_markdown(report));
+    Ok(out)
+}
+
+pub(crate) struct SeriesOpts {
+    pub series: Option<String>,
+    pub width: u16,
+    pub height: u16,
+}
+
+pub(crate) fn render_series(opts: SeriesOpts) -> anyhow::Result<String> {
+    let season = crate::commands::playoffs::default_season()
+        .context("no playoff seasons available in the bundle")?;
+    let bundle = icelines_fetch::bundled::load_playoffs(&season)
+        .with_context(|| format!("no playoff bundle for season '{season}'"))?;
+    let view = crate::commands::playoffs::playoffs_view_from_bundle(&bundle);
+    render_series_from_view(&view, &opts)
+}
+
+pub(crate) fn render_series_from_view(
+    view: &PlayoffsView,
+    opts: &SeriesOpts,
+) -> anyhow::Result<String> {
+    let requested = opts.series.as_deref().map(|value| value.to_uppercase());
+    let (round_label, series) = find_series(view, requested.as_deref()).with_context(|| {
+        if let Some(letter) = requested.as_deref() {
+            format!("no playoff series '{letter}' in {}", view.season_pretty)
+        } else {
+            format!("no playoff series in {}", view.season_pretty)
+        }
+    })?;
+    let letter = if series.letter.is_empty() {
+        "unknown".to_owned()
+    } else {
+        series.letter.clone()
+    };
+    let title = format!(
+        "{} {} vs {} - {}",
+        view.season_pretty, series.top_abbrev, series.bottom_abbrev, round_label
+    );
+
+    let mut out = String::new();
+    write_front_matter(
+        &mut out,
+        "series-log",
+        &title,
+        &[("series", letter.clone()), ("season", view.season.clone())],
+        opts.width,
+        opts.height,
+    );
+    let _ = writeln!(out, "## Summary");
+    let _ = writeln!(out);
+    let _ = writeln!(out, "- Series: {letter}");
+    let _ = writeln!(out, "- Round: {round_label}");
+    let _ = writeln!(
+        out,
+        "- Matchup: {} vs {}",
+        series.top_name, series.bottom_name
+    );
+    let _ = writeln!(out, "- Result: {}", series.summary);
+    let _ = writeln!(out);
+    let _ = writeln!(out, "## Game Log");
+    let _ = writeln!(out);
+    let _ = writeln!(out, "| Game | Date | Result | Series After |");
+    let _ = writeln!(out, "|-----:|------|--------|--------------|");
+    for game in &series.games {
+        let result = format!(
+            "{} {}-{} {}",
+            game.away_abbrev, game.away_score, game.home_score, game.home_abbrev
+        );
+        let _ = writeln!(
+            out,
+            "| {game_no:>4} | {date} | {result} | {after} |",
+            game_no = game.game_number,
+            date = game.date,
+            result = result,
+            after = game.series_after,
+        );
+    }
+    Ok(out)
+}
+
+fn find_series<'a>(
+    view: &'a PlayoffsView,
+    requested: Option<&str>,
+) -> Option<(&'a str, &'a PlayoffsSeriesRow)> {
+    for round in &view.rounds {
+        for series in &round.series {
+            let matches = requested
+                .map(|letter| series.letter.eq_ignore_ascii_case(letter))
+                .unwrap_or(true);
+            if matches {
+                return Some((round.label.as_str(), series));
+            }
+        }
+    }
+    None
+}
 
 fn parse_positions(s: &str) -> Vec<icelines_core::model::Position> {
     use icelines_core::model::Position;
@@ -1423,6 +1618,94 @@ mod tests {
         .unwrap();
         assert!(out.contains("Dee"));
         assert!(!out.contains("Cee"), "centers must be excluded for --pos D");
+    }
+
+    #[test]
+    fn l0_export_fantasy_wraps_poach_report_with_front_matter() {
+        let context = icelines_core::ViewContext::new(icelines_core::ViewWindow::new(
+            icelines_core::Season(20252026),
+            icelines_core::season_stats::SeasonType::Regular,
+        ));
+        let report = PoachReportView {
+            context: icelines_core::view_model::poach_report_context(context, "fantasy-export"),
+            scoring_scheme: "yahoo-standard".to_string(),
+            scoring_categories: vec!["hits".to_string(), "blocks".to_string()],
+            window: icelines_core::view_model::PoachWindow::Days14,
+            source_state: Vec::new(),
+            warnings: Vec::new(),
+            omissions: vec!["fantasy_import: unavailable".to_string()],
+            sections: vec![icelines_core::view_model::PoachReportSection {
+                id: "top_adds".to_string(),
+                title: "Top Adds".to_string(),
+                rows: Vec::new(),
+            }],
+        };
+
+        let out = render_fantasy_from_report(
+            &report,
+            &FantasyOpts {
+                top: 25,
+                width: 100,
+                height: 30,
+            },
+        )
+        .unwrap();
+
+        assert!(out.starts_with("---\n"));
+        assert!(out.contains("type: fantasy-poacher"));
+        assert!(out.contains("scheme: \"yahoo-standard\""));
+        assert!(out.contains("# Fantasy Poacher"));
+        assert!(out.contains("fantasy_import: unavailable"));
+    }
+
+    #[test]
+    fn l0_export_series_emits_game_log_from_playoffs_view() {
+        let view = PlayoffsView::from_bracket(
+            ViewContext::new(ViewWindow::new(Season(20242025), SeasonType::Playoff)),
+            "20242025".to_owned(),
+            "fixture".to_owned(),
+            icelines_core::PlayoffsBracketInput {
+                rounds: vec![icelines_core::PlayoffsRoundInput {
+                    round_number: 1,
+                    label: "Round 1".to_owned(),
+                    series: vec![icelines_core::PlayoffsSeriesInput {
+                        letter: Some("A".to_owned()),
+                        top_abbrev: "FLA".to_owned(),
+                        top_name: "Florida Panthers".to_owned(),
+                        top_wins: 1,
+                        top_seed_rank: Some("1".to_owned()),
+                        bottom_abbrev: "TBL".to_owned(),
+                        bottom_name: "Tampa Bay Lightning".to_owned(),
+                        bottom_wins: 0,
+                        bottom_seed_rank: Some("WC1".to_owned()),
+                        winner_abbrev: None,
+                        conference: Some("East".to_owned()),
+                        games: vec![icelines_core::PlayoffsGameInput {
+                            date: "2025-04-19".to_owned(),
+                            home_abbrev: "FLA".to_owned(),
+                            away_abbrev: "TBL".to_owned(),
+                            home_score: 4,
+                            away_score: 2,
+                            series_after: "FLA leads 1-0".to_owned(),
+                        }],
+                    }],
+                }],
+            },
+        );
+        let out = render_series_from_view(
+            &view,
+            &SeriesOpts {
+                series: Some("A".to_owned()),
+                width: 100,
+                height: 30,
+            },
+        )
+        .unwrap();
+
+        assert!(out.contains("type: series-log"));
+        assert!(out.contains("series: \"A\""));
+        assert!(out.contains("## Game Log"));
+        assert!(out.contains("|    1 | 2025-04-19 | TBL 2-4 FLA | FLA leads 1-0 |"));
     }
 
     #[test]

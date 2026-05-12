@@ -9,8 +9,8 @@ use anyhow::{Context, Result};
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
 use icelines_core::{
-    PlayoffsBracketInput, PlayoffsRoundInput, PlayoffsSeriesInput, PlayoffsView, ViewContext,
-    ViewWindow,
+    PlayoffsBracketInput, PlayoffsGameInput, PlayoffsRoundInput, PlayoffsSeriesInput, PlayoffsView,
+    ViewContext, ViewWindow,
 };
 use icelines_fetch::bundled;
 use icelines_fetch::playoffs_bundle::PlayoffsBundle;
@@ -55,7 +55,7 @@ pub fn project_playoff_rows(bundle: &PlayoffsBundle, round_filter: Option<u8>) -
         .collect()
 }
 
-fn playoffs_view_from_bundle(bundle: &PlayoffsBundle) -> PlayoffsView {
+pub(crate) fn playoffs_view_from_bundle(bundle: &PlayoffsBundle) -> PlayoffsView {
     let season = bundle
         .season
         .parse::<u32>()
@@ -91,6 +91,18 @@ fn playoff_bracket_input(bracket: icelines_fetch::nhl_api::PlayoffBracket) -> Pl
                         bottom_seed_rank: series.bottom_seed_rank,
                         winner_abbrev: series.winner_abbrev,
                         conference: series.conference,
+                        games: series
+                            .games
+                            .into_iter()
+                            .map(|game| PlayoffsGameInput {
+                                date: game.date,
+                                home_abbrev: game.home_abbrev,
+                                away_abbrev: game.away_abbrev,
+                                home_score: game.home_score,
+                                away_score: game.away_score,
+                                series_after: game.series_after,
+                            })
+                            .collect(),
                     })
                     .collect(),
             })
@@ -102,7 +114,7 @@ fn playoff_bracket_input(bracket: icelines_fetch::nhl_api::PlayoffBracket) -> Pl
 /// `bundled_playoff_seasons()` newest-first and pick the first whose
 /// final-round series has a winner. Falls back to the newest available
 /// if none look complete.
-fn default_season() -> Option<String> {
+pub(crate) fn default_season() -> Option<String> {
     let seasons = bundled::bundled_playoff_seasons();
     let mut newest_complete: Option<String> = None;
     for s in &seasons {

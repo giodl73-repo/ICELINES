@@ -505,6 +505,19 @@ pub struct DocsTemplate {
 }
 
 /// `team.html` — King.4.1. Roster page for one team.
+/// `scouting.html` - rendered `ReportView` for one player.
+#[derive(Template)]
+#[template(path = "scouting.html")]
+pub struct ScoutingTemplate {
+    pub active_label: String,
+    pub title: String,
+    pub player_href: String,
+    /// Pre-rendered HTML from the report markdown body.
+    pub rendered_html: String,
+    /// Raw markdown body for the copy-as-markdown button.
+    pub markdown_body: String,
+}
+
 #[derive(Template)]
 #[template(path = "team.html")]
 pub struct TeamTemplate {
@@ -546,9 +559,75 @@ pub struct PoachTemplate {
     pub categories: String,
     pub teams: String,
     pub positions: String,
+    pub availability: String,
     pub source_note: String,
     pub empty_title: String,
     pub empty_detail: String,
+}
+
+/// `/fantasy` — active-league roster gaps rendered from
+/// `FantasyRosterGapView`.
+#[derive(Template)]
+#[template(path = "fantasy.html")]
+pub struct FantasyTemplate {
+    pub active_label: String,
+    pub league: String,
+    pub team: String,
+    pub scoring_scheme: String,
+    pub categories: String,
+    pub add_player: String,
+    pub drop_player: String,
+    pub rows: Vec<FantasyGapRow>,
+    pub simulation_rows: Vec<FantasySimulationRow>,
+    pub simulation_scenarios: Vec<FantasySimulationScenarioRow>,
+    pub simulation_assumptions: Vec<String>,
+    pub simulation_warnings: Vec<String>,
+    pub warnings: Vec<String>,
+    pub empty_title: String,
+    pub empty_detail: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct FantasyGapRow {
+    pub rank: usize,
+    pub action: String,
+    pub action_reason: String,
+    pub category: String,
+    pub roster_total: String,
+    pub weight: String,
+    pub player_id: u32,
+    pub best_available: String,
+    pub team: String,
+    pub position: String,
+    pub value: String,
+    pub weighted_value: String,
+    pub weighted_delta: String,
+    pub replacement: String,
+    pub recommendation: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct FantasySimulationRow {
+    pub rank: usize,
+    pub team: String,
+    pub owner: String,
+    pub is_user_team: bool,
+    pub projected_score: String,
+    pub score_gap: String,
+    pub games_remaining: u32,
+    pub rostered_players: u16,
+}
+
+#[derive(Debug, Clone)]
+pub struct FantasySimulationScenarioRow {
+    pub action: String,
+    pub label: String,
+    pub add_player: String,
+    pub drop_player: String,
+    pub projected_score_delta: String,
+    pub projected_games_delta: i32,
+    pub confidence: String,
+    pub explanation: String,
 }
 
 /// `favorites.html` — user-maintained players and teams rendered
@@ -583,6 +662,7 @@ pub struct WatchlistTemplate {
     pub team_count: usize,
     pub players: Vec<WatchlistPlayerRow>,
     pub teams: Vec<WatchlistTeamRow>,
+    pub alerts: Vec<WatchlistAlertRow>,
 }
 
 #[derive(Debug, Clone)]
@@ -596,6 +676,14 @@ pub struct WatchlistTeamRow {
     pub key: String,
 }
 
+#[derive(Debug, Clone)]
+pub struct WatchlistAlertRow {
+    pub fired_at: String,
+    pub rule_id: String,
+    pub entity: String,
+    pub message: String,
+}
+
 /// One pre-formatted row for the poach board template.
 #[derive(Debug, Clone)]
 pub struct PoachRow {
@@ -606,6 +694,7 @@ pub struct PoachRow {
     pub position: String,
     pub score: String,
     pub confidence: String,
+    pub availability: String,
     pub category_fit: String,
     pub schedule: String,
     pub risk: String,

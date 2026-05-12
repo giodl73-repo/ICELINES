@@ -116,13 +116,14 @@ surface still differs from CLI/TUI.
      `meta.source_error` on successful API responses.
    - Transactions and compare now use strict data/meta success envelopes.
 
-6. **Close high-value route claims** - complete for deferred web routes
-   - Confirm `/fantasy` remains intentionally deferred and is not advertised as
-     shipped elsewhere.
+6. **Close high-value route claims** - complete; fantasy status superseded
+   - Superseded by later Selke/Ted Lindsay work: `/fantasy`,
+     `/api/v1/fantasy/gaps`, and `/api/v1/fantasy/simulate` are now shipped
+     read/product routes.
    - Confirm docs/search/admin snapshot routes are either implemented, planned,
      or absent from user-facing claims.
-   - Current explicit deferred/not-mounted claims cover fantasy fold-in,
-     scouting web routes, report toggles, data admin, and snapshots.
+   - Current explicit not-mounted claims cover report toggles, data admin, and
+     snapshots.
 
 7. **Hand off visual quality**
    - Ted Lindsay should leave web route truth settled.

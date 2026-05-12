@@ -21,8 +21,8 @@ use crate::tui::playoffs::{new_cache, PlayoffsCache};
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
 use icelines_core::{
-    PlayoffsBracketInput, PlayoffsRoundInput, PlayoffsSeriesInput, PlayoffsSeriesRow, PlayoffsView,
-    ViewContext, ViewWindow,
+    PlayoffsBracketInput, PlayoffsGameInput, PlayoffsGameRow, PlayoffsRoundInput,
+    PlayoffsSeriesInput, PlayoffsSeriesRow, PlayoffsView, ViewContext, ViewWindow,
 };
 
 // ── Phase Norris.4 — per-screen state struct ─────────────────────────────────
@@ -149,7 +149,7 @@ mod norris_state_tests {
     }
 }
 use crate::tui::playoffs::{playoff_year_for_season, PlayoffsState};
-use icelines_fetch::nhl_api::{PlayoffBracket, PlayoffGameResult, PlayoffSeries};
+use icelines_fetch::nhl_api::{PlayoffBracket, PlayoffSeries};
 
 // ── Bracket view ──────────────────────────────────────────────────────────────
 
@@ -389,6 +389,18 @@ fn playoff_bracket_input(bracket: PlayoffBracket) -> PlayoffsBracketInput {
                         bottom_seed_rank: series.bottom_seed_rank,
                         winner_abbrev: series.winner_abbrev,
                         conference: series.conference,
+                        games: series
+                            .games
+                            .into_iter()
+                            .map(|game| PlayoffsGameInput {
+                                date: game.date,
+                                home_abbrev: game.home_abbrev,
+                                away_abbrev: game.away_abbrev,
+                                home_score: game.home_score,
+                                away_score: game.away_score,
+                                series_after: game.series_after,
+                            })
+                            .collect(),
                     })
                     .collect(),
             })
@@ -499,7 +511,8 @@ fn render_series_body(
     lines.push(Line::from(""));
 
     lines.push(Line::styled("  GAMES", gold));
-    if s.games.is_empty() {
+    let view_games = view.map(|row| row.games.as_slice()).unwrap_or(&[]);
+    if view_games.is_empty() {
         // Live API path — no per-game data. Show the count + next-game hint.
         lines.push(Line::styled(
             format!("    {} game(s) played so far", s.games_played()),
@@ -526,8 +539,8 @@ fn render_series_body(
         ));
     } else {
         // Bundled-data path — render the actual game log.
-        for (i, g) in s.games.iter().enumerate() {
-            let row = format_game_row(i + 1, g);
+        for g in view_games {
+            let row = format_game_row(g);
             let style = if g.home_score > g.away_score && g.home_abbrev == s.top_seed_abbrev
                 || g.away_score > g.home_score && g.away_abbrev == s.top_seed_abbrev
             {
@@ -547,10 +560,10 @@ fn render_series_body(
 
 /// Format one row of the game log:
 /// `  Game 7  1994-06-14   NYR 3 – 2 VAN   NYR wins 4-3`
-fn format_game_row(num: usize, g: &PlayoffGameResult) -> String {
+fn format_game_row(g: &PlayoffsGameRow) -> String {
     format!(
         "    Game {num}  {date}   {home} {hs} – {as_} {away}   {after}",
-        num = num,
+        num = g.game_number,
         date = g.date,
         home = g.home_abbrev,
         hs = g.home_score,

@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::identity::PlayerId;
 use crate::model::{Position, Season, TeamAbbr};
 use crate::season_stats::SeasonType;
+use crate::stats_catalog::{StatId, StatUnit};
 use crate::stats_repository::{PlayerView, StatsRepository};
 use crate::view_model::context::{
     AppliedFilter, Completeness, EmptyKind, EmptyState, SortDirection, SortKey, SortState,
@@ -137,6 +138,7 @@ pub struct LeaderRow {
     pub position: Position,
     pub primary: MetricCell,
     pub secondary: Vec<MetricCell>,
+    pub catalog_metrics: Vec<MetricCell>,
     pub tokens: Vec<SemanticToken>,
 }
 
@@ -196,11 +198,59 @@ fn leader_row(
                 None,
             ),
         ],
+        catalog_metrics: catalog_metrics(player),
         tokens: if player.is_rankable() {
             vec![SemanticToken::SupportingEvidence]
         } else {
             vec![SemanticToken::SourcePartial]
         },
+    }
+}
+
+fn catalog_metrics(player: &PlayerView<'_>) -> Vec<MetricCell> {
+    StatId::all()
+        .iter()
+        .map(|sid| {
+            let value = sid
+                .read(player)
+                .map(metric_value_for_stat_unit(sid.unit()))
+                .unwrap_or(MetricValue::Missing);
+            MetricCell {
+                key: StatKey::from(sid.cli_key()),
+                label: sid.short_label().to_string(),
+                value,
+                unit: metric_unit_for_stat_unit(sid.unit()),
+                precision: precision_for_stat_unit(sid.unit()),
+                token: None,
+            }
+        })
+        .collect()
+}
+
+fn metric_value_for_stat_unit(unit: StatUnit) -> impl Fn(f64) -> MetricValue {
+    move |value| match unit {
+        StatUnit::Count | StatUnit::Seconds => MetricValue::Integer(value as i64),
+        StatUnit::Pct | StatUnit::Per60 | StatUnit::Rate | StatUnit::Inverted => {
+            MetricValue::Decimal(value)
+        }
+    }
+}
+
+fn metric_unit_for_stat_unit(unit: StatUnit) -> MetricUnit {
+    match unit {
+        StatUnit::Count => MetricUnit::Count,
+        StatUnit::Pct => MetricUnit::Percentage,
+        StatUnit::Per60 => MetricUnit::PerGame,
+        StatUnit::Seconds => MetricUnit::Seconds,
+        StatUnit::Rate | StatUnit::Inverted => MetricUnit::Score,
+    }
+}
+
+fn precision_for_stat_unit(unit: StatUnit) -> ValuePrecision {
+    match unit {
+        StatUnit::Count | StatUnit::Seconds => ValuePrecision::Integer,
+        StatUnit::Pct => ValuePrecision::PercentOneDecimal,
+        StatUnit::Per60 | StatUnit::Rate | StatUnit::Inverted => ValuePrecision::TwoDecimals,
     }
 }
 

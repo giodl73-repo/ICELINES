@@ -1,6 +1,6 @@
 //! Fantasy poacher TUI board. Phase Selke.5.
 
-use icelines_core::view_model::{PoachBoardView, PoachQuery};
+use icelines_core::view_model::{AvailabilityState, PoachBoardView, PoachQuery};
 use ratatui::{
     layout::Rect,
     style::{Color, Modifier, Style},
@@ -46,8 +46,8 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
     let mut items = Vec::new();
     items.push(ListItem::new(Line::styled(
         format!(
-            "  {:<3} {:<2} {:<24} {:<4} {:<3} {:>5} {:<11} {:<24} {}",
-            "Rk", "W", "Player", "Team", "Pos", "Score", "Conf", "Why", "Risk"
+            "  {:<3} {:<2} {:<22} {:<4} {:<3} {:>5} {:<9} {:<11} {:<22} {}",
+            "Rk", "W", "Player", "Team", "Pos", "Score", "Avail", "Conf", "Why", "Risk"
         ),
         Style::default().fg(Color::DarkGray),
     )));
@@ -86,16 +86,17 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
         };
         items.push(ListItem::new(Line::from(vec![Span::styled(
             format!(
-                "  {:<3} {:<2} {:<24} {:<4} {:<3} {:>5.1} {:<11} {:<24} {}",
+                "  {:<3} {:<2} {:<22} {:<4} {:<3} {:>5.1} {:<9} {:<11} {:<22} {}",
                 idx + 1,
                 watch_mark,
-                truncate(&row.display_name, 24),
+                truncate(&row.display_name, 22),
                 row.team.as_str(),
                 row.position.abbreviation(),
                 row.score.final_score,
+                availability_label(row.availability),
                 format!("{:?}", row.confidence).to_ascii_lowercase(),
-                truncate(why, 24),
-                truncate(risk, 24),
+                truncate(why, 22),
+                truncate(risk, 22),
             ),
             style,
         )])));
@@ -169,7 +170,50 @@ fn build_view(app: &App) -> PoachBoardView {
     let mut query = PoachQuery::new(app.active_season_typed, app.active_type, "yahoo-standard");
     query.limit = Some(30);
     query.sort = Some("poach_score".to_string());
+    if let Some(rosters) = active_fantasy_rostered_player_keys() {
+        query =
+            query.with_imported_league_availability(rosters.all_rostered, rosters.user_rostered);
+    }
     PoachBoardView::from_repository(&app.repo, query)
+}
+
+struct ActiveFantasyRosters {
+    all_rostered: Vec<String>,
+    user_rostered: Vec<String>,
+}
+
+fn active_fantasy_rostered_player_keys() -> Option<ActiveFantasyRosters> {
+    let db = crate::fantasy_db::FantasyDb::open().ok()?;
+    let league = db.get_active_league().ok()??;
+    let user_team_id = db
+        .get_user_team(&league.id)
+        .ok()
+        .flatten()
+        .map(|team| team.id);
+    let mut all_rostered = Vec::new();
+    let mut user_rostered = Vec::new();
+    for team in db.list_teams(&league.id).ok()? {
+        let roster = db.list_roster(&team.id).ok()?;
+        if Some(team.id.as_str()) == user_team_id.as_deref() {
+            user_rostered.extend(roster.iter().cloned());
+        }
+        all_rostered.extend(roster);
+    }
+    Some(ActiveFantasyRosters {
+        all_rostered,
+        user_rostered,
+    })
+}
+
+fn availability_label(state: AvailabilityState) -> &'static str {
+    match state {
+        AvailabilityState::Unknown => "unknown",
+        AvailabilityState::Available => "available",
+        AvailabilityState::RosteredByUser => "my",
+        AvailabilityState::ImportedAvailable => "free",
+        AvailabilityState::ImportedRostered => "rostered",
+        AvailabilityState::Watched => "watched",
+    }
 }
 
 fn watchlist_members() -> HashSet<String> {

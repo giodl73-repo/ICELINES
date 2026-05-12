@@ -14,6 +14,14 @@ pub(crate) struct WatchNote {
     pub(crate) updated_at: String,
 }
 
+#[derive(Debug, Clone, serde::Serialize)]
+pub(crate) struct WatchAlertEvent {
+    pub(crate) rule_id: String,
+    pub(crate) entity_ref: Option<String>,
+    pub(crate) message: String,
+    pub(crate) fired_at: String,
+}
+
 #[derive(Debug, serde::Serialize)]
 pub(crate) struct GroupApiResponse {
     pub(crate) schema_version: &'static str,
@@ -41,6 +49,7 @@ pub(crate) struct WatchlistApiResponse {
     pub(crate) schema_version: &'static str,
     pub(crate) route: &'static str,
     pub(crate) data: Vec<WatchlistApiRow>,
+    pub(crate) alerts: Vec<WatchAlertEvent>,
     pub(crate) meta: WatchlistApiMeta,
 }
 
@@ -145,6 +154,41 @@ pub(crate) fn read_watch_notes() -> HashMap<String, WatchNote> {
                 updated_at: r.get::<_, String>(3)?,
             },
         ))
+    })
+    .ok()
+    .map(|rows| rows.filter_map(Result::ok).collect())
+    .unwrap_or_default()
+}
+
+pub(crate) fn read_watch_alert_events(limit: usize) -> Vec<WatchAlertEvent> {
+    let Some(home) = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")) else {
+        return Vec::new();
+    };
+    let db_path = std::path::PathBuf::from(&home)
+        .join(".icelines")
+        .join("icelines.db");
+    if !db_path.exists() {
+        return Vec::new();
+    }
+    let Ok(conn) = rusqlite::Connection::open(&db_path) else {
+        return Vec::new();
+    };
+    let Ok(mut stmt) = conn.prepare(
+        "SELECT rule_id, entity_ref, message, fired_at
+         FROM watch_rule_events
+         WHERE rule_id LIKE 'alert-%'
+         ORDER BY fired_at DESC, id DESC
+         LIMIT ?1",
+    ) else {
+        return Vec::new();
+    };
+    stmt.query_map(rusqlite::params![limit.max(1) as i64], |r| {
+        Ok(WatchAlertEvent {
+            rule_id: r.get(0)?,
+            entity_ref: r.get(1)?,
+            message: r.get(2)?,
+            fired_at: r.get(3)?,
+        })
     })
     .ok()
     .map(|rows| rows.filter_map(Result::ok).collect())

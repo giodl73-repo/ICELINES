@@ -17,8 +17,10 @@ one user's machine. Four surfaces share one engine:
   `fantasy standings`, `export md`, ...). For scripting and one-shot lookups.
 - **Static site** (`build` / `serve` / `deploy`) — mkdocs-Material site, one team
   page per NHL team plus a ranked index. The "share with non-CLI users" surface.
-- **HTTP server** (`fantasy serve`) — axum on `127.0.0.1`, JSON API + HTML dashboard
-  for fantasy league management.
+- **HTTP server** (`serve`) — axum web dashboard with `/fantasy`,
+  `/api/v1/fantasy/gaps`, `/api/v1/fantasy/simulate`, poach, reports, and
+  other parity routes. The older `fantasy serve` command remains as a legacy
+  local league-management/mutation server.
 
 All four surfaces produce the same output for the same data state along the
 canonical view path (depth chart, query, scouting, fantasy scoring,
@@ -73,7 +75,7 @@ include: deliberate scope (fantasy is local-only today), data-source constraint
 | Playoffs | ✅ `playoffs` *(LP.2)* | ✅ `tui playoffs` *(LB)* | ✅ `/playoffs` |
 | Transactions | ✅ `transactions` *(Selke + LP.3)* | ✅ `tui transactions` *(LB)* | ✅ `/transactions` |
 | Docs reference | ✅ `docs` | ✅ `m` overlay *(LP.4)* | ✅ `/docs` |
-| Fantasy | ✅ `fantasy …` | (deep links via groups) | ❌ *(deferred — Phase Frank Selke when revisited)* |
+| Fantasy | ✅ `fantasy …` | ✅ `fantasy gaps` / `fantasy simulate` | ✅ `/fantasy`, `/api/v1/fantasy/*` |
 
 *(LB)* = ships in Phase Lady Byng (per `plans/2026-05-05-phaseLadyByng-tui-experiences.md`).
 
@@ -85,10 +87,11 @@ phase as the `m` keybind (LP.4 in v0.14.2). And a v0.14.2 follow-up added
 the **/depth** web route mirroring the TUI Depth tab — the last top-level
 surface gap.
 
-**Surface portfolio after v0.14.2**: every analytical feature is reachable
-on every surface (CLI ✅ TUI ✅ Web ✅). The only ❌ remaining is fantasy-
-on-web, intentionally deferred (single-user local-only fantasy is the v1
-stance).
+**Surface portfolio after v0.14.2 plus Selke/Ted Lindsay follow-up**: every
+analytical feature is reachable on every surface (CLI ✅ TUI ✅ Web ✅).
+Fantasy read/product surfaces now cover roster gaps, simulation scenarios, and
+poacher workflows on CLI, TUI, web HTML, and web JSON. Local CLI remains the
+primary mutation surface for league/team management.
 
 ## What the v1.0 surface is
 
@@ -98,14 +101,16 @@ The 28 commands working end-to-end against the post-Hart data model. Specificall
   top-level `rank`, `players`, `class`, `peers`, `compare`, `history`, `mates`,
   `scouting`, `project`, `team`, `trade`
 - **Fantasy**: `fantasy {league-create / team-{create,add,drop,show,list} / standings
-  / trade / serve}`, `scheme {list,show,fromcsv}`
+  / trade / gaps / simulate / serve}`, `poach`, `watch`, `report poach`,
+  `report weekly`, `scheme {list,show,fromcsv}`
 - **Live**: `tonight`, `schedule`, `transactions`, plus the TUI Scores/Schedule/Playoffs tabs
 - **Data ops**: `fetch all`, `data {install,list,remove}`, `snapshot {list,show,use,
   verify,delete}`, `group {create,add,show,list,delete}`
 - **Output**: `build`, `serve`, `deploy` (mkdocs), `export md <shape>`
 
-Plus the TUI: every tab functional, season time-travel via `y` working across all
-screens, fantasy server stable, ASCII headshots rendering.
+Plus the TUI: every tab functional, season time-travel via `y` working across
+all screens, fantasy gaps/simulation screens render shared ViewModels, fantasy
+server stable, ASCII headshots rendering.
 
 ## Where we are (2026-05-01)
 
@@ -142,10 +147,9 @@ In order:
    running build or is explicitly marked deferred. Rebuild the docs index. Cut a v1.0
    release.
 3. **Pick from backlog** — `INDEX.md` has 10 backlog items. After Hart, the highest-
-   value next moves are probably (in some order): goalie fantasy scoring (data is
-   already there post-Vezina; just wire it up), `mates` / `peers` against real shift
-   data, fantasy daily delta scoring, NHL Edge skating speed (parked on data
-   availability).
+   value next moves are probably (in some order): `mates` / `peers` against real
+   shift data, fantasy daily delta scoring, deeper fantasy matchup simulation,
+   NHL Edge skating speed (parked on data availability).
 
 ## Non-goals (where IceLines does not go)
 

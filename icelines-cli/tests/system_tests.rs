@@ -729,14 +729,26 @@ fn l2_cmd_export_md_team_requires_team_flag() {
 }
 
 #[test]
-fn l2_cmd_export_md_fantasy_returns_deferred_message() {
+fn l2_cmd_export_md_fantasy_renders_poach_report() {
     let out = run(&["export", "md", "fantasy", "--out", "-"]);
+    let stdout = String::from_utf8_lossy(&out.stdout);
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(!stderr.contains("panicked at"));
-    assert!(!out.status.success(), "deferred shapes must exit non-zero");
     assert!(
-        stderr.contains("deferred"),
-        "error must explain why fantasy is deferred"
+        out.status.success(),
+        "fantasy export must succeed: {stderr}"
+    );
+    assert!(
+        stdout.starts_with("---\n"),
+        "stdout must start with YAML front-matter"
+    );
+    assert!(
+        stdout.contains("type: fantasy-poacher"),
+        "fantasy export must use the poach report front matter"
+    );
+    assert!(
+        stdout.contains("Fantasy Poacher"),
+        "fantasy export must render the report body"
     );
 }
 
@@ -1677,6 +1689,71 @@ fn l2_cmd_fantasy_team_add_goalie_emits_goalie_tag() {
 }
 
 // ── L2: fetch sub-commands (dry-run only) ────────────────────────────────────
+
+#[test]
+fn l2_cmd_fantasy_gaps_json_emits_view_contract() {
+    let tmp = tempfile::tempdir().expect("tempdir for isolated HOME");
+    let home = tmp.path();
+    let league = unique_league("gaps-json");
+    let team = "Gap Checkers";
+
+    let out = run_isolated(home, &["fantasy", "league-create", &league]);
+    assert!(
+        out.status.success(),
+        "league-create must succeed, stderr: {}",
+        String::from_utf8_lossy(&out.stderr),
+    );
+
+    let out = run_isolated(home, &["fantasy", "team-create", team]);
+    assert!(
+        out.status.success(),
+        "team-create must succeed, stderr: {}",
+        String::from_utf8_lossy(&out.stderr),
+    );
+
+    let out = run_isolated(home, &["fantasy", "team-add", team, "McDavid"]);
+    assert!(
+        out.status.success(),
+        "team-add McDavid must succeed, stderr: {}",
+        String::from_utf8_lossy(&out.stderr),
+    );
+
+    let out = run_isolated(home, &["fantasy", "team-use", team]);
+    assert!(
+        out.status.success(),
+        "team-use must succeed, stderr: {}",
+        String::from_utf8_lossy(&out.stderr),
+    );
+
+    let out = run_isolated(
+        home,
+        &[
+            "fantasy",
+            "gaps",
+            "--category",
+            "hits,blocks,shots",
+            "--json",
+        ],
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        out.status.success(),
+        "fantasy gaps --json must succeed, stderr: {stderr}"
+    );
+    assert!(
+        stdout.contains("\"rows\""),
+        "gaps JSON must expose rows from FantasyRosterGapView, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("\"scoring_scheme\""),
+        "gaps JSON must expose the active scoring scheme, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("\"weighted_gap_score\""),
+        "gaps JSON must expose weighted gap scores, got: {stdout}"
+    );
+}
 
 #[test]
 fn l2_cmd_fetch_contracts_dry_run_exits_zero() {

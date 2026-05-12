@@ -55,13 +55,18 @@ Conn Smythe: Brian Leetch
 Per `design/IceLines.md` § "Feature × surface portfolio":
 - All three CLI ❌ rows from the post-Lady-Byng matrix flipped to ✅.
 - The docs ❌ row in the TUI column remains (LP.4 deferred).
-- The fantasy ❌ on web stays deliberate per `IceLines.md` non-goals.
+- Superseded by Selke/Ted Lindsay follow-up: fantasy read/product web routes
+  now ship through `/fantasy` and `/api/v1/fantasy/*`; local CLI remains the
+  primary mutation surface.
 
 ## What's next
 
-The portfolio is now ~95% complete. The two remaining gaps are:
+At the time of this note, the portfolio was ~95% complete. The two remaining
+gaps were:
 1. **In-TUI docs overlay (LP.4)** — flip TUI ❌ to ✅. Future LP-followup phase.
-2. **Fantasy on web** — flip Web ❌ to ✅. Intentionally deferred; v1 stance is local-only fantasy. Reopens if/when the user makes that call.
+2. **Fantasy web read/product parity** — superseded by later Selke/Ted Lindsay
+   work; `/fantasy`, `/api/v1/fantasy/gaps`, and
+   `/api/v1/fantasy/simulate` now exist.
 
 After this phase the next-highest-value work, in rough order:
 - Persona Wave 5 — exercise the new LP.1 / LP.2 commands with realistic scripts.

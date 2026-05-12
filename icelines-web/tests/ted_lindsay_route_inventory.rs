@@ -11,6 +11,8 @@ const ROUTER_ROUTES: &[&str] = &[
     "GET /api/v1/leaders",
     "GET /player/:id",
     "GET /api/v1/player/:id",
+    "GET /scouting/:id",
+    "GET /api/v1/scouting/:id",
     "GET /compare",
     "GET /api/v1/compare",
     "GET /goalies",
@@ -45,6 +47,8 @@ const ROUTER_ROUTES: &[&str] = &[
     "GET /transactions",
     "GET /api/v1/transactions",
     "GET /fantasy",
+    "GET /api/v1/fantasy/gaps",
+    "GET /api/v1/fantasy/simulate",
 ];
 
 #[test]

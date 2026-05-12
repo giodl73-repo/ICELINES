@@ -21,7 +21,10 @@ use crate::tui::schedule::{
     TeamSeasonCache, WeekCache,
 };
 use icelines_core::model::Season;
-use icelines_core::{ScheduleGameRow, ScheduleView, ScheduledGameInput, ViewContext, ViewWindow};
+use icelines_core::{
+    ScheduleGameRow, ScheduleMatchupView, ScheduleTeamView, ScheduleView, ScheduledGameInput,
+    ViewContext, ViewWindow,
+};
 use icelines_fetch::nhl_api::ScheduledGame;
 
 // ── Phase Norris.2 — per-screen state struct ─────────────────────────────────
@@ -591,73 +594,60 @@ fn render_team_schedule_loaded(
         .fg(Color::Yellow)
         .add_modifier(Modifier::BOLD);
 
-    // Compute record (W-L-OT) over completed games — exclude preseason (game_type=1)
-    let mut wins = 0u32;
-    let mut losses = 0u32;
-    let mut ot_l = 0u32;
-    for g in games.iter().filter(|g| g.game_type != 1 && g.is_final()) {
-        let team_is_away = g.away_abbrev == team;
-        let (team_score, opp_score) = if team_is_away {
-            (g.away_score.unwrap_or(0), g.home_score.unwrap_or(0))
-        } else {
-            (g.home_score.unwrap_or(0), g.away_score.unwrap_or(0))
-        };
-        if team_score > opp_score {
-            wins += 1;
-        } else if matches!(g.last_period.as_deref(), Some("OT") | Some("SO")) {
-            ot_l += 1;
-        } else {
-            losses += 1;
-        }
-    }
-    let played = wins + losses + ot_l;
+    // Team-season record/list projection lives in the shared schedule view model.
+    let view = ScheduleTeamView::from_games(
+        ViewContext::new(ViewWindow::new(
+            Season(app.active_season_typed.0),
+            app.active_type,
+        )),
+        app.active_season.clone(),
+        team.to_owned(),
+        games.iter().cloned().map(scheduled_game_input).collect(),
+    );
+    let rows = &view.rows;
+    let record = view.record;
 
-    let max_idx = games.len().saturating_sub(1);
+    let max_idx = rows.len().saturating_sub(1);
     let visible = (area.height as usize).saturating_sub(4);
     let selected_idx = app.schedule.selected.min(max_idx);
     let offset = selected_idx
         .saturating_sub(visible / 2)
-        .min(games.len().saturating_sub(visible));
+        .min(rows.len().saturating_sub(visible));
 
     let mut lines: Vec<Line> = Vec::with_capacity(visible + 4);
     lines.push(Line::styled(
-        format!("  Played: {played} · Record: {wins}-{losses}-{ot_l}"),
+        format!(
+            "  Played: {} · Record: {}-{}-{}",
+            record.played, record.wins, record.losses, record.overtime_losses
+        ),
         gold,
     ));
     lines.push(Line::styled(format!("  {}", "─".repeat(60)), dim));
 
-    for (i, g) in games.iter().enumerate().skip(offset).take(visible) {
-        let team_is_away = g.away_abbrev == team;
-        let opp = if team_is_away {
-            &g.home_abbrev
-        } else {
-            &g.away_abbrev
-        };
-        let venue = if team_is_away { "@" } else { "vs" };
+    for (i, g) in rows.iter().enumerate().skip(offset).take(visible) {
+        let opp = g.opponent_abbrev_for(team).unwrap_or("");
+        let venue = g.venue_label_for(team).unwrap_or("");
 
         let (marker, result_str, color) = if g.is_final() {
-            let (s, o) = if team_is_away {
-                (g.away_score.unwrap_or(0), g.home_score.unwrap_or(0))
-            } else {
-                (g.home_score.unwrap_or(0), g.away_score.unwrap_or(0))
-            };
+            let s = g.team_score(team).unwrap_or(0);
+            let o = g.opponent_score(team).unwrap_or(0);
             let ot_tag = match g.last_period.as_deref() {
                 Some("OT") => " (OT)",
                 Some("SO") => " (SO)",
                 _ => "",
             };
             if s > o {
-                ("✓", format!("{s}-{o}{ot_tag}"), Color::Green)
+                ("W", format!("{s}-{o}{ot_tag}"), Color::Green)
             } else if matches!(g.last_period.as_deref(), Some("OT") | Some("SO")) {
-                ("○", format!("{s}-{o}{ot_tag}"), Color::Yellow)
+                ("O", format!("{s}-{o}{ot_tag}"), Color::Yellow)
             } else {
-                ("✗", format!("{s}-{o}{ot_tag}"), Color::Red)
+                ("L", format!("{s}-{o}{ot_tag}"), Color::Red)
             }
         } else if g.is_live() {
-            ("◉", "LIVE".to_owned(), Color::Cyan)
+            ("*", "LIVE".to_owned(), Color::Cyan)
         } else {
             let utc = g.start_time_utc.get(11..16).unwrap_or("?");
-            ("○", fmt_et(utc), Color::DarkGray)
+            ("-", fmt_et(utc), Color::DarkGray)
         };
 
         let row = format!(
@@ -678,7 +668,7 @@ fn render_team_schedule_loaded(
 
     lines.push(Line::from(""));
     lines.push(Line::styled(
-        format!("  {} games total · ↑↓ scroll · Esc back", games.len()),
+        format!("  {} games total · ↑↓ scroll · Esc back", view.total),
         dim,
     ));
     f.render_widget(Paragraph::new(lines), area);
@@ -725,23 +715,35 @@ pub fn render_matchup(f: &mut Frame, app: &App, area: Rect, t1: &str, t2: &str) 
                 inner,
             );
         }
-        ScheduleState::Loaded(games) => render_matchup_loaded(f, inner, t1, t2, &games),
+        ScheduleState::Loaded(games) => render_matchup_loaded(f, app, inner, t1, t2, &games),
     }
 }
 
-fn render_matchup_loaded(f: &mut Frame, area: Rect, t1: &str, t2: &str, all: &[ScheduledGame]) {
+fn render_matchup_loaded(
+    f: &mut Frame,
+    app: &App,
+    area: Rect,
+    t1: &str,
+    t2: &str,
+    all: &[ScheduledGame],
+) {
     let dim = Style::default().fg(Color::DarkGray);
     let gold = Style::default()
         .fg(Color::Yellow)
         .add_modifier(Modifier::BOLD);
 
-    // Filter to games involving both teams
-    let relevant: Vec<&ScheduledGame> = all
-        .iter()
-        .filter(|g| g.involves(t1) && g.involves(t2))
-        .collect();
+    let view = ScheduleMatchupView::from_games(
+        ViewContext::new(ViewWindow::new(
+            Season(app.active_season_typed.0),
+            app.active_type,
+        )),
+        app.active_season.clone(),
+        t1.to_owned(),
+        t2.to_owned(),
+        all.iter().cloned().map(scheduled_game_input).collect(),
+    );
 
-    if relevant.is_empty() {
+    if view.rows.is_empty() {
         f.render_widget(
             Paragraph::new(vec![
                 Line::from(""),
@@ -752,73 +754,42 @@ fn render_matchup_loaded(f: &mut Frame, area: Rect, t1: &str, t2: &str, all: &[S
         return;
     }
 
-    // Tally regular season + playoff records (from t1 perspective)
-    let mut t1_reg_w = 0u32;
-    let mut t1_reg_l = 0u32;
-    let mut t1_po_w = 0u32;
-    let mut t1_po_l = 0u32;
-    for g in &relevant {
-        if !g.is_final() {
-            continue;
-        }
-        let t1_is_away = g.away_abbrev == t1;
-        let (t1_score, t2_score) = if t1_is_away {
-            (g.away_score.unwrap_or(0), g.home_score.unwrap_or(0))
-        } else {
-            (g.home_score.unwrap_or(0), g.away_score.unwrap_or(0))
-        };
-        let t1_won = t1_score > t2_score;
-        match (g.is_playoff(), t1_won) {
-            (true, true) => t1_po_w += 1,
-            (true, false) => t1_po_l += 1,
-            (false, true) => t1_reg_w += 1,
-            (false, false) => t1_reg_l += 1,
-        }
-    }
-
     let mut lines: Vec<Line> = Vec::new();
     lines.push(Line::styled(
         format!(
-            "  Regular season: {t1} {t1_reg_w}-{t1_reg_l} {t2}     ·     Playoffs: {t1} {t1_po_w}-{t1_po_l} {t2}"
+            "  Regular season: {t1} {}-{} {t2}     ·     Playoffs: {t1} {}-{} {t2}",
+            view.regular_record.wins,
+            view.regular_record.losses,
+            view.playoff_record.wins,
+            view.playoff_record.losses
         ),
         gold,
     ));
     lines.push(Line::styled(format!("  {}", "─".repeat(64)), dim));
 
-    let regular: Vec<&ScheduledGame> = relevant
-        .iter()
-        .copied()
-        .filter(|g| !g.is_playoff())
-        .collect();
-    let playoffs: Vec<&ScheduledGame> = relevant
-        .iter()
-        .copied()
-        .filter(|g| g.is_playoff())
-        .collect();
-
-    if !regular.is_empty() {
+    if !view.regular_rows.is_empty() {
         lines.push(Line::styled("  Regular Season", gold));
-        for g in &regular {
+        for g in &view.regular_rows {
             lines.push(matchup_row(g, t1));
         }
         lines.push(Line::from(""));
     }
-    if !playoffs.is_empty() {
+    if !view.playoff_rows.is_empty() {
         lines.push(Line::styled("  Playoffs", gold));
-        for g in &playoffs {
+        for g in &view.playoff_rows {
             lines.push(matchup_row(g, t1));
         }
     }
 
     lines.push(Line::from(""));
     lines.push(Line::styled(
-        format!("  {} matchup(s) · Esc back", relevant.len()),
+        format!("  {} matchup(s) · Esc back", view.total),
         dim,
     ));
     f.render_widget(Paragraph::new(lines), area);
 }
 
-fn matchup_row(g: &ScheduledGame, t1: &str) -> Line<'static> {
+fn matchup_row(g: &ScheduleGameRow, t1: &str) -> Line<'static> {
     let date = pretty_date(&g.date);
     let body = if g.is_final() {
         let aw = g.away_score.unwrap_or(0);
@@ -860,12 +831,8 @@ fn matchup_row(g: &ScheduledGame, t1: &str) -> Line<'static> {
 
     let style = if g.is_final() {
         // Bold the winning team's name in the matchup, color from t1's perspective
-        let t1_is_away = g.away_abbrev == t1;
-        let (t1_score, t2_score) = if t1_is_away {
-            (g.away_score.unwrap_or(0), g.home_score.unwrap_or(0))
-        } else {
-            (g.home_score.unwrap_or(0), g.away_score.unwrap_or(0))
-        };
+        let t1_score = g.team_score(t1).unwrap_or(0);
+        let t2_score = g.opponent_score(t1).unwrap_or(0);
         if t1_score > t2_score {
             Style::default().fg(Color::Green)
         } else {

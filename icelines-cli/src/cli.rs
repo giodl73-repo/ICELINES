@@ -141,6 +141,11 @@ pub enum Commands {
         #[arg(long)]
         pos: Vec<String>,
 
+        /// Filter by availability: any, available, imported-available,
+        /// not-on-user-roster, watched, unknown.
+        #[arg(long)]
+        availability: Option<String>,
+
         /// Number of candidates to show.
         #[arg(long, default_value_t = 20)]
         top: u16,
@@ -906,6 +911,39 @@ mod tui_surface_tests {
             );
         }
     }
+
+    #[test]
+    fn l0_fantasy_simulate_clap_surface_parses() {
+        let cli = Cli::try_parse_from([
+            "icelines",
+            "fantasy",
+            "simulate",
+            "--weeks",
+            "6",
+            "--add",
+            "Block Helper",
+            "--drop",
+            "Bench Forward",
+            "--json",
+        ])
+        .expect("fantasy simulate should parse");
+
+        match cli.command {
+            Commands::Fantasy(FantasySubcommand::Simulate {
+                weeks,
+                add_player,
+                drop_player,
+                json,
+                ..
+            }) => {
+                assert_eq!(weeks, 6);
+                assert_eq!(add_player.as_deref(), Some("Block Helper"));
+                assert_eq!(drop_player.as_deref(), Some("Bench Forward"));
+                assert!(json);
+            }
+            other => panic!("expected fantasy simulate, got {other:?}"),
+        }
+    }
 }
 
 // ── Fetch sub-commands ────────────────────────────────────────────────────────
@@ -970,6 +1008,11 @@ pub enum ReportSubcommand {
         #[arg(long)]
         pos: Vec<String>,
 
+        /// Filter by availability: any, available, imported-available,
+        /// not-on-user-roster, watched, unknown.
+        #[arg(long)]
+        availability: Option<String>,
+
         /// Number of candidates to include.
         #[arg(long, default_value_t = 20)]
         top: u16,
@@ -1012,6 +1055,11 @@ pub enum ReportSubcommand {
         /// Filter by position abbreviation: C, LW, RW, D.
         #[arg(long)]
         pos: Vec<String>,
+
+        /// Filter by availability: any, available, imported-available,
+        /// not-on-user-roster, watched, unknown.
+        #[arg(long)]
+        availability: Option<String>,
 
         /// Number of candidates to include per populated section.
         #[arg(long, default_value_t = 20)]
@@ -1110,6 +1158,29 @@ pub enum WatchSubcommand {
         limit: u16,
 
         /// Emit watch rule events as JSON.
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Evaluate current fantasy watch alerts without persisting events.
+    Alerts {
+        /// Season id, e.g. 20252026. Defaults to configured season.
+        #[arg(long)]
+        season: Option<String>,
+
+        /// Regular season or playoffs.
+        #[arg(long = "type", value_enum, default_value_t = QuerySeasonType::Regular)]
+        season_type: QuerySeasonType,
+
+        /// Number of poach candidates to evaluate.
+        #[arg(long, default_value_t = 200)]
+        top: u16,
+
+        /// Persist new alerts to watch history after evaluating.
+        #[arg(long)]
+        save: bool,
+
+        /// Emit WatchAlertsView as JSON.
         #[arg(long)]
         json: bool,
     },
@@ -2072,6 +2143,12 @@ pub enum FantasySubcommand {
         #[arg(long)]
         league: Option<String>,
     },
+    /// Mark a team as your roster in the active league.
+    TeamUse {
+        name: String,
+        #[arg(long)]
+        league: Option<String>,
+    },
     /// Show a team's roster with current stats and fantasy score.
     TeamShow {
         name: String,
@@ -2100,6 +2177,40 @@ pub enum FantasySubcommand {
         league: Option<String>,
         #[arg(long)]
         scheme: Option<String>,
+    },
+
+    /// Show category gaps for your marked team against available skaters.
+    Gaps {
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long)]
+        scheme: Option<String>,
+        /// Comma-separated categories to inspect, e.g. hits,blocks,shots.
+        #[arg(long = "category", value_delimiter = ',')]
+        categories: Vec<String>,
+        #[arg(long, default_value_t = 8)]
+        top: usize,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Simulate fantasy team standings and optional add/drop scenarios.
+    Simulate {
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long)]
+        scheme: Option<String>,
+        /// Projection horizon in weeks.
+        #[arg(long, default_value_t = 4)]
+        weeks: u8,
+        /// Candidate player to add in the scenario.
+        #[arg(long = "add")]
+        add_player: Option<String>,
+        /// Player to drop in the scenario.
+        #[arg(long = "drop")]
+        drop_player: Option<String>,
+        #[arg(long)]
+        json: bool,
     },
 
     // Trade

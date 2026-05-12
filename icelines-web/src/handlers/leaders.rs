@@ -310,6 +310,7 @@ fn leaders_view_from_template_rows(
                 web_metric_int("assists", "A", row.assists as i64, MetricUnit::Assists),
                 web_metric_int("points", "P", row.points as i64, MetricUnit::Points),
             ],
+            catalog_metrics: Vec::new(),
             tokens: vec![SemanticToken::SupportingEvidence],
         })
         .collect();
@@ -1287,4 +1288,80 @@ fn error_page(msg: String) -> Response {
         )),
     )
         .into_response()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn leader_fixture() -> LeaderRow {
+        LeaderRow {
+            nhl_id: 8478402,
+            name: "Connor McDavid".to_string(),
+            position: "C".to_string(),
+            team: "EDM".to_string(),
+            gp: 82,
+            goals: 64,
+            assists: 89,
+            points: 153,
+            ppg_str: "1.87".to_string(),
+            headshot_url: String::new(),
+            headshot_fallback_url: String::new(),
+            plus_minus_str: "+22".to_string(),
+            pim: 36,
+            shots: 352,
+            shooting_pct_str: "18.2%".to_string(),
+            hits_str: "89".to_string(),
+            blocks_str: "40".to_string(),
+            faceoff_pct_str: "51.9%".to_string(),
+            pp_points: 71,
+            plus_minus: 22,
+            shooting_pct: Some(18.2),
+            hits: Some(89),
+            blocks: Some(40),
+            faceoff_pct: Some(51.9),
+            points_per_60_str: "5.1".to_string(),
+            goals_per_60_str: "2.1".to_string(),
+            assists_per_60_str: "3.0".to_string(),
+            hits_per_60_str: "3.0".to_string(),
+            blocks_per_60_str: "1.4".to_string(),
+            points_per_60: Some(5.1),
+            goals_per_60: Some(2.1),
+            assists_per_60: Some(3.0),
+            hits_per_60: Some(3.0),
+            blocks_per_60: Some(1.4),
+            points_delta: Some(30),
+            points_delta_str: "+30".to_string(),
+            points_delta_class: "up".to_string(),
+        }
+    }
+
+    #[test]
+    fn l0_web_leaders_view_round_trips_template_and_json_rows() {
+        let rows = vec![leader_fixture()];
+        let view = leaders_view_from_template_rows(
+            &rows,
+            SortKey::Points,
+            Season(20242025),
+            SeasonType::Regular,
+        );
+
+        assert_eq!(view.rows[0].player_id.0, 8478402);
+        assert_eq!(view.rows[0].display_name, "Connor McDavid");
+        assert_eq!(view.rows[0].team.0, "EDM");
+        assert_eq!(view.rows[0].primary.key.0, "points");
+
+        let json_rows = leader_json_rows_from_view(&view);
+        assert_eq!(json_rows[0].name, "Connor McDavid");
+        assert_eq!(json_rows[0].team, "EDM");
+        assert_eq!(json_rows[0].points, 153);
+        assert_eq!(json_rows[0].points_per_game, Some(153.0 / 82.0));
+
+        let projected = leader_template_rows_from_view(&view, rows);
+        assert_eq!(projected[0].nhl_id, 8478402);
+        assert_eq!(projected[0].name, "Connor McDavid");
+        assert_eq!(projected[0].gp, 82);
+        assert_eq!(projected[0].points, 153);
+        assert_eq!(projected[0].ppg_str, "1.87");
+    }
 }

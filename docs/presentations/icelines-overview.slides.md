@@ -76,7 +76,7 @@ SLIDE 4 ────────────────────────
 ────────────────────────────────────────────────────────────────────────────────
 ● icelines query leaders — pace-adjusted leaderboard                            
 ● icelines team depth TB — full line/pair/pair chart                            
-● icelines fantasy score — compute fantasy points                               
+● icelines fantasy gaps/simulate — roster gaps and add/drop projections         
 ● icelines export md — markdown tables for proof/mdpath                         
 ● icelines comps HEDMAN — cross-team comparisons                                
 ● ```                                                                           

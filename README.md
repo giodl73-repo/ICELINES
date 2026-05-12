@@ -220,9 +220,14 @@ icelines fantasy team-add "My Team" "Kucherov"
 icelines fantasy team-show "My Team"       # roster with per-player fantasy scores
 icelines fantasy standings                 # league standings
 icelines fantasy league-switch "My League" # switch active league
+icelines fantasy team-use "My Team"        # mark your roster for gaps/poach
+icelines fantasy gaps --category hits,blocks,shots
+icelines fantasy simulate --weeks 4
+icelines fantasy simulate --add "McDavid" --drop "Bouchard" --json
 
 # Poacher
 icelines poach --category hits,blocks --top 15
+icelines poach --availability imported-available --category hits,blocks --top 15
 icelines poach --team SEA --pos LW --json
 icelines report poach --category shots --top 10 --out poach.md
 icelines report weekly --league default --category hits,blocks
@@ -234,18 +239,18 @@ icelines watch history
 icelines watch list
 icelines watch note "Matthew Knies" "PP1 promotion and strong hits fit"
 icelines tui poach                     # press w to watch with a score/reason note
-icelines serve                         # web includes /poach, /reports/poach, /reports/weekly, /watchlist, and Selke JSON APIs
+icelines serve                         # web includes /fantasy, /poach, reports, watchlist, and JSON APIs
 
 # Trades
 icelines fantasy trade "Bouchard" --to-team "Other" --for-player "Werenski"          # simulate
 icelines fantasy trade "Bouchard" --to-team "Other" --for-player "Werenski" --execute # commit
 
 # Web dashboard
-icelines fantasy serve --port 8080
-# GET /  → HTML standings
-# GET /api/standings → JSON
-# GET /api/teams     → JSON
-# POST /api/trade    → simulation JSON
+icelines serve --port 8000
+# GET /fantasy                 -> HTML gaps + simulation scenarios
+# GET /api/v1/fantasy/gaps     -> FantasyRosterGapView JSON
+# GET /api/v1/fantasy/simulate -> FantasySimulationView JSON
+# GET /poach                   -> HTML poacher board
 ```
 
 **Fantasy schemes:** `yahoo-standard`, `espn-standard`, `simple-pts`

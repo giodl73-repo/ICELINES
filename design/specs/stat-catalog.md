@@ -810,11 +810,14 @@ comments AND outside the allowlist. The pattern targets stat-name
 literals; doc-comments (`// `) and HTML/markdown comments (`<!-- `)
 are excluded.
 
-## HTTP integration (axum server)
+## HTTP integration (legacy fantasy axum server)
 
-The fantasy axum server exposes:
+The legacy fantasy-only axum server exposes:
 - `GET /api/team/:name/roster` — returns each player as JSON keyed by `StatId::cli_key()`.
 - `GET /api/standings` — scoring breakdown per fantasy team, again keyed by `StatId::cli_key()`.
+
+The main web dashboard parity routes for fantasy read/product views are
+`/fantasy`, `/api/v1/fantasy/gaps`, and `/api/v1/fantasy/simulate`.
 
 Tier-2 reports are NOT visible through the HTTP server. Promotion to
 Tier-1 (per AI-07 invariant) is a prerequisite for HTTP exposure.

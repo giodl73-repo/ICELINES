@@ -1,8 +1,10 @@
 use serde::{Deserialize, Serialize};
 
+use crate::career_history::{CareerStint, LeagueTier};
 use crate::identity::PlayerId;
 use crate::model::{Position, Season, TeamAbbr};
-use crate::season_stats::{SeasonStats, SeasonType};
+use crate::season_stats::SeasonType;
+use crate::stats_catalog::{StatId, StatUnit};
 use crate::stats_repository::{PlayerView, StatsRepository};
 use crate::view_model::context::{
     Completeness, EmptyKind, EmptyState, SourceKind, SourceState, ViewContext, ViewWarning,
@@ -20,6 +22,7 @@ pub struct PlayerCardView {
     pub headshot_url: Option<String>,
     pub active: Option<PlayerSeasonSummary>,
     pub career: Vec<PlayerCareerSummary>,
+    pub pre_nhl_career: Vec<PlayerPreNhlCareerRow>,
     pub warnings: Vec<ViewWarning>,
     pub empty_state: Option<EmptyState>,
 }
@@ -39,7 +42,14 @@ impl PlayerCardView {
             .career_all(player_id)
             .map(|iter| {
                 iter.filter(|stats| stats.totals.gp > 0)
-                    .map(player_career_summary)
+                    .map(|stats| {
+                        let row_view = PlayerView {
+                            identity,
+                            stats,
+                            contract: None,
+                        };
+                        player_career_summary(&row_view)
+                    })
                     .collect()
             })
             .unwrap_or_default();
@@ -79,9 +89,21 @@ impl PlayerCardView {
             headshot_url: identity.headshot_canonical_url.clone(),
             active,
             career,
+            pre_nhl_career: Vec::new(),
             warnings: Vec::new(),
             empty_state,
         })
+    }
+
+    pub fn with_pre_nhl_stints(mut self, stints: &[CareerStint]) -> Self {
+        self.pre_nhl_career = Self::pre_nhl_rows(stints);
+        self
+    }
+
+    pub fn pre_nhl_rows(stints: &[CareerStint]) -> Vec<PlayerPreNhlCareerRow> {
+        let mut rows: Vec<PlayerPreNhlCareerRow> = stints.iter().map(pre_nhl_row).collect();
+        rows.sort_by(|a, b| b.season.cmp(&a.season).then(a.sequence.cmp(&b.sequence)));
+        rows
     }
 }
 
@@ -102,7 +124,55 @@ pub struct PlayerCareerSummary {
     pub season_type: SeasonType,
     pub team: TeamAbbr,
     pub metrics: Vec<MetricCell>,
+    pub catalog_metrics: Vec<MetricCell>,
     pub tokens: Vec<SemanticToken>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PlayerPreNhlCareerRow {
+    pub season: Season,
+    pub season_label: String,
+    pub league: String,
+    pub league_tier: String,
+    pub team: String,
+    pub sequence: u8,
+    pub games: u32,
+    pub goals: Option<u32>,
+    pub assists: Option<u32>,
+    pub points: Option<u32>,
+    pub points_per_game: Option<f32>,
+}
+
+fn pre_nhl_row(stint: &CareerStint) -> PlayerPreNhlCareerRow {
+    PlayerPreNhlCareerRow {
+        season: stint.season,
+        season_label: pretty_season(stint.season),
+        league: stint.league.0.clone(),
+        league_tier: match stint.league.tier() {
+            LeagueTier::Pro => "pro",
+            LeagueTier::Junior => "junior",
+            LeagueTier::College => "college",
+            LeagueTier::International => "international",
+            LeagueTier::Other => "other",
+        }
+        .to_string(),
+        team: stint.team.clone(),
+        sequence: stint.sequence,
+        games: stint.gp,
+        goals: stint.goals,
+        assists: stint.assists,
+        points: stint.points,
+        points_per_game: stint.points_per_game(),
+    }
+}
+
+fn pretty_season(season: Season) -> String {
+    let value = season.0.to_string();
+    if value.len() == 8 {
+        format!("{}-{}", &value[2..4], &value[6..8])
+    } else {
+        value
+    }
 }
 
 fn player_season_summary(view: &PlayerView<'_>) -> PlayerSeasonSummary {
@@ -133,8 +203,9 @@ fn player_season_summary(view: &PlayerView<'_>) -> PlayerSeasonSummary {
     }
 }
 
-fn player_career_summary(stats: &SeasonStats) -> PlayerCareerSummary {
-    let totals = &stats.totals;
+fn player_career_summary(view: &PlayerView<'_>) -> PlayerCareerSummary {
+    let stats = view.stats;
+    let totals = &view.stats.totals;
     PlayerCareerSummary {
         season: stats.season,
         season_type: stats.season_type,
@@ -154,7 +225,55 @@ fn player_career_summary(stats: &SeasonStats) -> PlayerCareerSummary {
                 None
             },
         ),
+        catalog_metrics: catalog_metrics(view),
         tokens: vec![SemanticToken::SupportingEvidence],
+    }
+}
+
+fn catalog_metrics(view: &PlayerView<'_>) -> Vec<MetricCell> {
+    StatId::all()
+        .iter()
+        .map(|sid| {
+            let value = sid
+                .read(view)
+                .map(metric_value_for_stat_unit(sid.unit()))
+                .unwrap_or(MetricValue::Missing);
+            MetricCell {
+                key: StatKey::from(sid.cli_key()),
+                label: sid.short_label().to_string(),
+                value,
+                unit: metric_unit_for_stat_unit(sid.unit()),
+                precision: precision_for_stat_unit(sid.unit()),
+                token: None,
+            }
+        })
+        .collect()
+}
+
+fn metric_value_for_stat_unit(unit: StatUnit) -> impl Fn(f64) -> MetricValue {
+    move |value| match unit {
+        StatUnit::Count | StatUnit::Seconds => MetricValue::Integer(value as i64),
+        StatUnit::Pct | StatUnit::Per60 | StatUnit::Rate | StatUnit::Inverted => {
+            MetricValue::Decimal(value)
+        }
+    }
+}
+
+fn metric_unit_for_stat_unit(unit: StatUnit) -> MetricUnit {
+    match unit {
+        StatUnit::Count => MetricUnit::Count,
+        StatUnit::Pct => MetricUnit::Percentage,
+        StatUnit::Per60 => MetricUnit::PerGame,
+        StatUnit::Seconds => MetricUnit::Seconds,
+        StatUnit::Rate | StatUnit::Inverted => MetricUnit::Score,
+    }
+}
+
+fn precision_for_stat_unit(unit: StatUnit) -> ValuePrecision {
+    match unit {
+        StatUnit::Count | StatUnit::Seconds => ValuePrecision::Integer,
+        StatUnit::Pct => ValuePrecision::PercentOneDecimal,
+        StatUnit::Per60 | StatUnit::Rate | StatUnit::Inverted => ValuePrecision::TwoDecimals,
     }
 }
 

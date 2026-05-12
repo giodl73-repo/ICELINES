@@ -35,8 +35,9 @@ pub async fn fantasy(State(s): State<WebState>) -> Response {
         s,
         "Fantasy",
         "King.9",
-        "Fantasy league dashboard — standings, team rosters, scheme manager. \
-                 Folds in the existing `icelines fantasy serve` axum routes under one root.",
+        "Fantasy league dashboard - roster gaps, simulation scenarios, and \
+                 poacher workflows. Legacy `icelines fantasy serve` mutation routes remain \
+                 separate.",
     )
     .await
 }

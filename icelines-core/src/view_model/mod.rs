@@ -8,7 +8,10 @@ pub mod career;
 pub mod compare;
 pub mod config;
 pub mod context;
+pub mod data_status;
 pub mod docs;
+pub mod fantasy_gap;
+pub mod fantasy_sim;
 pub mod favorites;
 pub mod game;
 pub mod goalies;
@@ -17,21 +20,39 @@ pub mod leaders;
 pub mod player_card;
 pub mod playoffs;
 pub mod poach;
+pub mod report;
 pub mod schedule;
 pub mod scores;
+pub mod snapshot;
 pub mod team_depth;
 pub mod tokens;
 pub mod transactions;
 
 pub use career::{CareerRow, CareerSortKey, CareerView};
 pub use compare::{CompareView, SimilarPlayerRow, SimilarPlayerTarget, SimilarPlayersView};
-pub use config::SeasonTypeMutationIntent;
+pub use config::{ConfigEntryInput, ConfigEntryRow, ConfigView, SeasonTypeMutationIntent};
 pub use context::{
     AppliedFilter, Completeness, EmptyKind, EmptyState, FilterKey, FilterOp, RecoveryAction,
     ReportContext, ReportKind, ReportSectionRef, SortDirection, SortKey, SortState, SourceKind,
     SourceProvenance, SourceState, ViewContext, ViewWarning, ViewWindow, WarningKind,
 };
+pub use data_status::{DataStatusEntryInput, DataStatusRow, DataStatusView};
 pub use docs::DocsView;
+pub use fantasy_gap::{
+    FantasyRosterGapAction, FantasyRosterGapCandidate, FantasyRosterGapInput,
+    FantasyRosterGapReplacement, FantasyRosterGapRow, FantasyRosterGapView,
+};
+pub use fantasy_sim::{
+    build_fantasy_simulation_view, fantasy_roster_games_played, fantasy_roster_games_remaining,
+    find_fantasy_roster_player, goalie_scheme_stats_from_view, project_fantasy_roster_score,
+    project_fantasy_scenario, resolve_fantasy_scenario_roster,
+    resolve_fantasy_scenario_roster_details, score_fantasy_roster, skater_scheme_stats_from_view,
+    FantasyRosterScore, FantasyScenarioRosterResolution, FantasySimulationAction,
+    FantasySimulationBuildInput, FantasySimulationConfidence, FantasySimulationHorizon,
+    FantasySimulationInput, FantasySimulationRosterTeamInput, FantasySimulationScenarioInput,
+    FantasySimulationScenarioRosterInput, FantasySimulationScenarioRow, FantasySimulationTeamInput,
+    FantasySimulationTeamRow, FantasySimulationView,
+};
 pub use favorites::{
     FavoriteMemberInput, FavoriteMemberRow, FavoriteMutationIntent, FavoritesView, WatchNoteInput,
     WatchlistMemberRow, WatchlistView,
@@ -45,23 +66,31 @@ pub use goalies::{
 };
 pub use home::{HomeGoalieRow, HomeSkaterRow, HomeView};
 pub use leaders::{LeaderKind, LeaderRow, LeadersView};
-pub use player_card::{PlayerCardView, PlayerCareerSummary, PlayerSeasonSummary};
+pub use player_card::{
+    PlayerCardView, PlayerCareerSummary, PlayerPreNhlCareerRow, PlayerSeasonSummary,
+};
 pub use playoffs::{
-    PlayoffsBracketInput, PlayoffsRoundInput, PlayoffsRoundRow, PlayoffsSeriesInput,
-    PlayoffsSeriesRow, PlayoffsView,
+    PlayoffsBracketInput, PlayoffsGameInput, PlayoffsGameRow, PlayoffsRoundInput, PlayoffsRoundRow,
+    PlayoffsSeriesInput, PlayoffsSeriesRow, PlayoffsView,
 };
 pub use poach::{
-    default_watch_rules_view, poach_report_context, poach_report_from_board,
+    default_watch_rules_view, evaluate_watch_alerts, poach_report_context, poach_report_from_board,
     watch_rules_view_with_persisted, weekly_poach_report_from_board,
     weekly_poach_report_from_board_with_watched, AvailabilityState, ComponentStatus,
     ConfidenceSummary, DeploymentSignal, ExplanationImpact, PoachAvailabilityFilter,
     PoachBoardView, PoachCandidateKind, PoachComponentKind, PoachConfidence, PoachExplanation,
     PoachPlayerRow, PoachQuery, PoachReportSection, PoachReportView, PoachScheduleFilter,
-    PoachScore, PoachScoreComponent, PoachWindow, RecommendationKind, ScoreRange, WatchRule,
-    WatchRuleTrigger, WatchRulesView,
+    PoachScore, PoachScoreComponent, PoachWindow, RecommendationKind, ScoreRange, WatchAlertRow,
+    WatchAlertSeverity, WatchAlertTrigger, WatchAlertsView, WatchRule, WatchRuleTrigger,
+    WatchRulesView,
 };
-pub use schedule::{ScheduleGameRow, ScheduleView, TeamChipView};
+pub use report::{scouting_report_sections, ReportFormat, ReportView};
+pub use schedule::{
+    ScheduleGameRow, ScheduleMatchupRecord, ScheduleMatchupView, ScheduleRecord, ScheduleTeamView,
+    ScheduleView, TeamChipView,
+};
 pub use scores::{scores_context, ScheduledGameInput, ScoreGameRow, ScoresDayView, ScoresView};
+pub use snapshot::{SnapshotEntryInput, SnapshotRow, SnapshotView};
 pub use team_depth::{
     DeploymentEvidence, DepthGoalieSlot, DepthLeagueView, DepthLine, DepthPair, DepthPlayerSlot,
     DepthSlotKind, DepthSummary, DepthTeamStrengthRow, TeamDepthChartColumn, TeamDepthChartPlayer,
@@ -79,10 +108,11 @@ mod tests {
         FavoriteMemberInput, FavoriteMutationIntent, FavoritesView, GameBoxscoreInput,
         GameGoalInput, GameGoalieInput, GameSkaterInput, GameView, HomeView, LeaderKind,
         LeadersView, MetricCell, MetricUnit, MetricValue, PlayerCardView, PlayoffsBracketInput,
-        PlayoffsRoundInput, PlayoffsSeriesInput, PlayoffsView, ScheduleView, ScheduledGameInput,
-        ScoresView, SeasonTypeMutationIntent, SemanticToken, SourceKind, SourceProvenance,
-        SourceState, StatKey, TransactionsView, ValuePrecision, ViewContext, ViewWindow,
-        WatchNoteInput, WatchlistView,
+        PlayoffsGameInput, PlayoffsRoundInput, PlayoffsSeriesInput, PlayoffsView,
+        ScheduleMatchupView, ScheduleTeamView, ScheduleView, ScheduledGameInput, ScoresView,
+        SeasonTypeMutationIntent, SemanticToken, SourceKind, SourceProvenance, SourceState,
+        StatKey, TransactionsView, ValuePrecision, ViewContext, ViewWindow, WatchNoteInput,
+        WatchlistView,
     };
 
     #[test]
@@ -124,6 +154,7 @@ mod tests {
 
         assert_eq!(view.context.source_state[0].source, SourceKind::Docs);
         assert_eq!(view.source_path, "COMMANDS.md");
+        assert_eq!(view.markdown, "# IceLines\n");
         assert_eq!(view.markdown_bytes, "# IceLines\n".len());
         assert!(view.rendered_html.contains("<h1>IceLines</h1>"));
     }
@@ -272,6 +303,14 @@ mod tests {
                         bottom_seed_rank: Some("P3".to_string()),
                         winner_abbrev: Some("EDM".to_string()),
                         conference: Some("Western".to_string()),
+                        games: vec![PlayoffsGameInput {
+                            date: "2026-04-20".to_string(),
+                            home_abbrev: "EDM".to_string(),
+                            away_abbrev: "LAK".to_string(),
+                            home_score: 4,
+                            away_score: 2,
+                            series_after: "EDM leads 1-0".to_string(),
+                        }],
                     }],
                 }],
             },
@@ -290,6 +329,7 @@ mod tests {
         assert_eq!(view.rounds[0].series[0].top_seed_rank, "P2");
         assert_eq!(view.rounds[0].series[0].bottom_seed_rank, "P3");
         assert_eq!(view.rounds[0].series[0].letter, "A");
+        assert_eq!(view.rounds[0].series[0].games[0].game_number, 1);
     }
 
     #[test]
@@ -516,6 +556,14 @@ mod tests {
         assert_eq!(row["secondary"][1]["value"]["integer"], 82);
         assert_eq!(row["secondary"][4]["key"], "points");
         assert_eq!(row["secondary"][4]["value"]["integer"], 130);
+        assert!(
+            row["catalog_metrics"]
+                .as_array()
+                .expect("catalog metrics array")
+                .iter()
+                .any(|metric| metric["key"] == "points" && metric["value"]["integer"] == 130),
+            "leader row must carry catalog metrics for export/custom surfaces"
+        );
         assert_eq!(row["tokens"][0], "supporting_evidence");
     }
 
@@ -700,6 +748,7 @@ mod tests {
 
     #[test]
     fn player_card_viewmodel_contract_fixture_serializes_context_active_and_career() {
+        use crate::career_history::{CareerGameType, CareerStint, LeagueAbbrev};
         let (identity, stats) = crate::fixtures::stat_catalog_variants::skater_modern();
         let player_id = identity.id;
         let repo = crate::fixtures::test_repo_with(identity, stats);
@@ -711,6 +760,39 @@ mod tests {
             SeasonType::Regular,
         )
         .expect("player exists");
+        view = view.with_pre_nhl_stints(&[CareerStint {
+            season: Season(20142015),
+            league: LeagueAbbrev::new("OHL"),
+            team: "Erie".to_string(),
+            game_type: CareerGameType::Regular,
+            sequence: 1,
+            gp: 47,
+            goals: Some(44),
+            assists: Some(76),
+            points: Some(120),
+            pim: None,
+            plus_minus: None,
+            power_play_goals: None,
+            power_play_points: None,
+            shorthanded_goals: None,
+            shorthanded_points: None,
+            game_winning_goals: None,
+            ot_goals: None,
+            shots: None,
+            shooting_pct: None,
+            avg_toi_sec: None,
+            faceoff_win_pct: None,
+            games_started: None,
+            wins: None,
+            losses: None,
+            ot_losses: None,
+            goals_against: None,
+            goals_against_avg: None,
+            save_pct: None,
+            shots_against: None,
+            shutouts: None,
+            time_on_ice_sec: None,
+        }]);
         view.context.data_generation = Some("campbell-player-card-fixture-v1".to_string());
 
         let json = serde_json::to_value(&view).expect("serialize player card view");
@@ -741,6 +823,9 @@ mod tests {
         assert_eq!(json["active"]["metrics"][18]["key"], "toi_per_game_sec");
         assert_eq!(json["career"][0]["season"], 20242025);
         assert_eq!(json["career"][0]["metrics"][3]["value"]["integer"], 130);
+        assert_eq!(json["pre_nhl_career"][0]["season_label"], "14-15");
+        assert_eq!(json["pre_nhl_career"][0]["league"], "OHL");
+        assert_eq!(json["pre_nhl_career"][0]["points"], 120);
     }
 
     #[test]
@@ -897,6 +982,120 @@ mod tests {
     }
 
     #[test]
+    fn schedule_team_viewmodel_contract_fixture_projects_record_and_rows() {
+        let context = ViewContext::new(ViewWindow::new(Season(20242025), SeasonType::Regular));
+        let view = ScheduleTeamView::from_games(
+            context,
+            "20242025".to_string(),
+            "SEA".to_string(),
+            vec![
+                ScheduledGameInput {
+                    game_id: 2024020001,
+                    date: "2024-10-08".to_string(),
+                    game_type: 2,
+                    away_abbrev: "SEA".to_string(),
+                    away_name: "Kraken".to_string(),
+                    home_abbrev: "EDM".to_string(),
+                    home_name: "Oilers".to_string(),
+                    start_time_utc: "2024-10-08T23:00:00Z".to_string(),
+                    away_score: Some(3),
+                    home_score: Some(4),
+                    game_state: Some("FINAL".to_string()),
+                    last_period: Some("SO".to_string()),
+                    series_game: None,
+                    away_wins: None,
+                    home_wins: None,
+                },
+                ScheduledGameInput {
+                    game_id: 2024020002,
+                    date: "2024-10-10".to_string(),
+                    game_type: 2,
+                    away_abbrev: "VAN".to_string(),
+                    away_name: "Canucks".to_string(),
+                    home_abbrev: "SEA".to_string(),
+                    home_name: "Kraken".to_string(),
+                    start_time_utc: "2024-10-10T23:00:00Z".to_string(),
+                    away_score: Some(1),
+                    home_score: Some(5),
+                    game_state: Some("FINAL".to_string()),
+                    last_period: Some("REG".to_string()),
+                    series_game: None,
+                    away_wins: None,
+                    home_wins: None,
+                },
+            ],
+        );
+
+        let json = serde_json::to_value(&view).expect("serialize schedule team view");
+
+        assert_eq!(json["team"], "SEA");
+        assert_eq!(json["record"]["wins"], 1);
+        assert_eq!(json["record"]["losses"], 0);
+        assert_eq!(json["record"]["overtime_losses"], 1);
+        assert_eq!(json["record"]["played"], 2);
+        assert_eq!(json["rows"][0]["opponent_abbrev"], "EDM");
+        assert_eq!(json["rows"][1]["home_or_away"], "Home");
+    }
+
+    #[test]
+    fn schedule_matchup_viewmodel_contract_fixture_projects_records_and_groups() {
+        let context = ViewContext::new(ViewWindow::new(Season(20242025), SeasonType::Regular));
+        let view = ScheduleMatchupView::from_games(
+            context,
+            "20242025".to_string(),
+            "NYR".to_string(),
+            "WSH".to_string(),
+            vec![
+                ScheduledGameInput {
+                    game_id: 2024020001,
+                    date: "2024-11-15".to_string(),
+                    game_type: 2,
+                    away_abbrev: "WSH".to_string(),
+                    away_name: "Capitals".to_string(),
+                    home_abbrev: "NYR".to_string(),
+                    home_name: "Rangers".to_string(),
+                    start_time_utc: "2024-11-15T23:00:00Z".to_string(),
+                    away_score: Some(1),
+                    home_score: Some(4),
+                    game_state: Some("FINAL".to_string()),
+                    last_period: Some("REG".to_string()),
+                    series_game: None,
+                    away_wins: None,
+                    home_wins: None,
+                },
+                ScheduledGameInput {
+                    game_id: 2024030001,
+                    date: "2025-04-24".to_string(),
+                    game_type: 3,
+                    away_abbrev: "NYR".to_string(),
+                    away_name: "Rangers".to_string(),
+                    home_abbrev: "WSH".to_string(),
+                    home_name: "Capitals".to_string(),
+                    start_time_utc: "2025-04-24T23:00:00Z".to_string(),
+                    away_score: Some(2),
+                    home_score: Some(5),
+                    game_state: Some("FINAL".to_string()),
+                    last_period: Some("REG".to_string()),
+                    series_game: Some("Game 3".to_string()),
+                    away_wins: Some(1),
+                    home_wins: Some(2),
+                },
+            ],
+        );
+
+        let json = serde_json::to_value(&view).expect("serialize schedule matchup view");
+
+        assert_eq!(json["team"], "NYR");
+        assert_eq!(json["opponent"], "WSH");
+        assert_eq!(json["regular_record"]["wins"], 1);
+        assert_eq!(json["regular_record"]["losses"], 0);
+        assert_eq!(json["playoff_record"]["wins"], 0);
+        assert_eq!(json["playoff_record"]["losses"], 1);
+        assert_eq!(json["regular_rows"][0]["game_id"], 2024020001);
+        assert_eq!(json["playoff_rows"][0]["series_game"], "Game 3");
+    }
+
+    #[test]
     fn transactions_viewmodel_contract_fixture_filters_and_formats_rows() {
         use crate::model::TeamAbbr;
         use crate::transactions::{Transaction, TransactionKind};
@@ -1020,6 +1219,12 @@ mod tests {
                     player_id: 2,
                     player_name: "Away Skater".to_string(),
                     position: "C".to_string(),
+                    toi_seconds: 1200,
+                    sog: 2,
+                    hits: 1,
+                    blocked_shots: 0,
+                    takeaways: 0,
+                    giveaways: 1,
                     goals: 1,
                     assists: 0,
                     plus_minus: 1,
@@ -1029,6 +1234,12 @@ mod tests {
                         player_id: 3,
                         player_name: "Depth Skater".to_string(),
                         position: "R".to_string(),
+                        toi_seconds: 900,
+                        sog: 1,
+                        hits: 2,
+                        blocked_shots: 0,
+                        takeaways: 0,
+                        giveaways: 0,
                         goals: 0,
                         assists: 1,
                         plus_minus: 0,
@@ -1037,6 +1248,12 @@ mod tests {
                         player_id: 4,
                         player_name: "Top Skater".to_string(),
                         position: "C".to_string(),
+                        toi_seconds: 1300,
+                        sog: 4,
+                        hits: 1,
+                        blocked_shots: 1,
+                        takeaways: 2,
+                        giveaways: 0,
                         goals: 1,
                         assists: 2,
                         plus_minus: 2,

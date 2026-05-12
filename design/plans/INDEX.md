@@ -49,7 +49,7 @@ measured baseline and Campbell has established the shared contract path.
 | [Phase 7 — TUI v2 Redesign](2026-04-28-phase7-tui-v2-redesign.md) | 2026-04-28 | Jack Adams | 6/7-tab nav, season time-travel, Scores/Schedule/Playoffs (7a–7e) |
 | [Phase 8 — Spec Delta + Chunks](2026-04-28-spec-delta-catchup.md) | 2026-04-29 | Norris | Spec catch-up, snapshot operations, multi-season query support |
 | [Phase 8h — Chunked Snapshots](2026-04-29-phase8h-chunked-snapshots.md) | 2026-04-29 | Norris | Content-addressed object store; 10× storage savings on daily snapshots |
-| [Phase Vezina — Goalies](../specs/goalies.md) | 2026-04-29 | Vezina | Goalie type, repository, fantasy scoring (deferred), 5 bundled seasons |
+| [Phase Vezina — Goalies](../specs/goalies.md) | 2026-04-29 | Vezina | Goalie type, repository, fantasy scoring, 5 bundled seasons |
 | [Phase Selke — Transactions](2026-04-30-phaseT-transactions.md) | 2026-04-30 | Selke | ESPN site.api source, classifier, TUI tab, 5 bundled seasons |
 | [Phase Hart.4.1 — Test Foundation](2026-04-30-phaseHart-4-1-test-foundation.md) | 2026-04-30 | Hart | StatsRepository LRU + roster sum proptest; fixture builders |
 | [Phase Hart.5a/5b — Repo + Adapters](2026-04-30-phaseHart-normalization.md) | 2026-04-30 | Hart | StatsRepository load path; flat_view_legacy adapter; 6+ consumer migrations |
@@ -76,9 +76,6 @@ column tells us why it isn't shipping yet.
 
 | Item | Value | Notes |
 |------|-------|-------|
-| Goalie fantasy scoring (`fantasy team-add` + `score_team`) | ⭐⭐⭐ | Spec `fantasy-leagues.md` defers; `goalie-stats.json` is bundled (Vezina); `to_goalie_scheme_stats_view` exists post-5c.4. ~1 day to wire `RosterEntry::Goalie`. |
-| `export md fantasy` shape | ⭐⭐ | Spec defers; plumbing exists post-5c.4. ~1 day. |
-| `export md series` shape | ⭐⭐ | Spec defers; `playoffs.json` exists. ~1 day. |
 | Bundle shift data for historical seasons | ⭐ | Required for `mates`/`peers` against historical seasons. ~5 MB/season. |
 | `headshot.rs` test coverage | ⭐ | Spec calls it out. Manual smoke only today. |
 | `tui-admin-overlay` test coverage | ⭐ | Spec calls it out. Needs 5c.6 snapshot harness. |

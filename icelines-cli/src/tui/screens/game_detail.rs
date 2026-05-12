@@ -144,11 +144,11 @@ fn render_loaded(f: &mut Frame, area: Rect, b: &Boxscore, sched: Option<&Schedul
     // Per-team stat leaders. Only renders when the boxscore endpoint
     // populated `playerByGameStats` (current API; older games may
     // return an empty array which we silently skip).
-    if !b.away_skaters.is_empty() || !b.home_skaters.is_empty() {
+    if !game_view.away_top_skaters.is_empty() || !game_view.home_top_skaters.is_empty() {
         lines.push(Line::styled("  LEADERS", gold));
         for (label, team) in [
-            (b.away_abbrev.as_str(), &b.away_skaters),
-            (b.home_abbrev.as_str(), &b.home_skaters),
+            (game_view.away_abbrev.as_str(), &game_view.away_top_skaters),
+            (game_view.home_abbrev.as_str(), &game_view.home_top_skaters),
         ] {
             if team.is_empty() {
                 continue;
@@ -166,7 +166,10 @@ fn render_loaded(f: &mut Frame, area: Rect, b: &Boxscore, sched: Option<&Schedul
 ///   "    SEA  TOI 26:09 (V. Gavrikov)"
 ///   "         SOG 5 (Eberle) · Hits 7 (Wright) · Blocks 4 (Borgen)"
 ///   "         Takeaways 4 (Stephenson) · Giveaways 3 (Beniers)"
-fn team_leader_lines(team_label: &str, skaters: &[SkaterLine]) -> Vec<Line<'static>> {
+fn team_leader_lines(
+    team_label: &str,
+    skaters: &[icelines_core::GameSkaterRow],
+) -> Vec<Line<'static>> {
     let dim = Style::default().fg(Color::DarkGray);
     let cyan = Style::default()
         .fg(Color::Cyan)
@@ -251,7 +254,10 @@ fn team_leader_lines(team_label: &str, skaters: &[SkaterLine]) -> Vec<Line<'stat
 
 /// Pick the highest-`metric` skater. Returns None when every skater's
 /// value is 0 — no point rendering a leader row of zeros.
-fn leader_by<F: Fn(&SkaterLine) -> u32>(skaters: &[SkaterLine], f: F) -> Option<&SkaterLine> {
+fn leader_by<F: Fn(&icelines_core::GameSkaterRow) -> u32>(
+    skaters: &[icelines_core::GameSkaterRow],
+    f: F,
+) -> Option<&icelines_core::GameSkaterRow> {
     let leader = skaters.iter().max_by_key(|s| f(s))?;
     if f(leader) == 0 {
         None
@@ -404,6 +410,12 @@ fn skater_input(skater: SkaterLine) -> GameSkaterInput {
         player_id: skater.player_id,
         player_name: skater.player_name,
         position: skater.position,
+        toi_seconds: skater.toi_seconds,
+        sog: skater.sog,
+        hits: skater.hits,
+        blocked_shots: skater.blocked_shots,
+        takeaways: skater.takeaways,
+        giveaways: skater.giveaways,
         goals: skater.goals,
         assists: skater.assists,
         plus_minus: skater.plus_minus,

@@ -2,9 +2,12 @@ use crate::tui::app::App;
 use crate::tui::headshot;
 use icelines_core::identity::PlayerId;
 use icelines_core::model::Position;
-use icelines_core::stats_catalog::{StatCategory, StatId, StatUnit};
+use icelines_core::stats_catalog::{StatCategory, StatId};
 use icelines_core::stats_repository::PlayerView;
-use icelines_core::{MetricCell, MetricValue, PlayerCardView, PlayerSeasonSummary};
+use icelines_core::{
+    MetricCell, MetricValue, PlayerCardView, PlayerCareerSummary, PlayerPreNhlCareerRow,
+    PlayerSeasonSummary,
+};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -152,13 +155,14 @@ fn is_faceoff_stat(s: StatId) -> bool {
 /// Phase Lindsay L.4.3 — render a single career-table cell value.
 /// Reads via `StatId::read` (catalog dispatch) and formats per
 /// `StatId::unit()`. None renders as `"—"`.
+#[cfg(test)]
 pub fn render_career_cell(sid: StatId, view: &PlayerView<'_>) -> String {
     match sid.read(view) {
         None => "—".to_owned(),
         Some(v) => match sid.unit() {
             // Counts and seconds: integer formatting.
-            StatUnit::Count => format!("{}", v as i64),
-            StatUnit::Seconds => {
+            icelines_core::stats_catalog::StatUnit::Count => format!("{}", v as i64),
+            icelines_core::stats_catalog::StatUnit::Seconds => {
                 // Render TOI as M:SS (per-game) or just integer seconds
                 // (totals). Heuristic: < 3600 → per-game M:SS;
                 // ≥ 3600 → total minutes for readability.
@@ -172,12 +176,48 @@ pub fn render_career_cell(sid: StatId, view: &PlayerView<'_>) -> String {
             // Pct: render as percentage with one decimal (e.g. 12.5%).
             // API stores 0.125 → display as "12.5". Drop the % sign
             // to save column width.
-            StatUnit::Pct => format!("{:.1}", v * 100.0),
+            icelines_core::stats_catalog::StatUnit::Pct => format!("{:.1}", v * 100.0),
             // Per-60 rates and other rates: 2 decimals.
-            StatUnit::Per60 | StatUnit::Rate => format!("{:.2}", v),
+            icelines_core::stats_catalog::StatUnit::Per60
+            | icelines_core::stats_catalog::StatUnit::Rate => format!("{:.2}", v),
             // Inverted (GAA): 2 decimals.
-            StatUnit::Inverted => format!("{:.2}", v),
+            icelines_core::stats_catalog::StatUnit::Inverted => format!("{:.2}", v),
         },
+    }
+}
+
+pub fn render_career_card_cell(sid: StatId, row: &PlayerCareerSummary) -> String {
+    let Some(metric) = row
+        .catalog_metrics
+        .iter()
+        .find(|metric| metric.key.0 == sid.cli_key())
+    else {
+        return "â€”".to_owned();
+    };
+
+    match &metric.value {
+        MetricValue::Missing => "â€”".to_owned(),
+        MetricValue::Integer(value) => {
+            if matches!(sid.unit(), icelines_core::stats_catalog::StatUnit::Seconds) {
+                let secs = (*value).max(0) as u64;
+                if secs < 3600 {
+                    format!("{}:{:02}", secs / 60, secs % 60)
+                } else {
+                    format!("{}m", secs / 60)
+                }
+            } else {
+                value.to_string()
+            }
+        }
+        MetricValue::Decimal(value) => match sid.unit() {
+            icelines_core::stats_catalog::StatUnit::Pct => format!("{:.1}", value * 100.0),
+            icelines_core::stats_catalog::StatUnit::Per60
+            | icelines_core::stats_catalog::StatUnit::Rate
+            | icelines_core::stats_catalog::StatUnit::Inverted => format!("{:.2}", value),
+            icelines_core::stats_catalog::StatUnit::Count
+            | icelines_core::stats_catalog::StatUnit::Seconds => format!("{}", *value as i64),
+        },
+        MetricValue::Text(value) => value.clone(),
     }
 }
 
@@ -252,16 +292,16 @@ fn format_seconds_metric(metric: Option<&MetricCell>) -> String {
 /// career section. Returns 0 lines when stints is empty so the
 /// caller can splice unconditionally; tests pass a synthetic slice.
 pub(crate) fn pre_nhl_career_lines(
-    stints: &[icelines_core::career_history::CareerStint],
+    rows: &[PlayerPreNhlCareerRow],
     dim: ratatui::style::Style,
 ) -> Vec<Line<'static>> {
-    if stints.is_empty() {
+    if rows.is_empty() {
         return Vec::new();
     }
     let mut out: Vec<Line<'static>> = Vec::new();
     out.push(Line::from(""));
     out.push(Line::styled(
-        format!(" Pre-NHL career  ·  {} stints", stints.len()),
+        format!(" Pre-NHL career  ·  {} stints", rows.len()),
         dim,
     ));
     out.push(Line::styled(
@@ -271,18 +311,12 @@ pub(crate) fn pre_nhl_career_lines(
         ),
         dim,
     ));
-    let mut sorted: Vec<_> = stints.iter().collect();
-    sorted.sort_by_key(|s| std::cmp::Reverse(s.season.0));
-    for s in sorted.into_iter().take(15) {
-        let season_label = format!(
-            "{}-{}",
-            &s.season.0.to_string()[..4],
-            &s.season.0.to_string()[6..]
-        );
-        let team: String = s.team.chars().take(18).collect();
-        let league: String = s.league.0.chars().take(10).collect();
-        let ppg = s
-            .points_per_game()
+    for row in rows.iter().take(15) {
+        let season_label = row.season_label.clone();
+        let team: String = row.team.chars().take(18).collect();
+        let league: String = row.league.chars().take(10).collect();
+        let ppg = row
+            .points_per_game
             .map(|p| format!("{p:.2}"))
             .unwrap_or_else(|| "—".into());
         out.push(Line::from(format!(
@@ -290,12 +324,14 @@ pub(crate) fn pre_nhl_career_lines(
             season_label,
             league,
             team,
-            s.gp,
-            s.goals.map(|n| n.to_string()).unwrap_or_else(|| "—".into()),
-            s.assists
+            row.games,
+            row.goals
                 .map(|n| n.to_string())
                 .unwrap_or_else(|| "—".into()),
-            s.points
+            row.assists
+                .map(|n| n.to_string())
+                .unwrap_or_else(|| "—".into()),
+            row.points
                 .map(|n| n.to_string())
                 .unwrap_or_else(|| "—".into()),
             ppg,
@@ -404,7 +440,14 @@ mod dashboard_tests {
 // migrate to `Screen::PlayerById`.
 
 pub(crate) fn player_card_view_from_app(app: &App, pid: PlayerId) -> Option<PlayerCardView> {
-    PlayerCardView::from_repository(&app.repo, pid, app.active_season_typed, app.active_type)
+    let card =
+        PlayerCardView::from_repository(&app.repo, pid, app.active_season_typed, app.active_type)?;
+    let store = icelines_fetch::career_landing::load_local_store();
+    let pre_nhl = store
+        .get(pid.0)
+        .map(icelines_fetch::career_landing::extract_pre_nhl_stints)
+        .unwrap_or_default();
+    Some(card.with_pre_nhl_stints(&pre_nhl))
 }
 
 pub fn render_by_id(f: &mut Frame, app: &App, area: Rect, pid: PlayerId) {
@@ -639,29 +682,19 @@ fn render_stats_view(
         ));
 
         // One row per regular-season the player has played (most recent first).
-        let mut seasons: Vec<&icelines_core::season_stats::SeasonStats> = app
-            .repo
-            .career_regular(v.identity.id)
-            .map(|it| it.collect())
-            .unwrap_or_default();
-        seasons.sort_by_key(|s| std::cmp::Reverse(s.season)); // newest first
-
-        for stats in seasons {
-            // Build a transient PlayerView for this season to feed
-            // StatId::read. The identity is the same; contract is None.
-            let row_view = PlayerView {
-                identity: v.identity,
-                stats,
-                contract: None,
-            };
+        for row in card
+            .career
+            .iter()
+            .filter(|row| row.season_type == icelines_core::season_stats::SeasonType::Regular)
+        {
             let season_label = format!(
                 "{}-{}",
-                &stats.season.as_str()[..4],
-                &stats.season.as_str()[6..],
+                &row.season.as_str()[..4],
+                &row.season.as_str()[6..],
             );
             let mut line = format!(" {:<8}", season_label);
             for sid in &columns {
-                let cell = render_career_cell(*sid, &row_view);
+                let cell = render_career_card_cell(*sid, row);
                 line.push_str(&format!(" {:>7}", cell));
             }
             lines.push(Line::from(line));
@@ -669,17 +702,9 @@ fn render_stats_view(
     }
 
     // Phase Calder.3 — pre-NHL career stints. Loaded via the shared
-    // `extract_pre_nhl_stints` helper; rendering deferred to
-    // `pre_nhl_career_lines` so tests can pin format with synthetic
-    // stints (no env-dependent local store).
-    {
-        let store = icelines_fetch::career_landing::load_local_store();
-        if let Some(history) = store.get(v.identity.id.0) {
-            let pre_nhl = icelines_fetch::career_landing::extract_pre_nhl_stints(history);
-            for line in pre_nhl_career_lines(&pre_nhl, dim) {
-                lines.push(line);
-            }
-        }
+    // `extract_pre_nhl_stints` helper, then projected through PlayerCardView.
+    for line in pre_nhl_career_lines(&card.pre_nhl_career, dim) {
+        lines.push(line);
     }
 
     lines.push(Line::from(""));
@@ -1296,7 +1321,8 @@ mod calder_pre_nhl_tests {
     }
 
     fn render_to_text(stints: &[CareerStint]) -> String {
-        let lines = pre_nhl_career_lines(stints, Style::default());
+        let rows = icelines_core::PlayerCardView::pre_nhl_rows(stints);
+        let lines = pre_nhl_career_lines(&rows, Style::default());
         lines
             .iter()
             .map(|l| {
@@ -1314,7 +1340,8 @@ mod calder_pre_nhl_tests {
     ///   unconditionally without printing a stray header.
     #[test]
     fn l0_tui_pre_nhl_empty_returns_zero_lines() {
-        let lines = pre_nhl_career_lines(&[], Style::default());
+        let rows = icelines_core::PlayerCardView::pre_nhl_rows(&[]);
+        let lines = pre_nhl_career_lines(&rows, Style::default());
         assert!(lines.is_empty());
     }
 
@@ -1340,7 +1367,8 @@ mod calder_pre_nhl_tests {
         let stints: Vec<_> = (0..20)
             .map(|i| stint(20002001 + i * 10000, "OHL", "Erie", 60, 30))
             .collect();
-        let lines = pre_nhl_career_lines(&stints, Style::default());
+        let rows = icelines_core::PlayerCardView::pre_nhl_rows(&stints);
+        let lines = pre_nhl_career_lines(&rows, Style::default());
         // 1 blank + 1 header + 1 column header + 15 rows = 18 lines.
         assert_eq!(
             lines.len(),

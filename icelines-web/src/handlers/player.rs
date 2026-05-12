@@ -8,7 +8,8 @@ use icelines_core::identity::PlayerId;
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
 use icelines_core::{
-    MetricCell, MetricValue, PlayerCardView, PlayerCareerSummary, PlayerSeasonSummary,
+    MetricCell, MetricValue, PlayerCardView, PlayerCareerSummary, PlayerPreNhlCareerRow,
+    PlayerSeasonSummary,
 };
 
 /// Format a YYYYZZZZ season as "YYYY-YY" (e.g. 20242025 → "2024-25").
@@ -109,13 +110,22 @@ fn not_found_page(msg: String) -> Response {
 // Shared player page projectors.
 
 fn player_template_from_view(
-    view: PlayerCardView,
+    mut view: PlayerCardView,
     active_label: String,
     id: u32,
     season: Season,
     season_type: SeasonType,
     compare_suggestions: Vec<(String, u32)>,
 ) -> PlayerTemplate {
+    let pre_nhl_stints = {
+        let store = icelines_fetch::career_landing::load_local_store();
+        store
+            .get(id)
+            .map(icelines_fetch::career_landing::extract_pre_nhl_stints)
+            .unwrap_or_default()
+    };
+    view = view.with_pre_nhl_stints(&pre_nhl_stints);
+
     let active = view.active.as_ref();
     let (gp, goals, assists, points, position, team, team_link) = active_summary(active);
     let active_metrics = active
@@ -147,14 +157,7 @@ fn player_template_from_view(
         delta_int(assists as i64, prior_assists, prior_exists);
     let (points_delta, points_delta_class) = delta_int(points as i64, prior_points, prior_exists);
 
-    let pre_nhl_career = {
-        let store = icelines_fetch::career_landing::load_local_store();
-        let stints = store
-            .get(id)
-            .map(icelines_fetch::career_landing::extract_pre_nhl_stints)
-            .unwrap_or_default();
-        crate::templates::project_pre_nhl_html_rows(&stints)
-    };
+    let pre_nhl_career = crate::templates::project_pre_nhl_html_rows(&pre_nhl_stints);
 
     PlayerTemplate {
         active_label,
@@ -331,6 +334,28 @@ pub struct PreNhlStint {
     pub points_per_game: Option<f64>,
 }
 
+impl From<&PlayerPreNhlCareerRow> for PreNhlStint {
+    fn from(row: &PlayerPreNhlCareerRow) -> Self {
+        Self {
+            season: row.season.to_string(),
+            league: row.league.clone(),
+            league_tier: match row.league_tier.as_str() {
+                "pro" => "pro",
+                "junior" => "junior",
+                "college" => "college",
+                "international" => "international",
+                _ => "other",
+            },
+            team: row.team.clone(),
+            games: row.games,
+            goals: row.goals,
+            assists: row.assists,
+            points: row.points,
+            points_per_game: row.points_per_game.map(f64::from),
+        }
+    }
+}
+
 #[derive(Debug, serde::Serialize)]
 pub struct PlayerActiveStats {
     pub season: String,
@@ -377,39 +402,6 @@ fn player_error_meta(season: &str, season_type: SeasonType) -> PlayerMeta {
     }
 }
 
-/// Phase Calder.3 — load pre-NHL career stints for one player
-/// from the local store at `~/.icelines/career_history.json`.
-/// Returns an empty Vec if the store doesn't exist yet (the
-/// user can run `icelines fetch career` to populate). Same
-/// filtering as the CLI: drops NHL stints, drops international
-/// tournaments, drops youth/minor — keeps Pro/Junior/College
-/// development arc, regular season only.
-pub(crate) fn project_pre_nhl_rows(
-    stints: &[icelines_core::career_history::CareerStint],
-) -> Vec<PreNhlStint> {
-    use icelines_core::career_history::LeagueTier;
-    stints
-        .iter()
-        .map(|s| PreNhlStint {
-            season: s.season.to_string(),
-            league: s.league.0.clone(),
-            league_tier: match s.league.tier() {
-                LeagueTier::Pro => "pro",
-                LeagueTier::Junior => "junior",
-                LeagueTier::College => "college",
-                LeagueTier::International => "international",
-                LeagueTier::Other => "other",
-            },
-            team: s.team.clone(),
-            games: s.gp,
-            goals: s.goals,
-            assists: s.assists,
-            points: s.points,
-            points_per_game: s.points_per_game().map(|p| p as f64),
-        })
-        .collect()
-}
-
 /// `GET /api/v1/player/:id` — JSON twin of `/player/:id`.
 ///
 /// Same load + projection path as the HTML handler. Errors for
@@ -447,7 +439,7 @@ pub async fn get_player_json(State(state): State<WebState>, Path(id): Path<u32>)
         }
     }
 
-    let view = {
+    let mut view = {
         let repo = state.repo.read().await;
         match PlayerCardView::from_repository(&repo, pid, season, season_type) {
             Some(view) => view,
@@ -462,6 +454,15 @@ pub async fn get_player_json(State(state): State<WebState>, Path(id): Path<u32>)
             }
         }
     };
+
+    let pre_nhl_stints = {
+        let store = icelines_fetch::career_landing::load_local_store();
+        store
+            .get(id)
+            .map(icelines_fetch::career_landing::extract_pre_nhl_stints)
+            .unwrap_or_default()
+    };
+    view = view.with_pre_nhl_stints(&pre_nhl_stints);
 
     let active = view.active.as_ref();
     let (gp, goals, assists, points, position, team) = match active {
@@ -488,14 +489,7 @@ pub async fn get_player_json(State(state): State<WebState>, Path(id): Path<u32>)
         .collect();
     let career_rows_n = career.len();
 
-    let pre_nhl_stints = {
-        let store = icelines_fetch::career_landing::load_local_store();
-        store
-            .get(id)
-            .map(icelines_fetch::career_landing::extract_pre_nhl_stints)
-            .unwrap_or_default()
-    };
-    let pre_nhl_career = project_pre_nhl_rows(&pre_nhl_stints);
+    let pre_nhl_career: Vec<PreNhlStint> = view.pre_nhl_career.iter().map(Into::into).collect();
     let pre_nhl_career_rows = pre_nhl_career.len();
 
     let data = PlayerData {

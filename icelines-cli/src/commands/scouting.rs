@@ -6,9 +6,10 @@ use icelines_core::{
     history::CareerSummary,
     model::{Season, MIN_GP},
     name::normalize_name,
+    scouting_report_sections,
     season_stats::SeasonType,
     stats_repository::PlayerView,
-    ProjectionMode,
+    ProjectionMode, ReportFormat, ReportKind, ReportView, ViewContext, ViewWindow,
 };
 use icelines_fetch::{career::load_career, snapshot::SnapshotStore, stats_loader::load_into_repo};
 use std::fmt::Write as _;
@@ -84,8 +85,26 @@ pub async fn run(player_name: String, format: String) -> anyhow::Result<()> {
         &pre_nhl_stints,
         fmt,
     );
-    print!("{output}");
+    let report = ReportView::rendered(
+        ViewContext::new(ViewWindow::new(view.season(), view.season_type())),
+        ReportKind::Scouting,
+        format!("scouting-{}", view.id().0),
+        format!("Scouting Report - {}", view.identity.full_name),
+        report_format(fmt),
+        scouting_report_sections(),
+        output,
+    );
+    print!("{}", report.rendered_body);
     Ok(())
+}
+
+fn report_format(format: &str) -> ReportFormat {
+    match format {
+        "markdown" => ReportFormat::Markdown,
+        "json" => ReportFormat::Json,
+        "csv" => ReportFormat::Csv,
+        _ => ReportFormat::Terminal,
+    }
 }
 
 /// Pure renderer: produces the full scouting report as a String. No I/O.

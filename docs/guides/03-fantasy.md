@@ -1,7 +1,8 @@
 # Fantasy League Management
 
 IceLines includes a complete fantasy hockey system: create leagues and teams,
-add players, score against any scheme, simulate and execute trades.
+add players, score skaters and goalies against any scheme, find roster gaps,
+simulate add/drop scenarios, and execute trades.
 
 ---
 
@@ -64,6 +65,48 @@ Rank  Team                   Owner            Score      Per/G
 1     Gio's Rangers          Gio              927.0      3.86
 2     Hockey Nerds           Alex             725.5      3.31
 ```
+
+---
+
+## Roster gaps
+
+Mark your team as the roster IceLines should evaluate, then ask which categories
+need help:
+
+```bash
+icelines fantasy team-use "Gio's Rangers"
+icelines fantasy gaps --category hits,blocks,shots
+icelines fantasy gaps --category hits,blocks,shots --json
+```
+
+The gap view compares your roster against imported available players, applies
+the active fantasy scheme weights, and returns `add_now`, `watch`, or
+`no_action` recommendations. The same `FantasyRosterGapView` powers CLI text,
+TUI fantasy gaps, web HTML, and `/api/v1/fantasy/gaps`.
+
+---
+
+## Season simulation and scenarios
+
+Project the active league over a schedule horizon:
+
+```bash
+icelines fantasy simulate --weeks 4
+icelines fantasy simulate --weeks 4 --json
+```
+
+Test add/drop decisions without mutating the league:
+
+```bash
+icelines fantasy simulate --add "Connor McDavid" --drop "Evan Bouchard"
+icelines fantasy simulate --add "Connor McDavid"
+icelines fantasy simulate --drop "Evan Bouchard"
+```
+
+Scenario players are resolved to canonical names before projection. Invalid
+drops are rejected explicitly instead of producing a misleading projected
+roster. The same `FantasySimulationView` powers CLI text/JSON, TUI simulation,
+web `/fantasy`, and `/api/v1/fantasy/simulate`.
 
 ---
 
@@ -145,26 +188,35 @@ icelines fantasy team-show "My Team" --league "My League"
 
 ## Web dashboard
 
-Start a local HTTP server for a browser-based view:
+Start the local web dashboard for browser-based fantasy views:
 
 ```bash
-icelines fantasy serve --port 8080
+icelines serve --port 8000
 ```
 
 Available routes:
-- `GET /` — HTML standings dashboard
-- `GET /api/standings` — JSON standings
-- `GET /api/team/:name/roster` — JSON team roster
-- `POST /api/team/:name/add` — add player (body: `{"player": "name"}`)
-- `POST /api/trade` — trade simulation (body: `{"player1": "...", "to_team": "...", "player2": "..."}`)
+- `GET /fantasy` - HTML roster gaps and simulation scenarios
+- `GET /api/v1/fantasy/gaps` - JSON `FantasyRosterGapView`
+- `GET /api/v1/fantasy/simulate` - JSON `FantasySimulationView`
+- `GET /poach` - HTML poacher board
+- `GET /api/v1/poach` - JSON `PoachBoardView`
 
-Share the URL with your league members for a live view.
+`icelines fantasy serve --port 8080` remains available for the local fantasy
+server workflow, but the main dashboard is the parity surface for fantasy
+read/product views.
 
 ---
 
 ## Finding waiver wire pickups
 
-Use `query leaders` to find available players:
+Use `poach` for fantasy-specific pickup recommendations:
+
+```bash
+icelines poach --availability imported-available --category hits,blocks --top 15
+icelines report weekly --availability imported-available --category shots
+```
+
+You can still use `query leaders` for raw player searches:
 
 ```bash
 # High-pace players with limited GP (just returned from injury / recent callup)
@@ -192,7 +244,7 @@ Deleting a league cascades — removes all teams and rosters in that league.
 
 ## Notes
 
-- Goalies are not in the skater dataset — only forwards and defensemen
+- Goalies are scored through the goalie side of the active fantasy scheme.
 - Player uniqueness is scoped per-league — the same player can be on teams in different leagues
 - Fantasy scores are cumulative season stats × scheme weights (not daily)
 - For daily delta scoring, run `icelines fetch stats` each day and compare snapshots

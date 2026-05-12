@@ -2,7 +2,7 @@
 
 **Version**: 1.1
 **Date**: 2026-04-29
-**Status**: Implemented (partial — 5 of 7 shapes shipped; `fantasy` and `series` deferred)
+**Status**: Implemented (7 of 7 shapes shipped)
 
 ---
 
@@ -97,7 +97,7 @@ Front-matter keys:
 
 ### `team`
 
-Three sections (forwards, defense, goalies-stub):
+Three sections (forwards, defense, goalies when available):
 
 ```
 ## Forwards
@@ -237,7 +237,7 @@ L2 (subprocess):
 
 **Implemented (partial)** as of 2026-04-29 (Phase 8d).
 
-Five shapes shipped:
+Seven shapes shipped:
 
 | Shape | Status | Notes |
 |-------|--------|-------|
@@ -246,8 +246,8 @@ Five shapes shipped:
 | `depth` | ✅ Implemented | Top 50 cross-team metrics, sorted by delta |
 | `compare` | ✅ Implemented | GP/G/A/Pts/Pts82/PPG with diff |
 | `roster` | ✅ Implemented | grouped by team alpha, then pace within team |
-| `fantasy` | ⏸ Deferred | needs FantasyDb + scheme integration plumbing |
-| `series` | ⏸ Deferred | needs the historical playoffs.json bundle (Phase 8c) |
+| `fantasy` | ✅ Implemented | fantasy poacher report rendered from `PoachReportView`; source omissions disclose missing league imports |
+| `series` | ✅ Implemented | playoff game log rendered from `PlayoffsView` and the historical playoffs bundle |
 
 13 L0 tests + 3 L2 subprocess tests. proof DASHBOARD-SPEC integration
 is unblocked — the smoke test in `icelines-cli/tests/proof_lib_smoke.rs`

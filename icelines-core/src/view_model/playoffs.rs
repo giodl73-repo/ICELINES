@@ -86,6 +86,17 @@ pub struct PlayoffsSeriesInput {
     pub bottom_seed_rank: Option<String>,
     pub winner_abbrev: Option<String>,
     pub conference: Option<String>,
+    pub games: Vec<PlayoffsGameInput>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PlayoffsGameInput {
+    pub date: String,
+    pub home_abbrev: String,
+    pub away_abbrev: String,
+    pub home_score: u8,
+    pub away_score: u8,
+    pub series_after: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -111,6 +122,18 @@ pub struct PlayoffsSeriesRow {
     pub summary: String,
     pub is_complete: bool,
     pub conference: String,
+    pub games: Vec<PlayoffsGameRow>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PlayoffsGameRow {
+    pub game_number: usize,
+    pub date: String,
+    pub home_abbrev: String,
+    pub away_abbrev: String,
+    pub home_score: u8,
+    pub away_score: u8,
+    pub series_after: String,
 }
 
 fn playoffs_series_row(series: PlayoffsSeriesInput) -> PlayoffsSeriesRow {
@@ -138,6 +161,20 @@ fn playoffs_series_row(series: PlayoffsSeriesInput) -> PlayoffsSeriesRow {
         summary,
         is_complete,
         conference: series.conference.unwrap_or_default(),
+        games: series
+            .games
+            .into_iter()
+            .enumerate()
+            .map(|(idx, game)| PlayoffsGameRow {
+                game_number: idx + 1,
+                date: game.date,
+                home_abbrev: game.home_abbrev,
+                away_abbrev: game.away_abbrev,
+                home_score: game.home_score,
+                away_score: game.away_score,
+                series_after: game.series_after,
+            })
+            .collect(),
     }
 }
 

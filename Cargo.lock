@@ -1563,6 +1563,7 @@ dependencies = [
 name = "icelines-fetch"
 version = "0.24.1"
 dependencies = [
+ "anyhow",
  "chrono",
  "csv",
  "encoding_rs",
@@ -1570,6 +1571,7 @@ dependencies = [
  "icelines-core",
  "icelines-query",
  "reqwest",
+ "rusqlite",
  "serde",
  "serde_json",
  "sha2",
@@ -1577,6 +1579,7 @@ dependencies = [
  "thiserror 2.0.18",
  "tokio",
  "toml",
+ "uuid",
 ]
 
 [[package]]
