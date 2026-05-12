@@ -20,20 +20,20 @@
 {% block content %}
 {# Top action row — UX.B. Breadcrumb-style nav + compare form so the
    player card is a hub, not a dead end. #}
-<nav aria-label="Player actions" style="display:flex; gap:1rem; flex-wrap:wrap; align-items:center; margin-bottom:0.75rem; font-size:0.9rem;">
+<nav aria-label="Player actions" class="action-row">
     <a href="/leaders">← Leaders</a>
     {% if team_link != "" %}
         <a class="team-link team-{{ team_link }}" href="/team/{{ team_link }}">{{ team_link }} roster →</a>
     {% endif %}
     <a href="/goalies">Goalies</a>
     <a href="/transactions?team={{ team_link }}">Transactions</a>
-    <span style="flex:1"></span>
-    <form method="get" action="/compare" style="display:flex; gap:0.4rem; align-items:center;">
+    <span class="action-spacer"></span>
+    <form method="get" action="/compare" class="inline-compare">
         <input type="hidden" name="a" value="{{ nhl_id }}">
-        <label for="compare-b" style="font-size:0.85rem; color:#616161;">Compare with:</label>
+        <label for="compare-b" class="meta-line">Compare with:</label>
         <input id="compare-b" type="text" name="b" placeholder="type a player name…"
                list="compare-suggestions" autocomplete="off"
-               style="width: 16rem;">
+               class="compare-input">
         <datalist id="compare-suggestions">
             {% for s in compare_suggestions %}
             <option value="{{ s.0 }}"></option>
@@ -42,7 +42,7 @@
         <button type="submit">Compare</button>
     </form>
     <button type="button" id="copy-md-btn" data-target="player-md"
-            style="background:#fff; color:var(--nhl-navy); border:1px solid var(--nhl-navy);"
+            class="outline-button"
             title="Copy a paste-ready markdown stat block">
         Copy as Markdown
     </button>
@@ -62,16 +62,16 @@
 Source: IceLines · /player/{{ nhl_id }}
 </script>
 
-<div style="display: flex; gap: 1.5rem; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap;">
+<div class="player-identity">
     {% match headshot_url %}
         {% when Some with (url) %}
             <img src="{{ url }}" alt="Headshot of {{ full_name }}"
-                 style="width: 96px; height: 96px; border-radius: 4px; background: #f0f0f0;">
+                 class="player-headshot">
         {% when None %}
     {% endmatch %}
     <div>
-        <h1 style="margin: 0;">{{ full_name }}</h1>
-        <p style="color: #616161; margin: 0.25rem 0 0 0;">
+        <h1 class="flush-heading">{{ full_name }}</h1>
+        <p class="team-banner-meta meta-line">
             {{ position }} ·
             {% if team_link != "" %}
                 <a class="team-link team-{{ team_link }}" href="/team/{{ team_link }}">{{ team }}</a>
@@ -84,13 +84,11 @@ Source: IceLines · /player/{{ nhl_id }}
            player's full name; the server normalizes via
            `icelines_core::name::normalize_name` before persisting,
            matching the CLI auto-detect path. #}
-        <form method="POST" action="/favorites/add" style="margin-top: 0.4rem;">
+        <form method="POST" action="/favorites/add" class="favorite-form">
             <input type="hidden" name="key" value="{{ full_name }}">
             <input type="hidden" name="kind" value="player">
             <input type="hidden" name="return_to" value="/player/{{ nhl_id }}">
-            <button type="submit" style="padding: 0.25rem 0.6rem; cursor: pointer;
-                background: #fffbe6; color: #b8860b; border: 1px solid #b8860b;
-                border-radius: 3px; font-size: 0.9em;">
+            <button type="submit" class="favorite-button">
                 ★ Favorite player
             </button>
         </form>
@@ -99,55 +97,55 @@ Source: IceLines · /player/{{ nhl_id }}
 
 {# Expanded active-season stat block — UX.B. #}
 <section aria-label="Active season stats">
-    <h2 style="margin-top:0; margin-bottom:0.5rem; font-size:1.05rem;">
+    <h2 class="stat-section-heading">
         {{ active_label }} stats
         {% if prior_season_label != "" %}
-            <span style="color:#616161; font-size:0.85rem; font-weight:400;">— {{ prior_season_label }}</span>
+            <span class="section-heading-note">— {{ prior_season_label }}</span>
         {% endif %}
     </h2>
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap:0.75rem 1rem; max-width: 900px;">
+    <div class="stat-grid">
         <div>
-            <div style="color:#616161; font-size:0.8rem;">GP</div>
-            <strong style="font-size:1.1rem;">{{ gp }}</strong>
+            <div class="stat-label">GP</div>
+            <strong class="stat-value">{{ gp }}</strong>
             {% if gp_delta != "" %}<span class="stat-delta {{ gp_delta_class }}">{{ gp_delta }}</span>{% endif %}
         </div>
         <div>
-            <div style="color:#616161; font-size:0.8rem;">Goals</div>
-            <strong style="font-size:1.1rem;">{{ goals }}</strong>
+            <div class="stat-label">Goals</div>
+            <strong class="stat-value">{{ goals }}</strong>
             {% if goals_delta != "" %}<span class="stat-delta {{ goals_delta_class }}">{{ goals_delta }}</span>{% endif %}
         </div>
         <div>
-            <div style="color:#616161; font-size:0.8rem;">Assists</div>
-            <strong style="font-size:1.1rem;">{{ assists }}</strong>
+            <div class="stat-label">Assists</div>
+            <strong class="stat-value">{{ assists }}</strong>
             {% if assists_delta != "" %}<span class="stat-delta {{ assists_delta_class }}">{{ assists_delta }}</span>{% endif %}
         </div>
         <div>
-            <div style="color:#616161; font-size:0.8rem;">Points</div>
-            <strong style="font-size:1.1rem; color:#1565c0;">{{ points }}</strong>
+            <div class="stat-label">Points</div>
+            <strong class="stat-value stat-value-primary">{{ points }}</strong>
             {% if points_delta != "" %}<span class="stat-delta {{ points_delta_class }}">{{ points_delta }}</span>{% endif %}
         </div>
-        <div><div style="color:#616161; font-size:0.8rem;">P/GP</div><strong style="font-size:1.1rem;">{% if ppg_str.is_empty() %}—{% else %}{{ ppg_str }}{% endif %}</strong></div>
-        <div><div style="color:#616161; font-size:0.8rem;">+/-</div><strong style="font-size:1.1rem;">{{ plus_minus_str }}</strong></div>
-        <div><div style="color:#616161; font-size:0.8rem;">PIM</div><strong style="font-size:1.1rem;">{{ pim_str }}</strong></div>
-        <div><div style="color:#616161; font-size:0.8rem;">SOG</div><strong style="font-size:1.1rem;">{{ shots_str }}</strong></div>
-        <div><div style="color:#616161; font-size:0.8rem;">SH%</div><strong style="font-size:1.1rem;">{{ shooting_pct_str }}</strong></div>
-        <div><div style="color:#616161; font-size:0.8rem;">Hits</div><strong style="font-size:1.1rem;">{{ hits_str }}</strong></div>
-        <div><div style="color:#616161; font-size:0.8rem;">Blocks</div><strong style="font-size:1.1rem;">{{ blocks_str }}</strong></div>
-        <div><div style="color:#616161; font-size:0.8rem;">TK</div><strong style="font-size:1.1rem;">{{ takeaways_str }}</strong></div>
-        <div><div style="color:#616161; font-size:0.8rem;">GV</div><strong style="font-size:1.1rem;">{{ giveaways_str }}</strong></div>
-        <div><div style="color:#616161; font-size:0.8rem;">FOW%</div><strong style="font-size:1.1rem;">{{ faceoff_pct_str }}</strong></div>
-        <div><div style="color:#616161; font-size:0.8rem;">PP G</div><strong style="font-size:1.1rem;">{{ pp_goals_str }}</strong></div>
-        <div><div style="color:#616161; font-size:0.8rem;">PP P</div><strong style="font-size:1.1rem;">{{ pp_points_str }}</strong></div>
-        <div><div style="color:#616161; font-size:0.8rem;">SH G</div><strong style="font-size:1.1rem;">{{ sh_goals_str }}</strong></div>
-        <div><div style="color:#616161; font-size:0.8rem;">GWG</div><strong style="font-size:1.1rem;">{{ gwg_str }}</strong></div>
-        <div><div style="color:#616161; font-size:0.8rem;">TOI/G</div><strong style="font-size:1.1rem;">{{ toi_per_game_str }}</strong></div>
+        <div><div class="stat-label">P/GP</div><strong class="stat-value">{% if ppg_str.is_empty() %}—{% else %}{{ ppg_str }}{% endif %}</strong></div>
+        <div><div class="stat-label">+/-</div><strong class="stat-value">{{ plus_minus_str }}</strong></div>
+        <div><div class="stat-label">PIM</div><strong class="stat-value">{{ pim_str }}</strong></div>
+        <div><div class="stat-label">SOG</div><strong class="stat-value">{{ shots_str }}</strong></div>
+        <div><div class="stat-label">SH%</div><strong class="stat-value">{{ shooting_pct_str }}</strong></div>
+        <div><div class="stat-label">Hits</div><strong class="stat-value">{{ hits_str }}</strong></div>
+        <div><div class="stat-label">Blocks</div><strong class="stat-value">{{ blocks_str }}</strong></div>
+        <div><div class="stat-label">TK</div><strong class="stat-value">{{ takeaways_str }}</strong></div>
+        <div><div class="stat-label">GV</div><strong class="stat-value">{{ giveaways_str }}</strong></div>
+        <div><div class="stat-label">FOW%</div><strong class="stat-value">{{ faceoff_pct_str }}</strong></div>
+        <div><div class="stat-label">PP G</div><strong class="stat-value">{{ pp_goals_str }}</strong></div>
+        <div><div class="stat-label">PP P</div><strong class="stat-value">{{ pp_points_str }}</strong></div>
+        <div><div class="stat-label">SH G</div><strong class="stat-value">{{ sh_goals_str }}</strong></div>
+        <div><div class="stat-label">GWG</div><strong class="stat-value">{{ gwg_str }}</strong></div>
+        <div><div class="stat-label">TOI/G</div><strong class="stat-value">{{ toi_per_game_str }}</strong></div>
     </div>
 </section>
 
-<h2 style="margin-top: 1.5rem;">Career — {{ career_rows.len() }} season{% if career_rows.len() != 1 %}s{% endif %}</h2>
+<h2 class="page-section">Career — {{ career_rows.len() }} season{% if career_rows.len() != 1 %}s{% endif %}</h2>
 
 {% if career_rows.is_empty() %}
-<p style="color: #616161;">No career stats loaded for this player.</p>
+<p class="empty-state">No career stats loaded for this player.</p>
 {% else %}
 <div class="table-scroll">
 <table>
@@ -155,11 +153,11 @@ Source: IceLines · /player/{{ nhl_id }}
         <tr>
             <th>Season</th>
             <th>Team</th>
-            <th style="text-align: right;">GP</th>
-            <th style="text-align: right;">G</th>
-            <th style="text-align: right;">A</th>
-            <th style="text-align: right;">P</th>
-            <th style="text-align: right;">P/GP</th>
+            <th class="numeric">GP</th>
+            <th class="numeric">G</th>
+            <th class="numeric">A</th>
+            <th class="numeric">P</th>
+            <th class="numeric">P/GP</th>
         </tr>
     </thead>
     <tbody>
@@ -173,11 +171,11 @@ Source: IceLines · /player/{{ nhl_id }}
                     <a class="team-link team-{{ row.team_link }}" href="/team/{{ row.team_link }}">{{ row.team }}</a>
                 {% endif %}
             </td>
-            <td style="text-align: right;">{{ row.gp }}</td>
-            <td style="text-align: right;">{{ row.goals }}</td>
-            <td style="text-align: right;">{{ row.assists }}</td>
-            <td style="text-align: right;"><strong>{{ row.points }}</strong></td>
-            <td style="text-align: right;">{% if row.ppg_str.is_empty() %}—{% else %}{{ row.ppg_str }}{% endif %}</td>
+            <td class="numeric">{{ row.gp }}</td>
+            <td class="numeric">{{ row.goals }}</td>
+            <td class="numeric">{{ row.assists }}</td>
+            <td class="numeric"><strong>{{ row.points }}</strong></td>
+            <td class="numeric">{% if row.ppg_str.is_empty() %}—{% else %}{{ row.ppg_str }}{% endif %}</td>
         </tr>
         {% endfor %}
     </tbody>
@@ -189,7 +187,7 @@ Source: IceLines · /player/{{ nhl_id }}
    European pro). Section is hidden when the local store is empty
    (`icelines fetch career` not yet run). #}
 {% if !pre_nhl_career.is_empty() %}
-<h2 style="margin-top: 1.5rem;">Pre-NHL career — {{ pre_nhl_career.len() }} stint{% if pre_nhl_career.len() != 1 %}s{% endif %}</h2>
+<h2 class="page-section">Pre-NHL career — {{ pre_nhl_career.len() }} stint{% if pre_nhl_career.len() != 1 %}s{% endif %}</h2>
 <div class="table-scroll">
 <table>
     <thead>
@@ -197,11 +195,11 @@ Source: IceLines · /player/{{ nhl_id }}
             <th>Season</th>
             <th>League</th>
             <th>Team</th>
-            <th style="text-align: right;">GP</th>
-            <th style="text-align: right;">G</th>
-            <th style="text-align: right;">A</th>
-            <th style="text-align: right;">P</th>
-            <th style="text-align: right;">P/GP</th>
+            <th class="numeric">GP</th>
+            <th class="numeric">G</th>
+            <th class="numeric">A</th>
+            <th class="numeric">P</th>
+            <th class="numeric">P/GP</th>
         </tr>
     </thead>
     <tbody>
@@ -210,11 +208,11 @@ Source: IceLines · /player/{{ nhl_id }}
             <td><strong>{{ row.season }}</strong></td>
             <td><span class="league-badge tier-{{ row.league_tier }}">{{ row.league }}</span></td>
             <td>{{ row.team }}</td>
-            <td style="text-align: right;">{{ row.gp }}</td>
-            <td style="text-align: right;">{{ row.goals_str }}</td>
-            <td style="text-align: right;">{{ row.assists_str }}</td>
-            <td style="text-align: right;"><strong>{{ row.points_str }}</strong></td>
-            <td style="text-align: right;">{{ row.ppg_str }}</td>
+            <td class="numeric">{{ row.gp }}</td>
+            <td class="numeric">{{ row.goals_str }}</td>
+            <td class="numeric">{{ row.assists_str }}</td>
+            <td class="numeric"><strong>{{ row.points_str }}</strong></td>
+            <td class="numeric">{{ row.ppg_str }}</td>
         </tr>
         {% endfor %}
     </tbody>
@@ -222,7 +220,7 @@ Source: IceLines · /player/{{ nhl_id }}
 </div>
 {% endif %}
 
-<p style="margin-top: 2rem; color: #616161; font-size: 0.9rem;">
+<p class="page-section meta-line">
     Career table sourced from the 38-season bundle (1987-88 → 2025-26).
     {% if !pre_nhl_career.is_empty() %}Pre-NHL data via <code>icelines fetch career</code>.{% endif %}
     JSON twin: <a href="/api/v1/player/{{ nhl_id }}"><code>/api/v1/player/{{ nhl_id }}</code></a>.

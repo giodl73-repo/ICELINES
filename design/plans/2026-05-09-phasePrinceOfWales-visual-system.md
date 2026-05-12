@@ -273,6 +273,9 @@ Progress:
 - 2026-05-12: Moved Leaders route position chips, query filter form, active
   filter tokens, bio accordion, sortable headers, rank cells, and numeric
   columns onto shared Prince classes. Leaders is now free of inline `style=`.
+- 2026-05-12: Moved Player route action row, compare control, markdown action,
+  identity block, favorite action, stat grid, career headings, and career table
+  numerics onto shared Prince classes. Player is now free of inline `style=`.
 
 ---
 

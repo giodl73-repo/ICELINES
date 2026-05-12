@@ -439,11 +439,13 @@ Current Prince.4 evidence:
   `.form-actions`, `.inline-form-row`, `.filter-label`, `.filter-help`,
   `.filter-input-wide`, `.chip-strip`, `.filter-chip`,
   `.active-filter-line`, `.accordion-summary`, `.bio-filter-grid`,
-  `.range-input`, `.link-button-secondary`, `.sort-link`, `.numeric`,
-  `.rank-cell`, `.brand-link`, `.lede`, `.not-found-panel`,
-  `.centered-form`, `.back-link-row`, `.picker-nav`, `.inline-separator`,
-  `.table-score`, `.kind-chip`, `.game-live`, `.team-banner-meta`, and
-  `.team-banner-button`.
+  `.range-input`, `.link-button-secondary`, `.sort-link`, `.action-row`,
+  `.inline-compare`, `.outline-button`, `.player-identity`,
+  `.player-headshot`, `.favorite-button`, `.stat-grid`, `.stat-label`,
+  `.stat-value`, `.numeric`, `.rank-cell`, `.brand-link`, `.lede`,
+  `.not-found-panel`, `.centered-form`, `.back-link-row`, `.picker-nav`,
+  `.inline-separator`, `.table-score`, `.kind-chip`, `.game-live`,
+  `.team-banner-meta`, and `.team-banner-button`.
 
 ---
 
