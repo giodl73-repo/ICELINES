@@ -31,4 +31,6 @@ issue and several high-value hardening items before implementation starts.
 - Prince.2 must create the first token mapping before broad visual work.
 - Prince.3 and Prince.4 must capture before/after artifacts, not only patch CSS
   or ratatui styles.
-
+- CREST gets a dedicated aesthetic review protocol. A slice can pass GLASS
+  readability and still fail CREST if the artifact looks accidental,
+  generic, or visually weak.

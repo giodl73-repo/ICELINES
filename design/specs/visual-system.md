@@ -300,6 +300,61 @@ Aesthetic constraints:
 
 ---
 
+## CREST Aesthetic Review Protocol
+
+CREST is the aesthetic review gate. GLASS can approve a readable/accessibile
+surface that CREST still rejects as visually accidental. A Prince slice cannot
+claim visual polish until CREST has reviewed at least one artifact for the
+surface category it changes.
+
+Review artifacts:
+
+- TUI: terminal text capture or screenshot at the target size.
+- CLI: terminal capture with command, width, and color mode named.
+- Web: desktop and mobile screenshots with URL and viewport named.
+- Markdown/report: rendered GitHub/MkDocs or HTML capture.
+
+CREST review questions:
+
+1. Can a new user identify the surface, task, primary decision, supporting
+   evidence, and next action in three seconds?
+2. Does the composition feel intentionally designed, or like default widgets in
+   implementation order?
+3. Does density match the task: compact for comparison, calmer for decisions,
+   explicit for recovery?
+4. Does hockey identity come from real player/team/game/deployment context
+   rather than generic sports decoration?
+5. Does the palette have restraint and contrast without collapsing into one hue
+   family?
+6. Do borders, spacing, typography, and dividers create rhythm instead of noise?
+7. Are empty, stale, partial, loading, and error states designed as first-class
+   states?
+8. Would the artifact make someone want to use IceLines before reading an
+   explanation?
+
+CREST failure conditions:
+
+- The screen is readable but looks like unstyled default terminal/web output.
+- The page relies on a single dominant hue family.
+- The layout uses cards, borders, or panels without hierarchy.
+- The actual hockey object is visually secondary to chrome.
+- The artifact needs visible instructional copy to explain the interface.
+- Empty/error states look like appended plain text rather than designed states.
+
+Review output format:
+
+```text
+CREST review: PASS | PASS WITH NOTES | FAIL
+Artifact: <path or command + viewport>
+Primary failure, if any: hierarchy | density | palette | rhythm | identity | state design
+Required fix: <one concrete change>
+```
+
+`PASS WITH NOTES` is acceptable for intermediate Prince slices. Prince closeout
+requires `PASS` for TUI, web, CLI, and markdown/report representative artifacts.
+
+---
+
 ## Implementation Constraints
 
 - ViewModels own hockey meaning. Renderers own layout and styling.
@@ -327,13 +382,14 @@ Aesthetic constraints:
 | Token consistency | documented mapping from semantic token to TUI/CSS/text style |
 | Truth preservation | active season/type/source state visible where interpretation depends on it |
 | Accessibility | no color-only status; meaningful labels for fit, live/final, source, warning, error |
+| Aesthetic review | CREST `PASS` or documented `PASS WITH NOTES` for representative artifacts |
 
 ## Review Artifact Matrix
 
 | Slice | Required artifacts | Required edge states |
 |---|---|---|
-| Prince.2 tokens | token mapping table for core/TUI/CLI/web/markdown | color disabled, ASCII fallback |
-| Prince.3 TUI | 80x24 and 120x32 text snapshots for Team/Depth, Goalies, Scores/Schedule | no data, stale/partial source, long names, narrow width |
-| Prince.4 web | 1440x900 and 390x844 screenshots for home, leaders, player/team, fantasy/poach | empty filter, bad filter, partial source, keyboard focus |
-| Prince.5 CLI | 80-column captures for leaders, team, goalies, fantasy/poach | no color, invalid input, no rows |
-| Prince.6 closeout | before/after comparison note and updated spec links | known tradeoffs recorded |
+| Prince.2 tokens | token mapping table for core/TUI/CLI/web/markdown plus CREST palette note | color disabled, ASCII fallback |
+| Prince.3 TUI | 80x24 and 120x32 text snapshots for Team/Depth, Goalies, Scores/Schedule plus CREST review | no data, stale/partial source, long names, narrow width |
+| Prince.4 web | 1440x900 and 390x844 screenshots for home, leaders, player/team, fantasy/poach plus CREST review | empty filter, bad filter, partial source, keyboard focus |
+| Prince.5 CLI | 80-column captures for leaders, team, goalies, fantasy/poach plus CREST review | no color, invalid input, no rows |
+| Prince.6 closeout | before/after comparison note, updated spec links, and final CREST verdicts | known tradeoffs recorded |

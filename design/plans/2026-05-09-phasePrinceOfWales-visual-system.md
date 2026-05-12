@@ -135,6 +135,9 @@ Progress:
   `design/notes/2026-05-12-prince-visual-system-roles-review.md`. Tightened
   the spec around evidence-backed ASPECT scores, token ownership, ASCII
   fallbacks, web/mobile artifacts, and edge-state capture requirements.
+- 2026-05-12: Added a dedicated CREST aesthetic review protocol so visual
+  polish has an explicit pass/fail artifact review separate from GLASS
+  readability.
 
 ---
 
