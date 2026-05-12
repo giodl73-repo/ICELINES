@@ -276,6 +276,9 @@ Progress:
 - 2026-05-12: Moved Player route action row, compare control, markdown action,
   identity block, favorite action, stat grid, career headings, and career table
   numerics onto shared Prince classes. Player is now free of inline `style=`.
+- 2026-05-12: Moved Playoffs route back link, round headings, round empty
+  states, series grid, series cards, scores, summaries, and conference labels
+  onto shared Prince classes. Playoffs is now free of inline `style=`.
 
 ---
 
