@@ -963,8 +963,8 @@ fn print_table(view: &PoachBoardView) {
     }
 
     println!(
-        "{:<4} {:<26} {:<4} {:<3} {:>6} {:<10} {:<12} {:<28} Risk",
-        "Rank", "Player", "Team", "Pos", "Score", "Avail", "Confidence", "Why"
+        "{:<4} {:<20} {:<4} {:<3} {:>5} {:<8} {:<6} Why/Risk",
+        "Rank", "Player", "Team", "Pos", "Score", "Avail", "Conf"
     );
     for (idx, row) in view.rows.iter().enumerate() {
         let why = row
@@ -973,25 +973,27 @@ fn print_table(view: &PoachBoardView) {
             .map(|explanation| explanation.message.as_str())
             .unwrap_or("No explanation");
         let risk = row.risk_summary.as_deref().unwrap_or("-");
+        let why_risk = if risk == "-" {
+            truncate(why, 22)
+        } else {
+            truncate(&format!("{why}; risk: {risk}"), 22)
+        };
         println!(
-            "{:<4} {:<26} {:<4} {:<3} {:>6.1} {:<10} {:<12} {:<28} {}",
+            "{:<4} {:<20} {:<4} {:<3} {:>5.1} {:<8} {:<6} {}",
             idx + 1,
-            truncate(&row.display_name, 26),
+            truncate(&row.display_name, 20),
             row.team.as_str(),
             row.position.abbreviation(),
             row.score.final_score,
             availability_label(row.availability),
             format!("{:?}", row.confidence).to_ascii_lowercase(),
-            truncate(why, 28),
-            truncate(risk, 24)
+            why_risk
         );
     }
 
     if view.context.completeness != icelines_core::Completeness::Complete {
-        println!(
-            "\nSource state: {:?}. Missing schedule/import/shift data is disclosed, not scored as negative evidence.",
-            view.context.completeness
-        );
+        println!("\nSource state: {:?}.", view.context.completeness);
+        println!("Missing schedule/import/shift data is disclosed; not scored as negative.");
     }
 }
 

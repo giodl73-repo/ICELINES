@@ -298,6 +298,15 @@ Acceptance:
 - L2 command snapshots cover representative 80-column output.
 - JSON/CSV output is unaffected by decorative terminal styling.
 
+Progress:
+
+- 2026-05-12: Added `icelines-cli/tests/prince_cli_visual.rs` as the Prince.5
+  subprocess fence. It runs representative `query leaders`, `query goalies`,
+  and `poach` text commands with `NO_COLOR=1` and `COLUMNS=80`, then fails if
+  any output line exceeds 80 columns.
+- 2026-05-12: Tightened `icelines poach` terminal output to an 80-column table
+  with explicit `Why/Risk` labeling and a wrapped source-state footer.
+
 ---
 
 ## Prince.6 - Golden/screenshot tests and docs closeout

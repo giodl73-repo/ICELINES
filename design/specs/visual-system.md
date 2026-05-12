@@ -449,6 +449,15 @@ Current Prince.4 evidence:
   `.table-score`, `.kind-chip`, `.game-live`, `.team-banner-meta`, and
   `.team-banner-button`.
 
+Current Prince.5 evidence:
+
+- `cargo test -p icelines-cli --test prince_cli_visual` runs representative
+  `query leaders`, `query goalies`, and `poach` commands with `NO_COLOR=1` and
+  `COLUMNS=80`, asserts the key labels remain visible, and fails if any stdout
+  line exceeds 80 columns.
+- `cargo test -p icelines-cli l0_poach` covers the affected poach renderer
+  helpers and report markdown behavior after the 80-column terminal cleanup.
+
 ---
 
 ## Prince Exit Gates
