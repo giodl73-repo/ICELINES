@@ -5,7 +5,7 @@
 {% block content %}
 <h1>Goalies</h1>
 
-<p style="color: #616161; margin-bottom: 1rem;">
+<p class="meta-line">
     Top {{ rows.len() }} goalies by save percentage · {{ active_label }}
     · qualified threshold: {{ qualified_threshold }}+ GP
     {% if total > rows.len() %}
@@ -17,22 +17,22 @@
 <table>
     <thead>
         <tr>
-            <th style="text-align: right;">#</th>
+            <th class="numeric">#</th>
             <th>Goalie</th>
             <th>Team</th>
-            <th style="text-align: right;">GP</th>
-            <th style="text-align: right;">W</th>
-            <th style="text-align: right;">L</th>
-            <th style="text-align: right;">Saves</th>
-            <th style="text-align: right;">SV%</th>
-            <th style="text-align: right;">GAA</th>
-            <th style="text-align: right;">SO</th>
+            <th class="numeric">GP</th>
+            <th class="numeric">W</th>
+            <th class="numeric">L</th>
+            <th class="numeric">Saves</th>
+            <th class="numeric">SV%</th>
+            <th class="numeric">GAA</th>
+            <th class="numeric">SO</th>
         </tr>
     </thead>
     <tbody>
         {% for row in rows %}
         <tr>
-            <td style="text-align: right; color: #616161;">{{ loop.index }}</td>
+            <td class="rank-cell">{{ loop.index }}</td>
             <td>
                 <div class="player-cell">
                     <img class="avatar" src="{{ row.headshot_url }}" alt="" loading="lazy"
@@ -42,20 +42,20 @@
                 </div>
             </td>
             <td><a class="team-link team-{{ row.team }}" href="/team/{{ row.team }}">{{ row.team }}</a></td>
-            <td style="text-align: right;">{{ row.gp }}</td>
-            <td style="text-align: right;">{{ row.wins }}</td>
-            <td style="text-align: right;">{{ row.losses }}</td>
-            <td style="text-align: right;">{{ row.saves }}</td>
-            <td style="text-align: right;"><strong>{{ row.save_pct_str }}</strong></td>
-            <td style="text-align: right;">{{ row.gaa_str }}</td>
-            <td style="text-align: right;">{{ row.shutouts }}</td>
+            <td class="numeric">{{ row.gp }}</td>
+            <td class="numeric">{{ row.wins }}</td>
+            <td class="numeric">{{ row.losses }}</td>
+            <td class="numeric">{{ row.saves }}</td>
+            <td class="numeric"><strong>{{ row.save_pct_str }}</strong></td>
+            <td class="numeric">{{ row.gaa_str }}</td>
+            <td class="numeric">{{ row.shutouts }}</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
 </div>
 
-<p style="margin-top: 2rem; color: #616161; font-size: 0.9rem;">
+<p class="page-section meta-line">
     Sorted by save percentage with a {{ qualified_threshold }}-GP qualified threshold
     (the spec's rate-stat floor — without it, a goalie with 1 perfect game tops the list).
     King.5.2 will add filter form + sort picker; King.5.3 adds the
