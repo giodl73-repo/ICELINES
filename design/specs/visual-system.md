@@ -178,8 +178,10 @@ Current drift inventory:
    Remaining web work should migrate any future compatibility aliases back to
    these tokens instead of reviving `.fit-fringe`.
 2. TUI color use is still scattered across screens, but depth fit styling now
-   uses the shared CLI renderer mapping. Continue centralizing source, game,
-   action, and fantasy/poach token styles before pane-level redesign.
+   uses the shared CLI renderer mapping and the fantasy/poach screens now use
+   shared helpers for panel chrome, titles, metadata, warnings/errors, and
+   selected rows. Continue centralizing source, game, and action token styles
+   before pane-level redesign.
 3. CLI fit color and cross-team fit labels now use the shared CLI renderer
    mapping. Source, game, action, and fantasy/poach tokens need the same
    treatment.

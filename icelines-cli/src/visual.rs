@@ -1,6 +1,9 @@
 use comfy_table::Color as TableColor;
 use icelines_core::{FitClass, WebFitClass};
-use ratatui::style::Color as TuiColor;
+use ratatui::{
+    style::{Color as TuiColor, Modifier, Style},
+    widgets::{Block, Borders},
+};
 
 pub fn table_fit_color(fit: FitClass) -> TableColor {
     match fit {
@@ -38,6 +41,48 @@ pub fn web_fit_report_description(fit: WebFitClass) -> &'static str {
     }
 }
 
+pub fn tui_panel_block(title: impl Into<String>) -> Block<'static> {
+    Block::default()
+        .borders(Borders::ALL)
+        .border_style(tui_panel_border_style())
+        .title(title.into())
+}
+
+pub fn tui_panel_border_style() -> Style {
+    Style::default().fg(TuiColor::DarkGray)
+}
+
+pub fn tui_title_style() -> Style {
+    Style::default()
+        .fg(TuiColor::Cyan)
+        .add_modifier(Modifier::BOLD)
+}
+
+pub fn tui_header_style() -> Style {
+    Style::default()
+        .fg(TuiColor::Yellow)
+        .add_modifier(Modifier::BOLD)
+}
+
+pub fn tui_meta_style() -> Style {
+    Style::default().fg(TuiColor::DarkGray)
+}
+
+pub fn tui_warning_style() -> Style {
+    Style::default().fg(TuiColor::Yellow)
+}
+
+pub fn tui_error_style() -> Style {
+    Style::default().fg(TuiColor::Red)
+}
+
+pub fn tui_selected_style() -> Style {
+    Style::default()
+        .fg(TuiColor::Black)
+        .bg(TuiColor::Cyan)
+        .add_modifier(Modifier::BOLD)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -63,5 +108,12 @@ mod tests {
         assert_eq!(tui_web_fit_color(WebFitClass::Solid), TuiColor::Yellow);
         assert_eq!(tui_web_fit_color(WebFitClass::Buried), TuiColor::Cyan);
         assert_eq!(tui_web_fit_color(WebFitClass::Stretch), TuiColor::Red);
+    }
+
+    #[test]
+    fn l0_cli_visual_tui_state_styles_are_distinct() {
+        assert_ne!(tui_warning_style(), tui_error_style());
+        assert_ne!(tui_selected_style(), tui_meta_style());
+        assert_eq!(tui_panel_border_style().fg, Some(TuiColor::DarkGray));
     }
 }

@@ -3,14 +3,16 @@
 use icelines_core::view_model::{AvailabilityState, PoachBoardView, PoachQuery};
 use ratatui::{
     layout::Rect,
-    style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, List, ListItem, Paragraph},
+    widgets::{List, ListItem, Paragraph},
     Frame,
 };
 use std::collections::HashSet;
 
 use crate::tui::app::App;
+use crate::visual::{
+    tui_header_style, tui_meta_style, tui_panel_block, tui_selected_style, tui_warning_style,
+};
 
 pub fn chrome() -> crate::tui::chrome::ScreenChrome {
     use crate::tui::chrome::{KeyHint, ScreenChrome};
@@ -25,9 +27,7 @@ pub fn chrome() -> crate::tui::chrome::ScreenChrome {
 }
 
 pub fn render(f: &mut Frame, app: &App, area: Rect) {
-    let block = Block::default()
-        .borders(Borders::ALL)
-        .title(" Fantasy Poacher - adds, stashes, category fit ");
+    let block = tui_panel_block(" Fantasy Poacher - adds, stashes, category fit ");
     let inner = block.inner(area);
     f.render_widget(block, area);
 
@@ -35,8 +35,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
     if let Some(empty) = &view.empty_state {
         let detail = empty.detail.as_deref().unwrap_or("");
         f.render_widget(
-            Paragraph::new(format!("{}\n\n{}", empty.title, detail))
-                .style(Style::default().fg(Color::Yellow)),
+            Paragraph::new(format!("{}\n\n{}", empty.title, detail)).style(tui_warning_style()),
             inner,
         );
         return;
@@ -49,11 +48,11 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
             "  {:<3} {:<2} {:<22} {:<4} {:<3} {:>5} {:<9} {:<11} {:<22} {}",
             "Rk", "W", "Player", "Team", "Pos", "Score", "Avail", "Conf", "Why", "Risk"
         ),
-        Style::default().fg(Color::DarkGray),
+        tui_meta_style(),
     )));
     items.push(ListItem::new(Line::styled(
         format!("  {}", "-".repeat(92)),
-        Style::default().fg(Color::DarkGray),
+        tui_meta_style(),
     )));
 
     for (idx, row) in view.rows.iter().enumerate() {
@@ -75,14 +74,11 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
             "-"
         };
         let style = if selected {
-            Style::default()
-                .fg(Color::Black)
-                .bg(Color::Cyan)
-                .add_modifier(Modifier::BOLD)
+            tui_selected_style()
         } else if row.risk_summary.is_some() {
-            Style::default().fg(Color::Yellow)
+            tui_warning_style()
         } else {
-            Style::default().fg(Color::Green)
+            tui_header_style()
         };
         items.push(ListItem::new(Line::from(vec![Span::styled(
             format!(
@@ -105,7 +101,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
     if view.context.completeness != icelines_core::Completeness::Complete {
         items.push(ListItem::new(Line::styled(
             "  Missing schedule/import/shift data is disclosed, not scored as negative evidence.",
-            Style::default().fg(Color::DarkGray),
+            tui_meta_style(),
         )));
     }
 

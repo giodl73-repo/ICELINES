@@ -11,13 +11,16 @@ use icelines_core::{
 use icelines_fetch::schedule_remaining::remaining_games_by_team_from_cache;
 use ratatui::{
     layout::Rect,
-    style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, List, ListItem, Paragraph},
+    widgets::{List, ListItem, Paragraph},
     Frame,
 };
 
 use crate::tui::app::App;
+use crate::visual::{
+    tui_error_style, tui_header_style, tui_meta_style, tui_panel_block, tui_selected_style,
+    tui_title_style, tui_warning_style,
+};
 
 pub fn chrome() -> crate::tui::chrome::ScreenChrome {
     use crate::tui::chrome::{KeyHint, ScreenChrome};
@@ -40,9 +43,7 @@ pub fn simulation_chrome() -> crate::tui::chrome::ScreenChrome {
 }
 
 pub fn render(f: &mut Frame, app: &App, area: Rect) {
-    let block = Block::default()
-        .borders(Borders::ALL)
-        .title(" Fantasy Gaps - weighted category upgrades ");
+    let block = tui_panel_block(" Fantasy Gaps - weighted category upgrades ");
     let inner = block.inner(area);
     f.render_widget(block, area);
 
@@ -53,7 +54,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
                 Paragraph::new(format!(
                     "Fantasy roster gaps unavailable\n\n{message}\n\nRun `icelines fantasy team-use <name>` after importing or creating a league."
                 ))
-                .style(Style::default().fg(Color::Yellow)),
+                .style(tui_error_style()),
                 inner,
             );
             return;
@@ -66,14 +67,12 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
             "  {} / {} / {}",
             view.league, view.team, view.scoring_scheme
         ),
-        Style::default()
-            .fg(Color::Cyan)
-            .add_modifier(Modifier::BOLD),
+        tui_title_style(),
     )));
     for warning in &view.warnings {
         items.push(ListItem::new(Line::styled(
             format!("  warning: {warning}"),
-            Style::default().fg(Color::Yellow),
+            tui_warning_style(),
         )));
     }
     items.push(ListItem::new(Line::styled(
@@ -91,11 +90,11 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
             "Drop",
             "Why"
         ),
-        Style::default().fg(Color::DarkGray),
+        tui_meta_style(),
     )));
     items.push(ListItem::new(Line::styled(
         format!("  {}", "-".repeat(112)),
-        Style::default().fg(Color::DarkGray),
+        tui_meta_style(),
     )));
 
     for (idx, row) in view.rows.iter().enumerate() {
@@ -106,14 +105,11 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
             .map(|target| target.weighted_delta)
             .unwrap_or(row.weighted_gap_score);
         let style = if selected {
-            Style::default()
-                .fg(Color::Black)
-                .bg(Color::Cyan)
-                .add_modifier(Modifier::BOLD)
+            tui_selected_style()
         } else if weighted_delta > 0.0 {
-            Style::default().fg(Color::Green)
+            tui_header_style()
         } else {
-            Style::default().fg(Color::DarkGray)
+            tui_meta_style()
         };
         items.push(ListItem::new(Line::from(vec![Span::styled(
             format!(
@@ -150,9 +146,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
 }
 
 pub fn render_simulation(f: &mut Frame, app: &App, area: Rect) {
-    let block = Block::default()
-        .borders(Borders::ALL)
-        .title(" Fantasy Simulation - current score projection ");
+    let block = tui_panel_block(" Fantasy Simulation - current score projection ");
     let inner = block.inner(area);
     f.render_widget(block, area);
 
@@ -163,7 +157,7 @@ pub fn render_simulation(f: &mut Frame, app: &App, area: Rect) {
                 Paragraph::new(format!(
                     "Fantasy simulation unavailable\n\n{message}\n\nRun `icelines fantasy team-use <name>` after importing or creating a league."
                 ))
-                .style(Style::default().fg(Color::Yellow)),
+                .style(tui_error_style()),
                 inner,
             );
             return;
@@ -176,20 +170,18 @@ pub fn render_simulation(f: &mut Frame, app: &App, area: Rect) {
             "  {} / {} / {:?}",
             view.league, view.scoring_scheme, view.horizon
         ),
-        Style::default()
-            .fg(Color::Cyan)
-            .add_modifier(Modifier::BOLD),
+        tui_title_style(),
     )));
     for warning in &view.warnings {
         items.push(ListItem::new(Line::styled(
             format!("  warning: {warning}"),
-            Style::default().fg(Color::Yellow),
+            tui_warning_style(),
         )));
     }
     for assumption in &view.assumptions {
         items.push(ListItem::new(Line::styled(
             format!("  assumption: {assumption}"),
-            Style::default().fg(Color::DarkGray),
+            tui_meta_style(),
         )));
     }
     items.push(ListItem::new(Line::styled(
@@ -197,22 +189,19 @@ pub fn render_simulation(f: &mut Frame, app: &App, area: Rect) {
             "  {:<4} {:<28} {:<18} {:>12} {:>9} {:>8} {:>8}",
             "Rank", "Team", "Owner", "Projected", "Gap", "Games", "Players"
         ),
-        Style::default().fg(Color::DarkGray),
+        tui_meta_style(),
     )));
     items.push(ListItem::new(Line::styled(
         format!("  {}", "-".repeat(96)),
-        Style::default().fg(Color::DarkGray),
+        tui_meta_style(),
     )));
 
     for row in &view.rows {
         let selected = row.is_user_team;
         let style = if selected {
-            Style::default()
-                .fg(Color::Black)
-                .bg(Color::Cyan)
-                .add_modifier(Modifier::BOLD)
+            tui_selected_style()
         } else {
-            Style::default()
+            tui_meta_style()
         };
         items.push(ListItem::new(Line::from(vec![Span::styled(
             format!(
@@ -241,30 +230,24 @@ pub fn render_simulation(f: &mut Frame, app: &App, area: Rect) {
         items.push(ListItem::new(Line::from("")));
         items.push(ListItem::new(Line::styled(
             "  Scenarios",
-            Style::default()
-                .fg(Color::Cyan)
-                .add_modifier(Modifier::BOLD),
+            tui_title_style(),
         )));
         items.push(ListItem::new(Line::styled(
             format!(
                 "  {:<9} {:<22} {:>9} {:>6} {:<10} {}",
                 "Action", "Scenario", "Delta", "Games", "Confidence", "Why"
             ),
-            Style::default().fg(Color::DarkGray),
+            tui_meta_style(),
         )));
         items.push(ListItem::new(Line::styled(
             format!("  {}", "-".repeat(106)),
-            Style::default().fg(Color::DarkGray),
+            tui_meta_style(),
         )));
         for (scenario, row_text) in view.scenarios.iter().zip(simulation_scenario_rows(&view)) {
             let style = match scenario.action {
-                icelines_core::FantasySimulationAction::Improve => {
-                    Style::default().fg(Color::Green)
-                }
-                icelines_core::FantasySimulationAction::Watch => Style::default().fg(Color::Yellow),
-                icelines_core::FantasySimulationAction::Avoid => {
-                    Style::default().fg(Color::DarkGray)
-                }
+                icelines_core::FantasySimulationAction::Improve => tui_header_style(),
+                icelines_core::FantasySimulationAction::Watch => tui_warning_style(),
+                icelines_core::FantasySimulationAction::Avoid => tui_meta_style(),
             };
             items.push(ListItem::new(Line::from(vec![Span::styled(
                 row_text, style,

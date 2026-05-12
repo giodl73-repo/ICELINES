@@ -1,7 +1,7 @@
 # Phase Prince of Wales - ASPECT visual system
 
 **Date**: 2026-05-09
-**Status**: Active - Prince.2 shared visual language and tokens started
+**Status**: Active - Prince.3 TUI scan rhythm started
 **Trophy**: Prince of Wales Trophy. Fit: conference champion polish before the final release push. This phase turns the working platform into something that feels composed, readable, and worth opening every day.
 **External rubric**: DEGAS ASPECT v3.0 from `c:\src\degas\scoring\RUBRIC.md`
 **Estimated**: 3-6 sub-phases
@@ -187,6 +187,10 @@ Progress:
 - 2026-05-12: Added shared `.empty-state` styling and migrated representative
   no-data states on team, schedule, scores, playoffs, compare, fantasy, and
   poach routes.
+- 2026-05-12: Prince.2 token foundation is in place for core semantic labels,
+  CLI fit mapping, web fit/state/context/source/empty classes, and the first
+  TUI style helper layer. Remaining token work should happen as part of
+  surface-specific Prince.3-Prince.5 polish.
 
 ---
 
@@ -209,6 +213,13 @@ Acceptance:
 - CREST screenshot test passes on Team/Depth, Goalies, and Scores/Schedule.
 - Snapshot goldens cover default and filtered states.
 - No hidden keybinds introduced by the redesign.
+
+Progress:
+
+- 2026-05-12: Added shared TUI style helpers for panel borders, screen titles,
+  table headers, quiet metadata, warnings/errors, and selected rows.
+- 2026-05-12: Applied the helper layer to Fantasy Gaps, Fantasy Simulation, and
+  Fantasy Poacher as the first representative TUI scan-rhythm pass.
 
 ---
 
