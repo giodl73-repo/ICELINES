@@ -1,7 +1,7 @@
 # Phase Prince of Wales - ASPECT visual system
 
 **Date**: 2026-05-09
-**Status**: Active - Prince.1 visual inventory and ASPECT baseline started
+**Status**: Active - Prince.2 shared visual language and tokens started
 **Trophy**: Prince of Wales Trophy. Fit: conference champion polish before the final release push. This phase turns the working platform into something that feels composed, readable, and worth opening every day.
 **External rubric**: DEGAS ASPECT v3.0 from `c:\src\degas\scoring\RUBRIC.md`
 **Estimated**: 3-6 sub-phases
@@ -163,6 +163,16 @@ Acceptance:
 
 - One visual token source or documented mapping exists.
 - TUI, CLI, and web use the same names for semantic states.
+
+Progress:
+
+- 2026-05-12: Added the first shared semantic token source in core:
+  `SemanticToken::key()`, `SemanticToken::ascii_label()`, and
+  `ALL_SEMANTIC_TOKENS`. This keeps ViewModels semantic while giving renderers
+  stable names and ASCII-safe labels.
+- 2026-05-12: Expanded `design/specs/visual-system.md` with the complete
+  semantic token table, renderer mapping seed for TUI/CLI/web/markdown, and a
+  drift inventory for the next cleanup passes.
 
 ---
 

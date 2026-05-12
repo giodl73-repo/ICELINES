@@ -113,25 +113,39 @@ Hockey hierarchy primitives:
 
 ## Shared Semantic Tokens
 
-These are product-level visual meanings. Implementations may map them to
-terminal styles, CSS classes, or plain-text labels.
+These are product-level visual meanings. Implementations map them to terminal
+styles, CSS classes, or plain-text labels. The stable core contract is
+`SemanticToken::key()` plus `SemanticToken::ascii_label()`; renderers must not
+invent incompatible aliases for these meanings.
 
 | Token | Meaning | Required non-color cue | ASCII fallback |
 |---|---|---|---|
-| `primary_action` | next recommended action | verb label or leading command | `ACTION` |
-| `decision_highlight` | row or metric driving the decision | rank/label/strong weight | `KEY` |
 | `fit_elite` | strong positive role/fit signal | star or `ELITE` label | `ELITE` |
 | `fit_solid` | acceptable role/fit signal | `SOLID` label | `SOLID` |
 | `fit_buried` | underused positive player | up arrow or `UNDERUSED` label | `UNDERUSED` |
 | `fit_stretch` | overextended negative fit | down arrow or `OVEREXTENDED` label | `OVEREXTENDED` |
-| `game_pre` | scheduled game | `PRE` label and start time | `PRE` |
-| `game_live` | in-progress game | `LIVE` label and period/clock | `LIVE` |
-| `game_final` | completed game | `FINAL` label | `FINAL` |
 | `source_complete` | complete source for the view | `complete` source chip | `SRC complete` |
 | `source_partial` | partial/degraded source | `partial` source chip | `SRC partial` |
 | `source_stale` | stale cached source | timestamp/age chip | `SRC stale` |
+| `source_unavailable` | source cannot be loaded | unavailable chip and recovery | `SRC unavailable` |
+| `game_pre` | scheduled game | `PRE` label and start time | `PRE` |
+| `game_live` | in-progress game | `LIVE` label and period/clock | `LIVE` |
+| `game_final` | completed game | `FINAL` label | `FINAL` |
+| `game_overtime` | overtime result or live period | `OT` label | `OT` |
+| `game_shootout` | shootout result | `SO` label | `SO` |
+| `rising` | improving or rising-priority player | trend label | `RISING` |
+| `stash` | stash candidate | stash label | `STASH` |
+| `stream` | short-horizon streaming candidate | stream label | `STREAM` |
+| `category_fit` | fantasy category fit | category label | `CATEGORY` |
+| `schedule_edge` | schedule/game-count advantage | schedule label | `SCHEDULE` |
+| `risk` | risk driver or caution | risk label | `RISK` |
+| `primary_action` | next recommended action | verb label or leading command | `ACTION` |
+| `supporting_evidence` | evidence behind the decision | evidence label or secondary weight | `EVIDENCE` |
+| `quiet_metadata` | low-emphasis context metadata | muted label/placement | `META` |
+| `decision_highlight` | row or metric driving the decision | rank/label/strong weight | `KEY` |
 | `warning` | recoverable issue | `warning` label | `WARN` |
 | `error` | blocking issue | `error` label and recovery | `ERROR` |
+| `info` | neutral information | info label | `INFO` |
 
 Renderer mappings must keep these names or document exact aliases.
 
@@ -145,6 +159,32 @@ Token ownership:
   as selected, focused, clipped, expanded, or loading.
 - Any new renderer token must be added to this spec or mapped to an existing
   semantic token before broad use.
+
+Renderer mapping seed:
+
+| Token family | TUI mapping | CLI mapping | Web mapping | Markdown/report mapping |
+|---|---|---|---|---|
+| `fit_*` | compact label plus Green/Yellow/Blue/Red emphasis | same label in color mode, ASCII label in no-color mode | `.fit-elite`, `.fit-solid`, `.fit-buried`, `.fit-stretch` style classes | ASCII label before fit explanation |
+| `source_*` | header/context source chip | footer/source line | context chip in route header | context preamble before conclusions |
+| `game_*` | score row badge with clock/state text | status column text | score/status badge with state class | status label in schedule/game table |
+| `primary_action`, `decision_highlight` | focused action row and strong key metric | leading verb/action column | primary action button/link and highlighted decision row | action callout plus evidence bullets |
+| `supporting_evidence`, `quiet_metadata` | secondary row/footnote treatment | lower-emphasis evidence text | muted evidence/meta classes | secondary table columns or footnotes |
+| `rising`, `stash`, `stream`, `category_fit`, `schedule_edge`, `risk` | fantasy/poach badges with text label | fantasy/poach labels in table cells | fantasy/poach badge classes | explicit labels in poach/fantasy reports |
+| `warning`, `error`, `info` | first-class state blocks with recovery text | labeled state lines and non-zero exit where applicable | alert/state components | labeled state paragraph before data |
+
+Current drift inventory:
+
+1. Web fit CSS still has older class names and meanings in places, including
+   `.fit-fringe`; Prince.2 must migrate active HTML/CSS/tests to semantic
+   `fit_*` names or document exact compatibility aliases.
+2. TUI color use is still scattered across screens. Centralize token-to-style
+   mapping before aesthetic work on individual panes.
+3. CLI fit color is centralized for terminal output, but source, game, action,
+   and fantasy/poach tokens need the same treatment.
+4. Several web templates still carry inline hex colors. Move those through
+   named CSS variables or token classes before claiming web visual consistency.
+5. Markdown/report output needs explicit token labels because color and CSS are
+   not portable across GitHub/MkDocs/static HTML.
 
 ---
 
