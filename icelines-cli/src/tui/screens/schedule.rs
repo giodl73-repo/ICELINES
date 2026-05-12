@@ -9,9 +9,9 @@
 
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style},
+    style::{Color, Style},
     text::Line,
-    widgets::{Block, Borders, List, ListItem, Paragraph},
+    widgets::{List, ListItem, Paragraph},
     Frame,
 };
 
@@ -19,6 +19,10 @@ use crate::tui::app::App;
 use crate::tui::schedule::{
     monday_of, new_team_cache, new_week_cache, today_iso, week_label, ScheduleState, SearchFilter,
     TeamSeasonCache, WeekCache,
+};
+use crate::visual::{
+    tui_error_style, tui_header_style, tui_meta_style, tui_panel_block, tui_selected_style,
+    tui_title_style,
 };
 use icelines_core::model::Season;
 use icelines_core::{
@@ -318,7 +322,7 @@ fn render_week_block(f: &mut Frame, app: &App, area: Rect) {
             format!(" Schedule · {label} · filter: {a} vs {b}  ·  Enter: head-to-head ")
         }
     };
-    let block = Block::default().borders(Borders::ALL).title(title);
+    let block = tui_panel_block(title);
     let inner = block.inner(area);
     f.render_widget(block, area);
 
@@ -335,7 +339,7 @@ fn render_week_block(f: &mut Frame, app: &App, area: Rect) {
             f.render_widget(
                 Paragraph::new(vec![
                     Line::from(""),
-                    Line::styled("  Loading schedule…", Style::default().fg(Color::DarkGray)),
+                    Line::styled("  Loading schedule…", tui_meta_style()),
                 ]),
                 inner,
             );
@@ -344,14 +348,14 @@ fn render_week_block(f: &mut Frame, app: &App, area: Rect) {
             f.render_widget(
                 Paragraph::new(vec![
                     Line::from(""),
-                    Line::styled("  Fetching NHL schedule…", Style::default().fg(Color::Cyan)),
+                    Line::styled("  Fetching NHL schedule…", tui_title_style()),
                 ]),
                 inner,
             );
         }
         ScheduleState::Error(e) => {
-            let dim = Style::default().fg(Color::DarkGray);
-            let red = Style::default().fg(Color::Red);
+            let dim = tui_meta_style();
+            let red = tui_error_style();
             f.render_widget(
                 Paragraph::new(vec![
                     Line::from(""),
@@ -375,7 +379,7 @@ fn render_week_block(f: &mut Frame, app: &App, area: Rect) {
 
 fn render_games_grouped(f: &mut Frame, app: &App, area: Rect, games: &[&ScheduledGame]) {
     if games.is_empty() {
-        let dim = Style::default().fg(Color::DarkGray);
+        let dim = tui_meta_style();
         let msg = match &app.schedule.filter {
             SearchFilter::None => "  No games scheduled this week.",
             SearchFilter::Team(_) => "  No games match this team filter for this week.",
@@ -391,10 +395,8 @@ fn render_games_grouped(f: &mut Frame, app: &App, area: Rect, games: &[&Schedule
     let schedule_view = schedule_view_from_games(app, games.iter().map(|game| (**game).clone()));
     let rows: Vec<&ScheduleGameRow> = schedule_view.rows.iter().collect();
 
-    let dim = Style::default().fg(Color::DarkGray);
-    let gold = Style::default()
-        .fg(Color::Yellow)
-        .add_modifier(Modifier::BOLD);
+    let dim = tui_meta_style();
+    let gold = tui_header_style();
 
     // Group by date (preserves API ordering)
     let mut items: Vec<ListItem> = Vec::new();
@@ -456,18 +458,13 @@ fn render_games_grouped(f: &mut Frame, app: &App, area: Rect, games: &[&Schedule
         );
 
         let style = if row_idx == selected_idx {
-            Style::default()
-                .fg(Color::Black)
-                .bg(Color::Cyan)
-                .add_modifier(Modifier::BOLD)
+            tui_selected_style()
         } else if g.is_live() {
-            Style::default()
-                .fg(Color::Green)
-                .add_modifier(Modifier::BOLD)
+            tui_header_style()
         } else if g.is_final() {
-            Style::default()
+            tui_meta_style()
         } else {
-            Style::default().fg(Color::White)
+            tui_title_style()
         };
         items.push(ListItem::new(Line::styled(line, style)));
     }
@@ -523,19 +520,19 @@ fn scheduled_game_input(game: ScheduledGame) -> ScheduledGameInput {
 }
 
 fn render_search_bar(f: &mut Frame, app: &App, area: Rect) {
-    let block = Block::default().borders(Borders::ALL).title(" Search ");
+    let block = tui_panel_block(" Search ");
     let inner = block.inner(area);
     f.render_widget(block, area);
 
     let cursor = if app.schedule.search_mode { "█" } else { "" };
     let prompt = if let Some(err) = &app.schedule.filter_err {
-        Line::styled(format!("  ⚠ {err}"), Style::default().fg(Color::Red))
+        Line::styled(format!("  ⚠ {err}"), tui_error_style())
     } else if app.schedule.search_mode {
         Line::from(format!("  / {}{}", app.schedule.query, cursor))
     } else {
         Line::styled(
             "  Press / to filter by team (SEA) or matchup (NYR WSH)",
-            Style::default().fg(Color::DarkGray),
+            tui_meta_style(),
         )
     };
     f.render_widget(Paragraph::new(prompt), inner);
@@ -545,7 +542,7 @@ fn render_search_bar(f: &mut Frame, app: &App, area: Rect) {
 
 pub fn render_team_schedule(f: &mut Frame, app: &App, area: Rect, team: &str) {
     let title = format!(" {team} — Season Schedule  ·  Esc back ");
-    let block = Block::default().borders(Borders::ALL).title(title);
+    let block = tui_panel_block(title);
     let inner = block.inner(area);
     f.render_widget(block, area);
 
@@ -559,7 +556,7 @@ pub fn render_team_schedule(f: &mut Frame, app: &App, area: Rect, team: &str) {
 
     match state {
         ScheduleState::Idle | ScheduleState::Loading => {
-            let dim = Style::default().fg(Color::Cyan);
+            let dim = tui_title_style();
             f.render_widget(
                 Paragraph::new(vec![
                     Line::from(""),
@@ -574,7 +571,7 @@ pub fn render_team_schedule(f: &mut Frame, app: &App, area: Rect, team: &str) {
                     Line::from(""),
                     Line::styled(
                         format!("  Could not fetch team schedule: {e}"),
-                        Style::default().fg(Color::Red),
+                        tui_error_style(),
                     ),
                 ]),
                 inner,
@@ -591,10 +588,8 @@ fn render_team_schedule_loaded(
     team: &str,
     games: &[ScheduledGame],
 ) {
-    let dim = Style::default().fg(Color::DarkGray);
-    let gold = Style::default()
-        .fg(Color::Yellow)
-        .add_modifier(Modifier::BOLD);
+    let dim = tui_meta_style();
+    let gold = tui_header_style();
 
     // Team-season record/list projection lives in the shared schedule view model.
     let view = ScheduleTeamView::from_games(
@@ -658,10 +653,7 @@ fn render_team_schedule_loaded(
         );
 
         let style = if i == selected_idx {
-            Style::default()
-                .fg(Color::Black)
-                .bg(Color::Cyan)
-                .add_modifier(Modifier::BOLD)
+            tui_selected_style()
         } else {
             Style::default().fg(color)
         };
@@ -680,7 +672,7 @@ fn render_team_schedule_loaded(
 
 pub fn render_matchup(f: &mut Frame, app: &App, area: Rect, t1: &str, t2: &str) {
     let title = format!(" {t1} vs {t2} — Season Series  ·  Esc back ");
-    let block = Block::default().borders(Borders::ALL).title(title);
+    let block = tui_panel_block(title);
     let inner = block.inner(area);
     f.render_widget(block, area);
 
@@ -697,10 +689,7 @@ pub fn render_matchup(f: &mut Frame, app: &App, area: Rect, t1: &str, t2: &str) 
             f.render_widget(
                 Paragraph::new(vec![
                     Line::from(""),
-                    Line::styled(
-                        format!("  Fetching {t1} schedule…"),
-                        Style::default().fg(Color::Cyan),
-                    ),
+                    Line::styled(format!("  Fetching {t1} schedule…"), tui_title_style()),
                 ]),
                 inner,
             );
@@ -709,10 +698,7 @@ pub fn render_matchup(f: &mut Frame, app: &App, area: Rect, t1: &str, t2: &str) 
             f.render_widget(
                 Paragraph::new(vec![
                     Line::from(""),
-                    Line::styled(
-                        format!("  Could not fetch matchup: {e}"),
-                        Style::default().fg(Color::Red),
-                    ),
+                    Line::styled(format!("  Could not fetch matchup: {e}"), tui_error_style()),
                 ]),
                 inner,
             );
@@ -729,10 +715,8 @@ fn render_matchup_loaded(
     t2: &str,
     all: &[ScheduledGame],
 ) {
-    let dim = Style::default().fg(Color::DarkGray);
-    let gold = Style::default()
-        .fg(Color::Yellow)
-        .add_modifier(Modifier::BOLD);
+    let dim = tui_meta_style();
+    let gold = tui_header_style();
 
     let view = ScheduleMatchupView::from_games(
         ViewContext::new(ViewWindow::new(
@@ -836,12 +820,12 @@ fn matchup_row(g: &ScheduleGameRow, t1: &str) -> Line<'static> {
         let t1_score = g.team_score(t1).unwrap_or(0);
         let t2_score = g.opponent_score(t1).unwrap_or(0);
         if t1_score > t2_score {
-            Style::default().fg(Color::Green)
+            tui_header_style()
         } else {
-            Style::default().fg(Color::Red)
+            tui_error_style()
         }
     } else {
-        Style::default()
+        tui_meta_style()
     };
 
     Line::styled(body, style)

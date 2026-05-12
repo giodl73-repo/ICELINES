@@ -4,13 +4,8 @@ use crate::tui::filter_state::COUNTRY_CYCLE;
 use crate::tui::filter_state::{ForcedColumns, RosterFilterState};
 #[cfg(test)]
 pub type TeamPosFilter = crate::tui::filter_state::PosFilter;
-use ratatui::{
-    layout::Rect,
-    style::{Color, Modifier, Style},
-    text::Line,
-    widgets::{Block, Borders, Paragraph},
-    Frame,
-};
+use crate::visual::{tui_header_style, tui_meta_style, tui_panel_block, tui_selected_style};
+use ratatui::{layout::Rect, text::Line, widgets::Paragraph, Frame};
 
 // ── Phase Adams.10 — Team screen state ───────────────────────────────────────
 
@@ -113,7 +108,7 @@ pub fn chrome(state: &TeamScreenState) -> crate::tui::chrome::ScreenChrome {
 // ── Render ───────────────────────────────────────────────────────────────────
 
 pub fn render(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
-    let block = Block::default().borders(Borders::ALL).title(format!(
+    let block = tui_panel_block(format!(
         " {} — Roster  ·  s: sort ({})  ·  p: pos ({})  ·  c: country ({})  ·  h: hits ({})  ·  Enter: open ",
         abbrev,
         app.team.sort.label(),
@@ -211,12 +206,9 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
         );
 
         let style = if i == app.selected {
-            Style::default()
-                .fg(Color::Black)
-                .bg(Color::Cyan)
-                .add_modifier(Modifier::BOLD)
+            tui_selected_style()
         } else {
-            Style::default()
+            tui_meta_style()
         };
         lines.push(Line::styled(text, style));
     }
@@ -225,18 +217,14 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
     let goalie_views = app.goalie_views();
     let team_goalies = collect_team_goalie_views(&goalie_views, abbrev);
     if !team_goalies.is_empty() {
-        let dim = Style::default().fg(Color::DarkGray);
-        let gold = Style::default()
-            .fg(Color::Yellow)
-            .add_modifier(Modifier::BOLD);
         lines.push(Line::from(""));
-        lines.push(Line::styled("  GOALTENDING", gold));
+        lines.push(Line::styled("  GOALTENDING", tui_header_style()));
         lines.push(Line::styled(
             format!(
                 "  {:<22} {:<4}  {:>6}  {:>7}",
                 "Goalie", "GP", "SV%", "Record"
             ),
-            dim,
+            tui_meta_style(),
         ));
         for v in &team_goalies {
             let stats = match v.stats.goalie.as_ref() {

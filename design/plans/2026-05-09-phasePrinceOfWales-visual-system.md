@@ -220,6 +220,9 @@ Progress:
   table headers, quiet metadata, warnings/errors, and selected rows.
 - 2026-05-12: Applied the helper layer to Fantasy Gaps, Fantasy Simulation, and
   Fantasy Poacher as the first representative TUI scan-rhythm pass.
+- 2026-05-12: Applied the same helper layer to Team/Depth roster, Goalies
+  leaderboard/detail, and Schedule/Scores week/team/matchup flows. Focused
+  Team, Goalies, and Schedule TUI tests pass after the migration.
 
 ---
 

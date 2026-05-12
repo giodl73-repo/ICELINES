@@ -10,9 +10,9 @@
 
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style},
+    style::{Color, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, List, ListItem, Paragraph},
+    widgets::{List, ListItem, Paragraph},
     Frame,
 };
 
@@ -23,6 +23,9 @@ use icelines_core::{
 
 use crate::tui::app::App;
 use crate::tui::filter_state::{ForcedColumns, GoalieRoleFilter, RosterFilterState};
+use crate::visual::{
+    tui_header_style, tui_meta_style, tui_panel_block, tui_selected_style, tui_title_style,
+};
 
 // ── Phase Norris.4 — per-screen state struct ─────────────────────────────────
 
@@ -361,7 +364,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
         app.goalies.role_filter.label(),
         app.goalies.filters.country_label(),
     );
-    let block = Block::default().borders(Borders::ALL).title(title);
+    let block = tui_panel_block(title);
     let inner = block.inner(area);
     f.render_widget(block, area);
 
@@ -371,7 +374,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
     // populated for that window.
     let views = app.goalie_views();
     if views.is_empty() {
-        let dim = Style::default().fg(Color::DarkGray);
+        let dim = tui_meta_style();
         f.render_widget(
             Paragraph::new(vec![
                 Line::from(""),
@@ -398,7 +401,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
         season_type: app.active_type,
     });
     if goalies_view.rows.is_empty() {
-        let dim = Style::default().fg(Color::DarkGray);
+        let dim = tui_meta_style();
         f.render_widget(
             Paragraph::new(vec![
                 Line::from(""),
@@ -419,13 +422,9 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
         return;
     }
 
-    let dim = Style::default().fg(Color::DarkGray);
-    let gold = Style::default()
-        .fg(Color::Yellow)
-        .add_modifier(Modifier::BOLD);
-    let cyan = Style::default()
-        .fg(Color::Cyan)
-        .add_modifier(Modifier::BOLD);
+    let dim = tui_meta_style();
+    let gold = tui_header_style();
+    let cyan = tui_title_style();
 
     // Header row + horizontal rule.
     let header_line = format!(
@@ -469,14 +468,11 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
             goalie_metric_u32(goalie, "saves"),
         );
         let style = if rank == selected_idx {
-            Style::default()
-                .fg(Color::Black)
-                .bg(Color::Cyan)
-                .add_modifier(Modifier::BOLD)
+            tui_selected_style()
         } else if rank < 3 {
             cyan // top-3 highlighted
         } else {
-            Style::default()
+            tui_meta_style()
         };
         items.push(ListItem::new(Line::styled(row, style)));
     }
@@ -729,15 +725,13 @@ pub fn render_detail_by_id(
     pid: icelines_core::identity::PlayerId,
 ) {
     let Some(view) = app.view_for(pid) else {
-        let dim = Style::default().fg(Color::DarkGray);
+        let dim = tui_meta_style();
         let name = app
             .repo
             .identity(pid)
             .map(|i| i.full_name.as_str())
             .unwrap_or("Goalie");
-        let block = Block::default()
-            .borders(Borders::ALL)
-            .title(" Goalie · Esc back ");
+        let block = tui_panel_block(" Goalie · Esc back ");
         let inner = block.inner(area);
         f.render_widget(block, area);
         f.render_widget(
@@ -774,7 +768,7 @@ pub fn render_detail_by_id(
     }
 
     let title = format!(" Goalie — {}  ·  Esc back ", view.full_name());
-    let block = Block::default().borders(Borders::ALL).title(title);
+    let block = tui_panel_block(title);
     let inner = block.inner(area);
     f.render_widget(block, area);
 
@@ -797,10 +791,7 @@ pub fn render_detail_by_id(
     render_detail_stats_view(f, &view, layout[1]);
     if dashboards_on {
         if let Some(area_right) = layout.get(2).copied() {
-            let panel_block = Block::default()
-                .borders(Borders::ALL)
-                .title(" Scout card ")
-                .style(Style::default().fg(Color::DarkGray));
+            let panel_block = tui_panel_block(" Scout card ");
             let panel_inner = panel_block.inner(area_right);
             f.render_widget(panel_block, area_right);
             // compile() branches on view.is_goalie() and uses the
@@ -816,7 +807,7 @@ pub fn render_detail_by_id(
             match result {
                 Ok(out) => f.render_widget(Paragraph::new(out.lines), panel_inner),
                 Err(err) => {
-                    let dim = Style::default().fg(Color::DarkGray);
+                    let dim = tui_meta_style();
                     f.render_widget(
                         Paragraph::new(vec![
                             Line::styled("  Scout card unavailable", dim),
@@ -873,13 +864,9 @@ fn render_detail_stats_view(
     v: &icelines_core::stats_repository::PlayerView<'_>,
     area: Rect,
 ) {
-    let dim = Style::default().fg(Color::DarkGray);
-    let gold = Style::default()
-        .fg(Color::Yellow)
-        .add_modifier(Modifier::BOLD);
-    let cyan = Style::default()
-        .fg(Color::Cyan)
-        .add_modifier(Modifier::BOLD);
+    let dim = tui_meta_style();
+    let gold = tui_header_style();
+    let cyan = tui_title_style();
     let mut lines: Vec<Line> = Vec::new();
     lines.push(Line::from(""));
     lines.push(Line::from(vec![
