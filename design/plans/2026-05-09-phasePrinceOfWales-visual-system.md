@@ -131,6 +131,10 @@ Progress:
 - 2026-05-12: Created `design/specs/visual-system.md` with the ASPECT baseline,
   visual grammar, semantic token vocabulary, surface-specific failure modes, and
   Prince exit gates.
+- 2026-05-12: Reviewed the baseline with `.roles` and recorded findings in
+  `design/notes/2026-05-12-prince-visual-system-roles-review.md`. Tightened
+  the spec around evidence-backed ASPECT scores, token ownership, ASCII
+  fallbacks, web/mobile artifacts, and edge-state capture requirements.
 
 ---
 

@@ -36,6 +36,9 @@ The product must not feel like:
 ## ASPECT Baseline
 
 Scores are rough current-state review scores. They are not release claims.
+Every score change must name the artifact reviewed: a TUI text snapshot, CLI
+capture, web screenshot, or markdown render. A score without an artifact is an
+estimate and must stay in this baseline table.
 
 | Surface | Aim | School | Precision | Effect | Clarity | Truth | Total | Target |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -61,6 +64,18 @@ Current pattern:
 - Precision is uneven: tables carry value, but borders, spacing, glyphs,
   labels, and emphasis are not governed by one visual grammar.
 
+Baseline evidence ledger:
+
+| Surface | Evidence required before target claim |
+|---|---|
+| TUI | fixed-size text snapshot at 80x24 and 120x32 plus one wide capture when relevant |
+| CLI | 80-column command capture with color disabled and one color-enabled manual screenshot |
+| Web | desktop screenshot at 1440x900 and mobile screenshot at 390x844 |
+| Markdown | GitHub/MkDocs render check or static HTML capture |
+
+Prince may update ASPECT scores only when the evidence artifact is linked from
+the phase notes or committed test fixture.
+
 ---
 
 ## Visual Grammar
@@ -84,6 +99,16 @@ Rules:
 - Every renderer needs an ASCII-safe path.
 - Web stays no-build/no-SPA unless a later plan explicitly changes that.
 
+Hockey hierarchy primitives:
+
+| Primitive | Must show | Must not fake |
+|---|---|---|
+| Player | name, team, position/role, primary metric, source context when relevant | deployment certainty not present in the ViewModel |
+| Team | abbreviation/name, depth/rank context, active season/type | official branding beyond available assets |
+| Game | teams, state, score/time, period/final/pre label | live certainty when source is stale or unavailable |
+| Goalie | role signal, GP/start evidence, rate metric | starter certainty from low-sample data |
+| Fantasy decision | action, replacement/drop context, score/risk/confidence | recommendation certainty without explanation |
+
 ---
 
 ## Shared Semantic Tokens
@@ -91,24 +116,35 @@ Rules:
 These are product-level visual meanings. Implementations may map them to
 terminal styles, CSS classes, or plain-text labels.
 
-| Token | Meaning | Required non-color cue |
-|---|---|---|
-| `primary_action` | next recommended action | verb label or leading command |
-| `decision_highlight` | row or metric driving the decision | rank/label/strong weight |
-| `fit_elite` | strong positive role/fit signal | star or `ELITE` label |
-| `fit_solid` | acceptable role/fit signal | `SOLID` label |
-| `fit_buried` | underused positive player | up arrow or `UNDERUSED` label |
-| `fit_stretch` | overextended negative fit | down arrow or `OVEREXTENDED` label |
-| `game_pre` | scheduled game | `PRE` label and start time |
-| `game_live` | in-progress game | `LIVE` label and period/clock |
-| `game_final` | completed game | `FINAL` label |
-| `source_complete` | complete source for the view | `complete` source chip |
-| `source_partial` | partial/degraded source | `partial` source chip |
-| `source_stale` | stale cached source | timestamp/age chip |
-| `warning` | recoverable issue | `warning` label |
-| `error` | blocking issue | `error` label and recovery |
+| Token | Meaning | Required non-color cue | ASCII fallback |
+|---|---|---|---|
+| `primary_action` | next recommended action | verb label or leading command | `ACTION` |
+| `decision_highlight` | row or metric driving the decision | rank/label/strong weight | `KEY` |
+| `fit_elite` | strong positive role/fit signal | star or `ELITE` label | `ELITE` |
+| `fit_solid` | acceptable role/fit signal | `SOLID` label | `SOLID` |
+| `fit_buried` | underused positive player | up arrow or `UNDERUSED` label | `UNDERUSED` |
+| `fit_stretch` | overextended negative fit | down arrow or `OVEREXTENDED` label | `OVEREXTENDED` |
+| `game_pre` | scheduled game | `PRE` label and start time | `PRE` |
+| `game_live` | in-progress game | `LIVE` label and period/clock | `LIVE` |
+| `game_final` | completed game | `FINAL` label | `FINAL` |
+| `source_complete` | complete source for the view | `complete` source chip | `SRC complete` |
+| `source_partial` | partial/degraded source | `partial` source chip | `SRC partial` |
+| `source_stale` | stale cached source | timestamp/age chip | `SRC stale` |
+| `warning` | recoverable issue | `warning` label | `WARN` |
+| `error` | blocking issue | `error` label and recovery | `ERROR` |
 
 Renderer mappings must keep these names or document exact aliases.
+
+Token ownership:
+
+- Core ViewModels own semantic tokens when the meaning comes from hockey,
+  source, risk, score, or decision state.
+- Renderer layers own only presentation mappings: color, emphasis, border,
+  icon/glyph, spacing, and responsive layout.
+- A renderer-local token is allowed only when it describes layout state, such
+  as selected, focused, clipped, expanded, or loading.
+- Any new renderer token must be added to this spec or mapped to an existing
+  semantic token before broad use.
 
 ---
 
@@ -178,6 +214,16 @@ Prince targets:
 - route screenshots reviewed against ASPECT;
 - HTML tests for active context and applied filters where practical.
 
+Web artifact requirements:
+
+- desktop screenshot: 1440x900;
+- mobile screenshot: 390x844;
+- focus state visible for keyboard navigation;
+- touch targets at least 44px for mobile controls where controls are present;
+- tables either fit, wrap intentionally, or scroll inside a contained region;
+- HTMX/partial fragments preserve enough context for assistive technology or
+  document why the full page owns that context.
+
 ---
 
 ## CLI Baseline
@@ -207,6 +253,14 @@ Prince targets:
 - source/context footer convention;
 - no decorative styling in JSON/CSV.
 
+CLI artifact requirements:
+
+- capture with `NO_COLOR=1` or the repo's equivalent no-color flag;
+- capture with common terminal width set to 80 columns where practical;
+- verify JSON and CSV outputs are unchanged by visual-only work;
+- include one command with no rows or an invalid filter when that command has
+  a recovery path.
+
 ---
 
 ## Markdown And Reports Baseline
@@ -232,11 +286,25 @@ Prince targets:
 - standard source/context preamble;
 - stable table column rules for GitHub/MkDocs reading.
 
+Aesthetic constraints:
+
+- Avoid one-note palettes: no all-blue, all-purple, all-slate, all-beige, or
+  all-orange surface.
+- Avoid decorative gradients, blobs, and atmospheric backgrounds that do not
+  clarify the hockey data.
+- Cards are for repeated items, modals, and framed tools; do not nest cards or
+  turn every page section into a card.
+- Dense tables need hierarchy: rank, identity, primary metric, secondary
+  evidence, action/recovery.
+- Empty, stale, partial, and loading states must look designed, not appended.
+
 ---
 
 ## Implementation Constraints
 
 - ViewModels own hockey meaning. Renderers own layout and styling.
+- Context chips come from `ViewContext`, `ViewWindow`, `SourceState`, and
+  `Completeness`; renderers must not infer source truth from local flags.
 - Renderer styling must not recompute rank, fit, score, eligibility, or source
   truth.
 - Any color/status table added to TUI, CLI, or web must map back to this spec or
@@ -260,3 +328,12 @@ Prince targets:
 | Truth preservation | active season/type/source state visible where interpretation depends on it |
 | Accessibility | no color-only status; meaningful labels for fit, live/final, source, warning, error |
 
+## Review Artifact Matrix
+
+| Slice | Required artifacts | Required edge states |
+|---|---|---|
+| Prince.2 tokens | token mapping table for core/TUI/CLI/web/markdown | color disabled, ASCII fallback |
+| Prince.3 TUI | 80x24 and 120x32 text snapshots for Team/Depth, Goalies, Scores/Schedule | no data, stale/partial source, long names, narrow width |
+| Prince.4 web | 1440x900 and 390x844 screenshots for home, leaders, player/team, fantasy/poach | empty filter, bad filter, partial source, keyboard focus |
+| Prince.5 CLI | 80-column captures for leaders, team, goalies, fantasy/poach | no color, invalid input, no rows |
+| Prince.6 closeout | before/after comparison note and updated spec links | known tradeoffs recorded |
