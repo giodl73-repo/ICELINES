@@ -51,8 +51,8 @@
 {% endif %}
 
 {% if rows.is_empty() %}
-<section style="padding: 1rem; border: 1px solid var(--ice-divider); border-radius: 5px;">
-    <h2 style="margin-top: 0;">{{ empty_title }}</h2>
+<section class="empty-state">
+    <h2>{{ empty_title }}</h2>
     {% if !empty_detail.is_empty() %}<p>{{ empty_detail }}</p>{% endif %}
 </section>
 {% else %}

@@ -184,6 +184,9 @@ Progress:
   playoffs, schedule, and scores to the shared `.state-error` class.
 - 2026-05-12: Added shared web context/source/meta classes and migrated
   representative scores, schedule, playoffs, and poach state text.
+- 2026-05-12: Added shared `.empty-state` styling and migrated representative
+  no-data states on team, schedule, scores, playoffs, compare, fantasy, and
+  poach routes.
 
 ---
 

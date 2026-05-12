@@ -33,12 +33,12 @@
 {% endmatch %}
 
 {% if active_team == "" %}
-    <p style="color:#616161;">
+    <p class="empty-state">
         Pick a team from the strip above to view its season schedule.
     </p>
 {% else %}
     {% if rows.is_empty() && fetch_error.is_none() %}
-        <p style="color:#616161;">No games found for {{ active_team }} in {{ season_pretty }}.</p>
+        <p class="empty-state">No games found for {{ active_team }} in {{ season_pretty }}.</p>
     {% else %}
         <p style="color:#616161; font-size:0.85rem;">
             {{ total }} games for <strong>{{ active_team }}</strong>.

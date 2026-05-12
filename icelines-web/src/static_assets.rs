@@ -190,6 +190,7 @@ mod tests {
             ".context-line",
             ".source-note",
             ".meta-line",
+            ".empty-state",
         ] {
             assert!(
                 css.contains(class),

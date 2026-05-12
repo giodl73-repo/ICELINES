@@ -32,7 +32,7 @@
 {% endmatch %}
 
 {% if days.is_empty() && fetch_error.is_none() %}
-    <p style="color:#616161;">No games scheduled for this week.</p>
+    <p class="empty-state">No games scheduled for this week.</p>
 {% endif %}
 
 {% for d in days %}

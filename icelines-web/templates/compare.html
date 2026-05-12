@@ -88,7 +88,7 @@ Source: IceLines · /compare?a={{ pa.nhl_id }}&b={{ pb.nhl_id }}
                 {{ sim.target.display_name }} Â· {{ sim.target.position.abbreviation() }} Â· {{ sim.cohort_count }} player cohort
             </p>
             {% if sim.rows.is_empty() %}
-                <p style="color:#616161;">No similar-player rows available for this target.</p>
+                <p class="empty-state">No similar-player rows available for this target.</p>
             {% else %}
                 <table>
                     <thead>
