@@ -692,6 +692,29 @@ a.team-link:hover {
     color: #fff;
 }
 
+.team-banner-meta {
+    margin: 0.25rem 0 0 0;
+    opacity: 0.92;
+}
+
+.team-banner-actions {
+    margin-top: 0.6rem;
+}
+
+.team-banner-button {
+    padding: 0.3rem 0.7rem;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 3px;
+}
+
+.team-banner-button:hover {
+    background: rgba(255, 255, 255, 0.28);
+    border-color: rgba(255, 255, 255, 0.65);
+}
+
 /* ── 32 NHL team color classes ──────────────────────────────────── */
 /*
  * Hex values from each franchise's most recent published brand

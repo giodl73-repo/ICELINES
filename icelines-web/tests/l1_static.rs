@@ -119,6 +119,8 @@ async fn l1_static_css_contains_prince_route_layout_classes() {
         ".table-score",
         ".kind-chip",
         ".game-live",
+        ".team-banner-meta",
+        ".team-banner-button",
     ] {
         assert!(css.contains(class), "style.css missing {class}");
     }

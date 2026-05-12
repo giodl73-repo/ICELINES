@@ -267,6 +267,9 @@ Progress:
 - 2026-05-12: Moved Depth and Goalies route metadata, rank cells, and numeric
   columns onto shared `.meta-line`, `.rank-cell`, and `.numeric` classes. Both
   representative templates are now free of inline `style=`.
+- 2026-05-12: Moved Team route banner metadata, favorite action, section
+  rhythm, rank cells, and numeric columns onto shared Prince classes. Team is
+  now free of inline `style=`.
 
 ---
 

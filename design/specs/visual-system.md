@@ -438,7 +438,8 @@ Current Prince.4 evidence:
   `.section-heading`, `.section-link-row`, `.filter-panel`, `.filter-grid`,
   `.form-actions`, `.numeric`, `.rank-cell`, `.brand-link`, `.lede`,
   `.not-found-panel`, `.centered-form`, `.back-link-row`, `.picker-nav`,
-  `.inline-separator`, `.table-score`, `.kind-chip`, and `.game-live`.
+  `.inline-separator`, `.table-score`, `.kind-chip`, `.game-live`,
+  `.team-banner-meta`, and `.team-banner-button`.
 
 ---
 
