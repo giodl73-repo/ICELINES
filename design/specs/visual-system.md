@@ -435,7 +435,8 @@ Current Prince.4 evidence:
 
 - `cargo test -p icelines-web l1_static_css_contains_prince_route_layout_classes`
   fences the shared web route layout primitives: `.page-section`,
-  `.section-heading`, and `.section-link-row`.
+  `.section-heading`, `.section-link-row`, `.filter-panel`, `.filter-grid`,
+  `.form-actions`, `.numeric`, and `.rank-cell`.
 
 ---
 

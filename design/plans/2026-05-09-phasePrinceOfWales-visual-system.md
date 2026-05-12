@@ -255,6 +255,10 @@ Progress:
   inline section spacing, heading spacing, link-row spacing, and empty-state
   styling onto shared CSS classes. Added a static CSS fence for the new route
   layout primitives.
+- 2026-05-12: Extended shared web classes to fantasy and poach filter panels,
+  responsive filter grids, form actions, uppercase inputs, numeric cells, and
+  rank cells. The fantasy/poach templates now have no inline `style=`
+  attributes.
 
 ---
 

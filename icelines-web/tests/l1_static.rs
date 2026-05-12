@@ -100,7 +100,16 @@ async fn l1_static_css_serves_text_css_with_cache_headers() {
 async fn l1_static_css_contains_prince_route_layout_classes() {
     let css = body_text("/static/style.css").await;
 
-    for class in [".page-section", ".section-heading", ".section-link-row"] {
+    for class in [
+        ".page-section",
+        ".section-heading",
+        ".section-link-row",
+        ".filter-panel",
+        ".filter-grid",
+        ".form-actions",
+        ".numeric",
+        ".rank-cell",
+    ] {
         assert!(css.contains(class), "style.css missing {class}");
     }
 }

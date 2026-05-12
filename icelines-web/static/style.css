@@ -288,6 +288,46 @@ code {
     margin-top: 0.25rem;
 }
 
+.filter-panel {
+    margin-bottom: 1.25rem;
+    padding: 0.85rem 1rem;
+    background: var(--ice-divider);
+    border-radius: 5px;
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.6rem 0.8rem;
+}
+
+.filter-field input,
+.filter-field select {
+    width: 100%;
+    margin-top: 0.15rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.uppercase-input {
+    text-transform: uppercase;
+}
+
+.numeric {
+    text-align: right;
+}
+
+.rank-cell {
+    text-align: right;
+    color: var(--ice-muted);
+}
+
 /* ── Tables ─────────────────────────────────────────────────────── */
 table {
     width: 100%;

@@ -5,29 +5,29 @@
 {% block content %}
 <h1>Fantasy Poacher</h1>
 
-<p style="color: #616161; margin-bottom: 0.75rem;">
+<p class="meta-line">
     Top {{ rows.len() }} candidates · {{ active_label }} · {{ scoring_scheme }}
     {% if total > rows.len() %}
         · {{ total }} total
     {% endif %}
 </p>
 
-<form method="get" action="/poach" style="margin-bottom: 1.25rem; padding: 0.85rem 1rem; background: var(--ice-divider); border-radius: 5px;">
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:0.6rem 0.8rem;">
-        <label>Scheme
-            <input type="text" name="scheme" value="{{ scoring_scheme }}" style="width: 100%; margin-top: 0.15rem;">
+<form method="get" action="/poach" class="filter-panel">
+    <div class="filter-grid">
+        <label class="filter-field">Scheme
+            <input type="text" name="scheme" value="{{ scoring_scheme }}">
         </label>
-        <label>Categories
-            <input type="text" name="category" value="{{ categories }}" placeholder="hits,blocks,shots" style="width: 100%; margin-top: 0.15rem;">
+        <label class="filter-field">Categories
+            <input type="text" name="category" value="{{ categories }}" placeholder="hits,blocks,shots">
         </label>
-        <label>Teams
-            <input type="text" name="team" value="{{ teams }}" placeholder="SEA,TOR" style="width: 100%; margin-top: 0.15rem; text-transform: uppercase;">
+        <label class="filter-field">Teams
+            <input class="uppercase-input" type="text" name="team" value="{{ teams }}" placeholder="SEA,TOR">
         </label>
-        <label>Positions
-            <input type="text" name="pos" value="{{ positions }}" placeholder="C,LW,RW,D" style="width: 100%; margin-top: 0.15rem; text-transform: uppercase;">
+        <label class="filter-field">Positions
+            <input class="uppercase-input" type="text" name="pos" value="{{ positions }}" placeholder="C,LW,RW,D">
         </label>
-        <label>Availability
-            <select name="availability" style="width: 100%; margin-top: 0.15rem;">
+        <label class="filter-field">Availability
+            <select name="availability">
                 <option value="{{ availability }}">{{ availability }}</option>
                 <option value="any">any</option>
                 <option value="available">available</option>
@@ -38,7 +38,7 @@
             </select>
         </label>
     </div>
-    <div style="display:flex; gap:0.5rem; margin-top:0.75rem; align-items:center;">
+    <div class="form-actions">
         <button type="submit">Apply</button>
         <a href="/api/v1/poach"><code>/api/v1/poach</code></a>
     </div>
@@ -60,11 +60,11 @@
 <table>
     <thead>
         <tr>
-            <th style="text-align: right;">#</th>
+            <th class="numeric">#</th>
             <th>Player</th>
             <th>Team</th>
             <th>Pos</th>
-            <th style="text-align: right;">Score</th>
+            <th class="numeric">Score</th>
             <th>Avail</th>
             <th>Confidence</th>
             <th>Category Fit</th>
@@ -76,11 +76,11 @@
     <tbody>
         {% for row in rows %}
         <tr>
-            <td style="text-align: right; color: #616161;">{{ row.rank }}</td>
+            <td class="rank-cell">{{ row.rank }}</td>
             <td><a class="player-name" href="/player/{{ row.player_id }}">{{ row.name }}</a></td>
             <td><a class="team-link team-{{ row.team }}" href="/team/{{ row.team }}">{{ row.team }}</a></td>
             <td><span class="pos-chip pos-{{ row.position }}">{{ row.position }}</span></td>
-            <td style="text-align: right;"><strong>{{ row.score }}</strong></td>
+            <td class="numeric"><strong>{{ row.score }}</strong></td>
             <td>{{ row.availability }}</td>
             <td>{{ row.confidence }}</td>
             <td>{{ row.category_fit }}</td>
