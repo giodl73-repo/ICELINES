@@ -239,6 +239,13 @@ code {
     color: #8a5a00;
 }
 
+.state-error {
+    padding: 0.5rem 0.75rem;
+    border-left: 4px solid var(--accent-bad);
+    background: #ffebee;
+    margin: 0.75rem 0;
+}
+
 /* ── Tables ─────────────────────────────────────────────────────── */
 table {
     width: 100%;

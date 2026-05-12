@@ -25,7 +25,7 @@
 
 {% match fetch_error %}
     {% when Some with (msg) %}
-        <p style="background:#ffebee; border-left:4px solid #c62828; padding:0.5rem 0.75rem;">
+        <p class="state-error">
             Live schedule fetch failed: {{ msg }}
         </p>
     {% when None %}

@@ -180,6 +180,8 @@ Progress:
   TUI depth fit styling, markdown-safe fit labels, and scouting descriptions.
 - 2026-05-12: Moved fantasy simulation warning rendering from inline hex styles
   to shared web state classes, with template/static-asset fences.
+- 2026-05-12: Moved repeated web route fetch/error blocks for compare,
+  playoffs, schedule, and scores to the shared `.state-error` class.
 
 ---
 

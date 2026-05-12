@@ -183,15 +183,19 @@ mod tests {
     #[test]
     fn l0_style_css_carries_warning_state_contract() {
         let css = std::str::from_utf8(STYLE_CSS).expect("style.css is utf-8");
-        for class in &[".state-warning", ".state-warning-line"] {
+        for class in &[".state-warning", ".state-warning-line", ".state-error"] {
             assert!(
                 css.contains(class),
-                "style.css must define {class} for warning token rendering"
+                "style.css must define {class} for state token rendering"
             );
         }
         assert!(
             css.contains("var(--accent-warn)"),
             "warning state must use the shared warning accent token"
+        );
+        assert!(
+            css.contains("var(--accent-bad)"),
+            "error state must use the shared bad/error accent token"
         );
     }
 

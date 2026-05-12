@@ -74,7 +74,7 @@ Source: IceLines · /compare?a={{ pa.nhl_id }}&b={{ pb.nhl_id }}
 
 {% match error %}
     {% when Some with (msg) %}
-        <p style="background:#ffebee; border-left:4px solid #c62828; padding:0.5rem 0.75rem;">
+        <p class="state-error">
             {{ msg }}
         </p>
     {% when None %}
