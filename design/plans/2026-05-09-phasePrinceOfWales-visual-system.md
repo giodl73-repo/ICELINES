@@ -1,7 +1,7 @@
 # Phase Prince of Wales - ASPECT visual system
 
 **Date**: 2026-05-09
-**Status**: Next - planned after Campbell/Ted route truth, before Jim Gregory
+**Status**: Active - Prince.1 visual inventory and ASPECT baseline started
 **Trophy**: Prince of Wales Trophy. Fit: conference champion polish before the final release push. This phase turns the working platform into something that feels composed, readable, and worth opening every day.
 **External rubric**: DEGAS ASPECT v3.0 from `c:\src\degas\scoring\RUBRIC.md`
 **Estimated**: 3-6 sub-phases
@@ -125,6 +125,12 @@ Acceptance:
 - The plan stops saying "ugly" as a feeling and names exact failures:
   hierarchy, spacing, typography/glyphs, color, empty state, density, or flow.
 - At least one DEGAS-informed review table exists for TUI and one for web.
+
+Progress:
+
+- 2026-05-12: Created `design/specs/visual-system.md` with the ASPECT baseline,
+  visual grammar, semantic token vocabulary, surface-specific failure modes, and
+  Prince exit gates.
 
 ---
 

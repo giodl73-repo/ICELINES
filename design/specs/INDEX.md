@@ -41,6 +41,7 @@ For active work and backlog, see [`../plans/INDEX.md`](../plans/INDEX.md).
 | [platform-contracts.md](platform-contracts.md) | Draft | Uniform data/query/ViewModel/surface/report/visual contracts for Campbell and later phases. |
 | [viewmodels.md](viewmodels.md) | Draft | Typed ViewModel boundary between core/query logic and CLI/TUI/web/report renderers. |
 | [surface-parity.md](surface-parity.md) | Draft | Feature-by-surface matrix; Campbell seeds it, Ted Lindsay verifies web parity. |
+| [visual-system.md](visual-system.md) | Draft | Prince of Wales ASPECT baseline, visual grammar, semantic tokens, and exit gates for CLI/TUI/web/markdown. |
 
 ---
 
