@@ -1,7 +1,7 @@
 # Phase Ted Lindsay - web parity and web architecture
 
 **Date**: 2026-05-09
-**Status**: In progress - TedLindsay.2 handler split landed
+**Status**: Implemented with tracked partials - route inventory, handler split, major HTML/JSON parity, and ViewModel/envelope migration landed
 **Trophy**: Ted Lindsay Award. Fit: the players' choice. This phase makes the browser surface something a regular hockey user would actually choose, while keeping it aligned with CLI and TUI.
 **Target release**: post-Campbell, post-Messier, and post-Lester Patrick
 **Estimated**: 4-7 sub-phases
@@ -249,6 +249,11 @@ Progress:
 - 2026-05-10: Migrated TUI Stats result-table rendering to build a
   `LeadersView` adapter from the existing interactive query results. TUI
   selection/navigation still uses `PlayerView` for now.
+- 2026-05-12: Surface parity matrix now records the remaining Ted Lindsay
+  partials explicitly: richer career/favorites/watch UX, full arbitrary
+  watch-rule editing, admin HTML controls, and generated docs/spec-site
+  verification. Major web HTML/JSON product routes are no longer tracked as
+  vague future claims.
 
 ---
 
@@ -391,6 +396,13 @@ Acceptance:
 - Remaining beauty/readability work is handed to Prince of Wales with route
   truth already settled. Ted Lindsay makes the web honest and structured;
   Prince of Wales makes it visually excellent.
+
+Closeout note:
+
+- Ted Lindsay is considered implemented for route truth and major route parity.
+  The remaining `partial` rows in `design/specs/surface-parity.md` are scoped
+  follow-ups for Prince of Wales and Jim Gregory, not blockers for starting the
+  visual-system phase.
 
 ---
 

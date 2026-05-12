@@ -10,23 +10,25 @@ For the final forward-roadmap role review, see
 
 ---
 
-## Roadmap from Jennings
+## Current Forward Roadmap
 
-Jennings is the immediate gate. Campbell follows with the platform contracts
-and ViewModel layer. Messier does not start until Jennings records a green
-measured baseline and Campbell has established the shared contract path.
+Jennings restored the measured baseline, Campbell established the shared
+ViewModel contract path, and the Messier/Lester/Ted/Selke parity wave moved the
+major product surfaces onto that path. The remaining forward work is primarily
+visual quality, release discipline, and a few explicitly partial UX/admin/doc
+surfaces tracked in `design/specs/surface-parity.md`.
 
 | Plan | Status | Summary |
 |------|--------|---------|
-| [Phase Jennings - Stabilization + Truth](2026-05-09-phaseJennings-stabilization-truth.md) | Draft - immediate | Restores build-green, fixes config test drift, records measured baseline, and reconciles roadmap/docs before Messier. |
-| Jennings measured baseline | Recorded | `cargo check --workspace` PASS; `cargo test --workspace --no-fail-fast` PASS; test inventory 4620 `: test` entries; `cargo fmt --check` still fails due broad pre-existing formatting drift. |
-| [Phase Campbell - Platform contracts and ViewModels](2026-05-09-phaseCampbell-platform-viewmodels.md) | Draft - after Jennings | Defines data/query/ViewModel/surface/visual contracts and creates the shared typed ViewModel layer for later surface work. Role review: [`../notes/2026-05-09-campbell-specs-roles-review.md`](../notes/2026-05-09-campbell-specs-roles-review.md). |
+| [Phase Jennings - Stabilization + Truth](2026-05-09-phaseJennings-stabilization-truth.md) | Implemented | Restored the measured baseline, split CI/test gates into runnable areas, and made follow-on phases depend on explicit local/CI checks. |
+| Jennings measured baseline | Recorded | `cargo check --workspace` PASS; `cargo test --workspace --no-fail-fast` PASS; test inventory 4620 `: test` entries at the original Jennings measurement; later CI slices split the gates for faster failure. |
+| [Phase Campbell - Platform contracts and ViewModels](2026-05-09-phaseCampbell-platform-viewmodels.md) | Closed | Shared typed ViewModels now back the major CLI/TUI/web/site/report product surfaces; the final closeout routed generated team pages and `tonight trade` through ViewModel contracts. Role review: [`../notes/2026-05-09-campbell-specs-roles-review.md`](../notes/2026-05-09-campbell-specs-roles-review.md). |
 | [Phase Selke - Fantasy poacher](2026-05-09-phaseSelke-fantasy-poacher.md) | Implemented | Builds the fantasy poacher: PoachScore, watch rules, reports, streamers/stashes/category specialists, and CLI/TUI/web/markdown/JSON surfaces. Carry-forward: full TUI rule editor. |
 | [Phase Messier - TUI filter/sort consistency](2026-05-08-phaseMessier-roster-filters.md) | Implemented | Standardized TUI player-list filter/sort keybinds and cmdbar kv grammar through the shared contract path. Carry-forward: CLI parity in Lester Patrick, web parity in Ted Lindsay, visual polish in Prince of Wales. |
 | [Phase Lester Patrick - CLI parity](2026-05-05-phaseLesterPatrick-cli-parity.md) | Implemented | Closed CLI gaps for schedule/playoffs/transactions and in-TUI docs using the post-Messier command vocabulary. Carry-forward: Ted Lindsay verifies web parity. |
-| [Phase Ted Lindsay - Web parity](2026-05-09-phaseTedLindsay-web-parity.md) | Draft - after Lester Patrick | Splits the web handler monolith, builds a surface parity matrix, and brings web HTML/JSON routes into CLI/TUI parity. |
-| [Phase Prince of Wales - ASPECT visual system](2026-05-09-phasePrinceOfWales-visual-system.md) | Draft - after Ted Lindsay | Applies the DEGAS ASPECT rubric to TUI/web/CLI visual quality: shared tokens, scan rhythm, responsive polish, and screenshot/golden tests. |
-| [Phase Jim Gregory - Release hardening](2026-05-09-phaseJimGregory-release-hardening.md) | Draft - after Prince of Wales | CI, release checklist, current-season rollover, bundled-data freshness, and binary smoke discipline. |
+| [Phase Ted Lindsay - Web parity](2026-05-09-phaseTedLindsay-web-parity.md) | Implemented with tracked partials | Split the web handler monolith, established the route inventory, normalized major HTML/JSON routes onto ViewModels/envelopes, and left explicit partials for richer UX/admin/docs verification. |
+| [Phase Prince of Wales - ASPECT visual system](2026-05-09-phasePrinceOfWales-visual-system.md) | Next | Applies the DEGAS ASPECT rubric to TUI/web/CLI visual quality: shared tokens, scan rhythm, responsive polish, and screenshot/golden tests. |
+| [Phase Jim Gregory - Release hardening](2026-05-09-phaseJimGregory-release-hardening.md) | Planned after Prince | CI, release checklist, current-season rollover, bundled-data freshness, and binary smoke discipline. |
 | [Phase Hart — Normalization](2026-04-30-phaseHart-normalization.md) | Implemented | (player_id, season, season_type) primary-key axis. Sub-phases 4.1/5b/5c/6 all shipped 2026-04-30 → 2026-05-02. |
 | [Hart.5c — Final Cleanup](2026-05-01-phaseHart-5c-final-cleanup.md) | Implemented (v0.4) | Consumer migration to PlayerView. 5c.0–5c.7.12 shipped 2026-05-01. One followup (F1: contract helpers on PlayerView) tracked in plan. |
 | [Hart.5c.6 — TUI Restructure](2026-05-01-phaseHart-5c-6-tui-restructure.md) | Implemented | App owns StatsRepository; TUI screens migrated; user-flow + boot-load tests landed 2026-05-01. |

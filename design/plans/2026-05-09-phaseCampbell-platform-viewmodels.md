@@ -1,7 +1,7 @@
 # Phase Campbell - platform contracts and ViewModels
 
 **Date**: 2026-05-09
-**Status**: Implementation closeout - ViewModel seed and first adapters landed
+**Status**: Closed - shared ViewModel contract path landed across major product surfaces
 **Trophy**: Clarence S. Campbell Bowl. Fit: conference architecture between the data engine and the presentation surfaces. Campbell creates the common ice every later surface plays on.
 **Spec**: `design/specs/platform-contracts.md`
 **Estimated**: 2-4 sub-phases
@@ -265,6 +265,10 @@ Closeout so far:
   -- --nocapture`, `cargo test -p icelines-web --test persona_wave21_parity
   -- --nocapture`, `cargo test -p icelines-web leaders -- --nocapture`, and
   `cargo test -p icelines-core view_model -- --nocapture`.
+- 2026-05-12 closeout: generated static team pages now render from
+  `TeamDepthView`, CLI `tonight trade` renders from `TeamTradeImpactView`, and
+  no CLI/site/web product surface calls `DepthChartBuilder::build_views` or
+  `build_views_with_swap` directly.
 
 ---
 
@@ -299,6 +303,10 @@ Closeout:
   - Ted Lindsay owns web HTML/JSON parity from ViewModels.
   - Prince of Wales consumes semantic ViewModel tokens for visual styling.
   - Jim Gregory includes contract fixture checks in release gates.
+- Closed the last Campbell bypasses by routing static generated team pages and
+  the CLI trade what-if surface through ViewModel contracts, then updating
+  `design/INVARIANTS.md`, `design/specs/viewmodels.md`, and
+  `design/specs/surface-parity.md`.
 
 ---
 

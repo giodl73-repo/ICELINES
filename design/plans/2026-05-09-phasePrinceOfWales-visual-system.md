@@ -1,7 +1,7 @@
 # Phase Prince of Wales - ASPECT visual system
 
 **Date**: 2026-05-09
-**Status**: Draft - planned after Ted Lindsay, before Jim Gregory
+**Status**: Next - planned after Campbell/Ted route truth, before Jim Gregory
 **Trophy**: Prince of Wales Trophy. Fit: conference champion polish before the final release push. This phase turns the working platform into something that feels composed, readable, and worth opening every day.
 **External rubric**: DEGAS ASPECT v3.0 from `c:\src\degas\scoring\RUBRIC.md`
 **Estimated**: 3-6 sub-phases
@@ -177,7 +177,8 @@ Acceptance:
 
 ## Prince.4 - Web design pass and responsive polish
 
-After Ted Lindsay establishes route truth, make the web feel like a finished
+Ted Lindsay has established route truth for the major web surfaces. Make the
+web feel like a finished
 local hockey dashboard:
 
 - active context visible above the fold;
