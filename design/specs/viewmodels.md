@@ -188,6 +188,21 @@ Required:
 - warnings
 - source state
 
+### `TeamTradeImpactView`
+
+Purpose: CLI trade what-if projection for one destination team.
+
+Required:
+
+- `context`
+- destination `team`
+- incoming and outgoing player summaries
+- before/after forward lines
+- before/after defense pairs
+- projected `delta_pace_82`
+- result label
+- warnings
+
 ### `SimilarPlayersView`
 
 Purpose: shared compare/comps similarity cohort for CLI `query compare --similar`

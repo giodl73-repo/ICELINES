@@ -40,6 +40,51 @@ pub struct TeamDepthChartView {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TeamTradeImpactView {
+    pub context: ViewContext,
+    pub team: TeamAbbr,
+    pub player_out: TradeImpactPlayer,
+    pub player_in: TradeImpactPlayer,
+    pub forward_lines: Vec<TradeImpactLine>,
+    pub defense_pairs: Vec<TradeImpactPair>,
+    pub delta_pace_82: f64,
+    pub result_label: String,
+    pub warnings: Vec<ViewWarning>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TradeImpactPlayer {
+    pub player_id: PlayerId,
+    pub display_name: String,
+    pub team: TeamAbbr,
+    pub pace_82: Option<f64>,
+    pub points_per_game: Option<f64>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TradeImpactLine {
+    pub line: u8,
+    pub before: Vec<Option<TradeImpactSlot>>,
+    pub after: Vec<Option<TradeImpactSlot>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TradeImpactPair {
+    pub pair: u8,
+    pub before: Vec<Option<TradeImpactSlot>>,
+    pub after: Vec<Option<TradeImpactSlot>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TradeImpactSlot {
+    pub player_id: PlayerId,
+    pub display_name: String,
+    pub team: TeamAbbr,
+    pub position: Position,
+    pub pace_82: Option<f64>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TeamDepthChartColumn {
     pub key: String,
     pub label: String,
@@ -256,6 +301,66 @@ impl TeamDepthView {
             defense_pairs,
             goalies,
             extras,
+            warnings: Vec::new(),
+        }
+    }
+}
+
+impl TeamTradeImpactView {
+    pub fn from_player_views(
+        team: TeamAbbr,
+        season: Season,
+        season_type: SeasonType,
+        roster: &[PlayerView<'_>],
+        player_in: PlayerView<'_>,
+        player_out: PlayerView<'_>,
+    ) -> Self {
+        let before = DepthChartBuilder::build_views(team.clone(), season, roster);
+        let after = DepthChartBuilder::build_views_with_swap(
+            team.clone(),
+            season,
+            roster,
+            player_in,
+            player_out.id(),
+        );
+        let delta_pace_82 =
+            player_in.pace_82().unwrap_or(0.0) - player_out.pace_82().unwrap_or(0.0);
+
+        Self {
+            context: view_context(season, season_type, true),
+            team,
+            player_out: trade_player(&player_out),
+            player_in: trade_player(&player_in),
+            forward_lines: before
+                .forward_lines
+                .iter()
+                .zip(after.forward_lines.iter())
+                .enumerate()
+                .map(|(idx, (before, after))| TradeImpactLine {
+                    line: idx as u8 + 1,
+                    before: before.iter().map(trade_slot).collect(),
+                    after: after.iter().map(trade_slot).collect(),
+                })
+                .collect(),
+            defense_pairs: before
+                .defense_pairs
+                .iter()
+                .zip(after.defense_pairs.iter())
+                .enumerate()
+                .map(|(idx, (before, after))| TradeImpactPair {
+                    pair: idx as u8 + 1,
+                    before: before.iter().map(trade_slot).collect(),
+                    after: after.iter().map(trade_slot).collect(),
+                })
+                .collect(),
+            delta_pace_82,
+            result_label: if delta_pace_82 > 5.0 {
+                "UPGRADE".to_string()
+            } else if delta_pace_82 < -5.0 {
+                "DOWNGRADE".to_string()
+            } else {
+                "ROUGHLY EVEN".to_string()
+            },
             warnings: Vec::new(),
         }
     }
@@ -658,6 +763,29 @@ fn goalie_slot(goalie: &PlayerView<'_>) -> DepthGoalieSlot {
     }
 }
 
+fn trade_player(player: &PlayerView<'_>) -> TradeImpactPlayer {
+    TradeImpactPlayer {
+        player_id: player.id(),
+        display_name: player.full_name().to_string(),
+        team: player
+            .team()
+            .cloned()
+            .unwrap_or_else(|| TeamAbbr("UNK".to_string())),
+        pace_82: player.pace_82(),
+        points_per_game: player.pace_82().map(|pace| pace / 82.0),
+    }
+}
+
+fn trade_slot(slot: &Option<DepthChartSlot>) -> Option<TradeImpactSlot> {
+    slot.as_ref().map(|slot| TradeImpactSlot {
+        player_id: slot.player_id,
+        display_name: slot.full_name.clone(),
+        team: slot.team.clone(),
+        position: slot.position,
+        pace_82: slot.pace_82,
+    })
+}
+
 fn metric_int(key: &str, label: &str, value: i64) -> MetricCell {
     MetricCell {
         key: StatKey::from(key),
@@ -760,5 +888,45 @@ mod tests {
         assert_eq!(view.columns[3].players[0].display_name, "Left Defense");
         assert_eq!(view.columns[4].players[0].display_name, "Right Defense");
         assert_eq!(view.columns[0].players[0].score, 93.7);
+    }
+
+    #[test]
+    fn l0_team_trade_impact_view_projects_before_after_depth() {
+        let repo = repo_with_depth_players();
+        let season = Season(20252026);
+        let season_type = SeasonType::Regular;
+        let roster = repo.team_roster(&TeamAbbr("SEA".to_string()), season, season_type);
+        let player_out = repo.view(PlayerId(3), season, season_type).unwrap();
+        let player_in = repo.view(PlayerId(6), season, season_type).unwrap();
+
+        let view = TeamTradeImpactView::from_player_views(
+            TeamAbbr("SEA".to_string()),
+            season,
+            season_type,
+            &roster,
+            player_in,
+            player_out,
+        );
+
+        assert_eq!(view.team.as_str(), "SEA");
+        assert_eq!(view.player_out.display_name, "Right Wing One");
+        assert_eq!(view.player_in.display_name, "Other Team Center");
+        assert!(view.forward_lines.iter().any(|line| line
+            .before
+            .iter()
+            .flatten()
+            .any(|slot| slot.display_name == "Right Wing One")));
+        assert!(!view.forward_lines.iter().any(|line| line
+            .after
+            .iter()
+            .flatten()
+            .any(|slot| slot.display_name == "Right Wing One")));
+        let placed_in = view
+            .forward_lines
+            .iter()
+            .flat_map(|line| line.after.iter().flatten())
+            .find(|slot| slot.display_name == "Other Team Center")
+            .expect("incoming player should be placed after swap");
+        assert_eq!(placed_in.team.as_str(), "SEA");
     }
 }

@@ -97,7 +97,8 @@ pub use view_model::{
     SimilarPlayerTarget, SimilarPlayersView, SnapshotEntryInput, SnapshotMutationIntent,
     SnapshotMutationOperation, SnapshotRow, SnapshotView, SortDirection, SortKey, SortState,
     SourceKind, SourceProvenance, SourceState, StatKey, TeamChipView, TeamDepthChartColumn,
-    TeamDepthChartPlayer, TeamDepthChartView, TeamDepthView, TransactionViewRow, TransactionsView,
+    TeamDepthChartPlayer, TeamDepthChartView, TeamDepthView, TeamTradeImpactView, TradeImpactLine,
+    TradeImpactPair, TradeImpactPlayer, TradeImpactSlot, TransactionViewRow, TransactionsView,
     ValuePrecision, ViewContext, ViewWarning, ViewWindow, WarningKind, WatchNoteInput,
     WatchRuleMutationIntent, WatchRuleMutationOperation, WatchlistMemberRow, WatchlistView,
 };

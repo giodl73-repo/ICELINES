@@ -553,10 +553,8 @@ pub async fn run_trade(
 ) -> anyhow::Result<()> {
     use crate::config::Config;
     use icelines_core::{
-        model::{DepthChartSlot, Season},
-        name::normalize_name,
-        season_stats::SeasonType,
-        DepthChartBuilder, TeamAbbr,
+        model::Season, name::normalize_name, season_stats::SeasonType, TeamAbbr,
+        TeamTradeImpactView, TradeImpactSlot,
     };
     use icelines_fetch::{snapshot::SnapshotStore, stats_loader::load_into_repo};
 
@@ -606,21 +604,21 @@ pub async fn run_trade(
 
     let team_views = repo.team_roster(&team_abbr_t, season, stype);
 
-    let chart_before = DepthChartBuilder::build_views(team_abbr_t.clone(), season, &team_views);
-    let chart_after = DepthChartBuilder::build_views_with_swap(
-        team_abbr_t,
+    let impact = TeamTradeImpactView::from_player_views(
+        team_abbr_t.clone(),
         season,
+        stype,
         &team_views,
         view_in,
-        view_out.identity.id,
+        view_out,
     );
 
-    let fmt3 = |row: Option<&[Option<DepthChartSlot>; 3]>| {
+    let fmt3 = |row: Option<&Vec<Option<TradeImpactSlot>>>| {
         row.map(|r| {
             r.iter()
                 .map(|s| {
                     s.as_ref()
-                        .map(|slot| slot.full_name.chars().take(12).collect::<String>())
+                        .map(|slot| slot.display_name.chars().take(12).collect::<String>())
                         .unwrap_or_else(|| "—".repeat(12))
                 })
                 .collect::<Vec<_>>()
@@ -628,12 +626,12 @@ pub async fn run_trade(
         })
         .unwrap_or_else(|| "—".to_owned())
     };
-    let fmt2 = |row: Option<&[Option<DepthChartSlot>; 2]>| {
+    let fmt2 = |row: Option<&Vec<Option<TradeImpactSlot>>>| {
         row.map(|r| {
             r.iter()
                 .map(|s| {
                     s.as_ref()
-                        .map(|slot| slot.full_name.chars().take(16).collect::<String>())
+                        .map(|slot| slot.display_name.chars().take(16).collect::<String>())
                         .unwrap_or_else(|| "—".repeat(16))
                 })
                 .collect::<Vec<_>>()
@@ -644,28 +642,24 @@ pub async fn run_trade(
 
     println!("FORWARD LINES — BEFORE vs AFTER");
     println!("{}", "─".repeat(72usize));
-    for line in 0..3 {
-        let b_row = chart_before.forward_lines.get(line);
-        let a_row = chart_after.forward_lines.get(line);
-        println!("  Line {} BEFORE: {}", line + 1, fmt3(b_row));
-        println!("  Line {} AFTER:  {}", line + 1, fmt3(a_row));
+    for line in impact.forward_lines.iter().take(3) {
+        println!("  Line {} BEFORE: {}", line.line, fmt3(Some(&line.before)));
+        println!("  Line {} AFTER:  {}", line.line, fmt3(Some(&line.after)));
         println!();
     }
 
     println!("DEFENSE PAIRS — BEFORE vs AFTER");
     println!("{}", "─".repeat(72usize));
-    for pair in 0..3 {
-        let b_row = chart_before.defense_pairs.get(pair);
-        let a_row = chart_after.defense_pairs.get(pair);
-        println!("  Pair {} BEFORE: {}", pair + 1, fmt2(b_row));
-        println!("  Pair {} AFTER:  {}", pair + 1, fmt2(a_row));
+    for pair in impact.defense_pairs.iter().take(3) {
+        println!("  Pair {} BEFORE: {}", pair.pair, fmt2(Some(&pair.before)));
+        println!("  Pair {} AFTER:  {}", pair.pair, fmt2(Some(&pair.after)));
         println!();
     }
 
-    let delta = view_in.pace_82().unwrap_or(0.0) - view_out.pace_82().unwrap_or(0.0);
-    if delta > 5.0 {
+    let delta = impact.delta_pace_82;
+    if impact.result_label == "UPGRADE" {
         println!("  Result: UPGRADE (+{delta:.1} projected pts/82)");
-    } else if delta < -5.0 {
+    } else if impact.result_label == "DOWNGRADE" {
         println!("  Result: DOWNGRADE ({delta:.1} projected pts/82)");
     } else {
         println!("  Result: roughly even ({delta:+.1} projected pts/82)");

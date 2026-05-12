@@ -108,7 +108,8 @@ pub use snapshot::{
 pub use team_depth::{
     DeploymentEvidence, DepthGoalieSlot, DepthLeagueView, DepthLine, DepthPair, DepthPlayerSlot,
     DepthSlotKind, DepthSummary, DepthTeamStrengthRow, TeamDepthChartColumn, TeamDepthChartPlayer,
-    TeamDepthChartView, TeamDepthView,
+    TeamDepthChartView, TeamDepthView, TeamTradeImpactView, TradeImpactLine, TradeImpactPair,
+    TradeImpactPlayer, TradeImpactSlot,
 };
 pub use tokens::{MetricCell, MetricUnit, MetricValue, SemanticToken, StatKey, ValuePrecision};
 pub use transactions::{TransactionViewRow, TransactionsView};
