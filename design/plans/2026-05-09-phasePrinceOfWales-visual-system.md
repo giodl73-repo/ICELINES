@@ -249,6 +249,13 @@ Acceptance:
 - HTML tests assert active context and visible applied filters.
 - Browser screenshots at desktop and mobile are reviewed against ASPECT.
 
+Progress:
+
+- 2026-05-12: Started Prince.4 shared route layout cleanup by moving home page
+  inline section spacing, heading spacing, link-row spacing, and empty-state
+  styling onto shared CSS classes. Added a static CSS fence for the new route
+  layout primitives.
+
 ---
 
 ## Prince.5 - CLI table polish and export readability

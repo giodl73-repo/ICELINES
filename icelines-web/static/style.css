@@ -276,6 +276,18 @@ code {
     color: var(--ice-fg);
 }
 
+.page-section {
+    margin-top: 1.5rem;
+}
+
+.section-heading {
+    margin-bottom: 0.25rem;
+}
+
+.section-link-row {
+    margin-top: 0.25rem;
+}
+
 /* ── Tables ─────────────────────────────────────────────────────── */
 table {
     width: 100%;

@@ -21,6 +21,14 @@ async fn fire(path: &str) -> axum::http::Response<Body> {
     .expect("dispatch ok")
 }
 
+async fn body_text(path: &str) -> String {
+    let resp = fire(path).await;
+    let bytes = axum::body::to_bytes(resp.into_body(), 256 * 1024)
+        .await
+        .expect("body bytes");
+    String::from_utf8(bytes.to_vec()).expect("utf-8 body")
+}
+
 /// l1_static_htmx_serves_javascript_with_cache_headers
 /// — full HTTP round-trip on `/static/htmx.min.js`.
 #[tokio::test]
@@ -85,6 +93,16 @@ async fn l1_static_css_serves_text_css_with_cache_headers() {
         .to_str()
         .unwrap();
     assert!(cc.contains("immutable"));
+}
+
+/// Prince.4 shared route layout primitives.
+#[tokio::test]
+async fn l1_static_css_contains_prince_route_layout_classes() {
+    let css = body_text("/static/style.css").await;
+
+    for class in [".page-section", ".section-heading", ".section-link-row"] {
+        assert!(css.contains(class), "style.css missing {class}");
+    }
 }
 
 /// l1_static_svg_serves_image_svg_xml

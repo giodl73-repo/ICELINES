@@ -431,6 +431,12 @@ Current Prince.3 evidence:
   `cargo test -p icelines-cli "tui::screens::schedule"` cover the focused
   representative screen behavior after the shared helper migration.
 
+Current Prince.4 evidence:
+
+- `cargo test -p icelines-web l1_static_css_contains_prince_route_layout_classes`
+  fences the shared web route layout primitives: `.page-section`,
+  `.section-heading`, and `.section-link-row`.
+
 ---
 
 ## Prince Exit Gates

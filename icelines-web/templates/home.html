@@ -8,10 +8,10 @@
     NHL analytics dashboard for <code>{{ active_label }}</code>.
 </p>
 
-<section style="margin-top: 1.5rem;">
-    <h2 style="margin-bottom: 0.25rem;">Top scorers</h2>
+<section class="page-section">
+    <h2 class="section-heading">Top scorers</h2>
     {% if top_skaters.is_empty() %}
-        <p style="color:#616161;">
+        <p class="empty-state">
             No skater stats loaded for the active season yet —
             run <code>icelines fetch</code> or pick a bundled season.
         </p>
@@ -42,16 +42,16 @@
                 {% endfor %}
             </tbody>
         </table>
-        <p style="margin-top: 0.25rem;">
+        <p class="section-link-row">
             <a href="/leaders">full leaderboard →</a>
         </p>
     {% endif %}
 </section>
 
-<section style="margin-top: 1.5rem;">
-    <h2 style="margin-bottom: 0.25rem;">Top goalies (SV%)</h2>
+<section class="page-section">
+    <h2 class="section-heading">Top goalies (SV%)</h2>
     {% if top_goalies.is_empty() %}
-        <p style="color:#616161;">
+        <p class="empty-state">
             No qualified goalies for the active season yet.
         </p>
     {% else %}
@@ -81,14 +81,14 @@
                 {% endfor %}
             </tbody>
         </table>
-        <p style="margin-top: 0.25rem;">
+        <p class="section-link-row">
             <a href="/goalies">full goalie leaderboard →</a>
         </p>
     {% endif %}
 </section>
 
-<nav aria-label="Sections" style="margin-top: 2rem;">
-    <h2 style="margin-bottom: 0.25rem;">More</h2>
+<nav aria-label="Sections" class="page-section">
+    <h2 class="section-heading">More</h2>
     <ul>
         <li><a href="/leaders">Leaders</a> — skater leaderboards w/ filters</li>
         <li><a href="/goalies">Goalies</a> — goalie leaderboards</li>
