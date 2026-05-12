@@ -1,7 +1,7 @@
 # Phase Prince of Wales - ASPECT visual system
 
 **Date**: 2026-05-09
-**Status**: Active - Prince.3 TUI scan rhythm started
+**Status**: Implemented - closed 2026-05-12
 **Trophy**: Prince of Wales Trophy. Fit: conference champion polish before the final release push. This phase turns the working platform into something that feels composed, readable, and worth opening every day.
 **External rubric**: DEGAS ASPECT v3.0 from `c:\src\degas\scoring\RUBRIC.md`
 **Estimated**: 3-6 sub-phases
@@ -337,6 +337,15 @@ Acceptance:
 - Known subjective tradeoffs are recorded, not left as taste arguments.
 - The next release has a credible claim: IceLines is not merely powerful; it is
   pleasant and hockey-native to use.
+
+Progress:
+
+- 2026-05-12: Closed Prince with final CREST/roles review in
+  `design/notes/2026-05-12-prince-closeout-crest-review.md`. Verdict:
+  PASS WITH NOTES.
+- 2026-05-12: Recorded closeout evidence in `design/specs/visual-system.md`,
+  `design/plans/INDEX.md`, `design/phases.md`, `README.md`, `COMMANDS.md`,
+  `design/IceLines.md`, and `CHANGELOG.md`.
 
 ---
 

@@ -28,6 +28,12 @@ canonical view path (depth chart, query, scouting, fantasy scoring,
 exist (TUI admin overlay, fantasy SQLite, transactions UI); only the data +
 computation path is required to converge.
 
+Prince of Wales closed on 2026-05-12 with a shared visual contract for those
+surfaces: semantic visual tokens, representative TUI render fences, shared web
+layout/style primitives, 80-column no-color CLI checks, and a CREST closeout
+review. Screenshot automation and secondary-route visual cleanup carry forward
+to release hardening and normal polish slices.
+
 ## Who uses it
 
 A single user on their own machine. Specifically:

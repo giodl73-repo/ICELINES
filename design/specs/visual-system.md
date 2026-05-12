@@ -1,6 +1,6 @@
 # IceLines visual system
 
-**Status**: Draft - Prince of Wales baseline
+**Status**: Implemented - Prince of Wales closeout
 **Owner phase**: Prince of Wales - ASPECT visual system
 **Rubric**: DEGAS ASPECT v3.0 from `c:\src\degas\scoring\RUBRIC.md`
 
@@ -457,6 +457,12 @@ Current Prince.5 evidence:
   line exceeds 80 columns.
 - `cargo test -p icelines-cli l0_poach` covers the affected poach renderer
   helpers and report markdown behavior after the 80-column terminal cleanup.
+
+Current Prince.6 evidence:
+
+- `design/notes/2026-05-12-prince-closeout-crest-review.md` records the final
+  CREST/roles verdict as PASS WITH NOTES, including known screenshot and
+  secondary-route cleanup tradeoffs.
 
 ---
 

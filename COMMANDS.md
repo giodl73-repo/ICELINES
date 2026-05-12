@@ -27,6 +27,14 @@ Recommended rhythm:
 - before commit/push: run `full` when the change affects shared contracts or
   multiple surfaces.
 
+Prince visual-system focused gates:
+
+```powershell
+cargo test -p icelines-cli prince_tui
+cargo test -p icelines-cli --test prince_cli_visual
+cargo test -p icelines-web l1_static_css_contains_prince_route_layout_classes
+```
+
 ---
 
 Single-page reference for the `icelines` CLI. Every subcommand is listed with a one-line description and 2-3 real examples. Designed so you can read it once and be productive.

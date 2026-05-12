@@ -1,5 +1,25 @@
 # IceLines Changelog
 
+## Unreleased - Phase Prince of Wales closeout
+
+Headline: **Prince of Wales is closed as the visual-system phase: IceLines now
+has shared visual tokens, representative TUI/web/CLI visual fences, and a CREST
+closeout review.**
+
+### What changed
+
+- Added shared TUI visual helpers and render contracts for representative Team,
+  Goalies, Schedule/Scores, and Poach screens at 80x24 and 120x32.
+- Consolidated representative web route styling onto shared Prince classes for
+  home, leaders, player, team/depth, goalies, scores/schedule/playoffs,
+  fantasy, and poach.
+- Added `prince_cli_visual` subprocess tests for 80-column no-color CLI output
+  on leaders, goalies, and poach, and tightened the poach table/footer to fit.
+- Recorded the final CREST/roles verdict as PASS WITH NOTES, with screenshot
+  automation and secondary-route polish carried forward to Jim Gregory.
+
+---
+
 ## v0.24.1 - 2026-05-09 - Phase Lester Patrick closeout
 
 Headline: **Lester Patrick is closed as the CLI parity pass: schedule,

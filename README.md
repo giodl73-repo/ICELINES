@@ -36,6 +36,10 @@ That's it. **38 seasons of NHL data** ship inside the binary — Gretzky's first
 
 For the complete command reference, run `icelines docs` (or read [COMMANDS.md](COMMANDS.md)).
 
+IceLines now uses a shared Prince of Wales visual system across the major
+surfaces: TUI scan-rhythm contracts, web route layout classes, and 80-column
+no-color CLI readability fences for representative outputs.
+
 ---
 
 ## Build from source
