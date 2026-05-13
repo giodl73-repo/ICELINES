@@ -7,14 +7,16 @@ use askama::Template;
 use axum::extract::{Form, Query, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{Html, IntoResponse, Redirect, Response};
+use icelines_core::identity::PlayerId;
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
 use icelines_core::view_model::{
     AvailabilityState, FantasyRosterGapView, FantasySimulationView, PoachBoardView,
 };
 use icelines_core::{
-    DepthLeagueView, DepthTeamStrengthRow, HomeView, ScheduleRecord, TeamAbbr, TeamDepthView,
-    TeamSeasonView, ViewContext, ViewWindow,
+    DepthLeagueView, DepthTeamStrengthRow, HomeView, MetricCell, MetricValue, PlayerCardView,
+    PlayerSeasonSummary, ScheduleRecord, TeamAbbr, TeamDepthView, TeamSeasonView, ViewContext,
+    ViewWindow,
 };
 use serde::Deserialize;
 
@@ -238,6 +240,9 @@ async fn workspace_summary(state: &WebState, path: &str) -> Vec<DashboardSummary
     }
     if route == "/schedule" {
         return schedule_workspace_summary(state, path).await;
+    }
+    if let Some(player_id) = route.strip_prefix("/player/") {
+        return player_workspace_summary(state, player_id).await;
     }
     if let Some(team) = route
         .strip_prefix("/team/")
@@ -706,6 +711,88 @@ fn schedule_game_summary_row(game: &ScheduleRow) -> DashboardSummaryRow {
     )
 }
 
+async fn player_workspace_summary(
+    state: &WebState,
+    player_id_raw: &str,
+) -> Vec<DashboardSummaryRow> {
+    let Ok(player_id) = player_id_raw.parse::<u32>().map(PlayerId) else {
+        return Vec::new();
+    };
+    let (season, season_type) = {
+        let cfg = state.config.read().await;
+        (
+            cfg.active_season
+                .parse::<u32>()
+                .map(Season)
+                .unwrap_or(Season(icelines_core::CURRENT_SEASON)),
+            SeasonType::parse_lossy(&cfg.active_season_type),
+        )
+    };
+    let repo = state.repo.read().await;
+    let Some(view) = PlayerCardView::from_repository(&repo, player_id, season, season_type) else {
+        return vec![summary_row(
+            "Player",
+            "Not found",
+            format!("No player with NHL id {}", player_id.0),
+        )];
+    };
+    player_summary_rows(&view)
+}
+
+fn player_summary_rows(view: &PlayerCardView) -> Vec<DashboardSummaryRow> {
+    let Some(active) = &view.active else {
+        return vec![summary_row(
+            "Player",
+            view.display_name.clone(),
+            view.empty_state
+                .as_ref()
+                .and_then(|state| state.detail.clone())
+                .unwrap_or_else(|| "No active-season row for this player".to_string()),
+        )];
+    };
+
+    vec![
+        summary_row(
+            "Player",
+            view.display_name.clone(),
+            format!(
+                "{} · {}",
+                active.team_display,
+                active.position.abbreviation()
+            ),
+        ),
+        summary_row(
+            "Scoring",
+            metric_u32(&active.metrics, "points")
+                .map(|value| value.to_string())
+                .unwrap_or_else(|| "-".to_string()),
+            format!(
+                "{} G · {} A · {} GP",
+                metric_u32(&active.metrics, "goals").unwrap_or(0),
+                metric_u32(&active.metrics, "assists").unwrap_or(0),
+                metric_u32(&active.metrics, "gp").unwrap_or(0)
+            ),
+        ),
+        summary_row(
+            "Rate",
+            metric_f64(&active.metrics, "points_per_game")
+                .map(|value| format!("{value:.2} PPG"))
+                .unwrap_or_else(|| "-".to_string()),
+            player_secondary_detail(active),
+        ),
+    ]
+}
+
+fn player_secondary_detail(active: &PlayerSeasonSummary) -> String {
+    let shots = metric_u32(&active.metrics, "shots")
+        .map(|value| format!("{value} shots"))
+        .unwrap_or_else(|| "shots -".to_string());
+    let plus_minus = metric_i32(&active.metrics, "plus_minus")
+        .map(|value| format!("{value:+}"))
+        .unwrap_or_else(|| "-".to_string());
+    format!("{shots} · +/- {plus_minus}")
+}
+
 async fn team_season_workspace_summary(
     state: &WebState,
     team_raw: &str,
@@ -978,6 +1065,36 @@ fn cutline_detail(above: Option<i32>, behind: Option<i32>) -> String {
     } else {
         String::new()
     }
+}
+
+fn metric_u32(metrics: &[MetricCell], key: &str) -> Option<u32> {
+    metrics
+        .iter()
+        .find(|metric| metric.key.0 == key)
+        .and_then(|metric| match metric.value {
+            MetricValue::Integer(value) => u32::try_from(value).ok(),
+            _ => None,
+        })
+}
+
+fn metric_i32(metrics: &[MetricCell], key: &str) -> Option<i32> {
+    metrics
+        .iter()
+        .find(|metric| metric.key.0 == key)
+        .and_then(|metric| match metric.value {
+            MetricValue::Integer(value) => i32::try_from(value).ok(),
+            _ => None,
+        })
+}
+
+fn metric_f64(metrics: &[MetricCell], key: &str) -> Option<f64> {
+    metrics
+        .iter()
+        .find(|metric| metric.key.0 == key)
+        .and_then(|metric| match metric.value {
+            MetricValue::Decimal(value) => Some(value),
+            _ => None,
+        })
 }
 
 fn dashboard_entities(group: &str) -> Vec<DashboardEntityRow> {
@@ -1302,6 +1419,27 @@ mod tests {
         assert_eq!(rows[0].label, "Schedule");
         assert_eq!(rows[0].detail, "SEA · 2025-26");
         assert_eq!(rows[1].value, "EDM @ SEA");
+    }
+
+    #[test]
+    fn l0_dashboard_player_summary_handles_no_active_row() {
+        let view = PlayerCardView {
+            context: ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular)),
+            player_id: PlayerId(8478402),
+            display_name: "Connor McDavid".to_string(),
+            headshot_url: None,
+            active: None,
+            career: Vec::new(),
+            pre_nhl_career: Vec::new(),
+            warnings: Vec::new(),
+            empty_state: None,
+        };
+
+        let rows = player_summary_rows(&view);
+
+        assert_eq!(rows[0].label, "Player");
+        assert_eq!(rows[0].value, "Connor McDavid");
+        assert!(rows[0].detail.contains("No active-season row"));
     }
 
     #[test]

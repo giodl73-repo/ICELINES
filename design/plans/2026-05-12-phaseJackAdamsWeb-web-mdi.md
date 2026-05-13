@@ -222,9 +222,11 @@ top candidates from `PoachBoardView`; fantasy workspaces preserve league,
 category, horizon, and add/drop query state while summarizing
 `FantasyRosterGapView` and `FantasySimulationView`; scores and schedule
 workspaces preserve date/range/team query state while summarizing the same
-route result projections used by the full web pages, all while preserving
-canonical full route links. Remaining work is panel-specific fragments/parity
-for more product routes and richer side-pane row actions.
+route result projections used by the full web pages; player card workspaces
+summarize active-season identity, scoring, and rate context from
+`PlayerCardView`, all while preserving canonical full route links. Remaining
+work is panel-specific fragments/parity for more product routes and richer
+side-pane row actions.
 
 Make the shell feel like MDI without losing web semantics.
 
