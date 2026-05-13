@@ -23,6 +23,7 @@ use axum::http::{header, HeaderMap, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
 
 const HTMX_MIN_JS: &[u8] = include_bytes!("../static/htmx.min.js");
+const DASHBOARD_JS: &[u8] = include_bytes!("../static/dashboard.js");
 const STYLE_CSS: &[u8] = include_bytes!("../static/style.css");
 const ICELINES_SVG: &[u8] = include_bytes!("../static/icelines.svg");
 
@@ -46,6 +47,7 @@ fn etag() -> String {
 pub async fn serve_static(Path(asset): Path<String>) -> Response {
     let (bytes, mime) = match asset.as_str() {
         "htmx.min.js" => (HTMX_MIN_JS, "application/javascript; charset=utf-8"),
+        "dashboard.js" => (DASHBOARD_JS, "application/javascript; charset=utf-8"),
         "style.css" => (STYLE_CSS, "text/css; charset=utf-8"),
         "icelines.svg" => (ICELINES_SVG, "image/svg+xml; charset=utf-8"),
         _ => return (StatusCode::NOT_FOUND, "static asset not found").into_response(),
@@ -143,6 +145,11 @@ mod tests {
             HTMX_MIN_JS.len()
         );
         assert!(
+            DASHBOARD_JS.len() > 100,
+            "dashboard.js bytes look empty ({} bytes)",
+            DASHBOARD_JS.len()
+        );
+        assert!(
             STYLE_CSS.len() > 100,
             "style.css bytes look empty ({} bytes)",
             STYLE_CSS.len()
@@ -223,5 +230,22 @@ mod tests {
             is_stub || is_real,
             "htmx.min.js is neither the stub nor real HTMX — pipeline regression"
         );
+    }
+
+    #[test]
+    fn l0_dashboard_js_carries_workspace_fragment_contract() {
+        let js = std::str::from_utf8(DASHBOARD_JS).expect("dashboard.js is utf-8");
+        for needle in &[
+            "partial",
+            "workspace",
+            "pushState",
+            "popstate",
+            "data-workspace-url",
+        ] {
+            assert!(
+                js.contains(needle),
+                "dashboard.js must carry workspace fragment contract token {needle}"
+            );
+        }
     }
 }

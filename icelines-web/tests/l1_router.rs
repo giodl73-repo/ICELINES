@@ -858,6 +858,7 @@ async fn l1_dashboard_shell_renders_no_js_regions() {
     assert!(body.contains("data-workspace-url=\"/poach?availability=imported-available\""));
     assert!(body.contains("aria-label=\"Schedule\""));
     assert!(body.contains("aria-label=\"Command palette\""));
+    assert!(body.contains("src=\"/static/dashboard.js\""));
     assert!(body.contains("href=\"/dashboard?workspace=%2Fleaders\""));
     assert!(body.contains("href=\"/dashboard?workspace=%2Fpoach\""));
     assert!(body.contains("href=\"/poach?availability=imported-available\""));

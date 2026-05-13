@@ -65,6 +65,31 @@ async fn l1_static_htmx_serves_javascript_with_cache_headers() {
     assert!(etag.starts_with('"') && etag.ends_with('"'));
 }
 
+#[tokio::test]
+async fn l1_static_dashboard_js_serves_javascript_with_cache_headers() {
+    let resp = fire("/static/dashboard.js").await;
+    assert_eq!(resp.status(), StatusCode::OK);
+
+    let ct = resp
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .expect("content-type set")
+        .to_str()
+        .unwrap();
+    assert!(
+        ct.starts_with("application/javascript"),
+        "dashboard.js Content-Type must be application/javascript, got: {ct}"
+    );
+
+    let cc = resp
+        .headers()
+        .get(header::CACHE_CONTROL)
+        .expect("cache-control set")
+        .to_str()
+        .unwrap();
+    assert!(cc.contains("immutable"));
+}
+
 /// l1_static_css_serves_text_css_with_cache_headers
 #[tokio::test]
 async fn l1_static_css_serves_text_css_with_cache_headers() {
@@ -222,6 +247,18 @@ async fn l1_static_etag_consistent_across_assets_within_release() {
         .to_str()
         .unwrap()
         .to_owned();
+    let dashboard_js_etag = fire("/static/dashboard.js")
+        .await
+        .headers()
+        .get(header::ETAG)
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_owned();
     assert_eq!(css_etag, js_etag, "css and js must share ETag");
     assert_eq!(js_etag, svg_etag, "js and svg must share ETag");
+    assert_eq!(
+        svg_etag, dashboard_js_etag,
+        "dashboard.js must share release ETag"
+    );
 }
