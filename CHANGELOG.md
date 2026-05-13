@@ -1,6 +1,6 @@
 # IceLines Changelog
 
-## Unreleased - Phase Prince of Wales closeout
+## v0.25.0 - 2026-05-13 - Phase Prince of Wales + Jim Gregory closeout
 
 Headline: **Prince of Wales is closed as the visual-system phase: IceLines now
 has shared visual tokens, representative TUI/web/CLI visual fences, and a CREST
