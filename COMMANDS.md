@@ -641,6 +641,30 @@ Global hotkeys (work without entering the bar): `q` quits, `?` opens
 help overlay, `Ctrl+H` toggles Favorites pane, `Ctrl+L` toggles
 Schedule pane.
 
+### Web dashboard command contract (Phase Jack Adams Web)
+
+The browser dashboard uses the same deterministic command vocabulary as the
+TUI where the web route exists. Read commands resolve to internal workspace
+URLs for `/dashboard?workspace=...`; write commands resolve to POST-backed
+mutation intents rather than GET links.
+
+Examples:
+
+```text
+stats                                      -> /leaders
+goalies                                    -> /goalies
+poach                                      -> /poach
+gaps cats=hits,blocks top=8                -> /fantasy?category=hits%2Cblocks&top=8
+fantasy poach top=8 availability=available -> /poach?top=8&availability=available
+simulate add=Connor_McDavid drop=Bench_Forward weeks=3
+                                           -> /fantasy?add_player=Connor_McDavid&drop_player=Bench_Forward&weeks=3
+team EDM                                   -> /team/EDM
+team EDM season                            -> /schedule?team=EDM
+player Connor McDavid                      -> /leaders?filter=name%3DConnor+McDavid
+/fav add Connor McDavid                    -> POST /favorites/add
+watch Connor McDavid                       -> POST /watch-rules/create
+```
+
 Fantasy screen shortcuts prefill the same command bar grammar: `g` on Fantasy
 Gaps starts `gaps `, `p` on Poach starts `poach `, and `a` on Fantasy Sim
 starts `simulate add=`.

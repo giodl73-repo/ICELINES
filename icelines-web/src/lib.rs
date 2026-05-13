@@ -33,6 +33,7 @@
 
 pub mod api;
 pub mod config;
+pub mod dashboard_command;
 pub mod error;
 pub mod state;
 pub mod static_assets;
