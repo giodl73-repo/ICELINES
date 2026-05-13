@@ -53,7 +53,11 @@
     function setCommandStatus(message, kind) {
         var node = document.querySelector("[data-dashboard-command-status]");
         if (!node) return;
-        node.textContent = message || "";
+        var text = message || "";
+        if (kind === "error" && text && !/^error[:\s]/i.test(text)) {
+            text = "Error: " + text;
+        }
+        node.textContent = text;
         node.dataset.statusKind = kind || "";
     }
 
@@ -117,12 +121,24 @@
         return "icelines.dashboard.pane." + pane;
     }
 
-    function setPaneVisible(pane, visible) {
+    function panePreference(pane) {
+        try {
+            return window.localStorage.getItem(paneStorageKey(pane));
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function setPaneVisible(pane, visible, persist) {
         var node = document.querySelector("[data-dashboard-pane='" + pane + "']");
         var toggle = document.querySelector("[data-dashboard-pane-toggle='" + pane + "']");
-        if (node) node.hidden = !visible;
-        if (toggle) toggle.setAttribute("aria-expanded", visible ? "true" : "false");
+        if (node) node.setAttribute("data-dashboard-pane-collapsed", visible ? "false" : "true");
+        if (toggle) {
+            toggle.setAttribute("aria-expanded", visible ? "true" : "false");
+            toggle.textContent = visible ? "Hide" : "Show";
+        }
         if (!node) return;
+        if (persist === false) return;
         try {
             window.localStorage.setItem(paneStorageKey(pane), visible ? "show" : "hide");
         } catch (_) {}
@@ -130,12 +146,13 @@
 
     function restorePanes() {
         ["favorites", "schedule"].forEach(function (pane) {
-            try {
-                if (window.localStorage.getItem(paneStorageKey(pane)) === "hide") {
-                    setPaneVisible(pane, false);
-                }
-            } catch (_) {}
+            if (panePreference(pane) === "hide") {
+                setPaneVisible(pane, false, false);
+            }
         });
+        if (window.matchMedia && window.matchMedia("(max-width: 980px)").matches && !panePreference("schedule")) {
+            setPaneVisible("schedule", false, false);
+        }
     }
 
     function applyCommandSideEffect(command) {
@@ -157,7 +174,7 @@
             event.preventDefault();
             var pane = toggle.getAttribute("data-dashboard-pane-toggle");
             var node = document.querySelector("[data-dashboard-pane='" + pane + "']");
-            if (node) setPaneVisible(pane, node.hidden);
+            if (node) setPaneVisible(pane, node.getAttribute("data-dashboard-pane-collapsed") === "true");
             return;
         }
 

@@ -252,6 +252,9 @@ mod tests {
             "ArrowUp",
             "ArrowDown",
             "aria-expanded",
+            "data-dashboard-pane-collapsed",
+            "matchMedia",
+            "Error: ",
         ] {
             assert!(
                 js.contains(needle),
