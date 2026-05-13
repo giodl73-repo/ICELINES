@@ -1669,6 +1669,7 @@ mod tests {
             "poach rw cats=hits,blocks free top=12",
             "simulate add=Connor_McDavid drop=Bench_Forward weeks=3",
             "Fantasy screen shortcuts",
+            "Apply draft-year query, swap to Queries",
             "roster",
             "class 2024",
             "box EDM@BOS",

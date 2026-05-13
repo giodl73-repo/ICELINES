@@ -626,7 +626,7 @@ already typed (for slash commands). Enter submits; Esc cancels.
 | `player <name>` | Open player card | `:player Bedard` |
 | `team <ABBR> <kv...>` | Team depth chart with optional filters | `:team EDM pos=LW country=CAN` |
 | `team <ABBR> season` | Team's full schedule | `:team EDM season` |
-| `class <year>` | Apply draft-year query, swap to Stats | `:class 2024` |
+| `class <year>` | Apply draft-year query, swap to Queries | `:class 2024` |
 | `compare <a>` / `compare <a> <b>` | Similarity peers / head-to-head | `:compare McDavid` |
 | `box <game-id>` / `box <AWAY@HOME>` | Boxscore detail from id or loaded slate | `:box 2025020001`, `:box EDM@BOS` |
 | `query <filter>` | Apply Phase Art Ross filter, swap to Stats | `:query g >= 30 AND age <= 25` |
