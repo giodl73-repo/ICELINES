@@ -2,7 +2,7 @@
 wave: backcheck-the-phases
 pulse: 01
 date: 2026-05-13
-status: planned
+status: done
 governing_roles:
   - bench
   - forge
@@ -48,12 +48,12 @@ unless a broken doc link or typo blocks the inventory.
 
 ## Gates
 
-- [ ] Inventory names every currently implemented trophy phase in
+- [x] Inventory names every currently implemented trophy phase in
       `design/phases.md`.
-- [ ] Each residual item has one status: `pulse`, `defer`, `delete`, or `done`.
-- [ ] Each `pulse` item maps to a pulse number and owner surface.
-- [ ] Each pulse has tests/gates and affected files or discovery scope.
-- [ ] No residual requires reading chat history to understand the ask.
+- [x] Each residual item has one status: `pulse`, `defer`, `delete`, or `done`.
+- [x] Each `pulse` item maps to a pulse number and owner surface.
+- [x] Each pulse has tests/gates and affected files or discovery scope.
+- [x] No residual requires reading chat history to understand the ask.
 
 ## Suggested Commands
 

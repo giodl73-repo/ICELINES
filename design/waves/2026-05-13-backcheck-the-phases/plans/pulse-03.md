@@ -28,12 +28,24 @@ from roster/depth and should be exportable as a season-to-date assessment.
   already exposes them.
 - Update `design/specs/surface-parity.md`.
 
+## Likely Files
+
+- `icelines-core/src/view_model/team_season.rs`
+- `icelines-cli/src/commands/export.rs`
+- `icelines-cli/src/commands/team_season.rs`
+- `icelines-site/src/markdown.rs`
+- `icelines-web/src/handlers/team.rs`
+- `design/specs/surface-parity.md`
+- `COMMANDS.md`
+
 ## Gates
 
-- [ ] Focused core `TeamSeasonView` tests pass.
-- [ ] Focused CLI/report tests pass.
-- [ ] Focused web dashboard summary tests pass.
+- [ ] `cargo test -p icelines-core team_season`
+- [ ] `cargo test -p icelines-cli team_season`
+- [ ] `cargo test -p icelines-cli export`
+- [ ] `cargo test -p icelines-web team_season`
 - [ ] Surface parity row names report/export status truthfully.
+- [ ] `cargo fmt --check`
 
 ## Stop Conditions
 

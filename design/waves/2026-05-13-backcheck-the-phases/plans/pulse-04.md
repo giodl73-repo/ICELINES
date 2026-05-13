@@ -27,12 +27,22 @@ review notes that future pulses can trust.
   report surfaces.
 - Update visual-system docs with true capture commands.
 
+## Discovery Scope
+
+- `design/specs/visual-system.md`
+- `design/notes/*prince*`
+- `icelines-cli/tests/*prince*`
+- `icelines-web/tests/*`
+- `scripts/test-slice.ps1`
+- `COMMANDS.md`
+
 ## Gates
 
 - [ ] `cargo test -p icelines-cli prince_tui`
 - [ ] `cargo test -p icelines-cli --test prince_cli_visual`
 - [ ] `cargo test -p icelines-web l1_static_css_contains_prince_route_layout_classes`
 - [ ] `powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 web-captures`
+- [ ] Capture paths or browser-tooling blocker are recorded in the pulse result.
 
 ## Stop Conditions
 
