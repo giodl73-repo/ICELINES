@@ -214,9 +214,11 @@ replace the central panel, and update browser history. Favorites/Schedule panes
 have local toggle state that does not alter canonical URLs. The first
 product-aware workspace summaries are also shipping: `/dashboard?workspace=/team/EDM/season`
 projects a `TeamSeasonView` summary, and `/dashboard?workspace=/leaders` plus
-`/dashboard?workspace=/goalies` project top rows from `HomeView`, all while
-preserving canonical full route links. Remaining work is panel-specific
-fragments/parity for more product routes and richer side-pane row actions.
+`/dashboard?workspace=/goalies` project top rows from `HomeView`. Team depth
+workspaces now summarize roster count, first line, first pair, goalies, and
+extras from `TeamDepthView`, all while preserving canonical full route links.
+Remaining work is panel-specific fragments/parity for more product routes and
+richer side-pane row actions.
 
 Make the shell feel like MDI without losing web semantics.
 

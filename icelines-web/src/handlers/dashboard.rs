@@ -9,7 +9,9 @@ use axum::http::{HeaderMap, StatusCode};
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
-use icelines_core::{HomeView, ScheduleRecord, TeamAbbr, TeamSeasonView, ViewContext, ViewWindow};
+use icelines_core::{
+    HomeView, ScheduleRecord, TeamAbbr, TeamDepthView, TeamSeasonView, ViewContext, ViewWindow,
+};
 use serde::Deserialize;
 
 const DASHBOARD_PREVIEW_N: usize = 3;
@@ -224,6 +226,9 @@ async fn workspace_summary(state: &WebState, path: &str) -> Vec<DashboardSummary
     {
         return team_season_workspace_summary(state, team).await;
     }
+    if let Some(team) = route.strip_prefix("/team/") {
+        return team_depth_workspace_summary(state, team).await;
+    }
     Vec::new()
 }
 
@@ -346,6 +351,147 @@ async fn team_season_workspace_summary(
         standings,
     );
     team_season_summary_rows(&view)
+}
+
+async fn team_depth_workspace_summary(
+    state: &WebState,
+    team_raw: &str,
+) -> Vec<DashboardSummaryRow> {
+    let Ok(team) = TeamAbbr::parse(team_raw) else {
+        return Vec::new();
+    };
+    let (season, season_type) = {
+        let cfg = state.config.read().await;
+        (
+            cfg.active_season
+                .parse::<u32>()
+                .map(Season)
+                .unwrap_or(Season(icelines_core::CURRENT_SEASON)),
+            SeasonType::parse_lossy(&cfg.active_season_type),
+        )
+    };
+    let repo = state.repo.read().await;
+    let view = TeamDepthView::from_repository(&repo, team, season, season_type);
+    team_depth_summary_rows(&view)
+}
+
+fn team_depth_summary_rows(view: &TeamDepthView) -> Vec<DashboardSummaryRow> {
+    let forward_slots = forward_slot_count(view);
+    let defense_slots = defense_slot_count(view);
+    let rostered = forward_slots + defense_slots + view.goalies.len() + view.extras.len();
+    if rostered == 0 {
+        return vec![summary_row(
+            "Roster",
+            "No rows",
+            "No roster rows loaded for this team and season",
+        )];
+    }
+
+    let mut rows = vec![summary_row(
+        "Roster",
+        rostered.to_string(),
+        format!(
+            "{} F · {} D · {} G",
+            forward_slots,
+            defense_slots,
+            view.goalies.len()
+        ),
+    )];
+
+    if let Some(line) = view.forward_lines.first() {
+        let names = [
+            line.left.as_ref(),
+            line.center.as_ref(),
+            line.right.as_ref(),
+        ]
+        .into_iter()
+        .flatten()
+        .map(|slot| slot.display_name.as_str())
+        .collect::<Vec<_>>();
+        if !names.is_empty() {
+            rows.push(summary_row(
+                "Top Line",
+                names.join(" / "),
+                "estimated forward deployment",
+            ));
+        }
+    }
+
+    if let Some(pair) = view.defense_pairs.first() {
+        let names = [pair.left.as_ref(), pair.right.as_ref()]
+            .into_iter()
+            .flatten()
+            .map(|slot| slot.display_name.as_str())
+            .collect::<Vec<_>>();
+        if !names.is_empty() {
+            rows.push(summary_row(
+                "Top Pair",
+                names.join(" / "),
+                "estimated defense deployment",
+            ));
+        }
+    }
+
+    if !view.goalies.is_empty() {
+        rows.push(summary_row(
+            "Goalies",
+            view.goalies
+                .iter()
+                .take(2)
+                .map(|slot| slot.display_name.as_str())
+                .collect::<Vec<_>>()
+                .join(" / "),
+            view.goalies
+                .iter()
+                .take(2)
+                .map(|slot| slot.role.as_str())
+                .collect::<Vec<_>>()
+                .join(" · "),
+        ));
+    }
+
+    if !view.extras.is_empty() {
+        rows.push(summary_row(
+            "Extras",
+            view.extras.len().to_string(),
+            view.extras
+                .iter()
+                .take(3)
+                .map(|slot| slot.display_name.as_str())
+                .collect::<Vec<_>>()
+                .join(" / "),
+        ));
+    }
+
+    rows
+}
+
+fn forward_slot_count(view: &TeamDepthView) -> usize {
+    view.forward_lines
+        .iter()
+        .map(|line| {
+            [
+                line.left.as_ref(),
+                line.center.as_ref(),
+                line.right.as_ref(),
+            ]
+            .into_iter()
+            .flatten()
+            .count()
+        })
+        .sum()
+}
+
+fn defense_slot_count(view: &TeamDepthView) -> usize {
+    view.defense_pairs
+        .iter()
+        .map(|pair| {
+            [pair.left.as_ref(), pair.right.as_ref()]
+                .into_iter()
+                .flatten()
+                .count()
+        })
+        .sum()
 }
 
 fn team_season_summary_rows(view: &TeamSeasonView) -> Vec<DashboardSummaryRow> {
@@ -588,6 +734,23 @@ mod tests {
         assert!(rows.iter().any(|row| row.label == "Record"));
         assert!(rows.iter().any(|row| row.label == "SOS"));
         assert!(rows.iter().any(|row| row.label == "Ledger"));
+    }
+
+    #[test]
+    fn l0_dashboard_team_depth_summary_projects_empty_viewmodel() {
+        let view = TeamDepthView::from_player_views(
+            TeamAbbr("EDM".to_string()),
+            Season(20252026),
+            SeasonType::Regular,
+            &[],
+        );
+
+        let rows = team_depth_summary_rows(&view);
+
+        assert_eq!(rows[0].label, "Roster");
+        assert_eq!(rows[0].value, "No rows");
+        assert_eq!(forward_slot_count(&view), 0);
+        assert_eq!(defense_slot_count(&view), 0);
     }
 
     #[test]
