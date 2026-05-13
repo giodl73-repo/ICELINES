@@ -136,6 +136,11 @@ Acceptance:
 
 ## JAW.2 - Server-Rendered Dashboard Shell
 
+Status: Implemented in the initial Jack Adams Web slices. `/dashboard` now
+renders a no-JS shell with scores, Favorites/Watchlist, workspace, schedule,
+command form, allowlisted workspace URL state, and a shared
+`?partial=workspace` fragment.
+
 Add a new first-class dashboard route, probably `/dashboard`, then decide later
 whether `/` should redirect or render the shell by default.
 
@@ -168,6 +173,13 @@ Acceptance:
 
 ## JAW.3 - Command Palette
 
+Status: Partially implemented. The web has a deterministic command parser,
+`COMMANDS.md` parity examples, and `POST /dashboard/command`. Read commands
+redirect to allowlisted dashboard workspace URLs; favorite/watch mutations
+delegate to existing POST handlers or mutation intents. Remaining work is the
+full palette overlay, keyboard opener/history, and richer visible error/status
+rendering.
+
 Bring the TUI command bar idea to web as a command palette.
 
 Deliverables:
@@ -195,6 +207,13 @@ Acceptance:
 ---
 
 ## JAW.4 - Workspace Panels and Side Panes
+
+Status: In progress. The first progressive enhancement is shipped:
+dashboard workspace links and command redirects fetch `?partial=workspace`,
+replace the central panel, and update browser history. Favorites/Schedule panes
+have local toggle state that does not alter canonical URLs. Remaining work is
+panel-specific fragments/parity for product routes and richer side-pane row
+actions.
 
 Make the shell feel like MDI without losing web semantics.
 
