@@ -431,6 +431,10 @@ workflow completed during the Selke/Campbell/Jack Adams overlap:
   can clear the active scenario.
 - Fantasy screen shortcuts prefill the same grammar: `g` on Fantasy Gaps, `p`
   on Poach, and `a` on Fantasy Simulation.
+- `roster` / `fantasy roster`, `class <year>`, and `box AWAY@HOME` are also
+  implemented through the command bar; the first two route to Fantasy Gaps and
+  Queries respectively, while matchup boxscores resolve from loaded
+  Scores/Schedule data.
 
 The invariant is that TUI fantasy commands lower into the same shared
 ViewModels used by CLI text/JSON, web HTML/JSON, and report surfaces.

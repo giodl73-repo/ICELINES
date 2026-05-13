@@ -666,6 +666,12 @@ Jack Adams is implemented beyond the original v0.23.0/v0.23.1 scope:
 - Fantasy command grammar is now part of the dashboard contract:
   `gaps cats=hits,blocks,shots top=8`, `poach rw cats=hits,blocks free top=12`,
   and `simulate add=Connor_McDavid drop=Bench_Forward weeks=3`.
+- Remaining read-command grammar is wired through the same command bar:
+  `roster` / `fantasy roster` opens Fantasy Gaps, `class <year>` applies a
+  draft-year query in Queries, and `box AWAY@HOME` resolves against the loaded
+  Scores/Schedule slate before opening Boxscore.
+- The MDI help overlay and first-paint cheat sheet now advertise the completed
+  read-command set, with guard tests to catch command/docs drift.
 - Fantasy Gaps, Poach, and Fantasy Simulation retain screen-local state that
   lowers into shared ViewModels instead of duplicating scoring/projection
   logic.
