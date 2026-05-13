@@ -618,6 +618,10 @@ already typed (for slash commands). Enter submits; Esc cancels.
 | `goalies <kv...>` | Goalies filters/sort | `:goalies sort=gaa min-gp=20 nationality=CAN` |
 | `depth <kv...>` | Depth filters | `:depth pos=F country=SWE` |
 | `favorites <kv...>` | Favorites filters/sort | `:favorites sort=name min-gp=20` |
+| `gaps <kv...>` / `fantasy gaps <kv...>` | Fantasy roster-gap filters | `:gaps cats=hits,blocks,shots top=8` |
+| `poach <kv...>` / `fantasy poach <kv...>` | Fantasy poacher filters | `:poach rw cats=hits,blocks free top=12` |
+| `simulate <kv...>` / `fantasy simulate <kv...>` | Fantasy add/drop scenario projection | `:simulate add=Connor_McDavid drop=Bench_Forward weeks=3` |
+| `simulate clear` | Clear the active fantasy simulation scenario | `:simulate clear` |
 | `player <name>` | Open player card | `:player Bedard` |
 | `team <ABBR> <kv...>` | Team depth chart with optional filters | `:team EDM pos=LW country=CAN` |
 | `team <ABBR> season` | Team's full schedule | `:team EDM season` |
@@ -634,6 +638,10 @@ already typed (for slash commands). Enter submits; Esc cancels.
 Global hotkeys (work without entering the bar): `q` quits, `?` opens
 help overlay, `Ctrl+H` toggles Favorites pane, `Ctrl+L` toggles
 Schedule pane.
+
+Fantasy screen shortcuts prefill the same command bar grammar: `g` on Fantasy
+Gaps starts `gaps `, `p` on Poach starts `poach `, and `a` on Fantasy Sim
+starts `simulate add=`.
 
 Adaptive layout — the dashboard auto-drops side panes on narrow
 terminals: ≥160 cols full / 120-159 drops Schedule / 100-119 drops

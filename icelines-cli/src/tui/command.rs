@@ -1573,6 +1573,22 @@ mod tests {
     }
 
     #[test]
+    fn l0_adams_fantasy_cmdbar_examples_are_documented() {
+        const COMMANDS_MD: &str = include_str!("../../../COMMANDS.md");
+        for example in [
+            "gaps cats=hits,blocks,shots top=8",
+            "poach rw cats=hits,blocks free top=12",
+            "simulate add=Connor_McDavid drop=Bench_Forward weeks=3",
+            "Fantasy screen shortcuts",
+        ] {
+            assert!(
+                COMMANDS_MD.contains(example),
+                "COMMANDS.md must document fantasy cmdbar example {example:?}"
+            );
+        }
+    }
+
+    #[test]
     fn l0_adams_parse_fantasy_simulation_scenario() {
         assert_eq!(
             parse_command("simulate add=Connor McDavid drop=Bench Forward weeks=3").unwrap(),
