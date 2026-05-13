@@ -48,7 +48,7 @@ role panel.
 | Pulse | Status | Evidence |
 |---|---|---|
 | 01 - Backfill inventory and pulse map | planned | `plans/pulse-01.md` |
-| 02 - Jack Adams Web dashboard continuity | planned | `plans/pulse-02.md` |
+| 02 - Jack Adams Web dashboard continuity | done | `plans/pulse-02.md`; `forks/pulse-02.md`; this commit |
 | 03 - Presidents Trophy team season report/export parity | planned | `plans/pulse-03.md` |
 | 04 - Visual and CREST regression captures | planned | `plans/pulse-04.md` |
 | 05 - Scenario harness classification | planned | `plans/pulse-05.md` |

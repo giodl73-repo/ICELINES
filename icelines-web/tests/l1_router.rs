@@ -880,7 +880,7 @@ async fn l1_dashboard_shell_renders_no_js_regions() {
     assert!(body.contains("href=\"/dashboard?workspace=%2Fpoach\""));
     assert!(body.contains("href=\"/dashboard?workspace=%2Fteam%2FEDM%2Fseason\""));
     assert!(body.contains("href=\"/poach?availability=imported-available\""));
-    assert!(body.contains("href=\"/schedule\""));
+    assert!(body.contains("href=\"/dashboard?workspace=%2Fschedule\""));
     assert!(!body.contains("<style>"));
 }
 

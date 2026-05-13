@@ -12,7 +12,7 @@
 wave: backcheck-the-phases
 pulse: 02
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-01]
 governing_roles:
   - crest
@@ -57,13 +57,13 @@ after JavaScript partial swaps.
 
 ## Gates
 
-- [ ] `cargo fmt --check`
-- [ ] `cargo test -p icelines-web l1_dashboard_shell_renders_no_js_regions`
-- [ ] `cargo test -p icelines-web l1_dashboard_workspace_partial_renders_fragment_only`
-- [ ] `cargo test -p icelines-web dashboard_command`
-- [ ] `cargo check -p icelines-web`
-- [ ] `cargo build --release -p icelines-cli`
-- [ ] `powershell -ExecutionPolicy Bypass -File scripts/release-smoke.ps1`
+- [x] `cargo fmt --check`
+- [x] `cargo test -p icelines-web l1_dashboard_shell_renders_no_js_regions`
+- [x] `cargo test -p icelines-web l1_dashboard_workspace_partial_renders_fragment_only`
+- [x] `cargo test -p icelines-web dashboard_command`
+- [x] `cargo check -p icelines-web`
+- [x] `cargo build --release -p icelines-cli`
+- [x] `powershell -ExecutionPolicy Bypass -File scripts/release-smoke.ps1`
 
 ## Stop Conditions
 

@@ -1566,13 +1566,13 @@ fn favorite_entity_rows(view: &FavoritesView) -> Vec<DashboardEntityRow> {
         .iter()
         .take(8)
         .map(|row| {
-            let href = match row.kind.as_str() {
+            let route = match row.kind.as_str() {
                 "team" => format!("/team/{}", row.key),
                 _ => format!("/leaders?filter=name%3D{}", url_component(&row.key)),
             };
             DashboardEntityRow {
                 label: row.key.clone(),
-                href,
+                href: dashboard_workspace_href(&route),
                 kind: row
                     .stat_line
                     .clone()
@@ -1588,13 +1588,13 @@ fn watchlist_entity_rows(view: &WatchlistView) -> Vec<DashboardEntityRow> {
         .iter()
         .take(8)
         .map(|row| {
-            let href = match row.kind.as_str() {
+            let route = match row.kind.as_str() {
                 "team" => format!("/team/{}", row.key),
                 _ => format!("/leaders?filter=name%3D{}", url_component(&row.key)),
             };
             DashboardEntityRow {
                 label: row.key.clone(),
-                href,
+                href: dashboard_workspace_href(&route),
                 kind: row
                     .reason
                     .clone()
@@ -1609,17 +1609,17 @@ fn schedule_links() -> Vec<DashboardLinkRow> {
     vec![
         DashboardLinkRow {
             label: "Scores".to_owned(),
-            href: "/scores".to_owned(),
+            href: dashboard_workspace_href("/scores"),
             detail: "today's games".to_owned(),
         },
         DashboardLinkRow {
             label: "Schedule".to_owned(),
-            href: "/schedule".to_owned(),
+            href: dashboard_workspace_href("/schedule"),
             detail: "date and team views".to_owned(),
         },
         DashboardLinkRow {
             label: "Playoffs".to_owned(),
-            href: "/playoffs".to_owned(),
+            href: dashboard_workspace_href("/playoffs"),
             detail: "bracket context".to_owned(),
         },
     ]
@@ -2265,7 +2265,10 @@ mod tests {
 
         assert_eq!(rows[0].label, "Connor McDavid");
         assert_eq!(rows[0].kind, "2 G, 1 A");
-        assert_eq!(rows[0].href, "/leaders?filter=name%3DConnor+McDavid");
+        assert_eq!(
+            rows[0].href,
+            "/dashboard?workspace=%2Fleaders%3Ffilter%3Dname%253DConnor%2BMcDavid"
+        );
     }
 
     #[test]
@@ -2317,7 +2320,10 @@ mod tests {
 
         assert_eq!(rows[0].label, "Matthew Knies");
         assert_eq!(rows[0].kind, "PP1 promotion watch");
-        assert_eq!(rows[0].href, "/leaders?filter=name%3DMatthew+Knies");
+        assert_eq!(
+            rows[0].href,
+            "/dashboard?workspace=%2Fleaders%3Ffilter%3Dname%253DMatthew%2BKnies"
+        );
     }
 
     #[test]
