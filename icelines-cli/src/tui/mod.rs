@@ -53,15 +53,13 @@ pub struct RunTuiOpts {
 }
 
 impl RunTuiOpts {
-    /// Default: full color, boot on League, multi-tab mode.
-    /// Matches the pre-LB.1 behavior so existing call sites
-    /// switch over with one literal.
+    /// Default: full color, boot on League, Jack Adams dashboard mode.
     pub fn home() -> Self {
         Self {
             no_color: false,
             start_screen: Screen::Home,
             standalone: false,
-            mdi: false,
+            mdi: true,
         }
     }
 }
@@ -100,7 +98,7 @@ impl Drop for TerminalGuard {
 /// Terminal teardown is RAII via `TerminalGuard` (LB.0.5) — panic-safe.
 ///
 /// `opts` carries the initial `Screen` (LB.1 — `--start <slug>`) plus
-/// `no_color`. `RunTuiOpts::home()` matches pre-LB.1 behavior.
+/// `no_color`. `RunTuiOpts::home()` is the Jack Adams dashboard entry.
 pub async fn run_tui(opts: RunTuiOpts) -> Result<()> {
     // Setup. Construct the guard immediately after `enable_raw_mode`
     // so any subsequent failure (EnterAlternateScreen, Terminal::new,
@@ -213,7 +211,7 @@ async fn run_loop(
     if opts.standalone {
         app.locked_screen = Some(opts.start_screen);
     }
-    // Phase Jack Adams.1 — when --mdi is set, init the dashboard
+    // Phase Jack Adams — when dashboard mode is selected, init the
     // state so the render path branches to render_mdi.
     if opts.mdi {
         app.mdi = Some(crate::tui::mdi::MdiLayout::default());

@@ -50,7 +50,7 @@ fn print_short_banner() {
     println!();
     println!("Pick a surface:");
     println!("  icelines menu      Numbered launcher (P/T/G/C drill-downs, W web, Q quit)");
-    println!("  icelines tui       Full terminal dashboard, 8 tabs");
+    println!("  icelines tui       Jack Adams terminal dashboard + command bar");
     println!("  icelines serve     Web dashboard at http://localhost:8000");
     println!("  icelines docs      Full command reference");
     println!();
@@ -479,6 +479,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             start,
             standalone,
             mdi,
+            classic,
         } => {
             // LB.1+LB.2+LB.3 — resolve start screen BEFORE entering raw
             // mode, so resolution failures (unknown slug / unknown player
@@ -499,11 +500,12 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             // team / goalie / comps). Errors carry the candidate listing
             // for the Sebastian Aho ambiguity case.
             let start_screen = spec.into_screen()?;
+            let dashboard_mode = mdi || (!classic && !standalone);
             tui::run_tui(tui::RunTuiOpts {
                 no_color: false,
                 start_screen,
                 standalone,
-                mdi,
+                mdi: dashboard_mode,
             })
             .await?;
         }

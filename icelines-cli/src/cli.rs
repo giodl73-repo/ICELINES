@@ -365,13 +365,14 @@ Output columns (default text + CSV + JSON):
     /// Launch the interactive TUI.
     #[command(long_about = r#"Launch the interactive ratatui TUI.
 
-By default boots on the League tab. Two ways to jump to a specific
-surface — sugar subcommand or --start flag.
+By default opens the Jack Adams dashboard on the League workspace.
+Two ways to jump to a specific workspace — sugar subcommand or --start flag.
 
 EXAMPLES
-    icelines tui                       Boots on League (default).
-    icelines tui goalies               Boot on the Goalies tab.
-    icelines tui scores                Boot on tonight's scores.
+    icelines tui                       Dashboard on League (default).
+    icelines tui goalies               Dashboard with Goalies workspace.
+    icelines tui scores                Dashboard with tonight's scores.
+    icelines tui --classic             Older tabbed single-document UI.
     icelines tui --start goalies       Same as `icelines tui goalies`.
     icelines tui --start tonight       Alias accepted (= scores).
 
@@ -388,9 +389,10 @@ Recognized canonical slugs:
 Aliases also accepted on --start: queries (= stats), tonight (= scores),
 moves (= transactions). All slugs are case-insensitive.
 
-Once the TUI is up, Tab cycles all 8 tabs regardless of how you
-entered. Press y for the season picker; q (or Esc on a non-tab
-screen) to quit.
+By default the TUI opens the Jack Adams dashboard: scores ribbon,
+side panes, central workspace, and command bar. Use --classic for
+the older tabbed single-document UI. Press y for the season picker;
+q (or Esc on a non-tab screen) to quit.
 "#)]
     Tui {
         /// Optional sugar subcommand for one of the 8 nav surfaces.
@@ -407,19 +409,33 @@ screen) to quit.
         ///
         /// Example:
         ///   icelines tui goalies --standalone
-        #[arg(long)]
+        #[arg(long, global = true)]
         standalone: bool,
-        /// Phase Jack Adams.1 — launch the TUI in MDI dashboard
-        /// mode. Espn-style "front door": Scores ribbon top,
-        /// Favorites left, swappable Workspace middle, Schedule
-        /// right, plus a chat-CLI command bar bottom.
+        /// Phase Jack Adams — explicitly launch the TUI in dashboard
+        /// mode. This is now the default for `icelines tui`; the flag
+        /// remains for scripts and discoverability.
         ///
-        /// Mutually exclusive with --standalone.
+        /// Mutually exclusive with --standalone and --classic.
         ///
         /// Example:
         ///   icelines tui stats --mdi
-        #[arg(long, conflicts_with = "standalone")]
+        #[arg(
+            long,
+            global = true,
+            conflicts_with_all = ["standalone", "classic"]
+        )]
         mdi: bool,
+        /// Launch the older tabbed single-document TUI instead of
+        /// the Jack Adams dashboard. This keeps the pre-dashboard
+        /// workflow available while making the dashboard the normal
+        /// product entry point.
+        #[arg(
+            long,
+            alias = "sdi",
+            global = true,
+            conflicts_with_all = ["standalone", "mdi"]
+        )]
+        classic: bool,
     },
 
     /// Print the full command reference (embedded COMMANDS.md). No
@@ -840,6 +856,7 @@ mod tui_surface_tests {
                     start: None,
                     standalone: false,
                     mdi: false,
+                    classic: false,
                 } => s.into_screen_spec(),
                 other => panic!("expected Tui {{ surface: Some(_), start: None }}, got {other:?}"),
             };
@@ -854,6 +871,7 @@ mod tui_surface_tests {
                     start: Some(s),
                     standalone: false,
                     mdi: false,
+                    classic: false,
                 } => parse_start_slug(&s).expect("known slug"),
                 other => panic!("expected Tui {{ surface: None, start: Some(_) }}, got {other:?}"),
             };
@@ -876,15 +894,78 @@ mod tui_surface_tests {
                 start,
                 standalone,
                 mdi,
+                classic,
             } => {
                 assert!(surface.is_none());
                 assert!(!standalone, "bare tui must default standalone=false");
-                assert!(!mdi, "bare tui must default mdi=false");
+                assert!(!mdi, "bare tui should not require explicit --mdi");
+                assert!(!classic, "bare tui must default classic=false");
                 let _ = standalone; // silence unused warning
                 let _ = mdi;
+                let _ = classic;
                 assert!(start.is_none());
             }
             other => panic!("expected Tui, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn l0_tui_classic_flag_parses_as_sdi_escape_hatch() {
+        let cli = Cli::try_parse_from(["icelines", "tui", "--classic"]).unwrap();
+        match cli.command {
+            Commands::Tui {
+                surface,
+                start,
+                standalone,
+                mdi,
+                classic,
+            } => {
+                assert!(surface.is_none());
+                assert!(start.is_none());
+                assert!(!standalone);
+                assert!(!mdi);
+                assert!(classic);
+            }
+            other => panic!("expected Tui, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn l0_tui_mode_flags_parse_after_surface_for_documented_examples() {
+        let cases = [
+            (["icelines", "tui", "goalies", "--standalone"], "standalone"),
+            (["icelines", "tui", "goalies", "--mdi"], "mdi"),
+            (["icelines", "tui", "goalies", "--classic"], "classic"),
+        ];
+        for (args, expected_mode) in cases {
+            let cli = Cli::try_parse_from(args).unwrap();
+            match cli.command {
+                Commands::Tui {
+                    surface: Some(TuiSurface::Goalies),
+                    standalone,
+                    mdi,
+                    classic,
+                    ..
+                } => match expected_mode {
+                    "standalone" => assert!(standalone),
+                    "mdi" => assert!(mdi),
+                    "classic" => assert!(classic),
+                    other => panic!("unexpected mode {other}"),
+                },
+                other => panic!("expected Tui goalies for {args:?}, got {other:?}"),
+            }
+        }
+    }
+
+    #[test]
+    fn l0_tui_mode_flags_conflict() {
+        for args in [
+            ["icelines", "tui", "--mdi", "--standalone"],
+            ["icelines", "tui", "--mdi", "--classic"],
+            ["icelines", "tui", "--classic", "--standalone"],
+        ] {
+            let result = Cli::try_parse_from(args);
+            assert!(result.is_err(), "expected conflict for {args:?}");
         }
     }
 

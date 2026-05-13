@@ -5834,8 +5834,10 @@ mod tests {
 
     // ── Phase Jack Adams.1 — App-level MDI fence tests ───────────────────
 
-    /// `App::new` defaults `mdi` to None. SDI multi-tab is the
-    /// today's default; MDI mode is opt-in via `--mdi`.
+    /// `App::new` defaults `mdi` to None. Launch policy lives in
+    /// `RunTuiOpts`; `icelines tui` now selects MDI before the app
+    /// enters the render loop, while direct App construction stays SDI
+    /// for focused unit tests.
     #[test]
     fn l0_adams_app_default_is_sdi() {
         let app = App::new(false);

@@ -503,7 +503,11 @@ The bundled-data cap is 38 seasons because `BUNDLED_SEASONS` is the canonical so
 
 ## TUI (`icelines tui` or `icelines dashboard`)
 
-Interactive dashboard. Six tabs (League, Depth, Stats, Goalies, Scores, Schedule) plus Playoffs and Transactions overlays. Player cards lazy-load every player's full historical career across all 38 bundled seasons on first open.
+Interactive dashboard. By default `icelines tui` opens the Jack Adams
+multi-pane dashboard: scores ribbon, Favorites/watchlist pane, central
+workspace, Schedule/context pane, and a command bar. Use `--classic` for the
+older tabbed single-document UI. Player cards lazy-load every player's full
+historical career across all 38 bundled seasons on first open.
 
 | Key | Action |
 |---|---|
@@ -581,16 +585,18 @@ icelines tui transactions --standalone   # focused transactions feed
 # screen's chrome (header title + footer keybinds) is the only navigation
 # UI. Overlays (?, F, y, R) and per-screen keybinds work as usual.
 
-# Phase Jack Adams — multi-pane MDI dashboard
-icelines tui --mdi                       # Scores ribbon top + Favorites left
+# Phase Jack Adams — multi-pane MDI dashboard (default)
+icelines tui                             # Scores ribbon top + Favorites left
                                           # + swappable Workspace middle +
                                           # Schedule right + cmdbar bottom
-icelines tui --mdi goalies               # MDI launching with goalies workspace
+icelines tui goalies                     # dashboard launching with goalies workspace
+icelines tui --mdi                       # explicit dashboard mode (same default)
+icelines tui --classic                   # older tabbed single-document UI
 # In MDI mode: press `:` or `/` to focus the cmdbar; type a verb (e.g.
 # `stats`, `goalies`, `team EDM`, `query g >= 30`, `/fav add Bedard`,
 # `/hide schedule`); Enter to submit. `?` shows the full command
 # reference. Ctrl+H toggles Favorites pane, Ctrl+L toggles Schedule pane.
-# Mutually exclusive with --standalone.
+# --mdi is mutually exclusive with --standalone and --classic.
 
 # Equivalent flag form (for scripts)
 icelines tui --start goalies
@@ -602,7 +608,7 @@ icelines tui --start "team:EDM"
 
 ### MDI dashboard cmdbar reference (Phase Jack Adams)
 
-When `--mdi` is set, the TUI gains a chat-CLI command bar at the bottom.
+The default TUI dashboard includes a chat-CLI command bar at the bottom.
 Press `:` to focus the bar with empty input, or `/` to focus with `/`
 already typed (for slash commands). Enter submits; Esc cancels.
 

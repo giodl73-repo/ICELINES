@@ -92,14 +92,15 @@ icelines query leaders --seasons 10 --pos C --sort pts-pace --top 10
 
 ```bash
 icelines tui
-# or just: icelines  (no subcommand launches TUI)
 ```
 
-Six tabs: League · Stats · Scores · Schedule · Groups · Playoffs.
+Default dashboard: scores ribbon, Favorites/watchlist pane, central workspace,
+Schedule/context pane, and command bar. Use `icelines tui --classic` for the
+older tabbed UI.
 
-- `Tab` cycles tabs, `1`–`6` jumps directly.
-- `←/→` switches sub-views inside a tab (and navigates weeks on Schedule).
-- `/` opens search — players on most tabs, team / matchup on Schedule.
+- `:` opens the command bar; try `stats`, `goalies`, `team EDM`, or
+  `query age<=24 AND p>=80`.
+- `Ctrl+H` toggles Favorites; `Ctrl+L` toggles Schedule.
 - `y` opens the season picker for time-travel; `g`/`f` add players to
   groups; `?` shows the full key map.
 

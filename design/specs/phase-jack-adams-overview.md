@@ -40,7 +40,7 @@ unchanged.
 | Adaptive width breakpoints | `≥160 cols`: full MDI (Scores + Favorites + Workspace + Schedule). `120-159`: drop Schedule. `100-119`: drop Favorites. `<100`: collapse to SDI. | Same family as Masterton.1's 120-col chrome threshold. Drops the rightmost pane first (Schedule is more transient than Favorites). |
 | Command grammar (v1) | Free-form `query <Phase Art Ross filter>` (delegates to existing `parse_query`); `box <game-id-or-team@team>`; `player <name-or-pid>`; `team <abbrev>`; `goalies` / `transactions` / `playoffs` / `stats` / `depth` (swap workspace to that screen); slash commands `/hide`/`/show`/`/help`/`/quit`. | Builds on Phase Art Ross. The command bar is the "search anything" entry point — typing `Bedard` could disambiguate to player; `country=CAN` to a query. |
 | Reuse from Norris/Masterton | Each pane's screen reuses its existing renderer + state struct + chrome accessor. Workspace dispatches to the per-screen renderer based on its current "workspace screen" discriminator. Sides delegate to their respective render fns. | Norris already split state per-screen; Masterton.1 declared chrome per-screen; both slot in. The deferred Masterton.2.x trait migrations are NOT prerequisites — the MDI layout layer is render-only composition; input still flows through App's existing dispatch. |
-| Default mode on `icelines tui` | **SDI multi-tab** (today's default) stays. MDI is opt-in via `icelines tui --mdi` or auto-detected when terminal is ≥160 cols at launch (configurable). | Don't break existing users; MDI is additive. Auto-detect is a polish toggle (default off in v1 — explicit `--mdi` only). |
+| Default mode on `icelines tui` | **MDI dashboard** is the normal product entry. `--mdi` remains accepted for explicit launches; `--classic` keeps the older SDI multi-tab UI available. | The earlier opt-in dashboard was too hidden to change product feel. The release after Prince makes Jack Adams visible by default while preserving a classic escape hatch. |
 | Out-of-MDI screens | Sub-screens that don't fit cleanly (e.g., Game detail, Series detail) open in the workspace pane when navigated to. They render as the workspace screen until the user navigates away. | The middle IS the screen-stack location; sub-screens land there normally. |
 | Workspace screen identity | **Reuse the existing `crate::tui::app::Screen` enum directly.** No separate `WorkspaceScreen` enum. App's existing `screen` field IS the workspace discriminator in MDI mode; switching workspace = mutating `app.screen`. — forge-1 / forge-2 |
 | `app.screen` semantics in MDI | **`app.screen` stays the canonical "active screen"** — in MDI it's the workspace's screen. All existing `App::handle` per-screen dispatch keeps working unchanged when input routes to the workspace. The MDI render path consults `app.screen` to know which renderer to call for the middle pane. | Single source of truth; avoids enum drift. — forge-2 |
@@ -51,7 +51,7 @@ unchanged.
 | Scores ribbon overflow strategy | **Priority-ordered render**: LIVE games first, FINAL games next, scheduled-not-yet-started last. Drop trailing games with `… +N more` indicator when overflow. Auto-cycle (rotate) the visible window every ~10s if there's a continuous overflow. | Defines the truncation strategy concretely. — glass-3 |
 | Command-bar error channel | **Errors render IN the command-bar row itself** (red text, replaces the `>` prompt for ~2 seconds, then cleared back to chip-mode footer). Also persisted to `app.status` for accessibility / dump-state debugging. | "Game not found" from `box edm@bos` lands somewhere visible without consuming a separate row. — glass-4 |
 | SDI ↔ MDI mode flip on resize | **Strict launch-time mode**: `--mdi` is set at launch; subsequent resize narrows panes adaptively (Adams.4) but never flips back to SDI mid-session. | Less jarring than mode-changing on every resize event. — glass-5 |
-| Mutual exclusion | **Clap `conflicts_with`** between `--mdi` and `--standalone`. Passing both produces a parse error. | Explicit at the parse layer. — wire-1 |
+| Mutual exclusion | **Clap `conflicts_with`** between `--mdi`, `--classic`, and `--standalone`. Passing incompatible modes produces a parse error. | Explicit at the parse layer. — wire-1 |
 | Command bar ↔ filter editor state | **Shared**: `query <filter>` from the command bar mutates `app.queries.filter_text` and `app.queries.filter_plan` directly. If the user later opens the Stats filter editor (`f` in workspace=Stats), the editor opens pre-populated with the command-bar filter. | Single source of truth for filter text. — edge-2 |
 | Command grammar v1 — write actions | **Favorites mutation in-bar**: `/fav add Bedard`, `/fav remove Bedard` (or `fav add` shortcut). Mutates the `Favorites` group in `GroupDb`; left-pane Favorites list updates next render; workspace optionally swaps to that player's card on `add`. | User's brief: "i can do everything from the CLI so add/remove a favorite". Same backing DB as the player-card `g` keybind. |
 | Command grammar v1 — read actions | `team EDM` (workspace = team depth chart), `team EDM season` (workspace = full-season schedule for that team), `roster` / `fantasy roster` (workspace = the user's active fantasy roster), `class 2015` (workspace = draft class), and the v1 reads already in spec (`box`, `player`, `compare`, `goalies`, `transactions`, `playoffs`, `stats`, `depth`). All "pop in the middle." | User's brief: "all of those things pop in the middle." Each command swaps `app.screen` to the relevant Screen variant. |
@@ -137,7 +137,7 @@ unaffected.
 
 | Capability | CLI | TUI | Web |
 |---|---|---|---|
-| MDI dashboard mode | n/a | New: `icelines tui --mdi` | n/a (web has its own page composition) |
+| MDI dashboard mode | n/a | Default: `icelines tui`; explicit: `icelines tui --mdi`; classic escape hatch: `icelines tui --classic` | n/a (web has its own page composition) |
 | Command bar | n/a | New: bottom-row prompt with parser + executor | n/a |
 | Side-pane toggles | n/a | New: `Ctrl+H` / `Ctrl+L` | n/a |
 | Adaptive drop | n/a | New: layout shrinks gracefully at narrow widths | n/a |
@@ -172,7 +172,7 @@ pub enum WorkspaceScreen {
 ```
 
 App gains `pub mdi: Option<MdiLayout>` — `Some` when launched in
-MDI mode, `None` for SDI (today's default and `--standalone`).
+MDI mode, `None` for SDI (`--classic` and `--standalone`).
 
 Render dispatch in `screens/mod.rs::render` branches:
 
@@ -443,11 +443,11 @@ in CI; mock provider covers the integration shape).
    focus is implicitly on workspace pops the workspace screen
    (PlayerCard → Stats; Stats has no pop, stays). Esc-from-leaf
    in MDI stays in MDI (doesn't bounce back to SDI).
-5. **Mode switching** — `icelines tui` defaults to SDI multi-tab
-   (today). `--mdi` opts into MDI. `--standalone` opts into
-   single-screen-locked mode (Masterton.3). The three modes
-   are mutually exclusive; passing both `--mdi --standalone`
-   is a clap error.
+5. **Mode switching** — `icelines tui` defaults to the MDI
+   dashboard. `--mdi` is accepted for explicit dashboard launches.
+   `--classic` opts into the older SDI multi-tab UI. `--standalone`
+   opts into single-screen-locked mode (Masterton.3). The mode flags
+   are mutually exclusive.
 6. **Quit propagation from inside a workspace screen** — same
    as today. The workspace screen's handler can return Quit;
    App propagates.
@@ -482,7 +482,7 @@ in CI; mock provider covers the integration shape).
     share / commit. The `claude-cli` provider shells out to
     `claude -p`, which has its own auth path; no config needed.
 13. **Mode-switching UX precedence** (post-review wire-1):
-    clap rejects `--mdi --standalone` at parse time
-    (`conflicts_with`). Default `icelines tui` stays SDI
-    multi-tab. `icelines tui <surface> --mdi` opts into MDI
-    with that surface as the workspace.
+    clap rejects incompatible pairs such as `--mdi --standalone`
+    and `--mdi --classic` at parse time (`conflicts_with`). Default
+    `icelines tui` launches MDI with the requested surface as the
+    workspace; `icelines tui --classic` opts into SDI multi-tab.

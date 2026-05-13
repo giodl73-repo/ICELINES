@@ -25,7 +25,7 @@
 | `icelines tonight` | Tonight's NHL games with UTC start times | Live API |
 | `icelines schedule` | Upcoming schedule (N days) | Live API |
 | `icelines trade` | Depth chart impact of a player trade | Bundled |
-| `icelines tui` | Interactive terminal UI — 8 screens | Bundled |
+| `icelines tui` | Interactive Jack Adams dashboard with command bar | Bundled |
 | `icelines fantasy league-create` | Create a new fantasy league | Local SQLite |
 | `icelines fantasy team-create` | Create a team in the active league | Local SQLite |
 | `icelines fantasy team-add` | Add a player to a team | Local SQLite |

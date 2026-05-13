@@ -1,20 +1,20 @@
 # The Interactive TUI
 
-IceLines ships an interactive terminal UI built on ratatui. Six purposeful tabs,
-season time-travel, live scores, and full season schedule — all driven by the
-same data the CLI uses. Launch it with:
+IceLines ships an interactive terminal UI built on ratatui. The default TUI is
+the Jack Adams dashboard: a scores ribbon, Favorites/watchlist pane, central
+workspace, Schedule/context pane, and command bar, all driven by the same data
+the CLI uses. Launch it with:
 
 ```bash
 icelines tui
-# or just:
-icelines
 ```
 
-The TUI loads instantly with the bundled five-season dataset; no fetch required.
+The TUI loads instantly with the bundled dataset; no fetch required. Use
+`icelines tui --classic` for the older tabbed single-document UI.
 
 ---
 
-## The six tabs
+## Classic tabs
 
 ```
 ┌────────┬────────┬────────┬──────────┬────────┬──────────┐

@@ -16,7 +16,7 @@
 // footer/cmdbar). The cmdbar row is modal — chip-mode when the
 // input is empty, prompt-mode when non-empty.
 //
-// Per spec glass-5: strict launch-time mode. `--mdi` is set at
+// Per spec glass-5: strict launch-time mode. Dashboard mode is set at
 // launch; resize narrows panes adaptively (Adams.4) but never
 // flips back to SDI mid-session (except when width drops below
 // 100 cols, where MDI literally can't fit and we fall back to
@@ -34,7 +34,7 @@
 
 /// Phase Jack Adams.1 — MDI dashboard runtime state. Held by
 /// `App` as `app.mdi: Option<MdiLayout>` — Some when the user
-/// launched with `--mdi`, None for SDI modes (multi-tab default
+/// launched in dashboard mode, None for SDI modes (`--classic`
 /// and `--standalone`).
 #[derive(Debug)]
 pub struct MdiLayout {

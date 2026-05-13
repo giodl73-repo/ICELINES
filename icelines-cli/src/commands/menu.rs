@@ -249,7 +249,7 @@ async fn run_tui_then_continue(
         no_color: false,
         start_screen,
         standalone: false,
-        mdi: false,
+        mdi: true,
     };
     if let Err(e) = tui::run_tui(opts).await {
         return print_error_and_pause(stdin, &format!("TUI exited with error: {e}")).await;

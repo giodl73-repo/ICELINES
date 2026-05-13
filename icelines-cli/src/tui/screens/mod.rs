@@ -115,8 +115,8 @@ fn render_overlays(f: &mut Frame, app: &App, area: Rect) {
 
 /// Phase Jack Adams.1 — single-document render path. Renamed
 /// from `render` pre-Adams.1; same behavior. Used by SDI
-/// multi-tab (today's default) and SDI standalone (Masterton.3)
-/// modes, plus the Adams.1 collapse fallback when MDI can't fit.
+/// multi-tab (`--classic`) and SDI standalone (Masterton.3) modes,
+/// plus the Adams.1 collapse fallback when MDI can't fit.
 fn render_sdi(f: &mut Frame, app: &App) {
     let area = f.area();
     let chunks = Layout::default()
