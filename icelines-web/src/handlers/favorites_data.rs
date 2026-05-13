@@ -46,6 +46,7 @@ pub(crate) struct GroupApiMeta {
 pub(crate) struct GroupApiRow {
     pub(crate) kind: String,
     pub(crate) key: String,
+    pub(crate) stat_line: Option<String>,
 }
 
 #[derive(Debug, serde::Serialize)]
@@ -80,6 +81,7 @@ pub(crate) fn group_api_rows_from_view(view: &icelines_core::FavoritesView) -> V
         .map(|row| GroupApiRow {
             kind: row.kind.clone(),
             key: row.key.clone(),
+            stat_line: row.stat_line.clone(),
         })
         .collect()
 }

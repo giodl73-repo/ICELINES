@@ -1422,11 +1422,20 @@ async fn l1_favorites_json_returns_group_members() {
     assert_eq!(json["meta"]["count"], 2);
     assert_eq!(json["meta"]["player_count"], 1);
     assert_eq!(json["meta"]["team_count"], 1);
-    assert!(json["data"]
+    let player_row = json["data"]
         .as_array()
         .expect("data array")
         .iter()
-        .any(|row| row["kind"] == "player" && row["key"] == "connor mcdavid"));
+        .find(|row| row["kind"] == "player" && row["key"] == "connor mcdavid")
+        .expect("favorites player row");
+    assert!(
+        player_row
+            .as_object()
+            .expect("favorites row object")
+            .contains_key("stat_line"),
+        "favorites JSON rows should expose the shared FavoritesView stat_line slot"
+    );
+    assert!(player_row["stat_line"].is_null());
     assert!(json["data"]
         .as_array()
         .expect("data array")
