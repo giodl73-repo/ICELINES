@@ -273,6 +273,7 @@ pub struct App {
     /// key (`s` cycles), position filter (`p` cycles), cursor.
     pub team: crate::tui::screens::team::TeamScreenState,
     pub favorites: crate::tui::screens::favorites::FavoritesScreenState,
+    pub poach: crate::tui::screens::poach::PoachScreenState,
 
     // ── Repo-backed view state ─────────────────────────────────────────
     /// Post-Hart canonical store. `!Send + !Sync` by construction.
@@ -400,6 +401,7 @@ impl App {
             // Phase Adams.10 — Team screen sort + filter state.
             team: crate::tui::screens::team::TeamScreenState::default(),
             favorites: crate::tui::screens::favorites::FavoritesScreenState::default(),
+            poach: crate::tui::screens::poach::PoachScreenState::default(),
 
             // Empty repo + current season as the initial typed window.
             depth_filters: crate::tui::filter_state::RosterFilterState::default(),

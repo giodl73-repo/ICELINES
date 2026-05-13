@@ -23,6 +23,10 @@
 #![allow(dead_code)]
 
 use crate::tui::mdi::SidePane;
+use icelines_core::{
+    model::Position,
+    view_model::{PoachAvailabilityFilter, PoachCandidateKind},
+};
 
 // ── Command grammar ──────────────────────────────────────────────────────────
 
@@ -48,6 +52,9 @@ pub enum Command {
     Goalies,
     /// `poach` — workspace becomes Fantasy Poacher.
     Poach,
+    PoachKv {
+        args: PoachCommandArgs,
+    },
     /// `fantasy gaps` — workspace becomes active roster-gap board.
     FantasyGaps,
     /// `fantasy simulate` — workspace becomes league simulation board.
@@ -87,34 +94,51 @@ pub enum Command {
     // ── Workspace-swap reads (with args) ──────────────────────
     /// `player <name-or-pid>` — workspace becomes that player's
     /// card.
-    PlayerCard { needle: String },
+    PlayerCard {
+        needle: String,
+    },
     /// `team <abbrev>` — workspace becomes the team's depth
     /// chart.
-    Team { abbrev: String },
+    Team {
+        abbrev: String,
+    },
     TeamKv {
         abbrev: String,
         args: crate::tui::filter_state::RosterKvArgs,
     },
     /// `team <abbrev> season` — workspace becomes the team's
     /// full-season schedule.
-    TeamSeason { abbrev: String },
+    TeamSeason {
+        abbrev: String,
+    },
     /// `compare <left> [right]` — workspace becomes the
     /// comparison view. With one arg, `--similar` peers; with
     /// two, head-to-head.
-    Compare { left: String, right: Option<String> },
+    Compare {
+        left: String,
+        right: Option<String>,
+    },
     /// `box <game-id-or-team@team>` — workspace becomes the
     /// boxscore detail.
-    Box { game: String },
+    Box {
+        game: String,
+    },
     /// `class <year>` — workspace becomes the draft class for
     /// that year.
-    Class { year: u16 },
+    Class {
+        year: u16,
+    },
 
     // ── Write actions (favorites mutation) ────────────────────
     /// `fav add <name-or-pid>` (or `/fav add ...`) — adds the
     /// player to the Favorites group.
-    FavAdd { needle: String },
+    FavAdd {
+        needle: String,
+    },
     /// `fav remove <name-or-pid>` — removes from Favorites.
-    FavRemove { needle: String },
+    FavRemove {
+        needle: String,
+    },
 
     // ── Free-form query — delegates to Phase Art Ross ─────────
     /// `query <filter>` — sets the Stats screen's free-form
@@ -122,7 +146,18 @@ pub enum Command {
     /// swaps to Stats. Mutates `app.queries.filter_text` directly
     /// (per spec edge-2: shared state with the Stats filter
     /// editor).
-    Query { filter: String },
+    Query {
+        filter: String,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct PoachCommandArgs {
+    pub positions: Option<Vec<Position>>,
+    pub categories: Option<Vec<String>>,
+    pub availability_filter: Option<PoachAvailabilityFilter>,
+    pub candidate_kind: Option<PoachCandidateKind>,
+    pub limit: Option<u16>,
 }
 
 // ── Parse error shape ───────────────────────────────────────────────────────
@@ -278,6 +313,9 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
             })?,
         }),
         "poach" if args.trim().is_empty() => Ok(Command::Poach),
+        "poach" => Ok(Command::PoachKv {
+            args: parse_poach_kv(args)?,
+        }),
         "gaps" | "fantasy-gaps" if args.trim().is_empty() => Ok(Command::FantasyGaps),
         "simulate" | "sim" | "fantasy-sim" if args.trim().is_empty() => Ok(Command::FantasySim),
         "watchlist" if args.trim().is_empty() => Ok(Command::Watchlist),
@@ -423,12 +461,168 @@ fn parse_class(args: &str) -> Result<Command, ParseError> {
 
 /// `fantasy roster` → Roster; `fantasy gaps` → roster-gap board.
 fn parse_fantasy(args: &str) -> Result<Command, ParseError> {
-    let sub = args.trim().to_ascii_lowercase();
-    match sub.as_str() {
+    let (sub, rest) = split_first_word(args);
+    match sub.to_ascii_lowercase().as_str() {
         "" | "roster" => Ok(Command::Roster),
         "gaps" | "gap" => Ok(Command::FantasyGaps),
         "simulate" | "sim" => Ok(Command::FantasySim),
+        "poach" if rest.trim().is_empty() => Ok(Command::Poach),
+        "poach" => Ok(Command::PoachKv {
+            args: parse_poach_kv(rest)?,
+        }),
         unknown => Err(ParseError::UnknownCommand(format!("fantasy {unknown}"))),
+    }
+}
+
+fn parse_poach_kv(args: &str) -> Result<PoachCommandArgs, ParseError> {
+    let mut parsed = PoachCommandArgs::default();
+    for token in args.split_whitespace() {
+        let (key, value) = token
+            .split_once('=')
+            .map_or(("", token), |(key, value)| (key.trim(), value.trim()));
+        let key = key.to_ascii_lowercase();
+        let value = value.trim();
+        if value.is_empty() {
+            return Err(ParseError::BadFilter {
+                details: format!("poach: empty value in {token:?}"),
+            });
+        }
+        match key.as_str() {
+            "" => apply_poach_bare_token(&mut parsed, value)?,
+            "pos" | "position" | "positions" => {
+                parsed.positions = Some(parse_poach_positions(value)?);
+            }
+            "cat" | "cats" | "category" | "categories" => {
+                parsed.categories = Some(parse_poach_categories(value));
+            }
+            "avail" | "availability" => {
+                parsed.availability_filter = Some(parse_poach_availability(value)?);
+            }
+            "kind" | "candidate" | "type" => {
+                parsed.candidate_kind = Some(parse_poach_candidate_kind(value)?);
+            }
+            "top" | "limit" => {
+                let limit = value.parse::<u16>().map_err(|_| ParseError::BadInteger {
+                    command: "poach",
+                    raw: value.to_string(),
+                })?;
+                parsed.limit = Some(limit.clamp(1, 100));
+            }
+            other => {
+                return Err(ParseError::BadFilter {
+                    details: format!("poach: unknown filter {other:?}"),
+                });
+            }
+        }
+    }
+    Ok(parsed)
+}
+
+fn apply_poach_bare_token(args: &mut PoachCommandArgs, value: &str) -> Result<(), ParseError> {
+    if let Ok(positions) = parse_poach_positions(value) {
+        args.positions = Some(positions);
+        return Ok(());
+    }
+    if let Ok(availability) = parse_poach_availability(value) {
+        args.availability_filter = Some(availability);
+        return Ok(());
+    }
+    if let Ok(kind) = parse_poach_candidate_kind(value) {
+        args.candidate_kind = Some(kind);
+        return Ok(());
+    }
+    Err(ParseError::BadFilter {
+        details: format!("poach: unknown filter token {value:?}"),
+    })
+}
+
+fn parse_poach_positions(value: &str) -> Result<Vec<Position>, ParseError> {
+    let mut out = Vec::new();
+    for raw in value.split(',') {
+        let raw = raw.trim().to_ascii_lowercase();
+        match raw.as_str() {
+            "all" | "any" => return Ok(Vec::new()),
+            "c" | "center" => push_unique_position(&mut out, Position::Center),
+            "l" | "lw" | "left" | "left-wing" | "left_wing" => {
+                push_unique_position(&mut out, Position::LeftWing);
+            }
+            "r" | "rw" | "right" | "right-wing" | "right_wing" => {
+                push_unique_position(&mut out, Position::RightWing);
+            }
+            "d" | "def" | "defense" | "defence" => {
+                push_unique_position(&mut out, Position::Defense);
+            }
+            "g" | "goalie" | "goalies" => push_unique_position(&mut out, Position::Goalie),
+            "f" | "forward" | "forwards" => {
+                push_unique_position(&mut out, Position::Center);
+                push_unique_position(&mut out, Position::LeftWing);
+                push_unique_position(&mut out, Position::RightWing);
+            }
+            "" => {}
+            _ => {
+                return Err(ParseError::BadFilter {
+                    details: format!("poach: unknown position {raw:?}"),
+                });
+            }
+        }
+    }
+    Ok(out)
+}
+
+fn push_unique_position(out: &mut Vec<Position>, position: Position) {
+    if !out.contains(&position) {
+        out.push(position);
+    }
+}
+
+fn parse_poach_categories(value: &str) -> Vec<String> {
+    value
+        .split(',')
+        .filter_map(|raw| {
+            let category = raw.trim().to_ascii_lowercase().replace('_', "-");
+            if category.is_empty() || matches!(category.as_str(), "all" | "default" | "scheme") {
+                None
+            } else {
+                Some(category)
+            }
+        })
+        .collect()
+}
+
+fn parse_poach_availability(value: &str) -> Result<PoachAvailabilityFilter, ParseError> {
+    match value.to_ascii_lowercase().as_str() {
+        "any" | "all" => Ok(PoachAvailabilityFilter::Any),
+        "available" | "avail" => Ok(PoachAvailabilityFilter::Available),
+        "free" | "imported-available" | "imported_available" => {
+            Ok(PoachAvailabilityFilter::ImportedAvailable)
+        }
+        "not-mine" | "not_my_roster" | "not-my-roster" | "notonuser" | "not-on-user" => {
+            Ok(PoachAvailabilityFilter::NotOnUserRoster)
+        }
+        "watched" | "watch" | "watchlist" => Ok(PoachAvailabilityFilter::Watched),
+        "unknown" => Ok(PoachAvailabilityFilter::Unknown),
+        other => Err(ParseError::BadFilter {
+            details: format!("poach: unknown availability {other:?}"),
+        }),
+    }
+}
+
+fn parse_poach_candidate_kind(value: &str) -> Result<PoachCandidateKind, ParseError> {
+    match value.to_ascii_lowercase().as_str() {
+        "all" | "any" => Ok(PoachCandidateKind::All),
+        "streamer" | "streamers" => Ok(PoachCandidateKind::Streamer),
+        "stash" | "stashes" => Ok(PoachCandidateKind::Stash),
+        "category" | "category-specialist" | "category_specialist" | "cats" => {
+            Ok(PoachCandidateKind::CategorySpecialist)
+        }
+        "riser" | "risers" | "deployment" | "deployment-riser" | "deployment_riser" => {
+            Ok(PoachCandidateKind::DeploymentRiser)
+        }
+        "goalie-streamer" | "goalie_streamer" | "goalie" => Ok(PoachCandidateKind::GoalieStreamer),
+        "watch-alert" | "watch_alert" | "alert" => Ok(PoachCandidateKind::WatchAlert),
+        other => Err(ParseError::BadFilter {
+            details: format!("poach: unknown candidate kind {other:?}"),
+        }),
     }
 }
 
@@ -559,6 +753,7 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
             app.screen = Screen::Poach;
             ExecResult::Continue
         }
+        Command::PoachKv { args } => exec_poach_kv(app, args),
         Command::FantasyGaps => {
             app.screen = Screen::FantasyGaps;
             ExecResult::Continue
@@ -744,6 +939,32 @@ fn exec_goalies_kv(
     app.goalies.selected = 0;
     app.screen = Screen::Goalies;
     ExecResult::Flash("goalies filters applied".to_string())
+}
+
+fn exec_poach_kv(app: &mut crate::tui::app::App, args: PoachCommandArgs) -> ExecResult {
+    use crate::tui::app::Screen;
+
+    if let Some(positions) = args.positions {
+        app.poach.positions = positions;
+    }
+    if let Some(categories) = args.categories {
+        app.poach.categories = categories;
+    }
+    if let Some(availability_filter) = args.availability_filter {
+        app.poach.availability_filter = availability_filter;
+    }
+    if let Some(candidate_kind) = args.candidate_kind {
+        app.poach.candidate_kind = candidate_kind;
+    }
+    if let Some(limit) = args.limit {
+        app.poach.limit = limit;
+    }
+    app.selected = 0;
+    app.screen = Screen::Poach;
+    ExecResult::Flash(format!(
+        "poach filters applied: {}",
+        app.poach.context_label()
+    ))
 }
 
 fn exec_depth_kv(
@@ -1101,6 +1322,62 @@ mod tests {
             parse_command("fantasy simulate").unwrap(),
             Command::FantasySim
         );
+        assert_eq!(parse_command("fantasy poach").unwrap(), Command::Poach);
+    }
+
+    #[test]
+    fn l0_adams_parse_poach_filters() {
+        assert_eq!(
+            parse_command("poach rw cats=hits,blocks free top=12").unwrap(),
+            Command::PoachKv {
+                args: PoachCommandArgs {
+                    positions: Some(vec![Position::RightWing]),
+                    categories: Some(vec!["hits".to_string(), "blocks".to_string()]),
+                    availability_filter: Some(PoachAvailabilityFilter::ImportedAvailable),
+                    candidate_kind: None,
+                    limit: Some(12),
+                },
+            }
+        );
+        assert_eq!(
+            parse_command("fantasy poach top=8 available").unwrap(),
+            Command::PoachKv {
+                args: PoachCommandArgs {
+                    positions: None,
+                    categories: None,
+                    availability_filter: Some(PoachAvailabilityFilter::Available),
+                    candidate_kind: None,
+                    limit: Some(8),
+                },
+            }
+        );
+        assert_eq!(
+            parse_command("poach pos=f kind=streamer").unwrap(),
+            Command::PoachKv {
+                args: PoachCommandArgs {
+                    positions: Some(vec![
+                        Position::Center,
+                        Position::LeftWing,
+                        Position::RightWing,
+                    ]),
+                    categories: None,
+                    availability_filter: None,
+                    candidate_kind: Some(PoachCandidateKind::Streamer),
+                    limit: None,
+                },
+            }
+        );
+    }
+
+    #[test]
+    fn l0_adams_parse_poach_unknown_filter_errors() {
+        let e = parse_command("poach contract-year").unwrap_err();
+        match e {
+            ParseError::BadFilter { details } => {
+                assert!(details.contains("unknown filter token"));
+            }
+            other => panic!("expected BadFilter, got {other:?}"),
+        }
     }
 
     #[test]
@@ -1615,6 +1892,31 @@ mod tests {
 
         assert!(matches!(r, ExecResult::Flash(_)));
         assert_ne!(app.goalies.min_gp, 20);
+    }
+
+    #[test]
+    fn l0_adams_exec_poach_kv_applies_filters() {
+        let mut app = fresh_app_with_mdi();
+        app.selected = 5;
+        let r = execute_command(
+            parse_command("poach pos=rw cat=hits,blocks free kind=streamer top=11").unwrap(),
+            &mut app,
+        );
+
+        assert!(matches!(r, ExecResult::Flash(_)));
+        assert!(matches!(app.screen, Screen::Poach));
+        assert_eq!(app.selected, 0);
+        assert_eq!(app.poach.positions, vec![Position::RightWing]);
+        assert_eq!(
+            app.poach.categories,
+            vec!["hits".to_string(), "blocks".to_string()]
+        );
+        assert_eq!(
+            app.poach.availability_filter,
+            PoachAvailabilityFilter::ImportedAvailable
+        );
+        assert_eq!(app.poach.candidate_kind, PoachCandidateKind::Streamer);
+        assert_eq!(app.poach.limit, 11);
     }
 
     #[test]

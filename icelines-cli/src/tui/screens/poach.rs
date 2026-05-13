@@ -1,6 +1,11 @@
 //! Fantasy poacher TUI board. Phase Selke.5.
 
-use icelines_core::view_model::{AvailabilityState, PoachBoardView, PoachQuery};
+use icelines_core::{
+    model::Position,
+    view_model::{
+        AvailabilityState, PoachAvailabilityFilter, PoachBoardView, PoachCandidateKind, PoachQuery,
+    },
+};
 use ratatui::{
     layout::Rect,
     text::{Line, Span},
@@ -26,6 +31,63 @@ pub fn chrome() -> crate::tui::chrome::ScreenChrome {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PoachScreenState {
+    pub positions: Vec<Position>,
+    pub categories: Vec<String>,
+    pub availability_filter: PoachAvailabilityFilter,
+    pub candidate_kind: PoachCandidateKind,
+    pub limit: u16,
+}
+
+impl Default for PoachScreenState {
+    fn default() -> Self {
+        Self {
+            positions: Vec::new(),
+            categories: Vec::new(),
+            availability_filter: PoachAvailabilityFilter::Any,
+            candidate_kind: PoachCandidateKind::All,
+            limit: 30,
+        }
+    }
+}
+
+impl PoachScreenState {
+    pub fn apply_to_query(&self, query: &mut PoachQuery) {
+        query.positions = self.positions.clone();
+        query.categories = self.categories.clone();
+        query.availability_filter = self.availability_filter;
+        query.candidate_kind = self.candidate_kind;
+        query.limit = Some(self.limit);
+        query.sort = Some("poach_score".to_string());
+    }
+
+    pub fn context_label(&self) -> String {
+        let pos = if self.positions.is_empty() {
+            "all-pos".to_string()
+        } else {
+            self.positions
+                .iter()
+                .map(|position| position.abbreviation())
+                .collect::<Vec<_>>()
+                .join("/")
+        };
+        let cats = if self.categories.is_empty() {
+            "scheme-cats".to_string()
+        } else {
+            self.categories.join(",")
+        };
+        format!(
+            "{} | {} | {} | {} | top {}",
+            pos,
+            cats,
+            availability_filter_label(self.availability_filter),
+            candidate_kind_label(self.candidate_kind),
+            self.limit
+        )
+    }
+}
+
 pub fn render(f: &mut Frame, app: &App, area: Rect) {
     let block = tui_panel_block(" Fantasy Poacher - adds, stashes, category fit ");
     let inner = block.inner(area);
@@ -43,6 +105,10 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
 
     let watched = watchlist_members();
     let mut items = Vec::new();
+    items.push(ListItem::new(Line::styled(
+        format!("  {}", app.poach.context_label()),
+        tui_meta_style(),
+    )));
     items.push(ListItem::new(Line::styled(
         format!(
             "  {:<3} {:<2} {:<22} {:<4} {:<3} {:>5} {:<9} {:<11} {:<22} {}",
@@ -164,8 +230,7 @@ pub fn selected_watch_target(app: &App) -> Option<WatchTarget> {
 
 fn build_view(app: &App) -> PoachBoardView {
     let mut query = PoachQuery::new(app.active_season_typed, app.active_type, "yahoo-standard");
-    query.limit = Some(30);
-    query.sort = Some("poach_score".to_string());
+    app.poach.apply_to_query(&mut query);
     if let Some(rosters) = active_fantasy_rostered_player_keys() {
         query =
             query.with_imported_league_availability(rosters.all_rostered, rosters.user_rostered);
@@ -209,6 +274,29 @@ fn availability_label(state: AvailabilityState) -> &'static str {
         AvailabilityState::ImportedAvailable => "free",
         AvailabilityState::ImportedRostered => "rostered",
         AvailabilityState::Watched => "watched",
+    }
+}
+
+fn availability_filter_label(filter: PoachAvailabilityFilter) -> &'static str {
+    match filter {
+        PoachAvailabilityFilter::Any => "any",
+        PoachAvailabilityFilter::Available => "available",
+        PoachAvailabilityFilter::NotOnUserRoster => "not-my-roster",
+        PoachAvailabilityFilter::Watched => "watched",
+        PoachAvailabilityFilter::ImportedAvailable => "free",
+        PoachAvailabilityFilter::Unknown => "unknown",
+    }
+}
+
+fn candidate_kind_label(kind: PoachCandidateKind) -> &'static str {
+    match kind {
+        PoachCandidateKind::All => "all",
+        PoachCandidateKind::Streamer => "streamers",
+        PoachCandidateKind::Stash => "stashes",
+        PoachCandidateKind::CategorySpecialist => "category",
+        PoachCandidateKind::DeploymentRiser => "risers",
+        PoachCandidateKind::GoalieStreamer => "goalie-streamers",
+        PoachCandidateKind::WatchAlert => "watch-alerts",
     }
 }
 
