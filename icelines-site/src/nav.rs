@@ -48,7 +48,11 @@ pub fn update_nav(yml_path: &Path, ranked_teams: &[&str]) -> Result<(), SiteErro
         content
     };
 
-    let mut nav = "\nnav:\n  - Tracker: index.md\n  - Teams:\n".to_owned();
+    let mut nav = "\nnav:\n  - Tracker: index.md\n  - Guides:\n".to_owned();
+    for (label, path) in GUIDE_NAV {
+        nav.push_str(&format!("    - {label}: {path}\n"));
+    }
+    nav.push_str("  - Teams:\n");
     for abbrev in ranked_teams {
         let name = TEAM_NAMES
             .iter()
@@ -62,6 +66,17 @@ pub fn update_nav(yml_path: &Path, ranked_teams: &[&str]) -> Result<(), SiteErro
     f.write_all((base + &nav).as_bytes())?;
     Ok(())
 }
+
+const GUIDE_NAV: &[(&str, &str)] = &[
+    ("Getting Started", "guides/00-getting-started.md"),
+    ("Query", "guides/01-query.md"),
+    ("Team Depth", "guides/02-team-depth.md"),
+    ("Fantasy", "guides/03-fantasy.md"),
+    ("Data", "guides/04-data.md"),
+    ("Compare and History", "guides/05-comps-history.md"),
+    ("TUI", "guides/06-tui.md"),
+    ("Tutorial", "TUTORIAL.md"),
+];
 
 #[cfg(test)]
 mod tests {
@@ -83,6 +98,9 @@ mod tests {
         let out = std::fs::read_to_string(&path).unwrap();
         assert!(out.contains("site_name: IceLines"));
         assert!(out.contains("\nnav:\n"));
+        assert!(out.contains("  - Guides:"));
+        assert!(out.contains("guides/00-getting-started.md"));
+        assert!(out.contains("guides/06-tui.md"));
         // Order preserved — find the line index of each entry and assert
         // monotonic increasing.
         let edm = out.find("teams/EDM.md").expect("EDM in nav");
@@ -134,5 +152,29 @@ nav:
         let out = std::fs::read_to_string(&path).unwrap();
         assert!(out.contains("EDM — Edmonton Oilers"));
         assert!(out.contains("MTL — Montréal Canadiens"));
+    }
+
+    /// Generated nav must keep the durable docs/reference surface; otherwise
+    /// a site rebuild would leave the published MkDocs site with only the
+    /// tracker and team pages.
+    #[test]
+    fn l1_update_nav_keeps_guides_reference_section() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.path().join("mkdocs.yml");
+        std::fs::write(&path, "site_name: IceLines\n").unwrap();
+
+        update_nav(&path, &["SEA"]).unwrap();
+        let out = std::fs::read_to_string(&path).unwrap();
+
+        for (_, guide_path) in GUIDE_NAV {
+            assert!(
+                out.contains(guide_path),
+                "generated nav must include guide {guide_path}; got:\n{out}"
+            );
+        }
+        assert!(
+            out.find("  - Guides:").unwrap() < out.find("  - Teams:").unwrap(),
+            "guides section should precede generated team list"
+        );
     }
 }
