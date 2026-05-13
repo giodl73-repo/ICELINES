@@ -67,6 +67,11 @@ pub enum Command {
     },
     /// `watchlist` - workspace becomes local fantasy Watchlist.
     Watchlist,
+    /// `watch <player>` — command-bar bridge to watch-rule/note
+    /// creation surfaces.
+    WatchPlayer {
+        needle: String,
+    },
     GoaliesKv {
         args: crate::tui::filter_state::RosterKvArgs,
     },
@@ -397,6 +402,7 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
             args: parse_fantasy_sim_kv(args)?,
         }),
         "watchlist" if args.trim().is_empty() => Ok(Command::Watchlist),
+        "watch" => parse_watch(args),
         "transactions" | "txs" | "tx" => Ok(Command::Transactions),
         "playoffs" => Ok(Command::Playoffs),
         "depth" if args.trim().is_empty() => Ok(Command::Depth),
@@ -449,6 +455,19 @@ fn parse_player(args: &str) -> Result<Command, ParseError> {
     }
     Ok(Command::PlayerCard {
         needle: needle.to_owned(),
+    })
+}
+
+fn parse_watch(args: &str) -> Result<Command, ParseError> {
+    let needle = args.trim();
+    if needle.is_empty() {
+        return Err(ParseError::MissingArg {
+            command: "watch",
+            arg: "player",
+        });
+    }
+    Ok(Command::WatchPlayer {
+        needle: needle.to_string(),
     })
 }
 
@@ -1090,6 +1109,9 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
             app.screen = Screen::GroupDetail("Watchlist".to_string());
             ExecResult::Continue
         }
+        Command::WatchPlayer { needle } => ExecResult::Flash(format!(
+            "watch: run `icelines watch note \"{needle}\" \"reason\"`, preview `icelines watch player \"{needle}\" --when pp1 --save`, or open `/watchlist`"
+        )),
         Command::Transactions => {
             app.screen = Screen::Transactions;
             ExecResult::Continue
@@ -1843,6 +1865,16 @@ mod tests {
         assert_eq!(parse_command("fantasy roster").unwrap(), Command::Roster);
     }
 
+    #[test]
+    fn l0_adams_parse_watch_cmdbar_handoff() {
+        assert_eq!(
+            parse_command("watch Connor McDavid").unwrap(),
+            Command::WatchPlayer {
+                needle: "Connor McDavid".to_string(),
+            }
+        );
+    }
+
     // ── Workspace reads (with args) ────────────────────────────────────────
 
     #[test]
@@ -1943,6 +1975,7 @@ mod tests {
             "class 2024",
             "career league=OHL season=20142015 top=8",
             "report weekly cats=shots,hits top=12",
+            "watch Connor McDavid",
             "box EDM@BOS",
         ] {
             assert!(
@@ -2605,6 +2638,20 @@ mod tests {
         };
         assert!(message.contains("icelines report weekly --category shots,hits --top 12"));
         assert!(message.contains("/reports/weekly?category=shots%2Chits&top=12"));
+        assert!(matches!(app.screen, Screen::Home));
+    }
+
+    #[test]
+    fn l0_adams_exec_watch_cmdbar_handoff_flashes_targets() {
+        let mut app = fresh_app_with_mdi();
+        let r = execute_command(parse_command("watch Connor McDavid").unwrap(), &mut app);
+
+        let ExecResult::Flash(message) = r else {
+            panic!("watch handoff should flash canonical targets");
+        };
+        assert!(message.contains("icelines watch note \"Connor McDavid\""));
+        assert!(message.contains("icelines watch player \"Connor McDavid\" --when pp1 --save"));
+        assert!(message.contains("/watchlist"));
         assert!(matches!(app.screen, Screen::Home));
     }
 
