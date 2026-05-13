@@ -1692,6 +1692,16 @@ fn contextual_workspace_links(route: &str) -> Vec<DashboardLinkRow> {
                 "/fantasy?category=goals,shots&top=8",
                 "fantasy roster needs",
             ),
+            workspace_action_link(
+                "Poach report",
+                "/reports/poach?availability=imported-available&top=12",
+                "shareable waiver board",
+            ),
+            workspace_action_link(
+                "Weekly prep",
+                "/reports/weekly?availability=imported-available&top=12",
+                "watchlist-aware report",
+            ),
         ],
         _ => Vec::new(),
     }
@@ -1808,6 +1818,14 @@ mod tests {
         assert_eq!(
             imported.href,
             "/dashboard?workspace=%2Fpoach%3Favailability%3Dimported-available%26top%3D12"
+        );
+        let weekly = poach_links
+            .iter()
+            .find(|row| row.label == "Weekly prep")
+            .expect("poach weekly report quick action");
+        assert_eq!(
+            weekly.href,
+            "/dashboard?workspace=%2Freports%2Fweekly%3Favailability%3Dimported-available%26top%3D12"
         );
 
         let leaders_links = workspace_links("/leaders");
