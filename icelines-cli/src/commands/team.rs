@@ -50,7 +50,15 @@ pub async fn run_team_season(team: String, json: bool) -> anyhow::Result<()> {
         .unwrap_or(Season(icelines_core::CURRENT_SEASON));
     let season_type = SeasonType::Regular;
 
-    let games = NhlApiClient::production()
+    let client = NhlApiClient::production();
+    let standings = client
+        .fetch_standings_now()
+        .await
+        .unwrap_or_default()
+        .into_iter()
+        .map(|row| row.to_team_standing_input())
+        .collect();
+    let games = client
         .fetch_team_season_schedule(&team_abbr.0, &season_str)
         .await
         .with_context(|| format!("fetching {team_abbr} season schedule for {season_str}"))?
@@ -58,11 +66,12 @@ pub async fn run_team_season(team: String, json: bool) -> anyhow::Result<()> {
         .map(scheduled_game_input)
         .collect();
 
-    let view = TeamSeasonView::from_games(
+    let view = TeamSeasonView::from_games_and_standings(
         ViewContext::new(ViewWindow::new(season, season_type)),
         season_str,
         team_abbr.0.to_string(),
         games,
+        standings,
     );
 
     if json {
@@ -131,6 +140,25 @@ pub(crate) fn render_team_season_text(view: &TeamSeasonView) -> String {
         ));
     }
     out.push('\n');
+
+    if let Some(standings) = &view.standings {
+        out.push_str(&format!(
+            "Standings {} · {} pts · Pts% {:.3} · {}",
+            standings
+                .conference
+                .as_deref()
+                .unwrap_or("conference unknown"),
+            standings.points,
+            standings.points_percentage,
+            standings.playoff_position_label
+        ));
+        if let Some(behind) = standings.points_behind_cutline {
+            out.push_str(&format!(" · {behind} pts behind cutline"));
+        } else if let Some(above) = standings.points_above_cutline {
+            out.push_str(&format!(" · {above} pts above cutline"));
+        }
+        out.push('\n');
+    }
 
     if let Some(warning) = view.warnings.first() {
         out.push_str(&format!("Warning: {}\n", warning.message));

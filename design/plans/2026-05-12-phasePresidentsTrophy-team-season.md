@@ -334,6 +334,20 @@ Exit:
 - Active season standings can be loaded offline after fetch.
 - Missing/stale standings renders explicit source warnings.
 
+Progress:
+
+- 2026-05-13: Added core `TeamStandingInput` and
+  `TeamStandingsContext`; `TeamSeasonView::from_games_and_standings`
+  now marks standings complete when supplied and projects conference,
+  division, ranks, points, points percentage, regulation wins, goal
+  differential, playoff cut points, and above/behind cutline context.
+- 2026-05-13: Added `icelines-fetch` standings client/parser for
+  `/v1/standings/now` and `/v1/standings/{date}` with defensive NHL field
+  parsing and conversion into the core standings input DTO.
+- 2026-05-13: Wired CLI and web team-season surfaces to fetch current
+  standings opportunistically. If standings fail, surfaces still render the
+  schedule-derived view with the existing source warning.
+
 ### PT.4 - SOS And Quality Ledger
 
 - Compute faced/remaining opponent strength.

@@ -50,6 +50,11 @@
     <p class="context-line">
         Remaining {{ remaining_label }} · Next: {{ next_opponents }}
     </p>
+    {% if standings_label != "" %}
+    <p class="context-line">
+        Standings {{ standings_label }}
+    </p>
+    {% endif %}
 </section>
 
 {% if rows.is_empty() %}

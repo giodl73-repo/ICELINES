@@ -289,7 +289,15 @@ async fn build_team_season_view(
         )
     };
 
-    let (games, fetch_error) = match super::nhl_client()
+    let client = super::nhl_client();
+    let standings = client
+        .fetch_standings_now()
+        .await
+        .unwrap_or_default()
+        .into_iter()
+        .map(|row| row.to_team_standing_input())
+        .collect();
+    let (games, fetch_error) = match client
         .fetch_team_season_schedule(&team.0, &season_str)
         .await
     {
@@ -302,11 +310,12 @@ async fn build_team_season_view(
         ),
         Err(e) => (Vec::new(), Some(e.to_string())),
     };
-    let view = TeamSeasonView::from_games(
+    let view = TeamSeasonView::from_games_and_standings(
         icelines_core::ViewContext::new(icelines_core::ViewWindow::new(season, season_type)),
         season_str,
         team.0.to_string(),
         games,
+        standings,
     );
     Ok((active_label, view, fetch_error))
 }
@@ -338,6 +347,7 @@ fn team_season_template(
         } else {
             view.remaining.next_opponents.join(", ")
         },
+        standings_label: standings_label(view),
         warning: fetch_error.unwrap_or_else(|| {
             view.warnings
                 .first()
@@ -346,6 +356,28 @@ fn team_season_template(
         }),
         rows: view.rows.iter().map(team_season_template_row).collect(),
     }
+}
+
+fn standings_label(view: &TeamSeasonView) -> String {
+    let Some(standings) = &view.standings else {
+        return String::new();
+    };
+    let mut label = format!(
+        "{} · {} pts · Pts% {:.3} · {}",
+        standings
+            .conference
+            .as_deref()
+            .unwrap_or("conference unknown"),
+        standings.points,
+        standings.points_percentage,
+        standings.playoff_position_label
+    );
+    if let Some(behind) = standings.points_behind_cutline {
+        label.push_str(&format!(" · {behind} pts behind cutline"));
+    } else if let Some(above) = standings.points_above_cutline {
+        label.push_str(&format!(" · {above} pts above cutline"));
+    }
+    label
 }
 
 fn team_season_template_row(row: &TeamSeasonGameRow) -> TeamSeasonTemplateRow {

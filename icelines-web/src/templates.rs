@@ -582,6 +582,7 @@ pub struct TeamSeasonTemplate {
     pub last_10_goal_differential: String,
     pub remaining_label: String,
     pub next_opponents: String,
+    pub standings_label: String,
     pub warning: String,
     pub rows: Vec<TeamSeasonTemplateRow>,
 }

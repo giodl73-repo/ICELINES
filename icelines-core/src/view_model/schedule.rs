@@ -94,6 +94,7 @@ pub struct TeamSeasonView {
     pub season_pretty: String,
     pub team: String,
     pub headline: TeamSeasonHeadline,
+    pub standings: Option<TeamStandingsContext>,
     pub splits: TeamSeasonSplits,
     pub form: TeamRecentForm,
     pub remaining: TeamRemainingSchedule,
@@ -104,20 +105,38 @@ pub struct TeamSeasonView {
 
 impl TeamSeasonView {
     pub fn from_games(
-        mut context: ViewContext,
+        context: ViewContext,
         season: String,
         team: String,
         games: Vec<ScheduledGameInput>,
     ) -> Self {
+        Self::from_games_and_standings(context, season, team, games, Vec::new())
+    }
+
+    pub fn from_games_and_standings(
+        mut context: ViewContext,
+        season: String,
+        team: String,
+        games: Vec<ScheduledGameInput>,
+        standings: Vec<TeamStandingInput>,
+    ) -> Self {
         context
             .source_state
             .push(SourceState::complete(SourceKind::Schedule));
-        context
-            .source_state
-            .push(SourceState::missing(SourceKind::Standings));
-        context.completeness = Completeness::Partial;
 
         let team_upper = team.trim().to_ascii_uppercase();
+        let standings_context = team_standings_context(&team_upper, &standings);
+        if standings_context.is_some() {
+            context
+                .source_state
+                .push(SourceState::complete(SourceKind::Standings));
+        } else {
+            context
+                .source_state
+                .push(SourceState::missing(SourceKind::Standings));
+            context.completeness = Completeness::Partial;
+        }
+
         let mut schedule_rows: Vec<ScheduleGameRow> = games
             .into_iter()
             .map(|game| schedule_row(game, &team_upper))
@@ -148,17 +167,21 @@ impl TeamSeasonView {
             .iter()
             .map(|row| team_season_game_row(&team_upper, row))
             .collect();
-        let warnings = vec![ViewWarning {
-            kind: WarningKind::MissingSource,
-            source: Some(SourceKind::Standings),
-            message: "Standings source not loaded; playoff distance and strength-of-schedule are unavailable in this schedule-derived view.".to_string(),
-            recovery: vec![RecoveryAction {
-                label: "Fetch standings when Presidents Trophy PT.3 lands".to_string(),
-                action: RecoveryActionKind::RefreshSource {
-                    source: SourceKind::Standings,
-                },
-            }],
-        }];
+        let warnings = if standings_context.is_some() {
+            Vec::new()
+        } else {
+            vec![ViewWarning {
+                kind: WarningKind::MissingSource,
+                source: Some(SourceKind::Standings),
+                message: "Standings source not loaded; playoff distance and strength-of-schedule are unavailable in this schedule-derived view.".to_string(),
+                recovery: vec![RecoveryAction {
+                    label: "Fetch standings when Presidents Trophy PT.3 lands".to_string(),
+                    action: RecoveryActionKind::RefreshSource {
+                        source: SourceKind::Standings,
+                    },
+                }],
+            }]
+        };
         let empty_state = if rows.is_empty() {
             Some(EmptyState {
                 kind: EmptyKind::NoRows,
@@ -183,6 +206,7 @@ impl TeamSeasonView {
                 goals_against,
                 goal_differential: goals_for - goals_against,
             },
+            standings: standings_context,
             splits: TeamSeasonSplits {
                 home: split_for(&team_upper, &schedule_rows, TeamSeasonVenue::Home),
                 away: split_for(&team_upper, &schedule_rows, TeamSeasonVenue::Away),
@@ -210,6 +234,45 @@ impl TeamSeasonView {
             empty_state,
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TeamStandingInput {
+    pub team: String,
+    pub conference: Option<String>,
+    pub division: Option<String>,
+    pub games_played: u32,
+    pub wins: u32,
+    pub losses: u32,
+    pub overtime_losses: u32,
+    pub points: u32,
+    pub points_percentage: f32,
+    pub regulation_wins: Option<u32>,
+    pub goal_differential: i32,
+    pub league_rank: Option<u32>,
+    pub conference_rank: Option<u32>,
+    pub division_rank: Option<u32>,
+    pub wild_card_rank: Option<u32>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TeamStandingsContext {
+    pub conference: Option<String>,
+    pub division: Option<String>,
+    pub league_rank: Option<u32>,
+    pub conference_rank: Option<u32>,
+    pub division_rank: Option<u32>,
+    pub wild_card_rank: Option<u32>,
+    pub record: ScheduleRecord,
+    pub games_played: u32,
+    pub points: u32,
+    pub points_percentage: f32,
+    pub regulation_wins: Option<u32>,
+    pub goal_differential: i32,
+    pub playoff_cut_points: Option<u32>,
+    pub points_above_cutline: Option<i32>,
+    pub points_behind_cutline: Option<i32>,
+    pub playoff_position_label: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -635,6 +698,76 @@ fn one_goal_split(team: &str, rows: &[ScheduleGameRow]) -> TeamSeasonSplit {
         goals_against,
         goal_differential: goals_for - goals_against,
     }
+}
+
+fn team_standings_context(
+    team: &str,
+    standings: &[TeamStandingInput],
+) -> Option<TeamStandingsContext> {
+    let row = standings
+        .iter()
+        .find(|row| row.team.eq_ignore_ascii_case(team))?;
+    let playoff_cut_points = row
+        .conference
+        .as_deref()
+        .and_then(|conference| conference_playoff_cut_points(conference, standings));
+    let points_delta = playoff_cut_points.map(|cut| row.points as i32 - cut as i32);
+    let playoff_position_label = if let Some(rank) = row.division_rank {
+        if rank <= 3 {
+            format!("division {}", rank)
+        } else if let Some(wild_card_rank) = row.wild_card_rank {
+            format!("wild card {}", wild_card_rank)
+        } else if let Some(conference_rank) = row.conference_rank {
+            format!("conference {}", conference_rank)
+        } else {
+            "outside top three division".to_string()
+        }
+    } else if let Some(wild_card_rank) = row.wild_card_rank {
+        format!("wild card {}", wild_card_rank)
+    } else if let Some(conference_rank) = row.conference_rank {
+        format!("conference {}", conference_rank)
+    } else {
+        "unknown".to_string()
+    };
+
+    Some(TeamStandingsContext {
+        conference: row.conference.clone(),
+        division: row.division.clone(),
+        league_rank: row.league_rank,
+        conference_rank: row.conference_rank,
+        division_rank: row.division_rank,
+        wild_card_rank: row.wild_card_rank,
+        record: ScheduleRecord {
+            wins: row.wins,
+            losses: row.losses,
+            overtime_losses: row.overtime_losses,
+            played: row.games_played,
+        },
+        games_played: row.games_played,
+        points: row.points,
+        points_percentage: row.points_percentage,
+        regulation_wins: row.regulation_wins,
+        goal_differential: row.goal_differential,
+        playoff_cut_points,
+        points_above_cutline: points_delta.filter(|delta| *delta >= 0),
+        points_behind_cutline: points_delta.filter(|delta| *delta < 0).map(i32::abs),
+        playoff_position_label,
+    })
+}
+
+fn conference_playoff_cut_points(conference: &str, standings: &[TeamStandingInput]) -> Option<u32> {
+    let mut conference_rows: Vec<&TeamStandingInput> = standings
+        .iter()
+        .filter(|row| row.conference.as_deref() == Some(conference))
+        .collect();
+    conference_rows.sort_by(|a, b| {
+        a.conference_rank
+            .unwrap_or(u32::MAX)
+            .cmp(&b.conference_rank.unwrap_or(u32::MAX))
+            .then_with(|| b.points.cmp(&a.points))
+            .then_with(|| a.team.cmp(&b.team))
+    });
+    conference_rows.get(7).map(|row| row.points)
 }
 
 fn recent_form(team: &str, rows: &[ScheduleGameRow]) -> TeamRecentForm {

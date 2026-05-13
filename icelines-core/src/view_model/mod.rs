@@ -100,6 +100,7 @@ pub use schedule::{
     ScheduleGameRow, ScheduleMatchupRecord, ScheduleMatchupView, ScheduleRecord, ScheduleTeamView,
     ScheduleView, TeamChipView, TeamRecentForm, TeamRemainingSchedule, TeamSeasonGameRow,
     TeamSeasonHeadline, TeamSeasonSplit, TeamSeasonSplits, TeamSeasonVenue, TeamSeasonView,
+    TeamStandingInput, TeamStandingsContext,
 };
 pub use scores::{scores_context, ScheduledGameInput, ScoreGameRow, ScoresDayView, ScoresView};
 pub use snapshot::{
@@ -130,8 +131,8 @@ mod tests {
         PlayoffsGameInput, PlayoffsRoundInput, PlayoffsSeriesInput, PlayoffsView,
         ScheduleMatchupView, ScheduleTeamView, ScheduleView, ScheduledGameInput, ScoresView,
         SeasonTypeMutationIntent, SemanticToken, SourceKind, SourceProvenance, SourceState,
-        StatKey, TeamSeasonView, TransactionsView, ValuePrecision, ViewContext, ViewWindow,
-        WatchNoteInput, WatchlistView,
+        StatKey, TeamSeasonView, TeamStandingInput, TransactionsView, ValuePrecision, ViewContext,
+        ViewWindow, WatchNoteInput, WatchlistView,
     };
 
     #[test]
@@ -1182,6 +1183,65 @@ mod tests {
         );
         assert_eq!(view.context.source_state[0].source, SourceKind::Schedule);
         assert_eq!(view.context.source_state[1].source, SourceKind::Standings);
+    }
+
+    #[test]
+    fn team_season_viewmodel_with_standings_projects_playoff_context() {
+        let context = ViewContext::new(ViewWindow::new(Season(20242025), SeasonType::Regular));
+        let standings: Vec<TeamStandingInput> = (1..=8)
+            .map(|rank| TeamStandingInput {
+                team: format!("W{rank}"),
+                conference: Some("Western".to_string()),
+                division: Some("Pacific".to_string()),
+                games_played: 40,
+                wins: 20,
+                losses: 15,
+                overtime_losses: 5,
+                points: 96 - rank,
+                points_percentage: 0.600,
+                regulation_wins: Some(18),
+                goal_differential: 12,
+                league_rank: Some(rank),
+                conference_rank: Some(rank),
+                division_rank: Some(rank.min(4)),
+                wild_card_rank: (rank > 3).then(|| rank - 3),
+            })
+            .chain(std::iter::once(TeamStandingInput {
+                team: "SEA".to_string(),
+                conference: Some("Western".to_string()),
+                division: Some("Pacific".to_string()),
+                games_played: 40,
+                wins: 22,
+                losses: 13,
+                overtime_losses: 5,
+                points: 49,
+                points_percentage: 0.613,
+                regulation_wins: Some(19),
+                goal_differential: 14,
+                league_rank: Some(9),
+                conference_rank: Some(9),
+                division_rank: Some(5),
+                wild_card_rank: Some(3),
+            }))
+            .collect();
+
+        let view = TeamSeasonView::from_games_and_standings(
+            context,
+            "20242025".to_string(),
+            "SEA".to_string(),
+            Vec::new(),
+            standings,
+        );
+
+        let standings = view.standings.as_ref().expect("standings context");
+        assert_eq!(standings.conference.as_deref(), Some("Western"));
+        assert_eq!(standings.points, 49);
+        assert_eq!(standings.playoff_cut_points, Some(88));
+        assert_eq!(standings.points_behind_cutline, Some(39));
+        assert_eq!(standings.points_above_cutline, None);
+        assert_eq!(standings.playoff_position_label, "wild card 3");
+        assert!(view.warnings.is_empty());
+        assert_eq!(view.context.source_state[1].state, Completeness::Complete);
     }
 
     #[test]
