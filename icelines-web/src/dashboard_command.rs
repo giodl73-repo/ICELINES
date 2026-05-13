@@ -90,7 +90,9 @@ fn parse_verb(input: &str) -> Result<DashboardCommand, DashboardCommandError> {
         "playoffs" => workspace("/playoffs"),
         "favorites" => workspace("/favorites"),
         "watchlist" => workspace("/watchlist"),
+        "roster" => workspace("/fantasy"),
         "career" | "cohort" => workspace(&career_url(args)),
+        "class" => workspace(&career_class_url(args)),
         "report" | "reports" => parse_report(args),
         "poach" => workspace(&poach_url(args)),
         "gaps" | "fantasy-gaps" => workspace(&fantasy_url(args, FantasyMode::Gaps)),
@@ -316,6 +318,17 @@ fn career_url(args: &str) -> String {
     format!("/career?league={}&sort=points", url_component(trimmed))
 }
 
+fn career_class_url(args: &str) -> String {
+    let year = args.trim();
+    if year.is_empty() {
+        "/career?league=OHL&sort=points".to_owned()
+    } else if year.contains('=') {
+        query_url("/career", year)
+    } else {
+        format!("/career?season={}&sort=points", url_component(year))
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 enum FantasyMode {
     Gaps,
@@ -340,21 +353,54 @@ fn query_url(base: &str, args: &str) -> String {
 }
 
 fn command_args_to_query(args: &str) -> String {
-    shell_words(args)
-        .into_iter()
-        .filter_map(|part| {
-            let (key, value) = part.split_once('=')?;
-            let key = match key {
-                "cats" | "categories" => "category",
-                "free" | "available" => "availability",
-                "add" => "add_player",
-                "drop" => "drop_player",
-                other => other,
-            };
-            Some(format!("{}={}", url_component(key), url_component(value)))
-        })
-        .collect::<Vec<_>>()
-        .join("&")
+    let parts = shell_words(args);
+    let mut query = Vec::new();
+    let mut idx = 0;
+
+    while idx < parts.len() {
+        let part = &parts[idx];
+
+        if let Some((key, value)) = part.split_once('=') {
+            push_query_pair(&mut query, key, value);
+            idx += 1;
+            continue;
+        }
+
+        match part.to_ascii_lowercase().as_str() {
+            "free" | "available" => query.push("availability=available".to_owned()),
+            "watched" => query.push("availability=watched".to_owned()),
+            "rostered" => query.push("availability=imported-rostered".to_owned()),
+            "rw" | "lw" | "c" | "d" | "g" => {
+                query.push(format!("pos={}", url_component(&part.to_ascii_uppercase())));
+            }
+            "add" | "drop" if parts.get(idx + 1).is_some() => {
+                let key = if part.eq_ignore_ascii_case("add") {
+                    "add_player"
+                } else {
+                    "drop_player"
+                };
+                query.push(format!("{}={}", key, url_component(&parts[idx + 1])));
+                idx += 2;
+                continue;
+            }
+            _ => {}
+        }
+        idx += 1;
+    }
+
+    query.join("&")
+}
+
+fn push_query_pair(query: &mut Vec<String>, key: &str, value: &str) {
+    let key = match key {
+        "cats" | "categories" => "category",
+        "free" | "available" => "availability",
+        "add" => "add_player",
+        "drop" => "drop_player",
+        "pos" | "position" => "pos",
+        other => other,
+    };
+    query.push(format!("{}={}", url_component(key), url_component(value)));
 }
 
 fn split_first_word(input: &str) -> (&str, &str) {
@@ -420,6 +466,11 @@ mod tests {
         assert_eq!(route("stats"), "/leaders");
         assert_eq!(route("goalies"), "/goalies");
         assert_eq!(route("poach"), "/poach");
+        assert_eq!(route("roster"), "/fantasy");
+        assert_eq!(
+            route("poach rw cats=hits,blocks free top=12"),
+            "/poach?pos=RW&category=hits%2Cblocks&availability=available&top=12"
+        );
         assert_eq!(
             route("gaps cats=hits,blocks top=8"),
             "/fantasy?category=hits%2Cblocks&top=8"
@@ -429,8 +480,16 @@ mod tests {
             "/poach?top=8&availability=available"
         );
         assert_eq!(
+            route("fantasy poach top=8 available"),
+            "/poach?top=8&availability=available"
+        );
+        assert_eq!(
             route("simulate add=Connor_McDavid drop=Bench_Forward weeks=3"),
             "/fantasy?add_player=Connor_McDavid&drop_player=Bench_Forward&weeks=3"
+        );
+        assert_eq!(
+            route("fantasy simulate add Connor_McDavid drop Bench_Forward"),
+            "/fantasy?add_player=Connor_McDavid&drop_player=Bench_Forward"
         );
         assert_eq!(
             route("report weekly cats=shots,hits top=12"),
@@ -450,6 +509,7 @@ mod tests {
         assert_eq!(route("team EDM season"), "/team/EDM/season");
         assert_eq!(route("team EDM schedule"), "/schedule?team=EDM");
         assert_eq!(route("career"), "/career?league=OHL&sort=points");
+        assert_eq!(route("class 2015"), "/career?season=2015&sort=points");
         assert_eq!(
             route("career league=OHL season=20142015 top=8"),
             "/career?league=OHL&season=20142015&top=8"
