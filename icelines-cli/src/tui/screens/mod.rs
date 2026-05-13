@@ -4768,7 +4768,7 @@ mod adams_4_render_boundary_tests {
     /// `mdi_help_lines()` (which lists `:stats`, `:goalies`,
     /// `query <filter>`, etc.). We render through TestBackend
     /// and assert key verbs appear in the buffer.
-    /// Use a taller terminal (60 rows) so the full reference
+    /// Use a taller terminal (80 rows) so the full reference
     /// fits in the 88%-height popup.
     #[test]
     fn l1_adams_mdi_help_overlay_lists_command_verbs() {
@@ -4778,7 +4778,7 @@ mod adams_4_render_boundary_tests {
         app.handle(crate::tui::event::Action::Help);
         assert!(app.show_help);
 
-        let backend = TestBackend::new(140, 60);
+        let backend = TestBackend::new(140, 80);
         let mut term = Terminal::new(backend).unwrap();
         term.draw(|f| render(f, &app)).unwrap();
         let text = buf_text(term.backend().buffer());
@@ -4799,6 +4799,9 @@ mod adams_4_render_boundary_tests {
             "query",
             "gaps cats",
             "fantasy simulate",
+            "roster",
+            "class <year>",
+            "AWAY@HOME",
             "/fav add",
             "/hide favorites",
             "/help",

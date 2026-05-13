@@ -62,7 +62,7 @@ pub fn mdi_help_lines() -> Vec<Line<'static>> {
         Line::from("    team <ABBR> season      → team's full schedule"),
         Line::from("    compare <a>             → similar peers"),
         Line::from("    compare <a> <b>         → head-to-head"),
-        Line::from("    box <game-id>           → boxscore detail"),
+        Line::from("    box <game-id|AWAY@HOME> → boxscore detail"),
         Line::from("    class <year>            → draft-year query"),
         Line::from(""),
         Line::from("  FREE-FORM QUERY (Phase Art Ross filters)"),

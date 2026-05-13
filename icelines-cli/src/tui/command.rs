@@ -1669,6 +1669,9 @@ mod tests {
             "poach rw cats=hits,blocks free top=12",
             "simulate add=Connor_McDavid drop=Bench_Forward weeks=3",
             "Fantasy screen shortcuts",
+            "roster",
+            "class 2024",
+            "box EDM@BOS",
         ] {
             assert!(
                 COMMANDS_MD.contains(example),
