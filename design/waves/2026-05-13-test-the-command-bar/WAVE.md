@@ -39,8 +39,8 @@ than broad redesign guesses.
 | Pulse | Status | Evidence |
 |---|---|---|
 | 01 - Usability protocol and command inventory | done | `plans/pulse-01.md`; `USER-TESTING-PROTOCOL.md` |
-| 02 - Tabbing and focus regression harness | planned | `plans/pulse-02.md` |
-| 03 - Command vocabulary and subcommand discoverability | planned | `plans/pulse-03.md` |
+| 02 - Tabbing and focus regression harness | done | `plans/pulse-02.md`; `FOCUS-HARNESS-INVENTORY.md` |
+| 03 - Command vocabulary and subcommand discoverability | done | `plans/pulse-03.md`; `COMMAND-VOCAB-INVENTORY.md` |
 | 04 - Moderated session findings and fixes | planned | `plans/pulse-04.md` |
 
 ## Closeout Target

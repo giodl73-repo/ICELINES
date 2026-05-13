@@ -2,7 +2,7 @@
 wave: test-the-command-bar
 pulse: 03
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-01]
 governing_roles:
   - edge
@@ -28,10 +28,10 @@ handoffs, then fix mismatches or make intentional handoffs clearer.
 
 ## Gates
 
-- [ ] `cargo test -p icelines-cli --bin icelines l0_adams_parse`
-- [ ] `cargo test -p icelines-cli --bin icelines l0_adams_exec`
-- [ ] `cargo test -p icelines-web dashboard_command`
-- [ ] Every command in the protocol is classified: opens workspace, flashes
+- [x] `cargo test -p icelines-cli --bin icelines l0_adams_parse`
+- [x] `cargo test -p icelines-cli --bin icelines l0_adams_exec`
+- [x] `cargo test -p icelines-web dashboard_command`
+- [x] Every command in the protocol is classified: opens workspace, flashes
       CLI/web target, mutates through safe intent, or intentionally unsupported.
 
 ## Stop Conditions

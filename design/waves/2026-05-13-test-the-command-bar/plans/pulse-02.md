@@ -2,7 +2,7 @@
 wave: test-the-command-bar
 pulse: 02
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-01]
 governing_roles:
   - glass
@@ -28,9 +28,9 @@ have visible, test-backed outcomes.
 
 ## Gates
 
-- [ ] `cargo test -p icelines-cli --bin icelines persona_jack_adams`
-- [ ] Focused parser/focus tests added or identified by exact name.
-- [ ] Help/cheat-sheet text names the focus behavior testers need.
+- [x] `cargo test -p icelines-cli --bin icelines persona_jack_adams`
+- [x] Focused parser/focus tests added or identified by exact name.
+- [x] Help/cheat-sheet text names the focus behavior testers need.
 
 ## Stop Conditions
 
