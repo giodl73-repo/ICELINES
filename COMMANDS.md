@@ -693,11 +693,15 @@ player Connor McDavid                      -> /leaders?filter=name%3DConnor+McDa
 compare Connor McDavid vs Sidney Crosby    -> /compare?left=Connor+McDavid&right=Sidney+Crosby
 /fav add Connor McDavid                    -> POST /favorites/add
 watch Connor McDavid                       -> POST /watch-rules/create
+watch player Connor McDavid when=available -> save player watch rule
+watch enable player-connor-mcdavid         -> toggle persisted watch rule on
+watch disable player-connor-mcdavid        -> toggle persisted watch rule off
 ```
 
 Fantasy screen shortcuts prefill the same command bar grammar: `g` on Fantasy
-Gaps starts `gaps `, `p` on Poach starts `poach `, and `a` on Fantasy Sim
-starts `simulate add=`.
+Gaps starts `gaps `, `p` on Poach starts `poach `, `w` on Poach toggles the
+selected player in the local Watchlist, and `a` on Fantasy Sim starts
+`simulate add=`.
 
 Browser adaptive layout: wide screens show scores + Favorites/Watchlist +
 Workspace + Schedule. Tablet/mobile keeps Workspace primary, collapses Schedule

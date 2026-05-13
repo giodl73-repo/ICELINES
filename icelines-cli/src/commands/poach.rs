@@ -514,7 +514,7 @@ fn default_watch_context() -> ViewContext {
     })
 }
 
-fn player_watch_rule(player: &str, trigger: &str) -> WatchRule {
+pub(crate) fn player_watch_rule(player: &str, trigger: &str) -> WatchRule {
     let normalized_trigger = trigger.trim().to_ascii_lowercase();
     let (rule_trigger, unsupported_sources) = match normalized_trigger.as_str() {
         "available" | "availability" => (

@@ -2,7 +2,7 @@
 wave: backcheck-the-phases
 pulse: 06
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-01]
 governing_roles:
   - bench
@@ -44,12 +44,22 @@ partial.
 
 ## Gates
 
-- [ ] `cargo test -p icelines-core watch`
-- [ ] `cargo test -p icelines-cli watch`
-- [ ] `cargo test -p icelines-cli tui_watch`
-- [ ] `cargo test -p icelines-web watch_rule`
-- [ ] `cargo fmt --check`
-- [ ] Surface parity row explains any remaining non-TUI editing limitation.
+- [x] `cargo test -p icelines-core watch`
+- [x] `cargo test -p icelines-cli watch`
+- [x] `cargo test -p icelines-cli tui_watch`
+- [x] `cargo test -p icelines-web watch_rule`
+- [x] `cargo fmt --check`
+- [x] Surface parity row explains any remaining non-TUI editing limitation.
+
+## Gate Notes
+
+- `cargo test -p icelines-core watch` matched 7 tests.
+- `cargo test -p icelines-cli watch` matched 21 tests.
+- `cargo test -p icelines-cli tui_watch` matched 2 tests.
+- `cargo test -p icelines-web watch_rule` matched 11 tests.
+- TUI editing is intentionally limited to player-rule create and
+  enable/disable; destructive delete remains outside TUI because the current
+  schema cascades fired-alert history on delete.
 
 ## Stop Conditions
 

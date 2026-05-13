@@ -25,7 +25,7 @@
 use crate::tui::mdi::SidePane;
 use icelines_core::{
     model::Position,
-    view_model::{PoachAvailabilityFilter, PoachCandidateKind},
+    view_model::{PoachAvailabilityFilter, PoachCandidateKind, WatchRuleMutationIntent},
 };
 
 // ── Command grammar ──────────────────────────────────────────────────────────
@@ -73,6 +73,16 @@ pub enum Command {
     /// creation surfaces.
     WatchPlayer {
         needle: String,
+    },
+    /// `watch player <name> when=<trigger>` — persist a player watch rule.
+    WatchRulePlayer {
+        player: String,
+        when: String,
+    },
+    /// `watch enable|disable <rule-id>` — toggle a persisted watch rule.
+    WatchRuleSetEnabled {
+        id: String,
+        enabled: bool,
     },
     GoaliesKv {
         args: crate::tui::filter_state::RosterKvArgs,
@@ -489,8 +499,61 @@ fn parse_watch(args: &str) -> Result<Command, ParseError> {
             arg: "player",
         });
     }
-    Ok(Command::WatchPlayer {
-        needle: needle.to_string(),
+    let (subcommand, rest) = split_first_word(needle);
+    match subcommand.to_ascii_lowercase().as_str() {
+        "player" => parse_watch_player_rule(rest),
+        "enable" | "on" => parse_watch_rule_set_enabled(rest, true),
+        "disable" | "off" => parse_watch_rule_set_enabled(rest, false),
+        _ => Ok(Command::WatchPlayer {
+            needle: needle.to_string(),
+        }),
+    }
+}
+
+fn parse_watch_rule_set_enabled(args: &str, enabled: bool) -> Result<Command, ParseError> {
+    let id = args.trim();
+    if id.is_empty() {
+        return Err(ParseError::MissingArg {
+            command: "watch",
+            arg: "rule-id",
+        });
+    }
+    Ok(Command::WatchRuleSetEnabled {
+        id: id.to_string(),
+        enabled,
+    })
+}
+
+fn parse_watch_player_rule(args: &str) -> Result<Command, ParseError> {
+    let trimmed = args.trim();
+    if trimmed.is_empty() {
+        return Err(ParseError::MissingArg {
+            command: "watch player",
+            arg: "player",
+        });
+    }
+    let lower = trimmed.to_ascii_lowercase();
+    let (player, when) = if let Some(idx) = lower.rfind(" when=") {
+        let player = trimmed[..idx].trim();
+        let when = trimmed[idx + " when=".len()..].trim();
+        (player, when)
+    } else {
+        (trimmed, "promotion")
+    };
+    if player.is_empty() {
+        return Err(ParseError::MissingArg {
+            command: "watch player",
+            arg: "player",
+        });
+    }
+    if when.is_empty() || when.split_whitespace().nth(1).is_some() {
+        return Err(ParseError::BadFilter {
+            details: "watch player expects a single trigger after when=".to_string(),
+        });
+    }
+    Ok(Command::WatchRulePlayer {
+        player: player.to_string(),
+        when: when.to_string(),
     })
 }
 
@@ -1139,6 +1202,8 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
         Command::WatchPlayer { needle } => ExecResult::Flash(format!(
             "watch: run `icelines watch note \"{needle}\" \"reason\"`, preview `icelines watch player \"{needle}\" --when pp1 --save`, or open `/watchlist`"
         )),
+        Command::WatchRulePlayer { player, when } => exec_watch_rule_player(&player, &when),
+        Command::WatchRuleSetEnabled { id, enabled } => exec_watch_rule_set_enabled(&id, enabled),
         Command::Transactions => {
             app.screen = Screen::Transactions;
             ExecResult::Continue
@@ -1337,6 +1402,65 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
                 )),
             }
         }
+    }
+}
+
+fn exec_watch_rule_player(player: &str, when: &str) -> ExecResult {
+    let rule = crate::commands::poach::player_watch_rule(player, when);
+    let Ok(intent) = WatchRuleMutationIntent::create(&rule.id) else {
+        return ExecResult::Flash("watch rule id is required".to_string());
+    };
+    let trigger_json = match serde_json::to_string(&rule.trigger) {
+        Ok(json) => json,
+        Err(err) => return ExecResult::Flash(format!("Could not serialize watch rule: {err}")),
+    };
+    let unsupported_sources_json = match serde_json::to_string(&rule.unsupported_sources) {
+        Ok(json) => json,
+        Err(err) => {
+            return ExecResult::Flash(format!("Could not serialize watch rule sources: {err}"))
+        }
+    };
+    match crate::db::GroupDb::open().and_then(|db| {
+        db.upsert_watch_rule(
+            &intent.rule_id,
+            &rule.label,
+            true,
+            &trigger_json,
+            &unsupported_sources_json,
+        )
+    }) {
+        Ok(()) => ExecResult::Flash(format!("Saved watch rule '{}'", intent.rule_id)),
+        Err(err) => ExecResult::Flash(format!(
+            "Could not save watch rule '{}': {err}",
+            intent.rule_id
+        )),
+    }
+}
+
+fn exec_watch_rule_set_enabled(id: &str, enabled: bool) -> ExecResult {
+    let intent = match WatchRuleMutationIntent::resolve(id, enabled) {
+        Ok(intent) => intent,
+        Err(message) => return ExecResult::Flash(message),
+    };
+    match crate::db::GroupDb::open()
+        .and_then(|db| db.set_watch_rule_enabled(&intent.rule_id, intent.enabled))
+    {
+        Ok(true) => ExecResult::Flash(format!(
+            "{} watch rule '{}'",
+            if intent.enabled {
+                "Enabled"
+            } else {
+                "Disabled"
+            },
+            intent.rule_id
+        )),
+        Ok(false) => {
+            ExecResult::Flash(format!("unknown persisted watch rule '{}'", intent.rule_id))
+        }
+        Err(err) => ExecResult::Flash(format!(
+            "Could not update watch rule '{}': {err}",
+            intent.rule_id
+        )),
     }
 }
 
@@ -1914,6 +2038,31 @@ mod tests {
             parse_command("watch Connor McDavid").unwrap(),
             Command::WatchPlayer {
                 needle: "Connor McDavid".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn l0_tui_watch_parse_rule_editor_commands() {
+        assert_eq!(
+            parse_command("watch player Connor McDavid when=available").unwrap(),
+            Command::WatchRulePlayer {
+                player: "Connor McDavid".to_string(),
+                when: "available".to_string(),
+            }
+        );
+        assert_eq!(
+            parse_command("watch enable player-connor-mcdavid").unwrap(),
+            Command::WatchRuleSetEnabled {
+                id: "player-connor-mcdavid".to_string(),
+                enabled: true,
+            }
+        );
+        assert_eq!(
+            parse_command("watch disable player-connor-mcdavid").unwrap(),
+            Command::WatchRuleSetEnabled {
+                id: "player-connor-mcdavid".to_string(),
+                enabled: false,
             }
         );
     }
@@ -2528,9 +2677,8 @@ mod tests {
     // pure decisions: which `Screen` variant gets selected, which
     // `mdi.show_*` flag toggles, which `ExecResult` flavor returns.
     //
-    // We avoid hitting the GroupDb in tests (it would require a temp
-    // SQLite file). Fav add/remove are smoke-tested for "produces a
-    // Flash" only; deeper coverage is in the L1 group tests.
+    // Most executor tests avoid the GroupDb. Watch-rule editor tests use a
+    // temp HOME because the feature is explicitly a persistence adapter.
 
     use crate::tui::app::{App, Screen};
     use crate::tui::mdi::MdiLayout;
@@ -2539,6 +2687,28 @@ mod tests {
         let mut app = App::new(true);
         app.mdi = Some(MdiLayout::default());
         app
+    }
+
+    fn with_temp_home<F, R>(f: F) -> R
+    where
+        F: FnOnce(&std::path::Path) -> R,
+    {
+        let _guard = crate::test_utils::home_env_lock();
+        let dir = tempfile::TempDir::new().unwrap();
+        let prev_userprofile = std::env::var_os("USERPROFILE");
+        let prev_home = std::env::var_os("HOME");
+        std::env::set_var("USERPROFILE", dir.path());
+        std::env::set_var("HOME", dir.path());
+        let result = f(dir.path());
+        match prev_userprofile {
+            Some(p) => std::env::set_var("USERPROFILE", p),
+            None => std::env::remove_var("USERPROFILE"),
+        }
+        match prev_home {
+            Some(p) => std::env::set_var("HOME", p),
+            None => std::env::remove_var("HOME"),
+        }
+        result
     }
 
     fn scheduled_game(id: u64, away: &str, home: &str) -> icelines_fetch::nhl_api::ScheduledGame {
@@ -2729,6 +2899,62 @@ mod tests {
         assert!(message.contains("icelines watch player \"Connor McDavid\" --when pp1 --save"));
         assert!(message.contains("/watchlist"));
         assert!(matches!(app.screen, Screen::Home));
+    }
+
+    #[test]
+    fn l1_tui_watch_cmdbar_rule_editor_persists_and_toggles_without_erasing_history() {
+        with_temp_home(|_| {
+            let mut app = fresh_app_with_mdi();
+
+            let r = execute_command(
+                parse_command("watch player Matthew Knies when=available").unwrap(),
+                &mut app,
+            );
+            let ExecResult::Flash(message) = r else {
+                panic!("watch player should flash saved rule");
+            };
+            assert!(message.contains("Saved watch rule 'player-matthew-knies'"));
+
+            let db = crate::db::GroupDb::open().expect("open group db");
+            let rules = db.list_watch_rules().expect("list watch rules");
+            assert_eq!(rules.len(), 1);
+            assert_eq!(rules[0].id, "player-matthew-knies");
+            assert!(rules[0].enabled);
+
+            let r = execute_command(
+                parse_command("watch disable player-matthew-knies").unwrap(),
+                &mut app,
+            );
+            let ExecResult::Flash(message) = r else {
+                panic!("watch disable should flash mutation result");
+            };
+            assert!(message.contains("Disabled watch rule 'player-matthew-knies'"));
+            assert!(!db.list_watch_rules().expect("list rules after disable")[0].enabled);
+
+            db.record_watch_rule_event(
+                "player-matthew-knies",
+                Some("player:matthew-knies"),
+                "Knies became available",
+            )
+            .expect("record watch event");
+
+            let r = execute_command(
+                parse_command("watch enable player-matthew-knies").unwrap(),
+                &mut app,
+            );
+            let ExecResult::Flash(message) = r else {
+                panic!("watch enable should flash mutation result");
+            };
+            assert!(message.contains("Enabled watch rule 'player-matthew-knies'"));
+            assert!(db.list_watch_rules().expect("list rules after enable")[0].enabled);
+            assert_eq!(
+                db.list_watch_rule_events(10)
+                    .expect("list history after toggle")
+                    .len(),
+                1,
+                "TUI rule toggles must not erase fired-alert history"
+            );
+        });
     }
 
     #[test]
