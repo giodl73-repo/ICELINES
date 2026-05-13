@@ -293,7 +293,7 @@ pub struct TeamScheduleStrength {
     pub remaining: OpponentTierBreakdown,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OpponentTierBreakdown {
     pub top: u32,
     pub middle: u32,
@@ -833,17 +833,6 @@ enum OpponentTier {
     Middle,
     Bottom,
     Unknown,
-}
-
-impl Default for OpponentTierBreakdown {
-    fn default() -> Self {
-        Self {
-            top: 0,
-            middle: 0,
-            bottom: 0,
-            unknown: 0,
-        }
-    }
 }
 
 impl OpponentTierBreakdown {

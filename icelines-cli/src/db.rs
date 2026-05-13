@@ -164,7 +164,10 @@ fn run_migrations(conn: &Connection) -> anyhow::Result<()> {
         .query_map([], |row| row.get::<_, String>(1))?
         .filter_map(Result::ok)
         .collect();
-    if !cols.iter().any(|c| c == "kind") {
+    let has_kind = cols.iter().any(|c| c == "kind");
+    let has_player_normalized = cols.iter().any(|c| c == "player_normalized");
+    let has_entity_ref = cols.iter().any(|c| c == "entity_ref");
+    if !has_kind && has_player_normalized && !has_entity_ref {
         conn.execute_batch(
             "ALTER TABLE group_members ADD COLUMN kind TEXT NOT NULL DEFAULT 'player';",
         )

@@ -713,12 +713,7 @@ fn scores_summary_rows(result: &super::scores::ScoresResult) -> Vec<DashboardSum
         ),
     )];
 
-    rows.extend(
-        games
-            .into_iter()
-            .take(2)
-            .map(|game| score_game_summary_row(game)),
-    );
+    rows.extend(games.into_iter().take(2).map(score_game_summary_row));
     rows
 }
 
