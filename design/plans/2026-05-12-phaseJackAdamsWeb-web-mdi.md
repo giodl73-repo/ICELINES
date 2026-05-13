@@ -220,7 +220,9 @@ extras from `TeamDepthView`; league depth workspaces summarize the top-ranked
 teams from `DepthLeagueView`; poach workspaces preserve filters and summarize
 top candidates from `PoachBoardView`; fantasy workspaces preserve league,
 category, horizon, and add/drop query state while summarizing
-`FantasyRosterGapView` and `FantasySimulationView`, all while preserving
+`FantasyRosterGapView` and `FantasySimulationView`; scores and schedule
+workspaces preserve date/range/team query state while summarizing the same
+route result projections used by the full web pages, all while preserving
 canonical full route links. Remaining work is panel-specific fragments/parity
 for more product routes and richer side-pane row actions.
 

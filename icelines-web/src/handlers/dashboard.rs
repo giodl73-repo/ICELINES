@@ -1,7 +1,7 @@
 use crate::state::WebState;
 use crate::templates::{
     DashboardEntityRow, DashboardLinkRow, DashboardSummaryRow, DashboardTemplate,
-    DashboardWorkspaceTemplate,
+    DashboardWorkspaceTemplate, ScheduleRow, ScoreRow,
 };
 use askama::Template;
 use axum::extract::{Form, Query, State};
@@ -232,6 +232,12 @@ async fn workspace_summary(state: &WebState, path: &str) -> Vec<DashboardSummary
     }
     if route == "/fantasy" {
         return fantasy_workspace_summary(state, path).await;
+    }
+    if route == "/scores" {
+        return scores_workspace_summary(state, path).await;
+    }
+    if route == "/schedule" {
+        return schedule_workspace_summary(state, path).await;
     }
     if let Some(team) = route
         .strip_prefix("/team/")
@@ -558,6 +564,146 @@ fn fantasy_summary_rows(
     }
 
     rows
+}
+
+async fn scores_workspace_summary(state: &WebState, path: &str) -> Vec<DashboardSummaryRow> {
+    let q = scores_query_from_workspace(path);
+    let result = super::scores::build_scores_result(state, &q).await;
+    scores_summary_rows(&result)
+}
+
+fn scores_query_from_workspace(path: &str) -> super::scores::ScoresQuery {
+    let mut q = super::scores::ScoresQuery::default();
+    let Some(query) = path.split_once('?').map(|(_, query)| query) else {
+        return q;
+    };
+    for pair in query.split('&') {
+        let Some((key, value)) = pair.split_once('=') else {
+            continue;
+        };
+        let value = value.replace('+', " ");
+        match key {
+            "date" => q.date = Some(value),
+            "range" => q.range = Some(value),
+            _ => {}
+        }
+    }
+    q
+}
+
+fn scores_summary_rows(result: &super::scores::ScoresResult) -> Vec<DashboardSummaryRow> {
+    if let Some(error) = &result.fetch_error {
+        return vec![summary_row("Scores", "Unavailable", error.clone())];
+    }
+
+    let games = result
+        .days
+        .iter()
+        .flat_map(|day| day.rows.iter())
+        .collect::<Vec<_>>();
+    let live = games.iter().filter(|row| row.state_class == "live").count();
+    let finals = games
+        .iter()
+        .filter(|row| row.state_class == "final")
+        .count();
+    let upcoming = games.len().saturating_sub(live + finals);
+    let mut rows = vec![summary_row(
+        "Slate",
+        result.total_games.to_string(),
+        format!(
+            "{} · live {} · final {} · upcoming {}",
+            result.active_date, live, finals, upcoming
+        ),
+    )];
+
+    rows.extend(
+        games
+            .into_iter()
+            .take(2)
+            .map(|game| score_game_summary_row(game)),
+    );
+    rows
+}
+
+fn score_game_summary_row(game: &ScoreRow) -> DashboardSummaryRow {
+    let score = if game.away_score_str.is_empty() || game.home_score_str.is_empty() {
+        game.start_time_label.clone()
+    } else {
+        format!("{}-{}", game.away_score_str, game.home_score_str)
+    };
+    summary_row(
+        game.state_label.clone(),
+        format!("{} @ {}", game.away_abbrev, game.home_abbrev),
+        score,
+    )
+}
+
+async fn schedule_workspace_summary(state: &WebState, path: &str) -> Vec<DashboardSummaryRow> {
+    let q = schedule_query_from_workspace(path);
+    let result = super::schedule::build_schedule_result(state, &q).await;
+    schedule_summary_rows(&result)
+}
+
+fn schedule_query_from_workspace(path: &str) -> super::schedule::ScheduleQuery {
+    let mut q = super::schedule::ScheduleQuery::default();
+    let Some(query) = path.split_once('?').map(|(_, query)| query) else {
+        return q;
+    };
+    for pair in query.split('&') {
+        let Some((key, value)) = pair.split_once('=') else {
+            continue;
+        };
+        let value = value.replace('+', " ");
+        match key {
+            "team" => q.team = Some(value),
+            "date" => q.date = Some(value),
+            _ => {}
+        }
+    }
+    q
+}
+
+fn schedule_summary_rows(result: &super::schedule::ScheduleResult) -> Vec<DashboardSummaryRow> {
+    if let Some(error) = &result.fetch_error {
+        return vec![summary_row("Schedule", "Unavailable", error.clone())];
+    }
+
+    let scope = if result.active_team.is_empty() {
+        result
+            .active_date
+            .clone()
+            .unwrap_or_else(|| result.season_pretty.clone())
+    } else {
+        result.active_team.clone()
+    };
+    let mut rows = vec![summary_row(
+        "Schedule",
+        result.total.to_string(),
+        format!("{scope} · {}", result.season_pretty),
+    )];
+    rows.extend(result.rows.iter().take(2).map(schedule_game_summary_row));
+    rows
+}
+
+fn schedule_game_summary_row(game: &ScheduleRow) -> DashboardSummaryRow {
+    let score = if game.away_score_str.is_empty() || game.home_score_str.is_empty() {
+        game.state_label.clone()
+    } else {
+        format!(
+            "{} {}-{} {}",
+            game.away_abbrev, game.away_score_str, game.home_score_str, game.home_abbrev
+        )
+    };
+    let venue = if game.home_or_away.is_empty() {
+        game.date.clone()
+    } else {
+        format!("{} · {}", game.date, game.home_or_away)
+    };
+    summary_row(
+        venue,
+        format!("{} @ {}", game.away_abbrev, game.home_abbrev),
+        score,
+    )
 }
 
 async fn team_season_workspace_summary(
@@ -1084,6 +1230,78 @@ mod tests {
         assert_eq!(rows[0].label, "Fantasy");
         assert_eq!(rows[0].value, "Unavailable");
         assert_eq!(rows[0].detail, "fantasy db missing");
+    }
+
+    #[test]
+    fn l0_dashboard_scores_summary_counts_game_states() {
+        let result = super::super::scores::ScoresResult {
+            active_label: "25-26 · Regular".to_string(),
+            active_date: "2026-05-13".to_string(),
+            prev_date: "2026-05-06".to_string(),
+            next_date: "2026-05-20".to_string(),
+            today_date: "2026-05-13".to_string(),
+            range: "day".to_string(),
+            days: vec![crate::templates::ScoresDay {
+                date: "2026-05-13".to_string(),
+                date_pretty: "Wed, May 13".to_string(),
+                rows: vec![ScoreRow {
+                    away_abbrev: "EDM".to_string(),
+                    away_name: "Oilers".to_string(),
+                    home_abbrev: "SEA".to_string(),
+                    home_name: "Kraken".to_string(),
+                    away_score_str: "3".to_string(),
+                    home_score_str: "2".to_string(),
+                    state_label: "FINAL".to_string(),
+                    state_class: "final".to_string(),
+                    start_time_label: String::new(),
+                    is_playoff: false,
+                    series_context: String::new(),
+                }],
+            }],
+            total_games: 1,
+            fetch_error: None,
+        };
+
+        let rows = scores_summary_rows(&result);
+
+        assert_eq!(rows[0].label, "Slate");
+        assert_eq!(rows[0].value, "1");
+        assert!(rows[0].detail.contains("final 1"));
+        assert_eq!(rows[1].value, "EDM @ SEA");
+    }
+
+    #[test]
+    fn l0_dashboard_schedule_query_and_summary_preserve_team() {
+        let query = schedule_query_from_workspace("/schedule?team=SEA&date=2026-05-13");
+        assert_eq!(query.team.as_deref(), Some("SEA"));
+        assert_eq!(query.date.as_deref(), Some("2026-05-13"));
+
+        let result = super::super::schedule::ScheduleResult {
+            active_label: "25-26 · Regular".to_string(),
+            season_pretty: "2025-26".to_string(),
+            active_team: "SEA".to_string(),
+            active_date: None,
+            team_chips: Vec::new(),
+            rows: vec![ScheduleRow {
+                date: "2026-05-13".to_string(),
+                away_abbrev: "EDM".to_string(),
+                home_abbrev: "SEA".to_string(),
+                away_score_str: String::new(),
+                home_score_str: String::new(),
+                state_label: "FUT".to_string(),
+                home_or_away: "home".to_string(),
+                opponent_abbrev: "EDM".to_string(),
+                is_playoff: false,
+            }],
+            total: 1,
+            fetch_error: None,
+        };
+
+        let rows = schedule_summary_rows(&result);
+
+        assert_eq!(rows[0].label, "Schedule");
+        assert_eq!(rows[0].detail, "SEA · 2025-26");
+        assert_eq!(rows[1].value, "EDM @ SEA");
     }
 
     #[test]

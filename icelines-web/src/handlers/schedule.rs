@@ -21,15 +21,15 @@ pub struct ScheduleQuery {
     pub date: Option<String>,
 }
 
-struct ScheduleResult {
-    active_label: String,
-    season_pretty: String,
-    active_team: String,
-    active_date: Option<String>,
-    team_chips: Vec<TeamChip>,
-    rows: Vec<ScheduleRow>,
-    total: usize,
-    fetch_error: Option<String>,
+pub(super) struct ScheduleResult {
+    pub(super) active_label: String,
+    pub(super) season_pretty: String,
+    pub(super) active_team: String,
+    pub(super) active_date: Option<String>,
+    pub(super) team_chips: Vec<TeamChip>,
+    pub(super) rows: Vec<ScheduleRow>,
+    pub(super) total: usize,
+    pub(super) fetch_error: Option<String>,
 }
 
 #[derive(Debug, serde::Serialize)]
@@ -92,7 +92,7 @@ pub async fn get_schedule_json(
     )
 }
 
-async fn build_schedule_result(state: &WebState, q: &ScheduleQuery) -> ScheduleResult {
+pub(super) async fn build_schedule_result(state: &WebState, q: &ScheduleQuery) -> ScheduleResult {
     let (active_label, season_str, season, season_type) = {
         let cfg = state.config.read().await;
         (

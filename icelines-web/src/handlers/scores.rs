@@ -25,16 +25,16 @@ pub struct ScoresQuery {
     pub range: Option<String>,
 }
 
-struct ScoresResult {
-    active_label: String,
-    active_date: String,
-    prev_date: String,
-    next_date: String,
-    today_date: String,
-    range: String,
-    days: Vec<ScoresDay>,
-    total_games: usize,
-    fetch_error: Option<String>,
+pub(super) struct ScoresResult {
+    pub(super) active_label: String,
+    pub(super) active_date: String,
+    pub(super) prev_date: String,
+    pub(super) next_date: String,
+    pub(super) today_date: String,
+    pub(super) range: String,
+    pub(super) days: Vec<ScoresDay>,
+    pub(super) total_games: usize,
+    pub(super) fetch_error: Option<String>,
 }
 
 #[derive(Debug, serde::Serialize)]
@@ -64,7 +64,7 @@ pub(crate) fn parse_range_to_timeframe(s: Option<&str>) -> icelines_core::timefr
     }
 }
 
-async fn build_scores_result(state: &WebState, q: &ScoresQuery) -> ScoresResult {
+pub(super) async fn build_scores_result(state: &WebState, q: &ScoresQuery) -> ScoresResult {
     let (active_label, active_season, active_season_type) = {
         let cfg = state.config.read().await;
         (
