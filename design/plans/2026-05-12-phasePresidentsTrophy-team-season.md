@@ -1,7 +1,7 @@
 # Phase Presidents Trophy - team season performance
 
 **Date**: 2026-05-12
-**Status**: Draft
+**Status**: Active
 **Trophy lineage**: Presidents Trophy as the regular-season team-performance
 phase. This is distinct from the old folded "Presidents" season-type plan:
 this phase is about team standings truth, schedule context, and whether a
@@ -276,8 +276,8 @@ This is useful for snapshotting "why are they really 2nd in the division?"
 ## Sub-Phase Order
 
 ```text
-PT.1  Contract and fixtures
-PT.2  Schedule-derived TeamSeasonView
+PT.1  Contract and fixtures (started)
+PT.2  Schedule-derived TeamSeasonView (started)
 PT.3  Standings data source and playoff-distance model
 PT.4  Strength-of-schedule and quality ledger
 PT.5  CLI/TUI/web/JSON surfaces
@@ -313,6 +313,14 @@ Exit:
 
 - Core unit tests pass.
 - View can render meaningful output without standings data.
+
+Progress:
+
+- 2026-05-13: Added the first core `TeamSeasonView` builder from schedule
+  games. It projects record, points, points percentage, goal differential,
+  home/away and one-goal splits, last 5/10 form, remaining home/away counts,
+  next opponents, per-game rows, and explicit partial-source warnings while
+  standings are unavailable.
 
 ### PT.3 - Standings Data Source
 

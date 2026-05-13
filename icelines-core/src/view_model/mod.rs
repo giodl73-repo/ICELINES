@@ -98,7 +98,8 @@ pub use poach::{
 pub use report::{scouting_report_sections, ReportFormat, ReportView};
 pub use schedule::{
     ScheduleGameRow, ScheduleMatchupRecord, ScheduleMatchupView, ScheduleRecord, ScheduleTeamView,
-    ScheduleView, TeamChipView,
+    ScheduleView, TeamChipView, TeamRecentForm, TeamRemainingSchedule, TeamSeasonGameRow,
+    TeamSeasonHeadline, TeamSeasonSplit, TeamSeasonSplits, TeamSeasonVenue, TeamSeasonView,
 };
 pub use scores::{scores_context, ScheduledGameInput, ScoreGameRow, ScoresDayView, ScoresView};
 pub use snapshot::{
@@ -129,8 +130,8 @@ mod tests {
         PlayoffsGameInput, PlayoffsRoundInput, PlayoffsSeriesInput, PlayoffsView,
         ScheduleMatchupView, ScheduleTeamView, ScheduleView, ScheduledGameInput, ScoresView,
         SeasonTypeMutationIntent, SemanticToken, SourceKind, SourceProvenance, SourceState,
-        StatKey, TransactionsView, ValuePrecision, ViewContext, ViewWindow, WatchNoteInput,
-        WatchlistView,
+        StatKey, TeamSeasonView, TransactionsView, ValuePrecision, ViewContext, ViewWindow,
+        WatchNoteInput, WatchlistView,
     };
 
     #[test]
@@ -1053,6 +1054,134 @@ mod tests {
         assert_eq!(json["record"]["played"], 2);
         assert_eq!(json["rows"][0]["opponent_abbrev"], "EDM");
         assert_eq!(json["rows"][1]["home_or_away"], "Home");
+    }
+
+    #[test]
+    fn team_season_viewmodel_contract_fixture_projects_schedule_derived_performance() {
+        let context = ViewContext::new(ViewWindow::new(Season(20242025), SeasonType::Regular));
+        let view = TeamSeasonView::from_games(
+            context,
+            "20242025".to_string(),
+            "SEA".to_string(),
+            vec![
+                ScheduledGameInput {
+                    game_id: 2024020001,
+                    date: "2024-10-08".to_string(),
+                    game_type: 2,
+                    away_abbrev: "SEA".to_string(),
+                    away_name: "Kraken".to_string(),
+                    home_abbrev: "EDM".to_string(),
+                    home_name: "Oilers".to_string(),
+                    start_time_utc: "2024-10-08T23:00:00Z".to_string(),
+                    away_score: Some(3),
+                    home_score: Some(4),
+                    game_state: Some("FINAL".to_string()),
+                    last_period: Some("SO".to_string()),
+                    series_game: None,
+                    away_wins: None,
+                    home_wins: None,
+                },
+                ScheduledGameInput {
+                    game_id: 2024020002,
+                    date: "2024-10-10".to_string(),
+                    game_type: 2,
+                    away_abbrev: "VAN".to_string(),
+                    away_name: "Canucks".to_string(),
+                    home_abbrev: "SEA".to_string(),
+                    home_name: "Kraken".to_string(),
+                    start_time_utc: "2024-10-10T23:00:00Z".to_string(),
+                    away_score: Some(1),
+                    home_score: Some(5),
+                    game_state: Some("FINAL".to_string()),
+                    last_period: Some("REG".to_string()),
+                    series_game: None,
+                    away_wins: None,
+                    home_wins: None,
+                },
+                ScheduledGameInput {
+                    game_id: 2024020003,
+                    date: "2024-10-12".to_string(),
+                    game_type: 2,
+                    away_abbrev: "SEA".to_string(),
+                    away_name: "Kraken".to_string(),
+                    home_abbrev: "CGY".to_string(),
+                    home_name: "Flames".to_string(),
+                    start_time_utc: "2024-10-12T23:00:00Z".to_string(),
+                    away_score: Some(1),
+                    home_score: Some(3),
+                    game_state: Some("FINAL".to_string()),
+                    last_period: Some("REG".to_string()),
+                    series_game: None,
+                    away_wins: None,
+                    home_wins: None,
+                },
+                ScheduledGameInput {
+                    game_id: 2024020004,
+                    date: "2024-10-14".to_string(),
+                    game_type: 2,
+                    away_abbrev: "SEA".to_string(),
+                    away_name: "Kraken".to_string(),
+                    home_abbrev: "LAK".to_string(),
+                    home_name: "Kings".to_string(),
+                    start_time_utc: "2024-10-14T23:00:00Z".to_string(),
+                    away_score: None,
+                    home_score: None,
+                    game_state: Some("FUT".to_string()),
+                    last_period: None,
+                    series_game: None,
+                    away_wins: None,
+                    home_wins: None,
+                },
+            ],
+        );
+
+        let json = serde_json::to_value(&view).expect("serialize team season view");
+
+        assert_eq!(json["team"], "SEA");
+        assert_eq!(json["headline"]["record"]["wins"], 1);
+        assert_eq!(json["headline"]["record"]["losses"], 1);
+        assert_eq!(json["headline"]["record"]["overtime_losses"], 1);
+        assert_eq!(json["headline"]["points"], 3);
+        assert_eq!(json["headline"]["goals_for"], 9);
+        assert_eq!(json["headline"]["goals_against"], 8);
+        assert_eq!(json["headline"]["goal_differential"], 1);
+        assert_eq!(json["splits"]["home"]["record"]["wins"], 1);
+        assert_eq!(json["splits"]["away"]["record"]["losses"], 1);
+        assert_eq!(json["splits"]["one_goal"]["record"]["overtime_losses"], 1);
+        assert_eq!(json["form"]["last_5"]["played"], 3);
+        assert_eq!(json["form"]["last_10_goal_differential"], 1);
+        assert_eq!(json["remaining"]["games"], 1);
+        assert_eq!(json["remaining"]["away"], 1);
+        assert_eq!(json["remaining"]["next_opponents"][0], "LAK");
+        assert_eq!(json["context"]["completeness"], "partial");
+        assert_eq!(json["rows"][0]["venue"], "away");
+        assert_eq!(json["rows"][0]["result"], "OTL");
+        assert_eq!(json["rows"][1]["venue"], "home");
+        assert_eq!(json["rows"][3]["result"], "SCHEDULED");
+        assert_eq!(json["warnings"][0]["source"], "standings");
+        assert!(view.empty_state.is_none());
+    }
+
+    #[test]
+    fn team_season_viewmodel_empty_fixture_warns_and_marks_no_rows() {
+        let context = ViewContext::new(ViewWindow::new(Season(20242025), SeasonType::Regular));
+        let view = TeamSeasonView::from_games(
+            context,
+            "20242025".to_string(),
+            "SEA".to_string(),
+            Vec::new(),
+        );
+
+        assert_eq!(view.headline.record.played, 0);
+        assert_eq!(view.headline.points, 0);
+        assert_eq!(view.headline.points_percentage, 0.0);
+        assert_eq!(view.remaining.games, 0);
+        assert_eq!(
+            view.empty_state.as_ref().map(|empty| empty.kind),
+            Some(EmptyKind::NoRows)
+        );
+        assert_eq!(view.context.source_state[0].source, SourceKind::Schedule);
+        assert_eq!(view.context.source_state[1].source, SourceKind::Standings);
     }
 
     #[test]

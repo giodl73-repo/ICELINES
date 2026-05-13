@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 
 use crate::view_model::context::{
-    EmptyKind, EmptyState, SourceKind, SourceState, ViewContext, ViewWarning,
+    Completeness, EmptyKind, EmptyState, RecoveryAction, RecoveryActionKind, SourceKind,
+    SourceState, ViewContext, ViewWarning, WarningKind,
 };
 use crate::view_model::scores::ScheduledGameInput;
 
@@ -84,6 +85,192 @@ pub struct ScheduleTeamView {
     pub total: usize,
     pub warnings: Vec<ViewWarning>,
     pub empty_state: Option<EmptyState>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TeamSeasonView {
+    pub context: ViewContext,
+    pub season: String,
+    pub season_pretty: String,
+    pub team: String,
+    pub headline: TeamSeasonHeadline,
+    pub splits: TeamSeasonSplits,
+    pub form: TeamRecentForm,
+    pub remaining: TeamRemainingSchedule,
+    pub rows: Vec<TeamSeasonGameRow>,
+    pub warnings: Vec<ViewWarning>,
+    pub empty_state: Option<EmptyState>,
+}
+
+impl TeamSeasonView {
+    pub fn from_games(
+        mut context: ViewContext,
+        season: String,
+        team: String,
+        games: Vec<ScheduledGameInput>,
+    ) -> Self {
+        context
+            .source_state
+            .push(SourceState::complete(SourceKind::Schedule));
+        context
+            .source_state
+            .push(SourceState::missing(SourceKind::Standings));
+        context.completeness = Completeness::Partial;
+
+        let team_upper = team.trim().to_ascii_uppercase();
+        let mut schedule_rows: Vec<ScheduleGameRow> = games
+            .into_iter()
+            .map(|game| schedule_row(game, &team_upper))
+            .filter(|row| row.involves(&team_upper))
+            .collect();
+        schedule_rows.sort_by(|a, b| a.date.cmp(&b.date));
+
+        let final_rows: Vec<&ScheduleGameRow> = schedule_rows
+            .iter()
+            .filter(|row| !row.is_preseason() && row.is_final())
+            .collect();
+        let remaining_rows: Vec<&ScheduleGameRow> = schedule_rows
+            .iter()
+            .filter(|row| !row.is_preseason() && !row.is_final())
+            .collect();
+
+        let record = ScheduleRecord::for_team(&team_upper, &schedule_rows);
+        let points = record.wins * 2 + record.overtime_losses;
+        let max_points = record.played * 2;
+        let points_percentage = if max_points > 0 {
+            points as f32 / max_points as f32
+        } else {
+            0.0
+        };
+        let (goals_for, goals_against) = goals_for_against(&team_upper, final_rows.iter().copied());
+
+        let rows: Vec<TeamSeasonGameRow> = schedule_rows
+            .iter()
+            .map(|row| team_season_game_row(&team_upper, row))
+            .collect();
+        let warnings = vec![ViewWarning {
+            kind: WarningKind::MissingSource,
+            source: Some(SourceKind::Standings),
+            message: "Standings source not loaded; playoff distance and strength-of-schedule are unavailable in this schedule-derived view.".to_string(),
+            recovery: vec![RecoveryAction {
+                label: "Fetch standings when Presidents Trophy PT.3 lands".to_string(),
+                action: RecoveryActionKind::RefreshSource {
+                    source: SourceKind::Standings,
+                },
+            }],
+        }];
+        let empty_state = if rows.is_empty() {
+            Some(EmptyState {
+                kind: EmptyKind::NoRows,
+                title: "No team season games".to_string(),
+                detail: Some("No games matched the selected team season.".to_string()),
+                recovery: Vec::new(),
+            })
+        } else {
+            None
+        };
+
+        Self {
+            context,
+            season_pretty: pretty_season(&season),
+            season,
+            team: team_upper.clone(),
+            headline: TeamSeasonHeadline {
+                record,
+                points,
+                points_percentage,
+                goals_for,
+                goals_against,
+                goal_differential: goals_for - goals_against,
+            },
+            splits: TeamSeasonSplits {
+                home: split_for(&team_upper, &schedule_rows, TeamSeasonVenue::Home),
+                away: split_for(&team_upper, &schedule_rows, TeamSeasonVenue::Away),
+                one_goal: one_goal_split(&team_upper, &schedule_rows),
+            },
+            form: recent_form(&team_upper, &schedule_rows),
+            remaining: TeamRemainingSchedule {
+                games: remaining_rows.len() as u32,
+                home: remaining_rows
+                    .iter()
+                    .filter(|row| !row.team_is_away(&team_upper))
+                    .count() as u32,
+                away: remaining_rows
+                    .iter()
+                    .filter(|row| row.team_is_away(&team_upper))
+                    .count() as u32,
+                next_opponents: remaining_rows
+                    .iter()
+                    .take(5)
+                    .filter_map(|row| row.opponent_abbrev_for(&team_upper).map(str::to_owned))
+                    .collect(),
+            },
+            rows,
+            warnings,
+            empty_state,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TeamSeasonHeadline {
+    pub record: ScheduleRecord,
+    pub points: u32,
+    pub points_percentage: f32,
+    pub goals_for: i32,
+    pub goals_against: i32,
+    pub goal_differential: i32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TeamSeasonSplits {
+    pub home: TeamSeasonSplit,
+    pub away: TeamSeasonSplit,
+    pub one_goal: TeamSeasonSplit,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TeamSeasonVenue {
+    Home,
+    Away,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TeamSeasonSplit {
+    pub record: ScheduleRecord,
+    pub goals_for: i32,
+    pub goals_against: i32,
+    pub goal_differential: i32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TeamRecentForm {
+    pub last_5: ScheduleRecord,
+    pub last_10: ScheduleRecord,
+    pub last_10_goal_differential: i32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TeamRemainingSchedule {
+    pub games: u32,
+    pub home: u32,
+    pub away: u32,
+    pub next_opponents: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TeamSeasonGameRow {
+    pub game_id: u64,
+    pub date: String,
+    pub venue: TeamSeasonVenue,
+    pub opponent_abbrev: String,
+    pub result: String,
+    pub team_score: Option<u8>,
+    pub opponent_score: Option<u8>,
+    pub goal_differential: Option<i16>,
+    pub state_label: String,
+    pub is_playoff: bool,
 }
 
 impl ScheduleTeamView {
@@ -383,6 +570,125 @@ impl ScheduleGameRow {
 
     pub fn is_ot_or_so(&self) -> bool {
         matches!(self.last_period.as_deref(), Some("OT") | Some("SO"))
+    }
+}
+
+fn goals_for_against<'a>(
+    team: &str,
+    rows: impl IntoIterator<Item = &'a ScheduleGameRow>,
+) -> (i32, i32) {
+    let mut goals_for = 0;
+    let mut goals_against = 0;
+    for row in rows {
+        if let (Some(team_score), Some(opponent_score)) =
+            (row.team_score(team), row.opponent_score(team))
+        {
+            goals_for += i32::from(team_score);
+            goals_against += i32::from(opponent_score);
+        }
+    }
+    (goals_for, goals_against)
+}
+
+fn split_for(team: &str, rows: &[ScheduleGameRow], venue: TeamSeasonVenue) -> TeamSeasonSplit {
+    let venue_rows: Vec<ScheduleGameRow> = rows
+        .iter()
+        .filter(|row| {
+            row.is_final()
+                && !row.is_preseason()
+                && match venue {
+                    TeamSeasonVenue::Home => !row.team_is_away(team),
+                    TeamSeasonVenue::Away => row.team_is_away(team),
+                }
+        })
+        .cloned()
+        .collect();
+    let record = ScheduleRecord::for_team(team, &venue_rows);
+    let (goals_for, goals_against) = goals_for_against(team, venue_rows.iter());
+    TeamSeasonSplit {
+        record,
+        goals_for,
+        goals_against,
+        goal_differential: goals_for - goals_against,
+    }
+}
+
+fn one_goal_split(team: &str, rows: &[ScheduleGameRow]) -> TeamSeasonSplit {
+    let one_goal_rows: Vec<ScheduleGameRow> = rows
+        .iter()
+        .filter(|row| {
+            row.is_final()
+                && !row.is_preseason()
+                && matches!(
+                    (row.team_score(team), row.opponent_score(team)),
+                    (Some(team_score), Some(opponent_score))
+                        if team_score.abs_diff(opponent_score) == 1
+                )
+        })
+        .cloned()
+        .collect();
+    let record = ScheduleRecord::for_team(team, &one_goal_rows);
+    let (goals_for, goals_against) = goals_for_against(team, one_goal_rows.iter());
+    TeamSeasonSplit {
+        record,
+        goals_for,
+        goals_against,
+        goal_differential: goals_for - goals_against,
+    }
+}
+
+fn recent_form(team: &str, rows: &[ScheduleGameRow]) -> TeamRecentForm {
+    let finals: Vec<ScheduleGameRow> = rows
+        .iter()
+        .filter(|row| row.is_final() && !row.is_preseason())
+        .cloned()
+        .collect();
+    let last_5: Vec<ScheduleGameRow> = finals.iter().rev().take(5).cloned().collect();
+    let last_10: Vec<ScheduleGameRow> = finals.iter().rev().take(10).cloned().collect();
+    let (last_10_for, last_10_against) = goals_for_against(team, last_10.iter());
+    TeamRecentForm {
+        last_5: ScheduleRecord::for_team(team, &last_5),
+        last_10: ScheduleRecord::for_team(team, &last_10),
+        last_10_goal_differential: last_10_for - last_10_against,
+    }
+}
+
+fn team_season_game_row(team: &str, row: &ScheduleGameRow) -> TeamSeasonGameRow {
+    let team_score = row.team_score(team);
+    let opponent_score = row.opponent_score(team);
+    let result = if row.is_final() {
+        match (team_score, opponent_score) {
+            (Some(team_score), Some(opponent_score)) if team_score > opponent_score => "W",
+            (Some(_), Some(_)) if row.is_ot_or_so() => "OTL",
+            (Some(_), Some(_)) => "L",
+            _ => "",
+        }
+    } else if row.is_live() {
+        "LIVE"
+    } else {
+        "SCHEDULED"
+    }
+    .to_string();
+    TeamSeasonGameRow {
+        game_id: row.game_id,
+        date: row.date.clone(),
+        venue: if row.team_is_away(team) {
+            TeamSeasonVenue::Away
+        } else {
+            TeamSeasonVenue::Home
+        },
+        opponent_abbrev: row.opponent_abbrev_for(team).unwrap_or("").to_string(),
+        result,
+        team_score,
+        opponent_score,
+        goal_differential: match (team_score, opponent_score) {
+            (Some(team_score), Some(opponent_score)) => {
+                Some(i16::from(team_score) - i16::from(opponent_score))
+            }
+            _ => None,
+        },
+        state_label: row.state_label.clone(),
+        is_playoff: row.is_playoff,
     }
 }
 

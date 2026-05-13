@@ -100,6 +100,7 @@ pub enum SourceKind {
     Shifts,
     Transactions,
     Contracts,
+    Standings,
     FantasyImport,
     Snapshot,
     Bundle,
