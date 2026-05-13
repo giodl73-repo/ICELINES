@@ -370,6 +370,11 @@ Progress:
   command fetches the same club season schedule as the web route, builds the
   shared `TeamSeasonView`, renders a compact text summary/table, and emits the
   raw viewmodel for scripts.
+- 2026-05-13: Updated the TUI `team <ABBR> season` screen to render from
+  `TeamSeasonView` rather than `ScheduleTeamView`, adding points, points
+  percentage, goal differential, home/away/one-goal splits, recent form,
+  remaining schedule, next opponents, and explicit standings/SOS warning
+  context.
 
 ### PT.6 - Dashboard Integration
 

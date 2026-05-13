@@ -26,8 +26,8 @@ use crate::visual::{
 };
 use icelines_core::model::Season;
 use icelines_core::{
-    ScheduleGameRow, ScheduleMatchupView, ScheduleTeamView, ScheduleView, ScheduledGameInput,
-    ViewContext, ViewWindow,
+    ScheduleGameRow, ScheduleMatchupView, ScheduleRecord, ScheduleView, ScheduledGameInput,
+    TeamSeasonGameRow, TeamSeasonVenue, TeamSeasonView, ViewContext, ViewWindow,
 };
 use icelines_fetch::nhl_api::ScheduledGame;
 
@@ -538,10 +538,10 @@ fn render_search_bar(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(Paragraph::new(prompt), inner);
 }
 
-// ── Team season schedule ─────────────────────────────────────────────────────
+// ── Team season performance ──────────────────────────────────────────────────
 
 pub fn render_team_schedule(f: &mut Frame, app: &App, area: Rect, team: &str) {
-    let title = format!(" {team} — Season Schedule  ·  Esc back ");
+    let title = format!(" {team} — Season Performance  ·  Esc back ");
     let block = tui_panel_block(title);
     let inner = block.inner(area);
     f.render_widget(block, area);
@@ -560,7 +560,7 @@ pub fn render_team_schedule(f: &mut Frame, app: &App, area: Rect, team: &str) {
             f.render_widget(
                 Paragraph::new(vec![
                     Line::from(""),
-                    Line::styled(format!("  Fetching {team} schedule…"), dim),
+                    Line::styled(format!("  Fetching {team} season performance..."), dim),
                 ]),
                 inner,
             );
@@ -570,7 +570,7 @@ pub fn render_team_schedule(f: &mut Frame, app: &App, area: Rect, team: &str) {
                 Paragraph::new(vec![
                     Line::from(""),
                     Line::styled(
-                        format!("  Could not fetch team schedule: {e}"),
+                        format!("  Could not fetch team season performance: {e}"),
                         tui_error_style(),
                     ),
                 ]),
@@ -591,8 +591,8 @@ fn render_team_schedule_loaded(
     let dim = tui_meta_style();
     let gold = tui_header_style();
 
-    // Team-season record/list projection lives in the shared schedule view model.
-    let view = ScheduleTeamView::from_games(
+    // Team-season performance lives in the shared Presidents Trophy viewmodel.
+    let view = TeamSeasonView::from_games(
         ViewContext::new(ViewWindow::new(
             Season(app.active_season_typed.0),
             app.active_type,
@@ -602,10 +602,10 @@ fn render_team_schedule_loaded(
         games.iter().cloned().map(scheduled_game_input).collect(),
     );
     let rows = &view.rows;
-    let record = view.record;
+    let record = view.headline.record;
 
     let max_idx = rows.len().saturating_sub(1);
-    let visible = (area.height as usize).saturating_sub(4);
+    let visible = (area.height as usize).saturating_sub(7);
     let selected_idx = app.schedule.selected.min(max_idx);
     let offset = selected_idx
         .saturating_sub(visible / 2)
@@ -614,43 +614,45 @@ fn render_team_schedule_loaded(
     let mut lines: Vec<Line> = Vec::with_capacity(visible + 4);
     lines.push(Line::styled(
         format!(
-            "  Played: {} · Record: {}-{}-{}",
-            record.played, record.wins, record.losses, record.overtime_losses
+            "  Played: {} · Record: {} · Pts {} · Pts% {:.3} · GD {}",
+            record.played,
+            schedule_record_label(record),
+            view.headline.points,
+            view.headline.points_percentage,
+            signed_i32(view.headline.goal_differential)
         ),
         gold,
     ));
+    lines.push(Line::styled(
+        format!(
+            "  Home {} · Away {} · One-goal {} · Last 10 {} ({})",
+            schedule_record_label(view.splits.home.record),
+            schedule_record_label(view.splits.away.record),
+            schedule_record_label(view.splits.one_goal.record),
+            schedule_record_label(view.form.last_10),
+            signed_i32(view.form.last_10_goal_differential)
+        ),
+        dim,
+    ));
+    let next = if view.remaining.next_opponents.is_empty() {
+        "-".to_owned()
+    } else {
+        view.remaining.next_opponents.join(", ")
+    };
+    lines.push(Line::styled(
+        format!(
+            "  Remaining: {} games ({} home, {} away) · Next: {}",
+            view.remaining.games, view.remaining.home, view.remaining.away, next
+        ),
+        dim,
+    ));
+    if let Some(warning) = view.warnings.first() {
+        lines.push(Line::styled(format!("  Warning: {}", warning.message), dim));
+    }
     lines.push(Line::styled(format!("  {}", "─".repeat(60)), dim));
 
     for (i, g) in rows.iter().enumerate().skip(offset).take(visible) {
-        let opp = g.opponent_abbrev_for(team).unwrap_or("");
-        let venue = g.venue_label_for(team).unwrap_or("");
-
-        let (marker, result_str, color) = if g.is_final() {
-            let s = g.team_score(team).unwrap_or(0);
-            let o = g.opponent_score(team).unwrap_or(0);
-            let ot_tag = match g.last_period.as_deref() {
-                Some("OT") => " (OT)",
-                Some("SO") => " (SO)",
-                _ => "",
-            };
-            if s > o {
-                ("W", format!("{s}-{o}{ot_tag}"), Color::Green)
-            } else if matches!(g.last_period.as_deref(), Some("OT") | Some("SO")) {
-                ("O", format!("{s}-{o}{ot_tag}"), Color::Yellow)
-            } else {
-                ("L", format!("{s}-{o}{ot_tag}"), Color::Red)
-            }
-        } else if g.is_live() {
-            ("*", "LIVE".to_owned(), Color::Cyan)
-        } else {
-            let utc = g.start_time_utc.get(11..16).unwrap_or("?");
-            ("-", fmt_et(utc), Color::DarkGray)
-        };
-
-        let row = format!(
-            "  {marker} {date}  {team:<3} {venue:<2} {opp:<3}   {result_str}",
-            date = pretty_date(&g.date),
-        );
+        let (row, color) = team_season_line(team, g);
 
         let style = if i == selected_idx {
             tui_selected_style()
@@ -662,10 +664,57 @@ fn render_team_schedule_loaded(
 
     lines.push(Line::from(""));
     lines.push(Line::styled(
-        format!("  {} games total · ↑↓ scroll · Esc back", view.total),
+        format!("  {} games total · ↑↓ scroll · Esc back", view.rows.len()),
         dim,
     ));
     f.render_widget(Paragraph::new(lines), area);
+}
+
+fn team_season_line(team: &str, row: &TeamSeasonGameRow) -> (String, Color) {
+    let venue = match row.venue {
+        TeamSeasonVenue::Home => "H",
+        TeamSeasonVenue::Away => "A",
+    };
+    let score = match (row.team_score, row.opponent_score) {
+        (Some(team_score), Some(opponent_score)) => format!("{team_score}-{opponent_score}"),
+        _ => "-".to_owned(),
+    };
+    let gd = row
+        .goal_differential
+        .map(signed_i16)
+        .unwrap_or_else(|| "-".to_owned());
+    let color = match row.result.as_str() {
+        "W" => Color::Green,
+        "OTL" => Color::Yellow,
+        "L" => Color::Red,
+        "LIVE" => Color::Cyan,
+        _ => Color::DarkGray,
+    };
+    (
+        format!(
+            "  {result:<3} {date:<10} {team:<3} {venue:<1} {opp:<3}  {score:<5} {gd:>3}  {state}",
+            result = row.result,
+            date = pretty_date(&row.date),
+            opp = row.opponent_abbrev,
+            state = row.state_label,
+        ),
+        color,
+    )
+}
+
+fn schedule_record_label(record: ScheduleRecord) -> String {
+    format!(
+        "{}-{}-{}",
+        record.wins, record.losses, record.overtime_losses
+    )
+}
+
+fn signed_i32(value: i32) -> String {
+    format!("{value:+}")
+}
+
+fn signed_i16(value: i16) -> String {
+    format!("{value:+}")
 }
 
 // ── Head-to-head matchup ──────────────────────────────────────────────────────
@@ -1156,6 +1205,14 @@ mod tests {
         assert!(
             text.contains("Played: 3"),
             "played count must show 3, got:\n{text}"
+        );
+        assert!(
+            text.contains("Remaining:"),
+            "team season performance context must show remaining schedule, got:\n{text}"
+        );
+        assert!(
+            text.contains("One-goal"),
+            "team season performance context must show split labels, got:\n{text}"
         );
     }
 
