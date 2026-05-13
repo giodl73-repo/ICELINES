@@ -270,6 +270,10 @@ Deliverables:
   - `watch "Player"`;
 - Workspace cards expose add/drop/drop-only scenario actions using the existing
   `FantasySimulationView` and mutation/result contracts.
+  - Status: Initial no-JS action cards are in place for `/fantasy` and
+    `/poach`: category-gap shortcuts, four-week simulation, imported free-agent
+    poach board, and watched-player filters route through canonical dashboard
+    workspace URLs without introducing browser-side scoring logic.
 - Errors stay visible in the command/status bar and in the workspace.
 
 Acceptance:

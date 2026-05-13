@@ -1415,31 +1415,78 @@ fn schedule_links() -> Vec<DashboardLinkRow> {
 }
 
 fn workspace_links(active: &str) -> Vec<DashboardLinkRow> {
-    let mut rows = vec![
-        ("Leaders", "/leaders", "skater leaderboard and filters"),
-        ("Goalies", "/goalies", "goalie leaderboard"),
-        ("Depth", "/depth", "cross-team depth rankings"),
-        ("Poach", "/poach", "fantasy free-agent board"),
-        ("Fantasy", "/fantasy", "roster gaps and simulations"),
-        ("Transactions", "/transactions", "league movement feed"),
-    ]
-    .into_iter()
-    .map(|(label, href, detail)| DashboardLinkRow {
-        label: label.to_owned(),
-        href: dashboard_workspace_href(href),
-        detail: if workspace_route_key(active) == href {
-            format!("{detail} - active")
-        } else {
-            detail.to_owned()
-        },
-    })
-    .collect::<Vec<_>>();
+    let route = workspace_route_key(active);
+    let mut rows = contextual_workspace_links(route);
+    rows.extend(
+        vec![
+            ("Leaders", "/leaders", "skater leaderboard and filters"),
+            ("Goalies", "/goalies", "goalie leaderboard"),
+            ("Depth", "/depth", "cross-team depth rankings"),
+            ("Poach", "/poach", "fantasy free-agent board"),
+            ("Fantasy", "/fantasy", "roster gaps and simulations"),
+            ("Transactions", "/transactions", "league movement feed"),
+        ]
+        .into_iter()
+        .map(|(label, href, detail)| DashboardLinkRow {
+            label: label.to_owned(),
+            href: dashboard_workspace_href(href),
+            detail: if route == href {
+                format!("{detail} - active")
+            } else {
+                detail.to_owned()
+            },
+        }),
+    );
     rows.push(DashboardLinkRow {
         label: "Docs".to_owned(),
         href: dashboard_workspace_href("/docs"),
         detail: "command reference".to_owned(),
     });
     rows
+}
+
+fn contextual_workspace_links(route: &str) -> Vec<DashboardLinkRow> {
+    match route {
+        "/fantasy" => vec![
+            workspace_action_link(
+                "Goals + shots gaps",
+                "/fantasy?category=goals,shots&top=8",
+                "waiver-gap view",
+            ),
+            workspace_action_link("Four-week sim", "/fantasy?weeks=4", "league projection"),
+            workspace_action_link(
+                "Imported free agents",
+                "/poach?availability=imported-available&top=12",
+                "poacher board",
+            ),
+        ],
+        "/poach" => vec![
+            workspace_action_link(
+                "Imported free agents",
+                "/poach?availability=imported-available&top=12",
+                "waiver-wire candidates",
+            ),
+            workspace_action_link(
+                "Watched players",
+                "/poach?availability=watched",
+                "watchlist filter",
+            ),
+            workspace_action_link(
+                "Category gaps",
+                "/fantasy?category=goals,shots&top=8",
+                "fantasy roster needs",
+            ),
+        ],
+        _ => Vec::new(),
+    }
+}
+
+fn workspace_action_link(label: &str, href: &str, detail: &str) -> DashboardLinkRow {
+    DashboardLinkRow {
+        label: label.to_owned(),
+        href: dashboard_workspace_href(href),
+        detail: detail.to_owned(),
+    }
 }
 
 fn dashboard_workspace_href(path: &str) -> String {
@@ -1509,6 +1556,32 @@ mod tests {
         assert_eq!(
             dashboard_workspace_href("/poach?availability=imported-available"),
             "/dashboard?workspace=%2Fpoach%3Favailability%3Dimported-available"
+        );
+    }
+
+    #[test]
+    fn l0_dashboard_workspace_links_add_fantasy_poach_actions() {
+        let fantasy_links = workspace_links("/fantasy");
+        let sim = fantasy_links
+            .iter()
+            .find(|row| row.label == "Four-week sim")
+            .expect("fantasy simulation quick action");
+        assert_eq!(sim.href, "/dashboard?workspace=%2Ffantasy%3Fweeks%3D4");
+
+        let poach_links = workspace_links("/poach");
+        let imported = poach_links
+            .iter()
+            .find(|row| row.label == "Imported free agents")
+            .expect("poach imported-free-agents quick action");
+        assert_eq!(
+            imported.href,
+            "/dashboard?workspace=%2Fpoach%3Favailability%3Dimported-available%26top%3D12"
+        );
+
+        let leaders_links = workspace_links("/leaders");
+        assert!(
+            leaders_links.iter().all(|row| row.label != "Four-week sim"),
+            "contextual fantasy actions should not appear on generic workspaces"
         );
     }
 
