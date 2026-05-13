@@ -274,6 +274,7 @@ pub struct App {
     pub team: crate::tui::screens::team::TeamScreenState,
     pub favorites: crate::tui::screens::favorites::FavoritesScreenState,
     pub poach: crate::tui::screens::poach::PoachScreenState,
+    pub fantasy_gaps: crate::tui::screens::fantasy::FantasyGapsScreenState,
     pub fantasy_sim: crate::tui::screens::fantasy::FantasySimulationScreenState,
 
     // ── Repo-backed view state ─────────────────────────────────────────
@@ -403,6 +404,7 @@ impl App {
             team: crate::tui::screens::team::TeamScreenState::default(),
             favorites: crate::tui::screens::favorites::FavoritesScreenState::default(),
             poach: crate::tui::screens::poach::PoachScreenState::default(),
+            fantasy_gaps: crate::tui::screens::fantasy::FantasyGapsScreenState::default(),
             fantasy_sim: crate::tui::screens::fantasy::FantasySimulationScreenState::default(),
 
             // Empty repo + current season as the initial typed window.
@@ -1200,6 +1202,11 @@ impl App {
                         "poach ",
                         "Type poach filters: rw cats=hits,blocks free top=12",
                     );
+                } else if self.screen == Screen::FantasyGaps && c == 'g' {
+                    self.open_cmdbar_prefill(
+                        "gaps ",
+                        "Type gap filters: cats=hits,blocks,shots top=8",
+                    );
                 } else if self.screen == Screen::FantasySim && c == 'a' {
                     self.open_cmdbar_prefill(
                         "simulate add=",
@@ -1540,6 +1547,13 @@ impl App {
                 }
             }
             Action::AddToGroup => {
+                if self.screen == Screen::FantasyGaps {
+                    self.open_cmdbar_prefill(
+                        "gaps ",
+                        "Type gap filters: cats=hits,blocks,shots top=8",
+                    );
+                    return false;
+                }
                 let target_player = self.get_selected_player();
 
                 if let Some(player) = target_player {
@@ -6037,6 +6051,19 @@ mod tests {
         assert!(m.command_bar_focused);
         assert_eq!(m.command_input, "simulate add=");
         assert!(app.status.contains("simulation scenario"));
+    }
+
+    #[test]
+    fn l0_adams_fantasy_gaps_g_prefills_gap_command() {
+        let mut app = fresh_mdi_app();
+        app.screen = Screen::FantasyGaps;
+
+        app.handle(Action::AddToGroup);
+
+        let m = app.mdi.as_ref().unwrap();
+        assert!(m.command_bar_focused);
+        assert_eq!(m.command_input, "gaps ");
+        assert!(app.status.contains("gap filters"));
     }
 
     /// Backspace removes the last char; on empty input, releases

@@ -30,6 +30,7 @@ pub fn chrome() -> crate::tui::chrome::ScreenChrome {
         keybinds: vec![
             KeyHint::new("up/down", "select"),
             KeyHint::new("Enter", "player card"),
+            KeyHint::new("g", "gap filters"),
             KeyHint::new(":", "command"),
         ],
     }
@@ -51,6 +52,32 @@ pub struct FantasySimulationScreenState {
     pub weeks: u8,
     pub add_player: Option<String>,
     pub drop_player: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FantasyGapsScreenState {
+    pub categories: Vec<String>,
+    pub limit: usize,
+}
+
+impl Default for FantasyGapsScreenState {
+    fn default() -> Self {
+        Self {
+            categories: Vec::new(),
+            limit: 16,
+        }
+    }
+}
+
+impl FantasyGapsScreenState {
+    pub fn context_label(&self) -> String {
+        let categories = if self.categories.is_empty() {
+            "scheme-cats".to_string()
+        } else {
+            self.categories.join(",")
+        };
+        format!("{categories} | top {}", self.limit)
+    }
 }
 
 impl Default for FantasySimulationScreenState {
@@ -104,6 +131,10 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
             view.league, view.team, view.scoring_scheme
         ),
         tui_title_style(),
+    )));
+    items.push(ListItem::new(Line::styled(
+        format!("  {}", app.fantasy_gaps.context_label()),
+        tui_meta_style(),
     )));
     for warning in &view.warnings {
         items.push(ListItem::new(Line::styled(
@@ -438,10 +469,10 @@ fn build_view(app: &App) -> anyhow::Result<FantasyRosterGapView> {
             league: &snapshot.league,
             team: &snapshot.user_team,
             scoring_scheme: &snapshot.scoring_scheme,
-            categories: Vec::new(),
+            categories: app.fantasy_gaps.categories.clone(),
             user_roster_keys: user_rostered,
             all_rostered_keys: all_rostered,
-            limit: 16,
+            limit: app.fantasy_gaps.limit,
         },
     ))
 }
@@ -496,6 +527,7 @@ mod tests {
 
         assert!(chrome.title.contains("Fantasy Gaps"));
         assert!(chrome.keybinds.iter().any(|key| key.key == "Enter"));
+        assert!(chrome.keybinds.iter().any(|key| key.key == "g"));
     }
 
     #[test]

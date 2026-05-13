@@ -25,6 +25,7 @@ goalies
 team EDM
 player Connor McDavid
 query g >= 30 AND age <= 25
+gaps cats=hits,blocks,shots top=8
 poach rw cats=hits,blocks free top=12
 fantasy poach top=8 available
 simulate add=Connor_McDavid drop=Bench_Forward weeks=3

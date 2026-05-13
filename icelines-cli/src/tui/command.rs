@@ -57,6 +57,9 @@ pub enum Command {
     },
     /// `fantasy gaps` — workspace becomes active roster-gap board.
     FantasyGaps,
+    FantasyGapsKv {
+        args: FantasyGapsCommandArgs,
+    },
     /// `fantasy simulate` — workspace becomes league simulation board.
     FantasySim,
     FantasySimKv {
@@ -169,6 +172,12 @@ pub struct FantasySimulationCommandArgs {
     pub add_player: Option<String>,
     pub drop_player: Option<String>,
     pub clear: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct FantasyGapsCommandArgs {
+    pub categories: Option<Vec<String>>,
+    pub limit: Option<usize>,
 }
 
 // ── Parse error shape ───────────────────────────────────────────────────────
@@ -328,6 +337,9 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
             args: parse_poach_kv(args)?,
         }),
         "gaps" | "fantasy-gaps" if args.trim().is_empty() => Ok(Command::FantasyGaps),
+        "gaps" | "fantasy-gaps" => Ok(Command::FantasyGapsKv {
+            args: parse_fantasy_gaps_kv(args)?,
+        }),
         "simulate" | "sim" | "fantasy-sim" if args.trim().is_empty() => Ok(Command::FantasySim),
         "simulate" | "sim" | "fantasy-sim" => Ok(Command::FantasySimKv {
             args: parse_fantasy_sim_kv(args)?,
@@ -478,6 +490,9 @@ fn parse_fantasy(args: &str) -> Result<Command, ParseError> {
     let (sub, rest) = split_first_word(args);
     match sub.to_ascii_lowercase().as_str() {
         "" | "roster" => Ok(Command::Roster),
+        "gaps" | "gap" if !rest.trim().is_empty() => Ok(Command::FantasyGapsKv {
+            args: parse_fantasy_gaps_kv(rest)?,
+        }),
         "gaps" | "gap" => Ok(Command::FantasyGaps),
         "simulate" | "sim" if !rest.trim().is_empty() => Ok(Command::FantasySimKv {
             args: parse_fantasy_sim_kv(rest)?,
@@ -532,6 +547,40 @@ fn parse_fantasy_sim_kv(args: &str) -> Result<FantasySimulationCommandArgs, Pars
             command: "simulate",
             arg: "add/drop/weeks/clear",
         });
+    }
+    Ok(parsed)
+}
+
+fn parse_fantasy_gaps_kv(args: &str) -> Result<FantasyGapsCommandArgs, ParseError> {
+    let mut parsed = FantasyGapsCommandArgs::default();
+    for token in args.split_whitespace() {
+        let (key, value) = token
+            .split_once('=')
+            .map_or(("", token), |(key, value)| (key.trim(), value.trim()));
+        let key = key.to_ascii_lowercase();
+        let value = value.trim();
+        if value.is_empty() {
+            return Err(ParseError::BadFilter {
+                details: format!("gaps: empty value in {token:?}"),
+            });
+        }
+        match key.as_str() {
+            "" | "cat" | "cats" | "category" | "categories" => {
+                parsed.categories = Some(parse_category_list(value));
+            }
+            "top" | "limit" => {
+                let limit = value.parse::<usize>().map_err(|_| ParseError::BadInteger {
+                    command: "gaps",
+                    raw: value.to_string(),
+                })?;
+                parsed.limit = Some(limit.clamp(1, 64));
+            }
+            other => {
+                return Err(ParseError::BadFilter {
+                    details: format!("gaps: unknown filter {other:?}"),
+                });
+            }
+        }
     }
     Ok(parsed)
 }
@@ -699,6 +748,10 @@ fn push_unique_position(out: &mut Vec<Position>, position: Position) {
 }
 
 fn parse_poach_categories(value: &str) -> Vec<String> {
+    parse_category_list(value)
+}
+
+fn parse_category_list(value: &str) -> Vec<String> {
     value
         .split(',')
         .filter_map(|raw| {
@@ -881,6 +934,7 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
             app.screen = Screen::FantasyGaps;
             ExecResult::Continue
         }
+        Command::FantasyGapsKv { args } => exec_fantasy_gaps_kv(app, args),
         Command::FantasySim => {
             app.screen = Screen::FantasySim;
             ExecResult::Continue
@@ -1115,6 +1169,26 @@ fn exec_fantasy_sim_kv(
         "fantasy simulation: {} over {} weeks",
         app.fantasy_sim.scenario_label(),
         app.fantasy_sim.weeks
+    ))
+}
+
+fn exec_fantasy_gaps_kv(
+    app: &mut crate::tui::app::App,
+    args: FantasyGapsCommandArgs,
+) -> ExecResult {
+    use crate::tui::app::Screen;
+
+    if let Some(categories) = args.categories {
+        app.fantasy_gaps.categories = categories;
+    }
+    if let Some(limit) = args.limit {
+        app.fantasy_gaps.limit = limit;
+    }
+    app.selected = 0;
+    app.screen = Screen::FantasyGaps;
+    ExecResult::Flash(format!(
+        "fantasy gaps filters applied: {}",
+        app.fantasy_gaps.context_label()
     ))
 }
 
@@ -1474,6 +1548,28 @@ mod tests {
             Command::FantasySim
         );
         assert_eq!(parse_command("fantasy poach").unwrap(), Command::Poach);
+    }
+
+    #[test]
+    fn l0_adams_parse_fantasy_gaps_filters() {
+        assert_eq!(
+            parse_command("gaps cats=hits,blocks top=8").unwrap(),
+            Command::FantasyGapsKv {
+                args: FantasyGapsCommandArgs {
+                    categories: Some(vec!["hits".to_string(), "blocks".to_string()]),
+                    limit: Some(8),
+                },
+            }
+        );
+        assert_eq!(
+            parse_command("fantasy gaps shots limit=6").unwrap(),
+            Command::FantasyGapsKv {
+                args: FantasyGapsCommandArgs {
+                    categories: Some(vec!["shots".to_string()]),
+                    limit: Some(6),
+                },
+            }
+        );
     }
 
     #[test]
@@ -2130,6 +2226,25 @@ mod tests {
         assert!(app.fantasy_sim.add_player.is_none());
         assert!(app.fantasy_sim.drop_player.is_none());
         assert_eq!(app.fantasy_sim.weeks, 2);
+    }
+
+    #[test]
+    fn l0_adams_exec_fantasy_gaps_kv_applies_filters() {
+        let mut app = fresh_app_with_mdi();
+        app.selected = 3;
+        let r = execute_command(
+            parse_command("gaps cats=hits,blocks top=7").unwrap(),
+            &mut app,
+        );
+
+        assert!(matches!(r, ExecResult::Flash(_)));
+        assert!(matches!(app.screen, Screen::FantasyGaps));
+        assert_eq!(app.selected, 0);
+        assert_eq!(
+            app.fantasy_gaps.categories,
+            vec!["hits".to_string(), "blocks".to_string()]
+        );
+        assert_eq!(app.fantasy_gaps.limit, 7);
     }
 
     #[test]

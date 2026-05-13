@@ -4797,6 +4797,7 @@ mod adams_4_render_boundary_tests {
             "playoffs",
             "schedule",
             "query",
+            "gaps cats",
             "fantasy simulate",
             "/fav add",
             "/hide favorites",

@@ -68,6 +68,7 @@ pub fn mdi_help_lines() -> Vec<Line<'static>> {
         Line::from("                              e.g. query g >= 30 AND age <= 25"),
         Line::from(""),
         Line::from("  FANTASY WORKFLOWS"),
+        Line::from("    gaps cats=hits,blocks,shots top=8"),
         Line::from("    poach rw cats=hits,blocks free top=12"),
         Line::from("    fantasy poach top=8 available"),
         Line::from("    simulate add=Connor_McDavid drop=Bench_Forward weeks=3"),
