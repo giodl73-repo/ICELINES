@@ -134,6 +134,11 @@ pub enum Command {
     Class {
         year: u16,
     },
+    /// `career league=OHL season=20142015` — command-bar bridge
+    /// to the cross-league CareerView surfaces.
+    Career {
+        args: CareerCommandArgs,
+    },
 
     // ── Write actions (favorites mutation) ────────────────────
     /// `fav add <name-or-pid>` (or `/fav add ...`) — adds the
@@ -178,6 +183,25 @@ pub struct FantasySimulationCommandArgs {
 pub struct FantasyGapsCommandArgs {
     pub categories: Option<Vec<String>>,
     pub limit: Option<usize>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CareerCommandArgs {
+    pub league: String,
+    pub season: Option<u32>,
+    pub top: usize,
+    pub sort: String,
+}
+
+impl Default for CareerCommandArgs {
+    fn default() -> Self {
+        Self {
+            league: "OHL".to_string(),
+            season: None,
+            top: 20,
+            sort: "points".to_string(),
+        }
+    }
 }
 
 // ── Parse error shape ───────────────────────────────────────────────────────
@@ -374,6 +398,7 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
         "compare" | "cmp" | "vs" => parse_compare(args),
         "box" | "boxscore" => parse_box(args),
         "class" => parse_class(args),
+        "career" => parse_career(args),
 
         // Write actions (also accessible via /fav)
         "fav" | "favorite" => parse_fav(args),
@@ -483,6 +508,45 @@ fn parse_class(args: &str) -> Result<Command, ParseError> {
         raw: trimmed.to_owned(),
     })?;
     Ok(Command::Class { year })
+}
+
+fn parse_career(args: &str) -> Result<Command, ParseError> {
+    let mut parsed = CareerCommandArgs::default();
+    for token in args.split_whitespace() {
+        let (key, value) = token.split_once('=').map_or(("league", token), |pair| pair);
+        let key = key.trim().to_ascii_lowercase();
+        let value = value.trim();
+        if value.is_empty() {
+            return Err(ParseError::BadFilter {
+                details: format!("career: empty value in {token:?}"),
+            });
+        }
+        match key.as_str() {
+            "league" => parsed.league = value.to_ascii_uppercase(),
+            "season" => {
+                parsed.season = Some(value.parse::<u32>().map_err(|_| ParseError::BadInteger {
+                    command: "career",
+                    raw: value.to_string(),
+                })?);
+            }
+            "top" | "limit" => {
+                parsed.top = value
+                    .parse::<usize>()
+                    .map_err(|_| ParseError::BadInteger {
+                        command: "career",
+                        raw: value.to_string(),
+                    })?
+                    .clamp(1, 100);
+            }
+            "sort" => parsed.sort = value.to_ascii_lowercase(),
+            other => {
+                return Err(ParseError::BadFilter {
+                    details: format!("career: unknown filter {other:?}"),
+                });
+            }
+        }
+    }
+    Ok(Command::Career { args: parsed })
 }
 
 /// `fantasy roster` → Roster; `fantasy gaps` → roster-gap board.
@@ -1042,6 +1106,27 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
                         .join("; ")
                 )),
             }
+        }
+        Command::Career { args } => {
+            let season_arg = args
+                .season
+                .map(|season| format!(" --season {season}"))
+                .unwrap_or_default();
+            let season_query = args
+                .season
+                .map(|season| format!("&season={season}"))
+                .unwrap_or_default();
+            ExecResult::Flash(format!(
+                "career cohorts: run `icelines query career --league {}{} --sort {} --top {}` or open `/career?league={}&sort={}{}&top={}`",
+                args.league,
+                season_arg,
+                args.sort,
+                args.top,
+                args.league,
+                args.sort,
+                season_query,
+                args.top
+            ))
         }
 
         // ── Roster / fantasy ─────────────────────────────────
@@ -1662,6 +1747,30 @@ mod tests {
     }
 
     #[test]
+    fn l0_adams_parse_career_cmdbar_handoff() {
+        assert_eq!(
+            parse_command("career league=OHL season=20142015 top=8 sort=goals").unwrap(),
+            Command::Career {
+                args: CareerCommandArgs {
+                    league: "OHL".to_string(),
+                    season: Some(20142015),
+                    top: 8,
+                    sort: "goals".to_string(),
+                },
+            }
+        );
+        assert_eq!(
+            parse_command("career whl").unwrap(),
+            Command::Career {
+                args: CareerCommandArgs {
+                    league: "WHL".to_string(),
+                    ..CareerCommandArgs::default()
+                },
+            }
+        );
+    }
+
+    #[test]
     fn l0_adams_fantasy_cmdbar_examples_are_documented() {
         const COMMANDS_MD: &str = include_str!("../../../COMMANDS.md");
         for example in [
@@ -1672,6 +1781,7 @@ mod tests {
             "Apply draft-year query, swap to Queries",
             "roster",
             "class 2024",
+            "career league=OHL season=20142015 top=8",
             "box EDM@BOS",
         ] {
             assert!(
@@ -2303,6 +2413,22 @@ mod tests {
 
         assert!(matches!(r, ExecResult::Flash(_)));
         assert_ne!(app.goalies.min_gp, 20);
+    }
+
+    #[test]
+    fn l0_adams_exec_career_cmdbar_handoff_flashes_targets() {
+        let mut app = fresh_app_with_mdi();
+        let r = execute_command(
+            parse_command("career league=OHL season=20142015 top=8").unwrap(),
+            &mut app,
+        );
+
+        let ExecResult::Flash(message) = r else {
+            panic!("career handoff should flash canonical targets");
+        };
+        assert!(message.contains("icelines query career --league OHL --season 20142015"));
+        assert!(message.contains("/career?league=OHL"));
+        assert!(matches!(app.screen, Screen::Home));
     }
 
     #[test]

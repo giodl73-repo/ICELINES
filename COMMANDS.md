@@ -630,6 +630,7 @@ already typed (for slash commands). Enter submits; Esc cancels.
 | `team <ABBR> season` | Team season-performance view | `:team EDM season` |
 | `team <ABBR> schedule` | Team's full schedule list | `:team EDM schedule` |
 | `class <year>` | Apply draft-year query, swap to Queries | `:class 2024` |
+| `career <kv...>` | Show exact Career cohort CLI/web target | `:career league=OHL season=20142015 top=8` |
 | `compare <a>` / `compare <a> <b>` | Similarity peers / head-to-head | `:compare McDavid` |
 | `box <game-id>` / `box <AWAY@HOME>` | Boxscore detail from id or loaded slate | `:box 2025020001`, `:box EDM@BOS` |
 | `query <filter>` | Apply Phase Art Ross filter, swap to Stats | `:query g >= 30 AND age <= 25` |
