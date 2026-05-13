@@ -104,5 +104,6 @@ pub use view_model::{
     TradeImpactPair, TradeImpactPlayer, TradeImpactSlot, TransactionViewRow, TransactionsView,
     ValuePrecision, ViewContext, ViewWarning, ViewWindow, WarningKind, WatchNoteInput,
     WatchRuleMutationIntent, WatchRuleMutationOperation, WatchlistMemberRow, WatchlistView,
-    ALL_SEMANTIC_TOKENS,
+    ALL_SEMANTIC_TOKENS, CAREER_HISTORY_FETCH_COMMAND, CAREER_HISTORY_MISSING_STORE_MESSAGE,
+    CAREER_HISTORY_STORE_PATH,
 };

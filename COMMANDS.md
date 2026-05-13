@@ -393,6 +393,11 @@ Run `icelines fetch career --bundled-seasons 5` once (≈100 s, hits the
 NHL landing endpoint for ~1,650 players) before this command; the
 data isn't bundled into the binary.
 
+TUI note: cross-league cohorts do not have a dedicated in-dashboard board.
+Use the command bar handoff (`:career league=OHL season=20142015 top=8`)
+to open the canonical CLI command or web `/career` target. Player cards still
+show bundled NHL career arcs and local-store pre-NHL rows when available.
+
 ---
 
 ## Top-level analytics commands

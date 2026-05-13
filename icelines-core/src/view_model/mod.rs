@@ -30,7 +30,10 @@ pub mod team_depth;
 pub mod tokens;
 pub mod transactions;
 
-pub use career::{CareerRow, CareerSortKey, CareerView};
+pub use career::{
+    CareerRow, CareerSortKey, CareerView, CAREER_HISTORY_FETCH_COMMAND,
+    CAREER_HISTORY_MISSING_STORE_MESSAGE, CAREER_HISTORY_STORE_PATH,
+};
 pub use compare::{CompareView, SimilarPlayerRow, SimilarPlayerTarget, SimilarPlayersView};
 pub use config::{
     ConfigEntryInput, ConfigEntryRow, ConfigMutationIntent, ConfigView, SeasonTypeMutationIntent,

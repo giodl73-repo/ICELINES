@@ -2,7 +2,7 @@
 wave: backcheck-the-phases
 pulse: 08
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-01]
 governing_roles:
   - scout
@@ -46,12 +46,12 @@ new career-history data.
 
 ## Gates
 
-- [ ] `cargo test -p icelines-core career`
-- [ ] `cargo test -p icelines-cli career`
-- [ ] `cargo test -p icelines-web career`
-- [ ] `cargo test -p icelines-web docs`
-- [ ] `cargo fmt --check`
-- [ ] If no TUI board is added, the parity matrix names the canonical handoff and the reason.
+- [x] `cargo test -p icelines-core career`
+- [x] `cargo test -p icelines-cli career`
+- [x] `cargo test -p icelines-web career`
+- [x] `cargo test -p icelines-web docs`
+- [x] `cargo fmt --check`
+- [x] If no TUI board is added, the parity matrix names the canonical handoff and the reason.
 
 ## Stop Conditions
 

@@ -105,6 +105,10 @@ icelines query compare "Wayne Gretzky" "Mario Lemieux" --seasons 38   # full-his
 icelines query player "McDavid" --seasons 38 --percentiles   # full bundled history
 icelines query player "Patrick Roy" --season 19951996        # historical goalies work too
 icelines query player "Wayne Gretzky"                        # historical name resolves without --season
+
+# Cross-league career cohorts — requires local career-history store
+icelines fetch career --bundled-seasons 5
+icelines query career --league OHL --season 20142015 --top 20
 ```
 
 ### Sort metrics
@@ -311,7 +315,10 @@ Interactive dashboard. By default `icelines tui` opens the Jack Adams multi-pane
 dashboard: scores ribbon, Favorites/watchlist pane, central workspace,
 Schedule/context pane, and command bar. Use `--classic` for the older tabbed
 single-document UI. Player cards lazy-load every player's full historical
-career across all 38 bundled seasons on first open.
+career across all 38 bundled seasons on first open. Cross-league cohort boards
+use the canonical CLI/web surfaces instead; from the command bar,
+`:career league=OHL season=20142015 top=8` flashes the exact `query career`
+and `/career` targets.
 
 | Key | Action |
 |---|---|

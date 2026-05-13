@@ -19,6 +19,7 @@ use icelines_core::career_history::{CareerGameType, CareerHistory, CareerStint};
 use icelines_core::season_stats::SeasonType;
 use icelines_core::{
     CareerRow as CoreCareerRow, CareerSortKey, CareerView, Season, ViewContext, ViewWindow,
+    CAREER_HISTORY_MISSING_STORE_MESSAGE,
 };
 use icelines_fetch::career_landing::CareerHistoryStore;
 use std::collections::HashMap;
@@ -344,10 +345,7 @@ pub async fn run(
 
     let store = icelines_fetch::career_landing::load_local_store();
     if store.is_empty() {
-        return Err(anyhow!(
-            "career history store is empty — run `icelines fetch career --bundled-seasons 5` first \
-             to populate ~/.icelines/career_history.json"
-        ));
+        return Err(anyhow!(CAREER_HISTORY_MISSING_STORE_MESSAGE));
     }
 
     let mut matched = project_career_rows(&store, &league, season_u32, sort);
@@ -742,6 +740,13 @@ mod tests {
         assert_eq!(SortKey::parse("ppg").unwrap(), SortKey::Ppg);
         assert_eq!(SortKey::parse("gp").unwrap(), SortKey::Gp);
         assert!(SortKey::parse("xyz").is_err());
+    }
+
+    #[test]
+    fn l0_missing_career_store_error_instructs_fetch() {
+        let message = CAREER_HISTORY_MISSING_STORE_MESSAGE;
+        assert!(message.contains("icelines fetch career --bundled-seasons 5"));
+        assert!(message.contains("~/.icelines/career_history.json"));
     }
 
     /// Calder.4 / l0_sample_leagues_returns_top_by_count

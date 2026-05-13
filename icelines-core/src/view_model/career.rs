@@ -7,6 +7,10 @@ use crate::view_model::context::{
     EmptyKind, EmptyState, SourceKind, SourceState, ViewContext, ViewWarning,
 };
 
+pub const CAREER_HISTORY_FETCH_COMMAND: &str = "icelines fetch career --bundled-seasons 5";
+pub const CAREER_HISTORY_STORE_PATH: &str = "~/.icelines/career_history.json";
+pub const CAREER_HISTORY_MISSING_STORE_MESSAGE: &str = "career history store is empty — run `icelines fetch career --bundled-seasons 5` to populate ~/.icelines/career_history.json";
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CareerView {
     pub context: ViewContext,
@@ -176,5 +180,16 @@ fn metric(stint: &CareerStint, sort: CareerSortKey) -> Option<f64> {
         CareerSortKey::Assists => stint.assists.map(f64::from),
         CareerSortKey::Gp => Some(f64::from(stint.gp)),
         CareerSortKey::Ppg => stint.points_per_game().map(f64::from),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn l0_missing_store_message_names_fetch_command_and_store_path() {
+        assert!(CAREER_HISTORY_MISSING_STORE_MESSAGE.contains(CAREER_HISTORY_FETCH_COMMAND));
+        assert!(CAREER_HISTORY_MISSING_STORE_MESSAGE.contains(CAREER_HISTORY_STORE_PATH));
     }
 }

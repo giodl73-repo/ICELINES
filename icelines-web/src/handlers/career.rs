@@ -5,7 +5,10 @@ use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
-use icelines_core::{CareerRow, CareerSortKey, CareerView, ViewContext, ViewWindow};
+use icelines_core::{
+    CareerRow, CareerSortKey, CareerView, ViewContext, ViewWindow,
+    CAREER_HISTORY_MISSING_STORE_MESSAGE,
+};
 use serde::Deserialize;
 
 use crate::templates::{CareerLeaderRow, CareerTemplate};
@@ -73,10 +76,7 @@ pub(super) fn build_view(q: &CareerQuery) -> Result<CareerView, String> {
 
     let store = icelines_fetch::career_landing::load_local_store();
     if store.is_empty() {
-        return Err("career history store is empty — populate \
-                     ~/.icelines/career_history.json via \
-                     `icelines fetch career --bundled-seasons 5`"
-            .to_owned());
+        return Err(CAREER_HISTORY_MISSING_STORE_MESSAGE.to_owned());
     }
 
     let histories: Vec<(u32, icelines_core::CareerHistory)> = store

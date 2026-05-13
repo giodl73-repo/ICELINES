@@ -19,7 +19,7 @@ use icelines_core::view_model::{DepthGoalieSlot, DepthLine, DepthPair, DepthPlay
 use icelines_core::{
     fixtures, CareerSortKey, CareerView, CompareView, DepthLeagueView, DepthTeamStrengthRow,
     MetricCell, MetricValue, PlayerCardView, Season, SimilarPlayersView, TeamAbbr, TeamDepthView,
-    ViewContext, ViewWindow,
+    ViewContext, ViewWindow, CAREER_HISTORY_FETCH_COMMAND,
 };
 use icelines_fetch::career_landing::CareerHistoryStore;
 use icelines_fetch::datastore::DataStore;
@@ -837,6 +837,29 @@ async fn l1_html_each_route_has_active_season_header() {
              base.html and the handler passes active_label)"
         );
     }
+}
+
+#[tokio::test]
+async fn l1_docs_route_includes_career_fetch_instruction() {
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/docs")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 512 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("docs html is utf-8");
+    assert!(body.contains("query career"));
+    assert!(body.contains(CAREER_HISTORY_FETCH_COMMAND));
+    assert!(body.contains("/career"));
 }
 
 #[tokio::test]
@@ -3376,6 +3399,47 @@ async fn l1_api_career_envelope_shape() {
         let obj = assert_shared_error_envelope(&v, "career");
         assert!(obj["data"].as_array().is_some_and(Vec::is_empty));
     }
+}
+
+#[tokio::test]
+async fn l1_career_missing_store_errors_name_fetch_command() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    let app = router(WebState::new());
+
+    let html_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/career?league=OHL&season=20142015")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("html dispatch ok");
+    assert_eq!(html_response.status(), StatusCode::BAD_REQUEST);
+    let html_bytes = axum::body::to_bytes(html_response.into_body(), 256 * 1024)
+        .await
+        .expect("html body fits");
+    let html = std::str::from_utf8(&html_bytes).expect("html is utf-8");
+    assert!(html.contains(CAREER_HISTORY_FETCH_COMMAND));
+    assert!(html.contains("~/.icelines/career_history.json"));
+
+    let json_response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/career?league=OHL&season=20142015")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("json dispatch ok");
+    assert_eq!(json_response.status(), StatusCode::BAD_REQUEST);
+    let json = response_json(json_response, 256 * 1024).await;
+    let obj = assert_shared_error_envelope(&json, "career");
+    assert!(obj["error"]
+        .as_str()
+        .is_some_and(|message| message.contains(CAREER_HISTORY_FETCH_COMMAND)));
 }
 
 #[tokio::test]
