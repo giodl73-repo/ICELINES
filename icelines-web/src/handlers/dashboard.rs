@@ -9,7 +9,9 @@ use axum::http::{HeaderMap, StatusCode};
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
-use icelines_core::view_model::{AvailabilityState, PoachBoardView};
+use icelines_core::view_model::{
+    AvailabilityState, FantasyRosterGapView, FantasySimulationView, PoachBoardView,
+};
 use icelines_core::{
     DepthLeagueView, DepthTeamStrengthRow, HomeView, ScheduleRecord, TeamAbbr, TeamDepthView,
     TeamSeasonView, ViewContext, ViewWindow,
@@ -228,6 +230,9 @@ async fn workspace_summary(state: &WebState, path: &str) -> Vec<DashboardSummary
     if route == "/poach" {
         return poach_workspace_summary(state, path).await;
     }
+    if route == "/fantasy" {
+        return fantasy_workspace_summary(state, path).await;
+    }
     if let Some(team) = route
         .strip_prefix("/team/")
         .and_then(|rest| rest.strip_suffix("/season"))
@@ -440,6 +445,119 @@ fn availability_summary_label(state: AvailabilityState) -> &'static str {
         AvailabilityState::ImportedAvailable => "free",
         AvailabilityState::Unknown => "unknown",
     }
+}
+
+async fn fantasy_workspace_summary(state: &WebState, path: &str) -> Vec<DashboardSummaryRow> {
+    let q = fantasy_query_from_workspace(path);
+    let gaps = super::fantasy::build_fantasy_gaps(state, &q).await;
+    let simulation = super::fantasy::build_fantasy_simulation(state, &q).await;
+    let gaps_error = gaps.as_ref().err().cloned();
+    fantasy_summary_rows(gaps.as_ref().ok(), simulation.as_ref().ok(), gaps_error)
+}
+
+fn fantasy_query_from_workspace(path: &str) -> super::fantasy::FantasyWebQuery {
+    let mut q = super::fantasy::FantasyWebQuery {
+        top: Some(DASHBOARD_PREVIEW_N),
+        ..Default::default()
+    };
+    let Some(query) = path.split_once('?').map(|(_, query)| query) else {
+        return q;
+    };
+    for pair in query.split('&') {
+        let Some((key, value)) = pair.split_once('=') else {
+            continue;
+        };
+        let value = value.replace('+', " ");
+        match key {
+            "league" => q.league = Some(value),
+            "scheme" => q.scheme = Some(value),
+            "category" | "categories" => q.categories = Some(value),
+            "top" => q.top = value.parse::<usize>().ok(),
+            "weeks" => q.weeks = value.parse::<u8>().ok(),
+            "add_player" => q.add_player = Some(value),
+            "drop_player" => q.drop_player = Some(value),
+            _ => {}
+        }
+    }
+    q.top = Some(q.top.unwrap_or(DASHBOARD_PREVIEW_N).clamp(1, 10));
+    q
+}
+
+fn fantasy_summary_rows(
+    gaps: Option<&FantasyRosterGapView>,
+    simulation: Option<&FantasySimulationView>,
+    gaps_error: Option<String>,
+) -> Vec<DashboardSummaryRow> {
+    let Some(gaps) = gaps else {
+        return vec![summary_row(
+            "Fantasy",
+            "Unavailable",
+            gaps_error.unwrap_or_else(|| "Fantasy league import is not loaded".to_string()),
+        )];
+    };
+
+    let add_now = gaps
+        .rows
+        .iter()
+        .filter(|row| {
+            matches!(
+                row.action,
+                icelines_core::view_model::FantasyRosterGapAction::AddNow
+            )
+        })
+        .count();
+    let watch = gaps
+        .rows
+        .iter()
+        .filter(|row| {
+            matches!(
+                row.action,
+                icelines_core::view_model::FantasyRosterGapAction::Watch
+            )
+        })
+        .count();
+    let mut rows = vec![summary_row(
+        "Roster Gaps",
+        gaps.rows.len().to_string(),
+        format!("add now {} · watch {}", add_now, watch),
+    )];
+
+    if let Some(best) = gaps.rows.iter().find_map(|row| {
+        row.best_available
+            .as_ref()
+            .map(|candidate| (row, candidate))
+    }) {
+        rows.push(summary_row(
+            "Best Add",
+            best.1.display_name.clone(),
+            format!(
+                "{} {} · {} · {:.1}",
+                best.1.team, best.1.position, best.0.category, best.1.weighted_value
+            ),
+        ));
+    }
+
+    if let Some(simulation) = simulation {
+        if let Some(user_row) = simulation.rows.iter().find(|row| row.is_user_team) {
+            rows.push(summary_row(
+                "Simulation",
+                format!("#{}", user_row.rank),
+                format!(
+                    "{} pts · gap {:.1}",
+                    user_row.projected_score, user_row.score_gap_to_leader
+                ),
+            ));
+        }
+        if let Some(scenario) = simulation.scenarios.first() {
+            rows.push(summary_row(
+                "Scenario",
+                format!("{:+.1}", scenario.projected_score_delta),
+                scenario.explanation.clone(),
+            ));
+        }
+    }
+
+    rows
 }
 
 async fn team_season_workspace_summary(
@@ -943,6 +1061,29 @@ mod tests {
         assert_eq!(query.categories.as_deref(), Some("hits,blocks"));
         assert_eq!(query.team.as_deref(), Some("SEA"));
         assert_eq!(query.top, Some(10));
+    }
+
+    #[test]
+    fn l0_dashboard_fantasy_workspace_query_preserves_filters() {
+        let query = fantasy_query_from_workspace(
+            "/fantasy?league=home&category=goals,shots&add_player=Player+One&drop_player=Bench&top=99&weeks=3",
+        );
+
+        assert_eq!(query.league.as_deref(), Some("home"));
+        assert_eq!(query.categories.as_deref(), Some("goals,shots"));
+        assert_eq!(query.add_player.as_deref(), Some("Player One"));
+        assert_eq!(query.drop_player.as_deref(), Some("Bench"));
+        assert_eq!(query.top, Some(10));
+        assert_eq!(query.weeks, Some(3));
+    }
+
+    #[test]
+    fn l0_dashboard_fantasy_summary_reports_unavailable_import() {
+        let rows = fantasy_summary_rows(None, None, Some("fantasy db missing".to_string()));
+
+        assert_eq!(rows[0].label, "Fantasy");
+        assert_eq!(rows[0].value, "Unavailable");
+        assert_eq!(rows[0].detail, "fantasy db missing");
     }
 
     #[test]

@@ -218,9 +218,11 @@ projects a `TeamSeasonView` summary, and `/dashboard?workspace=/leaders` plus
 workspaces now summarize roster count, first line, first pair, goalies, and
 extras from `TeamDepthView`; league depth workspaces summarize the top-ranked
 teams from `DepthLeagueView`; poach workspaces preserve filters and summarize
-top candidates from `PoachBoardView`, all while preserving canonical full route
-links. Remaining work is panel-specific fragments/parity for more product
-routes and richer side-pane row actions.
+top candidates from `PoachBoardView`; fantasy workspaces preserve league,
+category, horizon, and add/drop query state while summarizing
+`FantasyRosterGapView` and `FantasySimulationView`, all while preserving
+canonical full route links. Remaining work is panel-specific fragments/parity
+for more product routes and richer side-pane row actions.
 
 Make the shell feel like MDI without losing web semantics.
 

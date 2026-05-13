@@ -242,7 +242,7 @@ fn project_template(
     }
 }
 
-async fn build_fantasy_simulation(
+pub(super) async fn build_fantasy_simulation(
     state: &WebState,
     q: &FantasyWebQuery,
 ) -> Result<FantasySimulationView, String> {
@@ -342,7 +342,7 @@ async fn build_fantasy_simulation(
     ))
 }
 
-async fn build_fantasy_gaps(
+pub(super) async fn build_fantasy_gaps(
     state: &WebState,
     q: &FantasyWebQuery,
 ) -> Result<FantasyRosterGapView, String> {
