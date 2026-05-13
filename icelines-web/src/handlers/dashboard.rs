@@ -10,7 +10,8 @@ use axum::response::{Html, IntoResponse, Redirect, Response};
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
 use icelines_core::{
-    HomeView, ScheduleRecord, TeamAbbr, TeamDepthView, TeamSeasonView, ViewContext, ViewWindow,
+    DepthLeagueView, DepthTeamStrengthRow, HomeView, ScheduleRecord, TeamAbbr, TeamDepthView,
+    TeamSeasonView, ViewContext, ViewWindow,
 };
 use serde::Deserialize;
 
@@ -220,6 +221,9 @@ async fn workspace_summary(state: &WebState, path: &str) -> Vec<DashboardSummary
     if route == "/goalies" {
         return goalies_workspace_summary(state).await;
     }
+    if route == "/depth" {
+        return depth_workspace_summary(state).await;
+    }
     if let Some(team) = route
         .strip_prefix("/team/")
         .and_then(|rest| rest.strip_suffix("/season"))
@@ -308,6 +312,47 @@ async fn goalies_workspace_summary(state: &WebState) -> Vec<DashboardSummaryRow>
             )
         })
         .collect()
+}
+
+async fn depth_workspace_summary(state: &WebState) -> Vec<DashboardSummaryRow> {
+    let (season, season_type) = {
+        let cfg = state.config.read().await;
+        (
+            cfg.active_season
+                .parse::<u32>()
+                .map(Season)
+                .unwrap_or(Season(icelines_core::CURRENT_SEASON)),
+            SeasonType::parse_lossy(&cfg.active_season_type),
+        )
+    };
+    let repo = state.repo.read().await;
+    let view = DepthLeagueView::pace_from_repository(&repo, season, season_type);
+    depth_summary_rows(&view)
+}
+
+fn depth_summary_rows(view: &DepthLeagueView) -> Vec<DashboardSummaryRow> {
+    if view.rows.is_empty() {
+        return vec![summary_row(
+            "Depth",
+            "No rows",
+            "No league depth rows loaded for the active season",
+        )];
+    }
+
+    view.rows
+        .iter()
+        .take(DASHBOARD_PREVIEW_N)
+        .enumerate()
+        .map(|(idx, row)| depth_summary_row(idx, row))
+        .collect()
+}
+
+fn depth_summary_row(idx: usize, row: &DepthTeamStrengthRow) -> DashboardSummaryRow {
+    summary_row(
+        format!("#{}", idx + 1),
+        row.team.0.clone(),
+        format!("total {:.0} · C {} · D {}", row.total, row.c_top, row.d_top),
+    )
 }
 
 async fn team_season_workspace_summary(
@@ -751,6 +796,34 @@ mod tests {
         assert_eq!(rows[0].value, "No rows");
         assert_eq!(forward_slot_count(&view), 0);
         assert_eq!(defense_slot_count(&view), 0);
+    }
+
+    #[test]
+    fn l0_dashboard_depth_summary_projects_league_viewmodel() {
+        let view = DepthLeagueView {
+            context: ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular)),
+            scoring_mode: "Pts/82".to_string(),
+            rows: vec![DepthTeamStrengthRow {
+                team: TeamAbbr("EDM".to_string()),
+                c_score: 88.0,
+                lw_score: 74.0,
+                rw_score: 72.0,
+                d_score: 80.0,
+                total: 314.0,
+                c_top: "Connor McDavid".to_string(),
+                lw_top: "Ryan Nugent-Hopkins".to_string(),
+                rw_top: "Zach Hyman".to_string(),
+                d_top: "Evan Bouchard".to_string(),
+            }],
+            warnings: Vec::new(),
+        };
+
+        let rows = depth_summary_rows(&view);
+
+        assert_eq!(rows[0].label, "#1");
+        assert_eq!(rows[0].value, "EDM");
+        assert!(rows[0].detail.contains("total 314"));
+        assert!(rows[0].detail.contains("Connor McDavid"));
     }
 
     #[test]
