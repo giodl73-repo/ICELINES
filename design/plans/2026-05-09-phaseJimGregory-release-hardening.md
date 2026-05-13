@@ -1,7 +1,7 @@
 # Phase Jim Gregory - release and operations hardening
 
 **Date**: 2026-05-09
-**Status**: Implemented - latest CI pending
+**Status**: Closed
 **Trophy**: Jim Gregory General Manager of the Year Award. Fit: this phase manages the whole organization: CI, release discipline, data freshness, packaging, and operational trust.
 **Estimated**: 2-4 days
 
@@ -237,8 +237,8 @@ Progress:
 - 2026-05-12: Local closeout gates passed:
   `cargo test -p icelines-fetch bundled`, `cargo fmt --check`,
   `scripts/test-slice.ps1 ci-release`, and `git diff --check`.
-- 2026-05-12: Remote CI for the latest Jim Gregory commits is still pending;
-  close the phase after GitHub Actions reports success for the head commit.
+- 2026-05-12: Remote CI for `72154a51` completed successfully, including the
+  new CI release-smoke job.
 
 ---
 

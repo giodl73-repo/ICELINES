@@ -30,11 +30,11 @@ closeout review.**
   automation.
 - Added release-workflow artifact verification so packaged zip/tarball outputs
   are checked for the expected binary before upload.
-- Updated Jim Gregory roadmap/index docs to record release hardening as
-  implemented locally with latest remote CI pending.
+- Updated Jim Gregory roadmap/index docs to record release hardening as closed.
 - Updated CI path filters so release workflow/checklist/rollover docs and
   release-smoke changes run CI; the CI release job now runs the optimized
   release smoke gate.
+- Closed Jim Gregory after CI passed on the release-smoke gate commit.
 
 ---
 
