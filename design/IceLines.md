@@ -66,24 +66,25 @@ If any surface has ❌, add a one-line `Reason:` in the spec. Acceptable reasons
 include: deliberate scope (fantasy is local-only today), data-source constraint
 (Edge speed has no public API), or "deferred to phase X" with a tracked plan.
 
-### Current portfolio (as of 2026-05-05, post-v0.13.0 + planned Phase Lady Byng)
+### Current portfolio (as of 2026-05-12, post-Lady-Byng/Lester/Campbell/Selke)
 
 | Feature | CLI | TUI | Web |
 |---|---|---|---|
-| Skater leaderboard | ✅ `query leaders` | ✅ `tui stats` *(LB)* | ✅ `/leaders` |
-| Goalie leaderboard | ✅ `query goalies` | ✅ `tui goalies` *(LB)* | ✅ `/goalies` |
-| Player card | ✅ `query player <name>` | ✅ `tui player <name>` *(LB)* | ✅ `/player/:id` |
-| Team depth | ✅ `team EDM` | ✅ `tui team EDM` *(LB)* | ✅ `/team/:abbrev` |
-| Compare | ✅ `query compare A B` | ✅ `tui comps <name>` *(LB)* | ✅ `/compare?a=…&b=…` |
-| League rankings | ✅ `rank` | ✅ `tui league` *(LB)* | ✅ home preview |
-| Tonight's scores | ✅ `tonight` | ✅ `tui scores` *(LB)* | ✅ `/scores` |
-| Schedule | ✅ `schedule` *(LP.1)* | ✅ `tui schedule` *(LB)* | ✅ `/schedule` |
-| Playoffs | ✅ `playoffs` *(LP.2)* | ✅ `tui playoffs` *(LB)* | ✅ `/playoffs` |
-| Transactions | ✅ `transactions` *(Selke + LP.3)* | ✅ `tui transactions` *(LB)* | ✅ `/transactions` |
+| Skater leaderboard | ✅ `query leaders` | ✅ `tui stats` | ✅ `/leaders` |
+| Goalie leaderboard | ✅ `query goalies` | ✅ `tui goalies` | ✅ `/goalies` |
+| Player card | ✅ `query player <name>` | ✅ `tui player <name>` | ✅ `/player/:id` |
+| Team depth | ✅ `team EDM` | ✅ `tui team EDM` | ✅ `/team/:abbrev` |
+| Compare | ✅ `query compare A B` | ✅ `tui comps <name>` | ✅ `/compare?a=…&b=…` |
+| League rankings | ✅ `rank` | ✅ `tui league` | ✅ home preview |
+| Tonight's scores | ✅ `tonight` | ✅ `tui scores` | ✅ `/scores` |
+| Schedule | ✅ `schedule` | ✅ `tui schedule` | ✅ `/schedule` |
+| Playoffs | ✅ `playoffs` | ✅ `tui playoffs` | ✅ `/playoffs` |
+| Transactions | ✅ `transactions` | ✅ `tui transactions` | ✅ `/transactions` |
 | Docs reference | ✅ `docs` | ✅ `m` overlay *(LP.4)* | ✅ `/docs` |
 | Fantasy | ✅ `fantasy …` | ✅ `fantasy gaps` / `fantasy simulate` | ✅ `/fantasy`, `/api/v1/fantasy/*` |
 
-*(LB)* = ships in Phase Lady Byng (per `plans/2026-05-05-phaseLadyByng-tui-experiences.md`).
+Phase Lady Byng is implemented; the TUI launcher forms above are active
+product entry points, not planned placeholders.
 
 **Phase Lester Patrick (2026-05-05)**: closed three of the four CLI gaps.
 `icelines schedule` (LP.1) gained `--json`/`--csv`/comfy-table; `icelines

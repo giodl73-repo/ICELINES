@@ -2,6 +2,8 @@
 
 **Date**: 2026-05-05
 **Spec**: `design/specs/tui-experiences.md` (v0.3 — post-roles review)
+**Status**: Implemented — `--start`, surface sugar, drill-down launchers, and
+`icelines menu` are present in the running CLI/TUI
 **Trophy**: Lady Byng *(second use; first was Phase 2 Site)*
 **Estimated effort**: 2–3 sessions
 **Predecessors**: QueryA + QueryB (shipped in v0.13.0). This phase builds the third leg from the v0.13 QueryC conversation: A (shared engine — done), B (CLI parity — done), **C (per-surface entry points — this phase)**.
