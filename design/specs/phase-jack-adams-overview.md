@@ -8,6 +8,19 @@
 
 ---
 
+## Browser bridge addendum
+
+The browser counterpart is tracked in
+`design/plans/2026-05-12-phaseJackAdamsWeb-web-mdi.md`. It keeps the TUI's
+scores/Favorites/workspace/Schedule/command-bar concept, but implements it as a
+progressively enhanced server-rendered shell at `/dashboard`. Canonical route
+pages such as `/leaders`, `/team/EDM`, `/poach`, and `/fantasy` remain normal
+full-page URLs and can also be hosted as dashboard workspaces through
+`/dashboard?workspace=<route>`. The root `/` remains the lightweight league/home
+preview rather than becoming the dashboard shell.
+
+---
+
 ## Vision in one paragraph
 
 Today the TUI is **SDI** (Single Document Interface) — one screen

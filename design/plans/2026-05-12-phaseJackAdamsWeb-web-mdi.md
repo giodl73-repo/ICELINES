@@ -1,7 +1,7 @@
 # Phase Jack Adams Web - browser dashboard and command surface
 
 **Date**: 2026-05-12
-**Status**: Draft
+**Status**: Implemented
 **Trophy lineage**: Jack Adams concept bridge. The original Jack Adams phase made
 the TUI feel like a coordinated bench: MDI dashboard, stable side panes,
 workspace swapping, and a command bar. This phase brings that product model to
@@ -55,8 +55,8 @@ Mobile is not a squeezed three-column dashboard. It becomes:
 - scores ribbon at top;
 - workspace as the main page;
 - bottom command/search affordance;
-- Favorites, Schedule, and Watchlist as drawer tabs;
-- command palette as a full-screen overlay.
+- Favorites, Schedule, and Watchlist as collapsible context drawers;
+- command palette as a sticky reach target.
 
 ---
 
@@ -76,6 +76,7 @@ Mobile is not a squeezed three-column dashboard. It becomes:
 | No-JS baseline | Every product route remains usable as a full server-rendered page. |
 | Mutation boundary | Web commands that mutate state must submit through existing POST handlers or shared mutation intents. No GET mutations, no external navigation, and no browser-only mutation logic. |
 | Styling | Use Prince semantic tokens and existing route layout classes; no separate one-off dashboard palette. |
+| Root route | Keep `/` as the lightweight league/home preview. `/dashboard` is the browser command-center shell so canonical home remains fast and no-JS friendly. |
 
 ---
 
@@ -322,14 +323,14 @@ Acceptance:
 
 ## JAW.7 - Tests, Docs, Closeout
 
-Status: In progress. Route, no-JS shell, fragment, static-asset, command, and
+Status: Implemented. Route, no-JS shell, fragment, static-asset, command, and
 route-inventory fences are in place for the shipped dashboard shell. README,
 COMMANDS, and surface parity now advertise `/dashboard`, command routing,
 responsive collapsible panes, and the browser-local side-pane/history state. A
 repeatable `scripts/test-slice.ps1 web-captures` gate now starts the web server
-and captures desktop/mobile dashboard screenshots with installed Edge/Chrome.
-Remaining closeout is the final decision on whether `/` should ever become the
-dashboard shell.
+and captures desktop/mobile dashboard screenshots with installed Edge/Chrome. We
+keep `/` as the lightweight league/home preview and keep `/dashboard` as the
+explicit command-center shell.
 
 Tests:
 
@@ -353,9 +354,10 @@ Docs:
 
 Closeout:
 
-- Decide whether `/` becomes the dashboard shell.
-- Record remaining deferred items explicitly.
-- Commit, tag if this is a release phase.
+- `/` remains the lightweight home preview; `/dashboard` remains the explicit
+  dashboard shell.
+- Deferred: JAW.8 optional AI interpretation remains config-gated future work.
+- Tagging is deferred to the next release build, not this phase closeout.
 
 ---
 
