@@ -1188,11 +1188,14 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
             app.screen = Screen::ScheduleTeam(abbrev);
             ExecResult::Continue
         }
-        Command::Compare { left, .. } => {
-            // v1: compare drives the comps screen via the left
-            // player; the right arg is parsed but not yet wired
-            // through (the existing TUI Comps screen is
-            // similarity-only). Future polish: head-to-head.
+        Command::Compare { left, right } => {
+            if let Some(right) = right {
+                return ExecResult::Flash(format!(
+                    "compare: run `icelines query compare \"{left}\" \"{right}\"` or open `/compare?left={}&right={}`",
+                    url_component(&left),
+                    url_component(&right)
+                ));
+            }
             match icelines_fetch::stats_loader::resolve_player_id_by_name(&left) {
                 Some(pid) => {
                     app.screen = Screen::CompsById(icelines_core::identity::PlayerId(pid));
@@ -2042,6 +2045,7 @@ mod tests {
             "data status",
             "snapshot list",
             "config list",
+            "compare McDavid vs Crosby",
             "box EDM@BOS",
         ] {
             assert!(
@@ -2923,6 +2927,22 @@ mod tests {
             Screen::ScheduleTeam(abbr) => assert_eq!(abbr, "BOS"),
             other => panic!("expected ScheduleTeam screen, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn l0_adams_exec_compare_head_to_head_handoff_flashes_targets() {
+        let mut app = fresh_app_with_mdi();
+        let r = execute_command(
+            parse_command("compare Connor McDavid vs Sidney Crosby").unwrap(),
+            &mut app,
+        );
+
+        let ExecResult::Flash(message) = r else {
+            panic!("head-to-head compare should flash canonical targets");
+        };
+        assert!(message.contains("icelines query compare \"Connor McDavid\" \"Sidney Crosby\""));
+        assert!(message.contains("/compare?left=Connor+McDavid&right=Sidney+Crosby"));
+        assert!(matches!(app.screen, Screen::Home));
     }
 
     #[test]
