@@ -1031,6 +1031,64 @@ async fn l1_dashboard_command_watch_returns_to_dashboard_workspace() {
 }
 
 #[tokio::test]
+async fn l1_watch_rule_create_rejects_external_return_targets() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/watch-rules/create")
+                .header("content-type", "application/x-www-form-urlencoded")
+                .body(Body::from(
+                    "player=Connor+McDavid&trigger=available&return_to=https%3A%2F%2Fevil.example",
+                ))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    let location = response
+        .headers()
+        .get("location")
+        .and_then(|value| value.to_str().ok())
+        .expect("redirect location");
+    assert_eq!(location, "/watchlist");
+}
+
+#[tokio::test]
+async fn l1_watch_rule_create_rejects_protocol_relative_return_targets() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/watch-rules/create")
+                .header("content-type", "application/x-www-form-urlencoded")
+                .body(Body::from(
+                    "player=Connor+McDavid&trigger=available&return_to=%2F%2Fevil.example",
+                ))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    let location = response
+        .headers()
+        .get("location")
+        .and_then(|value| value.to_str().ok())
+        .expect("redirect location");
+    assert_eq!(location, "/watchlist");
+}
+
+#[tokio::test]
 async fn l1_fantasy_simulation_json_projects_seeded_league() {
     let _guard = home_env_lock().await;
     let _home = HomeEnvFixture::new();
