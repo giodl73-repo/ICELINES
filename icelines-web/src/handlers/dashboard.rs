@@ -1457,11 +1457,12 @@ fn metric_f64(metrics: &[MetricCell], key: &str) -> Option<f64> {
 async fn dashboard_favorites_entities(state: &WebState) -> Vec<DashboardEntityRow> {
     let context = dashboard_view_context(state).await;
     let members = super::favorites_data::read_group_members("Favorites");
+    let stat_lines = super::favorites::compute_player_stat_lines(&members).await;
     let view = FavoritesView::from_members(
         context,
         "Favorites".to_string(),
         favorite_member_inputs(&members),
-        std::collections::HashMap::new(),
+        stat_lines,
     );
     favorite_entity_rows(&view)
 }

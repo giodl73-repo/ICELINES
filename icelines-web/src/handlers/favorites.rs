@@ -257,7 +257,7 @@ fn read_watch_rule_rows() -> Vec<WatchRuleTemplateRow> {
 /// vec of (display_name, formatted_line) pairs the renderer
 /// drops in below the player's name. Empty when no boxscore
 /// data is on disk yet — caller falls back to plain listing.
-async fn compute_player_stat_lines(
+pub(super) async fn compute_player_stat_lines(
     members: &[(String, String)],
 ) -> std::collections::HashMap<String, String> {
     use std::collections::HashMap;
