@@ -68,6 +68,11 @@
     .jaw-command code {
         white-space: normal;
     }
+    .jaw-command-status {
+        color: var(--ice-warning-fg);
+        min-height: 1.25rem;
+        margin: 0.35rem 0;
+    }
     .jaw-pane-title {
         align-items: center;
         display: flex;
@@ -153,6 +158,7 @@
     <footer class="jaw-command" aria-label="Command palette">
         <strong>Command</strong>
         <span class="jaw-detail">Coming next: <code>stats</code>, <code>player Bedard</code>, <code>team EDM</code>, <code>poach availability=imported-available</code>.</span>
+        <p class="jaw-command-status" data-dashboard-command-status role="status" aria-live="polite"></p>
         <form method="post" action="/dashboard/command">
             <input type="hidden" name="workspace" value="{{ workspace_url }}">
             <input type="text" name="command" aria-label="Dashboard command" placeholder="team EDM">

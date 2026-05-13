@@ -245,6 +245,8 @@ mod tests {
             "localStorage",
             "data-dashboard-pane",
             "data-workspace-url",
+            "data-dashboard-command-status",
+            "setCommandStatus",
         ] {
             assert!(
                 js.contains(needle),

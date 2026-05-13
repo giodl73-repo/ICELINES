@@ -860,6 +860,8 @@ async fn l1_dashboard_shell_renders_no_js_regions() {
     assert!(body.contains("aria-label=\"Schedule\""));
     assert!(body.contains("data-dashboard-pane=\"schedule\""));
     assert!(body.contains("aria-label=\"Command palette\""));
+    assert!(body.contains("data-dashboard-command-status"));
+    assert!(body.contains("aria-live=\"polite\""));
     assert!(body.contains("src=\"/static/dashboard.js\""));
     assert!(body.contains("href=\"/dashboard?workspace=%2Fleaders\""));
     assert!(body.contains("href=\"/dashboard?workspace=%2Fpoach\""));

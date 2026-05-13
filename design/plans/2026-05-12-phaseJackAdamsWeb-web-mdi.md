@@ -176,9 +176,10 @@ Acceptance:
 Status: Partially implemented. The web has a deterministic command parser,
 `COMMANDS.md` parity examples, and `POST /dashboard/command`. Read commands
 redirect to allowlisted dashboard workspace URLs; favorite/watch mutations
-delegate to existing POST handlers or mutation intents. Remaining work is the
-full palette overlay, keyboard opener/history, and richer visible error/status
-rendering.
+delegate to existing POST handlers or mutation intents. The enhanced command
+form now keeps parse/command failures visible in an ARIA live status region
+inside the shell instead of falling through to an opaque page. Remaining work is
+the full palette overlay, keyboard opener/history, and richer command history.
 
 Bring the TUI command bar idea to web as a command palette.
 

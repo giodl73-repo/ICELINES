@@ -47,6 +47,13 @@
         return true;
     }
 
+    function setCommandStatus(message, kind) {
+        var node = document.querySelector("[data-dashboard-command-status]");
+        if (!node) return;
+        node.textContent = message || "";
+        node.dataset.statusKind = kind || "";
+    }
+
     function paneStorageKey(pane) {
         return "icelines.dashboard.pane." + pane;
     }
@@ -132,11 +139,14 @@
             }
             if (!response.ok) {
                 return response.text().then(function (text) {
-                    throw new Error(text || "Dashboard command failed");
+                    setCommandStatus(text || "Dashboard command failed", "error");
+                    return false;
                 });
             }
             return true;
-        }).then(function () {
+        }).then(function (handled) {
+            if (handled === false) return;
+            setCommandStatus("", "");
             applyCommandSideEffect(String(data.get("command") || ""));
             var input = form.querySelector("input[name='command']");
             if (input) input.value = "";
