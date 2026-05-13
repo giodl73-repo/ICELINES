@@ -624,6 +624,7 @@ already typed (for slash commands). Enter submits; Esc cancels.
 | `poach <kv...>` / `fantasy poach <kv...>` | Fantasy poacher filters | `:poach rw cats=hits,blocks free top=12` |
 | `simulate <kv...>` / `fantasy simulate <kv...>` | Fantasy add/drop scenario projection | `:simulate add=Connor_McDavid drop=Bench_Forward weeks=3` |
 | `simulate clear` | Clear the active fantasy simulation scenario | `:simulate clear` |
+| `report poach` / `report weekly` | Show exact report CLI/web target | `:report weekly cats=shots,hits top=12` |
 | `roster` / `fantasy roster` | Open active fantasy roster-gap view | `:roster` |
 | `player <name>` | Open player card | `:player Bedard` |
 | `team <ABBR> <kv...>` | Team depth chart with optional filters | `:team EDM pos=LW country=CAN` |

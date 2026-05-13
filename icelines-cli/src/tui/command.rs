@@ -139,6 +139,11 @@ pub enum Command {
     Career {
         args: CareerCommandArgs,
     },
+    /// `report poach` / `report weekly` — command-bar bridge
+    /// to shared PoachReportView report surfaces.
+    Report {
+        args: ReportCommandArgs,
+    },
 
     // ── Write actions (favorites mutation) ────────────────────
     /// `fav add <name-or-pid>` (or `/fav add ...`) — adds the
@@ -200,6 +205,29 @@ impl Default for CareerCommandArgs {
             season: None,
             top: 20,
             sort: "points".to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ReportCommandArgs {
+    pub kind: ReportKind,
+    pub categories: Vec<String>,
+    pub availability: Option<String>,
+    pub top: Option<u16>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ReportKind {
+    Poach,
+    Weekly,
+}
+
+impl ReportKind {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Poach => "poach",
+            Self::Weekly => "weekly",
         }
     }
 }
@@ -399,6 +427,7 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
         "box" | "boxscore" => parse_box(args),
         "class" => parse_class(args),
         "career" => parse_career(args),
+        "report" | "reports" => parse_report(args),
 
         // Write actions (also accessible via /fav)
         "fav" | "favorite" => parse_fav(args),
@@ -547,6 +576,63 @@ fn parse_career(args: &str) -> Result<Command, ParseError> {
         }
     }
     Ok(Command::Career { args: parsed })
+}
+
+fn parse_report(args: &str) -> Result<Command, ParseError> {
+    let (kind_raw, rest) = split_first_word(args);
+    let kind = match kind_raw.to_ascii_lowercase().as_str() {
+        "poach" | "poacher" => ReportKind::Poach,
+        "weekly" | "week" => ReportKind::Weekly,
+        "" => {
+            return Err(ParseError::MissingArg {
+                command: "report",
+                arg: "poach|weekly",
+            });
+        }
+        other => return Err(ParseError::UnknownCommand(format!("report {other}"))),
+    };
+
+    let mut parsed = ReportCommandArgs {
+        kind,
+        categories: Vec::new(),
+        availability: None,
+        top: None,
+    };
+    for token in rest.split_whitespace() {
+        let (key, value) = token
+            .split_once('=')
+            .map_or(("category", token), |(key, value)| {
+                (key.trim(), value.trim())
+            });
+        if value.is_empty() {
+            return Err(ParseError::BadFilter {
+                details: format!("report: empty value in {token:?}"),
+            });
+        }
+        match key.to_ascii_lowercase().as_str() {
+            "cat" | "cats" | "category" | "categories" => {
+                parsed.categories = value
+                    .split(',')
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .map(str::to_string)
+                    .collect();
+            }
+            "availability" | "avail" => parsed.availability = Some(value.to_string()),
+            "top" | "limit" => {
+                parsed.top = Some(value.parse::<u16>().map_err(|_| ParseError::BadInteger {
+                    command: "report",
+                    raw: value.to_string(),
+                })?);
+            }
+            other => {
+                return Err(ParseError::BadFilter {
+                    details: format!("report: unknown filter {other:?}"),
+                });
+            }
+        }
+    }
+    Ok(Command::Report { args: parsed })
 }
 
 /// `fantasy roster` → Roster; `fantasy gaps` → roster-gap board.
@@ -1128,6 +1214,40 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
                 args.top
             ))
         }
+        Command::Report { args } => {
+            let mut cli_args = Vec::new();
+            let mut query_args = Vec::new();
+            if !args.categories.is_empty() {
+                let categories = args.categories.join(",");
+                cli_args.push(format!("--category {categories}"));
+                query_args.push(format!("category={}", url_component(&categories)));
+            }
+            if let Some(availability) = &args.availability {
+                cli_args.push(format!("--availability {availability}"));
+                query_args.push(format!("availability={}", url_component(availability)));
+            }
+            if let Some(top) = args.top {
+                cli_args.push(format!("--top {top}"));
+                query_args.push(format!("top={top}"));
+            }
+            let cli_suffix = if cli_args.is_empty() {
+                String::new()
+            } else {
+                format!(" {}", cli_args.join(" "))
+            };
+            let query_suffix = if query_args.is_empty() {
+                String::new()
+            } else {
+                format!("?{}", query_args.join("&"))
+            };
+            ExecResult::Flash(format!(
+                "report: run `icelines report {}{}` or open `/reports/{}{}`",
+                args.kind.as_str(),
+                cli_suffix,
+                args.kind.as_str(),
+                query_suffix
+            ))
+        }
 
         // ── Roster / fantasy ─────────────────────────────────
         Command::Roster => {
@@ -1593,6 +1713,19 @@ fn split_first_word(s: &str) -> (&str, &str) {
     }
 }
 
+fn url_component(value: &str) -> String {
+    value
+        .bytes()
+        .flat_map(|byte| match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                vec![byte as char]
+            }
+            b' ' => vec!['+'],
+            _ => format!("%{byte:02X}").chars().collect(),
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1771,6 +1904,33 @@ mod tests {
     }
 
     #[test]
+    fn l0_adams_parse_report_cmdbar_handoff() {
+        assert_eq!(
+            parse_command("report weekly cats=shots,hits availability=imported-available top=12")
+                .unwrap(),
+            Command::Report {
+                args: ReportCommandArgs {
+                    kind: ReportKind::Weekly,
+                    categories: vec!["shots".to_string(), "hits".to_string()],
+                    availability: Some("imported-available".to_string()),
+                    top: Some(12),
+                },
+            }
+        );
+        assert_eq!(
+            parse_command("reports poach blocks").unwrap(),
+            Command::Report {
+                args: ReportCommandArgs {
+                    kind: ReportKind::Poach,
+                    categories: vec!["blocks".to_string()],
+                    availability: None,
+                    top: None,
+                },
+            }
+        );
+    }
+
+    #[test]
     fn l0_adams_fantasy_cmdbar_examples_are_documented() {
         const COMMANDS_MD: &str = include_str!("../../../COMMANDS.md");
         for example in [
@@ -1782,6 +1942,7 @@ mod tests {
             "roster",
             "class 2024",
             "career league=OHL season=20142015 top=8",
+            "report weekly cats=shots,hits top=12",
             "box EDM@BOS",
         ] {
             assert!(
@@ -2428,6 +2589,22 @@ mod tests {
         };
         assert!(message.contains("icelines query career --league OHL --season 20142015"));
         assert!(message.contains("/career?league=OHL"));
+        assert!(matches!(app.screen, Screen::Home));
+    }
+
+    #[test]
+    fn l0_adams_exec_report_cmdbar_handoff_flashes_targets() {
+        let mut app = fresh_app_with_mdi();
+        let r = execute_command(
+            parse_command("report weekly cats=shots,hits top=12").unwrap(),
+            &mut app,
+        );
+
+        let ExecResult::Flash(message) = r else {
+            panic!("report handoff should flash canonical targets");
+        };
+        assert!(message.contains("icelines report weekly --category shots,hits --top 12"));
+        assert!(message.contains("/reports/weekly?category=shots%2Chits&top=12"));
         assert!(matches!(app.screen, Screen::Home));
     }
 
