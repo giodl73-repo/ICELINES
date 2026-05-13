@@ -97,6 +97,7 @@ pub async fn get_watchlist(State(state): State<crate::WebState>) -> Response {
 
 pub async fn get_favorites_json() -> Response {
     let members = read_group_members("Favorites");
+    let stat_lines = compute_player_stat_lines(&members).await;
     let view = FavoritesView::from_members(
         ViewContext::new(ViewWindow::new(
             Season(icelines_core::CURRENT_SEASON),
@@ -104,7 +105,7 @@ pub async fn get_favorites_json() -> Response {
         )),
         "Favorites".to_string(),
         favorite_member_inputs(&members),
-        std::collections::HashMap::new(),
+        stat_lines,
     );
     let rows = group_api_rows_from_view(&view);
     let meta = GroupApiMeta {
