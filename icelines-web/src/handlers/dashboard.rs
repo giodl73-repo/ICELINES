@@ -184,6 +184,8 @@ fn is_workspace_route(path: &str) -> bool {
             | "/favorites"
             | "/watchlist"
             | "/career"
+            | "/reports/poach"
+            | "/reports/weekly"
             | "/docs"
     ) || route.starts_with("/player/")
         || route.starts_with("/team/")
@@ -214,6 +216,8 @@ fn workspace_label(path: &str) -> String {
         "/favorites" => "Favorites",
         "/watchlist" => "Watchlist",
         "/career" => "Career Cohorts",
+        "/reports/poach" => "Poach Report",
+        "/reports/weekly" => "Weekly Report",
         other if other.starts_with("/player/") => "Player Card",
         other if other.starts_with("/team/") && other.ends_with("/season") => "Team Season",
         other if other.starts_with("/team/") => "Team Depth",
@@ -1685,6 +1689,11 @@ mod tests {
         assert_eq!(workspace_label("/team/EDM/season"), "Team Season");
         assert_eq!(workspace_label("/player/8478402"), "Player Card");
         assert_eq!(workspace_label("/career?league=OHL"), "Career Cohorts");
+        assert_eq!(workspace_label("/reports/poach"), "Poach Report");
+        assert_eq!(
+            workspace_label("/reports/weekly?category=shots"),
+            "Weekly Report"
+        );
         assert_eq!(
             workspace_label("/poach?availability=imported-available"),
             "Poach"

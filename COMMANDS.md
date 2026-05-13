@@ -672,6 +672,9 @@ gaps cats=hits,blocks top=8                -> /fantasy?category=hits%2Cblocks&to
 fantasy poach top=8 availability=available -> /poach?top=8&availability=available
 simulate add=Connor_McDavid drop=Bench_Forward weeks=3
                                            -> /fantasy?add_player=Connor_McDavid&drop_player=Bench_Forward&weeks=3
+report weekly cats=shots,hits top=12       -> /reports/weekly?category=shots%2Chits&top=12
+report poach availability=imported-available
+                                           -> /reports/poach?availability=imported-available
 team EDM                                   -> /team/EDM
 team EDM season                            -> /team/EDM/season
 team EDM schedule                          -> /schedule?team=EDM

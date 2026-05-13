@@ -91,6 +91,7 @@ fn parse_verb(input: &str) -> Result<DashboardCommand, DashboardCommandError> {
         "favorites" => workspace("/favorites"),
         "watchlist" => workspace("/watchlist"),
         "career" | "cohort" => workspace(&career_url(args)),
+        "report" | "reports" => parse_report(args),
         "poach" => workspace(&poach_url(args)),
         "gaps" | "fantasy-gaps" => workspace(&fantasy_url(args, FantasyMode::Gaps)),
         "simulate" | "sim" | "fantasy-sim" => {
@@ -122,6 +123,26 @@ fn parse_fantasy(args: &str) -> Result<DashboardCommand, DashboardCommandError> 
             "fantasy {unknown}"
         ))),
     }
+}
+
+fn parse_report(args: &str) -> Result<DashboardCommand, DashboardCommandError> {
+    let (kind, rest) = split_first_word(args);
+    let base = match kind.to_ascii_lowercase().as_str() {
+        "poach" | "poacher" => "/reports/poach",
+        "weekly" | "week" => "/reports/weekly",
+        "" => {
+            return Err(DashboardCommandError::MissingArg {
+                command: "report",
+                arg: "poach|weekly",
+            });
+        }
+        other => {
+            return Err(DashboardCommandError::UnknownCommand(format!(
+                "report {other}"
+            )))
+        }
+    };
+    workspace(&query_url(base, rest))
 }
 
 fn parse_team(args: &str) -> Result<DashboardCommand, DashboardCommandError> {
@@ -382,6 +403,14 @@ mod tests {
         assert_eq!(
             route("simulate add=Connor_McDavid drop=Bench_Forward weeks=3"),
             "/fantasy?add_player=Connor_McDavid&drop_player=Bench_Forward&weeks=3"
+        );
+        assert_eq!(
+            route("report weekly cats=shots,hits top=12"),
+            "/reports/weekly?category=shots%2Chits&top=12"
+        );
+        assert_eq!(
+            route("report poach availability=imported-available"),
+            "/reports/poach?availability=imported-available"
         );
     }
 

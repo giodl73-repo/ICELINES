@@ -83,6 +83,8 @@ const DASHBOARD_PANEL_READY_WORKSPACES: &[&str] = &[
     "/favorites",
     "/watchlist",
     "/career",
+    "/reports/poach",
+    "/reports/weekly",
     "/docs",
 ];
 
