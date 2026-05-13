@@ -8,6 +8,17 @@
     NHL analytics dashboard for <code>{{ active_label }}</code>.
 </p>
 
+<section class="dashboard-callout" aria-label="Jack Adams dashboard">
+    <div>
+        <h2>Jack Adams Dashboard</h2>
+        <p>
+            Scores, Favorites, Watchlist, Schedule, workspace panels, and a
+            command bar in one browser bench.
+        </p>
+    </div>
+    <a class="primary-action" href="/dashboard">Open dashboard</a>
+</section>
+
 <section class="page-section">
     <h2 class="section-heading">Top scorers</h2>
     {% if top_skaters.is_empty() %}
@@ -90,6 +101,7 @@
 <nav aria-label="Sections" class="page-section">
     <h2 class="section-heading">More</h2>
     <ul>
+        <li><a href="/dashboard">Dashboard</a> — Jack Adams multi-pane command center</li>
         <li><a href="/leaders">Leaders</a> — skater leaderboards w/ filters</li>
         <li><a href="/goalies">Goalies</a> — goalie leaderboards</li>
         <li><a href="/scores">Scores</a> — live NHL schedule</li>

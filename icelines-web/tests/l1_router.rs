@@ -749,6 +749,12 @@ async fn l1_get_root_returns_200_html() {
         "home page should render the askama template content"
     );
     assert!(
+        body.contains("Jack Adams Dashboard")
+            && body.contains("href=\"/dashboard\"")
+            && body.contains("Open dashboard"),
+        "home page should make the Jack Adams browser dashboard obvious"
+    );
+    assert!(
         body.contains("/fantasy") && body.contains("roster gaps and league simulation"),
         "home page should advertise the live fantasy read/product surface"
     );
@@ -4211,6 +4217,10 @@ async fn l1_season_type_toggle_visible_in_global_nav() {
     // CSS refactor that drops the styling is detectable by other
     // means than a visual scan.
     assert!(body.contains("season-type-toggle"));
+    assert!(
+        body.contains("nav-dashboard") && body.contains("href=\"/dashboard\""),
+        "global nav should expose the Jack Adams dashboard entry point"
+    );
 }
 
 // ── Phase Foster.1 — date-anchored route smokes ────────────────────────────

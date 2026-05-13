@@ -185,6 +185,14 @@ code {
     background: var(--link-bg-soft);
     color: var(--nhl-navy);
 }
+.global-nav .nav-dashboard {
+    background: var(--nhl-navy);
+    color: #fff;
+}
+.global-nav .nav-dashboard:hover {
+    background: var(--nhl-navy-2);
+    color: #fff;
+}
 
 /* Season-type toggle on the right of the global nav. */
 .season-type-toggle {
@@ -283,6 +291,56 @@ code {
 
 .page-section {
     margin-top: 1.5rem;
+}
+
+.dashboard-callout {
+    align-items: center;
+    background: var(--ice-surface);
+    border: 1px solid var(--ice-divider);
+    border-left: 5px solid var(--nhl-red);
+    border-radius: 6px;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    margin-top: 1.2rem;
+    padding: 1rem;
+}
+
+.dashboard-callout h2 {
+    margin-bottom: 0.2rem;
+}
+
+.dashboard-callout p {
+    color: var(--ice-muted);
+    margin: 0;
+}
+
+.primary-action {
+    background: var(--nhl-navy);
+    border-radius: 4px;
+    color: #fff;
+    display: inline-block;
+    font-weight: 700;
+    padding: 0.55rem 0.8rem;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.primary-action:hover {
+    background: var(--nhl-red);
+    color: #fff;
+}
+
+@media (max-width: 720px) {
+    .dashboard-callout {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .primary-action {
+        text-align: center;
+        white-space: normal;
+    }
 }
 
 .section-heading {
