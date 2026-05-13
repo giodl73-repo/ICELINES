@@ -867,16 +867,12 @@ fn parse_query(args: &str) -> Result<Command, ParseError> {
 /// Phase Adams.2 — outcome of running an executed Command.
 /// Matches the spec's "what does the orchestrator do next" model:
 /// Continue is the no-op default; Quit propagates; Flash sets a
-/// transient success message in the cmdbar; NotImplemented
-/// surfaces a "this command is recognized but not yet wired"
-/// error inline (used by Roster / Class etc. that don't have a
-/// TUI screen yet).
+/// transient success or error message in the cmdbar/status row.
 #[derive(Debug, Clone)]
 pub enum ExecResult {
     Continue,
     Quit,
     Flash(String),
-    NotImplemented(&'static str),
 }
 
 /// Phase Adams.2 — run a parsed Command against `App`. Mutates
@@ -1007,16 +1003,25 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
             }
         }
         Command::Box { game } => {
-            // For now, only numeric game-ids are wired. "edm@bos"
-            // requires today's slate lookup (Adams.3 polish).
             match game.parse::<u64>() {
                 Ok(game_id) => {
                     app.screen = Screen::GameDetail(game_id);
                     ExecResult::Continue
                 }
-                Err(_) => ExecResult::Flash(format!(
-                    "box: only numeric game-id wired in v1; got {game:?}"
-                )),
+                Err(_) => match resolve_matchup_game_id(app, &game) {
+                    Ok(Some(game_id)) => {
+                        app.screen = Screen::GameDetail(game_id);
+                        crate::tui::tonight::maybe_fetch_boxscore(
+                            app.tonight.boxscore_cache.clone(),
+                            game_id,
+                        );
+                        ExecResult::Continue
+                    }
+                    Ok(None) => ExecResult::Flash(format!(
+                        "box: no loaded game matched {game:?}; open Scores/Schedule first or use numeric game-id"
+                    )),
+                    Err(message) => ExecResult::Flash(message),
+                },
             }
         }
         Command::Class { year } => {
@@ -1252,6 +1257,79 @@ fn exec_favorites_kv(
     app.selected = 0;
     app.screen = Screen::Favorites;
     ExecResult::Flash("favorites filters applied".to_string())
+}
+
+fn resolve_matchup_game_id(
+    app: &crate::tui::app::App,
+    matchup: &str,
+) -> Result<Option<u64>, String> {
+    let Some((away, home)) = parse_matchup_arg(matchup) else {
+        return Err(format!(
+            "box: expected numeric game-id or TEAM@TEAM matchup; got {matchup:?}"
+        ));
+    };
+
+    for game in loaded_score_games(app) {
+        if scheduled_game_matches(&game, away, home) {
+            return Ok(Some(game.game_id));
+        }
+    }
+
+    for game in loaded_schedule_games(app) {
+        if scheduled_game_matches(&game, away, home) {
+            return Ok(Some(game.game_id));
+        }
+    }
+
+    Ok(None)
+}
+
+fn parse_matchup_arg(input: &str) -> Option<(&str, &str)> {
+    let (away, home) = input.split_once('@')?;
+    let away = away.trim();
+    let home = home.trim();
+    if away.is_empty() || home.is_empty() {
+        return None;
+    }
+    Some((away, home))
+}
+
+fn loaded_score_games(app: &crate::tui::app::App) -> Vec<icelines_fetch::nhl_api::ScheduledGame> {
+    match crate::tui::tonight::lookup(&app.tonight.cache, &app.tonight.date) {
+        crate::tui::tonight::TonightState::Loaded(games) => games,
+        _ => Vec::new(),
+    }
+}
+
+fn loaded_schedule_games(
+    app: &crate::tui::app::App,
+) -> Vec<icelines_fetch::nhl_api::ScheduledGame> {
+    let mut games = Vec::new();
+    {
+        let map = app.schedule.week_cache.lock().unwrap();
+        if let Some(crate::tui::schedule::ScheduleState::Loaded(week_games)) =
+            map.get(&app.schedule.week)
+        {
+            games.extend(week_games.iter().cloned());
+        }
+    }
+    {
+        let map = app.schedule.team_cache.lock().unwrap();
+        for state in map.values() {
+            if let crate::tui::schedule::ScheduleState::Loaded(team_games) = state {
+                games.extend(team_games.iter().cloned());
+            }
+        }
+    }
+    games
+}
+
+fn scheduled_game_matches(
+    game: &icelines_fetch::nhl_api::ScheduledGame,
+    away: &str,
+    home: &str,
+) -> bool {
+    game.away_abbrev.eq_ignore_ascii_case(away) && game.home_abbrev.eq_ignore_ascii_case(home)
 }
 
 fn exec_team_kv(
@@ -2079,6 +2157,26 @@ mod tests {
         app
     }
 
+    fn scheduled_game(id: u64, away: &str, home: &str) -> icelines_fetch::nhl_api::ScheduledGame {
+        icelines_fetch::nhl_api::ScheduledGame {
+            game_id: id,
+            date: "2026-05-12".to_string(),
+            game_type: 2,
+            away_abbrev: away.to_string(),
+            away_name: away.to_string(),
+            home_abbrev: home.to_string(),
+            home_name: home.to_string(),
+            start_time_utc: "2026-05-12T23:00:00Z".to_string(),
+            away_score: None,
+            home_score: None,
+            game_state: Some("FUT".to_string()),
+            last_period: None,
+            series_game: None,
+            away_wins: None,
+            home_wins: None,
+        }
+    }
+
     #[test]
     fn l0_adams_exec_help_sets_show_help() {
         let mut app = fresh_app_with_mdi();
@@ -2408,6 +2506,52 @@ mod tests {
         assert!(matches!(r, ExecResult::Flash(_)));
         // Screen should not have moved.
         assert!(!matches!(app.screen, Screen::GameDetail(_)));
+    }
+
+    #[test]
+    fn l0_adams_exec_box_matchup_uses_loaded_scores_cache() {
+        let mut app = fresh_app_with_mdi();
+        app.tonight.cache.lock().unwrap().insert(
+            app.tonight.date.clone(),
+            crate::tui::tonight::TonightState::Loaded(vec![scheduled_game(
+                2_025_020_321,
+                "EDM",
+                "BOS",
+            )]),
+        );
+
+        let r = execute_command(
+            Command::Box {
+                game: "edm@bos".to_string(),
+            },
+            &mut app,
+        );
+
+        assert!(matches!(r, ExecResult::Continue));
+        assert!(matches!(app.screen, Screen::GameDetail(2_025_020_321)));
+    }
+
+    #[test]
+    fn l0_adams_exec_box_matchup_uses_loaded_schedule_cache() {
+        let mut app = fresh_app_with_mdi();
+        app.schedule.week_cache.lock().unwrap().insert(
+            app.schedule.week.clone(),
+            crate::tui::schedule::ScheduleState::Loaded(vec![scheduled_game(
+                2_025_020_654,
+                "NYR",
+                "WSH",
+            )]),
+        );
+
+        let r = execute_command(
+            Command::Box {
+                game: "nyr@wsh".to_string(),
+            },
+            &mut app,
+        );
+
+        assert!(matches!(r, ExecResult::Continue));
+        assert!(matches!(app.screen, Screen::GameDetail(2_025_020_654)));
     }
 
     #[test]

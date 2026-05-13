@@ -404,7 +404,7 @@ mod tests {
         let mut app = fresh_mdi();
         type_cmd(&mut app, "box edm@bos");
         submit(&mut app);
-        // Non-numeric box: NotImplemented flash.
+        // No loaded schedule/scores cache: clear flash, no panic.
         // Bar should defocus (success-path) since execute returned Flash.
         assert!(matches!(app.screen, Screen::Home));
     }

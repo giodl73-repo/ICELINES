@@ -628,7 +628,7 @@ already typed (for slash commands). Enter submits; Esc cancels.
 | `team <ABBR> season` | Team's full schedule | `:team EDM season` |
 | `class <year>` | Apply draft-year query, swap to Stats | `:class 2024` |
 | `compare <a>` / `compare <a> <b>` | Similarity peers / head-to-head | `:compare McDavid` |
-| `box <game-id>` | Boxscore detail | `:box 2025020001` |
+| `box <game-id>` / `box <AWAY@HOME>` | Boxscore detail from id or loaded slate | `:box 2025020001`, `:box EDM@BOS` |
 | `query <filter>` | Apply Phase Art Ross filter, swap to Stats | `:query g >= 30 AND age <= 25` |
 | `/fav add <name>` | Add to Favorites | `/fav add Bedard` |
 | `/fav remove <name>` | Remove from Favorites | `/fav remove Bedard` |

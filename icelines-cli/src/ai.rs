@@ -122,7 +122,7 @@ pub enum AiError {
 /// canonical examples. Versioned: bump VERSION when you change
 /// the grammar so prompt-cache invalidation is obvious.
 #[allow(dead_code)]
-pub const SYSTEM_PROMPT_VERSION: &str = "v4";
+pub const SYSTEM_PROMPT_VERSION: &str = "v5";
 
 pub fn default_system_prompt() -> String {
     // Single source of truth for the prompt — keep it in sync
@@ -154,6 +154,7 @@ VERBS (with args):
   compare <a>               similarity peers
   compare <a> <b>           head-to-head
   box <game-id>             boxscore detail (numeric NHL game id)
+  box <AWAY@HOME>           boxscore detail from loaded slate/schedule
   class <year>              draft-year query                    e.g. class 2024
 
 ROSTER KV FORM:
@@ -235,6 +236,9 @@ You: simulate add=Connor_McDavid drop=Bench_Forward weeks=3
 
 User: show the 2024 draft class
 You: class 2024
+
+User: open the oilers at bruins boxscore
+You: box EDM@BOS
 
 If the user's request CANNOT be expressed in this grammar, respond with the single token UNSUPPORTED.
 "#
@@ -717,6 +721,7 @@ mod tests {
             "watchlist",
             "team <ABBR>",
             "class <year>",
+            "box <AWAY@HOME>",
             "query <filter-expression>",
             "/fav add",
             "/hide favorites",
@@ -733,6 +738,7 @@ mod tests {
             "fantasy poach top=8 available",
             "simulate add=Connor_McDavid drop=Bench_Forward weeks=3",
             "class 2024",
+            "box EDM@BOS",
         ] {
             assert!(
                 s.contains(landmark),
@@ -744,7 +750,7 @@ mod tests {
     #[test]
     fn l0_adams_system_prompt_version_is_set() {
         // Version sentinel for prompt-cache invalidation.
-        assert_eq!(SYSTEM_PROMPT_VERSION, "v4");
+        assert_eq!(SYSTEM_PROMPT_VERSION, "v5");
     }
 
     #[test]

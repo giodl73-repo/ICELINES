@@ -2429,13 +2429,6 @@ impl App {
                         self.status = msg;
                         false
                     }
-                    crate::tui::command::ExecResult::NotImplemented(msg) => {
-                        if let Some(m) = self.mdi.as_mut() {
-                            m.flash_error = Some(msg.to_owned());
-                        }
-                        self.status = msg.to_owned();
-                        false
-                    }
                 }
             }
             Err(parse_err) => {
@@ -2593,11 +2586,6 @@ impl App {
                     }
                     crate::tui::command::ExecResult::Flash(msg) => {
                         self.status = format!("{provider_name} → {msg}");
-                    }
-                    crate::tui::command::ExecResult::NotImplemented(msg) => {
-                        if let Some(m) = self.mdi.as_mut() {
-                            m.flash_error = Some(format!("{provider_name}: {msg}"));
-                        }
                     }
                 }
             }
