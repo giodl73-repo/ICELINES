@@ -13,10 +13,12 @@ For the final forward-roadmap role review, see
 ## Current Forward Roadmap
 
 Jennings restored the measured baseline, Campbell established the shared
-ViewModel contract path, and the Messier/Lester/Ted/Selke parity wave moved the
-major product surfaces onto that path. The remaining forward work is primarily
-visual quality, release discipline, and a few explicitly partial UX/admin/doc
-surfaces tracked in `design/specs/surface-parity.md`.
+ViewModel contract path, the Messier/Lester/Ted/Selke parity wave moved the
+major product surfaces onto that path, Prince closed the shared visual-system
+pass, and Jim Gregory closed release hardening. The next forward work is now the
+explicitly partial UX/admin/doc surfaces tracked in
+`design/specs/surface-parity.md`, plus any new feature phase we choose from the
+backlog.
 
 | Plan | Status | Summary |
 |------|--------|---------|
