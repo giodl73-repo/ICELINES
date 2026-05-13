@@ -134,7 +134,8 @@ fn parse_team(args: &str) -> Result<DashboardCommand, DashboardCommandError> {
     let team = abbrev.to_ascii_uppercase();
     match rest.trim().to_ascii_lowercase().as_str() {
         "" => workspace(&format!("/team/{team}")),
-        "season" | "schedule" => workspace(&format!("/schedule?team={team}")),
+        "season" => workspace(&format!("/team/{team}/season")),
+        "schedule" => workspace(&format!("/schedule?team={team}")),
         _ => workspace(&format!("/team/{team}")),
     }
 }
@@ -375,7 +376,8 @@ mod tests {
     #[test]
     fn l0_dashboard_command_navigation_examples_resolve_to_internal_routes() {
         assert_eq!(route("team edm"), "/team/EDM");
-        assert_eq!(route("team EDM season"), "/schedule?team=EDM");
+        assert_eq!(route("team EDM season"), "/team/EDM/season");
+        assert_eq!(route("team EDM schedule"), "/schedule?team=EDM");
         assert_eq!(
             route("player Connor McDavid"),
             "/leaders?filter=name%3DConnor+McDavid"

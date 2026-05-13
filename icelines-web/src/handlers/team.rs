@@ -1,5 +1,7 @@
 use crate::state::WebState;
-use crate::templates::{GoalieRow, LeaderRow, TeamTemplate};
+use crate::templates::{
+    GoalieRow, LeaderRow, TeamSeasonTemplate, TeamSeasonTemplateRow, TeamTemplate,
+};
 use askama::Template;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
@@ -7,7 +9,8 @@ use axum::response::{Html, IntoResponse, Response};
 use icelines_core::model::{Season, TeamAbbr};
 use icelines_core::season_stats::SeasonType;
 use icelines_core::view_model::{
-    DepthGoalieSlot, DepthLine, DepthPair, DepthPlayerSlot, TeamDepthView,
+    DepthGoalieSlot, DepthLine, DepthPair, DepthPlayerSlot, TeamDepthView, TeamSeasonGameRow,
+    TeamSeasonVenue, TeamSeasonView,
 };
 use icelines_core::{MetricCell, MetricValue};
 
@@ -202,6 +205,184 @@ pub async fn get_team_json(
         goalies,
     };
     crate::api::json_data_meta("team", data, meta)
+}
+
+pub async fn get_team_season(
+    State(state): State<WebState>,
+    Path(abbrev_raw): Path<String>,
+) -> Response {
+    let (active_label, view, fetch_error) = match build_team_season_view(&state, &abbrev_raw).await
+    {
+        Ok(result) => result,
+        Err(response) => return response,
+    };
+    let tmpl = team_season_template(active_label, &view, fetch_error);
+    match tmpl.render() {
+        Ok(html) => Html(html).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html(format!("template render failed: {e}")),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn get_team_season_json(
+    State(state): State<WebState>,
+    Path(abbrev_raw): Path<String>,
+) -> Response {
+    if let Err((abbrev_upper, message)) = parse_team(&abbrev_raw) {
+        return crate::api::json_error_meta(
+            StatusCode::NOT_FOUND,
+            "team-season",
+            serde_json::json!({ "team": abbrev_upper }),
+            serde_json::json!({}),
+            message,
+        );
+    }
+
+    match build_team_season_view(&state, &abbrev_raw).await {
+        Ok((_active_label, view, fetch_error)) => {
+            let meta = serde_json::json!({
+                "team_abbrev": view.team,
+                "season": view.season,
+                "season_pretty": view.season_pretty,
+                "source_error": fetch_error,
+                "warnings": view.warnings,
+            });
+            crate::api::json_data_meta("team-season", view, meta)
+        }
+        Err(response) => response,
+    }
+}
+
+async fn build_team_season_view(
+    state: &WebState,
+    abbrev_raw: &str,
+) -> Result<(String, TeamSeasonView, Option<String>), Response> {
+    let team = match parse_team(abbrev_raw) {
+        Ok(team) => team,
+        Err((_abbrev_upper, message)) => {
+            return Err((
+                StatusCode::NOT_FOUND,
+                Html(format!(
+                    "<!doctype html><html><body><h1>Unknown team</h1>\
+                     <p>{message}</p>\
+                     <p><a href=\"/leaders\">back to leaders</a></p>\
+                     </body></html>"
+                )),
+            )
+                .into_response());
+        }
+    };
+
+    let (active_label, season_str, season, season_type) = {
+        let cfg = state.config.read().await;
+        (
+            cfg.active_label.clone(),
+            cfg.active_season.clone(),
+            cfg.active_season
+                .parse::<u32>()
+                .map(Season)
+                .unwrap_or(Season(0)),
+            SeasonType::parse_lossy(&cfg.active_season_type),
+        )
+    };
+
+    let (games, fetch_error) = match super::nhl_client()
+        .fetch_team_season_schedule(&team.0, &season_str)
+        .await
+    {
+        Ok(games) => (
+            games
+                .into_iter()
+                .map(super::schedule::scheduled_game_input)
+                .collect(),
+            None,
+        ),
+        Err(e) => (Vec::new(), Some(e.to_string())),
+    };
+    let view = TeamSeasonView::from_games(
+        icelines_core::ViewContext::new(icelines_core::ViewWindow::new(season, season_type)),
+        season_str,
+        team.0.to_string(),
+        games,
+    );
+    Ok((active_label, view, fetch_error))
+}
+
+fn team_season_template(
+    active_label: String,
+    view: &TeamSeasonView,
+    fetch_error: Option<String>,
+) -> TeamSeasonTemplate {
+    TeamSeasonTemplate {
+        active_label,
+        team_abbrev: view.team.clone(),
+        season_pretty: view.season_pretty.clone(),
+        record_label: record_label(view.headline.record),
+        points: view.headline.points,
+        points_percentage: format!("{:.3}", view.headline.points_percentage),
+        goal_differential: signed_i32(view.headline.goal_differential),
+        home_record: record_label(view.splits.home.record),
+        away_record: record_label(view.splits.away.record),
+        one_goal_record: record_label(view.splits.one_goal.record),
+        last_10_record: record_label(view.form.last_10),
+        last_10_goal_differential: signed_i32(view.form.last_10_goal_differential),
+        remaining_label: format!(
+            "{} games ({} home, {} away)",
+            view.remaining.games, view.remaining.home, view.remaining.away
+        ),
+        next_opponents: if view.remaining.next_opponents.is_empty() {
+            "-".to_string()
+        } else {
+            view.remaining.next_opponents.join(", ")
+        },
+        warning: fetch_error.unwrap_or_else(|| {
+            view.warnings
+                .first()
+                .map(|warning| warning.message.clone())
+                .unwrap_or_default()
+        }),
+        rows: view.rows.iter().map(team_season_template_row).collect(),
+    }
+}
+
+fn team_season_template_row(row: &TeamSeasonGameRow) -> TeamSeasonTemplateRow {
+    TeamSeasonTemplateRow {
+        date: row.date.clone(),
+        venue: match row.venue {
+            TeamSeasonVenue::Home => "Home".to_string(),
+            TeamSeasonVenue::Away => "Away".to_string(),
+        },
+        opponent_abbrev: row.opponent_abbrev.clone(),
+        result: row.result.clone(),
+        score: match (row.team_score, row.opponent_score) {
+            (Some(team_score), Some(opponent_score)) => format!("{team_score}-{opponent_score}"),
+            _ => "-".to_string(),
+        },
+        goal_differential: row
+            .goal_differential
+            .map(signed_i16)
+            .unwrap_or_else(|| "-".to_string()),
+        state_label: row.state_label.clone(),
+        is_playoff: row.is_playoff,
+    }
+}
+
+fn record_label(record: icelines_core::ScheduleRecord) -> String {
+    format!(
+        "{}-{}-{}",
+        record.wins, record.losses, record.overtime_losses
+    )
+}
+
+fn signed_i32(value: i32) -> String {
+    format!("{value:+}")
+}
+
+fn signed_i16(value: i16) -> String {
+    format!("{value:+}")
 }
 
 fn empty_team_data(team_abbrev: String) -> TeamData {
@@ -412,4 +593,69 @@ fn metric_f64(metrics: &[MetricCell], key: &str) -> Option<f64> {
             MetricValue::Decimal(value) => Some(value),
             _ => None,
         })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use icelines_core::{ScheduledGameInput, Season, ViewContext, ViewWindow};
+
+    #[test]
+    fn l0_team_season_template_projects_viewmodel_summary() {
+        let view = TeamSeasonView::from_games(
+            ViewContext::new(ViewWindow::new(Season(20242025), SeasonType::Regular)),
+            "20242025".to_string(),
+            "SEA".to_string(),
+            vec![
+                ScheduledGameInput {
+                    game_id: 2024020001,
+                    date: "2024-10-08".to_string(),
+                    game_type: 2,
+                    away_abbrev: "SEA".to_string(),
+                    away_name: "Kraken".to_string(),
+                    home_abbrev: "EDM".to_string(),
+                    home_name: "Oilers".to_string(),
+                    start_time_utc: "2024-10-08T23:00:00Z".to_string(),
+                    away_score: Some(3),
+                    home_score: Some(4),
+                    game_state: Some("FINAL".to_string()),
+                    last_period: Some("SO".to_string()),
+                    series_game: None,
+                    away_wins: None,
+                    home_wins: None,
+                },
+                ScheduledGameInput {
+                    game_id: 2024020002,
+                    date: "2024-10-10".to_string(),
+                    game_type: 2,
+                    away_abbrev: "VAN".to_string(),
+                    away_name: "Canucks".to_string(),
+                    home_abbrev: "SEA".to_string(),
+                    home_name: "Kraken".to_string(),
+                    start_time_utc: "2024-10-10T23:00:00Z".to_string(),
+                    away_score: Some(1),
+                    home_score: Some(5),
+                    game_state: Some("FINAL".to_string()),
+                    last_period: Some("REG".to_string()),
+                    series_game: None,
+                    away_wins: None,
+                    home_wins: None,
+                },
+            ],
+        );
+
+        let tmpl = team_season_template("24-25 · Regular".to_string(), &view, None);
+
+        assert_eq!(tmpl.team_abbrev, "SEA");
+        assert_eq!(tmpl.record_label, "1-0-1");
+        assert_eq!(tmpl.points, 3);
+        assert_eq!(tmpl.points_percentage, "0.750");
+        assert_eq!(tmpl.goal_differential, "+3");
+        assert_eq!(tmpl.home_record, "1-0-0");
+        assert_eq!(tmpl.away_record, "0-0-1");
+        assert_eq!(tmpl.rows[0].venue, "Away");
+        assert_eq!(tmpl.rows[0].result, "OTL");
+        assert_eq!(tmpl.rows[1].score, "5-1");
+        assert!(tmpl.warning.contains("Standings source not loaded"));
+    }
 }

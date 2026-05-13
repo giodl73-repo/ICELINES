@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}{{ team_abbrev }} season{% endblock %}
+
+{% block content %}
+<p class="back-link-row">
+    <a href="/team/{{ team_abbrev }}">← roster/depth</a>
+    <span class="inline-separator">·</span>
+    <a href="/schedule?team={{ team_abbrev }}">schedule list</a>
+</p>
+
+<header class="team-banner team-{{ team_abbrev }}">
+    <h1>{{ team_abbrev }} Season</h1>
+    <p class="team-banner-meta">
+        {{ active_label }} · {{ season_pretty }} · schedule-derived performance
+    </p>
+</header>
+
+{% if warning != "" %}
+<p class="state-warning-line">{{ warning }}</p>
+{% endif %}
+
+<section class="stat-grid" aria-label="Team season summary">
+    <div>
+        <span class="stat-label">Record</span>
+        <strong class="stat-value">{{ record_label }}</strong>
+    </div>
+    <div>
+        <span class="stat-label">Points</span>
+        <strong class="stat-value">{{ points }}</strong>
+    </div>
+    <div>
+        <span class="stat-label">Pts%</span>
+        <strong class="stat-value">{{ points_percentage }}</strong>
+    </div>
+    <div>
+        <span class="stat-label">Goal Diff</span>
+        <strong class="stat-value">{{ goal_differential }}</strong>
+    </div>
+</section>
+
+<section class="page-section" aria-label="Team season splits">
+    <h2 class="section-heading">Splits</h2>
+    <p class="context-line">
+        Home {{ home_record }} · Away {{ away_record }} · One-goal games {{ one_goal_record }}
+    </p>
+    <p class="context-line">
+        Last 10 {{ last_10_record }} · Last 10 goal diff {{ last_10_goal_differential }}
+    </p>
+    <p class="context-line">
+        Remaining {{ remaining_label }} · Next: {{ next_opponents }}
+    </p>
+</section>
+
+{% if rows.is_empty() %}
+<p class="empty-state">No games found for {{ team_abbrev }} in {{ season_pretty }}.</p>
+{% else %}
+<div class="table-scroll">
+<table>
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>H/A</th>
+            <th>Opponent</th>
+            <th>Result</th>
+            <th>Score</th>
+            <th class="numeric">GD</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in rows %}
+        <tr>
+            <td><code>{{ row.date }}</code></td>
+            <td>{{ row.venue }}</td>
+            <td>
+                <a class="team-link team-{{ row.opponent_abbrev }}" href="/team/{{ row.opponent_abbrev }}">{{ row.opponent_abbrev }}</a>
+                {% if row.is_playoff %}<span class="kind-chip kind-playoff">playoff</span>{% endif %}
+            </td>
+            <td>{{ row.result }}</td>
+            <td>{{ row.score }}</td>
+            <td class="numeric">{{ row.goal_differential }}</td>
+            <td>{{ row.state_label }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

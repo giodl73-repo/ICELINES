@@ -161,7 +161,9 @@ async fn build_schedule_result(state: &WebState, q: &ScheduleQuery) -> ScheduleR
     }
 }
 
-fn scheduled_game_input(game: icelines_fetch::nhl_api::ScheduledGame) -> ScheduledGameInput {
+pub(crate) fn scheduled_game_input(
+    game: icelines_fetch::nhl_api::ScheduledGame,
+) -> ScheduledGameInput {
     ScheduledGameInput {
         game_id: game.game_id,
         date: game.date,

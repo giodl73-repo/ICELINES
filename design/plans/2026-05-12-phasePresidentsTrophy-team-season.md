@@ -358,6 +358,15 @@ Exit:
 - CLI/TUI/web/JSON row identity/parity tests.
 - Surface parity matrix updated.
 
+Progress:
+
+- 2026-05-13: Added the first web HTML and JSON route plan target in code:
+  `/team/:abbrev/season` and `/api/v1/team/:abbrev/season` project the
+  schedule-derived `TeamSeasonView`. The roster/depth route remains unchanged,
+  and `team <ABBR> season` in the web dashboard command parser now opens the
+  season-performance route while `team <ABBR> schedule` keeps the raw schedule
+  list.
+
 ### PT.6 - Dashboard Integration
 
 - Update Jack Adams Web command parser:

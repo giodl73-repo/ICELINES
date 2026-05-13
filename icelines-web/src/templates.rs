@@ -565,6 +565,39 @@ pub struct TeamTemplate {
     pub goalies: Vec<GoalieRow>,
 }
 
+#[derive(Template)]
+#[template(path = "team_season.html")]
+pub struct TeamSeasonTemplate {
+    pub active_label: String,
+    pub team_abbrev: String,
+    pub season_pretty: String,
+    pub record_label: String,
+    pub points: u32,
+    pub points_percentage: String,
+    pub goal_differential: String,
+    pub home_record: String,
+    pub away_record: String,
+    pub one_goal_record: String,
+    pub last_10_record: String,
+    pub last_10_goal_differential: String,
+    pub remaining_label: String,
+    pub next_opponents: String,
+    pub warning: String,
+    pub rows: Vec<TeamSeasonTemplateRow>,
+}
+
+#[derive(Debug, Clone)]
+pub struct TeamSeasonTemplateRow {
+    pub date: String,
+    pub venue: String,
+    pub opponent_abbrev: String,
+    pub result: String,
+    pub score: String,
+    pub goal_differential: String,
+    pub state_label: String,
+    pub is_playoff: bool,
+}
+
 /// `goalies.html` — King.5.1 minimum viable goalie leaderboard.
 #[derive(Template)]
 #[template(path = "goalies.html")]

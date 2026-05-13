@@ -92,8 +92,13 @@ pub fn router(state: WebState) -> Router {
         .route("/api/v1/goalies", get(handlers::goalies::get_goalies_json))
         // Team roster — King.4.1. /team/SEA, /team/EDM, etc.
         .route("/team/:abbrev", get(handlers::team::get_team))
+        .route("/team/:abbrev/season", get(handlers::team::get_team_season))
         // JSON twin — King.4.2.
         .route("/api/v1/team/:abbrev", get(handlers::team::get_team_json))
+        .route(
+            "/api/v1/team/:abbrev/season",
+            get(handlers::team::get_team_season_json),
+        )
         // Depth rankings — Phase Lady Byng follow-up. Cross-team
         // line-value rankings; mirror of TUI Depth tab.
         .route("/depth", get(handlers::depth::get_depth))

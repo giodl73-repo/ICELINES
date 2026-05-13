@@ -625,7 +625,8 @@ already typed (for slash commands). Enter submits; Esc cancels.
 | `roster` / `fantasy roster` | Open active fantasy roster-gap view | `:roster` |
 | `player <name>` | Open player card | `:player Bedard` |
 | `team <ABBR> <kv...>` | Team depth chart with optional filters | `:team EDM pos=LW country=CAN` |
-| `team <ABBR> season` | Team's full schedule | `:team EDM season` |
+| `team <ABBR> season` | Team season-performance view | `:team EDM season` |
+| `team <ABBR> schedule` | Team's full schedule list | `:team EDM schedule` |
 | `class <year>` | Apply draft-year query, swap to Queries | `:class 2024` |
 | `compare <a>` / `compare <a> <b>` | Similarity peers / head-to-head | `:compare McDavid` |
 | `box <game-id>` / `box <AWAY@HOME>` | Boxscore detail from id or loaded slate | `:box 2025020001`, `:box EDM@BOS` |
@@ -659,7 +660,8 @@ fantasy poach top=8 availability=available -> /poach?top=8&availability=availabl
 simulate add=Connor_McDavid drop=Bench_Forward weeks=3
                                            -> /fantasy?add_player=Connor_McDavid&drop_player=Bench_Forward&weeks=3
 team EDM                                   -> /team/EDM
-team EDM season                            -> /schedule?team=EDM
+team EDM season                            -> /team/EDM/season
+team EDM schedule                          -> /schedule?team=EDM
 player Connor McDavid                      -> /leaders?filter=name%3DConnor+McDavid
 /fav add Connor McDavid                    -> POST /favorites/add
 watch Connor McDavid                       -> POST /watch-rules/create
