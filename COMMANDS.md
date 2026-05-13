@@ -500,6 +500,7 @@ icelines fetch career --bundled-seasons 5   # multi-league career history (Calde
 icelines data list                    # show installed seasons
 icelines data install --season 19881989
 icelines data remove 19921993
+icelines data verify --all            # verify installed data manifests
 ```
 
 The bundled-data cap is 38 seasons because `BUNDLED_SEASONS` is the canonical source. The 2004-05 lockout has no data and never will.
@@ -866,6 +867,13 @@ icelines serve                         # boot localhost:8000, auto-open browser
 icelines serve --port 9000             # custom port
 icelines serve --no-open               # print URL, don't auto-open
 icelines serve --bind 0.0.0.0          # LAN-accessible (warning prints)
+
+# Web admin operations are at /admin while the server is running.
+# Safe POST-backed mutations: runtime web config set/reset, data verify,
+# inactive snapshot delete, sealed snapshot activate.
+# Web data install/remove and persistent report toggles are intentionally
+# deferred to avoid live-network or destructive admin operations without an
+# explicit local-only/confirmation contract.
 
 # Selke fantasy poacher web/API surfaces:
 # /poach, /reports/poach, /reports/weekly, /watchlist, /api/v1/poach,

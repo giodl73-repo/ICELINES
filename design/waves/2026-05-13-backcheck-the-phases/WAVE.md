@@ -53,7 +53,7 @@ role panel.
 | 04 - Visual and CREST regression captures | planned | `plans/pulse-04.md` |
 | 05 - Scenario harness classification | done | `plans/pulse-05.md`; `SCENARIO-INVENTORY.md` |
 | 06 - Selke watch-rule TUI editor and UX | done | `plans/pulse-06.md` |
-| 07 - Web admin operations parity | planned | `plans/pulse-07.md` |
+| 07 - Web admin operations parity | done | `plans/pulse-07.md`; `ADMIN-OPERATIONS-INVENTORY.md` |
 | 08 - Career/docs parity backfill | planned | `plans/pulse-08.md` |
 
 ## Closeout Target

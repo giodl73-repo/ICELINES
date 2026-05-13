@@ -125,14 +125,16 @@ mod tests {
     use crate::model::Season;
     use crate::season_stats::SeasonType;
     use crate::view_model::{
-        CareerSortKey, CareerView, CompareView, Completeness, DepthLeagueView, DocsView, EmptyKind,
+        CareerSortKey, CareerView, CompareView, Completeness, ConfigMutationIntent,
+        DataMutationIntent, DataMutationOperation, DepthLeagueView, DocsView, EmptyKind,
         FavoriteMemberInput, FavoriteMutationIntent, FavoritesView, GameBoxscoreInput,
         GameGoalInput, GameGoalieInput, GameSkaterInput, GameView, HomeView, LeaderKind,
-        LeadersView, MetricCell, MetricUnit, MetricValue, PlayerCardView, PlayoffsBracketInput,
-        PlayoffsGameInput, PlayoffsRoundInput, PlayoffsSeriesInput, PlayoffsView,
-        ScheduleMatchupView, ScheduleTeamView, ScheduleView, ScheduledGameInput, ScoresView,
-        SeasonTypeMutationIntent, SemanticToken, SourceKind, SourceProvenance, SourceState,
-        StatKey, TeamSeasonView, TeamStandingInput, TransactionsView, ValuePrecision, ViewContext,
+        LeadersView, MetricCell, MetricUnit, MetricValue, MutationStatus, PlayerCardView,
+        PlayoffsBracketInput, PlayoffsGameInput, PlayoffsRoundInput, PlayoffsSeriesInput,
+        PlayoffsView, ScheduleMatchupView, ScheduleTeamView, ScheduleView, ScheduledGameInput,
+        ScoresView, SeasonTypeMutationIntent, SemanticToken, SnapshotMutationIntent,
+        SnapshotMutationOperation, SourceKind, SourceProvenance, SourceState, StatKey,
+        TeamSeasonView, TeamStandingInput, TransactionsView, ValuePrecision, ViewContext,
         ViewWindow, WatchNoteInput, WatchlistView,
     };
 
@@ -178,6 +180,33 @@ mod tests {
         assert_eq!(view.markdown, "# IceLines\n");
         assert_eq!(view.markdown_bytes, "# IceLines\n".len());
         assert!(view.rendered_html.contains("<h1>IceLines</h1>"));
+    }
+
+    #[test]
+    fn l0_admin_mutation_intents_project_shared_result_views() {
+        let context = ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular));
+
+        let config = ConfigMutationIntent::set("web.active_season_type", "playoff")
+            .expect("valid config intent")
+            .result_view(context.clone(), true);
+        assert_eq!(config.operation, "config_set");
+        assert_eq!(config.status, MutationStatus::Applied);
+
+        let data =
+            DataMutationIntent::resolve(DataMutationOperation::Verify, "20252026/regular", false)
+                .expect("valid data intent")
+                .result_view(context.clone(), false);
+        assert_eq!(data.operation, "data_verify");
+        assert_eq!(data.status, MutationStatus::Noop);
+
+        let snapshot = SnapshotMutationIntent::resolve(
+            SnapshotMutationOperation::Activate,
+            "stats-2026-05-10",
+        )
+        .expect("valid snapshot intent")
+        .result_view(context, true);
+        assert_eq!(snapshot.operation, "snapshot_activate");
+        assert_eq!(snapshot.status, MutationStatus::Applied);
     }
 
     #[test]

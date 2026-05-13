@@ -2,7 +2,7 @@
 wave: backcheck-the-phases
 pulse: 07
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-01]
 governing_roles:
   - keel
@@ -45,12 +45,23 @@ remain explicitly deferred.
 
 ## Gates
 
-- [ ] `cargo test -p icelines-core admin`
-- [ ] `cargo test -p icelines-cli config`
-- [ ] `cargo test -p icelines-cli data`
-- [ ] `cargo test -p icelines-web admin`
-- [ ] `cargo fmt --check`
-- [ ] `surface-parity.md` distinguishes implemented, deferred, and dangerous admin operations.
+- [x] `cargo test -p icelines-core admin` - 1 matched test passed.
+- [x] `cargo test -p icelines-cli config` - 98 matched tests passed.
+- [x] `cargo test -p icelines-cli data` - 85 matched tests passed.
+- [x] `cargo test -p icelines-web admin` - 18 matched tests passed.
+- [x] `cargo fmt --check`
+- [x] `surface-parity.md` distinguishes implemented, deferred, and dangerous admin operations.
+
+## Pulse 07 Result
+
+- Created `ADMIN-OPERATIONS-INVENTORY.md` with the WIRE decision table across
+  CLI, TUI, web HTML, and web JSON.
+- Kept web data install/remove and persistent report-toggle UI deferred; no live
+  network install or unscoped destructive data removal was added to web admin.
+- Added fixture-backed web admin safety coverage for absent data install/remove
+  controls and active-snapshot delete rejection.
+- Added a core ViewModel test proving config/data/snapshot admin mutations share
+  `MutationResultView`.
 
 ## Stop Conditions
 

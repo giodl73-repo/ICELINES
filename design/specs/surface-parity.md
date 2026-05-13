@@ -206,10 +206,23 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `POST /admin/config/reset` | `handlers/admin.rs` | HTML mutation | Config/report toggles | partial - resets runtime web config through `ConfigMutationIntent`, derives a `MutationResultView`, and redirects back to `/admin`; covered by `l1_admin_config_reset_form_redirects_and_restores_runtime_config` |
 | `POST /api/v1/admin/snapshots/activate` | `handlers/admin.rs` | JSON mutation | Snapshot operations | partial - activates sealed snapshots through `SnapshotMutationIntent` and returns `MutationResultView`; covered by `l1_admin_snapshot_activate_json_returns_mutation_result_view` |
 | `POST /admin/snapshots/activate` | `handlers/admin.rs` | HTML mutation | Snapshot operations | partial - activates sealed snapshots through `SnapshotMutationIntent`, derives `MutationResultView`, and redirects back to `/admin`; covered by `l1_admin_html_renders_snapshot_activate_form_for_sealed_inactive_rows` and `l1_admin_snapshot_activate_form_redirects_and_sets_active_snapshot` |
-| `POST /api/v1/admin/snapshots/delete` | `handlers/admin.rs` | JSON mutation | Snapshot operations | partial - deletes inactive snapshots through `SnapshotMutationIntent` and returns `MutationResultView`; covered by `l1_admin_snapshot_delete_json_returns_mutation_result_view` |
+| `POST /api/v1/admin/snapshots/delete` | `handlers/admin.rs` | JSON mutation | Snapshot operations | partial - deletes inactive snapshots through `SnapshotMutationIntent` and returns `MutationResultView`; covered by `l1_admin_snapshot_delete_json_returns_mutation_result_view` and `l1_admin_snapshot_delete_json_rejects_active_snapshot` |
 | `POST /admin/snapshots/delete` | `handlers/admin.rs` | HTML mutation | Snapshot operations | partial - deletes inactive snapshots through `SnapshotMutationIntent`, derives `MutationResultView`, and redirects back to `/admin`; covered by `l1_admin_snapshot_delete_form_redirects_and_removes_inactive_snapshot` |
 | `POST /api/v1/admin/data/verify` | `handlers/admin.rs` | JSON mutation | Data install/list/remove | partial - resolves a safe data verification intent, rejects unknown targets, and returns `MutationResultView`; covered by `l1_admin_data_verify_json_returns_mutation_result_view` and `l1_admin_data_verify_json_rejects_unknown_target` |
 | `POST /admin/data/verify` | `handlers/admin.rs` | HTML mutation | Data install/list/remove | partial - resolves a safe data verification intent, derives `MutationResultView`, and redirects back to `/admin`; covered by `l1_admin_html_renders_data_verify_form_for_manifest_rows` and `l1_admin_data_verify_form_redirects_for_known_target` |
+
+### Web admin operation safety matrix
+
+Pulse 07 keeps the admin surface intentionally conservative. Implemented web
+mutations are typed, POST-backed, and covered by fixture-backed tests:
+runtime web config set/reset, data verify, sealed snapshot activate, and
+inactive snapshot delete. Dangerous or incomplete operations remain explicit
+deferrals: web data install is deferred because it performs live/network release
+downloads; web data remove is deferred because it is destructive filesystem
+mutation without a scoped confirmation contract; persistent report-toggle web UI
+is deferred until it can share the CLI/TUI `~/.icelines/config.toml` report
+contract. The durable decision table is
+`design/waves/2026-05-13-backcheck-the-phases/ADMIN-OPERATIONS-INVENTORY.md`.
 
 TedLindsay.3 should use this table as the route-by-route checklist for parity,
 not `design/specs/web-dashboard.md` claims.

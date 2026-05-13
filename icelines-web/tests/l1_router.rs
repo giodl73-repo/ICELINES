@@ -2570,6 +2570,14 @@ async fn l1_admin_html_renders_data_verify_form_for_manifest_rows() {
 
     assert!(html.contains("action=\"/admin/data/verify\""));
     assert!(html.contains("name=\"target\" value=\"20252026\""));
+    assert!(
+        !html.contains("/admin/data/install"),
+        "live data install must stay out of the web admin mutation surface"
+    );
+    assert!(
+        !html.contains("/admin/data/remove"),
+        "destructive data remove must stay out of the web admin mutation surface"
+    );
 }
 
 #[tokio::test]
@@ -2950,6 +2958,50 @@ async fn l1_admin_snapshot_delete_json_returns_mutation_result_view() {
         .collect();
     assert!(!names.contains("stats-a"));
     assert!(names.contains("stats-b"));
+}
+
+#[tokio::test]
+async fn l1_admin_snapshot_delete_json_rejects_active_snapshot() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    let store = SnapshotStore::new(SnapshotStore::default_root());
+    store
+        .create(
+            "stats-active",
+            "20252026",
+            SnapshotTier::Stats,
+            None,
+            "2026-05-10",
+        )
+        .expect("create active snapshot");
+    store.seal("stats-active").expect("seal active snapshot");
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/admin/snapshots/delete")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"name":"stats-active"}"#))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value = serde_json::from_slice(&bytes).expect("json body");
+    assert!(json["error"]
+        .as_str()
+        .expect("error string")
+        .contains("cannot delete active snapshot"));
+    assert_eq!(
+        store.load_manifest().expect("manifest").active.as_deref(),
+        Some("stats-active")
+    );
 }
 
 #[tokio::test]
