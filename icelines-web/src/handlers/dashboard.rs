@@ -220,6 +220,7 @@ fn workspace_label(path: &str) -> String {
         "/career" => "Career Cohorts",
         "/reports/poach" => "Poach Report",
         "/reports/weekly" => "Weekly Report",
+        "/docs" => "Docs",
         other if other.starts_with("/player/") => "Player Card",
         other if other.starts_with("/team/") && other.ends_with("/season") => "Team Season",
         other if other.starts_with("/team/") => "Team Depth",
@@ -1762,6 +1763,7 @@ mod tests {
             workspace_label("/poach?availability=imported-available"),
             "Poach"
         );
+        assert_eq!(workspace_label("/docs"), "Docs");
     }
 
     #[test]

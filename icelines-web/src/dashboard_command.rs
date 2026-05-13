@@ -444,6 +444,8 @@ mod tests {
 
     #[test]
     fn l0_dashboard_command_navigation_examples_resolve_to_internal_routes() {
+        assert_eq!(route("help"), "/docs");
+        assert_eq!(route("/help"), "/docs");
         assert_eq!(route("team edm"), "/team/EDM");
         assert_eq!(route("team EDM season"), "/team/EDM/season");
         assert_eq!(route("team EDM schedule"), "/schedule?team=EDM");
