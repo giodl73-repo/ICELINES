@@ -9,6 +9,7 @@ use axum::http::{HeaderMap, StatusCode};
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
+use icelines_core::view_model::{AvailabilityState, PoachBoardView};
 use icelines_core::{
     DepthLeagueView, DepthTeamStrengthRow, HomeView, ScheduleRecord, TeamAbbr, TeamDepthView,
     TeamSeasonView, ViewContext, ViewWindow,
@@ -224,6 +225,9 @@ async fn workspace_summary(state: &WebState, path: &str) -> Vec<DashboardSummary
     if route == "/depth" {
         return depth_workspace_summary(state).await;
     }
+    if route == "/poach" {
+        return poach_workspace_summary(state, path).await;
+    }
     if let Some(team) = route
         .strip_prefix("/team/")
         .and_then(|rest| rest.strip_suffix("/season"))
@@ -353,6 +357,89 @@ fn depth_summary_row(idx: usize, row: &DepthTeamStrengthRow) -> DashboardSummary
         row.team.0.clone(),
         format!("total {:.0} · C {} · D {}", row.total, row.c_top, row.d_top),
     )
+}
+
+async fn poach_workspace_summary(state: &WebState, path: &str) -> Vec<DashboardSummaryRow> {
+    let q = poach_query_from_workspace(path);
+    let Ok(result) = super::poach::build_poach_view(state, &q).await else {
+        return Vec::new();
+    };
+    poach_summary_rows(&result.view)
+}
+
+fn poach_query_from_workspace(path: &str) -> super::poach::PoachWebQuery {
+    let mut q = super::poach::PoachWebQuery {
+        top: Some(DASHBOARD_PREVIEW_N as u16),
+        ..Default::default()
+    };
+    let Some(query) = path.split_once('?').map(|(_, query)| query) else {
+        return q;
+    };
+    for pair in query.split('&') {
+        let Some((key, value)) = pair.split_once('=') else {
+            continue;
+        };
+        let value = value.replace('+', " ");
+        match key {
+            "scheme" => q.scheme = Some(value),
+            "category" | "categories" => q.categories = Some(value),
+            "team" => q.team = Some(value),
+            "pos" => q.pos = Some(value),
+            "league" => q.league = Some(value),
+            "availability" => q.availability = Some(value),
+            "top" => q.top = value.parse::<u16>().ok(),
+            _ => {}
+        }
+    }
+    q.top = Some(q.top.unwrap_or(DASHBOARD_PREVIEW_N as u16).clamp(1, 10));
+    q
+}
+
+fn poach_summary_rows(view: &PoachBoardView) -> Vec<DashboardSummaryRow> {
+    let mut rows = vec![summary_row(
+        "Candidates",
+        view.rows.len().to_string(),
+        format!(
+            "{} · high {} · medium {}",
+            view.scoring_scheme, view.confidence_summary.high, view.confidence_summary.medium
+        ),
+    )];
+
+    if view.rows.is_empty() {
+        rows[0].value = "No rows".to_string();
+        rows[0].detail = view
+            .empty_state
+            .as_ref()
+            .and_then(|state| state.detail.clone())
+            .unwrap_or_else(|| "No poach candidates matched the active filters".to_string());
+        return rows;
+    }
+
+    rows.extend(view.rows.iter().take(2).enumerate().map(|(idx, row)| {
+        summary_row(
+            format!("#{}", idx + 1),
+            row.display_name.clone(),
+            format!(
+                "{} {} · {:.1} · {}",
+                row.team.0,
+                row.position.abbreviation(),
+                row.score.final_score,
+                availability_summary_label(row.availability)
+            ),
+        )
+    }));
+    rows
+}
+
+fn availability_summary_label(state: AvailabilityState) -> &'static str {
+    match state {
+        AvailabilityState::Available => "available",
+        AvailabilityState::RosteredByUser => "my roster",
+        AvailabilityState::Watched => "watched",
+        AvailabilityState::ImportedRostered => "rostered",
+        AvailabilityState::ImportedAvailable => "free",
+        AvailabilityState::Unknown => "unknown",
+    }
 }
 
 async fn team_season_workspace_summary(
@@ -824,6 +911,38 @@ mod tests {
         assert_eq!(rows[0].value, "EDM");
         assert!(rows[0].detail.contains("total 314"));
         assert!(rows[0].detail.contains("Connor McDavid"));
+    }
+
+    #[test]
+    fn l0_dashboard_poach_summary_projects_empty_viewmodel() {
+        let query = icelines_core::view_model::PoachQuery::new(
+            Season(20252026),
+            SeasonType::Regular,
+            "yahoo-standard",
+        );
+        let view = PoachBoardView::new(
+            ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular)),
+            query,
+            "yahoo-standard",
+        );
+
+        let rows = poach_summary_rows(&view);
+
+        assert_eq!(rows[0].label, "Candidates");
+        assert_eq!(rows[0].value, "No rows");
+        assert!(rows[0].detail.contains("No poach candidates"));
+    }
+
+    #[test]
+    fn l0_dashboard_poach_workspace_query_preserves_filters() {
+        let query = poach_query_from_workspace(
+            "/poach?availability=imported_available&category=hits,blocks&team=SEA&top=99",
+        );
+
+        assert_eq!(query.availability.as_deref(), Some("imported_available"));
+        assert_eq!(query.categories.as_deref(), Some("hits,blocks"));
+        assert_eq!(query.team.as_deref(), Some("SEA"));
+        assert_eq!(query.top, Some(10));
     }
 
     #[test]

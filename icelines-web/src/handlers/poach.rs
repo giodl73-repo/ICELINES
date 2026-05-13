@@ -623,12 +623,12 @@ fn watch_rules_error(status: StatusCode, message: impl Into<String>) -> Response
         .into_response()
 }
 
-struct PoachBuildResult {
-    view: PoachBoardView,
-    active_label: String,
+pub(super) struct PoachBuildResult {
+    pub(super) view: PoachBoardView,
+    pub(super) active_label: String,
 }
 
-async fn build_poach_view(
+pub(super) async fn build_poach_view(
     state: &WebState,
     q: &PoachWebQuery,
 ) -> Result<PoachBuildResult, Response> {
