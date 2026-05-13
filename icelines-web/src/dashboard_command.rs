@@ -163,19 +163,47 @@ fn parse_team(args: &str) -> Result<DashboardCommand, DashboardCommandError> {
 }
 
 fn parse_compare(args: &str) -> Result<DashboardCommand, DashboardCommandError> {
-    let parts = shell_words(args);
+    let trimmed = args.trim();
+    if trimmed.is_empty() {
+        return Err(DashboardCommandError::MissingArg {
+            command: "compare",
+            arg: "left player",
+        });
+    };
+
+    if let Some((left, right)) = split_compare_pair(trimmed) {
+        return workspace(&compare_url(left, Some(right)));
+    }
+
+    let parts = shell_words(trimmed);
     let Some(left) = parts.first() else {
         return Err(DashboardCommandError::MissingArg {
             command: "compare",
             arg: "left player",
         });
     };
+    workspace(&compare_url(left, parts.get(1).map(String::as_str)))
+}
+
+fn split_compare_pair(input: &str) -> Option<(&str, &str)> {
+    let lower = input.to_ascii_lowercase();
+    if let Some(idx) = lower.find(" vs ") {
+        let (left, rest) = input.split_at(idx);
+        let right = &rest[4..];
+        return Some((left.trim(), right.trim()));
+    }
+    input
+        .split_once(',')
+        .map(|(left, right)| (left.trim(), right.trim()))
+}
+
+fn compare_url(left: &str, right: Option<&str>) -> String {
     let mut url = format!("/compare?left={}", url_component(left));
-    if let Some(right) = parts.get(1) {
+    if let Some(right) = right.filter(|value| !value.is_empty()) {
         url.push_str("&right=");
         url.push_str(&url_component(right));
     }
-    workspace(&url)
+    url
 }
 
 fn parse_favorite_mutation(args: &str) -> Result<DashboardCommand, DashboardCommandError> {
@@ -431,6 +459,14 @@ mod tests {
         assert_eq!(route("box EDM@BOS"), "/game/EDM%40BOS");
         assert_eq!(
             route("compare \"Connor McDavid\" \"Nathan MacKinnon\""),
+            "/compare?left=Connor+McDavid&right=Nathan+MacKinnon"
+        );
+        assert_eq!(
+            route("compare Connor McDavid vs Sidney Crosby"),
+            "/compare?left=Connor+McDavid&right=Sidney+Crosby"
+        );
+        assert_eq!(
+            route("compare Connor McDavid, Nathan MacKinnon"),
             "/compare?left=Connor+McDavid&right=Nathan+MacKinnon"
         );
     }
