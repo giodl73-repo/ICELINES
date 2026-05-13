@@ -194,6 +194,29 @@ pub async fn post_snapshot_activate_json(
     }
 }
 
+pub async fn post_snapshot_activate_form(
+    Form(req): Form<AdminSnapshotMutationRequest>,
+) -> Response {
+    let intent =
+        match SnapshotMutationIntent::resolve(SnapshotMutationOperation::Activate, req.name) {
+            Ok(intent) => intent,
+            Err(message) => return admin_bad_request_html(message),
+        };
+    let store = SnapshotStore::new(SnapshotStore::default_root());
+    let before = match store.load_manifest() {
+        Ok(manifest) => manifest.active,
+        Err(err) => return admin_error_html(format!("loading snapshot manifest: {err}")),
+    };
+    match store.set_active(&intent.name) {
+        Ok(()) => {
+            let changed = before.as_deref() != Some(intent.name.as_str());
+            let _result = intent.result_view(default_context(), changed);
+            Redirect::to("/admin").into_response()
+        }
+        Err(err) => admin_bad_request_html(format!("activating snapshot '{}': {err}", intent.name)),
+    }
+}
+
 pub async fn post_snapshot_delete_json(Json(req): Json<AdminSnapshotMutationRequest>) -> Response {
     let intent = match SnapshotMutationIntent::resolve(SnapshotMutationOperation::Remove, req.name)
     {
@@ -583,11 +606,11 @@ fn render_snapshot_section(html: &mut String, view: &SnapshotView) {
         html.push_str("</section>");
         return;
     }
-    html.push_str("<table><thead><tr><th>Name</th><th>Season</th><th>Tier</th><th>Date</th><th>Sealed</th><th>Files</th></tr></thead><tbody>");
+    html.push_str("<table><thead><tr><th>Name</th><th>Season</th><th>Tier</th><th>Date</th><th>Sealed</th><th>Files</th><th>Action</th></tr></thead><tbody>");
     for row in &view.rows {
         let active = if row.is_active { " active" } else { "" };
         html.push_str(&format!(
-            "<tr><td>{}{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>",
+            "<tr><td>{}{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>",
             html_escape(&row.name),
             active,
             html_escape(&row.season),
@@ -596,6 +619,17 @@ fn render_snapshot_section(html: &mut String, view: &SnapshotView) {
             html_escape(&row.sealed_label),
             row.file_count
         ));
+        if row.is_active {
+            html.push_str("<span class=\"muted\">Active</span>");
+        } else if row.sealed {
+            html.push_str(&format!(
+                "<form method=\"post\" action=\"/admin/snapshots/activate\"><input type=\"hidden\" name=\"name\" value=\"{}\"><button type=\"submit\">Activate</button></form>",
+                html_escape(&row.name)
+            ));
+        } else {
+            html.push_str("<span class=\"muted\">Seal before activate</span>");
+        }
+        html.push_str("</td></tr>");
     }
     html.push_str("</tbody></table></section>");
 }

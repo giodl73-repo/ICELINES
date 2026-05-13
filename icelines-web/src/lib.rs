@@ -223,6 +223,10 @@ pub fn router(state: WebState) -> Router {
             post(handlers::admin::post_snapshot_activate_json),
         )
         .route(
+            "/admin/snapshots/activate",
+            post(handlers::admin::post_snapshot_activate_form),
+        )
+        .route(
             "/api/v1/admin/snapshots/delete",
             post(handlers::admin::post_snapshot_delete_json),
         )

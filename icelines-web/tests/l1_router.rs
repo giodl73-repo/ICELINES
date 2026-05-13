@@ -2205,6 +2205,54 @@ async fn l1_admin_snapshots_json_returns_viewmodel_contract() {
 }
 
 #[tokio::test]
+async fn l1_admin_html_renders_snapshot_activate_form_for_sealed_inactive_rows() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    let store = SnapshotStore::new(SnapshotStore::default_root());
+    store
+        .create(
+            "stats-a",
+            "20252026",
+            SnapshotTier::Stats,
+            None,
+            "2026-05-10",
+        )
+        .expect("create snapshot a");
+    store.seal("stats-a").expect("seal snapshot a");
+    store
+        .create(
+            "stats-b",
+            "20252026",
+            SnapshotTier::Stats,
+            None,
+            "2026-05-11",
+        )
+        .expect("create snapshot b");
+    store.seal("stats-b").expect("seal snapshot b");
+    store.set_active("stats-a").expect("set active snapshot");
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/admin")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let html = String::from_utf8(bytes.to_vec()).expect("utf8 html");
+
+    assert!(html.contains("action=\"/admin/snapshots/activate\""));
+    assert!(html.contains("name=\"name\" value=\"stats-b\""));
+}
+
+#[tokio::test]
 async fn l1_admin_config_json_returns_runtime_config_viewmodel() {
     let state = WebState::new();
     {
@@ -2401,6 +2449,49 @@ async fn l1_admin_snapshot_activate_json_returns_mutation_result_view() {
     assert_eq!(json["operation"], "snapshot_activate");
     assert_eq!(json["target"], "stats-a");
     assert_eq!(json["status"], "applied");
+    assert_eq!(
+        store.load_manifest().expect("manifest").active.as_deref(),
+        Some("stats-a")
+    );
+}
+
+#[tokio::test]
+async fn l1_admin_snapshot_activate_form_redirects_and_sets_active_snapshot() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    let store = SnapshotStore::new(SnapshotStore::default_root());
+    store
+        .create(
+            "stats-a",
+            "20252026",
+            SnapshotTier::Stats,
+            None,
+            "2026-05-10",
+        )
+        .expect("create snapshot a");
+    store.seal("stats-a").expect("seal snapshot a");
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/admin/snapshots/activate")
+                .header("content-type", "application/x-www-form-urlencoded")
+                .body(Body::from("name=stats-a"))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        response
+            .headers()
+            .get("location")
+            .and_then(|v| v.to_str().ok()),
+        Some("/admin")
+    );
     assert_eq!(
         store.load_manifest().expect("manifest").active.as_deref(),
         Some("stats-a")
