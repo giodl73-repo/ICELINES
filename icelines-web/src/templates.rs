@@ -64,6 +64,7 @@ pub struct DashboardTemplate {
     pub active_label: String,
     pub workspace_url: String,
     pub workspace_label: String,
+    pub workspace_summary: Vec<DashboardSummaryRow>,
     pub scores_summary: String,
     pub favorites: Vec<DashboardEntityRow>,
     pub watchlist: Vec<DashboardEntityRow>,
@@ -76,7 +77,15 @@ pub struct DashboardTemplate {
 pub struct DashboardWorkspaceTemplate {
     pub workspace_url: String,
     pub workspace_label: String,
+    pub workspace_summary: Vec<DashboardSummaryRow>,
     pub workspace_links: Vec<DashboardLinkRow>,
+}
+
+#[derive(Debug, Clone)]
+pub struct DashboardSummaryRow {
+    pub label: String,
+    pub value: String,
+    pub detail: String,
 }
 
 #[derive(Debug, Clone)]

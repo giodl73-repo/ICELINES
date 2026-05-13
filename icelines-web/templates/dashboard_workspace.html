@@ -4,6 +4,17 @@
         This workspace is server-rendered and URL-addressable.
         <a href="{{ workspace_url }}">Open the full page</a>.
     </p>
+    {% if !workspace_summary.is_empty() %}
+    <div class="stat-grid" aria-label="Workspace summary">
+        {% for row in workspace_summary %}
+        <div>
+            <span class="stat-label">{{ row.label }}</span>
+            <strong class="stat-value">{{ row.value }}</strong>
+            {% if row.detail != "" %}<span class="jaw-detail">{{ row.detail }}</span>{% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
     <div class="jaw-workspace-grid">
         {% for row in workspace_links %}
         <a class="jaw-workspace-card" href="{{ row.href }}">

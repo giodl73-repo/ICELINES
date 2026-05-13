@@ -1,11 +1,15 @@
 use crate::state::WebState;
 use crate::templates::{
-    DashboardEntityRow, DashboardLinkRow, DashboardTemplate, DashboardWorkspaceTemplate,
+    DashboardEntityRow, DashboardLinkRow, DashboardSummaryRow, DashboardTemplate,
+    DashboardWorkspaceTemplate,
 };
 use askama::Template;
 use axum::extract::{Form, Query, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{Html, IntoResponse, Redirect, Response};
+use icelines_core::model::Season;
+use icelines_core::season_stats::SeasonType;
+use icelines_core::{ScheduleRecord, TeamAbbr, TeamSeasonView, ViewContext, ViewWindow};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize, Default)]
@@ -31,11 +35,13 @@ pub async fn get_dashboard(
     let workspace_url = normalize_workspace(q.workspace.as_deref());
     let workspace_label = workspace_label(&workspace_url);
     let workspace_links = workspace_links(&workspace_url);
+    let workspace_summary = workspace_summary(&state, &workspace_url).await;
 
     if matches!(q.partial.as_deref(), Some("workspace")) {
         return render_template(DashboardWorkspaceTemplate {
             workspace_url,
             workspace_label,
+            workspace_summary,
             workspace_links,
         });
     }
@@ -52,6 +58,7 @@ pub async fn get_dashboard(
         active_label,
         workspace_url: workspace_url.clone(),
         workspace_label,
+        workspace_summary,
         scores_summary: "Live, final, and scheduled games stay one click away.".to_owned(),
         favorites: dashboard_entities("Favorites"),
         watchlist: dashboard_entities("Watchlist"),
@@ -191,11 +198,156 @@ fn workspace_label(path: &str) -> String {
         "/favorites" => "Favorites",
         "/watchlist" => "Watchlist",
         other if other.starts_with("/player/") => "Player Card",
+        other if other.starts_with("/team/") && other.ends_with("/season") => "Team Season",
         other if other.starts_with("/team/") => "Team Depth",
         other if other.starts_with("/game/") => "Game Detail",
         _ => "Workspace",
     }
     .to_owned()
+}
+
+async fn workspace_summary(state: &WebState, path: &str) -> Vec<DashboardSummaryRow> {
+    let route = workspace_route_key(path);
+    if let Some(team) = route
+        .strip_prefix("/team/")
+        .and_then(|rest| rest.strip_suffix("/season"))
+    {
+        return team_season_workspace_summary(state, team).await;
+    }
+    Vec::new()
+}
+
+async fn team_season_workspace_summary(
+    state: &WebState,
+    team_raw: &str,
+) -> Vec<DashboardSummaryRow> {
+    let Ok(team) = TeamAbbr::parse(team_raw) else {
+        return Vec::new();
+    };
+    let (season_str, season, season_type) = {
+        let cfg = state.config.read().await;
+        (
+            cfg.active_season.clone(),
+            cfg.active_season
+                .parse::<u32>()
+                .map(Season)
+                .unwrap_or(Season(icelines_core::CURRENT_SEASON)),
+            SeasonType::parse_lossy(&cfg.active_season_type),
+        )
+    };
+    let client = super::nhl_client();
+    let standings = client
+        .fetch_standings_now()
+        .await
+        .unwrap_or_default()
+        .into_iter()
+        .map(|row| row.to_team_standing_input())
+        .collect();
+    let games = client
+        .fetch_team_season_schedule(&team.0, &season_str)
+        .await
+        .unwrap_or_default()
+        .into_iter()
+        .map(super::schedule::scheduled_game_input)
+        .collect();
+    let view = TeamSeasonView::from_games_and_standings(
+        ViewContext::new(ViewWindow::new(season, season_type)),
+        season_str,
+        team.0.to_string(),
+        games,
+        standings,
+    );
+    team_season_summary_rows(&view)
+}
+
+fn team_season_summary_rows(view: &TeamSeasonView) -> Vec<DashboardSummaryRow> {
+    let mut rows = vec![
+        summary_row(
+            "Record",
+            record_label(view.headline.record),
+            format!(
+                "{} pts · Pts% {:.3}",
+                view.headline.points, view.headline.points_percentage
+            ),
+        ),
+        summary_row(
+            "Goal Diff",
+            signed_i32(view.headline.goal_differential),
+            format!(
+                "GF-GA {}-{}",
+                view.headline.goals_for, view.headline.goals_against
+            ),
+        ),
+        summary_row(
+            "SOS",
+            pct_or_dash(view.schedule_strength.faced_average_points_percentage),
+            format!(
+                "remaining {}",
+                pct_or_dash(view.schedule_strength.remaining_average_points_percentage)
+            ),
+        ),
+        summary_row(
+            "Ledger",
+            format!("QW {}", view.quality_ledger.quality_wins),
+            format!(
+                "bad losses {} · missed pts {}",
+                view.quality_ledger.bad_losses, view.quality_ledger.missed_points
+            ),
+        ),
+    ];
+    if let Some(standings) = &view.standings {
+        rows.insert(
+            1,
+            summary_row(
+                "Standings",
+                standings.playoff_position_label.clone(),
+                cutline_detail(
+                    standings.points_above_cutline,
+                    standings.points_behind_cutline,
+                ),
+            ),
+        );
+    }
+    rows
+}
+
+fn summary_row(
+    label: impl Into<String>,
+    value: impl Into<String>,
+    detail: impl Into<String>,
+) -> DashboardSummaryRow {
+    DashboardSummaryRow {
+        label: label.into(),
+        value: value.into(),
+        detail: detail.into(),
+    }
+}
+
+fn record_label(record: ScheduleRecord) -> String {
+    format!(
+        "{}-{}-{}",
+        record.wins, record.losses, record.overtime_losses
+    )
+}
+
+fn signed_i32(value: i32) -> String {
+    format!("{value:+}")
+}
+
+fn pct_or_dash(value: Option<f32>) -> String {
+    value
+        .map(|value| format!("{value:.3}"))
+        .unwrap_or_else(|| "-".to_string())
+}
+
+fn cutline_detail(above: Option<i32>, behind: Option<i32>) -> String {
+    if let Some(above) = above {
+        format!("{above} pts above cutline")
+    } else if let Some(behind) = behind {
+        format!("{behind} pts behind cutline")
+    } else {
+        String::new()
+    }
 }
 
 fn dashboard_entities(group: &str) -> Vec<DashboardEntityRow> {
@@ -310,6 +462,7 @@ mod tests {
     #[test]
     fn l0_dashboard_workspace_labels_known_routes() {
         assert_eq!(workspace_label("/team/EDM"), "Team Depth");
+        assert_eq!(workspace_label("/team/EDM/season"), "Team Season");
         assert_eq!(workspace_label("/player/8478402"), "Player Card");
         assert_eq!(
             workspace_label("/poach?availability=imported-available"),
@@ -331,5 +484,21 @@ mod tests {
             dashboard_workspace_href("/poach?availability=imported-available"),
             "/dashboard?workspace=%2Fpoach%3Favailability%3Dimported-available"
         );
+    }
+
+    #[test]
+    fn l0_dashboard_team_season_summary_projects_viewmodel() {
+        let view = TeamSeasonView::from_games(
+            ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular)),
+            "20252026".to_string(),
+            "EDM".to_string(),
+            Vec::new(),
+        );
+
+        let rows = team_season_summary_rows(&view);
+
+        assert!(rows.iter().any(|row| row.label == "Record"));
+        assert!(rows.iter().any(|row| row.label == "SOS"));
+        assert!(rows.iter().any(|row| row.label == "Ledger"));
     }
 }
