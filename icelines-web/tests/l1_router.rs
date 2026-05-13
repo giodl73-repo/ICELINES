@@ -2132,6 +2132,53 @@ async fn l1_admin_html_renders_operational_viewmodels() {
 }
 
 #[tokio::test]
+async fn l1_admin_html_renders_data_verify_form_for_manifest_rows() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    let data_root = std::env::var("USERPROFILE")
+        .map(std::path::PathBuf::from)
+        .expect("temp home")
+        .join(".icelines")
+        .join("data");
+    let store = DataStore::open(&data_root).expect("open data store");
+    store
+        .manifest()
+        .upsert(
+            DataKind::Bios,
+            ManifestEntry {
+                key: DataKey::Season(Season(20252026)),
+                path: data_root.join("bios.json"),
+                freshness: Freshness {
+                    fetched_at: chrono::Utc::now(),
+                    source: FetchSource::Manual,
+                    ttl: Ttl::After(Duration::from_secs(3600)),
+                },
+            },
+        )
+        .expect("seed manifest");
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/admin")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let html = String::from_utf8(bytes.to_vec()).expect("utf8 html");
+
+    assert!(html.contains("action=\"/admin/data/verify\""));
+    assert!(html.contains("name=\"target\" value=\"20252026\""));
+}
+
+#[tokio::test]
 async fn l1_admin_snapshots_json_returns_viewmodel_contract() {
     let _guard = home_env_lock().await;
     let _home = HomeEnvFixture::new();
@@ -2467,6 +2514,55 @@ async fn l1_admin_data_verify_json_returns_mutation_result_view() {
     assert_eq!(json["operation"], "data_verify");
     assert_eq!(json["target"], "20252026");
     assert_eq!(json["status"], "noop");
+}
+
+#[tokio::test]
+async fn l1_admin_data_verify_form_redirects_for_known_target() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    let data_root = std::env::var("USERPROFILE")
+        .map(std::path::PathBuf::from)
+        .expect("temp home")
+        .join(".icelines")
+        .join("data");
+    let store = DataStore::open(&data_root).expect("open data store");
+    store
+        .manifest()
+        .upsert(
+            DataKind::Bios,
+            ManifestEntry {
+                key: DataKey::Season(Season(20252026)),
+                path: data_root.join("bios.json"),
+                freshness: Freshness {
+                    fetched_at: chrono::Utc::now(),
+                    source: FetchSource::Manual,
+                    ttl: Ttl::After(Duration::from_secs(3600)),
+                },
+            },
+        )
+        .expect("seed manifest");
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/admin/data/verify")
+                .header("content-type", "application/x-www-form-urlencoded")
+                .body(Body::from("target=20252026"))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        response
+            .headers()
+            .get("location")
+            .and_then(|v| v.to_str().ok()),
+        Some("/admin")
+    );
 }
 
 #[tokio::test]

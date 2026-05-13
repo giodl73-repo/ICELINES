@@ -223,6 +223,24 @@ pub async fn post_data_verify_json(Json(req): Json<AdminDataVerifyRequest>) -> R
     axum::Json(intent.result_view(default_context(), false)).into_response()
 }
 
+pub async fn post_data_verify_form(Form(req): Form<AdminDataVerifyRequest>) -> Response {
+    let intent = match DataMutationIntent::resolve(DataMutationOperation::Verify, req.target, false)
+    {
+        Ok(intent) => intent,
+        Err(message) => return admin_bad_request_html(message),
+    };
+    match data_target_exists(&intent.target) {
+        Ok(true) => {
+            let _result = intent.result_view(default_context(), false);
+            Redirect::to("/admin").into_response()
+        }
+        Ok(false) => {
+            admin_bad_request_html(format!("data target '{}' was not found", intent.target))
+        }
+        Err(message) => admin_error_html(message),
+    }
+}
+
 fn build_data_status_view(q: AdminDataStatusQuery) -> Result<DataStatusView, String> {
     let home = match home_dir() {
         Some(path) => path,
@@ -538,14 +556,15 @@ fn render_data_status_section(html: &mut String, view: &DataStatusView) {
         html.push_str("</section>");
         return;
     }
-    html.push_str("<table><thead><tr><th>Source</th><th>Kind</th><th>Key</th><th>Freshness</th></tr></thead><tbody>");
+    html.push_str("<table><thead><tr><th>Source</th><th>Kind</th><th>Key</th><th>Freshness</th><th>Action</th></tr></thead><tbody>");
     for row in &view.rows {
         html.push_str(&format!(
-            "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>",
+            "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td><form method=\"post\" action=\"/admin/data/verify\"><input type=\"hidden\" name=\"target\" value=\"{}\"><button type=\"submit\">Verify</button></form></td></tr>",
             html_escape(&row.source),
             html_escape(&row.kind),
             html_escape(&row.key),
-            html_escape(&row.freshness)
+            html_escape(&row.freshness),
+            html_escape(&row.key)
         ));
     }
     html.push_str("</tbody></table></section>");

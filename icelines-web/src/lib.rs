@@ -230,6 +230,10 @@ pub fn router(state: WebState) -> Router {
             "/api/v1/admin/data/verify",
             post(handlers::admin::post_data_verify_json),
         )
+        .route(
+            "/admin/data/verify",
+            post(handlers::admin::post_data_verify_form),
+        )
         // Sasq.7 — friendly 404 with a player-search input replaces
         // axum's bare default. Wired as router fallback so any
         // unmatched path lands here.
