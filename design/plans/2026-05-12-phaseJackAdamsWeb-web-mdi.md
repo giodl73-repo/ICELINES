@@ -66,11 +66,15 @@ Mobile is not a squeezed three-column dashboard. It becomes:
 |---|---|
 | Architecture | Progressive enhancement over server-rendered routes. Keep normal URLs working without JavaScript. |
 | Workspace identity | URLs remain canonical (`/leaders`, `/player/:id`, `/poach`, etc.). The dashboard shell can load them as panels, but deep links render the same content. |
+| Panel mechanics | Server-rendered fragments are the default panel unit: full routes render full pages, and `?partial=workspace` or explicit fragment siblings can render only workspace-safe markup. JSON is for APIs and parity checks, not the primary browser rendering path. |
+| Dashboard URL state | Canonical workspace lives in `/dashboard?workspace=<url-encoded-internal-path>`. Side-pane visibility is local/session state. Command input/history is never persisted in the URL. |
 | Command grammar | Reuse the TUI command vocabulary where possible: `stats`, `goalies`, `poach`, `gaps`, `simulate`, `team EDM`, `player Bedard`, `box EDM@BOS`, `favorites`, `/fav add`, `/hide schedule`, `/show favorites`. |
 | Command execution | Deterministic parser first. Optional AI interpretation remains off by default and must validate into the same command schema. |
+| Command contract ownership | Prefer extracting the deterministic command grammar into a shared parser used by TUI and web adapters. If extraction is too expensive in the first slice, add parity fixtures so web and TUI examples cannot drift silently. |
 | Side panes | Favorites/Watchlist and Schedule are context panes, not independent app modes. They can be hidden, collapsed, or opened as drawers. |
 | Data source | Panels consume existing HTML fragments or JSON/ViewModel endpoints. No duplicated scoring/projection logic in JavaScript. |
 | No-JS baseline | Every product route remains usable as a full server-rendered page. |
+| Mutation boundary | Web commands that mutate state must submit through existing POST handlers or shared mutation intents. No GET mutations, no external navigation, and no browser-only mutation logic. |
 | Styling | Use Prince semantic tokens and existing route layout classes; no separate one-off dashboard palette. |
 
 ---
@@ -106,18 +110,27 @@ Deliverables:
   - source warnings.
 - A route capability table mapping command verbs to existing routes and
   endpoints.
+- A URL/state invariant note:
+  - `/dashboard?workspace=/poach?availability=imported-available` identifies
+    the workspace;
+  - side-pane hide/show lives in local/session state;
+  - command input/history is never serialized into the URL.
 - A panel contract for every workspace route:
   - full-page URL;
-  - optional HTML fragment URL;
+  - server-rendered HTML fragment URL or `?partial=workspace` behavior;
   - JSON endpoint;
   - command verbs that can open it;
   - required query params.
+- A mutation-safety table mapping web commands to existing POST routes or
+  mutation intents.
 
 Acceptance:
 
 - No route loses its full-page rendering.
 - `surface-parity.md` names which web routes are dashboard-panel-ready.
 - Tests fence the shell ViewModel's active context and source-state fields.
+- Tests prove dashboard URL state keeps workspace canonical and does not encode
+  side-pane or command-input state.
 
 ---
 
@@ -140,6 +153,8 @@ Deliverables:
 Acceptance:
 
 - `/dashboard` works without JavaScript.
+- With JavaScript disabled, `/dashboard` still renders useful scores,
+  favorites/watchlist, workspace, schedule, and normal links.
 - Shell renders active context, empty states, and source warnings.
 - Route inventory test includes `/dashboard`.
 - HTML tests assert all landmark regions exist:
@@ -173,7 +188,9 @@ Acceptance:
 - Parser tests cover every supported verb.
 - Web and TUI command examples in `COMMANDS.md` stay aligned.
 - No command can navigate to an external URL.
-- No mutation bypasses existing mutation intent contracts.
+- No mutation bypasses existing POST handlers or mutation intent contracts.
+- Command grammar is either shared with the TUI parser or fenced by parity
+  fixtures derived from the documented command examples.
 
 ---
 
@@ -208,6 +225,8 @@ Acceptance:
 - Direct links and shell-loaded panels render equivalent data.
 - Browser back/forward restores workspace route.
 - Side-pane hide/show state is local and does not alter canonical URLs.
+- Panel fragment tests compare visible row identity against the full route or
+  JSON ViewModel endpoint.
 - Tests cover panel parity for at least leaders, player, team, fantasy, poach.
 
 ---
@@ -233,6 +252,8 @@ Acceptance:
 - Scenario resolution remains canonical-name based.
 - Invalid drops render the same error contract as full-page routes.
 - No fantasy scoring/projection logic is introduced in JS.
+- All mutations are POST-backed and resolve through existing intent/result
+  ViewModels.
 
 ---
 
@@ -268,6 +289,9 @@ Tests:
 - Template tests for shell regions and active context.
 - Static asset tests for dashboard JS/CSS if added.
 - Parser parity tests against TUI command examples.
+- No-JS tests for `/dashboard` useful fallback content.
+- Mutation-safety tests proving command actions do not use GET and do not emit
+  external URLs.
 - Playwright/smoke screenshots for responsive states.
 
 Docs:
