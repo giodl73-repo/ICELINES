@@ -348,6 +348,8 @@ fn team_season_template(
             view.remaining.next_opponents.join(", ")
         },
         standings_label: standings_label(view),
+        schedule_strength_label: schedule_strength_label(view),
+        quality_ledger_label: quality_ledger_label(view),
         warning: fetch_error.unwrap_or_else(|| {
             view.warnings
                 .first()
@@ -378,6 +380,34 @@ fn standings_label(view: &TeamSeasonView) -> String {
         label.push_str(&format!(" · {above} pts above cutline"));
     }
     label
+}
+
+fn schedule_strength_label(view: &TeamSeasonView) -> String {
+    format!(
+        "faced {} · remaining {} · faced tiers T/M/B/U {}/{}/{}/{}",
+        pct_or_dash(view.schedule_strength.faced_average_points_percentage),
+        pct_or_dash(view.schedule_strength.remaining_average_points_percentage),
+        view.schedule_strength.faced.top,
+        view.schedule_strength.faced.middle,
+        view.schedule_strength.faced.bottom,
+        view.schedule_strength.faced.unknown
+    )
+}
+
+fn quality_ledger_label(view: &TeamSeasonView) -> String {
+    format!(
+        "quality wins {} · expected wins {} · bad losses {} · missed pts {}",
+        view.quality_ledger.quality_wins,
+        view.quality_ledger.expected_wins,
+        view.quality_ledger.bad_losses,
+        view.quality_ledger.missed_points
+    )
+}
+
+fn pct_or_dash(value: Option<f32>) -> String {
+    value
+        .map(|value| format!("{value:.3}"))
+        .unwrap_or_else(|| "-".to_string())
 }
 
 fn team_season_template_row(row: &TeamSeasonGameRow) -> TeamSeasonTemplateRow {
@@ -688,6 +718,8 @@ mod tests {
         assert_eq!(tmpl.rows[0].venue, "Away");
         assert_eq!(tmpl.rows[0].result, "OTL");
         assert_eq!(tmpl.rows[1].score, "5-1");
+        assert!(tmpl.schedule_strength_label.contains("faced"));
+        assert!(tmpl.quality_ledger_label.contains("quality wins"));
         assert!(tmpl.warning.contains("Standings source not loaded"));
     }
 }

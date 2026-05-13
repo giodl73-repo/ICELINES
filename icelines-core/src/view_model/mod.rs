@@ -97,8 +97,9 @@ pub use poach::{
 };
 pub use report::{scouting_report_sections, ReportFormat, ReportView};
 pub use schedule::{
-    ScheduleGameRow, ScheduleMatchupRecord, ScheduleMatchupView, ScheduleRecord, ScheduleTeamView,
-    ScheduleView, TeamChipView, TeamRecentForm, TeamRemainingSchedule, TeamSeasonGameRow,
+    OpponentTierBreakdown, ScheduleGameRow, ScheduleMatchupRecord, ScheduleMatchupView,
+    ScheduleRecord, ScheduleTeamView, ScheduleView, TeamChipView, TeamQualityLedger,
+    TeamRecentForm, TeamRemainingSchedule, TeamScheduleStrength, TeamSeasonGameRow,
     TeamSeasonHeadline, TeamSeasonSplit, TeamSeasonSplits, TeamSeasonVenue, TeamSeasonView,
     TeamStandingInput, TeamStandingsContext,
 };
@@ -1242,6 +1243,91 @@ mod tests {
         assert_eq!(standings.playoff_position_label, "wild card 3");
         assert!(view.warnings.is_empty());
         assert_eq!(view.context.source_state[1].state, Completeness::Complete);
+    }
+
+    #[test]
+    fn team_season_viewmodel_with_standings_projects_sos_and_quality_ledger() {
+        fn standing(team: &str, points_percentage: f32, points: u32) -> TeamStandingInput {
+            TeamStandingInput {
+                team: team.to_string(),
+                conference: Some("Western".to_string()),
+                division: Some("Pacific".to_string()),
+                games_played: 40,
+                wins: 20,
+                losses: 15,
+                overtime_losses: 5,
+                points,
+                points_percentage,
+                regulation_wins: Some(18),
+                goal_differential: 0,
+                league_rank: None,
+                conference_rank: None,
+                division_rank: None,
+                wild_card_rank: None,
+            }
+        }
+        fn game(
+            id: u64,
+            date: &str,
+            away: &str,
+            home: &str,
+            away_score: Option<u8>,
+            home_score: Option<u8>,
+            last_period: Option<&str>,
+        ) -> ScheduledGameInput {
+            ScheduledGameInput {
+                game_id: id,
+                date: date.to_string(),
+                game_type: 2,
+                away_abbrev: away.to_string(),
+                away_name: away.to_string(),
+                home_abbrev: home.to_string(),
+                home_name: home.to_string(),
+                start_time_utc: format!("{date}T23:00:00Z"),
+                away_score,
+                home_score,
+                game_state: Some(if away_score.is_some() {
+                    "FINAL".to_string()
+                } else {
+                    "FUT".to_string()
+                }),
+                last_period: last_period.map(str::to_string),
+                series_game: None,
+                away_wins: None,
+                home_wins: None,
+            }
+        }
+
+        let context = ViewContext::new(ViewWindow::new(Season(20242025), SeasonType::Regular));
+        let view = TeamSeasonView::from_games_and_standings(
+            context,
+            "20242025".to_string(),
+            "SEA".to_string(),
+            vec![
+                game(1, "2024-10-01", "SEA", "COL", Some(4), Some(2), Some("REG")),
+                game(2, "2024-10-03", "SEA", "SJS", Some(1), Some(2), Some("REG")),
+                game(3, "2024-10-05", "ANA", "SEA", Some(3), Some(2), Some("OT")),
+                game(4, "2024-10-07", "SEA", "VGK", None, None, None),
+            ],
+            vec![
+                standing("COL", 0.720, 58),
+                standing("VGK", 0.690, 56),
+                standing("SEA", 0.600, 48),
+                standing("EDM", 0.590, 47),
+                standing("ANA", 0.430, 34),
+                standing("SJS", 0.350, 28),
+            ],
+        );
+
+        assert_eq!(view.schedule_strength.faced_games, 3);
+        assert_eq!(view.schedule_strength.remaining_games, 1);
+        assert_eq!(view.schedule_strength.faced.top, 1);
+        assert_eq!(view.schedule_strength.faced.bottom, 2);
+        assert_eq!(view.schedule_strength.remaining.top, 1);
+        assert_eq!(view.quality_ledger.quality_wins, 1);
+        assert_eq!(view.quality_ledger.bad_losses, 2);
+        assert_eq!(view.quality_ledger.missed_points, 3);
+        assert_eq!(view.quality_ledger.expected_wins, 0);
     }
 
     #[test]

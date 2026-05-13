@@ -360,6 +360,18 @@ Exit:
 - Tests prove opponent strength uses standings input, not route-local ranking.
 - Ledger counts reconcile with final games.
 
+Progress:
+
+- 2026-05-13: Added core `TeamScheduleStrength` and `TeamQualityLedger` to
+  `TeamSeasonView`. Opponent tiers are computed from current standings points
+  percentage thirds, faced/remaining average opponent points percentage is
+  tracked separately, and ledger counts reconcile final regular-season quality
+  wins, expected wins, bad losses, missed points, top-opponent games, and
+  bottom-opponent games.
+- 2026-05-13: Projected SOS and ledger summaries through CLI text, TUI team
+  season, and web team-season HTML; JSON gets the same fields directly from
+  the shared viewmodel.
+
 ### PT.5 - Surfaces
 
 - CLI `team-season`.

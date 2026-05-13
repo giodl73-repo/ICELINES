@@ -583,6 +583,8 @@ pub struct TeamSeasonTemplate {
     pub remaining_label: String,
     pub next_opponents: String,
     pub standings_label: String,
+    pub schedule_strength_label: String,
+    pub quality_ledger_label: String,
     pub warning: String,
     pub rows: Vec<TeamSeasonTemplateRow>,
 }

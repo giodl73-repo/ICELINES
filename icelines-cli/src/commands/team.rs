@@ -159,6 +159,22 @@ pub(crate) fn render_team_season_text(view: &TeamSeasonView) -> String {
         }
         out.push('\n');
     }
+    out.push_str(&format!(
+        "SOS faced {} · remaining {} · tiers faced T/M/B/U {}/{}/{}/{}\n",
+        pct_or_dash(view.schedule_strength.faced_average_points_percentage),
+        pct_or_dash(view.schedule_strength.remaining_average_points_percentage),
+        view.schedule_strength.faced.top,
+        view.schedule_strength.faced.middle,
+        view.schedule_strength.faced.bottom,
+        view.schedule_strength.faced.unknown
+    ));
+    out.push_str(&format!(
+        "Ledger quality wins {} · expected wins {} · bad losses {} · missed pts {}\n",
+        view.quality_ledger.quality_wins,
+        view.quality_ledger.expected_wins,
+        view.quality_ledger.bad_losses,
+        view.quality_ledger.missed_points
+    ));
 
     if let Some(warning) = view.warnings.first() {
         out.push_str(&format!("Warning: {}\n", warning.message));
@@ -214,6 +230,12 @@ fn signed_i32(value: i32) -> String {
 
 fn signed_i16(value: i16) -> String {
     format!("{value:+}")
+}
+
+fn pct_or_dash(value: Option<f32>) -> String {
+    value
+        .map(|value| format!("{value:.3}"))
+        .unwrap_or_else(|| "-".to_string())
 }
 
 #[cfg(test)]
@@ -276,6 +298,8 @@ mod tests {
             out.contains("Warning: Standings source not loaded"),
             "{out}"
         );
+        assert!(out.contains("SOS faced"), "{out}");
+        assert!(out.contains("Ledger quality wins"), "{out}");
     }
 
     #[test]

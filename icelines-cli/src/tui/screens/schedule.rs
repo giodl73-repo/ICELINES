@@ -605,7 +605,7 @@ fn render_team_schedule_loaded(
     let record = view.headline.record;
 
     let max_idx = rows.len().saturating_sub(1);
-    let visible = (area.height as usize).saturating_sub(7);
+    let visible = (area.height as usize).saturating_sub(8);
     let selected_idx = app.schedule.selected.min(max_idx);
     let offset = selected_idx
         .saturating_sub(visible / 2)
@@ -643,6 +643,18 @@ fn render_team_schedule_loaded(
         format!(
             "  Remaining: {} games ({} home, {} away) · Next: {}",
             view.remaining.games, view.remaining.home, view.remaining.away, next
+        ),
+        dim,
+    ));
+    lines.push(Line::styled(
+        format!(
+            "  SOS: faced {} · rem {} · Ledger: QW {} · EW {} · bad L {} · missed {}",
+            pct_or_dash(view.schedule_strength.faced_average_points_percentage),
+            pct_or_dash(view.schedule_strength.remaining_average_points_percentage),
+            view.quality_ledger.quality_wins,
+            view.quality_ledger.expected_wins,
+            view.quality_ledger.bad_losses,
+            view.quality_ledger.missed_points
         ),
         dim,
     ));
@@ -715,6 +727,12 @@ fn signed_i32(value: i32) -> String {
 
 fn signed_i16(value: i16) -> String {
     format!("{value:+}")
+}
+
+fn pct_or_dash(value: Option<f32>) -> String {
+    value
+        .map(|value| format!("{value:.3}"))
+        .unwrap_or_else(|| "-".to_owned())
 }
 
 // ── Head-to-head matchup ──────────────────────────────────────────────────────
@@ -1213,6 +1231,10 @@ mod tests {
         assert!(
             text.contains("One-goal"),
             "team season performance context must show split labels, got:\n{text}"
+        );
+        assert!(
+            text.contains("SOS:"),
+            "team season performance context must show schedule strength, got:\n{text}"
         );
     }
 

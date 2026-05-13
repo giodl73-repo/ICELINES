@@ -96,6 +96,8 @@ pub struct TeamSeasonView {
     pub headline: TeamSeasonHeadline,
     pub standings: Option<TeamStandingsContext>,
     pub splits: TeamSeasonSplits,
+    pub schedule_strength: TeamScheduleStrength,
+    pub quality_ledger: TeamQualityLedger,
     pub form: TeamRecentForm,
     pub remaining: TeamRemainingSchedule,
     pub rows: Vec<TeamSeasonGameRow>,
@@ -167,6 +169,8 @@ impl TeamSeasonView {
             .iter()
             .map(|row| team_season_game_row(&team_upper, row))
             .collect();
+        let schedule_strength = schedule_strength(&team_upper, &schedule_rows, &standings);
+        let quality_ledger = quality_ledger(&team_upper, &schedule_rows, &standings);
         let warnings = if standings_context.is_some() {
             Vec::new()
         } else {
@@ -212,6 +216,8 @@ impl TeamSeasonView {
                 away: split_for(&team_upper, &schedule_rows, TeamSeasonVenue::Away),
                 one_goal: one_goal_split(&team_upper, &schedule_rows),
             },
+            schedule_strength,
+            quality_ledger,
             form: recent_form(&team_upper, &schedule_rows),
             remaining: TeamRemainingSchedule {
                 games: remaining_rows.len() as u32,
@@ -273,6 +279,37 @@ pub struct TeamStandingsContext {
     pub points_above_cutline: Option<i32>,
     pub points_behind_cutline: Option<i32>,
     pub playoff_position_label: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TeamScheduleStrength {
+    pub basis: String,
+    pub tier_basis: String,
+    pub faced_games: u32,
+    pub remaining_games: u32,
+    pub faced_average_points_percentage: Option<f32>,
+    pub remaining_average_points_percentage: Option<f32>,
+    pub faced: OpponentTierBreakdown,
+    pub remaining: OpponentTierBreakdown,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct OpponentTierBreakdown {
+    pub top: u32,
+    pub middle: u32,
+    pub bottom: u32,
+    pub unknown: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TeamQualityLedger {
+    pub basis: String,
+    pub quality_wins: u32,
+    pub expected_wins: u32,
+    pub bad_losses: u32,
+    pub missed_points: u32,
+    pub top_opponent_games: u32,
+    pub bottom_opponent_games: u32,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -697,6 +734,174 @@ fn one_goal_split(team: &str, rows: &[ScheduleGameRow]) -> TeamSeasonSplit {
         goals_for,
         goals_against,
         goal_differential: goals_for - goals_against,
+    }
+}
+
+fn schedule_strength(
+    team: &str,
+    rows: &[ScheduleGameRow],
+    standings: &[TeamStandingInput],
+) -> TeamScheduleStrength {
+    let mut faced = OpponentTierBreakdown::default();
+    let mut remaining = OpponentTierBreakdown::default();
+    let mut faced_pct_sum = 0.0_f32;
+    let mut faced_pct_count = 0_u32;
+    let mut remaining_pct_sum = 0.0_f32;
+    let mut remaining_pct_count = 0_u32;
+
+    for row in rows.iter().filter(|row| !row.is_preseason()) {
+        let opponent = row.opponent_abbrev_for(team).unwrap_or_default();
+        let tier = opponent_tier(opponent, standings);
+        if row.is_final() {
+            faced.add(tier);
+            if let Some(pct) = opponent_points_percentage(opponent, standings) {
+                faced_pct_sum += pct;
+                faced_pct_count += 1;
+            }
+        } else {
+            remaining.add(tier);
+            if let Some(pct) = opponent_points_percentage(opponent, standings) {
+                remaining_pct_sum += pct;
+                remaining_pct_count += 1;
+            }
+        }
+    }
+
+    TeamScheduleStrength {
+        basis: "current standings points percentage".to_string(),
+        tier_basis: "top/middle/bottom thirds by current standings points percentage".to_string(),
+        faced_games: faced.total(),
+        remaining_games: remaining.total(),
+        faced_average_points_percentage: average(faced_pct_sum, faced_pct_count),
+        remaining_average_points_percentage: average(remaining_pct_sum, remaining_pct_count),
+        faced,
+        remaining,
+    }
+}
+
+fn quality_ledger(
+    team: &str,
+    rows: &[ScheduleGameRow],
+    standings: &[TeamStandingInput],
+) -> TeamQualityLedger {
+    let mut ledger = TeamQualityLedger {
+        basis: "quality win = final win over top-third opponent; expected win = final win over bottom-third opponent; bad loss = final loss/OTL to bottom-third opponent".to_string(),
+        quality_wins: 0,
+        expected_wins: 0,
+        bad_losses: 0,
+        missed_points: 0,
+        top_opponent_games: 0,
+        bottom_opponent_games: 0,
+    };
+
+    for row in rows
+        .iter()
+        .filter(|row| row.is_final() && !row.is_preseason())
+    {
+        let opponent = row.opponent_abbrev_for(team).unwrap_or_default();
+        let tier = opponent_tier(opponent, standings);
+        if tier == OpponentTier::Top {
+            ledger.top_opponent_games += 1;
+        } else if tier == OpponentTier::Bottom {
+            ledger.bottom_opponent_games += 1;
+        }
+
+        let Some(team_score) = row.team_score(team) else {
+            continue;
+        };
+        let Some(opponent_score) = row.opponent_score(team) else {
+            continue;
+        };
+        if team_score > opponent_score && tier == OpponentTier::Top {
+            ledger.quality_wins += 1;
+        }
+        if team_score > opponent_score && tier == OpponentTier::Bottom {
+            ledger.expected_wins += 1;
+        }
+        if team_score < opponent_score && tier == OpponentTier::Bottom {
+            ledger.bad_losses += 1;
+            ledger.missed_points += if row.is_ot_or_so() { 1 } else { 2 };
+        }
+    }
+
+    ledger
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum OpponentTier {
+    Top,
+    Middle,
+    Bottom,
+    Unknown,
+}
+
+impl Default for OpponentTierBreakdown {
+    fn default() -> Self {
+        Self {
+            top: 0,
+            middle: 0,
+            bottom: 0,
+            unknown: 0,
+        }
+    }
+}
+
+impl OpponentTierBreakdown {
+    fn add(&mut self, tier: OpponentTier) {
+        match tier {
+            OpponentTier::Top => self.top += 1,
+            OpponentTier::Middle => self.middle += 1,
+            OpponentTier::Bottom => self.bottom += 1,
+            OpponentTier::Unknown => self.unknown += 1,
+        }
+    }
+
+    fn total(&self) -> u32 {
+        self.top + self.middle + self.bottom + self.unknown
+    }
+}
+
+fn opponent_tier(opponent: &str, standings: &[TeamStandingInput]) -> OpponentTier {
+    let mut ranked: Vec<&TeamStandingInput> = standings.iter().collect();
+    if ranked.is_empty() {
+        return OpponentTier::Unknown;
+    }
+    ranked.sort_by(|a, b| {
+        b.points_percentage
+            .partial_cmp(&a.points_percentage)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| b.points.cmp(&a.points))
+            .then_with(|| a.team.cmp(&b.team))
+    });
+    let Some(index) = ranked
+        .iter()
+        .position(|row| row.team.eq_ignore_ascii_case(opponent))
+    else {
+        return OpponentTier::Unknown;
+    };
+    let top_cut = ranked.len().div_ceil(3);
+    let bottom_cut = ranked.len() - ranked.len() / 3;
+    if index < top_cut {
+        OpponentTier::Top
+    } else if index >= bottom_cut {
+        OpponentTier::Bottom
+    } else {
+        OpponentTier::Middle
+    }
+}
+
+fn opponent_points_percentage(opponent: &str, standings: &[TeamStandingInput]) -> Option<f32> {
+    standings
+        .iter()
+        .find(|row| row.team.eq_ignore_ascii_case(opponent))
+        .map(|row| row.points_percentage)
+}
+
+fn average(sum: f32, count: u32) -> Option<f32> {
+    if count == 0 {
+        None
+    } else {
+        Some(sum / count as f32)
     }
 }
 
