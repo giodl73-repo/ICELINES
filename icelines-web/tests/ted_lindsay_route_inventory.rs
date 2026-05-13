@@ -65,6 +65,26 @@ const ROUTER_ROUTES: &[&str] = &[
     "GET /api/v1/admin/config",
 ];
 
+const DASHBOARD_PANEL_READY_WORKSPACES: &[&str] = &[
+    "/",
+    "/leaders",
+    "/goalies",
+    "/depth",
+    "/team/:abbrev",
+    "/team/:abbrev/season",
+    "/player/:id",
+    "/scores",
+    "/schedule",
+    "/game/:id",
+    "/poach",
+    "/fantasy",
+    "/transactions",
+    "/playoffs",
+    "/favorites",
+    "/watchlist",
+    "/docs",
+];
+
 #[test]
 fn every_router_route_is_in_surface_parity_matrix() {
     let matrix = include_str!("../../design/specs/surface-parity.md");
@@ -77,6 +97,21 @@ fn every_router_route_is_in_surface_parity_matrix() {
     assert!(
         missing.is_empty(),
         "surface-parity.md is missing mounted route(s): {missing:?}"
+    );
+}
+
+#[test]
+fn dashboard_panel_ready_workspaces_are_documented() {
+    let matrix = include_str!("../../design/specs/surface-parity.md");
+    let missing: Vec<&str> = DASHBOARD_PANEL_READY_WORKSPACES
+        .iter()
+        .copied()
+        .filter(|workspace| !matrix.contains(&format!("| `{workspace}` |")))
+        .collect();
+
+    assert!(
+        missing.is_empty(),
+        "surface-parity.md is missing dashboard panel-ready workspace(s): {missing:?}"
     );
 }
 

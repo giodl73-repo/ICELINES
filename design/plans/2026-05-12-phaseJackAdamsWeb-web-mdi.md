@@ -208,31 +208,16 @@ Acceptance:
 
 ## JAW.4 - Workspace Panels and Side Panes
 
-Status: In progress. The first progressive enhancement is shipped:
-dashboard workspace links and command redirects fetch `?partial=workspace`,
-replace the central panel, and update browser history. Favorites/Schedule panes
-have local toggle state that does not alter canonical URLs. The first
-product-aware workspace summaries are also shipping: `/dashboard?workspace=/team/EDM/season`
-projects a `TeamSeasonView` summary, and `/dashboard?workspace=/leaders` plus
-`/dashboard?workspace=/goalies` project top rows from `HomeView`. Team depth
-workspaces now summarize roster count, first line, first pair, goalies, and
-extras from `TeamDepthView`; league depth workspaces summarize the top-ranked
-teams from `DepthLeagueView`; poach workspaces preserve filters and summarize
-top candidates from `PoachBoardView`; fantasy workspaces preserve league,
-category, horizon, and add/drop query state while summarizing
-`FantasyRosterGapView` and `FantasySimulationView`; scores and schedule
-workspaces preserve date/range/team query state while summarizing the same
-route result projections used by the full web pages; player card workspaces
-summarize active-season identity, scoring, and rate context from
-`PlayerCardView`; game detail workspaces summarize matchup, latest goal, and
-top skater context from the same `GameView` projection used by the full game
-route; transactions preserve kind/team filters and summarize the same
-`TransactionsView` route result; playoffs summarize bracket/series context from
-`PlayoffsView`; favorites and watchlist workspaces summarize saved players,
-teams, notes, and recent alert counts from `FavoritesView` and `WatchlistView`,
-all while preserving canonical full route links. Remaining work is
-panel-specific fragments/parity for more product routes and richer side-pane row
-actions.
+Status: Implemented for route-summary readiness. Dashboard workspace links and
+command redirects fetch `?partial=workspace`, replace the central panel, and
+update browser history. Favorites/Schedule panes have local toggle state that
+does not alter canonical URLs. Product-aware workspace summaries now cover
+leaders/home, goalies, league depth, team depth, team season, player card,
+scores, schedule, game detail, poach, fantasy gaps/simulation, transactions,
+playoffs, favorites, and watchlist while preserving canonical full route links.
+`surface-parity.md` records the panel-ready workspace table, fenced by
+`dashboard_panel_ready_workspaces_are_documented`. Remaining work is richer
+side-pane row actions and later responsive/mobile polish.
 
 Make the shell feel like MDI without losing web semantics.
 

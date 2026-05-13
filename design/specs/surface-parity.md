@@ -213,3 +213,36 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 
 TedLindsay.3 should use this table as the route-by-route checklist for parity,
 not `design/specs/web-dashboard.md` claims.
+
+---
+
+## Jack Adams Web Dashboard Panel Readiness
+
+`/dashboard?workspace=...` keeps full routes canonical while giving the browser
+shell useful no-JS workspace summaries and progressive fragment replacement.
+The central dashboard panel is summary-ready for:
+
+| Workspace | Dashboard summary source | Status |
+|---|---|---|
+| `/`, `/leaders` | `HomeView.top_skaters` | ready |
+| `/goalies` | `HomeView.top_goalies` | ready |
+| `/depth` | `DepthLeagueView` | ready |
+| `/team/:abbrev` | `TeamDepthView` | ready |
+| `/team/:abbrev/season` | `TeamSeasonView` | ready |
+| `/player/:id` | `PlayerCardView` | ready |
+| `/scores` | scores route result from `ScoresView` | ready |
+| `/schedule` | schedule route result from `ScheduleView` | ready |
+| `/game/:id` | game route result from `GameView` | ready |
+| `/poach` | `PoachBoardView` | ready |
+| `/fantasy` | `FantasyRosterGapView` / `FantasySimulationView` | ready |
+| `/transactions` | transactions route result from `TransactionsView` | ready |
+| `/playoffs` | playoffs route result from `PlayoffsView` | ready |
+| `/favorites` | `FavoritesView` | ready |
+| `/watchlist` | `WatchlistView` plus recent alert count | ready |
+| `/docs` | canonical docs route only; no product summary needed | allowed |
+
+Dashboard command routes and workspace links preserve canonical route state; side
+pane visibility remains local browser state. The focused dashboard projection
+tests live in `handlers::dashboard::tests::*`, while `l1_dashboard_*` route
+tests fence shell rendering, URL allowlisting, fragment behavior, and command
+redirect safety.
