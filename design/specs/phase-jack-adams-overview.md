@@ -3,8 +3,8 @@
 **Trophy**: Jack Adams Award (NHL coach of the year — "designs the system, manages the lines, makes the bench coordinate")
 **Version**: 1.0 (initial)
 **Date**: 2026-05-08
-**Status**: Spec — pending 8-role review
-**Plan**: `design/plans/2026-05-08-phaseJackAdams-mdi-dashboard.md` (TBD)
+**Status**: Implemented — dashboard default, command bar, fantasy grammar, and opt-in AI fallback landed
+**Plan**: `design/plans/2026-05-08-phaseJackAdams-mdi-dashboard.md`
 
 ---
 
@@ -416,8 +416,24 @@ in CI; mock provider covers the integration shape).
       footer in MDI shows the workspace's chrome
 - [x] Command-bar parser can reuse `icelines_query::parse_query`
       for `query` commands
-- [ ] Spec reviewed via 8-role pass
-- [ ] Adams.1 starts
+- [x] Spec reviewed via role pass
+- [x] Adams.1 starts
+
+## Implementation addendum — 2026-05-12
+
+The shipped dashboard extends the original command grammar with the fantasy
+workflow completed during the Selke/Campbell/Jack Adams overlap:
+
+- `gaps` / `fantasy gaps` filters active roster gaps by categories and limit.
+- `poach` / `fantasy poach` filters the poacher board by category, position,
+  availability, candidate kind, and limit.
+- `simulate` / `fantasy simulate` applies add/drop/drop-only scenario state and
+  can clear the active scenario.
+- Fantasy screen shortcuts prefill the same grammar: `g` on Fantasy Gaps, `p`
+  on Poach, and `a` on Fantasy Simulation.
+
+The invariant is that TUI fantasy commands lower into the same shared
+ViewModels used by CLI text/JSON, web HTML/JSON, and report surfaces.
 
 ## Cross-cutting open items
 

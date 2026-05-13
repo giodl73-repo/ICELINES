@@ -2,7 +2,7 @@
 
 **Spec**: `design/specs/phase-jack-adams-overview.md`
 **Date**: 2026-05-08
-**Status**: Plan — ready for execution
+**Status**: Implemented — deterministic dashboard, command bar, fantasy grammar, and opt-in AI fallback landed
 **Dependency**: v0.22.0 (Masterton complete; trait scaffold + chrome
 landed; bin suite 803/803 green)
 
@@ -35,7 +35,7 @@ git commit. Each commit must:
 - [x] `cargo test --workspace` green at HEAD (803/803)
 - [x] Spec written + 8-role review applied (13 action items folded)
 - [x] phases.md updated with Jack Adams row
-- [ ] Adams.1 begins
+- [x] Adams.1 begins
 
 ## Adams.1 — MDI layout engine
 
@@ -637,8 +637,8 @@ Cargo bump 0.23.0 → 0.23.1. Commit + tag + push.
 
 ## Acceptance for Phase Jack Adams
 
-- All seven sub-phases ship as their own commits (some have
-  paired extraction + tests commits)
+- All seven sub-phases ship as focused commits (some have paired
+  extraction + tests commits)
 - Bin suite grows by ~85 (~70 for v0.23.0 + ~15 for v0.23.1):
   803 → 873 → ~888
 - Existing 803 SDI tests pass at every commit (no regressions
@@ -653,6 +653,24 @@ Cargo bump 0.23.0 → 0.23.1. Commit + tag + push.
 - Saved-query JSON contract unchanged (Phase Art Ross
   preserved)
 - `--mdi --standalone` is rejected by clap at parse time
+
+## Implementation addendum — 2026-05-12
+
+Jack Adams is implemented beyond the original v0.23.0/v0.23.1 scope:
+
+- `icelines tui` now opens the dashboard by default; `--classic` preserves
+  the older multi-tab mode and `--standalone` preserves locked single-screen
+  launches.
+- The command bar owns workspace navigation, pane toggles, command history,
+  parse errors, and opt-in AI translation through a validated parser boundary.
+- Fantasy command grammar is now part of the dashboard contract:
+  `gaps cats=hits,blocks,shots top=8`, `poach rw cats=hits,blocks free top=12`,
+  and `simulate add=Connor_McDavid drop=Bench_Forward weeks=3`.
+- Fantasy Gaps, Poach, and Fantasy Simulation retain screen-local state that
+  lowers into shared ViewModels instead of duplicating scoring/projection
+  logic.
+- Docs now cover the TUI fantasy command flow in `COMMANDS.md`, `README.md`,
+  `docs/TUTORIAL.md`, and `docs/guides/06-tui.md`.
 
 ## Risks
 
