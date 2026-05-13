@@ -202,6 +202,7 @@ Filter keys are also case-insensitive: `--filter "HITS>=200"` resolves to Hits.
 ```bash
 icelines team SEA        # Seattle Kraken — 4×3 forward grid, 3×2 defense pairs
 icelines team EDM        # Edmonton Oilers
+icelines team-season EDM # season record, standings context, SOS, quality ledger
 ```
 
 Players are color-coded by **cross-team fit** — how they'd rank on each of the other 31 teams:
@@ -331,6 +332,7 @@ The Reports overlay (`R`) persists toggles to `~/.icelines/config.toml`. Disable
 icelines tonight                    # tonight's NHL games (live API)
 icelines tonight --team EDM         # filter to one team
 icelines schedule --days 7          # upcoming schedule
+icelines team-season EDM            # team season-performance view
 icelines trade "Bouchard" for "Fox" --team EDM  # depth chart trade impact
 
 icelines group create "Watchlist"   # player watchlists (SQLite-backed)

@@ -1,7 +1,7 @@
 # Phase Presidents Trophy - team season performance
 
 **Date**: 2026-05-12
-**Status**: Active
+**Status**: Implemented
 **Trophy lineage**: Presidents Trophy as the regular-season team-performance
 phase. This is distinct from the old folded "Presidents" season-type plan:
 this phase is about team standings truth, schedule context, and whether a
@@ -427,6 +427,22 @@ Exit:
   - TUI team-season tests;
   - web route/template/JSON tests;
   - dashboard command tests.
+
+Progress:
+
+- 2026-05-13: Closeout gates passed:
+  - `cargo test -p icelines-core team_season_viewmodel`;
+  - `cargo test -p icelines-fetch standings`;
+  - `cargo test -p icelines-cli --bin icelines team_season`;
+  - `cargo test -p icelines-cli --bin icelines l0_render_team_schedule`;
+  - `cargo test -p icelines-web l0_team_season_template`;
+  - `cargo test -p icelines-web dashboard_command`;
+  - `cargo test -p icelines-web --test ted_lindsay_route_inventory`;
+  - `cargo check -p icelines-cli`;
+  - `cargo check -p icelines-web`.
+- Markdown/report export remains an explicitly later reporting follow-up, as
+  described in the Reports section, not a blocker for the shipped CLI/TUI/web
+  product surface.
 
 ---
 
