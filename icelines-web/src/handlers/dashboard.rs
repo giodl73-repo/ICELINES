@@ -1,5 +1,7 @@
 use crate::state::WebState;
-use crate::templates::{DashboardEntityRow, DashboardLinkRow, DashboardTemplate};
+use crate::templates::{
+    DashboardEntityRow, DashboardLinkRow, DashboardTemplate, DashboardWorkspaceTemplate,
+};
 use askama::Template;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
@@ -10,6 +12,8 @@ use serde::Deserialize;
 pub struct DashboardQuery {
     #[serde(default)]
     pub workspace: Option<String>,
+    #[serde(default)]
+    pub partial: Option<String>,
 }
 
 pub async fn get_dashboard(
@@ -19,6 +23,23 @@ pub async fn get_dashboard(
     let active_label = state.config.read().await.active_label.clone();
     let workspace_url = normalize_workspace(q.workspace.as_deref());
     let workspace_label = workspace_label(&workspace_url);
+    let workspace_links = workspace_links(&workspace_url);
+
+    if matches!(q.partial.as_deref(), Some("workspace")) {
+        return render_template(DashboardWorkspaceTemplate {
+            workspace_url,
+            workspace_label,
+            workspace_links,
+        });
+    }
+
+    if q.partial.is_some() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Html("unknown dashboard partial".to_owned()),
+        )
+            .into_response();
+    }
 
     let tmpl = DashboardTemplate {
         active_label,
@@ -28,9 +49,13 @@ pub async fn get_dashboard(
         favorites: dashboard_entities("Favorites"),
         watchlist: dashboard_entities("Watchlist"),
         schedule_links: schedule_links(),
-        workspace_links: workspace_links(&workspace_url),
+        workspace_links,
     };
 
+    render_template(tmpl)
+}
+
+fn render_template<T: Template>(tmpl: T) -> Response {
     match tmpl.render() {
         Ok(html) => Html(html).into_response(),
         Err(e) => (

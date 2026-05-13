@@ -1,0 +1,15 @@
+<main class="jaw-workspace" aria-label="Workspace" data-workspace-url="{{ workspace_url }}">
+    <h1>{{ workspace_label }}</h1>
+    <p>
+        This workspace is server-rendered and URL-addressable.
+        <a href="{{ workspace_url }}">Open the full page</a>.
+    </p>
+    <div class="jaw-workspace-grid">
+        {% for row in workspace_links %}
+        <a class="jaw-workspace-card" href="{{ row.href }}">
+            <strong>{{ row.label }}</strong>
+            <span class="jaw-detail">{{ row.detail }}</span>
+        </a>
+        {% endfor %}
+    </div>
+</main>

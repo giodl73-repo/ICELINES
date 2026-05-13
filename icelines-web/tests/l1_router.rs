@@ -889,6 +889,34 @@ async fn l1_dashboard_rejects_unsafe_workspace_paths() {
 }
 
 #[tokio::test]
+async fn l1_dashboard_workspace_partial_renders_fragment_only() {
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/dashboard?workspace=/poach&partial=workspace")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+
+    assert!(body.contains("aria-label=\"Workspace\""));
+    assert!(body.contains("data-workspace-url=\"/poach\""));
+    assert!(body.contains("href=\"/poach\""));
+    assert!(body.contains("href=\"/dashboard?workspace=%2Fleaders\""));
+    assert!(!body.contains("aria-label=\"Scores ribbon\""));
+    assert!(!body.contains("aria-label=\"Favorites and watchlist\""));
+    assert!(!body.contains("<html"));
+}
+
+#[tokio::test]
 async fn l1_fantasy_simulation_json_projects_seeded_league() {
     let _guard = home_env_lock().await;
     let _home = HomeEnvFixture::new();

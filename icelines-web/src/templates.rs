@@ -71,6 +71,14 @@ pub struct DashboardTemplate {
     pub workspace_links: Vec<DashboardLinkRow>,
 }
 
+#[derive(Template)]
+#[template(path = "dashboard_workspace.html")]
+pub struct DashboardWorkspaceTemplate {
+    pub workspace_url: String,
+    pub workspace_label: String,
+    pub workspace_links: Vec<DashboardLinkRow>,
+}
+
 #[derive(Debug, Clone)]
 pub struct DashboardEntityRow {
     pub label: String,
