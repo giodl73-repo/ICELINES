@@ -53,7 +53,7 @@ fn error_meta_from_query(q: &CareerQuery) -> Meta {
 
 /// Resolve league + season + sort + top from query params,
 /// load the local store, project into a shared CareerView.
-fn build_view(q: &CareerQuery) -> Result<CareerView, String> {
+pub(super) fn build_view(q: &CareerQuery) -> Result<CareerView, String> {
     let league = q
         .league
         .as_deref()

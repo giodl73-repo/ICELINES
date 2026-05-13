@@ -670,6 +670,8 @@ simulate add=Connor_McDavid drop=Bench_Forward weeks=3
 team EDM                                   -> /team/EDM
 team EDM season                            -> /team/EDM/season
 team EDM schedule                          -> /schedule?team=EDM
+career                                     -> /career?league=OHL&sort=points
+career league=OHL season=20142015 top=8    -> /career?league=OHL&season=20142015&top=8
 player Connor McDavid                      -> /leaders?filter=name%3DConnor+McDavid
 /fav add Connor McDavid                    -> POST /favorites/add
 watch Connor McDavid                       -> POST /watch-rules/create

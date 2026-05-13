@@ -14,9 +14,9 @@ use icelines_core::view_model::{
     AvailabilityState, FantasyRosterGapView, FantasySimulationView, PoachBoardView, WatchNoteInput,
 };
 use icelines_core::{
-    DepthLeagueView, DepthTeamStrengthRow, FavoriteMemberInput, FavoritesView, HomeView,
-    MetricCell, MetricValue, PlayerCardView, PlayerSeasonSummary, ScheduleRecord, TeamAbbr,
-    TeamDepthView, TeamSeasonView, ViewContext, ViewWindow, WatchlistView,
+    CareerView, DepthLeagueView, DepthTeamStrengthRow, FavoriteMemberInput, FavoritesView,
+    HomeView, MetricCell, MetricValue, PlayerCardView, PlayerSeasonSummary, ScheduleRecord,
+    TeamAbbr, TeamDepthView, TeamSeasonView, ViewContext, ViewWindow, WatchlistView,
 };
 use serde::Deserialize;
 
@@ -180,6 +180,7 @@ fn is_workspace_route(path: &str) -> bool {
             | "/playoffs"
             | "/favorites"
             | "/watchlist"
+            | "/career"
             | "/docs"
     ) || route.starts_with("/player/")
         || route.starts_with("/team/")
@@ -209,6 +210,7 @@ fn workspace_label(path: &str) -> String {
         "/playoffs" => "Playoffs",
         "/favorites" => "Favorites",
         "/watchlist" => "Watchlist",
+        "/career" => "Career Cohorts",
         other if other.starts_with("/player/") => "Player Card",
         other if other.starts_with("/team/") && other.ends_with("/season") => "Team Season",
         other if other.starts_with("/team/") => "Team Depth",
@@ -258,6 +260,9 @@ async fn workspace_summary(state: &WebState, path: &str) -> Vec<DashboardSummary
     }
     if route == "/watchlist" {
         return watchlist_workspace_summary(state).await;
+    }
+    if route == "/career" {
+        return career_workspace_summary(path).await;
     }
     if let Some(team) = route
         .strip_prefix("/team/")
@@ -1072,6 +1077,76 @@ fn watchlist_summary_rows(view: &WatchlistView, alert_count: usize) -> Vec<Dashb
     rows
 }
 
+async fn career_workspace_summary(path: &str) -> Vec<DashboardSummaryRow> {
+    let q = career_query_from_workspace(path);
+    match super::career::build_view(&q) {
+        Ok(view) => career_summary_rows(&view),
+        Err(error) => vec![summary_row("Career", "Unavailable", error)],
+    }
+}
+
+fn career_query_from_workspace(path: &str) -> super::career::CareerQuery {
+    let mut q = super::career::CareerQuery {
+        league: Some("OHL".to_owned()),
+        season: None,
+        sort: Some("points".to_owned()),
+        top: Some(DASHBOARD_PREVIEW_N),
+    };
+    let Some(query) = path.split_once('?').map(|(_, query)| query) else {
+        return q;
+    };
+    for pair in query.split('&') {
+        let Some((key, value)) = pair.split_once('=') else {
+            continue;
+        };
+        let value = value.replace('+', " ");
+        match key {
+            "league" => q.league = Some(value),
+            "season" => q.season = Some(value),
+            "sort" => q.sort = Some(value),
+            "top" => q.top = value.parse::<usize>().ok(),
+            _ => {}
+        }
+    }
+    q.top = Some(q.top.unwrap_or(DASHBOARD_PREVIEW_N).clamp(1, 10));
+    q
+}
+
+fn career_summary_rows(view: &CareerView) -> Vec<DashboardSummaryRow> {
+    let mut rows = vec![summary_row(
+        "Cohort",
+        format!("{} {}", view.league, view.season),
+        format!(
+            "{} of {} rows - sorted by {}",
+            view.rows.len(),
+            view.total,
+            view.sort.as_str()
+        ),
+    )];
+
+    if view.rows.is_empty() {
+        rows[0].value = "No rows".to_owned();
+        rows[0].detail = "No matching career-history rows for this cohort".to_owned();
+        return rows;
+    }
+
+    rows.extend(view.rows.iter().take(2).map(|row| {
+        summary_row(
+            format!("#{}", row.rank),
+            row.name.clone(),
+            format!(
+                "{} - {} GP - {} PTS",
+                row.team,
+                row.gp,
+                row.points
+                    .map(|points| points.to_string())
+                    .unwrap_or_else(|| "-".to_owned())
+            ),
+        )
+    }));
+    rows
+}
+
 async fn team_season_workspace_summary(
     state: &WebState,
     team_raw: &str,
@@ -1424,6 +1499,11 @@ fn workspace_links(active: &str) -> Vec<DashboardLinkRow> {
             ("Depth", "/depth", "cross-team depth rankings"),
             ("Poach", "/poach", "fantasy free-agent board"),
             ("Fantasy", "/fantasy", "roster gaps and simulations"),
+            (
+                "Career",
+                "/career?league=OHL&sort=points",
+                "pre-NHL cohort leaders",
+            ),
             ("Transactions", "/transactions", "league movement feed"),
         ]
         .into_iter()
@@ -1537,6 +1617,7 @@ mod tests {
         assert_eq!(workspace_label("/team/EDM"), "Team Depth");
         assert_eq!(workspace_label("/team/EDM/season"), "Team Season");
         assert_eq!(workspace_label("/player/8478402"), "Player Card");
+        assert_eq!(workspace_label("/career?league=OHL"), "Career Cohorts");
         assert_eq!(
             workspace_label("/poach?availability=imported-available"),
             "Poach"
@@ -1556,6 +1637,15 @@ mod tests {
         assert_eq!(
             dashboard_workspace_href("/poach?availability=imported-available"),
             "/dashboard?workspace=%2Fpoach%3Favailability%3Dimported-available"
+        );
+
+        let career = links
+            .iter()
+            .find(|row| row.label == "Career")
+            .expect("career workspace link");
+        assert_eq!(
+            career.href,
+            "/dashboard?workspace=%2Fcareer%3Fleague%3DOHL%26sort%3Dpoints"
         );
     }
 
@@ -1599,6 +1689,39 @@ mod tests {
         assert!(rows.iter().any(|row| row.label == "Record"));
         assert!(rows.iter().any(|row| row.label == "SOS"));
         assert!(rows.iter().any(|row| row.label == "Ledger"));
+    }
+
+    #[test]
+    fn l0_dashboard_career_summary_projects_viewmodel() {
+        let view = CareerView {
+            context: ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular)),
+            league: "OHL".to_owned(),
+            season: 20142015,
+            sort: icelines_core::CareerSortKey::Points,
+            rows: vec![icelines_core::CareerRow {
+                rank: 1,
+                player_id: 8478402,
+                name: "Connor McDavid".to_owned(),
+                team: "ER".to_owned(),
+                gp: 47,
+                goals: Some(44),
+                assists: Some(76),
+                points: Some(120),
+                points_per_game: Some(2.55),
+            }],
+            count: 1,
+            total: 12,
+            warnings: Vec::new(),
+            empty_state: None,
+        };
+
+        let rows = career_summary_rows(&view);
+
+        assert_eq!(rows[0].label, "Cohort");
+        assert_eq!(rows[0].value, "OHL 20142015");
+        assert!(rows[0].detail.contains("1 of 12 rows"));
+        assert_eq!(rows[1].label, "#1");
+        assert_eq!(rows[1].value, "Connor McDavid");
     }
 
     #[test]

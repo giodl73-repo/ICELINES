@@ -90,6 +90,7 @@ fn parse_verb(input: &str) -> Result<DashboardCommand, DashboardCommandError> {
         "playoffs" => workspace("/playoffs"),
         "favorites" => workspace("/favorites"),
         "watchlist" => workspace("/watchlist"),
+        "career" | "cohort" => workspace(&career_url(args)),
         "poach" => workspace(&poach_url(args)),
         "gaps" | "fantasy-gaps" => workspace(&fantasy_url(args, FantasyMode::Gaps)),
         "simulate" | "sim" | "fantasy-sim" => {
@@ -255,6 +256,17 @@ fn poach_url(args: &str) -> String {
     query_url("/poach", args)
 }
 
+fn career_url(args: &str) -> String {
+    let trimmed = args.trim();
+    if trimmed.is_empty() {
+        return "/career?league=OHL&sort=points".to_owned();
+    }
+    if trimmed.contains('=') {
+        return query_url("/career", trimmed);
+    }
+    format!("/career?league={}&sort=points", url_component(trimmed))
+}
+
 #[derive(Debug, Clone, Copy)]
 enum FantasyMode {
     Gaps,
@@ -378,6 +390,11 @@ mod tests {
         assert_eq!(route("team edm"), "/team/EDM");
         assert_eq!(route("team EDM season"), "/team/EDM/season");
         assert_eq!(route("team EDM schedule"), "/schedule?team=EDM");
+        assert_eq!(route("career"), "/career?league=OHL&sort=points");
+        assert_eq!(
+            route("career league=OHL season=20142015 top=8"),
+            "/career?league=OHL&season=20142015&top=8"
+        );
         assert_eq!(
             route("player Connor McDavid"),
             "/leaders?filter=name%3DConnor+McDavid"

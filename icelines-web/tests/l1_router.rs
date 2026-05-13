@@ -929,6 +929,30 @@ async fn l1_dashboard_workspace_partial_renders_fragment_only() {
 }
 
 #[tokio::test]
+async fn l1_dashboard_career_workspace_renders_summary_shell() {
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/dashboard?workspace=%2Fcareer%3Fleague%3DOHL%26sort%3Dpoints")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+    assert!(body.contains("data-workspace-url=\"/career?league=OHL&amp;sort=points\""));
+    assert!(body.contains("Career Cohorts"));
+    assert!(body.contains("Open the full page"));
+    assert!(body.contains("href=\"/career?league=OHL&amp;sort=points\""));
+}
+
+#[tokio::test]
 async fn l1_dashboard_command_read_redirects_to_workspace_state() {
     let app = router(WebState::new());
     let response = app
