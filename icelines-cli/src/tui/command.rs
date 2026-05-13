@@ -504,7 +504,7 @@ fn parse_team(args: &str) -> Result<Command, ParseError> {
     }
     let (abbrev, rest) = split_first_word(trimmed);
     let rest = rest.trim();
-    if rest.eq_ignore_ascii_case("season") {
+    if rest.eq_ignore_ascii_case("season") || rest.eq_ignore_ascii_case("schedule") {
         return Ok(Command::TeamSeason {
             abbrev: abbrev.to_uppercase(),
         });
@@ -2189,6 +2189,12 @@ mod tests {
     fn l0_adams_parse_team_season_distinct_variant() {
         assert_eq!(
             parse_command("team edm season").unwrap(),
+            Command::TeamSeason {
+                abbrev: "EDM".into(),
+            }
+        );
+        assert_eq!(
+            parse_command("team edm schedule").unwrap(),
             Command::TeamSeason {
                 abbrev: "EDM".into(),
             }
