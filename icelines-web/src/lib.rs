@@ -65,6 +65,10 @@ pub fn router(state: WebState) -> Router {
     Router::new()
         .route("/", get(handlers::home::get_home))
         .route("/dashboard", get(handlers::dashboard::get_dashboard))
+        .route(
+            "/dashboard/command",
+            post(handlers::dashboard::post_dashboard_command),
+        )
         .route("/static/:asset", get(static_assets::serve_static))
         // Real handlers — replace coming-soon stubs as each lands.
         .route("/leaders", get(handlers::leaders::get_leaders))

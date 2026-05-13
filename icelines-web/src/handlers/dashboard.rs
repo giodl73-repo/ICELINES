@@ -3,9 +3,9 @@ use crate::templates::{
     DashboardEntityRow, DashboardLinkRow, DashboardTemplate, DashboardWorkspaceTemplate,
 };
 use askama::Template;
-use axum::extract::{Query, State};
-use axum::http::StatusCode;
-use axum::response::{Html, IntoResponse, Response};
+use axum::extract::{Form, Query, State};
+use axum::http::{HeaderMap, StatusCode};
+use axum::response::{Html, IntoResponse, Redirect, Response};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize, Default)]
@@ -14,6 +14,13 @@ pub struct DashboardQuery {
     pub workspace: Option<String>,
     #[serde(default)]
     pub partial: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DashboardCommandForm {
+    pub command: String,
+    #[serde(default)]
+    pub workspace: Option<String>,
 }
 
 pub async fn get_dashboard(
@@ -53,6 +60,63 @@ pub async fn get_dashboard(
     };
 
     render_template(tmpl)
+}
+
+pub async fn post_dashboard_command(
+    headers: HeaderMap,
+    Form(form): Form<DashboardCommandForm>,
+) -> Response {
+    let current_workspace = normalize_workspace(form.workspace.as_deref());
+    match crate::dashboard_command::parse_dashboard_command(&form.command) {
+        Ok(crate::dashboard_command::DashboardCommand::OpenWorkspace { url }) => {
+            Redirect::to(&dashboard_workspace_href(&normalize_workspace(Some(&url))))
+                .into_response()
+        }
+        Ok(crate::dashboard_command::DashboardCommand::HidePane(_))
+        | Ok(crate::dashboard_command::DashboardCommand::ShowPane(_)) => {
+            Redirect::to(&dashboard_workspace_href(&current_workspace)).into_response()
+        }
+        Ok(crate::dashboard_command::DashboardCommand::Mutation(
+            crate::dashboard_command::DashboardMutationIntent::FavoriteAdd { player, .. },
+        )) => {
+            super::favorites::post_add(
+                headers,
+                Form(super::favorites::FavoritesMutation {
+                    key: player,
+                    kind: Some("player".to_owned()),
+                    return_to: Some(dashboard_workspace_href(&current_workspace)),
+                }),
+            )
+            .await
+        }
+        Ok(crate::dashboard_command::DashboardCommand::Mutation(
+            crate::dashboard_command::DashboardMutationIntent::FavoriteRemove { player, .. },
+        )) => {
+            super::favorites::post_remove(
+                headers,
+                Form(super::favorites::FavoritesMutation {
+                    key: player,
+                    kind: Some("player".to_owned()),
+                    return_to: Some(dashboard_workspace_href(&current_workspace)),
+                }),
+            )
+            .await
+        }
+        Ok(crate::dashboard_command::DashboardCommand::Mutation(
+            crate::dashboard_command::DashboardMutationIntent::WatchPlayer { player, .. },
+        )) => {
+            super::poach::post_watch_rule_create_form(Form(super::poach::WatchRuleCreateForm {
+                player,
+                trigger: "available".to_owned(),
+            }))
+            .await
+        }
+        Err(err) => (
+            StatusCode::BAD_REQUEST,
+            Html(format!("dashboard command error: {err}")),
+        )
+            .into_response(),
+    }
 }
 
 fn render_template<T: Template>(tmpl: T) -> Response {

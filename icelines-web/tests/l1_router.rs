@@ -917,6 +917,55 @@ async fn l1_dashboard_workspace_partial_renders_fragment_only() {
 }
 
 #[tokio::test]
+async fn l1_dashboard_command_read_redirects_to_workspace_state() {
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/dashboard/command")
+                .header("content-type", "application/x-www-form-urlencoded")
+                .body(Body::from("command=team+EDM&workspace=%2Fleaders"))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    let location = response
+        .headers()
+        .get("location")
+        .and_then(|value| value.to_str().ok())
+        .expect("redirect location");
+    assert_eq!(location, "/dashboard?workspace=%2Fteam%2FEDM");
+}
+
+#[tokio::test]
+async fn l1_dashboard_command_rejects_unknown_without_redirecting() {
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/dashboard/command")
+                .header("content-type", "application/x-www-form-urlencoded")
+                .body(Body::from(
+                    "command=https%3A%2F%2Fevil.example&workspace=%2Fleaders",
+                ))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    let bytes = axum::body::to_bytes(response.into_body(), 64 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+    assert!(body.contains("dashboard command error"));
+}
+
+#[tokio::test]
 async fn l1_fantasy_simulation_json_projects_seeded_league() {
     let _guard = home_env_lock().await;
     let _home = HomeEnvFixture::new();

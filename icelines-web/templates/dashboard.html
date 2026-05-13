@@ -133,7 +133,11 @@
     <footer class="jaw-command" aria-label="Command palette">
         <strong>Command</strong>
         <span class="jaw-detail">Coming next: <code>stats</code>, <code>player Bedard</code>, <code>team EDM</code>, <code>poach availability=imported-available</code>.</span>
-        <button type="button" aria-label="Open command palette" disabled>Command palette</button>
+        <form method="post" action="/dashboard/command">
+            <input type="hidden" name="workspace" value="{{ workspace_url }}">
+            <input type="text" name="command" aria-label="Dashboard command" placeholder="team EDM">
+            <button type="submit" aria-label="Run dashboard command">Run</button>
+        </form>
     </footer>
 </section>
 {% endblock %}
