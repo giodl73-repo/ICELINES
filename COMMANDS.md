@@ -685,6 +685,15 @@ first when no user preference exists, lets both side panes reopen via visible
 Show/Hide handles, and keeps the command bar as a sticky reach target. Command
 history is session-local; side-pane visibility is local browser state.
 
+Visual capture gate:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 web-captures
+```
+
+This starts `icelines serve --no-open`, uses installed Edge/Chrome headless, and
+writes desktop/mobile dashboard screenshots under `dist/web-dashboard-captures/`.
+
 ### MDI cmdbar AI fallback (Phase Jack Adams.6 / .7, v0.23.1+)
 
 Off by default. When enabled, an input that the deterministic parser

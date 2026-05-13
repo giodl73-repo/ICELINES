@@ -325,9 +325,11 @@ Acceptance:
 Status: In progress. Route, no-JS shell, fragment, static-asset, command, and
 route-inventory fences are in place for the shipped dashboard shell. README,
 COMMANDS, and surface parity now advertise `/dashboard`, command routing,
-responsive collapsible panes, and the browser-local side-pane/history state.
-Remaining closeout is screenshot automation/manual capture plus the final
-decision on whether `/` should ever become the dashboard shell.
+responsive collapsible panes, and the browser-local side-pane/history state. A
+repeatable `scripts/test-slice.ps1 web-captures` gate now starts the web server
+and captures desktop/mobile dashboard screenshots with installed Edge/Chrome.
+Remaining closeout is the final decision on whether `/` should ever become the
+dashboard shell.
 
 Tests:
 
@@ -338,7 +340,8 @@ Tests:
 - No-JS tests for `/dashboard` useful fallback content.
 - Mutation-safety tests proving command actions do not use GET and do not emit
   external URLs.
-- Playwright/smoke screenshots for responsive states.
+- Headless Edge/Chrome screenshots for responsive states via
+  `scripts/test-slice.ps1 web-captures`.
 
 Docs:
 

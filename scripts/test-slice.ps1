@@ -27,6 +27,7 @@ param(
         "scenarios-query",
         "scenarios-web",
         "scenarios-tui",
+        "web-captures",
         "selke",
         "workspace-check",
         "viewmodel",
@@ -89,6 +90,7 @@ Fast daily slices:
   scenarios-query  query persona/storyline harnesses
   scenarios-web    web persona/parity harnesses
   scenarios-tui    in-bin TUI persona/user-flow harness
+  web-captures     headless Edge/Chrome dashboard screenshots into dist/
   selke            fantasy poacher ViewModel + CLI poach/watch/report tests
 
 CI gates:
@@ -226,6 +228,14 @@ switch ($Slice) {
     }
     "scenarios-tui" {
         Invoke-Test @("test", "-p", "icelines-cli", "--bin", "icelines", "persona_jack_adams")
+    }
+    "web-captures" {
+        Write-Host ""
+        Write-Host "powershell -ExecutionPolicy Bypass -File scripts/web-dashboard-capture.ps1" -ForegroundColor Cyan
+        & powershell -ExecutionPolicy Bypass -File scripts/web-dashboard-capture.ps1
+        if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+        }
     }
     "selke" {
         Invoke-Test @("test", "-p", "icelines-core", "view_model::poach")

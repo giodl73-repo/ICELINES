@@ -248,3 +248,7 @@ saved preference, and leaves visible Show/Hide handles for both context panes.
 The focused dashboard projection tests live in `handlers::dashboard::tests::*`,
 while `l1_dashboard_*` route tests fence shell rendering, URL allowlisting,
 fragment behavior, responsive/accessibility tokens, and command redirect safety.
+Responsive visual capture is available through
+`scripts/test-slice.ps1 web-captures`, which writes desktop and mobile dashboard
+screenshots under `dist/web-dashboard-captures/` using installed Edge/Chrome
+headless.
