@@ -59,6 +59,9 @@ pub enum Command {
     FantasyGaps,
     /// `fantasy simulate` — workspace becomes league simulation board.
     FantasySim,
+    FantasySimKv {
+        args: FantasySimulationCommandArgs,
+    },
     /// `watchlist` - workspace becomes local fantasy Watchlist.
     Watchlist,
     GoaliesKv {
@@ -158,6 +161,14 @@ pub struct PoachCommandArgs {
     pub availability_filter: Option<PoachAvailabilityFilter>,
     pub candidate_kind: Option<PoachCandidateKind>,
     pub limit: Option<u16>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct FantasySimulationCommandArgs {
+    pub weeks: Option<u8>,
+    pub add_player: Option<String>,
+    pub drop_player: Option<String>,
+    pub clear: bool,
 }
 
 // ── Parse error shape ───────────────────────────────────────────────────────
@@ -318,6 +329,9 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
         }),
         "gaps" | "fantasy-gaps" if args.trim().is_empty() => Ok(Command::FantasyGaps),
         "simulate" | "sim" | "fantasy-sim" if args.trim().is_empty() => Ok(Command::FantasySim),
+        "simulate" | "sim" | "fantasy-sim" => Ok(Command::FantasySimKv {
+            args: parse_fantasy_sim_kv(args)?,
+        }),
         "watchlist" if args.trim().is_empty() => Ok(Command::Watchlist),
         "transactions" | "txs" | "tx" => Ok(Command::Transactions),
         "playoffs" => Ok(Command::Playoffs),
@@ -465,6 +479,9 @@ fn parse_fantasy(args: &str) -> Result<Command, ParseError> {
     match sub.to_ascii_lowercase().as_str() {
         "" | "roster" => Ok(Command::Roster),
         "gaps" | "gap" => Ok(Command::FantasyGaps),
+        "simulate" | "sim" if !rest.trim().is_empty() => Ok(Command::FantasySimKv {
+            args: parse_fantasy_sim_kv(rest)?,
+        }),
         "simulate" | "sim" => Ok(Command::FantasySim),
         "poach" if rest.trim().is_empty() => Ok(Command::Poach),
         "poach" => Ok(Command::PoachKv {
@@ -472,6 +489,112 @@ fn parse_fantasy(args: &str) -> Result<Command, ParseError> {
         }),
         unknown => Err(ParseError::UnknownCommand(format!("fantasy {unknown}"))),
     }
+}
+
+fn parse_fantasy_sim_kv(args: &str) -> Result<FantasySimulationCommandArgs, ParseError> {
+    let segments = parse_command_segments(args, &["add", "drop", "weeks", "clear"])?;
+    let mut parsed = FantasySimulationCommandArgs::default();
+    for (key, value) in segments {
+        match key.as_str() {
+            "add" => parsed.add_player = Some(required_segment_value("simulate", "add", &value)?),
+            "drop" => {
+                parsed.drop_player = Some(required_segment_value("simulate", "drop", &value)?);
+            }
+            "weeks" => {
+                let raw = required_segment_value("simulate", "weeks", &value)?;
+                let weeks = raw.parse::<u8>().map_err(|_| ParseError::BadInteger {
+                    command: "simulate",
+                    raw,
+                })?;
+                parsed.weeks = Some(weeks.clamp(1, 26));
+            }
+            "clear" => {
+                if !value.trim().is_empty() {
+                    return Err(ParseError::BadFilter {
+                        details: "simulate: clear does not take a value".to_string(),
+                    });
+                }
+                parsed.clear = true;
+            }
+            other => {
+                return Err(ParseError::BadFilter {
+                    details: format!("simulate: unknown filter {other:?}"),
+                });
+            }
+        }
+    }
+    if !parsed.clear
+        && parsed.weeks.is_none()
+        && parsed.add_player.is_none()
+        && parsed.drop_player.is_none()
+    {
+        return Err(ParseError::MissingArg {
+            command: "simulate",
+            arg: "add/drop/weeks/clear",
+        });
+    }
+    Ok(parsed)
+}
+
+fn required_segment_value(
+    command: &'static str,
+    key: &'static str,
+    value: &str,
+) -> Result<String, ParseError> {
+    let value = value.trim();
+    if value.is_empty() {
+        Err(ParseError::MissingArg { command, arg: key })
+    } else {
+        Ok(value.to_string())
+    }
+}
+
+fn parse_command_segments(
+    input: &str,
+    keys: &[&'static str],
+) -> Result<Vec<(String, String)>, ParseError> {
+    let mut segments: Vec<(String, String)> = Vec::new();
+    let mut current_key: Option<String> = None;
+    let mut current_value: Vec<String> = Vec::new();
+
+    for token in input.split_whitespace() {
+        if let Some((raw_key, raw_value)) = token.split_once('=') {
+            let key = raw_key.to_ascii_lowercase();
+            if !keys.contains(&key.as_str()) {
+                return Err(ParseError::BadFilter {
+                    details: format!("unknown argument {raw_key:?}"),
+                });
+            }
+            if let Some(key) = current_key.take() {
+                segments.push((key, current_value.join(" ")));
+                current_value.clear();
+            }
+            current_key = Some(key);
+            if !raw_value.is_empty() {
+                current_value.push(raw_value.replace('_', " "));
+            }
+        } else {
+            let key = token.to_ascii_lowercase();
+            if keys.contains(&key.as_str()) {
+                if let Some(key) = current_key.take() {
+                    segments.push((key, current_value.join(" ")));
+                    current_value.clear();
+                }
+                current_key = Some(key);
+            } else if current_key.is_some() {
+                current_value.push(token.replace('_', " "));
+            } else {
+                return Err(ParseError::BadFilter {
+                    details: format!("unknown argument {token:?}"),
+                });
+            }
+        }
+    }
+
+    if let Some(key) = current_key {
+        segments.push((key, current_value.join(" ")));
+    }
+    Ok(segments)
 }
 
 fn parse_poach_kv(args: &str) -> Result<PoachCommandArgs, ParseError> {
@@ -762,6 +885,7 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
             app.screen = Screen::FantasySim;
             ExecResult::Continue
         }
+        Command::FantasySimKv { args } => exec_fantasy_sim_kv(app, args),
         Command::Watchlist => {
             app.screen = Screen::GroupDetail("Watchlist".to_string());
             ExecResult::Continue
@@ -964,6 +1088,33 @@ fn exec_poach_kv(app: &mut crate::tui::app::App, args: PoachCommandArgs) -> Exec
     ExecResult::Flash(format!(
         "poach filters applied: {}",
         app.poach.context_label()
+    ))
+}
+
+fn exec_fantasy_sim_kv(
+    app: &mut crate::tui::app::App,
+    args: FantasySimulationCommandArgs,
+) -> ExecResult {
+    use crate::tui::app::Screen;
+
+    if args.clear {
+        app.fantasy_sim.add_player = None;
+        app.fantasy_sim.drop_player = None;
+    }
+    if let Some(weeks) = args.weeks {
+        app.fantasy_sim.weeks = weeks;
+    }
+    if let Some(add_player) = args.add_player {
+        app.fantasy_sim.add_player = Some(add_player);
+    }
+    if let Some(drop_player) = args.drop_player {
+        app.fantasy_sim.drop_player = Some(drop_player);
+    }
+    app.screen = Screen::FantasySim;
+    ExecResult::Flash(format!(
+        "fantasy simulation: {} over {} weeks",
+        app.fantasy_sim.scenario_label(),
+        app.fantasy_sim.weeks
     ))
 }
 
@@ -1323,6 +1474,41 @@ mod tests {
             Command::FantasySim
         );
         assert_eq!(parse_command("fantasy poach").unwrap(), Command::Poach);
+    }
+
+    #[test]
+    fn l0_adams_parse_fantasy_simulation_scenario() {
+        assert_eq!(
+            parse_command("simulate add=Connor McDavid drop=Bench Forward weeks=3").unwrap(),
+            Command::FantasySimKv {
+                args: FantasySimulationCommandArgs {
+                    weeks: Some(3),
+                    add_player: Some("Connor McDavid".to_string()),
+                    drop_player: Some("Bench Forward".to_string()),
+                    clear: false,
+                },
+            }
+        );
+        assert_eq!(
+            parse_command("fantasy simulate add Connor_McDavid drop Bench Forward").unwrap(),
+            Command::FantasySimKv {
+                args: FantasySimulationCommandArgs {
+                    weeks: None,
+                    add_player: Some("Connor McDavid".to_string()),
+                    drop_player: Some("Bench Forward".to_string()),
+                    clear: false,
+                },
+            }
+        );
+        assert_eq!(
+            parse_command("simulate clear").unwrap(),
+            Command::FantasySimKv {
+                args: FantasySimulationCommandArgs {
+                    clear: true,
+                    ..Default::default()
+                },
+            }
+        );
     }
 
     #[test]
@@ -1917,6 +2103,33 @@ mod tests {
         );
         assert_eq!(app.poach.candidate_kind, PoachCandidateKind::Streamer);
         assert_eq!(app.poach.limit, 11);
+    }
+
+    #[test]
+    fn l0_adams_exec_fantasy_sim_kv_applies_scenario() {
+        let mut app = fresh_app_with_mdi();
+        let r = execute_command(
+            parse_command("simulate add=Connor McDavid drop=Bench Forward weeks=2").unwrap(),
+            &mut app,
+        );
+
+        assert!(matches!(r, ExecResult::Flash(_)));
+        assert!(matches!(app.screen, Screen::FantasySim));
+        assert_eq!(app.fantasy_sim.weeks, 2);
+        assert_eq!(
+            app.fantasy_sim.add_player.as_deref(),
+            Some("Connor McDavid")
+        );
+        assert_eq!(
+            app.fantasy_sim.drop_player.as_deref(),
+            Some("Bench Forward")
+        );
+
+        let r = execute_command(parse_command("simulate clear").unwrap(), &mut app);
+        assert!(matches!(r, ExecResult::Flash(_)));
+        assert!(app.fantasy_sim.add_player.is_none());
+        assert!(app.fantasy_sim.drop_player.is_none());
+        assert_eq!(app.fantasy_sim.weeks, 2);
     }
 
     #[test]

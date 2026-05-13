@@ -274,6 +274,7 @@ pub struct App {
     pub team: crate::tui::screens::team::TeamScreenState,
     pub favorites: crate::tui::screens::favorites::FavoritesScreenState,
     pub poach: crate::tui::screens::poach::PoachScreenState,
+    pub fantasy_sim: crate::tui::screens::fantasy::FantasySimulationScreenState,
 
     // ── Repo-backed view state ─────────────────────────────────────────
     /// Post-Hart canonical store. `!Send + !Sync` by construction.
@@ -402,6 +403,7 @@ impl App {
             team: crate::tui::screens::team::TeamScreenState::default(),
             favorites: crate::tui::screens::favorites::FavoritesScreenState::default(),
             poach: crate::tui::screens::poach::PoachScreenState::default(),
+            fantasy_sim: crate::tui::screens::fantasy::FantasySimulationScreenState::default(),
 
             // Empty repo + current season as the initial typed window.
             depth_filters: crate::tui::filter_state::RosterFilterState::default(),

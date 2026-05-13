@@ -1,10 +1,11 @@
 //! Active fantasy roster-gap and simulation TUI boards.
 
 use icelines_core::{
-    build_fantasy_simulation_view,
+    build_fantasy_simulation_view, resolve_fantasy_scenario_roster_details,
     view_model::{
         FantasyRosterGapInput, FantasyRosterGapView, FantasySimulationBuildInput,
-        FantasySimulationHorizon, FantasySimulationRosterTeamInput, FantasySimulationView,
+        FantasySimulationConfidence, FantasySimulationHorizon, FantasySimulationRosterTeamInput,
+        FantasySimulationScenarioRosterInput, FantasySimulationView,
     },
     Scheme,
 };
@@ -39,6 +40,38 @@ pub fn simulation_chrome() -> crate::tui::chrome::ScreenChrome {
     ScreenChrome {
         title: "Fantasy Simulation - active league".to_string(),
         keybinds: vec![KeyHint::new(":", "command")],
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FantasySimulationScreenState {
+    pub weeks: u8,
+    pub add_player: Option<String>,
+    pub drop_player: Option<String>,
+}
+
+impl Default for FantasySimulationScreenState {
+    fn default() -> Self {
+        Self {
+            weeks: 4,
+            add_player: None,
+            drop_player: None,
+        }
+    }
+}
+
+impl FantasySimulationScreenState {
+    pub fn has_scenario(&self) -> bool {
+        self.add_player.is_some() || self.drop_player.is_some()
+    }
+
+    pub fn scenario_label(&self) -> String {
+        match (&self.add_player, &self.drop_player) {
+            (Some(add), Some(drop)) => format!("Add {add} / drop {drop}"),
+            (Some(add), None) => format!("Add {add}"),
+            (None, Some(drop)) => format!("Drop {drop}"),
+            (None, None) => "No add/drop scenario".to_string(),
+        }
     }
 }
 
@@ -172,6 +205,12 @@ pub fn render_simulation(f: &mut Frame, app: &App, area: Rect) {
         ),
         tui_title_style(),
     )));
+    if app.fantasy_sim.has_scenario() {
+        items.push(ListItem::new(Line::styled(
+            format!("  scenario: {}", app.fantasy_sim.scenario_label()),
+            tui_meta_style(),
+        )));
+    }
     for warning in &view.warnings {
         items.push(ListItem::new(Line::styled(
             format!("  warning: {warning}"),
@@ -307,13 +346,55 @@ fn build_simulation_view(app: &App) -> anyhow::Result<FantasySimulationView> {
     let schedule_cache = remaining_games_by_team_from_cache(app.active_season_typed);
     let schedule_available = !schedule_cache.remaining_by_team.is_empty();
     let snapshot = db.league_snapshot(None)?;
+    let mut scenario_rosters = Vec::new();
+    let mut warnings = if schedule_available {
+        Vec::new()
+    } else {
+        vec![
+            "schedule unavailable in TUI; projection falls back to current fantasy score"
+                .to_string(),
+        ]
+    };
+    if app.fantasy_sim.has_scenario() {
+        let baseline = snapshot
+            .teams
+            .iter()
+            .find(|team| team.name == snapshot.user_team)
+            .map(|team| team.roster.clone())
+            .unwrap_or_default();
+        match resolve_fantasy_scenario_roster_details(
+            &baseline,
+            app.fantasy_sim.add_player.as_deref(),
+            app.fantasy_sim.drop_player.as_deref(),
+            &skaters,
+            &goalies,
+        ) {
+            Ok(resolution) => {
+                scenario_rosters.push(FantasySimulationScenarioRosterInput {
+                    id: "tui-add-drop".to_string(),
+                    label: app.fantasy_sim.scenario_label(),
+                    add_player: resolution
+                        .resolved_add_player
+                        .or_else(|| app.fantasy_sim.add_player.clone()),
+                    drop_player: resolution
+                        .resolved_drop_player
+                        .or_else(|| app.fantasy_sim.drop_player.clone()),
+                    baseline_roster: baseline,
+                    scenario_roster: resolution.roster,
+                    confidence: FantasySimulationConfidence::Low,
+                });
+            }
+            Err(message) => warnings.push(format!("scenario error: {message}")),
+        }
+    }
+
     Ok(build_fantasy_simulation_view(
         FantasySimulationBuildInput {
             season: app.active_season_typed,
             season_type: app.active_type,
             league: snapshot.league,
             scoring_scheme: league.scheme.clone(),
-            horizon: FantasySimulationHorizon::Weeks(4),
+            horizon: FantasySimulationHorizon::Weeks(app.fantasy_sim.weeks.max(1)),
             user_team: user_team.name,
             teams: snapshot
                 .teams
@@ -326,20 +407,13 @@ fn build_simulation_view(app: &App) -> anyhow::Result<FantasySimulationView> {
                 .collect(),
             remaining_by_team: schedule_cache.remaining_by_team,
             scenarios: Vec::new(),
-            scenario_rosters: Vec::new(),
+            scenario_rosters,
             assumptions: vec![
                 "projects each roster from season-to-date fantasy points per played game"
                     .to_string(),
                 "games remaining use the local schedule cache when available".to_string(),
             ],
-            warnings: if schedule_available {
-                Vec::new()
-            } else {
-                vec![
-                    "schedule unavailable in TUI; projection falls back to current fantasy score"
-                        .to_string(),
-                ]
-            },
+            warnings,
             schedule_available,
         },
         &skaters,
