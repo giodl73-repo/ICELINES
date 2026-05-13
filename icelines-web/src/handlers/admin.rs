@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
-use axum::extract::{Json, Query, State};
+use axum::extract::{Form, Json, Query, State};
 use axum::http::StatusCode;
-use axum::response::{Html, IntoResponse, Response};
+use axum::response::{Html, IntoResponse, Redirect, Response};
 use icelines_core::{
     ConfigEntryInput, ConfigMutationIntent, ConfigView, DataMutationIntent, DataMutationOperation,
     DataStatusEntryInput, DataStatusView, Season, SnapshotEntryInput, SnapshotMutationIntent,
@@ -130,6 +130,45 @@ pub async fn post_config_reset_json(
     match apply_web_config_reset(&mut config, &intent.key) {
         Ok(changed) => axum::Json(intent.result_view(default_context(), changed)).into_response(),
         Err(message) => admin_bad_request(message),
+    }
+}
+
+pub async fn post_config_set_form(
+    State(state): State<WebState>,
+    Form(req): Form<AdminConfigMutationRequest>,
+) -> Response {
+    let Some(value) = req.value.as_deref() else {
+        return admin_bad_request_html("config value is required");
+    };
+    let intent = match ConfigMutationIntent::set(&req.key, value) {
+        Ok(intent) => intent,
+        Err(message) => return admin_bad_request_html(message),
+    };
+    let mut config = state.config.write().await;
+    match apply_web_config_set(&mut config, &intent.key, value) {
+        Ok(changed) => {
+            let _result = intent.result_view(default_context(), changed);
+            Redirect::to("/admin").into_response()
+        }
+        Err(message) => admin_bad_request_html(message),
+    }
+}
+
+pub async fn post_config_reset_form(
+    State(state): State<WebState>,
+    Form(req): Form<AdminConfigMutationRequest>,
+) -> Response {
+    let intent = match ConfigMutationIntent::reset(&req.key) {
+        Ok(intent) => intent,
+        Err(message) => return admin_bad_request_html(message),
+    };
+    let mut config = state.config.write().await;
+    match apply_web_config_reset(&mut config, &intent.key) {
+        Ok(changed) => {
+            let _result = intent.result_view(default_context(), changed);
+            Redirect::to("/admin").into_response()
+        }
+        Err(message) => admin_bad_request_html(message),
     }
 }
 
@@ -436,6 +475,17 @@ fn admin_bad_request(message: impl Into<String>) -> Response {
         .into_response()
 }
 
+fn admin_bad_request_html(message: impl Into<String>) -> Response {
+    (
+        StatusCode::BAD_REQUEST,
+        Html(format!(
+            "<!doctype html><html><body><h1>Admin request rejected</h1><p>{}</p><p><a href=\"/admin\">Back to admin</a></p></body></html>",
+            html_escape(&message.into())
+        )),
+    )
+        .into_response()
+}
+
 fn admin_error_html(message: impl Into<String>) -> Response {
     (
         StatusCode::INTERNAL_SERVER_ERROR,
@@ -533,13 +583,32 @@ fn render_snapshot_section(html: &mut String, view: &SnapshotView) {
 
 fn render_config_section(html: &mut String, view: &ConfigView) {
     html.push_str("<section><h2>Runtime Config</h2>");
-    html.push_str("<table><thead><tr><th>Key</th><th>Value</th></tr></thead><tbody>");
+    html.push_str(
+        "<table><thead><tr><th>Key</th><th>Value</th><th>Action</th></tr></thead><tbody>",
+    );
     for row in &view.rows {
+        html.push_str("<tr>");
         html.push_str(&format!(
-            "<tr><td>{}</td><td>{}</td></tr>",
+            "<td>{}</td><td>{}</td>",
             html_escape(&row.key),
             html_escape(&row.value)
         ));
+        html.push_str("<td>");
+        if row.key == "web.active_season" || row.key == "web.active_season_type" {
+            html.push_str(&format!(
+                "<form method=\"post\" action=\"/admin/config/set\"><input type=\"hidden\" name=\"key\" value=\"{}\"><input name=\"value\" value=\"{}\" aria-label=\"{} value\"><button type=\"submit\">Set</button></form>",
+                html_escape(&row.key),
+                html_escape(&row.value),
+                html_escape(&row.key)
+            ));
+            html.push_str(&format!(
+                "<form method=\"post\" action=\"/admin/config/reset\"><input type=\"hidden\" name=\"key\" value=\"{}\"><button type=\"submit\">Reset</button></form>",
+                html_escape(&row.key)
+            ));
+        } else {
+            html.push_str("<span class=\"muted\">Derived</span>");
+        }
+        html.push_str("</td></tr>");
     }
     html.push_str("</tbody></table></section>");
 }

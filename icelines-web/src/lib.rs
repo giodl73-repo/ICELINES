@@ -211,6 +211,14 @@ pub fn router(state: WebState) -> Router {
             post(handlers::admin::post_config_reset_json),
         )
         .route(
+            "/admin/config/set",
+            post(handlers::admin::post_config_set_form),
+        )
+        .route(
+            "/admin/config/reset",
+            post(handlers::admin::post_config_reset_form),
+        )
+        .route(
             "/api/v1/admin/snapshots/activate",
             post(handlers::admin::post_snapshot_activate_json),
         )

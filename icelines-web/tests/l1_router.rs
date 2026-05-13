@@ -2127,6 +2127,8 @@ async fn l1_admin_html_renders_operational_viewmodels() {
     assert!(html.contains("Snapshots"));
     assert!(html.contains("Runtime Config"));
     assert!(html.contains("web.active_season"));
+    assert!(html.contains("action=\"/admin/config/set\""));
+    assert!(html.contains("action=\"/admin/config/reset\""));
 }
 
 #[tokio::test]
@@ -2215,6 +2217,66 @@ async fn l1_admin_config_set_json_returns_mutation_result_view() {
     assert_eq!(json["target"], "web.active_season_type");
     assert_eq!(json["status"], "applied");
     assert_eq!(state.config.read().await.active_season_type, "playoff");
+}
+
+#[tokio::test]
+async fn l1_admin_config_set_form_redirects_and_updates_runtime_config() {
+    let state = WebState::new();
+    let app = router(state.clone());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/admin/config/set")
+                .header("content-type", "application/x-www-form-urlencoded")
+                .body(Body::from("key=web.active_season_type&value=playoff"))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        response
+            .headers()
+            .get("location")
+            .and_then(|v| v.to_str().ok()),
+        Some("/admin")
+    );
+    assert_eq!(state.config.read().await.active_season_type, "playoff");
+}
+
+#[tokio::test]
+async fn l1_admin_config_reset_form_redirects_and_restores_runtime_config() {
+    let state = WebState::new();
+    {
+        let mut cfg = state.config.write().await;
+        *cfg = WebConfig::new("20242025", "playoff");
+    }
+    let app = router(state.clone());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/admin/config/reset")
+                .header("content-type", "application/x-www-form-urlencoded")
+                .body(Body::from("key=web.active_season_type"))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        response
+            .headers()
+            .get("location")
+            .and_then(|v| v.to_str().ok()),
+        Some("/admin")
+    );
+    assert_eq!(state.config.read().await.active_season_type, "regular");
 }
 
 #[tokio::test]
