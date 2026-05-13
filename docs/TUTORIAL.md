@@ -118,6 +118,15 @@ icelines fantasy gaps --category hits,blocks,shots
 icelines fantasy simulate --weeks 4 --add "McDavid" --drop "Bouchard"
 ```
 
+The interactive dashboard can run the same fantasy workflow from its command
+bar. Launch `icelines tui`, press `:`, then try:
+
+```text
+gaps cats=hits,blocks,shots top=8
+poach rw cats=hits,blocks free top=12
+simulate add=Connor_McDavid drop=Bench_Forward weeks=3
+```
+
 ---
 
 ## Step 10 — Interactive TUI

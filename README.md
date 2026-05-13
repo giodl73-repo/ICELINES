@@ -32,6 +32,11 @@ icelines tui player Bedard        # Bedard's card cold
 icelines tui team EDM             # Edmonton depth chart
 ```
 
+Inside `icelines tui`, press `:` for the command bar. Fantasy views accept the
+same product grammar as the CLI: `gaps cats=hits,blocks,shots top=8`,
+`poach rw cats=hits,blocks free top=12`, and
+`simulate add=Connor_McDavid drop=Bench_Forward weeks=3`.
+
 That's it. **38 seasons of NHL data** ship inside the binary — Gretzky's first LA year through this morning. No database setup, no accounts.
 
 For the complete command reference, run `icelines docs` (or read [COMMANDS.md](COMMANDS.md)).
@@ -236,6 +241,12 @@ icelines fantasy team-use "My Team"        # mark your roster for gaps/poach
 icelines fantasy gaps --category hits,blocks,shots
 icelines fantasy simulate --weeks 4
 icelines fantasy simulate --add "McDavid" --drop "Bouchard" --json
+
+# Same fantasy workflow in the TUI command bar:
+icelines tui
+# :gaps cats=hits,blocks,shots top=8
+# :poach rw cats=hits,blocks free top=12
+# :simulate add=Connor_McDavid drop=Bench_Forward weeks=3
 
 # Poacher
 icelines poach --category hits,blocks --top 15
