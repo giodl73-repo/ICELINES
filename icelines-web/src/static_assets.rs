@@ -251,6 +251,7 @@ mod tests {
             "sessionStorage",
             "ArrowUp",
             "ArrowDown",
+            "aria-expanded",
         ] {
             assert!(
                 js.contains(needle),

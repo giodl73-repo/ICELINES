@@ -855,6 +855,7 @@ async fn l1_dashboard_shell_renders_no_js_regions() {
     assert!(body.contains("aria-label=\"Scores ribbon\""));
     assert!(body.contains("aria-label=\"Favorites and watchlist\""));
     assert!(body.contains("data-dashboard-pane=\"favorites\""));
+    assert!(body.contains("aria-expanded=\"true\""));
     assert!(body.contains("aria-label=\"Workspace\""));
     assert!(body.contains("data-workspace-url=\"/poach?availability=imported-available\""));
     assert!(body.contains("aria-label=\"Schedule\""));
@@ -868,6 +869,8 @@ async fn l1_dashboard_shell_renders_no_js_regions() {
     assert!(body.contains("href=\"/dashboard?workspace=%2Fpoach\""));
     assert!(body.contains("href=\"/poach?availability=imported-available\""));
     assert!(body.contains("href=\"/schedule\""));
+    assert!(body.contains("@media (max-width: 720px)"));
+    assert!(body.contains("position: sticky"));
 }
 
 #[tokio::test]

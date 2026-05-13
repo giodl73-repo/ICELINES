@@ -288,6 +288,12 @@ Acceptance:
 
 ## JAW.6 - Responsive, Accessibility, and Visual Polish
 
+Status: In progress. The dashboard shell now has explicit wide/tablet/mobile
+CSS breakpoints: the workspace stays primary on narrow screens, side panes stack
+below it, contextual action cards become single-column, and the command bar
+sticks near the bottom for mobile reach. Pane toggles carry `aria-expanded` and
+the JS keeps that state synchronized with local pane visibility.
+
 Deliverables:
 
 - Desktop, tablet, and mobile layouts with explicit breakpoints:

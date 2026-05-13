@@ -94,6 +94,34 @@
             order: 3;
         }
     }
+    @media (max-width: 720px) {
+        .jaw-shell {
+            min-height: auto;
+        }
+        .jaw-body {
+            gap: 0.55rem;
+        }
+        .jaw-workspace {
+            order: 1;
+        }
+        .jaw-side-left,
+        .jaw-side-right {
+            order: 2;
+        }
+        .jaw-command {
+            position: sticky;
+            bottom: 0.5rem;
+            z-index: 5;
+        }
+        .jaw-command form {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 0.45rem;
+        }
+        .jaw-workspace-grid {
+            grid-template-columns: 1fr;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -109,7 +137,7 @@
         <aside class="jaw-pane jaw-side-left" aria-label="Favorites and watchlist" data-dashboard-pane="favorites">
             <div class="jaw-pane-title">
                 <h2>Favorites</h2>
-                <button type="button" class="jaw-pane-toggle" data-dashboard-pane-toggle="favorites" aria-label="Toggle favorites pane">Toggle</button>
+                <button type="button" class="jaw-pane-toggle" data-dashboard-pane-toggle="favorites" aria-label="Toggle favorites pane" aria-expanded="true">Toggle</button>
             </div>
             {% if favorites.is_empty() %}
             <p class="empty-state">No favorites yet. Add players or teams from player and team pages.</p>
@@ -143,7 +171,7 @@
         <aside class="jaw-pane jaw-side-right" aria-label="Schedule" data-dashboard-pane="schedule">
             <div class="jaw-pane-title">
                 <h2>Schedule</h2>
-                <button type="button" class="jaw-pane-toggle" data-dashboard-pane-toggle="schedule" aria-label="Toggle schedule pane">Toggle</button>
+                <button type="button" class="jaw-pane-toggle" data-dashboard-pane-toggle="schedule" aria-label="Toggle schedule pane" aria-expanded="true">Toggle</button>
             </div>
             <ul class="jaw-list">
                 {% for row in schedule_links %}

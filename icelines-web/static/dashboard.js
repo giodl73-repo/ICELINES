@@ -119,8 +119,10 @@
 
     function setPaneVisible(pane, visible) {
         var node = document.querySelector("[data-dashboard-pane='" + pane + "']");
+        var toggle = document.querySelector("[data-dashboard-pane-toggle='" + pane + "']");
+        if (node) node.hidden = !visible;
+        if (toggle) toggle.setAttribute("aria-expanded", visible ? "true" : "false");
         if (!node) return;
-        node.hidden = !visible;
         try {
             window.localStorage.setItem(paneStorageKey(pane), visible ? "show" : "hide");
         } catch (_) {}
