@@ -31,6 +31,8 @@ fantasy poach top=8 available
 simulate add=Connor_McDavid drop=Bench_Forward weeks=3
 fantasy simulate add Connor_McDavid drop Bench_Forward
 simulate clear
+roster
+class 2024
 ```
 
 Press `?` in dashboard mode for the full command reference. `Ctrl+H` toggles

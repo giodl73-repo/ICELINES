@@ -981,9 +981,7 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
                     app.screen = Screen::PlayerById(icelines_core::identity::PlayerId(pid));
                     ExecResult::Continue
                 }
-                None => ExecResult::Flash(format!(
-                    "player not found: {needle:?}"
-                )),
+                None => ExecResult::Flash(format!("player not found: {needle:?}")),
             }
         }
         Command::Team { abbrev } => {
@@ -1005,9 +1003,7 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
                     app.screen = Screen::CompsById(icelines_core::identity::PlayerId(pid));
                     ExecResult::Continue
                 }
-                None => ExecResult::Flash(format!(
-                    "player not found: {left:?}"
-                )),
+                None => ExecResult::Flash(format!("player not found: {left:?}")),
             }
         }
         Command::Box { game } => {
@@ -1023,14 +1019,31 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
                 )),
             }
         }
-        Command::Class { year: _ } => ExecResult::NotImplemented(
-            "class — TUI draft-class screen not wired yet (use `icelines class <year>` from CLI)",
-        ),
+        Command::Class { year } => {
+            let filter = format!("draft-year={year}");
+            match icelines_query::parse_query(icelines_query::FilterInput::Cli(filter.clone())) {
+                Ok(plan) => {
+                    app.queries.filter_text = filter.clone();
+                    app.queries.filter_plan = Some(plan);
+                    app.queries.filter_error = None;
+                    app.screen = Screen::Queries;
+                    ExecResult::Flash(format!("draft class applied: {filter}"))
+                }
+                Err(errs) => ExecResult::Flash(format!(
+                    "draft-class filter parse error: {}",
+                    errs.iter()
+                        .map(|e| e.to_string())
+                        .collect::<Vec<_>>()
+                        .join("; ")
+                )),
+            }
+        }
 
         // ── Roster / fantasy ─────────────────────────────────
-        Command::Roster => ExecResult::NotImplemented(
-            "roster — TUI fantasy-roster screen not wired yet (use `icelines fantasy ...` from CLI)",
-        ),
+        Command::Roster => {
+            app.screen = Screen::FantasyGaps;
+            ExecResult::Flash("active fantasy roster gaps".to_string())
+        }
 
         // ── Write actions: favorites mutation ────────────────
         Command::FavAdd { needle } => exec_fav_add(app, &needle),
@@ -1042,9 +1055,7 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
             // editor. Mutate app.queries.filter_text directly;
             // re-parse to populate filter_plan; swap workspace
             // to Stats.
-            match icelines_query::parse_query(
-                icelines_query::FilterInput::Cli(filter.clone()),
-            ) {
+            match icelines_query::parse_query(icelines_query::FilterInput::Cli(filter.clone())) {
                 Ok(plan) => {
                     app.queries.filter_text = filter.clone();
                     app.queries.filter_plan = Some(plan);
@@ -2400,17 +2411,21 @@ mod tests {
     }
 
     #[test]
-    fn l0_adams_exec_class_returns_not_implemented() {
+    fn l0_adams_exec_class_lowers_to_draft_year_query() {
         let mut app = fresh_app_with_mdi();
         let r = execute_command(Command::Class { year: 2024 }, &mut app);
-        assert!(matches!(r, ExecResult::NotImplemented(_)));
+        assert!(matches!(r, ExecResult::Flash(_)));
+        assert!(matches!(app.screen, Screen::Queries));
+        assert_eq!(app.queries.filter_text, "draft-year=2024");
+        assert!(app.queries.filter_plan.is_some());
     }
 
     #[test]
-    fn l0_adams_exec_roster_returns_not_implemented() {
+    fn l0_adams_exec_roster_opens_fantasy_gaps() {
         let mut app = fresh_app_with_mdi();
         let r = execute_command(Command::Roster, &mut app);
-        assert!(matches!(r, ExecResult::NotImplemented(_)));
+        assert!(matches!(r, ExecResult::Flash(_)));
+        assert!(matches!(app.screen, Screen::FantasyGaps));
     }
 
     #[test]

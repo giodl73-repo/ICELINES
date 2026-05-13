@@ -122,7 +122,7 @@ pub enum AiError {
 /// canonical examples. Versioned: bump VERSION when you change
 /// the grammar so prompt-cache invalidation is obvious.
 #[allow(dead_code)]
-pub const SYSTEM_PROMPT_VERSION: &str = "v3";
+pub const SYSTEM_PROMPT_VERSION: &str = "v4";
 
 pub fn default_system_prompt() -> String {
     // Single source of truth for the prompt — keep it in sync
@@ -145,6 +145,7 @@ VERBS (no args):
   scores         → Today's scores
   schedule       → Weekly schedule
   favorites      → Favorites screen
+  roster         → Active fantasy roster-gap board
 
 VERBS (with args):
   player <name>             open player card                    e.g. player Bedard
@@ -153,6 +154,7 @@ VERBS (with args):
   compare <a>               similarity peers
   compare <a> <b>           head-to-head
   box <game-id>             boxscore detail (numeric NHL game id)
+  class <year>              draft-year query                    e.g. class 2024
 
 ROSTER KV FORM:
   stats nationality=CAN pos=LW min-gp=20
@@ -163,6 +165,8 @@ ROSTER KV FORM:
   fantasy poach top=8 available
   simulate add=Connor_McDavid drop=Bench_Forward weeks=3
   fantasy simulate add Connor_McDavid drop Bench_Forward
+  roster
+  fantasy roster
   watchlist
   team EDM pos=LW nationality=CAN
   depth pos=LW nationality=CAN
@@ -228,6 +232,9 @@ You: poach rw cats=hits,blocks free top=12
 
 User: simulate adding mcdavid and dropping my bench forward
 You: simulate add=Connor_McDavid drop=Bench_Forward weeks=3
+
+User: show the 2024 draft class
+You: class 2024
 
 If the user's request CANNOT be expressed in this grammar, respond with the single token UNSUPPORTED.
 "#
@@ -706,8 +713,10 @@ mod tests {
             "poach",
             "gaps",
             "simulate",
+            "roster",
             "watchlist",
             "team <ABBR>",
+            "class <year>",
             "query <filter-expression>",
             "/fav add",
             "/hide favorites",
@@ -723,6 +732,7 @@ mod tests {
             "fantasy gaps shots top=6",
             "fantasy poach top=8 available",
             "simulate add=Connor_McDavid drop=Bench_Forward weeks=3",
+            "class 2024",
         ] {
             assert!(
                 s.contains(landmark),
@@ -734,7 +744,7 @@ mod tests {
     #[test]
     fn l0_adams_system_prompt_version_is_set() {
         // Version sentinel for prompt-cache invalidation.
-        assert_eq!(SYSTEM_PROMPT_VERSION, "v3");
+        assert_eq!(SYSTEM_PROMPT_VERSION, "v4");
     }
 
     #[test]

@@ -305,9 +305,9 @@ mod tests {
     #[test]
     fn s018_cmdbar_failed_submit_still_records_history() {
         // Even if execute returns Flash, the typed command goes
-        // into history. (NotImplemented/Flash all push history.)
+        // into history. Flash outcomes still push history.
         let mut app = fresh_mdi();
-        type_cmd(&mut app, "class 2024"); // returns NotImplemented
+        type_cmd(&mut app, "class 2024");
         submit(&mut app);
         let m = app.mdi.as_ref().unwrap();
         assert_eq!(m.command_history.len(), 1);
@@ -419,12 +419,12 @@ mod tests {
     }
 
     #[test]
-    fn s028_cmdbar_class_returns_not_implemented() {
+    fn s028_cmdbar_class_lands_on_queries() {
         let mut app = fresh_mdi();
         type_cmd(&mut app, "class 2024");
         submit(&mut app);
-        // NotImplemented → Flash, stay on Home.
-        assert!(matches!(app.screen, Screen::Home));
+        assert!(matches!(app.screen, Screen::Queries));
+        assert_eq!(app.queries.filter_text, "draft-year=2024");
     }
 
     #[test]
@@ -971,15 +971,14 @@ mod tests {
     }
 
     #[test]
-    fn s084_class_and_roster_show_not_implemented() {
+    fn s084_class_and_roster_land_on_product_views() {
         let mut app = fresh_mdi();
         type_cmd(&mut app, "class 2024");
         submit(&mut app);
-        // App stays on Home (Flash), no panic.
-        assert!(matches!(app.screen, Screen::Home));
+        assert!(matches!(app.screen, Screen::Queries));
         type_cmd(&mut app, "roster");
         submit(&mut app);
-        assert!(matches!(app.screen, Screen::Home));
+        assert!(matches!(app.screen, Screen::FantasyGaps));
     }
 
     #[test]
