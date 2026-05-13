@@ -47,7 +47,52 @@
         return true;
     }
 
+    function paneStorageKey(pane) {
+        return "icelines.dashboard.pane." + pane;
+    }
+
+    function setPaneVisible(pane, visible) {
+        var node = document.querySelector("[data-dashboard-pane='" + pane + "']");
+        if (!node) return;
+        node.hidden = !visible;
+        try {
+            window.localStorage.setItem(paneStorageKey(pane), visible ? "show" : "hide");
+        } catch (_) {}
+    }
+
+    function restorePanes() {
+        ["favorites", "schedule"].forEach(function (pane) {
+            try {
+                if (window.localStorage.getItem(paneStorageKey(pane)) === "hide") {
+                    setPaneVisible(pane, false);
+                }
+            } catch (_) {}
+        });
+    }
+
+    function applyCommandSideEffect(command) {
+        var normalized = (command || "").trim().toLowerCase();
+        if (normalized === "/hide favorites" || normalized === "/hide fav") {
+            setPaneVisible("favorites", false);
+        } else if (normalized === "/show favorites" || normalized === "/show fav") {
+            setPaneVisible("favorites", true);
+        } else if (normalized === "/hide schedule" || normalized === "/hide sched") {
+            setPaneVisible("schedule", false);
+        } else if (normalized === "/show schedule" || normalized === "/show sched") {
+            setPaneVisible("schedule", true);
+        }
+    }
+
     document.addEventListener("click", function (event) {
+        var toggle = event.target.closest("[data-dashboard-pane-toggle]");
+        if (toggle) {
+            event.preventDefault();
+            var pane = toggle.getAttribute("data-dashboard-pane-toggle");
+            var node = document.querySelector("[data-dashboard-pane='" + pane + "']");
+            if (node) setPaneVisible(pane, node.hidden);
+            return;
+        }
+
         var link = event.target.closest("a[href]");
         if (!link) return;
 
@@ -92,10 +137,13 @@
             }
             return true;
         }).then(function () {
+            applyCommandSideEffect(String(data.get("command") || ""));
             var input = form.querySelector("input[name='command']");
             if (input) input.value = "";
         }).catch(function () {
             form.submit();
         });
     });
+
+    restorePanes();
 })();

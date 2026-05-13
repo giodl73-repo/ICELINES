@@ -242,6 +242,8 @@ mod tests {
             "popstate",
             "FormData",
             "redirect: \"manual\"",
+            "localStorage",
+            "data-dashboard-pane",
             "data-workspace-url",
         ] {
             assert!(

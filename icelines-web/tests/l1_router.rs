@@ -854,9 +854,11 @@ async fn l1_dashboard_shell_renders_no_js_regions() {
 
     assert!(body.contains("aria-label=\"Scores ribbon\""));
     assert!(body.contains("aria-label=\"Favorites and watchlist\""));
+    assert!(body.contains("data-dashboard-pane=\"favorites\""));
     assert!(body.contains("aria-label=\"Workspace\""));
     assert!(body.contains("data-workspace-url=\"/poach?availability=imported-available\""));
     assert!(body.contains("aria-label=\"Schedule\""));
+    assert!(body.contains("data-dashboard-pane=\"schedule\""));
     assert!(body.contains("aria-label=\"Command palette\""));
     assert!(body.contains("src=\"/static/dashboard.js\""));
     assert!(body.contains("href=\"/dashboard?workspace=%2Fleaders\""));

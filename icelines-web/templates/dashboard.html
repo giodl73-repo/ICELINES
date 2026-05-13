@@ -68,6 +68,19 @@
     .jaw-command code {
         white-space: normal;
     }
+    .jaw-pane-title {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+    }
+    .jaw-pane-title h2 {
+        margin: 0;
+    }
+    .jaw-pane-toggle {
+        font-size: 0.85rem;
+        padding: 0.2rem 0.45rem;
+    }
     @media (max-width: 980px) {
         .jaw-body {
             grid-template-columns: 1fr;
@@ -88,8 +101,11 @@
     </header>
 
     <div class="jaw-body">
-        <aside class="jaw-pane jaw-side-left" aria-label="Favorites and watchlist">
-            <h2>Favorites</h2>
+        <aside class="jaw-pane jaw-side-left" aria-label="Favorites and watchlist" data-dashboard-pane="favorites">
+            <div class="jaw-pane-title">
+                <h2>Favorites</h2>
+                <button type="button" class="jaw-pane-toggle" data-dashboard-pane-toggle="favorites" aria-label="Toggle favorites pane">Toggle</button>
+            </div>
             {% if favorites.is_empty() %}
             <p class="empty-state">No favorites yet. Add players or teams from player and team pages.</p>
             {% else %}
@@ -119,8 +135,11 @@
 
         {% include "dashboard_workspace.html" %}
 
-        <aside class="jaw-pane jaw-side-right" aria-label="Schedule">
-            <h2>Schedule</h2>
+        <aside class="jaw-pane jaw-side-right" aria-label="Schedule" data-dashboard-pane="schedule">
+            <div class="jaw-pane-title">
+                <h2>Schedule</h2>
+                <button type="button" class="jaw-pane-toggle" data-dashboard-pane-toggle="schedule" aria-label="Toggle schedule pane">Toggle</button>
+            </div>
             <ul class="jaw-list">
                 {% for row in schedule_links %}
                 <li>
