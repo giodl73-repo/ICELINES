@@ -92,7 +92,7 @@
         </div>
         <p class="jaw-command-status" data-dashboard-command-status role="status" aria-live="polite"></p>
         <form method="post" action="/dashboard/command">
-            <input type="hidden" name="workspace" value="{{ workspace_url }}">
+            <input type="hidden" name="workspace" value="{{ workspace_url }}" data-dashboard-workspace-input>
             <input type="text" name="command" aria-label="Dashboard command" placeholder="team EDM" data-dashboard-command-input>
             <button type="submit" aria-label="Run dashboard command">Run</button>
         </form>

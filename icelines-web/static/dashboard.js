@@ -40,11 +40,13 @@
         if (!next) return false;
 
         current.replaceWith(next);
+        var nextWorkspace = next.getAttribute("data-workspace-url") || workspace;
+        updateCommandWorkspace(nextWorkspace);
         if (push) {
             window.history.pushState(
-                { workspace: next.getAttribute("data-workspace-url") || workspace },
+                { workspace: nextWorkspace },
                 "",
-                dashboardUrl(next.getAttribute("data-workspace-url") || workspace).toString()
+                dashboardUrl(nextWorkspace).toString()
             );
         }
         return true;
@@ -63,6 +65,11 @@
 
     function commandInput() {
         return document.querySelector("[data-dashboard-command-input]");
+    }
+
+    function updateCommandWorkspace(workspace) {
+        var input = document.querySelector("[data-dashboard-workspace-input]");
+        if (input) input.value = workspace || "/leaders";
     }
 
     function focusCommandInput() {

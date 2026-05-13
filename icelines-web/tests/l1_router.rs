@@ -870,6 +870,7 @@ async fn l1_dashboard_shell_renders_no_js_regions() {
     assert!(body.contains("aria-label=\"Command palette\""));
     assert!(body.contains("data-dashboard-command-status"));
     assert!(body.contains("data-dashboard-command-input"));
+    assert!(body.contains("data-dashboard-workspace-input"));
     assert!(body.contains("data-dashboard-nav"));
     assert!(body.contains("Team season"));
     assert!(body.contains("jaw-command-examples"));
