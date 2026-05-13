@@ -55,6 +55,36 @@ pub struct HomeTemplate {
     pub top_goalies: Vec<GoalieRow>,
 }
 
+/// `dashboard.html` — Jack Adams Web shell. Server-rendered first
+/// so the dashboard is useful without JavaScript; later slices
+/// progressively enhance workspace swaps and the command palette.
+#[derive(Template)]
+#[template(path = "dashboard.html")]
+pub struct DashboardTemplate {
+    pub active_label: String,
+    pub workspace_url: String,
+    pub workspace_label: String,
+    pub scores_summary: String,
+    pub favorites: Vec<DashboardEntityRow>,
+    pub watchlist: Vec<DashboardEntityRow>,
+    pub schedule_links: Vec<DashboardLinkRow>,
+    pub workspace_links: Vec<DashboardLinkRow>,
+}
+
+#[derive(Debug, Clone)]
+pub struct DashboardEntityRow {
+    pub label: String,
+    pub href: String,
+    pub kind: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct DashboardLinkRow {
+    pub label: String,
+    pub href: String,
+    pub detail: String,
+}
+
 /// `not_found.html` — Sasq.7. Friendly 404 with a player-search
 /// input. Replaces axum's default bare 404 for a typo'd URL like
 /// `/playr/8478402` so users land somewhere useful.

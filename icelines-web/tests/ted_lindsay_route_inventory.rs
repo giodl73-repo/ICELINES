@@ -6,6 +6,7 @@
 
 const ROUTER_ROUTES: &[&str] = &[
     "GET /",
+    "GET /dashboard",
     "GET /static/:asset",
     "GET /leaders",
     "GET /api/v1/leaders",

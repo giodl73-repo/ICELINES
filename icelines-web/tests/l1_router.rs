@@ -776,6 +776,7 @@ async fn l1_html_each_route_has_active_season_header() {
     // marker (the season-header CSS class) plus the label substring.
     let html_routes: &[&str] = &[
         "/",
+        "/dashboard",
         "/leaders",
         "/compare",
         "/goalies",
@@ -830,6 +831,36 @@ async fn l1_html_each_route_has_active_season_header() {
              base.html and the handler passes active_label)"
         );
     }
+}
+
+#[tokio::test]
+async fn l1_dashboard_shell_renders_no_js_regions() {
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/dashboard?workspace=/poach?availability=imported-available")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+
+    assert!(body.contains("aria-label=\"Scores ribbon\""));
+    assert!(body.contains("aria-label=\"Favorites and watchlist\""));
+    assert!(body.contains("aria-label=\"Workspace\""));
+    assert!(body.contains("data-workspace-url=\"/poach?availability=imported-available\""));
+    assert!(body.contains("aria-label=\"Schedule\""));
+    assert!(body.contains("aria-label=\"Command palette\""));
+    assert!(body.contains("href=\"/leaders\""));
+    assert!(body.contains("href=\"/poach\""));
+    assert!(body.contains("href=\"/schedule\""));
 }
 
 #[tokio::test]

@@ -63,6 +63,7 @@ pub use state::WebState;
 pub fn router(state: WebState) -> Router {
     Router::new()
         .route("/", get(handlers::home::get_home))
+        .route("/dashboard", get(handlers::dashboard::get_dashboard))
         .route("/static/:asset", get(static_assets::serve_static))
         // Real handlers — replace coming-soon stubs as each lands.
         .route("/leaders", get(handlers::leaders::get_leaders))
@@ -301,6 +302,7 @@ mod handlers {
     /// `/compare` — UX.D. Side-by-side stat comparison of two players.
     pub mod compare;
 
+    pub mod dashboard;
     pub mod home;
 
     /// `/transactions` — King.8.2. League moves feed for the active
