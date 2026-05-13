@@ -353,10 +353,12 @@ fn chrome_screen_label(s: &Screen) -> &'static str {
 /// call" feedback.
 fn render_mdi_cheat_sheet(f: &mut Frame, area: Rect) {
     let yellow = Style::default().fg(Color::Yellow);
-    let line = if area.width >= 140 {
-        " GO  stats goalies poach gaps simulate scores  |  OPEN  team <ABBR> player <name>  |  ASK  query <filter>  |  /help "
+    let line = if area.width >= 160 {
+        " GO stats goalies scores  |  OPEN team <ABBR> player <name> box AWAY@HOME class <year>  |  FANTASY roster gaps sim poach  |  ASK query <filter>  |  /help "
+    } else if area.width >= 120 {
+        " GO stats goalies scores  |  OPEN team player box class  |  FANTASY roster gaps sim poach  |  ASK query "
     } else if area.width >= 100 {
-        " GO  stats goalies poach gaps sim scores  |  OPEN  team <ABBR> player <name>  |  ASK  query <filter> "
+        " GO stats goalies scores  |  OPEN team player box  |  FANTASY roster gaps sim  |  ASK query "
     } else {
         " GO stats goalies scores  |  ASK query <filter> "
     };
@@ -4293,9 +4295,12 @@ mod adams_4_render_boundary_tests {
         let text = render_mdi_at(200);
         for expected in [
             "dashboard ready",
-            "GO  stats goalies poach",
-            "OPEN  team <ABBR> player <name>",
-            "ASK  query <filter>",
+            "GO stats goalies scores",
+            "OPEN team <ABBR> player <name>",
+            "box AWAY@HOME",
+            "class <year>",
+            "FANTASY roster gaps sim poach",
+            "ASK query <filter>",
             "Press : to command",
         ] {
             assert!(
