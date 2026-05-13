@@ -150,7 +150,7 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /scouting/:id` | `handlers/scouting.rs` | HTML | Scouting report | renders a player-card-backed `ReportView` |
 | `GET /api/v1/scouting/:id` | `handlers/scouting.rs` | JSON | Scouting report | returns the player-card-backed `ReportView` contract |
 | `GET /compare` | `handlers/compare.rs` | HTML | Compare/comps | projects compare page from `CompareView`; `?a=ID&similar=N` projects similarity rows from `SimilarPlayersView` |
-| `GET /api/v1/compare` | `handlers/compare.rs` | JSON | Compare/comps | partial - projects stable data/meta success and shared bad-input error envelopes from `CompareView`; covered by `l1_compare_json_*` |
+| `GET /api/v1/compare` | `handlers/compare.rs` | JSON | Compare/comps | projects stable data/meta success and shared bad-input error envelopes from `CompareView`; covered by `l1_compare_json_*` |
 | `GET /goalies` | `handlers/goalies.rs` | HTML | Goalie leaderboard | projects goalie leaderboard rows from `GoaliesView` |
 | `GET /api/v1/goalies` | `handlers/goalies.rs` | JSON | Goalie leaderboard | projects stable data/meta success envelope from `GoaliesView`; covered by `l1_goalies_json_envelope_shape` |
 | `GET /team/:abbrev` | `handlers/team.rs` | HTML | Team depth | renders from `TeamDepthView`; TUI scoring chart uses separate `TeamDepthChartView` contract |
@@ -169,11 +169,11 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /career` | `handlers/career.rs` | HTML | Career/cross-league cohorts | partial - projects cohort rows from `CareerView` through the shared `base.html` shell; covered by `l1_career_html_uses_shared_page_shell` |
 | `GET /api/v1/career` | `handlers/career.rs` | JSON | Career/cross-league cohorts | partial - projects stable success and bad-request envelopes from `CareerView`; covered by `l1_api_career_envelope_shape` |
 | `GET /docs` | `handlers/docs.rs` | HTML | Docs reference | renders `COMMANDS.md` through `DocsView`; TUI overlay uses the same docs contract for source metadata/body |
-| `GET /season-type/:kind` | `handlers/season_type.rs` | mutating redirect | Config/report toggles | partial - normalizes season-type mutation intent through shared config support |
+| `GET /season-type/:kind` | `handlers/season_type.rs` | mutating redirect | Config/report toggles | normalizes season-type mutation intent through shared config support; covered by `l1_season_type_*` |
 | `GET /scores` | `handlers/scores.rs` | HTML | Scores/tonight | projects score days from `ScoresView`; CLI `tonight` and TUI scores alignment landed |
-| `GET /api/v1/scores` | `handlers/scores.rs` | JSON | Scores/tonight | partial - projects stable data/meta envelope from `ScoresView`; live source failures are `meta.source_error`; covered by `l1_scores_json_envelope_shape` |
+| `GET /api/v1/scores` | `handlers/scores.rs` | JSON | Scores/tonight | projects stable data/meta envelope from `ScoresView`; live source failures are `meta.source_error`; covered by `l1_scores_json_envelope_shape` |
 | `GET /schedule` | `handlers/schedule.rs` | HTML | Schedule | projects schedule rows from `ScheduleView`; richer TUI-only season-team and matchup projections are covered by `ScheduleTeamView` and `ScheduleMatchupView` |
-| `GET /api/v1/schedule` | `handlers/schedule.rs` | JSON | Schedule | partial - projects stable data/meta envelope from `ScheduleView`; live source failures are `meta.source_error`; covered by `l1_schedule_json_envelope_shape` |
+| `GET /api/v1/schedule` | `handlers/schedule.rs` | JSON | Schedule | projects stable data/meta envelope from `ScheduleView`; live source failures are `meta.source_error`; covered by `l1_schedule_json_envelope_shape` |
 | `GET /playoffs` | `handlers/playoffs.rs` | HTML | Playoffs | projects bundled/live bracket through `PlayoffsView` |
 | `GET /api/v1/playoffs` | `handlers/playoffs.rs` | JSON | Playoffs | projects bundled/live bracket through `PlayoffsView`; live source failures are `meta.source_error`; covered by `l1_playoffs_json_envelope_shape` |
 | `GET /favorites` | `handlers/favorites.rs` | HTML | Favorites/groups | partial - projects group membership through `FavoritesView` |
@@ -187,7 +187,7 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `POST /api/v1/favorites/add` | `handlers/favorites.rs` | JSON mutation | Favorites/groups | partial - returns `MutationResultView`; covered by `l1_favorites_add_json_returns_mutation_result_view` |
 | `POST /api/v1/favorites/remove` | `handlers/favorites.rs` | JSON mutation | Favorites/groups | partial - returns `MutationResultView`; covered by `l1_favorites_remove_json_returns_mutation_result_view` |
 | `GET /transactions` | `handlers/transactions.rs` | HTML | Transactions | projects transaction feed from `TransactionsView`; CLI/TUI row projection is aligned |
-| `GET /api/v1/transactions` | `handlers/transactions.rs` | JSON | Transactions | partial - projects stable data/meta success envelope and shared bad-filter error envelope from `TransactionsView`; covered by `l1_transactions_json_envelope_shape` |
+| `GET /api/v1/transactions` | `handlers/transactions.rs` | JSON | Transactions | projects stable data/meta success envelope and shared bad-filter error envelope from `TransactionsView`; covered by `l1_transactions_json_envelope_shape` |
 | `GET /fantasy` | `handlers/fantasy.rs` | HTML page | Fantasy roster gaps and simulation scenarios | done for read/product views; renders `FantasyRosterGapView` and `FantasySimulationView`, including scenario warnings |
 | `GET /api/v1/fantasy/gaps` | `handlers/fantasy.rs` | JSON API | Fantasy roster gaps | done for read/product views; returns `FantasyRosterGapView` |
 | `GET /api/v1/fantasy/simulate` | `handlers/fantasy.rs` | JSON API | Fantasy league simulation and add/drop/drop-only scenario projection | done for read/product views; returns `FantasySimulationView` and explicit scenario-resolution errors |
