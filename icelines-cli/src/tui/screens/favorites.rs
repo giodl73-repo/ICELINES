@@ -437,11 +437,11 @@ fn render_empty_state(f: &mut Frame, area: Rect) {
         Line::from(Span::styled("    icelines group add Favorites EDM", dim)),
         Line::from(""),
         Line::from(Span::styled(
-            "  Per-night stat lines + box scores ship in a follow-up;",
+            "  Per-night stat lines appear after schedule/boxscore data is available;",
             dim,
         )),
         Line::from(Span::styled(
-            "  this tab is here so favorites land somewhere visible.",
+            "  run `icelines fetch boxscore` or open Scores first to warm the cache.",
             dim,
         )),
     ];
@@ -507,11 +507,11 @@ fn render_member_list(
     }
     items.push(ListItem::new(""));
     items.push(ListItem::new(Span::styled(
-        "  Tonight's stat lines wire in via `icelines fetch boxscore`",
+        "  Tonight's stat lines appear when schedule/boxscore data is available.",
         Style::default().fg(Color::DarkGray),
     )));
     items.push(ListItem::new(Span::styled(
-        "  (Foster.3+ orchestration — coming soon).",
+        "  Run `icelines fetch boxscore` or open Scores first to warm the cache.",
         Style::default().fg(Color::DarkGray),
     )));
 
