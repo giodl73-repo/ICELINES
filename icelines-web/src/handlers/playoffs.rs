@@ -11,13 +11,13 @@ use icelines_core::{
     PlayoffsSeriesInput, PlayoffsSeriesRow, PlayoffsView, ViewContext, ViewWindow,
 };
 
-struct PlayoffsResult {
-    active_label: String,
-    season_pretty: String,
-    source_label: String,
-    rounds: Vec<PlayoffsRoundView>,
-    empty: bool,
-    fetch_error: Option<String>,
+pub(super) struct PlayoffsResult {
+    pub(super) active_label: String,
+    pub(super) season_pretty: String,
+    pub(super) source_label: String,
+    pub(super) rounds: Vec<PlayoffsRoundView>,
+    pub(super) empty: bool,
+    pub(super) fetch_error: Option<String>,
 }
 
 #[derive(Debug, serde::Serialize)]
@@ -68,7 +68,7 @@ pub async fn get_playoffs_json(State(state): State<WebState>) -> Response {
     )
 }
 
-async fn build_playoffs_result(state: &WebState) -> PlayoffsResult {
+pub(super) async fn build_playoffs_result(state: &WebState) -> PlayoffsResult {
     let (active_label, season_str, season, season_type) = {
         let cfg = state.config.read().await;
         (

@@ -1,7 +1,7 @@
 use crate::state::WebState;
 use crate::templates::{
     DashboardEntityRow, DashboardLinkRow, DashboardSummaryRow, DashboardTemplate,
-    DashboardWorkspaceTemplate, ScheduleRow, ScoreRow,
+    DashboardWorkspaceTemplate, PlayoffsSeriesView, ScheduleRow, ScoreRow, TransactionRow,
 };
 use askama::Template;
 use axum::extract::{Form, Query, State};
@@ -246,6 +246,12 @@ async fn workspace_summary(state: &WebState, path: &str) -> Vec<DashboardSummary
     }
     if let Some(game_id) = route.strip_prefix("/game/") {
         return game_workspace_summary(state, game_id).await;
+    }
+    if route == "/transactions" {
+        return transactions_workspace_summary(state, path).await;
+    }
+    if route == "/playoffs" {
+        return playoffs_workspace_summary(state).await;
     }
     if let Some(team) = route
         .strip_prefix("/team/")
@@ -841,6 +847,107 @@ fn game_summary_rows(view: &super::game::GameDetailView) -> Vec<DashboardSummary
         ));
     }
     rows
+}
+
+async fn transactions_workspace_summary(state: &WebState, path: &str) -> Vec<DashboardSummaryRow> {
+    let q = transactions_query_from_workspace(path);
+    match super::transactions::build_transactions_result(state, &q).await {
+        Ok(result) => transactions_summary_rows(&result),
+        Err(error) => vec![summary_row("Transactions", "Bad filter", error)],
+    }
+}
+
+fn transactions_query_from_workspace(path: &str) -> super::transactions::TransactionsQuery {
+    let mut q = super::transactions::TransactionsQuery::default();
+    let Some(query) = path.split_once('?').map(|(_, query)| query) else {
+        return q;
+    };
+    for pair in query.split('&') {
+        let Some((key, value)) = pair.split_once('=') else {
+            continue;
+        };
+        let value = value.replace('+', " ");
+        match key {
+            "kind" => q.kind = Some(value),
+            "team" => q.team = Some(value),
+            _ => {}
+        }
+    }
+    q
+}
+
+fn transactions_summary_rows(
+    result: &super::transactions::TransactionsResult,
+) -> Vec<DashboardSummaryRow> {
+    let scope = match (result.active_kind.is_empty(), result.active_team.is_empty()) {
+        (true, true) => result.season_pretty.clone(),
+        (false, true) => format!("{} · {}", result.season_pretty, result.active_kind),
+        (true, false) => format!("{} · {}", result.season_pretty, result.active_team),
+        (false, false) => format!(
+            "{} · {} · {}",
+            result.season_pretty, result.active_team, result.active_kind
+        ),
+    };
+    let mut rows = vec![summary_row(
+        "Transactions",
+        result.total.to_string(),
+        if result.out_of_coverage {
+            format!("coverage starts {}", result.earliest_season_pretty)
+        } else {
+            scope
+        },
+    )];
+    rows.extend(result.rows.iter().take(2).map(transaction_summary_row));
+    rows
+}
+
+fn transaction_summary_row(row: &TransactionRow) -> DashboardSummaryRow {
+    summary_row(
+        row.kind_pretty.clone(),
+        if row.team.is_empty() {
+            row.date.clone()
+        } else {
+            format!("{} · {}", row.date, row.team)
+        },
+        row.description.clone(),
+    )
+}
+
+async fn playoffs_workspace_summary(state: &WebState) -> Vec<DashboardSummaryRow> {
+    let result = super::playoffs::build_playoffs_result(state).await;
+    playoffs_summary_rows(&result)
+}
+
+fn playoffs_summary_rows(result: &super::playoffs::PlayoffsResult) -> Vec<DashboardSummaryRow> {
+    if let Some(error) = &result.fetch_error {
+        return vec![summary_row("Playoffs", "Unavailable", error.clone())];
+    }
+    let series_count: usize = result.rounds.iter().map(|round| round.series.len()).sum();
+    let mut rows = vec![summary_row(
+        "Playoffs",
+        series_count.to_string(),
+        format!("{} · {}", result.season_pretty, result.source_label),
+    )];
+    if result.empty {
+        rows[0].value = "No bracket".to_string();
+    }
+    rows.extend(
+        result
+            .rounds
+            .iter()
+            .flat_map(|round| round.series.iter())
+            .take(2)
+            .map(playoff_series_summary_row),
+    );
+    rows
+}
+
+fn playoff_series_summary_row(series: &PlayoffsSeriesView) -> DashboardSummaryRow {
+    summary_row(
+        series.conference.clone(),
+        format!("{} vs {}", series.top_abbrev, series.bottom_abbrev),
+        series.summary.clone(),
+    )
 }
 
 async fn team_season_workspace_summary(
@@ -1533,6 +1640,69 @@ mod tests {
         assert_eq!(rows[0].value, "EDM @ SEA");
         assert_eq!(rows[1].value, "Leon Draisaitl");
         assert_eq!(rows[2].value, "Connor McDavid");
+    }
+
+    #[test]
+    fn l0_dashboard_transactions_query_and_summary_preserve_filters() {
+        let query = transactions_query_from_workspace("/transactions?kind=trade&team=SEA");
+        assert_eq!(query.kind.as_deref(), Some("trade"));
+        assert_eq!(query.team.as_deref(), Some("SEA"));
+
+        let result = super::super::transactions::TransactionsResult {
+            active_label: "25-26 · Regular".to_string(),
+            season_pretty: "2025-26".to_string(),
+            rows: vec![TransactionRow {
+                date: "2026-02-01".to_string(),
+                team: "SEA".to_string(),
+                kind_label: "trade".to_string(),
+                kind_pretty: "Trade".to_string(),
+                description: "SEA acquired a scorer".to_string(),
+            }],
+            total: 1,
+            empty_unfiltered: false,
+            active_kind: "trade".to_string(),
+            active_team: "SEA".to_string(),
+            out_of_coverage: false,
+            earliest_season_pretty: "2023-24".to_string(),
+        };
+
+        let rows = transactions_summary_rows(&result);
+
+        assert_eq!(rows[0].label, "Transactions");
+        assert_eq!(rows[0].detail, "2025-26 · SEA · trade");
+        assert_eq!(rows[1].value, "2026-02-01 · SEA");
+    }
+
+    #[test]
+    fn l0_dashboard_playoffs_summary_projects_series() {
+        let result = super::super::playoffs::PlayoffsResult {
+            active_label: "25-26 · Playoffs".to_string(),
+            season_pretty: "2025-26".to_string(),
+            source_label: "historical bundle".to_string(),
+            rounds: vec![crate::templates::PlayoffsRoundView {
+                round_number: 1,
+                label: "Round 1".to_string(),
+                series: vec![PlayoffsSeriesView {
+                    top_abbrev: "EDM".to_string(),
+                    top_name: "Oilers".to_string(),
+                    top_wins: 4,
+                    bottom_abbrev: "SEA".to_string(),
+                    bottom_name: "Kraken".to_string(),
+                    bottom_wins: 2,
+                    summary: "EDM wins 4-2".to_string(),
+                    is_complete: true,
+                    conference: "Western".to_string(),
+                }],
+            }],
+            empty: false,
+            fetch_error: None,
+        };
+
+        let rows = playoffs_summary_rows(&result);
+
+        assert_eq!(rows[0].label, "Playoffs");
+        assert_eq!(rows[0].value, "1");
+        assert_eq!(rows[1].value, "EDM vs SEA");
     }
 
     #[test]

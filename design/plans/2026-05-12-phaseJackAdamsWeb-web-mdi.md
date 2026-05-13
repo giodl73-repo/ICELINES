@@ -226,8 +226,10 @@ route result projections used by the full web pages; player card workspaces
 summarize active-season identity, scoring, and rate context from
 `PlayerCardView`; game detail workspaces summarize matchup, latest goal, and
 top skater context from the same `GameView` projection used by the full game
-route, all while preserving canonical full route links. Remaining work is
-panel-specific fragments/parity for more product routes and richer side-pane
+route; transactions preserve kind/team filters and summarize the same
+`TransactionsView` route result; playoffs summarize bracket/series context from
+`PlayoffsView`, all while preserving canonical full route links. Remaining work
+is panel-specific fragments/parity for more product routes and richer side-pane
 row actions.
 
 Make the shell feel like MDI without losing web semantics.

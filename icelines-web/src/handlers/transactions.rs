@@ -23,16 +23,16 @@ pub struct TransactionsQuery {
     pub team: Option<String>,
 }
 
-struct TransactionsResult {
-    active_label: String,
-    season_pretty: String,
-    rows: Vec<TransactionRow>,
-    total: usize,
-    empty_unfiltered: bool,
-    active_kind: String,
-    active_team: String,
-    out_of_coverage: bool,
-    earliest_season_pretty: String,
+pub(super) struct TransactionsResult {
+    pub(super) active_label: String,
+    pub(super) season_pretty: String,
+    pub(super) rows: Vec<TransactionRow>,
+    pub(super) total: usize,
+    pub(super) empty_unfiltered: bool,
+    pub(super) active_kind: String,
+    pub(super) active_team: String,
+    pub(super) out_of_coverage: bool,
+    pub(super) earliest_season_pretty: String,
 }
 
 #[derive(Debug, serde::Serialize)]
@@ -134,7 +134,7 @@ pub async fn get_transactions_json(
     }
 }
 
-async fn build_transactions_result(
+pub(super) async fn build_transactions_result(
     state: &WebState,
     q: &TransactionsQuery,
 ) -> Result<TransactionsResult, String> {
