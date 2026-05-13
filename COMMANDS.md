@@ -626,6 +626,8 @@ already typed (for slash commands). Enter submits; Esc cancels.
 | `simulate clear` | Clear the active fantasy simulation scenario | `:simulate clear` |
 | `report poach` / `report weekly` | Show exact report CLI/web target | `:report weekly cats=shots,hits top=12` |
 | `watch <player>` | Show exact watch-note/rule target | `:watch Connor McDavid` |
+| `admin` | Open the operational admin overlay | `:admin` |
+| `data ...` / `snapshot ...` / `config ...` | Show exact admin CLI/web target | `:data status`, `:snapshot list`, `:config list` |
 | `roster` / `fantasy roster` | Open active fantasy roster-gap view | `:roster` |
 | `player <name>` | Open player card | `:player Bedard` |
 | `team <ABBR> <kv...>` | Team depth chart with optional filters | `:team EDM pos=LW country=CAN` |

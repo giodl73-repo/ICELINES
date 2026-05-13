@@ -44,6 +44,8 @@ pub enum Command {
     Hide(SidePane),
     /// `/show favorites` or `/show schedule` — show a side pane.
     Show(SidePane),
+    /// `admin` — open the operational admin overlay.
+    Admin,
 
     // ── Workspace-swap reads (no args) ────────────────────────
     /// `stats` — workspace becomes Stats / Queries.
@@ -148,6 +150,17 @@ pub enum Command {
     /// to shared PoachReportView report surfaces.
     Report {
         args: ReportCommandArgs,
+    },
+    /// Operational command handoffs. The TUI does not run these
+    /// long-running or destructive commands from the cmdbar.
+    Data {
+        args: String,
+    },
+    Snapshot {
+        args: String,
+    },
+    Config {
+        args: String,
     },
 
     // ── Write actions (favorites mutation) ────────────────────
@@ -374,6 +387,7 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
     match v.as_str() {
         "help" => Ok(Command::Help),
         "quit" | "exit" => Ok(Command::Quit),
+        "admin" => Ok(Command::Admin),
         // `q` is shorthand for quit — `query` is the long-form verb
         // (consistent with vim). Filter syntax goes through `query`.
         "q" => Ok(Command::Quit),
@@ -434,6 +448,15 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
         "class" => parse_class(args),
         "career" => parse_career(args),
         "report" | "reports" => parse_report(args),
+        "data" => Ok(Command::Data {
+            args: args.trim().to_string(),
+        }),
+        "snapshot" | "snapshots" => Ok(Command::Snapshot {
+            args: args.trim().to_string(),
+        }),
+        "config" => Ok(Command::Config {
+            args: args.trim().to_string(),
+        }),
 
         // Write actions (also accessible via /fav)
         "fav" | "favorite" => parse_fav(args),
@@ -1079,6 +1102,10 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
             }
             ExecResult::Continue
         }
+        Command::Admin => {
+            app.show_admin = true;
+            ExecResult::Flash("admin overlay opened".to_string())
+        }
 
         // ── Workspace swap (no args) ─────────────────────────
         Command::Stats => {
@@ -1270,6 +1297,9 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
                 query_suffix
             ))
         }
+        Command::Data { args } => ExecResult::Flash(cli_handoff("data", &args, "/admin")),
+        Command::Snapshot { args } => ExecResult::Flash(cli_handoff("snapshot", &args, "/admin")),
+        Command::Config { args } => ExecResult::Flash(cli_handoff("config", &args, "/admin")),
 
         // ── Roster / fantasy ─────────────────────────────────
         Command::Roster => {
@@ -1748,6 +1778,15 @@ fn url_component(value: &str) -> String {
         .collect()
 }
 
+fn cli_handoff(command: &str, args: &str, route: &str) -> String {
+    let suffix = if args.trim().is_empty() {
+        String::new()
+    } else {
+        format!(" {}", args.trim())
+    };
+    format!("admin: run `icelines {command}{suffix}` or open `{route}`")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1845,6 +1884,7 @@ mod tests {
             ("stats", Command::Stats),
             ("goalies", Command::Goalies),
             ("poach", Command::Poach),
+            ("admin", Command::Admin),
             ("watchlist", Command::Watchlist),
             ("transactions", Command::Transactions),
             ("txs", Command::Transactions),
@@ -1871,6 +1911,29 @@ mod tests {
             parse_command("watch Connor McDavid").unwrap(),
             Command::WatchPlayer {
                 needle: "Connor McDavid".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn l0_adams_parse_admin_cmdbar_handoffs() {
+        assert_eq!(parse_command("admin").unwrap(), Command::Admin);
+        assert_eq!(
+            parse_command("data status").unwrap(),
+            Command::Data {
+                args: "status".to_string(),
+            }
+        );
+        assert_eq!(
+            parse_command("snapshot list").unwrap(),
+            Command::Snapshot {
+                args: "list".to_string(),
+            }
+        );
+        assert_eq!(
+            parse_command("config list").unwrap(),
+            Command::Config {
+                args: "list".to_string(),
             }
         );
     }
@@ -1976,6 +2039,9 @@ mod tests {
             "career league=OHL season=20142015 top=8",
             "report weekly cats=shots,hits top=12",
             "watch Connor McDavid",
+            "data status",
+            "snapshot list",
+            "config list",
             "box EDM@BOS",
         ] {
             assert!(
@@ -2653,6 +2719,27 @@ mod tests {
         assert!(message.contains("icelines watch player \"Connor McDavid\" --when pp1 --save"));
         assert!(message.contains("/watchlist"));
         assert!(matches!(app.screen, Screen::Home));
+    }
+
+    #[test]
+    fn l0_adams_exec_admin_and_operational_cmdbar_handoffs() {
+        let mut app = fresh_app_with_mdi();
+        let r = execute_command(Command::Admin, &mut app);
+        assert!(matches!(r, ExecResult::Flash(_)));
+        assert!(app.show_admin);
+
+        for (input, expected) in [
+            ("data status", "icelines data status"),
+            ("snapshot list", "icelines snapshot list"),
+            ("config list", "icelines config list"),
+        ] {
+            let r = execute_command(parse_command(input).unwrap(), &mut app);
+            let ExecResult::Flash(message) = r else {
+                panic!("{input} should flash canonical target");
+            };
+            assert!(message.contains(expected), "{message}");
+            assert!(message.contains("/admin"), "{message}");
+        }
     }
 
     #[test]
