@@ -130,6 +130,18 @@ provider-shell-out work that benefits from a dedicated review.
   fires on deterministic-parse-failure. We never call the LLM
   pre-emptively to suggest commands.
 
+### Web Bridge Addendum — 2026-05-12
+
+The original Jack Adams implementation remains TUI-only, but the product model
+is now explicitly planned for the browser in
+`design/plans/2026-05-12-phaseJackAdamsWeb-web-mdi.md`.
+
+That follow-on phase does not port ratatui internals. It ports the concepts:
+scores ribbon, Favorites/Watchlist and Schedule context panes, a swappable
+workspace, command-palette navigation, responsive side-pane collapse, and
+ViewModel-backed panels. Existing full-page web routes remain canonical and
+usable without JavaScript.
+
 ## Surface coverage matrix
 
 Jack Adams is a TUI-only feature. CLI and web surfaces are
