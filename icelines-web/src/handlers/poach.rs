@@ -58,6 +58,8 @@ pub struct WatchRuleMutationForm {
 pub struct WatchRuleCreateForm {
     pub player: String,
     pub trigger: String,
+    #[serde(default)]
+    pub return_to: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -221,6 +223,7 @@ pub async fn post_watch_rule_enabled_form(
 }
 
 pub async fn post_watch_rule_create_form(Form(req): Form<WatchRuleCreateForm>) -> Response {
+    let return_to = safe_return_to(req.return_to.as_deref()).unwrap_or("/watchlist");
     let rule = match player_watch_rule(&req.player, &req.trigger) {
         Ok(rule) => rule,
         Err(message) => return bad_request_html(message),
@@ -232,7 +235,7 @@ pub async fn post_watch_rule_create_form(Form(req): Form<WatchRuleCreateForm>) -
     match persist_watch_rule(&rule) {
         Ok(()) => {
             let _result = intent.result_view(default_watch_context(), true);
-            Redirect::to("/watchlist").into_response()
+            Redirect::to(return_to).into_response()
         }
         Err(message) => watch_rules_error(StatusCode::INTERNAL_SERVER_ERROR, message),
     }
@@ -281,6 +284,19 @@ async fn watch_context_from_state(state: &WebState) -> Result<ViewContext, Respo
 
 fn default_watch_context() -> ViewContext {
     ViewContext::new(ViewWindow::new(Season(CURRENT_SEASON), SeasonType::Regular))
+}
+
+fn safe_return_to(value: Option<&str>) -> Option<&str> {
+    let path = value?.trim();
+    if path.starts_with('/')
+        && !path.starts_with("//")
+        && !path.contains("://")
+        && !path.chars().any(char::is_control)
+    {
+        Some(path)
+    } else {
+        None
+    }
 }
 
 fn render_poach_report_html(report: &PoachReportView, active_label: &str) -> String {

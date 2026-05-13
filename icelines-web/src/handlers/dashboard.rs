@@ -131,6 +131,7 @@ pub async fn post_dashboard_command(
             super::poach::post_watch_rule_create_form(Form(super::poach::WatchRuleCreateForm {
                 player,
                 trigger: "available".to_owned(),
+                return_to: Some(dashboard_workspace_href(&current_workspace)),
             }))
             .await
         }
