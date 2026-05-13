@@ -158,8 +158,8 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | `GET /api/v1/goalies` | `handlers/goalies.rs` | JSON | Goalie leaderboard | projects stable data/meta success envelope from `GoaliesView`; covered by `l1_goalies_json_envelope_shape` |
 | `GET /team/:abbrev` | `handlers/team.rs` | HTML | Team depth | renders from `TeamDepthView`; TUI scoring chart uses separate `TeamDepthChartView` contract |
 | `GET /api/v1/team/:abbrev` | `handlers/team.rs` | JSON | Team depth | projects stable success and error envelopes from `TeamDepthView`; row identity covered by `l1_team_json_rows_match_team_depth_view`; error envelopes covered by `l1_team_json_*` |
-| `GET /team/:abbrev/season` | `handlers/team.rs` | HTML | Team season performance | Presidents Trophy first slice; projects schedule-derived `TeamSeasonView` with record, points, splits, form, remaining games, and standings source warning |
-| `GET /api/v1/team/:abbrev/season` | `handlers/team.rs` | JSON | Team season performance | returns `TeamSeasonView` in the standard data/meta envelope; standings/SOS fields remain planned |
+| `GET /team/:abbrev/season` | `handlers/team.rs` | HTML | Team season performance | projects `TeamSeasonView` with record, points, home/away splits, form, remaining schedule, standings/cutline context, schedule-strength labels, and quality ledger |
+| `GET /api/v1/team/:abbrev/season` | `handlers/team.rs` | JSON | Team season performance | returns `TeamSeasonView` in the standard data/meta envelope, including standings context, schedule strength, and quality ledger fields |
 | `GET /depth` | `handlers/depth.rs` | HTML | Cross-team depth | projects depth rankings from `DepthLeagueView`; markdown export includes a `DepthLeagueView` team-strength section |
 | `GET /api/v1/depth` | `handlers/depth.rs` | JSON | Cross-team depth | projects stable success and error envelopes from `DepthLeagueView`; row identity covered by `l1_depth_json_rows_match_depth_league_view`; error/envelope shape covered by `l1_depth_json_*` |
 | `GET /poach` | `handlers/poach.rs` | HTML | Poacher board | done |
