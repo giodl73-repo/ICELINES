@@ -354,11 +354,11 @@ fn chrome_screen_label(s: &Screen) -> &'static str {
 fn render_mdi_cheat_sheet(f: &mut Frame, area: Rect) {
     let yellow = Style::default().fg(Color::Yellow);
     let line = if area.width >= 140 {
-        " stats · goalies · transactions · playoffs · depth · scores · schedule · favorites  |  team <ABBR> · player <name> · query <filter> · /fav add <name> · /help "
+        " GO  stats goalies poach scores schedule  |  OPEN  team <ABBR> player <name>  |  ASK  query <filter>  |  /help "
     } else if area.width >= 100 {
-        " stats · goalies · txs · playoffs · scores · schedule  |  team <ABBR> · player <name> · query <filter> · /help "
+        " GO  stats goalies poach scores  |  OPEN  team <ABBR> player <name>  |  ASK  query <filter> "
     } else {
-        " stats · goalies · scores · query <f> · /help "
+        " GO stats goalies scores  |  ASK query <filter> "
     };
     f.render_widget(Paragraph::new(line).style(yellow), area);
 }
@@ -388,9 +388,9 @@ fn render_mdi_cmdbar(f: &mut Frame, area: Rect, mdi: &crate::tui::mdi::MdiLayout
         // emphasizes the cmdbar mechanics: how to enter, how
         // to leave, history navigation.
         let hint = if area.width >= 110 {
-            " : / enter cmd · ↑↓ history · Tab leave bar · ^H favs · ^L sched · ? help · q quit "
+            " Press : to command  |  / slash  |  Up/Down history  |  Ctrl+H favorites  |  Ctrl+L schedule  |  q quit "
         } else {
-            " : cmd · ↑↓ hist · Tab leave · ? help · q quit "
+            " : command  |  / slash  |  Up/Down history  |  q quit "
         };
         f.render_widget(Paragraph::new(hint).style(dim), area);
     }
@@ -447,7 +447,7 @@ fn render_mdi_workspace(f: &mut Frame, app: &App, area: Rect) {
 fn render_mdi_favorites_pane(f: &mut Frame, app: &App, area: Rect) {
     let block = Block::default()
         .borders(Borders::ALL)
-        .title(" ★ Favorites ")
+        .title(" Favorites / Watch ")
         .border_style(Style::default().fg(Color::Yellow));
     let inner = block.inner(area);
     f.render_widget(block, area);
@@ -459,7 +459,7 @@ fn render_mdi_favorites_pane(f: &mut Frame, app: &App, area: Rect) {
 fn render_mdi_schedule_pane(f: &mut Frame, app: &App, area: Rect) {
     let block = Block::default()
         .borders(Borders::ALL)
-        .title(" Schedule ")
+        .title(" Upcoming Schedule ")
         .border_style(Style::default().fg(Color::Magenta));
     let inner = block.inner(area);
     f.render_widget(block, area);
@@ -500,20 +500,26 @@ fn render_mdi_scores_ribbon(f: &mut Frame, app: &App, area: Rect) {
                 };
                 parts.push(format!("{away} {score} {home}"));
             }
-            let mut s = format!(" SCORES  {}", parts.join("  ·  "));
+            let mut s = format!(" LIVE BOARD  {}", parts.join("  |  "));
             if games.len() > 8 {
                 s.push_str(&format!("  +{} more", games.len() - 8));
             }
             (s, true)
         }
         TonightState::Loaded(_) => (
-            " SCORES  (no games today — `:scores` for slate)".to_owned(),
+            " LIVE BOARD  no games today | :schedule for next slate | :poach for pickups"
+                .to_owned(),
             false,
         ),
-        TonightState::Loading => (" SCORES  loading…".to_owned(), false),
-        TonightState::Error(e) => (format!(" SCORES  err: {e}"), false),
+        TonightState::Loading => (" LIVE BOARD  loading today's slate...".to_owned(), false),
+        TonightState::Error(_) => (
+            " LIVE BOARD  live feed unavailable | :scores to retry | :schedule for calendar"
+                .to_owned(),
+            false,
+        ),
         TonightState::Idle => (
-            " SCORES  (idle — switch to scores tab to fetch)".to_owned(),
+            " ICELINES  dashboard ready | :stats | :goalies | :poach | :team EDM | ? help"
+                .to_owned(),
             false,
         ),
     };
@@ -4262,8 +4268,8 @@ mod adams_4_render_boundary_tests {
     fn l0_adams_render_at_200_full_mdi() {
         let text = render_mdi_at(200);
         assert!(
-            text.contains("SCORES"),
-            "Scores ribbon must render at 200; got:\n{text}"
+            text.contains("ICELINES") || text.contains("LIVE BOARD"),
+            "Dashboard ribbon must render at 200; got:\n{text}"
         );
         assert!(
             text.contains("Favorites"),
@@ -4277,6 +4283,26 @@ mod adams_4_render_boundary_tests {
             text.contains("Goalies"),
             "Workspace title (Goalies) must render at 200; got:\n{text}"
         );
+    }
+
+    /// First paint should look like a dashboard, not an empty cache.
+    /// The top ribbon and command rows must advertise useful next
+    /// actions before live data has loaded.
+    #[test]
+    fn l0_adams_first_paint_has_dashboard_affordances() {
+        let text = render_mdi_at(200);
+        for expected in [
+            "dashboard ready",
+            "GO  stats goalies poach",
+            "OPEN  team <ABBR> player <name>",
+            "ASK  query <filter>",
+            "Press : to command",
+        ] {
+            assert!(
+                text.contains(expected),
+                "first paint must contain {expected:?}; got:\n{text}"
+            );
+        }
     }
 
     /// At width 160 (boundary — exactly meets ≥160 threshold),
@@ -4330,7 +4356,10 @@ mod adams_4_render_boundary_tests {
             "Favorites pane must drop at 119; got:\n{text}"
         );
         assert!(text.contains("Goalies"), "workspace must still render");
-        assert!(text.contains("SCORES"), "ribbon must still render");
+        assert!(
+            text.contains("ICELINES") || text.contains("LIVE BOARD"),
+            "ribbon must still render"
+        );
     }
 
     /// At width 100 (boundary above the SDI fallback line), MDI
@@ -4339,7 +4368,10 @@ mod adams_4_render_boundary_tests {
     fn l0_adams_render_at_100_mdi_workspace_only() {
         let text = render_mdi_at(100);
         assert!(text.contains("Goalies"), "workspace renders at 100");
-        assert!(text.contains("SCORES"), "ribbon renders at 100");
+        assert!(
+            text.contains("ICELINES") || text.contains("LIVE BOARD"),
+            "ribbon renders at 100"
+        );
     }
 
     /// At width 99 (just below SDI fallback), MDI render is
@@ -4354,7 +4386,7 @@ mod adams_4_render_boundary_tests {
         // The MDI chip-mode hint string is unique to MDI cmdbar;
         // its absence here is the SDI-fallback marker.
         assert!(
-            !text.contains("^H favs"),
+            !text.contains("Ctrl+H favorites"),
             "SDI fallback must NOT show MDI chip-mode hint; got:\n{text}"
         );
     }
