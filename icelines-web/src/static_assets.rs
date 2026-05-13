@@ -246,7 +246,11 @@ mod tests {
             "data-dashboard-pane",
             "data-workspace-url",
             "data-dashboard-command-status",
+            "data-dashboard-command-input",
             "setCommandStatus",
+            "sessionStorage",
+            "ArrowUp",
+            "ArrowDown",
         ] {
             assert!(
                 js.contains(needle),

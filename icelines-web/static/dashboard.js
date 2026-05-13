@@ -1,4 +1,7 @@
 (function () {
+    var commandHistory = readCommandHistory();
+    var commandHistoryIndex = commandHistory.length;
+
     function workspaceFromUrl(url) {
         try {
             var parsed = new URL(url, window.location.origin);
@@ -52,6 +55,62 @@
         if (!node) return;
         node.textContent = message || "";
         node.dataset.statusKind = kind || "";
+    }
+
+    function commandInput() {
+        return document.querySelector("[data-dashboard-command-input]");
+    }
+
+    function focusCommandInput() {
+        var input = commandInput();
+        if (!input) return;
+        input.focus();
+        input.select();
+    }
+
+    function isEditableTarget(target) {
+        if (!target) return false;
+        var tag = String(target.tagName || "").toLowerCase();
+        return tag === "input" || tag === "textarea" || tag === "select" || target.isContentEditable;
+    }
+
+    function commandHistoryKey() {
+        return "icelines.dashboard.command.history";
+    }
+
+    function readCommandHistory() {
+        try {
+            var raw = window.sessionStorage.getItem(commandHistoryKey());
+            var parsed = raw && JSON.parse(raw);
+            return Array.isArray(parsed) ? parsed.filter(Boolean).slice(-25) : [];
+        } catch (_) {
+            return [];
+        }
+    }
+
+    function writeCommandHistory() {
+        try {
+            window.sessionStorage.setItem(commandHistoryKey(), JSON.stringify(commandHistory.slice(-25)));
+        } catch (_) {}
+    }
+
+    function pushCommandHistory(command) {
+        var trimmed = String(command || "").trim();
+        if (!trimmed) return;
+        if (commandHistory[commandHistory.length - 1] !== trimmed) {
+            commandHistory.push(trimmed);
+        }
+        commandHistory = commandHistory.slice(-25);
+        commandHistoryIndex = commandHistory.length;
+        writeCommandHistory();
+    }
+
+    function recallCommandHistory(input, direction) {
+        if (!commandHistory.length) return;
+        commandHistoryIndex += direction;
+        if (commandHistoryIndex < 0) commandHistoryIndex = 0;
+        if (commandHistoryIndex > commandHistory.length) commandHistoryIndex = commandHistory.length;
+        input.value = commandHistory[commandHistoryIndex] || "";
     }
 
     function paneStorageKey(pane) {
@@ -120,12 +179,41 @@
         });
     });
 
+    document.addEventListener("keydown", function (event) {
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+            event.preventDefault();
+            focusCommandInput();
+            return;
+        }
+        if (event.key === "/" && !isEditableTarget(event.target)) {
+            event.preventDefault();
+            focusCommandInput();
+            return;
+        }
+        if (event.key === "Escape" && event.target === commandInput()) {
+            event.preventDefault();
+            event.target.value = "";
+            setCommandStatus("", "");
+            return;
+        }
+        if (event.target === commandInput() && event.key === "ArrowUp") {
+            event.preventDefault();
+            recallCommandHistory(event.target, -1);
+            return;
+        }
+        if (event.target === commandInput() && event.key === "ArrowDown") {
+            event.preventDefault();
+            recallCommandHistory(event.target, 1);
+        }
+    });
+
     document.addEventListener("submit", function (event) {
         var form = event.target;
         if (!form || !form.matches(".jaw-command form")) return;
 
         event.preventDefault();
         var data = new FormData(form);
+        var submittedCommand = String(data.get("command") || "");
         fetch(form.action, {
             method: "POST",
             body: data,
@@ -146,8 +234,9 @@
             return true;
         }).then(function (handled) {
             if (handled === false) return;
+            pushCommandHistory(submittedCommand);
             setCommandStatus("", "");
-            applyCommandSideEffect(String(data.get("command") || ""));
+            applyCommandSideEffect(submittedCommand);
             var input = form.querySelector("input[name='command']");
             if (input) input.value = "";
         }).catch(function () {

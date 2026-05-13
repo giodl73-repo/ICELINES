@@ -178,8 +178,9 @@ Status: Partially implemented. The web has a deterministic command parser,
 redirect to allowlisted dashboard workspace URLs; favorite/watch mutations
 delegate to existing POST handlers or mutation intents. The enhanced command
 form now keeps parse/command failures visible in an ARIA live status region
-inside the shell instead of falling through to an opaque page. Remaining work is
-the full palette overlay, keyboard opener/history, and richer command history.
+inside the shell instead of falling through to an opaque page, and the command
+input opens from `/` or `Ctrl+K` with session-scoped Up/Down history. Remaining
+work is the full palette overlay and richer command-history UI.
 
 Bring the TUI command bar idea to web as a command palette.
 
