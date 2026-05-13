@@ -143,8 +143,8 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | Route | Handler module | Surface | Matrix row | Status |
 |---|---|---|---|---|
 | `GET /` | `handlers/home.rs` | HTML | League/home | done - preview skaters/goalies project from `HomeView`; covered by `cargo test -p icelines-web` |
-| `GET /dashboard` | `handlers/dashboard.rs` | HTML shell | Jack Adams Web dashboard | server-rendered no-JS shell with scores ribbon, Favorites/Watchlist context, allowlisted `workspace` URL state, schedule pane, command-palette affordance, `?partial=workspace` fragment, progressive workspace loader, and local side-pane state; covered by `l1_dashboard_shell_renders_no_js_regions`, `l1_dashboard_rejects_unsafe_workspace_paths`, `l1_dashboard_workspace_partial_renders_fragment_only`, and dashboard static-asset tests |
-| `POST /dashboard/command` | `handlers/dashboard.rs` | HTML command action | Jack Adams Web dashboard | deterministic command form endpoint; read commands redirect to allowlisted dashboard workspace URLs, pane commands preserve URL state, and favorite/watch mutations delegate to existing POST handlers/intents; progressively enhanced by `dashboard.js` |
+| `GET /dashboard` | `handlers/dashboard.rs` | HTML shell | Jack Adams Web dashboard | server-rendered no-JS shell with scores ribbon, Favorites/Watchlist context, allowlisted `workspace` URL state, schedule pane, command-palette affordance, `?partial=workspace` fragment, progressive workspace loader, collapsible side-pane bodies, responsive mobile/tablet breakpoints, and local side-pane state; covered by `l1_dashboard_shell_renders_no_js_regions`, `l1_dashboard_rejects_unsafe_workspace_paths`, `l1_dashboard_workspace_partial_renders_fragment_only`, and dashboard static-asset tests |
+| `POST /dashboard/command` | `handlers/dashboard.rs` | HTML command action | Jack Adams Web dashboard | deterministic command form endpoint; read commands redirect to allowlisted dashboard workspace URLs, pane commands preserve URL state, command errors render explicit text labels, and favorite/watch mutations delegate to existing POST handlers/intents; progressively enhanced by `dashboard.js` |
 | `GET /static/:asset` | `static_assets` | asset | Static assets | done |
 | `GET /leaders` | `handlers/leaders.rs` | HTML | Leaders/skater leaderboard | projects template rows from `LeadersView`; adapter round-trip covered by `l0_web_leaders_view_round_trips_template_and_json_rows` |
 | `GET /api/v1/leaders` | `handlers/leaders.rs` | JSON | Leaders/skater leaderboard | projects JSON rows from `LeadersView`; success and bad-filter JSON envelopes are tested |
@@ -242,7 +242,9 @@ The central dashboard panel is summary-ready for:
 | `/docs` | canonical docs route only; no product summary needed | allowed |
 
 Dashboard command routes and workspace links preserve canonical route state; side
-pane visibility remains local browser state. The focused dashboard projection
-tests live in `handlers::dashboard::tests::*`, while `l1_dashboard_*` route
-tests fence shell rendering, URL allowlisting, fragment behavior, and command
-redirect safety.
+pane visibility remains local browser state. Responsive shell behavior keeps the
+workspace primary, collapses Schedule first on medium screens when there is no
+saved preference, and leaves visible Show/Hide handles for both context panes.
+The focused dashboard projection tests live in `handlers::dashboard::tests::*`,
+while `l1_dashboard_*` route tests fence shell rendering, URL allowlisting,
+fragment behavior, responsive/accessibility tokens, and command redirect safety.

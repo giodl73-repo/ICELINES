@@ -322,6 +322,13 @@ Acceptance:
 
 ## JAW.7 - Tests, Docs, Closeout
 
+Status: In progress. Route, no-JS shell, fragment, static-asset, command, and
+route-inventory fences are in place for the shipped dashboard shell. README,
+COMMANDS, and surface parity now advertise `/dashboard`, command routing,
+responsive collapsible panes, and the browser-local side-pane/history state.
+Remaining closeout is screenshot automation/manual capture plus the final
+decision on whether `/` should ever become the dashboard shell.
+
 Tests:
 
 - Rust route tests for `/dashboard` and panel endpoints.

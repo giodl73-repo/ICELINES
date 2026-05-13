@@ -646,6 +646,12 @@ Schedule pane.
 
 ### Web dashboard command contract (Phase Jack Adams Web)
 
+Run `icelines serve --port 8000` and open `/dashboard` for the browser version
+of the Jack Adams bench: scores ribbon, Favorites/watchlist pane, central
+workspace, Schedule pane, and a command bar. Canonical route pages still work
+directly; the dashboard shell wraps them as workspace panels through
+`/dashboard?workspace=<route>`.
+
 The browser dashboard uses the same deterministic command vocabulary as the
 TUI where the web route exists. Read commands resolve to internal workspace
 URLs for `/dashboard?workspace=...`; write commands resolve to POST-backed
@@ -673,10 +679,11 @@ Fantasy screen shortcuts prefill the same command bar grammar: `g` on Fantasy
 Gaps starts `gaps `, `p` on Poach starts `poach `, and `a` on Fantasy Sim
 starts `simulate add=`.
 
-Adaptive layout — the dashboard auto-drops side panes on narrow
-terminals: ≥160 cols full / 120-159 drops Schedule / 100-119 drops
-Favorites too / <100 falls back to single-document SDI render for
-that frame.
+Browser adaptive layout: wide screens show scores + Favorites/Watchlist +
+Workspace + Schedule. Tablet/mobile keeps Workspace primary, collapses Schedule
+first when no user preference exists, lets both side panes reopen via visible
+Show/Hide handles, and keeps the command bar as a sticky reach target. Command
+history is session-local; side-pane visibility is local browser state.
 
 ### MDI cmdbar AI fallback (Phase Jack Adams.6 / .7, v0.23.1+)
 

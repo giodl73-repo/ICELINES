@@ -271,6 +271,7 @@ icelines fantasy trade "Bouchard" --to-team "Other" --for-player "Werenski" --ex
 
 # Web dashboard
 icelines serve --port 8000
+# GET /dashboard               -> Jack Adams browser shell with scores, side panes, workspace, command bar
 # GET /fantasy                 -> HTML gaps + simulation scenarios
 # GET /api/v1/fantasy/gaps     -> FantasyRosterGapView JSON
 # GET /api/v1/fantasy/simulate -> FantasySimulationView JSON
@@ -304,7 +305,11 @@ icelines query leaders --seasons 5  --sort pts-pace --top 10
 
 ### TUI (`icelines tui` or `icelines dashboard`)
 
-Interactive dashboard with six tabs (League / Depth / Stats / Goalies / Scores / Schedule), plus Playoffs and Transactions overlays. Player cards lazy-load every player's full historical career across all 38 bundled seasons on first open.
+Interactive dashboard. By default `icelines tui` opens the Jack Adams multi-pane
+dashboard: scores ribbon, Favorites/watchlist pane, central workspace,
+Schedule/context pane, and command bar. Use `--classic` for the older tabbed
+single-document UI. Player cards lazy-load every player's full historical
+career across all 38 bundled seasons on first open.
 
 | Key | Action |
 |---|---|
