@@ -354,11 +354,11 @@ fn chrome_screen_label(s: &Screen) -> &'static str {
 fn render_mdi_cheat_sheet(f: &mut Frame, area: Rect) {
     let yellow = Style::default().fg(Color::Yellow);
     let line = if area.width >= 160 {
-        " GO stats goalies scores  |  OPEN team <ABBR> player <name> box AWAY@HOME class <year>  |  FANTASY roster gaps sim poach  |  ASK query <filter>  |  /help "
+        " GO stats goalies scores  |  OPEN team <ABBR> player <name> box AWAY@HOME class <year>  |  FANTASY roster gaps simulate poach  |  ASK query <filter>  |  /help "
     } else if area.width >= 120 {
-        " GO stats goalies scores  |  OPEN team player box class  |  FANTASY roster gaps sim poach  |  ASK query "
+        " GO stats goalies scores  |  OPEN team player box class  |  FANTASY roster gaps simulate poach  |  ASK query "
     } else if area.width >= 100 {
-        " GO stats goalies scores  |  OPEN team player box  |  FANTASY roster gaps sim  |  ASK query "
+        " GO stats goalies scores  |  OPEN team player box  |  FANTASY roster gaps simulate  |  ASK query "
     } else {
         " GO stats goalies scores  |  ASK query <filter> "
     };
@@ -4299,7 +4299,8 @@ mod adams_4_render_boundary_tests {
             "OPEN team <ABBR> player <name>",
             "box AWAY@HOME",
             "class <year>",
-            "FANTASY roster gaps sim poach",
+            "FANTASY roster gaps simulate",
+            "poach",
             "ASK query <filter>",
             "Press : to command",
         ] {
