@@ -26,6 +26,7 @@ pub fn chrome() -> crate::tui::chrome::ScreenChrome {
         keybinds: vec![
             KeyHint::new("up/down", "select"),
             KeyHint::new("Enter", "player card"),
+            KeyHint::new("p", "poach filters"),
             KeyHint::new("w", "toggle watch"),
         ],
     }
@@ -356,6 +357,7 @@ mod tests {
         let chrome = super::chrome();
 
         assert!(chrome.title.contains("Poach"));
+        assert!(chrome.keybinds.iter().any(|key| key.key == "p"));
         assert!(chrome.keybinds.iter().any(|key| key.key == "w"));
     }
 }

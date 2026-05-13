@@ -1195,6 +1195,16 @@ impl App {
                     self.open_roster_kv_cmdbar("favorites");
                 } else if self.screen == Screen::Poach && c == 'w' {
                     self.toggle_selected_poach_watch();
+                } else if self.screen == Screen::Poach && c == 'p' {
+                    self.open_cmdbar_prefill(
+                        "poach ",
+                        "Type poach filters: rw cats=hits,blocks free top=12",
+                    );
+                } else if self.screen == Screen::FantasySim && c == 'a' {
+                    self.open_cmdbar_prefill(
+                        "simulate add=",
+                        "Type simulation scenario: add=Player drop=Player weeks=4",
+                    );
                 } else if self.screen == Screen::Goalies && c == 's' {
                     // Phase G.3: cycle sort SV% → GAA → W → GP → Saves → SO
                     let n = crate::tui::screens::goalies::SORTS.len() as u8;
@@ -2294,14 +2304,25 @@ impl App {
     }
 
     fn open_roster_kv_cmdbar(&mut self, verb: &str) {
+        if self.mdi.is_some() {
+            self.open_cmdbar_prefill(
+                format!("{verb} "),
+                format!("Type {verb} filters as key=value, then Enter"),
+            );
+        } else {
+            self.status = format!("Use :{verb} key=value filters in MDI command bar");
+        }
+    }
+
+    fn open_cmdbar_prefill(&mut self, input: impl Into<String>, status: impl Into<String>) {
         if let Some(m) = self.mdi.as_mut() {
-            m.command_input = format!("{verb} ");
+            m.command_input = input.into();
             m.command_bar_focused = true;
             m.command_history_cursor = None;
             m.flash_error = None;
-            self.status = format!("Type {verb} filters as key=value, then Enter");
+            self.status = status.into();
         } else {
-            self.status = format!("Use :{verb} key=value filters in MDI command bar");
+            self.status = status.into();
         }
     }
 
@@ -5990,6 +6011,32 @@ mod tests {
         // 's' would normally cycle the goalies sort — but cmdbar
         // captured it, so the sort must NOT have moved.
         assert_eq!(app.goalies.sort, goalies_sort_before);
+    }
+
+    #[test]
+    fn l0_adams_poach_p_prefills_poach_command() {
+        let mut app = fresh_mdi_app();
+        app.screen = Screen::Poach;
+
+        app.handle(Action::Char('p'));
+
+        let m = app.mdi.as_ref().unwrap();
+        assert!(m.command_bar_focused);
+        assert_eq!(m.command_input, "poach ");
+        assert!(app.status.contains("poach filters"));
+    }
+
+    #[test]
+    fn l0_adams_fantasy_sim_a_prefills_scenario_command() {
+        let mut app = fresh_mdi_app();
+        app.screen = Screen::FantasySim;
+
+        app.handle(Action::Char('a'));
+
+        let m = app.mdi.as_ref().unwrap();
+        assert!(m.command_bar_focused);
+        assert_eq!(m.command_input, "simulate add=");
+        assert!(app.status.contains("simulation scenario"));
     }
 
     /// Backspace removes the last char; on empty input, releases

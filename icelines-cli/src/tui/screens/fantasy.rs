@@ -39,7 +39,10 @@ pub fn simulation_chrome() -> crate::tui::chrome::ScreenChrome {
     use crate::tui::chrome::{KeyHint, ScreenChrome};
     ScreenChrome {
         title: "Fantasy Simulation - active league".to_string(),
-        keybinds: vec![KeyHint::new(":", "command")],
+        keybinds: vec![
+            KeyHint::new("a", "add/drop scenario"),
+            KeyHint::new(":", "command"),
+        ],
     }
 }
 
@@ -493,6 +496,14 @@ mod tests {
 
         assert!(chrome.title.contains("Fantasy Gaps"));
         assert!(chrome.keybinds.iter().any(|key| key.key == "Enter"));
+    }
+
+    #[test]
+    fn l0_fantasy_sim_tui_chrome_names_scenario_shortcut() {
+        let chrome = super::simulation_chrome();
+
+        assert!(chrome.title.contains("Fantasy Simulation"));
+        assert!(chrome.keybinds.iter().any(|key| key.key == "a"));
     }
 
     #[test]
