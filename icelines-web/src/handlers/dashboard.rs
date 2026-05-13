@@ -43,18 +43,52 @@ pub async fn get_dashboard(
 
 fn normalize_workspace(raw: Option<&str>) -> String {
     raw.map(str::trim)
-        .filter(|path| {
-            path.starts_with('/')
-                && !path.starts_with("//")
-                && !path.starts_with("/api/")
-                && !path.starts_with("/static/")
-        })
+        .filter(|path| is_workspace_route(path))
         .unwrap_or("/leaders")
         .to_owned()
 }
 
+fn is_workspace_route(path: &str) -> bool {
+    if path.is_empty()
+        || path.chars().any(char::is_control)
+        || !path.starts_with('/')
+        || path.starts_with("//")
+        || path.contains("://")
+    {
+        return false;
+    }
+
+    let route = workspace_route_key(path);
+    matches!(
+        route,
+        "/" | "/leaders"
+            | "/goalies"
+            | "/depth"
+            | "/poach"
+            | "/fantasy"
+            | "/scores"
+            | "/schedule"
+            | "/transactions"
+            | "/playoffs"
+            | "/favorites"
+            | "/watchlist"
+            | "/docs"
+    ) || route.starts_with("/player/")
+        || route.starts_with("/team/")
+        || route.starts_with("/game/")
+}
+
+fn workspace_route_key(path: &str) -> &str {
+    let route = path.split('?').next().unwrap_or(path);
+    if route.len() > 1 {
+        route.trim_end_matches('/')
+    } else {
+        route
+    }
+}
+
 fn workspace_label(path: &str) -> String {
-    match path.split('?').next().unwrap_or(path) {
+    match workspace_route_key(path) {
         "/" => "Home Preview",
         "/leaders" => "Leaders",
         "/goalies" => "Goalies",
@@ -125,8 +159,8 @@ fn workspace_links(active: &str) -> Vec<DashboardLinkRow> {
     .into_iter()
     .map(|(label, href, detail)| DashboardLinkRow {
         label: label.to_owned(),
-        href: href.to_owned(),
-        detail: if active == href {
+        href: dashboard_workspace_href(href),
+        detail: if workspace_route_key(active) == href {
             format!("{detail} - active")
         } else {
             detail.to_owned()
@@ -135,10 +169,14 @@ fn workspace_links(active: &str) -> Vec<DashboardLinkRow> {
     .collect::<Vec<_>>();
     rows.push(DashboardLinkRow {
         label: "Docs".to_owned(),
-        href: "/docs".to_owned(),
+        href: dashboard_workspace_href("/docs"),
         detail: "command reference".to_owned(),
     });
     rows
+}
+
+fn dashboard_workspace_href(path: &str) -> String {
+    format!("/dashboard?workspace={}", url_component(path))
 }
 
 fn url_component(value: &str) -> String {
@@ -167,6 +205,17 @@ mod tests {
         assert_eq!(normalize_workspace(Some("//evil.example")), "/leaders");
         assert_eq!(normalize_workspace(Some("/api/v1/leaders")), "/leaders");
         assert_eq!(normalize_workspace(Some("/static/style.css")), "/leaders");
+        assert_eq!(normalize_workspace(Some("/admin")), "/leaders");
+        assert_eq!(normalize_workspace(Some("/dashboard")), "/leaders");
+        assert_eq!(normalize_workspace(Some("/favorites/add")), "/leaders");
+        assert_eq!(
+            normalize_workspace(Some("/season-type/playoff")),
+            "/leaders"
+        );
+        assert_eq!(
+            normalize_workspace(Some("https://evil.example")),
+            "/leaders"
+        );
     }
 
     #[test]
@@ -176,6 +225,22 @@ mod tests {
         assert_eq!(
             workspace_label("/poach?availability=imported-available"),
             "Poach"
+        );
+    }
+
+    #[test]
+    fn l0_dashboard_workspace_links_preserve_dashboard_state() {
+        let links = workspace_links("/poach?availability=imported-available");
+        let poach = links
+            .iter()
+            .find(|row| row.label == "Poach")
+            .expect("poach workspace link");
+        assert_eq!(poach.href, "/dashboard?workspace=%2Fpoach");
+        assert_eq!(poach.detail, "fantasy free-agent board - active");
+
+        assert_eq!(
+            dashboard_workspace_href("/poach?availability=imported-available"),
+            "/dashboard?workspace=%2Fpoach%3Favailability%3Dimported-available"
         );
     }
 }

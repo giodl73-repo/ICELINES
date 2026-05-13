@@ -142,7 +142,7 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | Route | Handler module | Surface | Matrix row | Status |
 |---|---|---|---|---|
 | `GET /` | `handlers/home.rs` | HTML | League/home | done - preview skaters/goalies project from `HomeView`; covered by `cargo test -p icelines-web` |
-| `GET /dashboard` | `handlers/dashboard.rs` | HTML shell | Jack Adams Web dashboard | server-rendered no-JS shell with scores ribbon, Favorites/Watchlist context, workspace links, schedule pane, and command-palette affordance; covered by `l1_dashboard_shell_renders_no_js_regions` |
+| `GET /dashboard` | `handlers/dashboard.rs` | HTML shell | Jack Adams Web dashboard | server-rendered no-JS shell with scores ribbon, Favorites/Watchlist context, allowlisted `workspace` URL state, schedule pane, and command-palette affordance; covered by `l1_dashboard_shell_renders_no_js_regions` and `l1_dashboard_rejects_unsafe_workspace_paths` |
 | `GET /static/:asset` | `static_assets` | asset | Static assets | done |
 | `GET /leaders` | `handlers/leaders.rs` | HTML | Leaders/skater leaderboard | projects template rows from `LeadersView`; adapter round-trip covered by `l0_web_leaders_view_round_trips_template_and_json_rows` |
 | `GET /api/v1/leaders` | `handlers/leaders.rs` | JSON | Leaders/skater leaderboard | projects JSON rows from `LeadersView`; success and bad-filter JSON envelopes are tested |

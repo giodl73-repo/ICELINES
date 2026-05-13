@@ -119,9 +119,8 @@
         <main class="jaw-workspace" aria-label="Workspace" data-workspace-url="{{ workspace_url }}">
             <h1>{{ workspace_label }}</h1>
             <p>
-                This first dashboard slice is server-rendered. Use these workspace links
-                normally; later slices will load them into this panel without losing
-                the canonical URL.
+                This workspace is server-rendered and URL-addressable.
+                <a href="{{ workspace_url }}">Open the full page</a>.
             </p>
             <div class="jaw-workspace-grid">
                 {% for row in workspace_links %}

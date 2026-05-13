@@ -858,9 +858,34 @@ async fn l1_dashboard_shell_renders_no_js_regions() {
     assert!(body.contains("data-workspace-url=\"/poach?availability=imported-available\""));
     assert!(body.contains("aria-label=\"Schedule\""));
     assert!(body.contains("aria-label=\"Command palette\""));
-    assert!(body.contains("href=\"/leaders\""));
-    assert!(body.contains("href=\"/poach\""));
+    assert!(body.contains("href=\"/dashboard?workspace=%2Fleaders\""));
+    assert!(body.contains("href=\"/dashboard?workspace=%2Fpoach\""));
+    assert!(body.contains("href=\"/poach?availability=imported-available\""));
     assert!(body.contains("href=\"/schedule\""));
+}
+
+#[tokio::test]
+async fn l1_dashboard_rejects_unsafe_workspace_paths() {
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/dashboard?workspace=/favorites/add")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+
+    assert!(body.contains("data-workspace-url=\"/leaders\""));
+    assert!(body.contains("href=\"/leaders\""));
+    assert!(!body.contains("data-workspace-url=\"/favorites/add\""));
 }
 
 #[tokio::test]
