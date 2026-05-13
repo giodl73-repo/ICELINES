@@ -26,53 +26,53 @@ struct GameErrorTemplate {
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
-struct GameDetailView {
-    game_id: u64,
-    away_abbrev: String,
-    home_abbrev: String,
-    away_score: u8,
-    home_score: u8,
-    state_label: String,
-    is_live: bool,
-    auto_refresh: bool,
-    goalies: Vec<GameGoalieView>,
-    goals: Vec<GameGoalView>,
-    away_top_skaters: Vec<GameSkaterView>,
-    home_top_skaters: Vec<GameSkaterView>,
+pub(super) struct GameDetailView {
+    pub(super) game_id: u64,
+    pub(super) away_abbrev: String,
+    pub(super) home_abbrev: String,
+    pub(super) away_score: u8,
+    pub(super) home_score: u8,
+    pub(super) state_label: String,
+    pub(super) is_live: bool,
+    pub(super) auto_refresh: bool,
+    pub(super) goalies: Vec<GameGoalieView>,
+    pub(super) goals: Vec<GameGoalView>,
+    pub(super) away_top_skaters: Vec<GameSkaterView>,
+    pub(super) home_top_skaters: Vec<GameSkaterView>,
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
-struct GameGoalieView {
-    player_id: u32,
-    player_name: String,
-    team_abbrev: String,
-    saves: u32,
-    shots: u32,
-    decision: Option<String>,
+pub(super) struct GameGoalieView {
+    pub(super) player_id: u32,
+    pub(super) player_name: String,
+    pub(super) team_abbrev: String,
+    pub(super) saves: u32,
+    pub(super) shots: u32,
+    pub(super) decision: Option<String>,
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
-struct GameGoalView {
-    period: u8,
-    period_type: String,
-    time_in_period: String,
-    scorer_team: String,
-    scorer_name: String,
-    assist1_name: Option<String>,
-    assist2_name: Option<String>,
-    away_score: u8,
-    home_score: u8,
+pub(super) struct GameGoalView {
+    pub(super) period: u8,
+    pub(super) period_type: String,
+    pub(super) time_in_period: String,
+    pub(super) scorer_team: String,
+    pub(super) scorer_name: String,
+    pub(super) assist1_name: Option<String>,
+    pub(super) assist2_name: Option<String>,
+    pub(super) away_score: u8,
+    pub(super) home_score: u8,
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
-struct GameSkaterView {
-    player_id: u32,
-    player_name: String,
-    position: String,
-    goals: u32,
-    assists: u32,
-    points: u32,
-    plus_minus: i32,
+pub(super) struct GameSkaterView {
+    pub(super) player_id: u32,
+    pub(super) player_name: String,
+    pub(super) position: String,
+    pub(super) goals: u32,
+    pub(super) assists: u32,
+    pub(super) points: u32,
+    pub(super) plus_minus: i32,
 }
 
 #[derive(Debug, serde::Serialize)]
@@ -81,11 +81,10 @@ struct GameMeta {
     source_error: Option<String>,
 }
 
-pub async fn get_game(State(state): State<WebState>, Path(id): Path<u64>) -> Response {
-    let (active_label, season, season_type) = {
+pub(super) async fn build_game_detail(state: &WebState, id: u64) -> Result<GameDetailView, String> {
+    let (season, season_type) = {
         let cfg = state.config.read().await;
         (
-            cfg.active_label.clone(),
             cfg.active_season
                 .parse::<u32>()
                 .map(Season)
@@ -94,15 +93,20 @@ pub async fn get_game(State(state): State<WebState>, Path(id): Path<u64>) -> Res
         )
     };
     let client = icelines_fetch::nhl_api::NhlApiClient::production();
-    let rendered = match client.fetch_boxscore(id).await {
-        Ok(boxscore) => GameTemplate {
-            active_label,
-            view: game_detail_from_view(&GameView::from_boxscore(
-                ViewContext::new(ViewWindow::new(season, season_type)),
-                boxscore_input(boxscore),
-            )),
-        }
-        .render(),
+    let boxscore = client.fetch_boxscore(id).await.map_err(|e| e.to_string())?;
+    Ok(game_detail_from_view(&GameView::from_boxscore(
+        ViewContext::new(ViewWindow::new(season, season_type)),
+        boxscore_input(boxscore),
+    )))
+}
+
+pub async fn get_game(State(state): State<WebState>, Path(id): Path<u64>) -> Response {
+    let active_label = {
+        let cfg = state.config.read().await;
+        cfg.active_label.clone()
+    };
+    let rendered = match build_game_detail(&state, id).await {
+        Ok(view) => GameTemplate { active_label, view }.render(),
         Err(e) => GameErrorTemplate {
             active_label,
             game_id: id,
@@ -121,25 +125,8 @@ pub async fn get_game(State(state): State<WebState>, Path(id): Path<u64>) -> Res
 }
 
 pub async fn get_game_json(State(state): State<WebState>, Path(id): Path<u64>) -> Response {
-    let (season, season_type) = {
-        let cfg = state.config.read().await;
-        (
-            cfg.active_season
-                .parse::<u32>()
-                .map(Season)
-                .unwrap_or(Season(0)),
-            SeasonType::parse_lossy(&cfg.active_season_type),
-        )
-    };
-    let client = icelines_fetch::nhl_api::NhlApiClient::production();
-    let (data, source_error) = match client.fetch_boxscore(id).await {
-        Ok(boxscore) => {
-            let view = GameView::from_boxscore(
-                ViewContext::new(ViewWindow::new(season, season_type)),
-                boxscore_input(boxscore),
-            );
-            (Some(game_detail_from_view(&view)), None)
-        }
+    let (data, source_error) = match build_game_detail(&state, id).await {
+        Ok(view) => (Some(view), None),
         Err(e) => (None, Some(e.to_string())),
     };
     crate::api::json_data_meta(
@@ -218,7 +205,7 @@ fn skater_input(skater: icelines_fetch::nhl_api::SkaterLine) -> GameSkaterInput 
     }
 }
 
-fn game_detail_from_view(view: &GameView) -> GameDetailView {
+pub(super) fn game_detail_from_view(view: &GameView) -> GameDetailView {
     GameDetailView {
         game_id: view.game_id.0,
         away_abbrev: view.away_abbrev.clone(),

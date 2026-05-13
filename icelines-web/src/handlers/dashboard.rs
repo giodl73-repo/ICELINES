@@ -244,6 +244,9 @@ async fn workspace_summary(state: &WebState, path: &str) -> Vec<DashboardSummary
     if let Some(player_id) = route.strip_prefix("/player/") {
         return player_workspace_summary(state, player_id).await;
     }
+    if let Some(game_id) = route.strip_prefix("/game/") {
+        return game_workspace_summary(state, game_id).await;
+    }
     if let Some(team) = route
         .strip_prefix("/team/")
         .and_then(|rest| rest.strip_suffix("/season"))
@@ -791,6 +794,53 @@ fn player_secondary_detail(active: &PlayerSeasonSummary) -> String {
         .map(|value| format!("{value:+}"))
         .unwrap_or_else(|| "-".to_string());
     format!("{shots} · +/- {plus_minus}")
+}
+
+async fn game_workspace_summary(state: &WebState, game_id_raw: &str) -> Vec<DashboardSummaryRow> {
+    let Ok(game_id) = game_id_raw.parse::<u64>() else {
+        return Vec::new();
+    };
+    match super::game::build_game_detail(state, game_id).await {
+        Ok(view) => game_summary_rows(&view),
+        Err(error) => vec![summary_row("Game", "Unavailable", error)],
+    }
+}
+
+fn game_summary_rows(view: &super::game::GameDetailView) -> Vec<DashboardSummaryRow> {
+    let mut rows = vec![summary_row(
+        "Game",
+        format!("{} @ {}", view.away_abbrev, view.home_abbrev),
+        format!(
+            "{} {}-{} · {}",
+            view.away_abbrev, view.away_score, view.home_score, view.state_label
+        ),
+    )];
+    if let Some(goal) = view.goals.last() {
+        rows.push(summary_row(
+            "Latest Goal",
+            goal.scorer_name.clone(),
+            format!(
+                "{} {} · {}-{}",
+                goal.scorer_team, goal.time_in_period, goal.away_score, goal.home_score
+            ),
+        ));
+    }
+    if let Some(skater) = view
+        .away_top_skaters
+        .iter()
+        .chain(view.home_top_skaters.iter())
+        .max_by_key(|skater| (skater.points, skater.goals, skater.assists))
+    {
+        rows.push(summary_row(
+            "Top Skater",
+            skater.player_name.clone(),
+            format!(
+                "{} P · {} G · {} A",
+                skater.points, skater.goals, skater.assists
+            ),
+        ));
+    }
+    rows
 }
 
 async fn team_season_workspace_summary(
@@ -1440,6 +1490,49 @@ mod tests {
         assert_eq!(rows[0].label, "Player");
         assert_eq!(rows[0].value, "Connor McDavid");
         assert!(rows[0].detail.contains("No active-season row"));
+    }
+
+    #[test]
+    fn l0_dashboard_game_summary_projects_detail_view() {
+        let view = super::super::game::GameDetailView {
+            game_id: 2025020001,
+            away_abbrev: "EDM".to_string(),
+            home_abbrev: "SEA".to_string(),
+            away_score: 4,
+            home_score: 3,
+            state_label: "FINAL/OT".to_string(),
+            is_live: false,
+            auto_refresh: false,
+            goalies: Vec::new(),
+            goals: vec![super::super::game::GameGoalView {
+                period: 4,
+                period_type: "OT".to_string(),
+                time_in_period: "02:11".to_string(),
+                scorer_team: "EDM".to_string(),
+                scorer_name: "Leon Draisaitl".to_string(),
+                assist1_name: None,
+                assist2_name: None,
+                away_score: 4,
+                home_score: 3,
+            }],
+            away_top_skaters: vec![super::super::game::GameSkaterView {
+                player_id: 8478402,
+                player_name: "Connor McDavid".to_string(),
+                position: "C".to_string(),
+                goals: 1,
+                assists: 2,
+                points: 3,
+                plus_minus: 1,
+            }],
+            home_top_skaters: Vec::new(),
+        };
+
+        let rows = game_summary_rows(&view);
+
+        assert_eq!(rows[0].label, "Game");
+        assert_eq!(rows[0].value, "EDM @ SEA");
+        assert_eq!(rows[1].value, "Leon Draisaitl");
+        assert_eq!(rows[2].value, "Connor McDavid");
     }
 
     #[test]
