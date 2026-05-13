@@ -212,10 +212,11 @@ Status: In progress. The first progressive enhancement is shipped:
 dashboard workspace links and command redirects fetch `?partial=workspace`,
 replace the central panel, and update browser history. Favorites/Schedule panes
 have local toggle state that does not alter canonical URLs. The first
-product-aware workspace summary is also shipped: `/dashboard?workspace=/team/EDM/season`
-projects a `TeamSeasonView` summary into the central panel while preserving the
-canonical full route link. Remaining work is panel-specific fragments/parity for
-more product routes and richer side-pane row actions.
+product-aware workspace summaries are also shipping: `/dashboard?workspace=/team/EDM/season`
+projects a `TeamSeasonView` summary, and `/dashboard?workspace=/leaders` plus
+`/dashboard?workspace=/goalies` project top rows from `HomeView`, all while
+preserving canonical full route links. Remaining work is panel-specific
+fragments/parity for more product routes and richer side-pane row actions.
 
 Make the shell feel like MDI without losing web semantics.
 

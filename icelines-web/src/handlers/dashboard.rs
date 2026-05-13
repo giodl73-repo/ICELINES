@@ -9,8 +9,12 @@ use axum::http::{HeaderMap, StatusCode};
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
-use icelines_core::{ScheduleRecord, TeamAbbr, TeamSeasonView, ViewContext, ViewWindow};
+use icelines_core::{HomeView, ScheduleRecord, TeamAbbr, TeamSeasonView, ViewContext, ViewWindow};
 use serde::Deserialize;
+
+const DASHBOARD_PREVIEW_N: usize = 3;
+const DASHBOARD_GOALIE_GP_REGULAR: u32 = 5;
+const DASHBOARD_GOALIE_GP_PLAYOFF: u32 = 1;
 
 #[derive(Debug, Deserialize, Default)]
 pub struct DashboardQuery {
@@ -208,6 +212,12 @@ fn workspace_label(path: &str) -> String {
 
 async fn workspace_summary(state: &WebState, path: &str) -> Vec<DashboardSummaryRow> {
     let route = workspace_route_key(path);
+    if matches!(route, "/" | "/leaders") {
+        return leaders_workspace_summary(state).await;
+    }
+    if route == "/goalies" {
+        return goalies_workspace_summary(state).await;
+    }
     if let Some(team) = route
         .strip_prefix("/team/")
         .and_then(|rest| rest.strip_suffix("/season"))
@@ -215,6 +225,84 @@ async fn workspace_summary(state: &WebState, path: &str) -> Vec<DashboardSummary
         return team_season_workspace_summary(state, team).await;
     }
     Vec::new()
+}
+
+async fn home_view_for_dashboard(state: &WebState) -> Option<HomeView> {
+    let (season_str, season_type) = {
+        let cfg = state.config.read().await;
+        (
+            cfg.active_season.clone(),
+            SeasonType::parse_lossy(&cfg.active_season_type),
+        )
+    };
+    let season = season_str.parse::<u32>().map(Season).ok()?;
+    let goalie_floor = match season_type {
+        SeasonType::Regular => DASHBOARD_GOALIE_GP_REGULAR,
+        SeasonType::Playoff => DASHBOARD_GOALIE_GP_PLAYOFF,
+    };
+    let repo = state.repo.read().await;
+    Some(HomeView::from_repository(
+        &repo,
+        season,
+        season_type,
+        goalie_floor,
+        DASHBOARD_PREVIEW_N,
+    ))
+}
+
+async fn leaders_workspace_summary(state: &WebState) -> Vec<DashboardSummaryRow> {
+    let Some(view) = home_view_for_dashboard(state).await else {
+        return Vec::new();
+    };
+    if view.top_skaters.is_empty() {
+        return vec![summary_row(
+            "Leaders",
+            "No rows",
+            "No skater rows loaded for the active season",
+        )];
+    }
+    view.top_skaters
+        .iter()
+        .enumerate()
+        .map(|(idx, row)| {
+            summary_row(
+                format!("#{}", idx + 1),
+                row.display_name.clone(),
+                format!("{} {} pts · {} G", row.team.0, row.points, row.goals),
+            )
+        })
+        .collect()
+}
+
+async fn goalies_workspace_summary(state: &WebState) -> Vec<DashboardSummaryRow> {
+    let Some(view) = home_view_for_dashboard(state).await else {
+        return Vec::new();
+    };
+    if view.top_goalies.is_empty() {
+        return vec![summary_row(
+            "Goalies",
+            "No rows",
+            "No qualified goalie rows loaded for the active season",
+        )];
+    }
+    view.top_goalies
+        .iter()
+        .enumerate()
+        .map(|(idx, row)| {
+            summary_row(
+                format!("#{}", idx + 1),
+                row.display_name.clone(),
+                format!(
+                    "{} {} W · SV% {}",
+                    row.team.0,
+                    row.wins,
+                    row.save_pct
+                        .map(|value| format!("{value:.3}"))
+                        .unwrap_or_else(|| "-".to_string())
+                ),
+            )
+        })
+        .collect()
 }
 
 async fn team_season_workspace_summary(
@@ -500,5 +588,13 @@ mod tests {
         assert!(rows.iter().any(|row| row.label == "Record"));
         assert!(rows.iter().any(|row| row.label == "SOS"));
         assert!(rows.iter().any(|row| row.label == "Ledger"));
+    }
+
+    #[test]
+    fn l0_dashboard_labels_leaders_and_goalies_workspace_summaries() {
+        assert_eq!(workspace_label("/leaders"), "Leaders");
+        assert_eq!(workspace_label("/goalies"), "Goalies");
+        assert_eq!(DASHBOARD_PREVIEW_N, 3);
+        assert_eq!(DASHBOARD_GOALIE_GP_REGULAR, 5);
     }
 }
