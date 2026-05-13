@@ -401,6 +401,8 @@ data isn't bundled into the binary.
 icelines rank --top 10 [--pos C|LW|RW|D]    # league pace-score ranking
 icelines rank --json
 icelines team EDM                            # team depth chart with cross-team fit
+icelines team-season EDM                     # season record, splits, form, remaining games
+icelines team-season EDM --json              # shared TeamSeasonView JSON
 icelines players --top 20                    # full PlayerFilter surface
 icelines history "Connor McDavid"            # season-by-season log
 icelines project "Celebrini" --mode pace     # rest-of-season projection
@@ -766,6 +768,10 @@ icelines schedule                       # next 7 days
 icelines schedule --team EDM --days 14
 icelines schedule --json > games.json   # scripted export
 icelines schedule --csv > games.csv     # Excel-friendly
+
+# Team season performance (Presidents Trophy)
+icelines team-season EDM                # record, home/away splits, form, remaining schedule
+icelines team-season EDM --json         # shared TeamSeasonView JSON
 
 # Playoff bracket (LP.2 — new)
 icelines playoffs                       # most recent completed bracket

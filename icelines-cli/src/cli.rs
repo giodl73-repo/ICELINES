@@ -94,6 +94,17 @@ pub enum Commands {
         no_color: bool,
     },
 
+    /// Show team season performance: record, splits, form, and remaining schedule.
+    #[command(name = "team-season")]
+    TeamSeason {
+        /// Team abbreviation (e.g. EDM, TOR, SEA).
+        team: String,
+
+        /// Emit the shared TeamSeasonView as JSON.
+        #[arg(long)]
+        json: bool,
+    },
+
     /// Show the top-N ranked players by pace score.
     Rank {
         /// Number of players to show.

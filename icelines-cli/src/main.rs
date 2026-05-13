@@ -102,6 +102,9 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         } => {
             commands::team::run(team, scheme, no_color).await?;
         }
+        Commands::TeamSeason { team, json } => {
+            commands::team::run_team_season(team, json).await?;
+        }
         Commands::Rank {
             top,
             pos,

@@ -366,6 +366,10 @@ Progress:
   and `team <ABBR> season` in the web dashboard command parser now opens the
   season-performance route while `team <ABBR> schedule` keeps the raw schedule
   list.
+- 2026-05-13: Added CLI `icelines team-season <ABBR>` and `--json`. The
+  command fetches the same club season schedule as the web route, builds the
+  shared `TeamSeasonView`, renders a compact text summary/table, and emits the
+  raw viewmodel for scripts.
 
 ### PT.6 - Dashboard Integration
 
