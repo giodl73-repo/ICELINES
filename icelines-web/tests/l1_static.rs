@@ -171,6 +171,14 @@ async fn l1_static_css_contains_prince_route_layout_classes() {
         ".game-live",
         ".team-banner-meta",
         ".team-banner-button",
+        ".jaw-shell",
+        ".jaw-workbench-nav",
+        ".jaw-body",
+        ".jaw-workspace",
+        ".jaw-command-examples",
+        ".jaw-command-status",
+        "data-dashboard-pane-collapsed",
+        "position: sticky",
     ] {
         assert!(css.contains(class), "style.css missing {class}");
     }

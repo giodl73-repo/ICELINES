@@ -870,16 +870,17 @@ async fn l1_dashboard_shell_renders_no_js_regions() {
     assert!(body.contains("aria-label=\"Command palette\""));
     assert!(body.contains("data-dashboard-command-status"));
     assert!(body.contains("data-dashboard-command-input"));
+    assert!(body.contains("data-dashboard-nav"));
+    assert!(body.contains("Team season"));
+    assert!(body.contains("jaw-command-examples"));
     assert!(body.contains("aria-live=\"polite\""));
     assert!(body.contains("src=\"/static/dashboard.js\""));
     assert!(body.contains("href=\"/dashboard?workspace=%2Fleaders\""));
     assert!(body.contains("href=\"/dashboard?workspace=%2Fpoach\""));
+    assert!(body.contains("href=\"/dashboard?workspace=%2Fteam%2FEDM%2Fseason\""));
     assert!(body.contains("href=\"/poach?availability=imported-available\""));
     assert!(body.contains("href=\"/schedule\""));
-    assert!(body.contains("@media (max-width: 720px)"));
-    assert!(body.contains("data-dashboard-pane-collapsed=\"true\""));
-    assert!(body.contains("var(--accent-bad)"));
-    assert!(body.contains("position: sticky"));
+    assert!(!body.contains("<style>"));
 }
 
 #[tokio::test]

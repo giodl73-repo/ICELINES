@@ -4,141 +4,6 @@
 
 {% block head_extra %}
 <script src="/static/dashboard.js" defer></script>
-<style>
-    .jaw-shell {
-        display: grid;
-        grid-template-rows: auto minmax(24rem, 1fr) auto;
-        gap: 0.75rem;
-        min-height: calc(100vh - 8rem);
-    }
-    .jaw-ribbon,
-    .jaw-command,
-    .jaw-pane,
-    .jaw-workspace {
-        border: 1px solid var(--ice-divider);
-        border-radius: 6px;
-        background: var(--ice-surface);
-    }
-    .jaw-ribbon,
-    .jaw-command {
-        padding: 0.65rem 0.8rem;
-    }
-    .jaw-body {
-        display: grid;
-        grid-template-columns: minmax(13rem, 18rem) minmax(0, 1fr) minmax(13rem, 18rem);
-        gap: 0.75rem;
-    }
-    .jaw-pane,
-    .jaw-workspace {
-        padding: 0.8rem;
-        min-width: 0;
-    }
-    .jaw-pane h2,
-    .jaw-workspace h1 {
-        margin-top: 0;
-    }
-    .jaw-list {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-        display: grid;
-        gap: 0.45rem;
-    }
-    .jaw-list a {
-        display: block;
-        text-decoration: none;
-    }
-    .jaw-detail,
-    .jaw-kind {
-        display: block;
-        color: var(--ice-muted);
-        font-size: 0.88rem;
-    }
-    .jaw-workspace-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
-        gap: 0.55rem;
-    }
-    .jaw-workspace-card {
-        border: 1px solid var(--ice-divider);
-        border-radius: 5px;
-        padding: 0.6rem;
-        background: var(--ice-bg);
-    }
-    .jaw-command code {
-        white-space: normal;
-    }
-    .jaw-command-status {
-        color: var(--accent-warn);
-        min-height: 1.25rem;
-        margin: 0.35rem 0;
-    }
-    .jaw-command-status[data-status-kind="error"] {
-        color: var(--accent-bad);
-    }
-    .jaw-command-status[data-status-kind="ok"] {
-        color: var(--accent-good);
-    }
-    .jaw-pane-title {
-        align-items: center;
-        display: flex;
-        justify-content: space-between;
-        gap: 0.5rem;
-    }
-    .jaw-pane-title h2 {
-        margin: 0;
-    }
-    .jaw-pane-toggle {
-        font-size: 0.85rem;
-        padding: 0.2rem 0.45rem;
-    }
-    .jaw-pane[data-dashboard-pane-collapsed="true"] .jaw-pane-content {
-        display: none;
-    }
-    .jaw-pane[data-dashboard-pane-collapsed="true"] {
-        align-self: start;
-    }
-    @media (max-width: 980px) {
-        .jaw-body {
-            grid-template-columns: 1fr;
-        }
-        .jaw-side-right {
-            order: 3;
-        }
-    }
-    @media (max-width: 720px) {
-        .jaw-shell {
-            min-height: auto;
-        }
-        .jaw-body {
-            gap: 0.55rem;
-        }
-        .jaw-workspace {
-            order: 1;
-        }
-        .jaw-side-left,
-        .jaw-side-right {
-            order: 2;
-        }
-        .jaw-command {
-            position: sticky;
-            bottom: 0.5rem;
-            z-index: 5;
-        }
-        .jaw-command input,
-        .jaw-command button {
-            min-height: 2.75rem;
-        }
-        .jaw-command form {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) auto;
-            gap: 0.45rem;
-        }
-        .jaw-workspace-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-</style>
 {% endblock %}
 
 {% block content %}
@@ -148,6 +13,17 @@
         <span class="jaw-detail">{{ scores_summary }}</span>
         <a href="/scores">Open scores</a>
     </header>
+
+    <nav class="jaw-workbench-nav" aria-label="Dashboard workspaces" data-dashboard-nav>
+        <a href="/dashboard?workspace=%2Fleaders">Leaders</a>
+        <a href="/dashboard?workspace=%2Fgoalies">Goalies</a>
+        <a href="/dashboard?workspace=%2Fdepth">Depth</a>
+        <a href="/dashboard?workspace=%2Fscores">Scores</a>
+        <a href="/dashboard?workspace=%2Fteam%2FEDM%2Fseason">Team season</a>
+        <a href="/dashboard?workspace=%2Fpoach">Poach</a>
+        <a href="/dashboard?workspace=%2Ffantasy">Fantasy</a>
+        <a href="/dashboard?workspace=%2Fdocs">Docs</a>
+    </nav>
 
     <div class="jaw-body">
         <aside class="jaw-pane jaw-side-left" aria-label="Favorites and watchlist" data-dashboard-pane="favorites">
@@ -205,7 +81,14 @@
 
     <footer class="jaw-command" aria-label="Command palette">
         <strong>Command</strong>
-        <span class="jaw-detail">Coming next: <code>stats</code>, <code>player Bedard</code>, <code>team EDM</code>, <code>poach availability=imported-available</code>.</span>
+        <span class="jaw-detail">Run a workspace command or jump straight to a scenario.</span>
+        <div class="jaw-command-examples" aria-label="Command examples">
+            <code>stats</code>
+            <code>goalies</code>
+            <code>team EDM</code>
+            <code>poach availability=imported-available</code>
+            <code>sim weeks=4</code>
+        </div>
         <p class="jaw-command-status" data-dashboard-command-status role="status" aria-live="polite"></p>
         <form method="post" action="/dashboard/command">
             <input type="hidden" name="workspace" value="{{ workspace_url }}">

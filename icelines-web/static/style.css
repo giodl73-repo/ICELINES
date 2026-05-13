@@ -343,6 +343,227 @@ code {
     }
 }
 
+.jaw-shell {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-rows: auto auto minmax(24rem, 1fr) auto;
+    min-height: calc(100vh - 8rem);
+}
+
+.jaw-ribbon,
+.jaw-command,
+.jaw-pane,
+.jaw-workspace {
+    background: var(--ice-surface);
+    border: 1px solid var(--ice-divider);
+    border-radius: 6px;
+}
+
+.jaw-ribbon,
+.jaw-command {
+    padding: 0.65rem 0.8rem;
+}
+
+.jaw-ribbon {
+    align-items: center;
+    border-left: 5px solid var(--accent-good);
+    display: flex;
+    gap: 0.75rem;
+    justify-content: space-between;
+}
+
+.jaw-workbench-nav {
+    align-items: center;
+    background: var(--ice-panel);
+    border: 1px solid var(--ice-divider);
+    border-radius: 6px;
+    display: flex;
+    gap: 0.4rem;
+    overflow-x: auto;
+    padding: 0.45rem;
+}
+
+.jaw-workbench-nav a {
+    background: var(--ice-surface);
+    border: 1px solid var(--ice-divider);
+    border-radius: 4px;
+    color: var(--nhl-navy);
+    flex: 0 0 auto;
+    font-weight: 700;
+    padding: 0.45rem 0.6rem;
+    text-decoration: none;
+}
+
+.jaw-workbench-nav a:hover {
+    background: var(--link-bg-soft);
+}
+
+.jaw-body {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: minmax(13rem, 18rem) minmax(0, 1fr) minmax(13rem, 18rem);
+}
+
+.jaw-pane,
+.jaw-workspace {
+    min-width: 0;
+    padding: 0.8rem;
+}
+
+.jaw-pane h2,
+.jaw-workspace h1 {
+    margin-top: 0;
+}
+
+.jaw-list {
+    display: grid;
+    gap: 0.45rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.jaw-list a {
+    display: block;
+    text-decoration: none;
+}
+
+.jaw-detail,
+.jaw-kind {
+    color: var(--ice-muted);
+    display: block;
+    font-size: 0.88rem;
+}
+
+.jaw-workspace-grid {
+    display: grid;
+    gap: 0.55rem;
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+
+.jaw-workspace-card {
+    background: var(--ice-bg);
+    border: 1px solid var(--ice-divider);
+    border-radius: 5px;
+    padding: 0.6rem;
+}
+
+.jaw-command code {
+    white-space: normal;
+}
+
+.jaw-command form {
+    display: grid;
+    gap: 0.45rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.jaw-command-examples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.45rem;
+}
+
+.jaw-command-examples code {
+    background: var(--link-bg-soft);
+    border: 1px solid var(--ice-divider);
+    border-radius: 4px;
+    color: var(--nhl-navy);
+    padding: 0.18rem 0.35rem;
+}
+
+.jaw-command-status {
+    color: var(--accent-warn);
+    margin: 0.35rem 0;
+    min-height: 1.25rem;
+}
+
+.jaw-command-status[data-status-kind="error"] {
+    color: var(--accent-bad);
+}
+
+.jaw-command-status[data-status-kind="ok"] {
+    color: var(--accent-good);
+}
+
+.jaw-pane-title {
+    align-items: center;
+    display: flex;
+    gap: 0.5rem;
+    justify-content: space-between;
+}
+
+.jaw-pane-title h2 {
+    margin: 0;
+}
+
+.jaw-pane-toggle {
+    font-size: 0.85rem;
+    padding: 0.2rem 0.45rem;
+}
+
+.jaw-pane[data-dashboard-pane-collapsed="true"] {
+    align-self: start;
+}
+
+.jaw-pane[data-dashboard-pane-collapsed="true"] .jaw-pane-content {
+    display: none;
+}
+
+@media (max-width: 980px) {
+    .jaw-body {
+        grid-template-columns: 1fr;
+    }
+
+    .jaw-side-right {
+        order: 3;
+    }
+}
+
+@media (max-width: 720px) {
+    .jaw-shell {
+        min-height: auto;
+    }
+
+    .jaw-ribbon {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .jaw-body {
+        gap: 0.55rem;
+    }
+
+    .jaw-workspace {
+        order: 1;
+    }
+
+    .jaw-side-left,
+    .jaw-side-right {
+        order: 2;
+    }
+
+    .jaw-command {
+        bottom: 0.5rem;
+        position: sticky;
+        z-index: 5;
+    }
+
+    .jaw-command input,
+    .jaw-command button {
+        min-height: 2.75rem;
+    }
+
+    .jaw-command form {
+        grid-template-columns: 1fr;
+    }
+
+    .jaw-workspace-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 .section-heading {
     margin-bottom: 0.25rem;
 }
