@@ -2,7 +2,7 @@
 
 | Wave | Status | Mission | Active Evidence |
 |---|---|---|---|
-| [Backcheck the Phases](2026-05-13-backcheck-the-phases/WAVE.md) | active | Backfill previous trophy phases into executable pulse packets so agents can clear residual gaps without relying on chat memory. | `design/plans/`, `design/specs/surface-parity.md`, `design/INVARIANTS.md`, `design/PITFALLS.md`, `.roles/` |
+| [Backcheck the Phases](2026-05-13-backcheck-the-phases/WAVE.md) | closed | Backfill previous trophy phases into executable pulse packets so agents can clear residual gaps without relying on chat memory. | `BACKFILL-INVENTORY.md`; `VISUAL-CAPTURE-INVENTORY.md`; pulse plans/forks |
 | [Hart Normalizes the Core](2026-04-30-hart-normalizes-the-core/WAVE.md) | backfilled | Retrospective wave record for normalization and View-based migration. | `plans/pulse-01.md` |
 | [Art Ross Rewrites the Query](2026-05-06-art-ross-rewrites-the-query/WAVE.md) | backfilled | Retrospective wave record for query grammar, planner, executor, and parity hardening. | `plans/pulse-01.md` |
 | [Foster Broadcasts the Night](2026-05-06-foster-broadcasts-the-night/WAVE.md) | backfilled | Retrospective wave record for favorites, date axes, sync, and live slate. | `plans/pulse-01.md` |

@@ -1,7 +1,7 @@
 ---
 wave: backcheck-the-phases
 date_open: 2026-05-13
-status: active
+status: closed
 source: previous trophy phases and current Jack Adams Web continuation
 ---
 
@@ -50,7 +50,7 @@ role panel.
 | 01 - Backfill inventory and pulse map | done | `plans/pulse-01.md`; `BACKFILL-INVENTORY.md` |
 | 02 - Jack Adams Web dashboard continuity | done | `plans/pulse-02.md`; `forks/pulse-02.md`; this commit |
 | 03 - Presidents Trophy team season report/export parity | done | `plans/pulse-03.md` |
-| 04 - Visual and CREST regression captures | planned | `plans/pulse-04.md` |
+| 04 - Visual and CREST regression captures | done | `plans/pulse-04.md`; `VISUAL-CAPTURE-INVENTORY.md` |
 | 05 - Scenario harness classification | done | `plans/pulse-05.md`; `SCENARIO-INVENTORY.md` |
 | 06 - Selke watch-rule TUI editor and UX | done | `plans/pulse-06.md` |
 | 07 - Web admin operations parity | done | `plans/pulse-07.md`; `ADMIN-OPERATIONS-INVENTORY.md` |
@@ -66,3 +66,14 @@ This wave closes when:
   fork packet;
 - `design/waves/PHASES.md` and this `WAVE.md` reflect true status;
 - focused tests and docs prove the backfill model is usable.
+
+## Closeout Result
+
+Closed after pulses 01-08 completed. Durable evidence lives in the pulse plans,
+forks, and wave inventories:
+
+- `BACKFILL-INVENTORY.md`
+- `SCENARIO-INVENTORY.md`
+- `ADMIN-OPERATIONS-INVENTORY.md`
+- `CAREER-DOCS-INVENTORY.md`
+- `VISUAL-CAPTURE-INVENTORY.md`

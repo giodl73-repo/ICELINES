@@ -464,6 +464,21 @@ Current Prince.6 evidence:
   CREST/roles verdict as PASS WITH NOTES, including known screenshot and
   secondary-route cleanup tradeoffs.
 
+Backcheck Pulse 04 capture commands:
+
+- `cargo test -p icelines-cli prince_tui`
+- `cargo test -p icelines-cli --test prince_cli_visual`
+- `cargo test -p icelines-web l1_static_css_contains_prince_route_layout_classes`
+- `powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 web-captures`
+
+Backcheck Pulse 04 browser captures are generated artifacts under
+`dist/web-dashboard-captures/`:
+
+- `dashboard-leaders-desktop.png` (1440x900)
+- `dashboard-poach-desktop.png` (1440x900)
+- `dashboard-fantasy-mobile.png` (390x844)
+- `dashboard-team-season-mobile.png` (390x844)
+
 ---
 
 ## Prince Exit Gates
