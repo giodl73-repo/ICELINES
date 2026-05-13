@@ -1,7 +1,7 @@
 ---
 wave: test-the-command-bar
 date_open: 2026-05-13
-status: active
+status: closed
 source: user-testing request for command bar, tabbing, and subcommand usability
 ---
 
@@ -41,7 +41,7 @@ than broad redesign guesses.
 | 01 - Usability protocol and command inventory | done | `plans/pulse-01.md`; `USER-TESTING-PROTOCOL.md` |
 | 02 - Tabbing and focus regression harness | done | `plans/pulse-02.md`; `FOCUS-HARNESS-INVENTORY.md` |
 | 03 - Command vocabulary and subcommand discoverability | done | `plans/pulse-03.md`; `COMMAND-VOCAB-INVENTORY.md` |
-| 04 - Moderated session findings and fixes | planned | `plans/pulse-04.md` |
+| 04 - Moderated session findings and fixes | done | `plans/pulse-04.md`; `SESSION-FINDINGS.md` |
 
 ## Closeout Target
 
@@ -51,3 +51,16 @@ This wave closes when:
 - command-bar/tabbing issues are classified as fixed, documented, or deferred;
 - any behavior changes have focused parser/render/persona tests;
 - `COMMANDS.md` and help affordances match the commands users are expected to try.
+
+## Closeout Result
+
+Closed with a protocol dry-run because no live participant was available inside
+the CLI session. The current command bar has strong automated coverage:
+
+- 100 MDI persona/focus scenarios.
+- 41 parser tests and 25 execution tests under `l0_adams`.
+- 8 web dashboard command tests.
+
+The next true usability step is an external moderated session using
+`USER-TESTING-PROTOCOL.md`; any observed failures should open a new follow-up
+wave or reopen this one with concrete findings.

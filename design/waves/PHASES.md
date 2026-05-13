@@ -2,7 +2,7 @@
 
 | Wave | Status | Mission | Active Evidence |
 |---|---|---|---|
-| [Test the Command Bar](2026-05-13-test-the-command-bar/WAVE.md) | active | Validate whether real users can navigate IceLines through the MDI command bar, tabbing, and subcommand handoffs without maintainer coaching. | `USER-TESTING-PROTOCOL.md`; command-bar/tui persona tests |
+| [Test the Command Bar](2026-05-13-test-the-command-bar/WAVE.md) | closed | Validate whether real users can navigate IceLines through the MDI command bar, tabbing, and subcommand handoffs without maintainer coaching. | `USER-TESTING-PROTOCOL.md`; `SESSION-FINDINGS.md`; command-bar/tui persona tests |
 | [Backcheck the Phases](2026-05-13-backcheck-the-phases/WAVE.md) | closed | Backfill previous trophy phases into executable pulse packets so agents can clear residual gaps without relying on chat memory. | `BACKFILL-INVENTORY.md`; `VISUAL-CAPTURE-INVENTORY.md`; pulse plans/forks |
 | [Hart Normalizes the Core](2026-04-30-hart-normalizes-the-core/WAVE.md) | backfilled | Retrospective wave record for normalization and View-based migration. | `plans/pulse-01.md` |
 | [Art Ross Rewrites the Query](2026-05-06-art-ross-rewrites-the-query/WAVE.md) | backfilled | Retrospective wave record for query grammar, planner, executor, and parity hardening. | `plans/pulse-01.md` |

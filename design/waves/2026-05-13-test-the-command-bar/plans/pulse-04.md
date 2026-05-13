@@ -2,7 +2,7 @@
 wave: test-the-command-bar
 pulse: 04
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-02, pulse-03]
 governing_roles:
   - glass
@@ -27,12 +27,12 @@ smallest fixes needed to make IceLines usable without maintainer coaching.
 
 ## Gates
 
-- [ ] Session findings artifact names participant/task outcomes or a dry-run
+- [x] Session findings artifact names participant/task outcomes or a dry-run
       blocker.
-- [ ] `cargo test -p icelines-cli --bin icelines persona_jack_adams`
-- [ ] `cargo test -p icelines-cli --bin icelines l0_adams`
-- [ ] `cargo test -p icelines-web dashboard_command`
-- [ ] `cargo fmt --check`
+- [x] `cargo test -p icelines-cli --bin icelines persona_jack_adams`
+- [x] `cargo test -p icelines-cli --bin icelines l0_adams`
+- [x] `cargo test -p icelines-web dashboard_command`
+- [x] `cargo fmt --check`
 
 ## Stop Conditions
 
