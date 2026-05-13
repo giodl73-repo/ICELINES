@@ -240,6 +240,8 @@ mod tests {
             "workspace",
             "pushState",
             "popstate",
+            "FormData",
+            "redirect: \"manual\"",
             "data-workspace-url",
         ] {
             assert!(

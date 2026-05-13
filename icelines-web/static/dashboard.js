@@ -67,4 +67,35 @@
             window.location.href = dashboardUrl(workspace).toString();
         });
     });
+
+    document.addEventListener("submit", function (event) {
+        var form = event.target;
+        if (!form || !form.matches(".jaw-command form")) return;
+
+        event.preventDefault();
+        var data = new FormData(form);
+        fetch(form.action, {
+            method: "POST",
+            body: data,
+            redirect: "manual",
+            headers: { "X-Requested-With": "fetch" }
+        }).then(function (response) {
+            if (response.status >= 300 && response.status < 400) {
+                var location = response.headers.get("Location") || response.headers.get("location");
+                var workspace = location && workspaceFromUrl(location);
+                if (workspace) return loadWorkspace(workspace, true);
+            }
+            if (!response.ok) {
+                return response.text().then(function (text) {
+                    throw new Error(text || "Dashboard command failed");
+                });
+            }
+            return true;
+        }).then(function () {
+            var input = form.querySelector("input[name='command']");
+            if (input) input.value = "";
+        }).catch(function () {
+            form.submit();
+        });
+    });
 })();
