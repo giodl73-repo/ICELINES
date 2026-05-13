@@ -85,7 +85,7 @@ pub async fn run_team_season(team: String, json: bool) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn scheduled_game_input(game: ScheduledGame) -> ScheduledGameInput {
+pub(crate) fn scheduled_game_input(game: ScheduledGame) -> ScheduledGameInput {
     ScheduledGameInput {
         game_id: game.game_id,
         date: game.date,

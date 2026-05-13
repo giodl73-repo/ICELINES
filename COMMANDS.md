@@ -435,9 +435,12 @@ Deterministic markdown output for documentation / reports.
 
 ```bash
 icelines export md leaders --top 10 --out leaders.md
-icelines export md goalies --top 5 --out goalies.md
+icelines export md roster --pos G --out goalies.md
+icelines export md team-season --team EDM --out team-season-EDM.md
 icelines export md leaders --columns "g,a,p,blk" --out custom.md
 ```
+
+Shapes: `leaders`, `team`, `team-season`, `depth`, `fantasy`, `compare`, `series`, `roster`.
 
 ---
 

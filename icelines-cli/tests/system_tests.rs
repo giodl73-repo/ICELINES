@@ -729,6 +729,27 @@ fn l2_cmd_export_md_team_requires_team_flag() {
 }
 
 #[test]
+fn l2_cmd_export_md_team_season_to_stdout() {
+    let out = run(&["export", "md", "team-season", "--team", "EDM", "--out", "-"]);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(!stderr.contains("panicked at"));
+    assert!(
+        out.status.success(),
+        "team-season export must exit 0, stderr: {stderr}"
+    );
+    assert!(
+        stdout.starts_with("---\n"),
+        "stdout must start with YAML front-matter"
+    );
+    assert!(stdout.contains("type: team-season"));
+    assert!(stdout.contains("## Source State"));
+    assert!(stdout.contains("## Schedule Strength"));
+    assert!(stdout.contains("## Quality Ledger"));
+    assert!(stdout.contains("## Game Log"));
+}
+
+#[test]
 fn l2_cmd_export_md_fantasy_renders_poach_report() {
     let out = run(&["export", "md", "fantasy", "--out", "-"]);
     let stdout = String::from_utf8_lossy(&out.stdout);

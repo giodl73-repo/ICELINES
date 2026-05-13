@@ -2364,7 +2364,7 @@ pub enum ExportSubcommand {
         /// Position filter for `leaders` / `roster` (`C`, `LW`, `RW`, `D`, `F`, `G`).
         #[arg(long)]
         pos: Option<String>,
-        /// Team abbrev for `team` (e.g. `SEA`).
+        /// Team abbrev for `team` / `team-season` (e.g. `SEA`).
         #[arg(long)]
         team: Option<String>,
         /// Top-N for `leaders`.
@@ -2408,6 +2408,8 @@ pub enum MdShape {
     Leaders,
     /// Single team's lineup card.
     Team,
+    /// Single team's season-performance report.
+    TeamSeason,
     /// Cross-team line-value rankings.
     Depth,
     /// Active fantasy league standings.
@@ -2426,6 +2428,7 @@ impl MdShape {
         match self {
             MdShape::Leaders => "leaders",
             MdShape::Team => "team",
+            MdShape::TeamSeason => "team-season",
             MdShape::Depth => "depth",
             MdShape::Fantasy => "fantasy",
             MdShape::Compare => "compare",

@@ -23,9 +23,11 @@ use icelines_core::{
     scoring::sort_views_by_pace,
     stats_repository::PlayerView,
     view_model::{poach_report_from_board, PoachBoardView, PoachQuery, PoachReportView},
-    DepthLeagueView, LeaderKind, LeadersView, PlayoffsSeriesRow, PlayoffsView, SortDirection,
-    SortKey, SortState, TeamAbbr, TeamDepthView, ViewContext, ViewWindow,
+    Completeness, DepthLeagueView, LeaderKind, LeadersView, PlayoffsSeriesRow, PlayoffsView,
+    ScheduleRecord, SortDirection, SortKey, SortState, TeamAbbr, TeamDepthView, TeamSeasonGameRow,
+    TeamSeasonVenue, TeamSeasonView, ViewContext, ViewWindow,
 };
+use icelines_fetch::nhl_api::NhlApiClient;
 
 use crate::cli::{ExportSubcommand, MdShape};
 use crate::commands::players::load_repo_for_season;
@@ -64,6 +66,16 @@ pub async fn run(cmd: ExportSubcommand) -> anyhow::Result<()> {
                     width,
                     height,
                 })?,
+                MdShape::TeamSeason => {
+                    render_team_season(TeamSeasonOpts {
+                        team: team
+                            .clone()
+                            .context("--team is required for `export md team-season`")?,
+                        width,
+                        height,
+                    })
+                    .await?
+                }
                 MdShape::Depth => render_depth(DepthOpts { width, height })?,
                 MdShape::Compare => render_compare(CompareOpts {
                     p1: p1
@@ -496,6 +508,289 @@ pub(crate) fn render_team_from_views(
     }
 
     Ok(out)
+}
+
+// ── team-season ───────────────────────────────────────────────────────────────
+
+pub(crate) struct TeamSeasonOpts {
+    pub team: String,
+    pub width: u16,
+    pub height: u16,
+}
+
+pub(crate) async fn render_team_season(opts: TeamSeasonOpts) -> anyhow::Result<String> {
+    let team_abbr = TeamAbbr::parse(&opts.team)
+        .map_err(|_| anyhow::anyhow!("'{}' is not a valid NHL team abbreviation", opts.team))?;
+    let season = icelines_core::model::Season(icelines_core::CURRENT_SEASON);
+    let season_type = icelines_core::season_stats::SeasonType::Regular;
+    let season_str = icelines_core::CURRENT_SEASON_STR.to_string();
+    let client = NhlApiClient::production();
+    let standings = client
+        .fetch_standings_now()
+        .await
+        .unwrap_or_default()
+        .into_iter()
+        .map(|row| row.to_team_standing_input())
+        .collect();
+    let games = client
+        .fetch_team_season_schedule(&team_abbr.0, &season_str)
+        .await
+        .with_context(|| format!("fetching {team_abbr} season schedule for {season_str}"))?
+        .into_iter()
+        .map(crate::commands::team::scheduled_game_input)
+        .collect();
+    let view = TeamSeasonView::from_games_and_standings(
+        ViewContext::new(ViewWindow::new(season, season_type)),
+        season_str,
+        team_abbr.0,
+        games,
+        standings,
+    );
+    render_team_season_from_view(&view, &opts)
+}
+
+pub(crate) fn render_team_season_from_view(
+    view: &TeamSeasonView,
+    opts: &TeamSeasonOpts,
+) -> anyhow::Result<String> {
+    let mut out = String::new();
+    write_front_matter(
+        &mut out,
+        "team-season",
+        &format!("{} team season - {}", view.team, view.season_pretty),
+        &[("team", view.team.clone()), ("season", view.season.clone())],
+        opts.width,
+        opts.height,
+    );
+
+    let headline = &view.headline;
+    let _ = writeln!(out, "## Summary\n");
+    let _ = writeln!(out, "- Team: {}", view.team);
+    let _ = writeln!(out, "- Season: {}", view.season_pretty);
+    let _ = writeln!(out, "- Record: {}", schedule_record_label(headline.record));
+    let _ = writeln!(out, "- Points: {}", headline.points);
+    let _ = writeln!(
+        out,
+        "- Points percentage: {:.3}",
+        headline.points_percentage
+    );
+    let _ = writeln!(
+        out,
+        "- Goals: {} for / {} against ({})",
+        headline.goals_for,
+        headline.goals_against,
+        signed_i32(headline.goal_differential)
+    );
+    if let Some(standings) = &view.standings {
+        let _ = writeln!(
+            out,
+            "- Standings: {} pts, {:.3} pts%, {}",
+            standings.points, standings.points_percentage, standings.playoff_position_label
+        );
+        if let Some(above) = standings.points_above_cutline {
+            let _ = writeln!(out, "- Playoff cutline: {above} points above cutline");
+        } else if let Some(behind) = standings.points_behind_cutline {
+            let _ = writeln!(out, "- Playoff cutline: {behind} points behind cutline");
+        }
+    }
+    let _ = writeln!(
+        out,
+        "- Remaining: {} games ({} home, {} away)",
+        view.remaining.games, view.remaining.home, view.remaining.away
+    );
+    let _ = writeln!(
+        out,
+        "- Recent form: last 5 {}, last 10 {} ({})",
+        schedule_record_label(view.form.last_5),
+        schedule_record_label(view.form.last_10),
+        signed_i32(view.form.last_10_goal_differential)
+    );
+    if !view.remaining.next_opponents.is_empty() {
+        let _ = writeln!(
+            out,
+            "- Next opponents: {}",
+            view.remaining.next_opponents.join(", ")
+        );
+    }
+    let _ = writeln!(out);
+
+    write_team_season_source_state(&mut out, view);
+    write_team_season_splits(&mut out, view);
+    write_team_season_strength_and_ledger(&mut out, view);
+    write_team_season_game_log(&mut out, view);
+    Ok(out)
+}
+
+fn write_team_season_source_state(out: &mut String, view: &TeamSeasonView) {
+    let _ = writeln!(out, "## Source State\n");
+    let _ = writeln!(out, "| Source | State | Message |");
+    let _ = writeln!(out, "|---|---|---|");
+    for source in &view.context.source_state {
+        let _ = writeln!(
+            out,
+            "| {} | {} | {} |",
+            source_kind_label(source.source),
+            completeness_label(source.state),
+            source.message.as_deref().unwrap_or("-")
+        );
+    }
+    if !view.warnings.is_empty() {
+        let _ = writeln!(out, "\n## Warnings\n");
+        for warning in &view.warnings {
+            let _ = writeln!(out, "- {}", warning.message);
+        }
+    }
+    let _ = writeln!(out);
+}
+
+fn write_team_season_splits(out: &mut String, view: &TeamSeasonView) {
+    let _ = writeln!(out, "## Splits\n");
+    let _ = writeln!(out, "| Split | Record | GF | GA | GD |");
+    let _ = writeln!(out, "|---|---:|---:|---:|---:|");
+    let rows = [
+        ("Home", &view.splits.home),
+        ("Away", &view.splits.away),
+        ("One-goal", &view.splits.one_goal),
+    ];
+    for (label, split) in rows {
+        let _ = writeln!(
+            out,
+            "| {label} | {} | {} | {} | {} |",
+            schedule_record_label(split.record),
+            split.goals_for,
+            split.goals_against,
+            signed_i32(split.goal_differential)
+        );
+    }
+    let _ = writeln!(out);
+}
+
+fn write_team_season_strength_and_ledger(out: &mut String, view: &TeamSeasonView) {
+    let _ = writeln!(out, "## Schedule Strength\n");
+    let _ = writeln!(
+        out,
+        "| Window | Games | Avg opp pts% | Top | Middle | Bottom | Unknown |"
+    );
+    let _ = writeln!(out, "|---|---:|---:|---:|---:|---:|---:|");
+    let _ = writeln!(
+        out,
+        "| Faced | {} | {} | {} | {} | {} | {} |",
+        view.schedule_strength.faced_games,
+        pct_or_dash(view.schedule_strength.faced_average_points_percentage),
+        view.schedule_strength.faced.top,
+        view.schedule_strength.faced.middle,
+        view.schedule_strength.faced.bottom,
+        view.schedule_strength.faced.unknown
+    );
+    let _ = writeln!(
+        out,
+        "| Remaining | {} | {} | {} | {} | {} | {} |",
+        view.schedule_strength.remaining_games,
+        pct_or_dash(view.schedule_strength.remaining_average_points_percentage),
+        view.schedule_strength.remaining.top,
+        view.schedule_strength.remaining.middle,
+        view.schedule_strength.remaining.bottom,
+        view.schedule_strength.remaining.unknown
+    );
+    let _ = writeln!(out, "\n## Quality Ledger\n");
+    let _ = writeln!(out, "| Quality wins | Expected wins | Bad losses | Missed points | Top-opponent games | Bottom-opponent games |");
+    let _ = writeln!(out, "|---:|---:|---:|---:|---:|---:|");
+    let _ = writeln!(
+        out,
+        "| {} | {} | {} | {} | {} | {} |",
+        view.quality_ledger.quality_wins,
+        view.quality_ledger.expected_wins,
+        view.quality_ledger.bad_losses,
+        view.quality_ledger.missed_points,
+        view.quality_ledger.top_opponent_games,
+        view.quality_ledger.bottom_opponent_games
+    );
+    let _ = writeln!(out);
+}
+
+fn write_team_season_game_log(out: &mut String, view: &TeamSeasonView) {
+    let _ = writeln!(out, "## Game Log\n");
+    if view.rows.is_empty() {
+        let _ = writeln!(out, "_No games found for this team season._");
+        return;
+    }
+    let _ = writeln!(out, "| Date | V | Opp | Result | Score | GD | Status |");
+    let _ = writeln!(out, "|---|:---:|:---:|---|---:|---:|---|");
+    for row in &view.rows {
+        let _ = writeln!(out, "{}", team_season_markdown_row(row));
+    }
+}
+
+fn team_season_markdown_row(row: &TeamSeasonGameRow) -> String {
+    format!(
+        "| {} | {} | {} | {} | {} | {} | {} |",
+        row.date,
+        match row.venue {
+            TeamSeasonVenue::Home => "H",
+            TeamSeasonVenue::Away => "A",
+        },
+        row.opponent_abbrev,
+        row.result,
+        match (row.team_score, row.opponent_score) {
+            (Some(team_score), Some(opponent_score)) => format!("{team_score}-{opponent_score}"),
+            _ => "-".to_string(),
+        },
+        row.goal_differential
+            .map(|value| signed_i32(value as i32))
+            .unwrap_or_else(|| "-".to_string()),
+        row.state_label
+    )
+}
+
+fn schedule_record_label(record: ScheduleRecord) -> String {
+    format!(
+        "{}-{}-{}",
+        record.wins, record.losses, record.overtime_losses
+    )
+}
+
+fn signed_i32(value: i32) -> String {
+    format!("{value:+}")
+}
+
+fn pct_or_dash(value: Option<f32>) -> String {
+    value
+        .map(|value| format!("{value:.3}"))
+        .unwrap_or_else(|| "-".to_string())
+}
+
+fn source_kind_label(source: icelines_core::SourceKind) -> &'static str {
+    match source {
+        icelines_core::SourceKind::Schedule => "schedule",
+        icelines_core::SourceKind::Standings => "standings",
+        icelines_core::SourceKind::Roster => "roster",
+        icelines_core::SourceKind::Scores => "scores",
+        icelines_core::SourceKind::Playoffs => "playoffs",
+        icelines_core::SourceKind::Favorites => "favorites",
+        icelines_core::SourceKind::Watchlist => "watchlist",
+        icelines_core::SourceKind::Career => "career",
+        icelines_core::SourceKind::Home => "home",
+        icelines_core::SourceKind::Docs => "docs",
+        icelines_core::SourceKind::GameLog => "game-log",
+        icelines_core::SourceKind::Boxscore => "boxscore",
+        icelines_core::SourceKind::Shifts => "shifts",
+        icelines_core::SourceKind::Transactions => "transactions",
+        icelines_core::SourceKind::Contracts => "contracts",
+        icelines_core::SourceKind::FantasyImport => "fantasy-import",
+        icelines_core::SourceKind::Snapshot => "snapshot",
+        icelines_core::SourceKind::Bundle => "bundle",
+        icelines_core::SourceKind::Cache => "cache",
+        icelines_core::SourceKind::Unknown => "unknown",
+    }
+}
+
+fn completeness_label(completeness: Completeness) -> &'static str {
+    match completeness {
+        Completeness::Complete => "complete",
+        Completeness::Partial => "partial",
+        Completeness::Stale => "stale",
+        Completeness::Unavailable => "unavailable",
+    }
 }
 
 // ── depth ────────────────────────────────────────────────────────────────────
@@ -1105,7 +1400,8 @@ mod tests {
         identity::PlayerId,
         model::{Position, Season},
         season_stats::{SeasonStatsBuilder, SeasonType, StatTotals, TeamStint},
-        PaceScore, TeamAbbr,
+        PaceScore, ScheduledGameInput, TeamAbbr, TeamSeasonView, TeamStandingInput, ViewContext,
+        ViewWindow,
     };
 
     /// Build a one-row repo at the given (id, name, team, pos, pace_82)
@@ -1169,6 +1465,77 @@ mod tests {
     ) -> Vec<PlayerView<'_>> {
         repo.skaters(Season(20242025), SeasonType::Regular)
             .collect()
+    }
+
+    fn team_season_fixture() -> TeamSeasonView {
+        fn game(
+            id: u64,
+            date: &str,
+            away: &str,
+            home: &str,
+            away_score: Option<u8>,
+            home_score: Option<u8>,
+            last_period: Option<&str>,
+        ) -> ScheduledGameInput {
+            ScheduledGameInput {
+                game_id: id,
+                date: date.to_string(),
+                game_type: 2,
+                away_abbrev: away.to_string(),
+                away_name: away.to_string(),
+                home_abbrev: home.to_string(),
+                home_name: home.to_string(),
+                start_time_utc: format!("{date}T23:00:00Z"),
+                away_score,
+                home_score,
+                game_state: Some(if away_score.is_some() {
+                    "FINAL".to_string()
+                } else {
+                    "FUT".to_string()
+                }),
+                last_period: last_period.map(str::to_string),
+                series_game: None,
+                away_wins: None,
+                home_wins: None,
+            }
+        }
+        fn standing(team: &str, points_percentage: f32, points: u32) -> TeamStandingInput {
+            TeamStandingInput {
+                team: team.to_string(),
+                conference: Some("Western".to_string()),
+                division: Some("Pacific".to_string()),
+                games_played: 40,
+                wins: 20,
+                losses: 15,
+                overtime_losses: 5,
+                points,
+                points_percentage,
+                regulation_wins: Some(18),
+                goal_differential: 0,
+                league_rank: None,
+                conference_rank: None,
+                division_rank: None,
+                wild_card_rank: None,
+            }
+        }
+        TeamSeasonView::from_games_and_standings(
+            ViewContext::new(ViewWindow::new(Season(20242025), SeasonType::Regular)),
+            "20242025".to_string(),
+            "SEA".to_string(),
+            vec![
+                game(1, "2024-10-01", "SEA", "COL", Some(4), Some(2), Some("REG")),
+                game(2, "2024-10-03", "SEA", "SJS", Some(1), Some(2), Some("REG")),
+                game(3, "2024-10-05", "ANA", "SEA", Some(3), Some(2), Some("OT")),
+                game(4, "2024-10-07", "SEA", "VGK", None, None, None),
+            ],
+            vec![
+                standing("COL", 0.720, 58),
+                standing("VGK", 0.690, 56),
+                standing("SEA", 0.600, 48),
+                standing("ANA", 0.430, 34),
+                standing("SJS", 0.350, 28),
+            ],
+        )
     }
 
     #[test]
@@ -1345,6 +1712,57 @@ mod tests {
         )
         .unwrap_err();
         assert!(err.to_string().contains("invalid-metric"));
+    }
+
+    #[test]
+    fn l0_export_team_season_renders_viewmodel_report_sections() {
+        let view = team_season_fixture();
+        let out = render_team_season_from_view(
+            &view,
+            &TeamSeasonOpts {
+                team: "SEA".to_string(),
+                width: 100,
+                height: 30,
+            },
+        )
+        .unwrap();
+
+        assert!(out.starts_with("---\n"));
+        assert!(out.contains("type: team-season"));
+        assert!(out.contains("## Summary"));
+        assert!(out.contains("- Recent form: last 5"));
+        assert!(out.contains("## Source State"));
+        assert!(out.contains("| schedule | complete | - |"));
+        assert!(out.contains("| standings | complete | - |"));
+        assert!(out.contains("## Splits"));
+        assert!(out.contains("## Schedule Strength"));
+        assert!(out.contains("## Quality Ledger"));
+        assert!(out.contains("## Game Log"));
+        assert!(out.contains("| 2024-10-01 | A | COL | W | 4-2 | +2 | FINAL |"));
+    }
+
+    #[test]
+    fn l0_export_team_season_preserves_missing_source_warning() {
+        let view = TeamSeasonView::from_games(
+            ViewContext::new(ViewWindow::new(Season(20242025), SeasonType::Regular)),
+            "20242025".to_string(),
+            "SEA".to_string(),
+            Vec::new(),
+        );
+        let out = render_team_season_from_view(
+            &view,
+            &TeamSeasonOpts {
+                team: "SEA".to_string(),
+                width: 100,
+                height: 30,
+            },
+        )
+        .unwrap();
+
+        assert!(out.contains("| standings | unavailable | source window is not loaded |"));
+        assert!(out.contains("## Warnings"));
+        assert!(out.contains("Standings source not loaded"));
+        assert!(out.contains("_No games found for this team season._"));
     }
 
     // ── Phase Lindsay L.5.4 — `--columns` StatId list ─────────────────

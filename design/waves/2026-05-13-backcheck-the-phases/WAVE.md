@@ -49,7 +49,7 @@ role panel.
 |---|---|---|
 | 01 - Backfill inventory and pulse map | done | `plans/pulse-01.md`; `BACKFILL-INVENTORY.md` |
 | 02 - Jack Adams Web dashboard continuity | done | `plans/pulse-02.md`; `forks/pulse-02.md`; this commit |
-| 03 - Presidents Trophy team season report/export parity | planned | `plans/pulse-03.md` |
+| 03 - Presidents Trophy team season report/export parity | done | `plans/pulse-03.md` |
 | 04 - Visual and CREST regression captures | planned | `plans/pulse-04.md` |
 | 05 - Scenario harness classification | planned | `plans/pulse-05.md` |
 | 06 - Selke watch-rule TUI editor and UX | planned | `plans/pulse-06.md` |

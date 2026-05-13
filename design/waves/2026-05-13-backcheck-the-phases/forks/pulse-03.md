@@ -11,7 +11,7 @@
 wave: backcheck-the-phases
 pulse: 03
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-01]
 governing_roles:
   - keel
@@ -49,12 +49,12 @@ from roster/depth and should be exportable as a season-to-date assessment.
 
 ## Gates
 
-- [ ] `cargo test -p icelines-core team_season`
-- [ ] `cargo test -p icelines-cli team_season`
-- [ ] `cargo test -p icelines-cli export`
-- [ ] `cargo test -p icelines-web team_season`
-- [ ] Surface parity row names report/export status truthfully.
-- [ ] `cargo fmt --check`
+- [x] `cargo test -p icelines-core team_season`
+- [x] `cargo test -p icelines-cli team_season`
+- [x] `cargo test -p icelines-cli export`
+- [x] `cargo test -p icelines-web team_season`
+- [x] Surface parity row names report/export status truthfully.
+- [x] `cargo fmt --check`
 
 ## Stop Conditions
 
