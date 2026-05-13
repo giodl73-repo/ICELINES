@@ -695,6 +695,33 @@ pub struct WatchlistAlertRow {
     pub message: String,
 }
 
+/// `career.html` — cross-league cohort leaderboard.
+#[derive(Template)]
+#[template(path = "career.html")]
+pub struct CareerTemplate {
+    pub active_label: String,
+    pub league: String,
+    pub season_label: String,
+    pub season: u32,
+    pub sort: String,
+    pub count: usize,
+    pub total: usize,
+    pub rows: Vec<CareerLeaderRow>,
+}
+
+#[derive(Debug, Clone)]
+pub struct CareerLeaderRow {
+    pub rank: usize,
+    pub player_id: u32,
+    pub name: String,
+    pub team: String,
+    pub gp: u32,
+    pub goals: String,
+    pub assists: String,
+    pub points: String,
+    pub points_per_game: String,
+}
+
 /// One pre-formatted row for the poach board template.
 #[derive(Debug, Clone)]
 pub struct PoachRow {

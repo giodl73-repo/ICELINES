@@ -2854,6 +2854,61 @@ async fn l1_career_route_missing_league_returns_400() {
     );
 }
 
+#[tokio::test]
+async fn l1_career_html_uses_shared_page_shell() {
+    let _guard = home_env_lock().await;
+    let dir = tempfile::tempdir().expect("temp home");
+    let prev_userprofile = std::env::var_os("USERPROFILE");
+    let prev_home = std::env::var_os("HOME");
+    std::env::set_var("USERPROFILE", dir.path());
+    std::env::set_var("HOME", dir.path());
+
+    let mut store = CareerHistoryStore::new();
+    store.upsert(career_history(
+        990001,
+        vec![career_stint(20142015, "OHL", "ER", 60, 40, 50)],
+    ));
+    store.upsert(career_history(
+        990002,
+        vec![career_stint(20142015, "OHL", "LDN", 62, 30, 45)],
+    ));
+    let path = dir.path().join(".icelines").join("career_history.json");
+    store.save(&path).expect("save career store");
+
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/career?league=OHL&season=20142015&sort=points&top=2")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    match prev_userprofile {
+        Some(value) => std::env::set_var("USERPROFILE", value),
+        None => std::env::remove_var("USERPROFILE"),
+    }
+    match prev_home {
+        Some(value) => std::env::set_var("HOME", value),
+        None => std::env::remove_var("HOME"),
+    }
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+
+    assert!(body.contains("season-header"));
+    assert!(body.contains("global-nav"));
+    assert!(body.contains("OHL Leaders"));
+    assert!(body.contains("2014-15"));
+    assert!(body.contains("/api/v1/career?league=OHL"));
+    assert!(body.contains("career-table"));
+}
+
 /// l1_api_career_envelope_shape (Calder.4)
 /// — `/api/v1/career` envelope. When the local store is empty the
 ///   handler returns 400 with the same envelope shape and a helpful

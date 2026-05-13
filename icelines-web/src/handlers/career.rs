@@ -1,10 +1,14 @@
+use askama::Template;
 use axum::extract::Query;
+use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
 use icelines_core::{CareerRow, CareerSortKey, CareerView, ViewContext, ViewWindow};
 use serde::Deserialize;
+
+use crate::templates::{CareerLeaderRow, CareerTemplate};
 
 #[derive(Debug, Deserialize)]
 pub struct CareerQuery {
@@ -143,44 +147,25 @@ pub async fn get_career_json(Query(q): Query<CareerQuery>) -> Response {
     }
 }
 
-/// `GET /career` — minimal HTML rendering. Not a templated
-/// page yet (Calder.5 polish); plain HTML with the rows so
-/// the route exists and the JSON twin has a sibling.
-pub async fn get_career(Query(q): Query<CareerQuery>) -> Response {
+/// `GET /career` — HTML sibling for the JSON cohort leaderboard.
+pub async fn get_career(
+    State(state): State<crate::WebState>,
+    Query(q): Query<CareerQuery>,
+) -> Response {
     match build_view(&q) {
         Ok(view) => {
-            let season_label = if view.season.to_string().len() == 8 {
-                format!(
-                    "{}-{}",
-                    &view.season.to_string()[..4],
-                    &view.season.to_string()[6..]
-                )
-            } else {
-                view.season.to_string()
+            let active_label = state.config.read().await.active_label.clone();
+            let tmpl = CareerTemplate {
+                active_label,
+                league: view.league.clone(),
+                season_label: season_label(view.season),
+                season: view.season,
+                sort: view.sort.as_str().to_owned(),
+                count: view.rows.len(),
+                total: view.total,
+                rows: view.rows.iter().map(career_leader_row).collect(),
             };
-            let sort = view.sort.as_str();
-            let mut html = format!(
-                        "<!doctype html><html><head><title>{league} {season_label} Leaders — IceLines</title>\
-                        <style>body{{font-family:system-ui;margin:2rem;max-width:64rem}}\
-                        table{{border-collapse:collapse;width:100%}}\
-                        th,td{{border-bottom:1px solid #e0e0e0;padding:0.5rem;text-align:left}}\
-                        th{{background:#f5f5f5}}.right{{text-align:right}}</style>\
-                        </head><body><h1>{league} Leaders — {season_label}</h1>\
-                        <p>Sort: <strong>{sort}</strong>  ·  Showing {} of {} rows.  \
-                        JSON twin: <a href=\"/api/v1/career?league={league}&season={season}&sort={sort}\">/api/v1/career</a></p>\
-                        <table><thead><tr><th>Rank</th><th>Player</th><th>Team</th>\
-                        <th class=right>GP</th><th class=right>G</th><th class=right>A</th>\
-                        <th class=right>P</th><th class=right>PPG</th></tr></thead><tbody>",
-                        view.rows.len(),
-                        view.total,
-                        league = view.league,
-                        season = view.season,
-                    );
-            for row in &view.rows {
-                push_career_row(&mut html, row);
-            }
-            html.push_str("</tbody></table></body></html>");
-            Html(html).into_response()
+            render_template(tmpl)
         }
         Err(msg) => (
             axum::http::StatusCode::BAD_REQUEST,
@@ -193,27 +178,55 @@ pub async fn get_career(Query(q): Query<CareerQuery>) -> Response {
     }
 }
 
-fn push_career_row(html: &mut String, row: &CareerRow) {
-    let goals = row
-        .goals
+fn season_label(season: u32) -> String {
+    let season = season.to_string();
+    if season.len() == 8 {
+        format!("{}-{}", &season[..4], &season[6..])
+    } else {
+        season
+    }
+}
+
+fn career_leader_row(row: &CareerRow) -> CareerLeaderRow {
+    CareerLeaderRow {
+        rank: row.rank,
+        player_id: row.player_id,
+        name: row.name.clone(),
+        team: row.team.clone(),
+        gp: row.gp,
+        goals: optional_u32(row.goals),
+        assists: optional_u32(row.assists),
+        points: optional_u32(row.points),
+        points_per_game: row
+            .points_per_game
+            .map(|p| format!("{p:.2}"))
+            .unwrap_or_else(|| "-".to_owned()),
+    }
+}
+
+fn optional_u32(value: Option<u32>) -> String {
+    value
         .map(|n| n.to_string())
-        .unwrap_or_else(|| "—".into());
-    let assists = row
-        .assists
-        .map(|n| n.to_string())
-        .unwrap_or_else(|| "—".into());
-    let points = row
-        .points
-        .map(|n| n.to_string())
-        .unwrap_or_else(|| "—".into());
-    let ppg = row
-        .points_per_game
-        .map(|p| format!("{p:.2}"))
-        .unwrap_or_else(|| "—".into());
-    html.push_str(&format!(
-        "<tr><td>{}</td><td><a href=\"/player/{}\">{}</a></td><td>{}</td>\
-                            <td class=right>{}</td><td class=right>{}</td><td class=right>{}</td>\
-                            <td class=right><strong>{}</strong></td><td class=right>{}</td></tr>",
-        row.rank, row.player_id, row.name, row.team, row.gp, goals, assists, points, ppg
-    ));
+        .unwrap_or_else(|| "-".to_owned())
+}
+
+fn render_template<T: Template>(tmpl: T) -> Response {
+    match tmpl.render() {
+        Ok(html) => Html(html).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html(format!(
+                "<!doctype html><body><h1>500</h1><p>{}</p></body>",
+                html_escape(&e.to_string())
+            )),
+        )
+            .into_response(),
+    }
+}
+
+fn html_escape(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
 }

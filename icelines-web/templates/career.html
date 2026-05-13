@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}{{ league }} {{ season_label }} Leaders{% endblock %}
+
+{% block head_extra %}
+<style>
+    .career-context {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        align-items: center;
+        color: var(--ice-muted);
+        margin: 0.25rem 0 1rem;
+    }
+    .career-context strong {
+        color: var(--ice-fg);
+    }
+    .career-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin: 0 0 1rem;
+    }
+    .career-actions a {
+        border: 1px solid var(--ice-divider);
+        border-radius: 5px;
+        padding: 0.28rem 0.55rem;
+        text-decoration: none;
+    }
+    .career-actions a[aria-current="true"] {
+        background: var(--ice-divider);
+        color: var(--ice-fg);
+        font-weight: 700;
+    }
+    .career-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .career-table th,
+    .career-table td {
+        border-bottom: 1px solid var(--ice-divider);
+        padding: 0.5rem;
+        text-align: left;
+        vertical-align: top;
+    }
+    .career-table th {
+        background: var(--ice-divider);
+        color: var(--ice-muted);
+        font-size: 0.82rem;
+        text-transform: uppercase;
+    }
+    .career-table .numeric {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+    @media (max-width: 700px) {
+        .career-table th:nth-child(4),
+        .career-table td:nth-child(4),
+        .career-table th:nth-child(6),
+        .career-table td:nth-child(6),
+        .career-table th:nth-child(7),
+        .career-table td:nth-child(7),
+        .career-table th:nth-child(9),
+        .career-table td:nth-child(9) {
+            display: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>{{ league }} Leaders</h1>
+
+<div class="career-context">
+    <span><strong>{{ season_label }}</strong></span>
+    <span>Sort: <strong>{{ sort }}</strong></span>
+    <span>Showing <strong>{{ count }}</strong> of <strong>{{ total }}</strong> rows</span>
+</div>
+
+<nav class="career-actions" aria-label="Career sort options">
+    <a href="/career?league={{ league }}&amp;season={{ season }}&amp;sort=points"{% if sort == "points" %} aria-current="true"{% endif %}>Points</a>
+    <a href="/career?league={{ league }}&amp;season={{ season }}&amp;sort=goals"{% if sort == "goals" %} aria-current="true"{% endif %}>Goals</a>
+    <a href="/career?league={{ league }}&amp;season={{ season }}&amp;sort=assists"{% if sort == "assists" %} aria-current="true"{% endif %}>Assists</a>
+    <a href="/career?league={{ league }}&amp;season={{ season }}&amp;sort=gp"{% if sort == "gp" %} aria-current="true"{% endif %}>GP</a>
+    <a href="/career?league={{ league }}&amp;season={{ season }}&amp;sort=ppg"{% if sort == "ppg" %} aria-current="true"{% endif %}>PPG</a>
+    <a href="/api/v1/career?league={{ league }}&amp;season={{ season }}&amp;sort={{ sort }}">JSON</a>
+</nav>
+
+{% if rows.is_empty() %}
+<section class="empty-state">
+    <p><strong>No cohort rows.</strong> Try a different league or season after refreshing career history.</p>
+    <pre><code>icelines fetch career --bundled-seasons 5</code></pre>
+</section>
+{% else %}
+<table class="career-table">
+    <thead>
+        <tr>
+            <th class="numeric">Rank</th>
+            <th>Player</th>
+            <th>Team</th>
+            <th class="numeric">GP</th>
+            <th class="numeric">G</th>
+            <th class="numeric">A</th>
+            <th class="numeric">P</th>
+            <th class="numeric">PPG</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in rows %}
+        <tr>
+            <td class="numeric">{{ row.rank }}</td>
+            <td><a href="/player/{{ row.player_id }}">{{ row.name }}</a></td>
+            <td>{{ row.team }}</td>
+            <td class="numeric">{{ row.gp }}</td>
+            <td class="numeric">{{ row.goals }}</td>
+            <td class="numeric">{{ row.assists }}</td>
+            <td class="numeric"><strong>{{ row.points }}</strong></td>
+            <td class="numeric">{{ row.points_per_game }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endblock %}
