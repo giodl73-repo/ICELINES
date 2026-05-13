@@ -228,9 +228,11 @@ summarize active-season identity, scoring, and rate context from
 top skater context from the same `GameView` projection used by the full game
 route; transactions preserve kind/team filters and summarize the same
 `TransactionsView` route result; playoffs summarize bracket/series context from
-`PlayoffsView`, all while preserving canonical full route links. Remaining work
-is panel-specific fragments/parity for more product routes and richer side-pane
-row actions.
+`PlayoffsView`; favorites and watchlist workspaces summarize saved players,
+teams, notes, and recent alert counts from `FavoritesView` and `WatchlistView`,
+all while preserving canonical full route links. Remaining work is
+panel-specific fragments/parity for more product routes and richer side-pane row
+actions.
 
 Make the shell feel like MDI without losing web semantics.
 

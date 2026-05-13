@@ -11,12 +11,12 @@ use icelines_core::identity::PlayerId;
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
 use icelines_core::view_model::{
-    AvailabilityState, FantasyRosterGapView, FantasySimulationView, PoachBoardView,
+    AvailabilityState, FantasyRosterGapView, FantasySimulationView, PoachBoardView, WatchNoteInput,
 };
 use icelines_core::{
-    DepthLeagueView, DepthTeamStrengthRow, HomeView, MetricCell, MetricValue, PlayerCardView,
-    PlayerSeasonSummary, ScheduleRecord, TeamAbbr, TeamDepthView, TeamSeasonView, ViewContext,
-    ViewWindow,
+    DepthLeagueView, DepthTeamStrengthRow, FavoriteMemberInput, FavoritesView, HomeView,
+    MetricCell, MetricValue, PlayerCardView, PlayerSeasonSummary, ScheduleRecord, TeamAbbr,
+    TeamDepthView, TeamSeasonView, ViewContext, ViewWindow, WatchlistView,
 };
 use serde::Deserialize;
 
@@ -252,6 +252,12 @@ async fn workspace_summary(state: &WebState, path: &str) -> Vec<DashboardSummary
     }
     if route == "/playoffs" {
         return playoffs_workspace_summary(state).await;
+    }
+    if route == "/favorites" {
+        return favorites_workspace_summary(state).await;
+    }
+    if route == "/watchlist" {
+        return watchlist_workspace_summary(state).await;
     }
     if let Some(team) = route
         .strip_prefix("/team/")
@@ -948,6 +954,122 @@ fn playoff_series_summary_row(series: &PlayoffsSeriesView) -> DashboardSummaryRo
         format!("{} vs {}", series.top_abbrev, series.bottom_abbrev),
         series.summary.clone(),
     )
+}
+
+async fn favorites_workspace_summary(state: &WebState) -> Vec<DashboardSummaryRow> {
+    let context = dashboard_view_context(state).await;
+    let members = super::favorites_data::read_group_members("Favorites");
+    let view = FavoritesView::from_members(
+        context,
+        "Favorites".to_string(),
+        favorite_member_inputs(&members),
+        std::collections::HashMap::new(),
+    );
+    favorites_summary_rows(&view)
+}
+
+async fn watchlist_workspace_summary(state: &WebState) -> Vec<DashboardSummaryRow> {
+    let context = dashboard_view_context(state).await;
+    let members = super::favorites_data::read_group_members("Watchlist");
+    let notes = super::favorites_data::read_watch_notes();
+    let alerts = super::favorites_data::read_watch_alert_events(3);
+    let view = WatchlistView::from_members(
+        context,
+        "Watchlist".to_string(),
+        favorite_member_inputs(&members),
+        notes
+            .into_iter()
+            .map(|(key, note)| {
+                (
+                    key,
+                    WatchNoteInput {
+                        reason: note.reason,
+                        source: note.source,
+                        updated_at: note.updated_at,
+                    },
+                )
+            })
+            .collect(),
+    );
+    watchlist_summary_rows(&view, alerts.len())
+}
+
+async fn dashboard_view_context(state: &WebState) -> ViewContext {
+    let cfg = state.config.read().await;
+    let season = cfg
+        .active_season
+        .parse::<u32>()
+        .map(Season)
+        .unwrap_or(Season(icelines_core::CURRENT_SEASON));
+    let season_type = SeasonType::parse_lossy(&cfg.active_season_type);
+    ViewContext::new(ViewWindow::new(season, season_type))
+}
+
+fn favorite_member_inputs(members: &[(String, String)]) -> Vec<FavoriteMemberInput> {
+    members
+        .iter()
+        .map(|(kind, key)| FavoriteMemberInput {
+            kind: kind.clone(),
+            key: key.clone(),
+        })
+        .collect()
+}
+
+fn favorites_summary_rows(view: &FavoritesView) -> Vec<DashboardSummaryRow> {
+    let mut rows = vec![summary_row(
+        "Favorites",
+        view.rows.len().to_string(),
+        format!("{} players · {} teams", view.player_count, view.team_count),
+    )];
+    if view.rows.is_empty() {
+        rows[0].value = "No rows".to_string();
+        rows[0].detail = view
+            .empty_state
+            .as_ref()
+            .and_then(|state| state.detail.clone())
+            .unwrap_or_else(|| "No favorites saved yet".to_string());
+        return rows;
+    }
+    rows.extend(view.rows.iter().take(2).map(|row| {
+        summary_row(
+            row.kind.clone(),
+            row.key.clone(),
+            row.stat_line.clone().unwrap_or_default(),
+        )
+    }));
+    rows
+}
+
+fn watchlist_summary_rows(view: &WatchlistView, alert_count: usize) -> Vec<DashboardSummaryRow> {
+    let mut rows = vec![summary_row(
+        "Watchlist",
+        view.rows.len().to_string(),
+        format!(
+            "{} players · {} teams · {} alerts",
+            view.player_count, view.team_count, alert_count
+        ),
+    )];
+    if view.rows.is_empty() {
+        rows[0].value = "No rows".to_string();
+        rows[0].detail = view
+            .empty_state
+            .as_ref()
+            .and_then(|state| state.detail.clone())
+            .unwrap_or_else(|| "No watchlist entries saved yet".to_string());
+        return rows;
+    }
+    rows.extend(view.rows.iter().take(2).map(|row| {
+        summary_row(
+            row.kind.clone(),
+            row.key.clone(),
+            row.reason.clone().unwrap_or_else(|| {
+                row.source
+                    .clone()
+                    .unwrap_or_else(|| "No watch note yet".to_string())
+            }),
+        )
+    }));
+    rows
 }
 
 async fn team_season_workspace_summary(
@@ -1703,6 +1825,57 @@ mod tests {
         assert_eq!(rows[0].label, "Playoffs");
         assert_eq!(rows[0].value, "1");
         assert_eq!(rows[1].value, "EDM vs SEA");
+    }
+
+    #[test]
+    fn l0_dashboard_favorites_summary_projects_viewmodel() {
+        let view = FavoritesView::from_members(
+            ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular)),
+            "Favorites".to_string(),
+            vec![
+                FavoriteMemberInput {
+                    kind: "player".to_string(),
+                    key: "connor mcdavid".to_string(),
+                },
+                FavoriteMemberInput {
+                    kind: "team".to_string(),
+                    key: "SEA".to_string(),
+                },
+            ],
+            std::collections::HashMap::new(),
+        );
+
+        let rows = favorites_summary_rows(&view);
+
+        assert_eq!(rows[0].label, "Favorites");
+        assert_eq!(rows[0].value, "2");
+        assert_eq!(rows[0].detail, "1 players · 1 teams");
+    }
+
+    #[test]
+    fn l0_dashboard_watchlist_summary_projects_viewmodel_alert_count() {
+        let view = WatchlistView::from_members(
+            ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular)),
+            "Watchlist".to_string(),
+            vec![FavoriteMemberInput {
+                kind: "player".to_string(),
+                key: "matty beniers".to_string(),
+            }],
+            std::collections::HashMap::from([(
+                "player:matty beniers".to_string(),
+                WatchNoteInput {
+                    reason: "deployment watch".to_string(),
+                    source: "manual".to_string(),
+                    updated_at: "2026-05-13T00:00:00Z".to_string(),
+                },
+            )]),
+        );
+
+        let rows = watchlist_summary_rows(&view, 2);
+
+        assert_eq!(rows[0].label, "Watchlist");
+        assert_eq!(rows[0].detail, "1 players · 0 teams · 2 alerts");
+        assert_eq!(rows[1].detail, "deployment watch");
     }
 
     #[test]
