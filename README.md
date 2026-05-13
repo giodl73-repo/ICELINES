@@ -271,7 +271,9 @@ icelines fantasy trade "Bouchard" --to-team "Other" --for-player "Werenski" --ex
 
 # Web dashboard
 icelines serve --port 8000
-# GET /dashboard               -> Jack Adams browser shell with scores, side panes, workspace, command bar
+# GET /dashboard               -> Jack Adams browser shell with workspace rail and command bar
+# Try: poach rw cats=hits,blocks free top=12
+# Try: fantasy simulate add Connor_McDavid drop Bench_Forward
 # GET /fantasy                 -> HTML gaps + simulation scenarios
 # GET /api/v1/fantasy/gaps     -> FantasyRosterGapView JSON
 # GET /api/v1/fantasy/simulate -> FantasySimulationView JSON

@@ -188,18 +188,31 @@ icelines fantasy team-show "My Team" --league "My League"
 
 ## Web dashboard
 
-Start the local web dashboard for browser-based fantasy views:
+Start the local web dashboard and open `/dashboard` for the Jack Adams browser
+bench: scores ribbon, Favorites/watchlist pane, central workspace,
+Schedule/context pane, and command bar.
 
 ```bash
 icelines serve --port 8000
 ```
 
 Available routes:
+- `GET /dashboard` - multi-pane browser dashboard with workspace command bar
 - `GET /fantasy` - HTML roster gaps and simulation scenarios
 - `GET /api/v1/fantasy/gaps` - JSON `FantasyRosterGapView`
 - `GET /api/v1/fantasy/simulate` - JSON `FantasySimulationView`
 - `GET /poach` - HTML poacher board
 - `GET /api/v1/poach` - JSON `PoachBoardView`
+
+Command examples inside `/dashboard`:
+
+```text
+gaps cats=hits,blocks,shots top=8
+poach rw cats=hits,blocks free top=12
+fantasy poach top=8 available
+fantasy simulate add Connor_McDavid drop Bench_Forward
+report weekly cats=shots,hits top=12
+```
 
 `icelines fantasy serve --port 8080` remains available for the local fantasy
 server workflow, but the main dashboard is the parity surface for fantasy

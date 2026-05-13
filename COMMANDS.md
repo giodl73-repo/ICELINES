@@ -668,10 +668,15 @@ Examples:
 stats                                      -> /leaders
 goalies                                    -> /goalies
 poach                                      -> /poach
+roster                                     -> /fantasy
+poach rw cats=hits,blocks free top=12      -> /poach?pos=RW&category=hits%2Cblocks&availability=available&top=12
 gaps cats=hits,blocks top=8                -> /fantasy?category=hits%2Cblocks&top=8
 fantasy poach top=8 availability=available -> /poach?top=8&availability=available
+fantasy poach top=8 available              -> /poach?top=8&availability=available
 simulate add=Connor_McDavid drop=Bench_Forward weeks=3
                                            -> /fantasy?add_player=Connor_McDavid&drop_player=Bench_Forward&weeks=3
+fantasy simulate add Connor_McDavid drop Bench_Forward
+                                           -> /fantasy?add_player=Connor_McDavid&drop_player=Bench_Forward
 report weekly cats=shots,hits top=12       -> /reports/weekly?category=shots%2Chits&top=12
 report poach availability=imported-available
                                            -> /reports/poach?availability=imported-available
@@ -679,6 +684,7 @@ team EDM                                   -> /team/EDM
 team EDM season                            -> /team/EDM/season
 team EDM schedule                          -> /schedule?team=EDM
 career                                     -> /career?league=OHL&sort=points
+class 2015                                 -> /career?season=2015&sort=points
 career league=OHL season=20142015 top=8    -> /career?league=OHL&season=20142015&top=8
 player Connor McDavid                      -> /leaders?filter=name%3DConnor+McDavid
 compare Connor McDavid vs Sidney Crosby    -> /compare?left=Connor+McDavid&right=Sidney+Crosby
