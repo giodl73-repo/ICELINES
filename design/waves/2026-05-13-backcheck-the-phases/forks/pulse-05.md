@@ -11,7 +11,7 @@
 wave: backcheck-the-phases
 pulse: 05
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-01]
 governing_roles:
   - scout
@@ -34,6 +34,7 @@ covered by tests, what should become a test, and what should be retired.
   `future-product`.
 - A recommended next batch of scenario-to-test conversions.
 - Links from scenario groups to existing focused test slices.
+- Durable artifact: `design/waves/2026-05-13-backcheck-the-phases/SCENARIO-INVENTORY.md`.
 
 ## Discovery Scope
 
@@ -47,11 +48,11 @@ covered by tests, what should become a test, and what should be retired.
 
 ## Gates
 
-- [ ] Inventory command records the scenario count and source paths.
-- [ ] Every scenario bucket has at least one example.
-- [ ] `needs-test` scenarios map to a crate/surface and suggested test level.
-- [ ] Obsolete scenarios explain the superseding ViewModel or surface.
-- [ ] Recommended next conversions name the exact test file or new test target.
+- [x] Inventory command records the scenario count and source paths.
+- [x] Every scenario bucket has at least one example.
+- [x] `needs-test` scenarios map to a crate/surface and suggested test level.
+- [x] Obsolete scenarios explain the superseding ViewModel or surface.
+- [x] Recommended next conversions name the exact test file or new test target.
 
 ## Stop Conditions
 
