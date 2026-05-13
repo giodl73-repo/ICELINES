@@ -371,6 +371,9 @@ Progress:
 - 2026-05-13: Projected SOS and ledger summaries through CLI text, TUI team
   season, and web team-season HTML; JSON gets the same fields directly from
   the shared viewmodel.
+- 2026-05-13: Added a non-blocking TUI standings cache so `team <ABBR>
+  season` can use standings-backed SOS and ledger calculations instead of
+  remaining schedule-only when standings are loaded.
 
 ### PT.5 - Surfaces
 

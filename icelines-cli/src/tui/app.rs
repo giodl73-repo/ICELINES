@@ -1926,6 +1926,10 @@ impl App {
                     team.clone(),
                     self.active_season.clone(),
                 );
+                crate::tui::schedule::maybe_fetch_standings(
+                    self.schedule.standings_cache.clone(),
+                    self.active_season.clone(),
+                );
             }
             Screen::ScheduleMatchup(t1, _t2) => {
                 // Matchup view derives from one team's full season schedule

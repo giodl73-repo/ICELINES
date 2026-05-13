@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use chrono::{Datelike, Duration, NaiveDate, Utc};
-use icelines_fetch::nhl_api::{NhlApiClient, ScheduledGame};
+use icelines_fetch::nhl_api::{NhlApiClient, NhlStandingsRow, ScheduledGame};
 
 #[derive(Debug, Clone, Default)]
 pub enum ScheduleState {
@@ -20,17 +20,31 @@ pub enum ScheduleState {
     Error(String),
 }
 
+#[derive(Debug, Clone, Default)]
+pub enum StandingsState {
+    #[default]
+    Idle,
+    Loading,
+    Loaded(Vec<NhlStandingsRow>),
+    Error(String),
+}
+
 pub type WeekCache = Arc<Mutex<HashMap<String, ScheduleState>>>;
 /// Hart.5c.6 Phase C — D5 cache key widening. Keyed by
 /// `(team_abbrev, season)` so a season switch can't return wrong-
 /// season schedule data after `repo_swap` (KEEL/HART catch).
 pub type TeamSeasonCache = Arc<Mutex<HashMap<(String, String), ScheduleState>>>;
+pub type StandingsCache = Arc<Mutex<HashMap<String, StandingsState>>>;
 
 pub fn new_week_cache() -> WeekCache {
     Arc::new(Mutex::new(HashMap::new()))
 }
 
 pub fn new_team_cache() -> TeamSeasonCache {
+    Arc::new(Mutex::new(HashMap::new()))
+}
+
+pub fn new_standings_cache() -> StandingsCache {
     Arc::new(Mutex::new(HashMap::new()))
 }
 
@@ -184,6 +198,39 @@ pub fn maybe_fetch_team(cache: TeamSeasonCache, team: String, season: String) {
         match result {
             Ok(games) => map.insert(key, ScheduleState::Loaded(games)),
             Err(e) => map.insert(key, ScheduleState::Error(e.to_string())),
+        };
+    });
+}
+
+pub fn maybe_fetch_standings(cache: StandingsCache, season: String) {
+    if !crate::config::live_feeds_enabled() {
+        cache.lock().unwrap().insert(
+            season,
+            StandingsState::Error(crate::tui::tonight::LIVE_DISABLED_MSG.to_owned()),
+        );
+        return;
+    }
+    {
+        let mut map = cache.lock().unwrap();
+        match map.get(&season) {
+            Some(StandingsState::Loading)
+            | Some(StandingsState::Loaded(_))
+            | Some(StandingsState::Error(_)) => return,
+            _ => {}
+        }
+        map.insert(season.clone(), StandingsState::Loading);
+    }
+    if tokio::runtime::Handle::try_current().is_err() {
+        return;
+    }
+    let cache2 = cache.clone();
+    tokio::spawn(async move {
+        let client = NhlApiClient::production();
+        let result = client.fetch_standings_now().await;
+        let mut map = cache2.lock().unwrap();
+        match result {
+            Ok(rows) => map.insert(season, StandingsState::Loaded(rows)),
+            Err(e) => map.insert(season, StandingsState::Error(e.to_string())),
         };
     });
 }

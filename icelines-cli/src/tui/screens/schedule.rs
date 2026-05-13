@@ -17,8 +17,8 @@ use ratatui::{
 
 use crate::tui::app::App;
 use crate::tui::schedule::{
-    monday_of, new_team_cache, new_week_cache, today_iso, week_label, ScheduleState, SearchFilter,
-    TeamSeasonCache, WeekCache,
+    monday_of, new_standings_cache, new_team_cache, new_week_cache, today_iso, week_label,
+    ScheduleState, SearchFilter, StandingsCache, StandingsState, TeamSeasonCache, WeekCache,
 };
 use crate::visual::{
     tui_error_style, tui_header_style, tui_meta_style, tui_panel_block, tui_selected_style,
@@ -48,6 +48,7 @@ pub struct ScheduleScreenState {
     // Week + team caches (shared between renderer threads)
     pub week_cache: WeekCache,
     pub team_cache: TeamSeasonCache,
+    pub standings_cache: StandingsCache,
 
     // Currently-viewed week (Monday "YYYY-MM-DD")
     pub week: String,
@@ -100,6 +101,7 @@ impl Default for ScheduleScreenState {
         Self {
             week_cache: new_week_cache(),
             team_cache: new_team_cache(),
+            standings_cache: new_standings_cache(),
             // Monday of today; falls back to today's ISO if Monday
             // resolution fails (mirrors the legacy App::new init).
             week: monday_of(&today_iso()).unwrap_or_else(today_iso),
@@ -591,8 +593,21 @@ fn render_team_schedule_loaded(
     let dim = tui_meta_style();
     let gold = tui_header_style();
 
+    let (standings, standings_error) = {
+        let map = app.schedule.standings_cache.lock().unwrap();
+        match map.get(&app.active_season) {
+            Some(StandingsState::Loaded(rows)) => (
+                rows.iter()
+                    .map(|row| row.to_team_standing_input())
+                    .collect(),
+                None,
+            ),
+            Some(StandingsState::Error(e)) => (Vec::new(), Some(e.clone())),
+            _ => (Vec::new(), None),
+        }
+    };
     // Team-season performance lives in the shared Presidents Trophy viewmodel.
-    let view = TeamSeasonView::from_games(
+    let view = TeamSeasonView::from_games_and_standings(
         ViewContext::new(ViewWindow::new(
             Season(app.active_season_typed.0),
             app.active_type,
@@ -600,6 +615,7 @@ fn render_team_schedule_loaded(
         app.active_season.clone(),
         team.to_owned(),
         games.iter().cloned().map(scheduled_game_input).collect(),
+        standings,
     );
     let rows = &view.rows;
     let record = view.headline.record;
@@ -660,6 +676,12 @@ fn render_team_schedule_loaded(
     ));
     if let Some(warning) = view.warnings.first() {
         lines.push(Line::styled(format!("  Warning: {}", warning.message), dim));
+    }
+    if let Some(error) = standings_error {
+        lines.push(Line::styled(
+            format!("  Standings unavailable: {error}"),
+            tui_error_style(),
+        ));
     }
     lines.push(Line::styled(format!("  {}", "─".repeat(60)), dim));
 
@@ -933,7 +955,7 @@ mod tests {
 
     use super::*;
     use crate::tui::schedule::{ScheduleState, SearchFilter};
-    use icelines_fetch::nhl_api::ScheduledGame;
+    use icelines_fetch::nhl_api::{NhlStandingsRow, ScheduledGame};
     use ratatui::backend::TestBackend;
     use ratatui::Terminal;
 
@@ -964,6 +986,26 @@ mod tests {
             series_game: series.map(|s| s.0.to_owned()),
             away_wins: series.map(|s| s.1),
             home_wins: series.map(|s| s.2),
+        }
+    }
+
+    fn standings_row(team: &str, points_percentage: f32) -> NhlStandingsRow {
+        NhlStandingsRow {
+            team: team.to_owned(),
+            conference: Some("Western".to_owned()),
+            division: Some("Pacific".to_owned()),
+            games_played: 40,
+            wins: 20,
+            losses: 15,
+            overtime_losses: 5,
+            points: (points_percentage * 80.0).round() as u32,
+            points_percentage,
+            regulation_wins: Some(18),
+            goal_differential: 0,
+            league_rank: None,
+            conference_rank: None,
+            division_rank: None,
+            wild_card_rank: None,
         }
     }
 
@@ -1210,6 +1252,15 @@ mod tests {
             ("SEA".to_owned(), app.active_season.clone()),
             ScheduleState::Loaded(games),
         );
+        app.schedule.standings_cache.lock().unwrap().insert(
+            app.active_season.clone(),
+            StandingsState::Loaded(vec![
+                standings_row("EDM", 0.720),
+                standings_row("VAN", 0.650),
+                standings_row("SEA", 0.600),
+                standings_row("CGY", 0.540),
+            ]),
+        );
 
         let text = render_team_to_text(&app, "SEA");
         // Title shows the team
@@ -1235,6 +1286,10 @@ mod tests {
         assert!(
             text.contains("SOS:"),
             "team season performance context must show schedule strength, got:\n{text}"
+        );
+        assert!(
+            text.contains("0."),
+            "standings-backed schedule strength should show numeric opponent Pts%, got:\n{text}"
         );
     }
 
