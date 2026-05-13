@@ -66,14 +66,17 @@ pub async fn get_dashboard(
             .into_response();
     }
 
+    let favorites = dashboard_favorites_entities(&state).await;
+    let watchlist = dashboard_watchlist_entities(&state).await;
+
     let tmpl = DashboardTemplate {
         active_label,
         workspace_url: workspace_url.clone(),
         workspace_label,
         workspace_summary,
         scores_summary: "Live, final, and scheduled games stay one click away.".to_owned(),
-        favorites: dashboard_entities("Favorites"),
-        watchlist: dashboard_entities("Watchlist"),
+        favorites,
+        watchlist,
         schedule_links: schedule_links(),
         workspace_links,
     };
@@ -1451,19 +1454,82 @@ fn metric_f64(metrics: &[MetricCell], key: &str) -> Option<f64> {
         })
 }
 
-fn dashboard_entities(group: &str) -> Vec<DashboardEntityRow> {
-    super::favorites_data::read_group_members(group)
-        .into_iter()
+async fn dashboard_favorites_entities(state: &WebState) -> Vec<DashboardEntityRow> {
+    let context = dashboard_view_context(state).await;
+    let members = super::favorites_data::read_group_members("Favorites");
+    let view = FavoritesView::from_members(
+        context,
+        "Favorites".to_string(),
+        favorite_member_inputs(&members),
+        std::collections::HashMap::new(),
+    );
+    favorite_entity_rows(&view)
+}
+
+async fn dashboard_watchlist_entities(state: &WebState) -> Vec<DashboardEntityRow> {
+    let context = dashboard_view_context(state).await;
+    let members = super::favorites_data::read_group_members("Watchlist");
+    let notes = super::favorites_data::read_watch_notes();
+    let view = WatchlistView::from_members(
+        context,
+        "Watchlist".to_string(),
+        favorite_member_inputs(&members),
+        notes
+            .into_iter()
+            .map(|(key, note)| {
+                (
+                    key,
+                    WatchNoteInput {
+                        reason: note.reason,
+                        source: note.source,
+                        updated_at: note.updated_at,
+                    },
+                )
+            })
+            .collect(),
+    );
+    watchlist_entity_rows(&view)
+}
+
+fn favorite_entity_rows(view: &FavoritesView) -> Vec<DashboardEntityRow> {
+    view.rows
+        .iter()
         .take(8)
-        .map(|(kind, key)| {
-            let href = match kind.as_str() {
-                "team" => format!("/team/{key}"),
-                _ => format!("/leaders?filter=name%3D{}", url_component(&key)),
+        .map(|row| {
+            let href = match row.kind.as_str() {
+                "team" => format!("/team/{}", row.key),
+                _ => format!("/leaders?filter=name%3D{}", url_component(&row.key)),
             };
             DashboardEntityRow {
-                label: key,
+                label: row.key.clone(),
                 href,
-                kind,
+                kind: row
+                    .stat_line
+                    .clone()
+                    .filter(|line| !line.is_empty())
+                    .unwrap_or_else(|| row.kind.clone()),
+            }
+        })
+        .collect()
+}
+
+fn watchlist_entity_rows(view: &WatchlistView) -> Vec<DashboardEntityRow> {
+    view.rows
+        .iter()
+        .take(8)
+        .map(|row| {
+            let href = match row.kind.as_str() {
+                "team" => format!("/team/{}", row.key),
+                _ => format!("/leaders?filter=name%3D{}", url_component(&row.key)),
+            };
+            DashboardEntityRow {
+                label: row.key.clone(),
+                href,
+                kind: row
+                    .reason
+                    .clone()
+                    .or_else(|| row.source.clone())
+                    .unwrap_or_else(|| row.kind.clone()),
             }
         })
         .collect()
@@ -2049,6 +2115,28 @@ mod tests {
     }
 
     #[test]
+    fn l0_dashboard_favorites_pane_projects_viewmodel_rows() {
+        let view = FavoritesView::from_members(
+            ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular)),
+            "Favorites".to_string(),
+            vec![FavoriteMemberInput {
+                kind: "player".to_string(),
+                key: "Connor McDavid".to_string(),
+            }],
+            std::collections::HashMap::from([(
+                "Connor McDavid".to_string(),
+                "2 G, 1 A".to_string(),
+            )]),
+        );
+
+        let rows = favorite_entity_rows(&view);
+
+        assert_eq!(rows[0].label, "Connor McDavid");
+        assert_eq!(rows[0].kind, "2 G, 1 A");
+        assert_eq!(rows[0].href, "/leaders?filter=name%3DConnor+McDavid");
+    }
+
+    #[test]
     fn l0_dashboard_watchlist_summary_projects_viewmodel_alert_count() {
         let view = WatchlistView::from_members(
             ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular)),
@@ -2072,6 +2160,32 @@ mod tests {
         assert_eq!(rows[0].label, "Watchlist");
         assert_eq!(rows[0].detail, "1 players · 0 teams · 2 alerts");
         assert_eq!(rows[1].detail, "deployment watch");
+    }
+
+    #[test]
+    fn l0_dashboard_watchlist_pane_projects_notes_from_viewmodel() {
+        let view = WatchlistView::from_members(
+            ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular)),
+            "Watchlist".to_string(),
+            vec![FavoriteMemberInput {
+                kind: "player".to_string(),
+                key: "Matthew Knies".to_string(),
+            }],
+            std::collections::HashMap::from([(
+                "player:Matthew Knies".to_string(),
+                WatchNoteInput {
+                    reason: "PP1 promotion watch".to_string(),
+                    source: "manual".to_string(),
+                    updated_at: "2026-05-13T00:00:00Z".to_string(),
+                },
+            )]),
+        );
+
+        let rows = watchlist_entity_rows(&view);
+
+        assert_eq!(rows[0].label, "Matthew Knies");
+        assert_eq!(rows[0].kind, "PP1 promotion watch");
+        assert_eq!(rows[0].href, "/leaders?filter=name%3DMatthew+Knies");
     }
 
     #[test]
