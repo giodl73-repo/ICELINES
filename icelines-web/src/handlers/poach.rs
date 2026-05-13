@@ -432,7 +432,7 @@ fn read_watch_rule_last_fired(
     .unwrap_or_default()
 }
 
-fn read_watchlist_player_keys() -> Vec<String> {
+pub(super) fn read_watchlist_player_keys() -> Vec<String> {
     let Some(home) = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")) else {
         return Vec::new();
     };

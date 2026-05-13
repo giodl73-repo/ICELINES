@@ -11,7 +11,8 @@ use icelines_core::identity::PlayerId;
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
 use icelines_core::view_model::{
-    AvailabilityState, FantasyRosterGapView, FantasySimulationView, PoachBoardView, WatchNoteInput,
+    poach_report_from_board, weekly_poach_report_from_board_with_watched, AvailabilityState,
+    FantasyRosterGapView, FantasySimulationView, PoachBoardView, PoachReportView, WatchNoteInput,
 };
 use icelines_core::{
     CareerView, DepthLeagueView, DepthTeamStrengthRow, FavoriteMemberInput, FavoritesView,
@@ -241,6 +242,12 @@ async fn workspace_summary(state: &WebState, path: &str) -> Vec<DashboardSummary
     if route == "/poach" {
         return poach_workspace_summary(state, path).await;
     }
+    if route == "/reports/poach" {
+        return poach_report_workspace_summary(state, path, false).await;
+    }
+    if route == "/reports/weekly" {
+        return poach_report_workspace_summary(state, path, true).await;
+    }
     if route == "/fantasy" {
         return fantasy_workspace_summary(state, path).await;
     }
@@ -469,6 +476,62 @@ fn poach_summary_rows(view: &PoachBoardView) -> Vec<DashboardSummaryRow> {
                 row.score.final_score,
                 availability_summary_label(row.availability)
             ),
+        )
+    }));
+    rows
+}
+
+async fn poach_report_workspace_summary(
+    state: &WebState,
+    path: &str,
+    weekly: bool,
+) -> Vec<DashboardSummaryRow> {
+    let q = poach_query_from_workspace(path);
+    let Ok(result) = super::poach::build_poach_view(state, &q).await else {
+        return Vec::new();
+    };
+    let report = if weekly {
+        let league = q.league.as_deref().unwrap_or("default");
+        let top = q.top.unwrap_or(DASHBOARD_PREVIEW_N as u16).clamp(1, 100);
+        let watched = super::poach::read_watchlist_player_keys();
+        weekly_poach_report_from_board_with_watched(result.view, league, top, &watched)
+    } else {
+        poach_report_from_board(result.view)
+    };
+    poach_report_summary_rows(&report)
+}
+
+fn poach_report_summary_rows(report: &PoachReportView) -> Vec<DashboardSummaryRow> {
+    let candidate_count: usize = report
+        .sections
+        .iter()
+        .map(|section| section.rows.len())
+        .sum();
+    let mut rows = vec![summary_row(
+        "Report",
+        report.context.title.clone(),
+        format!(
+            "{} candidates · {} sections",
+            candidate_count,
+            report.sections.len()
+        ),
+    )];
+    if !report.scoring_categories.is_empty() {
+        rows.push(summary_row(
+            "Categories",
+            report.scoring_categories.join(", "),
+            report.scoring_scheme.clone(),
+        ));
+    }
+    rows.extend(report.sections.iter().take(2).map(|section| {
+        summary_row(
+            section.title.clone(),
+            section.rows.len().to_string(),
+            section
+                .rows
+                .first()
+                .map(|row| format!("top: {} · {:.1}", row.display_name, row.score.final_score))
+                .unwrap_or_else(|| "No candidates in this section".to_string()),
         )
     }));
     rows
@@ -2122,6 +2185,44 @@ mod tests {
         assert_eq!(rows[0].label, "Favorites");
         assert_eq!(rows[0].value, "2");
         assert_eq!(rows[0].detail, "1 players · 1 teams");
+    }
+
+    #[test]
+    fn l0_dashboard_poach_report_summary_projects_viewmodel() {
+        let report = PoachReportView {
+            context: icelines_core::ReportContext {
+                kind: icelines_core::ReportKind::Weekly,
+                view_context: ViewContext::new(ViewWindow::new(
+                    Season(20252026),
+                    SeasonType::Regular,
+                )),
+                report_id: "weekly-main".to_string(),
+                title: "Weekly fantasy prep".to_string(),
+                sections: vec![icelines_core::ReportSectionRef {
+                    id: "streamers".to_string(),
+                    title: "Streamers".to_string(),
+                }],
+            },
+            scoring_scheme: "yahoo-standard".to_string(),
+            scoring_categories: vec!["shots".to_string(), "hits".to_string()],
+            window: icelines_core::view_model::PoachWindow::Days14,
+            source_state: Vec::new(),
+            warnings: Vec::new(),
+            omissions: Vec::new(),
+            sections: vec![icelines_core::view_model::PoachReportSection {
+                id: "streamers".to_string(),
+                title: "Streamers".to_string(),
+                rows: Vec::new(),
+            }],
+        };
+
+        let rows = poach_report_summary_rows(&report);
+
+        assert_eq!(rows[0].label, "Report");
+        assert_eq!(rows[0].value, "Weekly fantasy prep");
+        assert_eq!(rows[1].label, "Categories");
+        assert_eq!(rows[1].value, "shots, hits");
+        assert_eq!(rows[2].label, "Streamers");
     }
 
     #[test]
