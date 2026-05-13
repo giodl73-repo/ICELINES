@@ -752,6 +752,40 @@ fn l2_cmd_export_md_fantasy_renders_poach_report() {
     );
 }
 
+// ── L2: team season performance (Presidents Trophy) ─────────────────────────
+
+#[test]
+fn l2_cmd_team_season_text_exits_zero_and_shows_context() {
+    let out = run(&["team-season", "EDM"]);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(!stderr.contains("panicked at"));
+    assert!(
+        out.status.success(),
+        "team-season text must exit 0, stderr: {stderr}"
+    );
+    assert!(stdout.contains("EDM TEAM SEASON"));
+    assert!(stdout.contains("Standings"));
+    assert!(stdout.contains("SOS faced"));
+    assert!(stdout.contains("Ledger quality wins"));
+}
+
+#[test]
+fn l2_cmd_team_season_json_exits_zero_and_emits_view_contract() {
+    let out = run(&["team-season", "EDM", "--json"]);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(!stderr.contains("panicked at"));
+    assert!(
+        out.status.success(),
+        "team-season json must exit 0, stderr: {stderr}"
+    );
+    assert!(stdout.contains("\"team\": \"EDM\""));
+    assert!(stdout.contains("\"schedule_strength\""));
+    assert!(stdout.contains("\"quality_ledger\""));
+    assert!(stdout.contains("\"standings\""));
+}
+
 // ── L2: live-feeds toggle (Phase 8f.1) ────────────────────────────────────────
 
 #[test]

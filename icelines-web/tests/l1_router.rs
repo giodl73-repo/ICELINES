@@ -953,6 +953,44 @@ async fn l1_dashboard_career_workspace_renders_summary_shell() {
 }
 
 #[tokio::test]
+async fn l1_dashboard_report_workspaces_render_summary_shells() {
+    let app = router(WebState::new());
+    for (workspace, label) in [
+        (
+            "%2Freports%2Fpoach%3Favailability%3Dimported-available%26top%3D12",
+            "Poach Report",
+        ),
+        (
+            "%2Freports%2Fweekly%3Fcategory%3Dshots%252Chits%26top%3D12",
+            "Weekly Report",
+        ),
+    ] {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/dashboard?workspace={workspace}"))
+                    .body(Body::empty())
+                    .expect("request builder ok"),
+            )
+            .await
+            .expect("dispatch ok");
+
+        assert_eq!(response.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+            .await
+            .expect("body fits");
+        let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+        assert!(body.contains(label), "{label} workspace label missing");
+        assert!(body.contains("Open the full page"));
+        assert!(
+            body.contains("Candidates") || body.contains("No candidates"),
+            "{label} summary should expose report candidate context, got:\n{body}"
+        );
+    }
+}
+
+#[tokio::test]
 async fn l1_dashboard_command_read_redirects_to_workspace_state() {
     let app = router(WebState::new());
     let response = app
@@ -974,6 +1012,35 @@ async fn l1_dashboard_command_read_redirects_to_workspace_state() {
         .and_then(|value| value.to_str().ok())
         .expect("redirect location");
     assert_eq!(location, "/dashboard?workspace=%2Fteam%2FEDM");
+}
+
+#[tokio::test]
+async fn l1_dashboard_command_report_weekly_redirects_to_workspace_state() {
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/dashboard/command")
+                .header("content-type", "application/x-www-form-urlencoded")
+                .body(Body::from(
+                    "command=report+weekly+cats%3Dshots%2Chits+top%3D12&workspace=%2Fpoach",
+                ))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    let location = response
+        .headers()
+        .get("location")
+        .and_then(|value| value.to_str().ok())
+        .expect("redirect location");
+    assert_eq!(
+        location,
+        "/dashboard?workspace=%2Freports%2Fweekly%3Fcategory%3Dshots%252Chits%26top%3D12"
+    );
 }
 
 #[tokio::test]
@@ -1031,6 +1098,31 @@ async fn l1_dashboard_command_watch_returns_to_dashboard_workspace() {
 }
 
 #[tokio::test]
+async fn l1_dashboard_poach_workspace_exposes_report_actions() {
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/dashboard?workspace=%2Fpoach%3Favailability%3Dimported-available")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+    assert!(body.contains("Poach report"));
+    assert!(body.contains("Weekly prep"));
+    assert!(body.contains(
+        "/dashboard?workspace=%2Freports%2Fweekly%3Favailability%3Dimported-available%26top%3D12"
+    ));
+}
+
+#[tokio::test]
 async fn l1_watch_rule_create_rejects_external_return_targets() {
     let _guard = home_env_lock().await;
     let _home = HomeEnvFixture::new();
@@ -1057,6 +1149,35 @@ async fn l1_watch_rule_create_rejects_external_return_targets() {
         .and_then(|value| value.to_str().ok())
         .expect("redirect location");
     assert_eq!(location, "/watchlist");
+}
+
+#[tokio::test]
+async fn l1_watch_rule_create_honors_safe_return_target() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/watch-rules/create")
+                .header("content-type", "application/x-www-form-urlencoded")
+                .body(Body::from(
+                    "player=Connor+McDavid&trigger=available&return_to=%2Fdashboard%3Fworkspace%3D%252Fpoach",
+                ))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    let location = response
+        .headers()
+        .get("location")
+        .and_then(|value| value.to_str().ok())
+        .expect("redirect location");
+    assert_eq!(location, "/dashboard?workspace=%2Fpoach");
 }
 
 #[tokio::test]
