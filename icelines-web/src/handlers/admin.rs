@@ -230,6 +230,22 @@ pub async fn post_snapshot_delete_json(Json(req): Json<AdminSnapshotMutationRequ
     }
 }
 
+pub async fn post_snapshot_delete_form(Form(req): Form<AdminSnapshotMutationRequest>) -> Response {
+    let intent = match SnapshotMutationIntent::resolve(SnapshotMutationOperation::Remove, req.name)
+    {
+        Ok(intent) => intent,
+        Err(message) => return admin_bad_request_html(message),
+    };
+    let store = SnapshotStore::new(SnapshotStore::default_root());
+    match store.delete(&intent.name) {
+        Ok(()) => {
+            let _result = intent.result_view(default_context(), true);
+            Redirect::to("/admin").into_response()
+        }
+        Err(err) => admin_bad_request_html(format!("deleting snapshot '{}': {err}", intent.name)),
+    }
+}
+
 pub async fn post_data_verify_json(Json(req): Json<AdminDataVerifyRequest>) -> Response {
     let intent = match DataMutationIntent::resolve(DataMutationOperation::Verify, req.target, false)
     {
@@ -621,12 +637,18 @@ fn render_snapshot_section(html: &mut String, view: &SnapshotView) {
         ));
         if row.is_active {
             html.push_str("<span class=\"muted\">Active</span>");
-        } else if row.sealed {
+        } else {
+            html.push_str(&format!(
+                "<form method=\"post\" action=\"/admin/snapshots/delete\"><input type=\"hidden\" name=\"name\" value=\"{}\"><button type=\"submit\">Delete</button></form>",
+                html_escape(&row.name)
+            ));
+        }
+        if !row.is_active && row.sealed {
             html.push_str(&format!(
                 "<form method=\"post\" action=\"/admin/snapshots/activate\"><input type=\"hidden\" name=\"name\" value=\"{}\"><button type=\"submit\">Activate</button></form>",
                 html_escape(&row.name)
             ));
-        } else {
+        } else if !row.is_active {
             html.push_str("<span class=\"muted\">Seal before activate</span>");
         }
         html.push_str("</td></tr>");

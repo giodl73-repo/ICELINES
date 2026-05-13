@@ -231,6 +231,10 @@ pub fn router(state: WebState) -> Router {
             post(handlers::admin::post_snapshot_delete_json),
         )
         .route(
+            "/admin/snapshots/delete",
+            post(handlers::admin::post_snapshot_delete_form),
+        )
+        .route(
             "/api/v1/admin/data/verify",
             post(handlers::admin::post_data_verify_json),
         )

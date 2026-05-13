@@ -2249,6 +2249,7 @@ async fn l1_admin_html_renders_snapshot_activate_form_for_sealed_inactive_rows()
     let html = String::from_utf8(bytes.to_vec()).expect("utf8 html");
 
     assert!(html.contains("action=\"/admin/snapshots/activate\""));
+    assert!(html.contains("action=\"/admin/snapshots/delete\""));
     assert!(html.contains("name=\"name\" value=\"stats-b\""));
 }
 
@@ -2546,6 +2547,65 @@ async fn l1_admin_snapshot_delete_json_returns_mutation_result_view() {
     assert_eq!(json["operation"], "snapshot_remove");
     assert_eq!(json["target"], "stats-a");
     assert_eq!(json["status"], "applied");
+    let names: BTreeSet<String> = store
+        .load_manifest()
+        .expect("manifest")
+        .snapshots
+        .into_iter()
+        .map(|entry| entry.name)
+        .collect();
+    assert!(!names.contains("stats-a"));
+    assert!(names.contains("stats-b"));
+}
+
+#[tokio::test]
+async fn l1_admin_snapshot_delete_form_redirects_and_removes_inactive_snapshot() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    let store = SnapshotStore::new(SnapshotStore::default_root());
+    store
+        .create(
+            "stats-a",
+            "20252026",
+            SnapshotTier::Stats,
+            None,
+            "2026-05-10",
+        )
+        .expect("create snapshot a");
+    store.seal("stats-a").expect("seal snapshot a");
+    store
+        .create(
+            "stats-b",
+            "20252026",
+            SnapshotTier::Stats,
+            None,
+            "2026-05-11",
+        )
+        .expect("create snapshot b");
+    store.seal("stats-b").expect("seal snapshot b");
+    store.set_active("stats-b").expect("set active snapshot");
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/admin/snapshots/delete")
+                .header("content-type", "application/x-www-form-urlencoded")
+                .body(Body::from("name=stats-a"))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        response
+            .headers()
+            .get("location")
+            .and_then(|v| v.to_str().ok()),
+        Some("/admin")
+    );
     let names: BTreeSet<String> = store
         .load_manifest()
         .expect("manifest")
