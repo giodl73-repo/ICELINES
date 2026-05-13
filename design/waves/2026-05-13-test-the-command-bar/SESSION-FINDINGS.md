@@ -42,14 +42,16 @@ protects.
 | Class | Finding | Disposition |
 |---|---|---|
 | Parser gap | No protocol command failed in the existing parser/exec harness. | Fixed/covered by existing tests. |
-| Discoverability gap | Not measurable without a live participant. | Deferred to first moderated session. |
-| Feedback gap | Automated tests show flash/error paths exist, but not whether wording is obvious. | Deferred to first moderated session. |
-| Focus gap | `:`, `/`, `Esc`, pane toggles, Tab/Shift+Tab behavior, history, and help interactions are covered. | Fixed/covered by persona tests. |
+| Discoverability gap | Post-dry-run user feedback called out confusing command-mode focus and weak hints for repeated command use. | Fixed in follow-up: sticky empty prompt now says the next command can be typed and `Tab`/`Esc` leave. |
+| Feedback gap | Successful command execution could leave an empty focused prompt, hiding the fact that the app was ready for the next command. | Fixed in follow-up: successful commands now render a visible command-row handoff. |
+| Focus gap | Pressing `:` again after a successful command could be interpreted as literal `:` input because sticky focus was still active. | Fixed in follow-up: `:` at an empty focused prompt is a harmless re-entry no-op. |
 | Handoff gap | Career and compare intentionally flash CLI/web targets instead of opening richer TUI boards. | Defer judgment to participant comprehension; do not change before observation. |
-| Documentation gap | `COMMANDS.md` documents the command-bar vocabulary and web contract. | Covered for dry-run; validate with participant. |
+| Documentation gap | `COMMANDS.md` documents the command-bar vocabulary, web contract, and sticky command-mode exit keys. | Covered for dry-run; validate with participant. |
 
 ## Recommendation
 
-Run one live moderated session next. Do not change grammar before that session:
-the likely risks are not untested parser paths but whether a user discovers the
-bar, understands handoff-only commands, and reads flash feedback correctly.
+Run one live moderated session next with special attention to whether users
+notice sticky command mode, understand that `Tab`/`Esc` leaves it, and can chain
+workspace commands without maintainer coaching. Keep career/compare handoff
+judgment for that session; the follow-up fix only addresses the repeated-command
+focus and feedback friction reported after the dry-run.

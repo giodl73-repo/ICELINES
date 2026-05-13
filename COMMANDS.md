@@ -621,7 +621,9 @@ icelines tui --start "team:EDM"
 
 The default TUI dashboard includes a chat-CLI command bar at the bottom.
 Press `:` to focus the bar with empty input, or `/` to focus with `/`
-already typed (for slash commands). Enter submits; Esc cancels.
+already typed (for slash commands). Enter submits and keeps the bar ready
+for the next command; pressing `:` again at the empty prompt is harmless.
+Use `Tab` or `Esc` to leave command mode.
 
 | Verb | Effect | Example |
 |---|---|---|

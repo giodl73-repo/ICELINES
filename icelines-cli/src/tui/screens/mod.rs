@@ -376,14 +376,21 @@ fn render_mdi_cmdbar(f: &mut Frame, area: Rect, mdi: &crate::tui::mdi::MdiLayout
         return;
     }
 
+    if let Some(info) = mdi.flash_info.as_deref() {
+        f.render_widget(Paragraph::new(format!(" ✓ {info}")).style(cyan), area);
+        return;
+    }
+
     let focused = mdi.command_bar_focused || !mdi.command_input.is_empty();
     if focused {
         // Prompt mode: trailing `_` as fake cursor (no real cursor
         // positioning yet — that's an Adams.3 polish item).
-        f.render_widget(
-            Paragraph::new(format!(" > {}_", mdi.command_input)).style(cyan),
-            area,
-        );
+        let prompt = if mdi.command_input.is_empty() {
+            " > next command…  (Tab/Esc leaves)_".to_owned()
+        } else {
+            format!(" > {}_", mdi.command_input)
+        };
+        f.render_widget(Paragraph::new(prompt).style(cyan), area);
     } else {
         // Phase Adams.8 — chip-mode (idle) hint. The cheat
         // sheet row above already lists verbs, so this row
@@ -856,6 +863,7 @@ fn centered_rect(pct_x: u16, pct_y: u16, r: Rect) -> Rect {
 #[cfg(test)]
 mod app_snapshot_tests {
     use crate::tui::app::{App, Screen};
+    use crate::tui::event::Action;
     use ratatui::backend::TestBackend;
     use ratatui::Terminal;
 
@@ -913,6 +921,26 @@ mod app_snapshot_tests {
         assert!(
             text.contains("Loading data") || text.contains("Press ?"),
             "status line missing from Home, got:\n{text}"
+        );
+    }
+
+    /// MDI command chaining should be visually discoverable after
+    /// Enter: the bar stays focused and tells the user how to keep
+    /// issuing commands or leave command mode.
+    #[test]
+    fn l0_mdi_cmdbar_success_hint_renders_after_submit() {
+        let mut app = App::new(true);
+        app.mdi = Some(crate::tui::mdi::MdiLayout::default());
+        app.handle(Action::Char(':'));
+        for c in "stats".chars() {
+            app.handle(Action::Char(c));
+        }
+        app.handle(Action::Enter);
+
+        let text = render_app_to_text(&app, 140, 30);
+        assert!(
+            text.contains("type next command") && text.contains("Tab/Esc leaves"),
+            "command chain hint missing after submit, got:\n{text}"
         );
     }
 
@@ -1268,8 +1296,6 @@ mod app_snapshot_tests {
         let store = icelines_fetch::snapshot::SnapshotStore::new(dir.path());
         (dir, store)
     }
-
-    use crate::tui::event::Action;
 
     /// Boot with bundled data → render Home. Real user content (team
     /// abbrevs from the ranked list) must appear. If this fails, the

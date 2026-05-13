@@ -869,15 +869,23 @@ mod tests {
     }
 
     #[test]
-    fn s076_double_focus_via_colon_clears_input() {
+    fn s076_colon_reentry_after_submit_keeps_chain_smooth() {
         let mut app = fresh_mdi();
-        type_cmd(&mut app, "garb");
-        // Press `:` again while focused — should it re-clear?
-        // Currently: while focused, `:` (Char) goes through
-        // handle_command_bar, which pushes ':' as text.
+        type_cmd(&mut app, "stats");
+        submit(&mut app);
+        assert!(app.mdi.as_ref().unwrap().command_bar_focused);
         app.handle(Action::Char(':'));
+        for c in "goalies".chars() {
+            app.handle(ch(c));
+        }
+        submit(&mut app);
         let m = app.mdi.as_ref().unwrap();
-        assert_eq!(m.command_input, "garb:");
+        assert_eq!(m.command_input, "");
+        assert_eq!(
+            m.command_history.front().map(String::as_str),
+            Some("goalies")
+        );
+        assert!(matches!(app.screen, Screen::Goalies));
     }
 
     #[test]

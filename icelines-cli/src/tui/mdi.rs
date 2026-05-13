@@ -67,6 +67,11 @@ pub struct MdiLayout {
     /// per spec glass-4.
     pub flash_error: Option<String>,
 
+    /// Transient success / handoff feedback shown in the command
+    /// row after a successful command while sticky command focus is
+    /// retained. Cleared on the next edit or cancel.
+    pub flash_info: Option<String>,
+
     /// Phase Adams.2 — command bar has captured keyboard input.
     /// Set true when user types `:` or `/` (entry triggers).
     /// Reset to false on Enter (after submit), Escape, or
@@ -123,6 +128,7 @@ impl Default for MdiLayout {
             command_history: std::collections::VecDeque::new(),
             command_history_cursor: None,
             flash_error: None,
+            flash_info: None,
             command_bar_focused: false,
             ai_pending: None,
         }

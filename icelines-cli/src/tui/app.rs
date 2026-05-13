@@ -681,6 +681,7 @@ impl App {
                         // `/` so the user can keep typing.
                         m.command_input.push('/');
                         m.flash_error = None;
+                        m.flash_info = None;
                     }
                     return false;
                 }
@@ -689,6 +690,7 @@ impl App {
                         m.command_bar_focused = true;
                         m.command_input.clear();
                         m.flash_error = None;
+                        m.flash_info = None;
                     }
                     return false;
                 }
@@ -2237,6 +2239,7 @@ impl App {
                     m.command_input.clear();
                     m.command_bar_focused = false;
                     m.flash_error = None;
+                    m.flash_info = None;
                     m.command_history_cursor = None;
                     // Phase Adams.6 — Esc also cancels an
                     // in-flight AI request. Dropping the receiver
@@ -2254,6 +2257,7 @@ impl App {
                         m.command_bar_focused = false;
                     }
                     m.flash_error = None;
+                    m.flash_info = None;
                     m.command_history_cursor = None;
                 }
                 false
@@ -2261,8 +2265,11 @@ impl App {
             Action::Enter => self.submit_command_bar(),
             Action::Char(c) => {
                 if let Some(m) = self.mdi.as_mut() {
-                    m.command_input.push(c);
+                    if !(c == ':' && m.command_bar_focused && m.command_input.is_empty()) {
+                        m.command_input.push(c);
+                    }
                     m.flash_error = None;
+                    m.flash_info = None;
                     m.command_history_cursor = None;
                 }
                 false
@@ -2271,6 +2278,7 @@ impl App {
                 if let Some(m) = self.mdi.as_mut() {
                     m.command_input.push(' ');
                     m.flash_error = None;
+                    m.flash_info = None;
                     m.command_history_cursor = None;
                 }
                 false
@@ -2314,6 +2322,7 @@ impl App {
                     m.command_bar_focused = false;
                     m.command_history_cursor = None;
                     m.flash_error = None;
+                    m.flash_info = None;
                 }
                 false
             }
@@ -2338,6 +2347,7 @@ impl App {
             m.command_bar_focused = true;
             m.command_history_cursor = None;
             m.flash_error = None;
+            m.flash_info = None;
             self.status = status.into();
         } else {
             self.status = status.into();
@@ -2362,6 +2372,7 @@ impl App {
         m.command_history_cursor = Some(next_cursor);
         m.command_input = m.command_history[next_cursor].clone();
         m.flash_error = None;
+        m.flash_info = None;
     }
 
     /// Phase Adams.8 — walk the command history forward (newer
@@ -2384,21 +2395,23 @@ impl App {
             m.command_input = m.command_history[next].clone();
         }
         m.flash_error = None;
+        m.flash_info = None;
     }
 
     fn cmdbar_push(&mut self, c: char) -> bool {
         if let Some(m) = self.mdi.as_mut() {
             m.command_input.push(c);
             m.flash_error = None;
+            m.flash_info = None;
             m.command_history_cursor = None;
         }
         false
     }
 
     /// Phase Adams.2 — Enter pressed in the command bar: parse the
-    /// input, execute on success, surface flash on error. Always
-    /// clears focus + input on success; preserves input on parse
-    /// error so the user can fix it.
+    /// input, execute on success, surface flash on error. Clears
+    /// input on success but keeps focus for command chaining;
+    /// preserves input on parse error so the user can fix it.
     fn submit_command_bar(&mut self) -> bool {
         let input = match self.mdi.as_ref() {
             Some(m) => m.command_input.clone(),
@@ -2409,6 +2422,7 @@ impl App {
             if let Some(m) = self.mdi.as_mut() {
                 m.command_bar_focused = false;
                 m.command_input.clear();
+                m.flash_info = None;
             }
             return false;
         }
@@ -2424,6 +2438,9 @@ impl App {
                     crate::tui::mdi::push_command_history(&mut m.command_history, input.clone());
                     m.command_input.clear();
                     m.command_history_cursor = None;
+                    m.flash_info = Some(format!(
+                        "ran `{input}` · type next command · Tab/Esc leaves"
+                    ));
                     // m.command_bar_focused stays true
                 }
                 match result {
@@ -2431,6 +2448,12 @@ impl App {
                     crate::tui::command::ExecResult::Quit => true,
                     crate::tui::command::ExecResult::Flash(msg) => {
                         self.status = msg;
+                        if let Some(m) = self.mdi.as_mut() {
+                            m.flash_info = Some(format!(
+                                "{} · type next command · Tab/Esc leaves",
+                                self.status
+                            ));
+                        }
                         false
                     }
                 }
@@ -2449,6 +2472,7 @@ impl App {
                 }
                 if let Some(m) = self.mdi.as_mut() {
                     m.flash_error = Some(parse_err.to_string());
+                    m.flash_info = None;
                     // Keep input + focus so user can edit.
                 }
                 false
@@ -2504,6 +2528,7 @@ impl App {
                 provider_name,
                 started_at: std::time::Instant::now(),
             });
+            m.flash_info = None;
             m.flash_error = Some(format!(
                 "asking {provider_name}… (Esc to cancel) — {parse_err}"
             ));
@@ -2539,6 +2564,7 @@ impl App {
                 // user can edit manually.
                 if let Some(m) = self.mdi.as_mut() {
                     m.flash_error = Some(format!("{} failed: {ai_err}", pending.provider_name));
+                    m.flash_info = None;
                     m.command_input = pending.original_input.clone();
                     m.command_bar_focused = true;
                 }
@@ -2554,6 +2580,7 @@ impl App {
                 if let Some(m) = self.mdi.as_mut() {
                     m.flash_error =
                         Some(format!("{} aborted (no response)", pending.provider_name));
+                    m.flash_info = None;
                     m.command_input = pending.original_input.clone();
                     m.command_bar_focused = true;
                 }
@@ -2573,6 +2600,9 @@ impl App {
                     m.command_input.clear();
                     // Phase Adams.8 — sticky focus on AI success too.
                     m.flash_error = None;
+                    m.flash_info = Some(format!(
+                        "{provider_name} ran `{trimmed}` · type next command · Tab/Esc leaves"
+                    ));
                     crate::tui::mdi::push_command_history(
                         &mut m.command_history,
                         format!("ai:{trimmed}"),
@@ -2590,6 +2620,12 @@ impl App {
                     }
                     crate::tui::command::ExecResult::Flash(msg) => {
                         self.status = format!("{provider_name} → {msg}");
+                        if let Some(m) = self.mdi.as_mut() {
+                            m.flash_info = Some(format!(
+                                "{} · type next command · Tab/Esc leaves",
+                                self.status
+                            ));
+                        }
                     }
                 }
             }
@@ -2601,6 +2637,7 @@ impl App {
                     m.flash_error = Some(format!(
                         "{provider_name} returned unparseable: {parse_err} — got {trimmed:?}"
                     ));
+                    m.flash_info = None;
                     m.command_bar_focused = true;
                 }
             }
@@ -6380,6 +6417,56 @@ mod tests {
         let m = app.mdi.as_ref().unwrap();
         assert!(m.command_bar_focused, "focus stays after submit");
         assert_eq!(m.command_input, "");
+    }
+
+    /// Regression: after sticky focus leaves the bar empty, users
+    /// often press `:` again out of habit before their next command.
+    /// Treat that as re-entering command mode, not as literal input.
+    #[test]
+    fn l0_adams_cmdbar_colon_reentry_after_submit_is_noop() {
+        let mut app = fresh_mdi_app();
+        app.handle(Action::Char(':'));
+        for c in "stats".chars() {
+            app.handle(Action::Char(c));
+        }
+        app.handle(Action::Enter);
+        app.handle(Action::Char(':'));
+        for c in "goalies".chars() {
+            app.handle(Action::Char(c));
+        }
+        app.handle(Action::Enter);
+
+        let m = app.mdi.as_ref().unwrap();
+        assert!(m.command_bar_focused);
+        assert_eq!(m.command_input, "");
+        assert_eq!(
+            m.command_history.front().map(String::as_str),
+            Some("goalies")
+        );
+        assert!(matches!(app.screen, Screen::Goalies));
+    }
+
+    /// Successful command execution leaves a visible handoff in
+    /// the command row so an empty sticky prompt doesn't look inert.
+    #[test]
+    fn l0_adams_cmdbar_success_sets_chain_hint() {
+        let mut app = fresh_mdi_app();
+        app.handle(Action::Char(':'));
+        for c in "stats".chars() {
+            app.handle(Action::Char(c));
+        }
+        app.handle(Action::Enter);
+
+        let m = app.mdi.as_ref().unwrap();
+        assert!(m
+            .flash_info
+            .as_deref()
+            .unwrap_or("")
+            .contains("next command"));
+        app.handle(Action::Char('g'));
+        let m = app.mdi.as_ref().unwrap();
+        assert!(m.flash_info.is_none());
+        assert_eq!(m.command_input, "g");
     }
 
     /// Tab while focused leaves the bar (defocus + clear).

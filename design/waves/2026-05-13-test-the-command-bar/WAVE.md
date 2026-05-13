@@ -42,6 +42,7 @@ than broad redesign guesses.
 | 02 - Tabbing and focus regression harness | done | `plans/pulse-02.md`; `FOCUS-HARNESS-INVENTORY.md` |
 | 03 - Command vocabulary and subcommand discoverability | done | `plans/pulse-03.md`; `COMMAND-VOCAB-INVENTORY.md` |
 | 04 - Moderated session findings and fixes | done | `plans/pulse-04.md`; `SESSION-FINDINGS.md` |
+| 05 - Sticky command-mode follow-up | done | `plans/pulse-05.md`; `SESSION-FINDINGS.md`; TUI command-bar tests |
 
 ## Closeout Target
 
@@ -64,3 +65,10 @@ the CLI session. The current command bar has strong automated coverage:
 The next true usability step is an external moderated session using
 `USER-TESTING-PROTOCOL.md`; any observed failures should open a new follow-up
 wave or reopen this one with concrete findings.
+
+Post-close user feedback identified a concrete repeated-command friction: after
+Enter kept the command bar focused, pressing `:` again out of habit became
+literal input and the empty focused prompt did not clearly advertise the next
+step. Pulse 05 fixed that behavior without changing the command grammar: `:` at
+an empty focused prompt is now a no-op, successful commands show a chain hint,
+and `COMMANDS.md` documents `Tab`/`Esc` as the way out of sticky command mode.
