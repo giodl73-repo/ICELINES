@@ -354,9 +354,9 @@ fn chrome_screen_label(s: &Screen) -> &'static str {
 fn render_mdi_cheat_sheet(f: &mut Frame, area: Rect) {
     let yellow = Style::default().fg(Color::Yellow);
     let line = if area.width >= 140 {
-        " GO  stats goalies poach scores schedule  |  OPEN  team <ABBR> player <name>  |  ASK  query <filter>  |  /help "
+        " GO  stats goalies poach gaps simulate scores  |  OPEN  team <ABBR> player <name>  |  ASK  query <filter>  |  /help "
     } else if area.width >= 100 {
-        " GO  stats goalies poach scores  |  OPEN  team <ABBR> player <name>  |  ASK  query <filter> "
+        " GO  stats goalies poach gaps sim scores  |  OPEN  team <ABBR> player <name>  |  ASK  query <filter> "
     } else {
         " GO stats goalies scores  |  ASK query <filter> "
     };
@@ -4790,10 +4790,14 @@ mod adams_4_render_boundary_tests {
         for verb in &[
             "stats",
             "goalies",
+            "gaps",
+            "simulate",
+            "poach",
             "transactions",
             "playoffs",
             "schedule",
             "query",
+            "fantasy simulate",
             "/fav add",
             "/hide favorites",
             "/help",

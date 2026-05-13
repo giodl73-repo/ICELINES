@@ -14,6 +14,30 @@ The TUI loads instantly with the bundled dataset; no fetch required. Use
 
 ---
 
+## Dashboard command bar
+
+Press `:` to open the command bar. It accepts the same product language as the
+CLI, but stays inside the dashboard:
+
+```text
+stats
+goalies
+team EDM
+player Connor McDavid
+query g >= 30 AND age <= 25
+poach rw cats=hits,blocks free top=12
+fantasy poach top=8 available
+simulate add=Connor_McDavid drop=Bench_Forward weeks=3
+fantasy simulate add Connor_McDavid drop Bench_Forward
+simulate clear
+```
+
+Press `?` in dashboard mode for the full command reference. `Ctrl+H` toggles
+Favorites, `Ctrl+L` toggles Schedule, and `/help` opens the same reference from
+the command bar.
+
+---
+
 ## Classic tabs
 
 ```

@@ -1150,7 +1150,7 @@ mod tests {
         }
         // Cheat sheet row contains canonical verbs.
         assert!(
-            text.contains("stats") && text.contains("goalies"),
+            text.contains("stats") && text.contains("goalies") && text.contains("simulate"),
             "cheat sheet must list verbs at width 140; got:\n{text}"
         );
     }
@@ -1211,6 +1211,20 @@ mod tests {
         submit(&mut app);
         type_slash(&mut app, "show schedule");
         submit(&mut app);
+        type_cmd(&mut app, "poach rw cats=hits,blocks free top=12");
+        submit(&mut app);
+        assert!(matches!(app.screen, Screen::Poach));
+        type_cmd(
+            &mut app,
+            "simulate add=Connor_McDavid drop=Bench_Forward weeks=3",
+        );
+        submit(&mut app);
+        assert!(matches!(app.screen, Screen::FantasySim));
+        assert_eq!(app.fantasy_sim.weeks, 3);
+        assert_eq!(
+            app.fantasy_sim.add_player.as_deref(),
+            Some("Connor McDavid")
+        );
         type_cmd(&mut app, "playoffs");
         submit(&mut app);
         app.handle(Action::Help);

@@ -98,8 +98,9 @@ Default dashboard: scores ribbon, Favorites/watchlist pane, central workspace,
 Schedule/context pane, and command bar. Use `icelines tui --classic` for the
 older tabbed UI.
 
-- `:` opens the command bar; try `stats`, `goalies`, `team EDM`, or
-  `query age<=24 AND p>=80`.
+- `:` opens the command bar; try `stats`, `goalies`, `team EDM`,
+  `query age<=24 AND p>=80`, `poach rw cats=hits,blocks free top=12`, or
+  `simulate add=Connor_McDavid drop=Bench_Forward weeks=3`.
 - `Ctrl+H` toggles Favorites; `Ctrl+L` toggles Schedule.
 - `y` opens the season picker for time-travel; `g`/`f` add players to
   groups; `?` shows the full key map.
