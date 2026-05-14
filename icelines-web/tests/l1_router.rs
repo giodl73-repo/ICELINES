@@ -1564,6 +1564,49 @@ async fn l1_player_json_envelope_shape() {
 }
 
 #[tokio::test]
+async fn l1_player_json_does_not_mutate_shared_repo_windows() {
+    let season = Season(20242025);
+    let season_type = SeasonType::Regular;
+    let pid = PlayerId(8478402);
+    let store = SnapshotStore::new(SnapshotStore::default_root());
+    let load = load_into_repo(season, season_type, &store)
+        .expect("bundled regular-season repo should load");
+    let state = WebState::with_repo_and_config(load.repo, WebConfig::new("20242025", "regular"));
+    let before_windows = state.repo.read().await.resident_windows();
+    let app = router(state.clone());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/player/8478402")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json = response_json(response, 1024 * 1024).await;
+    assert!(
+        json["data"]["career"]
+            .as_array()
+            .is_some_and(|rows| rows.len() > 1),
+        "request-local fan-out should still produce career rows"
+    );
+    let after_windows = state.repo.read().await.resident_windows();
+    assert_eq!(
+        after_windows, before_windows,
+        "player request must not add career windows to shared repo"
+    );
+
+    let shared = state.repo.read().await;
+    assert!(
+        shared.season(pid, Season(20232024), season_type).is_none(),
+        "prior season should stay out of shared active repo"
+    );
+}
+
+#[tokio::test]
 async fn l1_player_json_rows_match_player_card_view() {
     let season = Season(20242025);
     let season_type = SeasonType::Regular;

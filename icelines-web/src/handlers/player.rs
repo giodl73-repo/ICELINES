@@ -7,6 +7,7 @@ use axum::response::{Html, IntoResponse, Response};
 use icelines_core::identity::PlayerId;
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
+use icelines_core::stats_repository::StatsRepository;
 use icelines_core::{
     MetricCell, MetricValue, PlayerCardView, PlayerCareerSummary, PlayerPreNhlCareerRow,
     PlayerSeasonSummary,
@@ -38,24 +39,18 @@ pub async fn get_player(State(state): State<WebState>, Path(id): Path<u32>) -> R
     let season = Season(season_u32);
     let pid = PlayerId(id);
 
-    // King.3.2 — lazy career fan-out (UX.1 pattern). Brief
-    // write lock loads all 38 bundled seasons for this pid
-    // into the repo. Idempotent — re-opening the same player
-    // is a ~5ms no-op aside from the bundle scans.
-    // Per spec: subsequent reads are concurrent (RwLock).
-    {
-        let mut repo = state.repo.write().await;
-        if let Err(e) = icelines_fetch::stats_loader::load_player_career_into_repo(&mut repo, pid) {
+    let (view, compare_suggestions) = {
+        let repo = state.repo.read().await;
+        let mut local_repo = player_local_repo(&repo, pid);
+        if let Err(e) =
+            icelines_fetch::stats_loader::load_player_career_into_repo(&mut local_repo, pid)
+        {
             eprintln!(
                 "warn: career fan-out for pid={id} failed: {e} — \
                          player card will show only seasons already loaded"
             );
         }
-    }
-
-    let (view, compare_suggestions) = {
-        let repo = state.repo.read().await;
-        let view = match PlayerCardView::from_repository(&repo, pid, season, season_type) {
+        let view = match PlayerCardView::from_repository(&local_repo, pid, season, season_type) {
             Some(view) => view,
             None => {
                 return not_found_page(format!(
@@ -105,6 +100,30 @@ fn not_found_page(msg: String) -> Response {
         )),
     )
         .into_response()
+}
+
+fn player_local_repo(shared: &StatsRepository, pid: PlayerId) -> StatsRepository {
+    let mut local = StatsRepository::with_lru_cap(shared.lru_cap());
+    if let Some(identity) = shared.identity(pid) {
+        if let Err(err) = local.upsert_identity(identity.clone()) {
+            eprintln!(
+                "warn: local player repo identity merge for pid={} failed: {err}",
+                pid.0
+            );
+        }
+    }
+    if let Some(contract) = shared.contract(pid) {
+        local.upsert_contract(pid, contract.clone());
+    }
+    for stats in shared.iter_stats().filter(|stats| stats.player_id == pid) {
+        if let Err(err) = local.upsert_stats(stats.clone()) {
+            eprintln!(
+                "warn: local player repo stat copy for pid={} failed: {err}",
+                pid.0
+            );
+        }
+    }
+    local
 }
 
 // Shared player page projectors.
@@ -428,20 +447,18 @@ pub async fn get_player_json(State(state): State<WebState>, Path(id): Path<u32>)
     let season = Season(season_u32);
     let pid = PlayerId(id);
 
-    // Mirror the HTML handler's lazy career fan-out.
-    {
-        let mut repo = state.repo.write().await;
-        if let Err(e) = icelines_fetch::stats_loader::load_player_career_into_repo(&mut repo, pid) {
+    let mut view = {
+        let repo = state.repo.read().await;
+        let mut local_repo = player_local_repo(&repo, pid);
+        if let Err(e) =
+            icelines_fetch::stats_loader::load_player_career_into_repo(&mut local_repo, pid)
+        {
             eprintln!(
                 "warn: career fan-out for pid={id} failed: {e} — \
                          /api/v1/player/:id will return only seasons already loaded"
             );
         }
-    }
-
-    let mut view = {
-        let repo = state.repo.read().await;
-        match PlayerCardView::from_repository(&repo, pid, season, season_type) {
+        match PlayerCardView::from_repository(&local_repo, pid, season, season_type) {
             Some(view) => view,
             None => {
                 return crate::api::json_error_meta(
