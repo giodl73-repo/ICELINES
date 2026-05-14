@@ -611,6 +611,31 @@ pub struct TeamSeasonTemplateRow {
 }
 
 #[derive(Template)]
+#[template(path = "team_streaks.html")]
+pub struct TeamPlayerStreaksTemplate {
+    pub active_label: String,
+    pub team_abbrev: String,
+    pub season: String,
+    pub season_pretty: String,
+    pub season_type: String,
+    pub rows: Vec<TeamPlayerStreaksTemplateRow>,
+    pub games_loaded: usize,
+    pub players_loaded: usize,
+}
+
+#[derive(Debug, Clone)]
+pub struct TeamPlayerStreaksTemplateRow {
+    pub metric: String,
+    pub player_id: u32,
+    pub player_name: String,
+    pub current: u32,
+    pub longest: u32,
+    pub start: String,
+    pub end: String,
+    pub games_loaded: usize,
+}
+
+#[derive(Template)]
 #[template(path = "records.html")]
 pub struct RecordsTemplate {
     pub active_label: String,

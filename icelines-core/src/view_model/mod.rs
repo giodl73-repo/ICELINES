@@ -118,7 +118,10 @@ pub use snapshot::{
     SnapshotEntryInput, SnapshotMutationIntent, SnapshotMutationOperation, SnapshotRow,
     SnapshotView,
 };
-pub use streaks::{PlayerGameLineInput, PlayerStreakRow, PlayerStreaksView};
+pub use streaks::{
+    PlayerGameLineInput, PlayerStreakRow, PlayerStreaksView, TeamPlayerStreakLeaderRow,
+    TeamPlayerStreaksView,
+};
 pub use team_depth::{
     DeploymentEvidence, DepthGoalieSlot, DepthLeagueView, DepthLine, DepthPair, DepthPlayerSlot,
     DepthSlotKind, DepthSummary, DepthTeamStrengthRow, TeamDepthChartColumn, TeamDepthChartPlayer,

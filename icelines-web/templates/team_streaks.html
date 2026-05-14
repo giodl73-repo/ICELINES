@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}{{ team_abbrev }} streak leaders{% endblock %}
+
+{% block content %}
+<p class="back-link-row">
+    <a href="/team/{{ team_abbrev }}">← roster/depth</a>
+    <span class="inline-separator">·</span>
+    <a href="/team/{{ team_abbrev }}/season">season summary</a>
+    <span class="inline-separator">·</span>
+    <a href="/records/team/{{ team_abbrev }}">records</a>
+    <span class="inline-separator">·</span>
+    <a href="/api/v1/team/{{ team_abbrev }}/streaks">JSON</a>
+</p>
+
+<header class="team-banner team-{{ team_abbrev }}">
+    <h1>{{ team_abbrev }} Player Streak Leaders</h1>
+    <p class="team-banner-meta">
+        {{ active_label }} · {{ season_pretty }} · {{ season_type }} · per-game boxscore rows
+    </p>
+</header>
+
+<p class="context-line">
+    {{ games_loaded }} player-game rows loaded across {{ players_loaded }} skaters.
+    Streaks use game order, so they come from the local game cache rather than season totals.
+</p>
+
+{% if rows.is_empty() %}
+<section class="empty-state">
+    <p>No player-game rows are loaded yet for {{ team_abbrev }} in {{ season_pretty }}.</p>
+    <form method="post" action="/admin/game-cache/load" class="inline-form">
+        <input type="hidden" name="season" value="{{ season }}">
+        <input type="hidden" name="season_type" value="{{ season_type }}">
+        <input type="hidden" name="teams" value="{{ team_abbrev }}">
+        <input type="hidden" name="artifacts" value="boxscore">
+        <input type="hidden" name="return_to" value="/team/{{ team_abbrev }}/streaks">
+        <button type="submit">Load {{ team_abbrev }} game cache</button>
+    </form>
+</section>
+{% else %}
+<div class="table-scroll">
+<table>
+    <thead>
+        <tr>
+            <th>Metric</th>
+            <th>Player</th>
+            <th class="numeric">Longest</th>
+            <th class="numeric">Current</th>
+            <th>Start</th>
+            <th>End</th>
+            <th class="numeric">Games</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in rows %}
+        <tr>
+            <td>{{ row.metric }}</td>
+            <td><a href="/player/{{ row.player_id }}">{{ row.player_name }}</a></td>
+            <td class="numeric">{{ row.longest }}</td>
+            <td class="numeric">{{ row.current }}</td>
+            <td>{{ row.start }}</td>
+            <td>{{ row.end }}</td>
+            <td class="numeric">{{ row.games_loaded }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

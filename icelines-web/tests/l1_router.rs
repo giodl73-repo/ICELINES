@@ -1836,6 +1836,63 @@ async fn l1_player_streaks_empty_state_loads_cache_in_web_ui() {
 }
 
 #[tokio::test]
+async fn l1_team_streaks_empty_state_loads_cache_in_web_ui() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/team/EDM/streaks")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let bytes = axum::body::to_bytes(response.into_body(), 512 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+    assert!(
+        body.contains("EDM Player Streak Leaders"),
+        "body was:\n{body}"
+    );
+    assert!(body.contains("/admin/game-cache/load"), "body was:\n{body}");
+    assert!(
+        !body.contains("icelines fetch boxscore"),
+        "team streaks empty state should not send users to the CLI:\n{body}"
+    );
+}
+
+#[tokio::test]
+async fn l1_team_streaks_json_empty_state_uses_shared_envelope() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/team/EDM/streaks")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let json = response_json(response, 512 * 1024).await;
+    assert_data_meta_envelope(&json, "team-streaks");
+    assert_eq!(json["data"]["team"], serde_json::json!("EDM"));
+    assert_eq!(json["data"]["games_loaded"], serde_json::json!(0));
+    assert!(json["data"]["rows"].as_array().is_some_and(Vec::is_empty));
+    assert_eq!(json["meta"]["team_abbrev"], serde_json::json!("EDM"));
+}
+
+#[tokio::test]
 async fn l1_watchlist_route_returns_200_html() {
     let _guard = home_env_lock().await;
     let app = router(WebState::new());

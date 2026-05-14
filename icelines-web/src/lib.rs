@@ -110,6 +110,10 @@ pub fn router(state: WebState) -> Router {
         .route("/team/:abbrev", get(handlers::team::get_team))
         .route("/team/:abbrev/season", get(handlers::team::get_team_season))
         .route(
+            "/team/:abbrev/streaks",
+            get(handlers::team::get_team_streaks),
+        )
+        .route(
             "/records/player/:id",
             get(handlers::records::get_player_records),
         )
@@ -122,6 +126,10 @@ pub fn router(state: WebState) -> Router {
         .route(
             "/api/v1/team/:abbrev/season",
             get(handlers::team::get_team_season_json),
+        )
+        .route(
+            "/api/v1/team/:abbrev/streaks",
+            get(handlers::team::get_team_streaks_json),
         )
         .route(
             "/api/v1/records/player/:id",

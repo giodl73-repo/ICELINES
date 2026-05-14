@@ -1,6 +1,7 @@
 use crate::state::WebState;
 use crate::templates::{
-    GoalieRow, LeaderRow, TeamSeasonTemplate, TeamSeasonTemplateRow, TeamTemplate,
+    GoalieRow, LeaderRow, TeamPlayerStreaksTemplate, TeamPlayerStreaksTemplateRow,
+    TeamSeasonTemplate, TeamSeasonTemplateRow, TeamTemplate,
 };
 use askama::Template;
 use axum::extract::{Path, State};
@@ -9,8 +10,8 @@ use axum::response::{Html, IntoResponse, Response};
 use icelines_core::model::{Season, TeamAbbr};
 use icelines_core::season_stats::SeasonType;
 use icelines_core::view_model::{
-    DepthGoalieSlot, DepthLine, DepthPair, DepthPlayerSlot, TeamDepthView, TeamSeasonGameRow,
-    TeamSeasonVenue, TeamSeasonView,
+    DepthGoalieSlot, DepthLine, DepthPair, DepthPlayerSlot, TeamDepthView, TeamPlayerStreaksView,
+    TeamSeasonGameRow, TeamSeasonVenue, TeamSeasonView, ViewContext, ViewWindow,
 };
 use icelines_core::{MetricCell, MetricValue};
 
@@ -254,6 +255,175 @@ pub async fn get_team_season_json(
         }
         Err(response) => response,
     }
+}
+
+pub async fn get_team_streaks(
+    State(state): State<WebState>,
+    Path(abbrev_raw): Path<String>,
+) -> Response {
+    match build_team_streaks_view(&state, &abbrev_raw).await {
+        Ok((active_label, view)) => {
+            let tmpl = team_streaks_template(active_label, &view);
+            match tmpl.render() {
+                Ok(html) => Html(html).into_response(),
+                Err(e) => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Html(format!("template render failed: {e}")),
+                )
+                    .into_response(),
+            }
+        }
+        Err(response) => response,
+    }
+}
+
+pub async fn get_team_streaks_json(
+    State(state): State<WebState>,
+    Path(abbrev_raw): Path<String>,
+) -> Response {
+    if let Err((abbrev_upper, message)) = parse_team(&abbrev_raw) {
+        return crate::api::json_error_meta(
+            StatusCode::NOT_FOUND,
+            "team-streaks",
+            serde_json::json!({ "team": abbrev_upper }),
+            serde_json::json!({}),
+            message,
+        );
+    }
+
+    match build_team_streaks_view(&state, &abbrev_raw).await {
+        Ok((_active_label, view)) => {
+            let meta = serde_json::json!({
+                "team_abbrev": view.team,
+                "season": view.context.window.season.0.to_string(),
+                "season_type": view.context.window.season_type.label(),
+                "games_loaded": view.games_loaded,
+                "players_loaded": view.players_loaded,
+                "source_state": view.context.source_state,
+            });
+            crate::api::json_data_meta("team-streaks", view, meta)
+        }
+        Err(response) => response,
+    }
+}
+
+async fn build_team_streaks_view(
+    state: &WebState,
+    abbrev_raw: &str,
+) -> Result<(String, TeamPlayerStreaksView), Response> {
+    let team = match parse_team(abbrev_raw) {
+        Ok(team) => team,
+        Err((_abbrev_upper, message)) => {
+            return Err((
+                StatusCode::NOT_FOUND,
+                Html(format!(
+                    "<!doctype html><html><body><h1>Unknown team</h1>\
+                     <p>{message}</p>\
+                     <p><a href=\"/leaders\">back to leaders</a></p>\
+                     </body></html>"
+                )),
+            )
+                .into_response());
+        }
+    };
+    let (active_label, season, season_type) = {
+        let cfg = state.config.read().await;
+        let season = cfg.active_season.parse::<u32>().map(Season).map_err(|_| {
+            crate::api::json_error_meta(
+                StatusCode::BAD_REQUEST,
+                "team-streaks",
+                serde_json::json!({ "team": team.0 }),
+                serde_json::json!({ "season": cfg.active_season }),
+                format!("Season '{}' is not a valid YYYYZZZZ id", cfg.active_season),
+            )
+        })?;
+        (
+            cfg.active_label.clone(),
+            season,
+            SeasonType::parse_lossy(&cfg.active_season_type),
+        )
+    };
+    let data_root = data_root().ok_or_else(|| {
+        crate::api::json_error_meta(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "team-streaks",
+            serde_json::json!({}),
+            serde_json::json!({}),
+            "cannot determine home directory".to_string(),
+        )
+    })?;
+    let store = icelines_fetch::datastore::DataStore::open(&data_root).map_err(|err| {
+        crate::api::json_error_meta(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "team-streaks",
+            serde_json::json!({ "team": team.0 }),
+            serde_json::json!({ "data_root": data_root.display().to_string() }),
+            err.to_string(),
+        )
+    })?;
+    let lines = icelines_fetch::streaks_provider::load_team_game_lines(
+        &store,
+        &team.0,
+        season,
+        season_type,
+    );
+    let context = ViewContext::new(ViewWindow::new(season, season_type));
+    let view = TeamPlayerStreaksView::from_game_lines(context, team.0.to_string(), &lines);
+    Ok((active_label, view))
+}
+
+fn team_streaks_template(
+    active_label: String,
+    view: &TeamPlayerStreaksView,
+) -> TeamPlayerStreaksTemplate {
+    TeamPlayerStreaksTemplate {
+        active_label,
+        team_abbrev: view.team.clone(),
+        season: view.context.window.season.0.to_string(),
+        season_pretty: pretty_season_label(view.context.window.season.0),
+        season_type: view.context.window.season_type.label().to_string(),
+        rows: view.rows.iter().map(team_streaks_template_row).collect(),
+        games_loaded: view.games_loaded,
+        players_loaded: view.players_loaded,
+    }
+}
+
+fn team_streaks_template_row(
+    row: &icelines_core::TeamPlayerStreakLeaderRow,
+) -> TeamPlayerStreaksTemplateRow {
+    TeamPlayerStreaksTemplateRow {
+        metric: row.metric.clone(),
+        player_id: row.player_id,
+        player_name: row.player_name.clone(),
+        current: row.current,
+        longest: row.longest,
+        start: row
+            .longest_start_date
+            .clone()
+            .unwrap_or_else(|| "-".to_string()),
+        end: row
+            .longest_end_date
+            .clone()
+            .unwrap_or_else(|| "-".to_string()),
+        games_loaded: row.games_loaded,
+    }
+}
+
+fn pretty_season_label(season: u32) -> String {
+    let start = season / 10_000;
+    let end = season % 10_000;
+    if start > 0 && end > 0 {
+        format!("{start}-{end_short:02}", end_short = end % 100)
+    } else {
+        season.to_string()
+    }
+}
+
+fn data_root() -> Option<std::path::PathBuf> {
+    std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(std::path::PathBuf::from)
+        .map(|home| home.join(".icelines").join("data"))
 }
 
 async fn build_team_season_view(
