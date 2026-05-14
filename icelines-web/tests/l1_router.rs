@@ -1849,6 +1849,34 @@ async fn l1_watchlist_route_renders_watch_reason_metadata() {
 }
 
 #[tokio::test]
+async fn l1_favorites_and_watchlist_bad_active_season_return_typed_errors() {
+    let state = WebState::new();
+    {
+        let mut cfg = state.config.write().await;
+        *cfg = icelines_web::WebConfig::new("not-a-season", "regular");
+    }
+
+    for (uri, route) in [("/favorites", "favorites"), ("/watchlist", "watchlist")] {
+        let app = router(state.clone());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri(uri)
+                    .body(Body::empty())
+                    .expect("request builder ok"),
+            )
+            .await
+            .expect("oneshot dispatch ok");
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        let json = response_json(response, 256 * 1024).await;
+        let obj = assert_shared_error_envelope(&json, route);
+        assert_eq!(obj["meta"]["season"], serde_json::json!("not-a-season"));
+        assert!(obj["data"].as_array().is_some_and(Vec::is_empty));
+    }
+}
+
+#[tokio::test]
 async fn l1_favorites_json_returns_group_members() {
     let _guard = home_env_lock().await;
     let dir = tempfile::TempDir::new().expect("temp home");
@@ -4186,6 +4214,39 @@ async fn l1_transactions_json_envelope_shape() {
     assert_eq!(json["meta"]["active_team"], "TOR");
     assert!(json["meta"]["total"].is_number());
     assert!(json["data"].is_array());
+}
+
+#[tokio::test]
+async fn l1_transactions_json_missing_source_returns_typed_error() {
+    let dir = tempfile::TempDir::new().expect("temp snapshots root");
+    let state = WebState {
+        snapshots_root: std::sync::Arc::new(Some(dir.path().join("snapshots"))),
+        ..WebState::new()
+    };
+    {
+        let mut cfg = state.config.write().await;
+        *cfg = icelines_web::WebConfig::new("20992099", "regular");
+    }
+    let app = router(state);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/transactions")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    let json = response_json(response, 256 * 1024).await;
+    let obj = assert_shared_error_envelope(&json, "transactions");
+    assert_eq!(obj["meta"]["season"], serde_json::json!("2099-99"));
+    assert!(obj["data"].as_array().is_some_and(Vec::is_empty));
+    assert!(obj["error"]
+        .as_str()
+        .is_some_and(|msg| msg.contains("could not be loaded")));
 }
 
 /// l1_unknown_route_returns_404

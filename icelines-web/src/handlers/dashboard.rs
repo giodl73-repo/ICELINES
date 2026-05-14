@@ -931,7 +931,11 @@ async fn transactions_workspace_summary(state: &WebState, path: &str) -> Vec<Das
     let q = transactions_query_from_workspace(path);
     match super::transactions::build_transactions_result(state, &q).await {
         Ok(result) => transactions_summary_rows(&result),
-        Err(error) => vec![summary_row("Transactions", "Bad filter", error)],
+        Err(error) => vec![summary_row(
+            "Transactions",
+            error.title(),
+            error.message().to_string(),
+        )],
     }
 }
 

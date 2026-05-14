@@ -21,6 +21,10 @@ use serde::Deserialize;
 
 pub async fn get_favorites(State(state): State<crate::WebState>) -> Response {
     let members = read_group_members("Favorites");
+    let (active_label, context) = match favorites_context(&state, "favorites").await {
+        Ok(context) => context,
+        Err(response) => return response,
+    };
 
     // Phase Foster +21 — for each favorited player resolve to
     // a PlayerId and walk the persisted boxscore JSON to pull
@@ -28,7 +32,6 @@ pub async fn get_favorites(State(state): State<crate::WebState>) -> Response {
     // → row drops to "no resolved pid"; missing boxscore →
     // dash row.
     let stat_lines = compute_player_stat_lines(&members).await;
-    let (active_label, context) = favorites_context(&state).await;
     let view = FavoritesView::from_members(
         context,
         "Favorites".to_string(),
@@ -63,7 +66,10 @@ pub async fn get_watchlist(State(state): State<crate::WebState>) -> Response {
     let members = read_group_members("Watchlist");
     let notes = read_watch_notes();
     let alerts = read_watch_alert_events(5);
-    let (active_label, context) = favorites_context(&state).await;
+    let (active_label, context) = match favorites_context(&state, "watchlist").await {
+        Ok(context) => context,
+        Err(response) => return response,
+    };
     let view = WatchlistView::from_members(
         context,
         "Watchlist".to_string(),
@@ -123,18 +129,25 @@ pub async fn get_favorites_json() -> Response {
     .into_response()
 }
 
-async fn favorites_context(state: &crate::WebState) -> (String, ViewContext) {
+async fn favorites_context(
+    state: &crate::WebState,
+    route: &'static str,
+) -> Result<(String, ViewContext), Response> {
     let cfg = state.config.read().await;
-    let season = cfg
-        .active_season
-        .parse::<u32>()
-        .map(Season)
-        .unwrap_or(Season(0));
+    let season = cfg.active_season.parse::<u32>().map(Season).map_err(|_| {
+        crate::api::json_error_meta(
+            StatusCode::BAD_REQUEST,
+            route,
+            Vec::<FavoriteMemberInput>::new(),
+            serde_json::json!({ "season": cfg.active_season }),
+            format!("Season '{}' is not a valid YYYYZZZZ id", cfg.active_season),
+        )
+    })?;
     let season_type = SeasonType::parse_lossy(&cfg.active_season_type);
-    (
+    Ok((
         cfg.active_label.clone(),
         ViewContext::new(ViewWindow::new(season, season_type)),
-    )
+    ))
 }
 
 fn favorite_member_inputs(members: &[(String, String)]) -> Vec<FavoriteMemberInput> {

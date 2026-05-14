@@ -35,6 +35,54 @@ pub(super) struct TransactionsResult {
     pub(super) earliest_season_pretty: String,
 }
 
+#[derive(Debug)]
+pub(super) enum TransactionsBuildError {
+    BadRequest { message: String, season: String },
+    Unavailable { message: String, season: String },
+}
+
+impl TransactionsBuildError {
+    fn bad_request(message: impl Into<String>, season: &str) -> Self {
+        Self::BadRequest {
+            message: message.into(),
+            season: season.to_string(),
+        }
+    }
+
+    fn unavailable(message: impl Into<String>, season: &str) -> Self {
+        Self::Unavailable {
+            message: message.into(),
+            season: season.to_string(),
+        }
+    }
+
+    pub(super) fn message(&self) -> &str {
+        match self {
+            Self::BadRequest { message, .. } | Self::Unavailable { message, .. } => message,
+        }
+    }
+
+    fn season(&self) -> &str {
+        match self {
+            Self::BadRequest { season, .. } | Self::Unavailable { season, .. } => season,
+        }
+    }
+
+    fn status(&self) -> StatusCode {
+        match self {
+            Self::BadRequest { .. } => StatusCode::BAD_REQUEST,
+            Self::Unavailable { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+
+    pub(super) fn title(&self) -> &'static str {
+        match self {
+            Self::BadRequest { .. } => "Bad transactions request",
+            Self::Unavailable { .. } => "Transactions unavailable",
+        }
+    }
+}
+
 #[derive(Debug, serde::Serialize)]
 struct TransactionsMeta {
     season: String,
@@ -60,14 +108,16 @@ pub async fn get_transactions(
 ) -> Response {
     let result = match build_transactions_result(&state, &q).await {
         Ok(result) => result,
-        Err(msg) => {
+        Err(err) => {
             return (
-                StatusCode::BAD_REQUEST,
+                err.status(),
                 Html(format!(
                     "<!doctype html><html><body>\
-                             <h1>Bad filter</h1><p>{msg}</p>\
+                             <h1>{}</h1><p>{}</p>\
                              <p><a href=\"/transactions\">back to transactions</a></p>\
                              </body></html>",
+                    err.title(),
+                    err.message()
                 )),
             )
                 .into_response();
@@ -116,20 +166,12 @@ pub async fn get_transactions_json(
                 earliest_season: result.earliest_season_pretty,
             },
         ),
-        Err(msg) => crate::api::json_error_meta(
-            StatusCode::BAD_REQUEST,
+        Err(err) => crate::api::json_error_meta(
+            err.status(),
             "transactions",
             Vec::<TransactionRow>::new(),
-            TransactionsMeta {
-                season: String::new(),
-                total: 0,
-                active_kind: q.kind.unwrap_or_default(),
-                active_team: q.team.unwrap_or_default(),
-                empty_unfiltered: true,
-                out_of_coverage: false,
-                earliest_season: pretty_season(TRANSACTIONS_EARLIEST_SEASON),
-            },
-            msg,
+            transactions_error_meta(&q, err.season()),
+            err.message().to_string(),
         ),
     }
 }
@@ -137,15 +179,28 @@ pub async fn get_transactions_json(
 pub(super) async fn build_transactions_result(
     state: &WebState,
     q: &TransactionsQuery,
-) -> Result<TransactionsResult, String> {
-    let (season_str, active_label) = {
+) -> Result<TransactionsResult, TransactionsBuildError> {
+    let (season_str, season_type, active_label) = {
         let cfg = state.config.read().await;
-        (cfg.active_season.clone(), cfg.active_label.clone())
+        (
+            cfg.active_season.clone(),
+            SeasonType::parse_lossy(&cfg.active_season_type),
+            cfg.active_label.clone(),
+        )
     };
+    let season = season_str.parse::<u32>().map(Season).map_err(|_| {
+        TransactionsBuildError::bad_request(
+            format!("Season '{season_str}' is not a valid YYYYZZZZ id"),
+            &season_str,
+        )
+    })?;
 
     let kind_filter: Option<Vec<TransactionKind>> = match q.kind.as_deref() {
         None | Some("") => None,
-        Some(k) => Some(TransactionKind::parse_filter(k)?),
+        Some(k) => Some(
+            TransactionKind::parse_filter(k)
+                .map_err(|msg| TransactionsBuildError::bad_request(msg, &season_str))?,
+        ),
     };
     let team_filter = q
         .team
@@ -161,19 +216,21 @@ pub(super) async fn build_transactions_result(
     };
     let store = icelines_fetch::snapshot::SnapshotStore::new(snapshots_root);
 
-    let envelope_result = if out_of_coverage {
-        Err(())
+    let rows = if out_of_coverage {
+        Vec::new()
     } else {
         icelines_fetch::bundled::load_transactions_with_fallback(&season_str, &store)
-            .map_err(|_| ())
+            .map_err(|err| {
+                TransactionsBuildError::unavailable(
+                    format!("Transactions data for season {season_str} could not be loaded: {err}"),
+                    &season_str,
+                )
+            })?
+            .rows
     };
 
-    let rows = envelope_result.map(|env| env.rows).unwrap_or_default();
     let view = TransactionsView::from_rows(
-        ViewContext::new(ViewWindow::new(
-            season_str.parse::<u32>().map(Season).unwrap_or(Season(0)),
-            SeasonType::parse_lossy(&state.config.read().await.active_season_type),
-        )),
+        ViewContext::new(ViewWindow::new(season, season_type)),
         season_str,
         rows,
         kind_filter.as_deref(),
@@ -193,6 +250,18 @@ pub(super) async fn build_transactions_result(
         out_of_coverage: view.out_of_coverage,
         earliest_season_pretty: view.earliest_season_pretty,
     })
+}
+
+fn transactions_error_meta(q: &TransactionsQuery, season: &str) -> TransactionsMeta {
+    TransactionsMeta {
+        season: pretty_season(season),
+        total: 0,
+        active_kind: q.kind.clone().unwrap_or_default(),
+        active_team: q.team.clone().unwrap_or_default(),
+        empty_unfiltered: true,
+        out_of_coverage: false,
+        earliest_season: pretty_season(TRANSACTIONS_EARLIEST_SEASON),
+    }
 }
 
 fn transaction_row_from_view(row: &TransactionViewRow) -> TransactionRow {
