@@ -17,3 +17,9 @@ opponents.
 
 - Core/fetch L0 tests for any parser additions.
 - No live network calls in tests.
+
+## Result
+
+Done. `RECORDS-DATA-INVENTORY.md` records the existing sources, feasible
+metrics, missing event data, ViewModel input shapes, and implementation order.
+No parser code changed in this pulse, so no new L0 parser tests were required.
