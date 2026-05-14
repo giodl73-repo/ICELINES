@@ -22,6 +22,7 @@
         {{ skaters.len() }} skater{% if skaters.len() != 1 %}s{% endif %}
         · {{ goalies.len() }} goalie{% if goalies.len() != 1 %}s{% endif %}
         · <a href="/team/{{ team_abbrev }}/season">season performance</a>
+        · <a href="/records/team/{{ team_abbrev }}">records</a>
     </p>
     {# Foster +18 — one-click favorite. POST so it's not CSRF'd via prefetch. #}
     <form method="POST" action="/favorites/add" class="team-banner-actions">

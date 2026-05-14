@@ -25,6 +25,7 @@
     {% if team_link != "" %}
         <a class="team-link team-{{ team_link }}" href="/team/{{ team_link }}">{{ team_link }} roster →</a>
     {% endif %}
+    <a href="/records/player/{{ nhl_id }}">Records</a>
     <a href="/goalies">Goalies</a>
     <a href="/transactions?team={{ team_link }}">Transactions</a>
     <span class="action-spacer"></span>
@@ -223,6 +224,7 @@ Source: IceLines · /player/{{ nhl_id }}
 <p class="page-section meta-line">
     Career table sourced from the 38-season bundle (1987-88 → 2025-26).
     {% if !pre_nhl_career.is_empty() %}Pre-NHL data via <code>icelines fetch career</code>.{% endif %}
+    Records: <a href="/records/player/{{ nhl_id }}"><code>/records/player/{{ nhl_id }}</code></a>.
     JSON twin: <a href="/api/v1/player/{{ nhl_id }}"><code>/api/v1/player/{{ nhl_id }}</code></a>.
 </p>
 {% endblock %}

@@ -3543,6 +3543,10 @@ mod app_snapshot_tests {
             )),
             "Player TUI header must include PlayerCardView active team/position, got:\n{text}"
         );
+        assert!(
+            text.contains("Records") && text.contains("/records/player/"),
+            "Player TUI card must expose records entry point, got:\n{text}"
+        );
     }
 
     #[test]

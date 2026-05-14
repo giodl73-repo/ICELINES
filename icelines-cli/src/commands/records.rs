@@ -3,7 +3,7 @@ use icelines_core::{
     model::Season, season_stats::SeasonType, PlayerRecordsView, TeamAbbr, TeamRecordsView,
     ViewContext, ViewWindow, CURRENT_SEASON,
 };
-use icelines_fetch::{datastore::DataStore, records_provider::load_goal_record_inputs};
+use icelines_fetch::records_provider::load_goal_record_inputs_from_default_store;
 
 use crate::cli::RecordsMetric;
 use crate::commands::output::Format;
@@ -20,8 +20,7 @@ pub async fn run_player(
     }
     let player_id = icelines_fetch::stats_loader::resolve_player_id_by_name(&player)
         .with_context(|| format!("could not resolve player `{player}` from bundled bios"))?;
-    let store = open_store()?;
-    let goals = load_goal_record_inputs(&store)?;
+    let goals = load_goal_record_inputs_from_default_store()?;
     let view = PlayerRecordsView::teams_scored_against(context(), player_id, player, &goals);
     emit_player_view(&view, json, csv, out.as_deref())
 }
@@ -38,19 +37,9 @@ pub async fn run_team(
     }
     let team = TeamAbbr::parse(&team)
         .map_err(|_| anyhow::anyhow!("'{}' is not a valid NHL team abbreviation", team))?;
-    let store = open_store()?;
-    let goals = load_goal_record_inputs(&store)?;
+    let goals = load_goal_record_inputs_from_default_store()?;
     let view = TeamRecordsView::players_scored_against_team(context(), team.0, &goals);
     emit_team_view(&view, json, csv, out.as_deref())
-}
-
-fn open_store() -> anyhow::Result<DataStore> {
-    let home = std::env::var_os("HOME")
-        .or_else(|| std::env::var_os("USERPROFILE"))
-        .map(std::path::PathBuf::from)
-        .ok_or_else(|| anyhow::anyhow!("cannot determine home directory"))?;
-    let data_root = home.join(".icelines").join("data");
-    DataStore::open(&data_root).context("open DataStore")
 }
 
 fn context() -> ViewContext {

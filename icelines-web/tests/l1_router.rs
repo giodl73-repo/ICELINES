@@ -1655,6 +1655,63 @@ async fn l1_player_json_missing_player_uses_shared_envelope_shape() {
 }
 
 #[tokio::test]
+async fn l1_records_player_json_envelope_shape() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/records/player/8478402")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let json = response_json(response, 512 * 1024).await;
+    assert_data_meta_envelope(&json, "records-player");
+    assert_eq!(json["data"]["player_id"], serde_json::json!(8478402));
+    assert_eq!(json["data"]["metric"], "teams-scored-against");
+    assert!(json["data"]["rows"].is_array());
+    assert_eq!(json["meta"]["rows"], serde_json::json!(0));
+}
+
+#[tokio::test]
+async fn l1_records_team_html_empty_state_links_json() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/records/team/EDM")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let bytes = axum::body::to_bytes(response.into_body(), 512 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+    assert!(body.contains("EDM Records"), "body was:\n{body}");
+    assert!(
+        body.contains("/api/v1/records/team/EDM"),
+        "body was:\n{body}"
+    );
+    assert!(
+        body.contains("icelines fetch boxscore"),
+        "body was:\n{body}"
+    );
+}
+
+#[tokio::test]
 async fn l1_watchlist_route_returns_200_html() {
     let _guard = home_env_lock().await;
     let app = router(WebState::new());

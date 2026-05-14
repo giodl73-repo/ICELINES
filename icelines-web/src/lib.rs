@@ -93,11 +93,27 @@ pub fn router(state: WebState) -> Router {
         // Team roster — King.4.1. /team/SEA, /team/EDM, etc.
         .route("/team/:abbrev", get(handlers::team::get_team))
         .route("/team/:abbrev/season", get(handlers::team::get_team_season))
+        .route(
+            "/records/player/:id",
+            get(handlers::records::get_player_records),
+        )
+        .route(
+            "/records/team/:abbrev",
+            get(handlers::records::get_team_records),
+        )
         // JSON twin — King.4.2.
         .route("/api/v1/team/:abbrev", get(handlers::team::get_team_json))
         .route(
             "/api/v1/team/:abbrev/season",
             get(handlers::team::get_team_season_json),
+        )
+        .route(
+            "/api/v1/records/player/:id",
+            get(handlers::records::get_player_records_json),
+        )
+        .route(
+            "/api/v1/records/team/:abbrev",
+            get(handlers::records::get_team_records_json),
         )
         // Depth rankings — Phase Lady Byng follow-up. Cross-team
         // line-value rankings; mirror of TUI Depth tab.
@@ -307,6 +323,7 @@ mod handlers {
 
     /// `/player/:id` — King.3.1 + King.3.2. Player card + career table.
     pub mod player;
+    pub mod records;
     pub mod scouting;
 
     /// `/compare` — UX.D. Side-by-side stat comparison of two players.

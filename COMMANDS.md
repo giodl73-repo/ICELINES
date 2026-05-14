@@ -459,7 +459,9 @@ icelines records team EDM --metric players-scored-against-team --csv
 Available now: `teams-scored-against` for players and
 `players-scored-against-team` for teams. Planned but not guessed yet:
 `goalies-scored-against` and `fight-opponents`, which need play-by-play goalie
-on-ice / penalty participant data.
+on-ice / penalty participant data. Web twins live at
+`/records/player/:id`, `/records/team/:abbrev`,
+`/api/v1/records/player/:id`, and `/api/v1/records/team/:abbrev`.
 
 ## `x` — quick CSV/JSON export
 
@@ -679,6 +681,7 @@ Use `Tab` or `Esc` to leave command mode.
 | `simulate <kv...>` / `fantasy simulate <kv...>` | Fantasy add/drop scenario projection | `:simulate add=Connor_McDavid drop=Bench_Forward weeks=3` |
 | `simulate clear` | Clear the active fantasy simulation scenario | `:simulate clear` |
 | `report poach` / `report weekly` | Show exact report CLI/web target | `:report weekly cats=shots,hits top=12` |
+| `records player <name>` / `records team <ABBR>` | Show exact records CLI/web target | `:records player Andre Burakovsky`, `:records team SEA` |
 | `watch <player>` | Show exact watch-note/rule target | `:watch Connor McDavid` |
 | `admin` | Open the operational admin overlay | `:admin` |
 | `data ...` / `snapshot ...` / `config ...` | Show exact admin CLI/web target | `:data status`, `:snapshot list`, `:config list` |
@@ -734,6 +737,8 @@ fantasy simulate add Connor_McDavid drop Bench_Forward
 report weekly cats=shots,hits top=12       -> /reports/weekly?category=shots%2Chits&top=12
 report poach availability=imported-available
                                            -> /reports/poach?availability=imported-available
+records team EDM                           -> /records/team/EDM
+records player 8478402                     -> /records/player/8478402
 team EDM                                   -> /team/EDM
 team EDM season                            -> /team/EDM/season
 team EDM schedule                          -> /schedule?team=EDM

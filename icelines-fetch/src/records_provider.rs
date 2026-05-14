@@ -1,9 +1,29 @@
-use anyhow::Result;
+use std::path::PathBuf;
+
+use anyhow::{Context, Result};
 use icelines_core::PlayerGoalRecordInput;
 
 use crate::datastore::DataStore;
 use crate::manifest::{DataKey, DataKind};
 use crate::nhl_api::parse_boxscore;
+
+pub fn default_data_root() -> Result<PathBuf> {
+    let home = std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(PathBuf::from)
+        .context("cannot determine home directory")?;
+    Ok(home.join(".icelines").join("data"))
+}
+
+pub fn open_default_store() -> Result<DataStore> {
+    let data_root = default_data_root()?;
+    DataStore::open(&data_root).context("open DataStore")
+}
+
+pub fn load_goal_record_inputs_from_default_store() -> Result<Vec<PlayerGoalRecordInput>> {
+    let store = open_default_store()?;
+    load_goal_record_inputs(&store)
+}
 
 pub fn load_goal_record_inputs(store: &DataStore) -> Result<Vec<PlayerGoalRecordInput>> {
     let mut out = Vec::new();

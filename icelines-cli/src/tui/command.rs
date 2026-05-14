@@ -161,6 +161,11 @@ pub enum Command {
     Report {
         args: ReportCommandArgs,
     },
+    /// `records player <name>` / `records team <ABBR>` — command-bar
+    /// bridge to individual records surfaces.
+    Records {
+        args: RecordsCommandArgs,
+    },
     /// Operational command handoffs. The TUI does not run these
     /// long-running or destructive commands from the cmdbar.
     Data {
@@ -258,6 +263,18 @@ impl ReportKind {
             Self::Weekly => "weekly",
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RecordsCommandArgs {
+    pub target: RecordsTarget,
+    pub subject: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RecordsTarget {
+    Player,
+    Team,
 }
 
 // ── Parse error shape ───────────────────────────────────────────────────────
@@ -458,6 +475,7 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
         "class" => parse_class(args),
         "career" => parse_career(args),
         "report" | "reports" => parse_report(args),
+        "records" | "record" => parse_records(args),
         "data" => Ok(Command::Data {
             args: args.trim().to_string(),
         }),
@@ -738,6 +756,37 @@ fn parse_report(args: &str) -> Result<Command, ParseError> {
         }
     }
     Ok(Command::Report { args: parsed })
+}
+
+fn parse_records(args: &str) -> Result<Command, ParseError> {
+    let (target_raw, subject_raw) = split_first_word(args);
+    let target = match target_raw.to_ascii_lowercase().as_str() {
+        "player" | "p" => RecordsTarget::Player,
+        "team" | "t" => RecordsTarget::Team,
+        "" => {
+            return Err(ParseError::MissingArg {
+                command: "records",
+                arg: "player|team",
+            });
+        }
+        other => return Err(ParseError::UnknownCommand(format!("records {other}"))),
+    };
+    let subject = subject_raw.trim();
+    if subject.is_empty() {
+        return Err(ParseError::MissingArg {
+            command: "records",
+            arg: match target {
+                RecordsTarget::Player => "player",
+                RecordsTarget::Team => "team",
+            },
+        });
+    }
+    Ok(Command::Records {
+        args: RecordsCommandArgs {
+            target,
+            subject: subject.to_string(),
+        },
+    })
 }
 
 /// `fantasy roster` → Roster; `fantasy gaps` → roster-gap board.
@@ -1365,6 +1414,25 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
                 query_suffix
             ))
         }
+        Command::Records { args } => match args.target {
+            RecordsTarget::Player => {
+                match icelines_fetch::stats_loader::resolve_player_id_by_name(&args.subject) {
+                    Some(pid) => ExecResult::Flash(format!(
+                        "records: run `icelines records player \"{}\" --metric teams-scored-against` or open `/records/player/{pid}`",
+                        args.subject
+                    )),
+                    None => {
+                        ExecResult::Flash(format!("records: player not found: {:?}", args.subject))
+                    }
+                }
+            }
+            RecordsTarget::Team => {
+                let team = args.subject.to_ascii_uppercase();
+                ExecResult::Flash(format!(
+                    "records: run `icelines records team {team} --metric players-scored-against-team` or open `/records/team/{team}`"
+                ))
+            }
+        },
         Command::Data { args } => ExecResult::Flash(cli_handoff("data", &args, "/admin")),
         Command::Snapshot { args } => ExecResult::Flash(cli_handoff("snapshot", &args, "/admin")),
         Command::Config { args } => ExecResult::Flash(cli_handoff("config", &args, "/admin")),
@@ -2178,6 +2246,28 @@ mod tests {
     }
 
     #[test]
+    fn l0_adams_parse_records_cmdbar_handoff() {
+        assert_eq!(
+            parse_command("records player Andre Burakovsky").unwrap(),
+            Command::Records {
+                args: RecordsCommandArgs {
+                    target: RecordsTarget::Player,
+                    subject: "Andre Burakovsky".to_string(),
+                },
+            }
+        );
+        assert_eq!(
+            parse_command("records team edm").unwrap(),
+            Command::Records {
+                args: RecordsCommandArgs {
+                    target: RecordsTarget::Team,
+                    subject: "edm".to_string(),
+                },
+            }
+        );
+    }
+
+    #[test]
     fn l0_adams_fantasy_cmdbar_examples_are_documented() {
         const COMMANDS_MD: &str = include_str!("../../../COMMANDS.md");
         for example in [
@@ -2190,6 +2280,8 @@ mod tests {
             "class 2024",
             "career league=OHL season=20142015 top=8",
             "report weekly cats=shots,hits top=12",
+            "records player Andre Burakovsky",
+            "records team SEA",
             "watch Connor McDavid",
             "data status",
             "snapshot list",
@@ -3168,6 +3260,19 @@ mod tests {
         };
         assert!(message.contains("icelines query compare \"Connor McDavid\" \"Sidney Crosby\""));
         assert!(message.contains("/compare?left=Connor+McDavid&right=Sidney+Crosby"));
+        assert!(matches!(app.screen, Screen::Home));
+    }
+
+    #[test]
+    fn l0_adams_exec_records_team_handoff_flashes_cli_and_web() {
+        let mut app = fresh_app_with_mdi();
+        let r = execute_command(parse_command("records team edm").unwrap(), &mut app);
+
+        let ExecResult::Flash(message) = r else {
+            panic!("records team should flash canonical targets");
+        };
+        assert!(message.contains("icelines records team EDM"));
+        assert!(message.contains("/records/team/EDM"));
         assert!(matches!(app.screen, Screen::Home));
     }
 

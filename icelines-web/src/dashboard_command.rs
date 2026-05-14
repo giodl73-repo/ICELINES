@@ -94,6 +94,7 @@ fn parse_verb(input: &str) -> Result<DashboardCommand, DashboardCommandError> {
         "career" | "cohort" => workspace(&career_url(args)),
         "class" => workspace(&career_class_url(args)),
         "report" | "reports" => parse_report(args),
+        "records" | "record" => parse_records(args),
         "poach" => workspace(&poach_url(args)),
         "gaps" | "fantasy-gaps" => workspace(&fantasy_url(args, FantasyMode::Gaps)),
         "simulate" | "sim" | "fantasy-sim" => {
@@ -145,6 +146,33 @@ fn parse_report(args: &str) -> Result<DashboardCommand, DashboardCommandError> {
         }
     };
     workspace(&query_url(base, rest))
+}
+
+fn parse_records(args: &str) -> Result<DashboardCommand, DashboardCommandError> {
+    let (target, subject) = split_first_word(args);
+    let subject = subject.trim();
+    match target.to_ascii_lowercase().as_str() {
+        "player" | "p" if subject.is_empty() => Err(DashboardCommandError::MissingArg {
+            command: "records player",
+            arg: "nhl-id",
+        }),
+        "player" | "p" => workspace(&format!("/records/player/{}", url_component(subject))),
+        "team" | "t" if subject.is_empty() => Err(DashboardCommandError::MissingArg {
+            command: "records team",
+            arg: "abbrev",
+        }),
+        "team" | "t" => workspace(&format!(
+            "/records/team/{}",
+            url_component(&subject.to_ascii_uppercase())
+        )),
+        "" => Err(DashboardCommandError::MissingArg {
+            command: "records",
+            arg: "player|team",
+        }),
+        other => Err(DashboardCommandError::UnknownCommand(format!(
+            "records {other}"
+        ))),
+    }
 }
 
 fn parse_team(args: &str) -> Result<DashboardCommand, DashboardCommandError> {
@@ -508,6 +536,8 @@ mod tests {
         assert_eq!(route("team edm"), "/team/EDM");
         assert_eq!(route("team EDM season"), "/team/EDM/season");
         assert_eq!(route("team EDM schedule"), "/schedule?team=EDM");
+        assert_eq!(route("records team edm"), "/records/team/EDM");
+        assert_eq!(route("records player 8478402"), "/records/player/8478402");
         assert_eq!(route("career"), "/career?league=OHL&sort=points");
         assert_eq!(route("class 2015"), "/career?season=2015&sort=points");
         assert_eq!(

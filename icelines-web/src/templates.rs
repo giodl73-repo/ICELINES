@@ -610,6 +610,32 @@ pub struct TeamSeasonTemplateRow {
     pub is_playoff: bool,
 }
 
+#[derive(Template)]
+#[template(path = "records.html")]
+pub struct RecordsTemplate {
+    pub active_label: String,
+    pub title: String,
+    pub subtitle: String,
+    pub back_href: String,
+    pub back_label: String,
+    pub json_href: String,
+    pub subject_label: String,
+    pub empty_hint: String,
+    pub total: usize,
+    pub rows: Vec<RecordsTemplateRow>,
+}
+
+#[derive(Debug, Clone)]
+pub struct RecordsTemplateRow {
+    pub key: String,
+    pub label: String,
+    pub count: u32,
+    pub first_game_id: u64,
+    pub first_date: String,
+    pub last_game_id: u64,
+    pub last_date: String,
+}
+
 /// `goalies.html` — King.5.1 minimum viable goalie leaderboard.
 #[derive(Template)]
 #[template(path = "goalies.html")]

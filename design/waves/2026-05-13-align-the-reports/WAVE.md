@@ -1,7 +1,7 @@
 ---
 wave: align-the-reports
 date_open: 2026-05-13
-status: active
+status: closed
 source: user request to align query/report/export CLI surfaces and plan individual records
 ---
 
@@ -28,7 +28,7 @@ one-off commands.
 | 01 - Report surface inventory and CLI catalog | done | `REPORT-SURFACE-INVENTORY.md`; `icelines report list`; `COMMANDS.md` |
 | 02 - Symmetric records data inventory | done | `plans/pulse-02.md`; `RECORDS-DATA-INVENTORY.md` |
 | 03 - Records ViewModels and CLI surface | done | `plans/pulse-03.md`; `icelines records player/team`; core/CLI tests |
-| 04 - Player/team records screens | planned | `plans/pulse-04.md` |
+| 04 - Player/team records screens | done | `plans/pulse-04.md`; `/records/player/:id`; `/records/team/:abbrev`; TUI cmdbar handoffs |
 
 ## Role notes
 
@@ -57,3 +57,14 @@ team `players-scored-against-team`, backed by pure ViewModels and persisted
 boxscore goal rows with scorer ids. `goalies-scored-against` and
 `fight-opponents` remain planned until play-by-play event participants are
 available.
+
+Pulse 04 made records visible from the natural player/team surfaces. Web now has
+HTML and JSON twins for player and team records, player/team pages link to those
+records, and the TUI player/team screens plus command bar point users to the
+canonical records commands/routes.
+
+## Closeout
+
+The wave is closed. The report catalog is discoverable, the first symmetric
+records slice is implemented, and player/team surfaces expose records without
+duplicating record computation outside the core/fetch ViewModels.

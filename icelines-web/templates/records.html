@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<p class="back-link-row">
+    <a href="{{ back_href }}">← {{ back_label }}</a>
+    <span class="inline-separator">·</span>
+    <a href="{{ json_href }}">JSON</a>
+</p>
+
+<header class="team-banner">
+    <h1>{{ title }}</h1>
+    <p class="team-banner-meta">
+        {{ active_label }} · {{ subtitle }} · {{ total }} row{% if total != 1 %}s{% endif %}
+    </p>
+</header>
+
+{% if rows.is_empty() %}
+<p class="empty-state">{{ empty_hint }}</p>
+{% else %}
+<div class="table-scroll">
+<table>
+    <thead>
+        <tr>
+            <th>{{ subject_label }}</th>
+            <th class="numeric">Count</th>
+            <th>First game</th>
+            <th>Last game</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in rows %}
+        <tr>
+            <td><strong>{{ row.label }}</strong> <span class="meta-line">{{ row.key }}</span></td>
+            <td class="numeric">{{ row.count }}</td>
+            <td>
+                <a href="/game/{{ row.first_game_id }}">{{ row.first_game_id }}</a>
+                {% if row.first_date != "" %}<span class="meta-line">{{ row.first_date }}</span>{% endif %}
+            </td>
+            <td>
+                <a href="/game/{{ row.last_game_id }}">{{ row.last_game_id }}</a>
+                {% if row.last_date != "" %}<span class="meta-line">{{ row.last_date }}</span>{% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

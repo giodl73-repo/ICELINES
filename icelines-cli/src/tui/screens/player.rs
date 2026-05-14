@@ -616,6 +616,14 @@ fn render_stats_view(
     // `report_source()` is `None` (core / Tier-2 / derived) are always
     // visible.
     lines.extend(active_season_summary_lines(card.active.as_ref(), dim));
+    lines.push(Line::styled(
+        format!(
+            " Records  ·  :records player \"{}\"  ·  /records/player/{}",
+            card.display_name, card.player_id.0
+        ),
+        dim,
+    ));
+    lines.push(Line::from(""));
 
     let preset = app.queries.career_table_preset;
     let all_columns: Vec<icelines_core::stats_catalog::StatId> = preset

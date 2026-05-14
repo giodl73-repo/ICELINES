@@ -21,3 +21,17 @@ screens.
 
 - TUI render tests for records entry points.
 - Web route/API tests if web parity is included.
+
+## Result
+
+Done. Added player/team records visibility in three places:
+
+- Web HTML/API routes: `/records/player/:id`, `/records/team/:abbrev`,
+  `/api/v1/records/player/:id`, and `/api/v1/records/team/:abbrev`.
+- Player/team web pages link directly to records pages.
+- TUI player card and team-season screens show records entry points, and the
+  command bar parses `records player <name>` / `records team <ABBR>` handoffs.
+
+All records rows still come from `PlayerRecordsView` / `TeamRecordsView` over
+persisted boxscore goal inputs. Goalie/fight records remain deferred until
+play-by-play participants are validated.

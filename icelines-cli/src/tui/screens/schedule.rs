@@ -674,6 +674,10 @@ fn render_team_schedule_loaded(
         ),
         dim,
     ));
+    lines.push(Line::styled(
+        format!("  Records: :records team {team} · /records/team/{team}"),
+        dim,
+    ));
     if let Some(warning) = view.warnings.first() {
         lines.push(Line::styled(format!("  Warning: {}", warning.message), dim));
     }
@@ -1290,6 +1294,10 @@ mod tests {
         assert!(
             text.contains("0."),
             "standings-backed schedule strength should show numeric opponent Pts%, got:\n{text}"
+        );
+        assert!(
+            text.contains("Records:") && text.contains("/records/team/SEA"),
+            "team season screen must expose team records entry point, got:\n{text}"
         );
     }
 

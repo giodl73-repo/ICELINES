@@ -133,10 +133,9 @@ pub fn run_list(json: bool) -> anyhow::Result<()> {
         );
     }
     println!();
-    println!("Planned records examples:");
+    println!("Available records examples:");
     println!("  icelines records player \"Andre Burakovsky\" --metric teams-scored-against");
-    println!("  icelines records player \"Andre Burakovsky\" --metric goalies-scored-against");
-    println!("  icelines records player \"Andre Burakovsky\" --metric fight-opponents");
-    println!("  icelines records team SEA --metric player-goals-against");
+    println!("  icelines records team SEA --metric players-scored-against-team");
+    println!("Planned after play-by-play validation: goalies-scored-against, fight-opponents.");
     Ok(())
 }
