@@ -176,10 +176,21 @@ fn favorite_player_row(row: &FavoriteMemberRow) -> FavoritePlayerRow {
 }
 
 fn resolve_favorite_player(key: &str) -> Option<icelines_fetch::stats_loader::PlayerCandidate> {
-    let pid = icelines_fetch::stats_loader::resolve_player_id_by_name(key)?;
-    icelines_fetch::stats_loader::find_player_candidates(key)
+    let key = key.trim();
+    if let Ok(pid) = key.parse::<u32>() {
+        return icelines_fetch::stats_loader::find_player_candidate_by_id(pid);
+    }
+
+    let needle = icelines_core::name::normalize_name(key);
+    let mut exact_matches: Vec<_> = icelines_fetch::stats_loader::find_player_candidates(key)
         .into_iter()
-        .find(|candidate| candidate.pid == pid)
+        .filter(|candidate| icelines_core::name::normalize_name(&candidate.full_name) == needle)
+        .collect();
+    if exact_matches.len() == 1 {
+        exact_matches.pop()
+    } else {
+        None
+    }
 }
 
 pub async fn get_watchlist_json() -> Response {

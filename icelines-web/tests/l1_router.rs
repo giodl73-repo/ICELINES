@@ -1877,6 +1877,55 @@ async fn l1_favorites_and_watchlist_bad_active_season_return_typed_errors() {
 }
 
 #[tokio::test]
+async fn l1_favorites_links_canonical_ids_but_not_ambiguous_names() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+
+    let home = std::env::var_os("HOME").expect("test home set");
+    let db_dir = std::path::PathBuf::from(home).join(".icelines");
+    std::fs::create_dir_all(&db_dir).expect("create db dir");
+    let conn = rusqlite::Connection::open(db_dir.join("icelines.db")).expect("open db");
+    conn.execute_batch(
+        "CREATE TABLE groups (
+            name TEXT PRIMARY KEY,
+            description TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL
+         );
+         CREATE TABLE group_members (
+            group_name TEXT NOT NULL,
+            entity_ref TEXT NOT NULL,
+            added_at TEXT NOT NULL,
+            PRIMARY KEY (group_name, entity_ref)
+         );
+         INSERT INTO groups VALUES ('Favorites', '', datetime('now'));
+         INSERT INTO group_members VALUES ('Favorites', 'player:8478402', datetime('now'));
+         INSERT INTO group_members VALUES ('Favorites', 'player:smith', datetime('now'));",
+    )
+    .expect("seed favorites db");
+
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/favorites")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+
+    assert!(body.contains("href=\"/player/8478402\""));
+    assert!(body.contains("Connor McDavid"));
+    assert!(body.contains("favorite-player-unresolved\">smith</span>"));
+}
+
+#[tokio::test]
 async fn l1_favorites_json_returns_group_members() {
     let _guard = home_env_lock().await;
     let dir = tempfile::TempDir::new().expect("temp home");

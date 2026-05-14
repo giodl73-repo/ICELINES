@@ -822,6 +822,51 @@ pub fn find_player_candidates(name: &str) -> Vec<PlayerCandidate> {
     out
 }
 
+/// Resolve one bundled player candidate by canonical NHL id.
+///
+/// Unlike [`resolve_player_id_by_name`], this does not perform substring
+/// matching. It is safe for persisted `player:<pid>` entity refs where the
+/// caller already has a canonical id and only needs the display metadata.
+pub fn find_player_candidate_by_id(pid: u32) -> Option<PlayerCandidate> {
+    use crate::bundled;
+
+    for season_id in bundled::BUNDLED_SEASONS {
+        if let Some(bios) = bundled::get_bios(season_id) {
+            if let Some(bio) = bios.iter().find(|bio| bio.player_id == pid) {
+                return Some(PlayerCandidate {
+                    pid: bio.player_id,
+                    full_name: bio.skater_full_name.clone(),
+                    last_team: bio.current_team_abbrev.clone(),
+                    last_season: season_id.parse::<u32>().ok(),
+                    is_goalie: false,
+                });
+            }
+        }
+    }
+
+    for season_id in bundled::BUNDLED_SEASONS {
+        if let Some(goalies) = bundled::get_goalie_stats(season_id) {
+            if let Some(g) = goalies.iter().find(|g| g.player_id == pid) {
+                let primary_team = g
+                    .team_abbrevs
+                    .split(',')
+                    .next()
+                    .map(|s| s.trim().to_owned())
+                    .filter(|s| !s.is_empty());
+                return Some(PlayerCandidate {
+                    pid: g.player_id,
+                    full_name: g.goalie_full_name.clone(),
+                    last_team: primary_team,
+                    last_season: season_id.parse::<u32>().ok(),
+                    is_goalie: true,
+                });
+            }
+        }
+    }
+
+    None
+}
+
 // ── Phase UX.1 — lazy per-player career loader ──────────────────────────────
 
 /// Pull a single player's bios + stats rows from every bundled season
@@ -1399,6 +1444,23 @@ mod tests {
         assert_eq!(contracts.clone(), contracts);
         assert_eq!(goalie.clone(), goalie);
         assert_ne!(realtime, mp.clone());
+    }
+
+    #[test]
+    fn l0_find_player_candidate_by_id_resolves_canonical_pid() {
+        let candidate =
+            find_player_candidate_by_id(8478402).expect("Connor McDavid should be bundled");
+        assert_eq!(candidate.pid, 8478402);
+        assert_eq!(candidate.full_name, "Connor McDavid");
+    }
+
+    #[test]
+    fn l0_find_player_candidates_keeps_common_surnames_ambiguous() {
+        let candidates = find_player_candidates("smith");
+        assert!(
+            candidates.len() > 1,
+            "fixture should keep Smith ambiguous, got {candidates:?}"
+        );
     }
 
     // ── Career-team fix (2026-05-04) ────────────────────────────────

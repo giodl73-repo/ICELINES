@@ -16,3 +16,12 @@ Prefer canonical `player:<pid>` entity refs for persisted groups and require exa
 - `cargo test -p icelines-web`
 - `cargo test -p icelines-cli`
 - `cargo clippy --workspace -- -D warnings`
+
+## Closeout
+
+Closed in this pulse:
+
+- Added `find_player_candidate_by_id` for canonical `player:<pid>` group refs.
+- Web Favorites/Watchlist now link canonical numeric player refs directly by id.
+- Legacy name keys now render confident links only on exact normalized single-player matches; ambiguous substring inputs render unresolved text.
+- Added L0 bundled identity regressions and an L1 Favorites route regression for canonical id plus ambiguous surname behavior.
