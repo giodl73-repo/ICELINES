@@ -99,8 +99,10 @@ pub fn load_play_by_play_goal_record_inputs(
         };
         let parsed = parse_play_by_play(&raw, game_id.0);
         for goal in &parsed.goals {
-            let scorer_team = team_abbrev_for_id(&parsed, goal.event_owner_team_id);
-            let opponent_team = opponent_team_for(&parsed, &scorer_team);
+            let Some(scorer_team) = team_abbrev_for_id(&parsed, goal.event_owner_team_id) else {
+                continue;
+            };
+            let opponent_team = opponent_team_for(&parsed, scorer_team);
             out.push(PlayerGoalRecordInput {
                 game_id: game_id.0,
                 date: date.clone().or_else(|| parsed.game_date.clone()),
@@ -109,7 +111,7 @@ pub fn load_play_by_play_goal_record_inputs(
                     .scoring_player_id
                     .and_then(|id| scorer_names.get(&id).cloned())
                     .unwrap_or_default(),
-                scorer_team,
+                scorer_team: scorer_team.to_string(),
                 opponent_team,
                 period: goal.period,
                 time_in_period: goal.time_in_period.clone(),
@@ -124,11 +126,11 @@ pub fn load_play_by_play_goal_record_inputs(
     Ok(out)
 }
 
-fn team_abbrev_for_id(parsed: &crate::nhl_api::PlayByPlay, team_id: Option<u32>) -> String {
+fn team_abbrev_for_id(parsed: &crate::nhl_api::PlayByPlay, team_id: Option<u32>) -> Option<&str> {
     match team_id {
-        Some(id) if Some(id) == parsed.home_team_id => parsed.home_abbrev.clone(),
-        Some(id) if Some(id) == parsed.away_team_id => parsed.away_abbrev.clone(),
-        _ => String::new(),
+        Some(id) if Some(id) == parsed.home_team_id => Some(&parsed.home_abbrev),
+        Some(id) if Some(id) == parsed.away_team_id => Some(&parsed.away_abbrev),
+        _ => None,
     }
 }
 
@@ -209,8 +211,10 @@ pub fn load_fight_record_inputs(store: &DataStore) -> Result<Vec<FightRecordInpu
                 continue;
             }
 
-            let player_team = team_abbrev_for_id(&parsed, penalty.event_owner_team_id);
-            let opponent_team = opponent_team_for(&parsed, &player_team);
+            let Some(player_team) = team_abbrev_for_id(&parsed, penalty.event_owner_team_id) else {
+                continue;
+            };
+            let opponent_team = opponent_team_for(&parsed, player_team);
             let committed_name = names.get(&committed).cloned().unwrap_or_default();
             let drawn_name = names.get(&drawn).cloned().unwrap_or_default();
             let fight_date = date.clone().or_else(|| parsed.game_date.clone());
@@ -220,7 +224,7 @@ pub fn load_fight_record_inputs(store: &DataStore) -> Result<Vec<FightRecordInpu
                 date: fight_date.clone(),
                 player_id: committed,
                 player_name: committed_name.clone(),
-                player_team: player_team.clone(),
+                player_team: player_team.to_string(),
                 opponent_id: drawn,
                 opponent_name: drawn_name.clone(),
                 opponent_team: opponent_team.clone(),
@@ -235,7 +239,7 @@ pub fn load_fight_record_inputs(store: &DataStore) -> Result<Vec<FightRecordInpu
                 player_team: opponent_team,
                 opponent_id: committed,
                 opponent_name: committed_name,
-                opponent_team: player_team,
+                opponent_team: player_team.to_string(),
                 period: penalty.period,
                 time_in_period: penalty.time_in_period.clone(),
             });
@@ -254,7 +258,7 @@ fn person_name_map() -> std::collections::HashMap<u32, String> {
 
 #[cfg(test)]
 mod tests {
-    use super::load_fight_record_inputs;
+    use super::{load_fight_record_inputs, load_play_by_play_goal_record_inputs};
     use crate::atomic_write::write_bytes_atomic;
     use crate::datastore::DataStore;
     use crate::manifest::{DataKey, DataKind, ManifestEntry};
@@ -333,5 +337,113 @@ mod tests {
         assert_eq!(fights[0].opponent_id, 20);
         assert_eq!(fights[0].player_team, "SEA");
         assert_eq!(fights[0].opponent_team, "EDM");
+    }
+
+    #[test]
+    fn l1_goal_records_skip_missing_owner_team() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = DataStore::open(dir.path()).unwrap();
+        let path = dir
+            .path()
+            .join("play_by_play")
+            .join("2026-01-15")
+            .join("2025020343.json");
+        let body = serde_json::json!({
+            "id": 2025020343,
+            "gameDate": "2026-01-15",
+            "awayTeam": { "id": 1, "abbrev": "SEA" },
+            "homeTeam": { "id": 2, "abbrev": "EDM" },
+            "plays": [
+                {
+                    "eventId": 1,
+                    "periodDescriptor": { "number": 1, "periodType": "REG" },
+                    "timeInPeriod": "03:21",
+                    "typeDescKey": "goal",
+                    "details": {
+                        "scoringPlayerId": 10,
+                        "goalieInNetId": 20
+                    }
+                }
+            ]
+        });
+        write_bytes_atomic(&path, body.to_string().as_bytes()).unwrap();
+        store
+            .manifest()
+            .upsert(
+                DataKind::PlayByPlay,
+                ManifestEntry {
+                    key: DataKey::Game(GameId(2025020343)),
+                    path,
+                    freshness: icelines_core::Freshness {
+                        fetched_at: chrono::Utc::now(),
+                        source: icelines_core::FetchSource::Live,
+                        ttl: icelines_core::Ttl::Static,
+                    },
+                },
+            )
+            .unwrap();
+
+        let goals = load_play_by_play_goal_record_inputs(&store).unwrap();
+
+        assert!(
+            goals.is_empty(),
+            "missing owner team should not produce blank team records"
+        );
+    }
+
+    #[test]
+    fn l1_fight_records_skip_unknown_owner_team() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = DataStore::open(dir.path()).unwrap();
+        let path = dir
+            .path()
+            .join("play_by_play")
+            .join("2026-01-15")
+            .join("2025020344.json");
+        let body = serde_json::json!({
+            "id": 2025020344,
+            "gameDate": "2026-01-15",
+            "awayTeam": { "id": 1, "abbrev": "SEA" },
+            "homeTeam": { "id": 2, "abbrev": "EDM" },
+            "plays": [
+                {
+                    "eventId": 1,
+                    "periodDescriptor": { "number": 1, "periodType": "REG" },
+                    "timeInPeriod": "10:20",
+                    "typeDescKey": "penalty",
+                    "details": {
+                        "eventOwnerTeamId": 999,
+                        "typeCode": "MAJ",
+                        "descKey": "fighting",
+                        "duration": 5,
+                        "committedByPlayerId": 10,
+                        "drawnByPlayerId": 20
+                    }
+                }
+            ]
+        });
+        write_bytes_atomic(&path, body.to_string().as_bytes()).unwrap();
+        store
+            .manifest()
+            .upsert(
+                DataKind::PlayByPlay,
+                ManifestEntry {
+                    key: DataKey::Game(GameId(2025020344)),
+                    path,
+                    freshness: icelines_core::Freshness {
+                        fetched_at: chrono::Utc::now(),
+                        source: icelines_core::FetchSource::Live,
+                        ttl: icelines_core::Ttl::Static,
+                    },
+                },
+            )
+            .unwrap();
+
+        let fights = load_fight_record_inputs(&store).unwrap();
+
+        assert!(
+            fights.is_empty(),
+            "unknown owner team should not produce blank team records"
+        );
     }
 }
