@@ -17,6 +17,7 @@ pub mod query;
 pub mod query_career;
 pub mod query_window;
 pub mod rank;
+pub mod records;
 pub mod report;
 pub mod scheme;
 pub mod scheme_dialects;

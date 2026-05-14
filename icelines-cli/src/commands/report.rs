@@ -101,11 +101,11 @@ const REPORT_CATALOG: &[ReportCatalogEntry] = &[
     },
     ReportCatalogEntry {
         name: "records",
-        status: "planned",
+        status: "available",
         canonical: "icelines records player <name> | icelines records team <ABBR>",
-        formats: "table,json,csv,markdown",
+        formats: "table,json,csv",
         screens: "future Player Records / Team Records",
-        notes: "Symmetric records: teams scored against, goalies scored against, fight opponents, head-to-head counts.",
+        notes: "First slice: teams scored against and players scored against team. Goalie/fight metrics still need play-by-play.",
     },
 ];
 

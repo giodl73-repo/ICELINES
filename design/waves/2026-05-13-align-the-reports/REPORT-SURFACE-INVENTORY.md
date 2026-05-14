@@ -41,7 +41,8 @@ Candidate team records:
 - Fight opponents by team.
 - Head-to-head opponent counts.
 
-Data warning: teams-scored-against can come from game/goal records; goalie
-scored-against and fight opponents need event-level boxscore/play-by-play data
-with goalie-on-ice and penalty/fighting participants. This should be modeled in
-core/fetch before exposing CLI/TUI/web renderers.
+Implemented first slice: `icelines records player <name> --metric
+teams-scored-against` and `icelines records team <ABBR> --metric
+players-scored-against-team`. Data warning still applies to goalie-scored-
+against and fight opponents: they need event-level boxscore/play-by-play data
+with goalie-on-ice and penalty/fighting participants.

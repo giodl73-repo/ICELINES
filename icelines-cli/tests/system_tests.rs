@@ -1310,7 +1310,7 @@ fn l2_report_list_exits_zero_and_lists_report_doors() {
 }
 
 #[test]
-fn l2_report_list_json_marks_records_planned() {
+fn l2_report_list_json_marks_records_available() {
     let out = run(&["report", "list", "--json"]);
     assert!(
         out.status.success(),
@@ -1318,8 +1318,46 @@ fn l2_report_list_json_marks_records_planned() {
     );
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(
-        stdout.contains("\"name\": \"records\"") && stdout.contains("\"status\": \"planned\""),
-        "report list JSON must expose planned records catalog row, got: {stdout}"
+        stdout.contains("\"name\": \"records\"") && stdout.contains("\"status\": \"available\""),
+        "report list JSON must expose available records catalog row, got: {stdout}"
+    );
+}
+
+#[test]
+fn l2_records_player_no_data_exits_zero_with_headers() {
+    let home = tempfile::TempDir::new().unwrap();
+    let out = run_isolated(
+        home.path(),
+        &[
+            "--no-setup",
+            "records",
+            "player",
+            "Andre Burakovsky",
+            "--metric",
+            "teams-scored-against",
+            "--csv",
+        ],
+    );
+    assert!(
+        out.status.success(),
+        "records player must exit 0 with empty local boxscores, stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("opponent_team") && stdout.contains("count"),
+        "records CSV should include stable headers, got: {stdout}"
+    );
+}
+
+#[test]
+fn l2_records_team_help_lists_first_metric() {
+    let out = run(&["records", "team", "--help"]);
+    assert!(out.status.success(), "records team --help must exit 0");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("players-scored-against-team"),
+        "records team help should list supported metric, got: {stdout}"
     );
 }
 

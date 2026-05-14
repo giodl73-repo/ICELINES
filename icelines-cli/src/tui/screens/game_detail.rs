@@ -452,6 +452,7 @@ mod tests {
         hm: u8,
     ) -> Goal {
         Goal {
+            scorer_id: None,
             period,
             period_type: ptype.to_owned(),
             time_in_period: time.to_owned(),

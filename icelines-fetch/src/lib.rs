@@ -19,6 +19,7 @@ pub mod moneypuck;
 pub mod nhl_api;
 pub mod playoffs_bundle;
 pub mod query_provider;
+pub mod records_provider;
 pub mod resolver;
 pub mod schedule_remaining;
 pub mod schema;

@@ -12,6 +12,11 @@ screens.
 - TUI command-bar handoffs for records commands.
 - Web route/API parity if the ViewModels are stable.
 
+## Inputs
+
+- `PlayerRecordsView` / `TeamRecordsView` from Pulse 03.
+- `icelines records player/team` CLI behavior and output columns.
+
 ## Gates
 
 - TUI render tests for records entry points.

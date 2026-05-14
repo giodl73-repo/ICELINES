@@ -787,6 +787,7 @@ fn expand_conference(abbrev: &str) -> String {
 /// One goal scored in a game.
 #[derive(Debug, Clone)]
 pub struct Goal {
+    pub scorer_id: Option<u32>,
     pub period: u8,             // 1, 2, 3, OT=4+
     pub period_type: String,    // "REG" | "OT" | "SO"
     pub time_in_period: String, // "MM:SS"
@@ -925,6 +926,7 @@ pub fn parse_boxscore(raw: &serde_json::Value, game_id: u64) -> Boxscore {
                     .or_else(|| g["name"]["default"].as_str().map(str::to_owned))
                     .or_else(|| g["scorer"].as_str().map(str::to_owned))
                     .unwrap_or_default();
+                let scorer_id = goal_player_id(g);
                 let scorer_team = g["teamAbbrev"]["default"]
                     .as_str()
                     .or_else(|| g["teamAbbrev"].as_str())
@@ -957,6 +959,7 @@ pub fn parse_boxscore(raw: &serde_json::Value, game_id: u64) -> Boxscore {
                 let hm_score = g["homeScore"].as_u64().unwrap_or(0) as u8;
 
                 goals.push(Goal {
+                    scorer_id,
                     period: period_num,
                     period_type: period_type.clone(),
                     time_in_period,
@@ -1044,6 +1047,21 @@ pub fn parse_boxscore(raw: &serde_json::Value, game_id: u64) -> Boxscore {
         away_skaters,
         home_skaters,
     }
+}
+
+fn goal_player_id(g: &serde_json::Value) -> Option<u32> {
+    [
+        &g["playerId"],
+        &g["scorerPlayerId"],
+        &g["scoringPlayerId"],
+        &g["scorerId"],
+        &g["player"]["playerId"],
+        &g["player"]["id"],
+    ]
+    .iter()
+    .find_map(|value| value.as_u64())
+    .and_then(|id| u32::try_from(id).ok())
+    .filter(|id| *id != 0)
 }
 
 /// Pull all forwards + defense out of one team's `playerByGameStats`
@@ -1404,6 +1422,44 @@ fn parse_series(s: &serde_json::Value) -> PlayoffSeries {
         winner_abbrev,
         conference,
         games: Vec::new(),
+    }
+}
+
+#[cfg(test)]
+mod boxscore_tests {
+    use super::parse_boxscore;
+    use serde_json::json;
+
+    #[test]
+    fn l0_parse_boxscore_reads_goal_scorer_id() {
+        let raw = json!({
+            "awayTeam": {"abbrev": "SEA", "score": 1},
+            "homeTeam": {"abbrev": "EDM", "score": 0},
+            "summary": {
+                "scoring": [
+                    {
+                        "periodDescriptor": {"number": 1, "periodType": "REG"},
+                        "goals": [
+                            {
+                                "playerId": 8477444,
+                                "firstName": {"default": "Andre"},
+                                "lastName": {"default": "Burakovsky"},
+                                "teamAbbrev": {"default": "SEA"},
+                                "timeInPeriod": "04:12",
+                                "awayScore": 1,
+                                "homeScore": 0
+                            }
+                        ]
+                    }
+                ]
+            }
+        });
+
+        let parsed = parse_boxscore(&raw, 2025020001);
+
+        assert_eq!(parsed.goals.len(), 1);
+        assert_eq!(parsed.goals[0].scorer_id, Some(8477444));
+        assert_eq!(parsed.goals[0].scorer_team, "SEA");
     }
 }
 

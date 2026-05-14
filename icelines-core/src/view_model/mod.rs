@@ -22,6 +22,7 @@ pub mod mutation;
 pub mod player_card;
 pub mod playoffs;
 pub mod poach;
+pub mod records;
 pub mod report;
 pub mod schedule;
 pub mod scores;
@@ -98,6 +99,7 @@ pub use poach::{
     WatchAlertSeverity, WatchAlertTrigger, WatchAlertsView, WatchRule, WatchRuleMutationIntent,
     WatchRuleMutationOperation, WatchRuleTrigger, WatchRulesView,
 };
+pub use records::{PlayerGoalRecordInput, PlayerRecordsView, RecordsOpponentRow, TeamRecordsView};
 pub use report::{scouting_report_sections, ReportFormat, ReportView};
 pub use schedule::{
     OpponentTierBreakdown, ScheduleGameRow, ScheduleMatchupRecord, ScheduleMatchupView,

@@ -16,7 +16,10 @@ mod visual;
 
 use anyhow::Context;
 use clap::Parser;
-use cli::{Cli, Commands, FantasySubcommand, QuerySubcommand, ReportSubcommand, WatchSubcommand};
+use cli::{
+    Cli, Commands, FantasySubcommand, QuerySubcommand, RecordsSubcommand, ReportSubcommand,
+    WatchSubcommand,
+};
 use config::Config;
 
 /// Post-LP review fix #4 — Reset SIGPIPE to SIG_DFL on Unix so a
@@ -197,6 +200,26 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                     out,
                 })
                 .await?;
+            }
+        },
+        Commands::Records(sub) => match sub {
+            RecordsSubcommand::Player {
+                player,
+                metric,
+                json,
+                csv,
+                out,
+            } => {
+                commands::records::run_player(player, metric, json, csv, out).await?;
+            }
+            RecordsSubcommand::Team {
+                team,
+                metric,
+                json,
+                csv,
+                out,
+            } => {
+                commands::records::run_team(team, metric, json, csv, out).await?;
             }
         },
         Commands::Watch(sub) => match sub {

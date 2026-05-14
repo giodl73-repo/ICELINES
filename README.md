@@ -260,6 +260,7 @@ icelines poach --team SEA --pos LW --json
 icelines report list
 icelines report poach --category shots --top 10 --out poach.md
 icelines report weekly --league default --category hits,blocks
+icelines records player "Andre Burakovsky" --metric teams-scored-against
 icelines watch rules
 icelines watch player "Matthew Knies" --when pp1 --save
 icelines watch disable player-matthew-knies

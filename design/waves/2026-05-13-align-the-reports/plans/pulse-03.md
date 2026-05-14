@@ -33,3 +33,16 @@ icelines records team SEA --metric player-goals-against
 
 - L0 ViewModel tests.
 - L2 records CLI tests.
+
+## Result
+
+Done. Added `PlayerRecordsView` / `TeamRecordsView`, parsed goal scorer ids from
+boxscore goal rows, and exposed:
+
+```bash
+icelines records player "Andre Burakovsky" --metric teams-scored-against
+icelines records team EDM --metric players-scored-against-team
+```
+
+The implementation walks persisted `DataKind::Boxscore` raw JSON. Metrics that
+need goalie-on-ice or fighting participants remain planned.

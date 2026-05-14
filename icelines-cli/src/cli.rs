@@ -185,6 +185,24 @@ Examples:
     )]
     Report(ReportSubcommand),
 
+    /// Player/team individual records from event-level data.
+    #[command(
+        subcommand,
+        long_about = r#"
+Compute individual records from persisted event-level data.
+
+The first available metrics use persisted boxscore goal rows:
+  icelines records player "Andre Burakovsky" --metric teams-scored-against
+  icelines records team EDM --metric players-scored-against-team
+
+Run `icelines fetch boxscore --date YYYY-MM-DD` to populate local boxscore
+records. Future metrics such as goalies-scored-against and fight-opponents need
+play-by-play/event participant data and are intentionally not guessed from
+aggregate goalie or PIM totals.
+"#
+    )]
+    Records(RecordsSubcommand),
+
     /// Preview fantasy poacher watch rules.
     #[command(subcommand)]
     Watch(WatchSubcommand),
@@ -1187,6 +1205,61 @@ pub enum ReportSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<std::path::PathBuf>,
     },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum RecordsSubcommand {
+    /// Show records for one player.
+    Player {
+        /// Player name or partial name.
+        player: String,
+
+        /// Record metric to compute.
+        #[arg(long, value_enum, default_value_t = RecordsMetric::TeamsScoredAgainst)]
+        metric: RecordsMetric,
+
+        /// Emit JSON instead of a table.
+        #[arg(long)]
+        json: bool,
+
+        /// Emit CSV instead of a table.
+        #[arg(long)]
+        csv: bool,
+
+        /// Write output to a file instead of stdout.
+        #[arg(long, value_name = "PATH")]
+        out: Option<std::path::PathBuf>,
+    },
+
+    /// Show records against one team.
+    Team {
+        /// Team abbreviation, e.g. EDM.
+        team: String,
+
+        /// Record metric to compute.
+        #[arg(long, value_enum, default_value_t = RecordsMetric::PlayersScoredAgainstTeam)]
+        metric: RecordsMetric,
+
+        /// Emit JSON instead of a table.
+        #[arg(long)]
+        json: bool,
+
+        /// Emit CSV instead of a table.
+        #[arg(long)]
+        csv: bool,
+
+        /// Write output to a file instead of stdout.
+        #[arg(long, value_name = "PATH")]
+        out: Option<std::path::PathBuf>,
+    },
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, ValueEnum)]
+pub enum RecordsMetric {
+    /// NHL teams a player has scored against.
+    TeamsScoredAgainst,
+    /// Players who scored against a team.
+    PlayersScoredAgainstTeam,
 }
 
 #[derive(Debug, Subcommand)]

@@ -27,7 +27,7 @@ one-off commands.
 |---|---|---|
 | 01 - Report surface inventory and CLI catalog | done | `REPORT-SURFACE-INVENTORY.md`; `icelines report list`; `COMMANDS.md` |
 | 02 - Symmetric records data inventory | done | `plans/pulse-02.md`; `RECORDS-DATA-INVENTORY.md` |
-| 03 - Records ViewModels and CLI surface | planned | `plans/pulse-03.md` |
+| 03 - Records ViewModels and CLI surface | done | `plans/pulse-03.md`; `icelines records player/team`; core/CLI tests |
 | 04 - Player/team records screens | planned | `plans/pulse-04.md` |
 
 ## Role notes
@@ -51,3 +51,9 @@ slice is `teams-scored-against` / `players-scored-against-team`, but it still
 needs goal scorer ids parsed from persisted boxscore raw JSON. Goalie-scored-
 against and fight-opponent records require play-by-play/event participant data
 and must not be inferred from aggregate goalie or PIM rows.
+
+Pulse 03 implemented the first records slice: player `teams-scored-against` and
+team `players-scored-against-team`, backed by pure ViewModels and persisted
+boxscore goal rows with scorer ids. `goalies-scored-against` and
+`fight-opponents` remain planned until play-by-play event participants are
+available.

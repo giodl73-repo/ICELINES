@@ -441,10 +441,25 @@ Surface rule of thumb:
 | Fantasy decision report | `icelines report poach` / `icelines report weekly` |
 | See every available/planned report family | `icelines report list` |
 
-Planned records reports will live under a canonical `records` surface and will
-also appear in `report list`: player/team symmetric facts such as NHL teams a
-player has scored against, goalies scored against, fight opponents, and
-head-to-head counts.
+Records reports live under the canonical `records` surface and also appear in
+`report list`: player/team symmetric facts such as NHL teams a player has scored
+against, goalies scored against, fight opponents, and head-to-head counts.
+
+## `records` — player/team individual records
+
+The first records slice uses persisted boxscore goal rows. Populate local
+boxscores with `icelines fetch boxscore --date YYYY-MM-DD`, then run:
+
+```bash
+icelines records player "Andre Burakovsky" --metric teams-scored-against
+icelines records player "Andre Burakovsky" --metric teams-scored-against --json
+icelines records team EDM --metric players-scored-against-team --csv
+```
+
+Available now: `teams-scored-against` for players and
+`players-scored-against-team` for teams. Planned but not guessed yet:
+`goalies-scored-against` and `fight-opponents`, which need play-by-play goalie
+on-ice / penalty participant data.
 
 ## `x` — quick CSV/JSON export
 
