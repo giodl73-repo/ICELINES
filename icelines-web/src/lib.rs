@@ -293,6 +293,14 @@ pub fn router(state: WebState) -> Router {
             "/admin/game-cache/load",
             post(handlers::admin::post_game_cache_load_form),
         )
+        .route(
+            "/api/v1/admin/game-cache/load-favorites",
+            post(handlers::admin::post_favorites_game_cache_load_json),
+        )
+        .route(
+            "/admin/game-cache/load-favorites",
+            post(handlers::admin::post_favorites_game_cache_load_form),
+        )
         // Sasq.7 — friendly 404 with a player-search input replaces
         // axum's bare default. Wired as router fallback so any
         // unmatched path lands here.

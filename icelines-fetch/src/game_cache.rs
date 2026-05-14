@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
@@ -68,11 +68,35 @@ pub struct GameCacheLoadRequest {
     pub artifacts: Vec<GameCacheArtifact>,
 }
 
+#[derive(Debug, Clone)]
+pub struct FavoriteGameCacheLoadRequest {
+    pub season: Season,
+    pub season_type: SeasonType,
+    pub player_ids: Vec<u32>,
+    pub teams: Vec<String>,
+    pub artifacts: Vec<GameCacheArtifact>,
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GameCacheLoadSummary {
     pub season: u32,
     pub season_type: String,
     pub teams: Vec<String>,
+    pub scheduled_games: usize,
+    pub final_games: usize,
+    pub cached_artifacts: usize,
+    pub fetched_artifacts: usize,
+    pub failed_artifacts: usize,
+    pub errors: Vec<String>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FavoriteGameCacheLoadSummary {
+    pub season: u32,
+    pub season_type: String,
+    pub player_count: usize,
+    pub team_count: usize,
+    pub cache_requests: usize,
     pub scheduled_games: usize,
     pub final_games: usize,
     pub cached_artifacts: usize,
@@ -89,6 +113,70 @@ pub async fn ensure_team_game_cache(
     let store = DataStore::open(data_root).context("open DataStore")?;
     let client = NhlApiClient::production();
     ensure_team_game_cache_with_client(data_root, &store, &client, request).await
+}
+
+pub async fn ensure_favorites_game_cache(
+    data_root: impl AsRef<Path>,
+    request: FavoriteGameCacheLoadRequest,
+) -> Result<FavoriteGameCacheLoadSummary> {
+    let data_root = data_root.as_ref();
+    let store = DataStore::open(data_root).context("open DataStore")?;
+    let client = NhlApiClient::production();
+    let requests = favorite_game_cache_requests(&request);
+    let mut summary = FavoriteGameCacheLoadSummary {
+        season: request.season.0,
+        season_type: request.season_type.label().to_string(),
+        player_count: request
+            .player_ids
+            .iter()
+            .copied()
+            .collect::<HashSet<_>>()
+            .len(),
+        team_count: normalize_teams(&request.teams).len(),
+        cache_requests: requests.len(),
+        ..FavoriteGameCacheLoadSummary::default()
+    };
+
+    for request in requests {
+        let result =
+            ensure_team_game_cache_with_client(data_root, &store, &client, request).await?;
+        summary.scheduled_games += result.scheduled_games;
+        summary.final_games += result.final_games;
+        summary.cached_artifacts += result.cached_artifacts;
+        summary.fetched_artifacts += result.fetched_artifacts;
+        summary.failed_artifacts += result.failed_artifacts;
+        summary.errors.extend(result.errors);
+    }
+
+    Ok(summary)
+}
+
+pub fn favorite_game_cache_requests(
+    request: &FavoriteGameCacheLoadRequest,
+) -> Vec<GameCacheLoadRequest> {
+    let mut grouped: BTreeMap<(Season, SeasonType), BTreeSet<String>> = BTreeMap::new();
+    let active_teams = normalize_teams(&request.teams);
+    if !active_teams.is_empty() {
+        grouped
+            .entry((request.season, request.season_type))
+            .or_default()
+            .extend(active_teams);
+    }
+
+    let player_ids: HashSet<u32> = request.player_ids.iter().copied().collect();
+    if !player_ids.is_empty() {
+        add_player_career_requests(&mut grouped, &player_ids);
+    }
+
+    grouped
+        .into_iter()
+        .map(|((season, season_type), teams)| GameCacheLoadRequest {
+            season,
+            season_type,
+            teams: teams.into_iter().collect(),
+            artifacts: request.artifacts.clone(),
+        })
+        .collect()
 }
 
 async fn ensure_team_game_cache_with_client(
@@ -212,6 +300,110 @@ fn game_type_for(season_type: SeasonType) -> u8 {
     }
 }
 
+fn add_player_career_requests(
+    grouped: &mut BTreeMap<(Season, SeasonType), BTreeSet<String>>,
+    player_ids: &HashSet<u32>,
+) {
+    for season_id in crate::bundled::BUNDLED_SEASONS {
+        let Ok(season_num) = season_id.parse::<u32>() else {
+            continue;
+        };
+        let season = Season(season_num);
+
+        if let Some(rows) = crate::bundled::get_stats(season_id) {
+            for row in rows
+                .iter()
+                .filter(|row| player_ids.contains(&row.player_id) && row.games_played > 0)
+            {
+                if let Some(teams) = row.team_abbrevs.as_deref() {
+                    add_teams(grouped, season, SeasonType::Regular, teams);
+                }
+            }
+        }
+        if let Some(rows) = crate::bundled::get_goalie_stats(season_id) {
+            for row in rows
+                .iter()
+                .filter(|row| player_ids.contains(&row.player_id) && row.games_played > 0)
+            {
+                add_teams(
+                    grouped,
+                    season,
+                    SeasonType::Regular,
+                    row.team_abbrevs.as_str(),
+                );
+            }
+        }
+
+        let regular_fallback = regular_team_fallbacks(season_id, player_ids);
+        if let Some(rows) = crate::bundled::get_playoff_stats(season_id) {
+            for row in rows
+                .iter()
+                .filter(|row| player_ids.contains(&row.player_id) && row.games_played > 0)
+            {
+                if let Some(teams) = row.team_abbrevs.as_deref() {
+                    add_teams(grouped, season, SeasonType::Playoff, teams);
+                } else if let Some(team) = regular_fallback.get(&row.player_id) {
+                    add_teams(grouped, season, SeasonType::Playoff, team);
+                }
+            }
+        }
+        if let Some(rows) = crate::bundled::get_playoff_goalie_stats(season_id) {
+            for row in rows
+                .iter()
+                .filter(|row| player_ids.contains(&row.player_id) && row.games_played > 0)
+            {
+                add_teams(
+                    grouped,
+                    season,
+                    SeasonType::Playoff,
+                    row.team_abbrevs.as_str(),
+                );
+            }
+        }
+    }
+}
+
+fn regular_team_fallbacks(season_id: &str, player_ids: &HashSet<u32>) -> BTreeMap<u32, String> {
+    let mut out = BTreeMap::new();
+    if let Some(rows) = crate::bundled::get_stats(season_id) {
+        for row in rows
+            .iter()
+            .filter(|row| player_ids.contains(&row.player_id) && row.games_played > 0)
+        {
+            if let Some(teams) = row.team_abbrevs.as_deref() {
+                if let Some(last) = split_team_abbrevs(teams).last() {
+                    out.insert(row.player_id, last.clone());
+                }
+            }
+        }
+    }
+    out
+}
+
+fn add_teams(
+    grouped: &mut BTreeMap<(Season, SeasonType), BTreeSet<String>>,
+    season: Season,
+    season_type: SeasonType,
+    teams: &str,
+) {
+    let teams = split_team_abbrevs(teams);
+    if teams.is_empty() {
+        return;
+    }
+    grouped
+        .entry((season, season_type))
+        .or_default()
+        .extend(teams);
+}
+
+fn split_team_abbrevs(teams: &str) -> Vec<String> {
+    teams
+        .split(',')
+        .map(|team| team.trim().to_ascii_uppercase())
+        .filter(|team| !team.is_empty())
+        .collect()
+}
+
 pub fn normalize_teams(teams: &[String]) -> Vec<String> {
     teams
         .iter()
@@ -263,6 +455,51 @@ mod tests {
                 .join("play_by_play")
                 .join("2026-01-01")
                 .join("2025020001.json")
+        );
+    }
+
+    #[test]
+    fn l0_favorite_game_cache_requests_include_player_career_and_team_year() {
+        let request = FavoriteGameCacheLoadRequest {
+            season: Season(20252026),
+            season_type: SeasonType::Regular,
+            player_ids: vec![8478402],
+            teams: vec!["BOS".to_string()],
+            artifacts: vec![GameCacheArtifact::Boxscore],
+        };
+
+        let requests = favorite_game_cache_requests(&request);
+        assert!(
+            requests.len() > 5,
+            "Connor McDavid career should span multiple cached season requests"
+        );
+        let active = requests
+            .iter()
+            .find(|request| {
+                request.season == Season(20252026)
+                    && matches!(request.season_type, SeasonType::Regular)
+            })
+            .expect("active season request");
+        assert!(active.teams.contains(&"EDM".to_string()));
+        assert!(active.teams.contains(&"BOS".to_string()));
+    }
+
+    #[test]
+    fn l0_favorite_game_cache_requests_include_goalie_careers() {
+        let request = FavoriteGameCacheLoadRequest {
+            season: Season(20252026),
+            season_type: SeasonType::Regular,
+            player_ids: vec![8476945],
+            teams: Vec::new(),
+            artifacts: vec![GameCacheArtifact::Boxscore],
+        };
+
+        let requests = favorite_game_cache_requests(&request);
+        assert!(
+            requests
+                .iter()
+                .any(|request| request.teams.contains(&"WPG".to_string())),
+            "Connor Hellebuyck goalie career should plan WPG game-cache loads"
         );
     }
 }

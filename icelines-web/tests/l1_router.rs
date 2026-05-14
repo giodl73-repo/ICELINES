@@ -2025,6 +2025,8 @@ async fn l1_favorites_links_canonical_ids_but_not_ambiguous_names() {
     assert!(body.contains("href=\"/player/8478402\""));
     assert!(body.contains("Connor McDavid"));
     assert!(body.contains("favorite-player-unresolved\">smith</span>"));
+    assert!(body.contains("action=\"/admin/game-cache/load-favorites\""));
+    assert!(body.contains("Load Favorites cache"));
 }
 
 #[tokio::test]
@@ -2802,9 +2804,42 @@ async fn l1_admin_html_renders_operational_viewmodels() {
     assert!(html.contains("Data Status"));
     assert!(html.contains("Snapshots"));
     assert!(html.contains("Runtime Config"));
+    assert!(html.contains("action=\"/admin/game-cache/load-favorites\""));
+    assert!(html.contains("Load Favorites cache"));
     assert!(html.contains("web.active_season"));
     assert!(html.contains("action=\"/admin/config/set\""));
     assert!(html.contains("action=\"/admin/config/reset\""));
+}
+
+#[tokio::test]
+async fn l1_admin_favorites_game_cache_json_rejects_invalid_season_before_network() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/admin/game-cache/load-favorites")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"season":"bad","season_type":"regular","artifacts":"boxscore"}"#,
+                ))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    let json = response_json(response, 64 * 1024).await;
+    assert!(
+        json["error"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("not a valid YYYYZZZZ"),
+        "json was {json}"
+    );
 }
 
 #[tokio::test]

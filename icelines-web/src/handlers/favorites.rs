@@ -41,6 +41,8 @@ pub async fn get_favorites(State(state): State<crate::WebState>) -> Response {
 
     let tmpl = FavoritesTemplate {
         active_label,
+        active_season: view.context.window.season.as_str(),
+        active_season_type: view.context.window.season_type.label().to_string(),
         player_count: view.player_count,
         team_count: view.team_count,
         players: view

@@ -751,6 +751,8 @@ pub struct FantasySimulationScenarioRow {
 #[template(path = "favorites.html")]
 pub struct FavoritesTemplate {
     pub active_label: String,
+    pub active_season: String,
+    pub active_season_type: String,
     pub player_count: usize,
     pub team_count: usize,
     pub players: Vec<FavoritePlayerRow>,

@@ -9,11 +9,14 @@ use icelines_core::{
     SnapshotMutationOperation, SnapshotView, ViewContext, ViewWindow, CURRENT_SEASON,
 };
 use icelines_fetch::datastore::DataStore;
-use icelines_fetch::game_cache::{GameCacheArtifact, GameCacheLoadRequest};
+use icelines_fetch::game_cache::{
+    FavoriteGameCacheLoadRequest, GameCacheArtifact, GameCacheLoadRequest,
+};
 use icelines_fetch::manifest::{DataKey, DataKind};
 use icelines_fetch::snapshot::SnapshotStore;
 use serde::Deserialize;
 
+use super::favorites_data::read_group_members;
 use crate::state::WebState;
 
 #[derive(Debug, Deserialize, Default)]
@@ -58,6 +61,15 @@ pub struct AdminGameCacheLoadRequest {
     pub season: String,
     pub season_type: String,
     pub teams: String,
+    pub artifacts: String,
+    #[serde(default)]
+    pub return_to: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AdminFavoritesGameCacheLoadRequest {
+    pub season: String,
+    pub season_type: String,
     pub artifacts: String,
     #[serde(default)]
     pub return_to: Option<String>,
@@ -310,6 +322,27 @@ pub async fn post_game_cache_load_form(Form(req): Form<AdminGameCacheLoadRequest
     }
 }
 
+pub async fn post_favorites_game_cache_load_json(
+    Json(req): Json<AdminFavoritesGameCacheLoadRequest>,
+) -> Response {
+    match load_favorites_game_cache(req).await {
+        Ok(summary) => axum::Json(summary).into_response(),
+        Err(message) => admin_bad_request(message),
+    }
+}
+
+pub async fn post_favorites_game_cache_load_form(
+    Form(req): Form<AdminFavoritesGameCacheLoadRequest>,
+) -> Response {
+    let return_to = safe_return_to(req.return_to.as_deref())
+        .unwrap_or("/admin")
+        .to_string();
+    match load_favorites_game_cache(req).await {
+        Ok(_summary) => Redirect::to(&return_to).into_response(),
+        Err(message) => admin_bad_request_html(message),
+    }
+}
+
 async fn load_game_cache(
     req: AdminGameCacheLoadRequest,
 ) -> Result<icelines_fetch::game_cache::GameCacheLoadSummary, String> {
@@ -354,6 +387,54 @@ async fn load_game_cache(
         && summary.failed_artifacts > 0
     {
         return Err(summary.errors.join("; "));
+    }
+    Ok(summary)
+}
+
+async fn load_favorites_game_cache(
+    req: AdminFavoritesGameCacheLoadRequest,
+) -> Result<icelines_fetch::game_cache::FavoriteGameCacheLoadSummary, String> {
+    let season_value = req
+        .season
+        .parse::<u32>()
+        .map_err(|_| format!("season '{}' is not a valid YYYYZZZZ id", req.season))?;
+    let season = Season::try_new(season_value).map_err(|err| err.to_string())?;
+    let season_type = normalize_season_type(&req.season_type)?;
+    let artifacts = GameCacheArtifact::parse_list(&req.artifacts)?;
+    let mut unresolved_players = Vec::new();
+    let mut player_ids = Vec::new();
+    let mut teams = Vec::new();
+    for (kind, key) in read_group_members("Favorites") {
+        match kind.as_str() {
+            "team" => teams.push(key),
+            "player" => match resolve_favorite_player_id(&key) {
+                Some(pid) => player_ids.push(pid),
+                None => unresolved_players.push(key),
+            },
+            _ => {}
+        }
+    }
+
+    let data_root = home_dir()
+        .ok_or_else(|| "cannot determine home directory".to_string())?
+        .join(".icelines")
+        .join("data");
+    let mut summary = icelines_fetch::game_cache::ensure_favorites_game_cache(
+        &data_root,
+        FavoriteGameCacheLoadRequest {
+            season,
+            season_type: icelines_core::season_stats::SeasonType::parse_lossy(&season_type),
+            player_ids,
+            teams,
+            artifacts,
+        },
+    )
+    .await
+    .map_err(|err| err.to_string())?;
+    for player in unresolved_players {
+        summary
+            .errors
+            .push(format!("favorite player '{player}' could not be resolved"));
     }
     Ok(summary)
 }
@@ -523,6 +604,15 @@ fn safe_return_to(value: Option<&str>) -> Option<&str> {
     }
 }
 
+fn resolve_favorite_player_id(key: &str) -> Option<u32> {
+    let key = key.trim();
+    if let Ok(pid) = key.parse::<u32>() {
+        return icelines_fetch::stats_loader::find_player_candidate_by_id(pid)
+            .map(|candidate| candidate.pid);
+    }
+    icelines_fetch::stats_loader::resolve_player_id_by_name(key)
+}
+
 fn expected_label(season: &str, season_type: &str) -> String {
     crate::WebConfig::new(season, season_type).active_label
 }
@@ -671,6 +761,20 @@ fn render_admin_html(
 fn render_game_cache_section(html: &mut String, active_season: &str, active_season_type: &str) {
     html.push_str("<section><h2>Game Cache</h2>");
     html.push_str("<p>Load per-game rows from the NHL API into the local cache for records, streaks, and matchup pages.</p>");
+    html.push_str("<form method=\"post\" action=\"/admin/game-cache/load-favorites\">");
+    html.push_str(&format!(
+        "<input type=\"hidden\" name=\"season\" value=\"{}\">",
+        html_escape(active_season)
+    ));
+    html.push_str(&format!(
+        "<input type=\"hidden\" name=\"season_type\" value=\"{}\">",
+        html_escape(active_season_type)
+    ));
+    html.push_str("<input type=\"hidden\" name=\"artifacts\" value=\"boxscore,play-by-play\">");
+    html.push_str("<input type=\"hidden\" name=\"return_to\" value=\"/admin\">");
+    html.push_str("<button type=\"submit\">Load Favorites cache</button>");
+    html.push_str("<span class=\"muted\"> Favorite players: career teams/seasons. Favorite teams: active year.</span>");
+    html.push_str("</form>");
     html.push_str("<form method=\"post\" action=\"/admin/game-cache/load\">");
     html.push_str(&format!(
         "<input type=\"hidden\" name=\"season\" value=\"{}\">",

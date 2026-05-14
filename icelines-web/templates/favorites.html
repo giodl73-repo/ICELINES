@@ -81,6 +81,20 @@
 icelines group add Favorites EDM</code></pre>
 </section>
 {% else %}
+    <section class="fav-form">
+        <h3 style="margin: 0 0 0.5rem 0;">Cache Favorites data</h3>
+        <p style="font-size: 0.9em; margin: 0 0 0.6rem 0;">
+            Loads favorite players across their career teams/seasons and favorite teams for the active year.
+        </p>
+        <form method="POST" action="/admin/game-cache/load-favorites">
+            <input type="hidden" name="season" value="{{ active_season }}">
+            <input type="hidden" name="season_type" value="{{ active_season_type }}">
+            <input type="hidden" name="artifacts" value="boxscore,play-by-play">
+            <input type="hidden" name="return_to" value="/favorites">
+            <button type="submit">Load Favorites cache</button>
+        </form>
+    </section>
+
     {% if !players.is_empty() %}
     <h2>Players</h2>
     <ul class="fav-list">

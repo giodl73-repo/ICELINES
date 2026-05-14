@@ -69,6 +69,8 @@ const ROUTER_ROUTES: &[&str] = &[
     "GET /api/v1/admin/config",
     "POST /api/v1/admin/game-cache/load",
     "POST /admin/game-cache/load",
+    "POST /api/v1/admin/game-cache/load-favorites",
+    "POST /admin/game-cache/load-favorites",
 ];
 
 const DASHBOARD_PANEL_READY_WORKSPACES: &[&str] = &[
