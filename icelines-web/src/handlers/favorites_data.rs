@@ -222,9 +222,9 @@ pub(crate) fn mutate_favorites(
     std::fs::create_dir_all(&dir).map_err(|e| format!("create {}: {e}", dir.display()))?;
     let db_path = dir.join("icelines.db");
     let conn = rusqlite::Connection::open(&db_path).map_err(|e| format!("open db: {e}"))?;
-    conn.busy_timeout(Duration::from_secs(2))
+    conn.busy_timeout(Duration::from_secs(5))
         .map_err(|e| format!("set db busy timeout: {e}"))?;
-    let _ = conn.execute_batch(
+    conn.execute_batch(
         "CREATE TABLE IF NOT EXISTS groups (
                     name        TEXT PRIMARY KEY,
                     description TEXT NOT NULL DEFAULT '',
@@ -237,8 +237,9 @@ pub(crate) fn mutate_favorites(
                     entity_ref TEXT NOT NULL,
                     added_at   TEXT NOT NULL,
                     PRIMARY KEY (group_name, entity_ref)
-                 );",
-    );
+                  );",
+    )
+    .map_err(|e| format!("initialize favorites tables: {e}"))?;
 
     let result = match op {
         MutateOp::Add => conn
