@@ -88,23 +88,42 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
 
     render_header(f, chunks[0]);
 
-    // Read members lazily on each render — group sizes are small and
-    // SQLite open is fast. Future versions can cache this.
-    let members = match crate::db::GroupDb::open() {
-        Ok(db) => db.list_members_with_kind("Favorites").unwrap_or_default(),
-        Err(_) => Vec::new(),
+    let db = match crate::db::GroupDb::open() {
+        Ok(db) => db,
+        Err(err) => {
+            render_error_state(f, chunks[1], "Could not open Favorites", &err.to_string());
+            return;
+        }
+    };
+    let members = match db.list_members_with_kind("Favorites") {
+        Ok(members) => members,
+        Err(err) => {
+            render_error_state(f, chunks[1], "Could not read Favorites", &err.to_string());
+            return;
+        }
     };
 
     if members.is_empty() {
         render_empty_state(f, chunks[1]);
-    } else if let Some(view) = build_view(app) {
-        let mut view = view;
-        apply_favorites_state(&mut view, app);
-        render_view(f, chunks[1], &view);
-    } else {
-        let views = active_player_views(app);
-        let members = filtered_member_rows(&members, &app.favorites.filters, &views);
-        render_member_list(f, chunks[1], &members, app.favorites.sort);
+        return;
+    }
+
+    match build_view(app, &db) {
+        Ok(mut view) => {
+            apply_favorites_state(&mut view, app);
+            render_view(f, chunks[1], &view);
+        }
+        Err(BuildViewError::NoHome) => {
+            render_error_state(
+                f,
+                chunks[1],
+                "Could not locate IceLines data",
+                "HOME/USERPROFILE is not set, so Favorites cannot find ~/.icelines/data.",
+            );
+        }
+        Err(BuildViewError::Compute(err)) => {
+            render_error_state(f, chunks[1], "Could not build Favorites", &err.to_string());
+        }
     }
 }
 
@@ -114,12 +133,18 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
 /// upfront. If the cache is cold (user hasn't opened the Scores tab
 /// yet), fires `maybe_fetch` in the background and renders with the
 /// empty slate — next render after the fetch lands will populate.
-fn build_view(app: &App) -> Option<FavoritesView> {
-    let db = crate::db::GroupDb::open().ok()?;
+#[derive(Debug)]
+enum BuildViewError {
+    NoHome,
+    Compute(anyhow::Error),
+}
+
+fn build_view(app: &App, db: &crate::db::GroupDb) -> Result<FavoritesView, BuildViewError> {
     let date = chrono::Utc::now().date_naive();
     let home = std::env::var_os("HOME")
         .or_else(|| std::env::var_os("USERPROFILE"))
-        .map(std::path::PathBuf::from)?;
+        .map(std::path::PathBuf::from)
+        .ok_or(BuildViewError::NoHome)?;
     let data_root = home.join(".icelines").join("data");
 
     // Pull today's slate from the existing tonight_cache. Favorites
@@ -145,14 +170,14 @@ fn build_view(app: &App) -> Option<FavoritesView> {
     };
 
     crate::favorites_view::compute_favorites_view(
-        &db,
+        db,
         "Favorites",
         date,
         icelines_core::timeframe::Timeframe::Day,
         &slate,
         &data_root,
     )
-    .ok()
+    .map_err(BuildViewError::Compute)
 }
 
 fn apply_favorites_state(view: &mut FavoritesView, app: &App) {
@@ -448,125 +473,25 @@ fn render_empty_state(f: &mut Frame, area: Rect) {
     f.render_widget(Paragraph::new(lines), inner);
 }
 
-fn render_member_list(
-    f: &mut Frame,
-    area: Rect,
-    members: &[(String, crate::db::MemberKind)],
-    sort: FavoritesSort,
-) {
-    let player_count = members
-        .iter()
-        .filter(|(_, k)| matches!(k, crate::db::MemberKind::Player))
-        .count();
-    let team_count = members
-        .iter()
-        .filter(|(_, k)| matches!(k, crate::db::MemberKind::Team))
-        .count();
-    let title = format!(" Favorites — {player_count} player(s), {team_count} team(s) ");
-    let block = Block::default().borders(Borders::ALL).title(title);
+fn render_error_state(f: &mut Frame, area: Rect, title: &str, detail: &str) {
+    let block = Block::default().borders(Borders::ALL).title(" Favorites ");
     let inner = block.inner(area);
     f.render_widget(block, area);
 
-    let rows = sorted_member_rows(members, sort);
-    let players: Vec<&str> = rows
-        .iter()
-        .filter(|(_, k)| matches!(k, crate::db::MemberKind::Player))
-        .map(|(k, _)| k.as_str())
-        .collect();
-    let teams: Vec<&str> = rows
-        .iter()
-        .filter(|(_, k)| matches!(k, crate::db::MemberKind::Team))
-        .map(|(k, _)| k.as_str())
-        .collect();
-
-    let mut items: Vec<ListItem> = Vec::with_capacity(members.len() + 4);
-    if !players.is_empty() {
-        items.push(ListItem::new(Span::styled(
-            "PLAYERS",
-            Style::default()
-                .fg(Color::Cyan)
-                .add_modifier(Modifier::BOLD),
-        )));
-        for p in players {
-            items.push(ListItem::new(format!("  · {p}")));
-        }
-    }
-    if !teams.is_empty() {
-        if !items.is_empty() {
-            items.push(ListItem::new(""));
-        }
-        items.push(ListItem::new(Span::styled(
-            "TEAMS",
-            Style::default()
-                .fg(Color::Cyan)
-                .add_modifier(Modifier::BOLD),
-        )));
-        for t in teams {
-            items.push(ListItem::new(format!("  · {t}")));
-        }
-    }
-    items.push(ListItem::new(""));
-    items.push(ListItem::new(Span::styled(
-        "  Tonight's stat lines appear when schedule/boxscore data is available.",
-        Style::default().fg(Color::DarkGray),
-    )));
-    items.push(ListItem::new(Span::styled(
-        "  Run `icelines fetch boxscore` or open Scores first to warm the cache.",
-        Style::default().fg(Color::DarkGray),
-    )));
-
-    f.render_widget(List::new(items), inner);
-}
-
-fn sorted_member_rows(
-    members: &[(String, crate::db::MemberKind)],
-    sort: FavoritesSort,
-) -> Vec<(String, crate::db::MemberKind)> {
-    let mut rows = members.to_vec();
-    match sort {
-        FavoritesSort::RecentlyAdded => {}
-        FavoritesSort::Name => rows.sort_by(|a, b| {
-            a.0.cmp(&b.0)
-                .then_with(|| kind_rank(a.1).cmp(&kind_rank(b.1)))
-        }),
-        FavoritesSort::Kind => rows.sort_by(|a, b| {
-            kind_rank(a.1)
-                .cmp(&kind_rank(b.1))
-                .then_with(|| a.0.cmp(&b.0))
-        }),
-    }
-    rows
-}
-
-fn filtered_member_rows(
-    members: &[(String, crate::db::MemberKind)],
-    filters: &crate::tui::filter_state::RosterFilterState,
-    views: &[PlayerView<'_>],
-) -> Vec<(String, crate::db::MemberKind)> {
-    if !filters_active(filters) {
-        return members.to_vec();
-    }
-    members
-        .iter()
-        .filter(|(key, kind)| match kind {
-            crate::db::MemberKind::Team => true,
-            crate::db::MemberKind::Player => {
-                icelines_fetch::stats_loader::resolve_player_id_by_name(key)
-                    .map(PlayerId)
-                    .and_then(|pid| views.iter().find(|view| view.id() == pid))
-                    .map(|view| filters.matches_view(view))
-                    .unwrap_or(false)
-            }
-        })
-        .cloned()
-        .collect()
-}
-
-fn kind_rank(kind: crate::db::MemberKind) -> u8 {
-    match kind {
-        crate::db::MemberKind::Player => 0,
-        crate::db::MemberKind::Team => 1,
-    }
+    let error = Style::default().fg(Color::Red).add_modifier(Modifier::BOLD);
+    let dim = Style::default().fg(Color::DarkGray);
+    let lines = vec![
+        Line::from(""),
+        Line::from(Span::styled(format!("  {title}"), error)),
+        Line::from(""),
+        Line::from(Span::styled(format!("  {detail}"), dim)),
+        Line::from(""),
+        Line::from(Span::styled(
+            "  This is different from an empty Favorites group; fix the storage error and reopen the tab.",
+            dim,
+        )),
+    ];
+    f.render_widget(Paragraph::new(lines), inner);
 }
 
 #[cfg(test)]
@@ -602,33 +527,42 @@ mod tests {
     }
 
     #[test]
-    fn l0_messier_favorites_member_rows_sort_by_name() {
-        let rows = vec![
-            ("EDM".to_string(), crate::db::MemberKind::Team),
-            ("mcdavid.connor".to_string(), crate::db::MemberKind::Player),
-            ("bedard.connor".to_string(), crate::db::MemberKind::Player),
-        ];
+    fn l0_audit_error_state_distinct_from_empty_state_text() {
+        let backend = ratatui::backend::TestBackend::new(80, 12);
+        let mut terminal = ratatui::Terminal::new(backend).expect("terminal");
 
-        let sorted = sorted_member_rows(&rows, FavoritesSort::Name);
+        terminal
+            .draw(|f| render_error_state(f, f.area(), "Could not read Favorites", "disk full"))
+            .expect("draw");
 
-        assert_eq!(sorted[0].0, "EDM");
-        assert_eq!(sorted[1].0, "bedard.connor");
-        assert_eq!(sorted[2].0, "mcdavid.connor");
+        let buffer = terminal.backend().buffer();
+        let text = buffer
+            .content()
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(text.contains("Could not read Favorites"));
+        assert!(text.contains("disk full"));
+        assert!(!text.contains("No favorites yet."));
     }
 
     #[test]
-    fn l0_messier_favorites_member_rows_sort_by_kind_then_name() {
-        let rows = vec![
-            ("EDM".to_string(), crate::db::MemberKind::Team),
-            ("mcdavid.connor".to_string(), crate::db::MemberKind::Player),
-            ("bedard.connor".to_string(), crate::db::MemberKind::Player),
-        ];
+    fn l0_audit_empty_state_remains_instructional() {
+        let backend = ratatui::backend::TestBackend::new(80, 16);
+        let mut terminal = ratatui::Terminal::new(backend).expect("terminal");
 
-        let sorted = sorted_member_rows(&rows, FavoritesSort::Kind);
+        terminal
+            .draw(|f| render_empty_state(f, f.area()))
+            .expect("draw");
 
-        assert_eq!(sorted[0].0, "bedard.connor");
-        assert_eq!(sorted[1].0, "mcdavid.connor");
-        assert_eq!(sorted[2].0, "EDM");
+        let buffer = terminal.backend().buffer();
+        let text = buffer
+            .content()
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(text.contains("No favorites yet."));
+        assert!(!text.contains("Could not read Favorites"));
     }
 
     #[test]

@@ -1,7 +1,7 @@
 ---
 wave: audit-the-stack
 date_open: 2026-05-14
-status: active
+status: closed
 source: user request for whole-codebase bug detection and architecture review
 ---
 
@@ -44,4 +44,4 @@ format. Each finding must be actionable and grounded in inspected files.
 | [Pulse 02 - Identity resolution hardening](plans/pulse-02.md) | closed | R3 F-02, R4 F-02 | Stopped ambiguous player-name matches from creating confident wrong player links. |
 | [Pulse 03 - Records ownership integrity](plans/pulse-03.md) | closed | R4 F-01, R5 F-02 | Made malformed play-by-play team ownership explicit by skipping rows that would otherwise group under a blank team key. |
 | [Pulse 04 - Player route cache ownership](plans/pulse-04.md) | closed | R1 F-01 | Kept web player-card requests from mutating the shared active-season repository. |
-| [Pulse 05 - TUI storage error surfacing](plans/pulse-05.md) | planned | R6 F-01 | Surface Favorites storage/view-construction failures instead of rendering them as empty state. |
+| [Pulse 05 - TUI storage error surfacing](plans/pulse-05.md) | closed | R6 F-01 | Surfaced Favorites storage/view-construction failures instead of rendering them as empty state. |
