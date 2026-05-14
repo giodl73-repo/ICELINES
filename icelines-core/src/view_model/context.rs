@@ -97,6 +97,7 @@ pub enum SourceKind {
     Docs,
     GameLog,
     Boxscore,
+    PlayByPlay,
     Shifts,
     Transactions,
     Contracts,

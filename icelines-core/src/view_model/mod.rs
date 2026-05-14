@@ -99,7 +99,9 @@ pub use poach::{
     WatchAlertSeverity, WatchAlertTrigger, WatchAlertsView, WatchRule, WatchRuleMutationIntent,
     WatchRuleMutationOperation, WatchRuleTrigger, WatchRulesView,
 };
-pub use records::{PlayerGoalRecordInput, PlayerRecordsView, RecordsOpponentRow, TeamRecordsView};
+pub use records::{
+    FightRecordInput, PlayerGoalRecordInput, PlayerRecordsView, RecordsOpponentRow, TeamRecordsView,
+};
 pub use report::{scouting_report_sections, ReportFormat, ReportView};
 pub use schedule::{
     OpponentTierBreakdown, ScheduleGameRow, ScheduleMatchupRecord, ScheduleMatchupView,

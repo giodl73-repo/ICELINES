@@ -38,8 +38,8 @@ FLAGS
 pub struct Cli {
     /// Disable all live NHL API fetches (Phase 8f.1).
     ///
-    /// Suppresses Scores / Schedule / Playoffs / boxscore endpoints
-    /// and the Scores auto-refresh timer.
+    /// Suppresses Scores / Schedule / Playoffs / boxscore / play-by-play
+    /// endpoints and the Scores auto-refresh timer.
     ///
     /// Useful for airplane mode, demos, and CI runs.
     ///
@@ -193,12 +193,16 @@ Compute individual records from persisted event-level data.
 
 The first available metrics use persisted boxscore goal rows:
   icelines records player "Andre Burakovsky" --metric teams-scored-against
+  icelines records player "Andre Burakovsky" --metric goalies-scored-against
+  icelines records player "Andre Burakovsky" --metric fight-opponents
   icelines records team EDM --metric players-scored-against-team
+  icelines records team EDM --metric goalies-beaten-by-team
+  icelines records team EDM --metric fight-opponents-by-team
 
 Run `icelines fetch boxscore --date YYYY-MM-DD` to populate local boxscore
-records. Future metrics such as goalies-scored-against and fight-opponents need
-play-by-play/event participant data and are intentionally not guessed from
-aggregate goalie or PIM totals.
+records. `icelines fetch play-by-play --date YYYY-MM-DD` populates the event
+participants needed by goalie and fight metrics. Fight-opponent records use
+explicit fighting-major participants, not aggregate PIM totals.
 "#
     )]
     Records(RecordsSubcommand),
@@ -1258,8 +1262,16 @@ pub enum RecordsSubcommand {
 pub enum RecordsMetric {
     /// NHL teams a player has scored against.
     TeamsScoredAgainst,
+    /// Goalies a player has scored against.
+    GoaliesScoredAgainst,
+    /// Players a player has fought.
+    FightOpponents,
     /// Players who scored against a team.
     PlayersScoredAgainstTeam,
+    /// Goalies a team has scored against.
+    GoaliesBeatenByTeam,
+    /// Opposing players fought by players on a team.
+    FightOpponentsByTeam,
 }
 
 #[derive(Debug, Subcommand)]
@@ -1537,6 +1549,20 @@ pub enum FetchSubcommand {
         #[arg(long)]
         for_favorites: bool,
         /// Print what would be fetched without writing to disk / db.
+        #[arg(long)]
+        dry_run: bool,
+    },
+    /// Fetch play-by-play event JSON for one date. Needed for event-backed
+    /// records such as goalies scored against and fight opponents.
+    #[command(name = "play-by-play", alias = "pbp")]
+    PlayByPlay {
+        /// Date in `YYYY-MM-DD` form. Defaults to today.
+        #[arg(long, value_name = "YYYY-MM-DD")]
+        date: Option<String>,
+        /// Restrict to games involving favorited teams.
+        #[arg(long)]
+        for_favorites: bool,
+        /// Print what would be fetched without writing to disk.
         #[arg(long)]
         dry_run: bool,
     },

@@ -38,7 +38,8 @@ const REPORT_CATALOG: &[ReportCatalogEntry] = &[
     ReportCatalogEntry {
         name: "compare",
         status: "available",
-        canonical: "icelines query compare <a> <b> | icelines x compare | icelines export md compare",
+        canonical:
+            "icelines query compare <a> <b> | icelines x compare | icelines export md compare",
         formats: "table,json,csv,markdown",
         screens: "TUI handoff, web compare",
         notes: "Use query compare for interactive output; export md for report packets.",
@@ -105,7 +106,8 @@ const REPORT_CATALOG: &[ReportCatalogEntry] = &[
         canonical: "icelines records player <name> | icelines records team <ABBR>",
         formats: "table,json,csv",
         screens: "future Player Records / Team Records",
-        notes: "First slice: teams scored against and players scored against team. Goalie/fight metrics still need play-by-play.",
+        notes:
+            "Available: teams/goalies scored against plus fight opponents from cached play-by-play.",
     },
 ];
 
@@ -135,7 +137,10 @@ pub fn run_list(json: bool) -> anyhow::Result<()> {
     println!();
     println!("Available records examples:");
     println!("  icelines records player \"Andre Burakovsky\" --metric teams-scored-against");
+    println!("  icelines records player \"Andre Burakovsky\" --metric goalies-scored-against");
+    println!("  icelines records player \"Andre Burakovsky\" --metric fight-opponents");
     println!("  icelines records team SEA --metric players-scored-against-team");
-    println!("Planned after play-by-play validation: goalies-scored-against, fight-opponents.");
+    println!("  icelines records team SEA --metric goalies-beaten-by-team");
+    println!("  icelines records team SEA --metric fight-opponents-by-team");
     Ok(())
 }

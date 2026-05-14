@@ -1680,6 +1680,28 @@ async fn l1_records_player_json_envelope_shape() {
 }
 
 #[tokio::test]
+async fn l1_records_player_metric_query_selects_fight_opponents() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/records/player/8478402?metric=fight-opponents")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let json = response_json(response, 512 * 1024).await;
+    assert_data_meta_envelope(&json, "records-player");
+    assert_eq!(json["data"]["metric"], "fight-opponents");
+}
+
+#[tokio::test]
 async fn l1_records_team_html_empty_state_links_json() {
     let _guard = home_env_lock().await;
     let _home = HomeEnvFixture::new();

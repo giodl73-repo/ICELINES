@@ -773,6 +773,7 @@ fn source_kind_label(source: icelines_core::SourceKind) -> &'static str {
         icelines_core::SourceKind::Docs => "docs",
         icelines_core::SourceKind::GameLog => "game-log",
         icelines_core::SourceKind::Boxscore => "boxscore",
+        icelines_core::SourceKind::PlayByPlay => "play-by-play",
         icelines_core::SourceKind::Shifts => "shifts",
         icelines_core::SourceKind::Transactions => "transactions",
         icelines_core::SourceKind::Contracts => "contracts",

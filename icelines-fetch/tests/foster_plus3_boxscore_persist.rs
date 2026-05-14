@@ -96,6 +96,48 @@ fn l1_foster_plus3_load_boxscore_raw_reads_persisted_file() {
 }
 
 #[test]
+fn l1_trace_events_load_play_by_play_raw_reads_persisted_file() {
+    let dir = tempfile::tempdir().unwrap();
+    let store = DataStore::open(dir.path()).unwrap();
+
+    let path = dir
+        .path()
+        .join("play_by_play")
+        .join("2026-01-15")
+        .join("2025020342.json");
+    let body = serde_json::json!({
+        "id": 2025020342,
+        "plays": [
+            {
+                "eventId": 12,
+                "typeDescKey": "goal",
+                "details": { "scoringPlayerId": 8477444, "goalieInNetId": 8478400 }
+            }
+        ]
+    });
+    write_bytes_atomic(&path, body.to_string().as_bytes()).unwrap();
+
+    let entry = ManifestEntry {
+        key: DataKey::Game(GameId(2025020342)),
+        path,
+        freshness: icelines_core::Freshness {
+            fetched_at: chrono::Utc::now(),
+            source: icelines_core::FetchSource::Live,
+            ttl: icelines_core::Ttl::Static,
+        },
+    };
+    store
+        .manifest()
+        .upsert(DataKind::PlayByPlay, entry)
+        .unwrap();
+
+    let got = store
+        .load_play_by_play_raw(DataKey::Game(GameId(2025020342)))
+        .expect("manifest hit");
+    assert_eq!(got["plays"][0]["details"]["goalieInNetId"], 8478400);
+}
+
+#[test]
 fn l1_foster_plus3_load_boxscore_raw_returns_none_when_unmanifested() {
     let dir = tempfile::tempdir().unwrap();
     let store = DataStore::open(dir.path()).unwrap();

@@ -675,7 +675,7 @@ fn render_team_schedule_loaded(
         dim,
     ));
     lines.push(Line::styled(
-        format!("  Records: :records team {team} · /records/team/{team}"),
+        format!("  Records: :records team {team} · /records/team/{team}?metric=..."),
         dim,
     ));
     if let Some(warning) = view.warnings.first() {

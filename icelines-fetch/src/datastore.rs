@@ -441,6 +441,18 @@ impl DataStore {
         serde_json::from_slice(&bytes).ok()
     }
 
+    /// Trace-the-Events.2 — load a persisted play-by-play body. Mirrors
+    /// `load_boxscore_raw`: the manifest is the lookup/commit point and callers
+    /// decide whether to lazy-fetch if the game has not been installed.
+    pub fn load_play_by_play_raw(
+        &self,
+        game: crate::manifest::DataKey,
+    ) -> Option<serde_json::Value> {
+        let entry = self.manifest.get(DataKind::PlayByPlay, &game)?;
+        let bytes = std::fs::read(&entry.path).ok()?;
+        serde_json::from_slice(&bytes).ok()
+    }
+
     /// Career history is per-player; returns `None` when the player
     /// isn't in the local store (newly-favorited rookies, etc.) and
     /// lazy-fetch is disabled or fails. Mirrors the spec's

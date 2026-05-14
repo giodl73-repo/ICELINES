@@ -88,6 +88,11 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             for_favorites,
             dry_run,
         } => do_boxscore(date, for_favorites, dry_run).await,
+        FetchSubcommand::PlayByPlay {
+            date,
+            for_favorites,
+            dry_run,
+        } => do_play_by_play(date, for_favorites, dry_run).await,
         FetchSubcommand::Sync { dry_run, force } => do_sync(dry_run, force).await,
         FetchSubcommand::Report {
             kind,
@@ -97,6 +102,135 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             dry_run,
         } => do_report(kind, &season, season_type, no_lock, dry_run).await,
     }
+}
+
+async fn do_play_by_play(
+    date: Option<String>,
+    for_favorites: bool,
+    dry_run: bool,
+) -> anyhow::Result<()> {
+    use crate::commands::tonight::parse_iso_date;
+    use chrono::Utc;
+    use icelines_core::identity::GameId;
+    use icelines_fetch::manifest::{DataKey, DataKind, ManifestEntry};
+
+    let anchor_str = match date.as_deref() {
+        Some(d) => parse_iso_date(d)?,
+        None => Utc::now().date_naive().format("%Y-%m-%d").to_string(),
+    };
+
+    let client = NhlApiClient::production();
+    let games = client
+        .fetch_schedule_for_date(&anchor_str)
+        .await
+        .with_context(|| format!("fetching schedule for {anchor_str}"))?;
+    let same_day: Vec<_> = games.into_iter().filter(|g| g.date == anchor_str).collect();
+    if same_day.is_empty() {
+        println!("No games scheduled on {anchor_str}.");
+        return Ok(());
+    }
+
+    let favorited_teams: std::collections::HashSet<String> = if for_favorites {
+        let db = crate::db::GroupDb::open().context("open group db")?;
+        db.list_members_with_kind("Favorites")
+            .unwrap_or_default()
+            .iter()
+            .filter(|(_, kind)| matches!(kind, crate::db::MemberKind::Team))
+            .map(|(key, _)| key.to_uppercase())
+            .collect()
+    } else {
+        std::collections::HashSet::new()
+    };
+
+    let to_fetch: Vec<_> = if for_favorites {
+        same_day
+            .iter()
+            .filter(|g| {
+                favorited_teams.contains(g.away_abbrev.to_uppercase().as_str())
+                    || favorited_teams.contains(g.home_abbrev.to_uppercase().as_str())
+            })
+            .collect()
+    } else {
+        same_day.iter().collect()
+    };
+
+    println!(
+        "Play-by-play fetch — {anchor_str} · {} game(s){}",
+        to_fetch.len(),
+        if for_favorites {
+            format!(
+                " (favorites only — {} team(s) tracked)",
+                favorited_teams.len()
+            )
+        } else {
+            String::new()
+        }
+    );
+
+    if dry_run {
+        for g in &to_fetch {
+            println!(
+                "  · {} @ {}  game_id={}",
+                g.away_abbrev, g.home_abbrev, g.game_id
+            );
+        }
+        println!("(dry run — no play-by-play files fetched)");
+        return Ok(());
+    }
+
+    let data_root = icelines_data_root()?;
+    let store = icelines_fetch::datastore::DataStore::open(&data_root).context("open DataStore")?;
+    let mut persisted = 0usize;
+    let mut skipped = 0usize;
+
+    for g in &to_fetch {
+        match client.fetch_play_by_play_with_raw(g.game_id).await {
+            Ok((parsed, raw)) => {
+                let path = data_root
+                    .join("play_by_play")
+                    .join(&anchor_str)
+                    .join(format!("{}.json", g.game_id));
+                let bytes = serde_json::to_vec(&raw).context("serialize play-by-play body")?;
+                if let Err(e) = icelines_fetch::atomic_write::write_bytes_atomic(&path, &bytes) {
+                    skipped += 1;
+                    eprintln!(
+                        "  ! play-by-play body write failed for game {}: {e}",
+                        g.game_id
+                    );
+                    continue;
+                }
+
+                let entry = ManifestEntry {
+                    key: DataKey::Game(GameId(g.game_id)),
+                    path,
+                    freshness: icelines_core::Freshness {
+                        fetched_at: chrono::Utc::now(),
+                        source: icelines_core::FetchSource::Live,
+                        ttl: icelines_core::Ttl::Static,
+                    },
+                };
+                if let Err(e) = store.manifest().upsert(DataKind::PlayByPlay, entry) {
+                    skipped += 1;
+                    eprintln!("  ! manifest upsert failed for game {}: {e}", g.game_id);
+                } else {
+                    persisted += 1;
+                    println!(
+                        "  · game {} persisted ({} goals, {} penalties)",
+                        parsed.game_id,
+                        parsed.goals.len(),
+                        parsed.penalties.len()
+                    );
+                }
+            }
+            Err(e) => {
+                skipped += 1;
+                eprintln!("  · play-by-play skipped for game {} ({e})", g.game_id);
+            }
+        }
+    }
+
+    println!("Done. Play-by-play persisted: {persisted}; skipped: {skipped}");
+    Ok(())
 }
 
 /// Phase Lindsay L.1.6 — generic per-report fetcher.
@@ -1338,6 +1472,14 @@ fn bundled_player_team(pid: icelines_core::identity::PlayerId) -> Option<String>
         }
     }
     None
+}
+
+fn icelines_data_root() -> anyhow::Result<std::path::PathBuf> {
+    let home = std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(std::path::PathBuf::from)
+        .ok_or_else(|| anyhow!("cannot determine home directory"))?;
+    Ok(home.join(".icelines").join("data"))
 }
 
 // ── Phase Foster.4 — `icelines fetch sync` CLI surface ───────────────────────

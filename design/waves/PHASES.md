@@ -2,6 +2,7 @@
 
 | Wave | Status | Mission | Active Evidence |
 |---|---|---|---|
+| [Trace the Events](2026-05-13-trace-the-events/WAVE.md) | closed | Validate and ingest NHL play-by-play participants so richer individual records can count goalies beaten and fight opponents without aggregate inference. | `EVENT-DATA-INVENTORY.md`; `icelines fetch play-by-play`; event-backed `icelines records` metrics; metric-aware records web/API routes |
 | [Align the Reports](2026-05-13-align-the-reports/WAVE.md) | closed | Make CLI query/report/export surfaces discoverable and prepare symmetric player/team records as a report and screen family. | `REPORT-SURFACE-INVENTORY.md`; `RECORDS-DATA-INVENTORY.md`; `icelines report list`; `icelines records`; `/records/player/:id`; `/records/team/:abbrev` |
 | [Test the Command Bar](2026-05-13-test-the-command-bar/WAVE.md) | closed | Validate whether real users can navigate IceLines through the MDI command bar, tabbing, and subcommand handoffs without maintainer coaching. | `USER-TESTING-PROTOCOL.md`; `SESSION-FINDINGS.md`; sticky command-mode follow-up; command-bar/tui persona tests |
 | [Backcheck the Phases](2026-05-13-backcheck-the-phases/WAVE.md) | closed | Backfill previous trophy phases into executable pulse packets so agents can clear residual gaps without relying on chat memory. | `BACKFILL-INVENTORY.md`; `VISUAL-CAPTURE-INVENTORY.md`; pulse plans/forks |

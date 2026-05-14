@@ -1418,7 +1418,7 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
             RecordsTarget::Player => {
                 match icelines_fetch::stats_loader::resolve_player_id_by_name(&args.subject) {
                     Some(pid) => ExecResult::Flash(format!(
-                        "records: run `icelines records player \"{}\" --metric teams-scored-against` or open `/records/player/{pid}`",
+                        "records: run `icelines records player \"{}\" --metric teams-scored-against|goalies-scored-against|fight-opponents` or open `/records/player/{pid}?metric=...`",
                         args.subject
                     )),
                     None => {
@@ -1429,7 +1429,7 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
             RecordsTarget::Team => {
                 let team = args.subject.to_ascii_uppercase();
                 ExecResult::Flash(format!(
-                    "records: run `icelines records team {team} --metric players-scored-against-team` or open `/records/team/{team}`"
+                    "records: run `icelines records team {team} --metric players-scored-against-team|goalies-beaten-by-team|fight-opponents-by-team` or open `/records/team/{team}?metric=...`"
                 ))
             }
         },

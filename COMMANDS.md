@@ -452,14 +452,21 @@ boxscores with `icelines fetch boxscore --date YYYY-MM-DD`, then run:
 
 ```bash
 icelines records player "Andre Burakovsky" --metric teams-scored-against
+icelines records player "Andre Burakovsky" --metric goalies-scored-against
+icelines records player "Andre Burakovsky" --metric fight-opponents
 icelines records player "Andre Burakovsky" --metric teams-scored-against --json
 icelines records team EDM --metric players-scored-against-team --csv
+icelines records team EDM --metric goalies-beaten-by-team
+icelines records team EDM --metric fight-opponents-by-team
 ```
 
 Available now: `teams-scored-against` for players and
-`players-scored-against-team` for teams. Planned but not guessed yet:
-`goalies-scored-against` and `fight-opponents`, which need play-by-play goalie
-on-ice / penalty participant data. Web twins live at
+`goalies-scored-against` and `fight-opponents` for players, plus
+`players-scored-against-team`, `goalies-beaten-by-team`, and
+`fight-opponents-by-team` for teams. `icelines fetch play-by-play --date
+YYYY-MM-DD` installs the event participant source for goalie and fight metrics.
+Fight records use explicit fighting-major participants, not aggregate PIM.
+Default web records pages live at
 `/records/player/:id`, `/records/team/:abbrev`,
 `/api/v1/records/player/:id`, and `/api/v1/records/team/:abbrev`.
 
@@ -1028,6 +1035,26 @@ icelines fetch boxscore --for-favorites
 icelines fetch boxscore --date 2026-01-15 --dry-run
 ```
 
+### `icelines fetch play-by-play` — event participants for records
+
+```bash
+# Today's slate — persist raw play-by-play JSON under the data manifest
+icelines fetch play-by-play
+
+# Specific date
+icelines fetch play-by-play --date 2026-01-15
+
+# Only games involving favorited teams
+icelines fetch play-by-play --for-favorites
+
+# Preview
+icelines fetch play-by-play --date 2026-01-15 --dry-run
+```
+
+This is the source for future event-backed records such as goalies a player has
+scored against and fight opponents. Empty-net goals remain no-goalie rows; the
+records layer must not infer a goalie from the boxscore.
+
 ### `icelines fetch sync` — refresh stale entries
 
 ```bash
@@ -1059,8 +1086,8 @@ icelines data-status --stale-only
 ```
 
 Recognized `--shard` values: `bios`, `stats`, `goalie_stats`,
-`transactions`, `boxscore`, `career_history`, `schedule`, `score`,
-`playoff_bracket`. Source labels: Bundle / Setup / Live /
+`transactions`, `boxscore`, `play_by_play`, `career_history`, `schedule`,
+`score`, `playoff_bracket`. Source labels: Bundle / Setup / Live /
 DataInstall / Manual.
 
 ### Date axis on existing commands

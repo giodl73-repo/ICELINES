@@ -857,6 +857,46 @@ pub struct Boxscore {
     pub home_skaters: Vec<SkaterLine>,
 }
 
+/// Event-level play-by-play projection for one game.
+#[derive(Debug, Clone)]
+pub struct PlayByPlay {
+    pub game_id: u64,
+    pub game_date: Option<String>,
+    pub away_team_id: Option<u32>,
+    pub away_abbrev: String,
+    pub home_team_id: Option<u32>,
+    pub home_abbrev: String,
+    pub goals: Vec<PlayByPlayGoal>,
+    pub penalties: Vec<PlayByPlayPenalty>,
+}
+
+#[derive(Debug, Clone)]
+pub struct PlayByPlayGoal {
+    pub event_id: u32,
+    pub period: u8,
+    pub period_type: String,
+    pub time_in_period: String,
+    pub situation_code: Option<String>,
+    pub event_owner_team_id: Option<u32>,
+    pub scoring_player_id: Option<u32>,
+    pub goalie_in_net_id: Option<u32>,
+}
+
+#[derive(Debug, Clone)]
+pub struct PlayByPlayPenalty {
+    pub event_id: u32,
+    pub period: u8,
+    pub period_type: String,
+    pub time_in_period: String,
+    pub situation_code: Option<String>,
+    pub event_owner_team_id: Option<u32>,
+    pub penalty_type: Option<String>,
+    pub desc_key: Option<String>,
+    pub duration: Option<u32>,
+    pub committed_by_player_id: Option<u32>,
+    pub drawn_by_player_id: Option<u32>,
+}
+
 impl NhlApiClient {
     /// Fetch the boxscore for one game from `/v1/gamecenter/{id}/boxscore`.
     pub async fn fetch_boxscore(&self, game_id: u64) -> Result<Boxscore, FetchError> {
@@ -876,6 +916,26 @@ impl NhlApiClient {
         let url = format!("{}/gamecenter/{game_id}/boxscore", self.base_web);
         let raw: serde_json::Value = self.get_json(&url).await?;
         let parsed = parse_boxscore(&raw, game_id);
+        Ok((parsed, raw))
+    }
+
+    /// Fetch event-level play-by-play for one game from
+    /// `/v1/gamecenter/{id}/play-by-play`.
+    pub async fn fetch_play_by_play(&self, game_id: u64) -> Result<PlayByPlay, FetchError> {
+        let url = format!("{}/gamecenter/{game_id}/play-by-play", self.base_web);
+        let raw: serde_json::Value = self.get_json(&url).await?;
+        Ok(parse_play_by_play(&raw, game_id))
+    }
+
+    /// Return the raw play-by-play JSON body alongside the typed projection so
+    /// callers can persist the source before deriving records.
+    pub async fn fetch_play_by_play_with_raw(
+        &self,
+        game_id: u64,
+    ) -> Result<(PlayByPlay, serde_json::Value), FetchError> {
+        let url = format!("{}/gamecenter/{game_id}/play-by-play", self.base_web);
+        let raw: serde_json::Value = self.get_json(&url).await?;
+        let parsed = parse_play_by_play(&raw, game_id);
         Ok((parsed, raw))
     }
 }
@@ -1047,6 +1107,93 @@ pub fn parse_boxscore(raw: &serde_json::Value, game_id: u64) -> Boxscore {
         away_skaters,
         home_skaters,
     }
+}
+
+/// Parse the NHL web play-by-play endpoint into the narrow event projection
+/// needed by records. Unknown event families are intentionally ignored.
+pub fn parse_play_by_play(raw: &serde_json::Value, fallback_game_id: u64) -> PlayByPlay {
+    let game_id = raw["id"].as_u64().unwrap_or(fallback_game_id);
+    let game_date = raw["gameDate"].as_str().map(str::to_owned);
+    let away_team_id = play_u32(&raw["awayTeam"], "id");
+    let away_abbrev = raw["awayTeam"]["abbrev"].as_str().unwrap_or("").to_owned();
+    let home_team_id = play_u32(&raw["homeTeam"], "id");
+    let home_abbrev = raw["homeTeam"]["abbrev"].as_str().unwrap_or("").to_owned();
+    let mut goals = Vec::new();
+    let mut penalties = Vec::new();
+
+    if let Some(plays) = raw["plays"].as_array() {
+        for play in plays {
+            match play["typeDescKey"].as_str() {
+                Some("goal") => goals.push(parse_play_by_play_goal(play)),
+                Some("penalty") => penalties.push(parse_play_by_play_penalty(play)),
+                _ => {}
+            }
+        }
+    }
+
+    PlayByPlay {
+        game_id,
+        game_date,
+        away_team_id,
+        away_abbrev,
+        home_team_id,
+        home_abbrev,
+        goals,
+        penalties,
+    }
+}
+
+fn parse_play_by_play_goal(play: &serde_json::Value) -> PlayByPlayGoal {
+    let details = &play["details"];
+    PlayByPlayGoal {
+        event_id: play_u32(play, "eventId").unwrap_or(0),
+        period: period_number(play),
+        period_type: period_type(play),
+        time_in_period: play["timeInPeriod"].as_str().unwrap_or("").to_owned(),
+        situation_code: play["situationCode"].as_str().map(str::to_owned),
+        event_owner_team_id: play_u32(details, "eventOwnerTeamId"),
+        scoring_player_id: play_u32(details, "scoringPlayerId"),
+        goalie_in_net_id: play_u32(details, "goalieInNetId"),
+    }
+}
+
+fn parse_play_by_play_penalty(play: &serde_json::Value) -> PlayByPlayPenalty {
+    let details = &play["details"];
+    PlayByPlayPenalty {
+        event_id: play_u32(play, "eventId").unwrap_or(0),
+        period: period_number(play),
+        period_type: period_type(play),
+        time_in_period: play["timeInPeriod"].as_str().unwrap_or("").to_owned(),
+        situation_code: play["situationCode"].as_str().map(str::to_owned),
+        event_owner_team_id: play_u32(details, "eventOwnerTeamId"),
+        penalty_type: details["typeCode"].as_str().map(str::to_owned),
+        desc_key: details["descKey"].as_str().map(str::to_owned),
+        duration: play_u32(details, "duration"),
+        committed_by_player_id: play_u32(details, "committedByPlayerId"),
+        drawn_by_player_id: play_u32(details, "drawnByPlayerId"),
+    }
+}
+
+fn period_number(play: &serde_json::Value) -> u8 {
+    play["periodDescriptor"]["number"]
+        .as_u64()
+        .or_else(|| play["period"].as_u64())
+        .unwrap_or(0) as u8
+}
+
+fn period_type(play: &serde_json::Value) -> String {
+    play["periodDescriptor"]["periodType"]
+        .as_str()
+        .or_else(|| play["periodType"].as_str())
+        .unwrap_or("REG")
+        .to_owned()
+}
+
+fn play_u32(value: &serde_json::Value, key: &str) -> Option<u32> {
+    value[key]
+        .as_u64()
+        .and_then(|id| u32::try_from(id).ok())
+        .filter(|id| *id != 0)
 }
 
 fn goal_player_id(g: &serde_json::Value) -> Option<u32> {
@@ -1427,7 +1574,7 @@ fn parse_series(s: &serde_json::Value) -> PlayoffSeries {
 
 #[cfg(test)]
 mod boxscore_tests {
-    use super::parse_boxscore;
+    use super::{parse_boxscore, parse_play_by_play};
     use serde_json::json;
 
     #[test]
@@ -1460,6 +1607,83 @@ mod boxscore_tests {
         assert_eq!(parsed.goals.len(), 1);
         assert_eq!(parsed.goals[0].scorer_id, Some(8477444));
         assert_eq!(parsed.goals[0].scorer_team, "SEA");
+    }
+
+    #[test]
+    fn l0_parse_play_by_play_reads_goalie_in_net_and_empty_net_gap() {
+        let raw = json!({
+            "id": 2023020001,
+            "gameDate": "2023-10-10",
+            "awayTeam": {"abbrev": "NSH"},
+            "homeTeam": {"abbrev": "TBL"},
+            "plays": [
+                {
+                    "eventId": 154,
+                    "periodDescriptor": {"number": 1, "periodType": "REG"},
+                    "timeInPeriod": "09:48",
+                    "situationCode": "1551",
+                    "typeDescKey": "goal",
+                    "details": {
+                        "scoringPlayerId": 8476453,
+                        "eventOwnerTeamId": 14,
+                        "goalieInNetId": 8477424
+                    }
+                },
+                {
+                    "eventId": 179,
+                    "periodDescriptor": {"number": 3, "periodType": "REG"},
+                    "timeInPeriod": "19:58",
+                    "situationCode": "0651",
+                    "typeDescKey": "goal",
+                    "details": {
+                        "scoringPlayerId": 8476453,
+                        "eventOwnerTeamId": 14
+                    }
+                }
+            ]
+        });
+
+        let parsed = parse_play_by_play(&raw, 0);
+
+        assert_eq!(parsed.game_id, 2023020001);
+        assert_eq!(parsed.goals.len(), 2);
+        assert_eq!(parsed.goals[0].scoring_player_id, Some(8476453));
+        assert_eq!(parsed.goals[0].goalie_in_net_id, Some(8477424));
+        assert_eq!(parsed.goals[1].goalie_in_net_id, None);
+    }
+
+    #[test]
+    fn l0_parse_play_by_play_reads_fighting_participants() {
+        let raw = json!({
+            "id": 2023020005,
+            "plays": [
+                {
+                    "eventId": 372,
+                    "periodDescriptor": {"number": 1, "periodType": "REG"},
+                    "timeInPeriod": "10:20",
+                    "situationCode": "1551",
+                    "typeDescKey": "penalty",
+                    "details": {
+                        "typeCode": "MAJ",
+                        "descKey": "fighting",
+                        "duration": 5,
+                        "committedByPlayerId": 8471817,
+                        "drawnByPlayerId": 8482964,
+                        "eventOwnerTeamId": 10
+                    }
+                }
+            ]
+        });
+
+        let parsed = parse_play_by_play(&raw, 0);
+
+        assert_eq!(parsed.penalties.len(), 1);
+        let penalty = &parsed.penalties[0];
+        assert_eq!(penalty.penalty_type.as_deref(), Some("MAJ"));
+        assert_eq!(penalty.desc_key.as_deref(), Some("fighting"));
+        assert_eq!(penalty.duration, Some(5));
+        assert_eq!(penalty.committed_by_player_id, Some(8471817));
+        assert_eq!(penalty.drawn_by_player_id, Some(8482964));
     }
 }
 

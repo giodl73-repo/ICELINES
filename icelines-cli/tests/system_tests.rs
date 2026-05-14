@@ -1351,6 +1351,60 @@ fn l2_records_player_no_data_exits_zero_with_headers() {
 }
 
 #[test]
+fn l2_records_player_goalies_no_data_exits_zero_with_headers() {
+    let home = tempfile::TempDir::new().unwrap();
+    let out = run_isolated(
+        home.path(),
+        &[
+            "--no-setup",
+            "records",
+            "player",
+            "Andre Burakovsky",
+            "--metric",
+            "goalies-scored-against",
+            "--csv",
+        ],
+    );
+    assert!(
+        out.status.success(),
+        "records player goalie metric must exit 0 with empty play-by-play, stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("goalie_id") && stdout.contains("goalie") && stdout.contains("count"),
+        "records goalie CSV should include stable headers, got: {stdout}"
+    );
+}
+
+#[test]
+fn l2_records_player_fights_no_data_exits_zero_with_headers() {
+    let home = tempfile::TempDir::new().unwrap();
+    let out = run_isolated(
+        home.path(),
+        &[
+            "--no-setup",
+            "records",
+            "player",
+            "Andre Burakovsky",
+            "--metric",
+            "fight-opponents",
+            "--csv",
+        ],
+    );
+    assert!(
+        out.status.success(),
+        "records player fight metric must exit 0 with empty play-by-play, stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("opponent_id") && stdout.contains("opponent") && stdout.contains("count"),
+        "records fight CSV should include stable headers, got: {stdout}"
+    );
+}
+
+#[test]
 fn l2_records_team_help_lists_first_metric() {
     let out = run(&["records", "team", "--help"]);
     assert!(out.status.success(), "records team --help must exit 0");
@@ -3957,6 +4011,25 @@ fn l2_foster4_fetch_sync_dry_run_empty_manifest() {
 fn l2_foster3_fetch_boxscore_invalid_date_clean_error() {
     let home = tempfile::tempdir().expect("tempdir");
     let out = run_isolated(home.path(), &["fetch", "boxscore", "--date", "garbage"]);
+    assert!(!out.status.success(), "invalid date must non-zero exit");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        !stderr.contains("panicked"),
+        "must not panic, stderr: {stderr}"
+    );
+    assert!(
+        stderr.contains("invalid date") && stderr.contains("YYYY-MM-DD"),
+        "validator error must surface, stderr: {stderr}"
+    );
+}
+
+/// L2 / l2_trace_events_fetch_play_by_play_invalid_date_clean_error
+/// — `fetch play-by-play --date garbage` must reuse the date validator
+///   error before any network call.
+#[test]
+fn l2_trace_events_fetch_play_by_play_invalid_date_clean_error() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let out = run_isolated(home.path(), &["fetch", "play-by-play", "--date", "garbage"]);
     assert!(!out.status.success(), "invalid date must non-zero exit");
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(
