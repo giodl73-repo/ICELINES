@@ -623,6 +623,17 @@ async fn p_w8_069_favorites_team_link_present_when_populated() {
 }
 
 #[tokio::test]
+async fn p_w8_069b_favorites_player_link_present_when_resolved() {
+    post_form("/favorites/add", "key=Connor%20McDavid&kind=player").await;
+    let r = get("/favorites").await;
+    let body = body_text(r).await;
+    assert!(
+        body.contains("/player/8478402") && body.contains("favorite-player-link"),
+        "resolved favorite players should render as player links, not plain search text"
+    );
+}
+
+#[tokio::test]
 async fn p_w8_070_favorites_empty_state_renders_when_no_members() {
     // Note: state may not be empty due to other parallel tests adding
     // members. Just check no 5xx.

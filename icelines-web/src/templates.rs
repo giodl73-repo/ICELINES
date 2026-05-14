@@ -754,6 +754,8 @@ pub struct FavoritesTemplate {
 #[derive(Debug, Clone)]
 pub struct FavoritePlayerRow {
     pub key: String,
+    pub display_name: String,
+    pub player_url: String,
     pub stat_line: String,
 }
 

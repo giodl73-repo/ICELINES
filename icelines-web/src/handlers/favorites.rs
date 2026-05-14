@@ -148,10 +148,25 @@ fn favorite_member_inputs(members: &[(String, String)]) -> Vec<FavoriteMemberInp
 }
 
 fn favorite_player_row(row: &FavoriteMemberRow) -> FavoritePlayerRow {
+    let resolved = resolve_favorite_player(&row.key);
     FavoritePlayerRow {
         key: row.key.clone(),
+        display_name: resolved
+            .as_ref()
+            .map(|candidate| candidate.full_name.clone())
+            .unwrap_or_else(|| row.key.clone()),
+        player_url: resolved
+            .map(|candidate| format!("/player/{}", candidate.pid))
+            .unwrap_or_default(),
         stat_line: row.stat_line.clone().unwrap_or_default(),
     }
+}
+
+fn resolve_favorite_player(key: &str) -> Option<icelines_fetch::stats_loader::PlayerCandidate> {
+    let pid = icelines_fetch::stats_loader::resolve_player_id_by_name(key)?;
+    icelines_fetch::stats_loader::find_player_candidates(key)
+        .into_iter()
+        .find(|candidate| candidate.pid == pid)
 }
 
 pub async fn get_watchlist_json() -> Response {
