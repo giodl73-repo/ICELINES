@@ -190,6 +190,7 @@ fn player_template_from_view(
         } else {
             view.headshot_url
         },
+        headshot_fallback_url: format!("https://assets.nhle.com/mugs/nhl/default/{id}.png"),
         gp,
         goals,
         assists,

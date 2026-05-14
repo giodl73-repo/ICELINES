@@ -614,6 +614,8 @@ pub struct TeamSeasonTemplateRow {
 #[template(path = "records.html")]
 pub struct RecordsTemplate {
     pub active_label: String,
+    pub active_season: String,
+    pub active_season_type: String,
     pub title: String,
     pub subtitle: String,
     pub back_href: String,
@@ -621,6 +623,10 @@ pub struct RecordsTemplate {
     pub json_href: String,
     pub subject_label: String,
     pub empty_hint: String,
+    pub cache_teams: String,
+    pub cache_artifacts: String,
+    pub cache_return_to: String,
+    pub cache_button_label: String,
     pub total: usize,
     pub rows: Vec<RecordsTemplateRow>,
 }
@@ -905,6 +911,7 @@ pub struct PlayerTemplate {
     /// — used to suppress the "/team/" link.
     pub team_link: String,
     pub headshot_url: Option<String>,
+    pub headshot_fallback_url: String,
     pub gp: u32,
     pub goals: u32,
     pub assists: u32,

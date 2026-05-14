@@ -14,6 +14,7 @@ pub mod datastore;
 pub mod error;
 pub mod fantasy_db;
 pub mod fetch_lock;
+pub mod game_cache;
 pub mod manifest;
 pub mod moneypuck;
 pub mod nhl_api;

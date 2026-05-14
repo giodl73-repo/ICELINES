@@ -17,7 +17,19 @@
 </header>
 
 {% if rows.is_empty() %}
-<p class="empty-state">{{ empty_hint }}</p>
+<div class="empty-state">
+    <p>{{ empty_hint }}</p>
+    {% if cache_teams != "" %}
+    <form method="post" action="/admin/game-cache/load" class="inline-form">
+        <input type="hidden" name="season" value="{{ active_season }}">
+        <input type="hidden" name="season_type" value="{{ active_season_type }}">
+        <input type="hidden" name="teams" value="{{ cache_teams }}">
+        <input type="hidden" name="artifacts" value="{{ cache_artifacts }}">
+        <input type="hidden" name="return_to" value="{{ cache_return_to }}">
+        <button type="submit">{{ cache_button_label }}</button>
+    </form>
+    {% endif %}
+</div>
 {% else %}
 <div class="table-scroll">
 <table>

@@ -67,14 +67,21 @@ impl PlayerWebRecordsMetric {
     fn empty_hint(self) -> &'static str {
         match self {
             Self::TeamsScoredAgainst => {
-                "No goal records found in local boxscores. Run `icelines fetch boxscore --date YYYY-MM-DD` to populate this record."
+                "No matching game records are loaded yet. Load active-season game lines from the NHL API, then this page will read them from the local cache."
             }
             Self::GoaliesScoredAgainst => {
-                "No goalie records found in local play-by-play. Run `icelines fetch play-by-play --date YYYY-MM-DD` to populate this record."
+                "No goalie matchup records are loaded yet. Load active-season play-by-play from the NHL API, then this page will read it from the local cache."
             }
             Self::FightOpponents => {
-                "No fight records found in local play-by-play. Run `icelines fetch play-by-play --date YYYY-MM-DD` to populate this record."
+                "No fight records are loaded yet. Load active-season play-by-play from the NHL API, then this page will read it from the local cache."
             }
+        }
+    }
+
+    fn cache_artifacts(self) -> &'static str {
+        match self {
+            Self::TeamsScoredAgainst => "boxscore",
+            Self::GoaliesScoredAgainst | Self::FightOpponents => "play-by-play",
         }
     }
 }
@@ -129,14 +136,21 @@ impl TeamWebRecordsMetric {
     fn empty_hint(self) -> &'static str {
         match self {
             Self::PlayersScored => {
-                "No team goal records found in local boxscores. Run `icelines fetch boxscore --date YYYY-MM-DD` to populate this record."
+                "No matching team game records are loaded yet. Load active-season game lines from the NHL API, then this page will read them from the local cache."
             }
             Self::GoaliesBeaten => {
-                "No team goalie records found in local play-by-play. Run `icelines fetch play-by-play --date YYYY-MM-DD` to populate this record."
+                "No team goalie matchup records are loaded yet. Load active-season play-by-play from the NHL API, then this page will read it from the local cache."
             }
             Self::FightOpponents => {
-                "No team fight records found in local play-by-play. Run `icelines fetch play-by-play --date YYYY-MM-DD` to populate this record."
+                "No team fight records are loaded yet. Load active-season play-by-play from the NHL API, then this page will read it from the local cache."
             }
+        }
+    }
+
+    fn cache_artifacts(self) -> &'static str {
+        match self {
+            Self::PlayersScored => "boxscore",
+            Self::GoaliesBeaten | Self::FightOpponents => "play-by-play",
         }
     }
 }
@@ -152,12 +166,16 @@ pub async fn get_player_records(
             return metric_error("records-player", &metric, PlayerWebRecordsMetric::ALLOWED)
         }
     };
-    let (active_label, view) = match build_player_records_view(&state, id, metric).await {
-        Ok(result) => result,
-        Err(response) => return response,
-    };
+    let (active_label, view, cache_teams) =
+        match build_player_records_view(&state, id, metric).await {
+            Ok(result) => result,
+            Err(response) => return response,
+        };
+    let cache_return_to = format!("/records/player/{id}?metric={}", metric.as_str());
     let template = records_template(RecordsTemplateInput {
         active_label,
+        active_season: view.context.window.season.as_str(),
+        active_season_type: view.context.window.season_type.label().to_string(),
         title: format!("{} Records", view.player_name),
         subtitle: metric.subtitle().to_string(),
         back_href: format!("/player/{id}"),
@@ -165,6 +183,10 @@ pub async fn get_player_records(
         json_href: format!("/api/v1/records/player/{id}?metric={}", metric.as_str()),
         subject_label: metric.subject_label().to_string(),
         empty_hint: metric.empty_hint().to_string(),
+        cache_teams: cache_teams.join(","),
+        cache_artifacts: metric.cache_artifacts().to_string(),
+        cache_return_to,
+        cache_button_label: "Load game cache for this player".to_string(),
         rows: &view.rows,
     });
     render_template(template)
@@ -182,7 +204,7 @@ pub async fn get_player_records_json(
         }
     };
     match build_player_records_view(&state, id, metric).await {
-        Ok((_active_label, view)) => {
+        Ok((_active_label, view, _cache_teams)) => {
             let meta = serde_json::json!({
                 "player_id": view.player_id,
                 "player_name": view.player_name.clone(),
@@ -210,8 +232,11 @@ pub async fn get_team_records(
         Ok(result) => result,
         Err(response) => return response,
     };
+    let cache_return_to = format!("/records/team/{}?metric={}", view.team, metric.as_str());
     let template = records_template(RecordsTemplateInput {
         active_label,
+        active_season: view.context.window.season.as_str(),
+        active_season_type: view.context.window.season_type.label().to_string(),
         title: format!("{} Records", view.team),
         subtitle: metric.subtitle().to_string(),
         back_href: format!("/team/{}/season", view.team),
@@ -223,6 +248,10 @@ pub async fn get_team_records(
         ),
         subject_label: metric.subject_label().to_string(),
         empty_hint: metric.empty_hint().to_string(),
+        cache_teams: view.team.clone(),
+        cache_artifacts: metric.cache_artifacts().to_string(),
+        cache_return_to,
+        cache_button_label: "Load game cache for this team".to_string(),
         rows: &view.rows,
     });
     render_template(template)
@@ -256,7 +285,7 @@ async fn build_player_records_view(
     state: &WebState,
     id: u32,
     metric: PlayerWebRecordsMetric,
-) -> Result<(String, PlayerRecordsView), Response> {
+) -> Result<(String, PlayerRecordsView, Vec<String>), Response> {
     let (active_label, context) = active_context(state, "records-player").await?;
     let pid = PlayerId(id);
     {
@@ -265,10 +294,18 @@ async fn build_player_records_view(
             eprintln!("warn: records career fan-out for pid={id} failed: {e}");
         }
     }
-    let player_name = {
+    let (player_name, cache_teams) = {
         let repo = state.repo.read().await;
         match repo.identity(pid) {
-            Some(identity) => identity.full_name.clone(),
+            Some(identity) => (
+                identity.full_name.clone(),
+                player_cache_teams(
+                    &repo,
+                    pid,
+                    context.window.season,
+                    context.window.season_type,
+                ),
+            ),
             None => {
                 return Err(crate::api::json_error_meta(
                     StatusCode::NOT_FOUND,
@@ -300,7 +337,7 @@ async fn build_player_records_view(
             PlayerRecordsView::fight_opponents(context, id, player_name, &fights)
         }
     };
-    Ok((active_label, view))
+    Ok((active_label, view, cache_teams))
 }
 
 async fn build_team_records_view(
@@ -364,6 +401,8 @@ async fn active_context(
 
 struct RecordsTemplateInput<'a> {
     active_label: String,
+    active_season: String,
+    active_season_type: String,
     title: String,
     subtitle: String,
     back_href: String,
@@ -371,12 +410,18 @@ struct RecordsTemplateInput<'a> {
     json_href: String,
     subject_label: String,
     empty_hint: String,
+    cache_teams: String,
+    cache_artifacts: String,
+    cache_return_to: String,
+    cache_button_label: String,
     rows: &'a [RecordsOpponentRow],
 }
 
 fn records_template(input: RecordsTemplateInput<'_>) -> RecordsTemplate {
     RecordsTemplate {
         active_label: input.active_label,
+        active_season: input.active_season,
+        active_season_type: input.active_season_type,
         title: input.title,
         subtitle: input.subtitle,
         back_href: input.back_href,
@@ -384,9 +429,42 @@ fn records_template(input: RecordsTemplateInput<'_>) -> RecordsTemplate {
         json_href: input.json_href,
         subject_label: input.subject_label,
         empty_hint: input.empty_hint,
+        cache_teams: input.cache_teams,
+        cache_artifacts: input.cache_artifacts,
+        cache_return_to: input.cache_return_to,
+        cache_button_label: input.cache_button_label,
         total: input.rows.len(),
         rows: input.rows.iter().map(record_row).collect(),
     }
+}
+
+fn player_cache_teams(
+    repo: &icelines_core::stats_repository::StatsRepository,
+    pid: PlayerId,
+    season: Season,
+    season_type: SeasonType,
+) -> Vec<String> {
+    let Some(stats) = repo.season(pid, season, season_type) else {
+        let Some(stats) = repo.career_all(pid).and_then(|rows| {
+            rows.filter(|row| row.season <= season && row.season_type == season_type)
+                .max_by_key(|row| row.season)
+        }) else {
+            return Vec::new();
+        };
+        return sorted_teams_from_stats(stats);
+    };
+    sorted_teams_from_stats(stats)
+}
+
+fn sorted_teams_from_stats(stats: &icelines_core::season_stats::SeasonStats) -> Vec<String> {
+    let mut teams: Vec<String> = stats
+        .team_stints
+        .iter()
+        .map(|stint| stint.team.0.clone())
+        .collect();
+    teams.sort();
+    teams.dedup();
+    teams
 }
 
 fn record_row(row: &RecordsOpponentRow) -> RecordsTemplateRow {

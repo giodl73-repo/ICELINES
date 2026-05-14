@@ -11,7 +11,9 @@ pub async fn get_player_streaks(
     Path(id): Path<u32>,
 ) -> Response {
     match build_streaks_view(&state, id).await {
-        Ok((active_label, view)) => Html(render_streaks_html(&active_label, &view)).into_response(),
+        Ok((active_label, view, cache_teams)) => {
+            Html(render_streaks_html(&active_label, &view, &cache_teams)).into_response()
+        }
         Err(response) => response,
     }
 }
@@ -21,7 +23,7 @@ pub async fn get_player_streaks_json(
     Path(id): Path<u32>,
 ) -> Response {
     match build_streaks_view(&state, id).await {
-        Ok((_active_label, view)) => {
+        Ok((_active_label, view, _cache_teams)) => {
             let meta = serde_json::json!({
                 "player_id": view.player_id,
                 "games_loaded": view.games_loaded,
@@ -36,7 +38,7 @@ pub async fn get_player_streaks_json(
 async fn build_streaks_view(
     state: &crate::WebState,
     id: u32,
-) -> Result<(String, PlayerStreaksView), Response> {
+) -> Result<(String, PlayerStreaksView, Vec<String>), Response> {
     let (active_label, context) = active_context(state).await?;
     let pid = PlayerId(id);
     {
@@ -45,10 +47,18 @@ async fn build_streaks_view(
             eprintln!("warn: streaks career fan-out for pid={id} failed: {e}");
         }
     }
-    let player_name = {
+    let (player_name, cache_teams) = {
         let repo = state.repo.read().await;
         match repo.identity(pid) {
-            Some(identity) => identity.full_name.clone(),
+            Some(identity) => (
+                identity.full_name.clone(),
+                player_cache_teams(
+                    &repo,
+                    pid,
+                    context.window.season,
+                    context.window.season_type,
+                ),
+            ),
             None => {
                 return Err(crate::api::json_error_meta(
                     StatusCode::NOT_FOUND,
@@ -89,7 +99,7 @@ async fn build_streaks_view(
         .map(|line| line.player_name.clone())
         .unwrap_or(player_name);
     let view = PlayerStreaksView::from_game_lines(context, id, player_name, &lines);
-    Ok((active_label, view))
+    Ok((active_label, view, cache_teams))
 }
 
 async fn active_context(state: &crate::WebState) -> Result<(String, ViewContext), Response> {
@@ -110,7 +120,11 @@ async fn active_context(state: &crate::WebState) -> Result<(String, ViewContext)
     ))
 }
 
-fn render_streaks_html(active_label: &str, view: &PlayerStreaksView) -> String {
+fn render_streaks_html(
+    active_label: &str,
+    view: &PlayerStreaksView,
+    cache_teams: &[String],
+) -> String {
     let mut rows = String::new();
     for row in &view.rows {
         rows.push_str(&format!(
@@ -123,16 +137,55 @@ fn render_streaks_html(active_label: &str, view: &PlayerStreaksView) -> String {
         ));
     }
     if view.games_loaded == 0 {
-        rows.push_str("<tr><td colspan=\"5\">No cached boxscore game lines found. Run <code>icelines fetch boxscore --date YYYY-MM-DD</code>.</td></tr>");
+        rows.push_str("<tr><td colspan=\"5\">No per-game rows are loaded yet for this player. Streaks need game order, so they read the local game cache instead of season totals.");
+        if !cache_teams.is_empty() {
+            rows.push_str(&format!(
+                "<form method=\"post\" action=\"/admin/game-cache/load\" class=\"inline-form\"><input type=\"hidden\" name=\"season\" value=\"{}\"><input type=\"hidden\" name=\"season_type\" value=\"{}\"><input type=\"hidden\" name=\"teams\" value=\"{}\"><input type=\"hidden\" name=\"artifacts\" value=\"boxscore\"><input type=\"hidden\" name=\"return_to\" value=\"/player/{}/streaks\"><button type=\"submit\">Load game cache for this player</button></form>",
+                view.context.window.season.0,
+                html_escape(view.context.window.season_type.label()).as_str(),
+                html_escape(&cache_teams.join(",")),
+                view.player_id,
+            ));
+        }
+        rows.push_str("</td></tr>");
     }
     format!(
-        "<!doctype html><html><head><meta charset=\"utf-8\"><title>{name} Streaks</title><link rel=\"stylesheet\" href=\"/static/style.css\"></head><body><header><a href=\"/\">IceLines</a> <span>{active}</span></header><main id=\"main\"><p><a href=\"/player/{pid}\">Back to player card</a> | <a href=\"/api/v1/player/{pid}/streaks\">JSON</a></p><h1>{name} Streaks</h1><p>{games} cached game lines. Source: boxscore skater rows; no streaks are inferred from season totals.</p><table><thead><tr><th>Metric</th><th>Current</th><th>Longest</th><th>Start</th><th>End</th></tr></thead><tbody>{rows}</tbody></table></main></body></html>",
+        "<!doctype html><html><head><meta charset=\"utf-8\"><title>{name} Streaks</title><link rel=\"stylesheet\" href=\"/static/style.css\"></head><body><header><a href=\"/\">IceLines</a> <span>{active}</span></header><main id=\"main\"><p><a href=\"/player/{pid}\">Back to player card</a> | <a href=\"/api/v1/player/{pid}/streaks\">JSON</a></p><h1>{name} Streaks</h1><p>{games} loaded game lines. Source: per-game skater rows; no streaks are inferred from season totals.</p><table><thead><tr><th>Metric</th><th>Current</th><th>Longest</th><th>Start</th><th>End</th></tr></thead><tbody>{rows}</tbody></table></main></body></html>",
         name = html_escape(&view.player_name),
         active = html_escape(active_label),
         pid = view.player_id,
         games = view.games_loaded,
         rows = rows
     )
+}
+
+fn player_cache_teams(
+    repo: &icelines_core::stats_repository::StatsRepository,
+    pid: PlayerId,
+    season: Season,
+    season_type: SeasonType,
+) -> Vec<String> {
+    let Some(stats) = repo.season(pid, season, season_type) else {
+        let Some(stats) = repo.career_all(pid).and_then(|rows| {
+            rows.filter(|row| row.season <= season && row.season_type == season_type)
+                .max_by_key(|row| row.season)
+        }) else {
+            return Vec::new();
+        };
+        return sorted_teams_from_stats(stats);
+    };
+    sorted_teams_from_stats(stats)
+}
+
+fn sorted_teams_from_stats(stats: &icelines_core::season_stats::SeasonStats) -> Vec<String> {
+    let mut teams: Vec<String> = stats
+        .team_stints
+        .iter()
+        .map(|stint| stint.team.0.clone())
+        .collect();
+    teams.sort();
+    teams.dedup();
+    teams
 }
 
 fn opt_str(value: Option<&str>) -> String {

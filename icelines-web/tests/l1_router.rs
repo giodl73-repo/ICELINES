@@ -1564,6 +1564,36 @@ async fn l1_player_json_envelope_shape() {
 }
 
 #[tokio::test]
+async fn l1_player_html_renders_headshot_with_fallback() {
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/player/8478402")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let bytes = axum::body::to_bytes(response.into_body(), 512 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+    assert!(
+        body.contains("class=\"player-headshot\""),
+        "body was:\n{body}"
+    );
+    assert!(
+        body.contains("data-fallback=\"https://assets.nhle.com/mugs/nhl/default/8478402.png\""),
+        "body was:\n{body}"
+    );
+    assert!(body.contains("onerror="), "body was:\n{body}");
+}
+
+#[tokio::test]
 async fn l1_player_json_does_not_mutate_shared_repo_windows() {
     let season = Season(20242025);
     let season_type = SeasonType::Regular;
@@ -1770,9 +1800,38 @@ async fn l1_records_team_html_empty_state_links_json() {
         body.contains("/api/v1/records/team/EDM"),
         "body was:\n{body}"
     );
+    assert!(body.contains("/admin/game-cache/load"), "body was:\n{body}");
     assert!(
-        body.contains("icelines fetch boxscore"),
-        "body was:\n{body}"
+        !body.contains("icelines fetch boxscore"),
+        "web records empty state should not send users to the CLI:\n{body}"
+    );
+}
+
+#[tokio::test]
+async fn l1_player_streaks_empty_state_loads_cache_in_web_ui() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/player/8478402/streaks")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let bytes = axum::body::to_bytes(response.into_body(), 512 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+    assert!(body.contains("/admin/game-cache/load"), "body was:\n{body}");
+    assert!(
+        !body.contains("icelines fetch boxscore"),
+        "web streaks empty state should not send users to the CLI:\n{body}"
     );
 }
 

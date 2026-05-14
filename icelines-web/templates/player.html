@@ -70,7 +70,9 @@ Source: IceLines · /player/{{ nhl_id }}
     {% match headshot_url %}
         {% when Some with (url) %}
             <img src="{{ url }}" alt="Headshot of {{ full_name }}"
-                 class="player-headshot">
+                 class="player-headshot" loading="lazy"
+                 onerror="if(this.src!==this.dataset.fallback){this.src=this.dataset.fallback;}"
+                 data-fallback="{{ headshot_fallback_url }}">
         {% when None %}
     {% endmatch %}
     <div>
