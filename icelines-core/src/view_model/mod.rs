@@ -4,6 +4,7 @@
 //! display policy. CLI, TUI, web, JSON, and reports render these shapes without
 //! recomputing hockey logic.
 
+pub mod awards;
 pub mod career;
 pub mod compare;
 pub mod config;
@@ -31,6 +32,7 @@ pub mod team_depth;
 pub mod tokens;
 pub mod transactions;
 
+pub use awards::{PlayerAwardRow, PlayerAwardSeasonRow, PlayerAwardsView};
 pub use career::{
     CareerRow, CareerSortKey, CareerView, CAREER_HISTORY_FETCH_COMMAND,
     CAREER_HISTORY_MISSING_STORE_MESSAGE, CAREER_HISTORY_STORE_PATH,

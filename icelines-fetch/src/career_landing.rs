@@ -21,6 +21,7 @@
 
 use icelines_core::career_history::{CareerGameType, CareerHistory, CareerStint, LeagueAbbrev};
 use icelines_core::model::Season;
+use icelines_core::{PlayerAwardRow, PlayerAwardSeasonRow, PlayerAwardsView, ViewContext};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -156,6 +157,66 @@ fn toi_field(v: &Value, key: &str) -> Option<u32> {
     Some(m * 60 + s)
 }
 
+// ── Phase Profile.4 — awards parser + store ───────────────────────────
+
+pub fn parse_player_awards(
+    player_id: u32,
+    player_name: impl Into<String>,
+    context: ViewContext,
+    raw: &Value,
+) -> PlayerAwardsView {
+    let awards = raw
+        .get("awards")
+        .and_then(|v| v.as_array())
+        .map(|entries| {
+            entries
+                .iter()
+                .filter_map(parse_award_row)
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
+    PlayerAwardsView::new(context, player_id, player_name, awards)
+}
+
+fn parse_award_row(entry: &Value) -> Option<PlayerAwardRow> {
+    let trophy = entry
+        .get("trophy")
+        .and_then(|v| v.get("default"))
+        .and_then(|v| v.as_str())
+        .filter(|name| !name.is_empty())?
+        .to_string();
+    let seasons = entry
+        .get("seasons")
+        .and_then(|v| v.as_array())
+        .map(|rows| rows.iter().filter_map(parse_award_season).collect())
+        .unwrap_or_default();
+    Some(PlayerAwardRow { trophy, seasons })
+}
+
+fn parse_award_season(entry: &Value) -> Option<PlayerAwardSeasonRow> {
+    let season = entry
+        .get("seasonId")
+        .or_else(|| entry.get("season"))
+        .and_then(|v| v.as_u64())? as u32;
+    let game_type_id = entry
+        .get("gameTypeId")
+        .and_then(|v| v.as_u64())
+        .map(|v| v as u8)
+        .unwrap_or(2);
+    Some(PlayerAwardSeasonRow {
+        season: Season(season),
+        game_type_id,
+        games_played: u32_field(entry, "gamesPlayed"),
+        goals: u32_field(entry, "goals"),
+        assists: u32_field(entry, "assists"),
+        points: u32_field(entry, "points"),
+        plus_minus: i32_field(entry, "plusMinus"),
+        pim: u32_field(entry, "pim"),
+        hits: u32_field(entry, "hits"),
+        blocked_shots: u32_field(entry, "blockedShots"),
+    })
+}
+
 // ── Phase Calder.2 — store ───────────────────────────────────────────
 
 /// On-disk format for the global career-history blob.
@@ -177,6 +238,63 @@ pub struct CareerHistoryStore {
     /// Keyed by stringified pid so JSON object keys (which must be
     /// strings) round-trip cleanly.
     pub histories: HashMap<String, CareerHistory>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct PlayerAwardsStore {
+    pub schema_version: u32,
+    pub fetched_at: Option<String>,
+    pub players: HashMap<String, PlayerAwardsView>,
+}
+
+impl PlayerAwardsStore {
+    pub fn new() -> Self {
+        Self {
+            schema_version: 1,
+            fetched_at: None,
+            players: HashMap::new(),
+        }
+    }
+
+    pub fn load(path: &Path) -> std::io::Result<Self> {
+        match std::fs::read(path) {
+            Ok(bytes) => serde_json::from_slice(&bytes).map_err(|e| {
+                std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    format!("invalid player_awards.json: {e}"),
+                )
+            }),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Self::new()),
+            Err(e) => Err(e),
+        }
+    }
+
+    pub fn save(&self, path: &Path) -> std::io::Result<()> {
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        let mut tmp = path.to_path_buf();
+        let mut name = tmp.file_name().map(|n| n.to_owned()).unwrap_or_default();
+        name.push(".tmp");
+        tmp.set_file_name(name);
+        let bytes = serde_json::to_vec(self)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string()))?;
+        std::fs::write(&tmp, &bytes)?;
+        std::fs::rename(&tmp, path)?;
+        Ok(())
+    }
+
+    pub fn upsert(&mut self, view: PlayerAwardsView) {
+        self.players.insert(view.player_id.to_string(), view);
+    }
+
+    pub fn get(&self, player_id: u32) -> Option<&PlayerAwardsView> {
+        self.players.get(&player_id.to_string())
+    }
+
+    pub fn stamp_now(&mut self) {
+        self.fetched_at = Some(chrono::Utc::now().to_rfc3339());
+    }
 }
 
 impl CareerHistoryStore {
@@ -259,6 +377,23 @@ pub fn load_local_store() -> CareerHistoryStore {
         return CareerHistoryStore::new();
     };
     CareerHistoryStore::load(&path).unwrap_or_else(|_| CareerHistoryStore::new())
+}
+
+pub fn load_local_awards_store() -> PlayerAwardsStore {
+    let Some(path) = local_awards_store_path() else {
+        return PlayerAwardsStore::new();
+    };
+    PlayerAwardsStore::load(&path).unwrap_or_else(|_| PlayerAwardsStore::new())
+}
+
+pub fn save_local_awards_view(view: PlayerAwardsView) -> std::io::Result<()> {
+    let Some(path) = local_awards_store_path() else {
+        return Ok(());
+    };
+    let mut store = PlayerAwardsStore::load(&path).unwrap_or_else(|_| PlayerAwardsStore::new());
+    store.upsert(view);
+    store.stamp_now();
+    store.save(&path)
 }
 
 /// Phase Foster +6 (SCOUT M7) — opportunistic career-history pull
@@ -354,10 +489,21 @@ fn local_store_path() -> Option<std::path::PathBuf> {
     )
 }
 
+fn local_awards_store_path() -> Option<std::path::PathBuf> {
+    let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))?;
+    Some(
+        std::path::PathBuf::from(home)
+            .join(".icelines")
+            .join("player_awards.json"),
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use icelines_core::career_history::LeagueTier;
+    use icelines_core::season_stats::SeasonType;
+    use icelines_core::{ViewContext, ViewWindow};
 
     fn load_fixture(name: &str) -> Value {
         let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -405,6 +551,20 @@ mod tests {
             .expect("first NHL stint missing");
         assert_eq!(nhl_first.season.0, 20152016);
         assert_eq!(nhl_first.team, "Edmonton Oilers");
+    }
+
+    #[test]
+    fn l0_parse_mcdavid_awards_includes_trophy_case() {
+        let raw = load_fixture("mcdavid_8478402.json");
+        let context = ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular));
+        let view = parse_player_awards(8478402, "Connor McDavid", context, &raw);
+        assert!(view.trophy_count() >= 5);
+        let art_ross = view
+            .awards
+            .iter()
+            .find(|award| award.trophy == "Art Ross Trophy")
+            .expect("Art Ross Trophy present");
+        assert!(art_ross.seasons.iter().any(|row| row.points == Some(100)));
     }
 
     /// Calder.1 / l0_parse_bedard_includes_whl_and_european_junior

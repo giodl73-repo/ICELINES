@@ -263,6 +263,7 @@ icelines report weekly --league default --category hits,blocks
 icelines records player "Andre Burakovsky" --metric teams-scored-against
 icelines records player "Andre Burakovsky" --metric goalies-scored-against
 icelines records player "Andre Burakovsky" --metric fight-opponents
+icelines awards "Connor McDavid"
 icelines watch rules
 icelines watch player "Matthew Knies" --when pp1 --save
 icelines watch disable player-matthew-knies
@@ -324,7 +325,8 @@ use the canonical CLI/web surfaces instead; from the command bar,
 `:career league=OHL season=20142015 top=8` flashes the exact `query career`
 and `/career` targets. Player cards also have a dedicated Records screen:
 press `r` from a player card, or run `:records player Andre Burakovsky` in the
-MDI command bar.
+MDI command bar. Press `a` from a player card for the cached Awards / Trophy
+Case screen; populate it with `icelines awards "Connor McDavid"`.
 
 | Key | Action |
 |---|---|

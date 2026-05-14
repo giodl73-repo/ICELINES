@@ -623,6 +623,13 @@ fn render_stats_view(
         ),
         dim,
     ));
+    lines.push(Line::styled(
+        format!(
+            " Awards   ·  a: Trophy Case  ·  icelines awards \"{}\"  ·  /player/{}/awards",
+            card.display_name, card.player_id.0
+        ),
+        dim,
+    ));
     lines.push(Line::from(""));
 
     let preset = app.queries.career_table_preset;

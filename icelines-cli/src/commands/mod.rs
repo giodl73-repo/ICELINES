@@ -1,4 +1,5 @@
 pub mod analysis;
+pub mod awards;
 pub mod config;
 pub mod data;
 pub mod data_status;

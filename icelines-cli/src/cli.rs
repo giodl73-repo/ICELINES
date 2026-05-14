@@ -207,6 +207,36 @@ explicit fighting-major participants, not aggregate PIM totals.
     )]
     Records(RecordsSubcommand),
 
+    /// Show a player's official NHL awards / Trophy Case from the landing API.
+    #[command(long_about = r#"
+Show a player's official NHL awards / Trophy Case.
+
+Awards come from the NHL player landing endpoint (`awards[]`). They are not
+inferred from leaderboard finishes, so voted trophies and playoff awards such as
+the Conn Smythe stay authoritative.
+
+Examples:
+  icelines awards "Connor McDavid"
+  icelines awards "Connor McDavid" --json
+  icelines awards "Connor McDavid" --csv --out mcdavid-awards.csv
+"#)]
+    Awards {
+        /// Player name or partial name.
+        player: String,
+
+        /// Emit the full PlayerAwardsView as JSON.
+        #[arg(long)]
+        json: bool,
+
+        /// Emit CSV instead of a table.
+        #[arg(long)]
+        csv: bool,
+
+        /// Write output to a file instead of stdout.
+        #[arg(long, value_name = "PATH")]
+        out: Option<std::path::PathBuf>,
+    },
+
     /// Preview fantasy poacher watch rules.
     #[command(subcommand)]
     Watch(WatchSubcommand),

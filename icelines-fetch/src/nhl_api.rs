@@ -330,6 +330,22 @@ impl NhlApiClient {
         })
     }
 
+    pub async fn fetch_player_awards(
+        &self,
+        player_id: u32,
+        player_name: &str,
+        context: icelines_core::ViewContext,
+    ) -> Result<icelines_core::PlayerAwardsView, FetchError> {
+        let url = format!("{}/player/{player_id}/landing", self.base_web);
+        let raw: serde_json::Value = self.get_json(&url).await?;
+        Ok(crate::career_landing::parse_player_awards(
+            player_id,
+            player_name,
+            context,
+            &raw,
+        ))
+    }
+
     /// Phase Calder.2 — batch career-history fetch.
     ///
     /// Sequential with a small per-request delay (50ms — matches

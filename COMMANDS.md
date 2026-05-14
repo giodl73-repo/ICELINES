@@ -445,6 +445,21 @@ Records reports live under the canonical `records` surface and also appear in
 `report list`: player/team symmetric facts such as NHL teams a player has scored
 against, goalies scored against, fight opponents, and head-to-head counts.
 
+## `awards` - player NHL Trophy Case
+
+Official NHL awards and trophy seasons come from the NHL player landing
+endpoint's `awards[]` array. They are not inferred from leaderboard finishes.
+
+```bash
+icelines awards "Connor McDavid"
+icelines awards "Connor McDavid" --json
+icelines awards "Connor McDavid" --csv --out mcdavid-awards.csv
+```
+
+Web routes: `/player/:id/awards` and `/api/v1/player/:id/awards`. In the TUI,
+press `a` from a player card to open the cached Trophy Case; run the CLI command
+once to populate `~/.icelines/player_awards.json`.
+
 ## `records` — player/team individual records
 
 The first records slice uses persisted boxscore goal rows. Populate local
@@ -692,6 +707,7 @@ Use `Tab` or `Esc` to leave command mode.
 | `simulate <kv...>` / `fantasy simulate <kv...>` | Fantasy add/drop scenario projection | `:simulate add=Connor_McDavid drop=Bench_Forward weeks=3` |
 | `simulate clear` | Clear the active fantasy simulation scenario | `:simulate clear` |
 | `report poach` / `report weekly` | Show exact report CLI/web target | `:report weekly cats=shots,hits top=12` |
+| `awards player <name>` | Open the cached TUI Trophy Case | `:awards player Connor McDavid` |
 | `records player <name>` | Open the TUI player records screen | `:records player Andre Burakovsky` |
 | `records team <ABBR>` | Show exact records CLI/web target | `:records team SEA` |
 | `watch <player>` | Show exact watch-note/rule target | `:watch Connor McDavid` |

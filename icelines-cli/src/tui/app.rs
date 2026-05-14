@@ -149,6 +149,8 @@ pub enum Screen {
     /// PlayerId-keyed records screen. Reuses records ViewModels and cached
     /// boxscore/play-by-play sources.
     PlayerRecordsById(PlayerId),
+    /// PlayerId-keyed NHL awards / Trophy Case screen.
+    PlayerAwardsById(PlayerId),
     Search,
     Tonight,
     Projections,
@@ -1150,6 +1152,10 @@ impl App {
                     } else if c == 'r' {
                         self.prev_screen = Some(self.screen.clone());
                         self.screen = Screen::PlayerRecordsById(pid);
+                        self.selected = 0;
+                    } else if c == 'a' {
+                        self.prev_screen = Some(self.screen.clone());
+                        self.screen = Screen::PlayerAwardsById(pid);
                         self.selected = 0;
                     } else if c == '[' {
                         // Phase Lindsay L.4.4 — `[` cycles career-table
@@ -3012,6 +3018,7 @@ impl App {
                 Screen::Team(_) => Screen::Home,
                 Screen::PlayerById(_) => Screen::Home,
                 Screen::PlayerRecordsById(pid) => Screen::PlayerById(*pid),
+                Screen::PlayerAwardsById(pid) => Screen::PlayerById(*pid),
                 Screen::CompsById(_) => Screen::Home,
                 Screen::GroupDetail(_) => Screen::Groups,
                 Screen::ScheduleTeam(_) => Screen::Schedule,
@@ -3034,6 +3041,10 @@ impl App {
                 .identity(*pid)
                 .map(|i| (i.name_normalized.clone(), i.full_name.clone())),
             Screen::PlayerRecordsById(pid) => self
+                .repo
+                .identity(*pid)
+                .map(|i| (i.name_normalized.clone(), i.full_name.clone())),
+            Screen::PlayerAwardsById(pid) => self
                 .repo
                 .identity(*pid)
                 .map(|i| (i.name_normalized.clone(), i.full_name.clone())),

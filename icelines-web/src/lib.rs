@@ -77,8 +77,16 @@ pub fn router(state: WebState) -> Router {
         .route("/api/v1/leaders", get(handlers::leaders::get_leaders_json))
         // Player card — King.3.1. Name links on /leaders point here.
         .route("/player/:id", get(handlers::player::get_player))
+        .route(
+            "/player/:id/awards",
+            get(handlers::awards::get_player_awards),
+        )
         // JSON twin — King.3.3.
         .route("/api/v1/player/:id", get(handlers::player::get_player_json))
+        .route(
+            "/api/v1/player/:id/awards",
+            get(handlers::awards::get_player_awards_json),
+        )
         .route("/scouting/:id", get(handlers::scouting::get_scouting))
         .route(
             "/api/v1/scouting/:id",
@@ -321,6 +329,7 @@ mod handlers {
     /// `/goalies` — King.5.1 + King.5.2 goalie leaderboard.
     pub mod goalies;
 
+    pub mod awards;
     /// `/player/:id` — King.3.1 + King.3.2. Player card + career table.
     pub mod player;
     pub mod records;

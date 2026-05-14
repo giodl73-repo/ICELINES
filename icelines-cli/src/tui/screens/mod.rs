@@ -7,6 +7,7 @@ pub mod goalies;
 pub mod home;
 pub mod misc;
 pub mod player;
+pub mod player_awards;
 pub mod player_records;
 pub mod playoffs;
 pub mod poach;
@@ -60,7 +61,10 @@ fn render_overlays(f: &mut Frame, app: &App, area: Rect) {
     if app.group_picker.open {
         let handled_locally = matches!(
             app.screen,
-            Screen::PlayerById(_) | Screen::PlayerRecordsById(_) | Screen::Team(_)
+            Screen::PlayerById(_)
+                | Screen::PlayerRecordsById(_)
+                | Screen::PlayerAwardsById(_)
+                | Screen::Team(_)
         );
         if !handled_locally {
             player::render_group_picker(f, app, area);
@@ -141,6 +145,7 @@ fn render_sdi(f: &mut Frame, app: &App) {
         Screen::Team(abbrev) => team::render(f, app, chunks[1], abbrev),
         Screen::PlayerById(pid) => player::render_by_id(f, app, chunks[1], *pid),
         Screen::PlayerRecordsById(pid) => player_records::render_by_id(f, app, chunks[1], *pid),
+        Screen::PlayerAwardsById(pid) => player_awards::render_by_id(f, app, chunks[1], *pid),
         Screen::Search => search::render(f, app, chunks[1]),
         Screen::Queries => queries::render(f, app, chunks[1]),
         Screen::Tonight => misc::render_tonight(f, app, chunks[1]),
@@ -345,6 +350,7 @@ fn chrome_screen_label(s: &Screen) -> &'static str {
         Screen::Favorites => "Favorites",
         Screen::PlayerById(_) => "Player",
         Screen::PlayerRecordsById(_) => "Records",
+        Screen::PlayerAwardsById(_) => "Awards",
         Screen::CompsById(_) => "Comps",
         Screen::GameDetail(_) => "Boxscore",
         Screen::GoalieDetailById(_) => "Goalie",
@@ -429,6 +435,7 @@ fn render_mdi_workspace(f: &mut Frame, app: &App, area: Rect) {
         Screen::Team(abbrev) => team::render(f, app, inner, abbrev),
         Screen::PlayerById(pid) => player::render_by_id(f, app, inner, *pid),
         Screen::PlayerRecordsById(pid) => player_records::render_by_id(f, app, inner, *pid),
+        Screen::PlayerAwardsById(pid) => player_awards::render_by_id(f, app, inner, *pid),
         Screen::Search => search::render(f, app, inner),
         Screen::Queries => queries::render(f, app, inner),
         Screen::Tonight => misc::render_tonight(f, app, inner),
@@ -552,6 +559,7 @@ fn screen_label(s: &Screen) -> &'static str {
         Screen::Team(_) => "Team",
         Screen::PlayerById(_) => "Player",
         Screen::PlayerRecordsById(_) => "Player Records",
+        Screen::PlayerAwardsById(_) => "Trophy Case",
         Screen::Search => "Search",
         Screen::Queries => "Stats",
         Screen::Tonight => "Tonight",
@@ -632,6 +640,7 @@ fn tab_for_screen(screen: &Screen) -> usize {
         | Screen::Team(_)
         | Screen::PlayerById(_)
         | Screen::PlayerRecordsById(_)
+        | Screen::PlayerAwardsById(_)
         | Screen::CompsById(_) => 0, // League
         Screen::Depth | Screen::DepthTeam(_) => 1, // Depth
         Screen::Queries | Screen::Projections | Screen::Search => 2, // Stats (default: Queries)

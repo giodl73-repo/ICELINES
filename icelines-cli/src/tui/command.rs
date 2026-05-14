@@ -166,6 +166,10 @@ pub enum Command {
     Records {
         args: RecordsCommandArgs,
     },
+    /// `awards player <name>` — open the cached NHL Trophy Case screen.
+    Awards {
+        player: String,
+    },
     /// Operational command handoffs. The TUI does not run these
     /// long-running or destructive commands from the cmdbar.
     Data {
@@ -476,6 +480,7 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
         "career" => parse_career(args),
         "report" | "reports" => parse_report(args),
         "records" | "record" => parse_records(args),
+        "awards" | "award" | "trophy" => parse_awards(args),
         "data" => Ok(Command::Data {
             args: args.trim().to_string(),
         }),
@@ -786,6 +791,20 @@ fn parse_records(args: &str) -> Result<Command, ParseError> {
             target,
             subject: subject.to_string(),
         },
+    })
+}
+
+fn parse_awards(args: &str) -> Result<Command, ParseError> {
+    let trimmed = args.trim();
+    let player = trimmed.strip_prefix("player ").unwrap_or(trimmed).trim();
+    if player.is_empty() {
+        return Err(ParseError::MissingArg {
+            command: "awards",
+            arg: "player <name>",
+        });
+    }
+    Ok(Command::Awards {
+        player: player.to_string(),
     })
 }
 
@@ -1446,6 +1465,27 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
                 ))
             }
         },
+        Command::Awards { player } => {
+            match icelines_fetch::stats_loader::resolve_player_id_by_name(&player) {
+                Some(pid) => {
+                    let player_id = icelines_core::identity::PlayerId(pid);
+                    if let Err(e) = icelines_fetch::stats_loader::load_player_career_into_repo(
+                        &mut app.repo,
+                        player_id,
+                    ) {
+                        return ExecResult::Flash(format!(
+                            "awards: could not load player {pid}: {e}"
+                        ));
+                    }
+                    app.prev_screen = Some(app.screen.clone());
+                    app.screen = Screen::PlayerAwardsById(player_id);
+                    ExecResult::Flash(format!(
+                        "awards: {player}  -  fetch/update with `icelines awards \"{player}\"`"
+                    ))
+                }
+                None => ExecResult::Flash(format!("awards: player not found: {player:?}")),
+            }
+        }
         Command::Data { args } => ExecResult::Flash(cli_handoff("data", &args, "/admin")),
         Command::Snapshot { args } => ExecResult::Flash(cli_handoff("snapshot", &args, "/admin")),
         Command::Config { args } => ExecResult::Flash(cli_handoff("config", &args, "/admin")),
@@ -2276,6 +2316,22 @@ mod tests {
                     target: RecordsTarget::Team,
                     subject: "edm".to_string(),
                 },
+            }
+        );
+    }
+
+    #[test]
+    fn l0_profile_parse_awards_cmdbar() {
+        assert_eq!(
+            parse_command("awards player Connor McDavid").unwrap(),
+            Command::Awards {
+                player: "Connor McDavid".to_string()
+            }
+        );
+        assert_eq!(
+            parse_command("trophy Connor McDavid").unwrap(),
+            Command::Awards {
+                player: "Connor McDavid".to_string()
             }
         );
     }
@@ -3302,6 +3358,21 @@ mod tests {
         };
         assert!(message.contains("icelines records player \"Connor McDavid\""));
         assert!(matches!(app.screen, Screen::PlayerRecordsById(_)));
+    }
+
+    #[test]
+    fn l0_profile_exec_awards_player_opens_tui_awards_screen() {
+        let mut app = fresh_app_with_mdi();
+        let r = execute_command(
+            parse_command("awards player Connor McDavid").unwrap(),
+            &mut app,
+        );
+
+        let ExecResult::Flash(message) = r else {
+            panic!("awards player should flash canonical CLI target");
+        };
+        assert!(message.contains("icelines awards \"Connor McDavid\""));
+        assert!(matches!(app.screen, Screen::PlayerAwardsById(_)));
     }
 
     #[test]

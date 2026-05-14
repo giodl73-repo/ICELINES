@@ -17,9 +17,9 @@ need new ViewModels.
 | Overview | `PlayerById` player card | `/player/:id` | `query player <name>` | exists |
 | NHL career table | embedded on player card | embedded on `/player/:id` | `history <player>`, `query player --seasons` | exists but should become a tab/section |
 | Game log | not a player screen | game pages exist, not player game log | partial through boxscore-driven commands | planned |
-| Records | hint only | `/records/player/:id?metric=...` | `records player <name> --metric ...` | web/CLI exists; TUI screen missing |
+| Records | `PlayerRecordsById` | `/records/player/:id?metric=...` | `records player <name> --metric ...` | exists |
 | Streaks and windows | not a player screen | not a player screen | query grammar can express streak filters | planned |
-| Awards / Trophy Case | not modeled | not modeled | not modeled | planned |
+| Awards / Trophy Case | `PlayerAwardsById` cached screen | `/player/:id/awards` | `awards <player>` | exists |
 | Scouting report | not a main player tab | `/scouting/:id` | `scouting <player>` | exists as separate surface |
 | Peers and comparisons | `CompsById` exists | `/compare` exists | `peers`, `compare` | exists but not hubbed from player |
 | Mates and deployment | not a player tab | not a player route | `mates <player>` | exists as CLI-only |
@@ -34,7 +34,7 @@ need new ViewModels.
 | 3 | Game Log | What happened game by game? | cached boxscore/play-by-play rows | TUI tab, web `/player/:id/games`, API twin |
 | 4 | Records | What symmetric records does he own? | `PlayerRecordsView` | TUI records screen, web `/records/player/:id?metric=...`, CLI `records player` |
 | 5 | Streaks | What runs did he have? | game log/window ViewModel; no season-total inference | TUI tab, web `/player/:id/streaks`, CLI `streaks player` or `records player --metric streaks` |
-| 6 | Awards / Trophy Case | What NHL awards and trophy seasons does he have? | new `PlayerAwardsView` from landing `awards[]` | TUI tab, web `/player/:id/awards`, API twin, CLI `awards player` |
+| 6 | Awards / Trophy Case | What NHL awards and trophy seasons does he have? | `PlayerAwardsView` from landing `awards[]` | TUI `PlayerAwardsById`, web `/player/:id/awards`, API twin, CLI `awards` |
 | 7 | Scouting | What kind of player is he? | existing scouting report ViewModel | TUI tab/handoff, web `/scouting/:id`, CLI `scouting` |
 | 8 | Peers / Compare | Who is he like, and how does he compare? | existing peers/compare ViewModels | TUI comps screen, web compare, CLI `peers` / `compare` |
 | 9 | Mates / Deployment | Who does he play with and how is he used? | linemate/boxscore/deployment data | TUI tab, web `/player/:id/mates`, CLI `mates` |
