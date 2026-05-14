@@ -40,7 +40,9 @@ impl PlayerAwardsView {
     ) -> Self {
         awards.sort_by(|a, b| a.trophy.cmp(&b.trophy));
         for award in &mut awards {
-            award.seasons.sort_by(|a, b| b.season.0.cmp(&a.season.0));
+            award
+                .seasons
+                .sort_by_key(|season| std::cmp::Reverse(season.season.0));
         }
         context.source_state.push(SourceState {
             source: SourceKind::Career,
