@@ -56,6 +56,7 @@ fn print_short_banner() {
     println!();
     println!("Quick:");
     println!("  icelines query leaders --filter \"age<=24 AND p>=80\"");
+    println!("  icelines report list");
     println!("  icelines tui player Bedard");
     println!("  icelines --help    All commands and flags");
 }
