@@ -26,6 +26,7 @@ pub mod scouting;
 pub mod serve;
 pub mod setup;
 pub mod snapshot;
+pub mod streaks;
 pub mod team;
 pub mod tonight;
 pub mod transactions;

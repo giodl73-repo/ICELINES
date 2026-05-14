@@ -460,6 +460,21 @@ Web routes: `/player/:id/awards` and `/api/v1/player/:id/awards`. In the TUI,
 press `a` from a player card to open the cached Trophy Case; run the CLI command
 once to populate `~/.icelines/player_awards.json`.
 
+## `streaks` - player goal/assist/point streaks
+
+Streaks are computed from cached per-game boxscore skater rows, not from season
+totals. Populate local inputs with `icelines fetch boxscore --date YYYY-MM-DD`,
+then run:
+
+```bash
+icelines streaks "Connor McDavid"
+icelines streaks "Connor McDavid" --json
+icelines streaks "Connor McDavid" --csv --out mcdavid-streaks.csv
+```
+
+Web routes: `/player/:id/streaks` and `/api/v1/player/:id/streaks`. In the TUI,
+press `s` from a player card, or run `:streaks player <name>` in the command bar.
+
 ## `records` — player/team individual records
 
 The first records slice uses persisted boxscore goal rows. Populate local
@@ -610,7 +625,7 @@ historical career across all 38 bundled seasons on first open.
 | `F` | Toggle admin overlay |
 | `g` | Add to group from a player card / team roster |
 | `w` | Toggle selected Poach candidate in the local `Watchlist` group |
-| `s` / `l` | Save / load query (Queries tab) |
+| `s` / `l` | Save / load query on Queries; `s` opens player streaks from a player card |
 | `f` | **Free-form filter overlay** (Queries tab) — type any Phase Art Ross filter (`country IN (CAN, USA) AND age<25`, `g.last10g>=5`, `p.career>=500`, etc.); Enter to apply, Esc to cancel. Inside the overlay: `↑/↓` walk recent-filter history, `?` toggle grammar cheatsheet, live "→ N of M match" count for bio + season-stat filters |
 
 ### TUI filter/sort matrix (Phase Messier)
@@ -708,6 +723,7 @@ Use `Tab` or `Esc` to leave command mode.
 | `simulate clear` | Clear the active fantasy simulation scenario | `:simulate clear` |
 | `report poach` / `report weekly` | Show exact report CLI/web target | `:report weekly cats=shots,hits top=12` |
 | `awards player <name>` | Open the cached TUI Trophy Case | `:awards player Connor McDavid` |
+| `streaks player <name>` | Open the TUI player streaks screen | `:streaks player Connor McDavid` |
 | `records player <name>` | Open the TUI player records screen | `:records player Andre Burakovsky` |
 | `records team <ABBR>` | Show exact records CLI/web target | `:records team SEA` |
 | `watch <player>` | Show exact watch-note/rule target | `:watch Connor McDavid` |

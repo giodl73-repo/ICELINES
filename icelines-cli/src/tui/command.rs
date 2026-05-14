@@ -170,6 +170,10 @@ pub enum Command {
     Awards {
         player: String,
     },
+    /// `streaks player <name>` — open the cached player streaks screen.
+    Streaks {
+        player: String,
+    },
     /// Operational command handoffs. The TUI does not run these
     /// long-running or destructive commands from the cmdbar.
     Data {
@@ -481,6 +485,7 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
         "report" | "reports" => parse_report(args),
         "records" | "record" => parse_records(args),
         "awards" | "award" | "trophy" => parse_awards(args),
+        "streaks" | "streak" => parse_streaks(args),
         "data" => Ok(Command::Data {
             args: args.trim().to_string(),
         }),
@@ -804,6 +809,20 @@ fn parse_awards(args: &str) -> Result<Command, ParseError> {
         });
     }
     Ok(Command::Awards {
+        player: player.to_string(),
+    })
+}
+
+fn parse_streaks(args: &str) -> Result<Command, ParseError> {
+    let trimmed = args.trim();
+    let player = trimmed.strip_prefix("player ").unwrap_or(trimmed).trim();
+    if player.is_empty() {
+        return Err(ParseError::MissingArg {
+            command: "streaks",
+            arg: "player <name>",
+        });
+    }
+    Ok(Command::Streaks {
         player: player.to_string(),
     })
 }
@@ -1484,6 +1503,27 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
                     ))
                 }
                 None => ExecResult::Flash(format!("awards: player not found: {player:?}")),
+            }
+        }
+        Command::Streaks { player } => {
+            match icelines_fetch::stats_loader::resolve_player_id_by_name(&player) {
+                Some(pid) => {
+                    let player_id = icelines_core::identity::PlayerId(pid);
+                    if let Err(e) = icelines_fetch::stats_loader::load_player_career_into_repo(
+                        &mut app.repo,
+                        player_id,
+                    ) {
+                        return ExecResult::Flash(format!(
+                            "streaks: could not load player {pid}: {e}"
+                        ));
+                    }
+                    app.prev_screen = Some(app.screen.clone());
+                    app.screen = Screen::PlayerStreaksById(player_id);
+                    ExecResult::Flash(format!(
+                        "streaks: {player}  -  CLI: icelines streaks \"{player}\""
+                    ))
+                }
+                None => ExecResult::Flash(format!("streaks: player not found: {player:?}")),
             }
         }
         Command::Data { args } => ExecResult::Flash(cli_handoff("data", &args, "/admin")),
@@ -2331,6 +2371,22 @@ mod tests {
         assert_eq!(
             parse_command("trophy Connor McDavid").unwrap(),
             Command::Awards {
+                player: "Connor McDavid".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn l0_profile_parse_streaks_cmdbar() {
+        assert_eq!(
+            parse_command("streaks player Connor McDavid").unwrap(),
+            Command::Streaks {
+                player: "Connor McDavid".to_string()
+            }
+        );
+        assert_eq!(
+            parse_command("streak Connor McDavid").unwrap(),
+            Command::Streaks {
                 player: "Connor McDavid".to_string()
             }
         );

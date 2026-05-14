@@ -28,7 +28,7 @@ which CLI/TUI/web surface exposes it.
 |---|---|---|
 | 01 - Player screen map | done | `PLAYER-SCREEN-MAP.md`; awards source probe |
 | 02 - Player records TUI screen | done | `Screen::PlayerRecordsById`; `r` from player card; `:records player <name>` opens records screen |
-| 03 - Player streaks screen | planned | streak ViewModel from game logs/play-by-play windows |
+| 03 - Player streaks screen | done | `PlayerStreaksView`; `icelines streaks`; `/player/:id/streaks`; `Screen::PlayerStreaksById` |
 | 04 - Player awards Trophy Case | done | `PlayerAwardsView`; `icelines awards`; `/player/:id/awards`; `Screen::PlayerAwardsById` |
 | 05 - Player navigation polish | planned | player hub links, command-bar targets, docs, parity inventory |
 
@@ -66,3 +66,5 @@ season rows, so awards are viable as a data-backed screen once parsed. Pulse 02
 adds a dedicated TUI player records screen that renders all current player
 record metrics from the shared `PlayerRecordsView`. Pulse 04 adds the Awards /
 Trophy Case ViewModel and CLI/web/TUI surfaces backed by landing `awards[]`.
+Pulse 03 adds the Streaks screen from cached boxscore game rows, with CLI, TUI,
+web, and API surfaces sharing `PlayerStreaksView`.

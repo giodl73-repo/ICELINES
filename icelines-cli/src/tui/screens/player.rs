@@ -452,7 +452,7 @@ pub(crate) fn player_card_view_from_app(app: &App, pid: PlayerId) -> Option<Play
 
 pub fn render_by_id(f: &mut Frame, app: &App, area: Rect, pid: PlayerId) {
     let block = Block::default().borders(Borders::ALL).title(
-        " Player Card  ·  [/]: preset  ·  c: comps  ·  g: group  ·  f: favorites  ·  Esc: back ",
+        " Player Card  ·  [/]: preset  ·  c: comps  ·  r/a/s: records/awards/streaks  ·  Esc: back ",
     );
     let inner = block.inner(area);
     f.render_widget(block, area);
@@ -626,6 +626,13 @@ fn render_stats_view(
     lines.push(Line::styled(
         format!(
             " Awards   ·  a: Trophy Case  ·  icelines awards \"{}\"  ·  /player/{}/awards",
+            card.display_name, card.player_id.0
+        ),
+        dim,
+    ));
+    lines.push(Line::styled(
+        format!(
+            " Streaks  ·  s: open  ·  icelines streaks \"{}\"  ·  /player/{}/streaks",
             card.display_name, card.player_id.0
         ),
         dim,

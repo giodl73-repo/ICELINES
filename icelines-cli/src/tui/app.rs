@@ -151,6 +151,8 @@ pub enum Screen {
     PlayerRecordsById(PlayerId),
     /// PlayerId-keyed NHL awards / Trophy Case screen.
     PlayerAwardsById(PlayerId),
+    /// PlayerId-keyed goal/assist/point streak screen.
+    PlayerStreaksById(PlayerId),
     Search,
     Tonight,
     Projections,
@@ -282,6 +284,7 @@ pub struct App {
     pub fantasy_gaps: crate::tui::screens::fantasy::FantasyGapsScreenState,
     pub fantasy_sim: crate::tui::screens::fantasy::FantasySimulationScreenState,
     pub player_records: crate::tui::screens::player_records::PlayerRecordsScreenState,
+    pub player_streaks: crate::tui::screens::player_streaks::PlayerStreaksScreenState,
 
     // ── Repo-backed view state ─────────────────────────────────────────
     /// Post-Hart canonical store. `!Send + !Sync` by construction.
@@ -413,6 +416,7 @@ impl App {
             fantasy_gaps: crate::tui::screens::fantasy::FantasyGapsScreenState::default(),
             fantasy_sim: crate::tui::screens::fantasy::FantasySimulationScreenState::default(),
             player_records: Default::default(),
+            player_streaks: Default::default(),
 
             // Empty repo + current season as the initial typed window.
             depth_filters: crate::tui::filter_state::RosterFilterState::default(),
@@ -1156,6 +1160,10 @@ impl App {
                     } else if c == 'a' {
                         self.prev_screen = Some(self.screen.clone());
                         self.screen = Screen::PlayerAwardsById(pid);
+                        self.selected = 0;
+                    } else if c == 's' {
+                        self.prev_screen = Some(self.screen.clone());
+                        self.screen = Screen::PlayerStreaksById(pid);
                         self.selected = 0;
                     } else if c == '[' {
                         // Phase Lindsay L.4.4 — `[` cycles career-table
@@ -3019,6 +3027,7 @@ impl App {
                 Screen::PlayerById(_) => Screen::Home,
                 Screen::PlayerRecordsById(pid) => Screen::PlayerById(*pid),
                 Screen::PlayerAwardsById(pid) => Screen::PlayerById(*pid),
+                Screen::PlayerStreaksById(pid) => Screen::PlayerById(*pid),
                 Screen::CompsById(_) => Screen::Home,
                 Screen::GroupDetail(_) => Screen::Groups,
                 Screen::ScheduleTeam(_) => Screen::Schedule,
@@ -3045,6 +3054,10 @@ impl App {
                 .identity(*pid)
                 .map(|i| (i.name_normalized.clone(), i.full_name.clone())),
             Screen::PlayerAwardsById(pid) => self
+                .repo
+                .identity(*pid)
+                .map(|i| (i.name_normalized.clone(), i.full_name.clone())),
+            Screen::PlayerStreaksById(pid) => self
                 .repo
                 .identity(*pid)
                 .map(|i| (i.name_normalized.clone(), i.full_name.clone())),

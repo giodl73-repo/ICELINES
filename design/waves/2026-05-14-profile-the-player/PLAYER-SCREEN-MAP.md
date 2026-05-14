@@ -18,7 +18,7 @@ need new ViewModels.
 | NHL career table | embedded on player card | embedded on `/player/:id` | `history <player>`, `query player --seasons` | exists but should become a tab/section |
 | Game log | not a player screen | game pages exist, not player game log | partial through boxscore-driven commands | planned |
 | Records | `PlayerRecordsById` | `/records/player/:id?metric=...` | `records player <name> --metric ...` | exists |
-| Streaks and windows | not a player screen | not a player screen | query grammar can express streak filters | planned |
+| Streaks and windows | `PlayerStreaksById` | `/player/:id/streaks` | `streaks <player>` | exists |
 | Awards / Trophy Case | `PlayerAwardsById` cached screen | `/player/:id/awards` | `awards <player>` | exists |
 | Scouting report | not a main player tab | `/scouting/:id` | `scouting <player>` | exists as separate surface |
 | Peers and comparisons | `CompsById` exists | `/compare` exists | `peers`, `compare` | exists but not hubbed from player |
@@ -33,7 +33,7 @@ need new ViewModels.
 | 2 | Career | What did he do by season and league? | existing NHL career rows + Calder `CareerHistory` | TUI tab, web section/page, CLI `history` / `query player --seasons` |
 | 3 | Game Log | What happened game by game? | cached boxscore/play-by-play rows | TUI tab, web `/player/:id/games`, API twin |
 | 4 | Records | What symmetric records does he own? | `PlayerRecordsView` | TUI records screen, web `/records/player/:id?metric=...`, CLI `records player` |
-| 5 | Streaks | What runs did he have? | game log/window ViewModel; no season-total inference | TUI tab, web `/player/:id/streaks`, CLI `streaks player` or `records player --metric streaks` |
+| 5 | Streaks | What runs did he have? | `PlayerStreaksView` from cached boxscore game rows; no season-total inference | TUI `PlayerStreaksById`, web `/player/:id/streaks`, API twin, CLI `streaks` |
 | 6 | Awards / Trophy Case | What NHL awards and trophy seasons does he have? | `PlayerAwardsView` from landing `awards[]` | TUI `PlayerAwardsById`, web `/player/:id/awards`, API twin, CLI `awards` |
 | 7 | Scouting | What kind of player is he? | existing scouting report ViewModel | TUI tab/handoff, web `/scouting/:id`, CLI `scouting` |
 | 8 | Peers / Compare | Who is he like, and how does he compare? | existing peers/compare ViewModels | TUI comps screen, web compare, CLI `peers` / `compare` |
@@ -74,8 +74,8 @@ awards such as Conn Smythe.
    `PlayerRecordsView`.
 2. **Awards / Trophy Case**: adds a high-value player story screen from an
    already validated source.
-3. **Streaks**: needs game-log/window semantics; build after player game log
-   source shape is explicit.
+3. **Streaks**: uses cached boxscore skater rows for goal, assist, and point
+   streaks; future game-log work can expand the same game-row foundation.
 4. **Game Log**: foundational for streaks, hot/cold form, and fantasy context.
 5. **Player hub navigation**: link all screens from overview in TUI and web.
 

@@ -28,6 +28,7 @@ pub mod report;
 pub mod schedule;
 pub mod scores;
 pub mod snapshot;
+pub mod streaks;
 pub mod team_depth;
 pub mod tokens;
 pub mod transactions;
@@ -117,6 +118,7 @@ pub use snapshot::{
     SnapshotEntryInput, SnapshotMutationIntent, SnapshotMutationOperation, SnapshotRow,
     SnapshotView,
 };
+pub use streaks::{PlayerGameLineInput, PlayerStreakRow, PlayerStreaksView};
 pub use team_depth::{
     DeploymentEvidence, DepthGoalieSlot, DepthLeagueView, DepthLine, DepthPair, DepthPlayerSlot,
     DepthSlotKind, DepthSummary, DepthTeamStrengthRow, TeamDepthChartColumn, TeamDepthChartPlayer,

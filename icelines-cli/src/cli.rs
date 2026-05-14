@@ -237,6 +237,35 @@ Examples:
         out: Option<std::path::PathBuf>,
     },
 
+    /// Show a player's goal, assist, and point streaks from cached game lines.
+    #[command(long_about = r#"
+Show a player's goal, assist, and point streaks from cached boxscore game lines.
+
+Streaks are computed from persisted per-game skater rows, not season totals. Run
+`icelines fetch boxscore --date YYYY-MM-DD` to populate the local inputs.
+
+Examples:
+  icelines streaks "Andre Burakovsky"
+  icelines streaks "Connor McDavid" --json
+  icelines streaks "Connor McDavid" --csv --out mcdavid-streaks.csv
+"#)]
+    Streaks {
+        /// Player name or partial name.
+        player: String,
+
+        /// Emit the full PlayerStreaksView as JSON.
+        #[arg(long)]
+        json: bool,
+
+        /// Emit CSV instead of a table.
+        #[arg(long)]
+        csv: bool,
+
+        /// Write output to a file instead of stdout.
+        #[arg(long, value_name = "PATH")]
+        out: Option<std::path::PathBuf>,
+    },
+
     /// Preview fantasy poacher watch rules.
     #[command(subcommand)]
     Watch(WatchSubcommand),

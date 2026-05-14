@@ -81,11 +81,19 @@ pub fn router(state: WebState) -> Router {
             "/player/:id/awards",
             get(handlers::awards::get_player_awards),
         )
+        .route(
+            "/player/:id/streaks",
+            get(handlers::streaks::get_player_streaks),
+        )
         // JSON twin — King.3.3.
         .route("/api/v1/player/:id", get(handlers::player::get_player_json))
         .route(
             "/api/v1/player/:id/awards",
             get(handlers::awards::get_player_awards_json),
+        )
+        .route(
+            "/api/v1/player/:id/streaks",
+            get(handlers::streaks::get_player_streaks_json),
         )
         .route("/scouting/:id", get(handlers::scouting::get_scouting))
         .route(
@@ -334,6 +342,7 @@ mod handlers {
     pub mod player;
     pub mod records;
     pub mod scouting;
+    pub mod streaks;
 
     /// `/compare` — UX.D. Side-by-side stat comparison of two players.
     pub mod compare;

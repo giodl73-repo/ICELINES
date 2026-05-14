@@ -27,6 +27,7 @@ pub mod series_momentum_builder;
 pub mod shift_profile;
 pub mod snapshot;
 pub mod stats_loader;
+pub mod streaks_provider;
 pub mod sync_engine;
 pub mod teams;
 pub mod transactions;

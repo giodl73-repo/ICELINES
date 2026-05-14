@@ -264,6 +264,7 @@ icelines records player "Andre Burakovsky" --metric teams-scored-against
 icelines records player "Andre Burakovsky" --metric goalies-scored-against
 icelines records player "Andre Burakovsky" --metric fight-opponents
 icelines awards "Connor McDavid"
+icelines streaks "Connor McDavid"
 icelines watch rules
 icelines watch player "Matthew Knies" --when pp1 --save
 icelines watch disable player-matthew-knies
@@ -326,7 +327,8 @@ use the canonical CLI/web surfaces instead; from the command bar,
 and `/career` targets. Player cards also have a dedicated Records screen:
 press `r` from a player card, or run `:records player Andre Burakovsky` in the
 MDI command bar. Press `a` from a player card for the cached Awards / Trophy
-Case screen; populate it with `icelines awards "Connor McDavid"`.
+Case screen; populate it with `icelines awards "Connor McDavid"`. Press `s`
+for cached goal/assist/point streaks, or run `:streaks player Connor McDavid`.
 
 | Key | Action |
 |---|---|

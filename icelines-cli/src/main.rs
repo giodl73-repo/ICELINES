@@ -230,6 +230,14 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         } => {
             commands::awards::run(player, json, csv, out).await?;
         }
+        Commands::Streaks {
+            player,
+            json,
+            csv,
+            out,
+        } => {
+            commands::streaks::run(player, json, csv, out).await?;
+        }
         Commands::Watch(sub) => match sub {
             WatchSubcommand::List { json } => {
                 commands::poach::run_watch_list(commands::poach::WatchListArgs { json }).await?;
