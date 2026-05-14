@@ -1417,10 +1417,23 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
         Command::Records { args } => match args.target {
             RecordsTarget::Player => {
                 match icelines_fetch::stats_loader::resolve_player_id_by_name(&args.subject) {
-                    Some(pid) => ExecResult::Flash(format!(
-                        "records: run `icelines records player \"{}\" --metric teams-scored-against|goalies-scored-against|fight-opponents` or open `/records/player/{pid}?metric=...`",
-                        args.subject
-                    )),
+                    Some(pid) => {
+                        let player_id = icelines_core::identity::PlayerId(pid);
+                        if let Err(e) = icelines_fetch::stats_loader::load_player_career_into_repo(
+                            &mut app.repo,
+                            player_id,
+                        ) {
+                            return ExecResult::Flash(format!(
+                                "records: could not load player {pid}: {e}"
+                            ));
+                        }
+                        app.prev_screen = Some(app.screen.clone());
+                        app.screen = Screen::PlayerRecordsById(player_id);
+                        ExecResult::Flash(format!(
+                            "records: {}  -  CLI: icelines records player \"{}\" --metric ...",
+                            args.subject, args.subject
+                        ))
+                    }
                     None => {
                         ExecResult::Flash(format!("records: player not found: {:?}", args.subject))
                     }
@@ -3274,6 +3287,21 @@ mod tests {
         assert!(message.contains("icelines records team EDM"));
         assert!(message.contains("/records/team/EDM"));
         assert!(matches!(app.screen, Screen::Home));
+    }
+
+    #[test]
+    fn l0_profile_exec_records_player_opens_tui_records_screen() {
+        let mut app = fresh_app_with_mdi();
+        let r = execute_command(
+            parse_command("records player Connor McDavid").unwrap(),
+            &mut app,
+        );
+
+        let ExecResult::Flash(message) = r else {
+            panic!("records player should flash canonical CLI target");
+        };
+        assert!(message.contains("icelines records player \"Connor McDavid\""));
+        assert!(matches!(app.screen, Screen::PlayerRecordsById(_)));
     }
 
     #[test]

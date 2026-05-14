@@ -146,6 +146,9 @@ pub enum Screen {
     /// PlayerId-keyed player card. D6 auto-pop UX: renderer shows a
     /// placeholder if pid isn't in the active window.
     PlayerById(PlayerId),
+    /// PlayerId-keyed records screen. Reuses records ViewModels and cached
+    /// boxscore/play-by-play sources.
+    PlayerRecordsById(PlayerId),
     Search,
     Tonight,
     Projections,
@@ -276,6 +279,7 @@ pub struct App {
     pub poach: crate::tui::screens::poach::PoachScreenState,
     pub fantasy_gaps: crate::tui::screens::fantasy::FantasyGapsScreenState,
     pub fantasy_sim: crate::tui::screens::fantasy::FantasySimulationScreenState,
+    pub player_records: crate::tui::screens::player_records::PlayerRecordsScreenState,
 
     // ── Repo-backed view state ─────────────────────────────────────────
     /// Post-Hart canonical store. `!Send + !Sync` by construction.
@@ -406,6 +410,7 @@ impl App {
             poach: crate::tui::screens::poach::PoachScreenState::default(),
             fantasy_gaps: crate::tui::screens::fantasy::FantasyGapsScreenState::default(),
             fantasy_sim: crate::tui::screens::fantasy::FantasySimulationScreenState::default(),
+            player_records: Default::default(),
 
             // Empty repo + current season as the initial typed window.
             depth_filters: crate::tui::filter_state::RosterFilterState::default(),
@@ -1141,6 +1146,10 @@ impl App {
                     if c == 'c' {
                         self.prev_screen = Some(self.screen.clone());
                         self.screen = Screen::CompsById(pid);
+                        self.selected = 0;
+                    } else if c == 'r' {
+                        self.prev_screen = Some(self.screen.clone());
+                        self.screen = Screen::PlayerRecordsById(pid);
                         self.selected = 0;
                     } else if c == '[' {
                         // Phase Lindsay L.4.4 — `[` cycles career-table
@@ -3002,6 +3011,7 @@ impl App {
                 Screen::DepthTeam(_) => Screen::Depth,
                 Screen::Team(_) => Screen::Home,
                 Screen::PlayerById(_) => Screen::Home,
+                Screen::PlayerRecordsById(pid) => Screen::PlayerById(*pid),
                 Screen::CompsById(_) => Screen::Home,
                 Screen::GroupDetail(_) => Screen::Groups,
                 Screen::ScheduleTeam(_) => Screen::Schedule,
@@ -3020,6 +3030,10 @@ impl App {
     fn get_selected_player(&self) -> Option<(String, String)> {
         match &self.screen {
             Screen::PlayerById(pid) => self
+                .repo
+                .identity(*pid)
+                .map(|i| (i.name_normalized.clone(), i.full_name.clone())),
+            Screen::PlayerRecordsById(pid) => self
                 .repo
                 .identity(*pid)
                 .map(|i| (i.name_normalized.clone(), i.full_name.clone())),

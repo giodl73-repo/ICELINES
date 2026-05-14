@@ -7,6 +7,7 @@ pub mod goalies;
 pub mod home;
 pub mod misc;
 pub mod player;
+pub mod player_records;
 pub mod playoffs;
 pub mod poach;
 pub mod queries;
@@ -57,7 +58,10 @@ fn render_overlays(f: &mut Frame, app: &App, area: Rect) {
     // own; this catches Projections, Search, Queries,
     // GroupDetail).
     if app.group_picker.open {
-        let handled_locally = matches!(app.screen, Screen::PlayerById(_) | Screen::Team(_));
+        let handled_locally = matches!(
+            app.screen,
+            Screen::PlayerById(_) | Screen::PlayerRecordsById(_) | Screen::Team(_)
+        );
         if !handled_locally {
             player::render_group_picker(f, app, area);
         }
@@ -136,6 +140,7 @@ fn render_sdi(f: &mut Frame, app: &App) {
         Screen::Home => home::render(f, app, chunks[1]),
         Screen::Team(abbrev) => team::render(f, app, chunks[1], abbrev),
         Screen::PlayerById(pid) => player::render_by_id(f, app, chunks[1], *pid),
+        Screen::PlayerRecordsById(pid) => player_records::render_by_id(f, app, chunks[1], *pid),
         Screen::Search => search::render(f, app, chunks[1]),
         Screen::Queries => queries::render(f, app, chunks[1]),
         Screen::Tonight => misc::render_tonight(f, app, chunks[1]),
@@ -339,6 +344,7 @@ fn chrome_screen_label(s: &Screen) -> &'static str {
         Screen::FantasyGaps => "Fantasy",
         Screen::Favorites => "Favorites",
         Screen::PlayerById(_) => "Player",
+        Screen::PlayerRecordsById(_) => "Records",
         Screen::CompsById(_) => "Comps",
         Screen::GameDetail(_) => "Boxscore",
         Screen::GoalieDetailById(_) => "Goalie",
@@ -422,6 +428,7 @@ fn render_mdi_workspace(f: &mut Frame, app: &App, area: Rect) {
         Screen::Home => home::render(f, app, inner),
         Screen::Team(abbrev) => team::render(f, app, inner, abbrev),
         Screen::PlayerById(pid) => player::render_by_id(f, app, inner, *pid),
+        Screen::PlayerRecordsById(pid) => player_records::render_by_id(f, app, inner, *pid),
         Screen::Search => search::render(f, app, inner),
         Screen::Queries => queries::render(f, app, inner),
         Screen::Tonight => misc::render_tonight(f, app, inner),
@@ -544,6 +551,7 @@ fn screen_label(s: &Screen) -> &'static str {
         Screen::Home => "Home",
         Screen::Team(_) => "Team",
         Screen::PlayerById(_) => "Player",
+        Screen::PlayerRecordsById(_) => "Player Records",
         Screen::Search => "Search",
         Screen::Queries => "Stats",
         Screen::Tonight => "Tonight",
@@ -620,16 +628,20 @@ fn render_docs_overlay(f: &mut Frame, app: &App, area: Rect) {
 
 fn tab_for_screen(screen: &Screen) -> usize {
     match screen {
-        Screen::Home | Screen::Team(_) | Screen::PlayerById(_) | Screen::CompsById(_) => 0, // League
-        Screen::Depth | Screen::DepthTeam(_) => 1,                                          // Depth
+        Screen::Home
+        | Screen::Team(_)
+        | Screen::PlayerById(_)
+        | Screen::PlayerRecordsById(_)
+        | Screen::CompsById(_) => 0, // League
+        Screen::Depth | Screen::DepthTeam(_) => 1, // Depth
         Screen::Queries | Screen::Projections | Screen::Search => 2, // Stats (default: Queries)
-        Screen::Goalies | Screen::GoalieDetailById(_) => 3,          // Goalies
-        Screen::Favorites => 4,                                      // Favorites (Foster.2)
+        Screen::Goalies | Screen::GoalieDetailById(_) => 3, // Goalies
+        Screen::Favorites => 4,                    // Favorites (Foster.2)
         Screen::Poach | Screen::FantasyGaps | Screen::FantasySim => 5, // Poach/Fantasy (Selke)
-        Screen::Tonight | Screen::GameDetail(_) => 6,                // Scores
+        Screen::Tonight | Screen::GameDetail(_) => 6, // Scores
         Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => 7, // Schedule
-        Screen::Transactions => 8,                                   // Transactions
-        Screen::Playoffs | Screen::SeriesDetail(_) => 9,             // Playoffs
+        Screen::Transactions => 8,                 // Transactions
+        Screen::Playoffs | Screen::SeriesDetail(_) => 9, // Playoffs
         // Groups is not a tab (Phase T+1): reachable via `g` from anywhere.
         _ => 99, // no tab (Fetch, Help, Groups)
     }

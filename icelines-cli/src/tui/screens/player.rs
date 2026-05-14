@@ -618,7 +618,7 @@ fn render_stats_view(
     lines.extend(active_season_summary_lines(card.active.as_ref(), dim));
     lines.push(Line::styled(
         format!(
-            " Records  ·  :records player \"{}\"  ·  /records/player/{}?metric=...",
+            " Records  ·  r: open  ·  :records player \"{}\"  ·  /records/player/{}?metric=...",
             card.display_name, card.player_id.0
         ),
         dim,

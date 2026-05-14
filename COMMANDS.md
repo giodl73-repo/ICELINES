@@ -469,6 +469,10 @@ Fight records use explicit fighting-major participants, not aggregate PIM.
 Default web records pages live at
 `/records/player/:id`, `/records/team/:abbrev`,
 `/api/v1/records/player/:id`, and `/api/v1/records/team/:abbrev`.
+In the TUI, open a player card and press `r` to see the player records screen
+with teams scored against, goalies scored against, and fight opponents. In the
+MDI command bar, `:records player <name>` opens the same TUI records screen;
+`:records team <ABBR>` still flashes the canonical CLI/web target.
 
 ## `x` — quick CSV/JSON export
 
@@ -586,7 +590,7 @@ historical career across all 38 bundled seasons on first open.
 | `o` | Toggle the current section on Stats (Queries) |
 | `[` / `]` | Cycle career-table column presets on a player card |
 | `/` | Open the sort picker (search-as-you-type 108 stats) |
-| `r` | Refresh current view |
+| `r` | Open player records from a player card; refresh current view elsewhere |
 | `d` | Jump to depth chart (or jump-to-date on Scores) |
 | `F` | Toggle admin overlay |
 | `g` | Add to group from a player card / team roster |
@@ -688,7 +692,8 @@ Use `Tab` or `Esc` to leave command mode.
 | `simulate <kv...>` / `fantasy simulate <kv...>` | Fantasy add/drop scenario projection | `:simulate add=Connor_McDavid drop=Bench_Forward weeks=3` |
 | `simulate clear` | Clear the active fantasy simulation scenario | `:simulate clear` |
 | `report poach` / `report weekly` | Show exact report CLI/web target | `:report weekly cats=shots,hits top=12` |
-| `records player <name>` / `records team <ABBR>` | Show exact records CLI/web target | `:records player Andre Burakovsky`, `:records team SEA` |
+| `records player <name>` | Open the TUI player records screen | `:records player Andre Burakovsky` |
+| `records team <ABBR>` | Show exact records CLI/web target | `:records team SEA` |
 | `watch <player>` | Show exact watch-note/rule target | `:watch Connor McDavid` |
 | `admin` | Open the operational admin overlay | `:admin` |
 | `data ...` / `snapshot ...` / `config ...` | Show exact admin CLI/web target | `:data status`, `:snapshot list`, `:config list` |

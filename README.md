@@ -261,6 +261,8 @@ icelines report list
 icelines report poach --category shots --top 10 --out poach.md
 icelines report weekly --league default --category hits,blocks
 icelines records player "Andre Burakovsky" --metric teams-scored-against
+icelines records player "Andre Burakovsky" --metric goalies-scored-against
+icelines records player "Andre Burakovsky" --metric fight-opponents
 icelines watch rules
 icelines watch player "Matthew Knies" --when pp1 --save
 icelines watch disable player-matthew-knies
@@ -320,7 +322,9 @@ single-document UI. Player cards lazy-load every player's full historical
 career across all 38 bundled seasons on first open. Cross-league cohort boards
 use the canonical CLI/web surfaces instead; from the command bar,
 `:career league=OHL season=20142015 top=8` flashes the exact `query career`
-and `/career` targets.
+and `/career` targets. Player cards also have a dedicated Records screen:
+press `r` from a player card, or run `:records player Andre Burakovsky` in the
+MDI command bar.
 
 | Key | Action |
 |---|---|
