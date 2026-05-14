@@ -218,8 +218,16 @@ fn watch_note_inputs(
 }
 
 fn watchlist_player_row(row: &WatchlistMemberRow) -> WatchlistPlayerRow {
+    let resolved = resolve_favorite_player(&row.key);
     WatchlistPlayerRow {
         key: row.key.clone(),
+        display_name: resolved
+            .as_ref()
+            .map(|candidate| candidate.full_name.clone())
+            .unwrap_or_else(|| row.key.clone()),
+        player_url: resolved
+            .map(|candidate| format!("/player/{}", candidate.pid))
+            .unwrap_or_default(),
         reason: row.reason.clone().unwrap_or_default(),
     }
 }

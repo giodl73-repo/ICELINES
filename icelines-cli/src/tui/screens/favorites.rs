@@ -75,7 +75,7 @@ pub fn chrome(state: &FavoritesScreenState) -> crate::tui::chrome::ScreenChrome 
             KeyHint::new("f", "free filter"),
             KeyHint::new("g", "manage groups"),
             KeyHint::new("Enter", "open card"),
-            KeyHint::new(":fav add", "from cmdbar"),
+            KeyHint::new("fav add", "cmdbar"),
         ],
     }
 }
@@ -597,6 +597,8 @@ mod tests {
         assert!(keys.contains(&"p"));
         assert!(keys.contains(&"n"));
         assert!(keys.contains(&"f"));
+        assert!(keys.contains(&"fav add"));
+        assert!(!keys.contains(&":fav add"));
     }
 
     #[test]

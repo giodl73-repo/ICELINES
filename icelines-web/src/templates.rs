@@ -780,6 +780,8 @@ pub struct WatchlistTemplate {
 #[derive(Debug, Clone)]
 pub struct WatchlistPlayerRow {
     pub key: String,
+    pub display_name: String,
+    pub player_url: String,
     pub reason: String,
 }
 

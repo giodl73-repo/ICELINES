@@ -1797,18 +1797,18 @@ async fn l1_watchlist_route_renders_watch_reason_metadata() {
             fired_at TEXT NOT NULL
          );
          INSERT INTO groups VALUES ('Watchlist', '', datetime('now'));
-         INSERT INTO group_members VALUES ('Watchlist', 'player:matthew knies', datetime('now'));
+         INSERT INTO group_members VALUES ('Watchlist', 'player:connor mcdavid', datetime('now'));
          INSERT INTO watch_notes VALUES (
-            'player:matthew knies',
+            'player:connor mcdavid',
             'Poach score 72.0; confidence High; PP1 promotion',
             'tui-poach',
             datetime('now')
-         );
+          );
          INSERT INTO watch_rule_events (rule_id, entity_ref, message, fired_at)
             VALUES (
                 'alert-watched-available',
-                'player:matthew knies',
-                'Matthew Knies is available.',
+                'player:connor mcdavid',
+                'Connor McDavid is available.',
                 '2026-05-09T13:00:00Z'
             );",
     )
@@ -1840,11 +1840,12 @@ async fn l1_watchlist_route_renders_watch_reason_metadata() {
         .expect("body fits");
     let body = std::str::from_utf8(&bytes).expect("html is utf-8");
 
-    assert!(body.contains("matthew knies"));
+    assert!(body.contains("Connor McDavid"));
+    assert!(body.contains("href=\"/player/8478402\""));
     assert!(body.contains("Poach score 72.0"));
     assert!(body.contains("Recent Alerts"));
     assert!(body.contains("alert-watched-available"));
-    assert!(body.contains("Matthew Knies is available."));
+    assert!(body.contains("Connor McDavid is available."));
 }
 
 #[tokio::test]

@@ -2,6 +2,7 @@
 
 | Wave | Status | Mission | Active Evidence |
 |---|---|---|---|
+| [Audit the Stack](2026-05-14-audit-the-stack/WAVE.md) | active | Run a whole-codebase bug-detection and architecture review focused on cross-surface mismatches, stale state, and missing regression coverage. | `panels/whole-codebase-bug-pass/` |
 | [Profile the Player](2026-05-14-profile-the-player/WAVE.md) | closed | Define the complete player screen system, including records, streaks, awards, career arc, comparisons, and fantasy context. | `PLAYER-SCREEN-MAP.md`; `plans/pulse-01.md`; `plans/pulse-02.md`; `plans/pulse-03.md`; `plans/pulse-04.md`; `plans/pulse-05.md` |
 | [Trace the Events](2026-05-13-trace-the-events/WAVE.md) | closed | Validate and ingest NHL play-by-play participants so richer individual records can count goalies beaten and fight opponents without aggregate inference. | `EVENT-DATA-INVENTORY.md`; `icelines fetch play-by-play`; event-backed `icelines records` metrics; metric-aware records web/API routes |
 | [Align the Reports](2026-05-13-align-the-reports/WAVE.md) | closed | Make CLI query/report/export surfaces discoverable and prepare symmetric player/team records as a report and screen family. | `REPORT-SURFACE-INVENTORY.md`; `RECORDS-DATA-INVENTORY.md`; `icelines report list`; `icelines records`; `/records/player/:id`; `/records/team/:abbrev` |
