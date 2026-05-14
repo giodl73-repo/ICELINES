@@ -257,6 +257,7 @@ icelines tui
 icelines poach --category hits,blocks --top 15
 icelines poach --availability imported-available --category hits,blocks --top 15
 icelines poach --team SEA --pos LW --json
+icelines report list
 icelines report poach --category shots --top 10 --out poach.md
 icelines report weekly --league default --category hits,blocks
 icelines watch rules

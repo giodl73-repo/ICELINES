@@ -140,6 +140,9 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             .await?;
         }
         Commands::Report(sub) => match sub {
+            ReportSubcommand::List { json } => {
+                commands::report::run_list(json)?;
+            }
             ReportSubcommand::Poach {
                 season,
                 season_type,

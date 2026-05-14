@@ -1288,6 +1288,41 @@ fn l2_x_help_lists_all_shapes() {
     }
 }
 
+#[test]
+fn l2_report_list_exits_zero_and_lists_report_doors() {
+    let out = run(&["report", "list"]);
+    assert!(out.status.success(), "icelines report list must exit 0");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    for needle in [
+        "IceLines report surface",
+        "query",
+        "x",
+        "export md",
+        "weekly-fantasy",
+        "records",
+        "teams-scored-against",
+    ] {
+        assert!(
+            stdout.contains(needle),
+            "report list should mention {needle:?}, got: {stdout}"
+        );
+    }
+}
+
+#[test]
+fn l2_report_list_json_marks_records_planned() {
+    let out = run(&["report", "list", "--json"]);
+    assert!(
+        out.status.success(),
+        "icelines report list --json must exit 0"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("\"name\": \"records\"") && stdout.contains("\"status\": \"planned\""),
+        "report list JSON must expose planned records catalog row, got: {stdout}"
+    );
+}
+
 // ── L2: transactions (Phase T.4) ─────────────────────────────────────────────
 
 #[test]

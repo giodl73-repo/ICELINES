@@ -2,6 +2,7 @@
 
 | Wave | Status | Mission | Active Evidence |
 |---|---|---|---|
+| [Align the Reports](2026-05-13-align-the-reports/WAVE.md) | active | Make CLI query/report/export surfaces discoverable and prepare symmetric player/team records as a report and screen family. | `plans/pulse-01.md`; `REPORT-SURFACE-INVENTORY.md`; `icelines report list` |
 | [Test the Command Bar](2026-05-13-test-the-command-bar/WAVE.md) | closed | Validate whether real users can navigate IceLines through the MDI command bar, tabbing, and subcommand handoffs without maintainer coaching. | `USER-TESTING-PROTOCOL.md`; `SESSION-FINDINGS.md`; sticky command-mode follow-up; command-bar/tui persona tests |
 | [Backcheck the Phases](2026-05-13-backcheck-the-phases/WAVE.md) | closed | Backfill previous trophy phases into executable pulse packets so agents can clear residual gaps without relying on chat memory. | `BACKFILL-INVENTORY.md`; `VISUAL-CAPTURE-INVENTORY.md`; pulse plans/forks |
 | [Hart Normalizes the Core](2026-04-30-hart-normalizes-the-core/WAVE.md) | backfilled | Retrospective wave record for normalization and View-based migration. | `plans/pulse-01.md` |

@@ -167,7 +167,22 @@ pub enum Commands {
     },
 
     /// Generate decision reports from shared ViewModels.
-    #[command(subcommand)]
+    #[command(
+        subcommand,
+        long_about = r#"
+Generate durable reports and discover the canonical report/export surfaces.
+
+Use `icelines report list` when you are not sure whether a report belongs under
+`query`, `x`, `export md`, or `report`. The list command also marks planned
+families such as player/team records.
+
+Examples:
+  icelines report list
+  icelines report list --json
+  icelines report poach --category shots --top 10 --out poach.md
+  icelines report weekly --league default --category hits,blocks --out weekly.md
+"#
+    )]
     Report(ReportSubcommand),
 
     /// Preview fantasy poacher watch rules.
@@ -1074,6 +1089,13 @@ pub enum QuerySeasonType {
 
 #[derive(Debug, Subcommand)]
 pub enum ReportSubcommand {
+    /// List canonical report/export surfaces and planned record reports.
+    List {
+        /// Emit the report catalog as JSON.
+        #[arg(long)]
+        json: bool,
+    },
+
     /// Generate a fantasy poacher report from PoachReportView.
     Poach {
         /// Season id, e.g. 20252026. Defaults to configured season.

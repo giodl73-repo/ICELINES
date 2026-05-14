@@ -418,6 +418,34 @@ icelines compare "McDavid" "MacKinnon"       # alias for `query compare`
 icelines mates "Beniers" --top 5             # linemates (requires fetch shifts)
 ```
 
+## `report` — report surface map and durable decision reports
+
+Use `icelines report list` when you are not sure which command generates the
+report you want. It lists the canonical report families, output formats, and the
+screen/web surface that owns each one.
+
+```bash
+icelines report list
+icelines report list --json
+icelines report poach --category shots --top 10 --out poach.md
+icelines report weekly --league default --category hits,blocks --out weekly.md
+```
+
+Surface rule of thumb:
+
+| Need | Use |
+|---|---|
+| Ask a filter/query question | `icelines query ...` |
+| Quick CSV/JSON for Excel/scripts | `icelines x <shape>` |
+| Durable markdown packet | `icelines export md <shape>` |
+| Fantasy decision report | `icelines report poach` / `icelines report weekly` |
+| See every available/planned report family | `icelines report list` |
+
+Planned records reports will live under a canonical `records` surface and will
+also appear in `report list`: player/team symmetric facts such as NHL teams a
+player has scored against, goalies scored against, fight opponents, and
+head-to-head counts.
+
 ## `x` — quick CSV/JSON export
 
 One-shot export of any report shape to stdout (default CSV) or a file. Excel-friendly.
