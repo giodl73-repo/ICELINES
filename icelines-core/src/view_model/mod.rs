@@ -27,6 +27,7 @@ pub mod records;
 pub mod report;
 pub mod schedule;
 pub mod scores;
+pub mod scoring;
 pub mod snapshot;
 pub mod streaks;
 pub mod team_depth;
@@ -114,6 +115,10 @@ pub use schedule::{
     TeamStandingInput, TeamStandingsContext,
 };
 pub use scores::{scores_context, ScheduledGameInput, ScoreGameRow, ScoresDayView, ScoresView};
+pub use scoring::{
+    GameScoringReportView, PlayerScoringProfileView, ScoringEventInput, ScoringEventSummary,
+    ShotEventKind, ShotLocation, TeamScoringProfileView, TonightScoringIntelView,
+};
 pub use snapshot::{
     SnapshotEntryInput, SnapshotMutationIntent, SnapshotMutationOperation, SnapshotRow,
     SnapshotView,

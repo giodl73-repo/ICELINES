@@ -3,7 +3,9 @@ use crate::schema::{
     PagedResponse, PlayerContract, RosterResponse, SkaterBio, SkaterRealtime, SkaterStats,
 };
 use crate::teams::ALL_NHL_TEAMS as TEAMS;
-use icelines_core::{season_stats::SeasonType, TeamStandingInput};
+use icelines_core::{
+    season_stats::SeasonType, ScoringEventInput, ShotEventKind, ShotLocation, TeamStandingInput,
+};
 use std::time::Duration;
 
 /// Map `SeasonType` to the NHL API's `gameTypeId` query parameter.
@@ -884,6 +886,7 @@ pub struct PlayByPlay {
     pub home_abbrev: String,
     pub goals: Vec<PlayByPlayGoal>,
     pub penalties: Vec<PlayByPlayPenalty>,
+    pub scoring_events: Vec<ScoringEventInput>,
 }
 
 #[derive(Debug, Clone)]
@@ -1125,8 +1128,8 @@ pub fn parse_boxscore(raw: &serde_json::Value, game_id: u64) -> Boxscore {
     }
 }
 
-/// Parse the NHL web play-by-play endpoint into the narrow event projection
-/// needed by records. Unknown event families are intentionally ignored.
+/// Parse the NHL web play-by-play endpoint into the event projection needed by
+/// records and scoring reports. Unknown event families are intentionally ignored.
 pub fn parse_play_by_play(raw: &serde_json::Value, fallback_game_id: u64) -> PlayByPlay {
     let game_id = raw["id"].as_u64().unwrap_or(fallback_game_id);
     let game_date = raw["gameDate"].as_str().map(str::to_owned);
@@ -1136,11 +1139,62 @@ pub fn parse_play_by_play(raw: &serde_json::Value, fallback_game_id: u64) -> Pla
     let home_abbrev = raw["homeTeam"]["abbrev"].as_str().unwrap_or("").to_owned();
     let mut goals = Vec::new();
     let mut penalties = Vec::new();
+    let mut scoring_events = Vec::new();
 
     if let Some(plays) = raw["plays"].as_array() {
         for play in plays {
             match play["typeDescKey"].as_str() {
-                Some("goal") => goals.push(parse_play_by_play_goal(play)),
+                Some("goal") => {
+                    goals.push(parse_play_by_play_goal(play));
+                    scoring_events.push(parse_play_by_play_scoring_event(
+                        play,
+                        game_id,
+                        game_date.clone(),
+                        ShotEventKind::Goal,
+                        TeamLookup {
+                            away_team_id,
+                            away_abbrev: &away_abbrev,
+                            home_team_id,
+                            home_abbrev: &home_abbrev,
+                        },
+                    ));
+                }
+                Some("shot-on-goal") => scoring_events.push(parse_play_by_play_scoring_event(
+                    play,
+                    game_id,
+                    game_date.clone(),
+                    ShotEventKind::ShotOnGoal,
+                    TeamLookup {
+                        away_team_id,
+                        away_abbrev: &away_abbrev,
+                        home_team_id,
+                        home_abbrev: &home_abbrev,
+                    },
+                )),
+                Some("missed-shot") => scoring_events.push(parse_play_by_play_scoring_event(
+                    play,
+                    game_id,
+                    game_date.clone(),
+                    ShotEventKind::MissedShot,
+                    TeamLookup {
+                        away_team_id,
+                        away_abbrev: &away_abbrev,
+                        home_team_id,
+                        home_abbrev: &home_abbrev,
+                    },
+                )),
+                Some("blocked-shot") => scoring_events.push(parse_play_by_play_scoring_event(
+                    play,
+                    game_id,
+                    game_date.clone(),
+                    ShotEventKind::BlockedShot,
+                    TeamLookup {
+                        away_team_id,
+                        away_abbrev: &away_abbrev,
+                        home_team_id,
+                        home_abbrev: &home_abbrev,
+                    },
+                )),
                 Some("penalty") => penalties.push(parse_play_by_play_penalty(play)),
                 _ => {}
             }
@@ -1156,6 +1210,68 @@ pub fn parse_play_by_play(raw: &serde_json::Value, fallback_game_id: u64) -> Pla
         home_abbrev,
         goals,
         penalties,
+        scoring_events,
+    }
+}
+
+struct TeamLookup<'a> {
+    away_team_id: Option<u32>,
+    away_abbrev: &'a str,
+    home_team_id: Option<u32>,
+    home_abbrev: &'a str,
+}
+
+fn parse_play_by_play_scoring_event(
+    play: &serde_json::Value,
+    game_id: u64,
+    date: Option<String>,
+    kind: ShotEventKind,
+    teams: TeamLookup<'_>,
+) -> ScoringEventInput {
+    let details = &play["details"];
+    let event_owner_team_id = play_u32(details, "eventOwnerTeamId");
+    let scoring_player_id = play_u32(details, "scoringPlayerId");
+    let shooting_player_id = play_u32(details, "shootingPlayerId").or(scoring_player_id);
+    ScoringEventInput {
+        game_id,
+        event_id: play_u32(play, "eventId").unwrap_or(0),
+        date,
+        kind,
+        period: period_number(play),
+        period_type: period_type(play),
+        time_in_period: play["timeInPeriod"].as_str().unwrap_or("").to_owned(),
+        situation_code: play["situationCode"].as_str().map(str::to_owned),
+        event_owner_team_id,
+        event_owner_team_abbrev: team_abbrev_for_event_owner_id(event_owner_team_id, teams),
+        shooting_player_id,
+        scoring_player_id,
+        blocking_player_id: play_u32(details, "blockingPlayerId"),
+        goalie_in_net_id: play_u32(details, "goalieInNetId"),
+        location: ShotLocation {
+            x_coord: play_i16(details, "xCoord"),
+            y_coord: play_i16(details, "yCoord"),
+            zone_code: details["zoneCode"].as_str().map(str::to_owned),
+        },
+        shot_type: details["shotType"].as_str().map(str::to_owned),
+        reason: details["reason"].as_str().map(str::to_owned),
+        home_team_defending_side: play["homeTeamDefendingSide"].as_str().map(str::to_owned),
+        away_score: play_u8(details, "awayScore"),
+        home_score: play_u8(details, "homeScore"),
+    }
+}
+
+fn team_abbrev_for_event_owner_id(
+    event_owner_team_id: Option<u32>,
+    teams: TeamLookup<'_>,
+) -> Option<String> {
+    match event_owner_team_id {
+        Some(id) if Some(id) == teams.away_team_id && !teams.away_abbrev.is_empty() => {
+            Some(teams.away_abbrev.to_owned())
+        }
+        Some(id) if Some(id) == teams.home_team_id && !teams.home_abbrev.is_empty() => {
+            Some(teams.home_abbrev.to_owned())
+        }
+        _ => None,
     }
 }
 
@@ -1210,6 +1326,16 @@ fn play_u32(value: &serde_json::Value, key: &str) -> Option<u32> {
         .as_u64()
         .and_then(|id| u32::try_from(id).ok())
         .filter(|id| *id != 0)
+}
+
+fn play_u8(value: &serde_json::Value, key: &str) -> Option<u8> {
+    value[key].as_u64().and_then(|id| u8::try_from(id).ok())
+}
+
+fn play_i16(value: &serde_json::Value, key: &str) -> Option<i16> {
+    value[key]
+        .as_i64()
+        .and_then(|coord| i16::try_from(coord).ok())
 }
 
 fn goal_player_id(g: &serde_json::Value) -> Option<u32> {
@@ -1591,6 +1717,7 @@ fn parse_series(s: &serde_json::Value) -> PlayoffSeries {
 #[cfg(test)]
 mod boxscore_tests {
     use super::{parse_boxscore, parse_play_by_play};
+    use icelines_core::ShotEventKind;
     use serde_json::json;
 
     #[test]
@@ -1666,6 +1793,138 @@ mod boxscore_tests {
         assert_eq!(parsed.goals[0].scoring_player_id, Some(8476453));
         assert_eq!(parsed.goals[0].goalie_in_net_id, Some(8477424));
         assert_eq!(parsed.goals[1].goalie_in_net_id, None);
+        assert_eq!(parsed.scoring_events.len(), 2);
+        assert_eq!(parsed.scoring_events[0].kind, ShotEventKind::Goal);
+        assert_eq!(parsed.scoring_events[0].scoring_player_id, Some(8476453));
+        assert_eq!(parsed.scoring_events[0].shooting_player_id, Some(8476453));
+        assert_eq!(parsed.scoring_events[0].goalie_in_net_id, Some(8477424));
+    }
+
+    #[test]
+    fn l0_parse_play_by_play_reads_shot_attempt_families() {
+        let raw = json!({
+            "id": 2025020001u64,
+            "gameDate": "2025-10-07",
+            "awayTeam": {"id": 16, "abbrev": "CHI"},
+            "homeTeam": {"id": 24, "abbrev": "LAK"},
+            "plays": [
+                {
+                    "eventId": 21,
+                    "periodDescriptor": {"number": 1, "periodType": "REG"},
+                    "timeInPeriod": "03:10",
+                    "situationCode": "1551",
+                    "homeTeamDefendingSide": "right",
+                    "typeDescKey": "shot-on-goal",
+                    "details": {
+                        "eventOwnerTeamId": 16,
+                        "shootingPlayerId": 8483493,
+                        "goalieInNetId": 8475683,
+                        "xCoord": 66,
+                        "yCoord": -1,
+                        "zoneCode": "O",
+                        "shotType": "snap"
+                    }
+                },
+                {
+                    "eventId": 42,
+                    "periodDescriptor": {"number": 1, "periodType": "REG"},
+                    "timeInPeriod": "06:40",
+                    "situationCode": "1551",
+                    "typeDescKey": "missed-shot",
+                    "details": {
+                        "eventOwnerTeamId": 24,
+                        "shootingPlayerId": 8471685,
+                        "xCoord": -74,
+                        "yCoord": 14,
+                        "zoneCode": "O",
+                        "reason": "wide-of-net",
+                        "shotType": "wrist"
+                    }
+                },
+                {
+                    "eventId": 53,
+                    "periodDescriptor": {"number": 2, "periodType": "REG"},
+                    "timeInPeriod": "02:01",
+                    "situationCode": "1551",
+                    "typeDescKey": "blocked-shot",
+                    "details": {
+                        "eventOwnerTeamId": 16,
+                        "shootingPlayerId": 8483493,
+                        "blockingPlayerId": 8476457,
+                        "xCoord": 52,
+                        "yCoord": -8,
+                        "zoneCode": "O",
+                        "reason": "blocked"
+                    }
+                }
+            ]
+        });
+
+        let parsed = parse_play_by_play(&raw, 0);
+
+        assert_eq!(parsed.scoring_events.len(), 3);
+        assert_eq!(parsed.scoring_events[0].kind, ShotEventKind::ShotOnGoal);
+        assert_eq!(parsed.scoring_events[0].date.as_deref(), Some("2025-10-07"));
+        assert_eq!(parsed.scoring_events[0].event_owner_team_id, Some(16));
+        assert_eq!(
+            parsed.scoring_events[0].event_owner_team_abbrev.as_deref(),
+            Some("CHI")
+        );
+        assert_eq!(parsed.scoring_events[0].shooting_player_id, Some(8483493));
+        assert_eq!(parsed.scoring_events[0].goalie_in_net_id, Some(8475683));
+        assert_eq!(parsed.scoring_events[0].location.x_coord, Some(66));
+        assert_eq!(parsed.scoring_events[0].location.y_coord, Some(-1));
+        assert_eq!(
+            parsed.scoring_events[0].location.zone_code.as_deref(),
+            Some("O")
+        );
+        assert_eq!(parsed.scoring_events[0].shot_type.as_deref(), Some("snap"));
+        assert_eq!(
+            parsed.scoring_events[0].home_team_defending_side.as_deref(),
+            Some("right")
+        );
+
+        assert_eq!(parsed.scoring_events[1].kind, ShotEventKind::MissedShot);
+        assert_eq!(
+            parsed.scoring_events[1].event_owner_team_abbrev.as_deref(),
+            Some("LAK")
+        );
+        assert_eq!(
+            parsed.scoring_events[1].reason.as_deref(),
+            Some("wide-of-net")
+        );
+
+        assert_eq!(parsed.scoring_events[2].kind, ShotEventKind::BlockedShot);
+        assert_eq!(parsed.scoring_events[2].blocking_player_id, Some(8476457));
+    }
+
+    #[test]
+    fn l0_parse_play_by_play_preserves_missing_shot_coordinates() {
+        let raw = json!({
+            "id": 2025020002u64,
+            "awayTeam": {"id": 16, "abbrev": "CHI"},
+            "homeTeam": {"id": 24, "abbrev": "LAK"},
+            "plays": [
+                {
+                    "eventId": 99,
+                    "periodDescriptor": {"number": 1, "periodType": "REG"},
+                    "timeInPeriod": "01:00",
+                    "typeDescKey": "shot-on-goal",
+                    "details": {
+                        "eventOwnerTeamId": 16,
+                        "shootingPlayerId": 8483493
+                    }
+                }
+            ]
+        });
+
+        let parsed = parse_play_by_play(&raw, 0);
+
+        assert_eq!(parsed.scoring_events.len(), 1);
+        assert_eq!(parsed.scoring_events[0].location.x_coord, None);
+        assert_eq!(parsed.scoring_events[0].location.y_coord, None);
+        assert_eq!(parsed.scoring_events[0].location.zone_code, None);
+        assert_eq!(parsed.scoring_events[0].goalie_in_net_id, None);
     }
 
     #[test]

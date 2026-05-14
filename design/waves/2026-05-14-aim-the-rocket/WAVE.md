@@ -34,7 +34,7 @@ tonight's games.
 | Pulse | Status | Evidence |
 |---|---|---|
 | 01 - Scoring data inventory | done | `SCORING-DATA-INVENTORY.md`; `plans/pulse-01.md`; `panels/rocket-01-review/` |
-| 02 - Scoring ViewModel contracts | planned | Generate after Pulse 01 review is accepted |
+| 02 - Scoring ViewModel contracts | done | `plans/pulse-02.md`; `icelines-core/src/view_model/scoring.rs`; `icelines-fetch/src/scoring_provider.rs` |
 | 03 - Shot-event cache loader | planned | Depends on Pulse 02 contracts |
 | 04 - Game/team scoring reports | planned | Depends on shot-event cache loader |
 | 05 - Tonight scoring intelligence | planned | Depends on scoring reports and favorites cache path |
@@ -64,5 +64,5 @@ a new data spine.
 
 ## Next
 
-Generate Pulse 02 to add shared scoring ViewModels and typed shot-event input
-structures in `icelines-core`, with parser/provider wiring in `icelines-fetch`.
+Generate Pulse 03 for shot-event cache loading/report source states on top of
+the typed scoring-event projection.
