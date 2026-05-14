@@ -174,6 +174,14 @@ pub enum Command {
     Streaks {
         player: String,
     },
+    /// `scouting player <name>` — show canonical scouting report targets.
+    Scouting {
+        player: String,
+    },
+    /// `mates player <name>` — show canonical linemate/deployment targets.
+    Mates {
+        player: String,
+    },
     /// Operational command handoffs. The TUI does not run these
     /// long-running or destructive commands from the cmdbar.
     Data {
@@ -486,6 +494,8 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
         "records" | "record" => parse_records(args),
         "awards" | "award" | "trophy" => parse_awards(args),
         "streaks" | "streak" => parse_streaks(args),
+        "scouting" | "scout" => parse_scouting(args),
+        "mates" | "linemates" | "deployment" => parse_mates(args),
         "data" => Ok(Command::Data {
             args: args.trim().to_string(),
         }),
@@ -825,6 +835,28 @@ fn parse_streaks(args: &str) -> Result<Command, ParseError> {
     Ok(Command::Streaks {
         player: player.to_string(),
     })
+}
+
+fn parse_scouting(args: &str) -> Result<Command, ParseError> {
+    let player = parse_player_subject("scouting", args)?;
+    Ok(Command::Scouting { player })
+}
+
+fn parse_mates(args: &str) -> Result<Command, ParseError> {
+    let player = parse_player_subject("mates", args)?;
+    Ok(Command::Mates { player })
+}
+
+fn parse_player_subject(command: &'static str, args: &str) -> Result<String, ParseError> {
+    let trimmed = args.trim();
+    let player = trimmed.strip_prefix("player ").unwrap_or(trimmed).trim();
+    if player.is_empty() {
+        return Err(ParseError::MissingArg {
+            command,
+            arg: "player <name>",
+        });
+    }
+    Ok(player.to_string())
 }
 
 /// `fantasy roster` → Roster; `fantasy gaps` → roster-gap board.
@@ -1526,6 +1558,19 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
                 None => ExecResult::Flash(format!("streaks: player not found: {player:?}")),
             }
         }
+        Command::Scouting { player } => {
+            match icelines_fetch::stats_loader::resolve_player_id_by_name(&player) {
+                Some(pid) => ExecResult::Flash(format!(
+                    "scouting: run `icelines scouting \"{player}\"` or open `/scouting/{pid}`"
+                )),
+                None => ExecResult::Flash(format!(
+                    "scouting: run `icelines scouting \"{player}\"`"
+                )),
+            }
+        }
+        Command::Mates { player } => ExecResult::Flash(format!(
+            "mates: run `icelines mates \"{player}\"` for linemates/deployment"
+        )),
         Command::Data { args } => ExecResult::Flash(cli_handoff("data", &args, "/admin")),
         Command::Snapshot { args } => ExecResult::Flash(cli_handoff("snapshot", &args, "/admin")),
         Command::Config { args } => ExecResult::Flash(cli_handoff("config", &args, "/admin")),
@@ -2387,6 +2432,22 @@ mod tests {
         assert_eq!(
             parse_command("streak Connor McDavid").unwrap(),
             Command::Streaks {
+                player: "Connor McDavid".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn l0_profile_parse_player_hub_handoffs() {
+        assert_eq!(
+            parse_command("scouting player Connor McDavid").unwrap(),
+            Command::Scouting {
+                player: "Connor McDavid".to_string()
+            }
+        );
+        assert_eq!(
+            parse_command("mates Connor McDavid").unwrap(),
+            Command::Mates {
                 player: "Connor McDavid".to_string()
             }
         );

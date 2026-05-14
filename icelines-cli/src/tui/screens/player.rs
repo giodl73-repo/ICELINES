@@ -617,8 +617,12 @@ fn render_stats_view(
     // visible.
     lines.extend(active_season_summary_lines(card.active.as_ref(), dim));
     lines.push(Line::styled(
+        " Hub      ·  r Records  ·  a Awards  ·  s Streaks  ·  c Compare  ·  g Group  ·  f Favorite",
+        dim,
+    ));
+    lines.push(Line::styled(
         format!(
-            " Records  ·  r: open  ·  :records player \"{}\"  ·  /records/player/{}?metric=...",
+            " Records  ·  :records player \"{}\"  ·  /records/player/{}?metric=...",
             card.display_name, card.player_id.0
         ),
         dim,
@@ -632,8 +636,15 @@ fn render_stats_view(
     ));
     lines.push(Line::styled(
         format!(
-            " Streaks  ·  s: open  ·  icelines streaks \"{}\"  ·  /player/{}/streaks",
+            " Streaks  ·  icelines streaks \"{}\"  ·  /player/{}/streaks",
             card.display_name, card.player_id.0
+        ),
+        dim,
+    ));
+    lines.push(Line::styled(
+        format!(
+            " Reports  ·  :scouting player \"{}\"  ·  :mates player \"{}\"  ·  :watch {}",
+            card.display_name, card.display_name, card.display_name
         ),
         dim,
     ));

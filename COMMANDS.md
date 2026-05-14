@@ -475,6 +475,10 @@ icelines streaks "Connor McDavid" --csv --out mcdavid-streaks.csv
 Web routes: `/player/:id/streaks` and `/api/v1/player/:id/streaks`. In the TUI,
 press `s` from a player card, or run `:streaks player <name>` in the command bar.
 
+Player cards are now the hub for player-specific surfaces: records, awards,
+streaks, scouting, compare, groups/favorites, and fantasy watch handoffs are
+linked from the TUI card, web `/player/:id`, or the command bar.
+
 ## `records` — player/team individual records
 
 The first records slice uses persisted boxscore goal rows. Populate local
@@ -726,6 +730,8 @@ Use `Tab` or `Esc` to leave command mode.
 | `streaks player <name>` | Open the TUI player streaks screen | `:streaks player Connor McDavid` |
 | `records player <name>` | Open the TUI player records screen | `:records player Andre Burakovsky` |
 | `records team <ABBR>` | Show exact records CLI/web target | `:records team SEA` |
+| `scouting player <name>` | Show exact scouting CLI/web target | `:scouting player Connor McDavid` |
+| `mates player <name>` | Show exact linemate/deployment CLI target | `:mates player Connor McDavid` |
 | `watch <player>` | Show exact watch-note/rule target | `:watch Connor McDavid` |
 | `admin` | Open the operational admin overlay | `:admin` |
 | `data ...` / `snapshot ...` / `config ...` | Show exact admin CLI/web target | `:data status`, `:snapshot list`, `:config list` |

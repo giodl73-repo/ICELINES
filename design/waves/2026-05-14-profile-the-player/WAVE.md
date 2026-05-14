@@ -1,7 +1,7 @@
 ---
 wave: profile-the-player
 date_open: 2026-05-14
-status: active
+status: closed
 source: user request for comprehensive player screens including records, streaks, and NHL awards
 ---
 
@@ -30,7 +30,7 @@ which CLI/TUI/web surface exposes it.
 | 02 - Player records TUI screen | done | `Screen::PlayerRecordsById`; `r` from player card; `:records player <name>` opens records screen |
 | 03 - Player streaks screen | done | `PlayerStreaksView`; `icelines streaks`; `/player/:id/streaks`; `Screen::PlayerStreaksById` |
 | 04 - Player awards Trophy Case | done | `PlayerAwardsView`; `icelines awards`; `/player/:id/awards`; `Screen::PlayerAwardsById` |
-| 05 - Player navigation polish | planned | player hub links, command-bar targets, docs, parity inventory |
+| 05 - Player navigation polish | done | player-card hub hints; web player links; `:scouting player`; `:mates player` |
 
 ## Role notes
 
@@ -67,4 +67,13 @@ adds a dedicated TUI player records screen that renders all current player
 record metrics from the shared `PlayerRecordsView`. Pulse 04 adds the Awards /
 Trophy Case ViewModel and CLI/web/TUI surfaces backed by landing `awards[]`.
 Pulse 03 adds the Streaks screen from cached boxscore game rows, with CLI, TUI,
-web, and API surfaces sharing `PlayerStreaksView`.
+web, and API surfaces sharing `PlayerStreaksView`. Pulse 05 polishes the player
+card into the navigation hub for records, awards, streaks, scouting, compare,
+groups/favorites, and fantasy/watch handoffs.
+
+## Closeout
+
+The wave is closed. IceLines now has a documented 10-screen player taxonomy,
+first-class records, awards, and streaks player surfaces, and player cards act
+as hubs into the shipped CLI/TUI/web/API routes without duplicating computation
+outside shared ViewModels and fetch providers.

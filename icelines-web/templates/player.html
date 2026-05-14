@@ -24,11 +24,12 @@
     <a href="/leaders">← Leaders</a>
     {% if team_link != "" %}
         <a class="team-link team-{{ team_link }}" href="/team/{{ team_link }}">{{ team_link }} roster →</a>
-     {% endif %}
-     <a href="/records/player/{{ nhl_id }}">Records</a>
+    {% endif %}
+    <a href="/records/player/{{ nhl_id }}">Records</a>
     <a href="/player/{{ nhl_id }}/awards">Awards</a>
     <a href="/player/{{ nhl_id }}/streaks">Streaks</a>
-     <a href="/goalies">Goalies</a>
+    <a href="/scouting/{{ nhl_id }}">Scouting</a>
+    <a href="/goalies">Goalies</a>
     <a href="/transactions?team={{ team_link }}">Transactions</a>
     <span class="action-spacer"></span>
     <form method="get" action="/compare" class="inline-compare">

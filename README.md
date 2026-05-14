@@ -329,6 +329,8 @@ press `r` from a player card, or run `:records player Andre Burakovsky` in the
 MDI command bar. Press `a` from a player card for the cached Awards / Trophy
 Case screen; populate it with `icelines awards "Connor McDavid"`. Press `s`
 for cached goal/assist/point streaks, or run `:streaks player Connor McDavid`.
+The player card is the hub for records, awards, streaks, scouting, compare,
+groups/favorites, and fantasy watch handoffs.
 
 | Key | Action |
 |---|---|

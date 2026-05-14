@@ -20,10 +20,10 @@ need new ViewModels.
 | Records | `PlayerRecordsById` | `/records/player/:id?metric=...` | `records player <name> --metric ...` | exists |
 | Streaks and windows | `PlayerStreaksById` | `/player/:id/streaks` | `streaks <player>` | exists |
 | Awards / Trophy Case | `PlayerAwardsById` cached screen | `/player/:id/awards` | `awards <player>` | exists |
-| Scouting report | not a main player tab | `/scouting/:id` | `scouting <player>` | exists as separate surface |
-| Peers and comparisons | `CompsById` exists | `/compare` exists | `peers`, `compare` | exists but not hubbed from player |
-| Mates and deployment | not a player tab | not a player route | `mates <player>` | exists as CLI-only |
-| Fantasy/watch context | favorites/watch surfaces, not player tab | favorites/watch pages, not player tab | `poach`, `watch`, `favorites` | planned as player context |
+| Scouting report | command-bar handoff from player hub | `/scouting/:id` linked from player card | `scouting <player>` | hubbed |
+| Peers and comparisons | `CompsById` from player card | `/compare` form on player card | `peers`, `compare` | hubbed |
+| Mates and deployment | command-bar handoff from player hub | not a player route | `mates <player>` | CLI handoff |
+| Fantasy/watch context | player card group/favorite/watch hints | favorites/watch pages, not player tab | `poach`, `watch`, `favorites` | hub handoff |
 
 ## Proposed 10-screen player system
 
@@ -77,7 +77,8 @@ awards such as Conn Smythe.
 3. **Streaks**: uses cached boxscore skater rows for goal, assist, and point
    streaks; future game-log work can expand the same game-row foundation.
 4. **Game Log**: foundational for streaks, hot/cold form, and fantasy context.
-5. **Player hub navigation**: link all screens from overview in TUI and web.
+5. **Player hub navigation**: player cards now link/handoff to records, awards,
+   streaks, scouting, compare, groups/favorites, and fantasy/watch context.
 
 ## Role decisions
 
