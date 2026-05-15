@@ -75,6 +75,37 @@ impl Drop for HomeEnvFixture {
     }
 }
 
+struct DataRootEnvFixture {
+    _dir: tempfile::TempDir,
+    prev_data_root: Option<std::ffi::OsString>,
+}
+
+impl DataRootEnvFixture {
+    fn new() -> Self {
+        let dir = tempfile::TempDir::new().expect("temp data root");
+        let data_root = dir.path().join("data");
+        let prev_data_root = std::env::var_os("ICELINES_DATA_ROOT");
+        std::env::set_var("ICELINES_DATA_ROOT", &data_root);
+        Self {
+            _dir: dir,
+            prev_data_root,
+        }
+    }
+
+    fn data_root(&self) -> std::path::PathBuf {
+        self._dir.path().join("data")
+    }
+}
+
+impl Drop for DataRootEnvFixture {
+    fn drop(&mut self) {
+        match &self.prev_data_root {
+            Some(p) => std::env::set_var("ICELINES_DATA_ROOT", p),
+            None => std::env::remove_var("ICELINES_DATA_ROOT"),
+        }
+    }
+}
+
 fn seed_fantasy_league(name: &str, user_roster: &[&str], rival_roster: &[&str]) {
     let db = FantasyDb::open().expect("open fantasy db");
     let league_id = db
@@ -4922,8 +4953,8 @@ async fn l1_conn_smythe_c3_game_json_envelope_shape() {
 #[tokio::test]
 async fn l1_rocket_game_scoring_json_reads_cached_play_by_play() {
     let _guard = home_env_lock().await;
-    let _home = HomeEnvFixture::new();
-    seed_scoring_play_by_play(2025020001, "2025-10-07");
+    let data_root = DataRootEnvFixture::new();
+    seed_scoring_play_by_play(&data_root.data_root(), 2025020001, "2025-10-07");
     let app = router(WebState::new());
 
     let response = app
@@ -4953,7 +4984,7 @@ async fn l1_rocket_game_scoring_json_reads_cached_play_by_play() {
 #[tokio::test]
 async fn l1_rocket_team_scoring_html_offers_cache_load_when_missing() {
     let _guard = home_env_lock().await;
-    let _home = HomeEnvFixture::new();
+    let _data_root = DataRootEnvFixture::new();
     let app = router(WebState::new());
 
     let response = app
@@ -4985,8 +5016,8 @@ async fn l1_rocket_team_scoring_html_offers_cache_load_when_missing() {
 #[tokio::test]
 async fn l1_rocket_team_scoring_json_filters_team_events() {
     let _guard = home_env_lock().await;
-    let _home = HomeEnvFixture::new();
-    seed_scoring_play_by_play(2025020001, "2025-10-07");
+    let data_root = DataRootEnvFixture::new();
+    seed_scoring_play_by_play(&data_root.data_root(), 2025020001, "2025-10-07");
     let app = router(WebState::new());
 
     let response = app
@@ -5017,12 +5048,7 @@ async fn l1_rocket_team_scoring_json_filters_team_events() {
     );
 }
 
-fn seed_scoring_play_by_play(game_id: u64, date: &str) {
-    let data_root = std::env::var("USERPROFILE")
-        .map(std::path::PathBuf::from)
-        .expect("temp home")
-        .join(".icelines")
-        .join("data");
+fn seed_scoring_play_by_play(data_root: &std::path::Path, game_id: u64, date: &str) {
     let play_path = data_root
         .join("play_by_play")
         .join(date)

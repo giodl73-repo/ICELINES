@@ -387,6 +387,9 @@ fn pretty_season_label(season: u32) -> String {
 }
 
 fn data_root() -> Option<std::path::PathBuf> {
+    if let Some(root) = std::env::var_os("ICELINES_DATA_ROOT") {
+        return Some(std::path::PathBuf::from(root));
+    }
     std::env::var_os("HOME")
         .or_else(|| std::env::var_os("USERPROFILE"))
         .map(std::path::PathBuf::from)
