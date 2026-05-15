@@ -52,5 +52,5 @@ existing local cache data.
 
 ## Gates
 
-- [ ] `cargo fmt --check`
-- [ ] `C:\src\proof\target\debug\proof.exe check design\waves\2026-05-14-measure-the-finish design\waves\PHASES.md --errors-only`
+- [x] `cargo fmt --check`
+- [x] `C:\src\proof\target\debug\proof.exe check design\waves\2026-05-14-measure-the-finish design\waves\PHASES.md --errors-only`

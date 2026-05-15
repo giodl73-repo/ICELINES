@@ -34,10 +34,10 @@ who is due for regression, and who is carrying the best finishing run?"
 
 | Pulse | Status | Evidence |
 |---|---|---|
-| 01 - Finish inventory and proxy contract | planned | `plans/pulse-01.md` |
-| 02 - Player scoring trend rows | planned | depends on Pulse 01 |
-| 03 - Streak leaderboards | planned | depends on cached game-line/streak primitives |
-| 04 - Shot-quality proxy implementation | planned | depends on Pulse 01 contract |
+| 01 - Finish inventory and proxy contract | done | `FINISH-INVENTORY.md`; `plans/pulse-01.md` |
+| 02 - Shot-quality proxy implementation | planned | `plans/pulse-02.md`; depends on Pulse 01 contract |
+| 03 - Player scoring trend rows | planned | depends on Pulse 02 |
+| 04 - Streak leaderboards | planned | depends on cached game-line/streak primitives and Pulse 02 event aggregation |
 | 05 - Surface parity and wave closeout | planned | depends on Pulses 02-04 |
 
 ## Role Notes
@@ -51,9 +51,10 @@ who is due for regression, and who is carrying the best finishing run?"
 ## Current Result
 
 Wave opened after Aim the Rocket completed and CI passed through Pulse 06.
+Pulse 01 inventoried current scoring-event, game-line, and cache inputs and
+defined the first owned IceLines inside-shot proxy contract.
 
 ## Next
 
-Execute Pulse 01: inventory the current player scoring profile and streak data,
-then write the first owned shot-quality proxy contract before implementing
-trend/proxy math.
+Execute Pulse 02: implement the IceLines inside-shot proxy in core with
+known-value tests before trend rows or shot-streak leaderboards consume it.
