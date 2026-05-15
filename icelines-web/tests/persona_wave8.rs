@@ -9,6 +9,7 @@ use std::sync::OnceLock;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use icelines_web::{router, WebState};
+use tokio::sync::Mutex;
 use tower::util::ServiceExt;
 
 fn isolated_home() -> &'static tempfile::TempDir {
@@ -35,6 +36,8 @@ async fn get(uri: &str) -> axum::http::Response<Body> {
 }
 
 async fn post_form(uri: &str, body: &str) -> axum::http::Response<Body> {
+    static POST_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    let _guard = POST_LOCK.get_or_init(|| Mutex::new(())).lock().await;
     let _home = isolated_home();
     let app = router(WebState::new());
     app.oneshot(
