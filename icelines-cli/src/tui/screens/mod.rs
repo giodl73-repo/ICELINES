@@ -436,7 +436,11 @@ fn render_mdi_cmdbar(f: &mut Frame, area: Rect, mdi: &crate::tui::mdi::MdiLayout
 /// inner area is shrunken by a 1-cell border so the active
 /// screen knows it's a panel, not the whole terminal.
 fn render_mdi_workspace(f: &mut Frame, app: &App, mdi: &crate::tui::mdi::MdiLayout, area: Rect) {
-    let title = format!(" {} ", screen_label(&app.screen));
+    let title = if let Some(experience) = mdi.active_experience() {
+        format!(" {} · {} ", screen_label(&app.screen), experience.label)
+    } else {
+        format!(" {} ", screen_label(&app.screen))
+    };
     let block = Block::default()
         .borders(Borders::ALL)
         .title(title)
@@ -488,14 +492,21 @@ fn render_mdi_favorites_pane(
     mdi: &crate::tui::mdi::MdiLayout,
     area: Rect,
 ) {
-    let title = workbench_pane_title(mdi.left_pane_model, "Favorites / Watch");
+    let binding = mdi.left_pane_binding();
+    let title = workbench_binding_title(binding, "Favorites / Watch");
     let block = Block::default()
         .borders(Borders::ALL)
         .title(title)
         .border_style(mdi_zone_style(mdi, MdiFocus::LeftPane, Color::Yellow));
     let inner = block.inner(area);
     f.render_widget(block, area);
-    favorites::render(f, app, inner);
+    match binding.map(|binding| binding.id) {
+        Some(icelines_core::WorkbenchPaneBindingId::FavoritesLeft) => {
+            favorites::render(f, app, inner);
+        }
+        Some(id) => render_mdi_unavailable_pane(f, inner, id),
+        None => render_mdi_unavailable_label(f, inner, "Unknown pane"),
+    }
 }
 
 /// Phase Adams.3 — Schedule side pane: 32-col strip on the
@@ -506,14 +517,21 @@ fn render_mdi_schedule_pane(
     mdi: &crate::tui::mdi::MdiLayout,
     area: Rect,
 ) {
-    let title = workbench_pane_title(mdi.right_pane_model, "Upcoming Schedule");
+    let binding = mdi.right_pane_binding();
+    let title = workbench_binding_title(binding, "Upcoming Schedule");
     let block = Block::default()
         .borders(Borders::ALL)
         .title(title)
         .border_style(mdi_zone_style(mdi, MdiFocus::RightPane, Color::Magenta));
     let inner = block.inner(area);
     f.render_widget(block, area);
-    schedule::render(f, app, inner);
+    match binding.map(|binding| binding.id) {
+        Some(icelines_core::WorkbenchPaneBindingId::ScheduleRight) => {
+            schedule::render(f, app, inner);
+        }
+        Some(id) => render_mdi_unavailable_pane(f, inner, id),
+        None => render_mdi_unavailable_label(f, inner, "Unknown pane"),
+    }
 }
 
 fn render_mdi_activity_catalog(
@@ -610,11 +628,39 @@ fn compact_workbench_label(label: &'static str) -> &'static str {
     }
 }
 
-fn workbench_pane_title(id: icelines_core::WorkbenchPaneModelId, fallback: &'static str) -> String {
-    let label = icelines_core::workbench_pane_model(id)
-        .map(|pane| pane.label)
-        .unwrap_or(fallback);
-    format!(" {label} ")
+fn workbench_binding_title(
+    binding: Option<&'static icelines_core::WorkbenchPaneBinding>,
+    fallback: &'static str,
+) -> String {
+    let label = binding.map(|binding| binding.label).unwrap_or(fallback);
+    format!(" {label} pane ")
+}
+
+fn render_mdi_unavailable_pane(
+    f: &mut Frame,
+    area: Rect,
+    id: icelines_core::WorkbenchPaneBindingId,
+) {
+    let label = icelines_core::workbench_pane_binding(id)
+        .map(|binding| binding.label)
+        .unwrap_or("Pane");
+    render_mdi_unavailable_label(f, area, label);
+}
+
+fn render_mdi_unavailable_label(f: &mut Frame, area: Rect, label: &str) {
+    let dim = Style::default().fg(Color::DarkGray);
+    let lines = vec![
+        Line::from(Span::styled(
+            label.to_owned(),
+            Style::default().fg(Color::Gray),
+        )),
+        Line::from(Span::styled("Not yet rendered in the TUI.", dim)),
+        Line::from(Span::styled(
+            "Use Left/Right to swap panes or :open the full surface.",
+            dim,
+        )),
+    ];
+    f.render_widget(Paragraph::new(lines).style(dim), area);
 }
 
 /// Phase Adams.3 — Scores ribbon: top 1-row strip showing
@@ -4455,11 +4501,11 @@ mod adams_4_render_boundary_tests {
             "Dashboard ribbon must render at 200; got:\n{text}"
         );
         assert!(
-            text.contains("Favorites navigator"),
+            text.contains("Favorites pane"),
             "Favorites pane must render at 200; got:\n{text}"
         );
         assert!(
-            text.contains("Schedule inspector"),
+            text.contains("Schedule pane"),
             "Schedule pane must render at 200; got:\n{text}"
         );
         assert!(
@@ -4498,7 +4544,7 @@ mod adams_4_render_boundary_tests {
     fn l0_adams_render_at_160_schedule_visible() {
         let text = render_mdi_at(160);
         assert!(
-            text.contains("Schedule inspector"),
+            text.contains("Schedule pane"),
             "Schedule pane must render at 160 (boundary); got:\n{text}"
         );
         assert!(text.contains("Goalies"), "workspace must render");
@@ -4516,15 +4562,12 @@ mod adams_4_render_boundary_tests {
         // The Workspace title
         // could itself be "Schedule" if app.screen == Schedule;
         // we land on Goalies to avoid that confound.
-        let schedule_count = text.matches("Schedule inspector").count();
+        let schedule_count = text.matches("Schedule pane").count();
         assert_eq!(
             schedule_count, 0,
             "Schedule pane must drop at 159; got:\n{text}"
         );
-        assert!(
-            text.contains("Favorites navigator"),
-            "favorites still visible"
-        );
+        assert!(text.contains("Favorites pane"), "favorites still visible");
         assert!(text.contains("Goalies"), "workspace still visible");
     }
 
@@ -4534,7 +4577,7 @@ mod adams_4_render_boundary_tests {
     fn l0_adams_render_at_120_favorites_visible() {
         let text = render_mdi_at(120);
         assert!(
-            text.contains("Favorites navigator"),
+            text.contains("Favorites pane"),
             "Favorites pane must render at 120 (boundary); got:\n{text}"
         );
     }
@@ -4600,13 +4643,13 @@ mod adams_4_render_boundary_tests {
         let mut term = Terminal::new(backend).unwrap();
         term.draw(|f| render(f, &app)).unwrap();
         let text = buf_text(term.backend().buffer());
-        let fav_count = text.matches("Favorites navigator").count();
+        let fav_count = text.matches("Favorites pane").count();
         assert_eq!(
             fav_count, 0,
             "Manual show_favorites=false must drop pane at 200; got:\n{text}"
         );
         assert!(
-            text.contains("Schedule inspector"),
+            text.contains("Schedule pane"),
             "Schedule still adaptive-visible at 200"
         );
     }
@@ -4804,12 +4847,9 @@ mod adams_4_render_boundary_tests {
 
         // 200: full MDI.
         let text_200 = render_at(&app, 200);
+        assert!(text_200.contains("Schedule pane"), "200: schedule visible");
         assert!(
-            text_200.contains("Schedule inspector"),
-            "200: schedule visible"
-        );
-        assert!(
-            text_200.contains("Favorites navigator"),
+            text_200.contains("Favorites pane"),
             "200: favorites visible"
         );
         assert!(app.mdi.is_some(), "MDI state preserved after frame 1");
@@ -4817,13 +4857,10 @@ mod adams_4_render_boundary_tests {
         // 159: schedule drops adaptively.
         let text_159 = render_at(&app, 159);
         assert!(
-            !text_159.contains("Schedule inspector"),
+            !text_159.contains("Schedule pane"),
             "159: schedule must drop; got:\n{text_159}"
         );
-        assert!(
-            text_159.contains("Favorites navigator"),
-            "159: favorites stays"
-        );
+        assert!(text_159.contains("Favorites pane"), "159: favorites stays");
 
         // 119: favorites drops too.
         let text_119 = render_at(&app, 119);
@@ -4842,7 +4879,7 @@ mod adams_4_render_boundary_tests {
         // 200 again: full MDI returns.
         let text_back = render_at(&app, 200);
         assert!(
-            text_back.contains("Schedule inspector") && text_back.contains("Favorites navigator"),
+            text_back.contains("Schedule pane") && text_back.contains("Favorites pane"),
             "Resize back to 200 must restore both side panes; got:\n{text_back}"
         );
     }
@@ -4870,7 +4907,7 @@ mod adams_4_render_boundary_tests {
 
         let text_200 = render_at(&app, 200);
         assert!(
-            !text_200.contains("Favorites navigator"),
+            !text_200.contains("Favorites pane"),
             "After Ctrl+H: favorites must be hidden at 200"
         );
 
@@ -4879,7 +4916,7 @@ mod adams_4_render_boundary_tests {
         let _ = render_at(&app, 119);
         let text_back = render_at(&app, 200);
         assert!(
-            !text_back.contains("Favorites navigator"),
+            !text_back.contains("Favorites pane"),
             "Manual hide must persist across resize cycle; got:\n{text_back}"
         );
         assert!(!app.mdi.as_ref().unwrap().show_favorites);
@@ -4921,7 +4958,7 @@ mod adams_4_render_boundary_tests {
         term.draw(|f| render(f, &app)).unwrap();
         let text = buf_text(term.backend().buffer());
         assert!(
-            text.contains("Schedule inspector"),
+            text.contains("Schedule pane"),
             "Schedule pane must render after /show schedule; got:\n{text}"
         );
     }

@@ -768,6 +768,18 @@ impl App {
                     self.activate_mdi_catalog_entry();
                     return false;
                 }
+                Action::Left | Action::Right
+                    if self.mdi.as_ref().is_some_and(|m| {
+                        matches!(
+                            m.focus,
+                            crate::tui::mdi::MdiFocus::LeftPane
+                                | crate::tui::mdi::MdiFocus::RightPane
+                        )
+                    }) =>
+                {
+                    self.cycle_mdi_focused_pane(matches!(action, Action::Left));
+                    return false;
+                }
                 _ => {}
             }
         }
@@ -1810,7 +1822,39 @@ impl App {
         self.maybe_fetch_scores();
         self.maybe_fetch_schedule();
         self.maybe_fetch_playoffs();
-        self.status = format!("Workbench · {label}");
+        if let Some(experience_label) = self.apply_mdi_experience_for_workbench(id) {
+            self.status = format!("Workbench · {label} · {experience_label}");
+        } else {
+            if let Some(mdi) = self.mdi.as_mut() {
+                mdi.clear_active_experience();
+            }
+            self.status = format!("Workbench · {label}");
+        }
+    }
+
+    fn apply_mdi_experience_for_workbench(
+        &mut self,
+        id: icelines_core::WorkbenchId,
+    ) -> Option<&'static str> {
+        let experience = crate::tui::workbench::tui_bound_experiences()
+            .find(|experience| experience.center == id)?;
+        let mdi = self.mdi.as_mut()?;
+        mdi.apply_experience(experience);
+        Some(experience.label)
+    }
+
+    fn cycle_mdi_focused_pane(&mut self, reverse: bool) {
+        let Some(mdi) = self.mdi.as_mut() else {
+            return;
+        };
+        let (zone, selected) = match mdi.focus {
+            crate::tui::mdi::MdiFocus::LeftPane => ("Left pane", mdi.cycle_left_pane(reverse)),
+            crate::tui::mdi::MdiFocus::RightPane => ("Right pane", mdi.cycle_right_pane(reverse)),
+            _ => return,
+        };
+        self.status = selected
+            .map(|binding| format!("{zone} · {}", binding.label))
+            .unwrap_or_else(|| format!("{zone} · no TUI panes available"));
     }
 
     /// Phase Adams.5 — MDI-mode auto-fetch. The Scores ribbon
@@ -6152,6 +6196,60 @@ mod tests {
 
         assert_eq!(app.screen, Screen::Queries);
         assert_eq!(app.status, "Workbench · Stats");
+    }
+
+    #[test]
+    fn l0_compose_the_bench_activity_rail_applies_tui_experience() {
+        let mut app = fresh_mdi_app();
+        let scores_idx = icelines_core::WORKBENCH_CATALOG
+            .iter()
+            .position(|entry| entry.id == icelines_core::WorkbenchId::Scores)
+            .unwrap();
+        {
+            let mdi = app.mdi.as_mut().unwrap();
+            mdi.focus = crate::tui::mdi::MdiFocus::ActivityRail;
+            mdi.catalog_selected = scores_idx;
+            mdi.left_pane_binding = icelines_core::WorkbenchPaneBindingId::SavedQueriesLeft;
+            mdi.right_pane_binding = icelines_core::WorkbenchPaneBindingId::DocsHelpRight;
+        }
+
+        app.handle(Action::Enter);
+
+        let mdi = app.mdi.as_ref().unwrap();
+        assert_eq!(app.screen, Screen::Tonight);
+        assert_eq!(
+            mdi.active_experience,
+            Some(icelines_core::WorkbenchExperienceId::TonightBench)
+        );
+        assert_eq!(
+            mdi.left_pane_binding,
+            icelines_core::WorkbenchPaneBindingId::FavoritesLeft
+        );
+        assert_eq!(
+            mdi.right_pane_binding,
+            icelines_core::WorkbenchPaneBindingId::ScheduleRight
+        );
+        assert_eq!(app.status, "Workbench · Scores · Tonight bench");
+    }
+
+    #[test]
+    fn l0_compose_the_bench_focused_pane_cycles_without_workspace_change() {
+        let mut app = fresh_mdi_app();
+        app.screen = Screen::Queries;
+        {
+            let mdi = app.mdi.as_mut().unwrap();
+            mdi.focus = crate::tui::mdi::MdiFocus::RightPane;
+        }
+
+        app.handle(Action::Right);
+
+        let mdi = app.mdi.as_ref().unwrap();
+        assert_eq!(app.screen, Screen::Queries);
+        assert_eq!(
+            mdi.right_pane_binding,
+            icelines_core::WorkbenchPaneBindingId::DataSourceRight
+        );
+        assert_eq!(app.status, "Right pane · Data/source");
     }
 
     #[test]

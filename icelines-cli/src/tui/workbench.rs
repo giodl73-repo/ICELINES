@@ -156,7 +156,7 @@ mod tests {
     }
 
     #[test]
-    fn l0_tui_workbench_adapter_exposes_only_renderable_pane_bindings() {
+    fn l0_tui_workbench_adapter_exposes_tui_safe_pane_bindings() {
         let left: Vec<_> = tui_pane_bindings_for_zone(WorkbenchZone::LeftPane)
             .map(|binding| binding.id)
             .collect();
@@ -164,8 +164,21 @@ mod tests {
             .map(|binding| binding.id)
             .collect();
 
-        assert_eq!(left, vec![WorkbenchPaneBindingId::FavoritesLeft]);
-        assert_eq!(right, vec![WorkbenchPaneBindingId::ScheduleRight]);
+        assert_eq!(
+            left,
+            vec![
+                WorkbenchPaneBindingId::FavoritesLeft,
+                WorkbenchPaneBindingId::SavedQueriesLeft
+            ]
+        );
+        assert_eq!(
+            right,
+            vec![
+                WorkbenchPaneBindingId::ScheduleRight,
+                WorkbenchPaneBindingId::DataSourceRight,
+                WorkbenchPaneBindingId::DocsHelpRight
+            ]
+        );
     }
 
     #[test]

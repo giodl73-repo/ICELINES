@@ -30,7 +30,11 @@
 // the lint becomes meaningful again once Adams.2 wires them.
 #![allow(dead_code)]
 
-use icelines_core::{WorkbenchId, WorkbenchPaneModelId, WORKBENCH_CATALOG};
+use icelines_core::{
+    workbench_experience, workbench_pane_binding, WorkbenchExperience, WorkbenchExperienceId,
+    WorkbenchId, WorkbenchPaneBinding, WorkbenchPaneBindingId, WorkbenchPaneModelId, WorkbenchZone,
+    WORKBENCH_CATALOG,
+};
 
 // ── Layout state ─────────────────────────────────────────────────────────────
 
@@ -56,11 +60,16 @@ pub struct MdiLayout {
     /// Pulse 03 — selected row in the shared activity/catalog rail.
     pub catalog_selected: usize,
 
-    /// Pulse 03 — shared pane-model identities backing today's
-    /// concrete side panes. Selection UI grows from these IDs in
-    /// later pulses without inventing TUI-local pane categories.
-    pub left_pane_model: WorkbenchPaneModelId,
-    pub right_pane_model: WorkbenchPaneModelId,
+    /// Compose the Bench.03 — active bound experience, if the
+    /// current workspace was selected through a shared experience.
+    /// Free-form activity-rail navigation clears this back to None.
+    pub active_experience: Option<WorkbenchExperienceId>,
+
+    /// Compose the Bench.03 — shared pane-binding identities backing
+    /// the concrete side panes. The render path derives both the title
+    /// and body from the binding so labels never drift from content.
+    pub left_pane_binding: WorkbenchPaneBindingId,
+    pub right_pane_binding: WorkbenchPaneBindingId,
 
     /// User-toggleable side-pane visibility. Combined with
     /// `effective_panes(width)`'s adaptive auto-drop to decide
@@ -148,8 +157,9 @@ impl Default for MdiLayout {
         Self {
             focus: MdiFocus::Workspace,
             catalog_selected: 0,
-            left_pane_model: WorkbenchPaneModelId::FavoritesNavigator,
-            right_pane_model: WorkbenchPaneModelId::ScheduleInspector,
+            active_experience: None,
+            left_pane_binding: WorkbenchPaneBindingId::FavoritesLeft,
+            right_pane_binding: WorkbenchPaneBindingId::ScheduleRight,
             show_favorites: true,
             show_schedule: true,
             command_input: String::new(),
@@ -282,6 +292,85 @@ impl MdiLayout {
         WORKBENCH_CATALOG
             .get(self.catalog_selected)
             .map(|entry| entry.id)
+    }
+
+    pub fn active_experience(&self) -> Option<&'static WorkbenchExperience> {
+        self.active_experience.and_then(workbench_experience)
+    }
+
+    pub fn left_pane_binding(&self) -> Option<&'static WorkbenchPaneBinding> {
+        workbench_pane_binding(self.left_pane_binding)
+    }
+
+    pub fn right_pane_binding(&self) -> Option<&'static WorkbenchPaneBinding> {
+        workbench_pane_binding(self.right_pane_binding)
+    }
+
+    pub fn left_pane_model(&self) -> Option<WorkbenchPaneModelId> {
+        self.left_pane_binding().map(|binding| binding.pane_model)
+    }
+
+    pub fn right_pane_model(&self) -> Option<WorkbenchPaneModelId> {
+        self.right_pane_binding().map(|binding| binding.pane_model)
+    }
+
+    pub fn apply_experience(&mut self, experience: &'static WorkbenchExperience) {
+        self.active_experience = Some(experience.id);
+        if let Some(id) = experience
+            .left_pane
+            .filter(|id| Self::binding_is_tui_zone(*id, WorkbenchZone::LeftPane))
+        {
+            self.left_pane_binding = id;
+        }
+        if let Some(id) = experience
+            .right_pane
+            .filter(|id| Self::binding_is_tui_zone(*id, WorkbenchZone::RightPane))
+        {
+            self.right_pane_binding = id;
+        }
+    }
+
+    pub fn clear_active_experience(&mut self) {
+        self.active_experience = None;
+    }
+
+    pub fn cycle_left_pane(&mut self, reverse: bool) -> Option<&'static WorkbenchPaneBinding> {
+        let id = Self::next_binding_id(WorkbenchZone::LeftPane, self.left_pane_binding, reverse)?;
+        self.left_pane_binding = id;
+        self.clear_active_experience();
+        self.left_pane_binding()
+    }
+
+    pub fn cycle_right_pane(&mut self, reverse: bool) -> Option<&'static WorkbenchPaneBinding> {
+        let id = Self::next_binding_id(WorkbenchZone::RightPane, self.right_pane_binding, reverse)?;
+        self.right_pane_binding = id;
+        self.clear_active_experience();
+        self.right_pane_binding()
+    }
+
+    fn next_binding_id(
+        zone: WorkbenchZone,
+        current: WorkbenchPaneBindingId,
+        reverse: bool,
+    ) -> Option<WorkbenchPaneBindingId> {
+        let bindings: Vec<_> = crate::tui::workbench::tui_pane_bindings_for_zone(zone).collect();
+        if bindings.is_empty() {
+            return None;
+        }
+        let current_idx = bindings
+            .iter()
+            .position(|binding| binding.id == current)
+            .unwrap_or(0);
+        let next_idx = if reverse {
+            current_idx.checked_sub(1).unwrap_or(bindings.len() - 1)
+        } else {
+            (current_idx + 1) % bindings.len()
+        };
+        Some(bindings[next_idx].id)
+    }
+
+    fn binding_is_tui_zone(id: WorkbenchPaneBindingId, zone: WorkbenchZone) -> bool {
+        crate::tui::workbench::tui_pane_bindings_for_zone(zone).any(|binding| binding.id == id)
     }
 }
 
@@ -493,8 +582,17 @@ mod tests {
         let m = MdiLayout::default();
         assert_eq!(m.focus, MdiFocus::Workspace);
         assert_eq!(m.catalog_selected, 0);
-        assert_eq!(m.left_pane_model, WorkbenchPaneModelId::FavoritesNavigator);
-        assert_eq!(m.right_pane_model, WorkbenchPaneModelId::ScheduleInspector);
+        assert_eq!(m.active_experience, None);
+        assert_eq!(m.left_pane_binding, WorkbenchPaneBindingId::FavoritesLeft);
+        assert_eq!(m.right_pane_binding, WorkbenchPaneBindingId::ScheduleRight);
+        assert_eq!(
+            m.left_pane_model(),
+            Some(WorkbenchPaneModelId::FavoritesNavigator)
+        );
+        assert_eq!(
+            m.right_pane_model(),
+            Some(WorkbenchPaneModelId::ScheduleInspector)
+        );
     }
 
     #[test]
@@ -522,6 +620,58 @@ mod tests {
         assert_eq!(m.focus, MdiFocus::ActivityRail);
         m.focus_next();
         assert_eq!(m.focus, MdiFocus::Workspace);
+    }
+
+    #[test]
+    fn l0_compose_the_bench_left_pane_cycles_tui_bindings() {
+        let mut m = MdiLayout::default();
+
+        let selected = m.cycle_left_pane(false).unwrap();
+
+        assert_eq!(selected.id, WorkbenchPaneBindingId::SavedQueriesLeft);
+        assert_eq!(
+            m.left_pane_binding,
+            WorkbenchPaneBindingId::SavedQueriesLeft
+        );
+        assert_eq!(
+            m.left_pane_model(),
+            Some(WorkbenchPaneModelId::SavedQueries)
+        );
+    }
+
+    #[test]
+    fn l0_compose_the_bench_right_pane_cycles_tui_bindings() {
+        let mut m = MdiLayout::default();
+
+        let selected = m.cycle_right_pane(false).unwrap();
+
+        assert_eq!(selected.id, WorkbenchPaneBindingId::DataSourceRight);
+        assert_eq!(
+            m.right_pane_binding,
+            WorkbenchPaneBindingId::DataSourceRight
+        );
+        assert_eq!(
+            m.right_pane_model(),
+            Some(WorkbenchPaneModelId::DataSourceInspector)
+        );
+    }
+
+    #[test]
+    fn l0_compose_the_bench_experience_applies_bound_panes() {
+        let mut m = MdiLayout::default();
+        m.left_pane_binding = WorkbenchPaneBindingId::SavedQueriesLeft;
+        m.right_pane_binding = WorkbenchPaneBindingId::DocsHelpRight;
+
+        let experience =
+            workbench_experience(WorkbenchExperienceId::TonightBench).expect("known experience");
+        m.apply_experience(experience);
+
+        assert_eq!(
+            m.active_experience,
+            Some(WorkbenchExperienceId::TonightBench)
+        );
+        assert_eq!(m.left_pane_binding, WorkbenchPaneBindingId::FavoritesLeft);
+        assert_eq!(m.right_pane_binding, WorkbenchPaneBindingId::ScheduleRight);
     }
 
     #[test]

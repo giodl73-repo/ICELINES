@@ -33,6 +33,17 @@ syntax, while `--classic` and `--standalone` keep their compatibility behavior.
 
 ## Gates
 
-- [ ] `cargo fmt --check`
-- [ ] `cargo test -p icelines-cli --quiet`
-- [ ] `cargo clippy -p icelines-cli --no-deps -- -D warnings`
+- [x] `cargo fmt --check`
+- [x] `cargo test -p icelines-cli --quiet`
+- [x] `cargo clippy -p icelines-cli --no-deps -- -D warnings`
+
+## Result
+
+Complete. Default TUI MDI now stores active experience plus left/right shared
+pane binding IDs, applies TUI-supported bound experiences from the activity rail,
+and cycles focused side panes with truthful titles/stub bodies for panes whose
+full TUI renderer does not exist yet. Extra validation ran because the pulse
+expanded TUI support on shared pane bindings:
+
+- [x] `cargo test -p icelines-core --quiet`
+- [x] `cargo clippy -p icelines-core --no-deps -- -D warnings`

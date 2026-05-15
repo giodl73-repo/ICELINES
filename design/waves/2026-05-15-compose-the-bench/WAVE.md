@@ -51,7 +51,7 @@ Schedule-right forever.
 |---|---|---|
 | 01 - Pane composition inventory and contract | complete | `PANE-COMPOSITION-INVENTORY.md`; `plans/pulse-01.md` |
 | 02 - Shared pane binding contract | complete | `icelines-core/src/workbench.rs`; `icelines-core/src/lib.rs`; `icelines-cli/src/tui/workbench.rs`; `icelines-web/src/workbench.rs`; `plans/pulse-02.md` |
-| 03 - TUI pane composition controls | planned | depends on Pulse 02 |
+| 03 - TUI pane composition controls | complete | `icelines-cli/src/tui/mdi.rs`; `icelines-cli/src/tui/app.rs`; `icelines-cli/src/tui/screens/mod.rs`; `plans/pulse-03.md` |
 | 04 - Web pane composition controls | planned | depends on Pulse 02 |
 | 05 - Docs, regression gates, and closeout | planned | depends on Pulses 03-04 |
 
@@ -72,12 +72,12 @@ Schedule-right forever.
 
 ## Current Result
 
-Pulse 02 added the shared pane binding contract. Core now exposes typed pane
-binding IDs, supported surfaces, binding interactions, status scopes, and
-experience compositions that reference bindings rather than raw pane models. TUI
-and web adapters lower the shared metadata to surface-ready bindings without
-adding visible controls yet.
+Pulse 03 wired the shared pane binding contract into default TUI MDI. The TUI
+layout now stores active experience plus left/right pane binding IDs, applies the
+Tonight bench experience from the activity rail, and cycles focused side panes
+with truthful labels and explicit non-rendered stubs where a full TUI pane body
+does not exist yet.
 
 ## Next
 
-Execute Pulse 03: TUI pane composition controls.
+Execute Pulse 04: web pane composition controls.

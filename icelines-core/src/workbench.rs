@@ -981,7 +981,7 @@ pub const WORKBENCH_PANE_BINDINGS: &[WorkbenchPaneBinding] = &[
         "Saved queries",
         WorkbenchPaneModelId::SavedQueries,
         WorkbenchZone::LeftPane,
-        &[WorkbenchSurface::Web],
+        &[WorkbenchSurface::Tui, WorkbenchSurface::Web],
         &[
             WorkbenchFieldId::Workspace,
             WorkbenchFieldId::StatKey,
@@ -1203,7 +1203,7 @@ pub const WORKBENCH_PANE_BINDINGS: &[WorkbenchPaneBinding] = &[
         "Data/source",
         WorkbenchPaneModelId::DataSourceInspector,
         WorkbenchZone::RightPane,
-        &[WorkbenchSurface::Web],
+        &[WorkbenchSurface::Tui, WorkbenchSurface::Web],
         &[
             WorkbenchFieldId::DataKind,
             WorkbenchFieldId::SourceState,
@@ -1217,7 +1217,7 @@ pub const WORKBENCH_PANE_BINDINGS: &[WorkbenchPaneBinding] = &[
         "Docs/help",
         WorkbenchPaneModelId::DocsHelp,
         WorkbenchZone::RightPane,
-        &[WorkbenchSurface::Web],
+        &[WorkbenchSurface::Tui, WorkbenchSurface::Web],
         &[WorkbenchFieldId::Workspace, WorkbenchFieldId::Route],
         140,
         WorkbenchPaneInteraction::ReadOnly,
