@@ -1,7 +1,7 @@
 ---
 wave: sim-the-spark
 date_open: 2026-05-15
-status: active
+status: closed
 source: Measure the Finish closeout and the Phase Rocket Richard roadmap
 ---
 
@@ -40,7 +40,7 @@ finish look like, and how much should I trust that read?"
 | 02 - Player scoring pace ViewModel | done | `PlayerScoringPaceView`; `plans/pulse-02.md` |
 | 03 - Team scoring outlook ViewModel | done | `TeamScoringOutlookView`; `plans/pulse-03.md` |
 | 04 - Surface parity and docs | done | `/player/:id/outlook`; `/team/:abbrev/outlook`; `plans/pulse-04.md` |
-| 05 - Wave closeout | planned | `plans/pulse-05.md`; depends on Pulse 04 |
+| 05 - Wave closeout | done | final gates; closed wave record; `plans/pulse-05.md` |
 
 ## Role Notes
 
@@ -69,7 +69,13 @@ Pulse 04 wired cache-safe web/API outlook routes for players and teams:
 `/player/:id/outlook`, `/team/:abbrev/outlook`, and JSON twins. The routes render
 core ViewModels, preserve nullable/source-state semantics, and do not fetch live
 NHL data on GET.
+Pulse 05 closed the wave after validating the delivered scope against PACE,
+SCOUT, WIRE, and BENCH: formulas remain descriptive, user-facing labels avoid
+certainty/odds language, GET routes stay cache/read-only, and the pulse gates are
+recorded in `plans/pulse-05.md`.
 
 ## Next
 
-Execute Pulse 05: wave closeout.
+Sim the Spark is closed. Future scoring-intelligence work should open a new wave
+only after it has a scoped contract beyond the descriptive player/team outlooks
+delivered here.

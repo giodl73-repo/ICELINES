@@ -33,9 +33,10 @@ and handoff notes for any residual Rocket Richard scoring-intelligence work.
 
 ## Gates
 
-- [ ] `cargo fmt --check`
-- [ ] `cargo test -p icelines-core --quiet`
-- [ ] `cargo test -p icelines-fetch --quiet`
-- [ ] `cargo test -p icelines-web --quiet`
-- [ ] `cargo clippy -- -D warnings`
-- [ ] `C:\src\proof\target\debug\proof.exe check design\waves\2026-05-15-sim-the-spark README.md COMMANDS.md --errors-only`
+- [x] `cargo fmt --check`
+- [x] `cargo test -p icelines-core --quiet`
+- [x] `cargo test -p icelines-fetch --quiet`
+- [x] `cargo test -p icelines-web --quiet`
+- [x] `cargo clippy -- -D warnings`
+- [x] `C:\src\proof\target\debug\proof.exe check design\waves\2026-05-15-sim-the-spark README.md COMMANDS.md --errors-only`
+- [x] `cargo build --release -p icelines-cli`
