@@ -21,8 +21,8 @@ temporary overlays.
 - **wire**: picker/catalog navigation must not create GET-backed mutations, live
   fetches, or browser-only state that changes canonical route meaning.
 - **bench**: inventory must name regression tests for active-screen selection,
-  catalog completeness, ViewModel-backed pane dimensions, keyboard access, and
-  docs parity.
+  catalog completeness, ViewModel-backed pane fields/models, keyboard access,
+  and docs parity.
 
 ## Owned scope
 
@@ -40,8 +40,9 @@ temporary overlays.
      - top live ribbon;
      - bottom command/status surface;
      - overlays;
-   - context-pane option bank sourced from existing ViewModels, including filter
-     dimensions/pivots each pane can expose;
+   - context-pane option bank sourced from existing ViewModels, including pane
+     models, shared fields, filter dimensions, summaries, timelines,
+     comparisons, queues, source-state panes, and action/status panes;
    - TUI workbench UX options and selected default;
    - web workbench UX options and selected default;
    - tab removal/compatibility rules for default MDI and `--classic`;
@@ -64,12 +65,12 @@ temporary overlays.
 
 | Pulse | Scope |
 |---|---|
-| 02 - Shared workbench catalog and zone model | Add typed catalog entries and tests for labels, aliases, default zone, TUI targets, web targets, and ViewModel-backed pane dimensions. |
+| 02 - Shared workbench catalog and zone model | Add typed catalog entries and tests for labels, aliases, default zone, TUI targets, web targets, ViewModel-backed fields, and pane model capabilities. |
 | 03 - TUI full-MDI workbench shell | Replace default TUI MDI tab-first navigation with activity/catalog selection, center workspace, context panes, live ribbon, and command/status surface while preserving `--classic`. |
 | 04 - Web dashboard workbench catalog | Add visible catalog/zone navigation to `/dashboard` that opens canonical workspace panels and keeps side-pane semantics aligned with TUI. |
 | 05 - Docs, regression gates, and closeout | Update README/COMMANDS/surface parity, run gates, and close the wave. |
 
 ## Gates
 
-- [ ] `cargo fmt --check`
-- [ ] `C:\src\proof\target\debug\proof.exe check design\waves\2026-05-15-call-the-changes design\waves\PHASES.md --errors-only`
+- [x] `cargo fmt --check`
+- [x] `C:\src\proof\target\debug\proof.exe check design\waves\2026-05-15-call-the-changes design\waves\PHASES.md --errors-only`
