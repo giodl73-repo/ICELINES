@@ -763,7 +763,7 @@ fn render_admin_html(
 
 fn render_game_cache_section(html: &mut String, active_season: &str, active_season_type: &str) {
     html.push_str("<section><h2>Game Cache</h2>");
-    html.push_str("<p>Load per-game rows from the NHL API into the local cache for records, streaks, scoring events, and matchup pages.</p>");
+    html.push_str("<p>POST-backed cache warmers for records, streaks, scoring events, and matchup pages. These may fetch official NHL game data for the requested teams/favorites, but they do not install release data bundles or remove local data.</p>");
     html.push_str("<form method=\"post\" action=\"/admin/game-cache/load-favorites\">");
     html.push_str(&format!(
         "<input type=\"hidden\" name=\"season\" value=\"{}\">",
@@ -808,6 +808,7 @@ fn render_data_status_section(html: &mut String, view: &DataStatusView) {
                 .as_ref()
                 .map(|state| (&state.title, &state.detail)),
         );
+        render_data_install_remove_deferral(html);
         html.push_str("</section>");
         return;
     }
@@ -822,7 +823,16 @@ fn render_data_status_section(html: &mut String, view: &DataStatusView) {
             html_escape(&row.key)
         ));
     }
-    html.push_str("</tbody></table></section>");
+    html.push_str("</tbody></table>");
+    render_data_install_remove_deferral(html);
+    html.push_str("</section>");
+}
+
+fn render_data_install_remove_deferral(html: &mut String) {
+    html.push_str("<div class=\"muted\">");
+    html.push_str("Web data install is deferred because it performs live/network release downloads; use <code>icelines data install</code> from the CLI when you intentionally want that operation. ");
+    html.push_str("Web data remove is deferred because it is destructive filesystem mutation and needs a scoped confirmation contract.");
+    html.push_str("</div>");
 }
 
 fn render_snapshot_section(html: &mut String, view: &SnapshotView) {

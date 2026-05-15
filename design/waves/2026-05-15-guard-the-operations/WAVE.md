@@ -51,7 +51,7 @@ operate.
 |---|---|---|
 | 01 - Operations parity inventory and pulse map | complete | `OPERATIONS-PARITY-INVENTORY.md`; `plans/pulse-01.md`; `panels/wave-plan-review/` |
 | 02 - Persistent config/report toggle contract | complete | `icelines-web/src/handlers/admin.rs`; `icelines-web/src/config.rs`; `icelines-web/tests/l1_router.rs`; `plans/pulse-02.md` |
-| 03 - Admin data operation safety | planned | depends on Pulse 01 |
+| 03 - Admin data operation safety | complete | `ADMIN-DATA-SAFETY.md`; `icelines-web/src/handlers/admin.rs`; `icelines-web/tests/l1_router.rs`; `plans/pulse-03.md` |
 | 04 - Watch-rule editor parity | planned | depends on Pulse 01 |
 | 05 - Favorites/groups parity | planned | depends on Pulse 01 |
 | 06 - Docs, regression gates, and closeout | planned | depends on Pulses 02-05 |
@@ -70,11 +70,11 @@ operate.
 
 ## Current Result
 
-Pulse 02 fenced the config/report-toggle partial without inventing duplicate web
-persistence. `/admin` now labels active-season controls as runtime-only, renders
-an explicit persistent-report-toggle deferral with the TUI Reports overlay
-recovery path, and `ConfigView` JSON carries the same warning.
+Pulse 03 fenced web admin data operations. `/admin` now labels game-cache
+controls as POST-backed cache warmers, renders explicit data install/remove
+deferral copy, and tests prove install/remove routes remain unmounted while
+invalid cache-warmer requests fail before network work.
 
 ## Next
 
-Execute Pulse 03: admin data operation safety.
+Execute Pulse 04: watch-rule editor parity.

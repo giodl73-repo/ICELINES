@@ -10,8 +10,8 @@ editing affordances.
 | Residual | Source | Decision | Pulse | Notes |
 |---|---|---|---|---|
 | Persistent web config/report toggles | `surface-parity.md` config/report row; Backcheck admin inventory | pulse | 02 | Web admin currently mutates runtime web season/type keys. Persistent report-toggle UI remains planned and must share CLI/TUI config contracts. |
-| Web data install/remove safety | `surface-parity.md` data row; Backcheck admin inventory | pulse | 03 | Install is live/network work; remove is destructive filesystem mutation. Either needs safe confirmation/dry-run/local-only contracts or explicit durable deferral. |
-| Admin game-cache load evidence | `surface-parity.md` admin route rows | pulse | 03 | Routes exist as partials. Pulse should ensure fixture-backed tests and user-facing source-state labels are sufficient. |
+| Web data install/remove safety | `surface-parity.md` data row; Backcheck admin inventory | done | 03 | Install remains deferred because it is live/network release work; remove remains deferred because it is destructive filesystem mutation. `/admin` now renders explicit deferral copy and install/remove routes remain unmounted. |
+| Admin game-cache load evidence | `surface-parity.md` admin route rows | done | 03 | Game-cache routes are labeled as POST-backed cache warmers, not release data install/remove. Invalid requests are rejected before network work. |
 | Snapshot activate/delete safety | `surface-parity.md` snapshot row | watch | 03 | Already POST-backed with active-snapshot guard. Re-audit only if Pulse 03 touches admin forms. |
 | Watch-rule arbitrary team/deployment editing | `surface-parity.md` watch rules row | pulse | 04 | Player-rule create/toggle/delete exists; richer rule dimensions are deferred. Pulse must stop if needed fields are not present in `WatchRulesView` or mutation intents. |
 | Favorites/groups management | `surface-parity.md` favorites/groups row | pulse | 05 | Add/remove favorites exists. Group-management parity needs a concrete UX decision around group selection/create/remove without changing identity semantics casually. |

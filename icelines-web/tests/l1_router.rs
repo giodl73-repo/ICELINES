@@ -2911,6 +2911,10 @@ async fn l1_admin_html_renders_operational_viewmodels() {
     assert!(html.contains("action=\"/admin/game-cache/load-favorites\""));
     assert!(html.contains("Load Favorites cache"));
     assert!(html.contains("Scoring events / play-by-play"));
+    assert!(html.contains("POST-backed cache warmers"));
+    assert!(html.contains("do not install release data bundles or remove local data"));
+    assert!(html.contains("Web data install is deferred"));
+    assert!(html.contains("Web data remove is deferred"));
     assert!(html.contains("web.active_season"));
     assert!(html.contains("action=\"/admin/config/set\""));
     assert!(html.contains("action=\"/admin/config/reset\""));
@@ -2996,6 +3000,8 @@ async fn l1_admin_html_renders_data_verify_form_for_manifest_rows() {
 
     assert!(html.contains("action=\"/admin/data/verify\""));
     assert!(html.contains("name=\"target\" value=\"20252026\""));
+    assert!(html.contains("Web data install is deferred"));
+    assert!(html.contains("Web data remove is deferred"));
     assert!(
         !html.contains("/admin/data/install"),
         "live data install must stay out of the web admin mutation surface"
@@ -3003,6 +3009,66 @@ async fn l1_admin_html_renders_data_verify_form_for_manifest_rows() {
     assert!(
         !html.contains("/admin/data/remove"),
         "destructive data remove must stay out of the web admin mutation surface"
+    );
+}
+
+#[tokio::test]
+async fn l1_admin_data_install_remove_routes_remain_unmounted() {
+    let app = router(WebState::new());
+
+    for uri in [
+        "/admin/data/install",
+        "/admin/data/remove",
+        "/api/v1/admin/data/install",
+        "/api/v1/admin/data/remove",
+    ] {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri(uri)
+                    .body(Body::empty())
+                    .expect("request builder ok"),
+            )
+            .await
+            .expect("oneshot dispatch ok");
+        assert_eq!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "{uri} must stay unmounted until a scoped safety contract exists"
+        );
+    }
+}
+
+#[tokio::test]
+async fn l1_admin_game_cache_json_rejects_invalid_request_before_network() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/admin/game-cache/load")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"season":"20252026","season_type":"regular","teams":"","artifacts":"boxscore"}"#,
+                ))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    let json = response_json(response, 64 * 1024).await;
+    assert!(
+        json["error"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("at least one team is required"),
+        "json was {json}"
     );
 }
 

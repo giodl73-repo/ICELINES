@@ -2,7 +2,7 @@
 wave: guard-the-operations
 pulse: 03
 date: 2026-05-15
-status: planned
+status: done
 governing_roles:
   - wire
   - bench
@@ -37,7 +37,15 @@ explicitly deferred.
 
 ## Gates
 
-- [ ] `cargo fmt --check`
-- [ ] `cargo test -p icelines-web --quiet`
-- [ ] `cargo clippy -p icelines-web --no-deps -- -D warnings`
-- [ ] `C:\src\proof\target\debug\proof.exe check design\waves\2026-05-15-guard-the-operations design\specs\surface-parity.md COMMANDS.md --errors-only`
+- [x] `cargo fmt --check`
+- [x] `cargo test -p icelines-web --quiet`
+- [x] `cargo clippy -p icelines-web --no-deps -- -D warnings`
+- [x] `C:\src\proof\target\debug\proof.exe check design\waves\2026-05-15-guard-the-operations design\specs\surface-parity.md COMMANDS.md --errors-only`
+
+## Result
+
+Kept web data install/remove deliberately deferred. `/admin` now labels
+game-cache controls as POST-backed cache warmers rather than release bundle
+install/remove operations, renders explicit data install/remove deferral copy,
+and tests prove install/remove routes remain unmounted while invalid game-cache
+requests are rejected before network work.
