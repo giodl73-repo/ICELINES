@@ -32,8 +32,11 @@ icelines tui player Bedard        # Bedard's card cold
 icelines tui team EDM             # Edmonton depth chart
 ```
 
-Inside `icelines tui`, press `:` for the command bar. Fantasy views accept the
-same product grammar as the CLI: `gaps cats=hits,blocks,shots top=8`,
+Inside `icelines tui`, the default MDI mode is a shared workbench: an activity
+catalog rail, a center workspace, Favorites/watchlist and Schedule context
+panes, a scores ribbon, and a bottom command bar. Use `Tab` / `Shift+Tab` to
+move focus across workbench zones; press `:` for commands. Fantasy views accept
+the same product grammar as the CLI: `gaps cats=hits,blocks,shots top=8`,
 `poach rw cats=hits,blocks free top=12`, and
 `simulate add=Connor_McDavid drop=Bench_Forward weeks=3`.
 
@@ -281,7 +284,7 @@ icelines fantasy trade "Bouchard" --to-team "Other" --for-player "Werenski" --ex
 
 # Web dashboard
 icelines serve --port 8000
-# GET /dashboard               -> Jack Adams browser shell with workspace rail and command bar
+# GET /dashboard               -> shared workbench catalog, panes, tabs, command bar
 # Try: poach rw cats=hits,blocks free top=12
 # Try: fantasy simulate add Connor_McDavid drop Bench_Forward
 # GET /fantasy                 -> HTML gaps + simulation scenarios
@@ -319,12 +322,14 @@ icelines query leaders --seasons 5  --sort pts-pace --top 10
 
 ### TUI (`icelines tui` or `icelines dashboard`)
 
-Interactive dashboard. By default `icelines tui` opens the Jack Adams multi-pane
-dashboard: scores ribbon, Favorites/watchlist pane, central workspace,
-Schedule/context pane, and command bar. Use `--classic` for the older tabbed
-single-document UI. Player cards lazy-load every player's full historical
-career across all 38 bundled seasons on first open. Cross-league cohort boards
-use the canonical CLI/web surfaces instead; from the command bar,
+Interactive dashboard. By default `icelines tui` opens the shared MDI
+workbench: activity/catalog rail, scores ribbon, Favorites/watchlist left pane,
+central workspace, Schedule/context right pane, bound experience presets, and a
+command bar. `Tab` / `Shift+Tab` moves focus across workbench zones in default
+MDI; use `--classic` for the older tabbed single-document UI or `--standalone`
+for a locked one-screen surface. Player cards lazy-load every player's full
+historical career across all 38 bundled seasons on first open. Cross-league
+cohort boards use the canonical CLI/web surfaces instead; from the command bar,
 `:career league=OHL season=20142015 top=8` flashes the exact `query career`
 and `/career` targets. Player cards also have a dedicated Records screen:
 press `r` from a player card, or run `:records player Andre Burakovsky` in the

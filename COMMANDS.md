@@ -626,17 +626,18 @@ The bundled-data cap is 38 seasons because `BUNDLED_SEASONS` is the canonical so
 
 ## TUI (`icelines tui` or `icelines dashboard`)
 
-Interactive dashboard. By default `icelines tui` opens the Jack Adams
-multi-pane dashboard: scores ribbon, Favorites/watchlist pane, central
-workspace, Schedule/context pane, and a command bar. Use `--classic` for the
-older tabbed single-document UI. Player cards lazy-load every player's full
-historical career across all 38 bundled seasons on first open.
+Interactive dashboard. By default `icelines tui` opens the shared workbench:
+an activity/catalog rail, scores ribbon, Favorites/watchlist left pane, central
+workspace, Schedule/context right pane, bound experience presets, and a command
+bar. Use `--classic` for the older tabbed single-document UI. Player cards
+lazy-load every player's full historical career across all 38 bundled seasons
+on first open.
 
 | Key | Action |
 |---|---|
-| `Tab` / `Shift+Tab` | Cycle tabs forward / backward |
-| `↑↓` / `←→` | Navigate within a tab |
-| `Enter` | Drill into selection (team / player / game) |
+| `Tab` / `Shift+Tab` | Default MDI: move focus across workbench rail / panes / workspace. `--classic`: cycle tabs forward / backward. `--standalone`: no-op. |
+| `↑↓` / `←→` | Navigate within the focused zone or screen |
+| `Enter` | Rail focused: open selected workbench entry. Workspace focused: drill into selection (team / player / game). |
 | `Esc` / `q` | Back / quit |
 | `?` | Help overlay (keybind cheatsheet) |
 | `M` (Shift+m) | **Manual / docs overlay** — full COMMANDS.md content scrollable inside the TUI. Lowercase `m` is reserved for the Goalies min-GP cycle. (LP.4) |
@@ -708,17 +709,21 @@ icelines tui transactions --standalone   # focused transactions feed
 # screen's chrome (header title + footer keybinds) is the only navigation
 # UI. Overlays (?, F, y, R) and per-screen keybinds work as usual.
 
-# Phase Jack Adams — multi-pane MDI dashboard (default)
-icelines tui                             # Scores ribbon top + Favorites left
-                                          # + swappable Workspace middle +
-                                          # Schedule right + cmdbar bottom
+# Phase Jack Adams / Call the Changes — workbench MDI dashboard (default)
+icelines tui                             # Activity rail + Scores ribbon top
+                                          # + Favorites left + swappable
+                                          # Workspace middle + Schedule right
+                                          # + cmdbar bottom
 icelines tui goalies                     # dashboard launching with goalies workspace
 icelines tui --mdi                       # explicit dashboard mode (same default)
 icelines tui --classic                   # older tabbed single-document UI
-# In MDI mode: press `:` or `/` to focus the cmdbar; type a verb (e.g.
-# `stats`, `goalies`, `team EDM`, `query g >= 30`, `/fav add Bedard`,
-# `/hide schedule`); Enter to submit. `?` shows the full command
-# reference. Ctrl+H toggles Favorites pane, Ctrl+L toggles Schedule pane.
+# In MDI mode: Tab/Shift+Tab move focus between the activity rail, side
+# panes, and center workspace. With the rail focused, ↑/↓ selects a shared
+# catalog entry and Enter opens it when it has a no-argument TUI screen.
+# Press `:` or `/` to focus the cmdbar; type a verb (e.g. `stats`, `goalies`,
+# `team EDM`, `query g >= 30`, `/fav add Bedard`, `/hide schedule`); Enter to
+# submit. `?` shows the full command reference. Ctrl+H toggles Favorites pane,
+# Ctrl+L toggles Schedule pane.
 # --mdi is mutually exclusive with --standalone and --classic.
 
 # Equivalent flag form (for scripts)
@@ -735,7 +740,8 @@ The default TUI dashboard includes a chat-CLI command bar at the bottom.
 Press `:` to focus the bar with empty input, or `/` to focus with `/`
 already typed (for slash commands). Enter submits and keeps the bar ready
 for the next command; pressing `:` again at the empty prompt is harmless.
-Use `Tab` or `Esc` to leave command mode.
+Use `Tab` or `Esc` to leave command mode. Outside command mode, Tab moves
+between workbench zones instead of cycling legacy tabs.
 
 | Verb | Effect | Example |
 |---|---|---|
@@ -775,15 +781,16 @@ Use `Tab` or `Esc` to leave command mode.
 | `/quit` (alias `q`, `quit`) | Exit | `:q` |
 
 Global hotkeys (work without entering the bar): `q` quits, `?` opens
-help overlay, `Ctrl+H` toggles Favorites pane, `Ctrl+L` toggles
-Schedule pane.
+help overlay, `Tab`/`Shift+Tab` moves workbench focus, `Ctrl+H` toggles
+Favorites pane, `Ctrl+L` toggles Schedule pane.
 
 ### Web dashboard command contract (Phase Jack Adams Web)
 
 Run `icelines serve --port 8000` and open `/dashboard` for the browser version
-of the Jack Adams bench: scores ribbon, Favorites/watchlist pane, central
-workspace, Schedule pane, and a command bar. Canonical route pages still work
-directly; the dashboard shell wraps them as workspace panels through
+of the shared workbench: grouped activity/catalog rail, bound experience tabs,
+scores ribbon, Favorites/watchlist pane, central workspace, Schedule pane,
+visible pane-model/field affordances, and a command bar. Canonical route pages
+still work directly; the dashboard shell wraps them as workspace panels through
 `/dashboard?workspace=<route>`.
 
 The browser dashboard uses the same deterministic command vocabulary as the
@@ -831,11 +838,13 @@ Gaps starts `gaps `, `p` on Poach starts `poach `, `w` on Poach toggles the
 selected player in the local Watchlist, and `a` on Fantasy Sim starts
 `simulate add=`.
 
-Browser adaptive layout: wide screens show scores + Favorites/Watchlist +
-Workspace + Schedule. Tablet/mobile keeps Workspace primary, collapses Schedule
-first when no user preference exists, lets both side panes reopen via visible
-Show/Hide handles, and keeps the command bar as a sticky reach target. Command
-history is session-local; side-pane visibility is local browser state.
+Browser adaptive layout: wide screens show the catalog rail + experience tabs +
+scores + Favorites/Watchlist + Workspace + Schedule. Tablet/mobile keeps
+Workspace primary, collapses Schedule first when no user preference exists,
+lets both side panes reopen via visible Show/Hide handles, and keeps the
+command bar as a sticky reach target. Command history is session-local;
+side-pane visibility is local browser state. Dashboard GET navigation is
+read-only; favorite/watch writes continue to use POST-backed endpoints.
 
 Visual capture gate:
 

@@ -1,7 +1,7 @@
 ---
 wave: call-the-changes
 date_open: 2026-05-15
-status: active
+status: closed
 source: user request for final MDI stage after Sim the Spark closeout
 ---
 
@@ -89,7 +89,7 @@ or route summaries; no pane gets its own hockey math.
 | 02 - Shared workbench catalog, fields, and pane models | complete | `icelines-core/src/workbench.rs`; `icelines-cli/src/tui/workbench.rs`; `icelines-web/src/workbench.rs`; `plans/pulse-02.md` |
 | 03 - TUI full-MDI workbench shell | complete | `icelines-cli/src/tui/mdi.rs`; `icelines-cli/src/tui/screens/mod.rs`; `icelines-cli/src/tui/app.rs`; `plans/pulse-03.md` |
 | 04 - Web dashboard workbench catalog | complete | `icelines-web/src/handlers/dashboard.rs`; `icelines-web/templates/dashboard.html`; `icelines-web/templates/dashboard_workspace.html`; `plans/pulse-04.md` |
-| 05 - Docs, regression gates, and closeout | planned | depends on Pulses 03-04 |
+| 05 - Docs, regression gates, and closeout | complete | `README.md`; `COMMANDS.md`; `design/specs/surface-parity.md`; `plans/pulse-05.md` |
 
 ## Role Notes
 
@@ -111,12 +111,25 @@ or route summaries; no pane gets its own hockey math.
 
 ## Current Result
 
-Pulse 04 promoted `/dashboard` to the shared web workbench. It now renders a
-grouped activity/catalog rail from shared web adapter routes, bound experience
-tabs as composed layouts, visible pane-model and field affordances, and
-server-rendered workspace fragments that preserve canonical full-page routes and
-local-only side-pane state.
+Call the Changes is closed. IceLines now has one shared workbench model across
+TUI and web: catalog identity, zone placement, pane models, fields, bound
+experiences, default TUI activity-rail navigation, and a server-rendered web
+dashboard catalog with no-JS workspace summaries. README, COMMANDS, and the
+surface-parity matrix document the default MDI behavior, Tab focus traversal,
+bound web experience tabs, pane/field affordances, and POST-backed mutation
+boundary.
+
+## Closeout Gates
+
+- `cargo fmt --check`
+- `cargo test -p icelines-core --quiet`
+- `cargo test -p icelines-cli --quiet`
+- `cargo test -p icelines-web --quiet`
+- `cargo clippy -- -D warnings`
+- `C:\src\proof\target\debug\proof.exe check design\waves\2026-05-15-call-the-changes README.md COMMANDS.md design\specs\surface-parity.md --errors-only`
+- `cargo build --release -p icelines-cli`
 
 ## Next
 
-Execute Pulse 05: Docs, regression gates, and closeout.
+Open the next wave from `design/waves/PHASES.md` when a new product direction is
+ready.
