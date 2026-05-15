@@ -518,9 +518,17 @@ with `icelines fetch play-by-play --date YYYY-MM-DD` or use the web Admin game
 cache loader's "Scoring events / play-by-play" artifact.
 
 Web routes: `/game/:id/scoring`, `/team/:abbrev/scoring`,
-`/player/:id/scoring`, `/tonight/intel`, `/api/v1/game/:id/scoring`,
-`/api/v1/team/:abbrev/scoring`, `/api/v1/player/:id/scoring`, and
-`/api/v1/tonight/intel`.
+`/player/:id/scoring`, `/team/:abbrev/outlook`, `/player/:id/outlook`,
+`/tonight/intel`, `/api/v1/game/:id/scoring`, `/api/v1/team/:abbrev/scoring`,
+`/api/v1/player/:id/scoring`, `/api/v1/team/:abbrev/outlook`,
+`/api/v1/player/:id/outlook`, and `/api/v1/tonight/intel`.
+
+Scoring outlook pages are descriptive pace surfaces, not betting forecasts.
+Player outlook rows show goals, points, and shots with 82-game pace and nullable
+projected finish below the sample floor or when remaining schedule data is not
+loaded. Team outlook rows show goals for/against pace and recent pressure from
+cached regular-season schedule scores only; GET routes do not fetch live NHL
+data.
 
 ## `x` — quick CSV/JSON export
 

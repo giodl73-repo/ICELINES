@@ -503,7 +503,10 @@ impl NhlApiClient {
 /// Parse one game JSON object into a ScheduledGame.
 /// `fallback_date` is used when the date isn't on the game itself (gameWeek nests
 /// games under a date; club-schedule-season puts `gameDate` on the game).
-fn parse_game(g: &serde_json::Value, fallback_date: Option<&str>) -> Option<ScheduledGame> {
+pub(crate) fn parse_game(
+    g: &serde_json::Value,
+    fallback_date: Option<&str>,
+) -> Option<ScheduledGame> {
     let game_id = g["id"].as_u64().unwrap_or(0);
     if game_id == 0 {
         return None;

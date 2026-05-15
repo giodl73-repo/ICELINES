@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page.title }}{% endblock %}
+
+{% block content %}
+<p class="back-link-row">
+    <a href="{{ page.back_href }}">← {{ page.back_label }}</a>
+    <span class="inline-separator">·</span>
+    <a href="{{ page.api_href }}">JSON</a>
+</p>
+
+<header class="team-banner">
+    <h1>{{ page.title }}</h1>
+    <p class="team-banner-meta">{{ page.subtitle }} · {{ page.source_label }}</p>
+</header>
+
+<section>
+    <h2>Descriptive outlook</h2>
+    <div class="table-scroll">
+    <table>
+        <thead>
+            <tr>
+                <th>Metric</th>
+                <th class="numeric">Current</th>
+                <th class="numeric">GP</th>
+                <th class="numeric">Per game</th>
+                <th class="numeric">82-game pace</th>
+                <th class="numeric">Projected finish</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in page.rows %}
+            <tr>
+                <td>{{ row.label }}</td>
+                <td class="numeric">{{ row.current_total }}</td>
+                <td class="numeric">{{ row.games_played }}</td>
+                <td class="numeric">{{ row.per_game }}</td>
+                <td class="numeric">{{ row.pace_82 }}</td>
+                <td class="numeric">{{ row.projected_finish }}</td>
+                <td>{{ row.status_label }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    <p class="help-text">Pace is descriptive: (current total / games played) × 82. Projected finish is nullable when the remaining schedule is unavailable or the sample is below the floor.</p>
+</section>
+
+{% if page.has_recent_form %}
+<section>
+    <h2>{{ page.recent_label }}</h2>
+    <div class="stat-card-grid">
+        <div class="stat-card"><strong>{{ page.recent_games_loaded }}</strong><span>Games loaded</span></div>
+        <div class="stat-card"><strong>{{ page.recent_goals_for }}</strong><span>Goals for</span></div>
+        <div class="stat-card"><strong>{{ page.recent_goals_against }}</strong><span>Goals against</span></div>
+        <div class="stat-card"><strong>{{ page.recent_goal_differential }}</strong><span>Goal differential</span></div>
+        <div class="stat-card"><strong>{{ page.recent_goals_for_per_game }}</strong><span>GF/G</span></div>
+        <div class="stat-card"><strong>{{ page.recent_goals_against_per_game }}</strong><span>GA/G</span></div>
+    </div>
+    <p class="help-text">Recent pressure is context only; it is not a betting line, win probability, or proprietary expected-goals model.</p>
+</section>
+{% endif %}
+{% endblock %}

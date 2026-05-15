@@ -39,8 +39,8 @@ finish look like, and how much should I trust that read?"
 | 01 - Projection inventory and assumptions contract | done | `SPARK-INVENTORY.md`; `plans/pulse-01.md` |
 | 02 - Player scoring pace ViewModel | done | `PlayerScoringPaceView`; `plans/pulse-02.md` |
 | 03 - Team scoring outlook ViewModel | done | `TeamScoringOutlookView`; `plans/pulse-03.md` |
-| 04 - Surface parity and docs | planned | `plans/pulse-04.md`; depends on Pulses 02-03 |
-| 05 - Wave closeout | planned | depends on Pulse 04 |
+| 04 - Surface parity and docs | done | `/player/:id/outlook`; `/team/:abbrev/outlook`; `plans/pulse-04.md` |
+| 05 - Wave closeout | planned | `plans/pulse-05.md`; depends on Pulse 04 |
 
 ## Role Notes
 
@@ -65,7 +65,11 @@ Pulse 03 added core-owned `TeamScoringOutlookView` rows for goals for and goals
 against from caller-supplied regular-season schedule/score inputs. Projected
 finish stays nullable without a remaining-game count, and missing/partial source
 states are explicit in the ViewModel context.
+Pulse 04 wired cache-safe web/API outlook routes for players and teams:
+`/player/:id/outlook`, `/team/:abbrev/outlook`, and JSON twins. The routes render
+core ViewModels, preserve nullable/source-state semantics, and do not fetch live
+NHL data on GET.
 
 ## Next
 
-Execute Pulse 04: surface parity and docs.
+Execute Pulse 05: wave closeout.

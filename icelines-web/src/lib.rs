@@ -86,6 +86,10 @@ pub fn router(state: WebState) -> Router {
             get(handlers::scoring::get_player_scoring),
         )
         .route(
+            "/player/:id/outlook",
+            get(handlers::scoring::get_player_outlook),
+        )
+        .route(
             "/player/:id/streaks",
             get(handlers::streaks::get_player_streaks),
         )
@@ -98,6 +102,10 @@ pub fn router(state: WebState) -> Router {
         .route(
             "/api/v1/player/:id/scoring",
             get(handlers::scoring::get_player_scoring_json),
+        )
+        .route(
+            "/api/v1/player/:id/outlook",
+            get(handlers::scoring::get_player_outlook_json),
         )
         .route(
             "/api/v1/player/:id/streaks",
@@ -126,6 +134,10 @@ pub fn router(state: WebState) -> Router {
             get(handlers::scoring::get_team_scoring),
         )
         .route(
+            "/team/:abbrev/outlook",
+            get(handlers::scoring::get_team_outlook),
+        )
+        .route(
             "/records/player/:id",
             get(handlers::records::get_player_records),
         )
@@ -146,6 +158,10 @@ pub fn router(state: WebState) -> Router {
         .route(
             "/api/v1/team/:abbrev/scoring",
             get(handlers::scoring::get_team_scoring_json),
+        )
+        .route(
+            "/api/v1/team/:abbrev/outlook",
+            get(handlers::scoring::get_team_outlook_json),
         )
         .route(
             "/api/v1/records/player/:id",

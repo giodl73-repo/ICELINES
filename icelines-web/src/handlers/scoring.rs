@@ -4,12 +4,15 @@ use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
 use chrono::{NaiveDate, Utc};
+use icelines_core::identity::PlayerId;
 use icelines_core::model::{Season, TeamAbbr};
 use icelines_core::season_stats::SeasonType;
 use icelines_core::{
-    Completeness, GameScoringReportView, ScoringEventInput, ScoringEventSummary,
-    ScoringShooterSummary, ScoringSplitSummary, ShotEventKind, TeamScoringProfileView, ViewContext,
-    ViewWindow,
+    Completeness, GameScoringReportView, PlayerScoringPaceMetric, PlayerScoringPaceRow,
+    PlayerScoringPaceSampleStatus, PlayerScoringPaceView, ScoringEventInput, ScoringEventSummary,
+    ScoringShooterSummary, ScoringSplitSummary, ShotEventKind, SourceKind, SourceState,
+    TeamScoringOutlookMetric, TeamScoringOutlookRow, TeamScoringOutlookSourceStatus,
+    TeamScoringOutlookView, TeamScoringProfileView, ViewContext, ViewWindow,
 };
 
 #[derive(Template)]
@@ -85,6 +88,43 @@ struct TonightPlayerIntelRow {
     summary: ScoringSummaryTemplateRow,
 }
 
+#[derive(Template)]
+#[template(path = "scoring_outlook.html")]
+struct ScoringOutlookTemplate {
+    active_label: String,
+    page: ScoringOutlookPage,
+}
+
+#[derive(Debug, Clone)]
+struct ScoringOutlookPage {
+    title: String,
+    subtitle: String,
+    back_href: String,
+    back_label: String,
+    api_href: String,
+    source_label: String,
+    rows: Vec<ScoringOutlookTemplateRow>,
+    has_recent_form: bool,
+    recent_label: String,
+    recent_games_loaded: u32,
+    recent_goals_for: u32,
+    recent_goals_against: u32,
+    recent_goal_differential: String,
+    recent_goals_for_per_game: String,
+    recent_goals_against_per_game: String,
+}
+
+#[derive(Debug, Clone)]
+struct ScoringOutlookTemplateRow {
+    label: String,
+    current_total: u32,
+    games_played: u32,
+    per_game: String,
+    pace_82: String,
+    projected_finish: String,
+    status_label: String,
+}
+
 #[derive(Debug, Clone)]
 struct ScoringSummaryTemplateRow {
     goals: u32,
@@ -153,6 +193,34 @@ pub async fn get_player_scoring(State(state): State<WebState>, Path(id): Path<u3
     }
 }
 
+pub async fn get_player_outlook(State(state): State<WebState>, Path(id): Path<u32>) -> Response {
+    match build_player_outlook_view(&state, id).await {
+        Ok((active_label, view)) => {
+            let page = player_outlook_page(&view);
+            render_outlook_template(active_label, page)
+        }
+        Err(response) => *response,
+    }
+}
+
+pub async fn get_player_outlook_json(
+    State(state): State<WebState>,
+    Path(id): Path<u32>,
+) -> Response {
+    match build_player_outlook_view(&state, id).await {
+        Ok((_active_label, view)) => {
+            let meta = serde_json::json!({
+                "player_id": view.player_id,
+                "season": view.context.window.season.0.to_string(),
+                "season_type": view.context.window.season_type.label(),
+                "source_state": view.context.source_state,
+            });
+            crate::api::json_data_meta("player-outlook", view, meta)
+        }
+        Err(response) => *response,
+    }
+}
+
 pub async fn get_player_scoring_json(
     State(state): State<WebState>,
     Path(id): Path<u32>,
@@ -179,6 +247,37 @@ pub async fn get_team_scoring(
         Ok((active_label, season, season_type, view)) => {
             let page = team_scoring_page(&view, season, season_type);
             render_scoring_template(active_label, page)
+        }
+        Err(response) => *response,
+    }
+}
+
+pub async fn get_team_outlook(
+    State(state): State<WebState>,
+    Path(abbrev_raw): Path<String>,
+) -> Response {
+    match build_team_outlook_view(&state, &abbrev_raw).await {
+        Ok((active_label, view)) => {
+            let page = team_outlook_page(&view);
+            render_outlook_template(active_label, page)
+        }
+        Err(response) => *response,
+    }
+}
+
+pub async fn get_team_outlook_json(
+    State(state): State<WebState>,
+    Path(abbrev_raw): Path<String>,
+) -> Response {
+    match build_team_outlook_view(&state, &abbrev_raw).await {
+        Ok((_active_label, view)) => {
+            let meta = serde_json::json!({
+                "team_abbrev": view.team,
+                "season": view.context.window.season.0.to_string(),
+                "season_type": view.context.window.season_type.label(),
+                "source_state": view.context.source_state,
+            });
+            crate::api::json_data_meta("team-outlook", view, meta)
         }
         Err(response) => *response,
     }
@@ -251,6 +350,17 @@ fn render_scoring_template(active_label: String, page: ScoringReportPage) -> Res
     }
 }
 
+fn render_outlook_template(active_label: String, page: ScoringOutlookPage) -> Response {
+    match (ScoringOutlookTemplate { active_label, page }).render() {
+        Ok(html) => Html(html).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html(format!("template render failed: {e}")),
+        )
+            .into_response(),
+    }
+}
+
 async fn build_game_scoring_view(
     state: &WebState,
     game_id: u64,
@@ -273,6 +383,20 @@ async fn build_team_scoring_view(
     let view =
         icelines_fetch::scoring_provider::load_team_scoring_profile(&store, context, &team.0);
     Ok((active_label, season, season_type, view))
+}
+
+async fn build_team_outlook_view(
+    state: &WebState,
+    abbrev_raw: &str,
+) -> Result<(String, TeamScoringOutlookView), Box<Response>> {
+    let team = parse_team(abbrev_raw)?;
+    let (active_label, season, season_type) = active_window(state).await?;
+    let store = open_data_store("team-outlook")?;
+    let context = ViewContext::new(ViewWindow::new(season, season_type));
+    let view = icelines_fetch::scoring_outlook_provider::load_team_scoring_outlook(
+        &store, context, &team.0,
+    );
+    Ok((active_label, view))
 }
 
 async fn build_player_scoring_view(
@@ -300,6 +424,44 @@ async fn build_player_scoring_view(
         player_name,
     );
     Ok((active_label, season, season_type, view))
+}
+
+async fn build_player_outlook_view(
+    state: &WebState,
+    player_id: u32,
+) -> Result<(String, PlayerScoringPaceView), Box<Response>> {
+    let (active_label, season, season_type) = active_window(state).await?;
+    let store = open_data_store("player-outlook")?;
+    let view = {
+        let repo = state.repo.read().await;
+        let player = repo
+            .view(PlayerId(player_id), season, season_type)
+            .ok_or_else(|| {
+                Box::new(
+                    (
+                        StatusCode::NOT_FOUND,
+                        Html(format!(
+                            "<!doctype html><html><body><h1>Player not found</h1>\
+                         <p>No player with NHL id {player_id} in the active repository.</p>\
+                         <p><a href=\"/leaders\">back to leaders</a></p></body></html>"
+                        )),
+                    )
+                        .into_response(),
+                )
+            })?;
+        let (remaining_games, schedule_status) =
+            icelines_fetch::scoring_outlook_provider::schedule_remaining_for_team(
+                &store,
+                season,
+                player.team_display(),
+            );
+        let mut context = ViewContext::new(ViewWindow::new(season, season_type));
+        context
+            .source_state
+            .push(schedule_source_state(schedule_status));
+        PlayerScoringPaceView::from_player(context, &player, remaining_games)
+    };
+    Ok((active_label, view))
 }
 
 async fn build_tonight_intel_view(
@@ -459,6 +621,56 @@ fn player_scoring_page(
     }
 }
 
+fn player_outlook_page(view: &PlayerScoringPaceView) -> ScoringOutlookPage {
+    ScoringOutlookPage {
+        title: format!("{} Scoring Outlook", view.player_name),
+        subtitle: format!(
+            "{} · {} · descriptive 82-game pace",
+            pretty_season_label(view.context.window.season.0),
+            view.context.window.season_type.label()
+        ),
+        back_href: format!("/player/{}", view.player_id),
+        back_label: "player card".to_string(),
+        api_href: format!("/api/v1/player/{}/outlook", view.player_id),
+        source_label: player_outlook_source_label(view),
+        rows: view.rows.iter().map(player_outlook_row).collect(),
+        has_recent_form: false,
+        recent_label: String::new(),
+        recent_games_loaded: 0,
+        recent_goals_for: 0,
+        recent_goals_against: 0,
+        recent_goal_differential: String::new(),
+        recent_goals_for_per_game: String::new(),
+        recent_goals_against_per_game: String::new(),
+    }
+}
+
+fn team_outlook_page(view: &TeamScoringOutlookView) -> ScoringOutlookPage {
+    ScoringOutlookPage {
+        title: format!("{} Scoring Outlook", view.team),
+        subtitle: format!(
+            "{} · {} · goals for / against pace",
+            pretty_season_label(view.context.window.season.0),
+            view.context.window.season_type.label()
+        ),
+        back_href: format!("/team/{}", view.team),
+        back_label: "team page".to_string(),
+        api_href: format!("/api/v1/team/{}/outlook", view.team),
+        source_label: team_outlook_source_label(view.source_status),
+        rows: view.rows.iter().map(team_outlook_row).collect(),
+        has_recent_form: true,
+        recent_label: view.recent_form.label.clone(),
+        recent_games_loaded: view.recent_form.games_loaded,
+        recent_goals_for: view.recent_form.goals_for,
+        recent_goals_against: view.recent_form.goals_against,
+        recent_goal_differential: signed_i32(view.recent_form.goal_differential),
+        recent_goals_for_per_game: format_opt_one_decimal(view.recent_form.goals_for_per_game),
+        recent_goals_against_per_game: format_opt_one_decimal(
+            view.recent_form.goals_against_per_game,
+        ),
+    }
+}
+
 fn tonight_intel_page(view: &icelines_core::TonightScoringIntelView) -> TonightIntelPage {
     let source_loaded = source_loaded(&view.context.source_state);
     TonightIntelPage {
@@ -501,6 +713,90 @@ fn tonight_intel_page(view: &icelines_core::TonightScoringIntelView) -> TonightI
             return_to: format!("/tonight/intel?date={}", view.date),
         },
     }
+}
+
+fn player_outlook_row(row: &PlayerScoringPaceRow) -> ScoringOutlookTemplateRow {
+    let status_label = match row.sample_status {
+        PlayerScoringPaceSampleStatus::ZeroGames => "below sample floor",
+        PlayerScoringPaceSampleStatus::BelowThreshold => "below sample floor",
+        PlayerScoringPaceSampleStatus::Eligible => match row.metric {
+            PlayerScoringPaceMetric::Goals => "on pace",
+            PlayerScoringPaceMetric::Points | PlayerScoringPaceMetric::Shots => "tracking toward",
+        },
+    };
+    ScoringOutlookTemplateRow {
+        label: row.label.clone(),
+        current_total: row.current_total,
+        games_played: row.games_played,
+        per_game: format_opt_two_decimal(row.per_game),
+        pace_82: format_opt_one_decimal(row.pace_82),
+        projected_finish: format_opt_one_decimal(row.projected_finish),
+        status_label: status_label.to_string(),
+    }
+}
+
+fn team_outlook_row(row: &TeamScoringOutlookRow) -> ScoringOutlookTemplateRow {
+    let status_label = match row.source_status {
+        TeamScoringOutlookSourceStatus::MissingSource => "source missing",
+        TeamScoringOutlookSourceStatus::PartialSource => "partial source",
+        TeamScoringOutlookSourceStatus::Loaded => match row.metric {
+            TeamScoringOutlookMetric::GoalsFor => "tracking toward",
+            TeamScoringOutlookMetric::GoalsAgainst => "recent pressure",
+        },
+    };
+    ScoringOutlookTemplateRow {
+        label: row.label.clone(),
+        current_total: row.current_total,
+        games_played: row.games_played,
+        per_game: format_opt_two_decimal(row.per_game),
+        pace_82: format_opt_one_decimal(row.pace_82),
+        projected_finish: format_opt_one_decimal(row.projected_finish),
+        status_label: status_label.to_string(),
+    }
+}
+
+fn player_outlook_source_label(view: &PlayerScoringPaceView) -> String {
+    let schedule_status = view
+        .context
+        .source_state
+        .iter()
+        .find(|state| state.source == SourceKind::Schedule)
+        .map(|state| state.state)
+        .unwrap_or(Completeness::Unavailable);
+    match schedule_status {
+        Completeness::Complete => "season stats loaded · schedule loaded".to_string(),
+        Completeness::Partial => "season stats loaded · partial source".to_string(),
+        Completeness::Unavailable => {
+            "season stats loaded · schedule missing, projected finish unavailable".to_string()
+        }
+        Completeness::Stale => "season stats loaded · schedule stale".to_string(),
+    }
+}
+
+fn team_outlook_source_label(status: TeamScoringOutlookSourceStatus) -> String {
+    match status {
+        TeamScoringOutlookSourceStatus::Loaded => "schedule loaded".to_string(),
+        TeamScoringOutlookSourceStatus::PartialSource => "partial source".to_string(),
+        TeamScoringOutlookSourceStatus::MissingSource => {
+            "schedule missing, projected finish unavailable".to_string()
+        }
+    }
+}
+
+fn format_opt_one_decimal(value: Option<f64>) -> String {
+    value
+        .map(|value| format!("{value:.1}"))
+        .unwrap_or_else(|| "-".to_string())
+}
+
+fn format_opt_two_decimal(value: Option<f64>) -> String {
+    value
+        .map(|value| format!("{value:.2}"))
+        .unwrap_or_else(|| "-".to_string())
+}
+
+fn signed_i32(value: i32) -> String {
+    format!("{value:+}")
 }
 
 fn summary_row(summary: ScoringEventSummary) -> ScoringSummaryTemplateRow {
@@ -598,6 +894,21 @@ fn source_label(loaded: bool) -> String {
     }
 }
 
+fn schedule_source_state(status: TeamScoringOutlookSourceStatus) -> SourceState {
+    match status {
+        TeamScoringOutlookSourceStatus::Loaded => SourceState::complete(SourceKind::Schedule),
+        TeamScoringOutlookSourceStatus::PartialSource => SourceState {
+            source: SourceKind::Schedule,
+            state: Completeness::Partial,
+            provenance: None,
+            fetched_at: None,
+            stale_reason: None,
+            message: Some("loaded schedule/score window is partial".to_string()),
+        },
+        TeamScoringOutlookSourceStatus::MissingSource => SourceState::missing(SourceKind::Schedule),
+    }
+}
+
 fn parse_team(abbrev_raw: &str) -> Result<TeamAbbr, Box<Response>> {
     let abbrev_upper = abbrev_raw.to_ascii_uppercase();
     TeamAbbr::parse(&abbrev_upper).map_err(|e| {
@@ -643,4 +954,73 @@ fn resolve_favorite_player_id(key: &str) -> Option<u32> {
         return Some(pid);
     }
     icelines_fetch::stats_loader::resolve_player_id_by_name(key)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use icelines_core::model::Season;
+    use icelines_core::season_stats::SeasonType;
+
+    #[test]
+    fn l0_player_outlook_page_preserves_sample_floor_and_json_source_state() {
+        let mut context = ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular));
+        context.source_state.push(schedule_source_state(
+            TeamScoringOutlookSourceStatus::MissingSource,
+        ));
+        let view = PlayerScoringPaceView {
+            context,
+            player_id: 8478402,
+            player_name: "Connor McDavid".to_string(),
+            team: "EDM".to_string(),
+            position: "C".to_string(),
+            games_played: 9,
+            sample_status: PlayerScoringPaceSampleStatus::BelowThreshold,
+            min_games: 10,
+            pace_games: 82,
+            remaining_games: None,
+            shot_pct: None,
+            rows: vec![PlayerScoringPaceRow::new(
+                PlayerScoringPaceMetric::Goals,
+                4,
+                9,
+                None,
+            )],
+        };
+
+        let page = player_outlook_page(&view);
+        let json = serde_json::to_value(&view).expect("view json");
+
+        assert_eq!(page.rows[0].status_label, "below sample floor");
+        assert_eq!(page.rows[0].pace_82, "-");
+        assert!(page.source_label.contains("schedule missing"));
+        assert_eq!(
+            json["context"]["source_state"][0]["source"],
+            serde_json::json!("schedule")
+        );
+    }
+
+    #[test]
+    fn l0_team_outlook_page_preserves_partial_source_and_recent_pressure() {
+        let view = TeamScoringOutlookView::from_schedule_games(
+            ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular)),
+            "EDM",
+            true,
+            true,
+            Vec::new(),
+            None,
+        );
+
+        let page = team_outlook_page(&view);
+        let json = serde_json::to_value(&view).expect("view json");
+
+        assert_eq!(page.source_label, "partial source");
+        assert_eq!(page.rows[0].status_label, "partial source");
+        assert!(page.has_recent_form);
+        assert_eq!(page.recent_label, "recent pressure - last 10 games");
+        assert_eq!(
+            json["context"]["source_state"][0]["state"],
+            serde_json::json!("partial")
+        );
+    }
 }

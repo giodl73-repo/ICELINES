@@ -24,6 +24,7 @@ pub mod records_provider;
 pub mod resolver;
 pub mod schedule_remaining;
 pub mod schema;
+pub mod scoring_outlook_provider;
 pub mod scoring_provider;
 pub mod series_momentum_builder;
 pub mod shift_profile;

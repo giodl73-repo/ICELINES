@@ -288,6 +288,8 @@ icelines serve --port 8000
 # GET /api/v1/fantasy/gaps     -> FantasyRosterGapView JSON
 # GET /api/v1/fantasy/simulate -> FantasySimulationView JSON
 # GET /poach                   -> HTML poacher board
+# GET /player/:id/outlook      -> descriptive scoring pace, nullable finish
+# GET /team/:abbrev/outlook    -> cached GF/GA pace and recent pressure
 ```
 
 **Fantasy schemes:** `yahoo-standard`, `espn-standard`, `simple-pts`
