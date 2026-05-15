@@ -398,8 +398,8 @@ code {
 }
 
 .jaw-workbench-nav {
-    align-items: center;
-    background: var(--ice-panel);
+    align-items: stretch;
+    background: var(--ice-bg);
     border: 1px solid var(--ice-divider);
     border-radius: 6px;
     display: flex;
@@ -408,19 +408,58 @@ code {
     padding: 0.45rem;
 }
 
-.jaw-workbench-nav a {
+.jaw-catalog-group {
+    background: var(--ice-surface);
+    border: 1px solid var(--ice-divider);
+    border-radius: 5px;
+    flex: 0 0 12rem;
+    padding: 0.45rem;
+}
+
+.jaw-catalog-group h2 {
+    color: var(--ice-muted);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    margin: 0 0 0.35rem 0;
+    text-transform: uppercase;
+}
+
+.jaw-catalog-links {
+    display: grid;
+    gap: 0.3rem;
+}
+
+.jaw-workbench-nav a,
+.jaw-experience-tabs a {
     background: var(--ice-surface);
     border: 1px solid var(--ice-divider);
     border-radius: 4px;
     color: var(--nhl-navy);
-    flex: 0 0 auto;
     font-weight: 700;
     padding: 0.45rem 0.6rem;
     text-decoration: none;
 }
 
-.jaw-workbench-nav a:hover {
+.jaw-workbench-nav a:hover,
+.jaw-experience-tabs a:hover {
     background: var(--link-bg-soft);
+}
+
+.jaw-workbench-nav a[aria-current="page"],
+.jaw-experience-tabs a[aria-current="page"] {
+    border-color: var(--nhl-navy);
+    box-shadow: inset 3px 0 0 var(--nhl-red);
+}
+
+.jaw-experience-tabs {
+    display: flex;
+    gap: 0.4rem;
+    overflow-x: auto;
+}
+
+.jaw-experience-tabs a {
+    flex: 0 0 auto;
+    min-width: 10rem;
 }
 
 .jaw-body {
@@ -464,6 +503,29 @@ code {
     display: grid;
     gap: 0.55rem;
     grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+
+.jaw-workspace-affordances {
+    margin: 0.8rem 0;
+}
+
+.jaw-workspace-affordances h2 {
+    font-size: 0.95rem;
+    margin-bottom: 0.35rem;
+}
+
+.jaw-affordance-grid {
+    display: grid;
+    gap: 0.45rem;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+}
+
+.jaw-affordance-card,
+.jaw-pane-model {
+    background: var(--ice-bg);
+    border: 1px solid var(--ice-divider);
+    border-radius: 5px;
+    padding: 0.5rem;
 }
 
 .jaw-workspace-card {

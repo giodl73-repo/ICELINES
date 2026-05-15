@@ -1,7 +1,9 @@
 use crate::state::WebState;
 use crate::templates::{
-    DashboardEntityRow, DashboardLinkRow, DashboardSummaryRow, DashboardTemplate,
-    DashboardWorkspaceTemplate, PlayoffsSeriesView, ScheduleRow, ScoreRow, TransactionRow,
+    DashboardCatalogEntry, DashboardCatalogGroup, DashboardEntityRow, DashboardExperienceTab,
+    DashboardFieldRow, DashboardLinkRow, DashboardPaneModelRow, DashboardSummaryRow,
+    DashboardTemplate, DashboardWorkspaceTemplate, PlayoffsSeriesView, ScheduleRow, ScoreRow,
+    TransactionRow,
 };
 use askama::Template;
 use axum::extract::{Form, Query, State};
@@ -15,9 +17,12 @@ use icelines_core::view_model::{
     FantasyRosterGapView, FantasySimulationView, PoachBoardView, PoachReportView, WatchNoteInput,
 };
 use icelines_core::{
-    CareerView, DepthLeagueView, DepthTeamStrengthRow, FavoriteMemberInput, FavoritesView,
-    HomeView, MetricCell, MetricValue, PlayerCardView, PlayerSeasonSummary, ScheduleRecord,
-    TeamAbbr, TeamDepthView, TeamSeasonView, ViewContext, ViewWindow, WatchlistView,
+    workbench_entry, workbench_field, workbench_pane_model, CareerView, DepthLeagueView,
+    DepthTeamStrengthRow, FavoriteMemberInput, FavoritesView, HomeView, MetricCell, MetricValue,
+    PlayerCardView, PlayerSeasonSummary, ScheduleRecord, TeamAbbr, TeamDepthView, TeamSeasonView,
+    ViewContext, ViewWindow, WatchlistView, WorkbenchEntry, WorkbenchExperience, WorkbenchFieldId,
+    WorkbenchFieldSource, WorkbenchFieldSummary, WorkbenchGroup, WorkbenchId, WorkbenchPaneKind,
+    WorkbenchPaneModelId, WorkbenchValueKind, WORKBENCH_EXPERIENCES,
 };
 use serde::Deserialize;
 
@@ -49,6 +54,9 @@ pub async fn get_dashboard(
     let workspace_label = workspace_label(&workspace_url);
     let workspace_links = workspace_links(&workspace_url);
     let workspace_summary = workspace_summary(&state, &workspace_url).await;
+    let active_workbench = workbench_id_for_workspace(&workspace_url);
+    let active_fields = active_dashboard_fields(active_workbench);
+    let active_pane_models = active_dashboard_pane_models(active_workbench);
 
     if matches!(q.partial.as_deref(), Some("workspace")) {
         return render_template(DashboardWorkspaceTemplate {
@@ -56,6 +64,8 @@ pub async fn get_dashboard(
             workspace_label,
             workspace_summary,
             workspace_links,
+            active_fields,
+            active_pane_models,
         });
     }
 
@@ -76,6 +86,12 @@ pub async fn get_dashboard(
         workspace_label,
         workspace_summary,
         scores_summary: "Live, final, and scheduled games stay one click away.".to_owned(),
+        catalog_groups: dashboard_catalog_groups(active_workbench),
+        experience_tabs: dashboard_experience_tabs(active_workbench),
+        active_fields,
+        active_pane_models,
+        left_pane_model: dashboard_pane_model_row(WorkbenchPaneModelId::FavoritesNavigator),
+        right_pane_model: dashboard_pane_model_row(WorkbenchPaneModelId::ScheduleInspector),
         favorites,
         watchlist,
         schedule_links: schedule_links(),
@@ -188,6 +204,7 @@ fn is_workspace_route(path: &str) -> bool {
             | "/career"
             | "/reports/poach"
             | "/reports/weekly"
+            | "/admin"
             | "/docs"
     ) || route.starts_with("/player/")
         || route.starts_with("/team/")
@@ -1604,6 +1621,260 @@ fn watchlist_entity_rows(view: &WatchlistView) -> Vec<DashboardEntityRow> {
         .collect()
 }
 
+fn dashboard_catalog_groups(active: Option<WorkbenchId>) -> Vec<DashboardCatalogGroup> {
+    let ready: Vec<_> = crate::workbench::dashboard_ready_workbenches().collect();
+    [
+        WorkbenchGroup::League,
+        WorkbenchGroup::Analytics,
+        WorkbenchGroup::Teams,
+        WorkbenchGroup::Players,
+        WorkbenchGroup::Live,
+        WorkbenchGroup::MyBench,
+        WorkbenchGroup::Fantasy,
+        WorkbenchGroup::Reports,
+        WorkbenchGroup::System,
+    ]
+    .into_iter()
+    .filter_map(|group| {
+        let entries = ready
+            .iter()
+            .filter_map(|(id, route)| {
+                let entry = workbench_entry(*id)?;
+                (entry.group == group).then(|| dashboard_catalog_entry(entry, route, active))
+            })
+            .collect::<Vec<_>>();
+        (!entries.is_empty()).then(|| DashboardCatalogGroup {
+            label: workbench_group_label(group).to_owned(),
+            entries,
+        })
+    })
+    .collect()
+}
+
+fn dashboard_catalog_entry(
+    entry: &WorkbenchEntry,
+    route: &str,
+    active: Option<WorkbenchId>,
+) -> DashboardCatalogEntry {
+    DashboardCatalogEntry {
+        label: entry.label.to_owned(),
+        href: dashboard_workspace_href(route),
+        detail: format!(
+            "{} · {} · {}",
+            workbench_zone_label(entry.default_zone),
+            document_kind_label(entry.document_kind),
+            route
+        ),
+        is_active: active == Some(entry.id),
+    }
+}
+
+fn dashboard_experience_tabs(active: Option<WorkbenchId>) -> Vec<DashboardExperienceTab> {
+    WORKBENCH_EXPERIENCES
+        .iter()
+        .filter_map(|experience| dashboard_experience_tab(experience, active))
+        .collect()
+}
+
+fn dashboard_experience_tab(
+    experience: &WorkbenchExperience,
+    active: Option<WorkbenchId>,
+) -> Option<DashboardExperienceTab> {
+    let route = crate::workbench::route_for_workbench(experience.center)?;
+    let left = experience
+        .left_pane
+        .map(workbench_pane_label)
+        .unwrap_or("no left pane");
+    let right = experience
+        .right_pane
+        .map(workbench_pane_label)
+        .unwrap_or("no right pane");
+    Some(DashboardExperienceTab {
+        label: experience.label.to_owned(),
+        href: dashboard_workspace_href(route),
+        detail: format!("{left} + {right}"),
+        is_active: active == Some(experience.center),
+    })
+}
+
+fn active_dashboard_fields(active: Option<WorkbenchId>) -> Vec<DashboardFieldRow> {
+    active
+        .and_then(workbench_entry)
+        .map(|entry| {
+            entry
+                .fields
+                .iter()
+                .copied()
+                .map(dashboard_field_row)
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn active_dashboard_pane_models(active: Option<WorkbenchId>) -> Vec<DashboardPaneModelRow> {
+    active
+        .and_then(workbench_entry)
+        .map(|entry| {
+            entry
+                .pane_models
+                .iter()
+                .copied()
+                .map(dashboard_pane_model_row)
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn dashboard_pane_model_row(id: WorkbenchPaneModelId) -> DashboardPaneModelRow {
+    let Some(pane) = workbench_pane_model(id) else {
+        return DashboardPaneModelRow {
+            label: id.slug().to_owned(),
+            kind: "Pane".to_owned(),
+            detail: "Unknown pane model".to_owned(),
+        };
+    };
+    DashboardPaneModelRow {
+        label: pane.label.to_owned(),
+        kind: workbench_pane_kind_label(pane.kind).to_owned(),
+        detail: pane
+            .fields
+            .iter()
+            .copied()
+            .map(workbench_field_label)
+            .collect::<Vec<_>>()
+            .join(", "),
+    }
+}
+
+fn dashboard_field_row(id: WorkbenchFieldId) -> DashboardFieldRow {
+    let Some(field) = workbench_field(id) else {
+        return DashboardFieldRow {
+            label: id.slug().to_owned(),
+            value_kind: "value".to_owned(),
+            detail: "Unknown field".to_owned(),
+        };
+    };
+    DashboardFieldRow {
+        label: field.label.to_owned(),
+        value_kind: workbench_value_kind_label(field.value_kind).to_owned(),
+        detail: format!(
+            "{} · {}",
+            workbench_field_source_label(field.source),
+            workbench_field_summary_label(field.summary)
+        ),
+    }
+}
+
+fn workbench_id_for_workspace(path: &str) -> Option<WorkbenchId> {
+    if path == "/leaders" || path == "/" {
+        return Some(WorkbenchId::Stats);
+    }
+    if let Some(id) = crate::workbench::dashboard_ready_workbenches()
+        .find_map(|(id, route)| (path == route).then_some(id))
+    {
+        return Some(id);
+    }
+    crate::workbench::dashboard_ready_workbenches().find_map(|(id, route)| {
+        (workspace_route_key(path) == workspace_route_key(route)).then_some(id)
+    })
+}
+
+fn workbench_pane_label(id: WorkbenchPaneModelId) -> &'static str {
+    workbench_pane_model(id)
+        .map(|pane| pane.label)
+        .unwrap_or_else(|| id.slug())
+}
+
+fn workbench_field_label(id: WorkbenchFieldId) -> &'static str {
+    workbench_field(id)
+        .map(|field| field.label)
+        .unwrap_or_else(|| id.slug())
+}
+
+fn workbench_group_label(group: WorkbenchGroup) -> &'static str {
+    match group {
+        WorkbenchGroup::League => "League",
+        WorkbenchGroup::Analytics => "Analytics",
+        WorkbenchGroup::Teams => "Teams",
+        WorkbenchGroup::Players => "Players",
+        WorkbenchGroup::Live => "Live",
+        WorkbenchGroup::MyBench => "My Bench",
+        WorkbenchGroup::Fantasy => "Fantasy",
+        WorkbenchGroup::Reports => "Reports",
+        WorkbenchGroup::System => "System",
+    }
+}
+
+fn workbench_zone_label(zone: icelines_core::WorkbenchZone) -> &'static str {
+    match zone {
+        icelines_core::WorkbenchZone::ActivityRail => "Activity rail",
+        icelines_core::WorkbenchZone::Center => "Center workspace",
+        icelines_core::WorkbenchZone::LeftPane => "Left pane",
+        icelines_core::WorkbenchZone::RightPane => "Right pane",
+        icelines_core::WorkbenchZone::TopRibbon => "Top ribbon",
+        icelines_core::WorkbenchZone::BottomStatus => "Command/status",
+        icelines_core::WorkbenchZone::Overlay => "Overlay",
+    }
+}
+
+fn document_kind_label(kind: icelines_core::WorkbenchDocumentKind) -> &'static str {
+    match kind {
+        icelines_core::WorkbenchDocumentKind::Main => "main",
+        icelines_core::WorkbenchDocumentKind::Drilldown => "drilldown",
+        icelines_core::WorkbenchDocumentKind::Context => "context",
+        icelines_core::WorkbenchDocumentKind::Admin => "admin",
+        icelines_core::WorkbenchDocumentKind::Docs => "docs",
+    }
+}
+
+fn workbench_pane_kind_label(kind: WorkbenchPaneKind) -> &'static str {
+    match kind {
+        WorkbenchPaneKind::Navigator => "Navigator",
+        WorkbenchPaneKind::Inspector => "Inspector",
+        WorkbenchPaneKind::Filter => "Filter/dimension",
+        WorkbenchPaneKind::Summary => "Summary/KPI",
+        WorkbenchPaneKind::Timeline => "Timeline",
+        WorkbenchPaneKind::Compare => "Compare",
+        WorkbenchPaneKind::Queue => "Queue/checklist",
+        WorkbenchPaneKind::SourceState => "Source/data state",
+        WorkbenchPaneKind::ActionStatus => "Action/status",
+        WorkbenchPaneKind::Help => "Help",
+    }
+}
+
+fn workbench_value_kind_label(kind: WorkbenchValueKind) -> &'static str {
+    match kind {
+        WorkbenchValueKind::Bool => "boolean",
+        WorkbenchValueKind::Integer => "integer",
+        WorkbenchValueKind::Decimal => "decimal",
+        WorkbenchValueKind::Text => "text",
+        WorkbenchValueKind::Date => "date",
+        WorkbenchValueKind::EntityRef => "entity",
+        WorkbenchValueKind::Enum => "enum",
+        WorkbenchValueKind::Route => "route",
+    }
+}
+
+fn workbench_field_source_label(source: WorkbenchFieldSource) -> &'static str {
+    match source {
+        WorkbenchFieldSource::ViewModel => "view model",
+        WorkbenchFieldSource::RouteSummary => "route summary",
+        WorkbenchFieldSource::Catalog => "catalog",
+        WorkbenchFieldSource::CommandResult => "command result",
+    }
+}
+
+fn workbench_field_summary_label(summary: WorkbenchFieldSummary) -> &'static str {
+    match summary {
+        WorkbenchFieldSummary::None => "raw",
+        WorkbenchFieldSummary::Count => "count",
+        WorkbenchFieldSummary::MinMax => "range",
+        WorkbenchFieldSummary::Latest => "latest",
+        WorkbenchFieldSummary::Status => "status",
+        WorkbenchFieldSummary::Sparkline => "sparkline",
+    }
+}
+
 fn schedule_links() -> Vec<DashboardLinkRow> {
     vec![
         DashboardLinkRow {
@@ -1628,36 +1899,26 @@ fn workspace_links(active: &str) -> Vec<DashboardLinkRow> {
     let route = workspace_route_key(active);
     let mut rows = contextual_workspace_links(route);
     rows.extend(
-        vec![
-            ("Leaders", "/leaders", "skater leaderboard and filters"),
-            ("Goalies", "/goalies", "goalie leaderboard"),
-            ("Depth", "/depth", "cross-team depth rankings"),
-            ("Poach", "/poach", "fantasy free-agent board"),
-            ("Fantasy", "/fantasy", "roster gaps and simulations"),
-            (
-                "Career",
-                "/career?league=OHL&sort=points",
-                "pre-NHL cohort leaders",
-            ),
-            ("Transactions", "/transactions", "league movement feed"),
-        ]
-        .into_iter()
-        .map(|(label, href, detail)| DashboardLinkRow {
-            label: label.to_owned(),
-            href: dashboard_workspace_href(href),
-            detail: if route == href {
-                format!("{detail} - active")
-            } else {
-                detail.to_owned()
-            },
+        crate::workbench::dashboard_ready_workbenches().filter_map(|(id, href)| {
+            let entry = workbench_entry(id)?;
+            Some(DashboardLinkRow {
+                label: entry.label.to_owned(),
+                href: dashboard_workspace_href(href),
+                detail: if route == workspace_route_key(href) {
+                    format!("{} - active", workbench_pane_detail(entry))
+                } else {
+                    workbench_pane_detail(entry)
+                },
+            })
         }),
     );
-    rows.push(DashboardLinkRow {
-        label: "Docs".to_owned(),
-        href: dashboard_workspace_href("/docs"),
-        detail: "command reference".to_owned(),
-    });
     rows
+}
+
+fn workbench_pane_detail(entry: &WorkbenchEntry) -> String {
+    let pane_count = entry.pane_models.len();
+    let field_count = entry.fields.len();
+    format!("{pane_count} pane models · {field_count} fields")
 }
 
 fn contextual_workspace_links(route: &str) -> Vec<DashboardLinkRow> {
@@ -1744,7 +2005,7 @@ mod tests {
         assert_eq!(normalize_workspace(Some("//evil.example")), "/leaders");
         assert_eq!(normalize_workspace(Some("/api/v1/leaders")), "/leaders");
         assert_eq!(normalize_workspace(Some("/static/style.css")), "/leaders");
-        assert_eq!(normalize_workspace(Some("/admin")), "/leaders");
+        assert_eq!(normalize_workspace(Some("/admin")), "/admin");
         assert_eq!(normalize_workspace(Some("/dashboard")), "/leaders");
         assert_eq!(normalize_workspace(Some("/favorites/add")), "/leaders");
         assert_eq!(
@@ -1783,7 +2044,7 @@ mod tests {
             .find(|row| row.label == "Poach")
             .expect("poach workspace link");
         assert_eq!(poach.href, "/dashboard?workspace=%2Fpoach");
-        assert_eq!(poach.detail, "fantasy free-agent board - active");
+        assert_eq!(poach.detail, "1 pane models · 3 fields - active");
 
         assert_eq!(
             dashboard_workspace_href("/poach?availability=imported-available"),
@@ -1792,12 +2053,66 @@ mod tests {
 
         let career = links
             .iter()
-            .find(|row| row.label == "Career")
+            .find(|row| row.label == "Career cohorts")
             .expect("career workspace link");
-        assert_eq!(
-            career.href,
-            "/dashboard?workspace=%2Fcareer%3Fleague%3DOHL%26sort%3Dpoints"
+        assert_eq!(career.href, "/dashboard?workspace=%2Fcareer");
+    }
+
+    #[test]
+    fn l0_dashboard_catalog_uses_shared_workbench_adapter() {
+        let groups = dashboard_catalog_groups(Some(WorkbenchId::Stats));
+        let entries: Vec<_> = groups
+            .iter()
+            .flat_map(|group| group.entries.iter())
+            .collect();
+
+        let stats = entries
+            .iter()
+            .find(|entry| entry.label == "Stats")
+            .expect("shared Stats catalog entry");
+        assert_eq!(stats.href, "/dashboard?workspace=%2Fleaders");
+        assert!(stats.is_active);
+
+        let admin = entries
+            .iter()
+            .find(|entry| entry.label == "Admin")
+            .expect("shared Admin catalog entry");
+        assert_eq!(admin.href, "/dashboard?workspace=%2Fadmin");
+        assert!(
+            entries
+                .iter()
+                .all(|entry| entry.href.starts_with("/dashboard?workspace=")),
+            "catalog links must stay inside dashboard GET navigation"
         );
+    }
+
+    #[test]
+    fn l0_dashboard_bound_experience_tabs_are_composed_layouts() {
+        let tabs = dashboard_experience_tabs(Some(WorkbenchId::Scores));
+        let tonight = tabs
+            .iter()
+            .find(|tab| tab.label == "Tonight bench")
+            .expect("Tonight bench tab");
+
+        assert!(tonight.is_active);
+        assert_eq!(tonight.href, "/dashboard?workspace=%2Fscores");
+        assert!(tonight.detail.contains("Favorites navigator"));
+        assert!(tonight.detail.contains("Schedule inspector"));
+    }
+
+    #[test]
+    fn l0_dashboard_active_fields_and_panes_use_shared_metadata() {
+        let fields = active_dashboard_fields(Some(WorkbenchId::Scores));
+        assert!(fields.iter().any(|field| field.label == "Date"));
+        assert!(fields.iter().any(|field| field.label == "Game state"));
+
+        let panes = active_dashboard_pane_models(Some(WorkbenchId::Scores));
+        assert!(panes
+            .iter()
+            .any(|pane| pane.label == "Favorites navigator" && pane.kind == "Navigator"));
+        assert!(panes
+            .iter()
+            .any(|pane| pane.label == "Schedule inspector" && pane.kind == "Timeline"));
     }
 
     #[test]

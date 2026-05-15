@@ -41,7 +41,7 @@ canonical and keep the dashboard server-rendered/no-JS useful.
 
 ## Gates
 
-- [ ] `cargo fmt --check`
-- [ ] `cargo test -p icelines-web --quiet`
-- [ ] `cargo clippy -p icelines-web --no-deps -- -D warnings`
-- [ ] `powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 web-captures`
+- [x] `cargo fmt --check`
+- [x] `cargo test -p icelines-web --quiet`
+- [x] `cargo clippy -p icelines-web --no-deps -- -D warnings`
+- [x] `powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 web-captures`

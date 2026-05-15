@@ -88,7 +88,7 @@ or route summaries; no pane gets its own hockey math.
 | 01 - MDI workbench inventory and zone contract | complete | `MDI-WORKBENCH-INVENTORY.md`; `plans/pulse-01.md`; `panels/pulse-01-workbench-contract/` |
 | 02 - Shared workbench catalog, fields, and pane models | complete | `icelines-core/src/workbench.rs`; `icelines-cli/src/tui/workbench.rs`; `icelines-web/src/workbench.rs`; `plans/pulse-02.md` |
 | 03 - TUI full-MDI workbench shell | complete | `icelines-cli/src/tui/mdi.rs`; `icelines-cli/src/tui/screens/mod.rs`; `icelines-cli/src/tui/app.rs`; `plans/pulse-03.md` |
-| 04 - Web dashboard workbench catalog | planned | depends on Pulse 02 |
+| 04 - Web dashboard workbench catalog | complete | `icelines-web/src/handlers/dashboard.rs`; `icelines-web/templates/dashboard.html`; `icelines-web/templates/dashboard_workspace.html`; `plans/pulse-04.md` |
 | 05 - Docs, regression gates, and closeout | planned | depends on Pulses 03-04 |
 
 ## Role Notes
@@ -111,12 +111,12 @@ or route summaries; no pane gets its own hockey math.
 
 ## Current Result
 
-Pulse 03 wired the TUI MDI shell to the shared workbench catalog. Default MDI now
-renders an activity/catalog rail, has explicit rail/left/workspace/right focus,
-uses Tab/Shift+Tab for zone traversal, and activates no-argument workspaces from
-the rail through the shared TUI adapter. Classic screen cycling and standalone
-lock behavior remain preserved.
+Pulse 04 promoted `/dashboard` to the shared web workbench. It now renders a
+grouped activity/catalog rail from shared web adapter routes, bound experience
+tabs as composed layouts, visible pane-model and field affordances, and
+server-rendered workspace fragments that preserve canonical full-page routes and
+local-only side-pane state.
 
 ## Next
 
-Execute Pulse 04: Web dashboard workbench catalog.
+Execute Pulse 05: Docs, regression gates, and closeout.

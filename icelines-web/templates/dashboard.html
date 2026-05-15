@@ -14,24 +14,39 @@
         <a href="/scores">Open scores</a>
     </header>
 
-    <nav class="jaw-workbench-nav" aria-label="Dashboard workspaces" data-dashboard-nav>
-        <a href="/dashboard?workspace=%2Fleaders">Leaders</a>
-        <a href="/dashboard?workspace=%2Fgoalies">Goalies</a>
-        <a href="/dashboard?workspace=%2Fdepth">Depth</a>
-        <a href="/dashboard?workspace=%2Fscores">Scores</a>
-        <a href="/dashboard?workspace=%2Fteam%2FEDM%2Fseason">Team season</a>
-        <a href="/dashboard?workspace=%2Fpoach">Poach</a>
-        <a href="/dashboard?workspace=%2Ffantasy">Fantasy</a>
-        <a href="/dashboard?workspace=%2Fdocs">Docs</a>
+    <nav class="jaw-workbench-nav" aria-label="Activity catalog rail" data-dashboard-nav>
+        {% for group in catalog_groups %}
+        <section class="jaw-catalog-group" aria-label="{{ group.label }}">
+            <h2>{{ group.label }}</h2>
+            <div class="jaw-catalog-links">
+                {% for entry in group.entries %}
+                <a href="{{ entry.href }}" {% if entry.is_active %}aria-current="page"{% endif %}>
+                    <strong>{{ entry.label }}</strong>
+                    <span class="jaw-detail">{{ entry.detail }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+        {% endfor %}
+    </nav>
+
+    <nav class="jaw-experience-tabs" aria-label="Bound workbench experiences">
+        {% for tab in experience_tabs %}
+        <a href="{{ tab.href }}" {% if tab.is_active %}aria-current="page"{% endif %}>
+            <strong>{{ tab.label }}</strong>
+            <span class="jaw-detail">{{ tab.detail }}</span>
+        </a>
+        {% endfor %}
     </nav>
 
     <div class="jaw-body">
         <aside class="jaw-pane jaw-side-left" aria-label="Favorites and watchlist" data-dashboard-pane="favorites">
             <div class="jaw-pane-title">
-                <h2>Favorites</h2>
+                <h2>{{ left_pane_model.label }}</h2>
                 <button type="button" class="jaw-pane-toggle" data-dashboard-pane-toggle="favorites" aria-label="Toggle favorites pane" aria-expanded="true">Hide</button>
             </div>
             <div class="jaw-pane-content">
+            <p class="jaw-pane-model"><strong>{{ left_pane_model.kind }}</strong><span class="jaw-detail">{{ left_pane_model.detail }}</span></p>
             {% if favorites.is_empty() %}
             <p class="empty-state">No favorites yet. Add players or teams from player and team pages.</p>
             {% else %}
@@ -64,10 +79,11 @@
 
         <aside class="jaw-pane jaw-side-right" aria-label="Schedule" data-dashboard-pane="schedule">
             <div class="jaw-pane-title">
-                <h2>Schedule</h2>
+                <h2>{{ right_pane_model.label }}</h2>
                 <button type="button" class="jaw-pane-toggle" data-dashboard-pane-toggle="schedule" aria-label="Toggle schedule pane" aria-expanded="true">Hide</button>
             </div>
             <div class="jaw-pane-content">
+            <p class="jaw-pane-model"><strong>{{ right_pane_model.kind }}</strong><span class="jaw-detail">{{ right_pane_model.detail }}</span></p>
             <ul class="jaw-list">
                 {% for row in schedule_links %}
                 <li>

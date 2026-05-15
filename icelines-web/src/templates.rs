@@ -66,6 +66,12 @@ pub struct DashboardTemplate {
     pub workspace_label: String,
     pub workspace_summary: Vec<DashboardSummaryRow>,
     pub scores_summary: String,
+    pub catalog_groups: Vec<DashboardCatalogGroup>,
+    pub experience_tabs: Vec<DashboardExperienceTab>,
+    pub active_fields: Vec<DashboardFieldRow>,
+    pub active_pane_models: Vec<DashboardPaneModelRow>,
+    pub left_pane_model: DashboardPaneModelRow,
+    pub right_pane_model: DashboardPaneModelRow,
     pub favorites: Vec<DashboardEntityRow>,
     pub watchlist: Vec<DashboardEntityRow>,
     pub schedule_links: Vec<DashboardLinkRow>,
@@ -79,6 +85,8 @@ pub struct DashboardWorkspaceTemplate {
     pub workspace_label: String,
     pub workspace_summary: Vec<DashboardSummaryRow>,
     pub workspace_links: Vec<DashboardLinkRow>,
+    pub active_fields: Vec<DashboardFieldRow>,
+    pub active_pane_models: Vec<DashboardPaneModelRow>,
 }
 
 #[derive(Debug, Clone)]
@@ -99,6 +107,42 @@ pub struct DashboardEntityRow {
 pub struct DashboardLinkRow {
     pub label: String,
     pub href: String,
+    pub detail: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct DashboardCatalogGroup {
+    pub label: String,
+    pub entries: Vec<DashboardCatalogEntry>,
+}
+
+#[derive(Debug, Clone)]
+pub struct DashboardCatalogEntry {
+    pub label: String,
+    pub href: String,
+    pub detail: String,
+    pub is_active: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct DashboardExperienceTab {
+    pub label: String,
+    pub href: String,
+    pub detail: String,
+    pub is_active: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct DashboardPaneModelRow {
+    pub label: String,
+    pub kind: String,
+    pub detail: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct DashboardFieldRow {
+    pub label: String,
+    pub value_kind: String,
     pub detail: String,
 }
 

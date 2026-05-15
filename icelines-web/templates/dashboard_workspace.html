@@ -15,6 +15,34 @@
         {% endfor %}
     </div>
     {% endif %}
+    {% if !active_pane_models.is_empty() %}
+    <section class="jaw-workspace-affordances" aria-label="Active pane models">
+        <h2>Pane models</h2>
+        <div class="jaw-affordance-grid">
+            {% for pane in active_pane_models %}
+            <div class="jaw-affordance-card">
+                <strong>{{ pane.label }}</strong>
+                <span class="jaw-detail">{{ pane.kind }}</span>
+                <span class="jaw-detail">{{ pane.detail }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+    {% if !active_fields.is_empty() %}
+    <section class="jaw-workspace-affordances" aria-label="Active fields">
+        <h2>Fields</h2>
+        <div class="jaw-affordance-grid">
+            {% for field in active_fields %}
+            <div class="jaw-affordance-card">
+                <strong>{{ field.label }}</strong>
+                <span class="jaw-detail">{{ field.value_kind }}</span>
+                <span class="jaw-detail">{{ field.detail }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
     <div class="jaw-workspace-grid">
         {% for row in workspace_links %}
         <a class="jaw-workspace-card" href="{{ row.href }}">
