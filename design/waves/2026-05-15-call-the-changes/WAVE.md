@@ -87,7 +87,7 @@ or route summaries; no pane gets its own hockey math.
 |---|---|---|
 | 01 - MDI workbench inventory and zone contract | complete | `MDI-WORKBENCH-INVENTORY.md`; `plans/pulse-01.md`; `panels/pulse-01-workbench-contract/` |
 | 02 - Shared workbench catalog, fields, and pane models | complete | `icelines-core/src/workbench.rs`; `icelines-cli/src/tui/workbench.rs`; `icelines-web/src/workbench.rs`; `plans/pulse-02.md` |
-| 03 - TUI full-MDI workbench shell | planned | `plans/pulse-03.md` |
+| 03 - TUI full-MDI workbench shell | complete | `icelines-cli/src/tui/mdi.rs`; `icelines-cli/src/tui/screens/mod.rs`; `icelines-cli/src/tui/app.rs`; `plans/pulse-03.md` |
 | 04 - Web dashboard workbench catalog | planned | depends on Pulse 02 |
 | 05 - Docs, regression gates, and closeout | planned | depends on Pulses 03-04 |
 
@@ -111,13 +111,12 @@ or route summaries; no pane gets its own hockey math.
 
 ## Current Result
 
-Pulse 02 added the shared workbench foundation in `icelines-core`: catalog
-entries, field metadata, pane models, and bound experience tabs. TUI and web now
-have adapter modules that lower shared workbench IDs to no-argument screens or
-dashboard routes without changing visible layout yet. The bound experiences
-(`Tonight bench`, `Scoring room`, `Team room`, `Fantasy room`, `Admin room`)
-force the expected center/pane/field systems top-down for Pulse 03/04.
+Pulse 03 wired the TUI MDI shell to the shared workbench catalog. Default MDI now
+renders an activity/catalog rail, has explicit rail/left/workspace/right focus,
+uses Tab/Shift+Tab for zone traversal, and activates no-argument workspaces from
+the rail through the shared TUI adapter. Classic screen cycling and standalone
+lock behavior remain preserved.
 
 ## Next
 
-Execute Pulse 03: TUI full-MDI workbench shell.
+Execute Pulse 04: Web dashboard workbench catalog.

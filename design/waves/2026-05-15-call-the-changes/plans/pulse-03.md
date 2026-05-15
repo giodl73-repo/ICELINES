@@ -43,6 +43,6 @@ ribbon, bottom command/status surface, and explicit focus movement. Preserve
 
 ## Gates
 
-- [ ] `cargo fmt --check`
-- [ ] `cargo test -p icelines-cli --quiet`
-- [ ] `cargo clippy -p icelines-cli --no-deps -- -D warnings`
+- [x] `cargo fmt --check`
+- [x] `cargo test -p icelines-cli --quiet`
+- [x] `cargo clippy -p icelines-cli --no-deps -- -D warnings`

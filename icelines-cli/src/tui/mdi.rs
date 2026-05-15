@@ -30,7 +30,17 @@
 // the lint becomes meaningful again once Adams.2 wires them.
 #![allow(dead_code)]
 
+use icelines_core::{WorkbenchId, WorkbenchPaneModelId, WORKBENCH_CATALOG};
+
 // ── Layout state ─────────────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MdiFocus {
+    ActivityRail,
+    LeftPane,
+    Workspace,
+    RightPane,
+}
 
 /// Phase Jack Adams.1 — MDI dashboard runtime state. Held by
 /// `App` as `app.mdi: Option<MdiLayout>` — Some when the user
@@ -38,6 +48,20 @@
 /// and `--standalone`).
 #[derive(Debug)]
 pub struct MdiLayout {
+    /// Pulse 03 — which visible workbench zone has keyboard focus.
+    /// The center workspace remains the default so existing per-screen
+    /// key handling stays intact until the user tabs into the rail/panes.
+    pub focus: MdiFocus,
+
+    /// Pulse 03 — selected row in the shared activity/catalog rail.
+    pub catalog_selected: usize,
+
+    /// Pulse 03 — shared pane-model identities backing today's
+    /// concrete side panes. Selection UI grows from these IDs in
+    /// later pulses without inventing TUI-local pane categories.
+    pub left_pane_model: WorkbenchPaneModelId,
+    pub right_pane_model: WorkbenchPaneModelId,
+
     /// User-toggleable side-pane visibility. Combined with
     /// `effective_panes(width)`'s adaptive auto-drop to decide
     /// what actually renders.
@@ -122,6 +146,10 @@ pub const COMMAND_HISTORY_CAP: usize = 50;
 impl Default for MdiLayout {
     fn default() -> Self {
         Self {
+            focus: MdiFocus::Workspace,
+            catalog_selected: 0,
+            left_pane_model: WorkbenchPaneModelId::FavoritesNavigator,
+            right_pane_model: WorkbenchPaneModelId::ScheduleInspector,
             show_favorites: true,
             show_schedule: true,
             command_input: String::new(),
@@ -166,6 +194,7 @@ pub enum SidePane {
 /// `collapse_to_sdi` check).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PaneVisibility {
+    pub activity_catalog: bool,
     pub scores: bool,
     pub favorites: bool,
     pub workspace: bool,
@@ -189,6 +218,7 @@ impl MdiLayout {
         let adaptive_schedule = width >= 160;
 
         PaneVisibility {
+            activity_catalog: true,
             scores: true,
             favorites: self.show_favorites && adaptive_favorites,
             workspace: true,
@@ -201,6 +231,57 @@ impl MdiLayout {
     /// SDI render path for this frame.
     pub fn collapse_to_sdi(width: u16) -> bool {
         width < 100
+    }
+
+    pub fn focus_next(&mut self) {
+        self.focus = self.next_focus(false);
+    }
+
+    pub fn focus_prev(&mut self) {
+        self.focus = self.next_focus(true);
+    }
+
+    fn next_focus(&self, reverse: bool) -> MdiFocus {
+        let order = self.focus_order();
+        let current = order
+            .iter()
+            .position(|focus| *focus == self.focus)
+            .unwrap_or(0);
+        let next = if reverse {
+            current.checked_sub(1).unwrap_or(order.len() - 1)
+        } else {
+            (current + 1) % order.len()
+        };
+        order[next]
+    }
+
+    fn focus_order(&self) -> Vec<MdiFocus> {
+        let mut order = vec![MdiFocus::ActivityRail];
+        if self.show_favorites {
+            order.push(MdiFocus::LeftPane);
+        }
+        order.push(MdiFocus::Workspace);
+        if self.show_schedule {
+            order.push(MdiFocus::RightPane);
+        }
+        order
+    }
+
+    pub fn select_next_catalog_entry(&mut self) {
+        let len = WORKBENCH_CATALOG.len();
+        if len > 0 {
+            self.catalog_selected = (self.catalog_selected + 1).min(len - 1);
+        }
+    }
+
+    pub fn select_prev_catalog_entry(&mut self) {
+        self.catalog_selected = self.catalog_selected.saturating_sub(1);
+    }
+
+    pub fn selected_workbench_id(&self) -> Option<WorkbenchId> {
+        WORKBENCH_CATALOG
+            .get(self.catalog_selected)
+            .map(|entry| entry.id)
     }
 }
 
@@ -255,6 +336,7 @@ mod tests {
     fn l0_adams_effective_panes_at_160_full_mdi() {
         let m = MdiLayout::default();
         let v = m.effective_panes(160);
+        assert!(v.activity_catalog);
         assert!(v.scores);
         assert!(v.favorites);
         assert!(v.workspace);
@@ -266,6 +348,7 @@ mod tests {
     fn l0_adams_effective_panes_at_159_drops_schedule() {
         let m = MdiLayout::default();
         let v = m.effective_panes(159);
+        assert!(v.activity_catalog);
         assert!(v.scores);
         assert!(v.favorites);
         assert!(v.workspace);
@@ -280,6 +363,7 @@ mod tests {
     fn l0_adams_effective_panes_at_119_drops_favorites() {
         let m = MdiLayout::default();
         let v = m.effective_panes(119);
+        assert!(v.activity_catalog);
         assert!(v.scores);
         assert!(
             !v.favorites,
@@ -296,6 +380,7 @@ mod tests {
     fn l0_adams_effective_panes_at_100_workspace_only() {
         let m = MdiLayout::default();
         let v = m.effective_panes(100);
+        assert!(v.activity_catalog);
         assert!(v.scores);
         assert!(!v.favorites);
         assert!(v.workspace);
@@ -344,6 +429,10 @@ mod tests {
             let v = m.effective_panes(width);
             // Workspace + scores are always true when MDI
             // renders.
+            assert!(
+                v.activity_catalog,
+                "activity catalog must be true at width {width}"
+            );
             assert!(v.scores, "scores must be true at width {width}");
             assert!(v.workspace, "workspace must be true at width {width}");
             // Favorites is visible iff width ≥ 120.
@@ -397,5 +486,52 @@ mod tests {
         let b = a; // copy
         assert_eq!(a, b);
         assert_ne!(a, SidePane::Schedule);
+    }
+
+    #[test]
+    fn l0_call_the_changes_mdi_default_focuses_workspace() {
+        let m = MdiLayout::default();
+        assert_eq!(m.focus, MdiFocus::Workspace);
+        assert_eq!(m.catalog_selected, 0);
+        assert_eq!(m.left_pane_model, WorkbenchPaneModelId::FavoritesNavigator);
+        assert_eq!(m.right_pane_model, WorkbenchPaneModelId::ScheduleInspector);
+    }
+
+    #[test]
+    fn l0_call_the_changes_mdi_focus_cycles_visible_zones() {
+        let mut m = MdiLayout::default();
+        m.focus_next();
+        assert_eq!(m.focus, MdiFocus::RightPane);
+        m.focus_next();
+        assert_eq!(m.focus, MdiFocus::ActivityRail);
+        m.focus_next();
+        assert_eq!(m.focus, MdiFocus::LeftPane);
+        m.focus_prev();
+        assert_eq!(m.focus, MdiFocus::ActivityRail);
+    }
+
+    #[test]
+    fn l0_call_the_changes_mdi_focus_skips_hidden_panes() {
+        let mut m = MdiLayout {
+            show_favorites: false,
+            show_schedule: false,
+            ..Default::default()
+        };
+        m.focus = MdiFocus::Workspace;
+        m.focus_next();
+        assert_eq!(m.focus, MdiFocus::ActivityRail);
+        m.focus_next();
+        assert_eq!(m.focus, MdiFocus::Workspace);
+    }
+
+    #[test]
+    fn l0_call_the_changes_catalog_selection_saturates() {
+        let mut m = MdiLayout::default();
+        m.select_prev_catalog_entry();
+        assert_eq!(m.catalog_selected, 0);
+        for _ in 0..WORKBENCH_CATALOG.len() + 5 {
+            m.select_next_catalog_entry();
+        }
+        assert_eq!(m.catalog_selected, WORKBENCH_CATALOG.len() - 1);
     }
 }

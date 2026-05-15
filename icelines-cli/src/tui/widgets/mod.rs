@@ -93,6 +93,8 @@ pub fn mdi_help_lines() -> Vec<Line<'static>> {
         Line::from(""),
         Line::from("  GLOBAL HOTKEYS (work without entering the bar)"),
         Line::from("    q              quit"),
+        Line::from("    Tab / Shift+Tab move focus across rail / panes / workspace"),
+        Line::from("    ↑/↓ + Enter    pick workbench entries when the rail is focused"),
         Line::from("    Ctrl+H         toggle Favorites pane"),
         Line::from("    Ctrl+L         toggle Schedule pane"),
         Line::from("    ?              this help screen"),

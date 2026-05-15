@@ -359,6 +359,15 @@ fn digit_for_tab_index(n: usize) -> char {
     }
 }
 
+fn mdi_focus_label(focus: crate::tui::mdi::MdiFocus) -> &'static str {
+    match focus {
+        crate::tui::mdi::MdiFocus::ActivityRail => "workbench rail",
+        crate::tui::mdi::MdiFocus::LeftPane => "left pane",
+        crate::tui::mdi::MdiFocus::Workspace => "center workspace",
+        crate::tui::mdi::MdiFocus::RightPane => "right pane",
+    }
+}
+
 impl App {
     pub fn new(no_color: bool) -> Self {
         Self {
@@ -703,6 +712,60 @@ impl App {
                         m.flash_error = None;
                         m.flash_info = None;
                     }
+                    return false;
+                }
+                _ => {}
+            }
+        }
+
+        // Pulse 03 — in MDI, Tab/Shift-Tab traverse workbench
+        // zones instead of cycling legacy screens. Classic SDI keeps
+        // screen cycling below; standalone remains locked/no-op.
+        if self.mdi.is_some() {
+            match action {
+                Action::Tab => {
+                    if let Some(m) = self.mdi.as_mut() {
+                        m.focus_next();
+                        self.status = format!("MDI focus · {}", mdi_focus_label(m.focus));
+                    }
+                    return false;
+                }
+                Action::TabPrev => {
+                    if let Some(m) = self.mdi.as_mut() {
+                        m.focus_prev();
+                        self.status = format!("MDI focus · {}", mdi_focus_label(m.focus));
+                    }
+                    return false;
+                }
+                Action::Down
+                    if self
+                        .mdi
+                        .as_ref()
+                        .is_some_and(|m| m.focus == crate::tui::mdi::MdiFocus::ActivityRail) =>
+                {
+                    if let Some(m) = self.mdi.as_mut() {
+                        m.select_next_catalog_entry();
+                    }
+                    return false;
+                }
+                Action::Up
+                    if self
+                        .mdi
+                        .as_ref()
+                        .is_some_and(|m| m.focus == crate::tui::mdi::MdiFocus::ActivityRail) =>
+                {
+                    if let Some(m) = self.mdi.as_mut() {
+                        m.select_prev_catalog_entry();
+                    }
+                    return false;
+                }
+                Action::Enter
+                    if self
+                        .mdi
+                        .as_ref()
+                        .is_some_and(|m| m.focus == crate::tui::mdi::MdiFocus::ActivityRail) =>
+                {
+                    self.activate_mdi_catalog_entry();
                     return false;
                 }
                 _ => {}
@@ -1724,6 +1787,30 @@ impl App {
                 None
             };
         }
+    }
+
+    fn activate_mdi_catalog_entry(&mut self) {
+        let Some(id) = self.mdi.as_ref().and_then(|m| m.selected_workbench_id()) else {
+            return;
+        };
+        let label = icelines_core::workbench_entry(id)
+            .map(|entry| entry.label)
+            .unwrap_or_else(|| id.slug());
+        let Some(screen) = crate::tui::workbench::screen_for_workbench(id) else {
+            self.status = format!("{label} needs an argument · use :{}", id.slug());
+            return;
+        };
+
+        self.prev_screen = Some(self.screen.clone());
+        self.screen = screen;
+        self.selected = 0;
+        self.schedule.selected = 0;
+        self.queries.results_focused = false;
+        self.queries.result_scroll = 0;
+        self.maybe_fetch_scores();
+        self.maybe_fetch_schedule();
+        self.maybe_fetch_playoffs();
+        self.status = format!("Workbench · {label}");
     }
 
     /// Phase Adams.5 — MDI-mode auto-fetch. The Scores ribbon
@@ -6032,6 +6119,58 @@ mod tests {
         let mut app = App::new(true);
         app.mdi = Some(crate::tui::mdi::MdiLayout::default());
         app
+    }
+
+    #[test]
+    fn l0_call_the_changes_mdi_tab_moves_focus_not_workspace() {
+        let mut app = fresh_mdi_app();
+        app.screen = Screen::Home;
+
+        app.handle(Action::Tab);
+
+        assert_eq!(app.screen, Screen::Home);
+        assert_eq!(
+            app.mdi.as_ref().unwrap().focus,
+            crate::tui::mdi::MdiFocus::RightPane
+        );
+    }
+
+    #[test]
+    fn l0_call_the_changes_activity_rail_activates_no_arg_workspace() {
+        let mut app = fresh_mdi_app();
+        let stats_idx = icelines_core::WORKBENCH_CATALOG
+            .iter()
+            .position(|entry| entry.id == icelines_core::WorkbenchId::Stats)
+            .unwrap();
+        {
+            let mdi = app.mdi.as_mut().unwrap();
+            mdi.focus = crate::tui::mdi::MdiFocus::ActivityRail;
+            mdi.catalog_selected = stats_idx;
+        }
+
+        app.handle(Action::Enter);
+
+        assert_eq!(app.screen, Screen::Queries);
+        assert_eq!(app.status, "Workbench · Stats");
+    }
+
+    #[test]
+    fn l0_call_the_changes_activity_rail_defers_argument_workspace() {
+        let mut app = fresh_mdi_app();
+        let team_idx = icelines_core::WORKBENCH_CATALOG
+            .iter()
+            .position(|entry| entry.id == icelines_core::WorkbenchId::Team)
+            .unwrap();
+        {
+            let mdi = app.mdi.as_mut().unwrap();
+            mdi.focus = crate::tui::mdi::MdiFocus::ActivityRail;
+            mdi.catalog_selected = team_idx;
+        }
+
+        app.handle(Action::Enter);
+
+        assert_eq!(app.screen, Screen::Home);
+        assert!(app.status.contains("needs an argument"));
     }
 
     /// `:` focuses the command bar with empty input.

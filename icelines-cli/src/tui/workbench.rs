@@ -2,7 +2,6 @@ use icelines_core::{WorkbenchId, WORKBENCH_CATALOG};
 
 use crate::tui::app::Screen;
 
-#[allow(dead_code)]
 pub fn screen_for_workbench(id: WorkbenchId) -> Option<Screen> {
     match id {
         WorkbenchId::League => Some(Screen::Home),
@@ -35,6 +34,35 @@ pub fn no_arg_workbench_screens() -> impl Iterator<Item = (WorkbenchId, Screen)>
     WORKBENCH_CATALOG
         .iter()
         .filter_map(|entry| screen_for_workbench(entry.id).map(|screen| (entry.id, screen)))
+}
+
+pub fn workbench_for_screen(screen: &Screen) -> Option<WorkbenchId> {
+    match screen {
+        Screen::Home => Some(WorkbenchId::League),
+        Screen::Queries | Screen::Projections | Screen::Search => Some(WorkbenchId::Stats),
+        Screen::Goalies | Screen::GoalieDetailById(_) => Some(WorkbenchId::Goalies),
+        Screen::Depth | Screen::DepthTeam(_) => Some(WorkbenchId::Depth),
+        Screen::Team(_) => Some(WorkbenchId::Team),
+        Screen::PlayerById(_) => Some(WorkbenchId::Player),
+        Screen::Tonight => Some(WorkbenchId::Scores),
+        Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(_, _) => {
+            Some(WorkbenchId::Schedule)
+        }
+        Screen::Transactions => Some(WorkbenchId::Transactions),
+        Screen::Playoffs | Screen::SeriesDetail(_) => Some(WorkbenchId::Playoffs),
+        Screen::GameDetail(_) => Some(WorkbenchId::Game),
+        Screen::Favorites => Some(WorkbenchId::Favorites),
+        Screen::Groups | Screen::GroupDetail(_) => Some(WorkbenchId::Groups),
+        Screen::FantasyGaps => Some(WorkbenchId::Fantasy),
+        Screen::FantasySim => Some(WorkbenchId::Simulate),
+        Screen::Poach => Some(WorkbenchId::Poach),
+        Screen::Help => Some(WorkbenchId::Docs),
+        Screen::Fetch => Some(WorkbenchId::Admin),
+        Screen::PlayerRecordsById(_) => Some(WorkbenchId::Records),
+        Screen::PlayerAwardsById(_) | Screen::PlayerStreaksById(_) | Screen::CompsById(_) => {
+            Some(WorkbenchId::Player)
+        }
+    }
 }
 
 #[cfg(test)]
@@ -82,5 +110,25 @@ mod tests {
                 "{id:?} requires an argument and must not lower to a fake screen"
             );
         }
+    }
+
+    #[test]
+    fn l0_tui_workbench_adapter_maps_active_screen_to_catalog_id() {
+        assert_eq!(
+            workbench_for_screen(&Screen::Home),
+            Some(WorkbenchId::League)
+        );
+        assert_eq!(
+            workbench_for_screen(&Screen::Queries),
+            Some(WorkbenchId::Stats)
+        );
+        assert_eq!(
+            workbench_for_screen(&Screen::Tonight),
+            Some(WorkbenchId::Scores)
+        );
+        assert_eq!(
+            workbench_for_screen(&Screen::FantasySim),
+            Some(WorkbenchId::Simulate)
+        );
     }
 }

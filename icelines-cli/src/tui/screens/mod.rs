@@ -19,7 +19,9 @@ pub mod team;
 pub mod transactions;
 
 use crate::tui::app::{App, Screen};
+use crate::tui::mdi::MdiFocus;
 use crate::tui::widgets::{help_lines, mdi_help_lines};
+use icelines_core::{WorkbenchGroup, WORKBENCH_CATALOG};
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
@@ -188,9 +190,9 @@ fn render_sdi(f: &mut Frame, app: &App) {
 ///
 ///   ┌─ Scores ribbon (top, 1 row) ─────────────────────────┐
 ///   │                                                      │
-///   ├──────────┬─────────────────────────┬─────────────────┤
-///   │ Favorites│ Workspace (swappable)   │ Schedule        │
-///   │  (left)  │   (middle)              │   (right)       │
+///   ├──────┬──────────┬──────────────────┬─────────────────┤
+///   │ Rail │ Favorites│ Workspace        │ Schedule        │
+///   │      │  (left)  │   (middle)       │   (right)       │
 ///   ├──────────┴─────────────────────────┴─────────────────┤
 ///   │ Combined footer/cmdbar (bottom, 1 row) ──────────────│
 ///   └──────────────────────────────────────────────────────┘
@@ -230,9 +232,13 @@ fn render_mdi(f: &mut Frame, app: &App, mdi: &crate::tui::mdi::MdiLayout) {
     // showing today's slate.
     render_mdi_scores_ribbon(f, app, chunks[0]);
 
-    // Body 3-col split based on adaptive visibility.
+    // Body split based on adaptive visibility. Pulse 03 adds
+    // the activity/catalog rail ahead of the context panes.
     let visible = mdi.effective_panes(area.width);
     let mut constraints: Vec<Constraint> = Vec::new();
+    if visible.activity_catalog {
+        constraints.push(Constraint::Length(if area.width >= 140 { 20 } else { 14 }));
+    }
     if visible.favorites {
         constraints.push(Constraint::Length(28));
     }
@@ -246,14 +252,18 @@ fn render_mdi(f: &mut Frame, app: &App, mdi: &crate::tui::mdi::MdiLayout) {
         .split(chunks[1]);
 
     let mut idx = 0;
-    if visible.favorites {
-        render_mdi_favorites_pane(f, app, body_chunks[idx]);
+    if visible.activity_catalog {
+        render_mdi_activity_catalog(f, app, mdi, body_chunks[idx]);
         idx += 1;
     }
-    render_mdi_workspace(f, app, body_chunks[idx]);
+    if visible.favorites {
+        render_mdi_favorites_pane(f, app, mdi, body_chunks[idx]);
+        idx += 1;
+    }
+    render_mdi_workspace(f, app, mdi, body_chunks[idx]);
     idx += 1;
     if visible.schedule {
-        render_mdi_schedule_pane(f, app, body_chunks[idx]);
+        render_mdi_schedule_pane(f, app, mdi, body_chunks[idx]);
     }
     let _ = idx;
 
@@ -425,12 +435,12 @@ fn render_mdi_cmdbar(f: &mut Frame, area: Rect, mdi: &crate::tui::mdi::MdiLayout
 /// `app.screen` exactly like `render_sdi`'s body match. The
 /// inner area is shrunken by a 1-cell border so the active
 /// screen knows it's a panel, not the whole terminal.
-fn render_mdi_workspace(f: &mut Frame, app: &App, area: Rect) {
+fn render_mdi_workspace(f: &mut Frame, app: &App, mdi: &crate::tui::mdi::MdiLayout, area: Rect) {
     let title = format!(" {} ", screen_label(&app.screen));
     let block = Block::default()
         .borders(Borders::ALL)
         .title(title)
-        .border_style(Style::default().fg(Color::Cyan));
+        .border_style(mdi_zone_style(mdi, MdiFocus::Workspace, Color::Cyan));
     let inner = block.inner(area);
     f.render_widget(block, area);
 
@@ -472,11 +482,17 @@ fn render_mdi_workspace(f: &mut Frame, app: &App, area: Rect) {
 /// left. Reuses the existing favorites screen renderer; the
 /// narrow width forces single-column layout via favorites'
 /// internal width branching.
-fn render_mdi_favorites_pane(f: &mut Frame, app: &App, area: Rect) {
+fn render_mdi_favorites_pane(
+    f: &mut Frame,
+    app: &App,
+    mdi: &crate::tui::mdi::MdiLayout,
+    area: Rect,
+) {
+    let title = workbench_pane_title(mdi.left_pane_model, "Favorites / Watch");
     let block = Block::default()
         .borders(Borders::ALL)
-        .title(" Favorites / Watch ")
-        .border_style(Style::default().fg(Color::Yellow));
+        .title(title)
+        .border_style(mdi_zone_style(mdi, MdiFocus::LeftPane, Color::Yellow));
     let inner = block.inner(area);
     f.render_widget(block, area);
     favorites::render(f, app, inner);
@@ -484,14 +500,121 @@ fn render_mdi_favorites_pane(f: &mut Frame, app: &App, area: Rect) {
 
 /// Phase Adams.3 — Schedule side pane: 32-col strip on the
 /// right. Reuses `schedule::render` directly.
-fn render_mdi_schedule_pane(f: &mut Frame, app: &App, area: Rect) {
+fn render_mdi_schedule_pane(
+    f: &mut Frame,
+    app: &App,
+    mdi: &crate::tui::mdi::MdiLayout,
+    area: Rect,
+) {
+    let title = workbench_pane_title(mdi.right_pane_model, "Upcoming Schedule");
     let block = Block::default()
         .borders(Borders::ALL)
-        .title(" Upcoming Schedule ")
-        .border_style(Style::default().fg(Color::Magenta));
+        .title(title)
+        .border_style(mdi_zone_style(mdi, MdiFocus::RightPane, Color::Magenta));
     let inner = block.inner(area);
     f.render_widget(block, area);
     schedule::render(f, app, inner);
+}
+
+fn render_mdi_activity_catalog(
+    f: &mut Frame,
+    app: &App,
+    mdi: &crate::tui::mdi::MdiLayout,
+    area: Rect,
+) {
+    let active = crate::tui::workbench::workbench_for_screen(&app.screen);
+    let focused = mdi.focus == MdiFocus::ActivityRail;
+    let title = if focused {
+        " Workbench * "
+    } else {
+        " Workbench "
+    };
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .title(title)
+        .border_style(mdi_zone_style(mdi, MdiFocus::ActivityRail, Color::Green));
+    let inner = block.inner(area);
+
+    let mut lines = Vec::new();
+    for (idx, entry) in WORKBENCH_CATALOG
+        .iter()
+        .enumerate()
+        .take(inner.height as usize)
+    {
+        let selected = idx == mdi.catalog_selected;
+        let current = Some(entry.id) == active;
+        let available = crate::tui::workbench::screen_for_workbench(entry.id).is_some();
+        let marker = match (selected, current) {
+            (true, true) => ">>",
+            (true, false) => "> ",
+            (false, true) => "* ",
+            (false, false) => "  ",
+        };
+        let label = if area.width < 18 {
+            compact_workbench_label(entry.label)
+        } else {
+            entry.label
+        };
+        let prefix = group_prefix(entry.group);
+        let text = if available {
+            format!("{marker}{prefix} {label}")
+        } else {
+            format!("{marker}{prefix} {label}…")
+        };
+        let style = if selected {
+            Style::default()
+                .fg(Color::Green)
+                .add_modifier(Modifier::BOLD)
+        } else if current {
+            Style::default().fg(Color::Cyan)
+        } else if available {
+            Style::default().fg(Color::Gray)
+        } else {
+            Style::default().fg(Color::DarkGray)
+        };
+        lines.push(Line::from(Span::styled(text, style)));
+    }
+
+    f.render_widget(block, area);
+    f.render_widget(Paragraph::new(lines), inner);
+}
+
+fn mdi_zone_style(mdi: &crate::tui::mdi::MdiLayout, zone: MdiFocus, color: Color) -> Style {
+    if mdi.focus == zone {
+        Style::default().fg(color).add_modifier(Modifier::BOLD)
+    } else {
+        Style::default().fg(Color::DarkGray)
+    }
+}
+
+fn group_prefix(group: WorkbenchGroup) -> &'static str {
+    match group {
+        WorkbenchGroup::League => "L",
+        WorkbenchGroup::Analytics => "A",
+        WorkbenchGroup::Teams => "T",
+        WorkbenchGroup::Players => "P",
+        WorkbenchGroup::Live => "V",
+        WorkbenchGroup::MyBench => "M",
+        WorkbenchGroup::Fantasy => "F",
+        WorkbenchGroup::Reports => "R",
+        WorkbenchGroup::System => "S",
+    }
+}
+
+fn compact_workbench_label(label: &'static str) -> &'static str {
+    match label {
+        "Transactions" => "Moves",
+        "Favorites" => "Faves",
+        "Simulation" => "Sim",
+        other => other,
+    }
+}
+
+fn workbench_pane_title(id: icelines_core::WorkbenchPaneModelId, fallback: &'static str) -> String {
+    let label = icelines_core::workbench_pane_model(id)
+        .map(|pane| pane.label)
+        .unwrap_or(fallback);
+    format!(" {label} ")
 }
 
 /// Phase Adams.3 — Scores ribbon: top 1-row strip showing
@@ -4322,8 +4445,8 @@ mod adams_4_render_boundary_tests {
         buf_text(term.backend().buffer())
     }
 
-    /// At width 200, all four MDI regions render: Scores ribbon,
-    /// Favorites pane (yellow), Workspace pane, Schedule pane.
+    /// At width 200, all MDI regions render: Scores ribbon,
+    /// workbench rail, Favorites pane, Workspace pane, Schedule pane.
     #[test]
     fn l0_adams_render_at_200_full_mdi() {
         let text = render_mdi_at(200);
@@ -4332,11 +4455,11 @@ mod adams_4_render_boundary_tests {
             "Dashboard ribbon must render at 200; got:\n{text}"
         );
         assert!(
-            text.contains("Favorites"),
+            text.contains("Favorites navigator"),
             "Favorites pane must render at 200; got:\n{text}"
         );
         assert!(
-            text.contains("Schedule"),
+            text.contains("Schedule inspector"),
             "Schedule pane must render at 200; got:\n{text}"
         );
         assert!(
@@ -4375,7 +4498,7 @@ mod adams_4_render_boundary_tests {
     fn l0_adams_render_at_160_schedule_visible() {
         let text = render_mdi_at(160);
         assert!(
-            text.contains("Schedule"),
+            text.contains("Schedule inspector"),
             "Schedule pane must render at 160 (boundary); got:\n{text}"
         );
         assert!(text.contains("Goalies"), "workspace must render");
@@ -4386,15 +4509,22 @@ mod adams_4_render_boundary_tests {
     #[test]
     fn l0_adams_render_at_159_schedule_drops() {
         let text = render_mdi_at(159);
-        // Schedule pane title gone. NOTE: the Workspace title
+        // Schedule pane title gone. NOTE: the Workbench rail can
+        // contain the Schedule catalog entry; assert the side-pane
+        // title specifically.
+        //
+        // The Workspace title
         // could itself be "Schedule" if app.screen == Schedule;
         // we land on Goalies to avoid that confound.
-        let schedule_count = text.matches("Schedule").count();
+        let schedule_count = text.matches("Schedule inspector").count();
         assert_eq!(
             schedule_count, 0,
             "Schedule pane must drop at 159; got:\n{text}"
         );
-        assert!(text.contains("Favorites"), "favorites still visible");
+        assert!(
+            text.contains("Favorites navigator"),
+            "favorites still visible"
+        );
         assert!(text.contains("Goalies"), "workspace still visible");
     }
 
@@ -4404,7 +4534,7 @@ mod adams_4_render_boundary_tests {
     fn l0_adams_render_at_120_favorites_visible() {
         let text = render_mdi_at(120);
         assert!(
-            text.contains("Favorites"),
+            text.contains("Favorites navigator"),
             "Favorites pane must render at 120 (boundary); got:\n{text}"
         );
     }
@@ -4470,13 +4600,13 @@ mod adams_4_render_boundary_tests {
         let mut term = Terminal::new(backend).unwrap();
         term.draw(|f| render(f, &app)).unwrap();
         let text = buf_text(term.backend().buffer());
-        let fav_count = text.matches("Favorites").count();
+        let fav_count = text.matches("Favorites navigator").count();
         assert_eq!(
             fav_count, 0,
             "Manual show_favorites=false must drop pane at 200; got:\n{text}"
         );
         assert!(
-            text.contains("Schedule"),
+            text.contains("Schedule inspector"),
             "Schedule still adaptive-visible at 200"
         );
     }
@@ -4674,17 +4804,26 @@ mod adams_4_render_boundary_tests {
 
         // 200: full MDI.
         let text_200 = render_at(&app, 200);
-        assert!(text_200.contains("Schedule"), "200: schedule visible");
-        assert!(text_200.contains("Favorites"), "200: favorites visible");
+        assert!(
+            text_200.contains("Schedule inspector"),
+            "200: schedule visible"
+        );
+        assert!(
+            text_200.contains("Favorites navigator"),
+            "200: favorites visible"
+        );
         assert!(app.mdi.is_some(), "MDI state preserved after frame 1");
 
         // 159: schedule drops adaptively.
         let text_159 = render_at(&app, 159);
         assert!(
-            !text_159.contains("Schedule"),
+            !text_159.contains("Schedule inspector"),
             "159: schedule must drop; got:\n{text_159}"
         );
-        assert!(text_159.contains("Favorites"), "159: favorites stays");
+        assert!(
+            text_159.contains("Favorites navigator"),
+            "159: favorites stays"
+        );
 
         // 119: favorites drops too.
         let text_119 = render_at(&app, 119);
@@ -4703,7 +4842,7 @@ mod adams_4_render_boundary_tests {
         // 200 again: full MDI returns.
         let text_back = render_at(&app, 200);
         assert!(
-            text_back.contains("Schedule") && text_back.contains("Favorites"),
+            text_back.contains("Schedule inspector") && text_back.contains("Favorites navigator"),
             "Resize back to 200 must restore both side panes; got:\n{text_back}"
         );
     }
@@ -4731,7 +4870,7 @@ mod adams_4_render_boundary_tests {
 
         let text_200 = render_at(&app, 200);
         assert!(
-            !text_200.contains("Favorites"),
+            !text_200.contains("Favorites navigator"),
             "After Ctrl+H: favorites must be hidden at 200"
         );
 
@@ -4740,7 +4879,7 @@ mod adams_4_render_boundary_tests {
         let _ = render_at(&app, 119);
         let text_back = render_at(&app, 200);
         assert!(
-            !text_back.contains("Favorites"),
+            !text_back.contains("Favorites navigator"),
             "Manual hide must persist across resize cycle; got:\n{text_back}"
         );
         assert!(!app.mdi.as_ref().unwrap().show_favorites);
@@ -4782,7 +4921,7 @@ mod adams_4_render_boundary_tests {
         term.draw(|f| render(f, &app)).unwrap();
         let text = buf_text(term.backend().buffer());
         assert!(
-            text.contains("Schedule"),
+            text.contains("Schedule inspector"),
             "Schedule pane must render after /show schedule; got:\n{text}"
         );
     }
