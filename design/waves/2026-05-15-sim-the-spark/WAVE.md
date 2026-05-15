@@ -38,8 +38,8 @@ finish look like, and how much should I trust that read?"
 |---|---|---|
 | 01 - Projection inventory and assumptions contract | done | `SPARK-INVENTORY.md`; `plans/pulse-01.md` |
 | 02 - Player scoring pace ViewModel | done | `PlayerScoringPaceView`; `plans/pulse-02.md` |
-| 03 - Team scoring outlook ViewModel | planned | `plans/pulse-03.md`; depends on Pulse 02 |
-| 04 - Surface parity and docs | planned | depends on Pulses 02-03 |
+| 03 - Team scoring outlook ViewModel | done | `TeamScoringOutlookView`; `plans/pulse-03.md` |
+| 04 - Surface parity and docs | planned | `plans/pulse-04.md`; depends on Pulses 02-03 |
 | 05 - Wave closeout | planned | depends on Pulse 04 |
 
 ## Role Notes
@@ -61,7 +61,11 @@ inputs, cache/source-state constraints, and required tests before implementation
 Pulse 02 added core-owned `PlayerScoringPaceView` rows for goals, points, and
 shots from already-loaded `PlayerView` totals. Pace and projected-finish values
 stay nullable below `MIN_GP` or when remaining games are unavailable.
+Pulse 03 added core-owned `TeamScoringOutlookView` rows for goals for and goals
+against from caller-supplied regular-season schedule/score inputs. Projected
+finish stays nullable without a remaining-game count, and missing/partial source
+states are explicit in the ViewModel context.
 
 ## Next
 
-Execute Pulse 03: team scoring outlook ViewModel.
+Execute Pulse 04: surface parity and docs.
